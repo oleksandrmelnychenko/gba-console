@@ -59,6 +59,80 @@
   overflow: auto;
 }
 
+.clients-structure-layout > .mantine-Card-root:last-child {
+  padding: 16px;
+}
+
+.clients-structure-detail-skeleton,
+.client-commercial-structure {
+  min-width: 0;
+  width: 100%;
+}
+
+.client-commercial-summary {
+  margin-bottom: 2px;
+}
+
+.client-commercial-metric {
+  background: light-dark(var(--mantine-color-gray-0), var(--mantine-color-dark-6));
+  border: 1px solid light-dark(var(--mantine-color-gray-2), var(--mantine-color-dark-4));
+  border-radius: var(--mantine-radius-md);
+  min-width: 0;
+  padding: 10px 12px;
+}
+
+.client-legal-party {
+  background: light-dark(var(--mantine-color-white), var(--mantine-color-dark-7));
+  box-shadow: none;
+}
+
+.client-source-card {
+  background: light-dark(var(--mantine-color-gray-0), var(--mantine-color-dark-6));
+  border: 1px solid light-dark(var(--mantine-color-gray-2), var(--mantine-color-dark-4));
+  border-radius: var(--mantine-radius-md);
+  padding: 11px 12px;
+}
+
+.client-source-card--target {
+  background: light-dark(var(--mantine-color-indigo-0), rgba(92, 95, 236, 0.08));
+  border-color: light-dark(var(--mantine-color-indigo-2), var(--mantine-color-indigo-8));
+}
+
+.client-source-evidence {
+  margin-top: 9px;
+}
+
+.client-source-evidence > summary {
+  color: var(--mantine-color-dimmed);
+  cursor: pointer;
+  font-size: var(--mantine-font-size-xs);
+  font-weight: 600;
+  width: fit-content;
+}
+
+.client-source-snapshot {
+  background: light-dark(var(--mantine-color-white), var(--mantine-color-dark-7));
+  border: 1px solid light-dark(var(--mantine-color-gray-2), var(--mantine-color-dark-4));
+  border-radius: var(--mantine-radius-sm);
+  min-width: 0;
+  padding: 9px 10px;
+}
+
+.client-evidence-row {
+  border-bottom: 1px dashed light-dark(var(--mantine-color-gray-2), var(--mantine-color-dark-4));
+  padding: 5px 0;
+}
+
+.client-evidence-value {
+  max-width: 62%;
+  overflow-wrap: anywhere;
+  text-align: right;
+}
+
+.client-structure-reasons {
+  row-gap: 5px;
+}
+
 @media (max-width: 992px) {
   .clients-structure-workspace {
     overflow: auto;
@@ -66,5 +140,9 @@
 
   .clients-structure-layout > .mantine-Card-root {
     min-height: 280px;
+  }
+
+  .clients-structure-layout > .mantine-Card-root:last-child {
+    padding: 12px;
   }
 }

@@ -360,6 +360,100 @@ export type ClientIdentityAttentionSummary = {
   OverdueByCurrency: ClientLegalPartyOverdueCurrency[]
 }
 
+export type ClientCommercialStructureState =
+  | 'self'
+  | 'confirmed'
+  | 'probable'
+  | 'review_required'
+
+export type ClientSourceCardSnapshot = {
+  SourceSystem: 'fenix' | 'amg' | string
+  SourceCode: number
+  ClientName?: string | null
+  FullName?: string | null
+  Tin?: string | null
+  Usreou?: string | null
+  RegionCode?: string | null
+  RegionName?: string | null
+  MainClientCode?: number | null
+  MainClientName?: string | null
+  DirectClientGroupName?: string | null
+  ClientGroupName?: string | null
+  SourceMarkedDeleted: boolean
+  SourceIdentityValid: boolean
+  EvidenceTruncated: boolean
+  LastSeenAtUtc: string
+}
+
+export type ClientCommercialCard = {
+  ClientId: number
+  ClientNetUid: string
+  DisplayName?: string | null
+  CurrentRegionCode?: string | null
+  OriginalRegionCode?: string | null
+  Usreou?: string | null
+  Tin?: string | null
+  RoleType?: number | null
+  RoleName?: string | null
+  MainClientId?: number | null
+  IsSubClient: boolean
+  IsTradePoint: boolean
+  IsActive: boolean
+  IsBlocked: boolean
+  IsTarget: boolean
+  HasExplicitRelationship: boolean
+  AgreementCount: number
+  ActiveAgreementCount: number
+  SaleCount: number
+  Reasons: string[]
+  SourceSnapshots: ClientSourceCardSnapshot[]
+}
+
+export type ClientCommercialLegalParty = {
+  Key: string
+  DisplayName?: string | null
+  NormalizedLegalCode?: string | null
+  State: ClientCommercialStructureState
+  IsTarget: boolean
+  RequiresReview: boolean
+  AgreementCount: number
+  ActiveAgreementCount: number
+  SaleCount: number
+  Reasons: string[]
+  Cards: ClientCommercialCard[]
+}
+
+export type ClientCommercialStructure = {
+  ClientNetUid: string
+  AsOfUtc: string
+  GroupKey?: string | null
+  GroupName?: string | null
+  State: ClientCommercialStructureState
+  RequiresReview: boolean
+  IsPartial: boolean
+  CardCount: number
+  AgreementCount: number
+  ActiveAgreementCount: number
+  SaleCount: number
+  Reasons: string[]
+  LegalParties: ClientCommercialLegalParty[]
+}
+
+export type ClientSourceQualityState = 'not_synced' | 'clean' | 'review_required'
+
+export type ClientSourceQualitySummary = {
+  ClientNetUid: string
+  AsOfUtc: string
+  State: ClientSourceQualityState
+  RequiresReview: boolean
+  SourceSnapshotCount: number
+  SourceSystemCount: number
+  HasFenixSnapshot: boolean
+  HasAmgSnapshot: boolean
+  LastSeenAtUtc?: string | null
+  Reasons: string[]
+}
+
 export type ServicePayer = {
   Id?: number
   NetUid?: string

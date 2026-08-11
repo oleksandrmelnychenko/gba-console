@@ -43,7 +43,8 @@
   min-height: 36px;
 }
 
-.clients-create-button {
+.clients-create-button,
+.clients-structure-button {
   align-self: end;
   flex: 0 0 auto;
   font-family: var(--font-mono);
@@ -105,6 +106,18 @@
 }
 
 .client-identity-attention-badge .mantine-Badge-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.client-source-quality-badge {
+  cursor: pointer;
+  font-family: var(--font-mono);
+  max-width: 100%;
+  text-transform: none;
+}
+
+.client-source-quality-badge .mantine-Badge-label {
   overflow: hidden;
   text-overflow: ellipsis;
 }

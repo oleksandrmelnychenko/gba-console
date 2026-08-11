@@ -19,7 +19,7 @@ import { AiFeatureBadge } from '../../../shared/ai/AiFeatureBadge'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { AppModal } from "../../../shared/ui/AppModal"
 import { notifications } from '@mantine/notifications'
-import { CircleAlert, Clock, ExternalLink, Network, Plus, RotateCcw, Search, ToggleLeft, ToggleRight, Wallet } from 'lucide-react'
+import { CircleAlert, Clock, ExternalLink, GitBranch, Network, Plus, RotateCcw, Search, ToggleLeft, ToggleRight, Wallet } from 'lucide-react'
 import { useDebouncedValue } from '@mantine/hooks'
 import { type FormEvent, type RefObject, useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { ClientTypeRoleFilter } from '../components/ClientTypeRoleFilter'
@@ -43,8 +43,10 @@ import { useAuth } from '../../auth/useAuth'
 import {
   exportClientsDocument,
   getClientCount,
+  getClientCommercialStructure,
   getClientFilterItems,
   getClientIdentityAttentionBatch,
+  getClientSourceQualityBatch,
   getClients,
   getClientTypes,
   switchClientActiveState,
@@ -52,13 +54,17 @@ import {
 } from '../api/clientsApi'
 import type {
   Client,
+  ClientCommercialStructure,
   ClientFilterItem,
   ClientIdentityAttentionSummary,
   ClientPrintDocument,
+  ClientSourceQualitySummary,
   ClientType,
 } from '../types'
 import { getClientSolvencyScoresBatch } from '../api/clientSolvencyApi'
 import { SolvencyGaugeCell } from '../components/solvency/SolvencyGaugeCell'
+import { ClientCommercialStructureView } from '../components/structure/ClientCommercialStructureView'
+import { ClientSourceQualityBadge } from '../components/structure/ClientSourceQualityBadge'
 import type { SolvencyScore } from '../solvencyTypes'
 import './clients-page.css'
 
@@ -91,6 +97,7 @@ const CLIENT_TABLE_DEFAULT_LAYOUT = {
   columnOrder: [
     'status',
     'client',
+    'sourceQuality',
     'solvency',
     'role',
     'tin',
@@ -103,7 +110,7 @@ const CLIENT_TABLE_DEFAULT_LAYOUT = {
     'actions',
   ],
   columnPinning: {
-    left: ['status', 'client', 'solvency'],
+    left: ['status', 'client', 'sourceQuality', 'solvency'],
   },
   columnVisibility: {
     actions: false,
@@ -150,6 +157,10 @@ function useClientsPageModel() {
     () => new Map(),
   )
   const [identityAttentionError, setIdentityAttentionError] = useValueState<string | null>(null)
+  const [sourceQuality, setSourceQuality] = useValueState<Map<string, ClientSourceQualitySummary>>(
+    () => new Map(),
+  )
+  const [sourceQualityError, setSourceQualityError] = useValueState<string | null>(null)
   const [attentionSelection, setAttentionSelection] = useValueState<ClientAttentionSelection | null>(null)
   const [clientTypes, setClientTypes] = useValueState<ClientType[]>([])
   const [clientFilterItems, setClientFilterItems] = useValueState<ClientFilterItem[]>([])
@@ -226,11 +237,20 @@ function useClientsPageModel() {
   const openIdentityAttention = useCallback((client: Client, attention: ClientIdentityAttentionSummary) => {
     setAttentionSelection({ client, attention })
   }, [setAttentionSelection])
+  const openClientStructure = useCallback((client: Client) => {
+    setStructureClient(client)
+    setSelectedClient(null)
+  }, [setSelectedClient, setStructureClient])
+  const openClientsStructureTree = useCallback(() => {
+    navigate('/clients/structure')
+  }, [navigate])
   const clientColumns = useClientColumns(
     openClientActions,
     solvencyScores,
     identityAttention,
     openIdentityAttention,
+    sourceQuality,
+    openClientStructure,
   )
   const solvencyClientIds = useMemo(
     () => clients.map((client) => client.Id).filter((id): id is number => typeof id === 'number'),
@@ -354,6 +374,45 @@ function useClientsPageModel() {
       controller.abort()
     }
   }, [identityClientNetIdsKey, setIdentityAttention, setIdentityAttentionError, t])
+  useEffect(() => {
+    if (!identityClientNetIdsKey) {
+      setSourceQuality(new Map())
+      setSourceQualityError(null)
+      return
+    }
+
+    const controller = new AbortController()
+    let cancelled = false
+
+    async function loadSourceQuality() {
+      try {
+        const items = await getClientSourceQualityBatch(
+          identityClientNetIdsKey.split(','),
+          controller.signal,
+        )
+        if (cancelled) {
+          return
+        }
+
+        setSourceQuality(new Map(items.map((item) => [item.ClientNetUid, item])))
+        setSourceQualityError(null)
+      } catch (loadError) {
+        if (!cancelled) {
+          setSourceQuality(new Map())
+          setSourceQualityError(
+            loadError instanceof Error ? loadError.message : t('Маркери синхронізації 1С недоступні'),
+          )
+        }
+      }
+    }
+
+    void loadSourceQuality()
+
+    return () => {
+      cancelled = true
+      controller.abort()
+    }
+  }, [identityClientNetIdsKey, setSourceQuality, setSourceQualityError, t])
   useEffect(() => {
     const controller = new AbortController()
     let cancelled = false
@@ -486,11 +545,6 @@ function useClientsPageModel() {
   function openReserveDays(client: Client) {
     setReserveClient(client)
     setReserveDays(Number(client.OrderExpireDays ?? 0))
-    setSelectedClient(null)
-  }
-
-  function openClientStructure(client: Client) {
-    setStructureClient(client)
     setSelectedClient(null)
   }
 
@@ -636,6 +690,7 @@ function useClientsPageModel() {
     searchValue,
     selectedClient,
     solvencyScoresError,
+    sourceQualityError,
     sorting,
     structureClient,
     handleExport,
@@ -644,6 +699,7 @@ function useClientsPageModel() {
     openCashFlow,
     openClient,
     openClientStructure,
+    openClientsStructureTree,
     openCreateClient,
     openReserveDays,
     resetSearch,
@@ -701,6 +757,7 @@ function ClientsPageView({ model }: { model: ReturnType<typeof useClientsPageMod
     searchValue,
     selectedClient,
     solvencyScoresError,
+    sourceQualityError,
     sorting,
     structureClient,
     handleExport,
@@ -709,6 +766,7 @@ function ClientsPageView({ model }: { model: ReturnType<typeof useClientsPageMod
     openCashFlow,
     openClient,
     openClientStructure,
+    openClientsStructureTree,
     openCreateClient,
     openReserveDays,
     resetSearch,
@@ -761,6 +819,17 @@ function ClientsPageView({ model }: { model: ReturnType<typeof useClientsPageMod
             onSetSearchValue={setSearchValue}
           />
           <div ref={setTableToolbarSlot} className="app-filter-table-toolbar-slot clients-table-toolbar-slot" />
+          <Button
+            className="clients-structure-button"
+            color="indigo"
+            leftSection={<GitBranch size={16} />}
+            size="sm"
+            type="button"
+            variant="light"
+            onClick={openClientsStructureTree}
+          >
+            {t('Дерево клієнтів')}
+          </Button>
           {canCreateClient && (
             <Button
               className="clients-create-button"
@@ -789,6 +858,11 @@ function ClientsPageView({ model }: { model: ReturnType<typeof useClientsPageMod
             {identityAttentionError}
           </Alert>
         )}
+        {sourceQualityError && (
+          <Alert className="clients-page__alert" color="orange" icon={<CircleAlert size={18} />} variant="light">
+            {sourceQualityError}
+          </Alert>
+        )}
 
         <div className="clients-page__table">
           <DataTable
@@ -799,9 +873,9 @@ function ClientsPageView({ model }: { model: ReturnType<typeof useClientsPageMod
             getRowId={(client, index) => String(client.NetUid || client.Id || index)}
             height="100%"
             isLoading={isLoading}
-            layoutVersion="clients-table-11"
+            layoutVersion="clients-table-12"
             loadingText={t('Завантаження клієнтів')}
-            minWidth={1450}
+            minWidth={1570}
             showLayoutControls
             tableId="clients"
             toolbarPortalTarget={tableToolbarSlot}
@@ -847,10 +921,6 @@ function ClientsPageView({ model }: { model: ReturnType<typeof useClientsPageMod
       <ClientStructureModal
         client={structureClient}
         onClose={() => setStructureClient(null)}
-        onOpenClient={(subClient) => {
-          setStructureClient(null)
-          openClient(subClient)
-        }}
       />
 
       <ClientIdentityAttentionDrawer
@@ -1207,49 +1277,71 @@ function ClientDocumentModal({
 function ClientStructureModal({
   client,
   onClose,
-  onOpenClient,
 }: {
   client: Client | null
   onClose: () => void
-  onOpenClient: (client: Client) => void
 }) {
   const { t } = useI18n()
-  const subClients = client ? getClientSubClients(client) : []
+  const [structure, setStructure] = useValueState<ClientCommercialStructure | null>(null)
+  const [error, setError] = useValueState<string | null>(null)
+  const [isLoading, setLoading] = useValueState(false)
+
+  useEffect(() => {
+    const netUid = client?.NetUid
+    if (!netUid) {
+      setStructure(null)
+      setError(null)
+      return
+    }
+
+    const controller = new AbortController()
+    let cancelled = false
+    setLoading(true)
+    setError(null)
+
+    void getClientCommercialStructure(netUid, controller.signal)
+      .then((result) => {
+        if (cancelled) {
+          return
+        }
+        setStructure(result)
+        if (!result) {
+          setError(t('Сервер повернув неповну структуру клієнта'))
+        }
+      })
+      .catch((loadError: unknown) => {
+        if (!cancelled && !(loadError instanceof DOMException && loadError.name === 'AbortError')) {
+          setStructure(null)
+          setError(loadError instanceof Error ? loadError.message : t('Не вдалося завантажити структуру клієнта'))
+        }
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setLoading(false)
+        }
+      })
+
+    return () => {
+      cancelled = true
+      controller.abort()
+    }
+  }, [client?.NetUid, setError, setLoading, setStructure, t])
 
   return (
     <AppModal
       centered
       opened={Boolean(client)}
+      size="min(1100px, 94vw)"
       title={client ? `${t('Структура')}: ${getClientDisplayName(client)}` : t('Структура клієнта')}
       onClose={onClose}
     >
-      <Stack gap="sm">
-        {subClients.length > 0 ? (
-          subClients.map((subClient) => (
-            <Button
-              key={subClient.NetUid || subClient.Id || `${subClient.ClientNumber || ''}:${subClient.FullName || ''}`}
-              fullWidth
-              justify="flex-start"
-              leftSection={<ExternalLink size={16} />}
-              variant="outline"
-              onClick={() => onOpenClient(subClient)}
-            >
-              <Stack gap={0} align="flex-start">
-                <Text fw={600} size="sm">
-                  {getClientDisplayName(subClient)}
-                </Text>
-                <Text c="dimmed" size="xs">
-                  {displayValue(subClient.RegionCode?.Value)}
-                </Text>
-              </Stack>
-            </Button>
-          ))
-        ) : (
-          <Text c="dimmed" size="sm">
-            {t('Підклієнтів не знайдено')}
-          </Text>
-        )}
-      </Stack>
+      {isLoading ? (
+        <Group justify="center" py="xl"><Loader size="sm" /></Group>
+      ) : error ? (
+        <Alert color="red" icon={<CircleAlert size={18} />} variant="light">{error}</Alert>
+      ) : structure ? (
+        <ClientCommercialStructureView structure={structure} t={t} />
+      ) : null}
     </AppModal>
   )
 }
@@ -1259,6 +1351,8 @@ function useClientColumns(
   solvencyScores: Map<number, SolvencyScore>,
   identityAttention: Map<string, ClientIdentityAttentionSummary>,
   onOpenIdentityAttention: (client: Client, attention: ClientIdentityAttentionSummary) => void,
+  sourceQuality: Map<string, ClientSourceQualitySummary>,
+  onOpenStructure: (client: Client) => void,
 ) {
   const { t } = useI18n()
 
@@ -1297,6 +1391,22 @@ function useClientColumns(
             />
           )
         },
+      },
+      {
+        id: 'sourceQuality',
+        header: t('Дані 1С'),
+        width: 118,
+        minWidth: 108,
+        maxWidth: 132,
+        align: 'center',
+        enableSorting: false,
+        cell: (client) => (
+          <ClientSourceQualityBadge
+            quality={client.NetUid ? sourceQuality.get(client.NetUid) : undefined}
+            t={t}
+            onClick={() => onOpenStructure(client)}
+          />
+        ),
       },
       {
         id: 'solvency',
@@ -1420,7 +1530,15 @@ function useClientColumns(
         ),
       },
     ],
-    [identityAttention, onOpenActions, onOpenIdentityAttention, solvencyScores, t],
+    [
+      identityAttention,
+      onOpenActions,
+      onOpenIdentityAttention,
+      onOpenStructure,
+      solvencyScores,
+      sourceQuality,
+      t,
+    ],
   )
 }
 

@@ -3,6 +3,11 @@ import type { ServerBooleanFilter } from '../../../shared/api/searchQuery'
 import { buildServerSearchFilter } from '../../../shared/api/searchQuery'
 import type {
   Client,
+  ClientCommercialCard,
+  ClientCommercialLegalParty,
+  ClientCommercialStructure,
+  ClientSourceCardSnapshot,
+  ClientSourceQualitySummary,
   ClientFilterItem,
   ClientIdentityAttentionSummary,
   ClientPrintDocument,
@@ -109,6 +114,38 @@ export async function getClientIdentityAttentionBatch(
 
   return Array.isArray(result)
     ? result.filter(isIdentityAttentionSummary)
+    : []
+}
+
+export async function getClientCommercialStructure(
+  clientNetId: string,
+  signal?: AbortSignal,
+): Promise<ClientCommercialStructure | null> {
+  const result = await apiRequest<unknown>('/clients/get/commercial-structure', {
+    query: { netId: clientNetId },
+    ...(signal ? { signal } : {}),
+  })
+
+  return isClientCommercialStructure(result) ? result : null
+}
+
+export async function getClientSourceQualityBatch(
+  clientNetIds: string[],
+  signal?: AbortSignal,
+): Promise<ClientSourceQualitySummary[]> {
+  const normalizedIds = [...new Set(clientNetIds.filter(Boolean))].slice(0, 100)
+  if (normalizedIds.length === 0) {
+    return []
+  }
+
+  const result = await apiRequest<unknown>('/clients/get/source-quality/batch', {
+    method: 'POST',
+    body: normalizedIds,
+    ...(signal ? { signal } : {}),
+  })
+
+  return Array.isArray(result)
+    ? result.filter(isClientSourceQualitySummary)
     : []
 }
 
@@ -275,6 +312,122 @@ function isIdentityAttentionSummary(
     && Array.isArray(summary.AttentionReasons)
     && Array.isArray(summary.Candidates)
     && Array.isArray(summary.OverdueByCurrency)
+}
+
+function isClientCommercialStructure(
+  value: unknown,
+): value is ClientCommercialStructure {
+  if (!value || typeof value !== 'object') {
+    return false
+  }
+
+  const structure = value as Partial<ClientCommercialStructure>
+  return typeof structure.ClientNetUid === 'string'
+    && typeof structure.AsOfUtc === 'string'
+    && ['self', 'confirmed', 'probable', 'review_required'].includes(String(structure.State))
+    && typeof structure.RequiresReview === 'boolean'
+    && typeof structure.IsPartial === 'boolean'
+    && typeof structure.CardCount === 'number'
+    && typeof structure.AgreementCount === 'number'
+    && typeof structure.ActiveAgreementCount === 'number'
+    && typeof structure.SaleCount === 'number'
+    && Array.isArray(structure.Reasons)
+    && structure.Reasons.every((reason) => typeof reason === 'string')
+    && Array.isArray(structure.LegalParties)
+    && structure.LegalParties.every(isClientCommercialLegalParty)
+}
+
+function isClientCommercialLegalParty(
+  value: unknown,
+): value is ClientCommercialLegalParty {
+  if (!value || typeof value !== 'object') {
+    return false
+  }
+  const party = value as Partial<ClientCommercialLegalParty>
+  return typeof party.Key === 'string'
+    && ['self', 'confirmed', 'probable', 'review_required'].includes(String(party.State))
+    && typeof party.IsTarget === 'boolean'
+    && typeof party.RequiresReview === 'boolean'
+    && typeof party.AgreementCount === 'number'
+    && typeof party.ActiveAgreementCount === 'number'
+    && typeof party.SaleCount === 'number'
+    && Array.isArray(party.Reasons)
+    && party.Reasons.every((reason) => typeof reason === 'string')
+    && Array.isArray(party.Cards)
+    && party.Cards.every(isClientCommercialCard)
+}
+
+function isClientCommercialCard(value: unknown): value is ClientCommercialCard {
+  if (!value || typeof value !== 'object') {
+    return false
+  }
+  const card = value as Partial<ClientCommercialCard>
+  return typeof card.ClientId === 'number'
+    && typeof card.ClientNetUid === 'string'
+    && typeof card.IsSubClient === 'boolean'
+    && typeof card.IsTradePoint === 'boolean'
+    && typeof card.IsActive === 'boolean'
+    && typeof card.IsBlocked === 'boolean'
+    && typeof card.IsTarget === 'boolean'
+    && typeof card.HasExplicitRelationship === 'boolean'
+    && typeof card.AgreementCount === 'number'
+    && typeof card.ActiveAgreementCount === 'number'
+    && typeof card.SaleCount === 'number'
+    && Array.isArray(card.Reasons)
+    && card.Reasons.every((reason) => typeof reason === 'string')
+    && Array.isArray(card.SourceSnapshots)
+    && card.SourceSnapshots.every(isClientSourceCardSnapshot)
+}
+
+function isClientSourceCardSnapshot(
+  value: unknown,
+): value is ClientSourceCardSnapshot {
+  if (!value || typeof value !== 'object') {
+    return false
+  }
+  const snapshot = value as Partial<ClientSourceCardSnapshot>
+  return typeof snapshot.SourceSystem === 'string'
+    && typeof snapshot.SourceCode === 'number'
+    && typeof snapshot.SourceMarkedDeleted === 'boolean'
+    && typeof snapshot.SourceIdentityValid === 'boolean'
+    && typeof snapshot.EvidenceTruncated === 'boolean'
+    && typeof snapshot.LastSeenAtUtc === 'string'
+}
+
+function isClientSourceQualitySummary(
+  value: unknown,
+): value is ClientSourceQualitySummary {
+  if (!value || typeof value !== 'object') {
+    return false
+  }
+  const summary = value as Partial<ClientSourceQualitySummary>
+  const state = String(summary.State)
+  const snapshotCount = summary.SourceSnapshotCount
+  const systemCount = summary.SourceSystemCount
+  const hasValidCounts = Number.isInteger(snapshotCount)
+    && Number.isInteger(systemCount)
+    && Number(snapshotCount) >= 0
+    && Number(systemCount) >= 0
+    && Number(systemCount) <= Number(snapshotCount)
+  const hasConsistentState = state === 'not_synced'
+    ? snapshotCount === 0 && summary.RequiresReview === false
+    : state === 'clean'
+      ? Number(snapshotCount) > 0 && summary.RequiresReview === false
+      : state === 'review_required'
+        && Number(snapshotCount) > 0
+        && summary.RequiresReview === true
+
+  return typeof summary.ClientNetUid === 'string'
+    && typeof summary.AsOfUtc === 'string'
+    && ['not_synced', 'clean', 'review_required'].includes(state)
+    && typeof summary.RequiresReview === 'boolean'
+    && hasValidCounts
+    && hasConsistentState
+    && typeof summary.HasFenixSnapshot === 'boolean'
+    && typeof summary.HasAmgSnapshot === 'boolean'
+    && (summary.LastSeenAtUtc == null || typeof summary.LastSeenAtUtc === 'string')
+    && Array.isArray(summary.Reasons)
+    && summary.Reasons.every((reason) => typeof reason === 'string')
 }
 
 function parseCount(count: unknown): number {

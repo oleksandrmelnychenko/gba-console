@@ -6,9 +6,11 @@ import {
   exportClientsDocument,
   exportSuppliersDocument,
   getClientCount,
+  getClientCommercialStructure,
   getClientFilterItems,
   getClientIdentityAttention,
   getClientIdentityAttentionBatch,
+  getClientSourceQualityBatch,
   getClients,
   getSupplierCount,
   getSupplierFilterItems,
@@ -369,6 +371,66 @@ describe('clients API query contracts', () => {
     })
   })
 
+  it('loads 1C source-quality markers for a visible client page in one request', async () => {
+    const quality = createSourceQuality('client-1')
+    const controller = new AbortController()
+    apiRequestMock.mockResolvedValueOnce([quality])
+
+    await expect(
+      getClientSourceQualityBatch(
+        ['client-1', 'client-1'],
+        controller.signal,
+      ),
+    ).resolves.toEqual([quality])
+    expect(apiRequestMock).toHaveBeenCalledWith('/clients/get/source-quality/batch', {
+      method: 'POST',
+      body: ['client-1'],
+      signal: controller.signal,
+    })
+  })
+
+  it('drops malformed 1C source-quality markers', async () => {
+    apiRequestMock.mockResolvedValueOnce([
+      createSourceQuality('client-1'),
+      { ClientNetUid: 'broken' },
+      {
+        ...createSourceQuality('inconsistent-clean-card'),
+        State: 'clean',
+        RequiresReview: false,
+        SourceSnapshotCount: 0,
+        SourceSystemCount: 0,
+      },
+    ])
+
+    await expect(
+      getClientSourceQualityBatch([
+        'client-1',
+        'broken',
+        'inconsistent-clean-card',
+      ]),
+    ).resolves.toEqual([createSourceQuality('client-1')])
+  })
+
+  it('loads the non-destructive commercial structure for one selected card', async () => {
+    const structure = createCommercialStructure('client-1')
+    const controller = new AbortController()
+    apiRequestMock.mockResolvedValueOnce(structure)
+
+    await expect(
+      getClientCommercialStructure('client-1', controller.signal),
+    ).resolves.toEqual(structure)
+    expect(apiRequestMock).toHaveBeenCalledWith('/clients/get/commercial-structure', {
+      query: { netId: 'client-1' },
+      signal: controller.signal,
+    })
+  })
+
+  it('rejects a malformed commercial structure instead of rendering guessed data', async () => {
+    apiRequestMock.mockResolvedValueOnce({ ClientNetUid: 'client-1' })
+
+    await expect(getClientCommercialStructure('client-1')).resolves.toBeNull()
+  })
+
   it('loads dynamic supplier filter items through the source endpoint', async () => {
     const filterItems = [{ SQL: 'Client.FullName', Name: 'Постачальник' }]
 
@@ -441,5 +503,38 @@ function createIdentityAttention(clientNetUid: string) {
     AttentionReasons: ['invalid_legal_code'],
     Candidates: [],
     OverdueByCurrency: [],
+  }
+}
+
+function createCommercialStructure(clientNetUid: string) {
+  return {
+    ClientNetUid: clientNetUid,
+    AsOfUtc: '2026-08-11T10:00:00Z',
+    GroupKey: 'XM052',
+    GroupName: null,
+    State: 'review_required',
+    RequiresReview: true,
+    IsPartial: false,
+    CardCount: 2,
+    AgreementCount: 3,
+    ActiveAgreementCount: 2,
+    SaleCount: 8,
+    Reasons: ['region_code_family'],
+    LegalParties: [],
+  }
+}
+
+function createSourceQuality(clientNetUid: string) {
+  return {
+    ClientNetUid: clientNetUid,
+    AsOfUtc: '2026-08-11T10:00:00Z',
+    State: 'review_required',
+    RequiresReview: true,
+    SourceSnapshotCount: 2,
+    SourceSystemCount: 2,
+    HasFenixSnapshot: true,
+    HasAmgSnapshot: true,
+    LastSeenAtUtc: '2026-08-11T09:55:00Z',
+    Reasons: ['conflicting_region_code_family'],
   }
 }

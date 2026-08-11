@@ -1,14 +1,13 @@
 import { ActionIcon, Alert, Group, Loader, Skeleton, Stack, Text, TextInput, Tooltip } from '@mantine/core'
 import { useDebouncedValue } from '@mantine/hooks'
-import { CircleAlert, RefreshCw, RotateCcw, Search, User, Users } from 'lucide-react'
-import { useCallback, useEffect, useMemo, useReducer } from 'react'
+import { CircleAlert, RefreshCw, RotateCcw, Search } from 'lucide-react'
+import { useEffect, useMemo, useReducer } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { ListTreeItem, ListTreeLayout } from '../../../shared/ui/tree/ListTreeLayout'
-import { TreeView, type TreeViewNode } from '../../../shared/ui/tree/TreeView'
-import { getClientSubClients } from '../api/clientCabinetApi'
-import { getClients } from '../api/clientsApi'
-import type { Client } from '../types'
+import { ClientCommercialStructureView } from '../components/structure/ClientCommercialStructureView'
+import { getClientCommercialStructure, getClients } from '../api/clientsApi'
+import type { Client, ClientCommercialStructure } from '../types'
 import '../../../shared/ui/console-table-page.css'
 import './clients-structure-tree-page.css'
 
@@ -17,8 +16,8 @@ const CLIENTS_PAGE_SIZE = 50
 
 /**
  * «Структура клієнтів» — the reusable list+tree pattern applied to clients:
- * left = client list, right = the selected client's sub-client hierarchy as a
- * lazily-loaded expand/collapse tree (sub-clients fetched per node on expand).
+ * left = source client cards, right = a non-destructive commercial projection:
+ * commercial group → legal-party candidates → persisted cards → raw 1C evidence.
  * Rendered at 90% screen width.
  */
 export function ClientsStructureTreePage() {
@@ -29,9 +28,9 @@ export function ClientsStructureTreePage() {
   const [searchValue] = useDebouncedValue(searchDraft.trim(), SEARCH_DEBOUNCE_MS)
   const [error, setError] = useValueState<string | null>(null)
   const [isLoading, setLoading] = useValueState(true)
-  const [childrenByKey, setChildrenByKey] = useValueState<Record<string, Client[]>>({})
-  const [loadingKeys, setLoadingKeys] = useValueState<ReadonlySet<string>>(() => new Set())
-  const [loadedKeys, setLoadedKeys] = useValueState<ReadonlySet<string>>(() => new Set())
+  const [structure, setStructure] = useValueState<ClientCommercialStructure | null>(null)
+  const [structureError, setStructureError] = useValueState<string | null>(null)
+  const [isStructureLoading, setStructureLoading] = useValueState(false)
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
 
   useEffect(() => {
@@ -68,72 +67,50 @@ export function ClientsStructureTreePage() {
     }
   }, [reloadKey, searchValue, setClients, setError, setLoading, setSelectedNetUid, t])
 
-  const loadChildren = useCallback(
-    (netId: string) => {
-      if (!netId || loadedKeys.has(netId) || loadingKeys.has(netId)) {
-        return
-      }
-      setLoadingKeys((current) => new Set(current).add(netId))
-
-      void getClientSubClients(netId)
-        .then((links) => {
-          const children = links.reduce<Client[]>((acc, link) => {
-            if (link.SubClient) {
-              acc.push(link.SubClient)
-            }
-            return acc
-          }, [])
-          setChildrenByKey((current) => ({ ...current, [netId]: children }))
-        })
-        .catch(() => {
-          setChildrenByKey((current) => ({ ...current, [netId]: current[netId] || [] }))
-        })
-        .finally(() => {
-          setLoadedKeys((current) => new Set(current).add(netId))
-          setLoadingKeys((current) => {
-            const next = new Set(current)
-            next.delete(netId)
-            return next
-          })
-        })
-    },
-    [loadedKeys, loadingKeys, setChildrenByKey, setLoadedKeys, setLoadingKeys],
-  )
-
-  // Auto-load the selected client's direct sub-clients so the tree isn't empty.
   useEffect(() => {
-    if (selectedNetUid) {
-      loadChildren(selectedNetUid)
+    if (!selectedNetUid) {
+      setStructure(null)
+      setStructureError(null)
+      return
     }
-  }, [selectedNetUid, loadChildren])
 
-  const buildNode = useCallback(
-    function build(client: Client): TreeViewNode {
-      const key = clientKey(client)
-      const loaded = loadedKeys.has(key)
-      const childClients = childrenByKey[key] || []
+    const controller = new AbortController()
+    let cancelled = false
+    setStructureLoading(true)
+    setStructureError(null)
 
-      return {
-        id: key,
-        label: getClientName(client, t),
-        meta: getClientMeta(client),
-        icon: childClients.length > 0 ? <Users size={15} /> : <User size={15} />,
-        active: key === selectedNetUid,
-        hasChildren: loaded ? childClients.length > 0 : true,
-        loading: loadingKeys.has(key),
-        onExpand: () => loadChildren(key),
-        children: childClients.map(build),
-      }
-    },
-    [childrenByKey, loadChildren, loadedKeys, loadingKeys, selectedNetUid, t],
-  )
+    void getClientCommercialStructure(selectedNetUid, controller.signal)
+      .then((result) => {
+        if (cancelled) {
+          return
+        }
+        setStructure(result)
+        if (!result) {
+          setStructureError(t('Сервер повернув неповну структуру клієнта'))
+        }
+      })
+      .catch((loadError: unknown) => {
+        if (!cancelled && !(loadError instanceof DOMException && loadError.name === 'AbortError')) {
+          setStructure(null)
+          setStructureError(loadError instanceof Error ? loadError.message : t('Не вдалося завантажити структуру клієнта'))
+        }
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setStructureLoading(false)
+        }
+      })
+
+    return () => {
+      cancelled = true
+      controller.abort()
+    }
+  }, [reloadKey, selectedNetUid, setStructure, setStructureError, setStructureLoading, t])
 
   const selectedClient = useMemo(
     () => clients.find((client) => client.NetUid === selectedNetUid) || null,
     [clients, selectedNetUid],
   )
-  const treeNodes = useMemo(() => (selectedClient ? [buildNode(selectedClient)] : []), [buildNode, selectedClient])
-
   return (
     <Stack className="clients-structure-page console-table-page" gap={6}>
       <div className="clients-structure-shell console-table-shell">
@@ -197,7 +174,7 @@ export function ClientsStructureTreePage() {
               <div className="list-tree-list">
                 {clients.map((client, index) => (
                   <ListTreeItem
-                    key={client.NetUid || client.Id || index}
+                    key={getClientKey(client)}
                     index={index}
                     metrics={client.RegionCode?.Value ? [{ value: client.RegionCode.Value, label: '' }] : undefined}
                     name={getClientName(client, t)}
@@ -216,13 +193,18 @@ export function ClientsStructureTreePage() {
               </Stack>
             }
             detail={
-              selectedClient ? (
-                <TreeView
-                  key={selectedNetUid}
-                  defaultExpandedDepth={0}
-                  emptyText={t('Немає суб-клієнтів')}
-                  nodes={treeNodes}
-                />
+              isStructureLoading ? (
+                <Stack className="clients-structure-detail-skeleton" gap="sm">
+                  <Skeleton height={62} radius="md" />
+                  <Skeleton height={90} radius="md" />
+                  <Skeleton height={180} radius="md" />
+                </Stack>
+              ) : structureError ? (
+                <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
+                  {structureError}
+                </Alert>
+              ) : selectedClient && structure ? (
+                <ClientCommercialStructureView structure={structure} t={t} />
               ) : isLoading ? (
                 <Group justify="center" gap="xs" py="lg">
                   <Loader size="sm" />
@@ -238,10 +220,6 @@ export function ClientsStructureTreePage() {
   )
 }
 
-function clientKey(client: Client): string {
-  return client.NetUid || String(client.Id || '')
-}
-
 function getClientName(client: Client, t: (value: string) => string): string {
   return (
     client.FullName?.trim()
@@ -252,6 +230,19 @@ function getClientName(client: Client, t: (value: string) => string): string {
   )
 }
 
-function getClientMeta(client: Client): string {
-  return [client.RegionCode?.Value, client.RegionCode?.City].filter(Boolean).join(' · ')
+function getClientKey(client: Client): string {
+  if (client.NetUid) {
+    return `net:${client.NetUid}`
+  }
+  if (client.Id) {
+    return `id:${client.Id}`
+  }
+
+  return [
+    'source',
+    client.ClientNumber || '',
+    client.OriginalRegionCode || client.RegionCode?.Value || '',
+    client.FullName || client.Name || '',
+    client.USREOU || client.TIN || '',
+  ].join(':')
 }
