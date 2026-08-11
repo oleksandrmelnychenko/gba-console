@@ -66,6 +66,7 @@ import { SolvencyGaugeCell } from '../components/solvency/SolvencyGaugeCell'
 import { ClientCommercialStructureView } from '../components/structure/ClientCommercialStructureView'
 import { ClientSourceQualityBadge } from '../components/structure/ClientSourceQualityBadge'
 import type { SolvencyScore } from '../solvencyTypes'
+import { clientNetUidKey, indexByClientNetUid } from '../clientNetUidIndex'
 import './clients-page.css'
 
 const pageSizeOptions = PAGINATOR_PAGE_SIZE_OPTIONS
@@ -355,7 +356,7 @@ function useClientsPageModel() {
           return
         }
 
-        setIdentityAttention(new Map(items.map((item) => [item.ClientNetUid, item])))
+        setIdentityAttention(indexByClientNetUid(items))
         setIdentityAttentionError(null)
       } catch (loadError) {
         if (!cancelled) {
@@ -394,7 +395,7 @@ function useClientsPageModel() {
           return
         }
 
-        setSourceQuality(new Map(items.map((item) => [item.ClientNetUid, item])))
+        setSourceQuality(indexByClientNetUid(items))
         setSourceQualityError(null)
       } catch (loadError) {
         if (!cancelled) {
@@ -1382,7 +1383,9 @@ function useClientColumns(
         fill: true,
         accessor: getClientDisplayName,
         cell: (client) => {
-          const attention = client.NetUid ? identityAttention.get(client.NetUid) : undefined
+          const attention = client.NetUid
+            ? identityAttention.get(clientNetUidKey(client.NetUid))
+            : undefined
           return (
             <ClientNameCell
               attention={attention}
@@ -1402,7 +1405,9 @@ function useClientColumns(
         enableSorting: false,
         cell: (client) => (
           <ClientSourceQualityBadge
-            quality={client.NetUid ? sourceQuality.get(client.NetUid) : undefined}
+            quality={client.NetUid
+              ? sourceQuality.get(clientNetUidKey(client.NetUid))
+              : undefined}
             t={t}
             onClick={() => onOpenStructure(client)}
           />
