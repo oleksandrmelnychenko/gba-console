@@ -162,6 +162,7 @@ export function NewSaleReviewStep({
   onCreated,
   onMergedSubmitted,
   onRegisterSubmit,
+  onRequestClose,
   onVatDocuments,
   withVatAccounting,
 }: {
@@ -172,6 +173,7 @@ export function NewSaleReviewStep({
   onCreated?: () => void
   onMergedSubmitted?: () => void
   onRegisterSubmit?: (submit: (() => Promise<void>) | null) => void
+  onRequestClose?: () => void
   onVatDocuments?: (result: SaleDocumentResult) => void
   sale: SalesUkraineSale | null
   value: NewSaleReviewValue
@@ -420,19 +422,20 @@ export function NewSaleReviewStep({
   }, [onRegisterSubmit])
 
   useEffect(() => {
-    onBusyChange?.(finalSubmitOutcomePending || submitting || saving)
+    onBusyChange?.(submitting || saving)
 
     return () => {
       onBusyChange?.(false)
     }
-  }, [finalSubmitOutcomePending, onBusyChange, saving, submitting])
+  }, [onBusyChange, saving, submitting])
 
   useWizardKeyboard(2)
 
   useWizardKeyHandler((event) => {
     if (event.hotkey === 'Escape') {
       if (finalSubmitOutcomePending) {
-        notifications.show({ color: 'orange', message: t('Спочатку перевірте результат створення продажу') })
+        const requestClose = onRequestClose ?? onClose
+        requestClose?.()
 
         return true
       }
@@ -1565,7 +1568,9 @@ export function NewSaleReviewStep({
 
   async function handleConfirmClose() {
     if (finalSubmitOutcomePending) {
-      notifications.show({ color: 'orange', message: t('Спочатку перевірте результат створення продажу') })
+      setConfirmOpened(false)
+      const requestClose = onRequestClose ?? onClose
+      requestClose?.()
 
       return
     }

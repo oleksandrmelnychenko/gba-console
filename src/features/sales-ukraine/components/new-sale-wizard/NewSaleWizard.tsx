@@ -1291,6 +1291,7 @@ function NewSaleWizardContent({
             }}
             onMergedSubmitted={() => void goToClients()}
             onRegisterSubmit={registerReviewSubmit}
+            onRequestClose={requestExit}
             onVatDocuments={onVatDocuments}
             withVatAccounting={withVatAccounting}
           />

@@ -195,14 +195,18 @@ function reviewValue(ttnFile: File | null = null): NewSaleReviewValue {
 }
 
 function renderStep({
+  onBusyChange = vi.fn(),
   onChange = vi.fn(),
   onClose = vi.fn(),
   onCreated = vi.fn(),
+  onRequestClose = vi.fn(),
   value = reviewValue(),
 }: {
+  onBusyChange?: (busy: boolean) => void
   onChange?: (patch: Partial<NewSaleReviewValue>) => void
   onClose?: () => void
   onCreated?: () => void
+  onRequestClose?: () => void
   value?: NewSaleReviewValue
 } = {}) {
   return {
@@ -212,15 +216,19 @@ function renderStep({
           clientNetId="client-1"
           sale={sale}
           value={value}
+          onBusyChange={onBusyChange}
           onChange={onChange}
           onClose={onClose}
           onCreated={onCreated}
+          onRequestClose={onRequestClose}
         />
       </MantineProvider>,
     ),
+    onBusyChange,
     onChange,
     onClose,
     onCreated,
+    onRequestClose,
   }
 }
 
@@ -375,6 +383,26 @@ describe('NewSaleReviewStep persistent file reconciliation', () => {
     expect(onCreated).not.toHaveBeenCalled()
     expect(onClose).not.toHaveBeenCalled()
     expect(mocks.clearWizardSplitOrderItems).not.toHaveBeenCalled()
+  })
+
+  it('keeps the wizard closable while an ambiguous final result is pending reconciliation', async () => {
+    mocks.updateSaleFromData.mockRejectedValue(new ApiError('response lost', 500, null))
+    const { onBusyChange, onClose, onRequestClose } = renderStep()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Створити накладну' }))
+
+    await screen.findByRole('button', { name: 'Перевірити результат' })
+    await waitFor(() => expect(onBusyChange).toHaveBeenLastCalledWith(false))
+
+    act(() => {
+      mocks.keyHandler?.({ hotkey: 'Escape' })
+    })
+
+    expect(onRequestClose).toHaveBeenCalledTimes(1)
+    expect(onClose).not.toHaveBeenCalled()
+    expect(mocks.notificationsShow).not.toHaveBeenCalledWith(expect.objectContaining({
+      message: 'Спочатку перевірте результат створення продажу',
+    }))
   })
 
   it('links a split final operation before sending it and keeps both journals after a lost response', async () => {
