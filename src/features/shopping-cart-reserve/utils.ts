@@ -22,12 +22,17 @@ const moneyFormatter = new Intl.NumberFormat('uk-UA', {
   minimumFractionDigits: 2,
 })
 
+const exchangeRateFormatter = new Intl.NumberFormat('uk-UA', {
+  maximumFractionDigits: 4,
+  minimumFractionDigits: 4,
+})
+
 export function getCartCurrencyCode(): string {
   return CART_CURRENCY_CODE
 }
 
 export function getCartLocalCurrencyCode(cart: ShoppingCartReserveItem): string {
-  return cart.ClientAgreement?.Agreement?.Currency?.Code || UAH_CURRENCY_CODE
+  return cart.ClientAgreement?.Agreement?.Currency?.Code?.trim().toUpperCase() || '—'
 }
 
 export function getCartClientName(cart: ShoppingCartReserveItem): string {
@@ -90,12 +95,20 @@ export function formatCartTime(value?: string | Date): string {
   return dateTimeFormatter.format(date)
 }
 
-export function formatMoney(value?: number): string {
+export function formatMoney(value?: number | null): string {
   if (value == null || Number.isNaN(value)) {
-    return moneyFormatter.format(0)
+    return '—'
   }
 
   return moneyFormatter.format(value)
+}
+
+export function formatExchangeRate(value?: number): string {
+  if (value == null || !Number.isFinite(value) || value <= 0) {
+    return '—'
+  }
+
+  return exchangeRateFormatter.format(value)
 }
 
 export function formatQty(item: CartReserveOrderItem): string {
@@ -114,4 +127,8 @@ export function getOrderItemAmount(item: CartReserveOrderItem, localCurrencyCode
 
 export function getOrderItemAmountCurrency(localCurrencyCode: string): string {
   return localCurrencyCode === CART_CURRENCY_CODE ? UAH_CURRENCY_CODE : CART_CURRENCY_CODE
+}
+
+export function getCartUahAmount(cart: ShoppingCartReserveItem): number | null {
+  return cart.TotalAmountEurToUah ?? null
 }

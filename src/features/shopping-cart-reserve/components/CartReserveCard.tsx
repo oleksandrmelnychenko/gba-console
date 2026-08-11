@@ -8,12 +8,14 @@ import type { CartReserveOrderItem, ShoppingCartReserveItem } from '../types'
 import {
   formatCartDate,
   formatCartTime,
+  formatExchangeRate,
   formatMoney,
   formatQty,
   getCartClientName,
   getCartCurrencyCode,
   getCartKey,
   getCartLocalCurrencyCode,
+  getCartUahAmount,
   getDaysRemaining,
   getOrderItemAmount,
   getOrderItemAmountCurrency,
@@ -121,14 +123,14 @@ function useCartColumns(onOpenClient: (cart: ShoppingCartReserveItem) => void) {
       },
       {
         id: 'localAmount',
-        header: t('Сума, локальна'),
+        header: `${t('Сума')}, UAH`,
         width: 180,
         minWidth: 160,
         align: 'right',
-        accessor: (cart) => cart.TotalLocalAmount ?? 0,
+        accessor: (cart) => getCartUahAmount(cart) ?? Number.MIN_SAFE_INTEGER,
         cell: (cart) => (
           <Text className="app-money cart-reserve-summary-amount">
-            {formatMoney(cart.TotalLocalAmount)} <span>{getCartLocalCurrencyCode(cart)}</span>
+            {formatMoney(getCartUahAmount(cart))} <span>UAH</span>
           </Text>
         ),
       },
@@ -331,6 +333,9 @@ function useCartItemColumns(localCurrencyCode: string, onOpenProductCard: (produ
             </Text>
             <Text className="app-money app-money-meta" size="xs">
               {formatMoney(getOrderItemAmount(item, localCurrencyCode))} {getOrderItemAmountCurrency(localCurrencyCode)}
+            </Text>
+            <Text className="app-money app-money-meta" size="xs">
+              Курс EUR→UAH: {formatExchangeRate(item.Product?.CurrentEurToUahExchangeRate)}
             </Text>
           </Stack>
         ),

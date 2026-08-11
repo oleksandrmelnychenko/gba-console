@@ -27,6 +27,7 @@ export type CartReserveClientAgreement = CartReserveEntity & {
 }
 
 export type CartReserveProduct = CartReserveEntity & {
+  CurrentEurToUahExchangeRate?: number
   MainOriginalNumber?: string
   Name?: string
   VendorCode?: string
@@ -56,6 +57,7 @@ export type ShoppingCartReserveItem = CartReserveEntity & {
   ClientAgreement?: CartReserveClientAgreement
   OrderItems?: CartReserveOrderItem[]
   TotalAmount?: number
+  TotalAmountEurToUah?: number
   TotalLocalAmount?: number
   ValidUntil?: Date | string
 }
