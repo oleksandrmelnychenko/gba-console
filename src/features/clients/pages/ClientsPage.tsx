@@ -1331,9 +1331,10 @@ function ClientStructureModal({
   return (
     <AppModal
       centered
+      className="client-commercial-structure-modal"
       opened={Boolean(client)}
-      size="min(1100px, 94vw)"
-      title={client ? `${t('Структура')}: ${getClientDisplayName(client)}` : t('Структура клієнта')}
+      size="min(1120px, 94vw)"
+      title={client ? `${t('Структура клієнта')} · ${getClientDisplayName(client)}` : t('Структура клієнта')}
       onClose={onClose}
     >
       {isLoading ? (

@@ -1,6 +1,6 @@
 import { ActionIcon, Alert, Group, Loader, Skeleton, Stack, Text, TextInput, Tooltip } from '@mantine/core'
 import { useDebouncedValue } from '@mantine/hooks'
-import { CircleAlert, RefreshCw, RotateCcw, Search } from 'lucide-react'
+import { ChevronRight, CircleAlert, RefreshCw, RotateCcw, Search } from 'lucide-react'
 import { useEffect, useMemo, useReducer } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { useValueState } from '../../../shared/hooks/useValueState'
@@ -163,33 +163,46 @@ export function ClientsStructureTreePage() {
           <ListTreeLayout
             className="clients-structure-layout"
             list={
-              <Stack className="clients-structure-list" gap={6}>
-            {isLoading ? (
-              <Stack gap={5}>
-                {Array.from({ length: 7 }, (_, index) => (
-                  <Skeleton key={index} height={46} radius={7} />
-                ))}
-              </Stack>
-            ) : clients.length > 0 ? (
-              <div className="list-tree-list">
-                {clients.map((client, index) => (
-                  <ListTreeItem
-                    key={getClientKey(client)}
-                    index={index}
-                    metrics={client.RegionCode?.Value ? [{ value: client.RegionCode.Value, label: '' }] : undefined}
-                    name={getClientName(client, t)}
-                    selected={client.NetUid === selectedNetUid}
-                    onSelect={() => setSelectedNetUid(client.NetUid || null)}
-                  />
-                ))}
-              </div>
-            ) : (
-              <div className="list-tree-empty">
-                <Text c="dimmed" size="sm">
-                  {t('Клієнтів не знайдено')}
-                </Text>
-              </div>
-            )}
+              <Stack className="clients-structure-list" gap={4}>
+                <div className="clients-structure-rail-header">
+                  <Text className="app-section-title">{t('Клієнти')}</Text>
+                  {!isLoading ? <Text className="clients-structure-rail-count">{clients.length}</Text> : null}
+                </div>
+                {isLoading ? (
+                  <Stack gap={5}>
+                    {Array.from({ length: 7 }, (_, index) => (
+                      <Skeleton key={index} height={40} radius={7} />
+                    ))}
+                  </Stack>
+                ) : clients.length > 0 ? (
+                  <div className="list-tree-list">
+                    {clients.map((client) => {
+                      const name = getClientName(client, t)
+
+                      return (
+                        <ListTreeItem
+                          key={getClientKey(client)}
+                          metrics={client.RegionCode?.Value ? [{ value: client.RegionCode.Value, label: '' }] : undefined}
+                          name={(
+                            <span className="clients-structure-list-label">
+                              <span>{name}</span>
+                              <ChevronRight aria-hidden="true" className="clients-structure-list-chevron" size={14} />
+                            </span>
+                          )}
+                          selectLabel={name}
+                          selected={client.NetUid === selectedNetUid}
+                          onSelect={() => setSelectedNetUid(client.NetUid || null)}
+                        />
+                      )
+                    })}
+                  </div>
+                ) : (
+                  <div className="list-tree-empty">
+                    <Text c="dimmed" size="sm">
+                      {t('Клієнтів не знайдено')}
+                    </Text>
+                  </div>
+                )}
               </Stack>
             }
             detail={
