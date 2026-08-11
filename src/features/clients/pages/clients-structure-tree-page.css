@@ -83,7 +83,66 @@
 
 .client-legal-party {
   background: light-dark(var(--mantine-color-white), var(--mantine-color-dark-7));
-  box-shadow: none;
+  border: 1px solid light-dark(var(--mantine-color-gray-2), var(--mantine-color-dark-4));
+  border-radius: var(--mantine-radius-md);
+  overflow: clip;
+}
+
+.client-legal-party--target {
+  border-color: light-dark(var(--mantine-color-indigo-2), var(--mantine-color-indigo-8));
+}
+
+.client-legal-party__summary {
+  cursor: pointer;
+  list-style: none;
+  padding: 11px 12px;
+}
+
+.client-legal-party__summary::-webkit-details-marker {
+  display: none;
+}
+
+.client-legal-party__summary::before {
+  color: var(--mantine-color-dimmed);
+  content: '›';
+  display: inline-block;
+  font-size: 18px;
+  line-height: 1;
+  margin-right: 8px;
+  transform: rotate(0deg);
+  transition: transform 120ms ease;
+  vertical-align: middle;
+}
+
+.client-legal-party[open] > .client-legal-party__summary::before {
+  transform: rotate(90deg);
+}
+
+.client-legal-party__summary > .mantine-Group-root {
+  display: inline-flex;
+  max-width: calc(100% - 24px);
+  vertical-align: middle;
+  width: calc(100% - 24px);
+}
+
+.client-legal-party__identity {
+  min-width: 0;
+}
+
+.client-legal-party__cards {
+  border-left: 2px solid var(--mantine-color-teal-4);
+  margin: 0 12px 12px 28px;
+  padding-left: 20px;
+}
+
+.client-legal-party--probable .client-legal-party__cards {
+  border-left-color: var(--mantine-color-blue-4);
+  border-left-style: dashed;
+}
+
+.client-legal-party--review .client-legal-party__cards {
+  border-left-color: var(--mantine-color-yellow-5);
+  border-left-style: dashed;
 }
 
 .client-source-card {
@@ -91,6 +150,26 @@
   border: 1px solid light-dark(var(--mantine-color-gray-2), var(--mantine-color-dark-4));
   border-radius: var(--mantine-radius-md);
   padding: 11px 12px;
+  position: relative;
+}
+
+.client-source-card::before {
+  border-top: 2px solid var(--mantine-color-teal-4);
+  content: '';
+  left: -21px;
+  position: absolute;
+  top: 24px;
+  width: 20px;
+}
+
+.client-legal-party--probable .client-source-card::before {
+  border-top-color: var(--mantine-color-blue-4);
+  border-top-style: dashed;
+}
+
+.client-legal-party--review .client-source-card::before {
+  border-top-color: var(--mantine-color-yellow-5);
+  border-top-style: dashed;
 }
 
 .client-source-card--target {
@@ -99,7 +178,9 @@
 }
 
 .client-source-evidence {
-  margin-top: 9px;
+  border: 1px solid light-dark(var(--mantine-color-gray-2), var(--mantine-color-dark-4));
+  border-radius: var(--mantine-radius-sm);
+  padding: 8px 10px;
 }
 
 .client-source-evidence > summary {
@@ -108,6 +189,20 @@
   font-size: var(--mantine-font-size-xs);
   font-weight: 600;
   width: fit-content;
+}
+
+.client-structure-audit {
+  background: light-dark(var(--mantine-color-gray-0), var(--mantine-color-dark-6));
+  border: 1px solid light-dark(var(--mantine-color-gray-2), var(--mantine-color-dark-4));
+  border-radius: var(--mantine-radius-md);
+  padding: 10px 12px;
+}
+
+.client-structure-audit > summary {
+  color: var(--mantine-color-dimmed);
+  cursor: pointer;
+  font-size: var(--mantine-font-size-sm);
+  font-weight: 650;
 }
 
 .client-source-snapshot {

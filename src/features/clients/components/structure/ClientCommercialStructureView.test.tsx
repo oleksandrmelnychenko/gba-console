@@ -8,22 +8,28 @@ import { ClientCommercialStructureView } from './ClientCommercialStructureView'
 const t = (value: string) => value
 
 describe('ClientCommercialStructureView', () => {
-  it('shows the hierarchy, raw 1C evidence and a non-destructive review warning', () => {
-    render(
+  it('shows the business hierarchy first and keeps raw 1C evidence collapsed', () => {
+    const { container } = render(
       <MantineProvider theme={theme}>
         <ClientCommercialStructureView structure={createStructure()} t={t} />
       </MantineProvider>,
     )
 
     expect(screen.getByText('Комерційна група · XM052')).toBeTruthy()
-    expect(screen.getByText('Структура потребує перевірки')).toBeTruthy()
-    expect(screen.getByText(/Договори, продажі й баланси не переміщуються/)).toBeTruthy()
+    expect(screen.getByText('Є дані, які треба перевірити')).toBeTruthy()
+    expect(screen.getByText(/Робочі картки, договори, продажі й баланси залишаються без змін/)).toBeTruthy()
+    expect(screen.getByText('Структура клієнта')).toBeTruthy()
     expect(screen.getAllByText('ТОВ МАГРОМ')).toHaveLength(3)
     expect(screen.getByText('BXM05202')).toBeTruthy()
     expect(screen.getByText('AMG')).toBeTruthy()
     expect(screen.getByText('Пошкоджений ідентифікатор джерела — потрібна перевірка')).toBeTruthy()
     expect(screen.getByText('Картку позначено видаленою у 1С — не використовуйте без перевірки')).toBeTruthy()
     expect(screen.getByText('Пошкоджене або надмірно довге значення з 1С нормалізовано — перевірте оригінал')).toBeTruthy()
+
+    const selectedParty = container.querySelector<HTMLDetailsElement>('.client-legal-party')
+    const technicalAudit = screen.getByText('Деталі перевірки 1С').closest('details')
+    expect(selectedParty?.open).toBe(true)
+    expect(technicalAudit?.open).toBe(false)
   })
 
   it('makes a truncated candidate set impossible to mistake for a complete group', () => {
@@ -36,7 +42,7 @@ describe('ClientCommercialStructureView', () => {
       </MantineProvider>,
     )
 
-    expect(screen.getByText('Група надто велика: показано лише безпечну частину кандидатів')).toBeTruthy()
+    expect(screen.getByText('Показано не всю групу')).toBeTruthy()
   })
 })
 

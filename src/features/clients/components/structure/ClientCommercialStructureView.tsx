@@ -1,4 +1,4 @@
-import { Alert, Badge, Card, Divider, Group, SimpleGrid, Stack, Text, ThemeIcon } from '@mantine/core'
+import { Alert, Badge, Group, SimpleGrid, Stack, Text, ThemeIcon } from '@mantine/core'
 import { Building2, CircleAlert, FileText, GitBranch, Landmark, Store, UserRoundCheck } from 'lucide-react'
 import type {
   ClientCommercialCard,
@@ -44,69 +44,80 @@ export function ClientCommercialStructureView({ structure, t }: ClientCommercial
         <Alert color={structure.IsPartial ? 'red' : 'yellow'} icon={<CircleAlert size={18} />} variant="light">
           <Text fw={650} size="sm">
             {structure.IsPartial
-              ? t('Група надто велика: показано лише безпечну частину кандидатів')
-              : t('Структура потребує перевірки')}
+              ? t('Показано не всю групу')
+              : t('Є дані, які треба перевірити')}
           </Text>
           <Text c="dimmed" mt={3} size="xs">
-            {t('Коди регіонів, назви груп та реквізити з 1С є підказками, а не підставою для автоматичного об’єднання. Договори, продажі й баланси не переміщуються.')}
+            {t('Система нічого не об’єднує автоматично. Робочі картки, договори, продажі й баланси залишаються без змін.')}
           </Text>
-          <ReasonList reasons={structure.Reasons} t={t} />
         </Alert>
       ) : null}
 
       <SimpleGrid className="client-commercial-summary" cols={{ base: 2, md: 4 }} spacing="xs">
-        <SummaryMetric label={t('Карток')} value={structure.CardCount} />
-        <SummaryMetric label={t('Юросіб / кандидатів')} value={structure.LegalParties.length} />
-        <SummaryMetric label={t('Активних договорів')} value={structure.ActiveAgreementCount} />
+        <SummaryMetric label={t('Юросіб')} value={structure.LegalParties.length} />
+        <SummaryMetric label={t('Карток клієнта')} value={structure.CardCount} />
+        <SummaryMetric
+          label={t('Договорів')}
+          value={`${structure.ActiveAgreementCount}/${structure.AgreementCount}`}
+        />
         <SummaryMetric label={t('Продажів')} value={structure.SaleCount} />
       </SimpleGrid>
 
-      <Stack gap="sm">
+      <Stack gap="xs">
+        <Text fw={650} size="sm">{t('Структура клієнта')}</Text>
         {structure.LegalParties.map((party) => (
-          <LegalPartyCard key={party.Key} party={party} t={t} />
+          <LegalPartyNode key={party.Key} party={party} t={t} />
         ))}
       </Stack>
+
+      <TechnicalAudit structure={structure} t={t} />
     </Stack>
   )
 }
 
-function LegalPartyCard({ party, t }: { party: ClientCommercialLegalParty; t: (value: string) => string }) {
+function LegalPartyNode({ party, t }: { party: ClientCommercialLegalParty; t: (value: string) => string }) {
+  const relationshipClass = party.State === 'confirmed' || party.State === 'self'
+    ? 'client-legal-party--confirmed'
+    : party.State === 'probable'
+      ? 'client-legal-party--probable'
+      : 'client-legal-party--review'
+
   return (
-    <Card className="client-legal-party" padding="md" radius="md" withBorder>
-      <Group align="flex-start" justify="space-between" gap="sm" wrap="wrap">
-        <Group align="flex-start" gap="sm" wrap="nowrap">
-          <ThemeIcon color={party.RequiresReview ? 'yellow' : 'teal'} radius="xl" size={32} variant="light">
-            <Landmark size={16} />
-          </ThemeIcon>
-          <div>
-            <Text fw={650} size="sm">{party.DisplayName || t('Юрособа без назви')}</Text>
-            <Group gap={6} mt={4} wrap="wrap">
+    <details
+      className={`client-legal-party ${relationshipClass}${party.IsTarget ? ' client-legal-party--target' : ''}`}
+      open={party.IsTarget}
+    >
+      <summary className="client-legal-party__summary">
+        <Group align="center" justify="space-between" gap="sm" wrap="nowrap">
+          <Group align="center" gap="sm" wrap="nowrap">
+            <ThemeIcon color={party.RequiresReview ? 'yellow' : 'teal'} radius="xl" size={32} variant="light">
+              <Landmark size={16} />
+            </ThemeIcon>
+            <div className="client-legal-party__identity">
+              <Text fw={650} size="sm">{party.DisplayName || t('Юрособа без назви')}</Text>
               <Text c="dimmed" size="xs">
                 {party.NormalizedLegalCode
                   ? `${t('ЄДРПОУ / ІПН')}: ${party.NormalizedLegalCode}`
-                  : t('Немає надійного юридичного ідентифікатора')}
+                  : t('Юридичний код не вказано')}
               </Text>
-              <Text c="dimmed" size="xs">·</Text>
-              <Text c="dimmed" size="xs">
-                {t('Договорів')}: {party.ActiveAgreementCount}/{party.AgreementCount}
-              </Text>
-              <Text c="dimmed" size="xs">·</Text>
-              <Text c="dimmed" size="xs">{t('Продажів')}: {party.SaleCount}</Text>
-            </Group>
-          </div>
+            </div>
+          </Group>
+          <Group gap={6} wrap="nowrap">
+            {party.IsTarget ? <Badge color="indigo" size="xs" variant="light">{t('Обрана')}</Badge> : null}
+            {party.RequiresReview ? <Badge color="yellow" size="xs" variant="light">{t('Перевірити')}</Badge> : null}
+            <Badge color="gray" size="xs" variant="light">
+              {party.Cards.length} {t('карт.')}
+            </Badge>
+          </Group>
         </Group>
-        <StateBadge state={party.State} t={t} />
-      </Group>
+      </summary>
 
-      {party.RequiresReview ? <ReasonList reasons={party.Reasons} t={t} /> : null}
-
-      <Divider my="sm" />
-      <Stack gap="xs">
+      <Stack className="client-legal-party__cards" gap="xs">
         {party.Cards.map((card) => (
           <ClientCard key={card.ClientId} card={card} t={t} />
         ))}
       </Stack>
-    </Card>
+    </details>
   )
 }
 
@@ -122,6 +133,11 @@ function ClientCard({ card, t }: { card: ClientCommercialCard; t: (value: string
             <Group gap={6} wrap="wrap">
               <Text fw={600} size="sm">{card.DisplayName || t('Картка без назви')}</Text>
               {card.IsTarget ? <Badge color="indigo" size="xs" variant="light">{t('Обрана')}</Badge> : null}
+              {card.IsTradePoint ? <Badge color="blue" size="xs" variant="light">{t('Торгова точка')}</Badge> : null}
+              {card.IsSubClient && !card.IsTradePoint ? <Badge color="blue" size="xs" variant="light">{t('Підклієнт')}</Badge> : null}
+              {card.HasExplicitRelationship && !card.IsSubClient && !card.IsTradePoint ? (
+                <Badge color="teal" size="xs" variant="light">{t('Явний зв’язок')}</Badge>
+              ) : null}
               {card.IsBlocked ? <Badge color="red" size="xs" variant="light">{t('Заблокована')}</Badge> : null}
               {!card.IsActive ? <Badge color="gray" size="xs" variant="light">{t('Неактивна')}</Badge> : null}
             </Group>
@@ -144,32 +160,46 @@ function ClientCard({ card, t }: { card: ClientCommercialCard; t: (value: string
         </Group>
       </Group>
 
-      {card.Reasons.some((reason) => reason.includes('conflicting')
-        || reason.includes('invalid')
-        || reason.includes('truncated')
-        || reason === 'source_marked_deleted') ? (
-        <ReasonList reasons={card.Reasons} t={t} />
-      ) : null}
-
-      <details className="client-source-evidence">
-        <summary>
-          {t('Дані з джерел 1С')} · {card.SourceSnapshots.length || 0}
-        </summary>
-        {card.SourceSnapshots.length > 0 ? (
-          <SimpleGrid cols={{ base: 1, xl: 2 }} mt="xs" spacing="xs">
-            {card.SourceSnapshots.map((snapshot) => (
-              <SourceSnapshot
-                key={`${snapshot.SourceSystem}-${snapshot.SourceCode}`}
-                snapshot={snapshot}
-                t={t}
-              />
-            ))}
-          </SimpleGrid>
-        ) : (
-          <Text c="dimmed" mt="xs" size="xs">{t('Сирий знімок джерела з’явиться після наступного синку клієнтів')}</Text>
-        )}
-      </details>
     </div>
+  )
+}
+
+function TechnicalAudit({ structure, t }: ClientCommercialStructureViewProps) {
+  const cards = structure.LegalParties.flatMap((party) => party.Cards)
+
+  return (
+    <details className="client-structure-audit">
+      <summary>{t('Деталі перевірки 1С')}</summary>
+      <Stack gap="sm" mt="sm">
+        <Text c="dimmed" size="xs">
+          {t('Тут зібрані службові ознаки та сирі значення Fenix/AMG. Вони потрібні лише для розбору розбіжностей.')}
+        </Text>
+        <ReasonList reasons={structure.Reasons} t={t} />
+        {cards.map((card) => (
+          <details className="client-source-evidence" key={card.ClientId}>
+            <summary>
+              {card.DisplayName || t('Картка без назви')} · {card.SourceSnapshots.length} {t('джерел')}
+            </summary>
+            <ReasonList reasons={card.Reasons} t={t} />
+            {card.SourceSnapshots.length > 0 ? (
+              <SimpleGrid cols={{ base: 1, xl: 2 }} mt="xs" spacing="xs">
+                {card.SourceSnapshots.map((snapshot) => (
+                  <SourceSnapshot
+                    key={`${snapshot.SourceSystem}-${snapshot.SourceCode}`}
+                    snapshot={snapshot}
+                    t={t}
+                  />
+                ))}
+              </SimpleGrid>
+            ) : (
+              <Text c="dimmed" mt="xs" size="xs">
+                {t('Дані джерела з’являться після синку клієнтів')}
+              </Text>
+            )}
+          </details>
+        ))}
+      </Stack>
+    </details>
   )
 }
 
@@ -211,7 +241,7 @@ function EvidenceRow({ label, value }: { label: string; value?: string | number 
   )
 }
 
-function SummaryMetric({ label, value }: { label: string; value: number }) {
+function SummaryMetric({ label, value }: { label: string; value: number | string }) {
   return (
     <div className="client-commercial-metric">
       <Text fw={700} size="lg">{value}</Text>
