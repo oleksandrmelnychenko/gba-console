@@ -39,6 +39,7 @@ import {
   isSafeInformationalMovement,
   type InformationalMovement,
 } from './informationalMovements'
+import { formatProductMovementExchangeRate } from './productMovementFormatters'
 import './product-movement-history-drawers.css'
 
 export type MovementHistoryProduct = {
@@ -89,6 +90,7 @@ type ProductIncomeMovement = EntityFields & {
   FromInvoiceNumber?: string | number
   GrossPrice?: number
   ImportedForAmg?: boolean | null
+  ImportedSourceMetadataResolved?: boolean | null
   IncomeInvoiceDate?: Date | string
   IncomeInvoiceNumber?: string | number
   IncomeQty?: number
@@ -2173,7 +2175,9 @@ function useProductIncomeMovementColumns(): DataTableColumn<ProductIncomeMovemen
         width: 170,
         minWidth: 150,
         accessor: (row) => row.IncomeToStorageNumber,
-        cell: (row) => displayValue(row.IncomeToStorageNumber),
+        cell: (row) => row.ImportedSourceMetadataResolved === false
+          ? t('Дані AMG не визначені')
+          : displayValue(row.IncomeToStorageNumber),
       },
       {
         id: 'incomeInvoiceNumber',
@@ -2206,7 +2210,9 @@ function useProductIncomeMovementColumns(): DataTableColumn<ProductIncomeMovemen
         minWidth: 90,
         align: 'right',
         accessor: (row) => row.ExchangeRate,
-        cell: (row) => formatAmount(row.ExchangeRate),
+        cell: (row) => row.ImportedSourceMetadataResolved === false
+          ? displayValue(undefined)
+          : formatProductMovementExchangeRate(row.ExchangeRate),
       },
       {
         id: 'unitPriceLocal',

@@ -3216,7 +3216,9 @@ function ProductIncomeMovementsGrid({
         header: t('Номер приходу'),
         width: 140,
         accessor: (row) => row.IncomeToStorageNumber,
-        cell: (row) => renderMovementMono(row.IncomeToStorageNumber),
+        cell: (row) => row.ImportedSourceMetadataResolved === false
+          ? renderMovementText(t('Дані AMG не визначені'))
+          : renderMovementMono(row.IncomeToStorageNumber),
       },
       {
         id: 'invoice',
@@ -3245,7 +3247,9 @@ function ProductIncomeMovementsGrid({
         width: 92,
         align: 'right',
         accessor: (row) => row.ExchangeRate,
-        cell: (row) => renderMovementExchangeRate(row.ExchangeRate),
+        cell: (row) => row.ImportedSourceMetadataResolved === false
+          ? renderMovementExchangeRate(undefined)
+          : renderMovementExchangeRate(row.ExchangeRate),
       },
       {
         id: 'unitPriceLocal',

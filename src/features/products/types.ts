@@ -311,6 +311,7 @@ export type ProductIncomeMovement = EntityFields & {
   FromInvoiceDate?: Date | string
   FromInvoiceNumber?: string | number
   GrossPrice?: number
+  ImportedSourceMetadataResolved?: boolean | null
   IncomeInvoiceDate?: Date | string
   IncomeInvoiceNumber?: string | number
   IncomeQty?: number
