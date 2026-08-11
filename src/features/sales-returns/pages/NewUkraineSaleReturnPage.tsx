@@ -41,6 +41,7 @@ import {
   getSaleReturns,
   getSalesForReturn,
   getSalesReturnOrganizations,
+  MIN_SALES_FOR_RETURN_PRODUCT_SEARCH_LENGTH,
   searchSalesReturnClients,
 } from '../api/salesReturnsApi'
 import type {
@@ -327,10 +328,27 @@ export function NewUkraineSaleReturnPage() {
     setSearchDraft(nextSearchValue)
   }
 
-  const loadSales = useCallback(async () => {
+  const loadSales = useCallback(async (signal?: AbortSignal) => {
     const requestId = salesRequestIdRef.current + 1
 
     salesRequestIdRef.current = requestId
+    const normalizedSaleSearch = saleSearch.trim()
+
+    if (
+      normalizedSaleSearch &&
+      normalizedSaleSearch.length < MIN_SALES_FOR_RETURN_PRODUCT_SEARCH_LENGTH
+    ) {
+      setSalesState({
+        isLoading: false,
+        sales: [],
+      })
+      setCreateError(null)
+      setCreateWarning(
+        t(`Введіть щонайменше ${MIN_SALES_FOR_RETURN_PRODUCT_SEARCH_LENGTH} символи артикула`),
+      )
+      return
+    }
+
     // The create-return modal auto-loads the recent-sales window on open (legacy behaviour) so
     // the user can browse/narrow — an earlier empty-filter guard suppressed this and left the
     // grid blank («не находить товар»).
@@ -348,7 +366,7 @@ export function NewUkraineSaleReturnPage() {
         organizationNetId: selectedOrganizationNetUid,
         to: saleToDate,
         value: saleSearch,
-      })
+      }, signal)
 
       if (requestId !== salesRequestIdRef.current) {
         return
@@ -363,7 +381,7 @@ export function NewUkraineSaleReturnPage() {
         setCreateWarning(t('Продажі для повернення не знайдено'))
       }
     } catch (loadError) {
-      if (requestId !== salesRequestIdRef.current) {
+      if (signal?.aborted || requestId !== salesRequestIdRef.current) {
         return
       }
 
@@ -380,12 +398,14 @@ export function NewUkraineSaleReturnPage() {
       return
     }
 
+    const controller = new AbortController()
     const timeoutId = window.setTimeout(() => {
-      void loadSales()
+      void loadSales(controller.signal)
     }, 250)
 
     return () => {
       window.clearTimeout(timeoutId)
+      controller.abort()
     }
   }, [createOpened, loadSales])
 

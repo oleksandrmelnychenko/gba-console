@@ -28,6 +28,7 @@ const PRODUCT_RETURN_SORT_MODE = 2
 const FILTERED_SALES_FOR_RETURN_LIMIT = 50
 const SCOPED_SALES_FOR_RETURN_LIMIT = 20
 const UNFILTERED_SALES_FOR_RETURN_LIMIT = 10
+export const MIN_SALES_FOR_RETURN_PRODUCT_SEARCH_LENGTH = 4
 
 export async function getSaleReturns(params: SalesReturnsSearchParams): Promise<SalesReturn[]> {
   const result = await apiRequest<unknown>('/sales/returns/all/filtered', {
@@ -113,8 +114,16 @@ export async function createDirectSaleReturn(
   )
 }
 
-export async function getSalesForReturn(params: SalesForReturnSearchParams): Promise<SalesReturnSale[]> {
+export async function getSalesForReturn(
+  params: SalesForReturnSearchParams,
+  signal?: AbortSignal,
+): Promise<SalesReturnSale[]> {
   const value = params.value?.trim() || ''
+
+  if (value && value.length < MIN_SALES_FOR_RETURN_PRODUCT_SEARCH_LENGTH) {
+    return []
+  }
+
   const limit = value
     ? FILTERED_SALES_FOR_RETURN_LIMIT
     : params.clientNetId || params.organizationNetId
@@ -130,6 +139,7 @@ export async function getSalesForReturn(params: SalesForReturnSearchParams): Pro
       to: params.to,
       value,
     },
+    ...(signal ? { signal } : {}),
   })
 
   return readArrayPayload(result, ['Items', 'Sales', 'Data']) as SalesReturnSale[]

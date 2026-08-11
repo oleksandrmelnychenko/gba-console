@@ -89,6 +89,45 @@ describe('sales returns API', () => {
     })
   })
 
+  it('does not enqueue a broad sale search for an incomplete product code', async () => {
+    await expect(
+      getSalesForReturn({
+        from: '2021-08-08',
+        to: '2026-08-08',
+        value: 'ISS',
+      }),
+    ).resolves.toEqual([])
+
+    expect(apiRequestMock).not.toHaveBeenCalled()
+  })
+
+  it('forwards cancellation for a superseded product search', async () => {
+    const controller = new AbortController()
+
+    apiRequestMock.mockResolvedValueOnce({ Items: [] })
+
+    await getSalesForReturn(
+      {
+        from: '2021-08-08',
+        to: '2026-08-08',
+        value: 'ISS20081B',
+      },
+      controller.signal,
+    )
+
+    expect(apiRequestMock).toHaveBeenCalledWith('/sales/all/returns/search', {
+      query: {
+        from: '2021-08-08',
+        limit: 50,
+        netId: '',
+        organizationNetId: '',
+        to: '2026-08-08',
+        value: 'ISS20081B',
+      },
+      signal: controller.signal,
+    })
+  })
+
   it('keeps the automatic unfiltered return search small', async () => {
     apiRequestMock.mockResolvedValueOnce({ Items: [] })
 
