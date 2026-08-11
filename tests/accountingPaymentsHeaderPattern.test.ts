@@ -85,7 +85,8 @@ describe('accounting payments filter-header pattern', () => {
 
     expect(footerStart).toBeGreaterThanOrEqual(0)
     expect(footerSource).toContain('<Badge className="app-role-pill is-gray" variant="light">')
-    expect(footerSource).toContain("{t('Всього в EUR')}: {formatMoney(totalEuroAmount)}")
+    expect(footerSource).toContain("{t('Всього в')} <span className=\"app-money\">EUR</span>")
+    expect(footerSource).toContain('<span className="app-money">{formatMoney(totalEuroAmount)}</span>')
     expect(footerSource).not.toContain('<Text')
   })
 })

@@ -87,6 +87,7 @@ import type {
 import {
   displayValue,
   formatAmount,
+  formatExchangeRate,
   formatPrice,
   getProductCode,
   getProductGroupNames,
@@ -3244,7 +3245,7 @@ function ProductIncomeMovementsGrid({
         width: 92,
         align: 'right',
         accessor: (row) => row.ExchangeRate,
-        cell: (row) => renderMovementAmount(row.ExchangeRate),
+        cell: (row) => renderMovementExchangeRate(row.ExchangeRate),
       },
       {
         id: 'unitPriceLocal',
@@ -3715,6 +3716,12 @@ function renderMovementDate(value?: Date | string | null) {
 
 function renderMovementAmount(value?: number | null) {
   const text = typeof value === 'number' && Number.isFinite(value) ? formatAmount(value) : ''
+
+  return <span className="app-money" title={text}>{text}</span>
+}
+
+function renderMovementExchangeRate(value?: number | null) {
+  const text = typeof value === 'number' && Number.isFinite(value) ? formatExchangeRate(value) : ''
 
   return <span className="app-money" title={text}>{text}</span>
 }

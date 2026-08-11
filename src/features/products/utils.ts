@@ -14,6 +14,11 @@ const priceFormatter = new Intl.NumberFormat('uk-UA', {
   minimumFractionDigits: 2,
 })
 
+const exchangeRateFormatter = new Intl.NumberFormat('uk-UA', {
+  maximumFractionDigits: 4,
+  minimumFractionDigits: 4,
+})
+
 export function getEmptyGuid(): string {
   return EMPTY_GUID
 }
@@ -159,6 +164,10 @@ export function formatAmount(value?: number | null): string {
 
 export function formatPrice(value?: number | null): string {
   return typeof value === 'number' && Number.isFinite(value) ? priceFormatter.format(value) : '-'
+}
+
+export function formatExchangeRate(value?: number | null): string {
+  return typeof value === 'number' && Number.isFinite(value) ? exchangeRateFormatter.format(value) : '-'
 }
 
 export function getBooleanBadgeColor(value?: boolean): string {

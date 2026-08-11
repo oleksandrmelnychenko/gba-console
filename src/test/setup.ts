@@ -105,6 +105,15 @@ Object.defineProperty(window, 'matchMedia', {
   })),
 })
 
+// jsdom does not implement document.fonts. Mantine's autosizing Textarea
+// subscribes to its loading events, so provide the EventTarget contract used
+// by the component.
+Object.defineProperty(document, 'fonts', {
+  configurable: true,
+  writable: true,
+  value: new EventTarget(),
+})
+
 Object.defineProperty(HTMLElement.prototype, 'offsetWidth', { configurable: true, value: 640 })
 Object.defineProperty(HTMLElement.prototype, 'offsetHeight', { configurable: true, value: 320 })
 

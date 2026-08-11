@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
+  formatExchangeRate,
   getProductGroupNames,
   getProductMainImage,
   getProductMainOriginalNumber,
@@ -11,6 +12,16 @@ import {
 import type { Product } from './types'
 
 describe('product utils', () => {
+  it('keeps four decimal places for imported document exchange rates', () => {
+    expect(formatExchangeRate(51.083)).toBe('51,0830')
+    expect(formatExchangeRate(51.06)).toBe('51,0600')
+  })
+
+  it('does not invent an exchange rate when the API value is missing or invalid', () => {
+    expect(formatExchangeRate(undefined)).toBe('-')
+    expect(formatExchangeRate(Number.NaN)).toBe('-')
+  })
+
   it('ignores deleted product relations in display helpers', () => {
     const product: Product = {
       ProductImages: [

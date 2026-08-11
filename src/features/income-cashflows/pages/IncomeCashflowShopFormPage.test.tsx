@@ -1,5 +1,5 @@
 import { MantineProvider } from '@mantine/core'
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { I18nProvider } from '../../../shared/i18n/I18nProvider'
@@ -29,6 +29,53 @@ vi.mock('../api/incomeCashflowsApi', async (importOriginal) => ({
   searchIncomeCashflowPaymentMovements: vi.fn(),
   searchIncomeCashflowPaymentRegisters: vi.fn(),
   searchIncomeCashflowRetailClients: vi.fn(),
+}))
+
+vi.mock('../../../shared/ui/SearchableSelect', () => ({
+  SearchableSelect: ({
+    data = [],
+    disabled,
+    label,
+    onChange,
+    onOptionSubmit,
+    value = '',
+  }: {
+    data?: Array<string | { label: string; value: string }>
+    disabled?: boolean
+    label?: string
+    onChange?: (value: string) => void
+    onOptionSubmit?: (value: string) => void
+    value?: string
+  }) => (
+    <div>
+      <input
+        aria-label={label}
+        disabled={disabled}
+        role="combobox"
+        value={value}
+        onChange={(event) => onChange?.(event.currentTarget.value)}
+      />
+      {data.map((item) => {
+        const option = typeof item === 'string'
+          ? { label: item, value: item }
+          : item
+
+        return (
+          <button
+            key={option.value}
+            role="option"
+            type="button"
+            onClick={() => {
+              onChange?.(option.label)
+              onOptionSubmit?.(option.value)
+            }}
+          >
+            {option.label}
+          </button>
+        )
+      })}
+    </div>
+  ),
 }))
 
 const organization = {
@@ -122,10 +169,17 @@ describe('IncomeCashflowShopFormPage retail client selection', () => {
     await waitFor(() =>
       expect(searchIncomeCashflowRetailClients).toHaveBeenCalledWith('380257'),
     )
-    fireEvent.click(await screen.findByText(retailClientLabel))
+    fireEvent.click(await screen.findByRole('option', { name: retailClientLabel }))
 
     await waitFor(() =>
-      expect(screen.getAllByText('Інтернет-магазин GBA').length).toBeGreaterThan(0),
+      expect(getIncomeCashflowRetailClientAgreements).toHaveBeenCalledWith(retailClient.NetUid),
+    )
+    await act(async () => {
+      await vi.mocked(getIncomeCashflowRetailClientAgreements).mock.results.at(-1)?.value
+    })
+    await waitFor(() =>
+      expect((screen.getByRole('combobox', { name: 'Договір' }) as HTMLInputElement).value)
+        .toBe('Договір магазину UAH'),
     )
     fireEvent.change(screen.getByRole('textbox', { name: 'Сума' }), {
       target: { value: '50000' },
