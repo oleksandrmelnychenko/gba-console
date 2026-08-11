@@ -195,14 +195,17 @@ function renderNotificationMessage(notification: ConsoleNotification) {
   const parts = notification.message.split(' · ')
 
   return parts.map((part, index) => {
-    const isOrderNumber = notification.kind === 'ecommerce-order' && index === 0
-    const isClient = notification.kind === 'ecommerce-order' && index === 1
+    const isCommerceMetadata = notification.kind === 'ecommerce-order'
+      || notification.kind === 'ecommerce-interest'
+    const isReference = isCommerceMetadata && index === 0
+    const isClient = isCommerceMetadata && index === 1
     const isAmount = notification.kind === 'ecommerce-order' && /\d[\d\s.,]*\s[A-Z]{3}$/.test(part)
     const isPositions = notification.kind === 'ecommerce-order' && /^\d+\s+поз\.?$/i.test(part.trim())
+    const isQuantity = notification.kind === 'ecommerce-interest' && /^\d+(?:[.,]\d+)?\s+шт\.?$/i.test(part.trim())
     const className = [
-      isOrderNumber ? 'console-notification-order-number-tag' : null,
+      isReference ? 'console-notification-reference-tag' : null,
       isAmount ? 'console-notification-message-emphasis' : null,
-      isClient || isPositions ? 'console-notification-message-strong' : null,
+      isClient || isPositions || isQuantity ? 'console-notification-message-strong' : null,
     ].filter(Boolean).join(' ') || undefined
 
     return (

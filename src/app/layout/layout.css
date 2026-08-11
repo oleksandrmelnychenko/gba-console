@@ -611,7 +611,7 @@
 
 .console-notification-message {
   margin-top: 4px;
-  color: var(--mantine-color-gray-6);
+  color: var(--mantine-color-black);
   font-size: 11.5px !important;
   line-height: 1.2;
 }
@@ -624,7 +624,7 @@
   white-space: nowrap;
 }
 
-.console-notification-order-number-tag {
+.console-notification-reference-tag {
   display: inline-flex;
   align-items: center;
   min-height: 18px;
@@ -632,7 +632,7 @@
   border: 1px solid var(--mantine-color-gray-3);
   border-radius: 6px;
   background: var(--mantine-color-gray-0);
-  color: var(--mantine-color-gray-8);
+  color: var(--mantine-color-black);
   font-family: var(--font-mono);
   font-size: 10.5px;
   font-weight: 600;
@@ -642,12 +642,12 @@
 }
 
 .console-notification-message-strong {
-  color: var(--mantine-color-gray-8);
+  color: var(--mantine-color-black);
   font-weight: 500;
 }
 
 .console-notification-message-separator {
-  color: var(--mantine-color-gray-5);
+  color: var(--mantine-color-black);
   font-family: var(--font-sans);
   font-weight: 400;
 }

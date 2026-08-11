@@ -19,8 +19,8 @@ export function createEcommerceInterestNotification(
   const productName = (preOrder.Product?.NameUA || preOrder.Product?.Name)?.trim()
   const qty = getFiniteNumber(preOrder.Qty)
   const details = [
-    contact,
     vendorCode,
+    contact,
     productName,
     qty !== undefined ? `${qty} шт.` : '',
   ].filter(Boolean)

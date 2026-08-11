@@ -17,7 +17,7 @@ describe('createEcommerceInterestNotification', () => {
       entityNetUid: 'B2AB51BE-BC27-4EF3-977D-B0EF1B9B731C',
       id: 'ecommerce-interest:b2ab51be-bc27-4ef3-977d-b0ef1b9b731c',
       kind: 'ecommerce-interest',
-      message: 'Уляна тест · SEM123 · Амортизатор кабіни · 2 шт.',
+      message: 'SEM123 · Уляна тест · Амортизатор кабіни · 2 шт.',
       route: '/sales/ukraine/interest',
       title: 'Нова зацікавленість з інтернет-магазину',
     })
