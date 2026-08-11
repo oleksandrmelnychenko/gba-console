@@ -1,6 +1,5 @@
 import { useMemo, useState } from 'react'
-import { ActionIcon, Anchor, Badge, Card, Group, Stack, Text } from '@mantine/core'
-import { ChevronDown, ChevronUp } from 'lucide-react'
+import { Anchor, Badge, Stack, Text } from '@mantine/core'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { ProductCardModal } from '../../products/components/ProductCardModal'
@@ -13,6 +12,7 @@ import {
   formatQty,
   getCartClientName,
   getCartCurrencyCode,
+  getCartKey,
   getCartLocalCurrencyCode,
   getDaysRemaining,
   getOrderItemAmount,
@@ -20,86 +20,173 @@ import {
   getOrderItemKey,
 } from '../utils'
 
-const CART_ITEMS_LAYOUT = {
+const TABLE_LAYOUT = {
   density: 'normal',
 } satisfies DataTableDefaultLayout
 
-type CartReserveCardProps = {
-  cart: ShoppingCartReserveItem
-  index: number
-  isExpanded: boolean
+type CartReserveTableProps = {
+  carts: ShoppingCartReserveItem[]
+  isLoading: boolean
   onOpenClient: (cart: ShoppingCartReserveItem) => void
-  onToggle: (index: number) => void
 }
 
-export function CartReserveCard({ cart, index, isExpanded, onOpenClient, onToggle }: CartReserveCardProps) {
+export function CartReserveTable({ carts, isLoading, onOpenClient }: CartReserveTableProps) {
   const { t } = useI18n()
-  const localCurrencyCode = getCartLocalCurrencyCode(cart)
-  const daysRemaining = getDaysRemaining(cart.ValidUntil)
-  const clientName = getCartClientName(cart)
-  const orderItems = cart.OrderItems || []
   const [productCardNetId, setProductCardNetId] = useState<string | null>(null)
-  const columns = useCartItemColumns(localCurrencyCode, setProductCardNetId)
+  const columns = useCartColumns(onOpenClient)
 
   return (
-    <Card className="cart-reserve-card" withBorder radius="md" padding="md">
-      <Stack gap="sm">
-        <Group justify="space-between" align="flex-start" wrap="nowrap">
-          <Stack gap={2}>
-            <Anchor className="cart-reserve-client-link" underline="always" onClick={() => onOpenClient(cart)}>
+    <div className="cart-reserve-table">
+      <DataTable
+        columns={columns}
+        data={carts}
+        defaultLayout={TABLE_LAYOUT}
+        distributeAvailableWidth
+        emptyText={t('Кошиків не знайдено')}
+        expandColumnLabels={{
+          collapseRow: t('Згорнути позиції'),
+          expandRow: t('Розгорнути позиції'),
+        }}
+        getRowCanExpand={(cart) => Boolean(cart.OrderItems?.length)}
+        getRowId={getCartKey}
+        isLoading={isLoading}
+        layoutVersion="shopping-cart-reserve-summary-1"
+        minWidth={880}
+        showDensityToggle={false}
+        showLayoutControls={false}
+        tableId="shopping-cart-reserve-summary"
+        renderExpandedRow={(cart) => (
+          <CartReserveItems
+            cart={cart}
+            onOpenProductCard={setProductCardNetId}
+          />
+        )}
+      />
+      <ProductCardModal productNetId={productCardNetId} onClose={() => setProductCardNetId(null)} />
+    </div>
+  )
+}
+
+function useCartColumns(onOpenClient: (cart: ShoppingCartReserveItem) => void) {
+  const { t } = useI18n()
+
+  return useMemo<DataTableColumn<ShoppingCartReserveItem>[]>(
+    () => [
+      {
+        id: 'client',
+        header: t('Клієнт'),
+        width: 430,
+        minWidth: 280,
+        fill: true,
+        accessor: (cart) => getCartClientName(cart),
+        cell: (cart) => {
+          const clientName = getCartClientName(cart)
+
+          return (
+            <Anchor
+              className="cart-reserve-client-link"
+              component="button"
+              type="button"
+              underline="never"
+              onClick={(event) => {
+                event.stopPropagation()
+                onOpenClient(cart)
+              }}
+            >
               {clientName || t('Без назви')}
             </Anchor>
-            <Text className="cart-reserve-validity">
-              {t('Дійсно до')}: {formatCartDate(cart.ValidUntil)}
-            </Text>
-          </Stack>
+          )
+        },
+      },
+      {
+        id: 'validUntil',
+        header: t('Дійсно до'),
+        width: 150,
+        minWidth: 130,
+        accessor: (cart) => cart.ValidUntil ? new Date(cart.ValidUntil).getTime() : 0,
+        cell: (cart) => <Text className="cart-reserve-validity">{formatCartDate(cart.ValidUntil) || '—'}</Text>,
+      },
+      {
+        id: 'amount',
+        header: `${t('Сума')}, ${getCartCurrencyCode()}`,
+        width: 170,
+        minWidth: 150,
+        align: 'right',
+        accessor: (cart) => cart.TotalAmount ?? 0,
+        cell: (cart) => (
+          <Text className="app-money cart-reserve-summary-amount">
+            {formatMoney(cart.TotalAmount)} <span>{getCartCurrencyCode()}</span>
+          </Text>
+        ),
+      },
+      {
+        id: 'localAmount',
+        header: t('Сума, локальна'),
+        width: 180,
+        minWidth: 160,
+        align: 'right',
+        accessor: (cart) => cart.TotalLocalAmount ?? 0,
+        cell: (cart) => (
+          <Text className="app-money cart-reserve-summary-amount">
+            {formatMoney(cart.TotalLocalAmount)} <span>{getCartLocalCurrencyCode(cart)}</span>
+          </Text>
+        ),
+      },
+      {
+        id: 'daysRemaining',
+        header: t('Залишилось днів'),
+        width: 145,
+        minWidth: 130,
+        align: 'center',
+        accessor: (cart) => getDaysRemaining(cart.ValidUntil) ?? Number.MIN_SAFE_INTEGER,
+        cell: (cart) => {
+          const daysRemaining = getDaysRemaining(cart.ValidUntil)
 
-          <Group gap="sm" align="center" wrap="nowrap">
-            <Stack gap={2} align="flex-end">
-              <Text className="app-money" fw={600}>
-                {formatMoney(cart.TotalAmount)} {getCartCurrencyCode()}
-              </Text>
-              <Text className="app-money app-money-meta" size="sm">
-                {formatMoney(cart.TotalLocalAmount)} {localCurrencyCode}
-              </Text>
-            </Stack>
-
+          return (
             <Badge className={`app-role-pill ${getDaysPillClass(daysRemaining)}`} variant="light">
-              {daysRemaining == null
-                ? ''
-                : `${t('Залишилось днів')}: ${daysRemaining}`}
+              {daysRemaining == null ? '—' : daysRemaining}
             </Badge>
+          )
+        },
+      },
+    ],
+    [onOpenClient, t],
+  )
+}
 
-            <ActionIcon
-              className="cart-reserve-toggle"
-              variant="light"
-              color="gray"
-              aria-label={isExpanded ? t('Згорнути') : t('Розгорнути')}
-              onClick={() => onToggle(index)}
-            >
-              {isExpanded ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
-            </ActionIcon>
-          </Group>
-        </Group>
+function CartReserveItems({
+  cart,
+  onOpenProductCard,
+}: {
+  cart: ShoppingCartReserveItem
+  onOpenProductCard: (productNetId: string) => void
+}) {
+  const { t } = useI18n()
+  const localCurrencyCode = getCartLocalCurrencyCode(cart)
+  const columns = useCartItemColumns(localCurrencyCode, onOpenProductCard)
 
-        {isExpanded && (
-          <div className="cart-reserve-items-frame">
-            <DataTable
-              columns={columns}
-              data={orderItems}
-              defaultLayout={CART_ITEMS_LAYOUT}
-              distributeAvailableWidth
-              emptyText={t('Позицій не знайдено')}
-              getRowId={getOrderItemKey}
-              layoutVersion="shopping-cart-reserve-items-2"
-              minWidth={1100}
-              tableId={`shopping-cart-reserve-items-${cart.NetUid || index}`}
-            />
-          </div>
-        )}
-      </Stack>
-      <ProductCardModal productNetId={productCardNetId} onClose={() => setProductCardNetId(null)} />
-    </Card>
+  return (
+    <div className="cart-reserve-items-frame">
+      <div className="cart-reserve-items-heading">
+        <Text className="cart-reserve-items-title">{t('Позиції')}</Text>
+        <Badge className="app-role-pill is-gray" variant="light">
+          {cart.OrderItems?.length || 0}
+        </Badge>
+      </div>
+      <DataTable
+        columns={columns}
+        data={cart.OrderItems || []}
+        defaultLayout={TABLE_LAYOUT}
+        distributeAvailableWidth
+        emptyText={t('Позицій не знайдено')}
+        getRowId={getOrderItemKey}
+        layoutVersion="shopping-cart-reserve-items-3"
+        minWidth={1100}
+        showDensityToggle={false}
+        showLayoutControls={false}
+        tableId={`shopping-cart-reserve-items-${cart.NetUid || 'cart'}`}
+      />
+    </div>
   )
 }
 
@@ -201,9 +288,7 @@ function useCartItemColumns(localCurrencyCode: string, onOpenProductCard: (produ
         cell: (item) => (
           <Stack gap={0}>
             <Text className="cart-reserve-date-cell">{formatCartDate(item.Created) || ''}</Text>
-            <Text className="cart-reserve-time-cell">
-              {formatCartTime(item.Created)}
-            </Text>
+            <Text className="cart-reserve-time-cell">{formatCartTime(item.Created)}</Text>
           </Stack>
         ),
       },

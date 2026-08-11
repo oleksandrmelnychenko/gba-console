@@ -1,13 +1,13 @@
 import { useEffect, useReducer } from 'react'
-import { ActionIcon, Alert, Stack, Text, Tooltip } from '@mantine/core'
+import { ActionIcon, Alert, Stack, Tooltip } from '@mantine/core'
 import { CircleAlert, RefreshCw } from 'lucide-react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useNavigate } from 'react-router-dom'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { getShoppingCartReserves } from '../api/shoppingCartReserveApi'
-import { CartReserveCard } from '../components/CartReserveCard'
+import { CartReserveTable } from '../components/CartReserveCard'
 import type { ShoppingCartReserveItem } from '../types'
-import { getCartClientNetUid, getCartKey } from '../utils'
+import { getCartClientNetUid } from '../utils'
 import './shopping-cart-reserve-page.css'
 
 export function ShoppingCartReservePage() {
@@ -16,7 +16,6 @@ export function ShoppingCartReservePage() {
   const [carts, setCarts] = useValueState<ShoppingCartReserveItem[]>([])
   const [error, setError] = useValueState<string | null>(null)
   const [isLoading, setLoading] = useValueState(true)
-  const [expandedKey, setExpandedKey] = useValueState<string | null>(null)
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
 
   useEffect(() => {
@@ -62,12 +61,6 @@ export function ShoppingCartReservePage() {
     navigate('/clients')
   }
 
-  function handleToggle(index: number) {
-    const key = getCartKey(carts[index], index)
-
-    setExpandedKey((current) => (current === key ? null : key))
-  }
-
   return (
     <Stack className="shopping-cart-reserve-page" gap={0}>
       <div className="sales-dashboard-tab-content shopping-cart-reserve-card">
@@ -95,38 +88,13 @@ export function ShoppingCartReservePage() {
             </Alert>
           )}
 
-          {isLoading && (
-            <div className="shopping-cart-reserve-skeleton" aria-label={t('Завантаження кошиків')} aria-busy="true">
-              {Array.from({ length: 4 }, (_, index) => (
-                <div key={index} className="shopping-cart-reserve-skeleton-card">
-                  <span className="shopping-cart-reserve-skeleton-line is-title" />
-                  <span className="shopping-cart-reserve-skeleton-line" />
-                  <span className="shopping-cart-reserve-skeleton-line is-short" />
-                </div>
-              ))}
-            </div>
+          {!error && (
+            <CartReserveTable
+              carts={carts}
+              isLoading={isLoading}
+              onOpenClient={handleOpenClient}
+            />
           )}
-
-          {!isLoading && !error && carts.length === 0 && (
-            <Text size="sm" c="dimmed" ta="center" py="md">
-              {t('Кошиків не знайдено')}
-            </Text>
-          )}
-
-          {carts.map((cart, index) => {
-            const key = getCartKey(cart, index)
-
-            return (
-              <CartReserveCard
-                key={key}
-                cart={cart}
-                index={index}
-                isExpanded={expandedKey === key}
-                onOpenClient={handleOpenClient}
-                onToggle={handleToggle}
-              />
-            )
-          })}
         </div>
       </div>
     </Stack>
