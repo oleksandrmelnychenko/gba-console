@@ -73,6 +73,17 @@ export function ClientCommercialStructureView({ structure, t, onChanged }: Clien
         </Alert>
       ) : null}
 
+      {structure.IdentityMutationsEnabled !== true ? (
+        <Alert color="blue" icon={<CircleAlert size={17} />} variant="light">
+          <Text className="client-commercial-alert__title">
+            {t('Рішення щодо зв’язків тимчасово недоступні')}
+          </Text>
+          <Text className="client-commercial-alert__description">
+            {t('Структуру побудовано з наявних даних 1С. Підтвердження, відхилення та зміна головної картки стануть доступні після оновлення бази даних.')}
+          </Text>
+        </Alert>
+      ) : null}
+
       <SimpleGrid className="client-commercial-summary" cols={{ base: 2, md: 4 }} spacing={0}>
         <SummaryMetric label={t('Юросіб')} value={structure.LegalParties.length} />
         <SummaryMetric label={t('Карток клієнта')} value={structure.CardCount} />
@@ -626,6 +637,7 @@ function reasonLabel(reason: string, t: (value: string) => string): string {
     explicit_hierarchy: t('Явний зв’язок'),
     manual_confirmation: t('Підтверджено вручну'),
     manual_rejection: t('Зв’язок відхилено вручну'),
+    identity_resolution_unavailable: t('Рішення щодо зв’язків недоступні'),
     source_hierarchy: t('Ієрархія 1С'),
     conflicting_source_hierarchy: t('Конфлікт ієрархій 1С'),
     region_code_family: t('Схожий код регіону'),

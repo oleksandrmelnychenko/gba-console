@@ -52,6 +52,30 @@ describe('ClientCommercialStructureView', () => {
     expect(screen.getByText('Показано не всю групу')).toBeTruthy()
   })
 
+  it('keeps pre-migration source evidence visible but disables identity decisions', () => {
+    render(
+      <MantineProvider theme={theme}>
+        <ClientCommercialStructureView
+          structure={{
+            ...createStructure(),
+            IdentityMutationsEnabled: false,
+            Reasons: [
+              ...createStructure().Reasons,
+              'identity_resolution_unavailable',
+            ],
+          }}
+          t={t}
+          onChanged={vi.fn()}
+        />
+      </MantineProvider>,
+    )
+
+    expect(screen.getByText('Рішення щодо зв’язків тимчасово недоступні')).toBeTruthy()
+    expect(screen.getByText(/Структуру побудовано з наявних даних 1С/)).toBeTruthy()
+    expect(screen.queryByRole('button', { name: 'Дії зі зв’язком' })).toBeNull()
+    expect(screen.getByText('BXM05202')).toBeTruthy()
+  })
+
   it('lets an operator confirm a candidate without moving financial ownership', async () => {
     mutateClientIdentityMock.mockResolvedValueOnce({
       ClientNetUid: '11111111-1111-1111-1111-111111111111',
