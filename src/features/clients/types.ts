@@ -402,6 +402,10 @@ export type ClientCommercialCard = {
   IsBlocked: boolean
   IsTarget: boolean
   HasExplicitRelationship: boolean
+  IsConfirmedMember?: boolean
+  IsPrimaryClient?: boolean
+  ConfirmedRelationshipKind?: 'primary' | 'related' | 'duplicate' | null
+  IsRejectedCandidate?: boolean
   AgreementCount: number
   ActiveAgreementCount: number
   SaleCount: number
@@ -428,6 +432,11 @@ export type ClientCommercialStructure = {
   AsOfUtc: string
   GroupKey?: string | null
   GroupName?: string | null
+  ConfirmedGroupNetUid?: string | null
+  ConfirmedGroupRevision?: number | null
+  PrimaryClientNetUid?: string | null
+  PrimaryClientDisplayName?: string | null
+  IdentityMutationsEnabled?: boolean
   State: ClientCommercialStructureState
   RequiresReview: boolean
   IsPartial: boolean
@@ -437,6 +446,23 @@ export type ClientCommercialStructure = {
   SaleCount: number
   Reasons: string[]
   LegalParties: ClientCommercialLegalParty[]
+}
+
+export type ClientIdentityMutationKind = 'confirm' | 'reject' | 'unlink' | 'primary'
+
+export type ClientIdentityMutationRequest = {
+  ClientNetUid: string
+  RelatedClientNetUid: string
+  RelationshipKind?: 'related' | 'duplicate' | null
+  ExpectedRevision?: number | null
+  Comment?: string | null
+}
+
+export type ClientIdentityMutationResult = {
+  ClientNetUid: string
+  GroupNetUid?: string | null
+  Revision?: number | null
+  Replayed: boolean
 }
 
 export type ClientSourceQualityState = 'not_synced' | 'clean' | 'review_required'

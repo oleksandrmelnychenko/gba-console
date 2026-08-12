@@ -1286,6 +1286,7 @@ function ClientStructureModal({
   const [structure, setStructure] = useValueState<ClientCommercialStructure | null>(null)
   const [error, setError] = useValueState<string | null>(null)
   const [isLoading, setLoading] = useValueState(false)
+  const [structureReloadKey, reloadStructure] = useReducer((key: number) => key + 1, 0)
 
   useEffect(() => {
     const netUid = client?.NetUid
@@ -1326,7 +1327,7 @@ function ClientStructureModal({
       cancelled = true
       controller.abort()
     }
-  }, [client?.NetUid, setError, setLoading, setStructure, t])
+  }, [client?.NetUid, setError, setLoading, setStructure, structureReloadKey, t])
 
   return (
     <AppModal
@@ -1342,7 +1343,7 @@ function ClientStructureModal({
       ) : error ? (
         <Alert color="red" icon={<CircleAlert size={18} />} variant="light">{error}</Alert>
       ) : structure ? (
-        <ClientCommercialStructureView structure={structure} t={t} />
+        <ClientCommercialStructureView structure={structure} t={t} onChanged={reloadStructure} />
       ) : null}
     </AppModal>
   )

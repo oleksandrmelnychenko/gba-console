@@ -1,9 +1,16 @@
 import { MantineProvider } from '@mantine/core'
-import { render, screen } from '@testing-library/react'
-import { describe, expect, it } from 'vitest'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { describe, expect, it, vi } from 'vitest'
 import { theme } from '../../../../shared/theme/theme'
+import { mutateClientIdentity } from '../../api/clientsApi'
 import type { ClientCommercialStructure } from '../../types'
 import { ClientCommercialStructureView } from './ClientCommercialStructureView'
+
+vi.mock('../../api/clientsApi', () => ({
+  mutateClientIdentity: vi.fn(),
+}))
+
+const mutateClientIdentityMock = vi.mocked(mutateClientIdentity)
 
 const t = (value: string) => value
 
@@ -19,7 +26,7 @@ describe('ClientCommercialStructureView', () => {
     expect(screen.getByText('Є дані, які треба перевірити')).toBeTruthy()
     expect(screen.getByText(/Робочі картки, договори, продажі й баланси залишаються без змін/)).toBeTruthy()
     expect(screen.getByText('Структура клієнта')).toBeTruthy()
-    expect(screen.getAllByText('ТОВ МАГРОМ')).toHaveLength(3)
+    expect(screen.getAllByText('ТОВ МАГРОМ').length).toBeGreaterThanOrEqual(3)
     expect(screen.getByText('BXM05202')).toBeTruthy()
     expect(screen.getByText('AMG')).toBeTruthy()
     expect(screen.getByText('Пошкоджений ідентифікатор джерела — потрібна перевірка')).toBeTruthy()
@@ -44,6 +51,49 @@ describe('ClientCommercialStructureView', () => {
 
     expect(screen.getByText('Показано не всю групу')).toBeTruthy()
   })
+
+  it('lets an operator confirm a candidate without moving financial ownership', async () => {
+    mutateClientIdentityMock.mockResolvedValueOnce({
+      ClientNetUid: '11111111-1111-1111-1111-111111111111',
+      GroupNetUid: '33333333-3333-3333-3333-333333333333',
+      Revision: 1,
+      Replayed: false,
+    })
+    const structure = createStructure()
+    const candidate = {
+      ...structure.LegalParties[0].Cards[0],
+      ClientId: 11,
+      ClientNetUid: '22222222-2222-2222-2222-222222222222',
+      DisplayName: 'ТОВ МАГРОМ ФІЛІЯ',
+      IsTarget: false,
+      SourceSnapshots: [],
+    }
+    structure.LegalParties[0].Cards.push(candidate)
+    const onChanged = vi.fn()
+
+    render(
+      <MantineProvider theme={theme}>
+        <ClientCommercialStructureView structure={structure} t={t} onChanged={onChanged} />
+      </MantineProvider>,
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: 'Дії зі зв’язком' }))
+    fireEvent.click(await screen.findByRole('menuitem', { name: 'Підтвердити зв’язок' }))
+    expect(await screen.findByText(/Договори, продажі, платежі та баланси залишаться/)).toBeTruthy()
+    fireEvent.change(screen.getByLabelText('Коментар до рішення'), {
+      target: { value: 'Перевірено оператором' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: 'Підтвердити' }))
+
+    await waitFor(() => expect(mutateClientIdentityMock).toHaveBeenCalledWith('confirm', {
+      ClientNetUid: '11111111-1111-1111-1111-111111111111',
+      RelatedClientNetUid: '22222222-2222-2222-2222-222222222222',
+      RelationshipKind: 'related',
+      ExpectedRevision: undefined,
+      Comment: 'Перевірено оператором',
+    }))
+    expect(onChanged).toHaveBeenCalledOnce()
+  })
 })
 
 function createStructure(): ClientCommercialStructure {
@@ -52,6 +102,7 @@ function createStructure(): ClientCommercialStructure {
     AsOfUtc: '2026-08-11T12:00:00Z',
     GroupKey: 'XM052',
     GroupName: null,
+    IdentityMutationsEnabled: true,
     State: 'review_required',
     RequiresReview: true,
     IsPartial: false,

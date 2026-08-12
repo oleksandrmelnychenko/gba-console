@@ -10,6 +10,9 @@ import type {
   ClientSourceQualitySummary,
   ClientFilterItem,
   ClientIdentityAttentionSummary,
+  ClientIdentityMutationKind,
+  ClientIdentityMutationRequest,
+  ClientIdentityMutationResult,
   ClientPrintDocument,
   ClientSearchParams,
   ClientType,
@@ -127,6 +130,23 @@ export async function getClientCommercialStructure(
   })
 
   return isClientCommercialStructure(result) ? result : null
+}
+
+export async function mutateClientIdentity(
+  kind: ClientIdentityMutationKind,
+  request: ClientIdentityMutationRequest,
+): Promise<ClientIdentityMutationResult> {
+  const result = await apiRequest<ClientIdentityMutationResult>(`/clients/identity-links/${kind}`, {
+    method: 'POST',
+    body: request,
+    headers: { 'Idempotency-Key': crypto.randomUUID() },
+  })
+
+  if (!result || typeof result !== 'object' || typeof result.ClientNetUid !== 'string') {
+    throw new Error('Сервер повернув некоректний результат зміни зв’язку клієнтів')
+  }
+
+  return result
 }
 
 export async function getClientSourceQualityBatch(

@@ -217,7 +217,7 @@ export function ClientsStructureTreePage() {
                   {structureError}
                 </Alert>
               ) : selectedClient && structure ? (
-                <ClientCommercialStructureView structure={structure} t={t} />
+                <ClientCommercialStructureView structure={structure} t={t} onChanged={reload} />
               ) : isLoading ? (
                 <Group justify="center" gap="xs" py="lg">
                   <Loader size="sm" />

@@ -15,6 +15,7 @@ import {
   getSupplierCount,
   getSupplierFilterItems,
   getSuppliers,
+  mutateClientIdentity,
   switchClientActiveState,
   updateClientOrderExpireDays,
 } from './clientsApi'
@@ -429,6 +430,33 @@ describe('clients API query contracts', () => {
     apiRequestMock.mockResolvedValueOnce({ ClientNetUid: 'client-1' })
 
     await expect(getClientCommercialStructure('client-1')).resolves.toBeNull()
+  })
+
+  it('persists a client identity decision with a fresh idempotency key', async () => {
+    apiRequestMock.mockResolvedValueOnce({
+      ClientNetUid: '11111111-1111-1111-1111-111111111111',
+      GroupNetUid: '33333333-3333-3333-3333-333333333333',
+      Revision: 2,
+      Replayed: false,
+    })
+
+    await expect(mutateClientIdentity('confirm', {
+      ClientNetUid: '11111111-1111-1111-1111-111111111111',
+      RelatedClientNetUid: '22222222-2222-2222-2222-222222222222',
+      RelationshipKind: 'related',
+      ExpectedRevision: 1,
+      Comment: 'Перевірено менеджером',
+    })).resolves.toMatchObject({ Revision: 2, Replayed: false })
+
+    expect(apiRequestMock).toHaveBeenCalledWith('/clients/identity-links/confirm', {
+      method: 'POST',
+      body: expect.objectContaining({
+        RelatedClientNetUid: '22222222-2222-2222-2222-222222222222',
+      }),
+      headers: {
+        'Idempotency-Key': expect.stringMatching(/^[0-9a-f-]{36}$/),
+      },
+    })
   })
 
   it('loads dynamic supplier filter items through the source endpoint', async () => {
