@@ -12,7 +12,7 @@ import type { SupplyUkraineOrdersFilter } from './types'
 
 const NOW = new Date(2026, 6, 10, 12)
 const STALE_FILTERS: SupplyUkraineOrdersFilter = {
-  currencyId: 'currency-1',
+  currencyId: '2',
   from: '2026-06-29',
   supplier: 'Пилипенко',
   to: '2026-07-06',
@@ -54,5 +54,16 @@ describe('all Ukraine orders filter persistence', () => {
     expect(readAllOrdersUkraineFilterAfterCreateState(state)).toBe(filters)
     expect(clearAllOrdersUkraineFilterAfterCreateState(state)).toEqual({ backgroundLocation })
     expect(readAllOrdersUkraineFilterAfterCreateState(clearAllOrdersUkraineFilterAfterCreateState(state))).toBeNull()
+  })
+
+  it('drops a legacy currency UUID that cannot satisfy the numeric API contract', () => {
+    window.localStorage.setItem(ALL_ORDERS_UKRAINE_FILTER_STORAGE_KEY, JSON.stringify({
+      ...STALE_FILTERS,
+      currencyId: 'b196c411-99e5-41ae-92d2-c1f7ba94eb03',
+    }))
+
+    expect(readAllOrdersUkraineFilter(createDefaultAllOrdersUkraineFilter(NOW))).toMatchObject({
+      currencyId: '',
+    })
   })
 })

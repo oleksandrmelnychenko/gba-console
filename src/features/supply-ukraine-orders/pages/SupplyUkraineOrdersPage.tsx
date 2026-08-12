@@ -68,6 +68,7 @@ import type {
   SupplyUkraineOrdersResponse,
 } from '../types'
 import { hasSupplyProForm } from '../proFormHelpers'
+import { buildSupplyOrderCurrencyFilterOptions } from '../currencyFilter'
 import {
   getDirectOrderAmountBreakdown,
   getInvoiceAmountBreakdown,
@@ -500,7 +501,7 @@ function useSupplyUkraineOrdersPageController() {
   const totalQty = state.toUkraineTotal + state.directTotal
   const totalPages = Math.max(1, Math.ceil(totalQty / pageSize))
   const currencyOptions = useMemo(
-    () => toSelectOptions(currenciesState.items, getCurrencyLabel),
+    () => buildSupplyOrderCurrencyFilterOptions(currenciesState.items),
     [currenciesState.items],
   )
   const orderActionsPermissions = useMemo<OrderActionsPermissions>(
@@ -534,7 +535,7 @@ function useSupplyUkraineOrdersPageController() {
     dispatchUi({ filters: { ...filterDraft, ...patch }, type: 'setActiveFilters' })
   }
 
-  // Type and date changes apply immediately; text/currency drafts still wait for refresh.
+  // Type, date, and currency changes apply immediately; only free-text input is debounced.
   function applyTypeFilter(type: SupplyUkraineOrderKind) {
     applyFilterPatch({ type })
   }
@@ -1327,7 +1328,7 @@ function OrderMetaSeparator() {
   return <span className="supply-order-meta-separator" aria-hidden />
 }
 
-function OrdersFilterToolbar({
+export function OrdersFilterToolbar({
   canPrint,
   createPermissions,
   currencyOptions,
@@ -1415,7 +1416,7 @@ function OrdersFilterToolbar({
         placeholder={t('Усі')}
         searchable
         value={filterDraft.currencyId || null}
-        onChange={(value) => onFilterDraftChange({ currencyId: value || '' })}
+        onChange={(value) => onApplyFilterPatch({ currencyId: value || '' })}
       />
       <Select
         allowDeselect={false}
@@ -2441,10 +2442,6 @@ function toNonNegativeNumber(value: number | string): number | '' {
   const numberValue = typeof value === 'number' ? value : Number(value)
 
   return Number.isFinite(numberValue) && numberValue >= 0 ? numberValue : ''
-}
-
-function getCurrencyLabel(currency: Currency): string {
-  return [currency.Name, currency.Code].filter(Boolean).join(' - ') || String(currency.Id || currency.NetUid || '')
 }
 
 function getEntityName(entity?: { FullName?: string, LastName?: string, Name?: string } | null): string {

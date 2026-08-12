@@ -10,7 +10,7 @@ import type { SupplyUkraineOrdersFilter } from './types'
 
 const NOW = new Date(2026, 6, 10, 12)
 const STALE_FILTERS: SupplyUkraineOrdersFilter = {
-  currencyId: 'currency-1',
+  currencyId: '2',
   from: '2026-06-29',
   supplier: 'Пилипенко',
   to: '2026-07-06',

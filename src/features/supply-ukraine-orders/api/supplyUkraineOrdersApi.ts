@@ -990,13 +990,26 @@ function isUnknownSupplierFileOutcome(error: unknown): boolean {
 
 function buildSearchQuery(params: SupplyUkraineOrdersSearchParams) {
   return {
-    currencyId: params.currencyId ? Number(params.currencyId) : undefined,
+    currencyId: parseCurrencyId(params.currencyId),
     from: params.from,
     limit: params.limit,
     offset: params.offset,
     supplierName: params.supplierName?.trim() || '',
     to: toInclusiveEndOfDay(params.to),
   }
+}
+
+function parseCurrencyId(value?: string): number | undefined {
+  if (!value) {
+    return undefined
+  }
+
+  const currencyId = Number(value)
+  if (!Number.isSafeInteger(currencyId) || currencyId <= 0) {
+    throw new Error('Currency filter must contain a positive numeric ID.')
+  }
+
+  return currencyId
 }
 
 function toInclusiveEndOfDay(value: string): string {

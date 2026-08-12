@@ -1,5 +1,6 @@
 import { formatLocalDate } from '../../shared/date/dateTime'
 import type { SupplyUkraineOrderKind, SupplyUkraineOrdersFilter } from './types'
+import { normalizeSupplyOrderCurrencyFilterValue } from './currencyFilter'
 
 export const ALL_ORDERS_UKRAINE_FILTER_STORAGE_KEY = 'allOrdersUkraineFilter'
 
@@ -33,7 +34,9 @@ export function readAllOrdersUkraineFilter(fallback: SupplyUkraineOrdersFilter):
     const savedValue = JSON.parse(rawValue) as Partial<SupplyUkraineOrdersFilter>
 
     return {
-      currencyId: typeof savedValue.currencyId === 'string' ? savedValue.currencyId : fallback.currencyId,
+      currencyId: normalizeSupplyOrderCurrencyFilterValue(
+        typeof savedValue.currencyId === 'string' ? savedValue.currencyId : fallback.currencyId,
+      ),
       from: isDateInputValue(savedValue.from) ? savedValue.from : fallback.from,
       supplier: typeof savedValue.supplier === 'string' ? savedValue.supplier : fallback.supplier,
       to: isDateInputValue(savedValue.to) ? savedValue.to : fallback.to,
@@ -96,7 +99,7 @@ function isSupplyUkraineOrdersFilter(value: unknown): value is SupplyUkraineOrde
   }
 
   return (
-    typeof value.currencyId === 'string'
+    normalizeSupplyOrderCurrencyFilterValue(value.currencyId) === value.currencyId
     && isDateInputValue(value.from)
     && typeof value.supplier === 'string'
     && isDateInputValue(value.to)

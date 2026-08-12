@@ -95,6 +95,19 @@ describe('supplyUkraineOrdersApi', () => {
     })
   })
 
+  it('rejects a non-numeric currency value before it can become a NaN query parameter', async () => {
+    await expect(getDirectSupplyUkraineOrders({
+      currencyId: 'b196c411-99e5-41ae-92d2-c1f7ba94eb03',
+      from: '2026-07-17',
+      limit: 20,
+      offset: 0,
+      supplierName: '',
+      to: '2026-07-24',
+    })).rejects.toThrow('Currency filter must contain a positive numeric ID.')
+
+    expect(apiRequestMock).not.toHaveBeenCalled()
+  })
+
   it('uploads supplier-created Ukraine orders to the Ukraine supplier file endpoint', async () => {
     apiRequestMock.mockResolvedValueOnce({
       SupplyOrderUkraine: { NetUid: 'ukraine-order-1' },
