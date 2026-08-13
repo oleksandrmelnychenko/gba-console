@@ -36,6 +36,7 @@ import {
   SupplyUkraineOrderDocumentsModal,
   type UkraineOrderNewDocument,
 } from '../components/SupplyUkraineOrderDocumentsModal'
+import { parseOrderVatPercentInput, toPercentNumber } from '../supplyUkraineOrderVatInput'
 import type { SupplyOrderUkraine, SupplyOrderUkraineDocument, SupplyOrderUkraineItem } from '../types'
 import './supply-order-detail.css'
 
@@ -172,8 +173,22 @@ export function SupplyUkraineOrderOverviewPage() {
 
   function changeOrderVatPercent(value: string | number) {
     setOrder((currentOrder) => currentOrder
-      ? { ...currentOrder, VatPercent: toPercentNumber(value, 0) }
+      ? { ...currentOrder, VatPercent: parseOrderVatPercentInput(value) }
       : currentOrder)
+  }
+
+  function replaceInitialVatZero(event: React.KeyboardEvent<HTMLInputElement>) {
+    if (
+      order?.VatPercent === 0 &&
+      event.currentTarget.value === '0' &&
+      /^\d$/.test(event.key) &&
+      !event.altKey &&
+      !event.ctrlKey &&
+      !event.metaKey
+    ) {
+      event.preventDefault()
+      changeOrderVatPercent(event.key)
+    }
   }
 
   // Apply the entered order-level VАТ % to every item row at once (client-side),
@@ -535,9 +550,15 @@ export function SupplyUkraineOrderOverviewPage() {
                 label={t('Відсоток ПДВ')}
                 max={100}
                 min={0}
-                value={order?.VatPercent ?? 0}
+                value={order?.VatPercent ?? ''}
                 w={220}
+                onBlur={() => {
+                  if (order && order.VatPercent === undefined) {
+                    changeOrderVatPercent(0)
+                  }
+                }}
                 onChange={changeOrderVatPercent}
+                onKeyDown={replaceInitialVatZero}
               />
               <Group gap="xs">
                 <Button
@@ -1091,19 +1112,6 @@ function splitFileName(name: string): { contentType: string, fileName: string } 
     contentType,
     fileName: parts.join('.') || name,
   }
-}
-
-function toPercentNumber(value: string | number, decimalPlaces: number): number {
-  const parsedValue = typeof value === 'number' ? value : Number(value)
-
-  if (!Number.isFinite(parsedValue)) {
-    return 0
-  }
-
-  const clampedValue = Math.min(Math.max(parsedValue, 0), 100)
-  const multiplier = 10 ** decimalPlaces
-
-  return Math.round(clampedValue * multiplier) / multiplier
 }
 
 function upgradeHttpToHttps(url: string): string {
