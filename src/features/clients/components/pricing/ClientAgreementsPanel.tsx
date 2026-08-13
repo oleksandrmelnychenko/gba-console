@@ -260,13 +260,15 @@ export function ClientAgreementsPanel({
             const isHighlighted = Boolean(
               selectedAgreementNetId && agreement.NetUid === selectedAgreementNetId,
             )
+            const sourceManaged = Boolean(agreement.SourceAmgCode || agreement.SourceFenixCode)
 
             return isProvider ? (
               <ProviderAgreementItem
                 key={key}
                 agreement={agreement}
-                canEdit={canEdit}
+                canEdit={canEdit && !sourceManaged}
                 isHighlighted={isHighlighted}
+                sourceManaged={sourceManaged}
                 onClick={() => onRowClick?.(clientAgreement)}
                 onEdit={() => openEdit(agreement)}
               />
@@ -274,10 +276,11 @@ export function ClientAgreementsPanel({
               <BuyerAgreementItem
                 key={key}
                 agreement={agreement}
-                canEdit={canEdit}
+                canEdit={canEdit && !sourceManaged}
                 canExport={Boolean(agreement.NetUid) && (agreement.Id || 0) > 0}
                 isHighlighted={isHighlighted}
                 originalClientName={clientAgreement.OriginalClientName}
+                sourceManaged={sourceManaged}
                 onClick={() => onRowClick?.(clientAgreement)}
                 onEdit={() => openEdit(agreement)}
                 onPrint={() => agreement.NetUid && handlePrint(agreement.NetUid)}
@@ -371,6 +374,7 @@ function BuyerAgreementItem({
   canExport,
   isHighlighted,
   originalClientName,
+  sourceManaged,
   onClick,
   onEdit,
   onPrint,
@@ -381,6 +385,7 @@ function BuyerAgreementItem({
   canExport: boolean
   isHighlighted: boolean
   originalClientName?: string
+  sourceManaged: boolean
   onClick: () => void
   onEdit: () => void
   onPrint: () => void
@@ -405,6 +410,11 @@ function BuyerAgreementItem({
             {agreement.IsActive && (
               <Badge className="app-role-pill is-green" size="xs" variant="light">
                 {t('Активний')}
+              </Badge>
+            )}
+            {sourceManaged && (
+              <Badge className="app-role-pill is-gray" size="xs" variant="light">
+                {t('Керується 1С')}
               </Badge>
             )}
             {originalClientName && (
@@ -495,12 +505,14 @@ function ProviderAgreementItem({
   agreement,
   canEdit,
   isHighlighted,
+  sourceManaged,
   onClick,
   onEdit,
 }: {
   agreement: Agreement
   canEdit: boolean
   isHighlighted: boolean
+  sourceManaged: boolean
   onClick: () => void
   onEdit: () => void
 }) {
@@ -522,6 +534,11 @@ function ProviderAgreementItem({
             {agreement.IsActive && (
               <Badge className="app-role-pill is-green" size="xs" variant="light">
                 {t('Активний')}
+              </Badge>
+            )}
+            {sourceManaged && (
+              <Badge className="app-role-pill is-gray" size="xs" variant="light">
+                {t('Керується 1С')}
               </Badge>
             )}
           </Group>

@@ -10,7 +10,9 @@ import type {
   ClientCommercialStructure,
   ClientCommercialStructureState,
   ClientIdentityMutationKind,
+  ClientSourceAgreementSnapshot,
   ClientSourceCardSnapshot,
+  ClientSourceContactSnapshot,
 } from '../../types'
 import '../../pages/clients-structure-tree-page.css'
 
@@ -33,6 +35,10 @@ const dateTimeFormatter = new Intl.DateTimeFormat('uk-UA', {
   dateStyle: 'short',
   timeStyle: 'short',
 })
+const sourceAmountFormatter = new Intl.NumberFormat('uk-UA', {
+  maximumFractionDigits: 2,
+})
+const dateOnlyFormatter = new Intl.DateTimeFormat('uk-UA')
 
 export function ClientCommercialStructureView({ structure, t, onChanged }: ClientCommercialStructureViewProps) {
   const [pendingDecision, setPendingDecision] = useState<PendingIdentityDecision | null>(null)
@@ -41,6 +47,8 @@ export function ClientCommercialStructureView({ structure, t, onChanged }: Clien
   const groupTitle = structure.GroupName?.trim()
     || (structure.GroupKey ? `${t('Комерційна група')} · ${structure.GroupKey}` : t('Комерційна структура'))
   const { activeParties, rejectedCards } = partitionStructureCards(structure)
+  const partyHierarchy = buildLegalPartyHierarchy(activeParties)
+  const activeCardsById = indexActiveCards(activeParties)
   const canManageIdentity = Boolean(onChanged && structure.IdentityMutationsEnabled)
 
   return (
@@ -97,10 +105,11 @@ export function ClientCommercialStructureView({ structure, t, onChanged }: Clien
       <Stack className="client-commercial-parties" gap={7}>
         <Text className="app-section-title">{t('Структура клієнта')}</Text>
         <div className="client-commercial-parties__list">
-          {activeParties.map((party) => (
+          {partyHierarchy.map((node) => (
             <LegalPartyNode
-              key={party.Key}
-              party={party}
+              key={node.party.Key}
+              activeCardsById={activeCardsById}
+              node={node}
               structure={structure}
               t={t}
               onDecision={canManageIdentity ? (decision) => {
@@ -210,16 +219,22 @@ export function ClientCommercialStructureView({ structure, t, onChanged }: Clien
 }
 
 function LegalPartyNode({
-  party,
+  node,
+  activeCardsById,
   structure,
   t,
   onDecision,
+  depth = 0,
 }: {
-  party: ClientCommercialLegalParty
+  node: ClientLegalPartyHierarchyNodeModel
+  activeCardsById: ReadonlyMap<number, ClientCommercialCard>
   structure: ClientCommercialStructure
   t: (value: string) => string
   onDecision?: (decision: PendingIdentityDecision) => void
+  depth?: number
 }) {
+  const { party } = node
+  const cardHierarchy = buildClientCardHierarchy(party.Cards, activeCardsById)
   const relationshipClass = party.State === 'confirmed' || party.State === 'self'
     ? 'client-legal-party--confirmed'
     : party.State === 'probable'
@@ -229,6 +244,8 @@ function LegalPartyNode({
   return (
     <details
       className={`client-legal-party ${relationshipClass}${party.IsTarget ? ' client-legal-party--target' : ''}`}
+      data-legal-party-depth={depth}
+      data-legal-party-key={party.Key}
       open={party.IsTarget}
     >
       <summary className="client-legal-party__summary">
@@ -264,27 +281,230 @@ function LegalPartyNode({
       </summary>
 
       <Stack className="client-legal-party__cards" gap="xs">
-        {party.Cards.map((card) => (
-          <ClientCard
-            key={card.ClientId}
-            card={card}
+        {cardHierarchy.map((node) => (
+          <ClientCardHierarchyNode
+            key={node.card.ClientId}
+            node={node}
             structure={structure}
             t={t}
             onDecision={onDecision}
           />
         ))}
       </Stack>
+      {node.children.length > 0 ? (
+        <div className="client-legal-party-tree-children">
+          {node.children.map((child) => (
+            <LegalPartyNode
+              key={child.party.Key}
+              activeCardsById={activeCardsById}
+              depth={depth + 1}
+              node={child}
+              structure={structure}
+              t={t}
+              onDecision={onDecision}
+            />
+          ))}
+        </div>
+      ) : null}
     </details>
   )
 }
 
+type ClientLegalPartyHierarchyNodeModel = {
+  party: ClientCommercialLegalParty
+  children: ClientLegalPartyHierarchyNodeModel[]
+}
+
+function indexActiveCards(
+  parties: ClientCommercialLegalParty[],
+): ReadonlyMap<number, ClientCommercialCard> {
+  const cardsById = new Map<number, ClientCommercialCard>()
+  for (const party of parties) {
+    for (const card of party.Cards) {
+      if (!card.IsRejectedCandidate) cardsById.set(card.ClientId, card)
+    }
+  }
+  return cardsById
+}
+
+function buildLegalPartyHierarchy(
+  parties: ClientCommercialLegalParty[],
+): ClientLegalPartyHierarchyNodeModel[] {
+  const partiesByKey = new Map(parties.map((party) => [party.Key, party]))
+  const partyKeyByClientId = new Map<number, string>()
+  for (const party of parties) {
+    for (const card of party.Cards) {
+      if (!card.IsRejectedCandidate) partyKeyByClientId.set(card.ClientId, party.Key)
+    }
+  }
+
+  const parentByPartyKey = new Map<string, string>()
+  for (const party of parties) {
+    const parentKeys = new Set<string>()
+    for (const card of party.Cards) {
+      if (card.IsRejectedCandidate || !card.MainClientId) continue
+      const parentKey = partyKeyByClientId.get(card.MainClientId)
+      if (parentKey && parentKey !== party.Key) parentKeys.add(parentKey)
+    }
+    if (parentKeys.size === 1) {
+      parentByPartyKey.set(party.Key, [...parentKeys][0])
+    }
+  }
+
+  const cyclePartyKeys = new Set<string>()
+  for (const party of parties) {
+    const path = new Set<string>()
+    let currentKey: string | undefined = party.Key
+    while (currentKey !== undefined && parentByPartyKey.has(currentKey)) {
+      if (path.has(currentKey)) {
+        path.forEach((key) => cyclePartyKeys.add(key))
+        break
+      }
+      path.add(currentKey)
+      currentKey = parentByPartyKey.get(currentKey)
+    }
+  }
+  cyclePartyKeys.forEach((key) => parentByPartyKey.delete(key))
+
+  const childrenByPartyKey = new Map<string, ClientCommercialLegalParty[]>()
+  for (const party of parties) {
+    const parentKey = parentByPartyKey.get(party.Key)
+    if (!parentKey || !partiesByKey.has(parentKey)) continue
+    const children = childrenByPartyKey.get(parentKey) || []
+    children.push(party)
+    childrenByPartyKey.set(parentKey, children)
+  }
+
+  const sortParties = (left: ClientCommercialLegalParty, right: ClientCommercialLegalParty) => {
+    if (left.IsTarget !== right.IsTarget) return left.IsTarget ? -1 : 1
+    return (left.DisplayName || '').localeCompare(right.DisplayName || '', 'uk') || left.Key.localeCompare(right.Key)
+  }
+  const buildNode = (party: ClientCommercialLegalParty): ClientLegalPartyHierarchyNodeModel => ({
+    party,
+    children: (childrenByPartyKey.get(party.Key) || []).sort(sortParties).map(buildNode),
+  })
+
+  return parties
+    .filter((party) => !parentByPartyKey.has(party.Key))
+    .sort(sortParties)
+    .map(buildNode)
+}
+
+type ClientCardHierarchyNodeModel = {
+  card: ClientCommercialCard
+  parentCard?: ClientCommercialCard
+  children: ClientCardHierarchyNodeModel[]
+}
+
+function ClientCardHierarchyNode({
+  node,
+  structure,
+  t,
+  onDecision,
+  depth = 0,
+}: {
+  node: ClientCardHierarchyNodeModel
+  structure: ClientCommercialStructure
+  t: (value: string) => string
+  onDecision?: (decision: PendingIdentityDecision) => void
+  depth?: number
+}) {
+  return (
+    <div
+      className="client-source-card-tree-node"
+      data-client-depth={depth}
+      data-client-id={node.card.ClientId}
+    >
+      <ClientCard
+        card={node.card}
+        parentCard={node.parentCard}
+        structure={structure}
+        t={t}
+        onDecision={onDecision}
+      />
+      {node.children.length > 0 ? (
+        <div className="client-source-card-tree-children">
+          {node.children.map((child) => (
+            <ClientCardHierarchyNode
+              key={child.card.ClientId}
+              depth={depth + 1}
+              node={child}
+              structure={structure}
+              t={t}
+              onDecision={onDecision}
+            />
+          ))}
+        </div>
+      ) : null}
+    </div>
+  )
+}
+
+function buildClientCardHierarchy(
+  cards: ClientCommercialCard[],
+  allCardsById: ReadonlyMap<number, ClientCommercialCard>,
+): ClientCardHierarchyNodeModel[] {
+  const visibleCards = cards.filter((card) => !card.IsRejectedCandidate)
+  const cardsById = new Map(visibleCards.map((card) => [card.ClientId, card]))
+  const parentByClientId = new Map<number, number>()
+
+  for (const card of visibleCards) {
+    if (card.MainClientId && card.MainClientId !== card.ClientId && cardsById.has(card.MainClientId)) {
+      parentByClientId.set(card.ClientId, card.MainClientId)
+    }
+  }
+
+  // Malformed legacy data must not make the UI recurse forever. Every card
+  // participating in a cycle becomes a root and remains visible for review.
+  const cycleClientIds = new Set<number>()
+  for (const card of visibleCards) {
+    const path = new Set<number>()
+    let currentClientId: number | undefined = card.ClientId
+    while (currentClientId !== undefined && parentByClientId.has(currentClientId)) {
+      if (path.has(currentClientId)) {
+        path.forEach((clientId) => cycleClientIds.add(clientId))
+        break
+      }
+      path.add(currentClientId)
+      currentClientId = parentByClientId.get(currentClientId)
+    }
+  }
+  cycleClientIds.forEach((clientId) => parentByClientId.delete(clientId))
+
+  const childrenByParentId = new Map<number, ClientCommercialCard[]>()
+  for (const card of visibleCards) {
+    const parentId = parentByClientId.get(card.ClientId)
+    if (parentId === undefined) continue
+    const children = childrenByParentId.get(parentId) || []
+    children.push(card)
+    childrenByParentId.set(parentId, children)
+  }
+
+  const sortCards = (left: ClientCommercialCard, right: ClientCommercialCard) => {
+    if (left.IsTarget !== right.IsTarget) return left.IsTarget ? -1 : 1
+    return (left.DisplayName || '').localeCompare(right.DisplayName || '', 'uk') || left.ClientId - right.ClientId
+  }
+  const buildNode = (card: ClientCommercialCard): ClientCardHierarchyNodeModel => ({
+    card,
+    parentCard: card.MainClientId ? allCardsById.get(card.MainClientId) : undefined,
+    children: (childrenByParentId.get(card.ClientId) || []).sort(sortCards).map(buildNode),
+  })
+
+  return visibleCards
+    .filter((card) => !parentByClientId.has(card.ClientId))
+    .sort(sortCards)
+    .map(buildNode)
+}
+
 function ClientCard({
   card,
+  parentCard,
   structure,
   t,
   onDecision,
 }: {
   card: ClientCommercialCard
+  parentCard?: ClientCommercialCard
   structure: ClientCommercialStructure
   t: (value: string) => string
   onDecision?: (decision: PendingIdentityDecision) => void
@@ -293,6 +513,9 @@ function ClientCard({
   const anchorClientNetUid = structure.ClientNetUid === card.ClientNetUid
     ? fallbackAnchor?.ClientNetUid
     : structure.ClientNetUid
+  const roleLabel = getClientRoleLabel(card.RoleType, card.RoleName, t)
+  const regionCode = card.CurrentRegionCode || card.OriginalRegionCode
+  const legalCode = card.Usreou || card.Tin
 
   return (
     <div className={`client-source-card${card.IsTarget ? ' client-source-card--target' : ''}`}>
@@ -326,13 +549,33 @@ function ClientCard({
               {card.IsBlocked ? <Badge className="app-role-pill is-red" size="xs" variant="light">{t('Заблокована')}</Badge> : null}
               {!card.IsActive ? <Badge className="app-role-pill is-gray" size="xs" variant="light">{t('Неактивна')}</Badge> : null}
             </Group>
-            <Text className="client-source-card__meta">
-              {[
-                card.RoleName,
-                card.CurrentRegionCode || card.OriginalRegionCode,
-                card.Usreou ? `${t('код')} ${card.Usreou}` : null,
-              ].filter(Boolean).join(' · ') || t('Реквізити не заповнені')}
-            </Text>
+            <Group className="client-source-card__meta" gap={5} wrap="wrap">
+              {roleLabel ? (
+                <Badge className="client-card-role-chip" color="teal" size="xs" variant="light">
+                  {roleLabel}
+                </Badge>
+              ) : null}
+              {regionCode ? (
+                <Badge className="client-card-code-chip" color="blue" size="xs" variant="light">
+                  {regionCode}
+                </Badge>
+              ) : null}
+              {legalCode ? (
+                <Badge className="client-card-code-chip" color="gray" size="xs" variant="outline">
+                  {t('код')} {legalCode}
+                </Badge>
+              ) : null}
+              {card.MainClientId ? (
+                <Text className="client-source-card__parent" component="span">
+                  {t('Головний клієнт')}: {parentCard?.DisplayName || `#${card.MainClientId}`}
+                </Text>
+              ) : null}
+              {!roleLabel && !regionCode && !legalCode && !card.MainClientId ? (
+                <Text className="client-source-card__parent" component="span">
+                  {t('Реквізити не заповнені')}
+                </Text>
+              ) : null}
+            </Group>
           </div>
         </Group>
         <Group className="client-source-card__stats" gap={14} wrap="nowrap">
@@ -350,6 +593,22 @@ function ClientCard({
       </Group>
     </div>
   )
+}
+
+function getClientRoleLabel(
+  roleType: number | null | undefined,
+  roleName: string | null | undefined,
+  t: (value: string) => string,
+): string | null {
+  if (roleType === 0 || roleName?.trim().toLowerCase() === 'buyer') {
+    return t('Покупець')
+  }
+  if (roleType === 1 || ['provider', 'supplier'].includes(roleName?.trim().toLowerCase() || '')) {
+    return t('Постачальник')
+  }
+
+  const normalizedName = roleName?.trim()
+  return normalizedName ? t(normalizedName) : null
 }
 
 function partitionStructureCards(structure: ClientCommercialStructure): {
@@ -547,6 +806,10 @@ function TechnicalAudit({ structure, t }: ClientCommercialStructureViewProps) {
 function SourceSnapshot({ snapshot, t }: { snapshot: ClientSourceCardSnapshot; t: (value: string) => string }) {
   const sourceLabel = snapshot.SourceSystem.toLowerCase() === 'amg' ? 'AMG' : 'Fenix'
   const groupName = snapshot.DirectClientGroupName || snapshot.MainClientName || snapshot.ClientGroupName
+  const contacts = snapshot.Contacts || []
+  const agreements = snapshot.Agreements || []
+  const bankAccount = [snapshot.BankAccountNumber, snapshot.BankCurrencyCode].filter(Boolean).join(' · ')
+  const mainContact = [snapshot.MainContactPersonName, snapshot.MainContactPersonPosition].filter(Boolean).join(' · ')
 
   return (
     <div className="client-source-snapshot">
@@ -560,6 +823,49 @@ function SourceSnapshot({ snapshot, t }: { snapshot: ClientSourceCardSnapshot; t
       <EvidenceRow label={t('Головний клієнт')} value={snapshot.MainClientCode ? `${snapshot.MainClientCode}${snapshot.MainClientName ? ` · ${snapshot.MainClientName}` : ''}` : null} />
       <EvidenceRow label={t('Група у 1С')} value={groupName} />
       <EvidenceRow label={t('ЄДРПОУ / ІПН')} value={snapshot.Usreou || snapshot.Tin} />
+      <EvidenceRow label={t('Менеджер у 1С')} value={snapshot.ManagerName} />
+      <EvidenceRow label={t('Головна контактна особа')} value={mainContact} />
+      <EvidenceRow label={t('Банк')} value={snapshot.BankName} />
+      <EvidenceRow label={t('Рахунок / валюта')} value={bankAccount} />
+      <EvidenceRow
+        label={t('Контроль строку боргу')}
+        value={snapshot.IsControlDayDebt == null
+          ? null
+          : snapshot.IsControlDayDebt
+            ? `${t('увімкнено')} · ${snapshot.QuantityDayDebt ?? 0} ${t('дн.')}`
+            : t('вимкнено')}
+      />
+
+      {contacts.length > 0 ? (
+        <div className="client-source-evidence-group">
+          <Text className="client-source-evidence-group__title">{t('Контакти та адреси 1С')}</Text>
+          {contacts.map((contact) => (
+            <EvidenceRow
+              key={`${contact.AddressType}-${contact.InfoType}-${contact.SourceAddressKindCode}-${contact.Value}`}
+              label={sourceContactLabel(contact, t)}
+              value={contact.Value}
+            />
+          ))}
+        </div>
+      ) : null}
+
+      {agreements.length > 0 ? (
+        <div className="client-source-evidence-group">
+          <Text className="client-source-evidence-group__title">
+            {t('Договори та кредитні умови 1С')} · {agreements.length}
+          </Text>
+          <Stack gap={6}>
+            {agreements.map((agreement) => (
+              <SourceAgreement
+                key={`${agreement.SourceCode}-${agreement.AgreementType || ''}`}
+                agreement={agreement}
+                t={t}
+              />
+            ))}
+          </Stack>
+        </div>
+      ) : null}
+
       {!snapshot.SourceIdentityValid ? (
         <Text c="red" mt={5} size="xs">{t('Пошкоджений ідентифікатор джерела — потрібна перевірка')}</Text>
       ) : null}
@@ -571,6 +877,74 @@ function SourceSnapshot({ snapshot, t }: { snapshot: ClientSourceCardSnapshot; t
       ) : null}
     </div>
   )
+}
+
+function SourceAgreement({
+  agreement,
+  t,
+}: {
+  agreement: ClientSourceAgreementSnapshot
+  t: (value: string) => string
+}) {
+  const title = agreement.Number || agreement.Name || `#${agreement.SourceCode}`
+  const validity = [formatDateOnly(agreement.FromDate), formatDateOnly(agreement.ToDate)].filter(Boolean).join(' — ')
+  const accountKinds = [
+    agreement.IsManagementAccounting ? t('управлінський') : null,
+    agreement.IsAccounting ? t('бухгалтерський') : null,
+  ].filter(Boolean).join(', ')
+
+  return (
+    <div className="client-source-agreement">
+      <Group gap="xs" justify="space-between" wrap="wrap">
+        <Text className="client-source-agreement__title">{title}</Text>
+        {agreement.SourceMarkedDeleted ? (
+          <Badge className="app-role-pill is-red" size="xs" variant="light">{t('видалений у 1С')}</Badge>
+        ) : null}
+      </Group>
+      <EvidenceRow label={t('Код договору')} value={agreement.SourceCode} />
+      <EvidenceRow label={t('Організація')} value={agreement.OrganizationName} />
+      <EvidenceRow label={t('Валюта')} value={agreement.CurrencyCode} />
+      <EvidenceRow label={t('Тип ціни')} value={agreement.TypePriceName} />
+      <EvidenceRow label={t('Ліміт боргу')} value={formatSourceAmount(agreement.PermissibleDebtAmount, agreement.CurrencyCode)} />
+      <EvidenceRow label={t('Відстрочка платежу')} value={`${agreement.DebtDaysAllowedNumber || 0} ${t('дн.')}`} />
+      <EvidenceRow label={t('Період дії')} value={validity} />
+      <EvidenceRow label={t('Облік')} value={accountKinds} />
+    </div>
+  )
+}
+
+function sourceContactLabel(
+  contact: ClientSourceContactSnapshot,
+  t: (value: string) => string,
+): string {
+  const labels: Record<string, string> = {
+    AccountingNumber: t('Телефон бухгалтера'),
+    ActualAddress: t('Фактична адреса'),
+    DeliveryAddress: t('Адреса доставки'),
+    DeliveryNumber: t('Телефон доставки'),
+    DirectorName: t('Керівник'),
+    Email: 'Email',
+    FaxNumber: t('Факс'),
+    Icq: 'ICQ',
+    LegalAddress: t('Юридична адреса'),
+    ManagerNumber: t('Телефон менеджера'),
+    MobileNumber: t('Мобільний телефон'),
+    PhoneNumber: t('Телефон'),
+    Website: t('Сайт'),
+  }
+  const label = contact.InfoType ? labels[contact.InfoType] || contact.InfoType : contact.AddressType || t('Контакт')
+  return contact.IsUnclassified ? `${label} · ${t('не класифіковано')}` : label
+}
+
+function formatSourceAmount(value: number, currencyCode?: string | null): string | null {
+  if (!Number.isFinite(value)) return null
+  return `${sourceAmountFormatter.format(value)}${currencyCode ? ` ${currencyCode}` : ''}`
+}
+
+function formatDateOnly(value?: string | null): string | null {
+  if (!value) return null
+  const date = new Date(value)
+  return Number.isNaN(date.getTime()) ? null : dateOnlyFormatter.format(date)
 }
 
 function EvidenceRow({ label, value }: { label: string; value?: string | number | null }) {

@@ -5,6 +5,7 @@ import type { Client, ClientBankDetails, Currency } from '../../types'
 export type BankDetailsFieldsProps = {
   client: Client
   currencies: Currency[]
+  sourceManaged?: boolean
   onBankFieldChange: (key: 'BankAndBranch' | 'Swift' | 'BranchCode' | 'BankAddress', value: string) => void
   onAccountNumberChange: (value: string) => void
   onAccountNumberCurrencyChange: (currency: Currency | null) => void
@@ -26,6 +27,7 @@ export function BankDetailsFields(props: BankDetailsFieldsProps) {
         <Text className="client-section-title" fw={600}>{t('Банківські реквізити')}</Text>
 
         <TextInput
+          disabled={props.sourceManaged}
           label={t('Банк та відділення')}
           value={bankDetails.BankAndBranch || ''}
           onChange={(event) => props.onBankFieldChange('BankAndBranch', event.currentTarget.value)}
@@ -33,12 +35,14 @@ export function BankDetailsFields(props: BankDetailsFieldsProps) {
 
         <SimpleGrid cols={{ base: 1, md: 2 }} spacing="sm">
           <TextInput
+            disabled={props.sourceManaged}
             label={t('Номер рахунку')}
             value={bankDetails.AccountNumber?.AccountNumber || ''}
             onChange={(event) => props.onAccountNumberChange(event.currentTarget.value)}
           />
           <Select
             clearable
+            disabled={props.sourceManaged}
             searchable
             data={currencyOptions}
             label={t('Валюта')}
@@ -53,12 +57,14 @@ export function BankDetailsFields(props: BankDetailsFieldsProps) {
 
         <SimpleGrid cols={{ base: 1, md: 2 }} spacing="sm">
           <TextInput
+            disabled={props.sourceManaged}
             label="IBAN"
             value={bankDetails.ClientBankDetailIbanNo?.IBANNO || ''}
             onChange={(event) => props.onIbanNumberChange(event.currentTarget.value)}
           />
           <Select
             clearable
+            disabled={props.sourceManaged}
             searchable
             data={currencyOptions}
             label={t('Валюта')}

@@ -408,10 +408,64 @@ function isClientSourceCardSnapshot(
   const snapshot = value as Partial<ClientSourceCardSnapshot>
   return typeof snapshot.SourceSystem === 'string'
     && typeof snapshot.SourceCode === 'number'
+    && isOptionalString(snapshot.BankName)
+    && isOptionalString(snapshot.BankAccountNumber)
+    && isOptionalString(snapshot.BankCurrencyCode)
+    && isOptionalString(snapshot.MainContactPersonName)
+    && isOptionalString(snapshot.MainContactPersonPosition)
+    && isOptionalString(snapshot.ManagerName)
+    && isOptionalNumber(snapshot.QuantityDayDebt)
+    && isOptionalBoolean(snapshot.IsControlDayDebt)
+    && (snapshot.Contacts == null
+      || Array.isArray(snapshot.Contacts) && snapshot.Contacts.every(isClientSourceContactSnapshot))
+    && (snapshot.Agreements == null
+      || Array.isArray(snapshot.Agreements) && snapshot.Agreements.every(isClientSourceAgreementSnapshot))
     && typeof snapshot.SourceMarkedDeleted === 'boolean'
     && typeof snapshot.SourceIdentityValid === 'boolean'
     && typeof snapshot.EvidenceTruncated === 'boolean'
     && typeof snapshot.LastSeenAtUtc === 'string'
+}
+
+function isClientSourceContactSnapshot(value: unknown): boolean {
+  if (!value || typeof value !== 'object') return false
+  const contact = value as Record<string, unknown>
+  return isOptionalString(contact.AddressType)
+    && isOptionalString(contact.InfoType)
+    && isOptionalString(contact.SourceAddressKindCode)
+    && isOptionalString(contact.Value)
+    && typeof contact.IsUnclassified === 'boolean'
+}
+
+function isClientSourceAgreementSnapshot(value: unknown): boolean {
+  if (!value || typeof value !== 'object') return false
+  const agreement = value as Record<string, unknown>
+  return typeof agreement.SourceCode === 'number'
+    && isOptionalString(agreement.Name)
+    && isOptionalString(agreement.Number)
+    && isOptionalString(agreement.CurrencyCode)
+    && typeof agreement.PermissibleDebtAmount === 'number'
+    && typeof agreement.DebtDaysAllowedNumber === 'number'
+    && isOptionalString(agreement.OrganizationName)
+    && isOptionalString(agreement.TypePriceName)
+    && isOptionalString(agreement.PromotionalTypePriceName)
+    && isOptionalString(agreement.AgreementType)
+    && isOptionalString(agreement.FromDate)
+    && isOptionalString(agreement.ToDate)
+    && typeof agreement.IsManagementAccounting === 'boolean'
+    && typeof agreement.IsAccounting === 'boolean'
+    && typeof agreement.SourceMarkedDeleted === 'boolean'
+}
+
+function isOptionalString(value: unknown): boolean {
+  return value == null || typeof value === 'string'
+}
+
+function isOptionalNumber(value: unknown): boolean {
+  return value == null || typeof value === 'number' && Number.isFinite(value)
+}
+
+function isOptionalBoolean(value: unknown): boolean {
+  return value == null || typeof value === 'boolean'
 }
 
 function isClientSourceQualitySummary(

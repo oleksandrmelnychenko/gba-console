@@ -683,6 +683,15 @@ export function ClientEditPage() {
         </Alert>
       )}
 
+      {isSourceManagedClient(client) ? (
+        <Alert color="blue" icon={<CircleAlert size={18} />} variant="light">
+          <Text fw={600} size="sm">{t('Картка керується 1С')}</Text>
+          <Text size="sm">
+            {t('Назва, реквізити, контакти, регіон, банк і договори з кодом 1С доступні лише для перегляду. Сирі значення Fenix/AMG показані у «Дані 1С». Локальні операційні налаштування можна змінювати.')}
+          </Text>
+        </Alert>
+      ) : null}
+
       {identityAttention && identityAttention.AttentionLevel !== 'none' ? (
         <ClientIdentityAttentionBanner attention={identityAttention} />
       ) : null}
@@ -1125,8 +1134,10 @@ function EditStepContent({
   onSaveDocuments,
   step,
 }: EditStepContentProps) {
+  const sourceManaged = isSourceManagedClient(client)
+
   if (step === 'contact-information') {
-    return <ContactInfoFields client={client} errors={errors} role={role} onChange={setField} />
+    return <ContactInfoFields client={client} errors={errors} role={role} sourceManaged={sourceManaged} onChange={setField} />
   }
 
   if (step === 'analysts' || step === 'agreements' || step === 'pricing') {
@@ -1148,6 +1159,7 @@ function EditStepContent({
       <BankDetailsFields
         client={client}
         currencies={lookups.currencies}
+        sourceManaged={sourceManaged}
         onAccountNumberChange={setAccountNumber}
         onAccountNumberCurrencyChange={setAccountNumberCurrency}
         onBankFieldChange={setBankField}
@@ -1207,6 +1219,7 @@ function EditStepContent({
       packingMarkings={lookups.packingMarkings}
       regions={lookups.regions}
       role={role}
+      sourceManaged={sourceManaged}
       onAddDocuments={onAddDocuments}
       onChange={setField}
       onCreateCountry={onCreateCountry}
@@ -1222,6 +1235,10 @@ function EditStepContent({
 
 function getClientType(client: Client | null): number | undefined {
   return client?.ClientInRole?.ClientType?.Type
+}
+
+function isSourceManagedClient(client: Client | null): boolean {
+  return Boolean(client?.SourceAmgCode || client?.SourceFenixCode)
 }
 
 function isLookupBackedEditStep(step: string): boolean {

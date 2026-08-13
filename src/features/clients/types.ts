@@ -224,6 +224,8 @@ export type Agreement = {
   Created?: Date | string
   Updated?: Date | string
   Deleted?: boolean
+  SourceAmgCode?: number | null
+  SourceFenixCode?: number | null
 }
 
 export type ClientAgreement = {
@@ -366,6 +368,32 @@ export type ClientCommercialStructureState =
   | 'probable'
   | 'review_required'
 
+export type ClientSourceContactSnapshot = {
+  AddressType?: string | null
+  InfoType?: string | null
+  SourceAddressKindCode?: string | null
+  Value?: string | null
+  IsUnclassified: boolean
+}
+
+export type ClientSourceAgreementSnapshot = {
+  SourceCode: number
+  Name?: string | null
+  Number?: string | null
+  CurrencyCode?: string | null
+  PermissibleDebtAmount: number
+  DebtDaysAllowedNumber: number
+  OrganizationName?: string | null
+  TypePriceName?: string | null
+  PromotionalTypePriceName?: string | null
+  AgreementType?: string | null
+  FromDate?: string | null
+  ToDate?: string | null
+  IsManagementAccounting: boolean
+  IsAccounting: boolean
+  SourceMarkedDeleted: boolean
+}
+
 export type ClientSourceCardSnapshot = {
   SourceSystem: 'fenix' | 'amg' | string
   SourceCode: number
@@ -379,6 +407,16 @@ export type ClientSourceCardSnapshot = {
   MainClientName?: string | null
   DirectClientGroupName?: string | null
   ClientGroupName?: string | null
+  BankName?: string | null
+  BankAccountNumber?: string | null
+  BankCurrencyCode?: string | null
+  MainContactPersonName?: string | null
+  MainContactPersonPosition?: string | null
+  ManagerName?: string | null
+  QuantityDayDebt?: number | null
+  IsControlDayDebt?: boolean | null
+  Contacts: ClientSourceContactSnapshot[]
+  Agreements: ClientSourceAgreementSnapshot[]
   SourceMarkedDeleted: boolean
   SourceIdentityValid: boolean
   EvidenceTruncated: boolean
@@ -715,6 +753,8 @@ export type Client = {
   PurchaseVolumeEur?: number
   USREOU?: string
   Updated?: Date | string
+  SourceAmgCode?: number | null
+  SourceFenixCode?: number | null
 }
 
 export type ClientUserProfile = {

@@ -50,6 +50,7 @@ export type GeneralInfoFieldsProps = {
   isUploadingDocuments?: boolean
   canSaveDocuments?: boolean
   isNew?: boolean
+  sourceManaged?: boolean
   regionCodeError?: string
   onChange: <K extends keyof Client>(key: K, value: Client[K]) => void
   onRegionChange: (region: Region | null) => void
@@ -73,6 +74,7 @@ export function GeneralInfoFields(props: GeneralInfoFieldsProps) {
           <Text className="client-section-title" fw={600}>{t('Основна інформація')}</Text>
           <SimpleGrid cols={{ base: 1, md: 2 }} spacing="sm">
             <TextInput
+              disabled={props.sourceManaged}
               error={errors?.FullName}
               label={t('Повна назва')}
               maxLength={100}
@@ -81,6 +83,7 @@ export function GeneralInfoFields(props: GeneralInfoFieldsProps) {
             />
             {role.isProvider ? (
               <TextInput
+                disabled={props.sourceManaged}
                 error={errors?.Brand}
                 label={t('Бренд')}
                 maxLength={100}
@@ -89,6 +92,7 @@ export function GeneralInfoFields(props: GeneralInfoFieldsProps) {
               />
             ) : (
               <TextInput
+                disabled={props.sourceManaged}
                 error={errors?.Name}
                 label={t('Назва')}
                 maxLength={100}
@@ -117,6 +121,7 @@ function ProviderFields(props: GeneralInfoFieldsProps) {
           <Text className="client-section-title" fw={600}>{t('Дані постачальника')}</Text>
           <SimpleGrid cols={{ base: 1, md: 2 }} spacing="sm">
             <TextInput
+              disabled={props.sourceManaged}
               error={errors?.SupplierCode}
               label={t('Код постачальника')}
               maxLength={100}
@@ -124,6 +129,7 @@ function ProviderFields(props: GeneralInfoFieldsProps) {
               onChange={(event) => props.onChange('SupplierCode', event.currentTarget.value)}
             />
             <TextInput
+              disabled={props.sourceManaged}
               error={errors?.SupplierName}
               label={t('Постачальник')}
               maxLength={100}
@@ -165,6 +171,7 @@ function ProviderFields(props: GeneralInfoFieldsProps) {
             />
             <Checkbox
               checked={Boolean(client.IsNotResident)}
+              disabled={props.sourceManaged}
               label={t('Не резидент')}
               onChange={(event) => props.onChange('IsNotResident', event.currentTarget.checked)}
             />
@@ -248,16 +255,19 @@ function BuyerFields(props: GeneralInfoFieldsProps) {
           <Text fw={600}>{t('Реквізити покупця')}</Text>
           <SimpleGrid cols={{ base: 1, md: 3 }} spacing="sm">
             <TextInput
+              disabled={props.sourceManaged}
               label={t('Прізвище')}
               value={client.LastName || ''}
               onChange={(event) => props.onChange('LastName', event.currentTarget.value)}
             />
             <TextInput
+              disabled={props.sourceManaged}
               label={t("Ім'я")}
               value={client.FirstName || ''}
               onChange={(event) => props.onChange('FirstName', event.currentTarget.value)}
             />
             <TextInput
+              disabled={props.sourceManaged}
               label={t('По батькові')}
               value={client.MiddleName || ''}
               onChange={(event) => props.onChange('MiddleName', event.currentTarget.value)}
@@ -266,6 +276,7 @@ function BuyerFields(props: GeneralInfoFieldsProps) {
 
           <SimpleGrid cols={{ base: 1, md: 3 }} spacing="sm">
             <TextInput
+              disabled={props.sourceManaged}
               error={props.errors?.SROI}
               label={t('Номер платника ПДВ')}
               maxLength={30}
@@ -273,6 +284,7 @@ function BuyerFields(props: GeneralInfoFieldsProps) {
               onChange={(event) => props.onChange('SROI', event.currentTarget.value)}
             />
             <TextInput
+              disabled={props.sourceManaged}
               error={props.errors?.TIN}
               label={t('ІПН (ІНН)')}
               maxLength={30}
@@ -280,6 +292,7 @@ function BuyerFields(props: GeneralInfoFieldsProps) {
               onChange={(event) => props.onChange('TIN', event.currentTarget.value)}
             />
             <TextInput
+              disabled={props.sourceManaged}
               error={props.errors?.USREOU}
               label={t('ЄДРПОУ')}
               maxLength={30}
@@ -297,6 +310,7 @@ function BuyerFields(props: GeneralInfoFieldsProps) {
             <Group align="flex-end" gap="xs" wrap="nowrap">
               <Select
                 clearable
+                disabled={props.sourceManaged}
                 searchable
                 data={props.regions.map((region) => ({
                   value: String(region.Id),
@@ -311,7 +325,7 @@ function BuyerFields(props: GeneralInfoFieldsProps) {
                   props.onRegionChange(next)
                 }}
               />
-              {hasRegion && (
+              {hasRegion && !props.sourceManaged && (
                 <ActionIcon
                   aria-label={t('Видалити регіон')}
                   color="red"
@@ -322,12 +336,12 @@ function BuyerFields(props: GeneralInfoFieldsProps) {
                   <Trash2 size={16} />
                 </ActionIcon>
               )}
-              <NewRegionControl onCreate={props.onCreateRegion} />
+              {!props.sourceManaged && <NewRegionControl onCreate={props.onCreateRegion} />}
             </Group>
 
             <SimpleGrid cols={{ base: 1, md: 3 }} spacing="sm">
               <TextInput
-                disabled={!hasRegion}
+                disabled={!hasRegion || props.sourceManaged}
                 error={props.regionCodeError}
                 label={t('Код по регіону')}
                 rightSection={props.isLoadingRegionCode ? <Text size="xs">…</Text> : undefined}
@@ -335,13 +349,13 @@ function BuyerFields(props: GeneralInfoFieldsProps) {
                 onChange={(event) => props.onRegionCodeFieldChange('Value', event.currentTarget.value)}
               />
               <TextInput
-                disabled={!hasRegion}
+                disabled={!hasRegion || props.sourceManaged}
                 label={t('Місто')}
                 value={resolveRegionCodeValue(client.RegionCode, 'City')}
                 onChange={(event) => props.onRegionCodeFieldChange('City', event.currentTarget.value)}
               />
               <TextInput
-                disabled={!hasRegion}
+                disabled={!hasRegion || props.sourceManaged}
                 label={t('Район')}
                 value={resolveRegionCodeValue(client.RegionCode, 'District')}
                 onChange={(event) => props.onRegionCodeFieldChange('District', event.currentTarget.value)}
@@ -356,6 +370,7 @@ function BuyerFields(props: GeneralInfoFieldsProps) {
           <Text fw={600}>{t('Тип клієнта')}</Text>
           {role.isSubClient ? (
             <SegmentedControl
+              disabled={props.sourceManaged}
               data={[
                 { value: 'trade-point', label: t('Торгова точка') },
                 { value: 'sub-client', label: t('Субклієнт') },
@@ -370,6 +385,7 @@ function BuyerFields(props: GeneralInfoFieldsProps) {
           ) : (
             <Switch
               checked={Boolean(client.IsIndividual)}
+              disabled={props.sourceManaged}
               label={client.IsIndividual ? t('Фізична особа') : t('Юридична особа')}
               onChange={(event) => props.onChange('IsIndividual', event.currentTarget.checked)}
             />

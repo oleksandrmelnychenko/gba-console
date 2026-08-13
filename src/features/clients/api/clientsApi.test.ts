@@ -432,6 +432,14 @@ describe('clients API query contracts', () => {
     await expect(getClientCommercialStructure('client-1')).resolves.toBeNull()
   })
 
+  it('rejects malformed operational source evidence instead of crashing the structure view', async () => {
+    const structure = createCommercialStructure('client-1')
+    structure.LegalParties[0].Cards[0].SourceSnapshots[0].Contacts = 'not-an-array' as never
+    apiRequestMock.mockResolvedValueOnce(structure)
+
+    await expect(getClientCommercialStructure('client-1')).resolves.toBeNull()
+  })
+
   it('persists a client identity decision with a fresh idempotency key', async () => {
     apiRequestMock.mockResolvedValueOnce({
       ClientNetUid: '11111111-1111-1111-1111-111111111111',
@@ -543,12 +551,71 @@ function createCommercialStructure(clientNetUid: string) {
     State: 'review_required',
     RequiresReview: true,
     IsPartial: false,
-    CardCount: 2,
-    AgreementCount: 3,
-    ActiveAgreementCount: 2,
+    CardCount: 1,
+    AgreementCount: 1,
+    ActiveAgreementCount: 1,
     SaleCount: 8,
     Reasons: ['region_code_family'],
-    LegalParties: [],
+    LegalParties: [{
+      Key: 'legal:37263688',
+      State: 'self',
+      IsTarget: true,
+      RequiresReview: false,
+      AgreementCount: 1,
+      ActiveAgreementCount: 1,
+      SaleCount: 8,
+      Reasons: ['same_legal_code'],
+      Cards: [{
+        ClientId: 1,
+        ClientNetUid: clientNetUid,
+        IsSubClient: false,
+        IsTradePoint: false,
+        IsActive: true,
+        IsBlocked: false,
+        IsTarget: true,
+        HasExplicitRelationship: true,
+        AgreementCount: 1,
+        ActiveAgreementCount: 1,
+        SaleCount: 8,
+        Reasons: ['same_legal_code'],
+        SourceSnapshots: [{
+          SourceSystem: 'amg',
+          SourceCode: 1545,
+          BankName: 'АТ Тест Банк',
+          ManagerName: 'Марія Іваненко',
+          QuantityDayDebt: 14,
+          IsControlDayDebt: true,
+          Contacts: [{
+            AddressType: 'Email',
+            InfoType: 'Email',
+            SourceAddressKindCode: 'EMAIL',
+            Value: 'client@example.test',
+            IsUnclassified: false,
+          }],
+          Agreements: [{
+            SourceCode: 7001,
+            Name: 'Основний договір',
+            Number: 'A-7001',
+            CurrencyCode: 'UAH',
+            PermissibleDebtAmount: 50_000,
+            DebtDaysAllowedNumber: 14,
+            OrganizationName: 'ТОВ АМГ КОНКОРД',
+            TypePriceName: 'ЦР',
+            PromotionalTypePriceName: null,
+            AgreementType: 'WithBuyer',
+            FromDate: '2026-01-01T00:00:00Z',
+            ToDate: null,
+            IsManagementAccounting: true,
+            IsAccounting: false,
+            SourceMarkedDeleted: false,
+          }],
+          SourceMarkedDeleted: false,
+          SourceIdentityValid: true,
+          EvidenceTruncated: false,
+          LastSeenAtUtc: '2026-08-13T12:56:15Z',
+        }],
+      }],
+    }],
   }
 }
 

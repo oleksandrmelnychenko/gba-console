@@ -945,7 +945,7 @@ type ClientActionsModalProps = {
   onSwitchActive: (client: Client) => void
 }
 
-function ClientActionsModal({
+export function ClientActionsModal({
   canOpenCashFlow,
   canViewClient,
   client,
@@ -959,7 +959,38 @@ function ClientActionsModal({
 }: ClientActionsModalProps) {
   const { t } = useI18n()
   const isActive = client?.IsActive !== false
-  const subClientCount = client ? getClientSubClients(client).length : 0
+  const [structureCountResult, setStructureCountResult] = useState<{
+    clientNetUid: string
+    count: number | null
+  } | null>(null)
+  const structureCardCount = structureCountResult && structureCountResult.clientNetUid === client?.NetUid
+    ? structureCountResult.count
+    : null
+
+  useEffect(() => {
+    const netUid = client?.NetUid
+    if (!netUid) {
+      return
+    }
+
+    const controller = new AbortController()
+    void getClientCommercialStructure(netUid, controller.signal)
+      .then((structure) => {
+        if (!controller.signal.aborted) {
+          setStructureCountResult({
+            clientNetUid: netUid,
+            count: structure?.CardCount ?? null,
+          })
+        }
+      })
+      .catch((error: unknown) => {
+        if (!controller.signal.aborted && !(error instanceof DOMException && error.name === 'AbortError')) {
+          setStructureCountResult({ clientNetUid: netUid, count: null })
+        }
+      })
+
+    return () => controller.abort()
+  }, [client?.NetUid])
 
   return (
     <AppModal
@@ -1041,23 +1072,21 @@ function ClientActionsModal({
             >
               {t('Дні резерву')}
             </Button>
-            {subClientCount > 0 && (
-              <Button
-                fullWidth
-                justify="flex-start"
-                color="dark"
-                size="md"
-                leftSection={
-                  <span className="app-action-icon">
-                    <Network size={20} color="var(--mantine-color-gray-7)" />
-                  </span>
-                }
-                variant="subtle"
-                onClick={() => onStructure(client)}
-              >
-                {t('Структура клієнта')} ({subClientCount})
-              </Button>
-            )}
+            <Button
+              fullWidth
+              justify="flex-start"
+              color="dark"
+              size="md"
+              leftSection={
+                <span className="app-action-icon">
+                  <Network size={20} color="var(--mantine-color-gray-7)" />
+                </span>
+              }
+              variant="subtle"
+              onClick={() => onStructure(client)}
+            >
+              {t('Структура клієнта')}{structureCardCount == null ? '' : ` (${structureCardCount})`}
+            </Button>
           </Stack>
 
           <Divider />
@@ -1971,20 +2000,6 @@ function shouldKeepClientInActiveFilter(client: Client, activeFilter: ActiveFilt
   }
 
   return activeFilter === 'active' ? client.IsActive !== false : client.IsActive === false
-}
-
-function getClientSubClients(client: Client): Client[] {
-  const subClients: Client[] = []
-
-  const subClientLinks = client.SubClients || []
-
-  subClientLinks.forEach((subClientLink) => {
-    if (subClientLink.SubClient) {
-      subClients.push(subClientLink.SubClient)
-    }
-  })
-
-  return subClients
 }
 
 function getClientDisplayName(client: Client): string {

@@ -7,10 +7,11 @@ export type ContactInfoFieldsProps = {
   client: Client
   role: ClientFormRole
   errors?: ClientFieldErrors
+  sourceManaged?: boolean
   onChange: <K extends keyof Client>(key: K, value: Client[K]) => void
 }
 
-export function ContactInfoFields({ client, errors, role, onChange }: ContactInfoFieldsProps) {
+export function ContactInfoFields({ client, errors, role, sourceManaged, onChange }: ContactInfoFieldsProps) {
   const { t } = useI18n()
 
   return (
@@ -20,6 +21,7 @@ export function ContactInfoFields({ client, errors, role, onChange }: ContactInf
           <Text className="client-section-title" fw={600}>{t('Контактні дані')}</Text>
           <SimpleGrid cols={{ base: 1, md: 2 }} spacing="sm">
             <TextInput
+              disabled={sourceManaged}
               error={errors?.EmailAddress}
               label="Email"
               maxLength={100}
@@ -28,6 +30,7 @@ export function ContactInfoFields({ client, errors, role, onChange }: ContactInf
             />
             {role.isBuyer && (
               <TextInput
+                disabled={sourceManaged}
                 error={errors?.ICQ}
                 label="ICQ"
                 maxLength={20}
@@ -36,6 +39,7 @@ export function ContactInfoFields({ client, errors, role, onChange }: ContactInf
               />
             )}
             <TextInput
+              disabled={sourceManaged}
               error={errors?.FaxNumber}
               label={t('Факс')}
               maxLength={20}
@@ -43,12 +47,14 @@ export function ContactInfoFields({ client, errors, role, onChange }: ContactInf
               onChange={(event) => onChange('FaxNumber', event.currentTarget.value)}
             />
             <TextInput
+              disabled={sourceManaged}
               label={t('Телефон')}
               value={client.ClientNumber || ''}
               onChange={(event) => onChange('ClientNumber', event.currentTarget.value)}
             />
             {role.isBuyer && (
               <TextInput
+                disabled={sourceManaged}
                 error={errors?.SMSNumber}
                 label={t('Телефон для SMS')}
                 maxLength={20}
@@ -58,6 +64,7 @@ export function ContactInfoFields({ client, errors, role, onChange }: ContactInf
             )}
             {role.isProvider && (
               <TextInput
+                disabled={sourceManaged}
                 label={t("Ім'я")}
                 value={client.SupplierContactName || ''}
                 onChange={(event) => onChange('SupplierContactName', event.currentTarget.value)}
@@ -73,6 +80,7 @@ export function ContactInfoFields({ client, errors, role, onChange }: ContactInf
             <Text fw={600}>{t('Контакти керівництва')}</Text>
             <SimpleGrid cols={{ base: 1, md: 3 }} spacing="sm">
               <TextInput
+                disabled={sourceManaged}
                 error={errors?.AccountantNumber}
                 label={t('Телефон бухгалтера')}
                 maxLength={20}
@@ -80,6 +88,7 @@ export function ContactInfoFields({ client, errors, role, onChange }: ContactInf
                 onChange={(event) => onChange('AccountantNumber', event.currentTarget.value)}
               />
               <TextInput
+                disabled={sourceManaged}
                 error={errors?.DirectorNumber}
                 label={t('Телефон директора')}
                 maxLength={20}
@@ -87,6 +96,7 @@ export function ContactInfoFields({ client, errors, role, onChange }: ContactInf
                 onChange={(event) => onChange('DirectorNumber', event.currentTarget.value)}
               />
               <TextInput
+                disabled={sourceManaged}
                 error={errors?.Manager}
                 label={t('Директор')}
                 maxLength={250}
@@ -104,6 +114,7 @@ export function ContactInfoFields({ client, errors, role, onChange }: ContactInf
           <SimpleGrid cols={{ base: 1, md: role.isBuyer ? 3 : 1 }} spacing="sm">
             {role.isBuyer && (
               <TextInput
+                disabled={sourceManaged}
                 error={errors?.DeliveryAddress}
                 label={t('Адреса доставки')}
                 maxLength={500}
@@ -113,6 +124,7 @@ export function ContactInfoFields({ client, errors, role, onChange }: ContactInf
             )}
             {role.isBuyer && (
               <TextInput
+                disabled={sourceManaged}
                 error={errors?.LegalAddress}
                 label={t('Юридична адреса')}
                 maxLength={500}
@@ -121,6 +133,7 @@ export function ContactInfoFields({ client, errors, role, onChange }: ContactInf
               />
             )}
             <TextInput
+              disabled={sourceManaged}
               error={errors?.ActualAddress}
               label={t('Фактична адреса')}
               maxLength={500}

@@ -17,7 +17,7 @@ const t = (value: string) => value
 describe('ClientCommercialStructureView', () => {
   it('shows the business hierarchy first and keeps raw 1C evidence collapsed', () => {
     const { container } = render(
-      <MantineProvider theme={theme}>
+      <MantineProvider env="test" theme={theme}>
         <ClientCommercialStructureView structure={createStructure()} t={t} />
       </MantineProvider>,
     )
@@ -27,8 +27,18 @@ describe('ClientCommercialStructureView', () => {
     expect(screen.getByText(/Робочі картки, договори, продажі й баланси залишаються без змін/)).toBeTruthy()
     expect(screen.getByText('Структура клієнта')).toBeTruthy()
     expect(screen.getAllByText('ТОВ МАГРОМ').length).toBeGreaterThanOrEqual(3)
-    expect(screen.getByText('BXM05202')).toBeTruthy()
+    expect(screen.getByText('Покупець')).toBeTruthy()
+    expect(screen.queryByText('Buyer')).toBeNull()
+    const regionCodeValues = screen.getAllByText('BXM05202')
+    expect(regionCodeValues.length).toBeGreaterThanOrEqual(2)
+    expect(screen.getByText('код 01234567')).toBeTruthy()
+    expect(regionCodeValues.some((value) => Boolean(value.closest('.client-card-code-chip')))).toBe(true)
     expect(screen.getByText('AMG')).toBeTruthy()
+    expect(screen.getByText('Марія Іваненко')).toBeTruthy()
+    expect(screen.getByText('UA123456789 · UAH')).toBeTruthy()
+    expect(screen.getByText('client@example.test')).toBeTruthy()
+    expect(screen.getByText('Договори та кредитні умови 1С · 1')).toBeTruthy()
+    expect(screen.getByText('50 000 UAH')).toBeTruthy()
     expect(screen.getByText('Пошкоджений ідентифікатор джерела — потрібна перевірка')).toBeTruthy()
     expect(screen.getByText('Картку позначено видаленою у 1С — не використовуйте без перевірки')).toBeTruthy()
     expect(screen.getByText('Пошкоджене або надмірно довге значення з 1С нормалізовано — перевірте оригінал')).toBeTruthy()
@@ -41,7 +51,7 @@ describe('ClientCommercialStructureView', () => {
 
   it('makes a truncated candidate set impossible to mistake for a complete group', () => {
     render(
-      <MantineProvider theme={theme}>
+      <MantineProvider env="test" theme={theme}>
         <ClientCommercialStructureView
           structure={{ ...createStructure(), IsPartial: true }}
           t={t}
@@ -52,9 +62,83 @@ describe('ClientCommercialStructureView', () => {
     expect(screen.getByText('Показано не всю групу')).toBeTruthy()
   })
 
+  it('renders the synchronized client hierarchy at arbitrary depth', () => {
+    const structure = createStructure()
+    structure.LegalParties[0].Cards.push(
+      {
+        ...structure.LegalParties[0].Cards[0],
+        ClientId: 11,
+        ClientNetUid: '22222222-2222-2222-2222-222222222222',
+        DisplayName: 'ТОВ МАГРОМ · філія',
+        MainClientId: 10,
+        IsSubClient: true,
+        IsTarget: false,
+        SourceSnapshots: [],
+      },
+      {
+        ...structure.LegalParties[0].Cards[0],
+        ClientId: 12,
+        ClientNetUid: '33333333-3333-3333-3333-333333333333',
+        DisplayName: 'ТОВ МАГРОМ · торгова точка',
+        MainClientId: 11,
+        IsSubClient: false,
+        IsTradePoint: true,
+        IsTarget: false,
+        SourceSnapshots: [],
+      },
+    )
+
+    const { container } = render(
+      <MantineProvider env="test" theme={theme}>
+        <ClientCommercialStructureView structure={structure} t={t} />
+      </MantineProvider>,
+    )
+
+    expect(container.querySelector('[data-client-id="10"]')?.getAttribute('data-client-depth')).toBe('0')
+    expect(container.querySelector('[data-client-id="11"]')?.getAttribute('data-client-depth')).toBe('1')
+    expect(container.querySelector('[data-client-id="12"]')?.getAttribute('data-client-depth')).toBe('2')
+    expect(screen.getByText(/Головний клієнт: ТОВ МАГРОМ · філія/)).toBeTruthy()
+  })
+
+  it('renders source parent edges even when cards belong to different legal parties', () => {
+    const structure = createStructure()
+    structure.LegalParties.push({
+      Key: 'legal:3267717855',
+      DisplayName: 'ФОП ДОМАТЕВИЧ СЕРГІЙ ОЛЕКСАНДРОВИЧ',
+      NormalizedLegalCode: '3267717855',
+      State: 'confirmed',
+      IsTarget: false,
+      RequiresReview: false,
+      AgreementCount: 1,
+      ActiveAgreementCount: 1,
+      SaleCount: 247,
+      Reasons: ['explicit_hierarchy'],
+      Cards: [{
+        ...structure.LegalParties[0].Cards[0],
+        ClientId: 20,
+        ClientNetUid: '44444444-4444-4444-4444-444444444444',
+        DisplayName: 'ФОП ДОМАТЕВИЧ СЕРГІЙ ОЛЕКСАНДРОВИЧ',
+        MainClientId: 10,
+        IsTarget: false,
+        IsTradePoint: true,
+        SourceSnapshots: [],
+      }],
+    })
+
+    const { container } = render(
+      <MantineProvider env="test" theme={theme}>
+        <ClientCommercialStructureView structure={structure} t={t} />
+      </MantineProvider>,
+    )
+
+    expect(container.querySelector('[data-legal-party-key="legal:01234567"]')?.getAttribute('data-legal-party-depth')).toBe('0')
+    expect(container.querySelector('[data-legal-party-key="legal:3267717855"]')?.getAttribute('data-legal-party-depth')).toBe('1')
+    expect(screen.getByText(/Головний клієнт: ТОВ МАГРОМ/)).toBeTruthy()
+  })
+
   it('keeps pre-migration source evidence visible but disables identity decisions', () => {
     render(
-      <MantineProvider theme={theme}>
+      <MantineProvider env="test" theme={theme}>
         <ClientCommercialStructureView
           structure={{
             ...createStructure(),
@@ -73,7 +157,7 @@ describe('ClientCommercialStructureView', () => {
     expect(screen.getByText('Рішення щодо зв’язків тимчасово недоступні')).toBeTruthy()
     expect(screen.getByText(/Структуру побудовано з наявних даних 1С/)).toBeTruthy()
     expect(screen.queryByRole('button', { name: 'Дії зі зв’язком' })).toBeNull()
-    expect(screen.getByText('BXM05202')).toBeTruthy()
+    expect(screen.getAllByText('BXM05202').length).toBeGreaterThanOrEqual(2)
   })
 
   it('lets an operator confirm a candidate without moving financial ownership', async () => {
@@ -96,7 +180,7 @@ describe('ClientCommercialStructureView', () => {
     const onChanged = vi.fn()
 
     render(
-      <MantineProvider theme={theme}>
+      <MantineProvider env="test" theme={theme}>
         <ClientCommercialStructureView structure={structure} t={t} onChanged={onChanged} />
       </MantineProvider>,
     )
@@ -155,7 +239,7 @@ function createStructure(): ClientCommercialStructure {
         Usreou: '01234567',
         Tin: null,
         RoleType: 0,
-        RoleName: 'Покупець',
+        RoleName: 'Buyer',
         MainClientId: null,
         IsSubClient: false,
         IsTradePoint: false,
@@ -180,6 +264,38 @@ function createStructure(): ClientCommercialStructure {
           MainClientName: 'Хмельницький - Назаришин В.М.',
           DirectClientGroupName: null,
           ClientGroupName: null,
+          BankName: 'АТ Тест Банк',
+          BankAccountNumber: 'UA123456789',
+          BankCurrencyCode: 'UAH',
+          MainContactPersonName: 'Олег Керівник',
+          MainContactPersonPosition: 'Директор',
+          ManagerName: 'Марія Іваненко',
+          QuantityDayDebt: 14,
+          IsControlDayDebt: true,
+          Contacts: [{
+            AddressType: 'Email',
+            InfoType: 'Email',
+            SourceAddressKindCode: 'EMAIL',
+            Value: 'client@example.test',
+            IsUnclassified: false,
+          }],
+          Agreements: [{
+            SourceCode: 7001,
+            Name: 'Основний договір',
+            Number: 'A-7001',
+            CurrencyCode: 'UAH',
+            PermissibleDebtAmount: 50000,
+            DebtDaysAllowedNumber: 14,
+            OrganizationName: 'ТОВ «АМГ «КОНКОРД»',
+            TypePriceName: 'ЦР',
+            PromotionalTypePriceName: null,
+            AgreementType: 'WithBuyer',
+            FromDate: '2026-01-01T00:00:00Z',
+            ToDate: null,
+            IsManagementAccounting: true,
+            IsAccounting: false,
+            SourceMarkedDeleted: false,
+          }],
           SourceMarkedDeleted: true,
           SourceIdentityValid: false,
           EvidenceTruncated: true,
