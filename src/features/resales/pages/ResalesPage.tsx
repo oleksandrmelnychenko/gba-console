@@ -20,7 +20,7 @@ import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { AppModal } from '../../../shared/ui/AppModal'
 import { CheckboxMultiSelect } from '../../../shared/ui/CheckboxMultiSelect'
 import { notifications } from '@mantine/notifications'
-import { CircleAlert, Download, FileDown, Plus, RefreshCw, RotateCcw, Search, Truck } from 'lucide-react'
+import { CircleAlert, Download, FileDown, Pencil, Plus, RefreshCw, RotateCcw, Search, Truck } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { formatLocalDate, formatLocalDateTime } from '../../../shared/date/dateTime'
@@ -1156,7 +1156,12 @@ export function ResalePage() {
   const [downloadDocument, setDownloadDocument] = useValueState<ResaleExportDocument | null>(null)
   const [downloadModalOpened, setDownloadModalOpened] = useValueState(false)
   const [consignmentNoteOpened, setConsignmentNoteOpened] = useValueState(false)
+  const [editDrawerOpened, setEditDrawerOpened] = useValueState(false)
   const [productCardNetId, setProductCardNetId] = useValueState<string | null>(null)
+  const [itemSearch, setItemSearch] = useValueState('')
+  const [itemAvailability, setItemAvailability] = useValueState<string | null>('all')
+  const [itemSpecification, setItemSpecification] = useValueState<string | null>('all')
+  const [detailTableToolbarSlot, setDetailTableToolbarSlot] = useState<HTMLDivElement | null>(null)
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
   const recalcTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const detailRequestRef = useRef(0)
@@ -1248,6 +1253,64 @@ export function ResalePage() {
   )
 
   const totals = useMemo(() => getDetailTotals(model, rows), [model, rows])
+  const indexedRows = useMemo(
+    () => rows.map((row, index) => ({ ...row, __rowIndex: index } as UpdatedResaleItemModel & { __rowIndex: number })),
+    [rows],
+  )
+  const specificationOptions = useMemo(() => {
+    const values = new Set<string>()
+
+    rows.forEach((row) => {
+      const value = row.ConsignmentItem?.ProductSpecification?.SpecificationCode?.trim()
+
+      if (value) {
+        values.add(value)
+      }
+    })
+
+    return [
+      { label: t('Усі специфікації'), value: 'all' },
+      ...Array.from(values)
+        .sort((left, right) => left.localeCompare(right, 'uk-UA'))
+        .map((value) => ({ label: value, value })),
+    ]
+  }, [rows, t])
+  const filteredRows = useMemo(() => {
+    const query = itemSearch.trim().toLocaleLowerCase('uk-UA')
+
+    return indexedRows.filter((row) => {
+      const hasQuantity = toNumber(row.Qty) > 0
+      const specificationCode = row.ConsignmentItem?.ProductSpecification?.SpecificationCode?.trim() || ''
+
+      if (itemAvailability === 'available' && !hasQuantity) {
+        return false
+      }
+
+      if (itemAvailability === 'unavailable' && hasQuantity) {
+        return false
+      }
+
+      if (itemSpecification && itemSpecification !== 'all' && specificationCode !== itemSpecification) {
+        return false
+      }
+
+      if (!query) {
+        return true
+      }
+
+      const searchValue = [
+        getUpdatedRowVendorCode(row),
+        getUpdatedRowProductName(row),
+        specificationCode,
+        formatResaleProductLocations(getUpdatedRowProductLocations(row)),
+      ]
+        .filter(Boolean)
+        .join(' ')
+        .toLocaleLowerCase('uk-UA')
+
+      return searchValue.includes(query)
+    })
+  }, [indexedRows, itemAvailability, itemSearch, itemSpecification])
 
   function buildUpdatedModel(itemModels: UpdatedResaleItemModel[] = rows): UpdatedResaleModel | null {
     if (!model) {
@@ -1506,9 +1569,9 @@ export function ResalePage() {
           emptyText={t('Позицій не знайдено')}
           getRowId={(_row, index) => String(index)}
           isLoading
-          layoutVersion="resale-detail-items-table-1"
+          layoutVersion="resale-detail-items-table-2"
           loadingText={t('Завантаження перепродажу')}
-          minWidth={1360}
+          minWidth={1800}
           tableId="resale-detail-items"
         />
       </Card>
@@ -1524,9 +1587,34 @@ export function ResalePage() {
   }
 
   return (
-    <Stack gap="lg">
-      <Group justify="flex-end" align="end">
-        <Group gap="xs">
+    <Stack className="resale-detail-page console-table-page" gap={6}>
+      <div className="console-table-shell resale-detail-shell">
+      <div className="resale-detail-overview">
+      <section className="resale-detail-document">
+      <div className="resale-detail-summary">
+        <div className="resale-detail-summary__main">
+          <Text className="app-detail-eyebrow">{changedToInvoice ? t('Інвойс') : t('Рахунок')}</Text>
+          <Group gap="xs" align="center">
+            <Text className="app-detail-title" component="h1">
+              {displayValue(model.ReSale.SaleNumber?.Value)}
+            </Text>
+            <Badge color={getResaleStatusColor(model.ReSale)} variant="light">
+              {getResaleStatusLabel(model.ReSale)}
+            </Badge>
+          </Group>
+          <Text className="resale-detail-heading__meta">{formatDateTime(model.ReSale.Created)}</Text>
+        </div>
+        <div className="resale-detail-summary__metrics">
+          <ResaleSummaryMetric label={t('Сума')} value={formatMoney(totals.amount)} />
+          <ResaleSummaryMetric label={t('Сума, грн')} value={formatMoney(getResaleUahAmount(model.ReSale))} />
+          <ResaleSummaryMetric label={t('Оплачено')} value={formatMoney(model.ReSale.TotalPaymentAmount)} />
+          <ResaleSummaryMetric
+            danger={Number(model.ReSale.DifferencePaymentAndInvoiceAmount || 0) !== 0}
+            label={t('Різниця')}
+            value={formatMoney(model.ReSale.DifferencePaymentAndInvoiceAmount)}
+          />
+        </div>
+        <Group className="resale-detail-summary__actions" gap="xs">
           <Button component={Link} to="/resales" color="gray" variant="light">
             {t('До списку')}
           </Button>
@@ -1536,7 +1624,7 @@ export function ResalePage() {
             </ActionIcon>
           </Tooltip>
         </Group>
-      </Group>
+      </div>
 
       {(error || warning) && (
         <Alert color={warning ? 'yellow' : 'red'} icon={<CircleAlert size={18} />} variant="light">
@@ -1551,50 +1639,48 @@ export function ResalePage() {
         </Alert>
       )}
 
-      <Card withBorder radius="md" padding="md">
-        <Stack gap="md">
-          <Group justify="space-between" align="flex-end" wrap="nowrap">
-            <Text fw={700} size="lg">
-              {changedToInvoice ? t('Інвойс') : t('Рахунок')}
-              {model.ReSale.SaleNumber?.Value ? ` ${model.ReSale.SaleNumber.Value}` : ''}
-            </Text>
-            <DetailValue label={t('Дата створення')} value={formatDateTime(model.ReSale.Created)} />
-          </Group>
-          <SimpleGrid cols={{ base: 1, md: 3 }} spacing="sm">
-            <DetailValue label={t('Статус')} value={getResaleStatusLabel(model.ReSale)} />
-            <DetailValue label={t('Відповідальний')} value={model.ReSale.ChangedToInvoiceBy?.LastName || model.ReSale.User?.LastName} />
-            <DetailValue label={t('Організація')} value={model.ReSale.Organization?.Name || model.ReSale.Organization?.FullName} />
-          </SimpleGrid>
-          <SimpleGrid cols={{ base: 1, md: 2 }} spacing="sm">
-            <ResaleClientSelect
-              disabled={changedToInvoice || isSaving}
-              label={t('Клієнт')}
-              selectedClient={detailInfo.client}
-              onSelectClient={(client) => setDetailInfo((current) => ({ ...current, client, clientAgreement: null }))}
-            />
-            <Select
-              searchable
-              disabled={changedToInvoice || isSaving || !detailInfo.client}
-              data={buildClientAgreementOptions(detailInfo.client, model.ReSale.Organization || undefined, false)}
-              label={t('Угода')}
-              value={detailInfo.clientAgreement?.NetUid || detailInfo.clientAgreement?.Id ? String(detailInfo.clientAgreement.NetUid || detailInfo.clientAgreement.Id) : null}
-              onChange={(value) => {
-                const agreement = findClientAgreement(detailInfo.client, value)
-                setDetailInfo((current) => ({ ...current, clientAgreement: agreement }))
+      <div className="resale-detail-content-grid">
+        <section className="resale-detail-panel resale-detail-panel--facts">
+          <Text className="app-section-title">{t('Дані перепродажу')}</Text>
+          <div className="resale-detail-facts">
+            <ResaleDetailLine label={t('Статус')} value={getResaleStatusLabel(model.ReSale)} />
+            <ResaleDetailLine label={t('Відповідальний')} value={model.ReSale.ChangedToInvoiceBy?.LastName || model.ReSale.User?.LastName} />
+            <ResaleDetailLine label={t('Організація')} value={model.ReSale.Organization?.Name || model.ReSale.Organization?.FullName} />
+            <ResaleDetailLine label={t('Дата створення')} mono value={formatDateTime(model.ReSale.Created)} />
+          </div>
+          <div className="resale-detail-aux-metrics">
+            <ResaleAuxMetric label={t('Кількість')} value={formatAmount(totals.qty)} />
+            <ResaleAuxMetric label={t('ПДВ')} value={formatMoney(totals.vat)} />
+            <ResaleAuxMetric label={t('Вага')} value={formatAmount(totals.weight)} />
+          </div>
+        </section>
+
+        <section className="resale-detail-panel resale-detail-panel--client">
+          <Group className="resale-detail-panel-heading" justify="space-between" align="center" wrap="nowrap">
+            <Text className="app-section-title">{t('Клієнт і угода')}</Text>
+            <Button
+              leftSection={<Pencil size={15} />}
+              onClick={() => {
+                setDetailInfo({
+                  client: model.ReSale.ClientAgreement?.Client || null,
+                  clientAgreement: model.ReSale.ClientAgreement || null,
+                  comment: model.ReSale.Comment || '',
+                })
+                setEditDrawerOpened(true)
               }}
-            />
-          </SimpleGrid>
-          <Textarea
-            disabled={isSaving}
-            label={t('Коментар')}
-            minRows={2}
-            value={detailInfo.comment}
-            onChange={(event) => {
-              const nextValue = event.currentTarget.value
-              setDetailInfo((current) => ({ ...current, comment: nextValue }))
-            }}
-          />
-          <Group justify="flex-end">
+            >
+              {t('Редагувати')}
+            </Button>
+          </Group>
+          <div className="resale-detail-client-overview">
+            <ResaleDetailLine label={t('Клієнт')} value={getClientName(model.ReSale.ClientAgreement?.Client)} />
+            <ResaleDetailLine label={t('Угода')} value={getAgreementName(model.ReSale.ClientAgreement?.Agreement)} />
+          </div>
+          <div className="resale-detail-comment">
+            <Text className="resale-detail-comment__label">{t('Коментар')}</Text>
+            <Text className="resale-detail-comment__value">{displayValue(model.ReSale.Comment)}</Text>
+          </div>
+          <Group className="resale-detail-document-actions" justify="flex-end">
             <Button disabled={!model.ReSale.NetUid} leftSection={<Download size={16} />} loading={isExporting} variant="outline" onClick={() => exportDocument(DocumentType.PaymentDocument)}>
               {t('Платіжний документ')}
             </Button>
@@ -1608,51 +1694,155 @@ export function ResalePage() {
                 {t('ТТН')}
               </Button>
             )}
-            <Button disabled={isCompleted || isSaving} loading={isSaving} variant="outline" onClick={() => recalculate()}>
-              {t('Перерахувати')}
-            </Button>
-            <Button disabled={isSaving} loading={isSaving} onClick={saveResale}>
-              {t('Зберегти')}
-            </Button>
-            {!changedToInvoice && detailInfo.clientAgreement && (
-              <Button disabled={isSaving || isCompleted} loading={isSaving} color="green" onClick={changeToInvoice}>
-                {t('Зробити інвойсом')}
-              </Button>
-            )}
-            {changedToInvoice && detailInfo.clientAgreement && !model.ReSale.IsCompleted && (
-              <Button disabled={isSaving || isCompleted} loading={isSaving} color="green" onClick={completeInvoice}>
-                {t('Завершити')}
-              </Button>
-            )}
           </Group>
-        </Stack>
-      </Card>
+        </section>
+      </div>
+      </section>
 
-      <TotalsCard
-        items={[
-          { label: t('Кількість'), value: formatAmount(totals.qty) },
-          { label: t('Сума'), value: formatMoney(totals.amount) },
-          { label: t('Сума, грн'), value: formatMoney(getResaleUahAmount(model.ReSale)) },
-          { label: t('ПДВ'), value: formatMoney(totals.vat) },
-          { label: t('Вага'), value: formatAmount(totals.weight) },
-          { label: t('Оплачено'), value: formatMoney(model.ReSale.TotalPaymentAmount) },
-          { label: t('Різниця'), value: formatMoney(model.ReSale.DifferencePaymentAndInvoiceAmount) },
-        ]}
-      />
+      </div>
 
-      <Card withBorder radius="md" padding="md">
+      <section className="resale-detail-table-section">
+        <Group className="resale-detail-table-heading" justify="space-between" align="center">
+          <Text className="app-section-title">{t('Позиції перепродажу')}</Text>
+          <Badge color="gray" variant="light">
+            {filteredRows.length} / {rows.length}
+          </Badge>
+        </Group>
+        <div className="console-table-command-bar resale-detail-command-bar">
+          <TextInput
+            label={t('Пошук')}
+            leftSection={<Search size={16} />}
+            placeholder={t('Код, назва, специфікація або розміщення')}
+            value={itemSearch}
+            onChange={(event) => setItemSearch(event.currentTarget.value)}
+          />
+          <Select
+            data={[
+              { label: t('Усі позиції'), value: 'all' },
+              { label: t('З кількістю'), value: 'available' },
+              { label: t('Без кількості'), value: 'unavailable' },
+            ]}
+            label={t('Наявність')}
+            value={itemAvailability}
+            onChange={setItemAvailability}
+          />
+          <Select
+            searchable
+            data={specificationOptions}
+            label={t('Специфікація')}
+            value={itemSpecification}
+            onChange={setItemSpecification}
+          />
+          <div className="resale-detail-command-bar__actions">
+            <Tooltip label={t('Скинути фільтри')}>
+              <ActionIcon
+                aria-label={t('Скинути фільтри')}
+                color="gray"
+                size={36}
+                variant="light"
+                onClick={() => {
+                  setItemSearch('')
+                  setItemAvailability('all')
+                  setItemSpecification('all')
+                }}
+              >
+                <RotateCcw size={17} />
+              </ActionIcon>
+            </Tooltip>
+            <div ref={setDetailTableToolbarSlot} className="resale-detail-table-toolbar-slot" />
+          </div>
+        </div>
+        <div className="console-table-body resale-detail-table-body">
         <DataTable
           columns={columns}
-          data={rows.map((row, index) => ({ ...row, __rowIndex: index } as UpdatedResaleItemModel & { __rowIndex: number }))}
+          data={filteredRows}
           defaultLayout={DETAIL_TABLE_DEFAULT_LAYOUT}
           emptyText={t('Позицій не знайдено')}
           getRowId={(row, index) => String(row.ConsignmentItem?.NetUid || row.ConsignmentItem?.Id || index)}
-          layoutVersion="resale-detail-items-table-1"
-          maxHeight="calc(100vh - 520px)"
-          minWidth={1360}
+          layoutVersion="resale-detail-items-table-2"
+          height="100%"
+          minWidth={1800}
           tableId="resale-detail-items"
+          toolbarPortalTarget={detailTableToolbarSlot}
         />
-      </Card>
+        </div>
+      </section>
+      </div>
+
+      <AppDrawer
+        opened={editDrawerOpened}
+        size="compact"
+        title={t('Редагування перепродажу')}
+        footer={(
+          <Group className="resale-edit-drawer__footer" justify="space-between" wrap="nowrap">
+            <Group gap="xs">
+              {!changedToInvoice && detailInfo.clientAgreement && (
+                <Button disabled={isSaving || isCompleted} loading={isSaving} color="green" onClick={changeToInvoice}>
+                  {t('Зробити інвойсом')}
+                </Button>
+              )}
+              {changedToInvoice && detailInfo.clientAgreement && !model.ReSale.IsCompleted && (
+                <Button disabled={isSaving || isCompleted} loading={isSaving} color="green" onClick={completeInvoice}>
+                  {t('Завершити')}
+                </Button>
+              )}
+            </Group>
+            <Group gap="xs">
+              <Button variant="default" onClick={() => setEditDrawerOpened(false)}>
+                {t('Скасувати')}
+              </Button>
+              <Button disabled={isSaving} loading={isSaving} onClick={saveResale}>
+                {t('Зберегти')}
+              </Button>
+            </Group>
+          </Group>
+        )}
+        onClose={() => setEditDrawerOpened(false)}
+      >
+        <Stack className="resale-edit-drawer" gap="md">
+          <section className="resale-edit-drawer__section">
+            <Text className="app-section-title">{t('Клієнт і угода')}</Text>
+            <SimpleGrid cols={{ base: 1, md: 2 }} spacing="sm">
+              <ResaleClientSelect
+                disabled={changedToInvoice || isSaving}
+                label={t('Клієнт')}
+                selectedClient={detailInfo.client}
+                onSelectClient={(client) => setDetailInfo((current) => ({ ...current, client, clientAgreement: null }))}
+              />
+              <Select
+                searchable
+                disabled={changedToInvoice || isSaving || !detailInfo.client}
+                data={buildClientAgreementOptions(detailInfo.client, model.ReSale.Organization || undefined, false)}
+                label={t('Угода')}
+                value={detailInfo.clientAgreement?.NetUid || detailInfo.clientAgreement?.Id ? String(detailInfo.clientAgreement.NetUid || detailInfo.clientAgreement.Id) : null}
+                onChange={(value) => {
+                  const agreement = findClientAgreement(detailInfo.client, value)
+                  setDetailInfo((current) => ({ ...current, clientAgreement: agreement }))
+                }}
+              />
+            </SimpleGrid>
+            <Textarea
+              disabled={isSaving}
+              label={t('Коментар')}
+              minRows={4}
+              value={detailInfo.comment}
+              onChange={(event) => {
+                const nextValue = event.currentTarget.value
+                setDetailInfo((current) => ({ ...current, comment: nextValue }))
+              }}
+            />
+          </section>
+          <section className="resale-edit-drawer__section resale-edit-drawer__section--calculation">
+            <div>
+              <Text className="app-section-title">{t('Розрахунок')}</Text>
+              <Text className="resale-edit-drawer__hint">{t('Оновіть суми після зміни клієнта, угоди або позицій.')}</Text>
+            </div>
+            <Button disabled={isCompleted || isSaving} loading={isSaving} leftSection={<RefreshCw size={16} />} variant="light" onClick={() => recalculate()}>
+              {t('Перерахувати')}
+            </Button>
+          </section>
+        </Stack>
+      </AppDrawer>
 
       <DownloadDocumentModal
         document={downloadDocument}
@@ -3383,9 +3573,9 @@ function ConsignmentNoteSettingsDrawer({
   )
 }
 
-function TotalsCard({ items }: { items: Array<{ label: string; value: string }> }) {
+function TotalsCard({ items, className }: { items: Array<{ label: string; value: string }>; className?: string }) {
   return (
-    <SimpleGrid cols={{ base: 2, md: items.length }} spacing="sm">
+    <SimpleGrid className={className} cols={{ base: 2, md: items.length }} spacing="sm">
       {items.map((item) => (
         <Card className="resales-total-card" key={item.label} withBorder radius="sm" padding="sm">
           <Text className="resales-total-label">
@@ -3398,16 +3588,30 @@ function TotalsCard({ items }: { items: Array<{ label: string; value: string }> 
   )
 }
 
-function DetailValue({ label, value }: { label: string; value?: string | number }) {
+function ResaleSummaryMetric({ label, value, danger = false }: { label: string; value: string; danger?: boolean }) {
   return (
-    <Card className="resales-detail-value" withBorder radius="sm" padding="sm">
-      <Text className="resales-total-label">
-        {label}
-      </Text>
-      <Text className="resales-detail-value-text" lineClamp={2}>
-        {displayValue(value)}
-      </Text>
-    </Card>
+    <div className={`resale-detail-summary-metric${danger ? ' is-danger' : ''}`}>
+      <span>{label}</span>
+      <strong>{value}</strong>
+    </div>
+  )
+}
+
+function ResaleDetailLine({ label, value, mono = false }: { label: string; value?: string | number; mono?: boolean }) {
+  return (
+    <div className="app-leader-row resale-detail-fact">
+      <span className="app-leader-row-label">{label}</span>
+      <span className={`app-leader-row-value${mono ? ' is-mono' : ''}`}>{displayValue(value)}</span>
+    </div>
+  )
+}
+
+function ResaleAuxMetric({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="resale-detail-aux-metric">
+      <span>{label}</span>
+      <strong>{value}</strong>
+    </div>
   )
 }
 
