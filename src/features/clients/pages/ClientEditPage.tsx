@@ -36,6 +36,7 @@ import { useClientFormLookups } from '../hooks/useClientFormLookups'
 import { BankDetailsFields } from '../components/form/BankDetailsFields'
 import { ContactInfoFields } from '../components/form/ContactInfoFields'
 import { EditClientTypePanel } from '../components/EditClientTypePanel'
+import { canEditClientLifecycle, isSourceManagedClient } from '../clientSourceOwnership'
 import { EcommercePanel } from '../components/ecommerce/EcommercePanel'
 import { GeneralInfoFields, type ClientFormRole } from '../components/form/GeneralInfoFields'
 import { PerfectClientPanel } from '../components/perfect-client/PerfectClientPanel'
@@ -157,6 +158,7 @@ export function ClientEditPage() {
   const basePath = location.pathname.startsWith('/suppliers/edit') ? '/suppliers/edit' : '/clients/edit'
   const returnPath = routeState?.returnPath || (basePath === '/suppliers/edit' ? '/suppliers' : '/clients')
   const role = useMemo(() => getClientRole(client), [client])
+  const sourceManaged = isSourceManagedClient(client)
   const {
     isLoading: isLoadingLookups,
     lookups,
@@ -280,6 +282,10 @@ export function ClientEditPage() {
   }
 
   function setClientTypeRole(clientType: ClientType, clientTypeRole: ClientTypeRole) {
+    if (sourceManaged) {
+      return
+    }
+
     setClient((currentClient) =>
       currentClient
         ? {
@@ -617,7 +623,7 @@ export function ClientEditPage() {
   }
 
   async function handleDelete() {
-    if (!client?.NetUid) {
+    if (!client?.NetUid || sourceManaged) {
       return
     }
 
@@ -657,8 +663,14 @@ export function ClientEditPage() {
       title={
         client ? (
           <ClientEditTitle
-            canEditActive={hasPermission(EDIT_CLIENT_ACTIVE_PERMISSION)}
-            canEditType={hasPermission(EDIT_CLIENT_TYPE_PERMISSION)}
+            canEditActive={canEditClientLifecycle(
+              client,
+              hasPermission(EDIT_CLIENT_ACTIVE_PERMISSION),
+            )}
+            canEditType={canEditClientLifecycle(
+              client,
+              hasPermission(EDIT_CLIENT_TYPE_PERMISSION),
+            )}
             client={client}
             onToggleActive={(active) => setField('IsActive', active)}
             onTypeClick={() => setTypePanelOpened(true)}
@@ -668,7 +680,10 @@ export function ClientEditPage() {
       onClose={closeSheet}
       footer={
         <ClientEditActions
-          canDelete={hasPermission(EDIT_CLIENT_DELETE_PERMISSION)}
+          canDelete={canEditClientLifecycle(
+            client,
+            hasPermission(EDIT_CLIENT_DELETE_PERMISSION),
+          )}
           client={client}
           isDeleting={isDeleting}
           isSaving={isSaving}
@@ -738,14 +753,16 @@ export function ClientEditPage() {
         onConfirm={handleDelete}
       />
 
-      <EditClientTypePanel
-        currentRoleId={client?.ClientInRole?.ClientTypeRole?.Id}
-        currentRoleNetUid={client?.ClientInRole?.ClientTypeRole?.NetUid}
-        currentTypeNetUid={client?.ClientInRole?.ClientType?.NetUid}
-        opened={typePanelOpened}
-        onClose={() => setTypePanelOpened(false)}
-        onSelect={setClientTypeRole}
-      />
+      {!sourceManaged && (
+        <EditClientTypePanel
+          currentRoleId={client?.ClientInRole?.ClientTypeRole?.Id}
+          currentRoleNetUid={client?.ClientInRole?.ClientTypeRole?.NetUid}
+          currentTypeNetUid={client?.ClientInRole?.ClientType?.NetUid}
+          opened={typePanelOpened}
+          onClose={() => setTypePanelOpened(false)}
+          onSelect={setClientTypeRole}
+        />
+      )}
     </Stack>
     </AppDrawer>
   )
@@ -1146,6 +1163,7 @@ function EditStepContent({
         client={client}
         isProvider={role.isProvider}
         mode="edit"
+        sourceManaged={sourceManaged}
         // Legacy 'pricing' links still render both halves side by side.
         section={step === 'pricing' ? undefined : step}
         onChange={onClientChange}
@@ -1235,10 +1253,6 @@ function EditStepContent({
 
 function getClientType(client: Client | null): number | undefined {
   return client?.ClientInRole?.ClientType?.Type
-}
-
-function isSourceManagedClient(client: Client | null): boolean {
-  return Boolean(client?.SourceAmgCode || client?.SourceFenixCode)
 }
 
 function isLookupBackedEditStep(step: string): boolean {

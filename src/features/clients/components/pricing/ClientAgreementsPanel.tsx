@@ -260,7 +260,7 @@ export function ClientAgreementsPanel({
             const isHighlighted = Boolean(
               selectedAgreementNetId && agreement.NetUid === selectedAgreementNetId,
             )
-            const sourceManaged = Boolean(agreement.SourceAmgCode || agreement.SourceFenixCode)
+            const sourceManaged = agreement.SourceAmgCode != null || agreement.SourceFenixCode != null
 
             return isProvider ? (
               <ProviderAgreementItem

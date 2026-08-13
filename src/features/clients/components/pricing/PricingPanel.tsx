@@ -52,6 +52,7 @@ export type PricingPanelProps = {
   isProvider: boolean
   mode?: PricingPanelMode
   disabled?: boolean
+  sourceManaged?: boolean
   /** Render only one half of the panel (its own edit step); omit for the
    *  legacy side-by-side layout. */
   section?: PricingPanelSection
@@ -95,6 +96,7 @@ export function PricingPanel({
   isProvider,
   mode = 'edit',
   disabled = false,
+  sourceManaged = false,
   section,
   onChange,
   onAddContractDocuments,
@@ -433,7 +435,7 @@ export function PricingPanel({
       <Card className="app-section-card" withBorder padding="md" radius="md">
         <ManagerPicker
           client={client}
-          disabled={disabled}
+          disabled={disabled || sourceManaged}
           role={isProvider ? 'provider' : 'buyer'}
           onChange={onChange}
         />

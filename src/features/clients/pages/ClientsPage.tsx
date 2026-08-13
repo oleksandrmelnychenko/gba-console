@@ -67,6 +67,7 @@ import { ClientCommercialStructureView } from '../components/structure/ClientCom
 import { ClientSourceQualityBadge } from '../components/structure/ClientSourceQualityBadge'
 import type { SolvencyScore } from '../solvencyTypes'
 import { clientNetUidKey, indexByClientNetUid } from '../clientNetUidIndex'
+import { isSourceManagedClient } from '../clientSourceOwnership'
 import './clients-page.css'
 
 const pageSizeOptions = PAGINATOR_PAGE_SIZE_OPTIONS
@@ -559,7 +560,7 @@ function useClientsPageModel() {
   }
 
   async function handleSwitchActive(client: Client) {
-    if (!client.NetUid) {
+    if (!client.NetUid || isSourceManagedClient(client)) {
       return
     }
 
@@ -959,6 +960,7 @@ export function ClientActionsModal({
 }: ClientActionsModalProps) {
   const { t } = useI18n()
   const isActive = client?.IsActive !== false
+  const canSwitchActive = !isSourceManagedClient(client)
   const [structureCountResult, setStructureCountResult] = useState<{
     clientNetUid: string
     count: number | null
@@ -1089,19 +1091,26 @@ export function ClientActionsModal({
             </Button>
           </Stack>
 
-          <Divider />
-
-          <Button
-            fullWidth
-            color={isActive ? 'gray' : 'green'}
-            justify="flex-start"
-            leftSection={isActive ? <ToggleLeft size={16} /> : <ToggleRight size={16} />}
-            loading={isActiveLoading}
-            variant="light"
-            onClick={() => onSwitchActive(client)}
-          >
-            {isActive ? t('Позначити неактивним') : t('Позначити активним')}
-          </Button>
+          {canSwitchActive ? (
+            <>
+              <Divider />
+              <Button
+                fullWidth
+                color={isActive ? 'gray' : 'green'}
+                justify="flex-start"
+                leftSection={isActive ? <ToggleLeft size={16} /> : <ToggleRight size={16} />}
+                loading={isActiveLoading}
+                variant="light"
+                onClick={() => onSwitchActive(client)}
+              >
+                {isActive ? t('Позначити неактивним') : t('Позначити активним')}
+              </Button>
+            </>
+          ) : (
+            <Text c="dimmed" size="xs">
+              {t('Статус керується синхронізацією з 1С')}
+            </Text>
+          )}
         </Stack>
       )}
     </AppModal>

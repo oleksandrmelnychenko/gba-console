@@ -36,6 +36,7 @@ import {
   switchClientActiveState,
 } from '../api/clientsApi'
 import type { Client, ClientAgreement, ClientFilterItem, ClientPrintDocument } from '../types'
+import { isSourceManagedClient } from '../clientSourceOwnership'
 import '../../../shared/ui/console-table-page.css'
 import './suppliers-page.css'
 
@@ -323,7 +324,7 @@ function useSuppliersPageModel() {
   }
 
   async function handleSwitchActive(supplier: Client) {
-    if (!supplier.NetUid) {
+    if (!supplier.NetUid || isSourceManagedClient(supplier)) {
       return
     }
 
@@ -709,6 +710,7 @@ function SupplierDetailDrawer({
 }: SupplierDetailDrawerProps) {
   const { t } = useI18n()
   const isActive = supplier?.IsActive !== false
+  const canSwitchActive = !isSourceManagedClient(supplier)
 
   return (
     <AppModal
@@ -770,19 +772,26 @@ function SupplierDetailDrawer({
             </Button>
           </section>
 
-          <Divider />
-
-          <Button
-            fullWidth
-            color={isActive ? 'gray' : 'green'}
-            justify="flex-start"
-            leftSection={isActive ? <ToggleLeft size={16} /> : <ToggleRight size={16} />}
-            loading={isActiveLoading}
-            variant="light"
-            onClick={() => onSwitchActive(supplier)}
-          >
-            {isActive ? t('Позначити неактивним') : t('Позначити активним')}
-          </Button>
+          {canSwitchActive ? (
+            <>
+              <Divider />
+              <Button
+                fullWidth
+                color={isActive ? 'gray' : 'green'}
+                justify="flex-start"
+                leftSection={isActive ? <ToggleLeft size={16} /> : <ToggleRight size={16} />}
+                loading={isActiveLoading}
+                variant="light"
+                onClick={() => onSwitchActive(supplier)}
+              >
+                {isActive ? t('Позначити неактивним') : t('Позначити активним')}
+              </Button>
+            </>
+          ) : (
+            <Text c="dimmed" size="xs">
+              {t('Статус керується синхронізацією з 1С')}
+            </Text>
+          )}
         </div>
       )}
     </AppModal>
@@ -1481,4 +1490,3 @@ function displayValue(value?: number | string | null): string {
   // Empty values render as blank cells (no dash placeholder).
   return value?.trim() || ''
 }
-
