@@ -909,9 +909,19 @@ function useShipmentsTabModel({ onCarriedOut }: ShipmentsTabModelOptions = {}) {
   }
 }
 
-export function ShipmentsTab() {
+type ShipmentsTabProps = {
+  createRequest?: number
+}
+
+export function ShipmentsTab({ createRequest = 0 }: ShipmentsTabProps) {
   const { t } = useI18n()
   const [activeTab, setActiveTab] = useState<string | null>(SHIPMENTS_TAB_ALL)
+
+  useEffect(() => {
+    if (createRequest > 0) {
+      setActiveTab(SHIPMENTS_TAB_AUTO)
+    }
+  }, [createRequest])
 
   return (
     <Stack className="warehouse-ukraine-tab" gap={0}>

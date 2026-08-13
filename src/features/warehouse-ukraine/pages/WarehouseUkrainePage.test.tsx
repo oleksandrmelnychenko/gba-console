@@ -14,17 +14,18 @@ vi.mock('../api/shellApi', () => ({
 }))
 
 vi.mock('../components/SalesTab', () => ({
-  SalesTab: () => (
+  SalesTab: ({ onCreateShipment }: { onCreateShipment: () => void }) => (
     <div data-testid="sales-tab-content">
       <div className="app-filter-bar" data-testid="sales-filter" />
       <div className="console-table-body" data-testid="sales-table" />
+      <button type="button" onClick={onCreateShipment}>Create shipment</button>
     </div>
   ),
 }))
 
 vi.mock('../components/ShipmentsTab', () => ({
-  ShipmentsTab: () => (
-    <div data-testid="shipments-tab-content">
+  ShipmentsTab: ({ createRequest }: { createRequest?: number }) => (
+    <div data-create-request={createRequest} data-testid="shipments-tab-content">
       <div className="app-filter-bar" data-testid="shipments-filter" />
       <div className="console-table-body" data-testid="shipments-table" />
     </div>
@@ -107,5 +108,18 @@ describe('WarehouseUkrainePage layout', () => {
     expect((tabsAfter?.compareDocumentPosition(shipmentsFilter) ?? 0) & Node.DOCUMENT_POSITION_FOLLOWING).not.toBe(0)
     expect(salesPanel?.style.display).toBe('none')
     expect(shipmentsPanel?.style.display).toBe('')
+  })
+
+  it('opens shipment creation instead of the sale wizard from the invoices tab', async () => {
+    renderPage()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Create shipment' }))
+
+    const shipments = await screen.findByTestId('shipments-tab-content')
+    const shipmentsPanel = shipments.closest('.warehouse-ukraine-tab-panel') as HTMLElement | null
+
+    expect(shipments.dataset.createRequest).toBe('1')
+    expect(shipmentsPanel?.style.display).toBe('')
+    expect(screen.getByRole('button', { name: 'Відвантаження' }).getAttribute('aria-pressed')).toBe('true')
   })
 })

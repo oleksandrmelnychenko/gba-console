@@ -30,7 +30,6 @@ type WarehouseUkraineTab = {
   label: string
   permissionKey: string
   showBadge?: boolean
-  render: () => ReactNode
 }
 
 export function WarehouseUkrainePage() {
@@ -56,41 +55,35 @@ export function WarehouseUkrainePage() {
         value: TAB_SALES,
         label: t('Накладні'),
         permissionKey: PKEY_INVOICES,
-        render: () => <SalesTab />,
       },
       {
         value: TAB_SHIPMENTS,
         label: t('Відвантаження'),
         permissionKey: PKEY_SHIPMENTS,
-        render: () => <ShipmentsTab />,
       },
       {
         value: TAB_ORDERS,
         label: t('Замовлення на Україну'),
         permissionKey: PKEY_UKRAINE_ORDER,
-        render: () => <OrdersTab />,
       },
       {
         value: TAB_EDITING,
         label: t('Протокол актів редагування накладних'),
         permissionKey: PKEY_UKRAINE_ORDER,
         showBadge: true,
-        render: () => <EditingTab onCountChanged={reloadEditingTotal} />,
       },
       {
         value: TAB_INVOICE_REGISTER,
         label: t('Реєстр накладних'),
         permissionKey: PKEY_UKRAINE_ORDER,
-        render: () => <InvoiceRegisterTab />,
       },
       {
         value: TAB_VERIFICATION,
         label: t('Звірка'),
         permissionKey: PKEY_UKRAINE_ORDER,
-        render: () => <DocumentVerificationTab />,
       },
     ],
-    [reloadEditingTotal, t],
+    [t],
   )
 
   const visibleTabs = useMemo(() => {
@@ -99,6 +92,7 @@ export function WarehouseUkrainePage() {
 
   const defaultTab = visibleTabs[0]?.value ?? ''
   const [activeTab, setActiveTab] = useValueState(defaultTab)
+  const [shipmentCreateRequest, setShipmentCreateRequest] = useValueState(0)
   const activeTabItem = visibleTabs.find((tab) => tab.value === activeTab) ?? visibleTabs[0]
   const resolvedActiveValue = activeTabItem?.value ?? ''
 
@@ -114,6 +108,35 @@ export function WarehouseUkrainePage() {
   }, [resolvedActiveValue, mountedTabs, setMountedTabs])
 
   usePageBreadcrumb(activeTabItem?.label ?? null)
+
+  const openShipmentCreation = useCallback(() => {
+    setShipmentCreateRequest((current) => current + 1)
+    setActiveTab(TAB_SHIPMENTS)
+  }, [setActiveTab, setShipmentCreateRequest])
+
+  const renderTab = (tabValue: string): ReactNode => {
+    switch (tabValue) {
+      case TAB_SALES:
+        return (
+          <SalesTab
+            canCreateShipment={hasPermission(PKEY_SHIPMENTS)}
+            onCreateShipment={openShipmentCreation}
+          />
+        )
+      case TAB_SHIPMENTS:
+        return <ShipmentsTab createRequest={shipmentCreateRequest} />
+      case TAB_ORDERS:
+        return <OrdersTab />
+      case TAB_EDITING:
+        return <EditingTab onCountChanged={reloadEditingTotal} />
+      case TAB_INVOICE_REGISTER:
+        return <InvoiceRegisterTab />
+      case TAB_VERIFICATION:
+        return <DocumentVerificationTab />
+      default:
+        return null
+    }
+  }
 
   return (
     <Stack className="warehouse-ukraine-page console-table-page" gap={6}>
@@ -151,7 +174,7 @@ export function WarehouseUkrainePage() {
               className="warehouse-ukraine-tab-panel"
               style={tab.value === resolvedActiveValue ? undefined : { display: 'none' }}
             >
-              {tab.render()}
+              {renderTab(tab.value)}
             </Box>
           ))}
       </div>

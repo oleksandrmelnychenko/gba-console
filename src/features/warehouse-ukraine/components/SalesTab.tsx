@@ -2,10 +2,7 @@ import { ActionIcon, Alert, Anchor, Badge, Button, Group, Stack, Text, TextInput
 import { useDebouncedValue } from '@mantine/hooks'
 import { CircleAlert, Pencil, Plus, RotateCcw } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
-import { useAuth } from '../../auth/useAuth'
-import { NewSaleWizard } from '../../sales-ukraine/components/new-sale-wizard/NewSaleWizard'
 import { getSaleById } from '../../sales-ukraine/api/salesUkraineApi'
-import { SALES_UKRAINE_EDIT_PERMISSION } from '../../sales-ukraine/permissions'
 import { SaleDetailsDrawer } from '../../sales-ukraine/components/SaleDetailsDrawer'
 import { usePersistentSaleJsonMutationRunner } from '../../sales-ukraine/usePersistentSaleJsonMutation'
 import type { SalesUkraineSale } from '../../sales-ukraine/types'
@@ -403,12 +400,14 @@ function salesListReducer(state: SalesListState, action: SalesListAction): Sales
   }
 }
 
-export function SalesTab() {
+type SalesTabProps = {
+  canCreateShipment: boolean
+  onCreateShipment: () => void
+}
+
+export function SalesTab({ canCreateShipment, onCreateShipment }: SalesTabProps) {
   const model = useSalesTabModel()
   const { t } = useI18n()
-  const { hasPermission } = useAuth()
-  const canCreateSale = hasPermission(SALES_UKRAINE_EDIT_PERMISSION)
-  const [isNewSaleOpen, setNewSaleOpen] = useState(false)
   const [tableToolbarSlot, setTableToolbarSlot] = useState<HTMLDivElement | null>(null)
 
   return (
@@ -460,12 +459,12 @@ export function SalesTab() {
           <div className="warehouse-ukraine-command-actions">
             <Button
               color={CREATE_ACTION_COLOR}
-              disabled={!canCreateSale}
+              disabled={!canCreateShipment}
               leftSection={<Plus size={16} />}
               size="sm"
-              onClick={() => setNewSaleOpen(true)}
+              onClick={onCreateShipment}
             >
-              {t('Утворити')}
+              {t('Створити відвантаження')}
             </Button>
           </div>
         </div>
@@ -509,17 +508,6 @@ export function SalesTab() {
         isLoading={model.isDownloading}
         opened={model.downloadOpened}
         onClose={model.closeDownload}
-      />
-      <NewSaleWizard
-        opened={canCreateSale && isNewSaleOpen}
-        onClose={() => {
-          setNewSaleOpen(false)
-          model.reload()
-        }}
-        onCreated={() => {
-          setNewSaleOpen(false)
-          model.reload()
-        }}
       />
     </Stack>
   )
