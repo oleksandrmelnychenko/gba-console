@@ -29,6 +29,7 @@ import type {
   Organization,
   Pricing,
 } from '../../types'
+import { isSourceManagedAgreement } from '../../clientSourceOwnership'
 
 const EDIT_AGREEMENT_PERMISSION = 'Clients_Edit_Contract_Pricing_EditBtn_PKEY'
 const AGREEMENT_DEFAULT_NAME = 'Default'
@@ -260,7 +261,7 @@ export function ClientAgreementsPanel({
             const isHighlighted = Boolean(
               selectedAgreementNetId && agreement.NetUid === selectedAgreementNetId,
             )
-            const sourceManaged = agreement.SourceAmgCode != null || agreement.SourceFenixCode != null
+            const sourceManaged = isSourceManagedAgreement(agreement)
 
             return isProvider ? (
               <ProviderAgreementItem

@@ -1196,7 +1196,13 @@ function EditStepContent({
   }
 
   if (step === 'e-commerce') {
-    return <EcommercePanel client={client} onChange={onClientChange} />
+    return (
+      <EcommercePanel
+        client={client}
+        sourceManaged={sourceManaged}
+        onChange={onClientChange}
+      />
+    )
   }
 
   if (step === 'sales') {

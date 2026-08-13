@@ -21,10 +21,11 @@ const DEFAULT_CLEAR_CART_AFTER_DAYS = 3
 
 export type EcommercePanelProps = {
   client: Client
+  sourceManaged?: boolean
   onChange: (client: Client) => void
 }
 
-export function EcommercePanel({ client, onChange }: EcommercePanelProps) {
+export function EcommercePanel({ client, sourceManaged = false, onChange }: EcommercePanelProps) {
   const { t } = useI18n()
   const [mobileNumber, setMobileNumber] = useValueState(client.MobileNumber ?? '')
   const [password, setPassword] = useValueState('')
@@ -52,10 +53,12 @@ export function EcommercePanel({ client, onChange }: EcommercePanelProps) {
 
     try {
       await changeClientPassword(client.NetUid ?? '', password, mobileNumber)
-      onChange({
-        ...client,
-        MobileNumber: mobileNumber,
-      })
+      if (!sourceManaged) {
+        onChange({
+          ...client,
+          MobileNumber: mobileNumber,
+        })
+      }
       setPassword('')
       setConfirmPassword('')
       notifications.show({
@@ -86,11 +89,17 @@ export function EcommercePanel({ client, onChange }: EcommercePanelProps) {
           <Text fw={600}>{t('Зміна пароля')}</Text>
           <TextInput
             autoFocus
+            disabled={sourceManaged}
             label={t('Мобільний телефон')}
             value={mobileNumber}
             onChange={(event) => setMobileNumber(event.currentTarget.value)}
             onKeyDown={handleFieldKeyDown}
           />
+          {sourceManaged && (
+            <Text c="dimmed" size="xs">
+              {t('Телефон керується синхронізацією з 1С; тут змінюється лише пароль')}
+            </Text>
+          )}
           <PasswordInput
             autoComplete="new-password"
             label={t('Пароль')}

@@ -226,6 +226,8 @@ export type Agreement = {
   Deleted?: boolean
   SourceAmgCode?: number | null
   SourceFenixCode?: number | null
+  SourceAmgId?: string | number[] | null
+  SourceFenixId?: string | number[] | null
 }
 
 export type ClientAgreement = {
@@ -755,6 +757,8 @@ export type Client = {
   Updated?: Date | string
   SourceAmgCode?: number | null
   SourceFenixCode?: number | null
+  SourceAmgId?: string | number[] | null
+  SourceFenixId?: string | number[] | null
 }
 
 export type ClientUserProfile = {
