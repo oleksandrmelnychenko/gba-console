@@ -89,6 +89,7 @@ import {
   formatAmount,
   formatExchangeRate,
   formatPrice,
+  formatUnitPrice,
   getProductCode,
   getProductGroupNames,
   getProductMainImage,
@@ -3297,7 +3298,7 @@ function ProductIncomeMovementsGrid({
         width: 112,
         align: 'right',
         accessor: (row) => row.ManagementEurUnitPrice,
-        cell: (row) => renderMovementPrice(row.ManagementEurUnitPrice),
+        cell: (row) => renderMovementUnitPrice(row.ManagementEurUnitPrice),
       },
       {
         id: 'accountingEurUnitPrice',
@@ -3305,7 +3306,7 @@ function ProductIncomeMovementsGrid({
         width: 112,
         align: 'right',
         accessor: (row) => row.AccountingEurUnitPrice,
-        cell: (row) => renderMovementPrice(row.AccountingEurUnitPrice),
+        cell: (row) => renderMovementUnitPrice(row.AccountingEurUnitPrice),
       },
       {
         id: 'weight',
@@ -3732,6 +3733,12 @@ function renderMovementExchangeRate(value?: number | null) {
 
 function renderMovementPrice(value?: number | null) {
   const text = typeof value === 'number' && Number.isFinite(value) ? formatPrice(value) : ''
+
+  return <span className="app-money" title={text}>{text}</span>
+}
+
+function renderMovementUnitPrice(value?: number | null) {
+  const text = typeof value === 'number' && Number.isFinite(value) ? formatUnitPrice(value) : ''
 
   return <span className="app-money" title={text}>{text}</span>
 }
