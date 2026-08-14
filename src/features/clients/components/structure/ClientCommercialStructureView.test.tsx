@@ -1,5 +1,5 @@
 import { MantineProvider } from '@mantine/core'
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 import { theme } from '../../../../shared/theme/theme'
 import { mutateClientIdentity } from '../../api/clientsApi'
@@ -33,7 +33,7 @@ describe('ClientCommercialStructureView', () => {
     expect(regionCodeValues.length).toBeGreaterThanOrEqual(2)
     expect(screen.getByText('код 01234567')).toBeTruthy()
     expect(regionCodeValues.some((value) => Boolean(value.closest('.client-card-code-chip')))).toBe(true)
-    expect(screen.getByText('AMG')).toBeTruthy()
+    expect(screen.getAllByText('AMG').length).toBeGreaterThanOrEqual(2)
     expect(screen.getByText('Марія Іваненко')).toBeTruthy()
     expect(screen.getByText('UA123456789 · UAH')).toBeTruthy()
     expect(screen.getByText('client@example.test')).toBeTruthy()
@@ -60,6 +60,24 @@ describe('ClientCommercialStructureView', () => {
     )
 
     expect(screen.getByText('Показано не всю групу')).toBeTruthy()
+  })
+
+  it('shows the canonical family code with the 1C group name and every card agreement', () => {
+    const structure = {
+      ...createStructure(),
+      GroupName: 'Хмельницький - Назаришин В. М.',
+    }
+    const { container } = render(
+      <MantineProvider env="test" theme={theme}>
+        <ClientCommercialStructureView structure={structure} t={t} />
+      </MantineProvider>,
+    )
+
+    expect(screen.getByText('XM052 · Хмельницький - Назаришин В. М.')).toBeTruthy()
+    const targetCard = container.querySelector<HTMLElement>('[data-client-id="10"] .client-source-card')
+    expect(targetCard).not.toBeNull()
+    expect(within(targetCard!).getByText('Договори 1С · 1')).toBeTruthy()
+    expect(within(targetCard!).getByText('Основний договір · A-7001')).toBeTruthy()
   })
 
   it('renders the synchronized client hierarchy at arbitrary depth', () => {
