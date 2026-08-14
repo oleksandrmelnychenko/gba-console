@@ -1857,7 +1857,7 @@ function ProductMovementPanel({ product }: { product: Product }) {
           {t('Архівні партії 1С')}
         </Tabs.Tab>
         <Tabs.Tab leftSection={<TriangleAlert size={15} />} value="informational">
-          {t('Неповні дані 1С')}
+          {t('Контроль даних')}
         </Tabs.Tab>
       </Tabs.List>
       <Tabs.Panel value="movement" pt="md">

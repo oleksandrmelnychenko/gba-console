@@ -942,7 +942,7 @@ export function ProductsPage() {
         opened={informationalDataOpened}
         position="right"
         size="min(1480px, 98vw)"
-        title={t('Неповні дані 1С')}
+        title={t('Контроль складських даних')}
         onClose={() => setInformationalDataOpened(false)}
       >
         {informationalDataOpened ? (
@@ -1000,9 +1000,9 @@ function ProductAssortmentFilterBar({
           onChange={(value) => onSortModeChange((value as ProductSortMode) || DEFAULT_SORT_MODE)}
         />
         <div className="app-filter-actions">
-          <Tooltip label={t('Неповні дані 1С')}>
+          <Tooltip label={t('Контроль складських даних')}>
             <ActionIcon
-              aria-label={t('Неповні дані 1С')}
+              aria-label={t('Контроль складських даних')}
               color="yellow"
               size={34}
               variant="light"

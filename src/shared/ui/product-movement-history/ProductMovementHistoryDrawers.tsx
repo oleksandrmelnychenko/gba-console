@@ -16,6 +16,7 @@ import {
 import { Archive, ChevronLeft, ChevronRight, CircleAlert, Download, LockKeyhole, Minus, Plus, RefreshCw, TriangleAlert } from 'lucide-react'
 import { DocumentExportModal } from '../document-export-modal/DocumentExportModal'
 import { useEffect, useMemo, useReducer, useRef, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { apiRequest } from '../../api/apiClient'
 import { formatLocalDate } from '../../date/dateTime'
 import { requireExportDocument, type ExportDocument } from '../../documents/exportDocument'
@@ -36,8 +37,10 @@ import {
   type HistoricalSourceMovement,
 } from './historicalSourceAnchors'
 import {
+  getInformationalMovementActionPath,
   isSafeInformationalMovement,
   type InformationalMovement,
+  type InformationalMovementQueue,
 } from './informationalMovements'
 import { formatProductMovementExchangeRate } from './productMovementFormatters'
 import './product-movement-history-drawers.css'
@@ -167,6 +170,7 @@ type InformationalMovementParams = {
   limit: number
   offset: number
   productNetId?: string
+  queue: InformationalMovementQueue
   to: string
 }
 
@@ -598,7 +602,7 @@ function ProductMovementHistoryDrawerContent({
               {t('Архівні партії 1С')}
             </Tabs.Tab>
             <Tabs.Tab leftSection={<TriangleAlert size={15} />} value="informational">
-              {t('Неповні дані 1С')}
+              {t('Контроль даних')}
             </Tabs.Tab>
           </Tabs.List>
 
@@ -1134,6 +1138,7 @@ export function InformationalMovementPanel({
   const [dateFrom, setDateFrom] = useState(() => getDateYearsAgo(20))
   const [dateTo, setDateTo] = useState(getTodayDate)
   const [page, setPage] = useState(1)
+  const [queue, setQueue] = useState<InformationalMovementQueue>('ActionRequired')
   const [rowsState, dispatchRowsState] = useReducer(
     movementRowsReducer<InformationalMovement>,
     undefined,
@@ -1143,7 +1148,7 @@ export function InformationalMovementPanel({
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
   const filterError = getDateRangeError(dateFrom, dateTo, t)
   const missingNetUidError = product && !productNetUid
-    ? t('У товару немає NetUid для завантаження неповних даних 1С')
+    ? t('У товару немає NetUid для контролю складських даних')
     : null
   const unsafeRows = useMemo(() => rows.filter((row) => !isSafeInformationalMovement(row)), [rows])
   const safeRows = useMemo(() => rows.filter(isSafeInformationalMovement), [rows])
@@ -1169,6 +1174,7 @@ export function InformationalMovementPanel({
           limit: INFORMATIONAL_PAGE_SIZE,
           offset: (page - 1) * INFORMATIONAL_PAGE_SIZE,
           productNetId: productNetUid || undefined,
+          queue,
           to: dateTo,
         })
 
@@ -1180,7 +1186,7 @@ export function InformationalMovementPanel({
           dispatchRowsState({
             error: loadError instanceof Error
               ? loadError.message
-              : t('Не вдалося завантажити неповні дані 1С'),
+              : t('Не вдалося завантажити контроль складських даних'),
             type: 'load-failed',
           })
         }
@@ -1192,7 +1198,7 @@ export function InformationalMovementPanel({
     return () => {
       cancelled = true
     }
-  }, [active, dateFrom, dateTo, filterError, missingNetUidError, page, productNetUid, reloadKey, t])
+  }, [active, dateFrom, dateTo, filterError, missingNetUidError, page, productNetUid, queue, reloadKey, t])
 
   return (
     <Stack className="product-movement-history-panel" gap={0}>
@@ -1216,6 +1222,21 @@ export function InformationalMovementPanel({
             onChange={(event) => {
               setPage(1)
               setDateTo(event.currentTarget.value)
+            }}
+          />
+          <Select
+            allowDeselect={false}
+            data={[
+              { label: t('Проблеми'), value: 'ActionRequired' },
+              { label: t('Очікують дії'), value: 'BusinessPending' },
+              { label: t('Службові'), value: 'Technical' },
+            ]}
+            label={t('Черга')}
+            value={queue}
+            w={180}
+            onChange={(value) => {
+              setPage(1)
+              setQueue((value as InformationalMovementQueue) || 'ActionRequired')
             }}
           />
           <div className="app-filter-actions">
@@ -1250,8 +1271,8 @@ export function InformationalMovementPanel({
         </Group>
       </div>
       <Stack className="product-movement-history-panel__body" gap="md">
-        <Alert color="yellow" icon={<TriangleAlert size={18} />} variant="light">
-          {t('Це неповні або службові записи джерела. Вони показані для діагностики, але не є рухом товару, не змінюють наявність і недоступні для редагування.')}
+        <Alert color={getInformationalQueueColor(queue)} icon={<TriangleAlert size={18} />} variant="light">
+          {getInformationalQueueDescription(queue, t)}
         </Alert>
         {activeError ? (
           <Alert color={filterError || missingNetUidError ? 'yellow' : 'red'} icon={<CircleAlert size={18} />} variant="light">
@@ -1268,13 +1289,13 @@ export function InformationalMovementPanel({
             columns={columns}
             data={safeRows}
             defaultLayout={{ columnPinning: { left: ['state', 'product'] }, density: 'normal' }}
-            emptyText={t('Неповних даних 1С у вибраному періоді не знайдено')}
+            emptyText={getInformationalQueueEmptyText(queue, t)}
             getRowId={(row) => row.InfoKey}
             isLoading={isLoading}
-            layoutVersion="informational-movement-1"
-            loadingText={t('Завантаження неповних даних 1С')}
+            layoutVersion="informational-movement-2"
+            loadingText={t('Завантаження контролю складських даних')}
             maxHeight="calc(100vh - 390px)"
-            minWidth={1480}
+            minWidth={1590}
             rowClassName={() => 'informational-movement-row'}
             tableId="informational-movement"
           />
@@ -1322,6 +1343,7 @@ function HistoricalSourceDocuments({
 
 function useInformationalMovementColumns(): DataTableColumn<InformationalMovement>[] {
   const { t } = useI18n()
+  const navigate = useNavigate()
 
   return useMemo<DataTableColumn<InformationalMovement>[]>(() => [
     {
@@ -1331,10 +1353,10 @@ function useInformationalMovementColumns(): DataTableColumn<InformationalMovemen
       minWidth: 150,
       accessor: (row) => row.StateCode,
       cell: (row) => (
-        <Badge color={row.IsKnownFixture ? 'blue' : 'yellow'} variant="light">
+        <Badge color={getInformationalSeverityColor(row.SeverityCode)} variant="light">
           <Group gap={4} wrap="nowrap">
             <LockKeyhole size={12} />
-            {row.IsKnownFixture ? t('Тестовий запис') : t('Не є рухом')}
+            {getInformationalStateLabel(row, t)}
           </Group>
         </Badge>
       ),
@@ -1354,7 +1376,7 @@ function useInformationalMovementColumns(): DataTableColumn<InformationalMovemen
     },
     {
       id: 'reason',
-      header: t('Чому неповний'),
+      header: t('Причина'),
       width: 245,
       minWidth: 205,
       accessor: (row) => getInformationalReasonLabel(row.ReasonCode, t),
@@ -1395,11 +1417,27 @@ function useInformationalMovementColumns(): DataTableColumn<InformationalMovemen
     },
     {
       id: 'missingEvidence',
-      header: t('Чого бракує'),
+      header: t('Що очікується'),
       width: 235,
       minWidth: 195,
       accessor: (row) => getMissingEvidenceLabel(row.MissingEvidenceCode, t),
       cell: (row) => getMissingEvidenceLabel(row.MissingEvidenceCode, t),
+    },
+    {
+      id: 'action',
+      header: t('Дія'),
+      width: 135,
+      minWidth: 120,
+      accessor: (row) => row.ActionCode,
+      cell: (row) => {
+        const actionPath = getInformationalMovementActionPath(row)
+
+        return actionPath ? (
+          <Button size="compact-xs" variant="light" onClick={() => navigate(actionPath)}>
+            {row.ActionCode === 'OpenSale' ? t('Відкрити продаж') : t('Вирішити в акті звірки')}
+          </Button>
+        ) : '—'
+      },
     },
     {
       id: 'comment',
@@ -1418,7 +1456,71 @@ function useInformationalMovementColumns(): DataTableColumn<InformationalMovemen
       accessor: (row) => row.SourceItemId,
       cell: (row) => String(row.SourceItemId),
     },
-  ], [t])
+  ], [navigate, t])
+}
+
+function getInformationalQueueColor(queue: InformationalMovementQueue): string {
+  switch (queue) {
+    case 'ActionRequired':
+      return 'red'
+    case 'BusinessPending':
+      return 'yellow'
+    case 'Technical':
+      return 'blue'
+  }
+}
+
+function getInformationalQueueDescription(
+  queue: InformationalMovementQueue,
+  t: (key: string) => string,
+): string {
+  switch (queue) {
+    case 'ActionRequired':
+      return t('Тут лише записи з реально відсутнім зв’язком із партією або фізичним рухом. Їх потрібно перевірити та виправити.')
+    case 'BusinessPending':
+      return t('Це коректні складські документи, які очікують явної дії користувача. До застосування вони не змінюють наявність.')
+    case 'Technical':
+      return t('Це службові, тестові й аудитні записи. Вони не є рухом товару, не змінюють наявність і не потребують дії користувача.')
+  }
+}
+
+function getInformationalQueueEmptyText(
+  queue: InformationalMovementQueue,
+  t: (key: string) => string,
+): string {
+  switch (queue) {
+    case 'ActionRequired':
+      return t('Проблем складських даних у вибраному періоді не знайдено')
+    case 'BusinessPending':
+      return t('Документів, що очікують складської дії, не знайдено')
+    case 'Technical':
+      return t('Службових записів у вибраному періоді не знайдено')
+  }
+}
+
+function getInformationalSeverityColor(severity: InformationalMovement['SeverityCode']): string {
+  switch (severity) {
+    case 'Error':
+      return 'red'
+    case 'Warning':
+      return 'yellow'
+    case 'Info':
+      return 'blue'
+  }
+}
+
+function getInformationalStateLabel(
+  row: InformationalMovement,
+  t: (key: string) => string,
+): string {
+  switch (row.QueueCode) {
+    case 'ActionRequired':
+      return t('Потрібне виправлення')
+    case 'BusinessPending':
+      return t('Очікує дії')
+    case 'Technical':
+      return row.IsKnownFixture ? t('Тестовий запис') : t('Службовий запис')
+  }
 }
 
 function getInformationalReasonLabel(reasonCode: string, t: (key: string) => string): string {
@@ -1427,6 +1529,8 @@ function getInformationalReasonLabel(reasonCode: string, t: (key: string) => str
       return t('Службовий acceptance-тест')
     case 'NoPhysicalSource':
       return t('Немає фізичної партії або локації')
+    case 'NoStockEffectExpected':
+      return t('Складського руху не очікується')
     case 'PendingReconciliation':
       return t('Різницю ще не застосовано дією')
     case 'ZeroQuantity':
@@ -1448,8 +1552,12 @@ function getMissingEvidenceLabel(evidenceCode: string, t: (key: string) => strin
       return t('Партія або резерв фізичної партії')
     case 'LotReservationOrLocation':
       return t('Партія, резерв або складська локація')
+    case 'NoneExpected':
+      return t('Нічого — це аудит операції')
     case 'PositiveQuantity':
       return t('Додатна кількість')
+    case 'SourceSaleMovement':
+      return t('Фізичний рух проведеної накладної')
     default:
       return evidenceCode
   }
@@ -2584,11 +2692,12 @@ async function getInformationalMovements(
       limit: params.limit,
       offset: params.offset,
       ...(params.productNetId ? { productNetId: params.productNetId } : {}),
+      queue: params.queue,
       to: params.to,
     },
     errorMessages: {
-      default: 'Не вдалося завантажити неповні дані 1С',
-      network: 'Сервер неповних даних 1С недоступний',
+      default: 'Не вдалося завантажити контроль складських даних',
+      network: 'Сервер контролю складських даних недоступний',
     },
   })
 
