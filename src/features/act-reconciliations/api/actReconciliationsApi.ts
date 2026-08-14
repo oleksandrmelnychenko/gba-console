@@ -3,6 +3,9 @@ import { toDateTimeQuery } from '../../../shared/date/dateTime'
 import type {
   ActReconciliation,
   ActReconciliationAppliedAction,
+  ActReconciliationDispositionEvent,
+  ActReconciliationDispositionMutationResult,
+  ActReconciliationDispositionReasonCode,
   ActReconciliationItem,
   ActReconciliationsSearchParams,
   DepreciatedOrderFromItemQueryParams,
@@ -41,6 +44,47 @@ export async function getAppliedActions(netId: string): Promise<ActReconciliatio
   })
 
   return normalizeAppliedActions(result)
+}
+
+export async function getDispositionHistory(
+  netId: string,
+): Promise<ActReconciliationDispositionEvent[]> {
+  const result = await apiRequest<unknown>('/supplies/ukraine/reconciliation/disposition/history', {
+    query: { netId },
+  })
+
+  return readArrayPayload(result, ['Items', 'Events', 'Data', 'Collection', 'Values']) as ActReconciliationDispositionEvent[]
+}
+
+export async function changeReconciliationDisposition({
+  actNetId,
+  comment,
+  isDismissed,
+  itemNetIds,
+  operationNetUid,
+  reasonCode,
+}: {
+  actNetId: string
+  comment?: string
+  isDismissed: boolean
+  itemNetIds: string[]
+  operationNetUid: string
+  reasonCode?: ActReconciliationDispositionReasonCode
+}): Promise<ActReconciliationDispositionMutationResult> {
+  const result = await apiRequest<unknown>('/supplies/ukraine/reconciliation/disposition', {
+    method: 'POST',
+    query: { netId: actNetId },
+    headers: { 'Idempotency-Key': operationNetUid },
+    body: {
+      OperationNetUid: operationNetUid,
+      ItemNetIds: itemNetIds,
+      IsDismissed: isDismissed,
+      ReasonCode: isDismissed ? reasonCode : null,
+      Comment: comment?.trim() || null,
+    },
+  })
+
+  return (unwrapPayload(result) || {}) as ActReconciliationDispositionMutationResult
 }
 
 export async function getReconciliationStorages(

@@ -1,7 +1,9 @@
 import {
   ActionIcon,
   Alert,
+  Badge,
   Group,
+  Select,
   Stack,
   Text,
   TextInput,
@@ -17,6 +19,7 @@ import { translate } from '../../../shared/i18n/translate'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { getActReconciliations } from '../api/actReconciliationsApi'
+import { getActWorkflowState, getItemWorkflowState } from '../actReconciliationWorkflow'
 import type { ActReconciliation } from '../types'
 import '../../../shared/ui/console-table-page.css'
 import './act-reconciliations-page.css'
@@ -25,6 +28,8 @@ type FilterDraft = {
   from: string
   to: string
 }
+
+type StatusFilter = 'all' | 'pending' | 'partial' | 'dismissed' | 'resolved'
 
 /* Numbers / codes / dates in the tables read in mono (docs/ui-patterns.md §5.1). */
 const ACT_MONO_STYLE = { fontFamily: 'var(--font-mono)', letterSpacing: 0 } as const
@@ -53,11 +58,16 @@ function useActReconciliationsPageModel() {
   const [filterDraft, setFilterDraft] = useValueState<FilterDraft>(initialFilters)
   const [activeFilters, setActiveFilters] = useValueState<FilterDraft>(initialFilters)
   const [reconciliations, setReconciliations] = useValueState<ActReconciliation[]>([])
+  const [statusFilter, setStatusFilter] = useValueState<StatusFilter>('all')
   const [error, setError] = useValueState<string | null>(null)
   const [isLoading, setLoading] = useValueState(true)
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
   const filterError = getFilterError(activeFilters.from, activeFilters.to)
   const rowSummaries = useMemo(() => buildRowSummaries(reconciliations), [reconciliations])
+  const visibleReconciliations = useMemo(
+    () => reconciliations.filter((item) => statusFilter === 'all' || getActWorkflowState(item) === statusFilter),
+    [reconciliations, statusFilter],
+  )
 
   useReconciliationsLoader({
     activeFilters,
@@ -87,6 +97,7 @@ function useActReconciliationsPageModel() {
   function resetFilters() {
     setFilterDraft(initialFilters)
     setActiveFilters(initialFilters)
+    setStatusFilter('all')
   }
 
   return {
@@ -95,7 +106,9 @@ function useActReconciliationsPageModel() {
     filterDraft,
     filterError,
     isLoading,
-    reconciliations,
+    visibleReconciliations,
+    statusFilter,
+    setStatusFilter,
     applyFilters,
     openDetail,
     reload,
@@ -178,7 +191,9 @@ function ActReconciliationsPageView({ model }: { model: ReturnType<typeof useAct
     filterError,
     isLoading,
     openDetail,
-    reconciliations,
+    visibleReconciliations,
+    statusFilter,
+    setStatusFilter,
     reload,
     resetFilters,
     applyFilters,
@@ -207,6 +222,19 @@ function ActReconciliationsPageView({ model }: { model: ReturnType<typeof useAct
                 onChange={(event) => applyFilters({ ...filterDraft, to: event.currentTarget.value })}
               />
             </div>
+            <Select
+              className="act-reconciliations-status-filter"
+              data={[
+                { value: 'all', label: t('Усі стани') },
+                { value: 'pending', label: t('Очікує дії') },
+                { value: 'partial', label: t('Частково опрацьовано') },
+                { value: 'dismissed', label: t('Закрито без руху') },
+                { value: 'resolved', label: t('Опрацьовано') },
+              ]}
+              label={t('Стан')}
+              value={statusFilter}
+              onChange={(value) => setStatusFilter((value as StatusFilter) || 'all')}
+            />
             <div className="app-filter-actions">
               <Tooltip label={t('Скинути')}>
                 <ActionIcon aria-label={t('Скинути')} color="gray" size={34} variant="light" onClick={resetFilters}>
@@ -239,7 +267,7 @@ function ActReconciliationsPageView({ model }: { model: ReturnType<typeof useAct
         <div className="act-reconciliations-page__table console-table-body">
           <DataTable
             columns={columns}
-            data={reconciliations}
+            data={visibleReconciliations}
             defaultLayout={RECONCILIATIONS_TABLE_DEFAULT_LAYOUT}
             emptyText={t('Актів звірок не знайдено')}
             getRowId={(reconciliation, index) => String(reconciliation.NetUid || reconciliation.Id || index)}
@@ -259,11 +287,15 @@ function ActReconciliationsPageView({ model }: { model: ReturnType<typeof useAct
 }
 
 type RowSummary = {
+  dismissedCount: number
   index: number
   invNumber: string
   negativeSum: number
   organizationName: string
+  pendingCount: number
   positiveSum: number
+  resolvedCount: number
+  state: ReturnType<typeof getActWorkflowState>
 }
 
 function useReconciliationColumns(
@@ -337,6 +369,14 @@ function useReconciliationColumns(
         },
       },
       {
+        id: 'status',
+        header: t('Стан'),
+        width: 190,
+        minWidth: 160,
+        accessor: (reconciliation) => rowSummaries.get(reconciliation)?.state,
+        cell: (reconciliation) => <ActStatusBadge summary={rowSummaries.get(reconciliation)} />,
+      },
+      {
         id: 'difference',
         header: t('Різниця'),
         width: 200,
@@ -398,15 +438,36 @@ function DifferenceCell({ summary }: { summary?: RowSummary }) {
   )
 }
 
+function ActStatusBadge({ summary }: { summary?: RowSummary }) {
+  const { t } = useI18n()
+  const state = summary?.state || 'resolved'
+  const meta = {
+    pending: { color: 'red', label: 'Очікує дії' },
+    partial: { color: 'orange', label: 'Частково опрацьовано' },
+    dismissed: { color: 'orange', label: 'Закрито без руху' },
+    resolved: { color: 'green', label: 'Опрацьовано' },
+  }[state]
+
+  return (
+    <Group gap={6} wrap="nowrap">
+      <Badge color={meta.color} variant="light">{t(meta.label)}</Badge>
+      {summary && state === 'partial' && (
+        <Text c="dimmed" size="xs">{summary.pendingCount} / {summary.dismissedCount + summary.resolvedCount}</Text>
+      )}
+    </Group>
+  )
+}
+
 function buildRowSummaries(reconciliations: ActReconciliation[]): Map<ActReconciliation, RowSummary> {
   return reconciliations.reduce((summaries, reconciliation, index) => {
     const items = reconciliation.ActReconciliationItems || []
     const negativeSum = items
-      .filter((item) => item.HasDifference && item.NegativeDifference)
+      .filter((item) => getItemWorkflowState(item) === 'pending-shortage')
       .reduce((sum, item) => sum + (item.QtyDifference || 0), 0)
     const positiveSum = items
-      .filter((item) => item.HasDifference && !item.NegativeDifference)
+      .filter((item) => getItemWorkflowState(item) === 'pending-surplus')
       .reduce((sum, item) => sum + (item.QtyDifference || 0), 0)
+    const states = items.map(getItemWorkflowState)
 
     let invNumber = ''
     let organizationName = ''
@@ -420,11 +481,15 @@ function buildRowSummaries(reconciliations: ActReconciliation[]): Map<ActReconci
     }
 
     summaries.set(reconciliation, {
+      dismissedCount: states.filter((state) => state === 'dismissed').length,
       index: index + 1,
       invNumber,
       negativeSum,
       organizationName,
+      pendingCount: states.filter((state) => state.startsWith('pending-')).length,
       positiveSum,
+      resolvedCount: states.filter((state) => state === 'resolved').length,
+      state: getActWorkflowState(reconciliation),
     })
 
     return summaries

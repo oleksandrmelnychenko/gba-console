@@ -66,6 +66,49 @@ export type ActReconciliationItem = EntityFields & {
   QtyDifference?: number
   Reason?: string
   ToOperationQty?: number
+  IsDismissed?: boolean
+  IsDispositionStale?: boolean
+  DispositionReasonCode?: ActReconciliationDispositionReasonCode | null
+  DispositionComment?: string | null
+  DispositionUpdatedAtUtc?: Date | string | null
+  DispositionUpdatedByNetUid?: string | null
+  DispositionUpdatedByName?: string | null
+}
+
+export const ActReconciliationDispositionReason = {
+  TestData: 'TestData',
+  DataEntryError: 'DataEntryError',
+  SourceCancelled: 'SourceCancelled',
+  DuplicateDocument: 'DuplicateDocument',
+  BusinessAcceptedNoStockMovement: 'BusinessAcceptedNoStockMovement',
+  Other: 'Other',
+} as const
+
+export type ActReconciliationDispositionReasonCode =
+  (typeof ActReconciliationDispositionReason)[keyof typeof ActReconciliationDispositionReason]
+
+export type ActReconciliationDispositionEvent = {
+  Id?: number
+  OperationNetUid?: string
+  ActReconciliationItemNetUid?: string
+  ProductVendorCode?: string
+  ProductName?: string
+  IsDismissed?: boolean
+  ReasonCode?: ActReconciliationDispositionReasonCode | null
+  Comment?: string | null
+  UserNetUid?: string
+  UserName?: string
+  CreatedAtUtc?: Date | string
+  OrderedQty?: number
+  ActualQty?: number
+  QtyDifference?: number
+}
+
+export type ActReconciliationDispositionMutationResult = {
+  OperationNetUid?: string
+  IsDismissed?: boolean
+  IsReplay?: boolean
+  AffectedCount?: number
 }
 
 export type ActReconciliationSupplyInvoiceOrder = EntityFields & {

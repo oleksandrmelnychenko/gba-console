@@ -1,15 +1,25 @@
-import { Alert, Stack, Text } from '@mantine/core'
+import { Alert, Badge, Stack, Text } from '@mantine/core'
 import { CircleAlert } from 'lucide-react'
 import { useMemo } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn } from '../../../shared/ui/data-table/types'
-import type { ActReconciliationAppliedAction } from '../types'
+import { getDispositionReasonLabel } from '../actReconciliationWorkflow'
+import type {
+  ActReconciliationAppliedAction,
+  ActReconciliationDispositionEvent,
+} from '../types'
 import { AppliedActionsGrid } from './AppliedActionsGrid'
+
+const historyDateTimeFormatter = new Intl.DateTimeFormat('uk-UA', {
+  dateStyle: 'short',
+  timeStyle: 'short',
+})
 
 export function AppliedActionsHistoryDrawer({
   appliedActions,
+  dispositionEvents,
   error,
   isLoading,
   opened,
@@ -19,6 +29,7 @@ export function AppliedActionsHistoryDrawer({
   onSelectAction,
 }: {
   appliedActions: ActReconciliationAppliedAction[]
+  dispositionEvents: ActReconciliationDispositionEvent[]
   error: string | null
   isLoading: boolean
   opened: boolean
@@ -29,6 +40,7 @@ export function AppliedActionsHistoryDrawer({
 }) {
   const { t } = useI18n()
   const columns = useHistoryColumns(appliedActions)
+  const dispositionColumns = useDispositionHistoryColumns(t)
 
   return (
     <AppDrawer opened={opened} padding="lg" position="right" size="72rem" title={title} onClose={onClose}>
@@ -40,6 +52,8 @@ export function AppliedActionsHistoryDrawer({
         )}
 
         <Text fw={700}>{t('Історія')}</Text>
+
+        <Text c="dimmed" fw={600} size="sm">{t('Складські документи')}</Text>
 
         <DataTable
           columns={columns}
@@ -56,8 +70,90 @@ export function AppliedActionsHistoryDrawer({
         />
 
         {selectedAction && <AppliedActionsGrid appliedAction={selectedAction} />}
+
+        <Text c="dimmed" fw={600} mt="sm" size="sm">{t('Рішення без руху товару')}</Text>
+
+        <DataTable
+          columns={dispositionColumns}
+          data={dispositionEvents}
+          emptyText={t('Рішень без руху не знайдено')}
+          getRowId={(event, index) => String(event.Id || `${event.OperationNetUid}-${event.ActReconciliationItemNetUid}-${index}`)}
+          isLoading={isLoading}
+          layoutVersion="act-reconciliation-disposition-history-table-1"
+          loadingText={t('Завантаження історії')}
+          maxHeight="40vh"
+          minWidth={980}
+          tableId="act-reconciliation-disposition-history"
+        />
       </Stack>
     </AppDrawer>
+  )
+}
+
+function useDispositionHistoryColumns(
+  t: (key: string) => string,
+): DataTableColumn<ActReconciliationDispositionEvent>[] {
+  return useMemo<DataTableColumn<ActReconciliationDispositionEvent>[]>(
+    () => [
+      {
+        id: 'createdAt',
+        header: t('Дата і час'),
+        width: 170,
+        minWidth: 150,
+        accessor: (event) => getDateTime(event.CreatedAtUtc),
+        cell: (event) => formatDateTime(event.CreatedAtUtc),
+      },
+      {
+        id: 'action',
+        header: t('Рішення'),
+        width: 170,
+        minWidth: 150,
+        cell: (event) => (
+          <Badge color={event.IsDismissed ? 'orange' : 'blue'} variant="light">
+            {event.IsDismissed ? t('Закрито без руху') : t('Повернуто в роботу')}
+          </Badge>
+        ),
+      },
+      {
+        id: 'vendorCode',
+        header: t('Код товару'),
+        width: 150,
+        minWidth: 120,
+        accessor: (event) => event.ProductVendorCode,
+        cell: (event) => <Text fw={700}>{displayValue(event.ProductVendorCode)}</Text>,
+      },
+      {
+        id: 'productName',
+        header: t('Назва товару'),
+        minWidth: 220,
+        accessor: (event) => event.ProductName,
+        cell: (event) => <Text lineClamp={2}>{displayValue(event.ProductName)}</Text>,
+      },
+      {
+        id: 'reason',
+        header: t('Причина'),
+        width: 230,
+        minWidth: 180,
+        accessor: (event) => event.ReasonCode,
+        cell: (event) => event.IsDismissed ? t(getDispositionReasonLabel(event.ReasonCode)) : '-',
+      },
+      {
+        id: 'comment',
+        header: t('Пояснення'),
+        minWidth: 240,
+        accessor: (event) => event.Comment,
+        cell: (event) => <Text lineClamp={2}>{displayValue(event.Comment)}</Text>,
+      },
+      {
+        id: 'user',
+        header: t('Хто змінив'),
+        width: 190,
+        minWidth: 150,
+        accessor: (event) => event.UserName,
+        cell: (event) => displayValue(event.UserName),
+      },
+    ],
+    [t],
   )
 }
 
@@ -155,4 +251,26 @@ function displayValue(value: unknown): string {
   }
 
   return String(value)
+}
+
+function getDateTime(value: unknown): number {
+  if (!value) {
+    return 0
+  }
+
+  const parsed = value instanceof Date ? value : new Date(String(value))
+
+  return Number.isNaN(parsed.getTime()) ? 0 : parsed.getTime()
+}
+
+function formatDateTime(value?: Date | string): string {
+  if (!value) {
+    return '-'
+  }
+
+  const parsed = value instanceof Date ? value : new Date(value)
+
+  return Number.isNaN(parsed.getTime())
+    ? String(value)
+    : historyDateTimeFormatter.format(parsed)
 }

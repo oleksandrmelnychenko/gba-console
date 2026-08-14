@@ -1,6 +1,7 @@
 import {
   ActionIcon,
   Alert,
+  Badge,
   Box,
   Button,
   Card,
@@ -25,16 +26,32 @@ import type { DataTableColumn } from '../../../shared/ui/data-table/types'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { TableRowAction } from '../../../shared/ui/table-row-action'
 import { getActReconciliationByNetId, getAppliedActions } from '../api/actReconciliationsApi'
+import { getDispositionHistory } from '../api/actReconciliationsApi'
+import {
+  buildWorkflowCounts,
+  getDispositionReasonLabel,
+  getItemWorkflowState,
+} from '../actReconciliationWorkflow'
 import {
   ActReconciliationActionsModal,
   type ActionTarget,
 } from '../components/ActReconciliationActionsModal'
+import {
+  ActReconciliationDispositionModal,
+  type ActReconciliationDispositionMode,
+} from '../components/ActReconciliationDispositionModal'
 import { AppliedActionsHistoryDrawer } from '../components/AppliedActionsHistoryDrawer'
 import type {
   ActReconciliation,
   ActReconciliationAppliedAction,
+  ActReconciliationDispositionEvent,
   ActReconciliationItem,
 } from '../types'
+
+type DispositionTarget = {
+  mode: ActReconciliationDispositionMode
+  items: ActReconciliationItem[]
+}
 
 const dateFormatter = new Intl.DateTimeFormat('uk-UA', { dateStyle: 'short' })
 
@@ -48,6 +65,8 @@ function useActReconciliationViewModel() {
   const [isActionOpen, setActionOpen] = useValueState(false)
   const [isHistoryOpen, setHistoryOpen] = useValueState(false)
   const [appliedActions, setAppliedActions] = useValueState<ActReconciliationAppliedAction[]>([])
+  const [dispositionEvents, setDispositionEvents] = useValueState<ActReconciliationDispositionEvent[]>([])
+  const [dispositionTarget, setDispositionTarget] = useValueState<DispositionTarget | null>(null)
   const [selectedAppliedAction, setSelectedAppliedAction] =
     useValueState<ActReconciliationAppliedAction | null>(null)
   const [isHistoryLoading, setHistoryLoading] = useValueState(false)
@@ -62,6 +81,29 @@ function useActReconciliationViewModel() {
     () => items.filter((item) => item.NetUid && selectedNetIds.has(item.NetUid)),
     [items, selectedNetIds],
   )
+  const selectedActiveItems = useMemo(
+    () => selectedItems.filter((item) => getItemWorkflowState(item).startsWith('pending-')),
+    [selectedItems],
+  )
+  const activePendingItems = useMemo(
+    () => items.filter(isActivePendingItem),
+    [items],
+  )
+  const dismissedItems = useMemo(
+    () => items.filter((item) => getItemWorkflowState(item) === 'dismissed'),
+    [items],
+  )
+  const selectedDismissedItems = useMemo(
+    () => selectedItems.filter((item) => getItemWorkflowState(item) === 'dismissed'),
+    [selectedItems],
+  )
+  const workflowCounts = useMemo(() => buildWorkflowCounts(items), [items])
+  const hasMassZeroActualQty = useMemo(() => {
+    const pending = items.filter((item) => getItemWorkflowState(item).startsWith('pending-'))
+    const zeroActual = pending.filter((item) => Math.abs(item.ActualQty || 0) <= 0.0000001)
+
+    return pending.length >= 5 && zeroActual.length / pending.length >= 0.8
+  }, [items])
 
   const loadReconciliation = useCallback(() => {
     if (!netid) {
@@ -110,7 +152,7 @@ function useActReconciliationViewModel() {
 
   const toggleItem = useCallback(
     (item: ActReconciliationItem) => {
-      if (!item.HasDifference || !item.NetUid) {
+      if (!isSelectableItem(item) || !item.NetUid) {
         return
       }
 
@@ -130,7 +172,7 @@ function useActReconciliationViewModel() {
   )
 
   const toggleAll = useCallback(() => {
-    const eligible = items.filter((item) => item.HasDifference && item.NetUid)
+    const eligible = items.filter((item) => isSelectableItem(item) && item.NetUid)
     const allSelected = eligible.length > 0 && eligible.every((item) => selectedNetIds.has(item.NetUid as string))
 
     setSelectedNetIds(allSelected ? new Set() : new Set(eligible.map((item) => item.NetUid as string)))
@@ -138,7 +180,7 @@ function useActReconciliationViewModel() {
 
   const openSingleAction = useCallback(
     (item: ActReconciliationItem) => {
-      if (!item.HasDifference) {
+      if (!isActivePendingItem(item)) {
         return
       }
 
@@ -149,13 +191,28 @@ function useActReconciliationViewModel() {
   )
 
   const openMultiAction = useCallback(() => {
-    if (selectedItems.length === 0) {
+    if (selectedActiveItems.length === 0) {
       return
     }
 
-    setActionTarget({ mode: 'multi', items: selectedItems })
+    setActionTarget({ mode: 'multi', items: selectedActiveItems })
     setActionOpen(true)
-  }, [selectedItems, setActionOpen, setActionTarget])
+  }, [selectedActiveItems, setActionOpen, setActionTarget])
+
+  const openDisposition = useCallback(
+    (mode: ActReconciliationDispositionMode, targetItems: ActReconciliationItem[]) => {
+      if (targetItems.length === 0) {
+        return
+      }
+
+      setDispositionTarget({ mode, items: targetItems })
+    },
+    [setDispositionTarget],
+  )
+
+  const closeDisposition = useCallback(() => {
+    setDispositionTarget(null)
+  }, [setDispositionTarget])
 
   const closeAction = useCallback(() => {
     setActionOpen(false)
@@ -176,16 +233,26 @@ function useActReconciliationViewModel() {
     setHistoryError(null)
     setSelectedAppliedAction(null)
 
-    try {
-      const actions = await getAppliedActions(netid)
-      setAppliedActions(actions)
-    } catch (loadError) {
-      setAppliedActions([])
-      setHistoryError(loadError instanceof Error ? loadError.message : translate('Не вдалося завантажити історію'))
-    } finally {
-      setHistoryLoading(false)
+    const [actionsResult, eventsResult] = await Promise.allSettled([
+      getAppliedActions(netid),
+      getDispositionHistory(netid),
+    ])
+
+    setAppliedActions(actionsResult.status === 'fulfilled' ? actionsResult.value : [])
+    setDispositionEvents(eventsResult.status === 'fulfilled' ? eventsResult.value : [])
+
+    const failedSections = [actionsResult, eventsResult]
+      .filter((result) => result.status === 'rejected')
+      .length
+
+    if (failedSections === 2) {
+      setHistoryError(translate('Не вдалося завантажити історію'))
+    } else if (failedSections === 1) {
+      setHistoryError(translate('Частину історії не вдалося завантажити. Доступні записи показано нижче.'))
     }
-  }, [netid, setAppliedActions, setHistoryError, setHistoryLoading, setHistoryOpen, setSelectedAppliedAction])
+
+    setHistoryLoading(false)
+  }, [netid, setAppliedActions, setDispositionEvents, setHistoryError, setHistoryLoading, setHistoryOpen, setSelectedAppliedAction])
 
   const closeHistory = useCallback(() => {
     setHistoryOpen(false)
@@ -194,7 +261,11 @@ function useActReconciliationViewModel() {
 
   return {
     actionTarget,
+    activePendingItems,
     appliedActions,
+    dispositionEvents,
+    dispositionTarget,
+    dismissedItems,
     error,
     historyError,
     isActionOpen,
@@ -202,16 +273,22 @@ function useActReconciliationViewModel() {
     isHistoryOpen,
     isLoading,
     items,
+    hasMassZeroActualQty,
     organizationNetId,
     reconciliation,
     selectedAppliedAction,
     selectedItems,
+    selectedActiveItems,
+    selectedDismissedItems,
     selectedNetIds,
     totals,
+    workflowCounts,
     closeAction,
     closeHistory,
+    closeDisposition,
     handleApplied,
     openHistory,
+    openDisposition,
     openMultiAction,
     openSingleAction,
     reload,
@@ -234,6 +311,7 @@ function ActReconciliationViewPageView({ model }: { model: ReturnType<typeof use
   const columns = useItemColumns({
     items: model.items,
     selectedNetIds: model.selectedNetIds,
+    onOpenDisposition: model.openDisposition,
     onOpenAction: model.openSingleAction,
     onToggleAll: model.toggleAll,
     onToggleItem: model.toggleItem,
@@ -277,9 +355,45 @@ function ActReconciliationViewPageView({ model }: { model: ReturnType<typeof use
               <RefreshCw size={18} />
             </ActionIcon>
           </Tooltip>
-          {model.selectedItems.length > 0 && (
+          {model.selectedActiveItems.length > 0 && (
             <Button color={CREATE_ACTION_COLOR} onClick={model.openMultiAction}>
-              {t('Обробити')} ({model.selectedItems.length})
+              {t('Створити складську дію')} ({model.selectedActiveItems.length})
+            </Button>
+          )}
+          {model.selectedActiveItems.length > 0 && (
+            <Button
+              color="orange"
+              variant="light"
+              onClick={() => model.openDisposition('dismiss', model.selectedActiveItems)}
+            >
+              {t('Закрити без руху')} ({model.selectedActiveItems.length})
+            </Button>
+          )}
+          {model.selectedDismissedItems.length > 0 && (
+            <Button
+              color="blue"
+              variant="light"
+              onClick={() => model.openDisposition('reopen', model.selectedDismissedItems)}
+            >
+              {t('Повернути в роботу')} ({model.selectedDismissedItems.length})
+            </Button>
+          )}
+          {model.selectedItems.length === 0 && model.activePendingItems.length > 0 && (
+            <Button
+              color="orange"
+              variant="subtle"
+              onClick={() => model.openDisposition('dismiss', model.activePendingItems)}
+            >
+              {t('Закрити всі активні')} ({model.activePendingItems.length})
+            </Button>
+          )}
+          {model.selectedItems.length === 0 && model.dismissedItems.length > 0 && (
+            <Button
+              color="blue"
+              variant="subtle"
+              onClick={() => model.openDisposition('reopen', model.dismissedItems)}
+            >
+              {t('Повернути всі закриті')} ({model.dismissedItems.length})
             </Button>
           )}
           <DataTableDensityToggle density={density} onToggle={toggleDensity} size={38} />
@@ -292,6 +406,15 @@ function ActReconciliationViewPageView({ model }: { model: ReturnType<typeof use
         </Alert>
       )}
 
+      {model.hasMassZeroActualQty && (
+        <Alert color="orange" icon={<CircleAlert size={18} />} variant="light">
+          <Text fw={600}>{t('Масове нульове фактичне значення')}</Text>
+          <Text size="sm">
+            {t('У більшості невирішених позицій фактична кількість дорівнює нулю. Перевірте в 1С, чи інвентаризацію завершили та провели конкретною складською дією, перш ніж створювати документи масово.')}
+          </Text>
+        </Alert>
+      )}
+
       <Card className="app-section-card" withBorder radius="md" padding="md">
         <DataTable
           columns={columns}
@@ -300,28 +423,30 @@ function ActReconciliationViewPageView({ model }: { model: ReturnType<typeof use
           emptyText={t('Позицій не знайдено')}
           getRowId={(item, index) => String(item.NetUid || item.Id || index)}
           isLoading={model.isLoading}
-          layoutVersion="act-reconciliation-items-table-1"
+          layoutVersion="act-reconciliation-items-table-2"
           loadingText={t('Завантаження позицій')}
           maxHeight="calc(100vh - 360px)"
-          minWidth={1100}
+          minWidth={1120}
           tableId="act-reconciliation-items"
           onRowClick={model.toggleItem}
         />
       </Card>
 
-      <SimpleGrid cols={{ base: 2, sm: 4 }} spacing="md">
+      <SimpleGrid cols={{ base: 2, sm: 3, md: 6 }} spacing="md">
         <TotalValue label={t('Всього товарів')} value={model.totals.totalProducts} />
-        <TotalValue label={t('Вся кількість')} value={model.totals.totalCount} />
         <TotalValue
           color="red"
-          label={t('Недостача')}
-          value={model.totals.lack > 0 ? `- ${model.totals.lack}` : model.totals.lack}
+          label={t('Очікує · недостача')}
+          value={model.workflowCounts['pending-shortage']}
         />
         <TotalValue
           color="teal"
-          label={t('Надлишок')}
-          value={model.totals.excess > 0 ? `+ ${model.totals.excess}` : model.totals.excess}
+          label={t('Очікує · надлишок')}
+          value={model.workflowCounts['pending-surplus']}
         />
+        <TotalValue color="orange" label={t('Закрито без руху')} value={model.workflowCounts.dismissed} />
+        <TotalValue color="green" label={t('Опрацьовано')} value={model.workflowCounts.resolved} />
+        <TotalValue label={t('Загальна кількість')} value={model.totals.totalCount} />
       </SimpleGrid>
 
       <ActReconciliationActionsModal
@@ -332,8 +457,18 @@ function ActReconciliationViewPageView({ model }: { model: ReturnType<typeof use
         onClose={model.closeAction}
       />
 
+      <ActReconciliationDispositionModal
+        actNetId={model.reconciliation?.NetUid || ''}
+        items={model.dispositionTarget?.items || []}
+        mode={model.dispositionTarget?.mode || 'dismiss'}
+        opened={Boolean(model.dispositionTarget)}
+        onApplied={model.handleApplied}
+        onClose={model.closeDisposition}
+      />
+
       <AppliedActionsHistoryDrawer
         appliedActions={model.appliedActions}
+        dispositionEvents={model.dispositionEvents}
         error={model.historyError}
         isLoading={model.isHistoryLoading}
         opened={model.isHistoryOpen}
@@ -367,19 +502,24 @@ const ACT_VIEW_MONO_STYLE = { fontFamily: 'var(--font-mono)', letterSpacing: 0 }
 function useItemColumns({
   items,
   selectedNetIds,
+  onOpenDisposition,
   onOpenAction,
   onToggleAll,
   onToggleItem,
 }: {
   items: ActReconciliationItem[]
   selectedNetIds: Set<string>
+  onOpenDisposition: (
+    mode: ActReconciliationDispositionMode,
+    items: ActReconciliationItem[],
+  ) => void
   onOpenAction: (item: ActReconciliationItem) => void
   onToggleAll: () => void
   onToggleItem: (item: ActReconciliationItem) => void
 }): DataTableColumn<ActReconciliationItem>[] {
   const { t } = useI18n()
   const storageColumns = useMemo(() => buildStorageColumns(items), [items])
-  const eligible = useMemo(() => items.filter((item) => item.HasDifference && item.NetUid), [items])
+  const eligible = useMemo(() => items.filter((item) => isSelectableItem(item) && item.NetUid), [items])
   const allSelected = eligible.length > 0 && eligible.every((item) => selectedNetIds.has(item.NetUid as string))
 
   return useMemo<DataTableColumn<ActReconciliationItem>[]>(
@@ -407,7 +547,7 @@ function useItemColumns({
             <Checkbox
               aria-label={t('Обрати')}
               checked={Boolean(item.NetUid && selectedNetIds.has(item.NetUid))}
-              disabled={!item.HasDifference}
+              disabled={!isSelectableItem(item)}
               onChange={() => onToggleItem(item)}
             />
           </Box>
@@ -425,15 +565,16 @@ function useItemColumns({
       {
         id: 'vendorCode',
         header: t('Код товару'),
-        width: 160,
-        minWidth: 124,
+        width: 140,
+        minWidth: 120,
         accessor: (item) => item.Product?.VendorCode,
         cell: (item) => <Text fw={700}>{displayValue(item.Product?.VendorCode)}</Text>,
       },
       {
         id: 'name',
         header: t('Назва товару'),
-        minWidth: 240,
+        width: 220,
+        minWidth: 190,
         accessor: (item) => item.Product?.NameUA || item.Product?.Name,
         cell: (item) => (
           <Text lineClamp={2}>{displayValue(item.Product?.NameUA || item.Product?.Name)}</Text>
@@ -442,7 +583,7 @@ function useItemColumns({
       {
         id: 'qty',
         header: t('К-сть'),
-        width: 90,
+        width: 80,
         minWidth: 72,
         align: 'right',
         accessor: (item) => item.OrderedQty,
@@ -451,8 +592,8 @@ function useItemColumns({
       {
         id: 'actualQty',
         header: t('Фактична К-сть'),
-        width: 140,
-        minWidth: 110,
+        width: 120,
+        minWidth: 100,
         align: 'right',
         accessor: (item) => item.ActualQty,
         cell: (item) => displayValue(item.ActualQty),
@@ -460,35 +601,98 @@ function useItemColumns({
       {
         id: 'difference',
         header: t('Різниця'),
-        width: 110,
+        width: 100,
         minWidth: 90,
         align: 'right',
         accessor: (item) => item.QtyDifference,
         cell: (item) => <DifferenceText item={item} />,
       },
       {
-        id: 'action',
+        id: 'workflowStatus',
         header: t('Статус'),
-        width: 80,
-        minWidth: 72,
+        width: 220,
+        minWidth: 190,
+        accessor: (item) => getItemWorkflowState(item),
+        cell: (item) => <WorkflowStatusBadge item={item} />,
+      },
+      {
+        id: 'action',
+        header: '',
+        width: 64,
+        minWidth: 56,
         align: 'center',
         rowActions: true,
         enableSorting: false,
-        cell: (item) =>
-          item.HasDifference ? (
+        cell: (item) => {
+          const state = getItemWorkflowState(item)
+
+          if (state === 'dismissed') {
+            return (
+              <Box onClick={(event) => event.stopPropagation()}>
+                <TableRowAction
+                  action="restore"
+                  label={t('Повернути в роботу')}
+                  tone="success"
+                  onClick={() => onOpenDisposition('reopen', [item])}
+                />
+              </Box>
+            )
+          }
+
+          return state.startsWith('pending-') ? (
             <Box onClick={(event) => event.stopPropagation()}>
               <TableRowAction
                 action="settings"
-                label={t('Дія')}
+                label={t('Створити складську дію')}
                 tone={item.NegativeDifference ? 'danger' : 'success'}
                 onClick={() => onOpenAction(item)}
               />
             </Box>
-          ) : null,
+          ) : null
+        },
       },
       ...storageColumns,
     ],
-    [allSelected, eligible.length, items, onOpenAction, onToggleAll, onToggleItem, selectedNetIds, storageColumns, t],
+    [allSelected, eligible.length, items, onOpenAction, onOpenDisposition, onToggleAll, onToggleItem, selectedNetIds, storageColumns, t],
+  )
+}
+
+function WorkflowStatusBadge({ item }: { item: ActReconciliationItem }) {
+  const { t } = useI18n()
+  const state = getItemWorkflowState(item)
+
+  if (item.IsDispositionStale) {
+    return (
+      <Stack gap={2}>
+        <Badge color="yellow" variant="light">{t('Дані змінилися · перевірити')}</Badge>
+        <Text c="orange" lineClamp={1} size="xs">
+          {item.DispositionReasonCode
+            ? `${t('Було')}: ${t(getDispositionReasonLabel(item.DispositionReasonCode))}`
+            : t('Перевірити повторно')}
+        </Text>
+      </Stack>
+    )
+  }
+
+  if (state === 'dismissed') {
+    return (
+      <Stack gap={2}>
+        <Badge color="orange" variant="light">{t('Закрито без руху')}</Badge>
+        <Text c="dimmed" lineClamp={1} size="xs">
+          {t(getDispositionReasonLabel(item.DispositionReasonCode))}
+        </Text>
+      </Stack>
+    )
+  }
+
+  if (state === 'resolved') {
+    return <Badge color="green" variant="light">{t('Опрацьовано')}</Badge>
+  }
+
+  return (
+    <Badge color={state === 'pending-shortage' ? 'red' : 'teal'} variant="light">
+      {state === 'pending-shortage' ? t('Очікує · недостача') : t('Очікує · надлишок')}
+    </Badge>
   )
 }
 
@@ -521,8 +725,8 @@ function buildStorageColumns(items: ActReconciliationItem[]): DataTableColumn<Ac
     columns.push({
       id: `storage-${storageNetUid}`,
       header: availability.Storage?.Name || '-',
-      width: 140,
-      minWidth: 100,
+      width: 110,
+      minWidth: 90,
       align: 'right',
       enableSorting: false,
       accessor: (item) => getStorageQty(item, storageNetUid),
@@ -545,11 +749,33 @@ function sortByDifferenceFirst(items: ActReconciliationItem[]): ActReconciliatio
   return items
     .map((item, index) => ({ index, item }))
     .sort((left, right) => {
-      const difference = Number(Boolean(right.item.HasDifference)) - Number(Boolean(left.item.HasDifference))
+      const difference = getWorkflowSortRank(left.item) - getWorkflowSortRank(right.item)
 
       return difference !== 0 ? difference : left.index - right.index
     })
     .map((entry) => entry.item)
+}
+
+function getWorkflowSortRank(item: ActReconciliationItem): number {
+  const state = getItemWorkflowState(item)
+
+  if (state === 'pending-shortage') {
+    return 0
+  }
+
+  if (state === 'pending-surplus') {
+    return 1
+  }
+
+  return state === 'dismissed' ? 2 : 3
+}
+
+function isSelectableItem(item: ActReconciliationItem): boolean {
+  return item.HasDifference === true && (item.QtyDifference || 0) > 0.0000001
+}
+
+function isActivePendingItem(item: ActReconciliationItem): boolean {
+  return getItemWorkflowState(item).startsWith('pending-')
 }
 
 function buildTotals(items: ActReconciliationItem[]) {

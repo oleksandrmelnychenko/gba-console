@@ -2,9 +2,11 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { apiRequest } from '../../../shared/api/apiClient'
 import type { ActReconciliationItem } from '../types'
 import {
+  changeReconciliationDisposition,
   createDepreciatedOrderFromItem,
   createDepreciatedOrderFromItems,
   getActReconciliationByNetId,
+  getDispositionHistory,
   getActReconciliations,
 } from './actReconciliationsApi'
 
@@ -117,5 +119,49 @@ describe('actReconciliationsApi', () => {
       NetUid: 'act-2',
       ActReconciliationItems: [],
     })
+  })
+
+  it('closes selected items without stock movement using one exact idempotency key', async () => {
+    apiRequestMock.mockResolvedValueOnce({
+      Body: { AffectedCount: 2, IsDismissed: true, IsReplay: false },
+    })
+
+    const result = await changeReconciliationDisposition({
+      actNetId: 'act-2',
+      comment: '  звірено з 1С  ',
+      isDismissed: true,
+      itemNetIds: ['item-1', 'item-2'],
+      operationNetUid: 'f0000000-0000-0000-0000-000000000001',
+      reasonCode: 'DataEntryError',
+    })
+
+    expect(apiRequestMock).toHaveBeenCalledWith('/supplies/ukraine/reconciliation/disposition', {
+      method: 'POST',
+      query: { netId: 'act-2' },
+      headers: { 'Idempotency-Key': 'f0000000-0000-0000-0000-000000000001' },
+      body: {
+        OperationNetUid: 'f0000000-0000-0000-0000-000000000001',
+        ItemNetIds: ['item-1', 'item-2'],
+        IsDismissed: true,
+        ReasonCode: 'DataEntryError',
+        Comment: 'звірено з 1С',
+      },
+    })
+    expect(result.AffectedCount).toBe(2)
+  })
+
+  it('loads immutable disposition history', async () => {
+    apiRequestMock.mockResolvedValueOnce({
+      Body: {
+        Items: [{ Id: 7, IsDismissed: true, ProductVendorCode: 'SEM14844' }],
+      },
+    })
+
+    const result = await getDispositionHistory('act-2')
+
+    expect(apiRequestMock).toHaveBeenCalledWith('/supplies/ukraine/reconciliation/disposition/history', {
+      query: { netId: 'act-2' },
+    })
+    expect(result).toEqual([{ Id: 7, IsDismissed: true, ProductVendorCode: 'SEM14844' }])
   })
 })
