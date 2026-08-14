@@ -27,6 +27,10 @@ const REASON_OPTIONS: { value: ActReconciliationDispositionReasonCode; label: st
   { value: ActReconciliationDispositionReason.Other, label: 'Інша причина' },
 ]
 
+const quantityFormatter = new Intl.NumberFormat('uk-UA', {
+  maximumFractionDigits: 4,
+})
+
 export function ActReconciliationDispositionModal({
   actNetId,
   items,
@@ -212,5 +216,5 @@ function createOperationNetUid(): string | null {
 }
 
 function formatQuantity(value: number): string {
-  return new Intl.NumberFormat('uk-UA', { maximumFractionDigits: 4 }).format(value)
+  return quantityFormatter.format(value)
 }
