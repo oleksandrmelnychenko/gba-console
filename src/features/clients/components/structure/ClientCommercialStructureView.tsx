@@ -44,8 +44,7 @@ export function ClientCommercialStructureView({ structure, t, onChanged }: Clien
   const [pendingDecision, setPendingDecision] = useState<PendingIdentityDecision | null>(null)
   const [comment, setComment] = useState('')
   const [isSaving, setSaving] = useState(false)
-  const groupTitle = structure.GroupName?.trim()
-    || (structure.GroupKey ? `${t('Комерційна група')} · ${structure.GroupKey}` : t('Комерційна структура'))
+  const groupTitle = getCommercialGroupTitle(structure, t)
   const { activeParties, rejectedCards } = partitionStructureCards(structure)
   const partyHierarchy = buildLegalPartyHierarchy(activeParties)
   const activeCardsById = indexActiveCards(activeParties)
@@ -516,6 +515,7 @@ function ClientCard({
   const roleLabel = getClientRoleLabel(card.RoleType, card.RoleName, t)
   const regionCode = card.CurrentRegionCode || card.OriginalRegionCode
   const legalCode = card.Usreou || card.Tin
+  const sourceAgreements = getCardSourceAgreements(card)
 
   return (
     <div className={`client-source-card${card.IsTarget ? ' client-source-card--target' : ''}`}>
@@ -591,7 +591,57 @@ function ClientCard({
           ) : null}
         </Group>
       </Group>
+      {sourceAgreements.length > 0 ? (
+        <div className="client-source-card__agreements">
+          <Text className="client-source-card__agreements-title">
+            {t('Договори 1С')} · {sourceAgreements.length}
+          </Text>
+          <div className="client-source-card__agreement-list">
+            {sourceAgreements.map(({ agreement, snapshotSourceCode, sourceSystem }, index) => (
+              <span
+                className={`client-source-card__agreement${agreement.SourceMarkedDeleted ? ' is-deleted' : ''}`}
+                key={`${sourceSystem}-${snapshotSourceCode}-${agreement.SourceCode}-${agreement.AgreementType || ''}-${index}`}
+              >
+                <span className="client-source-card__agreement-source">{getSourceLabel(sourceSystem)}</span>
+                <span>{getSourceAgreementTitle(agreement)}</span>
+                {agreement.SourceMarkedDeleted ? (
+                  <span className="client-source-card__agreement-state">{t('видалений у 1С')}</span>
+                ) : null}
+              </span>
+            ))}
+          </div>
+        </div>
+      ) : null}
     </div>
+  )
+}
+
+function getCommercialGroupTitle(
+  structure: ClientCommercialStructure,
+  t: (value: string) => string,
+): string {
+  const groupKey = structure.GroupKey?.trim()
+  const groupName = structure.GroupName?.trim()
+
+  if (groupKey && groupName && !groupKey.includes(':')) return `${groupKey} · ${groupName}`
+  if (groupName) return groupName
+  if (groupKey) return `${t('Комерційна група')} · ${groupKey}`
+  return t('Комерційна структура')
+}
+
+type CardSourceAgreement = {
+  agreement: ClientSourceAgreementSnapshot
+  snapshotSourceCode: number
+  sourceSystem: string
+}
+
+function getCardSourceAgreements(card: ClientCommercialCard): CardSourceAgreement[] {
+  return card.SourceSnapshots.flatMap((snapshot) =>
+    (snapshot.Agreements || []).map((agreement) => ({
+      agreement,
+      snapshotSourceCode: snapshot.SourceCode,
+      sourceSystem: snapshot.SourceSystem,
+    })),
   )
 }
 
@@ -804,7 +854,7 @@ function TechnicalAudit({ structure, t }: ClientCommercialStructureViewProps) {
 }
 
 function SourceSnapshot({ snapshot, t }: { snapshot: ClientSourceCardSnapshot; t: (value: string) => string }) {
-  const sourceLabel = snapshot.SourceSystem.toLowerCase() === 'amg' ? 'AMG' : 'Fenix'
+  const sourceLabel = getSourceLabel(snapshot.SourceSystem)
   const groupName = snapshot.DirectClientGroupName || snapshot.MainClientName || snapshot.ClientGroupName
   const contacts = snapshot.Contacts || []
   const agreements = snapshot.Agreements || []
@@ -886,7 +936,7 @@ function SourceAgreement({
   agreement: ClientSourceAgreementSnapshot
   t: (value: string) => string
 }) {
-  const title = agreement.Number || agreement.Name || `#${agreement.SourceCode}`
+  const title = getSourceAgreementTitle(agreement)
   const validity = [formatDateOnly(agreement.FromDate), formatDateOnly(agreement.ToDate)].filter(Boolean).join(' — ')
   const accountKinds = [
     agreement.IsManagementAccounting ? t('управлінський') : null,
@@ -911,6 +961,18 @@ function SourceAgreement({
       <EvidenceRow label={t('Облік')} value={accountKinds} />
     </div>
   )
+}
+
+function getSourceLabel(sourceSystem: string): string {
+  return sourceSystem.toLowerCase() === 'amg' ? 'AMG' : 'Fenix'
+}
+
+function getSourceAgreementTitle(agreement: ClientSourceAgreementSnapshot): string {
+  const name = agreement.Name?.trim()
+  const number = agreement.Number?.trim()
+
+  if (name && number && name !== number) return `${name} · ${number}`
+  return name || number || `#${agreement.SourceCode}`
 }
 
 function sourceContactLabel(
