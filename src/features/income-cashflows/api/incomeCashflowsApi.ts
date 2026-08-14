@@ -25,6 +25,8 @@ import type {
 } from '../types'
 
 const MANUFACTURER_CLIENT_TYPE_ROLE_ID = 4
+const RETAIL_CLIENT_INITIAL_PAGE_SIZE = 100
+const RETAIL_CLIENT_INITIAL_MAX_PAGES = 100
 const CREATE_INCOME_ENDPOINT =
   getAccountingOperation(ACCOUNTING_OPERATION_ID.IncomeClientPayment).endpoint
 
@@ -298,6 +300,43 @@ export async function searchIncomeCashflowRetailClients(value: string): Promise<
   return readArrayPayload(result, ['Items', 'RetailClients', 'Clients', 'Data', 'Collection']) as RetailClient[]
 }
 
+export async function getIncomeCashflowRetailClients(): Promise<RetailClient[]> {
+  const clients = new Map<string, RetailClient>()
+  let offset = 0
+
+  for (let page = 0; page < RETAIL_CLIENT_INITIAL_MAX_PAGES; page += 1) {
+    const result = await apiRequest<unknown>('/retail/clients/all', {
+      query: {
+        limit: RETAIL_CLIENT_INITIAL_PAGE_SIZE,
+        offset,
+      },
+    })
+    const nextClients = readArrayPayload(
+      result,
+      ['Items', 'RetailClients', 'Clients', 'Data', 'Collection'],
+    ) as RetailClient[]
+    const totalQty = readTotalQty(result)
+
+    nextClients.forEach((client, index) => {
+      const identity = client.NetUid
+        || (client.Id ? `id:${client.Id}` : `page:${page}:row:${index}`)
+      clients.set(identity, client)
+    })
+
+    offset += nextClients.length
+
+    if (
+      nextClients.length === 0
+      || (totalQty !== null && offset >= totalQty)
+      || (totalQty === null && nextClients.length < RETAIL_CLIENT_INITIAL_PAGE_SIZE)
+    ) {
+      return [...clients.values()]
+    }
+  }
+
+  throw new Error('Retail-client initial lookup exceeded its safe pagination limit.')
+}
+
 export async function getIncomeCashflowRetailClientAgreements(netId: string): Promise<ClientAgreement[]> {
   const result = await apiRequest<unknown>('/agreements/retail/client/all', {
     query: {
@@ -488,4 +527,15 @@ function readNumberPayload(result: unknown): number {
   }
 
   return 0
+}
+
+function readTotalQty(result: unknown): number | null {
+  if (!result || typeof result !== 'object') {
+    return null
+  }
+
+  const value = (result as Record<string, unknown>).TotalQty
+  const totalQty = typeof value === 'number' ? value : Number(value)
+
+  return Number.isFinite(totalQty) && totalQty >= 0 ? totalQty : null
 }

@@ -30,6 +30,7 @@ import {
   createIncomeCashflow,
   createIncomeCashflowPaymentMovement,
   getIncomeCashflowPaymentMovements,
+  getIncomeCashflowRetailClients,
   getIncomeCashflowRetailClientAgreements,
   getIncomeCashflowSpecificExchangeRate,
   searchIncomeCashflowPaymentMovements,
@@ -264,9 +265,10 @@ export function IncomeCashflowShopFormPage() {
       setError(null)
 
       try {
-        const [nextRegisters, nextMovements] = await Promise.all([
+        const [nextRegisters, nextMovements, nextRetailClients] = await Promise.all([
           searchIncomeCashflowPaymentRegisters(''),
           getIncomeCashflowPaymentMovements(),
+          getIncomeCashflowRetailClients().catch(() => []),
         ])
 
         if (cancelled) {
@@ -280,6 +282,7 @@ export function IncomeCashflowShopFormPage() {
 
         setPaymentRegisters(nextRegisters)
         setPaymentMovements(nextMovements)
+        setRetailClients(nextRetailClients)
         setForm((current) => ({
           ...current,
           movementSearch: defaultMovement?.OperationName || '',
@@ -288,6 +291,9 @@ export function IncomeCashflowShopFormPage() {
 
         if (retailClientId) {
           const agreements = await getIncomeCashflowRetailClientAgreements(retailClientId)
+          const retailClient = nextRetailClients.find(
+            (client) => getEntityValue(client) === retailClientId,
+          ) || null
 
           if (!cancelled) {
             applyRetailAgreements({
@@ -295,6 +301,7 @@ export function IncomeCashflowShopFormPage() {
               amount: queryAmount,
               autoAllocate: Boolean(saleId),
               paymentRegisters: nextRegisters,
+              retailClient,
               selectedAgreementId: agreementId,
               selectedSaleId: saleId,
             })
@@ -327,6 +334,7 @@ export function IncomeCashflowShopFormPage() {
     setLoading,
     setPaymentMovements,
     setPaymentRegisters,
+    setRetailClients,
     t,
   ])
 

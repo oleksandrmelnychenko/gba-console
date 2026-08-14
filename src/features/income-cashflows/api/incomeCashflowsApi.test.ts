@@ -7,6 +7,7 @@ import {
   getIncomeCashflowClientAgreements,
   getIncomeCashflowOrganizations,
   getIncomeCashflowPaymentMovements,
+  getIncomeCashflowRetailClients,
   getIncomeCashflowSpecificExchangeRate,
   getIncomeCashflowSupplyOrganizationAgreements,
   getIncomeCashflowByNetId,
@@ -168,6 +169,37 @@ describe('income cashflow API lookup contracts', () => {
         },
       },
     )
+  })
+
+  it('loads every initial retail-client page for the shop selector', async () => {
+    const firstPage = Array.from({ length: 100 }, (_, index) => ({
+      Name: `Retail ${index + 1}`,
+      NetUid: `retail-client-${index + 1}`,
+    }))
+    const target = {
+      Name: 'ShopClient VAT',
+      NetUid: 'retail-client-101',
+    }
+    apiRequestMock
+      .mockResolvedValueOnce({ Collection: firstPage, TotalQty: 101 })
+      .mockResolvedValueOnce({ Collection: [target], TotalQty: 101 })
+
+    const clients = await getIncomeCashflowRetailClients()
+
+    expect(clients).toHaveLength(101)
+    expect(clients.at(-1)).toEqual(target)
+    expect(apiRequestMock).toHaveBeenNthCalledWith(1, '/retail/clients/all', {
+      query: {
+        limit: 100,
+        offset: 0,
+      },
+    })
+    expect(apiRequestMock).toHaveBeenNthCalledWith(2, '/retail/clients/all', {
+      query: {
+        limit: 100,
+        offset: 100,
+      },
+    })
   })
 
   it('loads a specific exchange rate for the selected register and agreement currencies', async () => {

@@ -7,6 +7,7 @@ import {
   createIncomeCashflow,
   getIncomeCashflowPaymentMovements,
   getIncomeCashflowRetailClientAgreements,
+  getIncomeCashflowRetailClients,
   getIncomeCashflowSpecificExchangeRate,
   searchIncomeCashflowPaymentMovements,
   searchIncomeCashflowPaymentRegisters,
@@ -25,6 +26,7 @@ vi.mock('../api/incomeCashflowsApi', async (importOriginal) => ({
   createIncomeCashflow: vi.fn(),
   getIncomeCashflowPaymentMovements: vi.fn(),
   getIncomeCashflowRetailClientAgreements: vi.fn(),
+  getIncomeCashflowRetailClients: vi.fn(),
   getIncomeCashflowSpecificExchangeRate: vi.fn(),
   searchIncomeCashflowPaymentMovements: vi.fn(),
   searchIncomeCashflowPaymentRegisters: vi.fn(),
@@ -112,6 +114,12 @@ const retailClient: RetailClient = {
   NetUid: 'retail-client-60',
   PhoneNumber: '+380257899548',
 }
+const shopClientVat: RetailClient = {
+  Id: 61,
+  Name: 'ShopClient VAT',
+  NetUid: 'retail-client-61',
+  PhoneNumber: '+380501234567',
+}
 const agreement: ClientAgreement = {
   AgreementId: 70,
   Client: {
@@ -132,6 +140,7 @@ const agreement: ClientAgreement = {
   },
 }
 const retailClientLabel = `${retailClient.Name} ${retailClient.PhoneNumber}`
+const shopClientVatLabel = `${shopClientVat.Name} ${shopClientVat.PhoneNumber}`
 
 function renderPage() {
   return render(
@@ -151,10 +160,36 @@ describe('IncomeCashflowShopFormPage retail client selection', () => {
     vi.mocked(searchIncomeCashflowPaymentRegisters).mockResolvedValue([register])
     vi.mocked(getIncomeCashflowPaymentMovements).mockResolvedValue([movement])
     vi.mocked(searchIncomeCashflowPaymentMovements).mockResolvedValue([movement])
+    vi.mocked(getIncomeCashflowRetailClients).mockResolvedValue([shopClientVat])
     vi.mocked(searchIncomeCashflowRetailClients).mockResolvedValue([retailClient])
     vi.mocked(getIncomeCashflowRetailClientAgreements).mockResolvedValue([agreement])
     vi.mocked(getIncomeCashflowSpecificExchangeRate).mockResolvedValue(1)
     vi.mocked(createIncomeCashflow).mockResolvedValue({ NetUid: 'income-1' })
+  })
+
+  it('shows the initial retail-client list before the user types', async () => {
+    renderPage()
+
+    expect(await screen.findByRole('option', { name: shopClientVatLabel })).toBeTruthy()
+    expect(getIncomeCashflowRetailClients).toHaveBeenCalledOnce()
+    expect(
+      (screen.getByRole('combobox', { name: 'Retail-клієнт' }) as HTMLInputElement).disabled,
+    ).toBe(false)
+  })
+
+  it('keeps the payment form usable when the optional initial client list fails', async () => {
+    vi.mocked(getIncomeCashflowRetailClients).mockRejectedValueOnce(
+      new Error('Retail clients unavailable'),
+    )
+
+    renderPage()
+
+    await waitFor(() =>
+      expect(
+        (screen.getByRole('combobox', { name: 'Retail-клієнт' }) as HTMLInputElement).disabled,
+      ).toBe(false),
+    )
+    expect(screen.queryByRole('alert')).toBeNull()
   })
 
   it('keeps a selected retail client and allows saving when its agreement has no debts', async () => {
