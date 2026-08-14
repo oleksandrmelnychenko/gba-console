@@ -124,7 +124,12 @@ export function WarehouseUkrainePage() {
           />
         )
       case TAB_SHIPMENTS:
-        return <ShipmentsTab createRequest={shipmentCreateRequest} />
+        return (
+          <ShipmentsTab
+            key={shipmentCreateRequest}
+            createRequest={shipmentCreateRequest}
+          />
+        )
       case TAB_ORDERS:
         return <OrdersTab />
       case TAB_EDITING:
@@ -166,9 +171,8 @@ export function WarehouseUkrainePage() {
           })}
         </div>
 
-        {visibleTabs
-          .filter((tab) => mountedTabs.has(tab.value))
-          .map((tab) => (
+        {visibleTabs.map((tab) =>
+          mountedTabs.has(tab.value) ? (
             <Box
               key={tab.value}
               className="warehouse-ukraine-tab-panel"
@@ -176,7 +180,8 @@ export function WarehouseUkrainePage() {
             >
               {renderTab(tab.value)}
             </Box>
-          ))}
+          ) : null,
+        )}
       </div>
     </Stack>
   )
