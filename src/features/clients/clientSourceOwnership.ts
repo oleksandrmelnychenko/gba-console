@@ -1,5 +1,7 @@
 import type { Agreement, Client } from './types'
 
+export type SourceEditMode = 'locked' | 'manual'
+
 type SourceIdentity = Pick<
   Client,
   'SourceAmgCode' | 'SourceFenixCode' | 'SourceAmgId' | 'SourceFenixId'

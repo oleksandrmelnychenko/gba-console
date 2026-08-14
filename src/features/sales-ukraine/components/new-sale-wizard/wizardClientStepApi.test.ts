@@ -104,6 +104,8 @@ describe('wizard client step API contracts', () => {
       IsTargetBlocked: false,
       HasRelatedBlockedCard: false,
       MaxOverdueDays: 1519,
+      OwnMaxOverdueDays: 0,
+      RelatedMaxOverdueDays: 1519,
       RelatedCardCount: 1,
       BuyerCardCount: 2,
       AttentionReasons: ['related_overdue_debt'],

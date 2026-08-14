@@ -51,6 +51,7 @@ export type GeneralInfoFieldsProps = {
   canSaveDocuments?: boolean
   isNew?: boolean
   sourceManaged?: boolean
+  sourceStructureManaged?: boolean
   regionCodeError?: string
   onChange: <K extends keyof Client>(key: K, value: Client[K]) => void
   onRegionChange: (region: Region | null) => void
@@ -370,7 +371,7 @@ function BuyerFields(props: GeneralInfoFieldsProps) {
           <Text fw={600}>{t('Тип клієнта')}</Text>
           {role.isSubClient ? (
             <SegmentedControl
-              disabled={props.sourceManaged}
+              disabled={props.sourceStructureManaged ?? props.sourceManaged}
               data={[
                 { value: 'trade-point', label: t('Торгова точка') },
                 { value: 'sub-client', label: t('Субклієнт') },

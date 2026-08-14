@@ -15,7 +15,7 @@ import { AppDrawer } from "../../../shared/ui/AppDrawer"
 import { AppModal } from "../../../shared/ui/AppModal"
 import { CREATE_ACTION_COLOR } from "../../../shared/ui/page-header-actions/PageHeaderActions"
 import { notifications } from '@mantine/notifications'
-import { BookUser, ChartBar, Check, ChevronRight, CircleAlert, CircleDot, Gauge, Globe, Info, Landmark, Network, Save, Star, Tag, Target, Trash2, type LucideProps } from 'lucide-react'
+import { BookUser, ChartBar, Check, ChevronRight, CircleAlert, CircleDot, Gauge, Globe, Info, Landmark, Network, Pencil, Save, Star, Tag, Target, Trash2, type LucideProps } from 'lucide-react'
 import type { ComponentType } from 'react'
 import { type FormEvent, useEffect, useMemo, useRef } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
@@ -37,6 +37,10 @@ import { BankDetailsFields } from '../components/form/BankDetailsFields'
 import { ContactInfoFields } from '../components/form/ContactInfoFields'
 import { EditClientTypePanel } from '../components/EditClientTypePanel'
 import { canEditClientLifecycle, isSourceManagedClient } from '../clientSourceOwnership'
+import {
+  getClientIdentityAttentionMessage,
+  getClientIdentityAttentionTitle,
+} from '../clientIdentityAttentionMessage'
 import { EcommercePanel } from '../components/ecommerce/EcommercePanel'
 import { GeneralInfoFields, type ClientFormRole } from '../components/form/GeneralInfoFields'
 import { PerfectClientPanel } from '../components/perfect-client/PerfectClientPanel'
@@ -84,6 +88,7 @@ const CLIENT_TYPE_BUYER = 0
 const CLIENT_TYPE_PROVIDER = 1
 const DEFAULT_UKRAINIAN_REGION_CODE = 'XM007'
 const DEFAULT_POLAND_REGION_CODE = 'PL007'
+const INFORMATION_NOTICE_TIMEOUT_MS = 3_000
 
 type EditStep = {
   isAi?: boolean
@@ -99,6 +104,7 @@ type ClientEditRouteState = {
 }
 
 type EditStepContentProps = {
+  allowSourceOverride: boolean
   client: Client
   errors: ClientFormErrors
   role: ClientFormRole
@@ -134,6 +140,32 @@ function getClientRole(client: Client | null): ClientFormRole {
   }
 }
 
+function useAutoDismissNotice(noticeKey: string | null) {
+  const [dismissedNoticeKey, setDismissedNoticeKey] = useValueState<string | null>(null)
+  const visible = Boolean(noticeKey && dismissedNoticeKey !== noticeKey)
+
+  useEffect(() => {
+    if (!noticeKey || !visible) {
+      return
+    }
+
+    const timeout = window.setTimeout(() => {
+      setDismissedNoticeKey(noticeKey)
+    }, INFORMATION_NOTICE_TIMEOUT_MS)
+
+    return () => window.clearTimeout(timeout)
+  }, [noticeKey, setDismissedNoticeKey, visible])
+
+  return {
+    dismiss: () => {
+      if (noticeKey) {
+        setDismissedNoticeKey(noticeKey)
+      }
+    },
+    visible,
+  }
+}
+
 export function ClientEditPage() {
   const { t } = useI18n()
   const { netid, step, productNetId } = useParams()
@@ -152,6 +184,7 @@ export function ClientEditPage() {
   const [isUploadingDocuments, setUploadingDocuments] = useValueState(false)
   const [formErrors, setFormErrors] = useValueState<ClientFormErrors>({})
   const [pendingDocuments, setPendingDocuments] = useValueState<File[]>([])
+  const [manualSourceOverrideClientNetId, setManualSourceOverrideClientNetId] = useValueState<string | null>(null)
   const originalRegionRef = useRef<{ regionNetUid?: string; regionCode?: Client['RegionCode'] }>({})
   const pendingDiscountDraftRef = useRef<DiscountsTreeDraft | null>(null)
   const routeState = location.state as ClientEditRouteState | null
@@ -159,6 +192,21 @@ export function ClientEditPage() {
   const returnPath = routeState?.returnPath || (basePath === '/suppliers/edit' ? '/suppliers' : '/clients')
   const role = useMemo(() => getClientRole(client), [client])
   const sourceManaged = isSourceManagedClient(client)
+  const sourceOverrideEnabled = Boolean(
+    sourceManaged
+    && client?.NetUid
+    && manualSourceOverrideClientNetId === client.NetUid,
+  )
+  const sourceNotice = useAutoDismissNotice(
+    sourceManaged && client?.NetUid
+      ? `source:${client.NetUid}:${sourceOverrideEnabled ? 'override' : 'locked'}`
+      : null,
+  )
+  const identityNotice = useAutoDismissNotice(
+    identityAttention && identityAttention.AttentionLevel !== 'none'
+      ? `identity:${identityAttention.ClientNetUid}:${identityAttention.AsOfUtc}:${(identityAttention.AttentionReasons || []).join(',')}`
+      : null,
+  )
   const {
     isLoading: isLoadingLookups,
     lookups,
@@ -608,12 +656,16 @@ export function ClientEditPage() {
     setError(null)
 
     try {
-      const updatedClient = await updateClient(clientToSave)
+      const updatedClient = await updateClient(clientToSave, {
+        allowSourceOverride: sourceOverrideEnabled,
+      })
       pendingDiscountDraftRef.current = null
       setClient(updatedClient || clientToSave)
       notifications.show({
         color: 'green',
-        message: t('Картку збережено'),
+        message: sourceOverrideEnabled
+          ? t('Ручні зміни збережено. Наступна синхронізація 1С може їх перезаписати.')
+          : t('Картку збережено'),
       })
     } catch (saveError) {
       setError(saveError instanceof Error ? saveError.message : t('Не вдалося зберегти картку'))
@@ -687,7 +739,14 @@ export function ClientEditPage() {
           client={client}
           isDeleting={isDeleting}
           isSaving={isSaving}
+          sourceManaged={sourceManaged}
+          sourceOverrideEnabled={sourceOverrideEnabled}
           onDelete={() => setDeleteModalOpened(true)}
+          onEnableSourceOverride={() => {
+            if (client?.NetUid) {
+              setManualSourceOverrideClientNetId(client.NetUid)
+            }
+          }}
         />
       }
     >
@@ -698,20 +757,37 @@ export function ClientEditPage() {
         </Alert>
       )}
 
-      {isSourceManagedClient(client) ? (
-        <Alert color="blue" icon={<CircleAlert size={18} />} variant="light">
-          <Text fw={600} size="sm">{t('Картка керується 1С')}</Text>
+      {sourceManaged && sourceNotice.visible ? (
+        <Alert
+          closeButtonLabel={t('Закрити повідомлення')}
+          color={sourceOverrideEnabled ? 'orange' : 'blue'}
+          icon={<CircleAlert size={18} />}
+          variant="light"
+          withCloseButton
+          onClose={sourceNotice.dismiss}
+        >
+          <Text fw={600} size="sm">
+            {sourceOverrideEnabled
+              ? t('Ручне редагування 1С-даних увімкнено')
+              : t('Картка синхронізується з 1С')}
+          </Text>
           <Text size="sm">
-            {t('Назва, реквізити, контакти, регіон, банк і договори з кодом 1С доступні лише для перегляду. Сирі значення Fenix/AMG показані у «Дані 1С». Локальні операційні налаштування можна змінювати.')}
+            {sourceOverrideEnabled
+              ? t('Назву, реквізити, контакти, регіон, банк, менеджерів і договори можна змінювати. Наступна синхронізація 1С може перезаписати ці значення.')
+              : t('Дані 1С захищені від випадкових змін. Натисніть «Редагувати вручну», якщо потрібно їх змінити; наступна синхронізація може повернути значення Fenix/AMG.')}
           </Text>
         </Alert>
       ) : null}
 
-      {identityAttention && identityAttention.AttentionLevel !== 'none' ? (
-        <ClientIdentityAttentionBanner attention={identityAttention} />
+      {identityAttention && identityAttention.AttentionLevel !== 'none' && identityNotice.visible ? (
+        <ClientIdentityAttentionBanner
+          attention={identityAttention}
+          onClose={identityNotice.dismiss}
+        />
       ) : null}
 
       <ClientEditBody
+        allowSourceOverride={sourceOverrideEnabled}
         client={client}
         errors={formErrors}
         firstStep={firstStep}
@@ -770,29 +846,27 @@ export function ClientEditPage() {
 
 function ClientIdentityAttentionBanner({
   attention,
+  onClose,
 }: {
   attention: ClientIdentityAttentionSummary
+  onClose: () => void
 }) {
   const { t } = useI18n()
   const color = attention.AttentionLevel === 'critical' ? 'red' : 'orange'
-  const title = attention.HasRelatedOverdueDebt
-    ? `${t('Прострочення в іншій картці')} · ${attention.MaxOverdueDays} ${t('дн.')}`
-    : attention.HasOwnOverdueDebt
-      ? `${t('Є прострочений борг')} · ${attention.MaxOverdueDays} ${t('дн.')}`
-      : attention.IsTargetBlocked
-        ? t('Картку клієнта заблоковано')
-        : attention.RequiresReview
-          ? t('Потрібно перевірити зв’язок карток')
-          : attention.LegalCodeQuality === 'invalid'
-            ? t('ЄДРПОУ / ІПН заповнений некоректно')
-            : t('Дані клієнта потребують уваги')
+  const title = getClientIdentityAttentionTitle(attention, t)
 
   return (
-    <Alert color={color} icon={<CircleAlert size={18} />} title={title} variant="light">
+    <Alert
+      closeButtonLabel={t('Закрити повідомлення')}
+      color={color}
+      icon={<CircleAlert size={18} />}
+      title={title}
+      variant="light"
+      withCloseButton
+      onClose={onClose}
+    >
       <Text size="sm">
-        {attention.Candidates.length > 1
-          ? `${t('Знайдено карток')}: ${attention.Candidates.length}. ${t('Перевірте ролі, контакти та фінансові дані перед зміною клієнта.')}`
-          : t('Перевірте ЄДРПОУ / ІПН та реквізити клієнта.')}
+        {getClientIdentityAttentionMessage(attention, t)}
       </Text>
     </Alert>
   )
@@ -803,18 +877,37 @@ function ClientEditActions({
   client,
   isDeleting,
   isSaving,
+  sourceManaged,
+  sourceOverrideEnabled,
   onDelete,
+  onEnableSourceOverride,
 }: {
   canDelete: boolean
   client: Client | null
   isDeleting: boolean
   isSaving: boolean
+  sourceManaged: boolean
+  sourceOverrideEnabled: boolean
   onDelete: () => void
+  onEnableSourceOverride: () => void
 }) {
   const { t } = useI18n()
 
   return (
     <Group gap="xs" className="client-edit-footer-actions">
+      {sourceManaged && (
+        <Button
+          color="orange"
+          disabled={sourceOverrideEnabled}
+          leftSection={<Pencil size={16} />}
+          variant="light"
+          onClick={onEnableSourceOverride}
+        >
+          {sourceOverrideEnabled
+            ? t('Ручне редагування увімкнено')
+            : t('Редагувати вручну')}
+        </Button>
+      )}
       {canDelete && (
         <Button color="red" leftSection={<Trash2 size={16} />} loading={isDeleting} variant="light" onClick={onDelete}>
           {t('Видалити')}
@@ -897,6 +990,7 @@ function ClientEditTitle({
 }
 
 function ClientEditBody({
+  allowSourceOverride,
   client,
   errors,
   firstStep,
@@ -927,6 +1021,7 @@ function ClientEditBody({
   onSaveDocuments,
   onSubmit,
 }: {
+  allowSourceOverride: boolean
   client: Client | null
   errors: ClientFormErrors
   firstStep?: EditStep
@@ -1025,6 +1120,7 @@ function ClientEditBody({
           <Card className="app-section-card client-edit-shell-card" withBorder radius="md" padding="md">
             <Stack gap="md">
               <EditStepContent
+                allowSourceOverride={allowSourceOverride}
                 client={client}
                 errors={errors}
                 isLoadingRegionCode={isLoadingRegionCode}
@@ -1094,6 +1190,7 @@ function buildEditSteps(client: Client | null, hasPermission: (permissionKey: st
   const steps: EditStep[] = [
     { value: 'general-information', label: translate('Загальна інформація') },
     { value: 'contact-information', label: translate('Контакти') },
+    { value: 'bank-details', label: translate('Банківські дані') },
   ]
 
   if (hasPermission(EDIT_CLIENT_PRICING_PERMISSION)) {
@@ -1118,14 +1215,11 @@ function buildEditSteps(client: Client | null, hasPermission: (permissionKey: st
     steps.push({ isAi: true, value: 'solvency', label: translate('Платоспроможність') })
   }
 
-  if (getClientType(client) === CLIENT_TYPE_PROVIDER) {
-    steps.push({ value: 'bank-details', label: translate('Банківські дані') })
-  }
-
   return steps
 }
 
 function EditStepContent({
+  allowSourceOverride,
   client,
   errors,
   isLoadingRegionCode,
@@ -1152,9 +1246,10 @@ function EditStepContent({
   step,
 }: EditStepContentProps) {
   const sourceManaged = isSourceManagedClient(client)
+  const sourceFieldsLocked = sourceManaged && !allowSourceOverride
 
   if (step === 'contact-information') {
-    return <ContactInfoFields client={client} errors={errors} role={role} sourceManaged={sourceManaged} onChange={setField} />
+    return <ContactInfoFields client={client} errors={errors} role={role} sourceManaged={sourceFieldsLocked} onChange={setField} />
   }
 
   if (step === 'analysts' || step === 'agreements' || step === 'pricing') {
@@ -1164,6 +1259,7 @@ function EditStepContent({
         isProvider={role.isProvider}
         mode="edit"
         sourceManaged={sourceManaged}
+        sourceEditMode={allowSourceOverride ? 'manual' : 'locked'}
         // Legacy 'pricing' links still render both halves side by side.
         section={step === 'pricing' ? undefined : step}
         onChange={onClientChange}
@@ -1177,7 +1273,7 @@ function EditStepContent({
       <BankDetailsFields
         client={client}
         currencies={lookups.currencies}
-        sourceManaged={sourceManaged}
+        sourceManaged={sourceFieldsLocked}
         onAccountNumberChange={setAccountNumber}
         onAccountNumberCurrencyChange={setAccountNumberCurrency}
         onBankFieldChange={setBankField}
@@ -1199,7 +1295,7 @@ function EditStepContent({
     return (
       <EcommercePanel
         client={client}
-        sourceManaged={sourceManaged}
+        sourceManaged={sourceFieldsLocked}
         onChange={onClientChange}
       />
     )
@@ -1243,7 +1339,8 @@ function EditStepContent({
       packingMarkings={lookups.packingMarkings}
       regions={lookups.regions}
       role={role}
-      sourceManaged={sourceManaged}
+      sourceManaged={sourceFieldsLocked}
+      sourceStructureManaged={sourceManaged}
       onAddDocuments={onAddDocuments}
       onChange={setField}
       onCreateCountry={onCreateCountry}

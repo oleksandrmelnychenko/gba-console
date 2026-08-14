@@ -27,6 +27,11 @@ const CLIENT_SAVE_OMIT_KEYS = [
 
 const CLIENT_AGREEMENT_SAVE_OMIT_KEYS = ['Client']
 const AGREEMENT_SAVE_OMIT_KEYS = ['ClientAgreements', 'ClientInDebts', 'IsSelected', 'TempId']
+const CLIENT_SOURCE_OVERRIDE_HEADER = 'X-Client-Source-Override'
+
+export type ClientUpdateOptions = {
+  allowSourceOverride?: boolean
+}
 
 export async function getClientById(netId: string): Promise<Client | null> {
   const result = await apiRequest<unknown>('/clients/get', {
@@ -51,17 +56,26 @@ export async function createClient(client: Client, parentId?: string | null): Pr
   return normalizeClient(result)
 }
 
-export async function updateClient(client: Client): Promise<ClientUpsertResult> {
+export async function updateClient(
+  client: Client,
+  options: ClientUpdateOptions = {},
+): Promise<ClientUpsertResult> {
   const payload = prepareClientSavePayload(client)
+  const allowSourceOverride = options.allowSourceOverride === true
   const result = await executeAccountingMutation({
     identity: client,
-    kind: 'clients:update',
+    kind: allowSourceOverride ? 'clients:update:source-override' : 'clients:update',
     payload,
     request: (payloadSnapshot, context) => apiRequest<unknown>('/clients/update', {
       method: 'POST',
       body: payloadSnapshot,
       dedupe: false,
-      headers: context.headers,
+      headers: allowSourceOverride
+        ? {
+            ...context.headers,
+            [CLIENT_SOURCE_OVERRIDE_HEADER]: 'true',
+          }
+        : context.headers,
       ...(context.signal ? { signal: context.signal } : {}),
     }),
   })

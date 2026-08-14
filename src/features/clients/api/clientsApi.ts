@@ -329,6 +329,8 @@ function isIdentityAttentionSummary(
     && typeof summary.HasRelatedOverdueDebt === 'boolean'
     && typeof summary.IsTargetBlocked === 'boolean'
     && typeof summary.HasRelatedBlockedCard === 'boolean'
+    && typeof summary.OwnMaxOverdueDays === 'number'
+    && typeof summary.RelatedMaxOverdueDays === 'number'
     && Array.isArray(summary.AttentionReasons)
     && Array.isArray(summary.Candidates)
     && Array.isArray(summary.OverdueByCurrency)

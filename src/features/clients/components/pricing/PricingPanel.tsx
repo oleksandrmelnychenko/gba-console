@@ -25,6 +25,7 @@ import {
 import { exportAgreementDocument, exportAgreementWarrantyConditions } from '../../api/clientAgreementsApi'
 import { uploadClientContract } from '../../api/clientCabinetApi'
 import { ClientAgreementsPanel } from './ClientAgreementsPanel'
+import type { SourceEditMode } from '../../clientSourceOwnership'
 import { appendNewClientAgreementDraft } from './clientAgreementDraft'
 import { DiscountsTree, type DiscountsTreeDraft } from './DiscountsTree'
 import { ManagerPicker } from './ManagerPicker'
@@ -53,6 +54,7 @@ export type PricingPanelProps = {
   mode?: PricingPanelMode
   disabled?: boolean
   sourceManaged?: boolean
+  sourceEditMode?: SourceEditMode
   /** Render only one half of the panel (its own edit step); omit for the
    *  legacy side-by-side layout. */
   section?: PricingPanelSection
@@ -97,6 +99,7 @@ export function PricingPanel({
   mode = 'edit',
   disabled = false,
   sourceManaged = false,
+  sourceEditMode = 'locked',
   section,
   onChange,
   onAddContractDocuments,
@@ -435,7 +438,7 @@ export function PricingPanel({
       <Card className="app-section-card" withBorder padding="md" radius="md">
         <ManagerPicker
           client={client}
-          disabled={disabled || sourceManaged}
+          disabled={disabled || (sourceManaged && sourceEditMode !== 'manual')}
           role={isProvider ? 'provider' : 'buyer'}
           onChange={onChange}
         />
@@ -465,6 +468,7 @@ export function PricingPanel({
           pricings={pricings}
           promotionalPricings={pricings}
           selectedAgreementNetId={selectedAgreementNetId}
+          sourceEditMode={sourceEditMode}
           onDeleteAgreement={handleDeleteAgreement}
           onExportAgreementDocument={handleExportAgreementDocument}
           onExportAgreementWarrantyConditions={handleExportAgreementWarranty}

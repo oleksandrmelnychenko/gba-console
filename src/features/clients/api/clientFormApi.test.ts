@@ -83,6 +83,24 @@ describe('client form API contracts', () => {
     })
   })
 
+  it('binds an explicit 1C override to the operation kind and request header', async () => {
+    const client: Client = { NetUid: 'client-net-id', FullName: 'Manual client name' }
+    apiRequestMock.mockResolvedValueOnce(client)
+
+    await expect(updateClient(client, { allowSourceOverride: true })).resolves.toEqual(client)
+
+    expect(executeAccountingMutationMock.mock.calls[0]?.[0].kind).toBe('clients:update:source-override')
+    expect(apiRequestMock).toHaveBeenCalledWith('/clients/update', {
+      method: 'POST',
+      body: client,
+      dedupe: false,
+      headers: {
+        ...clientUpdateHeaders,
+        'X-Client-Source-Override': 'true',
+      },
+    })
+  })
+
   it('removes read-only and recursive client graph fields from save payloads', async () => {
     const client: Client = {
       NetUid: 'client-net-id',

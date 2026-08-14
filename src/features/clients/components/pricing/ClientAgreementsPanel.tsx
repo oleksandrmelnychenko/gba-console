@@ -29,7 +29,7 @@ import type {
   Organization,
   Pricing,
 } from '../../types'
-import { isSourceManagedAgreement } from '../../clientSourceOwnership'
+import { isSourceManagedAgreement, type SourceEditMode } from '../../clientSourceOwnership'
 
 const EDIT_AGREEMENT_PERMISSION = 'Clients_Edit_Contract_Pricing_EditBtn_PKEY'
 const AGREEMENT_DEFAULT_NAME = 'Default'
@@ -47,6 +47,7 @@ export type ClientAgreementsPanelProps = {
   isDeleting?: boolean
   error?: string | null
   selectedAgreementNetId?: string
+  sourceEditMode?: SourceEditMode
   exportDocument?: ClientPrintDocument | null
   isExporting?: boolean
   onRowClick?: (clientAgreement: ClientAgreement) => void
@@ -129,6 +130,7 @@ export function ClientAgreementsPanel({
   isDeleting = false,
   error = null,
   selectedAgreementNetId,
+  sourceEditMode = 'locked',
   exportDocument,
   isExporting = false,
   onRowClick,
@@ -143,6 +145,7 @@ export function ClientAgreementsPanel({
 
   const [state, dispatch] = useReducer(agreementsPanelReducer, initialAgreementsPanelState)
   const { downloadModalOpened, formDraft, formError, formIsEdit, formOpened } = state
+  const formIsSourceManaged = isSourceManagedAgreement(formDraft)
 
   const isVatAccountingHidden = useMemo(
     () => !(formDraft?.IsAccounting),
@@ -267,7 +270,7 @@ export function ClientAgreementsPanel({
               <ProviderAgreementItem
                 key={key}
                 agreement={agreement}
-                canEdit={canEdit && !sourceManaged}
+                canEdit={canEdit && (!sourceManaged || sourceEditMode === 'manual')}
                 isHighlighted={isHighlighted}
                 sourceManaged={sourceManaged}
                 onClick={() => onRowClick?.(clientAgreement)}
@@ -277,7 +280,7 @@ export function ClientAgreementsPanel({
               <BuyerAgreementItem
                 key={key}
                 agreement={agreement}
-                canEdit={canEdit && !sourceManaged}
+                canEdit={canEdit && (!sourceManaged || sourceEditMode === 'manual')}
                 canExport={Boolean(agreement.NetUid) && (agreement.Id || 0) > 0}
                 isHighlighted={isHighlighted}
                 originalClientName={clientAgreement.OriginalClientName}
@@ -327,7 +330,7 @@ export function ClientAgreementsPanel({
 
             <Group justify="space-between">
               <div>
-                {formIsEdit && (
+                {formIsEdit && !formIsSourceManaged && (
                   <Button
                     color="red"
                     leftSection={<Trash2 size={16} />}

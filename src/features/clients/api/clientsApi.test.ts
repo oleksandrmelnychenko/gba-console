@@ -534,6 +534,8 @@ function createIdentityAttention(clientNetUid: string) {
     IsTargetBlocked: false,
     HasRelatedBlockedCard: false,
     MaxOverdueDays: 0,
+    OwnMaxOverdueDays: 0,
+    RelatedMaxOverdueDays: 0,
     RelatedCardCount: 1,
     BuyerCardCount: 2,
     AttentionReasons: ['invalid_legal_code'],

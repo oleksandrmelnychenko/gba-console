@@ -21,6 +21,8 @@ function createRisk(
     IsTargetBlocked: false,
     HasRelatedBlockedCard: false,
     MaxOverdueDays: 0,
+    OwnMaxOverdueDays: 0,
+    RelatedMaxOverdueDays: 0,
     RelatedCardCount: 2,
     BuyerCardCount: 2,
     AttentionReasons: [],
@@ -38,10 +40,27 @@ describe('wizard legal-party risk label', () => {
           HasOverdueDebt: true,
           HasRelatedOverdueDebt: true,
           MaxOverdueDays: 1519,
+          RelatedMaxOverdueDays: 1519,
         }),
         translate,
       ),
     ).toBe('Прострочення в іншій картці · 1519 дн.')
+  })
+
+  it('shows the opened card debt age when own and related debt coexist', () => {
+    expect(
+      getLegalPartyRiskLabel(
+        createRisk({
+          HasOverdueDebt: true,
+          HasOwnOverdueDebt: true,
+          HasRelatedOverdueDebt: true,
+          MaxOverdueDays: 54,
+          OwnMaxOverdueDays: 1,
+          RelatedMaxOverdueDays: 54,
+        }),
+        translate,
+      ),
+    ).toBe('Є прострочений борг · 1 дн.')
   })
 
   it('shows the number of linked client cards when there is no harder risk', () => {

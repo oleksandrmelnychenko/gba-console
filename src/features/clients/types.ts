@@ -357,6 +357,8 @@ export type ClientIdentityAttentionSummary = {
   IsTargetBlocked: boolean
   HasRelatedBlockedCard: boolean
   MaxOverdueDays: number
+  OwnMaxOverdueDays: number
+  RelatedMaxOverdueDays: number
   RelatedCardCount: number
   BuyerCardCount: number
   AttentionReasons: string[]

@@ -4,12 +4,12 @@ export function getLegalPartyRiskLabel(
   risk: ClientIdentityAttentionSummary,
   t: (value: string) => string,
 ): string {
-  if (risk.HasRelatedOverdueDebt) {
-    return `${t('Прострочення в іншій картці')} · ${risk.MaxOverdueDays} ${t('дн.')}`
+  if (risk.HasOwnOverdueDebt) {
+    return `${t('Є прострочений борг')} · ${risk.OwnMaxOverdueDays} ${t('дн.')}`
   }
 
-  if (risk.HasOwnOverdueDebt) {
-    return `${t('Є прострочений борг')} · ${risk.MaxOverdueDays} ${t('дн.')}`
+  if (risk.HasRelatedOverdueDebt) {
+    return `${t('Прострочення в іншій картці')} · ${risk.RelatedMaxOverdueDays} ${t('дн.')}`
   }
 
   if (risk.IsTargetBlocked) {

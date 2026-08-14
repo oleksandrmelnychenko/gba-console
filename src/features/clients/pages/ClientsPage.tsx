@@ -67,6 +67,7 @@ import { ClientCommercialStructureView } from '../components/structure/ClientCom
 import { ClientSourceQualityBadge } from '../components/structure/ClientSourceQualityBadge'
 import type { SolvencyScore } from '../solvencyTypes'
 import { clientNetUidKey, indexByClientNetUid } from '../clientNetUidIndex'
+import { getClientIdentityAttentionTitle } from '../clientIdentityAttentionMessage'
 import { isSourceManagedClient } from '../clientSourceOwnership'
 import './clients-page.css'
 
@@ -1795,29 +1796,7 @@ function getIdentityAttentionLabel(
   attention: ClientIdentityAttentionSummary,
   t: (value: string) => string,
 ): string {
-  if (attention.HasRelatedOverdueDebt) {
-    return `${t('Прострочення в іншій картці')} · ${attention.MaxOverdueDays} ${t('дн.')}`
-  }
-  if (attention.HasOwnOverdueDebt) {
-    return `${t('Є прострочений борг')} · ${attention.MaxOverdueDays} ${t('дн.')}`
-  }
-  if (attention.IsTargetBlocked) {
-    return t('Картку клієнта заблоковано')
-  }
-  if (attention.HasRelatedBlockedCard) {
-    return t('Заблоковано іншу пов’язану картку')
-  }
-  if (attention.RequiresReview) {
-    return t('Потрібна перевірка карток')
-  }
-  if (attention.LegalCodeQuality === 'invalid') {
-    return t('Некоректні дані')
-  }
-  if (attention.LegalCodeQuality === 'missing') {
-    return t('Неповні дані')
-  }
-
-  return t('Пов’язані картки')
+  return getClientIdentityAttentionTitle(attention, t)
 }
 
 function getLegalCodeQualityLabel(
