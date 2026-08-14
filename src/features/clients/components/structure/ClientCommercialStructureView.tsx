@@ -515,7 +515,8 @@ function ClientCard({
   const roleLabel = getClientRoleLabel(card.RoleType, card.RoleName, t)
   const regionCode = card.CurrentRegionCode || card.OriginalRegionCode
   const legalCode = card.Usreou || card.Tin
-  const sourceAgreements = getCardSourceAgreements(card)
+  const sourceSnapshots = getCardSourceSnapshots(card)
+  const displayName = getPreferredCardDisplayName(card, t)
 
   return (
     <div className={`client-source-card${card.IsTarget ? ' client-source-card--target' : ''}`}>
@@ -532,7 +533,7 @@ function ClientCard({
           </ThemeIcon>
           <div className="client-source-card__identity">
             <Group gap={5} wrap="wrap">
-              <Text className="client-source-card__name">{card.DisplayName || t('Картка без назви')}</Text>
+              <Text className="client-source-card__name">{displayName}</Text>
               {card.IsTarget ? <Badge className="app-role-pill is-orange" size="xs" variant="light">{t('Обрана')}</Badge> : null}
               {card.IsTradePoint ? <Badge className="app-role-pill is-gray" size="xs" variant="light">{t('Торгова точка')}</Badge> : null}
               {card.IsSubClient && !card.IsTradePoint ? <Badge className="app-role-pill is-gray" size="xs" variant="light">{t('Підклієнт')}</Badge> : null}
@@ -567,7 +568,12 @@ function ClientCard({
               ) : null}
               {card.MainClientId ? (
                 <Text className="client-source-card__parent" component="span">
-                  {t('Головний клієнт')}: {parentCard?.DisplayName || `#${card.MainClientId}`}
+                  {t('Головний клієнт')}: {parentCard ? getPreferredCardDisplayName(parentCard, t) : `#${card.MainClientId}`}
+                </Text>
+              ) : null}
+              {card.DisplayName?.trim() && card.DisplayName.trim() !== displayName ? (
+                <Text className="client-source-card__parent" component="span">
+                  {t('Картка GBA')}: {card.DisplayName.trim()}
                 </Text>
               ) : null}
               {!roleLabel && !regionCode && !legalCode && !card.MainClientId ? (
@@ -591,27 +597,104 @@ function ClientCard({
           ) : null}
         </Group>
       </Group>
-      {sourceAgreements.length > 0 ? (
-        <div className="client-source-card__agreements">
+      {sourceSnapshots.length > 0 ? (
+        <div className="client-source-card__source-tree">
           <Text className="client-source-card__agreements-title">
-            {t('Договори 1С')} · {sourceAgreements.length}
+            {t('Дані 1С')} · {sourceSnapshots.length}
           </Text>
-          <div className="client-source-card__agreement-list">
-            {sourceAgreements.map(({ agreement, snapshotSourceCode, sourceSystem }, index) => (
-              <span
-                className={`client-source-card__agreement${agreement.SourceMarkedDeleted ? ' is-deleted' : ''}`}
-                key={`${sourceSystem}-${snapshotSourceCode}-${agreement.SourceCode}-${agreement.AgreementType || ''}-${index}`}
-              >
-                <span className="client-source-card__agreement-source">{getSourceLabel(sourceSystem)}</span>
-                <span>{getSourceAgreementTitle(agreement)}</span>
-                {agreement.SourceMarkedDeleted ? (
-                  <span className="client-source-card__agreement-state">{t('видалений у 1С')}</span>
-                ) : null}
-              </span>
+          <div className="client-source-card__source-list">
+            {sourceSnapshots.map((snapshot) => (
+              <ClientSourceTreeNode
+                key={`${snapshot.SourceSystem}-${snapshot.SourceCode}`}
+                asOfUtc={structure.AsOfUtc}
+                snapshot={snapshot}
+                t={t}
+              />
             ))}
           </div>
         </div>
-      ) : null}
+      ) : (
+        <Text className="client-source-card__source-empty">{t('Очікує синку')}</Text>
+      )}
+    </div>
+  )
+}
+
+function ClientSourceTreeNode({
+  asOfUtc,
+  snapshot,
+  t,
+}: {
+  asOfUtc: string
+  snapshot: ClientSourceCardSnapshot
+  t: (value: string) => string
+}) {
+  const sourceName = snapshot.FullName?.trim()
+    || snapshot.ClientName?.trim()
+    || `#${snapshot.SourceCode}`
+  const shortName = snapshot.ClientName?.trim()
+  const agreements = snapshot.Agreements || []
+
+  return (
+    <div
+      className={`client-source-card__source-node${snapshot.SourceMarkedDeleted ? ' is-deleted' : ''}`}
+      data-source-code={snapshot.SourceCode}
+      data-source-system={snapshot.SourceSystem.toLowerCase()}
+    >
+      <div className="client-source-card__source-header">
+        <Badge className="app-role-pill is-gray" size="xs" variant="light">
+          {getSourceLabel(snapshot.SourceSystem)}
+        </Badge>
+        {snapshot.SourceMarkedDeleted ? (
+          <Badge className="app-role-pill is-red" size="xs" variant="light">
+            {t('видалений у 1С')}
+          </Badge>
+        ) : null}
+        <div className="client-source-card__source-identity">
+          <Text className="client-source-card__source-name">{sourceName}</Text>
+          {shortName && shortName !== sourceName ? (
+            <Text className="client-source-card__source-short-name">{shortName}</Text>
+          ) : null}
+          <Text className="client-source-card__source-code">
+            #{snapshot.SourceCode}
+            {snapshot.RegionCode?.trim() ? ` · ${snapshot.RegionCode.trim()}` : ''}
+          </Text>
+        </div>
+      </div>
+      <div className="client-source-card__agreements">
+        <Text className="client-source-card__agreements-title">
+          {t('Договори 1С')} · {agreements.length}
+        </Text>
+        {agreements.length > 0 ? (
+          <div className="client-source-card__agreement-list">
+            {agreements.map((agreement) => {
+              const activity = getSourceAgreementActivity(
+                agreement,
+                asOfUtc,
+                snapshot.SourceMarkedDeleted,
+              )
+              return (
+                <span
+                  className={`client-source-card__agreement is-${activity.kind}`}
+                  key={`${snapshot.SourceSystem}-${snapshot.SourceCode}-${agreement.SourceCode}-${agreement.AgreementType || ''}-${agreement.Number || ''}-${agreement.FromDate || ''}-${agreement.ToDate || ''}`}
+                >
+                  <span>{getSourceAgreementTitle(agreement)}</span>
+                  {getSourceAgreementDetails(agreement) ? (
+                    <span className="client-source-card__agreement-details">
+                      {getSourceAgreementDetails(agreement)}
+                    </span>
+                  ) : null}
+                  <span className={`client-source-card__agreement-state is-${activity.kind}`}>
+                    {t(activity.label)}
+                  </span>
+                </span>
+              )
+            })}
+          </div>
+        ) : (
+          <Text className="client-source-card__source-empty">{t('Немає договорів у 1С')}</Text>
+        )}
+      </div>
     </div>
   )
 }
@@ -622,27 +705,101 @@ function getCommercialGroupTitle(
 ): string {
   const groupKey = structure.GroupKey?.trim()
   const groupName = structure.GroupName?.trim()
+  const displayGroupKey = groupKey ? getCommercialGroupDisplayKey(groupKey) : ''
 
-  if (groupKey && groupName && !groupKey.includes(':')) return `${groupKey} · ${groupName}`
+  if (displayGroupKey && groupName && !groupKey?.includes(':')) return `${displayGroupKey} · ${groupName}`
   if (groupName) return groupName
-  if (groupKey) return `${t('Комерційна група')} · ${groupKey}`
+  if (displayGroupKey) return `${t('Комерційна група')} · ${displayGroupKey}`
   return t('Комерційна структура')
 }
 
-type CardSourceAgreement = {
-  agreement: ClientSourceAgreementSnapshot
-  snapshotSourceCode: number
-  sourceSystem: string
+function getCommercialGroupDisplayKey(groupKey: string): string {
+  const match = /^XM(\d+)$/i.exec(groupKey.trim())
+  return match ? `ХМ${match[1]}` : groupKey.trim()
 }
 
-function getCardSourceAgreements(card: ClientCommercialCard): CardSourceAgreement[] {
-  return card.SourceSnapshots.flatMap((snapshot) =>
-    (snapshot.Agreements || []).map((agreement) => ({
-      agreement,
-      snapshotSourceCode: snapshot.SourceCode,
-      sourceSystem: snapshot.SourceSystem,
-    })),
-  )
+function getCardSourceSnapshots(card: ClientCommercialCard): ClientSourceCardSnapshot[] {
+  return card.SourceSnapshots
+    .toSorted((left, right) => Number(left.SourceMarkedDeleted) - Number(right.SourceMarkedDeleted)
+      || getSourcePriority(left.SourceSystem) - getSourcePriority(right.SourceSystem)
+      || left.SourceCode - right.SourceCode)
+}
+
+function getActiveCardSourceSnapshots(card: ClientCommercialCard): ClientSourceCardSnapshot[] {
+  return getCardSourceSnapshots(card)
+    .filter((snapshot) => !snapshot.SourceMarkedDeleted)
+}
+
+function getPreferredCardDisplayName(
+  card: ClientCommercialCard,
+  t: (value: string) => string,
+): string {
+  const preferredSource = getActiveCardSourceSnapshots(card)[0]
+  return preferredSource?.FullName?.trim()
+    || preferredSource?.ClientName?.trim()
+    || card.DisplayName?.trim()
+    || t('Картка без назви')
+}
+
+function getSourcePriority(sourceSystem: string): number {
+  if (sourceSystem.toLowerCase() === 'fenix') return 0
+  if (sourceSystem.toLowerCase() === 'amg') return 1
+  return 2
+}
+
+type SourceAgreementActivity = {
+  kind: 'current' | 'deleted' | 'expired' | 'future' | 'retained'
+  label: string
+}
+
+function getSourceAgreementActivity(
+  agreement: ClientSourceAgreementSnapshot,
+  asOfUtc: string,
+  sourceMarkedDeleted: boolean,
+): SourceAgreementActivity {
+  if (sourceMarkedDeleted || agreement.SourceMarkedDeleted) {
+    return { kind: 'deleted', label: 'видалений у 1С' }
+  }
+
+  const asOfDay = getUtcDay(asOfUtc)
+  const fromDay = getUtcDay(agreement.FromDate)
+  const toDay = getUtcDay(agreement.ToDate)
+  if (asOfDay !== null && fromDay !== null && fromDay > asOfDay) {
+    return { kind: 'future', label: 'ще не діє на дату зрізу' }
+  }
+  if (asOfDay !== null && toDay !== null && toDay < asOfDay) {
+    return { kind: 'expired', label: 'строк дії минув' }
+  }
+  if (asOfDay !== null && (fromDay !== null || toDay !== null)) {
+    return { kind: 'current', label: 'чинний на дату зрізу' }
+  }
+
+  return { kind: 'retained', label: 'не видалений у 1С' }
+}
+
+function getUtcDay(value: string | null | undefined): number | null {
+  if (!value) return null
+
+  // GBA serializes UTC DateTime values without a trailing offset. Agreement
+  // bounds are business dates, so preserve their ISO calendar prefix instead
+  // of letting the browser reinterpret midnight in its local timezone.
+  const isoDate = /^(\d{4})-(\d{2})-(\d{2})/.exec(value.trim())
+  if (isoDate) {
+    const year = Number(isoDate[1])
+    const month = Number(isoDate[2])
+    const day = Number(isoDate[3])
+    const utcDay = Date.UTC(year, month - 1, day)
+    const validated = new Date(utcDay)
+    return validated.getUTCFullYear() === year
+      && validated.getUTCMonth() === month - 1
+      && validated.getUTCDate() === day
+      ? utcDay
+      : null
+  }
+
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return null
+  return Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate())
 }
 
 function getClientRoleLabel(
@@ -973,6 +1130,19 @@ function getSourceAgreementTitle(agreement: ClientSourceAgreementSnapshot): stri
 
   if (name && number && name !== number) return `${name} · ${number}`
   return name || number || `#${agreement.SourceCode}`
+}
+
+function getSourceAgreementDetails(agreement: ClientSourceAgreementSnapshot): string {
+  const validity = [formatDateOnly(agreement.FromDate), formatDateOnly(agreement.ToDate)]
+    .filter(Boolean)
+    .join(' — ')
+
+  return [
+    agreement.CurrencyCode?.trim(),
+    agreement.OrganizationName?.trim(),
+    agreement.TypePriceName?.trim(),
+    validity,
+  ].filter(Boolean).join(' · ')
 }
 
 function sourceContactLabel(

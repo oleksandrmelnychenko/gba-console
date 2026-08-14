@@ -22,7 +22,7 @@ describe('ClientCommercialStructureView', () => {
       </MantineProvider>,
     )
 
-    expect(screen.getByText('Комерційна група · XM052')).toBeTruthy()
+    expect(screen.getByText('Комерційна група · ХМ052')).toBeTruthy()
     expect(screen.getByText('Є дані, які треба перевірити')).toBeTruthy()
     expect(screen.getByText(/Робочі картки, договори, продажі й баланси залишаються без змін/)).toBeTruthy()
     expect(screen.getByText('Структура клієнта')).toBeTruthy()
@@ -33,7 +33,7 @@ describe('ClientCommercialStructureView', () => {
     expect(regionCodeValues.length).toBeGreaterThanOrEqual(2)
     expect(screen.getByText('код 01234567')).toBeTruthy()
     expect(regionCodeValues.some((value) => Boolean(value.closest('.client-card-code-chip')))).toBe(true)
-    expect(screen.getAllByText('AMG').length).toBeGreaterThanOrEqual(2)
+    expect(screen.getAllByText('AMG').length).toBeGreaterThanOrEqual(1)
     expect(screen.getByText('Марія Іваненко')).toBeTruthy()
     expect(screen.getByText('UA123456789 · UAH')).toBeTruthy()
     expect(screen.getByText('client@example.test')).toBeTruthy()
@@ -73,11 +73,120 @@ describe('ClientCommercialStructureView', () => {
       </MantineProvider>,
     )
 
-    expect(screen.getByText('XM052 · Хмельницький - Назаришин В. М.')).toBeTruthy()
+    expect(screen.getByText('ХМ052 · Хмельницький - Назаришин В. М.')).toBeTruthy()
     const targetCard = container.querySelector<HTMLElement>('[data-client-id="10"] .client-source-card')
     expect(targetCard).not.toBeNull()
+    expect(within(targetCard!).getByText('Дані 1С · 2')).toBeTruthy()
+    expect(targetCard!.querySelector('[data-source-system="fenix"]')).not.toBeNull()
+    const deletedAmg = targetCard!.querySelector<HTMLElement>('[data-source-system="amg"]')
+    expect(deletedAmg).not.toBeNull()
+    expect(deletedAmg!.classList.contains('is-deleted')).toBe(true)
+    expect(within(deletedAmg!).getByText('видалений у 1С')).toBeTruthy()
     expect(within(targetCard!).getByText('Договори 1С · 1')).toBeTruthy()
     expect(within(targetCard!).getByText('Основний договір · A-7001')).toBeTruthy()
+    expect(within(targetCard!).getByText('чинний на дату зрізу')).toBeTruthy()
+  })
+
+  it('derives agreement activity from the structure snapshot date', () => {
+    const structure = createStructure()
+    structure.AsOfUtc = '2026-08-11T23:59:59'
+    const target = structure.LegalParties[0].Cards[0]
+    const fenix = target.SourceSnapshots.find((snapshot) => snapshot.SourceSystem === 'fenix')!
+    const agreement = fenix.Agreements[0]
+    fenix.Agreements = [
+      agreement,
+      {
+        ...agreement,
+        SourceCode: 7002,
+        Name: 'Минулий договір',
+        Number: 'A-7002',
+        FromDate: '2025-01-01T00:00:00Z',
+        ToDate: '2026-08-10T23:59:59',
+      },
+      {
+        ...agreement,
+        SourceCode: 7003,
+        Name: 'Майбутній договір',
+        Number: 'A-7003',
+        FromDate: '2026-08-12T00:00:00',
+        ToDate: null,
+      },
+      {
+        ...agreement,
+        SourceCode: 7004,
+        Name: 'Без строку',
+        Number: 'A-7004',
+        FromDate: null,
+        ToDate: null,
+      },
+    ]
+
+    const { container } = render(
+      <MantineProvider env="test" theme={theme}>
+        <ClientCommercialStructureView structure={structure} t={t} />
+      </MantineProvider>,
+    )
+
+    const fenixNode = container.querySelector<HTMLElement>('[data-source-system="fenix"]')
+    expect(fenixNode).not.toBeNull()
+    expect(within(fenixNode!).getByText('чинний на дату зрізу')).toBeTruthy()
+    expect(within(fenixNode!).getByText('строк дії минув')).toBeTruthy()
+    expect(within(fenixNode!).getByText('ще не діє на дату зрізу')).toBeTruthy()
+    expect(within(fenixNode!).getByText('не видалений у 1С')).toBeTruthy()
+  })
+
+  it('renders every exact XM052 source card with its own 1C agreements', () => {
+    const structure = createStructure()
+    structure.GroupName = 'Хмельницький - Назаришин В. М.'
+    const template = structure.LegalParties[0].Cards[0]
+    const sourceTemplate = template.SourceSnapshots.find((snapshot) => !snapshot.SourceMarkedDeleted)!
+    const agreementTemplate = sourceTemplate.Agreements[0]
+    const sourceCards = [
+      ['XM05201', 'Хмельницький - ФОП Назаришин Валерій Миколайович'],
+      ['BXM05202', 'ТОВАРИСТВО З ОБМЕЖЕНОЮ ВІДПОВІДАЛЬНІСТЮ "МАГРОМ"'],
+      ['BXM05203', 'ФІЗИЧНА ОСОБА-ПІДПРИЄМЕЦЬ НАЗАРИШИН ВАЛЕРІЙ МИКОЛАЙОВИЧ'],
+      ['XM05204', 'Камянець Подільський  - ФОП Назаришин Валерій Миколайович'],
+      ['BXM05205', 'Фізична особа-підприємець ДОМАТЕВИЧ СЕРГІЙ ОЛЕКСАНДРОВИЧ'],
+      ['BXM05206', 'ФІЗИЧНА ОСОБА-ПІДПРИЄМЕЦЬ МАМИЧ ДІАНА ОЛЕКСАНДРІВНА'],
+    ] as const
+
+    structure.LegalParties[0].Cards = sourceCards.map(([regionCode, sourceName], index) => ({
+      ...template,
+      ClientId: 100 + index,
+      ClientNetUid: `00000000-0000-4000-8000-${String(100 + index).padStart(12, '0')}`,
+      DisplayName: `GBA card ${index + 1}`,
+      CurrentRegionCode: regionCode,
+      OriginalRegionCode: regionCode,
+      MainClientId: index >= 2 && index !== 3 ? 101 : null,
+      IsTarget: index === 1,
+      SourceSnapshots: [{
+        ...sourceTemplate,
+        SourceCode: 3900 + index,
+        ClientName: `Клієнт 1С ${index + 1}`,
+        FullName: sourceName,
+        RegionCode: regionCode,
+        Agreements: [{
+          ...agreementTemplate,
+          SourceCode: 5100 + index,
+          Name: `Договір ${regionCode}`,
+          Number: `K-${index + 1}`,
+        }],
+      }],
+    }))
+
+    const { container } = render(
+      <MantineProvider env="test" theme={theme}>
+        <ClientCommercialStructureView structure={structure} t={t} />
+      </MantineProvider>,
+    )
+
+    expect(screen.getByText('ХМ052 · Хмельницький - Назаришин В. М.')).toBeTruthy()
+    sourceCards.forEach(([regionCode, sourceName], index) => {
+      const sourceNode = container.querySelector<HTMLElement>(`[data-source-code="${3900 + index}"]`)
+      expect(sourceNode).not.toBeNull()
+      expect(sourceNode!.querySelector('.client-source-card__source-name')?.textContent).toBe(sourceName)
+      expect(within(sourceNode!).getByText(`Договір ${regionCode} · K-${index + 1}`)).toBeTruthy()
+    })
   })
 
   it('renders the synchronized client hierarchy at arbitrary depth', () => {
@@ -270,18 +379,18 @@ function createStructure(): ClientCommercialStructure {
         SaleCount: 7,
         Reasons: ['invalid_source_identity'],
         SourceSnapshots: [{
-          SourceSystem: 'amg',
-          SourceCode: 1545,
+          SourceSystem: 'fenix',
+          SourceCode: 3929,
           ClientName: 'МАГРОМ ТОВ',
           FullName: 'ТОВ МАГРОМ',
           Tin: null,
           Usreou: '01234567',
           RegionCode: 'BXM05202',
           RegionName: 'Хмельницький',
-          MainClientCode: 1545,
-          MainClientName: 'Хмельницький - Назаришин В.М.',
-          DirectClientGroupName: null,
-          ClientGroupName: null,
+          MainClientCode: 3929,
+          MainClientName: 'МАГРОМ ТОВ',
+          DirectClientGroupName: 'Хмельницький - Назаришин В. М.',
+          ClientGroupName: 'Покупці',
           BankName: 'АТ Тест Банк',
           BankAccountNumber: 'UA123456789',
           BankCurrencyCode: 'UAH',
@@ -314,10 +423,37 @@ function createStructure(): ClientCommercialStructure {
             IsAccounting: false,
             SourceMarkedDeleted: false,
           }],
+          SourceMarkedDeleted: false,
+          SourceIdentityValid: true,
+          EvidenceTruncated: false,
+          LastSeenAtUtc: '2026-08-11T11:00:00Z',
+        }, {
+          SourceSystem: 'amg',
+          SourceCode: 1545,
+          ClientName: 'МАГРОМ ТОВ',
+          FullName: 'ТОВ МАГРОМ · видалена картка',
+          Tin: null,
+          Usreou: '01234567',
+          RegionCode: 'BXM05202',
+          RegionName: 'Хмельницький',
+          MainClientCode: 1545,
+          MainClientName: 'МАГРОМ ТОВ',
+          DirectClientGroupName: 'Хмельницький - Назаришин',
+          ClientGroupName: 'Покупці',
+          BankName: null,
+          BankAccountNumber: null,
+          BankCurrencyCode: null,
+          MainContactPersonName: null,
+          MainContactPersonPosition: null,
+          ManagerName: null,
+          QuantityDayDebt: null,
+          IsControlDayDebt: null,
+          Contacts: [],
+          Agreements: [],
           SourceMarkedDeleted: true,
           SourceIdentityValid: false,
           EvidenceTruncated: true,
-          LastSeenAtUtc: '2026-08-11T11:00:00Z',
+          LastSeenAtUtc: '2026-08-11T10:00:00Z',
         }],
       }],
     }],

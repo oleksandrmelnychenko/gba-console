@@ -14,11 +14,6 @@ const priceFormatter = new Intl.NumberFormat('uk-UA', {
   minimumFractionDigits: 2,
 })
 
-const unitPriceFormatter = new Intl.NumberFormat('uk-UA', {
-  maximumFractionDigits: 4,
-  minimumFractionDigits: 4,
-})
-
 const exchangeRateFormatter = new Intl.NumberFormat('uk-UA', {
   maximumFractionDigits: 4,
   minimumFractionDigits: 4,
@@ -169,10 +164,6 @@ export function formatAmount(value?: number | null): string {
 
 export function formatPrice(value?: number | null): string {
   return typeof value === 'number' && Number.isFinite(value) ? priceFormatter.format(value) : '-'
-}
-
-export function formatUnitPrice(value?: number | null): string {
-  return typeof value === 'number' && Number.isFinite(value) ? unitPriceFormatter.format(value) : '-'
 }
 
 export function formatExchangeRate(value?: number | null): string {

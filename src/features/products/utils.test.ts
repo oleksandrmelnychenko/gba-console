@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest'
 import {
   formatExchangeRate,
   formatPrice,
-  formatUnitPrice,
   getProductGroupNames,
   getProductMainImage,
   getProductMainOriginalNumber,
@@ -14,15 +13,8 @@ import {
 import type { Product } from './types'
 
 describe('product utils', () => {
-  it('keeps the synchronized accounting and management unit costs visibly distinct', () => {
-    expect(formatUnitPrice(1.49699858182768)).toBe('1,4970')
-    expect(formatUnitPrice(1.4976938980838341)).toBe('1,4977')
-  })
-
-  it('keeps monetary totals at cents while unit costs retain four decimal places', () => {
+  it('keeps monetary totals at cents', () => {
     expect(formatPrice(299.399716365536)).toBe('299,40')
-    expect(formatUnitPrice(1.5)).toBe('1,5000')
-    expect(formatUnitPrice(undefined)).toBe('-')
   })
 
   it('keeps four decimal places for imported document exchange rates', () => {

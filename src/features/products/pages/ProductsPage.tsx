@@ -89,7 +89,6 @@ import {
   formatAmount,
   formatExchangeRate,
   formatPrice,
-  formatUnitPrice,
   getProductCode,
   getProductGroupNames,
   getProductMainImage,
@@ -101,6 +100,7 @@ import {
   isProductRealtimePayloadForProduct,
   splitProductSearchResults,
 } from '../utils'
+import { formatProductMovementUnitPrice } from '../../../shared/ui/product-movement-history/productMovementFormatters'
 import {
   getDuplicateProductUploadPricingIds,
   hasDuplicateProductUploadPricings,
@@ -3738,7 +3738,9 @@ function renderMovementPrice(value?: number | null) {
 }
 
 function renderMovementUnitPrice(value?: number | null) {
-  const text = typeof value === 'number' && Number.isFinite(value) ? formatUnitPrice(value) : ''
+  const text = typeof value === 'number' && Number.isFinite(value)
+    ? formatProductMovementUnitPrice(value)
+    : ''
 
   return <span className="app-money" title={text}>{text}</span>
 }

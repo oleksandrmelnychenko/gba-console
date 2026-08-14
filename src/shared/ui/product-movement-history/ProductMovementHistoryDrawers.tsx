@@ -42,7 +42,10 @@ import {
   type InformationalMovement,
   type InformationalMovementQueue,
 } from './informationalMovements'
-import { formatProductMovementExchangeRate } from './productMovementFormatters'
+import {
+  formatProductMovementExchangeRate,
+  formatProductMovementUnitPrice,
+} from './productMovementFormatters'
 import './product-movement-history-drawers.css'
 
 export type MovementHistoryProduct = {
@@ -2374,7 +2377,7 @@ function useProductIncomeMovementColumns(): DataTableColumn<ProductIncomeMovemen
         minWidth: 104,
         align: 'right',
         accessor: (row) => row.ManagementEurUnitPrice,
-        cell: (row) => formatMoney(row.ManagementEurUnitPrice),
+        cell: (row) => formatProductMovementUnitPrice(row.ManagementEurUnitPrice),
       },
       {
         id: 'accountingEurUnitPrice',
@@ -2383,7 +2386,7 @@ function useProductIncomeMovementColumns(): DataTableColumn<ProductIncomeMovemen
         minWidth: 104,
         align: 'right',
         accessor: (row) => row.AccountingEurUnitPrice,
-        cell: (row) => formatMoney(row.AccountingEurUnitPrice),
+        cell: (row) => formatProductMovementUnitPrice(row.AccountingEurUnitPrice),
       },
       {
         id: 'weight',
