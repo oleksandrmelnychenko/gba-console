@@ -20,6 +20,7 @@ import {
   createProductIncomeFromDynamicPlacements,
   getNonDefectiveStorages,
   getSupplyOrderUkraineById,
+  saveDynamicPlacementRow,
   updateSupplyOrderUkraine,
 } from '../api/orderPlacementsApi'
 import { NewDynamicColumnModal } from '../components/NewDynamicColumnModal'
@@ -370,6 +371,11 @@ function useOrderPlacementsModel() {
         return
       }
 
+      if (isDirty) {
+        notifications.show({ color: 'red', message: t('Збережіть зміни перед редагуванням розміщень') })
+        return
+      }
+
       if (!row.Qty) {
         notifications.show({ color: 'red', message: t('Неможливо розмісти нульову кількість') })
         return
@@ -377,19 +383,101 @@ function useOrderPlacementsModel() {
 
       setDrawer({ item: gridRow.item, row, columnId })
     },
-    [isBusy, order?.IsPlaced, setDrawer, t],
+    [isBusy, isDirty, order?.IsPlaced, setDrawer, t],
   )
 
   const handleApplyPlacements = useCallback(
-    (placements: DynamicProductPlacement[]) => {
-      if (!drawer || isBusy || order?.IsPlaced) {
+    async (placements: DynamicProductPlacement[]) => {
+      if (!drawer || !order || isBusy || isDirty || order.IsPlaced) {
         return
       }
 
-      applyColumnRowQty(drawer.columnId, drawer.item, sumPlacements(placements), placements)
-      setDrawer(null)
+      const column = order.DynamicProductPlacementColumns.find(
+        (candidate) => columnKey(candidate) === drawer.columnId,
+      )
+
+      if (!column?.Id || column.Id <= 0) {
+        setError(t('Не вдалося визначити колонку розміщення'))
+        return
+      }
+
+      const { columnId, item, row } = drawer
+      const payload: DynamicProductPlacementRow = {
+        ...row,
+        Qty: sumPlacements(placements),
+        SupplyOrderUkraineItemId: item.Id,
+        SupplyOrderUkraineItem: item,
+        DynamicProductPlacementColumnId: column.Id,
+        DynamicProductPlacements: placements,
+      }
+
+      setSaving(true)
+      setError(null)
+
+      try {
+        // The aggregate order update stores only row quantities and replaces draft
+        // addresses with N-N-N. Persist edited addresses through the canonical,
+        // transactional row mutation before product income can use the row.
+        const savedRow = await saveDynamicPlacementRow(payload)
+        const savedPlacements = savedRow.DynamicProductPlacements || []
+        const savedPlacementQty = sumPlacements(savedPlacements)
+        const savedItemId = savedRow.SupplyOrderUkraineItemId
+        const savedColumnId = savedRow.DynamicProductPlacementColumnId
+        const savedQty = savedRow.Qty
+
+        if (
+          !savedRow.Id
+          || savedRow.Id <= 0
+          || (row.Id && row.Id > 0 && savedRow.Id !== row.Id)
+          || !item.Id
+          || savedItemId !== item.Id
+          || savedRow.SupplyOrderUkraineItem?.Id !== item.Id
+          || savedColumnId !== column.Id
+          || typeof savedQty !== 'number'
+          || !Number.isFinite(savedQty)
+          || savedQty !== payload.Qty
+          || savedPlacements.length === 0
+          || Math.abs(savedPlacementQty - savedQty) > 1e-9
+        ) {
+          throw new Error(t('Сервер не підтвердив збереження розміщення'))
+        }
+
+        const nextRow: DynamicProductPlacementRow = {
+          ...savedRow,
+          DynamicProductPlacements: savedPlacements,
+        }
+
+        setOrder((current) => {
+          if (!current) {
+            return current
+          }
+
+          const columns = current.DynamicProductPlacementColumns.map((candidate) => {
+            if (columnKey(candidate) !== columnId) {
+              return candidate
+            }
+
+            const rows = candidate.DynamicProductPlacementRows.some(
+              (candidateRow) => candidateRow.SupplyOrderUkraineItemId === item.Id,
+            )
+              ? candidate.DynamicProductPlacementRows.map((candidateRow) =>
+                  candidateRow.SupplyOrderUkraineItemId === item.Id ? nextRow : candidateRow,
+                )
+              : [...candidate.DynamicProductPlacementRows, nextRow]
+
+            return { ...candidate, DynamicProductPlacementRows: rows }
+          })
+
+          return { ...current, DynamicProductPlacementColumns: columns }
+        })
+        setDrawer(null)
+      } catch (saveError) {
+        setError(saveError instanceof Error ? saveError.message : t('Не вдалося зберегти розміщення'))
+      } finally {
+        setSaving(false)
+      }
     },
-    [applyColumnRowQty, drawer, isBusy, order?.IsPlaced, setDrawer],
+    [drawer, isBusy, isDirty, order, setDrawer, setError, setOrder, setSaving, t],
   )
 
   const handleAddColumn = useCallback(

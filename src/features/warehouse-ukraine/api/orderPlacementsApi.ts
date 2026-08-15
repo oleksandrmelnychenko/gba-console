@@ -54,6 +54,20 @@ export async function updateSupplyOrderUkraine(order: PlacementSupplyOrder): Pro
   return normalizeOrder(result)
 }
 
+export async function saveDynamicPlacementRow(
+  row: DynamicProductPlacementRow,
+): Promise<DynamicProductPlacementRow> {
+  const endpoint = row.Id && row.Id > 0
+    ? '/supplies/ukraine/order/placements/dynamic/rows/update'
+    : '/supplies/ukraine/order/placements/dynamic/rows/new'
+  const result = await apiRequest<unknown>(endpoint, {
+    method: 'POST',
+    body: row,
+  })
+
+  return normalizePlacementRow(result as DynamicProductPlacementRow)
+}
+
 export async function createProductIncomeFromDynamicPlacements(
   order: PlacementSupplyOrder,
   fromDate: string,
