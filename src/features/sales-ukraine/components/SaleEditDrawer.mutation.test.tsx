@@ -133,7 +133,7 @@ describe('SaleEditDrawer pending operation recovery', () => {
     const onSaved = vi.fn()
 
     render(
-      <MantineProvider env="test" theme={theme}>
+      <MantineProvider theme={theme}>
         <SaleEditDrawer
           sale={sale}
           onClose={vi.fn()}

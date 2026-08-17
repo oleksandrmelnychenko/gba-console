@@ -319,6 +319,14 @@ function SupplyUkraineOrderFileCreatePage({ mode }: { mode: CreateMode }) {
   )
 
   function updateForm(patch: Partial<DirectOrderForm>) {
+    if (
+      patch.comment !== undefined
+      && commentValidationError
+      && error === commentValidationError
+      && !getSupplyOrderCommentValidationError(patch.comment, t)
+    ) {
+      dispatchPage({ type: 'setError', error: null })
+    }
     dispatchForm({ type: 'patch', patch })
   }
 

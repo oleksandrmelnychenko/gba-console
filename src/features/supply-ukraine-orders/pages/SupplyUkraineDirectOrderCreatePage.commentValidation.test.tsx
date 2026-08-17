@@ -45,5 +45,11 @@ describe('direct supply order comment validation', () => {
 
     expect(screen.getAllByText('Коментар: не більше 500 символів')).not.toHaveLength(0)
     expect(apiMocks.uploadDirectSupplyOrderFromFile).not.toHaveBeenCalled()
+
+    fireEvent.change(comment, {
+      target: { value: '2'.repeat(SUPPLY_ORDER_COMMENT_MAX_LENGTH) },
+    })
+
+    expect(screen.queryByText('Коментар: не більше 500 символів')).toBeNull()
   })
 })
