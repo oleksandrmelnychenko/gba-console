@@ -30,6 +30,10 @@ import {
   type SupplyUkraineOrderUploadResponse,
 } from '../supplyUkraineOrderCreateSuccess'
 import {
+  getSupplyOrderCommentValidationError,
+  SUPPLY_ORDER_COMMENT_MAX_LENGTH,
+} from '../supplyOrderCommentValidation'
+import {
   getSupplyOrderOrganizations,
   getSupplyOrderSuppliers,
   uploadDirectSupplyOrderFromFile,
@@ -220,6 +224,7 @@ function SupplyUkraineOrderFileCreatePage({ mode }: { mode: CreateMode }) {
   const [form, dispatchForm] = useReducer(directOrderFormReducer, undefined, createInitialDirectOrderForm)
   const [parseForm, dispatchParseForm] = useReducer(parseFormReducer, EMPTY_PARSE_FORM)
   const { error, isLoading, isSaving, organizations, supplierSearch, suppliers, uploadResponse } = pageState
+  const commentValidationError = getSupplyOrderCommentValidationError(form.comment, t)
 
   useEffect(() => {
     let cancelled = false
@@ -352,6 +357,11 @@ function SupplyUkraineOrderFileCreatePage({ mode }: { mode: CreateMode }) {
   async function submitForm(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
 
+    if (commentValidationError) {
+      dispatchPage({ type: 'setError', error: commentValidationError })
+      return
+    }
+
     if (!selectedSupplier || !selectedOrganization || !selectedClientAgreement) {
       dispatchPage({ type: 'setError', error: t('Оберіть постачальника, організацію та договір') })
       return
@@ -456,6 +466,7 @@ function SupplyUkraineOrderFileCreatePage({ mode }: { mode: CreateMode }) {
           <SimpleGrid cols={isToUkraineMode ? 1 : { base: 1, md: 2 }} spacing="md">
             <OrderDetailsSection
               agreementOptions={agreementOptions}
+              commentValidationError={commentValidationError}
               form={form}
               isLoading={isLoading}
               isSaving={isSaving}
@@ -488,6 +499,7 @@ function SupplyUkraineOrderFileCreatePage({ mode }: { mode: CreateMode }) {
 
 function OrderDetailsSection({
   agreementOptions,
+  commentValidationError,
   form,
   isLoading,
   isSaving,
@@ -503,6 +515,7 @@ function OrderDetailsSection({
   onSupplierSearchChange,
 }: {
   agreementOptions: SelectOption[]
+  commentValidationError: string | null
   form: DirectOrderForm
   isLoading: boolean
   isSaving: boolean
@@ -565,8 +578,10 @@ function OrderDetailsSection({
     <Textarea
       autosize
       disabled={isSaving}
+      error={commentValidationError}
       label={t('Коментар')}
       minRows={2}
+      description={t('До {count} символів', { count: SUPPLY_ORDER_COMMENT_MAX_LENGTH })}
       value={form.comment}
       onChange={(event) => onFormChange({ comment: event.currentTarget.value })}
     />

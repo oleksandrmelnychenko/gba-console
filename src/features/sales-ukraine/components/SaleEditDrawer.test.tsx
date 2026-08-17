@@ -56,7 +56,7 @@ function Harness() {
   const [sale, setSale] = useState<SalesUkraineSale | null>(createSale())
 
   return (
-    <MantineProvider theme={theme}>
+    <MantineProvider env="test" theme={theme}>
       <button type="button" onClick={() => setSale(createSale(1))}>open again</button>
       <SaleEditDrawer sale={sale} onClose={() => setSale(null)} onSaved={() => setSale(null)} />
     </MantineProvider>
