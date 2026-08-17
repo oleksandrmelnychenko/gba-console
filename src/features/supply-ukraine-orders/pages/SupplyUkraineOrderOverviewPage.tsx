@@ -17,6 +17,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { useAuth } from '../../auth/useAuth'
 import { ProductCardModal } from '../../products/components/ProductCardModal'
 import { useI18n } from '../../../shared/i18n/useI18n'
+import { getSupplyOrderIncomeStatusLabel } from '../../../shared/supplyOrderIncomeStatus'
 import { getSupplyUkraineOrderDisplayNumber } from '../../../shared/supplyUkraineOrderNumbers'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { AppModal } from '../../../shared/ui/AppModal'
@@ -521,7 +522,7 @@ export function SupplyUkraineOrderOverviewPage() {
             <Group justify="space-between" align="center">
               <Text className="app-section-title" fw={600} size="sm">{t('Замовлення')}</Text>
               <Badge className={`app-role-pill ${order?.IsPlaced ? 'is-green' : 'is-gray'}`} variant="light">
-                {order?.IsPlaced ? t('Розміщено') : t('Не розміщено')}
+                {t(getSupplyOrderIncomeStatusLabel(order?.IsPlaced))}
               </Badge>
             </Group>
 

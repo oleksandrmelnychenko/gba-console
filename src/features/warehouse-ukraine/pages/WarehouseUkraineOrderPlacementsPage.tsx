@@ -7,6 +7,7 @@ import { useAuth } from '../../auth/useAuth'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
+import { getSupplyOrderIncomeStatusLabel } from '../../../shared/supplyOrderIncomeStatus'
 import { getSupplyUkraineOrderDisplayNumber } from '../../../shared/supplyUkraineOrderNumbers'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { AppModal } from '../../../shared/ui/AppModal'
@@ -963,7 +964,7 @@ export function WarehouseUkraineOrderPlacementsPage() {
             )}
             {model.order && (
               <Badge className={`app-role-pill ${model.order.IsPlaced ? 'is-green' : 'is-gray'}`} variant="light">
-                {model.order.IsPlaced ? t('Розміщено') : t('Не розміщено')}
+                {t(getSupplyOrderIncomeStatusLabel(model.order.IsPlaced))}
               </Badge>
             )}
           </div>

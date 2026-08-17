@@ -29,6 +29,7 @@ import './supply-order-detail.css'
 import { formatLocalDateTime } from '../../../shared/date/dateTime'
 import { formatExcelArticleColumnError } from '../../../shared/excel/excelImportError'
 import { useI18n } from '../../../shared/i18n/useI18n'
+import { SUPPLY_ORDER_INCOME_STATUS_LABEL } from '../../../shared/supplyOrderIncomeStatus'
 import { upgradeHttpToHttps } from '../../../shared/url/upgradeHttpToHttps'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { AppModal } from '../../../shared/ui/AppModal'
@@ -1989,7 +1990,7 @@ function useOrderItemColumns(onOpenProductCard: (productNetId: string) => void):
       { id: 'leftToInvoice', header: t('Залишок'), width: 120, align: 'right', accessor: (item) => item.QtyDifference, cell: (item) => <BalanceBadge value={item.QtyDifference || 0} /> },
       { id: 'price', header: t('Ціна'), width: 120, align: 'right', accessor: (item) => item.UnitPrice, cell: (item) => <Text fw={600} size="sm" style={{ fontFamily: 'var(--font-mono)', letterSpacing: 0 }}>{formatMoney(item.UnitPrice)}</Text> },
       { id: 'total', header: t('Сума нетто'), width: 130, align: 'right', accessor: (item) => getOrderItemTotal(item), cell: (item) => <Text fw={600} size="sm" style={{ fontFamily: 'var(--font-mono)', letterSpacing: 0 }}>{formatMoney(getOrderItemTotal(item))}</Text> },
-      { id: 'placed', header: t('Розміщено'), width: 120, accessor: (item) => item.IsPlaced, cell: (item) => <Badge className={item.IsPlaced ? 'app-role-pill is-green' : 'app-role-pill is-gray'} variant="light">{item.IsPlaced ? t('Так') : t('Ні')}</Badge> },
+      { id: 'placed', header: t(SUPPLY_ORDER_INCOME_STATUS_LABEL), width: 120, accessor: (item) => item.IsPlaced, cell: (item) => <Badge className={item.IsPlaced ? 'app-role-pill is-green' : 'app-role-pill is-gray'} variant="light">{item.IsPlaced ? t('Так') : t('Ні')}</Badge> },
     ],
     [onOpenProductCard, t],
   )

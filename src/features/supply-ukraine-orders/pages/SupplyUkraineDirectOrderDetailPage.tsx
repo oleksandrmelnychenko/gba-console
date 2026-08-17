@@ -23,6 +23,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import './supply-order-detail.css'
 import { formatLocalDate, formatLocalDateTime } from '../../../shared/date/dateTime'
 import { useI18n } from '../../../shared/i18n/useI18n'
+import { SUPPLY_ORDER_INCOME_STATUS_LABEL } from '../../../shared/supplyOrderIncomeStatus'
 import { upgradeHttpToHttps } from '../../../shared/url/upgradeHttpToHttps'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { AppModal } from '../../../shared/ui/AppModal'
@@ -635,7 +636,7 @@ export function SupplyUkraineDirectOrderDetailPage() {
             {statusPill(t('Відправлено'), t, order.IsOrderShipped)}
             {statusPill(t('Прибуло'), t, order.IsOrderArrived)}
             {statusPill(t('Завершено'), t, order.IsCompleted)}
-            {statusPill(t('Розміщено'), t, Boolean(order.IsFullyPlaced || order.IsPlaced))}
+            {statusPill(t(SUPPLY_ORDER_INCOME_STATUS_LABEL), t, Boolean(order.IsFullyPlaced || order.IsPlaced))}
           </Group>
 
           <DirectOrderProductIncomeStatus key={order.NetUid} orderNetId={order.NetUid} />

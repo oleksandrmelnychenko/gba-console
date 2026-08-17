@@ -179,6 +179,27 @@ describe('WarehouseUkraineOrderPlacementsPage', () => {
       }))
   })
 
+  it('shows an unfinished order as not incomed', async () => {
+    renderPage()
+
+    expect(await screen.findByText('Не оприходувано')).toBeTruthy()
+  })
+
+  it('shows a completed product income as incomed instead of placed', async () => {
+    apiMocks.getOrder.mockResolvedValue({
+      Id: 1,
+      NetUid: 'order-1',
+      IsPlaced: true,
+      SupplyOrderUkraineItems: [],
+      DynamicProductPlacementColumns: [],
+    })
+
+    renderPage()
+
+    expect(await screen.findByText('Оприходувано')).toBeTruthy()
+    expect(screen.queryByText('Розміщено')).toBeNull()
+  })
+
   it('keeps the editor open when the server does not confirm persisted placements', async () => {
     apiMocks.savePlacementRow.mockResolvedValueOnce({
       Id: 31,

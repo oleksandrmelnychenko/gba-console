@@ -23,6 +23,7 @@ import { useAuth } from '../../auth/useAuth'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { realtimeEvents, useRealtimeEvent } from '../../../shared/realtime/events'
+import { SUPPLY_ORDER_INCOME_STATUS_LABEL } from '../../../shared/supplyOrderIncomeStatus'
 import { getSupplyUkraineOrderDisplayNumber, normalizeDisplayNumber } from '../../../shared/supplyUkraineOrderNumbers'
 import { AppModal, AppModalFooter } from '../../../shared/ui/AppModal'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
@@ -976,7 +977,7 @@ function useSupplyUkraineOrderColumns(): DataTableColumn<SupplyUkraineOrderRow>[
         accessor: (row) => (row.isPlaced ? 1 : 0),
         align: 'center',
         cell: (row) => <OrderPlacedCell value={row.isPlaced} />,
-        header: t('Розміщено'),
+        header: t(SUPPLY_ORDER_INCOME_STATUS_LABEL),
         id: 'isPlaced',
         minWidth: 92,
         width: 96,
@@ -1105,7 +1106,7 @@ function useSupplyOrderInvoiceColumns(): DataTableColumn<SupplyUkraineOrderRow>[
         accessor: (row) => (row.isPlaced ? 1 : 0),
         align: 'center',
         cell: (row) => <OrderPlacedCell value={row.isPlaced} />,
-        header: t('Розміщено'),
+        header: t(SUPPLY_ORDER_INCOME_STATUS_LABEL),
         id: 'isPlaced',
         minWidth: 124,
         width: 132,
@@ -2340,7 +2341,7 @@ function buildPrintColumns(t: (key: string) => string) {
     { Number: 10, ColumnName: 'Qty', TableName: 'SupplyOrderModel', Translate: t('Кількість') },
     { Number: 11, ColumnName: 'AdditionalPrice', TableName: 'SupplyOrderModel', Translate: t('Додатковий відсоток') },
     { Number: 12, ColumnName: 'Organization', TableName: 'SupplyOrderModel', Translate: t('Організація') },
-    { Number: 13, ColumnName: 'Placed', TableName: 'SupplyOrderModel', Translate: t('Розміщено') },
+    { Number: 13, ColumnName: 'Placed', TableName: 'SupplyOrderModel', Translate: t(SUPPLY_ORDER_INCOME_STATUS_LABEL) },
     { Number: 14, ColumnName: 'Responsible', TableName: 'SupplyOrderModel', Translate: t('Відповідальний') },
   ]
 }
