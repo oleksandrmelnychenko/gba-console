@@ -10,6 +10,7 @@ import {
   createProductStorageSupplyReturn,
   createProductStorageTransfer,
   createProductStorageWriteOff,
+  exportProductStorageAvailability,
   getAvailableProductsByStorage,
 } from './productStoragesApi'
 
@@ -159,6 +160,30 @@ describe('productStoragesApi', () => {
         offset: 40,
         to: '2026-06-30',
         value: 'PR-1',
+      },
+    })
+  })
+
+  it('exports storage availability through the permission-scoped facade', async () => {
+    apiRequestMock.mockResolvedValueOnce({
+      PdfDocumentURL: '/storage.pdf',
+      XlsxDocumentURL: '/storage.xlsx',
+    })
+
+    await expect(exportProductStorageAvailability({
+      from: '2026-06-01',
+      storageNetId: 'storage-net-id',
+      to: '2026-06-30',
+    })).resolves.toEqual({
+      DocumentURL: '',
+      PdfDocumentURL: '/storage.pdf',
+    })
+
+    expect(apiRequestMock).toHaveBeenCalledWith('/storages/warehouse-accounting/document/export', {
+      query: {
+        from: '2026-06-01',
+        netId: 'storage-net-id',
+        to: '2026-06-30',
       },
     })
   })

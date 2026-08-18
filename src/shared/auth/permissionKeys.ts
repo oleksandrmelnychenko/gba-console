@@ -563,6 +563,9 @@ export const PermissionKeys = {
       Page: {
         View: 'warehouse_accounting.storages.page.view',
       },
+      Document: {
+        Export: 'warehouse_accounting.storages.document.export',
+      },
       Preview: {
         Open: 'warehouse_accounting.storages.preview.open',
       },
@@ -1021,6 +1024,7 @@ export type WarehouseAccountingPermissionKey =
   | Values<typeof PermissionKeys.WarehouseAccounting.SupplierReturns.Return>
   | Values<typeof PermissionKeys.WarehouseAccounting.SupplierReturns.Document>
   | Values<typeof PermissionKeys.WarehouseAccounting.Storages.Page>
+  | Values<typeof PermissionKeys.WarehouseAccounting.Storages.Document>
   | Values<typeof PermissionKeys.WarehouseAccounting.Storages.Preview>
   | Values<typeof PermissionKeys.WarehouseAccounting.Storages.PositionAction>
 
@@ -2116,6 +2120,7 @@ const eventPermissionKeys = new Set<string>([
   ...Object.values(PermissionKeys.WarehouseAccounting.Capitalization.Capitalization),
   ...Object.values(PermissionKeys.WarehouseAccounting.Capitalization.Document),
   ...Object.values(PermissionKeys.WarehouseAccounting.Storages.Page),
+  ...Object.values(PermissionKeys.WarehouseAccounting.Storages.Document),
   ...Object.values(PermissionKeys.WarehouseAccounting.Storages.Preview),
   ...Object.values(PermissionKeys.WarehouseAccounting.Storages.PositionAction),
   ...Object.values(PermissionKeys.WarehouseAccounting.SupplierReturns.Page),

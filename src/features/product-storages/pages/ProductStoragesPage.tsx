@@ -70,6 +70,7 @@ const PRODUCT_STORAGES_TABLE_DEFAULT_LAYOUT = {
 const pageSizeOptions = ['50', '100', '150']
 const PRODUCT_STORAGES_SEARCH_DEBOUNCE_MS = 200
 const PRODUCT_STORAGES_ACTION_PERMISSION = PermissionKeys.WarehouseAccounting.Storages.PositionAction.Open
+const PRODUCT_STORAGES_EXPORT_PERMISSION = PermissionKeys.WarehouseAccounting.Storages.Document.Export
 const PRODUCT_STORAGES_PREVIEW_PERMISSION = PermissionKeys.WarehouseAccounting.Storages.Preview.Open
 const amountFormatter = new Intl.NumberFormat('uk-UA', {
   maximumFractionDigits: 3,
@@ -160,6 +161,7 @@ function useProductStoragesPageModel() {
   const totalAvailabilities = availabilityList.total
   const totalPages = Math.max(1, Math.ceil(totalAvailabilities / pageSize))
   const canOpenAction = hasPermission(PRODUCT_STORAGES_ACTION_PERMISSION)
+  const canExport = hasPermission(PRODUCT_STORAGES_EXPORT_PERMISSION)
   const canOpenPreview = hasPermission(PRODUCT_STORAGES_PREVIEW_PERMISSION)
   const storageOptions = useMemo(() => buildStorageOptions(storages), [storages])
   const selectedStorage = useMemo(
@@ -766,7 +768,7 @@ function useProductStoragesPageModel() {
   }
 
   async function handleExport() {
-    if (!selectedStorageNetId || filterError || isExporting) {
+    if (!canExport || !selectedStorageNetId || filterError || isExporting) {
       return
     }
 
@@ -838,6 +840,7 @@ function useProductStoragesPageModel() {
     totalPages,
     canOpenPreview,
     canOpenAction,
+    canExport,
     changeActionMode,
     closeActionModal,
     closeStorageActions,
@@ -925,6 +928,7 @@ function ProductStoragesPageView({ model }: { model: ReturnType<typeof useProduc
     toStorageOptions,
     totalPages,
     canOpenAction,
+    canExport,
     canOpenPreview,
     changeActionMode,
     closeActionModal,
@@ -990,19 +994,21 @@ function ProductStoragesPageView({ model }: { model: ReturnType<typeof useProduc
               onChange={(event) => updateSearch(event.currentTarget.value)}
             />
             <div className="app-filter-actions">
-              <Tooltip label={t('Експорт')}>
-                <ActionIcon
-                  aria-label={t('Експорт')}
-                  color="gray"
-                  disabled={!selectedStorageNetId || Boolean(filterError) || isExporting}
-                  loading={isExporting}
-                  size={34}
-                  variant="light"
-                  onClick={handleExport}
-                >
-                  <Download size={18} />
-                </ActionIcon>
-              </Tooltip>
+              {canExport ? (
+                <Tooltip label={t('Експорт')}>
+                  <ActionIcon
+                    aria-label={t('Експорт')}
+                    color="gray"
+                    disabled={!selectedStorageNetId || Boolean(filterError) || isExporting}
+                    loading={isExporting}
+                    size={34}
+                    variant="light"
+                    onClick={handleExport}
+                  >
+                    <Download size={18} />
+                  </ActionIcon>
+                </Tooltip>
+              ) : null}
               <Tooltip label={t('Скинути')}>
                 <ActionIcon aria-label={t('Скинути')} color="gray" size={34} variant="light" onClick={resetFilters}>
                   <RotateCcw size={17} />

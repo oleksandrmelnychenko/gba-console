@@ -2969,6 +2969,41 @@
       "disposition": "duplicate_occurrence",
       "duplicateOf": "PE-01680",
       "reason": "The delete opener is part of the same protected deletion capability whose final boundary is PE-01680."
+    },
+    "PE-00951": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["warehouse_accounting.storages.document.export"],
+      "reason": "Storage availability export is independently hidden, rechecked in the handler, and served by the protected export facade."
+    },
+    "PE-00953": {
+      "disposition": "technical_ui",
+      "reason": "This raw record resolves to local modal state initialization and is not a user-triggered business action."
+    },
+    "PE-00954": {
+      "disposition": "technical_ui",
+      "reason": "Clicking an availability row only toggles local selection and performs no request or business mutation."
+    },
+    "PE-00955": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["warehouse_accounting.storages.position_action.open"],
+      "reason": "Final transfer, write-off, or return submission rechecks the position-action right and uses protected mutation facades."
+    },
+    "PE-00957": {
+      "disposition": "technical_ui",
+      "reason": "Removing a row from Preview only changes the local draft selection and does not delete server data."
+    },
+    "PE-00959": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-00955",
+      "reason": "The Preview process button opens the same protected position-action flow whose final boundary is PE-00955."
+    },
+    "PE-00961": {
+      "disposition": "technical_ui",
+      "reason": "This raw record resolves to local submitting-state initialization rather than an independent submit capability."
+    },
+    "PE-00962": {
+      "disposition": "technical_ui",
+      "reason": "Selecting a return consignment only updates the local form; the protected final position action owns persistence."
     }
   }
 }

@@ -4,25 +4,25 @@
     "inputRecords": 1902,
     "classifiedRecords": 1902,
     "dispositionCounts": {
-      "technical_ui": 736,
-      "covered_existing": 483,
-      "duplicate_occurrence": 254,
+      "technical_ui": 741,
+      "covered_existing": 485,
+      "duplicate_occurrence": 255,
       "business_candidate": 258,
-      "needs_human_review": 163,
+      "needs_human_review": 155,
       "stale_or_aggregated": 8
     },
-    "reviewCandidates": 421,
-    "technicalExcluded": 736,
-    "duplicatesExcluded": 254,
-    "duplicateOccurrencesTotal": 324,
+    "reviewCandidates": 413,
+    "technicalExcluded": 741,
+    "duplicatesExcluded": 255,
+    "duplicateOccurrencesTotal": 325,
     "technicalDuplicateOverlap": 70,
     "sourceResolved": 1828,
     "sourceUnresolved": 74,
     "currentActionResolved": 1186,
     "currentActionUnresolved": 716,
     "currentProductionActions": 1829,
-    "currentPermissionBoundActions": 277,
-    "currentUnboundActions": 1552
+    "currentPermissionBoundActions": 278,
+    "currentUnboundActions": 1551
   },
   "invariants": {
     "allInputRecordsClassified": true,
@@ -38313,7 +38313,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/product-storages/pages/ProductStoragesPage.tsx",
-        "line": 865,
+        "line": 868,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -38334,28 +38334,32 @@
       "proposedPermission": "products.products_storages.handle_export.command_export",
       "securityLevel": "medium",
       "rawStatus": "Candidate existing key in component; binding review required",
-      "disposition": "needs_human_review",
-      "dispositionReason": "raw_audit_claims_existing_binding_but_does_not_name_the_key",
+      "disposition": "covered_existing",
+      "dispositionReason": "Storage availability export is independently hidden, rechecked in the handler, and served by the protected export facade.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "warehouse_accounting.storages.document.export"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-5e76417efbe5",
-          "distance": 226,
+          "candidateId": "EPC-8f121a04295b",
+          "distance": 229,
           "file": "src/features/product-storages/pages/ProductStoragesPage.tsx",
           "handler": "{handleExport}",
           "humanLabel": "Експорт",
-          "line": 994,
-          "permissionKeys": [],
+          "line": 999,
+          "permissionKeys": [
+            "warehouse_accounting.storages.document.export"
+          ],
           "score": 12
         }
       ],
       "source": {
         "status": "resolved",
         "file": "src/features/product-storages/pages/ProductStoragesPage.tsx",
-        "line": 768,
+        "line": 770,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -38384,12 +38388,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-3cd02b06d8cb",
-          "distance": 535,
+          "candidateId": "EPC-d13a8739c1dd",
+          "distance": 539,
           "file": "src/features/product-storages/pages/ProductStoragesPage.tsx",
           "handler": "{resetFilters}",
           "humanLabel": "Скинути",
-          "line": 1007,
+          "line": 1013,
           "permissionKeys": [],
           "score": 12
         }
@@ -38397,7 +38401,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/product-storages/pages/ProductStoragesPage.tsx",
-        "line": 472,
+        "line": 474,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -38418,17 +38422,17 @@
       "proposedPermission": "products.products_storages.button.modal_open",
       "securityLevel": "medium",
       "rawStatus": "Candidate existing key in component; binding review required",
-      "disposition": "needs_human_review",
-      "dispositionReason": "raw_audit_claims_existing_binding_but_does_not_name_the_key",
+      "disposition": "technical_ui",
+      "dispositionReason": "This raw record resolves to local modal state initialization and is not a user-triggered business action.",
       "duplicateOf": null,
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [],
       "source": {
         "status": "resolved",
         "file": "src/features/product-storages/pages/ProductStoragesPage.tsx",
-        "line": 138,
+        "line": 139,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -38449,20 +38453,20 @@
       "proposedPermission": "products.products_storages.availability_toggle_availability_availability.row_click",
       "securityLevel": "medium",
       "rawStatus": "Candidate existing key in component; binding review required",
-      "disposition": "needs_human_review",
-      "dispositionReason": "raw_audit_claims_existing_binding_but_does_not_name_the_key",
+      "disposition": "technical_ui",
+      "dispositionReason": "Clicking an availability row only toggles local selection and performs no request or business mutation.",
       "duplicateOf": null,
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-d0d3555764e1",
+          "candidateId": "EPC-50f96f84e7b5",
           "distance": 17,
           "file": "src/features/product-storages/pages/ProductStoragesPage.tsx",
           "handler": "{(availability) => toggleAvailability(availability)}",
           "humanLabel": null,
-          "line": 1050,
+          "line": 1056,
           "permissionKeys": [],
           "score": 42
         }
@@ -38470,7 +38474,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/product-storages/pages/ProductStoragesPage.tsx",
-        "line": 1067,
+        "line": 1073,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -38491,20 +38495,22 @@
       "proposedPermission": "products.products_storages.submit_action.form_submit",
       "securityLevel": "high",
       "rawStatus": "Candidate existing key in component; binding review required",
-      "disposition": "needs_human_review",
-      "dispositionReason": "raw_audit_claims_existing_binding_but_does_not_name_the_key",
+      "disposition": "covered_existing",
+      "dispositionReason": "Final transfer, write-off, or return submission rechecks the position-action right and uses protected mutation facades.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "warehouse_accounting.storages.position_action.open"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-e3121296591e",
-          "distance": 429,
+          "candidateId": "EPC-4421d0ec6dfb",
+          "distance": 433,
           "file": "src/features/product-storages/pages/ProductStoragesPage.tsx",
           "handler": "{submitAction}",
           "humanLabel": null,
-          "line": 1083,
+          "line": 1089,
           "permissionKeys": [],
           "score": 12
         }
@@ -38512,7 +38518,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/product-storages/pages/ProductStoragesPage.tsx",
-        "line": 654,
+        "line": 656,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -38543,7 +38549,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/product-storages/pages/ProductStoragesPage.tsx",
-        "line": 1225,
+        "line": 1231,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -38564,20 +38570,20 @@
       "proposedPermission": "products.products_storages.on_remove_row_row_availability.command_delete",
       "securityLevel": "high",
       "rawStatus": "Candidate existing key in component; binding review required",
-      "disposition": "needs_human_review",
-      "dispositionReason": "raw_audit_claims_existing_binding_but_does_not_name_the_key",
+      "disposition": "technical_ui",
+      "dispositionReason": "Removing a row from Preview only changes the local draft selection and does not delete server data.",
       "duplicateOf": null,
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-976844e3b4e2",
+          "candidateId": "EPC-82dba3ef8f3a",
           "distance": 3,
           "file": "src/features/product-storages/pages/ProductStoragesPage.tsx",
           "handler": "{() => onRemoveRow(row.availability)}",
           "humanLabel": "Вилучити з Preview",
-          "line": 1240,
+          "line": 1246,
           "permissionKeys": [],
           "score": 24
         }
@@ -38585,7 +38591,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/product-storages/pages/ProductStoragesPage.tsx",
-        "line": 1243,
+        "line": 1249,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -38616,7 +38622,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/product-storages/pages/ProductStoragesPage.tsx",
-        "line": 613,
+        "line": 615,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -38637,17 +38643,17 @@
       "proposedPermission": "products.products_storages.on_process.button_click",
       "securityLevel": "low",
       "rawStatus": "Candidate existing key in component; binding review required",
-      "disposition": "needs_human_review",
-      "dispositionReason": "raw_audit_claims_existing_binding_but_does_not_name_the_key",
-      "duplicateOf": null,
+      "disposition": "duplicate_occurrence",
+      "dispositionReason": "The Preview process button opens the same protected position-action flow whose final boundary is PE-00955.",
+      "duplicateOf": "PE-00955",
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [],
       "source": {
         "status": "resolved",
         "file": "src/features/product-storages/pages/ProductStoragesPage.tsx",
-        "line": 1078,
+        "line": 1084,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -38678,7 +38684,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/product-storages/pages/ProductStoragesPage.tsx",
-        "line": 613,
+        "line": 615,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -38699,17 +38705,17 @@
       "proposedPermission": "products.products_storages.on_submit.command_submit",
       "securityLevel": "high",
       "rawStatus": "Candidate existing key in component; binding review required",
-      "disposition": "needs_human_review",
-      "dispositionReason": "raw_audit_claims_existing_binding_but_does_not_name_the_key",
+      "disposition": "technical_ui",
+      "dispositionReason": "This raw record resolves to local submitting-state initialization rather than an independent submit capability.",
       "duplicateOf": null,
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [],
       "source": {
         "status": "resolved",
         "file": "src/features/product-storages/pages/ProductStoragesPage.tsx",
-        "line": 147,
+        "line": 148,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -38730,17 +38736,17 @@
       "proposedPermission": "products.products_storages.consignment_id_on_change_form_current_current_consignment_id.menu_item_select",
       "securityLevel": "low",
       "rawStatus": "Candidate existing key in component; binding review required",
-      "disposition": "needs_human_review",
-      "dispositionReason": "raw_audit_claims_existing_binding_but_does_not_name_the_key",
+      "disposition": "technical_ui",
+      "dispositionReason": "Selecting a return consignment only updates the local form; the protected final position action owns persistence.",
       "duplicateOf": null,
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [],
       "source": {
         "status": "resolved",
         "file": "src/features/product-storages/pages/ProductStoragesPage.tsx",
-        "line": 1479,
+        "line": 1485,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -38769,12 +38775,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-b61c03c4624c",
+          "candidateId": "EPC-b5d87f76f4b0",
           "distance": 103,
           "file": "src/features/product-storages/pages/ProductStoragesPage.tsx",
           "handler": "{() => onSelect(consignmentId)}",
           "humanLabel": null,
-          "line": 1582,
+          "line": 1588,
           "permissionKeys": [],
           "score": 17
         }
@@ -38782,7 +38788,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/product-storages/pages/ProductStoragesPage.tsx",
-        "line": 1479,
+        "line": 1485,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -38813,7 +38819,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/product-storages/pages/ProductStoragesPage.tsx",
-        "line": 1225,
+        "line": 1231,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -38844,12 +38850,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-aa72c5bb78dd",
+          "candidateId": "EPC-6d918a8b8ee2",
           "distance": 97,
           "file": "src/features/product-storages/pages/ProductStoragesPage.tsx",
           "handler": "{() => onOpenAction(availability)}",
           "humanLabel": "Операція зі складської позиції",
-          "line": 1745,
+          "line": 1751,
           "permissionKeys": [
             "warehouse_accounting.storages.position_action.open"
           ],
@@ -38859,7 +38865,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/product-storages/pages/ProductStoragesPage.tsx",
-        "line": 1648,
+        "line": 1654,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -79886,14 +79892,6 @@
     "PE-00939",
     "PE-00942",
     "PE-00948",
-    "PE-00951",
-    "PE-00953",
-    "PE-00954",
-    "PE-00955",
-    "PE-00957",
-    "PE-00959",
-    "PE-00961",
-    "PE-00962",
     "PE-00968",
     "PE-00969",
     "PE-00970",
