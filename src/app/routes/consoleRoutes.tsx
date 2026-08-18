@@ -666,7 +666,7 @@ const customsMigrationRoutes: ConsoleRoute[] = [
   {
     path: '/tax-free/pack-list/edit/:id',
     element: lazyRoute(<EditTaxFreePackListPage />),
-    permissionKey: PermissionKeys.SystemPages.TaxFreePackLists.View,
+    permissionKey: PermissionKeys.TaxFreePackLists.PackList.OpenDetails,
   },
   {
     path: '/tax-free/all',

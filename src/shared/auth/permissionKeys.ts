@@ -596,6 +596,23 @@ export const PermissionKeys = {
       CreateOutcome: 'warehouse_accounting.tax_free_documents.accounting.create_outcome',
     },
   },
+  TaxFreePackLists: {
+    PackList: {
+      Break: 'warehouse_accounting.tax_free_pack_lists.pack_list.break',
+      Delete: 'warehouse_accounting.tax_free_pack_lists.pack_list.delete',
+      Edit: 'warehouse_accounting.tax_free_pack_lists.pack_list.edit',
+      OpenDetails: 'warehouse_accounting.tax_free_pack_lists.pack_list.open_details',
+      Send: 'warehouse_accounting.tax_free_pack_lists.pack_list.send',
+    },
+    Document: {
+      Delete: 'warehouse_accounting.tax_free_pack_lists.document.delete',
+      Export: 'warehouse_accounting.tax_free_pack_lists.document.export',
+      Upload: 'warehouse_accounting.tax_free_pack_lists.document.upload',
+    },
+    SupplyOrder: {
+      Create: 'warehouse_accounting.tax_free_pack_lists.supply_order.create',
+    },
+  },
   OnlineShopSeo: {
     Client: {
       Toggle: 'administration.online_shop_seo.client.toggle',
@@ -1016,6 +1033,11 @@ export type TaxFreeDocumentsPermissionKey =
   | Values<typeof PermissionKeys.TaxFreeDocuments.Status>
   | Values<typeof PermissionKeys.TaxFreeDocuments.Accounting>
 
+export type TaxFreePackListsPermissionKey =
+  | Values<typeof PermissionKeys.TaxFreePackLists.PackList>
+  | Values<typeof PermissionKeys.TaxFreePackLists.Document>
+  | Values<typeof PermissionKeys.TaxFreePackLists.SupplyOrder>
+
 export type OnlineShopSeoPermissionKey =
   | Values<typeof PermissionKeys.OnlineShopSeo.Client>
   | Values<typeof PermissionKeys.OnlineShopSeo.Contact>
@@ -1125,6 +1147,7 @@ export type PermissionKey =
   | SupplierOrganizationsPermissionKey
   | TaxFreeCarriersPermissionKey
   | TaxFreeDocumentsPermissionKey
+  | TaxFreePackListsPermissionKey
   | WarehouseAccountingPermissionKey
   | WarehousesPermissionKey
 
@@ -2103,6 +2126,9 @@ const eventPermissionKeys = new Set<string>([
   ...Object.values(PermissionKeys.TaxFreeDocuments.Document),
   ...Object.values(PermissionKeys.TaxFreeDocuments.Status),
   ...Object.values(PermissionKeys.TaxFreeDocuments.Accounting),
+  ...Object.values(PermissionKeys.TaxFreePackLists.PackList),
+  ...Object.values(PermissionKeys.TaxFreePackLists.Document),
+  ...Object.values(PermissionKeys.TaxFreePackLists.SupplyOrder),
   ...Object.values(PermissionKeys.OnlineShopSeo.Client),
   ...Object.values(PermissionKeys.OnlineShopSeo.Contact),
   ...Object.values(PermissionKeys.OnlineShopSeo.GeneralInfo),

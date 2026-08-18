@@ -2853,6 +2853,122 @@
     "PE-01632": {
       "disposition": "technical_ui",
       "reason": "The generic table-row action adapter only forwards an already permission-filtered callback and owns no business capability."
+    },
+    "PE-01634": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["warehouse_accounting.tax_free_pack_lists.supply_order.create"],
+      "reason": "Final creation of a Ukraine supply order is independently guarded and uses the dedicated pack-list create façade."
+    },
+    "PE-01636": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-01656",
+      "reason": "The move modal submit forwards its draft to the parent; the parent persistence boundary owns the edit capability."
+    },
+    "PE-01638": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["warehouse_accounting.tax_free_pack_lists.pack_list.break"],
+      "reason": "Final split rechecks the independent break right and calls the protected split façade."
+    },
+    "PE-01640": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["warehouse_accounting.tax_free_documents.document.edit"],
+      "reason": "Carrier assignment edits the underlying Tax Free document and reuses its existing protected document-edit boundary."
+    },
+    "PE-01641": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["warehouse_accounting.tax_free_pack_lists.document.upload"],
+      "reason": "Attachment upload is independently guarded and uses the idempotent upload façade."
+    },
+    "PE-01642": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["warehouse_accounting.tax_free_pack_lists.document.delete"],
+      "reason": "Attachment deletion is independently guarded at the control and final request boundary."
+    },
+    "PE-01646": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["warehouse_accounting.tax_free_pack_lists.pack_list.send"],
+      "reason": "Sending accepts only the pack-list identity; the server loads canonical data and validates every Tax Free before mutation."
+    },
+    "PE-01647": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-01638",
+      "reason": "Opening the split form is part of the same independently guarded split capability."
+    },
+    "PE-01649": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["warehouse_accounting.tax_free_pack_lists.pack_list.edit"],
+      "reason": "Final aggregate save rechecks edit and the server rejects send or sent-document mutation through this route."
+    },
+    "PE-01650": {
+      "disposition": "technical_ui",
+      "reason": "Selecting a source row only changes local selection state and performs no request."
+    },
+    "PE-01653": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["warehouse_accounting.tax_free_pack_lists.document.export"],
+      "reason": "Export of selected Tax Free documents is guarded and uses the export-only façade."
+    },
+    "PE-01654": {
+      "disposition": "technical_ui",
+      "reason": "Removing selected Tax Free groups only changes the local draft; the final edit save owns persistence."
+    },
+    "PE-01655": {
+      "disposition": "technical_ui",
+      "reason": "Selecting a draft Tax Free status only changes the local aggregate; the final edit save owns persistence."
+    },
+    "PE-01656": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["warehouse_accounting.tax_free_pack_lists.pack_list.edit"],
+      "reason": "The parent move handler performs the actual protected aggregate edit request."
+    },
+    "PE-01660": {
+      "disposition": "technical_ui",
+      "reason": "Confirming removal of a Tax Free group only changes the local draft; the final edit save owns persistence."
+    },
+    "PE-01662": {
+      "disposition": "technical_ui",
+      "reason": "Discarding unsaved changes is local navigation protection and performs no business mutation."
+    },
+    "PE-01664": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-01653",
+      "reason": "Per-card document export invokes the same export-only capability as selected document export."
+    },
+    "PE-01666": {
+      "disposition": "technical_ui",
+      "reason": "Opening local draft removal confirmation performs no request; persistence belongs to final edit save."
+    },
+    "PE-01667": {
+      "disposition": "technical_ui",
+      "reason": "Selecting a Tax Free item only changes local selection state and performs no request."
+    },
+    "PE-01671": {
+      "disposition": "technical_ui",
+      "reason": "Removing an unpacked source row only changes the local draft; final edit save owns persistence."
+    },
+    "PE-01675": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["warehouse_accounting.tax_free_pack_lists.document.export"],
+      "reason": "Registry export is independently guarded and calls the pack-list registry export façade."
+    },
+    "PE-01676": {
+      "disposition": "technical_ui",
+      "reason": "Clicking a registry row only opens the local action chooser; protected actions inside own their capabilities."
+    },
+    "PE-01680": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["warehouse_accounting.tax_free_pack_lists.pack_list.delete"],
+      "reason": "Final deletion rechecks the delete right and calls the protected remove façade."
+    },
+    "PE-01681": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["warehouse_accounting.tax_free_pack_lists.pack_list.open_details"],
+      "reason": "Opening pack-list details is independently guarded in the registry, route, and details API."
+    },
+    "PE-01682": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-01680",
+      "reason": "The delete opener is part of the same protected deletion capability whose final boundary is PE-01680."
     }
   }
 }

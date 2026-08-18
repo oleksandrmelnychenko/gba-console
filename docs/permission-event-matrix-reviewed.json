@@ -4,25 +4,25 @@
     "inputRecords": 1902,
     "classifiedRecords": 1902,
     "dispositionCounts": {
-      "technical_ui": 727,
-      "covered_existing": 471,
-      "duplicate_occurrence": 250,
-      "business_candidate": 281,
-      "needs_human_review": 165,
+      "technical_ui": 736,
+      "covered_existing": 483,
+      "duplicate_occurrence": 254,
+      "business_candidate": 258,
+      "needs_human_review": 163,
       "stale_or_aggregated": 8
     },
-    "reviewCandidates": 446,
-    "technicalExcluded": 727,
-    "duplicatesExcluded": 250,
-    "duplicateOccurrencesTotal": 320,
+    "reviewCandidates": 421,
+    "technicalExcluded": 736,
+    "duplicatesExcluded": 254,
+    "duplicateOccurrencesTotal": 324,
     "technicalDuplicateOverlap": 70,
     "sourceResolved": 1828,
     "sourceUnresolved": 74,
     "currentActionResolved": 1186,
     "currentActionUnresolved": 716,
     "currentProductionActions": 1829,
-    "currentPermissionBoundActions": 261,
-    "currentUnboundActions": 1568
+    "currentPermissionBoundActions": 277,
+    "currentUnboundActions": 1552
   },
   "invariants": {
     "allInputRecordsClassified": true,
@@ -66341,7 +66341,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/tax-free-pack-lists/components/CreateSupplyOrderModal.tsx",
-        "line": 19,
+        "line": 20,
         "alternatives": []
       }
     },
@@ -66361,20 +66361,22 @@
       "proposedPermission": "tax_free.tax_free_pack_list_all.create_order.command_submit",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "covered_existing",
+      "dispositionReason": "Final creation of a Ukraine supply order is independently guarded and uses the dedicated pack-list create façade.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "warehouse_accounting.tax_free_pack_lists.supply_order.create"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-e4e9004d7332",
+          "candidateId": "EPC-d8c3eeaf80f8",
           "distance": 114,
           "file": "src/features/tax-free-pack-lists/components/CreateSupplyOrderModal.tsx",
           "handler": "{createOrder}",
           "humanLabel": "Створити",
-          "line": 235,
+          "line": 240,
           "permissionKeys": [],
           "score": 11
         }
@@ -66382,7 +66384,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/tax-free-pack-lists/components/CreateSupplyOrderModal.tsx",
-        "line": 121,
+        "line": 126,
         "alternatives": []
       }
     },
@@ -66432,12 +66434,12 @@
       "proposedPermission": "tax_free.tax_free_pack_list_all.submit_move.command_submit",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
-      "duplicateOf": null,
+      "disposition": "duplicate_occurrence",
+      "dispositionReason": "The move modal submit forwards its draft to the parent; the parent persistence boundary owns the edit capability.",
+      "duplicateOf": "PE-01656",
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
           "candidateId": "EPC-550ace2dd86f",
@@ -66483,7 +66485,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/tax-free-pack-lists/components/TaxFreeBreakModal.tsx",
-        "line": 22,
+        "line": 23,
         "alternatives": []
       }
     },
@@ -66503,20 +66505,22 @@
       "proposedPermission": "tax_free.tax_free_pack_list_all.submit_break.command_submit",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "covered_existing",
+      "dispositionReason": "Final split rechecks the independent break right and calls the protected split façade.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "warehouse_accounting.tax_free_pack_lists.pack_list.break"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-4272bf5b2001",
+          "candidateId": "EPC-ceaaba36cb92",
           "distance": 79,
           "file": "src/features/tax-free-pack-lists/components/TaxFreeBreakModal.tsx",
           "handler": "{submitBreak}",
           "humanLabel": "Розбити",
-          "line": 122,
+          "line": 123,
           "permissionKeys": [],
           "score": 11
         }
@@ -66524,7 +66528,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/tax-free-pack-lists/components/TaxFreeBreakModal.tsx",
-        "line": 43,
+        "line": 44,
         "alternatives": []
       }
     },
@@ -66554,7 +66558,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/tax-free-pack-lists/components/TaxFreeCarrierModal.tsx",
-        "line": 14,
+        "line": 15,
         "alternatives": []
       }
     },
@@ -66574,20 +66578,22 @@
       "proposedPermission": "tax_free.tax_free_pack_list_all.save_carrier.command_submit",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "covered_existing",
+      "dispositionReason": "Carrier assignment edits the underlying Tax Free document and reuses its existing protected document-edit boundary.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "warehouse_accounting.tax_free_documents.document.edit"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-0df9832c0f41",
+          "candidateId": "EPC-807136477538",
           "distance": 85,
           "file": "src/features/tax-free-pack-lists/components/TaxFreeCarrierModal.tsx",
           "handler": "{saveCarrier}",
           "humanLabel": "Зберегти",
-          "line": 175,
+          "line": 176,
           "permissionKeys": [],
           "score": 11
         }
@@ -66595,7 +66601,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/tax-free-pack-lists/components/TaxFreeCarrierModal.tsx",
-        "line": 90,
+        "line": 91,
         "alternatives": []
       }
     },
@@ -66615,17 +66621,19 @@
       "proposedPermission": "tax_free.tax_free_pack_list_all.event_event_prevent_default_void_upload_documents.form_submit",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "covered_existing",
+      "dispositionReason": "Attachment upload is independently guarded and uses the idempotent upload façade.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "warehouse_accounting.tax_free_pack_lists.document.upload"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [],
       "source": {
         "status": "resolved",
         "file": "src/features/tax-free-pack-lists/components/TaxFreeDocumentsPanel.tsx",
-        "line": 19,
+        "line": 21,
         "alternatives": []
       }
     },
@@ -66645,20 +66653,22 @@
       "proposedPermission": "tax_free.tax_free_pack_list_all.remove_document_document.command_delete",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "covered_existing",
+      "dispositionReason": "Attachment deletion is independently guarded at the control and final request boundary.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "warehouse_accounting.tax_free_pack_lists.document.delete"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-af6f5c5048c4",
-          "distance": 81,
+          "candidateId": "EPC-82e30cfbda6a",
+          "distance": 82,
           "file": "src/features/tax-free-pack-lists/components/TaxFreeDocumentsPanel.tsx",
           "handler": "{() => removeDocument(document)}",
           "humanLabel": "Видалити",
-          "line": 113,
+          "line": 118,
           "permissionKeys": [],
           "score": 22
         }
@@ -66666,7 +66676,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/tax-free-pack-lists/components/TaxFreeDocumentsPanel.tsx",
-        "line": 32,
+        "line": 36,
         "alternatives": []
       }
     },
@@ -66697,7 +66707,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/tax-free-pack-lists/pages/TaxFreePackListsPage.tsx",
-        "line": 102,
+        "line": 104,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -66728,7 +66738,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/tax-free-pack-lists/pages/EditTaxFreePackListPage.tsx",
-        "line": 107,
+        "line": 110,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -66758,12 +66768,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-6d7bcb09897e",
-          "distance": 165,
+          "candidateId": "EPC-506d0b9f8c73",
+          "distance": 170,
           "file": "src/features/tax-free-pack-lists/pages/EditTaxFreePackListPage.tsx",
           "handler": "{requestReload}",
           "humanLabel": "Оновити",
-          "line": 470,
+          "line": 500,
           "permissionKeys": [],
           "score": 13
         }
@@ -66771,7 +66781,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/tax-free-pack-lists/pages/EditTaxFreePackListPage.tsx",
-        "line": 305,
+        "line": 330,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -66793,28 +66803,32 @@
       "proposedPermission": "tax_free.tax_free_pack_list_all.send_pack_list.command_submit",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "covered_existing",
+      "dispositionReason": "Sending accepts only the pack-list identity; the server loads canonical data and validates every Tax Free before mutation.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "warehouse_accounting.tax_free_pack_lists.pack_list.send"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-64dee89b46f0",
-          "distance": 197,
+          "candidateId": "EPC-a3c8b77181cb",
+          "distance": 216,
           "file": "src/features/tax-free-pack-lists/pages/EditTaxFreePackListPage.tsx",
           "handler": "{sendPackList}",
           "humanLabel": "Провести",
-          "line": 475,
-          "permissionKeys": [],
+          "line": 505,
+          "permissionKeys": [
+            "warehouse_accounting.tax_free_pack_lists.pack_list.send"
+          ],
           "score": 12
         }
       ],
       "source": {
         "status": "resolved",
         "file": "src/features/tax-free-pack-lists/pages/EditTaxFreePackListPage.tsx",
-        "line": 278,
+        "line": 289,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -66836,28 +66850,34 @@
       "proposedPermission": "tax_free.tax_free_pack_list_all.set_break_modal_open_true.modal_open",
       "securityLevel": "low",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
-      "duplicateOf": null,
+      "disposition": "duplicate_occurrence",
+      "dispositionReason": "Opening the split form is part of the same independently guarded split capability.",
+      "duplicateOf": "PE-01638",
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "warehouse_accounting.tax_free_pack_lists.pack_list.break",
+        "warehouse_accounting.tax_free_pack_lists.pack_list.edit"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-fbcbbe081326",
+          "candidateId": "EPC-7bbb0876f238",
           "distance": 0,
           "file": "src/features/tax-free-pack-lists/pages/EditTaxFreePackListPage.tsx",
           "handler": "{() => setBreakModalOpen(true)}",
           "humanLabel": "Розбити",
-          "line": 560,
-          "permissionKeys": [],
+          "line": 590,
+          "permissionKeys": [
+            "warehouse_accounting.tax_free_pack_lists.pack_list.break",
+            "warehouse_accounting.tax_free_pack_lists.pack_list.edit"
+          ],
           "score": 21
         }
       ],
       "source": {
         "status": "resolved",
         "file": "src/features/tax-free-pack-lists/pages/EditTaxFreePackListPage.tsx",
-        "line": 560,
+        "line": 590,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -66883,24 +66903,30 @@
       "dispositionReason": "current_source_confirms_local_cancel_or_refresh_control",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
+      "canonicalPermissionKeys": [
+        "warehouse_accounting.tax_free_pack_lists.pack_list.break",
+        "warehouse_accounting.tax_free_pack_lists.pack_list.edit"
+      ],
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-de6679e1f4c5",
-          "distance": 269,
+          "candidateId": "EPC-5725d17442b9",
+          "distance": 274,
           "file": "src/features/tax-free-pack-lists/pages/EditTaxFreePackListPage.tsx",
           "handler": "{cancelChanges}",
           "humanLabel": "Скасувати",
-          "line": 565,
-          "permissionKeys": [],
+          "line": 595,
+          "permissionKeys": [
+            "warehouse_accounting.tax_free_pack_lists.pack_list.break",
+            "warehouse_accounting.tax_free_pack_lists.pack_list.edit"
+          ],
           "score": 13
         }
       ],
       "source": {
         "status": "resolved",
         "file": "src/features/tax-free-pack-lists/pages/EditTaxFreePackListPage.tsx",
-        "line": 296,
+        "line": 321,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -66922,28 +66948,34 @@
       "proposedPermission": "tax_free.tax_free_pack_list_all.persist_pack_list.button_click",
       "securityLevel": "low",
       "rawStatus": "No permission candidate found",
-      "disposition": "needs_human_review",
-      "dispositionReason": "insufficient_evidence_for_automatic_permission_or_exclusion",
+      "disposition": "covered_existing",
+      "dispositionReason": "Final aggregate save rechecks edit and the server rejects send or sent-document mutation through this route.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "warehouse_accounting.tax_free_pack_lists.pack_list.break",
+        "warehouse_accounting.tax_free_pack_lists.pack_list.edit"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-0f2dd0fc2c9a",
-          "distance": 313,
+          "candidateId": "EPC-6770519286de",
+          "distance": 332,
           "file": "src/features/tax-free-pack-lists/pages/EditTaxFreePackListPage.tsx",
           "handler": "{() => persistPackList()}",
           "humanLabel": "Зберегти",
-          "line": 566,
-          "permissionKeys": [],
+          "line": 596,
+          "permissionKeys": [
+            "warehouse_accounting.tax_free_pack_lists.pack_list.break",
+            "warehouse_accounting.tax_free_pack_lists.pack_list.edit"
+          ],
           "score": 15
         }
       ],
       "source": {
         "status": "resolved",
         "file": "src/features/tax-free-pack-lists/pages/EditTaxFreePackListPage.tsx",
-        "line": 253,
+        "line": 264,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -66965,28 +66997,32 @@
       "proposedPermission": "tax_free.tax_free_pack_list_all.row_if_pack_list_is_sent_get_source_unpacked_qty_row_entity_0_to.row_click",
       "securityLevel": "medium",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "technical_ui",
+      "dispositionReason": "Selecting a source row only changes local selection state and performs no request.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "warehouse_accounting.tax_free_pack_lists.pack_list.edit"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-fe448821db1d",
-          "distance": 485,
+          "candidateId": "EPC-fa07abb0ef90",
+          "distance": 512,
           "file": "src/features/tax-free-pack-lists/pages/EditTaxFreePackListPage.tsx",
-          "handler": "{(row) => { if (!packList?.IsSent && getSourceUnpackedQty(row.entity) > 0) { toggleSource(row.id, !selectedSourceIds.has(row.id)) } }}",
+          "handler": "{(row) => { if (canEdit && !packList?.IsSent && getSourceUnpackedQty(row.entity) > 0) { toggleSource(row.id, !selectedSourceIds.has(row.id)) } }}",
           "humanLabel": null,
-          "line": 592,
-          "permissionKeys": [],
+          "line": 622,
+          "permissionKeys": [
+            "warehouse_accounting.tax_free_pack_lists.pack_list.edit"
+          ],
           "score": 33
         }
       ],
       "source": {
         "status": "resolved",
         "file": "src/features/tax-free-pack-lists/pages/EditTaxFreePackListPage.tsx",
-        "line": 107,
+        "line": 110,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -67012,24 +67048,28 @@
       "dispositionReason": "local_form_selection_only",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
+      "canonicalPermissionKeys": [
+        "warehouse_accounting.tax_free_pack_lists.pack_list.edit"
+      ],
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-9c62a44e29d8",
-          "distance": 270,
+          "candidateId": "EPC-d332fa13da46",
+          "distance": 275,
           "file": "src/features/tax-free-pack-lists/pages/EditTaxFreePackListPage.tsx",
           "handler": "{moveSelectedRight}",
           "humanLabel": "Перенести у Tax Free",
-          "line": 622,
-          "permissionKeys": [],
+          "line": 652,
+          "permissionKeys": [
+            "warehouse_accounting.tax_free_pack_lists.pack_list.edit"
+          ],
           "score": 17
         }
       ],
       "source": {
         "status": "resolved",
         "file": "src/features/tax-free-pack-lists/pages/EditTaxFreePackListPage.tsx",
-        "line": 352,
+        "line": 377,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -67055,24 +67095,28 @@
       "dispositionReason": "local_form_selection_only",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
+      "canonicalPermissionKeys": [
+        "warehouse_accounting.tax_free_pack_lists.pack_list.edit"
+      ],
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-14915e176df7",
-          "distance": 260,
+          "candidateId": "EPC-0bb796279a43",
+          "distance": 265,
           "file": "src/features/tax-free-pack-lists/pages/EditTaxFreePackListPage.tsx",
           "handler": "{moveSelectedLeft}",
           "humanLabel": "Повернути з Tax Free",
-          "line": 634,
-          "permissionKeys": [],
+          "line": 664,
+          "permissionKeys": [
+            "warehouse_accounting.tax_free_pack_lists.pack_list.edit"
+          ],
           "score": 16
         }
       ],
       "source": {
         "status": "resolved",
         "file": "src/features/tax-free-pack-lists/pages/EditTaxFreePackListPage.tsx",
-        "line": 374,
+        "line": 399,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -67094,28 +67138,32 @@
       "proposedPermission": "tax_free.tax_free_pack_list_all.print_selected_tax_frees.command_export",
       "securityLevel": "medium",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "covered_existing",
+      "dispositionReason": "Export of selected Tax Free documents is guarded and uses the export-only façade.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "warehouse_accounting.tax_free_pack_lists.document.export"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-a442e4ea145f",
-          "distance": 280,
+          "candidateId": "EPC-07ad0f1f15f2",
+          "distance": 285,
           "file": "src/features/tax-free-pack-lists/pages/EditTaxFreePackListPage.tsx",
           "handler": "{printSelectedTaxFrees}",
           "humanLabel": "Друк",
-          "line": 678,
-          "permissionKeys": [],
+          "line": 708,
+          "permissionKeys": [
+            "warehouse_accounting.tax_free_pack_lists.document.export"
+          ],
           "score": 21
         }
       ],
       "source": {
         "status": "resolved",
         "file": "src/features/tax-free-pack-lists/pages/EditTaxFreePackListPage.tsx",
-        "line": 398,
+        "line": 423,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -67137,28 +67185,32 @@
       "proposedPermission": "tax_free.tax_free_pack_list_all.if_pack_list_return_set_pack_list_pack_list_tax_frees_pack_list_.button_click",
       "securityLevel": "low",
       "rawStatus": "No permission candidate found",
-      "disposition": "needs_human_review",
-      "dispositionReason": "insufficient_evidence_for_automatic_permission_or_exclusion",
+      "disposition": "technical_ui",
+      "dispositionReason": "Removing selected Tax Free groups only changes the local draft; the final edit save owns persistence.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "warehouse_accounting.tax_free_pack_lists.pack_list.edit"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-40000ff42de4",
-          "distance": 581,
+          "candidateId": "EPC-1acc32803b79",
+          "distance": 608,
           "file": "src/features/tax-free-pack-lists/pages/EditTaxFreePackListPage.tsx",
           "handler": "{() => { if (!packList) { return } setPackList({ ...packList, TaxFrees: (packList.TaxFrees || []).filter((taxFree, index) => ( !selectedTaxFreeIds.has(getTaxFreeId(taxFree, index)) || isTaxFreeReadOnly(taxFree, packList) )), }) setSelect...",
           "humanLabel": "Видалити",
-          "line": 688,
-          "permissionKeys": [],
+          "line": 718,
+          "permissionKeys": [
+            "warehouse_accounting.tax_free_pack_lists.pack_list.edit"
+          ],
           "score": 49
         }
       ],
       "source": {
         "status": "resolved",
         "file": "src/features/tax-free-pack-lists/pages/EditTaxFreePackListPage.tsx",
-        "line": 107,
+        "line": 110,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -67180,17 +67232,17 @@
       "proposedPermission": "tax_free.tax_free_pack_list_all.checked_set_selected_tax_free_ids_current_ids_const_next_ids_new.menu_item_select",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "technical_ui",
+      "dispositionReason": "Selecting a draft Tax Free status only changes the local aggregate; the final edit save owns persistence.",
       "duplicateOf": null,
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [],
       "source": {
         "status": "resolved",
         "file": "src/features/tax-free-pack-lists/pages/EditTaxFreePackListPage.tsx",
-        "line": 107,
+        "line": 110,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -67212,20 +67264,22 @@
       "proposedPermission": "tax_free.tax_free_pack_list_all.async_next_pack_list_set_move_modal_open_false_const_saved_pack_.form_submit",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "covered_existing",
+      "dispositionReason": "The parent move handler performs the actual protected aggregate edit request.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "warehouse_accounting.tax_free_pack_lists.pack_list.edit"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-cc0e8d495051",
-          "distance": 692,
+          "candidateId": "EPC-fd5b9f66f33b",
+          "distance": 723,
           "file": "src/features/tax-free-pack-lists/pages/EditTaxFreePackListPage.tsx",
           "handler": "{async (nextPackList) => { setMoveModalOpen(false) const savedPackList = await persistPackList(nextPackList, t('Позиції перенесено')) if (savedPackList) { setSelectedSourceIds(new Set()) } }}",
           "humanLabel": null,
-          "line": 799,
+          "line": 833,
           "permissionKeys": [],
           "score": 52
         }
@@ -67233,7 +67287,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/tax-free-pack-lists/pages/EditTaxFreePackListPage.tsx",
-        "line": 107,
+        "line": 110,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -67263,12 +67317,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-f821e3913db3",
-          "distance": 549,
+          "candidateId": "EPC-7cf8555e3285",
+          "distance": 562,
           "file": "src/features/tax-free-pack-lists/pages/EditTaxFreePackListPage.tsx",
           "handler": "{() => setConfirmCloseDocumentsOpen(false)}",
           "humanLabel": "Залишитися",
-          "line": 884,
+          "line": 922,
           "permissionKeys": [],
           "score": 33
         }
@@ -67276,7 +67330,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/tax-free-pack-lists/pages/EditTaxFreePackListPage.tsx",
-        "line": 335,
+        "line": 360,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -67306,12 +67360,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-f4b56415d9dd",
-          "distance": 553,
+          "candidateId": "EPC-e543a18fda82",
+          "distance": 566,
           "file": "src/features/tax-free-pack-lists/pages/EditTaxFreePackListPage.tsx",
           "handler": "{confirmCloseDocumentsDrawer}",
           "humanLabel": "Закрити без збереження",
-          "line": 887,
+          "line": 925,
           "permissionKeys": [],
           "score": 27
         }
@@ -67319,7 +67373,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/tax-free-pack-lists/pages/EditTaxFreePackListPage.tsx",
-        "line": 334,
+        "line": 359,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -67349,12 +67403,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-09548ffe2fcc",
+          "candidateId": "EPC-23937a518d3f",
           "distance": 4,
           "file": "src/features/tax-free-pack-lists/pages/EditTaxFreePackListPage.tsx",
           "handler": "{() => setDeleteTaxFree(null)}",
           "humanLabel": "Скасувати",
-          "line": 898,
+          "line": 936,
           "permissionKeys": [],
           "score": 20
         }
@@ -67362,7 +67416,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/tax-free-pack-lists/pages/EditTaxFreePackListPage.tsx",
-        "line": 894,
+        "line": 932,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -67384,20 +67438,20 @@
       "proposedPermission": "tax_free.tax_free_pack_list_all.if_pack_list_delete_tax_free_set_pack_list_pack_list_tax_frees_p.command_delete",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "technical_ui",
+      "dispositionReason": "Confirming removal of a Tax Free group only changes the local draft; the final edit save owns persistence.",
       "duplicateOf": null,
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-61634e5b1b97",
-          "distance": 792,
+          "candidateId": "EPC-ca1261905ac8",
+          "distance": 827,
           "file": "src/features/tax-free-pack-lists/pages/EditTaxFreePackListPage.tsx",
           "handler": "{() => { if (packList && deleteTaxFree) { setPackList({ ...packList, TaxFrees: (packList.TaxFrees || []).filter((taxFree) => taxFree.NetUid !== deleteTaxFree.NetUid), }) } setDeleteTaxFree(null) }}",
           "humanLabel": "Видалити",
-          "line": 899,
+          "line": 937,
           "permissionKeys": [],
           "score": 48
         }
@@ -67405,7 +67459,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/tax-free-pack-lists/pages/EditTaxFreePackListPage.tsx",
-        "line": 107,
+        "line": 110,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -67435,12 +67489,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-f7d8e2d2e3b3",
-          "distance": 612,
+          "candidateId": "EPC-118483540f9a",
+          "distance": 625,
           "file": "src/features/tax-free-pack-lists/pages/EditTaxFreePackListPage.tsx",
           "handler": "{cancelDirtyNavigation}",
           "humanLabel": "Залишитися",
-          "line": 926,
+          "line": 964,
           "permissionKeys": [],
           "score": 21
         }
@@ -67448,7 +67502,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/tax-free-pack-lists/pages/EditTaxFreePackListPage.tsx",
-        "line": 314,
+        "line": 339,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -67470,20 +67524,20 @@
       "proposedPermission": "tax_free.tax_free_pack_list_all.confirm_dirty_navigation.command_submit",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "technical_ui",
+      "dispositionReason": "Discarding unsaved changes is local navigation protection and performs no business mutation.",
       "duplicateOf": null,
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-bb909dc5a8d4",
-          "distance": 611,
+          "candidateId": "EPC-a30ad30b3fbb",
+          "distance": 624,
           "file": "src/features/tax-free-pack-lists/pages/EditTaxFreePackListPage.tsx",
           "handler": "{confirmDirtyNavigation}",
           "humanLabel": "Продовжити без збереження",
-          "line": 929,
+          "line": 967,
           "permissionKeys": [],
           "score": 22
         }
@@ -67491,7 +67545,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/tax-free-pack-lists/pages/EditTaxFreePackListPage.tsx",
-        "line": 318,
+        "line": 343,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -67521,12 +67575,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-f821e3913db3",
-          "distance": 159,
+          "candidateId": "EPC-7cf8555e3285",
+          "distance": 165,
           "file": "src/features/tax-free-pack-lists/pages/EditTaxFreePackListPage.tsx",
           "handler": "{() => setConfirmCloseDocumentsOpen(false)}",
           "humanLabel": "Залишитися",
-          "line": 884,
+          "line": 922,
           "permissionKeys": [],
           "score": 9
         }
@@ -67534,7 +67588,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/tax-free-pack-lists/pages/EditTaxFreePackListPage.tsx",
-        "line": 725,
+        "line": 757,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -67556,17 +67610,17 @@
       "proposedPermission": "tax_free.tax_free_pack_list_all.on_print.command_export",
       "securityLevel": "medium",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
-      "duplicateOf": null,
+      "disposition": "duplicate_occurrence",
+      "dispositionReason": "Per-card document export invokes the same export-only capability as selected document export.",
+      "duplicateOf": "PE-01653",
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [],
       "source": {
         "status": "resolved",
         "file": "src/features/tax-free-pack-lists/pages/EditTaxFreePackListPage.tsx",
-        "line": 398,
+        "line": 423,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -67596,12 +67650,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-313246b70be1",
-          "distance": 250,
+          "candidateId": "EPC-8a9fa9039430",
+          "distance": 260,
           "file": "src/features/tax-free-pack-lists/pages/EditTaxFreePackListPage.tsx",
           "handler": "{onSelectCarrier}",
           "humanLabel": "Перевізник",
-          "line": 1013,
+          "line": 1055,
           "permissionKeys": [],
           "score": 13
         }
@@ -67609,7 +67663,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/tax-free-pack-lists/pages/EditTaxFreePackListPage.tsx",
-        "line": 763,
+        "line": 795,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -67631,17 +67685,17 @@
       "proposedPermission": "tax_free.tax_free_pack_list_all.on_delete.command_delete",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "technical_ui",
+      "dispositionReason": "Opening local draft removal confirmation performs no request; persistence belongs to final edit save.",
       "duplicateOf": null,
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [],
       "source": {
         "status": "resolved",
         "file": "src/features/tax-free-pack-lists/pages/EditTaxFreePackListPage.tsx",
-        "line": 440,
+        "line": 469,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -67663,20 +67717,20 @@
       "proposedPermission": "tax_free.tax_free_pack_list_all.item_const_index_tax_free_tax_free_items_index_of_item_if_is_rea.row_click",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "technical_ui",
+      "dispositionReason": "Selecting a Tax Free item only changes local selection state and performs no request.",
       "duplicateOf": null,
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-72e0239babb2",
-          "distance": 921,
+          "candidateId": "EPC-4732ea0cf9ca",
+          "distance": 960,
           "file": "src/features/tax-free-pack-lists/pages/EditTaxFreePackListPage.tsx",
           "handler": "{(item) => { const index = (taxFree.TaxFreeItems || []).indexOf(item) if (!isReadOnly && index >= 0) { const itemId = getTaxFreeItemId(taxFree, taxFreeIndex, item, index) onToggleItem(item, index, !selectedItemIds.has(itemId)) } }}",
           "humanLabel": null,
-          "line": 1028,
+          "line": 1070,
           "permissionKeys": [],
           "score": 38
         }
@@ -67684,7 +67738,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/tax-free-pack-lists/pages/EditTaxFreePackListPage.tsx",
-        "line": 107,
+        "line": 110,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -67716,7 +67770,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/tax-free-pack-lists/pages/EditTaxFreePackListPage.tsx",
-        "line": 1125,
+        "line": 1167,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -67748,7 +67802,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/tax-free-pack-lists/pages/EditTaxFreePackListPage.tsx",
-        "line": 1125,
+        "line": 1167,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -67780,7 +67834,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/tax-free-pack-lists/pages/EditTaxFreePackListPage.tsx",
-        "line": 1125,
+        "line": 1167,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -67802,20 +67856,20 @@
       "proposedPermission": "tax_free.tax_free_pack_list_all.on_delete_row.command_delete",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "technical_ui",
+      "dispositionReason": "Removing an unpacked source row only changes the local draft; final edit save owns persistence.",
       "duplicateOf": null,
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-7edeaa1930be",
-          "distance": 774,
+          "candidateId": "EPC-9515e6a8fb04",
+          "distance": 787,
           "file": "src/features/tax-free-pack-lists/pages/EditTaxFreePackListPage.tsx",
           "handler": "{() => onDelete(row)}",
           "humanLabel": "Видалити",
-          "line": 1214,
+          "line": 1256,
           "permissionKeys": [],
           "score": 9
         }
@@ -67823,7 +67877,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/tax-free-pack-lists/pages/EditTaxFreePackListPage.tsx",
-        "line": 440,
+        "line": 469,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -67855,7 +67909,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/tax-free-pack-lists/pages/EditTaxFreePackListPage.tsx",
-        "line": 1125,
+        "line": 1167,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -67887,7 +67941,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/tax-free-pack-lists/pages/EditTaxFreePackListPage.tsx",
-        "line": 1125,
+        "line": 1167,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -67917,12 +67971,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-fcea5473927d",
-          "distance": 150,
+          "candidateId": "EPC-663595a770be",
+          "distance": 167,
           "file": "src/features/tax-free-pack-lists/pages/TaxFreePackListsPage.tsx",
           "handler": "{resetFilters}",
           "humanLabel": "Скинути",
-          "line": 243,
+          "line": 262,
           "permissionKeys": [],
           "score": 12
         }
@@ -67930,7 +67984,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/tax-free-pack-lists/pages/TaxFreePackListsPage.tsx",
-        "line": 93,
+        "line": 95,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -67952,28 +68006,32 @@
       "proposedPermission": "tax_free.tax_free_pack_list_all.export_pack_lists.command_export",
       "securityLevel": "medium",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "covered_existing",
+      "dispositionReason": "Registry export is independently guarded and calls the pack-list registry export façade.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "warehouse_accounting.tax_free_pack_lists.document.export"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-30e1badbe44d",
-          "distance": 68,
+          "candidateId": "EPC-32e734e28c17",
+          "distance": 72,
           "file": "src/features/tax-free-pack-lists/pages/TaxFreePackListsPage.tsx",
           "handler": "{exportPackLists}",
           "humanLabel": "Завантажити",
-          "line": 254,
-          "permissionKeys": [],
+          "line": 273,
+          "permissionKeys": [
+            "warehouse_accounting.tax_free_pack_lists.document.export"
+          ],
           "score": 15
         }
       ],
       "source": {
         "status": "resolved",
         "file": "src/features/tax-free-pack-lists/pages/TaxFreePackListsPage.tsx",
-        "line": 186,
+        "line": 201,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -67995,28 +68053,34 @@
       "proposedPermission": "tax_free.tax_free_pack_list_all.set_selected_pack_list.row_click",
       "securityLevel": "medium",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "technical_ui",
+      "dispositionReason": "Clicking a registry row only opens the local action chooser; protected actions inside own their capabilities.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "warehouse_accounting.tax_free_pack_lists.pack_list.open_details",
+        "warehouse_accounting.tax_free_pack_lists.supply_order.create"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-4a5880870bbf",
-          "distance": 181,
+          "candidateId": "EPC-5e9505cadf76",
+          "distance": 193,
           "file": "src/features/tax-free-pack-lists/pages/TaxFreePackListsPage.tsx",
-          "handler": "{setSelectedPackList}",
+          "handler": "{canOpenDetails || canCreateSupplyOrder ? (packList) => { if (canOpenDetails || (canCreateSupplyOrder && packList.IsSent && !packList.SupplyOrderUkraineId)) { setSelectedPackList(packList) } } : undefined}",
           "humanLabel": null,
-          "line": 287,
-          "permissionKeys": [],
+          "line": 306,
+          "permissionKeys": [
+            "warehouse_accounting.tax_free_pack_lists.pack_list.open_details",
+            "warehouse_accounting.tax_free_pack_lists.supply_order.create"
+          ],
           "score": 19
         }
       ],
       "source": {
         "status": "resolved",
         "file": "src/features/tax-free-pack-lists/pages/TaxFreePackListsPage.tsx",
-        "line": 106,
+        "line": 113,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -68042,24 +68106,28 @@
       "dispositionReason": "navigation_is_guarded_by_destination_page",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
+      "canonicalPermissionKeys": [
+        "warehouse_accounting.tax_free_pack_lists.pack_list.open_details"
+      ],
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-34462ecd39ef",
-          "distance": 11,
+          "candidateId": "EPC-b19a817a1a40",
+          "distance": 12,
           "file": "src/features/tax-free-pack-lists/pages/TaxFreePackListsPage.tsx",
-          "handler": "{() => navigate(`/tax-free/pack-list/edit/${selectedPackList.NetUid}`)}",
+          "handler": "{() => { if (canOpenDetails) navigate(`/tax-free/pack-list/edit/${selectedPackList.NetUid}`) }}",
           "humanLabel": "Переглянути",
-          "line": 319,
-          "permissionKeys": [],
+          "line": 342,
+          "permissionKeys": [
+            "warehouse_accounting.tax_free_pack_lists.pack_list.open_details"
+          ],
           "score": 49
         }
       ],
       "source": {
         "status": "resolved",
         "file": "src/features/tax-free-pack-lists/pages/TaxFreePackListsPage.tsx",
-        "line": 330,
+        "line": 354,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -68085,24 +68153,28 @@
       "dispositionReason": "local_form_selection_only",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
+      "canonicalPermissionKeys": [
+        "warehouse_accounting.tax_free_pack_lists.supply_order.create"
+      ],
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-ed29f25d213e",
-          "distance": 232,
+          "candidateId": "EPC-b203752f2318",
+          "distance": 255,
           "file": "src/features/tax-free-pack-lists/pages/TaxFreePackListsPage.tsx",
-          "handler": "{() => { setOrderPackList(selectedPackList) setSelectedPackList(null) }}",
+          "handler": "{() => { if (!canCreateSupplyOrder) return setOrderPackList(selectedPackList) setSelectedPackList(null) }}",
           "humanLabel": "Створити замовлення в Україну",
-          "line": 334,
-          "permissionKeys": [],
+          "line": 359,
+          "permissionKeys": [
+            "warehouse_accounting.tax_free_pack_lists.supply_order.create"
+          ],
           "score": 51
         }
       ],
       "source": {
         "status": "resolved",
         "file": "src/features/tax-free-pack-lists/pages/TaxFreePackListsPage.tsx",
-        "line": 102,
+        "line": 104,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -68132,12 +68204,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-3212bbb2261c",
-          "distance": 192,
+          "candidateId": "EPC-c82d0d70e9f8",
+          "distance": 203,
           "file": "src/features/tax-free-pack-lists/pages/TaxFreePackListsPage.tsx",
           "handler": "{() => setDeleteCandidate(null)}",
           "humanLabel": "Скасувати",
-          "line": 368,
+          "line": 394,
           "permissionKeys": [],
           "score": 22
         }
@@ -68145,7 +68217,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/tax-free-pack-lists/pages/TaxFreePackListsPage.tsx",
-        "line": 176,
+        "line": 191,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -68167,20 +68239,22 @@
       "proposedPermission": "tax_free.tax_free_pack_list_all.confirm_delete.command_submit",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "covered_existing",
+      "dispositionReason": "Final deletion rechecks the delete right and calls the protected remove façade.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "warehouse_accounting.tax_free_pack_lists.pack_list.delete"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-3ea041c65a11",
-          "distance": 201,
+          "candidateId": "EPC-0c4cdc1709e7",
+          "distance": 212,
           "file": "src/features/tax-free-pack-lists/pages/TaxFreePackListsPage.tsx",
           "handler": "{confirmDelete}",
           "humanLabel": "Видалити",
-          "line": 369,
+          "line": 395,
           "permissionKeys": [],
           "score": 13
         }
@@ -68188,7 +68262,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/tax-free-pack-lists/pages/TaxFreePackListsPage.tsx",
-        "line": 168,
+        "line": 183,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -68210,28 +68284,32 @@
       "proposedPermission": "tax_free.tax_free_pack_list_all.on_open_pack_list.modal_open",
       "securityLevel": "low",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "covered_existing",
+      "dispositionReason": "Opening pack-list details is independently guarded in the registry, route, and details API.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "warehouse_accounting.tax_free_pack_lists.pack_list.open_details"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-fd3d9a434c01",
-          "distance": 13,
+          "candidateId": "EPC-b7651485eb8f",
+          "distance": 389,
           "file": "src/features/tax-free-pack-lists/pages/TaxFreePackListsPage.tsx",
           "handler": "{() => onOpen(packList)}",
           "humanLabel": "Переглянути",
-          "line": 489,
-          "permissionKeys": [],
+          "line": 520,
+          "permissionKeys": [
+            "warehouse_accounting.tax_free_pack_lists.pack_list.open_details"
+          ],
           "score": 12
         }
       ],
       "source": {
         "status": "resolved",
         "file": "src/features/tax-free-pack-lists/pages/TaxFreePackListsPage.tsx",
-        "line": 476,
+        "line": 131,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -68253,28 +68331,32 @@
       "proposedPermission": "tax_free.tax_free_pack_list_all.on_delete_pack_list.command_delete",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
-      "duplicateOf": null,
+      "disposition": "duplicate_occurrence",
+      "dispositionReason": "The delete opener is part of the same protected deletion capability whose final boundary is PE-01680.",
+      "duplicateOf": "PE-01680",
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "warehouse_accounting.tax_free_pack_lists.pack_list.delete"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-11638335d7db",
-          "distance": 19,
+          "candidateId": "EPC-cadc7ecc4ab2",
+          "distance": 397,
           "file": "src/features/tax-free-pack-lists/pages/TaxFreePackListsPage.tsx",
           "handler": "{() => onDelete(packList)}",
           "humanLabel": "Видалити",
-          "line": 494,
-          "permissionKeys": [],
+          "line": 525,
+          "permissionKeys": [
+            "warehouse_accounting.tax_free_pack_lists.pack_list.delete"
+          ],
           "score": 14
         }
       ],
       "source": {
         "status": "resolved",
         "file": "src/features/tax-free-pack-lists/pages/TaxFreePackListsPage.tsx",
-        "line": 475,
+        "line": 128,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -80054,31 +80136,6 @@
     "PE-01581",
     "PE-01582",
     "PE-01584",
-    "PE-01634",
-    "PE-01636",
-    "PE-01638",
-    "PE-01640",
-    "PE-01641",
-    "PE-01642",
-    "PE-01646",
-    "PE-01647",
-    "PE-01649",
-    "PE-01650",
-    "PE-01653",
-    "PE-01654",
-    "PE-01655",
-    "PE-01656",
-    "PE-01660",
-    "PE-01662",
-    "PE-01664",
-    "PE-01666",
-    "PE-01667",
-    "PE-01671",
-    "PE-01675",
-    "PE-01676",
-    "PE-01680",
-    "PE-01681",
-    "PE-01682",
     "PE-01841",
     "PE-01843",
     "PE-01844",

@@ -18,7 +18,7 @@ import {
 } from './taxFreeDocumentUploadOperation'
 
 export async function getTaxFreePackLists(params: TaxFreePackListsSearchParams): Promise<TaxFreePackListsResponse> {
-  const result = await apiRequest<unknown>('/supplies/ukraine/order/packlists/taxfree/all/filtered', {
+  const result = await apiRequest<unknown>('/supplies/ukraine/order/packlists/taxfree/registry', {
     query: {
       from: toDateTimeQuery(params.from, 'start'),
       limit: params.limit,
@@ -36,7 +36,7 @@ export async function getTaxFreePackLists(params: TaxFreePackListsSearchParams):
 }
 
 export async function getTaxFreePackListById(netId: string): Promise<TaxFreePackList | null> {
-  const result = await apiRequest<unknown>('/supplies/ukraine/order/packlists/taxfree/get', {
+  const result = await apiRequest<unknown>('/supplies/ukraine/order/packlists/taxfree/details', {
     query: {
       netId,
     },
@@ -45,8 +45,8 @@ export async function getTaxFreePackListById(netId: string): Promise<TaxFreePack
   return normalizeObject<TaxFreePackList>(result, normalizePackList)
 }
 
-async function updateTaxFreePackList(packList: TaxFreePackList): Promise<TaxFreePackList | null> {
-  const result = await apiRequest<unknown>('/supplies/ukraine/order/packlists/taxfree/update', {
+export async function saveTaxFreePackList(packList: TaxFreePackList): Promise<TaxFreePackList | null> {
+  const result = await apiRequest<unknown>('/supplies/ukraine/order/packlists/taxfree/edit', {
     body: packList,
     method: 'POST',
   })
@@ -54,21 +54,17 @@ async function updateTaxFreePackList(packList: TaxFreePackList): Promise<TaxFree
   return normalizeObject<TaxFreePackList>(result, normalizePackList)
 }
 
-async function updateSaleTaxFreePackList(packList: TaxFreePackList): Promise<TaxFreePackList | null> {
-  const result = await apiRequest<unknown>('/supplies/ukraine/order/packlists/taxfree/update/sale', {
-    body: packList,
+export async function sendTaxFreePackList(netId: string): Promise<TaxFreePackList | null> {
+  const result = await apiRequest<unknown>('/supplies/ukraine/order/packlists/taxfree/send', {
     method: 'POST',
+    query: { netId },
   })
 
   return normalizeObject<TaxFreePackList>(result, normalizePackList)
-}
-
-export function saveTaxFreePackList(packList: TaxFreePackList): Promise<TaxFreePackList | null> {
-  return packList.IsFromSale ? updateSaleTaxFreePackList(packList) : updateTaxFreePackList(packList)
 }
 
 export async function deleteTaxFreePackList(netId: string): Promise<void> {
-  await apiRequest<unknown>('/supplies/ukraine/order/packlists/taxfree/delete', {
+  await apiRequest<unknown>('/supplies/ukraine/order/packlists/taxfree/remove', {
     method: 'DELETE',
     query: {
       netId,
@@ -77,7 +73,7 @@ export async function deleteTaxFreePackList(netId: string): Promise<void> {
 }
 
 export async function breakTaxFreePackList(packList: TaxFreePackList): Promise<TaxFreePackList | null> {
-  const result = await apiRequest<unknown>('/supplies/ukraine/order/packlists/taxfree/break', {
+  const result = await apiRequest<unknown>('/supplies/ukraine/order/packlists/taxfree/split', {
     body: packList,
     method: 'POST',
   })
@@ -86,7 +82,7 @@ export async function breakTaxFreePackList(packList: TaxFreePackList): Promise<T
 }
 
 export async function updateTaxFree(taxFree: TaxFree): Promise<TaxFree | null> {
-  const result = await apiRequest<unknown>('/supplies/ukraine/order/taxfree/update', {
+  const result = await apiRequest<unknown>('/supplies/ukraine/order/taxfree/edit', {
     body: taxFree,
     method: 'POST',
   })
@@ -95,7 +91,7 @@ export async function updateTaxFree(taxFree: TaxFree): Promise<TaxFree | null> {
 }
 
 export async function getTaxFreePrintDocument(netId: string): Promise<TaxFreePrintDocument | null> {
-  const result = await apiRequest<unknown>('/supplies/ukraine/order/taxfree/documents/printing/get', {
+  const result = await apiRequest<unknown>('/supplies/ukraine/order/taxfree/pack-lists/document/export', {
     query: {
       netId,
     },
@@ -105,7 +101,7 @@ export async function getTaxFreePrintDocument(netId: string): Promise<TaxFreePri
 }
 
 export async function getTaxFreePrintDocuments(netIds: string[]): Promise<TaxFreePrintDocument | null> {
-  const result = await apiRequest<unknown>('/supplies/ukraine/order/taxfree/documents/printing/get/all', {
+  const result = await apiRequest<unknown>('/supplies/ukraine/order/taxfree/pack-lists/documents/export', {
     body: netIds,
     method: 'POST',
   })
@@ -125,7 +121,7 @@ export async function uploadTaxFreeDocuments(netId: string, files: File[]): Prom
       immutableFiles.forEach((file) =>
         formData.append('files', file))
       const result = await apiRequest<unknown>(
-        '/supplies/ukraine/order/taxfree/documents/upload',
+        '/supplies/ukraine/order/taxfree/pack-lists/documents/upload',
         {
           body: formData,
           dedupe: false,
@@ -146,7 +142,7 @@ export async function uploadTaxFreeDocuments(netId: string, files: File[]): Prom
 }
 
 export async function deleteTaxFreeDocument(netId: string): Promise<void> {
-  await apiRequest<unknown>('/supplies/ukraine/order/taxfree/documents/remove', {
+  await apiRequest<unknown>('/supplies/ukraine/order/taxfree/pack-lists/documents/remove', {
     method: 'DELETE',
     query: {
       netId,
@@ -159,7 +155,7 @@ export async function exportTaxFreePackLists(params: {
   from: string
   to: string
 }): Promise<TaxFreePrintDocument | null> {
-  const result = await apiRequest<unknown>('/supplies/ukraine/order/packlists/taxfree/print/documents', {
+  const result = await apiRequest<unknown>('/supplies/ukraine/order/packlists/taxfree/document/export', {
     body: params.columns,
     method: 'POST',
     query: {
@@ -207,7 +203,7 @@ export async function searchCarriers(value: string, signal?: AbortSignal): Promi
     return []
   }
 
-  const result = await apiRequest<unknown>('/supplies/ukraine/carriers/statham/all/search', {
+  const result = await apiRequest<unknown>('/supplies/ukraine/carriers/statham/tax-free-pack-lists/search', {
     query: {
       value: value.trim(),
     },
@@ -218,7 +214,7 @@ export async function searchCarriers(value: string, signal?: AbortSignal): Promi
 }
 
 export async function getCarrierById(netId: string): Promise<Statham | null> {
-  const result = await apiRequest<unknown>('/supplies/ukraine/carriers/statham/get', {
+  const result = await apiRequest<unknown>('/supplies/ukraine/carriers/statham/tax-free-pack-lists/details', {
     query: {
       netId,
     },
@@ -237,7 +233,7 @@ export async function createSupplyOrderFromPackList(
   packListNetId: string,
   payload: SupplyOrderFromPackListPayload,
 ): Promise<{ NetUid?: string } | null> {
-  const result = await apiRequest<unknown>('/supplies/ukraine/order/new/packlist/taxfree', {
+  const result = await apiRequest<unknown>('/supplies/ukraine/order/tax-free-pack-list/create', {
     body: payload,
     method: 'POST',
     query: {

@@ -22,6 +22,8 @@ import { ArrowLeft, ArrowRight, CircleAlert, File, Printer, RefreshCw, Save, Sea
 import { notifications } from '@mantine/notifications'
 import { useCallback, useEffect, useMemo, useReducer, useState } from 'react'
 import { useParams } from 'react-router-dom'
+import { usePermissions } from '../../auth/usePermissions'
+import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
@@ -33,6 +35,7 @@ import {
   getTaxFreePrintDocument,
   getTaxFreePrintDocuments,
   saveTaxFreePackList,
+  sendTaxFreePackList,
   searchClients,
 } from '../api/taxFreePackListsApi'
 import { MoveTaxFreeItemsModal } from '../components/MoveTaxFreeItemsModal'
@@ -107,6 +110,14 @@ type PrintDocumentModalState = {
 export function EditTaxFreePackListPage() {
   const { t } = useI18n()
   const { id } = useParams()
+  const { can } = usePermissions()
+  const canEdit = can(PermissionKeys.TaxFreePackLists.PackList.Edit)
+  const canBreak = can(PermissionKeys.TaxFreePackLists.PackList.Break)
+  const canSend = can(PermissionKeys.TaxFreePackLists.PackList.Send)
+  const canExport = can(PermissionKeys.TaxFreePackLists.Document.Export)
+  const canUploadDocument = can(PermissionKeys.TaxFreePackLists.Document.Upload)
+  const canDeleteDocument = can(PermissionKeys.TaxFreePackLists.Document.Delete)
+  const canEditTaxFreeDocument = can(PermissionKeys.TaxFreeDocuments.Document.Edit)
   const [state, setState] = useState<EditState>({ isLoading: false, packList: null })
   const [originalPackList, setOriginalPackList] = useState<TaxFreePackList | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -251,7 +262,7 @@ export function EditTaxFreePackListPage() {
   }, [])
 
   async function persistPackList(nextPackList = packList, successMessage = t('Пакувальний лист збережено')) {
-    if (!nextPackList) {
+    if (!canEdit || !nextPackList) {
       return null
     }
 
@@ -276,7 +287,7 @@ export function EditTaxFreePackListPage() {
   }
 
   async function sendPackList() {
-    if (!packList) {
+    if (!canSend || !packList?.NetUid) {
       return
     }
 
@@ -290,7 +301,21 @@ export function EditTaxFreePackListPage() {
       return
     }
 
-    await persistPackList({ ...packList, IsSent: true }, t('Пакувальний лист проведено'))
+    setSaving(true)
+    setError(null)
+
+    try {
+      const sentPackList = await sendTaxFreePackList(packList.NetUid)
+      if (sentPackList) {
+        setState({ isLoading: false, packList: sentPackList })
+        setOriginalPackList(clonePackList(sentPackList))
+      }
+      notifications.show({ color: 'green', message: t('Пакувальний лист проведено') })
+    } catch (sendError) {
+      setError(sendError instanceof Error ? sendError.message : t('Не вдалося провести пакувальний лист'))
+    } finally {
+      setSaving(false)
+    }
   }
 
   function cancelChanges() {
@@ -350,7 +375,7 @@ export function EditTaxFreePackListPage() {
   }
 
   function moveSelectedRight() {
-    if (!packList) {
+    if (!canEdit || !packList) {
       return
     }
 
@@ -372,7 +397,7 @@ export function EditTaxFreePackListPage() {
   }
 
   function moveSelectedLeft() {
-    if (!packList) {
+    if (!canEdit || !packList) {
       return
     }
 
@@ -396,6 +421,10 @@ export function EditTaxFreePackListPage() {
   }
 
   async function printSelectedTaxFrees() {
+    if (!canExport) {
+      return
+    }
+
     const selectedTaxFrees = (packList?.TaxFrees || [])
       .filter((taxFree, index) => selectedTaxFreeIds.has(getTaxFreeId(taxFree, index)))
 
@@ -435,7 +464,7 @@ export function EditTaxFreePackListPage() {
   }
 
   const sourceColumns = useSourceColumns({
-    disabled: Boolean(packList?.IsSent),
+    disabled: !canEdit || Boolean(packList?.IsSent),
     isSelected: (rowId) => selectedSourceIds.has(rowId),
     onDelete: (row) => {
       if (!packList) {
@@ -452,6 +481,7 @@ export function EditTaxFreePackListPage() {
   const hasSelectedReadOnlyTaxFrees = selectedTaxFrees.some((taxFree) => isTaxFreeReadOnly(taxFree, packList))
 
   function applyStatusToSelectedTaxFrees(status: TaxFreeStatus) {
+    if (!canEdit) return
     setPackList((currentPackList) => (currentPackList.TaxFrees || []).reduce((nextPackList, taxFree, index) => (
       selectedTaxFreeIds.has(getTaxFreeId(taxFree, index)) && !isTaxFreeReadOnly(taxFree, nextPackList)
         ? updateTaxFreeStatus(nextPackList, index, status)
@@ -471,7 +501,7 @@ export function EditTaxFreePackListPage() {
               <RefreshCw size={18} />
             </ActionIcon>
           </Tooltip>
-          {!packList?.IsSent && (
+          {!packList?.IsSent && canSend && (
             <Button color={CREATE_ACTION_COLOR} disabled={isDirty || (packList?.TaxFrees || []).length === 0} onClick={sendPackList}>
               {t('Провести')}
             </Button>
@@ -487,7 +517,7 @@ export function EditTaxFreePackListPage() {
 
       <Card withBorder radius="md" className="app-section-card">
         <Stack>
-          {packList?.IsSent ? (
+          {packList && (packList.IsSent || !canEdit) ? (
             <SimpleGrid cols={{ base: 1, md: 4 }}>
               <ReadonlyField label={t('Організація')} value={getEntityName(packList.Organization)} />
               <ReadonlyField label={t('Клієнт')} value={getEntityName(packList.Client)} />
@@ -530,7 +560,7 @@ export function EditTaxFreePackListPage() {
               <Select
                 clearable
                 data={clientAgreementOptions}
-                disabled={!packList?.Client}
+                disabled={!canEdit || !packList?.Client}
                 label={t('Договір')}
                 value={selectedAgreementValue}
                 onChange={(value) => {
@@ -542,7 +572,7 @@ export function EditTaxFreePackListPage() {
               />
               {!packList?.IsFromSale && (
                 <NumberInput
-                  disabled={(packList?.TaxFrees || []).length > 0}
+                  disabled={!canEdit || (packList?.TaxFrees || []).length > 0}
                   label={t('Маржа')}
                   min={0}
                   value={packList?.MarginAmount || 0}
@@ -555,12 +585,12 @@ export function EditTaxFreePackListPage() {
             </SimpleGrid>
           )}
 
-          {!packList?.IsSent && (
+          {!packList?.IsSent && (canBreak || (canEdit && isDirty)) && (
             <Group justify="space-between">
-              <Button disabled={isDirty} variant="outline" onClick={() => setBreakModalOpen(true)}>
+              {canBreak && <Button disabled={isDirty} variant="outline" onClick={() => setBreakModalOpen(true)}>
                 {t('Розбити')}
-              </Button>
-              {isDirty && (
+              </Button>}
+              {canEdit && isDirty && (
                 <Group>
                   <Button variant="subtle" onClick={cancelChanges}>{t('Скасувати')}</Button>
                   <Button color={CREATE_ACTION_COLOR} leftSection={<Save size={16} />} loading={isSaving} onClick={() => persistPackList()}>
@@ -580,7 +610,7 @@ export function EditTaxFreePackListPage() {
               <Title order={4}>{packList?.IsFromSale ? t('Позиції продажу') : t('Позиції замовлення')}</Title>
               <Checkbox
                 checked={sourceRows.length > 0 && sourceRows.every((row) => selectedSourceIds.has(row.id))}
-                disabled={sourceRows.length === 0 || packList?.IsSent}
+                disabled={!canEdit || sourceRows.length === 0 || packList?.IsSent}
                 label={t('Обрати всі')}
                 onChange={(event) => {
                   setSelectedSourceIds(event.currentTarget.checked
@@ -601,7 +631,7 @@ export function EditTaxFreePackListPage() {
               minWidth={900}
               tableId="tax-free-pack-list-source"
               onRowClick={(row) => {
-                if (!packList?.IsSent && getSourceUnpackedQty(row.entity) > 0) {
+                if (canEdit && !packList?.IsSent && getSourceUnpackedQty(row.entity) > 0) {
                   toggleSource(row.id, !selectedSourceIds.has(row.id))
                 }
               }}
@@ -622,7 +652,7 @@ export function EditTaxFreePackListPage() {
             <ActionIcon
               aria-label={t('Перенести у Tax Free')}
               color={CREATE_ACTION_COLOR}
-              disabled={selectedSourceIds.size === 0 || packList?.IsSent || isDirty}
+              disabled={!canEdit || selectedSourceIds.size === 0 || packList?.IsSent || isDirty}
               size="lg"
               variant="filled"
               onClick={moveSelectedRight}
@@ -633,7 +663,7 @@ export function EditTaxFreePackListPage() {
           <Tooltip label={t('Повернути з Tax Free')}>
             <ActionIcon
               aria-label={t('Повернути з Tax Free')}
-              disabled={selectedTaxFreeItemIds.size === 0 || packList?.IsSent || isDirty}
+              disabled={!canEdit || selectedTaxFreeItemIds.size === 0 || packList?.IsSent || isDirty}
               size="lg"
               variant="light"
               onClick={moveSelectedLeft}
@@ -663,7 +693,7 @@ export function EditTaxFreePackListPage() {
                 {selectedTaxFreeIds.size > 0 && (
                   <Select
                     data={taxFreeStatuses.map((status) => ({ label: status.label, value: String(status.value) }))}
-                    disabled={hasSelectedReadOnlyTaxFrees}
+                    disabled={!canEdit || hasSelectedReadOnlyTaxFrees}
                     placeholder={t('Статус')}
                     size="xs"
                     value={null}
@@ -675,7 +705,7 @@ export function EditTaxFreePackListPage() {
                     }}
                   />
                 )}
-                <Button
+                {canExport && <Button
                   disabled={selectedTaxFreeIds.size === 0 || isDirty || hasNonPrintableSelectedTaxFrees}
                   leftSection={<Printer size={16} />}
                   loading={isPrinting}
@@ -684,8 +714,8 @@ export function EditTaxFreePackListPage() {
                   onClick={printSelectedTaxFrees}
                 >
                   {t('Друк')}
-                </Button>
-                <Button
+                </Button>}
+                {canEdit && <Button
                   color="red"
                   disabled={selectedTaxFreeIds.size === 0 || packList?.IsSent}
                   leftSection={<Trash2 size={16} />}
@@ -705,7 +735,7 @@ export function EditTaxFreePackListPage() {
                   }}
                 >
                   {t('Видалити')}
-                </Button>
+                </Button>}
               </Group>
             </Group>
 
@@ -713,7 +743,9 @@ export function EditTaxFreePackListPage() {
               {(packList?.TaxFrees || []).map((taxFree, index) => (
                 <TaxFreeCard
                   isDirty={isDirty}
-                  isReadOnly={isTaxFreeReadOnly(taxFree, packList)}
+                  canEditCarrier={canEditTaxFreeDocument}
+                  canExport={canExport}
+                  isReadOnly={!canEdit || isTaxFreeReadOnly(taxFree, packList)}
                   key={getTaxFreeId(taxFree, index)}
                   selectedItemIds={selectedTaxFreeItemIds}
                   selectedTaxFreeIds={selectedTaxFreeIds}
@@ -731,7 +763,7 @@ export function EditTaxFreePackListPage() {
                     setPackList((currentPackList) => updateTaxFreeItem(currentPackList, index, itemIndex, { ChangedQty: qty }))
                   }}
                   onPrint={async () => {
-                    if (!taxFree.NetUid) {
+                    if (!canExport || !taxFree.NetUid) {
                       return
                     }
                     setPrinting(true)
@@ -760,7 +792,9 @@ export function EditTaxFreePackListPage() {
                       return nextIds
                     })
                   }}
-                  onSelectCarrier={() => setCarrierTaxFree(taxFree)}
+                  onSelectCarrier={() => {
+                    if (canEditTaxFreeDocument) setCarrierTaxFree(taxFree)
+                  }}
                   onToggleItem={(item, itemIndex, checked) => {
                     const itemId = getTaxFreeItemId(taxFree, index, item, itemIndex)
                     setSelectedTaxFreeItemIds((currentIds) => {
@@ -811,6 +845,7 @@ export function EditTaxFreePackListPage() {
       />
 
       <TaxFreeBreakModal
+        canBreak={canBreak}
         opened={isBreakModalOpen}
         packList={packList}
         onClose={() => setBreakModalOpen(false)}
@@ -821,6 +856,7 @@ export function EditTaxFreePackListPage() {
       />
 
       <TaxFreeCarrierModal
+        canEdit={canEditTaxFreeDocument}
         opened={Boolean(carrierTaxFree)}
         taxFree={carrierTaxFree}
         onClose={() => setCarrierTaxFree(null)}
@@ -834,7 +870,7 @@ export function EditTaxFreePackListPage() {
         footer={
           documentTaxFree ? (
             <Button
-              disabled={documentFiles.length === 0 || isSavingDocuments || !documentTaxFree.NetUid}
+              disabled={!canUploadDocument || documentFiles.length === 0 || isSavingDocuments || !documentTaxFree.NetUid}
               form={TAX_FREE_DOCUMENTS_FORM_ID}
               loading={isSavingDocuments}
               type="submit"
@@ -851,6 +887,8 @@ export function EditTaxFreePackListPage() {
       >
         {documentTaxFree && (
           <TaxFreeDocumentsPanel
+            canDelete={canDeleteDocument}
+            canUpload={canUploadDocument}
             files={documentFiles}
             formId={TAX_FREE_DOCUMENTS_FORM_ID}
             isSaving={isSavingDocuments}
@@ -937,6 +975,8 @@ export function EditTaxFreePackListPage() {
 }
 
 function TaxFreeCard({
+  canEditCarrier,
+  canExport,
   isDirty,
   isReadOnly,
   onDelete,
@@ -954,6 +994,8 @@ function TaxFreeCard({
   taxFreeId,
   taxFreeIndex,
 }: {
+  canEditCarrier: boolean
+  canExport: boolean
   isDirty: boolean
   isReadOnly: boolean
   onDelete: () => void
@@ -1001,14 +1043,14 @@ function TaxFreeCard({
                 <File size={16} />
               </ActionIcon>
             </Tooltip>
-            {!isDirty && canPrint && (
+            {canExport && !isDirty && canPrint && (
               <Tooltip label={t('Друк')}>
                 <ActionIcon aria-label={t('Друк')} loading={false} variant="subtle" onClick={onPrint}>
                   <Printer size={16} />
                 </ActionIcon>
               </Tooltip>
             )}
-            {!isDirty && canSelectCarrier && (
+            {canEditCarrier && !isDirty && canSelectCarrier && (
               <Tooltip label={t('Перевізник')}>
                 <ActionIcon aria-label={t('Перевізник')} variant="subtle" onClick={onSelectCarrier}>
                   <Truck size={16} />
