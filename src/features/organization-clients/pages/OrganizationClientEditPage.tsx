@@ -30,12 +30,49 @@ import {
   normalizeClientForSave,
   validateOrganizationClient,
 } from '../utils'
+import { PermissionKeys } from '../../../shared/auth/permissionKeys'
+import { usePermissions } from '../../auth/usePermissions'
 
 type OrganizationClientEditRouteState = {
   returnPath?: string
 }
 
+type OrganizationClientEditPermissions = {
+  canDelete: boolean
+  canEdit: boolean
+}
+
 export function OrganizationClientEditPage() {
+  const { t } = useI18n()
+  const { can, isLoading } = usePermissions()
+
+  if (isLoading) {
+    return <Text c="dimmed">{t('Завантаження')}</Text>
+  }
+
+  if (!can(PermissionKeys.OrganizationClients.Client.OpenDetails)) {
+    return (
+      <Alert color="red" icon={<CircleAlert size={18} />} title={t('Доступ заборонено')} variant="light">
+        {t('Недостатньо прав для перегляду картки організації покупця')}
+      </Alert>
+    )
+  }
+
+  return (
+    <OrganizationClientEditPageContent
+      permissions={{
+        canDelete: can(PermissionKeys.OrganizationClients.Client.Delete),
+        canEdit: can(PermissionKeys.OrganizationClients.Client.Edit),
+      }}
+    />
+  )
+}
+
+function OrganizationClientEditPageContent({
+  permissions,
+}: {
+  permissions: OrganizationClientEditPermissions
+}) {
   const { t } = useI18n()
   const { netId } = useParams<{ netId?: string }>()
   const navigate = useNavigate()
@@ -170,7 +207,7 @@ export function OrganizationClientEditPage() {
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
 
-    if (!client) {
+    if (!permissions.canEdit || !client) {
       return
     }
 
@@ -201,7 +238,7 @@ export function OrganizationClientEditPage() {
   }
 
   async function handleDelete() {
-    if (!client?.NetUid) {
+    if (!permissions.canDelete || !client?.NetUid) {
       return
     }
 
@@ -246,26 +283,30 @@ export function OrganizationClientEditPage() {
       onClose={closeSheet}
       footer={
         <Group gap="xs">
-          <Button
-            color="red"
-            disabled={!client}
-            leftSection={<Trash2 size={16} />}
-            loading={isDeleting}
-            variant="light"
-            onClick={() => setDeleteModalOpened(true)}
-          >
-            {t('Видалити')}
-          </Button>
-          <Button
-            color={CREATE_ACTION_COLOR}
-            disabled={!client}
-            form="organization-client-edit-form"
-            leftSection={<Save size={16} />}
-            loading={isSaving}
-            type="submit"
-          >
-            {t('Зберегти')}
-          </Button>
+          {permissions.canDelete && (
+            <Button
+              color="red"
+              disabled={!client}
+              leftSection={<Trash2 size={16} />}
+              loading={isDeleting}
+              variant="light"
+              onClick={() => setDeleteModalOpened(true)}
+            >
+              {t('Видалити')}
+            </Button>
+          )}
+          {permissions.canEdit && (
+            <Button
+              color={CREATE_ACTION_COLOR}
+              disabled={!client}
+              form="organization-client-edit-form"
+              leftSection={<Save size={16} />}
+              loading={isSaving}
+              type="submit"
+            >
+              {t('Зберегти')}
+            </Button>
+          )}
         </Group>
       }
     >
@@ -289,13 +330,17 @@ export function OrganizationClientEditPage() {
         <form id="organization-client-edit-form" onSubmit={handleSubmit}>
           <Card withBorder radius="md" padding="md">
             <Stack gap="md">
-              <OrganizationClientForm client={client} disabled={isSaving || isDeleting} onFieldChange={setField} />
+              <OrganizationClientForm
+                client={client}
+                disabled={!permissions.canEdit || isSaving || isDeleting}
+                onFieldChange={setField}
+              />
 
               <OrganizationClientAgreementsPanel
                 agreements={client.OrganizationClientAgreements || []}
                 allowRemovingLast={false}
                 currencies={currencies}
-                disabled={isSaving || isDeleting}
+                disabled={!permissions.canEdit || isSaving || isDeleting}
                 isLoadingCurrencies={isLoadingCurrencies}
                 onAddAgreement={addAgreement}
                 onRemoveAgreement={removeAgreement}
@@ -318,7 +363,7 @@ export function OrganizationClientEditPage() {
         </Card>
       )}
 
-      <AppModal centered opened={deleteModalOpened} title={t('Видалити організацію')} onClose={() => setDeleteModalOpened(false)}>
+      <AppModal centered opened={permissions.canDelete && deleteModalOpened} title={t('Видалити організацію')} onClose={() => setDeleteModalOpened(false)}>
         <Stack gap="md">
           <Text size="sm">{t('Підтвердити видалення')}: {client ? getOrganizationClientName(client) : ''}</Text>
           <Group justify="flex-end">

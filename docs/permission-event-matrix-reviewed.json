@@ -4,17 +4,17 @@
     "inputRecords": 1902,
     "classifiedRecords": 1902,
     "dispositionCounts": {
-      "technical_ui": 637,
-      "covered_existing": 294,
-      "business_candidate": 568,
+      "technical_ui": 641,
+      "covered_existing": 298,
+      "business_candidate": 558,
       "needs_human_review": 287,
-      "duplicate_occurrence": 113,
+      "duplicate_occurrence": 115,
       "stale_or_aggregated": 3
     },
-    "reviewCandidates": 855,
-    "technicalExcluded": 637,
-    "duplicatesExcluded": 113,
-    "duplicateOccurrencesTotal": 180,
+    "reviewCandidates": 845,
+    "technicalExcluded": 641,
+    "duplicatesExcluded": 115,
+    "duplicateOccurrencesTotal": 182,
     "technicalDuplicateOverlap": 67,
     "sourceResolved": 1828,
     "sourceUnresolved": 74,
@@ -24864,12 +24864,12 @@
       "proposedPermission": "organization_clients.organization_clients_edit_item.on_remove_agreement_row_agreement_row_index.command_delete",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "technical_ui",
+      "dispositionReason": "Removing an agreement row only changes the local organization draft; the final edit save owns the server mutation.",
       "duplicateOf": null,
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
           "candidateId": "EPC-9f41183cf118",
@@ -24905,12 +24905,12 @@
       "proposedPermission": "organization_clients.organization_clients_edit_item.open_add_modal.command_submit",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "technical_ui",
+      "dispositionReason": "Opening the add-agreement modal is local UI state and does not perform a request.",
       "duplicateOf": null,
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
           "candidateId": "EPC-1fc4ccd0a783",
@@ -24987,12 +24987,12 @@
       "proposedPermission": "organization_clients.organization_clients_edit_item.handle_add_agreement.command_submit",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "technical_ui",
+      "dispositionReason": "Adding an agreement only changes the local draft; create or edit owns the final aggregate mutation.",
       "duplicateOf": null,
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
           "candidateId": "EPC-768ad9168ee3",
@@ -25039,7 +25039,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/organization-clients/pages/OrganizationClientEditPage.tsx",
-        "line": 38,
+        "line": 45,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -25060,20 +25060,20 @@
       "proposedPermission": "organization_clients.organization_clients_edit_item.set_delete_modal_opened_true.modal_open",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
-      "duplicateOf": null,
+      "disposition": "duplicate_occurrence",
+      "dispositionReason": "Opening the delete confirmation is the first UI step of the same reviewed delete business action.",
+      "duplicateOf": "PE-00630",
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-28920ac6bca7",
+          "candidateId": "EPC-4172a78be07b",
           "distance": 6,
           "file": "src/features/organization-clients/pages/OrganizationClientEditPage.tsx",
           "handler": "{() => setDeleteModalOpened(true)}",
           "humanLabel": "Видалити",
-          "line": 249,
+          "line": 287,
           "permissionKeys": [],
           "score": 24
         }
@@ -25081,7 +25081,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/organization-clients/pages/OrganizationClientEditPage.tsx",
-        "line": 255,
+        "line": 293,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -25102,20 +25102,22 @@
       "proposedPermission": "organization_clients.organization_clients_edit_item.handle_submit.form_submit",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "covered_existing",
+      "dispositionReason": "The edit form submit is the single organization aggregate update boundary.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "counterparties.buyer_organizations.client.edit"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-be094f78a6fd",
-          "distance": 119,
+          "candidateId": "EPC-9e421a3f2ccd",
+          "distance": 123,
           "file": "src/features/organization-clients/pages/OrganizationClientEditPage.tsx",
           "handler": "{handleSubmit}",
           "humanLabel": null,
-          "line": 289,
+          "line": 330,
           "permissionKeys": [],
           "score": 12
         }
@@ -25123,7 +25125,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/organization-clients/pages/OrganizationClientEditPage.tsx",
-        "line": 170,
+        "line": 207,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -25152,12 +25154,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-74dc66daccfb",
-          "distance": 103,
+          "candidateId": "EPC-3d49198c3e92",
+          "distance": 111,
           "file": "src/features/organization-clients/pages/OrganizationClientEditPage.tsx",
           "handler": "{() => setDeleteModalOpened(false)}",
           "humanLabel": "Скасувати",
-          "line": 325,
+          "line": 370,
           "permissionKeys": [],
           "score": 25
         }
@@ -25165,7 +25167,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/organization-clients/pages/OrganizationClientEditPage.tsx",
-        "line": 222,
+        "line": 259,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -25186,20 +25188,22 @@
       "proposedPermission": "organization_clients.organization_clients_edit_item.handle_delete.command_delete",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "covered_existing",
+      "dispositionReason": "The confirmed delete calls the dedicated permission-scoped remove endpoint.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "counterparties.buyer_organizations.client.delete"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-47c2b0489265",
-          "distance": 125,
+          "candidateId": "EPC-abcda39ba3ed",
+          "distance": 133,
           "file": "src/features/organization-clients/pages/OrganizationClientEditPage.tsx",
           "handler": "{handleDelete}",
           "humanLabel": "Видалити",
-          "line": 328,
+          "line": 373,
           "permissionKeys": [],
           "score": 12
         }
@@ -25207,7 +25211,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/organization-clients/pages/OrganizationClientEditPage.tsx",
-        "line": 203,
+        "line": 240,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -25240,7 +25244,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/organization-clients/pages/OrganizationClientNewPage.tsx",
-        "line": 32,
+        "line": 34,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -25261,20 +25265,22 @@
       "proposedPermission": "organization_clients.organization_clients_new.handle_submit.form_submit",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "covered_existing",
+      "dispositionReason": "The new-organization submit calls the dedicated permission-scoped create endpoint.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "counterparties.buyer_organizations.client.create"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-98192bb35bdc",
-          "distance": 64,
+          "candidateId": "EPC-0558db9ac612",
+          "distance": 68,
           "file": "src/features/organization-clients/pages/OrganizationClientNewPage.tsx",
           "handler": "{handleSubmit}",
           "humanLabel": null,
-          "line": 172,
+          "line": 197,
           "permissionKeys": [],
           "score": 12
         }
@@ -25282,7 +25288,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/organization-clients/pages/OrganizationClientNewPage.tsx",
-        "line": 108,
+        "line": 129,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -25315,7 +25321,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/organization-clients/pages/OrganizationClientsPage.tsx",
-        "line": 33,
+        "line": 41,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -25346,7 +25352,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/organization-clients/pages/OrganizationClientsPage.tsx",
-        "line": 148,
+        "line": 186,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -25367,20 +25373,20 @@
       "proposedPermission": "organization_clients.organization_clients.open_client_actions_client.modal_open",
       "securityLevel": "low",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "technical_ui",
+      "dispositionReason": "Row activation only opens a local action chooser and exposes no data or request by itself.",
       "duplicateOf": null,
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-d3698ef15bd5",
+          "candidateId": "EPC-a64893f9b644",
           "distance": 3,
           "file": "src/features/organization-clients/pages/OrganizationClientsPage.tsx",
           "handler": "{() => openClientActions(client)}",
           "humanLabel": "Відкрити",
-          "line": 149,
+          "line": 188,
           "permissionKeys": [],
           "score": 23
         }
@@ -25388,7 +25394,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/organization-clients/pages/OrganizationClientsPage.tsx",
-        "line": 152,
+        "line": 191,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -25417,12 +25423,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-60bd6d06d7a5",
-          "distance": 28,
+          "candidateId": "EPC-1023c6c16dd0",
+          "distance": 32,
           "file": "src/features/organization-clients/pages/OrganizationClientsPage.tsx",
           "handler": "{resetSearch}",
           "humanLabel": "Скинути",
-          "line": 234,
+          "line": 278,
           "permissionKeys": [],
           "score": 11
         }
@@ -25430,7 +25436,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/organization-clients/pages/OrganizationClientsPage.tsx",
-        "line": 206,
+        "line": 246,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -25461,7 +25467,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/organization-clients/pages/OrganizationClientsPage.tsx",
-        "line": 44,
+        "line": 78,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -25482,20 +25488,20 @@
       "proposedPermission": "organization_clients.organization_clients.open_create_client.command_submit",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
-      "duplicateOf": null,
+      "disposition": "duplicate_occurrence",
+      "dispositionReason": "The registry create opener and final create submit are one business action guarded by one permission.",
+      "duplicateOf": "PE-00632",
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-af188788e9c2",
-          "distance": 50,
+          "candidateId": "EPC-e9c78996f66f",
+          "distance": 55,
           "file": "src/features/organization-clients/pages/OrganizationClientsPage.tsx",
           "handler": "{openCreateClient}",
           "humanLabel": "Нова організація",
-          "line": 261,
+          "line": 306,
           "permissionKeys": [],
           "score": 16
         }
@@ -25503,7 +25509,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/organization-clients/pages/OrganizationClientsPage.tsx",
-        "line": 211,
+        "line": 251,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -25532,12 +25538,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-d3698ef15bd5",
-          "distance": 88,
+          "candidateId": "EPC-a64893f9b644",
+          "distance": 93,
           "file": "src/features/organization-clients/pages/OrganizationClientsPage.tsx",
           "handler": "{() => openClientActions(client)}",
           "humanLabel": "Відкрити",
-          "line": 149,
+          "line": 188,
           "permissionKeys": [],
           "score": 13
         }
@@ -25545,7 +25551,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/organization-clients/pages/OrganizationClientsPage.tsx",
-        "line": 61,
+        "line": 95,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -25566,20 +25572,22 @@
       "proposedPermission": "organization_clients.organization_clients.on_open_client.modal_open",
       "securityLevel": "low",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "covered_existing",
+      "dispositionReason": "Opening the card loads the dedicated permission-scoped organization details endpoint.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "counterparties.buyer_organizations.client.open_details"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-a4c08e79d77c",
-          "distance": 21,
+          "candidateId": "EPC-8a7010bdbeee",
+          "distance": 22,
           "file": "src/features/organization-clients/pages/OrganizationClientsPage.tsx",
           "handler": "{() => onOpen(client)}",
           "humanLabel": "Відкрити картку",
-          "line": 340,
+          "line": 390,
           "permissionKeys": [],
           "score": 10
         }
@@ -25587,7 +25595,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/organization-clients/pages/OrganizationClientsPage.tsx",
-        "line": 319,
+        "line": 368,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -79288,16 +79296,6 @@
     "PE-00548",
     "PE-00549",
     "PE-00550",
-    "PE-00622",
-    "PE-00623",
-    "PE-00625",
-    "PE-00627",
-    "PE-00628",
-    "PE-00630",
-    "PE-00632",
-    "PE-00635",
-    "PE-00638",
-    "PE-00640",
     "PE-00641",
     "PE-00642",
     "PE-00643",

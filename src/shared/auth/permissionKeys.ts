@@ -157,6 +157,17 @@ export const PermissionKeys = {
       Export: 'counterparties.suppliers.document.export',
     },
   },
+  OrganizationClients: {
+    Page: {
+      View: 'counterparties.buyer_organizations.page.view',
+    },
+    Client: {
+      Create: 'counterparties.buyer_organizations.client.create',
+      OpenDetails: 'counterparties.buyer_organizations.client.open_details',
+      Edit: 'counterparties.buyer_organizations.client.edit',
+      Delete: 'counterparties.buyer_organizations.client.delete',
+    },
+  },
   FinancialAdministration: {
     Banks: {
       Page: {
@@ -621,6 +632,10 @@ export type SuppliersPermissionKey =
   | Values<typeof PermissionKeys.Suppliers.Passport>
   | Values<typeof PermissionKeys.Suppliers.Document>
 
+export type OrganizationClientsPermissionKey =
+  | Values<typeof PermissionKeys.OrganizationClients.Page>
+  | Values<typeof PermissionKeys.OrganizationClients.Client>
+
 export type ProductDeliveryProtocolsPermissionKey =
   | Values<typeof PermissionKeys.ProductDeliveryProtocols.Page>
   | Values<typeof PermissionKeys.ProductDeliveryProtocols.DeliveryDocuments>
@@ -749,6 +764,7 @@ export type PermissionKey =
   | ClientResourcesPermissionKey
   | ClientsPermissionKey
   | SuppliersPermissionKey
+  | OrganizationClientsPermissionKey
   | ConsumableProductsPermissionKey
   | FinancialAdministrationPermissionKey
   | OrdersUkrainePermissionKey
@@ -1638,6 +1654,8 @@ const eventPermissionKeys = new Set<string>([
   ...Object.values(PermissionKeys.Suppliers.Page),
   ...Object.values(PermissionKeys.Suppliers.Passport),
   ...Object.values(PermissionKeys.Suppliers.Document),
+  ...Object.values(PermissionKeys.OrganizationClients.Page),
+  ...Object.values(PermissionKeys.OrganizationClients.Client),
   ...Object.values(PermissionKeys.ProductDeliveryProtocols.Page),
   ...Object.values(PermissionKeys.ProductDeliveryProtocols.DeliveryDocuments),
   ...Object.values(PermissionKeys.ProductDeliveryProtocols.Document),

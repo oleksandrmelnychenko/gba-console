@@ -4,7 +4,7 @@ import type { Currency, OrganizationClient } from '../types'
 export async function getOrganizationClients(value?: string): Promise<OrganizationClient[]> {
   const normalizedValue = value?.trim()
   const result = await apiRequest<unknown>(
-    normalizedValue ? '/clients/organizations/all/search' : '/clients/organizations/all',
+    normalizedValue ? '/clients/organizations/registry/search' : '/clients/organizations/registry',
     normalizedValue
       ? {
           query: {
@@ -18,7 +18,7 @@ export async function getOrganizationClients(value?: string): Promise<Organizati
 }
 
 export async function getOrganizationClient(netId: string): Promise<OrganizationClient | null> {
-  const result = await apiRequest<unknown>('/clients/organizations/get', {
+  const result = await apiRequest<unknown>('/clients/organizations/details', {
     query: {
       netId,
     },
@@ -28,7 +28,7 @@ export async function getOrganizationClient(netId: string): Promise<Organization
 }
 
 export async function createOrganizationClient(client: OrganizationClient): Promise<OrganizationClient | null> {
-  const result = await apiRequest<unknown>('/clients/organizations/new', {
+  const result = await apiRequest<unknown>('/clients/organizations/create', {
     method: 'POST',
     body: client,
   })
@@ -37,7 +37,7 @@ export async function createOrganizationClient(client: OrganizationClient): Prom
 }
 
 export async function updateOrganizationClient(client: OrganizationClient): Promise<OrganizationClient | null> {
-  const result = await apiRequest<unknown>('/clients/organizations/update', {
+  const result = await apiRequest<unknown>('/clients/organizations/edit', {
     method: 'POST',
     body: client,
   })
@@ -46,7 +46,7 @@ export async function updateOrganizationClient(client: OrganizationClient): Prom
 }
 
 export async function deleteOrganizationClient(netId: string): Promise<void> {
-  await apiRequest<unknown>('/clients/organizations/delete', {
+  await apiRequest<unknown>('/clients/organizations/remove', {
     method: 'DELETE',
     query: {
       netId,

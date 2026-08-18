@@ -254,3 +254,17 @@ describe('human-reviewed supplier registry actions', () => {
     )
   })
 })
+
+describe('human-reviewed buyer-organization actions', () => {
+  it('contains four business actions without local modal or submit duplicates', () => {
+    expect(Object.values(PermissionKeys.OrganizationClients.Client)).toEqual([
+      'counterparties.buyer_organizations.client.create',
+      'counterparties.buyer_organizations.client.open_details',
+      'counterparties.buyer_organizations.client.edit',
+      'counterparties.buyer_organizations.client.delete',
+    ])
+    expect(PermissionKeys.OrganizationClients.Page.View).toBe(
+      'counterparties.buyer_organizations.page.view',
+    )
+  })
+})

@@ -378,14 +378,17 @@ const clientMigrationRoutes: ConsoleRoute[] = [
   {
     path: '/organization-clients',
     element: lazyRoute(<OrganizationClientsPage />),
+    permissionKey: PermissionKeys.OrganizationClients.Page.View,
   },
   {
     path: '/organization-clients/new',
     element: lazyRoute(<OrganizationClientNewPage />),
+    permissionKey: PermissionKeys.OrganizationClients.Client.Create,
   },
   {
     path: '/organization-clients/edit/:netId',
     element: lazyRoute(<OrganizationClientEditPage />),
+    permissionKey: PermissionKeys.OrganizationClients.Client.OpenDetails,
   },
 ]
 

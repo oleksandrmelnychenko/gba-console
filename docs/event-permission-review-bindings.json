@@ -617,6 +617,60 @@
       "disposition": "duplicate_occurrence",
       "duplicateOf": "PE-01643",
       "reason": "The pack-list edit route belongs to the Tax Free pack-list page."
+    },
+    "PE-00622": {
+      "disposition": "technical_ui",
+      "reason": "Removing an agreement row only changes the local organization draft; the final edit save owns the server mutation."
+    },
+    "PE-00623": {
+      "disposition": "technical_ui",
+      "reason": "Opening the add-agreement modal is local UI state and does not perform a request."
+    },
+    "PE-00625": {
+      "disposition": "technical_ui",
+      "reason": "Adding an agreement only changes the local draft; create or edit owns the final aggregate mutation."
+    },
+    "PE-00628": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": [
+        "counterparties.buyer_organizations.client.edit"
+      ],
+      "reason": "The edit form submit is the single organization aggregate update boundary."
+    },
+    "PE-00630": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": [
+        "counterparties.buyer_organizations.client.delete"
+      ],
+      "reason": "The confirmed delete calls the dedicated permission-scoped remove endpoint."
+    },
+    "PE-00627": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-00630",
+      "reason": "Opening the delete confirmation is the first UI step of the same reviewed delete business action."
+    },
+    "PE-00632": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": [
+        "counterparties.buyer_organizations.client.create"
+      ],
+      "reason": "The new-organization submit calls the dedicated permission-scoped create endpoint."
+    },
+    "PE-00635": {
+      "disposition": "technical_ui",
+      "reason": "Row activation only opens a local action chooser and exposes no data or request by itself."
+    },
+    "PE-00638": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-00632",
+      "reason": "The registry create opener and final create submit are one business action guarded by one permission."
+    },
+    "PE-00640": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": [
+        "counterparties.buyer_organizations.client.open_details"
+      ],
+      "reason": "Opening the card loads the dedicated permission-scoped organization details endpoint."
     }
   }
 }

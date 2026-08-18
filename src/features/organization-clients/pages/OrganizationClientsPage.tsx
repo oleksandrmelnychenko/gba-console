@@ -3,6 +3,7 @@ import {
   Alert,
   Button,
   Stack,
+  Text,
   TextInput,
   Tooltip,
 } from '@mantine/core'
@@ -19,6 +20,8 @@ import { TableRowAction } from '../../../shared/ui/table-row-action'
 import { getOrganizationClients } from '../api/organizationClientsApi'
 import type { OrganizationClient } from '../types'
 import { getOrganizationClientName } from '../utils'
+import { PermissionKeys } from '../../../shared/auth/permissionKeys'
+import { usePermissions } from '../../auth/usePermissions'
 import '../../../shared/ui/console-table-page.css'
 import './organization-clients-page.css'
 
@@ -30,7 +33,38 @@ const ORGANIZATION_CLIENT_TABLE_DEFAULT_LAYOUT = {
   density: 'normal',
 } satisfies DataTableDefaultLayout
 
+type OrganizationClientsPermissions = {
+  canCreate: boolean
+  canOpenDetails: boolean
+}
+
 export function OrganizationClientsPage() {
+  const { t } = useI18n()
+  const { can, isLoading } = usePermissions()
+
+  if (isLoading) {
+    return <Text c="dimmed">{t('Завантаження')}</Text>
+  }
+
+  if (!can(PermissionKeys.OrganizationClients.Page.View)) {
+    return (
+      <Alert color="red" icon={<CircleAlert size={18} />} title={t('Доступ заборонено')} variant="light">
+        {t('Недостатньо прав для перегляду організацій покупців')}
+      </Alert>
+    )
+  }
+
+  return (
+    <OrganizationClientsPageContent
+      permissions={{
+        canCreate: can(PermissionKeys.OrganizationClients.Client.Create),
+        canOpenDetails: can(PermissionKeys.OrganizationClients.Client.OpenDetails),
+      }}
+    />
+  )
+}
+
+function OrganizationClientsPageContent({ permissions }: { permissions: OrganizationClientsPermissions }) {
   const { t } = useI18n()
   const navigate = useNavigate()
   const location = useLocation()
@@ -44,7 +78,7 @@ export function OrganizationClientsPage() {
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
   const openClient = useCallback(
     (client: OrganizationClient) => {
-      if (!client.NetUid) {
+      if (!permissions.canOpenDetails || !client.NetUid) {
         return
       }
 
@@ -56,13 +90,17 @@ export function OrganizationClientsPage() {
         },
       })
     },
-    [location, navigate],
+    [location, navigate, permissions.canOpenDetails],
   )
   const openClientActions = useCallback(
     (client: OrganizationClient) => {
+      if (!permissions.canOpenDetails) {
+        return
+      }
+
       setActionsClient(client)
     },
-    [setActionsClient],
+    [permissions.canOpenDetails, setActionsClient],
   )
   const closeClientActions = useCallback(() => setActionsClient(null), [setActionsClient])
   const openSelectedClient = useCallback(
@@ -146,16 +184,18 @@ export function OrganizationClientsPage() {
         enableSorting: false,
         cell: (client) => (
           <div className="organization-clients-row-actions" onClick={(event) => event.stopPropagation()}>
-            <TableRowAction
-              action="open"
-              label={t('Відкрити')}
-              onClick={() => openClientActions(client)}
-            />
+            {permissions.canOpenDetails && (
+              <TableRowAction
+                action="open"
+                label={t('Відкрити')}
+                onClick={() => openClientActions(client)}
+              />
+            )}
           </div>
         ),
       },
     ],
-    [openClientActions, t],
+    [openClientActions, permissions.canOpenDetails, t],
   )
   useEffect(() => {
     const state = location.state as { mutated?: boolean } | null
@@ -209,6 +249,10 @@ export function OrganizationClientsPage() {
   }
 
   function openCreateClient() {
+    if (!permissions.canCreate) {
+      return
+    }
+
     navigate('/organization-clients/new', {
       state: {
         backgroundLocation: location,
@@ -258,15 +302,17 @@ export function OrganizationClientsPage() {
           </div>
           <div ref={setTableToolbarSlot} className="app-filter-table-toolbar-slot organization-clients-table-toolbar-slot" />
           <div className="organization-clients-create-actions">
-            <Button
-              color={CREATE_ACTION_COLOR}
-              leftSection={<Plus size={16} />}
-              size="sm"
-              type="button"
-              onClick={openCreateClient}
-            >
-              {t('Нова організація')}
-            </Button>
+            {permissions.canCreate && (
+              <Button
+                color={CREATE_ACTION_COLOR}
+                leftSection={<Plus size={16} />}
+                size="sm"
+                type="button"
+                onClick={openCreateClient}
+              >
+                {t('Нова організація')}
+              </Button>
+            )}
           </div>
         </div>
 
@@ -296,11 +342,12 @@ export function OrganizationClientsPage() {
             showLayoutControls
             tableId="organization-clients"
             toolbarPortalTarget={tableToolbarSlot}
-            onRowClick={openClientActions}
+            onRowClick={permissions.canOpenDetails ? openClientActions : undefined}
           />
         </div>
       </div>
       <OrganizationClientActionsModal
+        canOpen={permissions.canOpenDetails}
         client={actionsClient}
         onClose={closeClientActions}
         onOpen={openSelectedClient}
@@ -310,10 +357,12 @@ export function OrganizationClientsPage() {
 }
 
 function OrganizationClientActionsModal({
+  canOpen,
   client,
   onClose,
   onOpen,
 }: {
+  canOpen: boolean
   client: OrganizationClient | null
   onClose: () => void
   onOpen: (client: OrganizationClient) => void
@@ -337,21 +386,23 @@ function OrganizationClientActionsModal({
       {client && (
         <Stack gap="md">
           <Stack className="app-modal-actions" gap="xs">
-            <Button
-              fullWidth
-              color="dark"
-              justify="flex-start"
-              leftSection={
-                <span className="app-action-icon">
-                  <ExternalLink size={20} color="var(--mantine-color-gray-7)" />
-                </span>
-              }
-              size="md"
-              variant="subtle"
-              onClick={() => onOpen(client)}
-            >
-              {t('Відкрити картку')}
-            </Button>
+            {canOpen && (
+              <Button
+                fullWidth
+                color="dark"
+                justify="flex-start"
+                leftSection={
+                  <span className="app-action-icon">
+                    <ExternalLink size={20} color="var(--mantine-color-gray-7)" />
+                  </span>
+                }
+                size="md"
+                variant="subtle"
+                onClick={() => onOpen(client)}
+              >
+                {t('Відкрити картку')}
+              </Button>
+            )}
           </Stack>
         </Stack>
       )}
