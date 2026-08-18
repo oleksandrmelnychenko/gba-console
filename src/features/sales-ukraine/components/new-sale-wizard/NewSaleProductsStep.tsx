@@ -517,6 +517,34 @@ export function NewSaleProductsStep({
         onPendingMutationChange?.(true)
         queueMicrotask(() => {
           if (!cancelled && mountedRef.current && mutationContextRef.current === mutationContextKey) {
+            if (sale && localCommit.kind === 'none' && operation.inspect(sale) === 'committed') {
+              void withSalesPendingMutationLock(
+                scope as SalesPendingMutationScope,
+                operation.operationId,
+                toPersistedCartMutation(operation),
+                async (lease) => {
+                  resolveSalesPendingMutation(lease, 'committed')
+
+                  if (
+                    !cancelled &&
+                    mountedRef.current &&
+                    mutationContextRef.current === mutationContextKey &&
+                    pendingMutationRef.current?.operationId === operation.operationId
+                  ) {
+                    pendingMutationRef.current = null
+                    setPendingMutationError(null)
+                    onPendingMutationChange?.(false)
+                  }
+                },
+              ).catch(() => {
+                if (!cancelled && mountedRef.current && mutationContextRef.current === mutationContextKey) {
+                  setPendingMutationError(t('Операція не була підтверджена. Перевірте результат і повторіть з тим самим ключем'))
+                }
+              })
+
+              return
+            }
+
             setPendingMutationError(t('Операція не була підтверджена. Перевірте результат і повторіть з тим самим ключем'))
           }
         })
@@ -556,7 +584,7 @@ export function NewSaleProductsStep({
     return () => {
       cancelled = true
     }
-  }, [getPendingCartMutationScope, mutationContextKey, mutationStorageRevision, onBusyChange, onPendingMutationChange, pendingMutationUserKey, persistSplitItems, t])
+  }, [getPendingCartMutationScope, mutationContextKey, mutationStorageRevision, onBusyChange, onPendingMutationChange, pendingMutationUserKey, persistSplitItems, sale, t])
 
   useEffect(() => {
     setWizardKeyboardState('ProductSearch')

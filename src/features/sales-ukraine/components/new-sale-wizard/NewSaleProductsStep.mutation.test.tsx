@@ -220,6 +220,36 @@ afterEach(() => {
 })
 
 describe('NewSaleProductsStep persistent cart mutations', () => {
+  it('automatically clears a restored operation confirmed by the exact server marker', async () => {
+    const operationId = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'
+    const sale = createSale()
+    const persisted = createPersistedWizardCartMutation({
+      context: scope.context,
+      expectation: { kind: 'operation-marker' },
+      fallbackMessage: 'Не вдалося додати товар',
+      localCommit: { kind: 'none' },
+      operationId,
+      request: {
+        clientAgreementNetId: agreementNetId,
+        kind: 'add',
+        orderItem: sale.Order?.OrderItems?.[0] as SalesUkraineOrderItem,
+        saleNetId: sale.NetUid as string,
+      },
+    })
+    saveSalesPendingMutation(scope, operationId, persisted)
+    const committedSale = { ...sale, OperationNetUid: operationId }
+    const onCartChanged = vi.fn(async () => committedSale)
+    const onPendingMutationChange = vi.fn()
+
+    renderStep({ onCartChanged, onPendingMutationChange, sale: committedSale })
+
+    await waitFor(() => expect(loadSalesPendingMutation(scope)).toBe(null))
+    expect(onCartChanged).not.toHaveBeenCalled()
+    expect(apiMocks.addOrderItem).not.toHaveBeenCalled()
+    expect(onPendingMutationChange).toHaveBeenLastCalledWith(false)
+    expect(screen.queryByText('Результат операції потребує перевірки')).toBeNull()
+  })
+
   it('unblocks a completed add whose cart projection has no operation marker', async () => {
     const operationId = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'
     const sale = createSale()
