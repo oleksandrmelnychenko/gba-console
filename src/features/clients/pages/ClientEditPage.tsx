@@ -54,11 +54,17 @@ import { ClientStructurePanel } from '../components/structure/ClientStructurePan
 import { type ClientFormErrors, validateClientForm } from '../components/form/validateClientForm'
 import {
   EDIT_CLIENT_ACTIVE_PERMISSION,
+  CHANGE_CLIENT_ECOMMERCE_PASSWORD_PERMISSION,
+  CREATE_CLIENT_COUNTRY_PERMISSION,
+  CREATE_CLIENT_INCOTERM_PERMISSION,
+  CREATE_CLIENT_REGION_PERMISSION,
   EDIT_CLIENT_DELETE_PERMISSION,
   EDIT_CLIENT_ECOMMERCE_PERMISSION,
+  EDIT_CLIENT_PERMISSION,
   EDIT_CLIENT_PRICING_PERMISSION,
   EDIT_CLIENT_TYPE_PERMISSION,
 } from '../permissions'
+import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import type {
   Client,
   ClientContractDocument,
@@ -105,6 +111,13 @@ type ClientEditRouteState = {
 
 type EditStepContentProps = {
   allowSourceOverride: boolean
+  canChangeEcommercePassword: boolean
+  canCreateCountry: boolean
+  canCreateIncoterm: boolean
+  canCreatePerfectClientDefinition: boolean
+  canCreateRegion: boolean
+  canEditClient: boolean
+  canEditContract: boolean
   client: Client
   errors: ClientFormErrors
   role: ClientFormRole
@@ -192,6 +205,8 @@ export function ClientEditPage() {
   const returnPath = routeState?.returnPath || (basePath === '/suppliers/edit' ? '/suppliers' : '/clients')
   const role = useMemo(() => getClientRole(client), [client])
   const sourceManaged = isSourceManagedClient(client)
+  const canEditClient = hasPermission(EDIT_CLIENT_PERMISSION)
+  const canEditContract = hasPermission(PermissionKeys.Clients.Contract.Edit)
   const sourceOverrideEnabled = Boolean(
     sourceManaged
     && client?.NetUid
@@ -639,7 +654,7 @@ export function ClientEditPage() {
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
 
-    if (!client) {
+    if (!client || !canEditClient) {
       return
     }
 
@@ -732,6 +747,7 @@ export function ClientEditPage() {
       onClose={closeSheet}
       footer={
         <ClientEditActions
+          canEdit={canEditClient}
           canDelete={canEditClientLifecycle(
             client,
             hasPermission(EDIT_CLIENT_DELETE_PERMISSION),
@@ -788,6 +804,13 @@ export function ClientEditPage() {
 
       <ClientEditBody
         allowSourceOverride={sourceOverrideEnabled}
+        canChangeEcommercePassword={hasPermission(CHANGE_CLIENT_ECOMMERCE_PASSWORD_PERMISSION)}
+        canCreateCountry={hasPermission(CREATE_CLIENT_COUNTRY_PERMISSION)}
+        canCreateIncoterm={hasPermission(CREATE_CLIENT_INCOTERM_PERMISSION)}
+        canCreatePerfectClientDefinition={hasPermission(PermissionKeys.ClientResources.PerfectClient.Create)}
+        canCreateRegion={hasPermission(CREATE_CLIENT_REGION_PERMISSION)}
+        canEditClient={canEditClient}
+        canEditContract={canEditContract}
         client={client}
         errors={formErrors}
         firstStep={firstStep}
@@ -872,7 +895,8 @@ function ClientIdentityAttentionBanner({
   )
 }
 
-function ClientEditActions({
+export function ClientEditActions({
+  canEdit,
   canDelete,
   client,
   isDeleting,
@@ -882,6 +906,7 @@ function ClientEditActions({
   onDelete,
   onEnableSourceOverride,
 }: {
+  canEdit: boolean
   canDelete: boolean
   client: Client | null
   isDeleting: boolean
@@ -895,7 +920,7 @@ function ClientEditActions({
 
   return (
     <Group gap="xs" className="client-edit-footer-actions">
-      {sourceManaged && (
+      {sourceManaged && canEdit && (
         <Button
           color="orange"
           disabled={sourceOverrideEnabled}
@@ -913,16 +938,18 @@ function ClientEditActions({
           {t('Видалити')}
         </Button>
       )}
-      <Button
-        color={CREATE_ACTION_COLOR}
-        disabled={!client}
-        form="client-edit-form"
-        leftSection={<Save size={16} />}
-        loading={isSaving}
-        type="submit"
-      >
-        {t('Зберегти')}
-      </Button>
+      {canEdit && (
+        <Button
+          color={CREATE_ACTION_COLOR}
+          disabled={!client}
+          form="client-edit-form"
+          leftSection={<Save size={16} />}
+          loading={isSaving}
+          type="submit"
+        >
+          {t('Зберегти')}
+        </Button>
+      )}
     </Group>
   )
 }
@@ -991,6 +1018,13 @@ function ClientEditTitle({
 
 function ClientEditBody({
   allowSourceOverride,
+  canChangeEcommercePassword,
+  canCreateCountry,
+  canCreateIncoterm,
+  canCreatePerfectClientDefinition,
+  canCreateRegion,
+  canEditClient,
+  canEditContract,
   client,
   errors,
   firstStep,
@@ -1022,6 +1056,13 @@ function ClientEditBody({
   onSubmit,
 }: {
   allowSourceOverride: boolean
+  canChangeEcommercePassword: boolean
+  canCreateCountry: boolean
+  canCreateIncoterm: boolean
+  canCreatePerfectClientDefinition: boolean
+  canCreateRegion: boolean
+  canEditClient: boolean
+  canEditContract: boolean
   client: Client | null
   errors: ClientFormErrors
   firstStep?: EditStep
@@ -1121,6 +1162,13 @@ function ClientEditBody({
             <Stack gap="md">
               <EditStepContent
                 allowSourceOverride={allowSourceOverride}
+                canChangeEcommercePassword={canChangeEcommercePassword}
+                canCreateCountry={canCreateCountry}
+                canCreateIncoterm={canCreateIncoterm}
+                canCreatePerfectClientDefinition={canCreatePerfectClientDefinition}
+                canCreateRegion={canCreateRegion}
+                canEditClient={canEditClient}
+                canEditContract={canEditContract}
                 client={client}
                 errors={errors}
                 isLoadingRegionCode={isLoadingRegionCode}
@@ -1220,6 +1268,13 @@ function buildEditSteps(client: Client | null, hasPermission: (permissionKey: st
 
 function EditStepContent({
   allowSourceOverride,
+  canChangeEcommercePassword,
+  canCreateCountry,
+  canCreateIncoterm,
+  canCreatePerfectClientDefinition,
+  canCreateRegion,
+  canEditClient,
+  canEditContract,
   client,
   errors,
   isLoadingRegionCode,
@@ -1246,7 +1301,7 @@ function EditStepContent({
   step,
 }: EditStepContentProps) {
   const sourceManaged = isSourceManagedClient(client)
-  const sourceFieldsLocked = sourceManaged && !allowSourceOverride
+  const sourceFieldsLocked = !canEditClient || (sourceManaged && !allowSourceOverride)
 
   if (step === 'contact-information') {
     return <ContactInfoFields client={client} errors={errors} role={role} sourceManaged={sourceFieldsLocked} onChange={setField} />
@@ -1256,6 +1311,7 @@ function EditStepContent({
     return (
       <PricingPanel
         client={client}
+        disabled={!canEditClient}
         isProvider={role.isProvider}
         mode="edit"
         sourceManaged={sourceManaged}
@@ -1288,12 +1344,21 @@ function EditStepContent({
   }
 
   if (step === 'perfect-client') {
-    return <PerfectClientPanel client={client} onChange={onClientChange} />
+    return (
+      <PerfectClientPanel
+        canCreateDefinition={canCreatePerfectClientDefinition}
+        client={client}
+        disabled={!canEditClient}
+        onChange={onClientChange}
+      />
+    )
   }
 
   if (step === 'e-commerce') {
     return (
       <EcommercePanel
+        canChangePassword={canChangeEcommercePassword}
+        canEditSettings={canEditClient}
         client={client}
         sourceManaged={sourceFieldsLocked}
         onChange={onClientChange}
@@ -1329,6 +1394,11 @@ function EditStepContent({
 
   return (
     <GeneralInfoFields
+      canCreateCountry={canCreateCountry}
+      canCreateIncoterm={canCreateIncoterm}
+      canCreateRegion={canCreateRegion}
+      canEditDocuments={canEditContract}
+      canSaveDocuments={canEditContract}
       client={client}
       countries={lookups.countries}
       errors={errors}
@@ -1340,7 +1410,7 @@ function EditStepContent({
       regions={lookups.regions}
       role={role}
       sourceManaged={sourceFieldsLocked}
-      sourceStructureManaged={sourceManaged}
+      sourceStructureManaged={!canEditClient || sourceManaged}
       onAddDocuments={onAddDocuments}
       onChange={setField}
       onCreateCountry={onCreateCountry}

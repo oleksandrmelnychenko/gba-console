@@ -33,7 +33,9 @@ const PERFECT_CLIENT_CULTURE = 'uk'
 const PERFECT_CLIENT_TRANSLATION_CULTURE = 'pl'
 
 export type PerfectClientPanelProps = {
+  canCreateDefinition?: boolean
   client: Client
+  disabled?: boolean
   onChange: (client: Client) => void
 }
 
@@ -147,7 +149,12 @@ function buildNewPerfectClientPayload(values: PerfectClientFormValues, roleId: n
   }
 }
 
-export function PerfectClientPanel({ client, onChange }: PerfectClientPanelProps) {
+export function PerfectClientPanel({
+  canCreateDefinition = false,
+  client,
+  disabled = false,
+  onChange,
+}: PerfectClientPanelProps) {
   const { t } = useI18n()
   const roleId = getRoleId(client)
   const [perfectClients, setPerfectClients] = useValueState<PerfectClient[]>([])
@@ -202,6 +209,10 @@ export function PerfectClientPanel({ client, onChange }: PerfectClientPanelProps
   const toggleClients = perfectClients.filter((item) => item.Type === PerfectClientType.Toggle)
 
   function commit(next: PerfectClient[]) {
+    if (disabled) {
+      return
+    }
+
     setPerfectClients(next)
     onChange({
       ...client,
@@ -237,7 +248,7 @@ export function PerfectClientPanel({ client, onChange }: PerfectClientPanelProps
   }
 
   async function handleAddPerfectClient(values: PerfectClientFormValues) {
-    if (!roleId) {
+    if (!roleId || !canCreateDefinition) {
       return
     }
 
@@ -288,15 +299,17 @@ export function PerfectClientPanel({ client, onChange }: PerfectClientPanelProps
         <Stack gap="md">
           <Group justify="space-between" align="center">
             <Text fw={600}>{t('Ідеальний клієнт')}</Text>
-            <Button
-              color={CREATE_ACTION_COLOR}
-              disabled={!roleId}
-              leftSection={<Plus size={16} />}
-              size="xs"
-              onClick={openAddModal}
-            >
-              {t('Додати параметр')}
-            </Button>
+            {canCreateDefinition && (
+              <Button
+                color={CREATE_ACTION_COLOR}
+                disabled={!roleId}
+                leftSection={<Plus size={16} />}
+                size="xs"
+                onClick={openAddModal}
+              >
+                {t('Додати параметр')}
+              </Button>
+            )}
           </Group>
 
           {error && (
@@ -325,6 +338,7 @@ export function PerfectClientPanel({ client, onChange }: PerfectClientPanelProps
                   <Stack gap="sm">
                     {checkboxClients.map((perfectClient, index) => (
                       <CheckboxRow
+                        disabled={disabled}
                         key={getKey(perfectClient, index)}
                         perfectClient={perfectClient}
                         onSelectedChange={(isSelected) => handleCheckboxSelectedChange(perfectClient, isSelected)}
@@ -337,6 +351,7 @@ export function PerfectClientPanel({ client, onChange }: PerfectClientPanelProps
                   <Stack gap="sm">
                     {toggleClients.map((perfectClient, index) => (
                       <ToggleRow
+                        disabled={disabled}
                         key={getKey(perfectClient, index)}
                         perfectClient={perfectClient}
                         onCommentChange={(value) => handleToggleCommentChange(perfectClient, value)}
@@ -364,10 +379,12 @@ export function PerfectClientPanel({ client, onChange }: PerfectClientPanelProps
 }
 
 function CheckboxRow({
+  disabled,
   perfectClient,
   onSelectedChange,
   onValueChange,
 }: {
+  disabled: boolean
   perfectClient: PerfectClient
   onSelectedChange: (isSelected: boolean) => void
   onValueChange: (value: string) => void
@@ -380,11 +397,12 @@ function CheckboxRow({
         <Checkbox
           checked={isSelected}
           color={CREATE_ACTION_COLOR}
+          disabled={disabled}
           label={perfectClient.Lable}
           onChange={(event) => onSelectedChange(event.currentTarget.checked)}
         />
         <TextInput
-          disabled={!isSelected}
+          disabled={disabled || !isSelected}
           value={perfectClient.Value || ''}
           onChange={(event) => onValueChange(event.currentTarget.value)}
         />
@@ -394,11 +412,13 @@ function CheckboxRow({
 }
 
 function ToggleRow({
+  disabled,
   perfectClient,
   onCommentChange,
   onSelectedChange,
   onSideChange,
 }: {
+  disabled: boolean
   perfectClient: PerfectClient
   onCommentChange: (value: string) => void
   onSelectedChange: (isSelected: boolean) => void
@@ -416,6 +436,7 @@ function ToggleRow({
         <Checkbox
           checked={isSelected}
           color={CREATE_ACTION_COLOR}
+          disabled={disabled}
           label={perfectClient.Lable}
           onChange={(event) => onSelectedChange(event.currentTarget.checked)}
         />
@@ -426,7 +447,7 @@ function ToggleRow({
           <Switch
             checked={isRightSelected}
             color={CREATE_ACTION_COLOR}
-            disabled={!isSelected}
+            disabled={disabled || !isSelected}
             onChange={onSideChange}
           />
           <Text c={isRightSelected ? undefined : 'dimmed'} size="sm">
@@ -435,7 +456,7 @@ function ToggleRow({
         </Group>
         <Textarea
           autosize
-          disabled={!isSelected}
+          disabled={disabled || !isSelected}
           minRows={2}
           value={perfectClient.Value || ''}
           onChange={(event) => onCommentChange(event.currentTarget.value)}

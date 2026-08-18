@@ -108,10 +108,16 @@ export const PermissionKeys = {
     Page: {
       View: 'counterparties.company_resources.page.view',
     },
+    Country: {
+      Create: 'counterparties.resources.country.create',
+    },
     Currency: {
       Create: 'counterparties.resources.currency.create',
       Delete: 'counterparties.resources.currency.delete',
       Edit: 'counterparties.resources.currency.edit',
+    },
+    Incoterm: {
+      Create: 'counterparties.resources.incoterm.create',
     },
     MeasureUnit: {
       Create: 'counterparties.resources.measure_unit.create',
@@ -171,6 +177,7 @@ export const PermissionKeys = {
     },
     Client: {
       Create: 'counterparties.clients.client.create',
+      Edit: 'counterparties.clients.client.edit',
       Delete: 'counterparties.clients.client.delete',
     },
     ClientType: {
@@ -190,6 +197,7 @@ export const PermissionKeys = {
         'counterparties.clients.client_type.select_ukraine_buyer',
     },
     Contract: {
+      ExportDocument: 'counterparties.clients.contract.export_document',
       Edit: 'counterparties.clients.contract.edit',
       SelectAll: 'counterparties.clients.contract.select_all',
     },
@@ -197,6 +205,7 @@ export const PermissionKeys = {
       Open: 'counterparties.clients.details.open',
     },
     Ecommerce: {
+      ChangePassword: 'counterparties.clients.ecommerce.change_password',
       Open: 'counterparties.clients.ecommerce.open',
     },
     Pricing: {

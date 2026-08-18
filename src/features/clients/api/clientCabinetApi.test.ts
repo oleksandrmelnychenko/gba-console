@@ -5,6 +5,7 @@ import {
   createClientWorkplace,
   updateClientWorkplace,
   uploadClientContract,
+  uploadNewClientContract,
 } from './clientCabinetApi'
 import type { Client, ClientWorkplace } from '../types'
 
@@ -29,7 +30,7 @@ describe('client cabinet API contracts', () => {
     )
 
     expect(apiRequestMock).toHaveBeenCalledWith(
-      '/clients/update/password',
+      '/clients/ecommerce/password',
       {
         method: 'PATCH',
         body: {
@@ -157,7 +158,7 @@ describe('client cabinet API contracts', () => {
     const payload = JSON.parse(String(body.get('client'))) as Client
 
     expect(apiRequestMock).toHaveBeenCalledWith(
-      '/clients/documents/upload/contracts',
+      '/clients/documents/contracts/edit',
       expect.objectContaining({ method: 'POST' }),
     )
     expect(body.getAll('documents')).toEqual([document])
@@ -183,6 +184,23 @@ describe('client cabinet API contracts', () => {
     expect(payload.ClientAgreements?.[0]?.Agreement).not.toHaveProperty('ClientAgreements')
     expect(payload.ClientAgreements?.[0]?.Agreement).not.toHaveProperty('ClientInDebts')
     expect(payload.ClientAgreements?.[0]?.Agreement?.Currency).not.toHaveProperty('IsSelected')
+  })
+
+  it('uses the create-scoped contract route after a new client is saved', async () => {
+    apiRequestMock.mockResolvedValueOnce({ NetUid: 'client-new' })
+
+    await uploadNewClientContract(
+      {
+        ClientContractDocuments: [{ FileName: 'new.pdf' }],
+        NetUid: 'client-new',
+      },
+      [new File(['contract'], 'new.pdf', { type: 'application/pdf' })],
+    )
+
+    expect(apiRequestMock).toHaveBeenCalledWith(
+      '/clients/documents/contracts/create',
+      expect.objectContaining({ method: 'POST' }),
+    )
   })
 })
 

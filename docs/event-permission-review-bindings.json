@@ -2080,6 +2080,218 @@
       ],
       "reason": "The mode-aware final action selects independently guarded post or capitalize endpoints."
     },
+    "PE-00232": {
+      "disposition": "technical_ui",
+      "reason": "The role filter only changes the local registry query state and is not an independent business capability."
+    },
+    "PE-00233": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["counterparties.clients.ecommerce.change_password"],
+      "reason": "The password action is fail-closed in the panel and uses the dedicated permission-scoped PATCH façade."
+    },
+    "PE-00236": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-00237",
+      "reason": "Removing a pending contract document only changes the local upload draft; the guarded upload owns authorization."
+    },
+    "PE-00237": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["counterparties.clients.contract.edit"],
+      "reason": "Contract-document persistence uses the Contract.Edit-scoped multipart façade."
+    },
+    "PE-00238": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-00240",
+      "reason": "Opening the Incoterm popover is local UI; final creation owns authorization."
+    },
+    "PE-00240": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["counterparties.resources.incoterm.create"],
+      "reason": "Inline Incoterm creation is hidden without permission and uses the clients-scoped reference-data façade."
+    },
+    "PE-00241": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-00243",
+      "reason": "Opening the country popover is local UI; final creation owns authorization."
+    },
+    "PE-00243": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["counterparties.resources.country.create"],
+      "reason": "Inline country creation is hidden without permission and uses the clients-scoped reference-data façade."
+    },
+    "PE-00244": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-00246",
+      "reason": "Opening the region popover is local UI; final creation owns authorization."
+    },
+    "PE-00246": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["counterparties.resources.region.create"],
+      "reason": "Inline region creation reuses Region.Create and its clients-scoped mutation façade."
+    },
+    "PE-00247": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-00248",
+      "reason": "The add-parameter button only opens the local form; final resource creation owns authorization."
+    },
+    "PE-00248": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["counterparties.resources.perfect_client.create"],
+      "reason": "Perfect-client definition creation is hidden without the existing resource permission and uses its scoped API."
+    },
+    "PE-00250": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-00260",
+      "reason": "Opening the provider-pricing editor only prepares the guarded agreement draft."
+    },
+    "PE-00251": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-00260",
+      "reason": "Removing provider pricing changes the same local agreement draft governed by Contract.Edit."
+    },
+    "PE-00254": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-00260",
+      "reason": "Saving provider-pricing fields updates the same local agreement draft rather than a separate server capability."
+    },
+    "PE-00258": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["counterparties.clients.contract.edit"],
+      "reason": "Agreement removal is part of the existing Contract.Edit capability and persists only through guarded card save."
+    },
+    "PE-00260": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["counterparties.clients.contract.edit"],
+      "reason": "Agreement create/update is exposed only with Contract.Edit; aggregate persistence is independently guarded by Client.Edit."
+    },
+    "PE-00261": {
+      "disposition": "technical_ui",
+      "reason": "The unresolved generated button callback has no independent mutation or data boundary."
+    },
+    "PE-00262": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["counterparties.clients.contract.export_document"],
+      "reason": "Agreement printing uses the dedicated permission-scoped document façade."
+    },
+    "PE-00263": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-00262",
+      "reason": "Warranty conditions are the second document type of the same guarded agreement export capability."
+    },
+    "PE-00264": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["counterparties.clients.contract.edit"],
+      "reason": "The edit entry point reuses the existing Contract.Edit capability."
+    },
+    "PE-00265": {
+      "disposition": "technical_ui",
+      "reason": "The row callback only selects an agreement locally for viewing its conditions."
+    },
+    "PE-00269": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["counterparties.clients.promotion.toggle"],
+      "reason": "Bulk deactivation reuses the existing promotion toggle capability."
+    },
+    "PE-00270": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-00269",
+      "reason": "Bulk activation is the inverse state of the same promotion-toggle capability."
+    },
+    "PE-00272": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-00340",
+      "reason": "Applying discounts only merges a local draft; the guarded aggregate card save is the persistence boundary."
+    },
+    "PE-00273": {
+      "disposition": "technical_ui",
+      "reason": "Selecting a discount-tree node changes only local presentation state."
+    },
+    "PE-00274": {
+      "disposition": "technical_ui",
+      "reason": "The generated input/button callback has no independent server effect."
+    },
+    "PE-00275": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-00340",
+      "reason": "Selecting an analyst updates the local client draft and persists through Client.Edit."
+    },
+    "PE-00276": {
+      "disposition": "technical_ui",
+      "reason": "The agreement row click only selects which local discount tree is shown."
+    },
+    "PE-00277": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-00278",
+      "reason": "Removing a pending contract file is part of the same guarded document-edit operation."
+    },
+    "PE-00278": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["counterparties.clients.contract.edit"],
+      "reason": "Contract documents are saved through the Contract.Edit-scoped multipart façade."
+    },
+    "PE-00279": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-00349",
+      "reason": "Removing a service payer changes only the new-client draft."
+    },
+    "PE-00281": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-00349",
+      "reason": "The service-payer form updates only the new-client draft."
+    },
+    "PE-00282": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-00349",
+      "reason": "Opening the new service-payer form is local UI inside client creation."
+    },
+    "PE-00283": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-00349",
+      "reason": "Opening service-payer edit is local UI inside client creation."
+    },
+    "PE-00284": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-00349",
+      "reason": "The panel submit only consolidates the service-payer draft before guarded client creation."
+    },
+    "PE-00340": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["counterparties.clients.client.edit"],
+      "reason": "The final aggregate save is fail-closed in UI and calls the Client.Edit-scoped idempotent update façade."
+    },
+    "PE-00341": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["counterparties.clients.client_type.change"],
+      "reason": "Changing the saved client type keeps its existing dedicated UI permission; final aggregate persistence also requires Client.Edit."
+    },
+    "PE-00342": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-00346",
+      "reason": "The footer delete action only opens the shared confirmation."
+    },
+    "PE-00343": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-00340",
+      "reason": "The form-level submit dispatches the same guarded aggregate save handler."
+    },
+    "PE-00346": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["counterparties.clients.client.delete"],
+      "reason": "Final deletion already uses the dedicated permission-scoped registry façade."
+    },
+    "PE-00349": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["counterparties.clients.client.create"],
+      "reason": "Final client creation now rechecks Client.Create in UI and uses the permission-scoped create façade."
+    },
+    "PE-00350": {
+      "disposition": "technical_ui",
+      "reason": "Wizard step navigation changes only local route and presentation state."
+    },
+    "PE-00352": {
+      "disposition": "technical_ui",
+      "reason": "The next-step action performs no business mutation."
+    },
     "PE-00299": {
       "disposition": "covered_existing",
       "canonicalPermissionKeys": ["counterparties.clients.identity_review.manage"],

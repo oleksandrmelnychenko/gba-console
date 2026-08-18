@@ -33,6 +33,7 @@ import type {
 import { isSourceManagedAgreement, type SourceEditMode } from '../../clientSourceOwnership'
 
 const EDIT_AGREEMENT_PERMISSION = PermissionKeys.Clients.Contract.Edit
+const EXPORT_AGREEMENT_DOCUMENT_PERMISSION = PermissionKeys.Clients.Contract.ExportDocument
 const AGREEMENT_DEFAULT_NAME = 'Default'
 
 export type ClientAgreementsPanelProps = {
@@ -143,6 +144,7 @@ export function ClientAgreementsPanel({
   const { t } = useI18n()
   const { hasPermission } = useAuth()
   const canEdit = hasPermission(EDIT_AGREEMENT_PERMISSION)
+  const canExportDocument = hasPermission(EXPORT_AGREEMENT_DOCUMENT_PERMISSION)
 
   const [state, dispatch] = useReducer(agreementsPanelReducer, initialAgreementsPanelState)
   const { downloadModalOpened, formDraft, formError, formIsEdit, formOpened } = state
@@ -282,7 +284,7 @@ export function ClientAgreementsPanel({
                 key={key}
                 agreement={agreement}
                 canEdit={canEdit && (!sourceManaged || sourceEditMode === 'manual')}
-                canExport={Boolean(agreement.NetUid) && (agreement.Id || 0) > 0}
+                canExport={canExportDocument && Boolean(agreement.NetUid) && (agreement.Id || 0) > 0}
                 isHighlighted={isHighlighted}
                 originalClientName={clientAgreement.OriginalClientName}
                 sourceManaged={sourceManaged}

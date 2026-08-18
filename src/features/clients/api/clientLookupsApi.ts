@@ -86,7 +86,7 @@ export async function checkRegionCodeAvailability(regionNetUid: string, code: st
 }
 
 export async function createIncoterm(incoterm: Incoterm): Promise<Incoterm | null> {
-  const result = await apiRequest<unknown>('/incoterms/new', {
+  const result = await apiRequest<unknown>('/incoterms/clients/new', {
     method: 'POST',
     body: incoterm,
   })
@@ -99,7 +99,7 @@ export async function createIncoterm(incoterm: Incoterm): Promise<Incoterm | nul
 }
 
 export async function createCountry(country: Country): Promise<Country | null> {
-  const result = await apiRequest<unknown>('/countries/new', {
+  const result = await apiRequest<unknown>('/countries/clients/new', {
     method: 'POST',
     body: country,
   })
@@ -112,7 +112,7 @@ export async function createCountry(country: Country): Promise<Country | null> {
 }
 
 export async function createRegion(region: Region): Promise<Region | null> {
-  const result = await apiRequest<unknown>('/regions/new', {
+  const result = await apiRequest<unknown>('/regions/clients/new', {
     method: 'POST',
     body: region,
   })

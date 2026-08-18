@@ -191,7 +191,7 @@ export async function changeClientPassword(
   password: string,
   mobileNumber: string,
 ): Promise<ClientUpsertResult> {
-  const result = await apiRequest<unknown>('/clients/update/password', {
+  const result = await apiRequest<unknown>('/clients/ecommerce/password', {
     method: 'PATCH',
     body: {
       netId,
@@ -207,6 +207,21 @@ export async function uploadClientContract(
   client: Client,
   documents: File[],
 ): Promise<ClientUpsertResult> {
+  return uploadClientContractTo('/clients/documents/contracts/edit', client, documents)
+}
+
+export async function uploadNewClientContract(
+  client: Client,
+  documents: File[],
+): Promise<ClientUpsertResult> {
+  return uploadClientContractTo('/clients/documents/contracts/create', client, documents)
+}
+
+async function uploadClientContractTo(
+  route: string,
+  client: Client,
+  documents: File[],
+): Promise<ClientUpsertResult> {
   const formData = new FormData()
 
   documents.forEach((document) => {
@@ -215,7 +230,7 @@ export async function uploadClientContract(
 
   formData.append('client', JSON.stringify(prepareClientContractUploadPayload(client)))
 
-  const result = await apiRequest<unknown>('/clients/documents/upload/contracts', {
+  const result = await apiRequest<unknown>(route, {
     method: 'POST',
     body: formData,
   })

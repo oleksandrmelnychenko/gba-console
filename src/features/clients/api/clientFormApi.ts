@@ -88,7 +88,7 @@ export async function updateClient(
     identity: client,
     kind: allowSourceOverride ? 'clients:update:source-override' : 'clients:update',
     payload,
-    request: (payloadSnapshot, context) => apiRequest<unknown>('/clients/update', {
+    request: (payloadSnapshot, context) => apiRequest<unknown>('/clients/card/update', {
       method: 'POST',
       body: payloadSnapshot,
       dedupe: false,

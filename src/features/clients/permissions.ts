@@ -3,8 +3,14 @@ import { PermissionKeys } from '../../shared/auth/permissionKeys'
 export const EDIT_CLIENT_TYPE_PERMISSION = PermissionKeys.Clients.ClientType.Change
 export const EDIT_CLIENT_ACTIVE_PERMISSION = PermissionKeys.Clients.Status.ToggleActive
 export const EDIT_CLIENT_DELETE_PERMISSION = PermissionKeys.Clients.Client.Delete
+export const EDIT_CLIENT_PERMISSION = PermissionKeys.Clients.Client.Edit
 export const EDIT_CLIENT_PRICING_PERMISSION = PermissionKeys.Clients.Pricing.Open
 export const EDIT_CLIENT_ECOMMERCE_PERMISSION = PermissionKeys.Clients.Ecommerce.Open
+export const CHANGE_CLIENT_ECOMMERCE_PASSWORD_PERMISSION = PermissionKeys.Clients.Ecommerce.ChangePassword
+export const EXPORT_CLIENT_AGREEMENT_DOCUMENT_PERMISSION = PermissionKeys.Clients.Contract.ExportDocument
+export const CREATE_CLIENT_COUNTRY_PERMISSION = PermissionKeys.ClientResources.Country.Create
+export const CREATE_CLIENT_INCOTERM_PERMISSION = PermissionKeys.ClientResources.Incoterm.Create
+export const CREATE_CLIENT_REGION_PERMISSION = PermissionKeys.ClientResources.Region.Create
 
 export const DISCOUNT_SELECT_ALL_PERMISSION = PermissionKeys.Clients.Contract.SelectAll
 export const DISCOUNT_PERCENT_INPUT_PERMISSION = PermissionKeys.Clients.Promotion.EditText

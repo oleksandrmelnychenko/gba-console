@@ -108,7 +108,7 @@ describe('client form API contracts', () => {
     apiRequestMock.mockResolvedValueOnce(client)
 
     await expect(updateClient(client)).resolves.toEqual(client)
-    expect(apiRequestMock).toHaveBeenCalledWith('/clients/update', {
+    expect(apiRequestMock).toHaveBeenCalledWith('/clients/card/update', {
       method: 'POST',
       body: client,
       dedupe: false,
@@ -123,7 +123,7 @@ describe('client form API contracts', () => {
     await expect(updateClient(client, { allowSourceOverride: true })).resolves.toEqual(client)
 
     expect(executeAccountingMutationMock.mock.calls[0]?.[0].kind).toBe('clients:update:source-override')
-    expect(apiRequestMock).toHaveBeenCalledWith('/clients/update', {
+    expect(apiRequestMock).toHaveBeenCalledWith('/clients/card/update', {
       method: 'POST',
       body: client,
       dedupe: false,
@@ -302,7 +302,7 @@ describe('client form API contracts', () => {
 
     await updateClient(client)
 
-    expect(apiRequestMock).toHaveBeenCalledWith('/clients/update', {
+    expect(apiRequestMock).toHaveBeenCalledWith('/clients/card/update', {
       method: 'POST',
       body: {
         NetUid: 'client-net-id',
@@ -345,7 +345,7 @@ describe('client form API contracts', () => {
 
     await updateClient(client)
 
-    expect(apiRequestMock).toHaveBeenCalledWith('/clients/update', {
+    expect(apiRequestMock).toHaveBeenCalledWith('/clients/card/update', {
       method: 'POST',
       body: {
         NetUid: 'client-net-id',
