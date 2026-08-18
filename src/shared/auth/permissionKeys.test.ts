@@ -163,6 +163,29 @@ describe('human-reviewed product-group actions', () => {
   })
 })
 
+describe('human-reviewed act-reconciliation actions', () => {
+  it('contains six independent business actions plus the existing page key', () => {
+    const actual = [
+      ...Object.values(PermissionKeys.ActReconciliations.Page),
+      ...Object.values(PermissionKeys.ActReconciliations.Act),
+      ...Object.values(PermissionKeys.ActReconciliations.History),
+      ...Object.values(PermissionKeys.ActReconciliations.Action),
+      ...Object.values(PermissionKeys.ActReconciliations.Disposition),
+    ]
+
+    expect(actual).toEqual([
+      'orders.reconciliation_acts.page.view',
+      'orders.reconciliation_acts.act.open_details',
+      'orders.reconciliation_acts.history.view',
+      'orders.reconciliation_acts.action.create_product_income',
+      'orders.reconciliation_acts.action.create_product_transfer',
+      'orders.reconciliation_acts.action.create_write_off',
+      'orders.reconciliation_acts.disposition.change',
+    ])
+    expect(new Set(actual).size).toBe(7)
+  })
+})
+
 describe('new e-commerce clients review', () => {
   it('reuses client details and adds no row-click permission', () => {
     expect(PermissionKeys.NewEcommerceClients.Page.View).toBe(

@@ -657,10 +657,12 @@ const customsMigrationRoutes: ConsoleRoute[] = [
   {
     path: '/ukraine/act/reconcoliation',
     element: lazyRoute(<ActReconciliationsPage />),
+    permissionKey: PermissionKeys.ActReconciliations.Page.View,
   },
   {
     path: '/ukraine/act/reconcoliation/:netid',
     element: lazyRoute(<ActReconciliationViewPage />),
+    permissionKey: PermissionKeys.ActReconciliations.Page.View,
   },
 ]
 

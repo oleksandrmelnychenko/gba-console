@@ -31,6 +31,25 @@ export const PermissionKeys = {
       View: 'warehouse_accounting.tax_free_pack_lists.page.view',
     },
   },
+  ActReconciliations: {
+    Page: {
+      View: 'orders.reconciliation_acts.page.view',
+    },
+    Act: {
+      OpenDetails: 'orders.reconciliation_acts.act.open_details',
+    },
+    History: {
+      View: 'orders.reconciliation_acts.history.view',
+    },
+    Action: {
+      CreateProductIncome: 'orders.reconciliation_acts.action.create_product_income',
+      CreateProductTransfer: 'orders.reconciliation_acts.action.create_product_transfer',
+      CreateWriteOff: 'orders.reconciliation_acts.action.create_write_off',
+    },
+    Disposition: {
+      Change: 'orders.reconciliation_acts.disposition.change',
+    },
+  },
   VehicleRegistry: {
     Vehicle: {
       OpenDetails: 'administration.vehicle_registry.vehicle.open_details',
@@ -734,6 +753,13 @@ export type ProductGroupsPermissionKey =
   | Values<typeof PermissionKeys.ProductGroups.Page>
   | Values<typeof PermissionKeys.ProductGroups.Group>
 
+export type ActReconciliationsPermissionKey =
+  | Values<typeof PermissionKeys.ActReconciliations.Page>
+  | Values<typeof PermissionKeys.ActReconciliations.Act>
+  | Values<typeof PermissionKeys.ActReconciliations.History>
+  | Values<typeof PermissionKeys.ActReconciliations.Action>
+  | Values<typeof PermissionKeys.ActReconciliations.Disposition>
+
 export type ProductPricingPermissionKey =
   | Values<typeof PermissionKeys.ProductPricing.Page>
   | Values<typeof PermissionKeys.ProductPricing.CompetitorSearch>
@@ -762,6 +788,7 @@ export type FinancialAdministrationPermissionKey =
 
 export type PermissionKey =
   | SystemPagePermissionKey
+  | ActReconciliationsPermissionKey
   | VehicleRegistryPermissionKey
   | ClientResourcesPermissionKey
   | ClientsPermissionKey
@@ -1619,6 +1646,11 @@ export const PermissionAliases: Readonly<
 }
 
 const eventPermissionKeys = new Set<string>([
+  ...Object.values(PermissionKeys.ActReconciliations.Page),
+  ...Object.values(PermissionKeys.ActReconciliations.Act),
+  ...Object.values(PermissionKeys.ActReconciliations.History),
+  ...Object.values(PermissionKeys.ActReconciliations.Action),
+  ...Object.values(PermissionKeys.ActReconciliations.Disposition),
   ...Object.values(PermissionKeys.SystemPages.Dashboard),
   ...Object.values(PermissionKeys.SystemPages.VehicleRegistry),
   ...Object.values(PermissionKeys.SystemPages.ExpenseArticles),

@@ -15,6 +15,7 @@ import {
 import { CircleAlert, History, RefreshCw } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useReducer, useRef } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
+import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -25,6 +26,8 @@ import { useDataTableDensity } from '../../../shared/ui/data-table/useDataTableD
 import type { DataTableColumn } from '../../../shared/ui/data-table/types'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { TableRowAction } from '../../../shared/ui/table-row-action'
+import { PermissionGate } from '../../auth/components/PermissionGate'
+import { usePermissions } from '../../auth/usePermissions'
 import { getActReconciliationByNetId, getAppliedActions } from '../api/actReconciliationsApi'
 import { getDispositionHistory } from '../api/actReconciliationsApi'
 import {
@@ -56,6 +59,14 @@ type DispositionTarget = {
 const dateFormatter = new Intl.DateTimeFormat('uk-UA', { dateStyle: 'short' })
 
 function useActReconciliationViewModel() {
+  const { can } = usePermissions()
+  const canViewHistory = can(PermissionKeys.ActReconciliations.History.View)
+  const canCreateProductIncome = can(PermissionKeys.ActReconciliations.Action.CreateProductIncome)
+  const canCreateProductTransfer = can(PermissionKeys.ActReconciliations.Action.CreateProductTransfer)
+  const canCreateWriteOff = can(PermissionKeys.ActReconciliations.Action.CreateWriteOff)
+  const canChangeDisposition = can(PermissionKeys.ActReconciliations.Disposition.Change)
+  const canCreateAction = canCreateProductIncome || canCreateProductTransfer || canCreateWriteOff
+  const canSelectItems = canCreateAction || canChangeDisposition
   const { netid } = useParams<{ netid: string }>()
   const [reconciliation, setReconciliation] = useValueState<ActReconciliation | null>(null)
   const [selectedNetIds, setSelectedNetIds] = useValueState<Set<string>>(() => new Set())
@@ -152,7 +163,7 @@ function useActReconciliationViewModel() {
 
   const toggleItem = useCallback(
     (item: ActReconciliationItem) => {
-      if (!isSelectableItem(item) || !item.NetUid) {
+      if (!canSelectItems || !isSelectableItem(item) || !item.NetUid) {
         return
       }
 
@@ -168,46 +179,50 @@ function useActReconciliationViewModel() {
         return next
       })
     },
-    [setSelectedNetIds],
+    [canSelectItems, setSelectedNetIds],
   )
 
   const toggleAll = useCallback(() => {
+    if (!canSelectItems) {
+      return
+    }
+
     const eligible = items.filter((item) => isSelectableItem(item) && item.NetUid)
     const allSelected = eligible.length > 0 && eligible.every((item) => selectedNetIds.has(item.NetUid as string))
 
     setSelectedNetIds(allSelected ? new Set() : new Set(eligible.map((item) => item.NetUid as string)))
-  }, [items, selectedNetIds, setSelectedNetIds])
+  }, [canSelectItems, items, selectedNetIds, setSelectedNetIds])
 
   const openSingleAction = useCallback(
     (item: ActReconciliationItem) => {
-      if (!isActivePendingItem(item)) {
+      if (!canCreateAction || !isActivePendingItem(item)) {
         return
       }
 
       setActionTarget({ mode: 'single', item })
       setActionOpen(true)
     },
-    [setActionOpen, setActionTarget],
+    [canCreateAction, setActionOpen, setActionTarget],
   )
 
   const openMultiAction = useCallback(() => {
-    if (selectedActiveItems.length === 0) {
+    if (!canCreateAction || selectedActiveItems.length === 0) {
       return
     }
 
     setActionTarget({ mode: 'multi', items: selectedActiveItems })
     setActionOpen(true)
-  }, [selectedActiveItems, setActionOpen, setActionTarget])
+  }, [canCreateAction, selectedActiveItems, setActionOpen, setActionTarget])
 
   const openDisposition = useCallback(
     (mode: ActReconciliationDispositionMode, targetItems: ActReconciliationItem[]) => {
-      if (targetItems.length === 0) {
+      if (!canChangeDisposition || targetItems.length === 0) {
         return
       }
 
       setDispositionTarget({ mode, items: targetItems })
     },
-    [setDispositionTarget],
+    [canChangeDisposition, setDispositionTarget],
   )
 
   const closeDisposition = useCallback(() => {
@@ -224,7 +239,7 @@ function useActReconciliationViewModel() {
   }, [loadReconciliation])
 
   const openHistory = useCallback(async () => {
-    if (!netid) {
+    if (!canViewHistory || !netid) {
       return
     }
 
@@ -252,7 +267,7 @@ function useActReconciliationViewModel() {
     }
 
     setHistoryLoading(false)
-  }, [netid, setAppliedActions, setDispositionEvents, setHistoryError, setHistoryLoading, setHistoryOpen, setSelectedAppliedAction])
+  }, [canViewHistory, netid, setAppliedActions, setDispositionEvents, setHistoryError, setHistoryLoading, setHistoryOpen, setSelectedAppliedAction])
 
   const closeHistory = useCallback(() => {
     setHistoryOpen(false)
@@ -283,6 +298,13 @@ function useActReconciliationViewModel() {
     selectedNetIds,
     totals,
     workflowCounts,
+    canChangeDisposition,
+    canCreateAction,
+    canCreateProductIncome,
+    canCreateProductTransfer,
+    canCreateWriteOff,
+    canSelectItems,
+    canViewHistory,
     closeAction,
     closeHistory,
     closeDisposition,
@@ -299,9 +321,29 @@ function useActReconciliationViewModel() {
 }
 
 export function ActReconciliationViewPage() {
+  return (
+    <PermissionGate permissionKey={PermissionKeys.ActReconciliations.Page.View} fallback={<ActReconciliationPermissionDenied />}>
+      <PermissionGate permissionKey={PermissionKeys.ActReconciliations.Act.OpenDetails} fallback={<ActReconciliationPermissionDenied />}>
+        <ActReconciliationViewPageContent />
+      </PermissionGate>
+    </PermissionGate>
+  )
+}
+
+function ActReconciliationViewPageContent() {
   const model = useActReconciliationViewModel()
 
   return <ActReconciliationViewPageView model={model} />
+}
+
+function ActReconciliationPermissionDenied() {
+  const { t } = useI18n()
+
+  return (
+    <Alert color="red" icon={<CircleAlert size={18} />} title={t('Доступ заборонено')} variant="light">
+      {t('У вашої ролі немає права відкривати акт звірки.')}
+    </Alert>
+  )
 }
 
 function ActReconciliationViewPageView({ model }: { model: ReturnType<typeof useActReconciliationViewModel> }) {
@@ -309,6 +351,9 @@ function ActReconciliationViewPageView({ model }: { model: ReturnType<typeof use
   const navigate = useNavigate()
   const { density, toggleDensity } = useDataTableDensity('act-reconciliation-items', 'normal')
   const columns = useItemColumns({
+    canChangeDisposition: model.canChangeDisposition,
+    canCreateAction: model.canCreateAction,
+    canSelectItems: model.canSelectItems,
     items: model.items,
     selectedNetIds: model.selectedNetIds,
     onOpenDisposition: model.openDisposition,
@@ -331,7 +376,7 @@ function ActReconciliationViewPageView({ model }: { model: ReturnType<typeof use
     <Stack gap="md">
       <Group justify="flex-end" align="center">
         <Group gap="xs">
-          <Tooltip label={t('Історія змін')}>
+          {model.canViewHistory && <Tooltip label={t('Історія змін')}>
             <ActionIcon
               aria-label={t('Історія змін')}
               color="gray"
@@ -342,7 +387,7 @@ function ActReconciliationViewPageView({ model }: { model: ReturnType<typeof use
             >
               <History size={18} />
             </ActionIcon>
-          </Tooltip>
+          </Tooltip>}
           <Tooltip label={t('Оновити')}>
             <ActionIcon
               aria-label={t('Оновити')}
@@ -355,12 +400,12 @@ function ActReconciliationViewPageView({ model }: { model: ReturnType<typeof use
               <RefreshCw size={18} />
             </ActionIcon>
           </Tooltip>
-          {model.selectedActiveItems.length > 0 && (
+          {model.canCreateAction && model.selectedActiveItems.length > 0 && (
             <Button color={CREATE_ACTION_COLOR} onClick={model.openMultiAction}>
               {t('Створити складську дію')} ({model.selectedActiveItems.length})
             </Button>
           )}
-          {model.selectedActiveItems.length > 0 && (
+          {model.canChangeDisposition && model.selectedActiveItems.length > 0 && (
             <Button
               color="orange"
               variant="light"
@@ -369,7 +414,7 @@ function ActReconciliationViewPageView({ model }: { model: ReturnType<typeof use
               {t('Закрити без руху')} ({model.selectedActiveItems.length})
             </Button>
           )}
-          {model.selectedDismissedItems.length > 0 && (
+          {model.canChangeDisposition && model.selectedDismissedItems.length > 0 && (
             <Button
               color="blue"
               variant="light"
@@ -378,7 +423,7 @@ function ActReconciliationViewPageView({ model }: { model: ReturnType<typeof use
               {t('Повернути в роботу')} ({model.selectedDismissedItems.length})
             </Button>
           )}
-          {model.selectedItems.length === 0 && model.activePendingItems.length > 0 && (
+          {model.canChangeDisposition && model.selectedItems.length === 0 && model.activePendingItems.length > 0 && (
             <Button
               color="orange"
               variant="subtle"
@@ -387,7 +432,7 @@ function ActReconciliationViewPageView({ model }: { model: ReturnType<typeof use
               {t('Закрити всі активні')} ({model.activePendingItems.length})
             </Button>
           )}
-          {model.selectedItems.length === 0 && model.dismissedItems.length > 0 && (
+          {model.canChangeDisposition && model.selectedItems.length === 0 && model.dismissedItems.length > 0 && (
             <Button
               color="blue"
               variant="subtle"
@@ -428,7 +473,7 @@ function ActReconciliationViewPageView({ model }: { model: ReturnType<typeof use
           maxHeight="calc(100vh - 360px)"
           minWidth={1120}
           tableId="act-reconciliation-items"
-          onRowClick={model.toggleItem}
+          onRowClick={model.canSelectItems ? model.toggleItem : undefined}
         />
       </Card>
 
@@ -450,6 +495,9 @@ function ActReconciliationViewPageView({ model }: { model: ReturnType<typeof use
       </SimpleGrid>
 
       <ActReconciliationActionsModal
+        canCreateProductIncome={model.canCreateProductIncome}
+        canCreateProductTransfer={model.canCreateProductTransfer}
+        canCreateWriteOff={model.canCreateWriteOff}
         opened={model.isActionOpen}
         organizationNetId={model.organizationNetId}
         target={model.actionTarget}
@@ -462,6 +510,7 @@ function ActReconciliationViewPageView({ model }: { model: ReturnType<typeof use
         items={model.dispositionTarget?.items || []}
         mode={model.dispositionTarget?.mode || 'dismiss'}
         opened={Boolean(model.dispositionTarget)}
+        permitted={model.canChangeDisposition}
         onApplied={model.handleApplied}
         onClose={model.closeDisposition}
       />
@@ -500,6 +549,9 @@ function TotalValue({ color, label, value }: { color?: string; label: string; va
 const ACT_VIEW_MONO_STYLE = { fontFamily: 'var(--font-mono)', letterSpacing: 0 } as const
 
 function useItemColumns({
+  canChangeDisposition,
+  canCreateAction,
+  canSelectItems,
   items,
   selectedNetIds,
   onOpenDisposition,
@@ -507,6 +559,9 @@ function useItemColumns({
   onToggleAll,
   onToggleItem,
 }: {
+  canChangeDisposition: boolean
+  canCreateAction: boolean
+  canSelectItems: boolean
   items: ActReconciliationItem[]
   selectedNetIds: Set<string>
   onOpenDisposition: (
@@ -524,7 +579,7 @@ function useItemColumns({
 
   return useMemo<DataTableColumn<ActReconciliationItem>[]>(
     () => [
-      {
+      ...(canSelectItems ? [{
         id: 'check',
         header: (
           <Box onClick={(event) => event.stopPropagation()}>
@@ -552,7 +607,7 @@ function useItemColumns({
             />
           </Box>
         ),
-      },
+      } satisfies DataTableColumn<ActReconciliationItem>] : []),
       {
         id: 'index',
         header: '#',
@@ -626,7 +681,7 @@ function useItemColumns({
         cell: (item) => {
           const state = getItemWorkflowState(item)
 
-          if (state === 'dismissed') {
+          if (state === 'dismissed' && canChangeDisposition) {
             return (
               <Box onClick={(event) => event.stopPropagation()}>
                 <TableRowAction
@@ -639,7 +694,7 @@ function useItemColumns({
             )
           }
 
-          return state.startsWith('pending-') ? (
+          return canCreateAction && state.startsWith('pending-') ? (
             <Box onClick={(event) => event.stopPropagation()}>
               <TableRowAction
                 action="settings"
@@ -653,7 +708,7 @@ function useItemColumns({
       },
       ...storageColumns,
     ],
-    [allSelected, eligible.length, items, onOpenAction, onOpenDisposition, onToggleAll, onToggleItem, selectedNetIds, storageColumns, t],
+    [allSelected, canChangeDisposition, canCreateAction, canSelectItems, eligible.length, items, onOpenAction, onOpenDisposition, onToggleAll, onToggleItem, selectedNetIds, storageColumns, t],
   )
 }
 

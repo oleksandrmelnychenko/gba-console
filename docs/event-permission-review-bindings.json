@@ -727,6 +727,72 @@
       "disposition": "duplicate_occurrence",
       "duplicateOf": "PE-00890",
       "reason": "The nested form submit is the same create submission already represented by the create modal boundary."
+    },
+    "PE-00045": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": [
+        "orders.reconciliation_acts.action.create_product_income"
+      ],
+      "reason": "The placement submit creates product income through dedicated single and multi permission-scoped routes."
+    },
+    "PE-00046": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": [
+        "orders.reconciliation_acts.action.create_product_transfer"
+      ],
+      "reason": "The shift submit creates product transfer through dedicated single and multi permission-scoped routes."
+    },
+    "PE-00047": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": [
+        "orders.reconciliation_acts.action.create_write_off"
+      ],
+      "reason": "The write-off submit creates a depreciated order through dedicated single and multi permission-scoped routes."
+    },
+    "PE-00048": {
+      "disposition": "technical_ui",
+      "reason": "Selecting an already loaded history row only expands its local document details; history loading owns the read permission."
+    },
+    "PE-00049": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-00045",
+      "reason": "The form button and placement form submit are the same product-income business action."
+    },
+    "PE-00050": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-00046",
+      "reason": "The form button and shift form submit are the same product-transfer business action."
+    },
+    "PE-00051": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-00047",
+      "reason": "The form button and write-off form submit are the same write-off business action."
+    },
+    "PE-00056": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": [
+        "orders.reconciliation_acts.act.open_details"
+      ],
+      "reason": "The registry row opens and hydrates an act through a dedicated permission-scoped details route."
+    },
+    "PE-00057": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": [
+        "orders.reconciliation_acts.history.view"
+      ],
+      "reason": "Opening history loads applied actions and disposition events through two history-scoped routes."
+    },
+    "PE-00059": {
+      "disposition": "technical_ui",
+      "reason": "Opening the warehouse-action modal is local UI state; each visible tab and final mutation has its own permission."
+    },
+    "PE-00061": {
+      "disposition": "technical_ui",
+      "reason": "Row activation only changes local selection and is disabled unless at least one downstream action is permitted."
+    },
+    "PE-00065": {
+      "disposition": "technical_ui",
+      "reason": "The row action only opens the local warehouse-action modal; its tabs and submissions are independently guarded."
     }
   }
 }

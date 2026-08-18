@@ -4,25 +4,25 @@
     "inputRecords": 1902,
     "classifiedRecords": 1902,
     "dispositionCounts": {
-      "technical_ui": 643,
-      "covered_existing": 302,
-      "business_candidate": 550,
+      "technical_ui": 647,
+      "covered_existing": 307,
+      "business_candidate": 538,
       "needs_human_review": 285,
-      "duplicate_occurrence": 119,
+      "duplicate_occurrence": 122,
       "stale_or_aggregated": 3
     },
-    "reviewCandidates": 835,
-    "technicalExcluded": 643,
-    "duplicatesExcluded": 119,
-    "duplicateOccurrencesTotal": 186,
+    "reviewCandidates": 823,
+    "technicalExcluded": 647,
+    "duplicatesExcluded": 122,
+    "duplicateOccurrencesTotal": 189,
     "technicalDuplicateOverlap": 67,
     "sourceResolved": 1828,
     "sourceUnresolved": 74,
     "currentActionResolved": 1191,
     "currentActionUnresolved": 711,
     "currentProductionActions": 1829,
-    "currentPermissionBoundActions": 173,
-    "currentUnboundActions": 1656
+    "currentPermissionBoundActions": 181,
+    "currentUnboundActions": 1648
   },
   "invariants": {
     "allInputRecordsClassified": true,
@@ -1644,20 +1644,22 @@
       "proposedPermission": "ukraine.ukraine_act_reconcoliation.handle_placement_submit.form_submit",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "covered_existing",
+      "dispositionReason": "The placement submit creates product income through dedicated single and multi permission-scoped routes.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "orders.reconciliation_acts.action.create_product_income"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-e6aa2278cf69",
+          "candidateId": "EPC-6834ee621ed6",
           "distance": 158,
           "file": "src/features/act-reconciliations/components/ActReconciliationActionsModal.tsx",
           "handler": "{handlePlacementSubmit}",
           "humanLabel": null,
-          "line": 294,
+          "line": 306,
           "permissionKeys": [],
           "score": 21
         }
@@ -1665,7 +1667,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/act-reconciliations/components/ActReconciliationActionsModal.tsx",
-        "line": 136,
+        "line": 148,
         "alternatives": []
       }
     },
@@ -1685,20 +1687,22 @@
       "proposedPermission": "ukraine.ukraine_act_reconcoliation.handle_shift_submit.form_submit",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "covered_existing",
+      "dispositionReason": "The shift submit creates product transfer through dedicated single and multi permission-scoped routes.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "orders.reconciliation_acts.action.create_product_transfer"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-7f6a42b09f17",
+          "candidateId": "EPC-ae30ee882670",
           "distance": 126,
           "file": "src/features/act-reconciliations/components/ActReconciliationActionsModal.tsx",
           "handler": "{handleShiftSubmit}",
           "humanLabel": null,
-          "line": 304,
+          "line": 316,
           "permissionKeys": [],
           "score": 17
         }
@@ -1706,7 +1710,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/act-reconciliations/components/ActReconciliationActionsModal.tsx",
-        "line": 178,
+        "line": 190,
         "alternatives": []
       }
     },
@@ -1726,20 +1730,22 @@
       "proposedPermission": "ukraine.ukraine_act_reconcoliation.handle_write_off_submit.form_submit",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "covered_existing",
+      "dispositionReason": "The write-off submit creates a depreciated order through dedicated single and multi permission-scoped routes.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "orders.reconciliation_acts.action.create_write_off"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-0864b895b91b",
+          "candidateId": "EPC-ce3e65be5a91",
           "distance": 91,
           "file": "src/features/act-reconciliations/components/ActReconciliationActionsModal.tsx",
           "handler": "{handleWriteOffSubmit}",
           "humanLabel": null,
-          "line": 315,
+          "line": 327,
           "permissionKeys": [],
           "score": 20
         }
@@ -1747,7 +1753,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/act-reconciliations/components/ActReconciliationActionsModal.tsx",
-        "line": 224,
+        "line": 236,
         "alternatives": []
       }
     },
@@ -1767,12 +1773,12 @@
       "proposedPermission": "ukraine.ukraine_act_reconcoliation.on_select_action.row_click",
       "securityLevel": "medium",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "technical_ui",
+      "dispositionReason": "Selecting an already loaded history row only expands its local document details; history loading owns the read permission.",
       "duplicateOf": null,
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
           "candidateId": "EPC-9b306e647fe9",
@@ -1808,12 +1814,12 @@
       "proposedPermission": "ukraine.ukraine_act_reconcoliation.handle_submit.command_submit",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
-      "duplicateOf": null,
+      "disposition": "duplicate_occurrence",
+      "dispositionReason": "The form button and placement form submit are the same product-income business action.",
+      "duplicateOf": "PE-00045",
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
           "candidateId": "EPC-37d5676b78d2",
@@ -1849,12 +1855,12 @@
       "proposedPermission": "ukraine.ukraine_act_reconcoliation.handle_submit.command_submit.2",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
-      "duplicateOf": null,
+      "disposition": "duplicate_occurrence",
+      "dispositionReason": "The form button and shift form submit are the same product-transfer business action.",
+      "duplicateOf": "PE-00046",
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
           "candidateId": "EPC-86cf8d678e9d",
@@ -1890,12 +1896,12 @@
       "proposedPermission": "ukraine.ukraine_act_reconcoliation.handle_submit.command_submit.3",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
-      "duplicateOf": null,
+      "disposition": "duplicate_occurrence",
+      "dispositionReason": "The form button and write-off form submit are the same write-off business action.",
+      "duplicateOf": "PE-00047",
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
           "candidateId": "EPC-cbc4c42f4353",
@@ -1942,7 +1948,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/act-reconciliations/pages/ActReconciliationsPage.tsx",
-        "line": 178,
+        "line": 184,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -1975,7 +1981,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/act-reconciliations/pages/ActReconciliationViewPage.tsx",
-        "line": 301,
+        "line": 323,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -2005,12 +2011,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-d091d35a65a4",
-          "distance": 143,
+          "candidateId": "EPC-5c8d5f9d3ef5",
+          "distance": 163,
           "file": "src/features/act-reconciliations/pages/ActReconciliationsPage.tsx",
           "handler": "{resetFilters}",
           "humanLabel": "Скинути",
-          "line": 240,
+          "line": 265,
           "permissionKeys": [],
           "score": 12
         }
@@ -2018,7 +2024,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/act-reconciliations/pages/ActReconciliationsPage.tsx",
-        "line": 97,
+        "line": 102,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -2050,7 +2056,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/act-reconciliations/pages/ActReconciliationsPage.tsx",
-        "line": 64,
+        "line": 69,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -2072,17 +2078,19 @@
       "proposedPermission": "ukraine.ukraine_act_reconcoliation.open_detail.row_click",
       "securityLevel": "medium",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "covered_existing",
+      "dispositionReason": "The registry row opens and hydrates an act through a dedicated permission-scoped details route.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "orders.reconciliation_acts.act.open_details"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [],
       "source": {
         "status": "resolved",
         "file": "src/features/act-reconciliations/pages/ActReconciliationsPage.tsx",
-        "line": 81,
+        "line": 55,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -2104,28 +2112,32 @@
       "proposedPermission": "ukraine.ukraine_act_reconcoliation.void_model_open_history.modal_open",
       "securityLevel": "low",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "covered_existing",
+      "dispositionReason": "Opening history loads applied actions and disposition events through two history-scoped routes.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "orders.reconciliation_acts.history.view"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-074b0b75bf09",
+          "candidateId": "EPC-63e83ff57029",
           "distance": 6,
           "file": "src/features/act-reconciliations/pages/ActReconciliationViewPage.tsx",
           "handler": "{() => void model.openHistory()}",
           "humanLabel": "Історія змін",
-          "line": 335,
-          "permissionKeys": [],
+          "line": 380,
+          "permissionKeys": [
+            "orders.reconciliation_acts.history.view"
+          ],
           "score": 16
         }
       ],
       "source": {
         "status": "resolved",
         "file": "src/features/act-reconciliations/pages/ActReconciliationViewPage.tsx",
-        "line": 341,
+        "line": 386,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -2155,12 +2167,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-e33413745fda",
+          "candidateId": "EPC-650e0f7b3652",
           "distance": 6,
           "file": "src/features/act-reconciliations/pages/ActReconciliationViewPage.tsx",
           "handler": "{() => model.reload()}",
           "humanLabel": "Оновити",
-          "line": 347,
+          "line": 392,
           "permissionKeys": [],
           "score": 11
         }
@@ -2168,7 +2180,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/act-reconciliations/pages/ActReconciliationViewPage.tsx",
-        "line": 353,
+        "line": 398,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -2190,17 +2202,17 @@
       "proposedPermission": "ukraine.ukraine_act_reconcoliation.button.modal_open",
       "securityLevel": "low",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "technical_ui",
+      "dispositionReason": "Opening the warehouse-action modal is local UI state; each visible tab and final mutation has its own permission.",
       "duplicateOf": null,
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [],
       "source": {
         "status": "resolved",
         "file": "src/features/act-reconciliations/pages/ActReconciliationViewPage.tsx",
-        "line": 301,
+        "line": 323,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -2232,7 +2244,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/act-reconciliations/pages/ActReconciliationViewPage.tsx",
-        "line": 310,
+        "line": 352,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -2254,20 +2266,20 @@
       "proposedPermission": "ukraine.ukraine_act_reconcoliation.model_toggle_item.row_click",
       "securityLevel": "medium",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "technical_ui",
+      "dispositionReason": "Row activation only changes local selection and is disabled unless at least one downstream action is permitted.",
       "duplicateOf": null,
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-1d01fda4a902",
+          "candidateId": "EPC-c1a958763906",
           "distance": 102,
           "file": "src/features/act-reconciliations/pages/ActReconciliationViewPage.tsx",
-          "handler": "{model.toggleItem}",
+          "handler": "{model.canSelectItems ? model.toggleItem : undefined}",
           "humanLabel": null,
-          "line": 419,
+          "line": 464,
           "permissionKeys": [],
           "score": 15
         }
@@ -2275,7 +2287,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/act-reconciliations/pages/ActReconciliationViewPage.tsx",
-        "line": 317,
+        "line": 362,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -2307,7 +2319,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/act-reconciliations/pages/ActReconciliationViewPage.tsx",
-        "line": 530,
+        "line": 585,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -2339,7 +2351,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/act-reconciliations/pages/ActReconciliationViewPage.tsx",
-        "line": 530,
+        "line": 585,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -2371,7 +2383,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/act-reconciliations/pages/ActReconciliationViewPage.tsx",
-        "line": 530,
+        "line": 585,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -2393,20 +2405,20 @@
       "proposedPermission": "ukraine.ukraine_act_reconcoliation.on_open_action_item.modal_open",
       "securityLevel": "low",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "technical_ui",
+      "dispositionReason": "The row action only opens the local warehouse-action modal; its tabs and submissions are independently guarded.",
       "duplicateOf": null,
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-bb625d3d7f82",
+          "candidateId": "EPC-09938ffa7e1e",
           "distance": 128,
           "file": "src/features/act-reconciliations/pages/ActReconciliationViewPage.tsx",
           "handler": "{() => onOpenAction(item)}",
           "humanLabel": "Створити складську дію",
-          "line": 644,
+          "line": 699,
           "permissionKeys": [],
           "score": 14
         }
@@ -2414,7 +2426,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/act-reconciliations/pages/ActReconciliationViewPage.tsx",
-        "line": 516,
+        "line": 571,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -79102,18 +79114,6 @@
     "PE-00031",
     "PE-00032",
     "PE-00035",
-    "PE-00045",
-    "PE-00046",
-    "PE-00047",
-    "PE-00048",
-    "PE-00049",
-    "PE-00050",
-    "PE-00051",
-    "PE-00056",
-    "PE-00057",
-    "PE-00059",
-    "PE-00061",
-    "PE-00065",
     "PE-00070",
     "PE-00073",
     "PE-00074",

@@ -12,6 +12,7 @@ import {
 import { CircleAlert, RefreshCw, RotateCcw } from 'lucide-react'
 import { useEffect, useMemo, useReducer, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { formatLocalDate, SYNC_DATA_RANGE_START } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -19,6 +20,8 @@ import { translate } from '../../../shared/i18n/translate'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { getActReconciliations } from '../api/actReconciliationsApi'
+import { PermissionGate } from '../../auth/components/PermissionGate'
+import { usePermissions } from '../../auth/usePermissions'
 import { getActWorkflowState, getItemWorkflowState } from '../actReconciliationWorkflow'
 import type { ActReconciliation } from '../types'
 import '../../../shared/ui/console-table-page.css'
@@ -48,6 +51,8 @@ const dateTimeFormatter = new Intl.DateTimeFormat('uk-UA', {
 
 function useActReconciliationsPageModel() {
   const navigate = useNavigate()
+  const { can } = usePermissions()
+  const canOpenDetails = can(PermissionKeys.ActReconciliations.Act.OpenDetails)
   const initialFilters = useMemo<FilterDraft>(
     () => ({
       from: SYNC_DATA_RANGE_START,
@@ -80,11 +85,11 @@ function useActReconciliationsPageModel() {
 
   const openDetail = useMemo(
     () => (reconciliation: ActReconciliation) => {
-      if (reconciliation.NetUid) {
+      if (canOpenDetails && reconciliation.NetUid) {
         navigate(`/ukraine/act/reconcoliation/${reconciliation.NetUid}`)
       }
     },
-    [navigate],
+    [canOpenDetails, navigate],
   )
 
   const columns = useReconciliationColumns(rowSummaries)
@@ -111,6 +116,7 @@ function useActReconciliationsPageModel() {
     setStatusFilter,
     applyFilters,
     openDetail,
+    canOpenDetails,
     reload,
     resetFilters,
   }
@@ -176,9 +182,27 @@ function useReconciliationsLoader({
 }
 
 export function ActReconciliationsPage() {
+  return (
+    <PermissionGate permissionKey={PermissionKeys.ActReconciliations.Page.View} fallback={<ActReconciliationsPermissionDenied />}>
+      <ActReconciliationsPageContent />
+    </PermissionGate>
+  )
+}
+
+function ActReconciliationsPageContent() {
   const model = useActReconciliationsPageModel()
 
   return <ActReconciliationsPageView model={model} />
+}
+
+function ActReconciliationsPermissionDenied() {
+  const { t } = useI18n()
+
+  return (
+    <Alert color="red" icon={<CircleAlert size={18} />} title={t('Доступ заборонено')} variant="light">
+      {t('У вашої ролі немає права переглядати акти звірки.')}
+    </Alert>
+  )
 }
 
 function ActReconciliationsPageView({ model }: { model: ReturnType<typeof useActReconciliationsPageModel> }) {
@@ -186,6 +210,7 @@ function ActReconciliationsPageView({ model }: { model: ReturnType<typeof useAct
   const [tableToolbarSlot, setTableToolbarSlot] = useState<HTMLDivElement | null>(null)
   const {
     columns,
+    canOpenDetails,
     error,
     filterDraft,
     filterError,
@@ -278,7 +303,7 @@ function ActReconciliationsPageView({ model }: { model: ReturnType<typeof useAct
             showLayoutControls
             tableId="act-reconciliations"
             toolbarPortalTarget={tableToolbarSlot}
-            onRowClick={openDetail}
+            onRowClick={canOpenDetails ? openDetail : undefined}
           />
         </div>
       </div>
