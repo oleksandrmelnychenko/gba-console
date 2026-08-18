@@ -58,11 +58,11 @@ describe('payment expense article API contract', () => {
 
     expect(apiRequestMock).toHaveBeenNthCalledWith(
       1,
-      '/payments/costs/movements/all',
+      '/payments/costs/movements/accounting/all',
     )
     expect(apiRequestMock).toHaveBeenNthCalledWith(
       2,
-      '/payments/costs/movements/all/search',
+      '/payments/costs/movements/accounting/all/search',
       {
         query: {
           value: 'пальне',
@@ -115,7 +115,7 @@ describe('payment expense article API contract', () => {
 
     expect(apiRequestMock).toHaveBeenNthCalledWith(
       1,
-      '/payments/costs/movements/get',
+      '/payments/costs/movements/accounting/get',
       {
         query: {
           netId: 'article-1',
@@ -124,7 +124,7 @@ describe('payment expense article API contract', () => {
     )
     expect(apiRequestMock).toHaveBeenNthCalledWith(
       2,
-      '/payments/costs/movements/new',
+      '/payments/costs/movements/accounting/new',
       {
         body: {
           OperationName: 'Пальне',
@@ -134,7 +134,7 @@ describe('payment expense article API contract', () => {
     )
     expect(apiRequestMock).toHaveBeenNthCalledWith(
       3,
-      '/payments/costs/movements/update',
+      '/payments/costs/movements/accounting/update',
       {
         body: {
           NetUid: 'article-2',
@@ -151,7 +151,7 @@ describe('payment expense article API contract', () => {
     await deletePaymentExpenseArticle('article-1')
 
     expect(apiRequestMock).toHaveBeenCalledWith(
-      '/payments/costs/movements/delete',
+      '/payments/costs/movements/accounting/delete',
       {
         method: 'DELETE',
         query: {

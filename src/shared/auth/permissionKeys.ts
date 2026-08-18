@@ -208,6 +208,13 @@ export const PermissionKeys = {
         Save: 'accounting.cashflow_articles.article.save',
       },
     },
+    ExpenseArticles: {
+      Article: {
+        Create: 'accounting.expense_articles.article.create',
+        Delete: 'accounting.expense_articles.article.delete',
+        Save: 'accounting.expense_articles.article.save',
+      },
+    },
     CurrencyConvertors: {
       Page: {
         View: 'payments.currency_convertors.page.view',
@@ -776,6 +783,9 @@ export type FinancialAdministrationPermissionKey =
       typeof PermissionKeys.FinancialAdministration.CashflowArticles.Article
     >
   | Values<
+      typeof PermissionKeys.FinancialAdministration.ExpenseArticles.Article
+    >
+  | Values<
       typeof PermissionKeys.FinancialAdministration.CurrencyConvertors.Page
     >
   | Values<
@@ -914,6 +924,14 @@ export const LegacyPermissionKeys = {
         Create: 'Accounting_Payment_Cashflow_Articles_AddBtn_PKEY',
         Delete: 'Accounting_Payment_Cashflow_Articles_DelBtn_PKEY',
         Save: 'Accounting_Payment_Cashflow_Articles_saveBtn_PKEY',
+      },
+    },
+    ExpenseArticles: {
+      Article: {
+        Create: 'Accounting_Payment_Expense_Articles_ADDBtn_PKEY',
+        Delete:
+          'Accounting_Payment_Expense_Articles_Edit_DeleteBtn_PKEY',
+        Save: 'Accounting_Payment_Expense_Articles_Edit_SaveBtn_PKEY',
       },
     },
     CurrencyConvertors: {
@@ -1331,6 +1349,17 @@ export const PermissionAliases: Readonly<
   ],
   [PermissionKeys.FinancialAdministration.CashflowArticles.Article.Save]: [
     LegacyPermissionKeys.FinancialAdministration.CashflowArticles.Article.Save,
+  ],
+  [PermissionKeys.FinancialAdministration.ExpenseArticles.Article.Create]: [
+    LegacyPermissionKeys.FinancialAdministration.ExpenseArticles.Article
+      .Create,
+  ],
+  [PermissionKeys.FinancialAdministration.ExpenseArticles.Article.Delete]: [
+    LegacyPermissionKeys.FinancialAdministration.ExpenseArticles.Article
+      .Delete,
+  ],
+  [PermissionKeys.FinancialAdministration.ExpenseArticles.Article.Save]: [
+    LegacyPermissionKeys.FinancialAdministration.ExpenseArticles.Article.Save,
   ],
   [PermissionKeys.FinancialAdministration.CurrencyConvertors.Converter.Create]:
     [
@@ -1771,6 +1800,9 @@ const eventPermissionKeys = new Set<string>([
   ),
   ...Object.values(
     PermissionKeys.FinancialAdministration.CashflowArticles.Article,
+  ),
+  ...Object.values(
+    PermissionKeys.FinancialAdministration.ExpenseArticles.Article,
   ),
   ...Object.values(
     PermissionKeys.FinancialAdministration.CurrencyConvertors.Page,

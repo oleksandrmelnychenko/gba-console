@@ -793,6 +793,90 @@
     "PE-00065": {
       "disposition": "technical_ui",
       "reason": "The row action only opens the local warehouse-action modal; its tabs and submissions are independently guarded."
+    },
+    "PE-00720": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": [
+        "accounting.cashflow_articles.article.create",
+        "accounting.cashflow_articles.article.save"
+      ],
+      "reason": "The shared form handler uses create on the new route and save on the edit route; both final API boundaries are independently permission-scoped."
+    },
+    "PE-00722": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": [
+        "accounting.cashflow_articles.article.delete"
+      ],
+      "reason": "The confirmed cashflow-article delete calls the dedicated delete-scoped endpoint."
+    },
+    "PE-00719": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-00722",
+      "reason": "Opening the delete confirmation is the first UI step of the same reviewed cashflow-article delete action."
+    },
+    "PE-00723": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": [
+        "accounting.cashflow_articles.page.view"
+      ],
+      "reason": "The row action opens a read-only-capable article card whose hydration uses the page-view-scoped details endpoint."
+    },
+    "PE-00727": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-00723",
+      "reason": "The table-row click and row action open the same cashflow article card under one read permission."
+    },
+    "PE-00731": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": [
+        "accounting.expense_articles.article.create",
+        "accounting.expense_articles.article.save"
+      ],
+      "reason": "The shared form handler uses create on the new route and save on the edit route; both final API boundaries are independently permission-scoped."
+    },
+    "PE-00733": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": [
+        "accounting.expense_articles.article.delete"
+      ],
+      "reason": "The confirmed expense-article delete calls the dedicated delete-scoped endpoint."
+    },
+    "PE-00730": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-00733",
+      "reason": "Opening the delete confirmation is the first UI step of the same reviewed expense-article delete action."
+    },
+    "PE-00734": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": [
+        "accounting.expense_articles.page.view"
+      ],
+      "reason": "The row action opens a read-only-capable expense article card whose hydration uses the page-view-scoped details endpoint."
+    },
+    "PE-00738": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-00734",
+      "reason": "The table-row click and row action open the same expense article card under one read permission."
+    },
+    "PE-01849": {
+      "disposition": "stale_or_aggregated",
+      "reason": "CashFlowGrid is an unused generic renderer with no route owner; its callback fan-out is not a standalone application action."
+    },
+    "PE-01851": {
+      "disposition": "stale_or_aggregated",
+      "reason": "The generic DataTable row callback aggregates every consumer route; each concrete screen owns and guards its row action."
+    },
+    "PE-01852": {
+      "disposition": "stale_or_aggregated",
+      "reason": "The generic table-body event dispatcher is implementation plumbing aggregated across consumers, not a standalone business action."
+    },
+    "PE-01854": {
+      "disposition": "stale_or_aggregated",
+      "reason": "The shared expand callback has no domain or API boundary and is represented by concrete consumer actions where applicable."
+    },
+    "PE-01855": {
+      "disposition": "stale_or_aggregated",
+      "reason": "The nested generic row callback duplicates the aggregated DataTable callback; concrete screens own authorization."
     }
   }
 }
