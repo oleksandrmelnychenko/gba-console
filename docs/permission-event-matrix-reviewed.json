@@ -4,22 +4,22 @@
     "inputRecords": 1902,
     "classifiedRecords": 1902,
     "dispositionCounts": {
-      "technical_ui": 754,
-      "covered_existing": 517,
-      "duplicate_occurrence": 267,
-      "business_candidate": 238,
-      "needs_human_review": 118,
+      "technical_ui": 757,
+      "covered_existing": 521,
+      "duplicate_occurrence": 268,
+      "business_candidate": 237,
+      "needs_human_review": 111,
       "stale_or_aggregated": 8
     },
-    "reviewCandidates": 356,
-    "technicalExcluded": 754,
-    "duplicatesExcluded": 267,
-    "duplicateOccurrencesTotal": 337,
+    "reviewCandidates": 348,
+    "technicalExcluded": 757,
+    "duplicatesExcluded": 268,
+    "duplicateOccurrencesTotal": 338,
     "technicalDuplicateOverlap": 70,
     "sourceResolved": 1828,
     "sourceUnresolved": 74,
-    "currentActionResolved": 1186,
-    "currentActionUnresolved": 716,
+    "currentActionResolved": 1185,
+    "currentActionUnresolved": 717,
     "currentProductionActions": 1829,
     "currentPermissionBoundActions": 278,
     "currentUnboundActions": 1551
@@ -33108,12 +33108,14 @@
       "proposedPermission": "orders.orders_develop_all_edit_item_specifications.event_event_stop_propagation_on_open_product_card_row_product_ne.modal_open",
       "securityLevel": "medium",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "covered_existing",
+      "dispositionReason": "The callback is not connected in Product Delivery Protocol; its real direct-order consumer now hides and loads the product card through the existing open-products capability.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "orders.ukraine.order.open_products"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
           "candidateId": "EPC-6cba2d78be4d",
@@ -39369,12 +39371,12 @@
       "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-7683705ed48e",
+          "candidateId": "EPC-1c2a665e63ac",
           "distance": 3,
           "file": "src/features/products/components/ProductCardModal.tsx",
           "handler": "{() => window.open(mainImage.ImageUrl, '_blank', 'noopener,noreferrer')}",
           "humanLabel": null,
-          "line": 141,
+          "line": 149,
           "permissionKeys": [],
           "score": 50
         }
@@ -39382,7 +39384,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/products/components/ProductCardModal.tsx",
-        "line": 144,
+        "line": 152,
         "alternatives": []
       }
     },
@@ -39430,12 +39432,12 @@
       "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-85a8a83e0c84",
+          "candidateId": "EPC-2b2a64255897",
           "distance": 4,
           "file": "src/features/products/components/ProductCardModal.tsx",
           "handler": "{() => window.open(imageUrl, '_blank', 'noopener,noreferrer')}",
           "humanLabel": null,
-          "line": 153,
+          "line": 161,
           "permissionKeys": [],
           "score": 41
         }
@@ -39443,7 +39445,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/products/components/ProductCardModal.tsx",
-        "line": 157,
+        "line": 165,
         "alternatives": []
       }
     },
@@ -59144,7 +59146,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/supply-ukraine-orders/pages/SupplyUkraineDirectOrderSpecificationsPage.tsx",
-        "line": 70,
+        "line": 74,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -59177,7 +59179,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/supply-ukraine-orders/pages/SupplyUkraineDirectOrderSpecificationsPage.tsx",
-        "line": 70,
+        "line": 74,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -61529,28 +61531,17 @@
       "proposedPermission": "orders.orders_develop_all_edit_item_specifications.model_set_upload_open_true.command_submit",
       "securityLevel": "high",
       "rawStatus": "Candidate existing key in component; binding review required",
-      "disposition": "needs_human_review",
-      "dispositionReason": "raw_audit_claims_existing_binding_but_does_not_name_the_key",
-      "duplicateOf": null,
+      "disposition": "duplicate_occurrence",
+      "dispositionReason": "Opening the customs-code upload modal is the first UI step of the same protected import finalized by PE-01530.",
+      "duplicateOf": "PE-01530",
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
-      "bindingEvidence": [
-        {
-          "candidateId": "EPC-fa664015f77a",
-          "distance": 7,
-          "file": "src/features/supply-ukraine-orders/pages/SupplyUkraineDirectOrderSpecificationsPage.tsx",
-          "handler": "{() => model.setUploadOpen(true)}",
-          "humanLabel": "Завантаження митних кодів",
-          "line": 817,
-          "permissionKeys": [],
-          "score": 22
-        }
-      ],
+      "classificationSource": "manual_override",
+      "bindingEvidence": [],
       "source": {
         "status": "resolved",
         "file": "src/features/supply-ukraine-orders/pages/SupplyUkraineDirectOrderSpecificationsPage.tsx",
-        "line": 824,
+        "line": 74,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -61589,12 +61580,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-f8f1416ea3d9",
+          "candidateId": "EPC-a8e799ef4b81",
           "distance": 7,
           "file": "src/features/supply-ukraine-orders/pages/SupplyUkraineDirectOrderSpecificationsPage.tsx",
           "handler": "{model.openDocuments}",
           "humanLabel": "Завантаження документів доставки",
-          "line": 830,
+          "line": 882,
           "permissionKeys": [
             "orders.ukraine.specification_codes.download_customs_documents"
           ],
@@ -61604,7 +61595,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/supply-ukraine-orders/pages/SupplyUkraineDirectOrderSpecificationsPage.tsx",
-        "line": 837,
+        "line": 889,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -61633,20 +61624,22 @@
       "proposedPermission": "orders.orders_develop_all_edit_item_specifications.model_open_download.modal_open",
       "securityLevel": "medium",
       "rawStatus": "Candidate existing key in component; binding review required",
-      "disposition": "needs_human_review",
-      "dispositionReason": "raw_audit_claims_existing_binding_but_does_not_name_the_key",
+      "disposition": "covered_existing",
+      "dispositionReason": "PDF generation is independently hidden, rechecked in the handler, and served by its direct-order scoped read facade.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "orders.ukraine.specification_codes.download_application_files"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-34533547702c",
+          "candidateId": "EPC-1ff2a4df0830",
           "distance": 7,
           "file": "src/features/supply-ukraine-orders/pages/SupplyUkraineDirectOrderSpecificationsPage.tsx",
           "handler": "{model.openDownload}",
           "humanLabel": "Друк PDF",
-          "line": 843,
+          "line": 895,
           "permissionKeys": [],
           "score": 17
         }
@@ -61654,7 +61647,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/supply-ukraine-orders/pages/SupplyUkraineDirectOrderSpecificationsPage.tsx",
-        "line": 850,
+        "line": 902,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -61683,17 +61676,17 @@
       "proposedPermission": "orders.orders_develop_all_edit_item_specifications.model_set_currency_is_eur_true.button_click",
       "securityLevel": "low",
       "rawStatus": "Candidate existing key in component; binding review required",
-      "disposition": "needs_human_review",
-      "dispositionReason": "raw_audit_claims_existing_binding_but_does_not_name_the_key",
+      "disposition": "technical_ui",
+      "dispositionReason": "Switching display currency only changes local presentation and performs no request or business mutation.",
       "duplicateOf": null,
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [],
       "source": {
         "status": "resolved",
         "file": "src/features/supply-ukraine-orders/pages/SupplyUkraineDirectOrderSpecificationsPage.tsx",
-        "line": 872,
+        "line": 924,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -61732,7 +61725,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/supply-ukraine-orders/pages/SupplyUkraineDirectOrderSpecificationsPage.tsx",
-        "line": 882,
+        "line": 934,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -61761,17 +61754,17 @@
       "proposedPermission": "orders.orders_develop_all_edit_item_specifications.уо.button_click",
       "securityLevel": "low",
       "rawStatus": "Candidate existing key in component; binding review required",
-      "disposition": "needs_human_review",
-      "dispositionReason": "raw_audit_claims_existing_binding_but_does_not_name_the_key",
+      "disposition": "technical_ui",
+      "dispositionReason": "Switching to management-accounting columns only changes the local table projection.",
       "duplicateOf": null,
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [],
       "source": {
         "status": "resolved",
         "file": "src/features/supply-ukraine-orders/pages/SupplyUkraineDirectOrderSpecificationsPage.tsx",
-        "line": 70,
+        "line": 74,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -61800,17 +61793,17 @@
       "proposedPermission": "orders.orders_develop_all_edit_item_specifications.бо.button_click",
       "securityLevel": "low",
       "rawStatus": "Candidate existing key in component; binding review required",
-      "disposition": "needs_human_review",
-      "dispositionReason": "raw_audit_claims_existing_binding_but_does_not_name_the_key",
+      "disposition": "technical_ui",
+      "dispositionReason": "Switching to accounting columns only changes the local table projection.",
       "duplicateOf": null,
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [],
       "source": {
         "status": "resolved",
         "file": "src/features/supply-ukraine-orders/pages/SupplyUkraineDirectOrderSpecificationsPage.tsx",
-        "line": 70,
+        "line": 74,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -61839,20 +61832,22 @@
       "proposedPermission": "orders.orders_develop_all_edit_item_specifications.model_select_invoice_invoice.button_click",
       "securityLevel": "low",
       "rawStatus": "Candidate existing key in component; binding review required",
-      "disposition": "needs_human_review",
-      "dispositionReason": "raw_audit_claims_existing_binding_but_does_not_name_the_key",
+      "disposition": "covered_existing",
+      "dispositionReason": "Selecting an invoice hydrates its specification data through page-scoped read facades; it needs no second per-selector permission.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "orders.ukraine.order.open_specification_codes"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-a074c8214d27",
+          "candidateId": "EPC-73653edb9421",
           "distance": 6,
           "file": "src/features/supply-ukraine-orders/pages/SupplyUkraineDirectOrderSpecificationsPage.tsx",
           "handler": "{() => model.selectInvoice(invoice)}",
           "humanLabel": "Інвойс",
-          "line": 928,
+          "line": 980,
           "permissionKeys": [],
           "score": 25
         }
@@ -61860,7 +61855,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/supply-ukraine-orders/pages/SupplyUkraineDirectOrderSpecificationsPage.tsx",
-        "line": 934,
+        "line": 986,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -61899,7 +61894,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/supply-ukraine-orders/pages/SupplyUkraineDirectOrderSpecificationsPage.tsx",
-        "line": 70,
+        "line": 74,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -61928,20 +61923,22 @@
       "proposedPermission": "orders.orders_develop_all_edit_item_specifications.model_submit_upload.form_submit",
       "securityLevel": "high",
       "rawStatus": "Candidate existing key in component; binding review required",
-      "disposition": "needs_human_review",
-      "dispositionReason": "raw_audit_claims_existing_binding_but_does_not_name_the_key",
+      "disposition": "covered_existing",
+      "dispositionReason": "Final customs-code import rechecks the upload permission and calls the direct-order scoped multipart facade.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "orders.ukraine.specification_codes.download_codes"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-190926591edc",
+          "candidateId": "EPC-2df31eb52914",
           "distance": 8,
           "file": "src/features/supply-ukraine-orders/pages/SupplyUkraineDirectOrderSpecificationsPage.tsx",
           "handler": "{model.submitUpload}",
           "humanLabel": null,
-          "line": 1043,
+          "line": 1095,
           "permissionKeys": [],
           "score": 17
         }
@@ -61949,7 +61946,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/supply-ukraine-orders/pages/SupplyUkraineDirectOrderSpecificationsPage.tsx",
-        "line": 1051,
+        "line": 1103,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -61986,12 +61983,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-d89fca6c0c0f",
+          "candidateId": "EPC-ff02606b9a65",
           "distance": 7,
           "file": "src/features/supply-ukraine-orders/pages/SupplyUkraineDirectOrderSpecificationsPage.tsx",
           "handler": "{() => model.setDocumentsCloseConfirmOpen(false)}",
           "humanLabel": "Залишитися",
-          "line": 1089,
+          "line": 1141,
           "permissionKeys": [],
           "score": 38
         }
@@ -61999,7 +61996,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/supply-ukraine-orders/pages/SupplyUkraineDirectOrderSpecificationsPage.tsx",
-        "line": 1082,
+        "line": 1134,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -62036,12 +62033,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-25499cba8dae",
+          "candidateId": "EPC-680490fad6be",
           "distance": 0,
           "file": "src/features/supply-ukraine-orders/pages/SupplyUkraineDirectOrderSpecificationsPage.tsx",
           "handler": "{model.closeDocumentsDraft}",
           "humanLabel": "Закрити без збереження",
-          "line": 1097,
+          "line": 1149,
           "permissionKeys": [],
           "score": 24
         }
@@ -62049,7 +62046,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/supply-ukraine-orders/pages/SupplyUkraineDirectOrderSpecificationsPage.tsx",
-        "line": 1097,
+        "line": 1149,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -79872,7 +79869,6 @@
     "PE-00747",
     "PE-00748",
     "PE-00749",
-    "PE-00821",
     "PE-00901",
     "PE-00902",
     "PE-00905",
@@ -80114,13 +80110,6 @@
     "PE-01516",
     "PE-01518",
     "PE-01519",
-    "PE-01521",
-    "PE-01523",
-    "PE-01524",
-    "PE-01526",
-    "PE-01527",
-    "PE-01528",
-    "PE-01530",
     "PE-01535",
     "PE-01536",
     "PE-01539",

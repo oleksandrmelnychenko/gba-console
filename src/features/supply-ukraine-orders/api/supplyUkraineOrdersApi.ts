@@ -117,6 +117,14 @@ export async function getDirectSupplyOrderForProductIncome(netId: string): Promi
   return normalizeDirectSupplyOrder(result)
 }
 
+export async function getDirectSupplyOrderForSpecifications(netId: string): Promise<DirectSupplyOrder | null> {
+  const result = await apiRequest<unknown>('/supplies/orders/specifications/details', {
+    query: { netId },
+  })
+
+  return normalizeDirectSupplyOrder(result)
+}
+
 export async function updateDirectSupplyOrder(order: DirectSupplyOrder): Promise<DirectSupplyOrder | null> {
   const result = await apiRequest<unknown>('/supplies/orders/update', {
     body: order,
@@ -199,6 +207,14 @@ export async function getSupplyInvoiceItems(netId: string): Promise<SupplyInvoic
   return normalizeSupplyInvoice(result)
 }
 
+export async function getSupplyInvoiceItemsForSpecifications(netId: string): Promise<SupplyInvoice | null> {
+  const result = await apiRequest<unknown>('/supplies/invoices/direct-supply-order/specification/items', {
+    query: { netId },
+  })
+
+  return normalizeSupplyInvoice(result)
+}
+
 export async function updateSupplyInvoiceItems(invoice: SupplyInvoice): Promise<SupplyInvoice | null> {
   const result = await apiRequest<unknown>('/supplies/invoices/items/update', {
     body: invoice,
@@ -257,6 +273,26 @@ export async function addDeliveryDocumentsToDirectSupplyInvoice(
   }
 
   const result = await apiRequest<unknown>('/supplies/invoices/order/documents/add', {
+    body: formData,
+    method: 'POST',
+  })
+
+  return normalizeDirectSupplyOrder(result)
+}
+
+export async function addDeliveryDocumentsToDirectSupplyInvoiceForSpecifications(
+  invoice: SupplyInvoice,
+  documents: File[],
+): Promise<DirectSupplyOrder | null> {
+  const formData = new FormData()
+
+  formData.append('invoice', JSON.stringify(invoice))
+
+  for (const document of documents) {
+    formData.append('documents', document)
+  }
+
+  const result = await apiRequest<unknown>('/supplies/invoices/direct-supply-order/specification/documents/add', {
     body: formData,
     method: 'POST',
   })
@@ -393,13 +429,29 @@ export async function getSupplyOrderSuppliers(): Promise<Client[]> {
 }
 
 export async function searchSupplyOrderServiceOrganizations(value: string): Promise<SupplyServiceOrganization[]> {
+  return searchSupplyOrderServiceOrganizationsAt('/supplies/organizations/all/search', value)
+}
+
+export async function searchSupplyOrderServiceOrganizationsForSpecifications(
+  value: string,
+): Promise<SupplyServiceOrganization[]> {
+  return searchSupplyOrderServiceOrganizationsAt(
+    '/supplies/organizations/direct-supply-order/specification/search',
+    value,
+  )
+}
+
+async function searchSupplyOrderServiceOrganizationsAt(
+  path: string,
+  value: string,
+): Promise<SupplyServiceOrganization[]> {
   const searchValue = value.trim()
 
   if (!searchValue) {
     return []
   }
 
-  const result = await apiRequest<unknown>('/supplies/organizations/all/search', {
+  const result = await apiRequest<unknown>(path, {
     query: {
       limit: SUPPLY_ORGANIZATION_LOOKUP_LIMIT,
       offset: 0,

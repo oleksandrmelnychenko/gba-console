@@ -1,15 +1,19 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { apiRequest } from '../../../shared/api/apiClient'
 import {
+  addDeliveryDocumentsToDirectSupplyInvoiceForSpecifications,
   createSupplyCreditNote,
   deleteDirectSupplyUkraineOrder,
   deleteSupplyProformDocument,
   getDirectSupplyUkraineOrders,
   getDirectSupplyOrderForProductIncome,
+  getDirectSupplyOrderForSpecifications,
+  getSupplyInvoiceItemsForSpecifications,
   getSupplyUkraineOrders,
   getSupplyOrderSuppliers,
   printSupplyOrdersDocument,
   searchSupplyOrderServiceOrganizations,
+  searchSupplyOrderServiceOrganizationsForSpecifications,
   uploadDirectSupplyOrderFromFile,
   uploadPackingListDocuments,
   uploadPackingListFile,
@@ -78,6 +82,42 @@ describe('supplyUkraineOrdersApi', () => {
     expect(apiRequestMock).toHaveBeenCalledWith('/supplies/orders/product-income/details', {
       query: { netId: 'direct-order-1' },
     })
+  })
+
+  it('uses specification-scoped direct-order hydration, invoice, document, and lookup routes', async () => {
+    apiRequestMock.mockResolvedValue({})
+    const file = new File(['document'], 'customs.pdf')
+
+    await getDirectSupplyOrderForSpecifications('direct-order-1')
+    await getSupplyInvoiceItemsForSpecifications('invoice-1')
+    await addDeliveryDocumentsToDirectSupplyInvoiceForSpecifications(
+      { NetUid: 'invoice-1' },
+      [file],
+    )
+    await searchSupplyOrderServiceOrganizationsForSpecifications('supplier')
+
+    expect(apiRequestMock).toHaveBeenNthCalledWith(1, '/supplies/orders/specifications/details', {
+      query: { netId: 'direct-order-1' },
+    })
+    expect(apiRequestMock).toHaveBeenNthCalledWith(
+      2,
+      '/supplies/invoices/direct-supply-order/specification/items',
+      { query: { netId: 'invoice-1' } },
+    )
+    expect(apiRequestMock).toHaveBeenNthCalledWith(
+      3,
+      '/supplies/invoices/direct-supply-order/specification/documents/add',
+      expect.objectContaining({ method: 'POST' }),
+    )
+    expect(apiRequestMock).toHaveBeenNthCalledWith(
+      4,
+      '/supplies/organizations/direct-supply-order/specification/search',
+      { query: { limit: 20, offset: 0, value: 'supplier' } },
+    )
+
+    const body = apiRequestMock.mock.calls[2]?.[1]?.body as FormData
+    expect(JSON.parse(String(body.get('invoice')))).toEqual({ NetUid: 'invoice-1' })
+    expect(body.getAll('documents')).toEqual([file])
   })
 
   it('includes the selected end date when loading both Ukraine order sources', async () => {

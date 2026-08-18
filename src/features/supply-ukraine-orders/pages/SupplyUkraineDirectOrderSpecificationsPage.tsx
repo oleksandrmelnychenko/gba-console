@@ -46,11 +46,12 @@ import type {
 } from '../../product-delivery-protocols/specificationTypes'
 import { useAuth } from '../../auth/useAuth'
 import { ProductCardModal } from '../../products/components/ProductCardModal'
+import { getProductForOrderSpecifications } from '../../products/api/productsApi'
 import {
-  addDeliveryDocumentsToDirectSupplyInvoice,
-  getDirectSupplyOrderById,
-  getSupplyInvoiceItems,
-  searchSupplyOrderServiceOrganizations,
+  addDeliveryDocumentsToDirectSupplyInvoiceForSpecifications,
+  getDirectSupplyOrderForSpecifications,
+  getSupplyInvoiceItemsForSpecifications,
+  searchSupplyOrderServiceOrganizationsForSpecifications,
 } from '../api/supplyUkraineOrdersApi'
 import type {
   DirectSupplyOrder,
@@ -60,6 +61,9 @@ import type {
 } from '../types'
 
 const dateFormatter = new Intl.DateTimeFormat('uk-UA', { dateStyle: 'short' })
+const SPECIFICATION_API_SCOPE = 'direct-supply-order' as const
+const PERMISSION_OPEN_SPECIFICATIONS = PermissionKeys.OrdersUkraine.Order.OpenSpecificationCodes
+const PERMISSION_OPEN_PRODUCT_CARD = PermissionKeys.OrdersUkraine.Order.OpenProducts
 const PERMISSION_DOWNLOAD_SPECIFICATION = PermissionKeys.OrdersUkraine.SpecificationCodes.DownloadApplicationFiles
 const PERMISSION_EDIT_SPECIFICATION = PermissionKeys.OrdersUkraine.SpecificationCodes.ViewHistory
 const PERMISSION_SAVE_SPECIFICATION = PermissionKeys.OrdersUkraine.SpecificationCodes.Edit
@@ -68,6 +72,21 @@ const PERMISSION_UPLOAD_SPECIFICATIONS = PermissionKeys.OrdersUkraine.Specificat
 const SUPPLY_ORGANIZATION_SEARCH_DEBOUNCE_MS = 300
 
 export function SupplyUkraineDirectOrderSpecificationsPage() {
+  const { t } = useI18n()
+  const { hasPermission } = useAuth()
+
+  if (!hasPermission(PERMISSION_OPEN_SPECIFICATIONS)) {
+    return (
+      <Alert color="red" icon={<CircleAlert size={18} />} title={t('Доступ заборонено')} variant="light">
+        {t('У вашої ролі немає права переглядати митні коди замовлення.')}
+      </Alert>
+    )
+  }
+
+  return <SupplyUkraineDirectOrderSpecificationsPageContent />
+}
+
+function SupplyUkraineDirectOrderSpecificationsPageContent() {
   const model = useSupplyUkraineDirectOrderSpecificationsPageModel()
 
   return <SupplyUkraineDirectOrderSpecificationsView model={model} />
@@ -129,6 +148,7 @@ function useSupplyUkraineDirectOrderSpecificationsPageModel() {
   const canSaveSpecification = hasPermission(PERMISSION_SAVE_SPECIFICATION)
   const canUploadDocuments = hasPermission(PERMISSION_UPLOAD_DELIVERY_DOCUMENTS)
   const canUploadSpecifications = hasPermission(PERMISSION_UPLOAD_SPECIFICATIONS) && Boolean(selectedInvoice)
+  const canOpenProductCard = hasPermission(PERMISSION_OPEN_PRODUCT_CARD)
   const isActionBusy = isUploading || isSavingDocuments || isDownloading || isSavingSpecification || isInvoiceLoading
   const filteredPackingList = filterPackingListByVendorCode(packingList, vendorCodeFilter)
   const selectedDocumentOrganization =
@@ -161,7 +181,7 @@ function useSupplyUkraineDirectOrderSpecificationsPageModel() {
       setError(null)
 
       try {
-        const nextOrder = await getDirectSupplyOrderById(id)
+        const nextOrder = await getDirectSupplyOrderForSpecifications(id)
 
         if (!cancelled) {
           setOrder(nextOrder)
@@ -205,7 +225,7 @@ function useSupplyUkraineDirectOrderSpecificationsPageModel() {
       setInvoiceLoading(true)
 
       try {
-        const invoice = await getSupplyInvoiceItems(invoiceNetId)
+        const invoice = await getSupplyInvoiceItemsForSpecifications(invoiceNetId)
 
         if (!cancelled) {
           setSelectedInvoice(invoice)
@@ -249,7 +269,7 @@ function useSupplyUkraineDirectOrderSpecificationsPageModel() {
       setPackingListError(null)
 
       try {
-        const result = await getPackingListSpecificationProducts(packListNetId)
+        const result = await getPackingListSpecificationProducts(packListNetId, SPECIFICATION_API_SCOPE)
 
         if (!cancelled) {
           setPackingList(result)
@@ -322,7 +342,7 @@ function useSupplyUkraineDirectOrderSpecificationsPageModel() {
 
     async function loadDocumentOrganizations() {
       try {
-        const organizations = await searchSupplyOrderServiceOrganizations(value)
+        const organizations = await searchSupplyOrderServiceOrganizationsForSpecifications(value)
 
         if (!cancelled) {
           setDocumentOrganizations(includeSupplyOrganization(organizations, currentOrganization))
@@ -354,6 +374,30 @@ function useSupplyUkraineDirectOrderSpecificationsPageModel() {
     setDocumentAgreementNetId(organization?.SupplyOrganizationAgreements?.[0]?.NetUid || null)
   }
 
+  function openUpload() {
+    if (!hasPermission(PERMISSION_UPLOAD_SPECIFICATIONS) || isActionBusy || !selectedInvoice) {
+      return
+    }
+
+    setUploadOpen(true)
+  }
+
+  function openProductCard(productNetId: string) {
+    if (!hasPermission(PERMISSION_OPEN_PRODUCT_CARD) || isActionBusy) {
+      return
+    }
+
+    setProductCardNetId(productNetId)
+  }
+
+  function openSpecificationEditor(item: PackingListPackageOrderItem) {
+    if (!hasPermission(PERMISSION_EDIT_SPECIFICATION) || isActionBusy) {
+      return
+    }
+
+    setEditingSpecificationItem(item)
+  }
+
   async function submitUpload(
     parseConfiguration: ProductSpecificationParseConfiguration,
     dateCustomDeclaration: string,
@@ -362,7 +406,7 @@ function useSupplyUkraineDirectOrderSpecificationsPageModel() {
     const invoiceNetId = selectedInvoice?.NetUid
     const packListNetId = selectedPackListNetId
 
-    if (!invoiceNetId || isUploading) {
+    if (!hasPermission(PERMISSION_UPLOAD_SPECIFICATIONS) || !invoiceNetId || isUploading) {
       return
     }
 
@@ -378,6 +422,7 @@ function useSupplyUkraineDirectOrderSpecificationsPageModel() {
         parseConfiguration,
         dateCustomDeclaration,
         file,
+        SPECIFICATION_API_SCOPE,
       )
 
       if (isCurrentUpload()) {
@@ -385,7 +430,7 @@ function useSupplyUkraineDirectOrderSpecificationsPageModel() {
         setUploadResult(result)
 
         if (packListNetId) {
-          const nextPackingList = await getPackingListSpecificationProducts(packListNetId)
+          const nextPackingList = await getPackingListSpecificationProducts(packListNetId, SPECIFICATION_API_SCOPE)
 
           if (isCurrentUpload()) {
             setPackingList(nextPackingList)
@@ -407,7 +452,7 @@ function useSupplyUkraineDirectOrderSpecificationsPageModel() {
   }
 
   function openDocuments() {
-    if (!selectedInvoice || isSavingDocuments) {
+    if (!hasPermission(PERMISSION_UPLOAD_DELIVERY_DOCUMENTS) || !selectedInvoice || isSavingDocuments) {
       notifications.show({ color: 'red', message: t('Інвойс відсутній') })
       return
     }
@@ -528,7 +573,7 @@ function useSupplyUkraineDirectOrderSpecificationsPageModel() {
   async function saveDocuments() {
     const invoice = selectedInvoice
 
-    if (!invoice?.NetUid || isSavingDocuments) {
+    if (!hasPermission(PERMISSION_UPLOAD_DELIVERY_DOCUMENTS) || !invoice?.NetUid || isSavingDocuments) {
       return
     }
 
@@ -558,8 +603,11 @@ function useSupplyUkraineDirectOrderSpecificationsPageModel() {
       }
       const files = newDocuments.map((document) => document.file).filter((file): file is File => Boolean(file))
 
-      const updatedOrder = await addDeliveryDocumentsToDirectSupplyInvoice(invoicePayload as unknown as SupplyInvoice, files)
-      const updatedInvoice = await getSupplyInvoiceItems(invoice.NetUid)
+      const updatedOrder = await addDeliveryDocumentsToDirectSupplyInvoiceForSpecifications(
+        invoicePayload as unknown as SupplyInvoice,
+        files,
+      )
+      const updatedInvoice = await getSupplyInvoiceItemsForSpecifications(invoice.NetUid)
 
       if (isCurrentDocumentsSave()) {
         if (updatedOrder) {
@@ -588,7 +636,7 @@ function useSupplyUkraineDirectOrderSpecificationsPageModel() {
   async function openDownload() {
     const packListNetId = selectedPackListNetId
 
-    if (!packListNetId || isDownloading) {
+    if (!hasPermission(PERMISSION_DOWNLOAD_SPECIFICATION) || !packListNetId || isDownloading) {
       return
     }
 
@@ -602,7 +650,7 @@ function useSupplyUkraineDirectOrderSpecificationsPageModel() {
     setDownloading(true)
 
     try {
-      const document = await getSpecificationDownloadUrls(packListNetId)
+      const document = await getSpecificationDownloadUrls(packListNetId, SPECIFICATION_API_SCOPE)
 
       if (isCurrentDownload()) {
         setDownloadDocument(document)
@@ -622,7 +670,7 @@ function useSupplyUkraineDirectOrderSpecificationsPageModel() {
     const invoiceNetId = selectedInvoiceNetId
     const packListNetId = selectedPackListNetId
 
-    if (isSavingSpecification) {
+    if (!hasPermission(PERMISSION_SAVE_SPECIFICATION) || isSavingSpecification) {
       return
     }
 
@@ -638,10 +686,10 @@ function useSupplyUkraineDirectOrderSpecificationsPageModel() {
     setSavingSpecification(true)
 
     try {
-      await addOrUpdateProductSpecification(invoiceNetId, payload)
+      await addOrUpdateProductSpecification(invoiceNetId, payload, SPECIFICATION_API_SCOPE)
 
       if (packListNetId) {
-        const nextPackingList = await getPackingListSpecificationProducts(packListNetId)
+        const nextPackingList = await getPackingListSpecificationProducts(packListNetId, SPECIFICATION_API_SCOPE)
 
         if (isCurrentSpecificationSave()) {
           setPackingList(nextPackingList)
@@ -670,6 +718,7 @@ function useSupplyUkraineDirectOrderSpecificationsPageModel() {
     addDocumentFiles,
     canDownload,
     canEditSpecification,
+    canOpenProductCard,
     canSaveSpecification,
     canUploadDocuments,
     canUploadSpecifications,
@@ -704,6 +753,9 @@ function useSupplyUkraineDirectOrderSpecificationsPageModel() {
     numberCustomDeclaration,
     openDocuments,
     openDownload,
+    openProductCard,
+    openSpecificationEditor,
+    openUpload,
     order,
     packingList,
     packingListError,
@@ -821,7 +873,7 @@ function SpecificationActionButtons({ model }: { model: DirectOrderSpecification
             leftSection={<FileInput size={16} />}
             loading={model.isUploading}
             variant="outline"
-            onClick={() => model.setUploadOpen(true)}
+            onClick={model.openUpload}
           >
             {t('Завантаження митних кодів')}
           </Button>
@@ -1007,8 +1059,8 @@ function SpecificationGridArea({ model }: { model: DirectOrderSpecificationsPage
           currencyIsEur={model.currencyIsEur}
           packingList={model.filteredPackingList}
           withManagementServices={model.withManagementServices}
-          onEditSpecification={model.setEditingSpecificationItem}
-          onOpenProductCard={model.setProductCardNetId}
+          onEditSpecification={model.openSpecificationEditor}
+          onOpenProductCard={model.canOpenProductCard ? model.openProductCard : undefined}
         />
       ) : (
         <div className="supply-detail-state">
@@ -1042,7 +1094,7 @@ function DirectOrderSpecificationsModals({ model }: { model: DirectOrderSpecific
     <>
       <UploadProductSpecificationModal
         isLoading={model.isUploading}
-        opened={model.isUploadOpen}
+        opened={model.isUploadOpen && model.canUploadSpecifications}
         onClose={() => {
           if (!model.isUploading) {
             model.setUploadOpen(false)
@@ -1057,7 +1109,7 @@ function DirectOrderSpecificationsModals({ model }: { model: DirectOrderSpecific
         isSaving={model.isSavingDocuments}
         newDocuments={model.newDocuments}
         numberCustomDeclaration={model.numberCustomDeclaration}
-        opened={model.isDocumentsOpen}
+        opened={model.isDocumentsOpen && model.canUploadDocuments}
         selectedSupplyOrganizationAgreementNetId={model.documentAgreementNetId}
         selectedSupplyOrganizationNetId={model.documentOrganizationNetId}
         supplyOrganizationSearchValue={model.documentOrganizationSearch}
@@ -1075,7 +1127,7 @@ function DirectOrderSpecificationsModals({ model }: { model: DirectOrderSpecific
       />
       <AppModal
         centered
-        opened={model.isDocumentsCloseConfirmOpen}
+        opened={model.isDocumentsCloseConfirmOpen && model.canUploadDocuments}
         title={t('Є незбережені зміни')}
         onClose={() => {
           if (!model.isSavingDocuments) {
@@ -1104,17 +1156,21 @@ function DirectOrderSpecificationsModals({ model }: { model: DirectOrderSpecific
         document={model.downloadDocument}
         error={model.downloadError}
         isLoading={model.isDownloading}
-        opened={model.isDownloadOpen}
+        opened={model.isDownloadOpen && model.canDownload}
         onClose={() => model.setDownloadOpen(false)}
       />
       <ProductSpecificationEditDrawer
         canSave={model.canSaveSpecification}
         isSaving={model.isSavingSpecification}
-        item={model.editingSpecificationItem}
+        item={model.canEditSpecification ? model.editingSpecificationItem : null}
         onClose={() => model.setEditingSpecificationItem(null)}
         onSave={model.saveSpecification}
       />
-      <ProductCardModal productNetId={model.productCardNetId} onClose={() => model.setProductCardNetId(null)} />
+      <ProductCardModal
+        loadProduct={getProductForOrderSpecifications}
+        productNetId={model.canOpenProductCard ? model.productCardNetId : null}
+        onClose={() => model.setProductCardNetId(null)}
+      />
     </>
   )
 }

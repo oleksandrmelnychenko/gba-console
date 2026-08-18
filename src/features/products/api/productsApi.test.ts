@@ -5,6 +5,7 @@ import {
   exportProductMovementsDocument,
   exportProductOutcomeMovementsDocument,
   getProductAuditEntities,
+  getProductForOrderSpecifications,
   getProductIncomeMovements,
   getProductOutcomeMovements,
   getProductSourcePriceComparison,
@@ -237,6 +238,18 @@ describe('products API upload contracts', () => {
         productNetId: 'product-1',
         to: '2026-07-07',
       },
+    })
+  })
+
+  it('loads an order-specification product card through its scoped read facade', async () => {
+    apiRequestMock.mockResolvedValueOnce({ NetUid: 'product-1' })
+    const controller = new AbortController()
+
+    await getProductForOrderSpecifications('product-1', controller.signal)
+
+    expect(apiRequestMock).toHaveBeenCalledWith('/products/orders-ukraine/specifications/details', {
+      query: { netId: 'product-1' },
+      signal: controller.signal,
     })
   })
 

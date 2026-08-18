@@ -3279,6 +3279,43 @@
       "disposition": "duplicate_occurrence",
       "duplicateOf": "PE-00864",
       "reason": "The modal-level submit delegates the same protected specification import finalized by PE-00864."
+    },
+    "PE-00821": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["orders.ukraine.order.open_products"],
+      "reason": "The callback is not connected in Product Delivery Protocol; its real direct-order consumer now hides and loads the product card through the existing open-products capability."
+    },
+    "PE-01521": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-01530",
+      "reason": "Opening the customs-code upload modal is the first UI step of the same protected import finalized by PE-01530."
+    },
+    "PE-01523": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["orders.ukraine.specification_codes.download_application_files"],
+      "reason": "PDF generation is independently hidden, rechecked in the handler, and served by its direct-order scoped read facade."
+    },
+    "PE-01524": {
+      "disposition": "technical_ui",
+      "reason": "Switching display currency only changes local presentation and performs no request or business mutation."
+    },
+    "PE-01526": {
+      "disposition": "technical_ui",
+      "reason": "Switching to management-accounting columns only changes the local table projection."
+    },
+    "PE-01527": {
+      "disposition": "technical_ui",
+      "reason": "Switching to accounting columns only changes the local table projection."
+    },
+    "PE-01528": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["orders.ukraine.order.open_specification_codes"],
+      "reason": "Selecting an invoice hydrates its specification data through page-scoped read facades; it needs no second per-selector permission."
+    },
+    "PE-01530": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["orders.ukraine.specification_codes.download_codes"],
+      "reason": "Final customs-code import rechecks the upload permission and calls the direct-order scoped multipart facade."
     }
   }
 }

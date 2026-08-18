@@ -1,6 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { apiRequest } from '../../../shared/api/apiClient'
 import {
+  addOrUpdateProductSpecification,
+  getPackingListSpecificationProducts,
   getSpecificationDownloadUrls,
   mergeSupplyInvoices,
   uploadProductSpecificationForInvoice,
@@ -80,6 +82,57 @@ describe('protocol specification API contracts', () => {
           invoiceNetIds: ['invoice-1', 'invoice-2'],
           netId: 'protocol-net-id',
         },
+      },
+    )
+  })
+
+  it('uses direct-order scoped routes for specification reads and mutations', async () => {
+    apiRequestMock.mockResolvedValue({})
+    const file = new File(['sheet'], 'customs.xlsx')
+
+    await getPackingListSpecificationProducts('pack-1', 'direct-supply-order')
+    await getSpecificationDownloadUrls('pack-1', 'direct-supply-order')
+    await uploadProductSpecificationForInvoice(
+      'invoice-1',
+      {
+        CustomsValue: 2,
+        Duty: 3,
+        EndRow: 10,
+        Price: 4,
+        Qty: 5,
+        SpecificationCode: 6,
+        StartRow: 2,
+        VATValue: 7,
+        VendorCode: 1,
+      },
+      '2026-08-18',
+      file,
+      'direct-supply-order',
+    )
+    await addOrUpdateProductSpecification('invoice-1', { SpecificationCode: '8708' }, 'direct-supply-order')
+
+    expect(apiRequestMock).toHaveBeenNthCalledWith(
+      1,
+      '/supplies/packinglists/direct-supply-order/specification/products/get',
+      { query: { netId: 'pack-1' } },
+    )
+    expect(apiRequestMock).toHaveBeenNthCalledWith(
+      2,
+      '/supplies/packinglists/direct-supply-order/specification/get',
+      { query: { netId: 'pack-1' } },
+    )
+    expect(apiRequestMock).toHaveBeenNthCalledWith(
+      3,
+      '/supplies/invoices/direct-supply-order/specification/upload',
+      expect.objectContaining({ method: 'POST', query: { invoiceNetId: 'invoice-1' } }),
+    )
+    expect(apiRequestMock).toHaveBeenNthCalledWith(
+      4,
+      '/specifications/direct-supply-order/update',
+      {
+        body: { SpecificationCode: '8708' },
+        method: 'POST',
+        query: { supplyInvoiceNetId: 'invoice-1' },
       },
     )
   })
