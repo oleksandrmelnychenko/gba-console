@@ -4,25 +4,25 @@
     "inputRecords": 1902,
     "classifiedRecords": 1902,
     "dispositionCounts": {
-      "technical_ui": 641,
-      "covered_existing": 298,
-      "business_candidate": 558,
-      "needs_human_review": 287,
-      "duplicate_occurrence": 115,
+      "technical_ui": 643,
+      "covered_existing": 302,
+      "business_candidate": 550,
+      "needs_human_review": 285,
+      "duplicate_occurrence": 119,
       "stale_or_aggregated": 3
     },
-    "reviewCandidates": 845,
-    "technicalExcluded": 641,
-    "duplicatesExcluded": 115,
-    "duplicateOccurrencesTotal": 182,
+    "reviewCandidates": 835,
+    "technicalExcluded": 643,
+    "duplicatesExcluded": 119,
+    "duplicateOccurrencesTotal": 186,
     "technicalDuplicateOverlap": 67,
     "sourceResolved": 1828,
     "sourceUnresolved": 74,
     "currentActionResolved": 1191,
     "currentActionUnresolved": 711,
     "currentProductionActions": 1829,
-    "currentPermissionBoundActions": 169,
-    "currentUnboundActions": 1660
+    "currentPermissionBoundActions": 173,
+    "currentUnboundActions": 1656
   },
   "invariants": {
     "allInputRecordsClassified": true,
@@ -34831,12 +34831,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-7c1d7a3e38cd",
+          "candidateId": "EPC-36428db3717b",
           "distance": 24,
           "file": "src/features/product-groups/components/ProductGroupProductsPanel.tsx",
           "handler": "{resetSearch}",
           "humanLabel": "Скинути",
-          "line": 244,
+          "line": 245,
           "permissionKeys": [],
           "score": 11
         }
@@ -34844,7 +34844,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/product-groups/components/ProductGroupProductsPanel.tsx",
-        "line": 220,
+        "line": 221,
         "alternatives": []
       }
     },
@@ -34873,7 +34873,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/product-groups/components/ProductGroupProductsPanel.tsx",
-        "line": 53,
+        "line": 54,
         "alternatives": []
       }
     },
@@ -34902,7 +34902,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/product-groups/components/ProductGroupProductsPanel.tsx",
-        "line": 54,
+        "line": 55,
         "alternatives": []
       }
     },
@@ -34921,17 +34921,19 @@
       "proposedPermission": "product_groups.product_groups_item.product_link_void_open_product_product_link.row_click",
       "securityLevel": "medium",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "covered_existing",
+      "dispositionReason": "Opening a product from the group uses the existing permission-scoped assortment details boundary.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "products.assortment.page.view"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [],
       "source": {
         "status": "resolved",
         "file": "src/features/product-groups/components/ProductGroupProductsPanel.tsx",
-        "line": 293,
+        "line": 294,
         "alternatives": []
       }
     },
@@ -34950,20 +34952,20 @@
       "proposedPermission": "product_groups.product_groups_item.load_products_product_links_length_true.button_click",
       "securityLevel": "low",
       "rawStatus": "No permission candidate found",
-      "disposition": "needs_human_review",
-      "dispositionReason": "insufficient_evidence_for_automatic_permission_or_exclusion",
+      "disposition": "technical_ui",
+      "dispositionReason": "Loading the next product page is pagination inside an already authorized group-details view.",
       "duplicateOf": null,
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-4336540611cf",
+          "candidateId": "EPC-ff890c148d29",
           "distance": 6,
           "file": "src/features/product-groups/components/ProductGroupProductsPanel.tsx",
           "handler": "{() => loadProducts(productLinks.length, true)}",
           "humanLabel": "Завантажити ще",
-          "line": 300,
+          "line": 301,
           "permissionKeys": [],
           "score": 34
         }
@@ -34971,7 +34973,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/product-groups/components/ProductGroupProductsPanel.tsx",
-        "line": 306,
+        "line": 307,
         "alternatives": []
       }
     },
@@ -35019,12 +35021,12 @@
       "proposedPermission": "product_groups.product_groups_item.open_sub_group_sub_group_sub_product_group.modal_open",
       "securityLevel": "low",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
-      "duplicateOf": null,
+      "disposition": "duplicate_occurrence",
+      "dispositionReason": "The subgroup action opens another product-group card and uses the same open-details business permission.",
+      "duplicateOf": "PE-00889",
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
           "candidateId": "EPC-1f6b91167c2c",
@@ -35157,12 +35159,12 @@
       "proposedPermission": "product_groups.product_groups_item.sub_group_open_sub_group_sub_group_sub_product_group.row_click",
       "securityLevel": "medium",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
-      "duplicateOf": null,
+      "disposition": "duplicate_occurrence",
+      "dispositionReason": "The subgroup row click duplicates the subgroup action and the registry open-details boundary.",
+      "duplicateOf": "PE-00889",
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
           "candidateId": "EPC-f006c0db5e5b",
@@ -35197,12 +35199,12 @@
       "proposedPermission": "product_groups.product_groups_item.load_sub_groups_sub_groups_length_true.button_click",
       "securityLevel": "low",
       "rawStatus": "No permission candidate found",
-      "disposition": "needs_human_review",
-      "dispositionReason": "insufficient_evidence_for_automatic_permission_or_exclusion",
+      "disposition": "technical_ui",
+      "dispositionReason": "Loading the next subgroup page is pagination inside an already authorized group-details view.",
       "duplicateOf": null,
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
           "candidateId": "EPC-2da474156509",
@@ -35249,7 +35251,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/product-groups/pages/ProductGroupDetailPage.tsx",
-        "line": 43,
+        "line": 44,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -35278,12 +35280,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-ea1f361092c0",
+          "candidateId": "EPC-0d5377e3f55e",
           "distance": 14,
           "file": "src/features/product-groups/pages/ProductGroupDetailPage.tsx",
           "handler": "{closeSheet}",
           "humanLabel": "Закрити",
-          "line": 227,
+          "line": 233,
           "permissionKeys": [],
           "score": 10
         }
@@ -35291,7 +35293,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/product-groups/pages/ProductGroupDetailPage.tsx",
-        "line": 213,
+        "line": 219,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -35316,24 +35318,28 @@
       "dispositionReason": "local_filter_or_form_state_only",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
+      "canonicalPermissionKeys": [
+        "products.groups.group.edit"
+      ],
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-5110d11ca115",
+          "candidateId": "EPC-80e95da7ba6b",
           "distance": 70,
           "file": "src/features/product-groups/pages/ProductGroupDetailPage.tsx",
           "handler": "{resetEdits}",
           "humanLabel": "Скасувати",
-          "line": 238,
-          "permissionKeys": [],
+          "line": 244,
+          "permissionKeys": [
+            "products.groups.group.edit"
+          ],
           "score": 10
         }
       ],
       "source": {
         "status": "resolved",
         "file": "src/features/product-groups/pages/ProductGroupDetailPage.tsx",
-        "line": 168,
+        "line": 174,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -35354,20 +35360,22 @@
       "proposedPermission": "product_groups.product_groups_item.handle_submit.form_submit",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "covered_existing",
+      "dispositionReason": "The detail form submit is the single permission-scoped product-group update boundary.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "products.groups.group.edit"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-b6551779619e",
+          "candidateId": "EPC-ea0c93969af5",
           "distance": 110,
           "file": "src/features/product-groups/pages/ProductGroupDetailPage.tsx",
           "handler": "{handleSubmit}",
           "humanLabel": null,
-          "line": 284,
+          "line": 290,
           "permissionKeys": [],
           "score": 12
         }
@@ -35375,7 +35383,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/product-groups/pages/ProductGroupDetailPage.tsx",
-        "line": 174,
+        "line": 180,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -35404,12 +35412,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-08f4801ad59b",
+          "candidateId": "EPC-eb361e429e13",
           "distance": 6,
           "file": "src/features/product-groups/pages/ProductGroupDetailPage.tsx",
           "handler": "{() => setActiveTab(tab.value)}",
           "humanLabel": null,
-          "line": 319,
+          "line": 325,
           "permissionKeys": [],
           "score": 20
         }
@@ -35417,7 +35425,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/product-groups/pages/ProductGroupDetailPage.tsx",
-        "line": 325,
+        "line": 331,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -35450,7 +35458,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/product-groups/pages/ProductGroupsPage.tsx",
-        "line": 56,
+        "line": 57,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -35479,12 +35487,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-c8dc44d4acbd",
-          "distance": 76,
+          "candidateId": "EPC-190a0b1866a8",
+          "distance": 80,
           "file": "src/features/product-groups/pages/ProductGroupsPage.tsx",
           "handler": "{resetSearch}",
           "humanLabel": "Скинути",
-          "line": 258,
+          "line": 266,
           "permissionKeys": [],
           "score": 11
         }
@@ -35492,7 +35500,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/product-groups/pages/ProductGroupsPage.tsx",
-        "line": 182,
+        "line": 186,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -35523,7 +35531,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/product-groups/pages/ProductGroupsPage.tsx",
-        "line": 90,
+        "line": 94,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -35554,12 +35562,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-e71673920717",
+          "candidateId": "EPC-07df6aeb75a2",
           "distance": 6,
           "file": "src/features/product-groups/pages/ProductGroupsPage.tsx",
           "handler": "{() => setCreateModalOpened(true)}",
           "humanLabel": "Нова група",
-          "line": 284,
+          "line": 292,
           "permissionKeys": [
             "products.groups.group.create"
           ],
@@ -35569,7 +35577,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/product-groups/pages/ProductGroupsPage.tsx",
-        "line": 290,
+        "line": 298,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -35590,28 +35598,32 @@
       "proposedPermission": "product_groups.product_groups.open_product_group.row_click",
       "securityLevel": "medium",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "covered_existing",
+      "dispositionReason": "The registry row opens and hydrates a product-group card through dedicated details facades.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "products.groups.group.open_details"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-a10019440ec7",
-          "distance": 282,
+          "candidateId": "EPC-0b77220b89e9",
+          "distance": 289,
           "file": "src/features/product-groups/pages/ProductGroupsPage.tsx",
-          "handler": "{openProductGroup}",
+          "handler": "{canOpenDetails ? openProductGroup : undefined}",
           "humanLabel": null,
-          "line": 310,
-          "permissionKeys": [],
+          "line": 318,
+          "permissionKeys": [
+            "products.groups.group.open_details"
+          ],
           "score": 12
         }
       ],
       "source": {
         "status": "resolved",
         "file": "src/features/product-groups/pages/ProductGroupsPage.tsx",
-        "line": 28,
+        "line": 29,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -35632,20 +35644,22 @@
       "proposedPermission": "product_groups.product_groups.handle_create.form_submit",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "covered_existing",
+      "dispositionReason": "The create modal submit uses the existing permission-scoped idempotent create endpoint.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "products.groups.group.create"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-3ed39fe7e009",
-          "distance": 129,
+          "candidateId": "EPC-0390c6aad6cc",
+          "distance": 133,
           "file": "src/features/product-groups/pages/ProductGroupsPage.tsx",
           "handler": "{handleCreate}",
           "humanLabel": null,
-          "line": 329,
+          "line": 337,
           "permissionKeys": [],
           "score": 12
         }
@@ -35653,7 +35667,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/product-groups/pages/ProductGroupsPage.tsx",
-        "line": 200,
+        "line": 204,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -35684,7 +35698,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/product-groups/pages/ProductGroupsPage.tsx",
-        "line": 443,
+        "line": 454,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -35705,28 +35719,32 @@
       "proposedPermission": "product_groups.product_groups.open_product_group_product_group.modal_open",
       "securityLevel": "low",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
-      "duplicateOf": null,
+      "disposition": "duplicate_occurrence",
+      "dispositionReason": "The row action and row click open the same product-group card under one permission.",
+      "duplicateOf": "PE-00889",
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "products.groups.group.open_details"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-1843a8dc5a49",
-          "distance": 98,
+          "candidateId": "EPC-54072fab0474",
+          "distance": 100,
           "file": "src/features/product-groups/pages/ProductGroupsPage.tsx",
           "handler": "{() => openProductGroup(productGroup)}",
           "humanLabel": "Відкрити",
-          "line": 444,
-          "permissionKeys": [],
+          "line": 455,
+          "permissionKeys": [
+            "products.groups.group.open_details"
+          ],
           "score": 28
         }
       ],
       "source": {
         "status": "resolved",
         "file": "src/features/product-groups/pages/ProductGroupsPage.tsx",
-        "line": 346,
+        "line": 355,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -35747,17 +35765,17 @@
       "proposedPermission": "product_groups.product_groups.on_submit.form_submit",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
-      "duplicateOf": null,
+      "disposition": "duplicate_occurrence",
+      "dispositionReason": "The nested form submit is the same create submission already represented by the create modal boundary.",
+      "duplicateOf": "PE-00890",
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [],
       "source": {
         "status": "resolved",
         "file": "src/features/product-groups/pages/ProductGroupsPage.tsx",
-        "line": 340,
+        "line": 348,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -35788,7 +35806,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/product-groups/pages/ProductGroupsPage.tsx",
-        "line": 186,
+        "line": 190,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -79417,16 +79435,6 @@
     "PE-00863",
     "PE-00864",
     "PE-00865",
-    "PE-00871",
-    "PE-00872",
-    "PE-00874",
-    "PE-00878",
-    "PE-00879",
-    "PE-00883",
-    "PE-00889",
-    "PE-00890",
-    "PE-00892",
-    "PE-00893",
     "PE-00901",
     "PE-00902",
     "PE-00905",

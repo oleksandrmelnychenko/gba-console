@@ -17,9 +17,10 @@ import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { Navigate, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { PermissionGate } from '../../auth/components/PermissionGate'
+import { usePermissions } from '../../auth/usePermissions'
 import {
+  getProductGroupDetailsRootGroups,
   getProductGroupWithRoot,
-  getRootProductGroups,
   updateProductGroup,
 } from '../api/productGroupsApi'
 import { ProductGroupForm } from '../components/ProductGroupForm'
@@ -43,7 +44,9 @@ type ProductGroupDetailRouteState = {
 export function ProductGroupDetailPage() {
   return (
     <PermissionGate permissionKey={PermissionKeys.ProductGroups.Page.View} fallback={<ProductGroupDetailPermissionDenied />}>
-      <ProductGroupDetailPageContent />
+      <PermissionGate permissionKey={PermissionKeys.ProductGroups.Group.OpenDetails} fallback={<ProductGroupDetailPermissionDenied />}>
+        <ProductGroupDetailPageContent />
+      </PermissionGate>
     </PermissionGate>
   )
 }
@@ -60,6 +63,9 @@ function ProductGroupDetailPermissionDenied() {
 
 function ProductGroupDetailPageContent() {
   const { t } = useI18n()
+  const { can } = usePermissions()
+  const canEdit = can(PermissionKeys.ProductGroups.Group.Edit)
+  const canOpenProduct = can(PermissionKeys.ProductsAssortment.Page.View)
   const { id } = useParams<{ id?: string }>()
   const navigate = useNavigate()
   const location = useLocation()
@@ -118,7 +124,7 @@ function ProductGroupDetailPageContent() {
       try {
         const [nextProductGroup, nextRootGroups] = await Promise.all([
           getProductGroupWithRoot(productGroupNetId),
-          getRootProductGroups(productGroupNetId),
+          getProductGroupDetailsRootGroups(productGroupNetId),
         ])
 
         if (!cancelled) {
@@ -174,7 +180,7 @@ function ProductGroupDetailPageContent() {
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
 
-    if (!productGroup || !formProductGroup) {
+    if (!canEdit || !productGroup || !formProductGroup) {
       return
     }
 
@@ -234,7 +240,7 @@ function ProductGroupDetailPageContent() {
           >
             {t('Закрити')}
           </Button>
-          <Group gap="xs">
+          {canEdit && <Group gap="xs">
             <Button
               color="gray"
               disabled={!isEdited || isSaving}
@@ -255,7 +261,7 @@ function ProductGroupDetailPageContent() {
             >
               {t('Зберегти')}
             </Button>
-          </Group>
+          </Group>}
         </>
       }
       keepMounted={false}
@@ -284,7 +290,7 @@ function ProductGroupDetailPageContent() {
         <form id="product-group-edit-form" onSubmit={handleSubmit}>
           <Card className="app-section-card" withBorder radius="md" padding="md">
             <ProductGroupForm
-              disabled={isSaving}
+              disabled={!canEdit || isSaving}
               isLoadingRootGroups={isLoadingRootGroups}
               productGroup={formProductGroup}
               rootGroups={rootGroupsForForm}
@@ -330,7 +336,12 @@ function ProductGroupDetailPageContent() {
           </div>
 
           {activeTab === 'subGroups' && <ProductGroupSubGroupsPanel productGroupNetId={productGroup.NetUid} />}
-          {activeTab === 'products' && <ProductGroupProductsPanel productGroupNetId={productGroup.NetUid} />}
+          {activeTab === 'products' && (
+            <ProductGroupProductsPanel
+              canOpenProduct={canOpenProduct}
+              productGroupNetId={productGroup.NetUid}
+            />
+          )}
         </Card>
       )}
 

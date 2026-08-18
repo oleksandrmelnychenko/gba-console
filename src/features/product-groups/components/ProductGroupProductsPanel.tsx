@@ -35,10 +35,11 @@ const PRODUCTS_TABLE_DEFAULT_LAYOUT = {
 } satisfies DataTableDefaultLayout
 
 type ProductGroupProductsPanelProps = {
+  canOpenProduct: boolean
   productGroupNetId: string
 }
 
-export function ProductGroupProductsPanel({ productGroupNetId }: ProductGroupProductsPanelProps) {
+export function ProductGroupProductsPanel({ canOpenProduct, productGroupNetId }: ProductGroupProductsPanelProps) {
   const { t } = useI18n()
   const [productLinks, setProductLinks] = useValueState<ProductProductGroup[]>([])
   const [searchDraft, setSearchDraft] = useValueState('')
@@ -61,7 +62,7 @@ export function ProductGroupProductsPanel({ productGroupNetId }: ProductGroupPro
     async (productLink: ProductProductGroup) => {
       const productNetId = productLink.Product?.NetUid?.trim()
 
-      if (!productNetId || isRedirecting) {
+      if (!canOpenProduct || !productNetId || isRedirecting) {
         return
       }
 
@@ -93,7 +94,7 @@ export function ProductGroupProductsPanel({ productGroupNetId }: ProductGroupPro
         setRedirecting(false)
       }
     },
-    [isRedirecting, setRedirecting, t],
+    [canOpenProduct, isRedirecting, setRedirecting, t],
   )
   const columns = useMemo<DataTableColumn<ProductProductGroup>[]>(
     () => [
@@ -290,7 +291,7 @@ export function ProductGroupProductsPanel({ productGroupNetId }: ProductGroupPro
         minWidth={1220}
         tableId={`product-group-products-${productGroupNetId}`}
         toolbarLeft={toolbarLeft}
-        onRowClick={(productLink) => void openProduct(productLink)}
+        onRowClick={canOpenProduct ? (productLink) => void openProduct(productLink) : undefined}
       />
 
       <Group justify="space-between">

@@ -470,6 +470,8 @@ export const PermissionKeys = {
     },
     Group: {
       Create: 'products.groups.group.create',
+      Edit: 'products.groups.group.edit',
+      OpenDetails: 'products.groups.group.open_details',
     },
   },
   ProductPricing: {

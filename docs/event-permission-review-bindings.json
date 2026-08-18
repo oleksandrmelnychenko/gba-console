@@ -671,6 +671,62 @@
         "counterparties.buyer_organizations.client.open_details"
       ],
       "reason": "Opening the card loads the dedicated permission-scoped organization details endpoint."
+    },
+    "PE-00871": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": [
+        "products.assortment.page.view"
+      ],
+      "reason": "Opening a product from the group uses the existing permission-scoped assortment details boundary."
+    },
+    "PE-00872": {
+      "disposition": "technical_ui",
+      "reason": "Loading the next product page is pagination inside an already authorized group-details view."
+    },
+    "PE-00874": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-00889",
+      "reason": "The subgroup action opens another product-group card and uses the same open-details business permission."
+    },
+    "PE-00878": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-00889",
+      "reason": "The subgroup row click duplicates the subgroup action and the registry open-details boundary."
+    },
+    "PE-00879": {
+      "disposition": "technical_ui",
+      "reason": "Loading the next subgroup page is pagination inside an already authorized group-details view."
+    },
+    "PE-00883": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": [
+        "products.groups.group.edit"
+      ],
+      "reason": "The detail form submit is the single permission-scoped product-group update boundary."
+    },
+    "PE-00889": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": [
+        "products.groups.group.open_details"
+      ],
+      "reason": "The registry row opens and hydrates a product-group card through dedicated details facades."
+    },
+    "PE-00890": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": [
+        "products.groups.group.create"
+      ],
+      "reason": "The create modal submit uses the existing permission-scoped idempotent create endpoint."
+    },
+    "PE-00892": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-00889",
+      "reason": "The row action and row click open the same product-group card under one permission."
+    },
+    "PE-00893": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-00890",
+      "reason": "The nested form submit is the same create submission already represented by the create modal boundary."
     }
   }
 }

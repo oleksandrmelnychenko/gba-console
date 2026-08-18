@@ -150,6 +150,19 @@ describe('human-reviewed product pricing actions', () => {
   })
 })
 
+describe('human-reviewed product-group actions', () => {
+  it('contains create, open-details and edit once without row or pagination keys', () => {
+    expect(Object.values(PermissionKeys.ProductGroups.Group)).toEqual([
+      'products.groups.group.create',
+      'products.groups.group.edit',
+      'products.groups.group.open_details',
+    ])
+    expect(PermissionKeys.ProductGroups.Page.View).toBe(
+      'products.groups.page.view',
+    )
+  })
+})
+
 describe('new e-commerce clients review', () => {
   it('reuses client details and adds no row-click permission', () => {
     expect(PermissionKeys.NewEcommerceClients.Page.View).toBe(
