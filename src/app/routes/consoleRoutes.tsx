@@ -395,10 +395,26 @@ const clientMigrationRoutes: ConsoleRoute[] = [
 ]
 
 const userMigrationRoutes: ConsoleRoute[] = [
-  { path: '/users', element: lazyRoute(<UsersPage />) },
-  { path: '/users/new', element: lazyRoute(<UserNewPage />) },
-  { path: '/users/edit/:netid', element: lazyRoute(<UserEditPage />) },
-  { path: '/users/roles', element: lazyRoute(<UserRolesPage />) },
+  {
+    path: '/users',
+    element: lazyRoute(<UsersPage />),
+    permissionKey: PermissionKeys.SystemPages.Users.View,
+  },
+  {
+    path: '/users/new',
+    element: lazyRoute(<UserNewPage />),
+    permissionKey: PermissionKeys.Users.User.Create,
+  },
+  {
+    path: '/users/edit/:netid',
+    element: lazyRoute(<UserEditPage />),
+    permissionKey: PermissionKeys.Users.User.OpenDetails,
+  },
+  {
+    path: '/users/roles',
+    element: lazyRoute(<UserRolesPage />),
+    permissionKey: PermissionKeys.SystemPages.Roles.View,
+  },
   {
     path: '/administration/vehicle-registry',
     element: lazyRoute(<VehicleRegistryPage />),

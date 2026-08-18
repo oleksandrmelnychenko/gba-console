@@ -3,6 +3,12 @@ export const PermissionKeys = {
     Dashboard: {
       View: 'dashboard.overview.page.view',
     },
+    Users: {
+      View: 'administration.users.page.view',
+    },
+    Roles: {
+      View: 'administration.roles.page.view',
+    },
     VehicleRegistry: {
       View: 'administration.vehicle_registry.page.view',
     },
@@ -41,6 +47,15 @@ export const PermissionKeys = {
     },
     TaxFreePackLists: {
       View: 'warehouse_accounting.tax_free_pack_lists.page.view',
+    },
+  },
+  Users: {
+    User: {
+      OpenDetails: 'administration.users.user.open_details',
+      Create: 'administration.users.user.create',
+      Edit: 'administration.users.user.edit',
+      Delete: 'administration.users.user.delete',
+      ResetPassword: 'administration.users.user.password_reset',
     },
   },
   ActReconciliations: {
@@ -716,6 +731,8 @@ type Values<T> = T[keyof T]
 
 export type SystemPagePermissionKey =
   | Values<typeof PermissionKeys.SystemPages.Dashboard>
+  | Values<typeof PermissionKeys.SystemPages.Users>
+  | Values<typeof PermissionKeys.SystemPages.Roles>
   | Values<typeof PermissionKeys.SystemPages.VehicleRegistry>
   | Values<typeof PermissionKeys.SystemPages.ExpenseArticles>
   | Values<typeof PermissionKeys.SystemPages.AdvancedReports>
@@ -729,6 +746,9 @@ export type SystemPagePermissionKey =
   | Values<typeof PermissionKeys.SystemPages.TaxFreeCarriers>
   | Values<typeof PermissionKeys.SystemPages.TaxFreeDocuments>
   | Values<typeof PermissionKeys.SystemPages.TaxFreePackLists>
+
+export type UsersPermissionKey =
+  Values<typeof PermissionKeys.Users.User>
 
 export type VehicleRegistryPermissionKey =
   | Values<typeof PermissionKeys.VehicleRegistry.Vehicle>
@@ -925,6 +945,7 @@ export type FinancialAdministrationPermissionKey =
 
 export type PermissionKey =
   | SystemPagePermissionKey
+  | UsersPermissionKey
   | AdvancedReportsPermissionKey
   | OutgoingCashflowsPermissionKey
   | ProductAvailabilitiesPermissionKey
@@ -1814,6 +1835,8 @@ const eventPermissionKeys = new Set<string>([
   ...Object.values(PermissionKeys.ActReconciliations.Action),
   ...Object.values(PermissionKeys.ActReconciliations.Disposition),
   ...Object.values(PermissionKeys.SystemPages.Dashboard),
+  ...Object.values(PermissionKeys.SystemPages.Users),
+  ...Object.values(PermissionKeys.SystemPages.Roles),
   ...Object.values(PermissionKeys.SystemPages.VehicleRegistry),
   ...Object.values(PermissionKeys.SystemPages.ExpenseArticles),
   ...Object.values(PermissionKeys.SystemPages.AdvancedReports),
@@ -1827,6 +1850,7 @@ const eventPermissionKeys = new Set<string>([
   ...Object.values(PermissionKeys.SystemPages.TaxFreeCarriers),
   ...Object.values(PermissionKeys.SystemPages.TaxFreeDocuments),
   ...Object.values(PermissionKeys.SystemPages.TaxFreePackLists),
+  ...Object.values(PermissionKeys.Users.User),
   ...Object.values(PermissionKeys.VehicleRegistry.Vehicle),
   ...Object.values(PermissionKeys.VehicleRegistry.Import),
   ...Object.values(PermissionKeys.ClientResources.Page),

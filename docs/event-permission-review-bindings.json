@@ -1726,6 +1726,51 @@
         "products.availability.document.export"
       ],
       "reason": "PDF/XLSX generation is the page's single independent business action; the UI rechecks document.export and calls a dedicated permission-scoped façade."
+    },
+    "PE-01709": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": [
+        "administration.users.user.edit"
+      ],
+      "reason": "The profile form's final submit is the single user-edit mutation; the handler rechecks user.edit and calls its scoped façade."
+    },
+    "PE-01710": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": [
+        "administration.users.user.delete"
+      ],
+      "reason": "The confirmed user deletion is one independently guarded business mutation; opening its confirmation does not create another permission."
+    },
+    "PE-01713": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-01709",
+      "reason": "The nested profile form submit dispatches the same guarded user-edit handler and is not a second business capability."
+    },
+    "PE-01714": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": [
+        "administration.users.user.password_reset"
+      ],
+      "reason": "The password panel submits the single independently authorized password-reset operation through its scoped façade."
+    },
+    "PE-01715": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-01714",
+      "reason": "The nested password form is the same password-reset submit boundary and adds no separate operation."
+    },
+    "PE-01720": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": [
+        "administration.users.user.create"
+      ],
+      "reason": "The new-user form has one final create mutation; direct mount and submit both require user.create."
+    },
+    "PE-01740": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": [
+        "administration.users.user.open_details"
+      ],
+      "reason": "Clicking a user row is the single profile-details boundary and loads the model only through the dedicated open-details façade."
     }
   }
 }
