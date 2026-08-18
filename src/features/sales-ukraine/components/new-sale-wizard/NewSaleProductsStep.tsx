@@ -1659,6 +1659,15 @@ export function NewSaleProductsStep({
         setActive(null)
         resetDetail()
         keyboard.setState('ProductSearch')
+      } else if (results.length > 0) {
+        // The cart mutation reserves stock on the server, but related-product
+        // navigation deliberately keeps this result list mounted. Reload that
+        // retained payload so its quantity reflects the committed reservation.
+        if (query.trim().length >= PRODUCT_SEARCH_MIN_QUERY_LENGTH && agreementNetId) {
+          retryProductSearch()
+        } else if (!query.trim() && clientNetId) {
+          void loadClientRecommendations()
+        }
       }
     }
 

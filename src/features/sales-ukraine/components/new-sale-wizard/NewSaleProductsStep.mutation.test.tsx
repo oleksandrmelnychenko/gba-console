@@ -14,9 +14,11 @@ import {
 import type { SalesUkraineOrderItem, SalesUkraineProduct, SalesUkraineSale } from '../../types'
 
 const apiMocks = vi.hoisted(() => ({
+  acceptedQty: 3,
   addOrderItem: vi.fn(),
   deleteOrderItem: vi.fn(),
   getProductAvailabilityBuckets: vi.fn(),
+  searchSaleProductsWithAvailability: vi.fn(),
   updateOrderItem: vi.fn(),
 }))
 
@@ -43,7 +45,7 @@ vi.mock('./newSaleWizardApi', async (importOriginal) => {
     getProductCalculatedPricingsByAgreement: vi.fn(async () => []),
     getProductCurrentPriceByAgreement: vi.fn(async () => null),
     getProductReservationsByAgreement: vi.fn(async () => []),
-    searchSaleProductsWithAvailability: vi.fn(async () => []),
+    searchSaleProductsWithAvailability: apiMocks.searchSaleProductsWithAvailability,
     shiftOrderItemFromSale: vi.fn(async () => null),
   }
 })
@@ -108,7 +110,7 @@ vi.mock('./WizardCrossSellModal', () => ({
 
 vi.mock('./ChangeQtyModal', () => ({
   ChangeQtyModal: ({ opened, onAccept }: { opened: boolean; onAccept: (qty: number, comment: string) => void }) => (
-    opened ? <button type="button" onClick={() => onAccept(3, '')}>accept quantity</button> : null
+    opened ? <button type="button" onClick={() => onAccept(apiMocks.acceptedQty, '')}>accept quantity</button> : null
   ),
 }))
 
@@ -201,8 +203,10 @@ beforeEach(() => {
   clearAllWizardSplitRecoveries()
   initializeWizardKeyboard(1)
   setWizardKeyboardState('ProductSearch')
+  apiMocks.acceptedQty = 3
   apiMocks.addOrderItem.mockReset().mockResolvedValue(null)
   apiMocks.deleteOrderItem.mockReset().mockResolvedValue(null)
+  apiMocks.searchSaleProductsWithAvailability.mockReset().mockResolvedValue([])
   apiMocks.updateOrderItem.mockReset().mockResolvedValue(null)
   apiMocks.getProductAvailabilityBuckets.mockReset().mockResolvedValue({
     AvailableQtyUk: 10,
@@ -262,6 +266,56 @@ describe('NewSaleProductsStep persistent cart mutations', () => {
       NetUid: '00000000-0000-0000-0000-000000000000',
       Product: { NetUid: 'product-1' },
       Qty: 3,
+    })
+  })
+
+  it('refreshes a retained search result from 254 to 0 after the full quantity enters the cart', async () => {
+    apiMocks.acceptedQty = 254
+    apiMocks.getProductAvailabilityBuckets.mockResolvedValue({
+      AvailableQtyUk: 254,
+      AvailableQtyUkReSale: 0,
+    })
+    apiMocks.searchSaleProductsWithAvailability
+      .mockResolvedValueOnce([createSearchProduct(254)])
+      .mockResolvedValueOnce([createSearchProduct(0)])
+    const emptySale = createSale(0)
+    emptySale.Order = { ...emptySale.Order, OrderItems: [] }
+    const view = renderStep({ onCartChanged: vi.fn(async () => createSale(254)), sale: emptySale })
+
+    fireEvent.change(screen.getByPlaceholderText(/пошук/i), { target: { value: 'SEM12081' } })
+    await screen.findByRole('button', { name: 'Скопіювати код: SEM12081' })
+    expect(view.container.querySelector('.new-sale-product-picker-card__qty')?.textContent).toBe('254')
+
+    fireEvent.keyDown(document.body, { key: 'Enter' })
+    fireEvent.click(await screen.findByRole('button', { name: 'accept quantity' }))
+
+    await waitFor(() => expect(apiMocks.searchSaleProductsWithAvailability).toHaveBeenCalledTimes(2))
+    await waitFor(() => {
+      expect(view.container.querySelector('.new-sale-product-picker-card__qty')?.textContent).toBe('0')
+    })
+  })
+
+  it('refreshes a retained search result to the exact partial remainder', async () => {
+    apiMocks.acceptedQty = 16
+    apiMocks.getProductAvailabilityBuckets.mockResolvedValue({
+      AvailableQtyUk: 30,
+      AvailableQtyUkReSale: 0,
+    })
+    apiMocks.searchSaleProductsWithAvailability
+      .mockResolvedValueOnce([createSearchProduct(30)])
+      .mockResolvedValueOnce([createSearchProduct(14)])
+    const emptySale = createSale(0)
+    emptySale.Order = { ...emptySale.Order, OrderItems: [] }
+    const view = renderStep({ onCartChanged: vi.fn(async () => createSale(16)), sale: emptySale })
+
+    fireEvent.change(screen.getByPlaceholderText(/пошук/i), { target: { value: 'SEM12081' } })
+    await screen.findByRole('button', { name: 'Скопіювати код: SEM12081' })
+
+    fireEvent.keyDown(document.body, { key: 'Enter' })
+    fireEvent.click(await screen.findByRole('button', { name: 'accept quantity' }))
+
+    await waitFor(() => {
+      expect(view.container.querySelector('.new-sale-product-picker-card__qty')?.textContent).toBe('14')
     })
   })
 
@@ -447,3 +501,15 @@ describe('NewSaleProductsStep persistent cart mutations', () => {
     })
   })
 })
+
+function createSearchProduct(availableQty: number): WizardSaleProduct {
+  return {
+    AvailableQtyUk: availableQty,
+    AvailableQtyUkReSale: 0,
+    HasAnalogue: true,
+    Id: 10,
+    NameUA: 'Комплект ремонтний вала розжимного',
+    NetUid: 'product-1',
+    VendorCode: 'SEM12081',
+  }
+}
