@@ -26,6 +26,9 @@ import {
 import './role-permissions-editor.css'
 
 type RolePermissionsEditorProps = {
+  canCreatePermissionDefinition?: boolean
+  canEditAssignments?: boolean
+  canEditPermissionDefinition?: boolean
   modules: DashboardNodeModule[]
   selectedNodes: DashboardNode[]
   selectedPermissions: UserPermission[]
@@ -38,6 +41,9 @@ type RolePermissionsEditorProps = {
 }
 
 export function RolePermissionsEditor({
+  canCreatePermissionDefinition = true,
+  canEditAssignments = true,
+  canEditPermissionDefinition = true,
   modules,
   selectedNodes,
   selectedPermissions,
@@ -71,7 +77,7 @@ export function RolePermissionsEditor({
   return (
     <Box className="role-tree">
       <Group className="role-tree-toolbar" justify="space-between" wrap="nowrap">
-        <button className="role-tree-text-action" type="button" onClick={onSelectAllPages}>
+        <button className="role-tree-text-action" disabled={!canEditAssignments} type="button" onClick={onSelectAllPages}>
           {t('Вибрати все')}
         </button>
         <Group className="role-tree-toolbar-stats" gap="xs" justify="flex-end" wrap="wrap">
@@ -95,6 +101,9 @@ export function RolePermissionsEditor({
                 collapsed={collapsedModules.has(moduleKey)}
                 collapsedNodes={collapsedNodes}
                 module={module}
+                canCreatePermissionDefinition={canCreatePermissionDefinition}
+                canEditAssignments={canEditAssignments}
+                canEditPermissionDefinition={canEditPermissionDefinition}
                 selectedNodes={selectedNodes}
                 selectedPermissions={selectedPermissions}
                 onAddPermission={onAddPermission}
@@ -114,6 +123,9 @@ export function RolePermissionsEditor({
 }
 
 type ModuleSectionProps = {
+  canCreatePermissionDefinition: boolean
+  canEditAssignments: boolean
+  canEditPermissionDefinition: boolean
   collapsed: boolean
   collapsedNodes: ReadonlySet<string>
   module: DashboardNodeModule
@@ -129,6 +141,9 @@ type ModuleSectionProps = {
 }
 
 function ModuleSection({
+  canCreatePermissionDefinition,
+  canEditAssignments,
+  canEditPermissionDefinition,
   collapsed,
   collapsedNodes,
   module,
@@ -167,7 +182,7 @@ function ModuleSection({
         </ActionIcon>
         <SelectionMark
           checked={isSelected}
-          disabled={nodes.length === 0}
+          disabled={!canEditAssignments || nodes.length === 0}
           indeterminate={isIndeterminate}
           label={t('Вибрати модуль')}
           onChange={() => onToggleModule(module)}
@@ -201,6 +216,9 @@ function ModuleSection({
                 collapsedNodes={collapsedNodes}
                 depth={0}
                 node={node}
+                canCreatePermissionDefinition={canCreatePermissionDefinition}
+                canEditAssignments={canEditAssignments}
+                canEditPermissionDefinition={canEditPermissionDefinition}
                 selectedNodes={selectedNodes}
                 selectedPermissions={selectedPermissions}
                 onAddPermission={onAddPermission}
@@ -219,6 +237,9 @@ function ModuleSection({
 }
 
 type NodeRowProps = {
+  canCreatePermissionDefinition: boolean
+  canEditAssignments: boolean
+  canEditPermissionDefinition: boolean
   collapsed: boolean
   collapsedNodes: ReadonlySet<string>
   depth: number
@@ -234,6 +255,9 @@ type NodeRowProps = {
 }
 
 function NodeRow({
+  canCreatePermissionDefinition,
+  canEditAssignments,
+  canEditPermissionDefinition,
   collapsed,
   collapsedNodes,
   depth,
@@ -282,6 +306,7 @@ function NodeRow({
         </ActionIcon>
         <SelectionMark
           checked={nodeFullySelected}
+          disabled={!canEditAssignments}
           indeterminate={nodeIndeterminate}
           label={t('Вибрати сторінку')}
           onChange={() => onToggleNode(node)}
@@ -307,13 +332,13 @@ function NodeRow({
             )}
           </span>
         </button>
-        <div className="role-tree-node-actions">
+        {canCreatePermissionDefinition ? <div className="role-tree-node-actions">
           <Tooltip label={t('Додати')}>
             <ActionIcon aria-label={t('Додати')} color="gray" size="sm" variant="light" onClick={() => onAddPermission(node)}>
               <Plus size={16} />
             </ActionIcon>
           </Tooltip>
-        </div>
+        </div> : null}
       </div>
 
       {hasDetails ? (
@@ -330,6 +355,9 @@ function NodeRow({
                     collapsedNodes={collapsedNodes}
                     depth={depth + 1}
                     node={childNode}
+                    canCreatePermissionDefinition={canCreatePermissionDefinition}
+                    canEditAssignments={canEditAssignments}
+                    canEditPermissionDefinition={canEditPermissionDefinition}
                     selectedNodes={selectedNodes}
                     selectedPermissions={selectedPermissions}
                     onAddPermission={onAddPermission}
@@ -352,6 +380,8 @@ function NodeRow({
                   node={node}
                   permission={permission}
                   selected={isPermissionSelected(selectedPermissions, permission)}
+                  canEditAssignment={canEditAssignments}
+                  canEditDefinition={canEditPermissionDefinition}
                   onEditPermission={onEditPermission}
                   onTogglePermission={onTogglePermission}
                 />
@@ -365,6 +395,8 @@ function NodeRow({
 }
 
 type PermissionRowProps = {
+  canEditAssignment: boolean
+  canEditDefinition: boolean
   node: DashboardNode
   permission: UserPermission
   selected: boolean
@@ -372,14 +404,14 @@ type PermissionRowProps = {
   onTogglePermission: (permission: UserPermission) => void
 }
 
-function PermissionRow({ node, permission, selected, onEditPermission, onTogglePermission }: PermissionRowProps) {
+function PermissionRow({ canEditAssignment, canEditDefinition, node, permission, selected, onEditPermission, onTogglePermission }: PermissionRowProps) {
   const { t } = useI18n()
   const hasMeta = Boolean(permission.Description || permission.ControlId)
 
   return (
     <div className={`role-tree-permission${selected ? ' is-selected' : ''}${permission.Deleted ? ' is-deleted' : ''}`}>
       <span className="role-tree-connector" aria-hidden />
-      <SelectionMark checked={selected} label={t('Вибрати право')} size="sm" onChange={() => onTogglePermission(permission)} />
+      <SelectionMark checked={selected} disabled={!canEditAssignment} label={t('Вибрати право')} size="sm" onChange={() => onTogglePermission(permission)} />
       <ThemeIcon className="role-tree-permission-icon" color="gray" size={24} variant="light">
         <ShieldCheck size={14} />
       </ThemeIcon>
@@ -417,7 +449,7 @@ function PermissionRow({ node, permission, selected, onEditPermission, onToggleP
             </HoverCard.Dropdown>
           </HoverCard>
         ) : null}
-        <Tooltip label={t('Редагувати')}>
+        {canEditDefinition ? <Tooltip label={t('Редагувати')}>
           <ActionIcon
             aria-label={t('Редагувати')}
             color="gray"
@@ -427,7 +459,7 @@ function PermissionRow({ node, permission, selected, onEditPermission, onToggleP
           >
             <Pencil size={16} />
           </ActionIcon>
-        </Tooltip>
+        </Tooltip> : null}
       </div>
     </div>
   )

@@ -82,8 +82,14 @@ export async function getUserRoles(): Promise<UserRole[]> {
   return normalizeUserRoles(result)
 }
 
+export async function getRoleManagementRoles(): Promise<UserRole[]> {
+  const result = await apiRequest<unknown>('/usermanagement/profiles/roles/registry')
+
+  return normalizeUserRoles(result)
+}
+
 export async function createUserRole(role: UserRole): Promise<UserRole | null> {
-  const result = await apiRequest<unknown>('/usermanagement/profiles/roles/new', {
+  const result = await apiRequest<unknown>('/usermanagement/profiles/roles/create', {
     method: 'POST',
     body: role,
   })
@@ -92,7 +98,7 @@ export async function createUserRole(role: UserRole): Promise<UserRole | null> {
 }
 
 export async function updateUserRole(role: UserRole): Promise<UserRole | null> {
-  const result = await apiRequest<unknown>('/usermanagement/profiles/roles/update', {
+  const result = await apiRequest<unknown>('/usermanagement/profiles/roles/edit', {
     method: 'POST',
     body: role,
   })
@@ -101,7 +107,7 @@ export async function updateUserRole(role: UserRole): Promise<UserRole | null> {
 }
 
 export async function deleteUserRole(netId: string): Promise<void> {
-  await apiRequest<unknown>('/usermanagement/profiles/roles/delete', {
+  await apiRequest<unknown>('/usermanagement/profiles/roles/remove', {
     method: 'DELETE',
     query: {
       netId,
@@ -110,13 +116,13 @@ export async function deleteUserRole(netId: string): Promise<void> {
 }
 
 export async function getDashboardModules(): Promise<DashboardNodeModule[]> {
-  const result = await apiRequest<unknown>('/dashboards/modules/all')
+  const result = await apiRequest<unknown>('/dashboards/roles/modules')
 
   return normalizeModules(result)
 }
 
 export async function changePermissionsToRole(role: UserRole): Promise<UserRole | null> {
-  const result = await apiRequest<unknown>('/usermanagement/profiles/roles/add/nodes', {
+  const result = await apiRequest<unknown>('/usermanagement/profiles/roles/page-permissions', {
     method: 'POST',
     body: role,
   })
@@ -125,14 +131,14 @@ export async function changePermissionsToRole(role: UserRole): Promise<UserRole 
 }
 
 export async function addPermissionToNode(permission: UserPermission, image?: File | null): Promise<void> {
-  await apiRequest<unknown>('/permissions/new', {
+  await apiRequest<unknown>('/permissions/roles/definitions/create', {
     method: 'POST',
     body: buildPermissionFormData(permission, image),
   })
 }
 
 export async function updatePermissionToNode(permission: UserPermission, image?: File | null): Promise<void> {
-  await apiRequest<unknown>('/permissions/update', {
+  await apiRequest<unknown>('/permissions/roles/definitions/edit', {
     method: 'POST',
     body: buildPermissionFormData(permission, image),
   })

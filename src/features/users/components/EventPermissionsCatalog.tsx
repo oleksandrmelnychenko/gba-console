@@ -69,6 +69,7 @@ const EMPTY_SELECTED_KEYS: ReadonlySet<string> = new Set()
 
 type EventPermissionsCatalogProps = {
   role: UserRole | null
+  readOnly?: boolean
   onDirtyChange?: (dirty: boolean) => void
   onSavingChange?: (saving: boolean) => void
 }
@@ -90,7 +91,7 @@ export const EventPermissionsCatalog = forwardRef<
   EventPermissionsCatalogHandle,
   EventPermissionsCatalogProps
 >(function EventPermissionsCatalog(
-  { role, onDirtyChange, onSavingChange },
+  { role, readOnly = false, onDirtyChange, onSavingChange },
   ref,
 ) {
   const { t } = useI18n()
@@ -319,7 +320,7 @@ export const EventPermissionsCatalog = forwardRef<
   }
 
   async function save() {
-    if (!roleNetUid || !rolePermissions || !dirty || isSaving) {
+    if (readOnly || !roleNetUid || !rolePermissions || !dirty || isSaving) {
       return
     }
 
@@ -381,6 +382,7 @@ export const EventPermissionsCatalog = forwardRef<
   }
 
   function toggleKeys(keys: readonly string[]) {
+    if (readOnly) return
     const editableKeys = keys.filter((key) => !inheritedKeys.has(key))
     if (editableKeys.length === 0) {
       return
@@ -391,11 +393,13 @@ export const EventPermissionsCatalog = forwardRef<
   }
 
   function selectKeys(keys: readonly string[]) {
+    if (readOnly) return
     setSelectedKeys((current) => new Set([...current, ...keys]))
     setConflict(null)
   }
 
   function clearKeys() {
+    if (readOnly) return
     setSelectedKeys(new Set(inheritedKeys))
     setConflict(null)
   }
@@ -538,6 +542,7 @@ export const EventPermissionsCatalog = forwardRef<
           <button
             className="role-tree-text-action"
             disabled={
+              readOnly ||
               activeKeys.length === 0 ||
               activeKeys.every((key) => selectedKeys.has(key)) ||
               isSaving
@@ -549,7 +554,7 @@ export const EventPermissionsCatalog = forwardRef<
           </button>
           <button
             className="role-tree-text-action"
-            disabled={selectedEditableCount === 0 || isSaving}
+            disabled={readOnly || selectedEditableCount === 0 || isSaving}
             type="button"
             onClick={clearKeys}
           >
@@ -559,6 +564,7 @@ export const EventPermissionsCatalog = forwardRef<
             <button
               className="role-tree-text-action"
               disabled={
+                readOnly ||
                 visibleKeys.length === 0 ||
                 visibleKeys.every((key) => selectedKeys.has(key)) ||
                 isSaving
@@ -589,6 +595,7 @@ export const EventPermissionsCatalog = forwardRef<
                 expandedKeys={expandedKeys}
                 forceExpanded={hasActiveFilters}
                 inheritedKeys={inheritedKeys}
+                readOnly={readOnly}
                 section={section}
                 selectedKeys={selectedKeys}
                 onToggleExpanded={toggleExpanded}
@@ -610,6 +617,7 @@ type TreeRowProps = {
   expandedKeys: ReadonlySet<string>
   forceExpanded: boolean
   inheritedKeys: ReadonlySet<string>
+  readOnly: boolean
   selectedKeys: ReadonlySet<string>
   onToggleExpanded: (key: string) => void
   onToggleKeys: (keys: readonly string[]) => void
@@ -619,6 +627,7 @@ function SectionRow({
   expandedKeys,
   forceExpanded,
   inheritedKeys,
+  readOnly,
   section,
   selectedKeys,
   onToggleExpanded,
@@ -641,7 +650,7 @@ function SectionRow({
         />
         <SelectionMark
           checked={selection.checked}
-          disabled={keys.every((key) => inheritedKeys.has(key))}
+          disabled={readOnly || keys.every((key) => inheritedKeys.has(key))}
           indeterminate={selection.indeterminate}
           label={`${t('Вибрати розділ')}: ${section.label}`}
           onChange={() => onToggleKeys(keys)}
@@ -672,6 +681,7 @@ function SectionRow({
                 expandedKeys={expandedKeys}
                 forceExpanded={forceExpanded}
                 inheritedKeys={inheritedKeys}
+                readOnly={readOnly}
                 page={page}
                 sectionId={section.id}
                 selectedKeys={selectedKeys}
@@ -690,6 +700,7 @@ function PageRow({
   expandedKeys,
   forceExpanded,
   inheritedKeys,
+  readOnly,
   page,
   sectionId,
   selectedKeys,
@@ -713,7 +724,7 @@ function PageRow({
         />
         <SelectionMark
           checked={selection.checked}
-          disabled={keys.every((key) => inheritedKeys.has(key))}
+          disabled={readOnly || keys.every((key) => inheritedKeys.has(key))}
           indeterminate={selection.indeterminate}
           label={`${t('Вибрати сторінку')}: ${page.label}`}
           onChange={() => onToggleKeys(keys)}
@@ -749,6 +760,7 @@ function PageRow({
                 expandedKeys={expandedKeys}
                 forceExpanded={forceExpanded}
                 inheritedKeys={inheritedKeys}
+                readOnly={readOnly}
                 group={group}
                 pageId={page.id}
                 sectionId={sectionId}
@@ -768,6 +780,7 @@ function GroupRow({
   expandedKeys,
   forceExpanded,
   inheritedKeys,
+  readOnly,
   group,
   pageId,
   sectionId,
@@ -800,7 +813,7 @@ function GroupRow({
         />
         <SelectionMark
           checked={selection.checked}
-          disabled={keys.every((key) => inheritedKeys.has(key))}
+          disabled={readOnly || keys.every((key) => inheritedKeys.has(key))}
           indeterminate={selection.indeterminate}
           label={`${t('Вибрати групу')}: ${group.label}`}
           onChange={() => onToggleKeys(keys)}
@@ -825,6 +838,7 @@ function GroupRow({
                 key={permission.key}
                 permission={permission}
                 inherited={inheritedKeys.has(permission.key)}
+                readOnly={readOnly}
                 selected={selectedKeys.has(permission.key)}
                 onToggle={() => onToggleKeys([permission.key])}
               />
@@ -838,11 +852,13 @@ function GroupRow({
 
 function PermissionRow({
   inherited,
+  readOnly,
   permission,
   selected,
   onToggle,
 }: {
   inherited: boolean
+  readOnly: boolean
   permission: EventPermissionDefinition
   selected: boolean
   onToggle: () => void
@@ -858,7 +874,7 @@ function PermissionRow({
       <span className="role-tree-connector" aria-hidden />
       <SelectionMark
         checked={selected}
-        disabled={inherited}
+        disabled={readOnly || inherited}
         label={`${t('Вибрати право')}: ${permission.name} (${permission.key})`}
         size="sm"
         onChange={onToggle}

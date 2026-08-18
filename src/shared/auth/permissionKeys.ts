@@ -58,6 +58,23 @@ export const PermissionKeys = {
       ResetPassword: 'administration.users.user.password_reset',
     },
   },
+  Roles: {
+    Role: {
+      Create: 'administration.roles.role.create',
+      Edit: 'administration.roles.role.edit',
+      Delete: 'administration.roles.role.delete',
+    },
+    PagePermissions: {
+      Edit: 'administration.roles.page_permissions.edit',
+    },
+    PermissionDefinition: {
+      Create: 'administration.roles.permission_definition.create',
+      Edit: 'administration.roles.permission_definition.edit',
+    },
+    EventPermissions: {
+      Edit: 'administration.roles.event_permissions.edit',
+    },
+  },
   ActReconciliations: {
     Page: {
       View: 'orders.reconciliation_acts.page.view',
@@ -750,6 +767,12 @@ export type SystemPagePermissionKey =
 export type UsersPermissionKey =
   Values<typeof PermissionKeys.Users.User>
 
+export type RolesPermissionKey =
+  | Values<typeof PermissionKeys.Roles.Role>
+  | Values<typeof PermissionKeys.Roles.PagePermissions>
+  | Values<typeof PermissionKeys.Roles.PermissionDefinition>
+  | Values<typeof PermissionKeys.Roles.EventPermissions>
+
 export type VehicleRegistryPermissionKey =
   | Values<typeof PermissionKeys.VehicleRegistry.Vehicle>
   | Values<typeof PermissionKeys.VehicleRegistry.Import>
@@ -946,6 +969,7 @@ export type FinancialAdministrationPermissionKey =
 export type PermissionKey =
   | SystemPagePermissionKey
   | UsersPermissionKey
+  | RolesPermissionKey
   | AdvancedReportsPermissionKey
   | OutgoingCashflowsPermissionKey
   | ProductAvailabilitiesPermissionKey
@@ -1851,6 +1875,10 @@ const eventPermissionKeys = new Set<string>([
   ...Object.values(PermissionKeys.SystemPages.TaxFreeDocuments),
   ...Object.values(PermissionKeys.SystemPages.TaxFreePackLists),
   ...Object.values(PermissionKeys.Users.User),
+  ...Object.values(PermissionKeys.Roles.Role),
+  ...Object.values(PermissionKeys.Roles.PagePermissions),
+  ...Object.values(PermissionKeys.Roles.PermissionDefinition),
+  ...Object.values(PermissionKeys.Roles.EventPermissions),
   ...Object.values(PermissionKeys.VehicleRegistry.Vehicle),
   ...Object.values(PermissionKeys.VehicleRegistry.Import),
   ...Object.values(PermissionKeys.ClientResources.Page),

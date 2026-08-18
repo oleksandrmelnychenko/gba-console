@@ -1771,6 +1771,78 @@
         "administration.users.user.open_details"
       ],
       "reason": "Clicking a user row is the single profile-details boundary and loads the model only through the dedicated open-details façade."
+    },
+    "PE-01695": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": [
+        "administration.roles.role.create",
+        "administration.roles.role.edit"
+      ],
+      "reason": "The mode-aware role form has one final save boundary and rechecks create or edit before the scoped mutation."
+    },
+    "PE-01696": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-01730",
+      "reason": "The delete button only opens confirmation; the final confirmed role deletion owns authorization."
+    },
+    "PE-01698": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": [
+        "administration.roles.permission_definition.create",
+        "administration.roles.permission_definition.edit"
+      ],
+      "reason": "The mode-aware permission-definition form rechecks create or edit and uses independent scoped mutations."
+    },
+    "PE-01704": {
+      "disposition": "technical_ui",
+      "reason": "Select-all only changes the local page-permission draft; the independent final save is the business boundary."
+    },
+    "PE-01705": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-01698",
+      "reason": "The add icon only opens the permission-definition form; final form submit owns authorization."
+    },
+    "PE-01706": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-01698",
+      "reason": "The edit icon only opens the same mode-aware permission-definition form."
+    },
+    "PE-01707": {
+      "disposition": "technical_ui",
+      "reason": "A tree checkbox changes only the local assignment draft; no server mutation occurs before the guarded save."
+    },
+    "PE-01725": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": [
+        "administration.roles.page_permissions.edit"
+      ],
+      "reason": "This is the single final mutation that persists page and legacy-permission assignments for a role."
+    },
+    "PE-01727": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-01695",
+      "reason": "The parent callback is the same mode-aware role form submit and adds no second business capability."
+    },
+    "PE-01728": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-01698",
+      "reason": "The parent callback is the same permission-definition submit boundary."
+    },
+    "PE-01730": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": [
+        "administration.roles.role.delete"
+      ],
+      "reason": "The confirmed role deletion rechecks role.delete and calls the dedicated scoped mutation."
+    },
+    "PE-01731": {
+      "disposition": "technical_ui",
+      "reason": "The scanned middle dot belongs to role metrics inside the local role selector and performs no business operation."
+    },
+    "PE-01732": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-01695",
+      "reason": "The role edit icon only opens the existing mode-aware role form; final submit owns edit authorization."
     }
   }
 }

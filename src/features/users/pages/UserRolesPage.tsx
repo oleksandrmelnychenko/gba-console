@@ -15,6 +15,7 @@ import {
 import { notifications } from '@mantine/notifications'
 import { CircleAlert, Pencil, Plus, RefreshCw, RotateCcw, Save, Search, Trash2 } from 'lucide-react'
 import { useEffect, useMemo, useReducer, useRef } from 'react'
+import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
@@ -25,7 +26,7 @@ import {
   createUserRole,
   deleteUserRole,
   getDashboardModules,
-  getUserRoles,
+  getRoleManagementRoles,
   updatePermissionToNode,
   updateUserRole,
 } from '../api/usersApi'
@@ -60,6 +61,8 @@ import {
 } from '../utils'
 import './user-roles-page.css'
 import '../../../shared/ui/console-table-page.css'
+import { PermissionGate } from '../../auth/components/PermissionGate'
+import { useAuth } from '../../auth/useAuth'
 
 type PermissionModalState = {
   node: DashboardNode | null
@@ -73,6 +76,24 @@ type PendingWorkspaceAction =
 
 export function UserRolesPage() {
   const { t } = useI18n()
+
+  return (
+    <PermissionGate
+      permissionKey={PermissionKeys.SystemPages.Roles.View}
+      fallback={
+        <Alert color="red" icon={<CircleAlert size={18} />} title={t('Доступ заборонено')} variant="light">
+          {t('Недостатньо прав для перегляду ролей')}
+        </Alert>
+      }
+    >
+      <UserRolesPageContent />
+    </PermissionGate>
+  )
+}
+
+function UserRolesPageContent() {
+  const { t } = useI18n()
+  const { hasPermission } = useAuth()
   const [roles, setRoles] = useValueState<UserRole[]>([])
   const [modules, setModules] = useValueState<DashboardNodeModule[]>([])
   const [selectedRoleKey, setSelectedRoleKey] = useValueState<string | null>(
@@ -109,6 +130,13 @@ export function UserRolesPage() {
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
   const selectedRoleKeyRef = useRef<string | null>(null)
   const eventPermissionsRef = useRef<EventPermissionsCatalogHandle | null>(null)
+  const canCreateRole = hasPermission(PermissionKeys.Roles.Role.Create)
+  const canEditRole = hasPermission(PermissionKeys.Roles.Role.Edit)
+  const canDeleteRole = hasPermission(PermissionKeys.Roles.Role.Delete)
+  const canEditPagePermissions = hasPermission(PermissionKeys.Roles.PagePermissions.Edit)
+  const canCreatePermissionDefinition = hasPermission(PermissionKeys.Roles.PermissionDefinition.Create)
+  const canEditPermissionDefinition = hasPermission(PermissionKeys.Roles.PermissionDefinition.Edit)
+  const canEditEventPermissions = hasPermission(PermissionKeys.Roles.EventPermissions.Edit)
   const filteredRoles = useMemo(
     () => filterRoles(roles, searchValue),
     [roles, searchValue],
@@ -161,7 +189,7 @@ export function UserRolesPage() {
 
       try {
         const [nextRoles, nextModules] = await Promise.all([
-          getUserRoles(),
+          getRoleManagementRoles(),
           getDashboardModules(),
         ])
 
@@ -320,6 +348,13 @@ export function UserRolesPage() {
   }
 
   async function submitRoleForm(values: { Dashboard: string; Name: string }) {
+    const requiredPermission = roleModalState.role
+      ? PermissionKeys.Roles.Role.Edit
+      : PermissionKeys.Roles.Role.Create
+    if (!hasPermission(requiredPermission)) {
+      setError(t('Недостатньо прав для збереження ролі'))
+      return
+    }
     setSaving(true)
     setError(null)
 
@@ -356,6 +391,7 @@ export function UserRolesPage() {
     const roleToDelete = deleteRoleTarget
 
     if (
+      !canDeleteRole ||
       !roleToDelete?.NetUid ||
       !canDeleteUserRole(roleToDelete)
     ) {
@@ -392,7 +428,7 @@ export function UserRolesPage() {
   }
 
   async function handleSavePermissions() {
-    if (!visibleSelectedRole || !hasSelectionChanges) {
+    if (!canEditPagePermissions || !visibleSelectedRole || !hasSelectionChanges) {
       return
     }
 
@@ -424,6 +460,7 @@ export function UserRolesPage() {
   }
 
   function handleToggleModule(module: DashboardNodeModule) {
+    if (!canEditPagePermissions) return
     const nodes = getDashboardModuleNodes(module)
     const permissions = getDashboardModulePermissions(module)
     const allSelected =
@@ -446,6 +483,7 @@ export function UserRolesPage() {
   }
 
   function handleToggleNode(node: DashboardNode) {
+    if (!canEditPagePermissions) return
     const nodes = getDashboardNodeTree(node)
     const permissions = getDashboardNodePermissions(node)
     const allSelected =
@@ -467,6 +505,7 @@ export function UserRolesPage() {
   }
 
   function handleToggleAll() {
+    if (!canEditPagePermissions) return
     const nodes = modules.flatMap(getDashboardModuleNodes)
     const permissions = modules.flatMap(getDashboardModulePermissions)
     const allSelected =
@@ -489,6 +528,13 @@ export function UserRolesPage() {
   }
 
   async function submitPermission(values: RolePermissionSubmit) {
+    const requiredPermission = permissionModalState?.permission
+      ? PermissionKeys.Roles.PermissionDefinition.Edit
+      : PermissionKeys.Roles.PermissionDefinition.Create
+    if (!hasPermission(requiredPermission)) {
+      setError(t('Недостатньо прав для збереження опису права'))
+      return
+    }
     setSaving(true)
     setError(null)
 
@@ -548,7 +594,7 @@ export function UserRolesPage() {
                 <RefreshCw size={17} />
               </ActionIcon>
             </Tooltip>
-            {visibleSelectedRole && activePermissionTab === 'pages' ? (
+            {canEditPagePermissions && visibleSelectedRole && activePermissionTab === 'pages' ? (
               <>
                 <Button
                   color="gray"
@@ -572,7 +618,7 @@ export function UserRolesPage() {
                 </Button>
               </>
             ) : null}
-            {visibleSelectedRole && activePermissionTab === 'events' ? (
+            {canEditEventPermissions && visibleSelectedRole && activePermissionTab === 'events' ? (
               <>
                 <Button
                   color="gray"
@@ -597,7 +643,7 @@ export function UserRolesPage() {
               </>
             ) : null}
           </div>
-          <Button
+          {canCreateRole ? <Button
             className="user-roles-create-button"
             color={CREATE_ACTION_COLOR}
             size="sm"
@@ -605,7 +651,7 @@ export function UserRolesPage() {
             onClick={() => setRoleModalState({ open: true, role: null })}
           >
             {t('Створити')}
-          </Button>
+          </Button> : null}
         </div>
 
         {error && (
@@ -627,6 +673,7 @@ export function UserRolesPage() {
           <Box className="user-roles-layout">
             <div className="user-roles-list-pane">
               <RoleList
+                canEdit={canEditRole}
                 isLoading={isLoading}
                 roles={filteredRoles}
                 selectedRoleKey={selectedRoleKey}
@@ -649,6 +696,9 @@ export function UserRolesPage() {
                 <Stack gap="md">
                   {visibleSelectedRole ? (
                     <RolePermissionsEditor
+                      canCreatePermissionDefinition={canCreatePermissionDefinition}
+                      canEditAssignments={canEditPagePermissions}
+                      canEditPermissionDefinition={canEditPermissionDefinition}
                       modules={modules}
                       selectedNodes={selectedNodes}
                       selectedPermissions={selectedPermissions}
@@ -662,7 +712,7 @@ export function UserRolesPage() {
                       onToggleModule={handleToggleModule}
                       onToggleNode={handleToggleNode}
                       onTogglePermission={(permission) =>
-                        setSelectedPermissions((current) =>
+                        canEditPagePermissions && setSelectedPermissions((current) =>
                           togglePermissionSelection(current, permission),
                         )
                       }
@@ -682,6 +732,7 @@ export function UserRolesPage() {
                   key={visibleSelectedRole?.NetUid || 'no-role'}
                   ref={eventPermissionsRef}
                   role={visibleSelectedRole}
+                  readOnly={!canEditEventPermissions}
                   onDirtyChange={setEventPermissionsDirty}
                   onSavingChange={setEventPermissionsSaving}
                 />
@@ -702,6 +753,7 @@ export function UserRolesPage() {
           opened={roleModalState.open}
           role={roleModalState.role}
           canDelete={Boolean(
+            canDeleteRole &&
             roleModalState.role && canDeleteUserRole(roleModalState.role),
           )}
           onClose={() => setRoleModalState({ open: false, role: null })}
@@ -790,6 +842,7 @@ export function UserRolesPage() {
 }
 
 type RoleListProps = {
+  canEdit: boolean
   isLoading: boolean
   roles: UserRole[]
   selectedRoleKey: string | null
@@ -798,6 +851,7 @@ type RoleListProps = {
 }
 
 function RoleList({
+  canEdit,
   isLoading,
   roles,
   selectedRoleKey,
@@ -846,7 +900,7 @@ function RoleList({
                       </span>
                     </span>
                   </button>
-                  <Tooltip label={t('Редагувати')}>
+                  {canEdit ? <Tooltip label={t('Редагувати')}>
                     <ActionIcon
                       aria-label={t('Редагувати')}
                       className="user-role-list-edit"
@@ -857,7 +911,7 @@ function RoleList({
                     >
                       <Pencil size={16} />
                     </ActionIcon>
-                  </Tooltip>
+                  </Tooltip> : null}
                 </div>
               )
             })}

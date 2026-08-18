@@ -4,25 +4,25 @@
     "inputRecords": 1902,
     "classifiedRecords": 1902,
     "dispositionCounts": {
-      "technical_ui": 680,
-      "covered_existing": 383,
-      "duplicate_occurrence": 167,
-      "business_candidate": 414,
-      "needs_human_review": 250,
+      "technical_ui": 683,
+      "covered_existing": 387,
+      "duplicate_occurrence": 173,
+      "business_candidate": 403,
+      "needs_human_review": 248,
       "stale_or_aggregated": 8
     },
-    "reviewCandidates": 664,
-    "technicalExcluded": 680,
-    "duplicatesExcluded": 167,
-    "duplicateOccurrencesTotal": 235,
+    "reviewCandidates": 651,
+    "technicalExcluded": 683,
+    "duplicatesExcluded": 173,
+    "duplicateOccurrencesTotal": 241,
     "technicalDuplicateOverlap": 68,
     "sourceResolved": 1828,
     "sourceUnresolved": 74,
     "currentActionResolved": 1187,
     "currentActionUnresolved": 715,
     "currentProductionActions": 1829,
-    "currentPermissionBoundActions": 215,
-    "currentUnboundActions": 1614
+    "currentPermissionBoundActions": 221,
+    "currentUnboundActions": 1608
   },
   "invariants": {
     "allInputRecordsClassified": true,
@@ -68518,12 +68518,15 @@
       "proposedPermission": "users.users_roles.dashboard.form_submit",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "covered_existing",
+      "dispositionReason": "The mode-aware role form has one final save boundary and rechecks create or edit before the scoped mutation.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "administration.roles.role.create",
+        "administration.roles.role.edit"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [],
       "source": {
         "status": "resolved",
@@ -68547,12 +68550,12 @@
       "proposedPermission": "users.users_roles.on_delete.command_delete",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
-      "duplicateOf": null,
+      "disposition": "duplicate_occurrence",
+      "dispositionReason": "The delete button only opens confirmation; the final confirmed role deletion owns authorization.",
+      "duplicateOf": "PE-01730",
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [],
       "source": {
         "status": "resolved",
@@ -68605,12 +68608,15 @@
       "proposedPermission": "users.users_roles.handle_submit.form_submit",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "covered_existing",
+      "dispositionReason": "The mode-aware permission-definition form rechecks create or edit and uses independent scoped mutations.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "administration.roles.permission_definition.create",
+        "administration.roles.permission_definition.edit"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
           "candidateId": "EPC-2c1c6dabfed2",
@@ -68682,12 +68688,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-a7b29234736f",
-          "distance": 40,
+          "candidateId": "EPC-fec292256501",
+          "distance": 43,
           "file": "src/features/users/components/RolePermissionsEditor.tsx",
           "handler": "{onSelectAllPages}",
           "humanLabel": "Вибрати все",
-          "line": 74,
+          "line": 80,
           "permissionKeys": [],
           "score": 14
         }
@@ -68695,7 +68701,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/users/components/RolePermissionsEditor.tsx",
-        "line": 34,
+        "line": 37,
         "alternatives": []
       }
     },
@@ -68722,12 +68728,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-e80d06a27fd3",
-          "distance": 55,
+          "candidateId": "EPC-7627a80252a8",
+          "distance": 61,
           "file": "src/features/users/components/RolePermissionsEditor.tsx",
           "handler": "{onToggleCollapse}",
           "humanLabel": null,
-          "line": 157,
+          "line": 172,
           "permissionKeys": [],
           "score": 14
         }
@@ -68735,7 +68741,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/users/components/RolePermissionsEditor.tsx",
-        "line": 102,
+        "line": 111,
         "alternatives": []
       }
     },
@@ -68762,12 +68768,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-e80d06a27fd3",
-          "distance": 55,
+          "candidateId": "EPC-7627a80252a8",
+          "distance": 61,
           "file": "src/features/users/components/RolePermissionsEditor.tsx",
           "handler": "{onToggleCollapse}",
           "humanLabel": null,
-          "line": 157,
+          "line": 172,
           "permissionKeys": [],
           "score": 14
         }
@@ -68775,7 +68781,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/users/components/RolePermissionsEditor.tsx",
-        "line": 102,
+        "line": 111,
         "alternatives": []
       }
     },
@@ -68802,12 +68808,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-e80d06a27fd3",
-          "distance": 55,
+          "candidateId": "EPC-7627a80252a8",
+          "distance": 61,
           "file": "src/features/users/components/RolePermissionsEditor.tsx",
           "handler": "{onToggleCollapse}",
           "humanLabel": null,
-          "line": 157,
+          "line": 172,
           "permissionKeys": [],
           "score": 14
         }
@@ -68815,7 +68821,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/users/components/RolePermissionsEditor.tsx",
-        "line": 102,
+        "line": 111,
         "alternatives": []
       }
     },
@@ -68834,17 +68840,17 @@
       "proposedPermission": "users.users_roles.button.button_click",
       "securityLevel": "low",
       "rawStatus": "No permission candidate found",
-      "disposition": "needs_human_review",
-      "dispositionReason": "insufficient_evidence_for_automatic_permission_or_exclusion",
+      "disposition": "technical_ui",
+      "dispositionReason": "Select-all only changes the local page-permission draft; the independent final save is the business boundary.",
       "duplicateOf": null,
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [],
       "source": {
         "status": "resolved",
         "file": "src/features/users/components/RolePermissionsEditor.tsx",
-        "line": 40,
+        "line": 43,
         "alternatives": []
       }
     },
@@ -68863,20 +68869,20 @@
       "proposedPermission": "users.users_roles.on_add_permission_node.command_submit",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
-      "duplicateOf": null,
+      "disposition": "duplicate_occurrence",
+      "dispositionReason": "The add icon only opens the permission-definition form; final form submit owns authorization.",
+      "duplicateOf": "PE-01698",
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-a796303806ab",
-          "distance": 280,
+          "candidateId": "EPC-78f96383fd70",
+          "distance": 302,
           "file": "src/features/users/components/RolePermissionsEditor.tsx",
           "handler": "{() => onAddPermission(node)}",
           "humanLabel": "Додати",
-          "line": 312,
+          "line": 337,
           "permissionKeys": [],
           "score": 17
         }
@@ -68884,7 +68890,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/users/components/RolePermissionsEditor.tsx",
-        "line": 32,
+        "line": 35,
         "alternatives": []
       }
     },
@@ -68903,20 +68909,20 @@
       "proposedPermission": "users.users_roles.on_edit_permission_node_permission.button_click",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
-      "duplicateOf": null,
+      "disposition": "duplicate_occurrence",
+      "dispositionReason": "The edit icon only opens the same mode-aware permission-definition form.",
+      "duplicateOf": "PE-01698",
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-7a251a8f4a7f",
+          "candidateId": "EPC-56a6c961e9aa",
           "distance": 5,
           "file": "src/features/users/components/RolePermissionsEditor.tsx",
           "handler": "{() => onEditPermission(node, permission)}",
           "humanLabel": "Редагувати",
-          "line": 421,
+          "line": 453,
           "permissionKeys": [],
           "score": 28
         }
@@ -68924,7 +68930,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/users/components/RolePermissionsEditor.tsx",
-        "line": 426,
+        "line": 458,
         "alternatives": []
       }
     },
@@ -68943,17 +68949,17 @@
       "proposedPermission": "users.users_roles.on_change.button_click",
       "securityLevel": "low",
       "rawStatus": "No permission candidate found",
-      "disposition": "needs_human_review",
-      "dispositionReason": "insufficient_evidence_for_automatic_permission_or_exclusion",
+      "disposition": "technical_ui",
+      "dispositionReason": "A tree checkbox changes only the local assignment draft; no server mutation occurs before the guarded save.",
       "duplicateOf": null,
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [],
       "source": {
         "status": "resolved",
         "file": "src/features/users/components/RolePermissionsEditor.tsx",
-        "line": 173,
+        "line": 188,
         "alternatives": []
       }
     },
@@ -69475,7 +69481,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/users/pages/UserRolesPage.tsx",
-        "line": 74,
+        "line": 77,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -69504,12 +69510,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-0882237875de",
-          "distance": 309,
+          "candidateId": "EPC-a8b8160bed1b",
+          "distance": 327,
           "file": "src/features/users/pages/UserRolesPage.tsx",
           "handler": "{resetSearch}",
           "humanLabel": "Скинути",
-          "line": 529,
+          "line": 575,
           "permissionKeys": [],
           "score": 11
         }
@@ -69517,7 +69523,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/users/pages/UserRolesPage.tsx",
-        "line": 220,
+        "line": 248,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -69548,7 +69554,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/users/pages/UserRolesPage.tsx",
-        "line": 70,
+        "line": 73,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -69573,24 +69579,28 @@
       "dispositionReason": "current_source_confirms_local_cancel_or_refresh_control",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
+      "canonicalPermissionKeys": [
+        "administration.roles.page_permissions.edit"
+      ],
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-63d3756ebe6a",
-          "distance": 253,
+          "candidateId": "EPC-dfe695092988",
+          "distance": 271,
           "file": "src/features/users/pages/UserRolesPage.tsx",
           "handler": "{cancelSelection}",
           "humanLabel": "Скасувати",
-          "line": 553,
-          "permissionKeys": [],
+          "line": 599,
+          "permissionKeys": [
+            "administration.roles.page_permissions.edit"
+          ],
           "score": 15
         }
       ],
       "source": {
         "status": "resolved",
         "file": "src/features/users/pages/UserRolesPage.tsx",
-        "line": 300,
+        "line": 328,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -69611,28 +69621,32 @@
       "proposedPermission": "users.users_roles.handle_save_permissions.command_submit",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "covered_existing",
+      "dispositionReason": "This is the single final mutation that persists page and legacy-permission assignments for a role.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "administration.roles.page_permissions.edit"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-4c688e006ef1",
-          "distance": 169,
+          "candidateId": "EPC-101d01fa8872",
+          "distance": 179,
           "file": "src/features/users/pages/UserRolesPage.tsx",
           "handler": "{handleSavePermissions}",
           "humanLabel": "Зберегти",
-          "line": 563,
-          "permissionKeys": [],
+          "line": 609,
+          "permissionKeys": [
+            "administration.roles.page_permissions.edit"
+          ],
           "score": 21
         }
       ],
       "source": {
         "status": "resolved",
         "file": "src/features/users/pages/UserRolesPage.tsx",
-        "line": 394,
+        "line": 430,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -69657,24 +69671,28 @@
       "dispositionReason": "local_ui_state_only",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
+      "canonicalPermissionKeys": [
+        "administration.roles.role.create"
+      ],
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-790641170336",
+          "candidateId": "EPC-b5e81f816719",
           "distance": 5,
           "file": "src/features/users/pages/UserRolesPage.tsx",
           "handler": "{() => setRoleModalState({ open: true, role: null })}",
           "humanLabel": "Створити",
-          "line": 600,
-          "permissionKeys": [],
+          "line": 646,
+          "permissionKeys": [
+            "administration.roles.role.create"
+          ],
           "score": 33
         }
       ],
       "source": {
         "status": "resolved",
         "file": "src/features/users/pages/UserRolesPage.tsx",
-        "line": 605,
+        "line": 651,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -69695,28 +69713,32 @@
       "proposedPermission": "users.users_roles.submit_role_form.form_submit",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
-      "duplicateOf": null,
+      "disposition": "duplicate_occurrence",
+      "dispositionReason": "The parent callback is the same mode-aware role form submit and adds no second business capability.",
+      "duplicateOf": "PE-01695",
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "administration.roles.role.delete"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-a9ecf0c813ed",
-          "distance": 373,
+          "candidateId": "EPC-ce5a0e935bcb",
+          "distance": 396,
           "file": "src/features/users/pages/UserRolesPage.tsx",
           "handler": "{submitRoleForm}",
           "humanLabel": null,
-          "line": 695,
-          "permissionKeys": [],
+          "line": 746,
+          "permissionKeys": [
+            "administration.roles.role.delete"
+          ],
           "score": 14
         }
       ],
       "source": {
         "status": "resolved",
         "file": "src/features/users/pages/UserRolesPage.tsx",
-        "line": 322,
+        "line": 350,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -69737,20 +69759,20 @@
       "proposedPermission": "users.users_roles.submit_permission.form_submit",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
-      "duplicateOf": null,
+      "disposition": "duplicate_occurrence",
+      "dispositionReason": "The parent callback is the same permission-definition submit boundary.",
+      "duplicateOf": "PE-01698",
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-c797abff097b",
-          "distance": 227,
+          "candidateId": "EPC-cede95e14062",
+          "distance": 240,
           "file": "src/features/users/pages/UserRolesPage.tsx",
           "handler": "{submitPermission}",
           "humanLabel": null,
-          "line": 718,
+          "line": 770,
           "permissionKeys": [],
           "score": 16
         }
@@ -69758,7 +69780,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/users/pages/UserRolesPage.tsx",
-        "line": 491,
+        "line": 530,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -69787,12 +69809,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-431febe12bd7",
-          "distance": 396,
+          "candidateId": "EPC-9ac536083553",
+          "distance": 412,
           "file": "src/features/users/pages/UserRolesPage.tsx",
           "handler": "{() => setDeleteRoleTarget(null)}",
           "humanLabel": "Ні",
-          "line": 769,
+          "line": 821,
           "permissionKeys": [],
           "score": 23
         }
@@ -69800,7 +69822,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/users/pages/UserRolesPage.tsx",
-        "line": 373,
+        "line": 409,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -69821,20 +69843,22 @@
       "proposedPermission": "users.users_roles.handle_delete_role.command_delete",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "covered_existing",
+      "dispositionReason": "The confirmed role deletion rechecks role.delete and calls the dedicated scoped mutation.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "administration.roles.role.delete"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-bc63cb1f0d39",
-          "distance": 422,
+          "candidateId": "EPC-c30003e17e10",
+          "distance": 439,
           "file": "src/features/users/pages/UserRolesPage.tsx",
           "handler": "{handleDeleteRole}",
           "humanLabel": "Так",
-          "line": 777,
+          "line": 829,
           "permissionKeys": [],
           "score": 16
         }
@@ -69842,7 +69866,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/users/pages/UserRolesPage.tsx",
-        "line": 355,
+        "line": 390,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -69863,17 +69887,17 @@
       "proposedPermission": "users.users_roles.button.button_click.2",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "technical_ui",
+      "dispositionReason": "The scanned middle dot belongs to role metrics inside the local role selector and performs no business operation.",
       "duplicateOf": null,
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [],
       "source": {
         "status": "resolved",
         "file": "src/features/users/pages/UserRolesPage.tsx",
-        "line": 74,
+        "line": 77,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -69894,20 +69918,20 @@
       "proposedPermission": "users.users_roles.on_edit_role_role.button_click",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
-      "duplicateOf": null,
+      "disposition": "duplicate_occurrence",
+      "dispositionReason": "The role edit icon only opens the existing mode-aware role form; final submit owns edit authorization.",
+      "duplicateOf": "PE-01695",
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-59832febd442",
-          "distance": 217,
+          "candidateId": "EPC-13bc4cb9bec6",
+          "distance": 224,
           "file": "src/features/users/pages/UserRolesPage.tsx",
           "handler": "{() => onEditRole(role)}",
           "humanLabel": "Редагувати",
-          "line": 850,
+          "line": 904,
           "permissionKeys": [],
           "score": 12
         }
@@ -69915,7 +69939,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/users/pages/UserRolesPage.tsx",
-        "line": 633,
+        "line": 680,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -79921,19 +79945,6 @@
     "PE-01680",
     "PE-01681",
     "PE-01682",
-    "PE-01695",
-    "PE-01696",
-    "PE-01698",
-    "PE-01704",
-    "PE-01705",
-    "PE-01706",
-    "PE-01707",
-    "PE-01725",
-    "PE-01727",
-    "PE-01728",
-    "PE-01730",
-    "PE-01731",
-    "PE-01732",
     "PE-01754",
     "PE-01756",
     "PE-01758",

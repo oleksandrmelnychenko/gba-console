@@ -121,6 +121,32 @@ describe('EventPermissionsCatalog', () => {
     await waitFor(() => expect(onDirtyChange).toHaveBeenLastCalledWith(false))
   })
 
+  it('keeps event assignments read-only without the edit permission', async () => {
+    const editorRef = createRef<EventPermissionsCatalogHandle>()
+
+    render(
+      <MantineProvider env="test">
+        <I18nProvider>
+          <EventPermissionsCatalog
+            ref={editorRef}
+            readOnly
+            role={{ Name: 'Перегляд', NetUid: 'role-1' }}
+          />
+        </I18nProvider>
+      </MantineProvider>,
+    )
+
+    expect(await screen.findByText('Продажі')).not.toBeNull()
+    expect((screen.getByRole('button', { name: 'Вибрати все' }) as HTMLButtonElement).disabled).toBe(true)
+    expect((screen.getByRole('checkbox', { name: /Вибрати розділ/ }) as HTMLButtonElement).disabled).toBe(true)
+
+    await act(async () => {
+      await editorRef.current?.save()
+    })
+
+    expect(mockedUpdateRolePermissions).not.toHaveBeenCalled()
+  })
+
   it('shows legacy-backed rights as inherited and prevents a false removal', async () => {
     mockedGetRolePermissions.mockResolvedValue({
       catalogVersion: 'catalog-1',

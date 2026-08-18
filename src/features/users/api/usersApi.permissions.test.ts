@@ -2,13 +2,21 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { apiRequest } from '../../../shared/api/apiClient'
 import {
   createUser,
+  createUserRole,
   deleteUser,
+  deleteUserRole,
+  getDashboardModules,
+  getRoleManagementRoles,
   getUser,
   getUsers,
   resetUserPassword,
+  changePermissionsToRole,
+  addPermissionToNode,
+  updatePermissionToNode,
   updateUser,
+  updateUserRole,
 } from './usersApi'
-import type { UserProfile } from '../types'
+import type { UserPermission, UserProfile, UserRole } from '../types'
 
 vi.mock('../../../shared/api/apiClient', () => ({
   apiRequest: vi.fn(),
@@ -73,5 +81,30 @@ describe('users permission-scoped transport', () => {
         query: { netId: 'user-net-id', password: 'new-secret' },
       },
     )
+  })
+
+  it('uses role-management scoped read and mutation façades', async () => {
+    const role = { NetUid: 'role-net-id' } as UserRole
+    const permission = { ControlId: 'control' } as UserPermission
+
+    await getRoleManagementRoles()
+    await getDashboardModules()
+    await createUserRole(role)
+    await updateUserRole(role)
+    await deleteUserRole('role-net-id')
+    await changePermissionsToRole(role)
+    await addPermissionToNode(permission)
+    await updatePermissionToNode(permission)
+
+    expect(vi.mocked(apiRequest).mock.calls.map(([path]) => path)).toEqual([
+      '/usermanagement/profiles/roles/registry',
+      '/dashboards/roles/modules',
+      '/usermanagement/profiles/roles/create',
+      '/usermanagement/profiles/roles/edit',
+      '/usermanagement/profiles/roles/remove',
+      '/usermanagement/profiles/roles/page-permissions',
+      '/permissions/roles/definitions/create',
+      '/permissions/roles/definitions/edit',
+    ])
   })
 })
