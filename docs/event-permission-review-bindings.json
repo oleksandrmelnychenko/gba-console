@@ -2496,6 +2496,164 @@
     "PE-00372": {
       "disposition": "technical_ui",
       "reason": "This click only stops row propagation around an independently guarded nested action."
+    },
+    "PE-00976": {
+      "disposition": "technical_ui",
+      "reason": "Opening the already loaded main image in a browser tab is presentation-only and performs no business read or mutation."
+    },
+    "PE-00977": {
+      "disposition": "technical_ui",
+      "reason": "Opening another already loaded product image is presentation-only and is not a separate authorization capability."
+    },
+    "PE-00979": {
+      "disposition": "technical_ui",
+      "reason": "The shop-image thumbnail callback only previews an already loaded public image."
+    },
+    "PE-00983": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["products.assortment_analytics.page.view"],
+      "reason": "Embedded AI analytics reuses the existing assortment-analytics page right and the intelligence controller enforces it server-side."
+    },
+    "PE-00984": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["products.assortment.storage_history.open"],
+      "reason": "Storage-location history is an independent read and mounts only through its dedicated protected façade."
+    },
+    "PE-00985": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["products.assortment.audit.open"],
+      "reason": "Product field audit is independently guarded in the toolbar, drawer and dedicated audit façade."
+    },
+    "PE-00986": {
+      "disposition": "technical_ui",
+      "reason": "Opening the specification sheet only presents specification data already returned with the product; the actual save remains independently guarded by specification.edit."
+    },
+    "PE-00987": {
+      "disposition": "technical_ui",
+      "reason": "Opening the local image sheet is presentation-only; upload and delete remain independent guarded business rights."
+    },
+    "PE-00992": {
+      "disposition": "technical_ui",
+      "reason": "The placement popover only reveals already loaded placement rows and performs no API request."
+    },
+    "PE-00993": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-00997",
+      "reason": "Starting placement editing only creates a local draft under the same placement.edit boundary as final save."
+    },
+    "PE-00994": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-00997",
+      "reason": "Removing an unsaved placement row only changes the local draft; final save owns authorization."
+    },
+    "PE-00995": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-00997",
+      "reason": "Adding a placement row only changes the local draft; final save owns authorization."
+    },
+    "PE-00997": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["products.assortment.placement.edit"],
+      "reason": "Final placement save rechecks placement.edit and calls the permission-scoped idempotent update façade."
+    },
+    "PE-00998": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["products.assortment.product.edit"],
+      "reason": "Product form submit is mounted behind product.edit and uses the existing protected product-update façade."
+    },
+    "PE-01000": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["products.assortment.image.delete", "products.assortment.image.upload"],
+      "reason": "Image save derives the exact upload/delete mode, requires every involved right and calls the correspondingly protected façade."
+    },
+    "PE-01004": {
+      "disposition": "technical_ui",
+      "reason": "Previewing a selected local image file is presentation-only and performs no upload."
+    },
+    "PE-01010": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["products.assortment.movement.export"],
+      "reason": "Movement document generation has its own UI guard, handler recheck and protected export façade."
+    },
+    "PE-01012": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["products.assortment.write_off_rules.delete"],
+      "reason": "Deleting a write-off rule is independently guarded and server-enforced from read and create."
+    },
+    "PE-01013": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["products.assortment.write_off_rules.create"],
+      "reason": "Creating a write-off rule is independently guarded and server-enforced from read and delete."
+    },
+    "PE-01016": {
+      "disposition": "technical_ui",
+      "reason": "Keyboard navigation only changes local carousel selection and does not define another business capability."
+    },
+    "PE-01017": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["products.assortment.movement.open"],
+      "reason": "Warehouse-data control is a movement read and now mounts and loads through the existing movement.open boundary."
+    },
+    "PE-01020": {
+      "disposition": "technical_ui",
+      "reason": "Selecting an already listed carousel product is local navigation inside the page-scoped assortment view."
+    },
+    "PE-01025": {
+      "disposition": "technical_ui",
+      "reason": "Opening an already loaded main-image preview is presentation-only."
+    },
+    "PE-01027": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["products.assortment_analytics.page.view"],
+      "reason": "The inline analytics opener reuses the same existing analytics page right and protected controller as the detail toolbar."
+    },
+    "PE-01028": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["products.assortment.storage_history.open"],
+      "reason": "The inline history opener uses the same storage-history read boundary and dedicated façade."
+    },
+    "PE-01029": {
+      "disposition": "technical_ui",
+      "reason": "The inline specification opener presents product data already loaded under page.view; specification mutation has its own right."
+    },
+    "PE-01040": {
+      "disposition": "technical_ui",
+      "reason": "Selecting an original-number row only fills a local edit draft; product.edit owns every resulting mutation."
+    },
+    "PE-01042": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["products.assortment.page.view"],
+      "reason": "Selecting a related product reloads details through the existing page-scoped assortment details façade."
+    },
+    "PE-01048": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["products.assortment.document.upload"],
+      "reason": "Placement-file import is part of the existing document.upload workflow and uses its protected parsing façade."
+    },
+    "PE-01050": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-01048",
+      "reason": "Submitting corrected import rows is the second step of the same placement document upload capability."
+    },
+    "PE-01051": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-01054",
+      "reason": "Adding a price mapping only modifies the local product-import form; final upload owns authorization."
+    },
+    "PE-01052": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-01054",
+      "reason": "Removing a price mapping only modifies the local product-import form; final upload owns authorization."
+    },
+    "PE-01054": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["products.assortment.document.upload"],
+      "reason": "Final assortment-file import is guarded by document.upload and calls the dedicated protected façade."
+    },
+    "PE-01059": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["products.assortment.movement.export"],
+      "reason": "Inline income/outcome PDF generation reuses the single movement.export capability and scoped export façades."
     }
   }
 }

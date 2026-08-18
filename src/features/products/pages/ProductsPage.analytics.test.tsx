@@ -3,6 +3,7 @@ import { fireEvent, render, screen, waitFor, within } from '@testing-library/rea
 import { MemoryRouter } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { I18nProvider } from '../../../shared/i18n/I18nProvider'
+import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { getProductByNetId, getProductReservationByNetId, getProducts } from '../api/productsApi'
 import type { Product } from '../types'
 
@@ -17,8 +18,12 @@ vi.mock('../api/productsApi', async (importOriginal) => {
   }
 })
 
+const authState = vi.hoisted(() => ({ denied: new Set<string>() }))
+
 vi.mock('../../auth/useAuth', () => ({
-  useAuth: () => ({ hasPermission: () => true }),
+  useAuth: () => ({
+    hasPermission: (permissionKey: string) => !authState.denied.has(permissionKey),
+  }),
 }))
 
 vi.mock('./ProductDetailPage', () => ({
@@ -40,6 +45,7 @@ const getProductReservationByNetIdMock = vi.mocked(getProductReservationByNetId)
 const getProductsMock = vi.mocked(getProducts)
 
 beforeEach(() => {
+  authState.denied.clear()
   getProductByNetIdMock.mockReset()
   getProductReservationByNetIdMock.mockReset()
   getProductsMock.mockReset()
@@ -96,5 +102,31 @@ describe('ProductsPage', () => {
 
     fireEvent.click(analyticsAction)
     expect((await screen.findByTestId('active-product-panel')).textContent).toBe('analytics')
+  })
+
+  it('does not expose the embedded analytics opener without the existing analytics page right', async () => {
+    authState.denied.add(PermissionKeys.ProductsAssortment.Analytics.Open)
+    const product = {
+      Id: 42,
+      NameUA: 'Тестовий товар',
+      NetUid: 'product-42',
+      VendorCode: 'TEST-42',
+    } as Product
+
+    getProductByNetIdMock.mockResolvedValue(product)
+    getProductReservationByNetIdMock.mockResolvedValue({})
+
+    render(
+      <MemoryRouter initialEntries={['/products?netId=product-42']}>
+        <MantineProvider>
+          <I18nProvider>
+            <ProductsPage />
+          </I18nProvider>
+        </MantineProvider>
+      </MemoryRouter>,
+    )
+
+    await screen.findByText('Тестовий товар')
+    expect(screen.queryByRole('button', { name: 'AI-аналітика товару' })).toBeNull()
   })
 })

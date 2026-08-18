@@ -103,9 +103,16 @@ import {
 } from '../utils'
 import { getProductPriceBreakdown } from '../productPricing'
 import {
+  PRODUCT_ANALYTICS_PERMISSION,
+  PRODUCT_AUDIT_PERMISSION,
   PRODUCT_BALANCES_PERMISSION,
   PRODUCT_EDIT_PERMISSION,
+  PRODUCT_MOVEMENT_EXPORT_PERMISSION,
   PRODUCT_MOVEMENT_PERMISSION,
+  PRODUCT_PLACEMENT_EDIT_PERMISSION,
+  PRODUCT_STORAGE_HISTORY_PERMISSION,
+  PRODUCT_WRITE_OFF_CREATE_PERMISSION,
+  PRODUCT_WRITE_OFF_DELETE_PERMISSION,
   PRODUCT_WRITE_OFF_PERMISSION,
 } from '../permissions'
 import { getProductAnalyticsId, ProductAnalyticsPanel } from '../components/ProductAnalyticsPanel'
@@ -576,28 +583,34 @@ function ProductActionToolbar({
 
   return (
     <Group gap="xs" justify="flex-end">
-      <Button
-        aria-label={t('AI-аналітика товару')}
-        color="orange"
-        disabled={analyticsDisabled}
-        h={38}
-        leftSection={<Sparkles fill="currentColor" size={16} strokeWidth={0} />}
-        px="sm"
-        size="xs"
-        onClick={() => openPanel('analytics')}
-      >
-        {t('AI-аналітика')}
-      </Button>
-      <Tooltip label={t('Історія місця зберігання')}>
-        <ActionIcon aria-label={t('Історія місця зберігання')} color="gray" size={38} variant="light" onClick={() => openPanel('storage-history')}>
-          <History size={18} />
-        </ActionIcon>
-      </Tooltip>
-      <Tooltip label={t('Історія змін полів')}>
-        <ActionIcon aria-label={t('Історія змін полів')} color="gray" size={38} variant="light" onClick={() => openPanel('audit')}>
-          <ClipboardList size={18} />
-        </ActionIcon>
-      </Tooltip>
+      <PermissionGate permissionKey={PRODUCT_ANALYTICS_PERMISSION}>
+        <Button
+          aria-label={t('AI-аналітика товару')}
+          color="orange"
+          disabled={analyticsDisabled}
+          h={38}
+          leftSection={<Sparkles fill="currentColor" size={16} strokeWidth={0} />}
+          px="sm"
+          size="xs"
+          onClick={() => openPanel('analytics')}
+        >
+          {t('AI-аналітика')}
+        </Button>
+      </PermissionGate>
+      <PermissionGate permissionKey={PRODUCT_STORAGE_HISTORY_PERMISSION}>
+        <Tooltip label={t('Історія місця зберігання')}>
+          <ActionIcon aria-label={t('Історія місця зберігання')} color="gray" size={38} variant="light" onClick={() => openPanel('storage-history')}>
+            <History size={18} />
+          </ActionIcon>
+        </Tooltip>
+      </PermissionGate>
+      <PermissionGate permissionKey={PRODUCT_AUDIT_PERMISSION}>
+        <Tooltip label={t('Історія змін полів')}>
+          <ActionIcon aria-label={t('Історія змін полів')} color="gray" size={38} variant="light" onClick={() => openPanel('audit')}>
+            <ClipboardList size={18} />
+          </ActionIcon>
+        </Tooltip>
+      </PermissionGate>
       <Tooltip label={t('Специфікація')}>
         <ActionIcon aria-label={t('Специфікація')} color="gray" size={38} variant="light" onClick={() => openPanel('specification')}>
           <FileText size={18} />
@@ -785,6 +798,7 @@ function ProductPlacementEditor({
   placements: ProductPlacement[]
 }) {
   const { t } = useI18n()
+  const { hasPermission } = useAuth()
   const [drafts, setDrafts] = useState<ProductPlacementDraft[]>(() => cloneProductPlacements(placements))
   const [error, setError] = useState<string | null>(null)
   const [isEditing, setEditing] = useState(false)
@@ -792,8 +806,13 @@ function ProductPlacementEditor({
   const originalTotal = useMemo(() => sumProductPlacementQty(placements), [placements])
   const draftTotal = useMemo(() => sumProductPlacementQty(drafts), [drafts])
   const groupedPlacements = useMemo(() => groupProductPlacements(drafts), [drafts])
+  const canEditPlacements = hasPermission(PRODUCT_PLACEMENT_EDIT_PERMISSION)
 
   function startEditing() {
+    if (!canEditPlacements) {
+      return
+    }
+
     setDrafts(cloneProductPlacements(placements))
     setError(null)
     setEditing(true)
@@ -838,6 +857,10 @@ function ProductPlacementEditor({
   }
 
   async function savePlacements() {
+    if (!canEditPlacements) {
+      return
+    }
+
     if (Math.abs(draftTotal - originalTotal) > 0.00001) {
       setError(t('Сума кількості по місцях має збігатися із залишком складу'))
       return
@@ -872,9 +895,11 @@ function ProductPlacementEditor({
             {formatAmount(draftTotal)} / {formatAmount(originalTotal)}
           </Badge>
           {!isEditing ? (
-            <Button color={CREATE_ACTION_COLOR} size="xs" variant="outline" leftSection={<SquarePen size={14} />} onClick={startEditing}>
-              {t('Редагувати')}
-            </Button>
+            <PermissionGate permissionKey={PRODUCT_PLACEMENT_EDIT_PERMISSION}>
+              <Button color={CREATE_ACTION_COLOR} size="xs" variant="outline" leftSection={<SquarePen size={14} />} onClick={startEditing}>
+                {t('Редагувати')}
+              </Button>
+            </PermissionGate>
           ) : null}
         </Group>
       </Group>
@@ -885,7 +910,7 @@ function ProductPlacementEditor({
         </Alert>
       ) : null}
 
-      {isEditing ? (
+      {isEditing && canEditPlacements ? (
         <Stack className="product-placement-editor__edit-shell" gap="xs">
           <ScrollArea.Autosize className="product-placement-editor__scroll" mah="min(320px, calc(100vh - 360px))" type="auto">
             <Table className="product-placement-editor__table" miw={680}>
@@ -1038,9 +1063,15 @@ export function ProductActionDrawer({
       onClose={onClose}
     >
       {activePanel === 'analytics' && (
-        <ProductAnalyticsPanel key={getProductPanelKey(product)} product={product} />
+        <PermissionGate permissionKey={PRODUCT_ANALYTICS_PERMISSION} fallback={<ProductPermissionDeniedAlert />}>
+          <ProductAnalyticsPanel key={getProductPanelKey(product)} product={product} />
+        </PermissionGate>
       )}
-      {activePanel === 'audit' && <ProductAuditPanel key={getProductPanelKey(product)} product={product} />}
+      {activePanel === 'audit' && (
+        <PermissionGate permissionKey={PRODUCT_AUDIT_PERMISSION} fallback={<ProductPermissionDeniedAlert />}>
+          <ProductAuditPanel key={getProductPanelKey(product)} product={product} />
+        </PermissionGate>
+      )}
       {activePanel === 'edit' && (
         <PermissionGate permissionKey={PRODUCT_EDIT_PERMISSION} fallback={<ProductPermissionDeniedAlert />}>
           <ProductEditPanel key={getProductPanelKey(product)} product={product} onProductSaved={onProductSaved} />
@@ -1058,7 +1089,11 @@ export function ProductActionDrawer({
         </PermissionGate>
       )}
       {activePanel === 'specification' && <ProductSpecificationPanel product={product} onProductSaved={onProductSaved} />}
-      {activePanel === 'storage-history' && <ProductStorageHistoryPanel product={product} />}
+      {activePanel === 'storage-history' && (
+        <PermissionGate permissionKey={PRODUCT_STORAGE_HISTORY_PERMISSION} fallback={<ProductPermissionDeniedAlert />}>
+          <ProductStorageHistoryPanel product={product} />
+        </PermissionGate>
+      )}
       {activePanel === 'writeoff' && (
         <PermissionGate permissionKey={PRODUCT_WRITE_OFF_PERMISSION} fallback={<ProductPermissionDeniedAlert />}>
           <ProductWriteOffRulesPanel product={product} onChanged={onReload} />
@@ -1888,12 +1923,14 @@ function ProductMovementPanel({ product }: { product: Product }) {
         <HistoricalSourceMovementPanel
           active={activeTab === 'historical-source'}
           product={product}
+          requestPath="/consignments/info/assortment/movement/historical-source/filtered"
         />
       </Tabs.Panel>
       <Tabs.Panel value="informational" pt={0}>
         <InformationalMovementPanel
           active={activeTab === 'informational'}
           product={product}
+          requestPath="/consignments/info/assortment/movement/informational/filtered"
         />
       </Tabs.Panel>
     </Tabs>
@@ -1902,6 +1939,7 @@ function ProductMovementPanel({ product }: { product: Product }) {
 
 function CurrentProductMovementPanel({ product }: { product: Product }) {
   const { t } = useI18n()
+  const { hasPermission } = useAuth()
   const productNetUid = product.NetUid?.trim()
   const [dateFrom, setDateFrom] = useState(() => getDateDaysAgo(PRODUCT_INCOME_DEFAULT_LOOKBACK_DAYS))
   const [dateTo, setDateTo] = useState(getTodayDate)
@@ -1918,6 +1956,7 @@ function CurrentProductMovementPanel({ product }: { product: Product }) {
   const missingNetUidError = productNetUid ? null : t('У товару немає NetUid для завантаження руху товару')
   const typesError = selectedTypes.length === 0 ? t('Оберіть хоча б один тип руху') : null
   const activeError = filterError || missingNetUidError || typesError || error
+  const canExportMovements = hasPermission(PRODUCT_MOVEMENT_EXPORT_PERMISSION)
 
   function toggleMovementItemType(value: number) {
     setSelectedTypes((currentTypes) => (
@@ -1972,7 +2011,7 @@ function CurrentProductMovementPanel({ product }: { product: Product }) {
   }, [dateFrom, dateTo, filterError, movementType, productNetUid, reloadKey, selectedTypes, t, typesError])
 
   async function exportMovements() {
-    if (!productNetUid || filterError || typesError || isExporting) {
+    if (!canExportMovements || !productNetUid || filterError || typesError || isExporting) {
       return
     }
 
@@ -2037,9 +2076,11 @@ function CurrentProductMovementPanel({ product }: { product: Product }) {
         <Button disabled={Boolean(filterError) || Boolean(typesError)} leftSection={<RefreshCw size={18} />} loading={isLoading} variant="outline" onClick={() => reload()}>
           {t('Оновити')}
         </Button>
-        <Button disabled={!productNetUid || Boolean(filterError) || Boolean(typesError)} leftSection={<FileDown size={18} />} loading={isExporting} variant="default" onClick={() => void exportMovements()}>
-          {t('Друк PDF')}
-        </Button>
+        <PermissionGate permissionKey={PRODUCT_MOVEMENT_EXPORT_PERMISSION}>
+          <Button disabled={!productNetUid || Boolean(filterError) || Boolean(typesError)} leftSection={<FileDown size={18} />} loading={isExporting} variant="default" onClick={() => void exportMovements()}>
+            {t('Друк PDF')}
+          </Button>
+        </PermissionGate>
       </Group>
       <div className="product-movement-type-filters">
         <div className="product-movement-type-grid">
@@ -2106,6 +2147,7 @@ function ProductDocumentDownloadModal({
 
 function ProductWriteOffRulesPanel({ onChanged, product }: { onChanged: () => void; product: Product }) {
   const { t } = useI18n()
+  const { hasPermission } = useAuth()
   const { density, toggleDensity } = useDataTableDensity('product-writeoff-rules', 'normal')
   const productNetUid = product.NetUid?.trim()
   const fallbackProductGroups = useMemo(() => getProductGroupsFromProduct(product), [product])
@@ -2146,6 +2188,8 @@ function ProductWriteOffRulesPanel({ onChanged, product }: { onChanged: () => vo
     ? t('Оберіть групу товарів для правил списання')
     : null
   const activeError = missingNetUidError || (scope === 'group' ? groupError || groupSelectionError : null) || error
+  const canCreateRule = hasPermission(PRODUCT_WRITE_OFF_CREATE_PERMISSION)
+  const canDeleteRule = hasPermission(PRODUCT_WRITE_OFF_DELETE_PERMISSION)
 
   useEffect(() => {
     if (!productNetUid) {
@@ -2260,6 +2304,10 @@ function ProductWriteOffRulesPanel({ onChanged, product }: { onChanged: () => vo
   }, [productNetUid, scope, selectedProductGroupNetId])
 
   async function addRule() {
+    if (!canCreateRule) {
+      return
+    }
+
     if (!productNetUid) {
       setError(t('У товару немає NetUid для збереження правила списання'))
       return
@@ -2310,7 +2358,7 @@ function ProductWriteOffRulesPanel({ onChanged, product }: { onChanged: () => vo
 
   const removeRule = useCallback(
     async (rule: ProductWriteOffRule) => {
-      if (!rule.NetUid) {
+      if (!canDeleteRule || !rule.NetUid) {
         return
       }
 
@@ -2328,7 +2376,7 @@ function ProductWriteOffRulesPanel({ onChanged, product }: { onChanged: () => vo
         setRemovingNetUid(null)
       }
     },
-    [onChanged, t],
+    [canDeleteRule, onChanged, t],
   )
 
   const writeOffColumns = useMemo<DataTableColumn<ProductWriteOffRule>[]>(() => [
@@ -2342,13 +2390,15 @@ function ProductWriteOffRulesPanel({ onChanged, product }: { onChanged: () => vo
       width: 64,
       accessor: () => null,
       cell: (row) => (
-        <TableRowAction
-          action="delete"
-          disabled={!row.NetUid || Boolean(removingNetUid)}
-          label={t('Видалити')}
-          loading={removingNetUid === row.NetUid}
-          onClick={() => removeRule(row)}
-        />
+        <PermissionGate permissionKey={PRODUCT_WRITE_OFF_DELETE_PERMISSION}>
+          <TableRowAction
+            action="delete"
+            disabled={!row.NetUid || Boolean(removingNetUid)}
+            label={t('Видалити')}
+            loading={removingNetUid === row.NetUid}
+            onClick={() => removeRule(row)}
+          />
+        </PermissionGate>
       ),
     },
   ], [removingNetUid, removeRule, t])
@@ -2374,9 +2424,11 @@ function ProductWriteOffRulesPanel({ onChanged, product }: { onChanged: () => vo
         ) : null}
         <Select label={t('Правило')} data={writeOffRuleTypeOptions.map((option) => ({ ...option, label: t(option.label) }))} value={ruleType} w={220} onChange={(value) => setRuleType(value || '0')} />
         <Select label={t('Регіон')} data={writeOffLocaleOptions.map((option) => ({ ...option, label: t(option.label) }))} value={locale} w={180} onChange={(value) => setLocale(value || 'uk')} />
-        <Button disabled={!productNetUid || isLoading || (scope === 'group' && (isLoadingGroups || !selectedProductGroupNetId))} color={CREATE_ACTION_COLOR} leftSection={<Plus size={18} />} loading={isSaving} onClick={addRule}>
-          {t('Додати')}
-        </Button>
+        <PermissionGate permissionKey={PRODUCT_WRITE_OFF_CREATE_PERMISSION}>
+          <Button disabled={!productNetUid || isLoading || (scope === 'group' && (isLoadingGroups || !selectedProductGroupNetId))} color={CREATE_ACTION_COLOR} leftSection={<Plus size={18} />} loading={isSaving} onClick={addRule}>
+            {t('Додати')}
+          </Button>
+        </PermissionGate>
         <DataTableDensityToggle density={density} onToggle={toggleDensity} size={36} />
       </Group>
       {activeError && <Alert color={missingNetUidError ? 'yellow' : 'red'} icon={<CircleAlert size={18} />} variant="light">{activeError}</Alert>}

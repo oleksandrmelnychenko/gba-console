@@ -169,6 +169,31 @@ describe('human-reviewed product-group actions', () => {
   })
 })
 
+describe('human-reviewed product-assortment actions', () => {
+  it('adds six missing business rights and reuses the existing analytics page right', () => {
+    const actual = [
+      ...Object.values(PermissionKeys.ProductsAssortment.Analytics),
+      ...Object.values(PermissionKeys.ProductsAssortment.Audit),
+      PermissionKeys.ProductsAssortment.Movement.Export,
+      ...Object.values(PermissionKeys.ProductsAssortment.Placement),
+      ...Object.values(PermissionKeys.ProductsAssortment.StorageHistory),
+      PermissionKeys.ProductsAssortment.WriteOffRules.Create,
+      PermissionKeys.ProductsAssortment.WriteOffRules.Delete,
+    ]
+
+    expect(actual).toEqual([
+      'products.assortment_analytics.page.view',
+      'products.assortment.audit.open',
+      'products.assortment.movement.export',
+      'products.assortment.placement.edit',
+      'products.assortment.storage_history.open',
+      'products.assortment.write_off_rules.create',
+      'products.assortment.write_off_rules.delete',
+    ])
+    expect(new Set(actual).size).toBe(actual.length)
+  })
+})
+
 describe('human-reviewed act-reconciliation actions', () => {
   it('contains six independent business actions plus the existing page key', () => {
     const actual = [

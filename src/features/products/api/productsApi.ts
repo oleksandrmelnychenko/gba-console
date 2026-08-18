@@ -129,7 +129,7 @@ export async function getProductSourcePriceComparison(
 }
 
 export async function getProductAuditEntities(netId: string, fieldName: ProductAuditField): Promise<AuditEntity[]> {
-  const result = await apiRequest<unknown>('/auditing/get/limited', {
+  const result = await apiRequest<unknown>('/auditing/products/assortment/history', {
     query: {
       fieldName,
       netId,
@@ -230,7 +230,7 @@ export async function createProductWithImages(product: Product, files: File[]): 
 export async function exportProductMovementsDocument(
   params: ProductMovementExportParams,
 ): Promise<ProductMovementExportDocument> {
-  const result = await apiRequest<unknown>('/consignments/info/movement/document/export', {
+  const result = await apiRequest<unknown>('/consignments/info/assortment/movement/document/export', {
     query: {
       from: params.from,
       movementType: params.movementType,
@@ -323,7 +323,7 @@ export async function uploadProductPlacementStorageReturn(
 export async function getProductStorageLocationHistory(
   params: ProductStorageLocationHistoryParams,
 ): Promise<ProductStorageLocationHistory[]> {
-  const result = await apiRequest<unknown>('/products/placements/history/all/filtered', {
+  const result = await apiRequest<unknown>('/products/placements/history/assortment/all/filtered', {
     query: {
       ProductNetId: params.productNetId,
       from: params.from,
@@ -375,7 +375,7 @@ export async function getProductMovements(params: ProductMovementsParams): Promi
 export async function getProductIncomeMovements(
   params: ProductIncomeOutcomeMovementParams,
 ): Promise<ProductIncomeMovement[]> {
-  const result = await apiRequest<unknown>('/consignments/info/income/filtered', {
+  const result = await apiRequest<unknown>('/consignments/info/assortment/income/filtered', {
     query: {
       from: params.from,
       productNetId: params.productNetId,
@@ -393,7 +393,7 @@ export async function getProductIncomeMovements(
 export async function getProductOutcomeMovements(
   params: ProductIncomeOutcomeMovementParams,
 ): Promise<ProductOutcomeMovement[]> {
-  const result = await apiRequest<unknown>('/consignments/info/outcome/filtered', {
+  const result = await apiRequest<unknown>('/consignments/info/assortment/outcome/filtered', {
     query: {
       from: params.from,
       productNetId: params.productNetId,
@@ -411,7 +411,7 @@ export async function getProductOutcomeMovements(
 export async function exportProductIncomeMovementsDocument(
   params: ProductIncomeOutcomeMovementParams,
 ): Promise<ProductMovementExportDocument> {
-  const result = await apiRequest<unknown>('/consignments/info/income/document/export', {
+  const result = await apiRequest<unknown>('/consignments/info/assortment/income/document/export', {
     query: {
       from: params.from,
       productNetId: params.productNetId,
@@ -429,7 +429,7 @@ export async function exportProductIncomeMovementsDocument(
 export async function exportProductOutcomeMovementsDocument(
   params: ProductIncomeOutcomeMovementParams,
 ): Promise<ProductMovementExportDocument> {
-  const result = await apiRequest<unknown>('/consignments/info/outcome/document/export', {
+  const result = await apiRequest<unknown>('/consignments/info/assortment/outcome/document/export', {
     query: {
       from: params.from,
       productNetId: params.productNetId,
@@ -574,7 +574,7 @@ async function updateProductPlacementsCore(
   }
 
   try {
-    const result = await apiRequest<unknown>('/products/placements/storage/update', {
+    const result = await apiRequest<unknown>('/products/placements/storage/assortment/update', {
       method: 'POST',
       headers: {
         'Idempotency-Key': snapshot.operationNetUid,

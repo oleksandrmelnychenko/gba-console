@@ -365,6 +365,12 @@ export const PermissionKeys = {
     Page: {
       View: 'products.assortment.page.view',
     },
+    Analytics: {
+      Open: 'products.assortment_analytics.page.view',
+    },
+    Audit: {
+      Open: 'products.assortment.audit.open',
+    },
     Product: {
       Edit: 'products.assortment.product.edit',
     },
@@ -380,9 +386,18 @@ export const PermissionKeys = {
     },
     Movement: {
       Open: 'products.assortment.movement.open',
+      Export: 'products.assortment.movement.export',
+    },
+    Placement: {
+      Edit: 'products.assortment.placement.edit',
+    },
+    StorageHistory: {
+      Open: 'products.assortment.storage_history.open',
     },
     WriteOffRules: {
       Open: 'products.assortment.write_off_rules.open',
+      Create: 'products.assortment.write_off_rules.create',
+      Delete: 'products.assortment.write_off_rules.delete',
     },
     Document: {
       Upload: 'products.assortment.document.upload',
@@ -894,11 +909,15 @@ export type ProductDeliveryProtocolsPermissionKey =
 
 export type ProductsAssortmentPermissionKey =
   | Values<typeof PermissionKeys.ProductsAssortment.Page>
+  | Values<typeof PermissionKeys.ProductsAssortment.Analytics>
+  | Values<typeof PermissionKeys.ProductsAssortment.Audit>
   | Values<typeof PermissionKeys.ProductsAssortment.Product>
   | Values<typeof PermissionKeys.ProductsAssortment.Specification>
   | Values<typeof PermissionKeys.ProductsAssortment.Image>
   | Values<typeof PermissionKeys.ProductsAssortment.ConsignmentBalances>
   | Values<typeof PermissionKeys.ProductsAssortment.Movement>
+  | Values<typeof PermissionKeys.ProductsAssortment.Placement>
+  | Values<typeof PermissionKeys.ProductsAssortment.StorageHistory>
   | Values<typeof PermissionKeys.ProductsAssortment.WriteOffRules>
   | Values<typeof PermissionKeys.ProductsAssortment.Document>
   | Values<typeof PermissionKeys.ProductsAssortment.Legacy77>
@@ -1983,11 +2002,15 @@ const eventPermissionKeys = new Set<string>([
   ),
   ...Object.values(PermissionKeys.ProductDeliveryProtocols.UnifiedService),
   ...Object.values(PermissionKeys.ProductsAssortment.Page),
+  ...Object.values(PermissionKeys.ProductsAssortment.Analytics),
+  ...Object.values(PermissionKeys.ProductsAssortment.Audit),
   ...Object.values(PermissionKeys.ProductsAssortment.Product),
   ...Object.values(PermissionKeys.ProductsAssortment.Specification),
   ...Object.values(PermissionKeys.ProductsAssortment.Image),
   ...Object.values(PermissionKeys.ProductsAssortment.ConsignmentBalances),
   ...Object.values(PermissionKeys.ProductsAssortment.Movement),
+  ...Object.values(PermissionKeys.ProductsAssortment.Placement),
+  ...Object.values(PermissionKeys.ProductsAssortment.StorageHistory),
   ...Object.values(PermissionKeys.ProductsAssortment.WriteOffRules),
   ...Object.values(PermissionKeys.ProductsAssortment.Document),
   ...Object.values(PermissionKeys.ProductsAssortment.Legacy77),

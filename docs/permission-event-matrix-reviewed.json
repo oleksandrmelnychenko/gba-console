@@ -4,25 +4,25 @@
     "inputRecords": 1902,
     "classifiedRecords": 1902,
     "dispositionCounts": {
-      "technical_ui": 703,
-      "covered_existing": 440,
-      "duplicate_occurrence": 231,
-      "business_candidate": 322,
-      "needs_human_review": 198,
+      "technical_ui": 715,
+      "covered_existing": 456,
+      "duplicate_occurrence": 237,
+      "business_candidate": 320,
+      "needs_human_review": 166,
       "stale_or_aggregated": 8
     },
-    "reviewCandidates": 520,
-    "technicalExcluded": 703,
-    "duplicatesExcluded": 231,
-    "duplicateOccurrencesTotal": 300,
+    "reviewCandidates": 486,
+    "technicalExcluded": 715,
+    "duplicatesExcluded": 237,
+    "duplicateOccurrencesTotal": 306,
     "technicalDuplicateOverlap": 69,
     "sourceResolved": 1828,
     "sourceUnresolved": 74,
     "currentActionResolved": 1187,
     "currentActionUnresolved": 715,
     "currentProductionActions": 1829,
-    "currentPermissionBoundActions": 231,
-    "currentUnboundActions": 1598
+    "currentPermissionBoundActions": 245,
+    "currentUnboundActions": 1584
   },
   "invariants": {
     "allInputRecordsClassified": true,
@@ -12374,12 +12374,12 @@
       "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-f9e9dd42a4f8",
+          "candidateId": "EPC-60068227d4c0",
           "distance": 5,
           "file": "src/features/clients/components/structure/ClientStructurePanel.tsx",
           "handler": "{() => setGroupsModalOpened(true)}",
           "humanLabel": "Підгрупи",
-          "line": 218,
+          "line": 219,
           "permissionKeys": [
             "counterparties.clients.structure.manage_groups"
           ],
@@ -12389,7 +12389,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/clients/components/structure/ClientStructurePanel.tsx",
-        "line": 223,
+        "line": 224,
         "alternatives": []
       }
     },
@@ -12423,12 +12423,12 @@
       "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-94426730d6c5",
+          "candidateId": "EPC-6bc7333c74fe",
           "distance": 51,
           "file": "src/features/clients/components/structure/ClientStructurePanel.tsx",
           "handler": "{openNewUser}",
           "humanLabel": "Новий користувач",
-          "line": 229,
+          "line": 230,
           "permissionKeys": [
             "counterparties.clients.client.create"
           ],
@@ -12438,7 +12438,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/clients/components/structure/ClientStructurePanel.tsx",
-        "line": 178,
+        "line": 179,
         "alternatives": []
       }
     },
@@ -39276,12 +39276,12 @@
       "proposedPermission": "clients.clients_edit_item.window_open_main_image_image_url_blank_noopener_noreferrer.modal_open",
       "securityLevel": "low",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "technical_ui",
+      "dispositionReason": "Opening the already loaded main image in a browser tab is presentation-only and performs no business read or mutation.",
       "duplicateOf": null,
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
           "candidateId": "EPC-7683705ed48e",
@@ -39337,12 +39337,12 @@
       "proposedPermission": "clients.clients_edit_item.window_open_image_url_blank_noopener_noreferrer.modal_open",
       "securityLevel": "low",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "technical_ui",
+      "dispositionReason": "Opening another already loaded product image is presentation-only and is not a separate authorization capability.",
       "duplicateOf": null,
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
           "candidateId": "EPC-85a8a83e0c84",
@@ -39438,12 +39438,12 @@
       "proposedPermission": "clients.clients_edit_item.on_image_click_url.button_click",
       "securityLevel": "low",
       "rawStatus": "No permission candidate found",
-      "disposition": "needs_human_review",
-      "dispositionReason": "insufficient_evidence_for_automatic_permission_or_exclusion",
+      "disposition": "technical_ui",
+      "dispositionReason": "The shop-image thumbnail callback only previews an already loaded public image.",
       "duplicateOf": null,
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
           "candidateId": "EPC-1328eec246ed",
@@ -39486,12 +39486,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-58fa9a0c7b9c",
+          "candidateId": "EPC-c463ab831a81",
           "distance": 0,
           "file": "src/features/products/pages/ProductDetailPage.tsx",
           "handler": "{() => navigate('/products')}",
           "humanLabel": "Назад",
-          "line": 373,
+          "line": 380,
           "permissionKeys": [],
           "score": 16
         }
@@ -39499,7 +39499,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/products/pages/ProductDetailPage.tsx",
-        "line": 373,
+        "line": 380,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -39530,7 +39530,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/products/pages/ProductDetailPage.tsx",
-        "line": 262,
+        "line": 269,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -39559,12 +39559,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-15340702f56a",
+          "candidateId": "EPC-07ca79020df4",
           "distance": 9,
           "file": "src/features/products/pages/ProductDetailPage.tsx",
           "handler": "{() => setPreviewImageUrl(mainImage.ImageUrl || null)}",
           "humanLabel": null,
-          "line": 426,
+          "line": 433,
           "permissionKeys": [],
           "score": 39
         }
@@ -39572,7 +39572,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/products/pages/ProductDetailPage.tsx",
-        "line": 435,
+        "line": 442,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -39593,28 +39593,32 @@
       "proposedPermission": "products.products.open_panel_analytics.modal_open",
       "securityLevel": "low",
       "rawStatus": "Candidate existing key in component; binding review required",
-      "disposition": "needs_human_review",
-      "dispositionReason": "raw_audit_claims_existing_binding_but_does_not_name_the_key",
+      "disposition": "covered_existing",
+      "dispositionReason": "Embedded AI analytics reuses the existing assortment-analytics page right and the intelligence controller enforces it server-side.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "products.assortment_analytics.page.view"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-4983db081783",
+          "candidateId": "EPC-39b9d57b2c5e",
           "distance": 8,
           "file": "src/features/products/pages/ProductDetailPage.tsx",
           "handler": "{() => openPanel('analytics')}",
           "humanLabel": "AI-аналітика товару",
-          "line": 579,
-          "permissionKeys": [],
+          "line": 587,
+          "permissionKeys": [
+            "products.assortment_analytics.page.view"
+          ],
           "score": 18
         }
       ],
       "source": {
         "status": "resolved",
         "file": "src/features/products/pages/ProductDetailPage.tsx",
-        "line": 587,
+        "line": 595,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -39635,28 +39639,32 @@
       "proposedPermission": "products.products.open_panel_storage_history.modal_open",
       "securityLevel": "low",
       "rawStatus": "Candidate existing key in component; binding review required",
-      "disposition": "needs_human_review",
-      "dispositionReason": "raw_audit_claims_existing_binding_but_does_not_name_the_key",
+      "disposition": "covered_existing",
+      "dispositionReason": "Storage-location history is an independent read and mounts only through its dedicated protected façade.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "products.assortment.storage_history.open"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-5e2008b74101",
+          "candidateId": "EPC-3d07d33f4b5f",
           "distance": 0,
           "file": "src/features/products/pages/ProductDetailPage.tsx",
           "handler": "{() => openPanel('storage-history')}",
           "humanLabel": "Історія місця зберігання",
-          "line": 592,
-          "permissionKeys": [],
+          "line": 602,
+          "permissionKeys": [
+            "products.assortment.storage_history.open"
+          ],
           "score": 23
         }
       ],
       "source": {
         "status": "resolved",
         "file": "src/features/products/pages/ProductDetailPage.tsx",
-        "line": 592,
+        "line": 602,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -39677,28 +39685,32 @@
       "proposedPermission": "products.products.open_panel_audit.modal_open",
       "securityLevel": "low",
       "rawStatus": "Candidate existing key in component; binding review required",
-      "disposition": "needs_human_review",
-      "dispositionReason": "raw_audit_claims_existing_binding_but_does_not_name_the_key",
+      "disposition": "covered_existing",
+      "dispositionReason": "Product field audit is independently guarded in the toolbar, drawer and dedicated audit façade.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "products.assortment.audit.open"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-6431774c7a68",
+          "candidateId": "EPC-63520f0901e1",
           "distance": 0,
           "file": "src/features/products/pages/ProductDetailPage.tsx",
           "handler": "{() => openPanel('audit')}",
           "humanLabel": "Історія змін полів",
-          "line": 597,
-          "permissionKeys": [],
+          "line": 609,
+          "permissionKeys": [
+            "products.assortment.audit.open"
+          ],
           "score": 14
         }
       ],
       "source": {
         "status": "resolved",
         "file": "src/features/products/pages/ProductDetailPage.tsx",
-        "line": 597,
+        "line": 609,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -39719,20 +39731,20 @@
       "proposedPermission": "products.products.open_panel_specification.modal_open",
       "securityLevel": "low",
       "rawStatus": "Candidate existing key in component; binding review required",
-      "disposition": "needs_human_review",
-      "dispositionReason": "raw_audit_claims_existing_binding_but_does_not_name_the_key",
+      "disposition": "technical_ui",
+      "dispositionReason": "Opening the specification sheet only presents specification data already returned with the product; the actual save remains independently guarded by specification.edit.",
       "duplicateOf": null,
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-f004b66f739f",
+          "candidateId": "EPC-1119fda15610",
           "distance": 0,
           "file": "src/features/products/pages/ProductDetailPage.tsx",
           "handler": "{() => openPanel('specification')}",
           "humanLabel": "Специфікація",
-          "line": 602,
+          "line": 615,
           "permissionKeys": [],
           "score": 22
         }
@@ -39740,7 +39752,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/products/pages/ProductDetailPage.tsx",
-        "line": 602,
+        "line": 615,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -39761,20 +39773,20 @@
       "proposedPermission": "products.products.open_panel_images.modal_open",
       "securityLevel": "low",
       "rawStatus": "Candidate existing key in component; binding review required",
-      "disposition": "needs_human_review",
-      "dispositionReason": "raw_audit_claims_existing_binding_but_does_not_name_the_key",
+      "disposition": "technical_ui",
+      "dispositionReason": "Opening the local image sheet is presentation-only; upload and delete remain independent guarded business rights.",
       "duplicateOf": null,
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-3bcb278f7f08",
+          "candidateId": "EPC-ef7d0e2ca77f",
           "distance": 0,
           "file": "src/features/products/pages/ProductDetailPage.tsx",
           "handler": "{() => openPanel('images')}",
           "humanLabel": "Зображення",
-          "line": 607,
+          "line": 620,
           "permissionKeys": [],
           "score": 15
         }
@@ -39782,7 +39794,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/products/pages/ProductDetailPage.tsx",
-        "line": 607,
+        "line": 620,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -39813,12 +39825,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-2bd4c7fd545b",
+          "candidateId": "EPC-157309825ee6",
           "distance": 0,
           "file": "src/features/products/pages/ProductDetailPage.tsx",
           "handler": "{() => openPanel('remains')}",
           "humanLabel": "Залишки по партіям",
-          "line": 613,
+          "line": 626,
           "permissionKeys": [
             "products.assortment.consignment_balances.open"
           ],
@@ -39828,7 +39840,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/products/pages/ProductDetailPage.tsx",
-        "line": 613,
+        "line": 626,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -39859,12 +39871,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-3ebe6ff22de0",
+          "candidateId": "EPC-9e989e924017",
           "distance": 0,
           "file": "src/features/products/pages/ProductDetailPage.tsx",
           "handler": "{() => openPanel('edit')}",
           "humanLabel": "Редагувати",
-          "line": 620,
+          "line": 633,
           "permissionKeys": [
             "products.assortment.product.edit"
           ],
@@ -39874,7 +39886,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/products/pages/ProductDetailPage.tsx",
-        "line": 620,
+        "line": 633,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -39905,12 +39917,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-937b48476239",
+          "candidateId": "EPC-15473b82bb51",
           "distance": 0,
           "file": "src/features/products/pages/ProductDetailPage.tsx",
           "handler": "{() => openPanel('movement')}",
           "humanLabel": "Рух товару",
-          "line": 627,
+          "line": 640,
           "permissionKeys": [
             "products.assortment.movement.open"
           ],
@@ -39920,7 +39932,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/products/pages/ProductDetailPage.tsx",
-        "line": 627,
+        "line": 640,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -39951,12 +39963,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-cca26671f878",
+          "candidateId": "EPC-66b483a05074",
           "distance": 0,
           "file": "src/features/products/pages/ProductDetailPage.tsx",
           "handler": "{() => openPanel('writeoff')}",
           "humanLabel": "Правила списання",
-          "line": 634,
+          "line": 647,
           "permissionKeys": [
             "products.assortment.write_off_rules.open"
           ],
@@ -39966,7 +39978,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/products/pages/ProductDetailPage.tsx",
-        "line": 634,
+        "line": 647,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -39987,20 +39999,20 @@
       "proposedPermission": "products.products.set_opened_current_opened_current_opened.modal_open",
       "securityLevel": "low",
       "rawStatus": "Candidate existing key in component; binding review required",
-      "disposition": "needs_human_review",
-      "dispositionReason": "raw_audit_claims_existing_binding_but_does_not_name_the_key",
+      "disposition": "technical_ui",
+      "dispositionReason": "The placement popover only reveals already loaded placement rows and performs no API request.",
       "duplicateOf": null,
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-6e8b61dd741e",
+          "candidateId": "EPC-d99adec939e7",
           "distance": 0,
           "file": "src/features/products/pages/ProductDetailPage.tsx",
           "handler": "{() => setOpened((currentOpened) => !currentOpened)}",
           "humanLabel": null,
-          "line": 754,
+          "line": 767,
           "permissionKeys": [],
           "score": 35
         }
@@ -40008,7 +40020,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/products/pages/ProductDetailPage.tsx",
-        "line": 754,
+        "line": 767,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -40029,28 +40041,32 @@
       "proposedPermission": "products.products.start_editing.button_click",
       "securityLevel": "high",
       "rawStatus": "Candidate existing key in component; binding review required",
-      "disposition": "needs_human_review",
-      "dispositionReason": "raw_audit_claims_existing_binding_but_does_not_name_the_key",
-      "duplicateOf": null,
+      "disposition": "duplicate_occurrence",
+      "dispositionReason": "Starting placement editing only creates a local draft under the same placement.edit boundary as final save.",
+      "duplicateOf": "PE-00997",
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "products.assortment.placement.edit"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-afa55e01ca09",
-          "distance": 79,
+          "candidateId": "EPC-baf2f0abf833",
+          "distance": 88,
           "file": "src/features/products/pages/ProductDetailPage.tsx",
           "handler": "{startEditing}",
           "humanLabel": "Редагувати",
-          "line": 875,
-          "permissionKeys": [],
+          "line": 899,
+          "permissionKeys": [
+            "products.assortment.placement.edit"
+          ],
           "score": 12
         }
       ],
       "source": {
         "status": "resolved",
         "file": "src/features/products/pages/ProductDetailPage.tsx",
-        "line": 796,
+        "line": 811,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -40071,20 +40087,20 @@
       "proposedPermission": "products.products.remove_local_placement_index.command_delete",
       "securityLevel": "high",
       "rawStatus": "Candidate existing key in component; binding review required",
-      "disposition": "needs_human_review",
-      "dispositionReason": "raw_audit_claims_existing_binding_but_does_not_name_the_key",
-      "duplicateOf": null,
+      "disposition": "duplicate_occurrence",
+      "dispositionReason": "Removing an unsaved placement row only changes the local draft; final save owns authorization.",
+      "duplicateOf": "PE-00997",
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-80fef6f1802d",
-          "distance": 106,
+          "candidateId": "EPC-8c0be6dcc04f",
+          "distance": 112,
           "file": "src/features/products/pages/ProductDetailPage.tsx",
           "handler": "{() => removeLocalPlacement(index)}",
           "humanLabel": "Видалити новий рядок",
-          "line": 942,
+          "line": 967,
           "permissionKeys": [],
           "score": 25
         }
@@ -40092,7 +40108,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/products/pages/ProductDetailPage.tsx",
-        "line": 836,
+        "line": 855,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -40113,28 +40129,32 @@
       "proposedPermission": "products.products.add_placement.command_submit",
       "securityLevel": "high",
       "rawStatus": "Candidate existing key in component; binding review required",
-      "disposition": "needs_human_review",
-      "dispositionReason": "raw_audit_claims_existing_binding_but_does_not_name_the_key",
-      "duplicateOf": null,
+      "disposition": "duplicate_occurrence",
+      "dispositionReason": "Adding a placement row only changes the local draft; final save owns authorization.",
+      "duplicateOf": "PE-00997",
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "products.assortment.placement.edit"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-4e3adbd09828",
-          "distance": 147,
+          "candidateId": "EPC-3b38ec80b0b3",
+          "distance": 153,
           "file": "src/features/products/pages/ProductDetailPage.tsx",
           "handler": "{addPlacement}",
           "humanLabel": "Додати місце",
-          "line": 955,
-          "permissionKeys": [],
+          "line": 980,
+          "permissionKeys": [
+            "products.assortment.placement.edit"
+          ],
           "score": 12
         }
       ],
       "source": {
         "status": "resolved",
         "file": "src/features/products/pages/ProductDetailPage.tsx",
-        "line": 808,
+        "line": 827,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -40159,24 +40179,28 @@
       "dispositionReason": "current_source_confirms_local_cancel_or_refresh_control",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
+      "canonicalPermissionKeys": [
+        "products.assortment.placement.edit"
+      ],
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-440e683489a9",
-          "distance": 157,
+          "candidateId": "EPC-76d65f86a71f",
+          "distance": 163,
           "file": "src/features/products/pages/ProductDetailPage.tsx",
           "handler": "{cancelEditing}",
           "humanLabel": "Скасувати",
-          "line": 959,
-          "permissionKeys": [],
+          "line": 984,
+          "permissionKeys": [
+            "products.assortment.placement.edit"
+          ],
           "score": 13
         }
       ],
       "source": {
         "status": "resolved",
         "file": "src/features/products/pages/ProductDetailPage.tsx",
-        "line": 802,
+        "line": 821,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -40197,28 +40221,32 @@
       "proposedPermission": "products.products.void_save_placements.command_submit",
       "securityLevel": "high",
       "rawStatus": "Candidate existing key in component; binding review required",
-      "disposition": "needs_human_review",
-      "dispositionReason": "raw_audit_claims_existing_binding_but_does_not_name_the_key",
+      "disposition": "covered_existing",
+      "dispositionReason": "Final placement save rechecks placement.edit and calls the permission-scoped idempotent update façade.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "products.assortment.placement.edit"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-e7606b657e2a",
+          "candidateId": "EPC-6b0127efb7fe",
           "distance": 0,
           "file": "src/features/products/pages/ProductDetailPage.tsx",
           "handler": "{() => void savePlacements()}",
           "humanLabel": "Зберегти",
-          "line": 962,
-          "permissionKeys": [],
+          "line": 987,
+          "permissionKeys": [
+            "products.assortment.placement.edit"
+          ],
           "score": 14
         }
       ],
       "source": {
         "status": "resolved",
         "file": "src/features/products/pages/ProductDetailPage.tsx",
-        "line": 962,
+        "line": 987,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -40239,20 +40267,22 @@
       "proposedPermission": "products.products.submit_form.form_submit",
       "securityLevel": "high",
       "rawStatus": "Candidate existing key in component; binding review required",
-      "disposition": "needs_human_review",
-      "dispositionReason": "raw_audit_claims_existing_binding_but_does_not_name_the_key",
+      "disposition": "covered_existing",
+      "dispositionReason": "Product form submit is mounted behind product.edit and uses the existing protected product-update façade.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "products.assortment.product.edit"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-33bb4cbdbbf9",
+          "candidateId": "EPC-a1167aabbc90",
           "distance": 33,
           "file": "src/features/products/pages/ProductDetailPage.tsx",
           "handler": "{submitForm}",
           "humanLabel": null,
-          "line": 1127,
+          "line": 1162,
           "permissionKeys": [],
           "score": 10
         }
@@ -40260,7 +40290,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/products/pages/ProductDetailPage.tsx",
-        "line": 1094,
+        "line": 1129,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -40289,12 +40319,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-ccc9ed2119b3",
+          "candidateId": "EPC-c37a7ac4fdff",
           "distance": 41,
           "file": "src/features/products/pages/ProductDetailPage.tsx",
           "handler": "{resetImageChanges}",
           "humanLabel": "Скасувати",
-          "line": 1276,
+          "line": 1311,
           "permissionKeys": [],
           "score": 17
         }
@@ -40302,7 +40332,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/products/pages/ProductDetailPage.tsx",
-        "line": 1235,
+        "line": 1270,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -40323,20 +40353,23 @@
       "proposedPermission": "products.products.save_images.command_submit",
       "securityLevel": "high",
       "rawStatus": "Candidate existing key in component; binding review required",
-      "disposition": "needs_human_review",
-      "dispositionReason": "raw_audit_claims_existing_binding_but_does_not_name_the_key",
+      "disposition": "covered_existing",
+      "dispositionReason": "Image save derives the exact upload/delete mode, requires every involved right and calls the correspondingly protected façade.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "products.assortment.image.delete",
+        "products.assortment.image.upload"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-c5b7b115bec3",
+          "candidateId": "EPC-8b0c624d7d4c",
           "distance": 38,
           "file": "src/features/products/pages/ProductDetailPage.tsx",
           "handler": "{saveImages}",
           "humanLabel": "Зберегти",
-          "line": 1279,
+          "line": 1314,
           "permissionKeys": [],
           "score": 10
         }
@@ -40344,7 +40377,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/products/pages/ProductDetailPage.tsx",
-        "line": 1241,
+        "line": 1276,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -40375,7 +40408,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/products/pages/ProductDetailPage.tsx",
-        "line": 1324,
+        "line": 1359,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -40406,12 +40439,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-b4e7b39a2e24",
+          "candidateId": "EPC-28327a144aee",
           "distance": 136,
           "file": "src/features/products/pages/ProductDetailPage.tsx",
           "handler": "{() => makeMain(image)}",
           "humanLabel": null,
-          "line": 1335,
+          "line": 1370,
           "permissionKeys": [
             "products.assortment.image.delete"
           ],
@@ -40421,7 +40454,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/products/pages/ProductDetailPage.tsx",
-        "line": 1199,
+        "line": 1234,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -40452,12 +40485,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-333d2dd2b850",
+          "candidateId": "EPC-9dfd945bfa16",
           "distance": 130,
           "file": "src/features/products/pages/ProductDetailPage.tsx",
           "handler": "{() => removeImage(image)}",
           "humanLabel": null,
-          "line": 1340,
+          "line": 1375,
           "permissionKeys": [
             "products.assortment.image.delete"
           ],
@@ -40467,7 +40500,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/products/pages/ProductDetailPage.tsx",
-        "line": 1210,
+        "line": 1245,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -40488,20 +40521,20 @@
       "proposedPermission": "products.products.set_preview_image_url_preview_url.modal_open",
       "securityLevel": "medium",
       "rawStatus": "Candidate existing key in component; binding review required",
-      "disposition": "needs_human_review",
-      "dispositionReason": "raw_audit_claims_existing_binding_but_does_not_name_the_key",
+      "disposition": "technical_ui",
+      "dispositionReason": "Previewing a selected local image file is presentation-only and performs no upload.",
       "duplicateOf": null,
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-3143a07cdb14",
+          "candidateId": "EPC-d1ec39f2cbac",
           "distance": 3,
           "file": "src/features/products/pages/ProductDetailPage.tsx",
           "handler": "{() => setPreviewImageUrl(preview.url)}",
           "humanLabel": null,
-          "line": 1356,
+          "line": 1391,
           "permissionKeys": [],
           "score": 28
         }
@@ -40509,7 +40542,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/products/pages/ProductDetailPage.tsx",
-        "line": 1359,
+        "line": 1394,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -40540,12 +40573,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-2b96caa7d0c6",
+          "candidateId": "EPC-a418a304a149",
           "distance": 4,
           "file": "src/features/products/pages/ProductDetailPage.tsx",
           "handler": "{() => void saveSpecification()}",
           "humanLabel": "Зберегти",
-          "line": 1548,
+          "line": 1583,
           "permissionKeys": [
             "products.assortment.specification.edit"
           ],
@@ -40555,7 +40588,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/products/pages/ProductDetailPage.tsx",
-        "line": 1552,
+        "line": 1587,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -40586,7 +40619,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/products/pages/ProductDetailPage.tsx",
-        "line": 1828,
+        "line": 1863,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -40615,12 +40648,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-7e2b0c388372",
+          "candidateId": "EPC-4dde4e9f939f",
           "distance": 0,
           "file": "src/features/products/pages/ProductDetailPage.tsx",
           "handler": "{() => setPage((currentPage) => currentPage + 1)}",
           "humanLabel": "Наступна сторінка",
-          "line": 1831,
+          "line": 1866,
           "permissionKeys": [],
           "score": 29
         }
@@ -40628,7 +40661,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/products/pages/ProductDetailPage.tsx",
-        "line": 1831,
+        "line": 1866,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -40659,7 +40692,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/products/pages/ProductDetailPage.tsx",
-        "line": 1759,
+        "line": 1794,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -40690,7 +40723,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/products/pages/ProductDetailPage.tsx",
-        "line": 262,
+        "line": 269,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -40711,28 +40744,32 @@
       "proposedPermission": "products.products.void_export_movements.command_export",
       "securityLevel": "medium",
       "rawStatus": "Candidate existing key in component; binding review required",
-      "disposition": "needs_human_review",
-      "dispositionReason": "raw_audit_claims_existing_binding_but_does_not_name_the_key",
+      "disposition": "covered_existing",
+      "dispositionReason": "Movement document generation has its own UI guard, handler recheck and protected export façade.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "products.assortment.movement.export"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-6abaec97aa61",
+          "candidateId": "EPC-fa7cd5167dce",
           "distance": 0,
           "file": "src/features/products/pages/ProductDetailPage.tsx",
           "handler": "{() => void exportMovements()}",
           "humanLabel": "Друк PDF",
-          "line": 2040,
-          "permissionKeys": [],
+          "line": 2080,
+          "permissionKeys": [
+            "products.assortment.movement.export"
+          ],
           "score": 15
         }
       ],
       "source": {
         "status": "resolved",
         "file": "src/features/products/pages/ProductDetailPage.tsx",
-        "line": 2040,
+        "line": 2080,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -40761,12 +40798,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-5156d79ff19e",
+          "candidateId": "EPC-4151652f2b70",
           "distance": 0,
           "file": "src/features/products/pages/ProductDetailPage.tsx",
           "handler": "{() => setSelectedTypes(movementItemTypes)}",
           "humanLabel": "Скинути",
-          "line": 2056,
+          "line": 2097,
           "permissionKeys": [],
           "score": 33
         }
@@ -40774,7 +40811,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/products/pages/ProductDetailPage.tsx",
-        "line": 2056,
+        "line": 2097,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -40795,28 +40832,32 @@
       "proposedPermission": "products.products.remove_rule_row.command_delete",
       "securityLevel": "high",
       "rawStatus": "Candidate existing key in component; binding review required",
-      "disposition": "needs_human_review",
-      "dispositionReason": "raw_audit_claims_existing_binding_but_does_not_name_the_key",
+      "disposition": "covered_existing",
+      "dispositionReason": "Deleting a write-off rule is independently guarded and server-enforced from read and create.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "products.assortment.write_off_rules.delete"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-b998ab5cc1f8",
+          "candidateId": "EPC-f02b5416848a",
           "distance": 5,
           "file": "src/features/products/pages/ProductDetailPage.tsx",
           "handler": "{() => removeRule(row)}",
           "humanLabel": "Видалити",
-          "line": 2345,
-          "permissionKeys": [],
+          "line": 2394,
+          "permissionKeys": [
+            "products.assortment.write_off_rules.delete"
+          ],
           "score": 13
         }
       ],
       "source": {
         "status": "resolved",
         "file": "src/features/products/pages/ProductDetailPage.tsx",
-        "line": 2350,
+        "line": 2399,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -40837,17 +40878,19 @@
       "proposedPermission": "products.products.add_rule.command_submit",
       "securityLevel": "high",
       "rawStatus": "Candidate existing key in component; binding review required",
-      "disposition": "needs_human_review",
-      "dispositionReason": "raw_audit_claims_existing_binding_but_does_not_name_the_key",
+      "disposition": "covered_existing",
+      "dispositionReason": "Creating a write-off rule is independently guarded and server-enforced from read and delete.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "products.assortment.write_off_rules.create"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [],
       "source": {
         "status": "resolved",
         "file": "src/features/products/pages/ProductDetailPage.tsx",
-        "line": 2262,
+        "line": 2306,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -40878,7 +40921,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/products/pages/ProductDetailPage.tsx",
-        "line": 1759,
+        "line": 1794,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -40911,7 +40954,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/products/pages/ProductsPage.tsx",
-        "line": 281,
+        "line": 284,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -40932,17 +40975,17 @@
       "proposedPermission": "products.products.keydown.keyboard_shortcut",
       "securityLevel": "medium",
       "rawStatus": "Candidate existing key in component; binding review required",
-      "disposition": "needs_human_review",
-      "dispositionReason": "raw_audit_claims_existing_binding_but_does_not_name_the_key",
+      "disposition": "technical_ui",
+      "dispositionReason": "Keyboard navigation only changes local carousel selection and does not define another business capability.",
       "duplicateOf": null,
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [],
       "source": {
         "status": "resolved",
         "file": "src/features/products/pages/ProductsPage.tsx",
-        "line": 281,
+        "line": 284,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -40963,28 +41006,32 @@
       "proposedPermission": "products.products.on_open_informational_data.modal_open",
       "securityLevel": "low",
       "rawStatus": "Candidate existing key in component; binding review required",
-      "disposition": "needs_human_review",
-      "dispositionReason": "raw_audit_claims_existing_binding_but_does_not_name_the_key",
+      "disposition": "covered_existing",
+      "dispositionReason": "Warehouse-data control is a movement read and now mounts and loads through the existing movement.open boundary.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "products.assortment.movement.open"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-adebfcb60b8a",
-          "distance": 105,
+          "candidateId": "EPC-a93b947f2a1f",
+          "distance": 111,
           "file": "src/features/products/pages/ProductsPage.tsx",
           "handler": "{onOpenInformationalData}",
           "humanLabel": "Контроль складських даних",
-          "line": 1026,
-          "permissionKeys": [],
+          "line": 1035,
+          "permissionKeys": [
+            "products.assortment.movement.open"
+          ],
           "score": 21
         }
       ],
       "source": {
         "status": "resolved",
         "file": "src/features/products/pages/ProductsPage.tsx",
-        "line": 921,
+        "line": 924,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -41015,7 +41062,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/products/pages/ProductsPage.tsx",
-        "line": 677,
+        "line": 680,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -41046,7 +41093,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/products/pages/ProductsPage.tsx",
-        "line": 919,
+        "line": 922,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -41067,20 +41114,20 @@
       "proposedPermission": "products.products.on_select_product.menu_item_select",
       "securityLevel": "low",
       "rawStatus": "Candidate existing key in component; binding review required",
-      "disposition": "needs_human_review",
-      "dispositionReason": "raw_audit_claims_existing_binding_but_does_not_name_the_key",
+      "disposition": "technical_ui",
+      "dispositionReason": "Selecting an already listed carousel product is local navigation inside the page-scoped assortment view.",
       "duplicateOf": null,
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-7dd2ad4e7fb9",
-          "distance": 446,
+          "candidateId": "EPC-1bbc87a69544",
+          "distance": 453,
           "file": "src/features/products/pages/ProductsPage.tsx",
           "handler": "{() => onSelect(product)}",
           "humanLabel": null,
-          "line": 1158,
+          "line": 1168,
           "permissionKeys": [],
           "score": 13
         }
@@ -41088,7 +41135,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/products/pages/ProductsPage.tsx",
-        "line": 712,
+        "line": 715,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -41117,12 +41164,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-367553e10b18",
+          "candidateId": "EPC-c735ed05e666",
           "distance": 5,
           "file": "src/features/products/pages/ProductsPage.tsx",
           "handler": "{() => copyToClipboard(getProductCode(selectedProduct))}",
           "humanLabel": "Скопіювати код",
-          "line": 1107,
+          "line": 1117,
           "permissionKeys": [],
           "score": 38
         }
@@ -41130,7 +41177,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/products/pages/ProductsPage.tsx",
-        "line": 1112,
+        "line": 1122,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -41159,12 +41206,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-7dd2ad4e7fb9",
-          "distance": 446,
+          "candidateId": "EPC-1bbc87a69544",
+          "distance": 453,
           "file": "src/features/products/pages/ProductsPage.tsx",
           "handler": "{() => onSelect(product)}",
           "humanLabel": null,
-          "line": 1158,
+          "line": 1168,
           "permissionKeys": [],
           "score": 13
         }
@@ -41172,7 +41219,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/products/pages/ProductsPage.tsx",
-        "line": 712,
+        "line": 715,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -41201,12 +41248,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-7dd2ad4e7fb9",
-          "distance": 446,
+          "candidateId": "EPC-1bbc87a69544",
+          "distance": 453,
           "file": "src/features/products/pages/ProductsPage.tsx",
           "handler": "{() => onSelect(product)}",
           "humanLabel": null,
-          "line": 1158,
+          "line": 1168,
           "permissionKeys": [],
           "score": 13
         }
@@ -41214,7 +41261,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/products/pages/ProductsPage.tsx",
-        "line": 712,
+        "line": 715,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -41245,7 +41292,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/products/pages/ProductsPage.tsx",
-        "line": 948,
+        "line": 951,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -41266,20 +41313,20 @@
       "proposedPermission": "products.products.main_image_image_url_set_preview_image_url_main_image_image_url_.modal_open",
       "securityLevel": "medium",
       "rawStatus": "Candidate existing key in component; binding review required",
-      "disposition": "needs_human_review",
-      "dispositionReason": "raw_audit_claims_existing_binding_but_does_not_name_the_key",
+      "disposition": "technical_ui",
+      "dispositionReason": "Opening an already loaded main-image preview is presentation-only.",
       "duplicateOf": null,
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-966c7fa4bfec",
+          "candidateId": "EPC-c5612451e8e4",
           "distance": 4,
           "file": "src/features/products/pages/ProductsPage.tsx",
           "handler": "{() => mainImage?.ImageUrl ? setPreviewImageUrl(mainImage.ImageUrl || null) : onOpenPanel('images')}",
           "humanLabel": null,
-          "line": 1246,
+          "line": 1256,
           "permissionKeys": [],
           "score": 52
         }
@@ -41287,7 +41334,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/products/pages/ProductsPage.tsx",
-        "line": 1250,
+        "line": 1260,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -41318,7 +41365,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/products/pages/ProductsPage.tsx",
-        "line": 1271,
+        "line": 1281,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -41339,28 +41386,32 @@
       "proposedPermission": "products.products.on_open_panel_analytics.modal_open",
       "securityLevel": "low",
       "rawStatus": "Candidate existing key in component; binding review required",
-      "disposition": "needs_human_review",
-      "dispositionReason": "raw_audit_claims_existing_binding_but_does_not_name_the_key",
+      "disposition": "covered_existing",
+      "dispositionReason": "The inline analytics opener reuses the same existing analytics page right and protected controller as the detail toolbar.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "products.assortment_analytics.page.view"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-42192ef580d9",
+          "candidateId": "EPC-1e53fcf580a8",
           "distance": 8,
           "file": "src/features/products/pages/ProductsPage.tsx",
           "handler": "{() => onOpenPanel('analytics')}",
           "humanLabel": "AI-аналітика товару",
-          "line": 1404,
-          "permissionKeys": [],
+          "line": 1415,
+          "permissionKeys": [
+            "products.assortment_analytics.page.view"
+          ],
           "score": 18
         }
       ],
       "source": {
         "status": "resolved",
         "file": "src/features/products/pages/ProductsPage.tsx",
-        "line": 1412,
+        "line": 1423,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -41381,28 +41432,32 @@
       "proposedPermission": "products.products.on_open_panel_storage_history.modal_open",
       "securityLevel": "low",
       "rawStatus": "Candidate existing key in component; binding review required",
-      "disposition": "needs_human_review",
-      "dispositionReason": "raw_audit_claims_existing_binding_but_does_not_name_the_key",
+      "disposition": "covered_existing",
+      "dispositionReason": "The inline history opener uses the same storage-history read boundary and dedicated façade.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "products.assortment.storage_history.open"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-8363bcc27803",
+          "candidateId": "EPC-a67f76ecda60",
           "distance": 0,
           "file": "src/features/products/pages/ProductsPage.tsx",
           "handler": "{() => onOpenPanel('storage-history')}",
           "humanLabel": "Історія місця зберігання",
-          "line": 1417,
-          "permissionKeys": [],
+          "line": 1430,
+          "permissionKeys": [
+            "products.assortment.storage_history.open"
+          ],
           "score": 23
         }
       ],
       "source": {
         "status": "resolved",
         "file": "src/features/products/pages/ProductsPage.tsx",
-        "line": 1417,
+        "line": 1430,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -41423,20 +41478,20 @@
       "proposedPermission": "products.products.on_open_panel_specification.modal_open",
       "securityLevel": "low",
       "rawStatus": "Candidate existing key in component; binding review required",
-      "disposition": "needs_human_review",
-      "dispositionReason": "raw_audit_claims_existing_binding_but_does_not_name_the_key",
+      "disposition": "technical_ui",
+      "dispositionReason": "The inline specification opener presents product data already loaded under page.view; specification mutation has its own right.",
       "duplicateOf": null,
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-66160148672b",
+          "candidateId": "EPC-dc8ce6d1064f",
           "distance": 0,
           "file": "src/features/products/pages/ProductsPage.tsx",
           "handler": "{() => onOpenPanel('specification')}",
           "humanLabel": "Специфікація",
-          "line": 1422,
+          "line": 1436,
           "permissionKeys": [],
           "score": 22
         }
@@ -41444,7 +41499,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/products/pages/ProductsPage.tsx",
-        "line": 1422,
+        "line": 1436,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -41473,12 +41528,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-966c7fa4bfec",
+          "candidateId": "EPC-c5612451e8e4",
           "distance": 4,
           "file": "src/features/products/pages/ProductsPage.tsx",
           "handler": "{() => mainImage?.ImageUrl ? setPreviewImageUrl(mainImage.ImageUrl || null) : onOpenPanel('images')}",
           "humanLabel": null,
-          "line": 1246,
+          "line": 1256,
           "permissionKeys": [],
           "score": 15
         }
@@ -41486,7 +41541,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/products/pages/ProductsPage.tsx",
-        "line": 1250,
+        "line": 1260,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -41517,12 +41572,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-8c95668591eb",
+          "candidateId": "EPC-40cfc1c7322b",
           "distance": 0,
           "file": "src/features/products/pages/ProductsPage.tsx",
           "handler": "{() => onOpenPanel('remains')}",
           "humanLabel": "Залишки по партіям",
-          "line": 1433,
+          "line": 1447,
           "permissionKeys": [
             "products.assortment.consignment_balances.open"
           ],
@@ -41532,7 +41587,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/products/pages/ProductsPage.tsx",
-        "line": 1433,
+        "line": 1447,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -41563,12 +41618,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-f0b973ace1db",
+          "candidateId": "EPC-a9484e01538c",
           "distance": 0,
           "file": "src/features/products/pages/ProductsPage.tsx",
           "handler": "{() => onOpenPanel('edit')}",
           "humanLabel": "Редагувати",
-          "line": 1440,
+          "line": 1454,
           "permissionKeys": [
             "products.assortment.product.edit"
           ],
@@ -41578,7 +41633,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/products/pages/ProductsPage.tsx",
-        "line": 1440,
+        "line": 1454,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -41609,12 +41664,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-e244b8aefcd0",
+          "candidateId": "EPC-5024832ef94c",
           "distance": 0,
           "file": "src/features/products/pages/ProductsPage.tsx",
           "handler": "{() => onOpenPanel('movement')}",
           "humanLabel": "Рух товару",
-          "line": 1447,
+          "line": 1461,
           "permissionKeys": [
             "products.assortment.movement.open"
           ],
@@ -41624,7 +41679,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/products/pages/ProductsPage.tsx",
-        "line": 1447,
+        "line": 1461,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -41655,12 +41710,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-d18aa60f6325",
+          "candidateId": "EPC-2af94e840030",
           "distance": 0,
           "file": "src/features/products/pages/ProductsPage.tsx",
           "handler": "{() => onOpenPanel('writeoff')}",
           "humanLabel": "Правила списання",
-          "line": 1454,
+          "line": 1468,
           "permissionKeys": [
             "products.assortment.write_off_rules.open"
           ],
@@ -41670,7 +41725,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/products/pages/ProductsPage.tsx",
-        "line": 1454,
+        "line": 1468,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -41699,12 +41754,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-08e5939a2f9d",
+          "candidateId": "EPC-4741e6a2b6c8",
           "distance": 5,
           "file": "src/features/products/pages/ProductsPage.tsx",
           "handler": "{() => setActiveTab(tab.value)}",
           "humanLabel": null,
-          "line": 1514,
+          "line": 1534,
           "permissionKeys": [],
           "score": 20
         }
@@ -41712,7 +41767,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/products/pages/ProductsPage.tsx",
-        "line": 1519,
+        "line": 1539,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -41743,12 +41798,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-7a1ebf718d95",
+          "candidateId": "EPC-07befa8ade97",
           "distance": 5,
           "file": "src/features/products/pages/ProductsPage.tsx",
           "handler": "{() => { void makeMainOriginalNumber(item) }}",
           "humanLabel": "Зробити основним",
-          "line": 1775,
+          "line": 1795,
           "permissionKeys": [
             "products.assortment.product.edit"
           ],
@@ -41758,7 +41813,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/products/pages/ProductsPage.tsx",
-        "line": 1780,
+        "line": 1800,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -41789,12 +41844,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-117ba9ed063d",
+          "candidateId": "EPC-75aaeaa80114",
           "distance": 5,
           "file": "src/features/products/pages/ProductsPage.tsx",
           "handler": "{() => { void removeOriginalNumber(item) }}",
           "humanLabel": "Видалити",
-          "line": 1783,
+          "line": 1803,
           "permissionKeys": [
             "products.assortment.product.edit"
           ],
@@ -41804,7 +41859,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/products/pages/ProductsPage.tsx",
-        "line": 1788,
+        "line": 1808,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -41835,12 +41890,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-74ebff2a8db6",
+          "candidateId": "EPC-ce08133027c1",
           "distance": 162,
           "file": "src/features/products/pages/ProductsPage.tsx",
           "handler": "{saveOriginalNumber}",
           "humanLabel": null,
-          "line": 1823,
+          "line": 1843,
           "permissionKeys": [
             "products.assortment.product.edit"
           ],
@@ -41850,7 +41905,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/products/pages/ProductsPage.tsx",
-        "line": 1661,
+        "line": 1681,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -41881,12 +41936,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-2750e8653c90",
+          "candidateId": "EPC-ae164ce65ec2",
           "distance": 227,
           "file": "src/features/products/pages/ProductsPage.tsx",
           "handler": "{resetForm}",
           "humanLabel": "Скинути",
-          "line": 1833,
+          "line": 1853,
           "permissionKeys": [
             "products.assortment.product.edit"
           ],
@@ -41896,7 +41951,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/products/pages/ProductsPage.tsx",
-        "line": 1606,
+        "line": 1626,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -41917,20 +41972,20 @@
       "proposedPermission": "products.products.select_original_number.row_click",
       "securityLevel": "medium",
       "rawStatus": "Candidate existing key in component; binding review required",
-      "disposition": "needs_human_review",
-      "dispositionReason": "raw_audit_claims_existing_binding_but_does_not_name_the_key",
+      "disposition": "technical_ui",
+      "dispositionReason": "Selecting an original-number row only fills a local edit draft; product.edit owns every resulting mutation.",
       "duplicateOf": null,
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-de15c3b63cc9",
+          "candidateId": "EPC-763b8a48e76f",
           "distance": 256,
           "file": "src/features/products/pages/ProductsPage.tsx",
           "handler": "{selectOriginalNumber}",
           "humanLabel": null,
-          "line": 1855,
+          "line": 1875,
           "permissionKeys": [],
           "score": 20
         }
@@ -41938,7 +41993,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/products/pages/ProductsPage.tsx",
-        "line": 1599,
+        "line": 1619,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -41969,12 +42024,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-750f9148ab21",
+          "candidateId": "EPC-e0886f9a83f9",
           "distance": 5,
           "file": "src/features/products/pages/ProductsPage.tsx",
           "handler": "{() => { void removeRelatedProduct(row) }}",
           "humanLabel": "Видалити",
-          "line": 2027,
+          "line": 2047,
           "permissionKeys": [
             "products.assortment.product.edit"
           ],
@@ -41984,7 +42039,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/products/pages/ProductsPage.tsx",
-        "line": 2032,
+        "line": 2052,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -42005,17 +42060,19 @@
       "proposedPermission": "products.products.row_if_row_product_net_uid_on_select_product_row_product.row_click",
       "securityLevel": "medium",
       "rawStatus": "Candidate existing key in component; binding review required",
-      "disposition": "needs_human_review",
-      "dispositionReason": "raw_audit_claims_existing_binding_but_does_not_name_the_key",
+      "disposition": "covered_existing",
+      "dispositionReason": "Selecting a related product reloads details through the existing page-scoped assortment details façade.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "products.assortment.page.view"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [],
       "source": {
         "status": "resolved",
         "file": "src/features/products/pages/ProductsPage.tsx",
-        "line": 281,
+        "line": 284,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -42046,12 +42103,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-ddef98f76da5",
+          "candidateId": "EPC-7e2121fdbfed",
           "distance": 0,
           "file": "src/features/products/pages/ProductsPage.tsx",
           "handler": "{() => setProductUploadOpened(true)}",
           "humanLabel": "Товари",
-          "line": 2131,
+          "line": 2151,
           "permissionKeys": [
             "products.assortment.document.upload"
           ],
@@ -42061,7 +42118,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/products/pages/ProductsPage.tsx",
-        "line": 2131,
+        "line": 2151,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -42092,12 +42149,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-689d961cdf0f",
+          "candidateId": "EPC-bbcdd9ad1968",
           "distance": 0,
           "file": "src/features/products/pages/ProductsPage.tsx",
           "handler": "{() => setUploadType('analogues')}",
           "humanLabel": "Аналоги",
-          "line": 2136,
+          "line": 2156,
           "permissionKeys": [
             "products.assortment.document.upload"
           ],
@@ -42107,7 +42164,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/products/pages/ProductsPage.tsx",
-        "line": 2136,
+        "line": 2156,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -42138,12 +42195,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-e78083f9385f",
+          "candidateId": "EPC-1b7dc04eff9b",
           "distance": 0,
           "file": "src/features/products/pages/ProductsPage.tsx",
           "handler": "{() => setUploadType('components')}",
           "humanLabel": "Комплектуючі",
-          "line": 2139,
+          "line": 2159,
           "permissionKeys": [
             "products.assortment.document.upload"
           ],
@@ -42153,7 +42210,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/products/pages/ProductsPage.tsx",
-        "line": 2139,
+        "line": 2159,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -42184,12 +42241,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-9fc4a5590739",
+          "candidateId": "EPC-9d310841d6d9",
           "distance": 0,
           "file": "src/features/products/pages/ProductsPage.tsx",
           "handler": "{() => setUploadType('originalNumbers')}",
           "humanLabel": "Оригінальні номери",
-          "line": 2142,
+          "line": 2162,
           "permissionKeys": [
             "products.assortment.document.upload"
           ],
@@ -42199,7 +42256,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/products/pages/ProductsPage.tsx",
-        "line": 2142,
+        "line": 2162,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -42230,12 +42287,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-5752aefe8a1d",
+          "candidateId": "EPC-ca45e4e603a9",
           "distance": 0,
           "file": "src/features/products/pages/ProductsPage.tsx",
           "handler": "{() => setStorageUploadOpened(true)}",
           "humanLabel": null,
-          "line": 2147,
+          "line": 2167,
           "permissionKeys": [
             "products.assortment.document.upload"
           ],
@@ -42245,7 +42302,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/products/pages/ProductsPage.tsx",
-        "line": 2147,
+        "line": 2167,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -42266,20 +42323,22 @@
       "proposedPermission": "products.products.void_upload_file.command_submit",
       "securityLevel": "high",
       "rawStatus": "Candidate existing key in component; binding review required",
-      "disposition": "needs_human_review",
-      "dispositionReason": "raw_audit_claims_existing_binding_but_does_not_name_the_key",
+      "disposition": "covered_existing",
+      "dispositionReason": "Placement-file import is part of the existing document.upload workflow and uses its protected parsing façade.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "products.assortment.document.upload"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-1c6a3d20680b",
+          "candidateId": "EPC-07130173b1e0",
           "distance": 0,
           "file": "src/features/products/pages/ProductsPage.tsx",
           "handler": "{() => void uploadFile()}",
           "humanLabel": "Завантажити",
-          "line": 2398,
+          "line": 2418,
           "permissionKeys": [],
           "score": 10
         }
@@ -42287,7 +42346,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/products/pages/ProductsPage.tsx",
-        "line": 2398,
+        "line": 2418,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -42316,12 +42375,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-980c9da0c81c",
+          "candidateId": "EPC-7ce4bd7dd112",
           "distance": 171,
           "file": "src/features/products/pages/ProductsPage.tsx",
           "handler": "{closeModal}",
           "humanLabel": "Закрити",
-          "line": 2439,
+          "line": 2459,
           "permissionKeys": [],
           "score": 10
         }
@@ -42329,7 +42388,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/products/pages/ProductsPage.tsx",
-        "line": 2268,
+        "line": 2288,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -42350,20 +42409,20 @@
       "proposedPermission": "products.products.void_save_not_passed_rows.command_submit",
       "securityLevel": "high",
       "rawStatus": "Candidate existing key in component; binding review required",
-      "disposition": "needs_human_review",
-      "dispositionReason": "raw_audit_claims_existing_binding_but_does_not_name_the_key",
-      "duplicateOf": null,
+      "disposition": "duplicate_occurrence",
+      "dispositionReason": "Submitting corrected import rows is the second step of the same placement document upload capability.",
+      "duplicateOf": "PE-01048",
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-a2ec99bc7b5a",
+          "candidateId": "EPC-0d7090c0c37d",
           "distance": 0,
           "file": "src/features/products/pages/ProductsPage.tsx",
           "handler": "{() => void saveNotPassedRows()}",
           "humanLabel": "Зберегти",
-          "line": 2442,
+          "line": 2462,
           "permissionKeys": [],
           "score": 17
         }
@@ -42371,7 +42430,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/products/pages/ProductsPage.tsx",
-        "line": 2442,
+        "line": 2462,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -42392,20 +42451,20 @@
       "proposedPermission": "products.products.add_price_row.command_submit",
       "securityLevel": "high",
       "rawStatus": "Candidate existing key in component; binding review required",
-      "disposition": "needs_human_review",
-      "dispositionReason": "raw_audit_claims_existing_binding_but_does_not_name_the_key",
-      "duplicateOf": null,
+      "disposition": "duplicate_occurrence",
+      "dispositionReason": "Adding a price mapping only modifies the local product-import form; final upload owns authorization.",
+      "duplicateOf": "PE-01054",
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-4d374cc7eb7f",
+          "candidateId": "EPC-13f93ef3bb9f",
           "distance": 137,
           "file": "src/features/products/pages/ProductsPage.tsx",
           "handler": "{addPriceRow}",
           "humanLabel": "Додати ціну",
-          "line": 2685,
+          "line": 2705,
           "permissionKeys": [],
           "score": 11
         }
@@ -42413,7 +42472,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/products/pages/ProductsPage.tsx",
-        "line": 2548,
+        "line": 2568,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -42434,20 +42493,20 @@
       "proposedPermission": "products.products.remove_price_row_price_row_key.command_delete",
       "securityLevel": "high",
       "rawStatus": "Candidate existing key in component; binding review required",
-      "disposition": "needs_human_review",
-      "dispositionReason": "raw_audit_claims_existing_binding_but_does_not_name_the_key",
-      "duplicateOf": null,
+      "disposition": "duplicate_occurrence",
+      "dispositionReason": "Removing a price mapping only modifies the local product-import form; final upload owns authorization.",
+      "duplicateOf": "PE-01054",
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-cd4b5628a217",
+          "candidateId": "EPC-9322399ea033",
           "distance": 0,
           "file": "src/features/products/pages/ProductsPage.tsx",
           "handler": "{() => removePriceRow(priceRow.key)}",
           "humanLabel": "Видалити",
-          "line": 2724,
+          "line": 2744,
           "permissionKeys": [],
           "score": 25
         }
@@ -42455,7 +42514,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/products/pages/ProductsPage.tsx",
-        "line": 2724,
+        "line": 2744,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -42484,12 +42543,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-980c9da0c81c",
+          "candidateId": "EPC-7ce4bd7dd112",
           "distance": 171,
           "file": "src/features/products/pages/ProductsPage.tsx",
           "handler": "{closeModal}",
           "humanLabel": "Закрити",
-          "line": 2439,
+          "line": 2459,
           "permissionKeys": [],
           "score": 10
         }
@@ -42497,7 +42556,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/products/pages/ProductsPage.tsx",
-        "line": 2268,
+        "line": 2288,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -42518,20 +42577,22 @@
       "proposedPermission": "products.products.void_submit_upload.command_submit",
       "securityLevel": "high",
       "rawStatus": "Candidate existing key in component; binding review required",
-      "disposition": "needs_human_review",
-      "dispositionReason": "raw_audit_claims_existing_binding_but_does_not_name_the_key",
+      "disposition": "covered_existing",
+      "dispositionReason": "Final assortment-file import is guarded by document.upload and calls the dedicated protected façade.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "products.assortment.document.upload"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-e2e9e7ba2c01",
+          "candidateId": "EPC-7e0c81990f1d",
           "distance": 0,
           "file": "src/features/products/pages/ProductsPage.tsx",
           "handler": "{() => void submitUpload()}",
           "humanLabel": "Завантажити",
-          "line": 2762,
+          "line": 2782,
           "permissionKeys": [],
           "score": 12
         }
@@ -42539,7 +42600,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/products/pages/ProductsPage.tsx",
-        "line": 2762,
+        "line": 2782,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -42570,12 +42631,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-43cc5a1f803f",
+          "candidateId": "EPC-423b951a1656",
           "distance": 11,
           "file": "src/features/products/pages/ProductsPage.tsx",
           "handler": "{openModal}",
           "humanLabel": null,
-          "line": 2795,
+          "line": 2815,
           "permissionKeys": [
             "products.assortment.document.upload"
           ],
@@ -42585,7 +42646,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/products/pages/ProductsPage.tsx",
-        "line": 2784,
+        "line": 2804,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -42614,12 +42675,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-980c9da0c81c",
+          "candidateId": "EPC-7ce4bd7dd112",
           "distance": 171,
           "file": "src/features/products/pages/ProductsPage.tsx",
           "handler": "{closeModal}",
           "humanLabel": "Закрити",
-          "line": 2439,
+          "line": 2459,
           "permissionKeys": [],
           "score": 10
         }
@@ -42627,7 +42688,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/products/pages/ProductsPage.tsx",
-        "line": 2268,
+        "line": 2288,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -42656,12 +42717,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-e2e9e7ba2c01",
+          "candidateId": "EPC-7e0c81990f1d",
           "distance": 0,
           "file": "src/features/products/pages/ProductsPage.tsx",
           "handler": "{() => void submitUpload()}",
           "humanLabel": "Завантажити",
-          "line": 2762,
+          "line": 2782,
           "permissionKeys": [],
           "score": 12
         }
@@ -42669,7 +42730,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/products/pages/ProductsPage.tsx",
-        "line": 2762,
+        "line": 2782,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -42700,7 +42761,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/products/pages/ProductsPage.tsx",
-        "line": 328,
+        "line": 331,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -42721,28 +42782,32 @@
       "proposedPermission": "products.products.void_export_rows.command_export",
       "securityLevel": "medium",
       "rawStatus": "Candidate existing key in component; binding review required",
-      "disposition": "needs_human_review",
-      "dispositionReason": "raw_audit_claims_existing_binding_but_does_not_name_the_key",
+      "disposition": "covered_existing",
+      "dispositionReason": "Inline income/outcome PDF generation reuses the single movement.export capability and scoped export façades.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "products.assortment.movement.export"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-8ec1c4138b27",
+          "candidateId": "EPC-25f7e0284221",
           "distance": 7,
           "file": "src/features/products/pages/ProductsPage.tsx",
           "handler": "{() => void exportRows()}",
           "humanLabel": "Друк PDF",
-          "line": 3147,
-          "permissionKeys": [],
+          "line": 3170,
+          "permissionKeys": [
+            "products.assortment.movement.export"
+          ],
           "score": 10
         }
       ],
       "source": {
         "status": "resolved",
         "file": "src/features/products/pages/ProductsPage.tsx",
-        "line": 3154,
+        "line": 3177,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -79689,40 +79754,6 @@
     "PE-00970",
     "PE-00974",
     "PE-00975",
-    "PE-00976",
-    "PE-00977",
-    "PE-00979",
-    "PE-00983",
-    "PE-00984",
-    "PE-00985",
-    "PE-00986",
-    "PE-00987",
-    "PE-00992",
-    "PE-00993",
-    "PE-00994",
-    "PE-00995",
-    "PE-00997",
-    "PE-00998",
-    "PE-01000",
-    "PE-01004",
-    "PE-01010",
-    "PE-01012",
-    "PE-01013",
-    "PE-01016",
-    "PE-01017",
-    "PE-01020",
-    "PE-01025",
-    "PE-01027",
-    "PE-01028",
-    "PE-01029",
-    "PE-01040",
-    "PE-01042",
-    "PE-01048",
-    "PE-01050",
-    "PE-01051",
-    "PE-01052",
-    "PE-01054",
-    "PE-01059",
     "PE-01064",
     "PE-01065",
     "PE-01068",

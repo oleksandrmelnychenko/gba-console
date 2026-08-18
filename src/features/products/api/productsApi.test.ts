@@ -4,7 +4,11 @@ import {
   exportProductIncomeMovementsDocument,
   exportProductMovementsDocument,
   exportProductOutcomeMovementsDocument,
+  getProductAuditEntities,
+  getProductIncomeMovements,
+  getProductOutcomeMovements,
   getProductSourcePriceComparison,
+  getProductStorageLocationHistory,
   resetProductPlacementMutationStateForTests,
   updateProduct,
   updateProductPlacements,
@@ -193,7 +197,7 @@ describe('products API upload contracts', () => {
       PdfDocumentURL: 'https://example.test/movement.pdf',
     })
 
-    expect(apiRequestMock).toHaveBeenCalledWith('/consignments/info/movement/document/export', {
+    expect(apiRequestMock).toHaveBeenCalledWith('/consignments/info/assortment/movement/document/export', {
       errorMessages: {
         default: 'Не вдалося сформувати документ руху товару',
         network: 'Сервер експорту руху товару недоступний',
@@ -223,7 +227,7 @@ describe('products API upload contracts', () => {
       PdfDocumentURL: 'https://example.test/outcome.pdf',
     })
 
-    expect(apiRequestMock).toHaveBeenCalledWith('/consignments/info/outcome/document/export', {
+    expect(apiRequestMock).toHaveBeenCalledWith('/consignments/info/assortment/outcome/document/export', {
       errorMessages: {
         default: 'Не вдалося сформувати документ виходу',
         network: 'Сервер експорту виходу недоступний',
@@ -234,6 +238,36 @@ describe('products API upload contracts', () => {
         to: '2026-07-07',
       },
     })
+  })
+
+  it('uses permission-scoped aliases for product audit, placement history, and inline movement reads', async () => {
+    apiRequestMock.mockResolvedValue([])
+
+    await getProductAuditEntities('product-1', 'Description')
+    await getProductStorageLocationHistory({
+      from: '2026-08-01',
+      limit: 20,
+      offset: 0,
+      productNetId: 'product-1',
+      to: '2026-08-18',
+    })
+    await getProductIncomeMovements({
+      from: '2026-08-01',
+      productNetId: 'product-1',
+      to: '2026-08-18',
+    })
+    await getProductOutcomeMovements({
+      from: '2026-08-01',
+      productNetId: 'product-1',
+      to: '2026-08-18',
+    })
+
+    expect(apiRequestMock.mock.calls.map(([path]) => path)).toEqual([
+      '/auditing/products/assortment/history',
+      '/products/placements/history/assortment/all/filtered',
+      '/consignments/info/assortment/income/filtered',
+      '/consignments/info/assortment/outcome/filtered',
+    ])
   })
 })
 
@@ -256,6 +290,8 @@ describe('product placement durable mutation', () => {
     apiRequestMock.mockResolvedValueOnce(response)
 
     await expect(updateProductPlacements(response)).resolves.toEqual(response)
+
+    expect(apiRequestMock.mock.calls[0]?.[0]).toBe('/products/placements/storage/assortment/update')
 
     const [, options] = apiRequestMock.mock.calls[0]
     const body = options?.body as ProductPlacement[]

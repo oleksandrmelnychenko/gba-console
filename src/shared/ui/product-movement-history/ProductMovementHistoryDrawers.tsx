@@ -1009,10 +1009,12 @@ export function HistoricalSourceMovementPanel({
   active,
   initialDateFrom,
   product,
+  requestPath = '/consignments/info/movement/historical-source/filtered',
 }: {
   active: boolean
   initialDateFrom?: string
   product: MovementHistoryProduct
+  requestPath?: string
 }) {
   const { t } = useI18n()
   const productNetUid = product.NetUid?.trim() || ''
@@ -1049,7 +1051,7 @@ export function HistoricalSourceMovementPanel({
           from: dateFrom,
           productNetId: productNetUid,
           to: dateTo,
-        })
+        }, requestPath)
 
         if (!cancelled) {
           dispatchRowsState({ rows: nextRows, type: 'load-succeeded' })
@@ -1071,7 +1073,7 @@ export function HistoricalSourceMovementPanel({
     return () => {
       cancelled = true
     }
-  }, [active, dateFrom, dateTo, filterError, productNetUid, reloadKey, t])
+  }, [active, dateFrom, dateTo, filterError, productNetUid, reloadKey, requestPath, t])
 
   return (
     <Stack className="product-movement-history-panel" gap={0}>
@@ -1132,9 +1134,11 @@ export function HistoricalSourceMovementPanel({
 export function InformationalMovementPanel({
   active,
   product,
+  requestPath = '/consignments/info/movement/informational/filtered',
 }: {
   active: boolean
   product?: MovementHistoryProduct
+  requestPath?: string
 }) {
   const { t } = useI18n()
   const productNetUid = product?.NetUid?.trim() || ''
@@ -1179,7 +1183,7 @@ export function InformationalMovementPanel({
           productNetId: productNetUid || undefined,
           queue,
           to: dateTo,
-        })
+        }, requestPath)
 
         if (!cancelled) {
           dispatchRowsState({ rows: nextRows, type: 'load-succeeded' })
@@ -1201,7 +1205,7 @@ export function InformationalMovementPanel({
     return () => {
       cancelled = true
     }
-  }, [active, dateFrom, dateTo, filterError, missingNetUidError, page, productNetUid, queue, reloadKey, t])
+  }, [active, dateFrom, dateTo, filterError, missingNetUidError, page, productNetUid, queue, reloadKey, requestPath, t])
 
   return (
     <Stack className="product-movement-history-panel" gap={0}>
@@ -2670,8 +2674,9 @@ async function getProductMovements(params: ProductMovementParams): Promise<Produ
 
 async function getHistoricalSourceMovements(
   params: ProductIncomeOutcomeMovementParams,
+  requestPath = '/consignments/info/movement/historical-source/filtered',
 ): Promise<HistoricalSourceMovement[]> {
-  const result = await apiRequest<unknown>('/consignments/info/movement/historical-source/filtered', {
+  const result = await apiRequest<unknown>(requestPath, {
     query: {
       from: params.from,
       productNetId: params.productNetId,
@@ -2688,8 +2693,9 @@ async function getHistoricalSourceMovements(
 
 async function getInformationalMovements(
   params: InformationalMovementParams,
+  requestPath = '/consignments/info/movement/informational/filtered',
 ): Promise<InformationalMovement[]> {
-  const result = await apiRequest<unknown>('/consignments/info/movement/informational/filtered', {
+  const result = await apiRequest<unknown>(requestPath, {
     query: {
       from: params.from,
       limit: params.limit,

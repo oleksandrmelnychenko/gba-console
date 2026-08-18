@@ -124,9 +124,12 @@ import {
   type ProductDetailPanel,
 } from './ProductDetailPage'
 import {
+  PRODUCT_ANALYTICS_PERMISSION,
   PRODUCT_BALANCES_PERMISSION,
   PRODUCT_EDIT_PERMISSION,
+  PRODUCT_MOVEMENT_EXPORT_PERMISSION,
   PRODUCT_MOVEMENT_PERMISSION,
+  PRODUCT_STORAGE_HISTORY_PERMISSION,
   PRODUCT_WRITE_OFF_PERMISSION,
 } from '../permissions'
 import './products.css'
@@ -969,7 +972,12 @@ function ProductsPageContent() {
       >
         {informationalDataOpened ? (
           <Suspense fallback={<Loader size="sm" />}>
-            <InformationalMovementPanel active />
+            <PermissionGate permissionKey={PRODUCT_MOVEMENT_PERMISSION}>
+              <InformationalMovementPanel
+                active
+                requestPath="/consignments/info/assortment/movement/informational/filtered"
+              />
+            </PermissionGate>
           </Suspense>
         ) : null}
       </AppDrawer>
@@ -1022,17 +1030,19 @@ function ProductAssortmentFilterBar({
           onChange={(value) => onSortModeChange((value as ProductSortMode) || DEFAULT_SORT_MODE)}
         />
         <div className="app-filter-actions">
-          <Tooltip label={t('Контроль складських даних')}>
-            <ActionIcon
-              aria-label={t('Контроль складських даних')}
-              color="yellow"
-              size={34}
-              variant="light"
-              onClick={onOpenInformationalData}
-            >
-              <TriangleAlert size={17} />
-            </ActionIcon>
-          </Tooltip>
+          <PermissionGate permissionKey={PRODUCT_MOVEMENT_PERMISSION}>
+            <Tooltip label={t('Контроль складських даних')}>
+              <ActionIcon
+                aria-label={t('Контроль складських даних')}
+                color="yellow"
+                size={34}
+                variant="light"
+                onClick={onOpenInformationalData}
+              >
+                <TriangleAlert size={17} />
+              </ActionIcon>
+            </Tooltip>
+          </PermissionGate>
           <Tooltip label={t('Скинути')}>
             <ActionIcon aria-label={t('Скинути')} color="gray" size={34} variant="light" onClick={onReset}>
               <RotateCcw size={17} />
@@ -1401,23 +1411,27 @@ function ProductInlineActions({
 
   return (
     <Group gap="xs" justify="flex-end" wrap="nowrap" className="product-inline-actions">
-      <Button
-        aria-label={t('AI-аналітика товару')}
-        disabled={disabled || analyticsDisabled}
-        h={38}
-        leftSection={<Sparkles fill="currentColor" size={16} strokeWidth={0} />}
-        px="sm"
-        size="xs"
-        variant="filled"
-        onClick={() => onOpenPanel('analytics')}
-      >
-        {t('AI-аналітика')}
-      </Button>
-      <Tooltip label={t('Історія місця зберігання')}>
-        <ActionIcon aria-label={t('Історія місця зберігання')} color="gray" size={38} variant="light" disabled={disabled} onClick={() => onOpenPanel('storage-history')}>
-          <History size={18} />
-        </ActionIcon>
-      </Tooltip>
+      <PermissionGate permissionKey={PRODUCT_ANALYTICS_PERMISSION}>
+        <Button
+          aria-label={t('AI-аналітика товару')}
+          disabled={disabled || analyticsDisabled}
+          h={38}
+          leftSection={<Sparkles fill="currentColor" size={16} strokeWidth={0} />}
+          px="sm"
+          size="xs"
+          variant="filled"
+          onClick={() => onOpenPanel('analytics')}
+        >
+          {t('AI-аналітика')}
+        </Button>
+      </PermissionGate>
+      <PermissionGate permissionKey={PRODUCT_STORAGE_HISTORY_PERMISSION}>
+        <Tooltip label={t('Історія місця зберігання')}>
+          <ActionIcon aria-label={t('Історія місця зберігання')} color="gray" size={38} variant="light" disabled={disabled} onClick={() => onOpenPanel('storage-history')}>
+            <History size={18} />
+          </ActionIcon>
+        </Tooltip>
+      </PermissionGate>
       <Tooltip label={t('Специфікація')}>
         <ActionIcon aria-label={t('Специфікація')} color="gray" size={38} variant="light" disabled={disabled} onClick={() => onOpenPanel('specification')}>
           <FileText size={18} />
@@ -1499,7 +1513,9 @@ function ProductInlineTabs({
   product: Product
 }) {
   const { t } = useI18n()
+  const { hasPermission } = useAuth()
   const [activeTab, setActiveTab] = useState<ProductInlineTab>('numbers')
+  const canViewMovement = hasPermission(PRODUCT_MOVEMENT_PERMISSION)
 
   return (
     <div className="product-inline-tabs">
@@ -1508,8 +1524,12 @@ function ProductInlineTabs({
           { value: 'numbers', label: t('Оригінальні номери') },
           { value: 'analogues', label: t('Аналоги') },
           { value: 'components', label: t('Комплектуючі') },
-          { value: 'income', label: t('Прихід') },
-          { value: 'outcome', label: t('Розхід') },
+          ...(canViewMovement
+            ? [
+                { value: 'income', label: t('Прихід') },
+                { value: 'outcome', label: t('Розхід') },
+              ] as const
+            : []),
         ] as const).map((tab) => (
           <button
             key={tab.value}
@@ -1551,12 +1571,12 @@ function ProductInlineTabs({
             />
           </Box>
         )}
-        {activeTab === 'income' && (
+        {canViewMovement && activeTab === 'income' && (
           <Box pt={0}>
             <ProductInlineMovementsTab direction="income" product={product} />
           </Box>
         )}
-        {activeTab === 'outcome' && (
+        {canViewMovement && activeTab === 'outcome' && (
           <Box pt={0}>
             <ProductInlineMovementsTab direction="outcome" product={product} />
           </Box>
@@ -3040,6 +3060,7 @@ function ProductInlineMovementsTab({
   product: Product
 }) {
   const { t } = useI18n()
+  const { hasPermission } = useAuth()
   const productNetUid = product.NetUid?.trim()
   // Both directions default to the last 30 days — outcome (sales) previously defaulted to
   // today-only, so the tab was almost always empty out of the box (no sales today).
@@ -3055,6 +3076,7 @@ function ProductInlineMovementsTab({
     rows: [],
   })
   const labels = inlineMovementLabels[direction]
+  const canExportMovements = hasPermission(PRODUCT_MOVEMENT_EXPORT_PERMISSION)
 
   useEffect(() => {
     if (!productNetUid) {
@@ -3101,7 +3123,7 @@ function ProductInlineMovementsTab({
   }, [dateFrom, dateTo, direction, productNetUid, reloadKey, t])
 
   async function exportRows() {
-    if (!productNetUid || state.isExporting) {
+    if (!canExportMovements || !productNetUid || state.isExporting) {
       return
     }
 
@@ -3144,17 +3166,19 @@ function ProductInlineMovementsTab({
           <Button className="product-movement-toolbar__button" color={CREATE_ACTION_COLOR} leftSection={<RefreshCw size={16} />} loading={state.isLoading} variant="outline" onClick={() => reload()}>
             {t('Оновити')}
           </Button>
-          <Button
-            className="product-movement-toolbar__button"
-            color={CREATE_ACTION_COLOR}
-            disabled={!productNetUid}
-            leftSection={<FileDown size={16} />}
-            loading={state.isExporting}
-            variant="outline"
-            onClick={() => void exportRows()}
-          >
-            {t('Друк PDF')}
-          </Button>
+          <PermissionGate permissionKey={PRODUCT_MOVEMENT_EXPORT_PERMISSION}>
+            <Button
+              className="product-movement-toolbar__button"
+              color={CREATE_ACTION_COLOR}
+              disabled={!productNetUid}
+              leftSection={<FileDown size={16} />}
+              loading={state.isExporting}
+              variant="outline"
+              onClick={() => void exportRows()}
+            >
+              {t('Друк PDF')}
+            </Button>
+          </PermissionGate>
         </div>
       </Group>
 
