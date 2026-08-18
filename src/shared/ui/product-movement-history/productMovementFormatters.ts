@@ -6,6 +6,7 @@ const exchangeRateFormatter = new Intl.NumberFormat('uk-UA', {
 const unitPriceFormatter = new Intl.NumberFormat('uk-UA', {
   maximumFractionDigits: 4,
   minimumFractionDigits: 4,
+  roundingMode: 'trunc',
 })
 
 export function formatProductMovementExchangeRate(value?: number | null): string {

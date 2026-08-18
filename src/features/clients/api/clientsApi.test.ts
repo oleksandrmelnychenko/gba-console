@@ -440,6 +440,21 @@ describe('clients API query contracts', () => {
     await expect(getClientCommercialStructure('client-1')).resolves.toBeNull()
   })
 
+  it('validates exact source-folder evidence before rendering it', async () => {
+    const malformedGroup = createCommercialStructure('client-1')
+    malformedGroup.GroupCode = 35 as never
+    apiRequestMock.mockResolvedValueOnce(malformedGroup)
+
+    await expect(getClientCommercialStructure('client-1')).resolves.toBeNull()
+
+    const malformedSnapshot = createCommercialStructure('client-1')
+    malformedSnapshot.LegalParties[0].Cards[0]
+      .SourceSnapshots[0].DirectClientGroupSourceCode = '4334' as never
+    apiRequestMock.mockResolvedValueOnce(malformedSnapshot)
+
+    await expect(getClientCommercialStructure('client-1')).resolves.toBeNull()
+  })
+
   it('persists a client identity decision with a fresh idempotency key', async () => {
     apiRequestMock.mockResolvedValueOnce({
       ClientNetUid: '11111111-1111-1111-1111-111111111111',
@@ -549,6 +564,7 @@ function createCommercialStructure(clientNetUid: string) {
     ClientNetUid: clientNetUid,
     AsOfUtc: '2026-08-11T10:00:00Z',
     GroupKey: 'XM052',
+    GroupCode: 'XM05200',
     GroupName: null,
     State: 'review_required',
     RequiresReview: true,
@@ -583,6 +599,9 @@ function createCommercialStructure(clientNetUid: string) {
         SourceSnapshots: [{
           SourceSystem: 'amg',
           SourceCode: 1545,
+          DirectClientGroupSourceCode: 4334,
+          DirectClientGroupRegionCode: 'BXM05200',
+          DirectClientGroupSourceMarkedDeleted: false,
           BankName: 'АТ Тест Банк',
           ManagerName: 'Марія Іваненко',
           QuantityDayDebt: 14,
