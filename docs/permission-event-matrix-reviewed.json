@@ -4,25 +4,25 @@
     "inputRecords": 1902,
     "classifiedRecords": 1902,
     "dispositionCounts": {
-      "technical_ui": 668,
-      "covered_existing": 358,
-      "duplicate_occurrence": 155,
-      "business_candidate": 461,
+      "technical_ui": 671,
+      "covered_existing": 362,
+      "duplicate_occurrence": 158,
+      "business_candidate": 451,
       "needs_human_review": 252,
       "stale_or_aggregated": 8
     },
-    "reviewCandidates": 713,
-    "technicalExcluded": 668,
-    "duplicatesExcluded": 155,
-    "duplicateOccurrencesTotal": 222,
-    "technicalDuplicateOverlap": 67,
+    "reviewCandidates": 703,
+    "technicalExcluded": 671,
+    "duplicatesExcluded": 158,
+    "duplicateOccurrencesTotal": 226,
+    "technicalDuplicateOverlap": 68,
     "sourceResolved": 1828,
     "sourceUnresolved": 74,
     "currentActionResolved": 1187,
     "currentActionUnresolved": 715,
     "currentProductionActions": 1829,
-    "currentPermissionBoundActions": 195,
-    "currentUnboundActions": 1634
+    "currentPermissionBoundActions": 198,
+    "currentUnboundActions": 1631
   },
   "invariants": {
     "allInputRecordsClassified": true,
@@ -18601,7 +18601,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/consumable-storages/pages/ConsumableStoragesPage.tsx",
-        "line": 99,
+        "line": 103,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -18634,7 +18634,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/consumable-storages/pages/ConsumableStorageFormPage.tsx",
-        "line": 65,
+        "line": 67,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -18667,7 +18667,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/consumable-storages/pages/ConsumableStorageFormPage.tsx",
-        "line": 65,
+        "line": 67,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -18698,12 +18698,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-d792e3b25747",
+          "candidateId": "EPC-6b6fb190df5a",
           "distance": 77,
           "file": "src/features/consumable-storages/pages/ConsumableStorageFormPage.tsx",
           "handler": "{handleSubmit}",
           "humanLabel": null,
-          "line": 258,
+          "line": 283,
           "permissionKeys": [],
           "score": 12
         }
@@ -18711,7 +18711,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/consumable-storages/pages/ConsumableStorageFormPage.tsx",
-        "line": 181,
+        "line": 206,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -18742,12 +18742,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-59c1db1444af",
-          "distance": 115,
+          "candidateId": "EPC-005c6a5e1438",
+          "distance": 121,
           "file": "src/features/consumable-storages/pages/ConsumableStoragesPage.tsx",
           "handler": "{() => setSearchValue('')}",
           "humanLabel": "Скинути",
-          "line": 237,
+          "line": 248,
           "permissionKeys": [],
           "score": 14
         }
@@ -18755,7 +18755,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/consumable-storages/pages/ConsumableStoragesPage.tsx",
-        "line": 122,
+        "line": 127,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -18788,7 +18788,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/consumable-storages/pages/ConsumableStoragesPage.tsx",
-        "line": 129,
+        "line": 134,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -18821,12 +18821,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-c28162c44ffd",
-          "distance": 108,
+          "candidateId": "EPC-7fc5ef31f81b",
+          "distance": 114,
           "file": "src/features/consumable-storages/pages/ConsumableStoragesPage.tsx",
           "handler": "{openCreateStorage}",
           "humanLabel": "Новий склад",
-          "line": 264,
+          "line": 275,
           "permissionKeys": [
             "warehouses.premises.premise.create"
           ],
@@ -18836,7 +18836,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/consumable-storages/pages/ConsumableStoragesPage.tsx",
-        "line": 156,
+        "line": 161,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -18859,20 +18859,22 @@
       "proposedPermission": "accounting.accounting_storages.set_selected_storage.row_click",
       "securityLevel": "medium",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "covered_existing",
+      "dispositionReason": "Clicking a storage row opens the same page-scoped detail drawer and its reads use the dedicated page-view façade.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "warehouses.premises.page.view"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-d07fcb677b9b",
-          "distance": 160,
+          "candidateId": "EPC-6c6cfd6e2014",
+          "distance": 166,
           "file": "src/features/consumable-storages/pages/ConsumableStoragesPage.tsx",
           "handler": "{setSelectedStorage}",
           "humanLabel": null,
-          "line": 286,
+          "line": 297,
           "permissionKeys": [],
           "score": 18
         }
@@ -18880,7 +18882,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/consumable-storages/pages/ConsumableStoragesPage.tsx",
-        "line": 126,
+        "line": 131,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -18913,12 +18915,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-9d8d595feee5",
-          "distance": 300,
+          "candidateId": "EPC-dabc8cd817bf",
+          "distance": 307,
           "file": "src/features/consumable-storages/pages/ConsumableStoragesPage.tsx",
           "handler": "{(event) => { event.stopPropagation() onDelete(storage) }}",
           "humanLabel": "Видалити",
-          "line": 399,
+          "line": 410,
           "permissionKeys": [
             "warehouses.premises.premise.delete"
           ],
@@ -18928,7 +18930,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/consumable-storages/pages/ConsumableStoragesPage.tsx",
-        "line": 99,
+        "line": 103,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -18951,20 +18953,20 @@
       "proposedPermission": "accounting.accounting_storages.event_event_stop_propagation_on_open_storage.modal_open",
       "securityLevel": "low",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
-      "duplicateOf": null,
+      "disposition": "duplicate_occurrence",
+      "dispositionReason": "The explicit details action opens the same storage drawer as the row click and is not a second business capability.",
+      "duplicateOf": "PE-00473",
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-14c2546e6734",
-          "distance": 310,
+          "candidateId": "EPC-d155c0296035",
+          "distance": 317,
           "file": "src/features/consumable-storages/pages/ConsumableStoragesPage.tsx",
           "handler": "{(event) => { event.stopPropagation() onOpen(storage) }}",
           "humanLabel": "Деталі",
-          "line": 409,
+          "line": 420,
           "permissionKeys": [],
           "score": 11
         }
@@ -18972,7 +18974,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/consumable-storages/pages/ConsumableStoragesPage.tsx",
-        "line": 99,
+        "line": 103,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -19005,12 +19007,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-43ec61af9526",
-          "distance": 319,
+          "candidateId": "EPC-df86c90ee4d6",
+          "distance": 326,
           "file": "src/features/consumable-storages/pages/ConsumableStoragesPage.tsx",
           "handler": "{(event) => { event.stopPropagation() onEdit(storage) }}",
           "humanLabel": "Редагувати",
-          "line": 418,
+          "line": 429,
           "permissionKeys": [
             "warehouses.premises.premise.edit"
           ],
@@ -19020,7 +19022,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/consumable-storages/pages/ConsumableStoragesPage.tsx",
-        "line": 99,
+        "line": 103,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -19051,12 +19053,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-21757632d812",
-          "distance": 46,
+          "candidateId": "EPC-7c46fe2cea85",
+          "distance": 52,
           "file": "src/features/consumable-storages/pages/ConsumableStoragesPage.tsx",
           "handler": "{resetFilters}",
           "humanLabel": "Скинути",
-          "line": 856,
+          "line": 874,
           "permissionKeys": [],
           "score": 12
         }
@@ -19064,7 +19066,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/consumable-storages/pages/ConsumableStoragesPage.tsx",
-        "line": 810,
+        "line": 822,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -19097,7 +19099,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/consumable-storages/pages/ConsumableStoragesPage.tsx",
-        "line": 756,
+        "line": 768,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -19120,28 +19122,32 @@
       "proposedPermission": "accounting.accounting_storages.set_editor_order_create_deprecated_consumable_order_draft_storag.command_submit",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
-      "duplicateOf": null,
+      "disposition": "duplicate_occurrence",
+      "dispositionReason": "The write-off create button only opens a local draft; authorization is enforced by the mode-aware final save.",
+      "duplicateOf": "PE-00484",
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "warehouses.premises.write_off.create"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-011660dc95b5",
+          "candidateId": "EPC-9dcd98ac74da",
           "distance": 0,
           "file": "src/features/consumable-storages/pages/ConsumableStoragesPage.tsx",
           "handler": "{() => setEditorOrder(createDeprecatedConsumableOrderDraft(storage))}",
           "humanLabel": "Списати",
-          "line": 863,
-          "permissionKeys": [],
+          "line": 882,
+          "permissionKeys": [
+            "warehouses.premises.write_off.create"
+          ],
           "score": 56
         }
       ],
       "source": {
         "status": "resolved",
         "file": "src/features/consumable-storages/pages/ConsumableStoragesPage.tsx",
-        "line": 863,
+        "line": 882,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -19164,28 +19170,32 @@
       "proposedPermission": "accounting.accounting_storages.event_event_stop_propagation_on_edit_row_order.button_click",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
-      "duplicateOf": null,
+      "disposition": "duplicate_occurrence",
+      "dispositionReason": "The write-off edit action only opens the existing draft; the same mode-aware final save is the mutation boundary.",
+      "duplicateOf": "PE-00484",
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "warehouses.premises.write_off.edit"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-f894f3fea325",
-          "distance": 935,
+          "candidateId": "EPC-bf3a331f96aa",
+          "distance": 952,
           "file": "src/features/consumable-storages/pages/ConsumableStoragesPage.tsx",
           "handler": "{(event) => { event.stopPropagation() onEdit(row.order) }}",
           "humanLabel": "Редагувати",
-          "line": 1034,
-          "permissionKeys": [],
+          "line": 1055,
+          "permissionKeys": [
+            "warehouses.premises.write_off.edit"
+          ],
           "score": 12
         }
       ],
       "source": {
         "status": "resolved",
         "file": "src/features/consumable-storages/pages/ConsumableStoragesPage.tsx",
-        "line": 99,
+        "line": 103,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -19208,28 +19218,32 @@
       "proposedPermission": "accounting.accounting_storages.event_event_stop_propagation_on_delete_row_order.command_delete",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
-      "duplicateOf": null,
+      "disposition": "duplicate_occurrence",
+      "dispositionReason": "The row delete action only opens confirmation; the independently guarded final write-off delete is the business boundary.",
+      "duplicateOf": "PE-00488",
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "warehouses.premises.write_off.delete"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-fa4bc5e2ba7a",
-          "distance": 944,
+          "candidateId": "EPC-83dbaca6c372",
+          "distance": 963,
           "file": "src/features/consumable-storages/pages/ConsumableStoragesPage.tsx",
           "handler": "{(event) => { event.stopPropagation() onDelete(row.order) }}",
           "humanLabel": "Видалити",
-          "line": 1043,
-          "permissionKeys": [],
+          "line": 1066,
+          "permissionKeys": [
+            "warehouses.premises.write_off.delete"
+          ],
           "score": 14
         }
       ],
       "source": {
         "status": "resolved",
         "file": "src/features/consumable-storages/pages/ConsumableStoragesPage.tsx",
-        "line": 99,
+        "line": 103,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -19252,20 +19266,20 @@
       "proposedPermission": "accounting.accounting_storages.add_selected_product.command_submit",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "technical_ui",
+      "dispositionReason": "Adding a product only changes the local write-off draft and performs no backend mutation.",
       "duplicateOf": null,
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-679acf223012",
-          "distance": 184,
+          "candidateId": "EPC-5477d7e0795f",
+          "distance": 189,
           "file": "src/features/consumable-storages/pages/ConsumableStoragesPage.tsx",
           "handler": "{addSelectedProduct}",
           "humanLabel": "Додати",
-          "line": 1305,
+          "line": 1339,
           "permissionKeys": [],
           "score": 18
         }
@@ -19273,7 +19287,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/consumable-storages/pages/ConsumableStoragesPage.tsx",
-        "line": 1121,
+        "line": 1150,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -19306,7 +19320,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/consumable-storages/pages/ConsumableStoragesPage.tsx",
-        "line": 309,
+        "line": 320,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -19329,20 +19343,23 @@
       "proposedPermission": "accounting.accounting_storages.handle_save.command_submit",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "covered_existing",
+      "dispositionReason": "Final write-off save selects create or edit by mode, rechecks the exact right and calls an independently permission-scoped backend façade.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "warehouses.premises.write_off.create",
+        "warehouses.premises.write_off.edit"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-cca80c5c37f9",
-          "distance": 150,
+          "candidateId": "EPC-09f1d0f5de61",
+          "distance": 155,
           "file": "src/features/consumable-storages/pages/ConsumableStoragesPage.tsx",
           "handler": "{handleSave}",
           "humanLabel": "Зберегти",
-          "line": 1341,
+          "line": 1375,
           "permissionKeys": [],
           "score": 10
         }
@@ -19350,7 +19367,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/consumable-storages/pages/ConsumableStoragesPage.tsx",
-        "line": 1191,
+        "line": 1220,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -19373,20 +19390,20 @@
       "proposedPermission": "accounting.accounting_storages.on_add_order_item.command_submit",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "technical_ui",
+      "dispositionReason": "Adding an incoming-order position only changes the local write-off draft; final save owns authorization.",
       "duplicateOf": null,
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-608392668f29",
+          "candidateId": "EPC-03b2d270dc2d",
           "distance": 5,
           "file": "src/features/consumable-storages/pages/ConsumableStoragesPage.tsx",
           "handler": "{() => onAdd(order, item)}",
           "humanLabel": null,
-          "line": 1418,
+          "line": 1452,
           "permissionKeys": [],
           "score": 12
         }
@@ -19394,7 +19411,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/consumable-storages/pages/ConsumableStoragesPage.tsx",
-        "line": 1423,
+        "line": 1457,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -19417,20 +19434,20 @@
       "proposedPermission": "accounting.accounting_storages.on_remove_index.command_delete",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "technical_ui",
+      "dispositionReason": "Removing a position only changes the local write-off draft and is not an independently persisted delete.",
       "duplicateOf": null,
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-457fbd1b39c8",
+          "candidateId": "EPC-10305cb5b976",
           "distance": 71,
           "file": "src/features/consumable-storages/pages/ConsumableStoragesPage.tsx",
           "handler": "{() => onRemove(index)}",
           "humanLabel": "Видалити",
-          "line": 1521,
+          "line": 1555,
           "permissionKeys": [],
           "score": 11
         }
@@ -19438,7 +19455,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/consumable-storages/pages/ConsumableStoragesPage.tsx",
-        "line": 1450,
+        "line": 1484,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -19471,7 +19488,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/consumable-storages/pages/ConsumableStoragesPage.tsx",
-        "line": 309,
+        "line": 320,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -19494,17 +19511,19 @@
       "proposedPermission": "accounting.accounting_storages.on_delete.command_delete",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "covered_existing",
+      "dispositionReason": "Final write-off deletion rechecks its own right and calls the dedicated permission-scoped delete façade.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "warehouses.premises.write_off.delete"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [],
       "source": {
         "status": "resolved",
         "file": "src/features/consumable-storages/pages/ConsumableStoragesPage.tsx",
-        "line": 166,
+        "line": 171,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -19537,7 +19556,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/consumable-storages/pages/ConsumableStoragesPage.tsx",
-        "line": 309,
+        "line": 320,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -19560,17 +19579,19 @@
       "proposedPermission": "accounting.accounting_storages.on_delete.command_delete.2",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "duplicate_occurrence",
-      "dispositionReason": "same_normalized_action_as:PE-00488",
+      "disposition": "covered_existing",
+      "dispositionReason": "This is the separate final storage-premise deletion, not a duplicate of write-off deletion; it rechecks the existing premise delete right.",
       "duplicateOf": "PE-00488",
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "warehouses.premises.premise.delete"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [],
       "source": {
         "status": "resolved",
         "file": "src/features/consumable-storages/pages/ConsumableStoragesPage.tsx",
-        "line": 166,
+        "line": 171,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -79352,16 +79373,6 @@
     "PE-00412",
     "PE-00414",
     "PE-00469",
-    "PE-00473",
-    "PE-00475",
-    "PE-00479",
-    "PE-00480",
-    "PE-00481",
-    "PE-00482",
-    "PE-00484",
-    "PE-00485",
-    "PE-00486",
-    "PE-00488",
     "PE-00511",
     "PE-00513",
     "PE-00517",

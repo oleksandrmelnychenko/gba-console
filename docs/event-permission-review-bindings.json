@@ -1454,6 +1454,67 @@
         "services.consumable_products.category.delete"
       ],
       "reason": "The reusable confirmation selects category edit or product delete from the target kind and rechecks it before the scoped delete."
+    },
+    "PE-00473": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": [
+        "warehouses.premises.page.view"
+      ],
+      "reason": "Clicking a storage row opens the same page-scoped detail drawer and its reads use the dedicated page-view façade."
+    },
+    "PE-00475": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-00473",
+      "reason": "The explicit details action opens the same storage drawer as the row click and is not a second business capability."
+    },
+    "PE-00479": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-00484",
+      "reason": "The write-off create button only opens a local draft; authorization is enforced by the mode-aware final save."
+    },
+    "PE-00480": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-00484",
+      "reason": "The write-off edit action only opens the existing draft; the same mode-aware final save is the mutation boundary."
+    },
+    "PE-00481": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-00488",
+      "reason": "The row delete action only opens confirmation; the independently guarded final write-off delete is the business boundary."
+    },
+    "PE-00482": {
+      "disposition": "technical_ui",
+      "reason": "Adding a product only changes the local write-off draft and performs no backend mutation."
+    },
+    "PE-00484": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": [
+        "warehouses.premises.write_off.create",
+        "warehouses.premises.write_off.edit"
+      ],
+      "reason": "Final write-off save selects create or edit by mode, rechecks the exact right and calls an independently permission-scoped backend façade."
+    },
+    "PE-00485": {
+      "disposition": "technical_ui",
+      "reason": "Adding an incoming-order position only changes the local write-off draft; final save owns authorization."
+    },
+    "PE-00486": {
+      "disposition": "technical_ui",
+      "reason": "Removing a position only changes the local write-off draft and is not an independently persisted delete."
+    },
+    "PE-00488": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": [
+        "warehouses.premises.write_off.delete"
+      ],
+      "reason": "Final write-off deletion rechecks its own right and calls the dedicated permission-scoped delete façade."
+    },
+    "PE-00490": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": [
+        "warehouses.premises.premise.delete"
+      ],
+      "reason": "This is the separate final storage-premise deletion, not a duplicate of write-off deletion; it rechecks the existing premise delete right."
     }
   }
 }

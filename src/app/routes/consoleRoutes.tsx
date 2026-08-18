@@ -462,14 +462,17 @@ const accountingMigrationRoutes: ConsoleRoute[] = [
   {
     path: '/accounting/storages',
     element: lazyRoute(<ConsumableStoragesPage />),
+    permissionKey: PermissionKeys.Warehouses.Premises.Page.View,
   },
   {
     path: '/accounting/storages/new',
     element: lazyRoute(<ConsumableStorageFormPage />),
+    permissionKey: PermissionKeys.Warehouses.Premises.Premise.Create,
   },
   {
     path: '/accounting/storages/edit/:id',
     element: lazyRoute(<ConsumableStorageFormPage />),
+    permissionKey: PermissionKeys.Warehouses.Premises.Premise.Edit,
   },
   {
     path: '/accounting/supplier-organizations',

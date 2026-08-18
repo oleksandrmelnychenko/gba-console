@@ -402,6 +402,11 @@ export const PermissionKeys = {
         Edit: 'warehouses.premises.premise.edit',
         Delete: 'warehouses.premises.premise.delete',
       },
+      WriteOff: {
+        Create: 'warehouses.premises.write_off.create',
+        Edit: 'warehouses.premises.write_off.edit',
+        Delete: 'warehouses.premises.write_off.delete',
+      },
     },
     Ukraine: {
       Page: {
@@ -783,6 +788,7 @@ export type WarehousesPermissionKey =
   | Values<typeof PermissionKeys.Warehouses.CompanyCars.Car>
   | Values<typeof PermissionKeys.Warehouses.Premises.Page>
   | Values<typeof PermissionKeys.Warehouses.Premises.Premise>
+  | Values<typeof PermissionKeys.Warehouses.Premises.WriteOff>
   | Values<typeof PermissionKeys.Warehouses.Ukraine.Page>
   | Values<typeof PermissionKeys.Warehouses.Ukraine.Invoices>
   | Values<typeof PermissionKeys.Warehouses.Ukraine.Shipments>

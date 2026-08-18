@@ -85,7 +85,7 @@ export async function searchConsumableStorageUsers(value: string): Promise<UserP
 export async function getDeprecatedConsumableOrders(
   params: DeprecatedConsumableOrdersParams,
 ): Promise<DeprecatedConsumableOrder[]> {
-  const result = await apiRequest<unknown>('/consumables/orders/depreciated/all/filtered', {
+  const result = await apiRequest<unknown>('/consumables/orders/depreciated/accounting/all/filtered', {
     query: {
       from: params.from,
       storageNetId: params.storageNetId,
@@ -101,7 +101,7 @@ export async function createDeprecatedConsumableOrder(
   order: DeprecatedConsumableOrder,
   expensiveFirst: boolean,
 ): Promise<DeprecatedConsumableOrder | null> {
-  const result = await apiRequest<unknown>('/consumables/orders/depreciated/new', {
+  const result = await apiRequest<unknown>('/consumables/orders/depreciated/accounting/new', {
     body: order,
     method: 'POST',
     query: {
@@ -116,7 +116,7 @@ export async function updateDeprecatedConsumableOrder(
   order: DeprecatedConsumableOrder,
   expensiveFirst: boolean,
 ): Promise<DeprecatedConsumableOrder | null> {
-  const result = await apiRequest<unknown>('/consumables/orders/depreciated/update', {
+  const result = await apiRequest<unknown>('/consumables/orders/depreciated/accounting/update', {
     body: order,
     method: 'POST',
     query: {
@@ -128,7 +128,7 @@ export async function updateDeprecatedConsumableOrder(
 }
 
 export async function deleteDeprecatedConsumableOrder(netId: string): Promise<void> {
-  await apiRequest<unknown>('/consumables/orders/depreciated/delete', {
+  await apiRequest<unknown>('/consumables/orders/depreciated/accounting/delete', {
     method: 'DELETE',
     query: {
       netId,
