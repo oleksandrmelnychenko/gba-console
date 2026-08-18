@@ -4,15 +4,15 @@
     "inputRecords": 1902,
     "classifiedRecords": 1902,
     "dispositionCounts": {
-      "technical_ui": 671,
-      "covered_existing": 362,
+      "technical_ui": 672,
+      "covered_existing": 364,
       "duplicate_occurrence": 158,
-      "business_candidate": 451,
-      "needs_human_review": 252,
+      "business_candidate": 449,
+      "needs_human_review": 251,
       "stale_or_aggregated": 8
     },
-    "reviewCandidates": 703,
-    "technicalExcluded": 671,
+    "reviewCandidates": 700,
+    "technicalExcluded": 672,
     "duplicatesExcluded": 158,
     "duplicateOccurrencesTotal": 226,
     "technicalDuplicateOverlap": 68,
@@ -21,8 +21,8 @@
     "currentActionResolved": 1187,
     "currentActionUnresolved": 715,
     "currentProductionActions": 1829,
-    "currentPermissionBoundActions": 198,
-    "currentUnboundActions": 1631
+    "currentPermissionBoundActions": 199,
+    "currentUnboundActions": 1630
   },
   "invariants": {
     "allInputRecordsClassified": true,
@@ -949,11 +949,11 @@
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
       "disposition": "covered_existing",
-      "dispositionReason": "existing_page_permission:counterparties.clients.page.view",
+      "dispositionReason": "existing_page_permission:counterparties.clients.accounting_cash_flow.open",
       "duplicateOf": null,
       "businessActionId": null,
       "canonicalPermissionKeys": [
-        "counterparties.clients.page.view"
+        "counterparties.clients.accounting_cash_flow.open"
       ],
       "classificationSource": "automatic",
       "bindingEvidence": [],
@@ -982,11 +982,11 @@
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
       "disposition": "covered_existing",
-      "dispositionReason": "existing_page_permission:counterparties.suppliers.page.view",
+      "dispositionReason": "existing_page_permission:counterparties.clients.accounting_cash_flow.open",
       "duplicateOf": null,
       "businessActionId": null,
       "canonicalPermissionKeys": [
-        "counterparties.suppliers.page.view"
+        "counterparties.clients.accounting_cash_flow.open"
       ],
       "classificationSource": "automatic",
       "bindingEvidence": [],
@@ -1023,12 +1023,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-f6763ca680ec",
+          "candidateId": "EPC-0e49c2ee46ff",
           "distance": 0,
           "file": "src/features/accounting-cash-flow/pages/AccountingCashFlowPage.tsx",
           "handler": "{(event) => event.preventDefault()}",
           "humanLabel": null,
-          "line": 752,
+          "line": 793,
           "permissionKeys": [],
           "score": 14
         }
@@ -1036,7 +1036,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/accounting-cash-flow/pages/AccountingCashFlowPage.tsx",
-        "line": 752,
+        "line": 793,
         "alternatives": []
       }
     },
@@ -1064,12 +1064,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-a7ca341d3c0a",
-          "distance": 459,
+          "candidateId": "EPC-7562d92f067a",
+          "distance": 475,
           "file": "src/features/accounting-cash-flow/pages/AccountingCashFlowPage.tsx",
           "handler": "{resetFilters}",
           "humanLabel": "Скинути",
-          "line": 809,
+          "line": 850,
           "permissionKeys": [],
           "score": 12
         }
@@ -1077,7 +1077,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/accounting-cash-flow/pages/AccountingCashFlowPage.tsx",
-        "line": 350,
+        "line": 375,
         "alternatives": []
       }
     },
@@ -1107,7 +1107,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/accounting-cash-flow/pages/AccountingCashFlowPage.tsx",
-        "line": 216,
+        "line": 241,
         "alternatives": []
       }
     },
@@ -1127,28 +1127,32 @@
       "proposedPermission": "clients.clients_accounting_cash_flow_item.handle_export.command_export",
       "securityLevel": "medium",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "covered_existing",
+      "dispositionReason": "Document generation is a distinct export capability with its own UI recheck and dedicated permission-scoped backend façade.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "counterparties.clients.accounting_cash_flow.export"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-49fbb6935467",
-          "distance": 459,
+          "candidateId": "EPC-09a9beaafbee",
+          "distance": 476,
           "file": "src/features/accounting-cash-flow/pages/AccountingCashFlowPage.tsx",
           "handler": "{handleExport}",
           "humanLabel": "Експорт / друк",
-          "line": 828,
-          "permissionKeys": [],
+          "line": 870,
+          "permissionKeys": [
+            "counterparties.clients.accounting_cash_flow.export"
+          ],
           "score": 12
         }
       ],
       "source": {
         "status": "resolved",
         "file": "src/features/accounting-cash-flow/pages/AccountingCashFlowPage.tsx",
-        "line": 369,
+        "line": 394,
         "alternatives": []
       }
     },
@@ -1168,20 +1172,24 @@
       "proposedPermission": "clients.clients_accounting_cash_flow_item.handle_cash_flow_row_click.row_click",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "covered_existing",
+      "dispositionReason": "The row uses the existing ledger access for already-loaded details; sale and income drilldowns additionally require their target detail/page permission before their scoped read.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "accounting.income_cashflows.page.view",
+        "counterparties.clients.accounting_cash_flow.open",
+        "sales.ukraine.sale.open_details"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-619f08f372ad",
-          "distance": 282,
+          "candidateId": "EPC-1c3ad0566b68",
+          "distance": 284,
           "file": "src/features/accounting-cash-flow/pages/AccountingCashFlowPage.tsx",
           "handler": "{handleCashFlowRowClick}",
           "humanLabel": null,
-          "line": 877,
+          "line": 920,
           "permissionKeys": [],
           "score": 22
         }
@@ -1189,7 +1197,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/accounting-cash-flow/pages/AccountingCashFlowPage.tsx",
-        "line": 595,
+        "line": 636,
         "alternatives": []
       }
     },
@@ -1217,12 +1225,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-26e660883d5a",
+          "candidateId": "EPC-6b507962af8c",
           "distance": 3,
           "file": "src/features/accounting-cash-flow/pages/AccountingCashFlowPage.tsx",
           "handler": "{() => onSelectAgreement(null)}",
           "humanLabel": null,
-          "line": 1091,
+          "line": 1134,
           "permissionKeys": [],
           "score": 19
         }
@@ -1230,7 +1238,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/accounting-cash-flow/pages/AccountingCashFlowPage.tsx",
-        "line": 1094,
+        "line": 1137,
         "alternatives": []
       }
     },
@@ -1260,7 +1268,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/accounting-cash-flow/pages/AccountingCashFlowPage.tsx",
-        "line": 1106,
+        "line": 1149,
         "alternatives": []
       }
     },
@@ -1280,17 +1288,17 @@
       "proposedPermission": "clients.clients_accounting_cash_flow_item.баланс.button_click",
       "securityLevel": "low",
       "rawStatus": "No permission candidate found",
-      "disposition": "needs_human_review",
-      "dispositionReason": "insufficient_evidence_for_automatic_permission_or_exclusion",
+      "disposition": "technical_ui",
+      "dispositionReason": "«Баланс» is a data-table column header and calculated display value, not an executable UI or backend action.",
       "duplicateOf": null,
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [],
       "source": {
         "status": "resolved",
         "file": "src/features/accounting-cash-flow/pages/AccountingCashFlowPage.tsx",
-        "line": 718,
+        "line": 759,
         "alternatives": []
       }
     },
@@ -79231,9 +79239,6 @@
     }
   ],
   "reviewCandidateIds": [
-    "PE-00031",
-    "PE-00032",
-    "PE-00035",
     "PE-00070",
     "PE-00073",
     "PE-00074",

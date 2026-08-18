@@ -58,6 +58,18 @@ export async function getIncomeCashflowByNetId(netId: string, signal?: AbortSign
   return normalizeIncomePaymentOrder(result)
 }
 
+export async function getIncomeCashflowForAccountingCashFlow(
+  netId: string,
+  signal?: AbortSignal,
+): Promise<IncomePaymentOrder | null> {
+  const result = await apiRequest<unknown>('/payments/orders/income/accounting-cash-flow/get', {
+    query: { netId },
+    ...(signal ? { signal } : {}),
+  })
+
+  return normalizeIncomePaymentOrder(result)
+}
+
 export async function cancelIncomeCashflow(
   netId: string,
   operation?: AccountingMutationOperationOptions,

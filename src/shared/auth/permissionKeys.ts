@@ -9,6 +9,9 @@ export const PermissionKeys = {
     ExpenseArticles: {
       View: 'accounting.expense_articles.page.view',
     },
+    IncomeCashflows: {
+      View: 'accounting.income_cashflows.page.view',
+    },
     SupplyCart: {
       View: 'orders.supply_cart.page.view',
     },
@@ -123,6 +126,7 @@ export const PermissionKeys = {
     },
     AccountingCashFlow: {
       Open: 'counterparties.clients.accounting_cash_flow.open',
+      Export: 'counterparties.clients.accounting_cash_flow.export',
     },
     Client: {
       Create: 'counterparties.clients.client.create',
@@ -675,6 +679,7 @@ export type SystemPagePermissionKey =
   | Values<typeof PermissionKeys.SystemPages.Dashboard>
   | Values<typeof PermissionKeys.SystemPages.VehicleRegistry>
   | Values<typeof PermissionKeys.SystemPages.ExpenseArticles>
+  | Values<typeof PermissionKeys.SystemPages.IncomeCashflows>
   | Values<typeof PermissionKeys.SystemPages.SupplyCart>
   | Values<typeof PermissionKeys.SystemPages.SupplySales>
   | Values<typeof PermissionKeys.SystemPages.ServiceOrganisations>
@@ -1766,6 +1771,7 @@ const eventPermissionKeys = new Set<string>([
   ...Object.values(PermissionKeys.SystemPages.Dashboard),
   ...Object.values(PermissionKeys.SystemPages.VehicleRegistry),
   ...Object.values(PermissionKeys.SystemPages.ExpenseArticles),
+  ...Object.values(PermissionKeys.SystemPages.IncomeCashflows),
   ...Object.values(PermissionKeys.SystemPages.SupplyCart),
   ...Object.values(PermissionKeys.SystemPages.SupplySales),
   ...Object.values(PermissionKeys.SystemPages.ServiceOrganisations),

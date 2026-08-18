@@ -11,6 +11,7 @@ import {
   getIncomeCashflowSpecificExchangeRate,
   getIncomeCashflowSupplyOrganizationAgreements,
   getIncomeCashflowByNetId,
+  getIncomeCashflowForAccountingCashFlow,
   searchIncomeCashflowCounterparties,
   searchIncomeCashflowPaymentMovements,
   searchIncomeCashflowPaymentRegisters,
@@ -236,6 +237,12 @@ describe('income cashflow API lookup contracts', () => {
       AssignedPaymentOrders: [],
       NetUid: 'income-order-1',
       Number: 'ПКО-1',
+    })
+
+    apiRequestMock.mockResolvedValueOnce({ NetUid: 'income-order-1' })
+    await getIncomeCashflowForAccountingCashFlow('income-order-1')
+    expect(apiRequestMock).toHaveBeenLastCalledWith('/payments/orders/income/accounting-cash-flow/get', {
+      query: { netId: 'income-order-1' },
     })
 
     expect(apiRequestMock).toHaveBeenCalledWith('/payments/orders/income/get', {

@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { apiRequest } from '../../../shared/api/apiClient'
 import {
   exportAccountingCashFlowDocument,
+  exportCounterpartyAccountingCashFlowDocument,
   getAccountingCashFlow,
   getAccountingCashFlowCounterparty,
 } from './accountingCashFlowApi'
@@ -86,5 +87,32 @@ describe('accountingCashFlowApi', () => {
         typePaymentTask: 2,
       },
     })
+  })
+
+  it('uses permission-scoped client reads and independently guarded export', async () => {
+    apiRequestMock
+      .mockResolvedValueOnce({ NetUid: 'client-1', ClientAgreements: [] })
+      .mockResolvedValueOnce({ AccountingCashFlowHeadItems: [] })
+      .mockResolvedValueOnce({ PdfDocumentURL: '/client-cash-flow.pdf' })
+
+    await getAccountingCashFlowCounterparty('client-1', 'client')
+    await getAccountingCashFlow({
+      from: '2026-07-01',
+      mode: 'client',
+      netId: 'client-1',
+      to: '2026-07-08',
+    })
+    await exportCounterpartyAccountingCashFlowDocument({
+      from: '2026-07-01',
+      mode: 'client',
+      netId: 'client-1',
+      to: '2026-07-08',
+    })
+
+    expect(apiRequestMock.mock.calls.map(([route]) => route)).toEqual([
+      '/clients/cash-flow/details',
+      '/accounting/cashflow/clients/get/filtered',
+      '/accounting/cashflow/counterparties/document/export',
+    ])
   })
 })

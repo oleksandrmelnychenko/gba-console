@@ -324,6 +324,7 @@ const clientMigrationRoutes: ConsoleRoute[] = [
   {
     path: '/clients/accounting-cash-flow/:id',
     element: lazyRoute(<ClientAccountingCashFlowPage />),
+    permissionKey: PermissionKeys.Clients.AccountingCashFlow.Open,
   },
   {
     path: '/new-clients-from-ecommerce',

@@ -32,10 +32,12 @@
     { "route": "/reports/stocks", "permissionKey": "reports.stocks_constructor.page.view" },
     { "route": "/clients/resources", "permissionKey": "counterparties.company_resources.page.view" },
     { "route": "/clients", "permissionKey": "counterparties.clients.page.view" },
+    { "route": "/clients/accounting-cash-flow/:id", "permissionKey": "counterparties.clients.accounting_cash_flow.open" },
     { "route": "/clients-online-shop", "permissionKey": "counterparties.online_shop_clients.page.view" },
     { "route": "/new-clients-from-ecommerce", "permissionKey": "counterparties.new_ecommerce_clients.page.view" },
     { "route": "/organization-clients", "permissionKey": "counterparties.buyer_organizations.page.view" },
     { "route": "/suppliers", "permissionKey": "counterparties.suppliers.page.view" },
+    { "route": "/suppliers/accounting-cash-flow/:id", "permissionKey": "counterparties.clients.accounting_cash_flow.open" },
     { "route": "/accounting/advanced-reports", "permissionKey": "accounting.advanced_reports.page.view" },
     { "route": "/accounting/income-cashflows", "permissionKey": "accounting.income_cashflows.page.view" },
     { "route": "/accounting/outgoing-cashflow", "permissionKey": "accounting.outgoing_cashflows.page.view" },
@@ -96,6 +98,26 @@
     { "route": "/recommendations", "permissionKey": "orders.purchase_cockpit.page.view" }
   ],
   "recordOverrides": {
+    "PE-00031": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": [
+        "counterparties.clients.accounting_cash_flow.export"
+      ],
+      "reason": "Document generation is a distinct export capability with its own UI recheck and dedicated permission-scoped backend façade."
+    },
+    "PE-00032": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": [
+        "counterparties.clients.accounting_cash_flow.open",
+        "sales.ukraine.sale.open_details",
+        "accounting.income_cashflows.page.view"
+      ],
+      "reason": "The row uses the existing ledger access for already-loaded details; sale and income drilldowns additionally require their target detail/page permission before their scoped read."
+    },
+    "PE-00035": {
+      "disposition": "technical_ui",
+      "reason": "«Баланс» is a data-table column header and calculated display value, not an executable UI or backend action."
+    },
     "PE-00387": {
       "disposition": "covered_existing",
       "canonicalPermissionKeys": [
