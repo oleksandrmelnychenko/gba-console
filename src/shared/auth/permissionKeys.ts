@@ -9,6 +9,9 @@ export const PermissionKeys = {
     ExpenseArticles: {
       View: 'accounting.expense_articles.page.view',
     },
+    AdvancedReports: {
+      View: 'accounting.advanced_reports.page.view',
+    },
     IncomeCashflows: {
       View: 'accounting.income_cashflows.page.view',
     },
@@ -657,6 +660,15 @@ export const PermissionKeys = {
       Generate: 'reports.stocks_constructor.report.generate',
     },
   },
+  AdvancedReports: {
+    Report: {
+      Open: 'accounting.advanced_reports.report.open',
+      Edit: 'accounting.advanced_reports.report.edit',
+    },
+    DocumentStructure: {
+      Open: 'accounting.advanced_reports.document_structure.open',
+    },
+  },
 } as const
 
 export type SalesUkraineSalePermissionKey =
@@ -673,12 +685,17 @@ export type ReportsStocksPermissionKey =
   | Values<typeof PermissionKeys.ReportsStocks.Page>
   | Values<typeof PermissionKeys.ReportsStocks.Report>
 
+export type AdvancedReportsPermissionKey =
+  | Values<typeof PermissionKeys.AdvancedReports.Report>
+  | Values<typeof PermissionKeys.AdvancedReports.DocumentStructure>
+
 type Values<T> = T[keyof T]
 
 export type SystemPagePermissionKey =
   | Values<typeof PermissionKeys.SystemPages.Dashboard>
   | Values<typeof PermissionKeys.SystemPages.VehicleRegistry>
   | Values<typeof PermissionKeys.SystemPages.ExpenseArticles>
+  | Values<typeof PermissionKeys.SystemPages.AdvancedReports>
   | Values<typeof PermissionKeys.SystemPages.IncomeCashflows>
   | Values<typeof PermissionKeys.SystemPages.SupplyCart>
   | Values<typeof PermissionKeys.SystemPages.SupplySales>
@@ -883,6 +900,7 @@ export type FinancialAdministrationPermissionKey =
 
 export type PermissionKey =
   | SystemPagePermissionKey
+  | AdvancedReportsPermissionKey
   | ActReconciliationsPermissionKey
   | VehicleRegistryPermissionKey
   | ClientResourcesPermissionKey
@@ -1771,6 +1789,7 @@ const eventPermissionKeys = new Set<string>([
   ...Object.values(PermissionKeys.SystemPages.Dashboard),
   ...Object.values(PermissionKeys.SystemPages.VehicleRegistry),
   ...Object.values(PermissionKeys.SystemPages.ExpenseArticles),
+  ...Object.values(PermissionKeys.SystemPages.AdvancedReports),
   ...Object.values(PermissionKeys.SystemPages.IncomeCashflows),
   ...Object.values(PermissionKeys.SystemPages.SupplyCart),
   ...Object.values(PermissionKeys.SystemPages.SupplySales),
@@ -1928,6 +1947,8 @@ const eventPermissionKeys = new Set<string>([
   ...Object.values(PermissionKeys.Resales.ConsignmentNote),
   ...Object.values(PermissionKeys.ReportsStocks.Page),
   ...Object.values(PermissionKeys.ReportsStocks.Report),
+  ...Object.values(PermissionKeys.AdvancedReports.Report),
+  ...Object.values(PermissionKeys.AdvancedReports.DocumentStructure),
 ])
 
 export function isEventPermissionKey(

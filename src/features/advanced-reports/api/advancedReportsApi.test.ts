@@ -43,7 +43,7 @@ describe('advancedReportsApi', () => {
 
     const result = await calculateAdvancedReportOrder(order)
 
-    expect(apiRequestMock).toHaveBeenCalledWith('/payments/orders/outcome/calculate', {
+    expect(apiRequestMock).toHaveBeenCalledWith('/payments/orders/outcome/advanced-reports/structure/calculate', {
       body: order,
       method: 'POST',
     })
@@ -75,7 +75,7 @@ describe('advancedReportsApi', () => {
       to: '2026-06-03',
     })
 
-    expect(apiRequestMock).toHaveBeenCalledWith('/payments/orders/outcome/all/underreport', {
+    expect(apiRequestMock).toHaveBeenCalledWith('/payments/orders/outcome/advanced-reports/registry', {
       query: {
         currencyNetId: undefined,
         from: '2026-06-01',

@@ -11,7 +11,7 @@ import type {
 } from '../types'
 
 export async function getAdvancedReports(params: AdvancedReportsSearchParams): Promise<AdvancedReportsResponse> {
-  const result = await apiRequest<unknown>('/payments/orders/outcome/all/underreport', {
+  const result = await apiRequest<unknown>('/payments/orders/outcome/advanced-reports/registry', {
     query: {
       currencyNetId: params.currencyNetId || undefined,
       from: params.from,
@@ -28,7 +28,7 @@ export async function getAdvancedReports(params: AdvancedReportsSearchParams): P
 }
 
 export async function calculateAdvancedReportOrder(order: OutcomePaymentOrder): Promise<OutcomePaymentOrder | null> {
-  const result = await apiRequest<unknown>('/payments/orders/outcome/calculate', {
+  const result = await apiRequest<unknown>('/payments/orders/outcome/advanced-reports/structure/calculate', {
     body: order,
     method: 'POST',
   })

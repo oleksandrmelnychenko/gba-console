@@ -17,14 +17,16 @@ const LOCAL_NET_UID_PREFIX = 'local-'
 const SUPPLY_ORGANIZATION_LOOKUP_LIMIT = 20
 
 export async function getAdvanceReportOrder(netId: string): Promise<AdvanceReportOrder | null> {
-  const result = await apiRequest<unknown>(`/payments/orders/outcome/get?netId=${encodeURIComponent(netId)}`)
+  const result = await apiRequest<unknown>('/payments/orders/outcome/advanced-reports/details', {
+    query: { netId },
+  })
 
   return normalizeAdvanceReportOrder(result)
 }
 
 export async function calculateAdvanceReportOrder(order: AdvanceReportOrder): Promise<AdvanceReportOrder | null> {
   const payload = sanitizeAdvanceReportOrderForCalculation(order)
-  const result = await apiRequest<unknown>('/payments/orders/outcome/calculate', {
+  const result = await apiRequest<unknown>('/payments/orders/outcome/advanced-reports/edit/calculate', {
     body: payload,
     method: 'POST',
   })
@@ -58,7 +60,7 @@ export async function updateAdvanceReportOrder(
         formData.append('order', JSON.stringify(snapshot.order))
         documentFiles.forEach((file) => formData.append('documents', file))
 
-        return apiRequest<unknown>('/payments/orders/outcome/upload/update', {
+        return apiRequest<unknown>('/payments/orders/outcome/advanced-reports/edit/upload/update', {
           body: formData,
           dedupe: false,
           headers: context.headers,
@@ -83,7 +85,7 @@ export async function updateAdvanceReportOrder(
       createIncomeAutomatically,
       order: payload,
     },
-    request: (snapshot, context) => apiRequest<unknown>('/payments/orders/outcome/update', {
+    request: (snapshot, context) => apiRequest<unknown>('/payments/orders/outcome/advanced-reports/edit/update', {
       body: snapshot.order,
       dedupe: false,
       headers: context.headers,
@@ -124,7 +126,7 @@ async function readAccountingDocumentMetadata(file: File) {
 export async function calculateAdvanceReportConsumableOrder(
   order: AdvanceReportConsumablesOrder,
 ): Promise<AdvanceReportConsumablesOrder | null> {
-  const result = await apiRequest<unknown>('/consumables/orders/calculate', {
+  const result = await apiRequest<unknown>('/consumables/orders/advanced-reports/edit/calculate', {
     body: [sanitizeConsumableOrderPayload(order)],
     method: 'POST',
   })
@@ -136,7 +138,7 @@ export async function calculateAdvanceReportConsumableOrder(
 export async function calculateAdvanceReportCompanyCarFueling(
   fueling: CompanyCarFueling,
 ): Promise<CompanyCarFueling | null> {
-  const result = await apiRequest<unknown>('/consumables/company/cars/fuelings/calculate', {
+  const result = await apiRequest<unknown>('/consumables/company/cars/advanced-reports/edit/fuelings/calculate', {
     body: [fueling],
     method: 'POST',
   })
@@ -155,7 +157,7 @@ export async function searchAdvanceReportSupplyOrganizations(
     return []
   }
 
-  const result = await apiRequest<unknown>('/supplies/organizations/all/search', {
+  const result = await apiRequest<unknown>('/supplies/organizations/advanced-reports/edit/search', {
     query: {
       limit: SUPPLY_ORGANIZATION_LOOKUP_LIMIT,
       offset: 0,

@@ -4,25 +4,25 @@
     "inputRecords": 1902,
     "classifiedRecords": 1902,
     "dispositionCounts": {
-      "technical_ui": 672,
-      "covered_existing": 364,
-      "duplicate_occurrence": 158,
-      "business_candidate": 449,
-      "needs_human_review": 251,
+      "technical_ui": 682,
+      "covered_existing": 370,
+      "duplicate_occurrence": 160,
+      "business_candidate": 432,
+      "needs_human_review": 250,
       "stale_or_aggregated": 8
     },
-    "reviewCandidates": 700,
-    "technicalExcluded": 672,
-    "duplicatesExcluded": 158,
-    "duplicateOccurrencesTotal": 226,
+    "reviewCandidates": 682,
+    "technicalExcluded": 682,
+    "duplicatesExcluded": 160,
+    "duplicateOccurrencesTotal": 228,
     "technicalDuplicateOverlap": 68,
     "sourceResolved": 1828,
     "sourceUnresolved": 74,
     "currentActionResolved": 1187,
     "currentActionUnresolved": 715,
     "currentProductionActions": 1829,
-    "currentPermissionBoundActions": 199,
-    "currentUnboundActions": 1630
+    "currentPermissionBoundActions": 206,
+    "currentUnboundActions": 1623
   },
   "invariants": {
     "allInputRecordsClassified": true,
@@ -2557,7 +2557,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/advanced-reports/pages/AdvancedReportsPage.tsx",
-        "line": 74,
+        "line": 78,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -2586,12 +2586,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-603764d6e631",
+          "candidateId": "EPC-8301096679de",
           "distance": 65,
           "file": "src/features/advanced-reports/pages/AdvancedReportsPage.tsx",
           "handler": "{resetFilters}",
           "humanLabel": "Скинути фільтри",
-          "line": 450,
+          "line": 489,
           "permissionKeys": [],
           "score": 12
         }
@@ -2599,7 +2599,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/advanced-reports/pages/AdvancedReportsPage.tsx",
-        "line": 385,
+        "line": 424,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -2620,20 +2620,23 @@
       "proposedPermission": "accounting.accounting_advanced_reports.handle_row_click.row_click",
       "securityLevel": "medium",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "covered_existing",
+      "dispositionReason": "A regular row opens already-loaded page-scoped details; an under-report row additionally rechecks report.open before navigating to the protected report route.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "accounting.advanced_reports.page.view",
+        "accounting.advanced_reports.report.open"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-88cab6daab48",
-          "distance": 227,
+          "candidateId": "EPC-47ddeb9ce5c2",
+          "distance": 235,
           "file": "src/features/advanced-reports/pages/AdvancedReportsPage.tsx",
           "handler": "{handleRowClick}",
           "humanLabel": null,
-          "line": 482,
+          "line": 521,
           "permissionKeys": [],
           "score": 14
         }
@@ -2641,7 +2644,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/advanced-reports/pages/AdvancedReportsPage.tsx",
-        "line": 255,
+        "line": 286,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -2672,7 +2675,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/advanced-reports/pages/AdvancedReportsPage.tsx",
-        "line": 669,
+        "line": 712,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -2703,7 +2706,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/advanced-reports/pages/AdvancedReportsPage.tsx",
-        "line": 669,
+        "line": 712,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -2724,17 +2727,17 @@
       "proposedPermission": "accounting.accounting_advanced_reports.on_open_row.modal_open",
       "securityLevel": "low",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
-      "duplicateOf": null,
+      "disposition": "duplicate_occurrence",
+      "dispositionReason": "The details menu item opens the same already-loaded drawer as a regular row click.",
+      "duplicateOf": "PE-00070",
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [],
       "source": {
         "status": "resolved",
         "file": "src/features/advanced-reports/pages/AdvancedReportsPage.tsx",
-        "line": 528,
+        "line": 571,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -2755,17 +2758,17 @@
       "proposedPermission": "accounting.accounting_advanced_reports.on_edit_row.button_click",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
-      "duplicateOf": null,
+      "disposition": "duplicate_occurrence",
+      "dispositionReason": "The report menu item invokes the same report.open navigation handler as an under-report row click.",
+      "duplicateOf": "PE-00070",
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [],
       "source": {
         "status": "resolved",
         "file": "src/features/advanced-reports/pages/AdvancedReportsPage.tsx",
-        "line": 527,
+        "line": 570,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -2786,20 +2789,22 @@
       "proposedPermission": "accounting.accounting_advanced_reports.on_open_document_structure_row.modal_open",
       "securityLevel": "low",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "covered_existing",
+      "dispositionReason": "Document structure is an independent derived-document read with a dedicated UI recheck and permission-scoped calculation façade.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "accounting.advanced_reports.document_structure.open"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-ac68e3321d57",
-          "distance": 155,
+          "candidateId": "EPC-e36863426bee",
+          "distance": 158,
           "file": "src/features/advanced-reports/pages/AdvancedReportsPage.tsx",
           "handler": "{() => onOpenDocumentStructure(row)}",
           "humanLabel": null,
-          "line": 684,
+          "line": 730,
           "permissionKeys": [],
           "score": 24
         }
@@ -2807,7 +2812,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/advanced-reports/pages/AdvancedReportsPage.tsx",
-        "line": 529,
+        "line": 572,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -25714,12 +25719,12 @@
       "proposedPermission": "accounting.accounting_outgoing_cashflow_item_advanced_report_view.remove_document_file_file.command_delete",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "technical_ui",
+      "dispositionReason": "Removing a newly attached local file only changes the unsaved editor draft; the final report mutation is guarded by report.edit.",
       "duplicateOf": null,
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
           "candidateId": "EPC-53593fc54c43",
@@ -25754,12 +25759,12 @@
       "proposedPermission": "accounting.accounting_outgoing_cashflow_item_advanced_report_view.open_new_item_editor.modal_open",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "technical_ui",
+      "dispositionReason": "Opening the nested new-item editor is local modal state inside the report.edit workflow.",
       "duplicateOf": null,
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
           "candidateId": "EPC-ad8534fc1639",
@@ -25794,12 +25799,12 @@
       "proposedPermission": "accounting.accounting_outgoing_cashflow_item_advanced_report_view.open_edit_item_editor_item_index.modal_open",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "technical_ui",
+      "dispositionReason": "Opening the nested item editor is local modal state inside the report.edit workflow.",
       "duplicateOf": null,
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
           "candidateId": "EPC-8c78b3e9bd72",
@@ -25834,12 +25839,12 @@
       "proposedPermission": "accounting.accounting_outgoing_cashflow_item_advanced_report_view.void_remove_item_index.command_delete",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "technical_ui",
+      "dispositionReason": "Removing an item changes only the local report draft until the separately guarded final save.",
       "duplicateOf": null,
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
           "candidateId": "EPC-c9af5a7685e0",
@@ -25914,12 +25919,14 @@
       "proposedPermission": "accounting.accounting_outgoing_cashflow_item_advanced_report_view.submit_order.command_submit",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "covered_existing",
+      "dispositionReason": "Submitting a consumable sub-form updates the guarded report draft and uses only report.edit-scoped calculation APIs.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "accounting.advanced_reports.report.edit"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
           "candidateId": "EPC-39fe42ccbbe9",
@@ -25994,12 +26001,12 @@
       "proposedPermission": "accounting.accounting_outgoing_cashflow_item_advanced_report_view.void_save_editor_item.command_submit",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "technical_ui",
+      "dispositionReason": "Saving a nested draft item does not persist the report and remains inside the report.edit workflow.",
       "duplicateOf": null,
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
           "candidateId": "EPC-b577365eed86",
@@ -26114,12 +26121,12 @@
       "proposedPermission": "accounting.accounting_outgoing_cashflow_item_advanced_report_view.on_remove_row.command_delete",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "technical_ui",
+      "dispositionReason": "Removing a fuel row changes only the local report draft until the separately guarded final save.",
       "duplicateOf": null,
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
           "candidateId": "EPC-2301b4f74877",
@@ -26194,12 +26201,14 @@
       "proposedPermission": "accounting.accounting_outgoing_cashflow_item_advanced_report_view.void_submit_fueling.command_submit",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "covered_existing",
+      "dispositionReason": "Submitting a fueling sub-form updates the guarded report draft and uses only report.edit-scoped calculation APIs.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "accounting.advanced_reports.report.edit"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
           "candidateId": "EPC-74a6c87d9a97",
@@ -26314,12 +26323,12 @@
       "proposedPermission": "accounting.accounting_outgoing_cashflow_item_advanced_report_view.on_remove_row.command_delete.2",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "technical_ui",
+      "dispositionReason": "Removing a product row changes only the local report draft until the separately guarded final save.",
       "duplicateOf": null,
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
           "candidateId": "EPC-16e94ffcdb03",
@@ -26660,18 +26669,18 @@
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
       "disposition": "covered_existing",
-      "dispositionReason": "existing_page_permission:accounting.outgoing_cashflows.page.view",
+      "dispositionReason": "existing_page_permission:accounting.advanced_reports.report.open",
       "duplicateOf": null,
       "businessActionId": null,
       "canonicalPermissionKeys": [
-        "accounting.outgoing_cashflows.page.view"
+        "accounting.advanced_reports.report.open"
       ],
       "classificationSource": "automatic",
       "bindingEvidence": [],
       "source": {
         "status": "resolved",
         "file": "src/features/outgoing-cashflows/pages/AdvanceReportViewPage.tsx",
-        "line": 470,
+        "line": 486,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -26692,28 +26701,32 @@
       "proposedPermission": "accounting.accounting_outgoing_cashflow_item_advanced_report_view.model_save_model_create_income_automatically.command_submit",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "covered_existing",
+      "dispositionReason": "The final report save rechecks report.edit and calls a dedicated permission-scoped mutation façade.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "accounting.advanced_reports.report.edit"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-f3b55ad47330",
+          "candidateId": "EPC-02c95fb8867e",
           "distance": 4,
           "file": "src/features/outgoing-cashflows/pages/AdvanceReportViewPage.tsx",
           "handler": "{() => model.save(model.createIncomeAutomatically)}",
           "humanLabel": "Зберегти",
-          "line": 478,
-          "permissionKeys": [],
+          "line": 515,
+          "permissionKeys": [
+            "accounting.advanced_reports.report.edit"
+          ],
           "score": 39
         }
       ],
       "source": {
         "status": "resolved",
         "file": "src/features/outgoing-cashflows/pages/AdvanceReportViewPage.tsx",
-        "line": 482,
+        "line": 519,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -26734,28 +26747,32 @@
       "proposedPermission": "accounting.accounting_outgoing_cashflow_item_advanced_report_view.model_open_consumable_modal.modal_open",
       "securityLevel": "low",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "technical_ui",
+      "dispositionReason": "Opening the consumable modal is local UI state and is hidden outside the report.edit workflow.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "accounting.advanced_reports.report.edit"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-ad95f0690358",
+          "candidateId": "EPC-e21c97b22082",
           "distance": 0,
           "file": "src/features/outgoing-cashflows/pages/AdvanceReportViewPage.tsx",
           "handler": "{model.openConsumableModal}",
           "humanLabel": "Додати товар / послугу",
-          "line": 498,
-          "permissionKeys": [],
+          "line": 535,
+          "permissionKeys": [
+            "accounting.advanced_reports.report.edit"
+          ],
           "score": 24
         }
       ],
       "source": {
         "status": "resolved",
         "file": "src/features/outgoing-cashflows/pages/AdvanceReportViewPage.tsx",
-        "line": 498,
+        "line": 535,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -26776,28 +26793,32 @@
       "proposedPermission": "accounting.accounting_outgoing_cashflow_item_advanced_report_view.model_open_fuel_modal.modal_open",
       "securityLevel": "low",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "technical_ui",
+      "dispositionReason": "Opening the fuel modal is local UI state and is hidden outside the report.edit workflow.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "accounting.advanced_reports.report.edit"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-12e04cf4791d",
+          "candidateId": "EPC-54b35368b4a2",
           "distance": 0,
           "file": "src/features/outgoing-cashflows/pages/AdvanceReportViewPage.tsx",
           "handler": "{model.openFuelModal}",
           "humanLabel": "Додати пальне",
-          "line": 501,
-          "permissionKeys": [],
+          "line": 538,
+          "permissionKeys": [
+            "accounting.advanced_reports.report.edit"
+          ],
           "score": 18
         }
       ],
       "source": {
         "status": "resolved",
         "file": "src/features/outgoing-cashflows/pages/AdvanceReportViewPage.tsx",
-        "line": 501,
+        "line": 538,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -26826,12 +26847,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-702464999d51",
+          "candidateId": "EPC-a5d44de07891",
           "distance": 7,
           "file": "src/features/outgoing-cashflows/pages/AdvanceReportViewPage.tsx",
           "handler": "{() => model.setConfirmLeaveOpen(false)}",
           "humanLabel": "Залишитися",
-          "line": 560,
+          "line": 597,
           "permissionKeys": [],
           "score": 29
         }
@@ -26839,7 +26860,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/outgoing-cashflows/pages/AdvanceReportViewPage.tsx",
-        "line": 553,
+        "line": 590,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -26860,20 +26881,20 @@
       "proposedPermission": "accounting.accounting_outgoing_cashflow_item_advanced_report_view.model_confirm_leave.command_submit",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "technical_ui",
+      "dispositionReason": "Confirming navigation away only discards local unsaved state and performs no business mutation.",
       "duplicateOf": null,
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-4620e2294759",
+          "candidateId": "EPC-fdb53be0254c",
           "distance": 14,
           "file": "src/features/outgoing-cashflows/pages/AdvanceReportViewPage.tsx",
           "handler": "{model.confirmLeave}",
           "humanLabel": "Вийти без збереження",
-          "line": 563,
+          "line": 600,
           "permissionKeys": [],
           "score": 17
         }
@@ -26881,7 +26902,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/outgoing-cashflows/pages/AdvanceReportViewPage.tsx",
-        "line": 549,
+        "line": 586,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -26902,28 +26923,32 @@
       "proposedPermission": "accounting.accounting_outgoing_cashflow_item_advanced_report_view.model_settle_difference.button_click",
       "securityLevel": "low",
       "rawStatus": "No permission candidate found",
-      "disposition": "needs_human_review",
-      "dispositionReason": "insufficient_evidence_for_automatic_permission_or_exclusion",
+      "disposition": "covered_existing",
+      "dispositionReason": "Settling the report difference is another state transition of the same report aggregate and reuses the exact guarded report.edit update boundary.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "accounting.advanced_reports.report.edit"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-1ba568034989",
+          "candidateId": "EPC-8852874c7b72",
           "distance": 6,
           "file": "src/features/outgoing-cashflows/pages/AdvanceReportViewPage.tsx",
           "handler": "{model.settleDifference}",
           "humanLabel": "Оплатив",
-          "line": 798,
-          "permissionKeys": [],
+          "line": 836,
+          "permissionKeys": [
+            "accounting.advanced_reports.report.edit"
+          ],
           "score": 21
         }
       ],
       "source": {
         "status": "resolved",
         "file": "src/features/outgoing-cashflows/pages/AdvanceReportViewPage.tsx",
-        "line": 804,
+        "line": 842,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -26948,24 +26973,28 @@
       "dispositionReason": "same_normalized_action_as:PE-00667",
       "duplicateOf": "PE-00667",
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
+      "canonicalPermissionKeys": [
+        "accounting.advanced_reports.report.edit"
+      ],
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-ad95f0690358",
+          "candidateId": "EPC-e21c97b22082",
           "distance": 0,
           "file": "src/features/outgoing-cashflows/pages/AdvanceReportViewPage.tsx",
           "handler": "{model.openConsumableModal}",
           "humanLabel": "Додати товар / послугу",
-          "line": 498,
-          "permissionKeys": [],
+          "line": 535,
+          "permissionKeys": [
+            "accounting.advanced_reports.report.edit"
+          ],
           "score": 24
         }
       ],
       "source": {
         "status": "resolved",
         "file": "src/features/outgoing-cashflows/pages/AdvanceReportViewPage.tsx",
-        "line": 498,
+        "line": 535,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -26990,24 +27019,28 @@
       "dispositionReason": "same_normalized_action_as:PE-00668",
       "duplicateOf": "PE-00668",
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
+      "canonicalPermissionKeys": [
+        "accounting.advanced_reports.report.edit"
+      ],
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-12e04cf4791d",
+          "candidateId": "EPC-54b35368b4a2",
           "distance": 0,
           "file": "src/features/outgoing-cashflows/pages/AdvanceReportViewPage.tsx",
           "handler": "{model.openFuelModal}",
           "humanLabel": "Додати пальне",
-          "line": 501,
-          "permissionKeys": [],
+          "line": 538,
+          "permissionKeys": [
+            "accounting.advanced_reports.report.edit"
+          ],
           "score": 18
         }
       ],
       "source": {
         "status": "resolved",
         "file": "src/features/outgoing-cashflows/pages/AdvanceReportViewPage.tsx",
-        "line": 501,
+        "line": 538,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -27032,24 +27065,28 @@
       "dispositionReason": "same_normalized_action_as:PE-00671",
       "duplicateOf": "PE-00671",
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
+      "canonicalPermissionKeys": [
+        "accounting.advanced_reports.report.edit"
+      ],
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-1ba568034989",
+          "candidateId": "EPC-8852874c7b72",
           "distance": 6,
           "file": "src/features/outgoing-cashflows/pages/AdvanceReportViewPage.tsx",
           "handler": "{model.settleDifference}",
           "humanLabel": "Оплатив",
-          "line": 798,
-          "permissionKeys": [],
+          "line": 836,
+          "permissionKeys": [
+            "accounting.advanced_reports.report.edit"
+          ],
           "score": 21
         }
       ],
       "source": {
         "status": "resolved",
         "file": "src/features/outgoing-cashflows/pages/AdvanceReportViewPage.tsx",
-        "line": 804,
+        "line": 842,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -79239,10 +79276,6 @@
     }
   ],
   "reviewCandidateIds": [
-    "PE-00070",
-    "PE-00073",
-    "PE-00074",
-    "PE-00075",
     "PE-00079",
     "PE-00081",
     "PE-00084",
@@ -79397,24 +79430,10 @@
     "PE-00548",
     "PE-00549",
     "PE-00550",
-    "PE-00641",
-    "PE-00642",
-    "PE-00643",
-    "PE-00644",
-    "PE-00646",
-    "PE-00648",
-    "PE-00651",
-    "PE-00653",
-    "PE-00656",
     "PE-00657",
     "PE-00658",
     "PE-00661",
     "PE-00662",
-    "PE-00666",
-    "PE-00667",
-    "PE-00668",
-    "PE-00670",
-    "PE-00671",
     "PE-00679",
     "PE-00681",
     "PE-00682",

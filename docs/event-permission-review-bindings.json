@@ -39,6 +39,7 @@
     { "route": "/suppliers", "permissionKey": "counterparties.suppliers.page.view" },
     { "route": "/suppliers/accounting-cash-flow/:id", "permissionKey": "counterparties.clients.accounting_cash_flow.open" },
     { "route": "/accounting/advanced-reports", "permissionKey": "accounting.advanced_reports.page.view" },
+    { "route": "/accounting/outgoing-cashflow/:id/advanced-report/view", "permissionKey": "accounting.advanced_reports.report.open" },
     { "route": "/accounting/income-cashflows", "permissionKey": "accounting.income_cashflows.page.view" },
     { "route": "/accounting/outgoing-cashflow", "permissionKey": "accounting.outgoing_cashflows.page.view" },
     { "route": "/accounting/payment-cashflow-articles", "permissionKey": "accounting.cashflow_articles.page.view" },
@@ -98,6 +99,99 @@
     { "route": "/recommendations", "permissionKey": "orders.purchase_cockpit.page.view" }
   ],
   "recordOverrides": {
+    "PE-00070": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": [
+        "accounting.advanced_reports.page.view",
+        "accounting.advanced_reports.report.open"
+      ],
+      "reason": "A regular row opens already-loaded page-scoped details; an under-report row additionally rechecks report.open before navigating to the protected report route."
+    },
+    "PE-00073": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-00070",
+      "reason": "The details menu item opens the same already-loaded drawer as a regular row click."
+    },
+    "PE-00074": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-00070",
+      "reason": "The report menu item invokes the same report.open navigation handler as an under-report row click."
+    },
+    "PE-00075": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": [
+        "accounting.advanced_reports.document_structure.open"
+      ],
+      "reason": "Document structure is an independent derived-document read with a dedicated UI recheck and permission-scoped calculation façade."
+    },
+    "PE-00641": {
+      "disposition": "technical_ui",
+      "reason": "Removing a newly attached local file only changes the unsaved editor draft; the final report mutation is guarded by report.edit."
+    },
+    "PE-00642": {
+      "disposition": "technical_ui",
+      "reason": "Opening the nested new-item editor is local modal state inside the report.edit workflow."
+    },
+    "PE-00643": {
+      "disposition": "technical_ui",
+      "reason": "Opening the nested item editor is local modal state inside the report.edit workflow."
+    },
+    "PE-00644": {
+      "disposition": "technical_ui",
+      "reason": "Removing an item changes only the local report draft until the separately guarded final save."
+    },
+    "PE-00646": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": [
+        "accounting.advanced_reports.report.edit"
+      ],
+      "reason": "Submitting a consumable sub-form updates the guarded report draft and uses only report.edit-scoped calculation APIs."
+    },
+    "PE-00648": {
+      "disposition": "technical_ui",
+      "reason": "Saving a nested draft item does not persist the report and remains inside the report.edit workflow."
+    },
+    "PE-00651": {
+      "disposition": "technical_ui",
+      "reason": "Removing a fuel row changes only the local report draft until the separately guarded final save."
+    },
+    "PE-00653": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": [
+        "accounting.advanced_reports.report.edit"
+      ],
+      "reason": "Submitting a fueling sub-form updates the guarded report draft and uses only report.edit-scoped calculation APIs."
+    },
+    "PE-00656": {
+      "disposition": "technical_ui",
+      "reason": "Removing a product row changes only the local report draft until the separately guarded final save."
+    },
+    "PE-00666": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": [
+        "accounting.advanced_reports.report.edit"
+      ],
+      "reason": "The final report save rechecks report.edit and calls a dedicated permission-scoped mutation façade."
+    },
+    "PE-00667": {
+      "disposition": "technical_ui",
+      "reason": "Opening the consumable modal is local UI state and is hidden outside the report.edit workflow."
+    },
+    "PE-00668": {
+      "disposition": "technical_ui",
+      "reason": "Opening the fuel modal is local UI state and is hidden outside the report.edit workflow."
+    },
+    "PE-00670": {
+      "disposition": "technical_ui",
+      "reason": "Confirming navigation away only discards local unsaved state and performs no business mutation."
+    },
+    "PE-00671": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": [
+        "accounting.advanced_reports.report.edit"
+      ],
+      "reason": "Settling the report difference is another state transition of the same report aggregate and reuses the exact guarded report.edit update boundary."
+    },
     "PE-00031": {
       "disposition": "covered_existing",
       "canonicalPermissionKeys": [

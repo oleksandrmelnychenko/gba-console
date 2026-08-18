@@ -414,6 +414,7 @@ const accountingMigrationRoutes: ConsoleRoute[] = [
   {
     path: '/accounting/advanced-reports',
     element: lazyRoute(<AdvancedReportsPage />),
+    permissionKey: PermissionKeys.SystemPages.AdvancedReports.View,
   },
   {
     path: '/accounting/consumable-services',
@@ -459,6 +460,7 @@ const accountingMigrationRoutes: ConsoleRoute[] = [
   {
     path: '/accounting/outgoing-cashflow/:id/advanced-report/view',
     element: lazyRoute(<AdvanceReportViewPage />),
+    permissionKey: PermissionKeys.AdvancedReports.Report.Open,
   },
   {
     path: '/accounting/storages',
