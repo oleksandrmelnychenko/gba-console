@@ -5,6 +5,7 @@ import {
   deleteDirectSupplyUkraineOrder,
   deleteSupplyProformDocument,
   getDirectSupplyUkraineOrders,
+  getDirectSupplyOrderForProductIncome,
   getSupplyUkraineOrders,
   getSupplyOrderSuppliers,
   printSupplyOrdersDocument,
@@ -66,6 +67,16 @@ describe('supplyUkraineOrdersApi', () => {
       body: columns,
       method: 'POST',
       query: { from: '2026-08-01', to: '2026-08-17' },
+    })
+  })
+
+  it('uses the open-product-income boundary for direct-order hydration', async () => {
+    apiRequestMock.mockResolvedValueOnce({ NetUid: 'direct-order-1' })
+
+    await getDirectSupplyOrderForProductIncome('direct-order-1')
+
+    expect(apiRequestMock).toHaveBeenCalledWith('/supplies/orders/product-income/details', {
+      query: { netId: 'direct-order-1' },
     })
   })
 

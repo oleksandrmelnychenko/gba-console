@@ -343,7 +343,12 @@ export const PermissionKeys = {
       Open: 'orders.delivery_protocol.options.open',
     },
     ProductIncome: {
+      Capitalize: 'orders.delivery_protocol.product_income.capitalize',
+      DownloadDocument: 'orders.delivery_protocol.product_income.download_document',
       Open: 'orders.delivery_protocol.product_income.open',
+      EditPlacement: 'orders.delivery_protocol.product_income.edit_placement',
+      Post: 'orders.delivery_protocol.product_income.post',
+      UpdateReadiness: 'orders.delivery_protocol.product_income.update_readiness',
     },
     Protocol: {
       Create: 'orders.delivery_protocol.protocol.create',

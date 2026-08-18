@@ -109,6 +109,14 @@ export async function getDirectSupplyOrderById(netId: string): Promise<DirectSup
   return normalizeDirectSupplyOrder(result)
 }
 
+export async function getDirectSupplyOrderForProductIncome(netId: string): Promise<DirectSupplyOrder | null> {
+  const result = await apiRequest<unknown>('/supplies/orders/product-income/details', {
+    query: { netId },
+  })
+
+  return normalizeDirectSupplyOrder(result)
+}
+
 export async function updateDirectSupplyOrder(order: DirectSupplyOrder): Promise<DirectSupplyOrder | null> {
   const result = await apiRequest<unknown>('/supplies/orders/update', {
     body: order,

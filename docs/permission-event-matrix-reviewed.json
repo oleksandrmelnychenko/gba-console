@@ -4,17 +4,17 @@
     "inputRecords": 1902,
     "classifiedRecords": 1902,
     "dispositionCounts": {
-      "technical_ui": 743,
-      "covered_existing": 489,
-      "duplicate_occurrence": 256,
+      "technical_ui": 744,
+      "covered_existing": 498,
+      "duplicate_occurrence": 258,
       "business_candidate": 258,
-      "needs_human_review": 148,
+      "needs_human_review": 136,
       "stale_or_aggregated": 8
     },
-    "reviewCandidates": 406,
-    "technicalExcluded": 743,
-    "duplicatesExcluded": 256,
-    "duplicateOccurrencesTotal": 326,
+    "reviewCandidates": 394,
+    "technicalExcluded": 744,
+    "duplicatesExcluded": 258,
+    "duplicateOccurrencesTotal": 328,
     "technicalDuplicateOverlap": 70,
     "sourceResolved": 1828,
     "sourceUnresolved": 74,
@@ -33783,7 +33783,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/product-delivery-protocols/pages/ProductDeliveryProtocolIncomePage.tsx",
-        "line": 1387,
+        "line": 1462,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -33808,20 +33808,22 @@
       "proposedPermission": "orders.orders_ukraine_all_edit_item_product_income.model_handle_move_remnants_column.button_click",
       "securityLevel": "low",
       "rawStatus": "Candidate existing key in component; binding review required",
-      "disposition": "needs_human_review",
-      "dispositionReason": "raw_audit_claims_existing_binding_but_does_not_name_the_key",
+      "disposition": "covered_existing",
+      "dispositionReason": "Moving remaining quantities only edits the placement draft and is owned by the single placement-edit capability.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "orders.delivery_protocol.product_income.edit_placement"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-b13508fa29a5",
+          "candidateId": "EPC-75c54018cdc0",
           "distance": 6,
           "file": "src/features/product-delivery-protocols/pages/ProductDeliveryProtocolIncomePage.tsx",
           "handler": "{() => model.handleMoveRemnants(column)}",
           "humanLabel": "Перемістити залишки",
-          "line": 1318,
+          "line": 1392,
           "permissionKeys": [],
           "score": 29
         }
@@ -33829,7 +33831,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/product-delivery-protocols/pages/ProductDeliveryProtocolIncomePage.tsx",
-        "line": 1324,
+        "line": 1398,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -33854,17 +33856,17 @@
       "proposedPermission": "orders.orders_ukraine_all_edit_item_product_income.model_set_column_to_remove_column.command_delete",
       "securityLevel": "high",
       "rawStatus": "Candidate existing key in component; binding review required",
-      "disposition": "needs_human_review",
-      "dispositionReason": "raw_audit_claims_existing_binding_but_does_not_name_the_key",
-      "duplicateOf": null,
+      "disposition": "duplicate_occurrence",
+      "dispositionReason": "Opening column-removal confirmation is the first UI step of the same placement-edit operation finalized by PE-00849.",
+      "duplicateOf": "PE-00849",
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [],
       "source": {
         "status": "resolved",
         "file": "src/features/product-delivery-protocols/pages/ProductDeliveryProtocolIncomePage.tsx",
-        "line": 1337,
+        "line": 1412,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -33889,20 +33891,22 @@
       "proposedPermission": "orders.orders_ukraine_all_edit_item_product_income.can_open_model_handle_open_placements_grid_row_key_row.modal_open",
       "securityLevel": "low",
       "rawStatus": "Candidate existing key in component; binding review required",
-      "disposition": "needs_human_review",
-      "dispositionReason": "raw_audit_claims_existing_binding_but_does_not_name_the_key",
+      "disposition": "covered_existing",
+      "dispositionReason": "The placement drawer and its final row mutation share one independently guarded placement-edit boundary.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "orders.delivery_protocol.product_income.edit_placement"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-909a414d5491",
+          "candidateId": "EPC-7532facf01ac",
           "distance": 3,
           "file": "src/features/product-delivery-protocols/pages/ProductDeliveryProtocolIncomePage.tsx",
           "handler": "{() => canOpen && model.handleOpenPlacements(gridRow, key, row)}",
           "humanLabel": null,
-          "line": 1359,
+          "line": 1434,
           "permissionKeys": [],
           "score": 45
         }
@@ -33910,7 +33914,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/product-delivery-protocols/pages/ProductDeliveryProtocolIncomePage.tsx",
-        "line": 1362,
+        "line": 1437,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -33943,12 +33947,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-00919adcafb6",
+          "candidateId": "EPC-e0d1a57d5732",
           "distance": 0,
           "file": "src/features/product-delivery-protocols/pages/ProductDeliveryProtocolIncomePage.tsx",
           "handler": "{model.reloadFromServer}",
           "humanLabel": "Скасувати",
-          "line": 1631,
+          "line": 1740,
           "permissionKeys": [],
           "score": 21
         }
@@ -33956,7 +33960,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/product-delivery-protocols/pages/ProductDeliveryProtocolIncomePage.tsx",
-        "line": 1631,
+        "line": 1740,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -33981,20 +33985,22 @@
       "proposedPermission": "orders.orders_ukraine_all_edit_item_product_income.model_handle_save.command_submit",
       "securityLevel": "high",
       "rawStatus": "Candidate existing key in component; binding review required",
-      "disposition": "needs_human_review",
-      "dispositionReason": "raw_audit_claims_existing_binding_but_does_not_name_the_key",
+      "disposition": "covered_existing",
+      "dispositionReason": "Saving the packing-list placement draft rechecks placement.edit and uses the protected placement facade.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "orders.delivery_protocol.product_income.edit_placement"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-8ee5c12a1b4c",
+          "candidateId": "EPC-646d00583b3c",
           "distance": 4,
           "file": "src/features/product-delivery-protocols/pages/ProductDeliveryProtocolIncomePage.tsx",
           "handler": "{model.handleSave}",
           "humanLabel": "Зберегти",
-          "line": 1635,
+          "line": 1745,
           "permissionKeys": [],
           "score": 15
         }
@@ -34002,7 +34008,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/product-delivery-protocols/pages/ProductDeliveryProtocolIncomePage.tsx",
-        "line": 1639,
+        "line": 1749,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -34027,20 +34033,22 @@
       "proposedPermission": "orders.orders_ukraine_all_edit_item_product_income.void_model_handle_download_pz_document.command_export",
       "securityLevel": "medium",
       "rawStatus": "Candidate existing key in component; binding review required",
-      "disposition": "needs_human_review",
-      "dispositionReason": "raw_audit_claims_existing_binding_but_does_not_name_the_key",
+      "disposition": "covered_existing",
+      "dispositionReason": "PZ generation is independently hidden, rechecked in the handler, and enforced by its document-download server policy.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "orders.delivery_protocol.product_income.download_document"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-ce7829d95977",
+          "candidateId": "EPC-845c708b7330",
           "distance": 5,
           "file": "src/features/product-delivery-protocols/pages/ProductDeliveryProtocolIncomePage.tsx",
           "handler": "{() => void model.handleDownloadPzDocument()}",
           "humanLabel": "Документ PZ",
-          "line": 1717,
+          "line": 1829,
           "permissionKeys": [],
           "score": 19
         }
@@ -34048,7 +34056,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/product-delivery-protocols/pages/ProductDeliveryProtocolIncomePage.tsx",
-        "line": 1722,
+        "line": 1834,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -34073,20 +34081,22 @@
       "proposedPermission": "orders.orders_ukraine_all_edit_item_product_income.void_model_handle_all_ready_to_place.button_click",
       "securityLevel": "low",
       "rawStatus": "Candidate existing key in component; binding review required",
-      "disposition": "needs_human_review",
-      "dispositionReason": "raw_audit_claims_existing_binding_but_does_not_name_the_key",
+      "disposition": "covered_existing",
+      "dispositionReason": "Marking every item ready is a distinct server mutation with an independent readiness permission.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "orders.delivery_protocol.product_income.update_readiness"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-442717e0e64c",
+          "candidateId": "EPC-9dd36f904074",
           "distance": 3,
           "file": "src/features/product-delivery-protocols/pages/ProductDeliveryProtocolIncomePage.tsx",
           "handler": "{() => void model.handleAllReadyToPlace()}",
           "humanLabel": "Всі готові до розміщення",
-          "line": 1727,
+          "line": 1840,
           "permissionKeys": [],
           "score": 19
         }
@@ -34094,7 +34104,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/product-delivery-protocols/pages/ProductDeliveryProtocolIncomePage.tsx",
-        "line": 1730,
+        "line": 1843,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -34119,20 +34129,22 @@
       "proposedPermission": "orders.orders_ukraine_all_edit_item_product_income.model_set_column_modal_open_true.modal_open",
       "securityLevel": "low",
       "rawStatus": "Candidate existing key in component; binding review required",
-      "disposition": "needs_human_review",
-      "dispositionReason": "raw_audit_claims_existing_binding_but_does_not_name_the_key",
+      "disposition": "covered_existing",
+      "dispositionReason": "Opening and submitting the add-column modal are two steps of the same placement-edit capability, not separate permissions.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "orders.delivery_protocol.product_income.edit_placement"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-3e4caaff3177",
+          "candidateId": "EPC-9090bac42df9",
           "distance": 3,
           "file": "src/features/product-delivery-protocols/pages/ProductDeliveryProtocolIncomePage.tsx",
           "handler": "{() => model.setColumnModalOpen(true)}",
           "humanLabel": "Додати",
-          "line": 1736,
+          "line": 1849,
           "permissionKeys": [],
           "score": 27
         }
@@ -34140,7 +34152,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/product-delivery-protocols/pages/ProductDeliveryProtocolIncomePage.tsx",
-        "line": 1739,
+        "line": 1852,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -34165,20 +34177,22 @@
       "proposedPermission": "orders.orders_ukraine_all_edit_item_product_income.void_model_handle_product_income.button_click",
       "securityLevel": "low",
       "rawStatus": "Candidate existing key in component; binding review required",
-      "disposition": "needs_human_review",
-      "dispositionReason": "raw_audit_claims_existing_binding_but_does_not_name_the_key",
+      "disposition": "covered_existing",
+      "dispositionReason": "Product capitalization has an independent UI guard, final handler recheck, and dedicated server policy.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "orders.delivery_protocol.product_income.capitalize"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-87105397cae6",
+          "candidateId": "EPC-2fbba24cab7a",
           "distance": 4,
           "file": "src/features/product-delivery-protocols/pages/ProductDeliveryProtocolIncomePage.tsx",
           "handler": "{() => void model.handleProductIncome()}",
           "humanLabel": "Оприходувати",
-          "line": 1745,
+          "line": 1858,
           "permissionKeys": [],
           "score": 24
         }
@@ -34186,7 +34200,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/product-delivery-protocols/pages/ProductDeliveryProtocolIncomePage.tsx",
-        "line": 1749,
+        "line": 1862,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -34211,20 +34225,20 @@
       "proposedPermission": "orders.orders_ukraine_all_edit_item_product_income.model_set_confirm_carry_out_true.command_submit",
       "securityLevel": "high",
       "rawStatus": "Candidate existing key in component; binding review required",
-      "disposition": "needs_human_review",
-      "dispositionReason": "raw_audit_claims_existing_binding_but_does_not_name_the_key",
-      "duplicateOf": null,
+      "disposition": "duplicate_occurrence",
+      "dispositionReason": "Opening the carry-out confirmation is the first UI step of the same protected post operation finalized by PE-00851.",
+      "duplicateOf": "PE-00851",
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-0fe906d87302",
+          "candidateId": "EPC-c74cf0327883",
           "distance": 4,
           "file": "src/features/product-delivery-protocols/pages/ProductDeliveryProtocolIncomePage.tsx",
           "handler": "{() => model.setConfirmCarryOut(true)}",
           "humanLabel": "Провести",
-          "line": 1755,
+          "line": 1868,
           "permissionKeys": [],
           "score": 27
         }
@@ -34232,7 +34246,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/product-delivery-protocols/pages/ProductDeliveryProtocolIncomePage.tsx",
-        "line": 1759,
+        "line": 1872,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -34267,7 +34281,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/product-delivery-protocols/pages/ProductDeliveryProtocolIncomePage.tsx",
-        "line": 1875,
+        "line": 1992,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -34292,20 +34306,22 @@
       "proposedPermission": "orders.orders_ukraine_all_edit_item_product_income.model_confirm_remove_column.command_submit",
       "securityLevel": "high",
       "rawStatus": "Candidate existing key in component; binding review required",
-      "disposition": "needs_human_review",
-      "dispositionReason": "raw_audit_claims_existing_binding_but_does_not_name_the_key",
+      "disposition": "covered_existing",
+      "dispositionReason": "Final column removal mutates the packing-list placement through the same placement-edit boundary.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "orders.delivery_protocol.product_income.edit_placement"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-6ba4f78b2572",
-          "distance": 0,
+          "candidateId": "EPC-c40a62eaa97e",
+          "distance": 4,
           "file": "src/features/product-delivery-protocols/pages/ProductDeliveryProtocolIncomePage.tsx",
           "handler": "{model.confirmRemoveColumn}",
           "humanLabel": "Видалити",
-          "line": 1883,
+          "line": 2000,
           "permissionKeys": [],
           "score": 24
         }
@@ -34313,7 +34329,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/product-delivery-protocols/pages/ProductDeliveryProtocolIncomePage.tsx",
-        "line": 1883,
+        "line": 2004,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -34346,12 +34362,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-60bef7c65e68",
+          "candidateId": "EPC-adad0d2b9cc1",
           "distance": 5,
           "file": "src/features/product-delivery-protocols/pages/ProductDeliveryProtocolIncomePage.tsx",
           "handler": "{() => model.setConfirmCarryOut(false)}",
           "humanLabel": "Скасувати",
-          "line": 1899,
+          "line": 2021,
           "permissionKeys": [],
           "score": 28
         }
@@ -34359,7 +34375,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/product-delivery-protocols/pages/ProductDeliveryProtocolIncomePage.tsx",
-        "line": 1894,
+        "line": 2016,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -34384,20 +34400,22 @@
       "proposedPermission": "orders.orders_ukraine_all_edit_item_product_income.void_model_handle_carry_out.button_click",
       "securityLevel": "low",
       "rawStatus": "Candidate existing key in component; binding review required",
-      "disposition": "needs_human_review",
-      "dispositionReason": "raw_audit_claims_existing_binding_but_does_not_name_the_key",
+      "disposition": "covered_existing",
+      "dispositionReason": "Posting is distinct from capitalization and is guarded by its own UI, handler, and server policy.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "orders.delivery_protocol.product_income.post"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-a54c192a8480",
-          "distance": 0,
+          "candidateId": "EPC-688924f6e6ee",
+          "distance": 3,
           "file": "src/features/product-delivery-protocols/pages/ProductDeliveryProtocolIncomePage.tsx",
           "handler": "{() => void model.handleCarryOut()}",
           "humanLabel": "Провести",
-          "line": 1902,
+          "line": 2024,
           "permissionKeys": [],
           "score": 19
         }
@@ -34405,7 +34423,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/product-delivery-protocols/pages/ProductDeliveryProtocolIncomePage.tsx",
-        "line": 1902,
+        "line": 2027,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -34438,12 +34456,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-e44ef28646b0",
+          "candidateId": "EPC-e0c1ef28973c",
           "distance": 7,
           "file": "src/features/product-delivery-protocols/pages/ProductDeliveryProtocolIncomePage.tsx",
           "handler": "{model.cancelDiscardChanges}",
           "humanLabel": "Залишитися",
-          "line": 1920,
+          "line": 2046,
           "permissionKeys": [],
           "score": 25
         }
@@ -34451,7 +34469,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/product-delivery-protocols/pages/ProductDeliveryProtocolIncomePage.tsx",
-        "line": 1913,
+        "line": 2039,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -34476,20 +34494,20 @@
       "proposedPermission": "orders.orders_ukraine_all_edit_item_product_income.model_confirm_discard_changes.command_submit",
       "securityLevel": "high",
       "rawStatus": "Candidate existing key in component; binding review required",
-      "disposition": "needs_human_review",
-      "dispositionReason": "raw_audit_claims_existing_binding_but_does_not_name_the_key",
+      "disposition": "technical_ui",
+      "dispositionReason": "Discard confirmation only chooses whether to abandon local unsaved state and does not call a business mutation.",
       "duplicateOf": null,
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-fa61dee129aa",
+          "candidateId": "EPC-7489559932a1",
           "distance": 0,
           "file": "src/features/product-delivery-protocols/pages/ProductDeliveryProtocolIncomePage.tsx",
           "handler": "{model.confirmDiscardChanges}",
           "humanLabel": "Продовжити без збереження",
-          "line": 1923,
+          "line": 2049,
           "permissionKeys": [],
           "score": 26
         }
@@ -34497,7 +34515,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/product-delivery-protocols/pages/ProductDeliveryProtocolIncomePage.tsx",
-        "line": 1923,
+        "line": 2049,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -79854,18 +79872,6 @@
     "PE-00828",
     "PE-00829",
     "PE-00831",
-    "PE-00838",
-    "PE-00839",
-    "PE-00840",
-    "PE-00842",
-    "PE-00843",
-    "PE-00844",
-    "PE-00845",
-    "PE-00846",
-    "PE-00847",
-    "PE-00849",
-    "PE-00851",
-    "PE-00853",
     "PE-00901",
     "PE-00902",
     "PE-00905",

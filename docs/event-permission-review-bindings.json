@@ -3005,6 +3005,65 @@
       "disposition": "technical_ui",
       "reason": "Selecting a return consignment only updates the local form; the protected final position action owns persistence."
     },
+    "PE-00838": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["orders.delivery_protocol.product_income.edit_placement"],
+      "reason": "Moving remaining quantities only edits the placement draft and is owned by the single placement-edit capability."
+    },
+    "PE-00839": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-00849",
+      "reason": "Opening column-removal confirmation is the first UI step of the same placement-edit operation finalized by PE-00849."
+    },
+    "PE-00840": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["orders.delivery_protocol.product_income.edit_placement"],
+      "reason": "The placement drawer and its final row mutation share one independently guarded placement-edit boundary."
+    },
+    "PE-00842": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["orders.delivery_protocol.product_income.edit_placement"],
+      "reason": "Saving the packing-list placement draft rechecks placement.edit and uses the protected placement facade."
+    },
+    "PE-00843": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["orders.delivery_protocol.product_income.download_document"],
+      "reason": "PZ generation is independently hidden, rechecked in the handler, and enforced by its document-download server policy."
+    },
+    "PE-00844": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["orders.delivery_protocol.product_income.update_readiness"],
+      "reason": "Marking every item ready is a distinct server mutation with an independent readiness permission."
+    },
+    "PE-00845": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["orders.delivery_protocol.product_income.edit_placement"],
+      "reason": "Opening and submitting the add-column modal are two steps of the same placement-edit capability, not separate permissions."
+    },
+    "PE-00846": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["orders.delivery_protocol.product_income.capitalize"],
+      "reason": "Product capitalization has an independent UI guard, final handler recheck, and dedicated server policy."
+    },
+    "PE-00847": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-00851",
+      "reason": "Opening the carry-out confirmation is the first UI step of the same protected post operation finalized by PE-00851."
+    },
+    "PE-00849": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["orders.delivery_protocol.product_income.edit_placement"],
+      "reason": "Final column removal mutates the packing-list placement through the same placement-edit boundary."
+    },
+    "PE-00851": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["orders.delivery_protocol.product_income.post"],
+      "reason": "Posting is distinct from capitalization and is guarded by its own UI, handler, and server policy."
+    },
+    "PE-00853": {
+      "disposition": "technical_ui",
+      "reason": "Discard confirmation only chooses whether to abandon local unsaved state and does not call a business mutation."
+    },
     "PE-00858": {
       "disposition": "technical_ui",
       "reason": "This raw record resolves to the exported page function declaration and is not a user-triggered action."
