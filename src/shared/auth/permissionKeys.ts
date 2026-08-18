@@ -333,6 +333,9 @@ export const PermissionKeys = {
     InvoiceManagement: {
       Open: 'orders.delivery_protocol.invoice_management.open',
     },
+    Invoice: {
+      Merge: 'orders.delivery_protocol.invoice.merge',
+    },
     LogisticWay: {
       Open: 'orders.delivery_protocol.logistic_way.open',
     },
@@ -956,6 +959,7 @@ export type ProductDeliveryProtocolsPermissionKey =
   | Values<typeof PermissionKeys.ProductDeliveryProtocols.Document>
   | Values<typeof PermissionKeys.ProductDeliveryProtocols.Documents>
   | Values<typeof PermissionKeys.ProductDeliveryProtocols.InvoiceManagement>
+  | Values<typeof PermissionKeys.ProductDeliveryProtocols.Invoice>
   | Values<typeof PermissionKeys.ProductDeliveryProtocols.LogisticWay>
   | Values<typeof PermissionKeys.ProductDeliveryProtocols.Options>
   | Values<typeof PermissionKeys.ProductDeliveryProtocols.ProductIncome>
@@ -2070,6 +2074,7 @@ const eventPermissionKeys = new Set<string>([
   ...Object.values(PermissionKeys.ProductDeliveryProtocols.Document),
   ...Object.values(PermissionKeys.ProductDeliveryProtocols.Documents),
   ...Object.values(PermissionKeys.ProductDeliveryProtocols.InvoiceManagement),
+  ...Object.values(PermissionKeys.ProductDeliveryProtocols.Invoice),
   ...Object.values(PermissionKeys.ProductDeliveryProtocols.LogisticWay),
   ...Object.values(PermissionKeys.ProductDeliveryProtocols.Options),
   ...Object.values(PermissionKeys.ProductDeliveryProtocols.ProductIncome),

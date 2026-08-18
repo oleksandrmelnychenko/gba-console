@@ -4,17 +4,17 @@
     "inputRecords": 1902,
     "classifiedRecords": 1902,
     "dispositionCounts": {
-      "technical_ui": 741,
-      "covered_existing": 485,
-      "duplicate_occurrence": 255,
+      "technical_ui": 743,
+      "covered_existing": 489,
+      "duplicate_occurrence": 256,
       "business_candidate": 258,
-      "needs_human_review": 155,
+      "needs_human_review": 148,
       "stale_or_aggregated": 8
     },
-    "reviewCandidates": 413,
-    "technicalExcluded": 741,
-    "duplicatesExcluded": 255,
-    "duplicateOccurrencesTotal": 325,
+    "reviewCandidates": 406,
+    "technicalExcluded": 743,
+    "duplicatesExcluded": 256,
+    "duplicateOccurrencesTotal": 326,
     "technicalDuplicateOverlap": 70,
     "sourceResolved": 1828,
     "sourceUnresolved": 74,
@@ -33750,7 +33750,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/product-delivery-protocols/pages/ProductDeliveryProtocolSpecificationPage.tsx",
-        "line": 878,
+        "line": 885,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -34718,17 +34718,17 @@
       "proposedPermission": "orders.orders_ukraine_all_edit_item_product_income.button.button_click",
       "securityLevel": "low",
       "rawStatus": "Candidate existing key in component; binding review required",
-      "disposition": "needs_human_review",
-      "dispositionReason": "raw_audit_claims_existing_binding_but_does_not_name_the_key",
+      "disposition": "technical_ui",
+      "dispositionReason": "This raw record resolves to the exported page function declaration and is not a user-triggered action.",
       "duplicateOf": null,
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [],
       "source": {
         "status": "resolved",
         "file": "src/features/product-delivery-protocols/pages/ProductDeliveryProtocolSpecificationPage.tsx",
-        "line": 878,
+        "line": 885,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -34763,7 +34763,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/product-delivery-protocols/pages/ProductDeliveryProtocolSpecificationPage.tsx",
-        "line": 878,
+        "line": 885,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -34788,20 +34788,20 @@
       "proposedPermission": "orders.orders_ukraine_all_edit_item_product_income.model_set_upload_open_true.command_submit",
       "securityLevel": "high",
       "rawStatus": "Candidate existing key in component; binding review required",
-      "disposition": "needs_human_review",
-      "dispositionReason": "raw_audit_claims_existing_binding_but_does_not_name_the_key",
-      "duplicateOf": null,
+      "disposition": "duplicate_occurrence",
+      "dispositionReason": "Opening the specification upload modal belongs to the same protected import capability as final upload PE-00864.",
+      "duplicateOf": "PE-00864",
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-f4d0f3d388c3",
+          "candidateId": "EPC-b55aa0a10500",
           "distance": 5,
           "file": "src/features/product-delivery-protocols/pages/ProductDeliveryProtocolSpecificationPage.tsx",
           "handler": "{() => model.setUploadOpen(true)}",
           "humanLabel": "Завантаження митних кодів",
-          "line": 1047,
+          "line": 1069,
           "permissionKeys": [],
           "score": 22
         }
@@ -34809,7 +34809,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/product-delivery-protocols/pages/ProductDeliveryProtocolSpecificationPage.tsx",
-        "line": 1052,
+        "line": 1074,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -34834,20 +34834,22 @@
       "proposedPermission": "orders.orders_ukraine_all_edit_item_product_income.model_open_documents.modal_open",
       "securityLevel": "low",
       "rawStatus": "Candidate existing key in component; binding review required",
-      "disposition": "needs_human_review",
-      "dispositionReason": "raw_audit_claims_existing_binding_but_does_not_name_the_key",
+      "disposition": "covered_existing",
+      "dispositionReason": "Opening and saving delivery documents both recheck the existing delivery-document permission and use its protected facade.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "orders.delivery_protocol.delivery_documents.download"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-78675306ec87",
+          "candidateId": "EPC-51eb09d29e51",
           "distance": 5,
           "file": "src/features/product-delivery-protocols/pages/ProductDeliveryProtocolSpecificationPage.tsx",
           "handler": "{model.openDocuments}",
           "humanLabel": "Завантаження документів доставки",
-          "line": 1058,
+          "line": 1080,
           "permissionKeys": [],
           "score": 18
         }
@@ -34855,7 +34857,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/product-delivery-protocols/pages/ProductDeliveryProtocolSpecificationPage.tsx",
-        "line": 1063,
+        "line": 1085,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -34880,20 +34882,22 @@
       "proposedPermission": "orders.orders_ukraine_all_edit_item_product_income.model_open_merge.modal_open",
       "securityLevel": "low",
       "rawStatus": "Candidate existing key in component; binding review required",
-      "disposition": "needs_human_review",
-      "dispositionReason": "raw_audit_claims_existing_binding_but_does_not_name_the_key",
+      "disposition": "covered_existing",
+      "dispositionReason": "Invoice merge is independently hidden, rechecked at confirmation, and enforced by its dedicated server policy.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "orders.delivery_protocol.invoice.merge"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-8882f9279775",
+          "candidateId": "EPC-7dab9d13c9cd",
           "distance": 5,
           "file": "src/features/product-delivery-protocols/pages/ProductDeliveryProtocolSpecificationPage.tsx",
           "handler": "{model.openMerge}",
           "humanLabel": "Об'єднати інвойси?",
-          "line": 1069,
+          "line": 1091,
           "permissionKeys": [],
           "score": 14
         }
@@ -34901,7 +34905,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/product-delivery-protocols/pages/ProductDeliveryProtocolSpecificationPage.tsx",
-        "line": 1074,
+        "line": 1096,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -34926,20 +34930,22 @@
       "proposedPermission": "orders.orders_ukraine_all_edit_item_product_income.model_open_download.modal_open",
       "securityLevel": "medium",
       "rawStatus": "Candidate existing key in component; binding review required",
-      "disposition": "needs_human_review",
-      "dispositionReason": "raw_audit_claims_existing_binding_but_does_not_name_the_key",
+      "disposition": "covered_existing",
+      "dispositionReason": "Specification document download is independently guarded in the UI, handler, and server facade.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "orders.delivery_protocol.documents.download"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-1ef93821e5aa",
+          "candidateId": "EPC-c3233e75fe05",
           "distance": 5,
           "file": "src/features/product-delivery-protocols/pages/ProductDeliveryProtocolSpecificationPage.tsx",
           "handler": "{model.openDownload}",
           "humanLabel": "Друк PDF",
-          "line": 1080,
+          "line": 1102,
           "permissionKeys": [],
           "score": 17
         }
@@ -34947,7 +34953,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/product-delivery-protocols/pages/ProductDeliveryProtocolSpecificationPage.tsx",
-        "line": 1085,
+        "line": 1107,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -34972,20 +34978,22 @@
       "proposedPermission": "orders.orders_ukraine_all_edit_item_product_income.model_submit_upload.form_submit",
       "securityLevel": "high",
       "rawStatus": "Candidate existing key in component; binding review required",
-      "disposition": "needs_human_review",
-      "dispositionReason": "raw_audit_claims_existing_binding_but_does_not_name_the_key",
+      "disposition": "covered_existing",
+      "dispositionReason": "Final specification-file import rechecks the existing import permission and calls the protected upload facade.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "orders.delivery_protocol.specification_codes.download"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-4af1fc233ae5",
+          "candidateId": "EPC-7165a5c8429d",
           "distance": 8,
           "file": "src/features/product-delivery-protocols/pages/ProductDeliveryProtocolSpecificationPage.tsx",
           "handler": "{model.submitUpload}",
           "humanLabel": null,
-          "line": 1183,
+          "line": 1205,
           "permissionKeys": [],
           "score": 17
         }
@@ -34993,7 +35001,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/product-delivery-protocols/pages/ProductDeliveryProtocolSpecificationPage.tsx",
-        "line": 1191,
+        "line": 1213,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -35018,17 +35026,17 @@
       "proposedPermission": "orders.orders_ukraine_all_edit_item_product_income.model_toggle_merge_invoice.control_toggle",
       "securityLevel": "low",
       "rawStatus": "Candidate existing key in component; binding review required",
-      "disposition": "needs_human_review",
-      "dispositionReason": "raw_audit_claims_existing_binding_but_does_not_name_the_key",
+      "disposition": "technical_ui",
+      "dispositionReason": "Toggling an invoice only changes local merge selection; final merge confirmation owns the business mutation.",
       "duplicateOf": null,
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [],
       "source": {
         "status": "resolved",
         "file": "src/features/product-delivery-protocols/pages/ProductDeliveryProtocolSpecificationPage.tsx",
-        "line": 1230,
+        "line": 1252,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -35061,12 +35069,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-4942cd77e2f2",
+          "candidateId": "EPC-c9b3bceae24d",
           "distance": 7,
           "file": "src/features/product-delivery-protocols/pages/ProductDeliveryProtocolSpecificationPage.tsx",
           "handler": "{model.cancelCloseDocuments}",
           "humanLabel": "Залишитися",
-          "line": 1267,
+          "line": 1289,
           "permissionKeys": [],
           "score": 25
         }
@@ -35074,7 +35082,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/product-delivery-protocols/pages/ProductDeliveryProtocolSpecificationPage.tsx",
-        "line": 1260,
+        "line": 1282,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -35107,12 +35115,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-d329b96279ee",
+          "candidateId": "EPC-0abc2190e090",
           "distance": 0,
           "file": "src/features/product-delivery-protocols/pages/ProductDeliveryProtocolSpecificationPage.tsx",
           "handler": "{model.closeDocumentsDraft}",
           "humanLabel": "Закрити без збереження",
-          "line": 1270,
+          "line": 1292,
           "permissionKeys": [],
           "score": 24
         }
@@ -35120,7 +35128,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/product-delivery-protocols/pages/ProductDeliveryProtocolSpecificationPage.tsx",
-        "line": 1270,
+        "line": 1292,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -79858,13 +79866,6 @@
     "PE-00849",
     "PE-00851",
     "PE-00853",
-    "PE-00858",
-    "PE-00860",
-    "PE-00861",
-    "PE-00862",
-    "PE-00863",
-    "PE-00864",
-    "PE-00865",
     "PE-00901",
     "PE-00902",
     "PE-00905",

@@ -3004,6 +3004,39 @@
     "PE-00962": {
       "disposition": "technical_ui",
       "reason": "Selecting a return consignment only updates the local form; the protected final position action owns persistence."
+    },
+    "PE-00858": {
+      "disposition": "technical_ui",
+      "reason": "This raw record resolves to the exported page function declaration and is not a user-triggered action."
+    },
+    "PE-00860": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-00864",
+      "reason": "Opening the specification upload modal belongs to the same protected import capability as final upload PE-00864."
+    },
+    "PE-00861": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["orders.delivery_protocol.delivery_documents.download"],
+      "reason": "Opening and saving delivery documents both recheck the existing delivery-document permission and use its protected facade."
+    },
+    "PE-00862": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["orders.delivery_protocol.invoice.merge"],
+      "reason": "Invoice merge is independently hidden, rechecked at confirmation, and enforced by its dedicated server policy."
+    },
+    "PE-00863": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["orders.delivery_protocol.documents.download"],
+      "reason": "Specification document download is independently guarded in the UI, handler, and server facade."
+    },
+    "PE-00864": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["orders.delivery_protocol.specification_codes.download"],
+      "reason": "Final specification-file import rechecks the existing import permission and calls the protected upload facade."
+    },
+    "PE-00865": {
+      "disposition": "technical_ui",
+      "reason": "Toggling an invoice only changes local merge selection; final merge confirmation owns the business mutation."
     }
   }
 }

@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { apiRequest } from '../../../shared/api/apiClient'
 import {
   getSpecificationDownloadUrls,
+  mergeSupplyInvoices,
   uploadProductSpecificationForInvoice,
 } from './protocolSpecificationApi'
 
@@ -63,6 +64,23 @@ describe('protocol specification API contracts', () => {
     expect(apiRequestMock).toHaveBeenCalledWith(
       '/supplies/invoices/product-delivery-protocol/specification/upload',
       expect.objectContaining({ method: 'POST' }),
+    )
+  })
+
+  it('merges invoices through the independently protected specification facade', async () => {
+    apiRequestMock.mockResolvedValueOnce(undefined)
+
+    await mergeSupplyInvoices('protocol-net-id', ['invoice-1', 'invoice-2'])
+
+    expect(apiRequestMock).toHaveBeenCalledWith(
+      '/delivery/product/protocol/specification/merge/supply/invoices',
+      {
+        method: 'POST',
+        query: {
+          invoiceNetIds: ['invoice-1', 'invoice-2'],
+          netId: 'protocol-net-id',
+        },
+      },
     )
   })
 })
