@@ -3,6 +3,7 @@ import { apiRequest } from '../../../shared/api/apiClient'
 import {
   getMostPurchasedProductsByClientId,
   RecommendationContractError,
+  sendRecommendationFeedback,
 } from './clientRecommendationsApi'
 
 vi.mock('../../../shared/api/apiClient', () => ({
@@ -80,5 +81,19 @@ describe('clientRecommendationsApi recommendation evidence', () => {
         false,
       ),
     ).rejects.toBeInstanceOf(RecommendationContractError)
+  })
+
+  it('sends negative feedback through the client-card permission facade', async () => {
+    apiRequestMock.mockResolvedValueOnce({})
+
+    await sendRecommendationFeedback('client-1', [42])
+
+    expect(apiRequestMock).toHaveBeenCalledWith(
+      '/recommendations/clients/card/feedback',
+      {
+        body: { ClientNetId: 'client-1', ProductIds: [42] },
+        method: 'POST',
+      },
+    )
   })
 })

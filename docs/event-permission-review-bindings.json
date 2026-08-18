@@ -2292,6 +2292,114 @@
       "disposition": "technical_ui",
       "reason": "The next-step action performs no business mutation."
     },
+    "PE-00288": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["counterparties.clients.recommendations.exclude_product"],
+      "reason": "Negative recommendation feedback is a persisted business mutation; UI rechecks the dedicated right and posts only through the permission-scoped client-card façade."
+    },
+    "PE-00290": {
+      "disposition": "technical_ui",
+      "reason": "Switching recommendation list/grid presentation changes only local UI state and is not a business capability."
+    },
+    "PE-00291": {
+      "disposition": "technical_ui",
+      "reason": "Image preview opens a local modal over recommendation data already loaded for the current card."
+    },
+    "PE-00295": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["sales.ukraine.sale.open_details"],
+      "reason": "Despite the legacy edit icon, this drawer is read-only sale detail and is exposed only by the existing open_details right."
+    },
+    "PE-00296": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["sales.ukraine.sale.view_audit"],
+      "reason": "The audit action is independently hidden/rechecked and hydrates through the existing Sales Ukraine audit façade."
+    },
+    "PE-00297": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["sales.ukraine.sale.open_delivery_details"],
+      "reason": "Carrier/delivery details reuse the existing Sales Ukraine delivery-details capability instead of creating a client-card duplicate."
+    },
+    "PE-00308": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-00315",
+      "reason": "The toolbar button only opens the group editor; final group mutations own manage_groups authorization."
+    },
+    "PE-00309": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-00349",
+      "reason": "The structure toolbar is a second entry point to the same guarded client creation workflow."
+    },
+    "PE-00310": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-00321",
+      "reason": "The add button only opens the recipient form; final submit owns create_delivery_recipient authorization."
+    },
+    "PE-00312": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["counterparties.clients.structure.delete_delivery_recipient"],
+      "reason": "Final recipient deletion rechecks its dedicated right and calls a DELETE permission-scoped façade."
+    },
+    "PE-00313": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-00312",
+      "reason": "The row trash icon only selects the recipient for the shared guarded delete confirmation."
+    },
+    "PE-00315": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["counterparties.clients.structure.manage_groups"],
+      "reason": "Group create/update submit is fail-closed in the modal and uses manage_groups-scoped mutation façades."
+    },
+    "PE-00317": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-00319",
+      "reason": "The trash icon only opens the shared group-delete confirmation."
+    },
+    "PE-00319": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["counterparties.clients.structure.manage_groups"],
+      "reason": "Final group deletion is an update-to-deleted mutation protected by the same intentional manage_groups capability."
+    },
+    "PE-00321": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["counterparties.clients.structure.create_delivery_recipient"],
+      "reason": "Final recipient creation rechecks its dedicated right and calls the scoped create façade."
+    },
+    "PE-00322": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-00349",
+      "reason": "The subclient-panel button enters the same Client.Create-guarded new-user workflow."
+    },
+    "PE-00325": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-00329",
+      "reason": "The inner form button dispatches the same guarded workplace submit handled by the panel."
+    },
+    "PE-00326": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-00329",
+      "reason": "The add button only opens the workplace form; final save owns authorization."
+    },
+    "PE-00327": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-00329",
+      "reason": "Selecting a workplace only opens the same guarded editor; it does not persist independently."
+    },
+    "PE-00329": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["counterparties.clients.structure.manage_workplaces"],
+      "reason": "Final workplace create/update rechecks manage_workplaces and uses separate scoped mutation façades."
+    },
+    "PE-00331": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["counterparties.clients.structure.delete_workplace"],
+      "reason": "Final workplace blocking rechecks its dedicated delete right and calls a DELETE permission-scoped façade."
+    },
+    "PE-00333": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-00331",
+      "reason": "The workplace trash icon only prepares the shared guarded delete confirmation."
+    },
     "PE-00299": {
       "disposition": "covered_existing",
       "canonicalPermissionKeys": ["counterparties.clients.identity_review.manage"],

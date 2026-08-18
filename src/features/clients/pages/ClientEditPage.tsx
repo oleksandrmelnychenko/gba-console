@@ -1249,11 +1249,15 @@ function buildEditSteps(client: Client | null, hasPermission: (permissionKey: st
   }
 
   if (getClientType(client) === CLIENT_TYPE_BUYER) {
-    steps.push(
-      { value: 'sales', label: translate('Продажі') },
-      { value: 'perfect-client', label: translate('Ідеальний клієнт') },
-      { value: 'client-types', label: translate('Структура клієнта') },
-    )
+    if (hasPermission(PermissionKeys.SalesUkraine.Sale.View)) {
+      steps.push({ value: 'sales', label: translate('Продажі') })
+    }
+
+    steps.push({ value: 'perfect-client', label: translate('Ідеальний клієнт') })
+
+    if (hasPermission(PermissionKeys.Clients.Structure.Open)) {
+      steps.push({ value: 'client-types', label: translate('Структура клієнта') })
+    }
 
     if (hasPermission(EDIT_CLIENT_ECOMMERCE_PERMISSION)) {
       steps.push({ value: 'e-commerce', label: translate('Інтернет-магазин') })

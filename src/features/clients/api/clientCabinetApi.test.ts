@@ -52,7 +52,7 @@ describe('client cabinet API contracts', () => {
 
     await createClientWorkplace(workplace)
 
-    expect(apiRequestMock).toHaveBeenCalledWith('/clients/new/workplace', {
+    expect(apiRequestMock).toHaveBeenCalledWith('/clients/structure/card/workplaces/create', {
       method: 'POST',
       body: expect.objectContaining({
         ClientGroupId: 2,
@@ -95,7 +95,7 @@ describe('client cabinet API contracts', () => {
 
     await updateClientWorkplace(workplace)
 
-    expect(apiRequestMock).toHaveBeenCalledWith('/clients/update/workplace', {
+    expect(apiRequestMock).toHaveBeenCalledWith('/clients/structure/card/workplaces/update', {
       method: 'POST',
       body: expect.objectContaining({
         Id: 3,

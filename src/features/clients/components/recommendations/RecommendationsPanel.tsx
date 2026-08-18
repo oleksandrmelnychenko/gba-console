@@ -27,6 +27,7 @@ import { toProxiedAssetUrl } from '../../../../shared/url/proxiedAssetUrl'
 import { AppModal } from '../../../../shared/ui/AppModal'
 import { CREATE_ACTION_COLOR } from '../../../../shared/ui/page-header-actions/PageHeaderActions'
 import { useAuth } from '../../../auth/useAuth'
+import { PermissionKeys } from '../../../../shared/auth/permissionKeys'
 import { SALES_UKRAINE_EDIT_PERMISSION } from '../../../sales-ukraine/permissions'
 import { NewSaleWizard, type NewSaleWizardPrefill } from '../../../sales-ukraine/components/new-sale-wizard/NewSaleWizard'
 import { getWizardClientAgreements } from '../../../sales-ukraine/components/new-sale-wizard/wizardClientStepApi'
@@ -160,6 +161,7 @@ export function RecommendationsPanel({ client, productNetId }: RecommendationsPa
 
   const clientNetId = client.NetUid || ''
   const canCreateSale = hasPermission(SALES_UKRAINE_EDIT_PERMISSION)
+  const canExcludeProduct = hasPermission(PermissionKeys.Clients.Recommendations.ExcludeProduct)
   const isVatSale = Boolean(agreement?.Agreement?.WithVATAccounting)
   const selectedCount = selectedKeys.size
   const createSaleDisabled = isLoading || !clientNetId || !agreementNetId || selectedCount === 0
@@ -307,7 +309,7 @@ export function RecommendationsPanel({ client, productNetId }: RecommendationsPa
   }
 
   async function handleExcludeProduct(product: RecommendationProduct, index: number) {
-    if (!clientNetId || !(product.Id ?? 0)) {
+    if (!canExcludeProduct || !clientNetId || !(product.Id ?? 0)) {
       return
     }
 
@@ -430,7 +432,7 @@ export function RecommendationsPanel({ client, productNetId }: RecommendationsPa
               products={products}
               selectable={canCreateSale}
               selectedKeys={selectedKeys}
-              onExclude={canCreateSale ? handleExcludeProduct : undefined}
+              onExclude={canExcludeProduct ? handleExcludeProduct : undefined}
               onPreview={(product) => dispatch({ product, type: 'previewProduct' })}
               onToggleSelect={toggleSelected}
             />

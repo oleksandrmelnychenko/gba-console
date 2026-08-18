@@ -4,6 +4,7 @@ import { useEffect } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useValueState } from '../../../../shared/hooks/useValueState'
 import { useI18n } from '../../../../shared/i18n/useI18n'
+import { PermissionKeys } from '../../../../shared/auth/permissionKeys'
 import { CREATE_ACTION_COLOR } from '../../../../shared/ui/page-header-actions/PageHeaderActions'
 import { getClientGroups, getClientWorkplaces } from '../../api/clientLookupsApi'
 import {
@@ -17,6 +18,7 @@ import { DeliveryRecipientsPanel } from './DeliveryRecipientsPanel'
 import { GroupsModal } from './GroupsModal'
 import { SubClientsPanel } from './SubClientsPanel'
 import { WorkplacesPanel } from './WorkplacesPanel'
+import { useAuth } from '../../../auth/useAuth'
 
 export type ClientStructurePanelProps = {
   client: Client
@@ -25,6 +27,7 @@ export type ClientStructurePanelProps = {
 
 export function ClientStructurePanel({ client, onChange }: ClientStructurePanelProps) {
   const { t } = useI18n()
+  const { hasPermission } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
   const netId = client.NetUid
@@ -37,9 +40,18 @@ export function ClientStructurePanel({ client, onChange }: ClientStructurePanelP
   const [isRemoving, setRemoving] = useValueState(false)
   const [error, setError] = useValueState<string | null>(null)
   const [groupsModalOpened, setGroupsModalOpened] = useValueState(false)
+  const canViewStructure = hasPermission(PermissionKeys.Clients.Structure.Open)
+  const canCreateClient = hasPermission(PermissionKeys.Clients.Client.Create)
+  const canOpenClientDetails = hasPermission(PermissionKeys.Clients.Details.Open)
+  const canEditClient = hasPermission(PermissionKeys.Clients.Client.Edit)
+  const canManageGroups = hasPermission(PermissionKeys.Clients.Structure.ManageGroups)
+  const canManageWorkplaces = hasPermission(PermissionKeys.Clients.Structure.ManageWorkplaces)
+  const canDeleteWorkplace = hasPermission(PermissionKeys.Clients.Structure.DeleteWorkplace)
+  const canCreateDeliveryRecipient = hasPermission(PermissionKeys.Clients.Structure.CreateDeliveryRecipient)
+  const canDeleteDeliveryRecipient = hasPermission(PermissionKeys.Clients.Structure.DeleteDeliveryRecipient)
 
   useEffect(() => {
-    if (!netId) {
+    if (!canViewStructure || !netId) {
       return
     }
 
@@ -77,10 +89,10 @@ export function ClientStructurePanel({ client, onChange }: ClientStructurePanelP
     return () => {
       cancelled = true
     }
-  }, [netId, setGroups, setWorkplaces, setLoading, setError, t])
+  }, [canViewStructure, netId, setGroups, setWorkplaces, setLoading, setError, t])
 
   async function reloadGroups() {
-    if (!netId) {
+    if (!canViewStructure || !netId) {
       return
     }
 
@@ -93,7 +105,7 @@ export function ClientStructurePanel({ client, onChange }: ClientStructurePanelP
   }
 
   async function reloadWorkplaces() {
-    if (!netId) {
+    if (!canViewStructure || !netId) {
       return
     }
 
@@ -106,6 +118,10 @@ export function ClientStructurePanel({ client, onChange }: ClientStructurePanelP
   }
 
   async function handleCreateWorkplace(workplace: ClientWorkplace) {
+    if (!canManageWorkplaces) {
+      return
+    }
+
     setSaving(true)
     setError(null)
 
@@ -120,6 +136,10 @@ export function ClientStructurePanel({ client, onChange }: ClientStructurePanelP
   }
 
   async function handleUpdateWorkplace(workplace: ClientWorkplace) {
+    if (!canManageWorkplaces) {
+      return
+    }
+
     setSaving(true)
     setError(null)
 
@@ -134,7 +154,7 @@ export function ClientStructurePanel({ client, onChange }: ClientStructurePanelP
   }
 
   async function handleRemoveWorkplace(workplace: ClientWorkplace) {
-    if (!workplace.NetUid) {
+    if (!canDeleteWorkplace || !workplace.NetUid) {
       return
     }
 
@@ -157,6 +177,10 @@ export function ClientStructurePanel({ client, onChange }: ClientStructurePanelP
   }
 
   function openNewUser() {
+    if (!canCreateClient) {
+      return
+    }
+
     navigate('/clients/new/role', {
       state: {
         ...(location.state && typeof location.state === 'object' ? location.state : {}),
@@ -191,8 +215,9 @@ export function ClientStructurePanel({ client, onChange }: ClientStructurePanelP
           </Tabs.List>
 
           <Group className="client-structure-toolbar" justify="flex-end" align="center">
-            <Tooltip label={t('Підгрупи')}>
+            {canManageGroups && <Tooltip label={t('Підгрупи')}>
               <ActionIcon
+                aria-label={t('Підгрупи')}
                 color="gray"
                 size="lg"
                 variant="light"
@@ -200,9 +225,10 @@ export function ClientStructurePanel({ client, onChange }: ClientStructurePanelP
               >
                 <Users size={18} />
               </ActionIcon>
-            </Tooltip>
-            <Tooltip label={t('Новий користувач')}>
+            </Tooltip>}
+            {canCreateClient && <Tooltip label={t('Новий користувач')}>
               <ActionIcon
+                aria-label={t('Новий користувач')}
                 color={CREATE_ACTION_COLOR}
                 size="lg"
                 variant="light"
@@ -210,11 +236,15 @@ export function ClientStructurePanel({ client, onChange }: ClientStructurePanelP
               >
                 <UserPlus size={18} />
               </ActionIcon>
-            </Tooltip>
+            </Tooltip>}
           </Group>
 
           <Tabs.Panel className="client-structure-panel" value="subClients">
-            <SubClientsPanel client={client} />
+            <SubClientsPanel
+              canCreateClient={canCreateClient}
+              canOpenDetails={canOpenClientDetails}
+              client={client}
+            />
           </Tabs.Panel>
 
           <Tabs.Panel className="client-structure-panel" value="workplaces">
@@ -226,6 +256,8 @@ export function ClientStructurePanel({ client, onChange }: ClientStructurePanelP
               isRemoving={isRemoving}
               isSaving={isSaving}
               workplaces={workplaces}
+              canDelete={canDeleteWorkplace}
+              canManage={canManageWorkplaces}
               onCreate={(workplace) => void handleCreateWorkplace(workplace)}
               onRemove={(workplace) => void handleRemoveWorkplace(workplace)}
               onUpdate={(workplace) => void handleUpdateWorkplace(workplace)}
@@ -238,6 +270,7 @@ export function ClientStructurePanel({ client, onChange }: ClientStructurePanelP
         <Grid.Col span={{ base: 12, md: 6 }}>
           <Card className="app-section-card" withBorder padding="md" radius="md">
             <ServicePayersPanel
+              disabled={!canEditClient}
               payers={client.ServicePayers || []}
               onChange={handleServicePayersChange}
             />
@@ -245,12 +278,18 @@ export function ClientStructurePanel({ client, onChange }: ClientStructurePanelP
         </Grid.Col>
         <Grid.Col span={{ base: 12, md: 6 }}>
           <Card className="app-section-card" withBorder padding="md" radius="md">
-            <DeliveryRecipientsPanel clientId={clientId} clientNetId={netId || ''} />
+            <DeliveryRecipientsPanel
+              canCreate={canCreateDeliveryRecipient}
+              canDelete={canDeleteDeliveryRecipient}
+              clientId={clientId}
+              clientNetId={netId || ''}
+            />
           </Card>
         </Grid.Col>
       </Grid>
 
       <GroupsModal
+        canManage={canManageGroups}
         clientId={clientId}
         clientNetId={netId || ''}
         opened={groupsModalOpened}

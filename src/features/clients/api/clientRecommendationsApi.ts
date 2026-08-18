@@ -62,7 +62,7 @@ export async function sendRecommendationFeedback(
   clientNetId: string,
   productIds: number[],
 ): Promise<void> {
-  await apiRequest<unknown>('/recommendations/feedback', {
+  await apiRequest<unknown>('/recommendations/clients/card/feedback', {
     method: 'POST',
     body: {
       ClientNetId: clientNetId,

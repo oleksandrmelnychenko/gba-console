@@ -10,6 +10,8 @@ import { getClientSubClients } from '../../api/clientCabinetApi'
 import type { Client } from '../../types'
 
 export type SubClientsPanelProps = {
+  canCreateClient: boolean
+  canOpenDetails: boolean
   client: Client
 }
 
@@ -18,7 +20,7 @@ export type SubClientsPanelProps = {
  * tree pattern). The current client's direct sub-clients are the top level;
  * each node lazy-loads its own sub-clients on expand.
  */
-export function SubClientsPanel({ client }: SubClientsPanelProps) {
+export function SubClientsPanel({ canCreateClient, canOpenDetails, client }: SubClientsPanelProps) {
   const { t } = useI18n()
   const navigate = useNavigate()
   const location = useLocation()
@@ -93,14 +95,18 @@ export function SubClientsPanel({ client }: SubClientsPanelProps) {
 
   const openSubClient = useCallback(
     (subClientNetId?: string) => {
-      if (subClientNetId) {
+      if (canOpenDetails && subClientNetId) {
         navigate(`/clients/edit/${subClientNetId}`)
       }
     },
-    [navigate],
+    [canOpenDetails, navigate],
   )
 
   function openNewUser() {
+    if (!canCreateClient) {
+      return
+    }
+
     navigate('/clients/new/role', {
       state: {
         ...(location.state && typeof location.state === 'object' ? location.state : {}),
@@ -137,11 +143,11 @@ export function SubClientsPanel({ client }: SubClientsPanelProps) {
 
   return (
     <Stack gap="sm">
-      <Group justify="flex-end" align="center">
+      {canCreateClient && <Group justify="flex-end" align="center">
         <Button color={CREATE_ACTION_COLOR} leftSection={<Plus size={16} />} size="xs" onClick={openNewUser}>
           {t('Новий користувач')}
         </Button>
-      </Group>
+      </Group>}
 
       {error && (
         <Alert color="red" icon={<CircleAlert size={18} />} variant="light">

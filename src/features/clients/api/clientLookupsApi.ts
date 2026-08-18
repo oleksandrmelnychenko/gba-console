@@ -133,7 +133,7 @@ export async function getPurchaseManagers(): Promise<Manager[]> {
 }
 
 export async function getClientGroups(clientNetId: string): Promise<ClientGroup[]> {
-  const result = await apiRequest<unknown>('/clients/all/groups', {
+  const result = await apiRequest<unknown>('/clients/structure/card/groups', {
     query: {
       clientNetId,
     },
@@ -143,7 +143,7 @@ export async function getClientGroups(clientNetId: string): Promise<ClientGroup[
 }
 
 export async function getClientWorkplaces(netId: string): Promise<ClientWorkplace[]> {
-  const result = await apiRequest<unknown>('/clients/all/workplaces/by/client', {
+  const result = await apiRequest<unknown>('/clients/structure/card/workplaces', {
     query: {
       netId,
     },
@@ -153,7 +153,7 @@ export async function getClientWorkplaces(netId: string): Promise<ClientWorkplac
 }
 
 export async function getClientDeliveryRecipients(netId: string): Promise<DeliveryRecipient[]> {
-  const result = await apiRequest<unknown>('/deliveries/recipients/all/client', {
+  const result = await apiRequest<unknown>('/deliveries/recipients/structure/all/client', {
     query: {
       netId,
     },

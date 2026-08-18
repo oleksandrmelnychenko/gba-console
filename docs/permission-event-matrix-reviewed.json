@@ -4,25 +4,25 @@
     "inputRecords": 1902,
     "classifiedRecords": 1902,
     "dispositionCounts": {
-      "technical_ui": 701,
-      "covered_existing": 430,
-      "duplicate_occurrence": 221,
-      "business_candidate": 340,
-      "needs_human_review": 202,
+      "technical_ui": 703,
+      "covered_existing": 440,
+      "duplicate_occurrence": 231,
+      "business_candidate": 322,
+      "needs_human_review": 198,
       "stale_or_aggregated": 8
     },
-    "reviewCandidates": 542,
-    "technicalExcluded": 701,
-    "duplicatesExcluded": 221,
-    "duplicateOccurrencesTotal": 290,
+    "reviewCandidates": 520,
+    "technicalExcluded": 703,
+    "duplicatesExcluded": 231,
+    "duplicateOccurrencesTotal": 300,
     "technicalDuplicateOverlap": 69,
     "sourceResolved": 1828,
     "sourceUnresolved": 74,
     "currentActionResolved": 1187,
     "currentActionUnresolved": 715,
     "currentProductionActions": 1829,
-    "currentPermissionBoundActions": 226,
-    "currentUnboundActions": 1603
+    "currentPermissionBoundActions": 231,
+    "currentUnboundActions": 1598
   },
   "invariants": {
     "allInputRecordsClassified": true,
@@ -11499,12 +11499,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-a4020f0f414d",
+          "candidateId": "EPC-91251c3330a1",
           "distance": 78,
           "file": "src/features/clients/components/recommendations/RecommendationsPanel.tsx",
           "handler": "{openSaleWizard}",
           "humanLabel": null,
-          "line": 357,
+          "line": 359,
           "permissionKeys": [
             "UkraineAllActOfEdit_Change_PKEY"
           ],
@@ -11514,7 +11514,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/clients/components/recommendations/RecommendationsPanel.tsx",
-        "line": 279,
+        "line": 281,
         "alternatives": []
       }
     },
@@ -11548,12 +11548,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-4382365bb34d",
+          "candidateId": "EPC-b053d0f91085",
           "distance": 81,
           "file": "src/features/clients/components/recommendations/RecommendationsPanel.tsx",
           "handler": "{handleCreateOffer}",
           "humanLabel": null,
-          "line": 374,
+          "line": 376,
           "permissionKeys": [
             "UkraineAllActOfEdit_Change_PKEY"
           ],
@@ -11563,7 +11563,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/clients/components/recommendations/RecommendationsPanel.tsx",
-        "line": 293,
+        "line": 295,
         "alternatives": []
       }
     },
@@ -11595,12 +11595,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-1dcd0bafe5f0",
+          "candidateId": "EPC-9f457902afe1",
           "distance": 0,
           "file": "src/features/clients/components/recommendations/RecommendationsPanel.tsx",
           "handler": "{() => dispatch({ type: 'toggleGrid' })}",
           "humanLabel": null,
-          "line": 404,
+          "line": 406,
           "permissionKeys": [],
           "score": 22
         }
@@ -11608,7 +11608,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/clients/components/recommendations/RecommendationsPanel.tsx",
-        "line": 404,
+        "line": 406,
         "alternatives": []
       }
     },
@@ -11632,20 +11632,22 @@
       "proposedPermission": "clients.clients_edit_item.on_exclude_product_index.button_click",
       "securityLevel": "low",
       "rawStatus": "No permission candidate found",
-      "disposition": "needs_human_review",
-      "dispositionReason": "insufficient_evidence_for_automatic_permission_or_exclusion",
+      "disposition": "covered_existing",
+      "dispositionReason": "Negative recommendation feedback is a persisted business mutation; UI rechecks the dedicated right and posts only through the permission-scoped client-card façade.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "counterparties.clients.recommendations.exclude_product"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-773131869729",
+          "candidateId": "EPC-286299bf0b8b",
           "distance": 0,
           "file": "src/features/clients/components/recommendations/RecommendationsPanel.tsx",
           "handler": "{() => onExclude(product, index)}",
           "humanLabel": null,
-          "line": 545,
+          "line": 547,
           "permissionKeys": [],
           "score": 19
         }
@@ -11653,7 +11655,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/clients/components/recommendations/RecommendationsPanel.tsx",
-        "line": 545,
+        "line": 547,
         "alternatives": []
       }
     },
@@ -11685,12 +11687,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-773131869729",
+          "candidateId": "EPC-286299bf0b8b",
           "distance": 0,
           "file": "src/features/clients/components/recommendations/RecommendationsPanel.tsx",
           "handler": "{() => onExclude(product, index)}",
           "humanLabel": null,
-          "line": 545,
+          "line": 547,
           "permissionKeys": [],
           "score": 19
         }
@@ -11698,7 +11700,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/clients/components/recommendations/RecommendationsPanel.tsx",
-        "line": 545,
+        "line": 547,
         "alternatives": []
       }
     },
@@ -11722,17 +11724,17 @@
       "proposedPermission": "clients.clients_edit_item.on_click.button_click.2",
       "securityLevel": "low",
       "rawStatus": "No permission candidate found",
-      "disposition": "needs_human_review",
-      "dispositionReason": "insufficient_evidence_for_automatic_permission_or_exclusion",
+      "disposition": "technical_ui",
+      "dispositionReason": "Switching recommendation list/grid presentation changes only local UI state and is not a business capability.",
       "duplicateOf": null,
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [],
       "source": {
         "status": "resolved",
         "file": "src/features/clients/components/recommendations/RecommendationsPanel.tsx",
-        "line": 363,
+        "line": 365,
         "alternatives": []
       }
     },
@@ -11756,17 +11758,17 @@
       "proposedPermission": "clients.clients_edit_item.on_preview.modal_open",
       "securityLevel": "medium",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "technical_ui",
+      "dispositionReason": "Image preview opens a local modal over recommendation data already loaded for the current card.",
       "duplicateOf": null,
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [],
       "source": {
         "status": "resolved",
         "file": "src/features/clients/components/recommendations/RecommendationsPanel.tsx",
-        "line": 424,
+        "line": 426,
         "alternatives": []
       }
     },
@@ -11800,7 +11802,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/clients/components/sales/SalesPanel.tsx",
-        "line": 105,
+        "line": 112,
         "alternatives": []
       }
     },
@@ -11834,7 +11836,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/clients/components/sales/SalesPanel.tsx",
-        "line": 105,
+        "line": 112,
         "alternatives": []
       }
     },
@@ -11868,7 +11870,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/clients/components/sales/SalesPanel.tsx",
-        "line": 105,
+        "line": 112,
         "alternatives": []
       }
     },
@@ -11892,28 +11894,32 @@
       "proposedPermission": "clients.clients_edit_item.on_edit_sale.button_click",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "covered_existing",
+      "dispositionReason": "Despite the legacy edit icon, this drawer is read-only sale detail and is exposed only by the existing open_details right.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "sales.ukraine.sale.open_details"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-210a7d25597a",
+          "candidateId": "EPC-7c165d2a9550",
           "distance": 131,
           "file": "src/features/clients/components/sales/SalesPanel.tsx",
           "handler": "{() => onEdit(sale)}",
-          "humanLabel": null,
-          "line": 427,
-          "permissionKeys": [],
+          "humanLabel": "Переглянути продаж",
+          "line": 446,
+          "permissionKeys": [
+            "sales.ukraine.sale.open_details"
+          ],
           "score": 8
         }
       ],
       "source": {
         "status": "resolved",
         "file": "src/features/clients/components/sales/SalesPanel.tsx",
-        "line": 296,
+        "line": 315,
         "alternatives": []
       }
     },
@@ -11937,28 +11943,32 @@
       "proposedPermission": "clients.clients_edit_item.on_audit_sale_statistic.button_click",
       "securityLevel": "low",
       "rawStatus": "No permission candidate found",
-      "disposition": "needs_human_review",
-      "dispositionReason": "insufficient_evidence_for_automatic_permission_or_exclusion",
+      "disposition": "covered_existing",
+      "dispositionReason": "The audit action is independently hidden/rechecked and hydrates through the existing Sales Ukraine audit façade.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "sales.ukraine.sale.view_audit"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-fdc3e080eee5",
+          "candidateId": "EPC-7bdeb920b9d1",
           "distance": 0,
           "file": "src/features/clients/components/sales/SalesPanel.tsx",
           "handler": "{() => onAudit(sale, statistic)}",
-          "humanLabel": null,
-          "line": 434,
-          "permissionKeys": [],
+          "humanLabel": "Рух ТМЦ",
+          "line": 453,
+          "permissionKeys": [
+            "sales.ukraine.sale.view_audit"
+          ],
           "score": 18
         }
       ],
       "source": {
         "status": "resolved",
         "file": "src/features/clients/components/sales/SalesPanel.tsx",
-        "line": 434,
+        "line": 453,
         "alternatives": []
       }
     },
@@ -11982,28 +11992,32 @@
       "proposedPermission": "clients.clients_edit_item.on_carrier_sale.button_click",
       "securityLevel": "low",
       "rawStatus": "No permission candidate found",
-      "disposition": "needs_human_review",
-      "dispositionReason": "insufficient_evidence_for_automatic_permission_or_exclusion",
+      "disposition": "covered_existing",
+      "dispositionReason": "Carrier/delivery details reuse the existing Sales Ukraine delivery-details capability instead of creating a client-card duplicate.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "sales.ukraine.sale.open_delivery_details"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-13bf5d9341a2",
+          "candidateId": "EPC-c0dce777a0b5",
           "distance": 146,
           "file": "src/features/clients/components/sales/SalesPanel.tsx",
           "handler": "{() => onCarrier(sale)}",
           "humanLabel": null,
-          "line": 441,
-          "permissionKeys": [],
+          "line": 460,
+          "permissionKeys": [
+            "sales.ukraine.sale.open_delivery_details"
+          ],
           "score": 11
         }
       ],
       "source": {
         "status": "resolved",
         "file": "src/features/clients/components/sales/SalesPanel.tsx",
-        "line": 295,
+        "line": 314,
         "alternatives": []
       }
     },
@@ -12350,28 +12364,32 @@
       "proposedPermission": "clients.clients_edit_item.set_groups_modal_opened_true.modal_open",
       "securityLevel": "low",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
-      "duplicateOf": null,
+      "disposition": "duplicate_occurrence",
+      "dispositionReason": "The toolbar button only opens the group editor; final group mutations own manage_groups authorization.",
+      "duplicateOf": "PE-00315",
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "counterparties.clients.structure.manage_groups"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-82a6935bfaf1",
-          "distance": 4,
+          "candidateId": "EPC-f9e9dd42a4f8",
+          "distance": 5,
           "file": "src/features/clients/components/structure/ClientStructurePanel.tsx",
           "handler": "{() => setGroupsModalOpened(true)}",
-          "humanLabel": null,
-          "line": 195,
-          "permissionKeys": [],
+          "humanLabel": "Підгрупи",
+          "line": 218,
+          "permissionKeys": [
+            "counterparties.clients.structure.manage_groups"
+          ],
           "score": 24
         }
       ],
       "source": {
         "status": "resolved",
         "file": "src/features/clients/components/structure/ClientStructurePanel.tsx",
-        "line": 199,
+        "line": 223,
         "alternatives": []
       }
     },
@@ -12395,28 +12413,32 @@
       "proposedPermission": "clients.clients_edit_item.open_new_user.modal_open",
       "securityLevel": "low",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
-      "duplicateOf": null,
+      "disposition": "duplicate_occurrence",
+      "dispositionReason": "The structure toolbar is a second entry point to the same guarded client creation workflow.",
+      "duplicateOf": "PE-00349",
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "counterparties.clients.client.create"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-96c2bd8b697d",
-          "distance": 46,
+          "candidateId": "EPC-94426730d6c5",
+          "distance": 51,
           "file": "src/features/clients/components/structure/ClientStructurePanel.tsx",
           "handler": "{openNewUser}",
-          "humanLabel": null,
-          "line": 205,
-          "permissionKeys": [],
+          "humanLabel": "Новий користувач",
+          "line": 229,
+          "permissionKeys": [
+            "counterparties.clients.client.create"
+          ],
           "score": 11
         }
       ],
       "source": {
         "status": "resolved",
         "file": "src/features/clients/components/structure/ClientStructurePanel.tsx",
-        "line": 159,
+        "line": 178,
         "alternatives": []
       }
     },
@@ -12440,20 +12462,20 @@
       "proposedPermission": "clients.clients_edit_item.set_modal_opened_true.modal_open",
       "securityLevel": "low",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
-      "duplicateOf": null,
+      "disposition": "duplicate_occurrence",
+      "dispositionReason": "The add button only opens the recipient form; final submit owns create_delivery_recipient authorization.",
+      "duplicateOf": "PE-00321",
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-2630fa86e3f0",
+          "candidateId": "EPC-1f8ca9ac55c8",
           "distance": 5,
           "file": "src/features/clients/components/structure/DeliveryRecipientsPanel.tsx",
           "handler": "{() => setModalOpened(true)}",
           "humanLabel": "Додати",
-          "line": 177,
+          "line": 181,
           "permissionKeys": [],
           "score": 18
         }
@@ -12461,7 +12483,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/clients/components/structure/DeliveryRecipientsPanel.tsx",
-        "line": 182,
+        "line": 186,
         "alternatives": []
       }
     },
@@ -12493,12 +12515,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-a17a10991ef9",
+          "candidateId": "EPC-71c00dbf8220",
           "distance": 90,
           "file": "src/features/clients/components/structure/DeliveryRecipientsPanel.tsx",
           "handler": "{() => setRemoveTarget(null)}",
           "humanLabel": "Ні",
-          "line": 240,
+          "line": 244,
           "permissionKeys": [],
           "score": 19
         }
@@ -12506,7 +12528,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/clients/components/structure/DeliveryRecipientsPanel.tsx",
-        "line": 150,
+        "line": 154,
         "alternatives": []
       }
     },
@@ -12530,20 +12552,22 @@
       "proposedPermission": "clients.clients_edit_item.void_handle_delete.command_delete",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "covered_existing",
+      "dispositionReason": "Final recipient deletion rechecks its dedicated right and calls a DELETE permission-scoped façade.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "counterparties.clients.structure.delete_delivery_recipient"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-a4ca2f00d660",
+          "candidateId": "EPC-8ba793a3f99f",
           "distance": 4,
           "file": "src/features/clients/components/structure/DeliveryRecipientsPanel.tsx",
           "handler": "{() => void handleDelete()}",
           "humanLabel": "Так",
-          "line": 243,
+          "line": 247,
           "permissionKeys": [],
           "score": 12
         }
@@ -12551,7 +12575,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/clients/components/structure/DeliveryRecipientsPanel.tsx",
-        "line": 247,
+        "line": 251,
         "alternatives": []
       }
     },
@@ -12575,17 +12599,17 @@
       "proposedPermission": "clients.clients_edit_item.event_event_stop_propagation_on_remove.command_delete",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
-      "duplicateOf": null,
+      "disposition": "duplicate_occurrence",
+      "dispositionReason": "The row trash icon only selects the recipient for the shared guarded delete confirmation.",
+      "duplicateOf": "PE-00312",
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [],
       "source": {
         "status": "resolved",
         "file": "src/features/clients/components/structure/DeliveryRecipientsPanel.tsx",
-        "line": 51,
+        "line": 53,
         "alternatives": []
       }
     },
@@ -12617,12 +12641,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-1759bc822c55",
+          "candidateId": "EPC-28db89236970",
           "distance": 104,
           "file": "src/features/clients/components/structure/GroupsModal.tsx",
           "handler": "{resetForm}",
           "humanLabel": null,
-          "line": 209,
+          "line": 214,
           "permissionKeys": [],
           "score": 9
         }
@@ -12630,7 +12654,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/clients/components/structure/GroupsModal.tsx",
-        "line": 105,
+        "line": 110,
         "alternatives": []
       }
     },
@@ -12654,20 +12678,22 @@
       "proposedPermission": "clients.clients_edit_item.void_handle_submit.command_submit",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "covered_existing",
+      "dispositionReason": "Group create/update submit is fail-closed in the modal and uses manage_groups-scoped mutation façades.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "counterparties.clients.structure.manage_groups"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-073a23a7598b",
+          "candidateId": "EPC-0f1c28161eaa",
           "distance": 13,
           "file": "src/features/clients/components/structure/GroupsModal.tsx",
           "handler": "{() => void handleSubmit()}",
           "humanLabel": null,
-          "line": 218,
+          "line": 223,
           "permissionKeys": [],
           "score": 12
         }
@@ -12675,7 +12701,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/clients/components/structure/GroupsModal.tsx",
-        "line": 205,
+        "line": 210,
         "alternatives": []
       }
     },
@@ -12707,12 +12733,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-4264bada613e",
-          "distance": 157,
+          "candidateId": "EPC-3fc3d384213a",
+          "distance": 161,
           "file": "src/features/clients/components/structure/GroupsModal.tsx",
           "handler": "{() => selectGroup(group)}",
           "humanLabel": null,
-          "line": 256,
+          "line": 261,
           "permissionKeys": [],
           "score": 16
         }
@@ -12720,7 +12746,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/clients/components/structure/GroupsModal.tsx",
-        "line": 99,
+        "line": 100,
         "alternatives": []
       }
     },
@@ -12744,20 +12770,20 @@
       "proposedPermission": "clients.clients_edit_item.set_group_pending_delete_group.command_delete",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
-      "duplicateOf": null,
+      "disposition": "duplicate_occurrence",
+      "dispositionReason": "The trash icon only opens the shared group-delete confirmation.",
+      "duplicateOf": "PE-00319",
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-0f46ddeb4163",
+          "candidateId": "EPC-7f0e8ec049a2",
           "distance": 5,
           "file": "src/features/clients/components/structure/GroupsModal.tsx",
           "handler": "{() => setGroupPendingDelete(group)}",
           "humanLabel": null,
-          "line": 265,
+          "line": 270,
           "permissionKeys": [],
           "score": 26
         }
@@ -12765,7 +12791,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/clients/components/structure/GroupsModal.tsx",
-        "line": 270,
+        "line": 275,
         "alternatives": []
       }
     },
@@ -12797,12 +12823,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-f38245944898",
-          "distance": 235,
+          "candidateId": "EPC-eadd7578312f",
+          "distance": 239,
           "file": "src/features/clients/components/structure/GroupsModal.tsx",
           "handler": "{() => setGroupPendingDelete(null)}",
           "humanLabel": "Скасувати",
-          "line": 290,
+          "line": 295,
           "permissionKeys": [],
           "score": 25
         }
@@ -12810,7 +12836,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/clients/components/structure/GroupsModal.tsx",
-        "line": 55,
+        "line": 56,
         "alternatives": []
       }
     },
@@ -12834,17 +12860,19 @@
       "proposedPermission": "clients.clients_edit_item.const_group_group_pending_delete_if_group_set_group_pending_dele.command_delete",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "covered_existing",
+      "dispositionReason": "Final group deletion is an update-to-deleted mutation protected by the same intentional manage_groups capability.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "counterparties.clients.structure.manage_groups"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [],
       "source": {
         "status": "resolved",
         "file": "src/features/clients/components/structure/GroupsModal.tsx",
-        "line": 34,
+        "line": 35,
         "alternatives": []
       }
     },
@@ -12902,12 +12930,14 @@
       "proposedPermission": "clients.clients_edit_item.handle_save.command_submit.2",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "covered_existing",
+      "dispositionReason": "Final recipient creation rechecks its dedicated right and calls the scoped create façade.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "counterparties.clients.structure.create_delivery_recipient"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
           "candidateId": "EPC-dfe3f459b37a",
@@ -12947,20 +12977,20 @@
       "proposedPermission": "clients.clients_edit_item.open_new_user.modal_open.2",
       "securityLevel": "low",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
-      "duplicateOf": null,
+      "disposition": "duplicate_occurrence",
+      "dispositionReason": "The subclient-panel button enters the same Client.Create-guarded new-user workflow.",
+      "duplicateOf": "PE-00349",
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-614bada5b6bb",
-          "distance": 38,
+          "candidateId": "EPC-fedab4f2f46e",
+          "distance": 42,
           "file": "src/features/clients/components/structure/SubClientsPanel.tsx",
           "handler": "{openNewUser}",
           "humanLabel": "Новий користувач",
-          "line": 141,
+          "line": 147,
           "permissionKeys": [],
           "score": 11
         }
@@ -12968,7 +12998,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/clients/components/structure/SubClientsPanel.tsx",
-        "line": 103,
+        "line": 105,
         "alternatives": []
       }
     },
@@ -13071,12 +13101,12 @@
       "proposedPermission": "clients.clients_edit_item.handle_submit.command_submit.2",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
-      "duplicateOf": null,
+      "disposition": "duplicate_occurrence",
+      "dispositionReason": "The inner form button dispatches the same guarded workplace submit handled by the panel.",
+      "duplicateOf": "PE-00329",
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
           "candidateId": "EPC-12f7c05b4ab6",
@@ -13116,20 +13146,20 @@
       "proposedPermission": "clients.clients_edit_item.open_create.command_submit.2",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
-      "duplicateOf": null,
+      "disposition": "duplicate_occurrence",
+      "dispositionReason": "The add button only opens the workplace form; final save owns authorization.",
+      "duplicateOf": "PE-00329",
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-82165e5fadd9",
-          "distance": 41,
+          "candidateId": "EPC-adfad5539a05",
+          "distance": 43,
           "file": "src/features/clients/components/structure/WorkplacesPanel.tsx",
           "handler": "{openCreate}",
           "humanLabel": "Додати",
-          "line": 103,
+          "line": 109,
           "permissionKeys": [],
           "score": 10
         }
@@ -13137,7 +13167,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/clients/components/structure/WorkplacesPanel.tsx",
-        "line": 62,
+        "line": 66,
         "alternatives": []
       }
     },
@@ -13161,17 +13191,17 @@
       "proposedPermission": "clients.clients_edit_item.open_edit_workplace.menu_item_select",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
-      "duplicateOf": null,
+      "disposition": "duplicate_occurrence",
+      "dispositionReason": "Selecting a workplace only opens the same guarded editor; it does not persist independently.",
+      "duplicateOf": "PE-00329",
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [],
       "source": {
         "status": "resolved",
         "file": "src/features/clients/components/structure/WorkplacesPanel.tsx",
-        "line": 67,
+        "line": 72,
         "alternatives": []
       }
     },
@@ -13205,7 +13235,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/clients/components/structure/WorkplacesPanel.tsx",
-        "line": 67,
+        "line": 72,
         "alternatives": []
       }
     },
@@ -13229,20 +13259,22 @@
       "proposedPermission": "clients.clients_edit_item.handle_submit.form_submit.2",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "covered_existing",
+      "dispositionReason": "Final workplace create/update rechecks manage_workplaces and uses separate scoped mutation façades.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "counterparties.clients.structure.manage_workplaces"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-6e3530f27d22",
-          "distance": 116,
+          "candidateId": "EPC-26db236af1d9",
+          "distance": 117,
           "file": "src/features/clients/components/structure/WorkplacesPanel.tsx",
           "handler": "{handleSubmit}",
           "humanLabel": null,
-          "line": 197,
+          "line": 203,
           "permissionKeys": [],
           "score": 12
         }
@@ -13250,7 +13282,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/clients/components/structure/WorkplacesPanel.tsx",
-        "line": 81,
+        "line": 86,
         "alternatives": []
       }
     },
@@ -13282,12 +13314,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-6a81034e7061",
+          "candidateId": "EPC-86c64edaed27",
           "distance": 120,
           "file": "src/features/clients/components/structure/WorkplacesPanel.tsx",
           "handler": "{() => setRemoveTarget(null)}",
           "humanLabel": "Ні",
-          "line": 216,
+          "line": 222,
           "permissionKeys": [],
           "score": 19
         }
@@ -13295,7 +13327,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/clients/components/structure/WorkplacesPanel.tsx",
-        "line": 96,
+        "line": 102,
         "alternatives": []
       }
     },
@@ -13319,20 +13351,22 @@
       "proposedPermission": "clients.clients_edit_item.confirm_remove.command_submit",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "covered_existing",
+      "dispositionReason": "Final workplace blocking rechecks its dedicated delete right and calls a DELETE permission-scoped façade.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "counterparties.clients.structure.delete_workplace"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-8513cf65e9be",
+          "candidateId": "EPC-ebc6547fbd9b",
           "distance": 128,
           "file": "src/features/clients/components/structure/WorkplacesPanel.tsx",
           "handler": "{confirmRemove}",
           "humanLabel": "Так",
-          "line": 219,
+          "line": 225,
           "permissionKeys": [],
           "score": 13
         }
@@ -13340,7 +13374,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/clients/components/structure/WorkplacesPanel.tsx",
-        "line": 91,
+        "line": 97,
         "alternatives": []
       }
     },
@@ -13372,12 +13406,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-4799de8b709d",
+          "candidateId": "EPC-2daefcb72b02",
           "distance": 12,
           "file": "src/features/clients/components/structure/WorkplacesPanel.tsx",
           "handler": "{readonly ? undefined : onSelect}",
           "humanLabel": null,
-          "line": 251,
+          "line": 257,
           "permissionKeys": [],
           "score": 17
         }
@@ -13385,7 +13419,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/clients/components/structure/WorkplacesPanel.tsx",
-        "line": 263,
+        "line": 269,
         "alternatives": []
       }
     },
@@ -13409,17 +13443,17 @@
       "proposedPermission": "clients.clients_edit_item.event_event_stop_propagation_on_remove.command_delete.2",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
-      "duplicateOf": null,
+      "disposition": "duplicate_occurrence",
+      "dispositionReason": "The workplace trash icon only prepares the shared guarded delete confirmation.",
+      "duplicateOf": "PE-00331",
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [],
       "source": {
         "status": "resolved",
         "file": "src/features/clients/components/structure/WorkplacesPanel.tsx",
-        "line": 41,
+        "line": 43,
         "alternatives": []
       }
     },
@@ -79511,28 +79545,6 @@
     "PE-00163",
     "PE-00165",
     "PE-00167",
-    "PE-00288",
-    "PE-00290",
-    "PE-00291",
-    "PE-00295",
-    "PE-00296",
-    "PE-00297",
-    "PE-00308",
-    "PE-00309",
-    "PE-00310",
-    "PE-00312",
-    "PE-00313",
-    "PE-00315",
-    "PE-00317",
-    "PE-00319",
-    "PE-00321",
-    "PE-00322",
-    "PE-00325",
-    "PE-00326",
-    "PE-00327",
-    "PE-00329",
-    "PE-00331",
-    "PE-00333",
     "PE-00395",
     "PE-00397",
     "PE-00402",

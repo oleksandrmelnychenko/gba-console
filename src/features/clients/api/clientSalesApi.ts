@@ -13,7 +13,7 @@ function toDateParam(value: Date | string): string {
 }
 
 export async function getSalesByClient(params: ClientSalesParams): Promise<SaleStatistic[]> {
-  const result = await apiRequest<unknown>('/sales/all/client', {
+  const result = await apiRequest<unknown>('/sales/ukraine/client-card/registry', {
     query: {
       netId: params.netId,
       from: toDateParam(params.from),
@@ -25,7 +25,7 @@ export async function getSalesByClient(params: ClientSalesParams): Promise<SaleS
 }
 
 export async function getSaleStatisticBySaleId(netId: string): Promise<SaleStatistic | null> {
-  const result = await apiRequest<unknown>('/sales/get/shifted', {
+  const result = await apiRequest<unknown>('/sales/ukraine/audit', {
     query: {
       netId,
     },

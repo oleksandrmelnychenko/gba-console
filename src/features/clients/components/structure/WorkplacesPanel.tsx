@@ -19,6 +19,8 @@ import type { Client, ClientGroup, ClientWorkplace } from '../../types'
 import { WorkplaceForm } from './WorkplaceForm'
 
 export type WorkplacesPanelProps = {
+  canManage: boolean
+  canDelete: boolean
   client: Client
   workplaces: ClientWorkplace[]
   groups: ClientGroup[]
@@ -39,6 +41,8 @@ function getFullName(workplace: ClientWorkplace): string {
 }
 
 export function WorkplacesPanel({
+  canManage,
+  canDelete,
   client,
   workplaces,
   groups,
@@ -60,12 +64,13 @@ export function WorkplacesPanel({
   )
 
   function openCreate() {
+    if (!canManage) return
     setEditingWorkplace(null)
     setFormOpened(true)
   }
 
   function openEdit(workplace: ClientWorkplace) {
-    if (workplace.IsBlocked) {
+    if (!canManage || workplace.IsBlocked) {
       return
     }
 
@@ -79,6 +84,7 @@ export function WorkplacesPanel({
   }
 
   function handleSubmit(workplace: ClientWorkplace) {
+    if (!canManage) return
     if (editingWorkplace && (editingWorkplace.Id || 0) > 0) {
       onUpdate(workplace)
     } else {
@@ -89,7 +95,7 @@ export function WorkplacesPanel({
   }
 
   function confirmRemove() {
-    if (removeTarget && (removeTarget.Id || 0) > 0) {
+    if (canDelete && removeTarget && (removeTarget.Id || 0) > 0) {
       onRemove(removeTarget)
     }
 
@@ -100,7 +106,7 @@ export function WorkplacesPanel({
     <Stack gap="sm">
       <Group justify="space-between" align="center">
         <Text fw={600}>{t('Робочі місця')}</Text>
-        <Button
+        {canManage && <Button
           color={CREATE_ACTION_COLOR}
           disabled={isSaving}
           leftSection={<Plus size={16} />}
@@ -108,7 +114,7 @@ export function WorkplacesPanel({
           onClick={openCreate}
         >
           {t('Додати')}
-        </Button>
+        </Button>}
       </Group>
 
       {error && (
@@ -153,8 +159,8 @@ export function WorkplacesPanel({
                             <WorkplaceItem
                               key={workplace.NetUid}
                               workplace={workplace}
-                              onRemove={() => setRemoveTarget(workplace)}
-                              onSelect={() => openEdit(workplace)}
+                              onRemove={canDelete ? () => setRemoveTarget(workplace) : undefined}
+                              onSelect={canManage ? () => openEdit(workplace) : undefined}
                             />
                           ))}
                         </Stack>
@@ -179,8 +185,8 @@ export function WorkplacesPanel({
                 <WorkplaceItem
                   key={workplace.NetUid}
                   workplace={workplace}
-                  onRemove={() => setRemoveTarget(workplace)}
-                  onSelect={() => openEdit(workplace)}
+                  onRemove={canDelete ? () => setRemoveTarget(workplace) : undefined}
+                  onSelect={canManage ? () => openEdit(workplace) : undefined}
                 />
               ))}
             </Stack>
@@ -188,7 +194,7 @@ export function WorkplacesPanel({
         </>
       )}
 
-      <AppModal
+      {canManage && <AppModal
         centered
         opened={formOpened}
         title={editingWorkplace && (editingWorkplace.Id || 0) > 0 ? t('Редагування') : t('Створення')}
@@ -202,9 +208,9 @@ export function WorkplacesPanel({
           onCancel={closeForm}
           onSubmit={handleSubmit}
         />
-      </AppModal>
+      </AppModal>}
 
-      <AppModal
+      {canDelete && <AppModal
         centered
         opened={Boolean(removeTarget)}
         title={t('Ви впевнені, що хочете заблокувати?')}
@@ -226,7 +232,7 @@ export function WorkplacesPanel({
             </Button>
           </Group>
         </Stack>
-      </AppModal>
+      </AppModal>}
     </Stack>
   )
 }

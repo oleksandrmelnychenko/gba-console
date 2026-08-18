@@ -226,6 +226,14 @@ export const PermissionKeys = {
     },
     Structure: {
       Open: 'counterparties.clients.structure.open',
+      ManageGroups: 'counterparties.clients.structure.manage_groups',
+      ManageWorkplaces: 'counterparties.clients.structure.manage_workplaces',
+      DeleteWorkplace: 'counterparties.clients.structure.delete_workplace',
+      CreateDeliveryRecipient: 'counterparties.clients.structure.create_delivery_recipient',
+      DeleteDeliveryRecipient: 'counterparties.clients.structure.delete_delivery_recipient',
+    },
+    Recommendations: {
+      ExcludeProduct: 'counterparties.clients.recommendations.exclude_product',
     },
     IdentityReview: {
       Open: 'counterparties.clients.identity_review.open',

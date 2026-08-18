@@ -28,6 +28,8 @@ import { NewDeliveryRecipientModal } from './NewDeliveryRecipientModal'
 const EMPTY_NET_UID = '00000000-0000-0000-0000-000000000000'
 
 export type DeliveryRecipientsPanelProps = {
+  canCreate: boolean
+  canDelete: boolean
   clientId: number
   clientNetId: string
   includeDeleted?: boolean
@@ -49,6 +51,8 @@ function sortRecipients(recipients: DeliveryRecipient[]): DeliveryRecipient[] {
 }
 
 export function DeliveryRecipientsPanel({
+  canCreate,
+  canDelete,
   clientId,
   clientNetId,
   includeDeleted = true,
@@ -118,7 +122,7 @@ export function DeliveryRecipientsPanel({
   }
 
   async function handleCreate(name: string) {
-    if (isBusy) {
+    if (!canCreate || isBusy) {
       return
     }
 
@@ -146,7 +150,7 @@ export function DeliveryRecipientsPanel({
   }
 
   async function handleDelete() {
-    if (!removeTarget || !removeTarget.NetUid || isBusy) {
+    if (!canDelete || !removeTarget || !removeTarget.NetUid || isBusy) {
       setRemoveTarget(null)
       return
     }
@@ -174,7 +178,7 @@ export function DeliveryRecipientsPanel({
         <Stack gap="md">
           <Group justify="space-between" align="center">
             <Text fw={600}>{t('Отримувачі доставки')}</Text>
-            <Button
+            {canCreate && <Button
               color={CREATE_ACTION_COLOR}
               disabled={isBusy}
               leftSection={<Plus size={16} />}
@@ -182,7 +186,7 @@ export function DeliveryRecipientsPanel({
               onClick={() => setModalOpened(true)}
             >
               {t('Додати')}
-            </Button>
+            </Button>}
           </Group>
 
           {error && (
@@ -209,7 +213,7 @@ export function DeliveryRecipientsPanel({
                   key={recipient.NetUid || recipient.Id || index}
                   isDeleting={deletingNetUid === recipient.NetUid}
                   recipient={recipient}
-                  onRemove={() => setRemoveTarget(recipient)}
+                  onRemove={canDelete ? () => setRemoveTarget(recipient) : undefined}
                 />
               ))}
             </Stack>
@@ -217,14 +221,14 @@ export function DeliveryRecipientsPanel({
         </Stack>
       </Card>
 
-      <NewDeliveryRecipientModal
+      {canCreate && <NewDeliveryRecipientModal
         isSaving={isSaving}
         opened={modalOpened}
         onClose={() => setModalOpened(false)}
         onSave={(name) => void handleCreate(name)}
-      />
+      />}
 
-      <AppModal
+      {canDelete && <AppModal
         centered
         opened={Boolean(removeTarget)}
         title={t('Ви впевнені, що хочете видалити?')}
@@ -250,7 +254,7 @@ export function DeliveryRecipientsPanel({
             </Button>
           </Group>
         </Stack>
-      </AppModal>
+      </AppModal>}
     </Stack>
   )
 }
@@ -262,7 +266,7 @@ function RecipientItem({
 }: {
   recipient: DeliveryRecipient
   isDeleting: boolean
-  onRemove: () => void
+  onRemove?: () => void
 }) {
   const fullName = recipient.FullName?.trim()
   const [isHovered, setHovered] = useState(false)
@@ -301,7 +305,7 @@ function RecipientItem({
           </Tooltip>
         </Group>
 
-        {!recipient.Deleted && (
+        {!recipient.Deleted && onRemove && (
           <ActionIcon
             color="red"
             loading={isDeleting}

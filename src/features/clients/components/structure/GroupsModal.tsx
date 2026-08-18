@@ -24,6 +24,7 @@ import type { ClientGroup } from '../../types'
 import { CREATE_ACTION_COLOR } from '../../../../shared/ui/page-header-actions/PageHeaderActions'
 
 export type GroupsModalProps = {
+  canManage: boolean
   opened: boolean
   clientId: number
   clientNetId: string
@@ -31,7 +32,7 @@ export type GroupsModalProps = {
   onChange?: (groups: ClientGroup[]) => void
 }
 
-export function GroupsModal({ opened, clientId, clientNetId, onClose, onChange }: GroupsModalProps) {
+export function GroupsModal({ canManage, opened, clientId, clientNetId, onClose, onChange }: GroupsModalProps) {
   const { t } = useI18n()
   const [groups, setGroups] = useValueState<ClientGroup[]>([])
   const [name, setName] = useValueState('')
@@ -97,6 +98,10 @@ export function GroupsModal({ opened, clientId, clientNetId, onClose, onChange }
   const isBusy = isSubmitting || Boolean(deletingNetUid)
 
   function selectGroup(group: ClientGroup) {
+    if (!canManage) {
+      return
+    }
+
     setEditingGroup(group)
     setName(group.Name || '')
     setError(null)
@@ -109,7 +114,7 @@ export function GroupsModal({ opened, clientId, clientNetId, onClose, onChange }
   }
 
   async function handleSubmit() {
-    if (!trimmedName || isBusy) {
+    if (!canManage || !trimmedName || isBusy) {
       return
     }
 
@@ -139,7 +144,7 @@ export function GroupsModal({ opened, clientId, clientNetId, onClose, onChange }
   }
 
   async function handleDelete(group: ClientGroup) {
-    if (isBusy || !group.NetUid) {
+    if (!canManage || isBusy || !group.NetUid) {
       return
     }
 
@@ -193,7 +198,7 @@ export function GroupsModal({ opened, clientId, clientNetId, onClose, onChange }
 
         <Group align="flex-end" gap="xs" wrap="nowrap">
           <TextInput
-            disabled={isBusy}
+            disabled={!canManage || isBusy}
             maxLength={100}
             placeholder={t('Назва групи')}
             style={{ flex: 1 }}
@@ -208,7 +213,7 @@ export function GroupsModal({ opened, clientId, clientNetId, onClose, onChange }
           />
           <ActionIcon
             color="gray"
-            disabled={!trimmedName || isBusy}
+            disabled={!canManage || !trimmedName || isBusy}
             size="lg"
             variant="light"
             onClick={resetForm}
@@ -217,7 +222,7 @@ export function GroupsModal({ opened, clientId, clientNetId, onClose, onChange }
           </ActionIcon>
           <Button
             color={CREATE_ACTION_COLOR}
-            disabled={!trimmedName}
+            disabled={!canManage || !trimmedName}
             leftSection={<Plus size={16} />}
             loading={isSubmitting}
             onClick={() => void handleSubmit()}
@@ -254,7 +259,7 @@ export function GroupsModal({ opened, clientId, clientNetId, onClose, onChange }
                 }}
               >
                 <UnstyledButton
-                  disabled={isBusy}
+                  disabled={!canManage || isBusy}
                   style={{ flex: 1, minWidth: 0 }}
                   onClick={() => selectGroup(group)}
                 >
@@ -262,7 +267,7 @@ export function GroupsModal({ opened, clientId, clientNetId, onClose, onChange }
                     {group.Name}
                   </Text>
                 </UnstyledButton>
-                <ActionIcon
+                {canManage && <ActionIcon
                   color="red"
                   disabled={isBusy}
                   loading={deletingNetUid === group.NetUid}
@@ -270,7 +275,7 @@ export function GroupsModal({ opened, clientId, clientNetId, onClose, onChange }
                   onClick={() => setGroupPendingDelete(group)}
                 >
                   <Trash2 size={16} />
-                </ActionIcon>
+                </ActionIcon>}
               </Group>
             ))}
           </Stack>
@@ -278,7 +283,7 @@ export function GroupsModal({ opened, clientId, clientNetId, onClose, onChange }
       </Stack>
     </AppModal>
 
-    <AppModal
+    {canManage && <AppModal
       centered
       opened={Boolean(groupPendingDelete)}
       title={t('Ви впевнені, що хочете видалити групу?')}
@@ -306,7 +311,7 @@ export function GroupsModal({ opened, clientId, clientNetId, onClose, onChange }
           </Button>
         </Group>
       </Stack>
-    </AppModal>
+    </AppModal>}
     </>
   )
 }
