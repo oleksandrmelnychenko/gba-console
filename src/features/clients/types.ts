@@ -409,6 +409,9 @@ export type ClientSourceCardSnapshot = {
   RegionName?: string | null
   MainClientCode?: number | null
   MainClientName?: string | null
+  DirectClientGroupSourceCode?: number | null
+  DirectClientGroupRegionCode?: string | null
+  DirectClientGroupSourceMarkedDeleted?: boolean | null
   DirectClientGroupName?: string | null
   ClientGroupName?: string | null
   BankName?: string | null
@@ -473,6 +476,7 @@ export type ClientCommercialStructure = {
   ClientNetUid: string
   AsOfUtc: string
   GroupKey?: string | null
+  GroupCode?: string | null
   GroupName?: string | null
   ConfirmedGroupNetUid?: string | null
   ConfirmedGroupRevision?: number | null

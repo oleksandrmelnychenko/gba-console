@@ -87,6 +87,67 @@ describe('ClientCommercialStructureView', () => {
     expect(within(targetCard!).getByText('чинний на дату зрізу')).toBeTruthy()
   })
 
+  it('prefers an exact source-folder code for the VI035 group title', () => {
+    render(
+      <MantineProvider env="test" theme={theme}>
+        <ClientCommercialStructureView
+          structure={{
+            ...createStructure(),
+            GroupKey: 'VI035',
+            GroupCode: 'VI03500',
+            GroupName: 'Гайсин - Решетнік Ігор Володимирович',
+          }}
+          t={t}
+        />
+      </MantineProvider>,
+    )
+
+    expect(screen.getByText('VI03500 · Гайсин - Решетнік Ігор Володимирович')).toBeTruthy()
+  })
+
+  it('keeps the visible GBA root name when a merged source alias sorts first', () => {
+    const structure = createStructure()
+    structure.GroupKey = 'VI035'
+    structure.GroupCode = 'VI03500'
+    structure.GroupName = 'Гайсин - Решетнік Ігор Володимирович'
+    const root = structure.LegalParties[0].Cards[0]
+    root.DisplayName = 'РЕШЕТНІК ІГОР ВОЛОДИМИРОВИЧ ФОП'
+    root.SourceSnapshots[0] = {
+      ...root.SourceSnapshots[0],
+      SourceCode: 2577,
+      ClientName: 'Гайсин - Решетнік Ігор Володимирович готівка',
+      FullName: 'Гайсин - Решетнік Ігор Володимирович готівка',
+    }
+
+    const { container } = render(
+      <MantineProvider env="test" theme={theme}>
+        <ClientCommercialStructureView structure={structure} t={t} />
+      </MantineProvider>,
+    )
+
+    const rootCard = container.querySelector<HTMLElement>('[data-client-id="10"] .client-source-card')
+    expect(rootCard).not.toBeNull()
+    expect(within(rootCard!).getByText('РЕШЕТНІК ІГОР ВОЛОДИМИРОВИЧ ФОП')).toBeTruthy()
+    expect(within(rootCard!).getByText('Гайсин - Решетнік Ігор Володимирович готівка')).toBeTruthy()
+  })
+
+  it('keeps the established XM052 business title when exact folder evidence is present', () => {
+    render(
+      <MantineProvider env="test" theme={theme}>
+        <ClientCommercialStructureView
+          structure={{
+            ...createStructure(),
+            GroupCode: 'XM05200',
+            GroupName: 'Хмельницький - Назаришин В. М.',
+          }}
+          t={t}
+        />
+      </MantineProvider>,
+    )
+
+    expect(screen.getByText('ХМ052 · Хмельницький - Назаришин В. М.')).toBeTruthy()
+  })
+
   it('derives agreement activity from the structure snapshot date', () => {
     const structure = createStructure()
     structure.AsOfUtc = '2026-08-11T23:59:59'

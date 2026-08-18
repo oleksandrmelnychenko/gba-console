@@ -704,18 +704,30 @@ function getCommercialGroupTitle(
   t: (value: string) => string,
 ): string {
   const groupKey = structure.GroupKey?.trim()
+  const groupCode = structure.GroupCode?.trim()
   const groupName = structure.GroupName?.trim()
-  const displayGroupKey = groupKey ? getCommercialGroupDisplayKey(groupKey) : ''
+  const displayGroupKey = getCommercialGroupDisplayKey(
+    groupCode || groupKey || '',
+    Boolean(groupCode),
+  )
 
-  if (displayGroupKey && groupName && !groupKey?.includes(':')) return `${displayGroupKey} · ${groupName}`
+  if (displayGroupKey && groupName && (groupCode || !groupKey?.includes(':'))) {
+    return `${displayGroupKey} · ${groupName}`
+  }
   if (groupName) return groupName
   if (displayGroupKey) return `${t('Комерційна група')} · ${displayGroupKey}`
   return t('Комерційна структура')
 }
 
-function getCommercialGroupDisplayKey(groupKey: string): string {
-  const match = /^XM(\d+)$/i.exec(groupKey.trim())
-  return match ? `ХМ${match[1]}` : groupKey.trim()
+function getCommercialGroupDisplayKey(groupKey: string, isExactFolderCode = false): string {
+  const normalized = groupKey.trim()
+  const exactXmFolder = isExactFolderCode
+    ? /^XM(\d+)00$/i.exec(normalized)
+    : null
+  if (exactXmFolder) return `ХМ${exactXmFolder[1]}`
+
+  const xmFamily = /^XM(\d+)$/i.exec(normalized)
+  return xmFamily ? `ХМ${xmFamily[1]}` : normalized
 }
 
 function getCardSourceSnapshots(card: ClientCommercialCard): ClientSourceCardSnapshot[] {
@@ -735,9 +747,9 @@ function getPreferredCardDisplayName(
   t: (value: string) => string,
 ): string {
   const preferredSource = getActiveCardSourceSnapshots(card)[0]
-  return preferredSource?.FullName?.trim()
+  return card.DisplayName?.trim()
+    || preferredSource?.FullName?.trim()
     || preferredSource?.ClientName?.trim()
-    || card.DisplayName?.trim()
     || t('Картка без назви')
 }
 

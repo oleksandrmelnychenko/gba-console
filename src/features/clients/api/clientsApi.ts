@@ -346,6 +346,7 @@ function isClientCommercialStructure(
   const structure = value as Partial<ClientCommercialStructure>
   return typeof structure.ClientNetUid === 'string'
     && typeof structure.AsOfUtc === 'string'
+    && isOptionalString(structure.GroupCode)
     && ['self', 'confirmed', 'probable', 'review_required'].includes(String(structure.State))
     && typeof structure.RequiresReview === 'boolean'
     && typeof structure.IsPartial === 'boolean'
@@ -410,6 +411,9 @@ function isClientSourceCardSnapshot(
   const snapshot = value as Partial<ClientSourceCardSnapshot>
   return typeof snapshot.SourceSystem === 'string'
     && typeof snapshot.SourceCode === 'number'
+    && isOptionalNumber(snapshot.DirectClientGroupSourceCode)
+    && isOptionalString(snapshot.DirectClientGroupRegionCode)
+    && isOptionalBoolean(snapshot.DirectClientGroupSourceMarkedDeleted)
     && isOptionalString(snapshot.BankName)
     && isOptionalString(snapshot.BankAccountNumber)
     && isOptionalString(snapshot.BankCurrencyCode)
