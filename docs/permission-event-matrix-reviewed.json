@@ -4,25 +4,25 @@
     "inputRecords": 1902,
     "classifiedRecords": 1902,
     "dispositionCounts": {
-      "technical_ui": 715,
-      "covered_existing": 456,
-      "duplicate_occurrence": 237,
-      "business_candidate": 320,
+      "technical_ui": 718,
+      "covered_existing": 459,
+      "duplicate_occurrence": 243,
+      "business_candidate": 308,
       "needs_human_review": 166,
       "stale_or_aggregated": 8
     },
-    "reviewCandidates": 486,
-    "technicalExcluded": 715,
-    "duplicatesExcluded": 237,
-    "duplicateOccurrencesTotal": 306,
+    "reviewCandidates": 474,
+    "technicalExcluded": 718,
+    "duplicatesExcluded": 243,
+    "duplicateOccurrencesTotal": 312,
     "technicalDuplicateOverlap": 69,
     "sourceResolved": 1828,
     "sourceUnresolved": 74,
     "currentActionResolved": 1187,
     "currentActionUnresolved": 715,
     "currentProductionActions": 1829,
-    "currentPermissionBoundActions": 245,
-    "currentUnboundActions": 1584
+    "currentPermissionBoundActions": 249,
+    "currentUnboundActions": 1580
   },
   "invariants": {
     "allInputRecordsClassified": true,
@@ -30530,20 +30530,20 @@
       "proposedPermission": "products.products_capitalization.model_open_upload_modal.command_submit",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "technical_ui",
+      "dispositionReason": "Opening the Excel-import modal only configures the local create draft and is not an independent business capability.",
       "duplicateOf": null,
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-0bf90092e4ab",
+          "candidateId": "EPC-6425c8ea5eec",
           "distance": 4,
           "file": "src/features/product-capitalizations/components/NewProductCapitalizationPanel.tsx",
           "handler": "{model.openUploadModal}",
           "humanLabel": "Імпорт з Excel",
-          "line": 136,
+          "line": 137,
           "permissionKeys": [],
           "score": 20
         }
@@ -30551,7 +30551,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/product-capitalizations/components/NewProductCapitalizationPanel.tsx",
-        "line": 140,
+        "line": 141,
         "alternatives": []
       }
     },
@@ -30570,20 +30570,22 @@
       "proposedPermission": "products.products_capitalization.model_submit.command_submit",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "covered_existing",
+      "dispositionReason": "The final capitalization submit rechecks create and calls the durable permission-scoped JSON mutation façade.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "warehouse_accounting.capitalization.capitalization.create"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-021fb904cee4",
+          "candidateId": "EPC-13ef4bfb804c",
           "distance": 4,
           "file": "src/features/product-capitalizations/components/NewProductCapitalizationPanel.tsx",
           "handler": "{model.submit}",
           "humanLabel": "Провести",
-          "line": 144,
+          "line": 145,
           "permissionKeys": [],
           "score": 11
         }
@@ -30591,7 +30593,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/product-capitalizations/components/NewProductCapitalizationPanel.tsx",
-        "line": 148,
+        "line": 149,
         "alternatives": []
       }
     },
@@ -30610,20 +30612,20 @@
       "proposedPermission": "products.products_capitalization.model_add_item.command_submit",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "technical_ui",
+      "dispositionReason": "Adding a row only changes the unsaved capitalization draft; final create owns authorization.",
       "duplicateOf": null,
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-b6bc3316e0ac",
+          "candidateId": "EPC-247b8c9df539",
           "distance": 5,
           "file": "src/features/product-capitalizations/components/NewProductCapitalizationPanel.tsx",
           "handler": "{model.addItem}",
           "humanLabel": "Додати рядок",
-          "line": 248,
+          "line": 249,
           "permissionKeys": [],
           "score": 12
         }
@@ -30631,7 +30633,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/product-capitalizations/components/NewProductCapitalizationPanel.tsx",
-        "line": 253,
+        "line": 254,
         "alternatives": []
       }
     },
@@ -30650,20 +30652,20 @@
       "proposedPermission": "products.products_capitalization.model_parse_from_files.form_submit",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
-      "duplicateOf": null,
+      "disposition": "duplicate_occurrence",
+      "dispositionReason": "Parsing imported rows is a preparatory step of the same create workflow and uses a create-scoped parser façade.",
+      "duplicateOf": "PE-00760",
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-5724472aca40",
+          "candidateId": "EPC-6076782635f4",
           "distance": 5,
           "file": "src/features/product-capitalizations/components/NewProductCapitalizationPanel.tsx",
           "handler": "{model.parseFromFiles}",
           "humanLabel": null,
-          "line": 273,
+          "line": 274,
           "permissionKeys": [],
           "score": 19
         }
@@ -30671,7 +30673,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/product-capitalizations/components/NewProductCapitalizationPanel.tsx",
-        "line": 278,
+        "line": 279,
         "alternatives": []
       }
     },
@@ -30698,12 +30700,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-fbcb9f8d7701",
+          "candidateId": "EPC-56c4bf16ef63",
           "distance": 5,
           "file": "src/features/product-capitalizations/components/NewProductCapitalizationPanel.tsx",
           "handler": "{model.cancelClose}",
           "humanLabel": "Залишитися",
-          "line": 298,
+          "line": 299,
           "permissionKeys": [],
           "score": 16
         }
@@ -30711,7 +30713,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/product-capitalizations/components/NewProductCapitalizationPanel.tsx",
-        "line": 293,
+        "line": 294,
         "alternatives": []
       }
     },
@@ -30738,12 +30740,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-0dd6f74dbc35",
+          "candidateId": "EPC-643d705e52a2",
           "distance": 10,
           "file": "src/features/product-capitalizations/components/NewProductCapitalizationPanel.tsx",
           "handler": "{model.confirmClose}",
           "humanLabel": "Закрити без збереження",
-          "line": 301,
+          "line": 302,
           "permissionKeys": [],
           "score": 17
         }
@@ -30751,7 +30753,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/product-capitalizations/components/NewProductCapitalizationPanel.tsx",
-        "line": 291,
+        "line": 292,
         "alternatives": []
       }
     },
@@ -30770,20 +30772,20 @@
       "proposedPermission": "products.products_capitalization.on_remove_item_row_key.command_delete",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "technical_ui",
+      "dispositionReason": "Removing an unsaved row only changes the local capitalization draft and performs no persisted deletion.",
       "duplicateOf": null,
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-79fe3956dd64",
+          "candidateId": "EPC-a5a2a9e20c4d",
           "distance": 4,
           "file": "src/features/product-capitalizations/components/NewProductCapitalizationPanel.tsx",
           "handler": "{() => onRemove(item.__rowKey)}",
           "humanLabel": "Видалити",
-          "line": 1103,
+          "line": 1115,
           "permissionKeys": [],
           "score": 16
         }
@@ -30791,7 +30793,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/product-capitalizations/components/NewProductCapitalizationPanel.tsx",
-        "line": 1107,
+        "line": 1119,
         "alternatives": []
       }
     },
@@ -30850,12 +30852,12 @@
       "proposedPermission": "products.products_capitalization.submit_form.command_submit",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
-      "duplicateOf": null,
+      "disposition": "duplicate_occurrence",
+      "dispositionReason": "The upload-modal form submit dispatches the same create-scoped import parser and adds no independent permission.",
+      "duplicateOf": "PE-00762",
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
           "candidateId": "EPC-36c4e614d442",
@@ -30902,7 +30904,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/product-capitalizations/pages/ProductCapitalizationsPage.tsx",
-        "line": 360,
+        "line": 381,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -30931,12 +30933,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-54432d83773a",
-          "distance": 97,
+          "candidateId": "EPC-01ad3f6c83b6",
+          "distance": 122,
           "file": "src/features/product-capitalizations/pages/ProductCapitalizationsPage.tsx",
           "handler": "{resetFilters}",
           "humanLabel": "Скинути",
-          "line": 421,
+          "line": 464,
           "permissionKeys": [],
           "score": 12
         }
@@ -30944,7 +30946,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/product-capitalizations/pages/ProductCapitalizationsPage.tsx",
-        "line": 324,
+        "line": 342,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -30965,28 +30967,32 @@
       "proposedPermission": "products.products_capitalization.set_create_panel_opened_true.command_submit",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
-      "duplicateOf": null,
+      "disposition": "duplicate_occurrence",
+      "dispositionReason": "The toolbar action only opens the create draft; the final guarded submit is the business boundary.",
+      "duplicateOf": "PE-00760",
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "warehouse_accounting.capitalization.capitalization.create"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-ef168a038e92",
+          "candidateId": "EPC-48065ee5fbb6",
           "distance": 5,
           "file": "src/features/product-capitalizations/pages/ProductCapitalizationsPage.tsx",
           "handler": "{() => setCreatePanelOpened(true)}",
           "humanLabel": "Нове оприбуткування",
-          "line": 439,
-          "permissionKeys": [],
+          "line": 483,
+          "permissionKeys": [
+            "warehouse_accounting.capitalization.capitalization.create"
+          ],
           "score": 24
         }
       ],
       "source": {
         "status": "resolved",
         "file": "src/features/product-capitalizations/pages/ProductCapitalizationsPage.tsx",
-        "line": 444,
+        "line": 488,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -31007,17 +31013,19 @@
       "proposedPermission": "products.products_capitalization.open_detail.row_click",
       "securityLevel": "medium",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "covered_existing",
+      "dispositionReason": "Row activation rechecks open_details and hydrates the document through its dedicated protected façade.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "warehouse_accounting.capitalization.capitalization.open_details"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [],
       "source": {
         "status": "resolved",
         "file": "src/features/product-capitalizations/pages/ProductCapitalizationsPage.tsx",
-        "line": 133,
+        "line": 125,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -31038,20 +31046,22 @@
       "proposedPermission": "products.products_capitalization.on_export_capitalization.command_export",
       "securityLevel": "medium",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "covered_existing",
+      "dispositionReason": "Document generation is one independent export capability with UI recheck and a permission-scoped backend façade.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "warehouse_accounting.capitalization.document.export"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-3f35e6e143c3",
-          "distance": 28,
+          "candidateId": "EPC-c1bd0b7b06f8",
+          "distance": 29,
           "file": "src/features/product-capitalizations/pages/ProductCapitalizationsPage.tsx",
           "handler": "{() => onExport(capitalization)}",
           "humanLabel": "Друк PDF",
-          "line": 556,
+          "line": 603,
           "permissionKeys": [],
           "score": 20
         }
@@ -31059,7 +31069,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/product-capitalizations/pages/ProductCapitalizationsPage.tsx",
-        "line": 528,
+        "line": 574,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -31080,17 +31090,17 @@
       "proposedPermission": "products.products_capitalization.деталі_друк_pdf.command_export",
       "securityLevel": "medium",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
-      "duplicateOf": null,
+      "disposition": "duplicate_occurrence",
+      "dispositionReason": "The details-drawer print action invokes the same export handler and does not define another capability.",
+      "duplicateOf": "PE-00772",
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [],
       "source": {
         "status": "resolved",
         "file": "src/features/product-capitalizations/pages/ProductCapitalizationsPage.tsx",
-        "line": 360,
+        "line": 381,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -31111,28 +31121,32 @@
       "proposedPermission": "products.products_capitalization.деталі.modal_open",
       "securityLevel": "low",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
-      "duplicateOf": null,
+      "disposition": "duplicate_occurrence",
+      "dispositionReason": "The explicit details action opens the same protected document drawer as the row activation.",
+      "duplicateOf": "PE-00771",
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "warehouse_accounting.capitalization.capitalization.open_details"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-5c9d9cfd15c6",
-          "distance": 562,
+          "candidateId": "EPC-965fc8bbc3ca",
+          "distance": 603,
           "file": "src/features/product-capitalizations/pages/ProductCapitalizationsPage.tsx",
           "handler": "{() => onOpenDetail(capitalization)}",
           "humanLabel": "Деталі",
-          "line": 735,
-          "permissionKeys": [],
+          "line": 786,
+          "permissionKeys": [
+            "warehouse_accounting.capitalization.capitalization.open_details"
+          ],
           "score": 6
         }
       ],
       "source": {
         "status": "resolved",
         "file": "src/features/product-capitalizations/pages/ProductCapitalizationsPage.tsx",
-        "line": 173,
+        "line": 183,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -31153,17 +31167,17 @@
       "proposedPermission": "products.products_capitalization.друк_pdf.command_export",
       "securityLevel": "medium",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
-      "duplicateOf": null,
+      "disposition": "duplicate_occurrence",
+      "dispositionReason": "The row print action invokes the same independently guarded document export as the other print trigger.",
+      "duplicateOf": "PE-00772",
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [],
       "source": {
         "status": "resolved",
         "file": "src/features/product-capitalizations/pages/ProductCapitalizationsPage.tsx",
-        "line": 207,
+        "line": 217,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -79644,18 +79658,6 @@
     "PE-00747",
     "PE-00748",
     "PE-00749",
-    "PE-00759",
-    "PE-00760",
-    "PE-00761",
-    "PE-00762",
-    "PE-00765",
-    "PE-00767",
-    "PE-00770",
-    "PE-00771",
-    "PE-00772",
-    "PE-00773",
-    "PE-00774",
-    "PE-00775",
     "PE-00776",
     "PE-00778",
     "PE-00780",

@@ -182,6 +182,7 @@ const migratedConsoleRoutes: ConsoleRoute[] = [
   {
     path: '/products/capitalization',
     element: lazyRoute(<ProductCapitalizationsPage />),
+    permissionKey: PermissionKeys.WarehouseAccounting.Capitalization.Page.View,
   },
   {
     path: '/products/assortment',

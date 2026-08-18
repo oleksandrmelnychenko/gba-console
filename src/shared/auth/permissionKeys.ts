@@ -536,6 +536,18 @@ export const PermissionKeys = {
     },
   },
   WarehouseAccounting: {
+    Capitalization: {
+      Page: {
+        View: 'warehouse_accounting.capitalization.page.view',
+      },
+      Capitalization: {
+        Create: 'warehouse_accounting.capitalization.capitalization.create',
+        OpenDetails: 'warehouse_accounting.capitalization.capitalization.open_details',
+      },
+      Document: {
+        Export: 'warehouse_accounting.capitalization.document.export',
+      },
+    },
     SupplierReturns: {
       Page: {
         View: 'warehouse_accounting.supplier_returns.page.view',
@@ -960,6 +972,9 @@ export type WarehousesPermissionKey =
   | Values<typeof PermissionKeys.Warehouses.Ukraine.Orders>
 
 export type WarehouseAccountingPermissionKey =
+  | Values<typeof PermissionKeys.WarehouseAccounting.Capitalization.Page>
+  | Values<typeof PermissionKeys.WarehouseAccounting.Capitalization.Capitalization>
+  | Values<typeof PermissionKeys.WarehouseAccounting.Capitalization.Document>
   | Values<typeof PermissionKeys.WarehouseAccounting.SupplierReturns.Page>
   | Values<typeof PermissionKeys.WarehouseAccounting.SupplierReturns.Return>
   | Values<typeof PermissionKeys.WarehouseAccounting.SupplierReturns.Document>
@@ -2038,6 +2053,9 @@ const eventPermissionKeys = new Set<string>([
   ...Object.values(PermissionKeys.Warehouses.Ukraine.Invoices),
   ...Object.values(PermissionKeys.Warehouses.Ukraine.Shipments),
   ...Object.values(PermissionKeys.Warehouses.Ukraine.Orders),
+  ...Object.values(PermissionKeys.WarehouseAccounting.Capitalization.Page),
+  ...Object.values(PermissionKeys.WarehouseAccounting.Capitalization.Capitalization),
+  ...Object.values(PermissionKeys.WarehouseAccounting.Capitalization.Document),
   ...Object.values(PermissionKeys.WarehouseAccounting.Storages.Page),
   ...Object.values(PermissionKeys.WarehouseAccounting.Storages.Preview),
   ...Object.values(PermissionKeys.WarehouseAccounting.Storages.PositionAction),

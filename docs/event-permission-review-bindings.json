@@ -2654,6 +2654,63 @@
       "disposition": "covered_existing",
       "canonicalPermissionKeys": ["products.assortment.movement.export"],
       "reason": "Inline income/outcome PDF generation reuses the single movement.export capability and scoped export façades."
+    },
+    "PE-00759": {
+      "disposition": "technical_ui",
+      "reason": "Opening the Excel-import modal only configures the local create draft and is not an independent business capability."
+    },
+    "PE-00760": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["warehouse_accounting.capitalization.capitalization.create"],
+      "reason": "The final capitalization submit rechecks create and calls the durable permission-scoped JSON mutation façade."
+    },
+    "PE-00761": {
+      "disposition": "technical_ui",
+      "reason": "Adding a row only changes the unsaved capitalization draft; final create owns authorization."
+    },
+    "PE-00762": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-00760",
+      "reason": "Parsing imported rows is a preparatory step of the same create workflow and uses a create-scoped parser façade."
+    },
+    "PE-00765": {
+      "disposition": "technical_ui",
+      "reason": "Removing an unsaved row only changes the local capitalization draft and performs no persisted deletion."
+    },
+    "PE-00767": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-00762",
+      "reason": "The upload-modal form submit dispatches the same create-scoped import parser and adds no independent permission."
+    },
+    "PE-00770": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-00760",
+      "reason": "The toolbar action only opens the create draft; the final guarded submit is the business boundary."
+    },
+    "PE-00771": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["warehouse_accounting.capitalization.capitalization.open_details"],
+      "reason": "Row activation rechecks open_details and hydrates the document through its dedicated protected façade."
+    },
+    "PE-00772": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["warehouse_accounting.capitalization.document.export"],
+      "reason": "Document generation is one independent export capability with UI recheck and a permission-scoped backend façade."
+    },
+    "PE-00773": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-00772",
+      "reason": "The details-drawer print action invokes the same export handler and does not define another capability."
+    },
+    "PE-00774": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-00771",
+      "reason": "The explicit details action opens the same protected document drawer as the row activation."
+    },
+    "PE-00775": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-00772",
+      "reason": "The row print action invokes the same independently guarded document export as the other print trigger."
     }
   }
 }

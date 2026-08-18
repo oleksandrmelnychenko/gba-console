@@ -27,7 +27,7 @@ import {
 export async function getProductCapitalizations(
   params: ProductCapitalizationsSearchParams,
 ): Promise<ProductCapitalizationsResponse> {
-  const result = await apiRequest<unknown>('/products/capitalizations/all/filtered', {
+  const result = await apiRequest<unknown>('/products/capitalizations/page/all/filtered', {
     query: {
       from: params.from,
       limit: params.limit,
@@ -40,7 +40,7 @@ export async function getProductCapitalizations(
 }
 
 export async function getProductCapitalization(netId: string): Promise<ProductCapitalization | null> {
-  const result = await apiRequest<unknown>('/products/capitalizations/get', {
+  const result = await apiRequest<unknown>('/products/capitalizations/page/details', {
     query: {
       netId,
     },
@@ -50,7 +50,7 @@ export async function getProductCapitalization(netId: string): Promise<ProductCa
 }
 
 export async function exportProductCapitalization(netId: string): Promise<ProductCapitalizationsExportDocument> {
-  const result = await apiRequest<unknown>('/products/capitalizations/document/export', {
+  const result = await apiRequest<unknown>('/products/capitalizations/page/document/export', {
     query: {
       netId,
     },
@@ -67,7 +67,7 @@ export async function createProductCapitalization(
     operation,
     payload,
     request: (payloadSnapshot, context) =>
-      apiRequest<unknown>('/products/capitalizations/new', {
+      apiRequest<unknown>('/products/capitalizations/page/new', {
         method: 'POST',
         body: payloadSnapshot,
         dedupe: false,
@@ -130,7 +130,7 @@ export async function parseProductCapitalizationItemsFromFile(
   formData.append('file', file)
   formData.append('configuration', JSON.stringify(parseConfiguration))
 
-  const result = await apiRequest<unknown>('/products/capitalizations/get/items/file', {
+  const result = await apiRequest<unknown>('/products/capitalizations/page/get/items/file', {
     method: 'POST',
     body: formData,
   })
