@@ -21,6 +21,7 @@ const EXPECTED_NEW_PAGE_PERMISSIONS = {
   '/tax-free/pack-list/all': PermissionKeys.SystemPages.TaxFreePackLists.View,
   '/accounting/consumable-services': PermissionKeys.AccountableExpenses.Page.View,
   '/accounting/consumable-orders': PermissionKeys.ConsumableOrders.Page.View,
+  '/resales': PermissionKeys.Resales.Page.View,
 } as const
 
 describe('newly classified page permissions', () => {
@@ -46,6 +47,13 @@ describe('newly classified page permissions', () => {
       .toBe(PermissionKeys.ConsumableOrders.Page.View)
     expect(consoleRoutes.find((route) => route.path === '/accounting/consumable-orders/pay/:id')?.permissionKey)
       .toBe(PermissionKeys.ConsumableOrders.Order.Pay)
+  })
+
+  it('uses create for the new resale route and page view for resale details', () => {
+    expect(consoleRoutes.find((route) => route.path === '/resales/new')?.permissionKey)
+      .toBe(PermissionKeys.Resales.Resale.Create)
+    expect(consoleRoutes.find((route) => route.path === '/resales/:id')?.permissionKey)
+      .toBe(PermissionKeys.Resales.Page.View)
   })
 })
 

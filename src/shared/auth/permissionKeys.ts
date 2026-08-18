@@ -619,10 +619,38 @@ export const PermissionKeys = {
       EditProductComment: 'sales.ukraine.sale.edit_product_comment',
     },
   },
+  Resales: {
+    Page: {
+      View: 'sales.resales.page.view',
+    },
+    Resale: {
+      Create: 'sales.resales.resale.create',
+      Edit: 'sales.resales.resale.edit',
+      Delete: 'sales.resales.resale.delete',
+      ConvertToInvoice: 'sales.resales.resale.convert_to_invoice',
+      Complete: 'sales.resales.resale.complete',
+    },
+    Availability: {
+      Export: 'sales.resales.availability.export',
+    },
+    Document: {
+      Export: 'sales.resales.document.export',
+    },
+    ConsignmentNote: {
+      Print: 'sales.resales.consignment_note.print',
+    },
+  },
 } as const
 
 export type SalesUkraineSalePermissionKey =
   (typeof PermissionKeys.SalesUkraine.Sale)[keyof typeof PermissionKeys.SalesUkraine.Sale]
+
+export type ResalesPermissionKey =
+  | Values<typeof PermissionKeys.Resales.Page>
+  | Values<typeof PermissionKeys.Resales.Resale>
+  | Values<typeof PermissionKeys.Resales.Availability>
+  | Values<typeof PermissionKeys.Resales.Document>
+  | Values<typeof PermissionKeys.Resales.ConsignmentNote>
 
 type Values<T> = T[keyof T]
 
@@ -855,6 +883,7 @@ export type PermissionKey =
   | ProvidingServiceActsPermissionKey
   | TransportersPermissionKey
   | SalesUkraineSalePermissionKey
+  | ResalesPermissionKey
   | SupplierOrganizationsPermissionKey
   | WarehouseAccountingPermissionKey
   | WarehousesPermissionKey
@@ -1867,6 +1896,11 @@ const eventPermissionKeys = new Set<string>([
   ...Object.values(PermissionKeys.OrdersUkraine.ProductIncome),
   ...Object.values(PermissionKeys.OrdersUkraine.SpecificationCodes),
   ...Object.values(PermissionKeys.SalesUkraine.Sale),
+  ...Object.values(PermissionKeys.Resales.Page),
+  ...Object.values(PermissionKeys.Resales.Resale),
+  ...Object.values(PermissionKeys.Resales.Availability),
+  ...Object.values(PermissionKeys.Resales.Document),
+  ...Object.values(PermissionKeys.Resales.ConsignmentNote),
 ])
 
 export function isEventPermissionKey(

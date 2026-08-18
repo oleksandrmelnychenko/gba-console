@@ -699,9 +699,18 @@ const plannedConsoleRoutes: ConsoleRoute[] = [
     element: (
       <SalesDashboardShell>{lazyRoute(<ResalesPage />)}</SalesDashboardShell>
     ),
+    permissionKey: PermissionKeys.Resales.Page.View,
   },
-  { path: '/resales/new', element: lazyRoute(<NewResalePage />) },
-  { path: '/resales/:id', element: lazyRoute(<ResalePage />) },
+  {
+    path: '/resales/new',
+    element: lazyRoute(<NewResalePage />),
+    permissionKey: PermissionKeys.Resales.Resale.Create,
+  },
+  {
+    path: '/resales/:id',
+    element: lazyRoute(<ResalePage />),
+    permissionKey: PermissionKeys.Resales.Page.View,
+  },
   { path: '/reports/stocks', element: lazyRoute(<ReportsStocksPage />) },
   { path: '/reports/sale', element: lazyRoute(<ReportsSalePage />) },
   { path: '/reports/sales', element: lazyRoute(<ReportsSalePage />) },

@@ -4,25 +4,25 @@
     "inputRecords": 1902,
     "classifiedRecords": 1902,
     "dispositionCounts": {
-      "technical_ui": 649,
-      "covered_existing": 338,
-      "duplicate_occurrence": 143,
-      "business_candidate": 495,
-      "needs_human_review": 269,
+      "technical_ui": 652,
+      "covered_existing": 354,
+      "duplicate_occurrence": 150,
+      "business_candidate": 477,
+      "needs_human_review": 261,
       "stale_or_aggregated": 8
     },
-    "reviewCandidates": 764,
-    "technicalExcluded": 649,
-    "duplicatesExcluded": 143,
-    "duplicateOccurrencesTotal": 210,
+    "reviewCandidates": 738,
+    "technicalExcluded": 652,
+    "duplicatesExcluded": 150,
+    "duplicateOccurrencesTotal": 217,
     "technicalDuplicateOverlap": 67,
     "sourceResolved": 1828,
     "sourceUnresolved": 74,
-    "currentActionResolved": 1191,
-    "currentActionUnresolved": 711,
+    "currentActionResolved": 1187,
+    "currentActionUnresolved": 715,
     "currentProductionActions": 1829,
-    "currentPermissionBoundActions": 186,
-    "currentUnboundActions": 1643
+    "currentPermissionBoundActions": 195,
+    "currentUnboundActions": 1634
   },
   "invariants": {
     "allInputRecordsClassified": true,
@@ -43794,25 +43794,28 @@
       "duplicateOf": null,
       "businessActionId": null,
       "canonicalPermissionKeys": [
-        "sales.resales.page.view"
+        "sales.resales.page.view",
+        "sales.resales.resale.create"
       ],
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-3fad5495b5b5",
+          "candidateId": "EPC-6bcdc47fb8ac",
           "distance": 91,
           "file": "src/features/resales/pages/ResalesPage.tsx",
           "handler": "{() => navigate('/resales/new', { state: { backgroundLocation: location, returnPath: `${location.pathname}${location.search}`, }, }) }",
           "humanLabel": "Створити",
-          "line": 436,
-          "permissionKeys": [],
+          "line": 457,
+          "permissionKeys": [
+            "sales.resales.resale.create"
+          ],
           "score": 10
         }
       ],
       "source": {
         "status": "resolved",
         "file": "src/features/resales/pages/ResalesPage.tsx",
-        "line": 527,
+        "line": 548,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -43845,7 +43848,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/resales/pages/ResalesPage.tsx",
-        "line": 1141,
+        "line": 1205,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -43875,12 +43878,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-3f28e5b6a300",
+          "candidateId": "EPC-abb56e0ad0db",
           "distance": 51,
           "file": "src/features/resales/pages/ResalesPage.tsx",
           "handler": "{resetFilters}",
           "humanLabel": "Скинути",
-          "line": 417,
+          "line": 438,
           "permissionKeys": [],
           "score": 12
         }
@@ -43888,7 +43891,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/resales/pages/ResalesPage.tsx",
-        "line": 366,
+        "line": 387,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -43914,24 +43917,28 @@
       "dispositionReason": "navigation_is_guarded_by_destination_page",
       "duplicateOf": "PE-01091",
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
+      "canonicalPermissionKeys": [
+        "sales.resales.resale.create"
+      ],
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-3fad5495b5b5",
-          "distance": 229,
+          "candidateId": "EPC-6bcdc47fb8ac",
+          "distance": 234,
           "file": "src/features/resales/pages/ResalesPage.tsx",
           "handler": "{() => navigate('/resales/new', { state: { backgroundLocation: location, returnPath: `${location.pathname}${location.search}`, }, }) }",
           "humanLabel": "Створити",
-          "line": 436,
-          "permissionKeys": [],
+          "line": 457,
+          "permissionKeys": [
+            "sales.resales.resale.create"
+          ],
           "score": 55
         }
       ],
       "source": {
         "status": "resolved",
         "file": "src/features/resales/pages/ResalesPage.tsx",
-        "line": 207,
+        "line": 223,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -43961,12 +43968,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-fee8a146a8de",
-          "distance": 260,
+          "candidateId": "EPC-bcc04d145e53",
+          "distance": 265,
           "file": "src/features/resales/pages/ResalesPage.tsx",
           "handler": "{(resale) => { if (resale.NetUid) { navigate(`/resales/${resale.NetUid}`) } }}",
           "humanLabel": null,
-          "line": 467,
+          "line": 488,
           "permissionKeys": [],
           "score": 39
         }
@@ -43974,7 +43981,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/resales/pages/ResalesPage.tsx",
-        "line": 207,
+        "line": 223,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -44004,12 +44011,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-8bf543856c0b",
+          "candidateId": "EPC-c67ba274fefa",
           "distance": 148,
           "file": "src/features/resales/pages/ResalesPage.tsx",
           "handler": "{() => setDeleteCandidate(null)}",
           "humanLabel": "Скасувати",
-          "line": 501,
+          "line": 522,
           "permissionKeys": [],
           "score": 22
         }
@@ -44017,7 +44024,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/resales/pages/ResalesPage.tsx",
-        "line": 353,
+        "line": 374,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -44039,20 +44046,20 @@
       "proposedPermission": "resales.resales_item.confirm_delete.command_submit",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
-      "duplicateOf": null,
+      "disposition": "duplicate_occurrence",
+      "dispositionReason": "The confirmation button completes the same resale-delete mutation represented by the guarded row action.",
+      "duplicateOf": "PE-01117",
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-bfe564072461",
+          "candidateId": "EPC-3e8946b5ff70",
           "distance": 161,
           "file": "src/features/resales/pages/ResalesPage.tsx",
           "handler": "{confirmDelete}",
           "humanLabel": "Видалити",
-          "line": 504,
+          "line": 525,
           "permissionKeys": [],
           "score": 13
         }
@@ -44060,7 +44067,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/resales/pages/ResalesPage.tsx",
-        "line": 343,
+        "line": 364,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -44082,20 +44089,22 @@
       "proposedPermission": "resales.resales_item.generate_automatically.button_click",
       "securityLevel": "low",
       "rawStatus": "No permission candidate found",
-      "disposition": "needs_human_review",
-      "dispositionReason": "insufficient_evidence_for_automatic_permission_or_exclusion",
+      "disposition": "covered_existing",
+      "dispositionReason": "Automatic selection is one entry path into the resale-create workflow and uses a create-scoped preparation endpoint.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "sales.resales.resale.create"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-e73570a2ee69",
-          "distance": 970,
+          "candidateId": "EPC-5e24bd312ada",
+          "distance": 1028,
           "file": "src/features/resales/pages/ResalesPage.tsx",
           "handler": "{generateAutomatically}",
           "humanLabel": "Створити автоматично",
-          "line": 1021,
+          "line": 1081,
           "permissionKeys": [],
           "score": 21
         }
@@ -44103,7 +44112,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/resales/pages/ResalesPage.tsx",
-        "line": 51,
+        "line": 53,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -44125,20 +44134,22 @@
       "proposedPermission": "resales.resales_item.request_process_selected.button_click",
       "securityLevel": "low",
       "rawStatus": "No permission candidate found",
-      "disposition": "needs_human_review",
-      "dispositionReason": "insufficient_evidence_for_automatic_permission_or_exclusion",
+      "disposition": "covered_existing",
+      "dispositionReason": "Processing selected availability rows prepares the same resale-create payload through create-scoped endpoints.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "sales.resales.resale.create"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-eae4ccd52871",
-          "distance": 295,
+          "candidateId": "EPC-7fd3f7575fde",
+          "distance": 299,
           "file": "src/features/resales/pages/ResalesPage.tsx",
           "handler": "{requestProcessSelected}",
           "humanLabel": "Обробити",
-          "line": 1030,
+          "line": 1090,
           "permissionKeys": [],
           "score": 22
         }
@@ -44146,7 +44157,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/resales/pages/ResalesPage.tsx",
-        "line": 735,
+        "line": 791,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -44168,20 +44179,22 @@
       "proposedPermission": "resales.resales_item.export_availabilities.command_export",
       "securityLevel": "medium",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "covered_existing",
+      "dispositionReason": "Availability export has an independent UI guard and dedicated export-scoped backend facade.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "sales.resales.availability.export"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-d2c06848617a",
-          "distance": 335,
+          "candidateId": "EPC-84cdf38c1aeb",
+          "distance": 530,
           "file": "src/features/resales/pages/ResalesPage.tsx",
           "handler": "{exportAvailabilities}",
           "humanLabel": "Друк",
-          "line": 1039,
+          "line": 1099,
           "permissionKeys": [],
           "score": 20
         }
@@ -44189,7 +44202,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/resales/pages/ResalesPage.tsx",
-        "line": 704,
+        "line": 569,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -44221,7 +44234,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/resales/pages/ResalesPage.tsx",
-        "line": 228,
+        "line": 249,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -44243,20 +44256,20 @@
       "proposedPermission": "resales.resales_item.toggle_availability.row_click",
       "securityLevel": "medium",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "technical_ui",
+      "dispositionReason": "A row click only toggles local availability selection and performs no backend operation.",
       "duplicateOf": null,
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-d9bdfb044d9e",
-          "distance": 489,
+          "candidateId": "EPC-1a7d87f365ee",
+          "distance": 493,
           "file": "src/features/resales/pages/ResalesPage.tsx",
           "handler": "{toggleAvailability}",
           "humanLabel": null,
-          "line": 1087,
+          "line": 1147,
           "permissionKeys": [],
           "score": 18
         }
@@ -44264,7 +44277,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/resales/pages/ResalesPage.tsx",
-        "line": 598,
+        "line": 654,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -44296,7 +44309,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/resales/pages/ResalesPage.tsx",
-        "line": 228,
+        "line": 249,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -44318,17 +44331,19 @@
       "proposedPermission": "resales.resales_item.set_detail_info_client_model_re_sale_client_agreement_client_nul.modal_open",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "covered_existing",
+      "dispositionReason": "Opening the edit drawer and saving it are one edit action; inline changes and recalculation are disabled without the same permission.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "sales.resales.resale.edit"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [],
       "source": {
         "status": "resolved",
         "file": "src/features/resales/pages/ResalesPage.tsx",
-        "line": 207,
+        "line": 223,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -44350,28 +44365,32 @@
       "proposedPermission": "resales.resales_item.export_document_document_type_payment_document.command_export",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "covered_existing",
+      "dispositionReason": "Payment-document export is independently guarded and uses the resale document-export facade.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "sales.resales.document.export"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-ee86a0ab1edb",
+          "candidateId": "EPC-1aee64e410a3",
           "distance": 0,
           "file": "src/features/resales/pages/ResalesPage.tsx",
           "handler": "{() => exportDocument(DocumentType.PaymentDocument)}",
           "humanLabel": "Платіжний документ",
-          "line": 1684,
-          "permissionKeys": [],
+          "line": 1763,
+          "permissionKeys": [
+            "sales.resales.document.export"
+          ],
           "score": 41
         }
       ],
       "source": {
         "status": "resolved",
         "file": "src/features/resales/pages/ResalesPage.tsx",
-        "line": 1684,
+        "line": 1763,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -44393,28 +44412,32 @@
       "proposedPermission": "resales.resales_item.export_document_document_type_sales_invoice.command_export",
       "securityLevel": "medium",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "covered_existing",
+      "dispositionReason": "Invoice export is the second document type governed by the same document-export permission and facade.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "sales.resales.document.export"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-ec82835c1439",
+          "candidateId": "EPC-f8131ebc68ea",
           "distance": 0,
           "file": "src/features/resales/pages/ResalesPage.tsx",
           "handler": "{() => exportDocument(DocumentType.SalesInvoice)}",
           "humanLabel": "Інвойс",
-          "line": 1688,
-          "permissionKeys": [],
+          "line": 1767,
+          "permissionKeys": [
+            "sales.resales.document.export"
+          ],
           "score": 38
         }
       ],
       "source": {
         "status": "resolved",
         "file": "src/features/resales/pages/ResalesPage.tsx",
-        "line": 1688,
+        "line": 1767,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -44436,28 +44459,32 @@
       "proposedPermission": "resales.resales_item.set_consignment_note_opened_true.modal_open",
       "securityLevel": "low",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "covered_existing",
+      "dispositionReason": "The TTN drawer, settings calls and print call are mounted only with the consignment-note permission and use scoped routes.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "sales.resales.consignment_note.print"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-fd09bbf5b687",
+          "candidateId": "EPC-0955eb150bc3",
           "distance": 0,
           "file": "src/features/resales/pages/ResalesPage.tsx",
           "handler": "{() => setConsignmentNoteOpened(true)}",
           "humanLabel": "ТТН",
-          "line": 1693,
-          "permissionKeys": [],
+          "line": 1772,
+          "permissionKeys": [
+            "sales.resales.consignment_note.print"
+          ],
           "score": 28
         }
       ],
       "source": {
         "status": "resolved",
         "file": "src/features/resales/pages/ResalesPage.tsx",
-        "line": 1693,
+        "line": 1772,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -44487,12 +44514,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-38ab7ac1b34e",
-          "distance": 1531,
+          "candidateId": "EPC-497a040d406e",
+          "distance": 1594,
           "file": "src/features/resales/pages/ResalesPage.tsx",
           "handler": "{() => { setItemSearch('') setItemAvailability('all') setItemSpecification('all') }}",
           "humanLabel": "Скинути фільтри",
-          "line": 1738,
+          "line": 1817,
           "permissionKeys": [],
           "score": 55
         }
@@ -44500,7 +44527,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/resales/pages/ResalesPage.tsx",
-        "line": 207,
+        "line": 223,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -44522,17 +44549,19 @@
       "proposedPermission": "resales.resales_item.change_to_invoice.button_click",
       "securityLevel": "low",
       "rawStatus": "No permission candidate found",
-      "disposition": "needs_human_review",
-      "dispositionReason": "insufficient_evidence_for_automatic_permission_or_exclusion",
+      "disposition": "covered_existing",
+      "dispositionReason": "Invoice conversion is independently checked and calls a dedicated mutation facade with the canonical permission.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "sales.resales.resale.convert_to_invoice"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [],
       "source": {
         "status": "resolved",
         "file": "src/features/resales/pages/ResalesPage.tsx",
-        "line": 1414,
+        "line": 1489,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -44554,28 +44583,32 @@
       "proposedPermission": "resales.resales_item.complete_invoice.button_click",
       "securityLevel": "low",
       "rawStatus": "No permission candidate found",
-      "disposition": "needs_human_review",
-      "dispositionReason": "insufficient_evidence_for_automatic_permission_or_exclusion",
+      "disposition": "covered_existing",
+      "dispositionReason": "Completing a resale invoice is independently checked and enforced at its mutation facade.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "sales.resales.resale.complete"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-1580157d69b3",
-          "distance": 333,
+          "candidateId": "EPC-b5c73155585c",
+          "distance": 337,
           "file": "src/features/resales/pages/ResalesPage.tsx",
           "handler": "{completeInvoice}",
           "humanLabel": "Завершити",
-          "line": 1785,
-          "permissionKeys": [],
+          "line": 1864,
+          "permissionKeys": [
+            "sales.resales.resale.complete"
+          ],
           "score": 15
         }
       ],
       "source": {
         "status": "resolved",
         "file": "src/features/resales/pages/ResalesPage.tsx",
-        "line": 1452,
+        "line": 1527,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -44605,12 +44638,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-20ccef8d4272",
+          "candidateId": "EPC-cbd9cc6c1b43",
           "distance": 0,
           "file": "src/features/resales/pages/ResalesPage.tsx",
           "handler": "{() => setEditDrawerOpened(false)}",
           "humanLabel": "Скасувати",
-          "line": 1791,
+          "line": 1870,
           "permissionKeys": [],
           "score": 24
         }
@@ -44618,7 +44651,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/resales/pages/ResalesPage.tsx",
-        "line": 1791,
+        "line": 1870,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -44640,20 +44673,22 @@
       "proposedPermission": "resales.resales_item.save_resale.command_submit",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "covered_existing",
+      "dispositionReason": "Final resale save rechecks edit authority and uses the edit-scoped mutation facade.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "sales.resales.resale.edit"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-44d8612f6b6c",
-          "distance": 413,
+          "candidateId": "EPC-0831761a672a",
+          "distance": 421,
           "file": "src/features/resales/pages/ResalesPage.tsx",
           "handler": "{saveResale}",
           "humanLabel": "Зберегти",
-          "line": 1794,
+          "line": 1873,
           "permissionKeys": [],
           "score": 10
         }
@@ -44661,7 +44696,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/resales/pages/ResalesPage.tsx",
-        "line": 1381,
+        "line": 1452,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -44683,20 +44718,20 @@
       "proposedPermission": "resales.resales_item.recalculate.button_click",
       "securityLevel": "low",
       "rawStatus": "No permission candidate found",
-      "disposition": "needs_human_review",
-      "dispositionReason": "insufficient_evidence_for_automatic_permission_or_exclusion",
-      "duplicateOf": null,
+      "disposition": "duplicate_occurrence",
+      "dispositionReason": "Recalculation applies only to the local edited model and is governed by the same edit permission as final save.",
+      "duplicateOf": "PE-01112",
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-1ae063df13fd",
-          "distance": 715,
+          "candidateId": "EPC-5ceb855dba23",
+          "distance": 1859,
           "file": "src/features/resales/pages/ResalesPage.tsx",
           "handler": "{() => recalculate()}",
           "humanLabel": "Перерахувати",
-          "line": 1840,
+          "line": 1919,
           "permissionKeys": [],
           "score": 11
         }
@@ -44704,7 +44739,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/resales/pages/ResalesPage.tsx",
-        "line": 1125,
+        "line": 60,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -44726,28 +44761,17 @@
       "proposedPermission": "resales.resales_item.on_export_resale_document_type_payment_document.command_export",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
-      "duplicateOf": null,
+      "disposition": "duplicate_occurrence",
+      "dispositionReason": "The registry payment-document action invokes the same guarded document-export business boundary.",
+      "duplicateOf": "PE-01105",
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
-      "bindingEvidence": [
-        {
-          "candidateId": "EPC-d1a00b8bb178",
-          "distance": 5,
-          "file": "src/features/resales/pages/ResalesPage.tsx",
-          "handler": "{() => onExport(resale, DocumentType.PaymentDocument)}",
-          "humanLabel": "Платіжний документ",
-          "line": 1998,
-          "permissionKeys": [],
-          "score": 39
-        }
-      ],
+      "classificationSource": "manual_override",
+      "bindingEvidence": [],
       "source": {
         "status": "resolved",
         "file": "src/features/resales/pages/ResalesPage.tsx",
-        "line": 2003,
+        "line": 223,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -44769,28 +44793,17 @@
       "proposedPermission": "resales.resales_item.on_export_resale_document_type_sales_invoice.command_export",
       "securityLevel": "medium",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
-      "duplicateOf": null,
+      "disposition": "duplicate_occurrence",
+      "dispositionReason": "The registry invoice action invokes the same guarded document-export business boundary.",
+      "duplicateOf": "PE-01106",
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
-      "bindingEvidence": [
-        {
-          "candidateId": "EPC-8e7efd539af4",
-          "distance": 5,
-          "file": "src/features/resales/pages/ResalesPage.tsx",
-          "handler": "{() => onExport(resale, DocumentType.SalesInvoice)}",
-          "humanLabel": "Інвойс",
-          "line": 2007,
-          "permissionKeys": [],
-          "score": 36
-        }
-      ],
+      "classificationSource": "manual_override",
+      "bindingEvidence": [],
       "source": {
         "status": "resolved",
         "file": "src/features/resales/pages/ResalesPage.tsx",
-        "line": 2012,
+        "line": 223,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -44812,28 +44825,17 @@
       "proposedPermission": "resales.resales_item.on_open_consignment_note_resale.modal_open",
       "securityLevel": "low",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
-      "duplicateOf": null,
+      "disposition": "duplicate_occurrence",
+      "dispositionReason": "The registry TTN opener enters the same permission-scoped consignment-note workflow.",
+      "duplicateOf": "PE-01107",
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
-      "bindingEvidence": [
-        {
-          "candidateId": "EPC-c56aded91e39",
-          "distance": 138,
-          "file": "src/features/resales/pages/ResalesPage.tsx",
-          "handler": "{() => onOpenConsignmentNote(resale)}",
-          "humanLabel": "ТТН",
-          "line": 2014,
-          "permissionKeys": [],
-          "score": 25
-        }
-      ],
+      "classificationSource": "manual_override",
+      "bindingEvidence": [],
       "source": {
         "status": "resolved",
         "file": "src/features/resales/pages/ResalesPage.tsx",
-        "line": 1876,
+        "line": 1957,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -44855,28 +44857,19 @@
       "proposedPermission": "resales.resales_item.on_delete_resale.command_delete",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "covered_existing",
+      "dispositionReason": "The delete row action, confirmation handler and backend mutation facade all enforce resale.delete.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
-      "bindingEvidence": [
-        {
-          "candidateId": "EPC-21d0ac5397a0",
-          "distance": 149,
-          "file": "src/features/resales/pages/ResalesPage.tsx",
-          "handler": "{() => onDelete(resale)}",
-          "humanLabel": "Видалити",
-          "line": 2023,
-          "permissionKeys": [],
-          "score": 12
-        }
+      "canonicalPermissionKeys": [
+        "sales.resales.resale.delete"
       ],
+      "classificationSource": "manual_override",
+      "bindingEvidence": [],
       "source": {
         "status": "resolved",
         "file": "src/features/resales/pages/ResalesPage.tsx",
-        "line": 1874,
+        "line": 1955,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -44898,20 +44891,20 @@
       "proposedPermission": "resales.resales_item.event_event_stop_propagation_on_toggle_all.button_click",
       "securityLevel": "low",
       "rawStatus": "No permission candidate found",
-      "disposition": "needs_human_review",
-      "dispositionReason": "insufficient_evidence_for_automatic_permission_or_exclusion",
+      "disposition": "technical_ui",
+      "dispositionReason": "Select-all only changes local row-selection state and performs no business mutation.",
       "duplicateOf": null,
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-5ab9d1ed280a",
-          "distance": 1860,
+          "candidateId": "EPC-9944a88d340f",
+          "distance": 1892,
           "file": "src/features/resales/pages/ResalesPage.tsx",
           "handler": "{(event) => { event.stopPropagation() onToggleAll() }}",
           "humanLabel": "Обрати всі",
-          "line": 2067,
+          "line": 2115,
           "permissionKeys": [],
           "score": 9
         }
@@ -44919,7 +44912,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/resales/pages/ResalesPage.tsx",
-        "line": 207,
+        "line": 223,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -44949,12 +44942,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-2cf7be821a8d",
+          "candidateId": "EPC-7e2c9f0209f5",
           "distance": 36,
           "file": "src/features/resales/pages/ResalesPage.tsx",
           "handler": "{() => onToggle(row)}",
           "humanLabel": "Обрати",
-          "line": 2091,
+          "line": 2139,
           "permissionKeys": [],
           "score": 9
         }
@@ -44962,7 +44955,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/resales/pages/ResalesPage.tsx",
-        "line": 2055,
+        "line": 2103,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -44984,20 +44977,22 @@
       "proposedPermission": "resales.resales_item.event_event_stop_propagation_on_open_product_card_net_id.modal_open",
       "securityLevel": "low",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "covered_existing",
+      "dispositionReason": "Product-card links are rendered only with product page view, and the shared product-details API is already page-view scoped.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "products.assortment.page.view"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-bdcbc9bc4208",
-          "distance": 1911,
+          "candidateId": "EPC-0cde7c11acc7",
+          "distance": 1943,
           "file": "src/features/resales/pages/ResalesPage.tsx",
           "handler": "{(event) => { event.stopPropagation() onOpenProductCard(netId) }}",
           "humanLabel": null,
-          "line": 2118,
+          "line": 2166,
           "permissionKeys": [],
           "score": 18
         }
@@ -45005,7 +45000,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/resales/pages/ResalesPage.tsx",
-        "line": 207,
+        "line": 223,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -45035,12 +45030,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-bdcbc9bc4208",
-          "distance": 1911,
+          "candidateId": "EPC-0cde7c11acc7",
+          "distance": 1943,
           "file": "src/features/resales/pages/ResalesPage.tsx",
           "handler": "{(event) => { event.stopPropagation() onOpenProductCard(netId) }}",
           "humanLabel": null,
-          "line": 2118,
+          "line": 2166,
           "permissionKeys": [],
           "score": 18
         }
@@ -45048,7 +45043,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/resales/pages/ResalesPage.tsx",
-        "line": 207,
+        "line": 223,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -45078,12 +45073,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-bdcbc9bc4208",
-          "distance": 1911,
+          "candidateId": "EPC-0cde7c11acc7",
+          "distance": 1943,
           "file": "src/features/resales/pages/ResalesPage.tsx",
           "handler": "{(event) => { event.stopPropagation() onOpenProductCard(netId) }}",
           "humanLabel": null,
-          "line": 2118,
+          "line": 2166,
           "permissionKeys": [],
           "score": 18
         }
@@ -45091,7 +45086,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/resales/pages/ResalesPage.tsx",
-        "line": 207,
+        "line": 223,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -45121,12 +45116,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-bdcbc9bc4208",
-          "distance": 1911,
+          "candidateId": "EPC-0cde7c11acc7",
+          "distance": 1943,
           "file": "src/features/resales/pages/ResalesPage.tsx",
           "handler": "{(event) => { event.stopPropagation() onOpenProductCard(netId) }}",
           "humanLabel": null,
-          "line": 2118,
+          "line": 2166,
           "permissionKeys": [],
           "score": 18
         }
@@ -45134,7 +45129,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/resales/pages/ResalesPage.tsx",
-        "line": 207,
+        "line": 223,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -45164,12 +45159,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-bdcbc9bc4208",
-          "distance": 1911,
+          "candidateId": "EPC-0cde7c11acc7",
+          "distance": 1943,
           "file": "src/features/resales/pages/ResalesPage.tsx",
           "handler": "{(event) => { event.stopPropagation() onOpenProductCard(netId) }}",
           "humanLabel": null,
-          "line": 2118,
+          "line": 2166,
           "permissionKeys": [],
           "score": 18
         }
@@ -45177,7 +45172,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/resales/pages/ResalesPage.tsx",
-        "line": 207,
+        "line": 223,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -45207,12 +45202,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-bdcbc9bc4208",
-          "distance": 1911,
+          "candidateId": "EPC-0cde7c11acc7",
+          "distance": 1943,
           "file": "src/features/resales/pages/ResalesPage.tsx",
           "handler": "{(event) => { event.stopPropagation() onOpenProductCard(netId) }}",
           "humanLabel": null,
-          "line": 2118,
+          "line": 2166,
           "permissionKeys": [],
           "score": 18
         }
@@ -45220,7 +45215,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/resales/pages/ResalesPage.tsx",
-        "line": 207,
+        "line": 223,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -45242,28 +45237,32 @@
       "proposedPermission": "resales.resales_item.event_event_stop_propagation_set_product_card_net_id_net_id.button_click",
       "securityLevel": "low",
       "rawStatus": "No permission candidate found",
-      "disposition": "needs_human_review",
-      "dispositionReason": "insufficient_evidence_for_automatic_permission_or_exclusion",
+      "disposition": "technical_ui",
+      "dispositionReason": "This handler only clears the local product-card modal identifier.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "products.assortment.page.view"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-15d91ab22174",
-          "distance": 2448,
+          "candidateId": "EPC-90ada1b8c25e",
+          "distance": 2482,
           "file": "src/features/resales/pages/ResalesPage.tsx",
           "handler": "{(event) => { event.stopPropagation() setProductCardNetId(netId) }}",
           "humanLabel": null,
-          "line": 2655,
-          "permissionKeys": [],
+          "line": 2705,
+          "permissionKeys": [
+            "products.assortment.page.view"
+          ],
           "score": 17
         }
       ],
       "source": {
         "status": "resolved",
         "file": "src/features/resales/pages/ResalesPage.tsx",
-        "line": 207,
+        "line": 223,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -45289,24 +45288,28 @@
       "dispositionReason": "same_normalized_action_as:PE-01126",
       "duplicateOf": "PE-01126",
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
+      "canonicalPermissionKeys": [
+        "products.assortment.page.view"
+      ],
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-15d91ab22174",
-          "distance": 2448,
+          "candidateId": "EPC-90ada1b8c25e",
+          "distance": 2482,
           "file": "src/features/resales/pages/ResalesPage.tsx",
           "handler": "{(event) => { event.stopPropagation() setProductCardNetId(netId) }}",
           "humanLabel": null,
-          "line": 2655,
-          "permissionKeys": [],
+          "line": 2705,
+          "permissionKeys": [
+            "products.assortment.page.view"
+          ],
           "score": 17
         }
       ],
       "source": {
         "status": "resolved",
         "file": "src/features/resales/pages/ResalesPage.tsx",
-        "line": 207,
+        "line": 223,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -45338,7 +45341,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/resales/pages/ResalesPage.tsx",
-        "line": 496,
+        "line": 517,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -45360,17 +45363,17 @@
       "proposedPermission": "resales.resales_item.on_confirm.command_submit",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
-      "duplicateOf": null,
+      "disposition": "duplicate_occurrence",
+      "dispositionReason": "The confirmation submits the already guarded selected-row preparation step and adds no separate permission.",
+      "duplicateOf": "PE-01099",
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [],
       "source": {
         "status": "resolved",
         "file": "src/features/resales/pages/ResalesPage.tsx",
-        "line": 343,
+        "line": 364,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -45392,20 +45395,20 @@
       "proposedPermission": "resales.resales_item.void_recalculate_rows.button_click",
       "securityLevel": "low",
       "rawStatus": "No permission candidate found",
-      "disposition": "needs_human_review",
-      "dispositionReason": "insufficient_evidence_for_automatic_permission_or_exclusion",
-      "duplicateOf": null,
+      "disposition": "duplicate_occurrence",
+      "dispositionReason": "Recalculating draft rows is a non-persistent step of the same resale-create workflow.",
+      "duplicateOf": "PE-01131",
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-da755b1a6643",
+          "candidateId": "EPC-88146a988da7",
           "distance": 91,
           "file": "src/features/resales/pages/ResalesPage.tsx",
           "handler": "{() => void recalculateRows()}",
           "humanLabel": "Перерахувати",
-          "line": 2995,
+          "line": 3049,
           "permissionKeys": [],
           "score": 15
         }
@@ -45413,7 +45416,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/resales/pages/ResalesPage.tsx",
-        "line": 2904,
+        "line": 2958,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -45435,12 +45438,14 @@
       "proposedPermission": "resales.resales_item.create.command_submit",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "covered_existing",
+      "dispositionReason": "Final resale creation rechecks create authority and uses the idempotent create-scoped mutation facade.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "sales.resales.resale.create"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [],
       "source": {
         "status": "resolved",
@@ -45475,12 +45480,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-6f8720d6109b",
+          "candidateId": "EPC-29dd97adecb0",
           "distance": 116,
           "file": "src/features/resales/pages/ResalesPage.tsx",
           "handler": "{resetChanges}",
           "humanLabel": "Скасувати",
-          "line": 3421,
+          "line": 3477,
           "permissionKeys": [],
           "score": 12
         }
@@ -45488,7 +45493,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/resales/pages/ResalesPage.tsx",
-        "line": 3305,
+        "line": 3361,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -45510,20 +45515,22 @@
       "proposedPermission": "resales.resales_item.delete_setting.command_delete",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "covered_existing",
+      "dispositionReason": "Deleting a saved TTN template is allowed only inside the guarded TTN workflow and uses its mutation-scoped route.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "sales.resales.consignment_note.print"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-a6a95370a9fe",
+          "candidateId": "EPC-5f9c5edf246b",
           "distance": 67,
           "file": "src/features/resales/pages/ResalesPage.tsx",
           "handler": "{deleteSetting}",
           "humanLabel": "Видалити",
-          "line": 3425,
+          "line": 3481,
           "permissionKeys": [],
           "score": 13
         }
@@ -45531,7 +45538,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/resales/pages/ResalesPage.tsx",
-        "line": 3358,
+        "line": 3414,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -45553,20 +45560,22 @@
       "proposedPermission": "resales.resales_item.save_setting.command_submit",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "covered_existing",
+      "dispositionReason": "Creating or saving a TTN template is enforced by the same consignment-note permission at the backend mutation facade.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "sales.resales.consignment_note.print"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-73153610d4d0",
+          "candidateId": "EPC-98f9eef85964",
           "distance": 115,
           "file": "src/features/resales/pages/ResalesPage.tsx",
           "handler": "{saveSetting}",
           "humanLabel": null,
-          "line": 3429,
+          "line": 3485,
           "permissionKeys": [],
           "score": 11
         }
@@ -45574,7 +45583,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/resales/pages/ResalesPage.tsx",
-        "line": 3314,
+        "line": 3370,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -45596,20 +45605,22 @@
       "proposedPermission": "resales.resales_item.print_document.command_export",
       "securityLevel": "medium",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "covered_existing",
+      "dispositionReason": "TTN document generation is independently guarded and calls the permission-scoped print facade.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "sales.resales.consignment_note.print"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-bb929b10a664",
+          "candidateId": "EPC-9d0565138d0a",
           "distance": 46,
           "file": "src/features/resales/pages/ResalesPage.tsx",
           "handler": "{printDocument}",
           "humanLabel": "Друк",
-          "line": 3432,
+          "line": 3488,
           "permissionKeys": [],
           "score": 13
         }
@@ -45617,7 +45628,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/resales/pages/ResalesPage.tsx",
-        "line": 3386,
+        "line": 3442,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -79562,32 +79573,6 @@
     "PE-01088",
     "PE-01089",
     "PE-01090",
-    "PE-01097",
-    "PE-01098",
-    "PE-01099",
-    "PE-01100",
-    "PE-01102",
-    "PE-01104",
-    "PE-01105",
-    "PE-01106",
-    "PE-01107",
-    "PE-01109",
-    "PE-01110",
-    "PE-01112",
-    "PE-01113",
-    "PE-01114",
-    "PE-01115",
-    "PE-01116",
-    "PE-01117",
-    "PE-01118",
-    "PE-01120",
-    "PE-01126",
-    "PE-01129",
-    "PE-01130",
-    "PE-01131",
-    "PE-01133",
-    "PE-01134",
-    "PE-01135",
     "PE-01139",
     "PE-01141",
     "PE-01142",

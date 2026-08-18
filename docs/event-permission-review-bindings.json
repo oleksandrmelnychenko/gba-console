@@ -1175,6 +1175,165 @@
         "services.consumable_orders.order.pay"
       ],
       "reason": "The registry pay action uses the same independently guarded payment flow and pay-scoped backend mutation."
+    },
+    "PE-01097": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-01117",
+      "reason": "The confirmation button completes the same resale-delete mutation represented by the guarded row action."
+    },
+    "PE-01098": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": [
+        "sales.resales.resale.create"
+      ],
+      "reason": "Automatic selection is one entry path into the resale-create workflow and uses a create-scoped preparation endpoint."
+    },
+    "PE-01099": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": [
+        "sales.resales.resale.create"
+      ],
+      "reason": "Processing selected availability rows prepares the same resale-create payload through create-scoped endpoints."
+    },
+    "PE-01100": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": [
+        "sales.resales.availability.export"
+      ],
+      "reason": "Availability export has an independent UI guard and dedicated export-scoped backend facade."
+    },
+    "PE-01102": {
+      "disposition": "technical_ui",
+      "reason": "A row click only toggles local availability selection and performs no backend operation."
+    },
+    "PE-01104": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": [
+        "sales.resales.resale.edit"
+      ],
+      "reason": "Opening the edit drawer and saving it are one edit action; inline changes and recalculation are disabled without the same permission."
+    },
+    "PE-01105": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": [
+        "sales.resales.document.export"
+      ],
+      "reason": "Payment-document export is independently guarded and uses the resale document-export facade."
+    },
+    "PE-01106": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": [
+        "sales.resales.document.export"
+      ],
+      "reason": "Invoice export is the second document type governed by the same document-export permission and facade."
+    },
+    "PE-01107": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": [
+        "sales.resales.consignment_note.print"
+      ],
+      "reason": "The TTN drawer, settings calls and print call are mounted only with the consignment-note permission and use scoped routes."
+    },
+    "PE-01109": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": [
+        "sales.resales.resale.convert_to_invoice"
+      ],
+      "reason": "Invoice conversion is independently checked and calls a dedicated mutation facade with the canonical permission."
+    },
+    "PE-01110": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": [
+        "sales.resales.resale.complete"
+      ],
+      "reason": "Completing a resale invoice is independently checked and enforced at its mutation facade."
+    },
+    "PE-01112": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": [
+        "sales.resales.resale.edit"
+      ],
+      "reason": "Final resale save rechecks edit authority and uses the edit-scoped mutation facade."
+    },
+    "PE-01113": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-01112",
+      "reason": "Recalculation applies only to the local edited model and is governed by the same edit permission as final save."
+    },
+    "PE-01114": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-01105",
+      "reason": "The registry payment-document action invokes the same guarded document-export business boundary."
+    },
+    "PE-01115": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-01106",
+      "reason": "The registry invoice action invokes the same guarded document-export business boundary."
+    },
+    "PE-01116": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-01107",
+      "reason": "The registry TTN opener enters the same permission-scoped consignment-note workflow."
+    },
+    "PE-01117": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": [
+        "sales.resales.resale.delete"
+      ],
+      "reason": "The delete row action, confirmation handler and backend mutation facade all enforce resale.delete."
+    },
+    "PE-01118": {
+      "disposition": "technical_ui",
+      "reason": "Select-all only changes local row-selection state and performs no business mutation."
+    },
+    "PE-01120": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": [
+        "products.assortment.page.view"
+      ],
+      "reason": "Product-card links are rendered only with product page view, and the shared product-details API is already page-view scoped."
+    },
+    "PE-01126": {
+      "disposition": "technical_ui",
+      "reason": "This handler only clears the local product-card modal identifier."
+    },
+    "PE-01129": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-01099",
+      "reason": "The confirmation submits the already guarded selected-row preparation step and adds no separate permission."
+    },
+    "PE-01130": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-01131",
+      "reason": "Recalculating draft rows is a non-persistent step of the same resale-create workflow."
+    },
+    "PE-01131": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": [
+        "sales.resales.resale.create"
+      ],
+      "reason": "Final resale creation rechecks create authority and uses the idempotent create-scoped mutation facade."
+    },
+    "PE-01133": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": [
+        "sales.resales.consignment_note.print"
+      ],
+      "reason": "Deleting a saved TTN template is allowed only inside the guarded TTN workflow and uses its mutation-scoped route."
+    },
+    "PE-01134": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": [
+        "sales.resales.consignment_note.print"
+      ],
+      "reason": "Creating or saving a TTN template is enforced by the same consignment-note permission at the backend mutation facade."
+    },
+    "PE-01135": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": [
+        "sales.resales.consignment_note.print"
+      ],
+      "reason": "TTN document generation is independently guarded and calls the permission-scoped print facade."
     }
   }
 }

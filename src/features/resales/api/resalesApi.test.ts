@@ -7,6 +7,7 @@ import {
   getResaleByNetId,
   getResaleAvailabilityFilterOptions,
   getResaleClientAgreements,
+  recalculateResale,
   updateResale,
 } from './resalesApi'
 
@@ -98,7 +99,7 @@ describe('resales API contracts', () => {
     } as unknown as Crypto)
   })
 
-  it('sends an explicit empty JSON model when opening a resale', async () => {
+  it('opens resale details without accepting an editable model payload', async () => {
     const netId = '41bb91ef-9828-420e-940c-aa25a5009b10'
     const detail = {
       ReSale: {
@@ -110,8 +111,7 @@ describe('resales API contracts', () => {
     apiRequestMock.mockResolvedValueOnce(detail)
 
     await expect(getResaleByNetId(netId)).resolves.toEqual({ data: detail })
-    expect(apiRequestMock).toHaveBeenCalledWith('/resales/updated/get', {
-      body: {},
+    expect(apiRequestMock).toHaveBeenCalledWith('/resales/permissions/details', {
       method: 'POST',
       query: {
         netId,
@@ -131,8 +131,8 @@ describe('resales API contracts', () => {
 
     apiRequestMock.mockResolvedValueOnce(detail)
 
-    await expect(getResaleByNetId(netId, detail)).resolves.toEqual({ data: detail })
-    expect(apiRequestMock).toHaveBeenCalledWith('/resales/updated/get', {
+    await expect(recalculateResale(netId, detail)).resolves.toEqual({ data: detail })
+    expect(apiRequestMock).toHaveBeenCalledWith('/resales/permissions/edit/recalculate', {
       body: detail,
       method: 'POST',
       query: {
@@ -164,7 +164,7 @@ describe('resales API contracts', () => {
       PdfDocumentURL: 'https://example.test/resale.pdf',
     })
 
-    expect(apiRequestMock).toHaveBeenCalledWith('/resales/document/resale', {
+    expect(apiRequestMock).toHaveBeenCalledWith('/resales/permissions/create/export', {
       body: payload,
       method: 'POST',
     })
@@ -213,7 +213,7 @@ describe('resales API contracts', () => {
       SpecificationCodes: ['8708999798'],
       Storages: [resaleStorage, legacyResaleStorage],
     })
-    expect(apiRequestMock).toHaveBeenNthCalledWith(1, '/resales/availabilities/filter/options')
+    expect(apiRequestMock).toHaveBeenNthCalledWith(1, '/resales/permissions/create/filter/options')
     expect(apiRequestMock).toHaveBeenNthCalledWith(2, '/storages/get/all')
   })
 

@@ -38,6 +38,8 @@ import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import { Paginator } from '../../../shared/ui/paginator/Paginator'
 import { DEFAULT_PAGINATOR_PAGE_SIZE } from '../../../shared/ui/paginator/paginatorPageSize'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
+import { useAuth } from '../../auth/useAuth'
+import { usePermissions } from '../../auth/usePermissions'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { TableRowAction } from '../../../shared/ui/table-row-action'
 import { DocumentExportModal } from '../../../shared/ui/document-export-modal/DocumentExportModal'
@@ -55,6 +57,7 @@ import {
   getResaleByNetId,
   getResales,
   printResaleConsignmentNoteDocument,
+  recalculateResale,
   removeResaleConsignmentNoteSetting,
   removeResale,
   searchResaleClients,
@@ -100,6 +103,19 @@ import {
   type ResaleAvailabilityForm,
 } from '../resalesFlowHelpers'
 import { useResaleClientAgreements } from '../hooks/useResaleClientAgreements'
+import { ResaleRowActions } from './ResaleRowActions'
+import {
+  PRODUCT_DETAILS_PERMISSION,
+  RESALES_PAGE_PERMISSION,
+  RESALE_AVAILABILITY_EXPORT_PERMISSION,
+  RESALE_COMPLETE_PERMISSION,
+  RESALE_CONSIGNMENT_NOTE_PERMISSION,
+  RESALE_CONVERT_PERMISSION,
+  RESALE_CREATE_PERMISSION,
+  RESALE_DELETE_PERMISSION,
+  RESALE_DOCUMENT_EXPORT_PERMISSION,
+  RESALE_EDIT_PERMISSION,
+} from '../permissions'
 import './resales-page.css'
 
 const PAGE_SIZE = DEFAULT_PAGINATOR_PAGE_SIZE
@@ -208,6 +224,11 @@ export function ResalesPage() {
   const { t } = useI18n()
   const navigate = useNavigate()
   const location = useLocation()
+  const { hasPermission } = useAuth()
+  const canCreate = hasPermission(RESALE_CREATE_PERMISSION)
+  const canDelete = hasPermission(RESALE_DELETE_PERMISSION)
+  const canExportDocuments = hasPermission(RESALE_DOCUMENT_EXPORT_PERMISSION)
+  const canPrintConsignmentNote = hasPermission(RESALE_CONSIGNMENT_NOTE_PERMISSION)
   const [fromDate, setFromDate] = useValueState(() => shiftDateInput(-DEFAULT_RESALES_LOOKBACK_DAYS))
   const [toDate, setToDate] = useValueState(() => shiftDateInput(1))
   const [status, setStatus] = useValueState('0')
@@ -237,9 +258,9 @@ export function ResalesPage() {
   const columns = useResalesColumns({
     exportingKey,
     removingNetId,
-    onDelete: setDeleteCandidate,
-    onExport: handleExport,
-    onOpenConsignmentNote: setConsignmentNoteSale,
+    onDelete: canDelete ? setDeleteCandidate : undefined,
+    onExport: canExportDocuments ? handleExport : undefined,
+    onOpenConsignmentNote: canPrintConsignmentNote ? setConsignmentNoteSale : undefined,
   })
   const filterError = getDateRangeError(fromDate, toDate)
 
@@ -317,7 +338,7 @@ export function ResalesPage() {
   }, [filterError, fromDate, offset, page, pageSize, reloadKey, setError, setListState, status, t, toDate])
 
   async function handleExport(resale: ReSale, type: ResaleDownloadDocumentType) {
-    if (!resale.NetUid) {
+    if (!canExportDocuments || !resale.NetUid) {
       return
     }
 
@@ -341,7 +362,7 @@ export function ResalesPage() {
   }
 
   async function confirmDelete() {
-    if (!deleteCandidate?.NetUid) {
+    if (!canDelete || !deleteCandidate?.NetUid) {
       return
     }
 
@@ -432,7 +453,7 @@ export function ResalesPage() {
               />
             </div>
             <div ref={setTableToolbarSlot} className="app-filter-table-toolbar-slot resales-table-toolbar-slot" />
-            <div className="resales-create-actions">
+            {canCreate && <div className="resales-create-actions">
               <Button
                 color={CREATE_ACTION_COLOR}
                 size="sm"
@@ -448,7 +469,7 @@ export function ResalesPage() {
               >
                 {t('Створити')}
               </Button>
-            </div>
+            </div>}
           </Group>
         </div>
 
@@ -491,7 +512,7 @@ export function ResalesPage() {
       <AppModal
         centered
         className="resales-modal"
-        opened={Boolean(deleteCandidate)}
+        opened={canDelete && Boolean(deleteCandidate)}
         title={<span className="resales-modal-title">{t('Видалити перепродаж')}</span>}
         onClose={() => setDeleteCandidate(null)}
       >
@@ -516,7 +537,7 @@ export function ResalesPage() {
       />
 
       <ConsignmentNoteSettingsDrawer
-        opened={Boolean(consignmentNoteSale)}
+        opened={canPrintConsignmentNote && Boolean(consignmentNoteSale)}
         resale={consignmentNoteSale}
         onClose={() => setConsignmentNoteSale(null)}
       />
@@ -525,6 +546,41 @@ export function ResalesPage() {
 }
 
 export function NewResalePage() {
+  const { t } = useI18n()
+  const { can, isLoading } = usePermissions()
+  const canOpenPage = can(RESALES_PAGE_PERMISSION)
+  const canCreate = can(RESALE_CREATE_PERMISSION)
+
+  if (isLoading) {
+    return <Text c="dimmed">{t('Завантаження')}</Text>
+  }
+
+  if (!canOpenPage || !canCreate) {
+    return (
+      <Alert color="red" icon={<CircleAlert size={18} />} title={t('Доступ заборонено')} variant="light">
+        {t('Недостатньо прав для створення перепродажу')}
+      </Alert>
+    )
+  }
+
+  return (
+    <NewResalePageContent
+      canCreate={canCreate}
+      canExportAvailabilities={can(RESALE_AVAILABILITY_EXPORT_PERMISSION)}
+      canOpenProductDetails={can(PRODUCT_DETAILS_PERMISSION)}
+    />
+  )
+}
+
+function NewResalePageContent({
+  canCreate,
+  canExportAvailabilities,
+  canOpenProductDetails,
+}: {
+  canCreate: boolean
+  canExportAvailabilities: boolean
+  canOpenProductDetails: boolean
+}) {
   const { t } = useI18n()
   const navigate = useNavigate()
   const location = useLocation()
@@ -594,7 +650,7 @@ export function NewResalePage() {
   const columns = useResaleAvailabilityColumns({
     rows: availabilities,
     selectedKeys,
-    onOpenProductCard: setProductCardNetId,
+    onOpenProductCard: canOpenProductDetails ? setProductCardNetId : undefined,
     onToggle: toggleAvailability,
     onToggleAll: toggleAllAvailabilities,
   })
@@ -702,7 +758,7 @@ export function NewResalePage() {
   useRealtimeEvent(realtimeEvents.resaleAvailabilitiesUpdated, handleRealtimeAvailabilityUpdate)
 
   async function exportAvailabilities() {
-    if (!payload) {
+    if (!canExportAvailabilities || !payload) {
       setWarning({ Message: dateRangeError || t('Перевірте фільтри') })
       return
     }
@@ -758,7 +814,7 @@ export function NewResalePage() {
   }
 
   async function processSelected() {
-    if (!payload || isLoadingAvailabilities || isLoadingOptions) {
+    if (!canCreate || !payload || isLoadingAvailabilities || isLoadingOptions) {
       setWarning({ Message: dateRangeError || t('Дочекайтесь завантаження доступних товарів') })
       return
     }
@@ -789,7 +845,7 @@ export function NewResalePage() {
   }
 
   async function generateAutomatically() {
-    if (!payload || isLoadingAvailabilities || isLoadingOptions) {
+    if (!canCreate || !payload || isLoadingAvailabilities || isLoadingOptions) {
       setWarning({ Message: dateRangeError || t('Дочекайтесь завантаження доступних товарів') })
       return
     }
@@ -879,6 +935,10 @@ export function NewResalePage() {
   }
 
   async function handleCreated(payload: ResaleCreatePayload) {
+    if (!canCreate) {
+      return
+    }
+
     setProcessing(true)
     setError(null)
     setWarning(null)
@@ -1023,7 +1083,7 @@ export function NewResalePage() {
                 color={CREATE_ACTION_COLOR}
                 disabled={!payload || isLoadingOptions || isLoadingAvailabilities}
                 loading={isProcessing}
-                  onClick={generateAutomatically}
+                onClick={generateAutomatically}
               >
                 {t('Створити автоматично')}
               </Button>
@@ -1036,7 +1096,7 @@ export function NewResalePage() {
               >
                 {t('Обробити')} {selectedRows.length ? selectedRows.length : ''}
               </Button>
-              <Button
+              {canExportAvailabilities && <Button
                 className="resales-new-action"
                 color={CREATE_ACTION_COLOR}
                 disabled={!payload || isLoadingOptions || isLoadingAvailabilities}
@@ -1045,7 +1105,7 @@ export function NewResalePage() {
                 onClick={exportAvailabilities}
               >
                 {t('Друк')}
-              </Button>
+              </Button>}
               <Tooltip label={t('Оновити фільтри')}>
                 <ActionIcon
                   aria-label={t('Оновити фільтри')}
@@ -1101,6 +1161,7 @@ export function NewResalePage() {
         </Card>
 
         <ProcessSelectionConfirmDrawer
+          canOpenProductDetails={canOpenProductDetails}
           isSaving={isProcessing}
           opened={processConfirmOpened}
           rows={selectedRows}
@@ -1109,6 +1170,7 @@ export function NewResalePage() {
         />
 
         <ResaleProcessDrawer
+          canOpenProductDetails={canOpenProductDetails}
           key={processState.id}
           fromStorageId={processState.fromStorageId}
           isSaving={isProcessing}
@@ -1132,7 +1194,9 @@ export function NewResalePage() {
           onClose={() => setDownloadModalOpened(false)}
         />
 
-        <ProductCardModal productNetId={productCardNetId} onClose={() => setProductCardNetId(null)} />
+        {canOpenProductDetails && (
+          <ProductCardModal productNetId={productCardNetId} onClose={() => setProductCardNetId(null)} />
+        )}
       </Stack>
     </AppDrawer>
   )
@@ -1141,6 +1205,13 @@ export function NewResalePage() {
 export function ResalePage() {
   const { t } = useI18n()
   const { id } = useParams()
+  const { hasPermission } = useAuth()
+  const canEdit = hasPermission(RESALE_EDIT_PERMISSION)
+  const canConvert = hasPermission(RESALE_CONVERT_PERMISSION)
+  const canComplete = hasPermission(RESALE_COMPLETE_PERMISSION)
+  const canExportDocuments = hasPermission(RESALE_DOCUMENT_EXPORT_PERMISSION)
+  const canPrintConsignmentNote = hasPermission(RESALE_CONSIGNMENT_NOTE_PERMISSION)
+  const canOpenProductDetails = hasPermission(PRODUCT_DETAILS_PERMISSION)
   const [model, setModel] = useValueState<UpdatedResaleModel | null>(null)
   const [detailInfo, setDetailInfo] = useValueState<DetailInfo>({
     client: null,
@@ -1169,13 +1240,13 @@ export function ResalePage() {
   const changedToInvoice = isResaleInvoice(model?.ReSale)
   const isCompleted = isResaleCompleted(model?.ReSale)
   const columns = useResaleDetailColumns({
-    isBusy: isSaving,
+    isBusy: isSaving || !canEdit,
     isCompleted,
     changedToInvoice,
     onChangeAmount: updateRowAmount,
     onChangeQty: updateRowQty,
     onChangeSalePrice: updateRowSalePrice,
-    onOpenProductCard: setProductCardNetId,
+    onOpenProductCard: canOpenProductDetails ? setProductCardNetId : undefined,
   })
   const applyDetailResult = useCallback(
     (result: ResaleActionResult<UpdatedResaleModel>) => {
@@ -1338,7 +1409,7 @@ export function ResalePage() {
   }
 
   async function recalculate(itemModels?: UpdatedResaleItemModel[]) {
-    if (!id || isCompleted) {
+    if (!canEdit || !id || isCompleted) {
       return
     }
 
@@ -1362,7 +1433,7 @@ export function ResalePage() {
     setWarning(null)
 
     try {
-      const result = await getResaleByNetId(id, nextModel)
+      const result = await recalculateResale(id, nextModel)
 
       if (isCurrentRequest()) {
         applyDetailResult(result)
@@ -1379,6 +1450,10 @@ export function ResalePage() {
   }
 
   async function saveResale() {
+    if (!canEdit) {
+      return
+    }
+
     cancelPendingRecalculate()
 
     const nextModel = buildUpdatedModel()
@@ -1412,7 +1487,7 @@ export function ResalePage() {
   }
 
   async function changeToInvoice() {
-    if (isCompleted || changedToInvoice || !detailInfo.clientAgreement || !model?.ReSale.NetUid) {
+    if (!canEdit || !canConvert || isCompleted || changedToInvoice || !detailInfo.clientAgreement || !model?.ReSale.NetUid) {
       return
     }
 
@@ -1450,7 +1525,7 @@ export function ResalePage() {
   }
 
   async function completeInvoice() {
-    if (isCompleted || !changedToInvoice || !detailInfo.clientAgreement || !model?.ReSale.NetUid) {
+    if (!canEdit || !canComplete || isCompleted || !changedToInvoice || !detailInfo.clientAgreement || !model?.ReSale.NetUid) {
       return
     }
 
@@ -1488,7 +1563,7 @@ export function ResalePage() {
   }
 
   async function exportDocument(type: ResaleDownloadDocumentType) {
-    if (!model?.ReSale.NetUid) {
+    if (!canExportDocuments || !model?.ReSale.NetUid) {
       return
     }
 
@@ -1523,6 +1598,10 @@ export function ResalePage() {
   }
 
   function updateRow(index: number, patch: Partial<UpdatedResaleItemModel>) {
+    if (!canEdit) {
+      return
+    }
+
     if (changedToInvoice && typeof patch.QtyToReSale !== 'undefined') {
       return
     }
@@ -1658,7 +1737,7 @@ export function ResalePage() {
         <section className="resale-detail-panel resale-detail-panel--client">
           <Group className="resale-detail-panel-heading" justify="space-between" align="center" wrap="nowrap">
             <Text className="app-section-title">{t('Клієнт і угода')}</Text>
-            <Button
+            {canEdit && <Button
               leftSection={<Pencil size={15} />}
               onClick={() => {
                 setDetailInfo({
@@ -1670,7 +1749,7 @@ export function ResalePage() {
               }}
             >
               {t('Редагувати')}
-            </Button>
+            </Button>}
           </Group>
           <div className="resale-detail-client-overview">
             <ResaleDetailLine label={t('Клієнт')} value={getClientName(model.ReSale.ClientAgreement?.Client)} />
@@ -1681,15 +1760,15 @@ export function ResalePage() {
             <Text className="resale-detail-comment__value">{displayValue(model.ReSale.Comment)}</Text>
           </div>
           <Group className="resale-detail-document-actions" justify="flex-end">
-            <Button disabled={!model.ReSale.NetUid} leftSection={<Download size={16} />} loading={isExporting} variant="outline" onClick={() => exportDocument(DocumentType.PaymentDocument)}>
+            {canExportDocuments && <Button disabled={!model.ReSale.NetUid} leftSection={<Download size={16} />} loading={isExporting} variant="outline" onClick={() => exportDocument(DocumentType.PaymentDocument)}>
               {t('Платіжний документ')}
-            </Button>
-            {changedToInvoice && (
+            </Button>}
+            {canExportDocuments && changedToInvoice && (
               <Button disabled={!model.ReSale.NetUid} leftSection={<Download size={16} />} loading={isExporting} variant="outline" onClick={() => exportDocument(DocumentType.SalesInvoice)}>
                 {t('Інвойс')}
               </Button>
             )}
-            {changedToInvoice && (
+            {canPrintConsignmentNote && changedToInvoice && (
               <Button disabled={!model.ReSale.NetUid} leftSection={<Truck size={16} />} variant="outline" onClick={() => setConsignmentNoteOpened(true)}>
                 {t('ТТН')}
               </Button>
@@ -1770,18 +1849,18 @@ export function ResalePage() {
       </div>
 
       <AppDrawer
-        opened={editDrawerOpened}
+        opened={canEdit && editDrawerOpened}
         size="compact"
         title={t('Редагування перепродажу')}
         footer={(
           <Group className="resale-edit-drawer__footer" justify="space-between" wrap="nowrap">
             <Group gap="xs">
-              {!changedToInvoice && detailInfo.clientAgreement && (
+              {canConvert && !changedToInvoice && detailInfo.clientAgreement && (
                 <Button disabled={isSaving || isCompleted} loading={isSaving} color="green" onClick={changeToInvoice}>
                   {t('Зробити інвойсом')}
                 </Button>
               )}
-              {changedToInvoice && detailInfo.clientAgreement && !model.ReSale.IsCompleted && (
+              {canComplete && changedToInvoice && detailInfo.clientAgreement && !model.ReSale.IsCompleted && (
                 <Button disabled={isSaving || isCompleted} loading={isSaving} color="green" onClick={completeInvoice}>
                   {t('Завершити')}
                 </Button>
@@ -1852,12 +1931,14 @@ export function ResalePage() {
       />
 
       <ConsignmentNoteSettingsDrawer
-        opened={consignmentNoteOpened}
+        opened={canPrintConsignmentNote && consignmentNoteOpened}
         resale={model.ReSale}
         onClose={() => setConsignmentNoteOpened(false)}
       />
 
-      <ProductCardModal productNetId={productCardNetId} onClose={() => setProductCardNetId(null)} />
+      {canOpenProductDetails && (
+        <ProductCardModal productNetId={productCardNetId} onClose={() => setProductCardNetId(null)} />
+      )}
     </Stack>
   )
 }
@@ -1871,9 +1952,9 @@ function useResalesColumns({
 }: {
   exportingKey: string | null
   removingNetId: string | null
-  onDelete: (resale: ReSale) => void
-  onExport: (resale: ReSale, type: ResaleDownloadDocumentType) => void
-  onOpenConsignmentNote: (resale: ReSale) => void
+  onDelete?: (resale: ReSale) => void
+  onExport?: (resale: ReSale, type: ResaleDownloadDocumentType) => void
+  onOpenConsignmentNote?: (resale: ReSale) => void
 }): DataTableColumn<ReSale>[] {
   const { t } = useI18n()
 
@@ -1994,47 +2075,14 @@ function useResalesColumns({
         enablePinning: false,
         enableReorder: false,
         cell: (resale) => (
-          <Group gap={4} justify="flex-end" wrap="nowrap">
-            <TableRowAction
-              action="download"
-              disabled={!resale.NetUid}
-              label={t('Платіжний документ')}
-              loading={exportingKey === `${resale.NetUid}:${DocumentType.PaymentDocument}`}
-              onClick={() => onExport(resale, DocumentType.PaymentDocument)}
-            />
-            {isResaleInvoice(resale) && (
-              <>
-                <TableRowAction
-                  action="download"
-                  disabled={!resale.NetUid}
-                  label={t('Інвойс')}
-                  loading={exportingKey === `${resale.NetUid}:${DocumentType.SalesInvoice}`}
-                  onClick={() => onExport(resale, DocumentType.SalesInvoice)}
-                />
-                <TableRowAction
-                  action="delivery"
-                  disabled={!resale.NetUid}
-                  label={t('ТТН')}
-                  onClick={() => onOpenConsignmentNote(resale)}
-                />
-              </>
-            )}
-            {isResaleDraft(resale) && (
-              <TableRowAction
-                action="delete"
-                disabled={!resale.NetUid || removingNetId === resale.NetUid}
-                label={t('Видалити')}
-                loading={removingNetId === resale.NetUid}
-                onClick={() => onDelete(resale)}
-              />
-            )}
-            <TableRowAction
-              action="open"
-              component={Link}
-              label={t('Відкрити')}
-              to={`/resales/${resale.NetUid || ''}`}
-            />
-          </Group>
+          <ResaleRowActions
+            exportingKey={exportingKey}
+            removingNetId={removingNetId}
+            resale={resale}
+            onDelete={onDelete}
+            onExport={onExport}
+            onOpenConsignmentNote={onOpenConsignmentNote}
+          />
         ),
       },
     ],
@@ -2051,7 +2099,7 @@ function useResaleAvailabilityColumns({
 }: {
   rows: GroupingResaleAvailability[]
   selectedKeys: string[]
-  onOpenProductCard: (netId: string) => void
+  onOpenProductCard?: (netId: string) => void
   onToggle: (row: GroupingResaleAvailability) => void
   onToggleAll: () => void
 }): DataTableColumn<GroupingResaleAvailability>[] {
@@ -2114,7 +2162,7 @@ function useResaleAvailabilityColumns({
         cell: (row) => {
           const netId = getAvailabilityProductNetId(row)
 
-          return netId ? (
+          return netId && onOpenProductCard ? (
             <Anchor
               component="button"
               fw={700}
@@ -2140,7 +2188,7 @@ function useResaleAvailabilityColumns({
         cell: (row) => {
           const netId = getAvailabilityProductNetId(row)
 
-          return netId ? (
+          return netId && onOpenProductCard ? (
             <Anchor
               component="button"
               lineClamp={2}
@@ -2257,7 +2305,7 @@ function useProcessColumns({
   onChangeAmount: (index: number, value: number | string) => void
   onChangeQty: (index: number, value: number | string) => void
   onChangeSalePrice: (index: number, value: number | string) => void
-  onOpenProductCard: (netId: string) => void
+  onOpenProductCard?: (netId: string) => void
 }): DataTableColumn<ResaleAvailabilityItemModel & { __rowIndex: number }>[] {
   const { t } = useI18n()
 
@@ -2272,7 +2320,7 @@ function useProcessColumns({
         cell: (row) => {
           const netId = getProductNetId(row)
 
-          return netId ? (
+          return netId && onOpenProductCard ? (
             <Anchor
               component="button"
               fw={700}
@@ -2298,7 +2346,7 @@ function useProcessColumns({
         cell: (row) => {
           const netId = getProductNetId(row)
 
-          return netId ? (
+          return netId && onOpenProductCard ? (
             <Anchor
               component="button"
               size="sm"
@@ -2433,7 +2481,7 @@ function useResaleDetailColumns({
   onChangeAmount: (index: number, value: number | string) => void
   onChangeQty: (index: number, value: number | string) => void
   onChangeSalePrice: (index: number, value: number | string) => void
-  onOpenProductCard: (netId: string) => void
+  onOpenProductCard?: (netId: string) => void
 }): DataTableColumn<UpdatedResaleItemModel & { __rowIndex: number }>[] {
   const { t } = useI18n()
 
@@ -2448,7 +2496,7 @@ function useResaleDetailColumns({
         cell: (row) => {
           const netId = getUpdatedRowProduct(row)?.NetUid
 
-          return netId ? (
+          return netId && onOpenProductCard ? (
             <Anchor
               component="button"
               fw={700}
@@ -2474,7 +2522,7 @@ function useResaleDetailColumns({
         cell: (row) => {
           const netId = getUpdatedRowProduct(row)?.NetUid
 
-          return netId ? (
+          return netId && onOpenProductCard ? (
             <Anchor
               component="button"
               lineClamp={2}
@@ -2615,12 +2663,14 @@ function useResaleDetailColumns({
 }
 
 function ProcessSelectionConfirmDrawer({
+  canOpenProductDetails,
   isSaving,
   opened,
   rows,
   onClose,
   onConfirm,
 }: {
+  canOpenProductDetails: boolean
   isSaving: boolean
   opened: boolean
   rows: GroupingResaleAvailability[]
@@ -2651,7 +2701,7 @@ function ProcessSelectionConfirmDrawer({
         cell: (row) => {
           const netId = getAvailabilityProductNetId(row)
 
-          return netId ? (
+          return netId && canOpenProductDetails ? (
             <Anchor
               component="button"
               fw={700}
@@ -2677,7 +2727,7 @@ function ProcessSelectionConfirmDrawer({
         cell: (row) => {
           const netId = getAvailabilityProductNetId(row)
 
-          return netId ? (
+          return netId && canOpenProductDetails ? (
             <Anchor
               component="button"
               lineClamp={2}
@@ -2743,7 +2793,7 @@ function ProcessSelectionConfirmDrawer({
         cell: (row) => formatMoney(row.TotalSalePrice),
       },
     ],
-    [setProductCardNetId, t],
+    [canOpenProductDetails, setProductCardNetId, t],
   )
 
   return (
@@ -2794,12 +2844,15 @@ function ProcessSelectionConfirmDrawer({
         />
 
       </Stack>
-      <ProductCardModal productNetId={productCardNetId} onClose={() => setProductCardNetId(null)} />
+      {canOpenProductDetails && (
+        <ProductCardModal productNetId={productCardNetId} onClose={() => setProductCardNetId(null)} />
+      )}
     </AppDrawer>
   )
 }
 
 function ResaleProcessDrawer({
+  canOpenProductDetails,
   fromStorageId,
   isSaving,
   opened,
@@ -2809,6 +2862,7 @@ function ResaleProcessDrawer({
   onCreate,
   onRecalculate,
 }: {
+  canOpenProductDetails: boolean
   fromStorageId?: number
   isSaving: boolean
   opened: boolean
@@ -2839,7 +2893,7 @@ function ResaleProcessDrawer({
     onChangeAmount: updateAmount,
     onChangeQty: updateQty,
     onChangeSalePrice: updateSalePrice,
-    onOpenProductCard: setProductCardNetId,
+    onOpenProductCard: canOpenProductDetails ? setProductCardNetId : undefined,
   })
   const totals = useMemo(
     () => getProcessTotals(processForm.activeProcessData, processForm.rows),
@@ -3094,7 +3148,9 @@ function ResaleProcessDrawer({
           tableId="resale-process"
         />
       </Stack>
-      <ProductCardModal productNetId={productCardNetId} onClose={() => setProductCardNetId(null)} />
+      {canOpenProductDetails && (
+        <ProductCardModal productNetId={productCardNetId} onClose={() => setProductCardNetId(null)} />
+      )}
     </AppDrawer>
   )
 }
@@ -3916,10 +3972,6 @@ function isResaleCompleted(resale?: ReSale | null): boolean {
 
 function isResaleInvoice(resale?: ReSale | null): boolean {
   return Boolean(resale?.ChangedToInvoice)
-}
-
-function isResaleDraft(resale?: ReSale | null): boolean {
-  return Boolean(resale && !isResaleInvoice(resale) && !isResaleCompleted(resale))
 }
 
 function getClientName(client?: ResaleClient | null): string | undefined {

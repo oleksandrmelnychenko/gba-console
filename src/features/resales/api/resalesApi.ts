@@ -47,7 +47,7 @@ type PendingResaleAdd = {
 }
 
 export async function getResales(params: ResalesSearchParams): Promise<ReSale[]> {
-  const result = await apiRequest<unknown>('/resales/all', {
+  const result = await apiRequest<unknown>('/resales/permissions/registry', {
     query: params,
   })
 
@@ -55,7 +55,7 @@ export async function getResales(params: ResalesSearchParams): Promise<ReSale[]>
 }
 
 export async function removeResale(netId: string): Promise<ReSale | null> {
-  const result = await apiRequest<unknown>('/resales/remove', {
+  const result = await apiRequest<unknown>('/resales/permissions/remove', {
     body: {},
     method: 'POST',
     query: {
@@ -68,10 +68,8 @@ export async function removeResale(netId: string): Promise<ReSale | null> {
 
 export async function getResaleByNetId(
   netId: string,
-  updatedReSaleModel?: UpdatedResaleModel,
 ): Promise<ResaleActionResult<UpdatedResaleModel>> {
-  const result = await apiRequest<unknown>('/resales/updated/get', {
-    body: updatedReSaleModel ?? {},
+  const result = await apiRequest<unknown>('/resales/permissions/details', {
     method: 'POST',
     query: {
       netId,
@@ -81,9 +79,22 @@ export async function getResaleByNetId(
   return normalizeActionResult(result, normalizeUpdatedResaleModel)
 }
 
+export async function recalculateResale(
+  netId: string,
+  updatedReSaleModel: UpdatedResaleModel,
+): Promise<ResaleActionResult<UpdatedResaleModel>> {
+  const result = await apiRequest<unknown>('/resales/permissions/edit/recalculate', {
+    body: updatedReSaleModel,
+    method: 'POST',
+    query: { netId },
+  })
+
+  return normalizeActionResult(result, normalizeUpdatedResaleModel)
+}
+
 export async function updateResale(payload: UpdatedResaleModel): Promise<ResaleActionResult<UpdatedResaleModel>> {
   try {
-    const result = await apiRequest<unknown>('/resales/update', {
+    const result = await apiRequest<unknown>('/resales/permissions/edit', {
       body: payload,
       method: 'POST',
     })
@@ -101,7 +112,7 @@ export async function updateResale(payload: UpdatedResaleModel): Promise<ResaleA
 }
 
 export async function completeResale(netId: string): Promise<UpdatedResaleModel | null> {
-  const result = await apiRequest<unknown>('/resales/complete', {
+  const result = await apiRequest<unknown>('/resales/permissions/complete', {
     body: {},
     method: 'POST',
     query: {
@@ -119,7 +130,7 @@ export async function completeResale(netId: string): Promise<UpdatedResaleModel 
 }
 
 export async function changeResaleToInvoice(netId: string): Promise<UpdatedResaleModel | null> {
-  const result = await apiRequest<unknown>('/resales/change/to/invoice', {
+  const result = await apiRequest<unknown>('/resales/permissions/convert-to-invoice', {
     body: {},
     method: 'POST',
     query: {
@@ -140,7 +151,7 @@ export async function exportResaleDocument(params: {
   netId: string
   type: ResaleDownloadDocumentType
 }): Promise<ResaleExportDocument> {
-  const result = await apiRequest<unknown>('/resales/document/export', {
+  const result = await apiRequest<unknown>('/resales/permissions/document/export', {
     query: params,
   })
 
@@ -148,7 +159,7 @@ export async function exportResaleDocument(params: {
 }
 
 export async function getResaleConsignmentNoteSettings(): Promise<ResaleConsignmentNoteSetting[]> {
-  const result = await apiRequest<unknown>('/consignment/note/settings/all/get', {
+  const result = await apiRequest<unknown>('/consignment/note/settings/resales/all/get', {
     query: {
       forReSale: true,
     },
@@ -160,7 +171,7 @@ export async function getResaleConsignmentNoteSettings(): Promise<ResaleConsignm
 export async function addResaleConsignmentNoteSetting(
   setting: ResaleConsignmentNoteSetting,
 ): Promise<ResaleConsignmentNoteSetting[]> {
-  const result = await apiRequest<unknown>('/consignment/note/settings/add', {
+  const result = await apiRequest<unknown>('/consignment/note/settings/resales/add', {
     body: setting,
     method: 'POST',
     query: {
@@ -174,7 +185,7 @@ export async function addResaleConsignmentNoteSetting(
 export async function updateResaleConsignmentNoteSetting(
   setting: ResaleConsignmentNoteSetting,
 ): Promise<ResaleConsignmentNoteSetting[]> {
-  const result = await apiRequest<unknown>('/consignment/note/settings/update', {
+  const result = await apiRequest<unknown>('/consignment/note/settings/resales/update', {
     body: setting,
     method: 'POST',
     query: {
@@ -186,7 +197,7 @@ export async function updateResaleConsignmentNoteSetting(
 }
 
 export async function removeResaleConsignmentNoteSetting(netId: string): Promise<ResaleConsignmentNoteSetting[]> {
-  const result = await apiRequest<unknown>('/consignment/note/settings/remove', {
+  const result = await apiRequest<unknown>('/consignment/note/settings/resales/remove', {
     body: {},
     method: 'POST',
     query: {
@@ -202,7 +213,7 @@ export async function printResaleConsignmentNoteDocument(
   saleNetId: string,
   setting: ResaleConsignmentNoteSetting,
 ): Promise<ResaleExportDocument> {
-  const result = await apiRequest<unknown>('/consignment/note/settings/print/document', {
+  const result = await apiRequest<unknown>('/consignment/note/settings/resales/print/document', {
     body: setting,
     method: 'POST',
     query: {
@@ -215,7 +226,7 @@ export async function printResaleConsignmentNoteDocument(
 }
 
 export async function getResaleAvailabilityFilterOptions(): Promise<ResaleAvailabilityFilterOptions> {
-  const result = await apiRequest<unknown>('/resales/availabilities/filter/options')
+  const result = await apiRequest<unknown>('/resales/permissions/create/filter/options')
   const options = normalizeFilterOptions(result)
   const [storages, specificationCodes] = await Promise.all([
     options.Storages.length > 0
@@ -245,7 +256,7 @@ async function getResaleAvailabilityStorages(): Promise<ResaleStorage[]> {
 }
 
 export async function getResaleAvailabilitySpecificationCodes(): Promise<string[]> {
-  const result = await apiRequest<unknown>('/resales/availabilities/specification/codes')
+  const result = await apiRequest<unknown>('/resales/permissions/create/specification/codes')
 
   return readArrayPayload(result, ['Items', 'SpecificationCodes', 'Data'])
     .filter((code): code is string => typeof code === 'string')
@@ -254,7 +265,7 @@ export async function getResaleAvailabilitySpecificationCodes(): Promise<string[
 export async function getResaleAvailabilities(
   payload: ResaleAvailabilityFilterPayload,
 ): Promise<ResaleAvailabilityWithTotals> {
-  const result = await apiRequest<unknown>('/resales/availabilities/all/filtered', {
+  const result = await apiRequest<unknown>('/resales/permissions/create/availabilities', {
     body: payload,
     method: 'POST',
   })
@@ -265,7 +276,7 @@ export async function getResaleAvailabilities(
 export async function exportResaleAvailabilities(
   payload: ResaleAvailabilityFilterPayload,
 ): Promise<ResaleExportDocument> {
-  const result = await apiRequest<unknown>('/resales/document/resale', {
+  const result = await apiRequest<unknown>('/resales/permissions/create/export', {
     body: payload,
     method: 'POST',
   })
@@ -276,7 +287,7 @@ export async function exportResaleAvailabilities(
 export async function updateResaleAvailabilityList(
   payload: ResaleAvailabilityItemModel[],
 ): Promise<ResaleActionResult<CreatedResaleAvailabilityWithTotals>> {
-  const result = await apiRequest<unknown>('/resales/availability/list/update', {
+  const result = await apiRequest<unknown>('/resales/permissions/create/recalculate', {
     body: payload,
     method: 'POST',
   })
@@ -287,7 +298,7 @@ export async function updateResaleAvailabilityList(
 export async function generateAutomaticallyResale(
   payload: GenerateAutomaticallyResalePayload,
 ): Promise<ResaleActionResult<CreatedResaleAvailabilityWithTotals>> {
-  const result = await apiRequest<unknown>('/resales/generate/automatically', {
+  const result = await apiRequest<unknown>('/resales/permissions/create/generate', {
     body: payload,
     method: 'POST',
   })
@@ -351,7 +362,7 @@ async function addResaleCore(
   }
 
   try {
-    const result = await apiRequest<unknown>('/resales/add', {
+    const result = await apiRequest<unknown>('/resales/permissions/create', {
       body: pending.payload,
       headers: {
         'Idempotency-Key': pending.operationNetUid,
