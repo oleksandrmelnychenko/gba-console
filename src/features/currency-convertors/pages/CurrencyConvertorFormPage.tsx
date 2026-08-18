@@ -8,7 +8,8 @@ import { AppModal } from '../../../shared/ui/AppModal'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
-import { useAuth } from '../../auth/useAuth'
+import { usePermissions } from '../../auth/usePermissions'
+import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { createCurrencyTrader, deleteCurrencyTrader, getCurrencyTrader, updateCurrencyTrader } from '../api/currencyConvertorsApi'
 import { CURRENCY_CONVERTOR_CREATE_PERMISSION, CURRENCY_CONVERTOR_EDIT_PERMISSION } from '../permissions'
 import type { CurrencyTrader, CurrencyTraderPayload } from '../types'
@@ -43,7 +44,7 @@ const CONVERTORS_PATH = '/accounting/currency-convertors'
 
 export function CurrencyConvertorFormPage() {
   const { t } = useI18n()
-  const { hasPermission } = useAuth()
+  const { can, isLoading: permissionsLoading } = usePermissions()
   const { id } = useParams<{ id?: string }>()
   const routeLocation = useLocation()
   const navigate = useNavigate()
@@ -59,9 +60,15 @@ export function CurrencyConvertorFormPage() {
   const [isSaving, setSaving] = useValueState(false)
   const [isDeleting, setDeleting] = useValueState(false)
   const [deleteModalOpened, setDeleteModalOpened] = useValueState(false)
-  const canSave = hasPermission(isEditMode ? CURRENCY_CONVERTOR_EDIT_PERMISSION : CURRENCY_CONVERTOR_CREATE_PERMISSION)
+  const canView = can(PermissionKeys.FinancialAdministration.CurrencyConvertors.Page.View)
+  const canSave = can(isEditMode ? CURRENCY_CONVERTOR_EDIT_PERMISSION : CURRENCY_CONVERTOR_CREATE_PERMISSION)
+  const canOpenRoute = canView && (isEditMode || canSave)
 
   useEffect(() => {
+    if (permissionsLoading || !canOpenRoute) {
+      return
+    }
+
     if (!id) {
       return
     }
@@ -92,7 +99,19 @@ export function CurrencyConvertorFormPage() {
       })
 
     return () => controller.abort()
-  }, [id, t])
+  }, [canOpenRoute, id, permissionsLoading, t])
+
+  if (permissionsLoading) {
+    return <Text c="dimmed">{t('Завантаження')}</Text>
+  }
+
+  if (!canOpenRoute) {
+    return (
+      <Alert color="red" icon={<CircleAlert size={18} />} title={t('Доступ заборонено')} variant="light">
+        {t('Недостатньо прав для відкриття валютного трейдера')}
+      </Alert>
+    )
+  }
 
   if (isEditMode && !id) {
     return <Navigate replace to={CONVERTORS_PATH} />
@@ -146,7 +165,7 @@ export function CurrencyConvertorFormPage() {
   }
 
   async function handleDelete() {
-    if (!trader.NetUid) {
+    if (!canSave || !trader.NetUid) {
       return
     }
 
@@ -177,7 +196,7 @@ export function CurrencyConvertorFormPage() {
       onClose={handleCancel}
       footer={
         <Group gap="xs">
-          {isEditMode && (
+          {isEditMode && canSave && (
             <Button
               color="red"
               disabled={isLoading || !canSave || !trader.NetUid}
@@ -190,16 +209,18 @@ export function CurrencyConvertorFormPage() {
               {t('Видалити')}
             </Button>
           )}
-          <Button
-            color={CREATE_ACTION_COLOR}
-            disabled={isLoading || !canSave}
-            form="currency-trader-form"
-            leftSection={<Save size={16} />}
-            loading={isSaving}
-            type="submit"
-          >
-            {t('Зберегти')}
-          </Button>
+          {canSave && (
+            <Button
+              color={CREATE_ACTION_COLOR}
+              disabled={isLoading}
+              form="currency-trader-form"
+              leftSection={<Save size={16} />}
+              loading={isSaving}
+              type="submit"
+            >
+              {t('Зберегти')}
+            </Button>
+          )}
         </Group>
       }
     >
@@ -219,27 +240,27 @@ export function CurrencyConvertorFormPage() {
 
           <SimpleGrid cols={{ base: 1, md: 2 }}>
             <TextInput
-              disabled={isLoading || isSaving}
+              disabled={isLoading || isSaving || !canSave}
               label={t("Ім'я")}
               required
               value={form.firstName}
               onChange={(event) => updateForm({ firstName: event.currentTarget.value })}
             />
             <TextInput
-              disabled={isLoading || isSaving}
+              disabled={isLoading || isSaving || !canSave}
               label={t('Прізвище')}
               required
               value={form.lastName}
               onChange={(event) => updateForm({ lastName: event.currentTarget.value })}
             />
             <TextInput
-              disabled={isLoading || isSaving}
+              disabled={isLoading || isSaving || !canSave}
               label={t('По батькові')}
               value={form.middleName}
               onChange={(event) => updateForm({ middleName: event.currentTarget.value })}
             />
             <TextInput
-              disabled={isLoading || isSaving}
+              disabled={isLoading || isSaving || !canSave}
               label={t('Телефон')}
               value={form.phoneNumber}
               onChange={(event) => updateForm({ phoneNumber: event.currentTarget.value })}

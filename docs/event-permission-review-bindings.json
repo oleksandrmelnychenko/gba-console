@@ -907,6 +907,74 @@
       "disposition": "duplicate_occurrence",
       "duplicateOf": "PE-00016",
       "reason": "The edit icon and table-row click open the same bank editor under one save permission."
+    },
+    "PE-00491": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-00493",
+      "reason": "Opening the add-rate draft is the first local step of the same exchange-rate update action."
+    },
+    "PE-00493": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": [
+        "payments.currency_convertors.converter.edit"
+      ],
+      "reason": "Adding rates updates the trader aggregate through the existing edit-scoped endpoint and shares the same access boundary."
+    },
+    "PE-00494": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": [
+        "payments.currency_convertors.converter.edit"
+      ],
+      "reason": "Saving an exchange-rate edit updates the trader aggregate through the existing edit-scoped endpoint."
+    },
+    "PE-00496": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-00494",
+      "reason": "Starting inline rate editing is the first local step of the same reviewed rate update."
+    },
+    "PE-00497": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": [
+        "payments.currency_convertors.converter.edit"
+      ],
+      "reason": "Deleting a rate marks it inside the trader aggregate and persists through the existing edit-scoped endpoint."
+    },
+    "PE-00501": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-00504",
+      "reason": "Opening the trader-delete confirmation is the first UI step of the same edit-scoped delete action."
+    },
+    "PE-00502": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": [
+        "payments.currency_convertors.converter.create",
+        "payments.currency_convertors.converter.edit"
+      ],
+      "reason": "The shared form submit uses create for a new trader and edit for an existing trader, each through its scoped endpoint."
+    },
+    "PE-00504": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": [
+        "payments.currency_convertors.converter.edit"
+      ],
+      "reason": "Trader deletion is part of the existing trader-edit authority and calls the edit-scoped delete endpoint."
+    },
+    "PE-00507": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-00502",
+      "reason": "The create-page opener and final create submit are one business action under the existing create permission."
+    },
+    "PE-00508": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": [
+        "payments.currency_convertors.page.view"
+      ],
+      "reason": "The row opens exchange-rate history and loads it through the existing page-view-scoped read endpoint."
+    },
+    "PE-00510": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-00502",
+      "reason": "The edit icon opens the same trader edit workflow whose final submit is governed by converter.edit."
     }
   }
 }

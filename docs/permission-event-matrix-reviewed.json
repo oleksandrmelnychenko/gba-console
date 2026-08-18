@@ -5,16 +5,16 @@
     "classifiedRecords": 1902,
     "dispositionCounts": {
       "technical_ui": 647,
-      "covered_existing": 314,
-      "business_candidate": 533,
+      "covered_existing": 320,
+      "business_candidate": 522,
       "needs_human_review": 271,
-      "duplicate_occurrence": 129,
+      "duplicate_occurrence": 134,
       "stale_or_aggregated": 8
     },
-    "reviewCandidates": 804,
+    "reviewCandidates": 793,
     "technicalExcluded": 647,
-    "duplicatesExcluded": 129,
-    "duplicateOccurrencesTotal": 196,
+    "duplicatesExcluded": 134,
+    "duplicateOccurrencesTotal": 201,
     "technicalDuplicateOverlap": 67,
     "sourceResolved": 1828,
     "sourceUnresolved": 74,
@@ -829,7 +829,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/accounting-banks/pages/AccountingBanksPage.tsx",
-        "line": 548,
+        "line": 547,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -860,12 +860,12 @@
       "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-90e85f75038c",
-          "distance": 70,
+          "candidateId": "EPC-10bce9009e58",
+          "distance": 69,
           "file": "src/features/accounting-banks/pages/AccountingBanksPage.tsx",
           "handler": "{() => openEditor(bank)}",
           "humanLabel": "Редагувати",
-          "line": 550,
+          "line": 549,
           "permissionKeys": [
             "payments.banks.bank.save"
           ],
@@ -906,12 +906,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-49ffbf60ae16",
-          "distance": 72,
+          "candidateId": "EPC-cdee6d0546b9",
+          "distance": 71,
           "file": "src/features/accounting-banks/pages/AccountingBanksPage.tsx",
           "handler": "{() => requestDelete(bank)}",
           "humanLabel": "Видалити",
-          "line": 553,
+          "line": 552,
           "permissionKeys": [
             "payments.banks.bank.delete"
           ],
@@ -19558,12 +19558,12 @@
       "proposedPermission": "accounting.accounting_currency_convertors.on_start_add.command_submit",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
-      "duplicateOf": null,
+      "disposition": "duplicate_occurrence",
+      "dispositionReason": "Opening the add-rate draft is the first local step of the same exchange-rate update action.",
+      "duplicateOf": "PE-00493",
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
           "candidateId": "EPC-40dd66240030",
@@ -19642,12 +19642,14 @@
       "proposedPermission": "accounting.accounting_currency_convertors.on_save_new_rate.command_submit",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "covered_existing",
+      "dispositionReason": "Adding rates updates the trader aggregate through the existing edit-scoped endpoint and shares the same access boundary.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "payments.currency_convertors.converter.edit"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
           "candidateId": "EPC-39ef1970de70",
@@ -19684,12 +19686,14 @@
       "proposedPermission": "accounting.accounting_currency_convertors.on_save_edit.command_submit",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "covered_existing",
+      "dispositionReason": "Saving an exchange-rate edit updates the trader aggregate through the existing edit-scoped endpoint.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "payments.currency_convertors.converter.edit"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
           "candidateId": "EPC-4aa2ac06d952",
@@ -19768,12 +19772,12 @@
       "proposedPermission": "accounting.accounting_currency_convertors.on_start_edit_rate.button_click",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
-      "duplicateOf": null,
+      "disposition": "duplicate_occurrence",
+      "dispositionReason": "Starting inline rate editing is the first local step of the same reviewed rate update.",
+      "duplicateOf": "PE-00494",
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
           "candidateId": "EPC-d6ecd0d98103",
@@ -19810,12 +19814,14 @@
       "proposedPermission": "accounting.accounting_currency_convertors.on_delete_rate.command_delete",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "covered_existing",
+      "dispositionReason": "Deleting a rate marks it inside the trader aggregate and persists through the existing edit-scoped endpoint.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "payments.currency_convertors.converter.edit"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
           "candidateId": "EPC-80ea6aac2ebc",
@@ -19862,7 +19868,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/currency-convertors/pages/CurrencyConvertorsPage.tsx",
-        "line": 360,
+        "line": 376,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -19895,7 +19901,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/currency-convertors/pages/CurrencyConvertorFormPage.tsx",
-        "line": 44,
+        "line": 45,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -19928,7 +19934,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/currency-convertors/pages/CurrencyConvertorFormPage.tsx",
-        "line": 44,
+        "line": 45,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -19951,20 +19957,20 @@
       "proposedPermission": "accounting.accounting_currency_convertors.set_delete_modal_opened_true.modal_open",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
-      "duplicateOf": null,
+      "disposition": "duplicate_occurrence",
+      "dispositionReason": "Opening the trader-delete confirmation is the first UI step of the same edit-scoped delete action.",
+      "duplicateOf": "PE-00504",
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-746c34f1e69c",
+          "candidateId": "EPC-70911b2f96ca",
           "distance": 7,
           "file": "src/features/currency-convertors/pages/CurrencyConvertorFormPage.tsx",
           "handler": "{() => setDeleteModalOpened(true)}",
           "humanLabel": "Видалити",
-          "line": 181,
+          "line": 200,
           "permissionKeys": [],
           "score": 24
         }
@@ -19972,7 +19978,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/currency-convertors/pages/CurrencyConvertorFormPage.tsx",
-        "line": 188,
+        "line": 207,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -19995,20 +20001,23 @@
       "proposedPermission": "accounting.accounting_currency_convertors.handle_submit.form_submit",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "covered_existing",
+      "dispositionReason": "The shared form submit uses create for a new trader and edit for an existing trader, each through its scoped endpoint.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "payments.currency_convertors.converter.create",
+        "payments.currency_convertors.converter.edit"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-eeedb3ebb2e8",
-          "distance": 93,
+          "candidateId": "EPC-630943903cc5",
+          "distance": 95,
           "file": "src/features/currency-convertors/pages/CurrencyConvertorFormPage.tsx",
           "handler": "{handleSubmit}",
           "humanLabel": null,
-          "line": 206,
+          "line": 227,
           "permissionKeys": [],
           "score": 12
         }
@@ -20016,7 +20025,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/currency-convertors/pages/CurrencyConvertorFormPage.tsx",
-        "line": 113,
+        "line": 132,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -20047,12 +20056,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-fbf76f9e2749",
-          "distance": 101,
+          "candidateId": "EPC-766e308107e5",
+          "distance": 103,
           "file": "src/features/currency-convertors/pages/CurrencyConvertorFormPage.tsx",
           "handler": "{() => setDeleteModalOpened(false)}",
           "humanLabel": "Скасувати",
-          "line": 266,
+          "line": 287,
           "permissionKeys": [],
           "score": 25
         }
@@ -20060,7 +20069,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/currency-convertors/pages/CurrencyConvertorFormPage.tsx",
-        "line": 165,
+        "line": 184,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -20083,20 +20092,22 @@
       "proposedPermission": "accounting.accounting_currency_convertors.handle_delete.command_delete",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "covered_existing",
+      "dispositionReason": "Trader deletion is part of the existing trader-edit authority and calls the edit-scoped delete endpoint.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "payments.currency_convertors.converter.edit"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-57cf5b9f6337",
-          "distance": 121,
+          "candidateId": "EPC-48b27fb79f0e",
+          "distance": 123,
           "file": "src/features/currency-convertors/pages/CurrencyConvertorFormPage.tsx",
           "handler": "{handleDelete}",
           "humanLabel": "Видалити",
-          "line": 269,
+          "line": 290,
           "permissionKeys": [],
           "score": 12
         }
@@ -20104,7 +20115,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/currency-convertors/pages/CurrencyConvertorFormPage.tsx",
-        "line": 148,
+        "line": 167,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -20135,12 +20146,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-8d7c0cd67556",
+          "candidateId": "EPC-e9805aaaf9d1",
           "distance": 6,
           "file": "src/features/currency-convertors/pages/CurrencyConvertorsPage.tsx",
           "handler": "{model.resetSearch}",
           "humanLabel": "Скинути",
-          "line": 401,
+          "line": 417,
           "permissionKeys": [],
           "score": 16
         }
@@ -20148,7 +20159,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/currency-convertors/pages/CurrencyConvertorsPage.tsx",
-        "line": 407,
+        "line": 423,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -20179,12 +20190,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-8dddfc857b37",
+          "candidateId": "EPC-4a0f75462045",
           "distance": 6,
           "file": "src/features/currency-convertors/pages/CurrencyConvertorsPage.tsx",
           "handler": "{() => model.reload()}",
           "humanLabel": "Оновити",
-          "line": 413,
+          "line": 429,
           "permissionKeys": [],
           "score": 11
         }
@@ -20192,7 +20203,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/currency-convertors/pages/CurrencyConvertorsPage.tsx",
-        "line": 419,
+        "line": 435,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -20215,17 +20226,17 @@
       "proposedPermission": "accounting.accounting_currency_convertors.model_go_to_create.command_submit",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
-      "duplicateOf": null,
+      "disposition": "duplicate_occurrence",
+      "dispositionReason": "The create-page opener and final create submit are one business action under the existing create permission.",
+      "duplicateOf": "PE-00502",
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [],
       "source": {
         "status": "resolved",
         "file": "src/features/currency-convertors/pages/CurrencyConvertorsPage.tsx",
-        "line": 432,
+        "line": 448,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -20248,20 +20259,22 @@
       "proposedPermission": "accounting.accounting_currency_convertors.model_open_trader.row_click",
       "securityLevel": "medium",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "covered_existing",
+      "dispositionReason": "The row opens exchange-rate history and loads it through the existing page-view-scoped read endpoint.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "payments.currency_convertors.page.view"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-133d7ce9ffbc",
+          "candidateId": "EPC-1b33bdf6915a",
           "distance": 13,
           "file": "src/features/currency-convertors/pages/CurrencyConvertorsPage.tsx",
           "handler": "{model.openTrader}",
           "humanLabel": null,
-          "line": 447,
+          "line": 463,
           "permissionKeys": [],
           "score": 15
         }
@@ -20269,7 +20282,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/currency-convertors/pages/CurrencyConvertorsPage.tsx",
-        "line": 460,
+        "line": 476,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -20302,7 +20315,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/currency-convertors/pages/CurrencyConvertorsPage.tsx",
-        "line": 569,
+        "line": 585,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -20325,20 +20338,20 @@
       "proposedPermission": "accounting.accounting_currency_convertors.on_edit_trader.button_click",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
-      "duplicateOf": null,
+      "disposition": "duplicate_occurrence",
+      "dispositionReason": "The edit icon opens the same trader edit workflow whose final submit is governed by converter.edit.",
+      "duplicateOf": "PE-00502",
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-7d8bd569a517",
+          "candidateId": "EPC-be085bc13254",
           "distance": 70,
           "file": "src/features/currency-convertors/pages/CurrencyConvertorsPage.tsx",
           "handler": "{() => onEdit(trader)}",
           "humanLabel": "Редагування валютного трейдера",
-          "line": 570,
+          "line": 586,
           "permissionKeys": [],
           "score": 10
         }
@@ -20346,7 +20359,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/currency-convertors/pages/CurrencyConvertorsPage.tsx",
-        "line": 500,
+        "line": 516,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -79306,17 +79319,6 @@
     "PE-00485",
     "PE-00486",
     "PE-00488",
-    "PE-00491",
-    "PE-00493",
-    "PE-00494",
-    "PE-00496",
-    "PE-00497",
-    "PE-00501",
-    "PE-00502",
-    "PE-00504",
-    "PE-00507",
-    "PE-00508",
-    "PE-00510",
     "PE-00511",
     "PE-00513",
     "PE-00517",

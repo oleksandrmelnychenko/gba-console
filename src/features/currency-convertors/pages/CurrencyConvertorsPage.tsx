@@ -11,7 +11,6 @@ import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn } from '../../../shared/ui/data-table/types'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { TableRowAction } from '../../../shared/ui/table-row-action'
-import { useAuth } from '../../auth/useAuth'
 import { usePermissions } from '../../auth/usePermissions'
 import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import {
@@ -48,9 +47,9 @@ function useCurrencyConvertorsPageModel() {
   const { t } = useI18n()
   const navigate = useNavigate()
   const location = useLocation()
-  const { hasPermission } = useAuth()
-  const canCreate = hasPermission(CURRENCY_CONVERTOR_CREATE_PERMISSION)
-  const canEdit = hasPermission(CURRENCY_CONVERTOR_EDIT_PERMISSION)
+  const { can } = usePermissions()
+  const canCreate = can(CURRENCY_CONVERTOR_CREATE_PERMISSION)
+  const canEdit = can(CURRENCY_CONVERTOR_EDIT_PERMISSION)
   const initialFrom = useMemo(() => getDateShiftedByDays(-7), [])
   const initialTo = useMemo(() => formatLocalDate(new Date()), [])
 
@@ -190,6 +189,11 @@ function useCurrencyConvertorsPageModel() {
   }
 
   async function persistTrader(payload: CurrencyTraderPayload, successMessage: string) {
+    if (!canEdit) {
+      setRatesError(t('Недостатньо прав для редагування валютного трейдера'))
+      return
+    }
+
     setSaving(true)
     setRatesError(null)
 
@@ -211,6 +215,10 @@ function useCurrencyConvertorsPageModel() {
   }
 
   function startAdd() {
+    if (!canEdit) {
+      return
+    }
+
     setNewRateDraft(createNewRateDraft())
     setEditingRate(null)
     setAdding(true)
@@ -229,7 +237,7 @@ function useCurrencyConvertorsPageModel() {
   }
 
   async function saveNewRate() {
-    if (!selectedTrader) {
+    if (!selectedTrader || !canEdit) {
       return
     }
 
@@ -249,6 +257,10 @@ function useCurrencyConvertorsPageModel() {
   }
 
   function startEdit(rate: CurrencyTraderExchangeRate) {
+    if (!canEdit) {
+      return
+    }
+
     setEditingRate(rate)
     setEditingValue(typeof rate.ExchangeRate === 'number' ? String(rate.ExchangeRate) : '')
   }
@@ -258,7 +270,7 @@ function useCurrencyConvertorsPageModel() {
   }
 
   async function saveEdit() {
-    if (!selectedTrader || !editingRate) {
+    if (!selectedTrader || !editingRate || !canEdit) {
       return
     }
 
@@ -281,7 +293,7 @@ function useCurrencyConvertorsPageModel() {
   }
 
   async function deleteRate(rate: CurrencyTraderExchangeRate) {
-    if (!selectedTrader) {
+    if (!selectedTrader || !canEdit) {
       return
     }
 
@@ -296,11 +308,15 @@ function useCurrencyConvertorsPageModel() {
   }
 
   function goToCreate() {
+    if (!canCreate) {
+      return
+    }
+
     navigate(`${CONVERTORS_PATH}/new`, { state: { backgroundLocation: location } })
   }
 
   function goToEdit(trader: CurrencyTrader) {
-    if (trader.NetUid) {
+    if (canEdit && trader.NetUid) {
       navigate(`${CONVERTORS_PATH}/edit/${trader.NetUid}`, { state: { backgroundLocation: location } })
     }
   }
