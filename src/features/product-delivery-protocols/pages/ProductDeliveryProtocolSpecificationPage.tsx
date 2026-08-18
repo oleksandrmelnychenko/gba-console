@@ -15,13 +15,14 @@ import { CircleAlert, FileDown, FileInput, FileX, Layers } from 'lucide-react'
 import { useEffect, useRef } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { formatLocalDate, formatLocalInputDateTime } from '../../../shared/date/dateTime'
+import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppModal } from '../../../shared/ui/AppModal'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { useAuth } from '../../auth/useAuth'
-import { getProtocolByNetId } from '../api/productDeliveryProtocolsApi'
+import { getProtocolForSpecification } from '../api/productDeliveryProtocolsApi'
 import { searchSupplyOrganizations } from '../api/protocolDetailApi'
 import {
   addDeliveryDocumentsToInvoice,
@@ -61,12 +62,11 @@ const CURRENCY_EUR = 'eur'
 const CURRENCY_UAH = 'uah'
 const SERVICES_MANAGEMENT = 'management'
 const SERVICES_ACCOUNTING = 'accounting'
-const PERMISSION_UPLOAD_SPECIFICATIONS = 'ProductDeliveryProtocols_specifications_download_exel_upload_PKEY'
-const PERMISSION_UPLOAD_DELIVERY_DOCUMENTS =
-  'ProductDeliveryProtocols_specifications_download_exel_upload_documents_PKEY'
-const PERMISSION_DOWNLOAD_SPECIFICATION = 'ProductDeliveryProtocols_specifications_download_exel_PKEY'
-const PERMISSION_OPEN_SPECIFICATION_CODE = 'ProductDeliveryProtocols_specifications_customs_codes_infoBtn_PKEY'
-const PERMISSION_SAVE_SPECIFICATION_CODE = 'SPECIFICATION_CODES_ordersUkraineAllEdit_SaveModalBtn_PKEY'
+const PERMISSION_UPLOAD_SPECIFICATIONS = PermissionKeys.ProductDeliveryProtocols.SpecificationCodes.Download
+const PERMISSION_UPLOAD_DELIVERY_DOCUMENTS = PermissionKeys.ProductDeliveryProtocols.DeliveryDocuments.Download
+const PERMISSION_DOWNLOAD_SPECIFICATION = PermissionKeys.ProductDeliveryProtocols.Documents.Download
+const PERMISSION_OPEN_SPECIFICATION_CODE = PermissionKeys.ProductDeliveryProtocols.SpecificationHistory.Open
+const PERMISSION_SAVE_SPECIFICATION_CODE = PermissionKeys.OrdersUkraine.SpecificationCodes.Edit
 const SUPPLY_ORGANIZATION_SEARCH_DEBOUNCE_MS = 300
 const SPECIFICATION_CURRENCY_OPTIONS = [
   { label: 'EUR', value: CURRENCY_EUR },
@@ -225,7 +225,7 @@ function useSpecificationModel(netId: string | undefined) {
       }))
 
       try {
-        const result = await getProtocolByNetId(currentNetId)
+        const result = await getProtocolForSpecification(currentNetId)
 
         if (cancelled) {
           return
@@ -432,7 +432,7 @@ function useSpecificationModel(netId: string | undefined) {
       return null
     }
 
-    const result = await getProtocolByNetId(netId)
+    const result = await getProtocolForSpecification(netId)
     const protocolResult = result ? (result as unknown as SpecificationProtocol) : null
 
     if (isCurrent()) {

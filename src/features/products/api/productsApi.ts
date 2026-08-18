@@ -36,7 +36,7 @@ import { getEmptyGuid } from '../utils'
 
 export async function getProducts(params: ProductSearchParams): Promise<Product[]> {
   const value = params.value?.trim() || ''
-  const result = await apiRequest<unknown>('/products/search/advanced', {
+  const result = await apiRequest<unknown>('/products/assortment/search', {
     query: {
       limit: params.limit,
       mode: params.searchMode,
@@ -68,7 +68,7 @@ export async function uploadProductsFromFile(configuration: ProductFileUploadCon
   formData.append('file', file)
   formData.append('configuration', JSON.stringify(normalizedConfiguration))
 
-  await apiRequest<unknown>('/products/upload/file', {
+  await apiRequest<unknown>('/products/assortment/upload/file', {
     method: 'POST',
     body: formData,
     errorMessages: {
@@ -100,7 +100,7 @@ function normalizeProductFileUploadConfiguration(
 }
 
 export async function getProductByNetId(netId: string, signal?: AbortSignal): Promise<Product | null> {
-  const result = await apiRequest<unknown>('/products/get', {
+  const result = await apiRequest<unknown>('/products/assortment/details', {
     query: {
       netId,
     },
@@ -159,7 +159,7 @@ export async function getProductReservationByNetId(netId: string, signal?: Abort
 }
 
 export async function updateProduct(product: Product, descriptionOnly = false): Promise<Product | null> {
-  const result = await apiRequest<unknown>('/products/update', {
+  const result = await apiRequest<unknown>('/products/assortment/update', {
     method: 'POST',
     query: {
       descriptionOnly,
@@ -175,7 +175,7 @@ export async function updateProduct(product: Product, descriptionOnly = false): 
 }
 
 export async function addProductSpecificationCode(product: Product, specification: ProductSpecification): Promise<Product | null> {
-  const result = await apiRequest<unknown>('/products/specification/new', {
+  const result = await apiRequest<unknown>('/products/assortment/specification/update', {
     method: 'POST',
     body: buildProductSpecificationPayload(product, specification),
     errorMessages: {
@@ -187,13 +187,17 @@ export async function addProductSpecificationCode(product: Product, specificatio
   return normalizeProduct(result)
 }
 
-export async function updateProductWithImages(product: Product, files: File[]): Promise<Product | null> {
+export async function updateProductWithImages(
+  product: Product,
+  files: File[],
+  permissionMode: 'delete' | 'upload' | 'upload-and-delete',
+): Promise<Product | null> {
   const formData = new FormData()
 
   files.forEach((file) => formData.append('images', file))
   formData.append('entity', JSON.stringify(buildProductImageUpdatePayload(product)))
 
-  const result = await apiRequest<unknown>('/products/update/upload', {
+  const result = await apiRequest<unknown>(`/products/assortment/images/${permissionMode}`, {
     method: 'POST',
     body: formData,
     errorMessages: {
@@ -285,7 +289,7 @@ export async function uploadProductPlacementStorageFile(
   formData.append('storageId', JSON.stringify(storageId))
   formData.append('parseConfiguration', JSON.stringify(configuration))
 
-  const result = await apiRequest<unknown>('/products/placements/storage/upload/placement/file', {
+  const result = await apiRequest<unknown>('/products/placements/storage/assortment/upload/placement/file', {
     method: 'POST',
     body: formData,
     errorMessages: {
@@ -301,7 +305,7 @@ export async function uploadProductPlacementStorageReturn(
   storageId: number,
   productPlacementStorages: ProductPlacementStorage[],
 ): Promise<ProductPlacementStorage[]> {
-  const result = await apiRequest<unknown>('/products/placements/storage/upload/placement/return', {
+  const result = await apiRequest<unknown>('/products/placements/storage/assortment/upload/placement/return', {
     method: 'POST',
     body: {
       productPlacementStorages,
@@ -337,7 +341,7 @@ export async function getProductStorageLocationHistory(
 }
 
 export async function getProductConsignmentRemainings(netId: string): Promise<ProductConsignmentRemaining[]> {
-  const result = await apiRequest<unknown>('/consignments/remaining/all/product', {
+  const result = await apiRequest<unknown>('/consignments/remaining/assortment/product', {
     query: {
       netId,
     },
@@ -351,7 +355,7 @@ export async function getProductConsignmentRemainings(netId: string): Promise<Pr
 }
 
 export async function getProductMovements(params: ProductMovementsParams): Promise<ProductMovement[]> {
-  const result = await apiRequest<unknown>('/consignments/info/movement/filtered', {
+  const result = await apiRequest<unknown>('/consignments/info/assortment/movement/filtered', {
     query: {
       from: params.from,
       movementType: params.movementType,
@@ -441,7 +445,7 @@ export async function exportProductOutcomeMovementsDocument(
 }
 
 export async function getProductWriteOffRulesByProductNetId(netId: string): Promise<ProductWriteOffRule[]> {
-  const result = await apiRequest<unknown>('/products/writeoff/rules/all/product', {
+  const result = await apiRequest<unknown>('/products/writeoff/rules/assortment/all/product', {
     query: {
       netId,
     },
@@ -455,7 +459,7 @@ export async function getProductWriteOffRulesByProductNetId(netId: string): Prom
 }
 
 export async function getProductWriteOffRulesByProductGroupNetId(netId: string): Promise<ProductWriteOffRule[]> {
-  const result = await apiRequest<unknown>('/products/writeoff/rules/all/productgroup', {
+  const result = await apiRequest<unknown>('/products/writeoff/rules/assortment/all/productgroup', {
     query: {
       netId,
     },
@@ -483,7 +487,7 @@ export async function getProductGroupsByProductNetId(productNetId: string): Prom
 }
 
 export async function addOrUpdateProductWriteOffRule(payload: ProductWriteOffRulePayload): Promise<ProductWriteOffRule | null> {
-  const result = await apiRequest<unknown>('/products/writeoff/rules/process', {
+  const result = await apiRequest<unknown>('/products/writeoff/rules/assortment/process', {
     method: 'POST',
     body: payload,
     errorMessages: {
@@ -500,7 +504,7 @@ export async function addOrUpdateProductWriteOffRule(payload: ProductWriteOffRul
 }
 
 export async function deleteProductWriteOffRule(netUid: string): Promise<void> {
-  await apiRequest<void>('/products/writeoff/rules/delete', {
+  await apiRequest<void>('/products/writeoff/rules/assortment/delete', {
     method: 'DELETE',
     query: {
       netId: netUid,
@@ -1026,11 +1030,11 @@ function normalizeArray(result: unknown): unknown[] {
 function getProductRelatedUploadEndpoint(type: ProductRelatedUploadType): string {
   switch (type) {
     case 'analogues':
-      return '/products/upload/analogues/file'
+      return '/products/assortment/upload/analogues/file'
     case 'components':
-      return '/products/upload/components/file'
+      return '/products/assortment/upload/components/file'
     case 'originalNumbers':
-      return '/products/upload/oems/file'
+      return '/products/assortment/upload/oems/file'
   }
 }
 

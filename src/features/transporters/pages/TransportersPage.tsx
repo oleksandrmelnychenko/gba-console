@@ -23,6 +23,8 @@ import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { toProxiedAssetUrl } from '../../../shared/url/proxiedAssetUrl'
 import { resolveTransporterLogo } from '../../../shared/transporter-icons/transporterLogos'
+import { PermissionKeys } from '../../../shared/auth/permissionKeys'
+import { usePermissions } from '../../auth/usePermissions'
 import {
   archiveTransporter,
   createTransporter,
@@ -112,6 +114,39 @@ function useTransporterColumns({
 }
 
 export function TransportersPage() {
+  const { t } = useI18n()
+  const { can, isLoading } = usePermissions()
+
+  if (isLoading) {
+    return <Text c="dimmed">{t('Завантаження')}</Text>
+  }
+
+  if (!can(PermissionKeys.Transporters.Page.View)) {
+    return (
+      <Alert color="red" icon={<CircleAlert size={18} />} title={t('Доступ заборонено')} variant="light">
+        {t('Недостатньо прав для перегляду перевізників')}
+      </Alert>
+    )
+  }
+
+  return (
+    <TransportersPageContent
+      canArchive={can(PermissionKeys.Transporters.Transporter.Archive)}
+      canCreate={can(PermissionKeys.Transporters.Transporter.Create)}
+      canEdit={can(PermissionKeys.Transporters.Transporter.Edit)}
+    />
+  )
+}
+
+function TransportersPageContent({
+  canArchive,
+  canCreate,
+  canEdit,
+}: {
+  canArchive: boolean
+  canCreate: boolean
+  canEdit: boolean
+}) {
   const { t } = useI18n()
   const [transporterTypes, setTransporterTypes] = useValueState<TransporterType[]>([])
   const [selectedTypeNetId, setSelectedTypeNetId] = useValueState<string | null>(null)
@@ -240,7 +275,7 @@ export function TransportersPage() {
   }, [reloadKey, selectedTypeNetId, setError, setLoadingTransporters, setTransporters, t])
 
   async function handleArchiveTransporter() {
-    if (!archiveTarget?.NetUid || !canArchiveTransporter(archiveTarget)) {
+    if (!canArchive || !archiveTarget?.NetUid || !canArchiveTransporter(archiveTarget)) {
       setArchiveTarget(null)
       return
     }
@@ -273,26 +308,48 @@ export function TransportersPage() {
   }
 
   function openCreateTransporter() {
+    if (!canCreate) {
+      return
+    }
+
     setFormError(null)
     setEditor({ mode: 'create' })
   }
 
   function openTransporterActions(transporter: Transporter) {
+    if (!canEdit && !canArchive) {
+      return
+    }
+
     setActionsTransporter(transporter)
   }
 
   function openEditTransporter(transporter: Transporter) {
+    if (!canEdit) {
+      return
+    }
+
     setActionsTransporter(null)
     setFormError(null)
     setEditor({ mode: 'edit', transporter })
   }
 
   function openArchiveTransporter(transporter: Transporter) {
+    if (!canArchive) {
+      return
+    }
+
     setActionsTransporter(null)
     setArchiveTarget(transporter)
   }
 
   async function handleSaveTransporter(values: TransporterFormValues) {
+    const requiredPermissionGranted = editor?.mode === 'edit' ? canEdit : canCreate
+
+    if (!requiredPermissionGranted) {
+      return
+    }
+
     const validationError = validateTransporterForm(values)
 
     if (validationError) {
@@ -390,16 +447,18 @@ export function TransportersPage() {
           </div>
           <div ref={setTableToolbarSlot} className="app-filter-table-toolbar-slot transporters-table-toolbar-slot" />
           <div className="transporters-create-actions">
-            <Button
-              className="transporters-create-action"
-              color={CREATE_ACTION_COLOR}
-              disabled={!selectedTransporterType}
-              leftSection={<Plus size={16} />}
-              size="sm"
-              onClick={openCreateTransporter}
-            >
-              {t('Створити')}
-            </Button>
+            {canCreate && (
+              <Button
+                className="transporters-create-action"
+                color={CREATE_ACTION_COLOR}
+                disabled={!selectedTransporterType}
+                leftSection={<Plus size={16} />}
+                size="sm"
+                onClick={openCreateTransporter}
+              >
+                {t('Створити')}
+              </Button>
+            )}
           </div>
         </div>
 
@@ -458,13 +517,15 @@ export function TransportersPage() {
               showLayoutControls
               tableId="transporters"
               toolbarPortalTarget={tableToolbarSlot}
-              onRowClick={openTransporterActions}
+              onRowClick={canEdit || canArchive ? openTransporterActions : undefined}
             />
           </section>
         </div>
       </div>
 
       <TransporterActionsModal
+        canArchivePermission={canArchive}
+        canEdit={canEdit}
         isArchiving={isArchiving}
         transporter={actionsTransporter}
         onArchive={openArchiveTransporter}
@@ -519,12 +580,16 @@ export function TransportersPage() {
 }
 
 function TransporterActionsModal({
+  canArchivePermission,
+  canEdit,
   isArchiving,
   transporter,
   onArchive,
   onClose,
   onEdit,
 }: {
+  canArchivePermission: boolean
+  canEdit: boolean
   isArchiving: boolean
   transporter: Transporter | null
   onArchive: (transporter: Transporter) => void
@@ -533,7 +598,7 @@ function TransporterActionsModal({
 }) {
   const { t } = useI18n()
   const isActive = transporter?.Deleted !== true
-  const canArchive = transporter ? canArchiveTransporter(transporter) : false
+  const canArchive = canArchivePermission && transporter ? canArchiveTransporter(transporter) : false
 
   return (
     <AppModal
@@ -551,38 +616,43 @@ function TransporterActionsModal({
       {transporter && (
         <Stack gap="md">
           <Stack className="app-modal-actions" gap="xs">
-            <Button
-              fullWidth
-              color="dark"
-              justify="flex-start"
-              leftSection={
-                <span className="app-action-icon">
-                  <ExternalLink size={20} color="var(--mantine-color-gray-7)" />
-                </span>
-              }
-              size="md"
-              variant="subtle"
-              onClick={() => onEdit(transporter)}
-            >
-              {t('Редагувати')}
-            </Button>
+            {canEdit && (
+              <Button
+                fullWidth
+                color="dark"
+                justify="flex-start"
+                leftSection={
+                  <span className="app-action-icon">
+                    <ExternalLink size={20} color="var(--mantine-color-gray-7)" />
+                  </span>
+                }
+                size="md"
+                variant="subtle"
+                onClick={() => onEdit(transporter)}
+              >
+                {t('Редагувати')}
+              </Button>
+            )}
           </Stack>
 
-          <Divider />
-
-          <Button
-            fullWidth
-            color="gray"
-            disabled={!canArchive}
-            justify="flex-start"
-            leftSection={<Archive size={16} />}
-            loading={isArchiving}
-            title={getArchiveTooltip(transporter)}
-            variant="light"
-            onClick={() => onArchive(transporter)}
-          >
-            {t('Архівувати')}
-          </Button>
+          {canArchivePermission && (
+            <>
+              <Divider />
+              <Button
+                fullWidth
+                color="gray"
+                disabled={!canArchive}
+                justify="flex-start"
+                leftSection={<Archive size={16} />}
+                loading={isArchiving}
+                title={getArchiveTooltip(transporter)}
+                variant="light"
+                onClick={() => onArchive(transporter)}
+              >
+                {t('Архівувати')}
+              </Button>
+            </>
+          )}
         </Stack>
       )}
     </AppModal>

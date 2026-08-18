@@ -31,7 +31,11 @@ const INITIAL_ACT_PROVIDING_SERVICE_DETAIL_STATE: ActProvidingServiceDetailState
 
 export type ActProvidingServiceDetailModel = ReturnType<typeof useActProvidingServiceDetailModel>
 
-export function useActProvidingServiceDetailModel(id: string | undefined) {
+export function useActProvidingServiceDetailModel(
+  id: string | undefined,
+  loadActRequest: typeof getActProvidingService = getActProvidingService,
+  canEdit = false,
+) {
   const { t } = useI18n()
   const [state, setState] = useValueState<ActProvidingServiceDetailState>(INITIAL_ACT_PROVIDING_SERVICE_DETAIL_STATE)
   const requestRef = useRef(0)
@@ -59,7 +63,7 @@ export function useActProvidingServiceDetailModel(id: string | undefined) {
     requestRef.current = requestId
     setState((currentState) => ({ ...currentState, error: null, isLoading: true }))
 
-    void getActProvidingService(id)
+    void loadActRequest(id)
       .then((loadedAct) => {
         if (!isActive || requestRef.current !== requestId) {
           return
@@ -99,7 +103,7 @@ export function useActProvidingServiceDetailModel(id: string | undefined) {
     return () => {
       isActive = false
     }
-  }, [id, setState, t])
+  }, [id, loadActRequest, setState, t])
 
   useEffect(() => {
     return loadAct()
@@ -118,7 +122,7 @@ export function useActProvidingServiceDetailModel(id: string | undefined) {
     [setState],
   )
   const save = useCallback(() => {
-    if (!act) {
+    if (!act || !canEdit) {
       return
     }
 
@@ -172,7 +176,7 @@ export function useActProvidingServiceDetailModel(id: string | undefined) {
           }))
         }
       })
-  }, [act, comment, fromDate, setState, t])
+  }, [act, canEdit, comment, fromDate, setState, t])
 
   return {
     act,

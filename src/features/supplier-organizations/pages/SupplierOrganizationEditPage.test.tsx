@@ -6,11 +6,11 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { I18nProvider } from '../../../shared/i18n/I18nProvider'
 import type { SupplyOrganization, SupplyOrganizationAgreement } from '../types'
 import {
-  createSupplyOrganization,
+  createSupplierOrganization,
   createSupplyOrganizationAgreement,
   getSupplierOrganizationCurrencies,
   getSupplierOrganizationsOwners,
-  getSupplyOrganization,
+  getSupplierOrganizationOverviewDetails,
   updateSupplyOrganization,
   updateSupplyOrganizationAgreement,
 } from '../api/supplierOrganizationsApi'
@@ -22,6 +22,10 @@ vi.mock('@mantine/notifications', () => ({
 
 vi.mock('../../auth/components/PermissionGate', () => ({
   PermissionGate: ({ children }: { children: ReactNode }) => children,
+}))
+
+vi.mock('../../auth/usePermissions', () => ({
+  usePermissions: () => ({ can: () => true, isLoading: false }),
 }))
 
 vi.mock('../../../shared/ui/AppDrawer', () => ({
@@ -67,12 +71,12 @@ vi.mock('../../../shared/ui/data-table/DataTable', () => ({
 }))
 
 vi.mock('../api/supplierOrganizationsApi', () => ({
-  createSupplyOrganization: vi.fn(),
+  createSupplierOrganization: vi.fn(),
   createSupplyOrganizationAgreement: vi.fn(),
-  deleteSupplyOrganization: vi.fn(),
+  removeSupplierOrganization: vi.fn(),
   getSupplierOrganizationCurrencies: vi.fn(),
   getSupplierOrganizationsOwners: vi.fn(),
-  getSupplyOrganization: vi.fn(),
+  getSupplierOrganizationOverviewDetails: vi.fn(),
   updateSupplyOrganization: vi.fn(),
   updateSupplyOrganizationAgreement: vi.fn(),
 }))
@@ -113,8 +117,8 @@ beforeEach(() => {
   vi.clearAllMocks()
   vi.mocked(getSupplierOrganizationCurrencies).mockResolvedValue([{ Code: 'EUR', Id: 2 }])
   vi.mocked(getSupplierOrganizationsOwners).mockResolvedValue([{ Id: 3, Name: 'GBA' }])
-  vi.mocked(getSupplyOrganization).mockResolvedValue(EXISTING_SUPPLIER)
-  vi.mocked(createSupplyOrganization).mockResolvedValue(EXISTING_SUPPLIER)
+  vi.mocked(getSupplierOrganizationOverviewDetails).mockResolvedValue(EXISTING_SUPPLIER)
+  vi.mocked(createSupplierOrganization).mockResolvedValue(EXISTING_SUPPLIER)
   vi.mocked(updateSupplyOrganization).mockResolvedValue(EXISTING_SUPPLIER)
   vi.mocked(createSupplyOrganizationAgreement).mockResolvedValue(null)
   vi.mocked(updateSupplyOrganizationAgreement).mockResolvedValue(null)
@@ -131,7 +135,7 @@ describe('SupplierOrganizationEditPage QA', () => {
     fireEvent.submit(generalForm as HTMLFormElement)
 
     expect(await screen.findByText('Вкажіть назву')).not.toBeNull()
-    expect(createSupplyOrganization).not.toHaveBeenCalled()
+    expect(createSupplierOrganization).not.toHaveBeenCalled()
 
     fireEvent.change(nameInput, { target: { value: ' Постачальник QA ' } })
     fireEvent.change(screen.getByRole('textbox', { name: 'Email' }), {
@@ -140,7 +144,7 @@ describe('SupplierOrganizationEditPage QA', () => {
     fireEvent.submit(generalForm as HTMLFormElement)
 
     await waitFor(() => {
-      expect(createSupplyOrganization).toHaveBeenCalledWith(expect.objectContaining({
+      expect(createSupplierOrganization).toHaveBeenCalledWith(expect.objectContaining({
         EmailAddress: 'qa@example.com',
         Name: 'Постачальник QA',
       }))
@@ -158,7 +162,7 @@ describe('SupplierOrganizationEditPage QA', () => {
       SupplyOrganizationDocuments: [],
       SupplyOrganizationId: 1,
     }
-    vi.mocked(getSupplyOrganization).mockResolvedValue({
+    vi.mocked(getSupplierOrganizationOverviewDetails).mockResolvedValue({
       ...EXISTING_SUPPLIER,
       SupplyOrganizationAgreements: [agreement],
     })

@@ -1,0 +1,256 @@
+import { describe, expect, it } from 'vitest'
+import { PermissionKeys } from './permissionKeys'
+
+const EXPECTED_SALES_UKRAINE_KEYS = [
+  'sales.ukraine.sale.view',
+  'sales.ukraine.sale.open_create_dialog',
+  'sales.ukraine.sale.create',
+  'sales.ukraine.sale.open_details',
+  'sales.ukraine.sale.open_context_menu',
+  'sales.ukraine.sale.edit',
+  'sales.ukraine.sale.delete',
+  'sales.ukraine.sale.open_delivery_details',
+  'sales.ukraine.sale.unlock',
+  'sales.ukraine.sale.unlock_for_shipping',
+  'sales.ukraine.sale.print_consignment_note',
+  'sales.ukraine.sale.view_audit',
+  'sales.ukraine.sale.sell_without_payment',
+  'sales.ukraine.sale.edit_product_comment',
+] as const
+
+const EXPECTED_SUPPLIER_ORGANIZATION_KEYS = [
+  'services.supplier_organizations.page.view',
+  'services.supplier_organizations.supplier.create',
+  'services.supplier_organizations.supplier.delete',
+  'services.supplier_organizations.settlements.open',
+  'services.supplier_organizations.overview.open',
+] as const
+
+const EXPECTED_PROVIDING_SERVICE_ACT_KEYS = [
+  'services.providing_service_acts.page.view',
+  'services.providing_service_acts.act.edit',
+  'services.providing_service_acts.logistic_way.open',
+  'services.providing_service_acts.overview.open',
+] as const
+
+const EXPECTED_NEW_PAGE_KEYS = [
+  'dashboard.overview.page.view',
+  'administration.vehicle_registry.page.view',
+  'accounting.expense_articles.page.view',
+  'orders.supply_cart.page.view',
+  'orders.supply_sales.page.view',
+  'services.organisations.page.view',
+  'warehouse_accounting.sad.page.view',
+  'warehouse_accounting.tax_free_carriers.page.view',
+  'warehouse_accounting.tax_free_documents.page.view',
+  'warehouse_accounting.tax_free_pack_lists.page.view',
+] as const
+
+const EXPECTED_ONLINE_SHOP_SEO_ACTION_KEYS = [
+  'administration.online_shop_seo.client.toggle',
+  'administration.online_shop_seo.contact.create',
+  'administration.online_shop_seo.contact.delete',
+  'administration.online_shop_seo.contact.edit',
+  'administration.online_shop_seo.general_info.edit',
+  'administration.online_shop_seo.payment_info.edit',
+  'administration.online_shop_seo.payment_register.select',
+  'administration.online_shop_seo.seo_page.edit',
+  'administration.online_shop_seo.storage.add',
+  'administration.online_shop_seo.storage.remove',
+  'administration.online_shop_seo.storage.set_priority',
+] as const
+
+describe('newly classified page permission catalog', () => {
+  it('contains ten unique business page keys and no technical controls', () => {
+    const actual = Object.values(PermissionKeys.SystemPages).flatMap(
+      Object.values,
+    )
+
+    expect(actual).toEqual(EXPECTED_NEW_PAGE_KEYS)
+    expect(new Set(actual).size).toBe(EXPECTED_NEW_PAGE_KEYS.length)
+    expect(actual.every((key) => key.endsWith('.page.view'))).toBe(true)
+  })
+})
+
+describe('human-reviewed company resource actions', () => {
+  it('contains only the four approved VAT/transporter business actions', () => {
+    const actual = [
+      ...Object.values(PermissionKeys.ClientResources.VatRate),
+      ...Object.values(PermissionKeys.ClientResources.Transporter),
+    ]
+
+    expect(actual).toEqual([
+      'counterparties.resources.vat_rate.create',
+      'counterparties.resources.transporter.create',
+      'counterparties.resources.transporter.delete',
+      'counterparties.resources.transporter.edit',
+    ])
+    expect(new Set(actual).size).toBe(4)
+  })
+})
+
+describe('human-reviewed vehicle registry actions', () => {
+  it('contains four business permissions and no technical form controls', () => {
+    const actual = [
+      ...Object.values(PermissionKeys.VehicleRegistry.Vehicle),
+      ...Object.values(PermissionKeys.VehicleRegistry.Import),
+    ]
+
+    expect(actual).toEqual([
+      'administration.vehicle_registry.vehicle.open_details',
+      'administration.vehicle_registry.workflow.update',
+      'administration.vehicle_registry.import.create',
+      'administration.vehicle_registry.import.view_issues',
+    ])
+    expect(new Set(actual).size).toBe(4)
+  })
+})
+
+describe('human-reviewed online shop SEO actions', () => {
+  it('contains eleven unique business permissions and no technical clicks', () => {
+    const actual = [
+      ...Object.values(PermissionKeys.OnlineShopSeo.Client),
+      ...Object.values(PermissionKeys.OnlineShopSeo.Contact),
+      ...Object.values(PermissionKeys.OnlineShopSeo.GeneralInfo),
+      ...Object.values(PermissionKeys.OnlineShopSeo.PaymentInfo),
+      ...Object.values(PermissionKeys.OnlineShopSeo.PaymentRegister),
+      ...Object.values(PermissionKeys.OnlineShopSeo.SeoPage),
+      ...Object.values(PermissionKeys.OnlineShopSeo.Storage),
+    ]
+
+    expect(actual).toEqual(EXPECTED_ONLINE_SHOP_SEO_ACTION_KEYS)
+    expect(new Set(actual).size).toBe(EXPECTED_ONLINE_SHOP_SEO_ACTION_KEYS.length)
+  })
+})
+
+describe('human-reviewed online shop city actions', () => {
+  it('contains create, edit and archive once without modal or confirmation keys', () => {
+    const actual = Object.values(PermissionKeys.OnlineShopCities.City)
+
+    expect(actual).toEqual([
+      'administration.online_shop_cities.city.archive',
+      'administration.online_shop_cities.city.create',
+      'administration.online_shop_cities.city.edit',
+    ])
+    expect(new Set(actual).size).toBe(3)
+    expect(PermissionKeys.OnlineShopCities.Page.View).toBe(
+      'administration.online_shop_cities.page.view',
+    )
+  })
+})
+
+describe('human-reviewed product pricing actions', () => {
+  it('contains one competitor-search business action without trigger duplicates', () => {
+    expect(Object.values(PermissionKeys.ProductPricing.CompetitorSearch)).toEqual([
+      'products.pricing.competitor_search.run',
+    ])
+    expect(PermissionKeys.ProductPricing.Page.View).toBe(
+      'products.pricing.page.view',
+    )
+  })
+})
+
+describe('new e-commerce clients review', () => {
+  it('reuses client details and adds no row-click permission', () => {
+    expect(PermissionKeys.NewEcommerceClients.Page.View).toBe(
+      'counterparties.new_ecommerce_clients.page.view',
+    )
+    expect(PermissionKeys.Clients.Details.Open).toBe(
+      'counterparties.clients.details.open',
+    )
+  })
+})
+
+describe('online-shop client review', () => {
+  it('contains cart and sales reads once without row or drawer trigger keys', () => {
+    expect([
+      ...Object.values(PermissionKeys.OnlineShopClients.Cart),
+      ...Object.values(PermissionKeys.OnlineShopClients.Sales),
+    ]).toEqual([
+      'counterparties.online_shop_clients.cart.open',
+      'counterparties.online_shop_clients.sales.open',
+    ])
+  })
+})
+
+describe('Sales Ukraine canonical permission catalog', () => {
+  it('contains every agreed key exactly once', () => {
+    const actual = Object.values(PermissionKeys.SalesUkraine.Sale)
+
+    expect(actual).toEqual(EXPECTED_SALES_UKRAINE_KEYS)
+    expect(new Set(actual).size).toBe(EXPECTED_SALES_UKRAINE_KEYS.length)
+  })
+})
+
+describe('Services canonical permission catalogs', () => {
+  it('contains every Supplier Organizations key exactly once', () => {
+    const actual = [
+      ...Object.values(PermissionKeys.SupplierOrganizations.Page),
+      ...Object.values(PermissionKeys.SupplierOrganizations.Supplier),
+      ...Object.values(PermissionKeys.SupplierOrganizations.Settlements),
+      ...Object.values(PermissionKeys.SupplierOrganizations.Overview),
+    ]
+
+    expect(actual).toEqual(EXPECTED_SUPPLIER_ORGANIZATION_KEYS)
+    expect(new Set(actual).size).toBe(
+      EXPECTED_SUPPLIER_ORGANIZATION_KEYS.length,
+    )
+  })
+
+  it('contains every Providing Service Acts key exactly once', () => {
+    const actual = [
+      ...Object.values(PermissionKeys.ProvidingServiceActs.Page),
+      ...Object.values(PermissionKeys.ProvidingServiceActs.Act),
+      ...Object.values(PermissionKeys.ProvidingServiceActs.LogisticWay),
+      ...Object.values(PermissionKeys.ProvidingServiceActs.Overview),
+    ]
+
+    expect(actual).toEqual(EXPECTED_PROVIDING_SERVICE_ACT_KEYS)
+    expect(new Set(actual).size).toBe(
+      EXPECTED_PROVIDING_SERVICE_ACT_KEYS.length,
+    )
+  })
+})
+
+describe('human-reviewed supplier-return actions', () => {
+  it('contains one detail right and one export right without duplicate row controls', () => {
+    const actual = [
+      ...Object.values(PermissionKeys.WarehouseAccounting.SupplierReturns.Return),
+      ...Object.values(PermissionKeys.WarehouseAccounting.SupplierReturns.Document),
+    ]
+
+    expect(actual).toEqual([
+      'warehouse_accounting.supplier_returns.return.open_details',
+      'warehouse_accounting.supplier_returns.document.export',
+    ])
+    expect(new Set(actual).size).toBe(2)
+  })
+})
+
+describe('human-reviewed transporter actions', () => {
+  it('contains create, edit and archive once without modal or submit duplicates', () => {
+    expect(Object.values(PermissionKeys.Transporters.Transporter)).toEqual([
+      'services.transporters.transporter.archive',
+      'services.transporters.transporter.create',
+      'services.transporters.transporter.edit',
+    ])
+    expect(PermissionKeys.Transporters.Page.View).toBe(
+      'services.transporters.page.view',
+    )
+  })
+})
+
+describe('human-reviewed supplier registry actions', () => {
+  it('adds only passport and export while reusing generic client business rights', () => {
+    expect([
+      ...Object.values(PermissionKeys.Suppliers.Passport),
+      ...Object.values(PermissionKeys.Suppliers.Document),
+    ]).toEqual([
+      'counterparties.suppliers.passport.open',
+      'counterparties.suppliers.document.export',
+    ])
+    expect(PermissionKeys.Suppliers.Page.View).toBe(
+      'counterparties.suppliers.page.view',
+    )
+  })
+})

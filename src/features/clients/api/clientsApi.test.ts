@@ -12,11 +12,13 @@ import {
   getClientIdentityAttentionBatch,
   getClientSourceQualityBatch,
   getClients,
+  getClientsForRegistry,
   getSupplierCount,
   getSupplierFilterItems,
   getSuppliers,
   mutateClientIdentity,
   switchClientActiveState,
+  switchClientActiveStateForRegistry,
   updateClientOrderExpireDays,
 } from './clientsApi'
 
@@ -202,6 +204,32 @@ describe('clients API query contracts', () => {
     })
   })
 
+  it('uses the permission-scoped registry endpoint for the clients page', async () => {
+    const client: Client = { NetUid: 'client-1', FullName: 'Ivanenko' }
+    const params: ClientSearchParams = {
+      offset: 0,
+      limit: 20,
+      value: 'Ivanenko',
+      active: null,
+      forReSale: null,
+      typeRoleFilter: '1',
+    }
+
+    apiRequestMock.mockResolvedValueOnce([client])
+
+    await expect(getClientsForRegistry(params)).resolves.toEqual([client])
+    expect(apiRequestMock).toHaveBeenCalledWith('/clients/registry/all/filtered', {
+      query: {
+        active: null,
+        filterSql: 'RegionCode.Value/Client.FullName/Client.USREOU',
+        limit: 20,
+        offset: 0,
+        typeRoleFilter: '1',
+        value: 'Ivanenko',
+      },
+    })
+  })
+
   it('requests resale clients through the targeted clients endpoint', async () => {
     const client: Client = { NetUid: 'client-1', FullName: 'Ivanenko' }
     const params: ClientSearchParams = {
@@ -271,7 +299,7 @@ describe('clients API query contracts', () => {
     apiRequestMock.mockResolvedValueOnce([supplier])
 
     await expect(getSuppliers(params)).resolves.toEqual([supplier])
-    expect(apiRequestMock).toHaveBeenCalledWith('/clients/suppliers/all/filtered', {
+    expect(apiRequestMock).toHaveBeenCalledWith('/clients/suppliers/registry/all/filtered', {
       query: {
         active: null,
         filterSql: 'RegionCode.Value/Client.FullName',
@@ -318,7 +346,7 @@ describe('clients API query contracts', () => {
     apiRequestMock.mockResolvedValueOnce(document)
 
     await expect(exportSuppliersDocument(params)).resolves.toEqual(document)
-    expect(apiRequestMock).toHaveBeenCalledWith('/clients/document', {
+    expect(apiRequestMock).toHaveBeenCalledWith('/clients/suppliers/document/export', {
       query: {
         filter: buildClientsSearchFilter(params),
       },
@@ -484,7 +512,7 @@ describe('clients API query contracts', () => {
     apiRequestMock.mockResolvedValueOnce({ Count: '7' })
 
     await expect(getSupplierCount()).resolves.toBe(7)
-    expect(apiRequestMock).toHaveBeenCalledWith('/clients/get/total', {
+    expect(apiRequestMock).toHaveBeenCalledWith('/clients/suppliers/registry/total', {
       query: {
         type: 1,
       },
@@ -497,6 +525,18 @@ describe('clients API query contracts', () => {
     await switchClientActiveState('client-net-id')
 
     expect(apiRequestMock).toHaveBeenCalledWith('/clients/switch/active', {
+      query: {
+        netId: 'client-net-id',
+      },
+    })
+  })
+
+  it('uses the permission-scoped route when the clients registry toggles active state', async () => {
+    apiRequestMock.mockResolvedValueOnce(null)
+
+    await switchClientActiveStateForRegistry('client-net-id')
+
+    expect(apiRequestMock).toHaveBeenCalledWith('/clients/registry/switch/active', {
       query: {
         netId: 'client-net-id',
       },

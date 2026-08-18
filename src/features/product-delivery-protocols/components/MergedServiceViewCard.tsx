@@ -1,6 +1,7 @@
 import { ActionIcon, Anchor, Alert, Badge, Button, Card, Group, Stack, Text, Tooltip } from '@mantine/core'
 import { CircleAlert, SquarePen, Trash2 } from 'lucide-react'
 import { useI18n } from '../../../shared/i18n/useI18n'
+import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { upgradeHttpToHttps } from '../../../shared/url/upgradeHttpToHttps'
 import { useAuth } from '../../auth/useAuth'
@@ -9,10 +10,10 @@ import { getMergedServiceCalculationLabel } from '../mergedServiceCalculationLab
 import { LabelValueRow } from './LabelValueRow'
 import { formatDate, formatMoney, responsibleName } from './protocolDetailHelpers'
 
-const DELETE_PERMISSION = 'ProductDeliveryProtocols_unified_services_DeleteBtn_PKEY'
-const CALCULATE_PERMISSION = 'ProductDeliveryProtocols_unified_services_CalculateBtn_PKEY'
-const ASSIGN_INVOICES_PERMISSION = 'ProductDeliveryProtocols_unified_services_AddInvoceBtn_PKEY'
-const EDIT_PERMISSION = 'ProductDeliveryProtocols_unified_services_EditBtn_PKEY'
+const DELETE_PERMISSION = PermissionKeys.ProductDeliveryProtocols.UnifiedService.Delete
+const CALCULATE_PERMISSION = PermissionKeys.ProductDeliveryProtocols.UnifiedService.Calculate
+const ASSIGN_INVOICES_PERMISSION = PermissionKeys.ProductDeliveryProtocols.UnifiedService.AddInvoice
+const EDIT_PERMISSION = PermissionKeys.ProductDeliveryProtocols.UnifiedService.Edit
 
 function DocumentLink({ document }: { document: SupplyDocument }) {
   if (!document.DocumentUrl) {

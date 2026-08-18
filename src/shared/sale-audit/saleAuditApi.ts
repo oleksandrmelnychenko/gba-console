@@ -18,10 +18,41 @@ export async function getSaleStatisticBySaleId(netId: string): Promise<SaleAudit
   return normalizeObject<SaleAuditStatistic>(result)
 }
 
+export async function getSalesUkraineSaleAudit(netId: string): Promise<SaleAuditStatistic | null> {
+  const result = await apiRequest<unknown>('/sales/ukraine/audit', {
+    query: { netId },
+  })
+
+  return normalizeObject<SaleAuditStatistic>(result)
+}
+
+export async function getSalesUkraineEditSaleStatistic(netId: string): Promise<SaleAuditStatistic | null> {
+  const result = await apiRequest<unknown>('/sales/ukraine/edit/shifted', {
+    query: { netId },
+  })
+
+  return normalizeObject<SaleAuditStatistic>(result)
+}
+
 export async function getShiftedSaleDocument(netId: string, historyNetId: string): Promise<SaleAuditPrintDocument | null> {
   const result = await apiRequest<unknown>('/sales/get/document/history', {
     query: {
       historyNetId,
+      netId,
+    },
+  })
+
+  return normalizeDocument(result)
+}
+
+export async function getSalesUkraineSaleAuditInvoiceDocument(
+  netId: string,
+  historyNetId: string,
+): Promise<SaleAuditPrintDocument | null> {
+  const result = await apiRequest<unknown>('/sales/ukraine/audit/invoice-document', {
+    query: {
+      historyNetId,
+      isFromStorages: false,
       netId,
     },
   })
@@ -43,6 +74,20 @@ export async function getShiftedSaleHistoryDocument(
   return normalizeDocument(result)
 }
 
+export async function getSalesUkraineSaleAuditShiftedDocument(
+  netId: string,
+  historyNetId: string,
+): Promise<SaleAuditPrintDocument | null> {
+  const result = await apiRequest<unknown>('/sales/ukraine/audit/shifted-document', {
+    query: {
+      historyNetId,
+      netId,
+    },
+  })
+
+  return normalizeDocument(result)
+}
+
 export type SaleAuditHistoryMutationPayload = {
   NetId: string
 } & SalesMutationOperationPayload
@@ -51,12 +96,35 @@ export async function confirmSaleAuditHistory(
   payload: SaleAuditHistoryMutationPayload,
   operation: SalesMutationOperationOptions,
 ): Promise<void> {
+  return confirmSaleAuditHistoryAt(
+    '/protocol/act/invoice/set/edit/act/for/editing',
+    payload,
+    operation,
+  )
+}
+
+export async function confirmSalesUkraineSaleAuditHistory(
+  payload: SaleAuditHistoryMutationPayload,
+  operation: SalesMutationOperationOptions,
+): Promise<void> {
+  return confirmSaleAuditHistoryAt(
+    '/protocol/act/invoice/ukraine/set/edit/act/for/editing',
+    payload,
+    operation,
+  )
+}
+
+async function confirmSaleAuditHistoryAt(
+  path: string,
+  payload: SaleAuditHistoryMutationPayload,
+  operation: SalesMutationOperationOptions,
+): Promise<void> {
   const historyNetId = requirePersistedGuid(
     payload.NetId,
     'Не вдалося визначити акт редагування накладної',
   )
 
-  await apiRequest<unknown>('/protocol/act/invoice/set/edit/act/for/editing', {
+  await apiRequest<unknown>(path, {
     body: withSalesMutationOperationNetUid(
       { NetId: historyNetId },
       operation.operationId,

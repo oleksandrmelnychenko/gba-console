@@ -29,7 +29,22 @@ export async function getClients(
   params: ClientSearchParams,
   signal?: AbortSignal,
 ): Promise<Client[]> {
-  const result = await apiRequest<unknown>('/clients/all/filtered', {
+  return getClientsFromRoute('/clients/all/filtered', params, signal)
+}
+
+export async function getClientsForRegistry(
+  params: ClientSearchParams,
+  signal?: AbortSignal,
+): Promise<Client[]> {
+  return getClientsFromRoute('/clients/registry/all/filtered', params, signal)
+}
+
+async function getClientsFromRoute(
+  route: string,
+  params: ClientSearchParams,
+  signal?: AbortSignal,
+): Promise<Client[]> {
+  const result = await apiRequest<unknown>(route, {
     query: {
       active: params.active,
       filterSql: params.filterSql || CLIENT_SEARCH_SQL,
@@ -51,7 +66,7 @@ export async function getSuppliers(
   params: ClientSearchParams,
   signal?: AbortSignal,
 ): Promise<Client[]> {
-  const result = await apiRequest<unknown>('/clients/suppliers/all/filtered', {
+  const result = await apiRequest<unknown>('/clients/suppliers/registry/all/filtered', {
     query: {
       active: params.active,
       filterSql: params.filterSql || SUPPLIER_SEARCH_SQL,
@@ -77,7 +92,11 @@ export async function getClientCount(type = CLIENT_TYPE_BUYER): Promise<number> 
 }
 
 export async function getSupplierCount(): Promise<number> {
-  return getClientCount(CLIENT_TYPE_PROVIDER)
+  const result = await apiRequest<unknown>('/clients/suppliers/registry/total', {
+    query: { type: CLIENT_TYPE_PROVIDER },
+  })
+
+  return normalizeCount(result)
 }
 
 export async function getClientTypes(): Promise<ClientType[]> {
@@ -198,7 +217,7 @@ export async function exportClientsDocument(params: ClientSearchParams): Promise
 }
 
 export async function exportSuppliersDocument(params: ClientSearchParams): Promise<ClientPrintDocument | null> {
-  const result = await apiRequest<unknown>('/clients/document', {
+  const result = await apiRequest<unknown>('/clients/suppliers/document/export', {
     query: {
       filter: buildClientsSearchFilter({
         ...params,
@@ -212,6 +231,14 @@ export async function exportSuppliersDocument(params: ClientSearchParams): Promi
 
 export async function switchClientActiveState(netId: string): Promise<void> {
   await apiRequest<unknown>('/clients/switch/active', {
+    query: {
+      netId,
+    },
+  })
+}
+
+export async function switchClientActiveStateForRegistry(netId: string): Promise<void> {
+  await apiRequest<unknown>('/clients/registry/switch/active', {
     query: {
       netId,
     },

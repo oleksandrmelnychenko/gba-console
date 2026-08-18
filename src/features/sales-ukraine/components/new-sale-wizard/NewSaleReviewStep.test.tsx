@@ -29,6 +29,9 @@ const mocks = vi.hoisted(() => ({
   confirmWizardSplitFinalMutationCommitted: vi.fn(),
   convertVatSaleAndGetPaymentDocument: vi.fn(),
   createSale: vi.fn(),
+  createSalesUkraineMergedSale: vi.fn(),
+  createSalesUkraineSaleFromData: vi.fn(),
+  createSalesUkraineVatSaleAndGetPaymentDocument: vi.fn(),
   getClientDeliveryRecipients: vi.fn(),
   getRetailPaymentStatusBySaleId: vi.fn(),
   getSaleTransporterTypes: vi.fn(),
@@ -73,6 +76,9 @@ vi.mock('@mantine/notifications', () => ({
 vi.mock('../../api/salesUkraineApi', () => ({
   convertVatSaleAndGetPaymentDocument: mocks.convertVatSaleAndGetPaymentDocument,
   createSale: mocks.createSale,
+  createSalesUkraineMergedSale: mocks.createSalesUkraineMergedSale,
+  createSalesUkraineSaleFromData: mocks.createSalesUkraineSaleFromData,
+  createSalesUkraineVatSaleAndGetPaymentDocument: mocks.createSalesUkraineVatSaleAndGetPaymentDocument,
   getRetailPaymentStatusBySaleId: mocks.getRetailPaymentStatusBySaleId,
   getSaleTransporterTypes: mocks.getSaleTransporterTypes,
   getSaleTransportersByType: mocks.getSaleTransportersByType,
@@ -195,32 +201,43 @@ function reviewValue(ttnFile: File | null = null): NewSaleReviewValue {
 }
 
 function renderStep({
+  canSubmit = true,
   onBusyChange = vi.fn(),
   onChange = vi.fn(),
   onClose = vi.fn(),
   onCreated = vi.fn(),
   onRequestClose = vi.fn(),
+  onVatDocuments = vi.fn(),
+  saleValue = sale,
+  submitFlow = 'edit',
   value = reviewValue(),
 }: {
+  canSubmit?: boolean
   onBusyChange?: (busy: boolean) => void
   onChange?: (patch: Partial<NewSaleReviewValue>) => void
   onClose?: () => void
   onCreated?: () => void
   onRequestClose?: () => void
+  onVatDocuments?: (result: unknown) => void
+  saleValue?: SalesUkraineSale
+  submitFlow?: 'create' | 'edit'
   value?: NewSaleReviewValue
 } = {}) {
   return {
     ...render(
       <MantineProvider theme={theme}>
         <NewSaleReviewStep
+          canSubmit={canSubmit}
           clientNetId="client-1"
-          sale={sale}
+          sale={saleValue}
           value={value}
           onBusyChange={onBusyChange}
           onChange={onChange}
           onClose={onClose}
           onCreated={onCreated}
           onRequestClose={onRequestClose}
+          onVatDocuments={onVatDocuments}
+          submitFlow={submitFlow}
         />
       </MantineProvider>,
     ),
@@ -242,6 +259,82 @@ describe('NewSaleReviewStep persistent file reconciliation', () => {
       },
     })
   })
+
+  it('blocks the final submit when the current wizard flow lacks permission', () => {
+    renderStep({ canSubmit: false })
+
+    const submit = document.querySelector<HTMLButtonElement>('.new-sale-review-actions__primary')
+
+    expect(submit?.disabled).toBe(true)
+    expect(submit?.title).toBe('Недостатньо прав для завершення операції')
+    expect(mocks.createSale).not.toHaveBeenCalled()
+  })
+
+  it('uses the permission-scoped multipart facade for an ordinary create submit', async () => {
+    mocks.createSalesUkraineSaleFromData.mockResolvedValue({ message: 'created', sale: null })
+    renderStep({ submitFlow: 'create' })
+
+    fireEvent.click(document.querySelector<HTMLButtonElement>('.new-sale-review-actions__primary') as HTMLButtonElement)
+
+    await waitFor(() => expect(mocks.createSalesUkraineSaleFromData).toHaveBeenCalledTimes(1))
+    expect(mocks.updateSaleFromData).not.toHaveBeenCalled()
+  })
+
+  it('uses the permission-scoped VAT POST/GET facade for a create submit', async () => {
+    mocks.createSalesUkraineVatSaleAndGetPaymentDocument.mockResolvedValue({
+      isAcceptedToPacking: false,
+      pdfUrl: 'https://example.test/payment.pdf',
+    })
+    renderStep({ saleValue: { ...sale, IsVatSale: true }, submitFlow: 'create' })
+
+    fireEvent.click(document.querySelector<HTMLButtonElement>('.new-sale-review-actions__primary') as HTMLButtonElement)
+
+    await waitFor(() => expect(mocks.createSalesUkraineVatSaleAndGetPaymentDocument).toHaveBeenCalledTimes(1))
+    expect(mocks.convertVatSaleAndGetPaymentDocument).not.toHaveBeenCalled()
+  })
+
+  it('uses the permission-scoped merged facade for a create submit', async () => {
+    mocks.mergedSale = {
+      netUid: 'sale-1',
+      orderItems: [{ NetUid: 'item-1', Product: { NetUid: 'product-1' }, Qty: 1 }],
+      unionSale: null,
+    }
+    mocks.createSalesUkraineMergedSale.mockResolvedValue(undefined)
+    renderStep({ submitFlow: 'create' })
+
+    fireEvent.click(screen.getByRole('button', { name: 'Створити накладну' }))
+
+    await waitFor(() => expect(mocks.createSalesUkraineMergedSale).toHaveBeenCalledTimes(1))
+    expect(mocks.updateMergedSale).not.toHaveBeenCalled()
+  })
+
+  it.each(['vat', 'merged'] as const)(
+    'does not enter the %s create finalizer when final create permission is denied',
+    async (branch) => {
+      if (branch === 'merged') {
+        mocks.mergedSale = {
+          netUid: 'sale-1',
+          orderItems: [{ NetUid: 'item-1', Product: { NetUid: 'product-1' }, Qty: 1 }],
+          unionSale: null,
+        }
+      }
+
+      renderStep({
+        canSubmit: false,
+        saleValue: branch === 'vat' ? { ...sale, IsVatSale: true } : sale,
+        submitFlow: 'create',
+      })
+
+      const submit = document.querySelector<HTMLButtonElement>('.new-sale-review-actions__primary') as HTMLButtonElement
+      expect(submit.disabled).toBe(true)
+      fireEvent.click(submit)
+
+      expect(mocks.createSalesUkraineVatSaleAndGetPaymentDocument).not.toHaveBeenCalled()
+      expect(mocks.createSalesUkraineMergedSale).not.toHaveBeenCalled()
+      expect(mocks.createSalesUkraineSaleFromData).not.toHaveBeenCalled()
+      expect(mocks.createSale).not.toHaveBeenCalled()
+    },
+  )
 
   beforeEach(() => {
     clearAllSalesPendingMutations()

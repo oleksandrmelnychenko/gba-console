@@ -17,7 +17,7 @@ import {
 type ListKey = 'ProductGroups' | 'ProductProductGroups' | 'ProductSubGroups'
 
 export async function getProductGroups(value?: string): Promise<ProductGroupsWithTotal> {
-  const result = await apiRequest<unknown>('/products/groups/filtered/get', {
+  const result = await apiRequest<unknown>('/products/groups/page/filtered/get', {
     query: {
       value: value?.trim() || '',
     },
@@ -32,7 +32,7 @@ export async function getProductGroups(value?: string): Promise<ProductGroupsWit
 }
 
 export async function getProductGroupWithRoot(netId: string): Promise<ProductGroup | null> {
-  const result = await apiRequest<unknown>('/products/groups/with/root/get', {
+  const result = await apiRequest<unknown>('/products/groups/page/with/root/get', {
     query: {
       netId,
     },
@@ -42,7 +42,7 @@ export async function getProductGroupWithRoot(netId: string): Promise<ProductGro
 }
 
 export async function getRootProductGroups(netId?: string): Promise<ProductGroup[]> {
-  const result = await apiRequest<unknown>('/products/groups/root/groups/get', {
+  const result = await apiRequest<unknown>('/products/groups/page/root/groups/get', {
     query: {
       netId: netId || undefined,
     },
@@ -52,7 +52,7 @@ export async function getRootProductGroups(netId?: string): Promise<ProductGroup
 }
 
 export async function getAllProductGroups(): Promise<ProductGroup[]> {
-  const result = await apiRequest<unknown>('/products/groups/all')
+  const result = await apiRequest<unknown>('/products/groups/page/all')
 
   return normalizeList<ProductGroup>(result, 'ProductGroups').items.map(ensureProductGroup)
 }
@@ -66,7 +66,7 @@ export async function createProductGroup(productGroup: ProductGroup): Promise<Pr
 
   let result: unknown
   try {
-    result = await apiRequest<unknown>('/products/groups/new', {
+    result = await apiRequest<unknown>('/products/groups/page/new', {
       method: 'POST',
       headers: {
         'Idempotency-Key': operation.operationNetUid,
@@ -113,7 +113,7 @@ export async function getProductSubGroups(params: {
   offset: number
   value?: string
 }): Promise<ProductSubGroupsWithTotal> {
-  const result = await apiRequest<unknown>('/products/groups/filtered/sub/groups/get', {
+  const result = await apiRequest<unknown>('/products/groups/page/filtered/sub/groups/get', {
     query: {
       limit: params.limit,
       netId: params.netId,
@@ -150,7 +150,7 @@ export async function getProductGroupProducts(params: {
   offset: number
   value?: string
 }): Promise<ProductProductGroupsWithTotal> {
-  const result = await apiRequest<unknown>('/products/groups/filtered/products/get', {
+  const result = await apiRequest<unknown>('/products/groups/page/filtered/products/get', {
     query: {
       limit: params.limit,
       netId: params.netId,

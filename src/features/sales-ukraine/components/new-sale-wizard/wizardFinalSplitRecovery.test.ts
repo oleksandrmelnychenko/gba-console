@@ -1,6 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { ApiError } from '../../../../shared/api/apiClient'
-import { convertVatSaleAndGetPaymentDocument, createSale } from '../../api/salesUkraineApi'
+import {
+  convertVatSaleAndGetPaymentDocument,
+  createSale,
+  createSalesUkraineVatSaleAndGetPaymentDocument,
+} from '../../api/salesUkraineApi'
 import {
   clearAllSalesPendingMutations,
   loadSalesPendingMutation,
@@ -41,6 +45,8 @@ vi.mock('../../api/salesUkraineApi', async (importOriginal) => {
     ...actual,
     convertVatSaleAndGetPaymentDocument: vi.fn(),
     createSale: vi.fn(),
+    createSalesUkraineSaleFromData: vi.fn(),
+    createSalesUkraineVatSaleAndGetPaymentDocument: vi.fn(),
   }
 })
 
@@ -165,6 +171,23 @@ describe('linked final split recovery', () => {
       { operationId },
     )
     expect(loadSalesPendingMutation(scope)).toBe(null)
+  })
+
+  it('does not reconcile a linked create after create permission is revoked', async () => {
+    const submission = createWizardCreateSaleSubmission({ NetUid: source.saleNetUid }, operationId)
+
+    stageWizardSplitFinalMutation({ ...scope, flow: 'create', operationId })
+    saveSalesPendingMutation(scope, operationId, { flow: 'ordinary-split', submission })
+
+    const result = await recoverLinkedWizardFinalMutation(
+      getWizardSplitRecovery()!,
+      null,
+      { canSubmitCreate: false, canSubmitEdit: true },
+    )
+
+    expect(result).toMatchObject({ status: 'pending' })
+    expect(createSale).not.toHaveBeenCalled()
+    expect(loadSalesPendingMutation(scope)?.operationId).toBe(operationId)
   })
 
   it('settles a definitive create rejection and releases the split final fence', async () => {
@@ -410,6 +433,40 @@ describe('linked final split recovery', () => {
     })
     expect(convertVatSaleAndGetPaymentDocument).toHaveBeenCalledTimes(1)
     expect(loadSalesPendingMutation(fileScope)).toBe(null)
+  })
+
+  it('reconciles a create-flow VAT finalizer through the protected facade', async () => {
+    const fileScope = {
+      ...scope,
+      kind: 'sale-vat-document',
+    } satisfies SalesPendingMutationScope
+    const submission = await createSaleFileMutationSubmission(
+      'sale-vat-document',
+      { NetUid: source.saleNetUid },
+      null,
+      operationId,
+    )
+    const persisted = {
+      ...persistSaleFileMutationSubmission(submission),
+      intent: 'submit' as const,
+      surface: 'new-sale-wizard' as const,
+    }
+
+    stageWizardSplitFinalMutation({ ...fileScope, flow: 'create', operationId })
+    saveSalesPendingMutation(fileScope, operationId, persisted)
+    vi.mocked(createSalesUkraineVatSaleAndGetPaymentDocument).mockResolvedValue({
+      excelUrl: null,
+      invoiceExcelUrl: null,
+      invoicePdfUrl: null,
+      isAcceptedToPacking: true,
+      pdfUrl: null,
+    })
+
+    await expect(recoverLinkedWizardFinalMutation(getWizardSplitRecovery()!)).resolves.toMatchObject({
+      status: 'committed',
+    })
+    expect(createSalesUkraineVatSaleAndGetPaymentDocument).toHaveBeenCalledTimes(1)
+    expect(convertVatSaleAndGetPaymentDocument).not.toHaveBeenCalled()
   })
 })
 

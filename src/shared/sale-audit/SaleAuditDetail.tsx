@@ -19,7 +19,20 @@ import {
 
 type AuditPrintKind = 'act' | 'invoice'
 
+export type SaleAuditDocumentApi = {
+  confirm: typeof confirmSaleAuditHistory
+  getInvoice: typeof getShiftedSaleDocument
+  getShifted: typeof getShiftedSaleHistoryDocument
+}
+
+const DEFAULT_SALE_AUDIT_DOCUMENT_API: SaleAuditDocumentApi = {
+  confirm: confirmSaleAuditHistory,
+  getInvoice: getShiftedSaleDocument,
+  getShifted: getShiftedSaleHistoryDocument,
+}
+
 type SaleAuditDetailProps = {
+  documentApi?: SaleAuditDocumentApi
   error: string | null
   isLoading: boolean
   onConfirmed?: () => void
@@ -27,7 +40,14 @@ type SaleAuditDetailProps = {
   statistic: SaleAuditStatistic | null
 }
 
-export function SaleAuditDetail({ error, isLoading, onConfirmed, showConfirm = true, statistic }: SaleAuditDetailProps) {
+export function SaleAuditDetail({
+  documentApi = DEFAULT_SALE_AUDIT_DOCUMENT_API,
+  error,
+  isLoading,
+  onConfirmed,
+  showConfirm = true,
+  statistic,
+}: SaleAuditDetailProps) {
   const { t } = useI18n()
   const sale = statistic?.Sale
   const printRequestRef = useRef(0)
@@ -78,8 +98,8 @@ export function SaleAuditDetail({ error, isLoading, onConfirmed, showConfirm = t
 
         const document =
           kind === 'invoice'
-            ? await getShiftedSaleDocument(netId, historyNetId)
-            : await getShiftedSaleHistoryDocument(netId, historyNetId)
+            ? await documentApi.getInvoice(netId, historyNetId)
+            : await documentApi.getShifted(netId, historyNetId)
 
         if (printRequestRef.current === requestId) {
           setPrintDocument(document)
@@ -117,7 +137,7 @@ export function SaleAuditDetail({ error, isLoading, onConfirmed, showConfirm = t
       const mutation = await runInvoiceEdit(
         `protocol-invoice-edit:${confirmHistoryNetId.toLowerCase()}`,
         { NetId: confirmHistoryNetId },
-        confirmSaleAuditHistory,
+        documentApi.confirm,
       )
       if (!mutation.completed) {
         throw mutation.error ??

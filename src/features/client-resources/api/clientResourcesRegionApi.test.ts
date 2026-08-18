@@ -59,7 +59,7 @@ describe('client resources region API', () => {
 
     expect(mockedApiRequest).toHaveBeenNthCalledWith(
       1,
-      '/regions/new',
+      '/regions/client-resources/new',
       expect.objectContaining({
         method: 'POST',
         headers: {
@@ -70,7 +70,7 @@ describe('client resources region API', () => {
     )
     expect(mockedApiRequest).toHaveBeenNthCalledWith(
       2,
-      '/regions/codes/new',
+      '/regions/codes/client-resources/new',
       expect.objectContaining({
         method: 'POST',
         headers: {
@@ -96,12 +96,12 @@ describe('client resources region API', () => {
 
     expect(mockedApiRequest).toHaveBeenNthCalledWith(
       1,
-      '/regions/update',
+      '/regions/client-resources/update',
       expect.objectContaining({ method: 'PUT' }),
     )
     expect(mockedApiRequest).toHaveBeenNthCalledWith(
       2,
-      '/regions/codes/update',
+      '/regions/codes/client-resources/update',
       expect.objectContaining({ method: 'PUT' }),
     )
   })
@@ -120,7 +120,7 @@ describe('client resources region API', () => {
 
     expect(mockedApiRequest).toHaveBeenNthCalledWith(
       1,
-      '/regions/delete',
+      '/regions/client-resources/delete',
       {
         method: 'DELETE',
         query: {
@@ -131,7 +131,7 @@ describe('client resources region API', () => {
     )
     expect(mockedApiRequest).toHaveBeenNthCalledWith(
       2,
-      '/regions/codes/delete',
+      '/regions/codes/client-resources/delete',
       {
         method: 'DELETE',
         query: {

@@ -1,6 +1,9 @@
-import { Badge, Box, Group, Stack } from '@mantine/core'
+import { Alert, Badge, Box, Group, Stack } from '@mantine/core'
+import { CircleAlert } from 'lucide-react'
 import { useCallback, useEffect, useMemo, type ReactNode } from 'react'
 import { useAuth } from '../../auth/useAuth'
+import { PermissionGate } from '../../auth/components/PermissionGate'
+import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { usePageBreadcrumb } from '../../../shared/ui/page-header-actions/pageHeaderActionsContext'
@@ -14,9 +17,9 @@ import { ShipmentsTab } from '../components/ShipmentsTab'
 import './warehouse-ukraine-page.css'
 import '../../../shared/ui/console-table-page.css'
 
-const PKEY_INVOICES = 'STORAGES_Ukraine_Invoices_Warehouse_Ukraine_PKEY'
-const PKEY_SHIPMENTS = 'STORAGES_Ukraine_Shipments_Warehouse_Ukraine_PKEY'
-const PKEY_UKRAINE_ORDER = 'STORAGES_Ukraine_UkraineOrder_Warehouse_Ukraine_PKEY'
+const PKEY_INVOICES = PermissionKeys.Warehouses.Ukraine.Invoices.Open
+const PKEY_SHIPMENTS = PermissionKeys.Warehouses.Ukraine.Shipments.Open
+const PKEY_UKRAINE_ORDER = PermissionKeys.Warehouses.Ukraine.Orders.Open
 
 const TAB_SALES = 'sales'
 const TAB_SHIPMENTS = 'shipments'
@@ -33,6 +36,24 @@ type WarehouseUkraineTab = {
 }
 
 export function WarehouseUkrainePage() {
+  return (
+    <PermissionGate permissionKey={PermissionKeys.Warehouses.Ukraine.Page.View} fallback={<WarehouseUkrainePermissionDenied />}>
+      <WarehouseUkrainePageContent />
+    </PermissionGate>
+  )
+}
+
+function WarehouseUkrainePermissionDenied() {
+  const { t } = useI18n()
+
+  return (
+    <Alert color="red" icon={<CircleAlert size={18} />} title={t('Доступ заборонено')} variant="light">
+      {t('У вашої ролі немає права переглядати склад Україна.')}
+    </Alert>
+  )
+}
+
+function WarehouseUkrainePageContent() {
   const { t } = useI18n()
   const { hasPermission } = useAuth()
   const [editingTotal, setEditingTotal] = useValueState(0)

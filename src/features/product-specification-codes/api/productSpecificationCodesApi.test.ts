@@ -1,0 +1,53 @@
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { apiRequest } from '../../../shared/api/apiClient'
+import { changeProductSpecification, getProductSpecifications } from './productSpecificationCodesApi'
+
+vi.mock('../../../shared/api/apiClient', () => ({
+  apiRequest: vi.fn(),
+}))
+
+const apiRequestMock = vi.mocked(apiRequest)
+
+describe('product specification codes permission-scoped API', () => {
+  beforeEach(() => {
+    apiRequestMock.mockReset()
+  })
+
+  it('loads the page through the page-view facade', async () => {
+    apiRequestMock.mockResolvedValueOnce([])
+
+    await getProductSpecifications({
+      vendorCode: '  A-1 ',
+      specificationCode: ' 8708 ',
+      locale: 'uk',
+      limit: 20,
+      offset: 0,
+    })
+
+    expect(apiRequestMock).toHaveBeenCalledWith('/specifications/page/get/all/filtered', {
+      query: {
+        vendorCode: 'A-1',
+        specificationCode: '8708',
+        locale: 'uk',
+        limit: 20,
+        offset: 0,
+      },
+    })
+  })
+
+  it('changes a code through the dedicated edit facade', async () => {
+    const body = { NetUid: '11111111-1111-4111-8111-111111111111' }
+    apiRequestMock.mockResolvedValueOnce(null)
+
+    await changeProductSpecification({
+      specificationChangeMode: 1,
+      body,
+    })
+
+    expect(apiRequestMock).toHaveBeenCalledWith('/specifications/page/change', {
+      method: 'POST',
+      query: { specificationChangeMode: 1 },
+      body,
+    })
+  })
+})

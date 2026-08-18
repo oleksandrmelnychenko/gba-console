@@ -1,17 +1,38 @@
-export const EDIT_CLIENT_TYPE_PERMISSION = 'EditClient_HEADER_EditClientHeaderClientType_PKEY'
-export const EDIT_CLIENT_ACTIVE_PERMISSION = 'EditClient_HEADER_ActiveCheck_PKEY'
-export const EDIT_CLIENT_DELETE_PERMISSION = 'EditClient_HEADER_OnDelete_PKEY'
-export const EDIT_CLIENT_PRICING_PERMISSION = 'EditClient_Body_EditClientPricingView_PKEY'
-export const EDIT_CLIENT_ECOMMERCE_PERMISSION = 'EditClient_Body_EditClientEcommerceView_PKEY'
+import { PermissionKeys } from '../../shared/auth/permissionKeys'
 
-export const DISCOUNT_SELECT_ALL_PERMISSION = 'Clients_Select_All_Contract_Pricing_Btn_PKEY'
-export const DISCOUNT_PERCENT_INPUT_PERMISSION = 'Clients_Select_All_Contract_Pricing_Input_PKEY'
-export const DISCOUNT_ROW_CHECKBOX_PERMISSION = 'Clients_Select_All_Contract_Pricing_CheckBox_Btn_PKEY'
+export const EDIT_CLIENT_TYPE_PERMISSION = PermissionKeys.Clients.ClientType.Change
+export const EDIT_CLIENT_ACTIVE_PERMISSION = PermissionKeys.Clients.Status.ToggleActive
+export const EDIT_CLIENT_DELETE_PERMISSION = PermissionKeys.Clients.Client.Delete
+export const EDIT_CLIENT_PRICING_PERMISSION = PermissionKeys.Clients.Pricing.Open
+export const EDIT_CLIENT_ECOMMERCE_PERMISSION = PermissionKeys.Clients.Ecommerce.Open
+
+export const DISCOUNT_SELECT_ALL_PERMISSION = PermissionKeys.Clients.Contract.SelectAll
+export const DISCOUNT_PERCENT_INPUT_PERMISSION = PermissionKeys.Clients.Promotion.EditText
+export const DISCOUNT_ROW_CHECKBOX_PERMISSION = PermissionKeys.Clients.Promotion.Toggle
+
+const CLIENT_TYPE_PERMISSION_BY_ICON: Readonly<Record<string, string>> = {
+  client_icon: PermissionKeys.Clients.ClientType.SelectBuyer,
+  supplier_icon: PermissionKeys.Clients.ClientType.SelectSupplier,
+}
+
+const CLIENT_ROLE_PERMISSION_BY_NAME: Readonly<Record<string, string>> = {
+  ShopClient: PermissionKeys.Clients.ClientType.SelectShopClient,
+  Постачальникитовару: PermissionKeys.Clients.ClientType.SelectProductSupplier,
+  ПокупціПЛ: PermissionKeys.Clients.ClientType.SelectPolishBuyer,
+  ПокупціПЛУкраїна: PermissionKeys.Clients.ClientType.SelectPolishUaBuyer,
+  ПокупціУкраїна: PermissionKeys.Clients.ClientType.SelectUkraineBuyer,
+  Польськіклієнти: PermissionKeys.Clients.ClientType.SelectPolishClient,
+}
 
 export function getClientTypePermission(clientTypeIcon?: string) {
-  return clientTypeIcon ? `${clientTypeIcon}_clientsNew_PKEY` : ''
+  if (!clientTypeIcon) return ''
+
+  return CLIENT_TYPE_PERMISSION_BY_ICON[clientTypeIcon] ?? `${clientTypeIcon}_clientsNew_PKEY`
 }
 
 export function getClientTypeRolePermission(roleName?: string) {
-  return roleName ? `${roleName.replace(/\s/g, '')}_sub_clientsNew_PKEY` : ''
+  if (!roleName) return ''
+
+  const normalizedRoleName = roleName.replace(/\s/g, '')
+  return CLIENT_ROLE_PERMISSION_BY_NAME[normalizedRoleName] ?? `${normalizedRoleName}_sub_clientsNew_PKEY`
 }

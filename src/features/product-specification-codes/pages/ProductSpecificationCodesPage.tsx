@@ -16,12 +16,14 @@ import { notifications } from '@mantine/notifications'
 import { CircleAlert, RotateCcw, Search } from 'lucide-react'
 import { useEffect, useMemo, useReducer, useState } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
+import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppModal } from '../../../shared/ui/AppModal'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { ExcelIcon } from '../../../shared/ui/ExcelIcon'
 import { Paginator } from '../../../shared/ui/paginator/Paginator'
+import { PermissionGate } from '../../auth/components/PermissionGate'
 import { DEFAULT_PAGINATOR_PAGE_SIZE, PAGINATOR_PAGE_SIZE_OPTIONS } from '../../../shared/ui/paginator/paginatorPageSize'
 import { getProductSpecifications, uploadSpecificationCodesFile } from '../api/productSpecificationCodesApi'
 import { ChangeProductSpecificationPanel } from '../components/ChangeProductSpecificationPanel'
@@ -139,6 +141,24 @@ function useProductSpecificationCodesModel() {
 }
 
 export function ProductSpecificationCodesPage() {
+  return (
+    <PermissionGate permissionKey={PermissionKeys.ProductSpecificationCodes.Page.View} fallback={<ProductSpecificationCodesPermissionDenied />}>
+      <ProductSpecificationCodesPageContent />
+    </PermissionGate>
+  )
+}
+
+function ProductSpecificationCodesPermissionDenied() {
+  const { t } = useI18n()
+
+  return (
+    <Alert color="red" icon={<CircleAlert size={18} />} title={t('Доступ заборонено')} variant="light">
+      {t('У вашої ролі немає права переглядати митні коди.')}
+    </Alert>
+  )
+}
+
+function ProductSpecificationCodesPageContent() {
   const { t } = useI18n()
   const model = useProductSpecificationCodesModel()
   const columns = useProductSpecificationColumns(model.specifications)

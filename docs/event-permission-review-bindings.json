@@ -1,0 +1,622 @@
+{
+  "schemaVersion": 1,
+  "permissionAliases": {
+    "OrderWillNotBeShipped_Btn_PKEY": "sales.ukraine.sale.unlock_for_shipping",
+    "UkraineAllActOfEdit_Change_PKEY": "sales.ukraine.sale.edit",
+    "UnclockSale_Btn_PKEY": "sales.ukraine.sale.unlock"
+  },
+  "pageRouteBindings": [
+    { "route": "/dashboard", "permissionKey": "dashboard.overview.page.view" },
+    { "route": "/administration/vehicle-registry", "permissionKey": "administration.vehicle_registry.page.view" },
+    { "route": "/accounting/sync/documents", "permissionKey": "administration.sync_documents.page.view" },
+    { "route": "/online-shop-cities", "permissionKey": "administration.online_shop_cities.page.view" },
+    { "route": "/online-shop-seo", "permissionKey": "administration.online_shop_seo.page.view" },
+    { "route": "/users", "permissionKey": "administration.users.page.view" },
+    { "route": "/users/roles", "permissionKey": "administration.roles.page.view" },
+    { "route": "/basket-supply-ukraine-order/budget-cart", "permissionKey": "orders.budget_cart.page.view" },
+    { "route": "/basket-supply-ukraine-order/cockpit", "permissionKey": "orders.purchase_cockpit.page.view" },
+    { "route": "/basket-supply-ukraine-order/dashboard", "permissionKey": "orders.supply_dashboard.page.view" },
+    { "route": "/basket-supply-ukraine-order", "permissionKey": "orders.supply_cart.page.view" },
+    { "route": "/orders/ukraine/all", "permissionKey": "orders.ukraine_orders.page.view" },
+    { "route": "/orders/ukraine/:id/product-income", "permissionKey": "orders.ukraine_orders.page.view" },
+    { "route": "/orders/ukraine/to-ukraine/new", "permissionKey": "orders.ukraine_orders.page.view" },
+    { "route": "/orders/ukraine/view/:id", "permissionKey": "orders.ukraine_orders.page.view" },
+    { "route": "/orders/develop/all/edit/:id/specifications", "permissionKey": "orders.ukraine_orders.page.view" },
+    { "route": "/orders/ukraine/protocols/:netid", "permissionKey": "orders.ukraine_orders.page.view" },
+    { "route": "/orders/ukraine/placement/:id", "permissionKey": "orders.ukraine_orders.page.view" },
+    { "route": "/supply-orders/product-placement/:id", "permissionKey": "orders.ukraine_orders.page.view" },
+    { "route": "/product-delivery-protocols", "permissionKey": "orders.product_delivery_protocols.page.view" },
+    { "route": "/ukraine/act/reconcoliation", "permissionKey": "orders.reconciliation_acts.page.view" },
+    { "route": "/reports/sale", "permissionKey": "reports.sale_file.page.view" },
+    { "route": "/reports/sales", "permissionKey": "reports.sale_file.page.view" },
+    { "route": "/reports/stocks", "permissionKey": "reports.stocks_constructor.page.view" },
+    { "route": "/clients/resources", "permissionKey": "counterparties.company_resources.page.view" },
+    { "route": "/clients", "permissionKey": "counterparties.clients.page.view" },
+    { "route": "/clients-online-shop", "permissionKey": "counterparties.online_shop_clients.page.view" },
+    { "route": "/new-clients-from-ecommerce", "permissionKey": "counterparties.new_ecommerce_clients.page.view" },
+    { "route": "/organization-clients", "permissionKey": "counterparties.buyer_organizations.page.view" },
+    { "route": "/suppliers", "permissionKey": "counterparties.suppliers.page.view" },
+    { "route": "/accounting/advanced-reports", "permissionKey": "accounting.advanced_reports.page.view" },
+    { "route": "/accounting/income-cashflows", "permissionKey": "accounting.income_cashflows.page.view" },
+    { "route": "/accounting/outgoing-cashflow", "permissionKey": "accounting.outgoing_cashflows.page.view" },
+    { "route": "/accounting/payment-cashflow-articles", "permissionKey": "accounting.cashflow_articles.page.view" },
+    { "route": "/accounting/payment-expense-articles", "permissionKey": "accounting.expense_articles.page.view" },
+    { "route": "/accounting/advance-payments", "permissionKey": "payments.advance_payments.page.view" },
+    { "route": "/accounting/available-payments", "permissionKey": "payments.available_payments.page.view" },
+    { "route": "/payments/available", "permissionKey": "payments.available_payments.page.view" },
+    { "route": "/accounting/banks", "permissionKey": "payments.banks.page.view" },
+    { "route": "/accounting/currency-convertors", "permissionKey": "payments.currency_convertors.page.view" },
+    { "route": "/accounting/payment-accounts", "permissionKey": "payments.payment_accounts.page.view" },
+    { "route": "/accounting/payment-online-shop", "permissionKey": "payments.online_shop_payment.page.view" },
+    { "route": "/accounting/consumable-orders", "permissionKey": "services.consumable_orders.page.view" },
+    { "route": "/accounting/consumable-product", "permissionKey": "services.consumable_products.page.view" },
+    { "route": "/accounting/consumable-services", "permissionKey": "services.accountable_expenses.page.view" },
+    { "route": "/accounting/supplier-organizations", "permissionKey": "services.supplier_organizations.page.view" },
+    { "route": "/act-providing-services", "permissionKey": "services.providing_service_acts.page.view" },
+    { "route": "/transporters", "permissionKey": "services.transporters.page.view" },
+    { "route": "/service/organisations", "permissionKey": "services.organisations.page.view" },
+    { "route": "/incomplete-sales-online-shop", "permissionKey": "sales.incomplete_online_shop_sales.page.view" },
+    { "route": "/sales/cockpit", "permissionKey": "sales.cockpit.page.view" },
+    { "route": "/sales/cockpit/head", "permissionKey": "sales.head_dashboard.page.view" },
+    { "route": "/sales/geography", "permissionKey": "sales.geography.page.view" },
+    { "route": "/sales-online-shop", "permissionKey": "sales.online_shop_sales.page.view" },
+    { "route": "/accounting/company-cars", "permissionKey": "warehouses.company_cars.page.view" },
+    { "route": "/accounting/storages", "permissionKey": "warehouses.premises.page.view" },
+    { "route": "/warehouse/ukraine", "permissionKey": "warehouses.ukraine.page.view" },
+    { "route": "/orders/depreciated", "permissionKey": "warehouse_accounting.write_off.page.view" },
+    { "route": "/products/capitalization", "permissionKey": "warehouse_accounting.capitalization.page.view" },
+    { "route": "/products/income/documents", "permissionKey": "warehouse_accounting.income_documents.page.view" },
+    { "route": "/products/storages", "permissionKey": "warehouse_accounting.storages.page.view" },
+    { "route": "/products/storages/incomes", "permissionKey": "warehouse_accounting.consignment_balances.page.view" },
+    { "route": "/products/transfers", "permissionKey": "warehouse_accounting.transfers.page.view" },
+    { "route": "/supplies/returns", "permissionKey": "warehouse_accounting.supplier_returns.page.view" },
+    { "route": "/sad/all", "permissionKey": "warehouse_accounting.sad.page.view" },
+    { "route": "/tax-free/carriers/all", "permissionKey": "warehouse_accounting.tax_free_carriers.page.view" },
+    { "route": "/tax-free/all", "permissionKey": "warehouse_accounting.tax_free_documents.page.view" },
+    { "route": "/tax-free/pack-list/all", "permissionKey": "warehouse_accounting.tax_free_pack_lists.page.view" },
+    { "route": "/accounting/specification-codes", "permissionKey": "products.specification_codes.page.view" },
+    { "route": "/pricing", "permissionKey": "products.pricing.page.view" },
+    { "route": "/product-groups", "permissionKey": "products.groups.page.view" },
+    { "route": "/products", "permissionKey": "products.assortment.page.view" },
+    { "route": "/products/assortment", "permissionKey": "products.assortment_analytics.page.view" },
+    { "route": "/products/consignments/availabilities", "permissionKey": "products.availability.page.view" },
+    { "route": "/products/history", "permissionKey": "products.history.page.view" },
+    { "route": "/sales/ukraine/all", "permissionKey": "sales.ukraine.sale.view" },
+    { "route": "/sales/return/client", "permissionKey": "sales.ukraine_returns.page.view" },
+    { "route": "/sales/ukraine/offers", "permissionKey": "sales.ukraine_offers.page.view" },
+    { "route": "/sales/ukraine/cart-reserve", "permissionKey": "sales.ukraine_cart_reserve.page.view" },
+    { "route": "/sales/ukraine/debtors", "permissionKey": "sales.ukraine_debtors.page.view" },
+    { "route": "/sales/ukraine/interest", "permissionKey": "sales.ukraine_interest.page.view" },
+    { "route": "/sales/ukraine/all/returns/new", "permissionKey": "sales.ukraine_returns.page.view" },
+    { "route": "/sales/ukraine/client-product-movement", "permissionKey": "sales.ukraine_client_product_movement.page.view" },
+    { "route": "/sales/ukraine/prediction", "permissionKey": "sales.ukraine_prediction.page.view" },
+    { "route": "/sales/charts", "permissionKey": "sales.charts.page.view" },
+    { "route": "/sales", "permissionKey": "orders.supply_sales.page.view" },
+    { "route": "/resales", "permissionKey": "sales.resales.page.view" },
+    { "route": "/recommendations", "permissionKey": "orders.purchase_cockpit.page.view" }
+  ],
+  "recordOverrides": {
+    "PE-00387": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": [
+        "counterparties.clients.client.create"
+      ],
+      "reason": "The supplier create opener enters the generic client-create workflow; opener, final submit and backend share the existing client create right."
+    },
+    "PE-00388": {
+      "disposition": "technical_ui",
+      "reason": "The supplier row only opens a local action drawer; every business action inside it is independently permission-guarded."
+    },
+    "PE-00389": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": [
+        "counterparties.clients.details.open"
+      ],
+      "reason": "A supplier is a client aggregate and its card uses the existing guarded client detail workflow rather than a duplicate supplier detail right."
+    },
+    "PE-00390": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": [
+        "counterparties.clients.accounting_cash_flow.open"
+      ],
+      "reason": "Supplier settlements use the existing counterparty cash-flow business right and dedicated supplier-scoped read façades."
+    },
+    "PE-00391": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": [
+        "counterparties.suppliers.passport.open"
+      ],
+      "reason": "The supplier passport is a distinct full-detail read with its own UI guard and scoped server endpoint."
+    },
+    "PE-00392": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": [
+        "counterparties.clients.status.toggle_active"
+      ],
+      "reason": "Supplier activation changes the same client aggregate status and reuses the existing status permission and guarded endpoint."
+    },
+    "PE-00394": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": [
+        "counterparties.suppliers.document.export"
+      ],
+      "reason": "Exporting the filtered supplier registry is one independent document generation action."
+    },
+    "PE-01686": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": [
+        "services.transporters.transporter.create"
+      ],
+      "reason": "Opening the create form is the first UI step of the same create business action; submit and backend use this one permission."
+    },
+    "PE-01688": {
+      "disposition": "technical_ui",
+      "reason": "The row click only opens a local chooser; edit and archive controls inside it are independently permission-guarded."
+    },
+    "PE-01690": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": [
+        "services.transporters.transporter.archive"
+      ],
+      "reason": "Archiving a transporter is one mutation across its opener, confirmation and backend boundary."
+    },
+    "PE-01691": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": [
+        "services.transporters.transporter.edit"
+      ],
+      "reason": "Opening and saving the edit form are one transporter edit business action."
+    },
+    "PE-01693": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": [
+        "services.transporters.transporter.create",
+        "services.transporters.transporter.edit"
+      ],
+      "reason": "The reusable form submit dispatches create or edit by mode and rechecks the exact matching permission before its scoped endpoint."
+    },
+    "PE-01454": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": [
+        "warehouse_accounting.supplier_returns.return.open_details"
+      ],
+      "reason": "The table-row activation and detail icon are two UI entry points to the same detail read and therefore share one permission."
+    },
+    "PE-01455": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": [
+        "warehouse_accounting.supplier_returns.document.export"
+      ],
+      "reason": "Generating the XLSX/PDF return document is one independent server-side export action."
+    },
+    "PE-01457": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-01454",
+      "reason": "The explicit detail icon calls the same detail handler and endpoint as the row click."
+    },
+    "PE-00038": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": [
+        "services.providing_service_acts.overview.open"
+      ],
+      "reason": "Refreshing an already opened act reloads the same overview-scoped detail and is not a separate business permission."
+    },
+    "PE-00039": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": [
+        "services.providing_service_acts.act.edit"
+      ],
+      "reason": "Saving the act date and comment is one reviewed mutation guarded by the same canonical permission in UI, handler and backend."
+    },
+    "PE-00041": {
+      "disposition": "technical_ui",
+      "reason": "Selecting a table row only opens a local action chooser; overview, logistic-way and order navigation remain independently permission-guarded."
+    },
+    "PE-00001": {
+      "disposition": "technical_ui",
+      "reason": "The root route only redirects to /dashboard; the destination page owns access control."
+    },
+    "PE-00139": {
+      "disposition": "technical_ui",
+      "reason": "Wildcard route registration mounts the procurement shell; concrete child routes own page access."
+    },
+    "PE-00181": {
+      "disposition": "stale_or_aggregated",
+      "reason": "The raw scanner merged multiple create/edit forms into one synthetic 'Cancel + Save' record; current source has no single executable action to permission."
+    },
+    "PE-00186": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": [
+        "counterparties.resources.region.delete",
+        "counterparties.resources.perfect_client.delete",
+        "counterparties.resources.organization.delete",
+        "counterparties.resources.tax_inspection.delete",
+        "counterparties.resources.pricing_rule.delete",
+        "counterparties.resources.currency.delete",
+        "counterparties.resources.storage.delete",
+        "counterparties.resources.measure_unit.delete",
+        "counterparties.resources.transporter.delete"
+      ],
+      "reason": "DeleteResourceModal is a reusable confirmation surface; the caller-specific opener and scoped backend mutation own the matching delete permission."
+    },
+    "PE-00190": {
+      "disposition": "stale_or_aggregated",
+      "reason": "The audited onSaveValues handler is absent from the current ClientResourcesPage source and cannot become a production permission."
+    },
+    "PE-00196": {
+      "disposition": "stale_or_aggregated",
+      "reason": "The audited onSaveDays handler is absent from the current ClientResourcesPage source and cannot become a production permission."
+    },
+    "PE-00203": {
+      "disposition": "technical_ui",
+      "reason": "This click only toggles the local VAT-rate popover; the reviewed create submit owns the business permission."
+    },
+    "PE-00218": {
+      "disposition": "technical_ui",
+      "reason": "This retry only repeats loading data already allowed by the company-resources page permission."
+    },
+    "PE-00224": {
+      "disposition": "technical_ui",
+      "reason": "This action only navigates to the clients page; the destination page owns data access."
+    },
+    "PE-00379": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["counterparties.clients.details.open"],
+      "reason": "The row navigates to the standard client detail workflow and reuses its existing canonical permission; page data is independently protected by the new-ecommerce page view permission."
+    },
+    "PE-00382": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["counterparties.online_shop_clients.cart.open"],
+      "reason": "Selecting a row loads the client's current cart through one guarded read; local row selection itself is not a separate permission."
+    },
+    "PE-00383": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["counterparties.online_shop_clients.sales.open"],
+      "reason": "Opening the sales drawer and its direct-link page use the same guarded client-sales read permission."
+    },
+    "PE-00554": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["sales.incomplete_online_shop_sales.page.view"],
+      "reason": "The row opens details already present in the page-view response; it is not a separate business action or API boundary."
+    },
+    "PE-00556": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": [
+        "sales.incomplete_online_shop.sale.assign_to_self",
+        "sales.incomplete_online_shop.sale.mark_completed"
+      ],
+      "reason": "The shared confirmation submits exactly one of the two reviewed workflow transitions and rechecks that transition permission before mutation."
+    },
+    "PE-00558": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-00554",
+      "reason": "The detail icon and row click open the same already-loaded detail drawer."
+    },
+    "PE-00559": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["counterparties.online_shop_clients.page.view"],
+      "reason": "The action navigates to the guarded online-shop client sales page; the destination page owns access."
+    },
+    "PE-00560": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["sales.incomplete_online_shop.sale.assign_to_self"],
+      "reason": "Assigning the current user is one canonical workflow mutation guarded in UI, handler, scoped API and legacy API."
+    },
+    "PE-00561": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["sales.incomplete_online_shop.sale.mark_completed"],
+      "reason": "Marking a sale completed is one canonical workflow mutation guarded in UI, handler, scoped API and legacy API."
+    },
+    "PE-00750": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["products.pricing.competitor_search.run"],
+      "reason": "Button, Enter key and result refresh all invoke the same external competitor-search business operation and share one server policy."
+    },
+    "PE-00581": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["administration.online_shop_seo.seo_page.edit"],
+      "reason": "The row edit action opens the SEO-page edit workflow; saving uses the same canonical business permission."
+    },
+    "PE-00577": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["administration.online_shop_seo.general_info.edit"],
+      "reason": "The reusable contact-information form submits the general-info update endpoint guarded by the canonical edit permission."
+    },
+    "PE-00564": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": [
+        "administration.online_shop_cities.city.create",
+        "administration.online_shop_cities.city.edit"
+      ],
+      "reason": "The shared city editor selects create or edit authorization from whether the city already has an identity."
+    },
+    "PE-00567": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["administration.online_shop_cities.city.create"],
+      "reason": "The new-city button opens the canonical city-create workflow and is not a separate modal permission."
+    },
+    "PE-00569": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["administration.online_shop_cities.city.edit"],
+      "reason": "The city-row click opens the canonical city-edit workflow."
+    },
+    "PE-00570": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["administration.online_shop_cities.city.archive"],
+      "reason": "The row archive action and its confirmation are one canonical archive business action."
+    },
+    "PE-00571": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-00564",
+      "reason": "The form node and CityEditorModal onSubmit prop describe the same create-or-edit submit handler."
+    },
+    "PE-00575": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-00570",
+      "reason": "The confirmation button completes the same archive action initiated from the row."
+    },
+    "PE-00578": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["administration.online_shop_seo.payment_info.edit"],
+      "reason": "The reusable payment-information form submits the payment update endpoint guarded by the canonical edit permission."
+    },
+    "PE-00582": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["administration.online_shop_seo.contact.edit"],
+      "reason": "Opening an existing contact and saving it are one contact-edit business action."
+    },
+    "PE-00583": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["administration.online_shop_seo.contact.delete"],
+      "reason": "The delete action and its confirmation are one contact-delete business action."
+    },
+    "PE-00618": {
+      "disposition": "technical_ui",
+      "reason": "Selecting an organization only updates local filter state; organization search and payment-task reads are protected by the page permission."
+    },
+    "PE-00621": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["services.organisations.page.view"],
+      "reason": "The row drawer renders details already returned by the page-scoped payment-task query and performs no additional read or mutation."
+    },
+    "PE-00584": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["administration.online_shop_seo.client.toggle"],
+      "reason": "Enabling or disabling an online-shop client is one reviewed toggle business action."
+    },
+    "PE-00585": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-00584",
+      "reason": "The second table layout exposes the same client toggle handler and endpoint."
+    },
+    "PE-00586": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["administration.online_shop_seo.payment_register.select"],
+      "reason": "Selecting the online-shop payment register is one reviewed business action."
+    },
+    "PE-00587": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["administration.online_shop_seo.storage.set_priority"],
+      "reason": "Opening and saving the priority editor are one storage-priority business action."
+    },
+    "PE-00588": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["administration.online_shop_seo.storage.remove"],
+      "reason": "The remove action and confirmation are one storage-removal business action."
+    },
+    "PE-00589": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["administration.online_shop_seo.storage.add"],
+      "reason": "Adding an available storage is one reviewed business action."
+    },
+    "PE-00590": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["administration.online_shop_seo.contact.create"],
+      "reason": "Opening the new-contact form and submitting it are one contact-create business action."
+    },
+    "PE-00591": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["administration.online_shop_seo.storage.add"],
+      "reason": "The storage drawer is the entry point to the guarded storage-add workflow, not a separate permission."
+    },
+    "PE-00592": {
+      "disposition": "technical_ui",
+      "reason": "Resetting a local search filter changes no business data and requires no event permission."
+    },
+    "PE-00593": {
+      "disposition": "technical_ui",
+      "reason": "Reload only repeats page-view reads already protected by the page permission."
+    },
+    "PE-00594": {
+      "disposition": "technical_ui",
+      "reason": "Tab selection is client-side navigation inside the already guarded page."
+    },
+    "PE-00595": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-00581",
+      "reason": "The page-row click and edit icon open the same SEO-page edit workflow."
+    },
+    "PE-00596": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": [
+        "administration.online_shop_seo.general_info.edit",
+        "administration.online_shop_seo.payment_info.edit"
+      ],
+      "reason": "The shared locale drawer exposes two independent forms; each form is rendered and saved only under its own permission."
+    },
+    "PE-00597": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-00582",
+      "reason": "The contact-row click and edit icon open the same contact-edit workflow."
+    },
+    "PE-00598": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-00584",
+      "reason": "The compact client-row click invokes the same guarded toggle business action."
+    },
+    "PE-00599": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-00584",
+      "reason": "The roster client-row click invokes the same guarded toggle business action."
+    },
+    "PE-00600": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-00586",
+      "reason": "The register-row click and select action invoke the same guarded selection endpoint."
+    },
+    "PE-00601": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["administration.online_shop_seo.seo_page.edit"],
+      "reason": "The edit form submit belongs to the same SEO-page edit business action as its opener."
+    },
+    "PE-00602": {
+      "disposition": "technical_ui",
+      "reason": "Closing the SEO-page modal only discards local UI state."
+    },
+    "PE-00603": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": [
+        "administration.online_shop_seo.contact.create",
+        "administration.online_shop_seo.contact.edit"
+      ],
+      "reason": "The shared contact form selects create or edit permission from whether an existing contact is being edited."
+    },
+    "PE-00604": {
+      "disposition": "technical_ui",
+      "reason": "Closing the contact modal only discards local UI state."
+    },
+    "PE-00605": {
+      "disposition": "technical_ui",
+      "reason": "Cancelling contact deletion performs no delete request."
+    },
+    "PE-00606": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-00583",
+      "reason": "The confirmation button completes the same contact-delete business action."
+    },
+    "PE-00607": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["administration.online_shop_seo.storage.set_priority"],
+      "reason": "The priority form submit belongs to the same storage-priority business action as its opener."
+    },
+    "PE-00608": {
+      "disposition": "technical_ui",
+      "reason": "Closing the priority modal only discards local UI state."
+    },
+    "PE-00609": {
+      "disposition": "technical_ui",
+      "reason": "Cancelling storage removal performs no remove request."
+    },
+    "PE-00610": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-00588",
+      "reason": "The confirmation button completes the same storage-removal business action."
+    },
+    "PE-00611": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-00589",
+      "reason": "The available-storage row and add icon invoke the same guarded storage-add endpoint."
+    },
+    "PE-00612": {
+      "disposition": "technical_ui",
+      "reason": "This handler only routes a card click around nested action cells; the payment-register business handler owns authorization."
+    },
+    "PE-00613": {
+      "disposition": "technical_ui",
+      "reason": "This keyboard handler only routes Enter/Space to the already guarded payment-register business handler."
+    },
+    "PE-01742": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": [
+        "administration.vehicle_registry.import.create"
+      ],
+      "reason": "Opening the native file picker is the first UI step of the single reviewed vehicle-registry import action, not a separate permission."
+    },
+    "PE-01743": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": [
+        "administration.vehicle_registry.import.create"
+      ],
+      "reason": "The file submit and file-picker opener are one import business action guarded by one canonical permission and one API policy."
+    },
+    "PE-01745": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": [
+        "administration.vehicle_registry.vehicle.open_details"
+      ],
+      "reason": "Vehicle row activation opens the guarded vehicle detail endpoint."
+    },
+    "PE-01746": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": [
+        "administration.vehicle_registry.import.view_issues"
+      ],
+      "reason": "Import row activation opens the guarded import-issues endpoint."
+    },
+    "PE-01748": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": [
+        "administration.vehicle_registry.workflow.update"
+      ],
+      "reason": "Saving status, note and client association is one vehicle workflow update business action."
+    },
+    "PE-01749": {
+      "disposition": "technical_ui",
+      "reason": "Selecting a suggested client only changes local form state; the workflow save owns the mutation permission."
+    },
+    "PE-01750": {
+      "disposition": "technical_ui",
+      "reason": "The match toggle only changes the local draft and performs no request; the workflow save owns the mutation permission."
+    },
+    "PE-01751": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-01745",
+      "reason": "The row action and row click open the same vehicle detail drawer and endpoint."
+    },
+    "PE-00728": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-00716",
+      "reason": "The create route is part of the payment-expense-articles page workflow."
+    },
+    "PE-00729": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-00716",
+      "reason": "The edit route is part of the payment-expense-articles page workflow."
+    },
+    "PE-01148": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-01147",
+      "reason": "The SAD edit route is a detail workflow of the SAD registry page."
+    },
+    "PE-01149": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-01147",
+      "reason": "The SAD sale route is a detail workflow of the SAD registry page."
+    },
+    "PE-01150": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-01147",
+      "reason": "The SAD TIR route is a detail workflow of the SAD registry page."
+    },
+    "PE-01151": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-01147",
+      "reason": "The SAD specifications route is a detail workflow of the SAD registry page."
+    },
+    "PE-01590": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-01589",
+      "reason": "The carrier create route belongs to the Tax Free carriers page."
+    },
+    "PE-01591": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-01589",
+      "reason": "The carrier edit route belongs to the Tax Free carriers page."
+    },
+    "PE-01644": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-01643",
+      "reason": "The pack-list edit route belongs to the Tax Free pack-list page."
+    }
+  }
+}

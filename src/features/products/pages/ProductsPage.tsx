@@ -68,6 +68,7 @@ import { toProxiedAssetUrl } from '../../../shared/url/proxiedAssetUrl'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { PermissionGate } from '../../auth/components/PermissionGate'
 import { useAuth } from '../../auth/useAuth'
+import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import type {
   Product,
   ProductFileUploadMode,
@@ -117,15 +118,17 @@ import { ShopImageGallery } from '../components/ShopImageGallery'
 import { ProductPriceSourcePanel } from '../components/ProductPriceSourcePanel'
 import { getProductAnalyticsId } from '../components/ProductAnalyticsPanel'
 import {
-  PRODUCT_BALANCES_PERMISSION,
-  PRODUCT_EDIT_PERMISSION,
-  PRODUCT_MOVEMENT_PERMISSION,
-  PRODUCT_WRITE_OFF_PERMISSION,
   ProductActionDrawer,
   ProductImageViewerModal,
   ProductStockSummary,
   type ProductDetailPanel,
 } from './ProductDetailPage'
+import {
+  PRODUCT_BALANCES_PERMISSION,
+  PRODUCT_EDIT_PERMISSION,
+  PRODUCT_MOVEMENT_PERMISSION,
+  PRODUCT_WRITE_OFF_PERMISSION,
+} from '../permissions'
 import './products.css'
 
 const InformationalMovementPanel = lazy(() =>
@@ -160,7 +163,7 @@ const SORT_MODE_LABELS: Record<ProductSortMode, string> = {
   '1': 'Код виробника',
   '2': 'Назва',
 }
-const PRODUCT_UPLOAD_DOCUMENT_PERMISSION = 'Product_Entire_Assortment_Product_Upload_Document_Btn_PKEY'
+const PRODUCT_UPLOAD_DOCUMENT_PERMISSION = PermissionKeys.ProductsAssortment.Document.Upload
 const inlineMovementLabels = {
   income: {
     empty: 'Приходів не знайдено',
@@ -276,6 +279,24 @@ type ProductPlacementStorageCorrectionStateUpdater = (
 ) => void
 
 export function ProductsPage() {
+  return (
+    <PermissionGate permissionKey={PermissionKeys.ProductsAssortment.Page.View} fallback={<ProductsPermissionDeniedAlert />}>
+      <ProductsPageContent />
+    </PermissionGate>
+  )
+}
+
+function ProductsPermissionDeniedAlert() {
+  const { t } = useI18n()
+
+  return (
+    <Alert color="red" icon={<CircleAlert size={18} />} title={t('Доступ заборонено')} variant="light">
+      {t('У вашої ролі немає права переглядати весь асортимент.')}
+    </Alert>
+  )
+}
+
+function ProductsPageContent() {
   const { t } = useI18n()
   const [urlSearchParams, setUrlSearchParams] = useSearchParams()
   const rawRouteProductNetId = urlSearchParams.get('netId')?.trim() || ''

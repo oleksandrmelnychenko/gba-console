@@ -7,6 +7,9 @@ import { useI18n } from '../../../../shared/i18n/useI18n'
 import {
   convertVatSaleAndGetPaymentDocument,
   createSale,
+  createSalesUkraineMergedSale,
+  createSalesUkraineSaleFromData,
+  createSalesUkraineVatSaleAndGetPaymentDocument,
   getRetailPaymentStatusBySaleId,
   getSaleTransporterTypes,
   getSaleTransportersByType,
@@ -153,6 +156,7 @@ type BlockedFinalFileMutation = {
 }
 
 export function NewSaleReviewStep({
+  canSubmit = true,
   clientNetId,
   sale,
   value,
@@ -164,8 +168,11 @@ export function NewSaleReviewStep({
   onRegisterSubmit,
   onRequestClose,
   onVatDocuments,
+  submitDeniedReason = 'Недостатньо прав для завершення операції',
+  submitFlow = 'edit',
   withVatAccounting,
 }: {
+  canSubmit?: boolean
   clientNetId: string | null
   onBusyChange?: (busy: boolean) => void
   onChange: (patch: Partial<NewSaleReviewValue>) => void
@@ -177,6 +184,8 @@ export function NewSaleReviewStep({
   onVatDocuments?: (result: SaleDocumentResult) => void
   sale: SalesUkraineSale | null
   value: NewSaleReviewValue
+  submitDeniedReason?: string
+  submitFlow?: 'create' | 'edit'
   withVatAccounting?: boolean
 }) {
   const { t } = useI18n()
@@ -205,6 +214,16 @@ export function NewSaleReviewStep({
   const splitItems = useWizardSplitOrderItems()
   const mergedSale = useWizardMergedSale()
   const isMergedMode = Boolean(mergedSale)
+  const submitPermissionDenied = !canSubmit
+  const submitSaleFromData = submitFlow === 'create'
+    ? createSalesUkraineSaleFromData
+    : updateSaleFromData
+  const submitMergedSale = submitFlow === 'create'
+    ? createSalesUkraineMergedSale
+    : updateMergedSale
+  const submitVatSale = submitFlow === 'create'
+    ? createSalesUkraineVatSaleAndGetPaymentDocument
+    : convertVatSaleAndGetPaymentDocument
   const retailSale = mergedSale?.unionSale ?? sale
   const pendingMutationUserKey = getSalesPendingMutationUserKey(session)
   const pendingMutationContext = getFinalMutationContext(clientNetId, sale)
@@ -897,6 +916,7 @@ export function NewSaleReviewStep({
     if (linkedToSplit) {
       stageWizardSplitFinalMutation({
         context: scope.context,
+        flow: submitFlow,
         kind: scope.kind as 'create-sale' | 'sale-update-file' | 'sale-vat-document',
         operationId,
         ...(lease ? { fencingToken: lease.fencingToken, generation: lease.generation } : {}),
@@ -1071,7 +1091,7 @@ export function NewSaleReviewStep({
         mergedSaleSubmissionRef.current = { submission: frozen }
         const result = await advanceWizardMergedSaleSession({
           submission: frozen,
-          updateMergedSale,
+          updateMergedSale: submitMergedSale,
         })
 
         if (result.status === 'pending-reconciliation') {
@@ -1318,6 +1338,12 @@ export function NewSaleReviewStep({
         return
       }
 
+      if (submitPermissionDenied) {
+        notifications.show({ color: 'red', message: submitDeniedReason })
+
+        return
+      }
+
       const pendingFinalCreateSale = createSaleSubmissionRef.current
       const pendingFinalMergedSale = mergedSaleSubmissionRef.current
       const pendingFinalFileMutation = fileMutationSubmissionRef.current
@@ -1382,14 +1408,16 @@ export function NewSaleReviewStep({
             ? await runFinalFileMutation(
                 'sale-vat-document',
                 pendingFinalFileMode,
-                convertVatSaleAndGetPaymentDocument,
+                submitVatSale,
                 undefined,
                 value.ttnFile,
               )
             : await runFinalFileMutation(
                 'sale-update-file',
                 pendingFinalFileMode,
-                updateSaleFromData,
+                pendingFinalFileMode === 'submit'
+                  ? submitSaleFromData
+                  : updateSaleFromData,
                 undefined,
                 value.ttnFile,
               )
@@ -1466,7 +1494,7 @@ export function NewSaleReviewStep({
           const documentResult = await runFinalFileMutation(
             'sale-vat-document',
             'submit',
-            convertVatSaleAndGetPaymentDocument,
+            submitVatSale,
             payload,
             value.ttnFile,
           )
@@ -1490,7 +1518,7 @@ export function NewSaleReviewStep({
           const result = await runFinalFileMutation(
             'sale-update-file',
             'submit',
-            updateSaleFromData,
+            submitSaleFromData,
             payload,
             value.ttnFile,
           )
@@ -1808,8 +1836,9 @@ export function NewSaleReviewStep({
             <Button
               ref={submitRef}
               className="new-sale-review-actions__primary"
-              disabled={Boolean(blockedFileMutation && !blockedFileMutation.canResume)}
+              disabled={submitPermissionDenied || Boolean(blockedFileMutation && !blockedFileMutation.canResume)}
               loading={submitting}
+              title={submitPermissionDenied ? submitDeniedReason : undefined}
               onClick={() => void submitSale()}
             >
               {primaryLabel}

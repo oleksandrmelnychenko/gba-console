@@ -507,6 +507,7 @@ export async function restoreWizardSplitItemsDurably({
 }
 
 const splitRecoveryRuns = new Map<string, Promise<WizardSplitRecoveryRunResult>>()
+type WizardSplitSaleLoader = (netId: string) => Promise<SalesUkraineSale | null>
 
 async function executeFencedWizardSplitMutation(
   scope: SalesPendingMutationScope,
@@ -614,24 +615,27 @@ function isMatchingPersistedWizardSplitMutation(
 
 export function restorePersistedWizardSplitRecovery(
   userKey: string,
+  loadSale: WizardSplitSaleLoader = getSaleById,
 ): Promise<WizardSplitRecoveryRunResult> {
   const normalizedUserKey = userKey.trim().toLowerCase()
-  const running = splitRecoveryRuns.get(normalizedUserKey)
+  const runKey = `${normalizedUserKey}:${loadSale === getSaleById ? 'legacy' : 'scoped'}`
+  const running = splitRecoveryRuns.get(runKey)
 
   if (running) {
     return running
   }
 
-  const run = performPersistedWizardSplitRecovery(normalizedUserKey).finally(() => {
-    splitRecoveryRuns.delete(normalizedUserKey)
+  const run = performPersistedWizardSplitRecovery(normalizedUserKey, loadSale).finally(() => {
+    splitRecoveryRuns.delete(runKey)
   })
-  splitRecoveryRuns.set(normalizedUserKey, run)
+  splitRecoveryRuns.set(runKey, run)
 
   return run
 }
 
 async function performPersistedWizardSplitRecovery(
   userKey: string,
+  loadSale: WizardSplitSaleLoader,
 ): Promise<WizardSplitRecoveryRunResult> {
   if (!userKey) {
     return {
@@ -680,7 +684,7 @@ async function performPersistedWizardSplitRecovery(
     userKey,
   }
   const loadSourceSale = async () => {
-    const sale = await getSaleById(source.saleNetUid)
+    const sale = await loadSale(source.saleNetUid)
 
     if (!sale) {
       throw new Error('Сервер не повернув вихідний рахунок для відновлення')

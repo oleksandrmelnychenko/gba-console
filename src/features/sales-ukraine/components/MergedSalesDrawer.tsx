@@ -49,6 +49,10 @@ const amountFormatter = new Intl.NumberFormat('uk-UA', { maximumFractionDigits: 
 const EMPTY_GUID = '00000000-0000-0000-0000-000000000000'
 
 export function MergedSalesDrawer({
+  canCreateInvoice = true,
+  canEdit = true,
+  loadCurrentUnmergedSale = getCurrentUnmergedSale,
+  loadMergedSale = getMergedSales,
   saleNetId,
   clientAgreementNetId,
   onClose,
@@ -56,14 +60,20 @@ export function MergedSalesDrawer({
   onCreateNewSale,
   onEditSale,
   onInvoice,
+  submitMergedSale = updateMergedSale,
 }: {
+  canCreateInvoice?: boolean
+  canEdit?: boolean
   clientAgreementNetId?: string | null
+  loadCurrentUnmergedSale?: typeof getCurrentUnmergedSale
+  loadMergedSale?: typeof getMergedSales
   onChanged: () => void
   onClose: () => void
   onCreateNewSale?: () => void
   onEditSale?: (sale: SalesUkraineSale) => void
   onInvoice?: (sale: SalesUkraineSale) => void
   saleNetId: string | null
+  submitMergedSale?: typeof updateMergedSale
 }) {
   const { t } = useI18n()
 
@@ -77,9 +87,14 @@ export function MergedSalesDrawer({
     >
       {saleNetId && (
         <MergedSalesContent
+          canCreateInvoice={canCreateInvoice}
+          canEdit={canEdit}
           key={saleNetId}
           clientAgreementNetId={clientAgreementNetId}
+          loadCurrentUnmergedSale={loadCurrentUnmergedSale}
+          loadMergedSale={loadMergedSale}
           saleNetId={saleNetId}
+          submitMergedSale={submitMergedSale}
           onChanged={onChanged}
           onCreateNewSale={onCreateNewSale}
           onEditSale={onEditSale}
@@ -91,19 +106,29 @@ export function MergedSalesDrawer({
 }
 
 function MergedSalesContent({
+  canCreateInvoice,
+  canEdit,
+  loadCurrentUnmergedSale,
+  loadMergedSale,
   saleNetId,
   clientAgreementNetId,
   onChanged,
   onCreateNewSale,
   onEditSale,
   onInvoice,
+  submitMergedSale,
 }: {
+  canCreateInvoice: boolean
+  canEdit: boolean
   clientAgreementNetId?: string | null
+  loadCurrentUnmergedSale: typeof getCurrentUnmergedSale
+  loadMergedSale: typeof getMergedSales
   onChanged: () => void
   onCreateNewSale?: () => void
   onEditSale?: (sale: SalesUkraineSale) => void
   onInvoice?: (sale: SalesUkraineSale) => void
   saleNetId: string
+  submitMergedSale: typeof updateMergedSale
 }) {
   const { t } = useI18n()
   const { session } = useAuth()
@@ -190,7 +215,7 @@ function MergedSalesContent({
 
     async function load() {
       try {
-        const next = await getMergedSales(saleNetId)
+        const next = await loadMergedSale(saleNetId)
 
         if (!cancelled) {
           setMergedSale(next)
@@ -212,7 +237,7 @@ function MergedSalesContent({
     return () => {
       cancelled = true
     }
-  }, [saleNetId, reloadKey, setDrafts, setError, setLoading, setMergedSale, t])
+  }, [loadMergedSale, saleNetId, reloadKey, setDrafts, setError, setLoading, setMergedSale, t])
 
   useEffect(() => {
     if (!wantsCreateNewSale || !agreementNetUid) {
@@ -224,7 +249,7 @@ function MergedSalesContent({
 
     async function check(netUid: string) {
       try {
-        const current = await getCurrentUnmergedSale(netUid)
+        const current = await loadCurrentUnmergedSale(netUid)
 
         if (!cancelled) {
           setHasMainClientNewSale(hasCurrentUnmergedSale(current))
@@ -241,7 +266,7 @@ function MergedSalesContent({
     return () => {
       cancelled = true
     }
-  }, [agreementNetUid, reloadKey, setHasMainClientNewSale, wantsCreateNewSale])
+  }, [agreementNetUid, loadCurrentUnmergedSale, reloadKey, setHasMainClientNewSale, wantsCreateNewSale])
 
   const merges = Array.isArray(mergedSale?.InputSaleMerges) ? mergedSale.InputSaleMerges : []
   const canCreateNewSaleToClient =
@@ -295,6 +320,10 @@ function MergedSalesContent({
   }
 
   function requestConvert(sale: SalesUkraineSale, index: number) {
+    if (!canCreateInvoice) {
+      return
+    }
+
     if (pendingMergedRef.current) {
       notifications.show({ color: 'orange', message: t('Спочатку перевірте результат попередньої операції') })
 
@@ -319,6 +348,10 @@ function MergedSalesContent({
   }
 
   async function submitSelectedSale() {
+    if (!canCreateInvoice) {
+      return
+    }
+
     if (pendingMergedRef.current) {
       setConfirmSale(null)
       notifications.show({ color: 'orange', message: t('Спочатку перевірте результат попередньої операції') })
@@ -354,6 +387,10 @@ function MergedSalesContent({
   }
 
   async function reconcilePendingMergedSale() {
+    if (!canCreateInvoice) {
+      return
+    }
+
     const submission = pendingMergedRef.current
 
     if (submission) {
@@ -362,6 +399,10 @@ function MergedSalesContent({
   }
 
   async function runMergedSaleSubmission(submission: WizardMergedSaleSubmission) {
+    if (!canCreateInvoice) {
+      return
+    }
+
     setConverting(true)
 
     try {
@@ -388,7 +429,7 @@ function MergedSalesContent({
           pendingMergedRef.current = durableSubmission
           const result = await advanceWizardMergedSaleSession({
             submission: durableSubmission,
-            updateMergedSale,
+            updateMergedSale: submitMergedSale,
           })
 
           if (result.status === 'pending-reconciliation') {
@@ -445,7 +486,7 @@ function MergedSalesContent({
     }
   }
 
-  const pendingMergedAlert = pendingMergedSubmission ? (
+  const pendingMergedAlert = canCreateInvoice && pendingMergedSubmission ? (
     <Alert color="orange" icon={<CircleAlert size={18} />} title={t('Потрібна звірка операції')} variant="light">
       <Stack gap="xs">
         <Text size="sm">
@@ -479,7 +520,7 @@ function MergedSalesContent({
         </Alert>
       )}
 
-      {canCreateNewSaleToClient && (
+      {canCreateInvoice && canCreateNewSaleToClient && (
         <Group>
           <Anchor component="button" fw={600} size="sm" type="button" onClick={onCreateNewSale}>
             {t('Створити новий рахунок головному клієнту')}
@@ -511,7 +552,8 @@ function MergedSalesContent({
             draft={drafts[getMergedSaleKey(getInputSale(merge) || {}, index)]}
             index={index}
             sale={getInputSale(merge)}
-            onEdit={onEditSale}
+            canInvoice={canCreateInvoice}
+            onEdit={canEdit ? onEditSale : undefined}
             onInvoice={requestConvert}
             invoiceDisabled={Boolean(pendingMergedSubmission)}
             onItemQtyChange={updateItemQty}
@@ -545,6 +587,7 @@ function MergedSalesContent({
 }
 
 function MergedSaleCard({
+  canInvoice: canCreateInvoice,
   draft,
   index,
   sale,
@@ -555,6 +598,7 @@ function MergedSaleCard({
   onItemToggle,
   onSaleToggle,
 }: {
+  canInvoice: boolean
   draft?: MergedSaleInvoiceDraft
   index: number
   invoiceDisabled: boolean
@@ -574,7 +618,7 @@ function MergedSaleCard({
   const orderItems = getOrderItems(sale)
   const client = sale.ClientAgreement?.Client
   const currency = sale.ClientAgreement?.Agreement?.Currency?.Code || ''
-  const canInvoice = hasSelectedMergedSaleItems(sale, draft)
+  const canInvoice = canCreateInvoice && hasSelectedMergedSaleItems(sale, draft)
 
   return (
     <Card withBorder className="sales-merge-card" padding="md" radius="md">
@@ -606,16 +650,18 @@ function MergedSaleCard({
                 <Pencil size={18} />
               </ActionIcon>
             )}
-            <Button
-              className="sales-drawer-action-button"
-              color={CREATE_ACTION_COLOR}
-              disabled={invoiceDisabled || !canInvoice}
-              leftSection={<ReceiptText size={16} />}
-              size="xs"
-              onClick={() => onInvoice(sale, index)}
-            >
-              {t('Створити накладну')}
-            </Button>
+            {canCreateInvoice && (
+              <Button
+                className="sales-drawer-action-button"
+                color={CREATE_ACTION_COLOR}
+                disabled={invoiceDisabled || !canInvoice}
+                leftSection={<ReceiptText size={16} />}
+                size="xs"
+                onClick={() => onInvoice(sale, index)}
+              >
+                {t('Створити накладну')}
+              </Button>
+            )}
           </Group>
         </Group>
 

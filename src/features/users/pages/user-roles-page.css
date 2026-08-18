@@ -229,3 +229,23 @@
   min-height: 48px;
   padding: 8px 10px;
 }
+
+.user-roles-workspace-tabs {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.user-roles-workspace-tabs-list {
+  flex: 0 0 auto;
+  padding: 0 8px;
+}
+
+.user-roles-workspace-tab-panel {
+  min-height: 0;
+}
+
+.user-roles-workspace-tabs > .user-roles-layout {
+  flex: 1 1 auto;
+}

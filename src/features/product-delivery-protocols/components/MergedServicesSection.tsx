@@ -1,6 +1,7 @@
 import { Button, Group, Stack, Text } from '@mantine/core'
 import { Plus } from 'lucide-react'
 import { formatLocalDateTime } from '../../../shared/date/dateTime'
+import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppModal } from '../../../shared/ui/AppModal'
@@ -23,7 +24,7 @@ import { MergedServiceViewCard } from './MergedServiceViewCard'
 import { NewMergedServiceForm } from './NewMergedServiceForm'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 
-const ADD_MERGED_SERVICE_PERMISSION = 'ProductDeliveryProtocols_unified_services_AddBtn_PKEY'
+const ADD_MERGED_SERVICE_PERMISSION = PermissionKeys.ProductDeliveryProtocols.UnifiedService.Create
 
 export type SaveMergedServicePayload = {
   files: {

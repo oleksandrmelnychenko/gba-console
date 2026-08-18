@@ -24,6 +24,8 @@ import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { TableRowAction } from '../../../shared/ui/table-row-action'
 import { PermissionGate } from '../../auth/components/PermissionGate'
+import { usePermissions } from '../../auth/usePermissions'
+import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import {
   getPaymentAccountOrganizations,
   getPaymentAccounts,
@@ -47,6 +49,25 @@ const PAYMENT_ACCOUNTS_TABLE_DEFAULT_LAYOUT = {
 type TypeFilter = 'all' | '0' | '1' | '2'
 
 export function PaymentAccountsPage() {
+  const { t } = useI18n()
+  const { can, isLoading } = usePermissions()
+
+  if (isLoading) {
+    return <Text c="dimmed">{t('Завантаження')}</Text>
+  }
+
+  if (!can(PermissionKeys.FinancialAdministration.PaymentAccounts.Page.View)) {
+    return (
+      <Alert color="red" icon={<CircleAlert size={18} />} title={t('Доступ заборонено')} variant="light">
+        {t('Недостатньо прав для перегляду платіжних рахунків')}
+      </Alert>
+    )
+  }
+
+  return <PaymentAccountsPageContent />
+}
+
+function PaymentAccountsPageContent() {
   const { t } = useI18n()
   const navigate = useNavigate()
   const location = useLocation()

@@ -21,6 +21,8 @@ import { useCallback, useEffect, useMemo, useReducer, useState } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { useAuth } from '../../auth/useAuth'
+import { usePermissions } from '../../auth/usePermissions'
+import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { getIncompleteSales, updateIncompleteSale } from '../../clients/api/onlineShopClientsApi'
 import { createWizardOperationId } from '../../sales-ukraine/components/new-sale-wizard/wizardMutationOperation'
 import { IncompleteSaleItemsList } from '../../clients/components/IncompleteSaleItemsList'
@@ -110,6 +112,10 @@ const STATUS_COLORS: Record<IncompleteSalesOnlineShopStatus, string> = {
 function useIncompleteSalesOnlineShopPageModel() {
   const { t } = useI18n()
   const { user } = useAuth()
+  const { can } = usePermissions()
+  const canOpenClientSales = can(PermissionKeys.OnlineShopClients.Page.View)
+  const canAssignToSelf = can(PermissionKeys.IncompleteSalesOnlineShop.Sale.AssignToSelf)
+  const canMarkCompleted = can(PermissionKeys.IncompleteSalesOnlineShop.Sale.MarkCompleted)
   const [sales, setSales] = useValueState<IncompleteSalesOnlineShopItem[]>([])
   const [filterDraft, setFilterDraft] = useValueState<FilterDraft>(createDefaultFilterDraft)
   const [activeFilters, setActiveFilters] = useValueState<IncompleteSalesOnlineShopFilter>(() => toIncompleteSalesFilter(createDefaultFilterDraft()))
@@ -164,20 +170,32 @@ function useIncompleteSalesOnlineShopPageModel() {
   }, [setDetailError, setSelectedSale])
 
   const openClientSales = useCallback((sale: IncompleteSalesOnlineShopItem) => {
+    if (!canOpenClientSales) {
+      return
+    }
+
     const netUid = getRetailClientNetUid(sale.RetailClient)
 
     if (netUid) {
       window.open(`/clients-online-shop/client/${netUid}`, '_blank', 'noopener,noreferrer')
     }
-  }, [])
+  }, [canOpenClientSales])
 
   const columns = useIncompleteSalesOnlineShopColumns({
-    onOpenClientSales: openClientSales,
+    canAssignToSelf,
+    canMarkCompleted,
+    onOpenClientSales: canOpenClientSales ? openClientSales : undefined,
     onOpenDetail: openDetail,
-    onStatusAction: (action) => setPendingStatusAction({
-      ...action,
-      operationId: createWizardOperationId(),
-    }),
+    onStatusAction: (action) => {
+      const isAllowed = action.status === 1 ? canAssignToSelf : canMarkCompleted
+
+      if (isAllowed) {
+        setPendingStatusAction({
+          ...action,
+          operationId: createWizardOperationId(),
+        })
+      }
+    },
     updatingId,
     user,
   })
@@ -222,6 +240,12 @@ function useIncompleteSalesOnlineShopPageModel() {
     }
 
     const { operationId, sale, status } = pendingStatusAction
+
+    if ((status === 1 && !canAssignToSelf) || (status === 2 && !canMarkCompleted)) {
+      setPendingStatusAction(null)
+      return
+    }
+
     let nextSale: IncompleteSalesOnlineShopItem
 
     if (status === 1) {
@@ -291,7 +315,7 @@ function useIncompleteSalesOnlineShopPageModel() {
     selectedSale,
     closeDetail,
     confirmStatusAction,
-    openClientSales,
+    openClientSales: canOpenClientSales ? openClientSales : undefined,
     openDetail,
     reloadSales,
     resetFilters,
@@ -486,7 +510,7 @@ function IncompleteSaleDetailDrawer({
   detailError: string | null
   sale: IncompleteSalesOnlineShopItem | null
   onClose: () => void
-  onOpenClientSales: (sale: IncompleteSalesOnlineShopItem) => void
+  onOpenClientSales?: (sale: IncompleteSalesOnlineShopItem) => void
 }) {
   const { t } = useI18n()
 
@@ -550,13 +574,17 @@ function IncompleteSaleStatusModal({
 }
 
 function useIncompleteSalesOnlineShopColumns({
+  canAssignToSelf,
+  canMarkCompleted,
   onOpenClientSales,
   onOpenDetail,
   onStatusAction,
   updatingId,
   user,
 }: {
-  onOpenClientSales: (sale: IncompleteSalesOnlineShopItem) => void
+  canAssignToSelf: boolean
+  canMarkCompleted: boolean
+  onOpenClientSales?: (sale: IncompleteSalesOnlineShopItem) => void
   onOpenDetail: (sale: IncompleteSalesOnlineShopItem) => void
   onStatusAction: (action: Omit<PendingStatusAction, 'operationId'>) => void
   updatingId: string | null
@@ -645,7 +673,7 @@ function useIncompleteSalesOnlineShopColumns({
               <Group gap={4} justify="center" wrap="nowrap">
                 <TableRowAction action="details" label={t('Деталі')} onClick={() => onOpenDetail(sale)} />
 
-                {hasClientSales && (
+                {hasClientSales && onOpenClientSales && (
                   <TableRowAction
                     action="receipt"
                     label={t('Продажі клієнта')}
@@ -654,7 +682,7 @@ function useIncompleteSalesOnlineShopColumns({
                   />
                 )}
 
-                {!hasResponsible && status !== 2 && (
+                {canAssignToSelf && !hasResponsible && status !== 2 && (
                   <TableRowAction
                     action="assign"
                     disabled={!user || isUpdating}
@@ -664,7 +692,7 @@ function useIncompleteSalesOnlineShopColumns({
                   />
                 )}
 
-                {hasResponsible && status !== 2 && (
+                {canMarkCompleted && hasResponsible && status !== 2 && (
                   <TableRowAction
                     action="complete"
                     disabled={isUpdating}
@@ -678,7 +706,7 @@ function useIncompleteSalesOnlineShopColumns({
         },
       },
     ],
-    [onOpenClientSales, onOpenDetail, onStatusAction, t, updatingId, user],
+    [canAssignToSelf, canMarkCompleted, onOpenClientSales, onOpenDetail, onStatusAction, t, updatingId, user],
   )
 }
 
@@ -686,7 +714,7 @@ type IncompleteSaleDetailProps = {
   error: string | null
   isLoading: boolean
   sale: IncompleteSalesOnlineShopItem
-  onOpenClientSales: (sale: IncompleteSalesOnlineShopItem) => void
+  onOpenClientSales?: (sale: IncompleteSalesOnlineShopItem) => void
 }
 
 function IncompleteSaleDetail({ error, isLoading, sale, onOpenClientSales }: IncompleteSaleDetailProps) {
@@ -741,7 +769,7 @@ function IncompleteSaleDetail({ error, isLoading, sale, onOpenClientSales }: Inc
             </div>
           </div>
 
-          {hasClientSales && (
+          {hasClientSales && onOpenClientSales && (
             <Button
               mt="xs"
               variant="outline"

@@ -14,6 +14,7 @@ import { notifications } from '@mantine/notifications'
 import { CircleAlert, ExternalLink, Pencil, Plus, RefreshCw, RotateCcw, Search, Trash2, X } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { PermissionGate } from '../../auth/components/PermissionGate'
+import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppModal } from '../../../shared/ui/AppModal'
@@ -61,6 +62,24 @@ type DeleteTarget =
   | { category: ConsumableProductCategory; kind: 'product'; product: ConsumableProduct }
 
 export function ConsumableProductsPage() {
+  return (
+    <PermissionGate permissionKey={PermissionKeys.ConsumableProducts.Page.View} fallback={<ConsumableProductsPermissionDenied />}>
+      <ConsumableProductsPageContent />
+    </PermissionGate>
+  )
+}
+
+function ConsumableProductsPermissionDenied() {
+  const { t } = useI18n()
+
+  return (
+    <Alert color="red" icon={<CircleAlert size={18} />} title={t('Доступ заборонено')} variant="light">
+      {t('У вашої ролі немає права переглядати побутові товари та послуги.')}
+    </Alert>
+  )
+}
+
+function ConsumableProductsPageContent() {
   const { t } = useI18n()
   const [categories, setCategories] = useValueState<ConsumableProductCategory[]>([])
   const [searchValue, setSearchValue] = useValueState('')
@@ -311,7 +330,7 @@ export function ConsumableProductsPage() {
           </div>
           <div ref={setTableToolbarSlot} className="app-filter-table-toolbar-slot" />
           <div className="consumable-products-create-actions">
-            <PermissionGate permissionKey="SERVICE_Accounting_Consumable_Product_addSupCategoryBtn_PKEY">
+            <PermissionGate permissionKey={PermissionKeys.ConsumableProducts.Product.Create}>
               <Button
                 color={CREATE_ACTION_COLOR}
                 disabled={!selectedCategory}
@@ -326,7 +345,7 @@ export function ConsumableProductsPage() {
                 {t('Додати товар')}
               </Button>
             </PermissionGate>
-            <PermissionGate permissionKey="SERVICE_Accounting_Consumable_Product_AddBtn_PKEY">
+            <PermissionGate permissionKey={PermissionKeys.ConsumableProducts.Category.Create}>
               <Button color={CREATE_ACTION_COLOR} size="sm" leftSection={<Plus size={16} />} onClick={() => setCategoryEditor({ mode: 'create' })}>
                 {t('Додати категорію')}
               </Button>
@@ -460,7 +479,7 @@ function ConsumableCategoryPanel({
           </Text>
         </div>
         <Group className="consumable-category-panel__actions" gap="xs">
-          <PermissionGate permissionKey="SERVICE_Accounting_Consumable_Product_edit_categoryBtn_PKEY">
+          <PermissionGate permissionKey={PermissionKeys.ConsumableProducts.Category.Edit}>
             <Tooltip label={t('Редагувати')}>
               <ActionIcon aria-label={t('Редагувати категорію')} color="gray" variant="light" onClick={onEditCategory}>
                 <Pencil size={16} />
@@ -591,7 +610,7 @@ function ConsumableProductActionsModal({
       {product && (
         <Stack gap="md">
           <Stack className="app-modal-actions" gap="xs">
-            <PermissionGate permissionKey="SERVICE_Accounting_Consumable_Product_editBtn_PKEY">
+            <PermissionGate permissionKey={PermissionKeys.ConsumableProducts.Product.Edit}>
               <Button
                 fullWidth
                 color="dark"
@@ -617,7 +636,7 @@ function ConsumableProductActionsModal({
 
           <Divider />
 
-          <PermissionGate permissionKey="SERVICE_Accounting_Consumable_Product_removeBtn_PKEY">
+          <PermissionGate permissionKey={PermissionKeys.ConsumableProducts.Product.Delete}>
             <Button
               fullWidth
               color="red"

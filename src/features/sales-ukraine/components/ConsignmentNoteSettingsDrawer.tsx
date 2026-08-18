@@ -26,11 +26,29 @@ type ConsignmentNoteDrawerState = {
   setting: SaleConsignmentNoteSetting
 }
 
+export type ConsignmentNoteSettingsApi = {
+  add: typeof addSaleConsignmentNoteSetting
+  getAll: typeof getSaleConsignmentNoteSettings
+  print: typeof printSaleConsignmentNoteDocument
+  remove: typeof removeSaleConsignmentNoteSetting
+  update: typeof updateSaleConsignmentNoteSetting
+}
+
+const DEFAULT_CONSIGNMENT_NOTE_SETTINGS_API: ConsignmentNoteSettingsApi = {
+  add: addSaleConsignmentNoteSetting,
+  getAll: getSaleConsignmentNoteSettings,
+  print: printSaleConsignmentNoteDocument,
+  remove: removeSaleConsignmentNoteSetting,
+  update: updateSaleConsignmentNoteSetting,
+}
+
 export function ConsignmentNoteSettingsDrawer({
+  api = DEFAULT_CONSIGNMENT_NOTE_SETTINGS_API,
   opened,
   sale,
   onClose,
 }: {
+  api?: ConsignmentNoteSettingsApi
   onClose: () => void
   opened: boolean
   sale: SalesUkraineSale | null
@@ -62,7 +80,7 @@ export function ConsignmentNoteSettingsDrawer({
       setLoading(true)
 
       try {
-        const nextSettings = await getSaleConsignmentNoteSettings()
+        const nextSettings = await api.getAll()
 
         if (!cancelled) {
           setSettings(nextSettings)
@@ -86,7 +104,7 @@ export function ConsignmentNoteSettingsDrawer({
     return () => {
       cancelled = true
     }
-  }, [defaultSetting, opened, setLoading, setNoteState, setSettings, t])
+  }, [api, defaultSetting, opened, setLoading, setNoteState, setSettings, t])
 
   function selectSetting(value: string | null) {
     if (!value) {
@@ -140,8 +158,8 @@ export function ConsignmentNoteSettingsDrawer({
 
     try {
       const nextSettings = hasExistingSetting
-        ? await updateSaleConsignmentNoteSetting(noteState.setting)
-        : await addSaleConsignmentNoteSetting(noteState.setting)
+        ? await api.update(noteState.setting)
+        : await api.add(noteState.setting)
       const nextSetting = applyConsignmentDocumentDefaults(
         findMatchingConsignmentSetting(nextSettings, noteState.setting) || noteState.setting,
         defaultSetting,
@@ -180,7 +198,7 @@ export function ConsignmentNoteSettingsDrawer({
     setNoteState((currentState) => ({ ...currentState, error: null }))
 
     try {
-      const nextSettings = await removeSaleConsignmentNoteSetting(noteState.setting.NetUid)
+      const nextSettings = await api.remove(noteState.setting.NetUid)
 
       setSettings(nextSettings)
       setNoteState(createConsignmentNoteDrawerState(defaultSetting))
@@ -214,7 +232,7 @@ export function ConsignmentNoteSettingsDrawer({
     setNoteState((currentState) => ({ ...currentState, error: null }))
 
     try {
-      const document = await printSaleConsignmentNoteDocument(sale.NetUid, noteState.setting)
+      const document = await api.print(sale.NetUid, noteState.setting)
 
       setDownloadDocument(document)
       setDownloadModalOpened(true)

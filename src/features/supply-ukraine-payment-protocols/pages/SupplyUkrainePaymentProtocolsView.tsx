@@ -3,6 +3,7 @@ import { CircleAlert } from 'lucide-react'
 import { useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useValueState } from '../../../shared/hooks/useValueState'
+import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { useAuth } from '../../auth/useAuth'
@@ -29,8 +30,8 @@ import type {
 import './supply-ukraine-payment-protocols.css'
 
 const BACK_ROUTE = '/orders/ukraine/all'
-const PERMISSION_ADD_PAYMENT_PROTOCOL = 'LOGISTIC_WAY_ordersUkraineAllEdit_AddPaymentProtocolToProform_PKEY'
-const PERMISSION_REMOVE_PAYMENT_TASK = 'LOGISTIC_WAY_ordersUkraineAllEdit_RemovePaymentTask_PKEY'
+const PERMISSION_ADD_PAYMENT_PROTOCOL = PermissionKeys.OrdersUkraine.LogisticWay.CreatePaymentTask
+const PERMISSION_REMOVE_PAYMENT_TASK = PermissionKeys.OrdersUkraine.LogisticWay.DeletePaymentTask
 
 export function SupplyUkrainePaymentProtocolsView() {
   const { t } = useI18n()

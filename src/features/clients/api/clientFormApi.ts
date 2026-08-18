@@ -44,8 +44,30 @@ export async function getClientById(netId: string): Promise<Client | null> {
   return normalizeClient(result)
 }
 
+export async function getClientForRegistryById(netId: string): Promise<Client | null> {
+  const result = await apiRequest<unknown>('/clients/registry/details', {
+    query: {
+      netId,
+      includeDebts: false,
+    },
+  })
+
+  return normalizeClient(result)
+}
+
+export async function getSupplierPassportById(netId: string): Promise<Client | null> {
+  const result = await apiRequest<unknown>('/clients/suppliers/passport/details', {
+    query: {
+      netId,
+      includeDebts: false,
+    },
+  })
+
+  return normalizeClient(result)
+}
+
 export async function createClient(client: Client, parentId?: string | null): Promise<ClientUpsertResult> {
-  const result = await apiRequest<unknown>('/clients/new', {
+  const result = await apiRequest<unknown>('/clients/registry/new', {
     method: 'POST',
     query: {
       parentId: parentId || undefined,
@@ -84,7 +106,7 @@ export async function updateClient(
 }
 
 export async function deleteClient(netId: string): Promise<void> {
-  await apiRequest<unknown>('/clients/delete', {
+  await apiRequest<unknown>('/clients/registry/delete', {
     method: 'DELETE',
     query: {
       netId,

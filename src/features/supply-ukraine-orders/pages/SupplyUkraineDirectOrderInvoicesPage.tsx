@@ -27,6 +27,7 @@ import { useEffect, useMemo, useReducer, useState, type CSSProperties, type Disp
 import { useNavigate, useParams } from 'react-router-dom'
 import './supply-order-detail.css'
 import { formatLocalDateTime } from '../../../shared/date/dateTime'
+import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { formatExcelArticleColumnError } from '../../../shared/excel/excelImportError'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { SUPPLY_ORDER_INCOME_STATUS_LABEL } from '../../../shared/supplyOrderIncomeStatus'
@@ -232,11 +233,11 @@ const moneyFormatter = new Intl.NumberFormat('uk-UA', {
 const PANEL_FILL_STYLE: CSSProperties = { display: 'flex', flex: 1, flexDirection: 'column', minHeight: 0 }
 const CARD_FILL_STYLE = PANEL_FILL_STYLE
 
-const PERMISSION_ADD_INVOICE = 'SUPPLY_INVOICES_ordersUkraineAllEdit_NewInvoiceBtn_PKEY'
-const PERMISSION_EDIT_INVOICE = 'LOGISTIC_WAY_ordersUkraineAllEdit_EditInvoice_PKEY'
-const PERMISSION_ADD_PACK_LIST = 'SUPPLY_INVOICES_ordersUkraineAllEdit_NewPackListBtn_PKEY'
-const PERMISSION_REMOVE_INVOICE = 'SUPPLY_INVOICES_ordersUkraineAllEdit_RemoveInvoiceBtn_PKEY'
-const PERMISSION_REMOVE_PACK_LIST = 'SUPPLY_INVOICES_ordersUkraineAllEdit_RemovePackListBtn_PKEY'
+const PERMISSION_ADD_INVOICE = PermissionKeys.OrdersUkraine.Invoice.Upload
+const PERMISSION_EDIT_INVOICE = PermissionKeys.OrdersUkraine.LogisticWay.EditInvoice
+const PERMISSION_ADD_PACK_LIST = PermissionKeys.OrdersUkraine.PackList.Upload
+const PERMISSION_REMOVE_INVOICE = PermissionKeys.OrdersUkraine.Invoice.Delete
+const PERMISSION_REMOVE_PACK_LIST = PermissionKeys.OrdersUkraine.PackList.Delete
 
 function pageStateReducer(state: PageState, action: PageStateAction): PageState {
   const patch = typeof action === 'function' ? action(state) : action

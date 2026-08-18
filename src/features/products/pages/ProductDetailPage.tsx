@@ -51,6 +51,7 @@ import { Navigate, useNavigate, useParams, useSearchParams } from 'react-router-
 import { realtimeEvents, useRealtimeEvent } from '../../../shared/realtime/events'
 import { PermissionGate } from '../../auth/components/PermissionGate'
 import { useAuth } from '../../auth/useAuth'
+import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import {
   addOrUpdateProductWriteOffRule,
   addProductSpecificationCode,
@@ -101,6 +102,12 @@ import {
   isProductRealtimePayloadForProduct,
 } from '../utils'
 import { getProductPriceBreakdown } from '../productPricing'
+import {
+  PRODUCT_BALANCES_PERMISSION,
+  PRODUCT_EDIT_PERMISSION,
+  PRODUCT_MOVEMENT_PERMISSION,
+  PRODUCT_WRITE_OFF_PERMISSION,
+} from '../permissions'
 import { getProductAnalyticsId, ProductAnalyticsPanel } from '../components/ProductAnalyticsPanel'
 import {
   HistoricalSourceMovementPanel,
@@ -118,13 +125,9 @@ export type ProductDetailPanel =
   | 'storage-history'
   | 'writeoff'
 
-export const PRODUCT_BALANCES_PERMISSION = 'Product_Entire_Assortment_BalancesOnParties_Btn_PKEY'
-export const PRODUCT_EDIT_PERMISSION = 'Product_Entire_Assortment_EditBtn_PKEY'
-const PRODUCT_IMAGE_ADD_PERMISSION = 'Product_Entire_Assortment_Picture_AddBtn_PKEY'
-const PRODUCT_IMAGE_DELETE_PERMISSION = 'Product_Entire_Assortment_Picture_DelBtn_PKEY'
-export const PRODUCT_MOVEMENT_PERMISSION = 'Product_Entire_Assortment_Product_Movement_Btn_PKEY'
-const PRODUCT_SPECIFICATION_CHANGE_PERMISSION = 'Product_Entire_Assortment_Specification_ChangeBtn_PKEY'
-export const PRODUCT_WRITE_OFF_PERMISSION = 'Product_Entire_Assortment_Product_WriteOff_Rule_Btn_PKEY'
+const PRODUCT_IMAGE_ADD_PERMISSION = PermissionKeys.ProductsAssortment.Image.Upload
+const PRODUCT_IMAGE_DELETE_PERMISSION = PermissionKeys.ProductsAssortment.Image.Delete
+const PRODUCT_SPECIFICATION_CHANGE_PERMISSION = PermissionKeys.ProductsAssortment.Specification.Edit
 type ProductWriteOffRuleScope = 'group' | 'product'
 
 type ProductSpecificationDraft = {
@@ -238,6 +241,14 @@ const dateTimeFormatter = new Intl.DateTimeFormat('uk-UA', {
 })
 
 export function ProductDetailPage() {
+  return (
+    <PermissionGate permissionKey={PermissionKeys.ProductsAssortment.Page.View} fallback={<ProductPermissionDeniedAlert />}>
+      <ProductDetailPageContent />
+    </PermissionGate>
+  )
+}
+
+function ProductDetailPageContent() {
   const { t } = useI18n()
   const { netId } = useParams<{ netId?: string }>()
   const navigate = useNavigate()
@@ -1158,6 +1169,7 @@ function ProductEditPanel({ onProductSaved, product }: { onProductSaved: (produc
 
 function ProductImagesPanel({ onProductSaved, product }: { onProductSaved: (product: Product | null) => void; product: Product }) {
   const { t } = useI18n()
+  const { hasPermission } = useAuth()
   const [images, setImages] = useState<ProductImage[]>(() => [...(product.ProductImages || [])])
   const [files, setFiles] = useState<File[]>([])
   const [filePreviews, setFilePreviews] = useState<SelectedProductImagePreview[]>([])
@@ -1165,7 +1177,11 @@ function ProductImagesPanel({ onProductSaved, product }: { onProductSaved: (prod
   const [isSaving, setSaving] = useState(false)
   const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null)
   const originalImages = product.ProductImages || []
-  const hasChanges = files.length > 0 || images.some((image, index) => image !== (product.ProductImages || [])[index])
+  const hasExistingImageChanges = images.some((image, index) => image !== originalImages[index])
+  const hasChanges = files.length > 0 || hasExistingImageChanges
+  const canSaveChanges =
+    (!files.length || hasPermission(PRODUCT_IMAGE_ADD_PERMISSION)) &&
+    (!hasExistingImageChanges || hasPermission(PRODUCT_IMAGE_DELETE_PERMISSION))
   const displayedImages = images.reduce<Array<{ image: ProductImage; index: number }>>((currentImages, image, index) => {
     if (!image.Deleted || (image.Deleted && !originalImages[index]?.Deleted)) {
       currentImages.push({ image, index })
@@ -1233,6 +1249,11 @@ function ProductImagesPanel({ onProductSaved, product }: { onProductSaved: (prod
           ProductImages: images,
         },
         files,
+        files.length > 0 && hasExistingImageChanges
+          ? 'upload-and-delete'
+          : files.length > 0
+            ? 'upload'
+            : 'delete',
       )
 
       onProductSaved(nextProduct)
@@ -1255,7 +1276,7 @@ function ProductImagesPanel({ onProductSaved, product }: { onProductSaved: (prod
           <Button variant="light" color="gray" leftSection={<RefreshCw size={18} />} disabled={!hasChanges || isSaving} onClick={resetImageChanges}>
             {t('Скасувати')}
           </Button>
-          <Button color={CREATE_ACTION_COLOR} leftSection={<Save size={18} />} loading={isSaving} disabled={!hasChanges} onClick={saveImages}>
+          <Button color={CREATE_ACTION_COLOR} leftSection={<Save size={18} />} loading={isSaving} disabled={!hasChanges || !canSaveChanges} onClick={saveImages}>
             {t('Зберегти')}
           </Button>
         </Group>

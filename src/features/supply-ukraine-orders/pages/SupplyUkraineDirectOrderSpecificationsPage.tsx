@@ -14,6 +14,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import './supply-order-detail.css'
 import { formatLocalDate, formatLocalInputDateTime } from '../../../shared/date/dateTime'
+import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { AppModal } from '../../../shared/ui/AppModal'
@@ -59,11 +60,11 @@ import type {
 } from '../types'
 
 const dateFormatter = new Intl.DateTimeFormat('uk-UA', { dateStyle: 'short' })
-const PERMISSION_DOWNLOAD_SPECIFICATION = 'SPECIFICATION_CODES_ordersUkraineAllEdit_DownloadFilesFromTheApplication_PKEY'
-const PERMISSION_EDIT_SPECIFICATION = 'SPECIFICATION_CODES_ordersUkraineAllEdit_History_PKEY'
-const PERMISSION_SAVE_SPECIFICATION = 'SPECIFICATION_CODES_ordersUkraineAllEdit_SaveModalBtn_PKEY'
-const PERMISSION_UPLOAD_DELIVERY_DOCUMENTS = 'SPECIFICATION_CODES_ordersUkraineAllEdit_DownloadingShippingDocuments_PKEY'
-const PERMISSION_UPLOAD_SPECIFICATIONS = 'SPECIFICATION_CODES_ordersUkraineAllEdit_DownloadingSpecificationDocuments_PKEY'
+const PERMISSION_DOWNLOAD_SPECIFICATION = PermissionKeys.OrdersUkraine.SpecificationCodes.DownloadApplicationFiles
+const PERMISSION_EDIT_SPECIFICATION = PermissionKeys.OrdersUkraine.SpecificationCodes.ViewHistory
+const PERMISSION_SAVE_SPECIFICATION = PermissionKeys.OrdersUkraine.SpecificationCodes.Edit
+const PERMISSION_UPLOAD_DELIVERY_DOCUMENTS = PermissionKeys.OrdersUkraine.SpecificationCodes.DownloadCustomsDocuments
+const PERMISSION_UPLOAD_SPECIFICATIONS = PermissionKeys.OrdersUkraine.SpecificationCodes.DownloadCodes
 const SUPPLY_ORGANIZATION_SEARCH_DEBOUNCE_MS = 300
 
 export function SupplyUkraineDirectOrderSpecificationsPage() {

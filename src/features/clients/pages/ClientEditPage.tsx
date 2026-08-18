@@ -23,7 +23,7 @@ import { Navigate, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { translate } from '../../../shared/i18n/translate'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { useAuth } from '../../auth/useAuth'
-import { deleteClient, getClientById, updateClient } from '../api/clientFormApi'
+import { deleteClient, getClientForRegistryById, updateClient } from '../api/clientFormApi'
 import { getClientIdentityAttention } from '../api/clientsApi'
 import { uploadClientContract } from '../api/clientCabinetApi'
 import {
@@ -232,7 +232,7 @@ export function ClientEditPage() {
       setError(null)
 
       try {
-        const nextClient = await getClientById(netid)
+        const nextClient = await getClientForRegistryById(netid)
 
         if (!cancelled) {
           setClient(nextClient)

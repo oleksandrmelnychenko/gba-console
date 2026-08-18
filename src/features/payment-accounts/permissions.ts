@@ -1,2 +1,6 @@
-export const PAYMENT_ACCOUNT_CREATE_PERMISSION = 'Accounting_Payment_accounts_All_ADDBtn_PKEY'
-export const PAYMENT_ACCOUNT_EDIT_PERMISSION = 'Accounting_Payment_accounts_All_Edit_EditBtn_PKEY'
+import { PermissionKeys } from '../../shared/auth/permissionKeys'
+
+export const PAYMENT_ACCOUNT_CREATE_PERMISSION =
+  PermissionKeys.FinancialAdministration.PaymentAccounts.Account.Create
+export const PAYMENT_ACCOUNT_EDIT_PERMISSION =
+  PermissionKeys.FinancialAdministration.PaymentAccounts.Account.Edit

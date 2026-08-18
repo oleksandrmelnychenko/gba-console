@@ -1,6 +1,6 @@
 import { ApiError, apiRequest, apiUrl, getApiLanguage } from '../../../shared/api/apiClient'
 import { clearSession, notifyUnauthorized, readSession } from '../../../shared/auth/session'
-import { getTimeZoneHeader } from '../../../shared/date/dateTime'
+import { getTimeZoneHeader, type QueryParams } from '../../../shared/date/dateTime'
 import { translate } from '../../../shared/i18n/translate'
 import {
   SALES_IDEMPOTENCY_HEADER,
@@ -38,7 +38,7 @@ const PAYMENT_DOCUMENT_POLL_INTERVAL_MS = 1_000
 const PAYMENT_DOCUMENT_POLL_TIMEOUT_MS = 6 * 60 * 1_000
 
 export async function getSalesUkraine(filters: SalesUkraineFilters, signal?: AbortSignal): Promise<SalesUkraineSale[]> {
-  const result = await apiRequest<unknown>('/sales/all/filtered', {
+  const result = await apiRequest<unknown>('/sales/ukraine/registry', {
     signal,
     query: {
       clientId: filters.clientId || undefined,
@@ -133,6 +133,59 @@ export async function getSaleById(netId: string, signal?: AbortSignal): Promise<
     ...(signal ? { signal } : {}),
   })
 
+  return normalizeSaleDetails(result)
+}
+
+export async function getSalesUkraineSaleDetails(
+  netId: string,
+  signal?: AbortSignal,
+): Promise<SalesUkraineSale | null> {
+  const result = await apiRequest<unknown>('/sales/ukraine/details', {
+    query: { netId },
+    ...(signal ? { signal } : {}),
+  })
+
+  return normalizeSaleDetails(result)
+}
+
+export async function getSalesUkraineDeliveryDetails(
+  netId: string,
+  signal?: AbortSignal,
+): Promise<SalesUkraineSale | null> {
+  const result = await apiRequest<unknown>('/sales/ukraine/delivery-details', {
+    query: { netId },
+    ...(signal ? { signal } : {}),
+  })
+
+  return normalizeSaleDetails(result)
+}
+
+export async function getSalesUkraineCreateDetails(
+  netId: string,
+  signal?: AbortSignal,
+): Promise<SalesUkraineSale | null> {
+  const result = await apiRequest<unknown>('/sales/ukraine/create/details', {
+    query: { netId },
+    ...(signal ? { signal } : {}),
+  })
+
+  return normalizeSaleDetails(result)
+}
+
+export async function getSalesUkraineEditDetails(
+  netId: string,
+  signal?: AbortSignal,
+): Promise<SalesUkraineSale | null> {
+  const result = await apiRequest<unknown>('/sales/ukraine/edit/details', {
+    query: { netId },
+    ...(signal ? { signal } : {}),
+  })
+
+  return normalizeSaleDetails(result)
+}
+
+function normalizeSaleDetails(result: unknown): SalesUkraineSale | null {
+
   if (!result || typeof result !== 'object' || Array.isArray(result)) {
     return null
   }
@@ -166,6 +219,18 @@ export async function getCurrentSaleCart(
   return normalizeSale(result)
 }
 
+export async function getSalesUkraineCreateCurrentCart(
+  clientAgreementNetId: string,
+  signal?: AbortSignal,
+): Promise<SalesUkraineSale | null> {
+  const result = await apiRequest<unknown>('/sales/ukraine/create/current', {
+    query: { netId: clientAgreementNetId },
+    ...(signal ? { signal } : {}),
+  })
+
+  return normalizeSale(result)
+}
+
 export type SaleSubmitResult = {
   message: string | null
   sale: SalesUkraineSale | null
@@ -175,10 +240,13 @@ export async function createSale(
   sale: SalesUkraineSale,
   operation: SalesMutationOperationOptions,
 ): Promise<SaleSubmitResult> {
+  const operationNetUid = normalizeSalesOperationNetUid(operation.operationId)
+
   return postSaleWithMessage(
-    '/sales/new',
-    withSalesMutationOperationNetUid(sale, operation.operationId),
+    '/sales/ukraine/create',
+    withSalesMutationOperationNetUid(sale, operationNetUid),
     operation,
+    { operationNetUid },
   )
 }
 
@@ -347,8 +415,26 @@ export async function getMergedSales(saleNetId: string): Promise<SalesUkraineSal
   return normalizeSale(result)
 }
 
+export async function getSalesUkraineMergedDetails(saleNetId: string): Promise<SalesUkraineSale | null> {
+  const result = await apiRequest<unknown>('/sales/ukraine/merged-details', {
+    query: { netId: saleNetId },
+  })
+
+  return normalizeSale(result)
+}
+
 export async function getCurrentUnmergedSale(clientAgreementNetId: string): Promise<SalesUkraineSale | null> {
   const result = await apiRequest<unknown>('/sales/get/current/unmerged', {
+    query: { netId: clientAgreementNetId },
+  })
+
+  return normalizeSale(result)
+}
+
+export async function getSalesUkraineCurrentUnmergedSale(
+  clientAgreementNetId: string,
+): Promise<SalesUkraineSale | null> {
+  const result = await apiRequest<unknown>('/sales/ukraine/current-unmerged', {
     query: { netId: clientAgreementNetId },
   })
 
@@ -363,6 +449,21 @@ export async function updateMergedSale(
     body: withSalesMutationOperationNetUid(sale, operation.operationId),
     headers: getSalesMutationOperationHeaders(operation.operationId),
     method: 'POST',
+    ...(operation?.signal ? { signal: operation.signal } : {}),
+  })
+}
+
+export async function createSalesUkraineMergedSale(
+  sale: SalesUkraineSale,
+  operation: SalesMutationOperationOptions,
+): Promise<void> {
+  const operationNetUid = normalizeSalesOperationNetUid(operation.operationId)
+
+  await apiRequest<unknown>('/sales/ukraine/create/merged', {
+    body: withSalesMutationOperationNetUid(sale, operationNetUid),
+    headers: getSalesMutationOperationHeaders(operationNetUid),
+    method: 'POST',
+    query: { operationNetUid },
     ...(operation?.signal ? { signal: operation.signal } : {}),
   })
 }
@@ -419,21 +520,65 @@ export async function updateSaleFromData(
   )
 }
 
+export async function createSalesUkraineSaleFromData(
+  sale: SalesUkraineSale,
+  file: File | null,
+  operation: SalesMutationOperationOptions,
+): Promise<SaleSubmitResult> {
+  return postSaleWithMessage(
+    '/sales/ukraine/create/file',
+    buildSaleFormData(sale, file, operation.operationId),
+    operation,
+  )
+}
+
 export async function convertVatSaleAndGetPaymentDocument(
   sale: SalesUkraineSale,
   file: File | null,
   operation: SalesMutationOperationOptions,
 ): Promise<SaleDocumentResult> {
+  return convertVatSaleAndGetPaymentDocumentAt(
+    '/sales/update/get/payment/document',
+    sale,
+    file,
+    operation,
+  )
+}
+
+export async function createSalesUkraineVatSaleAndGetPaymentDocument(
+  sale: SalesUkraineSale,
+  file: File | null,
+  operation: SalesMutationOperationOptions,
+): Promise<SaleDocumentResult> {
+  return convertVatSaleAndGetPaymentDocumentAt(
+    '/sales/ukraine/create/vat-document',
+    sale,
+    file,
+    operation,
+  )
+}
+
+async function convertVatSaleAndGetPaymentDocumentAt(
+  path: string,
+  sale: SalesUkraineSale,
+  file: File | null,
+  operation: SalesMutationOperationOptions,
+): Promise<SaleDocumentResult> {
   const requiredOperation = requirePaymentDocumentOperation(operation)
-  const submission = await apiRequest<unknown>('/sales/update/get/payment/document', {
+  const isSalesUkraineCreate = path === '/sales/ukraine/create/vat-document'
+  const submission = await apiRequest<unknown>(path, {
     body: buildSaleFormData(sale, file, requiredOperation.operationId),
     headers: getSalesMutationOperationHeaders(requiredOperation.operationId),
     method: 'POST',
+    ...(isSalesUkraineCreate
+      ? { query: { operationNetUid: requiredOperation.operationId } }
+      : {}),
     ...(requiredOperation.signal ? { signal: requiredOperation.signal } : {}),
   })
 
   const result = isPaymentDocumentProcessing(submission)
     ? await waitForPaymentDocument(
+        path,
         requiredOperation.operationId,
         requiredOperation.signal,
       )
@@ -443,6 +588,7 @@ export async function convertVatSaleAndGetPaymentDocument(
 }
 
 async function waitForPaymentDocument(
+  path: string,
   operationNetUid: string,
   signal?: AbortSignal,
 ): Promise<unknown> {
@@ -451,7 +597,7 @@ async function waitForPaymentDocument(
   while (Date.now() < deadline) {
     await waitForPaymentDocumentPoll(signal)
     const status = await apiRequest<unknown>(
-      '/sales/update/get/payment/document',
+      path,
       {
         ...(signal ? { signal } : {}),
         query: { operationNetUid },
@@ -539,6 +685,7 @@ async function postSaleWithMessage(
   path: string,
   body: FormData | SalesUkraineSale,
   operation?: SalesMutationOperationOptions,
+  query?: QueryParams,
 ): Promise<SaleSubmitResult> {
   const isForm = body instanceof FormData
   const headers = new Headers(getTimeZoneHeader())
@@ -556,7 +703,7 @@ async function postSaleWithMessage(
     headers.set(SALES_IDEMPOTENCY_HEADER, normalizeSalesOperationNetUid(operation.operationId))
   }
 
-  const response = await fetch(apiUrl(path, getApiLanguage()), {
+  const response = await fetch(apiUrl(path, getApiLanguage(), query), {
     body: isForm ? body : JSON.stringify(body),
     credentials: 'include',
     headers,
@@ -569,6 +716,7 @@ async function postSaleWithMessage(
       body,
       ...(operation ? { headers: getSalesMutationOperationHeaders(operation.operationId) } : {}),
       method: 'POST',
+      ...(query ? { query } : {}),
       ...(operation?.signal ? { signal: operation.signal } : {}),
     })
 
@@ -578,7 +726,7 @@ async function postSaleWithMessage(
   const payload = await readResponsePayload(response)
 
   if (!response.ok) {
-    if (response.status === 401 || response.status === 403) {
+    if (response.status === 401) {
       clearSession()
       notifyUnauthorized()
     }
@@ -703,6 +851,63 @@ export async function printSaleConsignmentNoteDocument(
   return (result && typeof result === 'object' ? result : {}) as SaleConsignmentDocument
 }
 
+export async function getSalesUkraineConsignmentNoteSettings(): Promise<SaleConsignmentNoteSetting[]> {
+  const result = await apiRequest<unknown>('/consignment/note/settings/ukraine/all/get', {
+    query: CONSIGNMENT_QUERY,
+  })
+
+  return normalizeArray(result) as SaleConsignmentNoteSetting[]
+}
+
+export async function addSalesUkraineConsignmentNoteSetting(
+  setting: SaleConsignmentNoteSetting,
+): Promise<SaleConsignmentNoteSetting[]> {
+  const result = await apiRequest<unknown>('/consignment/note/settings/ukraine/add', {
+    body: setting,
+    method: 'POST',
+    query: CONSIGNMENT_QUERY,
+  })
+
+  return normalizeArray(result) as SaleConsignmentNoteSetting[]
+}
+
+export async function updateSalesUkraineConsignmentNoteSetting(
+  setting: SaleConsignmentNoteSetting,
+): Promise<SaleConsignmentNoteSetting[]> {
+  const result = await apiRequest<unknown>('/consignment/note/settings/ukraine/update', {
+    body: setting,
+    method: 'POST',
+    query: CONSIGNMENT_QUERY,
+  })
+
+  return normalizeArray(result) as SaleConsignmentNoteSetting[]
+}
+
+export async function removeSalesUkraineConsignmentNoteSetting(
+  netId: string,
+): Promise<SaleConsignmentNoteSetting[]> {
+  const result = await apiRequest<unknown>('/consignment/note/settings/ukraine/remove', {
+    body: {},
+    method: 'POST',
+    query: { ...CONSIGNMENT_QUERY, netId },
+  })
+
+  return normalizeArray(result) as SaleConsignmentNoteSetting[]
+}
+
+export async function printSalesUkraineConsignmentNoteDocument(
+  saleNetId: string,
+  setting: SaleConsignmentNoteSetting,
+): Promise<SaleConsignmentDocument> {
+  const result = await apiRequest<unknown>('/consignment/note/settings/ukraine/print/document', {
+    body: setting,
+    method: 'POST',
+    query: { ...CONSIGNMENT_QUERY, netId: saleNetId },
+  })
+
+  return (result && typeof result === 'object' ? result : {}) as SaleConsignmentDocument
+}
+
 async function fetchSaleDocument(
   path: string,
   query: Record<string, string>,
@@ -756,6 +961,10 @@ export function getSaleInvoiceHistoryDocument(netId: string, historyNetId: strin
 
 export function getSaleActProtocolEditDocument(netId: string): Promise<SaleDocumentResult> {
   return fetchSaleDocument('/sales/get/shifted/document', { netId })
+}
+
+export function getSalesUkraineSaleAuditEditActDocument(netId: string): Promise<SaleDocumentResult> {
+  return fetchSaleDocument('/sales/ukraine/audit/edit-act-document', { netId })
 }
 
 export function getSaleActForEditingHistoryDocument(netId: string, historyNetId: string): Promise<SaleDocumentResult> {

@@ -17,6 +17,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { useAuth } from '../../auth/useAuth'
 import { ProductCardModal } from '../../products/components/ProductCardModal'
 import { useI18n } from '../../../shared/i18n/useI18n'
+import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { getSupplyOrderIncomeStatusLabel } from '../../../shared/supplyOrderIncomeStatus'
 import { getSupplyUkraineOrderDisplayNumber } from '../../../shared/supplyUkraineOrderNumbers'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
@@ -48,8 +49,8 @@ const TABLE_DEFAULT_LAYOUT = {
   density: 'normal',
 } satisfies DataTableDefaultLayout
 
-const PLACEMENT_PERMISSION = 'PlacementHeader_ProductPlacement_ordersUkraineView_PKEY'
-const MANAGE_DOCUMENTS_PERMISSION = 'PlacementHeader_LoadingSales_ordersUkraineView_PKEY'
+const PLACEMENT_PERMISSION = PermissionKeys.OrdersUkraine.Placement.OpenProductPlacement
+const MANAGE_DOCUMENTS_PERMISSION = PermissionKeys.OrdersUkraine.Placement.UploadDocuments
 const BACK_ROUTE = '/orders/ukraine/all'
 
 const dateFormatter = new Intl.DateTimeFormat('uk-UA', {

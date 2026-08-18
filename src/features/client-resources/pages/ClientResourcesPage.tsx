@@ -35,6 +35,8 @@ import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui
 import { TableRowAction } from '../../../shared/ui/table-row-action'
 import { toProxiedAssetUrl } from '../../../shared/url/proxiedAssetUrl'
 import { PermissionGate } from '../../auth/components/PermissionGate'
+import { usePermissions } from '../../auth/usePermissions'
+import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import {
   changeClientResourcePricingPriority,
   createClientResourceCurrency,
@@ -127,32 +129,36 @@ const PERFECT_CLIENT_CHECKBOX_TYPE = 1
 const PERFECT_CLIENT_TOGGLE_TYPE = 2
 const CLIENT_RESOURCE_PAGE_SIZE = 20
 const PROTECTED_TRANSPORTER_CSS_CLASS = 'self_checkout_item_class'
-const REGION_CREATE_PERMISSION = 'REGIONS_ClientsResources_NewRegionBtn_PKEY'
-const REGION_CODE_CREATE_PERMISSION = 'REGIONS_ClientsResources_NewBtn_PKEY'
-const REGION_EDIT_PERMISSION = 'REGIONS_ClientsResources_EditBtn_PKEY'
-const REGION_DELETE_PERMISSION = 'REGIONS_ClientsResources_DeleteBtn_PKEY'
-const ORGANIZATION_CREATE_PERMISSION = 'ORGANIZATIONS_ClientsResources_NewBtn_PKEY'
-const ORGANIZATION_EDIT_PERMISSION = 'ORGANIZATIONS_ClientsResources_EditBtn_PKEY'
-const ORGANIZATION_DELETE_PERMISSION = 'ORGANIZATIONS_ClientsResources_DeleteBtn_PKEY'
-const TAX_INSPECTION_CREATE_PERMISSION = 'TAX_INSPECTATION_ClientsResources_NewRowBtn_PKEY'
-const TAX_INSPECTION_EDIT_PERMISSION = 'TAX_INSPECTATION_ClientsResources_EditRowBtn_PKEY'
-const TAX_INSPECTION_DELETE_PERMISSION = 'TAX_INSPECTATION_ClientsResources_DeleteBtn_PKEY'
-const PRICING_CREATE_PERMISSION = 'PRICING_ClientsResources_NewBtn_PKEY'
-const PRICING_EDIT_PERMISSION = 'PRICING_ClientsResources_EditBtn_PKEY'
-const PRICING_DELETE_PERMISSION = 'PRICING_ClientsResources_DeleteBtn_PKEY'
-const PRICING_PRIORITY_PERMISSION = 'PRICING_ClientsResources_Priority_PKEY'
-const CURRENCY_CREATE_PERMISSION = 'CURRENCIES_ClientsResources_NewBtn_PKEY'
-const CURRENCY_EDIT_PERMISSION = 'CURRENCIES_ClientsResources_EditBtn_PKEY'
-const CURRENCY_DELETE_PERMISSION = 'CURRENCIES_ClientsResources_DeleteBtn_PKEY'
-const STORAGE_CREATE_PERMISSION = 'STORAGES_ClientsResources_NewBtn_PKEY'
-const STORAGE_EDIT_PERMISSION = 'STORAGES_ClientsResources_EditBtn_PKEY'
-const STORAGE_DELETE_PERMISSION = 'STORAGES_ClientsResources_DeleteBtn_PKEY'
-const MEASURE_UNIT_CREATE_PERMISSION = 'MEASURE_UNIT_ClientsResources_NewBtn_PKEY'
-const MEASURE_UNIT_EDIT_PERMISSION = 'MEASURE_UNIT_ClientsResources_EditBtn_PKEY'
-const MEASURE_UNIT_DELETE_PERMISSION = 'MEASURE_UNIT_ClientsResources_DeleteBtn_PKEY'
-const PERFECT_CLIENT_CREATE_PERMISSION = 'PERFECTCLIENT_ClientsResources_NewBtn_PKEY'
-const PERFECT_CLIENT_EDIT_PERMISSION = 'PERFECTCLIENT_ClientsResources_EditBtn_PKEY'
-const PERFECT_CLIENT_DELETE_PERMISSION = 'PERFECTCLIENT_ClientsResources_DeleteBtn_PKEY'
+const REGION_CREATE_PERMISSION = PermissionKeys.ClientResources.Region.Create
+const REGION_CODE_CREATE_PERMISSION = PermissionKeys.ClientResources.RegionCode.Create
+const REGION_EDIT_PERMISSION = PermissionKeys.ClientResources.Region.Edit
+const REGION_DELETE_PERMISSION = PermissionKeys.ClientResources.Region.Delete
+const ORGANIZATION_CREATE_PERMISSION = PermissionKeys.ClientResources.Organization.Create
+const ORGANIZATION_EDIT_PERMISSION = PermissionKeys.ClientResources.Organization.Edit
+const ORGANIZATION_DELETE_PERMISSION = PermissionKeys.ClientResources.Organization.Delete
+const TAX_INSPECTION_CREATE_PERMISSION = PermissionKeys.ClientResources.TaxInspection.Create
+const TAX_INSPECTION_EDIT_PERMISSION = PermissionKeys.ClientResources.TaxInspection.Edit
+const TAX_INSPECTION_DELETE_PERMISSION = PermissionKeys.ClientResources.TaxInspection.Delete
+const PRICING_CREATE_PERMISSION = PermissionKeys.ClientResources.PricingRule.Create
+const PRICING_EDIT_PERMISSION = PermissionKeys.ClientResources.PricingRule.Edit
+const PRICING_DELETE_PERMISSION = PermissionKeys.ClientResources.PricingRule.Delete
+const PRICING_PRIORITY_PERMISSION = PermissionKeys.ClientResources.PricingRule.SetPriority
+const CURRENCY_CREATE_PERMISSION = PermissionKeys.ClientResources.Currency.Create
+const CURRENCY_EDIT_PERMISSION = PermissionKeys.ClientResources.Currency.Edit
+const CURRENCY_DELETE_PERMISSION = PermissionKeys.ClientResources.Currency.Delete
+const STORAGE_CREATE_PERMISSION = PermissionKeys.ClientResources.Storage.Create
+const STORAGE_EDIT_PERMISSION = PermissionKeys.ClientResources.Storage.Edit
+const STORAGE_DELETE_PERMISSION = PermissionKeys.ClientResources.Storage.Delete
+const MEASURE_UNIT_CREATE_PERMISSION = PermissionKeys.ClientResources.MeasureUnit.Create
+const MEASURE_UNIT_EDIT_PERMISSION = PermissionKeys.ClientResources.MeasureUnit.Edit
+const MEASURE_UNIT_DELETE_PERMISSION = PermissionKeys.ClientResources.MeasureUnit.Delete
+const PERFECT_CLIENT_CREATE_PERMISSION = PermissionKeys.ClientResources.PerfectClient.Create
+const PERFECT_CLIENT_EDIT_PERMISSION = PermissionKeys.ClientResources.PerfectClient.Edit
+const PERFECT_CLIENT_DELETE_PERMISSION = PermissionKeys.ClientResources.PerfectClient.Delete
+const VAT_RATE_CREATE_PERMISSION = PermissionKeys.ClientResources.VatRate.Create
+const TRANSPORTER_CREATE_PERMISSION = PermissionKeys.ClientResources.Transporter.Create
+const TRANSPORTER_EDIT_PERMISSION = PermissionKeys.ClientResources.Transporter.Edit
+const TRANSPORTER_DELETE_PERMISSION = PermissionKeys.ClientResources.Transporter.Delete
 const UKRAINE_CULTURE = 'uk'
 const SKIPPED_TRANSLATION_CULTURES = new Set(['pl'])
 const TYPE_TAXATION_OPTIONS = [
@@ -551,6 +557,25 @@ const RESOURCE_SECTIONS: ClientResourceSection[] = [
 ]
 
 export function ClientResourcesPage() {
+  const { t } = useI18n()
+  const { can, isLoading } = usePermissions()
+
+  if (isLoading) {
+    return <Text c="dimmed">{t('Завантаження')}</Text>
+  }
+
+  if (!can(PermissionKeys.ClientResources.Page.View)) {
+    return (
+      <Alert color="red" icon={<CircleAlert size={18} />} title={t('Доступ заборонено')} variant="light">
+        {t('Недостатньо прав для перегляду ресурсів компанії')}
+      </Alert>
+    )
+  }
+
+  return <ClientResourcesPageContent />
+}
+
+function ClientResourcesPageContent() {
   const navigate = useNavigate()
   const { step } = useParams<{ step?: string }>()
   const activeStep = isClientResourceStep(step) ? step : DEFAULT_STEP
@@ -2512,6 +2537,7 @@ function OrganizationEditorModal({
   onClose: () => void
   onSave: (values: OrganizationFormValues) => void
 }) {
+  const { can } = usePermissions()
   const [values, setValues] = useValueState<OrganizationFormValues>(() =>
     organizationToFormValues(organization),
   )
@@ -2532,6 +2558,14 @@ function OrganizationEditorModal({
   const availableVatRates = useMemo(() => [...vatRates, ...extraVatRates], [vatRates, extraVatRates])
 
   async function handleCreateVatRate() {
+    if (!can(VAT_RATE_CREATE_PERMISSION)) {
+      notifications.show({
+        color: 'red',
+        message: translate('Недостатньо прав для додавання ставки ПДВ'),
+      })
+      return
+    }
+
     if (typeof newVatRateValue !== 'number' || Number.isNaN(newVatRateValue)) {
       return
     }
@@ -2638,34 +2672,36 @@ function OrganizationEditorModal({
                 value={values.VatRateId}
                 onChange={(value) => setField('VatRateId', value || '')}
               />
-              <Popover opened={isVatPopoverOpen} position="bottom-end" shadow="md" withArrow onChange={setVatPopoverOpen}>
-                <Popover.Target>
-                  <ActionIcon aria-label={translate('Додати ставку ПДВ')} size={36} variant="light" onClick={() => setVatPopoverOpen((open) => !open)}>
-                    <Plus size={16} />
-                  </ActionIcon>
-                </Popover.Target>
-                <Popover.Dropdown>
-                  <Group align="end" gap="xs" wrap="nowrap">
-                    <NumberInput
-                      label={translate('Нова ставка ПДВ, %')}
-                      max={100}
-                      min={0}
-                      value={newVatRateValue}
-                      w={150}
-                      onChange={(value) => setNewVatRateValue(typeof value === 'number' ? value : '')}
-                    />
-                    <Button
-                      color={CREATE_ACTION_COLOR}
-                      disabled={typeof newVatRateValue !== 'number'}
-                      loading={isCreatingVatRate}
-                      size="sm"
-                      onClick={() => void handleCreateVatRate()}
-                    >
-                      {translate('Додати')}
-                    </Button>
-                  </Group>
-                </Popover.Dropdown>
-              </Popover>
+              <PermissionGate permissionKey={VAT_RATE_CREATE_PERMISSION}>
+                <Popover opened={isVatPopoverOpen} position="bottom-end" shadow="md" withArrow onChange={setVatPopoverOpen}>
+                  <Popover.Target>
+                    <ActionIcon aria-label={translate('Додати ставку ПДВ')} size={36} variant="light" onClick={() => setVatPopoverOpen((open) => !open)}>
+                      <Plus size={16} />
+                    </ActionIcon>
+                  </Popover.Target>
+                  <Popover.Dropdown>
+                    <Group align="end" gap="xs" wrap="nowrap">
+                      <NumberInput
+                        label={translate('Нова ставка ПДВ, %')}
+                        max={100}
+                        min={0}
+                        value={newVatRateValue}
+                        w={150}
+                        onChange={(value) => setNewVatRateValue(typeof value === 'number' ? value : '')}
+                      />
+                      <Button
+                        color={CREATE_ACTION_COLOR}
+                        disabled={typeof newVatRateValue !== 'number'}
+                        loading={isCreatingVatRate}
+                        size="sm"
+                        onClick={() => void handleCreateVatRate()}
+                      >
+                        {translate('Додати')}
+                      </Button>
+                    </Group>
+                  </Popover.Dropdown>
+                </Popover>
+              </PermissionGate>
             </Group>
             {organization?.Id && organization.PaymentRegisters?.length ? (
               <Select
@@ -4256,6 +4292,7 @@ function ProductReservePanel({ section }: { section: ClientResourceSection }) {
 }
 
 function CarrierPanel({ section }: { section: ClientResourceSection }) {
+  const { can } = usePermissions()
   const typesState = useResourceData<ClientResourceTransporterType[]>(getClientResourceTransporterTypes, [])
   const [typeNetId, setTypeNetId] = useValueState<string | null>(null)
   const [search, setSearch] = useValueState('')
@@ -4321,6 +4358,17 @@ function CarrierPanel({ section }: { section: ClientResourceSection }) {
   }
 
   async function saveTransporter(values: TransporterFormValues) {
+    const requiredPermission =
+      editor?.mode === 'edit'
+        ? TRANSPORTER_EDIT_PERMISSION
+        : TRANSPORTER_CREATE_PERMISSION
+    if (!can(requiredPermission)) {
+      setFormError(
+        translate('Недостатньо прав для збереження перевізника'),
+      )
+      return
+    }
+
     const validationError = validateTransporterForm(values)
 
     if (validationError) {
@@ -4359,6 +4407,13 @@ function CarrierPanel({ section }: { section: ClientResourceSection }) {
   }
 
   async function confirmDeleteTransporter() {
+    if (!can(TRANSPORTER_DELETE_PERMISSION)) {
+      setFormError(
+        translate('Недостатньо прав для архівування перевізника'),
+      )
+      return
+    }
+
     if (deleteTarget?.type !== 'transporter') {
       return
     }
@@ -4392,15 +4447,17 @@ function CarrierPanel({ section }: { section: ClientResourceSection }) {
 
   const carrierAction = (
     <Group gap="xs" wrap="nowrap">
-      <Button
-        color={CREATE_ACTION_COLOR}
-        disabled={!selectedTransporterType}
-        leftSection={<Plus size={16} />}
-        size="xs"
-        onClick={openCreateTransporter}
-      >
-        Перевізник
-      </Button>
+      <PermissionGate permissionKey={TRANSPORTER_CREATE_PERMISSION}>
+        <Button
+          color={CREATE_ACTION_COLOR}
+          disabled={!selectedTransporterType}
+          leftSection={<Plus size={16} />}
+          size="xs"
+          onClick={openCreateTransporter}
+        >
+          Перевізник
+        </Button>
+      </PermissionGate>
     </Group>
   )
 
@@ -4565,18 +4622,22 @@ function TransporterTable({
 
                       return (
                         <Group gap={4} justify="flex-end" wrap="nowrap">
-                          <TableRowAction
-                            action="edit"
-                            label={translate("Редагувати перевізника")}
-                            onClick={() => onEdit(transporter)}
-                          />
-                          <TableRowAction
-                            action="archive"
-                            disabled={!transporter.NetUid || isProtected}
-                            hint={isProtected ? translate('Системного перевізника не можна архівувати') : undefined}
-                            label={translate("Архівувати перевізника")}
-                            onClick={() => onDelete(transporter)}
-                          />
+                          <PermissionGate permissionKey={TRANSPORTER_EDIT_PERMISSION}>
+                            <TableRowAction
+                              action="edit"
+                              label={translate("Редагувати перевізника")}
+                              onClick={() => onEdit(transporter)}
+                            />
+                          </PermissionGate>
+                          <PermissionGate permissionKey={TRANSPORTER_DELETE_PERMISSION}>
+                            <TableRowAction
+                              action="archive"
+                              disabled={!transporter.NetUid || isProtected}
+                              hint={isProtected ? translate('Системного перевізника не можна архівувати') : undefined}
+                              label={translate("Архівувати перевізника")}
+                              onClick={() => onDelete(transporter)}
+                            />
+                          </PermissionGate>
                         </Group>
                       )
                     },

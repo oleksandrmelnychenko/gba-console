@@ -13,8 +13,10 @@ import { notifications } from '@mantine/notifications'
 import { ChevronLeft, CircleAlert, RotateCcw, Save } from 'lucide-react'
 import { type FormEvent, useEffect, useMemo } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
+import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { Navigate, useLocation, useNavigate, useParams } from 'react-router-dom'
+import { PermissionGate } from '../../auth/components/PermissionGate'
 import {
   getProductGroupWithRoot,
   getRootProductGroups,
@@ -39,6 +41,24 @@ type ProductGroupDetailRouteState = {
 }
 
 export function ProductGroupDetailPage() {
+  return (
+    <PermissionGate permissionKey={PermissionKeys.ProductGroups.Page.View} fallback={<ProductGroupDetailPermissionDenied />}>
+      <ProductGroupDetailPageContent />
+    </PermissionGate>
+  )
+}
+
+function ProductGroupDetailPermissionDenied() {
+  const { t } = useI18n()
+
+  return (
+    <Alert color="red" icon={<CircleAlert size={18} />} title={t('Доступ заборонено')} variant="light">
+      {t('У вашої ролі немає права переглядати товарні групи.')}
+    </Alert>
+  )
+}
+
+function ProductGroupDetailPageContent() {
   const { t } = useI18n()
   const { id } = useParams<{ id?: string }>()
   const navigate = useNavigate()

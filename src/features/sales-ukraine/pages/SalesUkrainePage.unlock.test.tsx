@@ -9,7 +9,7 @@ import type { SalesUkraineSale } from '../types'
 
 const mocks = vi.hoisted(() => ({
   acceptSaleForPacking: vi.fn(),
-  getSaleById: vi.fn(),
+  getSalesUkraineSaleDetails: vi.fn(),
   getSalesUkraine: vi.fn(),
   getSalesUkraineOrganizations: vi.fn(),
   unlockSale: vi.fn(),
@@ -18,7 +18,7 @@ const mocks = vi.hoisted(() => ({
 vi.mock('../api/salesUkraineApi', async (importOriginal) => ({
   ...await importOriginal<typeof import('../api/salesUkraineApi')>(),
   acceptSaleForPacking: mocks.acceptSaleForPacking,
-  getSaleById: mocks.getSaleById,
+  getSalesUkraineSaleDetails: mocks.getSalesUkraineSaleDetails,
   getSalesUkraine: mocks.getSalesUkraine,
   getSalesUkraineOrganizations: mocks.getSalesUkraineOrganizations,
   unlockSale: mocks.unlockSale,
@@ -84,7 +84,7 @@ function createSale(isLocked: boolean): SalesUkraineSale {
 describe('SalesUkrainePage unlock state', () => {
   beforeEach(() => {
     mocks.acceptSaleForPacking.mockReset()
-    mocks.getSaleById.mockReset()
+    mocks.getSalesUkraineSaleDetails.mockReset()
     mocks.getSalesUkraine.mockReset()
     mocks.getSalesUkraineOrganizations.mockReset().mockResolvedValue([])
     mocks.unlockSale.mockReset()

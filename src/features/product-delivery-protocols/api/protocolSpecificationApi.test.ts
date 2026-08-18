@@ -27,7 +27,7 @@ describe('protocol specification API contracts', () => {
       PdfDocumentURL: 'https://example.test/specification.pdf',
     })
 
-    expect(apiRequestMock).toHaveBeenCalledWith('/supplies/packinglists/specification/get', {
+    expect(apiRequestMock).toHaveBeenCalledWith('/supplies/packinglists/product-delivery-protocol/specification/get', {
       query: {
         netId: 'pack-list-net-id',
       },
@@ -60,5 +60,9 @@ describe('protocol specification API contracts', () => {
 
     expect(formData.get('dateCustomDeclaration')).toBe('2026-08-01')
     expect(formData.get('file')).toBe(file)
+    expect(apiRequestMock).toHaveBeenCalledWith(
+      '/supplies/invoices/product-delivery-protocol/specification/upload',
+      expect.objectContaining({ method: 'POST' }),
+    )
   })
 })

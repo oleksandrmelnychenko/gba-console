@@ -15,6 +15,7 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { useMutatedListRefresh } from '../../../shared/router/useMutatedListRefresh'
+import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
@@ -60,6 +61,24 @@ const initialCompanyCarsPageState: CompanyCarsPageState = {
 }
 
 export function CompanyCarsPage() {
+  return (
+    <PermissionGate permissionKey={PermissionKeys.Warehouses.CompanyCars.Page.View} fallback={<CompanyCarsPermissionDenied />}>
+      <CompanyCarsPageContent />
+    </PermissionGate>
+  )
+}
+
+function CompanyCarsPermissionDenied() {
+  const { t } = useI18n()
+
+  return (
+    <Alert color="red" icon={<CircleAlert size={18} />} title={t('Доступ заборонено')} variant="light">
+      {t('У вашої ролі немає права переглядати автомобілі компанії.')}
+    </Alert>
+  )
+}
+
+function CompanyCarsPageContent() {
   const { t } = useI18n()
   const { hasPermission } = useAuth()
   const navigate = useNavigate()

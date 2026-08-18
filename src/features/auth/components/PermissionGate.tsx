@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { useAuth } from '../useAuth'
+import { Can } from './Can'
 
 type PermissionGateProps = {
   children: ReactNode
@@ -8,7 +8,9 @@ type PermissionGateProps = {
 }
 
 export function PermissionGate({ permissionKey, children, fallback = null }: PermissionGateProps) {
-  const { hasPermission } = useAuth()
-
-  return hasPermission(permissionKey) ? children : fallback
+  return (
+    <Can fallback={fallback} permission={permissionKey}>
+      {children}
+    </Can>
+  )
 }

@@ -29,6 +29,7 @@ import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/Page
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { useMutatedListRefresh } from '../../../shared/router/useMutatedListRefresh'
+import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import { DataTableDensityToggle } from '../../../shared/ui/data-table/DataTableDensityToggle'
 import { useDataTableDensity } from '../../../shared/ui/data-table/useDataTableDensity'
@@ -96,6 +97,24 @@ const dateTimeFormatter = new Intl.DateTimeFormat('uk-UA', {
 })
 
 export function ConsumableStoragesPage() {
+  return (
+    <PermissionGate permissionKey={PermissionKeys.Warehouses.Premises.Page.View} fallback={<ConsumableStoragesPermissionDenied />}>
+      <ConsumableStoragesPageContent />
+    </PermissionGate>
+  )
+}
+
+function ConsumableStoragesPermissionDenied() {
+  const { t } = useI18n()
+
+  return (
+    <Alert color="red" icon={<CircleAlert size={18} />} title={t('Доступ заборонено')} variant="light">
+      {t('У вашої ролі немає права переглядати складські приміщення.')}
+    </Alert>
+  )
+}
+
+function ConsumableStoragesPageContent() {
   const { t } = useI18n()
   const navigate = useNavigate()
   const location = useLocation()

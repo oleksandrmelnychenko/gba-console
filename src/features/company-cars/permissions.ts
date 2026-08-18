@@ -1,4 +1,6 @@
-export const COMPANY_CAR_CREATE_PERMISSION = 'STORAGES_Accounting_Company-cars_AddBtn_PKEY'
+import { PermissionKeys } from '../../shared/auth/permissionKeys'
+
+export const COMPANY_CAR_CREATE_PERMISSION = PermissionKeys.Warehouses.CompanyCars.Car.Create
 export const COMPANY_CAR_EDIT_PERMISSION = COMPANY_CAR_CREATE_PERMISSION
 export const COMPANY_CAR_DELETE_PERMISSION = COMPANY_CAR_CREATE_PERMISSION
 export const COMPANY_CAR_ROAD_LIST_MANAGE_PERMISSION = COMPANY_CAR_CREATE_PERMISSION

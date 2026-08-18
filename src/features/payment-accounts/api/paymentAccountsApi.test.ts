@@ -81,8 +81,8 @@ describe('paymentAccountsApi', () => {
   })
 
   it.each([
-    ['create', createPaymentAccount, '/payments/registers/new', '33333333-3333-4333-8333-333333333333'],
-    ['update', updatePaymentAccount, '/payments/registers/update', '44444444-4444-4444-8444-444444444444'],
+    ['create', createPaymentAccount, '/payments/registers/accounting/new', '33333333-3333-4333-8333-333333333333'],
+    ['update', updatePaymentAccount, '/payments/registers/accounting/update', '44444444-4444-4444-8444-444444444444'],
   ] as const)('sends one durable operation key for account %s', async (
     _name,
     mutate,

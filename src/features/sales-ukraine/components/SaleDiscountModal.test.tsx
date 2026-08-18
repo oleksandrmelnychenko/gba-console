@@ -62,7 +62,11 @@ function sale(status: number): SalesUkraineSale {
   }
 }
 
-function renderModal(value: SalesUkraineSale, orderItem: SalesUkraineOrderItem | null = null) {
+function renderModal(
+  value: SalesUkraineSale,
+  orderItem: SalesUkraineOrderItem | null = null,
+  loadSale?: (netId: string) => Promise<SalesUkraineSale | null>,
+) {
   getSaleByIdMock.mockResolvedValue(structuredClone(value))
   const onSaved = vi.fn()
 
@@ -70,6 +74,7 @@ function renderModal(value: SalesUkraineSale, orderItem: SalesUkraineOrderItem |
     ...render(
     <MantineProvider theme={theme}>
       <SaleDiscountModal
+        loadSale={loadSale}
         orderItem={orderItem}
         sale={value}
         onClose={vi.fn()}
@@ -182,6 +187,19 @@ describe('SaleDiscountModal', () => {
     expect(notificationsShowMock).toHaveBeenCalledWith(
       expect.objectContaining({ color: 'orange', message: expect.stringContaining('інший користувач') }),
     )
+  })
+
+  it('uses the injected edit loader for the pre-submit concurrency check', async () => {
+    const value = sale(0)
+    const loadEditSale = vi.fn(async () => structuredClone(value))
+    renderModal(value, null, loadEditSale)
+
+    fireEvent.change(screen.getByLabelText('Коментар'), { target: { value: 'scoped edit approval' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Зберегти' }))
+
+    await waitFor(() => expect(updateSaleDiscountMock).toHaveBeenCalledTimes(1))
+    expect(loadEditSale).toHaveBeenCalledWith('sale-a')
+    expect(getSaleByIdMock).not.toHaveBeenCalled()
   })
 
   it('refreshes an item target and settles a marked pre-ledger validation error', async () => {

@@ -2,15 +2,22 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { apiRequest } from '../../../shared/api/apiClient'
 import {
   createSupplyOrganization,
+  createSupplierOrganization,
   createSupplyOrganizationAgreement,
   deleteSupplyOrganization,
   exportSupplyOrganizations,
   getSupplierOrganizationCashFlow,
+  getSupplierOrganizationOverviewDetails,
+  getSupplierOrganizationSettlementsCashFlow,
+  getSupplierOrganizationSettlementsDetails,
+  getSupplierOrganizationsRegistry,
   getSupplierOrganizationCurrencies,
   getSupplierOrganizationsOwners,
   getSupplyOrganization,
   getSupplyOrganizations,
   searchSupplyOrganizations,
+  searchSupplierOrganizationsRegistry,
+  removeSupplierOrganization,
   updateSupplyOrganization,
   updateSupplyOrganizationAgreement,
 } from './supplierOrganizationsApi'
@@ -105,6 +112,60 @@ describe('supplierOrganizationsApi', () => {
     })
   })
 
+  it('uses permission-scoped registry and separate overview/settlements read routes', async () => {
+    apiRequestMock.mockResolvedValueOnce([{ NetUid: 'supplier-1' }])
+    apiRequestMock.mockResolvedValueOnce([{ NetUid: 'supplier-2' }])
+    apiRequestMock.mockResolvedValueOnce({ NetUid: 'supplier-1' })
+    apiRequestMock.mockResolvedValueOnce({ NetUid: 'supplier-1' })
+    apiRequestMock.mockResolvedValueOnce({ AccountingCashFlowHeadItems: [] })
+
+    await getSupplierOrganizationsRegistry({ limit: 40, offset: 0 })
+    await searchSupplierOrganizationsRegistry(' service ', '', { limit: 40, offset: 40 })
+    await getSupplierOrganizationOverviewDetails(' supplier-1 ')
+    await getSupplierOrganizationSettlementsDetails(' supplier-1 ')
+    await getSupplierOrganizationSettlementsCashFlow({
+      from: '2026-07-01',
+      netId: ' agreement-1 ',
+      to: '2026-07-24',
+      typePaymentTask: 2,
+    })
+
+    expect(apiRequestMock).toHaveBeenNthCalledWith(1, '/supplies/organizations/registry', {
+      query: {
+        from: undefined,
+        limit: 40,
+        offset: 0,
+        organizationNetId: '',
+        to: undefined,
+        value: '',
+      },
+    })
+    expect(apiRequestMock).toHaveBeenNthCalledWith(2, '/supplies/organizations/registry', {
+      query: {
+        from: undefined,
+        limit: 40,
+        offset: 40,
+        organizationNetId: '',
+        to: undefined,
+        value: 'service',
+      },
+    })
+    expect(apiRequestMock).toHaveBeenNthCalledWith(3, '/supplies/organizations/overview/details', {
+      query: { netId: 'supplier-1' },
+    })
+    expect(apiRequestMock).toHaveBeenNthCalledWith(4, '/supplies/organizations/settlements/details', {
+      query: { netId: 'supplier-1' },
+    })
+    expect(apiRequestMock).toHaveBeenNthCalledWith(5, '/supplies/organizations/settlements/cash-flow', {
+      query: {
+        from: '2026-07-01',
+        netId: 'agreement-1',
+        to: '2026-07-24',
+        typePaymentTask: 2,
+      },
+    })
+  })
+
   it('filters malformed supplier records instead of exposing them to forms', async () => {
     apiRequestMock.mockResolvedValueOnce([
       { Unexpected: true },
@@ -163,6 +224,23 @@ describe('supplierOrganizationsApi', () => {
     await deleteSupplyOrganization(' supplier-1 ')
 
     expect(apiRequestMock).toHaveBeenCalledWith('/supplies/organizations/delete', {
+      method: 'DELETE',
+      query: { netId: 'supplier-1' },
+    })
+  })
+
+  it('uses separate permission-scoped create and remove routes', async () => {
+    apiRequestMock.mockResolvedValueOnce({ Name: 'Scoped supplier', NetUid: 'supplier-1' })
+    apiRequestMock.mockResolvedValueOnce(undefined)
+
+    await createSupplierOrganization({ Name: 'Scoped supplier' })
+    await removeSupplierOrganization(' supplier-1 ')
+
+    expect(apiRequestMock).toHaveBeenNthCalledWith(1, '/supplies/organizations/create', {
+      body: { Name: 'Scoped supplier' },
+      method: 'POST',
+    })
+    expect(apiRequestMock).toHaveBeenNthCalledWith(2, '/supplies/organizations/remove', {
       method: 'DELETE',
       query: { netId: 'supplier-1' },
     })

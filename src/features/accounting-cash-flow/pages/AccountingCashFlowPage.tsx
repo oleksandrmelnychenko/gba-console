@@ -282,7 +282,7 @@ function useAccountingCashFlowPageModel(mode: AccountingCashFlowMode, routeNetId
       setCounterpartyError(null)
 
       try {
-        const loadedCounterparty = await getAccountingCashFlowCounterparty(routeNetId)
+        const loadedCounterparty = await getAccountingCashFlowCounterparty(routeNetId, mode)
 
         if (!cancelled) {
           const loadedAgreements = loadedCounterparty?.ClientAgreements || []
@@ -308,7 +308,7 @@ function useAccountingCashFlowPageModel(mode: AccountingCashFlowMode, routeNetId
     return () => {
       cancelled = true
     }
-  }, [reloadKey, routeNetId, t])
+  }, [mode, reloadKey, routeNetId, t])
 
   useEffect(() => {
     let cancelled = false
@@ -378,6 +378,7 @@ function useAccountingCashFlowPageModel(mode: AccountingCashFlowMode, routeNetId
     try {
       const exportedDocument = await exportAccountingCashFlowDocument({
         from: activeFilters.from,
+        mode,
         netId: selectedAgreement.NetUid,
         to: activeFilters.to,
       })
@@ -389,7 +390,7 @@ function useAccountingCashFlowPageModel(mode: AccountingCashFlowMode, routeNetId
     } finally {
       setExporting(false)
     }
-  }, [activeFilters.from, activeFilters.to, selectedAgreement, t])
+  }, [activeFilters.from, activeFilters.to, mode, selectedAgreement, t])
 
   return {
     activeFilters,

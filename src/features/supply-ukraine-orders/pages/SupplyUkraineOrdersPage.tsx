@@ -20,6 +20,8 @@ import { CircleAlert, Download, Eye, FileText, ListChecks, PackageCheck, Package
 import { Fragment, useCallback, useEffect, useMemo, useReducer, useRef, useState, type ReactNode } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../auth/useAuth'
+import { usePermissions } from '../../auth/usePermissions'
+import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { realtimeEvents, useRealtimeEvent } from '../../../shared/realtime/events'
@@ -134,18 +136,18 @@ const TYPE_OPTIONS: Array<{ label: string, value: SupplyUkraineOrderKind }> = [
   { label: 'Замовлення Україна', value: 'direct' },
 ]
 
-const PERMISSION_CREATE_TO_UKRAINE = 'Supply_Order_To_Ukraine_PKEY'
-const PERMISSION_CREATE_DIRECT = 'Ukraine_Order_PKEY'
-const PERMISSION_PRINT = 'SupplyOrderPrintDocumentUrls_Load_PKEY'
-const PERMISSION_TO_UKRAINE_PLACEMENT = 'UkraineAllOrders_SelectAnOption_ProductPlacement_PKEY'
-const PERMISSION_TO_UKRAINE_VIEW = 'UkraineAllOrders_SelectAnOption_View_PKEY'
-const PERMISSION_TO_UKRAINE_PROTOCOLS = 'UkraineAllOrders_SelectAnOption_NewPaymentProtocol_PKEY'
-const PERMISSION_TO_UKRAINE_OFFICIAL_COSTS = 'UkraineAllOrders_SelectAnOption_AddingOfficialCostsForProductDelivery_PKEY'
-const PERMISSION_DELETE_ORDER = 'UkraineAllOrders_SelectAnOption_Delete_PKEY'
-const PERMISSION_DIRECT_INVOICES = 'UkraineAllOrders_SelectAnOption_Products_PKEY'
-const PERMISSION_DIRECT_SPECIFICATIONS = 'UkraineAllOrders_SelectAnOption_ProductSpecificationCodes_PKEY'
-const PERMISSION_DIRECT_LOGISTICS = 'UkraineAllOrders_SelectAnOption_LogisticWay_PKEY'
-const PERMISSION_DIRECT_PRODUCT_INCOME = 'UkraineAllOrders_SelectAnOption_PlacementSupplyOrder_PKEY'
+const PERMISSION_CREATE_TO_UKRAINE = PermissionKeys.OrdersUkraine.Order.OpenArrival
+const PERMISSION_CREATE_DIRECT = PermissionKeys.OrdersUkraine.Order.OpenOrder
+const PERMISSION_PRINT = PermissionKeys.OrdersUkraine.Order.DownloadDocuments
+const PERMISSION_TO_UKRAINE_PLACEMENT = PermissionKeys.OrdersUkraine.Order.OpenPlacement
+const PERMISSION_TO_UKRAINE_VIEW = PermissionKeys.OrdersUkraine.Order.OpenOverview
+const PERMISSION_TO_UKRAINE_PROTOCOLS = PermissionKeys.OrdersUkraine.Order.CreatePaymentTask
+const PERMISSION_TO_UKRAINE_OFFICIAL_COSTS = PermissionKeys.OrdersUkraine.Order.AddDeliveryCosts
+const PERMISSION_DELETE_ORDER = PermissionKeys.OrdersUkraine.Order.Delete
+const PERMISSION_DIRECT_INVOICES = PermissionKeys.OrdersUkraine.Order.OpenProducts
+const PERMISSION_DIRECT_SPECIFICATIONS = PermissionKeys.OrdersUkraine.Order.OpenSpecificationCodes
+const PERMISSION_DIRECT_LOGISTICS = PermissionKeys.OrdersUkraine.Order.OpenLogisticWay
+const PERMISSION_DIRECT_PRODUCT_INCOME = PermissionKeys.OrdersUkraine.Order.OpenProductIncome
 
 type OrdersState = {
   directOrders: DirectSupplyOrder[]
@@ -690,6 +692,25 @@ function useSupplyUkraineOrdersPageController() {
 }
 
 export function SupplyUkraineOrdersPage() {
+  const { t } = useI18n()
+  const { can, isLoading } = usePermissions()
+
+  if (isLoading) {
+    return <Text c="dimmed">{t('Завантаження')}</Text>
+  }
+
+  if (!can(PermissionKeys.OrdersUkraine.Page.View)) {
+    return (
+      <Alert color="red" icon={<CircleAlert size={18} />} title={t('Доступ заборонено')} variant="light">
+        {t('Недостатньо прав для перегляду замовлень України')}
+      </Alert>
+    )
+  }
+
+  return <SupplyUkraineOrdersPageContent />
+}
+
+function SupplyUkraineOrdersPageContent() {
   const {
     changePage,
     changePageSize,

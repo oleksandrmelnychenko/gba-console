@@ -29,7 +29,7 @@ function normalizePackingList(result: unknown): SpecificationPackingList | null 
 export async function getPackingListSpecificationProducts(
   packListNetId: string,
 ): Promise<SpecificationPackingList | null> {
-  const result = await apiRequest<unknown>('/supplies/packinglists/specification/products/get', {
+  const result = await apiRequest<unknown>('/supplies/packinglists/product-delivery-protocol/specification/products/get', {
     query: { netId: packListNetId },
   })
 
@@ -37,7 +37,7 @@ export async function getPackingListSpecificationProducts(
 }
 
 export async function getSpecificationDownloadUrls(packListNetId: string): Promise<SpecificationDownloadDocument> {
-  const result = await apiRequest<unknown>('/supplies/packinglists/specification/get', {
+  const result = await apiRequest<unknown>('/supplies/packinglists/product-delivery-protocol/specification/get', {
     query: { netId: packListNetId },
   })
 
@@ -57,7 +57,7 @@ export async function uploadProductSpecificationForInvoice(
   formData.append('dateCustomDeclaration', dateCustomDeclaration)
   formData.append('file', file)
 
-  const result = await apiRequest<unknown>('/supplies/invoices/specification/upload', {
+  const result = await apiRequest<unknown>('/supplies/invoices/product-delivery-protocol/specification/upload', {
     method: 'POST',
     body: formData,
     query: { invoiceNetId },
@@ -81,7 +81,7 @@ export async function addDeliveryDocumentsToInvoice(
     formData.append('documents', document)
   }
 
-  const result = await apiRequest<unknown>('/supplies/invoices/documents/add', {
+  const result = await apiRequest<unknown>('/supplies/invoices/product-delivery-protocol/documents/add', {
     method: 'POST',
     body: formData,
   })
@@ -93,7 +93,7 @@ export async function addOrUpdateProductSpecification(
   supplyInvoiceNetId: string,
   body: Partial<ProductSpecificationEntity>,
 ): Promise<ProductSpecificationEntity | null> {
-  const result = await apiRequest<unknown>('/specifications/update', {
+  const result = await apiRequest<unknown>('/specifications/product-delivery-protocol/update', {
     method: 'POST',
     query: { supplyInvoiceNetId },
     body,
@@ -110,7 +110,7 @@ export async function mergeSupplyInvoices(
   protocolNetId: string,
   invoiceNetIds: string[],
 ): Promise<void> {
-  await apiRequest<unknown>('/delivery/product/protocol/merge/supply/invoices', {
+  await apiRequest<unknown>('/delivery/product/protocol/specification/merge/supply/invoices', {
     method: 'POST',
     query: { invoiceNetIds, netId: protocolNetId },
   })

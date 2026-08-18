@@ -8,6 +8,14 @@
     "npm": ">=11"
   },
   "scripts": {
+    "audit:event-permissions": "node scripts/event-permission-candidates.mjs",
+    "audit:event-permissions:check": "node scripts/event-permission-candidates.mjs --check",
+    "audit:event-permissions:matrix": "node scripts/classify-event-permission-matrix.mjs",
+    "audit:event-permissions:matrix:check": "node scripts/classify-event-permission-matrix.mjs --check",
+    "audit:event-permissions:matrix:test": "node --test scripts/classify-event-permission-matrix.unit.mjs",
+    "audit:event-permissions:matrix:write": "node scripts/classify-event-permission-matrix.mjs --write",
+    "audit:event-permissions:test": "node --test scripts/event-permission-candidates.unit.mjs",
+    "audit:event-permissions:write": "node scripts/event-permission-candidates.mjs --write",
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",

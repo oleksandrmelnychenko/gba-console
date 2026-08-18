@@ -49,7 +49,7 @@ vi.mock('../api/salesUkraineApi', async (importOriginal) => {
     ...original,
     getSalesUkraine: (...args: unknown[]) => getSalesUkraine(...(args as [])),
     getSalesUkraineOrganizations: vi.fn(async () => []),
-    getSaleById: vi.fn(async () => null),
+    getSalesUkraineSaleDetails: vi.fn(async () => null),
   }
 })
 

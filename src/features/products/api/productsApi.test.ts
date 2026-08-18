@@ -37,7 +37,7 @@ describe('products API upload contracts', () => {
     const [, options] = apiRequestMock.mock.calls[0]
     const body = options?.body as FormData
 
-    expect(apiRequestMock).toHaveBeenCalledWith('/products/upload/file', expect.objectContaining({ method: 'POST' }))
+    expect(apiRequestMock).toHaveBeenCalledWith('/products/assortment/upload/file', expect.objectContaining({ method: 'POST' }))
     expect(body).toBeInstanceOf(FormData)
     expect(body.getAll('file')).toEqual([file])
     expect(JSON.parse(String(body.get('configuration')))).toEqual(configuration)
@@ -96,7 +96,7 @@ describe('products API upload contracts', () => {
 
     const body = apiRequestMock.mock.calls[0]?.[1]?.body as Product
 
-    expect(apiRequestMock).toHaveBeenCalledWith('/products/update', expect.objectContaining({ method: 'POST' }))
+    expect(apiRequestMock).toHaveBeenCalledWith('/products/assortment/update', expect.objectContaining({ method: 'POST' }))
     expect(body).toMatchObject({
       Description: 'Description',
       IsForSale: true,
@@ -122,12 +122,12 @@ describe('products API upload contracts', () => {
 
     apiRequestMock.mockResolvedValueOnce({ NetUid: 'product-1' })
 
-    await updateProductWithImages(product, [file])
+    await updateProductWithImages(product, [file], 'upload-and-delete')
 
     const body = apiRequestMock.mock.calls[0]?.[1]?.body as FormData
     const payload = JSON.parse(String(body.get('entity'))) as Product
 
-    expect(apiRequestMock).toHaveBeenCalledWith('/products/update/upload', expect.objectContaining({ method: 'POST' }))
+    expect(apiRequestMock).toHaveBeenCalledWith('/products/assortment/images/upload-and-delete', expect.objectContaining({ method: 'POST' }))
     expect(body.getAll('images')).toEqual([file])
     expect(payload.ProductImages).toEqual([
       { Id: 1, ImageUrl: 'https://example.test/old.jpg' },

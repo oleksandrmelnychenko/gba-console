@@ -7,6 +7,7 @@ import {
   Group,
   Skeleton,
   Stack,
+  Tabs,
   Text,
   TextInput,
   Tooltip,
@@ -34,6 +35,10 @@ import {
   type RolePermissionSubmit,
 } from '../components/RolePermissionModal'
 import { RolePermissionsEditor } from '../components/RolePermissionsEditor'
+import {
+  EventPermissionsCatalog,
+  type EventPermissionsCatalogHandle,
+} from '../components/EventPermissionsCatalog'
 import { UserRoleType } from '../../../shared/auth/types'
 import type {
   DashboardNode,
@@ -61,6 +66,11 @@ type PermissionModalState = {
   permission: UserPermission | null
 }
 
+type PendingWorkspaceAction =
+  | { type: 'reload' }
+  | { role: UserRole; type: 'role' }
+  | { tab: string; type: 'tab' }
+
 export function UserRolesPage() {
   const { t } = useI18n()
   const [roles, setRoles] = useValueState<UserRole[]>([])
@@ -68,6 +78,8 @@ export function UserRolesPage() {
   const [selectedRoleKey, setSelectedRoleKey] = useValueState<string | null>(
     null,
   )
+  const [activePermissionTab, setActivePermissionTab] =
+    useValueState<string | null>('pages')
   const [selectedNodes, setSelectedNodes] = useValueState<DashboardNode[]>([])
   const [selectedPermissions, setSelectedPermissions] = useValueState<
     UserPermission[]
@@ -77,6 +89,12 @@ export function UserRolesPage() {
   const [error, setError] = useValueState<string | null>(null)
   const [isLoading, setLoading] = useValueState(true)
   const [isSaving, setSaving] = useValueState(false)
+  const [eventPermissionsDirty, setEventPermissionsDirty] =
+    useValueState(false)
+  const [eventPermissionsSaving, setEventPermissionsSaving] =
+    useValueState(false)
+  const [pendingWorkspaceAction, setPendingWorkspaceAction] =
+    useValueState<PendingWorkspaceAction | null>(null)
   const [roleModalState, setRoleModalState] = useValueState<{
     open: boolean
     role: UserRole | null
@@ -90,6 +108,7 @@ export function UserRolesPage() {
     useValueState<UserRole | null>(null)
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
   const selectedRoleKeyRef = useRef<string | null>(null)
+  const eventPermissionsRef = useRef<EventPermissionsCatalogHandle | null>(null)
   const filteredRoles = useMemo(
     () => filterRoles(roles, searchValue),
     [roles, searchValue],
@@ -99,14 +118,9 @@ export function UserRolesPage() {
       roles.find((role) => getUserRoleKey(role) === selectedRoleKey) || null,
     [roles, selectedRoleKey],
   )
-  const visibleSelectedRole = useMemo(
-    () =>
-      selectedRole &&
-      filteredRoles.some((role) => getUserRoleKey(role) === selectedRoleKey)
-        ? selectedRole
-        : null,
-    [filteredRoles, selectedRole, selectedRoleKey],
-  )
+  // Keep the active editor mounted when the role search temporarily hides its
+  // selected list item. Filtering the left pane must never discard form state.
+  const visibleSelectedRole = selectedRole
   const hasSelectionChanges = useMemo(
     () =>
       Boolean(
@@ -116,10 +130,27 @@ export function UserRolesPage() {
       ),
     [selectedNodes, selectedPermissions, visibleSelectedRole],
   )
-
+  const hasCurrentWorkspaceChanges =
+    activePermissionTab === 'events'
+      ? eventPermissionsDirty
+      : hasSelectionChanges
   useEffect(() => {
     selectedRoleKeyRef.current = selectedRoleKey
   }, [selectedRoleKey])
+
+  useEffect(() => {
+    if (!hasCurrentWorkspaceChanges) {
+      return
+    }
+
+    const preventAccidentalClose = (event: BeforeUnloadEvent) => {
+      event.preventDefault()
+      event.returnValue = ''
+    }
+
+    window.addEventListener('beforeunload', preventAccidentalClose)
+    return () => window.removeEventListener('beforeunload', preventAccidentalClose)
+  }, [hasCurrentWorkspaceChanges])
 
   useEffect(() => {
     let cancelled = false
@@ -191,9 +222,93 @@ export function UserRolesPage() {
     setSearchValue('')
   }
 
-  function selectRole(role: UserRole) {
+  function applySelectedRole(role: UserRole) {
     setSelectedRoleKey(getUserRoleKey(role))
     applyRoleSelection(role, setSelectedNodes, setSelectedPermissions)
+  }
+
+  function selectRole(role: UserRole) {
+    if (
+      getUserRoleKey(role) === selectedRoleKey ||
+      isWorkspaceSavingNow()
+    ) {
+      return
+    }
+
+    if (hasWorkspaceChangesNow()) {
+      setPendingWorkspaceAction({ role, type: 'role' })
+      return
+    }
+
+    applySelectedRole(role)
+  }
+
+  function changePermissionTab(tab: string | null) {
+    if (!tab || tab === activePermissionTab || isWorkspaceSavingNow()) {
+      return
+    }
+
+    if (hasWorkspaceChangesNow()) {
+      setPendingWorkspaceAction({ tab, type: 'tab' })
+      return
+    }
+
+    setActivePermissionTab(tab)
+  }
+
+  function requestReload() {
+    if (isWorkspaceSavingNow()) {
+      return
+    }
+
+    if (hasWorkspaceChangesNow()) {
+      setPendingWorkspaceAction({ type: 'reload' })
+      return
+    }
+
+    reloadWorkspace()
+  }
+
+  function reloadWorkspace() {
+    reload()
+    eventPermissionsRef.current?.reload()
+  }
+
+  function hasWorkspaceChangesNow(): boolean {
+    return activePermissionTab === 'events'
+      ? eventPermissionsRef.current?.hasUnsavedChanges() ?? eventPermissionsDirty
+      : hasSelectionChanges
+  }
+
+  function isWorkspaceSavingNow(): boolean {
+    return isSaving || (
+      activePermissionTab === 'events' &&
+      (eventPermissionsRef.current?.isSaving() ?? eventPermissionsSaving)
+    )
+  }
+
+  function discardChangesAndContinue() {
+    const action = pendingWorkspaceAction
+
+    if (!action) {
+      return
+    }
+
+    if (activePermissionTab === 'events') {
+      eventPermissionsRef.current?.cancel()
+    } else {
+      cancelSelection()
+    }
+
+    setPendingWorkspaceAction(null)
+
+    if (action.type === 'role') {
+      applySelectedRole(action.role)
+    } else if (action.type === 'tab') {
+      setActivePermissionTab(action.tab)
+    } else {
+      reloadWorkspace()
+    }
   }
 
   function cancelSelection() {
@@ -425,15 +540,15 @@ export function UserRolesPage() {
               <ActionIcon
                 aria-label={t('Оновити')}
                 color="gray"
-                loading={isLoading}
+                loading={isLoading || eventPermissionsSaving}
                 size={34}
                 variant="light"
-                onClick={() => reload()}
+                onClick={requestReload}
               >
                 <RefreshCw size={17} />
               </ActionIcon>
             </Tooltip>
-            {visibleSelectedRole ? (
+            {visibleSelectedRole && activePermissionTab === 'pages' ? (
               <>
                 <Button
                   color="gray"
@@ -457,6 +572,30 @@ export function UserRolesPage() {
                 </Button>
               </>
             ) : null}
+            {visibleSelectedRole && activePermissionTab === 'events' ? (
+              <>
+                <Button
+                  color="gray"
+                  className="user-roles-cancel-action"
+                  disabled={isLoading || eventPermissionsSaving || !eventPermissionsDirty}
+                  size="sm"
+                  variant="subtle"
+                  onClick={() => eventPermissionsRef.current?.cancel()}
+                >
+                  {t('Скасувати')}
+                </Button>
+                <Button
+                  color={CREATE_ACTION_COLOR}
+                  disabled={isLoading || !eventPermissionsDirty}
+                  leftSection={<Save size={15} />}
+                  loading={eventPermissionsSaving}
+                  size="sm"
+                  onClick={() => void eventPermissionsRef.current?.save()}
+                >
+                  {t('Зберегти')}
+                </Button>
+              </>
+            ) : null}
           </div>
           <Button
             className="user-roles-create-button"
@@ -475,45 +614,81 @@ export function UserRolesPage() {
           </Alert>
         )}
 
-        <Box className="user-roles-layout">
-          <div className="user-roles-list-pane">
-            <RoleList
-              isLoading={isLoading}
-              roles={filteredRoles}
-              selectedRoleKey={selectedRoleKey}
-              onEditRole={(role) => setRoleModalState({ open: true, role })}
-              onSelectRole={selectRole}
-            />
-          </div>
+        <Tabs
+          className="user-roles-workspace-tabs"
+          value={activePermissionTab}
+          onChange={changePermissionTab}
+        >
+          <Tabs.List className="user-roles-workspace-tabs-list">
+            <Tabs.Tab value="pages">{t('Права сторінок')}</Tabs.Tab>
+            <Tabs.Tab value="events">{t('Подієві права')}</Tabs.Tab>
+          </Tabs.List>
 
-          <Card className="app-section-card user-roles-editor-pane" withBorder radius="md" padding="md">
-            <Stack gap="md">
-              {visibleSelectedRole ? (
-                <RolePermissionsEditor
-                modules={modules}
-                selectedNodes={selectedNodes}
-                selectedPermissions={selectedPermissions}
-                onAddPermission={(node) =>
-                  setPermissionModalState({ node, permission: null })
-                }
-                onEditPermission={(node, permission) =>
-                  setPermissionModalState({ node, permission })
-                }
-                onSelectAllPages={handleToggleAll}
-                onToggleModule={handleToggleModule}
-                onToggleNode={handleToggleNode}
-                onTogglePermission={(permission) =>
-                  setSelectedPermissions((current) =>
-                    togglePermissionSelection(current, permission),
-                  )
-                }
+          <Box className="user-roles-layout">
+            <div className="user-roles-list-pane">
+              <RoleList
+                isLoading={isLoading}
+                roles={filteredRoles}
+                selectedRoleKey={selectedRoleKey}
+                onEditRole={(role) => setRoleModalState({ open: true, role })}
+                onSelectRole={selectRole}
               />
-              ) : (
-                <Text c="dimmed">{t('Оберіть роль зі списку')}</Text>
-              )}
-            </Stack>
-          </Card>
-        </Box>
+            </div>
+
+            <Card
+              className="app-section-card user-roles-editor-pane"
+              withBorder
+              radius="md"
+              padding="md"
+            >
+              <Tabs.Panel
+                className="user-roles-workspace-tab-panel"
+                value="pages"
+                keepMounted={false}
+              >
+                <Stack gap="md">
+                  {visibleSelectedRole ? (
+                    <RolePermissionsEditor
+                      modules={modules}
+                      selectedNodes={selectedNodes}
+                      selectedPermissions={selectedPermissions}
+                      onAddPermission={(node) =>
+                        setPermissionModalState({ node, permission: null })
+                      }
+                      onEditPermission={(node, permission) =>
+                        setPermissionModalState({ node, permission })
+                      }
+                      onSelectAllPages={handleToggleAll}
+                      onToggleModule={handleToggleModule}
+                      onToggleNode={handleToggleNode}
+                      onTogglePermission={(permission) =>
+                        setSelectedPermissions((current) =>
+                          togglePermissionSelection(current, permission),
+                        )
+                      }
+                    />
+                  ) : (
+                    <Text c="dimmed">{t('Оберіть роль зі списку')}</Text>
+                  )}
+                </Stack>
+              </Tabs.Panel>
+
+              <Tabs.Panel
+                className="user-roles-workspace-tab-panel"
+                value="events"
+                keepMounted={false}
+              >
+                <EventPermissionsCatalog
+                  key={visibleSelectedRole?.NetUid || 'no-role'}
+                  ref={eventPermissionsRef}
+                  role={visibleSelectedRole}
+                  onDirtyChange={setEventPermissionsDirty}
+                  onSavingChange={setEventPermissionsSaving}
+                />
+              </Tabs.Panel>
+            </Card>
+          </Box>
+        </Tabs>
       </div>
 
       {roleModalState.open ? (
@@ -553,6 +728,31 @@ export function UserRolesPage() {
           onSubmit={submitPermission}
         />
       ) : null}
+
+      <AppModal
+        centered
+        opened={Boolean(pendingWorkspaceAction)}
+        title={t('Незбережені зміни')}
+        onClose={() => setPendingWorkspaceAction(null)}
+      >
+        <Stack gap="md">
+          <Text size="sm">
+            {t('Є незбережені зміни прав. Відхилити їх і продовжити?')}
+          </Text>
+          <Group justify="flex-end">
+            <Button
+              color="gray"
+              variant="subtle"
+              onClick={() => setPendingWorkspaceAction(null)}
+            >
+              {t('Залишитися')}
+            </Button>
+            <Button color="red" onClick={discardChangesAndContinue}>
+              {t('Відхилити зміни')}
+            </Button>
+          </Group>
+        </Stack>
+      </AppModal>
 
       <AppModal
         centered

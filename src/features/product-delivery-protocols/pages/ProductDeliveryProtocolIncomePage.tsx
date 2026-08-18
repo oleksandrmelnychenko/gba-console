@@ -17,6 +17,7 @@ import { BetweenVerticalEnd, CircleAlert, FileText, Trash2 } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { formatLocalDate, formatLocalInputDateTime } from '../../../shared/date/dateTime'
+import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import type { ExportDocument } from '../../../shared/documents/exportDocument'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -29,7 +30,7 @@ import { DocumentExportModal } from '../../../shared/ui/document-export-modal/Do
 import { useAuth } from '../../auth/useAuth'
 import { getDirectSupplyOrderById } from '../../supply-ukraine-orders/api/supplyUkraineOrdersApi'
 import type { DirectSupplyOrder } from '../../supply-ukraine-orders/types'
-import { getProtocolByNetId } from '../api/productDeliveryProtocolsApi'
+import { getProtocolForProductIncome } from '../api/productDeliveryProtocolsApi'
 import {
   addDynamicPlacementRow,
   createProductIncomeFromPackingListDynamic,
@@ -71,9 +72,9 @@ import {
 import './product-income-page.css'
 
 const DEFAULT_VAT_PERCENT = 23
-const PERMISSION_ADD_DYNAMIC_INCOME_COLUMN = 'PRODUCT_INCOME_ordersUkraineAllEdit_NewInvoiceBtn_PKEY'
-const PERMISSION_CAPITALIZE_DYNAMIC_INCOME = 'PRODUCT_INCOME_ordersUkraineAllEdit_CapitalizeBtn_PKEY'
-const PERMISSION_CARRY_OUT_DYNAMIC_INCOME = 'PRODUCT_INCOME_ordersUkraineAllEdit_CarryOutBtn_PKEY'
+const PERMISSION_ADD_DYNAMIC_INCOME_COLUMN = PermissionKeys.OrdersUkraine.ProductIncome.Add
+const PERMISSION_CAPITALIZE_DYNAMIC_INCOME = PermissionKeys.OrdersUkraine.ProductIncome.Capitalize
+const PERMISSION_CARRY_OUT_DYNAMIC_INCOME = PermissionKeys.OrdersUkraine.ProductIncome.Post
 const PRODUCT_INCOME_QTY_COLUMN_WIDTH = 88
 
 const dateFormatter = new Intl.DateTimeFormat('uk-UA', { dateStyle: 'short' })
@@ -329,7 +330,7 @@ function useProtocolIncomeModel(source: ProductIncomeSource, sourceId?: string) 
               getProductIncomeBySupplyOrderNetId(id as string),
             ])
           : await Promise.all([
-              getProtocolByNetId(id as string).then(normalizeProtocolIncomeSource),
+              getProtocolForProductIncome(id as string).then(normalizeProtocolIncomeSource),
               getProductIncomeByDeliveryProtocolNetId(id as string),
             ])
 

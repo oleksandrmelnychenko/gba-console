@@ -128,6 +128,80 @@ describe('MergedSalesDrawer restored reconciliation', () => {
     mocks.updateMergedSale.mockResolvedValue(undefined)
   })
 
+  it('keeps merged create and edit controls independently unavailable without their keys', async () => {
+    const protectedRequest = vi.fn()
+
+    render(
+      <MantineProvider theme={theme}>
+        <MergedSalesDrawer
+          canCreateInvoice={false}
+          canEdit={false}
+          saleNetId="merge-root"
+          submitMergedSale={protectedRequest}
+          onChanged={vi.fn()}
+          onClose={vi.fn()}
+          onCreateNewSale={vi.fn()}
+          onEditSale={vi.fn()}
+          onInvoice={vi.fn()}
+        />
+      </MantineProvider>,
+    )
+
+    await screen.findByText('CURRENT-SALE')
+    expect(screen.queryByRole('button', { name: 'Створити накладну' })).toBe(null)
+    expect(screen.queryByRole('button', { name: 'Редагувати' })).toBe(null)
+    expect(screen.queryByText('Створити новий рахунок головному клієнту')).toBe(null)
+    expect(protectedRequest).not.toHaveBeenCalled()
+  })
+
+  it('loads permission-scoped merged reads without calling shared helpers', async () => {
+    const loadMergedSale = vi.fn().mockResolvedValue(currentMergedSale)
+    const loadCurrentUnmergedSale = vi.fn().mockResolvedValue(null)
+
+    render(
+      <MantineProvider theme={theme}>
+        <MergedSalesDrawer
+          clientAgreementNetId="agreement-1"
+          loadCurrentUnmergedSale={loadCurrentUnmergedSale}
+          loadMergedSale={loadMergedSale}
+          saleNetId="merge-root"
+          onChanged={vi.fn()}
+          onClose={vi.fn()}
+          onCreateNewSale={vi.fn()}
+        />
+      </MantineProvider>,
+    )
+
+    await screen.findByText('CURRENT-SALE')
+    await waitFor(() => expect(loadCurrentUnmergedSale).toHaveBeenCalledWith('agreement-1'))
+    expect(loadMergedSale).toHaveBeenCalledWith('merge-root')
+    expect(mocks.getMergedSales).not.toHaveBeenCalled()
+    expect(mocks.getCurrentUnmergedSale).not.toHaveBeenCalled()
+  })
+
+  it('does not replay a stored merged create after create permission is revoked', async () => {
+    seedPendingMergedSale()
+    const protectedRequest = vi.fn()
+
+    render(
+      <MantineProvider theme={theme}>
+        <MergedSalesDrawer
+          canCreateInvoice={false}
+          saleNetId="merge-root"
+          submitMergedSale={protectedRequest}
+          onChanged={vi.fn()}
+          onClose={vi.fn()}
+        />
+      </MantineProvider>,
+    )
+
+    await screen.findByText('CURRENT-SALE')
+    expect(screen.queryByText('Потрібна звірка операції')).toBe(null)
+    expect(screen.queryByRole('button', { name: 'Перевірити результат' })).toBe(null)
+    expect(protectedRequest).not.toHaveBeenCalled()
+    expect(loadSalesPendingMutation(pendingScope)?.operationId).toBeTruthy()
+  })
+
   it('keeps the restored warning visible through loading and replays only the frozen selection', async () => {
     const submission = seedPendingMergedSale()
     let resolveLoad: ((value: SalesUkraineSale) => void) | null = null

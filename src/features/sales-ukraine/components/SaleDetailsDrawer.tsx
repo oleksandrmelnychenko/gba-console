@@ -65,13 +65,19 @@ const HIDDEN_SALE_DETAILS_FOOTER: SaleDetailsFooterState = {
 }
 
 export function SaleDetailsDrawer({
+  canEdit = true,
+  loadSale = getSaleById,
   sale,
+  saveSale = updateSaleFromData,
   onClose,
   onSaved,
 }: {
+  canEdit?: boolean
+  loadSale?: typeof getSaleById
   onClose: () => void
   onSaved: () => void
   sale: SalesUkraineSale | null
+  saveSale?: typeof updateSaleFromData
 }) {
   const { t } = useI18n()
   const saleKey = sale ? String(sale.NetUid || sale.Id || '') : ''
@@ -81,7 +87,7 @@ export function SaleDetailsDrawer({
   return (
     <AppDrawer
       footer={
-        sale && activeFooterState.visible ? (
+        canEdit && sale && activeFooterState.visible ? (
           <Group gap="sm" justify="flex-end">
             <Button
               className="sales-drawer-action-button"
@@ -116,9 +122,12 @@ export function SaleDetailsDrawer({
     >
       {sale && (
         <SaleDetailsContent
+          canEdit={canEdit}
           key={sale.NetUid || sale.Id}
+          loadSale={loadSale}
           sale={sale}
           saleKey={saleKey}
+          saveSale={saveSale}
           onFooterStateChange={setFooterState}
           onSaved={onSaved}
         />
@@ -128,15 +137,21 @@ export function SaleDetailsDrawer({
 }
 
 function SaleDetailsContent({
+  canEdit,
+  loadSale,
   sale,
   saleKey,
+  saveSale,
   onFooterStateChange,
   onSaved,
 }: {
+  canEdit: boolean
+  loadSale: typeof getSaleById
   onFooterStateChange: (state: SaleDetailsFooterState) => void
   onSaved: () => void
   sale: SalesUkraineSale
   saleKey: string
+  saveSale: typeof updateSaleFromData
 }) {
   const { t } = useI18n()
   const fileMutation = usePersistentSaleFileMutation(
@@ -195,6 +210,10 @@ function SaleDetailsContent({
   } as SalesUkraineUpdateDataCarrier
 
   async function enterEdit() {
+    if (!canEdit) {
+      return
+    }
+
     setEditMode(true)
 
     if (transporters.length > 0) {
@@ -282,12 +301,16 @@ function SaleDetailsContent({
 
     try {
       const result = fileMutation.reconciliationRequired
-        ? await fileMutation.reconcile('sale-update-file', uploadedFile, replayFrozenDeliverySale)
+        ? await fileMutation.reconcile(
+            'sale-update-file',
+            uploadedFile,
+            (frozenSale, file, operation) => replayFrozenDeliverySale(frozenSale, file, operation, saveSale),
+          )
         : await fileMutation.run(
             'sale-update-file',
-            createPayload(await requireHydratedDeliverySale(sale)),
+            createPayload(await requireHydratedDeliverySale(sale, loadSale)),
             uploadedFile,
-            updateSaleFromData,
+            saveSale,
           )
 
       if (!result) {
@@ -322,9 +345,10 @@ function SaleDetailsContent({
       isSaving,
       saleKey,
       saveDisabled,
-      visible: isEditMode,
+      visible: canEdit && isEditMode,
     })
   }, [
+    canEdit,
     fileMutation.reconciliationRequired,
     isEditMode,
     isSaving,
@@ -339,7 +363,7 @@ function SaleDetailsContent({
         <Alert color="orange" mb="sm" title={t('Потрібна звірка операції')}>
           <Stack gap="xs">
             <Text size="sm">{fileMutation.pendingError}</Text>
-            {!isEditMode && fileMutation.canReconcile && (
+            {canEdit && !isEditMode && fileMutation.canReconcile && (
               <Button size="xs" variant="light" onClick={() => setEditMode(true)}>
                 {t('Звірити збереження')}
               </Button>
@@ -497,7 +521,7 @@ function SaleDetailsContent({
           )}
 
           {/* Edit button at the bottom of the left column, under "Завантажити ТТН" (legacy order). */}
-          {!sale.IsSent && !isEditMode && (
+          {canEdit && !sale.IsSent && !isEditMode && (
             <Button className="sales-drawer-action-button sale-carrier-edit-button" color={CREATE_ACTION_COLOR} leftSection={<Pencil size={16} />} mt="md" variant="outline" onClick={enterEdit}>
               {t(fileMutation.reconciliationRequired ? 'Звірити операцію' : 'Редагувати')}
             </Button>
@@ -522,6 +546,7 @@ async function replayFrozenDeliverySale(
   frozenSale: SalesUkraineSale,
   file: File | null,
   operation: SalesMutationOperationOptions,
+  request: typeof updateSaleFromData,
 ): Promise<SaleSubmitResult> {
   if (frozenSale.HasDetails !== true || !frozenSale.Order) {
     throw new Error(
@@ -529,17 +554,20 @@ async function replayFrozenDeliverySale(
     )
   }
 
-  return updateSaleFromData(frozenSale, file, operation)
+  return request(frozenSale, file, operation)
 }
 
-async function requireHydratedDeliverySale(sale: SalesUkraineSale): Promise<SalesUkraineSale> {
+async function requireHydratedDeliverySale(
+  sale: SalesUkraineSale,
+  loadSale: typeof getSaleById,
+): Promise<SalesUkraineSale> {
   const netUid = sale.NetUid?.trim()
 
   if (!netUid) {
     throw new Error('Продаж не має збереженого ідентифікатора')
   }
 
-  const hydratedSale = await getSaleById(netUid)
+  const hydratedSale = await loadSale(netUid)
 
   if (!hydratedSale || hydratedSale.HasDetails === false || !hydratedSale.Order) {
     throw new Error('Не вдалося завантажити повні дані продажу. Збереження заблоковано')

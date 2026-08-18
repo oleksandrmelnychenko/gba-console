@@ -5,6 +5,14 @@ import { I18nProvider } from '../../../shared/i18n/I18nProvider'
 import { searchCompetitorPrices } from '../api/pricingApi'
 import { CompetitorWebSearchPanel } from './CompetitorWebSearchPanel'
 
+const mocks = vi.hoisted(() => ({
+  can: vi.fn(),
+}))
+
+vi.mock('../../auth/usePermissions', () => ({
+  usePermissions: () => ({ can: mocks.can }),
+}))
+
 vi.mock('../api/pricingApi', () => ({
   searchCompetitorPrices: vi.fn(),
 }))
@@ -13,9 +21,28 @@ const searchCompetitorPricesMock = vi.mocked(searchCompetitorPrices)
 
 beforeEach(() => {
   searchCompetitorPricesMock.mockReset()
+  mocks.can.mockReturnValue(true)
 })
 
 describe('CompetitorWebSearchPanel', () => {
+  it('does not expose or execute market scan without its business permission', () => {
+    mocks.can.mockReturnValue(false)
+
+    render(
+      <MantineProvider env="test">
+        <I18nProvider>
+          <CompetitorWebSearchPanel product={{ MainOriginalNumber: 'OE-1' }} />
+        </I18nProvider>
+      </MantineProvider>,
+    )
+
+    expect(screen.queryByRole('button', { name: 'Знайти ціни' })).toBeNull()
+    fireEvent.keyDown(screen.getByLabelText('Пошуковий запит'), {
+      key: 'Enter',
+    })
+    expect(searchCompetitorPricesMock).not.toHaveBeenCalled()
+  })
+
   it('expands and collapses the Anthropic production prompt', () => {
     render(
       <MantineProvider env="test">

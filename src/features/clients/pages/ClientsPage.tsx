@@ -40,6 +40,8 @@ import type {
   DataTableSortingState,
 } from '../../../shared/ui/data-table/types'
 import { useAuth } from '../../auth/useAuth'
+import { usePermissions } from '../../auth/usePermissions'
+import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import {
   exportClientsDocument,
   getClientCount,
@@ -47,9 +49,9 @@ import {
   getClientFilterItems,
   getClientIdentityAttentionBatch,
   getClientSourceQualityBatch,
-  getClients,
+  getClientsForRegistry,
   getClientTypes,
-  switchClientActiveState,
+  switchClientActiveStateForRegistry,
   updateClientOrderExpireDays,
 } from '../api/clientsApi'
 import type {
@@ -73,9 +75,9 @@ import './clients-page.css'
 
 const pageSizeOptions = PAGINATOR_PAGE_SIZE_OPTIONS
 const CLIENT_SEARCH_SQL = 'RegionCode.Value/Client.FullName/Client.USREOU'
-const CLIENT_CREATE_PERMISSION = 'Header_NewClient_clientsAllView_PKEY'
-const CLIENT_CASH_FLOW_PERMISSION = 'AccountingCashFlow_row_clientModal_clientsAll_PKEY'
-const CLIENT_VIEW_PERMISSION = 'View_row_clientModal_clientsAll_PKEY'
+const CLIENT_CREATE_PERMISSION = PermissionKeys.Clients.Client.Create
+const CLIENT_CASH_FLOW_PERMISSION = PermissionKeys.Clients.AccountingCashFlow.Open
+const CLIENT_VIEW_PERMISSION = PermissionKeys.Clients.Details.Open
 
 type ActiveFilter = 'all' | 'active' | 'inactive'
 type ClientAction = 'active' | 'reserve' | 'export' | null
@@ -432,7 +434,7 @@ function useClientsPageModel() {
       setError(null)
 
       try {
-        const nextClients = await getClients(searchParams, controller.signal)
+        const nextClients = await getClientsForRegistry(searchParams, controller.signal)
 
         if (!cancelled) {
           setClients(nextClients)
@@ -569,7 +571,7 @@ function useClientsPageModel() {
     setError(null)
 
     try {
-      await switchClientActiveState(client.NetUid)
+      await switchClientActiveStateForRegistry(client.NetUid)
       setClients((currentClients) =>
         currentClients.reduce<Client[]>((nextClients, currentClient) => {
           const nextClient =
@@ -722,6 +724,25 @@ function useClientsPageModel() {
 }
 
 export function ClientsPage() {
+  const { t } = useI18n()
+  const { can, isLoading } = usePermissions()
+
+  if (isLoading) {
+    return <Text c="dimmed">{t('Завантаження')}</Text>
+  }
+
+  if (!can(PermissionKeys.Clients.Page.View)) {
+    return (
+      <Alert color="red" icon={<CircleAlert size={18} />} title={t('Доступ заборонено')} variant="light">
+        {t('Недостатньо прав для перегляду клієнтів')}
+      </Alert>
+    )
+  }
+
+  return <ClientsPageContent />
+}
+
+function ClientsPageContent() {
   const model = useClientsPageModel()
 
   return <ClientsPageView model={model} />

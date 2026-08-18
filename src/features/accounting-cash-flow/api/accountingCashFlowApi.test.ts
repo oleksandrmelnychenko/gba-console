@@ -1,6 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { apiRequest } from '../../../shared/api/apiClient'
-import { exportAccountingCashFlowDocument } from './accountingCashFlowApi'
+import {
+  exportAccountingCashFlowDocument,
+  getAccountingCashFlow,
+  getAccountingCashFlowCounterparty,
+} from './accountingCashFlowApi'
 
 vi.mock('../../../shared/api/apiClient', () => ({
   apiRequest: vi.fn(),
@@ -41,5 +45,46 @@ describe('accountingCashFlowApi', () => {
         to: '2026-07-08',
       }),
     ).rejects.toThrow('Не вдалося сформувати документ взаєморозрахунків')
+  })
+
+  it('uses permission-scoped supplier routes for hydration, rows, and export', async () => {
+    apiRequestMock
+      .mockResolvedValueOnce({ NetUid: 'supplier-1', ClientAgreements: [] })
+      .mockResolvedValueOnce({ AccountingCashFlowHeadItems: [] })
+      .mockResolvedValueOnce({ PdfDocumentURL: '/supplier-cash-flow.pdf' })
+
+    await getAccountingCashFlowCounterparty('supplier-1', 'supplier')
+    await getAccountingCashFlow({
+      from: '2026-07-01',
+      mode: 'supplier',
+      netId: 'supplier-1',
+      to: '2026-07-08',
+    })
+    await exportAccountingCashFlowDocument({
+      from: '2026-07-01',
+      mode: 'supplier',
+      netId: 'supplier-1',
+      to: '2026-07-08',
+    })
+
+    expect(apiRequestMock).toHaveBeenNthCalledWith(1, '/clients/suppliers/cash-flow/details', {
+      query: { netId: 'supplier-1' },
+    })
+    expect(apiRequestMock).toHaveBeenNthCalledWith(2, '/accounting/cashflow/suppliers/get/filtered', {
+      query: {
+        from: '2026-07-01',
+        netId: 'supplier-1',
+        to: '2026-07-08',
+        typePaymentTask: 2,
+      },
+    })
+    expect(apiRequestMock).toHaveBeenNthCalledWith(3, '/accounting/cashflow/suppliers/document/export', {
+      query: {
+        from: '2026-07-01',
+        netId: 'supplier-1',
+        to: '2026-07-08',
+        typePaymentTask: 2,
+      },
+    })
   })
 })

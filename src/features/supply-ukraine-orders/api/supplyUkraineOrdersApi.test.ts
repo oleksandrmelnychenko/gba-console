@@ -1,10 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { apiRequest } from '../../../shared/api/apiClient'
 import {
+  createSupplyCreditNote,
+  deleteDirectSupplyUkraineOrder,
   deleteSupplyProformDocument,
   getDirectSupplyUkraineOrders,
   getSupplyUkraineOrders,
   getSupplyOrderSuppliers,
+  printSupplyOrdersDocument,
   searchSupplyOrderServiceOrganizations,
   uploadDirectSupplyOrderFromFile,
   uploadPackingListDocuments,
@@ -41,6 +44,31 @@ describe('supplyUkraineOrdersApi', () => {
     }))
   })
 
+  it('uses scoped Ukraine routes for direct-order delete, credit note, and print', async () => {
+    apiRequestMock.mockResolvedValue({ DocumentURL: '/document.xlsx' })
+    const creditNote = new FormData()
+
+    await deleteDirectSupplyUkraineOrder('direct-order-1')
+    await createSupplyCreditNote('direct-order-1', creditNote)
+    const columns = [{ ColumnName: 'Number', Number: 1, TableName: 'SupplyOrder', Translate: 'Номер' }]
+    await printSupplyOrdersDocument('2026-08-01', '2026-08-17', columns)
+
+    expect(apiRequestMock).toHaveBeenNthCalledWith(1, '/supplies/orders/ukraine/delete', {
+      method: 'DELETE',
+      query: { netId: 'direct-order-1' },
+    })
+    expect(apiRequestMock).toHaveBeenNthCalledWith(2, '/supplies/orders/ukraine/upload/creditnote', {
+      body: creditNote,
+      method: 'POST',
+      query: { netId: 'direct-order-1' },
+    })
+    expect(apiRequestMock).toHaveBeenNthCalledWith(3, '/supplies/orders/ukraine/print/documents', {
+      body: columns,
+      method: 'POST',
+      query: { from: '2026-08-01', to: '2026-08-17' },
+    })
+  })
+
   it('includes the selected end date when loading both Ukraine order sources', async () => {
     apiRequestMock.mockResolvedValue({ Collection: [], TotalRowsQty: 0 })
     const params = {
@@ -66,7 +94,7 @@ describe('supplyUkraineOrdersApi', () => {
     expect(apiRequestMock).toHaveBeenNthCalledWith(1, '/supplies/ukraine/order/all/filtered', {
       query: expectedQuery,
     })
-    expect(apiRequestMock).toHaveBeenNthCalledWith(2, '/supplies/orders/all/uk/filtered', {
+    expect(apiRequestMock).toHaveBeenNthCalledWith(2, '/supplies/orders/ukraine/all/filtered', {
       query: expectedQuery,
     })
   })
@@ -83,7 +111,7 @@ describe('supplyUkraineOrdersApi', () => {
       to: '2026-07-24T12:30:00',
     })
 
-    expect(apiRequestMock).toHaveBeenCalledWith('/supplies/orders/all/uk/filtered', {
+    expect(apiRequestMock).toHaveBeenCalledWith('/supplies/orders/ukraine/all/filtered', {
       query: {
         currencyId: 2,
         from: '2026-07-17T00:00:00',
@@ -298,7 +326,7 @@ describe('supplyUkraineOrdersApi', () => {
       supplyOrder: createDirectSupplyOrder(),
     })
 
-    expect(apiRequestMock).toHaveBeenCalledWith('/supplies/orders/new/file', {
+    expect(apiRequestMock).toHaveBeenCalledWith('/supplies/orders/ukraine/new/file', {
       body: expect.any(FormData),
       method: 'POST',
     })
@@ -372,7 +400,7 @@ describe('supplyUkraineOrdersApi', () => {
       supplyOrderNetId: 'direct-order-1',
     })
 
-    expect(apiRequestMock).toHaveBeenCalledWith('/supplies/invoices/update/file', {
+    expect(apiRequestMock).toHaveBeenCalledWith('/supplies/invoices/ukraine/update/file', {
       body: expect.any(FormData),
       method: 'POST',
       query: { netId: 'direct-order-1' },
@@ -413,7 +441,7 @@ describe('supplyUkraineOrdersApi', () => {
       supplyInvoiceNetId: 'invoice-1',
     })
 
-    expect(apiRequestMock).toHaveBeenCalledWith('/supplies/packinglists/new/file', {
+    expect(apiRequestMock).toHaveBeenCalledWith('/supplies/packinglists/ukraine/new/file', {
       body: expect.any(FormData),
       method: 'POST',
       query: { netId: 'invoice-1' },
@@ -457,7 +485,7 @@ describe('supplyUkraineOrdersApi', () => {
 
     const response = await uploadPackingListDocuments(packingList, [file])
 
-    expect(apiRequestMock).toHaveBeenCalledWith('/supplies/packinglists/upload/documents', {
+    expect(apiRequestMock).toHaveBeenCalledWith('/supplies/packinglists/ukraine/upload/documents', {
       body: expect.any(FormData),
       method: 'POST',
     })

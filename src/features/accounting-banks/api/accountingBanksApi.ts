@@ -2,13 +2,18 @@ import { apiRequest } from '../../../shared/api/apiClient'
 import type { AccountingBank } from '../types'
 
 export async function getAccountingBanks(): Promise<AccountingBank[]> {
-  const result = await apiRequest<unknown>('/bank/all')
+  const result = await apiRequest<unknown>('/bank/accounting/all')
 
   return normalizeAccountingBanks(result)
 }
 
 export async function saveAccountingBank(bank: AccountingBank): Promise<AccountingBank[]> {
-  const result = await apiRequest<unknown>('/bank/update', {
+  const route = bank.Deleted
+    ? '/bank/accounting/delete'
+    : bank.Id
+      ? '/bank/accounting/save'
+      : '/bank/accounting/create'
+  const result = await apiRequest<unknown>(route, {
     method: 'POST',
     body: bank,
   })

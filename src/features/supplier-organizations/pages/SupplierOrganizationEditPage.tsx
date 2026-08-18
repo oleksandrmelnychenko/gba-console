@@ -20,6 +20,8 @@ import { CircleAlert, File, FileSpreadsheet, FileText, Plus, RefreshCw, Save, Tr
 import { type FormEvent, useEffect, useMemo, useRef } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import { PermissionGate } from '../../auth/components/PermissionGate'
+import { usePermissions } from '../../auth/usePermissions'
+import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import type { TranslateFunction } from '../../../shared/i18n/types'
@@ -31,12 +33,12 @@ import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import {
-  createSupplyOrganization,
+  createSupplierOrganization,
   createSupplyOrganizationAgreement,
-  deleteSupplyOrganization,
+  getSupplierOrganizationOverviewDetails,
   getSupplierOrganizationCurrencies,
   getSupplierOrganizationsOwners,
-  getSupplyOrganization,
+  removeSupplierOrganization,
   updateSupplyOrganization,
   updateSupplyOrganizationAgreement,
 } from '../api/supplierOrganizationsApi'
@@ -86,6 +88,29 @@ type SupplierOrganizationRouteState = {
 
 export function SupplierOrganizationEditPage() {
   const { t } = useI18n()
+  const { id } = useParams()
+  const { can, isLoading } = usePermissions()
+  const requiredAction = id
+    ? PermissionKeys.SupplierOrganizations.Overview.Open
+    : PermissionKeys.SupplierOrganizations.Supplier.Create
+
+  if (isLoading) {
+    return <Text c="dimmed">{t('Завантаження')}</Text>
+  }
+
+  if (!can(PermissionKeys.SupplierOrganizations.Page.View) || !can(requiredAction)) {
+    return (
+      <Alert color="red" icon={<CircleAlert size={18} />} title={t('Доступ заборонено')} variant="light">
+        {t('Недостатньо прав для відкриття постачальника послуг')}
+      </Alert>
+    )
+  }
+
+  return <SupplierOrganizationEditPageContent canOpenOverview={can(PermissionKeys.SupplierOrganizations.Overview.Open)} />
+}
+
+function SupplierOrganizationEditPageContent({ canOpenOverview }: { canOpenOverview: boolean }) {
+  const { t } = useI18n()
   const navigate = useNavigate()
   const location = useLocation()
   const { id } = useParams()
@@ -125,7 +150,7 @@ export function SupplierOrganizationEditPage() {
         const [nextCurrencies, nextOwnerOrganizations, nextOrganization] = await Promise.all([
           getSupplierOrganizationCurrencies(),
           getSupplierOrganizationsOwners(),
-          id ? getSupplyOrganization(id) : Promise.resolve(createEmptySupplyOrganization()),
+          id ? getSupplierOrganizationOverviewDetails(id) : Promise.resolve(createEmptySupplyOrganization()),
         ])
 
         if (requestRef.current === requestId) {
@@ -159,7 +184,7 @@ export function SupplierOrganizationEditPage() {
     setError(null)
 
     try {
-      const nextOrganization = await getSupplyOrganization(id)
+      const nextOrganization = await getSupplierOrganizationOverviewDetails(id)
 
       if (requestRef.current === requestId && nextOrganization) {
         setOrganization(nextOrganization)
@@ -215,7 +240,7 @@ export function SupplierOrganizationEditPage() {
         ...organization,
         ...values,
       }
-      const savedOrganization = isNew ? await createSupplyOrganization(payload) : await updateSupplyOrganization(payload)
+      const savedOrganization = isNew ? await createSupplierOrganization(payload) : await updateSupplyOrganization(payload)
 
       if (isNew && !savedOrganization?.NetUid) {
         notifications.show({
@@ -233,7 +258,11 @@ export function SupplierOrganizationEditPage() {
       notifications.show({ color: 'green', message: t('Постачальника послуг збережено') })
 
       if (isNew && savedOrganization?.NetUid) {
-        navigate(`/accounting/supplier-organizations/edit/${savedOrganization.NetUid}`, { replace: true, state: routeState })
+        if (canOpenOverview) {
+          navigate(`/accounting/supplier-organizations/edit/${savedOrganization.NetUid}`, { replace: true, state: routeState })
+        } else {
+          navigate(returnPath, { replace: true, state: { mutated: true } })
+        }
       }
     } catch (saveError) {
       setError(saveError instanceof Error ? saveError.message : t('Не вдалося зберегти постачальника послуг'))
@@ -253,7 +282,7 @@ export function SupplierOrganizationEditPage() {
     setError(null)
 
     try {
-      await deleteSupplyOrganization(organization.NetUid)
+      await removeSupplierOrganization(organization.NetUid)
       notifications.show({ color: 'green', message: t('Постачальника послуг видалено') })
       navigate(returnPath, { replace: true, state: { mutated: true } })
     } catch (deleteError) {
@@ -326,7 +355,7 @@ export function SupplierOrganizationEditPage() {
                 <RefreshCw size={18} />
               </ActionIcon>
             </Tooltip>
-            <PermissionGate permissionKey="SERVICE_Accounting_Supplier_Organizations_DelBtn_PKEY">
+            <PermissionGate permissionKey={PermissionKeys.SupplierOrganizations.Supplier.Delete}>
               <Button color="red" leftSection={<Trash2 size={16} />} loading={isDeleting} variant="light" onClick={() => setDeleteOpened(true)}>
                 {t('Видалити')}
               </Button>

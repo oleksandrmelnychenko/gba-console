@@ -76,7 +76,7 @@ export async function getSupplyUkraineOrders(
 export async function getDirectSupplyUkraineOrders(
   params: SupplyUkraineOrdersSearchParams,
 ): Promise<SupplyUkraineOrdersResponse<DirectSupplyOrder>> {
-  const result = await apiRequest<unknown>('/supplies/orders/all/uk/filtered', {
+  const result = await apiRequest<unknown>('/supplies/orders/ukraine/all/filtered', {
     query: buildSearchQuery(params),
   })
   const response = normalizeOrdersResponse<DirectSupplyOrder>(result, ['Items', 'SupplyOrders', 'Orders', 'Data'])
@@ -95,7 +95,7 @@ export async function deleteSupplyUkraineOrder(netId: string): Promise<void> {
 }
 
 export async function deleteDirectSupplyUkraineOrder(netId: string): Promise<void> {
-  await apiRequest<unknown>('/supplies/orders/delete', {
+  await apiRequest<unknown>('/supplies/orders/ukraine/delete', {
     method: 'DELETE',
     query: { netId },
   })
@@ -158,7 +158,7 @@ export async function deleteSupplyProformDocument(netId: string): Promise<void> 
 }
 
 export async function createSupplyCreditNote(supplyOrderNetId: string, formData: FormData): Promise<DirectSupplyOrder | null> {
-  const result = await apiRequest<unknown>('/supplies/orders/upload/creditnote', {
+  const result = await apiRequest<unknown>('/supplies/orders/ukraine/upload/creditnote', {
     body: formData,
     method: 'POST',
     query: { netId: supplyOrderNetId },
@@ -228,7 +228,7 @@ export async function uploadPackingListDocuments(packingList: PackingList, docum
     formData.append('documents', document)
   }
 
-  const result = await apiRequest<unknown>('/supplies/packinglists/upload/documents', {
+  const result = await apiRequest<unknown>('/supplies/packinglists/ukraine/upload/documents', {
     body: formData,
     method: 'POST',
   })
@@ -273,7 +273,7 @@ export async function uploadSupplyInvoiceDocuments({
     formData.append('invoiceFiles', file)
   }
 
-  const result = await apiRequest<unknown>('/supplies/invoices/upload/documents', {
+  const result = await apiRequest<unknown>('/supplies/invoices/ukraine/upload/documents', {
     body: formData,
     method: 'POST',
     query: { netId: supplyOrderNetId },
@@ -299,7 +299,7 @@ export async function uploadSupplyInvoiceFile({
   formData.append('parseConfiguration', JSON.stringify(parseConfiguration))
   formData.append('supplyInvoice', JSON.stringify(invoice))
 
-  const result = await apiRequest<unknown>('/supplies/invoices/update/file', {
+  const result = await apiRequest<unknown>('/supplies/invoices/ukraine/update/file', {
     body: formData,
     method: 'POST',
     query: { netId: supplyOrderNetId },
@@ -325,7 +325,7 @@ export async function uploadPackingListFile({
   formData.append('parseConfiguration', JSON.stringify(parseConfiguration))
   formData.append('packingList', JSON.stringify(packingList))
 
-  const result = await apiRequest<unknown>('/supplies/packinglists/new/file', {
+  const result = await apiRequest<unknown>('/supplies/packinglists/ukraine/new/file', {
     body: formData,
     method: 'POST',
     query: { netId: supplyInvoiceNetId },
@@ -335,21 +335,21 @@ export async function uploadPackingListFile({
 }
 
 export async function deleteSupplyInvoice(netId: string): Promise<void> {
-  await apiRequest<unknown>('/supplies/invoices/delete', {
+  await apiRequest<unknown>('/supplies/invoices/ukraine/delete', {
     method: 'DELETE',
     query: { netId },
   })
 }
 
 export async function deleteSupplyInvoiceDocument(netId: string): Promise<void> {
-  await apiRequest<unknown>('/supplies/invoices/delete/document', {
+  await apiRequest<unknown>('/supplies/invoices/ukraine/delete/document', {
     method: 'DELETE',
     query: { netId },
   })
 }
 
 export async function deletePackingList(netId: string): Promise<void> {
-  await apiRequest<unknown>('/supplies/packinglists/delete', {
+  await apiRequest<unknown>('/supplies/packinglists/ukraine/delete', {
     method: 'DELETE',
     query: { netId },
   })
@@ -586,7 +586,7 @@ export async function printSupplyOrdersDocument(
   to: string,
   columns: SupplyOrderPrintColumn[],
 ): Promise<SupplyOrderPrintDocument> {
-  const result = await apiRequest<unknown>('/supplies/orders/print/documents', {
+  const result = await apiRequest<unknown>('/supplies/orders/ukraine/print/documents', {
     method: 'POST',
     query: { from, to },
     body: columns,
@@ -610,7 +610,7 @@ export async function uploadDirectSupplyOrderFromFile({
   formData.append('parseConfiguration', JSON.stringify(parseConfiguration))
   formData.append('supplyOrder', JSON.stringify(supplyOrder))
 
-  const result = await apiRequest<unknown>('/supplies/orders/new/file', {
+  const result = await apiRequest<unknown>('/supplies/orders/ukraine/new/file', {
     body: formData,
     method: 'POST',
   })

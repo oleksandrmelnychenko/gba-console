@@ -18,7 +18,7 @@ describe('product delivery protocol detail API contracts', () => {
     apiRequestMock.mockResolvedValueOnce(protocol)
 
     await expect(updateProtocolStatus('protocol-net-id')).resolves.toEqual(protocol)
-    expect(apiRequestMock).toHaveBeenCalledWith('/delivery/product/protocol/update/status', {
+    expect(apiRequestMock).toHaveBeenCalledWith('/delivery/product/protocol/logistic/update/status', {
       method: 'POST',
       query: {
         netId: 'protocol-net-id',
@@ -31,7 +31,7 @@ describe('product delivery protocol detail API contracts', () => {
     apiRequestMock.mockResolvedValueOnce(protocol)
 
     await expect(removeMergedService('service-net-id')).resolves.toEqual(protocol)
-    expect(apiRequestMock).toHaveBeenCalledWith('/supplies/services/merged/remove/before/calculated/gross/price', {
+    expect(apiRequestMock).toHaveBeenCalledWith('/supplies/services/merged/product-delivery-protocol/delete', {
       method: 'POST',
       query: {
         netId: 'service-net-id',

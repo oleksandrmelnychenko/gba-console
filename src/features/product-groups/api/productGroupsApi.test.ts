@@ -37,13 +37,14 @@ describe('productGroupsApi create retry safety', () => {
 
     await createProductGroup(createPayload())
 
-    const [, request] = apiRequestMock.mock.calls[0]
+    const [path, request] = apiRequestMock.mock.calls[0]
     const operationNetUid = new Headers(request?.headers)
       .get('Idempotency-Key')
 
     expect(operationNetUid).toMatch(
       /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i,
     )
+    expect(path).toBe('/products/groups/page/new')
     expect(request).toEqual(expect.objectContaining({
       method: 'POST',
       query: {

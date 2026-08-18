@@ -33,6 +33,8 @@ import type { SupplyReturn, SupplyReturnExportDocument, SupplyReturnItem } from 
 import './supply-returns-page.css'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { TableRowAction } from '../../../shared/ui/table-row-action'
+import { PermissionKeys } from '../../../shared/auth/permissionKeys'
+import { usePermissions } from '../../auth/usePermissions'
 
 type FilterDraft = {
   from: string
@@ -65,7 +67,7 @@ const priceFormatter = new Intl.NumberFormat('uk-UA', {
   minimumFractionDigits: 2,
 })
 
-function useSupplyReturnsPageModel() {
+function useSupplyReturnsPageModel(canExportDocument: boolean, canOpenDetails: boolean) {
   const { t } = useI18n()
   const today = useMemo(() => formatLocalDate(new Date()), [])
   const initialFilters = useMemo<FilterDraft>(
@@ -122,6 +124,10 @@ function useSupplyReturnsPageModel() {
 
   const openDetail = useCallback(
     async (supplyReturn: SupplyReturn) => {
+      if (!canOpenDetails) {
+        return
+      }
+
       const requestId = detailRequestRef.current + 1
       detailRequestRef.current = requestId
       setSelectedReturn(supplyReturn)
@@ -155,12 +161,12 @@ function useSupplyReturnsPageModel() {
         }
       }
     },
-    [setDetailError, setDetailLoading, setSelectedReturn, t],
+    [canOpenDetails, setDetailError, setDetailLoading, setSelectedReturn, t],
   )
 
   const openDownload = useCallback(
     async (supplyReturn: SupplyReturn) => {
-      if (!supplyReturn.NetUid) {
+      if (!canExportDocument || !supplyReturn.NetUid) {
         return
       }
 
@@ -187,11 +193,11 @@ function useSupplyReturnsPageModel() {
         }
       }
     },
-    [setDownloadDocument, setDownloadError, setDownloadOpened, setDownloading, t],
+    [canExportDocument, setDownloadDocument, setDownloadError, setDownloadOpened, setDownloading, t],
   )
 
   const returnIndexMap = useMemo(() => buildIndexMap(supplyReturns), [supplyReturns])
-  const columns = useSupplyReturnColumns(openDetail, returnIndexMap)
+  const columns = useSupplyReturnColumns(canOpenDetails ? openDetail : undefined, returnIndexMap)
 
   const changePageSize = useCallback(
     (value: number) => {
@@ -250,6 +256,8 @@ function useSupplyReturnsPageModel() {
     applyFilters,
     closeDetail,
     closeDownload,
+    canExportDocument,
+    canOpenDetails,
     openDetail,
     openDownload,
     reload,
@@ -341,7 +349,37 @@ function useSupplyReturnsLoader({
 }
 
 export function SupplyReturnsPage() {
-  const model = useSupplyReturnsPageModel()
+  const { t } = useI18n()
+  const { can, isLoading } = usePermissions()
+
+  if (isLoading) {
+    return <Text c="dimmed">{t('Завантаження')}</Text>
+  }
+
+  if (!can(PermissionKeys.WarehouseAccounting.SupplierReturns.Page.View)) {
+    return (
+      <Alert color="red" icon={<CircleAlert size={18} />} title={t('Доступ заборонено')} variant="light">
+        {t('Недостатньо прав для перегляду повернень постачальникам')}
+      </Alert>
+    )
+  }
+
+  return (
+    <SupplyReturnsPageContent
+      canExportDocument={can(PermissionKeys.WarehouseAccounting.SupplierReturns.Document.Export)}
+      canOpenDetails={can(PermissionKeys.WarehouseAccounting.SupplierReturns.Return.OpenDetails)}
+    />
+  )
+}
+
+function SupplyReturnsPageContent({
+  canExportDocument,
+  canOpenDetails,
+}: {
+  canExportDocument: boolean
+  canOpenDetails: boolean
+}) {
+  const model = useSupplyReturnsPageModel(canExportDocument, canOpenDetails)
 
   return <SupplyReturnsPageView model={model} />
 }
@@ -360,6 +398,7 @@ function SupplyReturnsTableCard({ model }: { model: ReturnType<typeof useSupplyR
   const [tableToolbarSlot, setTableToolbarSlot] = useState<HTMLDivElement | null>(null)
   const {
     changePageSize,
+    canOpenDetails,
     columns,
     error,
     filterDraft,
@@ -442,7 +481,7 @@ function SupplyReturnsTableCard({ model }: { model: ReturnType<typeof useSupplyR
           showLayoutControls
           tableId="supply-returns"
           toolbarPortalTarget={tableToolbarSlot}
-          onRowClick={openDetail}
+          onRowClick={canOpenDetails ? openDetail : undefined}
         />
       </div>
     </Card>
@@ -454,6 +493,7 @@ function SupplyReturnDetailDrawer({ model }: { model: ReturnType<typeof useSuppl
   const {
     closeDetail,
     closeDownload,
+    canExportDocument,
     detailError,
     downloadDocument,
     downloadError,
@@ -474,18 +514,20 @@ function SupplyReturnDetailDrawer({ model }: { model: ReturnType<typeof useSuppl
     >
       {selectedReturn && (
         <>
-          <Group justify="flex-end" mb="md">
-            <Button
-              color={CREATE_ACTION_COLOR}
-              disabled={!selectedReturn.NetUid}
-              leftSection={<Download size={16} />}
-              loading={isDownloading}
-              variant="outline"
-              onClick={() => openDownload(selectedReturn)}
-            >
-              {t('Завантажити')}
-            </Button>
-          </Group>
+          {canExportDocument && (
+            <Group justify="flex-end" mb="md">
+              <Button
+                color={CREATE_ACTION_COLOR}
+                disabled={!selectedReturn.NetUid}
+                leftSection={<Download size={16} />}
+                loading={isDownloading}
+                variant="outline"
+                onClick={() => openDownload(selectedReturn)}
+              >
+                {t('Завантажити')}
+              </Button>
+            </Group>
+          )}
           <SupplyReturnDetail error={detailError} isLoading={isDetailLoading} supplyReturn={selectedReturn} />
         </>
       )}
@@ -503,7 +545,7 @@ function SupplyReturnDetailDrawer({ model }: { model: ReturnType<typeof useSuppl
 }
 
 function useSupplyReturnColumns(
-  onOpenDetail: (supplyReturn: SupplyReturn) => void,
+  onOpenDetail: ((supplyReturn: SupplyReturn) => void) | undefined,
   indexMap: Map<SupplyReturn, number>,
 ) {
   const { t } = useI18n()
@@ -637,7 +679,7 @@ function useSupplyReturnColumns(
         enableReorder: false,
         enableResizing: false,
         enableSorting: false,
-        cell: (supplyReturn) => (
+        cell: (supplyReturn) => onOpenDetail ? (
           <Box onClick={(event) => event.stopPropagation()}>
             <TableRowAction
               action="details"
@@ -645,7 +687,7 @@ function useSupplyReturnColumns(
               onClick={() => onOpenDetail(supplyReturn)}
             />
           </Box>
-        ),
+        ) : null,
       },
     ],
     [indexMap, onOpenDetail, t],

@@ -63,7 +63,7 @@ describe('client resource currency API', () => {
     await createClientResourceCurrency(currency)
 
     expect(mocks.prepare).toHaveBeenCalledWith(currency)
-    expect(mocks.apiRequest).toHaveBeenCalledWith('/currencies/new', {
+    expect(mocks.apiRequest).toHaveBeenCalledWith('/currencies/client-resources/new', {
       body: currency,
       headers: {
         'Idempotency-Key': '11111111-1111-4111-8111-111111111111',
@@ -86,7 +86,7 @@ describe('client resource currency API', () => {
 
     expect(mocks.apiRequest).toHaveBeenNthCalledWith(
       1,
-      '/currencies/update',
+      '/currencies/client-resources/update',
       {
         body: currency,
         method: 'PUT',
@@ -94,7 +94,7 @@ describe('client resource currency API', () => {
     )
     expect(mocks.apiRequest).toHaveBeenNthCalledWith(
       2,
-      '/currencies/delete',
+      '/currencies/client-resources/delete',
       {
         method: 'DELETE',
         query: {

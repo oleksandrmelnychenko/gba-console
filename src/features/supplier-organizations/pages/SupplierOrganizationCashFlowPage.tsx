@@ -4,6 +4,7 @@ import {
   Select,
   SimpleGrid,
   Stack,
+  Text,
   TextInput,
   Tooltip,
 } from '@mantine/core'
@@ -26,6 +27,8 @@ import type {
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
+import { PermissionKeys } from '../../../shared/auth/permissionKeys'
+import { usePermissions } from '../../auth/usePermissions'
 import {
   closePendingExportDocumentWindow,
   openExportDocumentInWindow,
@@ -35,8 +38,8 @@ import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn } from '../../../shared/ui/data-table/types'
 import {
-  getSupplierOrganizationCashFlow,
-  getSupplyOrganization,
+  getSupplierOrganizationSettlementsCashFlow,
+  getSupplierOrganizationSettlementsDetails,
 } from '../api/supplierOrganizationsApi'
 import type { SupplyOrganization } from '../types'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
@@ -88,6 +91,28 @@ const moneyFormatter = new Intl.NumberFormat('uk-UA', {
 
 export function SupplierOrganizationCashFlowPage() {
   const { t } = useI18n()
+  const { can, isLoading } = usePermissions()
+
+  if (isLoading) {
+    return <Text c="dimmed">{t('Завантаження')}</Text>
+  }
+
+  if (
+    !can(PermissionKeys.SupplierOrganizations.Page.View)
+    || !can(PermissionKeys.SupplierOrganizations.Settlements.Open)
+  ) {
+    return (
+      <Alert color="red" icon={<CircleAlert size={18} />} title={t('Доступ заборонено')} variant="light">
+        {t('Недостатньо прав для перегляду взаєморозрахунків')}
+      </Alert>
+    )
+  }
+
+  return <SupplierOrganizationCashFlowPageContent />
+}
+
+function SupplierOrganizationCashFlowPageContent() {
+  const { t } = useI18n()
   const navigate = useNavigate()
   const { id } = useParams()
   const [organization, setOrganization] = useValueState<SupplyOrganization | null>(null)
@@ -119,7 +144,7 @@ export function SupplierOrganizationCashFlowPage() {
     setError(null)
 
     try {
-      const nextOrganization = await getSupplyOrganization(id)
+      const nextOrganization = await getSupplierOrganizationSettlementsDetails(id)
 
       if (organizationRequestRef.current === requestId) {
         setOrganization(nextOrganization)
@@ -160,7 +185,7 @@ export function SupplierOrganizationCashFlowPage() {
     setError(null)
 
     try {
-      const nextCashFlow = await getSupplierOrganizationCashFlow({
+      const nextCashFlow = await getSupplierOrganizationSettlementsCashFlow({
         from: fromDate,
         netId,
         to: toDate,

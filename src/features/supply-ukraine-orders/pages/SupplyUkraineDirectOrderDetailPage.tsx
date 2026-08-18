@@ -22,6 +22,7 @@ import { useEffect, useReducer, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import './supply-order-detail.css'
 import { formatLocalDate, formatLocalDateTime } from '../../../shared/date/dateTime'
+import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { SUPPLY_ORDER_INCOME_STATUS_LABEL } from '../../../shared/supplyOrderIncomeStatus'
 import { upgradeHttpToHttps } from '../../../shared/url/upgradeHttpToHttps'
@@ -54,11 +55,11 @@ const TRANSPORTATION_OPTIONS: Array<{ label: string, value: string }> = [
   { label: 'Море', value: '1' },
   { label: 'Авіа', value: '2' },
 ]
-const PERMISSION_APPROVE_ORDER = 'LOGISTIC_WAY_ordersUkraineAllEdit_ApprovedSupplyOrderStatus_PKEY'
-const PERMISSION_CREDIT_NOTES = 'LOGISTIC_WAY_ordersUkraineAllEdit_CreditNotes_PKEY'
-const PERMISSION_EDIT_ORDER_AMOUNT = 'LOGISTIC_WAY_ordersUkraineAllEdit_EditSupplyNewAmount_PKEY'
-const PERMISSION_OPEN_DIRECT_INVOICES = 'UkraineAllOrders_SelectAnOption_Products_PKEY'
-const PERMISSION_OPEN_DIRECT_PRODUCT_INCOME = 'UkraineAllOrders_SelectAnOption_PlacementSupplyOrder_PKEY'
+const PERMISSION_APPROVE_ORDER = PermissionKeys.OrdersUkraine.LogisticWay.ApproveOrder
+const PERMISSION_CREDIT_NOTES = PermissionKeys.OrdersUkraine.LogisticWay.CreateCreditNote
+const PERMISSION_EDIT_ORDER_AMOUNT = PermissionKeys.OrdersUkraine.LogisticWay.EditOrderQuantity
+const PERMISSION_OPEN_DIRECT_INVOICES = PermissionKeys.OrdersUkraine.Order.OpenProducts
+const PERMISSION_OPEN_DIRECT_PRODUCT_INCOME = PermissionKeys.OrdersUkraine.Order.OpenProductIncome
 const dateTimeFormatter = new Intl.DateTimeFormat('uk-UA', { dateStyle: 'short', timeStyle: 'short' })
 const numberFormatter = new Intl.NumberFormat('uk-UA')
 const moneyFormatter = new Intl.NumberFormat('uk-UA', {

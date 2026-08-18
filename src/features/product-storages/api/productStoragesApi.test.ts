@@ -151,7 +151,7 @@ describe('productStoragesApi', () => {
       totalQty: 12,
     })
 
-    expect(apiRequestMock).toHaveBeenCalledWith('/storages/all/available/filtered', {
+    expect(apiRequestMock).toHaveBeenCalledWith('/storages/warehouse-accounting/available/filtered', {
       query: {
         from: '2026-06-01',
         limit: 20,
@@ -337,7 +337,7 @@ describe('productStoragesApi', () => {
     await vi.waitFor(() => expect(apiRequestMock).toHaveBeenCalledTimes(1))
 
     expect(apiRequestMock).toHaveBeenCalledWith(
-      '/orders/depreciated/new',
+      '/orders/depreciated/warehouse-accounting/new',
       expect.objectContaining({
         method: 'POST',
         dedupe: false,

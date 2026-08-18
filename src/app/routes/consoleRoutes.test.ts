@@ -2,7 +2,41 @@ import { isValidElement } from 'react'
 import { Navigate } from 'react-router-dom'
 import { describe, expect, it } from 'vitest'
 import { PaymentArticlesPage } from '../../features/payment-articles/PaymentArticlesPage'
+import { PermissionKeys } from '../../shared/auth/permissionKeys'
 import { consoleRoutes } from './consoleRoutes'
+
+const EXPECTED_NEW_PAGE_PERMISSIONS = {
+  '/dashboard': PermissionKeys.SystemPages.Dashboard.View,
+  '/administration/vehicle-registry':
+    PermissionKeys.SystemPages.VehicleRegistry.View,
+  '/accounting/payment-expense-articles':
+    PermissionKeys.SystemPages.ExpenseArticles.View,
+  '/basket-supply-ukraine-order': PermissionKeys.SystemPages.SupplyCart.View,
+  '/sales': PermissionKeys.SystemPages.SupplySales.View,
+  '/service/organisations':
+    PermissionKeys.SystemPages.ServiceOrganisations.View,
+  '/sad/all': PermissionKeys.SystemPages.Sad.View,
+  '/tax-free/carriers/all': PermissionKeys.SystemPages.TaxFreeCarriers.View,
+  '/tax-free/all': PermissionKeys.SystemPages.TaxFreeDocuments.View,
+  '/tax-free/pack-list/all': PermissionKeys.SystemPages.TaxFreePackLists.View,
+} as const
+
+describe('newly classified page permissions', () => {
+  it.each(Object.entries(EXPECTED_NEW_PAGE_PERMISSIONS))(
+    'maps %s to one canonical page key',
+    (path, permissionKey) => {
+      const route = consoleRoutes.find((candidate) => candidate.path === path)
+
+      expect(route?.permissionKey).toBe(permissionKey)
+    },
+  )
+
+  it('keeps every canonical page key unique', () => {
+    const keys = Object.values(EXPECTED_NEW_PAGE_PERMISSIONS)
+
+    expect(new Set(keys).size).toBe(keys.length)
+  })
+})
 
 describe('console report routes', () => {
   it('registers both sales-report URLs as direct routes', () => {
@@ -30,7 +64,9 @@ describe('legacy client return route', () => {
     expect(isValidElement(route?.element)).toBe(true)
 
     if (!isValidElement(route?.element)) {
-      throw new Error('Expected the legacy client return route to render a redirect')
+      throw new Error(
+        'Expected the legacy client return route to render a redirect',
+      )
     }
 
     expect(route.element.type).toBe(Navigate)
@@ -46,7 +82,10 @@ describe('console payment article routes', () => {
     '/accounting/payment-expense-articles',
     '/accounting/payment-cashflow-articles',
   ]
-  const formPaths = listPaths.flatMap((path) => [`${path}/new`, `${path}/edit/:id`])
+  const formPaths = listPaths.flatMap((path) => [
+    `${path}/new`,
+    `${path}/edit/:id`,
+  ])
 
   it('keeps both legacy list and form URLs registered', () => {
     const paths = new Set(consoleRoutes.map((route) => route.path))
@@ -56,17 +95,20 @@ describe('console payment article routes', () => {
     }
   })
 
-  it.each(listPaths)('renders %s as the combined two-table articles screen', (path) => {
-    const route = consoleRoutes.find((candidate) => candidate.path === path)
+  it.each(listPaths)(
+    'renders %s as the combined two-table articles screen',
+    (path) => {
+      const route = consoleRoutes.find((candidate) => candidate.path === path)
 
-    expect(isValidElement(route?.element)).toBe(true)
+      expect(isValidElement(route?.element)).toBe(true)
 
-    if (!isValidElement(route?.element)) {
-      throw new Error(`Expected ${path} to render a React element`)
-    }
+      if (!isValidElement(route?.element)) {
+        throw new Error(`Expected ${path} to render a React element`)
+      }
 
-    expect(route.element.type).toBe(PaymentArticlesPage)
-  })
+      expect(route.element.type).toBe(PaymentArticlesPage)
+    },
+  )
 })
 
 describe('retired VAT register', () => {

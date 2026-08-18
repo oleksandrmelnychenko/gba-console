@@ -24,6 +24,7 @@ import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { TableRowAction } from '../../../shared/ui/table-row-action'
 import { PermissionGate } from '../../auth/components/PermissionGate'
+import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { createProductGroup, getProductGroups, getRootProductGroups } from '../api/productGroupsApi'
 import { PRODUCT_GROUPS_ADD_PERMISSION } from '../permissions'
 import { ProductGroupForm } from '../components/ProductGroupForm'
@@ -53,6 +54,24 @@ const PRODUCT_GROUP_SEARCH_DEBOUNCE_MS = 300
 type ProductGroupFieldChange = <TKey extends keyof ProductGroup>(key: TKey, value: ProductGroup[TKey]) => void
 
 export function ProductGroupsPage() {
+  return (
+    <PermissionGate permissionKey={PermissionKeys.ProductGroups.Page.View} fallback={<ProductGroupsPermissionDenied />}>
+      <ProductGroupsPageContent />
+    </PermissionGate>
+  )
+}
+
+function ProductGroupsPermissionDenied() {
+  const { t } = useI18n()
+
+  return (
+    <Alert color="red" icon={<CircleAlert size={18} />} title={t('Доступ заборонено')} variant="light">
+      {t('У вашої ролі немає права переглядати товарні групи.')}
+    </Alert>
+  )
+}
+
+function ProductGroupsPageContent() {
   const { t } = useI18n()
   const navigate = useNavigate()
   const location = useLocation()

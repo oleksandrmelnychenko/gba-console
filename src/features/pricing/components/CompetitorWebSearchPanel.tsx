@@ -20,7 +20,9 @@ import {
 import { useEffect, useId, useMemo, useRef, useState } from 'react'
 import { ApiError } from '../../../shared/api/apiClient'
 import { AiFeatureBadge } from '../../../shared/ai/AiFeatureBadge'
+import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { useI18n } from '../../../shared/i18n/useI18n'
+import { usePermissions } from '../../auth/usePermissions'
 import type { SalesUkraineProduct } from '../../sales-ukraine/types'
 import { searchCompetitorPrices } from '../api/pricingApi'
 import type {
@@ -143,6 +145,10 @@ function CompetitorWebSearchPanelContent({
   productNetUid: string | null
 }) {
   const { t } = useI18n()
+  const { can } = usePermissions()
+  const canRunCompetitorSearch = can(
+    PermissionKeys.ProductPricing.CompetitorSearch.Run,
+  )
   const [query, setQuery] = useState(initialQuery)
   const [selectedSources, setSelectedSources] = useState<CompetitorSourceKey[]>(DEFAULT_SOURCES)
   const [status, setStatus] = useState<SearchStatus>('idle')
@@ -151,7 +157,7 @@ function CompetitorWebSearchPanelContent({
   const controllerRef = useRef<AbortController | null>(null)
 
   const trimmedQuery = query.trim()
-  const searchDisabled = trimmedQuery.length < 2 || selectedSources.length === 0 || status === 'loading'
+  const searchDisabled = !canRunCompetitorSearch || trimmedQuery.length < 2 || selectedSources.length === 0 || status === 'loading'
 
   useEffect(() => () => controllerRef.current?.abort(), [])
 
@@ -164,7 +170,7 @@ function CompetitorWebSearchPanelContent({
   }
 
   const runSearch = async () => {
-    if (searchDisabled) {
+    if (!canRunCompetitorSearch || searchDisabled) {
       return
     }
 
@@ -235,15 +241,17 @@ function CompetitorWebSearchPanelContent({
             placeholder={t('OE номер, артикул або точна назва товару')}
             value={query}
           />
-          <Button
-            className="competitor-radar__search-button"
-            disabled={searchDisabled}
-            leftSection={status === 'loading' ? undefined : <Sparkles size={16} />}
-            loading={status === 'loading'}
-            onClick={() => void runSearch()}
-          >
-            {status === 'loading' ? t('Сканую ринок') : t('Знайти ціни')}
-          </Button>
+          {canRunCompetitorSearch && (
+            <Button
+              className="competitor-radar__search-button"
+              disabled={searchDisabled}
+              leftSection={status === 'loading' ? undefined : <Sparkles size={16} />}
+              loading={status === 'loading'}
+              onClick={() => void runSearch()}
+            >
+              {status === 'loading' ? t('Сканую ринок') : t('Знайти ціни')}
+            </Button>
+          )}
         </div>
 
         <div className="competitor-radar__source-row" aria-label={t('Джерела пошуку')}>
@@ -280,7 +288,10 @@ function CompetitorWebSearchPanelContent({
         {status === 'loading' ? (
           <ScanningState selectedSources={selectedSources} />
         ) : status === 'success' && result ? (
-          <SearchResults result={result} onRefresh={() => void runSearch()} />
+          <SearchResults
+            result={result}
+            onRefresh={canRunCompetitorSearch ? () => void runSearch() : undefined}
+          />
         ) : status === 'error' || status === 'unavailable' ? (
           <SearchFallback error={error} query={trimmedQuery} status={status} />
         ) : (
@@ -437,7 +448,7 @@ function SearchResults({
   onRefresh,
   result,
 }: {
-  onRefresh: () => void
+  onRefresh?: () => void
   result: CompetitorPriceSearchResult
 }) {
   const { t } = useI18n()
@@ -475,15 +486,17 @@ function SearchResults({
             <Clock3 size={12} /> {formatScanTime(result.searched_at)}
           </Text>
         </div>
-        <Button
-          className="competitor-radar__refresh"
-          leftSection={<RefreshCw size={14} />}
-          onClick={onRefresh}
-          size="xs"
-          variant="subtle"
-        >
-          {t('Оновити')}
-        </Button>
+        {onRefresh && (
+          <Button
+            className="competitor-radar__refresh"
+            leftSection={<RefreshCw size={14} />}
+            onClick={onRefresh}
+            size="xs"
+            variant="subtle"
+          >
+            {t('Оновити')}
+          </Button>
+        )}
       </div>
 
       <div className="competitor-radar__stats">

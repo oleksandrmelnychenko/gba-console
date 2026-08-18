@@ -9,7 +9,7 @@ import type {
 export async function getProductSpecifications(
   params: ProductSpecificationsSearchParams,
 ): Promise<ProductSpecification[]> {
-  const result = await apiRequest<unknown>('/specifications/get/all/filtered', {
+  const result = await apiRequest<unknown>('/specifications/page/get/all/filtered', {
     query: {
       vendorCode: params.vendorCode?.trim() || '',
       specificationCode: params.specificationCode?.trim() || '',
@@ -27,7 +27,7 @@ export async function getProductSpecifications(
 export async function changeProductSpecification(
   payload: ChangeProductSpecificationPayload,
 ): Promise<ProductSpecification | null> {
-  const result = await apiRequest<unknown>('/specifications/change', {
+  const result = await apiRequest<unknown>('/specifications/page/change', {
     method: 'POST',
     query: {
       specificationChangeMode: payload.specificationChangeMode,

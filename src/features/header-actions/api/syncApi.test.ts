@@ -30,7 +30,7 @@ describe('sync API contracts', () => {
 
     await expect(getSyncStatus()).resolves.toEqual({ IsInProgress: false })
 
-    expect(apiRequestMock).toHaveBeenCalledWith('/data/sync/status', {
+    expect(apiRequestMock).toHaveBeenCalledWith('/data/sync/online-shop-seo/status', {
       errorMessages: {
         default: 'Не вдалося отримати статус синхронізації',
         network: 'Сервер синхронізації недоступний',
@@ -49,7 +49,7 @@ describe('sync API contracts', () => {
       types,
     })
 
-    expect(apiRequestMock).toHaveBeenCalledWith('/data/sync/start', {
+    expect(apiRequestMock).toHaveBeenCalledWith('/data/sync/online-shop-seo/start', {
       headers: {
         'X-GBA-Sync-Operation-Id': operationId,
       },
@@ -90,7 +90,7 @@ describe('sync API contracts', () => {
       Message: 'Синхронізацію запущено',
     })
 
-    expect(apiRequestMock).toHaveBeenCalledWith('/data/sync/start/daily', {
+    expect(apiRequestMock).toHaveBeenCalledWith('/data/sync/online-shop-seo/start/daily', {
       headers: {
         'X-GBA-Sync-Operation-Id': operationId,
       },
@@ -123,7 +123,7 @@ describe('sync API contracts', () => {
       types: [String(SyncProductConsignmentType.Sales)],
     })
 
-    expect(apiRequestMock).toHaveBeenCalledWith('/data/sync/start/session', {
+    expect(apiRequestMock).toHaveBeenCalledWith('/data/sync/online-shop-seo/start/session', {
       headers: {
         'X-GBA-Sync-Operation-Id': operationId,
       },
@@ -160,7 +160,7 @@ describe('sync API contracts', () => {
       types,
     })
 
-    expect(apiRequestMock).toHaveBeenCalledWith('/data/sync/start/session', {
+    expect(apiRequestMock).toHaveBeenCalledWith('/data/sync/online-shop-seo/start/session', {
       headers: {
         'X-GBA-Sync-Operation-Id': operationId,
       },

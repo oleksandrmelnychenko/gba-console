@@ -4,6 +4,7 @@ import { Box as BoxIcon, FileSignature, Hash, Search, Settings, Sparkles, Trash2
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { useAuth } from '../../../auth/useAuth'
 import { useI18n } from '../../../../shared/i18n/useI18n'
+import { PermissionKeys } from '../../../../shared/auth/permissionKeys'
 import { AppModal } from '../../../../shared/ui/AppModal'
 import { toProxiedAssetUrl } from '../../../../shared/url/proxiedAssetUrl'
 import { realtimeEvents, useRealtimeEvent } from '../../../../shared/realtime/events'
@@ -138,7 +139,7 @@ import {
 import { WizardShoppingCartGrid } from './WizardShoppingCartGrid'
 
 const EMPTY_GUID = '00000000-0000-0000-0000-000000000000'
-const CHANGE_PRODUCT_DESCRIPTION_PERMISSION = 'Sales_Ukraine_all_Change_Products_Btn_PKEY'
+const CHANGE_PRODUCT_DESCRIPTION_PERMISSION = PermissionKeys.SalesUkraine.Sale.EditProductComment
 const amountFormatter = new Intl.NumberFormat('uk-UA', { maximumFractionDigits: 2, minimumFractionDigits: 2 })
 const qtyFormatter = new Intl.NumberFormat('uk-UA', { maximumFractionDigits: 3 })
 const PRODUCT_SEARCH_MIN_QUERY_LENGTH = 3

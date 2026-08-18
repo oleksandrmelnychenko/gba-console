@@ -12,6 +12,8 @@ import type { DataTableColumn } from '../../../shared/ui/data-table/types'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { TableRowAction } from '../../../shared/ui/table-row-action'
 import { useAuth } from '../../auth/useAuth'
+import { usePermissions } from '../../auth/usePermissions'
+import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import {
   getAllCurrencyTraders,
   getCurrencyTraderExchangeRates,
@@ -356,6 +358,25 @@ function useCurrencyConvertorsPageModel() {
 }
 
 export function CurrencyConvertorsPage() {
+  const { t } = useI18n()
+  const { can, isLoading } = usePermissions()
+
+  if (isLoading) {
+    return <Text c="dimmed">{t('Завантаження')}</Text>
+  }
+
+  if (!can(PermissionKeys.FinancialAdministration.CurrencyConvertors.Page.View)) {
+    return (
+      <Alert color="red" icon={<CircleAlert size={18} />} title={t('Доступ заборонено')} variant="light">
+        {t('Недостатньо прав для перегляду валютних трейдерів')}
+      </Alert>
+    )
+  }
+
+  return <CurrencyConvertorsPageContent />
+}
+
+function CurrencyConvertorsPageContent() {
   const model = useCurrencyConvertorsPageModel()
   const { t } = useI18n()
   const [tableToolbarSlot, setTableToolbarSlot] = useState<HTMLDivElement | null>(null)

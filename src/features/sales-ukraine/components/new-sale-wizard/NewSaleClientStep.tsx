@@ -6,15 +6,30 @@ import { formatLocalDate } from '../../../../shared/date/dateTime'
 import { useI18n } from '../../../../shared/i18n/useI18n'
 import { realtimeEvents, useRealtimeEvent } from '../../../../shared/realtime/events'
 import { SaleAuditDetail } from '../../../../shared/sale-audit/SaleAuditDetail'
-import { getSaleStatisticBySaleId } from '../../../../shared/sale-audit/saleAuditApi'
+import {
+  confirmSalesUkraineSaleAuditHistory,
+  getSaleStatisticBySaleId,
+  getSalesUkraineEditSaleStatistic,
+  getSalesUkraineSaleAudit,
+  getSalesUkraineSaleAuditInvoiceDocument,
+  getSalesUkraineSaleAuditShiftedDocument,
+} from '../../../../shared/sale-audit/saleAuditApi'
 import type { SaleAuditStatistic } from '../../../../shared/sale-audit/saleAuditTypes'
 import { AppDrawer } from '../../../../shared/ui/AppDrawer'
 import { DocumentExportModal } from '../../../../shared/ui/document-export-modal/DocumentExportModal'
-import { useAuth } from '../../../auth/useAuth'
 import { getClientSubClients, getRootClientBySubClientNetId } from '../../../clients/api/clientCabinetApi'
 import type { Client, ClientAgreement, ClientInDebt } from '../../../clients/types'
-import { getSaleActProtocolEditDocument, getSaleById, updateSale } from '../../api/salesUkraineApi'
-import { SALES_UKRAINE_EDIT_PERMISSION } from '../../permissions'
+import {
+  getSaleActProtocolEditDocument,
+  getSaleById,
+  getSalesUkraineCurrentUnmergedSale,
+  createSalesUkraineMergedSale,
+  getSalesUkraineDeliveryDetails,
+  getSalesUkraineEditDetails,
+  getSalesUkraineMergedDetails,
+  getSalesUkraineSaleAuditEditActDocument,
+  updateSale,
+} from '../../api/salesUkraineApi'
 import type { SaleDocumentResult, SalesUkraineClientAgreement, SalesUkraineSale } from '../../types'
 import { MergedSalesDrawer } from '../MergedSalesDrawer'
 import { SaleDetailsDrawer } from '../SaleDetailsDrawer'
@@ -55,7 +70,18 @@ type WizardPrintState = {
 const WIZARD_CLIENT_SEARCH_MIN_LENGTH = 3
 const WIZARD_CLIENT_ARROW_LOAD_DEBOUNCE_MS = 220
 
+const SALES_UKRAINE_AUDIT_DOCUMENT_API = {
+  confirm: confirmSalesUkraineSaleAuditHistory,
+  getInvoice: getSalesUkraineSaleAuditInvoiceDocument,
+  getShifted: getSalesUkraineSaleAuditShiftedDocument,
+}
+
 export function NewSaleClientStep({
+  canCreate = true,
+  canEdit = true,
+  canOpenDeliveryDetails = true,
+  canOpenDetails = true,
+  canViewAudit = true,
   clientNetId,
   headerClose,
   headerTools,
@@ -68,7 +94,13 @@ export function NewSaleClientStep({
   onEditMergedSale,
   onInvoiceMergedSale,
   onRequestClose,
+  permissionScopedSalesUkraineApi = false,
 }: {
+  canCreate?: boolean
+  canEdit?: boolean
+  canOpenDeliveryDetails?: boolean
+  canOpenDetails?: boolean
+  canViewAudit?: boolean
   clientNetId: string | null
   headerClose?: ReactNode
   headerTools?: ReactNode
@@ -81,11 +113,10 @@ export function NewSaleClientStep({
   onInvoiceMergedSale?: (sale: SalesUkraineSale, unionSale: SalesUkraineSale | null) => void
   onOpenSale: (sale: SalesUkraineSale) => void
   onRequestClose?: () => void
+  permissionScopedSalesUkraineApi?: boolean
 }) {
   const { t } = useI18n()
-  const { hasPermission } = useAuth()
   const runSaleUpdate = usePersistentSaleJsonMutationRunner('sale-update')
-  const canEdit = hasPermission(SALES_UKRAINE_EDIT_PERMISSION)
   const { state: keyboardState, setState: setKeyboardState } = useWizardKeyboard(0)
 
   const [query, setQuery] = useState('')
@@ -791,6 +822,10 @@ export function NewSaleClientStep({
   }
 
   function openRow(sale: SalesUkraineSale) {
+    if (!canOpenDetails) {
+      return
+    }
+
     if (sale.InputSaleMerges?.length) {
       setMergedSale(sale)
     } else {
@@ -833,12 +868,21 @@ export function NewSaleClientStep({
     setRegistryItems((current) => current.map((item) => (item.Sale?.NetUid === netId ? statistic : item)))
   }
 
-  async function refreshRegistryRow(sale: SalesUkraineSale, autoExpand: boolean) {
+  async function refreshRegistryRow(
+    sale: SalesUkraineSale,
+    autoExpand: boolean,
+    semantic: 'audit' | 'edit' = 'edit',
+  ) {
     if (!sale.NetUid) {
       return
     }
 
-    const statistic = await getSaleStatisticBySaleId(sale.NetUid).catch(() => null)
+    const loadStatistic = permissionScopedSalesUkraineApi
+      ? semantic === 'audit'
+        ? getSalesUkraineSaleAudit
+        : getSalesUkraineEditSaleStatistic
+      : getSaleStatisticBySaleId
+    const statistic = await loadStatistic(sale.NetUid).catch(() => null)
 
     if (statistic?.Sale) {
       replaceRegistryRow(statistic as unknown as WizardSaleRegisterStatistic, autoExpand)
@@ -851,6 +895,10 @@ export function NewSaleClientStep({
   }
 
   function openAudit(sale: SalesUkraineSale) {
+    if (!canViewAudit) {
+      return
+    }
+
     setAuditSale(sale)
     setAuditStatistic(null)
     setAuditError(null)
@@ -865,7 +913,9 @@ export function NewSaleClientStep({
 
     void (async () => {
       try {
-        const statistic = await getSaleStatisticBySaleId(sale.NetUid as string)
+        const statistic = await (permissionScopedSalesUkraineApi
+          ? getSalesUkraineSaleAudit
+          : getSaleStatisticBySaleId)(sale.NetUid as string)
 
         if (auditRequestRef.current === requestId) {
           setAuditStatistic(statistic)
@@ -895,6 +945,10 @@ export function NewSaleClientStep({
   }
 
   async function printRow(sale: SalesUkraineSale) {
+    if (!canViewAudit) {
+      return
+    }
+
     const netId = sale.NetUid
 
     if (!netId) {
@@ -911,9 +965,11 @@ export function NewSaleClientStep({
     // row is a lightweight SalesRegisterModel, so hydrate the full sale first — posting an
     // un-hydrated sale to /sales/update would wipe its OrderPackages (empty Order.OrderPackages ->
     // RemoveAllByOrderId).
-    if (!sale.IsPrintedActProtocolEdit) {
+    if (canEdit && !sale.IsPrintedActProtocolEdit) {
       try {
-        const hydrated = await getSaleById(netId)
+        const hydrated = await (permissionScopedSalesUkraineApi
+          ? getSalesUkraineEditDetails
+          : getSaleById)(netId)
 
         if (hydrated) {
           const attempt = await runSaleUpdate(
@@ -931,10 +987,12 @@ export function NewSaleClientStep({
       }
     }
 
-    void refreshRegistryRow(sale, true)
+    void refreshRegistryRow(sale, true, 'audit')
 
     try {
-      const document = await getSaleActProtocolEditDocument(netId)
+      const document = await (permissionScopedSalesUkraineApi
+        ? getSalesUkraineSaleAuditEditActDocument
+        : getSaleActProtocolEditDocument)(netId)
 
       if (printRequestRef.current === requestId) {
         setPrintState({ document, isLoading: false })
@@ -1122,6 +1180,9 @@ export function NewSaleClientStep({
               </Box>
               <WizardClientRegistry
                 canEdit={canEdit}
+                canOpenDeliveryDetails={canOpenDeliveryDetails}
+                canOpenDetails={canOpenDetails}
+                canViewAudit={canViewAudit}
                 dateFrom={dateFrom}
                 dateTo={dateTo}
                 isLoading={isRegistryLoading}
@@ -1134,7 +1195,11 @@ export function NewSaleClientStep({
                 onChangeDateTo={handleDateToChange}
                 onChangeSaleSearch={handleSaleSearchChange}
                 onChangeStatus={handleStatusChange}
-                onDeliveryRow={setDetailsSale}
+                onDeliveryRow={(sale) => {
+                  if (canOpenDeliveryDetails) {
+                    setDetailsSale(sale)
+                  }
+                }}
                 onEditRow={openEditRow}
                 onOpenOrderedProducts={() => setOrderedProductsOpen(true)}
                 onOpenRow={openRow}
@@ -1172,10 +1237,18 @@ export function NewSaleClientStep({
         title={t('Рух товарно-матеріальних цінностей')}
         onClose={closeAudit}
       >
-        <SaleAuditDetail error={auditError} isLoading={isAuditLoading} statistic={auditStatistic} />
+        <SaleAuditDetail
+          documentApi={permissionScopedSalesUkraineApi ? SALES_UKRAINE_AUDIT_DOCUMENT_API : undefined}
+          error={auditError}
+          isLoading={isAuditLoading}
+          showConfirm={canEdit}
+          statistic={auditStatistic}
+        />
       </AppDrawer>
 
       <SaleDetailsDrawer
+        canEdit={canEdit}
+        loadSale={permissionScopedSalesUkraineApi ? getSalesUkraineDeliveryDetails : getSaleById}
         sale={detailsSale}
         onClose={() => setDetailsSale(null)}
         onSaved={() => {
@@ -1185,13 +1258,20 @@ export function NewSaleClientStep({
       />
 
       <MergedSalesDrawer
+        canCreateInvoice={canCreate}
+        canEdit={canEdit}
         clientAgreementNetId={mergedSale?.ClientAgreement?.NetUid ?? null}
+        loadCurrentUnmergedSale={permissionScopedSalesUkraineApi
+          ? getSalesUkraineCurrentUnmergedSale
+          : undefined}
+        loadMergedSale={permissionScopedSalesUkraineApi ? getSalesUkraineMergedDetails : undefined}
         saleNetId={mergedSale?.NetUid ?? null}
         onChanged={() => void fetchRegister()}
         onClose={() => setMergedSale(null)}
         onCreateNewSale={onCreateMergedMainClientSale ? handleMergedNewSale : undefined}
         onEditSale={onEditMergedSale ? handleMergedEdit : undefined}
         onInvoice={onInvoiceMergedSale ? handleMergedInvoice : undefined}
+        submitMergedSale={permissionScopedSalesUkraineApi ? createSalesUkraineMergedSale : undefined}
       />
 
       <WizardPrintDocumentModal opened={Boolean(printState)} printState={printState} onClose={closePrint} />

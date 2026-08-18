@@ -25,6 +25,7 @@ import { ArrowLeftRight, Check, CircleAlert, ClipboardList, Download, Eye, Rotat
 import { useDebouncedValue } from '@mantine/hooks'
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState, type Dispatch, type SetStateAction } from 'react'
 import { UserRoleType } from '../../../shared/auth/types'
+import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { translate } from '../../../shared/i18n/translate'
@@ -36,6 +37,7 @@ import { Paginator } from '../../../shared/ui/paginator/Paginator'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { TableRowAction } from '../../../shared/ui/table-row-action'
 import { useAuth } from '../../auth/useAuth'
+import { PermissionGate } from '../../auth/components/PermissionGate'
 import './product-storages.css'
 import {
   createProductStorageSupplyReturn,
@@ -67,8 +69,8 @@ const PRODUCT_STORAGES_TABLE_DEFAULT_LAYOUT = {
 
 const pageSizeOptions = ['50', '100', '150']
 const PRODUCT_STORAGES_SEARCH_DEBOUNCE_MS = 200
-const PRODUCT_STORAGES_ACTION_PERMISSION = 'Products_Storages_Action_WithAPosition_Btn_PKEY'
-const PRODUCT_STORAGES_PREVIEW_PERMISSION = 'Products_Storages_Preview_Btn_PKEY'
+const PRODUCT_STORAGES_ACTION_PERMISSION = PermissionKeys.WarehouseAccounting.Storages.PositionAction.Open
+const PRODUCT_STORAGES_PREVIEW_PERMISSION = PermissionKeys.WarehouseAccounting.Storages.Preview.Open
 const amountFormatter = new Intl.NumberFormat('uk-UA', {
   maximumFractionDigits: 3,
 })
@@ -861,6 +863,24 @@ function useProductStoragesPageModel() {
 }
 
 export function ProductStoragesPage() {
+  return (
+    <PermissionGate permissionKey={PermissionKeys.WarehouseAccounting.Storages.Page.View} fallback={<ProductStoragesPermissionDenied />}>
+      <ProductStoragesPageContent />
+    </PermissionGate>
+  )
+}
+
+function ProductStoragesPermissionDenied() {
+  const { t } = useI18n()
+
+  return (
+    <Alert color="red" icon={<CircleAlert size={18} />} title={t('Доступ заборонено')} variant="light">
+      {t('У вашої ролі немає права переглядати складський облік.')}
+    </Alert>
+  )
+}
+
+function ProductStoragesPageContent() {
   const model = useProductStoragesPageModel()
 
   return <ProductStoragesPageView model={model} />

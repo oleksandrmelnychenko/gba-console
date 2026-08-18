@@ -69,6 +69,9 @@ const WIZARD_REGISTER_ITEMS_TABLE_LAYOUT: DataTableDefaultLayout = {
 
 export function WizardClientRegistry({
   canEdit,
+  canOpenDeliveryDetails,
+  canOpenDetails,
+  canViewAudit,
   dateFrom,
   dateTo,
   isLoading,
@@ -88,6 +91,9 @@ export function WizardClientRegistry({
   onPrintRow,
 }: {
   canEdit: boolean
+  canOpenDeliveryDetails: boolean
+  canOpenDetails: boolean
+  canViewAudit: boolean
   dateFrom: string
   dateTo: string
   isLoading: boolean
@@ -176,6 +182,8 @@ export function WizardClientRegistry({
         cell: (sale) => (
           <WizardSaleActionsCell
             canEdit={canEdit}
+            canOpenDeliveryDetails={canOpenDeliveryDetails}
+            canViewAudit={canViewAudit}
             sale={sale}
             onAudit={onAuditRow}
             onDelivery={onDeliveryRow}
@@ -188,7 +196,16 @@ export function WizardClientRegistry({
         enableSorting: false,
       },
     ],
-    [canEdit, onAuditRow, onDeliveryRow, onEditRow, onPrintRow, t],
+    [
+      canEdit,
+      canOpenDeliveryDetails,
+      canViewAudit,
+      onAuditRow,
+      onDeliveryRow,
+      onEditRow,
+      onPrintRow,
+      t,
+    ],
   )
 
   return (
@@ -256,7 +273,7 @@ export function WizardClientRegistry({
             collapseRow: t('\u0417\u0433\u043e\u0440\u043d\u0443\u0442\u0438'),
             expandRow: t('\u0420\u043e\u0437\u0433\u043e\u0440\u043d\u0443\u0442\u0438'),
           }}
-          getRowCanExpand={() => true}
+          getRowCanExpand={() => canOpenDetails}
           getRowId={(sale, index) => String(sale.NetUid || sale.Id || index)}
           height="100%"
           isLoading={isLoading}
@@ -266,7 +283,7 @@ export function WizardClientRegistry({
           rowClassName={(sale) => getSaleRowClassName(sale)}
           showDensityToggle={false}
           tableId="new-sale-wizard-register"
-          onRowClick={onOpenRow}
+          onRowClick={canOpenDetails ? onOpenRow : undefined}
         />
       </Box>
     </Stack>
@@ -348,6 +365,8 @@ function WizardSaleCreatedCell({ sale }: { sale: SalesUkraineSale }) {
 
 function WizardSaleActionsCell({
   canEdit,
+  canOpenDeliveryDetails,
+  canViewAudit,
   sale,
   onAudit,
   onDelivery,
@@ -355,6 +374,8 @@ function WizardSaleActionsCell({
   onPrint,
 }: {
   canEdit: boolean
+  canOpenDeliveryDetails: boolean
+  canViewAudit: boolean
   sale: SalesUkraineSale
   onAudit: (sale: SalesUkraineSale) => void
   onDelivery: (sale: SalesUkraineSale) => void
@@ -368,7 +389,7 @@ function WizardSaleActionsCell({
   const isShift = Boolean((sale as { ShiftStatus?: unknown }).ShiftStatus)
   const hideActions = lifecycleKey === 'Received' && paymentKey === '0'
   const showEdit = canEdit && (sale.InputSaleMerges?.length ?? 0) === 0 && (sale.TotalCount ?? 0) > 0
-  const showAudit = !isNew || isShift
+  const showAudit = canViewAudit && (!isNew || isShift)
 
   if (hideActions) {
     return null
@@ -389,7 +410,7 @@ function WizardSaleActionsCell({
           }}
         />
       )}
-      {!isNew && (
+      {canViewAudit && !isNew && (
         <TableRowAction
           action="print"
           label={t('\u0414\u0440\u0443\u043a')}
@@ -410,7 +431,7 @@ function WizardSaleActionsCell({
           }}
         />
       )}
-      {sale.Transporter && (
+      {canOpenDeliveryDetails && sale.Transporter && (
         <TableRowAction
           action="delivery"
           label={t('\u041f\u0435\u0440\u0435\u0432\u0456\u0437\u043d\u0438\u043a')}

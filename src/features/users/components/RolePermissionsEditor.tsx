@@ -446,7 +446,7 @@ type SelectionMarkProps = {
   onChange: () => void
 }
 
-function SelectionMark({ checked, disabled = false, indeterminate = false, label, size = 'md', onChange }: SelectionMarkProps) {
+export function SelectionMark({ checked, disabled = false, indeterminate = false, label, size = 'md', onChange }: SelectionMarkProps) {
   return (
     <button
       aria-checked={indeterminate ? 'mixed' : checked}

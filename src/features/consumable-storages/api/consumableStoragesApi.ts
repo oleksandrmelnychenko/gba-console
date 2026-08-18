@@ -14,13 +14,13 @@ import type {
 } from '../types'
 
 export async function getConsumableStorages(): Promise<ConsumablesStorage[]> {
-  const result = await apiRequest<unknown>('/consumables/storages/all')
+  const result = await apiRequest<unknown>('/consumables/storages/accounting/all')
 
   return normalizeStorages(result)
 }
 
 export async function searchConsumableStorages(value: string): Promise<ConsumablesStorage[]> {
-  const result = await apiRequest<unknown>('/consumables/storages/search', {
+  const result = await apiRequest<unknown>('/consumables/storages/accounting/search', {
     query: {
       value,
     },
@@ -30,7 +30,7 @@ export async function searchConsumableStorages(value: string): Promise<Consumabl
 }
 
 export async function getConsumableStorage(netId: string): Promise<ConsumablesStorage | null> {
-  const result = await apiRequest<unknown>('/consumables/storages/get', {
+  const result = await apiRequest<unknown>('/consumables/storages/accounting/get', {
     query: {
       netId,
     },
@@ -40,7 +40,7 @@ export async function getConsumableStorage(netId: string): Promise<ConsumablesSt
 }
 
 export async function createConsumableStorage(storage: ConsumablesStoragePayload): Promise<ConsumablesStorage | null> {
-  const result = await apiRequest<unknown>('/consumables/storages/new', {
+  const result = await apiRequest<unknown>('/consumables/storages/accounting/new', {
     method: 'POST',
     body: storage,
   })
@@ -49,7 +49,7 @@ export async function createConsumableStorage(storage: ConsumablesStoragePayload
 }
 
 export async function updateConsumableStorage(storage: ConsumablesStoragePayload): Promise<ConsumablesStorage | null> {
-  const result = await apiRequest<unknown>('/consumables/storages/update', {
+  const result = await apiRequest<unknown>('/consumables/storages/accounting/update', {
     method: 'POST',
     body: storage,
   })
@@ -58,7 +58,7 @@ export async function updateConsumableStorage(storage: ConsumablesStoragePayload
 }
 
 export async function deleteConsumableStorage(netId: string): Promise<void> {
-  await apiRequest<unknown>('/consumables/storages/delete', {
+  await apiRequest<unknown>('/consumables/storages/accounting/delete', {
     method: 'DELETE',
     query: {
       netId,

@@ -2,12 +2,24 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { apiRequest } from '../../../shared/api/apiClient'
 import {
   acceptSaleForPacking,
+  addSalesUkraineConsignmentNoteSetting,
   addOrderItem,
   convertVatSaleAndGetPaymentDocument,
+  createSalesUkraineMergedSale,
+  createSalesUkraineVatSaleAndGetPaymentDocument,
   deleteOrderItem,
   getSaleActForEditingHistoryDocument,
   getSaleActProtocolEditDocument,
   getSaleById,
+  getSalesUkraine,
+  getSalesUkraineConsignmentNoteSettings,
+  getSalesUkraineCreateCurrentCart,
+  getSalesUkraineCreateDetails,
+  getSalesUkraineCurrentUnmergedSale,
+  getSalesUkraineDeliveryDetails,
+  getSalesUkraineEditDetails,
+  getSalesUkraineMergedDetails,
+  getSalesUkraineSaleDetails,
   getSaleInvoiceDocument,
   getSaleInvoiceHistoryDocument,
   getSalePaymentDocument,
@@ -16,10 +28,13 @@ import {
   getSaleShipmentListHistoryDocument,
   getShiftedSaleById,
   searchSalesUkraineClients,
+  printSalesUkraineConsignmentNoteDocument,
+  removeSalesUkraineConsignmentNoteSetting,
   shiftOrderItemsCurrent,
   switchSale,
   unlockSale,
   updateMergedSale,
+  updateSalesUkraineConsignmentNoteSetting,
   updateOrderItem,
   updateSale,
   updateSaleDiscount,
@@ -233,6 +248,52 @@ describe('sales Ukraine document request contracts', () => {
     expect(apiRequestMock).toHaveBeenCalledWith('/sales/get', { query: { netId: 'sale-net-id' } })
   })
 
+  it('loads the Sales Ukraine registry through the permission-protected facade', async () => {
+    apiRequestMock.mockResolvedValueOnce([{ NetUid: 'sale-net-id' }])
+
+    await expect(getSalesUkraine({
+      clientId: '',
+      forEcommerce: false,
+      from: '2026-08-01',
+      limit: 40,
+      offset: 0,
+      organisationIds: [1, 2],
+      status: 'all',
+      to: '2026-08-17',
+      type: 'All',
+      value: '',
+    })).resolves.toEqual([{ NetUid: 'sale-net-id' }])
+
+    expect(apiRequestMock).toHaveBeenCalledWith('/sales/ukraine/registry', {
+      signal: undefined,
+      query: {
+        clientId: undefined,
+        fastEcommerce: false,
+        forEcommerce: false,
+        from: '2026-08-01',
+        fromShipments: false,
+        includeDetails: false,
+        limit: 40,
+        offset: 0,
+        organisationIds: [1, 2],
+        status: 'All',
+        to: '2026-08-17',
+        type: 'All',
+        value: undefined,
+      },
+    })
+  })
+
+  it('loads user-facing details through the permission-protected facade without changing the shared helper', async () => {
+    apiRequestMock.mockResolvedValueOnce({ Sale: { NetUid: 'sale-net-id' } })
+
+    await expect(getSalesUkraineSaleDetails('sale-net-id')).resolves.toEqual({ NetUid: 'sale-net-id' })
+
+    expect(apiRequestMock).toHaveBeenCalledWith('/sales/ukraine/details', {
+      query: { netId: 'sale-net-id' },
+    })
+  })
+
   it('does not call the client search endpoint for blank client search values', async () => {
     await expect(searchSalesUkraineClients('   ')).resolves.toEqual([])
 
@@ -413,6 +474,112 @@ describe('sales Ukraine document request contracts', () => {
     )
   })
 
+  it('uses the permission-scoped delivery details facade', async () => {
+    apiRequestMock.mockResolvedValueOnce({ Body: { NetUid: 'sale-1' } })
+
+    await getSalesUkraineDeliveryDetails('sale-1')
+
+    expect(apiRequestMock).toHaveBeenCalledWith('/sales/ukraine/delivery-details', {
+      query: { netId: 'sale-1' },
+    })
+  })
+
+  it.each([
+    [
+      'merged details',
+      () => getSalesUkraineMergedDetails('sale-1'),
+      '/sales/ukraine/merged-details',
+      'sale-1',
+    ],
+    [
+      'current unmerged details',
+      () => getSalesUkraineCurrentUnmergedSale('agreement-1'),
+      '/sales/ukraine/current-unmerged',
+      'agreement-1',
+    ],
+    [
+      'create details',
+      () => getSalesUkraineCreateDetails('sale-1'),
+      '/sales/ukraine/create/details',
+      'sale-1',
+    ],
+    [
+      'create current cart',
+      () => getSalesUkraineCreateCurrentCart('agreement-1'),
+      '/sales/ukraine/create/current',
+      'agreement-1',
+    ],
+    [
+      'edit details',
+      () => getSalesUkraineEditDetails('sale-1'),
+      '/sales/ukraine/edit/details',
+      'sale-1',
+    ],
+  ])('uses the permission-scoped %s read facade', async (_label, request, path, netId) => {
+    apiRequestMock.mockResolvedValueOnce({ NetUid: netId })
+
+    await request()
+
+    expect(apiRequestMock).toHaveBeenCalledWith(path, {
+      query: { netId },
+    })
+  })
+
+  it('keeps all five TTN drawer calls on the PrintConsignmentNote-protected aliases', async () => {
+    const setting = { Name: 'Default', NetUid: 'setting-1' }
+    apiRequestMock.mockResolvedValue([])
+
+    await getSalesUkraineConsignmentNoteSettings()
+    await addSalesUkraineConsignmentNoteSetting(setting)
+    await updateSalesUkraineConsignmentNoteSetting(setting)
+    await removeSalesUkraineConsignmentNoteSetting('setting-1')
+    await printSalesUkraineConsignmentNoteDocument('sale-1', setting)
+
+    expect(apiRequestMock.mock.calls).toEqual([
+      ['/consignment/note/settings/ukraine/all/get', { query: { forReSale: false } }],
+      ['/consignment/note/settings/ukraine/add', {
+        body: setting,
+        method: 'POST',
+        query: { forReSale: false },
+      }],
+      ['/consignment/note/settings/ukraine/update', {
+        body: setting,
+        method: 'POST',
+        query: { forReSale: false },
+      }],
+      ['/consignment/note/settings/ukraine/remove', {
+        body: {},
+        method: 'POST',
+        query: { forReSale: false, netId: 'setting-1' },
+      }],
+      ['/consignment/note/settings/ukraine/print/document', {
+        body: setting,
+        method: 'POST',
+        query: { forReSale: false, netId: 'sale-1' },
+      }],
+    ])
+  })
+
+  it('sends merged create through the canonical permission facade with one operation identity', async () => {
+    const operationId = 'CCCCCCCC-CCCC-4CCC-8CCC-CCCCCCCCCCCC'
+    apiRequestMock.mockResolvedValueOnce(null)
+
+    await createSalesUkraineMergedSale(
+      { NetUid: 'sale-1' },
+      { operationId },
+    )
+
+    expect(apiRequestMock).toHaveBeenCalledWith('/sales/ukraine/create/merged', {
+      body: {
+        NetUid: 'sale-1',
+        OperationNetUid: operationId.toLowerCase(),
+      },
+      headers: { 'Idempotency-Key': operationId.toLowerCase() },
+      method: 'POST',
+      query: { operationNetUid: operationId.toLowerCase() },
+    })
+  })
+
   it('requires the canonical operation marker for the full sale update endpoint', async () => {
     apiRequestMock.mockResolvedValueOnce(null)
     const operationId = 'DDDDDDDD-DDDD-4DDD-8DDD-DDDDDDDDDDDD'
@@ -481,6 +648,35 @@ describe('sales Ukraine document request contracts', () => {
       expect(apiRequestMock).toHaveBeenCalledTimes(2)
       expect(apiRequestMock.mock.calls[1]).toEqual([
         '/sales/update/get/payment/document',
+        { query: { operationNetUid: operationId } },
+      ])
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it('keeps protected VAT POST and GET polling on the create permission facade', async () => {
+    vi.useFakeTimers()
+    const operationId = 'ffffffff-ffff-4fff-8fff-ffffffffffff'
+    apiRequestMock
+      .mockResolvedValueOnce({ Status: 'processing' })
+      .mockResolvedValueOnce({ PdfDocumentURL: 'https://example.test/payment.pdf', Status: 'completed' })
+
+    try {
+      const resultPromise = createSalesUkraineVatSaleAndGetPaymentDocument(
+        { NetUid: 'sale-1' },
+        null,
+        { operationId },
+      )
+      await vi.advanceTimersByTimeAsync(1_000)
+      await resultPromise
+
+      expect(apiRequestMock.mock.calls[0]?.[0]).toBe('/sales/ukraine/create/vat-document')
+      expect(apiRequestMock.mock.calls[0]?.[1]).toMatchObject({
+        query: { operationNetUid: operationId },
+      })
+      expect(apiRequestMock.mock.calls[1]).toEqual([
+        '/sales/ukraine/create/vat-document',
         { query: { operationNetUid: operationId } },
       ])
     } finally {

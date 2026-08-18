@@ -4,6 +4,7 @@ import {
   Alert,
   Button,
   Stack,
+  Text,
   TextInput,
   Tooltip,
 } from '@mantine/core'
@@ -12,6 +13,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { DocumentExportModal } from '../../../shared/ui/document-export-modal/DocumentExportModal'
 import { PermissionGate } from '../../auth/components/PermissionGate'
+import { usePermissions } from '../../auth/usePermissions'
+import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { useMutatedListRefresh } from '../../../shared/router/useMutatedListRefresh'
@@ -23,8 +26,8 @@ import { Paginator } from '../../../shared/ui/paginator/Paginator'
 import { DEFAULT_PAGINATOR_PAGE_SIZE } from '../../../shared/ui/paginator/paginatorPageSize'
 import {
   exportSupplyOrganizations,
-  getSupplyOrganizations,
-  searchSupplyOrganizations,
+  getSupplierOrganizationsRegistry,
+  searchSupplierOrganizationsRegistry,
 } from '../api/supplierOrganizationsApi'
 import {
   deduplicateSupplyOrganizationsByIdentity,
@@ -66,6 +69,25 @@ const SUPPLIER_ORGANIZATIONS_TABLE_DEFAULT_LAYOUT = {
 } satisfies DataTableDefaultLayout
 
 export function SupplierOrganizationsPage() {
+  const { t } = useI18n()
+  const { can, isLoading } = usePermissions()
+
+  if (isLoading) {
+    return <Text c="dimmed">{t('Завантаження')}</Text>
+  }
+
+  if (!can(PermissionKeys.SupplierOrganizations.Page.View)) {
+    return (
+      <Alert color="red" icon={<CircleAlert size={18} />} title={t('Доступ заборонено')} variant="light">
+        {t('Недостатньо прав для перегляду постачальників послуг')}
+      </Alert>
+    )
+  }
+
+  return <SupplierOrganizationsPageContent />
+}
+
+function SupplierOrganizationsPageContent() {
   const { t } = useI18n()
   const navigate = useNavigate()
   const location = useLocation()
@@ -120,8 +142,8 @@ export function SupplierOrganizationsPage() {
         offset: (page - 1) * pageSize,
       }
       const nextOrganizations = trimmedSearchValue
-        ? await searchSupplyOrganizations(trimmedSearchValue, '', paginationParams)
-        : await getSupplyOrganizations(paginationParams)
+        ? await searchSupplierOrganizationsRegistry(trimmedSearchValue, '', paginationParams)
+        : await getSupplierOrganizationsRegistry(paginationParams)
 
       if (requestRef.current === requestId) {
         setOrganizations(deduplicateSupplyOrganizationsByIdentity(nextOrganizations))
@@ -282,7 +304,7 @@ export function SupplierOrganizationsPage() {
           </div>
           <div ref={setTableToolbarSlot} className="app-filter-table-toolbar-slot" />
           <div className="supplier-organizations-create-actions">
-            <PermissionGate permissionKey="SERVICE_Accounting_Supplier_Organizations_AddBtn_PKEY">
+            <PermissionGate permissionKey={PermissionKeys.SupplierOrganizations.Supplier.Create}>
               <Button
                 color={CREATE_ACTION_COLOR}
                 leftSection={<Plus size={16} />}
@@ -566,7 +588,7 @@ function SupplierOrganizationActionModal({
     >
       {organization && (
         <Stack className="app-modal-actions" gap="xs">
-          <PermissionGate permissionKey="SERVICE_Accounting_Supplier_Organizations_SettlementsBtn_PKEY">
+          <PermissionGate permissionKey={PermissionKeys.SupplierOrganizations.Settlements.Open}>
             <Button
               fullWidth
               color="dark"
@@ -583,7 +605,7 @@ function SupplierOrganizationActionModal({
               {t('Взаєморозрахунки')}
             </Button>
           </PermissionGate>
-          <PermissionGate permissionKey="SERVICE_Accounting_Supplier_Organizations_OverviewBtn_PKEY">
+          <PermissionGate permissionKey={PermissionKeys.SupplierOrganizations.Overview.Open}>
             <Button
               fullWidth
               color="dark"

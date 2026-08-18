@@ -23,7 +23,7 @@ import type {
 } from '../types'
 
 export async function getPaymentAccounts(params: PaymentAccountsSearchParams = {}): Promise<PaymentAccountsResponse> {
-  const result = await apiRequest<unknown>('/payments/registers/all', {
+  const result = await apiRequest<unknown>('/payments/registers/accounting/all', {
     query: {
       organizationNetId: params.organizationNetId || undefined,
       type: params.type === '' ? undefined : params.type,
@@ -35,7 +35,7 @@ export async function getPaymentAccounts(params: PaymentAccountsSearchParams = {
 }
 
 export async function getPaymentAccount(netId: string): Promise<PaymentAccount | null> {
-  const result = await apiRequest<unknown>('/payments/registers/get', {
+  const result = await apiRequest<unknown>('/payments/registers/accounting/get', {
     query: {
       netId,
     },
@@ -53,7 +53,7 @@ export async function createPaymentAccount(
     kind: 'payment-register:add',
     operation,
     payload: account,
-    request: (payload, context) => apiRequest<unknown>('/payments/registers/new', {
+    request: (payload, context) => apiRequest<unknown>('/payments/registers/accounting/new', {
       body: payload,
       dedupe: false,
       headers: context.headers,
@@ -77,7 +77,7 @@ export async function updatePaymentAccount(
     kind: 'payment-register:update',
     operation,
     payload: account,
-    request: (payload, context) => apiRequest<unknown>('/payments/registers/update', {
+    request: (payload, context) => apiRequest<unknown>('/payments/registers/accounting/update', {
       body: payload,
       dedupe: false,
       headers: context.headers,

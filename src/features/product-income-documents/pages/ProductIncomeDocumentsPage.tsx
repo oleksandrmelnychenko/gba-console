@@ -16,6 +16,7 @@ import { CircleAlert, Download, ExternalLink, Eye, Layers, RotateCcw, Search } f
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { formatLocalDate, toDateTimeQuery } from '../../../shared/date/dateTime'
+import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { translate } from '../../../shared/i18n/translate'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -63,7 +64,7 @@ import type {
 import './product-income-documents-page.css'
 
 const FILTER_STORAGE_KEY = 'documentsFilters'
-const PRODUCT_MOVEMENT_PERMISSION = 'Product_Entire_Assortment_Product_Movement_Btn_PKEY'
+const PRODUCT_MOVEMENT_PERMISSION = PermissionKeys.ProductsAssortment.Movement.Open
 const PAGE_SIZE = DEFAULT_PAGINATOR_PAGE_SIZE
 
 const DOCUMENTS_TABLE_DEFAULT_LAYOUT = {

@@ -7,7 +7,15 @@ import { useI18n } from '../../../../shared/i18n/useI18n'
 import { AppModal } from '../../../../shared/ui/AppModal'
 import { CREATE_ACTION_COLOR } from '../../../../shared/ui/page-header-actions/PageHeaderActions'
 import { useAuth } from '../../../auth/useAuth'
-import { addOrderItem, getCurrentSaleCart, getSaleById } from '../../api/salesUkraineApi'
+import {
+  addOrderItem,
+  getCurrentSaleCart,
+  getSaleById,
+  getSalesUkraineCreateCurrentCart,
+  getSalesUkraineCreateDetails,
+  getSalesUkraineEditDetails,
+  getSalesUkraineSaleDetails,
+} from '../../api/salesUkraineApi'
 import { getSalesPendingMutationUserKey } from '../../pendingSalesMutationRegistry'
 import type { Client } from '../../../clients/types'
 import { createWizardOperationId } from './wizardMutationOperation'
@@ -121,14 +129,26 @@ export function NewSaleWizard({
   opened,
   editSale,
   prefill,
+  canOpenDeliveryDetails = true,
+  canOpenDetails = true,
+  canViewAudit = true,
+  canSubmitCreate = true,
+  canSubmitEdit = true,
+  permissionScopedSalesUkraineApi = false,
   onClose,
   onCreated,
 }: {
   editSale?: SalesUkraineSale | null
+  canOpenDeliveryDetails?: boolean
+  canOpenDetails?: boolean
+  canViewAudit?: boolean
+  canSubmitCreate?: boolean
+  canSubmitEdit?: boolean
   onClose: () => void
   onCreated: () => void
   opened: boolean
   prefill?: NewSaleWizardPrefill | null
+  permissionScopedSalesUkraineApi?: boolean
 }) {
   const { t } = useI18n()
   const { session } = useAuth()
@@ -145,8 +165,11 @@ export function NewSaleWizard({
     contentBusyRef.current = next
   }, [])
   const restoreSplit = useCallback(
-    () => restorePersistedWizardSplitRecovery(splitRecoveryUserKey),
-    [splitRecoveryUserKey],
+    () => restorePersistedWizardSplitRecovery(
+      splitRecoveryUserKey,
+      permissionScopedSalesUkraineApi ? getSalesUkraineCreateDetails : getSaleById,
+    ),
+    [permissionScopedSalesUkraineApi, splitRecoveryUserKey],
   )
   const runAutomaticSplitRecovery = useCallback(async (recoveryFile: File | null = null) => {
     const attempt = splitRecoveryAttemptRef.current + 1
@@ -185,7 +208,10 @@ export function NewSaleWizard({
 
     try {
       finalResult = recovery.finalMutation
-        ? await recoverLinkedWizardFinalMutation(recovery, recoveryFile)
+        ? await recoverLinkedWizardFinalMutation(recovery, recoveryFile, {
+            canSubmitCreate,
+            canSubmitEdit,
+          })
         : { status: 'not-linked' as const }
     } catch (error) {
       if (splitRecoveryAttemptRef.current !== attempt) {
@@ -273,7 +299,7 @@ export function NewSaleWizard({
     if (result.changed) {
       notifications.show({ color: 'green', message: t('Розділені позиції відновлено у вихідному рахунку') })
     }
-  }, [onClose, onCreated, restoreSplit, splitRecoveryUserKey, t])
+  }, [canSubmitCreate, canSubmitEdit, onClose, onCreated, restoreSplit, splitRecoveryUserKey, t])
   const confirmManualSplitDestination = useCallback(async () => {
     const recovery = hydrateWizardSplitRecovery(splitRecoveryUserKey)
 
@@ -374,7 +400,13 @@ export function NewSaleWizard({
       >
         {opened && splitRecoveryStatus === 'ready' && (
           <NewSaleWizardContent
+            canOpenDeliveryDetails={canOpenDeliveryDetails}
+            canOpenDetails={canOpenDetails}
+            canViewAudit={canViewAudit}
+            canSubmitCreate={canSubmitCreate}
+            canSubmitEdit={canSubmitEdit}
             initialSale={editSale ?? null}
+            permissionScopedSalesUkraineApi={permissionScopedSalesUkraineApi}
             prefill={prefill ?? null}
             onBusyChange={handleContentBusyChange}
             onClose={onClose}
@@ -454,7 +486,13 @@ function WizardKeyboardStateLabel() {
 }
 
 function NewSaleWizardContent({
+  canOpenDeliveryDetails,
+  canOpenDetails,
+  canViewAudit,
+  canSubmitCreate,
+  canSubmitEdit,
   initialSale,
+  permissionScopedSalesUkraineApi,
   prefill,
   onBusyChange,
   onClose,
@@ -462,7 +500,13 @@ function NewSaleWizardContent({
   onRestoreSplit,
   onVatDocuments,
 }: {
+  canOpenDeliveryDetails: boolean
+  canOpenDetails: boolean
+  canViewAudit: boolean
+  canSubmitCreate: boolean
+  canSubmitEdit: boolean
   initialSale?: SalesUkraineSale | null
+  permissionScopedSalesUkraineApi: boolean
   prefill?: NewSaleWizardPrefill | null
   onBusyChange: (busy: boolean) => void
   onClose: () => void
@@ -472,6 +516,7 @@ function NewSaleWizardContent({
 }) {
   const { t } = useI18n()
   const [active, setActive] = useState(0)
+  const [permissionFlow, setPermissionFlow] = useState<'create' | 'edit'>(initialSale ? 'edit' : 'create')
   const [state, setState] = useState<NewSaleWizardState>(() => createNewSaleWizardInitialState(prefill))
   // Preserved across step switches so the client step can restore instantly on remount.
   const [selectedClient, setSelectedClient] = useState<Client | null>(() => prefill?.client ?? null)
@@ -490,6 +535,14 @@ function NewSaleWizardContent({
   const [exitConfirmOpen, setExitConfirmOpen] = useState(false)
   const splitItems = useWizardSplitOrderItems()
   const shellBusy = isWizardShellBusy(busy, productsBusy, reviewBusy)
+  const loadCreateCurrentCart = permissionScopedSalesUkraineApi
+    ? getSalesUkraineCreateCurrentCart
+    : getCurrentSaleCart
+  const loadPermissionFlowDetails = permissionScopedSalesUkraineApi
+    ? permissionFlow === 'create'
+      ? getSalesUkraineCreateDetails
+      : getSalesUkraineEditDetails
+    : getSaleById
 
   useLayoutEffect(() => {
     stateRef.current = state
@@ -672,7 +725,7 @@ function NewSaleWizardContent({
     setBusy(true)
 
     try {
-      let sale = await getCurrentSaleCart(agreementNetId)
+      let sale = await loadCreateCurrentCart(agreementNetId)
       // The draft cart persists between wizard openings — skip products already in it
       // so reopening with the same selection does not duplicate order lines.
       const cartProductNetUids = new Set(
@@ -705,7 +758,7 @@ function NewSaleWizardContent({
         }
 
         if (!sale?.NetUid) {
-          sale = await getCurrentSaleCart(agreementNetId)
+          sale = await loadCreateCurrentCart(agreementNetId)
         }
       }
     } catch (seedError) {
@@ -751,9 +804,9 @@ function NewSaleWizardContent({
 
       try {
         next = netId
-          ? await getSaleById(netId, token.signal)
+          ? await loadPermissionFlowDetails(netId, token.signal)
           : agreementNetId
-            ? await getCurrentSaleCart(agreementNetId, token.signal)
+            ? await loadCreateCurrentCart(agreementNetId, token.signal)
             : null
       } catch (loadError) {
         if (token.signal.aborted) {
@@ -824,12 +877,13 @@ function NewSaleWizardContent({
     }
 
     const agreementNetId = state.agreementNetId
+    setPermissionFlow('create')
     invalidateCartReloads()
     const token = navigationGuard.begin(`products:${agreementNetId.toLowerCase()}`)
     setBusy(true)
 
     try {
-      const cart = await getCurrentSaleCart(agreementNetId, token.signal)
+      const cart = await loadCreateCurrentCart(agreementNetId, token.signal)
 
       if (
         !navigationGuard.isCurrent(token, token.context) ||
@@ -873,7 +927,12 @@ function NewSaleWizardContent({
     setBusy(true)
 
     try {
-      const fresh = sale.NetUid ? await getSaleById(sale.NetUid, token.signal) : null
+      const fresh = sale.NetUid
+        ? await (permissionScopedSalesUkraineApi ? getSalesUkraineSaleDetails : getSaleById)(
+            sale.NetUid,
+            token.signal,
+          )
+        : null
 
       if (!navigationGuard.isCurrent(token, token.context)) {
         return false
@@ -883,6 +942,7 @@ function NewSaleWizardContent({
 
       clearWizardMergedSale()
       setReview(NEW_SALE_REVIEW_INITIAL)
+      setPermissionFlow('edit')
       const current = stateRef.current
       const updated = {
         ...current,
@@ -928,7 +988,12 @@ function NewSaleWizardContent({
     setBusy(true)
 
     try {
-      const fresh = sale.NetUid ? await getSaleById(sale.NetUid, token.signal) : null
+      const fresh = sale.NetUid
+        ? await (permissionScopedSalesUkraineApi ? getSalesUkraineEditDetails : getSaleById)(
+            sale.NetUid,
+            token.signal,
+          )
+        : null
 
       if (!navigationGuard.isCurrent(token, token.context)) {
         return
@@ -936,6 +1001,7 @@ function NewSaleWizardContent({
 
       const next = requireHydratedWizardSale(fresh)
 
+      setPermissionFlow('edit')
       setReview(NEW_SALE_REVIEW_INITIAL)
       const current = stateRef.current
       const updated = {
@@ -975,6 +1041,7 @@ function NewSaleWizardContent({
     const agreement = unionSale?.ClientAgreement ?? null
 
     invalidateCartReloads()
+    setPermissionFlow('edit')
     setReview(NEW_SALE_REVIEW_INITIAL)
     setState((current) => ({
       ...current,
@@ -995,6 +1062,7 @@ function NewSaleWizardContent({
     const agreement = unionSale.ClientAgreement ?? null
 
     invalidateCartReloads()
+    setPermissionFlow('create')
     clearWizardMergedSale()
     setReview(NEW_SALE_REVIEW_INITIAL)
     setState((current) => ({
@@ -1013,6 +1081,7 @@ function NewSaleWizardContent({
     }
 
     invalidateCartReloads()
+    setPermissionFlow('create')
     clearWizardMergedSale()
     setReview(NEW_SALE_REVIEW_INITIAL)
     setState((current) => ({ ...current, sale: null }))
@@ -1235,9 +1304,15 @@ function NewSaleWizardContent({
       >
         {active === 0 && (
           <NewSaleClientStep
+            canCreate={canSubmitCreate}
+            canEdit={canSubmitEdit}
+            canOpenDeliveryDetails={canOpenDeliveryDetails}
+            canOpenDetails={canOpenDetails}
+            canViewAudit={canViewAudit}
             clientNetId={state.clientNetId}
             headerTools={wizardHeaderTools}
             initialClient={selectedClient}
+            permissionScopedSalesUkraineApi={permissionScopedSalesUkraineApi}
             onClientResolved={setSelectedClient}
             onAgreementChange={(agreementNetId, agreement) => {
               invalidateCartReloads()
@@ -1279,6 +1354,11 @@ function NewSaleWizardContent({
         )}
         {active === 2 && (
           <NewSaleReviewStep
+            canSubmit={permissionFlow === 'create' ? canSubmitCreate : canSubmitEdit}
+            submitDeniedReason={permissionFlow === 'create'
+              ? t('Недостатньо прав для створення продажу')
+              : t('Недостатньо прав для редагування продажу')}
+            submitFlow={permissionFlow}
             clientNetId={state.clientNetId}
             sale={state.sale}
             value={review}

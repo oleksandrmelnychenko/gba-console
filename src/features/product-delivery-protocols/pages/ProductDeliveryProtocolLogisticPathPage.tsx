@@ -4,11 +4,12 @@ import { CircleAlert } from 'lucide-react'
 import { useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { UserRoleType } from '../../../shared/auth/types'
+import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { useAuth } from '../../auth/useAuth'
-import { getProtocolByNetId } from '../api/productDeliveryProtocolsApi'
+import { getProtocolForLogisticPath } from '../api/productDeliveryProtocolsApi'
 import {
   assignInvoicesToMergedService,
   assignInvoicesToProtocol,
@@ -40,8 +41,7 @@ const INITIAL_LOGISTIC_PATH_LOAD_STATE: LogisticPathLoadState = {
   isLoading: true,
   protocol: null,
 }
-const PERMISSION_UPLOAD_DELIVERY_DOCUMENTS =
-  'ProductDeliveryProtocols_specifications_download_exel_upload_documents_PKEY'
+const PERMISSION_UPLOAD_DELIVERY_DOCUMENTS = PermissionKeys.ProductDeliveryProtocols.DeliveryDocuments.Download
 
 function useLogisticPathModel(netId: string | undefined) {
   const { t } = useI18n()
@@ -75,7 +75,7 @@ function useLogisticPathModel(netId: string | undefined) {
       }))
 
       try {
-        const result = await getProtocolByNetId(currentNetId)
+        const result = await getProtocolForLogisticPath(currentNetId)
 
         if (cancelled) {
           return

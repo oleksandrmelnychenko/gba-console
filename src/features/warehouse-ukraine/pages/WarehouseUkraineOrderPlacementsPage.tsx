@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import { useAuth } from '../../auth/useAuth'
 import { formatLocalDate } from '../../../shared/date/dateTime'
+import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { getSupplyOrderIncomeStatusLabel } from '../../../shared/supplyOrderIncomeStatus'
@@ -39,10 +40,10 @@ import type {
 } from '../placementsTypes'
 import './warehouse-ukraine-page.css'
 
-const PLACEMENT_ADD_CANCEL_SAVE_PERMISSION = 'PlacementHeader_AddCancelSave_ordersUkrainePlacement_PKEY'
-const PLACEMENT_ACT_RECONCILIATION_PERMISSION = 'PlacementHeader_ActReconciliationNew_ordersUkrainePlacement_PKEY'
-const PLACEMENT_CARRY_OUT_PERMISSION = 'PlacementHeader_CarryOut_ordersUkrainePlacement_PKEY'
-const PLACEMENT_GET_UP_PERMISSION = 'PlacementHeader_GetUp_ordersUkrainePlacement_PKEY'
+const PLACEMENT_ADD_CANCEL_SAVE_PERMISSION = PermissionKeys.OrdersUkraine.Placement.Save
+const PLACEMENT_ACT_RECONCILIATION_PERMISSION = PermissionKeys.OrdersUkraine.Placement.CreateReconciliation
+const PLACEMENT_CARRY_OUT_PERMISSION = PermissionKeys.OrdersUkraine.Placement.Post
+const PLACEMENT_GET_UP_PERMISSION = PermissionKeys.OrdersUkraine.Placement.Capitalize
 
 const amountFormatter = new Intl.NumberFormat('uk-UA', {
   maximumFractionDigits: 3,

@@ -16,6 +16,7 @@ import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppModal } from '../../../shared/ui/AppModal'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { useAuth } from '../../auth/useAuth'
+import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import {
   createPaymentCashflowArticle,
   deletePaymentCashflowArticle,
@@ -30,8 +31,10 @@ type LocationState = {
 
 const ARTICLES_PATH = '/accounting/payment-cashflow-articles'
 const ARTICLE_NAME_MAX_LENGTH = 150
-const PERMISSION_DELETE_CASHFLOW_ARTICLE = 'Accounting_Payment_Cashflow_Articles_DelBtn_PKEY'
-const PERMISSION_SAVE_CASHFLOW_ARTICLE = 'Accounting_Payment_Cashflow_Articles_saveBtn_PKEY'
+const PERMISSION_DELETE_CASHFLOW_ARTICLE =
+  PermissionKeys.FinancialAdministration.CashflowArticles.Article.Delete
+const PERMISSION_SAVE_CASHFLOW_ARTICLE =
+  PermissionKeys.FinancialAdministration.CashflowArticles.Article.Save
 
 type ArticleFormState = {
   article: PaymentCashflowArticle

@@ -16,6 +16,8 @@ import { notifications } from '@mantine/notifications'
 import { CircleAlert, Plus, RefreshCw, RotateCcw, Save, Search, Trash2 } from 'lucide-react'
 import { type FormEvent, useCallback, useEffect, useMemo, useReducer, useState } from 'react'
 import { PermissionGate } from '../../auth/components/PermissionGate'
+import { usePermissions } from '../../auth/usePermissions'
+import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { translate } from '../../../shared/i18n/translate'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
@@ -26,9 +28,9 @@ import { getAccountingBanks, saveAccountingBank } from '../api/accountingBanksAp
 import type { AccountingBank, AccountingBankFormValues } from '../types'
 import './accounting-banks-page.css'
 
-const ACCOUNTING_BANK_CREATE_PERMISSION = 'Accounting_Banks_All_ADDBtn_PKEY'
-const ACCOUNTING_BANK_SAVE_PERMISSION = 'Accounting_Banks_All_Modal_edit_SaveBtn_PKEY'
-const ACCOUNTING_BANK_DELETE_PERMISSION = 'Accounting_Banks_All_Modal_edit_DelBtn_PKEY'
+const ACCOUNTING_BANK_CREATE_PERMISSION = PermissionKeys.FinancialAdministration.Banks.Bank.Create
+const ACCOUNTING_BANK_SAVE_PERMISSION = PermissionKeys.FinancialAdministration.Banks.Bank.Save
+const ACCOUNTING_BANK_DELETE_PERMISSION = PermissionKeys.FinancialAdministration.Banks.Bank.Delete
 
 const ACCOUNTING_BANKS_TABLE_DEFAULT_LAYOUT = {
   columnPinning: {
@@ -48,6 +50,25 @@ const EMPTY_FORM_VALUES: AccountingBankFormValues = {
 }
 
 export function AccountingBanksPage() {
+  const { t } = useI18n()
+  const { can, isLoading } = usePermissions()
+
+  if (isLoading) {
+    return <Text c="dimmed">{t('Завантаження')}</Text>
+  }
+
+  if (!can(PermissionKeys.FinancialAdministration.Banks.Page.View)) {
+    return (
+      <Alert color="red" icon={<CircleAlert size={18} />} title={t('Доступ заборонено')} variant="light">
+        {t('Недостатньо прав для перегляду банків')}
+      </Alert>
+    )
+  }
+
+  return <AccountingBanksPageContent />
+}
+
+function AccountingBanksPageContent() {
   const { t } = useI18n()
   const [banks, setBanks] = useState<AccountingBank[]>([])
   const [searchDraft, setSearchDraft] = useState('')

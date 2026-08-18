@@ -3,13 +3,13 @@ import type { Transporter, TransporterType } from '../types'
 import { transporterCreateOperation } from './transporterMutationOperation'
 
 export async function getTransporterTypes(): Promise<TransporterType[]> {
-  const result = await apiRequest<unknown>('/transporters/types/all')
+  const result = await apiRequest<unknown>('/transporters/types/registry')
 
   return normalizeTransporterTypes(result)
 }
 
 export async function getTransportersByType(transporterTypeNetId: string): Promise<Transporter[]> {
-  const result = await apiRequest<unknown>('/transporters/all/type', {
+  const result = await apiRequest<unknown>('/transporters/registry', {
     query: {
       netId: transporterTypeNetId,
     },
@@ -22,7 +22,7 @@ export async function createTransporter(transporter: FormData): Promise<Transpor
   const operation = await transporterCreateOperation.prepare(transporter)
 
   try {
-    const result = await apiRequest<unknown>('/transporters/new', {
+    const result = await apiRequest<unknown>('/transporters/create', {
       method: 'POST',
       body: transporter,
       headers: {
@@ -39,7 +39,7 @@ export async function createTransporter(transporter: FormData): Promise<Transpor
 }
 
 export async function updateTransporter(transporter: FormData): Promise<Transporter | null> {
-  const result = await apiRequest<unknown>('/transporters/update', {
+  const result = await apiRequest<unknown>('/transporters/edit', {
     method: 'POST',
     body: transporter,
   })
@@ -48,7 +48,7 @@ export async function updateTransporter(transporter: FormData): Promise<Transpor
 }
 
 export async function archiveTransporter(netId: string): Promise<void> {
-  await apiRequest<unknown>('/transporters/delete', {
+  await apiRequest<unknown>('/transporters/archive', {
     method: 'DELETE',
     query: {
       netId,

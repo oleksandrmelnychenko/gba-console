@@ -17,6 +17,7 @@ import { notifications } from '@mantine/notifications'
 import { CircleAlert, ListTree, Save, Trash2, Undo2, Upload } from 'lucide-react'
 import { useEffect } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
+import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
@@ -39,7 +40,7 @@ import { InvoiceSelectList } from './InvoiceSelectList'
 import { LabelValueRow } from './LabelValueRow'
 import { formatDateTime, formatMoney, getInvoiceCurrencyCode, getInvoiceTotalNetPrice } from './protocolDetailHelpers'
 
-const MANAGE_INVOICES_PERMISSION = 'ProductDeliveryProtocols_logistic_path_card_invoices_infoBtn_PKEY'
+const MANAGE_INVOICES_PERMISSION = PermissionKeys.ProductDeliveryProtocols.InvoiceManagement.Open
 
 type InvoicesSectionPermissions = {
   canEditAssignments: boolean

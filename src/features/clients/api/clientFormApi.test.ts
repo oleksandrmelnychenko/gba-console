@@ -2,7 +2,14 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { apiRequest } from '../../../shared/api/apiClient'
 import { executeAccountingMutation } from '../../../shared/api/accountingMutationOperation'
 import type { Client } from '../types'
-import { createClient, deleteClient, getClientById, updateClient } from './clientFormApi'
+import {
+  createClient,
+  deleteClient,
+  getClientById,
+  getClientForRegistryById,
+  getSupplierPassportById,
+  updateClient,
+} from './clientFormApi'
 
 vi.mock('../../../shared/api/apiClient', () => ({
   apiRequest: vi.fn(),
@@ -41,13 +48,39 @@ describe('client form API contracts', () => {
     })
   })
 
+  it('uses the permission-scoped registry details route', async () => {
+    const client: Client = { NetUid: 'client-net-id', FullName: 'Client' }
+    apiRequestMock.mockResolvedValueOnce(client)
+
+    await expect(getClientForRegistryById('client-net-id')).resolves.toEqual(client)
+    expect(apiRequestMock).toHaveBeenCalledWith('/clients/registry/details', {
+      query: {
+        netId: 'client-net-id',
+        includeDebts: false,
+      },
+    })
+  })
+
+  it('uses the permission-scoped supplier passport details route', async () => {
+    const client: Client = { NetUid: 'supplier-net-id', FullName: 'Supplier' }
+    apiRequestMock.mockResolvedValueOnce(client)
+
+    await expect(getSupplierPassportById('supplier-net-id')).resolves.toEqual(client)
+    expect(apiRequestMock).toHaveBeenCalledWith('/clients/suppliers/passport/details', {
+      query: {
+        netId: 'supplier-net-id',
+        includeDebts: false,
+      },
+    })
+  })
+
   it('creates a client with parent id query and full body payload', async () => {
     const client: Client = { FullName: 'Client', ClientInRole: { ClientTypeRole: { Id: 1 } } }
     const createdClient: Client = { ...client, NetUid: 'created-client' }
     apiRequestMock.mockResolvedValueOnce(createdClient)
 
     await expect(createClient(client, 'parent-net-id')).resolves.toEqual(createdClient)
-    expect(apiRequestMock).toHaveBeenCalledWith('/clients/new', {
+    expect(apiRequestMock).toHaveBeenCalledWith('/clients/registry/new', {
       method: 'POST',
       query: {
         parentId: 'parent-net-id',
@@ -61,7 +94,7 @@ describe('client form API contracts', () => {
     apiRequestMock.mockResolvedValueOnce(client)
 
     await expect(createClient(client)).resolves.toEqual(client)
-    expect(apiRequestMock).toHaveBeenCalledWith('/clients/new', {
+    expect(apiRequestMock).toHaveBeenCalledWith('/clients/registry/new', {
       method: 'POST',
       query: {
         parentId: undefined,
@@ -343,7 +376,7 @@ describe('client form API contracts', () => {
     apiRequestMock.mockResolvedValueOnce(null)
 
     await deleteClient('client-net-id')
-    expect(apiRequestMock).toHaveBeenCalledWith('/clients/delete', {
+    expect(apiRequestMock).toHaveBeenCalledWith('/clients/registry/delete', {
       method: 'DELETE',
       query: {
         netId: 'client-net-id',

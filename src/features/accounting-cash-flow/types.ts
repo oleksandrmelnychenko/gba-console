@@ -183,6 +183,7 @@ export type AccountingCashFlowSearchParams = {
 
 export type AccountingCashFlowExportParams = {
   from: string
+  mode?: AccountingCashFlowMode
   netId: string
   to: string
 }

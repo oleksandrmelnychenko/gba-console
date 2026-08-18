@@ -12,7 +12,7 @@ type ConsumableCategoriesRequestOptions = {
 export async function getConsumableProductCategories(
   options: ConsumableCategoriesRequestOptions = {},
 ): Promise<ConsumableProductCategory[]> {
-  const result = await apiRequest<unknown>('/consumables/categories/all', {
+  const result = await apiRequest<unknown>('/consumables/categories/accounting/all', {
     query: {
       refreshToken: options.refreshToken,
     },
@@ -25,7 +25,7 @@ export async function searchConsumableProductCategories(
   value: string,
   options: ConsumableCategoriesRequestOptions = {},
 ): Promise<ConsumableProductCategory[]> {
-  const result = await apiRequest<unknown>('/consumables/categories/search', {
+  const result = await apiRequest<unknown>('/consumables/categories/accounting/search', {
     query: {
       refreshToken: options.refreshToken,
       value,
@@ -38,7 +38,7 @@ export async function searchConsumableProductCategories(
 export async function createConsumableProductCategory(
   category: ConsumableProductCategory,
 ): Promise<ConsumableProductCategory | null> {
-  const result = await apiRequest<unknown>('/consumables/categories/new', {
+  const result = await apiRequest<unknown>('/consumables/categories/accounting/create', {
     method: 'POST',
     body: category,
   })
@@ -49,7 +49,7 @@ export async function createConsumableProductCategory(
 export async function updateConsumableProductCategory(
   category: ConsumableProductCategory,
 ): Promise<ConsumableProductCategory | null> {
-  const result = await apiRequest<unknown>('/consumables/categories/update', {
+  const result = await apiRequest<unknown>('/consumables/categories/accounting/update', {
     method: 'POST',
     body: category,
   })
@@ -58,7 +58,7 @@ export async function updateConsumableProductCategory(
 }
 
 export async function deleteConsumableProductCategory(netId: string): Promise<void> {
-  await apiRequest<unknown>('/consumables/categories/delete', {
+  await apiRequest<unknown>('/consumables/categories/accounting/delete', {
     method: 'DELETE',
     query: {
       netId,
@@ -67,7 +67,7 @@ export async function deleteConsumableProductCategory(netId: string): Promise<vo
 }
 
 export async function createConsumableProduct(product: ConsumableProduct): Promise<ConsumableProduct | null> {
-  const result = await apiRequest<unknown>('/consumables/products/new', {
+  const result = await apiRequest<unknown>('/consumables/products/accounting/create', {
     method: 'POST',
     body: product,
   })
@@ -76,7 +76,7 @@ export async function createConsumableProduct(product: ConsumableProduct): Promi
 }
 
 export async function updateConsumableProduct(product: ConsumableProduct): Promise<ConsumableProduct | null> {
-  const result = await apiRequest<unknown>('/consumables/products/update', {
+  const result = await apiRequest<unknown>('/consumables/products/accounting/update', {
     method: 'POST',
     body: product,
   })
@@ -85,7 +85,7 @@ export async function updateConsumableProduct(product: ConsumableProduct): Promi
 }
 
 export async function deleteConsumableProduct(netId: string): Promise<void> {
-  await apiRequest<unknown>('/consumables/products/delete', {
+  await apiRequest<unknown>('/consumables/products/accounting/delete', {
     method: 'DELETE',
     query: {
       netId,

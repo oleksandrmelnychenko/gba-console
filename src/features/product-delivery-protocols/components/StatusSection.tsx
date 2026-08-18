@@ -1,5 +1,6 @@
 import { Button, Card, Group, Text } from '@mantine/core'
 import { useValueState } from '../../../shared/hooks/useValueState'
+import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppModal } from '../../../shared/ui/AppModal'
 import { useAuth } from '../../auth/useAuth'
@@ -7,7 +8,7 @@ import type { ProtocolDetail } from '../detailTypes'
 import { getProtocolStatusActionLabel } from '../protocolStatus'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 
-const CHANGE_STATUS_PERMISSION = 'ProductDeliveryProtocols_unified_services_ChangeStatusBtn_PKEY'
+const CHANGE_STATUS_PERMISSION = PermissionKeys.ProductDeliveryProtocols.UnifiedService.ChangeStatus
 
 export function StatusSection({
   protocol,
