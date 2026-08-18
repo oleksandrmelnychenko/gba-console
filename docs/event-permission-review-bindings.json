@@ -1651,6 +1651,14 @@
       ],
       "reason": "The reusable confirmation selects category edit or product delete from the target kind and rechecks it before the scoped delete."
     },
+    "PE-00469": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": [
+        "warehouses.premises.premise.create",
+        "warehouses.premises.premise.edit"
+      ],
+      "reason": "The final storage submit selects premise.create or premise.edit by route mode, rechecks that exact permission and calls the existing scoped mutation façade."
+    },
     "PE-00473": {
       "disposition": "covered_existing",
       "canonicalPermissionKeys": [

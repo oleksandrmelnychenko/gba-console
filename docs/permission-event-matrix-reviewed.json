@@ -5,13 +5,13 @@
     "classifiedRecords": 1902,
     "dispositionCounts": {
       "technical_ui": 680,
-      "covered_existing": 377,
+      "covered_existing": 378,
       "duplicate_occurrence": 165,
-      "business_candidate": 422,
+      "business_candidate": 421,
       "needs_human_review": 250,
       "stale_or_aggregated": 8
     },
-    "reviewCandidates": 672,
+    "reviewCandidates": 671,
     "technicalExcluded": 680,
     "duplicatesExcluded": 165,
     "duplicateOccurrencesTotal": 233,
@@ -18703,12 +18703,15 @@
       "proposedPermission": "accounting.accounting_storages.handle_submit.form_submit",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "covered_existing",
+      "dispositionReason": "The final storage submit selects premise.create or premise.edit by route mode, rechecks that exact permission and calls the existing scoped mutation façade.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "warehouses.premises.premise.create",
+        "warehouses.premises.premise.edit"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
           "candidateId": "EPC-6b6fb190df5a",
@@ -79430,7 +79433,6 @@
     "PE-00411",
     "PE-00412",
     "PE-00414",
-    "PE-00469",
     "PE-00511",
     "PE-00513",
     "PE-00517",
