@@ -349,6 +349,39 @@ describe('NewSaleProductsStep persistent cart mutations', () => {
     })
   })
 
+  it('refreshes the visible search quantity after adding from the product detail view', async () => {
+    apiMocks.acceptedQty = 1
+    apiMocks.getProductAvailabilityBuckets.mockResolvedValue({
+      AvailableQtyUk: 59,
+      AvailableQtyUkReSale: 0,
+    })
+    apiMocks.searchSaleProductsWithAvailability
+      .mockResolvedValueOnce([createSearchProduct(59, {
+        NameUA: 'Болт-шпилька з круглою головкою',
+        VendorCode: '38118103 NR',
+      })])
+      .mockResolvedValueOnce([createSearchProduct(58, {
+        NameUA: 'Болт-шпилька з круглою головкою',
+        VendorCode: '38118103 NR',
+      })])
+    const emptySale = createSale(0)
+    emptySale.Order = { ...emptySale.Order, OrderItems: [] }
+    const view = renderStep({ onCartChanged: vi.fn(async () => createSale(1)), sale: emptySale })
+
+    fireEvent.change(screen.getByPlaceholderText(/пошук/i), { target: { value: '38118103 NR' } })
+    await screen.findByRole('button', { name: 'Скопіювати код: 38118103 NR' })
+    expect(view.container.querySelector('.new-sale-product-picker-card__qty')?.textContent).toBe('59')
+
+    fireEvent.click(screen.getByRole('button', { name: 'Деталі' }))
+    fireEvent.keyDown(document.body, { key: 'Enter' })
+    fireEvent.click(await screen.findByRole('button', { name: 'accept quantity' }))
+
+    await waitFor(() => expect(apiMocks.searchSaleProductsWithAvailability).toHaveBeenCalledTimes(2))
+    await waitFor(() => {
+      expect(view.container.querySelector('.new-sale-product-picker-card__qty')?.textContent).toBe('58')
+    })
+  })
+
   it('retains an initial submitted 4xx until exact reconciliation succeeds', async () => {
     apiMocks.deleteOrderItem
       .mockRejectedValueOnce(new ApiError('row conflict', 400, null))
@@ -532,7 +565,7 @@ describe('NewSaleProductsStep persistent cart mutations', () => {
   })
 })
 
-function createSearchProduct(availableQty: number): WizardSaleProduct {
+function createSearchProduct(availableQty: number, overrides: Partial<WizardSaleProduct> = {}): WizardSaleProduct {
   return {
     AvailableQtyUk: availableQty,
     AvailableQtyUkReSale: 0,
@@ -541,5 +574,6 @@ function createSearchProduct(availableQty: number): WizardSaleProduct {
     NameUA: 'Комплект ремонтний вала розжимного',
     NetUid: 'product-1',
     VendorCode: 'SEM12081',
+    ...overrides,
   }
 }

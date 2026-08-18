@@ -1665,11 +1665,12 @@ export function NewSaleProductsStep({
 
   function resetSearchAfterAdd(product: WizardSaleProduct | undefined) {
     const state = getWizardKeyboardState(1)
+    const isMainSearchState = state === 'ProductSearch' || state === 'ProductSelection'
 
-    if (state === 'ProductSearch' || state === 'ProductSelection') {
+    if (isMainSearchState || results.length > 0) {
       const hasFollowUps = Boolean(product && (product.HasAnalogue || product.HasComponent))
 
-      if (!hasFollowUps) {
+      if (isMainSearchState && !hasFollowUps) {
         searchGenerationRef.current += 1
         searchAbortRef.current?.abort()
         loadMoreAbortRef.current?.abort()
@@ -1688,9 +1689,9 @@ export function NewSaleProductsStep({
         resetDetail()
         keyboard.setState('ProductSearch')
       } else if (results.length > 0) {
-        // The cart mutation reserves stock on the server, but related-product
-        // navigation deliberately keeps this result list mounted. Reload that
-        // retained payload so its quantity reflects the committed reservation.
+        // Detail and related-product navigation keep the original search list
+        // mounted too. Reload it after the confirmed reservation regardless of
+        // the current product sub-state so no visible quantity stays stale.
         if (query.trim().length >= PRODUCT_SEARCH_MIN_QUERY_LENGTH && agreementNetId) {
           retryProductSearch()
         } else if (!query.trim() && clientNetId) {
