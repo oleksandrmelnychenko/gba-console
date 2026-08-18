@@ -975,6 +975,99 @@
       "disposition": "duplicate_occurrence",
       "duplicateOf": "PE-00502",
       "reason": "The edit icon opens the same trader edit workflow whose final submit is governed by converter.edit."
+    },
+    "PE-00691": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": [
+        "payments.payment_accounts.account.create",
+        "payments.payment_accounts.account.edit"
+      ],
+      "reason": "The shared account form selects create or edit by route mode, rechecks that exact permission and calls the matching scoped endpoint."
+    },
+    "PE-00692": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-00691",
+      "reason": "The nested form node invokes the same create-or-edit account submit handler and is not a separate business action."
+    },
+    "PE-00694": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": [
+        "payments.payment_accounts.account.edit"
+      ],
+      "reason": "Entering edit mode is the first UI step of the existing account-edit business action; final save and backend use the same permission."
+    },
+    "PE-00696": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": [
+        "payments.payment_accounts.page.view"
+      ],
+      "reason": "Opening currency activity selects a tab within the already authorized account card and loads it only through a page-view-scoped read."
+    },
+    "PE-00697": {
+      "disposition": "technical_ui",
+      "reason": "This control only navigates to the income-cashflow module with a register filter; the destination module owns its page and create permissions."
+    },
+    "PE-00698": {
+      "disposition": "technical_ui",
+      "reason": "This control only navigates to the outgoing-cashflow module with a register filter; the destination module owns its page and create permissions."
+    },
+    "PE-00699": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": [
+        "payments.payment_accounts.transfer.create"
+      ],
+      "reason": "Opening and submitting the transfer form are one transfer-create business action with a fail-closed UI handler and dedicated scoped endpoint."
+    },
+    "PE-00700": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": [
+        "payments.payment_accounts.exchange.create"
+      ],
+      "reason": "Opening and submitting the exchange form are one exchange-create business action with a fail-closed UI handler and dedicated scoped endpoint."
+    },
+    "PE-00702": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-00699",
+      "reason": "The transfer form submit completes the same transfer-create action represented by its guarded opener."
+    },
+    "PE-00704": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-00700",
+      "reason": "The exchange form submit completes the same exchange-create action represented by its guarded opener."
+    },
+    "PE-00707": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": [
+        "payments.payment_accounts.transfer.cancel",
+        "payments.payment_accounts.exchange.cancel"
+      ],
+      "reason": "The reusable confirmation surface dispatches exactly one of two independently guarded cancellation handlers and adds no fifth permission."
+    },
+    "PE-00708": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": [
+        "payments.payment_accounts.transfer.cancel"
+      ],
+      "reason": "The transfer cancel row action and confirmation are one mutation protected in rendering, handler and scoped backend route."
+    },
+    "PE-00709": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": [
+        "payments.payment_accounts.exchange.cancel"
+      ],
+      "reason": "The exchange cancel row action and confirmation are one mutation protected in rendering, handler and scoped backend route."
+    },
+    "PE-00713": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": [
+        "payments.payment_accounts.page.view"
+      ],
+      "reason": "The table row opens a read-only-capable account card and hydrates it through the page-view-scoped account endpoint."
+    },
+    "PE-00714": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-00713",
+      "reason": "The explicit row action and table-row click open the same account card; edit authority remains independently checked inside that card."
     }
   }
 }

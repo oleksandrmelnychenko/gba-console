@@ -232,6 +232,14 @@ export const PermissionKeys = {
         Create: 'payments.payment_accounts.account.create',
         Edit: 'payments.payment_accounts.account.edit',
       },
+      Transfer: {
+        Create: 'payments.payment_accounts.transfer.create',
+        Cancel: 'payments.payment_accounts.transfer.cancel',
+      },
+      Exchange: {
+        Create: 'payments.payment_accounts.exchange.create',
+        Cancel: 'payments.payment_accounts.exchange.cancel',
+      },
     },
   },
   ProductDeliveryProtocols: {
@@ -794,6 +802,12 @@ export type FinancialAdministrationPermissionKey =
   | Values<typeof PermissionKeys.FinancialAdministration.PaymentAccounts.Page>
   | Values<
       typeof PermissionKeys.FinancialAdministration.PaymentAccounts.Account
+    >
+  | Values<
+      typeof PermissionKeys.FinancialAdministration.PaymentAccounts.Transfer
+    >
+  | Values<
+      typeof PermissionKeys.FinancialAdministration.PaymentAccounts.Exchange
     >
 
 export type PermissionKey =
@@ -1813,6 +1827,12 @@ const eventPermissionKeys = new Set<string>([
   ...Object.values(PermissionKeys.FinancialAdministration.PaymentAccounts.Page),
   ...Object.values(
     PermissionKeys.FinancialAdministration.PaymentAccounts.Account,
+  ),
+  ...Object.values(
+    PermissionKeys.FinancialAdministration.PaymentAccounts.Transfer,
+  ),
+  ...Object.values(
+    PermissionKeys.FinancialAdministration.PaymentAccounts.Exchange,
   ),
   ...Object.values(PermissionKeys.OrdersUkraine.Invoice),
   ...Object.values(PermissionKeys.OrdersUkraine.Page),

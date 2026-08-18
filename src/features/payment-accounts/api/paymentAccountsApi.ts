@@ -111,7 +111,7 @@ export async function getPaymentAccountBanks(): Promise<BankItem[]> {
 }
 
 export async function getPaymentAccountsByBank(paymentRegisterNetId: string): Promise<PaymentAccount[]> {
-  const result = await apiRequest<unknown>('/payments/registers/by/bank', {
+  const result = await apiRequest<unknown>('/payments/registers/accounting/by/bank', {
     query: {
       paymentRegisterNetId,
     },
@@ -143,7 +143,7 @@ export async function calculatePaymentAccountExchange(params: {
   currencyCode: string
   exchangeRate: number
 }): Promise<number> {
-  const result = await apiRequest<unknown>('/payments/registers/exchanges/calculate', {
+  const result = await apiRequest<unknown>('/payments/registers/exchanges/accounting/calculate', {
     query: {
       amount: params.amount,
       currencyCode: params.currencyCode,
@@ -167,7 +167,7 @@ export async function createPaymentAccountTransfer(
     kind: 'payment-register:transfer',
     operation,
     payload: transfer,
-    request: (payload, context) => apiRequest<unknown>('/payments/registers/transfers/new', {
+    request: (payload, context) => apiRequest<unknown>('/payments/registers/transfers/accounting/new', {
       body: payload,
       dedupe: false,
       headers: context.headers,
@@ -192,7 +192,7 @@ export async function cancelPaymentAccountTransfer(
     kind: 'payment-register:transfer-cancel',
     operation,
     payload,
-    request: (requestPayload, context) => apiRequest<unknown>('/payments/registers/transfers/cancel', {
+    request: (requestPayload, context) => apiRequest<unknown>('/payments/registers/transfers/accounting/cancel', {
       dedupe: false,
       headers: context.headers,
       method: 'PUT',
@@ -218,7 +218,7 @@ export async function createPaymentAccountExchange(
     kind: 'payment-register:currency-exchange',
     operation,
     payload: exchange,
-    request: (payload, context) => apiRequest<unknown>('/payments/registers/exchanges/new', {
+    request: (payload, context) => apiRequest<unknown>('/payments/registers/exchanges/accounting/new', {
       body: payload,
       dedupe: false,
       headers: context.headers,
@@ -243,7 +243,7 @@ export async function cancelPaymentAccountExchange(
     kind: 'payment-register:currency-exchange-cancel',
     operation,
     payload,
-    request: (requestPayload, context) => apiRequest<unknown>('/payments/registers/exchanges/cancel', {
+    request: (requestPayload, context) => apiRequest<unknown>('/payments/registers/exchanges/accounting/cancel', {
       dedupe: false,
       headers: context.headers,
       method: 'PUT',
@@ -263,7 +263,7 @@ export async function cancelPaymentAccountExchange(
 export async function getPaymentAccountTransfers(
   params: PaymentAccountActivitySearchParams,
 ): Promise<PaymentRegisterTransfer[]> {
-  const result = await apiRequest<unknown>('/payments/registers/transfers/all', {
+  const result = await apiRequest<unknown>('/payments/registers/transfers/accounting/all', {
     query: {
       currencyNetId: params.currencyNetId || undefined,
       from: params.from,
@@ -279,7 +279,7 @@ export async function getPaymentAccountTransfers(
 export async function getPaymentAccountExchanges(
   params: PaymentAccountActivitySearchParams,
 ): Promise<PaymentRegisterCurrencyExchange[]> {
-  const result = await apiRequest<unknown>('/payments/registers/exchanges/all', {
+  const result = await apiRequest<unknown>('/payments/registers/exchanges/accounting/all', {
     query: {
       from: params.from,
       fromCurrencyNetId: params.fromCurrencyNetId || undefined,
@@ -297,7 +297,7 @@ export async function getPaymentAccountCurrencyActivity(params: {
   from: string
   to: string
 }): Promise<PaymentCurrencyRegister | null> {
-  const result = await apiRequest<unknown>('/payments/registers/currencies/get/filtered', {
+  const result = await apiRequest<unknown>('/payments/registers/accounting/currencies/get/filtered', {
     query: {
       from: params.from,
       netId: params.currencyRegisterNetId,

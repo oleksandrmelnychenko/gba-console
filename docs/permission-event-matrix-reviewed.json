@@ -5,24 +5,24 @@
     "classifiedRecords": 1902,
     "dispositionCounts": {
       "technical_ui": 647,
-      "covered_existing": 320,
-      "business_candidate": 522,
+      "covered_existing": 329,
+      "business_candidate": 511,
       "needs_human_review": 271,
-      "duplicate_occurrence": 134,
+      "duplicate_occurrence": 136,
       "stale_or_aggregated": 8
     },
-    "reviewCandidates": 793,
+    "reviewCandidates": 782,
     "technicalExcluded": 647,
-    "duplicatesExcluded": 134,
-    "duplicateOccurrencesTotal": 201,
+    "duplicatesExcluded": 136,
+    "duplicateOccurrencesTotal": 203,
     "technicalDuplicateOverlap": 67,
     "sourceResolved": 1828,
     "sourceUnresolved": 74,
     "currentActionResolved": 1191,
     "currentActionUnresolved": 711,
     "currentProductionActions": 1829,
-    "currentPermissionBoundActions": 183,
-    "currentUnboundActions": 1646
+    "currentPermissionBoundActions": 185,
+    "currentUnboundActions": 1644
   },
   "invariants": {
     "allInputRecordsClassified": true,
@@ -27551,7 +27551,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/payment-accounts/pages/PaymentAccountFormPage.tsx",
-        "line": 271,
+        "line": 280,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -27584,7 +27584,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/payment-accounts/pages/PaymentAccountFormPage.tsx",
-        "line": 271,
+        "line": 280,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -27607,20 +27607,23 @@
       "proposedPermission": "accounting.accounting_payment_accounts.handle_submit.form_submit",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "covered_existing",
+      "dispositionReason": "The shared account form selects create or edit by route mode, rechecks that exact permission and calls the matching scoped endpoint.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "payments.payment_accounts.account.create",
+        "payments.payment_accounts.account.edit"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-055426efba65",
+          "candidateId": "EPC-84b072fa9e2b",
           "distance": 89,
           "file": "src/features/payment-accounts/pages/PaymentAccountFormPage.tsx",
           "handler": "{handleSubmit}",
           "humanLabel": null,
-          "line": 506,
+          "line": 538,
           "permissionKeys": [],
           "score": 12
         }
@@ -27628,7 +27631,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/payment-accounts/pages/PaymentAccountFormPage.tsx",
-        "line": 417,
+        "line": 449,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -27651,17 +27654,17 @@
       "proposedPermission": "accounting.accounting_payment_accounts.on_submit.form_submit",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
-      "duplicateOf": null,
+      "disposition": "duplicate_occurrence",
+      "dispositionReason": "The nested form node invokes the same create-or-edit account submit handler and is not a separate business action.",
+      "duplicateOf": "PE-00691",
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [],
       "source": {
         "status": "resolved",
         "file": "src/features/payment-accounts/pages/PaymentAccountFormPage.tsx",
-        "line": 528,
+        "line": 560,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -27694,7 +27697,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/payment-accounts/pages/PaymentAccountFormPage.tsx",
-        "line": 362,
+        "line": 394,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -27717,17 +27720,19 @@
       "proposedPermission": "accounting.accounting_payment_accounts.on_edit.button_click",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "covered_existing",
+      "dispositionReason": "Entering edit mode is the first UI step of the existing account-edit business action; final save and backend use the same permission.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "payments.payment_accounts.account.edit"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [],
       "source": {
         "status": "resolved",
         "file": "src/features/payment-accounts/pages/PaymentAccountFormPage.tsx",
-        "line": 501,
+        "line": 533,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -27758,12 +27763,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-dd7844e3ec9a",
-          "distance": 478,
+          "candidateId": "EPC-b43e198a6887",
+          "distance": 482,
           "file": "src/features/payment-accounts/pages/PaymentAccountFormPage.tsx",
           "handler": "{onCancelEdit}",
           "humanLabel": "Скасувати",
-          "line": 840,
+          "line": 876,
           "permissionKeys": [],
           "score": 10
         }
@@ -27771,7 +27776,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/payment-accounts/pages/PaymentAccountFormPage.tsx",
-        "line": 362,
+        "line": 394,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -27794,17 +27799,19 @@
       "proposedPermission": "accounting.accounting_payment_accounts.on_open_currency_activity_draft_original_as_payment_currency_reg.modal_open",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "covered_existing",
+      "dispositionReason": "Opening currency activity selects a tab within the already authorized account card and loads it only through a page-view-scoped read.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "payments.payment_accounts.page.view"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [],
       "source": {
         "status": "resolved",
         "file": "src/features/payment-accounts/pages/PaymentAccountFormPage.tsx",
-        "line": 1034,
+        "line": 1070,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -27827,20 +27834,20 @@
       "proposedPermission": "accounting.accounting_payment_accounts.on_open_income.modal_open",
       "securityLevel": "low",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "technical_ui",
+      "dispositionReason": "This control only navigates to the income-cashflow module with a register filter; the destination module owns its page and create permissions.",
       "duplicateOf": null,
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-4b3a8c9ff444",
-          "distance": 635,
+          "candidateId": "EPC-f3f6ae98dfc5",
+          "distance": 651,
           "file": "src/features/payment-accounts/pages/PaymentAccountFormPage.tsx",
           "handler": "{onOpenIncome}",
           "humanLabel": "Прихід",
-          "line": 1177,
+          "line": 1229,
           "permissionKeys": [],
           "score": 10
         }
@@ -27848,7 +27855,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/payment-accounts/pages/PaymentAccountFormPage.tsx",
-        "line": 542,
+        "line": 578,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -27871,20 +27878,20 @@
       "proposedPermission": "accounting.accounting_payment_accounts.on_open_outgoing.modal_open",
       "securityLevel": "low",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "technical_ui",
+      "dispositionReason": "This control only navigates to the outgoing-cashflow module with a register filter; the destination module owns its page and create permissions.",
       "duplicateOf": null,
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-dc8f7ae73d65",
-          "distance": 637,
+          "candidateId": "EPC-92c55d763044",
+          "distance": 653,
           "file": "src/features/payment-accounts/pages/PaymentAccountFormPage.tsx",
           "handler": "{onOpenOutgoing}",
           "humanLabel": "Розхід",
-          "line": 1180,
+          "line": 1232,
           "permissionKeys": [],
           "score": 12
         }
@@ -27892,7 +27899,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/payment-accounts/pages/PaymentAccountFormPage.tsx",
-        "line": 543,
+        "line": 579,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -27915,17 +27922,19 @@
       "proposedPermission": "accounting.accounting_payment_accounts.set_transfer_modal_opened_true_on_active_tab_change_transfers.modal_open",
       "securityLevel": "low",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "covered_existing",
+      "dispositionReason": "Opening and submitting the transfer form are one transfer-create business action with a fail-closed UI handler and dedicated scoped endpoint.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "payments.payment_accounts.transfer.create"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [],
       "source": {
         "status": "resolved",
         "file": "src/features/payment-accounts/pages/PaymentAccountFormPage.tsx",
-        "line": 271,
+        "line": 280,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -27948,17 +27957,19 @@
       "proposedPermission": "accounting.accounting_payment_accounts.set_exchange_modal_opened_true_on_active_tab_change_exchanges.modal_open",
       "securityLevel": "low",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "covered_existing",
+      "dispositionReason": "Opening and submitting the exchange form are one exchange-create business action with a fail-closed UI handler and dedicated scoped endpoint.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "payments.payment_accounts.exchange.create"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [],
       "source": {
         "status": "resolved",
         "file": "src/features/payment-accounts/pages/PaymentAccountFormPage.tsx",
-        "line": 271,
+        "line": 280,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -27991,7 +28002,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/payment-accounts/pages/PaymentAccountFormPage.tsx",
-        "line": 545,
+        "line": 581,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -28015,19 +28026,19 @@
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
       "disposition": "duplicate_occurrence",
-      "dispositionReason": "same_normalized_action_as:PE-00691",
-      "duplicateOf": "PE-00691",
+      "dispositionReason": "The transfer form submit completes the same transfer-create action represented by its guarded opener.",
+      "duplicateOf": "PE-00699",
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-055426efba65",
+          "candidateId": "EPC-84b072fa9e2b",
           "distance": 89,
           "file": "src/features/payment-accounts/pages/PaymentAccountFormPage.tsx",
           "handler": "{handleSubmit}",
           "humanLabel": null,
-          "line": 506,
+          "line": 538,
           "permissionKeys": [],
           "score": 12
         }
@@ -28035,7 +28046,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/payment-accounts/pages/PaymentAccountFormPage.tsx",
-        "line": 417,
+        "line": 449,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -28068,7 +28079,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/payment-accounts/pages/PaymentAccountFormPage.tsx",
-        "line": 495,
+        "line": 527,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -28092,19 +28103,19 @@
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
       "disposition": "duplicate_occurrence",
-      "dispositionReason": "same_normalized_action_as:PE-00691",
-      "duplicateOf": "PE-00691",
+      "dispositionReason": "The exchange form submit completes the same exchange-create action represented by its guarded opener.",
+      "duplicateOf": "PE-00700",
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-055426efba65",
+          "candidateId": "EPC-84b072fa9e2b",
           "distance": 89,
           "file": "src/features/payment-accounts/pages/PaymentAccountFormPage.tsx",
           "handler": "{handleSubmit}",
           "humanLabel": null,
-          "line": 506,
+          "line": 538,
           "permissionKeys": [],
           "score": 12
         }
@@ -28112,7 +28123,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/payment-accounts/pages/PaymentAccountFormPage.tsx",
-        "line": 417,
+        "line": 449,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -28145,7 +28156,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/payment-accounts/pages/PaymentAccountFormPage.tsx",
-        "line": 495,
+        "line": 527,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -28178,7 +28189,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/payment-accounts/pages/PaymentAccountFormPage.tsx",
-        "line": 495,
+        "line": 527,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -28201,17 +28212,20 @@
       "proposedPermission": "accounting.accounting_payment_accounts.on_confirm.command_submit",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "covered_existing",
+      "dispositionReason": "The reusable confirmation surface dispatches exactly one of two independently guarded cancellation handlers and adds no fifth permission.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "payments.payment_accounts.exchange.cancel",
+        "payments.payment_accounts.transfer.cancel"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [],
       "source": {
         "status": "resolved",
         "file": "src/features/payment-accounts/pages/PaymentAccountFormPage.tsx",
-        "line": 1305,
+        "line": 1363,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -28234,20 +28248,22 @@
       "proposedPermission": "accounting.accounting_payment_accounts.on_cancel_transfer.command_delete",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "technical_ui",
-      "dispositionReason": "current_source_confirms_local_cancel_or_refresh_control",
+      "disposition": "covered_existing",
+      "dispositionReason": "The transfer cancel row action and confirmation are one mutation protected in rendering, handler and scoped backend route.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "payments.payment_accounts.transfer.cancel"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-f73f80553155",
-          "distance": 892,
+          "candidateId": "EPC-cda9e55e9320",
+          "distance": 910,
           "file": "src/features/payment-accounts/pages/PaymentAccountFormPage.tsx",
           "handler": "{() => onCancel(transfer)}",
           "humanLabel": "Скасувати",
-          "line": 2172,
+          "line": 2246,
           "permissionKeys": [],
           "score": 14
         }
@@ -28255,7 +28271,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/payment-accounts/pages/PaymentAccountFormPage.tsx",
-        "line": 1280,
+        "line": 1336,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -28278,20 +28294,22 @@
       "proposedPermission": "accounting.accounting_payment_accounts.on_cancel_exchange.command_delete",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "technical_ui",
-      "dispositionReason": "current_source_confirms_local_cancel_or_refresh_control",
+      "disposition": "covered_existing",
+      "dispositionReason": "The exchange cancel row action and confirmation are one mutation protected in rendering, handler and scoped backend route.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "payments.payment_accounts.exchange.cancel"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-ac9bdcc8ad3f",
-          "distance": 940,
+          "candidateId": "EPC-bdc637907230",
+          "distance": 958,
           "file": "src/features/payment-accounts/pages/PaymentAccountFormPage.tsx",
           "handler": "{() => onCancel(exchange)}",
           "humanLabel": "Скасувати",
-          "line": 2219,
+          "line": 2293,
           "permissionKeys": [],
           "score": 14
         }
@@ -28299,7 +28317,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/payment-accounts/pages/PaymentAccountFormPage.tsx",
-        "line": 1279,
+        "line": 1335,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -28447,12 +28465,14 @@
       "proposedPermission": "accounting.accounting_payment_accounts.open_account.row_click",
       "securityLevel": "medium",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "covered_existing",
+      "dispositionReason": "The table row opens a read-only-capable account card and hydrates it through the page-view-scoped account endpoint.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "payments.payment_accounts.page.view"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [],
       "source": {
         "status": "resolved",
@@ -28480,12 +28500,12 @@
       "proposedPermission": "accounting.accounting_payment_accounts.on_open_account.modal_open",
       "securityLevel": "low",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
-      "duplicateOf": null,
+      "disposition": "duplicate_occurrence",
+      "dispositionReason": "The explicit row action and table-row click open the same account card; edit authority remains independently checked inside that card.",
+      "duplicateOf": "PE-00713",
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
           "candidateId": "EPC-941104031348",
@@ -79361,17 +79381,6 @@
     "PE-00682",
     "PE-00683",
     "PE-00685",
-    "PE-00691",
-    "PE-00692",
-    "PE-00694",
-    "PE-00696",
-    "PE-00697",
-    "PE-00698",
-    "PE-00699",
-    "PE-00700",
-    "PE-00707",
-    "PE-00713",
-    "PE-00714",
     "PE-00740",
     "PE-00741",
     "PE-00742",
