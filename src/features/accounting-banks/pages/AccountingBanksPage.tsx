@@ -70,6 +70,7 @@ export function AccountingBanksPage() {
 
 function AccountingBanksPageContent() {
   const { t } = useI18n()
+  const { can } = usePermissions()
   const [banks, setBanks] = useState<AccountingBank[]>([])
   const [searchDraft, setSearchDraft] = useState('')
   const [searchValue, setSearchValue] = useState('')
@@ -84,17 +85,29 @@ function AccountingBanksPageContent() {
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
   const [tableToolbarSlot, setTableToolbarSlot] = useState<HTMLDivElement | null>(null)
   const visibleBanks = useMemo(() => filterBanks(banks, searchValue), [banks, searchValue])
+  const canCreate = can(ACCOUNTING_BANK_CREATE_PERMISSION)
+  const canSave = can(ACCOUNTING_BANK_SAVE_PERMISSION)
+  const canDelete = can(ACCOUNTING_BANK_DELETE_PERMISSION)
+  const canSubmitEditor = editingBank?.Id ? canSave : canCreate
   const openEditor = useCallback((bank?: AccountingBank) => {
+    if (bank?.Id ? !canSave : !canCreate) {
+      return
+    }
+
     setEditingBank(bank || null)
     setFormValues(bankToFormValues(bank))
     setFormError(null)
     setEditorOpen(true)
-  }, [])
+  }, [canCreate, canSave])
   const requestDelete = useCallback((bank: AccountingBank) => {
+    if (!canDelete) {
+      return
+    }
+
     setDeleteTarget(bank)
     setEditorOpen(false)
     setFormError(null)
-  }, [])
+  }, [canDelete])
   const columns = useAccountingBankColumns(openEditor, requestDelete)
 
   useEffect(() => {
@@ -160,6 +173,11 @@ function AccountingBanksPageContent() {
   async function handleSaveBank(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
 
+    if (!canSubmitEditor) {
+      setFormError(t('Недостатньо прав для збереження банку'))
+      return
+    }
+
     const payload = buildBankPayload(editingBank, formValues)
     const validationError = validateBank(payload)
 
@@ -189,7 +207,7 @@ function AccountingBanksPageContent() {
   }
 
   async function handleDeleteBank() {
-    if (!deleteTarget) {
+    if (!deleteTarget || !canDelete) {
       return
     }
 
@@ -283,7 +301,7 @@ function AccountingBanksPageContent() {
               showLayoutControls
               tableId="accounting-banks"
               toolbarPortalTarget={tableToolbarSlot}
-              onRowClick={openEditor}
+              onRowClick={canSave ? openEditor : undefined}
             />
           </div>
         </Stack>
@@ -291,6 +309,7 @@ function AccountingBanksPageContent() {
 
       <BankEditorModal
         bank={editingBank}
+        canSubmit={canSubmitEditor}
         error={formError}
         isOpen={isEditorOpen}
         isSaving={isSaving}
@@ -313,6 +332,7 @@ function AccountingBanksPageContent() {
 
 type BankEditorModalProps = {
   bank: AccountingBank | null
+  canSubmit: boolean
   error: string | null
   isOpen: boolean
   isSaving: boolean
@@ -325,6 +345,7 @@ type BankEditorModalProps = {
 
 function BankEditorModal({
   bank,
+  canSubmit,
   error,
   isOpen,
   isSaving,
@@ -346,7 +367,7 @@ function BankEditorModal({
             </Alert>
           )}
           <TextInput
-            disabled={isSaving}
+            disabled={isSaving || !canSubmit}
             label={t('Назва')}
             maxLength={180}
             required
@@ -355,7 +376,7 @@ function BankEditorModal({
           />
           <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
             <TextInput
-              disabled={isSaving}
+              disabled={isSaving || !canSubmit}
               label={t('МФО')}
               maxLength={6}
               required
@@ -363,7 +384,7 @@ function BankEditorModal({
               onChange={(event) => onFieldChange('mfoCode', event.currentTarget.value)}
             />
             <TextInput
-              disabled={isSaving}
+              disabled={isSaving || !canSubmit}
               label={t('ЄДРПОУ')}
               maxLength={20}
               required
@@ -373,14 +394,14 @@ function BankEditorModal({
           </SimpleGrid>
           <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
             <TextInput
-              disabled={isSaving}
+              disabled={isSaving || !canSubmit}
               label={t('Місто')}
               maxLength={120}
               value={values.city}
               onChange={(event) => onFieldChange('city', event.currentTarget.value)}
             />
             <TextInput
-              disabled={isSaving}
+              disabled={isSaving || !canSubmit}
               label={t('Телефон')}
               maxLength={120}
               value={values.phones}
@@ -388,7 +409,7 @@ function BankEditorModal({
             />
           </SimpleGrid>
           <TextInput
-            disabled={isSaving}
+            disabled={isSaving || !canSubmit}
             label={t('Адреса')}
             maxLength={240}
             value={values.address}
@@ -415,7 +436,7 @@ function BankEditorModal({
               <Button color="gray" disabled={isSaving} type="button" variant="subtle" onClick={onClose}>
                 {t('Скасувати')}
               </Button>
-              <PermissionGate permissionKey={ACCOUNTING_BANK_SAVE_PERMISSION}>
+              <PermissionGate permissionKey={bank?.Id ? ACCOUNTING_BANK_SAVE_PERMISSION : ACCOUNTING_BANK_CREATE_PERMISSION}>
                 <Button color={CREATE_ACTION_COLOR} leftSection={<Save size={16} />} loading={isSaving} styles={{ label: { fontFamily: 'var(--font-mono)', letterSpacing: 0 } }} type="submit">
                   {t('Зберегти')}
                 </Button>
@@ -524,7 +545,9 @@ function useAccountingBankColumns(
         enableSorting: false,
         cell: (bank) => (
           <Group gap={4} justify="center" wrap="nowrap" onClick={(event) => event.stopPropagation()}>
-            <TableRowAction action="edit" label={t('Редагувати')} onClick={() => openEditor(bank)} />
+            <PermissionGate permissionKey={ACCOUNTING_BANK_SAVE_PERMISSION}>
+              <TableRowAction action="edit" label={t('Редагувати')} onClick={() => openEditor(bank)} />
+            </PermissionGate>
             <PermissionGate permissionKey={ACCOUNTING_BANK_DELETE_PERMISSION}>
               <TableRowAction
                 action="delete"

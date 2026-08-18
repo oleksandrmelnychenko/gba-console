@@ -877,6 +877,36 @@
     "PE-01855": {
       "disposition": "stale_or_aggregated",
       "reason": "The nested generic row callback duplicates the aggregated DataTable callback; concrete screens own authorization."
+    },
+    "PE-00016": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": [
+        "payments.banks.bank.save"
+      ],
+      "reason": "The row opens the bank editor only with save access; the final update uses the dedicated save-scoped endpoint."
+    },
+    "PE-00017": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": [
+        "payments.banks.bank.create",
+        "payments.banks.bank.save"
+      ],
+      "reason": "The shared editor handler requires create for a new bank and save for an existing bank before the matching scoped request."
+    },
+    "PE-00018": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-00017",
+      "reason": "The nested form submit invokes the same reviewed editor handler and is not a separate business action."
+    },
+    "PE-00022": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-00019",
+      "reason": "The confirmation button invokes the same bank-delete handler already represented by the delete business action."
+    },
+    "PE-00024": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-00016",
+      "reason": "The edit icon and table-row click open the same bank editor under one save permission."
     }
   }
 }

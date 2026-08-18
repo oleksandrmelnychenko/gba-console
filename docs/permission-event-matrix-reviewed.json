@@ -5,24 +5,24 @@
     "classifiedRecords": 1902,
     "dispositionCounts": {
       "technical_ui": 647,
-      "covered_existing": 312,
+      "covered_existing": 314,
       "business_candidate": 533,
-      "needs_human_review": 276,
-      "duplicate_occurrence": 126,
+      "needs_human_review": 271,
+      "duplicate_occurrence": 129,
       "stale_or_aggregated": 8
     },
-    "reviewCandidates": 809,
+    "reviewCandidates": 804,
     "technicalExcluded": 647,
-    "duplicatesExcluded": 126,
-    "duplicateOccurrencesTotal": 193,
+    "duplicatesExcluded": 129,
+    "duplicateOccurrencesTotal": 196,
     "technicalDuplicateOverlap": 67,
     "sourceResolved": 1828,
     "sourceUnresolved": 74,
     "currentActionResolved": 1191,
     "currentActionUnresolved": 711,
     "currentProductionActions": 1829,
-    "currentPermissionBoundActions": 181,
-    "currentUnboundActions": 1648
+    "currentPermissionBoundActions": 183,
+    "currentUnboundActions": 1646
   },
   "invariants": {
     "allInputRecordsClassified": true,
@@ -460,12 +460,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-dbac9827d36e",
-          "distance": 94,
+          "candidateId": "EPC-8bb8b4200596",
+          "distance": 99,
           "file": "src/features/accounting-banks/pages/AccountingBanksPage.tsx",
           "handler": "{resetSearch}",
           "humanLabel": "Скинути",
-          "line": 231,
+          "line": 249,
           "permissionKeys": [],
           "score": 11
         }
@@ -473,7 +473,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/accounting-banks/pages/AccountingBanksPage.tsx",
-        "line": 137,
+        "line": 150,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -504,7 +504,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/accounting-banks/pages/AccountingBanksPage.tsx",
-        "line": 84,
+        "line": 85,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -535,12 +535,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-5225c6cddd36",
-          "distance": 163,
+          "candidateId": "EPC-92bfdc12b4b4",
+          "distance": 176,
           "file": "src/features/accounting-banks/pages/AccountingBanksPage.tsx",
           "handler": "{() => openEditor()}",
           "humanLabel": "Новий банк",
-          "line": 250,
+          "line": 268,
           "permissionKeys": [
             "payments.banks.bank.create"
           ],
@@ -550,7 +550,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/accounting-banks/pages/AccountingBanksPage.tsx",
-        "line": 87,
+        "line": 92,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -571,17 +571,19 @@
       "proposedPermission": "accounting.accounting_banks.open_editor.row_click",
       "securityLevel": "high",
       "rawStatus": "Candidate existing key in component; binding review required",
-      "disposition": "needs_human_review",
-      "dispositionReason": "raw_audit_claims_existing_binding_but_does_not_name_the_key",
+      "disposition": "covered_existing",
+      "dispositionReason": "The row opens the bank editor only with save access; the final update uses the dedicated save-scoped endpoint.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "payments.banks.bank.save"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [],
       "source": {
         "status": "resolved",
         "file": "src/features/accounting-banks/pages/AccountingBanksPage.tsx",
-        "line": 81,
+        "line": 82,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -602,20 +604,23 @@
       "proposedPermission": "accounting.accounting_banks.handle_save_bank.form_submit",
       "securityLevel": "high",
       "rawStatus": "Candidate existing key in component; binding review required",
-      "disposition": "needs_human_review",
-      "dispositionReason": "raw_audit_claims_existing_binding_but_does_not_name_the_key",
+      "disposition": "covered_existing",
+      "dispositionReason": "The shared editor handler requires create for a new bank and save for an existing bank before the matching scoped request.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "payments.banks.bank.create",
+        "payments.banks.bank.save"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-857aeaf333fb",
-          "distance": 132,
+          "candidateId": "EPC-5000bfd21277",
+          "distance": 137,
           "file": "src/features/accounting-banks/pages/AccountingBanksPage.tsx",
           "handler": "{handleSaveBank}",
           "humanLabel": null,
-          "line": 292,
+          "line": 310,
           "permissionKeys": [],
           "score": 14
         }
@@ -623,7 +628,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/accounting-banks/pages/AccountingBanksPage.tsx",
-        "line": 160,
+        "line": 173,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -644,17 +649,17 @@
       "proposedPermission": "accounting.accounting_banks.on_submit.form_submit",
       "securityLevel": "high",
       "rawStatus": "Candidate existing key in component; binding review required",
-      "disposition": "needs_human_review",
-      "dispositionReason": "raw_audit_claims_existing_binding_but_does_not_name_the_key",
-      "duplicateOf": null,
+      "disposition": "duplicate_occurrence",
+      "dispositionReason": "The nested form submit invokes the same reviewed editor handler and is not a separate business action.",
+      "duplicateOf": "PE-00017",
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [],
       "source": {
         "status": "resolved",
         "file": "src/features/accounting-banks/pages/AccountingBanksPage.tsx",
-        "line": 301,
+        "line": 320,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -685,12 +690,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-8b963dde57e9",
-          "distance": 80,
+          "candidateId": "EPC-ad0ea769c0e9",
+          "distance": 81,
           "file": "src/features/accounting-banks/pages/AccountingBanksPage.tsx",
           "handler": "{() => onDelete(bank)}",
           "humanLabel": "Видалити",
-          "line": 401,
+          "line": 422,
           "permissionKeys": [
             "payments.banks.bank.delete"
           ],
@@ -700,7 +705,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/accounting-banks/pages/AccountingBanksPage.tsx",
-        "line": 321,
+        "line": 341,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -731,7 +736,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/accounting-banks/pages/AccountingBanksPage.tsx",
-        "line": 142,
+        "line": 155,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -762,7 +767,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/accounting-banks/pages/AccountingBanksPage.tsx",
-        "line": 142,
+        "line": 155,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -783,17 +788,17 @@
       "proposedPermission": "accounting.accounting_banks.on_delete.command_delete",
       "securityLevel": "high",
       "rawStatus": "Candidate existing key in component; binding review required",
-      "disposition": "needs_human_review",
-      "dispositionReason": "raw_audit_claims_existing_binding_but_does_not_name_the_key",
-      "duplicateOf": null,
+      "disposition": "duplicate_occurrence",
+      "dispositionReason": "The confirmation button invokes the same bank-delete handler already represented by the delete business action.",
+      "duplicateOf": "PE-00019",
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [],
       "source": {
         "status": "resolved",
         "file": "src/features/accounting-banks/pages/AccountingBanksPage.tsx",
-        "line": 299,
+        "line": 318,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -824,7 +829,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/accounting-banks/pages/AccountingBanksPage.tsx",
-        "line": 526,
+        "line": 548,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -845,28 +850,32 @@
       "proposedPermission": "accounting.accounting_banks.open_editor_bank.modal_open",
       "securityLevel": "high",
       "rawStatus": "Candidate existing key in component; binding review required",
-      "disposition": "needs_human_review",
-      "dispositionReason": "raw_audit_claims_existing_binding_but_does_not_name_the_key",
-      "duplicateOf": null,
+      "disposition": "duplicate_occurrence",
+      "dispositionReason": "The edit icon and table-row click open the same bank editor under one save permission.",
+      "duplicateOf": "PE-00016",
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "payments.banks.bank.save"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-cc7ccaebb909",
-          "distance": 68,
+          "candidateId": "EPC-90e85f75038c",
+          "distance": 70,
           "file": "src/features/accounting-banks/pages/AccountingBanksPage.tsx",
           "handler": "{() => openEditor(bank)}",
           "humanLabel": "Редагувати",
-          "line": 527,
-          "permissionKeys": [],
+          "line": 550,
+          "permissionKeys": [
+            "payments.banks.bank.save"
+          ],
           "score": 14
         }
       ],
       "source": {
         "status": "resolved",
         "file": "src/features/accounting-banks/pages/AccountingBanksPage.tsx",
-        "line": 459,
+        "line": 480,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -897,12 +906,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-5e202f56c26e",
-          "distance": 69,
+          "candidateId": "EPC-49ffbf60ae16",
+          "distance": 72,
           "file": "src/features/accounting-banks/pages/AccountingBanksPage.tsx",
           "handler": "{() => requestDelete(bank)}",
           "humanLabel": "Видалити",
-          "line": 529,
+          "line": 553,
           "permissionKeys": [
             "payments.banks.bank.delete"
           ],
@@ -912,7 +921,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/accounting-banks/pages/AccountingBanksPage.tsx",
-        "line": 460,
+        "line": 481,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -79124,11 +79133,6 @@
     "PE-00009",
     "PE-00010",
     "PE-00011",
-    "PE-00016",
-    "PE-00017",
-    "PE-00018",
-    "PE-00022",
-    "PE-00024",
     "PE-00031",
     "PE-00032",
     "PE-00035",
