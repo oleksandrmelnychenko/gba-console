@@ -61,8 +61,13 @@ export function StatusSection({
           </Button>
           <Button
             color={CREATE_ACTION_COLOR}
-            loading={isUpdating}
+            disabled={!canChangeStatus || isUpdating}
+            loading={canChangeStatus && isUpdating}
             onClick={() => {
+              if (!canChangeStatus) {
+                return
+              }
+
               setConfirmOpen(false)
               onChangeStatus()
             }}

@@ -69,11 +69,13 @@ function getInvoiceCardKey(invoice: SupplyInvoice): string {
 
 function InvoiceViewCard({
   invoice,
+  canOpenExpenses,
   canEditDeliveryDocuments,
   isSaving,
   onSaveDocuments,
 }: {
   canEditDeliveryDocuments: boolean
+  canOpenExpenses: boolean
   invoice: SupplyInvoice
   isSaving: boolean
   onSaveDocuments: (invoice: SupplyInvoice, documents: File[]) => Promise<void>
@@ -94,7 +96,7 @@ function InvoiceViewCard({
   const [expensesOpened, setExpensesOpened] = useValueState(false)
 
   function toggleDeleted(document: SupplyDocument, index: number) {
-    if (isSaving) {
+    if (!canEditDeliveryDocuments || isSaving) {
       return
     }
 
@@ -121,7 +123,7 @@ function InvoiceViewCard({
   }
 
   function handleChangeFiles(nextFiles: File[] | null) {
-    if (isSaving) {
+    if (!canEditDeliveryDocuments || isSaving) {
       return
     }
 
@@ -141,15 +143,17 @@ function InvoiceViewCard({
     <Card withBorder radius="md" padding="md">
       <Stack gap="xs">
         <Group justify="flex-end" gap="sm">
-          <Button
-            disabled={isSaving}
-            leftSection={<ListTree size={16} />}
-            size="xs"
-            variant="default"
-            onClick={() => setExpensesOpened(true)}
-          >
-            {t('Детальні витрати')}
-          </Button>
+          {canOpenExpenses && (
+            <Button
+              disabled={isSaving}
+              leftSection={<ListTree size={16} />}
+              size="xs"
+              variant="default"
+              onClick={() => setExpensesOpened(true)}
+            >
+              {t('Детальні витрати')}
+            </Button>
+          )}
           {canEditDeliveryDocuments && (
             <Button
               color={CREATE_ACTION_COLOR}
@@ -247,7 +251,7 @@ function InvoiceViewCard({
       </Stack>
       <InvoiceExpensesDrawer
         invoiceNetUid={invoice.NetUid || ''}
-        opened={expensesOpened}
+        opened={expensesOpened && canOpenExpenses}
         onClose={() => setExpensesOpened(false)}
       />
     </Card>
@@ -528,6 +532,10 @@ export function InvoicesSection({
   const canManageInvoices = permissions.canEditAssignments && hasPermission(MANAGE_INVOICES_PERMISSION)
 
   async function handleAssign(selectedInvoices: SupplyInvoice[]) {
+    if (!canManageInvoices) {
+      return
+    }
+
     try {
       await onAssignInvoices(selectedInvoices)
       setDrawerOpened(false)
@@ -564,6 +572,7 @@ export function InvoicesSection({
             <InvoiceViewCard
               key={getInvoiceCardKey(invoice)}
               canEditDeliveryDocuments={permissions.canEditDeliveryDocuments}
+              canOpenExpenses={canManageInvoices}
               invoice={invoice}
               isSaving={status.isSavingInvoiceDocuments}
               onSaveDocuments={onSaveInvoiceDocuments}
@@ -574,7 +583,7 @@ export function InvoicesSection({
 
       <AssignInvoicesDrawer
         isSaving={status.isAssigning}
-        opened={drawerOpened}
+        opened={drawerOpened && canManageInvoices}
         protocol={protocol}
         onAssign={handleAssign}
         onClose={() => {

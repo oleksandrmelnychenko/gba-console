@@ -3096,6 +3096,189 @@
     "PE-00865": {
       "disposition": "technical_ui",
       "reason": "Toggling an invoice only changes local merge selection; final merge confirmation owns the business mutation."
+    },
+    "PE-00776": {
+      "disposition": "technical_ui",
+      "reason": "Selecting an invoice only changes the local assignment draft; final assignment owns the business mutation."
+    },
+    "PE-00778": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["orders.delivery_protocol.unified_service.add_invoice"],
+      "reason": "Final merged-service invoice assignment is independently guarded and uses the protected add-invoice facade."
+    },
+    "PE-00780": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["orders.delivery_protocol.unified_service.calculate"],
+      "reason": "Final merged-service calculation rechecks the calculate permission and calls its dedicated server policy."
+    },
+    "PE-00781": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["orders.delivery_protocol.invoice_management.open"],
+      "reason": "Detailed invoice expenses are hidden without invoice-management access and loaded through its protected read facade."
+    },
+    "PE-00782": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["orders.delivery_protocol.delivery_documents.download"],
+      "reason": "Final delivery-document save is independently guarded and calls the protected multipart facade."
+    },
+    "PE-00783": {
+      "disposition": "technical_ui",
+      "reason": "Marking an existing document deleted only edits the local draft; final document save owns persistence."
+    },
+    "PE-00784": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["orders.delivery_protocol.invoice_management.open"],
+      "reason": "Final protocol invoice assignment is guarded at the drawer and page handler and uses the protected assignment facade."
+    },
+    "PE-00785": {
+      "disposition": "technical_ui",
+      "reason": "Toggling invoice selection only changes local drawer state and performs no request."
+    },
+    "PE-00786": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-00784",
+      "reason": "Opening invoice management is the first UI step of the same assignment capability finalized by PE-00784."
+    },
+    "PE-00787": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["orders.delivery_protocol.unified_service.edit"],
+      "reason": "Final merged-service edit is independently guarded and enforced by its edit facade."
+    },
+    "PE-00788": {
+      "disposition": "technical_ui",
+      "reason": "Toggling a service document deleted only edits the local form draft; final service edit owns persistence."
+    },
+    "PE-00790": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-00791",
+      "reason": "Opening the new-service form is the first UI step of the same create capability finalized by PE-00791."
+    },
+    "PE-00791": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["orders.delivery_protocol.unified_service.create"],
+      "reason": "Final merged-service creation is independently guarded and enforced by its create facade."
+    },
+    "PE-00792": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-00780",
+      "reason": "The section callback delegates the same protected calculation submitted by PE-00780."
+    },
+    "PE-00794": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["orders.delivery_protocol.unified_service.delete"],
+      "reason": "Final confirmed service deletion is independently guarded and calls the protected delete facade."
+    },
+    "PE-00795": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-00780",
+      "reason": "The calculate button opens the same protected calculation flow finalized by PE-00780."
+    },
+    "PE-00796": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-00778",
+      "reason": "The assign button opens the same protected invoice-assignment flow finalized by PE-00778."
+    },
+    "PE-00797": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-00787",
+      "reason": "The edit button opens the same protected service-edit flow finalized by PE-00787."
+    },
+    "PE-00798": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-00794",
+      "reason": "The delete button opens confirmation for the same protected deletion finalized by PE-00794."
+    },
+    "PE-00800": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["orders.delivery_protocol.invoice.merge"],
+      "reason": "Final invoice merge rechecks the dedicated merge right and uses its protected facade."
+    },
+    "PE-00802": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["orders.delivery_protocol.product_income.edit_placement"],
+      "reason": "Adding a dynamic income column is part of the single protected placement-edit aggregate operation."
+    },
+    "PE-00804": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-00791",
+      "reason": "The form-level submit delegates the same merged-service creation finalized by PE-00791."
+    },
+    "PE-00806": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["orders.delivery_protocol.protocol.create"],
+      "reason": "Final protocol creation is independently guarded in the registry and protected by its create facade."
+    },
+    "PE-00808": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["orders.ukraine.specification_codes.edit"],
+      "reason": "Final customs-specification save is guarded by the existing specification edit permission in both host flows."
+    },
+    "PE-00812": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["orders.delivery_protocol.product_income.edit_placement"],
+      "reason": "Applying the placement drawer draft delegates to the protected placement-edit handler."
+    },
+    "PE-00813": {
+      "disposition": "technical_ui",
+      "reason": "Opening a placement row draft only edits local drawer state and performs no request."
+    },
+    "PE-00814": {
+      "disposition": "technical_ui",
+      "reason": "Removing a placement only changes the local drawer draft; final apply owns the aggregate mutation."
+    },
+    "PE-00815": {
+      "disposition": "technical_ui",
+      "reason": "Opening a new placement draft is local form state and performs no request."
+    },
+    "PE-00817": {
+      "disposition": "technical_ui",
+      "reason": "Accepting a placement draft only updates the parent local draft; final apply owns persistence."
+    },
+    "PE-00818": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["orders.delivery_protocol.logistic_way.open"],
+      "reason": "Navigation to the logistic path is independently guarded by its existing open permission."
+    },
+    "PE-00819": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["orders.delivery_protocol.specification_codes.open"],
+      "reason": "Navigation to protocol specifications is independently guarded by its existing open permission."
+    },
+    "PE-00820": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["orders.delivery_protocol.product_income.open"],
+      "reason": "Navigation to product income is independently guarded by its existing open permission."
+    },
+    "PE-00823": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": [
+        "orders.delivery_protocol.specification_history.open",
+        "orders.ukraine.specification_codes.view_history"
+      ],
+      "reason": "The shared row editor opener uses the host-specific specification-history permission; final save remains separately protected."
+    },
+    "PE-00824": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["orders.delivery_protocol.unified_service.change_status"],
+      "reason": "Status confirmation and the final page handler both enforce the existing status-change permission."
+    },
+    "PE-00827": {
+      "disposition": "technical_ui",
+      "reason": "Removing a newly selected file only changes local upload state and performs no server deletion."
+    },
+    "PE-00828": {
+      "disposition": "technical_ui",
+      "reason": "Marking an existing delivery document deleted changes the local draft; final save owns persistence."
+    },
+    "PE-00829": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["orders.delivery_protocol.delivery_documents.download"],
+      "reason": "Final delivery-document save rechecks the existing permission and uses the protected multipart facade."
+    },
+    "PE-00831": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-00864",
+      "reason": "The modal-level submit delegates the same protected specification import finalized by PE-00864."
     }
   }
 }

@@ -4,17 +4,17 @@
     "inputRecords": 1902,
     "classifiedRecords": 1902,
     "dispositionCounts": {
-      "technical_ui": 744,
-      "covered_existing": 498,
-      "duplicate_occurrence": 258,
-      "business_candidate": 258,
-      "needs_human_review": 136,
+      "technical_ui": 754,
+      "covered_existing": 517,
+      "duplicate_occurrence": 267,
+      "business_candidate": 238,
+      "needs_human_review": 118,
       "stale_or_aggregated": 8
     },
-    "reviewCandidates": 394,
-    "technicalExcluded": 744,
-    "duplicatesExcluded": 258,
-    "duplicateOccurrencesTotal": 328,
+    "reviewCandidates": 356,
+    "technicalExcluded": 754,
+    "duplicatesExcluded": 267,
+    "duplicateOccurrencesTotal": 337,
     "technicalDuplicateOverlap": 70,
     "sourceResolved": 1828,
     "sourceUnresolved": 74,
@@ -31202,12 +31202,12 @@
       "proposedPermission": "orders.orders_ukraine_all_edit_item_product_income.toggle.control_toggle",
       "securityLevel": "low",
       "rawStatus": "No permission candidate found",
-      "disposition": "needs_human_review",
-      "dispositionReason": "insufficient_evidence_for_automatic_permission_or_exclusion",
+      "disposition": "technical_ui",
+      "dispositionReason": "Selecting an invoice only changes the local assignment draft; final assignment owns the business mutation.",
       "duplicateOf": null,
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [],
       "source": {
         "status": "resolved",
@@ -31268,12 +31268,14 @@
       "proposedPermission": "orders.orders_ukraine_all_edit_item_product_income.handle_assign.button_click",
       "securityLevel": "low",
       "rawStatus": "No permission candidate found",
-      "disposition": "needs_human_review",
-      "dispositionReason": "insufficient_evidence_for_automatic_permission_or_exclusion",
+      "disposition": "covered_existing",
+      "dispositionReason": "Final merged-service invoice assignment is independently guarded and uses the protected add-invoice facade.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "orders.delivery_protocol.unified_service.add_invoice"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
           "candidateId": "EPC-a67fca1d75a2",
@@ -31345,12 +31347,14 @@
       "proposedPermission": "orders.orders_ukraine_all_edit_item_product_income.handle_submit.command_submit",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "covered_existing",
+      "dispositionReason": "Final merged-service calculation rechecks the calculate permission and calls its dedicated server policy.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "orders.delivery_protocol.unified_service.calculate"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
           "candidateId": "EPC-30bf30a4b07e",
@@ -31389,20 +31393,22 @@
       "proposedPermission": "orders.orders_ukraine_all_edit_item_product_income.set_expenses_opened_true.modal_open",
       "securityLevel": "low",
       "rawStatus": "Candidate existing key in component; binding review required",
-      "disposition": "needs_human_review",
-      "dispositionReason": "raw_audit_claims_existing_binding_but_does_not_name_the_key",
+      "disposition": "covered_existing",
+      "dispositionReason": "Detailed invoice expenses are hidden without invoice-management access and loaded through its protected read facade.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "orders.delivery_protocol.invoice_management.open"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-8f6969ff2d9d",
+          "candidateId": "EPC-e419d0fab8ec",
           "distance": 5,
           "file": "src/features/product-delivery-protocols/components/InvoicesSection.tsx",
           "handler": "{() => setExpensesOpened(true)}",
           "humanLabel": "Детальні витрати",
-          "line": 144,
+          "line": 147,
           "permissionKeys": [],
           "score": 21
         }
@@ -31410,7 +31416,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/product-delivery-protocols/components/InvoicesSection.tsx",
-        "line": 149,
+        "line": 152,
         "alternatives": []
       }
     },
@@ -31433,20 +31439,22 @@
       "proposedPermission": "orders.orders_ukraine_all_edit_item_product_income.handle_save_documents.command_submit",
       "securityLevel": "high",
       "rawStatus": "Candidate existing key in component; binding review required",
-      "disposition": "needs_human_review",
-      "dispositionReason": "raw_audit_claims_existing_binding_but_does_not_name_the_key",
+      "disposition": "covered_existing",
+      "dispositionReason": "Final delivery-document save is independently guarded and calls the protected multipart facade.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "orders.delivery_protocol.delivery_documents.download"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-f81ca32d5de5",
-          "distance": 44,
+          "candidateId": "EPC-2268e3d3b191",
+          "distance": 46,
           "file": "src/features/product-delivery-protocols/components/InvoicesSection.tsx",
           "handler": "{handleSaveDocuments}",
           "humanLabel": "Зберегти",
-          "line": 154,
+          "line": 158,
           "permissionKeys": [],
           "score": 19
         }
@@ -31454,7 +31462,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/product-delivery-protocols/components/InvoicesSection.tsx",
-        "line": 110,
+        "line": 112,
         "alternatives": []
       }
     },
@@ -31477,20 +31485,20 @@
       "proposedPermission": "orders.orders_ukraine_all_edit_item_product_income.toggle_deleted_document_index.command_delete",
       "securityLevel": "high",
       "rawStatus": "Candidate existing key in component; binding review required",
-      "disposition": "needs_human_review",
-      "dispositionReason": "raw_audit_claims_existing_binding_but_does_not_name_the_key",
+      "disposition": "technical_ui",
+      "dispositionReason": "Marking an existing document deleted only edits the local draft; final document save owns persistence.",
       "duplicateOf": null,
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-6dc9ea24b1a6",
+          "candidateId": "EPC-c4ee5001664e",
           "distance": 6,
           "file": "src/features/product-delivery-protocols/components/InvoicesSection.tsx",
           "handler": "{() => toggleDeleted(document, index)}",
           "humanLabel": null,
-          "line": 213,
+          "line": 217,
           "permissionKeys": [],
           "score": 26
         }
@@ -31498,7 +31506,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/product-delivery-protocols/components/InvoicesSection.tsx",
-        "line": 219,
+        "line": 223,
         "alternatives": []
       }
     },
@@ -31521,20 +31529,22 @@
       "proposedPermission": "orders.orders_ukraine_all_edit_item_product_income.handle_assign.button_click.2",
       "securityLevel": "low",
       "rawStatus": "Candidate existing key in component; binding review required",
-      "disposition": "needs_human_review",
-      "dispositionReason": "raw_audit_claims_existing_binding_but_does_not_name_the_key",
+      "disposition": "covered_existing",
+      "dispositionReason": "Final protocol invoice assignment is guarded at the drawer and page handler and uses the protected assignment facade.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "orders.delivery_protocol.invoice_management.open"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-1cc8d872381c",
+          "candidateId": "EPC-85c0ccb8c20a",
           "distance": 19,
           "file": "src/features/product-delivery-protocols/components/InvoicesSection.tsx",
           "handler": "{handleAssign}",
           "humanLabel": "Зберегти",
-          "line": 488,
+          "line": 492,
           "permissionKeys": [],
           "score": 12
         }
@@ -31542,7 +31552,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/product-delivery-protocols/components/InvoicesSection.tsx",
-        "line": 469,
+        "line": 473,
         "alternatives": []
       }
     },
@@ -31565,17 +31575,17 @@
       "proposedPermission": "orders.orders_ukraine_all_edit_item_product_income.toggle.control_toggle.2",
       "securityLevel": "low",
       "rawStatus": "Candidate existing key in component; binding review required",
-      "disposition": "needs_human_review",
-      "dispositionReason": "raw_audit_claims_existing_binding_but_does_not_name_the_key",
+      "disposition": "technical_ui",
+      "dispositionReason": "Toggling invoice selection only changes local drawer state and performs no request.",
       "duplicateOf": null,
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [],
       "source": {
         "status": "resolved",
         "file": "src/features/product-delivery-protocols/components/InvoicesSection.tsx",
-        "line": 96,
+        "line": 98,
         "alternatives": []
       }
     },
@@ -31598,20 +31608,20 @@
       "proposedPermission": "orders.orders_ukraine_all_edit_item_product_income.set_drawer_opened_true.modal_open",
       "securityLevel": "low",
       "rawStatus": "Candidate existing key in component; binding review required",
-      "disposition": "needs_human_review",
-      "dispositionReason": "raw_audit_claims_existing_binding_but_does_not_name_the_key",
-      "duplicateOf": null,
+      "disposition": "duplicate_occurrence",
+      "dispositionReason": "Opening invoice management is the first UI step of the same assignment capability finalized by PE-00784.",
+      "duplicateOf": "PE-00784",
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-9c578bac61eb",
+          "candidateId": "EPC-3ee428368b54",
           "distance": 4,
           "file": "src/features/product-delivery-protocols/components/InvoicesSection.tsx",
           "handler": "{() => setDrawerOpened(true)}",
           "humanLabel": "Управління інвойсами",
-          "line": 546,
+          "line": 554,
           "permissionKeys": [],
           "score": 19
         }
@@ -31619,7 +31629,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/product-delivery-protocols/components/InvoicesSection.tsx",
-        "line": 550,
+        "line": 558,
         "alternatives": []
       }
     },
@@ -31642,12 +31652,14 @@
       "proposedPermission": "orders.orders_ukraine_all_edit_item_product_income.on_save.command_submit",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "covered_existing",
+      "dispositionReason": "Final merged-service edit is independently guarded and enforced by its edit facade.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "orders.delivery_protocol.unified_service.edit"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [],
       "source": {
         "status": "resolved",
@@ -31675,12 +31687,12 @@
       "proposedPermission": "orders.orders_ukraine_all_edit_item_product_income.on_toggle_deleted_document_index.command_delete",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "technical_ui",
+      "dispositionReason": "Toggling a service document deleted only edits the local form draft; final service edit owns persistence.",
       "duplicateOf": null,
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
           "candidateId": "EPC-5a044139d063",
@@ -31763,20 +31775,20 @@
       "proposedPermission": "orders.orders_ukraine_all_edit_item_product_income.set_new_open_true.modal_open",
       "securityLevel": "low",
       "rawStatus": "Candidate existing key in component; binding review required",
-      "disposition": "needs_human_review",
-      "dispositionReason": "raw_audit_claims_existing_binding_but_does_not_name_the_key",
-      "duplicateOf": null,
+      "disposition": "duplicate_occurrence",
+      "dispositionReason": "Opening the new-service form is the first UI step of the same create capability finalized by PE-00791.",
+      "duplicateOf": "PE-00791",
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-79e7f6215a29",
+          "candidateId": "EPC-55f614839f54",
           "distance": 4,
           "file": "src/features/product-delivery-protocols/components/MergedServicesSection.tsx",
           "handler": "{() => setNewOpen(true)}",
           "humanLabel": "Додати",
-          "line": 235,
+          "line": 251,
           "permissionKeys": [],
           "score": 14
         }
@@ -31784,7 +31796,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/product-delivery-protocols/components/MergedServicesSection.tsx",
-        "line": 239,
+        "line": 255,
         "alternatives": [
           "src/features/supply-ukraine-payment-protocols/components/MergedServicesSection.tsx"
         ]
@@ -31809,20 +31821,22 @@
       "proposedPermission": "orders.orders_ukraine_all_edit_item_product_income.handle_new_submit.form_submit",
       "securityLevel": "high",
       "rawStatus": "Candidate existing key in component; binding review required",
-      "disposition": "needs_human_review",
-      "dispositionReason": "raw_audit_claims_existing_binding_but_does_not_name_the_key",
+      "disposition": "covered_existing",
+      "dispositionReason": "Final merged-service creation is independently guarded and enforced by its create facade.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "orders.delivery_protocol.unified_service.create"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-7f87a4421bb7",
-          "distance": 127,
+          "candidateId": "EPC-5a0feb3da3b6",
+          "distance": 135,
           "file": "src/features/product-delivery-protocols/components/MergedServicesSection.tsx",
           "handler": "{handleNewSubmit}",
           "humanLabel": null,
-          "line": 267,
+          "line": 283,
           "permissionKeys": [],
           "score": 15
         }
@@ -31830,7 +31844,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/product-delivery-protocols/components/MergedServicesSection.tsx",
-        "line": 140,
+        "line": 148,
         "alternatives": [
           "src/features/supply-ukraine-payment-protocols/components/MergedServicesSection.tsx"
         ]
@@ -31855,20 +31869,20 @@
       "proposedPermission": "orders.orders_ukraine_all_edit_item_product_income.handle_calculate.form_submit",
       "securityLevel": "high",
       "rawStatus": "Candidate existing key in component; binding review required",
-      "disposition": "needs_human_review",
-      "dispositionReason": "raw_audit_claims_existing_binding_but_does_not_name_the_key",
-      "duplicateOf": null,
+      "disposition": "duplicate_occurrence",
+      "dispositionReason": "The section callback delegates the same protected calculation submitted by PE-00780.",
+      "duplicateOf": "PE-00780",
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-46e43fa44394",
+          "candidateId": "EPC-adc1c2ce39b0",
           "distance": 117,
           "file": "src/features/product-delivery-protocols/components/MergedServicesSection.tsx",
           "handler": "{handleCalculate}",
           "humanLabel": null,
-          "line": 293,
+          "line": 309,
           "permissionKeys": [],
           "score": 15
         }
@@ -31876,7 +31890,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/product-delivery-protocols/components/MergedServicesSection.tsx",
-        "line": 176,
+        "line": 192,
         "alternatives": [
           "src/features/supply-ukraine-payment-protocols/components/MergedServicesSection.tsx"
         ]
@@ -31909,12 +31923,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-82352d135c99",
+          "candidateId": "EPC-bfa29a0c9272",
           "distance": 111,
           "file": "src/features/product-delivery-protocols/components/MergedServicesSection.tsx",
           "handler": "{() => setRemoveTarget(null)}",
           "humanLabel": "Скасувати",
-          "line": 333,
+          "line": 349,
           "permissionKeys": [],
           "score": 19
         }
@@ -31922,7 +31936,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/product-delivery-protocols/components/MergedServicesSection.tsx",
-        "line": 222,
+        "line": 238,
         "alternatives": [
           "src/features/supply-ukraine-payment-protocols/components/MergedServicesSection.tsx"
         ]
@@ -31947,20 +31961,22 @@
       "proposedPermission": "orders.orders_ukraine_all_edit_item_product_income.handle_remove_confirm.command_submit",
       "securityLevel": "high",
       "rawStatus": "Candidate existing key in component; binding review required",
-      "disposition": "needs_human_review",
-      "dispositionReason": "raw_audit_claims_existing_binding_but_does_not_name_the_key",
+      "disposition": "covered_existing",
+      "dispositionReason": "Final confirmed service deletion is independently guarded and calls the protected delete facade.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "orders.delivery_protocol.unified_service.delete"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-40a3d92aa341",
+          "candidateId": "EPC-a5bc1e60b598",
           "distance": 121,
           "file": "src/features/product-delivery-protocols/components/MergedServicesSection.tsx",
           "handler": "{handleRemoveConfirm}",
           "humanLabel": "Видалити",
-          "line": 336,
+          "line": 352,
           "permissionKeys": [],
           "score": 19
         }
@@ -31968,7 +31984,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/product-delivery-protocols/components/MergedServicesSection.tsx",
-        "line": 215,
+        "line": 231,
         "alternatives": [
           "src/features/supply-ukraine-payment-protocols/components/MergedServicesSection.tsx"
         ]
@@ -31993,12 +32009,12 @@
       "proposedPermission": "orders.orders_ukraine_all_edit_item_product_income.on_calculate.button_click",
       "securityLevel": "low",
       "rawStatus": "Candidate existing key in component; binding review required",
-      "disposition": "needs_human_review",
-      "dispositionReason": "raw_audit_claims_existing_binding_but_does_not_name_the_key",
-      "duplicateOf": null,
+      "disposition": "duplicate_occurrence",
+      "dispositionReason": "The calculate button opens the same protected calculation flow finalized by PE-00780.",
+      "duplicateOf": "PE-00780",
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
           "candidateId": "EPC-10bb8b5d32e3",
@@ -32037,12 +32053,12 @@
       "proposedPermission": "orders.orders_ukraine_all_edit_item_product_income.on_assign_invoices.button_click",
       "securityLevel": "low",
       "rawStatus": "Candidate existing key in component; binding review required",
-      "disposition": "needs_human_review",
-      "dispositionReason": "raw_audit_claims_existing_binding_but_does_not_name_the_key",
-      "duplicateOf": null,
+      "disposition": "duplicate_occurrence",
+      "dispositionReason": "The assign button opens the same protected invoice-assignment flow finalized by PE-00778.",
+      "duplicateOf": "PE-00778",
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
           "candidateId": "EPC-e3c828cdb675",
@@ -32081,12 +32097,12 @@
       "proposedPermission": "orders.orders_ukraine_all_edit_item_product_income.on_edit.button_click",
       "securityLevel": "high",
       "rawStatus": "Candidate existing key in component; binding review required",
-      "disposition": "needs_human_review",
-      "dispositionReason": "raw_audit_claims_existing_binding_but_does_not_name_the_key",
-      "duplicateOf": null,
+      "disposition": "duplicate_occurrence",
+      "dispositionReason": "The edit button opens the same protected service-edit flow finalized by PE-00787.",
+      "duplicateOf": "PE-00787",
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [],
       "source": {
         "status": "resolved",
@@ -32114,12 +32130,12 @@
       "proposedPermission": "orders.orders_ukraine_all_edit_item_product_income.on_remove.command_delete",
       "securityLevel": "high",
       "rawStatus": "Candidate existing key in component; binding review required",
-      "disposition": "needs_human_review",
-      "dispositionReason": "raw_audit_claims_existing_binding_but_does_not_name_the_key",
-      "duplicateOf": null,
+      "disposition": "duplicate_occurrence",
+      "dispositionReason": "The delete button opens confirmation for the same protected deletion finalized by PE-00794.",
+      "duplicateOf": "PE-00794",
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [],
       "source": {
         "status": "resolved",
@@ -32180,12 +32196,14 @@
       "proposedPermission": "orders.orders_ukraine_all_edit_item_product_income.on_confirm.command_submit",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "covered_existing",
+      "dispositionReason": "Final invoice merge rechecks the dedicated merge right and uses its protected facade.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "orders.delivery_protocol.invoice.merge"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [],
       "source": {
         "status": "resolved",
@@ -32246,12 +32264,14 @@
       "proposedPermission": "orders.orders_ukraine_all_edit_item_product_income.on_add_from_date.command_submit",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "covered_existing",
+      "dispositionReason": "Adding a dynamic income column is part of the single protected placement-edit aggregate operation.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "orders.delivery_protocol.product_income.edit_placement"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
           "candidateId": "EPC-53b12b83d56e",
@@ -32325,12 +32345,12 @@
       "proposedPermission": "orders.orders_ukraine_all_edit_item_product_income.handle_submit.command_submit.2",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
-      "duplicateOf": null,
+      "disposition": "duplicate_occurrence",
+      "dispositionReason": "The form-level submit delegates the same merged-service creation finalized by PE-00791.",
+      "duplicateOf": "PE-00791",
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
           "candidateId": "EPC-50e1a6dc4871",
@@ -32404,12 +32424,14 @@
       "proposedPermission": "orders.orders_ukraine_all_edit_item_product_income.handle_submit.command_submit.3",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "covered_existing",
+      "dispositionReason": "Final protocol creation is independently guarded in the registry and protected by its create facade.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "orders.delivery_protocol.protocol.create"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
           "candidateId": "EPC-97e25fe185b5",
@@ -32510,12 +32532,14 @@
       "proposedPermission": "orders.orders_develop_all_edit_item_specifications.submit.command_submit",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "covered_existing",
+      "dispositionReason": "Final customs-specification save is guarded by the existing specification edit permission in both host flows.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "orders.ukraine.specification_codes.edit"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [],
       "source": {
         "status": "resolved",
@@ -32682,12 +32706,14 @@
       "proposedPermission": "orders.orders_ukraine_all_edit_item_product_income.handle_apply.command_submit",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "covered_existing",
+      "dispositionReason": "Applying the placement drawer draft delegates to the protected placement-edit handler.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "orders.delivery_protocol.product_income.edit_placement"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
           "candidateId": "EPC-3196f8e56649",
@@ -32726,12 +32752,12 @@
       "proposedPermission": "orders.orders_ukraine_all_edit_item_product_income.placement_is_applied_open_draft_placement.modal_open",
       "securityLevel": "low",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "technical_ui",
+      "dispositionReason": "Opening a placement row draft only edits local drawer state and performs no request.",
       "duplicateOf": null,
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
           "candidateId": "EPC-05ddece47813",
@@ -32770,12 +32796,12 @@
       "proposedPermission": "orders.orders_ukraine_all_edit_item_product_income.remove_placement_placement.command_delete",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "technical_ui",
+      "dispositionReason": "Removing a placement only changes the local drawer draft; final apply owns the aggregate mutation.",
       "duplicateOf": null,
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
           "candidateId": "EPC-a792c7f1a9ad",
@@ -32814,12 +32840,12 @@
       "proposedPermission": "orders.orders_ukraine_all_edit_item_product_income.open_draft_null.modal_open",
       "securityLevel": "low",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "technical_ui",
+      "dispositionReason": "Opening a new placement draft is local form state and performs no request.",
       "duplicateOf": null,
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
           "candidateId": "EPC-978f6b7415bc",
@@ -32902,12 +32928,12 @@
       "proposedPermission": "orders.orders_ukraine_all_edit_item_product_income.accept_draft.button_click",
       "securityLevel": "low",
       "rawStatus": "No permission candidate found",
-      "disposition": "needs_human_review",
-      "dispositionReason": "insufficient_evidence_for_automatic_permission_or_exclusion",
+      "disposition": "technical_ui",
+      "dispositionReason": "Accepting a placement draft only updates the parent local draft; final apply owns persistence.",
       "duplicateOf": null,
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
           "candidateId": "EPC-6320860b19a6",
@@ -32946,12 +32972,14 @@
       "proposedPermission": "orders.orders_ukraine_all_edit_item_product_income.protocol_on_open_logistic_path_protocol.modal_open",
       "securityLevel": "low",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "covered_existing",
+      "dispositionReason": "Navigation to the logistic path is independently guarded by its existing open permission.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "orders.delivery_protocol.logistic_way.open"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
           "candidateId": "EPC-aca4c6374323",
@@ -32990,12 +33018,14 @@
       "proposedPermission": "orders.orders_ukraine_all_edit_item_product_income.protocol_on_open_specifications_protocol.modal_open",
       "securityLevel": "low",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "covered_existing",
+      "dispositionReason": "Navigation to protocol specifications is independently guarded by its existing open permission.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "orders.delivery_protocol.specification_codes.open"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
           "candidateId": "EPC-2ea7720a25ae",
@@ -33034,12 +33064,14 @@
       "proposedPermission": "orders.orders_ukraine_all_edit_item_product_income.protocol_on_open_income_protocol.modal_open",
       "securityLevel": "low",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "covered_existing",
+      "dispositionReason": "Navigation to product income is independently guarded by its existing open permission.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "orders.delivery_protocol.product_income.open"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [],
       "source": {
         "status": "resolved",
@@ -33182,12 +33214,15 @@
       "proposedPermission": "orders.orders_develop_all_edit_item_specifications.on_edit_specification_row_item.button_click",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "covered_existing",
+      "dispositionReason": "The shared row editor opener uses the host-specific specification-history permission; final save remains separately protected.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "orders.delivery_protocol.specification_history.open",
+        "orders.ukraine.specification_codes.view_history"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
           "candidateId": "EPC-e02490c95347",
@@ -33226,12 +33261,14 @@
       "proposedPermission": "orders.orders_ukraine_all_edit_item_product_income.if_can_change_status_set_confirm_open_true.command_submit",
       "securityLevel": "high",
       "rawStatus": "Candidate existing key in component; binding review required",
-      "disposition": "needs_human_review",
-      "dispositionReason": "raw_audit_claims_existing_binding_but_does_not_name_the_key",
+      "disposition": "covered_existing",
+      "dispositionReason": "Status confirmation and the final page handler both enforce the existing status-change permission.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "orders.delivery_protocol.unified_service.change_status"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
           "candidateId": "EPC-b2846c0766c7",
@@ -33356,12 +33393,12 @@
       "proposedPermission": "orders.orders_develop_all_edit_item_specifications.on_remove_new_document_document.command_delete",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "technical_ui",
+      "dispositionReason": "Removing a newly selected file only changes local upload state and performs no server deletion.",
       "duplicateOf": null,
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
           "candidateId": "EPC-62576d571651",
@@ -33409,12 +33446,12 @@
       "proposedPermission": "orders.orders_develop_all_edit_item_specifications.on_remove_existing_document_document.command_delete",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "technical_ui",
+      "dispositionReason": "Marking an existing delivery document deleted changes the local draft; final save owns persistence.",
       "duplicateOf": null,
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
           "candidateId": "EPC-4ca9d4dae25f",
@@ -33462,12 +33499,14 @@
       "proposedPermission": "orders.orders_develop_all_edit_item_specifications.on_save.command_submit",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "covered_existing",
+      "dispositionReason": "Final delivery-document save rechecks the existing permission and uses the protected multipart facade.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "orders.delivery_protocol.delivery_documents.download"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [],
       "source": {
         "status": "resolved",
@@ -33557,12 +33596,12 @@
       "proposedPermission": "orders.orders_develop_all_edit_item_specifications.submit_form.command_submit",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
-      "duplicateOf": null,
+      "disposition": "duplicate_occurrence",
+      "dispositionReason": "The modal-level submit delegates the same protected specification import finalized by PE-00864.",
+      "duplicateOf": "PE-00864",
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
           "candidateId": "EPC-ff3ce847ceac",
@@ -33717,7 +33756,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/product-delivery-protocols/pages/ProductDeliveryProtocolLogisticPathPage.tsx",
-        "line": 297,
+        "line": 319,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -64005,12 +64044,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-79e7f6215a29",
+          "candidateId": "EPC-55f614839f54",
           "distance": 4,
           "file": "src/features/product-delivery-protocols/components/MergedServicesSection.tsx",
           "handler": "{() => setNewOpen(true)}",
           "humanLabel": "Додати",
-          "line": 235,
+          "line": 251,
           "permissionKeys": [],
           "score": 14
         }
@@ -64018,7 +64057,7 @@
       "source": {
         "status": "ambiguous",
         "file": "src/features/product-delivery-protocols/components/MergedServicesSection.tsx",
-        "line": 239,
+        "line": 255,
         "alternatives": [
           "src/features/supply-ukraine-payment-protocols/components/MergedServicesSection.tsx"
         ]
@@ -64047,12 +64086,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-7f87a4421bb7",
-          "distance": 127,
+          "candidateId": "EPC-5a0feb3da3b6",
+          "distance": 135,
           "file": "src/features/product-delivery-protocols/components/MergedServicesSection.tsx",
           "handler": "{handleNewSubmit}",
           "humanLabel": null,
-          "line": 267,
+          "line": 283,
           "permissionKeys": [],
           "score": 15
         }
@@ -64060,7 +64099,7 @@
       "source": {
         "status": "ambiguous",
         "file": "src/features/product-delivery-protocols/components/MergedServicesSection.tsx",
-        "line": 140,
+        "line": 148,
         "alternatives": [
           "src/features/supply-ukraine-payment-protocols/components/MergedServicesSection.tsx"
         ]
@@ -64089,12 +64128,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-82352d135c99",
+          "candidateId": "EPC-bfa29a0c9272",
           "distance": 111,
           "file": "src/features/product-delivery-protocols/components/MergedServicesSection.tsx",
           "handler": "{() => setRemoveTarget(null)}",
           "humanLabel": "Скасувати",
-          "line": 333,
+          "line": 349,
           "permissionKeys": [],
           "score": 19
         }
@@ -64102,7 +64141,7 @@
       "source": {
         "status": "ambiguous",
         "file": "src/features/product-delivery-protocols/components/MergedServicesSection.tsx",
-        "line": 222,
+        "line": 238,
         "alternatives": [
           "src/features/supply-ukraine-payment-protocols/components/MergedServicesSection.tsx"
         ]
@@ -64131,12 +64170,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-40a3d92aa341",
+          "candidateId": "EPC-a5bc1e60b598",
           "distance": 121,
           "file": "src/features/product-delivery-protocols/components/MergedServicesSection.tsx",
           "handler": "{handleRemoveConfirm}",
           "humanLabel": "Видалити",
-          "line": 336,
+          "line": 352,
           "permissionKeys": [],
           "score": 19
         }
@@ -64144,7 +64183,7 @@
       "source": {
         "status": "ambiguous",
         "file": "src/features/product-delivery-protocols/components/MergedServicesSection.tsx",
-        "line": 215,
+        "line": 231,
         "alternatives": [
           "src/features/supply-ukraine-payment-protocols/components/MergedServicesSection.tsx"
         ]
@@ -79833,45 +79872,7 @@
     "PE-00747",
     "PE-00748",
     "PE-00749",
-    "PE-00776",
-    "PE-00778",
-    "PE-00780",
-    "PE-00781",
-    "PE-00782",
-    "PE-00783",
-    "PE-00784",
-    "PE-00785",
-    "PE-00786",
-    "PE-00787",
-    "PE-00788",
-    "PE-00790",
-    "PE-00791",
-    "PE-00792",
-    "PE-00794",
-    "PE-00795",
-    "PE-00796",
-    "PE-00797",
-    "PE-00798",
-    "PE-00800",
-    "PE-00802",
-    "PE-00804",
-    "PE-00806",
-    "PE-00808",
-    "PE-00812",
-    "PE-00813",
-    "PE-00814",
-    "PE-00815",
-    "PE-00817",
-    "PE-00818",
-    "PE-00819",
-    "PE-00820",
     "PE-00821",
-    "PE-00823",
-    "PE-00824",
-    "PE-00827",
-    "PE-00828",
-    "PE-00829",
-    "PE-00831",
     "PE-00901",
     "PE-00902",
     "PE-00905",
