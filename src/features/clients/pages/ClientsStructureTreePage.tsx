@@ -3,10 +3,16 @@ import { useDebouncedValue } from '@mantine/hooks'
 import { ChevronRight, CircleAlert, RefreshCw, RotateCcw, Search } from 'lucide-react'
 import { useEffect, useMemo, useReducer } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
+import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { ListTreeItem, ListTreeLayout } from '../../../shared/ui/tree/ListTreeLayout'
 import { ClientCommercialStructureView } from '../components/structure/ClientCommercialStructureView'
-import { getClientCommercialStructure, getClients } from '../api/clientsApi'
+import {
+  getClientCommercialStructureForRegistry,
+  getClientsForStructure,
+  mutateClientIdentityForStructure,
+} from '../api/clientsApi'
+import { usePermissions } from '../../auth/usePermissions'
 import type { Client, ClientCommercialStructure } from '../types'
 import '../../../shared/ui/console-table-page.css'
 import './clients-structure-tree-page.css'
@@ -21,6 +27,30 @@ const CLIENTS_PAGE_SIZE = 50
  * Rendered at 90% screen width.
  */
 export function ClientsStructureTreePage() {
+  const { t } = useI18n()
+  const { can, isLoading } = usePermissions()
+
+  if (isLoading) {
+    return <Text c="dimmed">{t('Завантаження')}</Text>
+  }
+
+  if (!can(PermissionKeys.Clients.Page.View)
+    || !can(PermissionKeys.Clients.Structure.Open)) {
+    return (
+      <Alert color="red" icon={<CircleAlert size={18} />} title={t('Доступ заборонено')} variant="light">
+        {t('Недостатньо прав для перегляду структури клієнтів')}
+      </Alert>
+    )
+  }
+
+  return (
+    <ClientsStructureTreePageContent
+      canManageIdentity={can(PermissionKeys.Clients.IdentityReview.Manage)}
+    />
+  )
+}
+
+function ClientsStructureTreePageContent({ canManageIdentity }: { canManageIdentity: boolean }) {
   const { t } = useI18n()
   const [clients, setClients] = useValueState<Client[]>([])
   const [selectedNetUid, setSelectedNetUid] = useValueState<string | null>(null)
@@ -39,7 +69,7 @@ export function ClientsStructureTreePage() {
     setLoading(true)
     setError(null)
 
-    void getClients({ limit: CLIENTS_PAGE_SIZE, offset: 0, value: searchValue }, controller.signal)
+    void getClientsForStructure({ limit: CLIENTS_PAGE_SIZE, offset: 0, value: searchValue }, controller.signal)
       .then((result) => {
         if (cancelled) {
           return
@@ -79,7 +109,7 @@ export function ClientsStructureTreePage() {
     setStructureLoading(true)
     setStructureError(null)
 
-    void getClientCommercialStructure(selectedNetUid, controller.signal)
+    void getClientCommercialStructureForRegistry(selectedNetUid, controller.signal)
       .then((result) => {
         if (cancelled) {
           return
@@ -217,7 +247,13 @@ export function ClientsStructureTreePage() {
                   {structureError}
                 </Alert>
               ) : selectedClient && structure ? (
-                <ClientCommercialStructureView structure={structure} t={t} onChanged={reload} />
+                <ClientCommercialStructureView
+                  canManageIdentity={canManageIdentity}
+                  mutateIdentity={mutateClientIdentityForStructure}
+                  structure={structure}
+                  t={t}
+                  onChanged={reload}
+                />
               ) : isLoading ? (
                 <Group justify="center" gap="xs" py="lg">
                   <Loader size="sm" />

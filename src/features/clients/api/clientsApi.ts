@@ -39,6 +39,13 @@ export async function getClientsForRegistry(
   return getClientsFromRoute('/clients/registry/all/filtered', params, signal)
 }
 
+export async function getClientsForStructure(
+  params: ClientSearchParams,
+  signal?: AbortSignal,
+): Promise<Client[]> {
+  return getClientsFromRoute('/clients/structure/registry', params, signal)
+}
+
 async function getClientsFromRoute(
   route: string,
   params: ClientSearchParams,
@@ -139,6 +146,26 @@ export async function getClientIdentityAttentionBatch(
     : []
 }
 
+export async function getClientIdentityAttentionBatchForRegistry(
+  clientNetIds: string[],
+  signal?: AbortSignal,
+): Promise<ClientIdentityAttentionSummary[]> {
+  const normalizedIds = [...new Set(clientNetIds.filter(Boolean))].slice(0, 100)
+  if (normalizedIds.length === 0) {
+    return []
+  }
+
+  const result = await apiRequest<unknown>('/clients/registry/identity-attention/batch', {
+    method: 'POST',
+    body: normalizedIds,
+    ...(signal ? { signal } : {}),
+  })
+
+  return Array.isArray(result)
+    ? result.filter(isIdentityAttentionSummary)
+    : []
+}
+
 export async function getClientCommercialStructure(
   clientNetId: string,
   signal?: AbortSignal,
@@ -151,11 +178,40 @@ export async function getClientCommercialStructure(
   return isClientCommercialStructure(result) ? result : null
 }
 
+export async function getClientCommercialStructureForRegistry(
+  clientNetId: string,
+  signal?: AbortSignal,
+): Promise<ClientCommercialStructure | null> {
+  const result = await apiRequest<unknown>('/clients/structure/details', {
+    query: { netId: clientNetId },
+    ...(signal ? { signal } : {}),
+  })
+
+  return isClientCommercialStructure(result) ? result : null
+}
+
 export async function mutateClientIdentity(
   kind: ClientIdentityMutationKind,
   request: ClientIdentityMutationRequest,
 ): Promise<ClientIdentityMutationResult> {
   const result = await apiRequest<ClientIdentityMutationResult>(`/clients/identity-links/${kind}`, {
+    method: 'POST',
+    body: request,
+    headers: { 'Idempotency-Key': crypto.randomUUID() },
+  })
+
+  if (!result || typeof result !== 'object' || typeof result.ClientNetUid !== 'string') {
+    throw new Error('Сервер повернув некоректний результат зміни зв’язку клієнтів')
+  }
+
+  return result
+}
+
+export async function mutateClientIdentityForStructure(
+  kind: ClientIdentityMutationKind,
+  request: ClientIdentityMutationRequest,
+): Promise<ClientIdentityMutationResult> {
+  const result = await apiRequest<ClientIdentityMutationResult>(`/clients/structure/identity-links/${kind}`, {
     method: 'POST',
     body: request,
     headers: { 'Idempotency-Key': crypto.randomUUID() },
@@ -188,6 +244,26 @@ export async function getClientSourceQualityBatch(
     : []
 }
 
+export async function getClientSourceQualityBatchForRegistry(
+  clientNetIds: string[],
+  signal?: AbortSignal,
+): Promise<ClientSourceQualitySummary[]> {
+  const normalizedIds = [...new Set(clientNetIds.filter(Boolean))].slice(0, 100)
+  if (normalizedIds.length === 0) {
+    return []
+  }
+
+  const result = await apiRequest<unknown>('/clients/registry/source-quality/batch', {
+    method: 'POST',
+    body: normalizedIds,
+    ...(signal ? { signal } : {}),
+  })
+
+  return Array.isArray(result)
+    ? result.filter(isClientSourceQualitySummary)
+    : []
+}
+
 export async function getClientFilterItems(): Promise<ClientFilterItem[]> {
   return getFilterItems(CLIENT_FILTER_ENTITY_TYPE_CLIENT)
 }
@@ -208,6 +284,18 @@ async function getFilterItems(type: number): Promise<ClientFilterItem[]> {
 
 export async function exportClientsDocument(params: ClientSearchParams): Promise<ClientPrintDocument | null> {
   const result = await apiRequest<unknown>('/clients/document', {
+    query: {
+      filter: buildClientsSearchFilter(params),
+    },
+  })
+
+  return normalizeDocument(result)
+}
+
+export async function exportClientsDocumentForRegistry(
+  params: ClientSearchParams,
+): Promise<ClientPrintDocument | null> {
+  const result = await apiRequest<unknown>('/clients/registry/document/export', {
     query: {
       filter: buildClientsSearchFilter(params),
     },
@@ -247,6 +335,20 @@ export async function switchClientActiveStateForRegistry(netId: string): Promise
 
 export async function updateClientOrderExpireDays(clientNetId: string, days: number): Promise<void> {
   await apiRequest<unknown>('/clients/update/order/expire', {
+    method: 'POST',
+    query: {
+      clientNetId,
+      days,
+    },
+    body: {},
+  })
+}
+
+export async function updateClientOrderExpireDaysForRegistry(
+  clientNetId: string,
+  days: number,
+): Promise<void> {
+  await apiRequest<unknown>('/clients/registry/reservation-days', {
     method: 'POST',
     query: {
       clientNetId,

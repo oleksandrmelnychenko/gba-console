@@ -2079,6 +2079,103 @@
         "orders.ukraine.placement.capitalize"
       ],
       "reason": "The mode-aware final action selects independently guarded post or capitalize endpoints."
+    },
+    "PE-00299": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["counterparties.clients.identity_review.manage"],
+      "reason": "The final identity-decision confirmation rechecks manage access and calls one of the dedicated permission-scoped identity mutation façades."
+    },
+    "PE-00300": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-00299",
+      "reason": "The relationship action only prepares the shared identity-decision confirmation; final submit owns authorization."
+    },
+    "PE-00301": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-00299",
+      "reason": "Marking a duplicate opens the same guarded identity-decision confirmation."
+    },
+    "PE-00302": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-00299",
+      "reason": "Rejecting a candidate is dispatched by the same final manage-authorized confirmation boundary."
+    },
+    "PE-00303": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-00299",
+      "reason": "Selecting a new primary card only prepares the shared guarded identity mutation."
+    },
+    "PE-00305": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-00299",
+      "reason": "Changing a duplicate back to a related card uses the same identity manage boundary."
+    },
+    "PE-00306": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-00299",
+      "reason": "The unlink action opens the shared confirmation whose final mutation owns identity manage authorization."
+    },
+    "PE-00307": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-00355",
+      "reason": "The source-quality badge opens the same permission-scoped commercial structure view as the dedicated structure actions."
+    },
+    "PE-00355": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["counterparties.clients.structure.open"],
+      "reason": "The structure-tree entry point requires structure.open before mounting and uses only structure-scoped registry/detail reads."
+    },
+    "PE-00357": {
+      "disposition": "technical_ui",
+      "reason": "Selecting a client row only opens a local action chooser; every business action inside it is independently permission-guarded."
+    },
+    "PE-00358": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["counterparties.clients.reservation_days.edit"],
+      "reason": "The final reservation-days submit rechecks its right and calls the dedicated mutation façade."
+    },
+    "PE-00361": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-00358",
+      "reason": "The reservation-days menu item only opens the local form; final submit owns authorization."
+    },
+    "PE-00362": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-00355",
+      "reason": "The per-client structure modal is a second UI entry to the same structure.open read boundary."
+    },
+    "PE-00363": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["counterparties.clients.status.toggle_active"],
+      "reason": "The lifecycle transition rechecks the existing status right and calls the already scoped registry mutation."
+    },
+    "PE-00365": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["counterparties.clients.document.export"],
+      "reason": "Filtered registry export is an independent document-generation capability with a dedicated scoped read."
+    },
+    "PE-00366": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-00358",
+      "reason": "This form dispatches the same reservation-days submit handler and is not another business capability."
+    },
+    "PE-00368": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-00355",
+      "reason": "The alternate responsive-card action opens the same scoped client structure."
+    },
+    "PE-00370": {
+      "disposition": "technical_ui",
+      "reason": "The action button only opens a local chooser; it performs no read or mutation itself."
+    },
+    "PE-00371": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["counterparties.clients.identity_review.open"],
+      "reason": "Identity attention markers and their drawer load only with identity_review.open through dedicated registry-scoped reads."
+    },
+    "PE-00372": {
+      "disposition": "technical_ui",
+      "reason": "This click only stops row propagation around an independently guarded nested action."
     }
   }
 }

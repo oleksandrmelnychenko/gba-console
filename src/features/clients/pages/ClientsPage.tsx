@@ -43,16 +43,17 @@ import { useAuth } from '../../auth/useAuth'
 import { usePermissions } from '../../auth/usePermissions'
 import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import {
-  exportClientsDocument,
+  exportClientsDocumentForRegistry,
   getClientCount,
-  getClientCommercialStructure,
+  getClientCommercialStructureForRegistry,
   getClientFilterItems,
-  getClientIdentityAttentionBatch,
-  getClientSourceQualityBatch,
+  getClientIdentityAttentionBatchForRegistry,
+  getClientSourceQualityBatchForRegistry,
   getClientsForRegistry,
   getClientTypes,
+  mutateClientIdentityForStructure,
   switchClientActiveStateForRegistry,
-  updateClientOrderExpireDays,
+  updateClientOrderExpireDaysForRegistry,
 } from '../api/clientsApi'
 import type {
   Client,
@@ -78,6 +79,12 @@ const CLIENT_SEARCH_SQL = 'RegionCode.Value/Client.FullName/Client.USREOU'
 const CLIENT_CREATE_PERMISSION = PermissionKeys.Clients.Client.Create
 const CLIENT_CASH_FLOW_PERMISSION = PermissionKeys.Clients.AccountingCashFlow.Open
 const CLIENT_VIEW_PERMISSION = PermissionKeys.Clients.Details.Open
+const CLIENT_EXPORT_PERMISSION = PermissionKeys.Clients.Document.Export
+const CLIENT_RESERVATION_EDIT_PERMISSION = PermissionKeys.Clients.ReservationDays.Edit
+const CLIENT_STRUCTURE_OPEN_PERMISSION = PermissionKeys.Clients.Structure.Open
+const CLIENT_IDENTITY_REVIEW_OPEN_PERMISSION = PermissionKeys.Clients.IdentityReview.Open
+const CLIENT_IDENTITY_REVIEW_MANAGE_PERMISSION = PermissionKeys.Clients.IdentityReview.Manage
+const CLIENT_STATUS_TOGGLE_PERMISSION = PermissionKeys.Clients.Status.ToggleActive
 
 type ActiveFilter = 'all' | 'active' | 'inactive'
 type ClientAction = 'active' | 'reserve' | 'export' | null
@@ -216,6 +223,17 @@ function useClientsPageModel() {
   const canCreateClient = hasPermission(CLIENT_CREATE_PERMISSION)
   const canOpenCashFlow = hasPermission(CLIENT_CASH_FLOW_PERMISSION)
   const canViewClient = hasPermission(CLIENT_VIEW_PERMISSION)
+  const canExportClients = hasPermission(CLIENT_EXPORT_PERMISSION)
+  const canEditReservationDays = hasPermission(CLIENT_RESERVATION_EDIT_PERMISSION)
+  const canOpenStructure = hasPermission(CLIENT_STRUCTURE_OPEN_PERMISSION)
+  const canOpenIdentityReview = hasPermission(CLIENT_IDENTITY_REVIEW_OPEN_PERMISSION)
+  const canManageIdentity = hasPermission(CLIENT_IDENTITY_REVIEW_MANAGE_PERMISSION)
+  const canToggleActive = hasPermission(CLIENT_STATUS_TOGGLE_PERMISSION)
+  const canOpenActions = canViewClient
+    || canOpenCashFlow
+    || canEditReservationDays
+    || canOpenStructure
+    || canToggleActive
   const active = activeFilter === 'all' ? null : activeFilter === 'active'
   const typeRoleFilter = roleFilter.join(',')
   const searchFieldOptions = useMemo(() => buildSearchFieldOptions(clientFilterItems), [clientFilterItems])
@@ -238,17 +256,27 @@ function useClientsPageModel() {
     }),
     [active, normalizedSearchValue, offset, pageSize, searchField, selectedFilterItem, typeRoleFilter],
   )
-  const openClientActions = useCallback((client: Client) => setSelectedClient(client), [setSelectedClient])
+  const openClientActions = useCallback((client: Client) => {
+    if (canOpenActions) {
+      setSelectedClient(client)
+    }
+  }, [canOpenActions, setSelectedClient])
   const openIdentityAttention = useCallback((client: Client, attention: ClientIdentityAttentionSummary) => {
-    setAttentionSelection({ client, attention })
-  }, [setAttentionSelection])
+    if (canOpenIdentityReview) {
+      setAttentionSelection({ client, attention })
+    }
+  }, [canOpenIdentityReview, setAttentionSelection])
   const openClientStructure = useCallback((client: Client) => {
-    setStructureClient(client)
-    setSelectedClient(null)
-  }, [setSelectedClient, setStructureClient])
+    if (canOpenStructure) {
+      setStructureClient(client)
+      setSelectedClient(null)
+    }
+  }, [canOpenStructure, setSelectedClient, setStructureClient])
   const openClientsStructureTree = useCallback(() => {
-    navigate('/clients/structure')
-  }, [navigate])
+    if (canOpenStructure) {
+      navigate('/clients/structure')
+    }
+  }, [canOpenStructure, navigate])
   const clientColumns = useClientColumns(
     openClientActions,
     solvencyScores,
@@ -256,6 +284,9 @@ function useClientsPageModel() {
     openIdentityAttention,
     sourceQuality,
     openClientStructure,
+    canOpenActions,
+    canOpenIdentityReview,
+    canOpenStructure,
   )
   const solvencyClientIds = useMemo(
     () => clients.map((client) => client.Id).filter((id): id is number => typeof id === 'number'),
@@ -341,7 +372,7 @@ function useClientsPageModel() {
     }
   }, [setSolvencyScores, setSolvencyScoresError, solvencyClientIdsKey, t])
   useEffect(() => {
-    if (!identityClientNetIdsKey) {
+    if (!canOpenIdentityReview || !identityClientNetIdsKey) {
       setIdentityAttention(new Map())
       setIdentityAttentionError(null)
       return
@@ -352,7 +383,7 @@ function useClientsPageModel() {
 
     async function loadIdentityAttention() {
       try {
-        const items = await getClientIdentityAttentionBatch(
+        const items = await getClientIdentityAttentionBatchForRegistry(
           identityClientNetIdsKey.split(','),
           controller.signal,
         )
@@ -378,9 +409,9 @@ function useClientsPageModel() {
       cancelled = true
       controller.abort()
     }
-  }, [identityClientNetIdsKey, setIdentityAttention, setIdentityAttentionError, t])
+  }, [canOpenIdentityReview, identityClientNetIdsKey, setIdentityAttention, setIdentityAttentionError, t])
   useEffect(() => {
-    if (!identityClientNetIdsKey) {
+    if (!canOpenIdentityReview || !identityClientNetIdsKey) {
       setSourceQuality(new Map())
       setSourceQualityError(null)
       return
@@ -391,7 +422,7 @@ function useClientsPageModel() {
 
     async function loadSourceQuality() {
       try {
-        const items = await getClientSourceQualityBatch(
+        const items = await getClientSourceQualityBatchForRegistry(
           identityClientNetIdsKey.split(','),
           controller.signal,
         )
@@ -417,7 +448,7 @@ function useClientsPageModel() {
       cancelled = true
       controller.abort()
     }
-  }, [identityClientNetIdsKey, setSourceQuality, setSourceQualityError, t])
+  }, [canOpenIdentityReview, identityClientNetIdsKey, setSourceQuality, setSourceQualityError, t])
   useEffect(() => {
     const controller = new AbortController()
     let cancelled = false
@@ -518,7 +549,7 @@ function useClientsPageModel() {
   }
 
   function openClient(client: Client) {
-    if (!client.NetUid) {
+    if (!canViewClient || !client.NetUid) {
       return
     }
 
@@ -534,7 +565,7 @@ function useClientsPageModel() {
   }
 
   function openCashFlow(client: Client) {
-    if (!client.NetUid) {
+    if (!canOpenCashFlow || !client.NetUid) {
       return
     }
 
@@ -548,12 +579,20 @@ function useClientsPageModel() {
   }
 
   function openReserveDays(client: Client) {
+    if (!canEditReservationDays) {
+      return
+    }
+
     setReserveClient(client)
     setReserveDays(Number(client.OrderExpireDays ?? 0))
     setSelectedClient(null)
   }
 
   function openCreateClient() {
+    if (!canCreateClient) {
+      return
+    }
+
     navigate('/clients/new/role', {
       state: {
         backgroundLocation: location,
@@ -563,7 +602,7 @@ function useClientsPageModel() {
   }
 
   async function handleSwitchActive(client: Client) {
-    if (!client.NetUid || isSourceManagedClient(client)) {
+    if (!canToggleActive || !client.NetUid || isSourceManagedClient(client)) {
       return
     }
 
@@ -613,7 +652,7 @@ function useClientsPageModel() {
   async function handleReserveSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
 
-    if (!reserveClient?.NetUid) {
+    if (!canEditReservationDays || !reserveClient?.NetUid) {
       return
     }
 
@@ -622,7 +661,7 @@ function useClientsPageModel() {
     setError(null)
 
     try {
-      await updateClientOrderExpireDays(reserveClient.NetUid, nextDays)
+      await updateClientOrderExpireDaysForRegistry(reserveClient.NetUid, nextDays)
       setClients((currentClients) =>
         currentClients.map((currentClient) =>
           currentClient.NetUid === reserveClient.NetUid
@@ -646,11 +685,15 @@ function useClientsPageModel() {
   }
 
   async function handleExport() {
+    if (!canExportClients) {
+      return
+    }
+
     setClientAction('export')
     setError(null)
 
     try {
-      const document = await exportClientsDocument({
+      const document = await exportClientsDocumentForRegistry({
         ...searchParams,
         limit: totalCount && totalCount > 0 ? totalCount : pageSize,
         offset: 0,
@@ -669,7 +712,14 @@ function useClientsPageModel() {
     activeFilter,
     attentionSelection,
     canCreateClient,
+    canEditReservationDays,
+    canExportClients,
+    canManageIdentity,
+    canOpenActions,
     canOpenCashFlow,
+    canOpenIdentityReview,
+    canOpenStructure,
+    canToggleActive,
     canViewClient,
     clientAction,
     clientColumns,
@@ -755,7 +805,14 @@ function ClientsPageView({ model }: { model: ReturnType<typeof useClientsPageMod
     activeFilter,
     attentionSelection,
     canCreateClient,
+    canEditReservationDays,
+    canExportClients,
+    canManageIdentity,
+    canOpenActions,
     canOpenCashFlow,
+    canOpenIdentityReview,
+    canOpenStructure,
+    canToggleActive,
     canViewClient,
     clientAction,
     clientColumns,
@@ -823,6 +880,7 @@ function ClientsPageView({ model }: { model: ReturnType<typeof useClientsPageMod
             activeFilter={activeFilter}
             clientTypes={clientTypes}
             isExporting={clientAction === 'export'}
+            canExport={canExportClients}
             isTableBusy={isTableBusy}
             page={page}
             pageSize={pageSize}
@@ -843,17 +901,19 @@ function ClientsPageView({ model }: { model: ReturnType<typeof useClientsPageMod
             onSetSearchValue={setSearchValue}
           />
           <div ref={setTableToolbarSlot} className="app-filter-table-toolbar-slot clients-table-toolbar-slot" />
-          <Button
-            className="clients-structure-button"
-            color="indigo"
-            leftSection={<GitBranch size={16} />}
-            size="sm"
-            type="button"
-            variant="light"
-            onClick={openClientsStructureTree}
-          >
-            {t('Дерево клієнтів')}
-          </Button>
+          {canOpenStructure && (
+            <Button
+              className="clients-structure-button"
+              color="indigo"
+              leftSection={<GitBranch size={16} />}
+              size="sm"
+              type="button"
+              variant="light"
+              onClick={openClientsStructureTree}
+            >
+              {t('Дерево клієнтів')}
+            </Button>
+          )}
           {canCreateClient && (
             <Button
               className="clients-create-button"
@@ -904,7 +964,7 @@ function ClientsPageView({ model }: { model: ReturnType<typeof useClientsPageMod
             tableId="clients"
             toolbarPortalTarget={tableToolbarSlot}
             sorting={sorting}
-            onRowClick={setSelectedClient}
+            onRowClick={canOpenActions ? setSelectedClient : undefined}
             onSortingChange={(nextSorting) => {
               setPage(1)
               setSorting(nextSorting)
@@ -914,7 +974,10 @@ function ClientsPageView({ model }: { model: ReturnType<typeof useClientsPageMod
       </Card>
 
       <ClientActionsModal
+        canEditReservationDays={canEditReservationDays}
         canOpenCashFlow={canOpenCashFlow}
+        canOpenStructure={canOpenStructure}
+        canToggleActive={canToggleActive}
         canViewClient={canViewClient}
         client={selectedClient}
         isActiveLoading={clientAction === 'active'}
@@ -943,20 +1006,26 @@ function ClientsPageView({ model }: { model: ReturnType<typeof useClientsPageMod
       />
 
       <ClientStructureModal
+        canManageIdentity={canManageIdentity}
         client={structureClient}
         onClose={() => setStructureClient(null)}
       />
 
-      <ClientIdentityAttentionDrawer
-        selection={attentionSelection}
-        onClose={() => setAttentionSelection(null)}
-      />
+      {canOpenIdentityReview && (
+        <ClientIdentityAttentionDrawer
+          selection={attentionSelection}
+          onClose={() => setAttentionSelection(null)}
+        />
+      )}
     </Stack>
   )
 }
 
 type ClientActionsModalProps = {
+  canEditReservationDays: boolean
   canOpenCashFlow: boolean
+  canOpenStructure: boolean
+  canToggleActive: boolean
   canViewClient: boolean
   client: Client | null
   isActiveLoading: boolean
@@ -969,7 +1038,10 @@ type ClientActionsModalProps = {
 }
 
 export function ClientActionsModal({
+  canEditReservationDays,
   canOpenCashFlow,
+  canOpenStructure,
+  canToggleActive,
   canViewClient,
   client,
   isActiveLoading,
@@ -982,7 +1054,7 @@ export function ClientActionsModal({
 }: ClientActionsModalProps) {
   const { t } = useI18n()
   const isActive = client?.IsActive !== false
-  const canSwitchActive = !isSourceManagedClient(client)
+  const canSwitchActive = canToggleActive && !isSourceManagedClient(client)
   const [structureCountResult, setStructureCountResult] = useState<{
     clientNetUid: string
     count: number | null
@@ -993,12 +1065,12 @@ export function ClientActionsModal({
 
   useEffect(() => {
     const netUid = client?.NetUid
-    if (!netUid) {
+    if (!canOpenStructure || !netUid) {
       return
     }
 
     const controller = new AbortController()
-    void getClientCommercialStructure(netUid, controller.signal)
+    void getClientCommercialStructureForRegistry(netUid, controller.signal)
       .then((structure) => {
         if (!controller.signal.aborted) {
           setStructureCountResult({
@@ -1014,7 +1086,7 @@ export function ClientActionsModal({
       })
 
     return () => controller.abort()
-  }, [client?.NetUid])
+  }, [canOpenStructure, client?.NetUid])
 
   return (
     <AppModal
@@ -1081,36 +1153,40 @@ export function ClientActionsModal({
                 {t('Взаєморозрахунки')}
               </Button>
             )}
-            <Button
-              fullWidth
-              justify="flex-start"
-              color="dark"
-              size="md"
-              leftSection={
-                <span className="app-action-icon">
-                  <Clock size={20} color="var(--mantine-color-gray-7)" />
-                </span>
-              }
-              variant="subtle"
-              onClick={() => onReserveDays(client)}
-            >
-              {t('Дні резерву')}
-            </Button>
-            <Button
-              fullWidth
-              justify="flex-start"
-              color="dark"
-              size="md"
-              leftSection={
-                <span className="app-action-icon">
-                  <Network size={20} color="var(--mantine-color-gray-7)" />
-                </span>
-              }
-              variant="subtle"
-              onClick={() => onStructure(client)}
-            >
-              {t('Структура клієнта')}{structureCardCount == null ? '' : ` (${structureCardCount})`}
-            </Button>
+            {canEditReservationDays && (
+              <Button
+                fullWidth
+                justify="flex-start"
+                color="dark"
+                size="md"
+                leftSection={
+                  <span className="app-action-icon">
+                    <Clock size={20} color="var(--mantine-color-gray-7)" />
+                  </span>
+                }
+                variant="subtle"
+                onClick={() => onReserveDays(client)}
+              >
+                {t('Дні резерву')}
+              </Button>
+            )}
+            {canOpenStructure && (
+              <Button
+                fullWidth
+                justify="flex-start"
+                color="dark"
+                size="md"
+                leftSection={
+                  <span className="app-action-icon">
+                    <Network size={20} color="var(--mantine-color-gray-7)" />
+                  </span>
+                }
+                variant="subtle"
+                onClick={() => onStructure(client)}
+              >
+                {t('Структура клієнта')}{structureCardCount == null ? '' : ` (${structureCardCount})`}
+              </Button>
+            )}
           </Stack>
 
           {canSwitchActive ? (
@@ -1128,11 +1204,11 @@ export function ClientActionsModal({
                 {isActive ? t('Позначити неактивним') : t('Позначити активним')}
               </Button>
             </>
-          ) : (
+          ) : canToggleActive ? (
             <Text c="dimmed" size="xs">
               {t('Статус керується синхронізацією з 1С')}
             </Text>
-          )}
+          ) : null}
         </Stack>
       )}
     </AppModal>
@@ -1141,6 +1217,7 @@ export function ClientActionsModal({
 
 function ClientsFilterToolbar({
   activeFilter,
+  canExport,
   clientTypes,
   isExporting,
   isTableBusy,
@@ -1163,6 +1240,7 @@ function ClientsFilterToolbar({
   onSetSearchValue,
 }: {
   activeFilter: ActiveFilter
+  canExport: boolean
   clientTypes: ClientType[]
   isExporting: boolean
   isTableBusy: boolean
@@ -1242,17 +1320,19 @@ function ClientsFilterToolbar({
             <RotateCcw size={17} />
           </ActionIcon>
         </Tooltip>
-        <Tooltip label={t('Експорт в Excel')}>
-          <ActionIcon
-            variant="default"
-            size={34}
-            aria-label={t('Експорт в Excel')}
-            loading={isExporting}
-            onClick={onExport}
-          >
-            <ExcelIcon size={22} />
-          </ActionIcon>
-        </Tooltip>
+        {canExport && (
+          <Tooltip label={t('Експорт в Excel')}>
+            <ActionIcon
+              variant="default"
+              size={34}
+              aria-label={t('Експорт в Excel')}
+              loading={isExporting}
+              onClick={onExport}
+            >
+              <ExcelIcon size={22} />
+            </ActionIcon>
+          </Tooltip>
+        )}
         <Paginator
           isLoading={isTableBusy}
           page={page}
@@ -1336,9 +1416,11 @@ function ClientDocumentModal({
 }
 
 function ClientStructureModal({
+  canManageIdentity,
   client,
   onClose,
 }: {
+  canManageIdentity: boolean
   client: Client | null
   onClose: () => void
 }) {
@@ -1361,7 +1443,7 @@ function ClientStructureModal({
     setLoading(true)
     setError(null)
 
-    void getClientCommercialStructure(netUid, controller.signal)
+    void getClientCommercialStructureForRegistry(netUid, controller.signal)
       .then((result) => {
         if (cancelled) {
           return
@@ -1403,7 +1485,13 @@ function ClientStructureModal({
       ) : error ? (
         <Alert color="red" icon={<CircleAlert size={18} />} variant="light">{error}</Alert>
       ) : structure ? (
-        <ClientCommercialStructureView structure={structure} t={t} onChanged={reloadStructure} />
+        <ClientCommercialStructureView
+          canManageIdentity={canManageIdentity}
+          mutateIdentity={mutateClientIdentityForStructure}
+          structure={structure}
+          t={t}
+          onChanged={reloadStructure}
+        />
       ) : null}
     </AppModal>
   )
@@ -1416,6 +1504,9 @@ function useClientColumns(
   onOpenIdentityAttention: (client: Client, attention: ClientIdentityAttentionSummary) => void,
   sourceQuality: Map<string, ClientSourceQualitySummary>,
   onOpenStructure: (client: Client) => void,
+  canOpenActions: boolean,
+  canOpenIdentityReview: boolean,
+  canOpenStructure: boolean,
 ) {
   const { t } = useI18n()
 
@@ -1465,15 +1556,15 @@ function useClientColumns(
         maxWidth: 132,
         align: 'center',
         enableSorting: false,
-        cell: (client) => (
+        cell: (client) => canOpenIdentityReview ? (
           <ClientSourceQualityBadge
             quality={client.NetUid
               ? sourceQuality.get(clientNetUidKey(client.NetUid))
               : undefined}
             t={t}
-            onClick={() => onOpenStructure(client)}
+            onClick={canOpenStructure ? () => onOpenStructure(client) : undefined}
           />
-        ),
+        ) : null,
       },
       {
         id: 'solvency',
@@ -1590,15 +1681,18 @@ function useClientColumns(
         enableReorder: false,
         enableResizing: false,
         enableSorting: false,
-        cell: (client) => (
+        cell: (client) => canOpenActions ? (
           <Box onClick={(event) => event.stopPropagation()}>
             <TableRowAction action="more" label={t('Дії')} onClick={() => onOpenActions(client)} />
           </Box>
-        ),
+        ) : null,
       },
     ],
     [
       identityAttention,
+      canOpenActions,
+      canOpenIdentityReview,
+      canOpenStructure,
       onOpenActions,
       onOpenIdentityAttention,
       onOpenStructure,

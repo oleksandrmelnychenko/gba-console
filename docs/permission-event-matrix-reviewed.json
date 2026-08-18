@@ -4,25 +4,25 @@
     "inputRecords": 1902,
     "classifiedRecords": 1902,
     "dispositionCounts": {
-      "technical_ui": 690,
-      "covered_existing": 408,
-      "duplicate_occurrence": 193,
-      "business_candidate": 369,
-      "needs_human_review": 234,
+      "technical_ui": 693,
+      "covered_existing": 414,
+      "duplicate_occurrence": 204,
+      "business_candidate": 365,
+      "needs_human_review": 218,
       "stale_or_aggregated": 8
     },
-    "reviewCandidates": 603,
-    "technicalExcluded": 690,
-    "duplicatesExcluded": 193,
-    "duplicateOccurrencesTotal": 261,
+    "reviewCandidates": 583,
+    "technicalExcluded": 693,
+    "duplicatesExcluded": 204,
+    "duplicateOccurrencesTotal": 272,
     "technicalDuplicateOverlap": 68,
     "sourceResolved": 1828,
     "sourceUnresolved": 74,
     "currentActionResolved": 1187,
     "currentActionUnresolved": 715,
     "currentProductionActions": 1829,
-    "currentPermissionBoundActions": 221,
-    "currentUnboundActions": 1608
+    "currentPermissionBoundActions": 225,
+    "currentUnboundActions": 1604
   },
   "invariants": {
     "allInputRecordsClassified": true,
@@ -12007,12 +12007,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-f236430d1938",
+          "candidateId": "EPC-2521d0ee2ba4",
           "distance": 20,
           "file": "src/features/clients/components/structure/ClientCommercialStructureView.tsx",
           "handler": "{() => setPendingDecision(null)}",
           "humanLabel": "Скасувати",
-          "line": 180,
+          "line": 190,
           "permissionKeys": [],
           "score": 22
         }
@@ -12020,7 +12020,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/clients/components/structure/ClientCommercialStructureView.tsx",
-        "line": 160,
+        "line": 170,
         "alternatives": []
       }
     },
@@ -12040,20 +12040,22 @@
       "proposedPermission": "clients.clients.async_if_pending_decision_return_set_saving_true_try_await_mutat.command_submit",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "covered_existing",
+      "dispositionReason": "The final identity-decision confirmation rechecks manage access and calls one of the dedicated permission-scoped identity mutation façades.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "counterparties.clients.identity_review.manage"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-007f74eb9c51",
-          "distance": 140,
+          "candidateId": "EPC-572cc4cc4c48",
+          "distance": 148,
           "file": "src/features/clients/components/structure/ClientCommercialStructureView.tsx",
-          "handler": "{async () => { if (!pendingDecision) return setSaving(true) try { await mutateClientIdentity(pendingDecision.kind, { ClientNetUid: pendingDecision.anchorClientNetUid, RelatedClientNetUid: pendingDecision.card.ClientNetUid, RelationshipKi...",
+          "handler": "{async () => { if (!pendingDecision) return setSaving(true) try { await mutateIdentity(pendingDecision.kind, { ClientNetUid: pendingDecision.anchorClientNetUid, RelatedClientNetUid: pendingDecision.card.ClientNetUid, RelationshipKind: pe...",
           "humanLabel": "Підтвердити",
-          "line": 183,
+          "line": 193,
           "permissionKeys": [],
           "score": 47
         }
@@ -12061,7 +12063,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/clients/components/structure/ClientCommercialStructureView.tsx",
-        "line": 43,
+        "line": 45,
         "alternatives": []
       }
     },
@@ -12081,17 +12083,17 @@
       "proposedPermission": "clients.clients.decide_confirm_t_підтвердити_зв_язок_t_додати_до_однієі_підтверд.command_submit",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
-      "duplicateOf": null,
+      "disposition": "duplicate_occurrence",
+      "dispositionReason": "The relationship action only prepares the shared identity-decision confirmation; final submit owns authorization.",
+      "duplicateOf": "PE-00299",
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [],
       "source": {
         "status": "resolved",
         "file": "src/features/clients/components/structure/ClientCommercialStructureView.tsx",
-        "line": 43,
+        "line": 45,
         "alternatives": []
       }
     },
@@ -12111,17 +12113,17 @@
       "proposedPermission": "clients.clients.decide_confirm_t_позначити_дубль_t_позначити_як_іншу_картку_того.command_submit",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
-      "duplicateOf": null,
+      "disposition": "duplicate_occurrence",
+      "dispositionReason": "Marking a duplicate opens the same guarded identity-decision confirmation.",
+      "duplicateOf": "PE-00299",
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [],
       "source": {
         "status": "resolved",
         "file": "src/features/clients/components/structure/ClientCommercialStructureView.tsx",
-        "line": 43,
+        "line": 45,
         "alternatives": []
       }
     },
@@ -12141,17 +12143,17 @@
       "proposedPermission": "clients.clients.decide_reject_t_відхилити_зв_язок_t_більше_не_пропонувати_цю_кар.button_click",
       "securityLevel": "low",
       "rawStatus": "No permission candidate found",
-      "disposition": "needs_human_review",
-      "dispositionReason": "insufficient_evidence_for_automatic_permission_or_exclusion",
-      "duplicateOf": null,
+      "disposition": "duplicate_occurrence",
+      "dispositionReason": "Rejecting a candidate is dispatched by the same final manage-authorized confirmation boundary.",
+      "duplicateOf": "PE-00299",
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [],
       "source": {
         "status": "resolved",
         "file": "src/features/clients/components/structure/ClientCommercialStructureView.tsx",
-        "line": 43,
+        "line": 45,
         "alternatives": []
       }
     },
@@ -12171,17 +12173,17 @@
       "proposedPermission": "clients.clients.decide_primary_t_змінити_головну_картку_t_зробити_головною_картк.button_click",
       "securityLevel": "low",
       "rawStatus": "No permission candidate found",
-      "disposition": "needs_human_review",
-      "dispositionReason": "insufficient_evidence_for_automatic_permission_or_exclusion",
-      "duplicateOf": null,
+      "disposition": "duplicate_occurrence",
+      "dispositionReason": "Selecting a new primary card only prepares the shared guarded identity mutation.",
+      "duplicateOf": "PE-00299",
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [],
       "source": {
         "status": "resolved",
         "file": "src/features/clients/components/structure/ClientCommercialStructureView.tsx",
-        "line": 43,
+        "line": 45,
         "alternatives": []
       }
     },
@@ -12211,7 +12213,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/clients/components/structure/ClientCommercialStructureView.tsx",
-        "line": 43,
+        "line": 45,
         "alternatives": []
       }
     },
@@ -12231,17 +12233,17 @@
       "proposedPermission": "clients.clients.decide_confirm_t_позначити_пов_язаною_карткою_t_залишити_у_струк.command_submit",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
-      "duplicateOf": null,
+      "disposition": "duplicate_occurrence",
+      "dispositionReason": "Changing a duplicate back to a related card uses the same identity manage boundary.",
+      "duplicateOf": "PE-00299",
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [],
       "source": {
         "status": "resolved",
         "file": "src/features/clients/components/structure/ClientCommercialStructureView.tsx",
-        "line": 43,
+        "line": 45,
         "alternatives": []
       }
     },
@@ -12261,17 +12263,17 @@
       "proposedPermission": "clients.clients.decide_unlink_t_від_єднати_картку_t_прибрати_картку_з_підтвердже.button_click",
       "securityLevel": "low",
       "rawStatus": "No permission candidate found",
-      "disposition": "needs_human_review",
-      "dispositionReason": "insufficient_evidence_for_automatic_permission_or_exclusion",
-      "duplicateOf": null,
+      "disposition": "duplicate_occurrence",
+      "dispositionReason": "The unlink action opens the shared confirmation whose final mutation owns identity manage authorization.",
+      "duplicateOf": "PE-00299",
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [],
       "source": {
         "status": "resolved",
         "file": "src/features/clients/components/structure/ClientCommercialStructureView.tsx",
-        "line": 43,
+        "line": 45,
         "alternatives": []
       }
     },
@@ -12290,12 +12292,12 @@
       "proposedPermission": "clients.clients.event_event_stop_propagation_on_click.button_click",
       "securityLevel": "low",
       "rawStatus": "No permission candidate found",
-      "disposition": "needs_human_review",
-      "dispositionReason": "insufficient_evidence_for_automatic_permission_or_exclusion",
-      "duplicateOf": null,
+      "disposition": "duplicate_occurrence",
+      "dispositionReason": "The source-quality badge opens the same permission-scoped commercial structure view as the dedicated structure actions.",
+      "duplicateOf": "PE-00355",
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [],
       "source": {
         "status": "resolved",
@@ -14166,7 +14168,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/clients/pages/ClientsPage.tsx",
-        "line": 726,
+        "line": 776,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -14187,28 +14189,32 @@
       "proposedPermission": "clients.clients.open_clients_structure_tree.modal_open",
       "securityLevel": "low",
       "rawStatus": "Candidate existing key in component; binding review required",
-      "disposition": "needs_human_review",
-      "dispositionReason": "raw_audit_claims_existing_binding_but_does_not_name_the_key",
+      "disposition": "covered_existing",
+      "dispositionReason": "The structure-tree entry point requires structure.open before mounting and uses only structure-scoped registry/detail reads.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "counterparties.clients.structure.open"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-86182e13e3fd",
-          "distance": 597,
+          "candidateId": "EPC-46f7c0aa3f89",
+          "distance": 630,
           "file": "src/features/clients/pages/ClientsPage.tsx",
           "handler": "{openClientsStructureTree}",
           "humanLabel": "Дерево клієнтів",
-          "line": 846,
-          "permissionKeys": [],
+          "line": 905,
+          "permissionKeys": [
+            "counterparties.clients.structure.open"
+          ],
           "score": 24
         }
       ],
       "source": {
         "status": "resolved",
         "file": "src/features/clients/pages/ClientsPage.tsx",
-        "line": 249,
+        "line": 275,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -14239,12 +14245,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-4254ab78f70a",
-          "distance": 302,
+          "candidateId": "EPC-e282410c3d69",
+          "distance": 327,
           "file": "src/features/clients/pages/ClientsPage.tsx",
           "handler": "{openCreateClient}",
           "humanLabel": "Новий клієнт",
-          "line": 858,
+          "line": 918,
           "permissionKeys": [
             "counterparties.clients.client.create"
           ],
@@ -14254,7 +14260,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/clients/pages/ClientsPage.tsx",
-        "line": 556,
+        "line": 591,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -14275,20 +14281,20 @@
       "proposedPermission": "clients.clients.set_selected_client.row_click",
       "securityLevel": "medium",
       "rawStatus": "Candidate existing key in component; binding review required",
-      "disposition": "needs_human_review",
-      "dispositionReason": "raw_audit_claims_existing_binding_but_does_not_name_the_key",
+      "disposition": "technical_ui",
+      "dispositionReason": "Selecting a client row only opens a local action chooser; every business action inside it is independently permission-guarded.",
       "duplicateOf": null,
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-66a44bdf1147",
-          "distance": 713,
+          "candidateId": "EPC-f6307afaef40",
+          "distance": 766,
           "file": "src/features/clients/pages/ClientsPage.tsx",
-          "handler": "{setSelectedClient}",
+          "handler": "{canOpenActions ? setSelectedClient : undefined}",
           "humanLabel": null,
-          "line": 892,
+          "line": 952,
           "permissionKeys": [],
           "score": 17
         }
@@ -14296,7 +14302,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/clients/pages/ClientsPage.tsx",
-        "line": 179,
+        "line": 186,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -14317,20 +14323,22 @@
       "proposedPermission": "clients.clients.handle_reserve_submit.form_submit",
       "securityLevel": "high",
       "rawStatus": "Candidate existing key in component; binding review required",
-      "disposition": "needs_human_review",
-      "dispositionReason": "raw_audit_claims_existing_binding_but_does_not_name_the_key",
+      "disposition": "covered_existing",
+      "dispositionReason": "The final reservation-days submit rechecks its right and calls the dedicated mutation façade.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "counterparties.clients.reservation_days.edit"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-e5fd0ee20a12",
-          "distance": 316,
+          "candidateId": "EPC-82d8ca1dc821",
+          "distance": 340,
           "file": "src/features/clients/pages/ClientsPage.tsx",
           "handler": "{handleReserveSubmit}",
           "humanLabel": null,
-          "line": 929,
+          "line": 992,
           "permissionKeys": [],
           "score": 19
         }
@@ -14338,7 +14346,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/clients/pages/ClientsPage.tsx",
-        "line": 613,
+        "line": 652,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -14369,12 +14377,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-68f0a59fd525",
-          "distance": 86,
+          "candidateId": "EPC-ede470dc311e",
+          "distance": 89,
           "file": "src/features/clients/pages/ClientsPage.tsx",
           "handler": "{() => onEdit(client)}",
           "humanLabel": "Відкрити картку",
-          "line": 1051,
+          "line": 1123,
           "permissionKeys": [
             "counterparties.clients.details.open"
           ],
@@ -14384,7 +14392,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/clients/pages/ClientsPage.tsx",
-        "line": 965,
+        "line": 1034,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -14415,12 +14423,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-d73b33dd2253",
-          "distance": 105,
+          "candidateId": "EPC-79deef46224a",
+          "distance": 108,
           "file": "src/features/clients/pages/ClientsPage.tsx",
           "handler": "{() => onCashFlow(client)}",
           "humanLabel": "Взаєморозрахунки",
-          "line": 1068,
+          "line": 1140,
           "permissionKeys": [
             "counterparties.clients.accounting_cash_flow.open"
           ],
@@ -14430,7 +14438,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/clients/pages/ClientsPage.tsx",
-        "line": 963,
+        "line": 1032,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -14451,28 +14459,32 @@
       "proposedPermission": "clients.clients.on_reserve_days_client.button_click",
       "securityLevel": "low",
       "rawStatus": "Candidate existing key in component; binding review required",
-      "disposition": "needs_human_review",
-      "dispositionReason": "raw_audit_claims_existing_binding_but_does_not_name_the_key",
-      "duplicateOf": null,
+      "disposition": "duplicate_occurrence",
+      "dispositionReason": "The reservation-days menu item only opens the local form; final submit owns authorization.",
+      "duplicateOf": "PE-00358",
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "counterparties.clients.reservation_days.edit"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-39a55a4eff00",
-          "distance": 118,
+          "candidateId": "EPC-99cfe01537d8",
+          "distance": 122,
           "file": "src/features/clients/pages/ClientsPage.tsx",
           "handler": "{() => onReserveDays(client)}",
           "humanLabel": "Дні резерву",
-          "line": 1084,
-          "permissionKeys": [],
+          "line": 1157,
+          "permissionKeys": [
+            "counterparties.clients.reservation_days.edit"
+          ],
           "score": 17
         }
       ],
       "source": {
         "status": "resolved",
         "file": "src/features/clients/pages/ClientsPage.tsx",
-        "line": 966,
+        "line": 1035,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -14493,28 +14505,32 @@
       "proposedPermission": "clients.clients.on_structure_client.button_click",
       "securityLevel": "low",
       "rawStatus": "Candidate existing key in component; binding review required",
-      "disposition": "needs_human_review",
-      "dispositionReason": "raw_audit_claims_existing_binding_but_does_not_name_the_key",
-      "duplicateOf": null,
+      "disposition": "duplicate_occurrence",
+      "dispositionReason": "The per-client structure modal is a second UI entry to the same structure.open read boundary.",
+      "duplicateOf": "PE-00355",
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "counterparties.clients.structure.open"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-505a76bcf55f",
-          "distance": 132,
+          "candidateId": "EPC-91aa43b275cf",
+          "distance": 138,
           "file": "src/features/clients/pages/ClientsPage.tsx",
           "handler": "{() => onStructure(client)}",
           "humanLabel": "Структура клієнта",
-          "line": 1099,
-          "permissionKeys": [],
+          "line": 1174,
+          "permissionKeys": [
+            "counterparties.clients.structure.open"
+          ],
           "score": 15
         }
       ],
       "source": {
         "status": "resolved",
         "file": "src/features/clients/pages/ClientsPage.tsx",
-        "line": 967,
+        "line": 1036,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -14535,20 +14551,22 @@
       "proposedPermission": "clients.clients.on_switch_active_client.button_click",
       "securityLevel": "low",
       "rawStatus": "Candidate existing key in component; binding review required",
-      "disposition": "needs_human_review",
-      "dispositionReason": "raw_audit_claims_existing_binding_but_does_not_name_the_key",
+      "disposition": "covered_existing",
+      "dispositionReason": "The lifecycle transition rechecks the existing status right and calls the already scoped registry mutation.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "counterparties.clients.status.toggle_active"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-ab57d33c6abd",
-          "distance": 151,
+          "candidateId": "EPC-e6a0031ab260",
+          "distance": 158,
           "file": "src/features/clients/pages/ClientsPage.tsx",
           "handler": "{() => onSwitchActive(client)}",
           "humanLabel": null,
-          "line": 1119,
+          "line": 1195,
           "permissionKeys": [],
           "score": 18
         }
@@ -14556,7 +14574,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/clients/pages/ClientsPage.tsx",
-        "line": 968,
+        "line": 1037,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -14587,7 +14605,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/clients/pages/ClientsPage.tsx",
-        "line": 512,
+        "line": 543,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -14608,17 +14626,19 @@
       "proposedPermission": "clients.clients.on_export.command_export",
       "securityLevel": "medium",
       "rawStatus": "Candidate existing key in component; binding review required",
-      "disposition": "needs_human_review",
-      "dispositionReason": "raw_audit_claims_existing_binding_but_does_not_name_the_key",
+      "disposition": "covered_existing",
+      "dispositionReason": "Filtered registry export is an independent document-generation capability with a dedicated scoped read.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "counterparties.clients.document.export"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [],
       "source": {
         "status": "resolved",
         "file": "src/features/clients/pages/ClientsPage.tsx",
-        "line": 649,
+        "line": 692,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -14639,17 +14659,17 @@
       "proposedPermission": "clients.clients.on_submit.form_submit",
       "securityLevel": "high",
       "rawStatus": "Candidate existing key in component; binding review required",
-      "disposition": "needs_human_review",
-      "dispositionReason": "raw_audit_claims_existing_binding_but_does_not_name_the_key",
-      "duplicateOf": null,
+      "disposition": "duplicate_occurrence",
+      "dispositionReason": "This form dispatches the same reservation-days submit handler and is not another business capability.",
+      "duplicateOf": "PE-00358",
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [],
       "source": {
         "status": "resolved",
         "file": "src/features/clients/pages/ClientsPage.tsx",
-        "line": 935,
+        "line": 998,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -14680,7 +14700,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/clients/pages/ClientsPage.tsx",
-        "line": 922,
+        "line": 985,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -14701,28 +14721,34 @@
       "proposedPermission": "clients.clients.on_open_structure_client.modal_open",
       "securityLevel": "low",
       "rawStatus": "Candidate existing key in component; binding review required",
-      "disposition": "needs_human_review",
-      "dispositionReason": "raw_audit_claims_existing_binding_but_does_not_name_the_key",
-      "duplicateOf": null,
+      "disposition": "duplicate_occurrence",
+      "dispositionReason": "The alternate responsive-card action opens the same scoped client structure.",
+      "duplicateOf": "PE-00355",
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "counterparties.clients.identity_review.open",
+        "counterparties.clients.structure.open"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-cdad99e86da5",
-          "distance": 51,
+          "candidateId": "EPC-6c1ba0a23fc5",
+          "distance": 54,
           "file": "src/features/clients/pages/ClientsPage.tsx",
-          "handler": "{() => onOpenStructure(client)}",
+          "handler": "{canOpenStructure ? () => onOpenStructure(client) : undefined}",
           "humanLabel": null,
-          "line": 1469,
-          "permissionKeys": [],
+          "line": 1560,
+          "permissionKeys": [
+            "counterparties.clients.identity_review.open",
+            "counterparties.clients.structure.open"
+          ],
           "score": 19
         }
       ],
       "source": {
         "status": "resolved",
         "file": "src/features/clients/pages/ClientsPage.tsx",
-        "line": 1418,
+        "line": 1506,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -14753,7 +14779,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/clients/pages/ClientsPage.tsx",
-        "line": 1594,
+        "line": 1685,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -14774,20 +14800,20 @@
       "proposedPermission": "clients.clients.on_open_actions_client.modal_open",
       "securityLevel": "low",
       "rawStatus": "Candidate existing key in component; binding review required",
-      "disposition": "needs_human_review",
-      "dispositionReason": "raw_audit_claims_existing_binding_but_does_not_name_the_key",
+      "disposition": "technical_ui",
+      "dispositionReason": "The action button only opens a local chooser; it performs no read or mutation itself.",
       "duplicateOf": null,
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-eef4b8ebbea3",
-          "distance": 182,
+          "candidateId": "EPC-9803bd3dd7ad",
+          "distance": 185,
           "file": "src/features/clients/pages/ClientsPage.tsx",
           "handler": "{() => onOpenActions(client)}",
           "humanLabel": "Дії",
-          "line": 1595,
+          "line": 1686,
           "permissionKeys": [],
           "score": 17
         }
@@ -14795,7 +14821,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/clients/pages/ClientsPage.tsx",
-        "line": 1413,
+        "line": 1501,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -14816,20 +14842,22 @@
       "proposedPermission": "clients.clients.on_open_identity_attention_client_attention.modal_open",
       "securityLevel": "low",
       "rawStatus": "Candidate existing key in component; binding review required",
-      "disposition": "needs_human_review",
-      "dispositionReason": "raw_audit_claims_existing_binding_but_does_not_name_the_key",
+      "disposition": "covered_existing",
+      "dispositionReason": "Identity attention markers and their drawer load only with identity_review.open through dedicated registry-scoped reads.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "counterparties.clients.identity_review.open"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-e39dabdde2dd",
+          "candidateId": "EPC-76f35d827071",
           "distance": 2,
           "file": "src/features/clients/pages/ClientsPage.tsx",
           "handler": "{() => onOpenIdentityAttention(client, attention)}",
           "humanLabel": null,
-          "line": 1647,
+          "line": 1741,
           "permissionKeys": [],
           "score": 36
         }
@@ -14837,7 +14865,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/clients/pages/ClientsPage.tsx",
-        "line": 1649,
+        "line": 1743,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -14858,17 +14886,17 @@
       "proposedPermission": "clients.clients.event_event_stop_propagation_on_click.button_click.2",
       "securityLevel": "low",
       "rawStatus": "Candidate existing key in component; binding review required",
-      "disposition": "needs_human_review",
-      "dispositionReason": "raw_audit_claims_existing_binding_but_does_not_name_the_key",
+      "disposition": "technical_ui",
+      "dispositionReason": "This click only stops row propagation around an independently guarded nested action.",
       "duplicateOf": null,
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [],
       "source": {
         "status": "resolved",
         "file": "src/features/clients/pages/ClientsPage.tsx",
-        "line": 726,
+        "line": 776,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -14901,7 +14929,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/clients/pages/ClientsStructureTreePage.tsx",
-        "line": 23,
+        "line": 29,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -14930,12 +14958,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-466914282838",
+          "candidateId": "EPC-15ca4b45107a",
           "distance": 101,
           "file": "src/features/clients/pages/ClientsStructureTreePage.tsx",
           "handler": "{() => setSearchDraft('')}",
           "humanLabel": "Скинути",
-          "line": 128,
+          "line": 158,
           "permissionKeys": [],
           "score": 14
         }
@@ -14943,7 +14971,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/clients/pages/ClientsStructureTreePage.tsx",
-        "line": 27,
+        "line": 57,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -14974,7 +15002,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/clients/pages/ClientsStructureTreePage.tsx",
-        "line": 33,
+        "line": 63,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -15005,7 +15033,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/clients/pages/ClientsStructureTreePage.tsx",
-        "line": 194,
+        "line": 224,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -79476,14 +79504,6 @@
     "PE-00295",
     "PE-00296",
     "PE-00297",
-    "PE-00299",
-    "PE-00300",
-    "PE-00301",
-    "PE-00302",
-    "PE-00303",
-    "PE-00305",
-    "PE-00306",
-    "PE-00307",
     "PE-00308",
     "PE-00309",
     "PE-00310",
@@ -79508,18 +79528,6 @@
     "PE-00349",
     "PE-00350",
     "PE-00352",
-    "PE-00355",
-    "PE-00357",
-    "PE-00358",
-    "PE-00361",
-    "PE-00362",
-    "PE-00363",
-    "PE-00365",
-    "PE-00366",
-    "PE-00368",
-    "PE-00370",
-    "PE-00371",
-    "PE-00372",
     "PE-00395",
     "PE-00397",
     "PE-00402",

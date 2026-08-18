@@ -4,22 +4,29 @@ import type { Client, ClientSearchParams } from '../types'
 import {
   buildClientsSearchFilter,
   exportClientsDocument,
+  exportClientsDocumentForRegistry,
   exportSuppliersDocument,
   getClientCount,
   getClientCommercialStructure,
+  getClientCommercialStructureForRegistry,
   getClientFilterItems,
   getClientIdentityAttention,
   getClientIdentityAttentionBatch,
+  getClientIdentityAttentionBatchForRegistry,
   getClientSourceQualityBatch,
+  getClientSourceQualityBatchForRegistry,
   getClients,
   getClientsForRegistry,
+  getClientsForStructure,
   getSupplierCount,
   getSupplierFilterItems,
   getSuppliers,
   mutateClientIdentity,
+  mutateClientIdentityForStructure,
   switchClientActiveState,
   switchClientActiveStateForRegistry,
   updateClientOrderExpireDays,
+  updateClientOrderExpireDaysForRegistry,
 } from './clientsApi'
 
 vi.mock('../../../shared/api/apiClient', () => ({
@@ -675,3 +682,86 @@ function createSourceQuality(clientNetUid: string) {
     Reasons: ['conflicting_region_code_family'],
   }
 }
+
+describe('clients permission-scoped registry and structure contracts', () => {
+  beforeEach(() => {
+    apiRequestMock.mockReset()
+  })
+
+  it('uses only scoped read routes for registry diagnostics and structure', async () => {
+    const params: ClientSearchParams = { limit: 25, offset: 0, value: 'Магром' }
+    const attention = createIdentityAttention('client-1')
+    const quality = createSourceQuality('client-1')
+    const structure = createCommercialStructure('client-1')
+    const document = { PdfDocumentURL: '/exports/clients.pdf' }
+
+    apiRequestMock
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([attention])
+      .mockResolvedValueOnce([quality])
+      .mockResolvedValueOnce(structure)
+      .mockResolvedValueOnce(document)
+
+    await getClientsForStructure(params)
+    await getClientIdentityAttentionBatchForRegistry(['client-1'])
+    await getClientSourceQualityBatchForRegistry(['client-1'])
+    await getClientCommercialStructureForRegistry('client-1')
+    await exportClientsDocumentForRegistry(params)
+
+    expect(apiRequestMock).toHaveBeenNthCalledWith(1, '/clients/structure/registry', {
+      query: {
+        active: undefined,
+        filterSql: 'RegionCode.Value/Client.FullName/Client.USREOU',
+        limit: 25,
+        offset: 0,
+        typeRoleFilter: undefined,
+        value: 'Магром',
+      },
+    })
+    expect(apiRequestMock).toHaveBeenNthCalledWith(2, '/clients/registry/identity-attention/batch', {
+      method: 'POST',
+      body: ['client-1'],
+    })
+    expect(apiRequestMock).toHaveBeenNthCalledWith(3, '/clients/registry/source-quality/batch', {
+      method: 'POST',
+      body: ['client-1'],
+    })
+    expect(apiRequestMock).toHaveBeenNthCalledWith(4, '/clients/structure/details', {
+      query: { netId: 'client-1' },
+    })
+    expect(apiRequestMock).toHaveBeenNthCalledWith(5, '/clients/registry/document/export', {
+      query: { filter: buildClientsSearchFilter(params) },
+    })
+  })
+
+  it('uses separate permission-scoped mutation routes', async () => {
+    apiRequestMock
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce({
+        ClientNetUid: '11111111-1111-1111-1111-111111111111',
+        Revision: 3,
+      })
+
+    await updateClientOrderExpireDaysForRegistry('client-1', 14)
+    await mutateClientIdentityForStructure('confirm', {
+      ClientNetUid: '11111111-1111-1111-1111-111111111111',
+      RelatedClientNetUid: '22222222-2222-2222-2222-222222222222',
+      RelationshipKind: 'related',
+    })
+
+    expect(apiRequestMock).toHaveBeenNthCalledWith(1, '/clients/registry/reservation-days', {
+      method: 'POST',
+      query: { clientNetId: 'client-1', days: 14 },
+      body: {},
+    })
+    expect(apiRequestMock).toHaveBeenNthCalledWith(2, '/clients/structure/identity-links/confirm', {
+      method: 'POST',
+      body: {
+        ClientNetUid: '11111111-1111-1111-1111-111111111111',
+        RelatedClientNetUid: '22222222-2222-2222-2222-222222222222',
+        RelationshipKind: 'related',
+      },
+      headers: { 'Idempotency-Key': expect.any(String) },
+    })
+  })
+})

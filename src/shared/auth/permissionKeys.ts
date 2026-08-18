@@ -209,6 +209,19 @@ export const PermissionKeys = {
     Status: {
       ToggleActive: 'counterparties.clients.status.toggle_active',
     },
+    Document: {
+      Export: 'counterparties.clients.document.export',
+    },
+    ReservationDays: {
+      Edit: 'counterparties.clients.reservation_days.edit',
+    },
+    Structure: {
+      Open: 'counterparties.clients.structure.open',
+    },
+    IdentityReview: {
+      Open: 'counterparties.clients.identity_review.open',
+      Manage: 'counterparties.clients.identity_review.manage',
+    },
   },
   Suppliers: {
     Page: {
@@ -834,6 +847,10 @@ export type ClientsPermissionKey =
   | Values<typeof PermissionKeys.Clients.Pricing>
   | Values<typeof PermissionKeys.Clients.Promotion>
   | Values<typeof PermissionKeys.Clients.Status>
+  | Values<typeof PermissionKeys.Clients.Document>
+  | Values<typeof PermissionKeys.Clients.ReservationDays>
+  | Values<typeof PermissionKeys.Clients.Structure>
+  | Values<typeof PermissionKeys.Clients.IdentityReview>
 
 export type SuppliersPermissionKey =
   | Values<typeof PermissionKeys.Suppliers.Page>
@@ -1925,6 +1942,10 @@ const eventPermissionKeys = new Set<string>([
   ...Object.values(PermissionKeys.Clients.Pricing),
   ...Object.values(PermissionKeys.Clients.Promotion),
   ...Object.values(PermissionKeys.Clients.Status),
+  ...Object.values(PermissionKeys.Clients.Document),
+  ...Object.values(PermissionKeys.Clients.ReservationDays),
+  ...Object.values(PermissionKeys.Clients.Structure),
+  ...Object.values(PermissionKeys.Clients.IdentityReview),
   ...Object.values(PermissionKeys.Suppliers.Page),
   ...Object.values(PermissionKeys.Suppliers.Passport),
   ...Object.values(PermissionKeys.Suppliers.Document),

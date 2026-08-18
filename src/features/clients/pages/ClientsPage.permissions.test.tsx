@@ -6,9 +6,9 @@ import { I18nProvider } from '../../../shared/i18n/I18nProvider'
 import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { ClientsPage } from './ClientsPage'
 
-const { canMock, getClientsMock } = vi.hoisted(() => ({
+const { canMock, getClientsForRegistryMock } = vi.hoisted(() => ({
   canMock: vi.fn<(permissionKey: string) => boolean>(),
-  getClientsMock: vi.fn(),
+  getClientsForRegistryMock: vi.fn(),
 }))
 
 vi.mock('../../auth/usePermissions', () => ({
@@ -22,7 +22,7 @@ vi.mock('../../auth/usePermissions', () => ({
 
 vi.mock('../api/clientsApi', async (importOriginal) => {
   const actual = await importOriginal<typeof import('../api/clientsApi')>()
-  return { ...actual, getClients: getClientsMock }
+  return { ...actual, getClientsForRegistry: getClientsForRegistryMock }
 })
 
 describe('ClientsPage permissions', () => {
@@ -43,6 +43,6 @@ describe('ClientsPage permissions', () => {
 
     expect(screen.getByText('Доступ заборонено')).toBeTruthy()
     expect(screen.getByText('Недостатньо прав для перегляду клієнтів')).toBeTruthy()
-    expect(getClientsMock).not.toHaveBeenCalled()
+    expect(getClientsForRegistryMock).not.toHaveBeenCalled()
   })
 })

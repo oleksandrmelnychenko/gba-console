@@ -20,6 +20,8 @@ type ClientCommercialStructureViewProps = {
   structure: ClientCommercialStructure
   t: (value: string) => string
   onChanged?: () => void
+  canManageIdentity?: boolean
+  mutateIdentity?: typeof mutateClientIdentity
 }
 
 type PendingIdentityDecision = {
@@ -40,7 +42,13 @@ const sourceAmountFormatter = new Intl.NumberFormat('uk-UA', {
 })
 const dateOnlyFormatter = new Intl.DateTimeFormat('uk-UA')
 
-export function ClientCommercialStructureView({ structure, t, onChanged }: ClientCommercialStructureViewProps) {
+export function ClientCommercialStructureView({
+  structure,
+  t,
+  onChanged,
+  canManageIdentity = false,
+  mutateIdentity = mutateClientIdentity,
+}: ClientCommercialStructureViewProps) {
   const [pendingDecision, setPendingDecision] = useState<PendingIdentityDecision | null>(null)
   const [comment, setComment] = useState('')
   const [isSaving, setSaving] = useState(false)
@@ -48,7 +56,9 @@ export function ClientCommercialStructureView({ structure, t, onChanged }: Clien
   const { activeParties, rejectedCards } = partitionStructureCards(structure)
   const partyHierarchy = buildLegalPartyHierarchy(activeParties)
   const activeCardsById = indexActiveCards(activeParties)
-  const canManageIdentity = Boolean(onChanged && structure.IdentityMutationsEnabled)
+  const canManageIdentityActions = Boolean(
+    canManageIdentity && onChanged && structure.IdentityMutationsEnabled,
+  )
 
   return (
     <Stack className="client-commercial-structure" gap="md">
@@ -111,7 +121,7 @@ export function ClientCommercialStructureView({ structure, t, onChanged }: Clien
               node={node}
               structure={structure}
               t={t}
-              onDecision={canManageIdentity ? (decision) => {
+              onDecision={canManageIdentityActions ? (decision) => {
                 setComment('')
                 setPendingDecision(decision)
               } : undefined}
@@ -139,7 +149,7 @@ export function ClientCommercialStructureView({ structure, t, onChanged }: Clien
                 card={card}
                 structure={structure}
                 t={t}
-                onDecision={canManageIdentity ? (decision) => {
+                onDecision={canManageIdentityActions ? (decision) => {
                   setComment('')
                   setPendingDecision(decision)
                 } : undefined}
@@ -187,7 +197,7 @@ export function ClientCommercialStructureView({ structure, t, onChanged }: Clien
                 if (!pendingDecision) return
                 setSaving(true)
                 try {
-                  await mutateClientIdentity(pendingDecision.kind, {
+                  await mutateIdentity(pendingDecision.kind, {
                     ClientNetUid: pendingDecision.anchorClientNetUid,
                     RelatedClientNetUid: pendingDecision.card.ClientNetUid,
                     RelationshipKind: pendingDecision.relationshipKind,
