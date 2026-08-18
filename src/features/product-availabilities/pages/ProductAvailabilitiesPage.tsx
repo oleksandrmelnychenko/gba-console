@@ -12,6 +12,7 @@ import {
 import { useDebouncedValue } from '@mantine/hooks'
 import { CircleAlert, FileDown, RotateCcw, Search } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useReducer, useState } from 'react'
+import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { translate } from '../../../shared/i18n/translate'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -26,6 +27,8 @@ import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui
 import { Paginator } from '../../../shared/ui/paginator/Paginator'
 import { DEFAULT_PAGINATOR_PAGE_SIZE, PAGINATOR_PAGE_SIZE_OPTIONS } from '../../../shared/ui/paginator/paginatorPageSize'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
+import { PermissionGate } from '../../auth/components/PermissionGate'
+import { useAuth } from '../../auth/useAuth'
 import {
   exportProductAvailabilities,
   getProductAvailabilities,
@@ -57,6 +60,7 @@ const moneyFormatter = new Intl.NumberFormat('uk-UA', {
 
 function useProductAvailabilitiesPageModel() {
   const { t } = useI18n()
+  const { hasPermission } = useAuth()
   const [availabilities, setAvailabilities] = useValueState<ConsignmentAvailabilityItem[]>([])
   const [storages, setStorages] = useValueState<Storage[]>([])
   const [selectedStorageNetId, setSelectedStorageNetId] = useValueState('')
@@ -224,6 +228,11 @@ function useProductAvailabilitiesPageModel() {
   }
 
   async function handleExport() {
+    if (!hasPermission(PermissionKeys.ProductAvailabilities.Document.Export)) {
+      setError(t('Немає прав для експорту доступності партій'))
+      return
+    }
+
     if (!selectedStorageNetId || filterError) {
       return
     }
@@ -260,6 +269,7 @@ function useProductAvailabilitiesPageModel() {
 
   return {
     availabilities,
+    canExport: hasPermission(PermissionKeys.ProductAvailabilities.Document.Export),
     changePageSize,
     columns,
     dateFrom,
@@ -292,6 +302,23 @@ function useProductAvailabilitiesPageModel() {
 }
 
 export function ProductAvailabilitiesPage() {
+  return (
+    <PermissionGate
+      permissionKey={PermissionKeys.SystemPages.ProductAvailabilities.View}
+      fallback={<ProductAvailabilitiesPermissionDenied />}
+    >
+      <ProductAvailabilitiesPageContent />
+    </PermissionGate>
+  )
+}
+
+function ProductAvailabilitiesPermissionDenied() {
+  const { t } = useI18n()
+
+  return <Text c="red" p="md">{t('Доступ заборонено')}</Text>
+}
+
+function ProductAvailabilitiesPageContent() {
   const model = useProductAvailabilitiesPageModel()
 
   return <ProductAvailabilitiesPageView model={model} />
@@ -302,6 +329,7 @@ function ProductAvailabilitiesPageView({ model }: { model: ReturnType<typeof use
   const [tableToolbarSlot, setTableToolbarSlot] = useState<HTMLDivElement | null>(null)
   const {
     availabilities,
+    canExport,
     changePageSize,
     columns,
     dateFrom,
@@ -390,19 +418,21 @@ function ProductAvailabilitiesPageView({ model }: { model: ReturnType<typeof use
                   <RotateCcw size={17} />
                 </ActionIcon>
               </Tooltip>
-              <Tooltip label={t('Друк PDF')}>
-                <ActionIcon
-                  aria-label={t('Друк PDF')}
-                  color={CREATE_ACTION_COLOR}
-                  disabled={!selectedStorageNetId || Boolean(filterError)}
-                  loading={isExporting}
-                  size={34}
-                  variant="light"
-                  onClick={() => void handleExport()}
-                >
-                  <FileDown size={18} />
-                </ActionIcon>
-              </Tooltip>
+              {canExport && (
+                <Tooltip label={t('Друк PDF')}>
+                  <ActionIcon
+                    aria-label={t('Друк PDF')}
+                    color={CREATE_ACTION_COLOR}
+                    disabled={!selectedStorageNetId || Boolean(filterError)}
+                    loading={isExporting}
+                    size={34}
+                    variant="light"
+                    onClick={() => void handleExport()}
+                  >
+                    <FileDown size={18} />
+                  </ActionIcon>
+                </Tooltip>
+              )}
               <Paginator
                 isLoading={isLoading || isLoadingStorages}
                 page={page}

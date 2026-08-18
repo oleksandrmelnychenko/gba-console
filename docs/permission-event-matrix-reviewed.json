@@ -5,13 +5,13 @@
     "classifiedRecords": 1902,
     "dispositionCounts": {
       "technical_ui": 680,
-      "covered_existing": 376,
+      "covered_existing": 377,
       "duplicate_occurrence": 165,
-      "business_candidate": 423,
+      "business_candidate": 422,
       "needs_human_review": 250,
       "stale_or_aggregated": 8
     },
-    "reviewCandidates": 673,
+    "reviewCandidates": 672,
     "technicalExcluded": 680,
     "duplicatesExcluded": 165,
     "duplicateOccurrencesTotal": 233,
@@ -30312,7 +30312,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/product-availabilities/pages/ProductAvailabilitiesPage.tsx",
-        "line": 294,
+        "line": 304,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -30341,12 +30341,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-6554ff0565d4",
-          "distance": 172,
+          "candidateId": "EPC-77ad169a4352",
+          "distance": 196,
           "file": "src/features/product-availabilities/pages/ProductAvailabilitiesPage.tsx",
           "handler": "{resetFilters}",
           "humanLabel": "Скинути",
-          "line": 389,
+          "line": 417,
           "permissionKeys": [],
           "score": 12
         }
@@ -30354,7 +30354,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/product-availabilities/pages/ProductAvailabilitiesPage.tsx",
-        "line": 217,
+        "line": 221,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -30375,20 +30375,22 @@
       "proposedPermission": "products.products_consignments_availabilities.void_handle_export.command_export",
       "securityLevel": "medium",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "covered_existing",
+      "dispositionReason": "PDF/XLSX generation is the page's single independent business action; the UI rechecks document.export and calls a dedicated permission-scoped façade.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "products.availability.document.export"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-b35545f7414d",
+          "candidateId": "EPC-424b1621c749",
           "distance": 7,
           "file": "src/features/product-availabilities/pages/ProductAvailabilitiesPage.tsx",
           "handler": "{() => void handleExport()}",
           "humanLabel": "Друк PDF",
-          "line": 394,
+          "line": 423,
           "permissionKeys": [],
           "score": 12
         }
@@ -30396,7 +30398,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/product-availabilities/pages/ProductAvailabilitiesPage.tsx",
-        "line": 401,
+        "line": 430,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -79455,7 +79457,6 @@
     "PE-00747",
     "PE-00748",
     "PE-00749",
-    "PE-00758",
     "PE-00759",
     "PE-00760",
     "PE-00761",

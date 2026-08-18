@@ -155,6 +155,7 @@ const migratedConsoleRoutes: ConsoleRoute[] = [
   {
     path: '/products/consignments/availabilities',
     element: lazyRoute(<ProductAvailabilitiesPage />),
+    permissionKey: PermissionKeys.SystemPages.ProductAvailabilities.View,
   },
   {
     path: '/products/income/documents',

@@ -10,7 +10,7 @@ import type {
 export async function getProductAvailabilities(
   params: ProductAvailabilitiesSearchParams,
 ): Promise<ProductAvailabilitiesResponse> {
-  const result = await apiRequest<unknown>('/consignments/info/availability/filtered', {
+  const result = await apiRequest<unknown>('/consignments/info/product-availabilities/registry', {
     query: {
       from: params.from?.trim() || undefined,
       limit: params.limit,
@@ -33,7 +33,7 @@ export async function getProductAvailabilityStorages(): Promise<Storage[]> {
 export async function exportProductAvailabilities(
   params: Pick<ProductAvailabilitiesSearchParams, 'from' | 'storageNetId' | 'to' | 'vendorCode'>,
 ): Promise<ProductAvailabilityExportDocument> {
-  const result = await apiRequest<unknown>('/consignments/info/availability/filtered/export', {
+  const result = await apiRequest<unknown>('/consignments/info/product-availabilities/export', {
     query: {
       from: params.from?.trim() || undefined,
       storageNetId: params.storageNetId,

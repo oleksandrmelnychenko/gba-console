@@ -1711,6 +1711,13 @@
         "warehouses.premises.premise.delete"
       ],
       "reason": "This is the separate final storage-premise deletion, not a duplicate of write-off deletion; it rechecks the existing premise delete right."
+    },
+    "PE-00758": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": [
+        "products.availability.document.export"
+      ],
+      "reason": "PDF/XLSX generation is the page's single independent business action; the UI rechecks document.export and calls a dedicated permission-scoped façade."
     }
   }
 }
