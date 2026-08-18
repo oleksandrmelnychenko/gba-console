@@ -21,6 +21,7 @@ const EXPECTED_NEW_PAGE_PERMISSIONS = {
   '/tax-free/pack-list/all': PermissionKeys.SystemPages.TaxFreePackLists.View,
   '/accounting/consumable-services': PermissionKeys.AccountableExpenses.Page.View,
   '/accounting/consumable-orders': PermissionKeys.ConsumableOrders.Page.View,
+  '/accounting/consumable-product': PermissionKeys.ConsumableProducts.Page.View,
   '/resales': PermissionKeys.Resales.Page.View,
   '/reports/stocks': PermissionKeys.ReportsStocks.Page.View,
 } as const

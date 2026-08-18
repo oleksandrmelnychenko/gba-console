@@ -4,17 +4,17 @@
     "inputRecords": 1902,
     "classifiedRecords": 1902,
     "dispositionCounts": {
-      "technical_ui": 667,
-      "covered_existing": 355,
-      "duplicate_occurrence": 152,
+      "technical_ui": 668,
+      "covered_existing": 358,
+      "duplicate_occurrence": 155,
       "business_candidate": 461,
-      "needs_human_review": 259,
+      "needs_human_review": 252,
       "stale_or_aggregated": 8
     },
-    "reviewCandidates": 720,
-    "technicalExcluded": 667,
-    "duplicatesExcluded": 152,
-    "duplicateOccurrencesTotal": 219,
+    "reviewCandidates": 713,
+    "technicalExcluded": 668,
+    "duplicatesExcluded": 155,
+    "duplicateOccurrencesTotal": 222,
     "technicalDuplicateOverlap": 67,
     "sourceResolved": 1828,
     "sourceUnresolved": 74,
@@ -17772,7 +17772,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/consumable-products/pages/ConsumableProductsPage.tsx",
-        "line": 64,
+        "line": 65,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -17801,12 +17801,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-cac72804d09d",
-          "distance": 245,
+          "candidateId": "EPC-29fb969627c8",
+          "distance": 273,
           "file": "src/features/consumable-products/pages/ConsumableProductsPage.tsx",
           "handler": "{() => { setHasSearchInput(false) setSearchValue('') setSelectedCategoryKey(null) }}",
           "humanLabel": "Скинути",
-          "line": 309,
+          "line": 338,
           "permissionKeys": [],
           "score": 54
         }
@@ -17814,7 +17814,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/consumable-products/pages/ConsumableProductsPage.tsx",
-        "line": 64,
+        "line": 65,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -17843,12 +17843,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-cfaeb49c5f7c",
+          "candidateId": "EPC-ee9907ce60d4",
           "distance": 0,
           "file": "src/features/consumable-products/pages/ConsumableProductsPage.tsx",
           "handler": "{() => void reloadCategories()}",
           "humanLabel": "Оновити",
-          "line": 326,
+          "line": 355,
           "permissionKeys": [],
           "score": 16
         }
@@ -17856,7 +17856,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/consumable-products/pages/ConsumableProductsPage.tsx",
-        "line": 326,
+        "line": 355,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -17887,12 +17887,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-9618d98a770f",
-          "distance": 270,
+          "candidateId": "EPC-277f75191f31",
+          "distance": 298,
           "file": "src/features/consumable-products/pages/ConsumableProductsPage.tsx",
           "handler": "{() => { if (selectedCategory) { setProductEditor({ category: selectedCategory, mode: 'create' }) } }}",
           "humanLabel": "Додати товар",
-          "line": 334,
+          "line": 363,
           "permissionKeys": [
             "services.consumable_products.subcategory.create"
           ],
@@ -17902,7 +17902,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/consumable-products/pages/ConsumableProductsPage.tsx",
-        "line": 64,
+        "line": 65,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -17933,12 +17933,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-3601f72e93ba",
+          "candidateId": "EPC-4bf295ea1afc",
           "distance": 0,
           "file": "src/features/consumable-products/pages/ConsumableProductsPage.tsx",
           "handler": "{() => setCategoryEditor({ mode: 'create' })}",
           "humanLabel": "Додати категорію",
-          "line": 349,
+          "line": 378,
           "permissionKeys": [
             "services.consumable_products.category.create"
           ],
@@ -17948,7 +17948,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/consumable-products/pages/ConsumableProductsPage.tsx",
-        "line": 349,
+        "line": 378,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -17977,12 +17977,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-2202e3b29e3e",
+          "candidateId": "EPC-3779e21619eb",
           "distance": 4,
           "file": "src/features/consumable-products/pages/ConsumableProductsPage.tsx",
           "handler": "{() => setSelectedCategoryKey(categoryKey)}",
           "humanLabel": null,
-          "line": 372,
+          "line": 401,
           "permissionKeys": [],
           "score": 33
         }
@@ -17990,7 +17990,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/consumable-products/pages/ConsumableProductsPage.tsx",
-        "line": 376,
+        "line": 405,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -18011,20 +18011,23 @@
       "proposedPermission": "accounting.accounting_consumable_product.save_category.form_submit",
       "securityLevel": "high",
       "rawStatus": "Candidate existing key in component; binding review required",
-      "disposition": "needs_human_review",
-      "dispositionReason": "raw_audit_claims_existing_binding_but_does_not_name_the_key",
+      "disposition": "covered_existing",
+      "dispositionReason": "The category editor selects one existing create or edit permission by mode and rechecks it before the scoped mutation.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "services.consumable_products.category.create",
+        "services.consumable_products.subcategory.edit"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-0b3fbfaf73d2",
-          "distance": 250,
+          "candidateId": "EPC-9f45434c26a6",
+          "distance": 277,
           "file": "src/features/consumable-products/pages/ConsumableProductsPage.tsx",
           "handler": "{saveCategory}",
           "humanLabel": null,
-          "line": 425,
+          "line": 454,
           "permissionKeys": [],
           "score": 12
         }
@@ -18032,7 +18035,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/consumable-products/pages/ConsumableProductsPage.tsx",
-        "line": 175,
+        "line": 177,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -18053,20 +18056,23 @@
       "proposedPermission": "accounting.accounting_consumable_product.save_product.form_submit",
       "securityLevel": "high",
       "rawStatus": "Candidate existing key in component; binding review required",
-      "disposition": "needs_human_review",
-      "dispositionReason": "raw_audit_claims_existing_binding_but_does_not_name_the_key",
+      "disposition": "covered_existing",
+      "dispositionReason": "The product editor selects one existing create or edit permission by mode and rechecks it before the scoped mutation.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "services.consumable_products.category.edit",
+        "services.consumable_products.subcategory.create"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-f0f93f022ed3",
-          "distance": 218,
+          "candidateId": "EPC-f6a7ed0e2487",
+          "distance": 236,
           "file": "src/features/consumable-products/pages/ConsumableProductsPage.tsx",
           "handler": "{saveProduct}",
           "humanLabel": null,
-          "line": 433,
+          "line": 462,
           "permissionKeys": [],
           "score": 11
         }
@@ -18074,7 +18080,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/consumable-products/pages/ConsumableProductsPage.tsx",
-        "line": 215,
+        "line": 226,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -18105,12 +18111,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-5b47ac724b22",
+          "candidateId": "EPC-5c2b3f41d8cf",
           "distance": 87,
           "file": "src/features/consumable-products/pages/ConsumableProductsPage.tsx",
           "handler": "{onEditCategory}",
           "humanLabel": "Редагувати категорію",
-          "line": 484,
+          "line": 513,
           "permissionKeys": [
             "services.consumable_products.subcategory.edit"
           ],
@@ -18120,7 +18126,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/consumable-products/pages/ConsumableProductsPage.tsx",
-        "line": 397,
+        "line": 426,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -18151,12 +18157,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-53f35ee340bb",
+          "candidateId": "EPC-884949225f89",
           "distance": 93,
           "file": "src/features/consumable-products/pages/ConsumableProductsPage.tsx",
           "handler": "{onDeleteCategory}",
           "humanLabel": "Видалити категорію",
-          "line": 489,
+          "line": 518,
           "permissionKeys": [
             "services.consumable_products.subcategory.edit"
           ],
@@ -18166,7 +18172,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/consumable-products/pages/ConsumableProductsPage.tsx",
-        "line": 396,
+        "line": 425,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -18187,20 +18193,20 @@
       "proposedPermission": "accounting.accounting_consumable_product.on_open_product.row_click",
       "securityLevel": "medium",
       "rawStatus": "Candidate existing key in component; binding review required",
-      "disposition": "needs_human_review",
-      "dispositionReason": "raw_audit_claims_existing_binding_but_does_not_name_the_key",
+      "disposition": "technical_ui",
+      "dispositionReason": "The product row only opens a local action chooser; edit and delete actions inside it have independent permissions.",
       "duplicateOf": null,
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-7b25509e7df2",
+          "candidateId": "EPC-73372c634ed6",
           "distance": 100,
           "file": "src/features/consumable-products/pages/ConsumableProductsPage.tsx",
           "handler": "{onOpenProduct}",
           "humanLabel": null,
-          "line": 498,
+          "line": 527,
           "permissionKeys": [],
           "score": 11
         }
@@ -18208,7 +18214,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/consumable-products/pages/ConsumableProductsPage.tsx",
-        "line": 398,
+        "line": 427,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -18239,12 +18245,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-1ea85a8a8b8b",
-          "distance": 550,
+          "candidateId": "EPC-548810fd36c2",
+          "distance": 578,
           "file": "src/features/consumable-products/pages/ConsumableProductsPage.tsx",
           "handler": "{() => { if (category) { onEdit(category, product) } }}",
           "humanLabel": "Редагувати",
-          "line": 614,
+          "line": 643,
           "permissionKeys": [
             "services.consumable_products.category.edit"
           ],
@@ -18254,7 +18260,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/consumable-products/pages/ConsumableProductsPage.tsx",
-        "line": 64,
+        "line": 65,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -18285,12 +18291,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-9efb32ee5819",
-          "distance": 576,
+          "candidateId": "EPC-f05e5d247d31",
+          "distance": 604,
           "file": "src/features/consumable-products/pages/ConsumableProductsPage.tsx",
           "handler": "{() => { if (category) { onDelete(category, product) } }}",
           "humanLabel": "Видалити",
-          "line": 640,
+          "line": 669,
           "permissionKeys": [
             "services.consumable_products.category.delete"
           ],
@@ -18300,7 +18306,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/consumable-products/pages/ConsumableProductsPage.tsx",
-        "line": 64,
+        "line": 65,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -18321,17 +18327,17 @@
       "proposedPermission": "accounting.accounting_consumable_product.on_submit.form_submit",
       "securityLevel": "high",
       "rawStatus": "Candidate existing key in component; binding review required",
-      "disposition": "needs_human_review",
-      "dispositionReason": "raw_audit_claims_existing_binding_but_does_not_name_the_key",
-      "duplicateOf": null,
+      "disposition": "duplicate_occurrence",
+      "dispositionReason": "The nested category form dispatches the same mode-aware category save and adds no second business boundary.",
+      "duplicateOf": "PE-00451",
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [],
       "source": {
         "status": "resolved",
         "file": "src/features/consumable-products/pages/ConsumableProductsPage.tsx",
-        "line": 430,
+        "line": 459,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -18362,7 +18368,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/consumable-products/pages/ConsumableProductsPage.tsx",
-        "line": 414,
+        "line": 443,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -18383,20 +18389,20 @@
       "proposedPermission": "accounting.accounting_consumable_product.on_submit_is_supply_service_category_name.command_submit",
       "securityLevel": "high",
       "rawStatus": "Candidate existing key in component; binding review required",
-      "disposition": "needs_human_review",
-      "dispositionReason": "raw_audit_claims_existing_binding_but_does_not_name_the_key",
-      "duplicateOf": null,
+      "disposition": "duplicate_occurrence",
+      "dispositionReason": "The service-category toggle is persisted only through the same guarded category save operation.",
+      "duplicateOf": "PE-00451",
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-30f41c4092c5",
+          "candidateId": "EPC-e6cdc7bff575",
           "distance": 4,
           "file": "src/features/consumable-products/pages/ConsumableProductsPage.tsx",
           "handler": "{() => onSubmit({ isSupplyServiceCategory, name })}",
           "humanLabel": "Зберегти",
-          "line": 729,
+          "line": 758,
           "permissionKeys": [],
           "score": 25
         }
@@ -18404,7 +18410,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/consumable-products/pages/ConsumableProductsPage.tsx",
-        "line": 733,
+        "line": 762,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -18435,7 +18441,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/consumable-products/pages/ConsumableProductsPage.tsx",
-        "line": 430,
+        "line": 459,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -18466,7 +18472,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/consumable-products/pages/ConsumableProductsPage.tsx",
-        "line": 414,
+        "line": 443,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -18487,17 +18493,17 @@
       "proposedPermission": "accounting.accounting_consumable_product.submit.command_submit",
       "securityLevel": "high",
       "rawStatus": "Candidate existing key in component; binding review required",
-      "disposition": "needs_human_review",
-      "dispositionReason": "raw_audit_claims_existing_binding_but_does_not_name_the_key",
-      "duplicateOf": null,
+      "disposition": "duplicate_occurrence",
+      "dispositionReason": "The nested product form submit dispatches the same mode-aware product save operation.",
+      "duplicateOf": "PE-00452",
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [],
       "source": {
         "status": "resolved",
         "file": "src/features/consumable-products/pages/ConsumableProductsPage.tsx",
-        "line": 428,
+        "line": 457,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -18528,7 +18534,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/consumable-products/pages/ConsumableProductsPage.tsx",
-        "line": 414,
+        "line": 443,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -18549,17 +18555,20 @@
       "proposedPermission": "accounting.accounting_consumable_product.on_confirm.command_submit",
       "securityLevel": "high",
       "rawStatus": "Candidate existing key in component; binding review required",
-      "disposition": "needs_human_review",
-      "dispositionReason": "raw_audit_claims_existing_binding_but_does_not_name_the_key",
+      "disposition": "covered_existing",
+      "dispositionReason": "The reusable confirmation selects category edit or product delete from the target kind and rechecks it before the scoped delete.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "services.consumable_products.category.delete",
+        "services.consumable_products.subcategory.edit"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [],
       "source": {
         "status": "resolved",
         "file": "src/features/consumable-products/pages/ConsumableProductsPage.tsx",
-        "line": 257,
+        "line": 277,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -79342,13 +79351,6 @@
     "PE-00411",
     "PE-00412",
     "PE-00414",
-    "PE-00451",
-    "PE-00452",
-    "PE-00455",
-    "PE-00458",
-    "PE-00460",
-    "PE-00463",
-    "PE-00465",
     "PE-00469",
     "PE-00473",
     "PE-00475",

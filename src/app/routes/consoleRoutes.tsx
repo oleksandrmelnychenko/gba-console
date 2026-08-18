@@ -408,6 +408,7 @@ const accountingMigrationRoutes: ConsoleRoute[] = [
   {
     path: '/accounting/consumable-product',
     element: lazyRoute(<ConsumableProductsPage />),
+    permissionKey: PermissionKeys.ConsumableProducts.Page.View,
   },
   {
     path: '/accounting/advanced-reports',

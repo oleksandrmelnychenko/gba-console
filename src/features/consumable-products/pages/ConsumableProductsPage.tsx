@@ -14,6 +14,7 @@ import { notifications } from '@mantine/notifications'
 import { CircleAlert, ExternalLink, Pencil, Plus, RefreshCw, RotateCcw, Search, Trash2, X } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { PermissionGate } from '../../auth/components/PermissionGate'
+import { useAuth } from '../../auth/useAuth'
 import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -81,6 +82,7 @@ function ConsumableProductsPermissionDenied() {
 
 function ConsumableProductsPageContent() {
   const { t } = useI18n()
+  const { hasPermission } = useAuth()
   const [categories, setCategories] = useValueState<ConsumableProductCategory[]>([])
   const [searchValue, setSearchValue] = useValueState('')
   const [hasSearchInput, setHasSearchInput] = useValueState(false)
@@ -173,6 +175,15 @@ function ConsumableProductsPageContent() {
   }
 
   async function saveCategory(draft: ConsumableProductCategoryDraft) {
+    const requiredPermission = categoryEditor?.mode === 'edit'
+      ? PermissionKeys.ConsumableProducts.Category.Edit
+      : PermissionKeys.ConsumableProducts.Category.Create
+
+    if (!categoryEditor || !hasPermission(requiredPermission)) {
+      setError(t('Немає права зберігати цю категорію'))
+      return
+    }
+
     if (!draft.name.trim()) {
       setError(t('Вкажіть назву категорії'))
       return
@@ -213,6 +224,15 @@ function ConsumableProductsPageContent() {
   }
 
   async function saveProduct(editor: ProductEditor, draft: ConsumableProductDraft) {
+    const requiredPermission = editor.mode === 'edit'
+      ? PermissionKeys.ConsumableProducts.Product.Edit
+      : PermissionKeys.ConsumableProducts.Product.Create
+
+    if (!hasPermission(requiredPermission)) {
+      setError(t('Немає права зберігати цей товар'))
+      return
+    }
+
     if (!draft.name.trim()) {
       setError(t('Вкажіть назву товару'))
       return
@@ -256,6 +276,15 @@ function ConsumableProductsPageContent() {
 
   async function confirmDelete() {
     if (!deleteTarget) {
+      return
+    }
+
+    const requiredPermission = deleteTarget.kind === 'category'
+      ? PermissionKeys.ConsumableProducts.Category.Edit
+      : PermissionKeys.ConsumableProducts.Product.Delete
+
+    if (!hasPermission(requiredPermission)) {
+      setError(t('Немає права видаляти цей запис'))
       return
     }
 

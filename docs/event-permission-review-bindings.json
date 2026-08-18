@@ -1411,6 +1411,49 @@
     "PE-01090": {
       "disposition": "technical_ui",
       "reason": "Removing a manual filter value only changes the local report draft."
+    },
+    "PE-00451": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": [
+        "services.consumable_products.category.create",
+        "services.consumable_products.subcategory.edit"
+      ],
+      "reason": "The category editor selects one existing create or edit permission by mode and rechecks it before the scoped mutation."
+    },
+    "PE-00452": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": [
+        "services.consumable_products.subcategory.create",
+        "services.consumable_products.category.edit"
+      ],
+      "reason": "The product editor selects one existing create or edit permission by mode and rechecks it before the scoped mutation."
+    },
+    "PE-00455": {
+      "disposition": "technical_ui",
+      "reason": "The product row only opens a local action chooser; edit and delete actions inside it have independent permissions."
+    },
+    "PE-00458": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-00451",
+      "reason": "The nested category form dispatches the same mode-aware category save and adds no second business boundary."
+    },
+    "PE-00460": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-00451",
+      "reason": "The service-category toggle is persisted only through the same guarded category save operation."
+    },
+    "PE-00463": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-00452",
+      "reason": "The nested product form submit dispatches the same mode-aware product save operation."
+    },
+    "PE-00465": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": [
+        "services.consumable_products.subcategory.edit",
+        "services.consumable_products.category.delete"
+      ],
+      "reason": "The reusable confirmation selects category edit or product delete from the target kind and rechecks it before the scoped delete."
     }
   }
 }
