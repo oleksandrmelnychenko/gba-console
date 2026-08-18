@@ -711,7 +711,11 @@ const plannedConsoleRoutes: ConsoleRoute[] = [
     element: lazyRoute(<ResalePage />),
     permissionKey: PermissionKeys.Resales.Page.View,
   },
-  { path: '/reports/stocks', element: lazyRoute(<ReportsStocksPage />) },
+  {
+    path: '/reports/stocks',
+    element: lazyRoute(<ReportsStocksPage />),
+    permissionKey: PermissionKeys.ReportsStocks.Page.View,
+  },
   { path: '/reports/sale', element: lazyRoute(<ReportsSalePage />) },
   { path: '/reports/sales', element: lazyRoute(<ReportsSalePage />) },
   {

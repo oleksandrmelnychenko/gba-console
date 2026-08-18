@@ -640,6 +640,14 @@ export const PermissionKeys = {
       Print: 'sales.resales.consignment_note.print',
     },
   },
+  ReportsStocks: {
+    Page: {
+      View: 'reports.stocks_constructor.page.view',
+    },
+    Report: {
+      Generate: 'reports.stocks_constructor.report.generate',
+    },
+  },
 } as const
 
 export type SalesUkraineSalePermissionKey =
@@ -651,6 +659,10 @@ export type ResalesPermissionKey =
   | Values<typeof PermissionKeys.Resales.Availability>
   | Values<typeof PermissionKeys.Resales.Document>
   | Values<typeof PermissionKeys.Resales.ConsignmentNote>
+
+export type ReportsStocksPermissionKey =
+  | Values<typeof PermissionKeys.ReportsStocks.Page>
+  | Values<typeof PermissionKeys.ReportsStocks.Report>
 
 type Values<T> = T[keyof T]
 
@@ -884,6 +896,7 @@ export type PermissionKey =
   | TransportersPermissionKey
   | SalesUkraineSalePermissionKey
   | ResalesPermissionKey
+  | ReportsStocksPermissionKey
   | SupplierOrganizationsPermissionKey
   | WarehouseAccountingPermissionKey
   | WarehousesPermissionKey
@@ -1901,6 +1914,8 @@ const eventPermissionKeys = new Set<string>([
   ...Object.values(PermissionKeys.Resales.Availability),
   ...Object.values(PermissionKeys.Resales.Document),
   ...Object.values(PermissionKeys.Resales.ConsignmentNote),
+  ...Object.values(PermissionKeys.ReportsStocks.Page),
+  ...Object.values(PermissionKeys.ReportsStocks.Report),
 ])
 
 export function isEventPermissionKey(

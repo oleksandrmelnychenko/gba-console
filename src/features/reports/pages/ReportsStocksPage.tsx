@@ -31,6 +31,8 @@ import { DocumentExportModal } from '../../../shared/ui/document-export-modal/Do
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn } from '../../../shared/ui/data-table/types'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
+import { PermissionKeys } from '../../../shared/auth/permissionKeys'
+import { useAuth } from '../../auth/useAuth'
 import {
   createStockReport,
   getReportClientAgreements,
@@ -141,6 +143,10 @@ function createEmptySelection(): ReportSelection {
 
 export function ReportsStocksPage() {
   const { t } = useI18n()
+  const { hasPermission } = useAuth()
+  const canGenerateReport = hasPermission(
+    PermissionKeys.ReportsStocks.Report.Generate,
+  )
   const today = useMemo(() => formatLocalDate(new Date()), [])
   const [from, setFrom] = useValueState(today)
   const [to, setTo] = useValueState(today)
@@ -219,14 +225,17 @@ export function ReportsStocksPage() {
           field: getReportFieldLabel(selections[incompleteSelectionIndex].SelectedField.Name),
           position: incompleteSelectionIndex + 1,
         })
-  const canSubmit = !periodError && !incompleteSelectionMessage && checkedMeasurements > 0 && !missingRowGrouping
-  const submitBlockedReason = periodError
-    ? periodError
-    : checkedMeasurements === 0
-      ? t('Виберіть хоча б один показник')
-      : missingRowGrouping
-        ? t('Додайте хоча б одне групування рядків')
-        : incompleteSelectionMessage
+  const reportIsReady = !periodError && !incompleteSelectionMessage && checkedMeasurements > 0 && !missingRowGrouping
+  const canSubmit = canGenerateReport && reportIsReady
+  const submitBlockedReason = !canGenerateReport
+    ? t('Немає права формувати звіт залишків')
+    : periodError
+      ? periodError
+      : checkedMeasurements === 0
+        ? t('Виберіть хоча б один показник')
+        : missingRowGrouping
+          ? t('Додайте хоча б одне групування рядків')
+          : incompleteSelectionMessage
   const emptyRunNotice =
     lastRun && !lastRun.hasDocument
       ? t('За період {from} – {to} сервер не повернув файл звіту. Спробуйте інший період або послабте умови відбору.', {
@@ -243,7 +252,7 @@ export function ReportsStocksPage() {
   async function submitReport(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
 
-    if (!canSubmit) {
+    if (!canGenerateReport || !reportIsReady) {
       return
     }
 

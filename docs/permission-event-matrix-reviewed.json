@@ -4,17 +4,17 @@
     "inputRecords": 1902,
     "classifiedRecords": 1902,
     "dispositionCounts": {
-      "technical_ui": 652,
-      "covered_existing": 354,
-      "duplicate_occurrence": 150,
-      "business_candidate": 477,
-      "needs_human_review": 261,
+      "technical_ui": 667,
+      "covered_existing": 355,
+      "duplicate_occurrence": 152,
+      "business_candidate": 461,
+      "needs_human_review": 259,
       "stale_or_aggregated": 8
     },
-    "reviewCandidates": 738,
-    "technicalExcluded": 652,
-    "duplicatesExcluded": 150,
-    "duplicateOccurrencesTotal": 217,
+    "reviewCandidates": 720,
+    "technicalExcluded": 667,
+    "duplicatesExcluded": 152,
+    "duplicateOccurrencesTotal": 219,
     "technicalDuplicateOverlap": 67,
     "sourceResolved": 1828,
     "sourceUnresolved": 74,
@@ -42569,7 +42569,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/reports/pages/ReportsStocksPage.tsx",
-        "line": 142,
+        "line": 144,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -42911,20 +42911,20 @@
       "proposedPermission": "reports.reports_sale.submit_report.form_submit",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
-      "duplicateOf": null,
+      "disposition": "duplicate_occurrence",
+      "dispositionReason": "The form submit event invokes the same final stock-report generation handler and is not a second business action.",
+      "duplicateOf": "PE-01070",
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-7a85554099fe",
+          "candidateId": "EPC-45e307541cd1",
           "distance": 111,
           "file": "src/features/reports/pages/ReportsStocksPage.tsx",
           "handler": "{submitReport}",
           "humanLabel": null,
-          "line": 354,
+          "line": 363,
           "permissionKeys": [],
           "score": 12
         }
@@ -42932,7 +42932,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/reports/pages/ReportsStocksPage.tsx",
-        "line": 243,
+        "line": 252,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -42955,17 +42955,19 @@
       "proposedPermission": "reports.reports_sale.on_submit.form_submit",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "covered_existing",
+      "dispositionReason": "Final report generation is fail-closed in the UI and calls the dedicated permission-scoped Analytics endpoint.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "reports.stocks_constructor.report.generate"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [],
       "source": {
         "status": "resolved",
         "file": "src/features/reports/pages/ReportsStocksPage.tsx",
-        "line": 243,
+        "line": 252,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -42988,20 +42990,20 @@
       "proposedPermission": "reports.reports_sale.set_templates_opened_true.modal_open",
       "securityLevel": "low",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "technical_ui",
+      "dispositionReason": "Opening the local templates modal performs no backend operation and grants no additional data access.",
       "duplicateOf": null,
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-202dfe0039fd",
+          "candidateId": "EPC-878b21b0e894",
           "distance": 4,
           "file": "src/features/reports/pages/ReportsStocksPage.tsx",
           "handler": "{() => setTemplatesOpened(true)}",
           "humanLabel": "Шаблони",
-          "line": 527,
+          "line": 536,
           "permissionKeys": [],
           "score": 22
         }
@@ -43009,7 +43011,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/reports/pages/ReportsStocksPage.tsx",
-        "line": 531,
+        "line": 540,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -43042,7 +43044,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/reports/pages/ReportsStocksPage.tsx",
-        "line": 280,
+        "line": 289,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -43065,17 +43067,17 @@
       "proposedPermission": "reports.reports_sale.усі.button_click",
       "securityLevel": "low",
       "rawStatus": "No permission candidate found",
-      "disposition": "needs_human_review",
-      "dispositionReason": "insufficient_evidence_for_automatic_permission_or_exclusion",
+      "disposition": "technical_ui",
+      "dispositionReason": "Selecting all measurements only changes the local report draft.",
       "duplicateOf": null,
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [],
       "source": {
         "status": "resolved",
         "file": "src/features/reports/pages/ReportsStocksPage.tsx",
-        "line": 142,
+        "line": 144,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -43098,20 +43100,20 @@
       "proposedPermission": "reports.reports_sale.очистити.button_click",
       "securityLevel": "low",
       "rawStatus": "No permission candidate found",
-      "disposition": "needs_human_review",
-      "dispositionReason": "insufficient_evidence_for_automatic_permission_or_exclusion",
+      "disposition": "technical_ui",
+      "dispositionReason": "Clearing measurements only changes the local report draft.",
       "duplicateOf": null,
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-7ee178f15dee",
+          "candidateId": "EPC-4169ee478294",
           "distance": 7,
           "file": "src/features/reports/pages/ReportsStocksPage.tsx",
           "handler": "{() => setAllMeasurements(onMeasurementsChange, false)}",
           "humanLabel": "Очистити",
-          "line": 690,
+          "line": 699,
           "permissionKeys": [],
           "score": 8
         }
@@ -43119,7 +43121,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/reports/pages/ReportsStocksPage.tsx",
-        "line": 697,
+        "line": 706,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -43142,17 +43144,17 @@
       "proposedPermission": "reports.reports_sale.додати.modal_open",
       "securityLevel": "low",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "technical_ui",
+      "dispositionReason": "Opening the selection editor only prepares a local filter draft.",
       "duplicateOf": null,
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [],
       "source": {
         "status": "resolved",
         "file": "src/features/reports/pages/ReportsStocksPage.tsx",
-        "line": 796,
+        "line": 805,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -43175,20 +43177,20 @@
       "proposedPermission": "reports.reports_sale.on_remove_index.command_delete",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "technical_ui",
+      "dispositionReason": "Removing a selection only changes the local report draft.",
       "duplicateOf": null,
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-7951eee1739b",
+          "candidateId": "EPC-78197c777e7f",
           "distance": 74,
           "file": "src/features/reports/pages/ReportsStocksPage.tsx",
           "handler": "{() => onRemove(index)}",
           "humanLabel": null,
-          "line": 813,
+          "line": 822,
           "permissionKeys": [],
           "score": 11
         }
@@ -43196,7 +43198,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/reports/pages/ReportsStocksPage.tsx",
-        "line": 739,
+        "line": 748,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -43219,20 +43221,20 @@
       "proposedPermission": "reports.reports_sale.add_option_option_value.command_submit",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "technical_ui",
+      "dispositionReason": "Adding a grouping option only changes the local report draft.",
       "duplicateOf": null,
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-0e302bcde8ea",
+          "candidateId": "EPC-c2776d2b9d0d",
           "distance": 5,
           "file": "src/features/reports/pages/ReportsStocksPage.tsx",
           "handler": "{() => addOption(option.value)}",
           "humanLabel": null,
-          "line": 898,
+          "line": 907,
           "permissionKeys": [],
           "score": 20
         }
@@ -43240,7 +43242,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/reports/pages/ReportsStocksPage.tsx",
-        "line": 903,
+        "line": 912,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -43263,17 +43265,17 @@
       "proposedPermission": "reports.reports_sale.open_editor_1_create_empty_selection.command_submit",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "technical_ui",
+      "dispositionReason": "Creating an empty selection row only changes local form state.",
       "duplicateOf": null,
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [],
       "source": {
         "status": "resolved",
         "file": "src/features/reports/pages/ReportsStocksPage.tsx",
-        "line": 1019,
+        "line": 1028,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -43296,20 +43298,20 @@
       "proposedPermission": "reports.reports_sale.open_editor_index_selection.modal_open",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "technical_ui",
+      "dispositionReason": "Editing a selection row only changes local form state.",
       "duplicateOf": null,
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-2c570bee27e5",
+          "candidateId": "EPC-3557734d2604",
           "distance": 6,
           "file": "src/features/reports/pages/ReportsStocksPage.tsx",
           "handler": "{() => openEditor(index, selection)}",
           "humanLabel": "Редагувати",
-          "line": 1048,
+          "line": 1057,
           "permissionKeys": [],
           "score": 24
         }
@@ -43317,7 +43319,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/reports/pages/ReportsStocksPage.tsx",
-        "line": 1054,
+        "line": 1063,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -43348,12 +43350,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-7a65aa733811",
+          "candidateId": "EPC-3d5c8a5ff5d1",
           "distance": 6,
           "file": "src/features/reports/pages/ReportsStocksPage.tsx",
           "handler": "{() => onChange((current) => current.filter((_, itemIndex) => itemIndex !== index))}",
           "humanLabel": "Видалити",
-          "line": 1060,
+          "line": 1069,
           "permissionKeys": [],
           "score": 49
         }
@@ -43361,7 +43363,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/reports/pages/ReportsStocksPage.tsx",
-        "line": 1066,
+        "line": 1075,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -43392,12 +43394,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-24dbce169df2",
+          "candidateId": "EPC-23d1b6d933fe",
           "distance": 163,
           "file": "src/features/reports/pages/ReportsStocksPage.tsx",
           "handler": "{closeEditor}",
           "humanLabel": "Скасувати",
-          "line": 1139,
+          "line": 1148,
           "permissionKeys": [],
           "score": 11
         }
@@ -43405,7 +43407,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/reports/pages/ReportsStocksPage.tsx",
-        "line": 976,
+        "line": 985,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -43428,20 +43430,20 @@
       "proposedPermission": "reports.reports_sale.save_draft.command_submit",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "technical_ui",
+      "dispositionReason": "Saving a named template writes only to this browser's localStorage.",
       "duplicateOf": null,
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-cabd35aafad5",
+          "candidateId": "EPC-458814a91065",
           "distance": 154,
           "file": "src/features/reports/pages/ReportsStocksPage.tsx",
           "handler": "{saveDraft}",
           "humanLabel": "Зберегти",
-          "line": 1140,
+          "line": 1149,
           "permissionKeys": [],
           "score": 9
         }
@@ -43449,7 +43451,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/reports/pages/ReportsStocksPage.tsx",
-        "line": 986,
+        "line": 995,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -43472,17 +43474,17 @@
       "proposedPermission": "reports.reports_sale.on_save.command_submit",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "technical_ui",
+      "dispositionReason": "The template form submit dispatches the same localStorage-only save and has no server boundary.",
       "duplicateOf": null,
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [],
       "source": {
         "status": "resolved",
         "file": "src/features/reports/pages/ReportsStocksPage.tsx",
-        "line": 293,
+        "line": 302,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -43515,7 +43517,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/reports/pages/ReportsStocksPage.tsx",
-        "line": 383,
+        "line": 392,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -43538,17 +43540,17 @@
       "proposedPermission": "reports.reports_sale.button.command_submit",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "technical_ui",
+      "dispositionReason": "Removing a local draft value performs no backend mutation.",
       "duplicateOf": null,
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [],
       "source": {
         "status": "resolved",
         "file": "src/features/reports/pages/ReportsStocksPage.tsx",
-        "line": 142,
+        "line": 144,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -43571,20 +43573,20 @@
       "proposedPermission": "reports.reports_sale.on_update_template_name.command_submit",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "technical_ui",
+      "dispositionReason": "Updating a report template modifies only browser localStorage.",
       "duplicateOf": null,
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-02bda9fc7da4",
+          "candidateId": "EPC-49b495d215ef",
           "distance": 966,
           "file": "src/features/reports/pages/ReportsStocksPage.tsx",
           "handler": "{() => onUpdate(template.Name)}",
           "humanLabel": "Оновити шаблон",
-          "line": 1285,
+          "line": 1294,
           "permissionKeys": [],
           "score": 18
         }
@@ -43592,7 +43594,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/reports/pages/ReportsStocksPage.tsx",
-        "line": 319,
+        "line": 328,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -43615,20 +43617,20 @@
       "proposedPermission": "reports.reports_sale.on_delete_template_name.command_delete",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "technical_ui",
+      "dispositionReason": "Deleting a report template modifies only browser localStorage.",
       "duplicateOf": null,
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-c90e60414203",
+          "candidateId": "EPC-7f1b239a75e4",
           "distance": 970,
           "file": "src/features/reports/pages/ReportsStocksPage.tsx",
           "handler": "{() => onDelete(template.Name)}",
           "humanLabel": "Видалити",
-          "line": 1297,
+          "line": 1306,
           "permissionKeys": [],
           "score": 18
         }
@@ -43636,7 +43638,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/reports/pages/ReportsStocksPage.tsx",
-        "line": 327,
+        "line": 336,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -43659,20 +43661,20 @@
       "proposedPermission": "reports.reports_sale.on_open_files.modal_open",
       "securityLevel": "low",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
-      "duplicateOf": null,
+      "disposition": "duplicate_occurrence",
+      "dispositionReason": "Opening the files modal only displays links returned by the already authorized generation call.",
+      "duplicateOf": "PE-01070",
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-bc96be33bd14",
+          "candidateId": "EPC-38953dac836c",
           "distance": 1020,
           "file": "src/features/reports/pages/ReportsStocksPage.tsx",
           "handler": "{onOpenFiles}",
           "humanLabel": "Завантажити",
-          "line": 1402,
+          "line": 1411,
           "permissionKeys": [],
           "score": 9
         }
@@ -43680,7 +43682,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/reports/pages/ReportsStocksPage.tsx",
-        "line": 382,
+        "line": 391,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -43703,20 +43705,20 @@
       "proposedPermission": "reports.reports_sale.add_manual_value.command_submit",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "technical_ui",
+      "dispositionReason": "Adding a manual filter value only changes the local report draft.",
       "duplicateOf": null,
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-30829adc82e9",
+          "candidateId": "EPC-0ef801c64179",
           "distance": 61,
           "file": "src/features/reports/pages/ReportsStocksPage.tsx",
           "handler": "{addManualValue}",
           "humanLabel": "Додати",
-          "line": 1698,
+          "line": 1707,
           "permissionKeys": [],
           "score": 14
         }
@@ -43724,7 +43726,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/reports/pages/ReportsStocksPage.tsx",
-        "line": 1637,
+        "line": 1646,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -43747,20 +43749,20 @@
       "proposedPermission": "reports.reports_sale.remove_value_value_index.command_delete",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "technical_ui",
+      "dispositionReason": "Removing a manual filter value only changes the local report draft.",
       "duplicateOf": null,
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-283ad93c2500",
+          "candidateId": "EPC-86c23b5af2a9",
           "distance": 97,
           "file": "src/features/reports/pages/ReportsStocksPage.tsx",
           "handler": "{() => removeValue(valueIndex)}",
           "humanLabel": "Видалити",
-          "line": 1745,
+          "line": 1754,
           "permissionKeys": [],
           "score": 21
         }
@@ -43768,7 +43770,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/reports/pages/ReportsStocksPage.tsx",
-        "line": 1648,
+        "line": 1657,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -79555,24 +79557,6 @@
     "PE-01064",
     "PE-01065",
     "PE-01068",
-    "PE-01069",
-    "PE-01070",
-    "PE-01071",
-    "PE-01073",
-    "PE-01074",
-    "PE-01075",
-    "PE-01076",
-    "PE-01077",
-    "PE-01078",
-    "PE-01079",
-    "PE-01082",
-    "PE-01083",
-    "PE-01085",
-    "PE-01086",
-    "PE-01087",
-    "PE-01088",
-    "PE-01089",
-    "PE-01090",
     "PE-01139",
     "PE-01141",
     "PE-01142",

@@ -1334,6 +1334,83 @@
         "sales.resales.consignment_note.print"
       ],
       "reason": "TTN document generation is independently guarded and calls the permission-scoped print facade."
+    },
+    "PE-01069": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-01070",
+      "reason": "The form submit event invokes the same final stock-report generation handler and is not a second business action."
+    },
+    "PE-01070": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": [
+        "reports.stocks_constructor.report.generate"
+      ],
+      "reason": "Final report generation is fail-closed in the UI and calls the dedicated permission-scoped Analytics endpoint."
+    },
+    "PE-01071": {
+      "disposition": "technical_ui",
+      "reason": "Opening the local templates modal performs no backend operation and grants no additional data access."
+    },
+    "PE-01073": {
+      "disposition": "technical_ui",
+      "reason": "Selecting all measurements only changes the local report draft."
+    },
+    "PE-01074": {
+      "disposition": "technical_ui",
+      "reason": "Clearing measurements only changes the local report draft."
+    },
+    "PE-01075": {
+      "disposition": "technical_ui",
+      "reason": "Opening the selection editor only prepares a local filter draft."
+    },
+    "PE-01076": {
+      "disposition": "technical_ui",
+      "reason": "Removing a selection only changes the local report draft."
+    },
+    "PE-01077": {
+      "disposition": "technical_ui",
+      "reason": "Adding a grouping option only changes the local report draft."
+    },
+    "PE-01078": {
+      "disposition": "technical_ui",
+      "reason": "Creating an empty selection row only changes local form state."
+    },
+    "PE-01079": {
+      "disposition": "technical_ui",
+      "reason": "Editing a selection row only changes local form state."
+    },
+    "PE-01082": {
+      "disposition": "technical_ui",
+      "reason": "Saving a named template writes only to this browser's localStorage."
+    },
+    "PE-01083": {
+      "disposition": "technical_ui",
+      "reason": "The template form submit dispatches the same localStorage-only save and has no server boundary."
+    },
+    "PE-01085": {
+      "disposition": "technical_ui",
+      "reason": "Removing a local draft value performs no backend mutation."
+    },
+    "PE-01086": {
+      "disposition": "technical_ui",
+      "reason": "Updating a report template modifies only browser localStorage."
+    },
+    "PE-01087": {
+      "disposition": "technical_ui",
+      "reason": "Deleting a report template modifies only browser localStorage."
+    },
+    "PE-01088": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-01070",
+      "reason": "Opening the files modal only displays links returned by the already authorized generation call."
+    },
+    "PE-01089": {
+      "disposition": "technical_ui",
+      "reason": "Adding a manual filter value only changes the local report draft."
+    },
+    "PE-01090": {
+      "disposition": "technical_ui",
+      "reason": "Removing a manual filter value only changes the local report draft."
     }
   }
 }

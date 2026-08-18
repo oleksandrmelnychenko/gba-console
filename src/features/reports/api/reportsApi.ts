@@ -13,7 +13,7 @@ const EMPTY_GUID = '00000000-0000-0000-0000-000000000000'
 const CLIENT_FILTER_SQL = 'RegionCode.Value/Client.FullName/Client.USREOU'
 
 export async function createStockReport(body: ReportRequestBody): Promise<ReportResult> {
-  const result = await apiRequest<unknown>('/report/get/all/filtered', {
+  const result = await apiRequest<unknown>('/report/stocks/generate', {
     method: 'POST',
     body,
   })

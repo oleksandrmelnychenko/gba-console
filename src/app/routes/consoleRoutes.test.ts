@@ -22,6 +22,7 @@ const EXPECTED_NEW_PAGE_PERMISSIONS = {
   '/accounting/consumable-services': PermissionKeys.AccountableExpenses.Page.View,
   '/accounting/consumable-orders': PermissionKeys.ConsumableOrders.Page.View,
   '/resales': PermissionKeys.Resales.Page.View,
+  '/reports/stocks': PermissionKeys.ReportsStocks.Page.View,
 } as const
 
 describe('newly classified page permissions', () => {
