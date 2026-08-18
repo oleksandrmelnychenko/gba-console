@@ -466,6 +466,28 @@ export const PermissionKeys = {
       Orders: {
         Open: 'warehouses.ukraine.orders.open',
       },
+      Editing: {
+        Open: 'warehouses.ukraine.editing.open',
+        Process: 'warehouses.ukraine.editing.process',
+      },
+      InvoiceRegister: {
+        Open: 'warehouses.ukraine.invoice_register.open',
+        Export: 'warehouses.ukraine.invoice_register.export',
+      },
+      Verification: {
+        Open: 'warehouses.ukraine.verification.open',
+        Export: 'warehouses.ukraine.verification.export',
+      },
+      Shipment: {
+        Create: 'warehouses.ukraine.shipment.create',
+        Edit: 'warehouses.ukraine.shipment.edit',
+        CarryOut: 'warehouses.ukraine.shipment.carry_out',
+        Print: 'warehouses.ukraine.shipment.print',
+      },
+      Invoice: {
+        Print: 'warehouses.ukraine.invoice.print',
+        PrintEditAct: 'warehouses.ukraine.invoice.print_edit_act',
+      },
     },
   },
   WarehouseAccounting: {

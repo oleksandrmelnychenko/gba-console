@@ -29,6 +29,7 @@ import { Paginator } from '../../../shared/ui/paginator/Paginator'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { TableRowAction } from '../../../shared/ui/table-row-action'
 import {
+  carryOutShipmentList,
   getAllShipmentLists,
   getAutoShipmentList,
   getManualShipmentSales,
@@ -397,6 +398,9 @@ function getCashOnDeliveryAmount(sale: ShipmentSale): number | undefined {
 }
 
 type ShipmentsTabModelOptions = {
+  canCarryOut: boolean
+  canEdit: boolean
+  canPrintShipment: boolean
   onCarriedOut?: () => void
 }
 
@@ -405,7 +409,7 @@ let lastAutoShipmentFilters: FilterDraft | null = null
 let lastAutoShipmentTypeNetId: string | null = null
 let lastAutoShipmentTransporterNetId: string | null = null
 
-function useShipmentsTabModel({ onCarriedOut }: ShipmentsTabModelOptions = {}) {
+function useShipmentsTabModel({ canCarryOut, canEdit, canPrintShipment, onCarriedOut }: ShipmentsTabModelOptions) {
   const { t } = useI18n()
   const runRecipientMutation = usePersistentSaleJsonMutationRunner('sale-recipient')
   const runRecipientAddressMutation = usePersistentSaleJsonMutationRunner('sale-recipient-address')
@@ -452,7 +456,7 @@ function useShipmentsTabModel({ onCarriedOut }: ShipmentsTabModelOptions = {}) {
   const filterError = getFilterError(filterDraft.from, filterDraft.to)
   const items = shipmentList.ShipmentListItems
   const itemIndexMap = useMemo(() => buildIndexMap(items), [items])
-  const canEditShipment = !shipmentList.IsSent
+  const canEditShipment = canEdit && !shipmentList.IsSent
 
   useEffect(() => {
     let cancelled = false
@@ -667,7 +671,7 @@ function useShipmentsTabModel({ onCarriedOut }: ShipmentsTabModelOptions = {}) {
   }
 
   async function carryOut() {
-    if (!shipmentList.NetUid || shipmentList.IsSent || items.length === 0) {
+    if (!canCarryOut || !shipmentList.NetUid || shipmentList.IsSent || items.length === 0) {
       setConfirmCarryOut(false)
       return
     }
@@ -688,7 +692,7 @@ function useShipmentsTabModel({ onCarriedOut }: ShipmentsTabModelOptions = {}) {
       const attempt = await runShipmentListMutation<ShipmentListUpdateRequest, void>(
         `shipment-list-update:${nextShipmentList.NetUid ?? nextShipmentList.Id ?? 'unknown'}`,
         request,
-        (payload, operation) => updateShipmentList(
+        (payload, operation) => carryOutShipmentList(
           payload.shipmentList,
           operation,
           payload.window,
@@ -823,7 +827,7 @@ function useShipmentsTabModel({ onCarriedOut }: ShipmentsTabModelOptions = {}) {
   }
 
   async function printShipments() {
-    if (!selectedTransporterNetId || filterError) {
+    if (!canPrintShipment || !selectedTransporterNetId || filterError) {
       return
     }
 
@@ -872,7 +876,9 @@ function useShipmentsTabModel({ onCarriedOut }: ShipmentsTabModelOptions = {}) {
 
   return {
     activeModal,
+    canCarryOut,
     canEditShipment,
+    canPrintShipment,
     carryOut,
     commitQtyPlaces,
     confirmCarryOut,
@@ -909,14 +915,23 @@ function useShipmentsTabModel({ onCarriedOut }: ShipmentsTabModelOptions = {}) {
   }
 }
 
-type ShipmentsTabProps = {
-  createRequest?: number
+type WarehouseShipmentPermissions = {
+  canCarryOut: boolean
+  canCreate: boolean
+  canEdit: boolean
+  canPrintInvoice: boolean
+  canPrintShipment: boolean
 }
 
-export function ShipmentsTab({ createRequest = 0 }: ShipmentsTabProps) {
+type ShipmentsTabProps = {
+  createRequest?: number
+  permissions: WarehouseShipmentPermissions
+}
+
+export function ShipmentsTab({ createRequest = 0, permissions }: ShipmentsTabProps) {
   const { t } = useI18n()
   const [activeTab, setActiveTab] = useState<string | null>(() =>
-    createRequest > 0 ? SHIPMENTS_TAB_AUTO : SHIPMENTS_TAB_ALL,
+    createRequest > 0 && permissions.canCreate ? SHIPMENTS_TAB_AUTO : SHIPMENTS_TAB_ALL,
   )
 
   return (
@@ -930,21 +945,23 @@ export function ShipmentsTab({ createRequest = 0 }: ShipmentsTabProps) {
         >
           {t('Усі')}
         </button>
-        <button
-          type="button"
-          className={`pill-tab${activeTab === SHIPMENTS_TAB_AUTO ? ' is-active' : ''}`}
-          aria-pressed={activeTab === SHIPMENTS_TAB_AUTO}
-          onClick={() => setActiveTab(SHIPMENTS_TAB_AUTO)}
-        >
-          {t('Підбір')}
-        </button>
+        {permissions.canCreate && (
+          <button
+            type="button"
+            className={`pill-tab${activeTab === SHIPMENTS_TAB_AUTO ? ' is-active' : ''}`}
+            aria-pressed={activeTab === SHIPMENTS_TAB_AUTO}
+            onClick={() => setActiveTab(SHIPMENTS_TAB_AUTO)}
+          >
+            {t('Підбір')}
+          </button>
+        )}
       </div>
 
       <Box className="warehouse-ukraine-subtab-panel">
-        {activeTab === SHIPMENTS_TAB_AUTO ? (
-          <AutoShipmentsPanel onCarriedOut={() => setActiveTab(SHIPMENTS_TAB_ALL)} />
+        {activeTab === SHIPMENTS_TAB_AUTO && permissions.canCreate ? (
+          <AutoShipmentsPanel permissions={permissions} onCarriedOut={() => setActiveTab(SHIPMENTS_TAB_ALL)} />
         ) : (
-          <AllShipmentsPanel onCreate={() => setActiveTab(SHIPMENTS_TAB_AUTO)} />
+          <AllShipmentsPanel permissions={permissions} onCreate={() => setActiveTab(SHIPMENTS_TAB_AUTO)} />
         )}
       </Box>
     </Stack>
@@ -953,10 +970,16 @@ export function ShipmentsTab({ createRequest = 0 }: ShipmentsTabProps) {
 
 type AutoShipmentsPanelProps = {
   onCarriedOut: () => void
+  permissions: WarehouseShipmentPermissions
 }
 
-function AutoShipmentsPanel({ onCarriedOut }: AutoShipmentsPanelProps) {
-  const model = useShipmentsTabModel({ onCarriedOut })
+function AutoShipmentsPanel({ onCarriedOut, permissions }: AutoShipmentsPanelProps) {
+  const model = useShipmentsTabModel({
+    canCarryOut: permissions.canCarryOut,
+    canEdit: permissions.canCreate,
+    canPrintShipment: permissions.canPrintShipment,
+    onCarriedOut,
+  })
   const { t } = useI18n()
   const columns = useShipmentColumns(model)
   const [tableToolbarSlot, setTableToolbarSlot] = useState<HTMLDivElement | null>(null)
@@ -1035,7 +1058,7 @@ function AutoShipmentsPanel({ onCarriedOut }: AutoShipmentsPanelProps) {
               )}
               <Button
                 color="green"
-                disabled={!model.shipmentList.NetUid || !model.canEditShipment || model.items.length === 0}
+                disabled={!model.canCarryOut || !model.shipmentList.NetUid || !model.canEditShipment || model.items.length === 0}
                 loading={model.isSaving}
                 styles={{ label: { fontFamily: 'var(--font-mono)', letterSpacing: 0 } }}
                 onClick={() => model.setConfirmCarryOut(true)}
@@ -1044,7 +1067,7 @@ function AutoShipmentsPanel({ onCarriedOut }: AutoShipmentsPanelProps) {
               </Button>
               <Button
                 color={CREATE_ACTION_COLOR}
-                disabled={!model.selectedTransporterNetId || Boolean(model.filterError)}
+                disabled={!model.canPrintShipment || !model.selectedTransporterNetId || Boolean(model.filterError)}
                 leftSection={<FileDown size={18} />}
                 styles={{ label: { fontFamily: 'var(--font-mono)', letterSpacing: 0 } }}
                 variant="outline"
@@ -1124,7 +1147,7 @@ function AutoShipmentsPanel({ onCarriedOut }: AutoShipmentsPanelProps) {
           <Button color="gray" variant="light" onClick={() => model.setConfirmCarryOut(false)}>
             {t('Ні')}
           </Button>
-          <Button color="green" loading={model.isSaving} onClick={() => model.carryOut()}>
+          <Button color="green" disabled={!model.canCarryOut} loading={model.isSaving} onClick={() => model.carryOut()}>
             {t('Так')}
           </Button>
         </Group>
@@ -1135,9 +1158,10 @@ function AutoShipmentsPanel({ onCarriedOut }: AutoShipmentsPanelProps) {
 
 type AllShipmentsPanelProps = {
   onCreate: () => void
+  permissions: WarehouseShipmentPermissions
 }
 
-function AllShipmentsPanel({ onCreate }: AllShipmentsPanelProps) {
+function AllShipmentsPanel({ onCreate, permissions }: AllShipmentsPanelProps) {
   const { t } = useI18n()
   const runRecipientMutation = usePersistentSaleJsonMutationRunner('sale-recipient')
   const runRecipientAddressMutation = usePersistentSaleJsonMutationRunner('sale-recipient-address')
@@ -1200,7 +1224,7 @@ function AllShipmentsPanel({ onCreate }: AllShipmentsPanelProps) {
   )
   // Legacy kept carried-out (IsSent) shipments fully editable — post-dispatch TTN/declaration/qty
   // entry happens precisely on the «Усі» list — and the update endpoint persists regardless of IsSent.
-  const canEditShipment = Boolean(shipmentDraft)
+  const canEditShipment = permissions.canEdit && Boolean(shipmentDraft)
 
   useEffect(() => {
     let cancelled = false
@@ -1324,6 +1348,7 @@ function AllShipmentsPanel({ onCreate }: AllShipmentsPanelProps) {
 
   const editColumns = useEditShipmentColumns({
     canEdit: canEditShipment,
+    canPrintSale: permissions.canPrintInvoice,
     onEditAddress: (item) => {
       if (!item.Sale.DeliveryRecipient) {
         notifications.show({ color: 'yellow', message: t('Додайте одержувача для цієї накладної') })
@@ -1835,6 +1860,10 @@ function AllShipmentsPanel({ onCreate }: AllShipmentsPanelProps) {
   }
 
   function printSelectedShipment() {
+    if (!permissions.canPrintShipment) {
+      return
+    }
+
     const shipmentNetId = shipmentDraft?.NetUid
 
     if (!shipmentNetId) {
@@ -1845,6 +1874,10 @@ function AllShipmentsPanel({ onCreate }: AllShipmentsPanelProps) {
   }
 
   function printShipmentForSale(item: ShipmentListItem) {
+    if (!permissions.canPrintInvoice) {
+      return
+    }
+
     const saleNetId = item.Sale.NetUid
 
     if (!saleNetId) {
@@ -1855,7 +1888,9 @@ function AllShipmentsPanel({ onCreate }: AllShipmentsPanelProps) {
   }
 
   const activeShipmentNumber = shipmentDraft?.Number || selectedShipment?.Number || ''
-  const printSelectedShipmentDisabledReason = !shipmentDraft?.NetUid
+  const printSelectedShipmentDisabledReason = !permissions.canPrintShipment
+    ? t('Немає права друкувати відвантаження')
+    : !shipmentDraft?.NetUid
     ? t('Збережіть відвантаження перед друком')
     : hasShipmentDraftChanges
       ? t('Збережіть зміни перед друком')
@@ -1922,7 +1957,7 @@ function AllShipmentsPanel({ onCreate }: AllShipmentsPanelProps) {
             </div>
             <div ref={setTableToolbarSlot} className="app-filter-table-toolbar-slot warehouse-ukraine-table-toolbar-slot" />
             <div className="warehouse-ukraine-command-actions">
-              <Button color={CREATE_ACTION_COLOR} size="sm" leftSection={<Plus size={18} />} onClick={onCreate}>
+              <Button color={CREATE_ACTION_COLOR} disabled={!permissions.canCreate} size="sm" leftSection={<Plus size={18} />} onClick={onCreate}>
                 {t('Створити')}
               </Button>
             </div>
@@ -2510,6 +2545,7 @@ function useManualShipmentSalesColumns(model: ManualShipmentSalesColumnsModel): 
 
 type EditShipmentColumnsModel = {
   canEdit: boolean
+  canPrintSale: boolean
   onEditAddress: (item: ShipmentListItem) => void
   onEditComment: (item: ShipmentListItem) => void
   onEditRecipient: (item: ShipmentListItem) => void
@@ -2720,6 +2756,7 @@ function useEditShipmentColumns(model: EditShipmentColumnsModel): DataTableColum
             {item.Sale.IsVatSale ? (
               <TableRowAction
               action="print"
+              disabled={!model.canPrintSale}
               label={t('Друк PDF')}
               onClick={() => model.onPrintSale(item)}
             />

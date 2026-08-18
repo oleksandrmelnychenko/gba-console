@@ -22,7 +22,7 @@ export async function getWarehouseUkraineSales(
   params: SalesSearchParams,
   signal?: AbortSignal,
 ): Promise<SalesResponse> {
-  const result = await apiRequest<unknown>('/sales/all/filtered', {
+  const result = await apiRequest<unknown>('/sales/warehouse-ukraine/invoices/registry', {
     signal,
     query: {
       status: PACKAGING_STATUS,
@@ -42,7 +42,7 @@ export async function getWarehouseUkraineSales(
 }
 
 export async function getSalePrintDocument(saleNetId: string): Promise<WarehouseUkraineExportDocument> {
-  const result = await apiRequest<unknown>('/sales/get/document', {
+  const result = await apiRequest<unknown>('/sales/warehouse-ukraine/invoices/print', {
     query: {
       netId: saleNetId,
       isFromStorages: true,
@@ -56,7 +56,7 @@ export async function getSaleActProtocolEditDocument(
   saleNetId: string,
   isPrintedActProtocolEdit: boolean,
 ): Promise<WarehouseUkraineExportDocument> {
-  const result = await apiRequest<unknown>('/sales/get/shifted/document', {
+  const result = await apiRequest<unknown>('/sales/warehouse-ukraine/invoices/print-edit-act', {
     query: {
       netId: saleNetId,
       IsPrintedActProtocolEdit: isPrintedActProtocolEdit,

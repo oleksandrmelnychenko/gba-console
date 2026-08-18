@@ -49,7 +49,7 @@ export type ShipmentListSearchParams = {
 }
 
 export async function getManualShipmentSales(params: AutoShipmentListParams): Promise<ShipmentSale[]> {
-  const result = await apiRequest<unknown>('/sales/all/transporter/filtered', {
+  const result = await apiRequest<unknown>('/sales/warehouse-ukraine/shipments/sales', {
     query: {
       netId: params.transporterNetId,
       from: params.from,
@@ -66,7 +66,7 @@ export async function getAutoShipmentList(
 ): Promise<ShipmentList> {
   const requiredOperation = requireShipmentMutationOperation(operation)
   const normalizedParams = validateShipmentMutationWindow(params)
-  const result = await apiRequest<unknown>('/sales/shipments/update/filtered/auto', {
+  const result = await apiRequest<unknown>('/sales/shipments/warehouse-ukraine/create/auto', {
     headers: getSalesMutationOperationHeaders(requiredOperation.operationId),
     query: {
       netId: normalizedParams.transporterNetId,
@@ -80,7 +80,7 @@ export async function getAutoShipmentList(
 }
 
 export async function getAllShipmentLists(params: ShipmentListSearchParams): Promise<ShipmentList[]> {
-  const result = await apiRequest<unknown>('/sales/shipments/all/filtered', {
+  const result = await apiRequest<unknown>('/sales/shipments/warehouse-ukraine/registry', {
     query: {
       ...(params.transporterNetId ? { netId: params.transporterNetId } : {}),
       from: params.from,
@@ -94,7 +94,7 @@ export async function getAllShipmentLists(params: ShipmentListSearchParams): Pro
 }
 
 export async function getShipmentListById(shipmentListNetId: string): Promise<ShipmentList> {
-  const result = await apiRequest<unknown>('/sales/shipments/get', {
+  const result = await apiRequest<unknown>('/sales/shipments/warehouse-ukraine/details', {
     query: {
       netId: shipmentListNetId,
     },
@@ -108,13 +108,40 @@ export async function updateShipmentList(
   operation: SalesMutationOperationOptions,
   window?: { from: string; to: string },
 ): Promise<void> {
+  return persistShipmentList(
+    '/sales/shipments/warehouse-ukraine/edit',
+    shipmentList,
+    operation,
+    window,
+  )
+}
+
+export async function carryOutShipmentList(
+  shipmentList: ShipmentList,
+  operation: SalesMutationOperationOptions,
+  window?: { from: string; to: string },
+): Promise<void> {
+  return persistShipmentList(
+    '/sales/shipments/warehouse-ukraine/carry-out',
+    shipmentList,
+    operation,
+    window,
+  )
+}
+
+async function persistShipmentList(
+  path: string,
+  shipmentList: ShipmentList,
+  operation: SalesMutationOperationOptions,
+  window?: { from: string; to: string },
+): Promise<void> {
   const requiredOperation = requireShipmentMutationOperation(operation)
   validatePersistedShipmentList(shipmentList)
   const normalizedWindow = window
     ? validateShipmentDateWindow(window.from, window.to)
     : undefined
 
-  await apiRequest<unknown>('/sales/shipments/update', {
+  await apiRequest<unknown>(path, {
     method: 'POST',
     body: shipmentList,
     headers: getSalesMutationOperationHeaders(requiredOperation.operationId),
@@ -131,7 +158,7 @@ export async function getShipmentCreatePageDocument(
 ): Promise<WarehouseUkraineExportDocument> {
   const requiredOperation = requireShipmentMutationOperation(operation)
   const normalizedParams = validateShipmentMutationWindow(params)
-  const result = await apiRequest<unknown>('/sales/shipments/document/create/export', {
+  const result = await apiRequest<unknown>('/sales/shipments/warehouse-ukraine/print/create', {
     headers: getSalesMutationOperationHeaders(requiredOperation.operationId),
     query: {
       netId: normalizedParams.transporterNetId,
@@ -145,7 +172,7 @@ export async function getShipmentCreatePageDocument(
 }
 
 export async function getShipmentDocument(shipmentListNetId: string): Promise<WarehouseUkraineExportDocument> {
-  const result = await apiRequest<unknown>('/sales/shipments/document/export', {
+  const result = await apiRequest<unknown>('/sales/shipments/warehouse-ukraine/print', {
     query: {
       netId: shipmentListNetId,
     },
@@ -155,7 +182,7 @@ export async function getShipmentDocument(shipmentListNetId: string): Promise<Wa
 }
 
 export async function getShipmentListForSaleDocument(saleNetId: string): Promise<WarehouseUkraineExportDocument> {
-  const result = await apiRequest<unknown>('/sales/shipment/list/print/documents', {
+  const result = await apiRequest<unknown>('/sales/warehouse-ukraine/invoices/shipment-document', {
     query: {
       netId: saleNetId,
     },
@@ -174,7 +201,7 @@ export async function updateSaleComment(
   comment: string,
   operation: SalesMutationOperationOptions,
 ): Promise<void> {
-  await apiRequest<unknown>('/sales/update/comment', {
+  await apiRequest<unknown>('/sales/warehouse-ukraine/shipments/edit-comment', {
     method: 'POST',
     headers: getSalesMutationOperationHeaders(operation.operationId),
     query: {
@@ -190,7 +217,7 @@ export async function updateDeliveryRecipient(
   recipient: ShipmentDeliveryRecipient,
   operation: SalesMutationOperationOptions,
 ): Promise<void> {
-  await apiRequest<unknown>('/sales/update/recipient', {
+  await apiRequest<unknown>('/sales/warehouse-ukraine/shipments/edit-recipient', {
     method: 'POST',
     headers: getSalesMutationOperationHeaders(operation.operationId),
     query: {
@@ -206,7 +233,7 @@ export async function updateDeliveryRecipientAddress(
   address: ShipmentDeliveryRecipientAddress,
   operation: SalesMutationOperationOptions,
 ): Promise<void> {
-  await apiRequest<unknown>('/sales/update/recipient/address', {
+  await apiRequest<unknown>('/sales/warehouse-ukraine/shipments/edit-address', {
     method: 'POST',
     headers: getSalesMutationOperationHeaders(operation.operationId),
     query: {

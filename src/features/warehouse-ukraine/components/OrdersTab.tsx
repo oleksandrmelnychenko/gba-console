@@ -103,7 +103,7 @@ function ordersTabReducer(state: OrdersTabState, action: OrdersTabAction): Order
   }
 }
 
-function useOrdersTabModel() {
+function useOrdersTabModel(canOpenPlacement: boolean) {
   const { t } = useI18n()
   const navigate = useNavigate()
   const location = useLocation()
@@ -190,7 +190,7 @@ function useOrdersTabModel() {
   }
 
   function openOrder(order: SupplyOrderUkraine) {
-    if (order.NetUid) {
+    if (canOpenPlacement && order.NetUid) {
       navigate(`/warehouse/ukraine/orders/${order.NetUid}/placements`, { state: { backgroundLocation: location } })
     }
   }
@@ -212,8 +212,8 @@ function useOrdersTabModel() {
   }
 }
 
-export function OrdersTab() {
-  const model = useOrdersTabModel()
+export function OrdersTab({ canOpenPlacement }: { canOpenPlacement: boolean }) {
+  const model = useOrdersTabModel(canOpenPlacement)
   const { t } = useI18n()
   const [tableToolbarSlot, setTableToolbarSlot] = useState<HTMLDivElement | null>(null)
 
@@ -293,7 +293,7 @@ export function OrdersTab() {
             showLayoutControls
             tableId="warehouse-ukraine-orders"
             toolbarPortalTarget={tableToolbarSlot}
-            onRowClick={model.openOrder}
+            onRowClick={canOpenPlacement ? model.openOrder : undefined}
           />
           </div>
       </div>

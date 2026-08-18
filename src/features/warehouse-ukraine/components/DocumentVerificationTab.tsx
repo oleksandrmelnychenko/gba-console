@@ -164,7 +164,7 @@ function documentVerificationReducer(
   }
 }
 
-function useDocumentVerificationModel() {
+function useDocumentVerificationModel(canExport: boolean) {
   const { t } = useI18n()
   const initialFilters = useMemo<FilterDraft>(
     () => ({ from: getDateShiftedByDays(-1), to: getDateShiftedByDays(0) }),
@@ -280,6 +280,10 @@ function useDocumentVerificationModel() {
   }, [])
 
   async function exportDocument() {
+    if (!canExport) {
+      return
+    }
+
     if (exportError) {
       dispatchState({ type: 'downloadFailed', error: exportError })
       return
@@ -364,8 +368,8 @@ function useDocumentVerificationModel() {
   }
 }
 
-export function DocumentVerificationTab() {
-  const model = useDocumentVerificationModel()
+export function DocumentVerificationTab({ canExport }: { canExport: boolean }) {
+  const model = useDocumentVerificationModel(canExport)
   const { t } = useI18n()
   const [tableToolbarSlot, setTableToolbarSlot] = useState<HTMLDivElement | null>(null)
   const verificationDate = new Date().toLocaleDateString('uk-UA')
@@ -419,7 +423,7 @@ export function DocumentVerificationTab() {
               <Button
                 color="gray"
                 leftSection={<Download size={16} />}
-                disabled={Boolean(model.exportError) || !model.storagesReady}
+                disabled={!canExport || Boolean(model.exportError) || !model.storagesReady}
                 loading={model.isDownloading}
                 variant="light"
                 onClick={model.exportDocument}

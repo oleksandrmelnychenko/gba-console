@@ -20,6 +20,9 @@ import '../../../shared/ui/console-table-page.css'
 const PKEY_INVOICES = PermissionKeys.Warehouses.Ukraine.Invoices.Open
 const PKEY_SHIPMENTS = PermissionKeys.Warehouses.Ukraine.Shipments.Open
 const PKEY_UKRAINE_ORDER = PermissionKeys.Warehouses.Ukraine.Orders.Open
+const PKEY_EDITING = PermissionKeys.Warehouses.Ukraine.Editing.Open
+const PKEY_INVOICE_REGISTER = PermissionKeys.Warehouses.Ukraine.InvoiceRegister.Open
+const PKEY_VERIFICATION = PermissionKeys.Warehouses.Ukraine.Verification.Open
 
 const TAB_SALES = 'sales'
 const TAB_SHIPMENTS = 'shipments'
@@ -67,8 +70,10 @@ function WarehouseUkrainePageContent() {
   }, [setEditingTotal])
 
   useEffect(() => {
-    void reloadEditingTotal()
-  }, [reloadEditingTotal])
+    if (hasPermission(PKEY_EDITING)) {
+      void reloadEditingTotal()
+    }
+  }, [hasPermission, reloadEditingTotal])
 
   const tabs = useMemo<WarehouseUkraineTab[]>(
     () => [
@@ -90,18 +95,18 @@ function WarehouseUkrainePageContent() {
       {
         value: TAB_EDITING,
         label: t('Протокол актів редагування накладних'),
-        permissionKey: PKEY_UKRAINE_ORDER,
+        permissionKey: PKEY_EDITING,
         showBadge: true,
       },
       {
         value: TAB_INVOICE_REGISTER,
         label: t('Реєстр накладних'),
-        permissionKey: PKEY_UKRAINE_ORDER,
+        permissionKey: PKEY_INVOICE_REGISTER,
       },
       {
         value: TAB_VERIFICATION,
         label: t('Звірка'),
-        permissionKey: PKEY_UKRAINE_ORDER,
+        permissionKey: PKEY_VERIFICATION,
       },
     ],
     [t],
@@ -131,16 +136,23 @@ function WarehouseUkrainePageContent() {
   usePageBreadcrumb(activeTabItem?.label ?? null)
 
   const openShipmentCreation = useCallback(() => {
+    if (!hasPermission(PermissionKeys.Warehouses.Ukraine.Shipment.Create)) {
+      return
+    }
+
     setShipmentCreateRequest((current) => current + 1)
     setActiveTab(TAB_SHIPMENTS)
-  }, [setActiveTab, setShipmentCreateRequest])
+  }, [hasPermission, setActiveTab, setShipmentCreateRequest])
 
   const renderTab = (tabValue: string): ReactNode => {
     switch (tabValue) {
       case TAB_SALES:
         return (
           <SalesTab
-            canCreateShipment={hasPermission(PKEY_SHIPMENTS)}
+            canCreateShipment={hasPermission(PermissionKeys.Warehouses.Ukraine.Shipment.Create)}
+            canPrintInvoice={hasPermission(PermissionKeys.Warehouses.Ukraine.Invoice.Print)}
+            canPrintEditAct={hasPermission(PermissionKeys.Warehouses.Ukraine.Invoice.PrintEditAct)}
+            canUpdatePrintStatus={hasPermission(PermissionKeys.SalesUkraine.Sale.Edit)}
             onCreateShipment={openShipmentCreation}
           />
         )
@@ -149,16 +161,23 @@ function WarehouseUkrainePageContent() {
           <ShipmentsTab
             key={shipmentCreateRequest}
             createRequest={shipmentCreateRequest}
+            permissions={{
+              canCarryOut: hasPermission(PermissionKeys.Warehouses.Ukraine.Shipment.CarryOut),
+              canCreate: hasPermission(PermissionKeys.Warehouses.Ukraine.Shipment.Create),
+              canEdit: hasPermission(PermissionKeys.Warehouses.Ukraine.Shipment.Edit),
+              canPrintInvoice: hasPermission(PermissionKeys.Warehouses.Ukraine.Invoice.Print),
+              canPrintShipment: hasPermission(PermissionKeys.Warehouses.Ukraine.Shipment.Print),
+            }}
           />
         )
       case TAB_ORDERS:
-        return <OrdersTab />
+        return <OrdersTab canOpenPlacement={hasPermission(PermissionKeys.OrdersUkraine.Order.OpenPlacement)} />
       case TAB_EDITING:
-        return <EditingTab onCountChanged={reloadEditingTotal} />
+        return <EditingTab canProcess={hasPermission(PermissionKeys.Warehouses.Ukraine.Editing.Process)} onCountChanged={reloadEditingTotal} />
       case TAB_INVOICE_REGISTER:
-        return <InvoiceRegisterTab />
+        return <InvoiceRegisterTab canExport={hasPermission(PermissionKeys.Warehouses.Ukraine.InvoiceRegister.Export)} />
       case TAB_VERIFICATION:
-        return <DocumentVerificationTab />
+        return <DocumentVerificationTab canExport={hasPermission(PermissionKeys.Warehouses.Ukraine.Verification.Export)} />
       default:
         return null
     }

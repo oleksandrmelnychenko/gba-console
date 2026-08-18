@@ -1843,6 +1843,242 @@
       "disposition": "duplicate_occurrence",
       "duplicateOf": "PE-01695",
       "reason": "The role edit icon only opens the existing mode-aware role form; final submit owns edit authorization."
+    },
+    "PE-01754": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["warehouses.ukraine.shipment.edit"],
+      "reason": "The modal submit persists the sale comment through the shipment-edit scoped façade."
+    },
+    "PE-01756": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["warehouses.ukraine.verification.export"],
+      "reason": "This is the final verification-document export boundary and uses its dedicated guarded endpoint."
+    },
+    "PE-01758": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["warehouses.ukraine.shipment.edit"],
+      "reason": "The modal submit persists the recipient address through the shipment-edit scoped façade."
+    },
+    "PE-01760": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["warehouses.ukraine.shipment.edit"],
+      "reason": "The modal submit persists the delivery recipient through the shipment-edit scoped façade."
+    },
+    "PE-01763": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["warehouses.ukraine.editing.process"],
+      "reason": "The confirmed protocol mutation independently authorizes both invoice-edit and carrier-change processing."
+    },
+    "PE-01764": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-01763",
+      "reason": "The row action only opens confirmation for the same guarded protocol-processing mutation."
+    },
+    "PE-01768": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["warehouses.ukraine.invoice_register.export"],
+      "reason": "This is the final invoice-register document export boundary."
+    },
+    "PE-01770": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["orders.ukraine.placement.save"],
+      "reason": "Adding a dynamic placement column immediately persists the order through the existing placement-save capability."
+    },
+    "PE-01772": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["orders.ukraine.order.open_placement"],
+      "reason": "The row transition and direct route both require the existing open-placement permission before loading the model."
+    },
+    "PE-01774": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["orders.ukraine.placement.save"],
+      "reason": "Applying placement addresses is the final dedicated row-save mutation."
+    },
+    "PE-01775": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-01774",
+      "reason": "Selecting a draft placement only opens the editor; final apply owns authorization."
+    },
+    "PE-01776": {
+      "disposition": "technical_ui",
+      "reason": "Removing an address changes only the local placement draft until the guarded final apply."
+    },
+    "PE-01777": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-01774",
+      "reason": "The add button opens the same placement draft whose final apply is guarded."
+    },
+    "PE-01779": {
+      "disposition": "technical_ui",
+      "reason": "Accepting one address updates only the local drawer draft; it does not call the server."
+    },
+    "PE-01780": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["orders.ukraine.placement.create_reconciliation"],
+      "reason": "Deleting an unordered reconciliation item persists through the independently guarded reconciliation façade."
+    },
+    "PE-01781": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-01785",
+      "reason": "This button only opens the unordered-product form; final create owns authorization."
+    },
+    "PE-01782": {
+      "disposition": "technical_ui",
+      "reason": "Selecting a search result only changes local form state."
+    },
+    "PE-01785": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["orders.ukraine.placement.create_reconciliation"],
+      "reason": "Creating an unordered item persists through the existing reconciliation capability."
+    },
+    "PE-01787": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["warehouses.ukraine.shipment.create"],
+      "reason": "The create transition can mount the mutating selection workflow only with shipment.create."
+    },
+    "PE-01788": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["warehouses.ukraine.invoice.print"],
+      "reason": "The invoice document is loaded only through the dedicated print façade."
+    },
+    "PE-01789": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["warehouses.ukraine.invoice.print_edit_act"],
+      "reason": "The invoice edit-act document has its own independent print permission and endpoint."
+    },
+    "PE-01790": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-01787",
+      "reason": "Hydrating a sale for the shipment picker is part of the guarded shipment-create workflow."
+    },
+    "PE-01795": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-01798",
+      "reason": "This button only opens carry-out confirmation; the final confirmed mutation owns authorization."
+    },
+    "PE-01796": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["warehouses.ukraine.shipment.print"],
+      "reason": "The generated shipment document uses the dedicated shipment-print façade."
+    },
+    "PE-01798": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["warehouses.ukraine.shipment.carry_out"],
+      "reason": "The confirmed IsSent transition uses the independently guarded carry-out endpoint."
+    },
+    "PE-01800": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-01787",
+      "reason": "The All-tab create button opens the same shipment-create workflow."
+    },
+    "PE-01803": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["warehouses.ukraine.shipment.edit"],
+      "reason": "This is the final mutation that persists changes to an existing shipment."
+    },
+    "PE-01804": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-01803",
+      "reason": "Opening the manual picker only edits the existing shipment draft; final save owns authorization."
+    },
+    "PE-01805": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["warehouses.ukraine.shipment.print"],
+      "reason": "Printing a selected shipment calls the shipment-print scoped read."
+    },
+    "PE-01807": {
+      "disposition": "technical_ui",
+      "reason": "Appending selected sales changes only the local shipment draft until the guarded save."
+    },
+    "PE-01808": {
+      "disposition": "technical_ui",
+      "reason": "This filter refresh is an internal read inside the already guarded shipment-edit workflow."
+    },
+    "PE-01809": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["warehouses.ukraine.shipments.open"],
+      "reason": "Opening shipment details uses the tab-level read permission and dedicated details façade."
+    },
+    "PE-01814": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-01760",
+      "reason": "The row action opens the recipient editor; the modal submit is the guarded mutation."
+    },
+    "PE-01815": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-01758",
+      "reason": "The row action opens the address editor; the modal submit is the guarded mutation."
+    },
+    "PE-01816": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-01754",
+      "reason": "The row action opens the comment editor; the modal submit is the guarded mutation."
+    },
+    "PE-01817": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-01788",
+      "reason": "This is the same invoice-print business capability from the shipment details grid."
+    },
+    "PE-01818": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-01803",
+      "reason": "Removing a row changes the local shipment draft; the final save persists it."
+    },
+    "PE-01819": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-01760",
+      "reason": "This action only opens the recipient editor."
+    },
+    "PE-01820": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-01760",
+      "reason": "The recipient warning directs into the same guarded recipient-edit flow."
+    },
+    "PE-01821": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-01754",
+      "reason": "This action only opens the comment editor."
+    },
+    "PE-01825": {
+      "disposition": "technical_ui",
+      "reason": "Moving remnants changes only the local order draft until placement save."
+    },
+    "PE-01826": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-01836",
+      "reason": "The trash icon only opens column-removal confirmation."
+    },
+    "PE-01827": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-01774",
+      "reason": "The grid action opens the placement drawer whose final apply is guarded."
+    },
+    "PE-01830": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-01770",
+      "reason": "This button only opens the dynamic-column form."
+    },
+    "PE-01832": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-01838",
+      "reason": "This button only opens full-post confirmation."
+    },
+    "PE-01834": {
+      "disposition": "technical_ui",
+      "reason": "Density toggling changes only the local table presentation."
+    },
+    "PE-01836": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["orders.ukraine.placement.save"],
+      "reason": "Confirmed column removal persists through the placement-save façade."
+    },
+    "PE-01838": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": [
+        "orders.ukraine.placement.post",
+        "orders.ukraine.placement.capitalize"
+      ],
+      "reason": "The mode-aware final action selects independently guarded post or capitalize endpoints."
     }
   }
 }

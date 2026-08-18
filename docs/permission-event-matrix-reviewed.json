@@ -4,17 +4,17 @@
     "inputRecords": 1902,
     "classifiedRecords": 1902,
     "dispositionCounts": {
-      "technical_ui": 683,
-      "covered_existing": 387,
-      "duplicate_occurrence": 173,
-      "business_candidate": 403,
-      "needs_human_review": 248,
+      "technical_ui": 690,
+      "covered_existing": 408,
+      "duplicate_occurrence": 193,
+      "business_candidate": 369,
+      "needs_human_review": 234,
       "stale_or_aggregated": 8
     },
-    "reviewCandidates": 651,
-    "technicalExcluded": 683,
-    "duplicatesExcluded": 173,
-    "duplicateOccurrencesTotal": 241,
+    "reviewCandidates": 603,
+    "technicalExcluded": 690,
+    "duplicatesExcluded": 193,
+    "duplicateOccurrencesTotal": 261,
     "technicalDuplicateOverlap": 68,
     "sourceResolved": 1828,
     "sourceUnresolved": 74,
@@ -70760,12 +70760,14 @@
       "proposedPermission": "orders.orders_ukraine_placement_item.handle_save.command_submit",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "covered_existing",
+      "dispositionReason": "The modal submit persists the sale comment through the shipment-edit scoped façade.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "warehouses.ukraine.shipment.edit"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
           "candidateId": "EPC-1a1b93c5f9e6",
@@ -70810,12 +70812,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-1a55242ec9c6",
+          "candidateId": "EPC-2ac377ae0717",
           "distance": 0,
           "file": "src/features/warehouse-ukraine/components/DocumentVerificationTab.tsx",
           "handler": "{model.resetFilters}",
           "humanLabel": "Скинути",
-          "line": 415,
+          "line": 419,
           "permissionKeys": [],
           "score": 17
         }
@@ -70823,7 +70825,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/warehouse-ukraine/components/DocumentVerificationTab.tsx",
-        "line": 415,
+        "line": 419,
         "alternatives": []
       }
     },
@@ -70844,20 +70846,22 @@
       "proposedPermission": "orders.orders_ukraine_placement_item.model_export_document.command_export",
       "securityLevel": "medium",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "covered_existing",
+      "dispositionReason": "This is the final verification-document export boundary and uses its dedicated guarded endpoint.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "warehouses.ukraine.verification.export"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-6e8ef7053668",
+          "candidateId": "EPC-7037512de22c",
           "distance": 6,
           "file": "src/features/warehouse-ukraine/components/DocumentVerificationTab.tsx",
           "handler": "{model.exportDocument}",
           "humanLabel": "Роздрукувати",
-          "line": 419,
+          "line": 423,
           "permissionKeys": [],
           "score": 19
         }
@@ -70865,7 +70869,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/warehouse-ukraine/components/DocumentVerificationTab.tsx",
-        "line": 425,
+        "line": 429,
         "alternatives": []
       }
     },
@@ -70917,12 +70921,14 @@
       "proposedPermission": "orders.orders_ukraine_placement_item.handle_save.command_submit.2",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "covered_existing",
+      "dispositionReason": "The modal submit persists the recipient address through the shipment-edit scoped façade.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "warehouses.ukraine.shipment.edit"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
           "candidateId": "EPC-c56fe6c04a6a",
@@ -70990,12 +70996,14 @@
       "proposedPermission": "orders.orders_ukraine_placement_item.handle_save.command_submit.3",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "covered_existing",
+      "dispositionReason": "The modal submit persists the delivery recipient through the shipment-edit scoped façade.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "warehouses.ukraine.shipment.edit"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
           "candidateId": "EPC-679ac104510e",
@@ -71040,12 +71048,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-1d183cc2547a",
-          "distance": 140,
+          "candidateId": "EPC-889f7b0774d3",
+          "distance": 144,
           "file": "src/features/warehouse-ukraine/components/EditingList.tsx",
           "handler": "{resetFilters}",
           "humanLabel": "Скинути",
-          "line": 297,
+          "line": 303,
           "permissionKeys": [],
           "score": 12
         }
@@ -71053,7 +71061,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/warehouse-ukraine/components/EditingList.tsx",
-        "line": 157,
+        "line": 159,
         "alternatives": []
       }
     },
@@ -71082,12 +71090,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-e8b3fba98c64",
+          "candidateId": "EPC-fbe172e9f479",
           "distance": 141,
           "file": "src/features/warehouse-ukraine/components/EditingList.tsx",
           "handler": "{closeConfirm}",
           "humanLabel": "Скасувати",
-          "line": 357,
+          "line": 363,
           "permissionKeys": [],
           "score": 12
         }
@@ -71095,7 +71103,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/warehouse-ukraine/components/EditingList.tsx",
-        "line": 216,
+        "line": 222,
         "alternatives": []
       }
     },
@@ -71116,20 +71124,22 @@
       "proposedPermission": "orders.orders_ukraine_placement_item.process_confirmed_item.command_submit",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "covered_existing",
+      "dispositionReason": "The confirmed protocol mutation independently authorizes both invoice-edit and carrier-change processing.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "warehouses.ukraine.editing.process"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-46ebd8322f70",
+          "candidateId": "EPC-91477b166ac0",
           "distance": 136,
           "file": "src/features/warehouse-ukraine/components/EditingList.tsx",
           "handler": "{processConfirmedItem}",
           "humanLabel": "Підтвердити",
-          "line": 360,
+          "line": 366,
           "permissionKeys": [],
           "score": 20
         }
@@ -71137,7 +71147,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/warehouse-ukraine/components/EditingList.tsx",
-        "line": 224,
+        "line": 230,
         "alternatives": []
       }
     },
@@ -71158,20 +71168,20 @@
       "proposedPermission": "orders.orders_ukraine_placement_item.on_process_item.button_click",
       "securityLevel": "low",
       "rawStatus": "No permission candidate found",
-      "disposition": "needs_human_review",
-      "dispositionReason": "insufficient_evidence_for_automatic_permission_or_exclusion",
-      "duplicateOf": null,
+      "disposition": "duplicate_occurrence",
+      "dispositionReason": "The row action only opens confirmation for the same guarded protocol-processing mutation.",
+      "duplicateOf": "PE-01763",
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-b23afa25ef3d",
+          "candidateId": "EPC-bc27624371cd",
           "distance": 123,
           "file": "src/features/warehouse-ukraine/components/EditingList.tsx",
           "handler": "{() => onProcess(item)}",
           "humanLabel": null,
-          "line": 501,
+          "line": 508,
           "permissionKeys": [],
           "score": 11
         }
@@ -71179,7 +71189,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/warehouse-ukraine/components/EditingList.tsx",
-        "line": 378,
+        "line": 385,
         "alternatives": []
       }
     },
@@ -71326,12 +71336,14 @@
       "proposedPermission": "orders.orders_ukraine_placement_item.model_export_document.command_export.2",
       "securityLevel": "medium",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "covered_existing",
+      "dispositionReason": "This is the final invoice-register document export boundary.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "warehouses.ukraine.invoice_register.export"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
           "candidateId": "EPC-0814d9303106",
@@ -71399,12 +71411,14 @@
       "proposedPermission": "orders.orders_ukraine_placement_item.on_add_from_date.command_submit",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "covered_existing",
+      "dispositionReason": "Adding a dynamic placement column immediately persists the order through the existing placement-save capability.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "orders.ukraine.placement.save"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
           "candidateId": "EPC-50cc27063838",
@@ -71483,18 +71497,20 @@
       "proposedPermission": "orders.orders_ukraine_placement_item.model_open_order.row_click",
       "securityLevel": "medium",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "covered_existing",
+      "dispositionReason": "The row transition and direct route both require the existing open-placement permission before loading the model.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "orders.ukraine.order.open_placement"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-9d2c6f113e57",
+          "candidateId": "EPC-8de057e26b8c",
           "distance": 14,
           "file": "src/features/warehouse-ukraine/components/OrdersTab.tsx",
-          "handler": "{model.openOrder}",
+          "handler": "{canOpenPlacement ? model.openOrder : undefined}",
           "humanLabel": null,
           "line": 282,
           "permissionKeys": [],
@@ -71556,12 +71572,14 @@
       "proposedPermission": "orders.orders_ukraine_placement_item.handle_apply.command_submit",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "covered_existing",
+      "dispositionReason": "Applying placement addresses is the final dedicated row-save mutation.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "orders.ukraine.placement.save"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
           "candidateId": "EPC-1a98d5e2b6f2",
@@ -71598,12 +71616,12 @@
       "proposedPermission": "orders.orders_ukraine_placement_item.placement_is_applied_open_draft_placement.modal_open",
       "securityLevel": "low",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
-      "duplicateOf": null,
+      "disposition": "duplicate_occurrence",
+      "dispositionReason": "Selecting a draft placement only opens the editor; final apply owns authorization.",
+      "duplicateOf": "PE-01774",
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
           "candidateId": "EPC-0d534c298f93",
@@ -71640,12 +71658,12 @@
       "proposedPermission": "orders.orders_ukraine_placement_item.remove_placement_placement.command_delete",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "technical_ui",
+      "dispositionReason": "Removing an address changes only the local placement draft until the guarded final apply.",
       "duplicateOf": null,
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
           "candidateId": "EPC-02fda52032c6",
@@ -71682,12 +71700,12 @@
       "proposedPermission": "orders.orders_ukraine_placement_item.open_draft_null.modal_open",
       "securityLevel": "low",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
-      "duplicateOf": null,
+      "disposition": "duplicate_occurrence",
+      "dispositionReason": "The add button opens the same placement draft whose final apply is guarded.",
+      "duplicateOf": "PE-01774",
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
           "candidateId": "EPC-d3d19bdab51d",
@@ -71766,12 +71784,12 @@
       "proposedPermission": "orders.orders_ukraine_placement_item.accept_draft.button_click",
       "securityLevel": "low",
       "rawStatus": "No permission candidate found",
-      "disposition": "needs_human_review",
-      "dispositionReason": "insufficient_evidence_for_automatic_permission_or_exclusion",
+      "disposition": "technical_ui",
+      "dispositionReason": "Accepting one address updates only the local drawer draft; it does not call the server.",
       "duplicateOf": null,
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
           "candidateId": "EPC-cae4d971a6ca",
@@ -71808,12 +71826,14 @@
       "proposedPermission": "orders.orders_ukraine_placement_item.delete_item_item.command_delete",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "covered_existing",
+      "dispositionReason": "Deleting an unordered reconciliation item persists through the independently guarded reconciliation façade.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "orders.ukraine.placement.create_reconciliation"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
           "candidateId": "EPC-b8c3e7e6d377",
@@ -71850,12 +71870,12 @@
       "proposedPermission": "orders.orders_ukraine_placement_item.set_adding_true.command_submit",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
-      "duplicateOf": null,
+      "disposition": "duplicate_occurrence",
+      "dispositionReason": "This button only opens the unordered-product form; final create owns authorization.",
+      "duplicateOf": "PE-01785",
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
           "candidateId": "EPC-0bac8df40703",
@@ -71892,12 +71912,12 @@
       "proposedPermission": "orders.orders_ukraine_placement_item.set_selected_product.button_click",
       "securityLevel": "low",
       "rawStatus": "No permission candidate found",
-      "disposition": "needs_human_review",
-      "dispositionReason": "insufficient_evidence_for_automatic_permission_or_exclusion",
+      "disposition": "technical_ui",
+      "dispositionReason": "Selecting a search result only changes local form state.",
       "duplicateOf": null,
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
           "candidateId": "EPC-8b4f769db4e6",
@@ -72007,12 +72027,14 @@
       "proposedPermission": "orders.orders_ukraine_placement_item.create.command_submit",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "covered_existing",
+      "dispositionReason": "Creating an unordered item persists through the existing reconciliation capability.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "orders.ukraine.placement.create_reconciliation"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [],
       "source": {
         "status": "resolved",
@@ -72046,12 +72068,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-78d36c7b3d2b",
+          "candidateId": "EPC-b550590bf0e5",
           "distance": 0,
           "file": "src/features/warehouse-ukraine/components/SalesTab.tsx",
           "handler": "{model.resetFilters}",
           "humanLabel": "Скинути",
-          "line": 443,
+          "line": 456,
           "permissionKeys": [],
           "score": 17
         }
@@ -72059,7 +72081,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/warehouse-ukraine/components/SalesTab.tsx",
-        "line": 443,
+        "line": 456,
         "alternatives": []
       }
     },
@@ -72080,20 +72102,22 @@
       "proposedPermission": "orders.orders_ukraine_placement_item.on_create_shipment.command_submit",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "covered_existing",
+      "dispositionReason": "The create transition can mount the mutating selection workflow only with shipment.create.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "warehouses.ukraine.shipment.create"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-4d799883fec2",
+          "candidateId": "EPC-20983c5edb34",
           "distance": 55,
           "file": "src/features/warehouse-ukraine/components/SalesTab.tsx",
           "handler": "{onCreateShipment}",
           "humanLabel": "Створити відвантаження",
-          "line": 460,
+          "line": 473,
           "permissionKeys": [],
           "score": 14
         }
@@ -72101,7 +72125,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/warehouse-ukraine/components/SalesTab.tsx",
-        "line": 405,
+        "line": 418,
         "alternatives": []
       }
     },
@@ -72122,20 +72146,22 @@
       "proposedPermission": "orders.orders_ukraine_placement_item.on_print_sale.command_export",
       "securityLevel": "medium",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "covered_existing",
+      "dispositionReason": "The invoice document is loaded only through the dedicated print façade.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "warehouses.ukraine.invoice.print"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-650f56ec2dba",
+          "candidateId": "EPC-08f6f3e806d6",
           "distance": 37,
           "file": "src/features/warehouse-ukraine/components/SalesTab.tsx",
           "handler": "{() => onPrint(sale)}",
           "humanLabel": "PDF пакет документів",
-          "line": 561,
+          "line": 578,
           "permissionKeys": [],
           "score": 9
         }
@@ -72143,7 +72169,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/warehouse-ukraine/components/SalesTab.tsx",
-        "line": 524,
+        "line": 541,
         "alternatives": []
       }
     },
@@ -72164,20 +72190,22 @@
       "proposedPermission": "orders.orders_ukraine_placement_item.on_print_act_protocol_edit_sale.command_export",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "covered_existing",
+      "dispositionReason": "The invoice edit-act document has its own independent print permission and endpoint.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "warehouses.ukraine.invoice.print_edit_act"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-aefcacf644bc",
-          "distance": 42,
+          "candidateId": "EPC-e7caefd6f43e",
+          "distance": 43,
           "file": "src/features/warehouse-ukraine/components/SalesTab.tsx",
           "handler": "{() => onPrintActProtocolEdit(sale)}",
           "humanLabel": "PDF акт редагування",
-          "line": 567,
+          "line": 585,
           "permissionKeys": [],
           "score": 24
         }
@@ -72185,7 +72213,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/warehouse-ukraine/components/SalesTab.tsx",
-        "line": 525,
+        "line": 542,
         "alternatives": []
       }
     },
@@ -72206,20 +72234,20 @@
       "proposedPermission": "orders.orders_ukraine_placement_item.event_event_stop_propagation_on_open_carrier_sale.modal_open",
       "securityLevel": "low",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
-      "duplicateOf": null,
+      "disposition": "duplicate_occurrence",
+      "dispositionReason": "Hydrating a sale for the shipment picker is part of the guarded shipment-create workflow.",
+      "duplicateOf": "PE-01787",
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-e1c098e7b25f",
-          "distance": 299,
+          "candidateId": "EPC-f828ab833812",
+          "distance": 305,
           "file": "src/features/warehouse-ukraine/components/SalesTab.tsx",
           "handler": "{(event) => { event.stopPropagation() onOpenCarrier(sale) }}",
           "humanLabel": null,
-          "line": 707,
+          "line": 726,
           "permissionKeys": [],
           "score": 15
         }
@@ -72227,7 +72255,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/warehouse-ukraine/components/SalesTab.tsx",
-        "line": 408,
+        "line": 421,
         "alternatives": []
       }
     },
@@ -72256,12 +72284,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-9d4fc5fe7df3",
+          "candidateId": "EPC-c5995e4b6366",
           "distance": 4,
           "file": "src/features/warehouse-ukraine/components/ShipmentsTab.tsx",
           "handler": "{() => setActiveTab(SHIPMENTS_TAB_ALL)}",
           "humanLabel": "Усі",
-          "line": 925,
+          "line": 940,
           "permissionKeys": [],
           "score": 27
         }
@@ -72269,7 +72297,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/warehouse-ukraine/components/ShipmentsTab.tsx",
-        "line": 929,
+        "line": 944,
         "alternatives": []
       }
     },
@@ -72298,12 +72326,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-10f4759b0982",
+          "candidateId": "EPC-6348dadac017",
           "distance": 4,
           "file": "src/features/warehouse-ukraine/components/ShipmentsTab.tsx",
           "handler": "{() => setActiveTab(SHIPMENTS_TAB_AUTO)}",
           "humanLabel": "Підбір",
-          "line": 933,
+          "line": 949,
           "permissionKeys": [],
           "score": 28
         }
@@ -72311,7 +72339,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/warehouse-ukraine/components/ShipmentsTab.tsx",
-        "line": 937,
+        "line": 953,
         "alternatives": []
       }
     },
@@ -72340,12 +72368,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-3225619af08b",
+          "candidateId": "EPC-9f9f52e01efb",
           "distance": 0,
           "file": "src/features/warehouse-ukraine/components/ShipmentsTab.tsx",
           "handler": "{model.resetFilters}",
           "humanLabel": "Скинути",
-          "line": 1012,
+          "line": 1035,
           "permissionKeys": [],
           "score": 17
         }
@@ -72353,7 +72381,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/warehouse-ukraine/components/ShipmentsTab.tsx",
-        "line": 1012,
+        "line": 1035,
         "alternatives": []
       }
     },
@@ -72382,12 +72410,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-1a83bf3897d4",
+          "candidateId": "EPC-f66fc0ab3fea",
           "distance": 6,
           "file": "src/features/warehouse-ukraine/components/ShipmentsTab.tsx",
           "handler": "{() => model.refreshList()}",
           "humanLabel": "Оновити",
-          "line": 1017,
+          "line": 1040,
           "permissionKeys": [],
           "score": 16
         }
@@ -72395,7 +72423,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/warehouse-ukraine/components/ShipmentsTab.tsx",
-        "line": 1023,
+        "line": 1046,
         "alternatives": []
       }
     },
@@ -72416,20 +72444,20 @@
       "proposedPermission": "orders.orders_ukraine_placement_item.model_set_confirm_carry_out_true.command_submit",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
-      "duplicateOf": null,
+      "disposition": "duplicate_occurrence",
+      "dispositionReason": "This button only opens carry-out confirmation; the final confirmed mutation owns authorization.",
+      "duplicateOf": "PE-01798",
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-b0fcb3eb6e06",
+          "candidateId": "EPC-43d3f20bba79",
           "distance": 5,
           "file": "src/features/warehouse-ukraine/components/ShipmentsTab.tsx",
           "handler": "{() => model.setConfirmCarryOut(true)}",
           "humanLabel": "Провести і закрити",
-          "line": 1036,
+          "line": 1059,
           "permissionKeys": [],
           "score": 27
         }
@@ -72437,7 +72465,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/warehouse-ukraine/components/ShipmentsTab.tsx",
-        "line": 1041,
+        "line": 1064,
         "alternatives": []
       }
     },
@@ -72458,20 +72486,22 @@
       "proposedPermission": "orders.orders_ukraine_placement_item.model_print_shipments.command_export",
       "securityLevel": "medium",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "covered_existing",
+      "dispositionReason": "The generated shipment document uses the dedicated shipment-print façade.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "warehouses.ukraine.shipment.print"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-4235d2bd9466",
+          "candidateId": "EPC-328fba29357b",
           "distance": 6,
           "file": "src/features/warehouse-ukraine/components/ShipmentsTab.tsx",
           "handler": "{() => model.printShipments()}",
           "humanLabel": "Друк PDF",
-          "line": 1045,
+          "line": 1068,
           "permissionKeys": [],
           "score": 19
         }
@@ -72479,7 +72509,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/warehouse-ukraine/components/ShipmentsTab.tsx",
-        "line": 1051,
+        "line": 1074,
         "alternatives": []
       }
     },
@@ -72508,12 +72538,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-bc2561d86e43",
+          "candidateId": "EPC-c040926327f0",
           "distance": 3,
           "file": "src/features/warehouse-ukraine/components/ShipmentsTab.tsx",
           "handler": "{() => model.setConfirmCarryOut(false)}",
           "humanLabel": "Ні",
-          "line": 1124,
+          "line": 1147,
           "permissionKeys": [],
           "score": 28
         }
@@ -72521,7 +72551,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/warehouse-ukraine/components/ShipmentsTab.tsx",
-        "line": 1121,
+        "line": 1144,
         "alternatives": []
       }
     },
@@ -72542,20 +72572,22 @@
       "proposedPermission": "orders.orders_ukraine_placement_item.model_carry_out.button_click",
       "securityLevel": "low",
       "rawStatus": "No permission candidate found",
-      "disposition": "needs_human_review",
-      "dispositionReason": "insufficient_evidence_for_automatic_permission_or_exclusion",
+      "disposition": "covered_existing",
+      "dispositionReason": "The confirmed IsSent transition uses the independently guarded carry-out endpoint.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "warehouses.ukraine.shipment.carry_out"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-009732875d4e",
+          "candidateId": "EPC-ac50384088f1",
           "distance": 0,
           "file": "src/features/warehouse-ukraine/components/ShipmentsTab.tsx",
           "handler": "{() => model.carryOut()}",
           "humanLabel": "Так",
-          "line": 1127,
+          "line": 1150,
           "permissionKeys": [],
           "score": 13
         }
@@ -72563,7 +72595,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/warehouse-ukraine/components/ShipmentsTab.tsx",
-        "line": 1127,
+        "line": 1150,
         "alternatives": []
       }
     },
@@ -72592,12 +72624,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-fa90f64ce250",
-          "distance": 538,
+          "candidateId": "EPC-ff6813459a5d",
+          "distance": 548,
           "file": "src/features/warehouse-ukraine/components/ShipmentsTab.tsx",
           "handler": "{resetListFilters}",
           "humanLabel": "Скинути",
-          "line": 1908,
+          "line": 1943,
           "permissionKeys": [],
           "score": 16
         }
@@ -72605,7 +72637,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/warehouse-ukraine/components/ShipmentsTab.tsx",
-        "line": 1370,
+        "line": 1395,
         "alternatives": []
       }
     },
@@ -72626,17 +72658,17 @@
       "proposedPermission": "orders.orders_ukraine_placement_item.on_create.command_submit",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
-      "duplicateOf": null,
+      "disposition": "duplicate_occurrence",
+      "dispositionReason": "The All-tab create button opens the same shipment-create workflow.",
+      "duplicateOf": "PE-01787",
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [],
       "source": {
         "status": "resolved",
         "file": "src/features/warehouse-ukraine/components/ShipmentsTab.tsx",
-        "line": 947,
+        "line": 964,
         "alternatives": []
       }
     },
@@ -72665,12 +72697,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-9d4fc5fe7df3",
-          "distance": 893,
+          "candidateId": "EPC-c5995e4b6366",
+          "distance": 908,
           "file": "src/features/warehouse-ukraine/components/ShipmentsTab.tsx",
           "handler": "{() => setActiveTab(SHIPMENTS_TAB_ALL)}",
           "humanLabel": "Усі",
-          "line": 925,
+          "line": 940,
           "permissionKeys": [],
           "score": 8
         }
@@ -72707,12 +72739,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-e04c56861d1e",
-          "distance": 435,
+          "candidateId": "EPC-61d88d3b1db5",
+          "distance": 445,
           "file": "src/features/warehouse-ukraine/components/ShipmentsTab.tsx",
           "handler": "{requestCloseShipment}",
           "humanLabel": "Скасувати",
-          "line": 1961,
+          "line": 1996,
           "permissionKeys": [],
           "score": 20
         }
@@ -72720,7 +72752,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/warehouse-ukraine/components/ShipmentsTab.tsx",
-        "line": 1526,
+        "line": 1551,
         "alternatives": []
       }
     },
@@ -72741,20 +72773,22 @@
       "proposedPermission": "orders.orders_ukraine_placement_item.save_selected_shipment.command_submit",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "covered_existing",
+      "dispositionReason": "This is the final mutation that persists changes to an existing shipment.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "warehouses.ukraine.shipment.edit"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-c36f4cb04e32",
-          "distance": 356,
+          "candidateId": "EPC-95c73b23531f",
+          "distance": 366,
           "file": "src/features/warehouse-ukraine/components/ShipmentsTab.tsx",
           "handler": "{saveSelectedShipment}",
           "humanLabel": "Зберегти",
-          "line": 1964,
+          "line": 1999,
           "permissionKeys": [],
           "score": 20
         }
@@ -72762,7 +72796,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/warehouse-ukraine/components/ShipmentsTab.tsx",
-        "line": 1608,
+        "line": 1633,
         "alternatives": []
       }
     },
@@ -72783,20 +72817,20 @@
       "proposedPermission": "orders.orders_ukraine_placement_item.open_manual_picker.modal_open",
       "securityLevel": "low",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
-      "duplicateOf": null,
+      "disposition": "duplicate_occurrence",
+      "dispositionReason": "Opening the manual picker only edits the existing shipment draft; final save owns authorization.",
+      "duplicateOf": "PE-01803",
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-31b47414b82e",
-          "distance": 578,
+          "candidateId": "EPC-98bf90e970e4",
+          "distance": 588,
           "file": "src/features/warehouse-ukraine/components/ShipmentsTab.tsx",
           "handler": "{openManualPicker}",
           "humanLabel": "Додати накладні",
-          "line": 2011,
+          "line": 2046,
           "permissionKeys": [],
           "score": 16
         }
@@ -72804,7 +72838,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/warehouse-ukraine/components/ShipmentsTab.tsx",
-        "line": 1433,
+        "line": 1458,
         "alternatives": []
       }
     },
@@ -72825,20 +72859,22 @@
       "proposedPermission": "orders.orders_ukraine_placement_item.print_selected_shipment.command_export",
       "securityLevel": "medium",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "covered_existing",
+      "dispositionReason": "Printing a selected shipment calls the shipment-print scoped read.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "warehouses.ukraine.shipment.print"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-417b5b7d3746",
-          "distance": 184,
+          "candidateId": "EPC-9109dccd2026",
+          "distance": 194,
           "file": "src/features/warehouse-ukraine/components/ShipmentsTab.tsx",
           "handler": "{printSelectedShipment}",
           "humanLabel": "Друк PDF",
-          "line": 2021,
+          "line": 2056,
           "permissionKeys": [],
           "score": 21
         }
@@ -72846,7 +72882,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/warehouse-ukraine/components/ShipmentsTab.tsx",
-        "line": 1837,
+        "line": 1862,
         "alternatives": []
       }
     },
@@ -72875,12 +72911,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-776cea8d2f49",
-          "distance": 605,
+          "candidateId": "EPC-5463ecfdc674",
+          "distance": 615,
           "file": "src/features/warehouse-ukraine/components/ShipmentsTab.tsx",
           "handler": "{closeManualPicker}",
           "humanLabel": "Скасувати",
-          "line": 2060,
+          "line": 2095,
           "permissionKeys": [],
           "score": 17
         }
@@ -72888,7 +72924,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/warehouse-ukraine/components/ShipmentsTab.tsx",
-        "line": 1455,
+        "line": 1480,
         "alternatives": []
       }
     },
@@ -72909,20 +72945,20 @@
       "proposedPermission": "orders.orders_ukraine_placement_item.append_manual_selected_sales_to_draft.button_click",
       "securityLevel": "low",
       "rawStatus": "No permission candidate found",
-      "disposition": "needs_human_review",
-      "dispositionReason": "insufficient_evidence_for_automatic_permission_or_exclusion",
+      "disposition": "technical_ui",
+      "dispositionReason": "Appending selected sales changes only the local shipment draft until the guarded save.",
       "duplicateOf": null,
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-90bcc923b0cd",
-          "distance": 599,
+          "candidateId": "EPC-30c43dc28167",
+          "distance": 609,
           "file": "src/features/warehouse-ukraine/components/ShipmentsTab.tsx",
           "handler": "{appendManualSelectedSalesToDraft}",
           "humanLabel": "Додати",
-          "line": 2063,
+          "line": 2098,
           "permissionKeys": [],
           "score": 25
         }
@@ -72930,7 +72966,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/warehouse-ukraine/components/ShipmentsTab.tsx",
-        "line": 1464,
+        "line": 1489,
         "alternatives": []
       }
     },
@@ -72951,20 +72987,20 @@
       "proposedPermission": "orders.orders_ukraine_placement_item.void_load_manual_sales_manual_filter_draft.button_click",
       "securityLevel": "low",
       "rawStatus": "No permission candidate found",
-      "disposition": "needs_human_review",
-      "dispositionReason": "insufficient_evidence_for_automatic_permission_or_exclusion",
+      "disposition": "technical_ui",
+      "dispositionReason": "This filter refresh is an internal read inside the already guarded shipment-edit workflow.",
       "duplicateOf": null,
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-4d3584d44b88",
-          "distance": 644,
+          "candidateId": "EPC-8e49e97c7af6",
+          "distance": 654,
           "file": "src/features/warehouse-ukraine/components/ShipmentsTab.tsx",
           "handler": "{() => void loadManualSales(manualFilterDraft)}",
           "humanLabel": "Оновити",
-          "line": 2096,
+          "line": 2131,
           "permissionKeys": [],
           "score": 32
         }
@@ -72972,7 +73008,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/warehouse-ukraine/components/ShipmentsTab.tsx",
-        "line": 1452,
+        "line": 1477,
         "alternatives": []
       }
     },
@@ -72993,20 +73029,22 @@
       "proposedPermission": "orders.orders_ukraine_placement_item.sale_const_sale_key_get_shipment_sale_key_sale_if_sale_key_draft.row_click",
       "securityLevel": "medium",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "covered_existing",
+      "dispositionReason": "Opening shipment details uses the tab-level read permission and dedicated details façade.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "warehouses.ukraine.shipments.open"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-73e202359786",
-          "distance": 1201,
+          "candidateId": "EPC-911ff82c0fdb",
+          "distance": 1221,
           "file": "src/features/warehouse-ukraine/components/ShipmentsTab.tsx",
           "handler": "{(sale) => { const saleKey = getShipmentSaleKey(sale) if (!saleKey || draftSaleKeys.has(saleKey)) { return } setManualSelectedSaleKeys((current) => ({ ...current, [saleKey]: !current[saleKey] })) }}",
           "humanLabel": null,
-          "line": 2117,
+          "line": 2152,
           "permissionKeys": [],
           "score": 38
         }
@@ -73014,7 +73052,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/warehouse-ukraine/components/ShipmentsTab.tsx",
-        "line": 916,
+        "line": 931,
         "alternatives": []
       }
     },
@@ -73043,12 +73081,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-67c1676e6cfd",
-          "distance": 664,
+          "candidateId": "EPC-b8b0900d7f0e",
+          "distance": 674,
           "file": "src/features/warehouse-ukraine/components/ShipmentsTab.tsx",
           "handler": "{() => setConfirmCloseShipment(false)}",
           "humanLabel": "Ні",
-          "line": 2183,
+          "line": 2218,
           "permissionKeys": [],
           "score": 28
         }
@@ -73056,7 +73094,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/warehouse-ukraine/components/ShipmentsTab.tsx",
-        "line": 1519,
+        "line": 1544,
         "alternatives": []
       }
     },
@@ -73085,12 +73123,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-e04c56861d1e",
-          "distance": 800,
+          "candidateId": "EPC-61d88d3b1db5",
+          "distance": 811,
           "file": "src/features/warehouse-ukraine/components/ShipmentsTab.tsx",
           "handler": "{requestCloseShipment}",
           "humanLabel": "Скасувати",
-          "line": 1961,
+          "line": 1996,
           "permissionKeys": [],
           "score": 13
         }
@@ -73098,7 +73136,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/warehouse-ukraine/components/ShipmentsTab.tsx",
-        "line": 1161,
+        "line": 1185,
         "alternatives": []
       }
     },
@@ -73129,7 +73167,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/warehouse-ukraine/components/ShipmentsTab.tsx",
-        "line": 2371,
+        "line": 2406,
         "alternatives": []
       }
     },
@@ -73160,7 +73198,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/warehouse-ukraine/components/ShipmentsTab.tsx",
-        "line": 2371,
+        "line": 2406,
         "alternatives": []
       }
     },
@@ -73181,20 +73219,20 @@
       "proposedPermission": "orders.orders_ukraine_placement_item.model_on_edit_recipient_item.button_click",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
-      "duplicateOf": null,
+      "disposition": "duplicate_occurrence",
+      "dispositionReason": "The row action opens the recipient editor; the modal submit is the guarded mutation.",
+      "duplicateOf": "PE-01760",
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-98ae4e609b42",
+          "candidateId": "EPC-85321b68072f",
           "distance": 4,
           "file": "src/features/warehouse-ukraine/components/ShipmentsTab.tsx",
           "handler": "{() => model.onEditRecipient(item)}",
           "humanLabel": "Редагувати одержувача",
-          "line": 2702,
+          "line": 2738,
           "permissionKeys": [],
           "score": 17
         }
@@ -73202,7 +73240,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/warehouse-ukraine/components/ShipmentsTab.tsx",
-        "line": 2706,
+        "line": 2742,
         "alternatives": []
       }
     },
@@ -73223,20 +73261,20 @@
       "proposedPermission": "orders.orders_ukraine_placement_item.model_on_edit_address_item.command_submit",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
-      "duplicateOf": null,
+      "disposition": "duplicate_occurrence",
+      "dispositionReason": "The row action opens the address editor; the modal submit is the guarded mutation.",
+      "duplicateOf": "PE-01758",
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-9cabd16a2310",
+          "candidateId": "EPC-50c1b04e429f",
           "distance": 4,
           "file": "src/features/warehouse-ukraine/components/ShipmentsTab.tsx",
           "handler": "{() => model.onEditAddress(item)}",
           "humanLabel": "Редагувати адресу доставки",
-          "line": 2708,
+          "line": 2744,
           "permissionKeys": [],
           "score": 15
         }
@@ -73244,7 +73282,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/warehouse-ukraine/components/ShipmentsTab.tsx",
-        "line": 2712,
+        "line": 2748,
         "alternatives": []
       }
     },
@@ -73265,20 +73303,20 @@
       "proposedPermission": "orders.orders_ukraine_placement_item.model_on_edit_comment_item.button_click",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
-      "duplicateOf": null,
+      "disposition": "duplicate_occurrence",
+      "dispositionReason": "The row action opens the comment editor; the modal submit is the guarded mutation.",
+      "duplicateOf": "PE-01754",
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-563141339dd9",
+          "candidateId": "EPC-80b4753a15ef",
           "distance": 4,
           "file": "src/features/warehouse-ukraine/components/ShipmentsTab.tsx",
           "handler": "{() => model.onEditComment(item)}",
           "humanLabel": "Редагувати коментар",
-          "line": 2714,
+          "line": 2750,
           "permissionKeys": [],
           "score": 15
         }
@@ -73286,7 +73324,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/warehouse-ukraine/components/ShipmentsTab.tsx",
-        "line": 2718,
+        "line": 2754,
         "alternatives": []
       }
     },
@@ -73307,20 +73345,20 @@
       "proposedPermission": "orders.orders_ukraine_placement_item.model_on_print_sale_item.command_export",
       "securityLevel": "medium",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
-      "duplicateOf": null,
+      "disposition": "duplicate_occurrence",
+      "dispositionReason": "This is the same invoice-print business capability from the shipment details grid.",
+      "duplicateOf": "PE-01788",
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-2bd4de816601",
-          "distance": 3,
+          "candidateId": "EPC-8c0bbd70ce5e",
+          "distance": 4,
           "file": "src/features/warehouse-ukraine/components/ShipmentsTab.tsx",
           "handler": "{() => model.onPrintSale(item)}",
           "humanLabel": "Друк PDF",
-          "line": 2721,
+          "line": 2757,
           "permissionKeys": [],
           "score": 13
         }
@@ -73328,7 +73366,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/warehouse-ukraine/components/ShipmentsTab.tsx",
-        "line": 2724,
+        "line": 2761,
         "alternatives": []
       }
     },
@@ -73349,20 +73387,20 @@
       "proposedPermission": "orders.orders_ukraine_placement_item.model_on_remove_item_item.command_delete",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
-      "duplicateOf": null,
+      "disposition": "duplicate_occurrence",
+      "dispositionReason": "Removing a row changes the local shipment draft; the final save persists it.",
+      "duplicateOf": "PE-01803",
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-48f03ae44092",
+          "candidateId": "EPC-1ded1a0b8f2a",
           "distance": 4,
           "file": "src/features/warehouse-ukraine/components/ShipmentsTab.tsx",
           "handler": "{() => model.onRemoveItem(item)}",
           "humanLabel": "Видалити",
-          "line": 2727,
+          "line": 2764,
           "permissionKeys": [],
           "score": 14
         }
@@ -73370,7 +73408,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/warehouse-ukraine/components/ShipmentsTab.tsx",
-        "line": 2731,
+        "line": 2768,
         "alternatives": []
       }
     },
@@ -73391,20 +73429,20 @@
       "proposedPermission": "orders.orders_ukraine_placement_item.model_set_active_modal_kind_recipient_item.modal_open",
       "securityLevel": "low",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
-      "duplicateOf": null,
+      "disposition": "duplicate_occurrence",
+      "dispositionReason": "This action only opens the recipient editor.",
+      "duplicateOf": "PE-01760",
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-74a4326af9d2",
+          "candidateId": "EPC-730cc04ec096",
           "distance": 4,
           "file": "src/features/warehouse-ukraine/components/ShipmentsTab.tsx",
           "handler": "{() => model.setActiveModal({ kind: 'recipient', item })}",
           "humanLabel": "Редагувати одержувача",
-          "line": 2933,
+          "line": 2970,
           "permissionKeys": [],
           "score": 36
         }
@@ -73412,7 +73450,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/warehouse-ukraine/components/ShipmentsTab.tsx",
-        "line": 2937,
+        "line": 2974,
         "alternatives": []
       }
     },
@@ -73433,20 +73471,20 @@
       "proposedPermission": "orders.orders_ukraine_placement_item.if_item_sale_delivery_recipient_notifications_show_color_yellow_.command_submit",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
-      "duplicateOf": null,
+      "disposition": "duplicate_occurrence",
+      "dispositionReason": "The recipient warning directs into the same guarded recipient-edit flow.",
+      "duplicateOf": "PE-01760",
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-cac6f184f6e5",
-          "distance": 2023,
+          "candidateId": "EPC-8196aa9266a6",
+          "distance": 2045,
           "file": "src/features/warehouse-ukraine/components/ShipmentsTab.tsx",
           "handler": "{() => { if (!item.Sale.DeliveryRecipient) { notifications.show({ color: 'yellow', message: t('Додайте одержувача для цієї накладної') }) return } model.setActiveModal({ kind: 'address', item }) }}",
           "humanLabel": "Редагувати адресу доставки",
-          "line": 2939,
+          "line": 2976,
           "permissionKeys": [],
           "score": 53
         }
@@ -73454,7 +73492,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/warehouse-ukraine/components/ShipmentsTab.tsx",
-        "line": 916,
+        "line": 931,
         "alternatives": []
       }
     },
@@ -73475,20 +73513,20 @@
       "proposedPermission": "orders.orders_ukraine_placement_item.model_set_active_modal_kind_comment_item.modal_open",
       "securityLevel": "low",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
-      "duplicateOf": null,
+      "disposition": "duplicate_occurrence",
+      "dispositionReason": "This action only opens the comment editor.",
+      "duplicateOf": "PE-01754",
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-3998a2b78e2d",
+          "candidateId": "EPC-c5a1c0c514f4",
           "distance": 4,
           "file": "src/features/warehouse-ukraine/components/ShipmentsTab.tsx",
           "handler": "{() => model.setActiveModal({ kind: 'comment', item })}",
           "humanLabel": "Редагувати коментар",
-          "line": 2953,
+          "line": 2990,
           "permissionKeys": [],
           "score": 34
         }
@@ -73496,7 +73534,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/warehouse-ukraine/components/ShipmentsTab.tsx",
-        "line": 2957,
+        "line": 2994,
         "alternatives": []
       }
     },
@@ -73527,7 +73565,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/warehouse-ukraine/pages/WarehouseUkraineOrderPlacementsPage.tsx",
-        "line": 665,
+        "line": 666,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -73560,7 +73598,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/warehouse-ukraine/pages/WarehouseUkrainePage.tsx",
-        "line": 38,
+        "line": 41,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -73593,7 +73631,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/warehouse-ukraine/pages/WarehouseUkraineOrderPlacementsPage.tsx",
-        "line": 665,
+        "line": 666,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -73616,20 +73654,20 @@
       "proposedPermission": "orders.orders_ukraine_placement_item.model_handle_move_remnants_column.button_click",
       "securityLevel": "low",
       "rawStatus": "Candidate existing key in component; binding review required",
-      "disposition": "needs_human_review",
-      "dispositionReason": "raw_audit_claims_existing_binding_but_does_not_name_the_key",
+      "disposition": "technical_ui",
+      "dispositionReason": "Moving remnants changes only the local order draft until placement save.",
       "duplicateOf": null,
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-0ed4254b0422",
+          "candidateId": "EPC-1f8a7fc924d2",
           "distance": 6,
           "file": "src/features/warehouse-ukraine/pages/WarehouseUkraineOrderPlacementsPage.tsx",
           "handler": "{() => model.handleMoveRemnants(column)}",
           "humanLabel": "Перемістити залишки",
-          "line": 839,
+          "line": 869,
           "permissionKeys": [],
           "score": 29
         }
@@ -73637,7 +73675,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/warehouse-ukraine/pages/WarehouseUkraineOrderPlacementsPage.tsx",
-        "line": 845,
+        "line": 875,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -73660,17 +73698,17 @@
       "proposedPermission": "orders.orders_ukraine_placement_item.model_set_column_to_remove_column.command_delete",
       "securityLevel": "high",
       "rawStatus": "Candidate existing key in component; binding review required",
-      "disposition": "needs_human_review",
-      "dispositionReason": "raw_audit_claims_existing_binding_but_does_not_name_the_key",
-      "duplicateOf": null,
+      "disposition": "duplicate_occurrence",
+      "dispositionReason": "The trash icon only opens column-removal confirmation.",
+      "duplicateOf": "PE-01836",
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [],
       "source": {
         "status": "resolved",
         "file": "src/features/warehouse-ukraine/pages/WarehouseUkraineOrderPlacementsPage.tsx",
-        "line": 857,
+        "line": 887,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -73693,20 +73731,20 @@
       "proposedPermission": "orders.orders_ukraine_placement_item.model_handle_open_placements_grid_row_key_row.modal_open",
       "securityLevel": "low",
       "rawStatus": "Candidate existing key in component; binding review required",
-      "disposition": "needs_human_review",
-      "dispositionReason": "raw_audit_claims_existing_binding_but_does_not_name_the_key",
-      "duplicateOf": null,
+      "disposition": "duplicate_occurrence",
+      "dispositionReason": "The grid action opens the placement drawer whose final apply is guarded.",
+      "duplicateOf": "PE-01774",
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-5777243fe433",
+          "candidateId": "EPC-767ecb4940d0",
           "distance": 4,
           "file": "src/features/warehouse-ukraine/pages/WarehouseUkraineOrderPlacementsPage.tsx",
           "handler": "{() => model.handleOpenPlacements(gridRow, key, row)}",
           "humanLabel": "Оприходування",
-          "line": 894,
+          "line": 924,
           "permissionKeys": [],
           "score": 38
         }
@@ -73714,7 +73752,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/warehouse-ukraine/pages/WarehouseUkraineOrderPlacementsPage.tsx",
-        "line": 898,
+        "line": 928,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -73747,12 +73785,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-787422a7a712",
+          "candidateId": "EPC-84ee4fcf79c7",
           "distance": 5,
           "file": "src/features/warehouse-ukraine/pages/WarehouseUkraineOrderPlacementsPage.tsx",
           "handler": "{model.reloadFromServer}",
           "humanLabel": "Скасувати",
-          "line": 932,
+          "line": 962,
           "permissionKeys": [
             "orders.ukraine.placement.save"
           ],
@@ -73762,7 +73800,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/warehouse-ukraine/pages/WarehouseUkraineOrderPlacementsPage.tsx",
-        "line": 937,
+        "line": 967,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -73795,12 +73833,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-cbb3fa303abe",
+          "candidateId": "EPC-af99f23874ad",
           "distance": 5,
           "file": "src/features/warehouse-ukraine/pages/WarehouseUkraineOrderPlacementsPage.tsx",
           "handler": "{model.handleSave}",
           "humanLabel": "Зберегти",
-          "line": 942,
+          "line": 972,
           "permissionKeys": [
             "orders.ukraine.placement.save"
           ],
@@ -73810,7 +73848,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/warehouse-ukraine/pages/WarehouseUkraineOrderPlacementsPage.tsx",
-        "line": 947,
+        "line": 977,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -73833,20 +73871,20 @@
       "proposedPermission": "orders.orders_ukraine_placement_item.model_set_column_modal_open_true.modal_open",
       "securityLevel": "low",
       "rawStatus": "Candidate existing key in component; binding review required",
-      "disposition": "needs_human_review",
-      "dispositionReason": "raw_audit_claims_existing_binding_but_does_not_name_the_key",
-      "duplicateOf": null,
+      "disposition": "duplicate_occurrence",
+      "dispositionReason": "This button only opens the dynamic-column form.",
+      "duplicateOf": "PE-01770",
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-8b557ce15199",
+          "candidateId": "EPC-a8f998a7d322",
           "distance": 4,
           "file": "src/features/warehouse-ukraine/pages/WarehouseUkraineOrderPlacementsPage.tsx",
           "handler": "{() => model.setColumnModalOpen(true)}",
           "humanLabel": "Додати колонку",
-          "line": 1003,
+          "line": 1033,
           "permissionKeys": [],
           "score": 27
         }
@@ -73854,7 +73892,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/warehouse-ukraine/pages/WarehouseUkraineOrderPlacementsPage.tsx",
-        "line": 1007,
+        "line": 1037,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -73887,12 +73925,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-7889128213a5",
+          "candidateId": "EPC-ff84e975f3f6",
           "distance": 5,
           "file": "src/features/warehouse-ukraine/pages/WarehouseUkraineOrderPlacementsPage.tsx",
           "handler": "{() => model.setUnorderedOpen(true)}",
           "humanLabel": "Інший товар / більша кількість",
-          "line": 1013,
+          "line": 1043,
           "permissionKeys": [
             "orders.ukraine.placement.create_reconciliation"
           ],
@@ -73902,7 +73940,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/warehouse-ukraine/pages/WarehouseUkraineOrderPlacementsPage.tsx",
-        "line": 1018,
+        "line": 1048,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -73925,17 +73963,17 @@
       "proposedPermission": "orders.orders_ukraine_placement_item.model_set_confirm_placement_is_full_placed_true.command_submit",
       "securityLevel": "high",
       "rawStatus": "Candidate existing key in component; binding review required",
-      "disposition": "needs_human_review",
-      "dispositionReason": "raw_audit_claims_existing_binding_but_does_not_name_the_key",
-      "duplicateOf": null,
+      "disposition": "duplicate_occurrence",
+      "dispositionReason": "This button only opens full-post confirmation.",
+      "duplicateOf": "PE-01838",
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [],
       "source": {
         "status": "resolved",
         "file": "src/features/warehouse-ukraine/pages/WarehouseUkraineOrderPlacementsPage.tsx",
-        "line": 1046,
+        "line": 1076,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -73968,7 +74006,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/warehouse-ukraine/pages/WarehouseUkraineOrderPlacementsPage.tsx",
-        "line": 1057,
+        "line": 1087,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -73991,17 +74029,17 @@
       "proposedPermission": "orders.orders_ukraine_placement_item.model_toggle_density.control_toggle",
       "securityLevel": "low",
       "rawStatus": "Candidate existing key in component; binding review required",
-      "disposition": "needs_human_review",
-      "dispositionReason": "raw_audit_claims_existing_binding_but_does_not_name_the_key",
+      "disposition": "technical_ui",
+      "dispositionReason": "Density toggling changes only the local table presentation.",
       "duplicateOf": null,
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [],
       "source": {
         "status": "resolved",
         "file": "src/features/warehouse-ukraine/pages/WarehouseUkraineOrderPlacementsPage.tsx",
-        "line": 1062,
+        "line": 1092,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -74034,7 +74072,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/warehouse-ukraine/pages/WarehouseUkraineOrderPlacementsPage.tsx",
-        "line": 1138,
+        "line": 1168,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -74057,20 +74095,22 @@
       "proposedPermission": "orders.orders_ukraine_placement_item.model_confirm_remove_column.command_submit",
       "securityLevel": "high",
       "rawStatus": "Candidate existing key in component; binding review required",
-      "disposition": "needs_human_review",
-      "dispositionReason": "raw_audit_claims_existing_binding_but_does_not_name_the_key",
+      "disposition": "covered_existing",
+      "dispositionReason": "Confirmed column removal persists through the placement-save façade.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "orders.ukraine.placement.save"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-1976e64e57b1",
+          "candidateId": "EPC-bbf5e4074eec",
           "distance": 5,
           "file": "src/features/warehouse-ukraine/pages/WarehouseUkraineOrderPlacementsPage.tsx",
           "handler": "{model.confirmRemoveColumn}",
           "humanLabel": "Видалити",
-          "line": 1152,
+          "line": 1182,
           "permissionKeys": [],
           "score": 24
         }
@@ -74078,7 +74118,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/warehouse-ukraine/pages/WarehouseUkraineOrderPlacementsPage.tsx",
-        "line": 1157,
+        "line": 1187,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -74109,12 +74149,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-9b5865b9e3f0",
+          "candidateId": "EPC-6474677290fe",
           "distance": 9,
           "file": "src/features/warehouse-ukraine/pages/WarehouseUkraineOrderPlacementsPage.tsx",
           "handler": "{() => model.setConfirmPlacement(null)}",
           "humanLabel": "Скасувати",
-          "line": 1176,
+          "line": 1206,
           "permissionKeys": [],
           "score": 28
         }
@@ -74122,7 +74162,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/warehouse-ukraine/pages/WarehouseUkraineOrderPlacementsPage.tsx",
-        "line": 1167,
+        "line": 1197,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -74145,20 +74185,23 @@
       "proposedPermission": "orders.orders_ukraine_placement_item.model_place_order_boolean_model_confirm_placement_is_full_placed.command_submit",
       "securityLevel": "high",
       "rawStatus": "Candidate existing key in component; binding review required",
-      "disposition": "needs_human_review",
-      "dispositionReason": "raw_audit_claims_existing_binding_but_does_not_name_the_key",
+      "disposition": "covered_existing",
+      "dispositionReason": "The mode-aware final action selects independently guarded post or capitalize endpoints.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "orders.ukraine.placement.capitalize",
+        "orders.ukraine.placement.post"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-17bc48d44275",
+          "candidateId": "EPC-8c56178a7178",
           "distance": 5,
           "file": "src/features/warehouse-ukraine/pages/WarehouseUkraineOrderPlacementsPage.tsx",
           "handler": "{() => model.placeOrder(Boolean(model.confirmPlacement?.isFullPlaced))}",
           "humanLabel": "Підтвердити",
-          "line": 1185,
+          "line": 1215,
           "permissionKeys": [],
           "score": 43
         }
@@ -74166,7 +74209,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/warehouse-ukraine/pages/WarehouseUkraineOrderPlacementsPage.tsx",
-        "line": 1190,
+        "line": 1220,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -74197,12 +74240,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-955ebe22798e",
+          "candidateId": "EPC-6bed7b42dbbe",
           "distance": 5,
           "file": "src/features/warehouse-ukraine/pages/WarehouseUkrainePage.tsx",
           "handler": "{() => setActiveTab(tab.value)}",
           "humanLabel": null,
-          "line": 175,
+          "line": 194,
           "permissionKeys": [],
           "score": 20
         }
@@ -74210,7 +74253,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/warehouse-ukraine/pages/WarehouseUkrainePage.tsx",
-        "line": 180,
+        "line": 199,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -79945,54 +79988,6 @@
     "PE-01680",
     "PE-01681",
     "PE-01682",
-    "PE-01754",
-    "PE-01756",
-    "PE-01758",
-    "PE-01760",
-    "PE-01763",
-    "PE-01764",
-    "PE-01768",
-    "PE-01770",
-    "PE-01772",
-    "PE-01774",
-    "PE-01775",
-    "PE-01776",
-    "PE-01777",
-    "PE-01779",
-    "PE-01780",
-    "PE-01781",
-    "PE-01782",
-    "PE-01785",
-    "PE-01787",
-    "PE-01788",
-    "PE-01789",
-    "PE-01790",
-    "PE-01795",
-    "PE-01796",
-    "PE-01798",
-    "PE-01800",
-    "PE-01803",
-    "PE-01804",
-    "PE-01805",
-    "PE-01807",
-    "PE-01808",
-    "PE-01809",
-    "PE-01814",
-    "PE-01815",
-    "PE-01816",
-    "PE-01817",
-    "PE-01818",
-    "PE-01819",
-    "PE-01820",
-    "PE-01821",
-    "PE-01825",
-    "PE-01826",
-    "PE-01827",
-    "PE-01830",
-    "PE-01832",
-    "PE-01834",
-    "PE-01836",
-    "PE-01838",
     "PE-01841",
     "PE-01843",
     "PE-01844",

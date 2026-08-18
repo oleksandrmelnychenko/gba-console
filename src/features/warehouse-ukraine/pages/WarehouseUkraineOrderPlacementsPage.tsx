@@ -4,6 +4,7 @@ import { BetweenVerticalEnd, CircleAlert, Plus, Trash2 } from 'lucide-react'
 import { useCallback, useEffect, useMemo } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import { useAuth } from '../../auth/useAuth'
+import { PermissionGate } from '../../auth/components/PermissionGate'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { useValueState } from '../../../shared/hooks/useValueState'
@@ -663,6 +664,35 @@ function useOrderPlacementsModel() {
 }
 
 export function WarehouseUkraineOrderPlacementsPage() {
+  const location = useLocation()
+  const pagePermission = location.pathname.startsWith('/warehouse/ukraine/')
+    ? PermissionKeys.Warehouses.Ukraine.Page.View
+    : PermissionKeys.OrdersUkraine.Page.View
+
+  return (
+    <PermissionGate
+      permissionKey={pagePermission}
+      fallback={(
+        <Alert color="red" icon={<CircleAlert size={18} />} title="Доступ заборонено" variant="light">
+          Немає права переглядати сторінку оприбуткування.
+        </Alert>
+      )}
+    >
+      <PermissionGate
+        permissionKey={PermissionKeys.OrdersUkraine.Order.OpenPlacement}
+        fallback={(
+          <Alert color="red" icon={<CircleAlert size={18} />} title="Доступ заборонено" variant="light">
+            Немає права відкривати оприбуткування замовлення.
+          </Alert>
+        )}
+      >
+        <WarehouseUkraineOrderPlacementsPageContent />
+      </PermissionGate>
+    </PermissionGate>
+  )
+}
+
+function WarehouseUkraineOrderPlacementsPageContent() {
   const model = useOrderPlacementsModel()
   const { t } = useI18n()
   const { hasPermission } = useAuth()
