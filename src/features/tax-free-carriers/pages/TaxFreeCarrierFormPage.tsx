@@ -14,15 +14,15 @@ import { notifications } from '@mantine/notifications'
 import { Car, CircleAlert, IdCard, Plus, Save, SquarePen, Trash2 } from 'lucide-react'
 import { type FormEvent, useEffect } from 'react'
 import { Navigate, useNavigate, useParams } from 'react-router-dom'
+import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
-import { useAuth } from '../../auth/useAuth'
+import { usePermissions } from '../../auth/usePermissions'
 import { createTaxFreeCarrier, getTaxFreeCarrier, updateTaxFreeCarrier } from '../api/taxFreeCarriersApi'
 import { TaxFreeCarrierCarModal } from '../components/TaxFreeCarrierCarModal'
 import { TaxFreeCarrierPassportDrawer } from '../components/TaxFreeCarrierPassportDrawer'
-import { TAX_FREE_CARRIER_MANAGE_PERMISSION } from '../permissions'
 import type { TaxFreeCarrier, TaxFreeCarrierCar, TaxFreeCarrierPassport } from '../types'
 
 const CARRIERS_PATH = '/tax-free/carriers/all'
@@ -36,10 +36,13 @@ type CarrierFormState = {
 export function TaxFreeCarrierFormPage() {
   const { t } = useI18n()
   const navigate = useNavigate()
-  const { hasPermission } = useAuth()
+  const { can, isLoading: permissionsLoading } = usePermissions()
   const { id } = useParams<{ id?: string }>()
   const isEditMode = Boolean(id)
-  const canSave = isEditMode || hasPermission(TAX_FREE_CARRIER_MANAGE_PERMISSION)
+  const requiredPermission = isEditMode
+    ? PermissionKeys.TaxFreeCarriers.Carrier.Edit
+    : PermissionKeys.TaxFreeCarriers.Carrier.Create
+  const canSave = can(requiredPermission)
   const [carrier, setCarrier] = useValueState<TaxFreeCarrier>(() => createEmptyCarrier())
   const [form, setForm] = useValueState<CarrierFormState>(() => createEmptyForm())
   const [cars, setCars] = useValueState<TaxFreeCarrierCar[]>([])
@@ -52,7 +55,7 @@ export function TaxFreeCarrierFormPage() {
   const [isPassportDrawerOpen, setPassportDrawerOpen] = useValueState(false)
 
   useEffect(() => {
-    if (!id) {
+    if (!id || !canSave) {
       return
     }
 
@@ -89,7 +92,19 @@ export function TaxFreeCarrierFormPage() {
     return () => {
       cancelled = true
     }
-  }, [id, setCarrier, setCars, setError, setForm, setLoading, setPassports, t])
+  }, [canSave, id, setCarrier, setCars, setError, setForm, setLoading, setPassports, t])
+
+  if (permissionsLoading) {
+    return <Text c="dimmed">{t('Завантаження')}</Text>
+  }
+
+  if (!canSave) {
+    return (
+      <Alert color="red" icon={<CircleAlert size={18} />} title={t('Доступ заборонено')} variant="light">
+        {t('Недостатньо прав для цієї операції з перевізником')}
+      </Alert>
+    )
+  }
 
   if (isEditMode && !id) {
     return <Navigate replace to={CARRIERS_PATH} />
@@ -202,12 +217,6 @@ export function TaxFreeCarrierFormPage() {
           {error && (
             <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
               {error}
-            </Alert>
-          )}
-
-          {!canSave && (
-            <Alert color="yellow" icon={<CircleAlert size={18} />} variant="light">
-              {t('Немає прав для збереження перевізника')}
             </Alert>
           )}
 

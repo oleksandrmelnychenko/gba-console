@@ -2711,6 +2711,72 @@
       "disposition": "duplicate_occurrence",
       "duplicateOf": "PE-00772",
       "reason": "The row print action invokes the same independently guarded document export as the other print trigger."
+    },
+    "PE-01587": {
+      "disposition": "technical_ui",
+      "reason": "Submitting the car modal only adds a car to the unsaved carrier draft; final carrier create/edit owns authorization."
+    },
+    "PE-01588": {
+      "disposition": "technical_ui",
+      "reason": "Submitting the passport drawer only updates the unsaved carrier draft and performs no independent mutation."
+    },
+    "PE-01592": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": [
+        "warehouse_accounting.tax_free_carriers.carrier.create",
+        "warehouse_accounting.tax_free_carriers.carrier.edit"
+      ],
+      "reason": "The final form submit selects create or edit by route mode, rechecks the exact permission and calls the matching scoped mutation façade."
+    },
+    "PE-01593": {
+      "disposition": "technical_ui",
+      "reason": "Adding a car changes only the local carrier draft; the containing carrier save is the persistence boundary."
+    },
+    "PE-01594": {
+      "disposition": "technical_ui",
+      "reason": "Adding or editing a passport changes only the local carrier draft; the containing carrier save owns authorization."
+    },
+    "PE-01595": {
+      "disposition": "technical_ui",
+      "reason": "Opening the nested car/passport draft is local form interaction and not an independent business capability."
+    },
+    "PE-01596": {
+      "disposition": "technical_ui",
+      "reason": "Selecting an existing passport for local editing does not persist data independently from carrier save."
+    },
+    "PE-01597": {
+      "disposition": "technical_ui",
+      "reason": "Removing a passport from the local draft is persisted only as part of the final guarded carrier edit."
+    },
+    "PE-01601": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["warehouse_accounting.tax_free_carriers.document.export"],
+      "reason": "Registry PDF/XLSX generation has one independent export right and a dedicated permission-scoped façade."
+    },
+    "PE-01603": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-01592",
+      "reason": "The registry create button only navigates to the protected create form; final create submit is the mutation boundary."
+    },
+    "PE-01604": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["warehouse_accounting.tax_free_carriers.carrier.edit"],
+      "reason": "Row activation requires edit before navigation and the protected edit form hydrates details only through its edit-scoped façade."
+    },
+    "PE-01606": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["warehouse_accounting.tax_free_carriers.carrier.delete"],
+      "reason": "Confirmed deletion rechecks its independent delete right and calls the dedicated delete façade."
+    },
+    "PE-01608": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-01604",
+      "reason": "The explicit edit action navigates to the same edit-scoped form as the row activation."
+    },
+    "PE-01609": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-01606",
+      "reason": "The row delete action only opens confirmation; the independently guarded confirmed delete is the business boundary."
     }
   }
 }

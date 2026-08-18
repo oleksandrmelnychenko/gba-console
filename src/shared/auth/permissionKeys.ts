@@ -571,6 +571,16 @@ export const PermissionKeys = {
       },
     },
   },
+  TaxFreeCarriers: {
+    Carrier: {
+      Create: 'warehouse_accounting.tax_free_carriers.carrier.create',
+      Delete: 'warehouse_accounting.tax_free_carriers.carrier.delete',
+      Edit: 'warehouse_accounting.tax_free_carriers.carrier.edit',
+    },
+    Document: {
+      Export: 'warehouse_accounting.tax_free_carriers.document.export',
+    },
+  },
   OnlineShopSeo: {
     Client: {
       Toggle: 'administration.online_shop_seo.client.toggle',
@@ -982,6 +992,10 @@ export type WarehouseAccountingPermissionKey =
   | Values<typeof PermissionKeys.WarehouseAccounting.Storages.Preview>
   | Values<typeof PermissionKeys.WarehouseAccounting.Storages.PositionAction>
 
+export type TaxFreeCarriersPermissionKey =
+  | Values<typeof PermissionKeys.TaxFreeCarriers.Carrier>
+  | Values<typeof PermissionKeys.TaxFreeCarriers.Document>
+
 export type OnlineShopSeoPermissionKey =
   | Values<typeof PermissionKeys.OnlineShopSeo.Client>
   | Values<typeof PermissionKeys.OnlineShopSeo.Contact>
@@ -1089,6 +1103,7 @@ export type PermissionKey =
   | ResalesPermissionKey
   | ReportsStocksPermissionKey
   | SupplierOrganizationsPermissionKey
+  | TaxFreeCarriersPermissionKey
   | WarehouseAccountingPermissionKey
   | WarehousesPermissionKey
 
@@ -2062,6 +2077,8 @@ const eventPermissionKeys = new Set<string>([
   ...Object.values(PermissionKeys.WarehouseAccounting.SupplierReturns.Page),
   ...Object.values(PermissionKeys.WarehouseAccounting.SupplierReturns.Return),
   ...Object.values(PermissionKeys.WarehouseAccounting.SupplierReturns.Document),
+  ...Object.values(PermissionKeys.TaxFreeCarriers.Carrier),
+  ...Object.values(PermissionKeys.TaxFreeCarriers.Document),
   ...Object.values(PermissionKeys.OnlineShopSeo.Client),
   ...Object.values(PermissionKeys.OnlineShopSeo.Contact),
   ...Object.values(PermissionKeys.OnlineShopSeo.GeneralInfo),

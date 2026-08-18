@@ -4,25 +4,25 @@
     "inputRecords": 1902,
     "classifiedRecords": 1902,
     "dispositionCounts": {
-      "technical_ui": 718,
-      "covered_existing": 459,
-      "duplicate_occurrence": 243,
-      "business_candidate": 308,
+      "technical_ui": 725,
+      "covered_existing": 463,
+      "duplicate_occurrence": 246,
+      "business_candidate": 294,
       "needs_human_review": 166,
       "stale_or_aggregated": 8
     },
-    "reviewCandidates": 474,
-    "technicalExcluded": 718,
-    "duplicatesExcluded": 243,
-    "duplicateOccurrencesTotal": 312,
+    "reviewCandidates": 460,
+    "technicalExcluded": 725,
+    "duplicatesExcluded": 246,
+    "duplicateOccurrencesTotal": 315,
     "technicalDuplicateOverlap": 69,
     "sourceResolved": 1828,
     "sourceUnresolved": 74,
     "currentActionResolved": 1187,
     "currentActionUnresolved": 715,
     "currentProductionActions": 1829,
-    "currentPermissionBoundActions": 249,
-    "currentUnboundActions": 1580
+    "currentPermissionBoundActions": 251,
+    "currentUnboundActions": 1578
   },
   "invariants": {
     "allInputRecordsClassified": true,
@@ -64475,12 +64475,12 @@
       "proposedPermission": "tax_free.tax_free_carriers_all.handle_submit.command_submit",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "technical_ui",
+      "dispositionReason": "Submitting the car modal only adds a car to the unsaved carrier draft; final carrier create/edit owns authorization.",
       "duplicateOf": null,
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
           "candidateId": "EPC-1177f645c0d9",
@@ -64517,12 +64517,12 @@
       "proposedPermission": "tax_free.tax_free_carriers_all.handle_submit.command_submit.2",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "technical_ui",
+      "dispositionReason": "Submitting the passport drawer only updates the unsaved carrier draft and performs no independent mutation.",
       "duplicateOf": null,
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
           "candidateId": "EPC-0ed42fd9929b",
@@ -64569,7 +64569,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/tax-free-carriers/pages/TaxFreeCarriersPage.tsx",
-        "line": 221,
+        "line": 235,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -64654,20 +64654,23 @@
       "proposedPermission": "tax_free.tax_free_carriers_all.handle_submit.form_submit",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "covered_existing",
+      "dispositionReason": "The final form submit selects create or edit by route mode, rechecks the exact permission and calls the matching scoped mutation façade.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "warehouse_accounting.tax_free_carriers.carrier.create",
+        "warehouse_accounting.tax_free_carriers.carrier.edit"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-cbe414cff4c9",
+          "candidateId": "EPC-a4bdc6b03f98",
           "distance": 49,
           "file": "src/features/tax-free-carriers/pages/TaxFreeCarrierFormPage.tsx",
           "handler": "{handleSubmit}",
           "humanLabel": null,
-          "line": 200,
+          "line": 215,
           "permissionKeys": [],
           "score": 12
         }
@@ -64675,7 +64678,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/tax-free-carriers/pages/TaxFreeCarrierFormPage.tsx",
-        "line": 151,
+        "line": 166,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -64698,17 +64701,17 @@
       "proposedPermission": "tax_free.tax_free_carriers_all.add_car.form_submit",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "technical_ui",
+      "dispositionReason": "Adding a car changes only the local carrier draft; the containing carrier save is the persistence boundary.",
       "duplicateOf": null,
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [],
       "source": {
         "status": "resolved",
         "file": "src/features/tax-free-carriers/pages/TaxFreeCarrierFormPage.tsx",
-        "line": 112,
+        "line": 127,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -64731,20 +64734,20 @@
       "proposedPermission": "tax_free.tax_free_carriers_all.submit_passport.form_submit",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "technical_ui",
+      "dispositionReason": "Adding or editing a passport changes only the local carrier draft; the containing carrier save owns authorization.",
       "duplicateOf": null,
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-2cefaf5eb4b0",
-          "distance": 124,
+          "candidateId": "EPC-35b13941e02a",
+          "distance": 118,
           "file": "src/features/tax-free-carriers/pages/TaxFreeCarrierFormPage.tsx",
           "handler": "{submitPassport}",
           "humanLabel": null,
-          "line": 260,
+          "line": 269,
           "permissionKeys": [],
           "score": 14
         }
@@ -64752,7 +64755,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/tax-free-carriers/pages/TaxFreeCarrierFormPage.tsx",
-        "line": 136,
+        "line": 151,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -64775,17 +64778,17 @@
       "proposedPermission": "tax_free.tax_free_carriers_all.on_add.command_submit",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "technical_ui",
+      "dispositionReason": "Opening the nested car/passport draft is local form interaction and not an independent business capability.",
       "duplicateOf": null,
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [],
       "source": {
         "status": "resolved",
         "file": "src/features/tax-free-carriers/pages/TaxFreeCarrierFormPage.tsx",
-        "line": 112,
+        "line": 127,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -64808,20 +64811,20 @@
       "proposedPermission": "tax_free.tax_free_carriers_all.on_edit_index.button_click",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "technical_ui",
+      "dispositionReason": "Selecting an existing passport for local editing does not persist data independently from carrier save.",
       "duplicateOf": null,
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-19e4737343e6",
+          "candidateId": "EPC-8e06d5f68fb6",
           "distance": 46,
           "file": "src/features/tax-free-carriers/pages/TaxFreeCarrierFormPage.tsx",
           "handler": "{() => onEdit(index)}",
           "humanLabel": "Редагування Паспорту",
-          "line": 328,
+          "line": 337,
           "permissionKeys": [],
           "score": 9
         }
@@ -64829,7 +64832,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/tax-free-carriers/pages/TaxFreeCarrierFormPage.tsx",
-        "line": 282,
+        "line": 291,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -64852,20 +64855,20 @@
       "proposedPermission": "tax_free.tax_free_carriers_all.on_remove_index.command_delete",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "technical_ui",
+      "dispositionReason": "Removing a passport from the local draft is persisted only as part of the final guarded carrier edit.",
       "duplicateOf": null,
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-9ba79b4f63e2",
+          "candidateId": "EPC-90f8a73fa92f",
           "distance": 56,
           "file": "src/features/tax-free-carriers/pages/TaxFreeCarrierFormPage.tsx",
           "handler": "{() => onRemove(index)}",
           "humanLabel": "Видалити",
-          "line": 339,
+          "line": 348,
           "permissionKeys": [],
           "score": 11
         }
@@ -64873,7 +64876,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/tax-free-carriers/pages/TaxFreeCarrierFormPage.tsx",
-        "line": 283,
+        "line": 292,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -64906,7 +64909,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/tax-free-carriers/pages/TaxFreeCarrierFormPage.tsx",
-        "line": 112,
+        "line": 127,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -64937,12 +64940,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-9ba79b4f63e2",
+          "candidateId": "EPC-90f8a73fa92f",
           "distance": 56,
           "file": "src/features/tax-free-carriers/pages/TaxFreeCarrierFormPage.tsx",
           "handler": "{() => onRemove(index)}",
           "humanLabel": "Видалити",
-          "line": 339,
+          "line": 348,
           "permissionKeys": [],
           "score": 11
         }
@@ -64950,7 +64953,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/tax-free-carriers/pages/TaxFreeCarrierFormPage.tsx",
-        "line": 283,
+        "line": 292,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -64981,12 +64984,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-d4e6a6243c45",
-          "distance": 161,
+          "candidateId": "EPC-cc8e51e4d8af",
+          "distance": 173,
           "file": "src/features/tax-free-carriers/pages/TaxFreeCarriersPage.tsx",
           "handler": "{resetSearch}",
           "humanLabel": "Скинути",
-          "line": 255,
+          "line": 269,
           "permissionKeys": [],
           "score": 11
         }
@@ -64994,7 +64997,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/tax-free-carriers/pages/TaxFreeCarriersPage.tsx",
-        "line": 94,
+        "line": 96,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -65017,22 +65020,24 @@
       "proposedPermission": "tax_free.tax_free_carriers_all.export_document.command_export",
       "securityLevel": "medium",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "covered_existing",
+      "dispositionReason": "Registry PDF/XLSX generation has one independent export right and a dedicated permission-scoped façade.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "warehouse_accounting.tax_free_carriers.document.export"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-fc291da38ed0",
-          "distance": 228,
+          "candidateId": "EPC-09c8e5a45426",
+          "distance": 242,
           "file": "src/features/tax-free-carriers/pages/TaxFreeCarriersPage.tsx",
           "handler": "{exportDocument}",
           "humanLabel": "Завантажити",
-          "line": 261,
+          "line": 275,
           "permissionKeys": [
-            "Header_dataForPrintDocument_carriersAllView_PKEY"
+            "warehouse_accounting.tax_free_carriers.document.export"
           ],
           "score": 14
         }
@@ -65073,7 +65078,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/tax-free-carriers/pages/TaxFreeCarriersPage.tsx",
-        "line": 68,
+        "line": 70,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -65096,22 +65101,24 @@
       "proposedPermission": "tax_free.tax_free_carriers_all.open_create.command_submit",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
-      "duplicateOf": null,
+      "disposition": "duplicate_occurrence",
+      "dispositionReason": "The registry create button only navigates to the protected create form; final create submit is the mutation boundary.",
+      "duplicateOf": "PE-01592",
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "warehouse_accounting.tax_free_carriers.carrier.create"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-46e626b4a3fc",
-          "distance": 188,
+          "candidateId": "EPC-0e810ae91609",
+          "distance": 200,
           "file": "src/features/tax-free-carriers/pages/TaxFreeCarriersPage.tsx",
           "handler": "{openCreate}",
           "humanLabel": "Додати",
-          "line": 287,
+          "line": 301,
           "permissionKeys": [
-            "Header_NewRemoveStatham_carriersAllView_PKEY"
+            "warehouse_accounting.tax_free_carriers.carrier.create"
           ],
           "score": 10
         }
@@ -65119,7 +65126,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/tax-free-carriers/pages/TaxFreeCarriersPage.tsx",
-        "line": 99,
+        "line": 101,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -65142,17 +65149,19 @@
       "proposedPermission": "tax_free.tax_free_carriers_all.open_edit.row_click",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "covered_existing",
+      "dispositionReason": "Row activation requires edit before navigation and the protected edit form hydrates details only through its edit-scoped façade.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "warehouse_accounting.tax_free_carriers.carrier.edit"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [],
       "source": {
         "status": "resolved",
         "file": "src/features/tax-free-carriers/pages/TaxFreeCarriersPage.tsx",
-        "line": 103,
+        "line": 57,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -65185,7 +65194,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/tax-free-carriers/pages/TaxFreeCarriersPage.tsx",
-        "line": 122,
+        "line": 132,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -65208,20 +65217,22 @@
       "proposedPermission": "tax_free.tax_free_carriers_all.confirm_delete.command_submit",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "covered_existing",
+      "dispositionReason": "Confirmed deletion rechecks its independent delete right and calls the dedicated delete façade.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "warehouse_accounting.tax_free_carriers.carrier.delete"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-79225995d609",
-          "distance": 229,
+          "candidateId": "EPC-fad0444924ca",
+          "distance": 237,
           "file": "src/features/tax-free-carriers/pages/TaxFreeCarriersPage.tsx",
           "handler": "{confirmDelete}",
           "humanLabel": "Видалити",
-          "line": 338,
+          "line": 352,
           "permissionKeys": [],
           "score": 13
         }
@@ -65229,7 +65240,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/tax-free-carriers/pages/TaxFreeCarriersPage.tsx",
-        "line": 109,
+        "line": 115,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -65262,7 +65273,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/tax-free-carriers/pages/TaxFreeCarriersPage.tsx",
-        "line": 426,
+        "line": 442,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -65285,28 +65296,32 @@
       "proposedPermission": "tax_free.tax_free_carriers_all.on_edit_carrier.button_click",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
-      "duplicateOf": null,
+      "disposition": "duplicate_occurrence",
+      "dispositionReason": "The explicit edit action navigates to the same edit-scoped form as the row activation.",
+      "duplicateOf": "PE-01604",
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "warehouse_accounting.tax_free_carriers.carrier.edit"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-b46586e49740",
-          "distance": 56,
+          "candidateId": "EPC-9c7bd1ec201d",
+          "distance": 57,
           "file": "src/features/tax-free-carriers/pages/TaxFreeCarriersPage.tsx",
           "handler": "{() => onEdit(carrier)}",
           "humanLabel": "Редагування Перевізника",
-          "line": 428,
-          "permissionKeys": [],
+          "line": 445,
+          "permissionKeys": [
+            "warehouse_accounting.tax_free_carriers.carrier.edit"
+          ],
           "score": 11
         }
       ],
       "source": {
         "status": "resolved",
         "file": "src/features/tax-free-carriers/pages/TaxFreeCarriersPage.tsx",
-        "line": 372,
+        "line": 388,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -65329,22 +65344,24 @@
       "proposedPermission": "tax_free.tax_free_carriers_all.on_delete_carrier.command_delete",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
-      "duplicateOf": null,
+      "disposition": "duplicate_occurrence",
+      "dispositionReason": "The row delete action only opens confirmation; the independently guarded confirmed delete is the business boundary.",
+      "duplicateOf": "PE-01606",
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "warehouse_accounting.tax_free_carriers.carrier.delete"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-718fdb89681b",
-          "distance": 63,
+          "candidateId": "EPC-7d4b050c58fc",
+          "distance": 65,
           "file": "src/features/tax-free-carriers/pages/TaxFreeCarriersPage.tsx",
           "handler": "{() => onDelete(carrier)}",
           "humanLabel": "Видалити",
-          "line": 434,
+          "line": 452,
           "permissionKeys": [
-            "Header_NewRemoveStatham_carriersAllView_PKEY"
+            "warehouse_accounting.tax_free_carriers.carrier.delete"
           ],
           "score": 13
         }
@@ -65352,7 +65369,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/tax-free-carriers/pages/TaxFreeCarriersPage.tsx",
-        "line": 371,
+        "line": 387,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -79993,20 +80010,6 @@
     "PE-01581",
     "PE-01582",
     "PE-01584",
-    "PE-01587",
-    "PE-01588",
-    "PE-01592",
-    "PE-01593",
-    "PE-01594",
-    "PE-01595",
-    "PE-01596",
-    "PE-01597",
-    "PE-01601",
-    "PE-01603",
-    "PE-01604",
-    "PE-01606",
-    "PE-01608",
-    "PE-01609",
     "PE-01610",
     "PE-01612",
     "PE-01615",
