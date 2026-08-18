@@ -1068,6 +1068,113 @@
       "disposition": "duplicate_occurrence",
       "duplicateOf": "PE-00713",
       "reason": "The explicit row action and table-row click open the same account card; edit authority remains independently checked inside that card."
+    },
+    "PE-00008": {
+      "disposition": "technical_ui",
+      "reason": "The table row only opens a local action chooser over data already returned by the accountable-expenses page-scoped registry read."
+    },
+    "PE-00009": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": [
+        "services.accountable_expenses.page.view"
+      ],
+      "reason": "The details drawer renders the same row payload already authorized by accountable-expenses page view and performs no extra read."
+    },
+    "PE-00010": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": [
+        "services.consumable_orders.page.view"
+      ],
+      "reason": "Opening the linked invoice enters its read-only-capable card; edit authority is checked independently inside that card."
+    },
+    "PE-00011": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": [
+        "services.consumable_orders.order.pay"
+      ],
+      "reason": "The pay action is independently guarded and opens the payment flow backed by pay-scoped reads and mutation."
+    },
+    "PE-00425": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": [
+        "services.consumable_orders.order.create",
+        "services.consumable_orders.order.edit"
+      ],
+      "reason": "The shared final submit selects one exact create or edit permission from route mode and rechecks it before the scoped multipart mutation."
+    },
+    "PE-00426": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-00425",
+      "reason": "Opening the local new-item editor only prepares the draft later persisted by the guarded order create submit."
+    },
+    "PE-00427": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-00425",
+      "reason": "Toggling a draft document does not mutate the server independently; it is persisted only by the guarded mode-aware order submit."
+    },
+    "PE-00429": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-00425",
+      "reason": "Saving an item editor updates only the local order draft and adds no independent backend business boundary."
+    },
+    "PE-00430": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-00425",
+      "reason": "Editing a draft item is a local step of the guarded order create flow; existing-order economic rows remain locked."
+    },
+    "PE-00431": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-00425",
+      "reason": "Deleting or restoring a draft item is persisted only through the same guarded final order submit."
+    },
+    "PE-00432": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": [
+        "services.consumable_orders.order.pay"
+      ],
+      "reason": "The final payment submit is fail-closed and calls the dedicated pay-scoped outcome-payment route."
+    },
+    "PE-00433": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-00434",
+      "reason": "Opening the cashflow-article modal is the first UI step of the existing article-create action and adds no separate permission."
+    },
+    "PE-00434": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": [
+        "accounting.cashflow_articles.article.create"
+      ],
+      "reason": "Creating a cashflow article reuses the existing canonical article-create permission and its accounting-scoped endpoint."
+    },
+    "PE-00435": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-00432",
+      "reason": "The nested form submit dispatches the same guarded invoice-payment handler and is not a second business action."
+    },
+    "PE-00439": {
+      "disposition": "technical_ui",
+      "reason": "The table row only opens a local action chooser; every business action inside it is checked independently."
+    },
+    "PE-00440": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": [
+        "services.consumable_orders.page.view"
+      ],
+      "reason": "The details drawer renders the already page-authorized registry row and makes no separate backend request."
+    },
+    "PE-00441": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": [
+        "services.consumable_orders.order.edit"
+      ],
+      "reason": "The edit action and final edit submit use one canonical permission; page-only direct access remains read-only."
+    },
+    "PE-00442": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": [
+        "services.consumable_orders.order.pay"
+      ],
+      "reason": "The registry pay action uses the same independently guarded payment flow and pay-scoped backend mutation."
     }
   }
 }

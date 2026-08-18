@@ -19,6 +19,8 @@ const EXPECTED_NEW_PAGE_PERMISSIONS = {
   '/tax-free/carriers/all': PermissionKeys.SystemPages.TaxFreeCarriers.View,
   '/tax-free/all': PermissionKeys.SystemPages.TaxFreeDocuments.View,
   '/tax-free/pack-list/all': PermissionKeys.SystemPages.TaxFreePackLists.View,
+  '/accounting/consumable-services': PermissionKeys.AccountableExpenses.Page.View,
+  '/accounting/consumable-orders': PermissionKeys.ConsumableOrders.Page.View,
 } as const
 
 describe('newly classified page permissions', () => {
@@ -35,6 +37,15 @@ describe('newly classified page permissions', () => {
     const keys = Object.values(EXPECTED_NEW_PAGE_PERMISSIONS)
 
     expect(new Set(keys).size).toBe(keys.length)
+  })
+
+  it('uses independent create, edit-read and pay boundaries for consumable orders', () => {
+    expect(consoleRoutes.find((route) => route.path === '/accounting/consumable-orders/new')?.permissionKey)
+      .toBe(PermissionKeys.ConsumableOrders.Order.Create)
+    expect(consoleRoutes.find((route) => route.path === '/accounting/consumable-orders/edit/:id')?.permissionKey)
+      .toBe(PermissionKeys.ConsumableOrders.Page.View)
+    expect(consoleRoutes.find((route) => route.path === '/accounting/consumable-orders/pay/:id')?.permissionKey)
+      .toBe(PermissionKeys.ConsumableOrders.Order.Pay)
   })
 })
 

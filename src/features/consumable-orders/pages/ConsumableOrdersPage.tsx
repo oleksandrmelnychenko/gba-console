@@ -26,6 +26,7 @@ import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui
 import { Paginator } from '../../../shared/ui/paginator/Paginator'
 import { DEFAULT_PAGINATOR_PAGE_SIZE } from '../../../shared/ui/paginator/paginatorPageSize'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
+import { useAuth } from '../../auth/useAuth'
 import {
   getConsumableOrders,
   searchConsumableOrders,
@@ -45,6 +46,11 @@ import type {
   ConsumablesOrderItem,
   OutcomePaymentOrderConsumablesOrder,
 } from '../types'
+import {
+  CONSUMABLE_ORDER_CREATE_PERMISSION,
+  CONSUMABLE_ORDER_EDIT_PERMISSION,
+  CONSUMABLE_ORDER_PAY_PERMISSION,
+} from '../permissions'
 import './consumable-orders-page.css'
 import '../../../shared/ui/console-table-page.css'
 
@@ -78,6 +84,10 @@ export function ConsumableOrdersPage() {
   const { t } = useI18n()
   const navigate = useNavigate()
   const location = useLocation()
+  const { hasPermission } = useAuth()
+  const canCreateOrder = hasPermission(CONSUMABLE_ORDER_CREATE_PERMISSION)
+  const canEditOrder = hasPermission(CONSUMABLE_ORDER_EDIT_PERMISSION)
+  const canPayOrder = hasPermission(CONSUMABLE_ORDER_PAY_PERMISSION)
   const [orders, setOrders] = useValueState<ConsumablesOrder[]>([])
   const [fromDate, setFromDate] = useValueState(() => shiftDate(-DEFAULT_LOOKBACK_DAYS))
   const [toDate, setToDate] = useValueState(() => formatLocalDate(new Date()))
@@ -251,15 +261,21 @@ export function ConsumableOrdersPage() {
             />
           </div>
           <div ref={setTableToolbarSlot} className="app-filter-table-toolbar-slot" />
-          <Button
-            color={CREATE_ACTION_COLOR}
-            leftSection={<Plus size={16} />}
-            size="sm"
-            styles={{ label: ORDERS_MONO_STYLE }}
-            onClick={() => navigate('/accounting/consumable-orders/new', { state: { backgroundLocation: location, returnPath: '/accounting/consumable-orders' } })}
-          >
-            {t('Нова накладна')}
-          </Button>
+          {canCreateOrder && (
+            <Button
+              color={CREATE_ACTION_COLOR}
+              leftSection={<Plus size={16} />}
+              size="sm"
+              styles={{ label: ORDERS_MONO_STYLE }}
+              onClick={() => {
+                if (canCreateOrder) {
+                  navigate('/accounting/consumable-orders/new', { state: { backgroundLocation: location, returnPath: '/accounting/consumable-orders' } })
+                }
+              }}
+            >
+              {t('Нова накладна')}
+            </Button>
+          )}
         </div>
 
         {error && (
@@ -301,21 +317,35 @@ export function ConsumableOrdersPage() {
           setActionsRow(null)
           setSelectedRow(row)
         }}
-        onPay={(row) => {
+        onPay={canPayOrder ? (row) => {
+          if (!canPayOrder) {
+            return
+          }
           setActionsRow(null)
           navigateToPay(navigate, row, location)
-        }}
-        onView={(row) => {
+        } : undefined}
+        onView={canEditOrder ? (row) => {
+          if (!canEditOrder) {
+            return
+          }
           setActionsRow(null)
           navigateToEdit(navigate, row, location)
-        }}
+        } : undefined}
       />
 
       <ConsumableOrderDetailDrawer
         row={selectedRow}
         onClose={() => setSelectedRow(null)}
-        onPay={(row) => navigateToPay(navigate, row, location)}
-        onView={(row) => navigateToEdit(navigate, row, location)}
+        onPay={canPayOrder ? (row) => {
+          if (canPayOrder) {
+            navigateToPay(navigate, row, location)
+          }
+        } : undefined}
+        onView={canEditOrder ? (row) => {
+          if (canEditOrder) {
+            navigateToEdit(navigate, row, location)
+          }
+        } : undefined}
       />
     </Stack>
   )
@@ -386,7 +416,7 @@ function useConsumableOrderColumns() {
   )
 }
 
-function ConsumableOrderActionsModal({
+export function ConsumableOrderActionsModal({
   row,
   onClose,
   onOpenDetails,
@@ -396,8 +426,8 @@ function ConsumableOrderActionsModal({
   row: ConsumableOrderRow | null
   onClose: () => void
   onOpenDetails: (row: ConsumableOrderRow) => void
-  onPay: (row: ConsumableOrderRow) => void
-  onView: (row: ConsumableOrderRow) => void
+  onPay?: (row: ConsumableOrderRow) => void
+  onView?: (row: ConsumableOrderRow) => void
 }) {
   const { t } = useI18n()
   const title = row?.order.Number || row?.organizationNumber || t('Накладна')
@@ -420,15 +450,17 @@ function ConsumableOrderActionsModal({
               {t('Деталі')}
             </Group>
           </Button>
-          <Button fullWidth justify="flex-start" size="lg" variant="subtle" onClick={() => onView(row)}>
-            <Group gap={12} wrap="nowrap">
-              <span className="app-action-icon">
-                <SquarePenIcon size={20} />
-              </span>
-              {t('Редагувати')}
-            </Group>
-          </Button>
-          {!row.isPayed ? (
+          {onView && (
+            <Button fullWidth justify="flex-start" size="lg" variant="subtle" onClick={() => onView(row)}>
+              <Group gap={12} wrap="nowrap">
+                <span className="app-action-icon">
+                  <SquarePenIcon size={20} />
+                </span>
+                {t('Редагувати')}
+              </Group>
+            </Button>
+          )}
+          {onPay && !row.isPayed ? (
             <Button fullWidth justify="flex-start" size="lg" variant="subtle" onClick={() => onPay(row)}>
               <Group gap={12} wrap="nowrap">
                 <span className="app-action-icon">
@@ -555,8 +587,8 @@ function ConsumableOrderDetailDrawer({
 }: {
   row: ConsumableOrderRow | null
   onClose: () => void
-  onPay: (row: ConsumableOrderRow) => void
-  onView: (row: ConsumableOrderRow) => void
+  onPay?: (row: ConsumableOrderRow) => void
+  onView?: (row: ConsumableOrderRow) => void
 }) {
   const { t } = useI18n()
   const order = row?.order
@@ -568,10 +600,12 @@ function ConsumableOrderDetailDrawer({
       {row && order && (
         <Stack gap="md">
           <Group justify="flex-end">
-            <Button leftSection={<Pencil size={16} />} styles={{ label: ORDERS_MONO_STYLE }} variant="outline" onClick={() => onView(row)}>
-              {t('Редагувати')}
-            </Button>
-            {!order.IsPayed && (
+            {onView && (
+              <Button leftSection={<Pencil size={16} />} styles={{ label: ORDERS_MONO_STYLE }} variant="outline" onClick={() => onView(row)}>
+                {t('Редагувати')}
+              </Button>
+            )}
+            {onPay && !order.IsPayed && (
               <Button color="green" leftSection={<CreditCard size={16} />} styles={{ label: ORDERS_MONO_STYLE }} variant="outline" onClick={() => onPay(row)}>
                 {t('Оплатити')}
               </Button>

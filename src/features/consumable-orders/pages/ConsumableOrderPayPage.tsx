@@ -19,11 +19,12 @@ import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/Page
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
+import { usePermissions } from '../../auth/usePermissions'
 import {
-  calculateConsumableOrder,
+  calculateConsumableOrderForPayment,
   createOutcomePaymentOrder,
   createPaymentMovement,
-  getConsumableOrder,
+  getConsumableOrderForPayment,
   getConsumableOrderOrganizations,
   getPaymentMovements,
   searchPaymentMovements,
@@ -48,6 +49,10 @@ import type {
   PaymentMovement,
   PaymentRegister,
 } from '../types'
+import {
+  CASHFLOW_ARTICLE_CREATE_PERMISSION,
+  CONSUMABLE_ORDER_PAY_PERMISSION,
+} from '../permissions'
 import './consumable-order-pay-page.css'
 
 type LocationState = {
@@ -90,6 +95,37 @@ const dateFormatter = new Intl.DateTimeFormat('uk-UA', {
 })
 
 export function ConsumableOrderPayPage() {
+  const { t } = useI18n()
+  const { can, isLoading } = usePermissions()
+  const canPay = can(CONSUMABLE_ORDER_PAY_PERMISSION)
+
+  if (isLoading) {
+    return <Text c="dimmed">{t('Завантаження')}</Text>
+  }
+
+  if (!canPay) {
+    return (
+      <Alert color="red" icon={<CircleAlert size={18} />} title={t('Доступ заборонено')} variant="light">
+        {t('Недостатньо прав для оплати прибуткової накладної')}
+      </Alert>
+    )
+  }
+
+  return (
+    <ConsumableOrderPayPageContent
+      canCreateMovement={can(CASHFLOW_ARTICLE_CREATE_PERMISSION)}
+      canPay={canPay}
+    />
+  )
+}
+
+function ConsumableOrderPayPageContent({
+  canCreateMovement,
+  canPay,
+}: {
+  canCreateMovement: boolean
+  canPay: boolean
+}) {
   const { t } = useI18n()
   const { id } = useParams<{ id?: string }>()
   const routeLocation = useLocation()
@@ -166,7 +202,7 @@ export function ConsumableOrderPayPage() {
 
       try {
         const [nextOrder, nextOrganizations, nextRegisters, nextMovements] = await Promise.all([
-          getConsumableOrder(id as string),
+          getConsumableOrderForPayment(id as string),
           getConsumableOrderOrganizations(),
           searchPaymentRegisters(''),
           getPaymentMovements(),
@@ -182,7 +218,7 @@ export function ConsumableOrderPayPage() {
           return
         }
 
-        const calculation = await calculateConsumableOrder(nextOrder).catch((calcError) => {
+        const calculation = await calculateConsumableOrderForPayment(nextOrder).catch((calcError) => {
           if (!cancelled) {
             setError(calcError instanceof Error ? calcError.message : t('Не вдалося розрахувати оплату накладної'))
           }
@@ -278,12 +314,20 @@ export function ConsumableOrderPayPage() {
   }
 
   function openMovementModal() {
+    if (!canCreateMovement) {
+      return
+    }
+
     setMovementDraft(selectedMovement ? '' : form.movementSearch.trim())
     setMovementModalOpened(true)
   }
 
   async function handleCreateMovement(event?: FormEvent<HTMLFormElement>) {
     event?.preventDefault()
+
+    if (!canCreateMovement) {
+      return
+    }
 
     const operationName = movementDraft.trim()
 
@@ -315,6 +359,11 @@ export function ConsumableOrderPayPage() {
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
+
+    if (!canPay) {
+      setError(t('Немає прав для оплати прибуткової накладної'))
+      return
+    }
 
     if (!order) {
       setError(t('Прибуткову накладну не знайдено'))
@@ -380,7 +429,7 @@ export function ConsumableOrderPayPage() {
       footer={
         <Button
           color={CREATE_ACTION_COLOR}
-          disabled={isLoading || isSaving || isOrderPaid}
+          disabled={!canPay || isLoading || isSaving || isOrderPaid}
           form="consumable-order-pay-form"
           leftSection={<Save size={16} />}
           loading={isSaving}
@@ -434,18 +483,18 @@ export function ConsumableOrderPayPage() {
 
           <section className="consumable-order-pay-section">
             <PaySectionHeader
-              action={
+              action={canCreateMovement ? (
                 <Button
                   className="consumable-order-pay-add-movement"
                   disabled={isLoading || isSaving || isOrderPaid}
                   leftSection={<Plus size={14} />}
                   size="xs"
                   type="button"
-              onClick={openMovementModal}
+                  onClick={openMovementModal}
                 >
                   {t('Додати статтю')}
                 </Button>
-              }
+              ) : undefined}
               title={t('Оплата')}
             />
             <div className="consumable-order-pay-form-grid">
@@ -563,7 +612,7 @@ export function ConsumableOrderPayPage() {
       </form>
       <PaymentMovementModal
         isSaving={isSaving}
-        opened={movementModalOpened}
+        opened={canCreateMovement && movementModalOpened}
         value={movementDraft}
         onChange={setMovementDraft}
         onClose={() => setMovementModalOpened(false)}

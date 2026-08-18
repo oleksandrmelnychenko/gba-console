@@ -4,25 +4,25 @@
     "inputRecords": 1902,
     "classifiedRecords": 1902,
     "dispositionCounts": {
-      "technical_ui": 647,
-      "covered_existing": 329,
-      "business_candidate": 511,
-      "needs_human_review": 271,
-      "duplicate_occurrence": 136,
+      "technical_ui": 649,
+      "covered_existing": 338,
+      "duplicate_occurrence": 143,
+      "business_candidate": 495,
+      "needs_human_review": 269,
       "stale_or_aggregated": 8
     },
-    "reviewCandidates": 782,
-    "technicalExcluded": 647,
-    "duplicatesExcluded": 136,
-    "duplicateOccurrencesTotal": 203,
+    "reviewCandidates": 764,
+    "technicalExcluded": 649,
+    "duplicatesExcluded": 143,
+    "duplicateOccurrencesTotal": 210,
     "technicalDuplicateOverlap": 67,
     "sourceResolved": 1828,
     "sourceUnresolved": 74,
     "currentActionResolved": 1191,
     "currentActionUnresolved": 711,
     "currentProductionActions": 1829,
-    "currentPermissionBoundActions": 185,
-    "currentUnboundActions": 1644
+    "currentPermissionBoundActions": 186,
+    "currentUnboundActions": 1643
   },
   "invariants": {
     "allInputRecordsClassified": true,
@@ -210,7 +210,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/accountable-expenses/pages/AccountableExpensesPage.tsx",
-        "line": 82,
+        "line": 87,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -239,12 +239,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-260501f4858c",
+          "candidateId": "EPC-acd4931b1d19",
           "distance": 61,
           "file": "src/features/accountable-expenses/pages/AccountableExpensesPage.tsx",
           "handler": "{resetFilters}",
           "humanLabel": "Скинути",
-          "line": 281,
+          "line": 297,
           "permissionKeys": [],
           "score": 12
         }
@@ -252,7 +252,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/accountable-expenses/pages/AccountableExpensesPage.tsx",
-        "line": 220,
+        "line": 236,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -273,20 +273,20 @@
       "proposedPermission": "accounting.accounting_consumable_services.set_actions_row.row_click",
       "securityLevel": "medium",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "technical_ui",
+      "dispositionReason": "The table row only opens a local action chooser over data already returned by the accountable-expenses page-scoped registry read.",
       "duplicateOf": null,
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-42490b6dc0b2",
-          "distance": 224,
+          "candidateId": "EPC-0f80f01d3643",
+          "distance": 232,
           "file": "src/features/accountable-expenses/pages/AccountableExpensesPage.tsx",
           "handler": "{setActionsRow}",
           "humanLabel": null,
-          "line": 322,
+          "line": 338,
           "permissionKeys": [],
           "score": 13
         }
@@ -294,7 +294,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/accountable-expenses/pages/AccountableExpensesPage.tsx",
-        "line": 98,
+        "line": 106,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -315,20 +315,22 @@
       "proposedPermission": "accounting.accounting_consumable_services.on_details_row.modal_open",
       "securityLevel": "medium",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "covered_existing",
+      "dispositionReason": "The details drawer renders the same row payload already authorized by accountable-expenses page view and performs no extra read.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "services.accountable_expenses.page.view"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-647c2ed179dc",
+          "candidateId": "EPC-b6d9c518c6e6",
           "distance": 23,
           "file": "src/features/accountable-expenses/pages/AccountableExpensesPage.tsx",
           "handler": "{() => onDetails(row)}",
           "humanLabel": "Деталі",
-          "line": 537,
+          "line": 553,
           "permissionKeys": [],
           "score": 10
         }
@@ -336,7 +338,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/accountable-expenses/pages/AccountableExpensesPage.tsx",
-        "line": 514,
+        "line": 530,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -357,17 +359,19 @@
       "proposedPermission": "accounting.accounting_consumable_services.on_edit_row.button_click",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "covered_existing",
+      "dispositionReason": "Opening the linked invoice enters its read-only-capable card; edit authority is checked independently inside that card.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "services.consumable_orders.page.view"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [],
       "source": {
         "status": "resolved",
         "file": "src/features/accountable-expenses/pages/AccountableExpensesPage.tsx",
-        "line": 515,
+        "line": 531,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -388,17 +392,19 @@
       "proposedPermission": "accounting.accounting_consumable_services.on_pay_row.button_click",
       "securityLevel": "low",
       "rawStatus": "No permission candidate found",
-      "disposition": "needs_human_review",
-      "dispositionReason": "insufficient_evidence_for_automatic_permission_or_exclusion",
+      "disposition": "covered_existing",
+      "dispositionReason": "The pay action is independently guarded and opens the payment flow backed by pay-scoped reads and mutation.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "services.consumable_orders.order.pay"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [],
       "source": {
         "status": "resolved",
         "file": "src/features/accountable-expenses/pages/AccountableExpensesPage.tsx",
-        "line": 516,
+        "line": 532,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -16773,25 +16779,28 @@
       "duplicateOf": null,
       "businessActionId": null,
       "canonicalPermissionKeys": [
+        "services.consumable_orders.order.create",
         "services.consumable_orders.page.view"
       ],
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-8b3960c3e4bf",
-          "distance": 177,
+          "candidateId": "EPC-46bbcf6ec906",
+          "distance": 182,
           "file": "src/features/consumable-orders/pages/ConsumableOrdersPage.tsx",
-          "handler": "{() => navigate('/accounting/consumable-orders/new', { state: { backgroundLocation: location, returnPath: '/accounting/consumable-orders' } })}",
+          "handler": "{() => { if (canCreateOrder) { navigate('/accounting/consumable-orders/new', { state: { backgroundLocation: location, returnPath: '/accounting/consumable-orders' } }) } }}",
           "humanLabel": "Нова накладна",
-          "line": 254,
-          "permissionKeys": [],
+          "line": 265,
+          "permissionKeys": [
+            "services.consumable_orders.order.create"
+          ],
           "score": 26
         }
       ],
       "source": {
         "status": "resolved",
         "file": "src/features/consumable-orders/pages/ConsumableOrdersPage.tsx",
-        "line": 77,
+        "line": 83,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -16824,7 +16833,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/consumable-orders/pages/ConsumableOrderFormPage.tsx",
-        "line": 99,
+        "line": 105,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -16857,7 +16866,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/consumable-orders/pages/ConsumableOrderFormPage.tsx",
-        "line": 99,
+        "line": 105,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -16890,7 +16899,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/consumable-orders/pages/ConsumableOrderPayPage.tsx",
-        "line": 92,
+        "line": 97,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -16914,20 +16923,23 @@
       "proposedPermission": "accounting.accounting_consumable_orders.handle_submit.form_submit",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "covered_existing",
+      "dispositionReason": "The shared final submit selects one exact create or edit permission from route mode and rechecks it before the scoped multipart mutation.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "services.consumable_orders.order.create",
+        "services.consumable_orders.order.edit"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-ef311b590877",
+          "candidateId": "EPC-1098eb38969e",
           "distance": 96,
           "file": "src/features/consumable-orders/pages/ConsumableOrderFormPage.tsx",
           "handler": "{handleSubmit}",
           "humanLabel": null,
-          "line": 666,
+          "line": 699,
           "permissionKeys": [],
           "score": 12
         }
@@ -16935,7 +16947,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/consumable-orders/pages/ConsumableOrderFormPage.tsx",
-        "line": 570,
+        "line": 603,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -16959,20 +16971,20 @@
       "proposedPermission": "accounting.accounting_consumable_orders.open_new_item_editor.modal_open",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
-      "duplicateOf": null,
+      "disposition": "duplicate_occurrence",
+      "dispositionReason": "Opening the local new-item editor only prepares the draft later persisted by the guarded order create submit.",
+      "duplicateOf": "PE-00425",
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-fe33dfbe885d",
-          "distance": 413,
+          "candidateId": "EPC-058cfacc50ea",
+          "distance": 415,
           "file": "src/features/consumable-orders/pages/ConsumableOrderFormPage.tsx",
           "handler": "{openNewItemEditor}",
           "humanLabel": "Додати",
-          "line": 836,
+          "line": 871,
           "permissionKeys": [],
           "score": 17
         }
@@ -16980,7 +16992,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/consumable-orders/pages/ConsumableOrderFormPage.tsx",
-        "line": 423,
+        "line": 456,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -17004,20 +17016,20 @@
       "proposedPermission": "accounting.accounting_consumable_orders.toggle_document_deleted_document.command_delete",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
-      "duplicateOf": null,
+      "disposition": "duplicate_occurrence",
+      "dispositionReason": "Toggling a draft document does not mutate the server independently; it is persisted only by the guarded mode-aware order submit.",
+      "duplicateOf": "PE-00425",
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-cce0602062b2",
-          "distance": 521,
+          "candidateId": "EPC-30fda1436c88",
+          "distance": 527,
           "file": "src/features/consumable-orders/pages/ConsumableOrderFormPage.tsx",
           "handler": "{() => toggleDocumentDeleted(document)}",
           "humanLabel": null,
-          "line": 922,
+          "line": 957,
           "permissionKeys": [],
           "score": 29
         }
@@ -17025,7 +17037,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/consumable-orders/pages/ConsumableOrderFormPage.tsx",
-        "line": 401,
+        "line": 430,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -17057,12 +17069,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-0f994deca763",
-          "distance": 645,
+          "candidateId": "EPC-21c65cd17f45",
+          "distance": 647,
           "file": "src/features/consumable-orders/pages/ConsumableOrderFormPage.tsx",
           "handler": "{closeItemEditor}",
           "humanLabel": "Скасувати",
-          "line": 1102,
+          "line": 1137,
           "permissionKeys": [],
           "score": 15
         }
@@ -17070,7 +17082,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/consumable-orders/pages/ConsumableOrderFormPage.tsx",
-        "line": 457,
+        "line": 490,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -17094,20 +17106,20 @@
       "proposedPermission": "accounting.accounting_consumable_orders.void_save_editor_item.command_submit",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
-      "duplicateOf": null,
+      "disposition": "duplicate_occurrence",
+      "dispositionReason": "Saving an item editor updates only the local order draft and adds no independent backend business boundary.",
+      "duplicateOf": "PE-00425",
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-190d94ad25ff",
+          "candidateId": "EPC-73a06d8fc873",
           "distance": 0,
           "file": "src/features/consumable-orders/pages/ConsumableOrderFormPage.tsx",
           "handler": "{() => void saveEditorItem()}",
           "humanLabel": "Зберегти",
-          "line": 1105,
+          "line": 1140,
           "permissionKeys": [],
           "score": 14
         }
@@ -17115,7 +17127,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/consumable-orders/pages/ConsumableOrderFormPage.tsx",
-        "line": 1105,
+        "line": 1140,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -17139,17 +17151,17 @@
       "proposedPermission": "accounting.accounting_consumable_orders.on_edit.button_click",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
-      "duplicateOf": null,
+      "disposition": "duplicate_occurrence",
+      "dispositionReason": "Editing a draft item is a local step of the guarded order create flow; existing-order economic rows remain locked.",
+      "duplicateOf": "PE-00425",
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [],
       "source": {
         "status": "resolved",
         "file": "src/features/consumable-orders/pages/ConsumableOrderFormPage.tsx",
-        "line": 858,
+        "line": 893,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -17173,20 +17185,20 @@
       "proposedPermission": "accounting.accounting_consumable_orders.on_toggle_deleted.command_delete",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
-      "duplicateOf": null,
+      "disposition": "duplicate_occurrence",
+      "dispositionReason": "Deleting or restoring a draft item is persisted only through the same guarded final order submit.",
+      "duplicateOf": "PE-00425",
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-a26a54fab7d1",
+          "candidateId": "EPC-17bc0501a5de",
           "distance": 331,
           "file": "src/features/consumable-orders/pages/ConsumableOrderFormPage.tsx",
           "handler": "{onToggleDeleted}",
           "humanLabel": null,
-          "line": 1190,
+          "line": 1225,
           "permissionKeys": [],
           "score": 13
         }
@@ -17194,7 +17206,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/consumable-orders/pages/ConsumableOrderFormPage.tsx",
-        "line": 859,
+        "line": 894,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -17218,20 +17230,22 @@
       "proposedPermission": "accounting.accounting_consumable_orders.handle_submit.form_submit.2",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "covered_existing",
+      "dispositionReason": "The final payment submit is fail-closed and calls the dedicated pay-scoped outcome-payment route.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "services.consumable_orders.order.pay"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-f43d1ff4236c",
-          "distance": 78,
+          "candidateId": "EPC-2aade7643489",
+          "distance": 83,
           "file": "src/features/consumable-orders/pages/ConsumableOrderPayPage.tsx",
           "handler": "{handleSubmit}",
           "humanLabel": null,
-          "line": 394,
+          "line": 443,
           "permissionKeys": [],
           "score": 12
         }
@@ -17239,7 +17253,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/consumable-orders/pages/ConsumableOrderPayPage.tsx",
-        "line": 316,
+        "line": 360,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -17263,20 +17277,20 @@
       "proposedPermission": "accounting.accounting_consumable_orders.open_movement_modal.modal_open",
       "securityLevel": "low",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
-      "duplicateOf": null,
+      "disposition": "duplicate_occurrence",
+      "dispositionReason": "Opening the cashflow-article modal is the first UI step of the existing article-create action and adds no separate permission.",
+      "duplicateOf": "PE-00434",
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-87ea1de422f9",
-          "distance": 158,
+          "candidateId": "EPC-a4a9c2b44b47",
+          "distance": 171,
           "file": "src/features/consumable-orders/pages/ConsumableOrderPayPage.tsx",
           "handler": "{openMovementModal}",
           "humanLabel": "Додати статтю",
-          "line": 438,
+          "line": 487,
           "permissionKeys": [],
           "score": 17
         }
@@ -17284,7 +17298,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/consumable-orders/pages/ConsumableOrderPayPage.tsx",
-        "line": 280,
+        "line": 316,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -17308,20 +17322,22 @@
       "proposedPermission": "accounting.accounting_consumable_orders.handle_create_movement.form_submit",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "covered_existing",
+      "dispositionReason": "Creating a cashflow article reuses the existing canonical article-create permission and its accounting-scoped endpoint.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "accounting.cashflow_articles.article.create"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-21a3f389d86e",
-          "distance": 279,
+          "candidateId": "EPC-89ef291b78ba",
+          "distance": 288,
           "file": "src/features/consumable-orders/pages/ConsumableOrderPayPage.tsx",
           "handler": "{handleCreateMovement}",
           "humanLabel": null,
-          "line": 564,
+          "line": 613,
           "permissionKeys": [],
           "score": 20
         }
@@ -17329,7 +17345,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/consumable-orders/pages/ConsumableOrderPayPage.tsx",
-        "line": 285,
+        "line": 325,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -17353,17 +17369,17 @@
       "proposedPermission": "accounting.accounting_consumable_orders.on_submit.form_submit",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
-      "duplicateOf": null,
+      "disposition": "duplicate_occurrence",
+      "dispositionReason": "The nested form submit dispatches the same guarded invoice-payment handler and is not a second business action.",
+      "duplicateOf": "PE-00432",
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [],
       "source": {
         "status": "resolved",
         "file": "src/features/consumable-orders/pages/ConsumableOrderPayPage.tsx",
-        "line": 394,
+        "line": 443,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -17397,7 +17413,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/consumable-orders/pages/ConsumableOrderPayPage.tsx",
-        "line": 379,
+        "line": 428,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -17429,12 +17445,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-029037032747",
+          "candidateId": "EPC-a235d7c2730e",
           "distance": 55,
           "file": "src/features/consumable-orders/pages/ConsumableOrdersPage.tsx",
           "handler": "{resetFilters}",
           "humanLabel": "Скинути",
-          "line": 228,
+          "line": 238,
           "permissionKeys": [],
           "score": 12
         }
@@ -17442,7 +17458,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/consumable-orders/pages/ConsumableOrdersPage.tsx",
-        "line": 173,
+        "line": 183,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -17470,24 +17486,28 @@
       "dispositionReason": "navigation_is_guarded_by_destination_page",
       "duplicateOf": "PE-00421",
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
+      "canonicalPermissionKeys": [
+        "services.consumable_orders.order.create"
+      ],
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-8b3960c3e4bf",
-          "distance": 5,
+          "candidateId": "EPC-46bbcf6ec906",
+          "distance": 7,
           "file": "src/features/consumable-orders/pages/ConsumableOrdersPage.tsx",
-          "handler": "{() => navigate('/accounting/consumable-orders/new', { state: { backgroundLocation: location, returnPath: '/accounting/consumable-orders' } })}",
+          "handler": "{() => { if (canCreateOrder) { navigate('/accounting/consumable-orders/new', { state: { backgroundLocation: location, returnPath: '/accounting/consumable-orders' } }) } }}",
           "humanLabel": "Нова накладна",
-          "line": 254,
-          "permissionKeys": [],
+          "line": 265,
+          "permissionKeys": [
+            "services.consumable_orders.order.create"
+          ],
           "score": 57
         }
       ],
       "source": {
         "status": "resolved",
         "file": "src/features/consumable-orders/pages/ConsumableOrdersPage.tsx",
-        "line": 259,
+        "line": 272,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -17511,20 +17531,20 @@
       "proposedPermission": "accounting.accounting_consumable_orders.set_actions_row.row_click",
       "securityLevel": "medium",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "technical_ui",
+      "dispositionReason": "The table row only opens a local action chooser; every business action inside it is checked independently.",
       "duplicateOf": null,
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-be4b2b10f76e",
-          "distance": 187,
+          "candidateId": "EPC-8bfa6a179f4f",
+          "distance": 193,
           "file": "src/features/consumable-orders/pages/ConsumableOrdersPage.tsx",
           "handler": "{setActionsRow}",
           "humanLabel": null,
-          "line": 278,
+          "line": 294,
           "permissionKeys": [],
           "score": 13
         }
@@ -17532,7 +17552,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/consumable-orders/pages/ConsumableOrdersPage.tsx",
-        "line": 91,
+        "line": 101,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -17556,20 +17576,22 @@
       "proposedPermission": "accounting.accounting_consumable_orders.on_open_details_row.modal_open",
       "securityLevel": "medium",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "covered_existing",
+      "dispositionReason": "The details drawer renders the already page-authorized registry row and makes no separate backend request.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "services.consumable_orders.page.view"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-f85fbc0c3e9a",
-          "distance": 115,
+          "candidateId": "EPC-797b978e3d21",
+          "distance": 129,
           "file": "src/features/consumable-orders/pages/ConsumableOrdersPage.tsx",
           "handler": "{() => onOpenDetails(row)}",
           "humanLabel": null,
-          "line": 415,
+          "line": 445,
           "permissionKeys": [],
           "score": 14
         }
@@ -17577,7 +17599,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/consumable-orders/pages/ConsumableOrdersPage.tsx",
-        "line": 300,
+        "line": 316,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -17601,17 +17623,19 @@
       "proposedPermission": "accounting.accounting_consumable_orders.on_view_row.modal_open",
       "securityLevel": "medium",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "covered_existing",
+      "dispositionReason": "The edit action and final edit submit use one canonical permission; page-only direct access remains read-only.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "services.consumable_orders.order.edit"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [],
       "source": {
         "status": "resolved",
         "file": "src/features/consumable-orders/pages/ConsumableOrdersPage.tsx",
-        "line": 308,
+        "line": 430,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -17635,17 +17659,19 @@
       "proposedPermission": "accounting.accounting_consumable_orders.on_pay_row.button_click",
       "securityLevel": "low",
       "rawStatus": "No permission candidate found",
-      "disposition": "needs_human_review",
-      "dispositionReason": "insufficient_evidence_for_automatic_permission_or_exclusion",
+      "disposition": "covered_existing",
+      "dispositionReason": "The registry pay action uses the same independently guarded payment flow and pay-scoped backend mutation.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "services.consumable_orders.order.pay"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [],
       "source": {
         "status": "resolved",
         "file": "src/features/consumable-orders/pages/ConsumableOrdersPage.tsx",
-        "line": 304,
+        "line": 429,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -17679,7 +17705,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/consumable-orders/pages/ConsumableOrdersPage.tsx",
-        "line": 308,
+        "line": 430,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -17713,7 +17739,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/consumable-orders/pages/ConsumableOrdersPage.tsx",
-        "line": 304,
+        "line": 429,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -79162,10 +79188,6 @@
     }
   ],
   "reviewCandidateIds": [
-    "PE-00008",
-    "PE-00009",
-    "PE-00010",
-    "PE-00011",
     "PE-00031",
     "PE-00032",
     "PE-00035",
@@ -79307,20 +79329,6 @@
     "PE-00411",
     "PE-00412",
     "PE-00414",
-    "PE-00425",
-    "PE-00426",
-    "PE-00427",
-    "PE-00429",
-    "PE-00430",
-    "PE-00431",
-    "PE-00432",
-    "PE-00433",
-    "PE-00434",
-    "PE-00435",
-    "PE-00439",
-    "PE-00440",
-    "PE-00441",
-    "PE-00442",
     "PE-00451",
     "PE-00452",
     "PE-00455",

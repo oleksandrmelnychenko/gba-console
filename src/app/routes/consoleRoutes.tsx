@@ -416,22 +416,27 @@ const accountingMigrationRoutes: ConsoleRoute[] = [
   {
     path: '/accounting/consumable-services',
     element: lazyRoute(<AccountableExpensesPage />),
+    permissionKey: PermissionKeys.AccountableExpenses.Page.View,
   },
   {
     path: '/accounting/consumable-orders',
     element: lazyRoute(<ConsumableOrdersPage />),
+    permissionKey: PermissionKeys.ConsumableOrders.Page.View,
   },
   {
     path: '/accounting/consumable-orders/new',
     element: lazyRoute(<ConsumableOrderFormPage />),
+    permissionKey: PermissionKeys.ConsumableOrders.Order.Create,
   },
   {
     path: '/accounting/consumable-orders/edit/:id',
     element: lazyRoute(<ConsumableOrderFormPage />),
+    permissionKey: PermissionKeys.ConsumableOrders.Page.View,
   },
   {
     path: '/accounting/consumable-orders/pay/:id',
     element: lazyRoute(<ConsumableOrderPayPage />),
+    permissionKey: PermissionKeys.ConsumableOrders.Order.Pay,
   },
   {
     path: '/accounting/outgoing-cashflow',

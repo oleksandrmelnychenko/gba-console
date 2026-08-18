@@ -330,6 +330,21 @@ export const PermissionKeys = {
       Delete: 'services.consumable_products.category.delete',
     },
   },
+  AccountableExpenses: {
+    Page: {
+      View: 'services.accountable_expenses.page.view',
+    },
+  },
+  ConsumableOrders: {
+    Page: {
+      View: 'services.consumable_orders.page.view',
+    },
+    Order: {
+      Create: 'services.consumable_orders.order.create',
+      Edit: 'services.consumable_orders.order.edit',
+      Pay: 'services.consumable_orders.order.pay',
+    },
+  },
   SupplierOrganizations: {
     Page: {
       View: 'services.supplier_organizations.page.view',
@@ -702,6 +717,11 @@ export type ConsumableProductsPermissionKey =
   | Values<typeof PermissionKeys.ConsumableProducts.Category>
   | Values<typeof PermissionKeys.ConsumableProducts.Product>
 
+export type ConsumableOrdersPermissionKey =
+  | Values<typeof PermissionKeys.AccountableExpenses.Page>
+  | Values<typeof PermissionKeys.ConsumableOrders.Page>
+  | Values<typeof PermissionKeys.ConsumableOrders.Order>
+
 export type SupplierOrganizationsPermissionKey =
   | Values<typeof PermissionKeys.SupplierOrganizations.Page>
   | Values<typeof PermissionKeys.SupplierOrganizations.Supplier>
@@ -819,6 +839,7 @@ export type PermissionKey =
   | SuppliersPermissionKey
   | OrganizationClientsPermissionKey
   | ConsumableProductsPermissionKey
+  | ConsumableOrdersPermissionKey
   | FinancialAdministrationPermissionKey
   | OrdersUkrainePermissionKey
   | IncompleteSalesOnlineShopPermissionKey
@@ -1759,6 +1780,9 @@ const eventPermissionKeys = new Set<string>([
   ...Object.values(PermissionKeys.ConsumableProducts.Page),
   ...Object.values(PermissionKeys.ConsumableProducts.Category),
   ...Object.values(PermissionKeys.ConsumableProducts.Product),
+  ...Object.values(PermissionKeys.AccountableExpenses.Page),
+  ...Object.values(PermissionKeys.ConsumableOrders.Page),
+  ...Object.values(PermissionKeys.ConsumableOrders.Order),
   ...Object.values(PermissionKeys.SupplierOrganizations.Page),
   ...Object.values(PermissionKeys.SupplierOrganizations.Supplier),
   ...Object.values(PermissionKeys.SupplierOrganizations.Settlements),
