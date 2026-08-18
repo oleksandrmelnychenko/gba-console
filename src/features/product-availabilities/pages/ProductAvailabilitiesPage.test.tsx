@@ -15,6 +15,14 @@ vi.mock('../api/productAvailabilitiesApi', () => ({
   getProductAvailabilityStorages: vi.fn(),
 }))
 
+vi.mock('../../auth/usePermissions', () => ({
+  usePermissions: () => ({ can: () => true, isLoading: false }),
+}))
+
+vi.mock('../../auth/useAuth', () => ({
+  useAuth: () => ({ hasPermission: () => true }),
+}))
+
 vi.mock('../../../shared/ui/data-table/DataTable', () => ({
   DataTable: () => <div data-testid="availability-table" />,
 }))

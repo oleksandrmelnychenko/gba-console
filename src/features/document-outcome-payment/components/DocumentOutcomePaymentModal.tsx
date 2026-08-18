@@ -47,11 +47,17 @@ type FormState = {
 }
 
 export function DocumentOutcomePaymentModal({
+  canCreateMovement = true,
+  canSubmit = true,
+  createPaymentMovement = createIncomeCashflowPaymentMovement,
   onClose,
   onCreated,
   opened,
   source,
 }: {
+  canCreateMovement?: boolean
+  canSubmit?: boolean
+  createPaymentMovement?: typeof createIncomeCashflowPaymentMovement
   onClose: () => void
   onCreated?: () => void
   opened: boolean
@@ -242,7 +248,7 @@ export function DocumentOutcomePaymentModal({
   async function handleCreateMovement() {
     const operationName = form.movementSearch.trim()
 
-    if (!operationName) {
+    if (!canCreateMovement || !operationName) {
       return
     }
 
@@ -250,7 +256,7 @@ export function DocumentOutcomePaymentModal({
     setError(null)
 
     try {
-      const createdMovement = await createIncomeCashflowPaymentMovement(operationName)
+      const createdMovement = await createPaymentMovement(operationName)
 
       if (createdMovement) {
         setPaymentMovements((current) => includeEntity(current, createdMovement))
@@ -267,7 +273,7 @@ export function DocumentOutcomePaymentModal({
   }
 
   async function handleSubmit() {
-    if (!source) {
+    if (!canSubmit || !source) {
       return
     }
 
@@ -420,7 +426,7 @@ export function DocumentOutcomePaymentModal({
               onOptionSubmit={handleMovementSubmit}
             />
           </Grid.Col>
-          <Grid.Col span={{ base: 12, sm: 3 }}>
+          {canCreateMovement && <Grid.Col span={{ base: 12, sm: 3 }}>
             <Button
               disabled={Boolean(activeMovement) || !form.movementSearch.trim() || isLoading || isSaving}
               fullWidth
@@ -431,7 +437,7 @@ export function DocumentOutcomePaymentModal({
             >
               {t('Створити статтю')}
             </Button>
-          </Grid.Col>
+          </Grid.Col>}
           <Grid.Col span={12}>
             <Textarea
               disabled={isLoading || isSaving}
@@ -448,7 +454,7 @@ export function DocumentOutcomePaymentModal({
           <Button color="gray" disabled={isSaving} variant="subtle" onClick={onClose}>
             {t('Скасувати')}
           </Button>
-          <Button disabled={isLoading} loading={isSaving} onClick={() => void handleSubmit()}>
+          <Button disabled={isLoading || !canSubmit} loading={isSaving} onClick={() => void handleSubmit()}>
             {t('Створити')}
           </Button>
         </Group>

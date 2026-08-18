@@ -2777,6 +2777,82 @@
       "disposition": "duplicate_occurrence",
       "duplicateOf": "PE-01606",
       "reason": "The row delete action only opens confirmation; the independently guarded confirmed delete is the business boundary."
+    },
+    "PE-01610": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["accounting.cashflow_articles.article.create"],
+      "reason": "Creating a cash-flow article is an existing cross-module business capability and is guarded by its canonical article-create permission."
+    },
+    "PE-01612": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["warehouse_accounting.tax_free_documents.accounting.create_income"],
+      "reason": "Final Tax Free income-order submission rechecks the dedicated income right and calls the permission-scoped server façade."
+    },
+    "PE-01615": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["warehouse_accounting.tax_free_documents.document.open_details"],
+      "reason": "Row activation rehydrates the selected Tax Free document only through the protected details façade."
+    },
+    "PE-01616": {
+      "disposition": "technical_ui",
+      "reason": "The accounting chooser only routes to the income or outcome modal; each visible option and final submit has its own exact permission."
+    },
+    "PE-01619": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-01615",
+      "reason": "The explicit details action opens the same protected document drawer as row activation."
+    },
+    "PE-01620": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-01629",
+      "reason": "This status trigger opens the same independently guarded status workflow as the canonical status action."
+    },
+    "PE-01621": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": [
+        "warehouse_accounting.tax_free_documents.accounting.create_income",
+        "warehouse_accounting.tax_free_documents.accounting.create_outcome"
+      ],
+      "reason": "The accounting action is visible only when at least one exact order right exists, and the chooser exposes only the assigned income/outcome capability."
+    },
+    "PE-01622": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-01631",
+      "reason": "This print trigger reaches the same final permission-rechecked print handler as the canonical print action."
+    },
+    "PE-01623": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["warehouse_accounting.tax_free_documents.document.export"],
+      "reason": "Document download is independently guarded and calls the export-scoped server façade."
+    },
+    "PE-01624": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-01615",
+      "reason": "This details trigger reuses the same protected document hydration and drawer capability."
+    },
+    "PE-01626": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-01631",
+      "reason": "The drawer print control invokes the same permission-rechecked print boundary as the registry print action."
+    },
+    "PE-01628": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["warehouse_accounting.tax_free_documents.document.edit"],
+      "reason": "Saving document fields rechecks the edit right and calls the dedicated edit façade; it cannot mutate status."
+    },
+    "PE-01629": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["warehouse_accounting.tax_free_documents.status.change"],
+      "reason": "Saving status is a separate business mutation with its own permission and server façade, not a duplicate of document editing."
+    },
+    "PE-01631": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["warehouse_accounting.tax_free_documents.document.print"],
+      "reason": "Final print is independently permission-rechecked before invoking the Tax Free printer workflow."
+    },
+    "PE-01632": {
+      "disposition": "technical_ui",
+      "reason": "The generic table-row action adapter only forwards an already permission-filtered callback and owns no business capability."
     }
   }
 }

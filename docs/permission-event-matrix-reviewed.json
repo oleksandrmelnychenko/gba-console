@@ -4,25 +4,25 @@
     "inputRecords": 1902,
     "classifiedRecords": 1902,
     "dispositionCounts": {
-      "technical_ui": 725,
-      "covered_existing": 463,
-      "duplicate_occurrence": 246,
-      "business_candidate": 294,
-      "needs_human_review": 166,
+      "technical_ui": 727,
+      "covered_existing": 471,
+      "duplicate_occurrence": 250,
+      "business_candidate": 281,
+      "needs_human_review": 165,
       "stale_or_aggregated": 8
     },
-    "reviewCandidates": 460,
-    "technicalExcluded": 725,
-    "duplicatesExcluded": 246,
-    "duplicateOccurrencesTotal": 315,
-    "technicalDuplicateOverlap": 69,
+    "reviewCandidates": 446,
+    "technicalExcluded": 727,
+    "duplicatesExcluded": 250,
+    "duplicateOccurrencesTotal": 320,
+    "technicalDuplicateOverlap": 70,
     "sourceResolved": 1828,
     "sourceUnresolved": 74,
-    "currentActionResolved": 1187,
-    "currentActionUnresolved": 715,
+    "currentActionResolved": 1186,
+    "currentActionUnresolved": 716,
     "currentProductionActions": 1829,
-    "currentPermissionBoundActions": 251,
-    "currentUnboundActions": 1578
+    "currentPermissionBoundActions": 261,
+    "currentUnboundActions": 1568
   },
   "invariants": {
     "allInputRecordsClassified": true,
@@ -20943,12 +20943,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-fd3f89a402ff",
+          "candidateId": "EPC-245ab2aba994",
           "distance": 6,
           "file": "src/features/document-outcome-payment/components/DocumentOutcomePaymentModal.tsx",
           "handler": "{() => void handleCreateMovement()}",
           "humanLabel": "Створити статтю",
-          "line": 424,
+          "line": 430,
           "permissionKeys": [],
           "score": 20
         }
@@ -20956,7 +20956,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/document-outcome-payment/components/DocumentOutcomePaymentModal.tsx",
-        "line": 430,
+        "line": 436,
         "alternatives": []
       }
     },
@@ -20990,7 +20990,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/document-outcome-payment/components/DocumentOutcomePaymentModal.tsx",
-        "line": 50,
+        "line": 53,
         "alternatives": []
       }
     },
@@ -21022,12 +21022,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-bcba6ee45740",
+          "candidateId": "EPC-3e948c0c33ba",
           "distance": 0,
           "file": "src/features/document-outcome-payment/components/DocumentOutcomePaymentModal.tsx",
           "handler": "{() => void handleSubmit()}",
           "humanLabel": "Створити",
-          "line": 451,
+          "line": 457,
           "permissionKeys": [],
           "score": 12
         }
@@ -21035,7 +21035,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/document-outcome-payment/components/DocumentOutcomePaymentModal.tsx",
-        "line": 451,
+        "line": 457,
         "alternatives": []
       }
     },
@@ -65390,28 +65390,32 @@
       "proposedPermission": "tax_free.tax_free_all.void_handle_create_movement.command_submit",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "covered_existing",
+      "dispositionReason": "Creating a cash-flow article is an existing cross-module business capability and is guarded by its canonical article-create permission.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "accounting.cashflow_articles.article.create"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-7225ebef1360",
+          "candidateId": "EPC-8b77df4770fa",
           "distance": 6,
           "file": "src/features/tax-free-documents/components/TaxFreePaymentFromTaxFreeModal.tsx",
           "handler": "{() => void handleCreateMovement()}",
           "humanLabel": "Створити статтю",
-          "line": 403,
-          "permissionKeys": [],
+          "line": 407,
+          "permissionKeys": [
+            "accounting.cashflow_articles.article.create"
+          ],
           "score": 20
         }
       ],
       "source": {
         "status": "resolved",
         "file": "src/features/tax-free-documents/components/TaxFreePaymentFromTaxFreeModal.tsx",
-        "line": 409,
+        "line": 413,
         "alternatives": []
       }
     },
@@ -65440,7 +65444,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/tax-free-documents/components/TaxFreePaymentFromTaxFreeModal.tsx",
-        "line": 73,
+        "line": 74,
         "alternatives": []
       }
     },
@@ -65459,28 +65463,32 @@
       "proposedPermission": "tax_free.tax_free_all.void_handle_submit.command_submit",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "covered_existing",
+      "dispositionReason": "Final Tax Free income-order submission rechecks the dedicated income right and calls the permission-scoped server façade.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "warehouse_accounting.tax_free_documents.accounting.create_income"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-3c62b0595165",
+          "candidateId": "EPC-e147397144ba",
           "distance": 0,
           "file": "src/features/tax-free-documents/components/TaxFreePaymentFromTaxFreeModal.tsx",
           "handler": "{() => void handleSubmit()}",
           "humanLabel": "Створити",
-          "line": 431,
-          "permissionKeys": [],
+          "line": 435,
+          "permissionKeys": [
+            "warehouse_accounting.tax_free_documents.accounting.create_income"
+          ],
           "score": 12
         }
       ],
       "source": {
         "status": "resolved",
         "file": "src/features/tax-free-documents/components/TaxFreePaymentFromTaxFreeModal.tsx",
-        "line": 431,
+        "line": 435,
         "alternatives": []
       }
     },
@@ -65511,7 +65519,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/tax-free-documents/pages/TaxFreeDocumentsPage.tsx",
-        "line": 469,
+        "line": 556,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -65540,12 +65548,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-30322573f5c4",
-          "distance": 255,
+          "candidateId": "EPC-e5ec91f6283f",
+          "distance": 305,
           "file": "src/features/tax-free-documents/pages/TaxFreeDocumentsPage.tsx",
           "handler": "{resetFilters}",
           "humanLabel": "Скинути",
-          "line": 587,
+          "line": 684,
           "permissionKeys": [],
           "score": 12
         }
@@ -65553,7 +65561,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/tax-free-documents/pages/TaxFreeDocumentsPage.tsx",
-        "line": 332,
+        "line": 379,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -65574,28 +65582,32 @@
       "proposedPermission": "tax_free.tax_free_all.row_open_document_row_document.row_click",
       "securityLevel": "medium",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "covered_existing",
+      "dispositionReason": "Row activation rehydrates the selected Tax Free document only through the protected details façade.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "warehouse_accounting.tax_free_documents.document.open_details"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-57bf1780f37b",
-          "distance": 14,
+          "candidateId": "EPC-034bfa927926",
+          "distance": 160,
           "file": "src/features/tax-free-documents/pages/TaxFreeDocumentsPage.tsx",
-          "handler": "{(row) => openDocument(row.document)}",
+          "handler": "{canOpenDetails ? (row) => void openDocument(row.document) : undefined}",
           "humanLabel": null,
-          "line": 619,
-          "permissionKeys": [],
-          "score": 26
+          "line": 716,
+          "permissionKeys": [
+            "warehouse_accounting.tax_free_documents.document.open_details"
+          ],
+          "score": 23
         }
       ],
       "source": {
         "status": "resolved",
         "file": "src/features/tax-free-documents/pages/TaxFreeDocumentsPage.tsx",
-        "line": 633,
+        "line": 556,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -65616,17 +65628,17 @@
       "proposedPermission": "tax_free.tax_free_all.handle_accounting_action_selected.menu_item_select",
       "securityLevel": "low",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "technical_ui",
+      "dispositionReason": "The accounting chooser only routes to the income or outcome modal; each visible option and final submit has its own exact permission.",
       "duplicateOf": null,
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [],
       "source": {
         "status": "resolved",
         "file": "src/features/tax-free-documents/pages/TaxFreeDocumentsPage.tsx",
-        "line": 190,
+        "line": 224,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -65651,24 +65663,28 @@
       "dispositionReason": "local_form_selection_only",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
+      "canonicalPermissionKeys": [
+        "warehouse_accounting.tax_free_documents.accounting.create_income"
+      ],
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-c683c4d5ce37",
+          "candidateId": "EPC-04c1a07aaad8",
           "distance": 11,
           "file": "src/features/tax-free-documents/pages/TaxFreeDocumentsPage.tsx",
           "handler": "{() => onSelect('income')}",
           "humanLabel": "Прибутковий касовий ордер",
-          "line": 712,
-          "permissionKeys": [],
+          "line": 826,
+          "permissionKeys": [
+            "warehouse_accounting.tax_free_documents.accounting.create_income"
+          ],
           "score": 12
         }
       ],
       "source": {
         "status": "resolved",
         "file": "src/features/tax-free-documents/pages/TaxFreeDocumentsPage.tsx",
-        "line": 723,
+        "line": 837,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -65693,24 +65709,28 @@
       "dispositionReason": "local_form_selection_only",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
+      "canonicalPermissionKeys": [
+        "warehouse_accounting.tax_free_documents.accounting.create_outcome"
+      ],
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-1ab790610c82",
+          "candidateId": "EPC-fd1cd9835d85",
           "distance": 11,
           "file": "src/features/tax-free-documents/pages/TaxFreeDocumentsPage.tsx",
           "handler": "{() => onSelect('outcome')}",
           "humanLabel": "Видатковий касовий ордер",
-          "line": 727,
-          "permissionKeys": [],
+          "line": 841,
+          "permissionKeys": [
+            "warehouse_accounting.tax_free_documents.accounting.create_outcome"
+          ],
           "score": 13
         }
       ],
       "source": {
         "status": "resolved",
         "file": "src/features/tax-free-documents/pages/TaxFreeDocumentsPage.tsx",
-        "line": 738,
+        "line": 852,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -65731,28 +65751,32 @@
       "proposedPermission": "tax_free.tax_free_all.on_open_carrier_row_document.modal_open",
       "securityLevel": "medium",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
-      "duplicateOf": null,
+      "disposition": "duplicate_occurrence",
+      "dispositionReason": "The explicit details action opens the same protected document drawer as row activation.",
+      "duplicateOf": "PE-01615",
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "warehouse_accounting.tax_free_documents.document.open_details"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-cbfcff45c711",
-          "distance": 4,
+          "candidateId": "EPC-f6aa894b40bf",
+          "distance": 0,
           "file": "src/features/tax-free-documents/pages/TaxFreeDocumentsPage.tsx",
           "handler": "{() => onOpenCarrier(row.document)}",
           "humanLabel": "Переглянути перевізника",
-          "line": 837,
-          "permissionKeys": [],
+          "line": 961,
+          "permissionKeys": [
+            "warehouse_accounting.tax_free_documents.document.open_details"
+          ],
           "score": 22
         }
       ],
       "source": {
         "status": "resolved",
         "file": "src/features/tax-free-documents/pages/TaxFreeDocumentsPage.tsx",
-        "line": 841,
+        "line": 961,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -65773,28 +65797,34 @@
       "proposedPermission": "tax_free.tax_free_all.on_open_status_row_document.modal_open",
       "securityLevel": "medium",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
-      "duplicateOf": null,
+      "disposition": "duplicate_occurrence",
+      "dispositionReason": "This status trigger opens the same independently guarded status workflow as the canonical status action.",
+      "duplicateOf": "PE-01629",
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "warehouse_accounting.tax_free_documents.document.open_details",
+        "warehouse_accounting.tax_free_documents.status.change"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-ffe13b6a1887",
+          "candidateId": "EPC-b0b87bb1282b",
           "distance": 4,
           "file": "src/features/tax-free-documents/pages/TaxFreeDocumentsPage.tsx",
           "handler": "{() => onOpenStatus(row.document)}",
           "humanLabel": "Панель статусів",
-          "line": 869,
-          "permissionKeys": [],
+          "line": 988,
+          "permissionKeys": [
+            "warehouse_accounting.tax_free_documents.document.open_details",
+            "warehouse_accounting.tax_free_documents.status.change"
+          ],
           "score": 21
         }
       ],
       "source": {
         "status": "resolved",
         "file": "src/features/tax-free-documents/pages/TaxFreeDocumentsPage.tsx",
-        "line": 873,
+        "line": 992,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -65815,20 +65845,23 @@
       "proposedPermission": "tax_free.tax_free_all.on_open_accounting_row_document.modal_open",
       "securityLevel": "medium",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "covered_existing",
+      "dispositionReason": "The accounting action is visible only when at least one exact order right exists, and the chooser exposes only the assigned income/outcome capability.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "warehouse_accounting.tax_free_documents.accounting.create_income",
+        "warehouse_accounting.tax_free_documents.accounting.create_outcome"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-9d0e4e98aa04",
+          "candidateId": "EPC-5dcf65e0b8c3",
           "distance": 4,
           "file": "src/features/tax-free-documents/pages/TaxFreeDocumentsPage.tsx",
           "handler": "{() => onOpenAccounting(row.document)}",
           "humanLabel": null,
-          "line": 886,
+          "line": 1007,
           "permissionKeys": [],
           "score": 25
         }
@@ -65836,7 +65869,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/tax-free-documents/pages/TaxFreeDocumentsPage.tsx",
-        "line": 890,
+        "line": 1011,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -65857,28 +65890,32 @@
       "proposedPermission": "tax_free.tax_free_all.on_open_preview_row_document.modal_open",
       "securityLevel": "medium",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
-      "duplicateOf": null,
+      "disposition": "duplicate_occurrence",
+      "dispositionReason": "This print trigger reaches the same final permission-rechecked print handler as the canonical print action.",
+      "duplicateOf": "PE-01631",
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "warehouse_accounting.tax_free_documents.document.print"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-bbbeaf8e4bca",
+          "candidateId": "EPC-217498a88716",
           "distance": 4,
           "file": "src/features/tax-free-documents/pages/TaxFreeDocumentsPage.tsx",
           "handler": "{() => onOpenPreview(row.document)}",
           "humanLabel": "Попередній перегляд друку",
-          "line": 908,
-          "permissionKeys": [],
+          "line": 1029,
+          "permissionKeys": [
+            "warehouse_accounting.tax_free_documents.document.print"
+          ],
           "score": 22
         }
       ],
       "source": {
         "status": "resolved",
         "file": "src/features/tax-free-documents/pages/TaxFreeDocumentsPage.tsx",
-        "line": 912,
+        "line": 1033,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -65899,20 +65936,22 @@
       "proposedPermission": "tax_free.tax_free_all.on_open_download_row_document.modal_open",
       "securityLevel": "medium",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "covered_existing",
+      "dispositionReason": "Document download is independently guarded and calls the export-scoped server façade.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "warehouse_accounting.tax_free_documents.document.export"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-03b195751ebe",
+          "candidateId": "EPC-44d7d6edf249",
           "distance": 4,
           "file": "src/features/tax-free-documents/pages/TaxFreeDocumentsPage.tsx",
           "handler": "{() => onOpenDownload(row.document)}",
           "humanLabel": "Завантажити документи",
-          "line": 925,
+          "line": 1048,
           "permissionKeys": [],
           "score": 23
         }
@@ -65920,7 +65959,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/tax-free-documents/pages/TaxFreeDocumentsPage.tsx",
-        "line": 929,
+        "line": 1052,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -65941,28 +65980,32 @@
       "proposedPermission": "tax_free.tax_free_all.on_open_view_row_document.modal_open",
       "securityLevel": "medium",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
-      "duplicateOf": null,
+      "disposition": "duplicate_occurrence",
+      "dispositionReason": "This details trigger reuses the same protected document hydration and drawer capability.",
+      "duplicateOf": "PE-01615",
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "warehouse_accounting.tax_free_documents.document.open_details"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-5afb8cc1e7cc",
+          "candidateId": "EPC-5989ecca9b62",
           "distance": 0,
           "file": "src/features/tax-free-documents/pages/TaxFreeDocumentsPage.tsx",
           "handler": "{() => onOpenView(row.document)}",
           "humanLabel": "Деталі",
-          "line": 940,
-          "permissionKeys": [],
+          "line": 1063,
+          "permissionKeys": [
+            "warehouse_accounting.tax_free_documents.document.open_details"
+          ],
           "score": 19
         }
       ],
       "source": {
         "status": "resolved",
         "file": "src/features/tax-free-documents/pages/TaxFreeDocumentsPage.tsx",
-        "line": 940,
+        "line": 1063,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -65993,7 +66036,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/tax-free-documents/pages/TaxFreeDocumentsPage.tsx",
-        "line": 644,
+        "line": 745,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -66014,28 +66057,34 @@
       "proposedPermission": "tax_free.tax_free_all.on_preview_document.modal_open",
       "securityLevel": "medium",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
-      "duplicateOf": null,
+      "disposition": "duplicate_occurrence",
+      "dispositionReason": "The drawer print control invokes the same permission-rechecked print boundary as the registry print action.",
+      "duplicateOf": "PE-01631",
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "warehouse_accounting.tax_free_documents.document.edit",
+        "warehouse_accounting.tax_free_documents.document.print"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-bcff950ccf3c",
-          "distance": 16,
+          "candidateId": "EPC-2e657813dd60",
+          "distance": 485,
           "file": "src/features/tax-free-documents/pages/TaxFreeDocumentsPage.tsx",
           "handler": "{() => onPreview(document)}",
           "humanLabel": "Друк",
-          "line": 1083,
-          "permissionKeys": [],
+          "line": 1231,
+          "permissionKeys": [
+            "warehouse_accounting.tax_free_documents.document.edit",
+            "warehouse_accounting.tax_free_documents.document.print"
+          ],
           "score": 15
         }
       ],
       "source": {
         "status": "resolved",
         "file": "src/features/tax-free-documents/pages/TaxFreeDocumentsPage.tsx",
-        "line": 1067,
+        "line": 746,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -66062,22 +66111,11 @@
       "businessActionId": null,
       "canonicalPermissionKeys": [],
       "classificationSource": "automatic",
-      "bindingEvidence": [
-        {
-          "candidateId": "EPC-2c8b1fb4064f",
-          "distance": 6,
-          "file": "src/features/tax-free-documents/pages/TaxFreeDocumentsPage.tsx",
-          "handler": "{() => setActiveTab(tab.value)}",
-          "humanLabel": null,
-          "line": 1124,
-          "permissionKeys": [],
-          "score": 20
-        }
-      ],
+      "bindingEvidence": [],
       "source": {
         "status": "resolved",
         "file": "src/features/tax-free-documents/pages/TaxFreeDocumentsPage.tsx",
-        "line": 1130,
+        "line": 556,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -66098,20 +66136,22 @@
       "proposedPermission": "tax_free.tax_free_all.event_event_prevent_default_handle_save.form_submit",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "covered_existing",
+      "dispositionReason": "Saving document fields rechecks the edit right and calls the dedicated edit façade; it cannot mutate status.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "warehouse_accounting.tax_free_documents.document.edit"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-44a157908be5",
-          "distance": 832,
+          "candidateId": "EPC-52e659f31e13",
+          "distance": 900,
           "file": "src/features/tax-free-documents/pages/TaxFreeDocumentsPage.tsx",
           "handler": "{(event) => { event.preventDefault() handleSave() }}",
           "humanLabel": null,
-          "line": 1301,
+          "line": 1456,
           "permissionKeys": [],
           "score": 24
         }
@@ -66119,7 +66159,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/tax-free-documents/pages/TaxFreeDocumentsPage.tsx",
-        "line": 469,
+        "line": 556,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -66140,20 +66180,22 @@
       "proposedPermission": "tax_free.tax_free_all.event_event_prevent_default_handle_save.form_submit.2",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "duplicate_occurrence",
-      "dispositionReason": "same_normalized_action_as:PE-01628",
+      "disposition": "covered_existing",
+      "dispositionReason": "Saving status is a separate business mutation with its own permission and server façade, not a duplicate of document editing.",
       "duplicateOf": "PE-01628",
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "warehouse_accounting.tax_free_documents.status.change"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-44a157908be5",
-          "distance": 832,
+          "candidateId": "EPC-52e659f31e13",
+          "distance": 900,
           "file": "src/features/tax-free-documents/pages/TaxFreeDocumentsPage.tsx",
           "handler": "{(event) => { event.preventDefault() handleSave() }}",
           "humanLabel": null,
-          "line": 1301,
+          "line": 1456,
           "permissionKeys": [],
           "score": 24
         }
@@ -66161,7 +66203,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/tax-free-documents/pages/TaxFreeDocumentsPage.tsx",
-        "line": 469,
+        "line": 556,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -66192,7 +66234,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/tax-free-documents/pages/TaxFreeDocumentsPage.tsx",
-        "line": 644,
+        "line": 745,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -66213,20 +66255,22 @@
       "proposedPermission": "tax_free.tax_free_all.on_print_document.command_export",
       "securityLevel": "medium",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "covered_existing",
+      "dispositionReason": "Final print is independently permission-rechecked before invoking the Tax Free printer workflow.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "warehouse_accounting.tax_free_documents.document.print"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-6b06bd425a22",
-          "distance": 1144,
+          "candidateId": "EPC-125484cbc69b",
+          "distance": 1224,
           "file": "src/features/tax-free-documents/pages/TaxFreeDocumentsPage.tsx",
           "handler": "{() => onPrint(document)}",
           "humanLabel": "Друк",
-          "line": 1511,
+          "line": 1668,
           "permissionKeys": [],
           "score": 13
         }
@@ -66234,7 +66278,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/tax-free-documents/pages/TaxFreeDocumentsPage.tsx",
-        "line": 367,
+        "line": 444,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -66255,17 +66299,17 @@
       "proposedPermission": "tax_free.tax_free_all.on_click.button_click",
       "securityLevel": "low",
       "rawStatus": "No permission candidate found",
-      "disposition": "needs_human_review",
-      "dispositionReason": "insufficient_evidence_for_automatic_permission_or_exclusion",
+      "disposition": "technical_ui",
+      "dispositionReason": "The generic table-row action adapter only forwards an already permission-filtered callback and owns no business capability.",
       "duplicateOf": null,
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [],
       "source": {
         "status": "resolved",
         "file": "src/features/tax-free-documents/pages/TaxFreeDocumentsPage.tsx",
-        "line": 587,
+        "line": 684,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -80010,20 +80054,6 @@
     "PE-01581",
     "PE-01582",
     "PE-01584",
-    "PE-01610",
-    "PE-01612",
-    "PE-01615",
-    "PE-01616",
-    "PE-01619",
-    "PE-01620",
-    "PE-01621",
-    "PE-01622",
-    "PE-01623",
-    "PE-01624",
-    "PE-01626",
-    "PE-01628",
-    "PE-01631",
-    "PE-01632",
     "PE-01634",
     "PE-01636",
     "PE-01638",

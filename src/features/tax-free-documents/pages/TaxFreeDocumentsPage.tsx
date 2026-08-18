@@ -20,6 +20,8 @@ import { AppModal, AppModalFooter } from "../../../shared/ui/AppModal"
 import { notifications } from '@mantine/notifications'
 import { Banknote, CircleAlert, Printer, RotateCcw, Search } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useReducer } from 'react'
+import { usePermissions } from '../../auth/usePermissions'
+import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { formatLocalDate, SYNC_DATA_RANGE_START } from '../../../shared/date/dateTime'
 import { hasExportDocumentUrl } from '../../../shared/documents/exportDocument'
 import { useValueState } from '../../../shared/hooks/useValueState'
@@ -33,7 +35,10 @@ import { DEFAULT_PAGINATOR_PAGE_SIZE } from '../../../shared/ui/paginator/pagina
 import { TableRowAction, type TableRowActionKind } from '../../../shared/ui/table-row-action'
 import { DocumentExportModal } from '../../../shared/ui/document-export-modal/DocumentExportModal'
 import {
+  changeTaxFreeDocumentStatus,
+  createTaxFreeCashflowArticle,
   getTaxFreeCarrier,
+  getTaxFreeDocument,
   getTaxFreeDocuments,
   getTaxFreePrintDocument,
   printTaxFreeDocument,
@@ -140,6 +145,15 @@ type TaxFreeDocumentDetailsCarrierState = {
 
 function useTaxFreeDocumentsPageModel() {
   const { t } = useI18n()
+  const { can } = usePermissions()
+  const canOpenDetails = can(PermissionKeys.TaxFreeDocuments.Document.OpenDetails)
+  const canEdit = can(PermissionKeys.TaxFreeDocuments.Document.Edit)
+  const canChangeStatus = can(PermissionKeys.TaxFreeDocuments.Status.Change)
+  const canPrint = can(PermissionKeys.TaxFreeDocuments.Document.Print)
+  const canExport = can(PermissionKeys.TaxFreeDocuments.Document.Export)
+  const canCreateIncome = can(PermissionKeys.TaxFreeDocuments.Accounting.CreateIncome)
+  const canCreateOutcome = can(PermissionKeys.TaxFreeDocuments.Accounting.CreateOutcome)
+  const canCreateCashflowArticle = can(PermissionKeys.FinancialAdministration.CashflowArticles.Article.Create)
   const restoredFilters = useMemo(() => readStoredFilters(), [])
   const statusOptions = useMemo(() => getTaxFreeStatusOptions(), [])
   const [documentsState, setDocumentsState] = useValueState<DocumentsListState>({
@@ -159,6 +173,7 @@ function useTaxFreeDocumentsPageModel() {
   const [pageSize, setPageSize] = useValueState(DEFAULT_PAGINATOR_PAGE_SIZE)
   const [error, setError] = useValueState<string | null>(null)
   const [selectedDocument, setSelectedDocument] = useValueState<TaxFreeDocument | null>(null)
+  const [drawerTab, setDrawerTab] = useValueState<TaxFreeDocumentDrawerTab>('details')
   const [previewDocument, setPreviewDocument] = useValueState<TaxFreeDocument | null>(null)
   const [downloadDocument, setDownloadDocument] = useValueState<TaxFreePrintDocument | null>(null)
   const [downloadSourceTitle, setDownloadSourceTitle] = useValueState('')
@@ -176,16 +191,35 @@ function useTaxFreeDocumentsPageModel() {
   const canMoveForward = typeof total === 'number' ? page * pageSize < total : documents.length === pageSize
   const rows = useMemo(() => documents.map(mapTaxFreeDocumentRow), [documents])
   const openDocument = useCallback(
-    (document: TaxFreeDocument) => {
-      setSelectedDocument(document)
+    async (document: TaxFreeDocument, tab: TaxFreeDocumentDrawerTab = 'details') => {
+      if (!canOpenDetails || !document.NetUid) {
+        return
+      }
+
+      setError(null)
+
+      try {
+        const loadedDocument = await getTaxFreeDocument(document.NetUid)
+
+        if (loadedDocument) {
+          setDrawerTab(tab)
+          setSelectedDocument(loadedDocument)
+        }
+      } catch (loadError) {
+        setError(loadError instanceof Error ? loadError.message : t('Не вдалося завантажити Tax Free'))
+      }
     },
-    [setSelectedDocument],
+    [canOpenDetails, setDrawerTab, setError, setSelectedDocument, t],
   )
   const openAccounting = useCallback(
     (document: TaxFreeDocument) => {
+      if (!canCreateIncome && !canCreateOutcome) {
+        return
+      }
+
       setAccountingDocument(document)
     },
-    [setAccountingDocument],
+    [canCreateIncome, canCreateOutcome, setAccountingDocument],
   )
   const handleAccountingActionSelected = useCallback(
     (action: TaxFreeAccountingAction) => {
@@ -194,24 +228,37 @@ function useTaxFreeDocumentsPageModel() {
       }
 
       if (action === 'outcome') {
+        if (!canCreateOutcome) {
+          return
+        }
         setOutcomeSource(buildTaxFreeOutcomeSource(accountingDocument))
       } else {
+        if (!canCreateIncome) {
+          return
+        }
         setPaymentAction(accountingDocument)
       }
 
       setAccountingDocument(null)
     },
-    [accountingDocument, setAccountingDocument, setOutcomeSource, setPaymentAction],
+    [accountingDocument, canCreateIncome, canCreateOutcome, setAccountingDocument, setOutcomeSource, setPaymentAction],
   )
   const itemColumns = useTaxFreeItemColumns(selectedDocument?.TaxFreeItems ?? EMPTY_TAX_FREE_ITEMS)
   const columns = useTaxFreeDocumentColumns({
+    canChangeStatus,
+    canCreateAccounting: canCreateIncome || canCreateOutcome,
+    canExport,
+    canOpenDetails,
+    canPrint,
     downloadingId,
-    onOpenCarrier: openDocument,
+    onOpenCarrier: (document) => void openDocument(document),
     onOpenAccounting: openAccounting,
     onOpenDownload: downloadTaxFreeDocument,
-    onOpenPreview: setPreviewDocument,
-    onOpenStatus: openDocument,
-    onOpenView: openDocument,
+    onOpenPreview: (document) => {
+      if (canPrint) setPreviewDocument(document)
+    },
+    onOpenStatus: (document) => void openDocument(document, 'status'),
+    onOpenView: (document) => void openDocument(document),
   })
   const carrierSelectOptions = useMemo(() => buildCarrierOptions(carrierOptions, selectedCarrierNetId), [
     carrierOptions,
@@ -343,6 +390,10 @@ function useTaxFreeDocumentsPageModel() {
   }
 
   async function saveDocument(document: TaxFreeDocument) {
+    if (!canEdit) {
+      return
+    }
+
     setSaving(true)
     setError(null)
 
@@ -364,10 +415,36 @@ function useTaxFreeDocumentsPageModel() {
     }
   }
 
+  async function saveDocumentStatus(document: TaxFreeDocument) {
+    if (!canChangeStatus) {
+      return
+    }
+
+    setSaving(true)
+    setError(null)
+
+    try {
+      const updatedDocument = await changeTaxFreeDocumentStatus(document)
+
+      setDocumentsState((currentState) => ({
+        ...currentState,
+        documents: currentState.documents.map((currentDocument) =>
+          getDocumentKey(currentDocument) === getDocumentKey(updatedDocument) ? updatedDocument : currentDocument,
+        ),
+      }))
+      setSelectedDocument(updatedDocument)
+      notifications.show({ color: 'green', message: t('Статус Tax Free оновлено') })
+    } catch (saveError) {
+      setError(saveError instanceof Error ? saveError.message : t('Не вдалося оновити статус Tax Free'))
+    } finally {
+      setSaving(false)
+    }
+  }
+
   async function printDocument(document: TaxFreeDocument) {
     const documentId = document.NetUid || document.Id
 
-    if (!documentId) {
+    if (!canPrint || !documentId) {
       return
     }
 
@@ -390,7 +467,7 @@ function useTaxFreeDocumentsPageModel() {
   async function downloadTaxFreeDocument(document: TaxFreeDocument) {
     const documentId = document.NetUid || document.Id
 
-    if (!document.NetUid || !documentId) {
+    if (!canExport || !document.NetUid || !documentId) {
       notifications.show({ color: 'orange', message: t('Документ не має NetUid для формування файлів') })
       return
     }
@@ -417,6 +494,13 @@ function useTaxFreeDocumentsPageModel() {
   }
 
   return {
+    canChangeStatus,
+    canCreateCashflowArticle,
+    canCreateIncome,
+    canCreateOutcome,
+    canEdit,
+    canOpenDetails,
+    canPrint,
     canMoveForward,
     accountingDocument,
     carrierSearch,
@@ -426,6 +510,7 @@ function useTaxFreeDocumentsPageModel() {
     dateTo,
     downloadDocument,
     downloadSourceTitle,
+    drawerTab,
     error,
     filterError,
     isLoading,
@@ -453,10 +538,12 @@ function useTaxFreeDocumentsPageModel() {
     reload,
     resetFilters,
     saveDocument,
+    saveDocumentStatus,
     openDocument,
     setCarrierSearch,
     setDateFrom,
     setDateTo,
+    setDrawerTab,
     setPage,
     setPageSize,
     setPreviewDocument,
@@ -476,7 +563,14 @@ function TaxFreeDocumentsPageView({ model }: { model: ReturnType<typeof useTaxFr
   const { t } = useI18n()
   const {
     accountingDocument,
+    canChangeStatus,
     canMoveForward,
+    canCreateCashflowArticle,
+    canCreateIncome,
+    canCreateOutcome,
+    canEdit,
+    canOpenDetails,
+    canPrint,
     carrierSearch,
     carrierSelectOptions,
     columns,
@@ -484,6 +578,7 @@ function TaxFreeDocumentsPageView({ model }: { model: ReturnType<typeof useTaxFr
     dateTo,
     downloadDocument,
     downloadSourceTitle,
+    drawerTab,
     error,
     filterError,
     isLoading,
@@ -511,10 +606,12 @@ function TaxFreeDocumentsPageView({ model }: { model: ReturnType<typeof useTaxFr
     reload,
     resetFilters,
     saveDocument,
+    saveDocumentStatus,
     openDocument,
     setCarrierSearch,
     setDateFrom,
     setDateTo,
+    setDrawerTab,
     setPage,
     setPageSize,
     setPreviewDocument,
@@ -630,20 +727,28 @@ function TaxFreeDocumentsPageView({ model }: { model: ReturnType<typeof useTaxFr
             showLayoutControls
             showDensityToggle={false}
             tableId="tax-free-documents"
-            onRowClick={(row) => openDocument(row.document)}
+            onRowClick={canOpenDetails ? (row) => void openDocument(row.document) : undefined}
           />
         </div>
       </Card>
 
       <TaxFreeDocumentDrawer
+        activeTab={drawerTab}
+        canChangeStatus={canChangeStatus}
+        canEdit={canEdit}
+        canPrint={canPrint}
         carrierOptions={carrierSelectOptions}
         document={selectedDocument}
         isSaving={isSaving}
         itemColumns={itemColumns}
         onCarrierSearch={setCarrierSearch}
         onClose={closeDetails}
-        onPreview={setPreviewDocument}
+        onPreview={(document) => {
+          if (canPrint) setPreviewDocument(document)
+        }}
         onSave={saveDocument}
+        onSaveStatus={saveDocumentStatus}
+        onTabChange={setDrawerTab}
       />
 
       <TaxFreePrintPreviewModal
@@ -660,6 +765,8 @@ function TaxFreeDocumentsPageView({ model }: { model: ReturnType<typeof useTaxFr
       />
 
       <TaxFreeAccountingActionModal
+        canCreateIncome={canCreateIncome}
+        canCreateOutcome={canCreateOutcome}
         document={accountingDocument}
         opened={Boolean(accountingDocument)}
         onClose={closeAccounting}
@@ -667,15 +774,18 @@ function TaxFreeDocumentsPageView({ model }: { model: ReturnType<typeof useTaxFr
       />
 
       <TaxFreePaymentFromTaxFreeModal
-        document={paymentAction}
-        opened={Boolean(paymentAction)}
+        document={canCreateIncome ? paymentAction : null}
+        opened={canCreateIncome && Boolean(paymentAction)}
         onClose={closePaymentAction}
         onCreated={() => reload()}
       />
 
       <DocumentOutcomePaymentModal
-        opened={Boolean(outcomeSource)}
-        source={outcomeSource}
+        canCreateMovement={canCreateCashflowArticle}
+        canSubmit={canCreateOutcome}
+        createPaymentMovement={createTaxFreeCashflowArticle}
+        opened={canCreateOutcome && Boolean(outcomeSource)}
+        source={canCreateOutcome ? outcomeSource : null}
         onClose={closeOutcome}
         onCreated={() => reload()}
       />
@@ -684,11 +794,15 @@ function TaxFreeDocumentsPageView({ model }: { model: ReturnType<typeof useTaxFr
 }
 
 function TaxFreeAccountingActionModal({
+  canCreateIncome,
+  canCreateOutcome,
   document,
   opened,
   onClose,
   onSelect,
 }: {
+  canCreateIncome: boolean
+  canCreateOutcome: boolean
   document: TaxFreeDocument | null
   opened: boolean
   onClose: () => void
@@ -709,7 +823,7 @@ function TaxFreeAccountingActionModal({
       onClose={onClose}
     >
       <Stack className="app-modal-actions" gap="xs">
-        <Button
+        {canCreateIncome && <Button
           fullWidth
           justify="flex-start"
           color="dark"
@@ -723,8 +837,8 @@ function TaxFreeAccountingActionModal({
           onClick={() => onSelect('income')}
         >
           {t('Прибутковий касовий ордер')}
-        </Button>
-        <Button
+        </Button>}
+        {canCreateOutcome && <Button
           fullWidth
           justify="flex-start"
           color="dark"
@@ -738,13 +852,18 @@ function TaxFreeAccountingActionModal({
           onClick={() => onSelect('outcome')}
         >
           {t('Видатковий касовий ордер')}
-        </Button>
+        </Button>}
       </Stack>
     </AppModal>
   )
 }
 
 function useTaxFreeDocumentColumns({
+  canChangeStatus,
+  canCreateAccounting,
+  canExport,
+  canOpenDetails,
+  canPrint,
   downloadingId,
   onOpenCarrier,
   onOpenAccounting,
@@ -753,6 +872,11 @@ function useTaxFreeDocumentColumns({
   onOpenStatus,
   onOpenView,
 }: {
+  canChangeStatus: boolean
+  canCreateAccounting: boolean
+  canExport: boolean
+  canOpenDetails: boolean
+  canPrint: boolean
   downloadingId: string | number | null
   onOpenCarrier: (document: TaxFreeDocument) => void
   onOpenAccounting: (document: TaxFreeDocument) => void
@@ -833,14 +957,9 @@ function useTaxFreeDocumentColumns({
         width: 170,
       },
       {
-        cell: (row) => (
-          <TaxFreeRowAction
-            action="delivery"
-            disabled={!row.document.Statham}
-            label={t('Переглянути перевізника')}
-            onClick={() => onOpenCarrier(row.document)}
-          />
-        ),
+        cell: (row) => canOpenDetails ? (
+          <TaxFreeRowAction action="delivery" disabled={!row.document.Statham} label={t('Переглянути перевізника')} onClick={() => onOpenCarrier(row.document)} />
+        ) : null,
         enableSorting: false,
         header: '',
         id: 'carrierAction',
@@ -865,14 +984,14 @@ function useTaxFreeDocumentColumns({
         width: 150,
       },
       {
-        cell: (row) => (
+        cell: (row) => canOpenDetails && canChangeStatus ? (
           <TaxFreeRowAction
             action="status"
             disabled={(row.document.TaxFreeStatus ?? TaxFreeStatus.NotFormed) < TaxFreeStatus.Printed}
             label={t('Панель статусів')}
             onClick={() => onOpenStatus(row.document)}
           />
-        ),
+        ) : null,
         enableSorting: false,
         header: '',
         id: 'statusAction',
@@ -880,6 +999,8 @@ function useTaxFreeDocumentColumns({
       },
       {
         cell: (row) => {
+          if (!canCreateAccounting) return null
+
           const availability = getTaxFreeAccountingAvailability(row.document, t)
 
           return (
@@ -904,14 +1025,14 @@ function useTaxFreeDocumentColumns({
         width: 150,
       },
       {
-        cell: (row) => (
+        cell: (row) => canPrint ? (
           <TaxFreeRowAction
             action="print"
             disabled={row.document.TaxFreeStatus !== TaxFreeStatus.Formed}
             label={t('Попередній перегляд друку')}
             onClick={() => onOpenPreview(row.document)}
           />
-        ),
+        ) : null,
         enableSorting: false,
         header: '',
         id: 'printAction',
@@ -919,6 +1040,8 @@ function useTaxFreeDocumentColumns({
       },
       {
         cell: (row) => {
+          if (!canExport) return null
+
           const documentId = row.document.NetUid || row.document.Id
 
           return (
@@ -936,16 +1059,30 @@ function useTaxFreeDocumentColumns({
         width: 54,
       },
       {
-        cell: (row) => (
+        cell: (row) => canOpenDetails ? (
           <TaxFreeRowAction action="details" label={t('Деталі')} onClick={() => onOpenView(row.document)} />
-        ),
+        ) : null,
         enableSorting: false,
         header: '',
         id: 'viewAction',
         width: 54,
       },
     ],
-    [downloadingId, onOpenAccounting, onOpenCarrier, onOpenDownload, onOpenPreview, onOpenStatus, onOpenView, t],
+    [
+      canChangeStatus,
+      canCreateAccounting,
+      canExport,
+      canOpenDetails,
+      canPrint,
+      downloadingId,
+      onOpenAccounting,
+      onOpenCarrier,
+      onOpenDownload,
+      onOpenPreview,
+      onOpenStatus,
+      onOpenView,
+      t,
+    ],
   )
 }
 
@@ -1049,6 +1186,10 @@ function displayValue(value: unknown): string {
 }
 
 function TaxFreeDocumentDrawer({
+  activeTab,
+  canChangeStatus,
+  canEdit,
+  canPrint,
   carrierOptions,
   document,
   isSaving,
@@ -1057,7 +1198,13 @@ function TaxFreeDocumentDrawer({
   onClose,
   onPreview,
   onSave,
+  onSaveStatus,
+  onTabChange,
 }: {
+  activeTab: TaxFreeDocumentDrawerTab
+  canChangeStatus: boolean
+  canEdit: boolean
+  canPrint: boolean
   carrierOptions: { label: string; value: string }[]
   document: TaxFreeDocument | null
   isSaving: boolean
@@ -1066,9 +1213,10 @@ function TaxFreeDocumentDrawer({
   onClose: () => void
   onPreview: (document: TaxFreeDocument) => void
   onSave: (document: TaxFreeDocument) => void
+  onSaveStatus: (document: TaxFreeDocument) => void
+  onTabChange: (tab: TaxFreeDocumentDrawerTab) => void
 }) {
   const { t } = useI18n()
-  const [activeTab, setActiveTab] = useValueState<TaxFreeDocumentDrawerTab>('details')
   const canAdvanceStatus = document ? canAdvanceTaxFreeStatus(document) : false
 
   return (
@@ -1079,25 +1227,25 @@ function TaxFreeDocumentDrawer({
             <Button variant="default" onClick={onClose}>
               {t('Скасувати')}
             </Button>
-            <Group gap="xs" wrap="nowrap">
-              <Button
+            {(canPrint || canEdit) && <Group gap="xs" wrap="nowrap">
+              {canPrint && <Button
                 disabled={document.TaxFreeStatus !== TaxFreeStatus.Formed}
                 leftSection={<Printer size={17} />}
                 variant="default"
                 onClick={() => onPreview(document)}
               >
                 {t('Друк')}
-              </Button>
-              <Button
+              </Button>}
+              {canEdit && <Button
                 form={TAX_FREE_DOCUMENT_DETAILS_FORM_ID}
                 loading={isSaving}
                 type="submit"
               >
                 {t('Зберегти')}
-              </Button>
-            </Group>
+              </Button>}
+            </Group>}
           </>
-        ) : document && activeTab === 'status' && canAdvanceStatus ? (
+        ) : document && activeTab === 'status' && canChangeStatus && canAdvanceStatus ? (
           <Button
             form={TAX_FREE_DOCUMENT_STATUS_FORM_ID}
             loading={isSaving}
@@ -1118,7 +1266,7 @@ function TaxFreeDocumentDrawer({
           <div aria-label={t('Розділи документа Tax Free')} className="pill-tabs" role="tablist">
             {([
               { value: 'details', label: t('Деталі') },
-              { value: 'status', label: t('Статуси') },
+              ...(canChangeStatus ? [{ value: 'status' as const, label: t('Статуси') }] : []),
               { value: 'items', label: t('Товари') },
             ] as const).map((tab) => (
               <button
@@ -1127,7 +1275,7 @@ function TaxFreeDocumentDrawer({
                 className={`pill-tab${activeTab === tab.value ? ' is-active' : ''}`}
                 aria-selected={activeTab === tab.value}
                 role="tab"
-                onClick={() => setActiveTab(tab.value)}
+                onClick={() => onTabChange(tab.value)}
               >
                 {tab.label}
               </button>
@@ -1137,6 +1285,7 @@ function TaxFreeDocumentDrawer({
           {activeTab === 'details' && (
             <TaxFreeDocumentDetailsTab
               key={getTaxFreeDocumentDetailsKey(document)}
+              canEdit={canEdit}
               carrierOptions={carrierOptions}
               document={document}
               onCarrierSearch={onCarrierSearch}
@@ -1144,9 +1293,9 @@ function TaxFreeDocumentDrawer({
             />
           )}
 
-          {activeTab === 'status' && (
+          {activeTab === 'status' && canChangeStatus && (
             <Box pt="md">
-              <TaxFreeStatusPanel document={document} onSave={onSave} />
+              <TaxFreeStatusPanel document={document} onSave={onSaveStatus} />
             </Box>
           )}
 
@@ -1172,11 +1321,13 @@ function TaxFreeDocumentDrawer({
 }
 
 function TaxFreeDocumentDetailsTab({
+  canEdit,
   carrierOptions,
   document,
   onCarrierSearch,
   onSave,
 }: {
+  canEdit: boolean
   carrierOptions: { label: string; value: string }[]
   document: TaxFreeDocument
   onCarrierSearch: (value: string) => void
@@ -1284,6 +1435,10 @@ function TaxFreeDocumentDetailsTab({
   }
 
   function handleSave() {
+    if (!canEdit) {
+      return
+    }
+
     const selectedPassport = selectedCarrier?.StathamPassports?.find((passport) => String(passport.Id) === selectedPassportId) || null
     const parsedAmount = Number(amountPayedStatham)
 
@@ -1316,8 +1471,9 @@ function TaxFreeDocumentDetailsTab({
         </div>
 
         <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
-          <TextInput label={t('Код')} value={customCode} onChange={(event) => setCustomCode(event.currentTarget.value)} />
+          <TextInput disabled={!canEdit} label={t('Код')} value={customCode} onChange={(event) => setCustomCode(event.currentTarget.value)} />
           <TextInput
+            disabled={!canEdit}
             label={t('Сума відправлення')}
             type="number"
             value={amountPayedStatham}
@@ -1326,6 +1482,7 @@ function TaxFreeDocumentDetailsTab({
           <Select
             clearable
             data={drawerCarrierOptions}
+            disabled={!canEdit}
             label={t('Перевізник')}
             loading={isLoadingCarrier}
             searchable
@@ -1336,7 +1493,7 @@ function TaxFreeDocumentDetailsTab({
           <Select
             clearable
             data={passportOptions}
-            disabled={!passportOptions.length}
+            disabled={!canEdit || !passportOptions.length}
             label={t('Паспорт перевізника')}
             value={selectedPassportId}
             onChange={(value) =>

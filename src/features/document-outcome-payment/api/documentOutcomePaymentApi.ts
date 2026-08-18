@@ -11,8 +11,7 @@ import type { OutcomePaymentOrder } from '../types'
 
 const CREATE_SAD_OUTCOME_ENDPOINT =
   getAccountingOperation(ACCOUNTING_OPERATION_ID.SadOutcome).endpoint
-const CREATE_TAX_FREE_OUTCOME_ENDPOINT =
-  getAccountingOperation(ACCOUNTING_OPERATION_ID.TaxFreeOutcome).endpoint
+const CREATE_TAX_FREE_OUTCOME_ENDPOINT = '/payments/orders/outcome/tax-free-documents/new'
 
 export async function createOutcomeOrderFromTaxFree(
   taxFreeNetId: string,

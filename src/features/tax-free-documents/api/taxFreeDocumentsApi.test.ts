@@ -1,10 +1,14 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { apiRequest } from '../../../shared/api/apiClient'
 import {
+  changeTaxFreeDocumentStatus,
   createIncomePaymentFromTaxFree,
+  createTaxFreeCashflowArticle,
   getTaxFreeCarrier,
+  getTaxFreeDocument,
   getTaxFreeDocuments,
   getTaxFreePrintDocument,
+  updateTaxFreeDocument,
 } from './taxFreeDocumentsApi'
 
 vi.mock('../../../shared/api/apiClient', () => ({
@@ -41,7 +45,7 @@ describe('taxFreeDocumentsApi', () => {
       value: '',
     })
 
-    expect(apiRequestMock).toHaveBeenCalledWith('/supplies/ukraine/order/taxfree/all/filtered', {
+    expect(apiRequestMock).toHaveBeenCalledWith('/supplies/ukraine/order/taxfree/registry', {
       query: {
         from: '2025-01-01T00:00:00.000',
         limit: 21,
@@ -71,7 +75,7 @@ describe('taxFreeDocumentsApi', () => {
 
     const result = await getTaxFreeCarrier('carrier-1')
 
-    expect(apiRequestMock).toHaveBeenCalledWith('/supplies/ukraine/carriers/statham/get', {
+    expect(apiRequestMock).toHaveBeenCalledWith('/supplies/ukraine/carriers/statham/tax-free-documents/details', {
       query: {
         netId: 'carrier-1',
       },
@@ -91,7 +95,7 @@ describe('taxFreeDocumentsApi', () => {
       DocumentURL: 'http://example.test/tax-free.xlsx',
       PdfDocumentURL: 'http://example.test/tax-free.pdf',
     })
-    expect(apiRequestMock).toHaveBeenCalledWith('/supplies/ukraine/order/taxfree/documents/printing/get', {
+    expect(apiRequestMock).toHaveBeenCalledWith('/supplies/ukraine/order/taxfree/document/export', {
       query: {
         netId: 'tax-free-1',
       },
@@ -113,7 +117,7 @@ describe('taxFreeDocumentsApi', () => {
     )
 
     expect(apiRequestMock).toHaveBeenCalledWith(
-      '/payments/orders/income/new/taxfree',
+      '/payments/orders/income/tax-free-documents/new',
       {
         body: payment,
         dedupe: false,
@@ -124,5 +128,40 @@ describe('taxFreeDocumentsApi', () => {
         },
       },
     )
+  })
+
+  it('uses independently protected details, edit, status and article routes', async () => {
+    apiRequestMock
+      .mockResolvedValueOnce({ Body: { NetUid: 'tax-free-1', TaxFreeItems: null } })
+      .mockResolvedValueOnce({ Body: { NetUid: 'tax-free-1', CustomCode: 'EDIT', TaxFreeItems: [] } })
+      .mockResolvedValueOnce({ Body: { NetUid: 'tax-free-1', TaxFreeStatus: 3, TaxFreeItems: [] } })
+      .mockResolvedValueOnce({ Body: { NetUid: 'movement-1', OperationName: 'Tax Free' } })
+
+    await expect(getTaxFreeDocument('tax-free-1')).resolves.toEqual({
+      NetUid: 'tax-free-1',
+      TaxFreeItems: [],
+    })
+    await updateTaxFreeDocument({ NetUid: 'tax-free-1' })
+    await changeTaxFreeDocumentStatus({ NetUid: 'tax-free-1', TaxFreeStatus: 3 })
+    await expect(createTaxFreeCashflowArticle('Tax Free')).resolves.toEqual({
+      NetUid: 'movement-1',
+      OperationName: 'Tax Free',
+    })
+
+    expect(apiRequestMock).toHaveBeenNthCalledWith(1, '/supplies/ukraine/order/taxfree/details', {
+      query: { netId: 'tax-free-1' },
+    })
+    expect(apiRequestMock).toHaveBeenNthCalledWith(2, '/supplies/ukraine/order/taxfree/edit', {
+      body: { NetUid: 'tax-free-1' },
+      method: 'POST',
+    })
+    expect(apiRequestMock).toHaveBeenNthCalledWith(3, '/supplies/ukraine/order/taxfree/status/change', {
+      body: { NetUid: 'tax-free-1', TaxFreeStatus: 3 },
+      method: 'POST',
+    })
+    expect(apiRequestMock).toHaveBeenNthCalledWith(4, '/payments/movements/accounting/new', {
+      body: { OperationName: 'Tax Free' },
+      method: 'POST',
+    })
   })
 })

@@ -16,6 +16,10 @@ vi.mock('../../sales-ukraine/api/salesUkraineApi', () => ({
   searchSalesUkraineClients: vi.fn(),
 }))
 
+vi.mock('../../auth/usePermissions', () => ({
+  usePermissions: () => ({ can: () => true, isLoading: false }),
+}))
+
 function renderPage() {
   return render(
     <MemoryRouter initialEntries={['/pricing']}>

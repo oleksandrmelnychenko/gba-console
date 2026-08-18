@@ -58,7 +58,7 @@ describe('documentOutcomePaymentApi', () => {
       { operationId },
     )
 
-    expect(apiRequestMock).toHaveBeenCalledWith('/payments/orders/outcome/new/taxfree', {
+    expect(apiRequestMock).toHaveBeenCalledWith('/payments/orders/outcome/tax-free-documents/new', {
       dedupe: false,
       headers: { 'Idempotency-Key': operationId },
       method: 'POST',

@@ -581,6 +581,21 @@ export const PermissionKeys = {
       Export: 'warehouse_accounting.tax_free_carriers.document.export',
     },
   },
+  TaxFreeDocuments: {
+    Document: {
+      Edit: 'warehouse_accounting.tax_free_documents.document.edit',
+      Export: 'warehouse_accounting.tax_free_documents.document.export',
+      OpenDetails: 'warehouse_accounting.tax_free_documents.document.open_details',
+      Print: 'warehouse_accounting.tax_free_documents.document.print',
+    },
+    Status: {
+      Change: 'warehouse_accounting.tax_free_documents.status.change',
+    },
+    Accounting: {
+      CreateIncome: 'warehouse_accounting.tax_free_documents.accounting.create_income',
+      CreateOutcome: 'warehouse_accounting.tax_free_documents.accounting.create_outcome',
+    },
+  },
   OnlineShopSeo: {
     Client: {
       Toggle: 'administration.online_shop_seo.client.toggle',
@@ -996,6 +1011,11 @@ export type TaxFreeCarriersPermissionKey =
   | Values<typeof PermissionKeys.TaxFreeCarriers.Carrier>
   | Values<typeof PermissionKeys.TaxFreeCarriers.Document>
 
+export type TaxFreeDocumentsPermissionKey =
+  | Values<typeof PermissionKeys.TaxFreeDocuments.Document>
+  | Values<typeof PermissionKeys.TaxFreeDocuments.Status>
+  | Values<typeof PermissionKeys.TaxFreeDocuments.Accounting>
+
 export type OnlineShopSeoPermissionKey =
   | Values<typeof PermissionKeys.OnlineShopSeo.Client>
   | Values<typeof PermissionKeys.OnlineShopSeo.Contact>
@@ -1104,6 +1124,7 @@ export type PermissionKey =
   | ReportsStocksPermissionKey
   | SupplierOrganizationsPermissionKey
   | TaxFreeCarriersPermissionKey
+  | TaxFreeDocumentsPermissionKey
   | WarehouseAccountingPermissionKey
   | WarehousesPermissionKey
 
@@ -2079,6 +2100,9 @@ const eventPermissionKeys = new Set<string>([
   ...Object.values(PermissionKeys.WarehouseAccounting.SupplierReturns.Document),
   ...Object.values(PermissionKeys.TaxFreeCarriers.Carrier),
   ...Object.values(PermissionKeys.TaxFreeCarriers.Document),
+  ...Object.values(PermissionKeys.TaxFreeDocuments.Document),
+  ...Object.values(PermissionKeys.TaxFreeDocuments.Status),
+  ...Object.values(PermissionKeys.TaxFreeDocuments.Accounting),
   ...Object.values(PermissionKeys.OnlineShopSeo.Client),
   ...Object.values(PermissionKeys.OnlineShopSeo.Contact),
   ...Object.values(PermissionKeys.OnlineShopSeo.GeneralInfo),
