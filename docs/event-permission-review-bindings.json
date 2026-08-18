@@ -192,6 +192,86 @@
       ],
       "reason": "Settling the report difference is another state transition of the same report aggregate and reuses the exact guarded report.edit update boundary."
     },
+    "PE-00657": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": [
+        "accounting.outgoing_cashflows.order.create"
+      ],
+      "reason": "Final simple-order submit rechecks order.create and calls the dedicated permission-scoped create façade."
+    },
+    "PE-00658": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": [
+        "accounting.cashflow_articles.article.create"
+      ],
+      "reason": "Creating a payment movement is the existing cash-flow article create capability and uses its already scoped mutation façade."
+    },
+    "PE-00659": {
+      "disposition": "technical_ui",
+      "reason": "The form cancel button only returns to the local create-mode selector and performs no server cancellation."
+    },
+    "PE-00661": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-00657",
+      "reason": "The grouped-payment form persists the same outcome-payment aggregate through the same order.create boundary."
+    },
+    "PE-00662": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-00658",
+      "reason": "The grouped-payment form creates the same payment-movement entity through the existing article.create boundary."
+    },
+    "PE-00663": {
+      "disposition": "technical_ui",
+      "reason": "The grouped form cancel button only returns to the local create-mode selector."
+    },
+    "PE-00679": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-00657",
+      "reason": "The create menu only navigates to a form whose final mutation owns order.create authorization."
+    },
+    "PE-00680": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-00657",
+      "reason": "The second register menu repeats the same create-form navigation and does not introduce another capability."
+    },
+    "PE-00681": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": [
+        "accounting.outgoing_cashflows.page.view"
+      ],
+      "reason": "A row opens already-loaded page-scoped data; deep-link hydration uses the dedicated page-view details façade."
+    },
+    "PE-00682": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": [
+        "accounting.advanced_reports.document_structure.open"
+      ],
+      "reason": "Document structure reuses its independent read permission and now calls the correct structure-scoped calculation façade."
+    },
+    "PE-00683": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": [
+        "accounting.advanced_reports.report.open"
+      ],
+      "reason": "Despite the scanner's export label, this action only opens the advance report; editing remains independently controlled inside the report."
+    },
+    "PE-00684": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-00687",
+      "reason": "The row action only opens cancellation confirmation; the final confirmed mutation owns order.cancel."
+    },
+    "PE-00685": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-00681",
+      "reason": "The explicit details icon opens the same already-loaded drawer as the row click."
+    },
+    "PE-00687": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": [
+        "accounting.outgoing_cashflows.order.cancel"
+      ],
+      "reason": "Final cancellation rechecks order.cancel and calls the dedicated idempotent permission-scoped mutation façade."
+    },
     "PE-00031": {
       "disposition": "covered_existing",
       "canonicalPermissionKeys": [

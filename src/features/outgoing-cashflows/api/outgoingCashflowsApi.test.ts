@@ -51,7 +51,7 @@ describe('outgoingCashflowsApi', () => {
       OutcomePaymentOrderConsumablesOrders: [],
     })
 
-    expect(apiRequestMock).toHaveBeenCalledWith('/payments/orders/outcome/get', {
+    expect(apiRequestMock).toHaveBeenCalledWith('/payments/orders/outcome/outgoing-cashflows/details', {
       query: {
         netId: 'outcome-order-1',
       },
@@ -68,7 +68,7 @@ describe('outgoingCashflowsApi', () => {
 
     await cancelOutgoingCashflow('outcome-order-1', { operationId })
 
-    expect(apiRequestMock).toHaveBeenCalledWith('/payments/orders/outcome/cancel', {
+    expect(apiRequestMock).toHaveBeenCalledWith('/payments/orders/outcome/outgoing-cashflows/cancel', {
       dedupe: false,
       headers: { 'Idempotency-Key': operationId },
       method: 'PUT',

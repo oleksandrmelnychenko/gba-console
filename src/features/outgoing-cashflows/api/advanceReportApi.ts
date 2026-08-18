@@ -34,6 +34,17 @@ export async function calculateAdvanceReportOrder(order: AdvanceReportOrder): Pr
   return restoreDeletedFuelings(normalizeAdvanceReportOrder(result), order)
 }
 
+export async function calculateAdvanceReportDocumentStructure(
+  order: AdvanceReportOrder,
+): Promise<AdvanceReportOrder | null> {
+  const result = await apiRequest<unknown>('/payments/orders/outcome/advanced-reports/structure/calculate', {
+    method: 'POST',
+    body: order,
+  })
+
+  return normalizeAdvanceReportOrder(result)
+}
+
 export async function updateAdvanceReportOrder(
   createIncomeAutomatically: boolean,
   order: AdvanceReportOrder,

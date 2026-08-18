@@ -14,10 +14,12 @@
   Tooltip,
 } from '@mantine/core'
 import { useDebouncedValue } from '@mantine/hooks'
+import { notifications } from '@mantine/notifications'
 import { Banknote, ChevronDown, CircleAlert, Landmark, Plus, RotateCcw, Search } from 'lucide-react'
 import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { formatLocalDate } from '../../../shared/date/dateTime'
+import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import {
   buildOutgoingRegisterItems,
@@ -33,7 +35,9 @@ import { Paginator } from '../../../shared/ui/paginator/Paginator'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { TableRowAction } from '../../../shared/ui/table-row-action'
-import { calculateAdvanceReportOrder } from '../api/advanceReportApi'
+import { PermissionGate } from '../../auth/components/PermissionGate'
+import { useAuth } from '../../auth/useAuth'
+import { calculateAdvanceReportDocumentStructure } from '../api/advanceReportApi'
 import {
   cancelOutgoingCashflow,
   getOutgoingCashflowByNetId,
@@ -81,6 +85,7 @@ const moneyFormatter = new Intl.NumberFormat('uk-UA', {
 
 function useOutgoingCashflowsPageModel(): OutgoingCashflowsPageModel {
   const { t } = useI18n()
+  const { hasPermission } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
 
@@ -269,6 +274,11 @@ function useOutgoingCashflowsPageModel(): OutgoingCashflowsPageModel {
 
   const openAdvanceReport = useCallback(
     (row: OutgoingCashflowRow) => {
+      if (!hasPermission(PermissionKeys.AdvancedReports.Report.Open)) {
+        notifications.show({ color: 'red', message: t('Немає прав для перегляду авансового звіту') })
+        return
+      }
+
       if (row.order.NetUid) {
         navigate(`${ADVANCE_REPORT_ROUTE}/${encodeURIComponent(row.order.NetUid)}/advanced-report/view`, {
           state: {
@@ -278,11 +288,16 @@ function useOutgoingCashflowsPageModel(): OutgoingCashflowsPageModel {
         })
       }
     },
-    [location, navigate],
+    [hasPermission, location, navigate, t],
   )
 
   const openDocumentStructure = useCallback(
     (row: OutgoingCashflowRow) => {
+      if (!hasPermission(PermissionKeys.AdvancedReports.DocumentStructure.Open)) {
+        notifications.show({ color: 'red', message: t('Немає прав для перегляду структури документів') })
+        return
+      }
+
       const orderToCalculate = getDocumentStructureOutcomeToCalculate(row.order)
       const requestId = structureCalculationRequestRef.current + 1
       structureCalculationRequestRef.current = requestId
@@ -297,7 +312,7 @@ function useOutgoingCashflowsPageModel(): OutgoingCashflowsPageModel {
       }
 
       setCalculatingStructure(true)
-      void calculateAdvanceReportOrder(orderToCalculate)
+      void calculateAdvanceReportDocumentStructure(orderToCalculate)
         .then((calculatedOrder) => {
           if (structureCalculationRequestRef.current === requestId) {
             setStructureCalculatedOrder(calculatedOrder)
@@ -323,6 +338,7 @@ function useOutgoingCashflowsPageModel(): OutgoingCashflowsPageModel {
       setStructureCalculatedOrder,
       setStructureCalculationError,
       setStructureRow,
+      hasPermission,
       t,
     ],
   )
@@ -351,6 +367,9 @@ function useOutgoingCashflowsPageModel(): OutgoingCashflowsPageModel {
     setSelectedRow(null)
   }, [focusedOrderNetId, selectedRow?.order.NetUid, setSelectedRow])
   const columns = useOutgoingCashflowColumns({
+    canCancel: hasPermission(PermissionKeys.OutgoingCashflows.Order.Cancel),
+    canOpenDocumentStructure: hasPermission(PermissionKeys.AdvancedReports.DocumentStructure.Open),
+    canOpenReport: hasPermission(PermissionKeys.AdvancedReports.Report.Open),
     onCancel: setCancelRow,
     onEditReport: openAdvanceReport,
     onOpenDocumentStructure: openDocumentStructure,
@@ -429,6 +448,12 @@ function useOutgoingCashflowsPageModel(): OutgoingCashflowsPageModel {
       return
     }
 
+    if (!hasPermission(PermissionKeys.OutgoingCashflows.Order.Cancel)) {
+      setCancelRow(null)
+      notifications.show({ color: 'red', message: t('Немає прав для скасування видаткового ордера') })
+      return
+    }
+
     setCanceling(true)
     setError(null)
 
@@ -441,7 +466,7 @@ function useOutgoingCashflowsPageModel(): OutgoingCashflowsPageModel {
     } finally {
       setCanceling(false)
     }
-  }, [cancelRow, isCanceling, loadCashflows, page, setCancelRow, setCanceling, setError, t])
+  }, [cancelRow, hasPermission, isCanceling, loadCashflows, page, setCancelRow, setCanceling, setError, t])
 
   return {
     cancelRow,
@@ -498,6 +523,23 @@ function useOutgoingCashflowsPageModel(): OutgoingCashflowsPageModel {
 }
 
 export function OutgoingCashflowsPage() {
+  return (
+    <PermissionGate
+      permissionKey={PermissionKeys.SystemPages.OutgoingCashflows.View}
+      fallback={<OutgoingCashflowsPermissionDenied />}
+    >
+      <OutgoingCashflowsPageContent />
+    </PermissionGate>
+  )
+}
+
+function OutgoingCashflowsPermissionDenied() {
+  const { t } = useI18n()
+
+  return <Text c="red" p="md">{t('Доступ заборонено')}</Text>
+}
+
+function OutgoingCashflowsPageContent() {
   const model = useOutgoingCashflowsPageModel()
 
   return <OutgoingCashflowsContent model={model} />
@@ -604,11 +646,17 @@ function OutgoingCashflowsContent({ model }: { model: OutgoingCashflowsPageModel
     onSetToDate,
   } = model
   const { t } = useI18n()
+  const { hasPermission } = useAuth()
   const navigate = useNavigate()
   const [tableToolbarSlot, setTableToolbarSlot] = useState<HTMLDivElement | null>(null)
   const location = useLocation()
 
   function navigateToCreateItem(path: string) {
+    if (!hasPermission(PermissionKeys.OutgoingCashflows.Order.Create)) {
+      notifications.show({ color: 'red', message: t('Немає прав для створення видаткового ордера') })
+      return
+    }
+
     if (path.startsWith('/accounting/outgoing-cashflow/new')) {
       navigate(path, { state: { backgroundLocation: location } })
       return
@@ -696,8 +744,9 @@ function OutgoingCashflowsContent({ model }: { model: OutgoingCashflowsPageModel
               ref={setTableToolbarSlot}
               className="app-filter-table-toolbar-slot outgoing-cashflows-table-toolbar-slot"
             />
-            <div className="outgoing-cashflows-create-actions">
-              <Menu position="bottom-end" shadow="md" width={340} withinPortal>
+            {hasPermission(PermissionKeys.OutgoingCashflows.Order.Create) && (
+              <div className="outgoing-cashflows-create-actions">
+                <Menu position="bottom-end" shadow="md" width={340} withinPortal>
                 <Menu.Target>
                   <Button
                     color={CREATE_ACTION_COLOR}
@@ -732,8 +781,9 @@ function OutgoingCashflowsContent({ model }: { model: OutgoingCashflowsPageModel
                     </Menu.Item>
                   ))}
                 </Menu.Dropdown>
-              </Menu>
-            </div>
+                </Menu>
+              </div>
+            )}
           </Group>
         </div>
 
@@ -800,11 +850,17 @@ function OutgoingCashflowsContent({ model }: { model: OutgoingCashflowsPageModel
 }
 
 function useOutgoingCashflowColumns({
+  canCancel,
+  canOpenDocumentStructure,
+  canOpenReport,
   onCancel,
   onEditReport,
   onOpenDocumentStructure,
   onOpen,
 }: {
+  canCancel: boolean
+  canOpenDocumentStructure: boolean
+  canOpenReport: boolean
   onCancel: (row: OutgoingCashflowRow) => void
   onEditReport: (row: OutgoingCashflowRow) => void
   onOpenDocumentStructure: (row: OutgoingCashflowRow) => void
@@ -967,14 +1023,14 @@ function useOutgoingCashflowColumns({
         enableReorder: false,
         cell: (row) => (
           <Group className="outgoing-cashflows-row-actions" gap={4} justify="flex-end" wrap="nowrap">
-            {row.hasDocumentStructure && (
+            {canOpenDocumentStructure && row.hasDocumentStructure && (
               <TableRowAction
                 action="status"
                 label={t('Структура документів')}
                 onClick={() => onOpenDocumentStructure(row)}
               />
             )}
-            {row.isUnderReport && (
+            {canOpenReport && row.isUnderReport && (
               <TableRowAction
                 action="edit"
                 disabled={!row.order.NetUid}
@@ -982,19 +1038,21 @@ function useOutgoingCashflowColumns({
                 onClick={() => onEditReport(row)}
               />
             )}
-            <TableRowAction
-              action="cancel"
-              disabled={row.isCanceled || !row.order.NetUid}
-              hint={row.isCanceled ? t('Уже скасовано') : undefined}
-              label={t('Скасувати')}
-              onClick={() => onCancel(row)}
-            />
+            {canCancel && (
+              <TableRowAction
+                action="cancel"
+                disabled={row.isCanceled || !row.order.NetUid}
+                hint={row.isCanceled ? t('Уже скасовано') : undefined}
+                label={t('Скасувати')}
+                onClick={() => onCancel(row)}
+              />
+            )}
             <TableRowAction action="details" label={t('Деталі')} onClick={() => onOpen(row)} />
           </Group>
         ),
       },
     ],
-    [onCancel, onEditReport, onOpen, onOpenDocumentStructure, t],
+    [canCancel, canOpenDocumentStructure, canOpenReport, onCancel, onEditReport, onOpen, onOpenDocumentStructure, t],
   )
 }
 

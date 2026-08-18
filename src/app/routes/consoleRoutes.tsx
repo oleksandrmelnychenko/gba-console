@@ -444,18 +444,22 @@ const accountingMigrationRoutes: ConsoleRoute[] = [
   {
     path: '/accounting/outgoing-cashflow',
     element: lazyRoute(<OutgoingCashflowsPage />),
+    permissionKey: PermissionKeys.SystemPages.OutgoingCashflows.View,
   },
   {
     path: '/accounting/outgoing-cashflow/new',
     element: lazyRoute(<OutgoingCashflowCreatePage />),
+    permissionKey: PermissionKeys.OutgoingCashflows.Order.Create,
   },
   {
     path: '/accounting/outgoing-cashflow/new/simple',
     element: lazyRoute(<OutgoingCashflowCreatePage />),
+    permissionKey: PermissionKeys.OutgoingCashflows.Order.Create,
   },
   {
     path: '/accounting/outgoing-cashflow/new/group',
     element: lazyRoute(<OutgoingCashflowCreatePage />),
+    permissionKey: PermissionKeys.OutgoingCashflows.Order.Create,
   },
   {
     path: '/accounting/outgoing-cashflow/:id/advanced-report/view',

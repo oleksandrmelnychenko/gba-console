@@ -4,25 +4,25 @@
     "inputRecords": 1902,
     "classifiedRecords": 1902,
     "dispositionCounts": {
-      "technical_ui": 682,
-      "covered_existing": 370,
-      "duplicate_occurrence": 160,
-      "business_candidate": 432,
+      "technical_ui": 680,
+      "covered_existing": 376,
+      "duplicate_occurrence": 165,
+      "business_candidate": 423,
       "needs_human_review": 250,
       "stale_or_aggregated": 8
     },
-    "reviewCandidates": 682,
-    "technicalExcluded": 682,
-    "duplicatesExcluded": 160,
-    "duplicateOccurrencesTotal": 228,
+    "reviewCandidates": 673,
+    "technicalExcluded": 680,
+    "duplicatesExcluded": 165,
+    "duplicateOccurrencesTotal": 233,
     "technicalDuplicateOverlap": 68,
     "sourceResolved": 1828,
     "sourceUnresolved": 74,
     "currentActionResolved": 1187,
     "currentActionUnresolved": 715,
     "currentProductionActions": 1829,
-    "currentPermissionBoundActions": 206,
-    "currentUnboundActions": 1623
+    "currentPermissionBoundActions": 208,
+    "currentUnboundActions": 1621
   },
   "invariants": {
     "allInputRecordsClassified": true,
@@ -26365,20 +26365,22 @@
       "proposedPermission": "accounting.accounting_outgoing_cashflow_new.handle_submit.form_submit",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "covered_existing",
+      "dispositionReason": "Final simple-order submit rechecks order.create and calls the dedicated permission-scoped create façade.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "accounting.outgoing_cashflows.order.create"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-ad9d9da08c3b",
-          "distance": 63,
+          "candidateId": "EPC-556d98f913f6",
+          "distance": 68,
           "file": "src/features/outgoing-cashflows/components/OutgoingCashOrderForm.tsx",
           "handler": "{handleSubmit}",
           "humanLabel": null,
-          "line": 400,
+          "line": 413,
           "permissionKeys": [],
           "score": 12
         }
@@ -26386,7 +26388,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/outgoing-cashflows/components/OutgoingCashOrderForm.tsx",
-        "line": 337,
+        "line": 345,
         "alternatives": []
       }
     },
@@ -26407,28 +26409,32 @@
       "proposedPermission": "accounting.accounting_outgoing_cashflow_new.void_handle_create_movement.command_submit",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "covered_existing",
+      "dispositionReason": "Creating a payment movement is the existing cash-flow article create capability and uses its already scoped mutation façade.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "accounting.cashflow_articles.article.create"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-25fac02b870c",
+          "candidateId": "EPC-bb53cedb13e4",
           "distance": 7,
           "file": "src/features/outgoing-cashflows/components/OutgoingCashOrderForm.tsx",
           "handler": "{() => void handleCreateMovement()}",
           "humanLabel": "Створити статтю",
-          "line": 505,
-          "permissionKeys": [],
+          "line": 519,
+          "permissionKeys": [
+            "accounting.cashflow_articles.article.create"
+          ],
           "score": 20
         }
       ],
       "source": {
         "status": "resolved",
         "file": "src/features/outgoing-cashflows/components/OutgoingCashOrderForm.tsx",
-        "line": 512,
+        "line": 526,
         "alternatives": []
       }
     },
@@ -26450,16 +26456,16 @@
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
       "disposition": "technical_ui",
-      "dispositionReason": "local_ui_state_only",
+      "dispositionReason": "The form cancel button only returns to the local create-mode selector and performs no server cancellation.",
       "duplicateOf": null,
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [],
       "source": {
         "status": "resolved",
         "file": "src/features/outgoing-cashflows/components/OutgoingCashOrderForm.tsx",
-        "line": 54,
+        "line": 56,
         "alternatives": []
       }
     },
@@ -26522,20 +26528,20 @@
       "proposedPermission": "accounting.accounting_outgoing_cashflow_new.handle_submit.form_submit.2",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
-      "duplicateOf": null,
+      "disposition": "duplicate_occurrence",
+      "dispositionReason": "The grouped-payment form persists the same outcome-payment aggregate through the same order.create boundary.",
+      "duplicateOf": "PE-00657",
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-f219c05fc6b9",
-          "distance": 71,
+          "candidateId": "EPC-dc12aba1648b",
+          "distance": 76,
           "file": "src/features/outgoing-cashflows/components/OutgoingPaymentGroupForm.tsx",
           "handler": "{handleSubmit}",
           "humanLabel": null,
-          "line": 864,
+          "line": 879,
           "permissionKeys": [],
           "score": 12
         }
@@ -26543,7 +26549,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/outgoing-cashflows/components/OutgoingPaymentGroupForm.tsx",
-        "line": 793,
+        "line": 803,
         "alternatives": []
       }
     },
@@ -26564,28 +26570,32 @@
       "proposedPermission": "accounting.accounting_outgoing_cashflow_new.void_handle_create_movement.command_submit.2",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
-      "duplicateOf": null,
+      "disposition": "duplicate_occurrence",
+      "dispositionReason": "The grouped-payment form creates the same payment-movement entity through the existing article.create boundary.",
+      "duplicateOf": "PE-00658",
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "accounting.cashflow_articles.article.create"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-5c27dd0c8e2a",
+          "candidateId": "EPC-a2b472423361",
           "distance": 7,
           "file": "src/features/outgoing-cashflows/components/OutgoingPaymentGroupForm.tsx",
           "handler": "{() => void handleCreateMovement()}",
           "humanLabel": "Створити статтю",
-          "line": 1041,
-          "permissionKeys": [],
+          "line": 1057,
+          "permissionKeys": [
+            "accounting.cashflow_articles.article.create"
+          ],
           "score": 20
         }
       ],
       "source": {
         "status": "resolved",
         "file": "src/features/outgoing-cashflows/components/OutgoingPaymentGroupForm.tsx",
-        "line": 1048,
+        "line": 1064,
         "alternatives": []
       }
     },
@@ -26607,16 +26617,16 @@
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
       "disposition": "technical_ui",
-      "dispositionReason": "local_ui_state_only",
+      "dispositionReason": "The grouped form cancel button only returns to the local create-mode selector.",
       "duplicateOf": null,
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [],
       "source": {
         "status": "resolved",
         "file": "src/features/outgoing-cashflows/components/OutgoingPaymentGroupForm.tsx",
-        "line": 103,
+        "line": 107,
         "alternatives": []
       }
     },
@@ -26647,7 +26657,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/outgoing-cashflows/pages/OutgoingCashflowsPage.tsx",
-        "line": 500,
+        "line": 525,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -27119,7 +27129,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/outgoing-cashflows/pages/OutgoingCashflowCreatePage.tsx",
-        "line": 29,
+        "line": 31,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -27152,7 +27162,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/outgoing-cashflows/pages/OutgoingCashflowCreatePage.tsx",
-        "line": 29,
+        "line": 31,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -27185,7 +27195,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/outgoing-cashflows/pages/OutgoingCashflowCreatePage.tsx",
-        "line": 29,
+        "line": 31,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -27214,12 +27224,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-82e2e303fcc3",
-          "distance": 188,
+          "candidateId": "EPC-7af531bdec66",
+          "distance": 211,
           "file": "src/features/outgoing-cashflows/pages/OutgoingCashflowsPage.tsx",
           "handler": "{onResetFilters}",
           "humanLabel": "Скинути фільтри",
-          "line": 677,
+          "line": 725,
           "permissionKeys": [],
           "score": 12
         }
@@ -27227,7 +27237,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/outgoing-cashflows/pages/OutgoingCashflowsPage.tsx",
-        "line": 489,
+        "line": 514,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -27248,20 +27258,20 @@
       "proposedPermission": "accounting.accounting_outgoing_cashflow.navigate_to_create_item_item_path.command_submit",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
-      "duplicateOf": null,
+      "disposition": "duplicate_occurrence",
+      "dispositionReason": "The create menu only navigates to a form whose final mutation owns order.create authorization.",
+      "duplicateOf": "PE-00657",
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-7fd549efeb08",
+          "candidateId": "EPC-430517cb5d47",
           "distance": 3,
           "file": "src/features/outgoing-cashflows/pages/OutgoingCashflowsPage.tsx",
           "handler": "{() => navigateToCreateItem(item.path)}",
           "humanLabel": null,
-          "line": 715,
+          "line": 764,
           "permissionKeys": [],
           "score": 18
         }
@@ -27269,7 +27279,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/outgoing-cashflows/pages/OutgoingCashflowsPage.tsx",
-        "line": 718,
+        "line": 767,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -27291,19 +27301,19 @@
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
       "disposition": "duplicate_occurrence",
-      "dispositionReason": "same_normalized_action_as:PE-00679",
-      "duplicateOf": "PE-00679",
+      "dispositionReason": "The second register menu repeats the same create-form navigation and does not introduce another capability.",
+      "duplicateOf": "PE-00657",
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-7fd549efeb08",
+          "candidateId": "EPC-430517cb5d47",
           "distance": 3,
           "file": "src/features/outgoing-cashflows/pages/OutgoingCashflowsPage.tsx",
           "handler": "{() => navigateToCreateItem(item.path)}",
           "humanLabel": null,
-          "line": 715,
+          "line": 764,
           "permissionKeys": [],
           "score": 18
         }
@@ -27311,7 +27321,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/outgoing-cashflows/pages/OutgoingCashflowsPage.tsx",
-        "line": 718,
+        "line": 767,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -27332,20 +27342,22 @@
       "proposedPermission": "accounting.accounting_outgoing_cashflow.on_open_details.row_click",
       "securityLevel": "medium",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "covered_existing",
+      "dispositionReason": "A row opens already-loaded page-scoped data; deep-link hydration uses the dedicated page-view details façade.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "accounting.outgoing_cashflows.page.view"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-10aa101f175b",
-          "distance": 265,
+          "candidateId": "EPC-e9b135e1ab3d",
+          "distance": 290,
           "file": "src/features/outgoing-cashflows/pages/OutgoingCashflowsPage.tsx",
           "handler": "{onOpenDetails}",
           "humanLabel": null,
-          "line": 753,
+          "line": 803,
           "permissionKeys": [],
           "score": 11
         }
@@ -27353,7 +27365,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/outgoing-cashflows/pages/OutgoingCashflowsPage.tsx",
-        "line": 488,
+        "line": 513,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -27374,20 +27386,22 @@
       "proposedPermission": "accounting.accounting_outgoing_cashflow.on_open_document_structure_row.modal_open",
       "securityLevel": "low",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "covered_existing",
+      "dispositionReason": "Document structure reuses its independent read permission and now calls the correct structure-scoped calculation façade.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "accounting.advanced_reports.document_structure.open"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-bc16517205e3",
+          "candidateId": "EPC-0899391eff8e",
           "distance": 161,
           "file": "src/features/outgoing-cashflows/pages/OutgoingCashflowsPage.tsx",
           "handler": "{() => onOpenDocumentStructure(row)}",
           "humanLabel": "Структура документів",
-          "line": 971,
+          "line": 1027,
           "permissionKeys": [],
           "score": 24
         }
@@ -27395,7 +27409,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/outgoing-cashflows/pages/OutgoingCashflowsPage.tsx",
-        "line": 810,
+        "line": 866,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -27416,20 +27430,22 @@
       "proposedPermission": "accounting.accounting_outgoing_cashflow.on_edit_report_row.command_export",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "covered_existing",
+      "dispositionReason": "Despite the scanner's export label, this action only opens the advance report; editing remains independently controlled inside the report.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "accounting.advanced_reports.report.open"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-4142bf30498f",
+          "candidateId": "EPC-079dfd66f7ea",
           "distance": 169,
           "file": "src/features/outgoing-cashflows/pages/OutgoingCashflowsPage.tsx",
           "handler": "{() => onEditReport(row)}",
           "humanLabel": "Редагувати звіт",
-          "line": 978,
+          "line": 1034,
           "permissionKeys": [],
           "score": 13
         }
@@ -27437,7 +27453,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/outgoing-cashflows/pages/OutgoingCashflowsPage.tsx",
-        "line": 809,
+        "line": 865,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -27458,20 +27474,20 @@
       "proposedPermission": "accounting.accounting_outgoing_cashflow.on_cancel_row.command_delete",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "technical_ui",
-      "dispositionReason": "current_source_confirms_local_cancel_or_refresh_control",
-      "duplicateOf": null,
+      "disposition": "duplicate_occurrence",
+      "dispositionReason": "The row action only opens cancellation confirmation; the final confirmed mutation owns order.cancel.",
+      "duplicateOf": "PE-00687",
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-2da5d7cbcd45",
-          "distance": 177,
+          "candidateId": "EPC-15654a78116c",
+          "distance": 178,
           "file": "src/features/outgoing-cashflows/pages/OutgoingCashflowsPage.tsx",
           "handler": "{() => onCancel(row)}",
           "humanLabel": "Скасувати",
-          "line": 985,
+          "line": 1042,
           "permissionKeys": [],
           "score": 9
         }
@@ -27479,7 +27495,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/outgoing-cashflows/pages/OutgoingCashflowsPage.tsx",
-        "line": 808,
+        "line": 864,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -27500,17 +27516,17 @@
       "proposedPermission": "accounting.accounting_outgoing_cashflow.on_open_row.modal_open",
       "securityLevel": "low",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
-      "duplicateOf": null,
+      "disposition": "duplicate_occurrence",
+      "dispositionReason": "The explicit details icon opens the same already-loaded drawer as the row click.",
+      "duplicateOf": "PE-00681",
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [],
       "source": {
         "status": "resolved",
         "file": "src/features/outgoing-cashflows/pages/OutgoingCashflowsPage.tsx",
-        "line": 811,
+        "line": 867,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -27541,7 +27557,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/outgoing-cashflows/pages/OutgoingCashflowsPage.tsx",
-        "line": 478,
+        "line": 503,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -27562,17 +27578,19 @@
       "proposedPermission": "accounting.accounting_outgoing_cashflow.on_cancel.command_delete",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "technical_ui",
-      "dispositionReason": "local_ui_state_only",
+      "disposition": "covered_existing",
+      "dispositionReason": "Final cancellation rechecks order.cancel and calls the dedicated idempotent permission-scoped mutation façade.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "accounting.outgoing_cashflows.order.cancel"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [],
       "source": {
         "status": "resolved",
         "file": "src/features/outgoing-cashflows/pages/OutgoingCashflowsPage.tsx",
-        "line": 354,
+        "line": 373,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -79430,15 +79448,6 @@
     "PE-00548",
     "PE-00549",
     "PE-00550",
-    "PE-00657",
-    "PE-00658",
-    "PE-00661",
-    "PE-00662",
-    "PE-00679",
-    "PE-00681",
-    "PE-00682",
-    "PE-00683",
-    "PE-00685",
     "PE-00740",
     "PE-00741",
     "PE-00742",

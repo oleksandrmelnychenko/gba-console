@@ -16,7 +16,7 @@ import type {
 } from '../types'
 
 export async function getOutgoingCashflows(params: OutgoingCashflowsSearchParams): Promise<OutgoingCashflowsResponse> {
-  const result = await apiRequest<unknown>('/payments/orders/outcome/all', {
+  const result = await apiRequest<unknown>('/payments/orders/outcome/outgoing-cashflows/registry', {
     query: {
       currencyNetId: params.currencyNetId || undefined,
       from: params.from,
@@ -34,7 +34,7 @@ export async function getOutgoingCashflows(params: OutgoingCashflowsSearchParams
 }
 
 export async function getOutgoingCashflowByNetId(netId: string, signal?: AbortSignal): Promise<OutcomePaymentOrder | null> {
-  const result = await apiRequest<unknown>('/payments/orders/outcome/get', {
+  const result = await apiRequest<unknown>('/payments/orders/outcome/outgoing-cashflows/details', {
     query: {
       netId,
     },
@@ -52,7 +52,7 @@ export async function cancelOutgoingCashflow(
     kind: 'outcome-payment:cancel',
     operation,
     payload: { netId },
-    request: (payload, context) => apiRequest<unknown>('/payments/orders/outcome/cancel', {
+    request: (payload, context) => apiRequest<unknown>('/payments/orders/outcome/outgoing-cashflows/cancel', {
       dedupe: false,
       headers: context.headers,
       method: 'PUT',

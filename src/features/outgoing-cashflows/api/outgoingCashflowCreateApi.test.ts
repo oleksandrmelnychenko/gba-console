@@ -3,6 +3,7 @@ import { apiRequest } from '../../../shared/api/apiClient'
 import { OUTCOME_OPERATION_TYPE } from '../outgoingCreateTypes'
 import {
   createOutgoingCashflowOrder,
+  createOutgoingCreatePaymentMovement,
   getOutgoingCreateOrganizations,
   getOutgoingCreatePaymentMovements,
   searchOutgoingCreatePaymentMovements,
@@ -35,10 +36,24 @@ describe('outgoingCashflowCreateApi mutation contract', () => {
 
     await createOutgoingCashflowOrder(order, { operationId })
 
-    expect(apiRequestMock).toHaveBeenCalledWith('/payments/orders/outcome/new', {
+    expect(apiRequestMock).toHaveBeenCalledWith('/payments/orders/outcome/outgoing-cashflows/create', {
       body: order,
       dedupe: false,
       headers: { 'Idempotency-Key': operationId },
+      method: 'POST',
+    })
+  })
+
+  it('uses the existing cash-flow article create boundary for a new payment movement', async () => {
+    apiRequestMock.mockResolvedValueOnce({ Id: 7, OperationName: 'Господарські витрати' })
+
+    await expect(createOutgoingCreatePaymentMovement('Господарські витрати')).resolves.toEqual({
+      Id: 7,
+      OperationName: 'Господарські витрати',
+    })
+
+    expect(apiRequestMock).toHaveBeenCalledWith('/payments/movements/accounting/new', {
+      body: { OperationName: 'Господарські витрати' },
       method: 'POST',
     })
   })
@@ -136,7 +151,7 @@ describe('outgoingCashflowCreateApi mutation contract', () => {
     await createOutgoingCashflowOrder(order, { operationId })
 
     expect(apiRequestMock).toHaveBeenCalledWith(
-      '/payments/orders/outcome/new',
+      '/payments/orders/outcome/outgoing-cashflows/create',
       {
         body: order,
         dedupe: false,

@@ -3,6 +3,7 @@ import { apiRequest } from '../../../shared/api/apiClient'
 import {
   calculateAdvanceReportCompanyCarFueling,
   calculateAdvanceReportConsumableOrder,
+  calculateAdvanceReportDocumentStructure,
   calculateAdvanceReportOrder,
   getAdvanceReportOrder,
   searchAdvanceReportSupplyOrganizations,
@@ -70,6 +71,18 @@ describe('advanceReportApi', () => {
     })
     expect(order.OutcomePaymentOrderConsumablesOrders?.[0]?.NetUid).toBe('local-entry')
     expect(order.CompanyCarFuelings?.[0]?.NetUid).toBe('local-fueling')
+  })
+
+  it('keeps document-structure calculation on its independent read boundary', async () => {
+    const order: AdvanceReportOrder = { NetUid: 'order-1' }
+    apiRequestMock.mockResolvedValueOnce({ NetUid: 'order-1' })
+
+    await calculateAdvanceReportDocumentStructure(order)
+
+    expect(apiRequestMock).toHaveBeenCalledWith('/payments/orders/outcome/advanced-reports/structure/calculate', {
+      body: order,
+      method: 'POST',
+    })
   })
 
   it('does not send deleted fuel rows to calculation but keeps them in the returned order state', async () => {
