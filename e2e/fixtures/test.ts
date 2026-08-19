@@ -7,15 +7,17 @@ type WorkerFixtures = { db: E2eDb };
 
 export const test = base.extend<TestFixtures, WorkerFixtures>({
   db: [
-    async ({}, use) => {
+    async ({ browserName }, provide) => {
+      void browserName
       const db = await E2eDb.connect();
-      await use(db);
+      await provide(db);
       await db.close();
     },
     { scope: 'worker' },
   ],
-  entities: async ({}, use) => {
-    await use(EntitiesStore.open());
+  entities: async ({ browserName }, provide) => {
+    void browserName
+    await provide(EntitiesStore.open());
   },
 });
 
