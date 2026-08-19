@@ -76,7 +76,7 @@ export function ChangeProductSpecificationPanel({
   }
 
   async function submit() {
-    if (!productSpecification) {
+    if (!productSpecification || !hasPermission(CHANGE_PERMISSION)) {
       return
     }
 

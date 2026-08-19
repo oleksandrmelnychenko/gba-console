@@ -4327,6 +4327,17 @@
       "canonicalPermissionKeys": ["accounting.cashflow_articles.article.create"],
       "reason": "The colleague form's movement-article action reuses the single existing article.create capability and its protected accounting façade."
     },
+    "PE-00942": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["products.specification_codes.code.edit"],
+      "reason": "The final change handler rechecks code.edit immediately before calling the dedicated mutation-policy-protected specification-code façade."
+    },
+    "PE-00948": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-00942",
+      "canonicalPermissionKeys": ["products.specification_codes.code.edit"],
+      "reason": "The row click only opens the change workflow finalized by PE-00942 and is inert without the same code.edit capability."
+    },
     "PE-01064": {
       "disposition": "covered_existing",
       "canonicalPermissionKeys": ["reports.sale_file.document.export"],

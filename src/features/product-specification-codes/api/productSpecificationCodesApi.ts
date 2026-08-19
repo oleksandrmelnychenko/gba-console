@@ -46,7 +46,7 @@ export async function uploadSpecificationCodesFile(file: File): Promise<Specific
   const formData = new FormData()
   formData.append('file', file)
 
-  const result = await apiRequest<unknown>('/products/specification/new/all/file', {
+  const result = await apiRequest<unknown>('/products/specification-codes/file/import', {
     body: formData,
     method: 'POST',
   })

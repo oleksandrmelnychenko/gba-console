@@ -1,6 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { apiRequest } from '../../../shared/api/apiClient'
-import { changeProductSpecification, getProductSpecifications } from './productSpecificationCodesApi'
+import {
+  changeProductSpecification,
+  getProductSpecifications,
+  uploadSpecificationCodesFile,
+} from './productSpecificationCodesApi'
 
 vi.mock('../../../shared/api/apiClient', () => ({
   apiRequest: vi.fn(),
@@ -49,5 +53,19 @@ describe('product specification codes permission-scoped API', () => {
       query: { specificationChangeMode: 1 },
       body,
     })
+  })
+
+  it('imports codes through the dedicated import facade', async () => {
+    apiRequestMock.mockResolvedValueOnce({ ParsedCount: 1 })
+    const file = new File(['code'], 'codes.xlsx')
+
+    await uploadSpecificationCodesFile(file)
+
+    expect(apiRequestMock).toHaveBeenCalledWith('/products/specification-codes/file/import', {
+      body: expect.any(FormData),
+      method: 'POST',
+    })
+    const request = apiRequestMock.mock.calls[0]?.[1]
+    expect((request?.body as FormData).get('file')).toBe(file)
   })
 })

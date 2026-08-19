@@ -200,10 +200,12 @@ const migratedConsoleRoutes: ConsoleRoute[] = [
   {
     path: '/accounting/specification-codes',
     element: lazyRoute(<ProductSpecificationCodesPage />),
+    permissionKey: PermissionKeys.ProductSpecificationCodes.Page.View,
   },
   {
     path: '/accounting/specification-codes/uk',
     element: lazyRoute(<ProductSpecificationCodesPage />),
+    permissionKey: PermissionKeys.ProductSpecificationCodes.Page.View,
   },
   { path: '/supplies/returns', element: lazyRoute(<SupplyReturnsPage />) },
   {

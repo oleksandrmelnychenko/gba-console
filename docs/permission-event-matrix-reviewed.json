@@ -5,24 +5,24 @@
     "classifiedRecords": 1902,
     "dispositionCounts": {
       "technical_ui": 776,
-      "covered_existing": 617,
-      "duplicate_occurrence": 312,
-      "business_candidate": 122,
-      "needs_human_review": 62,
+      "covered_existing": 618,
+      "duplicate_occurrence": 313,
+      "business_candidate": 121,
+      "needs_human_review": 61,
       "stale_or_aggregated": 13
     },
-    "reviewCandidates": 184,
+    "reviewCandidates": 182,
     "technicalExcluded": 776,
-    "duplicatesExcluded": 312,
-    "duplicateOccurrencesTotal": 381,
+    "duplicatesExcluded": 313,
+    "duplicateOccurrencesTotal": 382,
     "technicalDuplicateOverlap": 69,
     "sourceResolved": 1828,
     "sourceUnresolved": 74,
     "currentActionResolved": 1178,
     "currentActionUnresolved": 724,
     "currentProductionActions": 1828,
-    "currentPermissionBoundActions": 345,
-    "currentUnboundActions": 1483
+    "currentPermissionBoundActions": 346,
+    "currentUnboundActions": 1482
   },
   "invariants": {
     "allInputRecordsClassified": true,
@@ -38216,12 +38216,14 @@
       "proposedPermission": "accounting.accounting_specification_codes.submit.command_submit",
       "securityLevel": "high",
       "rawStatus": "Candidate existing key in component; binding review required",
-      "disposition": "needs_human_review",
-      "dispositionReason": "raw_audit_claims_existing_binding_but_does_not_name_the_key",
+      "disposition": "covered_existing",
+      "dispositionReason": "The final change handler rechecks code.edit immediately before calling the dedicated mutation-policy-protected specification-code façade.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "products.specification_codes.code.edit"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [],
       "source": {
         "status": "resolved",
@@ -38339,7 +38341,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/product-specification-codes/pages/ProductSpecificationCodesPage.tsx",
-        "line": 143,
+        "line": 144,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -38372,7 +38374,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/product-specification-codes/pages/ProductSpecificationCodesPage.tsx",
-        "line": 143,
+        "line": 144,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -38402,12 +38404,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-eacdf4c7a5f1",
+          "candidateId": "EPC-a9d845b28859",
           "distance": 0,
           "file": "src/features/product-specification-codes/pages/ProductSpecificationCodesPage.tsx",
           "handler": "{model.resetFilters}",
           "humanLabel": "Скинути",
-          "line": 219,
+          "line": 231,
           "permissionKeys": [],
           "score": 17
         }
@@ -38415,7 +38417,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/product-specification-codes/pages/ProductSpecificationCodesPage.tsx",
-        "line": 219,
+        "line": 231,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -38437,28 +38439,32 @@
       "proposedPermission": "accounting.accounting_specification_codes.specification_model_set_selected_specification.row_click",
       "securityLevel": "medium",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
-      "duplicateOf": null,
+      "disposition": "duplicate_occurrence",
+      "dispositionReason": "The row click only opens the change workflow finalized by PE-00942 and is inert without the same code.edit capability.",
+      "duplicateOf": "PE-00942",
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "products.specification_codes.code.edit"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-11c66f363c17",
+          "candidateId": "EPC-c65aa27cf2c3",
           "distance": 15,
           "file": "src/features/product-specification-codes/pages/ProductSpecificationCodesPage.tsx",
-          "handler": "{(specification) => model.setSelected(specification)}",
+          "handler": "{canChange ? (specification) => model.setSelected(specification) : undefined}",
           "humanLabel": null,
-          "line": 260,
-          "permissionKeys": [],
+          "line": 274,
+          "permissionKeys": [
+            "products.specification_codes.code.edit"
+          ],
           "score": 42
         }
       ],
       "source": {
         "status": "resolved",
         "file": "src/features/product-specification-codes/pages/ProductSpecificationCodesPage.tsx",
-        "line": 275,
+        "line": 289,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -38490,7 +38496,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/product-specification-codes/pages/ProductSpecificationCodesPage.tsx",
-        "line": 283,
+        "line": 297,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -80125,8 +80131,6 @@
     "PE-00913",
     "PE-00916",
     "PE-00917",
-    "PE-00942",
-    "PE-00948",
     "PE-01139",
     "PE-01195",
     "PE-01197",

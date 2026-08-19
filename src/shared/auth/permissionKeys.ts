@@ -867,6 +867,7 @@ export const PermissionKeys = {
     },
     Code: {
       Edit: 'products.specification_codes.code.edit',
+      Import: 'products.specification_codes.code.import',
     },
   },
   OrdersUkraine: {
