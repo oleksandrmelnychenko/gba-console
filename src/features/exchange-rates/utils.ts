@@ -4,11 +4,6 @@ import type { ExchangeRate, ExchangeRateGroup, ExchangeRatesSnapshot } from './t
 
 const UKRAINE_LANGUAGE = 'uk'
 const POLAND_LANGUAGE = 'pl'
-const historyDateOnlyFormatter = new Intl.DateTimeFormat('uk-UA', {
-  day: '2-digit',
-  month: '2-digit',
-  year: 'numeric',
-})
 const historyDateFormatter = new Intl.DateTimeFormat('uk-UA', {
   day: '2-digit',
   hour: '2-digit',
@@ -104,15 +99,6 @@ export function formatHistoryDate(value?: string | Date): string {
 
   if (Number.isNaN(date.getTime())) {
     return ''
-  }
-
-  if (
-    date.getHours() === 0
-    && date.getMinutes() === 0
-    && date.getSeconds() === 0
-    && date.getMilliseconds() === 0
-  ) {
-    return historyDateOnlyFormatter.format(date)
   }
 
   return historyDateFormatter.format(date)

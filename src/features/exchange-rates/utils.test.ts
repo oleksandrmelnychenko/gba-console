@@ -50,8 +50,8 @@ describe('exchange rate groups', () => {
     )
   })
 
-  it('shows synchronized daily rates without a misleading midnight time', () => {
-    expect(formatHistoryDate('2026-08-18T00:00:00')).toBe('18.08.2026')
+  it('keeps the effective midnight time for synchronized daily rates', () => {
+    expect(formatHistoryDate('2026-08-18T00:00:00')).toBe('18.08.2026, 00:00')
   })
 
   it('keeps the actual time for intraday rate changes', () => {
