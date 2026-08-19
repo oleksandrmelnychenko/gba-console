@@ -117,8 +117,13 @@
 - [x] Динамічний policy provider/handler і `RequirePermission`.
 - [x] Ідемпотентна синхронізація каталогу.
 - [x] Міграційні й opt-in SQL integration tests.
-- [ ] Перевірити й безпечно усунути legacy duplicate role links на актуальній
-  БД; лише після аудиту вирішити питання DB unique index.
+- [x] Перевірити й безпечно усунути legacy duplicate role links на актуальній
+  БД — фізичних active duplicate pairs `UserRoleID+PermissionID` немає (`0`),
+  duplicate ControlId/alias/revision та orphan links також `0`. Виявлені 156
+  effective overlaps є canonical+legacy-alias парами у двох ролях, тому вони
+  збережені як compatibility, а не видалені. Додано filtered unique index для
+  active role links із fail-closed migration preflight; EF snapshot clean,
+  migration contract 2/2 і transactional dry-run з rollback пройшли.
 - [x] Прогнати required SQL integration на фінальній копії актуальної БД —
   `ConcordDb_EventPermissionsCurrent`, 2/2 SQL tests, exact cleanup.
 - [ ] Виконати reconciliation старих role assignments за розділом 2.
@@ -170,7 +175,7 @@
 - [x] Синхронізувати backend branch з актуальним `development`.
 - [x] Повні frontend test, lint, typecheck, build і audit checks.
 - [x] Повний backend build/test та `verify-event-permissions` у required SQL
-  mode — 96/96 API/security/SQL та 17/17 actor authorization tests.
+  mode — 98/98 API/security/SQL та 17/17 actor authorization tests.
 - [ ] Backup і dry-run міграцій на фінальній копії актуальної БД.
 - [ ] Deploy order: БД/міграції → backend → catalog sync → frontend.
 - [ ] Smoke test `/users/roles`, effective permissions та representative `403`.
@@ -186,7 +191,7 @@
 - [x] Frontend audit/typecheck/lint/full tests/build — 16 matrix audit tests,
   4 parity tests і 2564 Vitest tests пройшли; production build успішний.
 - [x] Backend event-permission verification і Release build — required SQL
-  mode: API/security/SQL 96 passed, 0 skipped; actor authorization 17 passed.
+  mode: API/security/SQL 98 passed, 0 skipped; actor authorization 17 passed.
 - [x] Перевірка runtime-каталогу — API повернув 479 active definitions,
   479 unique keys, 79 сторінок, 238 груп і 0 записів без required metadata.
 - [ ] Browser acceptance для role save/refresh, незалежних дій і `403/409` —
@@ -205,7 +210,11 @@
 - [x] Required SQL gate на актуальній test-only копії —
   `ConcordDb_EventPermissionsCurrent`; migration seed і transactional role
   read/update/conflict/link-revival пройшли 2/2 з exact cleanup. Повний
-  `verify-event-permissions` у REQUIRED mode: 96/96 + 17/17.
+  `verify-event-permissions` у REQUIRED mode: 98/98 + 17/17.
+- [x] DB duplicate/index gate — physical duplicates `0`; 156 intentional
+  canonical+alias overlaps збережені. Нова filtered unique migration має
+  preflight `THROW 51003`, exact `dbo` schema і успішний transactional dry-run;
+  post-rollback index/history залишилися незмінені.
 - [x] Upstream sync — актуальні `origin/main` і `origin/development` злиті в
   окремі `codex/event-permissions` гілки; обидві мають `0 behind`. Три
   frontend-конфлікти поєднали upstream folder-tree/comment logic із
