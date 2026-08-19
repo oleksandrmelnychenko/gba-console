@@ -119,7 +119,8 @@
 - [x] Міграційні й opt-in SQL integration tests.
 - [ ] Перевірити й безпечно усунути legacy duplicate role links на актуальній
   БД; лише після аудиту вирішити питання DB unique index.
-- [ ] Прогнати required SQL integration на фінальній копії актуальної БД.
+- [x] Прогнати required SQL integration на фінальній копії актуальної БД —
+  `ConcordDb_EventPermissionsCurrent`, 2/2 SQL tests, exact cleanup.
 - [ ] Виконати reconciliation старих role assignments за розділом 2.
 
 ## 5. Frontend guards і server enforcement
@@ -168,8 +169,8 @@
 - [x] Синхронізувати frontend branch з актуальним `main`.
 - [x] Синхронізувати backend branch з актуальним `development`.
 - [x] Повні frontend test, lint, typecheck, build і audit checks.
-- [ ] Повний backend build/test та `verify-event-permissions` у required SQL
-  mode.
+- [x] Повний backend build/test та `verify-event-permissions` у required SQL
+  mode — 96/96 API/security/SQL та 17/17 actor authorization tests.
 - [ ] Backup і dry-run міграцій на фінальній копії актуальної БД.
 - [ ] Deploy order: БД/міграції → backend → catalog sync → frontend.
 - [ ] Smoke test `/users/roles`, effective permissions та representative `403`.
@@ -184,8 +185,8 @@
 
 - [x] Frontend audit/typecheck/lint/full tests/build — 16 matrix audit tests,
   4 parity tests і 2564 Vitest tests пройшли; production build успішний.
-- [x] Backend event-permission verification і Release build — API/security
-  contracts 94 passed, 2 opt-in SQL skipped; actor authorization 17 passed.
+- [x] Backend event-permission verification і Release build — required SQL
+  mode: API/security/SQL 96 passed, 0 skipped; actor authorization 17 passed.
 - [x] Перевірка runtime-каталогу — API повернув 479 active definitions,
   479 unique keys, 79 сторінок, 238 груп і 0 записів без required metadata.
 - [ ] Browser acceptance для role save/refresh, незалежних дій і `403/409` —
@@ -201,6 +202,10 @@
   gate; виправлено 27 ключів, які існували в backend-каталозі, але не входили
   до frontend effective key set. Фінальний результат: 479 унікальних backend
   keys = 479 унікальних frontend keys, без missing/extra/duplicates.
+- [x] Required SQL gate на актуальній test-only копії —
+  `ConcordDb_EventPermissionsCurrent`; migration seed і transactional role
+  read/update/conflict/link-revival пройшли 2/2 з exact cleanup. Повний
+  `verify-event-permissions` у REQUIRED mode: 96/96 + 17/17.
 - [x] Upstream sync — актуальні `origin/main` і `origin/development` злиті в
   окремі `codex/event-permissions` гілки; обидві мають `0 behind`. Три
   frontend-конфлікти поєднали upstream folder-tree/comment logic із
