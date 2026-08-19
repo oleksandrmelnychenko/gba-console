@@ -411,3 +411,19 @@ describe('human-reviewed income cashflow actions', () => {
     ])
   })
 })
+
+describe('human-reviewed sale-file report actions', () => {
+  it('contains page, export, and print without sheet-tab or filter permissions', () => {
+    const actual = [
+      ...Object.values(PermissionKeys.ReportsSaleFile.Page),
+      ...Object.values(PermissionKeys.ReportsSaleFile.Document),
+    ]
+
+    expect(actual).toEqual([
+      'reports.sale_file.page.view',
+      'reports.sale_file.document.export',
+      'reports.sale_file.document.print',
+    ])
+    expect(new Set(actual).size).toBe(3)
+  })
+})

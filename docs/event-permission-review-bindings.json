@@ -4300,6 +4300,20 @@
       "canonicalPermissionKeys": ["accounting.cashflow_articles.article.create"],
       "reason": "The colleague form's movement-article action reuses the single existing article.create capability and its protected accounting façade."
     },
+    "PE-01064": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["reports.sale_file.document.export"],
+      "reason": "CSV export is independently hidden and its final local download handler rechecks document.export after the report file is loaded."
+    },
+    "PE-01065": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["reports.sale_file.document.print"],
+      "reason": "Browser printing is independently hidden and the final local print handler rechecks document.print immediately before window.print."
+    },
+    "PE-01068": {
+      "disposition": "technical_ui",
+      "reason": "Switching between sheets of an already authorized local workbook only changes presentation state; page.view owns file access and export/print own the two output boundaries."
+    },
     "PE-01869": {
       "disposition": "technical_ui",
       "reason": "The shared Excel format card only selects the requested representation; each caller owns and rechecks the upstream document-generation permission."

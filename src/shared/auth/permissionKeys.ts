@@ -979,6 +979,15 @@ export const PermissionKeys = {
       Generate: 'reports.stocks_constructor.report.generate',
     },
   },
+  ReportsSaleFile: {
+    Page: {
+      View: 'reports.sale_file.page.view',
+    },
+    Document: {
+      Export: 'reports.sale_file.document.export',
+      Print: 'reports.sale_file.document.print',
+    },
+  },
   AdvancedReports: {
     Report: {
       Open: 'accounting.advanced_reports.report.open',
@@ -1014,6 +1023,10 @@ export type ResalesPermissionKey =
 export type ReportsStocksPermissionKey =
   | Values<typeof PermissionKeys.ReportsStocks.Page>
   | Values<typeof PermissionKeys.ReportsStocks.Report>
+
+export type ReportsSaleFilePermissionKey =
+  | Values<typeof PermissionKeys.ReportsSaleFile.Page>
+  | Values<typeof PermissionKeys.ReportsSaleFile.Document>
 
 export type AdvancedReportsPermissionKey =
   | Values<typeof PermissionKeys.AdvancedReports.Report>
@@ -1366,6 +1379,7 @@ export type PermissionKey =
   | SalesUkraineSalePermissionKey
   | ResalesPermissionKey
   | ReportsStocksPermissionKey
+  | ReportsSaleFilePermissionKey
   | SupplierOrganizationsPermissionKey
   | TaxFreeCarriersPermissionKey
   | TaxFreeDocumentsPermissionKey
@@ -2473,6 +2487,8 @@ const eventPermissionKeys = new Set<string>([
   ...Object.values(PermissionKeys.Resales.ConsignmentNote),
   ...Object.values(PermissionKeys.ReportsStocks.Page),
   ...Object.values(PermissionKeys.ReportsStocks.Report),
+  ...Object.values(PermissionKeys.ReportsSaleFile.Page),
+  ...Object.values(PermissionKeys.ReportsSaleFile.Document),
   ...Object.values(PermissionKeys.AdvancedReports.Report),
   ...Object.values(PermissionKeys.AdvancedReports.DocumentStructure),
   ...Object.values(PermissionKeys.OutgoingCashflows.Order),

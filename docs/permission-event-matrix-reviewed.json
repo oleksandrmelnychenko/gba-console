@@ -4,25 +4,25 @@
     "inputRecords": 1902,
     "classifiedRecords": 1902,
     "dispositionCounts": {
-      "technical_ui": 775,
-      "covered_existing": 612,
+      "technical_ui": 776,
+      "covered_existing": 614,
       "duplicate_occurrence": 310,
-      "business_candidate": 130,
+      "business_candidate": 127,
       "needs_human_review": 62,
       "stale_or_aggregated": 13
     },
-    "reviewCandidates": 192,
-    "technicalExcluded": 775,
+    "reviewCandidates": 189,
+    "technicalExcluded": 776,
     "duplicatesExcluded": 310,
     "duplicateOccurrencesTotal": 379,
     "technicalDuplicateOverlap": 69,
     "sourceResolved": 1828,
     "sourceUnresolved": 74,
-    "currentActionResolved": 1179,
-    "currentActionUnresolved": 723,
+    "currentActionResolved": 1178,
+    "currentActionUnresolved": 724,
     "currentProductionActions": 1828,
-    "currentPermissionBoundActions": 339,
-    "currentUnboundActions": 1489
+    "currentPermissionBoundActions": 341,
+    "currentUnboundActions": 1487
   },
   "invariants": {
     "allInputRecordsClassified": true,
@@ -43099,7 +43099,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/reports/pages/ReportsSalePage.tsx",
-        "line": 48,
+        "line": 51,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -43132,7 +43132,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/reports/pages/ReportsSalePage.tsx",
-        "line": 48,
+        "line": 51,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -43163,12 +43163,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-805421b11fa4",
-          "distance": 52,
+          "candidateId": "EPC-6399be561354",
+          "distance": 63,
           "file": "src/features/reports/pages/ReportsSalePage.tsx",
           "handler": "{resetFilters}",
           "humanLabel": "Скинути",
-          "line": 161,
+          "line": 189,
           "permissionKeys": [],
           "score": 12
         }
@@ -43176,7 +43176,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/reports/pages/ReportsSalePage.tsx",
-        "line": 109,
+        "line": 126,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -43199,28 +43199,32 @@
       "proposedPermission": "reports.reports_sale.export_csv.command_export",
       "securityLevel": "medium",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "covered_existing",
+      "dispositionReason": "CSV export is independently hidden and its final local download handler rechecks document.export after the report file is loaded.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "reports.sale_file.document.export"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-be60fd3d8c36",
-          "distance": 51,
+          "candidateId": "EPC-8847b1b82550",
+          "distance": 63,
           "file": "src/features/reports/pages/ReportsSalePage.tsx",
           "handler": "{exportCsv}",
           "humanLabel": "Експорт CSV",
-          "line": 166,
-          "permissionKeys": [],
+          "line": 195,
+          "permissionKeys": [
+            "reports.sale_file.document.export"
+          ],
           "score": 9
         }
       ],
       "source": {
         "status": "resolved",
         "file": "src/features/reports/pages/ReportsSalePage.tsx",
-        "line": 115,
+        "line": 132,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -43243,28 +43247,19 @@
       "proposedPermission": "reports.reports_sale.window_print.command_export",
       "securityLevel": "medium",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "covered_existing",
+      "dispositionReason": "Browser printing is independently hidden and the final local print handler rechecks document.print immediately before window.print.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
-      "bindingEvidence": [
-        {
-          "candidateId": "EPC-de17aa8f0451",
-          "distance": 0,
-          "file": "src/features/reports/pages/ReportsSalePage.tsx",
-          "handler": "{() => window.print()}",
-          "humanLabel": "Друк",
-          "line": 171,
-          "permissionKeys": [],
-          "score": 11
-        }
+      "canonicalPermissionKeys": [
+        "reports.sale_file.document.print"
       ],
+      "classificationSource": "manual_override",
+      "bindingEvidence": [],
       "source": {
         "status": "resolved",
         "file": "src/features/reports/pages/ReportsSalePage.tsx",
-        "line": 171,
+        "line": 158,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -43295,12 +43290,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-d8101b1d9ace",
-          "distance": 128,
+          "candidateId": "EPC-874c05f7148c",
+          "distance": 157,
           "file": "src/features/reports/pages/ReportsSalePage.tsx",
           "handler": "{() => { setSheets([]) setActiveSheetName(null) setFileName('') resetFilters() }}",
           "humanLabel": "Очистити файл",
-          "line": 176,
+          "line": 208,
           "permissionKeys": [],
           "score": 53
         }
@@ -43308,7 +43303,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/reports/pages/ReportsSalePage.tsx",
-        "line": 48,
+        "line": 51,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -43341,7 +43336,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/reports/pages/ReportsSalePage.tsx",
-        "line": 58,
+        "line": 75,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -43364,20 +43359,20 @@
       "proposedPermission": "reports.reports_sale.set_active_sheet_name_sheet_name.modal_open",
       "securityLevel": "low",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "technical_ui",
+      "dispositionReason": "Switching between sheets of an already authorized local workbook only changes presentation state; page.view owns file access and export/print own the two output boundaries.",
       "duplicateOf": null,
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-a86c1965532e",
+          "candidateId": "EPC-8cbf3df2e2b8",
           "distance": 5,
           "file": "src/features/reports/pages/ReportsSalePage.tsx",
           "handler": "{() => setActiveSheetName(sheet.name)}",
           "humanLabel": null,
-          "line": 214,
+          "line": 246,
           "permissionKeys": [],
           "score": 27
         }
@@ -43385,7 +43380,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/reports/pages/ReportsSalePage.tsx",
-        "line": 219,
+        "line": 251,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -80123,9 +80118,6 @@
     "PE-00917",
     "PE-00942",
     "PE-00948",
-    "PE-01064",
-    "PE-01065",
-    "PE-01068",
     "PE-01139",
     "PE-01195",
     "PE-01197",

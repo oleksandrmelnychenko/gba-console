@@ -97,6 +97,13 @@ describe('console report routes', () => {
     expect(paths.has('/reports/sale')).toBe(true)
     expect(paths.has('/reports/sales')).toBe(true)
   })
+
+  it('guards both sale-file aliases with one page capability', () => {
+    expect(consoleRoutes.find((route) => route.path === '/reports/sale')?.permissionKey)
+      .toBe(PermissionKeys.ReportsSaleFile.Page.View)
+    expect(consoleRoutes.find((route) => route.path === '/reports/sales')?.permissionKey)
+      .toBe(PermissionKeys.ReportsSaleFile.Page.View)
+  })
 })
 
 describe('vehicle registry route', () => {

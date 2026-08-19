@@ -22,6 +22,9 @@ import { DataTableDensityToggle } from '../../../shared/ui/data-table/DataTableD
 import type { DataTableColumn, DataTableDensity } from '../../../shared/ui/data-table/types'
 import { useDataTableDensity } from '../../../shared/ui/data-table/useDataTableDensity'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
+import { PermissionGate } from '../../auth/components/PermissionGate'
+import { useAuth } from '../../auth/useAuth'
+import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import {
   buildSheetExportRows,
   buildSpreadsheetSheet,
@@ -47,6 +50,20 @@ const SEARCH_DEBOUNCE_MS = 400
 
 export function ReportsSalePage() {
   const { t } = useI18n()
+
+  return (
+    <PermissionGate
+      fallback={<Alert color="red">{t('Немає права переглядати файл звіту продажів')}</Alert>}
+      permissionKey={PermissionKeys.ReportsSaleFile.Page.View}
+    >
+      <ReportsSalePageContent />
+    </PermissionGate>
+  )
+}
+
+function ReportsSalePageContent() {
+  const { t } = useI18n()
+  const { hasPermission } = useAuth()
   const [sheets, setSheets] = useValueState<SpreadsheetSheet[]>([])
   const [activeSheetName, setActiveSheetName] = useValueState<string | null>(null)
   const [fileName, setFileName] = useValueState('')
@@ -113,7 +130,10 @@ export function ReportsSalePage() {
   }
 
   function exportCsv() {
-    if (!activeSheet) {
+    if (
+      !activeSheet ||
+      !hasPermission(PermissionKeys.ReportsSaleFile.Document.Export)
+    ) {
       return
     }
 
@@ -128,6 +148,14 @@ export function ReportsSalePage() {
       buildReportFileName([fileName.replace(/\.[^.]+$/, ''), activeSheet.name, buildDateFileSuffix()], 'csv'),
       buildSpreadsheetCsv(buildSheetExportRows(activeSheet, visibleRows, totalsRow)),
     )
+  }
+
+  function printReport() {
+    if (!hasPermission(PermissionKeys.ReportsSaleFile.Document.Print)) {
+      return
+    }
+
+    window.print()
   }
 
   return (
@@ -162,16 +190,20 @@ export function ReportsSalePage() {
                 <RotateCcw size={17} />
               </ActionIcon>
             </Tooltip>
-            <Tooltip label={t('Експорт CSV')}>
-              <ActionIcon aria-label={t('Експорт CSV')} color="gray" disabled={!activeSheet} size={34} variant="light" onClick={exportCsv}>
-                <Download size={17} />
-              </ActionIcon>
-            </Tooltip>
-            <Tooltip label={t('Друк')}>
-              <ActionIcon aria-label={t('Друк')} color="gray" disabled={!activeSheet} size={34} variant="light" onClick={() => window.print()}>
-                <Printer size={17} />
-              </ActionIcon>
-            </Tooltip>
+            {hasPermission(PermissionKeys.ReportsSaleFile.Document.Export) && (
+              <Tooltip label={t('Експорт CSV')}>
+                <ActionIcon aria-label={t('Експорт CSV')} color="gray" disabled={!activeSheet} size={34} variant="light" onClick={exportCsv}>
+                  <Download size={17} />
+                </ActionIcon>
+              </Tooltip>
+            )}
+            {hasPermission(PermissionKeys.ReportsSaleFile.Document.Print) && (
+              <Tooltip label={t('Друк')}>
+                <ActionIcon aria-label={t('Друк')} color="gray" disabled={!activeSheet} size={34} variant="light" onClick={printReport}>
+                  <Printer size={17} />
+                </ActionIcon>
+              </Tooltip>
+            )}
             <Tooltip label={t('Очистити файл')}>
               <ActionIcon
                 aria-label={t('Очистити файл')}
