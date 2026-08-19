@@ -1810,7 +1810,7 @@ function officialCostsReducer(state: OfficialCostsState, action: OfficialCostsAc
   }
 }
 
-function OfficialCostsModal({
+export function OfficialCostsModal({
   row,
   onClose,
   onSaved,
@@ -1953,8 +1953,8 @@ function OfficialCostsModal({
       return
     }
 
-    if (!selectedOrganization || !selectedAgreement || !selectedProduct || !form.invoiceNumber.trim()) {
-      dispatch({ error: t('Заповніть організацію, договір, тип і номер інвойса'), type: 'setError' })
+    if (!selectedOrganization || !selectedAgreement || !form.invoiceNumber.trim()) {
+      dispatch({ error: t('Заповніть організацію, договір і номер інвойса'), type: 'setError' })
       return
     }
 
@@ -1966,7 +1966,7 @@ function OfficialCostsModal({
       AccountingGrossAmount: Number(form.accountingGrossAmount || 0),
       AccountingVatPercent: Number(form.accountingVatPercent || 0),
       ConsumableProduct: selectedProduct,
-      ConsumableProductId: selectedProduct.Id,
+      ConsumableProductId: selectedProduct?.Id ?? null,
       FromDate: normalizeDateTimeInput(form.fromDate),
       GrossAmount: Number(form.grossAmount || 0),
       InvoiceNumber: form.invoiceNumber.trim(),
