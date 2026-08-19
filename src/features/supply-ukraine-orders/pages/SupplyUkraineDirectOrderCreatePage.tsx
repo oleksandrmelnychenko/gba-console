@@ -22,7 +22,9 @@ import { useNavigate } from 'react-router-dom'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { formatLocalDateTime } from '../../../shared/date/dateTime'
+import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { useI18n } from '../../../shared/i18n/useI18n'
+import { useAuth } from '../../auth/useAuth'
 import { EXCEL_FILE_ACCEPT, isExcelFile } from '../excelFiles'
 import {
   prepareSupplyUkraineOrderCreateNavigation,
@@ -205,15 +207,34 @@ function createPageReducer(state: CreatePageState, action: CreatePageAction): Cr
 }
 
 export function SupplyUkraineDirectOrderCreatePage() {
-  return <SupplyUkraineOrderFileCreatePage mode="direct" />
+  return <SupplyUkraineOrderFileCreatePageGuard mode="direct" />
 }
 
 export function SupplyUkraineToUkraineOrderCreatePage() {
-  return <SupplyUkraineOrderFileCreatePage mode="toUkraine" />
+  return <SupplyUkraineOrderFileCreatePageGuard mode="toUkraine" />
+}
+
+function SupplyUkraineOrderFileCreatePageGuard({ mode }: { mode: CreateMode }) {
+  const { t } = useI18n()
+  const { hasPermission } = useAuth()
+  const permission = mode === 'toUkraine'
+    ? PermissionKeys.OrdersUkraine.Order.OpenArrival
+    : PermissionKeys.OrdersUkraine.Order.OpenOrder
+
+  if (!hasPermission(permission)) {
+    return (
+      <Alert color="red" icon={<CircleAlert size={18} />} title={t('Доступ заборонено')} variant="light">
+        {t('У вашої ролі немає права створювати це замовлення.')}
+      </Alert>
+    )
+  }
+
+  return <SupplyUkraineOrderFileCreatePage mode={mode} />
 }
 
 function SupplyUkraineOrderFileCreatePage({ mode }: { mode: CreateMode }) {
   const { t } = useI18n()
+  const { hasPermission } = useAuth()
   const navigate = useNavigate()
   const isToUkraineMode = mode === 'toUkraine'
   const [pageState, dispatchPage] = useReducer(createPageReducer, INITIAL_CREATE_PAGE_STATE)
@@ -351,6 +372,15 @@ function SupplyUkraineOrderFileCreatePage({ mode }: { mode: CreateMode }) {
 
   async function submitForm(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
+
+    const permission = isToUkraineMode
+      ? PermissionKeys.OrdersUkraine.Order.OpenArrival
+      : PermissionKeys.OrdersUkraine.Order.OpenOrder
+
+    if (!hasPermission(permission)) {
+      dispatchPage({ type: 'setError', error: t('Право на цю дію було відкликано') })
+      return
+    }
 
     if (!selectedSupplier || !selectedOrganization || !selectedClientAgreement) {
       dispatchPage({ type: 'setError', error: t('Оберіть постачальника, організацію та договір') })

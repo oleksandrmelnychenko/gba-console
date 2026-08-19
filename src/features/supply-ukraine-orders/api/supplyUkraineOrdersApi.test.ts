@@ -2,15 +2,24 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { apiRequest } from '../../../shared/api/apiClient'
 import {
   addDeliveryDocumentsToDirectSupplyInvoiceForSpecifications,
+  approveDirectSupplyOrderLogistic,
+  clearDirectSupplyOrderDeliveryDocumentFile,
+  createDirectSupplyOrderLogisticPaymentTask,
   createSupplyCreditNote,
+  deleteDirectSupplyOrderLogisticPaymentTask,
+  deleteDirectSupplyOrderLogisticProformDocument,
   deleteDirectSupplyOrderInvoiceDocument,
   deleteDirectSupplyUkraineOrder,
   deleteSupplyProformDocument,
   getDirectSupplyUkraineOrders,
   getDirectSupplyOrderForInvoices,
+  getDirectSupplyOrderForLogisticWay,
   getDirectSupplyOrderInvoiceInformationProtocolKeys,
   getDirectSupplyOrderInvoicePaymentProtocolKeys,
   getDirectSupplyOrderInvoiceResponsibleUsers,
+  getDirectSupplyOrderLogisticPaymentTaskKeys,
+  getDirectSupplyOrderLogisticPaymentTasks,
+  getDirectSupplyOrderLogisticPaymentTaskUsers,
   getDirectSupplyOrderForProductIncome,
   getDirectSupplyOrderForSpecifications,
   getSupplyInvoiceItemsForDirectOrder,
@@ -18,13 +27,19 @@ import {
   getSupplyOrderInvoiceTotalsForInvoices,
   getSupplyOrderItemsForInvoices,
   getSupplyUkraineOrders,
+  getSupplyUkraineOrderForOverview,
   getSupplyOrderSuppliers,
   printSupplyOrdersDocument,
   searchSupplyOrderServiceOrganizations,
   searchSupplyOrderServiceOrganizationsForSpecifications,
   updateDirectSupplyOrderInvoice,
   updateDirectSupplyOrderInvoiceItems,
+  updateDirectSupplyOrderDeliveryDocumentStatus,
+  updateDirectSupplyOrderLogisticAmount,
   updateDirectSupplyOrderPackingLists,
+  updateDirectSupplyOrderProForm,
+  uploadDirectSupplyOrderLogisticDocument,
+  uploadDirectSupplyOrderLogisticProformDocuments,
   uploadDirectSupplyOrderFromFile,
   uploadDirectSupplyOrderInvoiceDocuments,
   uploadPackingListDocuments,
@@ -36,10 +51,12 @@ import {
 import type {
   Client,
   ClientAgreement,
+  DirectSupplyOrder,
   DirectSupplyOrderCreatePayload,
   Organization,
   PackingListDocumentParseConfiguration,
   SupplyOrderDocumentParseConfiguration,
+  SupplyInvoice,
   SupplyProForm,
   SupplyOrderUkraineSupplierCreatePayload,
   UkraineOrderFromSupplierParseConfiguration,
@@ -197,6 +214,68 @@ describe('supplyUkraineOrdersApi', () => {
     const body = apiRequestMock.mock.calls[10]?.[1]?.body as FormData
     expect(JSON.parse(String(body.get('invoice')))).toEqual(invoice)
     expect(body.getAll('invoiceFiles')).toEqual([file])
+  })
+
+  it('uses field-scoped logistic-way and payment-task routes', async () => {
+    apiRequestMock.mockResolvedValue({})
+    const order = { NetUid: 'order-1' } as DirectSupplyOrder
+    const invoice = { NetUid: 'invoice-1' } as SupplyInvoice
+    const proForm = { Number: 'PF-1' } as SupplyProForm
+    const file = new File(['doc'], 'doc.pdf', { type: 'application/pdf' })
+    const documentForm = new FormData()
+    documentForm.append('document', file)
+
+    await getDirectSupplyOrderForLogisticWay('order-1')
+    await updateDirectSupplyOrderLogisticAmount(order)
+    await approveDirectSupplyOrderLogistic(order)
+    await updateDirectSupplyOrderDeliveryDocumentStatus(order)
+    await clearDirectSupplyOrderDeliveryDocumentFile(order)
+    await updateDirectSupplyOrderProForm(order)
+    await uploadDirectSupplyOrderLogisticDocument(documentForm)
+    await uploadDirectSupplyOrderLogisticProformDocuments({ files: [file], orderNetId: 'order-1', proForm })
+    await deleteDirectSupplyOrderLogisticProformDocument('document-1')
+    await getDirectSupplyOrderLogisticPaymentTasks('invoice-1')
+    await getDirectSupplyOrderLogisticPaymentTaskKeys()
+    await getDirectSupplyOrderLogisticPaymentTaskUsers()
+    await createDirectSupplyOrderLogisticPaymentTask('order-1', invoice)
+    await deleteDirectSupplyOrderLogisticPaymentTask('order-1', invoice)
+
+    expect(apiRequestMock.mock.calls.map(([route]) => route)).toEqual([
+      '/supplies/orders/direct-supply-order/logistic-way/details',
+      '/supplies/orders/direct-supply-order/logistic-way/amount',
+      '/supplies/orders/direct-supply-order/logistic-way/approve',
+      '/supplies/orders/direct-supply-order/logistic-way/delivery-document-status',
+      '/supplies/orders/direct-supply-order/logistic-way/delivery-document-file',
+      '/supplies/orders/direct-supply-order/logistic-way/proform',
+      '/supplies/documents/direct-supply-order/logistic-way/upload',
+      '/supplies/proforms/direct-supply-order/logistic-way/upload/documents',
+      '/supplies/proforms/direct-supply-order/logistic-way/delete/document',
+      '/supplies/invoices/direct-supply-order/logistic-way/payment-tasks/details',
+      '/supplies/orders/direct-supply-order/logistic-way/payment-task-keys',
+      '/usermanagement/profiles/orders-ukraine/logistic-way/payment-task-users',
+      '/supplies/invoices/direct-supply-order/logistic-way/payment-tasks/create',
+      '/supplies/invoices/direct-supply-order/logistic-way/payment-tasks/delete',
+    ])
+    expect(apiRequestMock).toHaveBeenNthCalledWith(13, expect.any(String), {
+      body: invoice,
+      method: 'POST',
+      query: { netId: 'order-1' },
+    })
+    expect(apiRequestMock).toHaveBeenNthCalledWith(14, expect.any(String), {
+      body: invoice,
+      method: 'POST',
+      query: { netId: 'order-1' },
+    })
+  })
+
+  it('loads an Orders Ukraine overview through its scoped details route', async () => {
+    apiRequestMock.mockResolvedValue({})
+
+    await getSupplyUkraineOrderForOverview('order-1')
+
+    expect(apiRequestMock).toHaveBeenCalledWith('/supplies/ukraine/order/overview/details', {
+      query: { netId: 'order-1' },
+    })
   })
 
   it('includes the selected end date when loading both Ukraine order sources', async () => {

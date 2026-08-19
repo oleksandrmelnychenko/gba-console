@@ -3381,6 +3381,162 @@
       "disposition": "covered_existing",
       "canonicalPermissionKeys": ["orders.ukraine.order.open_products"],
       "reason": "Product-card opening is covered by the page capability and hydrates the product only through its open-products scoped facade."
+    },
+    "PE-01458": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["orders.ukraine.logistic_way.create_proforma"],
+      "reason": "Final proforma save rechecks create-proforma and uses field-scoped metadata plus protected document-upload facades."
+    },
+    "PE-01459": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-01458",
+      "canonicalPermissionKeys": ["orders.ukraine.logistic_way.create_proforma"],
+      "reason": "Starting proforma edit is the local entry step of the same business action finalized by PE-01458."
+    },
+    "PE-01461": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["orders.ukraine.logistic_way.create_proforma"],
+      "reason": "Removing an existing proforma document rechecks the proforma permission and calls its dedicated protected delete facade."
+    },
+    "PE-01462": {
+      "disposition": "technical_ui",
+      "reason": "Removing a newly selected unsaved document only edits the local draft; PE-01464 owns the eventual server mutation."
+    },
+    "PE-01464": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["orders.ukraine.placement.upload_documents"],
+      "reason": "The final overview-document save uses the existing upload-documents permission and protected aggregate endpoint."
+    },
+    "PE-01472": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["orders.ukraine.order.open_logistic_way"],
+      "reason": "The alternate direct-order logistic route mounts the same fail-closed page and uses only its scoped details loader."
+    },
+    "PE-01473": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-01472",
+      "canonicalPermissionKeys": ["orders.ukraine.order.open_logistic_way"],
+      "reason": "Both direct-order logistic URL variants mount the same page model and capability boundary."
+    },
+    "PE-01474": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": [
+        "orders.ukraine.order.open_order",
+        "orders.ukraine.order.open_arrival"
+      ],
+      "reason": "The mode-dependent final import rechecks direct-order or arrival permission and both server create endpoints enforce the matching key."
+    },
+    "PE-01476": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-01491",
+      "canonicalPermissionKeys": ["orders.ukraine.logistic_way.change_delivery_document_status"],
+      "reason": "Opening the status modal is the local entry step of the status mutation finalized by PE-01491."
+    },
+    "PE-01477": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["orders.ukraine.logistic_way.upload_delivery_document"],
+      "reason": "Clearing an existing delivery-document file is a real mutation; it rechecks the file-management permission and the server copies only file fields."
+    },
+    "PE-01478": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["orders.ukraine.logistic_way.create_credit_note"],
+      "reason": "Opening the credit-note collection is part of the existing credit-note capability and does not introduce a technical click permission."
+    },
+    "PE-01479": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["orders.ukraine.logistic_way.approve_order"],
+      "reason": "Approval rechecks the existing key and calls a field-scoped server action that can only change IsApproved."
+    },
+    "PE-01481": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["orders.ukraine.logistic_way.edit_order_quantity"],
+      "reason": "Final amount/date/transport save rechecks the existing edit capability and the server copies only those allowed fields."
+    },
+    "PE-01482": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-01481",
+      "canonicalPermissionKeys": ["orders.ukraine.logistic_way.edit_order_quantity"],
+      "reason": "Starting amount edit is the local entry step of the same mutation finalized by PE-01481."
+    },
+    "PE-01485": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-01489",
+      "canonicalPermissionKeys": ["orders.ukraine.logistic_way.create_credit_note"],
+      "reason": "Opening the credit-note form is the entry step of the create mutation finalized by PE-01489."
+    },
+    "PE-01489": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["orders.ukraine.logistic_way.create_credit_note"],
+      "reason": "Final credit-note creation rechecks the existing key and calls the protected multipart server route."
+    },
+    "PE-01491": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["orders.ukraine.logistic_way.change_delivery_document_status"],
+      "reason": "Final delivery-document status save rechecks the new business permission and the server copies only status/comment fields."
+    },
+    "PE-01533": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-01464",
+      "canonicalPermissionKeys": ["orders.ukraine.placement.upload_documents"],
+      "reason": "Opening the document editor is the local entry step of the upload/manage action finalized by PE-01464."
+    },
+    "PE-01534": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["orders.ukraine.placement.open_product_placement"],
+      "reason": "Navigation to placement remains independently guarded by the existing placement capability."
+    },
+    "PE-01535": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-01539",
+      "canonicalPermissionKeys": ["orders.ukraine.placement.calculate"],
+      "reason": "Applying the order VAT value to rows only edits a local draft; PE-01539 owns persistence."
+    },
+    "PE-01536": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["orders.ukraine.placement.calculate"],
+      "reason": "Server-side VAT recalculation rechecks calculate permission and the endpoint enforces the same canonical key."
+    },
+    "PE-01537": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-01464",
+      "canonicalPermissionKeys": ["orders.ukraine.placement.upload_documents"],
+      "reason": "The second document opener enters the same permission-scoped document management flow."
+    },
+    "PE-01538": {
+      "disposition": "technical_ui",
+      "reason": "Changing table density only updates local presentation."
+    },
+    "PE-01539": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["orders.ukraine.placement.calculate"],
+      "reason": "Final per-row VAT save rechecks calculate permission and its server endpoint enforces the same key."
+    },
+    "PE-01540": {
+      "disposition": "technical_ui",
+      "reason": "Cancelling VAT edits only restores the local draft and sends no request."
+    },
+    "PE-01541": {
+      "disposition": "technical_ui",
+      "reason": "Changing overview table density only updates local presentation."
+    },
+    "PE-01542": {
+      "disposition": "technical_ui",
+      "reason": "Dismissing the unsaved-changes warning only updates modal state."
+    },
+    "PE-01543": {
+      "disposition": "technical_ui",
+      "reason": "Closing the document draft discards local state and performs no server mutation."
+    },
+    "PE-01544": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["orders.ukraine.order.open_products"],
+      "reason": "Product-card opening is hidden without open-products and hydrates only through its overview-scoped read facade."
+    },
+    "PE-01545": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-01544",
+      "canonicalPermissionKeys": ["orders.ukraine.order.open_products"],
+      "reason": "Vendor code and product name are two entry controls for the same protected product card."
     }
   }
 }

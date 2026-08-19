@@ -735,9 +735,13 @@ export const PermissionKeys = {
       CreateCreditNote: 'orders.ukraine.logistic_way.create_credit_note',
       CreatePaymentTask: 'orders.ukraine.logistic_way.create_payment_task',
       CreateProforma: 'orders.ukraine.logistic_way.create_proforma',
+      ChangeDeliveryDocumentStatus:
+        'orders.ukraine.logistic_way.change_delivery_document_status',
       DeletePaymentTask: 'orders.ukraine.logistic_way.delete_payment_task',
       EditInvoice: 'orders.ukraine.logistic_way.edit_invoice',
       EditOrderQuantity: 'orders.ukraine.logistic_way.edit_order_quantity',
+      UploadDeliveryDocument:
+        'orders.ukraine.logistic_way.upload_delivery_document',
     },
     Order: {
       AddDeliveryCosts: 'orders.ukraine.order.add_delivery_costs',

@@ -2,6 +2,7 @@ import { Alert, Card, Group, Loader, Select, Stack, Text } from '@mantine/core'
 import { CircleAlert } from 'lucide-react'
 import { useCallback, useEffect, useMemo } from 'react'
 import { formatLocalDate } from '../../../shared/date/dateTime'
+import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { PaymentDeliveryProtocolsSection } from '../../supply-ukraine-payment-protocols/components/PaymentDeliveryProtocolsSection'
@@ -12,11 +13,13 @@ import type {
   SupplyOrderUkrainePaymentDeliveryProtocolKey,
 } from '../../supply-ukraine-payment-protocols/types'
 import {
-  getSupplyInvoiceItems,
-  getSupplyPaymentDeliveryProtocolKeys,
-  getSupplyProtocolResponsibleUsers,
-  updateSupplyInvoice,
+  createDirectSupplyOrderLogisticPaymentTask,
+  deleteDirectSupplyOrderLogisticPaymentTask,
+  getDirectSupplyOrderLogisticPaymentTaskKeys,
+  getDirectSupplyOrderLogisticPaymentTasks,
+  getDirectSupplyOrderLogisticPaymentTaskUsers,
 } from '../api/supplyUkraineOrdersApi'
+import { useAuth } from '../../auth/useAuth'
 import { sanitizeInvoicePaymentDeliveryProtocols } from '../invoicePaymentProtocolPayload'
 import type {
   DirectSupplyOrder,
@@ -35,15 +38,18 @@ import type {
  * PaymentDeliveryProtocolsSection (list + create + delete), and persists via /supplies/invoices/update.
  */
 export function DirectOrderPaymentTasksCard({
-  canEdit,
+  disabled = false,
   onError,
   order,
 }: {
-  canEdit: boolean
+  disabled?: boolean
   onError?: (message: string) => void
   order: DirectSupplyOrder
 }) {
   const { t } = useI18n()
+  const { hasPermission } = useAuth()
+  const canCreatePaymentTask = !disabled && hasPermission(PermissionKeys.OrdersUkraine.LogisticWay.CreatePaymentTask)
+  const canDeletePaymentTask = !disabled && hasPermission(PermissionKeys.OrdersUkraine.LogisticWay.DeletePaymentTask)
   const invoices = useMemo(() => order.SupplyInvoices || [], [order.SupplyInvoices])
   const [selectedInvoiceNetId, setSelectedInvoiceNetId] = useValueState<string | null>(invoices[0]?.NetUid || null)
   const [invoice, setInvoice] = useValueState<SupplyInvoice | null>(null)
@@ -71,10 +77,16 @@ export function DirectOrderPaymentTasksCard({
     let cancelled = false
 
     async function loadMeta() {
+      if (!canCreatePaymentTask) {
+        setProtocolKeys([])
+        setUsers([])
+        return
+      }
+
       try {
         const [nextKeys, nextUsers] = await Promise.all([
-          getSupplyPaymentDeliveryProtocolKeys(),
-          getSupplyProtocolResponsibleUsers(),
+          getDirectSupplyOrderLogisticPaymentTaskKeys(),
+          getDirectSupplyOrderLogisticPaymentTaskUsers(),
         ])
 
         if (!cancelled) {
@@ -93,7 +105,7 @@ export function DirectOrderPaymentTasksCard({
     return () => {
       cancelled = true
     }
-  }, [reportError, setProtocolKeys, setUsers, t])
+  }, [canCreatePaymentTask, reportError, setProtocolKeys, setUsers, t])
 
   // Full invoice (with its payment protocols) for the selected invoice.
   useEffect(() => {
@@ -109,7 +121,7 @@ export function DirectOrderPaymentTasksCard({
       setLocalError(null)
 
       try {
-        const loaded = await getSupplyInvoiceItems(netId)
+        const loaded = await getDirectSupplyOrderLogisticPaymentTasks(netId)
 
         if (!cancelled) {
           setInvoice(loaded)
@@ -135,20 +147,32 @@ export function DirectOrderPaymentTasksCard({
   async function persistInvoice(
     nextInvoice: SupplyInvoice,
     targetProtocols: SupplyOrderPaymentDeliveryProtocol[],
+    operation: 'create' | 'delete',
   ): Promise<void> {
     if (!order.NetUid) {
       return
+    }
+
+    const permission = operation === 'create'
+      ? PermissionKeys.OrdersUkraine.LogisticWay.CreatePaymentTask
+      : PermissionKeys.OrdersUkraine.LogisticWay.DeletePaymentTask
+
+    if (!hasPermission(permission)) {
+      const message = t('Право на цю дію було відкликано')
+      setLocalError(message)
+      onError?.(message)
+      throw new Error(message)
     }
 
     setSaving(true)
     setLocalError(null)
 
     try {
-      await updateSupplyInvoice(
-        order.NetUid,
-        createInvoiceProtocolsPayload(nextInvoice, targetProtocols),
-      )
-      const reloaded = await getSupplyInvoiceItems(nextInvoice.NetUid || selectedInvoiceNetId || '')
+      const update = operation === 'create'
+        ? createDirectSupplyOrderLogisticPaymentTask
+        : deleteDirectSupplyOrderLogisticPaymentTask
+      await update(order.NetUid, createInvoiceProtocolsPayload(nextInvoice, targetProtocols))
+      const reloaded = await getDirectSupplyOrderLogisticPaymentTasks(nextInvoice.NetUid || selectedInvoiceNetId || '')
       setInvoice(reloaded)
     } catch (cause) {
       reportError(cause, t('Не вдалося зберегти протоколи'))
@@ -170,7 +194,7 @@ export function DirectOrderPaymentTasksCard({
       throw new Error(t('Не вдалося підготувати платіжний протокол'))
     }
 
-    await persistInvoice(nextInvoice, [targetProtocol])
+    await persistInvoice(nextInvoice, [targetProtocol], 'create')
   }
 
   async function handleRemove(protocol: SupplyOrderUkrainePaymentDeliveryProtocol): Promise<void> {
@@ -190,7 +214,7 @@ export function DirectOrderPaymentTasksCard({
       throw new Error(t('Не вдалося знайти платіжний протокол'))
     }
 
-    await persistInvoice(nextInvoice, [targetProtocol])
+    await persistInvoice(nextInvoice, [targetProtocol], 'delete')
   }
 
   const displayProtocols = mapToDisplayProtocols(invoice)
@@ -231,8 +255,8 @@ export function DirectOrderPaymentTasksCard({
               </Group>
             ) : (
               <PaymentDeliveryProtocolsSection
-                canCreateProtocol={canEdit}
-                canRemoveProtocol={canEdit}
+                canCreateProtocol={canCreatePaymentTask}
+                canRemoveProtocol={canDeletePaymentTask}
                 isSaving={isSaving}
                 onCreateProtocol={handleCreate}
                 onRemoveProtocol={handleRemove}

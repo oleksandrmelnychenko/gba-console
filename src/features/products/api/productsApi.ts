@@ -128,6 +128,15 @@ export async function getProductForOrderInvoices(netId: string, signal?: AbortSi
   return normalizeProduct(result)
 }
 
+export async function getProductForOrderOverview(netId: string, signal?: AbortSignal): Promise<Product | null> {
+  const result = await apiRequest<unknown>('/products/orders-ukraine/overview/details', {
+    query: { netId },
+    signal,
+  })
+
+  return normalizeProduct(result)
+}
+
 export async function getProductSourcePriceComparison(
   netId: string,
   signal?: AbortSignal,

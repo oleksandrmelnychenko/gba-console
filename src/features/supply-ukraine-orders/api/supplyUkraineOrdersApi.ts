@@ -109,6 +109,14 @@ export async function getDirectSupplyOrderById(netId: string): Promise<DirectSup
   return normalizeDirectSupplyOrder(result)
 }
 
+export async function getDirectSupplyOrderForLogisticWay(netId: string): Promise<DirectSupplyOrder | null> {
+  const result = await apiRequest<unknown>('/supplies/orders/direct-supply-order/logistic-way/details', {
+    query: { netId },
+  })
+
+  return normalizeDirectSupplyOrder(result)
+}
+
 export async function getDirectSupplyOrderForProductIncome(netId: string): Promise<DirectSupplyOrder | null> {
   const result = await apiRequest<unknown>('/supplies/orders/product-income/details', {
     query: { netId },
@@ -142,8 +150,44 @@ export async function updateDirectSupplyOrder(order: DirectSupplyOrder): Promise
   return normalizeDirectSupplyOrder(result)
 }
 
+async function updateDirectSupplyOrderLogisticWay(
+  action: 'amount' | 'approve' | 'delivery-document-file' | 'delivery-document-status' | 'proform',
+  order: DirectSupplyOrder,
+): Promise<DirectSupplyOrder | null> {
+  const result = await apiRequest<unknown>(`/supplies/orders/direct-supply-order/logistic-way/${action}`, {
+    body: order,
+    method: 'POST',
+  })
+
+  return normalizeDirectSupplyOrder(result)
+}
+
+export const updateDirectSupplyOrderLogisticAmount = (order: DirectSupplyOrder) =>
+  updateDirectSupplyOrderLogisticWay('amount', order)
+
+export const approveDirectSupplyOrderLogistic = (order: DirectSupplyOrder) =>
+  updateDirectSupplyOrderLogisticWay('approve', order)
+
+export const updateDirectSupplyOrderDeliveryDocumentStatus = (order: DirectSupplyOrder) =>
+  updateDirectSupplyOrderLogisticWay('delivery-document-status', order)
+
+export const clearDirectSupplyOrderDeliveryDocumentFile = (order: DirectSupplyOrder) =>
+  updateDirectSupplyOrderLogisticWay('delivery-document-file', order)
+
+export const updateDirectSupplyOrderProForm = (order: DirectSupplyOrder) =>
+  updateDirectSupplyOrderLogisticWay('proform', order)
+
 export async function uploadSupplyOrderDocument(formData: FormData): Promise<DirectSupplyOrder | null> {
   const result = await apiRequest<unknown>('/supplies/documents/upload', {
+    body: formData,
+    method: 'POST',
+  })
+
+  return normalizeDirectSupplyOrder(result)
+}
+
+export async function uploadDirectSupplyOrderLogisticDocument(formData: FormData): Promise<DirectSupplyOrder | null> {
+  const result = await apiRequest<unknown>('/supplies/documents/direct-supply-order/logistic-way/upload', {
     body: formData,
     method: 'POST',
   })
@@ -166,6 +210,29 @@ export async function uploadSupplyOrderProformDocuments({
   formData.append('proForm', JSON.stringify(proForm))
 
   const result = await apiRequest<unknown>('/supplies/proforms/upload/documents', {
+    body: formData,
+    method: 'POST',
+    query: { netId: orderNetId },
+  })
+
+  return normalizeDirectSupplyOrder(result)
+}
+
+export async function uploadDirectSupplyOrderLogisticProformDocuments({
+  files,
+  orderNetId,
+  proForm,
+}: {
+  files: File[]
+  orderNetId: string
+  proForm: SupplyProForm
+}): Promise<DirectSupplyOrder | null> {
+  const formData = new FormData()
+
+  files.forEach((file) => formData.append('proFormFiles', file))
+  formData.append('proForm', JSON.stringify(proForm))
+
+  const result = await apiRequest<unknown>('/supplies/proforms/direct-supply-order/logistic-way/upload/documents', {
     body: formData,
     method: 'POST',
     query: { netId: orderNetId },
@@ -270,6 +337,40 @@ export async function updateSupplyInvoice(supplyOrderNetId: string, invoice: Sup
     body: invoice,
     method: 'POST',
     query: { netId: supplyOrderNetId },
+  })
+
+  return normalizeSupplyInvoice(result)
+}
+
+export async function createDirectSupplyOrderLogisticPaymentTask(
+  supplyOrderNetId: string,
+  invoice: SupplyInvoice,
+): Promise<SupplyInvoice | null> {
+  const result = await apiRequest<unknown>('/supplies/invoices/direct-supply-order/logistic-way/payment-tasks/create', {
+    body: invoice,
+    method: 'POST',
+    query: { netId: supplyOrderNetId },
+  })
+
+  return normalizeSupplyInvoice(result)
+}
+
+export async function deleteDirectSupplyOrderLogisticPaymentTask(
+  supplyOrderNetId: string,
+  invoice: SupplyInvoice,
+): Promise<SupplyInvoice | null> {
+  const result = await apiRequest<unknown>('/supplies/invoices/direct-supply-order/logistic-way/payment-tasks/delete', {
+    body: invoice,
+    method: 'POST',
+    query: { netId: supplyOrderNetId },
+  })
+
+  return normalizeSupplyInvoice(result)
+}
+
+export async function getDirectSupplyOrderLogisticPaymentTasks(netId: string): Promise<SupplyInvoice | null> {
+  const result = await apiRequest<unknown>('/supplies/invoices/direct-supply-order/logistic-way/payment-tasks/details', {
+    query: { netId },
   })
 
   return normalizeSupplyInvoice(result)
@@ -481,6 +582,13 @@ export async function deleteSupplyInvoiceDocument(netId: string): Promise<void> 
   })
 }
 
+export async function deleteDirectSupplyOrderLogisticProformDocument(netId: string): Promise<void> {
+  await apiRequest<unknown>('/supplies/proforms/direct-supply-order/logistic-way/delete/document', {
+    method: 'DELETE',
+    query: { netId },
+  })
+}
+
 export async function deleteDirectSupplyOrderInvoiceDocument(netId: string): Promise<void> {
   await apiRequest<unknown>('/supplies/invoices/direct-supply-order/documents/delete', {
     method: 'DELETE',
@@ -657,6 +765,12 @@ export async function getDirectSupplyOrderInvoicePaymentProtocolKeys(): Promise<
   return readArrayPayload(result, ['Items', 'Keys', 'Data']) as SupplyOrderPaymentDeliveryProtocolKey[]
 }
 
+export async function getDirectSupplyOrderLogisticPaymentTaskKeys(): Promise<SupplyOrderPaymentDeliveryProtocolKey[]> {
+  const result = await apiRequest<unknown>('/supplies/orders/direct-supply-order/logistic-way/payment-task-keys')
+
+  return readArrayPayload(result, ['Items', 'Keys', 'Data']) as SupplyOrderPaymentDeliveryProtocolKey[]
+}
+
 export async function getDirectSupplyOrderInvoiceInformationProtocolKeys(): Promise<SupplyInformationDeliveryProtocolKey[]> {
   const result = await apiRequest<unknown>('/supplies/orders/direct-supply-order/invoices/information-protocol-keys')
 
@@ -673,6 +787,14 @@ export async function getSupplyProtocolResponsibleUsers(): Promise<User[]> {
 
 export async function getDirectSupplyOrderInvoiceResponsibleUsers(): Promise<User[]> {
   const result = await apiRequest<unknown>('/usermanagement/profiles/orders-ukraine/invoices/responsible-users', {
+    query: { types: 7 },
+  })
+
+  return readArrayPayload(result, ['Items', 'Users', 'Profiles', 'Data']) as User[]
+}
+
+export async function getDirectSupplyOrderLogisticPaymentTaskUsers(): Promise<User[]> {
+  const result = await apiRequest<unknown>('/usermanagement/profiles/orders-ukraine/logistic-way/payment-task-users', {
     query: { types: 7 },
   })
 
@@ -706,6 +828,14 @@ export async function updateSupplyOrderUkraineDeliveryExpense(expense: ProductDe
 
 export async function getSupplyUkraineOrderById(netId: string): Promise<SupplyOrderUkraine | null> {
   const result = await apiRequest<unknown>('/supplies/ukraine/order/get', {
+    query: { netId },
+  })
+
+  return normalizeSupplyUkraineOrder(result)
+}
+
+export async function getSupplyUkraineOrderForOverview(netId: string): Promise<SupplyOrderUkraine | null> {
+  const result = await apiRequest<unknown>('/supplies/ukraine/order/overview/details', {
     query: { netId },
   })
 

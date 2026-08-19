@@ -3,25 +3,31 @@ import { fireEvent, render, screen } from '@testing-library/react'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { I18nProvider } from '../../../shared/i18n/I18nProvider'
+import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { parseOrderVatPercentInput } from '../supplyUkraineOrderVatInput'
 import type { SupplyOrderUkraine } from '../types'
 import { SupplyUkraineOrderOverviewPage } from './SupplyUkraineOrderOverviewPage'
 
 const apiMocks = vi.hoisted(() => ({
   addVatPercentToSupplyOrderUkraine: vi.fn(),
-  getSupplyUkraineOrderById: vi.fn(),
+  getSupplyUkraineOrderForOverview: vi.fn(),
   manageSupplyOrderUkraineDocuments: vi.fn(),
   updateSupplyOrderUkraineItems: vi.fn(),
 }))
 
+const allowedPermissions = new Set<string>([
+  PermissionKeys.OrdersUkraine.Order.OpenOverview,
+  PermissionKeys.OrdersUkraine.Placement.Calculate,
+])
+
 vi.mock('../../auth/useAuth', () => ({
-  useAuth: () => ({ hasPermission: () => false }),
+  useAuth: () => ({ hasPermission: (permission: string) => allowedPermissions.has(permission) }),
 }))
 
 vi.mock('../api/supplyUkraineOrdersApi', () => apiMocks)
 
 function renderPage(vatPercent: number) {
-  apiMocks.getSupplyUkraineOrderById.mockResolvedValue({
+  apiMocks.getSupplyUkraineOrderForOverview.mockResolvedValue({
     NetUid: 'd530f9a2-dab9-4942-bbfd-bab3bf0dc5b3',
     SupplyOrderUkraineDocuments: [],
     SupplyOrderUkraineItems: [],
@@ -61,6 +67,17 @@ function typeDigitsAtCursor(input: HTMLInputElement, cursor: number, digits: str
 describe('Supply Ukraine order VAT input', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    allowedPermissions.clear()
+    allowedPermissions.add(PermissionKeys.OrdersUkraine.Order.OpenOverview)
+    allowedPermissions.add(PermissionKeys.OrdersUkraine.Placement.Calculate)
+  })
+
+  it('does not mount the overview model without overview access', () => {
+    allowedPermissions.clear()
+    renderPage(0)
+
+    expect(screen.getByText('Доступ заборонено')).toBeTruthy()
+    expect(apiMocks.getSupplyUkraineOrderForOverview).not.toHaveBeenCalled()
   })
 
   it('preserves the transient empty value instead of restoring zero', () => {

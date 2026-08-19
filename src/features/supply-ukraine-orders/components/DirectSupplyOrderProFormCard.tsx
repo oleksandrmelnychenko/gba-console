@@ -16,14 +16,16 @@ import { notifications } from '@mantine/notifications'
 import { Pencil, Save, Trash2, Upload } from 'lucide-react'
 import { useEffect, useReducer } from 'react'
 import { formatLocalDate } from '../../../shared/date/dateTime'
+import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { upgradeHttpToHttps } from '../../../shared/url/upgradeHttpToHttps'
 import {
-  deleteSupplyProformDocument,
-  updateDirectSupplyOrder,
-  uploadSupplyOrderProformDocuments,
+  deleteDirectSupplyOrderLogisticProformDocument,
+  updateDirectSupplyOrderProForm,
+  uploadDirectSupplyOrderLogisticProformDocuments,
 } from '../api/supplyUkraineOrdersApi'
+import { useAuth } from '../../auth/useAuth'
 import { hasSupplyProForm } from '../proFormHelpers'
 import type { DirectSupplyOrder, SupplyProForm, SupplyProFormDocument } from '../types'
 
@@ -63,6 +65,7 @@ export function DirectSupplyOrderProFormCard({
   order: DirectSupplyOrder
 }) {
   const { t } = useI18n()
+  const { hasPermission } = useAuth()
   const [state, dispatch] = useReducer(proFormCardReducer, order, createInitialProFormCardState)
   const { draft, files, isEditing, isSaving } = state
   const documents = (draft.ProFormDocuments || []).filter((document) => !document.Deleted)
@@ -72,12 +75,23 @@ export function DirectSupplyOrderProFormCard({
     dispatch({ type: 'sync', order })
   }, [order])
 
+  useEffect(() => {
+    if (!canEdit && isEditing) {
+      dispatch({ type: 'cancel', order })
+    }
+  }, [canEdit, isEditing, order])
+
   async function removeDocument(document: SupplyProFormDocument) {
+    if (!hasPermission(PermissionKeys.OrdersUkraine.LogisticWay.CreateProforma)) {
+      onError(t('Право на цю дію було відкликано'))
+      return
+    }
+
     if (document.NetUid) {
       dispatch({ type: 'setSaving', value: true })
 
       try {
-        await deleteSupplyProformDocument(document.NetUid)
+        await deleteDirectSupplyOrderLogisticProformDocument(document.NetUid)
         await onReload()
         notifications.show({ color: 'green', message: t('Документ видалено') })
       } catch (deleteError) {
@@ -96,6 +110,11 @@ export function DirectSupplyOrderProFormCard({
       return
     }
 
+    if (!hasPermission(PermissionKeys.OrdersUkraine.LogisticWay.CreateProforma)) {
+      onError(t('Право на цю дію було відкликано'))
+      return
+    }
+
     const validationError = validateProFormDraft(draft, t)
 
     if (validationError) {
@@ -108,14 +127,14 @@ export function DirectSupplyOrderProFormCard({
     dispatch({ type: 'setSaving', value: true })
 
     try {
-      const updatedWithProForm = await updateDirectSupplyOrder({
+      const updatedWithProForm = await updateDirectSupplyOrderProForm({
         ...order,
         SupplyProForm: payloadProForm,
       })
       const uploadSource = updatedWithProForm?.SupplyProForm || payloadProForm
       const uploadOrderNetId = updatedWithProForm?.NetUid || order.NetUid
       const uploadedOrder = files.length > 0
-        ? await uploadSupplyOrderProformDocuments({
+        ? await uploadDirectSupplyOrderLogisticProformDocuments({
           files,
           orderNetId: uploadOrderNetId,
           proForm: uploadSource,
