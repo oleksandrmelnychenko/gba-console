@@ -49,6 +49,19 @@ export const PermissionKeys = {
       View: 'warehouse_accounting.tax_free_pack_lists.page.view',
     },
   },
+  SupplyCart: {
+    File: {
+      Import: 'orders.supply_cart.file.import',
+    },
+    Item: {
+      EditReservation: 'orders.supply_cart.item.edit_reservation',
+    },
+  },
+  SupplySales: {
+    Sale: {
+      Open: 'orders.supply_sales.sale.open',
+    },
+  },
   Users: {
     User: {
       OpenDetails: 'administration.users.user.open_details',
@@ -905,6 +918,13 @@ export type SystemPagePermissionKey =
   | Values<typeof PermissionKeys.SystemPages.TaxFreeDocuments>
   | Values<typeof PermissionKeys.SystemPages.TaxFreePackLists>
 
+export type SupplyCartPermissionKey =
+  | Values<typeof PermissionKeys.SupplyCart.File>
+  | Values<typeof PermissionKeys.SupplyCart.Item>
+
+export type SupplySalesPermissionKey =
+  Values<typeof PermissionKeys.SupplySales.Sale>
+
 export type UsersPermissionKey =
   Values<typeof PermissionKeys.Users.User>
 
@@ -1137,6 +1157,8 @@ export type FinancialAdministrationPermissionKey =
 
 export type PermissionKey =
   | SystemPagePermissionKey
+  | SupplyCartPermissionKey
+  | SupplySalesPermissionKey
   | UsersPermissionKey
   | RolesPermissionKey
   | AdvancedReportsPermissionKey
@@ -2046,6 +2068,9 @@ const eventPermissionKeys = new Set<string>([
   ...Object.values(PermissionKeys.SystemPages.TaxFreeCarriers),
   ...Object.values(PermissionKeys.SystemPages.TaxFreeDocuments),
   ...Object.values(PermissionKeys.SystemPages.TaxFreePackLists),
+  ...Object.values(PermissionKeys.SupplyCart.File),
+  ...Object.values(PermissionKeys.SupplyCart.Item),
+  ...Object.values(PermissionKeys.SupplySales.Sale),
   ...Object.values(PermissionKeys.Users.User),
   ...Object.values(PermissionKeys.Roles.Role),
   ...Object.values(PermissionKeys.Roles.PagePermissions),

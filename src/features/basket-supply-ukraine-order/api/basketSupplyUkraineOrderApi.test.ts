@@ -3,7 +3,10 @@ import { apiRequest } from '../../../shared/api/apiClient'
 import {
   addOrUpdateSad,
   addOrUpdateSaleSad,
+  getSalesForMovingToUkraine,
+  getUkraineCartItems,
   updateUkraineCartItem,
+  uploadPreviewUkraineCartItemsFromFile,
   uploadUkraineCartItemsFromFile,
 } from './basketSupplyUkraineOrderApi'
 
@@ -126,6 +129,9 @@ describe('basketSupplyUkraineOrderApi cart reservation mutations', () => {
     expect(firstOperation).toMatch(
       /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i,
     )
+    expect(apiRequestMock.mock.calls[0]?.[0]).toBe(
+      '/supplies/ukraine/order/cart/items/page/item/reservation',
+    )
     expect(retryOptions).toEqual({
       body: {
         Id: 41,
@@ -181,6 +187,9 @@ describe('basketSupplyUkraineOrderApi cart reservation mutations', () => {
       /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i,
     )
     expect(options?.body).toBeInstanceOf(FormData)
+    expect(apiRequestMock.mock.calls[0]?.[0]).toBe(
+      '/supplies/ukraine/order/cart/items/page/file/upload',
+    )
     expect(options).toMatchObject({
       dedupe: false,
       headers: {
@@ -191,5 +200,31 @@ describe('basketSupplyUkraineOrderApi cart reservation mutations', () => {
         operationNetUid: operation,
       },
     })
+  })
+
+  it('uses only permission-scoped registry and preview routes', async () => {
+    apiRequestMock.mockResolvedValue({ Body: [] })
+
+    await getUkraineCartItems()
+    await getSalesForMovingToUkraine({
+      from: '2026-08-01',
+      to: '2026-08-19',
+      value: 'QA',
+    })
+    await uploadPreviewUkraineCartItemsFromFile(
+      new File(['workbook'], 'cart.xlsx'),
+      {
+        EndRow: 10,
+        QtyColumnNumber: 2,
+        StartRow: 2,
+        VendorCodeColumnNumber: 1,
+      },
+    )
+
+    expect(apiRequestMock.mock.calls.map(([path]) => path)).toEqual([
+      '/supplies/ukraine/order/cart/items/page/all',
+      '/sales/supply-ukraine/registry',
+      '/supplies/ukraine/order/cart/items/page/file/select/preview',
+    ])
   })
 })

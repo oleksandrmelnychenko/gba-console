@@ -3,12 +3,22 @@ import { render, screen } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { I18nProvider } from '../../../shared/i18n/I18nProvider'
+import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import {
   getNotSentSads,
   getNotSentTaxFreePackLists,
   getUkraineCartItems,
 } from '../api/basketSupplyUkraineOrderApi'
 import { BasketSupplyUkraineOrderPage } from './BasketSupplyUkraineOrderPage'
+
+const allowedPermissions = new Set<string>()
+
+vi.mock('../../auth/usePermissions', () => ({
+  usePermissions: () => ({
+    can: (permission: string) => allowedPermissions.has(permission),
+    isLoading: false,
+  }),
+}))
 
 vi.mock('../api/basketSupplyUkraineOrderApi', () => ({
   addOrUpdateSad: vi.fn(),
@@ -52,6 +62,9 @@ function renderPage(pathname: string) {
 
 describe('BasketSupplyUkraineOrderPage shell', () => {
   beforeEach(() => {
+    allowedPermissions.clear()
+    allowedPermissions.add(PermissionKeys.SystemPages.SupplyCart.View)
+    allowedPermissions.add(PermissionKeys.SupplyCart.File.Import)
     vi.mocked(getUkraineCartItems).mockResolvedValue([])
     vi.mocked(getNotSentTaxFreePackLists).mockResolvedValue([])
     vi.mocked(getNotSentSads).mockResolvedValue([])

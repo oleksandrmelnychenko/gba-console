@@ -18,7 +18,7 @@ import type {
 } from '../types'
 
 export async function getUkraineCartItems(): Promise<SupplyOrderUkraineCartItem[]> {
-  const result = await apiRequest<unknown>('/supplies/ukraine/order/cart/items/all')
+  const result = await apiRequest<unknown>('/supplies/ukraine/order/cart/items/page/all')
 
   return normalizeArray<SupplyOrderUkraineCartItem>(result).map(ensureCartItem)
 }
@@ -30,7 +30,7 @@ export async function updateUkraineCartItem(
   const operation = acquireCartReservationUpdateOperation(target)
 
   try {
-    const result = await apiRequest<unknown>('/supplies/ukraine/order/cart/items/update', {
+    const result = await apiRequest<unknown>('/supplies/ukraine/order/cart/items/page/item/reservation', {
       method: 'POST',
       body: target,
       dedupe: false,
@@ -60,7 +60,7 @@ export async function uploadUkraineCartItemsFromFile(
   const operation = acquireCartReservationUploadOperation(file, parseConfiguration)
 
   try {
-    const result = await apiRequest<unknown>('/supplies/ukraine/order/cart/items/file/upload', {
+    const result = await apiRequest<unknown>('/supplies/ukraine/order/cart/items/page/file/upload', {
       method: 'POST',
       body: createCartItemsFormData(file, parseConfiguration),
       dedupe: false,
@@ -87,7 +87,7 @@ export async function uploadPreviewUkraineCartItemsFromFile(
   file: File,
   parseConfiguration: CartItemsParseConfiguration,
 ): Promise<PreviewCartItem[]> {
-  const result = await apiRequest<unknown>('/supplies/ukraine/order/cart/items/file/select/preview', {
+  const result = await apiRequest<unknown>('/supplies/ukraine/order/cart/items/page/file/select/preview', {
     method: 'POST',
     body: createCartItemsFormData(file, parseConfiguration),
   })
@@ -188,7 +188,7 @@ export async function addOrUpdateSaleSad(sad: Sad): Promise<Sad | null> {
 }
 
 export async function getSalesForMovingToUkraine(filters: BasketSupplySalesFilters): Promise<BasketSale[]> {
-  const result = await apiRequest<unknown>('/sales/all/filtered/pl-uk', {
+  const result = await apiRequest<unknown>('/sales/supply-ukraine/registry', {
     query: {
       from: filters.from,
       to: filters.to,

@@ -16,6 +16,7 @@
     { "route": "/basket-supply-ukraine-order/budget-cart", "permissionKey": "orders.budget_cart.page.view" },
     { "route": "/basket-supply-ukraine-order/cockpit", "permissionKey": "orders.purchase_cockpit.page.view" },
     { "route": "/basket-supply-ukraine-order/dashboard", "permissionKey": "orders.supply_dashboard.page.view" },
+    { "route": "/basket-supply-ukraine-order/sales", "permissionKey": "orders.supply_sales.page.view" },
     { "route": "/basket-supply-ukraine-order", "permissionKey": "orders.supply_cart.page.view" },
     { "route": "/orders/ukraine/all", "permissionKey": "orders.ukraine_orders.page.view" },
     { "route": "/orders/ukraine/:id/product-income", "permissionKey": "orders.ukraine_orders.page.view" },
@@ -123,6 +124,60 @@
         "accounting.advanced_reports.document_structure.open"
       ],
       "reason": "Document structure is an independent derived-document read with a dedicated UI recheck and permission-scoped calculation façade."
+    },
+    "PE-00109": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-00150",
+      "reason": "The upload modal submit button invokes the same final permission-checked import handler."
+    },
+    "PE-00146": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": [
+        "orders.supply_cart.file.import"
+      ],
+      "reason": "Opening the workbook import form is part of the single import capability; the control is hidden without that permission and the final handler rechecks it."
+    },
+    "PE-00147": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": [
+        "orders.supply_cart.file.import"
+      ],
+      "reason": "Previewing a workbook is the validation branch of the same import capability and uses a permission-scoped backend façade."
+    },
+    "PE-00148": {
+      "disposition": "technical_ui",
+      "reason": "The pill-tab click only changes the client route; each destination workflow is independently page-guarded before it mounts or requests data."
+    },
+    "PE-00150": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": [
+        "orders.supply_cart.file.import"
+      ],
+      "reason": "The final upload handler rechecks file.import and calls only the permission-scoped upload or validation façade."
+    },
+    "PE-00154": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": [
+        "orders.supply_cart.item.edit_reservation"
+      ],
+      "reason": "The final reservation save rechecks the dedicated permission and sends a narrow reservation target to its scoped mutation façade."
+    },
+    "PE-00157": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": [
+        "orders.supply_sales.sale.open"
+      ],
+      "reason": "Opening the already-loaded sale composition from a row is independently guarded by sale.open."
+    },
+    "PE-00165": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-00157",
+      "reason": "The row action opens the same sale drawer through the same guarded handler as the row click."
+    },
+    "PE-00167": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-00154",
+      "reason": "The reserve row action opens the editor for the same reservation capability whose final save is independently guarded."
     },
     "PE-00641": {
       "disposition": "technical_ui",
