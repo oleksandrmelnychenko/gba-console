@@ -136,6 +136,17 @@
       "duplicateOf": "PE-00150",
       "reason": "The upload modal submit button invokes the same final permission-checked import handler."
     },
+    "PE-00110": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": [
+        "orders.budget_cart.page.view"
+      ],
+      "reason": "Budget plan calculation is a read-only page operation; the component, supplier lookup, and /procurement/cart request all fail closed on the existing budget-cart page permission."
+    },
+    "PE-00111": {
+      "disposition": "technical_ui",
+      "reason": "Showing the bottom sheet only reveals the already loaded in-memory plan and performs no request or business mutation."
+    },
     "PE-00146": {
       "disposition": "covered_existing",
       "canonicalPermissionKeys": [

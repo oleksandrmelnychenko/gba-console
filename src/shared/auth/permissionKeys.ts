@@ -1,5 +1,8 @@
 export const PermissionKeys = {
   SystemPages: {
+    BudgetCart: {
+      View: 'orders.budget_cart.page.view',
+    },
     Dashboard: {
       View: 'dashboard.overview.page.view',
     },
@@ -1066,6 +1069,7 @@ export type ProductAvailabilitiesPermissionKey =
 type Values<T> = T[keyof T]
 
 export type SystemPagePermissionKey =
+  | Values<typeof PermissionKeys.SystemPages.BudgetCart>
   | Values<typeof PermissionKeys.SystemPages.Dashboard>
   | Values<typeof PermissionKeys.SystemPages.Users>
   | Values<typeof PermissionKeys.SystemPages.Roles>
@@ -2287,6 +2291,7 @@ const eventPermissionKeys = new Set<string>([
   ...Object.values(PermissionKeys.ActReconciliations.History),
   ...Object.values(PermissionKeys.ActReconciliations.Action),
   ...Object.values(PermissionKeys.ActReconciliations.Disposition),
+  ...Object.values(PermissionKeys.SystemPages.BudgetCart),
   ...Object.values(PermissionKeys.SystemPages.Dashboard),
   ...Object.values(PermissionKeys.SystemPages.Users),
   ...Object.values(PermissionKeys.SystemPages.Roles),

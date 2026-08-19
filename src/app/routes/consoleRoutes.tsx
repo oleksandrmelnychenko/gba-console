@@ -758,6 +758,11 @@ const plannedConsoleRoutes: ConsoleRoute[] = [
     permissionKey: PermissionKeys.SystemPages.SupplyCart.View,
   },
   {
+    path: '/basket-supply-ukraine-order/budget-cart',
+    element: lazyRoute(<BasketSupplyUkraineOrderPage />),
+    permissionKey: PermissionKeys.SystemPages.BudgetCart.View,
+  },
+  {
     path: '/basket-supply-ukraine-order/*',
     element: lazyRoute(<BasketSupplyUkraineOrderPage />),
     permissionKey: PermissionKeys.SystemPages.SupplyCart.View,

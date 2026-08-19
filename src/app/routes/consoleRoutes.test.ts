@@ -89,6 +89,11 @@ describe('newly classified page permissions', () => {
       .toBe(PermissionKeys.FinancialAdministration.AvailablePayments.Page.View)
   })
 
+  it('guards the budget-cart route with its own page right', () => {
+    expect(consoleRoutes.find((route) => route.path === '/basket-supply-ukraine-order/budget-cart')?.permissionKey)
+      .toBe(PermissionKeys.SystemPages.BudgetCart.View)
+  })
+
   it('uses the client-payment canonical for shop income without a duplicate right', () => {
     expect(PermissionKeys.OnlineShopPayment.IncomeOrder.Create).toBe(
       PermissionKeys.FinancialAdministration.IncomeCashflows.IncomeOrder.CreateClientPayment,

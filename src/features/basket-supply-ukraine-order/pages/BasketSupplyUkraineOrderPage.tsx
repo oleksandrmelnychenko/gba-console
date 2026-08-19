@@ -145,6 +145,7 @@ export function BasketSupplyUkraineOrderPage() {
   const location = useLocation()
   const activeTab = getActiveTab(location.pathname)
   const canViewCart = can(PermissionKeys.SystemPages.SupplyCart.View)
+  const canViewBudgetCart = can(PermissionKeys.SystemPages.BudgetCart.View)
   const canViewSales = can(PermissionKeys.SystemPages.SupplySales.View)
   const tabs: Array<{ ai?: boolean; label: string; value: BasketSupplyWorkflowTab }> = [
     ...(canViewSales ? [{ value: 'sales' as const, label: t('Фактура') }] : []),
@@ -152,6 +153,8 @@ export function BasketSupplyUkraineOrderPage() {
       { value: 'cart' as const, label: t('Переміщення на Україну') },
       { value: 'cockpit' as const, label: t('Конструктор закупівель'), ai: true },
       { value: 'dashboard' as const, label: t('Дашборд'), ai: true },
+    ] : []),
+    ...(canViewBudgetCart ? [
       { value: 'budget-cart' as const, label: t('Закупівля під бюджет'), ai: true },
     ] : []),
   ]
@@ -168,7 +171,13 @@ export function BasketSupplyUkraineOrderPage() {
     return <Text c="dimmed">{t('Завантаження')}</Text>
   }
 
-  if ((activeTab === 'sales' && !canViewSales) || (activeTab !== 'sales' && !canViewCart)) {
+  const canViewActiveTab = activeTab === 'sales'
+    ? canViewSales
+    : activeTab === 'budget-cart'
+      ? canViewBudgetCart
+      : canViewCart
+
+  if (!canViewActiveTab) {
     return (
       <Alert color="red" icon={ALERT_CIRCLE_ICON} title={t('Доступ заборонено')} variant="light">
         {t('Недостатньо прав для перегляду цього розділу закупівель')}

@@ -12,6 +12,7 @@ import {
   deleteDirectSupplyUkraineOrder,
   deleteSupplyProformDocument,
   getDirectSupplyUkraineOrders,
+  getBudgetCartSuppliers,
   getDirectSupplyOrderForInvoices,
   getDirectSupplyOrderForLogisticWay,
   getDirectSupplyOrderInvoiceInformationProtocolKeys,
@@ -838,6 +839,14 @@ describe('supplyUkraineOrdersApi', () => {
         ClientAgreements: [ukrainianAgreement],
       },
     ])
+  })
+
+  it('loads budget-cart manufacturers through the exact page-permission facade', async () => {
+    apiRequestMock.mockResolvedValueOnce([])
+
+    await expect(getBudgetCartSuppliers()).resolves.toEqual([])
+
+    expect(apiRequestMock).toHaveBeenCalledWith('/clients/budget-cart/manufacturers')
   })
 })
 

@@ -24,6 +24,10 @@ vi.mock('../../auth/usePermissions', () => ({
   }),
 }))
 
+vi.mock('../components/BudgetCartTab', () => ({
+  BudgetCartTab: () => <div>Budget cart permission fixture</div>,
+}))
+
 vi.mock('../api/basketSupplyUkraineOrderApi', () => ({
   addOrUpdateSad: vi.fn(),
   addOrUpdateSaleSad: vi.fn(),
@@ -200,6 +204,30 @@ describe('BasketSupplyUkraineOrderPage permissions', () => {
     renderPage('/basket-supply-ukraine-order/sales')
 
     expect(screen.getByText('Доступ заборонено')).not.toBeNull()
+    expect(getSalesForMovingToUkraine).not.toHaveBeenCalled()
+  })
+
+  it('keeps budget-cart access independent from the supply-cart page permission', () => {
+    allowedPermissions.add(PermissionKeys.SystemPages.SupplyCart.View)
+    const view = renderPage('/basket-supply-ukraine-order/budget-cart')
+
+    expect(screen.getByText('Доступ заборонено')).not.toBeNull()
+    expect(screen.queryByText('Budget cart permission fixture')).toBeNull()
+
+    allowedPermissions.clear()
+    allowedPermissions.add(PermissionKeys.SystemPages.BudgetCart.View)
+    view.rerender(
+      <MantineProvider>
+        <I18nProvider>
+          <MemoryRouter initialEntries={['/basket-supply-ukraine-order/budget-cart']}>
+            <BasketSupplyUkraineOrderPage />
+          </MemoryRouter>
+        </I18nProvider>
+      </MantineProvider>,
+    )
+
+    expect(screen.getByText('Budget cart permission fixture')).not.toBeNull()
+    expect(getUkraineCartItems).not.toHaveBeenCalled()
     expect(getSalesForMovingToUkraine).not.toHaveBeenCalled()
   })
 

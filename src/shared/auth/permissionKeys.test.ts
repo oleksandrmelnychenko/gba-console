@@ -43,6 +43,7 @@ const EXPECTED_PROVIDING_SERVICE_ACT_KEYS = [
 ] as const
 
 const EXPECTED_NEW_PAGE_KEYS = [
+  'orders.budget_cart.page.view',
   'dashboard.overview.page.view',
   'administration.users.page.view',
   'administration.roles.page.view',
@@ -80,7 +81,7 @@ const EXPECTED_ONLINE_SHOP_SEO_ACTION_KEYS = [
 ] as const
 
 describe('newly classified page permission catalog', () => {
-  it('contains twenty unique business page keys and no technical controls', () => {
+  it('contains twenty-one unique business page keys and no technical controls', () => {
     const actual = Object.values(PermissionKeys.SystemPages).flatMap(
       Object.values,
     )

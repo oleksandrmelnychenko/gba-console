@@ -617,7 +617,15 @@ export async function getSupplyOrderOrganizations(): Promise<Organization[]> {
 }
 
 export async function getSupplyOrderSuppliers(): Promise<Client[]> {
-  const result = await apiRequest<unknown>('/clients/all/manufacturers')
+  return getSupplyOrderSuppliersAt('/clients/all/manufacturers')
+}
+
+export async function getBudgetCartSuppliers(): Promise<Client[]> {
+  return getSupplyOrderSuppliersAt('/clients/budget-cart/manufacturers')
+}
+
+async function getSupplyOrderSuppliersAt(path: string): Promise<Client[]> {
+  const result = await apiRequest<unknown>(path)
   const suppliers = readArrayPayload(result, ['Items', 'Clients', 'Data']) as Client[]
 
   const normalizedSuppliers = suppliers.map((supplier) => ({
