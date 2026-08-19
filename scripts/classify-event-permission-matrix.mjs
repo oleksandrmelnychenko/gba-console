@@ -18,6 +18,18 @@ const DEFAULT_BINDINGS = 'docs/event-permission-review-bindings.json'
 const SOURCE_ROOT = 'src'
 const SOURCE_EXTENSIONS = new Set(['.ts', '.tsx'])
 const SOURCE_EXCLUDES = /(?:^|\/)(?:__tests__|test|tests)(?:\/|$)|\.(?:test|spec)\.tsx?$/i
+const SOURCE_ALL_FILES = '\0all-source-files'
+const GENERIC_COMPONENT_TOKENS = new Set([
+  'component',
+  'control',
+  'controls',
+  'drawer',
+  'drawers',
+  'modal',
+  'modals',
+  'page',
+  'pages',
+])
 
 const BUSINESS_EVENTS = new Set([
   'command.delete',
@@ -68,6 +80,7 @@ export function classifyMatrix(
     pageRouteBindings = [],
     permissionAliases = {},
     recordOverrides = {},
+    sourceFileBindings = [],
     sourceIndex,
   } = {},
 ) {
@@ -78,8 +91,9 @@ export function classifyMatrix(
   const seen = new Map()
   const records = matrix.map((rawRecord, index) => {
     const record = normalizeRecord(rawRecord, index)
-    const source = locateSource(record, sourceIndex)
-    const pagePermissionKeys = matchPagePermissions(record, pageRouteBindings)
+    const source = locateSource(record, sourceIndex, sourceFileBindings)
+    const pageBindings = matchPagePermissionBindings(record, pageRouteBindings)
+    const pagePermissionKeys = pageBindings.map((binding) => binding.permissionKey)
     const currentGuard = matchCurrentGuard(record, source, currentActionIndex)
     const technicalReason = technicalReasonFor(record, currentGuard.evidence)
     const duplicateKey = buildDuplicateKey(record, currentGuard.evidence)
@@ -110,6 +124,24 @@ export function classifyMatrix(
       record,
     })
     const disposition = review.disposition
+    const reviewedOverrideEvidence =
+      override &&
+      disposition === 'covered_existing' &&
+      pageBindings.length === 0 &&
+      currentGuard.evidence.length === 0
+        ? [{
+            candidateId: `review:${record.id}`,
+            distance: 0,
+            evidenceType: 'review_override',
+            file: source.file,
+            handler: normalizedHandler(record.targetEffect),
+            humanLabel: record.uiText,
+            line: source.line,
+            permissionKeys: review.canonicalPermissionKeys,
+            reviewReason: review.reason ?? null,
+            score: 0,
+          }]
+        : []
     return {
       ...record,
       disposition,
@@ -125,7 +157,21 @@ export function classifyMatrix(
       businessActionId: review.businessActionId,
       canonicalPermissionKeys: review.canonicalPermissionKeys,
       classificationSource: override ? 'manual_override' : 'automatic',
-      bindingEvidence: currentGuard.evidence,
+      bindingEvidence: [
+        ...pageBindings.map((binding) => ({
+          candidateId: `route:${binding.route}`,
+          distance: 0,
+          evidenceType: 'page_route_binding',
+          file: source.file,
+          handler: `route:${binding.matchedRoute}`,
+          humanLabel: binding.matchedRoute,
+          line: source.line,
+          permissionKeys: [binding.permissionKey],
+          score: normalizeRoute(binding.route).length,
+        })),
+        ...currentGuard.evidence,
+        ...reviewedOverrideEvidence,
+      ],
       source,
     }
   })
@@ -150,9 +196,30 @@ export function classifyMatrix(
   const unresolvedSourceRecords = records.filter(
     (record) => record.source.status !== 'resolved',
   )
-  const currentActionResolved = records.filter(
+  const currentActionResolved = records.filter((record) =>
+    record.bindingEvidence.some(
+      (evidence) => evidence.evidenceType === 'current_action',
+    ),
+  ).length
+  const bindingEvidenceResolved = records.filter(
     (record) => record.bindingEvidence.length > 0,
   ).length
+  const coveredWithoutBindingEvidence = records.filter(
+    (record) =>
+      record.disposition === 'covered_existing' &&
+      record.bindingEvidence.length === 0,
+  )
+  if (coveredWithoutBindingEvidence.length > 0) {
+    throw new Error(
+      `Covered records missing binding evidence: ${coveredWithoutBindingEvidence
+        .map((record) => record.id)
+        .join(', ')}`,
+    )
+  }
+  const bindingEvidenceCounts = countBy(
+    records.flatMap((record) => record.bindingEvidence),
+    (evidence) => evidence.evidenceType ?? 'unknown',
+  )
 
   assertPartition(matrix.length, dispositionCounts)
   assertCleanCandidates(reviewCandidates)
@@ -176,6 +243,10 @@ export function classifyMatrix(
       sourceUnresolved: unresolvedSourceRecords.length,
       currentActionResolved,
       currentActionUnresolved: records.length - currentActionResolved,
+      bindingEvidenceResolved,
+      bindingEvidenceUnresolved: records.length - bindingEvidenceResolved,
+      bindingEvidenceCounts,
+      coveredWithoutBindingEvidence: 0,
     },
     invariants: {
       allInputRecordsClassified:
@@ -221,6 +292,7 @@ export function buildReport({
     pageRouteBindings: reviewBindings.pageRouteBindings ?? [],
     permissionAliases: reviewBindings.permissionAliases ?? {},
     recordOverrides: reviewBindings.recordOverrides ?? {},
+    sourceFileBindings: reviewBindings.sourceFileBindings ?? [],
     sourceIndex,
   })
   const currentPermissionBoundActions = currentActions.filter(
@@ -594,19 +666,34 @@ function dispositionReason(
   return 'insufficient_evidence_for_automatic_permission_or_exclusion'
 }
 
-function matchPagePermissions(record, bindings) {
+function matchPagePermissionBindings(record, bindings) {
   if (record.event !== 'page.open') return []
 
-  const keys = record.routes.flatMap((route) => {
+  const matches = record.routes.flatMap((route) => {
     const normalizedRoute = normalizeRoute(route)
-    const matches = bindings
+    const bindingMatches = bindings
       .filter((binding) => routeContains(normalizedRoute, normalizeRoute(binding.route)))
       .sort((left, right) =>
         normalizeRoute(right.route).length - normalizeRoute(left.route).length,
       )
-    return matches[0]?.permissionKey ? [String(matches[0].permissionKey)] : []
+    const selected = bindingMatches[0]
+    return selected?.permissionKey
+      ? [{
+          matchedRoute: route,
+          permissionKey: String(selected.permissionKey),
+          route: String(selected.route),
+        }]
+      : []
   })
-  return [...new Set(keys)].sort(compareText)
+  return [...new Map(
+    matches.map((match) => [
+      `${normalizeRoute(match.route)}\0${match.permissionKey}`,
+      match,
+    ]),
+  ).values()].sort((left, right) =>
+    compareText(left.permissionKey, right.permissionKey) ||
+    compareText(left.route, right.route),
+  )
 }
 
 function routeContains(candidate, base) {
@@ -620,6 +707,7 @@ function normalizeRoute(route) {
 
 function buildSourceIndex(sourceFiles, projectRoot) {
   const byComponent = new Map()
+  const allFiles = []
 
   for (const absoluteFile of sourceFiles) {
     const file = normalizePath(relative(projectRoot, absoluteFile))
@@ -631,6 +719,7 @@ function buildSourceIndex(sourceFiles, projectRoot) {
       true,
       extname(file) === '.tsx' ? ts.ScriptKind.TSX : ts.ScriptKind.TS,
     )
+    allFiles.push({ file, line: 1, sourceText })
 
     visit(sourceFile, (node) => {
       const name = declarationName(node)
@@ -646,6 +735,8 @@ function buildSourceIndex(sourceFiles, projectRoot) {
       byComponent.set(name, entries)
     })
   }
+
+  byComponent.set(SOURCE_ALL_FILES, allFiles)
 
   return byComponent
 }
@@ -696,6 +787,7 @@ function matchCurrentGuard(record, source, actionIndex) {
         {
           candidateId: action.id,
           distance: Math.abs(action.line - source.line),
+          evidenceType: 'current_action',
           file: action.file,
           handler: action.handler,
           humanLabel: action.humanLabel,
@@ -720,6 +812,7 @@ function matchCurrentGuard(record, source, actionIndex) {
     evidence: selected.map((match) => ({
       candidateId: match.action.id,
       distance: match.distance,
+      evidenceType: 'current_action',
       file: match.action.file,
       handler: match.action.handler,
       humanLabel: match.action.humanLabel,
@@ -773,15 +866,32 @@ function handlerMatchScore(rawTokens, currentHandler) {
   return longestMatch.length
 }
 
-function locateSource(record, sourceIndex) {
+function locateSource(record, sourceIndex, sourceFileBindings = []) {
   if (!sourceIndex) {
     return { status: 'not_requested', file: null, line: null, alternatives: [] }
   }
 
-  const matches = sourceIndex.get(record.screenComponent) ?? []
-  if (matches.length === 0) {
-    return { status: 'unresolved', file: null, line: null, alternatives: [] }
+  const explicit = selectSourceFileBinding(record, sourceFileBindings)
+  if (explicit) {
+    const source = (sourceIndex.get(SOURCE_ALL_FILES) ?? [])
+      .find((match) => match.file === explicit.file)
+    if (!source) {
+      throw new Error(
+        `Source binding for ${record.id} references missing file ${explicit.file}`,
+      )
+    }
+    return {
+      status: 'resolved',
+      file: source.file,
+      line:
+        findHandlerLine(source.sourceText, record.targetEffect) ??
+        findBestHandlerLine(source.sourceText, record.targetEffect) ??
+        source.line,
+      alternatives: [],
+    }
   }
+
+  const matches = sourceIndex.get(record.screenComponent) ?? []
 
   const ranked = matches
     .map((match) => ({
@@ -792,15 +902,144 @@ function locateSource(record, sourceIndex) {
       right.score - left.score || compareText(left.file, right.file),
     )
   const selected = ranked[0]
+  if (selected && (ranked.length === 1 || selected.score > ranked[1]?.score)) {
+    return sourceResult(record, selected, ranked.slice(1))
+  }
 
-  return {
-    status: ranked.length === 1 || selected.score > ranked[1]?.score
+  const fallback = rankFallbackSources(
+    record,
+    sourceIndex.get(SOURCE_ALL_FILES) ?? [],
+  )
+  const fallbackSelected = fallback[0]
+  if (!fallbackSelected) {
+    return selected
+      ? sourceResult(record, selected, ranked.slice(1), 'ambiguous')
+      : { status: 'unresolved', file: null, line: null, alternatives: [] }
+  }
+
+  return sourceResult(
+    record,
+    fallbackSelected,
+    fallback.slice(1),
+    fallback.length === 1 || fallbackSelected.score > fallback[1]?.score
       ? 'resolved'
       : 'ambiguous',
+  )
+}
+
+function rankFallbackSources(record, files) {
+  return files
+    .map((match) => {
+      const handlerLine = findHandlerLine(match.sourceText, record.targetEffect)
+      const routeLine = record.event === 'page.open'
+        ? findRouteLine(match.sourceText, record.routes)
+        : null
+      if (handlerLine === null && routeLine === null) return null
+
+      return {
+        ...match,
+        line: handlerLine ?? routeLine ?? match.line,
+        score:
+          sourceMatchScore(record, match) +
+          componentTokenScore(record.screenComponent, match.file) +
+          (handlerLine === null ? 0 : 20) +
+          (routeLine === null ? 0 : 30),
+      }
+    })
+    .filter((match) => match !== null)
+    .sort((left, right) =>
+      right.score - left.score || compareText(left.file, right.file),
+    )
+}
+
+function sourceResult(record, selected, alternatives, status = 'resolved') {
+  return {
+    status,
     file: selected.file,
-    line: findHandlerLine(selected.sourceText, record.targetEffect) ?? selected.line,
-    alternatives: ranked.slice(1, 5).map((match) => match.file),
+    line:
+      findHandlerLine(selected.sourceText, record.targetEffect) ??
+      selected.line ??
+      1,
+    alternatives: alternatives
+      .slice(0, 4)
+      .map((match) => match.file)
+      .filter((file) => file !== selected.file),
   }
+}
+
+function selectSourceFileBinding(record, bindings) {
+  const matches = bindings
+    .filter((binding) =>
+      binding.screenComponent === record.screenComponent &&
+      (!binding.route || record.routes.includes(binding.route)),
+    )
+    .sort((left, right) =>
+      Number(Boolean(right.route)) - Number(Boolean(left.route)) ||
+      compareText(left.file, right.file),
+    )
+  if (matches.length > 1) {
+    const firstSpecificity = Number(Boolean(matches[0].route))
+    const secondSpecificity = Number(Boolean(matches[1].route))
+    if (firstSpecificity === secondSpecificity) {
+      throw new Error(
+        `Ambiguous source file bindings for ${record.id}: ` +
+        matches.map((match) => match.file).join(', '),
+      )
+    }
+  }
+  return matches[0] ?? null
+}
+
+function componentTokenScore(screenComponent, file) {
+  const path = normalizeForMatch(file).replace(/ /g, '')
+  const tokens = String(screenComponent ?? '')
+    .replace(/([a-z\d])([A-Z])/g, '$1 $2')
+    .split(/[^A-Za-z\d]+/)
+    .map((token) => token.toLowerCase())
+    .filter((token) => token.length >= 3 && !GENERIC_COMPONENT_TOKENS.has(token))
+
+  return tokens.reduce(
+    (score, token) => score + (path.includes(token) ? 4 : 0),
+    0,
+  )
+}
+
+function findRouteLine(sourceText, routes) {
+  const lines = sourceText.split(/\r?\n/)
+  for (const route of routes) {
+    const normalizedRoute = normalizeRoute(route)
+    if (!normalizedRoute) continue
+    const index = normalizedRoute === '/'
+      ? lines.findIndex((line) =>
+          /\b(?:path|route)\s*[:=]\s*['"]\/['"]/.test(line),
+        )
+      : lines.findIndex((line) => line.includes(normalizedRoute))
+    if (index >= 0) return index + 1
+  }
+  return null
+}
+
+function findBestHandlerLine(sourceText, targetEffect) {
+  const tokens = handlerTokens(targetEffect)
+  if (tokens.length === 0) return null
+
+  const lines = sourceText.split(/\r?\n/)
+  let bestIndex = -1
+  let bestScore = 0
+  lines.forEach((line, index) => {
+    const normalizedLine = normalizeForMatch(line).replace(/ /g, '')
+    const score = tokens.reduce(
+      (total, token) =>
+        total + (normalizedLine.includes(token) ? token.length : 0),
+      0,
+    )
+    if (score > bestScore) {
+      bestIndex = index
+      bestScore = score
+    }
+  })
+
+  return bestScore >= 6 ? bestIndex + 1 : null
 }
 
 function sourceMatchScore(record, match) {

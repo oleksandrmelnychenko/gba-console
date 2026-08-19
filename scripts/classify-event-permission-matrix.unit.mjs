@@ -86,6 +86,19 @@ test('maps nested routes to the longest existing page permission', () => {
   assert.deepEqual(report.records[0].canonicalPermissionKeys, [
     'products.assortment.page.view',
   ])
+  assert.deepEqual(report.records[0].bindingEvidence, [
+    {
+      candidateId: 'route:/products',
+      distance: 0,
+      evidenceType: 'page_route_binding',
+      file: null,
+      handler: 'route:/products/:netId',
+      humanLabel: '/products/:netId',
+      line: null,
+      permissionKeys: ['products.assortment.page.view'],
+      score: 9,
+    },
+  ])
   assert.equal(report.summary.reviewCandidates, 0)
 })
 
@@ -420,4 +433,152 @@ test('uses the resolved current handler to identify technical form and table con
 
   assert.equal(report.records[0].disposition, 'technical_ui')
   assert.equal(report.records[1].disposition, 'technical_ui')
+})
+
+test('resolves an aggregated scanner component by handler and component path tokens', () => {
+  const report = classifyMatrix(
+    [
+      candidate('PE-00001', {
+        domain: 'products',
+        routes: ['/products'],
+        screenComponent: 'ProductMovementHistoryDrawers',
+        targetEffect: 'Execute handle_export_history',
+      }),
+    ],
+    {
+      sourceIndex: new Map([
+        [
+          '\0all-source-files',
+          [
+            {
+              file: 'src/features/products/ProductMovementHistoryDrawer.tsx',
+              line: 1,
+              sourceText: 'const handleExportHistory = () => undefined',
+            },
+            {
+              file: 'src/features/products/OtherDrawer.tsx',
+              line: 1,
+              sourceText: 'const handleExportHistory = () => undefined',
+            },
+          ],
+        ],
+      ]),
+    },
+  )
+
+  assert.equal(report.records[0].source.status, 'resolved')
+  assert.equal(
+    report.records[0].source.file,
+    'src/features/products/ProductMovementHistoryDrawer.tsx',
+  )
+})
+
+test('keeps fallback source resolution ambiguous when the best scores tie', () => {
+  const sourceText = 'const handleExportHistory = () => undefined'
+  const report = classifyMatrix(
+    [
+      candidate('PE-00001', {
+        domain: 'products',
+        routes: ['/products'],
+        screenComponent: 'ProductMovementHistoryDrawers',
+        targetEffect: 'Execute handle_export_history',
+      }),
+    ],
+    {
+      sourceIndex: new Map([
+        [
+          '\0all-source-files',
+          [
+            {
+              file: 'src/features/products/ProductMovementHistoryDrawerA.tsx',
+              line: 1,
+              sourceText,
+            },
+            {
+              file: 'src/features/products/ProductMovementHistoryDrawerB.tsx',
+              line: 1,
+              sourceText,
+            },
+          ],
+        ],
+      ]),
+    },
+  )
+
+  assert.equal(report.records[0].source.status, 'ambiguous')
+  assert.equal(report.records[0].source.alternatives.length, 1)
+})
+
+test('uses a verified aggregate source binding and rejects a missing file', () => {
+  const record = candidate('PE-00001', {
+    screenComponent: 'SadPages',
+    targetEffect: 'Execute set_download_document',
+  })
+  const sourceIndex = new Map([
+    [
+      '\0all-source-files',
+      [
+        {
+          file: 'src/features/sad/pages/SadPages.tsx',
+          line: 1,
+          sourceText: 'setDownloadDocument(document)',
+        },
+      ],
+    ],
+  ])
+  const sourceFileBindings = [
+    {
+      file: 'src/features/sad/pages/SadPages.tsx',
+      screenComponent: 'SadPages',
+    },
+  ]
+
+  const report = classifyMatrix([record], { sourceFileBindings, sourceIndex })
+  assert.equal(report.records[0].source.status, 'resolved')
+  assert.equal(report.records[0].source.line, 1)
+  assert.throws(
+    () => classifyMatrix([record], {
+      sourceFileBindings: [
+        { file: 'src/missing.tsx', screenComponent: 'SadPages' },
+      ],
+      sourceIndex,
+    }),
+    /references missing file/,
+  )
+})
+
+test('resolves the root redirect from an exact route declaration', () => {
+  const report = classifyMatrix(
+    [
+      candidate('PE-00001', {
+        domain: 'shared',
+        event: 'page.open',
+        routes: ['/'],
+        screenComponent: 'Navigate',
+        targetEffect: 'Open page /',
+      }),
+    ],
+    {
+      sourceIndex: new Map([
+        [
+          '\0all-source-files',
+          [
+            {
+              file: 'src/app/routes/consoleRoutes.tsx',
+              line: 1,
+              sourceText: "const route = { path: '/', element: <Navigate /> }",
+            },
+            {
+              file: 'src/shared/other.ts',
+              line: 1,
+              sourceText: "const apiPath = '/api/v1'",
+            },
+          ],
+        ],
+      ]),
+    },
+  )
+
+  assert.equal(report.records[0].source.status, 'resolved')
+  assert.equal(report.records[0].source.file, 'src/app/routes/consoleRoutes.tsx')
 })

@@ -100,6 +100,35 @@
     { "route": "/resales", "permissionKey": "sales.resales.page.view" },
     { "route": "/recommendations", "permissionKey": "orders.purchase_cockpit.page.view" }
   ],
+  "sourceFileBindings": [
+    {
+      "screenComponent": "OnlineShopSeoControls",
+      "file": "src/features/online-shop-seo/components/OnlineShopSeoControls.tsx"
+    },
+    {
+      "screenComponent": "SadPages",
+      "file": "src/features/sad/pages/SadPages.tsx"
+    },
+    {
+      "screenComponent": "HeadTaskBoardModals",
+      "file": "src/features/sales-cockpit/components/HeadTaskBoardModals.tsx"
+    },
+    {
+      "screenComponent": "SupplyOrderUkraineProductPlacementPage",
+      "route": "/orders/ukraine/:id/product-income",
+      "file": "src/features/product-income-documents/pages/SupplyOrderProductPlacementPage.tsx"
+    },
+    {
+      "screenComponent": "MergedServicesSection",
+      "route": "/orders/ukraine/protocols/:netid",
+      "file": "src/features/product-delivery-protocols/components/MergedServicesSection.tsx"
+    },
+    {
+      "screenComponent": "NewMergedServiceForm",
+      "route": "/orders/ukraine/protocols/:netid",
+      "file": "src/features/product-delivery-protocols/components/NewMergedServiceForm.tsx"
+    }
+  ],
   "recordOverrides": {
     "PE-00079": {
       "disposition": "covered_existing",
