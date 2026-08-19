@@ -441,6 +441,16 @@ export const PermissionKeys = {
       Export: 'products.placements.document.export',
     },
   },
+  ProductIncomeDocuments: {
+    Page: {
+      View: 'warehouse_accounting.income_documents.page.view',
+    },
+    Document: {
+      OpenDetails: 'warehouse_accounting.income_documents.document.open_details',
+      OpenRemainings: 'warehouse_accounting.income_documents.document.open_remainings',
+      Export: 'warehouse_accounting.income_documents.document.export',
+    },
+  },
   ConsumableProducts: {
     Page: {
       View: 'services.consumable_products.page.view',
@@ -1037,6 +1047,10 @@ export type ProductPlacementsPermissionKey =
   | Values<typeof PermissionKeys.ProductPlacements.File>
   | Values<typeof PermissionKeys.ProductPlacements.Document>
 
+export type ProductIncomeDocumentsPermissionKey =
+  | Values<typeof PermissionKeys.ProductIncomeDocuments.Page>
+  | Values<typeof PermissionKeys.ProductIncomeDocuments.Document>
+
 export type ConsumableProductsPermissionKey =
   | Values<typeof PermissionKeys.ConsumableProducts.Page>
   | Values<typeof PermissionKeys.ConsumableProducts.Category>
@@ -1204,6 +1218,7 @@ export type PermissionKey =
   | ProductPricingPermissionKey
   | ProductsAssortmentPermissionKey
   | ProductPlacementsPermissionKey
+  | ProductIncomeDocumentsPermissionKey
   | ProductSpecificationCodesPermissionKey
   | ProvidingServiceActsPermissionKey
   | TransportersPermissionKey
@@ -2162,6 +2177,8 @@ const eventPermissionKeys = new Set<string>([
   ...Object.values(PermissionKeys.ProductPlacements.Page),
   ...Object.values(PermissionKeys.ProductPlacements.File),
   ...Object.values(PermissionKeys.ProductPlacements.Document),
+  ...Object.values(PermissionKeys.ProductIncomeDocuments.Page),
+  ...Object.values(PermissionKeys.ProductIncomeDocuments.Document),
   ...Object.values(PermissionKeys.ConsumableProducts.Page),
   ...Object.values(PermissionKeys.ConsumableProducts.Category),
   ...Object.values(PermissionKeys.ConsumableProducts.Product),

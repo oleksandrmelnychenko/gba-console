@@ -3664,6 +3664,47 @@
       "canonicalPermissionKeys": ["orders.ukraine.order.open_products"],
       "reason": "Vendor code and product name are two entry controls for the same protected product card."
     },
+    "PE-00905": {
+      "disposition": "technical_ui",
+      "reason": "The row click opens only a local chooser; every business operation inside it is independently permission-checked and the chooser does not call the server."
+    },
+    "PE-00906": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["warehouse_accounting.income_documents.document.open_details"],
+      "reason": "Document details are hidden and the handler is inert without open_details; all detail and capitalization reads use dedicated server façades under the same key."
+    },
+    "PE-00907": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["warehouse_accounting.income_documents.document.open_remainings"],
+      "reason": "Remaining consignments are independently hidden and loaded only through remainings-scoped detail and balance routes."
+    },
+    "PE-00908": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["warehouse_accounting.income_documents.document.export"],
+      "reason": "The export control and final handler both require document.export and call only the scoped export façade."
+    },
+    "PE-00909": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-00907",
+      "canonicalPermissionKeys": ["warehouse_accounting.income_documents.document.open_remainings"],
+      "reason": "The drawer button invokes the same permission-checked remaining-consignments workflow as the options chooser."
+    },
+    "PE-00910": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-00905",
+      "reason": "The row action and row click open the same local action chooser and do not represent separate business capabilities."
+    },
+    "PE-00911": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-00908",
+      "canonicalPermissionKeys": ["warehouse_accounting.income_documents.document.export"],
+      "reason": "The row export and drawer export converge on the same final permission-checked export handler."
+    },
+    "PE-00912": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["products.assortment.storage_history.open"],
+      "reason": "Storage-location history is now independently hidden without storage_history.open and reads through the existing protected assortment route."
+    },
     "PE-00919": {
       "disposition": "covered_existing",
       "canonicalPermissionKeys": ["products.placements.page.view"],

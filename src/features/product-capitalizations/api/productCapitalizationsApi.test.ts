@@ -4,6 +4,7 @@ import {
   createProductCapitalization,
   exportProductCapitalization,
   getProductCapitalization,
+  getProductCapitalizationForIncomeDocuments,
   getProductCapitalizations,
   parseProductCapitalizationItemsFromFile,
 } from './productCapitalizationsApi'
@@ -57,6 +58,16 @@ describe('productCapitalizationsApi', () => {
       Number: 'CAP-1',
     })
     expect(apiRequestMock).toHaveBeenCalledWith('/products/capitalizations/page/details', {
+      query: { netId: 'capitalization-1' },
+    })
+  })
+
+  it('loads capitalization projections through the income-document details scope', async () => {
+    apiRequestMock.mockResolvedValueOnce({ NetUid: 'capitalization-1' })
+
+    await getProductCapitalizationForIncomeDocuments('capitalization-1')
+
+    expect(apiRequestMock).toHaveBeenCalledWith('/products/capitalizations/income-documents/details', {
       query: { netId: 'capitalization-1' },
     })
   })

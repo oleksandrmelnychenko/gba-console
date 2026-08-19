@@ -4,25 +4,25 @@
     "inputRecords": 1902,
     "classifiedRecords": 1902,
     "dispositionCounts": {
-      "technical_ui": 760,
-      "covered_existing": 553,
-      "duplicate_occurrence": 290,
+      "technical_ui": 761,
+      "covered_existing": 556,
+      "duplicate_occurrence": 293,
       "business_candidate": 211,
-      "needs_human_review": 76,
+      "needs_human_review": 69,
       "stale_or_aggregated": 12
     },
-    "reviewCandidates": 287,
-    "technicalExcluded": 760,
-    "duplicatesExcluded": 290,
-    "duplicateOccurrencesTotal": 359,
+    "reviewCandidates": 280,
+    "technicalExcluded": 761,
+    "duplicatesExcluded": 293,
+    "duplicateOccurrencesTotal": 362,
     "technicalDuplicateOverlap": 69,
     "sourceResolved": 1828,
     "sourceUnresolved": 74,
     "currentActionResolved": 1185,
     "currentActionUnresolved": 717,
     "currentProductionActions": 1829,
-    "currentPermissionBoundActions": 300,
-    "currentUnboundActions": 1529
+    "currentPermissionBoundActions": 299,
+    "currentUnboundActions": 1530
   },
   "invariants": {
     "allInputRecordsClassified": true,
@@ -36552,7 +36552,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/product-income-documents/pages/ProductIncomeDocumentsPage.tsx",
-        "line": 563,
+        "line": 592,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -36582,12 +36582,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-9ffb3a326b9e",
-          "distance": 178,
+          "candidateId": "EPC-8cbf27488612",
+          "distance": 213,
           "file": "src/features/product-income-documents/pages/ProductIncomeDocumentsPage.tsx",
           "handler": "{resetFilters}",
           "humanLabel": "Скинути",
-          "line": 662,
+          "line": 722,
           "permissionKeys": [],
           "score": 12
         }
@@ -36595,7 +36595,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/product-income-documents/pages/ProductIncomeDocumentsPage.tsx",
-        "line": 484,
+        "line": 509,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -36617,20 +36617,20 @@
       "proposedPermission": "products.products_income_documents.row_open_options_row_document.row_click",
       "securityLevel": "medium",
       "rawStatus": "Candidate existing key in component; binding review required",
-      "disposition": "needs_human_review",
-      "dispositionReason": "raw_audit_claims_existing_binding_but_does_not_name_the_key",
+      "disposition": "technical_ui",
+      "dispositionReason": "The row click opens only a local chooser; every business operation inside it is independently permission-checked and the chooser does not call the server.",
       "duplicateOf": null,
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-ee2152e4da07",
+          "candidateId": "EPC-421fabb002fd",
           "distance": 14,
           "file": "src/features/product-income-documents/pages/ProductIncomeDocumentsPage.tsx",
           "handler": "{(row) => openOptions(row.document)}",
           "humanLabel": null,
-          "line": 702,
+          "line": 762,
           "permissionKeys": [],
           "score": 25
         }
@@ -36638,7 +36638,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/product-income-documents/pages/ProductIncomeDocumentsPage.tsx",
-        "line": 716,
+        "line": 776,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -36660,20 +36660,22 @@
       "proposedPermission": "products.products_income_documents.on_overview_document.modal_open",
       "securityLevel": "medium",
       "rawStatus": "Candidate existing key in component; binding review required",
-      "disposition": "needs_human_review",
-      "dispositionReason": "raw_audit_claims_existing_binding_but_does_not_name_the_key",
+      "disposition": "covered_existing",
+      "dispositionReason": "Document details are hidden and the handler is inert without open_details; all detail and capitalization reads use dedicated server façades under the same key.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "warehouse_accounting.income_documents.document.open_details"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-71a3e6ec7275",
-          "distance": 36,
+          "candidateId": "EPC-05479077c680",
+          "distance": 37,
           "file": "src/features/product-income-documents/pages/ProductIncomeDocumentsPage.tsx",
           "handler": "{() => onOverview(document)}",
           "humanLabel": "Деталі документа",
-          "line": 814,
+          "line": 886,
           "permissionKeys": [],
           "score": 16
         }
@@ -36681,7 +36683,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/product-income-documents/pages/ProductIncomeDocumentsPage.tsx",
-        "line": 778,
+        "line": 849,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -36703,20 +36705,22 @@
       "proposedPermission": "products.products_income_documents.on_remainings_document.button_click",
       "securityLevel": "low",
       "rawStatus": "Candidate existing key in component; binding review required",
-      "disposition": "needs_human_review",
-      "dispositionReason": "raw_audit_claims_existing_binding_but_does_not_name_the_key",
+      "disposition": "covered_existing",
+      "dispositionReason": "Remaining consignments are independently hidden and loaded only through remainings-scoped detail and balance routes.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "warehouse_accounting.income_documents.document.open_remainings"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-3afb3d72b972",
-          "distance": 50,
+          "candidateId": "EPC-dda85d026c7a",
+          "distance": 53,
           "file": "src/features/product-income-documents/pages/ProductIncomeDocumentsPage.tsx",
           "handler": "{() => onRemainings(document)}",
           "humanLabel": "Залишки по партіям",
-          "line": 829,
+          "line": 903,
           "permissionKeys": [],
           "score": 18
         }
@@ -36724,7 +36728,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/product-income-documents/pages/ProductIncomeDocumentsPage.tsx",
-        "line": 779,
+        "line": 850,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -36746,20 +36750,22 @@
       "proposedPermission": "products.products_income_documents.on_export_document.command_export",
       "securityLevel": "medium",
       "rawStatus": "Candidate existing key in component; binding review required",
-      "disposition": "needs_human_review",
-      "dispositionReason": "raw_audit_claims_existing_binding_but_does_not_name_the_key",
+      "disposition": "covered_existing",
+      "dispositionReason": "The export control and final handler both require document.export and call only the scoped export façade.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "warehouse_accounting.income_documents.document.export"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-c1011431f166",
-          "distance": 34,
+          "candidateId": "EPC-9fb7228be430",
+          "distance": 35,
           "file": "src/features/product-income-documents/pages/ProductIncomeDocumentsPage.tsx",
           "handler": "{() => onExport(document)}",
           "humanLabel": "Експорт",
-          "line": 925,
+          "line": 1005,
           "permissionKeys": [],
           "score": 14
         }
@@ -36767,7 +36773,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/product-income-documents/pages/ProductIncomeDocumentsPage.tsx",
-        "line": 891,
+        "line": 970,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -36789,20 +36795,22 @@
       "proposedPermission": "products.products_income_documents.on_load_remainings_document.button_click",
       "securityLevel": "low",
       "rawStatus": "Candidate existing key in component; binding review required",
-      "disposition": "needs_human_review",
-      "dispositionReason": "raw_audit_claims_existing_binding_but_does_not_name_the_key",
-      "duplicateOf": null,
+      "disposition": "duplicate_occurrence",
+      "dispositionReason": "The drawer button invokes the same permission-checked remaining-consignments workflow as the options chooser.",
+      "duplicateOf": "PE-00907",
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "warehouse_accounting.income_documents.document.open_remainings"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-9f666d6f6c7d",
-          "distance": 42,
+          "candidateId": "EPC-63535c879ec2",
+          "distance": 45,
           "file": "src/features/product-income-documents/pages/ProductIncomeDocumentsPage.tsx",
           "handler": "{() => onLoadRemainings(document)}",
           "humanLabel": "Залишки по партіям",
-          "line": 934,
+          "line": 1016,
           "permissionKeys": [],
           "score": 22
         }
@@ -36810,7 +36818,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/product-income-documents/pages/ProductIncomeDocumentsPage.tsx",
-        "line": 892,
+        "line": 971,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -36832,20 +36840,20 @@
       "proposedPermission": "products.products_income_documents.on_open_row_document.modal_open",
       "securityLevel": "medium",
       "rawStatus": "Candidate existing key in component; binding review required",
-      "disposition": "needs_human_review",
-      "dispositionReason": "raw_audit_claims_existing_binding_but_does_not_name_the_key",
-      "duplicateOf": null,
+      "disposition": "duplicate_occurrence",
+      "dispositionReason": "The row action and row click open the same local action chooser and do not represent separate business capabilities.",
+      "duplicateOf": "PE-00905",
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-ba61df02f7cd",
+          "candidateId": "EPC-0a6abd390970",
           "distance": 0,
           "file": "src/features/product-income-documents/pages/ProductIncomeDocumentsPage.tsx",
           "handler": "{() => onOpen(row.document)}",
           "humanLabel": "Відкрити",
-          "line": 1615,
+          "line": 1700,
           "permissionKeys": [],
           "score": 15
         }
@@ -36853,7 +36861,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/product-income-documents/pages/ProductIncomeDocumentsPage.tsx",
-        "line": 1615,
+        "line": 1700,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -36875,20 +36883,22 @@
       "proposedPermission": "products.products_income_documents.on_export_row_document.command_export",
       "securityLevel": "medium",
       "rawStatus": "Candidate existing key in component; binding review required",
-      "disposition": "needs_human_review",
-      "dispositionReason": "raw_audit_claims_existing_binding_but_does_not_name_the_key",
-      "duplicateOf": null,
+      "disposition": "duplicate_occurrence",
+      "dispositionReason": "The row export and drawer export converge on the same final permission-checked export handler.",
+      "duplicateOf": "PE-00908",
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "warehouse_accounting.income_documents.document.export"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-4ca07a7935d4",
+          "candidateId": "EPC-ad666bca0541",
           "distance": 5,
           "file": "src/features/product-income-documents/pages/ProductIncomeDocumentsPage.tsx",
           "handler": "{() => onExport(row.document)}",
           "humanLabel": "Експорт",
-          "line": 1616,
+          "line": 1702,
           "permissionKeys": [],
           "score": 17
         }
@@ -36896,7 +36906,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/product-income-documents/pages/ProductIncomeDocumentsPage.tsx",
-        "line": 1621,
+        "line": 1707,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -36918,20 +36928,22 @@
       "proposedPermission": "products.products_income_documents.on_open_storage_location_history_product.modal_open",
       "securityLevel": "low",
       "rawStatus": "Candidate existing key in component; binding review required",
-      "disposition": "needs_human_review",
-      "dispositionReason": "raw_audit_claims_existing_binding_but_does_not_name_the_key",
+      "disposition": "covered_existing",
+      "dispositionReason": "Storage-location history is now independently hidden without storage_history.open and reads through the existing protected assortment route.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "products.assortment.storage_history.open"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-3b658995aa61",
-          "distance": 251,
+          "candidateId": "EPC-fd57020ddf74",
+          "distance": 258,
           "file": "src/features/product-income-documents/pages/ProductIncomeDocumentsPage.tsx",
           "handler": "{() => onOpenStorageLocationHistory(product)}",
           "humanLabel": "Історія місця зберігання",
-          "line": 1889,
+          "line": 1985,
           "permissionKeys": [],
           "score": 33
         }
@@ -36939,7 +36951,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/product-income-documents/pages/ProductIncomeDocumentsPage.tsx",
-        "line": 1638,
+        "line": 1727,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -36961,32 +36973,28 @@
       "proposedPermission": "products.products_income_documents.on_open_movement_history_product.modal_open",
       "securityLevel": "low",
       "rawStatus": "Candidate existing key in component; binding review required",
-      "disposition": "covered_existing",
-      "dispositionReason": "existing_page_permission:products.assortment.movement.open",
+      "disposition": "needs_human_review",
+      "dispositionReason": "raw_audit_claims_existing_binding_but_does_not_name_the_key",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [
-        "products.assortment.movement.open"
-      ],
+      "canonicalPermissionKeys": [],
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-968fb83eadf3",
-          "distance": 260,
+          "candidateId": "EPC-f5a13dbf276d",
+          "distance": 268,
           "file": "src/features/product-income-documents/pages/ProductIncomeDocumentsPage.tsx",
           "handler": "{() => onOpenMovementHistory(product)}",
           "humanLabel": "Рух товару",
-          "line": 1897,
-          "permissionKeys": [
-            "products.assortment.movement.open"
-          ],
+          "line": 1994,
+          "permissionKeys": [],
           "score": 26
         }
       ],
       "source": {
         "status": "resolved",
         "file": "src/features/product-income-documents/pages/ProductIncomeDocumentsPage.tsx",
-        "line": 1637,
+        "line": 1726,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -80022,14 +80030,7 @@
     "PE-00749",
     "PE-00901",
     "PE-00902",
-    "PE-00905",
-    "PE-00906",
-    "PE-00907",
-    "PE-00908",
-    "PE-00909",
-    "PE-00910",
-    "PE-00911",
-    "PE-00912",
+    "PE-00913",
     "PE-00916",
     "PE-00917",
     "PE-00936",

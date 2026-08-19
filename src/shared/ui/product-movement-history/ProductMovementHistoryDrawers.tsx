@@ -46,6 +46,10 @@ import {
   formatProductMovementExchangeRate,
   formatProductMovementUnitPrice,
 } from './productMovementFormatters'
+import {
+  legacyMovementRequestPaths,
+  type ProductMovementHistoryRequestPaths,
+} from './productMovementHistoryRequestPaths'
 import './product-movement-history-drawers.css'
 
 export type MovementHistoryProduct = {
@@ -544,14 +548,18 @@ function productMovementExportModalReducer(
 }
 
 export function ProductMovementHistoryDrawer({
+  canExport = false,
   initialTab = 'movement',
   opened,
   product,
+  requestPaths = legacyMovementRequestPaths,
   onClose,
 }: {
+  canExport?: boolean
   initialTab?: ProductMovementHistoryTab
   opened: boolean
   product: MovementHistoryProduct | null
+  requestPaths?: ProductMovementHistoryRequestPaths
   onClose: () => void
 }) {
   const productNetUid = product?.NetUid?.trim() || ''
@@ -560,23 +568,29 @@ export function ProductMovementHistoryDrawer({
   return (
     <ProductMovementHistoryDrawerContent
       key={`${productKey}-${initialTab}`}
+      canExport={canExport}
       initialTab={initialTab}
       opened={opened}
       product={product}
+      requestPaths={requestPaths}
       onClose={onClose}
     />
   )
 }
 
 function ProductMovementHistoryDrawerContent({
+  canExport,
   initialTab,
   opened,
   product,
+  requestPaths,
   onClose,
 }: {
+  canExport: boolean
   initialTab: ProductMovementHistoryTab
   opened: boolean
   product: MovementHistoryProduct | null
+  requestPaths: ProductMovementHistoryRequestPaths
   onClose: () => void
 }) {
   const { t } = useI18n()
@@ -610,19 +624,19 @@ function ProductMovementHistoryDrawerContent({
           </Tabs.List>
 
           <Tabs.Panel value="movement" pt={0}>
-            <ProductMovementPanel active={opened && activeTab === 'movement'} product={product} />
+            <ProductMovementPanel active={opened && activeTab === 'movement'} canExport={canExport} product={product} requestPath={requestPaths.movement} exportPath={requestPaths.movementExport} />
           </Tabs.Panel>
           <Tabs.Panel value="income" pt={0}>
-            <ProductIncomeMovementPanel active={opened && activeTab === 'income'} product={product} />
+            <ProductIncomeMovementPanel active={opened && activeTab === 'income'} canExport={canExport} product={product} requestPath={requestPaths.income} exportPath={requestPaths.incomeExport} />
           </Tabs.Panel>
           <Tabs.Panel value="outcome" pt={0}>
-            <ProductOutcomeMovementPanel active={opened && activeTab === 'outcome'} product={product} />
+            <ProductOutcomeMovementPanel active={opened && activeTab === 'outcome'} canExport={canExport} product={product} requestPath={requestPaths.outcome} exportPath={requestPaths.outcomeExport} />
           </Tabs.Panel>
           <Tabs.Panel value="historical-source" pt={0}>
-            <HistoricalSourceMovementPanel active={opened && activeTab === 'historical-source'} product={product} />
+            <HistoricalSourceMovementPanel active={opened && activeTab === 'historical-source'} product={product} requestPath={requestPaths.historicalSource} />
           </Tabs.Panel>
           <Tabs.Panel value="informational" pt={0}>
-            <InformationalMovementPanel active={opened && activeTab === 'informational'} product={product} />
+            <InformationalMovementPanel active={opened && activeTab === 'informational'} product={product} requestPath={requestPaths.informational} />
           </Tabs.Panel>
         </Tabs>
         </Card>
@@ -634,10 +648,12 @@ function ProductMovementHistoryDrawerContent({
 export function ProductStorageLocationHistoryDrawer({
   opened,
   product,
+  requestPath = '/products/placements/history/all/filtered',
   onClose,
 }: {
   opened: boolean
   product: MovementHistoryProduct | null
+  requestPath?: string
   onClose: () => void
 }) {
   const productNetUid = product?.NetUid?.trim() || ''
@@ -647,6 +663,7 @@ export function ProductStorageLocationHistoryDrawer({
       key={productNetUid || 'closed'}
       opened={opened}
       product={product}
+      requestPath={requestPath}
       onClose={onClose}
     />
   )
@@ -655,10 +672,12 @@ export function ProductStorageLocationHistoryDrawer({
 function ProductStorageLocationHistoryDrawerContent({
   opened,
   product,
+  requestPath,
   onClose,
 }: {
   opened: boolean
   product: MovementHistoryProduct | null
+  requestPath: string
   onClose: () => void
 }) {
   const { t } = useI18n()
@@ -694,7 +713,7 @@ function ProductStorageLocationHistoryDrawerContent({
           offset,
           productNetId: productNetUid,
           to: dateTo,
-        })
+        }, requestPath)
 
         if (!cancelled) {
           dispatchDrawerState({ productNetUid, rows: nextRows, type: 'load-succeeded' })
@@ -715,7 +734,7 @@ function ProductStorageLocationHistoryDrawerContent({
     return () => {
       cancelled = true
     }
-  }, [dateFrom, dateTo, filterError, opened, page, pageSize, productNetUid, reloadKey, t])
+  }, [dateFrom, dateTo, filterError, opened, page, pageSize, productNetUid, reloadKey, requestPath, t])
 
   return (
     <AppDrawer opened={opened && Boolean(product)} position="right" size="min(1180px, 98vw)" title={title} onClose={onClose}>
@@ -801,7 +820,19 @@ function ProductStorageLocationHistoryDrawerContent({
   )
 }
 
-function ProductMovementPanel({ active, product }: { active: boolean; product: MovementHistoryProduct }) {
+function ProductMovementPanel({
+  active,
+  canExport,
+  exportPath,
+  product,
+  requestPath,
+}: {
+  active: boolean
+  canExport: boolean
+  exportPath: string
+  product: MovementHistoryProduct
+  requestPath: string
+}) {
   const { t } = useI18n()
   const productNetUid = product.NetUid?.trim() || ''
   const [filterState, dispatchFilterState] = useReducer(productMovementFilterReducer, undefined, createProductMovementFilterState)
@@ -852,7 +883,7 @@ function ProductMovementPanel({ active, product }: { active: boolean; product: M
           productNetId: productNetUid,
           to: dateTo,
           types: selectedTypes,
-        })
+        }, requestPath)
 
         if (!cancelled) {
           dispatchRowsState({ rows: nextRows, type: 'load-succeeded' })
@@ -872,14 +903,14 @@ function ProductMovementPanel({ active, product }: { active: boolean; product: M
     return () => {
       cancelled = true
     }
-  }, [active, dateFrom, dateTo, filterError, movementType, productNetUid, reloadKey, selectedTypes, t, typesError])
+  }, [active, dateFrom, dateTo, filterError, movementType, productNetUid, reloadKey, requestPath, selectedTypes, t, typesError])
 
   function toggleMovementItemType(value: number) {
     dispatchFilterState({ type: 'toggle-selected-type', value })
   }
 
   async function exportMovements() {
-    if (!productNetUid || filterError || typesError || isExporting) {
+    if (!canExport || !productNetUid || filterError || typesError || isExporting) {
       return
     }
 
@@ -896,7 +927,7 @@ function ProductMovementPanel({ active, product }: { active: boolean; product: M
         productNetId: productNetUid,
         to: dateTo,
         types: selectedTypes,
-      })
+      }, exportPath)
 
       if (exportRequestRef.current === requestId) {
         dispatchExportModalState({ document: nextDocument, key: requestKey, type: 'export-succeeded' })
@@ -950,15 +981,17 @@ function ProductMovementPanel({ active, product }: { active: boolean; product: M
         >
           {t('Оновити')}
         </Button>
-        <Button
-          disabled={!productNetUid || Boolean(filterError) || Boolean(typesError)}
-          leftSection={<Download size={18} />}
-          loading={isExporting}
-          variant="outline"
-          onClick={() => void exportMovements()}
-        >
-          {t('Друк')}
-        </Button>
+        {canExport ? (
+          <Button
+            disabled={!productNetUid || Boolean(filterError) || Boolean(typesError)}
+            leftSection={<Download size={18} />}
+            loading={isExporting}
+            variant="outline"
+            onClick={() => void exportMovements()}
+          >
+            {t('Друк')}
+          </Button>
+        ) : null}
         </div>
       </Group>
       <Group gap="md" wrap="wrap" align="center" className="product-movement-history-types-row">
@@ -1694,7 +1727,19 @@ function formatHistoricalDateRange(from: Date | string, to: Date | string): stri
   return formattedFrom === formattedTo ? formattedFrom : `${formattedFrom} — ${formattedTo}`
 }
 
-function ProductIncomeMovementPanel({ active, product }: { active: boolean; product: MovementHistoryProduct }) {
+function ProductIncomeMovementPanel({
+  active,
+  canExport,
+  exportPath,
+  product,
+  requestPath,
+}: {
+  active: boolean
+  canExport: boolean
+  exportPath: string
+  product: MovementHistoryProduct
+  requestPath: string
+}) {
   const { t } = useI18n()
   const productNetUid = product.NetUid?.trim() || ''
   const [dateState, dispatchDateState] = useReducer(movementDateReducer, undefined, createMovementDateState)
@@ -1743,7 +1788,7 @@ function ProductIncomeMovementPanel({ active, product }: { active: boolean; prod
           from: dateFrom,
           productNetId: productNetUid,
           to: dateTo,
-        })
+        }, requestPath)
 
         if (!cancelled) {
           dispatchRowsState({ rows: nextRows, type: 'load-succeeded' })
@@ -1763,10 +1808,10 @@ function ProductIncomeMovementPanel({ active, product }: { active: boolean; prod
     return () => {
       cancelled = true
     }
-  }, [active, dateFrom, dateTo, filterError, productNetUid, reloadKey, t])
+  }, [active, dateFrom, dateTo, filterError, productNetUid, reloadKey, requestPath, t])
 
   async function exportMovements() {
-    if (!productNetUid || filterError || isExporting) {
+    if (!canExport || !productNetUid || filterError || isExporting) {
       return
     }
 
@@ -1781,7 +1826,7 @@ function ProductIncomeMovementPanel({ active, product }: { active: boolean; prod
         from: dateFrom,
         productNetId: productNetUid,
         to: dateTo,
-      })
+      }, exportPath)
 
       if (exportRequestRef.current === requestId) {
         dispatchExportModalState({ document: nextDocument, key: requestKey, type: 'export-succeeded' })
@@ -1804,6 +1849,7 @@ function ProductIncomeMovementPanel({ active, product }: { active: boolean; prod
     <Stack className="product-movement-history-panel" gap={0}>
       <div className="app-filter-bar product-movement-history-filter-bar">
       <MovementDateToolbar
+        canExport={canExport}
         dateFrom={dateFrom}
         dateTo={dateTo}
         exportDisabled={!productNetUid || Boolean(filterError)}
@@ -1893,7 +1939,19 @@ function ProductIncomeMovementBranches({
   )
 }
 
-function ProductOutcomeMovementPanel({ active, product }: { active: boolean; product: MovementHistoryProduct }) {
+function ProductOutcomeMovementPanel({
+  active,
+  canExport,
+  exportPath,
+  product,
+  requestPath,
+}: {
+  active: boolean
+  canExport: boolean
+  exportPath: string
+  product: MovementHistoryProduct
+  requestPath: string
+}) {
   const { t } = useI18n()
   const productNetUid = product.NetUid?.trim() || ''
   const [dateState, dispatchDateState] = useReducer(movementDateReducer, undefined, createMovementDateState)
@@ -1940,7 +1998,7 @@ function ProductOutcomeMovementPanel({ active, product }: { active: boolean; pro
           from: dateFrom,
           productNetId: productNetUid,
           to: dateTo,
-        })
+        }, requestPath)
 
         if (!cancelled) {
           dispatchRowsState({ rows: nextRows, type: 'load-succeeded' })
@@ -1960,10 +2018,10 @@ function ProductOutcomeMovementPanel({ active, product }: { active: boolean; pro
     return () => {
       cancelled = true
     }
-  }, [active, dateFrom, dateTo, filterError, productNetUid, reloadKey, t])
+  }, [active, dateFrom, dateTo, filterError, productNetUid, reloadKey, requestPath, t])
 
   async function exportMovements() {
-    if (!productNetUid || filterError || isExporting) {
+    if (!canExport || !productNetUid || filterError || isExporting) {
       return
     }
 
@@ -1978,7 +2036,7 @@ function ProductOutcomeMovementPanel({ active, product }: { active: boolean; pro
         from: dateFrom,
         productNetId: productNetUid,
         to: dateTo,
-      })
+      }, exportPath)
 
       if (exportRequestRef.current === requestId) {
         dispatchExportModalState({ document: nextDocument, key: requestKey, type: 'export-succeeded' })
@@ -2001,6 +2059,7 @@ function ProductOutcomeMovementPanel({ active, product }: { active: boolean; pro
     <Stack className="product-movement-history-panel" gap={0}>
       <div className="app-filter-bar product-movement-history-filter-bar">
       <MovementDateToolbar
+        canExport={canExport}
         dateFrom={dateFrom}
         dateTo={dateTo}
         exportDisabled={!productNetUid || Boolean(filterError)}
@@ -2042,6 +2101,7 @@ function ProductOutcomeMovementPanel({ active, product }: { active: boolean; pro
 }
 
 function MovementDateToolbar({
+  canExport,
   dateFrom,
   dateTo,
   exportDisabled,
@@ -2052,6 +2112,7 @@ function MovementDateToolbar({
   onExport,
   onRefresh,
 }: {
+  canExport: boolean
   dateFrom: string
   dateTo: string
   exportDisabled: boolean
@@ -2072,9 +2133,11 @@ function MovementDateToolbar({
       <Button leftSection={<RefreshCw size={18} />} loading={isLoading} variant="outline" onClick={onRefresh}>
         {t('Оновити')}
       </Button>
-      <Button disabled={exportDisabled} leftSection={<Download size={18} />} loading={exportLoading} variant="outline" onClick={onExport}>
-        {t('Друк')}
-      </Button>
+      {canExport ? (
+        <Button disabled={exportDisabled} leftSection={<Download size={18} />} loading={exportLoading} variant="outline" onClick={onExport}>
+          {t('Друк')}
+        </Button>
+      ) : null}
       </div>
     </Group>
   )
@@ -2654,8 +2717,8 @@ function useStorageLocationHistoryColumns(): DataTableColumn<ProductStorageLocat
   )
 }
 
-async function getProductMovements(params: ProductMovementParams): Promise<ProductMovement[]> {
-  const result = await apiRequest<unknown>('/consignments/info/movement/filtered', {
+async function getProductMovements(params: ProductMovementParams, requestPath: string): Promise<ProductMovement[]> {
+  const result = await apiRequest<unknown>(requestPath, {
     query: {
       from: params.from,
       movementType: params.movementType,
@@ -2715,8 +2778,9 @@ async function getInformationalMovements(
 
 async function getProductIncomeMovements(
   params: ProductIncomeOutcomeMovementParams,
+  requestPath: string,
 ): Promise<ProductIncomeMovement[]> {
-  const result = await apiRequest<unknown>('/consignments/info/income/filtered', {
+  const result = await apiRequest<unknown>(requestPath, {
     query: {
       from: params.from,
       productNetId: params.productNetId,
@@ -2733,8 +2797,9 @@ async function getProductIncomeMovements(
 
 async function getProductOutcomeMovements(
   params: ProductIncomeOutcomeMovementParams,
+  requestPath: string,
 ): Promise<ProductOutcomeMovement[]> {
-  const result = await apiRequest<unknown>('/consignments/info/outcome/filtered', {
+  const result = await apiRequest<unknown>(requestPath, {
     query: {
       from: params.from,
       productNetId: params.productNetId,
@@ -2751,8 +2816,9 @@ async function getProductOutcomeMovements(
 
 async function getProductStorageLocationHistory(
   params: ProductStorageLocationHistoryParams,
+  requestPath: string,
 ): Promise<ProductStorageLocationHistory[]> {
-  const result = await apiRequest<unknown>('/products/placements/history/all/filtered', {
+  const result = await apiRequest<unknown>(requestPath, {
     query: {
       ProductNetId: params.productNetId,
       from: params.from,
@@ -2771,8 +2837,9 @@ async function getProductStorageLocationHistory(
 
 async function exportProductMovementsDocument(
   params: ProductMovementParams,
+  requestPath: string,
 ): Promise<ProductMovementExportDocument> {
-  const result = await apiRequest<unknown>('/consignments/info/movement/document/export', {
+  const result = await apiRequest<unknown>(requestPath, {
     query: {
       from: params.from,
       movementType: params.movementType,
@@ -2791,8 +2858,9 @@ async function exportProductMovementsDocument(
 
 async function exportProductIncomeMovementsDocument(
   params: ProductIncomeOutcomeMovementParams,
+  requestPath: string,
 ): Promise<ProductMovementExportDocument> {
-  const result = await apiRequest<unknown>('/consignments/info/income/document/export', {
+  const result = await apiRequest<unknown>(requestPath, {
     query: {
       from: params.from,
       productNetId: params.productNetId,
@@ -2809,8 +2877,9 @@ async function exportProductIncomeMovementsDocument(
 
 async function exportProductOutcomeMovementsDocument(
   params: ProductIncomeOutcomeMovementParams,
+  requestPath: string,
 ): Promise<ProductMovementExportDocument> {
-  const result = await apiRequest<unknown>('/consignments/info/outcome/document/export', {
+  const result = await apiRequest<unknown>(requestPath, {
     query: {
       from: params.from,
       productNetId: params.productNetId,

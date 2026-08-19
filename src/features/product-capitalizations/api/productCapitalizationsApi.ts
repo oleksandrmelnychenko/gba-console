@@ -49,6 +49,18 @@ export async function getProductCapitalization(netId: string): Promise<ProductCa
   return normalizeProductCapitalization(result)
 }
 
+export async function getProductCapitalizationForIncomeDocuments(
+  netId: string,
+): Promise<ProductCapitalization | null> {
+  const result = await apiRequest<unknown>('/products/capitalizations/income-documents/details', {
+    query: {
+      netId,
+    },
+  })
+
+  return normalizeProductCapitalization(result)
+}
+
 export async function exportProductCapitalization(netId: string): Promise<ProductCapitalizationsExportDocument> {
   const result = await apiRequest<unknown>('/products/capitalizations/page/document/export', {
     query: {

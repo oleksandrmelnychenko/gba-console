@@ -14,7 +14,7 @@ import type {
 export async function getProductIncomeDocuments(
   params: ProductIncomeDocumentsSearchParams,
 ): Promise<ProductIncomeDocumentsResponse> {
-  const result = await apiRequest<unknown>('/products/incomes/all', {
+  const result = await apiRequest<unknown>('/products/incomes/income-documents/page/registry', {
     query: {
       from: params.from,
       limit: params.limit,
@@ -30,7 +30,7 @@ export async function getProductIncomeDocuments(
 export async function exportProductIncomeDocument(
   netId: string,
 ): Promise<ProductIncomeDocumentsExportDocument> {
-  const result = await apiRequest<unknown>('/products/incomes/document/export', {
+  const result = await apiRequest<unknown>('/products/incomes/income-documents/page/document/export', {
     query: {
       netId,
     },
@@ -40,7 +40,17 @@ export async function exportProductIncomeDocument(
 }
 
 export async function getProductIncomeInfo(netId: string): Promise<ProductIncomeInfo | null> {
-  const result = await apiRequest<unknown>('/products/incomes/get', {
+  const result = await apiRequest<unknown>('/products/incomes/income-documents/page/details', {
+    query: {
+      netId,
+    },
+  })
+
+  return normalizeProductIncomeInfo(result)
+}
+
+export async function getProductIncomeInfoForRemainings(netId: string): Promise<ProductIncomeInfo | null> {
+  const result = await apiRequest<unknown>('/products/incomes/income-documents/page/remainings/details', {
     query: {
       netId,
     },
@@ -70,7 +80,7 @@ export async function getSupplyOrderUkraineProductIncomeByNetId(netId: string): 
 }
 
 export async function getProductIncomeRemainings(netId: string): Promise<RemainingConsignment[]> {
-  const result = await apiRequest<unknown>('/consignments/remaining/all/income', {
+  const result = await apiRequest<unknown>('/consignments/remaining/income-documents/page/remainings', {
     query: {
       netId,
     },
