@@ -4,15 +4,15 @@
     "inputRecords": 1902,
     "classifiedRecords": 1902,
     "dispositionCounts": {
-      "technical_ui": 774,
-      "covered_existing": 575,
+      "technical_ui": 775,
+      "covered_existing": 585,
       "duplicate_occurrence": 294,
-      "business_candidate": 178,
-      "needs_human_review": 68,
+      "business_candidate": 168,
+      "needs_human_review": 67,
       "stale_or_aggregated": 13
     },
-    "reviewCandidates": 246,
-    "technicalExcluded": 774,
+    "reviewCandidates": 235,
+    "technicalExcluded": 775,
     "duplicatesExcluded": 294,
     "duplicateOccurrencesTotal": 363,
     "technicalDuplicateOverlap": 69,
@@ -21,8 +21,8 @@
     "currentActionResolved": 1184,
     "currentActionUnresolved": 718,
     "currentProductionActions": 1828,
-    "currentPermissionBoundActions": 319,
-    "currentUnboundActions": 1509
+    "currentPermissionBoundActions": 324,
+    "currentUnboundActions": 1504
   },
   "invariants": {
     "allInputRecordsClassified": true,
@@ -50268,12 +50268,14 @@
       "proposedPermission": "sales_online_shop.sales_online_shop.on_open.modal_open",
       "securityLevel": "low",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "covered_existing",
+      "dispositionReason": "Opening an AI image-search result is an in-page detail read; the page fails closed before mounting and list, detail and image endpoints all enforce the same page boundary.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "sales.online_shop_sales.page.view"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [],
       "source": {
         "status": "resolved",
@@ -50309,7 +50311,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/sales-online-shop/pages/SalesOnlineShopPage.tsx",
-        "line": 154,
+        "line": 183,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -50338,12 +50340,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-1536b3b9c9b8",
+          "candidateId": "EPC-aa553b9dc579",
           "distance": 67,
           "file": "src/features/sales-online-shop/pages/SalesOnlineShopPage.tsx",
           "handler": "{resetFilters}",
           "humanLabel": "Скинути",
-          "line": 731,
+          "line": 861,
           "permissionKeys": [],
           "score": 12
         }
@@ -50351,7 +50353,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/sales-online-shop/pages/SalesOnlineShopPage.tsx",
-        "line": 664,
+        "line": 794,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -50380,12 +50382,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-e95e71b9449a",
-          "distance": 377,
+          "candidateId": "EPC-4a157852cb4b",
+          "distance": 418,
           "file": "src/features/sales-online-shop/pages/SalesOnlineShopPage.tsx",
           "handler": "{() => setConfirmState(null)}",
           "humanLabel": "Скасувати",
-          "line": 901,
+          "line": 1064,
           "permissionKeys": [],
           "score": 19
         }
@@ -50393,7 +50395,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/sales-online-shop/pages/SalesOnlineShopPage.tsx",
-        "line": 524,
+        "line": 646,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -50414,20 +50416,23 @@
       "proposedPermission": "sales_online_shop.sales_online_shop.run_confirm.command_submit",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "covered_existing",
+      "dispositionReason": "The shared confirmation dispatcher rechecks the exact permission stored with the requested unlock operation before invoking either protected mutation.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "sales.ukraine.sale.unlock",
+        "sales.ukraine.sale.unlock_for_shipping"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-5f726e490bff",
-          "distance": 389,
+          "candidateId": "EPC-06047a1257e4",
+          "distance": 423,
           "file": "src/features/sales-online-shop/pages/SalesOnlineShopPage.tsx",
           "handler": "{runConfirm}",
           "humanLabel": null,
-          "line": 904,
+          "line": 1067,
           "permissionKeys": [],
           "score": 10
         }
@@ -50435,7 +50440,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/sales-online-shop/pages/SalesOnlineShopPage.tsx",
-        "line": 515,
+        "line": 644,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -50456,17 +50461,17 @@
       "proposedPermission": "sales_online_shop.sales_online_shop.div.modal_open",
       "securityLevel": "low",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "technical_ui",
+      "dispositionReason": "The scanner matched a layout container as a modal entry; it performs no server request and grants no data or mutation capability.",
       "duplicateOf": null,
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [],
       "source": {
         "status": "resolved",
         "file": "src/features/sales-online-shop/pages/SalesOnlineShopPage.tsx",
-        "line": 154,
+        "line": 183,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -50487,20 +50492,22 @@
       "proposedPermission": "sales_online_shop.sales_online_shop.on_open_editor_sale.modal_open",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "covered_existing",
+      "dispositionReason": "The editor entry is hidden and inert without sale.edit, hydrates through the edit-scoped details route and retains the backend edit mutation policy.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "sales.ukraine.sale.edit"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-b11cb766c818",
-          "distance": 79,
+          "candidateId": "EPC-e42775f2bfe5",
+          "distance": 89,
           "file": "src/features/sales-online-shop/pages/SalesOnlineShopPage.tsx",
           "handler": "{() => onOpenEditor(sale)}",
           "humanLabel": "Відкрити продаж",
-          "line": 1005,
+          "line": 1182,
           "permissionKeys": [],
           "score": 14
         }
@@ -50508,7 +50515,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/sales-online-shop/pages/SalesOnlineShopPage.tsx",
-        "line": 926,
+        "line": 1093,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -50529,20 +50536,22 @@
       "proposedPermission": "sales_online_shop.sales_online_shop.on_will_not_ship_sale.button_click",
       "securityLevel": "low",
       "rawStatus": "No permission candidate found",
-      "disposition": "needs_human_review",
-      "dispositionReason": "insufficient_evidence_for_automatic_permission_or_exclusion",
+      "disposition": "covered_existing",
+      "dispositionReason": "Unlock-for-shipping is independently hidden, checked again before confirmation and enforced by the canonical mutation policy.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "sales.ukraine.sale.unlock_for_shipping"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-c331280c7321",
-          "distance": 78,
+          "candidateId": "EPC-468b5cb1d3d0",
+          "distance": 88,
           "file": "src/features/sales-online-shop/pages/SalesOnlineShopPage.tsx",
           "handler": "{() => onWillNotShip(sale)}",
           "humanLabel": "Розблокувати для відвантаження",
-          "line": 1009,
+          "line": 1186,
           "permissionKeys": [],
           "score": 15
         }
@@ -50550,7 +50559,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/sales-online-shop/pages/SalesOnlineShopPage.tsx",
-        "line": 931,
+        "line": 1098,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -50579,12 +50588,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-dad882b99c5b",
+          "candidateId": "EPC-ce87da50b9ed",
           "distance": 3,
           "file": "src/features/sales-online-shop/pages/SalesOnlineShopPage.tsx",
           "handler": "{() => onToggleExpand(saleKey, sale)}",
           "humanLabel": null,
-          "line": 1025,
+          "line": 1202,
           "permissionKeys": [],
           "score": 23
         }
@@ -50592,7 +50601,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/sales-online-shop/pages/SalesOnlineShopPage.tsx",
-        "line": 1028,
+        "line": 1205,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -50613,20 +50622,22 @@
       "proposedPermission": "sales_online_shop.sales_online_shop.on_open_discount_sale.modal_open",
       "securityLevel": "low",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "covered_existing",
+      "dispositionReason": "Discount editing is part of sale.edit; row and expanded-item controls are hidden without it and fresh data is loaded only through the edit-scoped route.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "sales.ukraine.sale.edit"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-9d7906195d3b",
-          "distance": 198,
+          "candidateId": "EPC-ade0662069a0",
+          "distance": 208,
           "file": "src/features/sales-online-shop/pages/SalesOnlineShopPage.tsx",
           "handler": "{() => onOpenDiscount(sale)}",
           "humanLabel": "Знижка",
-          "line": 1130,
+          "line": 1307,
           "permissionKeys": [],
           "score": 16
         }
@@ -50634,7 +50645,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/sales-online-shop/pages/SalesOnlineShopPage.tsx",
-        "line": 932,
+        "line": 1099,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -50655,28 +50666,32 @@
       "proposedPermission": "sales_online_shop.sales_online_shop.on_open_details_sale.modal_open",
       "securityLevel": "medium",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "covered_existing",
+      "dispositionReason": "Delivery details are independently hidden and loaded through the dedicated delivery-details facade; editing inside the drawer still separately requires sale.edit.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "sales.ukraine.sale.open_delivery_details"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-d8efceb2ebba",
-          "distance": 216,
+          "candidateId": "EPC-49afd199ad14",
+          "distance": 227,
           "file": "src/features/sales-online-shop/pages/SalesOnlineShopPage.tsx",
           "handler": "{() => onOpenDetails(sale)}",
           "humanLabel": null,
-          "line": 1143,
-          "permissionKeys": [],
+          "line": 1321,
+          "permissionKeys": [
+            "sales.ukraine.sale.open_delivery_details"
+          ],
           "score": 15
         }
       ],
       "source": {
         "status": "resolved",
         "file": "src/features/sales-online-shop/pages/SalesOnlineShopPage.tsx",
-        "line": 927,
+        "line": 1094,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -50697,28 +50712,32 @@
       "proposedPermission": "sales_online_shop.sales_online_shop.on_open_sale_sale.modal_open",
       "securityLevel": "low",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "covered_existing",
+      "dispositionReason": "Row and detail opening are inert without open_details and hydrate only through the existing permission-scoped sale-details facade.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "sales.ukraine.sale.open_details"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-54f7cef1c3e3",
-          "distance": 226,
+          "candidateId": "EPC-564ea6677af6",
+          "distance": 240,
           "file": "src/features/sales-online-shop/pages/SalesOnlineShopPage.tsx",
           "handler": "{() => onOpenSale(sale)}",
           "humanLabel": "Деталі",
-          "line": 1151,
-          "permissionKeys": [],
+          "line": 1332,
+          "permissionKeys": [
+            "sales.ukraine.sale.open_details"
+          ],
           "score": 12
         }
       ],
       "source": {
         "status": "resolved",
         "file": "src/features/sales-online-shop/pages/SalesOnlineShopPage.tsx",
-        "line": 925,
+        "line": 1092,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -50747,12 +50766,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-b11cb766c818",
-          "distance": 79,
+          "candidateId": "EPC-e42775f2bfe5",
+          "distance": 89,
           "file": "src/features/sales-online-shop/pages/SalesOnlineShopPage.tsx",
           "handler": "{() => onOpenEditor(sale)}",
           "humanLabel": "Відкрити продаж",
-          "line": 1005,
+          "line": 1182,
           "permissionKeys": [],
           "score": 14
         }
@@ -50760,7 +50779,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/sales-online-shop/pages/SalesOnlineShopPage.tsx",
-        "line": 926,
+        "line": 1093,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -50785,24 +50804,28 @@
       "dispositionReason": "same_normalized_action_as:PE-01261",
       "duplicateOf": "PE-01261",
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
+      "canonicalPermissionKeys": [
+        "sales.ukraine.sale.open_delivery_details"
+      ],
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-d8efceb2ebba",
-          "distance": 216,
+          "candidateId": "EPC-49afd199ad14",
+          "distance": 227,
           "file": "src/features/sales-online-shop/pages/SalesOnlineShopPage.tsx",
           "handler": "{() => onOpenDetails(sale)}",
           "humanLabel": null,
-          "line": 1143,
-          "permissionKeys": [],
+          "line": 1321,
+          "permissionKeys": [
+            "sales.ukraine.sale.open_delivery_details"
+          ],
           "score": 15
         }
       ],
       "source": {
         "status": "resolved",
         "file": "src/features/sales-online-shop/pages/SalesOnlineShopPage.tsx",
-        "line": 927,
+        "line": 1094,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -50823,20 +50846,22 @@
       "proposedPermission": "sales_online_shop.sales_online_shop.on_open_consignment_sale.modal_open",
       "securityLevel": "low",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "covered_existing",
+      "dispositionReason": "The TTN drawer is mounted only with print_consignment_note and every settings and print request uses the protected Ukraine consignment facade.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "sales.ukraine.sale.print_consignment_note"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-c7ff4c494348",
-          "distance": 239,
+          "candidateId": "EPC-e32e54b51887",
+          "distance": 253,
           "file": "src/features/sales-online-shop/pages/SalesOnlineShopPage.tsx",
           "handler": "{() => onOpenConsignment(sale)}",
           "humanLabel": "Друк ТТН",
-          "line": 1167,
+          "line": 1348,
           "permissionKeys": [],
           "score": 19
         }
@@ -50844,7 +50869,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/sales-online-shop/pages/SalesOnlineShopPage.tsx",
-        "line": 928,
+        "line": 1095,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -50873,12 +50898,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-c331280c7321",
-          "distance": 78,
+          "candidateId": "EPC-468b5cb1d3d0",
+          "distance": 88,
           "file": "src/features/sales-online-shop/pages/SalesOnlineShopPage.tsx",
           "handler": "{() => onWillNotShip(sale)}",
           "humanLabel": "Розблокувати для відвантаження",
-          "line": 1009,
+          "line": 1186,
           "permissionKeys": [],
           "score": 15
         }
@@ -50886,7 +50911,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/sales-online-shop/pages/SalesOnlineShopPage.tsx",
-        "line": 931,
+        "line": 1098,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -50907,20 +50932,22 @@
       "proposedPermission": "sales_online_shop.sales_online_shop.on_unlock_sale.button_click",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "covered_existing",
+      "dispositionReason": "Unlock is independently hidden, rechecked by the confirmation dispatcher and enforced by the canonical backend mutation policy.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "sales.ukraine.sale.unlock"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-da4f0cba07ac",
-          "distance": 765,
+          "candidateId": "EPC-edcc6ec4378e",
+          "distance": 843,
           "file": "src/features/sales-online-shop/pages/SalesOnlineShopPage.tsx",
           "handler": "{() => onUnlock(sale)}",
           "humanLabel": "Розблокувати",
-          "line": 1182,
+          "line": 1363,
           "permissionKeys": [],
           "score": 10
         }
@@ -50928,7 +50955,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/sales-online-shop/pages/SalesOnlineShopPage.tsx",
-        "line": 417,
+        "line": 520,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -50949,28 +50976,32 @@
       "proposedPermission": "sales_online_shop.sales_online_shop.on_open_audit_sale.modal_open",
       "securityLevel": "low",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "covered_existing",
+      "dispositionReason": "Audit opening and document reads use view_audit-scoped facades; the confirm mutation remains hidden unless the user separately has sale.edit.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "sales.ukraine.sale.view_audit"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-c442ab15427e",
-          "distance": 257,
+          "candidateId": "EPC-f1c8bddf4f20",
+          "distance": 271,
           "file": "src/features/sales-online-shop/pages/SalesOnlineShopPage.tsx",
           "handler": "{() => onOpenAudit(sale)}",
           "humanLabel": "Історія редагувань",
-          "line": 1186,
-          "permissionKeys": [],
+          "line": 1367,
+          "permissionKeys": [
+            "sales.ukraine.sale.view_audit"
+          ],
           "score": 13
         }
       ],
       "source": {
         "status": "resolved",
         "file": "src/features/sales-online-shop/pages/SalesOnlineShopPage.tsx",
-        "line": 929,
+        "line": 1096,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -55213,12 +55244,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-d426c25188c4",
+          "candidateId": "EPC-4a7c9a040630",
           "distance": 0,
           "file": "src/features/sales-ukraine/components/SaleEditorDrawer.tsx",
           "handler": "{() => setConvertOpen(true)}",
           "humanLabel": "Звірити створення рахунку",
-          "line": 429,
+          "line": 437,
           "permissionKeys": [],
           "score": 18
         }
@@ -55226,7 +55257,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/sales-ukraine/components/SaleEditorDrawer.tsx",
-        "line": 429,
+        "line": 437,
         "alternatives": []
       }
     },
@@ -55253,12 +55284,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-9118c6ba6476",
+          "candidateId": "EPC-7aa91743c529",
           "distance": 0,
           "file": "src/features/sales-ukraine/components/SaleEditorDrawer.tsx",
           "handler": "{() => setMergedOpen(true)}",
           "humanLabel": "Об'єднання",
-          "line": 476,
+          "line": 484,
           "permissionKeys": [],
           "score": 17
         }
@@ -55266,7 +55297,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/sales-ukraine/components/SaleEditorDrawer.tsx",
-        "line": 476,
+        "line": 484,
         "alternatives": []
       }
     },
@@ -55293,12 +55324,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-54339491c5e5",
+          "candidateId": "EPC-13cd66d60e03",
           "distance": 99,
           "file": "src/features/sales-ukraine/components/SaleEditorDrawer.tsx",
           "handler": "{copySaleData}",
           "humanLabel": "Копіювати",
-          "line": 480,
+          "line": 488,
           "permissionKeys": [],
           "score": 12
         }
@@ -55306,7 +55337,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/sales-ukraine/components/SaleEditorDrawer.tsx",
-        "line": 381,
+        "line": 389,
         "alternatives": []
       }
     },
@@ -55333,12 +55364,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-662af3e036ae",
+          "candidateId": "EPC-848c186da869",
           "distance": 0,
           "file": "src/features/sales-ukraine/components/SaleEditorDrawer.tsx",
           "handler": "{() => setReassignOpen(true)}",
           "humanLabel": "Переназначити",
-          "line": 489,
+          "line": 497,
           "permissionKeys": [],
           "score": 19
         }
@@ -55346,7 +55377,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/sales-ukraine/components/SaleEditorDrawer.tsx",
-        "line": 489,
+        "line": 497,
         "alternatives": []
       }
     },
@@ -55373,12 +55404,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-7fbd4d009c48",
+          "candidateId": "EPC-263deee1d4fe",
           "distance": 0,
           "file": "src/features/sales-ukraine/components/SaleEditorDrawer.tsx",
           "handler": "{() => setDetailsOpen(true)}",
           "humanLabel": "Доставка",
-          "line": 494,
+          "line": 502,
           "permissionKeys": [],
           "score": 18
         }
@@ -55386,7 +55417,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/sales-ukraine/components/SaleEditorDrawer.tsx",
-        "line": 494,
+        "line": 502,
         "alternatives": []
       }
     },
@@ -55413,12 +55444,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-d426c25188c4",
+          "candidateId": "EPC-4a7c9a040630",
           "distance": 0,
           "file": "src/features/sales-ukraine/components/SaleEditorDrawer.tsx",
           "handler": "{() => setConvertOpen(true)}",
           "humanLabel": "Звірити створення рахунку",
-          "line": 429,
+          "line": 437,
           "permissionKeys": [],
           "score": 18
         }
@@ -55426,7 +55457,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/sales-ukraine/components/SaleEditorDrawer.tsx",
-        "line": 429,
+        "line": 437,
         "alternatives": []
       }
     },
@@ -55482,12 +55513,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-a9e6b6f4257e",
+          "candidateId": "EPC-103cb9ff79e4",
           "distance": 5,
           "file": "src/features/sales-ukraine/components/SaleEditorDrawer.tsx",
           "handler": "{() => setActiveTab('client')}",
           "humanLabel": "Клієнт",
-          "line": 521,
+          "line": 529,
           "permissionKeys": [],
           "score": 18
         }
@@ -55495,7 +55526,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/sales-ukraine/components/SaleEditorDrawer.tsx",
-        "line": 526,
+        "line": 534,
         "alternatives": []
       }
     },
@@ -55522,12 +55553,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-275fe6f9b824",
+          "candidateId": "EPC-19cb2fbc711e",
           "distance": 0,
           "file": "src/features/sales-ukraine/components/SaleEditorDrawer.tsx",
           "handler": "{() => setAddOpen(true)}",
           "humanLabel": "Додати товар",
-          "line": 536,
+          "line": 544,
           "permissionKeys": [],
           "score": 14
         }
@@ -55535,7 +55566,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/sales-ukraine/components/SaleEditorDrawer.tsx",
-        "line": 536,
+        "line": 544,
         "alternatives": []
       }
     },
@@ -55562,12 +55593,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-89a7b4cd901e",
-          "distance": 563,
+          "candidateId": "EPC-4d9b0dc87de1",
+          "distance": 572,
           "file": "src/features/sales-ukraine/components/SaleEditorDrawer.tsx",
           "handler": "{() => { setConvertOpen(false) setInvoiceTtnFile(null) }}",
           "humanLabel": "Скасувати",
-          "line": 661,
+          "line": 670,
           "permissionKeys": [],
           "score": 40
         }
@@ -55604,7 +55635,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/sales-ukraine/components/SaleEditorDrawer.tsx",
-        "line": 303,
+        "line": 311,
         "alternatives": []
       }
     },
@@ -55631,12 +55662,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-c2765100b6d4",
-          "distance": 410,
+          "candidateId": "EPC-2d4ef23ed559",
+          "distance": 411,
           "file": "src/features/sales-ukraine/components/SaleEditorDrawer.tsx",
           "handler": "{() => setDeletingItem(null)}",
           "humanLabel": "Скасувати",
-          "line": 704,
+          "line": 713,
           "permissionKeys": [],
           "score": 19
         }
@@ -55644,7 +55675,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/sales-ukraine/components/SaleEditorDrawer.tsx",
-        "line": 294,
+        "line": 302,
         "alternatives": []
       }
     },
@@ -55671,12 +55702,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-1fdb76db586f",
-          "distance": 441,
+          "candidateId": "EPC-28b7a6851bdd",
+          "distance": 442,
           "file": "src/features/sales-ukraine/components/SaleEditorDrawer.tsx",
           "handler": "{confirmDelete}",
           "humanLabel": "Видалити",
-          "line": 707,
+          "line": 716,
           "permissionKeys": [],
           "score": 13
         }
@@ -55684,7 +55715,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/sales-ukraine/components/SaleEditorDrawer.tsx",
-        "line": 266,
+        "line": 274,
         "alternatives": []
       }
     },
@@ -55711,12 +55742,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-cf3fab6857a3",
+          "candidateId": "EPC-a3ecb7e38e8f",
           "distance": 74,
           "file": "src/features/sales-ukraine/components/SaleEditorDrawer.tsx",
           "handler": "{() => onEditQty(item)}",
           "humanLabel": "Змінити кількість",
-          "line": 834,
+          "line": 843,
           "permissionKeys": [],
           "score": 11
         }
@@ -55724,7 +55755,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/sales-ukraine/components/SaleEditorDrawer.tsx",
-        "line": 760,
+        "line": 769,
         "alternatives": []
       }
     },
@@ -55751,12 +55782,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-e172a3d27592",
+          "candidateId": "EPC-4d5bbd7eb46a",
           "distance": 76,
           "file": "src/features/sales-ukraine/components/SaleEditorDrawer.tsx",
           "handler": "{() => onDelete(item)}",
           "humanLabel": "Видалити",
-          "line": 835,
+          "line": 844,
           "permissionKeys": [],
           "score": 10
         }
@@ -55764,7 +55795,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/sales-ukraine/components/SaleEditorDrawer.tsx",
-        "line": 759,
+        "line": 768,
         "alternatives": []
       }
     },
@@ -55793,7 +55824,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/sales-ukraine/components/SaleEditorDrawer.tsx",
-        "line": 903,
+        "line": 912,
         "alternatives": []
       }
     },
@@ -55822,7 +55853,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/sales-ukraine/components/SaleEditorDrawer.tsx",
-        "line": 578,
+        "line": 586,
         "alternatives": []
       }
     },
@@ -55849,12 +55880,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-35a85f619067",
+          "candidateId": "EPC-e72b8d39d863",
           "distance": 7,
           "file": "src/features/sales-ukraine/components/SaleEditorDrawer.tsx",
           "handler": "{() => setSelected(product)}",
           "humanLabel": null,
-          "line": 1150,
+          "line": 1159,
           "permissionKeys": [],
           "score": 18
         }
@@ -55862,7 +55893,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/sales-ukraine/components/SaleEditorDrawer.tsx",
-        "line": 1157,
+        "line": 1166,
         "alternatives": []
       }
     },
@@ -55891,7 +55922,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/sales-ukraine/components/SaleEditorDrawer.tsx",
-        "line": 903,
+        "line": 912,
         "alternatives": []
       }
     },
@@ -55949,7 +55980,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/sales-ukraine/components/SaleEditorDrawer.tsx",
-        "line": 903,
+        "line": 912,
         "alternatives": []
       }
     },
@@ -55976,12 +56007,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-662af3e036ae",
+          "candidateId": "EPC-848c186da869",
           "distance": 359,
           "file": "src/features/sales-ukraine/components/SaleEditorDrawer.tsx",
           "handler": "{() => setReassignOpen(true)}",
           "humanLabel": "Переназначити",
-          "line": 489,
+          "line": 497,
           "permissionKeys": [],
           "score": 8
         }
@@ -55989,7 +56020,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/sales-ukraine/components/SaleEditorDrawer.tsx",
-        "line": 130,
+        "line": 138,
         "alternatives": []
       }
     },
@@ -56016,12 +56047,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-89599b65801b",
+          "candidateId": "EPC-82acdfac8fa6",
           "distance": 66,
           "file": "src/features/sales-ukraine/components/SaleEditorDrawer.tsx",
           "handler": "{switchAgreement}",
           "humanLabel": "Змінити договір",
-          "line": 1495,
+          "line": 1504,
           "permissionKeys": [],
           "score": 15
         }
@@ -56029,7 +56060,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/sales-ukraine/components/SaleEditorDrawer.tsx",
-        "line": 1429,
+        "line": 1438,
         "alternatives": []
       }
     },
@@ -56056,12 +56087,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-7b44cb3e2e55",
-          "distance": 69,
+          "candidateId": "EPC-3079e83cede1",
+          "distance": 71,
           "file": "src/features/sales-ukraine/components/SaleExpandContent.tsx",
           "handler": "{openProductCard}",
           "humanLabel": null,
-          "line": 158,
+          "line": 163,
           "permissionKeys": [],
           "score": 15
         }
@@ -56069,7 +56100,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/sales-ukraine/components/SaleExpandContent.tsx",
-        "line": 89,
+        "line": 92,
         "alternatives": []
       }
     },
@@ -56096,12 +56127,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-7b44cb3e2e55",
-          "distance": 69,
+          "candidateId": "EPC-3079e83cede1",
+          "distance": 71,
           "file": "src/features/sales-ukraine/components/SaleExpandContent.tsx",
           "handler": "{openProductCard}",
           "humanLabel": null,
-          "line": 158,
+          "line": 163,
           "permissionKeys": [],
           "score": 15
         }
@@ -56109,7 +56140,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/sales-ukraine/components/SaleExpandContent.tsx",
-        "line": 89,
+        "line": 92,
         "alternatives": []
       }
     },
@@ -56136,12 +56167,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-dec872063081",
-          "distance": 213,
+          "candidateId": "EPC-ef7c4650c8f9",
+          "distance": 218,
           "file": "src/features/sales-ukraine/components/SaleExpandContent.tsx",
           "handler": "{(event) => { event.stopPropagation() onOpenItemDiscount() }}",
           "humanLabel": "Знижка",
-          "line": 240,
+          "line": 245,
           "permissionKeys": [],
           "score": 16
         }
@@ -56176,12 +56207,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-dec872063081",
-          "distance": 215,
+          "candidateId": "EPC-ef7c4650c8f9",
+          "distance": 220,
           "file": "src/features/sales-ukraine/components/SaleExpandContent.tsx",
           "handler": "{(event) => { event.stopPropagation() onOpenItemDiscount() }}",
           "humanLabel": "Знижка",
-          "line": 240,
+          "line": 245,
           "permissionKeys": [],
           "score": 16
         }
@@ -80103,17 +80134,6 @@
     "PE-01243",
     "PE-01244",
     "PE-01245",
-    "PE-01251",
-    "PE-01255",
-    "PE-01256",
-    "PE-01257",
-    "PE-01258",
-    "PE-01260",
-    "PE-01261",
-    "PE-01262",
-    "PE-01265",
-    "PE-01267",
-    "PE-01268",
     "PE-01269",
     "PE-01271",
     "PE-01274",

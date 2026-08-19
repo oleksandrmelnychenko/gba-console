@@ -34,12 +34,23 @@ describe('SaleExpandContent currencies', () => {
     expect(columnHeaders()).toEqual(['Товар', 'К-сть', 'EUR', 'UAH', 'Знижки'])
     expect(screen.getAllByRole('cell')).toHaveLength(5)
   })
+
+  it('renders expanded sale data but no discount action when edit is denied', () => {
+    const { container } = renderSale(createSale({ currencyCode: 'EUR', isVatSale: false }), false)
+
+    expect(screen.getByText('Ввід боргів')).toBeTruthy()
+    expect(container.querySelector('.sale-expand-discount-action')).toBeNull()
+  })
 })
 
-function renderSale(sale: SalesUkraineSale) {
+function renderSale(sale: SalesUkraineSale, canEditDiscount = true) {
   return render(
     <MantineProvider theme={theme}>
-      <SaleExpandContent sale={sale} onOpenItemDiscount={vi.fn()} />
+      <SaleExpandContent
+        canEditDiscount={canEditDiscount}
+        sale={sale}
+        onOpenItemDiscount={vi.fn()}
+      />
     </MantineProvider>,
   )
 }
@@ -56,6 +67,7 @@ function createSale({
   isVatSale: boolean
 }): SalesUkraineSale {
   return {
+    BaseLifeCycleStatus: { Name: 'New', SaleLifeCycleType: 0 },
     ClientAgreement: {
       Agreement: {
         Currency: { Code: currencyCode },

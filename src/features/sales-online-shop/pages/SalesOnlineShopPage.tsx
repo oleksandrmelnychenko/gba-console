@@ -42,12 +42,31 @@ import { TransporterNameWithIcon } from '../../../shared/transporter-icons/Trans
 import { DEFAULT_PAGINATOR_PAGE_SIZE } from '../../../shared/ui/paginator/paginatorPageSize'
 import { TableRowAction } from '../../../shared/ui/table-row-action'
 import '../../../shared/ui/console-table-page.css'
-import { SaleAuditDetail, getSaleStatisticBySaleId, type SaleAuditStatistic } from '../../../shared/sale-audit'
+import { SaleAuditDetail, type SaleAuditStatistic } from '../../../shared/sale-audit'
+import {
+  confirmSalesUkraineSaleAuditHistory,
+  getSalesUkraineSaleAudit,
+  getSalesUkraineSaleAuditInvoiceDocument,
+  getSalesUkraineSaleAuditShiftedDocument,
+} from '../../../shared/sale-audit/saleAuditApi'
+import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { UserRoleType } from '../../../shared/auth/types'
 import '../../sales-ukraine/pages/sales-grid.css'
 import '../../sales-ukraine/pages/sale-detail-sheet.css'
 import { useAuth } from '../../auth/useAuth'
-import { acceptSaleForPacking, getSaleById, unlockSale } from '../../sales-ukraine/api/salesUkraineApi'
+import { usePermissions } from '../../auth/usePermissions'
+import {
+  acceptSaleForPacking,
+  addSalesUkraineConsignmentNoteSetting,
+  getSalesUkraineConsignmentNoteSettings,
+  getSalesUkraineDeliveryDetails,
+  getSalesUkraineEditDetails,
+  getSalesUkraineSaleDetails,
+  printSalesUkraineConsignmentNoteDocument,
+  removeSalesUkraineConsignmentNoteSetting,
+  unlockSale,
+  updateSalesUkraineConsignmentNoteSetting,
+} from '../../sales-ukraine/api/salesUkraineApi'
 import { ConsignmentNoteSettingsDrawer } from '../../sales-ukraine/components/ConsignmentNoteSettingsDrawer'
 import { SaleDetailsDrawer } from '../../sales-ukraine/components/SaleDetailsDrawer'
 import { SaleDiscountModal } from '../../sales-ukraine/components/SaleDiscountModal'
@@ -56,11 +75,6 @@ import { SaleEditorDrawer } from '../../sales-ukraine/components/SaleEditorDrawe
 import { SaleExpandContent } from '../../sales-ukraine/components/SaleExpandContent'
 import { isPackingAcceptanceSaleLifecycle } from '../../sales-ukraine/saleStatus'
 import { usePersistentSaleJsonMutationRunner } from '../../sales-ukraine/usePersistentSaleJsonMutation'
-import {
-  SALES_UKRAINE_EDIT_PERMISSION,
-  SALES_UKRAINE_UNLOCK_PERMISSION,
-  SALES_UKRAINE_WILL_NOT_SHIP_PERMISSION,
-} from '../../sales-ukraine/permissions'
 import type { SalesUkraineSale } from '../../sales-ukraine/types'
 import { EcommerceImageSearchPanel } from '../components/EcommerceImageSearchPanel'
 import { getSalesOnlineShop } from '../api/salesOnlineShopApi'
@@ -95,6 +109,7 @@ type ConfirmState = {
   confirmLabel: string
   message: string
   onConfirm: () => Promise<void>
+  permissionKey: string
   title: string
 }
 
@@ -151,7 +166,40 @@ const amountFormatter = new Intl.NumberFormat('uk-UA', {
   minimumFractionDigits: 2,
 })
 
+const SALES_ONLINE_SHOP_AUDIT_DOCUMENT_API = {
+  confirm: confirmSalesUkraineSaleAuditHistory,
+  getInvoice: getSalesUkraineSaleAuditInvoiceDocument,
+  getShifted: getSalesUkraineSaleAuditShiftedDocument,
+}
+
+const SALES_ONLINE_SHOP_CONSIGNMENT_NOTE_API = {
+  add: addSalesUkraineConsignmentNoteSetting,
+  getAll: getSalesUkraineConsignmentNoteSettings,
+  print: printSalesUkraineConsignmentNoteDocument,
+  remove: removeSalesUkraineConsignmentNoteSetting,
+  update: updateSalesUkraineConsignmentNoteSetting,
+}
+
 export function SalesOnlineShopPage() {
+  const { t } = useI18n()
+  const { can, isLoading } = usePermissions()
+
+  if (isLoading) {
+    return <Text c="dimmed">{t('Завантаження')}</Text>
+  }
+
+  if (!can(PermissionKeys.SystemPages.SalesOnlineShop.View)) {
+    return (
+      <Alert color="red" icon={<CircleAlert size={18} />} title={t('Доступ заборонено')} variant="light">
+        {t('Недостатньо прав для перегляду продажів інтернет-магазину')}
+      </Alert>
+    )
+  }
+
+  return <SalesOnlineShopPageContent />
+}
+
+function SalesOnlineShopPageContent() {
   const { t } = useI18n()
   const [searchParams, setSearchParams] = useSearchParams()
   const workspace = searchParams.get('workspace') === 'image-searches' ? 'image-searches' : 'orders'
@@ -203,14 +251,19 @@ export function SalesOnlineShopPage() {
 
 function SalesOnlineShopOrdersPage() {
   const { t } = useI18n()
-  const { hasPermission, user } = useAuth()
+  const { user } = useAuth()
+  const { can } = usePermissions()
   const runSaleUnlock = usePersistentSaleJsonMutationRunner('sale-unlock')
   const runSaleAcceptForPacking = usePersistentSaleJsonMutationRunner('sale-accept-for-packing')
   const isAdmin =
     user?.UserRole?.UserRoleType === UserRoleType.Administrator || user?.UserRole?.UserRoleType === UserRoleType.GBA
-  const canEditSale = hasPermission(SALES_UKRAINE_EDIT_PERMISSION)
-  const canUnlock = hasPermission(SALES_UKRAINE_UNLOCK_PERMISSION)
-  const canWillNotShip = hasPermission(SALES_UKRAINE_WILL_NOT_SHIP_PERMISSION)
+  const canOpenSale = can(PermissionKeys.SalesUkraine.Sale.OpenDetails)
+  const canEditSale = can(PermissionKeys.SalesUkraine.Sale.Edit)
+  const canOpenDeliveryDetails = can(PermissionKeys.SalesUkraine.Sale.OpenDeliveryDetails)
+  const canUnlock = can(PermissionKeys.SalesUkraine.Sale.Unlock)
+  const canWillNotShip = can(PermissionKeys.SalesUkraine.Sale.UnlockForShipping)
+  const canPrintConsignmentNote = can(PermissionKeys.SalesUkraine.Sale.PrintConsignmentNote)
+  const canViewAudit = can(PermissionKeys.SalesUkraine.Sale.ViewAudit)
   const today = useMemo(() => formatLocalDate(new Date()), [])
   const initialDraft = useMemo<FilterDraft>(
     () => ({
@@ -272,7 +325,10 @@ function SalesOnlineShopOrdersPage() {
   )
 
   const ensureSaleDetails = useCallback(
-    async (sale: SalesOnlineShopSale): Promise<SalesOnlineShopSale | null> => {
+    async (
+      sale: SalesOnlineShopSale,
+      loadSale = getSalesUkraineSaleDetails,
+    ): Promise<SalesOnlineShopSale | null> => {
       if (!needsSaleDetails(sale)) {
         return sale
       }
@@ -282,7 +338,7 @@ function SalesOnlineShopOrdersPage() {
       }
 
       try {
-        const next = await getSaleById(sale.NetUid)
+        const next = await loadSale(sale.NetUid)
 
         if (!next) {
           return sale
@@ -303,28 +359,66 @@ function SalesOnlineShopOrdersPage() {
 
   const openSaleSheet = useCallback(
     async (sale: SalesOnlineShopSale) => {
+      if (!canOpenSale) {
+        return
+      }
+
       const next = await ensureSaleDetails(sale)
 
       if (next) {
         setSelectedSale(next)
       }
     },
-    [ensureSaleDetails, setSelectedSale],
+    [canOpenSale, ensureSaleDetails, setSelectedSale],
   )
 
   const openSaleDiscount = useCallback(
     async (sale: SalesOnlineShopSale) => {
-      const next = await ensureSaleDetails(sale)
+      if (!canEditSale) {
+        return
+      }
+
+      const next = await ensureSaleDetails(sale, getSalesUkraineEditDetails)
 
       if (next) {
         setDiscountSale(next)
       }
     },
-    [ensureSaleDetails, setDiscountSale],
+    [canEditSale, ensureSaleDetails, setDiscountSale],
   )
+
+  const openDeliveryDetails = useCallback(
+    async (sale: SalesOnlineShopSale) => {
+      if (!canOpenDeliveryDetails) {
+        return
+      }
+
+      const next = await ensureSaleDetails(sale, getSalesUkraineDeliveryDetails)
+      if (next) {
+        setDetailsSale(next)
+      }
+    },
+    [canOpenDeliveryDetails, ensureSaleDetails, setDetailsSale],
+  )
+
+  const openEditor = useCallback((sale: SalesOnlineShopSale) => {
+    if (canEditSale) {
+      setEditorSale(sale)
+    }
+  }, [canEditSale, setEditorSale])
+
+  const openConsignment = useCallback((sale: SalesOnlineShopSale) => {
+    if (canPrintConsignmentNote) {
+      setConsignmentSale(sale)
+    }
+  }, [canPrintConsignmentNote, setConsignmentSale])
 
   const toggleSaleExpand = useCallback(
     async (key: string, sale: SalesOnlineShopSale) => {
+      if (!canOpenSale) {
+        return
+      }
+
       if (expandedKeys.has(key)) {
         setExpandedKeys((current) => {
           const next = new Set(current)
@@ -349,11 +443,15 @@ function SalesOnlineShopOrdersPage() {
         return next
       })
     },
-    [ensureSaleDetails, expandedKeys, setExpandedKeys],
+    [canOpenSale, ensureSaleDetails, expandedKeys, setExpandedKeys],
   )
 
   const openAudit = useCallback(
     (sale: SalesOnlineShopSale) => {
+      if (!canViewAudit) {
+        return
+      }
+
       setAuditSale(sale)
       setAuditStatistic(null)
       setAuditError(null)
@@ -368,7 +466,7 @@ function SalesOnlineShopOrdersPage() {
 
       void (async () => {
         try {
-          const statistic = await getSaleStatisticBySaleId(sale.NetUid as string)
+          const statistic = await getSalesUkraineSaleAudit(sale.NetUid as string)
 
           if (auditRequestRef.current === requestId) {
             setAuditStatistic(statistic)
@@ -386,7 +484,7 @@ function SalesOnlineShopOrdersPage() {
         }
       })()
     },
-    [setAuditSale, setAuditStatistic, setAuditError, setAuditLoading, t],
+    [canViewAudit, setAuditSale, setAuditStatistic, setAuditError, setAuditLoading, t],
   )
 
   const closeAudit = useCallback(() => {
@@ -399,6 +497,10 @@ function SalesOnlineShopOrdersPage() {
 
   const requestUnlock = useCallback(
     (sale: SalesOnlineShopSale) => {
+      if (!canUnlock) {
+        return
+      }
+
       const netId = sale.NetUid
 
       if (!netId) {
@@ -409,6 +511,7 @@ function SalesOnlineShopOrdersPage() {
         color: 'red',
         confirmLabel: t('Розблокувати'),
         message: t('Розблокувати рахунок?'),
+        permissionKey: PermissionKeys.SalesUkraine.Sale.Unlock,
         title: t('Розблокування'),
         onConfirm: async () => {
           const attempt = await runSaleUnlock(
@@ -425,12 +528,12 @@ function SalesOnlineShopOrdersPage() {
         },
       })
     },
-    [runSaleUnlock, setConfirmState, t],
+    [canUnlock, runSaleUnlock, setConfirmState, t],
   )
 
   const requestWillNotShip = useCallback(
     (sale: SalesOnlineShopSale) => {
-      if (!sale.NetUid) {
+      if (!canWillNotShip || !sale.NetUid) {
         return
       }
 
@@ -439,6 +542,7 @@ function SalesOnlineShopOrdersPage() {
       setConfirmState({
         confirmLabel: t('Підтвердити'),
         message: t('Розблокувати продаж для відвантаження?'),
+        permissionKey: PermissionKeys.SalesUkraine.Sale.UnlockForShipping,
         title: t('Підтвердження відвантаження'),
         onConfirm: async () => {
           const attempt = await runSaleAcceptForPacking(
@@ -455,7 +559,7 @@ function SalesOnlineShopOrdersPage() {
         },
       })
     },
-    [runSaleAcceptForPacking, setConfirmState, t],
+    [canWillNotShip, runSaleAcceptForPacking, setConfirmState, t],
   )
 
   const statusSelectData = useMemo(() => STATUS_OPTIONS.map((option) => ({ ...option, label: t(option.label) })), [t])
@@ -472,6 +576,9 @@ function SalesOnlineShopOrdersPage() {
   // state each render — route the calls through a ref.
   const rowHandlersRef = useRef({
     openAudit,
+    openConsignment,
+    openDeliveryDetails,
+    openEditor,
     openSaleDiscount,
     openSaleSheet,
     requestUnlock,
@@ -482,13 +589,26 @@ function SalesOnlineShopOrdersPage() {
   useLayoutEffect(() => {
     rowHandlersRef.current = {
       openAudit,
+      openConsignment,
+      openDeliveryDetails,
+      openEditor,
       openSaleDiscount,
       openSaleSheet,
       requestUnlock,
       requestWillNotShip,
       toggleSaleExpand,
     }
-  }, [openAudit, openSaleDiscount, openSaleSheet, requestUnlock, requestWillNotShip, toggleSaleExpand])
+  }, [
+    openAudit,
+    openConsignment,
+    openDeliveryDetails,
+    openEditor,
+    openSaleDiscount,
+    openSaleSheet,
+    requestUnlock,
+    requestWillNotShip,
+    toggleSaleExpand,
+  ])
 
   const handleRowToggleExpand = useCallback((key: string, sale: SalesOnlineShopSale) => {
     void rowHandlersRef.current.toggleSaleExpand(key, sale)
@@ -502,6 +622,15 @@ function SalesOnlineShopOrdersPage() {
   const handleRowOpenAudit = useCallback((sale: SalesOnlineShopSale) => {
     rowHandlersRef.current.openAudit(sale)
   }, [])
+  const handleRowOpenConsignment = useCallback((sale: SalesOnlineShopSale) => {
+    rowHandlersRef.current.openConsignment(sale)
+  }, [])
+  const handleRowOpenDeliveryDetails = useCallback((sale: SalesOnlineShopSale) => {
+    void rowHandlersRef.current.openDeliveryDetails(sale)
+  }, [])
+  const handleRowOpenEditor = useCallback((sale: SalesOnlineShopSale) => {
+    rowHandlersRef.current.openEditor(sale)
+  }, [])
   const handleRowUnlock = useCallback((sale: SalesOnlineShopSale) => {
     rowHandlersRef.current.requestUnlock(sale)
   }, [])
@@ -513,7 +642,8 @@ function SalesOnlineShopOrdersPage() {
   }, [])
 
   async function runConfirm() {
-    if (!confirmState) {
+    if (!confirmState || !can(confirmState.permissionKey)) {
+      setConfirmState(null)
       return
     }
 
@@ -800,7 +930,7 @@ function SalesOnlineShopOrdersPage() {
                 </div>
                 {sales.map((sale, index) => {
                   const key = String(sale.NetUid || sale.Id || index)
-                  const canExpand = getOrderItemCount(sale) > 0
+                  const canExpand = canOpenSale && getOrderItemCount(sale) > 0
                   const isExpanded = expandedKeys.has(key)
 
                   return (
@@ -809,16 +939,20 @@ function SalesOnlineShopOrdersPage() {
                         sale={sale}
                         saleKey={key}
                         canEditSale={canEditSale}
+                        canOpenDeliveryDetails={canOpenDeliveryDetails}
+                        canOpenSale={canOpenSale}
+                        canPrintConsignmentNote={canPrintConsignmentNote}
                         canUnlock={canUnlock}
+                        canViewAudit={canViewAudit}
                         canWillNotShip={canWillNotShip}
                         isAdmin={isAdmin}
                         canExpand={canExpand}
                         isExpanded={isExpanded}
                         onToggleExpand={handleRowToggleExpand}
                         onOpenSale={handleRowOpenSale}
-                        onOpenEditor={setEditorSale}
-                        onOpenDetails={setDetailsSale}
-                        onOpenConsignment={setConsignmentSale}
+                        onOpenEditor={handleRowOpenEditor}
+                        onOpenDetails={handleRowOpenDeliveryDetails}
+                        onOpenConsignment={handleRowOpenConsignment}
                         onOpenAudit={handleRowOpenAudit}
                         onUnlock={handleRowUnlock}
                         onWillNotShip={handleRowWillNotShip}
@@ -826,7 +960,11 @@ function SalesOnlineShopOrdersPage() {
                       />
                       {isExpanded && (
                         <div className="sales-grid-expand">
-                          <SaleExpandContent sale={asUkraineSale(sale)} onOpenItemDiscount={handleRowItemDiscount} />
+                          <SaleExpandContent
+                            canEditDiscount={canEditSale}
+                            sale={asUkraineSale(sale)}
+                            onOpenItemDiscount={handleRowItemDiscount}
+                          />
                         </div>
                       )}
                     </Fragment>
@@ -839,52 +977,77 @@ function SalesOnlineShopOrdersPage() {
       </Card>
 
       <AppDrawer
-        opened={Boolean(selectedSale)}
+        opened={canOpenSale && Boolean(selectedSale)}
         position="right"
         size="full"
         title={t('Деталі продажу')}
         onClose={() => setSelectedSale(null)}
       >
-        {selectedSale && <SaleDetail sale={selectedSale} />}
+        {canOpenSale && selectedSale && <SaleDetail sale={selectedSale} />}
       </AppDrawer>
 
-      <SaleDiscountModal
-        sale={discountSale ? asUkraineSale(discountSale) : null}
-        onClose={() => setDiscountSale(null)}
-        onSaved={() => {
-          setDiscountSale(null)
-          reload()
-        }}
-      />
+      {canEditSale ? (
+        <SaleDiscountModal
+          loadSale={getSalesUkraineEditDetails}
+          sale={discountSale ? asUkraineSale(discountSale) : null}
+          onClose={() => setDiscountSale(null)}
+          onSaved={() => {
+            setDiscountSale(null)
+            reload()
+          }}
+        />
+      ) : null}
 
-      <SaleDetailsDrawer
-        sale={detailsSale ? asUkraineSale(detailsSale) : null}
-        onClose={() => setDetailsSale(null)}
-        onSaved={() => {
-          setDetailsSale(null)
-          reload()
-        }}
-      />
+      {canOpenDeliveryDetails ? (
+        <SaleDetailsDrawer
+          canEdit={canEditSale}
+          loadSale={getSalesUkraineDeliveryDetails}
+          sale={detailsSale ? asUkraineSale(detailsSale) : null}
+          onClose={() => setDetailsSale(null)}
+          onSaved={() => {
+            setDetailsSale(null)
+            reload()
+          }}
+        />
+      ) : null}
 
-      <ConsignmentNoteSettingsDrawer
-        opened={Boolean(consignmentSale)}
-        sale={consignmentSale ? asUkraineSale(consignmentSale) : null}
-        onClose={() => setConsignmentSale(null)}
-      />
+      {canPrintConsignmentNote ? (
+        <ConsignmentNoteSettingsDrawer
+          api={SALES_ONLINE_SHOP_CONSIGNMENT_NOTE_API}
+          opened={Boolean(consignmentSale)}
+          sale={consignmentSale ? asUkraineSale(consignmentSale) : null}
+          onClose={() => setConsignmentSale(null)}
+        />
+      ) : null}
 
-      <SaleEditorDrawer
-        sale={editorSale ? asUkraineSale(editorSale) : null}
-        onClose={() => setEditorSale(null)}
-      />
+      {canEditSale ? (
+        <SaleEditorDrawer
+          loadSale={getSalesUkraineEditDetails}
+          sale={editorSale ? asUkraineSale(editorSale) : null}
+          onClose={() => setEditorSale(null)}
+        />
+      ) : null}
 
       <AppDrawer
-        opened={Boolean(auditSale)}
+        opened={canViewAudit && Boolean(auditSale)}
         position="right"
         size="min(720px, 100vw)"
         title={t('Історія редагувань')}
         onClose={closeAudit}
       >
-        <SaleAuditDetail error={auditError} isLoading={auditLoading} statistic={auditStatistic} />
+        {canViewAudit ? (
+          <SaleAuditDetail
+            documentApi={SALES_ONLINE_SHOP_AUDIT_DOCUMENT_API}
+            error={auditError}
+            isLoading={auditLoading}
+            showConfirm={canEditSale}
+            statistic={auditStatistic}
+            onConfirmed={() => {
+              closeAudit()
+              reload()
+            }}
+          />
+        ) : null}
       </AppDrawer>
 
       <AppModal
@@ -916,7 +1079,11 @@ type SalesOnlineShopGridRowProps = {
   sale: SalesOnlineShopSale
   saleKey: string
   canEditSale: boolean
+  canOpenDeliveryDetails: boolean
+  canOpenSale: boolean
+  canPrintConsignmentNote: boolean
   canUnlock: boolean
+  canViewAudit: boolean
   canWillNotShip: boolean
   isAdmin: boolean
   canExpand: boolean
@@ -939,7 +1106,11 @@ export const SalesOnlineShopGridRow = memo(function SalesOnlineShopGridRow({
   sale,
   saleKey,
   canEditSale,
+  canOpenDeliveryDetails,
+  canOpenSale,
+  canPrintConsignmentNote,
   canUnlock,
+  canViewAudit,
   canWillNotShip,
   isAdmin,
   canExpand,
@@ -972,28 +1143,34 @@ export const SalesOnlineShopGridRow = memo(function SalesOnlineShopGridRow({
   const isPackaging = lifecycleStatusKey === 'Packaging' || lifecycleStatusKey === 'Packaged'
   const packingDocumentsRestricted = Boolean(sale.IsVatSale) && !sale.IsAcceptedToPacking && !isAdmin
   const showDocuments = lifecycleStatusKey === 'New' || !packingDocumentsRestricted
-  const showTtn = Boolean(sale.TransporterId) && isPackaging && !packingDocumentsRestricted
+  const showTtn = canPrintConsignmentNote && Boolean(sale.TransporterId) && isPackaging && !packingDocumentsRestricted
   const showWillNotShip = packingAcceptanceLifecycleEligible && canWillNotShip && Boolean(sale.IsVatSale) && !sale.IsAcceptedToPacking
   const showUnlock = canUnlock && Boolean(sale.IsLocked)
   const showEdit = canEditSale && (sale.InputSaleMerges?.length ?? 0) === 0
   const showBang = packingAcceptanceLifecycleEligible && Boolean(sale.IsVatSale) && !sale.IsAcceptedToPacking
   const bangClickable = Boolean(sale.ChangedToInvoice) && canWillNotShip
-  const discountEditable = isNewOrPackagingStatus(sale) && positions > 0
+  const discountEditable = canEditSale && isNewOrPackagingStatus(sale) && positions > 0
+  const showActions = showEdit
+    || canOpenDeliveryDetails
+    || showTtn
+    || showWillNotShip
+    || showUnlock
+    || canViewAudit
   const openSale = () => onOpenSale(sale)
 
   return (
     <div
       className={`sales-grid-row${isExpanded ? ' is-expanded' : ''}`}
-      role="button"
-      tabIndex={0}
-      aria-label={t('Відкрити продаж')}
+      role={canOpenSale ? 'button' : undefined}
+      tabIndex={canOpenSale ? 0 : undefined}
+      aria-label={canOpenSale ? t('Відкрити продаж') : undefined}
       onClick={(event) => {
-        if (!(event.target as HTMLElement).closest('[data-row-stop]')) {
+        if (canOpenSale && !(event.target as HTMLElement).closest('[data-row-stop]')) {
           openSale()
         }
       }}
       onKeyDown={(event) => {
-        if ((event.key === 'Enter' || event.key === ' ') && event.target === event.currentTarget) {
+        if (canOpenSale && (event.key === 'Enter' || event.key === ' ') && event.target === event.currentTarget) {
           event.preventDefault()
           openSale()
         }
@@ -1140,17 +1317,21 @@ export const SalesOnlineShopGridRow = memo(function SalesOnlineShopGridRow({
       </div>
 
       <div className="sg-transporter-cell" data-row-stop="true">
-        <TableRowAction
-          action="delivery"
-          label={transporter || t('Перевізник')}
-          onClick={() => onOpenDetails(sale)}
-        />
+        {canOpenDeliveryDetails ? (
+          <TableRowAction
+            action="delivery"
+            label={transporter || t('Перевізник')}
+            onClick={() => onOpenDetails(sale)}
+          />
+        ) : (
+          <span>{transporter}</span>
+        )}
       </div>
 
       <div className="sg-doc-actions" data-row-stop="true">
-        <TableRowAction action="details" label={t('Деталі')} onClick={() => onOpenSale(sale)} />
+        {canOpenSale && <TableRowAction action="details" label={t('Деталі')} onClick={() => onOpenSale(sale)} />}
         {showDocuments && <SaleDocumentsMenu sale={asUkraineSale(sale)} />}
-        <Menu position="bottom-end" shadow="md" withinPortal>
+        {showActions && <Menu position="bottom-end" shadow="md" withinPortal>
           <Menu.Target>
             <TableRowAction action="more" label={t('Дії')} />
           </Menu.Target>
@@ -1160,9 +1341,9 @@ export const SalesOnlineShopGridRow = memo(function SalesOnlineShopGridRow({
                 {t('Відкрити продаж')}
               </Menu.Item>
             )}
-            <Menu.Item leftSection={<Truck size={16} />} onClick={() => onOpenDetails(sale)}>
+            {canOpenDeliveryDetails && <Menu.Item leftSection={<Truck size={16} />} onClick={() => onOpenDetails(sale)}>
               {t('Дані доставки')}
-            </Menu.Item>
+            </Menu.Item>}
             {showTtn && (
               <Menu.Item leftSection={<Receipt size={16} />} onClick={() => onOpenConsignment(sale)}>
                 {t('Друк ТТН')}
@@ -1183,11 +1364,11 @@ export const SalesOnlineShopGridRow = memo(function SalesOnlineShopGridRow({
                 {t('Розблокувати')}
               </Menu.Item>
             )}
-            <Menu.Item leftSection={<History size={16} />} onClick={() => onOpenAudit(sale)}>
+            {canViewAudit && <Menu.Item leftSection={<History size={16} />} onClick={() => onOpenAudit(sale)}>
               {t('Історія редагувань')}
-            </Menu.Item>
+            </Menu.Item>}
           </Menu.Dropdown>
-        </Menu>
+        </Menu>}
       </div>
 
       <div className="sg-status">

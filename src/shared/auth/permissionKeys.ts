@@ -48,6 +48,9 @@ export const PermissionKeys = {
     TaxFreePackLists: {
       View: 'warehouse_accounting.tax_free_pack_lists.page.view',
     },
+    SalesOnlineShop: {
+      View: 'sales.online_shop_sales.page.view',
+    },
   },
   SupplyCart: {
     Document: {
@@ -980,6 +983,7 @@ export type SystemPagePermissionKey =
   | Values<typeof PermissionKeys.SystemPages.TaxFreeCarriers>
   | Values<typeof PermissionKeys.SystemPages.TaxFreeDocuments>
   | Values<typeof PermissionKeys.SystemPages.TaxFreePackLists>
+  | Values<typeof PermissionKeys.SystemPages.SalesOnlineShop>
 
 export type SupplyCartPermissionKey =
   | Values<typeof PermissionKeys.SupplyCart.Document>
@@ -2158,6 +2162,7 @@ const eventPermissionKeys = new Set<string>([
   ...Object.values(PermissionKeys.SystemPages.TaxFreeCarriers),
   ...Object.values(PermissionKeys.SystemPages.TaxFreeDocuments),
   ...Object.values(PermissionKeys.SystemPages.TaxFreePackLists),
+  ...Object.values(PermissionKeys.SystemPages.SalesOnlineShop),
   ...Object.values(PermissionKeys.SupplyCart.Document),
   ...Object.values(PermissionKeys.SupplyCart.File),
   ...Object.values(PermissionKeys.SupplyCart.Item),

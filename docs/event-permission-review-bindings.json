@@ -1750,6 +1750,81 @@
       ],
       "reason": "TTN document generation is independently guarded and calls the permission-scoped print facade."
     },
+    "PE-01251": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": [
+        "sales.online_shop_sales.page.view"
+      ],
+      "reason": "Opening an AI image-search result is an in-page detail read; the page fails closed before mounting and list, detail and image endpoints all enforce the same page boundary."
+    },
+    "PE-01255": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": [
+        "sales.ukraine.sale.unlock",
+        "sales.ukraine.sale.unlock_for_shipping"
+      ],
+      "reason": "The shared confirmation dispatcher rechecks the exact permission stored with the requested unlock operation before invoking either protected mutation."
+    },
+    "PE-01256": {
+      "disposition": "technical_ui",
+      "reason": "The scanner matched a layout container as a modal entry; it performs no server request and grants no data or mutation capability."
+    },
+    "PE-01257": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": [
+        "sales.ukraine.sale.edit"
+      ],
+      "reason": "The editor entry is hidden and inert without sale.edit, hydrates through the edit-scoped details route and retains the backend edit mutation policy."
+    },
+    "PE-01258": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": [
+        "sales.ukraine.sale.unlock_for_shipping"
+      ],
+      "reason": "Unlock-for-shipping is independently hidden, checked again before confirmation and enforced by the canonical mutation policy."
+    },
+    "PE-01260": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": [
+        "sales.ukraine.sale.edit"
+      ],
+      "reason": "Discount editing is part of sale.edit; row and expanded-item controls are hidden without it and fresh data is loaded only through the edit-scoped route."
+    },
+    "PE-01261": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": [
+        "sales.ukraine.sale.open_delivery_details"
+      ],
+      "reason": "Delivery details are independently hidden and loaded through the dedicated delivery-details facade; editing inside the drawer still separately requires sale.edit."
+    },
+    "PE-01262": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": [
+        "sales.ukraine.sale.open_details"
+      ],
+      "reason": "Row and detail opening are inert without open_details and hydrate only through the existing permission-scoped sale-details facade."
+    },
+    "PE-01265": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": [
+        "sales.ukraine.sale.print_consignment_note"
+      ],
+      "reason": "The TTN drawer is mounted only with print_consignment_note and every settings and print request uses the protected Ukraine consignment facade."
+    },
+    "PE-01267": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": [
+        "sales.ukraine.sale.unlock"
+      ],
+      "reason": "Unlock is independently hidden, rechecked by the confirmation dispatcher and enforced by the canonical backend mutation policy."
+    },
+    "PE-01268": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": [
+        "sales.ukraine.sale.view_audit"
+      ],
+      "reason": "Audit opening and document reads use view_audit-scoped facades; the confirm mutation remains hidden unless the user separately has sale.edit."
+    },
     "PE-01069": {
       "disposition": "duplicate_occurrence",
       "duplicateOf": "PE-01070",

@@ -355,7 +355,11 @@ const clientMigrationRoutes: ConsoleRoute[] = [
     element: lazyRoute(<OnlineShopClientsPage />),
     permissionKey: PermissionKeys.OnlineShopClients.Page.View,
   },
-  { path: '/sales-online-shop', element: lazyRoute(<SalesOnlineShopPage />) },
+  {
+    path: '/sales-online-shop',
+    element: lazyRoute(<SalesOnlineShopPage />),
+    permissionKey: PermissionKeys.SystemPages.SalesOnlineShop.View,
+  },
   {
     path: '/incomplete-sales-online-shop',
     element: lazyRoute(<IncompleteSalesOnlineShopPage />),

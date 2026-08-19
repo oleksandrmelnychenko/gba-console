@@ -95,7 +95,15 @@ type SaleCartMutationRunner = (
   fallbackMessage: string,
 ) => Promise<boolean>
 
-export function SaleEditorDrawer({ sale, onClose }: { onClose: () => void; sale: SalesUkraineSale | null }) {
+export function SaleEditorDrawer({
+  loadSale = getSaleById,
+  sale,
+  onClose,
+}: {
+  loadSale?: typeof getSaleById
+  onClose: () => void
+  sale: SalesUkraineSale | null
+}) {
   const { t } = useI18n()
 
   return (
@@ -106,12 +114,12 @@ export function SaleEditorDrawer({ sale, onClose }: { onClose: () => void; sale:
       title={sale ? `${t('Продаж')} ${sale.SaleNumber?.Value || ''}`.trim() : t('Продаж')}
       onClose={onClose}
     >
-      {sale && <SaleEditorContent key={sale.NetUid || sale.Id} initialSale={sale} />}
+      {sale && <SaleEditorContent key={sale.NetUid || sale.Id} initialSale={sale} loadSale={loadSale} />}
     </AppDrawer>
   )
 }
 
-function SaleEditorContent({ initialSale }: { initialSale: SalesUkraineSale }) {
+function SaleEditorContent({ initialSale, loadSale }: { initialSale: SalesUkraineSale; loadSale: typeof getSaleById }) {
   const { t } = useI18n()
   const [sale, setSale] = useValueState<SalesUkraineSale>(initialSale)
   const [retailPaymentState, setRetailPaymentState] =
@@ -136,7 +144,7 @@ function SaleEditorContent({ initialSale }: { initialSale: SalesUkraineSale }) {
     reconcile: async () => {
       const netUid = sale.NetUid || initialSale.NetUid
 
-      return netUid ? getSaleById(netUid) : null
+      return netUid ? loadSale(netUid) : null
     },
   })
   const fileMutation = usePersistentSaleFileMutation(
@@ -159,7 +167,7 @@ function SaleEditorContent({ initialSale }: { initialSale: SalesUkraineSale }) {
 
     async function load(id: string) {
       try {
-        const next = await getSaleById(id)
+        const next = await loadSale(id)
 
         if (!cancelled) {
           if (!next || next.HasDetails === false || !next.Order) {
@@ -184,7 +192,7 @@ function SaleEditorContent({ initialSale }: { initialSale: SalesUkraineSale }) {
     return () => {
       cancelled = true
     }
-  }, [initialSale.NetUid, reloadKey, setError, setLoading, setSale, t])
+  }, [initialSale.NetUid, loadSale, reloadKey, setError, setLoading, setSale, t])
 
   const retailSaleId = typeof sale.Id === 'number' && sale.Id > 0 ? sale.Id : null
   const retailClientKey = getEntityKey(sale.RetailClient)
@@ -251,7 +259,7 @@ function SaleEditorContent({ initialSale }: { initialSale: SalesUkraineSale }) {
       throw new Error(t('Продаж не має збереженого ідентифікатора'))
     }
 
-    const fresh = await getSaleById(netUid)
+    const fresh = await loadSale(netUid)
 
     if (!fresh || fresh.HasDetails === false || !fresh.Order) {
       throw new Error(t('Не вдалося завантажити повні дані продажу'))
@@ -582,6 +590,7 @@ function SaleEditorContent({ initialSale }: { initialSale: SalesUkraineSale }) {
       />
 
       <SaleDetailsDrawer
+        loadSale={loadSale}
         sale={isDetailsOpen ? sale : null}
         onClose={() => setDetailsOpen(false)}
         onSaved={() => {
