@@ -835,25 +835,188 @@
       "duplicateOf": "PE-00716",
       "reason": "The edit route is part of the payment-expense-articles page workflow."
     },
+    "PE-00521": {
+      "disposition": "technical_ui",
+      "reason": "Creating a payment-movement article is disabled for the SAD outcome workflow; SAD only selects an existing article before the separately guarded final payment submit."
+    },
+    "PE-00523": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": [
+        "warehouse_accounting.sad.accounting.create_outcome"
+      ],
+      "reason": "Final SAD outcome-order submit rechecks create_outcome and calls the narrow SAD-scoped payment façade."
+    },
+    "PE-01141": {
+      "disposition": "technical_ui",
+      "reason": "Adding selected cart rows only changes the local SAD draft; the separately guarded SAD edit save owns persistence."
+    },
+    "PE-01142": {
+      "disposition": "stale_or_aggregated",
+      "reason": "The SAD-specific create-movement control was removed; the current modal only searches and selects existing movement articles."
+    },
+    "PE-01144": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": [
+        "warehouse_accounting.sad.accounting.create_income"
+      ],
+      "reason": "Final SAD income-order submit rechecks create_income and calls the narrow SAD-scoped payment façade."
+    },
+    "PE-01146": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": [
+        "warehouse_accounting.sad.supply_order.create"
+      ],
+      "reason": "Final supply-order submit rechecks the SAD supply_order.create capability and sends only the narrow creation DTO."
+    },
     "PE-01148": {
-      "disposition": "duplicate_occurrence",
-      "duplicateOf": "PE-01147",
-      "reason": "The SAD edit route is a detail workflow of the SAD registry page."
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": [
+        "warehouse_accounting.sad.sad.open_details"
+      ],
+      "reason": "The SAD edit route is guarded by open_details before the editor mounts or loads the aggregate."
     },
     "PE-01149": {
-      "disposition": "duplicate_occurrence",
-      "duplicateOf": "PE-01147",
-      "reason": "The SAD sale route is a detail workflow of the SAD registry page."
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": [
+        "warehouse_accounting.sad.sad.open_details"
+      ],
+      "reason": "The SAD sale-detail route is guarded by open_details before the editor mounts or loads the aggregate."
     },
     "PE-01150": {
-      "disposition": "duplicate_occurrence",
-      "duplicateOf": "PE-01147",
-      "reason": "The SAD TIR route is a detail workflow of the SAD registry page."
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": [
+        "warehouse_accounting.sad.sad.open_details"
+      ],
+      "reason": "The SAD TIR-detail route is guarded by open_details before the editor mounts or loads the aggregate."
     },
     "PE-01151": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": [
+        "warehouse_accounting.sad.sad.open_details"
+      ],
+      "reason": "The SAD specification route is guarded by open_details before the page mounts or loads specification data."
+    },
+    "PE-01154": {
+      "disposition": "technical_ui",
+      "reason": "This control only opens the delete confirmation; the final delete handler owns the independently guarded business mutation."
+    },
+    "PE-01158": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": [
+        "warehouse_accounting.sad.sad.delete"
+      ],
+      "reason": "Final SAD deletion rechecks sad.delete and calls the dedicated permission-scoped DELETE façade."
+    },
+    "PE-01159": {
+      "disposition": "technical_ui",
+      "reason": "Opening the document modal changes only UI state; upload, delete and export remain independent capabilities."
+    },
+    "PE-01160": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": [
+        "warehouse_accounting.sad.document.export"
+      ],
+      "reason": "Document generation is guarded by document.export and calls the SAD-scoped export façade."
+    },
+    "PE-01161": {
+      "disposition": "technical_ui",
+      "reason": "Opening the cart-item selector only edits the local SAD draft; final persistence is guarded by sad.edit."
+    },
+    "PE-01163": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": [
+        "warehouse_accounting.sad.sad.edit"
+      ],
+      "reason": "Final SAD save rechecks sad.edit and sends a narrow server-merged mutation DTO."
+    },
+    "PE-01164": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": [
+        "warehouse_accounting.sad.sad.send"
+      ],
+      "reason": "Final SAD send uses an independent send permission and a server-loaded netId-only state transition."
+    },
+    "PE-01166": {
+      "disposition": "technical_ui",
+      "reason": "Removing an item from the editor only changes the local draft until the separately guarded SAD save."
+    },
+    "PE-01167": {
+      "disposition": "technical_ui",
+      "reason": "The row control only selects a local item for removal confirmation; no request is issued."
+    },
+    "PE-01168": {
+      "disposition": "technical_ui",
+      "reason": "Opening the pallet-move modal changes only local UI state inside the pallet.edit workflow."
+    },
+    "PE-01170": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": [
+        "warehouse_accounting.sad.pallet.edit"
+      ],
+      "reason": "Final pallet persistence rechecks pallet.edit and calls the narrow server-merged pallet façade."
+    },
+    "PE-01172": {
+      "disposition": "technical_ui",
+      "reason": "Removing a pallet changes only the local pallet draft until the independently guarded pallet save."
+    },
+    "PE-01173": {
+      "disposition": "technical_ui",
+      "reason": "The row control only selects a pallet for local removal confirmation; no request is issued."
+    },
+    "PE-01175": {
+      "disposition": "technical_ui",
+      "reason": "Moving selected items only modifies the local pallet draft; the final pallet save owns persistence."
+    },
+    "PE-01176": {
+      "disposition": "technical_ui",
+      "reason": "Opening the specification editor changes only local modal state; the final save owns specification.edit."
+    },
+    "PE-01177": {
+      "disposition": "technical_ui",
+      "reason": "Opening the specification import modal changes only UI state; the final upload owns specification.import."
+    },
+    "PE-01181": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": [
+        "warehouse_accounting.sad.document.delete"
+      ],
+      "reason": "Deleting a persisted SAD document rechecks document.delete and calls the scoped document DELETE façade."
+    },
+    "PE-01183": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": [
+        "warehouse_accounting.sad.document.upload"
+      ],
+      "reason": "Uploading SAD documents rechecks document.upload and calls the scoped multipart façade."
+    },
+    "PE-01185": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": [
+        "warehouse_accounting.sad.specification.edit"
+      ],
+      "reason": "Final specification save rechecks specification.edit and sends the narrow scoped specification DTO."
+    },
+    "PE-01187": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": [
+        "warehouse_accounting.sad.specification.import"
+      ],
+      "reason": "Final spreadsheet upload rechecks specification.import and calls the scoped SAD import façade."
+    },
+    "PE-01190": {
       "disposition": "duplicate_occurrence",
-      "duplicateOf": "PE-01147",
-      "reason": "The SAD specifications route is a detail workflow of the SAD registry page."
+      "duplicateOf": "PE-01146",
+      "reason": "The action-menu button opens the same supply-order workflow whose final submit is PE-01146."
+    },
+    "PE-01191": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-01144",
+      "reason": "The action-menu button opens the same income-order workflow whose final submit is PE-01144."
+    },
+    "PE-01192": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-00523",
+      "reason": "The action-menu button opens the same outcome-order workflow whose final submit is PE-00523."
     },
     "PE-01590": {
       "disposition": "duplicate_occurrence",

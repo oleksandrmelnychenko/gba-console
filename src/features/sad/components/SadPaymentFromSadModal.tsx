@@ -1,13 +1,12 @@
 import { Alert, Button, Grid, Group, NumberInput, Select, Stack, Text, TextInput, Textarea } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import { CircleAlert, Plus } from 'lucide-react'
+import { CircleAlert } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppModal } from '../../../shared/ui/AppModal'
 import { SearchableSelect } from '../../../shared/ui/SearchableSelect'
 import {
-  createIncomeCashflowPaymentMovement,
   getIncomeCashflowClientAgreements,
   getIncomeCashflowOrganizations,
   getIncomeCashflowPaymentMovements,
@@ -245,33 +244,6 @@ export function SadPaymentFromSadModal({
     })
   }
 
-  async function handleCreateMovement() {
-    const operationName = form.movementSearch.trim()
-
-    if (!operationName) {
-      return
-    }
-
-    setSaving(true)
-    setError(null)
-
-    try {
-      const createdMovement = await createIncomeCashflowPaymentMovement(operationName)
-
-      if (createdMovement) {
-        setPaymentMovements((current) => includeEntity(current, createdMovement))
-        updateForm({
-          movementSearch: getEntityName(createdMovement) || operationName,
-          selectedMovementValue: getEntityValue(createdMovement),
-        })
-      }
-    } catch (createError) {
-      setError(createError instanceof Error ? createError.message : t('Не вдалося створити статтю руху коштів'))
-    } finally {
-      setSaving(false)
-    }
-  }
-
   async function handleSubmit() {
     if (!sad?.NetUid) {
       return
@@ -426,7 +398,7 @@ export function SadPaymentFromSadModal({
             />
           </Grid.Col>
 
-          <Grid.Col span={{ base: 12, sm: 9 }}>
+          <Grid.Col span={12}>
             <SearchableSelect
               data={toUniqueLabels(paymentMovements)}
               disabled={isLoading || isSaving}
@@ -436,19 +408,6 @@ export function SadPaymentFromSadModal({
               onOptionSubmit={handleMovementSubmit}
             />
           </Grid.Col>
-          <Grid.Col span={{ base: 12, sm: 3 }}>
-            <Button
-              disabled={Boolean(activeMovement) || !form.movementSearch.trim() || isLoading || isSaving}
-              fullWidth
-              leftSection={<Plus size={16} />}
-              mt={24}
-              type="button"
-              onClick={() => void handleCreateMovement()}
-            >
-              {t('Створити статтю')}
-            </Button>
-          </Grid.Col>
-
           <Grid.Col span={12}>
             <Textarea
               disabled={isLoading || isSaving}
@@ -589,16 +548,6 @@ function toUniqueLabels<T extends NameLikeEntity>(entities: T[]): string[] {
       }),
     ),
   )
-}
-
-function includeEntity<T extends NameLikeEntity>(entities: T[], entity: T): T[] {
-  const entityValue = getEntityValue(entity)
-
-  if (!entityValue || entities.some((item) => getEntityValue(item) === entityValue)) {
-    return entities
-  }
-
-  return [entity, ...entities]
 }
 
 function getEntityValue(entity?: { Id?: number; NetUid?: string } | null): string {

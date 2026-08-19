@@ -648,22 +648,22 @@ const customsMigrationRoutes: ConsoleRoute[] = [
   {
     path: '/sad/edit/:netid',
     element: lazyRoute(<EditSadPage />),
-    permissionKey: PermissionKeys.SystemPages.Sad.View,
+    permissionKey: PermissionKeys.Sad.Sad.OpenDetails,
   },
   {
     path: '/sad/edit/:netid/sale',
     element: lazyRoute(<EditSaleSadPage />),
-    permissionKey: PermissionKeys.SystemPages.Sad.View,
+    permissionKey: PermissionKeys.Sad.Sad.OpenDetails,
   },
   {
     path: '/sad/edit/:netid/tir',
     element: lazyRoute(<EditTirSadPage />),
-    permissionKey: PermissionKeys.SystemPages.Sad.View,
+    permissionKey: PermissionKeys.Sad.Sad.OpenDetails,
   },
   {
     path: '/sad/edit/:id/specifications',
     element: lazyRoute(<SadSpecificationsPage />),
-    permissionKey: PermissionKeys.SystemPages.Sad.View,
+    permissionKey: PermissionKeys.Sad.Sad.OpenDetails,
   },
   {
     path: '/tax-free/pack-list/all',

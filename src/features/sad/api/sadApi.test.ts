@@ -47,7 +47,7 @@ describe('sadApi', () => {
       to: '2026-06-08',
     })
 
-    expect(apiRequestMock).toHaveBeenCalledWith('/supplies/ukraine/order/packlists/sad/all/filtered', {
+    expect(apiRequestMock).toHaveBeenCalledWith('/supplies/ukraine/order/packlists/sad/page/registry', {
       query: {
         from: '2025-01-01T00:00:00.000',
         limit: 20,
@@ -75,7 +75,7 @@ describe('sadApi', () => {
 
     const result = await getSad('sad-2')
 
-    expect(apiRequestMock).toHaveBeenCalledWith('/supplies/ukraine/order/packlists/sad/get', {
+    expect(apiRequestMock).toHaveBeenCalledWith('/supplies/ukraine/order/packlists/sad/page/details', {
       query: {
         netId: 'sad-2',
       },
@@ -83,7 +83,7 @@ describe('sadApi', () => {
     expect(result).toEqual(expect.objectContaining({ NetUid: 'sad-2', SadDocuments: [] }))
   })
 
-  it('persists and sends an idempotency key for a new cart-backed SAD', async () => {
+  it('updates an existing SAD through the narrow scoped DTO', async () => {
     apiRequestMock.mockResolvedValueOnce({
       Body: {
         Id: 41,
@@ -93,30 +93,43 @@ describe('sadApi', () => {
     })
 
     await updateSad({
-      Id: 0,
-      SadItems: [],
+      Id: 41,
+      NetUid: 'sad-2',
+      Comment: 'edited',
+      FromDate: '2026-08-19T00:00:00.000Z',
+      MarginAmount: 12,
+      Organization: { Id: 7 },
+      SadItems: [{
+        Id: 19,
+        Qty: 3,
+        Comment: 'item',
+      }],
       SadPallets: [],
     })
 
-    const options = apiRequestMock.mock
-      .calls[0]?.[1]
-    const operationId = new Headers(
-      options?.headers,
-    ).get('Idempotency-Key')
-    expect(operationId).toMatch(
-      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i,
-    )
     expect(apiRequestMock).toHaveBeenCalledWith(
-      '/supplies/ukraine/order/packlists/sad/update',
+      '/supplies/ukraine/order/packlists/sad/page/edit',
       {
         body: {
-          Id: 0,
-          SadItems: [],
-          SadPallets: [],
-        },
-        dedupe: false,
-        headers: {
-          'Idempotency-Key': operationId,
+          netUid: 'sad-2',
+          comment: 'edited',
+          fromDate: '2026-08-19T00:00:00.000Z',
+          marginAmount: 12,
+          organizationId: 7,
+          stathamId: null,
+          stathamCarId: null,
+          clientId: null,
+          clientAgreementId: null,
+          organizationClientId: null,
+          organizationClientAgreementId: null,
+          items: [{
+            id: 19,
+            supplyOrderUkraineCartItemId: null,
+            qty: 3,
+            netWeight: 0,
+            unitPrice: 0,
+            comment: 'item',
+          }],
         },
         method: 'POST',
       },
@@ -127,9 +140,17 @@ describe('sadApi', () => {
     const operationId = '44444444-4444-4444-8444-444444444444'
     const payment = {
       Amount: 100,
+      Comment: 'income',
+      FromDate: '2026-08-19T00:00:00.000Z',
+      Organization: { Id: 11 },
       OrganizationClientAgreement: {
         Id: 22,
         OrganizationClientId: 33,
+      },
+      PaymentRegister: { Id: 44 },
+      Currency: { Id: 55 },
+      PaymentMovementOperation: {
+        PaymentMovement: { Id: 66 },
       },
     }
     apiRequestMock.mockResolvedValueOnce({ NetUid: 'income-1' })
@@ -141,9 +162,22 @@ describe('sadApi', () => {
     )
 
     expect(apiRequestMock).toHaveBeenCalledWith(
-      '/payments/orders/income/new/sad',
+      '/payments/orders/income/sad/create',
       {
-        body: payment,
+        body: {
+          amount: 100,
+          comment: 'income',
+          fromDate: '2026-08-19T00:00:00.000Z',
+          organizationId: 11,
+          paymentMovementId: 66,
+          clientId: null,
+          clientAgreementId: null,
+          organizationClientId: 33,
+          organizationClientAgreementId: 22,
+          paymentRegisterId: 44,
+          currencyId: 55,
+          paymentCurrencyRegisterId: 0,
+        },
         dedupe: false,
         headers: { 'Idempotency-Key': operationId },
         method: 'POST',

@@ -678,6 +678,33 @@ export const PermissionKeys = {
       Create: 'warehouse_accounting.tax_free_pack_lists.supply_order.create',
     },
   },
+  Sad: {
+    Sad: {
+      OpenDetails: 'warehouse_accounting.sad.sad.open_details',
+      Edit: 'warehouse_accounting.sad.sad.edit',
+      Send: 'warehouse_accounting.sad.sad.send',
+      Delete: 'warehouse_accounting.sad.sad.delete',
+    },
+    Pallet: {
+      Edit: 'warehouse_accounting.sad.pallet.edit',
+    },
+    Document: {
+      Export: 'warehouse_accounting.sad.document.export',
+      Upload: 'warehouse_accounting.sad.document.upload',
+      Delete: 'warehouse_accounting.sad.document.delete',
+    },
+    Specification: {
+      Edit: 'warehouse_accounting.sad.specification.edit',
+      Import: 'warehouse_accounting.sad.specification.import',
+    },
+    SupplyOrder: {
+      Create: 'warehouse_accounting.sad.supply_order.create',
+    },
+    Accounting: {
+      CreateIncome: 'warehouse_accounting.sad.accounting.create_income',
+      CreateOutcome: 'warehouse_accounting.sad.accounting.create_outcome',
+    },
+  },
   OnlineShopSeo: {
     Client: {
       Toggle: 'administration.online_shop_seo.client.toggle',
@@ -1132,6 +1159,14 @@ export type TaxFreePackListsPermissionKey =
   | Values<typeof PermissionKeys.TaxFreePackLists.Document>
   | Values<typeof PermissionKeys.TaxFreePackLists.SupplyOrder>
 
+export type SadPermissionKey =
+  | Values<typeof PermissionKeys.Sad.Sad>
+  | Values<typeof PermissionKeys.Sad.Pallet>
+  | Values<typeof PermissionKeys.Sad.Document>
+  | Values<typeof PermissionKeys.Sad.Specification>
+  | Values<typeof PermissionKeys.Sad.SupplyOrder>
+  | Values<typeof PermissionKeys.Sad.Accounting>
+
 export type OnlineShopSeoPermissionKey =
   | Values<typeof PermissionKeys.OnlineShopSeo.Client>
   | Values<typeof PermissionKeys.OnlineShopSeo.Contact>
@@ -1247,6 +1282,7 @@ export type PermissionKey =
   | TaxFreeCarriersPermissionKey
   | TaxFreeDocumentsPermissionKey
   | TaxFreePackListsPermissionKey
+  | SadPermissionKey
   | WarehouseAccountingPermissionKey
   | WarehousesPermissionKey
 
@@ -2243,6 +2279,12 @@ const eventPermissionKeys = new Set<string>([
   ...Object.values(PermissionKeys.TaxFreePackLists.PackList),
   ...Object.values(PermissionKeys.TaxFreePackLists.Document),
   ...Object.values(PermissionKeys.TaxFreePackLists.SupplyOrder),
+  ...Object.values(PermissionKeys.Sad.Sad),
+  ...Object.values(PermissionKeys.Sad.Pallet),
+  ...Object.values(PermissionKeys.Sad.Document),
+  ...Object.values(PermissionKeys.Sad.Specification),
+  ...Object.values(PermissionKeys.Sad.SupplyOrder),
+  ...Object.values(PermissionKeys.Sad.Accounting),
   ...Object.values(PermissionKeys.OnlineShopSeo.Client),
   ...Object.values(PermissionKeys.OnlineShopSeo.Contact),
   ...Object.values(PermissionKeys.OnlineShopSeo.GeneralInfo),

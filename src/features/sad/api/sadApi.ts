@@ -1,5 +1,4 @@
 import { apiRequest } from '../../../shared/api/apiClient'
-import { executeSadMutation } from '../../../shared/api/sadMutationOperation'
 import {
   executeAccountingMutation,
   type AccountingMutationOperationOptions,
@@ -21,16 +20,11 @@ import type {
 } from '../types'
 import type { SupplyOrderUkraine } from '../../supply-ukraine-orders/types'
 import type { IncomePaymentOrder } from '../../income-cashflows/types'
-import {
-  ACCOUNTING_OPERATION_ID,
-  getAccountingOperation,
-} from '../../accounting/accountingOperationCatalog'
 
-const CREATE_SAD_INCOME_ENDPOINT =
-  getAccountingOperation(ACCOUNTING_OPERATION_ID.SadIncome).endpoint
+const CREATE_SAD_INCOME_ENDPOINT = '/payments/orders/income/sad/create'
 
 export async function getSads(params: SadSearchParams): Promise<Sad[]> {
-  const result = await apiRequest<unknown>('/supplies/ukraine/order/packlists/sad/all/filtered', {
+  const result = await apiRequest<unknown>('/supplies/ukraine/order/packlists/sad/page/registry', {
     query: {
       from: toDateTimeQuery(params.from, 'start'),
       limit: params.limit,
@@ -43,7 +37,7 @@ export async function getSads(params: SadSearchParams): Promise<Sad[]> {
 }
 
 export async function getSad(netId: string): Promise<Sad | null> {
-  const result = await apiRequest<unknown>('/supplies/ukraine/order/packlists/sad/get', {
+  const result = await apiRequest<unknown>('/supplies/ukraine/order/packlists/sad/page/details', {
     query: {
       netId,
     },
@@ -53,7 +47,7 @@ export async function getSad(netId: string): Promise<Sad | null> {
 }
 
 export async function getSadWithSpecifications(netId: string): Promise<Sad | null> {
-  const result = await apiRequest<unknown>('/supplies/ukraine/order/packlists/sad/specification/products/get', {
+  const result = await apiRequest<unknown>('/supplies/ukraine/order/packlists/sad/page/specification/details', {
     query: {
       netId,
     },
@@ -63,37 +57,51 @@ export async function getSadWithSpecifications(netId: string): Promise<Sad | nul
 }
 
 export async function updateSad(sad: Sad): Promise<Sad | null> {
-  const result = await executeSadMutation({
-    sad,
-    request: (payload, context) => apiRequest<unknown>(
-      '/supplies/ukraine/order/packlists/sad/update',
-      {
-        method: 'POST',
-        body: payload,
-        ...(context.isCreate
-          ? {
-              dedupe: false,
-              headers: context.headers,
-            }
-          : {}),
-      },
-    ),
+  const result = await apiRequest<unknown>('/supplies/ukraine/order/packlists/sad/page/edit', {
+    method: 'POST',
+    body: toSadEditRequest(sad),
   })
 
   return normalizeItem<Sad>(result, ensureSad)
 }
 
 export async function updateSaleSad(sad: Sad): Promise<Sad | null> {
-  const result = await apiRequest<unknown>('/supplies/ukraine/order/packlists/sad/update/sale', {
+  return updateSad(sad)
+}
+
+export async function sendSad(netId: string): Promise<Sad | null> {
+  const result = await apiRequest<unknown>('/supplies/ukraine/order/packlists/sad/page/send', {
     method: 'POST',
-    body: sad,
+    query: { netId },
+  })
+
+  return normalizeItem<Sad>(result, ensureSad)
+}
+
+export async function updateSadPallets(sad: Sad): Promise<Sad | null> {
+  const result = await apiRequest<unknown>('/supplies/ukraine/order/packlists/sad/page/pallet/edit', {
+    method: 'POST',
+    body: {
+      netUid: sad.NetUid,
+      pallets: (sad.SadPallets || []).map((pallet) => ({
+        id: pallet.Id || 0,
+        sadPalletTypeId: pallet.SadPalletTypeId || pallet.SadPalletType?.Id || 0,
+        number: pallet.Number || '',
+        comment: pallet.Comment || '',
+        items: (pallet.SadPalletItems || []).map((item) => ({
+          id: item.Id || 0,
+          sadItemId: item.SadItemId || item.SadItem?.Id || 0,
+          qty: item.ChangedQty ?? item.Qty ?? 0,
+        })),
+      })),
+    },
   })
 
   return normalizeItem<Sad>(result, ensureSad)
 }
 
 export async function deleteSad(netId: string): Promise<void> {
-  await apiRequest<unknown>('/supplies/ukraine/order/packlists/sad/delete', {
+  await apiRequest<unknown>('/supplies/ukraine/order/packlists/sad/page/remove', {
     method: 'DELETE',
     query: {
       netId,
@@ -106,7 +114,7 @@ export async function uploadSadDocuments(netId: string, files: File[]): Promise<
 
   files.forEach((file) => formData.append('files', file))
 
-  const result = await apiRequest<unknown>('/supplies/ukraine/order/packlists/sad/documents/upload', {
+  const result = await apiRequest<unknown>('/supplies/ukraine/order/packlists/sad/page/document/upload', {
     method: 'POST',
     query: {
       netId,
@@ -118,7 +126,7 @@ export async function uploadSadDocuments(netId: string, files: File[]): Promise<
 }
 
 export async function deleteSadDocument(netId: string): Promise<void> {
-  await apiRequest<unknown>('/supplies/ukraine/order/packlists/sad/documents/remove', {
+  await apiRequest<unknown>('/supplies/ukraine/order/packlists/sad/page/document/remove', {
     method: 'DELETE',
     query: {
       netId,
@@ -127,7 +135,7 @@ export async function deleteSadDocument(netId: string): Promise<void> {
 }
 
 export async function getSadDocuments(netId: string): Promise<SadPrintDocument | null> {
-  const result = await apiRequest<unknown>('/supplies/ukraine/order/packlists/sad/documents/export', {
+  const result = await apiRequest<unknown>('/supplies/ukraine/order/packlists/sad/page/document/export', {
     query: {
       netId,
     },
@@ -192,12 +200,21 @@ export async function updateProductSpecification(
   sadNetId: string,
   specification: Partial<SadProductSpecification>,
 ): Promise<SadProductSpecification | null> {
-  const result = await apiRequest<unknown>('/specifications/update', {
+  const result = await apiRequest<unknown>('/specifications/sad/update', {
     method: 'POST',
     query: {
       sadNetId,
     },
-    body: specification,
+    body: {
+      id: specification.Id || 0,
+      productId: specification.ProductId || specification.Product?.Id || 0,
+      specificationCode: specification.SpecificationCode || '',
+      customsValue: specification.CustomsValue || 0,
+      duty: specification.Duty || 0,
+      vatValue: specification.VATValue || 0,
+      dutyPercent: specification.DutyPercent || 0,
+      vatPercent: specification.VATPercent || 0,
+    },
   })
 
   return normalizeItem<SadProductSpecification>(result)
@@ -213,7 +230,7 @@ export async function uploadProductSpecificationForSad(
   formData.append('file', file)
   formData.append('parseConfiguration', JSON.stringify(parseConfiguration))
 
-  await apiRequest<unknown>('/supplies/ukraine/order/packlists/sad/specification/upload', {
+  await apiRequest<unknown>('/supplies/ukraine/order/packlists/sad/page/specification/import', {
     method: 'POST',
     query: {
       sadNetId,
@@ -237,12 +254,17 @@ export async function createSupplyOrderFromSad(
   sadNetId: string,
   order: Partial<SupplyOrderUkraine>,
 ): Promise<SupplyOrderUkraine | null> {
-  const result = await apiRequest<unknown>('/supplies/ukraine/order/new/packlist/sad', {
+  const result = await apiRequest<unknown>('/supplies/ukraine/order/sad/create', {
     method: 'POST',
     query: {
       sadNetId,
     },
-    body: order,
+    body: {
+      fromDate: order.FromDate,
+      organizationId: order.Organization?.Id || 0,
+      supplierId: order.Supplier?.Id || 0,
+      clientAgreementId: order.ClientAgreement?.Id || 0,
+    },
   })
 
   return normalizeItem<SupplyOrderUkraine>(result)
@@ -262,7 +284,7 @@ export async function createIncomePaymentFromSad(
       sadNetId,
     },
     request: (payload, context) => apiRequest<unknown>(CREATE_SAD_INCOME_ENDPOINT, {
-      body: payload.paymentIncome,
+      body: toSadPaymentRequest(payload.paymentIncome),
       dedupe: false,
       headers: context.headers,
       method: 'POST',
@@ -274,6 +296,51 @@ export async function createIncomePaymentFromSad(
   })
 
   return normalizeItem<IncomePaymentOrder>(result)
+}
+
+function toSadEditRequest(sad: Sad) {
+  return {
+    netUid: sad.NetUid,
+    comment: sad.Comment || '',
+    fromDate: sad.FromDate,
+    marginAmount: sad.MarginAmount || 0,
+    organizationId: sad.Organization?.Id || null,
+    stathamId: sad.Statham?.Id || null,
+    stathamCarId: sad.StathamCar?.Id || null,
+    clientId: sad.Client?.Id || null,
+    clientAgreementId: sad.ClientAgreement?.Id || null,
+    organizationClientId: sad.OrganizationClient?.Id || null,
+    organizationClientAgreementId:
+      sad.OrganizationClientAgreement?.Id || null,
+    items: (sad.SadItems || []).map((item) => ({
+      id: item.Id || 0,
+      supplyOrderUkraineCartItemId:
+        item.SupplyOrderUkraineCartItemId || item.SupplyOrderUkraineCartItem?.Id || null,
+      qty: item.ChangedQty ?? item.Qty ?? 0,
+      netWeight: item.NetWeight || 0,
+      unitPrice: item.UnitPrice || item.SupplyOrderUkraineCartItem?.UnitPrice || 0,
+      comment: item.Comment || '',
+    })),
+  }
+}
+
+function toSadPaymentRequest(payment: IncomePaymentOrder) {
+  const movement = payment.PaymentMovementOperation?.PaymentMovement
+  return {
+    amount: payment.Amount || 0,
+    comment: payment.Comment || '',
+    fromDate: payment.FromDate,
+    organizationId: payment.Organization?.Id || 0,
+    paymentMovementId: movement?.Id || 0,
+    clientId: payment.ClientAgreement?.Client?.Id || null,
+    clientAgreementId: payment.ClientAgreement?.Id || null,
+    organizationClientId: payment.OrganizationClientAgreement?.OrganizationClientId || null,
+    organizationClientAgreementId:
+      payment.OrganizationClientAgreement?.Id || null,
+    paymentRegisterId: payment.PaymentRegister?.Id || 0,
+    currencyId: payment.Currency?.Id || 0,
+    paymentCurrencyRegisterId: 0,
+  }
 }
 
 function normalizeArray<TItem>(result: unknown): TItem[] {
