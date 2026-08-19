@@ -4,25 +4,25 @@
     "inputRecords": 1902,
     "classifiedRecords": 1902,
     "dispositionCounts": {
-      "technical_ui": 789,
-      "covered_existing": 641,
-      "duplicate_occurrence": 317,
-      "stale_or_aggregated": 15,
-      "business_candidate": 95,
-      "needs_human_review": 45
+      "technical_ui": 793,
+      "covered_existing": 654,
+      "duplicate_occurrence": 330,
+      "stale_or_aggregated": 16,
+      "business_candidate": 73,
+      "needs_human_review": 36
     },
-    "reviewCandidates": 140,
-    "technicalExcluded": 789,
-    "duplicatesExcluded": 317,
-    "duplicateOccurrencesTotal": 386,
+    "reviewCandidates": 109,
+    "technicalExcluded": 793,
+    "duplicatesExcluded": 330,
+    "duplicateOccurrencesTotal": 399,
     "technicalDuplicateOverlap": 69,
     "sourceResolved": 1828,
     "sourceUnresolved": 74,
     "currentActionResolved": 1176,
     "currentActionUnresolved": 726,
     "currentProductionActions": 1826,
-    "currentPermissionBoundActions": 354,
-    "currentUnboundActions": 1472
+    "currentPermissionBoundActions": 367,
+    "currentUnboundActions": 1459
   },
   "invariants": {
     "allInputRecordsClassified": true,
@@ -48144,7 +48144,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/sales-cockpit/components/CockpitToolbar.tsx",
-        "line": 27,
+        "line": 28,
         "alternatives": []
       }
     },
@@ -48175,7 +48175,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/sales-cockpit/components/CockpitToolbar.tsx",
-        "line": 26,
+        "line": 27,
         "alternatives": []
       }
     },
@@ -48196,20 +48196,22 @@
       "proposedPermission": "dashboard.dashboard.on_regenerate.button_click",
       "securityLevel": "low",
       "rawStatus": "No permission candidate found",
-      "disposition": "needs_human_review",
-      "dispositionReason": "insufficient_evidence_for_automatic_permission_or_exclusion",
+      "disposition": "covered_existing",
+      "dispositionReason": "The final AI regeneration handler rechecks task.generate and calls the InternalMutationPolicy-protected cockpit generation route.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "sales.cockpit.task.generate"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-0beb42874ddc",
-          "distance": 76,
+          "candidateId": "EPC-7aa1735e65da",
+          "distance": 78,
           "file": "src/features/sales-cockpit/components/CockpitToolbar.tsx",
           "handler": "{onRegenerate}",
           "humanLabel": "Згенерувати завдання",
-          "line": 101,
+          "line": 104,
           "permissionKeys": [],
           "score": 10
         }
@@ -48217,7 +48219,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/sales-cockpit/components/CockpitToolbar.tsx",
-        "line": 25,
+        "line": 26,
         "alternatives": []
       }
     },
@@ -48269,12 +48271,14 @@
       "proposedPermission": "dashboard.dashboard.if_task_on_submit_task_trimmed_reason_null.command_submit",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
-      "duplicateOf": null,
+      "disposition": "duplicate_occurrence",
+      "dispositionReason": "The dismiss form submit only forwards its reason to the final dismiss handler PE-01245 and does not define a second business capability.",
+      "duplicateOf": "PE-01245",
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "sales.cockpit.task.dismiss"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
           "candidateId": "EPC-6cfb5d07de42",
@@ -48342,12 +48346,14 @@
       "proposedPermission": "dashboard.dashboard.task_on_submit_task_amount_to_amount_amount_sold.command_submit",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
-      "duplicateOf": null,
+      "disposition": "duplicate_occurrence",
+      "dispositionReason": "The completion form submit only forwards its outcome to the final completion handler PE-01244.",
+      "duplicateOf": "PE-01244",
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "sales.cockpit.task.complete"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [],
       "source": {
         "status": "resolved",
@@ -48373,20 +48379,20 @@
       "proposedPermission": "dashboard.dashboard.handle_status_change_tab_value.button_click",
       "securityLevel": "low",
       "rawStatus": "No permission candidate found",
-      "disposition": "needs_human_review",
-      "dispositionReason": "insufficient_evidence_for_automatic_permission_or_exclusion",
+      "disposition": "technical_ui",
+      "dispositionReason": "Changing a head-board status tab only changes local filtering over the page-authorized task registry; it performs no business mutation.",
       "duplicateOf": null,
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-a42e83297fb9",
+          "candidateId": "EPC-626c17e09f42",
           "distance": 6,
           "file": "src/features/sales-cockpit/components/HeadTaskBoard.tsx",
           "handler": "{() => handleStatusChange(tab.value)}",
           "humanLabel": null,
-          "line": 327,
+          "line": 351,
           "permissionKeys": [],
           "score": 26
         }
@@ -48394,7 +48400,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/sales-cockpit/components/HeadTaskBoard.tsx",
-        "line": 333,
+        "line": 357,
         "alternatives": []
       }
     },
@@ -48415,28 +48421,32 @@
       "proposedPermission": "dashboard.dashboard.set_create_open_true.command_submit",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
-      "duplicateOf": null,
+      "disposition": "duplicate_occurrence",
+      "dispositionReason": "Opening the new-task modal is the first UI step of the create workflow finalized by PE-01221.",
+      "duplicateOf": "PE-01221",
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "sales.head_dashboard.task.create"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-b09f7b0f627e",
+          "candidateId": "EPC-daefc73224c3",
           "distance": 4,
           "file": "src/features/sales-cockpit/components/HeadTaskBoard.tsx",
           "handler": "{() => setCreateOpen(true)}",
           "humanLabel": "Нова задача",
-          "line": 375,
-          "permissionKeys": [],
+          "line": 400,
+          "permissionKeys": [
+            "sales.head_dashboard.task.create"
+          ],
           "score": 17
         }
       ],
       "source": {
         "status": "resolved",
         "file": "src/features/sales-cockpit/components/HeadTaskBoard.tsx",
-        "line": 379,
+        "line": 404,
         "alternatives": []
       }
     },
@@ -48457,28 +48467,32 @@
       "proposedPermission": "dashboard.dashboard.handle_generate.button_click",
       "securityLevel": "low",
       "rawStatus": "No permission candidate found",
-      "disposition": "needs_human_review",
-      "dispositionReason": "insufficient_evidence_for_automatic_permission_or_exclusion",
+      "disposition": "covered_existing",
+      "dispositionReason": "The head generation control and final handler recheck task.generate and call the dedicated administrative mutation route.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "sales.head_dashboard.task.generate"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-3f6f9fd2a994",
-          "distance": 102,
+          "candidateId": "EPC-49fd7d59f4e0",
+          "distance": 109,
           "file": "src/features/sales-cockpit/components/HeadTaskBoard.tsx",
           "handler": "{handleGenerate}",
           "humanLabel": "Перерахувати AI задачі",
-          "line": 383,
-          "permissionKeys": [],
+          "line": 410,
+          "permissionKeys": [
+            "sales.head_dashboard.task.generate"
+          ],
           "score": 14
         }
       ],
       "source": {
         "status": "resolved",
         "file": "src/features/sales-cockpit/components/HeadTaskBoard.tsx",
-        "line": 281,
+        "line": 301,
         "alternatives": []
       }
     },
@@ -48507,12 +48521,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-27a92540c927",
-          "distance": 270,
+          "candidateId": "EPC-b4dba1b05f2d",
+          "distance": 286,
           "file": "src/features/sales-cockpit/components/HeadTaskBoard.tsx",
           "handler": "{() => { triggerReload() }}",
           "humanLabel": "Оновити",
-          "line": 393,
+          "line": 421,
           "permissionKeys": [],
           "score": 13
         }
@@ -48520,7 +48534,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/sales-cockpit/components/HeadTaskBoard.tsx",
-        "line": 123,
+        "line": 135,
         "alternatives": []
       }
     },
@@ -48541,28 +48555,32 @@
       "proposedPermission": "dashboard.dashboard.handle_board_note_submit.form_submit",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "covered_existing",
+      "dispositionReason": "The final head-note handler rechecks task.add_note and uses the dedicated administrative note route.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "sales.head_dashboard.task.add_note"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-a1cf28626bb6",
-          "distance": 221,
+          "candidateId": "EPC-5bfc8574c728",
+          "distance": 239,
           "file": "src/features/sales-cockpit/components/HeadTaskBoard.tsx",
           "handler": "{handleBoardNoteSubmit}",
           "humanLabel": null,
-          "line": 460,
-          "permissionKeys": [],
+          "line": 490,
+          "permissionKeys": [
+            "sales.head_dashboard.task.add_note"
+          ],
           "score": 21
         }
       ],
       "source": {
         "status": "resolved",
         "file": "src/features/sales-cockpit/components/HeadTaskBoard.tsx",
-        "line": 239,
+        "line": 251,
         "alternatives": []
       }
     },
@@ -48583,28 +48601,32 @@
       "proposedPermission": "dashboard.dashboard.handle_board_cancel_submit.form_submit",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "covered_existing",
+      "dispositionReason": "The final head-task dismissal rechecks task.dismiss and calls the dedicated administrative dismissal route.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "sales.head_dashboard.task.dismiss"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-d2820b83d48e",
-          "distance": 207,
+          "candidateId": "EPC-23731eb74ebd",
+          "distance": 221,
           "file": "src/features/sales-cockpit/components/HeadTaskBoard.tsx",
           "handler": "{handleBoardCancelSubmit}",
           "humanLabel": null,
-          "line": 467,
-          "permissionKeys": [],
+          "line": 497,
+          "permissionKeys": [
+            "sales.head_dashboard.task.dismiss"
+          ],
           "score": 23
         }
       ],
       "source": {
         "status": "resolved",
         "file": "src/features/sales-cockpit/components/HeadTaskBoard.tsx",
-        "line": 260,
+        "line": 276,
         "alternatives": []
       }
     },
@@ -48625,28 +48647,32 @@
       "proposedPermission": "dashboard.dashboard.on_add_note_task.command_submit",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
-      "duplicateOf": null,
+      "disposition": "duplicate_occurrence",
+      "dispositionReason": "The row icon only opens the note workflow owned by the single head task.add_note capability.",
+      "duplicateOf": "PE-01204",
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "sales.head_dashboard.task.add_note"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-a309001ea37c",
+          "candidateId": "EPC-3c8dfb60c3b0",
           "distance": 89,
           "file": "src/features/sales-cockpit/components/HeadTaskBoard.tsx",
           "handler": "{() => onAddNote(task)}",
           "humanLabel": "Коментар керівника",
-          "line": 650,
-          "permissionKeys": [],
+          "line": 684,
+          "permissionKeys": [
+            "sales.head_dashboard.task.add_note"
+          ],
           "score": 11
         }
       ],
       "source": {
         "status": "resolved",
         "file": "src/features/sales-cockpit/components/HeadTaskBoard.tsx",
-        "line": 561,
+        "line": 595,
         "alternatives": []
       }
     },
@@ -48667,20 +48693,22 @@
       "proposedPermission": "dashboard.dashboard.on_cancel_task.command_delete",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
-      "duplicateOf": null,
+      "disposition": "duplicate_occurrence",
+      "dispositionReason": "The row icon only opens the dismissal workflow owned by the single head task.dismiss capability.",
+      "duplicateOf": "PE-01205",
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "sales.head_dashboard.task.dismiss"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-2b2291c51b29",
+          "candidateId": "EPC-b64cc2e442fa",
           "distance": 100,
           "file": "src/features/sales-cockpit/components/HeadTaskBoard.tsx",
           "handler": "{() => onCancel(task)}",
           "humanLabel": "Скасувати задачу",
-          "line": 662,
+          "line": 696,
           "permissionKeys": [],
           "score": 10
         }
@@ -48688,7 +48716,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/sales-cockpit/components/HeadTaskBoard.tsx",
-        "line": 562,
+        "line": 596,
         "alternatives": []
       }
     },
@@ -48740,12 +48768,14 @@
       "proposedPermission": "dashboard.dashboard.if_task_trimmed_text_on_submit_task_trimmed_text.command_submit",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
-      "duplicateOf": null,
+      "disposition": "duplicate_occurrence",
+      "dispositionReason": "The head note modal submit only forwards its validated text to the final handler PE-01204 and does not define a second business capability.",
+      "duplicateOf": "PE-01204",
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "sales.head_dashboard.task.add_note"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [],
       "source": {
         "status": "unresolved",
@@ -48802,12 +48832,14 @@
       "proposedPermission": "dashboard.dashboard.if_task_on_submit_task_trimmed_reason_null.command_submit.2",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
-      "duplicateOf": null,
+      "disposition": "duplicate_occurrence",
+      "dispositionReason": "The head dismissal modal submit only forwards its optional reason to the final handler PE-01205.",
+      "duplicateOf": "PE-01205",
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "sales.head_dashboard.task.dismiss"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [],
       "source": {
         "status": "unresolved",
@@ -48841,12 +48873,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-3a45ddf778d1",
+          "candidateId": "EPC-036713e94af5",
           "distance": 3,
           "file": "src/features/sales-cockpit/components/MyClientsPanel.tsx",
           "handler": "{() => navigate(`/clients/edit/${client.client_net_uid}`)}",
           "humanLabel": null,
-          "line": 124,
+          "line": 126,
           "permissionKeys": [],
           "score": 37
         }
@@ -48854,7 +48886,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/sales-cockpit/components/MyClientsPanel.tsx",
-        "line": 127,
+        "line": 129,
         "alternatives": []
       }
     },
@@ -48883,12 +48915,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-1e12112db34b",
+          "candidateId": "EPC-9b169059d2a7",
           "distance": 4,
           "file": "src/features/sales-cockpit/components/MyClientsPanel.tsx",
           "handler": "{() => setReloadKey((key) => key + 1)}",
           "humanLabel": "Оновити",
-          "line": 251,
+          "line": 253,
           "permissionKeys": [],
           "score": 18
         }
@@ -48896,7 +48928,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/sales-cockpit/components/MyClientsPanel.tsx",
-        "line": 255,
+        "line": 257,
         "alternatives": []
       }
     },
@@ -48927,12 +48959,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-88fb791bb4e7",
+          "candidateId": "EPC-f7c9b1c6f766",
           "distance": 67,
           "file": "src/features/sales-cockpit/components/MyClientsPanel.tsx",
           "handler": "{handleOpenSaleWizard}",
           "humanLabel": null,
-          "line": 469,
+          "line": 474,
           "permissionKeys": [
             "UkraineAllActOfEdit_Change_PKEY"
           ],
@@ -48942,7 +48974,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/sales-cockpit/components/MyClientsPanel.tsx",
-        "line": 402,
+        "line": 407,
         "alternatives": []
       }
     },
@@ -48963,28 +48995,32 @@
       "proposedPermission": "dashboard.dashboard.handle_create_offer.command_submit",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "covered_existing",
+      "dispositionReason": "Creating an offer from recommendations is hidden without offer.create and the shared final create hook rechecks the capability before the protected mutation.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "sales.ukraine.offer.create"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-4cac087fc3a5",
-          "distance": 97,
+          "candidateId": "EPC-ead29e1da43c",
+          "distance": 98,
           "file": "src/features/sales-cockpit/components/MyClientsPanel.tsx",
           "handler": "{handleCreateOffer}",
           "humanLabel": null,
-          "line": 483,
-          "permissionKeys": [],
+          "line": 489,
+          "permissionKeys": [
+            "sales.ukraine.offer.create"
+          ],
           "score": 17
         }
       ],
       "source": {
         "status": "resolved",
         "file": "src/features/sales-cockpit/components/MyClientsPanel.tsx",
-        "line": 386,
+        "line": 391,
         "alternatives": []
       }
     },
@@ -49005,28 +49041,32 @@
       "proposedPermission": "dashboard.dashboard.handle_exclude_product_product_index.button_click",
       "securityLevel": "low",
       "rawStatus": "No permission candidate found",
-      "disposition": "needs_human_review",
-      "dispositionReason": "insufficient_evidence_for_automatic_permission_or_exclusion",
+      "disposition": "covered_existing",
+      "dispositionReason": "Excluding a recommendation reuses the existing product-exclusion business capability and its protected feedback mutation.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "counterparties.clients.recommendations.exclude_product"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-275ee5ee69f2",
+          "candidateId": "EPC-5c2ae50d60d0",
           "distance": 4,
           "file": "src/features/sales-cockpit/components/MyClientsPanel.tsx",
           "handler": "{() => handleExcludeProduct(product, index)}",
           "humanLabel": "Не пропонувати цей товар клієнту",
-          "line": 564,
-          "permissionKeys": [],
+          "line": 572,
+          "permissionKeys": [
+            "counterparties.clients.recommendations.exclude_product"
+          ],
           "score": 32
         }
       ],
       "source": {
         "status": "resolved",
         "file": "src/features/sales-cockpit/components/MyClientsPanel.tsx",
-        "line": 568,
+        "line": 576,
         "alternatives": []
       }
     },
@@ -49047,28 +49087,32 @@
       "proposedPermission": "dashboard.dashboard.void_extend_validity_offer.button_click",
       "securityLevel": "low",
       "rawStatus": "No permission candidate found",
-      "disposition": "needs_human_review",
-      "dispositionReason": "insufficient_evidence_for_automatic_permission_or_exclusion",
+      "disposition": "covered_existing",
+      "dispositionReason": "The offer validity extension is independently hidden and its final handler rechecks extend_validity before the protected PATCH.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "sales.ukraine.offer.extend_validity"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-e42067cf0e79",
+          "candidateId": "EPC-aac925c3bd94",
           "distance": 4,
           "file": "src/features/sales-cockpit/components/MyOffersPanel.tsx",
           "handler": "{() => void extendValidity(offer)}",
           "humanLabel": "Продовжити на 2 дні",
-          "line": 245,
-          "permissionKeys": [],
+          "line": 249,
+          "permissionKeys": [
+            "sales.ukraine.offer.extend_validity"
+          ],
           "score": 19
         }
       ],
       "source": {
         "status": "resolved",
         "file": "src/features/sales-cockpit/components/MyOffersPanel.tsx",
-        "line": 249,
+        "line": 253,
         "alternatives": []
       }
     },
@@ -49097,12 +49141,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-3dcb5ca448ff",
+          "candidateId": "EPC-368c5064faaa",
           "distance": 3,
           "file": "src/features/sales-cockpit/components/MyOffersPanel.tsx",
           "handler": "{() => void copyLink(offer)}",
           "humanLabel": "Скопіювати посилання",
-          "line": 254,
+          "line": 258,
           "permissionKeys": [],
           "score": 13
         }
@@ -49110,7 +49154,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/sales-cockpit/components/MyOffersPanel.tsx",
-        "line": 257,
+        "line": 261,
         "alternatives": []
       }
     },
@@ -49139,12 +49183,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-5bfd144d7fc4",
+          "candidateId": "EPC-ea41d617cc2f",
           "distance": 166,
           "file": "src/features/sales-cockpit/components/MyOffersPanel.tsx",
           "handler": "{() => setReloadKey((key) => key + 1)}",
           "humanLabel": "Оновити",
-          "line": 313,
+          "line": 317,
           "permissionKeys": [],
           "score": 18
         }
@@ -49152,7 +49196,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/sales-cockpit/components/MyOffersPanel.tsx",
-        "line": 147,
+        "line": 151,
         "alternatives": []
       }
     },
@@ -49183,7 +49227,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/sales-cockpit/components/NewHeadTaskModal.tsx",
-        "line": 21,
+        "line": 23,
         "alternatives": []
       }
     },
@@ -49204,20 +49248,22 @@
       "proposedPermission": "dashboard.dashboard.handle_submit.command_submit",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "covered_existing",
+      "dispositionReason": "The final manager-task submit rechecks task.create and calls the administrative InternalMutationPolicy-protected create route.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "sales.head_dashboard.task.create"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-0c507d351afc",
+          "candidateId": "EPC-bf1d32e8733e",
           "distance": 110,
           "file": "src/features/sales-cockpit/components/NewHeadTaskModal.tsx",
           "handler": "{handleSubmit}",
           "humanLabel": "Призначити задачу",
-          "line": 214,
+          "line": 218,
           "permissionKeys": [],
           "score": 12
         }
@@ -49225,7 +49271,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/sales-cockpit/components/NewHeadTaskModal.tsx",
-        "line": 104,
+        "line": 108,
         "alternatives": []
       }
     },
@@ -49277,12 +49323,14 @@
       "proposedPermission": "dashboard.dashboard.if_task_trimmed_text_on_submit_task_trimmed_text.command_submit.2",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
-      "duplicateOf": null,
+      "disposition": "duplicate_occurrence",
+      "dispositionReason": "The note modal submit forwards to the single final add-note handler PE-01242.",
+      "duplicateOf": "PE-01242",
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "sales.cockpit.task.add_note"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [],
       "source": {
         "status": "resolved",
@@ -49339,12 +49387,14 @@
       "proposedPermission": "dashboard.dashboard.if_task_snooze_until_the_datetime_local_value_is_kyiv_wall_time_.command_submit",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
-      "duplicateOf": null,
+      "disposition": "duplicate_occurrence",
+      "dispositionReason": "The snooze modal submit forwards to the single final snooze handler PE-01243.",
+      "duplicateOf": "PE-01243",
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "sales.cockpit.task.snooze"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
           "candidateId": "EPC-f33b823164ee",
@@ -49381,12 +49431,12 @@
       "proposedPermission": "dashboard.dashboard.anchor.command_submit",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "stale_or_aggregated",
+      "dispositionReason": "The scanner location no longer identifies a distinct executable control after the cockpit action handlers were consolidated; no separate request or business boundary exists.",
       "duplicateOf": null,
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [],
       "source": {
         "status": "resolved",
@@ -49412,20 +49462,22 @@
       "proposedPermission": "dashboard.dashboard.on_take_in_progress_task.button_click",
       "securityLevel": "low",
       "rawStatus": "No permission candidate found",
-      "disposition": "needs_human_review",
-      "dispositionReason": "insufficient_evidence_for_automatic_permission_or_exclusion",
+      "disposition": "covered_existing",
+      "dispositionReason": "Taking a task into progress is independently rendered and the final status handler rechecks take_in_progress before the dynamically authorized mutation.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "sales.cockpit.task.take_in_progress"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-0da604d82a01",
+          "candidateId": "EPC-bf08e37e8a7f",
           "distance": 106,
           "file": "src/features/sales-cockpit/components/TaskCard.tsx",
           "handler": "{() => onTakeInProgress(task)}",
           "humanLabel": "Взяти в роботу",
-          "line": 155,
+          "line": 165,
           "permissionKeys": [],
           "score": 12
         }
@@ -49433,7 +49485,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/sales-cockpit/components/TaskCard.tsx",
-        "line": 49,
+        "line": 59,
         "alternatives": []
       }
     },
@@ -49454,20 +49506,22 @@
       "proposedPermission": "dashboard.dashboard.on_done_task.button_click",
       "securityLevel": "low",
       "rawStatus": "No permission candidate found",
-      "disposition": "needs_human_review",
-      "dispositionReason": "insufficient_evidence_for_automatic_permission_or_exclusion",
-      "duplicateOf": null,
+      "disposition": "duplicate_occurrence",
+      "dispositionReason": "The card button only opens the completion workflow finalized by PE-01244.",
+      "duplicateOf": "PE-01244",
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "sales.cockpit.task.complete"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-b16fb767963f",
-          "distance": 115,
+          "candidateId": "EPC-3fe121232bce",
+          "distance": 116,
           "file": "src/features/sales-cockpit/components/TaskCard.tsx",
           "handler": "{() => onDone(task)}",
           "humanLabel": "Виконано",
-          "line": 165,
+          "line": 176,
           "permissionKeys": [],
           "score": 8
         }
@@ -49475,7 +49529,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/sales-cockpit/components/TaskCard.tsx",
-        "line": 50,
+        "line": 60,
         "alternatives": []
       }
     },
@@ -49496,20 +49550,22 @@
       "proposedPermission": "dashboard.dashboard.on_snooze_task.button_click",
       "securityLevel": "low",
       "rawStatus": "No permission candidate found",
-      "disposition": "needs_human_review",
-      "dispositionReason": "insufficient_evidence_for_automatic_permission_or_exclusion",
-      "duplicateOf": null,
+      "disposition": "duplicate_occurrence",
+      "dispositionReason": "The card button only opens the snooze workflow finalized by PE-01243.",
+      "duplicateOf": "PE-01243",
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "sales.cockpit.task.snooze"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-48204a32e190",
-          "distance": 117,
+          "candidateId": "EPC-e11f7bbbf62c",
+          "distance": 120,
           "file": "src/features/sales-cockpit/components/TaskCard.tsx",
           "handler": "{() => onSnooze(task)}",
           "humanLabel": "Відкласти",
-          "line": 168,
+          "line": 181,
           "permissionKeys": [],
           "score": 10
         }
@@ -49517,7 +49573,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/sales-cockpit/components/TaskCard.tsx",
-        "line": 51,
+        "line": 61,
         "alternatives": []
       }
     },
@@ -49538,20 +49594,22 @@
       "proposedPermission": "dashboard.dashboard.on_add_note_task.command_submit.2",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
-      "duplicateOf": null,
+      "disposition": "duplicate_occurrence",
+      "dispositionReason": "The card button and note-count link only open the note workflow finalized by PE-01242.",
+      "duplicateOf": "PE-01242",
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "sales.cockpit.task.add_note"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-a5a70980424d",
+          "candidateId": "EPC-cae132a2ff38",
           "distance": 95,
           "file": "src/features/sales-cockpit/components/TaskCard.tsx",
           "handler": "{() => onAddNote(task)}",
           "humanLabel": "Нотатки",
-          "line": 148,
+          "line": 158,
           "permissionKeys": [],
           "score": 11
         }
@@ -49559,7 +49617,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/sales-cockpit/components/TaskCard.tsx",
-        "line": 53,
+        "line": 63,
         "alternatives": []
       }
     },
@@ -49580,20 +49638,22 @@
       "proposedPermission": "dashboard.dashboard.on_dismiss_task.button_click",
       "securityLevel": "low",
       "rawStatus": "No permission candidate found",
-      "disposition": "needs_human_review",
-      "dispositionReason": "insufficient_evidence_for_automatic_permission_or_exclusion",
-      "duplicateOf": null,
+      "disposition": "duplicate_occurrence",
+      "dispositionReason": "The card button only opens the dismiss workflow finalized by PE-01245.",
+      "duplicateOf": "PE-01245",
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "sales.cockpit.task.dismiss"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-5ec481d1995c",
-          "distance": 122,
+          "candidateId": "EPC-aed9e51d0af1",
+          "distance": 129,
           "file": "src/features/sales-cockpit/components/TaskCard.tsx",
           "handler": "{() => onDismiss(task)}",
           "humanLabel": "Не актуально",
-          "line": 174,
+          "line": 191,
           "permissionKeys": [],
           "score": 11
         }
@@ -49601,7 +49661,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/sales-cockpit/components/TaskCard.tsx",
-        "line": 52,
+        "line": 62,
         "alternatives": []
       }
     },
@@ -49716,7 +49776,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/sales-cockpit/pages/SalesCockpitPage.tsx",
-        "line": 66,
+        "line": 69,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -49749,7 +49809,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/sales-cockpit/pages/HeadDashboardPage.tsx",
-        "line": 89,
+        "line": 91,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -49780,12 +49840,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-75a87e4adf96",
+          "candidateId": "EPC-362f91fa7b91",
           "distance": 6,
           "file": "src/features/sales-cockpit/pages/HeadDashboardPage.tsx",
           "handler": "{() => navigate('/sales/geography')}",
           "humanLabel": "Карта продажів і боргу",
-          "line": 164,
+          "line": 174,
           "permissionKeys": [],
           "score": 22
         }
@@ -49793,7 +49853,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/sales-cockpit/pages/HeadDashboardPage.tsx",
-        "line": 170,
+        "line": 180,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -49824,12 +49884,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-172fba0fd9df",
+          "candidateId": "EPC-c644adb7d486",
           "distance": 75,
           "file": "src/features/sales-cockpit/pages/HeadDashboardPage.tsx",
           "handler": "{triggerReload}",
           "humanLabel": "Оновити",
-          "line": 175,
+          "line": 185,
           "permissionKeys": [],
           "score": 13
         }
@@ -49837,7 +49897,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/sales-cockpit/pages/HeadDashboardPage.tsx",
-        "line": 100,
+        "line": 110,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -49860,17 +49920,17 @@
       "proposedPermission": "dashboard.dashboard.set_selected_manager_id.menu_item_select",
       "securityLevel": "low",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "technical_ui",
+      "dispositionReason": "Selecting a manager changes the local head-dashboard filter over already page-authorized data and performs no mutation.",
       "duplicateOf": null,
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [],
       "source": {
         "status": "resolved",
         "file": "src/features/sales-cockpit/pages/HeadDashboardPage.tsx",
-        "line": 94,
+        "line": 104,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -49901,12 +49961,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-f10e590f3649",
+          "candidateId": "EPC-5e784297a754",
           "distance": 0,
           "file": "src/features/sales-cockpit/pages/HeadDashboardPage.tsx",
           "handler": "{() => onSelect(null)}",
           "humanLabel": "Усі",
-          "line": 332,
+          "line": 342,
           "permissionKeys": [],
           "score": 10
         }
@@ -49914,7 +49974,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/sales-cockpit/pages/HeadDashboardPage.tsx",
-        "line": 332,
+        "line": 342,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -49937,20 +49997,20 @@
       "proposedPermission": "dashboard.dashboard.on_select_selected_null_row_manager_id.button_click",
       "securityLevel": "medium",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "technical_ui",
+      "dispositionReason": "Selecting a team row changes the active manager filter only; it neither exposes a new business resource nor mutates server state.",
       "duplicateOf": null,
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-836d8190be6c",
+          "candidateId": "EPC-69d3994c07d9",
           "distance": 4,
           "file": "src/features/sales-cockpit/pages/HeadDashboardPage.tsx",
           "handler": "{() => onSelect(selected ? null : row.manager_id)}",
           "humanLabel": null,
-          "line": 345,
+          "line": 355,
           "permissionKeys": [],
           "score": 28
         }
@@ -49958,7 +50018,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/sales-cockpit/pages/HeadDashboardPage.tsx",
-        "line": 349,
+        "line": 359,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -49981,20 +50041,20 @@
       "proposedPermission": "dashboard.dashboard.set_view_tab_value.modal_open",
       "securityLevel": "medium",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "technical_ui",
+      "dispositionReason": "Switching between cockpit subtabs is local presentation state under one page permission and performs no request by itself.",
       "duplicateOf": null,
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-2330f1379187",
+          "candidateId": "EPC-fad337ed416c",
           "distance": 6,
           "file": "src/features/sales-cockpit/pages/SalesCockpitPage.tsx",
           "handler": "{() => setView(tab.value)}",
           "humanLabel": null,
-          "line": 335,
+          "line": 377,
           "permissionKeys": [],
           "score": 15
         }
@@ -50002,7 +50062,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/sales-cockpit/pages/SalesCockpitPage.tsx",
-        "line": 341,
+        "line": 383,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -50025,28 +50085,32 @@
       "proposedPermission": "dashboard.dashboard.handle_note_submit.form_submit",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "covered_existing",
+      "dispositionReason": "The final note handler rechecks task.add_note and calls the InternalMutationPolicy-protected note route.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "sales.cockpit.task.add_note"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-01c83bde1859",
-          "distance": 167,
+          "candidateId": "EPC-326d4add1648",
+          "distance": 186,
           "file": "src/features/sales-cockpit/pages/SalesCockpitPage.tsx",
           "handler": "{handleNoteSubmit}",
           "humanLabel": null,
-          "line": 425,
-          "permissionKeys": [],
+          "line": 478,
+          "permissionKeys": [
+            "sales.cockpit.task.add_note"
+          ],
           "score": 16
         }
       ],
       "source": {
         "status": "resolved",
         "file": "src/features/sales-cockpit/pages/SalesCockpitPage.tsx",
-        "line": 258,
+        "line": 292,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -50069,28 +50133,32 @@
       "proposedPermission": "dashboard.dashboard.handle_snooze_submit.form_submit",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "covered_existing",
+      "dispositionReason": "The final snooze handler rechecks task.snooze before sending the dynamically authorized status transition.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "sales.cockpit.task.snooze"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-758aed7a3dbc",
-          "distance": 195,
+          "candidateId": "EPC-e0272668e9aa",
+          "distance": 218,
           "file": "src/features/sales-cockpit/pages/SalesCockpitPage.tsx",
           "handler": "{handleSnoozeSubmit}",
           "humanLabel": null,
-          "line": 432,
-          "permissionKeys": [],
+          "line": 485,
+          "permissionKeys": [
+            "sales.cockpit.task.snooze"
+          ],
           "score": 18
         }
       ],
       "source": {
         "status": "resolved",
         "file": "src/features/sales-cockpit/pages/SalesCockpitPage.tsx",
-        "line": 237,
+        "line": 267,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -50113,28 +50181,32 @@
       "proposedPermission": "dashboard.dashboard.handle_done_submit.form_submit",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "covered_existing",
+      "dispositionReason": "The final completion handler rechecks task.complete before sending the dynamically authorized done transition and outcome.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "sales.cockpit.task.complete"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-d94d7d0aa621",
-          "distance": 268,
+          "candidateId": "EPC-138d8971ce5a",
+          "distance": 303,
           "file": "src/features/sales-cockpit/pages/SalesCockpitPage.tsx",
           "handler": "{handleDoneSubmit}",
           "humanLabel": null,
-          "line": 439,
-          "permissionKeys": [],
+          "line": 492,
+          "permissionKeys": [
+            "sales.cockpit.task.complete"
+          ],
           "score": 16
         }
       ],
       "source": {
         "status": "resolved",
         "file": "src/features/sales-cockpit/pages/SalesCockpitPage.tsx",
-        "line": 171,
+        "line": 189,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -50157,28 +50229,32 @@
       "proposedPermission": "dashboard.dashboard.handle_dismiss_submit.form_submit",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "covered_existing",
+      "dispositionReason": "The final dismissal handler rechecks task.dismiss before sending the dynamically authorized dismissal transition.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "sales.cockpit.task.dismiss"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-4f6882af5aa4",
-          "distance": 250,
+          "candidateId": "EPC-982eb2dfbfd1",
+          "distance": 281,
           "file": "src/features/sales-cockpit/pages/SalesCockpitPage.tsx",
           "handler": "{handleDismissSubmit}",
           "humanLabel": null,
-          "line": 446,
-          "permissionKeys": [],
+          "line": 499,
+          "permissionKeys": [
+            "sales.cockpit.task.dismiss"
+          ],
           "score": 19
         }
       ],
       "source": {
         "status": "resolved",
         "file": "src/features/sales-cockpit/pages/SalesCockpitPage.tsx",
-        "line": 196,
+        "line": 218,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -80150,37 +80226,6 @@
   ],
   "reviewCandidateIds": [
     "PE-01139",
-    "PE-01195",
-    "PE-01197",
-    "PE-01199",
-    "PE-01200",
-    "PE-01201",
-    "PE-01202",
-    "PE-01204",
-    "PE-01205",
-    "PE-01206",
-    "PE-01207",
-    "PE-01209",
-    "PE-01211",
-    "PE-01215",
-    "PE-01216",
-    "PE-01217",
-    "PE-01221",
-    "PE-01223",
-    "PE-01225",
-    "PE-01226",
-    "PE-01227",
-    "PE-01228",
-    "PE-01229",
-    "PE-01230",
-    "PE-01231",
-    "PE-01238",
-    "PE-01240",
-    "PE-01241",
-    "PE-01242",
-    "PE-01243",
-    "PE-01244",
-    "PE-01245",
     "PE-01269",
     "PE-01271",
     "PE-01274",

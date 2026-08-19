@@ -1,10 +1,12 @@
 import { Anchor, Badge, Button, Group, Stack, Text, Textarea } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import { useState } from 'react'
+import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { ProductCardModal } from '../../products/components/ProductCardModal'
+import { usePermissions } from '../../auth/usePermissions'
 import { createWizardOperationId } from '../../sales-ukraine/components/new-sale-wizard/wizardMutationOperation'
 import { processOffer } from '../api/salesOffersApi'
 import type { ClientShoppingCart, OfferOrderItem } from '../types'
@@ -25,6 +27,8 @@ export function OfferReasonDrawer({
   opened: boolean
 }) {
   const { t } = useI18n()
+  const { can } = usePermissions()
+  const isOpen = can(PermissionKeys.SalesUkraineOffers.Offer.Edit) && opened
   const [isSaving, setSaving] = useState(false)
 
   function close() {
@@ -36,7 +40,7 @@ export function OfferReasonDrawer({
     <AppDrawer
       className="offer-reason-drawer"
       footer={
-        opened && offer ? (
+        isOpen && offer ? (
           <Group gap="sm" justify="flex-end">
             <Button color="gray" disabled={isSaving} type="button" variant="subtle" onClick={close}>
               {t('Скасувати')}
@@ -52,12 +56,12 @@ export function OfferReasonDrawer({
           </Group>
         ) : undefined
       }
-      opened={opened}
+      opened={isOpen}
       size="lg"
       title={offer ? `${t('Оферта')} ${offer.Number ?? ''}` : t('Причини')}
       onClose={close}
     >
-      {opened && offer && (
+      {isOpen && offer && (
         <OfferReasonForm
           key={offer.NetUid}
           isSaving={isSaving}
@@ -82,6 +86,7 @@ function OfferReasonForm({
   onSavingChange: (value: boolean) => void
 }) {
   const { t } = useI18n()
+  const { can } = usePermissions()
   const notProcessedItems = (offer.OrderItems ?? []).filter((item) => getItemNotProcessed(item) > 0)
   const isSingleItem = (offer.OrderItems ?? []).length === 1
   const [offerComment, setOfferComment] = useState(offer.Comment ?? '')
@@ -90,6 +95,10 @@ function OfferReasonForm({
   const [operationId] = useState(createWizardOperationId)
 
   async function save() {
+    if (!can(PermissionKeys.SalesUkraineOffers.Offer.Edit)) {
+      return
+    }
+
     onSavingChange(true)
 
     const payload: ClientShoppingCart = {

@@ -3,7 +3,10 @@ import { CircleAlert } from 'lucide-react'
 import { notifications } from '@mantine/notifications'
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
+import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { useI18n } from '../../../shared/i18n/useI18n'
+import { PagePermissionBoundary } from '../../auth/components/PagePermissionBoundary'
+import { usePermissions } from '../../auth/usePermissions'
 import {
   addTaskNote,
   getCockpitInbox,
@@ -64,7 +67,22 @@ function getTaskTypeRank(taskType?: CockpitTaskType): number {
 }
 
 export function SalesCockpitPage() {
+  return (
+    <PagePermissionBoundary permissionKey={PermissionKeys.SystemPages.SalesCockpit.View}>
+      <SalesCockpitPageContent />
+    </PagePermissionBoundary>
+  )
+}
+
+function SalesCockpitPageContent() {
   const { t } = useI18n()
+  const { can } = usePermissions()
+  const canTakeInProgress = can(PermissionKeys.SalesCockpit.Task.TakeInProgress)
+  const canComplete = can(PermissionKeys.SalesCockpit.Task.Complete)
+  const canSnooze = can(PermissionKeys.SalesCockpit.Task.Snooze)
+  const canDismiss = can(PermissionKeys.SalesCockpit.Task.Dismiss)
+  const canAddNote = can(PermissionKeys.SalesCockpit.Task.AddNote)
+  const canGenerate = can(PermissionKeys.SalesCockpit.Task.Generate)
   const [tasks, setTasks] = useValueState<CockpitTask[]>([])
   const [target, setTarget] = useValueState<CockpitTarget | null>(null)
   const [taskTypeFilter, setTaskTypeFilter] = useValueState<CockpitTaskType | null>(null)
@@ -170,6 +188,10 @@ export function SalesCockpitPage() {
 
   const handleDoneSubmit = useCallback(
     async (task: CockpitTask, outcome: { sold: boolean; amount: number | null }) => {
+      if (!can(PermissionKeys.SalesCockpit.Task.Complete)) {
+        return
+      }
+
       setPendingTaskKey(task.task_key)
 
       try {
@@ -190,11 +212,15 @@ export function SalesCockpitPage() {
         setPendingTaskKey(null)
       }
     },
-    [scheduleReload, t],
+    [can, scheduleReload, t],
   )
 
   const handleDismissSubmit = useCallback(
     async (task: CockpitTask, reason: string | null) => {
+      if (!can(PermissionKeys.SalesCockpit.Task.Dismiss)) {
+        return
+      }
+
       setPendingTaskKey(task.task_key)
 
       try {
@@ -211,11 +237,15 @@ export function SalesCockpitPage() {
         setPendingTaskKey(null)
       }
     },
-    [scheduleReload, t],
+    [can, scheduleReload, t],
   )
 
   const handleTakeInProgress = useCallback(
     async (task: CockpitTask) => {
+      if (!can(PermissionKeys.SalesCockpit.Task.TakeInProgress)) {
+        return
+      }
+
       setPendingTaskKey(task.task_key)
 
       try {
@@ -231,11 +261,15 @@ export function SalesCockpitPage() {
         setPendingTaskKey(null)
       }
     },
-    [scheduleReload, t],
+    [can, scheduleReload, t],
   )
 
   const handleSnoozeSubmit = useCallback(
     async (task: CockpitTask, snoozeUntil: string) => {
+      if (!can(PermissionKeys.SalesCockpit.Task.Snooze)) {
+        return
+      }
+
       setPendingTaskKey(task.task_key)
 
       try {
@@ -252,11 +286,15 @@ export function SalesCockpitPage() {
         setPendingTaskKey(null)
       }
     },
-    [scheduleReload, t],
+    [can, scheduleReload, t],
   )
 
   const handleNoteSubmit = useCallback(
     async (task: CockpitTask, text: string) => {
+      if (!can(PermissionKeys.SalesCockpit.Task.AddNote)) {
+        return
+      }
+
       setPendingTaskKey(task.task_key)
 
       try {
@@ -273,10 +311,14 @@ export function SalesCockpitPage() {
         setPendingTaskKey(null)
       }
     },
-    [scheduleReload, t],
+    [can, scheduleReload, t],
   )
 
   const handleRegenerate = useCallback(async () => {
+    if (!can(PermissionKeys.SalesCockpit.Task.Generate)) {
+      return
+    }
+
     setRegenerating(true)
 
     try {
@@ -291,7 +333,7 @@ export function SalesCockpitPage() {
     } finally {
       setRegenerating(false)
     }
-  }, [asOfDate, scheduleReload, t])
+  }, [asOfDate, can, scheduleReload, t])
 
   const handleReload = triggerReload
 
@@ -356,6 +398,7 @@ export function SalesCockpitPage() {
       ) : (
         <>
           <CockpitToolbar
+            canRegenerate={canGenerate}
             asOfDate={asOfDate}
             dayFilter={dayFilter}
             hasActiveFilters={hasActiveFilters}
@@ -394,6 +437,11 @@ export function SalesCockpitPage() {
 
             {manualTasks.length > 0 && (
               <CockpitTaskList
+                canAddNote={canAddNote}
+                canComplete={canComplete}
+                canDismiss={canDismiss}
+                canSnooze={canSnooze}
+                canTakeInProgress={canTakeInProgress}
                 isLoading={false}
                 pendingTaskKey={pendingTaskKey}
                 tasks={manualTasks}
@@ -407,6 +455,11 @@ export function SalesCockpitPage() {
             )}
 
             <CockpitTaskList
+              canAddNote={canAddNote}
+              canComplete={canComplete}
+              canDismiss={canDismiss}
+              canSnooze={canSnooze}
+              canTakeInProgress={canTakeInProgress}
               isLoading={isLoading}
               pendingTaskKey={pendingTaskKey}
               tasks={aiTasks}
@@ -424,28 +477,28 @@ export function SalesCockpitPage() {
 
       <NoteModal
         saving={Boolean(noteTask && pendingTaskKey === noteTask.task_key)}
-        task={noteTask}
+        task={canAddNote ? noteTask : null}
         onClose={() => setNoteTask(null)}
         onSubmit={handleNoteSubmit}
       />
 
       <SnoozeModal
         saving={Boolean(snoozeTask && pendingTaskKey === snoozeTask.task_key)}
-        task={snoozeTask}
+        task={canSnooze ? snoozeTask : null}
         onClose={() => setSnoozeTask(null)}
         onSubmit={handleSnoozeSubmit}
       />
 
       <DoneModal
         saving={Boolean(doneTask && pendingTaskKey === doneTask.task_key)}
-        task={doneTask}
+        task={canComplete ? doneTask : null}
         onClose={() => setDoneTask(null)}
         onSubmit={handleDoneSubmit}
       />
 
       <DismissModal
         saving={Boolean(dismissTask && pendingTaskKey === dismissTask.task_key)}
-        task={dismissTask}
+        task={canDismiss ? dismissTask : null}
         onClose={() => setDismissTask(null)}
         onSubmit={handleDismissSubmit}
       />

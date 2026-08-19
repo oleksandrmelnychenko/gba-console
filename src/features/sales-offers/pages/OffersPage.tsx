@@ -3,10 +3,13 @@ import { notifications } from '@mantine/notifications'
 import { CircleAlert, Plus, RefreshCw, RotateCcw } from 'lucide-react'
 import { useEffect, useRef } from 'react'
 import { formatLocalDate } from '../../../shared/date/dateTime'
+import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { AppModal } from '../../../shared/ui/AppModal'
+import { PagePermissionBoundary } from '../../auth/components/PagePermissionBoundary'
+import { usePermissions } from '../../auth/usePermissions'
 import { createWizardOperationId } from '../../sales-ukraine/components/new-sale-wizard/wizardMutationOperation'
 import { getOffers, getPublicOfferLink, processOffer, restartOfferValidity } from '../api/salesOffersApi'
 import { NewOfferModal } from '../components/NewOfferModal'
@@ -40,7 +43,20 @@ function toFilters(draft: FilterDraft): OffersFilters {
 }
 
 export function OffersPage() {
+  return (
+    <PagePermissionBoundary permissionKey={PermissionKeys.SystemPages.SalesUkraineOffers.View}>
+      <OffersPageContent />
+    </PagePermissionBoundary>
+  )
+}
+
+function OffersPageContent() {
   const { t } = useI18n()
+  const { can } = usePermissions()
+  const canCreate = can(PermissionKeys.SalesUkraineOffers.Offer.Create)
+  const canEdit = can(PermissionKeys.SalesUkraineOffers.Offer.Edit)
+  const canDelete = can(PermissionKeys.SalesUkraineOffers.Offer.Delete)
+  const canExtendValidity = can(PermissionKeys.SalesUkraineOffers.Offer.ExtendValidity)
   const [draft, setDraft] = useValueState<FilterDraft>(buildInitialFilters)
   const [applied, setApplied] = useValueState<FilterDraft>(buildInitialFilters)
   const [offers, setOffers] = useValueState<ClientShoppingCart[]>([])
@@ -119,11 +135,19 @@ export function OffersPage() {
   }
 
   function openReason(offer: ClientShoppingCart) {
+    if (!can(PermissionKeys.SalesUkraineOffers.Offer.Edit)) {
+      return
+    }
+
     setReasonOffer(offer)
     setReasonOpen(true)
   }
 
   function openItemReason(offer: ClientShoppingCart, item: OfferOrderItem) {
+    if (!can(PermissionKeys.SalesUkraineOffers.Offer.Edit)) {
+      return
+    }
+
     setReasonOffer({ Id: offer.Id, NetUid: offer.NetUid, Number: offer.Number, OrderItems: [item] })
     setReasonOpen(true)
   }
@@ -142,7 +166,7 @@ export function OffersPage() {
   }
 
   async function restart(offer: ClientShoppingCart) {
-    if (!offer.NetUid) {
+    if (!can(PermissionKeys.SalesUkraineOffers.Offer.ExtendValidity) || !offer.NetUid) {
       return
     }
 
@@ -162,11 +186,19 @@ export function OffersPage() {
   }
 
   function requestDelete(offer: ClientShoppingCart) {
+    if (!can(PermissionKeys.SalesUkraineOffers.Offer.Delete)) {
+      return
+    }
+
     setConfirmState({
       confirmLabel: t('Видалити'),
       message: t('Ви впевнені, що бажаєте видалити?'),
       title: t('Видалення оферти'),
       onConfirm: async () => {
+        if (!can(PermissionKeys.SalesUkraineOffers.Offer.Delete)) {
+          return
+        }
+
         const operationKey = `delete:${offer.NetUid ?? offer.Id ?? 'unknown'}`
 
         await processOffer(
@@ -181,7 +213,7 @@ export function OffersPage() {
   }
 
   async function runConfirm() {
-    if (!confirmState) {
+    if (!can(PermissionKeys.SalesUkraineOffers.Offer.Delete) || !confirmState) {
       return
     }
 
@@ -236,11 +268,13 @@ export function OffersPage() {
               </ActionIcon>
             </Tooltip>
           </div>
-          <div className="offers-create-actions">
-            <Button color={CREATE_ACTION_COLOR} size="sm" leftSection={<Plus size={16} />} onClick={() => setNewOpen(true)}>
-              {t('Створити оферту')}
-            </Button>
-          </div>
+          {canCreate && (
+            <div className="offers-create-actions">
+              <Button color={CREATE_ACTION_COLOR} size="sm" leftSection={<Plus size={16} />} onClick={() => setNewOpen(true)}>
+                {t('Створити оферту')}
+              </Button>
+            </div>
+          )}
         </div>
 
         <Stack className="offers-page__content" gap="md" p="md">
@@ -266,6 +300,9 @@ export function OffersPage() {
             <Stack gap="sm">
               {offers.map((offer) => (
                 <OfferCard
+                  canDelete={canDelete}
+                  canEdit={canEdit}
+                  canExtendValidity={canExtendValidity}
                   key={offer.NetUid}
                   expanded={expandedNetId === offer.NetUid}
                   offer={offer}
@@ -284,7 +321,7 @@ export function OffersPage() {
 
       <OfferReasonDrawer
         offer={reasonOffer}
-        opened={isReasonOpen}
+        opened={canEdit && isReasonOpen}
         onClose={() => setReasonOpen(false)}
         onSaved={() => {
           setReasonOpen(false)
@@ -293,7 +330,7 @@ export function OffersPage() {
       />
 
       <NewOfferModal
-        opened={isNewOpen}
+        opened={canCreate && isNewOpen}
         onClose={() => setNewOpen(false)}
         onCreated={() => {
           setNewOpen(false)
@@ -304,7 +341,7 @@ export function OffersPage() {
       <AppModal
         centered
         className="offers-confirm-modal"
-        opened={Boolean(confirmState)}
+        opened={canDelete && Boolean(confirmState)}
         size="sm"
         title={<span className="offers-confirm-modal__title">{confirmState?.title ?? ''}</span>}
         onClose={() => (isConfirming ? undefined : setConfirmState(null))}

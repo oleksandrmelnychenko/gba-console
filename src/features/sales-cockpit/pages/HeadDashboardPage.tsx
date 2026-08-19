@@ -16,10 +16,12 @@ import { useCallback, useEffect, useMemo, useReducer, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ApiError } from '../../../shared/api/apiClient'
 import { AiFeatureBadge } from '../../../shared/ai/AiFeatureBadge'
+import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { AiHistoryLineageNote } from '../../../shared/ai/AiHistoryLineageNote'
 import { hasAiHistoryLineage } from '../../../shared/ai/aiHistoryLineage'
 import { useI18n } from '../../../shared/i18n/useI18n'
+import { PagePermissionBoundary } from '../../auth/components/PagePermissionBoundary'
 import { getEscalated, getHeadTeam } from '../api/salesCockpitApi'
 import { HeadAiFleetStatus } from '../components/HeadAiFleetStatus'
 import { HeadDashboardChartsPanel } from '../components/HeadDashboardChartsPanel'
@@ -87,6 +89,14 @@ const EMPTY_ESCALATED: EscalatedResponse = {
 }
 
 export function HeadDashboardPage() {
+  return (
+    <PagePermissionBoundary permissionKey={PermissionKeys.SystemPages.SalesHeadDashboard.View}>
+      <HeadDashboardPageContent />
+    </PagePermissionBoundary>
+  )
+}
+
+function HeadDashboardPageContent() {
   const { t } = useI18n()
   const navigate = useNavigate()
   const [team, setTeam] = useValueState<HeadTeam>(EMPTY_TEAM)

@@ -13,6 +13,9 @@ const EXPECTED_NEW_PAGE_PERMISSIONS = {
     PermissionKeys.SystemPages.ExpenseArticles.View,
   '/basket-supply-ukraine-order': PermissionKeys.SystemPages.SupplyCart.View,
   '/sales': PermissionKeys.SystemPages.SupplySales.View,
+  '/sales/cockpit': PermissionKeys.SystemPages.SalesCockpit.View,
+  '/sales/cockpit/head': PermissionKeys.SystemPages.SalesHeadDashboard.View,
+  '/sales/ukraine/offers': PermissionKeys.SystemPages.SalesUkraineOffers.View,
   '/service/organisations':
     PermissionKeys.SystemPages.ServiceOrganisations.View,
   '/sad/all': PermissionKeys.SystemPages.Sad.View,

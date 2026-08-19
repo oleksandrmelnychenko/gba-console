@@ -9,6 +9,15 @@ export const PermissionKeys = {
     SupplyDashboard: {
       View: 'orders.supply_dashboard.page.view',
     },
+    SalesCockpit: {
+      View: 'sales.cockpit.page.view',
+    },
+    SalesHeadDashboard: {
+      View: 'sales.head_dashboard.page.view',
+    },
+    SalesUkraineOffers: {
+      View: 'sales.ukraine_offers.page.view',
+    },
     Dashboard: {
       View: 'dashboard.overview.page.view',
     },
@@ -96,6 +105,32 @@ export const PermissionKeys = {
     },
     ProductTerms: {
       Edit: 'orders.purchase_cockpit.product_terms.edit',
+    },
+  },
+  SalesCockpit: {
+    Task: {
+      TakeInProgress: 'sales.cockpit.task.take_in_progress',
+      Complete: 'sales.cockpit.task.complete',
+      Snooze: 'sales.cockpit.task.snooze',
+      Dismiss: 'sales.cockpit.task.dismiss',
+      AddNote: 'sales.cockpit.task.add_note',
+      Generate: 'sales.cockpit.task.generate',
+    },
+  },
+  SalesHeadDashboard: {
+    Task: {
+      Create: 'sales.head_dashboard.task.create',
+      AddNote: 'sales.head_dashboard.task.add_note',
+      Dismiss: 'sales.head_dashboard.task.dismiss',
+      Generate: 'sales.head_dashboard.task.generate',
+    },
+  },
+  SalesUkraineOffers: {
+    Offer: {
+      Create: 'sales.ukraine.offer.create',
+      Edit: 'sales.ukraine.offer.edit',
+      Delete: 'sales.ukraine.offer.delete',
+      ExtendValidity: 'sales.ukraine.offer.extend_validity',
     },
   },
   SupplySales: {
@@ -1095,6 +1130,9 @@ export type SystemPagePermissionKey =
   | Values<typeof PermissionKeys.SystemPages.BudgetCart>
   | Values<typeof PermissionKeys.SystemPages.PurchaseCockpit>
   | Values<typeof PermissionKeys.SystemPages.SupplyDashboard>
+  | Values<typeof PermissionKeys.SystemPages.SalesCockpit>
+  | Values<typeof PermissionKeys.SystemPages.SalesHeadDashboard>
+  | Values<typeof PermissionKeys.SystemPages.SalesUkraineOffers>
   | Values<typeof PermissionKeys.SystemPages.Dashboard>
   | Values<typeof PermissionKeys.SystemPages.Users>
   | Values<typeof PermissionKeys.SystemPages.Roles>
@@ -1127,6 +1165,15 @@ export type PurchaseCockpitPermissionKey =
   | Values<typeof PermissionKeys.PurchaseCockpit.Feedback>
   | Values<typeof PermissionKeys.PurchaseCockpit.ProducerProfile>
   | Values<typeof PermissionKeys.PurchaseCockpit.ProductTerms>
+
+export type SalesCockpitPermissionKey =
+  | Values<typeof PermissionKeys.SalesCockpit.Task>
+
+export type SalesHeadDashboardPermissionKey =
+  | Values<typeof PermissionKeys.SalesHeadDashboard.Task>
+
+export type SalesUkraineOffersPermissionKey =
+  | Values<typeof PermissionKeys.SalesUkraineOffers.Offer>
 
 export type SupplySalesPermissionKey =
   Values<typeof PermissionKeys.SupplySales.Sale>
@@ -1414,6 +1461,9 @@ export type PermissionKey =
   | SystemPagePermissionKey
   | SupplyCartPermissionKey
   | PurchaseCockpitPermissionKey
+  | SalesCockpitPermissionKey
+  | SalesHeadDashboardPermissionKey
+  | SalesUkraineOffersPermissionKey
   | SupplySalesPermissionKey
   | UsersPermissionKey
   | RolesPermissionKey
@@ -2327,6 +2377,9 @@ const eventPermissionKeys = new Set<string>([
   ...Object.values(PermissionKeys.SystemPages.BudgetCart),
   ...Object.values(PermissionKeys.SystemPages.PurchaseCockpit),
   ...Object.values(PermissionKeys.SystemPages.SupplyDashboard),
+  ...Object.values(PermissionKeys.SystemPages.SalesCockpit),
+  ...Object.values(PermissionKeys.SystemPages.SalesHeadDashboard),
+  ...Object.values(PermissionKeys.SystemPages.SalesUkraineOffers),
   ...Object.values(PermissionKeys.SystemPages.Dashboard),
   ...Object.values(PermissionKeys.SystemPages.Users),
   ...Object.values(PermissionKeys.SystemPages.Roles),
@@ -2355,6 +2408,9 @@ const eventPermissionKeys = new Set<string>([
   ...Object.values(PermissionKeys.PurchaseCockpit.Feedback),
   ...Object.values(PermissionKeys.PurchaseCockpit.ProducerProfile),
   ...Object.values(PermissionKeys.PurchaseCockpit.ProductTerms),
+  ...Object.values(PermissionKeys.SalesCockpit.Task),
+  ...Object.values(PermissionKeys.SalesHeadDashboard.Task),
+  ...Object.values(PermissionKeys.SalesUkraineOffers.Offer),
   ...Object.values(PermissionKeys.SupplySales.Sale),
   ...Object.values(PermissionKeys.Users.User),
   ...Object.values(PermissionKeys.Roles.Role),

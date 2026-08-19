@@ -311,8 +311,16 @@ const migratedConsoleRoutes: ConsoleRoute[] = [
     path: '/warehouse/ukraine/orders/:id/placements',
     element: lazyRoute(<WarehouseUkraineOrderPlacementsPage />),
   },
-  { path: '/sales/cockpit', element: lazyRoute(<SalesCockpitPage />) },
-  { path: '/sales/cockpit/head', element: lazyRoute(<HeadDashboardPage />) },
+  {
+    path: '/sales/cockpit',
+    element: lazyRoute(<SalesCockpitPage />),
+    permissionKey: PermissionKeys.SystemPages.SalesCockpit.View,
+  },
+  {
+    path: '/sales/cockpit/head',
+    element: lazyRoute(<HeadDashboardPage />),
+    permissionKey: PermissionKeys.SystemPages.SalesHeadDashboard.View,
+  },
   { path: '/sales/geography', element: lazyRoute(<SalesGeographyPage />) },
 ]
 
@@ -862,6 +870,7 @@ const plannedConsoleRoutes: ConsoleRoute[] = [
     element: (
       <SalesDashboardShell>{lazyRoute(<OffersPage />)}</SalesDashboardShell>
     ),
+    permissionKey: PermissionKeys.SystemPages.SalesUkraineOffers.View,
   },
   {
     path: '/sales/ukraine/prediction',

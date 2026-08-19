@@ -2,11 +2,13 @@ import { ActionIcon, Anchor, Button, Group, Loader, NumberInput, Select, Stack, 
 import { notifications } from '@mantine/notifications'
 import { Copy, Search } from 'lucide-react'
 import { useEffect, useState } from 'react'
+import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppModal } from '../../../shared/ui/AppModal'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { TableRowAction } from '../../../shared/ui/table-row-action'
 import { ProductCardModal } from '../../products/components/ProductCardModal'
+import { usePermissions } from '../../auth/usePermissions'
 import { usePersistentCreateMutation } from '../../sales-ukraine/persistentCreateMutation'
 import {
   createOffer,
@@ -37,6 +39,8 @@ export function NewOfferModal({
   opened: boolean
 }) {
   const { t } = useI18n()
+  const { can } = usePermissions()
+  const isOpen = can(PermissionKeys.SalesUkraineOffers.Offer.Create) && opened
   const [created, setCreated] = useState<ClientShoppingCart | null>(null)
 
   function close() {
@@ -53,12 +57,12 @@ export function NewOfferModal({
     <AppModal
       centered
       className="offers-modal"
-      opened={opened}
+      opened={isOpen}
       size="lg"
       title={<span className="offers-modal__title">{created ? t('Оферту створено') : t('Створити оферту')}</span>}
       onClose={close}
     >
-      {opened
+      {isOpen
         && (created ? (
           <OfferGeneratedLink offer={created} onDone={done} />
         ) : (
@@ -107,6 +111,7 @@ function NewOfferForm({
   onCreated: (offer: ClientShoppingCart) => void
 }) {
   const { t } = useI18n()
+  const { can } = usePermissions()
   const [clientQuery, setClientQuery] = useState('')
   const [clientOptions, setClientOptions] = useState<OffersClientOption[]>([])
   const [clientNetId, setClientNetId] = useState<string | null>(null)
@@ -324,6 +329,10 @@ function NewOfferForm({
   }
 
   async function create() {
+    if (!can(PermissionKeys.SalesUkraineOffers.Offer.Create)) {
+      return
+    }
+
     const agreement = agreements.find((item) => item.NetUid === agreementNetId)
 
     if (!agreement || lines.length === 0) {

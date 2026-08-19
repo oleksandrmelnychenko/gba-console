@@ -37,6 +37,11 @@ const TASK_TYPE_LABEL: Record<CockpitTaskType, string> = {
 const dueDateFormatter = new Intl.DateTimeFormat('uk-UA', { day: '2-digit', month: '2-digit' })
 
 export function TaskCard({
+  canAddNote,
+  canComplete,
+  canDismiss,
+  canSnooze,
+  canTakeInProgress: canTakeInProgressPermission,
   task,
   onTakeInProgress,
   onDone,
@@ -45,6 +50,11 @@ export function TaskCard({
   onAddNote,
   pending = false,
 }: {
+  canAddNote: boolean
+  canComplete: boolean
+  canDismiss: boolean
+  canSnooze: boolean
+  canTakeInProgress: boolean
   task: CockpitTask
   onTakeInProgress: (task: CockpitTask) => void
   onDone: (task: CockpitTask) => void
@@ -61,7 +71,7 @@ export function TaskCard({
   const isManual = task.task_type === 'manual'
   const dueDateLabel = formatDueDate(task.due_date)
   const isInProgress = task.status === 'in_progress'
-  const canTakeInProgress = task.status === 'open' || task.status === 'snoozed'
+  const canTakeInProgress = canTakeInProgressPermission && (task.status === 'open' || task.status === 'snoozed')
   const inProgressLabel = isInProgress ? inProgressBadgeLabel(task.in_progress_since, t) : ''
   const expectedValue = typeof task.expected_value === 'number' ? task.expected_value : null
   const pOutcome = typeof task.p_outcome === 'number' ? task.p_outcome : null
@@ -144,7 +154,7 @@ export function TaskCard({
 
         <WhyThisTask task={task} />
 
-        {notesCount > 0 && (
+        {canAddNote && notesCount > 0 && (
           <Anchor component="button" size="xs" type="button" onClick={() => onAddNote(task)}>
             {t('Нотатки')}: {notesCount}
           </Anchor>
@@ -162,18 +172,26 @@ export function TaskCard({
               {t('Взяти в роботу')}
             </Button>
           )}
-          <Button color="green" leftSection={<Check size={16} />} size="xs" variant={canTakeInProgress ? 'light' : 'filled'} onClick={() => onDone(task)}>
-            {t('Виконано')}
-          </Button>
-          <Button color="gray" leftSection={<Clock size={16} />} size="xs" variant="light" onClick={() => onSnooze(task)}>
-            {t('Відкласти')}
-          </Button>
-          <Button color="blue" leftSection={<MessageSquarePlus size={16} />} size="xs" variant="outline" onClick={() => onAddNote(task)}>
-            {t('Нотатка')}
-          </Button>
-          <Button color="red" leftSection={<X size={16} />} size="xs" variant="subtle" onClick={() => onDismiss(task)}>
-            {t('Не актуально')}
-          </Button>
+          {canComplete && (
+            <Button color="green" leftSection={<Check size={16} />} size="xs" variant={canTakeInProgress ? 'light' : 'filled'} onClick={() => onDone(task)}>
+              {t('Виконано')}
+            </Button>
+          )}
+          {canSnooze && (
+            <Button color="gray" leftSection={<Clock size={16} />} size="xs" variant="light" onClick={() => onSnooze(task)}>
+              {t('Відкласти')}
+            </Button>
+          )}
+          {canAddNote && (
+            <Button color="blue" leftSection={<MessageSquarePlus size={16} />} size="xs" variant="outline" onClick={() => onAddNote(task)}>
+              {t('Нотатка')}
+            </Button>
+          )}
+          {canDismiss && (
+            <Button color="red" leftSection={<X size={16} />} size="xs" variant="subtle" onClick={() => onDismiss(task)}>
+              {t('Не актуально')}
+            </Button>
+          )}
         </Group>
       </Stack>
     </Card>

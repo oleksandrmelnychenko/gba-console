@@ -46,6 +46,9 @@ const EXPECTED_NEW_PAGE_KEYS = [
   'orders.budget_cart.page.view',
   'orders.purchase_cockpit.page.view',
   'orders.supply_dashboard.page.view',
+  'sales.cockpit.page.view',
+  'sales.head_dashboard.page.view',
+  'sales.ukraine_offers.page.view',
   'dashboard.overview.page.view',
   'administration.users.page.view',
   'administration.roles.page.view',
@@ -83,7 +86,7 @@ const EXPECTED_ONLINE_SHOP_SEO_ACTION_KEYS = [
 ] as const
 
 describe('newly classified page permission catalog', () => {
-  it('contains twenty-three unique business page keys and no technical controls', () => {
+  it('contains twenty-six unique business page keys and no technical controls', () => {
     const actual = Object.values(PermissionKeys.SystemPages).flatMap(
       Object.values,
     )
@@ -203,6 +206,34 @@ describe('purchase cockpit business permissions', () => {
       'orders.purchase_cockpit.document.export',
     ])
     expect(new Set(actual).size).toBe(5)
+  })
+})
+
+describe('sales cockpit and offers business permissions', () => {
+  it('contains fourteen independent actions without modal, tab or local filter controls', () => {
+    const actual = [
+      ...Object.values(PermissionKeys.SalesCockpit.Task),
+      ...Object.values(PermissionKeys.SalesHeadDashboard.Task),
+      ...Object.values(PermissionKeys.SalesUkraineOffers.Offer),
+    ]
+
+    expect(actual).toEqual([
+      'sales.cockpit.task.take_in_progress',
+      'sales.cockpit.task.complete',
+      'sales.cockpit.task.snooze',
+      'sales.cockpit.task.dismiss',
+      'sales.cockpit.task.add_note',
+      'sales.cockpit.task.generate',
+      'sales.head_dashboard.task.create',
+      'sales.head_dashboard.task.add_note',
+      'sales.head_dashboard.task.dismiss',
+      'sales.head_dashboard.task.generate',
+      'sales.ukraine.offer.create',
+      'sales.ukraine.offer.edit',
+      'sales.ukraine.offer.delete',
+      'sales.ukraine.offer.extend_validity',
+    ])
+    expect(new Set(actual).size).toBe(14)
   })
 })
 

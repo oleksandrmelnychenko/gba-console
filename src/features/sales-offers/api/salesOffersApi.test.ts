@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { apiRequest } from '../../../shared/api/apiClient'
 import type { ClientShoppingCart } from '../types'
-import { createOffer, processOffer, restartOfferValidity } from './salesOffersApi'
+import { createOffer, getCockpitOffers, processOffer, restartOfferValidity } from './salesOffersApi'
 
 vi.mock('../../../shared/api/apiClient', () => ({
   apiRequest: vi.fn(),
@@ -93,6 +93,22 @@ describe('sales offer mutation contracts', () => {
       method: 'PATCH',
       query: { netId: offerNetUid, validDays: 2 },
       signal: undefined,
+    })
+  })
+
+  it('loads cockpit offers through the cockpit-scoped route', async () => {
+    apiRequestMock.mockResolvedValueOnce([])
+
+    await expect(getCockpitOffers({
+      from: new Date(2026, 7, 1),
+      to: new Date(2026, 7, 19),
+    })).resolves.toEqual([])
+
+    expect(apiRequestMock).toHaveBeenCalledWith('/sales/offers/cockpit/filtered', {
+      query: {
+        from: '2026-08-01',
+        to: '2026-08-19',
+      },
     })
   })
 })

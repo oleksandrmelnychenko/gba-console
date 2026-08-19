@@ -1137,6 +1137,169 @@
       "duplicateOf": "PE-00523",
       "reason": "The action-menu button opens the same outcome-order workflow whose final submit is PE-00523."
     },
+    "PE-01195": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["sales.cockpit.task.generate"],
+      "reason": "The final AI regeneration handler rechecks task.generate and calls the InternalMutationPolicy-protected cockpit generation route."
+    },
+    "PE-01197": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-01245",
+      "canonicalPermissionKeys": ["sales.cockpit.task.dismiss"],
+      "reason": "The dismiss form submit only forwards its reason to the final dismiss handler PE-01245 and does not define a second business capability."
+    },
+    "PE-01199": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-01244",
+      "canonicalPermissionKeys": ["sales.cockpit.task.complete"],
+      "reason": "The completion form submit only forwards its outcome to the final completion handler PE-01244."
+    },
+    "PE-01200": {
+      "disposition": "technical_ui",
+      "reason": "Changing a head-board status tab only changes local filtering over the page-authorized task registry; it performs no business mutation."
+    },
+    "PE-01201": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-01221",
+      "canonicalPermissionKeys": ["sales.head_dashboard.task.create"],
+      "reason": "Opening the new-task modal is the first UI step of the create workflow finalized by PE-01221."
+    },
+    "PE-01202": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["sales.head_dashboard.task.generate"],
+      "reason": "The head generation control and final handler recheck task.generate and call the dedicated administrative mutation route."
+    },
+    "PE-01204": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["sales.head_dashboard.task.add_note"],
+      "reason": "The final head-note handler rechecks task.add_note and uses the dedicated administrative note route."
+    },
+    "PE-01205": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["sales.head_dashboard.task.dismiss"],
+      "reason": "The final head-task dismissal rechecks task.dismiss and calls the dedicated administrative dismissal route."
+    },
+    "PE-01206": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-01204",
+      "canonicalPermissionKeys": ["sales.head_dashboard.task.add_note"],
+      "reason": "The row icon only opens the note workflow owned by the single head task.add_note capability."
+    },
+    "PE-01207": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-01205",
+      "canonicalPermissionKeys": ["sales.head_dashboard.task.dismiss"],
+      "reason": "The row icon only opens the dismissal workflow owned by the single head task.dismiss capability."
+    },
+    "PE-01209": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-01204",
+      "canonicalPermissionKeys": ["sales.head_dashboard.task.add_note"],
+      "reason": "The head note modal submit only forwards its validated text to the final handler PE-01204 and does not define a second business capability."
+    },
+    "PE-01211": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-01205",
+      "canonicalPermissionKeys": ["sales.head_dashboard.task.dismiss"],
+      "reason": "The head dismissal modal submit only forwards its optional reason to the final handler PE-01205."
+    },
+    "PE-01215": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["sales.ukraine.offer.create"],
+      "reason": "Creating an offer from recommendations is hidden without offer.create and the shared final create hook rechecks the capability before the protected mutation."
+    },
+    "PE-01216": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["counterparties.clients.recommendations.exclude_product"],
+      "reason": "Excluding a recommendation reuses the existing product-exclusion business capability and its protected feedback mutation."
+    },
+    "PE-01217": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["sales.ukraine.offer.extend_validity"],
+      "reason": "The offer validity extension is independently hidden and its final handler rechecks extend_validity before the protected PATCH."
+    },
+    "PE-01221": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["sales.head_dashboard.task.create"],
+      "reason": "The final manager-task submit rechecks task.create and calls the administrative InternalMutationPolicy-protected create route."
+    },
+    "PE-01223": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-01242",
+      "canonicalPermissionKeys": ["sales.cockpit.task.add_note"],
+      "reason": "The note modal submit forwards to the single final add-note handler PE-01242."
+    },
+    "PE-01225": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-01243",
+      "canonicalPermissionKeys": ["sales.cockpit.task.snooze"],
+      "reason": "The snooze modal submit forwards to the single final snooze handler PE-01243."
+    },
+    "PE-01226": {
+      "disposition": "stale_or_aggregated",
+      "reason": "The scanner location no longer identifies a distinct executable control after the cockpit action handlers were consolidated; no separate request or business boundary exists."
+    },
+    "PE-01227": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["sales.cockpit.task.take_in_progress"],
+      "reason": "Taking a task into progress is independently rendered and the final status handler rechecks take_in_progress before the dynamically authorized mutation."
+    },
+    "PE-01228": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-01244",
+      "canonicalPermissionKeys": ["sales.cockpit.task.complete"],
+      "reason": "The card button only opens the completion workflow finalized by PE-01244."
+    },
+    "PE-01229": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-01243",
+      "canonicalPermissionKeys": ["sales.cockpit.task.snooze"],
+      "reason": "The card button only opens the snooze workflow finalized by PE-01243."
+    },
+    "PE-01230": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-01242",
+      "canonicalPermissionKeys": ["sales.cockpit.task.add_note"],
+      "reason": "The card button and note-count link only open the note workflow finalized by PE-01242."
+    },
+    "PE-01231": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-01245",
+      "canonicalPermissionKeys": ["sales.cockpit.task.dismiss"],
+      "reason": "The card button only opens the dismiss workflow finalized by PE-01245."
+    },
+    "PE-01238": {
+      "disposition": "technical_ui",
+      "reason": "Selecting a manager changes the local head-dashboard filter over already page-authorized data and performs no mutation."
+    },
+    "PE-01240": {
+      "disposition": "technical_ui",
+      "reason": "Selecting a team row changes the active manager filter only; it neither exposes a new business resource nor mutates server state."
+    },
+    "PE-01241": {
+      "disposition": "technical_ui",
+      "reason": "Switching between cockpit subtabs is local presentation state under one page permission and performs no request by itself."
+    },
+    "PE-01242": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["sales.cockpit.task.add_note"],
+      "reason": "The final note handler rechecks task.add_note and calls the InternalMutationPolicy-protected note route."
+    },
+    "PE-01243": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["sales.cockpit.task.snooze"],
+      "reason": "The final snooze handler rechecks task.snooze before sending the dynamically authorized status transition."
+    },
+    "PE-01244": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["sales.cockpit.task.complete"],
+      "reason": "The final completion handler rechecks task.complete before sending the dynamically authorized done transition and outcome."
+    },
+    "PE-01245": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["sales.cockpit.task.dismiss"],
+      "reason": "The final dismissal handler rechecks task.dismiss before sending the dynamically authorized dismissal transition."
+    },
     "PE-01590": {
       "disposition": "duplicate_occurrence",
       "duplicateOf": "PE-01589",
