@@ -96,10 +96,13 @@ import {
   type WizardProductKeyboardState,
 } from './wizardKeyboard'
 import {
+  EMPTY_WIZARD_PRODUCT_AVAILABILITY,
   getComponentCarouselEntries,
   getWizardProductNumber,
   getWizardSellableQty,
   getWizardStorageQty,
+  patchWizardProductAvailability,
+  type WizardProductAvailability,
   type WizardCarouselEntry,
   type WizardSaleProduct,
 } from './wizardSaleProduct'
@@ -522,6 +525,34 @@ export function NewSaleProductsStep({
         onPendingMutationChange?.(true)
         queueMicrotask(() => {
           if (!cancelled && mountedRef.current && mutationContextRef.current === mutationContextKey) {
+            if (sale && localCommit.kind === 'none' && operation.inspect(sale) === 'committed') {
+              void withSalesPendingMutationLock(
+                scope as SalesPendingMutationScope,
+                operation.operationId,
+                toPersistedCartMutation(operation),
+                async (lease) => {
+                  resolveSalesPendingMutation(lease, 'committed')
+
+                  if (
+                    !cancelled &&
+                    mountedRef.current &&
+                    mutationContextRef.current === mutationContextKey &&
+                    pendingMutationRef.current?.operationId === operation.operationId
+                  ) {
+                    pendingMutationRef.current = null
+                    setPendingMutationError(null)
+                    onPendingMutationChange?.(false)
+                  }
+                },
+              ).catch(() => {
+                if (!cancelled && mountedRef.current && mutationContextRef.current === mutationContextKey) {
+                  setPendingMutationError(t('Операція не була підтверджена. Перевірте результат і повторіть з тим самим ключем'))
+                }
+              })
+
+              return
+            }
+
             setPendingMutationError(t('Операція не була підтверджена. Перевірте результат і повторіть з тим самим ключем'))
           }
         })
@@ -561,7 +592,7 @@ export function NewSaleProductsStep({
     return () => {
       cancelled = true
     }
-  }, [getPendingCartMutationScope, mutationContextKey, mutationStorageRevision, onBusyChange, onPendingMutationChange, pendingMutationUserKey, persistSplitItems, t])
+  }, [getPendingCartMutationScope, mutationContextKey, mutationStorageRevision, onBusyChange, onPendingMutationChange, pendingMutationUserKey, persistSplitItems, sale, t])
 
   useEffect(() => {
     setWizardKeyboardState('ProductSearch')
@@ -1190,8 +1221,9 @@ export function NewSaleProductsStep({
     }
 
     const persisted = toPersistedCartMutation(operation)
+    const productNetUid = getCartMutationProductNetUid(operation.request, orderItems)
 
-    return withSalesPendingMutationLock(scope, operation.operationId, persisted, async (lease) => {
+    const completed = await withSalesPendingMutationLock(scope, operation.operationId, persisted, async (lease) => {
       if (!isPersistedWizardCartMutation(lease.entry.payload)) {
         markSalesPendingMutationCorrupt(scope, lease.operationId, 'Durable wizard cart payload failed schema validation')
       }
@@ -1230,6 +1262,51 @@ export function NewSaleProductsStep({
         throw error
       }
     })
+
+    if (completed && productNetUid && isCurrentMutationContext(context)) {
+      await refreshProductAvailabilityAfterCartMutation(context, productNetUid)
+    }
+
+    return completed
+  }
+
+  async function refreshProductAvailabilityAfterCartMutation(context: string, productNetUid: string) {
+    if (!agreementNetId) {
+      return
+    }
+
+    try {
+      const buckets = await getProductAvailabilityBuckets(productNetUid, agreementNetId)
+
+      if (!isCurrentMutationContext(context)) {
+        return
+      }
+
+      applyAvailabilityBuckets(productNetUid, buckets ?? EMPTY_WIZARD_PRODUCT_AVAILABILITY)
+    } catch {
+      if (!isCurrentMutationContext(context)) {
+        return
+      }
+
+      // A confirmed cart mutation must never leave a stale sellable quantity on
+      // screen. Zero is the conservative fallback until the user repeats the
+      // search; the mutation itself remains committed and is not retried.
+      applyAvailabilityBuckets(productNetUid, EMPTY_WIZARD_PRODUCT_AVAILABILITY)
+      setSearchError(t('Не вдалося оновити залишок товару. Повторіть пошук.'))
+      notifications.show({ color: 'red', message: t('Не вдалося оновити залишок товару. Повторіть пошук.') })
+    }
+  }
+
+  function applyAvailabilityBuckets(productNetUid: string, buckets: WizardProductAvailability) {
+    const patchProduct = (product: WizardSaleProduct) => patchWizardProductAvailability(product, productNetUid, buckets)
+
+    setResults((previous) => previous.map(patchProduct))
+    setActive((previous) => (previous ? { ...previous, product: patchProduct(previous.product) } : previous))
+    setAnalogueState((previous) => ({ ...previous, items: previous.items.map(patchProduct) }))
+    setComponentParent((previous) => (previous ? patchProduct(previous) : previous))
+    setCrossSellProduct((previous) => (previous ? patchProduct(previous) : previous))
+    setInterestProduct((previous) => (previous ? patchProduct(previous) : previous))
+    setFutureProduct((previous) => (previous ? patchProduct(previous) : previous))
   }
 
   function createCartMutation(
@@ -1646,36 +1723,6 @@ export function NewSaleProductsStep({
     }
   }
 
-  function resetSearchAfterAdd(product: WizardSaleProduct | undefined) {
-    const state = getWizardKeyboardState(1)
-
-    if (state === 'ProductSearch' || state === 'ProductSelection') {
-      const hasFollowUps = Boolean(product && (product.HasAnalogue || product.HasComponent))
-
-      if (!hasFollowUps) {
-        searchGenerationRef.current += 1
-        searchAbortRef.current?.abort()
-        loadMoreAbortRef.current?.abort()
-        recommendationsAbortRef.current?.abort()
-        searchAbortRef.current = null
-        loadMoreAbortRef.current = null
-        recommendationsAbortRef.current = null
-        virtualLoadingRef.current = false
-        virtualExhaustedRef.current = false
-        setQuery('')
-        setResults([])
-        setSearchError(null)
-        setSearching(false)
-        setLoadingRecommendations(false)
-        setActive(null)
-        resetDetail()
-        keyboard.setState('ProductSearch')
-      }
-    }
-
-    focusSearchInput()
-  }
-
   async function acceptQtyModal(qty: number, comment: string) {
     const modal = qtyModal
 
@@ -1714,7 +1761,7 @@ export function NewSaleProductsStep({
         )
 
         if (completed && isCurrentMutationContext(context)) {
-          resetSearchAfterAdd(modal.item.Product as WizardSaleProduct | undefined)
+          focusSearchInput()
         }
       } else if (modal.kind === 'edit-current') {
         if (editCart?.isSplit) {
@@ -3950,6 +3997,21 @@ function getOrderItemsNewestFirst(sale: SalesUkraineSale | null): SalesUkraineOr
     .map((item) => [getCreatedTime(item), item] as const)
     .sort((a, b) => b[0] - a[0])
     .map(([, item]) => item)
+}
+
+function getCartMutationProductNetUid(
+  request: WizardCartMutationRequest,
+  orderItems: SalesUkraineOrderItem[],
+): string | null {
+  const requestedOrderItemNetUid = request.kind === 'delete'
+    ? request.orderItemNetId.trim().toLowerCase()
+    : null
+  const product = request.kind === 'delete'
+    ? orderItems.find((item) => item.NetUid?.trim().toLowerCase() === requestedOrderItemNetUid)?.Product
+    : request.orderItem.Product
+  const productNetUid = product?.NetUid?.trim()
+
+  return productNetUid || null
 }
 
 function getCreatedTime(item: SalesUkraineOrderItem): number {

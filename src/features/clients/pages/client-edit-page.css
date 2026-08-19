@@ -191,6 +191,97 @@
   opacity: 1;
 }
 
+.client-edit-nav-group-title {
+  color: var(--mantine-color-gray-6);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  margin: 8px 8px 3px;
+  text-transform: uppercase;
+}
+
+.client-edit-nav > .client-edit-nav-group-title:first-child {
+  margin-top: 0;
+}
+
+.client-edit-folder-tree {
+  border-bottom: 1px solid var(--mantine-color-gray-2);
+  border-top: 1px solid var(--mantine-color-gray-2);
+  margin: 8px 0;
+  padding: 5px 0 8px;
+}
+
+.client-edit-folder-tree .client-edit-nav-group-title {
+  margin-top: 3px;
+}
+
+.client-edit-folder-tree-view .app-tree-node-row {
+  gap: 4px;
+  min-height: 36px;
+  padding: 4px 4px 4px calc(3px + var(--app-tree-indent, 0px));
+}
+
+.client-edit-folder-tree-view .app-tree-disclosure-spacer {
+  width: 28px;
+}
+
+.client-edit-folder-tree-view .app-tree-node-icon {
+  background: transparent;
+  color: var(--mantine-color-gray-6);
+  height: 24px;
+  min-height: 24px;
+  min-width: 24px;
+  width: 24px;
+}
+
+.client-edit-folder-tree-view .app-tree-node-name {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.25;
+  white-space: normal;
+}
+
+.client-edit-folder-tree-view .app-tree-node-meta {
+  color: var(--mantine-color-gray-6);
+  font-family: var(--font-mono);
+  font-size: 10px;
+}
+
+.client-edit-folder-tree-view .app-tree-node.is-active > .app-tree-node-row {
+  background: var(--mantine-color-orange-0);
+  box-shadow: inset 2px 0 0 var(--brand-orange);
+}
+
+.client-edit-folder-tree .mantine-Alert-root {
+  font-size: 11px;
+  margin: 6px 4px 0;
+  padding: 7px 8px;
+}
+
+.client-edit-selected-client {
+  align-items: center;
+  background: var(--mantine-color-orange-0);
+  border: 1px solid var(--mantine-color-orange-2);
+  border-radius: 8px;
+  color: var(--mantine-color-orange-8);
+  display: flex;
+  gap: 9px;
+  min-width: 0;
+  padding: 8px 10px;
+}
+
+.client-edit-selected-client > div {
+  min-width: 0;
+}
+
+.client-edit-selected-client .mantine-Text-root:last-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 /* Structure navigation is a real content tab strip, so it mirrors the
    full-width page tabs instead of using filled pills. */
 .client-edit-sheet .client-structure-card {

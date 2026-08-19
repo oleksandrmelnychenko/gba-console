@@ -24,6 +24,21 @@ const CLIENT_FILTER_ENTITY_TYPE_CLIENT = 0
 const CLIENT_FILTER_ENTITY_TYPE_SUPPLIER = 7
 const CLIENT_TYPE_BUYER = 0
 const CLIENT_TYPE_PROVIDER = 1
+const CYRILLIC_CLIENT_CODE_HOMOGLYPHS: Readonly<Record<string, string>> = {
+  А: 'A',
+  В: 'B',
+  Е: 'E',
+  І: 'I',
+  К: 'K',
+  М: 'M',
+  Н: 'H',
+  О: 'O',
+  Р: 'P',
+  С: 'C',
+  Т: 'T',
+  У: 'Y',
+  Х: 'X',
+}
 
 export async function getClients(
   params: ClientSearchParams,
@@ -61,7 +76,7 @@ async function getClientsFromRoute(
       limit: params.limit,
       offset: params.offset,
       typeRoleFilter: params.typeRoleFilter,
-      value: params.value?.trim() || '',
+      value: normalizeClientSearchValue(params.value),
     },
     ...(signal ? { signal } : {}),
   })
@@ -80,7 +95,7 @@ export async function getSuppliers(
       limit: params.limit,
       offset: params.offset,
       typeRoleFilter: params.typeRoleFilter,
-      value: params.value?.trim() || '',
+      value: normalizeClientSearchValue(params.value),
     },
     ...(signal ? { signal } : {}),
   })
@@ -359,7 +374,7 @@ export async function updateClientOrderExpireDaysForRegistry(
 }
 
 export function buildClientsSearchFilter(params: ClientSearchParams): string {
-  const searchValue = params.value?.trim() || ''
+  const searchValue = normalizeClientSearchValue(params.value)
   const booleanFilter = buildActiveFilter(params.active)
   const filterEntityType = params.filterEntityType ?? CLIENT_FILTER_ENTITY_TYPE_CLIENT
   const hasSortDescriptors = Boolean(params.sortDescriptors?.length)
@@ -387,6 +402,38 @@ export function buildClientsSearchFilter(params: ClientSearchParams): string {
       forReSale: params.forReSale ?? null,
     },
   })
+}
+
+export function normalizeClientSearchValue(value?: string): string {
+  const trimmed = value?.trim() || ''
+
+  // 1C region/client codes are stored with Latin letters, but operators often
+  // type visually identical Cyrillic letters (for example «хм0» for «XM0»).
+  // Restrict folding to compact code-shaped values containing a digit so a
+  // normal Ukrainian client name is always sent to the server unchanged.
+  if (!/\d/u.test(trimmed) || !/^[\p{Script=Latin}\p{Script=Cyrillic}\d._/-]+$/u.test(trimmed)) {
+    return trimmed
+  }
+
+  let hasCyrillicHomoglyph = false
+  let normalized = ''
+
+  for (const character of trimmed.toUpperCase()) {
+    if (/\p{Script=Cyrillic}/u.test(character)) {
+      const replacement = CYRILLIC_CLIENT_CODE_HOMOGLYPHS[character]
+
+      if (!replacement) {
+        return trimmed
+      }
+
+      hasCyrillicHomoglyph = true
+      normalized += replacement
+    } else {
+      normalized += character
+    }
+  }
+
+  return hasCyrillicHomoglyph ? normalized : trimmed
 }
 
 function normalizeClients(result: unknown): Client[] {
@@ -475,6 +522,7 @@ function isClientCommercialStructure(
   const structure = value as Partial<ClientCommercialStructure>
   return typeof structure.ClientNetUid === 'string'
     && typeof structure.AsOfUtc === 'string'
+    && isOptionalString(structure.GroupCode)
     && ['self', 'confirmed', 'probable', 'review_required'].includes(String(structure.State))
     && typeof structure.RequiresReview === 'boolean'
     && typeof structure.IsPartial === 'boolean'
@@ -539,6 +587,9 @@ function isClientSourceCardSnapshot(
   const snapshot = value as Partial<ClientSourceCardSnapshot>
   return typeof snapshot.SourceSystem === 'string'
     && typeof snapshot.SourceCode === 'number'
+    && isOptionalNumber(snapshot.DirectClientGroupSourceCode)
+    && isOptionalString(snapshot.DirectClientGroupRegionCode)
+    && isOptionalBoolean(snapshot.DirectClientGroupSourceMarkedDeleted)
     && isOptionalString(snapshot.BankName)
     && isOptionalString(snapshot.BankAccountNumber)
     && isOptionalString(snapshot.BankCurrencyCode)

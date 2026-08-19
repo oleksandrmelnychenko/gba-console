@@ -14,9 +14,11 @@ import {
 import type { SalesUkraineOrderItem, SalesUkraineProduct, SalesUkraineSale } from '../../types'
 
 const apiMocks = vi.hoisted(() => ({
+  acceptedQty: 3,
   addOrderItem: vi.fn(),
   deleteOrderItem: vi.fn(),
   getProductAvailabilityBuckets: vi.fn(),
+  searchSaleProductsWithAvailability: vi.fn(),
   updateOrderItem: vi.fn(),
 }))
 
@@ -43,7 +45,7 @@ vi.mock('./newSaleWizardApi', async (importOriginal) => {
     getProductCalculatedPricingsByAgreement: vi.fn(async () => []),
     getProductCurrentPriceByAgreement: vi.fn(async () => null),
     getProductReservationsByAgreement: vi.fn(async () => []),
-    searchSaleProductsWithAvailability: vi.fn(async () => []),
+    searchSaleProductsWithAvailability: apiMocks.searchSaleProductsWithAvailability,
     shiftOrderItemFromSale: vi.fn(async () => null),
   }
 })
@@ -108,7 +110,7 @@ vi.mock('./WizardCrossSellModal', () => ({
 
 vi.mock('./ChangeQtyModal', () => ({
   ChangeQtyModal: ({ opened, onAccept }: { opened: boolean; onAccept: (qty: number, comment: string) => void }) => (
-    opened ? <button type="button" onClick={() => onAccept(3, '')}>accept quantity</button> : null
+    opened ? <button type="button" onClick={() => onAccept(apiMocks.acceptedQty, '')}>accept quantity</button> : null
   ),
 }))
 
@@ -180,7 +182,7 @@ function renderStep({
 } = {}) {
   return render(
     <MantineProvider theme={theme}>
-      <Notifications />
+      <Notifications autoClose={false} />
       <I18nProvider>
         <NewSaleProductsStep
           agreementNetId={agreementNetId}
@@ -201,8 +203,10 @@ beforeEach(() => {
   clearAllWizardSplitRecoveries()
   initializeWizardKeyboard(1)
   setWizardKeyboardState('ProductSearch')
+  apiMocks.acceptedQty = 3
   apiMocks.addOrderItem.mockReset().mockResolvedValue(null)
   apiMocks.deleteOrderItem.mockReset().mockResolvedValue(null)
+  apiMocks.searchSaleProductsWithAvailability.mockReset().mockResolvedValue([])
   apiMocks.updateOrderItem.mockReset().mockResolvedValue(null)
   apiMocks.getProductAvailabilityBuckets.mockReset().mockResolvedValue({
     AvailableQtyUk: 10,
@@ -216,7 +220,7 @@ afterEach(() => {
 })
 
 describe('NewSaleProductsStep persistent cart mutations', () => {
-  it('unblocks a completed add whose cart projection has no operation marker', async () => {
+  it('automatically clears a restored operation confirmed by the exact server marker', async () => {
     const operationId = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'
     const sale = createSale()
     const persisted = createPersistedWizardCartMutation({
@@ -233,9 +237,50 @@ describe('NewSaleProductsStep persistent cart mutations', () => {
       },
     })
     saveSalesPendingMutation(scope, operationId, persisted)
+    const committedSale = { ...sale, OperationNetUid: operationId }
+    const onCartChanged = vi.fn(async () => committedSale)
     const onPendingMutationChange = vi.fn()
 
-    renderStep({ onPendingMutationChange, sale })
+    renderStep({ onCartChanged, onPendingMutationChange, sale: committedSale })
+
+    await waitFor(() => expect(loadSalesPendingMutation(scope)).toBe(null))
+    expect(onCartChanged).not.toHaveBeenCalled()
+    expect(apiMocks.addOrderItem).not.toHaveBeenCalled()
+    expect(onPendingMutationChange).toHaveBeenLastCalledWith(false)
+    expect(screen.queryByText('Результат операції потребує перевірки')).toBeNull()
+  })
+
+  it('unblocks a completed add whose cart projection has no operation marker', async () => {
+    const operationId = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'
+    const sale = createSale()
+    const persisted = createPersistedWizardCartMutation({
+      context: scope.context,
+      expectation: { kind: 'operation-marker' },
+      fallbackMessage: 'Не вдалося додати товар',
+      localCommit: { kind: 'none' },
+      operationId,
+      request: {
+        clientAgreementNetId: agreementNetId,
+        kind: 'add',
+        orderItem: {
+          ...(sale.Order?.OrderItems?.[0] as SalesUkraineOrderItem),
+          Product: createSearchProduct(10),
+        },
+        saleNetId: sale.NetUid as string,
+      },
+    })
+    saveSalesPendingMutation(scope, operationId, persisted)
+    const onPendingMutationChange = vi.fn()
+    apiMocks.searchSaleProductsWithAvailability.mockResolvedValueOnce([createSearchProduct(10)])
+    apiMocks.getProductAvailabilityBuckets.mockResolvedValueOnce({
+      AvailableQtyUk: 7,
+      AvailableQtyUkReSale: 0,
+    })
+
+    const view = renderStep({ onPendingMutationChange, sale })
+
+    fireEvent.change(screen.getByPlaceholderText(/пошук/i), { target: { value: 'SEM12081' } })
+    await screen.findByRole('button', { name: 'Скопіювати код: SEM12081' })
 
     fireEvent.click(await screen.findByRole('button', { name: 'Перевірити та повторити' }))
 
@@ -243,6 +288,9 @@ describe('NewSaleProductsStep persistent cart mutations', () => {
     await waitFor(() => expect(loadSalesPendingMutation(scope)).toBe(null))
     expect(apiMocks.addOrderItem.mock.calls[0]?.[3]?.operationId).toBe(operationId)
     expect(onPendingMutationChange).toHaveBeenLastCalledWith(false)
+    await waitFor(() => {
+      expect(view.container.querySelector('.new-sale-product-picker-card__qty')?.textContent).toBe('7')
+    })
   })
 
   it('adds quantity atomically instead of overwriting an existing row with an absolute quantity', async () => {
@@ -263,6 +311,117 @@ describe('NewSaleProductsStep persistent cart mutations', () => {
       Product: { NetUid: 'product-1' },
       Qty: 3,
     })
+  })
+
+  it('refreshes a retained search result from 254 to 0 after the full quantity enters the cart', async () => {
+    apiMocks.acceptedQty = 254
+    apiMocks.getProductAvailabilityBuckets
+      .mockResolvedValueOnce({ AvailableQtyUk: 254, AvailableQtyUkReSale: 0 })
+      .mockResolvedValueOnce({ AvailableQtyUk: 0, AvailableQtyUkReSale: 0 })
+    apiMocks.searchSaleProductsWithAvailability
+      .mockResolvedValueOnce([createSearchProduct(254, { HasAnalogue: false })])
+    const emptySale = createSale(0)
+    emptySale.Order = { ...emptySale.Order, OrderItems: [] }
+    const view = renderStep({ onCartChanged: vi.fn(async () => createSale(254)), sale: emptySale })
+
+    fireEvent.change(screen.getByPlaceholderText(/пошук/i), { target: { value: 'SEM12081' } })
+    await screen.findByRole('button', { name: 'Скопіювати код: SEM12081' })
+    expect(view.container.querySelector('.new-sale-product-picker-card__qty')?.textContent).toBe('254')
+
+    fireEvent.keyDown(document.body, { key: 'Enter' })
+    fireEvent.click(await screen.findByRole('button', { name: 'accept quantity' }))
+
+    await waitFor(() => expect(apiMocks.getProductAvailabilityBuckets).toHaveBeenCalledTimes(2))
+    await waitFor(() => {
+      expect(view.container.querySelector('.new-sale-product-picker-card__qty')?.textContent).toBe('0')
+    })
+    expect((screen.getByPlaceholderText(/пошук/i) as HTMLInputElement).value).toBe('SEM12081')
+    expect(apiMocks.searchSaleProductsWithAvailability).toHaveBeenCalledOnce()
+  })
+
+  it('refreshes a retained search result to the exact partial remainder', async () => {
+    apiMocks.acceptedQty = 16
+    apiMocks.getProductAvailabilityBuckets
+      .mockResolvedValueOnce({ AvailableQtyUk: 30, AvailableQtyUkReSale: 0 })
+      .mockResolvedValueOnce({ AvailableQtyUk: 14, AvailableQtyUkReSale: 0 })
+    apiMocks.searchSaleProductsWithAvailability
+      .mockResolvedValueOnce([createSearchProduct(30)])
+    const emptySale = createSale(0)
+    emptySale.Order = { ...emptySale.Order, OrderItems: [] }
+    const view = renderStep({ onCartChanged: vi.fn(async () => createSale(16)), sale: emptySale })
+
+    fireEvent.change(screen.getByPlaceholderText(/пошук/i), { target: { value: 'SEM12081' } })
+    await screen.findByRole('button', { name: 'Скопіювати код: SEM12081' })
+
+    fireEvent.keyDown(document.body, { key: 'Enter' })
+    fireEvent.click(await screen.findByRole('button', { name: 'accept quantity' }))
+
+    await waitFor(() => {
+      expect(view.container.querySelector('.new-sale-product-picker-card__qty')?.textContent).toBe('14')
+    })
+  })
+
+  it('refreshes only the selected product and preserves a broad search detail view', async () => {
+    apiMocks.acceptedQty = 1
+    apiMocks.getProductAvailabilityBuckets
+      .mockResolvedValueOnce({ AvailableQtyUk: 59, AvailableQtyUkReSale: 0 })
+      .mockResolvedValueOnce({ AvailableQtyUk: 58, AvailableQtyUkReSale: 0 })
+    apiMocks.searchSaleProductsWithAvailability
+      .mockResolvedValueOnce([
+        createSearchProduct(40, { NetUid: 'product-other', VendorCode: '38100000 NR' }),
+        createSearchProduct(59, {
+          NameUA: 'Болт-шпилька з круглою головкою',
+          NetUid: 'product-1',
+          VendorCode: '38118103 NR',
+        }),
+        createSearchProduct(30, { NetUid: 'product-next', VendorCode: '38200000 NR' }),
+      ])
+    const emptySale = createSale(0)
+    emptySale.Order = { ...emptySale.Order, OrderItems: [] }
+    const view = renderStep({ onCartChanged: vi.fn(async () => createSale(1)), sale: emptySale })
+
+    fireEvent.change(screen.getByPlaceholderText(/пошук/i), { target: { value: '381' } })
+    fireEvent.click(await screen.findByText('38118103 NR'))
+    await screen.findByRole('button', { name: 'Скопіювати код: 38118103 NR' })
+    expect(view.container.querySelector('.new-sale-product-picker-card__qty')?.textContent).toBe('59')
+
+    fireEvent.click(screen.getByRole('button', { name: 'Деталі' }))
+    fireEvent.keyDown(document.body, { key: 'Enter' })
+    fireEvent.click(await screen.findByRole('button', { name: 'accept quantity' }))
+
+    await waitFor(() => expect(apiMocks.getProductAvailabilityBuckets).toHaveBeenCalledTimes(2))
+    await waitFor(() => {
+      expect(view.container.querySelector('.new-sale-product-picker-card__qty')?.textContent).toBe('58')
+    })
+    expect(screen.getByRole('button', { name: 'Деталі' })).toBeTruthy()
+    expect(screen.getByText('38100000 NR')).toBeTruthy()
+    expect(screen.getByText('38200000 NR')).toBeTruthy()
+    expect(apiMocks.searchSaleProductsWithAvailability).toHaveBeenCalledOnce()
+  })
+
+  it('fails closed without retrying a confirmed cart mutation when availability refresh fails', async () => {
+    apiMocks.acceptedQty = 1
+    apiMocks.getProductAvailabilityBuckets
+      .mockResolvedValueOnce({ AvailableQtyUk: 10, AvailableQtyUkReSale: 0 })
+      .mockRejectedValueOnce(new Error('availability unavailable'))
+    apiMocks.searchSaleProductsWithAvailability.mockResolvedValueOnce([
+      createSearchProduct(10, { HasAnalogue: false }),
+    ])
+    const emptySale = createSale(0)
+    emptySale.Order = { ...emptySale.Order, OrderItems: [] }
+    const view = renderStep({ onCartChanged: vi.fn(async () => createSale(1)), sale: emptySale })
+
+    fireEvent.change(screen.getByPlaceholderText(/пошук/i), { target: { value: 'SEM12081' } })
+    await screen.findByRole('button', { name: 'Скопіювати код: SEM12081' })
+    fireEvent.keyDown(document.body, { key: 'Enter' })
+    fireEvent.click(await screen.findByRole('button', { name: 'accept quantity' }))
+
+    await waitFor(() => {
+      expect(view.container.querySelector('.new-sale-product-picker-card__qty')?.textContent).toBe('0')
+    })
+    expect(screen.getAllByText('Не вдалося оновити залишок товару. Повторіть пошук.').length).toBeGreaterThan(0)
+    expect(apiMocks.addOrderItem).toHaveBeenCalledOnce()
+    expect(apiMocks.searchSaleProductsWithAvailability).toHaveBeenCalledOnce()
   })
 
   it('retains an initial submitted 4xx until exact reconciliation succeeds', async () => {
@@ -447,3 +606,16 @@ describe('NewSaleProductsStep persistent cart mutations', () => {
     })
   })
 })
+
+function createSearchProduct(availableQty: number, overrides: Partial<WizardSaleProduct> = {}): WizardSaleProduct {
+  return {
+    AvailableQtyUk: availableQty,
+    AvailableQtyUkReSale: 0,
+    HasAnalogue: true,
+    Id: 10,
+    NameUA: 'Комплект ремонтний вала розжимного',
+    NetUid: 'product-1',
+    VendorCode: 'SEM12081',
+    ...overrides,
+  }
+}

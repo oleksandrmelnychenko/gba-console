@@ -40,6 +40,100 @@ export type WizardCarouselEntry = {
   setQty?: number
 }
 
+export type WizardProductAvailability = Pick<
+  WizardSaleProduct,
+  'AvailableQtyPl' | 'AvailableQtyUk' | 'AvailableQtyUkReSale' | 'AvailableQtyUkVAT'
+>
+
+export const EMPTY_WIZARD_PRODUCT_AVAILABILITY: WizardProductAvailability = {
+  AvailableQtyPl: 0,
+  AvailableQtyUk: 0,
+  AvailableQtyUkReSale: 0,
+  AvailableQtyUkVAT: 0,
+}
+
+export function patchWizardProductAvailability(
+  product: WizardSaleProduct,
+  productNetUid: string,
+  buckets: WizardProductAvailability,
+): WizardSaleProduct {
+  const targetNetUid = normalizeProductNetUid(productNetUid)
+  const matchesTarget = normalizeProductNetUid(product.NetUid) === targetNetUid
+  let changed = matchesTarget
+
+  const nextSearchedProducts = product.NextSearchedProducts?.map((child) => {
+    const next = patchWizardProductAvailability(child, productNetUid, buckets)
+    changed ||= next !== child
+
+    return next
+  })
+  const analogueProducts = product.AnalogueProducts?.map((entry) => {
+    if (!entry.AnalogueProduct) {
+      return entry
+    }
+
+    const next = patchWizardProductAvailability(entry.AnalogueProduct, productNetUid, buckets)
+
+    if (next === entry.AnalogueProduct) {
+      return entry
+    }
+
+    changed = true
+
+    return { ...entry, AnalogueProduct: next }
+  })
+  const componentProducts = product.ComponentProducts?.map((entry) => {
+    if (!entry.ComponentProduct) {
+      return entry
+    }
+
+    const next = patchWizardProductAvailability(entry.ComponentProduct, productNetUid, buckets)
+
+    if (next === entry.ComponentProduct) {
+      return entry
+    }
+
+    changed = true
+
+    return { ...entry, ComponentProduct: next }
+  })
+  const baseSetProducts = product.BaseSetProducts?.map((entry) => {
+    if (!entry.BaseProduct) {
+      return entry
+    }
+
+    const next = patchWizardProductAvailability(entry.BaseProduct, productNetUid, buckets)
+
+    if (next === entry.BaseProduct) {
+      return entry
+    }
+
+    changed = true
+
+    return { ...entry, BaseProduct: next }
+  })
+
+  if (!changed) {
+    return product
+  }
+
+  return {
+    ...product,
+    ...(matchesTarget
+      ? {
+          AvailableQtyPl: buckets.AvailableQtyPl ?? 0,
+          AvailableQtyUk: buckets.AvailableQtyUk ?? 0,
+          AvailableQtyUkReSale: buckets.AvailableQtyUkReSale ?? 0,
+          AvailableQtyUkVAT: buckets.AvailableQtyUkVAT ?? 0,
+        }
+      : {}),
+    ...(nextSearchedProducts ? { NextSearchedProducts: nextSearchedProducts } : {}),
+    ...(analogueProducts ? { AnalogueProducts: analogueProducts } : {}),
+    ...(componentProducts ? { ComponentProducts: componentProducts } : {}),
+    ...(baseSetProducts ? { BaseSetProducts: baseSetProducts } : {}),
+  }
+}
+
 export function getWizardProductNumber(value: unknown): number | null {
   if (typeof value === 'number') {
     return Number.isFinite(value) ? value : null
@@ -52,6 +146,10 @@ export function getWizardProductNumber(value: unknown): number | null {
   }
 
   return null
+}
+
+function normalizeProductNetUid(value?: string): string {
+  return value?.trim().toLowerCase() ?? ''
 }
 
 export function getWizardStorageQty(product: WizardSaleProduct, isVatSale: boolean): number | undefined {

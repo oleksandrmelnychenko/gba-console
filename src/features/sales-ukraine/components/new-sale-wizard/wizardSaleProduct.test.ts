@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest'
-import { getWizardDisplayQty, getWizardSellableQty, getWizardStorageQty, type WizardSaleProduct } from './wizardSaleProduct'
+import {
+  getWizardDisplayQty,
+  getWizardSellableQty,
+  getWizardStorageQty,
+  patchWizardProductAvailability,
+  type WizardSaleProduct,
+} from './wizardSaleProduct'
 
 describe('wizard sale product availability', () => {
   const product = {
@@ -50,5 +56,35 @@ describe('wizard sale product availability', () => {
     expect(getWizardDisplayQty(productWithoutAgreementQty, false)).toBe(0)
     expect(getWizardSellableQty(productWithoutAgreementQty, false)).toBe(2)
     expect(getWizardSellableQty(productWithoutAgreementQty, true)).toBeUndefined()
+  })
+
+  it('patches an exact nested product without replacing unrelated search nodes', () => {
+    const untouched = { NetUid: 'product-untouched', AvailableQtyUk: 8 } as WizardSaleProduct
+    const nested = { NetUid: 'PRODUCT-TARGET', AvailableQtyUk: 59 } as WizardSaleProduct
+    const root = {
+      NetUid: 'product-root',
+      AvailableQtyUk: 40,
+      AnalogueProducts: [{ AnalogueProduct: nested }],
+      ComponentProducts: [{ ComponentProduct: untouched }],
+      NextSearchedProducts: [untouched],
+    } as WizardSaleProduct
+
+    const patched = patchWizardProductAvailability(root, ' product-target ', {
+      AvailableQtyPl: 2,
+      AvailableQtyUk: 58,
+      AvailableQtyUkReSale: 1,
+      AvailableQtyUkVAT: 3,
+    })
+
+    expect(patched).not.toBe(root)
+    expect(patched.AvailableQtyUk).toBe(40)
+    expect(patched.AnalogueProducts?.[0]?.AnalogueProduct).toMatchObject({
+      AvailableQtyPl: 2,
+      AvailableQtyUk: 58,
+      AvailableQtyUkReSale: 1,
+      AvailableQtyUkVAT: 3,
+    })
+    expect(patched.ComponentProducts?.[0]?.ComponentProduct).toBe(untouched)
+    expect(patched.NextSearchedProducts?.[0]).toBe(untouched)
   })
 })

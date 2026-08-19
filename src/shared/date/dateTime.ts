@@ -2,6 +2,14 @@ export type QueryValue = string | number | boolean | Date | null | undefined
 export type QueryParams = Record<string, QueryValue | QueryValue[]>
 
 export const SYNC_DATA_RANGE_START = '2025-01-01'
+export const KYIV_TIME_ZONE = 'Europe/Kyiv'
+
+const kyivBusinessDateFormatter = new Intl.DateTimeFormat('en-GB', {
+  day: '2-digit',
+  month: '2-digit',
+  timeZone: KYIV_TIME_ZONE,
+  year: 'numeric',
+})
 
 function getClientTimeZone(): string | undefined {
   try {
@@ -20,6 +28,20 @@ export function formatLocalDate(date: Date): string {
   const year = date.getFullYear()
   const month = String(date.getMonth() + 1).padStart(2, '0')
   const day = String(date.getDate()).padStart(2, '0')
+
+  return `${year}-${month}-${day}`
+}
+
+export function formatKyivBusinessDate(date: Date = new Date()): string {
+  let day = ''
+  let month = ''
+  let year = ''
+
+  for (const part of kyivBusinessDateFormatter.formatToParts(date)) {
+    if (part.type === 'day') day = part.value
+    if (part.type === 'month') month = part.value
+    if (part.type === 'year') year = part.value
+  }
 
   return `${year}-${month}-${day}`
 }

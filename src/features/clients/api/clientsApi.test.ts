@@ -23,6 +23,7 @@ import {
   getSuppliers,
   mutateClientIdentity,
   mutateClientIdentityForStructure,
+  normalizeClientSearchValue,
   switchClientActiveState,
   switchClientActiveStateForRegistry,
   updateClientOrderExpireDays,
@@ -179,6 +180,25 @@ describe('buildClientsSearchFilter', () => {
   })
 })
 
+describe('normalizeClientSearchValue', () => {
+  it.each([
+    ['хм0', 'XM0'],
+    ['ХМ052', 'XM052'],
+    ['Bхм05200', 'BXM05200'],
+  ])('folds the code-shaped mixed-script query %s to %s', (source, expected) => {
+    expect(normalizeClientSearchValue(source)).toBe(expected)
+  })
+
+  it.each([
+    'Хмельницький 2026',
+    'ЖА1',
+    'Іваненко',
+    'XM052',
+  ])('leaves a non-confusable or ordinary search value unchanged: %s', (value) => {
+    expect(normalizeClientSearchValue(value)).toBe(value)
+  })
+})
+
 describe('clients API query contracts', () => {
   beforeEach(() => {
     apiRequestMock.mockReset()
@@ -233,6 +253,22 @@ describe('clients API query contracts', () => {
         offset: 0,
         typeRoleFilter: '1',
         value: 'Ivanenko',
+      },
+    })
+  })
+
+  it('normalizes a Cyrillic client code before requesting the targeted endpoint', async () => {
+    apiRequestMock.mockResolvedValueOnce([])
+
+    await expect(getClients({ limit: 50, offset: 0, value: '  хм0  ' })).resolves.toEqual([])
+    expect(apiRequestMock).toHaveBeenCalledWith('/clients/all/filtered', {
+      query: {
+        active: undefined,
+        filterSql: 'RegionCode.Value/Client.FullName/Client.USREOU',
+        limit: 50,
+        offset: 0,
+        typeRoleFilter: undefined,
+        value: 'XM0',
       },
     })
   })
@@ -475,6 +511,21 @@ describe('clients API query contracts', () => {
     await expect(getClientCommercialStructure('client-1')).resolves.toBeNull()
   })
 
+  it('validates exact source-folder evidence before rendering it', async () => {
+    const malformedGroup = createCommercialStructure('client-1')
+    malformedGroup.GroupCode = 35 as never
+    apiRequestMock.mockResolvedValueOnce(malformedGroup)
+
+    await expect(getClientCommercialStructure('client-1')).resolves.toBeNull()
+
+    const malformedSnapshot = createCommercialStructure('client-1')
+    malformedSnapshot.LegalParties[0].Cards[0]
+      .SourceSnapshots[0].DirectClientGroupSourceCode = '4334' as never
+    apiRequestMock.mockResolvedValueOnce(malformedSnapshot)
+
+    await expect(getClientCommercialStructure('client-1')).resolves.toBeNull()
+  })
+
   it('persists a client identity decision with a fresh idempotency key', async () => {
     apiRequestMock.mockResolvedValueOnce({
       ClientNetUid: '11111111-1111-1111-1111-111111111111',
@@ -596,6 +647,7 @@ function createCommercialStructure(clientNetUid: string) {
     ClientNetUid: clientNetUid,
     AsOfUtc: '2026-08-11T10:00:00Z',
     GroupKey: 'XM052',
+    GroupCode: 'XM05200',
     GroupName: null,
     State: 'review_required',
     RequiresReview: true,
@@ -630,6 +682,9 @@ function createCommercialStructure(clientNetUid: string) {
         SourceSnapshots: [{
           SourceSystem: 'amg',
           SourceCode: 1545,
+          DirectClientGroupSourceCode: 4334,
+          DirectClientGroupRegionCode: 'BXM05200',
+          DirectClientGroupSourceMarkedDeleted: false,
           BankName: 'АТ Тест Банк',
           ManagerName: 'Марія Іваненко',
           QuantityDayDebt: 14,

@@ -364,7 +364,7 @@ export type ProductDeliveryExpense = EntityFields & {
   AccountingGrossAmount?: number
   AccountingVatPercent?: number
   ConsumableProduct?: SupplyServiceConsumableProduct | null
-  ConsumableProductId?: number
+  ConsumableProductId?: number | null
   FromDate?: Date | string
   GrossAmount?: number
   InvoiceNumber?: string

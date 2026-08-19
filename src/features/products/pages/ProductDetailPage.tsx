@@ -38,7 +38,7 @@ import { Archive, ArrowLeft, ArrowLeftRight, Check, ChevronLeft, ChevronRight, C
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { TableRowAction } from '../../../shared/ui/table-row-action'
 import { DocumentExportModal } from '../../../shared/ui/document-export-modal/DocumentExportModal'
-import { type FormEvent, useCallback, useEffect, useMemo, useReducer, useState } from 'react'
+import { type FormEvent, useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import './products.css'
 import {
@@ -2183,6 +2183,10 @@ function ProductWriteOffRulesPanel({ onChanged, product }: { onChanged: () => vo
     [productGroups],
   )
   const selectedProductGroupNetId = selectedProductGroup?.NetUid?.trim() || ''
+  const activeRuleScopeKey = scope === 'group'
+    ? `group:${selectedProductGroupNetId}`
+    : `product:${productNetUid || ''}`
+  const activeRuleScopeKeyRef = useRef(activeRuleScopeKey)
   const missingNetUidError = productNetUid ? null : t('У товару немає NetUid для завантаження правил списання')
   const groupSelectionError = scope === 'group' && !selectedProductGroupNetId
     ? t('Оберіть групу товарів для правил списання')
@@ -2190,6 +2194,10 @@ function ProductWriteOffRulesPanel({ onChanged, product }: { onChanged: () => vo
   const activeError = missingNetUidError || (scope === 'group' ? groupError || groupSelectionError : null) || error
   const canCreateRule = hasPermission(PRODUCT_WRITE_OFF_CREATE_PERMISSION)
   const canDeleteRule = hasPermission(PRODUCT_WRITE_OFF_DELETE_PERMISSION)
+
+  useEffect(() => {
+    activeRuleScopeKeyRef.current = activeRuleScopeKey
+  }, [activeRuleScopeKey])
 
   useEffect(() => {
     if (!productNetUid) {
@@ -2288,20 +2296,28 @@ function ProductWriteOffRulesPanel({ onChanged, product }: { onChanged: () => vo
       return
     }
 
+    const requestedScopeKey = activeRuleScopeKey
+
     if (scope === 'group') {
       if (!selectedProductGroupNetId) {
-        setRows([])
+        if (activeRuleScopeKeyRef.current === requestedScopeKey) {
+          setRows([])
+        }
         return
       }
 
       const nextRows = await getProductWriteOffRulesByProductGroupNetId(selectedProductGroupNetId)
-      setRows(nextRows)
+      if (activeRuleScopeKeyRef.current === requestedScopeKey) {
+        setRows(nextRows)
+      }
       return
     }
 
     const nextRows = await getProductWriteOffRulesByProductNetId(productNetUid)
-    setRows(nextRows)
-  }, [productNetUid, scope, selectedProductGroupNetId])
+    if (activeRuleScopeKeyRef.current === requestedScopeKey) {
+      setRows(nextRows)
+    }
+  }, [activeRuleScopeKey, productNetUid, scope, selectedProductGroupNetId])
 
   async function addRule() {
     if (!canCreateRule) {
@@ -2320,6 +2336,7 @@ function ProductWriteOffRulesPanel({ onChanged, product }: { onChanged: () => vo
 
     setSaving(true)
     setError(null)
+    const requestedScopeKey = activeRuleScopeKey
 
     try {
       const nextRule = await addOrUpdateProductWriteOffRule({
@@ -2341,7 +2358,7 @@ function ProductWriteOffRulesPanel({ onChanged, product }: { onChanged: () => vo
         RuleType: Number(ruleType),
       })
 
-      if (nextRule) {
+      if (nextRule && activeRuleScopeKeyRef.current === requestedScopeKey) {
         setRows((currentRows) => upsertProductWriteOffRule(currentRows, nextRule))
       } else {
         await reloadRules()
@@ -2408,13 +2425,14 @@ function ProductWriteOffRulesPanel({ onChanged, product }: { onChanged: () => vo
       <Group align="end" gap="sm" wrap="nowrap" className="clients-filter-row">
         <SegmentedControl
           data={writeOffScopeOptions.map((option) => ({ ...option, label: t(option.label) }))}
+          disabled={isSaving || Boolean(removingNetUid)}
           value={scope}
           onChange={(value) => setScope(value as ProductWriteOffRuleScope)}
         />
         {scope === 'group' ? (
           <Select
             data={productGroupOptions}
-            disabled={isLoadingGroups || productGroupOptions.length === 0}
+            disabled={isLoadingGroups || isSaving || Boolean(removingNetUid) || productGroupOptions.length === 0}
             label={t('Група товарів')}
             placeholder={isLoadingGroups ? t('Завантаження') : t('Оберіть групу')}
             value={selectedProductGroupNetUid || null}

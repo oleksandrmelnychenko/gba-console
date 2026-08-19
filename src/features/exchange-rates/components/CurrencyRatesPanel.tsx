@@ -14,6 +14,7 @@ import { useI18n } from '../../../shared/i18n/useI18n'
 import { getExchangeRateHistory, updateExchangeRates } from '../api/exchangeRatesApi'
 import type { ExchangeRate, ExchangeRateGroup } from '../types'
 import {
+  formatHistoryDate,
   formatRate,
   getDefaultHistoryFromDate,
   getDefaultFormDate,
@@ -286,6 +287,7 @@ export function CurrencyRatesPanel({ group, onClose, onRefresh, style }: Currenc
   const selectedRateTitle = panelState.selectedRate
     ? `${panelState.selectedRate.Code}: ${formatRate(panelState.selectedRate.Amount)}`
     : t('Оберіть валюту')
+  const selectedRateUpdatedAt = formatHistoryDate(panelState.selectedRate?.Updated)
   const amountEntries = useMemo(() => group.rates.map((rate) => ({ key: getRateKey(rate), rate })), [group.rates])
 
   const loadMore = useCallback(async () => {
@@ -389,6 +391,11 @@ export function CurrencyRatesPanel({ group, onClose, onRefresh, style }: Currenc
                 {selectedRateTitle}
               </Text>
             </Group>
+            {selectedRateUpdatedAt && (
+              <Text size="xs" c="dimmed" className="exchange-rates-panel-current">
+                {t('Оновлено')}: {selectedRateUpdatedAt}
+              </Text>
+            )}
           </Box>
         </Group>
         <ActionIcon variant="subtle" color="gray" aria-label={t('Закрити')} onClick={onClose}>
