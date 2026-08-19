@@ -182,7 +182,7 @@ function renderStep({
 } = {}) {
   return render(
     <MantineProvider theme={theme}>
-      <Notifications />
+      <Notifications autoClose={false} />
       <I18nProvider>
         <NewSaleProductsStep
           agreementNetId={agreementNetId}
