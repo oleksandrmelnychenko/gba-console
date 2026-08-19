@@ -26,6 +26,7 @@ import {
   getSupplyInvoiceItemsForSpecifications,
   getSupplyOrderInvoiceTotalsForInvoices,
   getSupplyOrderItemsForInvoices,
+  getSupplyOrderServiceConsumableProducts,
   getSupplyUkraineOrders,
   getSupplyUkraineOrderForOverview,
   getSupplyOrderSuppliers,
@@ -722,7 +723,7 @@ describe('supplyUkraineOrdersApi', () => {
 
     await expect(searchSupplyOrderServiceOrganizations('  broker  ')).resolves.toEqual([{ NetUid: 'organization-1' }])
 
-    expect(apiRequestMock).toHaveBeenCalledWith('/supplies/organizations/all/search', {
+    expect(apiRequestMock).toHaveBeenCalledWith('/supplies/organizations/orders-ukraine/delivery-expenses/search', {
       query: {
         limit: 20,
         offset: 0,
@@ -735,6 +736,21 @@ describe('supplyUkraineOrdersApi', () => {
     await expect(searchSupplyOrderServiceOrganizations('   ')).resolves.toEqual([])
 
     expect(apiRequestMock).not.toHaveBeenCalled()
+  })
+
+  it('loads official-cost products through the delivery-expenses permission facade', async () => {
+    apiRequestMock.mockResolvedValueOnce({
+      ConsumableProducts: [{ NetUid: 'product-1' }],
+    })
+
+    await expect(getSupplyOrderServiceConsumableProducts('delivery')).resolves.toEqual([
+      { NetUid: 'product-1' },
+    ])
+
+    expect(apiRequestMock).toHaveBeenCalledWith(
+      '/consumables/categories/orders-ukraine/delivery-expenses/products',
+      { query: { value: 'delivery' } },
+    )
   })
 
   it('deduplicates manufacturer dictionary rows by visible supplier identity', async () => {

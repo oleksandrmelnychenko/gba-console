@@ -77,6 +77,11 @@ describe('newly classified page permissions', () => {
       .toBe(PermissionKeys.Warehouses.CompanyCars.RoadList.Open)
   })
 
+  it('guards the supply-to-Ukraine create route with open-arrival', () => {
+    expect(consoleRoutes.find((route) => route.path === '/orders/ukraine/to-ukraine/new')?.permissionKey)
+      .toBe(PermissionKeys.OrdersUkraine.Order.OpenArrival)
+  })
+
   it('guards both available-payments route aliases with the same page right', () => {
     expect(consoleRoutes.find((route) => route.path === '/accounting/available-payments')?.permissionKey)
       .toBe(PermissionKeys.FinancialAdministration.AvailablePayments.Page.View)

@@ -220,6 +220,7 @@ const migratedConsoleRoutes: ConsoleRoute[] = [
   {
     path: '/orders/ukraine/to-ukraine/new',
     element: lazyRoute(<SupplyUkraineToUkraineOrderCreatePage />),
+    permissionKey: PermissionKeys.OrdersUkraine.Order.OpenArrival,
   },
   {
     path: '/orders/ukraine/view/:id',

@@ -20,7 +20,7 @@
     { "route": "/basket-supply-ukraine-order", "permissionKey": "orders.supply_cart.page.view" },
     { "route": "/orders/ukraine/all", "permissionKey": "orders.ukraine_orders.page.view" },
     { "route": "/orders/ukraine/:id/product-income", "permissionKey": "orders.ukraine.placement.open_product_placement" },
-    { "route": "/orders/ukraine/to-ukraine/new", "permissionKey": "orders.ukraine_orders.page.view" },
+    { "route": "/orders/ukraine/to-ukraine/new", "permissionKey": "orders.ukraine.order.open_arrival" },
     { "route": "/orders/ukraine/view/:id", "permissionKey": "orders.ukraine_orders.page.view" },
     { "route": "/orders/develop/all/edit/:id/specifications", "permissionKey": "orders.ukraine_orders.page.view" },
     { "route": "/orders/ukraine/protocols/:netid", "permissionKey": "orders.ukraine_orders.page.view" },
@@ -3925,6 +3925,33 @@
       "duplicateOf": "PE-01544",
       "canonicalPermissionKeys": ["orders.ukraine.order.open_products"],
       "reason": "Vendor code and product name are two entry controls for the same protected product card."
+    },
+    "PE-01546": {
+      "disposition": "technical_ui",
+      "reason": "Selecting an order row only opens the local action chooser; every business action inside that chooser has its own permission guard."
+    },
+    "PE-01547": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-01546",
+      "reason": "The roster callback is the prop-level occurrence of the same local row-selection action."
+    },
+    "PE-01552": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["orders.ukraine.order.open_arrival"],
+      "reason": "The supply-create control, direct route and create-page submit all fail closed on the canonical open-arrival permission."
+    },
+    "PE-01554": {
+      "disposition": "stale_or_aggregated",
+      "reason": "The scanner captured an unreachable delete confirmation handler: no UI control could set its candidate state, and the dead handler/modal were removed instead of inventing a permission surface."
+    },
+    "PE-01564": {
+      "disposition": "technical_ui",
+      "reason": "Resetting filters only restores local list-filter state and does not perform a business action."
+    },
+    "PE-01566": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["orders.ukraine.order.add_delivery_costs"],
+      "reason": "Official-cost dictionaries and mutations use permission-scoped server routes, while the final save rechecks the same canonical permission."
     },
     "PE-00905": {
       "disposition": "technical_ui",

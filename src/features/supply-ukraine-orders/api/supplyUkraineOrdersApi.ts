@@ -633,7 +633,7 @@ export async function getSupplyOrderSuppliers(): Promise<Client[]> {
 }
 
 export async function searchSupplyOrderServiceOrganizations(value: string): Promise<SupplyServiceOrganization[]> {
-  return searchSupplyOrderServiceOrganizationsAt('/supplies/organizations/all/search', value)
+  return searchSupplyOrderServiceOrganizationsAt('/supplies/organizations/orders-ukraine/delivery-expenses/search', value)
 }
 
 export async function searchSupplyOrderServiceOrganizationsForSpecifications(
@@ -667,7 +667,7 @@ async function searchSupplyOrderServiceOrganizationsAt(
 }
 
 export async function getSupplyOrderServiceConsumableProducts(value = ''): Promise<SupplyServiceConsumableProduct[]> {
-  const result = await apiRequest<unknown>('/consumables/categories/supply/services/get', {
+  const result = await apiRequest<unknown>('/consumables/categories/orders-ukraine/delivery-expenses/products', {
     query: { value },
   })
 

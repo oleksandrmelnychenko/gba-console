@@ -251,7 +251,11 @@ export function App() {
             />
             <Route
               path="/orders/ukraine/to-ukraine/new"
-              element={lazyRoute(<SupplyUkraineToUkraineOrderCreatePage />)}
+              element={
+                <PagePermissionBoundary permissionKey={PermissionKeys.OrdersUkraine.Order.OpenArrival}>
+                  {lazyRoute(<SupplyUkraineToUkraineOrderCreatePage />)}
+                </PagePermissionBoundary>
+              }
             />
             <Route
               path="/orders/ukraine/placement/:id"
