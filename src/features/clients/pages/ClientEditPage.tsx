@@ -15,7 +15,7 @@ import { AppDrawer } from "../../../shared/ui/AppDrawer"
 import { AppModal } from "../../../shared/ui/AppModal"
 import { CREATE_ACTION_COLOR } from "../../../shared/ui/page-header-actions/PageHeaderActions"
 import { notifications } from '@mantine/notifications'
-import { BookUser, ChartBar, Check, ChevronRight, CircleAlert, CircleDot, Gauge, Globe, Info, Landmark, Network, Pencil, Save, Star, Tag, Target, Trash2, type LucideProps } from 'lucide-react'
+import { BookUser, Building2, ChartBar, Check, ChevronRight, CircleAlert, CircleDot, Gauge, Globe, Info, Landmark, Network, Pencil, Save, Star, Tag, Target, Trash2, type LucideProps } from 'lucide-react'
 import type { ComponentType } from 'react'
 import { type FormEvent, useEffect, useMemo, useRef } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
@@ -24,7 +24,7 @@ import { translate } from '../../../shared/i18n/translate'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { useAuth } from '../../auth/useAuth'
 import { deleteClient, getClientById, updateClient } from '../api/clientFormApi'
-import { getClientIdentityAttention } from '../api/clientsApi'
+import { getClientCommercialStructure, getClientIdentityAttention } from '../api/clientsApi'
 import { uploadClientContract } from '../api/clientCabinetApi'
 import {
   createCountry,
@@ -51,6 +51,8 @@ import { RecommendationsPanel } from '../components/recommendations/Recommendati
 import { SolvencyPanel } from '../components/solvency/SolvencyPanel'
 import { SalesPanel } from '../components/sales/SalesPanel'
 import { ClientStructurePanel } from '../components/structure/ClientStructurePanel'
+import { ClientFolderTreeNav } from '../components/ClientFolderTreeNav'
+import { buildClientFolderTree, type ClientFolderTree } from '../clientFolderTree'
 import { type ClientFormErrors, validateClientForm } from '../components/form/validateClientForm'
 import {
   EDIT_CLIENT_ACTIVE_PERMISSION,
@@ -61,6 +63,7 @@ import {
 } from '../permissions'
 import type {
   Client,
+  ClientCommercialStructure,
   ClientContractDocument,
   ClientIdentityAttentionSummary,
   ClientType,
@@ -89,6 +92,12 @@ const CLIENT_TYPE_PROVIDER = 1
 const DEFAULT_UKRAINIAN_REGION_CODE = 'XM007'
 const DEFAULT_POLAND_REGION_CODE = 'PL007'
 const INFORMATION_NOTICE_TIMEOUT_MS = 3_000
+const ROOT_SHARED_EDIT_STEPS = new Set([
+  'general-information',
+  'contact-information',
+  'bank-details',
+  'analysts',
+])
 
 type EditStep = {
   isAi?: boolean
@@ -173,9 +182,16 @@ export function ClientEditPage() {
   const navigate = useNavigate()
   const { hasPermission } = useAuth()
   const [client, setClient] = useValueState<Client | null>(null)
+  const [commercialStructure, setCommercialStructure] = useValueState<ClientCommercialStructure | null>(null)
+  const [selectedFolderClientNetUid, setSelectedFolderClientNetUid] = useValueState<string | null>(null)
+  const [folderClient, setFolderClient] = useValueState<Client | null>(null)
   const [identityAttention, setIdentityAttention] = useValueState<ClientIdentityAttentionSummary | null>(null)
   const [error, setError] = useValueState<string | null>(null)
+  const [structureError, setStructureError] = useValueState<string | null>(null)
+  const [folderClientError, setFolderClientError] = useValueState<string | null>(null)
   const [isLoading, setLoading] = useValueState(true)
+  const [isStructureLoading, setStructureLoading] = useValueState(true)
+  const [isFolderClientLoading, setFolderClientLoading] = useValueState(false)
   const [isSaving, setSaving] = useValueState(false)
   const [isDeleting, setDeleting] = useValueState(false)
   const [deleteModalOpened, setDeleteModalOpened] = useValueState(false)
@@ -186,20 +202,44 @@ export function ClientEditPage() {
   const [pendingDocuments, setPendingDocuments] = useValueState<File[]>([])
   const [manualSourceOverrideClientNetId, setManualSourceOverrideClientNetId] = useValueState<string | null>(null)
   const originalRegionRef = useRef<{ regionNetUid?: string; regionCode?: Client['RegionCode'] }>({})
-  const pendingDiscountDraftRef = useRef<DiscountsTreeDraft | null>(null)
+  const pendingDiscountDraftRef = useRef<{
+    clientNetUid: string
+    draft: DiscountsTreeDraft
+  } | null>(null)
+  const selectedFolderClientNetUidRef = useRef<string | null>(null)
   const routeState = location.state as ClientEditRouteState | null
   const basePath = location.pathname.startsWith('/suppliers/edit') ? '/suppliers/edit' : '/clients/edit'
   const returnPath = routeState?.returnPath || (basePath === '/suppliers/edit' ? '/suppliers' : '/clients')
-  const role = useMemo(() => getClientRole(client), [client])
-  const sourceManaged = isSourceManagedClient(client)
+  const steps = useMemo(() => buildEditSteps(client, hasPermission), [client, hasPermission])
+  const activeStep = steps.find((item) => item.value === step)
+  const firstStep = steps[0]
+  const selectedStepValue = step || firstStep?.value || ''
+  const folderTree = useMemo(
+    () => client ? buildClientFolderTree(client, commercialStructure) : null,
+    [client, commercialStructure],
+  )
+  const hasFolderTree = Boolean(folderTree)
+  const usesFolderClient = Boolean(
+    folderTree && !isRootSharedEditStep(selectedStepValue),
+  )
+  const selectedFolderClient = selectedFolderClientNetUid === client?.NetUid
+    ? client
+    : folderClient?.NetUid === selectedFolderClientNetUid
+      ? folderClient
+      : null
+  const contentClient = usesFolderClient ? selectedFolderClient : client
+  const role = useMemo(() => getClientRole(contentClient || client), [client, contentClient])
+  const lookupRole = useMemo(() => getClientRole(client), [client])
+  const rootSourceManaged = isSourceManagedClient(client)
+  const sourceManaged = isSourceManagedClient(contentClient)
   const sourceOverrideEnabled = Boolean(
     sourceManaged
-    && client?.NetUid
-    && manualSourceOverrideClientNetId === client.NetUid,
+    && contentClient?.NetUid
+    && manualSourceOverrideClientNetId === contentClient.NetUid,
   )
   const sourceNotice = useAutoDismissNotice(
-    sourceManaged && client?.NetUid
-      ? `source:${client.NetUid}:${sourceOverrideEnabled ? 'override' : 'locked'}`
+    sourceManaged && contentClient?.NetUid
+      ? `source:${contentClient.NetUid}:${sourceOverrideEnabled ? 'override' : 'locked'}`
       : null,
   )
   const identityNotice = useAutoDismissNotice(
@@ -216,8 +256,8 @@ export function ClientEditPage() {
     reloadRegions,
   } = useClientFormLookups({
     enabled: Boolean(client),
-    needsProviderLookups: role.isProvider,
-    needsBuyerLookups: role.isBuyer,
+    needsProviderLookups: lookupRole.isProvider,
+    needsBuyerLookups: lookupRole.isBuyer,
   })
 
   useEffect(() => {
@@ -230,12 +270,21 @@ export function ClientEditPage() {
 
       setLoading(true)
       setError(null)
+      setCommercialStructure(null)
+      setStructureError(null)
+      setStructureLoading(true)
+      setSelectedFolderClientNetUid(null)
+      setFolderClient(null)
+      setFolderClientError(null)
 
       try {
         const nextClient = await getClientById(netid)
 
         if (!cancelled) {
           setClient(nextClient)
+          if (!nextClient) {
+            setStructureLoading(false)
+          }
           originalRegionRef.current = {
             regionNetUid: nextClient?.Region?.NetUid,
             regionCode: nextClient?.RegionCode,
@@ -245,6 +294,7 @@ export function ClientEditPage() {
         if (!cancelled) {
           setError(loadError instanceof Error ? loadError.message : t('Не вдалося завантажити картку'))
           setClient(null)
+          setStructureLoading(false)
         }
       } finally {
         if (!cancelled) {
@@ -258,7 +308,163 @@ export function ClientEditPage() {
     return () => {
       cancelled = true
     }
-  }, [netid, setClient, setError, setLoading, t])
+  }, [
+    netid,
+    setClient,
+    setCommercialStructure,
+    setError,
+    setFolderClient,
+    setFolderClientError,
+    setLoading,
+    setSelectedFolderClientNetUid,
+    setStructureError,
+    setStructureLoading,
+    t,
+  ])
+
+  useEffect(() => {
+    if (!netid || client?.NetUid !== netid) {
+      return
+    }
+
+    if (basePath === '/suppliers/edit') {
+      setCommercialStructure(null)
+      setStructureError(null)
+      setStructureLoading(false)
+      return
+    }
+
+    const controller = new AbortController()
+    let cancelled = false
+    setStructureLoading(true)
+    setStructureError(null)
+
+    void getClientCommercialStructure(netid, controller.signal)
+      .then((structure) => {
+        if (cancelled) {
+          return
+        }
+        setCommercialStructure(structure)
+        if (!structure) {
+          setStructureError(t('Сервер повернув неповне дерево клієнта'))
+        }
+      })
+      .catch((loadError: unknown) => {
+        if (!cancelled && !isAbortError(loadError)) {
+          setCommercialStructure(null)
+          setStructureError(
+            loadError instanceof Error
+              ? loadError.message
+              : t('Не вдалося завантажити дерево клієнта'),
+          )
+        }
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setStructureLoading(false)
+        }
+      })
+
+    return () => {
+      cancelled = true
+      controller.abort()
+    }
+  }, [
+    basePath,
+    client?.NetUid,
+    netid,
+    setCommercialStructure,
+    setStructureError,
+    setStructureLoading,
+    t,
+  ])
+
+  useEffect(() => {
+    selectedFolderClientNetUidRef.current = selectedFolderClientNetUid
+  }, [selectedFolderClientNetUid])
+
+  useEffect(() => {
+    if (!folderTree) {
+      setSelectedFolderClientNetUid(null)
+      setFolderClient(null)
+      setFolderClientError(null)
+      setFolderClientLoading(false)
+      return
+    }
+
+    setSelectedFolderClientNetUid((current) => {
+      if (current && folderTree.items.some((item) => item.clientNetUid === current)) {
+        return current
+      }
+
+      return folderTree.items.find((item) => item.clientNetUid === client?.NetUid)?.clientNetUid
+        || folderTree.items[0]?.clientNetUid
+        || null
+    })
+  }, [
+    client?.NetUid,
+    folderTree,
+    setFolderClient,
+    setFolderClientError,
+    setFolderClientLoading,
+    setSelectedFolderClientNetUid,
+  ])
+
+  useEffect(() => {
+    if (
+      !hasFolderTree
+      || !selectedFolderClientNetUid
+      || selectedFolderClientNetUid === client?.NetUid
+    ) {
+      setFolderClient(null)
+      setFolderClientError(null)
+      setFolderClientLoading(false)
+      return
+    }
+
+    let cancelled = false
+    setFolderClient(null)
+    setFolderClientError(null)
+    setFolderClientLoading(true)
+
+    void getClientById(selectedFolderClientNetUid)
+      .then((nextClient) => {
+        if (cancelled) {
+          return
+        }
+        setFolderClient(nextClient)
+        if (!nextClient) {
+          setFolderClientError(t('Дочірню картку не знайдено'))
+        }
+      })
+      .catch((loadError: unknown) => {
+        if (!cancelled) {
+          setFolderClient(null)
+          setFolderClientError(
+            loadError instanceof Error
+              ? loadError.message
+              : t('Не вдалося завантажити дочірню картку'),
+          )
+        }
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setFolderClientLoading(false)
+        }
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [
+    client?.NetUid,
+    hasFolderTree,
+    selectedFolderClientNetUid,
+    setFolderClient,
+    setFolderClientError,
+    setFolderClientLoading,
+    t,
+  ])
 
   useEffect(() => {
     if (!netid) {
@@ -291,11 +497,22 @@ export function ClientEditPage() {
     }
   }, [netid, setIdentityAttention])
 
-  const steps = useMemo(() => buildEditSteps(client, hasPermission), [client, hasPermission])
-  const activeStep = steps.find((item) => item.value === step)
-  const firstStep = steps[0]
-  const selectedStepValue = step || firstStep?.value || ''
-  const isBodyLoading = isLoading || (isLoadingLookups && isLookupBackedEditStep(selectedStepValue))
+  const isSelectedFolderClientLoading = Boolean(
+    usesFolderClient
+    && selectedFolderClientNetUid
+    && selectedFolderClientNetUid !== client?.NetUid
+    && (isFolderClientLoading || folderClient?.NetUid !== selectedFolderClientNetUid),
+  )
+  const isWaitingForFolderSelection = Boolean(
+    usesFolderClient
+    && folderTree?.items.length
+    && !selectedFolderClientNetUid,
+  )
+  const isBodyLoading = isLoading
+    || isStructureLoading
+    || isSelectedFolderClientLoading
+    || isWaitingForFolderSelection
+    || (isLoadingLookups && isLookupBackedEditStep(selectedStepValue))
 
   if (!netid) {
     return <Navigate to="/clients" replace />
@@ -326,11 +543,33 @@ export function ClientEditPage() {
   }
 
   function handleClientChange(updatedClient: Client) {
+    if (
+      folderTree
+      && !isRootSharedEditStep(selectedStepValue)
+      && updatedClient.NetUid !== client?.NetUid
+    ) {
+      setFolderClient(updatedClient)
+      return
+    }
+
     setClient(updatedClient)
   }
 
+  function handleFolderClientSelect(clientNetUid: string) {
+    if (clientNetUid === selectedFolderClientNetUid) {
+      return
+    }
+
+    selectedFolderClientNetUidRef.current = clientNetUid
+    setSelectedFolderClientNetUid(clientNetUid)
+    setFolderClient(null)
+    setFolderClientError(null)
+    setFormErrors({})
+    setError(null)
+  }
+
   function setClientTypeRole(clientType: ClientType, clientTypeRole: ClientTypeRole) {
-    if (sourceManaged) {
+    if (rootSourceManaged) {
       return
     }
 
@@ -639,12 +878,18 @@ export function ClientEditPage() {
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
 
-    if (!client) {
+    if (!contentClient) {
       return
     }
 
-    const clientToSave = applyPendingDiscountDraft(client, pendingDiscountDraftRef.current)
-    const errors = validateClientForm(clientToSave, role, t('Забагато символів'))
+    const pendingDiscountState = pendingDiscountDraftRef.current
+    const pendingDiscountDraft = pendingDiscountState
+      && pendingDiscountState.clientNetUid === contentClient.NetUid
+      ? pendingDiscountState.draft
+      : null
+    const clientToSave = applyPendingDiscountDraft(contentClient, pendingDiscountDraft)
+    const clientRole = getClientRole(contentClient)
+    const errors = validateClientForm(clientToSave, clientRole, t('Забагато символів'))
     setFormErrors(errors)
 
     if (Object.keys(errors).length > 0) {
@@ -659,8 +904,15 @@ export function ClientEditPage() {
       const updatedClient = await updateClient(clientToSave, {
         allowSourceOverride: sourceOverrideEnabled,
       })
-      pendingDiscountDraftRef.current = null
-      setClient(updatedClient || clientToSave)
+      if (pendingDiscountDraftRef.current?.clientNetUid === contentClient.NetUid) {
+        pendingDiscountDraftRef.current = null
+      }
+      const savedClient = updatedClient || clientToSave
+      if (savedClient.NetUid === client?.NetUid) {
+        setClient(savedClient)
+      } else if (selectedFolderClientNetUidRef.current === savedClient.NetUid) {
+        setFolderClient(savedClient)
+      }
       notifications.show({
         color: 'green',
         message: sourceOverrideEnabled
@@ -675,7 +927,7 @@ export function ClientEditPage() {
   }
 
   async function handleDelete() {
-    if (!client?.NetUid || sourceManaged) {
+    if (!client?.NetUid || rootSourceManaged) {
       return
     }
 
@@ -724,6 +976,8 @@ export function ClientEditPage() {
               hasPermission(EDIT_CLIENT_TYPE_PERMISSION),
             )}
             client={client}
+            displayCode={folderTree?.code}
+            displayName={folderTree?.name}
             onToggleActive={(active) => setField('IsActive', active)}
             onTypeClick={() => setTypePanelOpened(true)}
           />
@@ -735,25 +989,25 @@ export function ClientEditPage() {
           canDelete={canEditClientLifecycle(
             client,
             hasPermission(EDIT_CLIENT_DELETE_PERMISSION),
-          )}
-          client={client}
+          ) && (!folderTree || !usesFolderClient)}
+          client={contentClient}
           isDeleting={isDeleting}
           isSaving={isSaving}
           sourceManaged={sourceManaged}
           sourceOverrideEnabled={sourceOverrideEnabled}
           onDelete={() => setDeleteModalOpened(true)}
           onEnableSourceOverride={() => {
-            if (client?.NetUid) {
-              setManualSourceOverrideClientNetId(client.NetUid)
+            if (contentClient?.NetUid) {
+              setManualSourceOverrideClientNetId(contentClient.NetUid)
             }
           }}
         />
       }
     >
     <Stack className="client-edit-sheet" gap="md">
-      {(error || lookupsError) && (
+      {(error || lookupsError || structureError || folderClientError) && (
         <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
-          {error || lookupsError}
+          {error || lookupsError || structureError || folderClientError}
         </Alert>
       )}
 
@@ -788,15 +1042,17 @@ export function ClientEditPage() {
 
       <ClientEditBody
         allowSourceOverride={sourceOverrideEnabled}
-        client={client}
+        client={contentClient}
         errors={formErrors}
         firstStep={firstStep}
+        folderTree={folderTree}
         isLoading={isBodyLoading}
         isLoadingRegionCode={isLoadingRegionCode}
         isUploadingDocuments={isUploadingDocuments}
         lookups={lookups}
         productNetId={productNetId}
         role={role}
+        selectedFolderClientNetUid={selectedFolderClientNetUid}
         selectedStep={step}
         setAccountNumber={setAccountNumber}
         setAccountNumberCurrency={setAccountNumberCurrency}
@@ -810,9 +1066,20 @@ export function ClientEditPage() {
         onCreateCountry={handleCreateCountry}
         onCreateIncoterm={handleCreateIncoterm}
         onCreateRegion={handleCreateRegion}
+        onFolderClientSelect={handleFolderClientSelect}
         onGoToStep={goToStep}
         onPendingDiscountDraftChange={(draft) => {
-          pendingDiscountDraftRef.current = draft
+          if (!contentClient?.NetUid) {
+            return
+          }
+          if (draft) {
+            pendingDiscountDraftRef.current = {
+              clientNetUid: contentClient.NetUid,
+              draft,
+            }
+          } else if (pendingDiscountDraftRef.current?.clientNetUid === contentClient.NetUid) {
+            pendingDiscountDraftRef.current = null
+          }
         }}
         onRegionChange={handleRegionChange}
         onRegionCodeFieldChange={setRegionCodeField}
@@ -829,7 +1096,7 @@ export function ClientEditPage() {
         onConfirm={handleDelete}
       />
 
-      {!sourceManaged && (
+      {!rootSourceManaged && (
         <EditClientTypePanel
           currentRoleId={client?.ClientInRole?.ClientTypeRole?.Id}
           currentRoleNetUid={client?.ClientInRole?.ClientTypeRole?.NetUid}
@@ -931,16 +1198,21 @@ function ClientEditTitle({
   canEditActive,
   canEditType,
   client,
+  displayCode,
+  displayName,
   onToggleActive,
 }: {
   canEditActive: boolean
   canEditType: boolean
   client: Client | null
+  displayCode?: string
+  displayName?: string
   onToggleActive: (active: boolean) => void
   onTypeClick?: () => void
 }) {
   const { t } = useI18n()
-  const regionCodeValue = client?.RegionCode?.Value
+  const regionCodeValue = displayCode || client?.RegionCode?.Value
+  const titleName = displayName || client?.FullName
 
   if (!client) {
     return null
@@ -954,9 +1226,9 @@ function ClientEditTitle({
             {regionCodeValue}
           </Text>
         )}
-        {client.FullName && (
+        {titleName && (
           <Text fw={700} size="md" lineClamp={1}>
-            {client.FullName}
+            {titleName}
           </Text>
         )}
         {canEditActive ? (
@@ -994,12 +1266,14 @@ function ClientEditBody({
   client,
   errors,
   firstStep,
+  folderTree,
   isLoading,
   isLoadingRegionCode,
   isUploadingDocuments,
   lookups,
   productNetId,
   role,
+  selectedFolderClientNetUid,
   selectedStep,
   setAccountNumber,
   setAccountNumberCurrency,
@@ -1013,6 +1287,7 @@ function ClientEditBody({
   onCreateCountry,
   onCreateIncoterm,
   onCreateRegion,
+  onFolderClientSelect,
   onGoToStep,
   onPendingDiscountDraftChange,
   onRegionChange,
@@ -1025,12 +1300,14 @@ function ClientEditBody({
   client: Client | null
   errors: ClientFormErrors
   firstStep?: EditStep
+  folderTree: ClientFolderTree | null
   isLoading: boolean
   isLoadingRegionCode: boolean
   isUploadingDocuments: boolean
   lookups: ReturnType<typeof useClientFormLookups>['lookups']
   productNetId?: string
   role: ClientFormRole
+  selectedFolderClientNetUid: string | null
   selectedStep?: string
   setAccountNumber: (value: string) => void
   setAccountNumberCurrency: (currency: Currency | null) => void
@@ -1044,6 +1321,7 @@ function ClientEditBody({
   onCreateCountry: (name: string, code: string) => void
   onCreateIncoterm: (name: string) => void
   onCreateRegion: (name: string) => void
+  onFolderClientSelect: (clientNetUid: string) => void
   onGoToStep: (nextStep: string) => void
   onPendingDiscountDraftChange: (draft: DiscountsTreeDraft | null) => void
   onRegionChange: (region: Region | null) => void
@@ -1054,6 +1332,9 @@ function ClientEditBody({
 }) {
   const { t } = useI18n()
   const selectedStepValue = selectedStep || firstStep?.value || ''
+  const selectedFolderItem = folderTree?.items.find(
+    (item) => item.clientNetUid === selectedFolderClientNetUid,
+  )
 
   if (isLoading) {
     return (
@@ -1082,43 +1363,31 @@ function ClientEditBody({
         <Grid.Col span={{ base: 12, lg: 3 }}>
           <Card className="app-section-card client-edit-shell-card" withBorder radius="md" padding="md">
             <Stack gap={6} className="client-edit-nav" component="nav">
-              {steps.map((item, index) => {
-                const isActive = item.value === selectedStep
-                const StepIcon = STEP_ICON[item.value] ?? CircleDot
-
-                return (
-                  <Button
-                    key={item.value}
-                    className={`client-edit-nav-item${isActive ? ' is-active' : ''}`}
-                    color="gray"
-                    fullWidth
-                    justify="flex-start"
-                    leftSection={
-                      <span className="client-edit-nav-lead">
-                        <span className="client-edit-nav-index">{String(index + 1).padStart(2, '0')}</span>
-                        <span className="client-edit-nav-icon">
-                          <StepIcon size={17} strokeWidth={1.8} />
-                        </span>
-                      </span>
-                    }
-                    rightSection={<ChevronRight className="client-edit-nav-chevron" size={16} strokeWidth={2} />}
-                    size="sm"
-                    variant="subtle"
-                    onClick={() => onGoToStep(item.value)}
-                  >
-                    <span className="client-edit-nav-label">
-                      {item.label}
-                      {item.isAi && <AiFeatureBadge compact tooltip={translate('AI-функція')} />}
-                    </span>
-                  </Button>
-                )
-              })}
+              <ClientEditNavigation
+                folderTree={folderTree}
+                selectedFolderClientNetUid={selectedFolderClientNetUid}
+                selectedStep={selectedStepValue}
+                steps={steps}
+                onFolderClientSelect={onFolderClientSelect}
+                onGoToStep={onGoToStep}
+              />
             </Stack>
           </Card>
         </Grid.Col>
         <Grid.Col span={{ base: 12, lg: 9 }}>
           <Card className="app-section-card client-edit-shell-card" withBorder radius="md" padding="md">
             <Stack gap="md">
+              {folderTree && !isRootSharedEditStep(selectedStepValue) && selectedFolderItem ? (
+                <div className="client-edit-selected-client">
+                  <Building2 size={17} />
+                  <div>
+                    <Text c="dimmed" size="xs">{t('Дані вибраного клієнта')}</Text>
+                    <Text fw={600} size="sm">
+                      {formatFolderClientLabel(selectedFolderItem.code, selectedFolderItem.name)}
+                    </Text>
+                  </div>
+                </div>
+              ) : null}
               <EditStepContent
                 allowSourceOverride={allowSourceOverride}
                 client={client}
@@ -1152,6 +1421,106 @@ function ClientEditBody({
       </Grid>
     </form>
   )
+}
+
+function ClientEditNavigation({
+  folderTree,
+  selectedFolderClientNetUid,
+  selectedStep,
+  steps,
+  onFolderClientSelect,
+  onGoToStep,
+}: {
+  folderTree: ClientFolderTree | null
+  selectedFolderClientNetUid: string | null
+  selectedStep: string
+  steps: EditStep[]
+  onFolderClientSelect: (clientNetUid: string) => void
+  onGoToStep: (nextStep: string) => void
+}) {
+  const { t } = useI18n()
+
+  if (!folderTree) {
+    return (
+      <ClientEditStepButtons
+        selectedStep={selectedStep}
+        steps={steps}
+        onGoToStep={onGoToStep}
+      />
+    )
+  }
+
+  const sharedSteps = steps.filter((item) => isRootSharedEditStep(item.value))
+  const individualSteps = steps.filter((item) => !isRootSharedEditStep(item.value))
+
+  return (
+    <>
+      <Text className="client-edit-nav-group-title">{t('Загальні дані')}</Text>
+      <ClientEditStepButtons
+        selectedStep={selectedStep}
+        steps={sharedSteps}
+        onGoToStep={onGoToStep}
+      />
+      <ClientFolderTreeNav
+        selectedClientNetUid={selectedFolderClientNetUid}
+        tree={folderTree}
+        onSelect={onFolderClientSelect}
+      />
+      <Text className="client-edit-nav-group-title">{t('Дані вибраного клієнта')}</Text>
+      <ClientEditStepButtons
+        disabled={!selectedFolderClientNetUid}
+        selectedStep={selectedStep}
+        steps={individualSteps}
+        onGoToStep={onGoToStep}
+      />
+    </>
+  )
+}
+
+function ClientEditStepButtons({
+  disabled = false,
+  selectedStep,
+  steps,
+  onGoToStep,
+}: {
+  disabled?: boolean
+  selectedStep: string
+  steps: EditStep[]
+  onGoToStep: (nextStep: string) => void
+}) {
+  return steps.map((item, index) => {
+    const isActive = item.value === selectedStep
+    const StepIcon = STEP_ICON[item.value] ?? CircleDot
+
+    return (
+      <Button
+        key={item.value}
+        className={`client-edit-nav-item${isActive ? ' is-active' : ''}`}
+        color="gray"
+        disabled={disabled}
+        fullWidth
+        justify="flex-start"
+        leftSection={
+          <span aria-hidden="true" className="client-edit-nav-lead">
+            <span className="client-edit-nav-index">{String(index + 1).padStart(2, '0')}</span>
+            <span className="client-edit-nav-icon">
+              <StepIcon size={17} strokeWidth={1.8} />
+            </span>
+          </span>
+        }
+        rightSection={<ChevronRight className="client-edit-nav-chevron" size={16} strokeWidth={2} />}
+        size="sm"
+        type="button"
+        variant="subtle"
+        onClick={() => onGoToStep(item.value)}
+      >
+        <span className="client-edit-nav-label">
+          {item.label}
+          {item.isAi && <AiFeatureBadge compact tooltip={translate('AI-функція')} />}
+        </span>
+      </Button>
+    )
+  })
 }
 
 function DeleteClientModal({
@@ -1360,6 +1729,18 @@ function getClientType(client: Client | null): number | undefined {
 
 function isLookupBackedEditStep(step: string): boolean {
   return step === 'general-information' || step === 'bank-details'
+}
+
+function isRootSharedEditStep(step: string): boolean {
+  return ROOT_SHARED_EDIT_STEPS.has(step)
+}
+
+function formatFolderClientLabel(code: string | undefined, name: string): string {
+  return code ? `${code} — ${name}` : name
+}
+
+function isAbortError(error: unknown): boolean {
+  return error instanceof DOMException && error.name === 'AbortError'
 }
 
 function getClientDisplayName(client: Client): string {
