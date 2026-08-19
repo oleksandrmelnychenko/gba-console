@@ -264,6 +264,11 @@ function SalesOnlineShopOrdersPage() {
   const canWillNotShip = can(PermissionKeys.SalesUkraine.Sale.UnlockForShipping)
   const canPrintConsignmentNote = can(PermissionKeys.SalesUkraine.Sale.PrintConsignmentNote)
   const canViewAudit = can(PermissionKeys.SalesUkraine.Sale.ViewAudit)
+  const canExportSaleDocuments = can(PermissionKeys.SalesUkraine.Sale.ExportInvoice)
+    || can(PermissionKeys.SalesUkraine.Sale.ExportShipmentList)
+    || can(PermissionKeys.SalesUkraine.Sale.ExportPaymentInvoice)
+    || can(PermissionKeys.SalesUkraine.Sale.ExportPz)
+    || can(PermissionKeys.SalesUkraine.Sale.ExportRevisionDocuments)
   const today = useMemo(() => formatLocalDate(new Date()), [])
   const initialDraft = useMemo<FilterDraft>(
     () => ({
@@ -941,6 +946,7 @@ function SalesOnlineShopOrdersPage() {
                         canEditSale={canEditSale}
                         canOpenDeliveryDetails={canOpenDeliveryDetails}
                         canOpenSale={canOpenSale}
+                        canExportSaleDocuments={canExportSaleDocuments}
                         canPrintConsignmentNote={canPrintConsignmentNote}
                         canUnlock={canUnlock}
                         canViewAudit={canViewAudit}
@@ -1081,6 +1087,7 @@ type SalesOnlineShopGridRowProps = {
   canEditSale: boolean
   canOpenDeliveryDetails: boolean
   canOpenSale: boolean
+  canExportSaleDocuments: boolean
   canPrintConsignmentNote: boolean
   canUnlock: boolean
   canViewAudit: boolean
@@ -1108,6 +1115,7 @@ export const SalesOnlineShopGridRow = memo(function SalesOnlineShopGridRow({
   canEditSale,
   canOpenDeliveryDetails,
   canOpenSale,
+  canExportSaleDocuments,
   canPrintConsignmentNote,
   canUnlock,
   canViewAudit,
@@ -1142,7 +1150,7 @@ export const SalesOnlineShopGridRow = memo(function SalesOnlineShopGridRow({
   )
   const isPackaging = lifecycleStatusKey === 'Packaging' || lifecycleStatusKey === 'Packaged'
   const packingDocumentsRestricted = Boolean(sale.IsVatSale) && !sale.IsAcceptedToPacking && !isAdmin
-  const showDocuments = lifecycleStatusKey === 'New' || !packingDocumentsRestricted
+  const showDocuments = canExportSaleDocuments && (lifecycleStatusKey === 'New' || !packingDocumentsRestricted)
   const showTtn = canPrintConsignmentNote && Boolean(sale.TransporterId) && isPackaging && !packingDocumentsRestricted
   const showWillNotShip = packingAcceptanceLifecycleEligible && canWillNotShip && Boolean(sale.IsVatSale) && !sale.IsAcceptedToPacking
   const showUnlock = canUnlock && Boolean(sale.IsLocked)

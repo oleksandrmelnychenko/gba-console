@@ -193,10 +193,10 @@ describe('new sale wizard pricing API contracts', () => {
       SupplyOrderNetId: supplyOrderNetId,
     }, { operationId })
 
-    expect(apiRequestMock).toHaveBeenNthCalledWith(1, '/supplies/orders/arrival/nearest/get', {
+    expect(apiRequestMock).toHaveBeenNthCalledWith(1, '/supplies/orders/sales-ukraine/future-reservations/nearest', {
       query: { netId: productNetId },
     })
-    expect(apiRequestMock).toHaveBeenNthCalledWith(2, '/sales/reservations/new', {
+    expect(apiRequestMock).toHaveBeenNthCalledWith(2, '/sales/reservations/ukraine/create', {
       body: {
         ClientNetId: clientNetId,
         Count: 2,

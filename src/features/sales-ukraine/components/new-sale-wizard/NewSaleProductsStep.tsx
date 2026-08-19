@@ -141,6 +141,7 @@ import { WizardShoppingCartGrid } from './WizardShoppingCartGrid'
 const EMPTY_GUID = '00000000-0000-0000-0000-000000000000'
 const CHANGE_PRODUCT_DESCRIPTION_PERMISSION = PermissionKeys.SalesUkraine.Sale.EditProductComment
 const CREATE_PREORDER_PERMISSION = PermissionKeys.SalesUkraineInterest.Preorder.Create
+const CREATE_FUTURE_RESERVATION_PERMISSION = PermissionKeys.SalesUkraine.Sale.CreateFutureReservation
 const amountFormatter = new Intl.NumberFormat('uk-UA', { maximumFractionDigits: 2, minimumFractionDigits: 2 })
 const qtyFormatter = new Intl.NumberFormat('uk-UA', { maximumFractionDigits: 3 })
 const PRODUCT_SEARCH_MIN_QUERY_LENGTH = 3
@@ -266,6 +267,7 @@ export function NewSaleProductsStep({
   const { t } = useI18n()
   const { hasPermission, session, user } = useAuth()
   const canCreatePreorder = hasPermission(CREATE_PREORDER_PERMISSION)
+  const canCreateFutureReservation = hasPermission(CREATE_FUTURE_RESERVATION_PERMISSION)
   const keyboard = useWizardKeyboard(1)
 
   const [searchMode, setSearchMode] = useState('5')
@@ -1602,6 +1604,12 @@ export function NewSaleProductsStep({
     const sellable = getWizardSellableQty(product, isVatSale)
 
     if (typeof sellable === 'number' && sellable === 0) {
+      if (!canCreateFutureReservation) {
+        notifications.show({ color: 'red', message: t('Недостатньо прав для резервування під поставку') })
+
+        return
+      }
+
       setFutureProduct(product)
 
       return
@@ -3903,7 +3911,7 @@ export function NewSaleProductsStep({
 
       <FutureReservationModal
         clientNetId={clientNetId}
-        product={futureProduct}
+        product={canCreateFutureReservation ? futureProduct : null}
         onClose={() => {
           setFutureProduct(null)
           focusSearchInput()

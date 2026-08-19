@@ -3,7 +3,9 @@ import { notifications } from '@mantine/notifications'
 import { useEffect, useState } from 'react'
 import type { ReactNode } from 'react'
 import { useI18n } from '../../../../shared/i18n/useI18n'
+import { PermissionKeys } from '../../../../shared/auth/permissionKeys'
 import { AppModal } from '../../../../shared/ui/AppModal'
+import { usePermissions } from '../../../auth/usePermissions'
 import { switchSale, type SwitchSalePayload } from '../../api/salesUkraineApi'
 import type { SalesUkraineSale } from '../../types'
 import { usePersistentSaleJsonMutationRunner } from '../../usePersistentSaleJsonMutation'
@@ -27,16 +29,20 @@ export function WizardReassignSaleModal({
   onReassigned: (movedSale: SalesUkraineSale | null) => void
 }) {
   const { t } = useI18n()
+  const { can } = usePermissions()
+  const canReassign = can(PermissionKeys.SalesUkraine.Sale.Reassign)
 
   return (
     <AppModal
       centered
-      opened={opened}
+      opened={opened && canReassign}
       size="lg"
       title={`${t('Переміщення продажі')} ${sale.SaleNumber?.Value ?? ''}`.trim()}
       onClose={onClose}
     >
-      {opened && <WizardReassignSaleForm client={client} sale={sale} onCancel={onClose} onReassigned={onReassigned} />}
+      {opened && canReassign && (
+        <WizardReassignSaleForm client={client} sale={sale} onCancel={onClose} onReassigned={onReassigned} />
+      )}
     </AppModal>
   )
 }

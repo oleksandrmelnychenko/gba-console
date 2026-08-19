@@ -388,7 +388,7 @@ export async function switchSale(
     clientAgreementNetId,
     translate('Договір клієнта не має збереженого ідентифікатора'),
   )
-  const result = await apiRequest<unknown>('/sales/switch', {
+  const result = await apiRequest<unknown>('/sales/ukraine/reassign', {
     headers: getSalesMutationOperationHeaders(operation.operationId),
     method: 'PATCH',
     query: {
@@ -935,11 +935,11 @@ async function fetchSalePdfDocument(path: string, query: Record<string, string>)
 }
 
 export function getSaleInvoiceDocument(netId: string): Promise<SaleDocumentResult> {
-  return fetchSaleDocument('/sales/get/last/document', { netId })
+  return fetchSaleDocument('/sales/ukraine/documents/invoice', { netId })
 }
 
 export function getSaleShipmentListDocument(netId: string): Promise<SaleDocumentResult> {
-  return fetchSaleDocument('/sales/shipment/list/print/documents', { netId })
+  return fetchSaleDocument('/sales/ukraine/documents/shipment-list', { netId })
 }
 
 export async function getSalePaymentDocument(
@@ -948,15 +948,23 @@ export async function getSalePaymentDocument(
 ): Promise<SaleDocumentResult> {
   const requiredOperation = requirePaymentDocumentOperation(operation)
 
-  return fetchSaleDocument('/sales/get/payment/document', { netId }, requiredOperation)
+  return fetchSaleDocument('/sales/ukraine/documents/payment-invoice', { netId }, requiredOperation)
 }
 
 export function getSalePzDocument(netId: string): Promise<SaleDocumentResult> {
-  return fetchSalePdfDocument('/sales/get/document/pz', { netId })
+  return fetchSalePdfDocument('/sales/ukraine/documents/pz', { netId })
+}
+
+export function getSaleRevisionBaseInvoiceDocument(netId: string): Promise<SaleDocumentResult> {
+  return fetchSaleDocument('/sales/ukraine/documents/revisions/base-invoice', { netId })
+}
+
+export function getSaleRevisionBaseShipmentListDocument(netId: string): Promise<SaleDocumentResult> {
+  return fetchSaleDocument('/sales/ukraine/documents/revisions/base-shipment-list', { netId })
 }
 
 export function getSaleInvoiceHistoryDocument(netId: string, historyNetId: string): Promise<SaleDocumentResult> {
-  return fetchSaleDocument('/sales/get/document/history', { historyNetId, netId })
+  return fetchSaleDocument('/sales/ukraine/documents/revisions/invoice', { historyNetId, netId })
 }
 
 export function getSaleActProtocolEditDocument(netId: string): Promise<SaleDocumentResult> {
@@ -968,11 +976,11 @@ export function getSalesUkraineSaleAuditEditActDocument(netId: string): Promise<
 }
 
 export function getSaleActForEditingHistoryDocument(netId: string, historyNetId: string): Promise<SaleDocumentResult> {
-  return fetchSaleDocument('/sales/get/shifted/hisotry/document', { historyNetId, netId })
+  return fetchSaleDocument('/sales/ukraine/documents/revisions/edit-act', { historyNetId, netId })
 }
 
 export function getSaleShipmentListHistoryDocument(netId: string, historyNetId: string): Promise<SaleDocumentResult> {
-  return fetchSaleDocument('/sales/shipment/list/print/documents/history', { historyNetId, netId })
+  return fetchSaleDocument('/sales/ukraine/documents/revisions/shipment-list', { historyNetId, netId })
 }
 
 function requirePaymentDocumentOperation(

@@ -20,6 +20,7 @@ import { CircleAlert, Copy, Merge, Plus, ReceiptText, Search, Share2, TriangleAl
 import { useEffect, useReducer, useState } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
+import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { AppModal } from '../../../shared/ui/AppModal'
 import { TransporterNameWithIcon } from '../../../shared/transporter-icons/TransporterIcon'
@@ -63,6 +64,7 @@ import type { WizardCartMutationRequest } from './new-sale-wizard/wizardCartMuta
 import type { WizardCartMutationExpectation } from './new-sale-wizard/wizardMutationOperation'
 import { MergedSalesDrawer } from './MergedSalesDrawer'
 import { SaleDetailsDrawer } from './SaleDetailsDrawer'
+import { usePermissions } from '../../auth/usePermissions'
 import './sale-editor-drawer.css'
 import type {
   SaleClientDebtTotal,
@@ -121,6 +123,9 @@ export function SaleEditorDrawer({
 
 function SaleEditorContent({ initialSale, loadSale }: { initialSale: SalesUkraineSale; loadSale: typeof getSaleById }) {
   const { t } = useI18n()
+  const { can } = usePermissions()
+  const canCreateInvoice = can(PermissionKeys.SalesUkraine.Sale.Create)
+  const canReassign = can(PermissionKeys.SalesUkraine.Sale.Reassign)
   const [sale, setSale] = useValueState<SalesUkraineSale>(initialSale)
   const [retailPaymentState, setRetailPaymentState] =
     useValueState<RetailPaymentState>(EMPTY_RETAIL_PAYMENT_STATE)
@@ -493,7 +498,7 @@ function SaleEditorContent({ initialSale, loadSale }: { initialSale: SalesUkrain
         >
           {t('Копіювати')}
         </Button>
-        {isEditable && (
+        {isEditable && canReassign && (
           <Button leftSection={<Share2 size={16} />} variant="outline" onClick={() => setReassignOpen(true)}>
             {t('Переназначити')}
           </Button>
@@ -562,7 +567,7 @@ function SaleEditorContent({ initialSale, loadSale }: { initialSale: SalesUkrain
         </div>
         ) : (
         <div className="sale-editor-tab-panel">
-          <ClientTab canEdit={isEditable} sale={sale} onSwitched={reload} />
+          <ClientTab canReassign={isEditable && canReassign} sale={sale} onSwitched={reload} />
         </div>
         )}
       </div>
@@ -600,13 +605,15 @@ function SaleEditorContent({ initialSale, loadSale }: { initialSale: SalesUkrain
       />
 
       <MergedSalesDrawer
+        canCreateInvoice={canCreateInvoice}
+        canEdit={isEditable}
         saleNetId={isMergedOpen ? sale.NetUid ?? null : null}
         onChanged={reload}
         onClose={() => setMergedOpen(false)}
       />
 
       <ReassignSaleModal
-        opened={isReassignOpen}
+        opened={canReassign && isReassignOpen}
         sale={sale}
         onClose={() => setReassignOpen(false)}
         onReassigned={() => {
@@ -1387,7 +1394,7 @@ function getClientOptionName(client: SalesUkraineClientOption): string {
   )
 }
 
-function ClientTab({ canEdit, sale, onSwitched }: { canEdit: boolean; onSwitched: () => void; sale: SalesUkraineSale }) {
+function ClientTab({ canReassign, sale, onSwitched }: { canReassign: boolean; onSwitched: () => void; sale: SalesUkraineSale }) {
   const { t } = useI18n()
   const clientNetUid = sale.ClientAgreement?.Client?.NetUid
   const currentAgreementNetUid = sale.ClientAgreement?.NetUid || ''
@@ -1436,7 +1443,7 @@ function ClientTab({ canEdit, sale, onSwitched }: { canEdit: boolean; onSwitched
   }, [])
 
   async function switchAgreement() {
-    if (!sale.NetUid || !selectedAgreement || selectedAgreement === currentAgreementNetUid) {
+    if (!canReassign || !sale.NetUid || !selectedAgreement || selectedAgreement === currentAgreementNetUid) {
       return
     }
 
@@ -1493,7 +1500,7 @@ function ClientTab({ canEdit, sale, onSwitched }: { canEdit: boolean; onSwitched
 
       <Group align="end" gap="sm" wrap="nowrap">
         <Select
-          disabled={!canEdit}
+          disabled={!canReassign}
           searchable
           data={agreementOptions}
           label={t('Договір')}
@@ -1502,7 +1509,7 @@ function ClientTab({ canEdit, sale, onSwitched }: { canEdit: boolean; onSwitched
           onChange={(value) => setSelectedAgreement(value || '')}
         />
         <Button
-          disabled={!canEdit || !selectedAgreement || selectedAgreement === currentAgreementNetUid}
+          disabled={!canReassign || !selectedAgreement || selectedAgreement === currentAgreementNetUid}
           loading={isSwitching}
           variant="outline"
           onClick={switchAgreement}

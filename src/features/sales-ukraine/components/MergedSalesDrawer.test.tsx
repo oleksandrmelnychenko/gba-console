@@ -100,6 +100,8 @@ function renderDrawer(onChanged = vi.fn()) {
     ...render(
       <MantineProvider theme={theme}>
         <MergedSalesDrawer
+          canCreateInvoice
+          canEdit
           saleNetId="merge-root"
           onChanged={onChanged}
           onClose={vi.fn()}
@@ -161,6 +163,8 @@ describe('MergedSalesDrawer restored reconciliation', () => {
     render(
       <MantineProvider theme={theme}>
         <MergedSalesDrawer
+          canCreateInvoice
+          canEdit
           clientAgreementNetId="agreement-1"
           loadCurrentUnmergedSale={loadCurrentUnmergedSale}
           loadMergedSale={loadMergedSale}
@@ -187,6 +191,7 @@ describe('MergedSalesDrawer restored reconciliation', () => {
       <MantineProvider theme={theme}>
         <MergedSalesDrawer
           canCreateInvoice={false}
+          canEdit={false}
           saleNetId="merge-root"
           submitMergedSale={protectedRequest}
           onChanged={vi.fn()}

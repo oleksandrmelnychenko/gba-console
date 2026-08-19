@@ -49,8 +49,8 @@ const amountFormatter = new Intl.NumberFormat('uk-UA', { maximumFractionDigits: 
 const EMPTY_GUID = '00000000-0000-0000-0000-000000000000'
 
 export function MergedSalesDrawer({
-  canCreateInvoice = true,
-  canEdit = true,
+  canCreateInvoice,
+  canEdit,
   loadCurrentUnmergedSale = getCurrentUnmergedSale,
   loadMergedSale = getMergedSales,
   saleNetId,
@@ -62,8 +62,8 @@ export function MergedSalesDrawer({
   onInvoice,
   submitMergedSale = updateMergedSale,
 }: {
-  canCreateInvoice?: boolean
-  canEdit?: boolean
+  canCreateInvoice: boolean
+  canEdit: boolean
   clientAgreementNetId?: string | null
   loadCurrentUnmergedSale?: typeof getCurrentUnmergedSale
   loadMergedSale?: typeof getMergedSales

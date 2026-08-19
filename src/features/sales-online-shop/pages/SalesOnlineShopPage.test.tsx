@@ -69,6 +69,7 @@ describe('SalesOnlineShopGridRow shipment acceptance', () => {
           <SalesOnlineShopGridRow
             canEditSale={false}
             canExpand={false}
+            canExportSaleDocuments
             canOpenDeliveryDetails={false}
             canOpenSale={false}
             canPrintConsignmentNote={false}
@@ -118,6 +119,7 @@ describe('SalesOnlineShopGridRow shipment acceptance', () => {
           <SalesOnlineShopGridRow
             canEditSale={false}
             canExpand={false}
+            canExportSaleDocuments
             canOpenDeliveryDetails={false}
             canOpenSale={false}
             canPrintConsignmentNote={false}
@@ -169,6 +171,7 @@ describe('SalesOnlineShopGridRow shipment acceptance', () => {
           <SalesOnlineShopGridRow
             canEditSale={false}
             canExpand={false}
+            canExportSaleDocuments={false}
             canOpenDeliveryDetails={false}
             canOpenSale={false}
             canPrintConsignmentNote={false}
@@ -228,6 +231,7 @@ describe('SalesOnlineShopGridRow shipment acceptance', () => {
             {...handlers}
             canEditSale={false}
             canExpand={false}
+            canExportSaleDocuments={false}
             canOpenDeliveryDetails={false}
             canOpenSale={false}
             canPrintConsignmentNote={false}
@@ -255,6 +259,7 @@ describe('SalesOnlineShopGridRow shipment acceptance', () => {
             {...handlers}
             canEditSale={false}
             canExpand
+            canExportSaleDocuments
             canOpenDeliveryDetails
             canOpenSale
             canPrintConsignmentNote

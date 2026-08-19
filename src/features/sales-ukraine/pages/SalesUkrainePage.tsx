@@ -342,6 +342,11 @@ function SalesUkrainePageContent() {
   const canWillNotShip = can(PermissionKeys.SalesUkraine.Sale.UnlockForShipping)
   const canPrintConsignmentNote = can(PermissionKeys.SalesUkraine.Sale.PrintConsignmentNote)
   const canViewAudit = can(PermissionKeys.SalesUkraine.Sale.ViewAudit)
+  const canExportSaleDocuments = can(PermissionKeys.SalesUkraine.Sale.ExportInvoice)
+    || can(PermissionKeys.SalesUkraine.Sale.ExportShipmentList)
+    || can(PermissionKeys.SalesUkraine.Sale.ExportPaymentInvoice)
+    || can(PermissionKeys.SalesUkraine.Sale.ExportPz)
+    || can(PermissionKeys.SalesUkraine.Sale.ExportRevisionDocuments)
   const today = useMemo(() => formatLocalDate(new Date()), [])
   // Default the period to the last week (from = today − 7 days) instead of just today.
   const weekAgo = useMemo(() => {
@@ -750,12 +755,16 @@ function SalesUkrainePageContent() {
   )
 
   const handleRowOpenDocuments = useCallback((sale: SalesUkraineSale, target: HTMLElement) => {
+    if (!canExportSaleDocuments) {
+      return
+    }
+
     setDocumentsMenuState({
       anchor: getFloatingMenuAnchor(target),
       opened: true,
       sale,
     })
-  }, [])
+  }, [canExportSaleDocuments])
 
   const handleDocumentsMenuClose = useCallback(() => {
     setDocumentsMenuState((current) => (current ? { ...current, opened: false } : null))
@@ -1342,6 +1351,7 @@ function SalesUkrainePageContent() {
                         canEditSale={canEditSale}
                         canOpenActions={canOpenContextMenu}
                         canOpenDeliveryDetails={canOpenDeliveryDetails}
+                        canExportSaleDocuments={canExportSaleDocuments}
                         canOpenSale={canOpenSale}
                         canWillNotShip={canWillNotShip}
                         isAdmin={isAdmin}
@@ -1562,6 +1572,7 @@ type SaleGridRowProps = {
   canEditSale: boolean
   canOpenActions: boolean
   canOpenDeliveryDetails: boolean
+  canExportSaleDocuments: boolean
   canOpenSale: boolean
   canWillNotShip: boolean
   isAdmin: boolean
@@ -1586,6 +1597,7 @@ const SaleGridRow = memo(function SaleGridRow({
   canEditSale,
   canOpenActions,
   canOpenDeliveryDetails,
+  canExportSaleDocuments,
   canOpenSale,
   canWillNotShip,
   isAdmin,
@@ -1895,7 +1907,7 @@ const SaleGridRow = memo(function SaleGridRow({
       </div>
 
       <div className="sg-doc-actions" data-row-stop="true">
-        {!hidePrintBlock && !hideEditActActions && (
+        {canExportSaleDocuments && !hidePrintBlock && !hideEditActActions && (
           <TableRowAction
             action="document"
             aria-haspopup="menu"

@@ -4820,6 +4820,495 @@
       "disposition": "covered_existing",
       "canonicalPermissionKeys": ["orders.ukraine.logistic_way.delete_payment_task"],
       "reason": "The final confirmation rechecks delete-payment-task and sends only the selected protocol identity to the order-owned delete façade."
+    },
+    "PE-01276": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["sales.ukraine.consignment_note_setting.delete"],
+      "reason": "Deleting a TTN setting is exposed only with the dedicated delete right and calls the mutation-policy-protected Ukraine remove façade."
+    },
+    "PE-01277": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["sales.ukraine.consignment_note_setting.save"],
+      "reason": "Creating or updating a TTN setting is exposed only with the dedicated save right and calls the protected Ukraine save façades."
+    },
+    "PE-01278": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["sales.ukraine.sale.print_consignment_note"],
+      "reason": "The final TTN print handler rechecks print_consignment_note and calls the protected Ukraine print façade."
+    },
+    "PE-01279": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-01282",
+      "canonicalPermissionKeys": ["sales.ukraine.sale.create"],
+      "reason": "Retrying reconciliation repeats the same pending merged-sale create operation finalized by PE-01282."
+    },
+    "PE-01280": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-01282",
+      "canonicalPermissionKeys": ["sales.ukraine.sale.create"],
+      "reason": "This control only opens the merged-sale create path finalized by PE-01282."
+    },
+    "PE-01282": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["sales.ukraine.sale.create"],
+      "reason": "The final merged invoice submit rechecks sale.create and uses the mutation-policy-protected merged-create façade."
+    },
+    "PE-01283": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["sales.ukraine.sale.edit"],
+      "reason": "Opening an existing merged sale for editing is hidden unless sale.edit is effective."
+    },
+    "PE-01284": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-01282",
+      "canonicalPermissionKeys": ["sales.ukraine.sale.create"],
+      "reason": "This is another opener for the same merged invoice creation finalized by PE-01282."
+    },
+    "PE-01286": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["sales.ukraine.sale.create", "sales.ukraine.sale.edit"],
+      "reason": "Quantity confirmation remains inside the permission-scoped create or edit flow and the persisted cart mutation is rechecked by that flow."
+    },
+    "PE-01289": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["sales.ukraine.future_reservation.create"],
+      "reason": "The modal, lookup and final reservation submit fail closed without the dedicated future-reservation right and use protected scoped façades."
+    },
+    "PE-01290": {
+      "disposition": "technical_ui",
+      "reason": "The keyboard handler only moves focus and selection inside the already authorized client step."
+    },
+    "PE-01291": {
+      "disposition": "technical_ui",
+      "reason": "Agreement selection only changes the current wizard draft; reassigning a persisted sale has its own final permission boundary."
+    },
+    "PE-01292": {
+      "disposition": "technical_ui",
+      "reason": "The products-step keyboard handler only controls local search and selection."
+    },
+    "PE-01293": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["products.assortment.page.view"],
+      "reason": "The product-card opener and protected assortment details request require the existing assortment page right."
+    },
+    "PE-01294": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-01302",
+      "canonicalPermissionKeys": ["sales.ukraine.sale.create", "sales.ukraine.sale.edit"],
+      "reason": "Retrying the persisted cart mutation repeats the same create/edit workflow operation represented by the final submit."
+    },
+    "PE-01295": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-01302",
+      "canonicalPermissionKeys": ["sales.ukraine.sale.create", "sales.ukraine.sale.edit"],
+      "reason": "Cart reconciliation retry does not define a new capability; it replays the already authorized create/edit operation."
+    },
+    "PE-01296": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-01302",
+      "canonicalPermissionKeys": ["sales.ukraine.sale.create", "sales.ukraine.sale.edit"],
+      "reason": "Recommendations are supporting data loaded only inside the already permission-scoped create/edit wizard, not a separate business mutation."
+    },
+    "PE-01298": {
+      "disposition": "technical_ui",
+      "reason": "Clicking a cart row only changes the selected draft row and performs no independent request or mutation."
+    },
+    "PE-01299": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["sales.ukraine.sale.edit"],
+      "reason": "Editing the act-owned cart item remains within the sale.edit boundary."
+    },
+    "PE-01300": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-01286",
+      "canonicalPermissionKeys": ["sales.ukraine.sale.create", "sales.ukraine.sale.edit"],
+      "reason": "This button only opens the quantity workflow finalized by PE-01286."
+    },
+    "PE-01301": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["sales.ukraine.sale.create", "sales.ukraine.sale.edit"],
+      "reason": "Removing a cart item is allowed only in the current sale create/edit flow and uses that flow's guarded mutation."
+    },
+    "PE-01302": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["sales.ukraine.sale.create", "sales.ukraine.sale.edit"],
+      "reason": "Final sale submission selects the exact create or edit right by flow, rechecks it and uses the corresponding protected façade."
+    },
+    "PE-01303": {
+      "disposition": "technical_ui",
+      "reason": "Transporter selection only edits the local wizard draft; the final create/edit submit owns authorization."
+    },
+    "PE-01304": {
+      "disposition": "technical_ui",
+      "reason": "Recipient selection only edits the local wizard draft; the final create/edit submit owns authorization."
+    },
+    "PE-01305": {
+      "disposition": "technical_ui",
+      "reason": "Address selection only edits the local wizard draft; the final create/edit submit owns authorization."
+    },
+    "PE-01307": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-01302",
+      "canonicalPermissionKeys": ["sales.ukraine.sale.create", "sales.ukraine.sale.edit"],
+      "reason": "The review-step save dispatches the same final create/edit submission represented by PE-01302."
+    },
+    "PE-01310": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-01302",
+      "canonicalPermissionKeys": ["sales.ukraine.sale.create", "sales.ukraine.sale.edit"],
+      "reason": "Manual split confirmation is an intermediate branch of the same guarded sale submission."
+    },
+    "PE-01311": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-01302",
+      "canonicalPermissionKeys": ["sales.ukraine.sale.create", "sales.ukraine.sale.edit"],
+      "reason": "Split recovery replays the same persisted create/edit operation and refuses replay after permission revocation."
+    },
+    "PE-01312": {
+      "disposition": "technical_ui",
+      "reason": "The wizard keyboard shortcut only advances or cancels local navigation."
+    },
+    "PE-01316": {
+      "disposition": "technical_ui",
+      "reason": "Next only changes the local wizard step; the final business operation is separately authorized."
+    },
+    "PE-01317": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-01293",
+      "canonicalPermissionKeys": ["products.assortment.page.view"],
+      "reason": "Retry reloads the same permission-scoped assortment details opened by PE-01293."
+    },
+    "PE-01321": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["sales.ukraine.sale.edit"],
+      "reason": "Applying a shifted item is an edit mutation and is unavailable outside the guarded edit flow."
+    },
+    "PE-01322": {
+      "disposition": "technical_ui",
+      "reason": "The finance badge only expands values already loaded with the agreement; it performs no request or mutation."
+    },
+    "PE-01323": {
+      "disposition": "technical_ui",
+      "reason": "Selecting an agreement changes local wizard state; persisted reassignment uses its own dedicated permission."
+    },
+    "PE-01326": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["sales.ukraine.sale.open_details"],
+      "reason": "Ordered-product history is opened only with sale.open_details and hydrates through the scoped details façade."
+    },
+    "PE-01327": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["sales.ukraine.sale.open_details"],
+      "reason": "The registry row cannot open or hydrate sale details without sale.open_details."
+    },
+    "PE-01328": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["sales.ukraine.sale.edit"],
+      "reason": "The edit-sale control is independently hidden and guarded by sale.edit."
+    },
+    "PE-01329": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["sales.ukraine.sale.view_audit"],
+      "reason": "Printing the historical edit-act document is exposed through the protected audit document workflow."
+    },
+    "PE-01330": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["sales.ukraine.sale.view_audit"],
+      "reason": "The audit opener and its scoped hydration are unavailable without sale.view_audit."
+    },
+    "PE-01331": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["sales.ukraine.sale.open_delivery_details"],
+      "reason": "The delivery opener and scoped delivery hydration require open_delivery_details."
+    },
+    "PE-01333": {
+      "disposition": "technical_ui",
+      "reason": "This reusable confirmation shell only calls its caller-owned final handler, which rechecks the relevant permission."
+    },
+    "PE-01337": {
+      "disposition": "technical_ui",
+      "reason": "Selecting a target agreement is local modal state; the final reassignment is separately authorized."
+    },
+    "PE-01341": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["sales.ukraine.sale.reassign"],
+      "reason": "The final reassignment rechecks the dedicated right and calls the mutation-policy-protected reassign façade."
+    },
+    "PE-01342": {
+      "disposition": "technical_ui",
+      "reason": "The agreement combobox callback only changes local selection and cannot persist a reassignment."
+    },
+    "PE-01344": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["sales.ukraine_interest.preorder.create"],
+      "reason": "Product-interest creation uses the previously reviewed preorder.create boundary and protected endpoint."
+    },
+    "PE-01345": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["products.assortment.page.view"],
+      "reason": "Opening a related product card requires the existing assortment page right."
+    },
+    "PE-01346": {
+      "disposition": "technical_ui",
+      "reason": "Opening the combobox only exposes choices already held by the authorized review step."
+    },
+    "PE-01348": {
+      "disposition": "technical_ui",
+      "reason": "This reusable confirmation wrapper delegates to the caller's permission-rechecked final operation."
+    },
+    "PE-01349": {
+      "disposition": "technical_ui",
+      "reason": "The structure toggle expands already loaded client structure and performs no independent business operation."
+    },
+    "PE-01351": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-01341",
+      "canonicalPermissionKeys": ["sales.ukraine.sale.reassign"],
+      "reason": "This control only opens the reassignment modal finalized by PE-01341."
+    },
+    "PE-01353": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["sales.ukraine.sale.create", "sales.ukraine.sale.edit"],
+      "reason": "Removing a draft cart row remains within the guarded create/edit workflow."
+    },
+    "PE-01354": {
+      "disposition": "technical_ui",
+      "reason": "Cart row selection only chooses the local item for the already authorized workflow."
+    },
+    "PE-01355": {
+      "disposition": "technical_ui",
+      "reason": "The cross-sell control only exposes related suggestions inside the current wizard and does not mutate business state."
+    },
+    "PE-01356": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-01357",
+      "canonicalPermissionKeys": ["sales.ukraine.sale.edit"],
+      "reason": "Entering edit mode is the first local step of the save operation finalized by PE-01357."
+    },
+    "PE-01357": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["sales.ukraine.sale.edit"],
+      "reason": "The details drawer's final save is hidden, closed and server-protected without sale.edit."
+    },
+    "PE-01358": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-01357",
+      "canonicalPermissionKeys": ["sales.ukraine.sale.edit"],
+      "reason": "This is a second edit-mode opener for the save operation finalized by PE-01357."
+    },
+    "PE-01360": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["sales.ukraine.sale.edit"],
+      "reason": "Applying a sale discount is an edit mutation guarded by sale.edit on both client and server."
+    },
+    "PE-01361": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["sales.ukraine.sale.export_invoice", "sales.ukraine.sale.export_shipment_list", "sales.ukraine.sale.export_payment_invoice", "sales.ukraine.sale.export_pz", "sales.ukraine.sale.export_revision_documents"],
+      "reason": "Each document menu item has its own exact export key, the final handler rechecks that key, and every request uses its protected scoped façade."
+    },
+    "PE-01364": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["sales.ukraine.sale.edit"],
+      "reason": "The edit drawer's final form submit is guarded by sale.edit."
+    },
+    "PE-01365": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-01364",
+      "canonicalPermissionKeys": ["sales.ukraine.sale.edit"],
+      "reason": "Pending-shift recovery replays the same protected edit operation finalized by PE-01364."
+    },
+    "PE-01366": {
+      "disposition": "technical_ui",
+      "reason": "All-to-bill only updates the local split draft; persistence is authorized by the final edit submit."
+    },
+    "PE-01367": {
+      "disposition": "technical_ui",
+      "reason": "All-to-store only updates the local split draft; persistence is authorized by the final edit submit."
+    },
+    "PE-01368": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-01378",
+      "canonicalPermissionKeys": ["sales.ukraine.sale.edit"],
+      "reason": "This control opens the conversion workflow finalized by PE-01378."
+    },
+    "PE-01369": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-01282",
+      "canonicalPermissionKeys": ["sales.ukraine.sale.create", "sales.ukraine.sale.edit"],
+      "reason": "Opening the merged drawer is not a new capability; its create and edit actions are independently guarded."
+    },
+    "PE-01371": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-01341",
+      "canonicalPermissionKeys": ["sales.ukraine.sale.reassign"],
+      "reason": "This is another opener for the dedicated reassignment operation finalized by PE-01341."
+    },
+    "PE-01372": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["sales.ukraine.sale.open_delivery_details"],
+      "reason": "Opening and hydrating delivery details requires the existing delivery-details right."
+    },
+    "PE-01374": {
+      "disposition": "technical_ui",
+      "reason": "The display toggle only changes a local presentation mode and does not call an API."
+    },
+    "PE-01376": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-01387",
+      "canonicalPermissionKeys": ["sales.ukraine.sale.edit"],
+      "reason": "This control only opens the add-product form finalized by PE-01387."
+    },
+    "PE-01378": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["sales.ukraine.sale.edit"],
+      "reason": "Converting an existing sale is an edit mutation and is guarded by sale.edit."
+    },
+    "PE-01380": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["sales.ukraine.sale.edit"],
+      "reason": "Confirming item removal mutates the existing sale and requires sale.edit."
+    },
+    "PE-01381": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["sales.ukraine.sale.edit"],
+      "reason": "Opening quantity editing is available only in the guarded sale.edit workflow."
+    },
+    "PE-01382": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["sales.ukraine.sale.edit"],
+      "reason": "Deleting an item from an existing sale is guarded by sale.edit."
+    },
+    "PE-01384": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["sales.ukraine.sale.edit"],
+      "reason": "The editor's final save uses the protected sale.edit mutation boundary."
+    },
+    "PE-01385": {
+      "disposition": "technical_ui",
+      "reason": "Selecting a product only changes local add-form state and cannot persist it."
+    },
+    "PE-01387": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["sales.ukraine.sale.edit"],
+      "reason": "Adding the selected product to an existing sale is a guarded sale.edit mutation."
+    },
+    "PE-01390": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["sales.ukraine.sale.reassign"],
+      "reason": "Final agreement switching rechecks the dedicated reassignment right and calls the protected reassign façade."
+    },
+    "PE-01391": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["products.assortment.page.view"],
+      "reason": "Opening a product card from expanded sale content requires the assortment page right."
+    },
+    "PE-01393": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-01360",
+      "canonicalPermissionKeys": ["sales.ukraine.sale.edit"],
+      "reason": "This control only opens the item-discount edit finalized under sale.edit."
+    },
+    "PE-01395": {
+      "disposition": "technical_ui",
+      "reason": "Opening the client search combobox only exposes already loaded search controls; selection and final mutation are separately guarded."
+    },
+    "PE-01403": {
+      "disposition": "technical_ui",
+      "reason": "The shared page confirmation dispatcher invokes a caller-owned handler that rechecks the exact permission."
+    },
+    "PE-01404": {
+      "disposition": "technical_ui",
+      "reason": "The status/alert indicator only opens explanatory UI over already loaded sale state."
+    },
+    "PE-01405": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["sales.ukraine.sale.edit"],
+      "reason": "The sale editor opener is hidden and closed without sale.edit."
+    },
+    "PE-01407": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["sales.ukraine.sale.unlock_for_shipping"],
+      "reason": "The row action and final handler recheck unlock_for_shipping before the protected mutation."
+    },
+    "PE-01408": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-01360",
+      "canonicalPermissionKeys": ["sales.ukraine.sale.edit"],
+      "reason": "The row discount opener is the first UI step of the edit operation represented by PE-01360."
+    },
+    "PE-01413": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-01361",
+      "canonicalPermissionKeys": ["sales.ukraine.sale.export_invoice", "sales.ukraine.sale.export_shipment_list", "sales.ukraine.sale.export_payment_invoice", "sales.ukraine.sale.export_pz", "sales.ukraine.sale.export_revision_documents"],
+      "reason": "The generic documents opener is rendered only when at least one exact document right is effective; individual actions are finalized by PE-01361."
+    },
+    "PE-01414": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["sales.ukraine.sale.open_context_menu"],
+      "reason": "The row actions menu cannot open without the existing context-menu right."
+    },
+    "PE-01415": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-01357",
+      "canonicalPermissionKeys": ["sales.ukraine.sale.edit"],
+      "reason": "This menu entry is another opener for the guarded sale edit workflow."
+    },
+    "PE-01416": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-01364",
+      "canonicalPermissionKeys": ["sales.ukraine.sale.edit"],
+      "reason": "This menu entry opens the shifted-item edit workflow already covered by sale.edit."
+    },
+    "PE-01417": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["sales.ukraine.sale.open_delivery_details"],
+      "reason": "The actions-menu delivery entry requires open_delivery_details before opening the protected drawer."
+    },
+    "PE-01418": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["sales.ukraine.sale.print_consignment_note"],
+      "reason": "The TTN settings/print drawer cannot open without print_consignment_note."
+    },
+    "PE-01419": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-01407",
+      "canonicalPermissionKeys": ["sales.ukraine.sale.unlock_for_shipping"],
+      "reason": "This is the actions-menu occurrence of the same protected unlock-for-shipping operation."
+    },
+    "PE-01420": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["sales.ukraine.sale.unlock"],
+      "reason": "The unlock action and confirmation handler recheck sale.unlock before the protected mutation."
+    },
+    "PE-01421": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["sales.ukraine.sale.view_audit"],
+      "reason": "The audit menu entry and its scoped requests require sale.view_audit."
+    },
+    "PE-01553": {
+      "disposition": "technical_ui",
+      "reason": "Closing the delete confirmation only cancels local UI state and never deletes an order."
+    },
+    "PE-01841": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-01843",
+      "canonicalPermissionKeys": ["sales.ukraine.sale.edit"],
+      "reason": "This control only selects the audit revision to be confirmed by the edit mutation at PE-01843."
+    },
+    "PE-01843": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["sales.ukraine.sale.edit"],
+      "reason": "Audit confirmation is a mutation, so it is shown only with sale.edit and calls the edit-protected confirmation façade."
+    },
+    "PE-01844": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["sales.ukraine.sale.view_audit"],
+      "reason": "The audit invoice export is loaded through the sale.view_audit protected document façade."
+    },
+    "PE-01845": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["sales.ukraine.sale.view_audit"],
+      "reason": "The audit act export is loaded through the sale.view_audit protected document façade."
     }
   }
 }

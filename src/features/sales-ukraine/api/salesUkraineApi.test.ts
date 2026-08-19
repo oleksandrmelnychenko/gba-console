@@ -24,6 +24,8 @@ import {
   getSaleInvoiceHistoryDocument,
   getSalePaymentDocument,
   getSalePzDocument,
+  getSaleRevisionBaseInvoiceDocument,
+  getSaleRevisionBaseShipmentListDocument,
   getSaleShipmentListDocument,
   getSaleShipmentListHistoryDocument,
   getShiftedSaleById,
@@ -86,13 +88,15 @@ describe('sales Ukraine document request contracts', () => {
   })
 
   it.each([
-    ['current invoice', () => getSaleInvoiceDocument('sale-net-id'), '/sales/get/last/document', { netId: 'sale-net-id' }],
-    ['shipment list', () => getSaleShipmentListDocument('sale-net-id'), '/sales/shipment/list/print/documents', { netId: 'sale-net-id' }],
-    ['PZ document', () => getSalePzDocument('sale-net-id'), '/sales/get/document/pz', { netId: 'sale-net-id' }],
+    ['current invoice', () => getSaleInvoiceDocument('sale-net-id'), '/sales/ukraine/documents/invoice', { netId: 'sale-net-id' }],
+    ['shipment list', () => getSaleShipmentListDocument('sale-net-id'), '/sales/ukraine/documents/shipment-list', { netId: 'sale-net-id' }],
+    ['PZ document', () => getSalePzDocument('sale-net-id'), '/sales/ukraine/documents/pz', { netId: 'sale-net-id' }],
+    ['revision base invoice', () => getSaleRevisionBaseInvoiceDocument('sale-net-id'), '/sales/ukraine/documents/revisions/base-invoice', { netId: 'sale-net-id' }],
+    ['revision base shipment list', () => getSaleRevisionBaseShipmentListDocument('sale-net-id'), '/sales/ukraine/documents/revisions/base-shipment-list', { netId: 'sale-net-id' }],
     [
       'invoice history',
       () => getSaleInvoiceHistoryDocument('sale-net-id', 'history-net-id'),
-      '/sales/get/document/history',
+      '/sales/ukraine/documents/revisions/invoice',
       { historyNetId: 'history-net-id', netId: 'sale-net-id' },
     ],
     [
@@ -104,13 +108,13 @@ describe('sales Ukraine document request contracts', () => {
     [
       'act edit history',
       () => getSaleActForEditingHistoryDocument('sale-net-id', 'history-net-id'),
-      '/sales/get/shifted/hisotry/document',
+      '/sales/ukraine/documents/revisions/edit-act',
       { historyNetId: 'history-net-id', netId: 'sale-net-id' },
     ],
     [
       'shipment list history',
       () => getSaleShipmentListHistoryDocument('sale-net-id', 'history-net-id'),
-      '/sales/shipment/list/print/documents/history',
+      '/sales/ukraine/documents/revisions/shipment-list',
       { historyNetId: 'history-net-id', netId: 'sale-net-id' },
     ],
   ])('requests %s through the legacy-compatible endpoint', async (_label, request, path, query) => {
@@ -146,7 +150,7 @@ describe('sales Ukraine document request contracts', () => {
       operationId: '9B316272-8D8C-4D6D-95A4-6EEA9A79D7D6',
     })
 
-    expect(apiRequestMock).toHaveBeenCalledWith('/sales/get/payment/document', {
+    expect(apiRequestMock).toHaveBeenCalledWith('/sales/ukraine/documents/payment-invoice', {
       headers: {
         'Idempotency-Key': '9b316272-8d8c-4d6d-95a4-6eea9a79d7d6',
       },
@@ -341,7 +345,7 @@ describe('sales Ukraine document request contracts', () => {
       NetUid: saleNetUid,
     })
 
-    expect(apiRequestMock).toHaveBeenCalledWith('/sales/switch', {
+    expect(apiRequestMock).toHaveBeenCalledWith('/sales/ukraine/reassign', {
       headers: { 'Idempotency-Key': operationId },
       method: 'PATCH',
       query: { clientAgreementNetId: agreementNetUid, saleNetId: saleNetUid },
@@ -525,7 +529,7 @@ describe('sales Ukraine document request contracts', () => {
     })
   })
 
-  it('keeps all five TTN drawer calls on the PrintConsignmentNote-protected aliases', async () => {
+  it('keeps TTN reads, setting mutations and print on their scoped Ukraine aliases', async () => {
     const setting = { Name: 'Default', NetUid: 'setting-1' }
     apiRequestMock.mockResolvedValue([])
 

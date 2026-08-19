@@ -390,7 +390,7 @@ export async function getNearestSupplyOrder(
   productNetId: string,
   signal?: AbortSignal,
 ): Promise<WizardNearestSupplyOrder | null> {
-  const result = await apiRequest<unknown>('/supplies/orders/arrival/nearest/get', {
+  const result = await apiRequest<unknown>('/supplies/orders/sales-ukraine/future-reservations/nearest', {
     query: { netId: productNetId },
     ...(signal ? { signal } : {}),
   })
@@ -430,7 +430,7 @@ export async function createFutureReservation(
     throw new SalesMutationPreflightValidationError('Не вдалося визначити дату поставки')
   }
 
-  await apiRequest<unknown>('/sales/reservations/new', {
+  await apiRequest<unknown>('/sales/reservations/ukraine/create', {
     body: withSalesMutationOperationNetUid({
       ClientNetId: clientNetId,
       Count: count,
