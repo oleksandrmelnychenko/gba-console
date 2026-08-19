@@ -125,6 +125,14 @@ export async function getDirectSupplyOrderForSpecifications(netId: string): Prom
   return normalizeDirectSupplyOrder(result)
 }
 
+export async function getDirectSupplyOrderForInvoices(netId: string): Promise<DirectSupplyOrder | null> {
+  const result = await apiRequest<unknown>('/supplies/orders/direct-supply-order/invoices/details', {
+    query: { netId },
+  })
+
+  return normalizeDirectSupplyOrder(result)
+}
+
 export async function updateDirectSupplyOrder(order: DirectSupplyOrder): Promise<DirectSupplyOrder | null> {
   const result = await apiRequest<unknown>('/supplies/orders/update', {
     body: order,
@@ -191,8 +199,24 @@ export async function getSupplyOrderItems(netId: string): Promise<SupplyOrderIte
   return readArrayPayload(result, ['Items', 'SupplyOrderItems', 'Data']) as SupplyOrderItem[]
 }
 
+export async function getSupplyOrderItemsForInvoices(netId: string): Promise<SupplyOrderItem[]> {
+  const result = await apiRequest<unknown>('/supplies/orders/items/direct-supply-order/invoices', {
+    query: { netId },
+  })
+
+  return readArrayPayload(result, ['Items', 'SupplyOrderItems', 'Data']) as SupplyOrderItem[]
+}
+
 export async function getSupplyOrderInvoiceTotals(netId: string): Promise<SupplyOrderInvoiceTotals> {
   const result = await apiRequest<unknown>('/supplies/orders/get/items/total', {
+    query: { netId },
+  })
+
+  return result && typeof result === 'object' ? (result as SupplyOrderInvoiceTotals) : {}
+}
+
+export async function getSupplyOrderInvoiceTotalsForInvoices(netId: string): Promise<SupplyOrderInvoiceTotals> {
+  const result = await apiRequest<unknown>('/supplies/orders/direct-supply-order/invoices/totals', {
     query: { netId },
   })
 
@@ -215,8 +239,25 @@ export async function getSupplyInvoiceItemsForSpecifications(netId: string): Pro
   return normalizeSupplyInvoice(result)
 }
 
+export async function getSupplyInvoiceItemsForDirectOrder(netId: string): Promise<SupplyInvoice | null> {
+  const result = await apiRequest<unknown>('/supplies/invoices/direct-supply-order/items', {
+    query: { netId },
+  })
+
+  return normalizeSupplyInvoice(result)
+}
+
 export async function updateSupplyInvoiceItems(invoice: SupplyInvoice): Promise<SupplyInvoice | null> {
   const result = await apiRequest<unknown>('/supplies/invoices/items/update', {
+    body: invoice,
+    method: 'POST',
+  })
+
+  return normalizeSupplyInvoice(result)
+}
+
+export async function updateDirectSupplyOrderInvoiceItems(invoice: SupplyInvoice): Promise<SupplyInvoice | null> {
+  const result = await apiRequest<unknown>('/supplies/invoices/direct-supply-order/items/update', {
     body: invoice,
     method: 'POST',
   })
@@ -234,8 +275,30 @@ export async function updateSupplyInvoice(supplyOrderNetId: string, invoice: Sup
   return normalizeSupplyInvoice(result)
 }
 
+export async function updateDirectSupplyOrderInvoice(
+  supplyOrderNetId: string,
+  invoice: SupplyInvoice,
+): Promise<SupplyInvoice | null> {
+  const result = await apiRequest<unknown>('/supplies/invoices/direct-supply-order/update', {
+    body: invoice,
+    method: 'POST',
+    query: { netId: supplyOrderNetId },
+  })
+
+  return normalizeSupplyInvoice(result)
+}
+
 export async function updatePackingLists(invoice: SupplyInvoice): Promise<SupplyInvoice | null> {
   const result = await apiRequest<unknown>('/supplies/packinglists/update', {
+    body: invoice,
+    method: 'POST',
+  })
+
+  return normalizeSupplyInvoice(result)
+}
+
+export async function updateDirectSupplyOrderPackingLists(invoice: SupplyInvoice): Promise<SupplyInvoice | null> {
+  const result = await apiRequest<unknown>('/supplies/packinglists/direct-supply-order/update', {
     body: invoice,
     method: 'POST',
   })
@@ -326,6 +389,32 @@ export async function uploadSupplyInvoiceDocuments({
   return normalizeDirectSupplyOrder(result)
 }
 
+export async function uploadDirectSupplyOrderInvoiceDocuments({
+  files,
+  invoice,
+  supplyOrderNetId,
+}: {
+  files: File[]
+  invoice: SupplyInvoice
+  supplyOrderNetId: string
+}): Promise<DirectSupplyOrder | null> {
+  const formData = new FormData()
+
+  formData.append('invoice', JSON.stringify(invoice))
+
+  for (const file of files) {
+    formData.append('invoiceFiles', file)
+  }
+
+  const result = await apiRequest<unknown>('/supplies/invoices/direct-supply-order/documents/upload', {
+    body: formData,
+    method: 'POST',
+    query: { netId: supplyOrderNetId },
+  })
+
+  return normalizeDirectSupplyOrder(result)
+}
+
 export async function uploadSupplyInvoiceFile({
   file,
   invoice,
@@ -387,6 +476,13 @@ export async function deleteSupplyInvoice(netId: string): Promise<void> {
 
 export async function deleteSupplyInvoiceDocument(netId: string): Promise<void> {
   await apiRequest<unknown>('/supplies/invoices/ukraine/delete/document', {
+    method: 'DELETE',
+    query: { netId },
+  })
+}
+
+export async function deleteDirectSupplyOrderInvoiceDocument(netId: string): Promise<void> {
+  await apiRequest<unknown>('/supplies/invoices/direct-supply-order/documents/delete', {
     method: 'DELETE',
     query: { netId },
   })
@@ -555,8 +651,28 @@ export async function getSupplyInformationDeliveryProtocolKeys(): Promise<Supply
   return readArrayPayload(result, ['Items', 'Keys', 'Data']) as SupplyInformationDeliveryProtocolKey[]
 }
 
+export async function getDirectSupplyOrderInvoicePaymentProtocolKeys(): Promise<SupplyOrderPaymentDeliveryProtocolKey[]> {
+  const result = await apiRequest<unknown>('/supplies/orders/direct-supply-order/invoices/payment-protocol-keys')
+
+  return readArrayPayload(result, ['Items', 'Keys', 'Data']) as SupplyOrderPaymentDeliveryProtocolKey[]
+}
+
+export async function getDirectSupplyOrderInvoiceInformationProtocolKeys(): Promise<SupplyInformationDeliveryProtocolKey[]> {
+  const result = await apiRequest<unknown>('/supplies/orders/direct-supply-order/invoices/information-protocol-keys')
+
+  return readArrayPayload(result, ['Items', 'Keys', 'Data']) as SupplyInformationDeliveryProtocolKey[]
+}
+
 export async function getSupplyProtocolResponsibleUsers(): Promise<User[]> {
   const result = await apiRequest<unknown>('/usermanagement/profiles/all/by', {
+    query: { types: 7 },
+  })
+
+  return readArrayPayload(result, ['Items', 'Users', 'Profiles', 'Data']) as User[]
+}
+
+export async function getDirectSupplyOrderInvoiceResponsibleUsers(): Promise<User[]> {
+  const result = await apiRequest<unknown>('/usermanagement/profiles/orders-ukraine/invoices/responsible-users', {
     query: { types: 7 },
   })
 

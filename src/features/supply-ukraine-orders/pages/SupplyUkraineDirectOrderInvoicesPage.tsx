@@ -39,6 +39,7 @@ import type { DataTableColumn } from '../../../shared/ui/data-table/types'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { TableRowAction } from '../../../shared/ui/table-row-action'
 import { useAuth } from '../../auth/useAuth'
+import { getProductForOrderInvoices } from '../../products/api/productsApi'
 import { ProductCardModal } from '../../products/components/ProductCardModal'
 import { EXCEL_FILE_ACCEPT, isExcelFile } from '../excelFiles'
 import {
@@ -51,20 +52,20 @@ import { createPackListMetadataSavePlan } from '../packListDocumentSavePlan'
 import {
   deletePackingList,
   deleteSupplyInvoice,
-  deleteSupplyInvoiceDocument,
-  getDirectSupplyOrderById,
-  getSupplyInformationDeliveryProtocolKeys,
-  getSupplyInvoiceItems,
-  getSupplyOrderInvoiceTotals,
-  getSupplyOrderItems,
-  getSupplyPaymentDeliveryProtocolKeys,
-  getSupplyProtocolResponsibleUsers,
-  updatePackingLists,
-  updateSupplyInvoice,
-  updateSupplyInvoiceItems,
+  deleteDirectSupplyOrderInvoiceDocument,
+  getDirectSupplyOrderForInvoices,
+  getDirectSupplyOrderInvoiceInformationProtocolKeys,
+  getDirectSupplyOrderInvoicePaymentProtocolKeys,
+  getDirectSupplyOrderInvoiceResponsibleUsers,
+  getSupplyInvoiceItemsForDirectOrder,
+  getSupplyOrderInvoiceTotalsForInvoices,
+  getSupplyOrderItemsForInvoices,
+  updateDirectSupplyOrderInvoice,
+  updateDirectSupplyOrderInvoiceItems,
+  updateDirectSupplyOrderPackingLists,
   uploadPackingListDocuments,
   uploadPackingListFile,
-  uploadSupplyInvoiceDocuments,
+  uploadDirectSupplyOrderInvoiceDocuments,
   uploadSupplyInvoiceFile,
 } from '../api/supplyUkraineOrdersApi'
 import type {
@@ -238,6 +239,7 @@ const PERMISSION_EDIT_INVOICE = PermissionKeys.OrdersUkraine.LogisticWay.EditInv
 const PERMISSION_ADD_PACK_LIST = PermissionKeys.OrdersUkraine.PackList.Upload
 const PERMISSION_REMOVE_INVOICE = PermissionKeys.OrdersUkraine.Invoice.Delete
 const PERMISSION_REMOVE_PACK_LIST = PermissionKeys.OrdersUkraine.PackList.Delete
+const PERMISSION_OPEN_INVOICES = PermissionKeys.OrdersUkraine.Order.OpenProducts
 
 function pageStateReducer(state: PageState, action: PageStateAction): PageState {
   const patch = typeof action === 'function' ? action(state) : action
@@ -246,6 +248,21 @@ function pageStateReducer(state: PageState, action: PageStateAction): PageState 
 }
 
 export function SupplyUkraineDirectOrderInvoicesPage() {
+  const { t } = useI18n()
+  const { hasPermission } = useAuth()
+
+  if (!hasPermission(PERMISSION_OPEN_INVOICES)) {
+    return (
+      <Alert color="red" icon={<CircleAlert size={18} />} title={t('Доступ заборонено')} variant="light">
+        {t('У вашої ролі немає права переглядати інвойси і пак листи замовлення.')}
+      </Alert>
+    )
+  }
+
+  return <SupplyUkraineDirectOrderInvoicesPageContent />
+}
+
+function SupplyUkraineDirectOrderInvoicesPageContent() {
   const model = useSupplyUkraineDirectOrderInvoicesPageModel()
   const { t } = useI18n()
   const navigate = useNavigate()
@@ -384,9 +401,9 @@ function useSupplyUkraineDirectOrderInvoicesPageModel() {
 
       try {
         const [nextOrder, nextItems, nextTotals] = await Promise.all([
-          getDirectSupplyOrderById(id),
-          getSupplyOrderItems(id),
-          getSupplyOrderInvoiceTotals(id),
+          getDirectSupplyOrderForInvoices(id),
+          getSupplyOrderItemsForInvoices(id),
+          getSupplyOrderInvoiceTotalsForInvoices(id),
         ])
         const invoiceDetails = await loadInvoiceDetails(nextOrder)
 
@@ -427,6 +444,16 @@ function useSupplyUkraineDirectOrderInvoicesPageModel() {
   }, [id, t])
 
   useEffect(() => {
+    if (!canEditInvoice) {
+      setPageState({
+        informationProtocolKeys: [],
+        isProtocolDictionariesLoading: false,
+        paymentProtocolKeys: [],
+        responsibleUsers: [],
+      })
+      return
+    }
+
     let cancelled = false
 
     async function loadProtocolDictionaries() {
@@ -434,9 +461,9 @@ function useSupplyUkraineDirectOrderInvoicesPageModel() {
 
       try {
         const [nextPaymentKeys, nextInformationKeys, nextUsers] = await Promise.all([
-          getSupplyPaymentDeliveryProtocolKeys(),
-          getSupplyInformationDeliveryProtocolKeys(),
-          getSupplyProtocolResponsibleUsers(),
+          getDirectSupplyOrderInvoicePaymentProtocolKeys(),
+          getDirectSupplyOrderInvoiceInformationProtocolKeys(),
+          getDirectSupplyOrderInvoiceResponsibleUsers(),
         ])
 
         if (!cancelled) {
@@ -465,7 +492,7 @@ function useSupplyUkraineDirectOrderInvoicesPageModel() {
     return () => {
       cancelled = true
     }
-  }, [t])
+  }, [canEditInvoice, t])
 
   useEffect(() => {
     if (!selectedInvoiceNetId || invoiceDetailsByNetId[selectedInvoiceNetId]) {
@@ -478,7 +505,7 @@ function useSupplyUkraineDirectOrderInvoicesPageModel() {
       setPageState({ isInvoiceLoading: true })
 
       try {
-        const invoice = await getSupplyInvoiceItems(invoiceNetId)
+        const invoice = await getSupplyInvoiceItemsForDirectOrder(invoiceNetId)
 
         if (!cancelled) {
           setPageState((current) => ({
@@ -518,9 +545,9 @@ function useSupplyUkraineDirectOrderInvoicesPageModel() {
 
     try {
       const [nextOrder, nextItems, nextTotals] = await Promise.all([
-        getDirectSupplyOrderById(id),
-        getSupplyOrderItems(id),
-        getSupplyOrderInvoiceTotals(id),
+        getDirectSupplyOrderForInvoices(id),
+        getSupplyOrderItemsForInvoices(id),
+        getSupplyOrderInvoiceTotalsForInvoices(id),
       ])
       const invoiceDetails = await loadInvoiceDetails(nextOrder)
 
@@ -545,7 +572,7 @@ function useSupplyUkraineDirectOrderInvoicesPageModel() {
   }
 
   async function submitInvoice(form: InvoiceUploadForm) {
-    if (!canAddInvoice) {
+    if (!hasPermission(PERMISSION_ADD_INVOICE)) {
       notifications.show({ color: 'red', message: t('Недостатньо прав для цієї дії') })
       return
     }
@@ -609,7 +636,7 @@ function useSupplyUkraineDirectOrderInvoicesPageModel() {
   }
 
   async function submitPackList(form: PackListUploadForm) {
-    if (!canAddPackList) {
+    if (!hasPermission(PERMISSION_ADD_PACK_LIST)) {
       notifications.show({ color: 'red', message: t('Недостатньо прав для цієї дії') })
       return
     }
@@ -725,6 +752,12 @@ function useSupplyUkraineDirectOrderInvoicesPageModel() {
   }
 
   async function confirmDeleteInvoice() {
+    if (!hasPermission(PERMISSION_REMOVE_INVOICE)) {
+      setPageState({ deleteInvoiceCandidate: null })
+      notifications.show({ color: 'red', message: t('Недостатньо прав для цієї дії') })
+      return
+    }
+
     if (!deleteInvoiceCandidate?.NetUid) {
       setPageState({ deleteInvoiceCandidate: null })
       return
@@ -749,6 +782,12 @@ function useSupplyUkraineDirectOrderInvoicesPageModel() {
   }
 
   async function confirmDeletePackList() {
+    if (!hasPermission(PERMISSION_REMOVE_PACK_LIST)) {
+      setPageState({ deletePackListCandidate: null })
+      notifications.show({ color: 'red', message: t('Недостатньо прав для цієї дії') })
+      return
+    }
+
     if (!deletePackListCandidate?.NetUid) {
       setPageState({ deletePackListCandidate: null })
       return
@@ -769,7 +808,7 @@ function useSupplyUkraineDirectOrderInvoicesPageModel() {
   }
 
   async function saveInvoiceItems() {
-    if (!canEditInvoice) {
+    if (!hasPermission(PERMISSION_EDIT_INVOICE)) {
       notifications.show({ color: 'red', message: t('Недостатньо прав для цієї дії') })
       return
     }
@@ -787,7 +826,7 @@ function useSupplyUkraineDirectOrderInvoicesPageModel() {
     setPageState({ isSaving: true })
 
     try {
-      const updatedInvoice = await updateSupplyInvoiceItems(toSupplyInvoiceItemsPayload(selectedInvoice))
+      const updatedInvoice = await updateDirectSupplyOrderInvoiceItems(toSupplyInvoiceItemsPayload(selectedInvoice))
       const nextDetails = mergeInvoiceDetails(invoiceDetailsByNetId, [updatedInvoice])
 
       setPageState({ invoiceDetailsByNetId: nextDetails })
@@ -801,7 +840,7 @@ function useSupplyUkraineDirectOrderInvoicesPageModel() {
   }
 
   async function savePackingLists() {
-    if (!canAddPackList) {
+    if (!hasPermission(PERMISSION_ADD_PACK_LIST)) {
       notifications.show({ color: 'red', message: t('Недостатньо прав для цієї дії') })
       return
     }
@@ -819,7 +858,7 @@ function useSupplyUkraineDirectOrderInvoicesPageModel() {
     setPageState({ isSaving: true })
 
     try {
-      const updatedInvoice = await updatePackingLists(toPackingListsPayload(selectedInvoice))
+      const updatedInvoice = await updateDirectSupplyOrderPackingLists(toPackingListsPayload(selectedInvoice))
 
       if (updatedInvoice?.NetUid) {
         setPageState((current) => ({
@@ -840,7 +879,7 @@ function useSupplyUkraineDirectOrderInvoicesPageModel() {
   }
 
   async function saveInvoiceMetadata(form: InvoiceMetadataForm) {
-    if (!canEditInvoice) {
+    if (!hasPermission(PERMISSION_EDIT_INVOICE)) {
       notifications.show({ color: 'red', message: t('Недостатньо прав для цієї дії') })
       return
     }
@@ -869,13 +908,13 @@ function useSupplyUkraineDirectOrderInvoicesPageModel() {
     setPageState({ isSaving: true })
 
     try {
-      const updatedInvoice = await updateSupplyInvoice(id, invoicePayload)
+      const updatedInvoice = await updateDirectSupplyOrderInvoice(id, invoicePayload)
       const invoiceForUpload = updatedInvoice || invoicePayload
 
-      await Promise.all(deletedDocumentNetIds.map(deleteSupplyInvoiceDocument))
+      await Promise.all(deletedDocumentNetIds.map(deleteDirectSupplyOrderInvoiceDocument))
 
       if (form.files.length > 0) {
-        await uploadSupplyInvoiceDocuments({
+        await uploadDirectSupplyOrderInvoiceDocuments({
           files: form.files,
           invoice: invoiceForUpload,
           supplyOrderNetId: id,
@@ -893,7 +932,7 @@ function useSupplyUkraineDirectOrderInvoicesPageModel() {
   }
 
   async function saveInvoiceProtocols(invoice: SupplyInvoice) {
-    if (!canEditInvoice) {
+    if (!hasPermission(PERMISSION_EDIT_INVOICE)) {
       notifications.show({ color: 'red', message: t('Недостатньо прав для цієї дії') })
       return
     }
@@ -907,7 +946,7 @@ function useSupplyUkraineDirectOrderInvoicesPageModel() {
 
     try {
       const invoicePayload = createInvoiceProtocolsPayload(invoice)
-      const updatedInvoice = await updateSupplyInvoice(id, invoicePayload)
+      const updatedInvoice = await updateDirectSupplyOrderInvoice(id, invoicePayload)
       const invoiceForReload = updatedInvoice?.NetUid || invoice.NetUid || selectedInvoice.NetUid
 
       if (updatedInvoice) {
@@ -926,7 +965,7 @@ function useSupplyUkraineDirectOrderInvoicesPageModel() {
   }
 
   async function savePackListMetadata(form: PackListMetadataForm) {
-    if (!canAddPackList) {
+    if (!hasPermission(PERMISSION_ADD_PACK_LIST)) {
       notifications.show({ color: 'red', message: t('Недостатньо прав для цієї дії') })
       return
     }
@@ -944,7 +983,7 @@ function useSupplyUkraineDirectOrderInvoicesPageModel() {
     setPageState({ isSaving: true })
 
     try {
-      const updatedInvoice = await updatePackingLists(toPackingListsPayload(invoiceForMetadata))
+      const updatedInvoice = await updateDirectSupplyOrderPackingLists(toPackingListsPayload(invoiceForMetadata))
       const invoiceAfterMetadata = updatedInvoice || selectedInvoice
       const savedPackList = findSavedPackList(invoiceAfterMetadata, savePlan.metadataDraft)
 
@@ -1398,31 +1437,31 @@ function DirectOrderInvoicesModals({ model }: { model: DirectOrderInvoicesPageMo
     <>
       <InvoiceUploadModal
         isSaving={model.isSaving}
-        opened={model.invoiceUploadOpen}
+        opened={model.invoiceUploadOpen && model.canAddInvoice}
         onClose={() => model.setPageState({ invoiceUploadOpen: false })}
         onSubmit={model.submitInvoice}
       />
       <PackListUploadModal
         isSaving={model.isSaving}
-        opened={model.packListUploadOpen}
+        opened={model.packListUploadOpen && model.canAddPackList}
         onClose={() => model.setPageState({ packListUploadOpen: false })}
         onSubmit={model.submitPackList}
       />
       <InvoiceMetadataModal
-        editor={model.invoiceEditor}
+        editor={model.canEditInvoice ? model.invoiceEditor : null}
         isSaving={model.isSaving}
         onClose={() => model.setPageState({ invoiceEditor: null })}
         onSubmit={model.saveInvoiceMetadata}
       />
       <PackListMetadataModal
-        editor={model.packListEditor}
+        editor={model.canAddPackList ? model.packListEditor : null}
         isSaving={model.isSaving}
         onClose={() => model.setPageState({ packListEditor: null })}
         onSubmit={model.savePackListMetadata}
       />
       <DeleteModal
         isSaving={model.isSaving}
-        opened={Boolean(model.deleteInvoiceCandidate)}
+        opened={model.canRemoveInvoice && Boolean(model.deleteInvoiceCandidate)}
         title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Видалити інвойс')}</span>}
         value={model.deleteInvoiceCandidate?.Number || ''}
         onClose={() => model.setPageState({ deleteInvoiceCandidate: null })}
@@ -1430,13 +1469,17 @@ function DirectOrderInvoicesModals({ model }: { model: DirectOrderInvoicesPageMo
       />
       <DeleteModal
         isSaving={model.isSaving}
-        opened={Boolean(model.deletePackListCandidate)}
+        opened={model.canRemovePackList && Boolean(model.deletePackListCandidate)}
         title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Видалити пак лист')}</span>}
         value={model.deletePackListCandidate?.No || model.deletePackListCandidate?.InvNo || ''}
         onClose={() => model.setPageState({ deletePackListCandidate: null })}
         onConfirm={model.confirmDeletePackList}
       />
-      <ProductCardModal productNetId={model.productCardNetId} onClose={() => model.setProductCardNetId(null)} />
+      <ProductCardModal
+        loadProduct={getProductForOrderInvoices}
+        productNetId={model.productCardNetId}
+        onClose={() => model.setProductCardNetId(null)}
+      />
     </>
   )
 }
@@ -2286,7 +2329,7 @@ async function loadInvoiceDetails(order: DirectSupplyOrder | null): Promise<Reco
         return invoice
       }
 
-      return await getSupplyInvoiceItems(invoice.NetUid) || invoice
+      return await getSupplyInvoiceItemsForDirectOrder(invoice.NetUid) || invoice
     }),
   )
 

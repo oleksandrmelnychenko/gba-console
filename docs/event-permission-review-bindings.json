@@ -3316,6 +3316,71 @@
       "disposition": "covered_existing",
       "canonicalPermissionKeys": ["orders.ukraine.specification_codes.download_codes"],
       "reason": "Final customs-code import rechecks the upload permission and calls the direct-order scoped multipart facade."
+    },
+    "PE-01492": {
+      "disposition": "technical_ui",
+      "reason": "The back button only performs local route navigation and does not read or mutate a protected business resource."
+    },
+    "PE-01495": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-01502",
+      "canonicalPermissionKeys": ["orders.ukraine.pack_list.upload"],
+      "reason": "Opening the pack-list upload modal is the first UI step of the same protected upload finalized by PE-01502."
+    },
+    "PE-01496": {
+      "disposition": "stale_or_aggregated",
+      "reason": "The legacy scanner produced a generic punctuation-only modal record with no stable handler or current source control to authorize."
+    },
+    "PE-01498": {
+      "disposition": "stale_or_aggregated",
+      "reason": "The legacy scanner produced a generic punctuation-only click record with no stable handler or current source control to authorize."
+    },
+    "PE-01501": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["orders.ukraine.invoice.upload"],
+      "reason": "Final invoice-file import rechecks the existing upload permission and calls the already protected Ukraine invoice facade."
+    },
+    "PE-01502": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["orders.ukraine.pack_list.upload"],
+      "reason": "Final pack-list import rechecks the existing upload permission and calls the already protected Ukraine pack-list facade."
+    },
+    "PE-01503": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["orders.ukraine.logistic_way.edit_invoice"],
+      "reason": "Final invoice metadata save rechecks edit-invoice and uses scoped metadata, document-upload, and document-delete facades."
+    },
+    "PE-01504": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["orders.ukraine.pack_list.upload"],
+      "reason": "Final pack-list metadata save rechecks pack-list upload and uses scoped aggregate update plus protected document upload."
+    },
+    "PE-01506": {
+      "disposition": "stale_or_aggregated",
+      "reason": "The generic nested onSubmit(form) scanner record aggregates invoice upload, pack-list upload, and two metadata forms with different permissions; their exact parent handlers are classified separately."
+    },
+    "PE-01509": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-01503",
+      "canonicalPermissionKeys": ["orders.ukraine.logistic_way.edit_invoice"],
+      "reason": "The modal-body submit delegates to the same protected invoice metadata save finalized by PE-01503."
+    },
+    "PE-01515": {
+      "disposition": "technical_ui",
+      "reason": "Restoring a document only changes the local metadata draft; the final permission-scoped save owns persistence."
+    },
+    "PE-01516": {
+      "disposition": "technical_ui",
+      "reason": "Marking a document removed only changes the local metadata draft; the final permission-scoped save owns server deletion."
+    },
+    "PE-01518": {
+      "disposition": "stale_or_aggregated",
+      "reason": "The shared DeleteModal onConfirm record aggregates invoice and pack-list deletions with distinct permissions; their exact candidate openers and final handlers are protected separately."
+    },
+    "PE-01519": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["orders.ukraine.order.open_products"],
+      "reason": "Product-card opening is covered by the page capability and hydrates the product only through its open-products scoped facade."
     }
   }
 }

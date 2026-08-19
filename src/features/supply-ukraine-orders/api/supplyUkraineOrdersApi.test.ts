@@ -3,18 +3,30 @@ import { apiRequest } from '../../../shared/api/apiClient'
 import {
   addDeliveryDocumentsToDirectSupplyInvoiceForSpecifications,
   createSupplyCreditNote,
+  deleteDirectSupplyOrderInvoiceDocument,
   deleteDirectSupplyUkraineOrder,
   deleteSupplyProformDocument,
   getDirectSupplyUkraineOrders,
+  getDirectSupplyOrderForInvoices,
+  getDirectSupplyOrderInvoiceInformationProtocolKeys,
+  getDirectSupplyOrderInvoicePaymentProtocolKeys,
+  getDirectSupplyOrderInvoiceResponsibleUsers,
   getDirectSupplyOrderForProductIncome,
   getDirectSupplyOrderForSpecifications,
+  getSupplyInvoiceItemsForDirectOrder,
   getSupplyInvoiceItemsForSpecifications,
+  getSupplyOrderInvoiceTotalsForInvoices,
+  getSupplyOrderItemsForInvoices,
   getSupplyUkraineOrders,
   getSupplyOrderSuppliers,
   printSupplyOrdersDocument,
   searchSupplyOrderServiceOrganizations,
   searchSupplyOrderServiceOrganizationsForSpecifications,
+  updateDirectSupplyOrderInvoice,
+  updateDirectSupplyOrderInvoiceItems,
+  updateDirectSupplyOrderPackingLists,
   uploadDirectSupplyOrderFromFile,
+  uploadDirectSupplyOrderInvoiceDocuments,
   uploadPackingListDocuments,
   uploadPackingListFile,
   uploadSupplyInvoiceFile,
@@ -118,6 +130,73 @@ describe('supplyUkraineOrdersApi', () => {
     const body = apiRequestMock.mock.calls[2]?.[1]?.body as FormData
     expect(JSON.parse(String(body.get('invoice')))).toEqual({ NetUid: 'invoice-1' })
     expect(body.getAll('documents')).toEqual([file])
+  })
+
+  it('uses permission-scoped direct-order invoice and pack-list routes', async () => {
+    apiRequestMock.mockResolvedValue({})
+    const invoice = { NetUid: 'invoice-1' }
+    const file = new File(['invoice'], 'invoice.pdf', { type: 'application/pdf' })
+
+    await getDirectSupplyOrderForInvoices('order-1')
+    await getSupplyOrderItemsForInvoices('order-1')
+    await getSupplyOrderInvoiceTotalsForInvoices('order-1')
+    await getSupplyInvoiceItemsForDirectOrder('invoice-1')
+    await getDirectSupplyOrderInvoicePaymentProtocolKeys()
+    await getDirectSupplyOrderInvoiceInformationProtocolKeys()
+    await getDirectSupplyOrderInvoiceResponsibleUsers()
+    await updateDirectSupplyOrderInvoiceItems(invoice)
+    await updateDirectSupplyOrderInvoice('order-1', invoice)
+    await updateDirectSupplyOrderPackingLists(invoice)
+    await uploadDirectSupplyOrderInvoiceDocuments({
+      files: [file],
+      invoice,
+      supplyOrderNetId: 'order-1',
+    })
+    await deleteDirectSupplyOrderInvoiceDocument('document-1')
+
+    expect(apiRequestMock).toHaveBeenNthCalledWith(1, '/supplies/orders/direct-supply-order/invoices/details', {
+      query: { netId: 'order-1' },
+    })
+    expect(apiRequestMock).toHaveBeenNthCalledWith(2, '/supplies/orders/items/direct-supply-order/invoices', {
+      query: { netId: 'order-1' },
+    })
+    expect(apiRequestMock).toHaveBeenNthCalledWith(3, '/supplies/orders/direct-supply-order/invoices/totals', {
+      query: { netId: 'order-1' },
+    })
+    expect(apiRequestMock).toHaveBeenNthCalledWith(4, '/supplies/invoices/direct-supply-order/items', {
+      query: { netId: 'invoice-1' },
+    })
+    expect(apiRequestMock).toHaveBeenNthCalledWith(5, '/supplies/orders/direct-supply-order/invoices/payment-protocol-keys')
+    expect(apiRequestMock).toHaveBeenNthCalledWith(6, '/supplies/orders/direct-supply-order/invoices/information-protocol-keys')
+    expect(apiRequestMock).toHaveBeenNthCalledWith(7, '/usermanagement/profiles/orders-ukraine/invoices/responsible-users', {
+      query: { types: 7 },
+    })
+    expect(apiRequestMock).toHaveBeenNthCalledWith(8, '/supplies/invoices/direct-supply-order/items/update', {
+      body: invoice,
+      method: 'POST',
+    })
+    expect(apiRequestMock).toHaveBeenNthCalledWith(9, '/supplies/invoices/direct-supply-order/update', {
+      body: invoice,
+      method: 'POST',
+      query: { netId: 'order-1' },
+    })
+    expect(apiRequestMock).toHaveBeenNthCalledWith(10, '/supplies/packinglists/direct-supply-order/update', {
+      body: invoice,
+      method: 'POST',
+    })
+    expect(apiRequestMock).toHaveBeenNthCalledWith(11, '/supplies/invoices/direct-supply-order/documents/upload', {
+      body: expect.any(FormData),
+      method: 'POST',
+      query: { netId: 'order-1' },
+    })
+    expect(apiRequestMock).toHaveBeenNthCalledWith(12, '/supplies/invoices/direct-supply-order/documents/delete', {
+      method: 'DELETE',
+      query: { netId: 'document-1' },
+    })
+
+    const body = apiRequestMock.mock.calls[10]?.[1]?.body as FormData
+    expect(JSON.parse(String(body.get('invoice')))).toEqual(invoice)
+    expect(body.getAll('invoiceFiles')).toEqual([file])
   })
 
   it('includes the selected end date when loading both Ukraine order sources', async () => {

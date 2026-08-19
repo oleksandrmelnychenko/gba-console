@@ -5,6 +5,7 @@ import {
   exportProductMovementsDocument,
   exportProductOutcomeMovementsDocument,
   getProductAuditEntities,
+  getProductForOrderInvoices,
   getProductForOrderSpecifications,
   getProductIncomeMovements,
   getProductOutcomeMovements,
@@ -248,6 +249,18 @@ describe('products API upload contracts', () => {
     await getProductForOrderSpecifications('product-1', controller.signal)
 
     expect(apiRequestMock).toHaveBeenCalledWith('/products/orders-ukraine/specifications/details', {
+      query: { netId: 'product-1' },
+      signal: controller.signal,
+    })
+  })
+
+  it('loads a direct-order invoice product card through its scoped read facade', async () => {
+    apiRequestMock.mockResolvedValueOnce({ NetUid: 'product-1' })
+    const controller = new AbortController()
+
+    await getProductForOrderInvoices('product-1', controller.signal)
+
+    expect(apiRequestMock).toHaveBeenCalledWith('/products/orders-ukraine/invoices/details', {
       query: { netId: 'product-1' },
       signal: controller.signal,
     })
