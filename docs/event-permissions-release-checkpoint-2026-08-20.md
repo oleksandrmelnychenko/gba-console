@@ -20,7 +20,7 @@
 - Unified frontend gate: `npm run verify:event-permissions` пройшов; він
   перевіряє candidate snapshot, reviewed matrix, audit tests і фактичну
   backend/frontend parity.
-- Backend REQUIRED SQL verifier: API/security/migration/SQL 98/98,
+- Backend REQUIRED SQL verifier: API/security/migration/SQL 101/101,
   actor authorization 17/17, skipped = 0.
 - Runtime catalog: 479 active definitions, 79 pages, 238 groups, 12 sections,
   required metadata gaps = 0.
@@ -32,7 +32,18 @@
 ## БД та migration safety
 
 - Required SQL integration executed on test-only
-  `ConcordDb_EventPermissionsCurrent`; 2/2 passed with exact cleanup.
+  `ConcordDb_EventPermissionsCurrent`; 3/3 passed with exact cleanup/read-only
+  inventory behavior.
+- Legacy inventory union has 159 keys: 157 active and 1 deleted legacy
+  definitions plus alias-only compatibility entries. Every key has a
+  code-owned disposition and deterministic JSON snapshot: 157
+  `alias_to_canonical`, 1 `split_to_canonical`, 1 `inactive_orphan`.
+- Alias rows transitioned idempotently from pre-sync 156 to post-sync 158;
+  no extra canonical definition or UI permission was created.
+- The two previously unmapped active Tax Free carrier keys are now explicit:
+  document download maps to export; the old combined add/remove permission
+  splits into create and delete. Both had six active role links in the
+  inventory snapshot.
 - Active physical duplicate `RolePermission(UserRoleID, PermissionID)` groups:
   0. Duplicate ControlId/alias/revision groups and orphan active links: 0.
 - 156 effective overlaps are intentional canonical+legacy-alias pairs in two
@@ -62,8 +73,9 @@
 - Formal browser click-through for role save/refresh and representative UI
   actions; current local browser-control connector fails before attaching to
   the page. Component and runtime API acceptance are green.
-- Reconciliation/mapping of pre-existing legacy role assignments according to
-  the TЗ; legacy aliases must remain effective during rollout.
+- Transactional physical reconciliation of the 1098 pre-existing active
+  legacy role assignments; logical mapping is complete and legacy aliases
+  remain effective during rollout.
 - Production backup and complete migration dry-run on the final restore point.
 - Deploy in order: migrations → backend/catalog sync → frontend → role rollout.
 - Monitor authorization failures and complete the final before/after/rollback

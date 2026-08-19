@@ -526,6 +526,22 @@ describe('human-reviewed income cashflow actions', () => {
   })
 })
 
+describe('tax-free carrier legacy compatibility', () => {
+  it('splits the old add/remove capability and maps document export once', () => {
+    const createDelete =
+      LegacyPermissionKeys.TaxFreeCarriers.Carrier.CreateDelete
+
+    expect(PermissionAliases[PermissionKeys.TaxFreeCarriers.Carrier.Create])
+      .toEqual([createDelete])
+    expect(PermissionAliases[PermissionKeys.TaxFreeCarriers.Carrier.Delete])
+      .toEqual([createDelete])
+    expect(PermissionAliases[PermissionKeys.TaxFreeCarriers.Carrier.Edit])
+      .toBeUndefined()
+    expect(PermissionAliases[PermissionKeys.TaxFreeCarriers.Document.Export])
+      .toEqual([LegacyPermissionKeys.TaxFreeCarriers.Document.Export])
+  })
+})
+
 describe('human-reviewed sale-file report actions', () => {
   it('contains page, export, and print without sheet-tab or filter permissions', () => {
     const actual = [

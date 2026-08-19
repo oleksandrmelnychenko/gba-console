@@ -6,8 +6,9 @@
 - Робочі гілки: `codex/event-permissions` у кожному репозиторії.
 - UI керування ролями: `/users/roles`.
 - Канонічний каталог: 479 активних подієвих пермішенів.
-- Legacy aliases у поточному каталозі: 156.
-- Останнє оновлення статусу: 2026-08-19.
+- Legacy mapping у поточному каталозі: 158 distinct keys / 159 target
+  bindings (один старий широкий ключ явно split на два canonical права).
+- Останнє оновлення статусу: 2026-08-20.
 
 Цей файл є єдиним робочим ТЗ і чеклістом виконання. Позначка `[x]`
 означає, що пункт реалізований у робочих гілках; `[ ]` — що робота або
@@ -34,14 +35,25 @@
 
 - [x] Зібрати кандидати з frontend, backend, маршрутів і чинного каталогу.
 - [x] Виявити дублікати та технічні UI-кліки.
-- [ ] Отримати з актуальної БД повний список старих активних і неактивних
+- [x] Отримати з актуальної БД повний список старих активних і неактивних
   permission definitions, aliases та всіх `RolePermission` призначень.
-- [ ] Для кожного старого ключа зафіксувати рівно один статус:
+  Read-only inventory на `ConcordDb_EventPermissionsCurrent`: 157 active і
+  1 deleted legacy definitions, 1098 active legacy role links; alias rows
+  штатно перейшли з pre-sync 156 до post-sync 158 після додавання двох
+  mappings Tax Free. Перевірка не зберігає імена/ідентифікатори ролей в
+  artifact.
+- [x] Для кожного старого ключа зафіксувати рівно один статус:
   `same_canonical`, `alias_to_canonical`, `split_to_canonical`,
   `merged_into_canonical`, `inactive_orphan`, `requires_product_decision`.
-- [ ] Жоден старий ключ не може залишитися без явного mapping/status.
-- [ ] Результат mapping зберігати як відтворюваний versioned artifact і
+  Поточний результат: 157 `alias_to_canonical`, 1
+  `split_to_canonical`, 1 `inactive_orphan`, 0 невідомих активних ключів.
+- [x] Жоден старий ключ не може залишитися без явного mapping/status.
+- [x] Результат mapping зберігати як відтворюваний versioned artifact і
   перевіряти в CI.
+  Code-owned version `2026.08.20.1` та snapshot
+  `gba-server/docs/event-permission-legacy-mapping.v1.json` містять 159
+  dispositions; default contract перевіряє snapshot drift, required SQL gate
+  — точну повноту definitions/aliases/active links актуальної test-only БД.
 
 ### 2.2. Правила сумісності
 
@@ -77,7 +89,7 @@
 
 ### 2.4. Acceptance criteria для старих прав
 
-- [ ] 100% старих ключів мають mapping/status.
+- [x] 100% старих ключів мають mapping/status.
 - [ ] 100% старих активних рольових призначень reconciled без мовчазної
   втрати доступу.
 - [ ] Користувач зі старим сумісним призначенням отримує відповідне канонічне
@@ -88,8 +100,10 @@
   канонічного.
 - [ ] Прямий API-запит дозволяється/забороняється однаково для мігрованого
   canonical assignment і підтримуваного legacy alias.
-- [ ] CI падає, якщо з'явився невідомий legacy key, alias без target, duplicate
+- [x] CI падає, якщо з'явився невідомий legacy key, alias без target, duplicate
   mapping або активне старе право без disposition.
+  Єдиний дозволений multi-target mapping — зафіксований split старого
+  `Додати\Видалити` для Tax Free carriers на окремі create/delete права.
 
 ## 3. UI `/users/roles`
 
@@ -169,7 +183,10 @@
 - [x] Звести до поясненого нуля релевантні handler resolution gaps — 431
   records без evidence належать лише до виключених категорій: 320
   `technical_ui`, 98 `duplicate_occurrence`, 13 `stale_or_aggregated`.
-- [ ] Додати CI-перевірку повноти legacy mapping із розділу 2.
+- [x] Додати CI-перевірку повноти legacy mapping із розділу 2.
+  Versioned snapshot має 159 унікальних dispositions; contract і required SQL
+  integration fail-closed перевіряють target keys, активні definitions,
+  aliases, role links та відсутність невідомих активних legacy keys.
 
 ## 7. Фіналізація і rollout
 
@@ -177,7 +194,7 @@
 - [x] Синхронізувати backend branch з актуальним `development`.
 - [x] Повні frontend test, lint, typecheck, build і audit checks.
 - [x] Повний backend build/test та `verify-event-permissions` у required SQL
-  mode — 98/98 API/security/SQL та 17/17 actor authorization tests.
+  mode — 101/101 API/security/SQL та 17/17 actor authorization tests.
 - [ ] Backup і dry-run міграцій на фінальній копії актуальної БД.
 - [ ] Deploy order: БД/міграції → backend → catalog sync → frontend.
 - [ ] Smoke test `/users/roles`, effective permissions та representative `403`.
@@ -189,14 +206,24 @@
 
 ## Поточний етап
 
-**Етап 5 — фінальна перевірка реалізованих 479 прав — у роботі.**
+**Етап 6 — legacy integration і reconciliation — у роботі.**
 
 Поточний підетап від 2026-08-20:
+
+- [x] Повна legacy inventory/classification — 159 історичних ключів у union
+  definitions+aliases мають явний status: 157 alias, 1 split, 1 inactive
+  orphan. Два раніше unmapped активні права Tax Free carriers інтегровані:
+  `Завантаження документів` → document export, `Додати\Видалити` → explicit
+  create+delete split; обидва мали по 6 активних role links.
+- [x] Versioned mapping artifact і CI completeness gate — code version
+  `2026.08.20.1`, deterministic JSON snapshot, default contract та required
+  SQL inventory test пройшли. Фізичний transactional backfill 1098 активних
+  legacy role links у canonical assignments ще не позначений виконаним.
 
 - [x] Frontend audit/typecheck/lint/full tests/build — 16 matrix audit tests,
   4 parity tests і 2564 Vitest tests пройшли; production build успішний.
 - [x] Backend event-permission verification і Release build — required SQL
-  mode: API/security/SQL 98 passed, 0 skipped; actor authorization 17 passed.
+  mode: API/security/SQL 101 passed, 0 skipped; actor authorization 17 passed.
 - [x] Перевірка runtime-каталогу — API повернув 479 active definitions,
   479 unique keys, 79 сторінок, 238 груп і 0 записів без required metadata.
 - [ ] Browser acceptance для role save/refresh, незалежних дій і `403/409` —
@@ -215,7 +242,7 @@
 - [x] Required SQL gate на актуальній test-only копії —
   `ConcordDb_EventPermissionsCurrent`; migration seed і transactional role
   read/update/conflict/link-revival пройшли 2/2 з exact cleanup. Повний
-  `verify-event-permissions` у REQUIRED mode: 98/98 + 17/17.
+  `verify-event-permissions` у REQUIRED mode: 101/101 + 17/17.
 - [x] DB duplicate/index gate — physical duplicates `0`; 156 intentional
   canonical+alias overlaps збережені. Нова filtered unique migration має
   preflight `THROW 51003`, exact `dbo` schema і успішний transactional dry-run;

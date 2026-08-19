@@ -1823,6 +1823,14 @@ export const LegacyPermissionKeys = {
       },
     },
   },
+  TaxFreeCarriers: {
+    Carrier: {
+      CreateDelete: 'Header_NewRemoveStatham_carriersAllView_PKEY',
+    },
+    Document: {
+      Export: 'Header_dataForPrintDocument_carriersAllView_PKEY',
+    },
+  },
   OnlineShopSeo: {
     Resale: {
       Open: 'HEADER_ReSalesPage_BTN',
@@ -2256,6 +2264,15 @@ export const PermissionAliases: Readonly<
   ],
   [PermissionKeys.WarehouseAccounting.Storages.PositionAction.Open]: [
     LegacyPermissionKeys.WarehouseAccounting.Storages.PositionAction.Open,
+  ],
+  [PermissionKeys.TaxFreeCarriers.Carrier.Create]: [
+    LegacyPermissionKeys.TaxFreeCarriers.Carrier.CreateDelete,
+  ],
+  [PermissionKeys.TaxFreeCarriers.Carrier.Delete]: [
+    LegacyPermissionKeys.TaxFreeCarriers.Carrier.CreateDelete,
+  ],
+  [PermissionKeys.TaxFreeCarriers.Document.Export]: [
+    LegacyPermissionKeys.TaxFreeCarriers.Document.Export,
   ],
   [PermissionKeys.OnlineShopSeo.Resale.Open]: [
     LegacyPermissionKeys.OnlineShopSeo.Resale.Open,
