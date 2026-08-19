@@ -17,9 +17,11 @@ import { useValueState } from '../../../shared/hooks/useValueState'
 import { AiFeatureBadge } from '../../../shared/ai/AiFeatureBadge'
 import { AiHistoryLineageNote } from '../../../shared/ai/AiHistoryLineageNote'
 import { useI18n } from '../../../shared/i18n/useI18n'
+import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn } from '../../../shared/ui/data-table/types'
+import { usePermissions } from '../../auth/usePermissions'
 import {
   getAssortmentHealth,
   getAssortmentMargin,
@@ -329,6 +331,25 @@ function useAssortmentColumns(t: (key: string) => string, hasRegion: boolean) {
 }
 
 export function AssortmentDashboardPage() {
+  const { t } = useI18n()
+  const { can, isLoading } = usePermissions()
+
+  if (isLoading) {
+    return <Text c="dimmed">{t('Завантаження')}</Text>
+  }
+
+  if (!can(PermissionKeys.ProductsAssortment.Analytics.Open)) {
+    return (
+      <Alert color="red" icon={<CircleAlert size={18} />} title={t('Доступ заборонено')} variant="light">
+        {t('Недостатньо прав для перегляду аналітики асортименту')}
+      </Alert>
+    )
+  }
+
+  return <AssortmentDashboardPageContent />
+}
+
+function AssortmentDashboardPageContent() {
   const { t } = useI18n()
   const [overview, setOverview] = useValueState<AssortmentOverview | null>(null)
   const [rows, setRows] = useValueState<AssortmentRow[]>([])

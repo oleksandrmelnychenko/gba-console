@@ -5,13 +5,13 @@
     "classifiedRecords": 1902,
     "dispositionCounts": {
       "technical_ui": 778,
-      "covered_existing": 622,
+      "covered_existing": 626,
       "duplicate_occurrence": 313,
-      "business_candidate": 117,
-      "needs_human_review": 59,
+      "needs_human_review": 58,
+      "business_candidate": 114,
       "stale_or_aggregated": 13
     },
-    "reviewCandidates": 176,
+    "reviewCandidates": 172,
     "technicalExcluded": 778,
     "duplicatesExcluded": 313,
     "duplicateOccurrencesTotal": 382,
@@ -2845,7 +2845,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/assortment/pages/AssortmentDashboardPage.tsx",
-        "line": 331,
+        "line": 333,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -2876,7 +2876,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/assortment/pages/AssortmentDashboardPage.tsx",
-        "line": 478,
+        "line": 499,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -2905,12 +2905,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-e5ddfa9a3973",
+          "candidateId": "EPC-c0ed343535a3",
           "distance": 0,
           "file": "src/features/assortment/pages/AssortmentDashboardPage.tsx",
           "handler": "{() => onPick(item.row.product_id)}",
           "humanLabel": null,
-          "line": 825,
+          "line": 846,
           "permissionKeys": [],
           "score": 18
         }
@@ -2918,7 +2918,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/assortment/pages/AssortmentDashboardPage.tsx",
-        "line": 825,
+        "line": 846,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -2939,20 +2939,22 @@
       "proposedPermission": "products.products_assortment.row_on_pick_row_product_id.row_click",
       "securityLevel": "medium",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "covered_existing",
+      "dispositionReason": "The row only opens the product card inside the analytics page; the page and every Product Intelligence endpoint share the same existing class-level analytics page permission.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "products.assortment_analytics.page.view"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-340de1cee962",
+          "candidateId": "EPC-464713056ebc",
           "distance": 22,
           "file": "src/features/assortment/pages/AssortmentDashboardPage.tsx",
           "handler": "{(row) => onPick(row.product_id)}",
           "humanLabel": null,
-          "line": 924,
+          "line": 945,
           "permissionKeys": [],
           "score": 14
         }
@@ -2960,7 +2962,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/assortment/pages/AssortmentDashboardPage.tsx",
-        "line": 946,
+        "line": 967,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -37048,12 +37050,14 @@
       "proposedPermission": "products.products_income_documents.on_open_movement_history_product.modal_open",
       "securityLevel": "low",
       "rawStatus": "Candidate existing key in component; binding review required",
-      "disposition": "needs_human_review",
-      "dispositionReason": "raw_audit_claims_existing_binding_but_does_not_name_the_key",
+      "disposition": "covered_existing",
+      "dispositionReason": "The movement-history action is rendered only with movement.open and opens a drawer whose requests use the existing assortment-scoped read façades.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "products.assortment.movement.open"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
           "candidateId": "EPC-f5a13dbf276d",
@@ -79193,12 +79197,14 @@
       "proposedPermission": "products.products.void_export_movements.command_export.2",
       "securityLevel": "medium",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "covered_existing",
+      "dispositionReason": "The shared movement drawer receives canExport from the caller, hides the control without movement.export, rechecks it in the final handler, and calls only the scoped export path.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "products.assortment.movement.export"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [],
       "source": {
         "status": "unresolved",
@@ -79410,12 +79416,14 @@
       "proposedPermission": "products.products.on_export.command_export",
       "securityLevel": "medium",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "covered_existing",
+      "dispositionReason": "The shared income/outcome export toolbar is another occurrence of the same movement.export capability and does not define a separate permission.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "products.assortment.movement.export"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [],
       "source": {
         "status": "unresolved",
@@ -80121,7 +80129,6 @@
     }
   ],
   "reviewCandidateIds": [
-    "PE-00079",
     "PE-00110",
     "PE-00111",
     "PE-00113",
@@ -80142,7 +80149,6 @@
     "PE-00137",
     "PE-00152",
     "PE-00163",
-    "PE-00913",
     "PE-00916",
     "PE-00917",
     "PE-01139",
@@ -80294,9 +80300,7 @@
     "PE-01843",
     "PE-01844",
     "PE-01845",
-    "PE-01846",
-    "PE-01878",
-    "PE-01885"
+    "PE-01846"
   ],
   "source": {
     "artifact": "docs/permission-event-matrix-audit-2026-08-14.json",

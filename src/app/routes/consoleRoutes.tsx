@@ -196,6 +196,7 @@ const migratedConsoleRoutes: ConsoleRoute[] = [
   {
     path: '/products/assortment',
     element: lazyRoute(<AssortmentDashboardPage />),
+    permissionKey: PermissionKeys.ProductsAssortment.Analytics.Open,
   },
   {
     path: '/accounting/specification-codes',

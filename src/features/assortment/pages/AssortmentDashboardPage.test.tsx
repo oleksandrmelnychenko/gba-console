@@ -3,6 +3,7 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { I18nProvider } from '../../../shared/i18n/I18nProvider'
+import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { theme } from '../../../shared/theme/theme'
 import {
   getAssortmentHealth,
@@ -14,6 +15,15 @@ import {
 } from '../api/assortmentApi'
 import type { AssortmentRow } from '../types'
 import { AssortmentDashboardPage } from './AssortmentDashboardPage'
+
+const allowedPermissions = new Set<string>()
+
+vi.mock('../../auth/usePermissions', () => ({
+  usePermissions: () => ({
+    can: (permission: string) => allowedPermissions.has(permission),
+    isLoading: false,
+  }),
+}))
 
 vi.mock('../api/assortmentApi', () => ({
   getAssortmentHealth: vi.fn(),
@@ -131,8 +141,19 @@ function renderPage() {
 
 describe('AssortmentDashboardPage', () => {
   beforeEach(() => {
+    allowedPermissions.clear()
+    allowedPermissions.add(PermissionKeys.ProductsAssortment.Analytics.Open)
     vi.clearAllMocks()
     mockAssortmentData()
+  })
+
+  it('does not mount analytics without the existing page right', () => {
+    allowedPermissions.clear()
+    renderPage()
+
+    expect(screen.getByText('Доступ заборонено')).toBeTruthy()
+    expect(getAssortmentOverview).not.toHaveBeenCalled()
+    expect(getAssortmentHealth).not.toHaveBeenCalled()
   })
 
   it('puts the actionable product table first and keeps product names visually meaningful', async () => {

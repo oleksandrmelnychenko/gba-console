@@ -101,6 +101,11 @@
     { "route": "/recommendations", "permissionKey": "orders.purchase_cockpit.page.view" }
   ],
   "recordOverrides": {
+    "PE-00079": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["products.assortment_analytics.page.view"],
+      "reason": "The row only opens the product card inside the analytics page; the page and every Product Intelligence endpoint share the same existing class-level analytics page permission."
+    },
     "PE-00070": {
       "disposition": "covered_existing",
       "canonicalPermissionKeys": [
@@ -4355,6 +4360,11 @@
       "disposition": "technical_ui",
       "reason": "The storage badge only toggles a popover over placement rows already returned by the page-authorized registry request; it performs no additional API call or business operation."
     },
+    "PE-00913": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["products.assortment.movement.open"],
+      "reason": "The movement-history action is rendered only with movement.open and opens a drawer whose requests use the existing assortment-scoped read façades."
+    },
     "PE-00942": {
       "disposition": "covered_existing",
       "canonicalPermissionKeys": ["products.specification_codes.code.edit"],
@@ -4379,6 +4389,16 @@
     "PE-01068": {
       "disposition": "technical_ui",
       "reason": "Switching between sheets of an already authorized local workbook only changes presentation state; page.view owns file access and export/print own the two output boundaries."
+    },
+    "PE-01878": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["products.assortment.movement.export"],
+      "reason": "The shared movement drawer receives canExport from the caller, hides the control without movement.export, rechecks it in the final handler, and calls only the scoped export path."
+    },
+    "PE-01885": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["products.assortment.movement.export"],
+      "reason": "The shared income/outcome export toolbar is another occurrence of the same movement.export capability and does not define a separate permission."
     },
     "PE-01869": {
       "disposition": "technical_ui",
