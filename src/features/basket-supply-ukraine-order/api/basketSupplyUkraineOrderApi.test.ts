@@ -3,6 +3,10 @@ import { apiRequest } from '../../../shared/api/apiClient'
 import {
   addOrUpdateSad,
   addOrUpdateSaleSad,
+  assembleCartSadDocument,
+  assembleCartTaxFreeDocument,
+  getNotSentSads,
+  getNotSentTaxFreePackLists,
   getSalesForMovingToUkraine,
   getUkraineCartItems,
   updateUkraineCartItem,
@@ -226,5 +230,67 @@ describe('basketSupplyUkraineOrderApi cart reservation mutations', () => {
       '/sales/supply-ukraine/registry',
       '/supplies/ukraine/order/cart/items/page/file/select/preview',
     ])
+  })
+
+  it('uses scoped narrow routes for cart document references and TaxFree assembly', async () => {
+    apiRequestMock
+      .mockResolvedValueOnce({ Body: [] })
+      .mockResolvedValueOnce({ Body: [] })
+      .mockResolvedValueOnce({ Body: { Id: 61 } })
+
+    await getNotSentTaxFreePackLists()
+    await getNotSentSads()
+    await assembleCartTaxFreeDocument({
+      existingDocumentNetUid:
+        '11111111-1111-4111-8111-111111111111',
+      items: [{ cartItemId: 41, quantity: 7 }],
+    })
+
+    expect(apiRequestMock.mock.calls).toEqual([
+      ['/supplies/ukraine/order/packlists/taxfree/page/documents/taxfree/not-sent'],
+      ['/supplies/ukraine/order/packlists/sad/page/documents/sad/not-sent'],
+      [
+        '/supplies/ukraine/order/packlists/taxfree/page/documents/taxfree/assemble',
+        {
+          body: {
+            existingDocumentNetUid:
+              '11111111-1111-4111-8111-111111111111',
+            items: [{ cartItemId: 41, quantity: 7 }],
+          },
+          method: 'POST',
+        },
+      ],
+    ])
+  })
+
+  it('keeps a durable operation for narrow cart SAD assembly without sending a broad aggregate', async () => {
+    apiRequestMock.mockResolvedValueOnce({ Body: { Id: 62 } })
+
+    await assembleCartSadDocument({
+      items: [{ cartItemId: 42, quantity: 5 }],
+      sadType: 1,
+    })
+
+    const options = apiRequestMock.mock.calls[0]?.[1]
+    const operationId = new Headers(options?.headers)
+      .get('Idempotency-Key')
+
+    expect(operationId).toMatch(
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i,
+    )
+    expect(apiRequestMock).toHaveBeenCalledWith(
+      '/supplies/ukraine/order/packlists/sad/page/documents/sad/assemble',
+      {
+        body: {
+          items: [{ cartItemId: 42, quantity: 5 }],
+          sadType: 1,
+        },
+        dedupe: false,
+        headers: {
+          'Idempotency-Key': operationId,
+        },
+        method: 'POST',
+      },
+    )
   })
 })

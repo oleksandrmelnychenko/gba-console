@@ -25,6 +25,8 @@ vi.mock('../api/basketSupplyUkraineOrderApi', () => ({
   addOrUpdateSaleSad: vi.fn(),
   addOrUpdateSaleTaxFreePackList: vi.fn(),
   addOrUpdateTaxFreePackList: vi.fn(),
+  assembleCartSadDocument: vi.fn(),
+  assembleCartTaxFreeDocument: vi.fn(),
   calculateTotalsByCartItems: vi.fn(),
   calculateTotalsBySales: vi.fn(),
   getNotSentSads: vi.fn(),

@@ -8,6 +8,8 @@ import { I18nProvider } from '../../../shared/i18n/I18nProvider'
 import type { DataTableColumn } from '../../../shared/ui/data-table/types'
 import type { BasketSale, SupplyOrderUkraineCartItem } from '../types'
 import {
+  getNotSentSads,
+  getNotSentTaxFreePackLists,
   getSalesForMovingToUkraine,
   getUkraineCartItems,
 } from '../api/basketSupplyUkraineOrderApi'
@@ -27,6 +29,8 @@ vi.mock('../api/basketSupplyUkraineOrderApi', () => ({
   addOrUpdateSaleSad: vi.fn(),
   addOrUpdateSaleTaxFreePackList: vi.fn(),
   addOrUpdateTaxFreePackList: vi.fn(),
+  assembleCartSadDocument: vi.fn(),
+  assembleCartTaxFreeDocument: vi.fn(),
   calculateTotalsByCartItems: vi.fn().mockResolvedValue({}),
   calculateTotalsBySales: vi.fn().mockResolvedValue({}),
   getNotSentSads: vi.fn().mockResolvedValue([]),
@@ -162,6 +166,33 @@ describe('BasketSupplyUkraineOrderPage permissions', () => {
     )
     expect(screen.queryByRole('button', { name: 'Завантажити в корзину' })).toBeNull()
     expect(screen.getByRole('button', { name: 'Резерв' })).not.toBeNull()
+  })
+
+  it('does not load document references or expose assembly without the document permission', async () => {
+    allowedPermissions.add(PermissionKeys.SystemPages.SupplyCart.View)
+    const view = renderPage('/basket-supply-ukraine-order')
+
+    await waitFor(() => expect(getUkraineCartItems).toHaveBeenCalledTimes(1))
+    expect(getNotSentTaxFreePackLists).not.toHaveBeenCalled()
+    expect(getNotSentSads).not.toHaveBeenCalled()
+    expect(screen.queryByRole('button', { name: 'Створити' })).toBeNull()
+
+    allowedPermissions.add(PermissionKeys.SupplyCart.Document.Assemble)
+    view.rerender(
+      <MantineProvider>
+        <I18nProvider>
+          <MemoryRouter initialEntries={['/basket-supply-ukraine-order']}>
+            <BasketSupplyUkraineOrderPage />
+          </MemoryRouter>
+        </I18nProvider>
+      </MantineProvider>,
+    )
+
+    await waitFor(() => {
+      expect(getNotSentTaxFreePackLists).toHaveBeenCalledTimes(1)
+      expect(getNotSentSads).toHaveBeenCalledTimes(1)
+    })
+    expect(screen.getByRole('button', { name: 'Створити' })).not.toBeNull()
   })
 
   it('blocks the sales tab request without its page permission', () => {

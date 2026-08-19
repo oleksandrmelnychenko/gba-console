@@ -32,10 +32,10 @@ import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { TableRowAction } from '../../../shared/ui/table-row-action'
 import {
-  addOrUpdateSad,
   addOrUpdateSaleSad,
   addOrUpdateSaleTaxFreePackList,
-  addOrUpdateTaxFreePackList,
+  assembleCartSadDocument,
+  assembleCartTaxFreeDocument,
   calculateTotalsByCartItems,
   calculateTotalsBySales,
   getNotSentSads,
@@ -212,6 +212,7 @@ function BasketCartWorkflow() {
   const navigate = useNavigate()
   const canImportFile = can(PermissionKeys.SupplyCart.File.Import)
   const canEditReservation = can(PermissionKeys.SupplyCart.Item.EditReservation)
+  const canAssembleDocument = can(PermissionKeys.SupplyCart.Document.Assemble)
   const [cartItems, setCartItems] = useState<SupplyOrderUkraineCartItem[]>([])
   const [destinationItems, setDestinationItems] = useState<SupplyOrderUkraineCartItem[]>([])
   const [notSentTaxFreePackLists, setNotSentTaxFreePackLists] = useState<TaxFreePackList[]>([])
@@ -269,6 +270,14 @@ function BasketCartWorkflow() {
   })
 
   const loadReferenceDocuments = useCallback(async () => {
+    if (!canAssembleDocument) {
+      setNotSentTaxFreePackLists([])
+      setNotSentSads([])
+      setReferenceLoading(false)
+      setReferenceError(null)
+      return
+    }
+
     setReferenceLoading(true)
     setReferenceError(null)
 
@@ -282,7 +291,7 @@ function BasketCartWorkflow() {
     } finally {
       setReferenceLoading(false)
     }
-  }, [t])
+  }, [canAssembleDocument, t])
 
   useEffect(() => {
     let cancelled = false
@@ -321,6 +330,14 @@ function BasketCartWorkflow() {
     let cancelled = false
 
     async function loadReferences() {
+      if (!canAssembleDocument) {
+        setNotSentTaxFreePackLists([])
+        setNotSentSads([])
+        setReferenceLoading(false)
+        setReferenceError(null)
+        return
+      }
+
       setReferenceLoading(true)
       setReferenceError(null)
 
@@ -347,7 +364,7 @@ function BasketCartWorkflow() {
     return () => {
       cancelled = true
     }
-  }, [t])
+  }, [canAssembleDocument, t])
 
   useEffect(() => {
     let cancelled = false
@@ -564,6 +581,10 @@ function BasketCartWorkflow() {
   }
 
   async function createDocument() {
+    if (!canAssembleDocument) {
+      return
+    }
+
     setCreateError(null)
     setCreatedDocument(null)
 
@@ -672,11 +693,15 @@ function BasketCartWorkflow() {
   )
   const destinationToolbarRight = useMemo(
     () => (
-      <Button color={CREATE_ACTION_COLOR} disabled={!destinationItems.length} loading={isCreatingDocument} onClick={() => setCreateModalOpen(true)}>
-        {isCreatingDocument ? t('Створення') : t('Створити')}
-      </Button>
+      canAssembleDocument
+        ? (
+            <Button color={CREATE_ACTION_COLOR} disabled={!destinationItems.length} loading={isCreatingDocument} onClick={() => setCreateModalOpen(true)}>
+              {isCreatingDocument ? t('Створення') : t('Створити')}
+            </Button>
+          )
+        : null
     ),
-    [destinationItems.length, isCreatingDocument, t],
+    [canAssembleDocument, destinationItems.length, isCreatingDocument, t],
   )
 
   return (
@@ -863,7 +888,7 @@ function BasketCartWorkflow() {
         onLoadValidItems={addPreviewItemsToDestination}
       />
 
-      <AppModal centered opened={isCreateModalOpen} size="lg" title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Створити документ')}</span>} onClose={closeCreateModal}>
+      <AppModal centered opened={canAssembleDocument && isCreateModalOpen} size="lg" title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Створити документ')}</span>} onClose={closeCreateModal}>
         <Stack gap="md">
           <DocumentTargetControls
             disabled={isCreatingDocument || isReferenceLoading}
@@ -1816,16 +1841,10 @@ async function createTaxFreeDocument(
     throw new Error('TaxFree pack list is not selected')
   }
 
-  const packList: TaxFreePackList = selectedPackList
-    ? {
-        ...selectedPackList,
-        SupplyOrderUkraineCartItems: [...(selectedPackList.SupplyOrderUkraineCartItems || []), ...documentItems],
-      }
-    : {
-        SupplyOrderUkraineCartItems: documentItems,
-      }
-
-  const result = await addOrUpdateTaxFreePackList(packList)
+  const result = await assembleCartTaxFreeDocument({
+    existingDocumentNetUid: selectedPackList?.NetUid,
+    items: toDocumentAssemblyItems(documentItems),
+  })
 
   return {
     kind: 'TaxFree',
@@ -1845,22 +1864,11 @@ async function createSadDocument(
     throw new Error('SAD is not selected')
   }
 
-  const sadItems = documentItems.map((item) => ({
-    Qty: item.UploadedQty || item.ChangedQty || item.ReservedQty,
-    SupplyOrderUkraineCartItem: item,
-  }))
-  const sad: Sad = selectedSad
-    ? {
-        ...selectedSad,
-        SadItems: [...(selectedSad.SadItems || []), ...sadItems],
-        SadType: documentState.sadType,
-      }
-    : {
-        SadItems: sadItems,
-        SadType: documentState.sadType,
-      }
-
-  const result = await addOrUpdateSad(sad)
+  const result = await assembleCartSadDocument({
+    existingDocumentNetUid: selectedSad?.NetUid,
+    items: toDocumentAssemblyItems(documentItems),
+    sadType: documentState.sadType,
+  })
 
   return {
     kind: 'SAD',
@@ -2074,6 +2082,17 @@ function toCartItemsForDocument(items: SupplyOrderUkraineCartItem[]) {
     ...item,
     IsSelected: false,
     UploadedQty: item.ChangedQty || item.ReservedQty,
+  }))
+}
+
+function toDocumentAssemblyItems(
+  items: SupplyOrderUkraineCartItem[],
+) {
+  return items.map((item) => ({
+    cartItemId: Number(item.Id),
+    quantity: toNumber(
+      item.UploadedQty || item.ChangedQty || item.ReservedQty,
+    ),
   }))
 }
 

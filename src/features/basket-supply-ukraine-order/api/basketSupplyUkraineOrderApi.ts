@@ -14,6 +14,7 @@ import type {
   PreviewCartItem,
   Sad,
   SupplyOrderUkraineCartItem,
+  SupplyCartDocumentAssemblyRequest,
   TaxFreePackList,
 } from '../types'
 
@@ -116,9 +117,23 @@ export async function calculateTotalsBySales(sales: BasketSale[]): Promise<CartI
 }
 
 export async function getNotSentTaxFreePackLists(): Promise<TaxFreePackList[]> {
-  const result = await apiRequest<unknown>('/supplies/ukraine/order/packlists/taxfree/all/notsent')
+  const result = await apiRequest<unknown>('/supplies/ukraine/order/packlists/taxfree/page/documents/taxfree/not-sent')
 
   return normalizeArray<TaxFreePackList>(result)
+}
+
+export async function assembleCartTaxFreeDocument(
+  request: SupplyCartDocumentAssemblyRequest,
+): Promise<TaxFreePackList | null> {
+  const result = await apiRequest<unknown>(
+    '/supplies/ukraine/order/packlists/taxfree/page/documents/taxfree/assemble',
+    {
+      method: 'POST',
+      body: request,
+    },
+  )
+
+  return normalizeItem<TaxFreePackList>(result)
 }
 
 export async function getNotSentSaleTaxFreePackLists(): Promise<TaxFreePackList[]> {
@@ -146,9 +161,44 @@ export async function addOrUpdateSaleTaxFreePackList(packList: TaxFreePackList):
 }
 
 export async function getNotSentSads(): Promise<Sad[]> {
-  const result = await apiRequest<unknown>('/supplies/ukraine/order/packlists/sad/all/notsent')
+  const result = await apiRequest<unknown>('/supplies/ukraine/order/packlists/sad/page/documents/sad/not-sent')
 
   return normalizeArray<Sad>(result)
+}
+
+export async function assembleCartSadDocument(
+  request: SupplyCartDocumentAssemblyRequest,
+): Promise<Sad | null> {
+  type MutationEnvelope = SupplyCartDocumentAssemblyRequest & {
+    Id?: number
+  }
+  const mutation: MutationEnvelope = {
+    ...request,
+    Id: request.existingDocumentNetUid ? 1 : 0,
+  }
+  const result = await executeSadMutation({
+    sad: mutation,
+    request: (payload, context) => {
+      const body = { ...payload }
+      delete body.Id
+
+      return apiRequest<unknown>(
+        '/supplies/ukraine/order/packlists/sad/page/documents/sad/assemble',
+        {
+          method: 'POST',
+          body,
+          ...(context.isCreate
+            ? {
+                dedupe: false,
+                headers: context.headers,
+              }
+            : {}),
+        },
+      )
+    },
+  })
+
+  return normalizeItem<Sad>(result)
 }
 
 export async function getNotSentSaleSads(): Promise<Sad[]> {

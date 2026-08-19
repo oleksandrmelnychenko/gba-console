@@ -50,6 +50,9 @@ export const PermissionKeys = {
     },
   },
   SupplyCart: {
+    Document: {
+      Assemble: 'orders.supply_cart.document.assemble',
+    },
     File: {
       Import: 'orders.supply_cart.file.import',
     },
@@ -919,6 +922,7 @@ export type SystemPagePermissionKey =
   | Values<typeof PermissionKeys.SystemPages.TaxFreePackLists>
 
 export type SupplyCartPermissionKey =
+  | Values<typeof PermissionKeys.SupplyCart.Document>
   | Values<typeof PermissionKeys.SupplyCart.File>
   | Values<typeof PermissionKeys.SupplyCart.Item>
 
@@ -2068,6 +2072,7 @@ const eventPermissionKeys = new Set<string>([
   ...Object.values(PermissionKeys.SystemPages.TaxFreeCarriers),
   ...Object.values(PermissionKeys.SystemPages.TaxFreeDocuments),
   ...Object.values(PermissionKeys.SystemPages.TaxFreePackLists),
+  ...Object.values(PermissionKeys.SupplyCart.Document),
   ...Object.values(PermissionKeys.SupplyCart.File),
   ...Object.values(PermissionKeys.SupplyCart.Item),
   ...Object.values(PermissionKeys.SupplySales.Sale),
