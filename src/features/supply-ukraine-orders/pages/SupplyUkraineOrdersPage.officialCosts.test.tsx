@@ -18,6 +18,10 @@ const apiMocks = vi.hoisted(() => ({
   updateSupplyOrderUkraineDeliveryExpense: vi.fn(),
 }))
 
+vi.mock('../../auth/useAuth', () => ({
+  useAuth: () => ({ hasPermission: () => true }),
+}))
+
 vi.mock('@mantine/notifications', () => ({
   notifications: { show: vi.fn() },
 }))

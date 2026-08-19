@@ -13,6 +13,10 @@ import {
 import type { Product } from '../types'
 import { ProductActionDrawer } from './ProductDetailPage'
 
+vi.mock('../../auth/useAuth', () => ({
+  useAuth: () => ({ hasPermission: () => true }),
+}))
+
 vi.mock('../../auth/components/PermissionGate', () => ({
   PermissionGate: ({ children }: { children: ReactNode }) => children,
 }))
