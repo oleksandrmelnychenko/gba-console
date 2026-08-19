@@ -451,6 +451,18 @@ export const PermissionKeys = {
       Export: 'warehouse_accounting.income_documents.document.export',
     },
   },
+  ProductTransfers: {
+    Page: {
+      View: 'warehouse_accounting.transfers.page.view',
+    },
+    Transfer: {
+      Create: 'warehouse_accounting.transfers.transfer.create',
+      OpenDetails: 'warehouse_accounting.transfers.transfer.open_details',
+    },
+    Document: {
+      Export: 'warehouse_accounting.transfers.document.export',
+    },
+  },
   ConsumableProducts: {
     Page: {
       View: 'services.consumable_products.page.view',
@@ -1051,6 +1063,11 @@ export type ProductIncomeDocumentsPermissionKey =
   | Values<typeof PermissionKeys.ProductIncomeDocuments.Page>
   | Values<typeof PermissionKeys.ProductIncomeDocuments.Document>
 
+export type ProductTransfersPermissionKey =
+  | Values<typeof PermissionKeys.ProductTransfers.Page>
+  | Values<typeof PermissionKeys.ProductTransfers.Transfer>
+  | Values<typeof PermissionKeys.ProductTransfers.Document>
+
 export type ConsumableProductsPermissionKey =
   | Values<typeof PermissionKeys.ConsumableProducts.Page>
   | Values<typeof PermissionKeys.ConsumableProducts.Category>
@@ -1219,6 +1236,7 @@ export type PermissionKey =
   | ProductsAssortmentPermissionKey
   | ProductPlacementsPermissionKey
   | ProductIncomeDocumentsPermissionKey
+  | ProductTransfersPermissionKey
   | ProductSpecificationCodesPermissionKey
   | ProvidingServiceActsPermissionKey
   | TransportersPermissionKey
@@ -2179,6 +2197,9 @@ const eventPermissionKeys = new Set<string>([
   ...Object.values(PermissionKeys.ProductPlacements.Document),
   ...Object.values(PermissionKeys.ProductIncomeDocuments.Page),
   ...Object.values(PermissionKeys.ProductIncomeDocuments.Document),
+  ...Object.values(PermissionKeys.ProductTransfers.Page),
+  ...Object.values(PermissionKeys.ProductTransfers.Transfer),
+  ...Object.values(PermissionKeys.ProductTransfers.Document),
   ...Object.values(PermissionKeys.ConsumableProducts.Page),
   ...Object.values(PermissionKeys.ConsumableProducts.Category),
   ...Object.values(PermissionKeys.ConsumableProducts.Product),

@@ -123,8 +123,8 @@ export type ProductTransferCreateFromFilePayload = {
   productTransfer: {
     Comment: string
     FromDate: string
-    FromStorage: ProductTransferStorage
+    FromStorageNetUid: string
     IsManagement: boolean
-    ToStorage: ProductTransferStorage
+    ToStorageNetUid: string
   }
 }

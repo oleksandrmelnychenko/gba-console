@@ -3765,6 +3765,33 @@
       "canonicalPermissionKeys": ["products.placements.page.view"],
       "reason": "Vendor code and product name are two entry controls for the same page-scoped product card."
     },
+    "PE-00968": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-00970",
+      "canonicalPermissionKeys": ["warehouse_accounting.transfers.transfer.create"],
+      "reason": "Opening the import modal is the local entry step of the file import finalized by PE-00970 and is not a separate technical-click permission."
+    },
+    "PE-00969": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["warehouse_accounting.transfers.transfer.open_details"],
+      "reason": "Row opening is inert without open_details and hydrates only through the dedicated permission-scoped details route."
+    },
+    "PE-00970": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["warehouse_accounting.transfers.transfer.create"],
+      "reason": "Final file submit rechecks transfer.create, sends a narrow reviewed payload, and uses an idempotent mutation-policy-protected server façade."
+    },
+    "PE-00974": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-00969",
+      "canonicalPermissionKeys": ["warehouse_accounting.transfers.transfer.open_details"],
+      "reason": "The row action and row click converge on the same permission-checked details handler and server route."
+    },
+    "PE-00975": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["warehouse_accounting.transfers.document.export"],
+      "reason": "The drawer export control and final handler both require document.export and call only the scoped export façade."
+    },
     "PE-01869": {
       "disposition": "technical_ui",
       "reason": "The shared Excel format card only selects the requested representation; each caller owns and rechecks the upstream document-generation permission."

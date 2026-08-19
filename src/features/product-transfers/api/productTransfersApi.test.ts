@@ -1,6 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { apiRequest } from '../../../shared/api/apiClient'
-import { addProductTransferFromFile } from './productTransfersApi'
+import {
+  addProductTransferFromFile,
+  exportProductTransferDocument,
+  getProductTransferByNetId,
+  getProductTransfers,
+  getProductTransferStorages,
+} from './productTransfersApi'
 import type { ProductTransferCreateFromFilePayload } from '../types'
 
 vi.mock('../../../shared/api/apiClient', () => ({
@@ -38,7 +44,18 @@ describe('productTransfersApi file import', () => {
         operationNetUid,
       },
     }))
+    expect(apiRequestMock.mock.calls[0][0]).toBe(
+      '/products/transfers/page/import/file',
+    )
     expect(request?.body).toBeInstanceOf(FormData)
+    const body = request?.body as FormData
+    expect(JSON.parse(String(body.get('productTransfer')))).toEqual({
+      Comment: 'warehouse move',
+      FromDate: '2026-07-26T08:00:00.000Z',
+      FromStorageNetUid: '22222222-2222-4222-8222-222222222222',
+      IsManagement: false,
+      ToStorageNetUid: '33333333-3333-4333-8333-333333333333',
+    })
   })
 
   it('reuses the operation id after an unknown outcome', async () => {
@@ -78,6 +95,36 @@ describe('productTransfersApi file import', () => {
   })
 })
 
+describe('productTransfersApi permission-scoped reads', () => {
+  beforeEach(() => {
+    apiRequestMock.mockReset()
+    apiRequestMock.mockResolvedValue([])
+  })
+
+  it('uses only the reviewed page facade routes', async () => {
+    await getProductTransfers({
+      from: '2026-08-01',
+      limit: 20,
+      offset: 0,
+      to: '2026-08-19',
+    })
+    await getProductTransferByNetId(
+      '22222222-2222-4222-8222-222222222222',
+    )
+    await getProductTransferStorages()
+    await exportProductTransferDocument(
+      '22222222-2222-4222-8222-222222222222',
+    )
+
+    expect(apiRequestMock.mock.calls.map(([path]) => path)).toEqual([
+      '/products/transfers/page/registry',
+      '/products/transfers/page/details',
+      '/storages/product-transfers/page/all',
+      '/products/transfers/page/document/export',
+    ])
+  })
+})
+
 function createPayload(): ProductTransferCreateFromFilePayload {
   return {
     file: new File(['SEM1,2'], 'transfer.xlsx', {
@@ -92,17 +139,9 @@ function createPayload(): ProductTransferCreateFromFilePayload {
     productTransfer: {
       Comment: 'warehouse move',
       FromDate: '2026-07-26T08:00:00.000Z',
-      FromStorage: {
-        Id: 11,
-        Name: 'From',
-        NetUid: '22222222-2222-4222-8222-222222222222',
-      },
+      FromStorageNetUid: '22222222-2222-4222-8222-222222222222',
       IsManagement: false,
-      ToStorage: {
-        Id: 12,
-        Name: 'To',
-        NetUid: '33333333-3333-4333-8333-333333333333',
-      },
+      ToStorageNetUid: '33333333-3333-4333-8333-333333333333',
     },
   }
 }

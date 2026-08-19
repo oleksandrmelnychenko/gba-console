@@ -181,7 +181,11 @@ const migratedConsoleRoutes: ConsoleRoute[] = [
     path: '/products/storages/incomes/:tab',
     element: lazyRoute(<ProductRemainsPage />),
   },
-  { path: '/products/transfers', element: lazyRoute(<ProductTransfersPage />) },
+  {
+    path: '/products/transfers',
+    element: lazyRoute(<ProductTransfersPage />),
+    permissionKey: PermissionKeys.ProductTransfers.Page.View,
+  },
   {
     path: '/products/capitalization',
     element: lazyRoute(<ProductCapitalizationsPage />),

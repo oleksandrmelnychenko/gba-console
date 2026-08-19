@@ -5,16 +5,16 @@
     "classifiedRecords": 1902,
     "dispositionCounts": {
       "technical_ui": 761,
-      "covered_existing": 556,
-      "duplicate_occurrence": 293,
-      "business_candidate": 211,
+      "covered_existing": 559,
+      "duplicate_occurrence": 295,
+      "business_candidate": 206,
       "needs_human_review": 69,
       "stale_or_aggregated": 12
     },
-    "reviewCandidates": 280,
+    "reviewCandidates": 275,
     "technicalExcluded": 761,
-    "duplicatesExcluded": 293,
-    "duplicateOccurrencesTotal": 362,
+    "duplicatesExcluded": 295,
+    "duplicateOccurrencesTotal": 364,
     "technicalDuplicateOverlap": 69,
     "sourceResolved": 1828,
     "sourceUnresolved": 74,
@@ -39025,7 +39025,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/product-transfers/pages/ProductTransfersPage.tsx",
-        "line": 518,
+        "line": 550,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -39054,12 +39054,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-046d6903a145",
-          "distance": 281,
+          "candidateId": "EPC-23a72c1786d0",
+          "distance": 322,
           "file": "src/features/product-transfers/pages/ProductTransfersPage.tsx",
           "handler": "{resetFilters}",
           "humanLabel": "Скинути",
-          "line": 566,
+          "line": 622,
           "permissionKeys": [],
           "score": 12
         }
@@ -39067,7 +39067,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/product-transfers/pages/ProductTransfersPage.tsx",
-        "line": 285,
+        "line": 300,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -39088,20 +39088,22 @@
       "proposedPermission": "products.products_transfers.open_create_modal.command_submit",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
-      "duplicateOf": null,
+      "disposition": "duplicate_occurrence",
+      "dispositionReason": "Opening the import modal is the local entry step of the file import finalized by PE-00970 and is not a separate technical-click permission.",
+      "duplicateOf": "PE-00970",
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "warehouse_accounting.transfers.transfer.create"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-75f033860a20",
-          "distance": 286,
+          "candidateId": "EPC-9e481d864499",
+          "distance": 328,
           "file": "src/features/product-transfers/pages/ProductTransfersPage.tsx",
           "handler": "{openCreateModal}",
           "humanLabel": "Нове переміщення",
-          "line": 582,
+          "line": 639,
           "permissionKeys": [],
           "score": 15
         }
@@ -39109,7 +39111,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/product-transfers/pages/ProductTransfersPage.tsx",
-        "line": 296,
+        "line": 311,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -39130,17 +39132,19 @@
       "proposedPermission": "products.products_transfers.open_detail.row_click",
       "securityLevel": "medium",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "covered_existing",
+      "dispositionReason": "Row opening is inert without open_details and hydrates only through the dedicated permission-scoped details route.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "warehouse_accounting.transfers.transfer.open_details"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [],
       "source": {
         "status": "resolved",
         "file": "src/features/product-transfers/pages/ProductTransfersPage.tsx",
-        "line": 112,
+        "line": 99,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -39161,20 +39165,22 @@
       "proposedPermission": "products.products_transfers.handle_create.form_submit",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "covered_existing",
+      "dispositionReason": "Final file submit rechecks transfer.create, sends a narrow reviewed payload, and uses an idempotent mutation-policy-protected server façade.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "warehouse_accounting.transfers.transfer.create"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-21253efebe46",
-          "distance": 363,
+          "candidateId": "EPC-8dcadbca24b2",
+          "distance": 403,
           "file": "src/features/product-transfers/pages/ProductTransfersPage.tsx",
           "handler": "{handleCreate}",
           "humanLabel": null,
-          "line": 672,
+          "line": 731,
           "permissionKeys": [],
           "score": 12
         }
@@ -39182,7 +39188,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/product-transfers/pages/ProductTransfersPage.tsx",
-        "line": 309,
+        "line": 328,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -39211,12 +39217,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-f3393334dc63",
-          "distance": 511,
+          "candidateId": "EPC-91e28d2bc646",
+          "distance": 551,
           "file": "src/features/product-transfers/pages/ProductTransfersPage.tsx",
           "handler": "{closeCreateModal}",
           "humanLabel": "Скасувати",
-          "line": 813,
+          "line": 872,
           "permissionKeys": [],
           "score": 16
         }
@@ -39224,7 +39230,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/product-transfers/pages/ProductTransfersPage.tsx",
-        "line": 302,
+        "line": 321,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -39253,12 +39259,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-3a3030250784",
-          "distance": 735,
+          "candidateId": "EPC-a8e6d0afca82",
+          "distance": 784,
           "file": "src/features/product-transfers/pages/ProductTransfersPage.tsx",
           "handler": "{() => setExceptionMessages([])}",
           "humanLabel": "Закрити",
-          "line": 852,
+          "line": 911,
           "permissionKeys": [],
           "score": 20
         }
@@ -39266,7 +39272,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/product-transfers/pages/ProductTransfersPage.tsx",
-        "line": 117,
+        "line": 127,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -39297,7 +39303,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/product-transfers/pages/ProductTransfersPage.tsx",
-        "line": 998,
+        "line": 1058,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -39318,20 +39324,22 @@
       "proposedPermission": "products.products_transfers.on_open_detail_transfer.modal_open",
       "securityLevel": "low",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
-      "duplicateOf": null,
+      "disposition": "duplicate_occurrence",
+      "dispositionReason": "The row action and row click converge on the same permission-checked details handler and server route.",
+      "duplicateOf": "PE-00969",
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "warehouse_accounting.transfers.transfer.open_details"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-e7911f4e3b4f",
+          "candidateId": "EPC-d75478b47ac4",
           "distance": 137,
           "file": "src/features/product-transfers/pages/ProductTransfersPage.tsx",
           "handler": "{() => onOpenDetail(transfer)}",
           "humanLabel": "Деталі",
-          "line": 999,
+          "line": 1059,
           "permissionKeys": [],
           "score": 18
         }
@@ -39339,7 +39347,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/product-transfers/pages/ProductTransfersPage.tsx",
-        "line": 862,
+        "line": 922,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -39360,20 +39368,22 @@
       "proposedPermission": "products.products_transfers.on_download.command_export",
       "securityLevel": "medium",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "covered_existing",
+      "dispositionReason": "The drawer export control and final handler both require document.export and call only the scoped export façade.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "warehouse_accounting.transfers.document.export"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-2367de050925",
-          "distance": 488,
+          "candidateId": "EPC-15e93c2f45d4",
+          "distance": 492,
           "file": "src/features/product-transfers/pages/ProductTransfersPage.tsx",
           "handler": "{onDownload}",
           "humanLabel": "Завантажити",
-          "line": 1135,
+          "line": 1198,
           "permissionKeys": [],
           "score": 8
         }
@@ -39381,7 +39391,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/product-transfers/pages/ProductTransfersPage.tsx",
-        "line": 647,
+        "line": 706,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -80039,11 +80049,6 @@
     "PE-00939",
     "PE-00942",
     "PE-00948",
-    "PE-00968",
-    "PE-00969",
-    "PE-00970",
-    "PE-00974",
-    "PE-00975",
     "PE-01064",
     "PE-01065",
     "PE-01068",
