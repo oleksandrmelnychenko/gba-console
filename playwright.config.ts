@@ -1,6 +1,7 @@
 import { defineConfig } from '@playwright/test';
 
 const baseURL = process.env.E2E_BASE_URL ?? 'http://localhost:8084';
+const readyWorkflowSpecs = /(?:specs\/00-shell|specs\/f1-income\/.*|specs\/f2-sales\/.*)\.spec\.ts/;
 
 export default defineConfig({
   testDir: './e2e',
@@ -24,14 +25,14 @@ export default defineConfig({
     { name: 'setup', testMatch: /fixtures\/auth\.setup\.ts/ },
     {
       name: 'smoke',
-      testMatch: /specs\/f1-income\/.*\.spec\.ts/,
+      testMatch: readyWorkflowSpecs,
       grep: /@smoke/,
       dependencies: ['setup'],
       use: { storageState: 'e2e/.auth/user.json' },
     },
     {
       name: 'full',
-      testMatch: /specs\/f1-income\/.*\.spec\.ts/,
+      testMatch: readyWorkflowSpecs,
       dependencies: ['setup'],
       use: { storageState: 'e2e/.auth/user.json' },
     },

@@ -137,7 +137,12 @@ function ClientViewerRow({
   const code = client.RegionCode?.Value || client.ClientNumber || client.USREOU || ''
 
   return (
-    <UnstyledButton className={rowClassName} onClick={() => onPick(client)}>
+    <UnstyledButton
+      className={rowClassName}
+      data-client-net-uid={String(client.NetUid ?? '').toLowerCase()}
+      data-testid="wizard-client-row"
+      onClick={() => onPick(client)}
+    >
       <Box className="new-sale-client-drum-row__content">
         <Box className="new-sale-client-drum-row__status">
           <Box className={`new-sale-client-drum-row__dot ${hasDebt ? 'is-danger' : client.IsActive ? 'is-active' : ''}`} />
