@@ -110,6 +110,15 @@ export async function getProductByNetId(netId: string, signal?: AbortSignal): Pr
   return normalizeProduct(result)
 }
 
+export async function getProductForPlacements(netId: string, signal?: AbortSignal): Promise<Product | null> {
+  const result = await apiRequest<unknown>('/products/placements/details', {
+    query: { netId },
+    signal,
+  })
+
+  return normalizeProduct(result)
+}
+
 export async function getProductForOrderSpecifications(netId: string, signal?: AbortSignal): Promise<Product | null> {
   const result = await apiRequest<unknown>('/products/orders-ukraine/specifications/details', {
     query: { netId },

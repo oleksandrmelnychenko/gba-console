@@ -85,6 +85,7 @@
     { "route": "/products/assortment", "permissionKey": "products.assortment_analytics.page.view" },
     { "route": "/products/consignments/availabilities", "permissionKey": "products.availability.page.view" },
     { "route": "/products/history", "permissionKey": "products.history.page.view" },
+    { "route": "/products/placements", "permissionKey": "products.placements.page.view" },
     { "route": "/sales/ukraine/all", "permissionKey": "sales.ukraine.sale.view" },
     { "route": "/sales/return/client", "permissionKey": "sales.ukraine_returns.page.view" },
     { "route": "/sales/ukraine/offers", "permissionKey": "sales.ukraine_offers.page.view" },
@@ -3662,6 +3663,74 @@
       "duplicateOf": "PE-01544",
       "canonicalPermissionKeys": ["orders.ukraine.order.open_products"],
       "reason": "Vendor code and product name are two entry controls for the same protected product card."
+    },
+    "PE-00919": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["products.placements.page.view"],
+      "reason": "The placements route and component both fail closed on the dedicated page permission before any storage or registry request mounts."
+    },
+    "PE-00921": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-00924",
+      "canonicalPermissionKeys": ["products.placements.file.import"],
+      "reason": "Opening the import modal is the local entry step of the file import finalized by PE-00924; it has no separate technical-click permission."
+    },
+    "PE-00922": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["products.placements.document.export"],
+      "reason": "The main export handler rechecks document.export and calls only its permission-scoped server route."
+    },
+    "PE-00923": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-00925",
+      "canonicalPermissionKeys": ["products.placements.file.import"],
+      "reason": "Reopening failed import rows is part of the same correction workflow finalized by PE-00925."
+    },
+    "PE-00924": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["products.placements.file.import"],
+      "reason": "The final file upload rechecks file.import and uses the mutation-policy-protected import façade."
+    },
+    "PE-00925": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["products.placements.file.import"],
+      "reason": "The final correction rechecks file.import and sends only storageId, vendor code, quantity and placement through the validated narrow contract."
+    },
+    "PE-00926": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-00924",
+      "canonicalPermissionKeys": ["products.placements.file.import"],
+      "reason": "The form submit forwards to the same permission-checked import handler and is not a separate business right."
+    },
+    "PE-00928": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["products.placements.document.export"],
+      "reason": "Exporting failed rows rechecks the same document capability and crosses a validated narrow server contract."
+    },
+    "PE-00929": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-00925",
+      "canonicalPermissionKeys": ["products.placements.file.import"],
+      "reason": "The correction modal submit forwards to the final permission-checked correction handler."
+    },
+    "PE-00930": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["products.placements.page.view"],
+      "reason": "The product card is an in-page read under page.view and hydrates only through the placements-scoped product details route."
+    },
+    "PE-00931": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-00930",
+      "canonicalPermissionKeys": ["products.placements.page.view"],
+      "reason": "Vendor code and product name are two entry controls for the same page-scoped product card."
+    },
+    "PE-01869": {
+      "disposition": "technical_ui",
+      "reason": "The shared Excel format card only selects the requested representation; each caller owns and rechecks the upstream document-generation permission."
+    },
+    "PE-01870": {
+      "disposition": "technical_ui",
+      "reason": "The shared PDF format card only selects the requested representation; each caller owns and rechecks the upstream document-generation permission."
     }
   }
 }

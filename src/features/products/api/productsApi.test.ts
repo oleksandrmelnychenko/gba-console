@@ -8,6 +8,7 @@ import {
   getProductForOrderInvoices,
   getProductForOrderOverview,
   getProductForOrderSpecifications,
+  getProductForPlacements,
   getProductIncomeMovements,
   getProductOutcomeMovements,
   getProductSourcePriceComparison,
@@ -240,6 +241,17 @@ describe('products API upload contracts', () => {
         productNetId: 'product-1',
         to: '2026-07-07',
       },
+    })
+  })
+
+  it('loads a product card through the placements page scope', async () => {
+    apiRequestMock.mockResolvedValueOnce({ NetUid: 'product-1' })
+
+    await getProductForPlacements('product-1')
+
+    expect(apiRequestMock).toHaveBeenCalledWith('/products/placements/details', {
+      query: { netId: 'product-1' },
+      signal: undefined,
     })
   })
 

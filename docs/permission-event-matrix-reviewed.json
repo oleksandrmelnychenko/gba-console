@@ -4,17 +4,17 @@
     "inputRecords": 1902,
     "classifiedRecords": 1902,
     "dispositionCounts": {
-      "technical_ui": 758,
-      "covered_existing": 548,
-      "duplicate_occurrence": 286,
-      "business_candidate": 222,
+      "technical_ui": 760,
+      "covered_existing": 553,
+      "duplicate_occurrence": 290,
+      "business_candidate": 211,
       "needs_human_review": 76,
       "stale_or_aggregated": 12
     },
-    "reviewCandidates": 298,
-    "technicalExcluded": 758,
-    "duplicatesExcluded": 286,
-    "duplicateOccurrencesTotal": 355,
+    "reviewCandidates": 287,
+    "technicalExcluded": 760,
+    "duplicatesExcluded": 290,
+    "duplicateOccurrencesTotal": 359,
     "technicalDuplicateOverlap": 69,
     "sourceResolved": 1828,
     "sourceUnresolved": 74,
@@ -37193,18 +37193,18 @@
       "securityLevel": "medium",
       "rawStatus": "No permission candidate found",
       "disposition": "covered_existing",
-      "dispositionReason": "existing_page_permission:products.assortment.page.view",
+      "dispositionReason": "The placements route and component both fail closed on the dedicated page permission before any storage or registry request mounts.",
       "duplicateOf": null,
       "businessActionId": null,
       "canonicalPermissionKeys": [
-        "products.assortment.page.view"
+        "products.placements.page.view"
       ],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [],
       "source": {
         "status": "resolved",
         "file": "src/features/product-placements/pages/ProductPlacementsPage.tsx",
-        "line": 458,
+        "line": 488,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -37233,12 +37233,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-50e1f5ae928d",
-          "distance": 170,
+          "candidateId": "EPC-38ee68e4e3ac",
+          "distance": 197,
           "file": "src/features/product-placements/pages/ProductPlacementsPage.tsx",
           "handler": "{resetFilters}",
           "humanLabel": "Скинути",
-          "line": 553,
+          "line": 608,
           "permissionKeys": [],
           "score": 12
         }
@@ -37246,7 +37246,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/product-placements/pages/ProductPlacementsPage.tsx",
-        "line": 383,
+        "line": 411,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -37267,20 +37267,22 @@
       "proposedPermission": "products.products_placements.set_import_modal_opened_true.command_submit",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
-      "duplicateOf": null,
+      "disposition": "duplicate_occurrence",
+      "dispositionReason": "Opening the import modal is the local entry step of the file import finalized by PE-00924; it has no separate technical-click permission.",
+      "duplicateOf": "PE-00924",
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "products.placements.file.import"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-52c444393dd0",
+          "candidateId": "EPC-b4b0aa1f7adf",
           "distance": 6,
           "file": "src/features/product-placements/pages/ProductPlacementsPage.tsx",
           "handler": "{() => setImportModalOpened(true)}",
           "humanLabel": "Імпорт",
-          "line": 558,
+          "line": 613,
           "permissionKeys": [],
           "score": 24
         }
@@ -37288,7 +37290,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/product-placements/pages/ProductPlacementsPage.tsx",
-        "line": 564,
+        "line": 619,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -37309,20 +37311,22 @@
       "proposedPermission": "products.products_placements.handle_export.command_export",
       "securityLevel": "medium",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "covered_existing",
+      "dispositionReason": "The main export handler rechecks document.export and calls only its permission-scoped server route.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "products.placements.document.export"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-07b88e605c00",
-          "distance": 318,
+          "candidateId": "EPC-d9a4958a9cbe",
+          "distance": 364,
           "file": "src/features/product-placements/pages/ProductPlacementsPage.tsx",
           "handler": "{handleExport}",
           "humanLabel": "Експорт",
-          "line": 570,
+          "line": 625,
           "permissionKeys": [],
           "score": 12
         }
@@ -37330,7 +37334,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/product-placements/pages/ProductPlacementsPage.tsx",
-        "line": 252,
+        "line": 261,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -37351,20 +37355,22 @@
       "proposedPermission": "products.products_placements.set_return_modal_opened_true.modal_open",
       "securityLevel": "low",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
-      "duplicateOf": null,
+      "disposition": "duplicate_occurrence",
+      "dispositionReason": "Reopening failed import rows is part of the same correction workflow finalized by PE-00925.",
+      "duplicateOf": "PE-00925",
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "products.placements.file.import"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-540ded5eacd9",
-          "distance": 284,
+          "candidateId": "EPC-4723409aeb8f",
+          "distance": 322,
           "file": "src/features/product-placements/pages/ProductPlacementsPage.tsx",
           "handler": "{() => setReturnModalOpened(true)}",
           "humanLabel": "Не пройдені товари",
-          "line": 596,
+          "line": 651,
           "permissionKeys": [],
           "score": 24
         }
@@ -37372,7 +37378,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/product-placements/pages/ProductPlacementsPage.tsx",
-        "line": 312,
+        "line": 329,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -37393,20 +37399,22 @@
       "proposedPermission": "products.products_placements.handle_import.form_submit",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "covered_existing",
+      "dispositionReason": "The final file upload rechecks file.import and uses the mutation-policy-protected import façade.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "products.placements.file.import"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-6333174250c2",
-          "distance": 374,
+          "candidateId": "EPC-1559b9179aa2",
+          "distance": 416,
           "file": "src/features/product-placements/pages/ProductPlacementsPage.tsx",
           "handler": "{handleImport}",
           "humanLabel": null,
-          "line": 642,
+          "line": 697,
           "permissionKeys": [],
           "score": 12
         }
@@ -37414,7 +37422,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/product-placements/pages/ProductPlacementsPage.tsx",
-        "line": 268,
+        "line": 281,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -37435,20 +37443,22 @@
       "proposedPermission": "products.products_placements.handle_submit_returned.form_submit",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "covered_existing",
+      "dispositionReason": "The final correction rechecks file.import and sends only storageId, vendor code, quantity and placement through the validated narrow contract.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "products.placements.file.import"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-e4fec0227910",
-          "distance": 328,
+          "candidateId": "EPC-11c271f963b5",
+          "distance": 366,
           "file": "src/features/product-placements/pages/ProductPlacementsPage.tsx",
           "handler": "{handleSubmitReturned}",
           "humanLabel": null,
-          "line": 654,
+          "line": 709,
           "permissionKeys": [],
           "score": 20
         }
@@ -37456,7 +37466,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/product-placements/pages/ProductPlacementsPage.tsx",
-        "line": 326,
+        "line": 343,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -37477,20 +37487,22 @@
       "proposedPermission": "products.products_placements.submit_form.form_submit",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
-      "duplicateOf": null,
+      "disposition": "duplicate_occurrence",
+      "dispositionReason": "The form submit forwards to the same permission-checked import handler and is not a separate business right.",
+      "duplicateOf": "PE-00924",
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "products.placements.file.import"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-407a8bb437a8",
+          "candidateId": "EPC-d91794de65cb",
           "distance": 33,
           "file": "src/features/product-placements/pages/ProductPlacementsPage.tsx",
           "handler": "{submitForm}",
           "humanLabel": null,
-          "line": 727,
+          "line": 788,
           "permissionKeys": [],
           "score": 10
         }
@@ -37498,7 +37510,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/product-placements/pages/ProductPlacementsPage.tsx",
-        "line": 694,
+        "line": 755,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -37529,7 +37541,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/product-placements/pages/ProductPlacementsPage.tsx",
-        "line": 647,
+        "line": 702,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -37550,17 +37562,19 @@
       "proposedPermission": "products.products_placements.on_export.command_export",
       "securityLevel": "medium",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "covered_existing",
+      "dispositionReason": "Exporting failed rows rechecks the same document capability and crosses a validated narrow server contract.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "products.placements.document.export"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [],
       "source": {
         "status": "resolved",
         "file": "src/features/product-placements/pages/ProductPlacementsPage.tsx",
-        "line": 665,
+        "line": 722,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -37581,17 +37595,19 @@
       "proposedPermission": "products.products_placements.on_submit.command_submit",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
-      "duplicateOf": null,
+      "disposition": "duplicate_occurrence",
+      "dispositionReason": "The correction modal submit forwards to the final permission-checked correction handler.",
+      "duplicateOf": "PE-00925",
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "products.placements.file.import"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [],
       "source": {
         "status": "resolved",
         "file": "src/features/product-placements/pages/ProductPlacementsPage.tsx",
-        "line": 651,
+        "line": 706,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -37612,20 +37628,22 @@
       "proposedPermission": "products.products_placements.event_event_stop_propagation_on_open_product_card_net_id.modal_open",
       "securityLevel": "low",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "covered_existing",
+      "dispositionReason": "The product card is an in-page read under page.view and hydrates only through the placements-scoped product details route.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "products.placements.page.view"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-9916d1380db8",
-          "distance": 575,
+          "candidateId": "EPC-b9e4c490d63f",
+          "distance": 610,
           "file": "src/features/product-placements/pages/ProductPlacementsPage.tsx",
           "handler": "{(event) => { event.stopPropagation() onOpenProductCard(netId) }}",
           "humanLabel": null,
-          "line": 1033,
+          "line": 1098,
           "permissionKeys": [],
           "score": 18
         }
@@ -37633,7 +37651,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/product-placements/pages/ProductPlacementsPage.tsx",
-        "line": 458,
+        "line": 488,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -37655,19 +37673,21 @@
       "securityLevel": "low",
       "rawStatus": "No permission candidate found",
       "disposition": "duplicate_occurrence",
-      "dispositionReason": "same_normalized_action_as:PE-00930",
+      "dispositionReason": "Vendor code and product name are two entry controls for the same page-scoped product card.",
       "duplicateOf": "PE-00930",
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "products.placements.page.view"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-9916d1380db8",
-          "distance": 575,
+          "candidateId": "EPC-b9e4c490d63f",
+          "distance": 610,
           "file": "src/features/product-placements/pages/ProductPlacementsPage.tsx",
           "handler": "{(event) => { event.stopPropagation() onOpenProductCard(netId) }}",
           "humanLabel": null,
-          "line": 1033,
+          "line": 1098,
           "permissionKeys": [],
           "score": 18
         }
@@ -37675,7 +37695,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/product-placements/pages/ProductPlacementsPage.tsx",
-        "line": 458,
+        "line": 488,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -78404,12 +78424,12 @@
       "proposedPermission": "accounting.accounting_supplier_organizations.on_select_format_excel.command_export",
       "securityLevel": "medium",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "technical_ui",
+      "dispositionReason": "The shared Excel format card only selects the requested representation; each caller owns and rechecks the upstream document-generation permission.",
       "duplicateOf": null,
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
           "candidateId": "EPC-f1d64d19d76f",
@@ -78511,12 +78531,12 @@
       "proposedPermission": "accounting.accounting_supplier_organizations.on_select_format_pdf.command_export",
       "securityLevel": "medium",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "technical_ui",
+      "dispositionReason": "The shared PDF format card only selects the requested representation; each caller owns and rechecks the upstream document-generation permission.",
       "duplicateOf": null,
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
           "candidateId": "EPC-55c32c2bf5de",
@@ -80012,15 +80032,6 @@
     "PE-00912",
     "PE-00916",
     "PE-00917",
-    "PE-00921",
-    "PE-00922",
-    "PE-00923",
-    "PE-00924",
-    "PE-00925",
-    "PE-00926",
-    "PE-00928",
-    "PE-00929",
-    "PE-00930",
     "PE-00936",
     "PE-00937",
     "PE-00938",
@@ -80227,8 +80238,6 @@
     "PE-01844",
     "PE-01845",
     "PE-01846",
-    "PE-01869",
-    "PE-01870",
     "PE-01878",
     "PE-01885"
   ],

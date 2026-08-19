@@ -168,6 +168,7 @@ const migratedConsoleRoutes: ConsoleRoute[] = [
   {
     path: '/products/placements',
     element: lazyRoute(<ProductPlacementsPage />),
+    permissionKey: PermissionKeys.ProductPlacements.Page.View,
   },
   { path: '/products/storages', element: lazyRoute(<ProductStoragesPage />) },
   {

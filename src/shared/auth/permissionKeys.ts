@@ -430,6 +430,17 @@ export const PermissionKeys = {
       Execute: 'products.assortment.legacy_77.execute',
     },
   },
+  ProductPlacements: {
+    Page: {
+      View: 'products.placements.page.view',
+    },
+    File: {
+      Import: 'products.placements.file.import',
+    },
+    Document: {
+      Export: 'products.placements.document.export',
+    },
+  },
   ConsumableProducts: {
     Page: {
       View: 'services.consumable_products.page.view',
@@ -1021,6 +1032,11 @@ export type ProductsAssortmentPermissionKey =
   | Values<typeof PermissionKeys.ProductsAssortment.Document>
   | Values<typeof PermissionKeys.ProductsAssortment.Legacy77>
 
+export type ProductPlacementsPermissionKey =
+  | Values<typeof PermissionKeys.ProductPlacements.Page>
+  | Values<typeof PermissionKeys.ProductPlacements.File>
+  | Values<typeof PermissionKeys.ProductPlacements.Document>
+
 export type ConsumableProductsPermissionKey =
   | Values<typeof PermissionKeys.ConsumableProducts.Page>
   | Values<typeof PermissionKeys.ConsumableProducts.Category>
@@ -1187,6 +1203,7 @@ export type PermissionKey =
   | ProductGroupsPermissionKey
   | ProductPricingPermissionKey
   | ProductsAssortmentPermissionKey
+  | ProductPlacementsPermissionKey
   | ProductSpecificationCodesPermissionKey
   | ProvidingServiceActsPermissionKey
   | TransportersPermissionKey
@@ -2142,6 +2159,9 @@ const eventPermissionKeys = new Set<string>([
   ...Object.values(PermissionKeys.ProductsAssortment.WriteOffRules),
   ...Object.values(PermissionKeys.ProductsAssortment.Document),
   ...Object.values(PermissionKeys.ProductsAssortment.Legacy77),
+  ...Object.values(PermissionKeys.ProductPlacements.Page),
+  ...Object.values(PermissionKeys.ProductPlacements.File),
+  ...Object.values(PermissionKeys.ProductPlacements.Document),
   ...Object.values(PermissionKeys.ConsumableProducts.Page),
   ...Object.values(PermissionKeys.ConsumableProducts.Category),
   ...Object.values(PermissionKeys.ConsumableProducts.Product),
