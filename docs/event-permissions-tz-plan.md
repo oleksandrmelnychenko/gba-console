@@ -61,44 +61,68 @@
 - [x] Читання й перевірка доступу підтримують відомі legacy aliases.
 - [x] Alias не створює окреме право в UI і не збільшує кількість канонічних
   definitions.
-- [ ] Якщо старе право відповідає одному новому — перенести всі його рольові
+- [x] Якщо старе право відповідає одному новому — перенести всі його рольові
   призначення на канонічне право без втрати доступу.
-- [ ] Якщо кілька старих ключів відповідають одному новому — об'єднати
+- [x] Якщо кілька старих ключів відповідають одному новому — об'єднати
   призначення і не створити дублікати `(RoleId, PermissionId)`.
-- [ ] Якщо одне старе широке право розділяється на кілька granular rights —
+- [x] Якщо одне старе широке право розділяється на кілька granular rights —
   виконати явно затверджений compatibility backfill, щоб чинні ролі не
   втратили доступ у момент релізу.
-- [ ] Старі orphan/stale definitions не видаляти автоматично: позначити
+- [x] Старі orphan/stale definitions не видаляти автоматично: позначити
   неактивними, зберегти audit trail і видаляти лише окремою міграцією.
-- [ ] Legacy writers не повинні повторно створювати дублікати або обходити
+- [x] Legacy writers не повинні повторно створювати дублікати або обходити
   optimistic concurrency нової системи.
+  Filtered unique active `(UserRoleID, PermissionID)` index блокує фізичний
+  duplicate. До першого PUT legacy лишається compatibility input; після
+  revision legacy rows не входять в effective state, тому старий writer не
+  може обійти versioned canonical role state.
 
 ### 2.3. Міграція призначень ролей
 
-- [ ] Перед міграцією зафіксувати контрольні числа: definitions, active keys,
+- [x] Перед міграцією зафіксувати контрольні числа: definitions, active keys,
   aliases, roles, active role links і дублікати.
-- [ ] Виконувати backfill транзакційно та ідемпотентно.
-- [ ] Для кожного старого активного рольового призначення довести одне з двох:
+- [x] Виконувати backfill транзакційно та ідемпотентно.
+  Explicit one-shot tool має exact database guard, serializable transaction,
+  transaction-owned app lock, unique-index/duplicate preflight, dry-run
+  rollback і окремий double-confirm apply.
+- [x] Для кожного старого активного рольового призначення довести одне з двох:
   канонічне призначення створене/вже існувало або старий ключ залишається
   ефективним через задокументований alias.
-- [ ] Після міграції не повинно бути двох активних links для однієї пари
+- [x] Після міграції не повинно бути двох активних links для однієї пари
   роль–канонічний пермішен.
-- [ ] Повторний запуск синхронізації та backfill не змінює результат.
-- [ ] Rollback не видаляє історичні definitions або рольові призначення.
-- [ ] Сформувати before/after reconciliation report для релізу.
+- [x] Повторний запуск синхронізації та backfill не змінює результат.
+- [x] Rollback не видаляє історичні definitions або рольові призначення.
+  Legacy links залишені active; dry-run завжди rollback, а apply лише додає
+  або revive canonical links, тому старий backend продовжує бачити legacy.
+- [x] Сформувати before/after reconciliation report для релізу.
+  Test-copy report:
+  `gba-server/docs/event-permission-legacy-reconciliation-current-2026-08-20.json`.
 
 ### 2.4. Acceptance criteria для старих прав
 
 - [x] 100% старих ключів мають mapping/status.
-- [ ] 100% старих активних рольових призначень reconciled без мовчазної
+- [x] 100% старих активних рольових призначень reconciled без мовчазної
   втрати доступу.
-- [ ] Користувач зі старим сумісним призначенням отримує відповідне канонічне
+- [x] Користувач зі старим сумісним призначенням отримує відповідне канонічне
   право через `/permissions/me`.
-- [ ] Адміністратор бачить у новому UI одну канонічну бізнес-дію, а legacy keys
+  SQL fixture доводить legacy-only grant до revision, canonical response і
+  policy allow; після versioned cutover та відкликання canonical key response
+  і policy обидва deny, попри збережений active legacy row.
+- [x] Адміністратор бачить у новому UI одну канонічну бізнес-дію, а legacy keys
   — лише як другорядну інформацію/aliases.
-- [ ] Після збереження ролі нова система не записує legacy key замість
+  Catalog API/editor повертають 479 canonical definitions без окремих legacy
+  nodes; 158 legacy keys зберігаються лише в mapping/alias metadata і не
+  збільшують UI count.
+- [x] Після збереження ролі нова система не записує legacy key замість
   канонічного.
-- [ ] Прямий API-запит дозволяється/забороняється однаково для мігрованого
+  First successful versioned PUT створює revision і є per-role cutover:
+  подальші reads/policies використовують canonical links та dashboard page
+  inheritance, а legacy links лишаються фізично active лише для rollback
+  старого backend і більше не можуть повторно видати відкликане право.
+  Якщо reconciliation вже створив canonical link, відповідний legacy alias
+  не позначає його inherited: адміністратор може відкликати право вже першим
+  versioned save, без проміжного повторного збереження.
+- [x] Прямий API-запит дозволяється/забороняється однаково для мігрованого
   canonical assignment і підтримуваного legacy alias.
 - [x] CI падає, якщо з'явився невідомий legacy key, alias без target, duplicate
   mapping або активне старе право без disposition.
@@ -140,7 +164,12 @@
   migration contract 2/2 і transactional dry-run з rollback пройшли.
 - [x] Прогнати required SQL integration на фінальній копії актуальної БД —
   `ConcordDb_EventPermissionsCurrent`, 2/2 SQL tests, exact cleanup.
-- [ ] Виконати reconciliation старих role assignments за розділом 2.
+- [x] Виконати reconciliation старих role assignments за розділом 2 на
+  актуальній test-only копії. Після трьох pending migrations explicit apply
+  створив 945 canonical links: event links `480 → 1425`, усі 1104 required
+  canonical assignments для 12 ролей активні, legacy links лишилися `1098`,
+  duplicates 0.
+  Повторний dry-run: `AlreadyActive=1104`, `Created=0`, `Revived=0`.
 
 ## 5. Frontend guards і server enforcement
 
@@ -194,7 +223,7 @@
 - [x] Синхронізувати backend branch з актуальним `development`.
 - [x] Повні frontend test, lint, typecheck, build і audit checks.
 - [x] Повний backend build/test та `verify-event-permissions` у required SQL
-  mode — 101/101 API/security/SQL та 17/17 actor authorization tests.
+  mode — 104/104 API/security/SQL та 17/17 actor authorization tests.
 - [ ] Backup і dry-run міграцій на фінальній копії актуальної БД.
 - [ ] Deploy order: БД/міграції → backend → catalog sync → frontend.
 - [ ] Smoke test `/users/roles`, effective permissions та representative `403`.
@@ -217,13 +246,21 @@
   create+delete split; обидва мали по 6 активних role links.
 - [x] Versioned mapping artifact і CI completeness gate — code version
   `2026.08.20.1`, deterministic JSON snapshot, default contract та required
-  SQL inventory test пройшли. Фізичний transactional backfill 1098 активних
-  legacy role links у canonical assignments ще не позначений виконаним.
+  SQL inventory test пройшли.
+- [x] Physical reconciliation на актуальній test-only копії — migrations
+  застосовані до exact target; unique filtered index активний, duplicates 0.
+  Dry-run rollback розрахував 945 inserts; double-confirm apply створив їх,
+  `480 → 1425` active event links при збережених 1098 legacy links. Повторний
+  dry-run дав `1104 already active / 0 create / 0 revive`. Explicit tool не
+  підключений до API startup і збирається єдиним CI verifier. SQL acceptance
+  також довів staged per-role cutover: aliases діють до першого PUT, після
+  revision роль читається й редагується canonical-only без втрати rollback
+  legacy rows.
 
 - [x] Frontend audit/typecheck/lint/full tests/build — 16 matrix audit tests,
   4 parity tests і 2564 Vitest tests пройшли; production build успішний.
 - [x] Backend event-permission verification і Release build — required SQL
-  mode: API/security/SQL 101 passed, 0 skipped; actor authorization 17 passed.
+  mode: API/security/SQL 104 passed, 0 skipped; actor authorization 17 passed.
 - [x] Перевірка runtime-каталогу — API повернув 479 active definitions,
   479 unique keys, 79 сторінок, 238 груп і 0 записів без required metadata.
 - [ ] Browser acceptance для role save/refresh, незалежних дій і `403/409` —
@@ -242,7 +279,7 @@
 - [x] Required SQL gate на актуальній test-only копії —
   `ConcordDb_EventPermissionsCurrent`; migration seed і transactional role
   read/update/conflict/link-revival пройшли 2/2 з exact cleanup. Повний
-  `verify-event-permissions` у REQUIRED mode: 101/101 + 17/17.
+  `verify-event-permissions` у REQUIRED mode: 104/104 + 17/17.
 - [x] DB duplicate/index gate — physical duplicates `0`; 156 intentional
   canonical+alias overlaps збережені. Нова filtered unique migration має
   preflight `THROW 51003`, exact `dbo` schema і успішний transactional dry-run;

@@ -20,7 +20,7 @@
 - Unified frontend gate: `npm run verify:event-permissions` пройшов; він
   перевіряє candidate snapshot, reviewed matrix, audit tests і фактичну
   backend/frontend parity.
-- Backend REQUIRED SQL verifier: API/security/migration/SQL 101/101,
+- Backend REQUIRED SQL verifier: API/security/migration/SQL 104/104,
   actor authorization 17/17, skipped = 0.
 - Runtime catalog: 479 active definitions, 79 pages, 238 groups, 12 sections,
   required metadata gaps = 0.
@@ -55,6 +55,25 @@
 - Transactional migration dry-run created and verified the unique filtered
   index, then rolled back. Post-check confirmed the original non-unique index
   and zero migration-history rows, so the test DB was not changed.
+- The final test-only current restore was then advanced through its three
+  pending migrations to the exact uniqueness target. Post-check: unique
+  filtered index active, migration history present, duplicate groups = 0.
+- Explicit reconciliation dry-run calculated 1104 required canonical
+  assignments across 12 roles: 159 already active, 945 to create. Rollback
+  restored the original `480 event / 1098 legacy` counts.
+- Double-confirm apply committed the 945 canonical links, producing
+  `1425 event / 1098 legacy`. A second dry-run proved idempotency:
+  `AlreadyActive=1104`, `Created=0`, `Revived=0`. Legacy links were preserved
+  for rollback compatibility. The machine-readable report is
+  `gba-server/docs/event-permission-legacy-reconciliation-current-2026-08-20.json`.
+- Per-role cutover is revision-based: aliases remain effective before the
+  first versioned PUT; after a successful PUT, effective reads use canonical
+  links plus dashboard page inheritance. Legacy rows remain active for an
+  old-backend rollback but cannot re-grant a right removed in the new editor.
+- A reconciled canonical link takes precedence over its legacy alias in the
+  role editor, so it is not falsely marked inherited and can be removed by
+  the very first versioned save. The required SQL regression proves the
+  immediate deny while the rollback-only legacy row remains active.
 
 ## Rollback
 
@@ -73,9 +92,9 @@
 - Formal browser click-through for role save/refresh and representative UI
   actions; current local browser-control connector fails before attaching to
   the page. Component and runtime API acceptance are green.
-- Transactional physical reconciliation of the 1098 pre-existing active
-  legacy role assignments; logical mapping is complete and legacy aliases
-  remain effective during rollout.
+- Run the already verified explicit reconciliation workflow on the actual
+  production restore/deployment target; the test-only current restore is
+  complete and legacy aliases remain effective during rollout.
 - Production backup and complete migration dry-run on the final restore point.
 - Deploy in order: migrations → backend/catalog sync → frontend → role rollout.
 - Monitor authorization failures and complete the final before/after/rollback
