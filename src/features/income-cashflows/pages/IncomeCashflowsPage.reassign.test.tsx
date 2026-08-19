@@ -151,6 +151,12 @@ vi.mock('../api/incomeCashflowsApi', async (importOriginal) => ({
   searchIncomeCashflowClientPayers: vi.fn(),
 }))
 
+vi.mock('../../auth/useAuth', () => ({
+  useAuth: () => ({
+    hasPermission: () => true,
+  }),
+}))
+
 const getClientAgreementsMock = vi.mocked(
   getIncomeCashflowClientAgreements,
 )

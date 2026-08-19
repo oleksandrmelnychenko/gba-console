@@ -27,7 +27,12 @@ const EXPECTED_NEW_PAGE_PERMISSIONS = {
   '/products/transfers': PermissionKeys.ProductTransfers.Page.View,
   '/products/storages/incomes': PermissionKeys.SystemPages.ConsignmentBalances.View,
   '/accounting/payment-online-shop': PermissionKeys.SystemPages.OnlineShopPayment.View,
+  '/accounting/income-cashflows': PermissionKeys.SystemPages.IncomeCashflows.View,
+  '/accounting/income-cashflows/new/conversion':
+    PermissionKeys.FinancialAdministration.IncomeCashflows.IncomeOrder.CreateOtherIncome,
   '/accounting/income-cashflows/new/shop': PermissionKeys.OnlineShopPayment.IncomeOrder.Create,
+  '/accounting/income-cashflows/new/user':
+    PermissionKeys.FinancialAdministration.IncomeCashflows.IncomeOrder.CreateColleagueReturn,
 } as const
 
 describe('newly classified page permissions', () => {
@@ -76,6 +81,12 @@ describe('newly classified page permissions', () => {
       .toBe(PermissionKeys.FinancialAdministration.AvailablePayments.Page.View)
     expect(consoleRoutes.find((route) => route.path === '/payments/available')?.permissionKey)
       .toBe(PermissionKeys.FinancialAdministration.AvailablePayments.Page.View)
+  })
+
+  it('uses the client-payment canonical for shop income without a duplicate right', () => {
+    expect(PermissionKeys.OnlineShopPayment.IncomeOrder.Create).toBe(
+      PermissionKeys.FinancialAdministration.IncomeCashflows.IncomeOrder.CreateClientPayment,
+    )
   })
 })
 

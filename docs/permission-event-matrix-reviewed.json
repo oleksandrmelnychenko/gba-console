@@ -4,25 +4,25 @@
     "inputRecords": 1902,
     "classifiedRecords": 1902,
     "dispositionCounts": {
-      "technical_ui": 777,
-      "covered_existing": 603,
-      "duplicate_occurrence": 307,
-      "business_candidate": 139,
-      "needs_human_review": 63,
+      "technical_ui": 775,
+      "covered_existing": 612,
+      "duplicate_occurrence": 310,
+      "business_candidate": 130,
+      "needs_human_review": 62,
       "stale_or_aggregated": 13
     },
-    "reviewCandidates": 202,
-    "technicalExcluded": 777,
-    "duplicatesExcluded": 307,
-    "duplicateOccurrencesTotal": 376,
+    "reviewCandidates": 192,
+    "technicalExcluded": 775,
+    "duplicatesExcluded": 310,
+    "duplicateOccurrencesTotal": 379,
     "technicalDuplicateOverlap": 69,
     "sourceResolved": 1828,
     "sourceUnresolved": 74,
-    "currentActionResolved": 1183,
-    "currentActionUnresolved": 719,
+    "currentActionResolved": 1179,
+    "currentActionUnresolved": 723,
     "currentProductionActions": 1828,
-    "currentPermissionBoundActions": 335,
-    "currentUnboundActions": 1493
+    "currentPermissionBoundActions": 339,
+    "currentUnboundActions": 1489
   },
   "invariants": {
     "allInputRecordsClassified": true,
@@ -21143,7 +21143,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/income-cashflows/pages/IncomeCashflowsPage.tsx",
-        "line": 498,
+        "line": 557,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -21176,7 +21176,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/income-cashflows/pages/IncomeCashflowClientFormPage.tsx",
-        "line": 152,
+        "line": 158,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -21209,7 +21209,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/income-cashflows/pages/IncomeCashflowConversionFormPage.tsx",
-        "line": 92,
+        "line": 98,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -21275,7 +21275,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/income-cashflows/pages/IncomeCashflowUserFormPage.tsx",
-        "line": 84,
+        "line": 90,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -21300,17 +21300,21 @@
       "proposedPermission": "accounting.accounting_income_cashflows.eur_uah.form_submit",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "covered_existing",
+      "dispositionReason": "The shared counterparty form derives and rechecks the exact create capability from the immutable operation type, and each type crosses its own operation-validating idempotent server façade.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "accounting.income_cashflows.client_payment.create",
+        "accounting.income_cashflows.counterparty_income.create",
+        "accounting.income_cashflows.supplier_return.create"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [],
       "source": {
         "status": "resolved",
         "file": "src/features/income-cashflows/pages/IncomeCashflowClientFormPage.tsx",
-        "line": 152,
+        "line": 158,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -21335,28 +21339,32 @@
       "proposedPermission": "accounting.accounting_income_cashflows.void_handle_create_movement.command_submit",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "covered_existing",
+      "dispositionReason": "Creating a movement article reuses the existing article.create capability and its protected accounting façade; the local modal trigger is not a new technical permission.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "accounting.cashflow_articles.article.create"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-51db90a666c9",
+          "candidateId": "EPC-1e781e633219",
           "distance": 7,
           "file": "src/features/income-cashflows/pages/IncomeCashflowClientFormPage.tsx",
           "handler": "{() => void handleCreateMovement()}",
           "humanLabel": "Створити статтю",
-          "line": 1162,
-          "permissionKeys": [],
+          "line": 1199,
+          "permissionKeys": [
+            "accounting.cashflow_articles.article.create"
+          ],
           "score": 20
         }
       ],
       "source": {
         "status": "resolved",
         "file": "src/features/income-cashflows/pages/IncomeCashflowClientFormPage.tsx",
-        "line": 1169,
+        "line": 1206,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -21381,20 +21389,22 @@
       "proposedPermission": "accounting.accounting_income_cashflows.handle_submit.form_submit",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "covered_existing",
+      "dispositionReason": "The final other-income submit rechecks other_income.create and sends the fixed OtherIncome operation type only through its operation-validating idempotent façade.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "accounting.income_cashflows.other_income.create"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-296639e0d326",
-          "distance": 93,
+          "candidateId": "EPC-6275450271e2",
+          "distance": 98,
           "file": "src/features/income-cashflows/pages/IncomeCashflowConversionFormPage.tsx",
           "handler": "{handleSubmit}",
           "humanLabel": null,
-          "line": 503,
+          "line": 542,
           "permissionKeys": [],
           "score": 12
         }
@@ -21402,7 +21412,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/income-cashflows/pages/IncomeCashflowConversionFormPage.tsx",
-        "line": 410,
+        "line": 444,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -21427,28 +21437,32 @@
       "proposedPermission": "accounting.accounting_income_cashflows.void_handle_create_movement.command_submit.2",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "covered_existing",
+      "dispositionReason": "The conversion form's movement-article creation is the same existing article.create business capability and protected façade, not a local click permission.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "accounting.cashflow_articles.article.create"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-cb819b6fab0c",
+          "candidateId": "EPC-05ce92af6f10",
           "distance": 7,
           "file": "src/features/income-cashflows/pages/IncomeCashflowConversionFormPage.tsx",
           "handler": "{() => void handleCreateMovement()}",
           "humanLabel": "Створити статтю",
-          "line": 640,
-          "permissionKeys": [],
+          "line": 680,
+          "permissionKeys": [
+            "accounting.cashflow_articles.article.create"
+          ],
           "score": 20
         }
       ],
       "source": {
         "status": "resolved",
         "file": "src/features/income-cashflows/pages/IncomeCashflowConversionFormPage.tsx",
-        "line": 647,
+        "line": 687,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -21474,11 +21488,11 @@
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
       "disposition": "covered_existing",
-      "dispositionReason": "The final shop income-order submit rechecks income_order.create and uses the dedicated idempotent mutation-policy-protected server façade.",
+      "dispositionReason": "The final shop income-order submit rechecks the shared client-payment create capability and uses the dedicated idempotent mutation-policy-protected server façade; the retired shop-specific key remains only a compatibility alias.",
       "duplicateOf": null,
       "businessActionId": null,
       "canonicalPermissionKeys": [
-        "payments.online_shop_payment.income_order.create"
+        "accounting.income_cashflows.client_payment.create"
       ],
       "classificationSource": "manual_override",
       "bindingEvidence": [],
@@ -21570,12 +21584,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-f4009c47b589",
-          "distance": 171,
+          "candidateId": "EPC-2fd216b199b3",
+          "distance": 214,
           "file": "src/features/income-cashflows/pages/IncomeCashflowsPage.tsx",
           "handler": "{onResetFilters}",
           "humanLabel": "Скинути",
-          "line": 657,
+          "line": 759,
           "permissionKeys": [],
           "score": 12
         }
@@ -21583,7 +21597,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/income-cashflows/pages/IncomeCashflowsPage.tsx",
-        "line": 486,
+        "line": 545,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -21616,22 +21630,11 @@
       "businessActionId": null,
       "canonicalPermissionKeys": [],
       "classificationSource": "automatic",
-      "bindingEvidence": [
-        {
-          "candidateId": "EPC-5940f6832090",
-          "distance": 3,
-          "file": "src/features/income-cashflows/pages/IncomeCashflowsPage.tsx",
-          "handler": "{() => navigate(item.path, { state: { backgroundLocation: location } })}",
-          "humanLabel": null,
-          "line": 689,
-          "permissionKeys": [],
-          "score": 47
-        }
-      ],
+      "bindingEvidence": [],
       "source": {
         "status": "resolved",
         "file": "src/features/income-cashflows/pages/IncomeCashflowsPage.tsx",
-        "line": 692,
+        "line": 708,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -21664,22 +21667,11 @@
       "businessActionId": null,
       "canonicalPermissionKeys": [],
       "classificationSource": "automatic",
-      "bindingEvidence": [
-        {
-          "candidateId": "EPC-5940f6832090",
-          "distance": 3,
-          "file": "src/features/income-cashflows/pages/IncomeCashflowsPage.tsx",
-          "handler": "{() => navigate(item.path, { state: { backgroundLocation: location } })}",
-          "humanLabel": null,
-          "line": 689,
-          "permissionKeys": [],
-          "score": 47
-        }
-      ],
+      "bindingEvidence": [],
       "source": {
         "status": "resolved",
         "file": "src/features/income-cashflows/pages/IncomeCashflowsPage.tsx",
-        "line": 692,
+        "line": 708,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -21712,22 +21704,11 @@
       "businessActionId": null,
       "canonicalPermissionKeys": [],
       "classificationSource": "automatic",
-      "bindingEvidence": [
-        {
-          "candidateId": "EPC-6296ead41541",
-          "distance": 2,
-          "file": "src/features/income-cashflows/pages/IncomeCashflowsPage.tsx",
-          "handler": "{() => navigate(colleagueCreateItem.path, { state: { backgroundLocation: location } })}",
-          "humanLabel": null,
-          "line": 710,
-          "permissionKeys": [],
-          "score": 54
-        }
-      ],
+      "bindingEvidence": [],
       "source": {
         "status": "resolved",
         "file": "src/features/income-cashflows/pages/IncomeCashflowsPage.tsx",
-        "line": 712,
+        "line": 557,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -21760,22 +21741,11 @@
       "businessActionId": null,
       "canonicalPermissionKeys": [],
       "classificationSource": "automatic",
-      "bindingEvidence": [
-        {
-          "candidateId": "EPC-8f20f18108a2",
-          "distance": 2,
-          "file": "src/features/income-cashflows/pages/IncomeCashflowsPage.tsx",
-          "handler": "{() => navigate(shopCreateItem.path, { state: { backgroundLocation: location } })}",
-          "humanLabel": null,
-          "line": 718,
-          "permissionKeys": [],
-          "score": 56
-        }
-      ],
+      "bindingEvidence": [],
       "source": {
         "status": "resolved",
         "file": "src/features/income-cashflows/pages/IncomeCashflowsPage.tsx",
-        "line": 720,
+        "line": 557,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -21802,28 +21772,32 @@
       "proposedPermission": "accounting.accounting_income_cashflows.on_open_details.row_click",
       "securityLevel": "medium",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "covered_existing",
+      "dispositionReason": "The row and deep-link details workflow is inert without open_details, hydrates through the scoped details façade, and uses the same right for document-structure calculation.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "accounting.income_cashflows.order.open_details"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-6adc770fcbf6",
-          "distance": 266,
+          "candidateId": "EPC-914940394797",
+          "distance": 331,
           "file": "src/features/income-cashflows/pages/IncomeCashflowsPage.tsx",
-          "handler": "{onOpenDetails}",
+          "handler": "{canOpenDetails ? onOpenDetails : undefined}",
           "humanLabel": null,
-          "line": 743,
-          "permissionKeys": [],
+          "line": 863,
+          "permissionKeys": [
+            "accounting.income_cashflows.order.open_details"
+          ],
           "score": 11
         }
       ],
       "source": {
         "status": "resolved",
         "file": "src/features/income-cashflows/pages/IncomeCashflowsPage.tsx",
-        "line": 477,
+        "line": 532,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -21850,20 +21824,22 @@
       "proposedPermission": "accounting.accounting_income_cashflows.event_event_stop_propagation_on_reassign_row.button_click",
       "securityLevel": "low",
       "rawStatus": "No permission candidate found",
-      "disposition": "needs_human_review",
-      "dispositionReason": "insufficient_evidence_for_automatic_permission_or_exclusion",
-      "duplicateOf": null,
+      "disposition": "duplicate_occurrence",
+      "dispositionReason": "The row action only opens the reassignment modal finalized by PE-00548 and therefore is not a separate permission.",
+      "duplicateOf": "PE-00548",
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "accounting.income_cashflows.order.reassign_client"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-ec4e3c4e4e4d",
-          "distance": 466,
+          "candidateId": "EPC-151ccda2b60d",
+          "distance": 539,
           "file": "src/features/income-cashflows/pages/IncomeCashflowsPage.tsx",
           "handler": "{(event) => { event.stopPropagation() onReassign(row) }}",
           "humanLabel": "Переназначити клієнта",
-          "line": 964,
+          "line": 1096,
           "permissionKeys": [],
           "score": 11
         }
@@ -21871,7 +21847,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/income-cashflows/pages/IncomeCashflowsPage.tsx",
-        "line": 498,
+        "line": 557,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -21898,20 +21874,22 @@
       "proposedPermission": "accounting.accounting_income_cashflows.event_event_stop_propagation_on_cancel_row.command_delete",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "technical_ui",
-      "dispositionReason": "current_source_confirms_local_cancel_or_refresh_control",
-      "duplicateOf": null,
+      "disposition": "duplicate_occurrence",
+      "dispositionReason": "The row action only opens confirmation for the final cancellation in PE-00546 and is not a technical-click permission.",
+      "duplicateOf": "PE-00546",
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "accounting.income_cashflows.order.cancel"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-15321236f2ac",
-          "distance": 490,
+          "candidateId": "EPC-b8c958cc9bd9",
+          "distance": 567,
           "file": "src/features/income-cashflows/pages/IncomeCashflowsPage.tsx",
           "handler": "{(event) => { event.stopPropagation() onCancel(row) }}",
           "humanLabel": "Скасувати",
-          "line": 988,
+          "line": 1124,
           "permissionKeys": [],
           "score": 9
         }
@@ -21919,7 +21897,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/income-cashflows/pages/IncomeCashflowsPage.tsx",
-        "line": 498,
+        "line": 557,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -21946,17 +21924,19 @@
       "proposedPermission": "accounting.accounting_income_cashflows.event_event_stop_propagation_on_open_row.modal_open",
       "securityLevel": "low",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
-      "duplicateOf": null,
+      "disposition": "duplicate_occurrence",
+      "dispositionReason": "The explicit Details action and row click converge on the same permission-checked details workflow.",
+      "duplicateOf": "PE-00540",
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "accounting.income_cashflows.order.open_details"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [],
       "source": {
         "status": "resolved",
         "file": "src/features/income-cashflows/pages/IncomeCashflowsPage.tsx",
-        "line": 498,
+        "line": 557,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -21991,12 +21971,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-ec4e3c4e4e4d",
-          "distance": 144,
+          "candidateId": "EPC-151ccda2b60d",
+          "distance": 850,
           "file": "src/features/income-cashflows/pages/IncomeCashflowsPage.tsx",
           "handler": "{(event) => { event.stopPropagation() onReassign(row) }}",
           "humanLabel": "Переназначити клієнта",
-          "line": 964,
+          "line": 1096,
           "permissionKeys": [],
           "score": 11
         }
@@ -22004,7 +21984,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/income-cashflows/pages/IncomeCashflowsPage.tsx",
-        "line": 820,
+        "line": 246,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -22041,7 +22021,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/income-cashflows/pages/IncomeCashflowsPage.tsx",
-        "line": 472,
+        "line": 527,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -22068,17 +22048,19 @@
       "proposedPermission": "accounting.accounting_income_cashflows.on_cancel.command_delete",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "technical_ui",
-      "dispositionReason": "local_ui_state_only",
+      "disposition": "covered_existing",
+      "dispositionReason": "The final cancel handler rechecks order.cancel and calls only the dedicated idempotent mutation-policy-protected cancellation façade.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "accounting.income_cashflows.order.cancel"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [],
       "source": {
         "status": "resolved",
         "file": "src/features/income-cashflows/pages/IncomeCashflowsPage.tsx",
-        "line": 216,
+        "line": 240,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -22113,12 +22095,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-2d5f2894d0b7",
-          "distance": 189,
+          "candidateId": "EPC-2b678e5eed94",
+          "distance": 194,
           "file": "src/features/income-cashflows/pages/IncomeCashflowsPage.tsx",
           "handler": "{handleClose}",
           "humanLabel": "Скасувати",
-          "line": 1740,
+          "line": 1882,
           "permissionKeys": [],
           "score": 11
         }
@@ -22126,7 +22108,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/income-cashflows/pages/IncomeCashflowsPage.tsx",
-        "line": 1551,
+        "line": 1688,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -22153,20 +22135,22 @@
       "proposedPermission": "accounting.accounting_income_cashflows.void_handle_submit.command_submit",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "covered_existing",
+      "dispositionReason": "The final reassignment handler rechecks order.reassign_client and calls only the dedicated idempotent mutation-policy-protected façade.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "accounting.income_cashflows.order.reassign_client"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-c155ee793e5d",
+          "candidateId": "EPC-878992ea6d1a",
           "distance": 5,
           "file": "src/features/income-cashflows/pages/IncomeCashflowsPage.tsx",
           "handler": "{() => void handleSubmit()}",
           "humanLabel": "Зберегти",
-          "line": 1743,
+          "line": 1885,
           "permissionKeys": [],
           "score": 12
         }
@@ -22174,7 +22158,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/income-cashflows/pages/IncomeCashflowsPage.tsx",
-        "line": 1748,
+        "line": 1890,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -22199,20 +22183,22 @@
       "proposedPermission": "accounting.accounting_income_cashflows.handle_submit.form_submit.2",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "covered_existing",
+      "dispositionReason": "The colleague-return form is fail-closed, rechecks its exact create capability on submit, and crosses only the operation-validating idempotent façade.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "accounting.income_cashflows.colleague_return.create"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-45f3c7d7aaa3",
-          "distance": 77,
+          "candidateId": "EPC-dc3ad3ff6e2d",
+          "distance": 82,
           "file": "src/features/income-cashflows/pages/IncomeCashflowUserFormPage.tsx",
           "handler": "{handleSubmit}",
           "humanLabel": null,
-          "line": 447,
+          "line": 486,
           "permissionKeys": [],
           "score": 12
         }
@@ -22220,7 +22206,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/income-cashflows/pages/IncomeCashflowUserFormPage.tsx",
-        "line": 370,
+        "line": 404,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -22245,28 +22231,32 @@
       "proposedPermission": "accounting.accounting_income_cashflows.void_handle_create_movement.command_submit.4",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "covered_existing",
+      "dispositionReason": "The colleague form's movement-article action reuses the single existing article.create capability and its protected accounting façade.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "accounting.cashflow_articles.article.create"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-a829c0903086",
+          "candidateId": "EPC-e4f421604470",
           "distance": 7,
           "file": "src/features/income-cashflows/pages/IncomeCashflowUserFormPage.tsx",
           "handler": "{() => void handleCreateMovement()}",
           "humanLabel": "Створити статтю",
-          "line": 573,
-          "permissionKeys": [],
+          "line": 613,
+          "permissionKeys": [
+            "accounting.cashflow_articles.article.create"
+          ],
           "score": 20
         }
       ],
       "source": {
         "status": "resolved",
         "file": "src/features/income-cashflows/pages/IncomeCashflowUserFormPage.tsx",
-        "line": 580,
+        "line": 620,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -30210,7 +30200,7 @@
       "duplicateOf": "PE-00533",
       "businessActionId": null,
       "canonicalPermissionKeys": [
-        "payments.online_shop_payment.income_order.create"
+        "accounting.income_cashflows.client_payment.create"
       ],
       "classificationSource": "manual_override",
       "bindingEvidence": [
@@ -30222,7 +30212,7 @@
           "humanLabel": "Новий прибутковий ордер",
           "line": 656,
           "permissionKeys": [
-            "payments.online_shop_payment.income_order.create"
+            "accounting.income_cashflows.client_payment.create"
           ],
           "score": 21
         }
@@ -80126,16 +80116,6 @@
     "PE-00517",
     "PE-00518",
     "PE-00520",
-    "PE-00529",
-    "PE-00530",
-    "PE-00531",
-    "PE-00532",
-    "PE-00540",
-    "PE-00541",
-    "PE-00543",
-    "PE-00548",
-    "PE-00549",
-    "PE-00550",
     "PE-00901",
     "PE-00902",
     "PE-00913",

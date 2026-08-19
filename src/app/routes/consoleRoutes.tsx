@@ -543,6 +543,7 @@ const accountingMigrationRoutes: ConsoleRoute[] = [
   {
     path: '/accounting/income-cashflows',
     element: lazyRoute(<IncomeCashflowsPage />),
+    permissionKey: PermissionKeys.SystemPages.IncomeCashflows.View,
   },
   {
     path: '/accounting/income-cashflows/new',
@@ -560,6 +561,9 @@ const accountingMigrationRoutes: ConsoleRoute[] = [
   {
     path: '/accounting/income-cashflows/new/conversion',
     element: lazyRoute(<IncomeCashflowConversionFormPage />),
+    permissionKey:
+      PermissionKeys.FinancialAdministration.IncomeCashflows.IncomeOrder
+        .CreateOtherIncome,
   },
   {
     path: '/accounting/income-cashflows/new/shop',
@@ -569,6 +573,9 @@ const accountingMigrationRoutes: ConsoleRoute[] = [
   {
     path: '/accounting/income-cashflows/new/user',
     element: lazyRoute(<IncomeCashflowUserFormPage />),
+    permissionKey:
+      PermissionKeys.FinancialAdministration.IncomeCashflows.IncomeOrder
+        .CreateColleagueReturn,
   },
   {
     path: '/accounting/income-cashflows/new/:step',

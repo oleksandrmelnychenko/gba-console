@@ -25,8 +25,27 @@ export async function getAdvanceReportOrder(netId: string): Promise<AdvanceRepor
 }
 
 export async function calculateAdvanceReportOrder(order: AdvanceReportOrder): Promise<AdvanceReportOrder | null> {
+  return calculateAdvanceReportOrderAtEndpoint(
+    order,
+    '/payments/orders/outcome/advanced-reports/edit/calculate',
+  )
+}
+
+export async function calculateIncomeCashflowAdvanceReportOrder(
+  order: AdvanceReportOrder,
+): Promise<AdvanceReportOrder | null> {
+  return calculateAdvanceReportOrderAtEndpoint(
+    order,
+    '/payments/orders/outcome/income-cashflows/details/advance-report/calculate',
+  )
+}
+
+async function calculateAdvanceReportOrderAtEndpoint(
+  order: AdvanceReportOrder,
+  endpoint: string,
+): Promise<AdvanceReportOrder | null> {
   const payload = sanitizeAdvanceReportOrderForCalculation(order)
-  const result = await apiRequest<unknown>('/payments/orders/outcome/advanced-reports/edit/calculate', {
+  const result = await apiRequest<unknown>(endpoint, {
     body: payload,
     method: 'POST',
   })

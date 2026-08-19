@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { apiRequest } from '../../../shared/api/apiClient'
+import { INCOME_PAYMENT_OPERATION_CODE } from '../../accounting/accountingOperationCatalog'
 import { IncomeCounterpartySearchType } from '../types'
 import {
   cancelIncomeCashflow,
@@ -247,7 +248,7 @@ describe('income cashflow API lookup contracts', () => {
       query: { netId: 'income-order-1' },
     })
 
-    expect(apiRequestMock).toHaveBeenCalledWith('/payments/orders/income/get', {
+    expect(apiRequestMock).toHaveBeenCalledWith('/payments/orders/income/accounting/details', {
       query: {
         netId: 'income-order-1',
       },
@@ -279,12 +280,19 @@ describe('income cashflow API lookup contracts', () => {
     })
   })
 
-  it('sends one explicit idempotency key for a general income create', async () => {
+  it.each([
+    [INCOME_PAYMENT_OPERATION_CODE.ClientPayment, 'client-payment'],
+    [INCOME_PAYMENT_OPERATION_CODE.SupplierReturn, 'supplier-return'],
+    [INCOME_PAYMENT_OPERATION_CODE.OtherAccountingWithCounterparts, 'counterparty-income'],
+    [INCOME_PAYMENT_OPERATION_CODE.OtherIncome, 'other-income'],
+    [INCOME_PAYMENT_OPERATION_CODE.ReturnFromColleague, 'colleague-return'],
+  ])('uses the exact scoped create route for operation %s', async (operationType, route) => {
     const operationId = '11111111-1111-4111-8111-111111111111'
     const order = {
       Amount: 250,
       AssignedPaymentOrders: [],
       Comment: 'Оплата',
+      OperationType: operationType,
     }
     apiRequestMock.mockResolvedValueOnce({
       ...order,
@@ -293,7 +301,7 @@ describe('income cashflow API lookup contracts', () => {
 
     await createIncomeCashflow(order, true, { operationId })
 
-    expect(apiRequestMock).toHaveBeenCalledWith('/payments/orders/income/new', {
+    expect(apiRequestMock).toHaveBeenCalledWith(`/payments/orders/income/accounting/create/${route}`, {
       body: order,
       dedupe: false,
       headers: { 'Idempotency-Key': operationId },
@@ -325,6 +333,15 @@ describe('income cashflow API lookup contracts', () => {
     })
   })
 
+  it('fails closed before transport for an unsupported create operation', async () => {
+    await expect(createIncomeCashflow({
+      AssignedPaymentOrders: [],
+      OperationType: 404,
+    })).rejects.toThrow('Unsupported income payment operation type.')
+
+    expect(apiRequestMock).not.toHaveBeenCalled()
+  })
+
   it('covers cancel, update-client, and update with backward-compatible operation options', async () => {
     const cancelOperationId = '22222222-2222-4222-8222-222222222222'
     const clientOperationId = '33333333-3333-4333-8333-333333333333'
@@ -351,7 +368,7 @@ describe('income cashflow API lookup contracts', () => {
 
     expect(apiRequestMock).toHaveBeenNthCalledWith(
       1,
-      '/payments/orders/income/cancel',
+      '/payments/orders/income/accounting/cancel',
       {
         dedupe: false,
         headers: { 'Idempotency-Key': cancelOperationId },
@@ -363,7 +380,7 @@ describe('income cashflow API lookup contracts', () => {
     )
     expect(apiRequestMock).toHaveBeenNthCalledWith(
       2,
-      '/payments/orders/income/update/client',
+      '/payments/orders/income/accounting/reassign-client',
       {
         dedupe: false,
         headers: { 'Idempotency-Key': clientOperationId },

@@ -303,6 +303,24 @@ export const PermissionKeys = {
         Open: 'payments.available_payments.cash_flow.open',
       },
     },
+    IncomeCashflows: {
+      IncomeOrder: {
+        CreateClientPayment:
+          'accounting.income_cashflows.client_payment.create',
+        CreateSupplierReturn:
+          'accounting.income_cashflows.supplier_return.create',
+        CreateCounterpartyIncome:
+          'accounting.income_cashflows.counterparty_income.create',
+        CreateOtherIncome: 'accounting.income_cashflows.other_income.create',
+        CreateColleagueReturn:
+          'accounting.income_cashflows.colleague_return.create',
+      },
+      Order: {
+        OpenDetails: 'accounting.income_cashflows.order.open_details',
+        ReassignClient: 'accounting.income_cashflows.order.reassign_client',
+        Cancel: 'accounting.income_cashflows.order.cancel',
+      },
+    },
     Banks: {
       Page: {
         View: 'payments.banks.page.view',
@@ -929,7 +947,7 @@ export const PermissionKeys = {
       Edit: 'payments.online_shop_payment.payment.edit',
     },
     IncomeOrder: {
-      Create: 'payments.online_shop_payment.income_order.create',
+      Create: 'accounting.income_cashflows.client_payment.create',
     },
   },
   Resales: {
@@ -1278,6 +1296,12 @@ export type FinancialAdministrationPermissionKey =
   | Values<
       typeof PermissionKeys.FinancialAdministration.AvailablePayments.CashFlow
     >
+  | Values<
+      typeof PermissionKeys.FinancialAdministration.IncomeCashflows.IncomeOrder
+    >
+  | Values<
+      typeof PermissionKeys.FinancialAdministration.IncomeCashflows.Order
+    >
   | Values<typeof PermissionKeys.FinancialAdministration.Banks.Page>
   | Values<typeof PermissionKeys.FinancialAdministration.Banks.Bank>
   | Values<typeof PermissionKeys.FinancialAdministration.CashflowArticles.Page>
@@ -1351,6 +1375,11 @@ export type PermissionKey =
   | WarehousesPermissionKey
 
 export const LegacyPermissionKeys = {
+  OnlineShopPayment: {
+    IncomeOrder: {
+      Create: 'payments.online_shop_payment.income_order.create',
+    },
+  },
   ClientResources: {
     Currency: {
       Create: 'CURRENCIES_ClientsResources_NewBtn_PKEY',
@@ -1718,6 +1747,10 @@ export const LegacyPermissionKeys = {
 export const PermissionAliases: Readonly<
   Partial<Record<PermissionKey, readonly string[]>>
 > = {
+  [
+    PermissionKeys.FinancialAdministration.IncomeCashflows.IncomeOrder
+      .CreateClientPayment
+  ]: [LegacyPermissionKeys.OnlineShopPayment.IncomeOrder.Create],
   [PermissionKeys.ClientResources.Currency.Create]: [
     LegacyPermissionKeys.ClientResources.Currency.Create,
   ],
@@ -2370,7 +2403,6 @@ const eventPermissionKeys = new Set<string>([
   ...Object.values(PermissionKeys.OnlineShopClients.Cart),
   ...Object.values(PermissionKeys.OnlineShopClients.Sales),
   ...Object.values(PermissionKeys.OnlineShopPayment.Payment),
-  ...Object.values(PermissionKeys.OnlineShopPayment.IncomeOrder),
   ...Object.values(PermissionKeys.NewEcommerceClients.Page),
   ...Object.values(PermissionKeys.IncompleteSalesOnlineShop.Page),
   ...Object.values(PermissionKeys.IncompleteSalesOnlineShop.Sale),
@@ -2391,6 +2423,12 @@ const eventPermissionKeys = new Set<string>([
   ),
   ...Object.values(
     PermissionKeys.FinancialAdministration.AvailablePayments.CashFlow,
+  ),
+  ...Object.values(
+    PermissionKeys.FinancialAdministration.IncomeCashflows.IncomeOrder,
+  ),
+  ...Object.values(
+    PermissionKeys.FinancialAdministration.IncomeCashflows.Order,
   ),
   ...Object.values(PermissionKeys.FinancialAdministration.Banks.Page),
   ...Object.values(PermissionKeys.FinancialAdministration.Banks.Bank),

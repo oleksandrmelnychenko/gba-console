@@ -4053,8 +4053,8 @@
     },
     "PE-00533": {
       "disposition": "covered_existing",
-      "canonicalPermissionKeys": ["payments.online_shop_payment.income_order.create"],
-      "reason": "The final shop income-order submit rechecks income_order.create and uses the dedicated idempotent mutation-policy-protected server façade."
+      "canonicalPermissionKeys": ["accounting.income_cashflows.client_payment.create"],
+      "reason": "The final shop income-order submit rechecks the shared client-payment create capability and uses the dedicated idempotent mutation-policy-protected server façade; the retired shop-specific key remains only a compatibility alias."
     },
     "PE-00534": {
       "disposition": "covered_existing",
@@ -4091,7 +4091,7 @@
     "PE-00748": {
       "disposition": "duplicate_occurrence",
       "duplicateOf": "PE-00533",
-      "canonicalPermissionKeys": ["payments.online_shop_payment.income_order.create"],
+      "canonicalPermissionKeys": ["accounting.income_cashflows.client_payment.create"],
       "reason": "The row action only enters the income-order workflow finalized by PE-00533 and is not a separate permission."
     },
     "PE-00749": {
@@ -4232,6 +4232,73 @@
       "duplicateOf": "PE-00104",
       "canonicalPermissionKeys": ["payments.available_payments.page.view"],
       "reason": "The explicit details action and row click open the same page-scoped drawer from the same protected registry payload."
+    },
+    "PE-00529": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": [
+        "accounting.income_cashflows.client_payment.create",
+        "accounting.income_cashflows.supplier_return.create",
+        "accounting.income_cashflows.counterparty_income.create"
+      ],
+      "reason": "The shared counterparty form derives and rechecks the exact create capability from the immutable operation type, and each type crosses its own operation-validating idempotent server façade."
+    },
+    "PE-00530": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["accounting.cashflow_articles.article.create"],
+      "reason": "Creating a movement article reuses the existing article.create capability and its protected accounting façade; the local modal trigger is not a new technical permission."
+    },
+    "PE-00531": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["accounting.income_cashflows.other_income.create"],
+      "reason": "The final other-income submit rechecks other_income.create and sends the fixed OtherIncome operation type only through its operation-validating idempotent façade."
+    },
+    "PE-00532": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["accounting.cashflow_articles.article.create"],
+      "reason": "The conversion form's movement-article creation is the same existing article.create business capability and protected façade, not a local click permission."
+    },
+    "PE-00540": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["accounting.income_cashflows.order.open_details"],
+      "reason": "The row and deep-link details workflow is inert without open_details, hydrates through the scoped details façade, and uses the same right for document-structure calculation."
+    },
+    "PE-00541": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-00548",
+      "canonicalPermissionKeys": ["accounting.income_cashflows.order.reassign_client"],
+      "reason": "The row action only opens the reassignment modal finalized by PE-00548 and therefore is not a separate permission."
+    },
+    "PE-00542": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-00546",
+      "canonicalPermissionKeys": ["accounting.income_cashflows.order.cancel"],
+      "reason": "The row action only opens confirmation for the final cancellation in PE-00546 and is not a technical-click permission."
+    },
+    "PE-00543": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-00540",
+      "canonicalPermissionKeys": ["accounting.income_cashflows.order.open_details"],
+      "reason": "The explicit Details action and row click converge on the same permission-checked details workflow."
+    },
+    "PE-00546": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["accounting.income_cashflows.order.cancel"],
+      "reason": "The final cancel handler rechecks order.cancel and calls only the dedicated idempotent mutation-policy-protected cancellation façade."
+    },
+    "PE-00548": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["accounting.income_cashflows.order.reassign_client"],
+      "reason": "The final reassignment handler rechecks order.reassign_client and calls only the dedicated idempotent mutation-policy-protected façade."
+    },
+    "PE-00549": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["accounting.income_cashflows.colleague_return.create"],
+      "reason": "The colleague-return form is fail-closed, rechecks its exact create capability on submit, and crosses only the operation-validating idempotent façade."
+    },
+    "PE-00550": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["accounting.cashflow_articles.article.create"],
+      "reason": "The colleague form's movement-article action reuses the single existing article.create capability and its protected accounting façade."
     },
     "PE-01869": {
       "disposition": "technical_ui",

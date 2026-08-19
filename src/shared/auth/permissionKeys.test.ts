@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest'
-import { PermissionKeys } from './permissionKeys'
+import {
+  LegacyPermissionKeys,
+  PermissionAliases,
+  PermissionKeys,
+} from './permissionKeys'
 
 const EXPECTED_SALES_UKRAINE_KEYS = [
   'sales.ukraine.sale.view',
@@ -380,5 +384,30 @@ describe('human-reviewed available-payments actions', () => {
       'payments.available_payments.cash_flow.open',
     ])
     expect(new Set(actual).size).toBe(5)
+  })
+})
+
+describe('human-reviewed income cashflow actions', () => {
+  it('contains eight independent capabilities without a duplicate shop-create key', () => {
+    const actual = [
+      ...Object.values(PermissionKeys.FinancialAdministration.IncomeCashflows.IncomeOrder),
+      ...Object.values(PermissionKeys.FinancialAdministration.IncomeCashflows.Order),
+    ]
+
+    expect(actual).toEqual([
+      'accounting.income_cashflows.client_payment.create',
+      'accounting.income_cashflows.supplier_return.create',
+      'accounting.income_cashflows.counterparty_income.create',
+      'accounting.income_cashflows.other_income.create',
+      'accounting.income_cashflows.colleague_return.create',
+      'accounting.income_cashflows.order.open_details',
+      'accounting.income_cashflows.order.reassign_client',
+      'accounting.income_cashflows.order.cancel',
+    ])
+    expect(new Set(actual).size).toBe(8)
+    expect(PermissionKeys.OnlineShopPayment.IncomeOrder.Create).toBe(actual[0])
+    expect(PermissionAliases[actual[0]]).toEqual([
+      LegacyPermissionKeys.OnlineShopPayment.IncomeOrder.Create,
+    ])
   })
 })

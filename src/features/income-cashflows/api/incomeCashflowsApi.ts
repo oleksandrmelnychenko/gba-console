@@ -3,10 +3,7 @@ import {
   executeAccountingMutation,
   type AccountingMutationOperationOptions,
 } from '../../../shared/api/accountingMutationOperation'
-import {
-  ACCOUNTING_OPERATION_ID,
-  getAccountingOperation,
-} from '../../accounting/accountingOperationCatalog'
+import { INCOME_PAYMENT_OPERATION_CODE } from '../../accounting/accountingOperationCatalog'
 import { IncomeCounterpartySearchType } from '../types'
 import type {
   Client,
@@ -27,11 +24,8 @@ import type {
 const MANUFACTURER_CLIENT_TYPE_ROLE_ID = 4
 const RETAIL_CLIENT_INITIAL_PAGE_SIZE = 100
 const RETAIL_CLIENT_INITIAL_MAX_PAGES = 100
-const CREATE_INCOME_ENDPOINT =
-  getAccountingOperation(ACCOUNTING_OPERATION_ID.IncomeClientPayment).endpoint
-
 export async function getIncomeCashflows(params: IncomeCashflowsSearchParams): Promise<IncomePaymentOrder[]> {
-  const result = await apiRequest<unknown>('/payments/orders/income/all', {
+  const result = await apiRequest<unknown>('/payments/orders/income/accounting/registry', {
     query: {
       currencyNetId: params.currencyNetId || undefined,
       from: params.from,
@@ -48,7 +42,7 @@ export async function getIncomeCashflows(params: IncomeCashflowsSearchParams): P
 }
 
 export async function getIncomeCashflowByNetId(netId: string, signal?: AbortSignal): Promise<IncomePaymentOrder | null> {
-  const result = await apiRequest<unknown>('/payments/orders/income/get', {
+  const result = await apiRequest<unknown>('/payments/orders/income/accounting/details', {
     query: {
       netId,
     },
@@ -78,7 +72,7 @@ export async function cancelIncomeCashflow(
     kind: 'income-payment:cancel',
     operation,
     payload: { netId },
-    request: (payload, context) => apiRequest<unknown>('/payments/orders/income/cancel', {
+    request: (payload, context) => apiRequest<unknown>('/payments/orders/income/accounting/cancel', {
       dedupe: false,
       headers: context.headers,
       method: 'PUT',
@@ -105,7 +99,7 @@ export async function updateIncomeCashflowClient(
     kind: 'income-payment:change-client',
     operation,
     payload: params,
-    request: (payload, context) => apiRequest<unknown>('/payments/orders/income/update/client', {
+    request: (payload, context) => apiRequest<unknown>('/payments/orders/income/accounting/reassign-client', {
       dedupe: false,
       headers: context.headers,
       method: 'PUT',
@@ -417,7 +411,12 @@ export async function createIncomeCashflow(
   isAuto = false,
   operation?: AccountingMutationOperationOptions,
 ): Promise<IncomePaymentOrder | null> {
-  return createIncomeCashflowAtEndpoint(CREATE_INCOME_ENDPOINT, order, isAuto, operation)
+  return createIncomeCashflowAtEndpoint(
+    getIncomeCreateEndpoint(order.OperationType),
+    order,
+    isAuto,
+    operation,
+  )
 }
 
 export async function createOnlineShopIncomeCashflow(
@@ -455,6 +454,23 @@ async function createIncomeCashflowAtEndpoint(
   })
 
   return normalizeIncomePaymentOrder(result)
+}
+
+function getIncomeCreateEndpoint(operationType: string | number | undefined): string {
+  switch (Number(operationType)) {
+    case INCOME_PAYMENT_OPERATION_CODE.ClientPayment:
+      return '/payments/orders/income/accounting/create/client-payment'
+    case INCOME_PAYMENT_OPERATION_CODE.SupplierReturn:
+      return '/payments/orders/income/accounting/create/supplier-return'
+    case INCOME_PAYMENT_OPERATION_CODE.OtherAccountingWithCounterparts:
+      return '/payments/orders/income/accounting/create/counterparty-income'
+    case INCOME_PAYMENT_OPERATION_CODE.OtherIncome:
+      return '/payments/orders/income/accounting/create/other-income'
+    case INCOME_PAYMENT_OPERATION_CODE.ReturnFromColleague:
+      return '/payments/orders/income/accounting/create/colleague-return'
+    default:
+      throw new Error('Unsupported income payment operation type.')
+  }
 }
 
 function normalizeIncomePaymentOrders(result: unknown): IncomePaymentOrder[] {

@@ -53,6 +53,12 @@ import {
   validateIncomeCashflowMovementName,
 } from '../incomeCashflowFormValidation'
 import { createAutocompleteOptionSubmitGuard } from '../autocompleteOptionSubmitGuard'
+import { PermissionGate } from '../../auth/components/PermissionGate'
+import { useAuth } from '../../auth/useAuth'
+import {
+  getIncomeCreatePermissionByOperationType,
+  INCOME_CASHFLOWS_MOVEMENT_CREATE_PERMISSION,
+} from '../permissions'
 import './income-cashflows-page.css'
 
 type FormState = {
@@ -91,10 +97,33 @@ const moneyFormatter = new Intl.NumberFormat('uk-UA', {
 
 export function IncomeCashflowConversionFormPage() {
   const { t } = useI18n()
+  const permissionKey = getIncomeCreatePermissionByOperationType(
+    IncomePaymentOperationType.OtherIncome,
+  )
+
+  return (
+    <PermissionGate
+      fallback={<Alert color="red">{t('Немає права створювати інше надходження')}</Alert>}
+      permissionKey={permissionKey}
+    >
+      <IncomeCashflowConversionFormPageContent />
+    </PermissionGate>
+  )
+}
+
+function IncomeCashflowConversionFormPageContent() {
+  const { t } = useI18n()
+  const { hasPermission } = useAuth()
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const registerType = parseRegisterType(searchParams.get('type'))
   const isBankIncome = registerType === PaymentRegisterType.Bank
+  const createPermission = getIncomeCreatePermissionByOperationType(
+    IncomePaymentOperationType.OtherIncome,
+  )
+  const canCreateMovement = hasPermission(
+    INCOME_CASHFLOWS_MOVEMENT_CREATE_PERMISSION,
+  )
   const [organizations, setOrganizations] = useValueState<Organization[]>([])
   const [paymentRegisters, setPaymentRegisters] = useValueState<PaymentRegister[]>([])
   const [paymentMovements, setPaymentMovements] = useValueState<PaymentMovement[]>([])
@@ -338,6 +367,11 @@ export function IncomeCashflowConversionFormPage() {
   }
 
   async function handleCreateMovement() {
+    if (!hasPermission(INCOME_CASHFLOWS_MOVEMENT_CREATE_PERMISSION)) {
+      setError(t('Немає права створювати статтю руху коштів'))
+      return
+    }
+
     const operationName = form.movementSearch.trim()
 
     if (!operationName) {
@@ -409,6 +443,11 @@ export function IncomeCashflowConversionFormPage() {
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
+
+    if (!hasPermission(createPermission)) {
+      setError(t('Немає права створювати інше надходження'))
+      return
+    }
 
     const validationError = validateForm({
       activeMovement,
@@ -636,19 +675,21 @@ export function IncomeCashflowConversionFormPage() {
                   onChange={handleMovementSearchChanged}
                   onOptionSubmit={handleMovementSubmit}
                 />
-                <Tooltip label={t('Створити статтю')} withArrow>
-                  <ActionIcon
-                    aria-label={t('Створити статтю')}
-                    color={CREATE_ACTION_COLOR}
-                    disabled={Boolean(activeMovement) || !form.movementSearch.trim() || isLoading || isSaving}
-                    size={36}
-                    type="button"
-                    variant="outline"
-                    onClick={() => void handleCreateMovement()}
-                  >
-                    <Plus size={17} />
-                  </ActionIcon>
-                </Tooltip>
+                {canCreateMovement && (
+                  <Tooltip label={t('Створити статтю')} withArrow>
+                    <ActionIcon
+                      aria-label={t('Створити статтю')}
+                      color={CREATE_ACTION_COLOR}
+                      disabled={Boolean(activeMovement) || !form.movementSearch.trim() || isLoading || isSaving}
+                      size={36}
+                      type="button"
+                      variant="outline"
+                      onClick={() => void handleCreateMovement()}
+                    >
+                      <Plus size={17} />
+                    </ActionIcon>
+                  </Tooltip>
+                )}
               </Group>
             <TextInput
               disabled={isLoading || isSaving}

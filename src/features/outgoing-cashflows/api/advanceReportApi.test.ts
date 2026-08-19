@@ -5,6 +5,7 @@ import {
   calculateAdvanceReportConsumableOrder,
   calculateAdvanceReportDocumentStructure,
   calculateAdvanceReportOrder,
+  calculateIncomeCashflowAdvanceReportOrder,
   getAdvanceReportOrder,
   searchAdvanceReportSupplyOrganizations,
   updateAdvanceReportOrder,
@@ -83,6 +84,21 @@ describe('advanceReportApi', () => {
       body: order,
       method: 'POST',
     })
+  })
+
+  it('uses the income-details scoped calculation boundary from income cashflows', async () => {
+    const order: AdvanceReportOrder = { NetUid: 'order-1' }
+    apiRequestMock.mockResolvedValueOnce({ NetUid: 'order-1' })
+
+    await calculateIncomeCashflowAdvanceReportOrder(order)
+
+    expect(apiRequestMock).toHaveBeenCalledWith(
+      '/payments/orders/outcome/income-cashflows/details/advance-report/calculate',
+      {
+        body: expect.objectContaining(order),
+        method: 'POST',
+      },
+    )
   })
 
   it('does not send deleted fuel rows to calculation but keeps them in the returned order state', async () => {
