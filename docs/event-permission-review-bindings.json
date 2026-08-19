@@ -4416,6 +4416,28 @@
     "PE-00917": {
       "disposition": "technical_ui",
       "reason": "The row location action only opens a drawer over placement values already returned by the independently authorized details request; it performs no additional API call or business operation."
+    },
+    "PE-01580": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-01584",
+      "canonicalPermissionKeys": ["orders.ukraine.logistic_way.delete_payment_task"],
+      "reason": "The trash action only selects the protocol for confirmation; the final delete handler owns the single delete-payment-task boundary."
+    },
+    "PE-01581": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-01582",
+      "canonicalPermissionKeys": ["orders.ukraine.order.create_payment_task"],
+      "reason": "Opening the payment-protocol form is the first UI step of the same create-payment-task workflow finalized by PE-01582."
+    },
+    "PE-01582": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["orders.ukraine.order.create_payment_task"],
+      "reason": "The final protocol submit rechecks the existing order payment-task permission and calls only the narrow server-side create façade."
+    },
+    "PE-01584": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["orders.ukraine.logistic_way.delete_payment_task"],
+      "reason": "The final confirmation rechecks delete-payment-task and sends only the selected protocol identity to the order-owned delete façade."
     }
   }
 }

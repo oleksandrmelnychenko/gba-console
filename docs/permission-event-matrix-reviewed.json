@@ -5,16 +5,16 @@
     "classifiedRecords": 1902,
     "dispositionCounts": {
       "technical_ui": 779,
-      "covered_existing": 627,
-      "duplicate_occurrence": 313,
+      "covered_existing": 629,
+      "duplicate_occurrence": 315,
       "needs_human_review": 58,
-      "business_candidate": 112,
+      "business_candidate": 108,
       "stale_or_aggregated": 13
     },
-    "reviewCandidates": 170,
+    "reviewCandidates": 166,
     "technicalExcluded": 779,
-    "duplicatesExcluded": 313,
-    "duplicateOccurrencesTotal": 382,
+    "duplicatesExcluded": 315,
+    "duplicateOccurrencesTotal": 384,
     "technicalDuplicateOverlap": 69,
     "sourceResolved": 1828,
     "sourceUnresolved": 74,
@@ -64587,17 +64587,19 @@
       "proposedPermission": "orders.orders_develop_all_edit_item_specifications.on_remove.command_delete",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
-      "duplicateOf": null,
+      "disposition": "duplicate_occurrence",
+      "dispositionReason": "The trash action only selects the protocol for confirmation; the final delete handler owns the single delete-payment-task boundary.",
+      "duplicateOf": "PE-01584",
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "orders.ukraine.logistic_way.delete_payment_task"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [],
       "source": {
         "status": "resolved",
         "file": "src/features/supply-ukraine-payment-protocols/components/PaymentDeliveryProtocolsSection.tsx",
-        "line": 40,
+        "line": 41,
         "alternatives": []
       }
     },
@@ -64625,20 +64627,22 @@
       "proposedPermission": "orders.orders_develop_all_edit_item_specifications.set_form_open_true.modal_open",
       "securityLevel": "low",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
-      "duplicateOf": null,
+      "disposition": "duplicate_occurrence",
+      "dispositionReason": "Opening the payment-protocol form is the first UI step of the same create-payment-task workflow finalized by PE-01582.",
+      "duplicateOf": "PE-01582",
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "orders.ukraine.order.create_payment_task"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-75e88e40bafc",
+          "candidateId": "EPC-d45bdcb0e8bd",
           "distance": 0,
           "file": "src/features/supply-ukraine-payment-protocols/components/PaymentDeliveryProtocolsSection.tsx",
           "handler": "{() => setFormOpen(true)}",
           "humanLabel": "Створити платіжну задачу",
-          "line": 265,
+          "line": 282,
           "permissionKeys": [],
           "score": 15
         }
@@ -64646,7 +64650,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/supply-ukraine-payment-protocols/components/PaymentDeliveryProtocolsSection.tsx",
-        "line": 265,
+        "line": 282,
         "alternatives": []
       }
     },
@@ -64674,20 +64678,22 @@
       "proposedPermission": "orders.orders_develop_all_edit_item_specifications.handle_submit.command_submit",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "covered_existing",
+      "dispositionReason": "The final protocol submit rechecks the existing order payment-task permission and calls only the narrow server-side create façade.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "orders.ukraine.order.create_payment_task"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-a38ebadeff92",
-          "distance": 98,
+          "candidateId": "EPC-215c459dba65",
+          "distance": 102,
           "file": "src/features/supply-ukraine-payment-protocols/components/PaymentDeliveryProtocolsSection.tsx",
           "handler": "{handleSubmit}",
           "humanLabel": "Зберегти",
-          "line": 295,
+          "line": 312,
           "permissionKeys": [],
           "score": 12
         }
@@ -64695,7 +64701,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/supply-ukraine-payment-protocols/components/PaymentDeliveryProtocolsSection.tsx",
-        "line": 197,
+        "line": 210,
         "alternatives": []
       }
     },
@@ -64731,12 +64737,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-89ecd2cfe791",
-          "distance": 115,
+          "candidateId": "EPC-991ccf14840a",
+          "distance": 234,
           "file": "src/features/supply-ukraine-payment-protocols/components/PaymentDeliveryProtocolsSection.tsx",
           "handler": "{() => setRemoveTarget(null)}",
           "humanLabel": "Скасувати",
-          "line": 367,
+          "line": 384,
           "permissionKeys": [],
           "score": 19
         }
@@ -64744,7 +64750,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/supply-ukraine-payment-protocols/components/PaymentDeliveryProtocolsSection.tsx",
-        "line": 252,
+        "line": 150,
         "alternatives": []
       }
     },
@@ -64772,20 +64778,22 @@
       "proposedPermission": "orders.orders_develop_all_edit_item_specifications.handle_remove_confirm.command_submit",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "covered_existing",
+      "dispositionReason": "The final confirmation rechecks delete-payment-task and sends only the selected protocol identity to the order-owned delete façade.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "orders.ukraine.logistic_way.delete_payment_task"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-63f73afde8be",
+          "candidateId": "EPC-f454455e2f77",
           "distance": 125,
           "file": "src/features/supply-ukraine-payment-protocols/components/PaymentDeliveryProtocolsSection.tsx",
           "handler": "{handleRemoveConfirm}",
           "humanLabel": "Видалити",
-          "line": 370,
+          "line": 387,
           "permissionKeys": [],
           "score": 19
         }
@@ -64793,7 +64801,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/supply-ukraine-payment-protocols/components/PaymentDeliveryProtocolsSection.tsx",
-        "line": 245,
+        "line": 262,
         "alternatives": []
       }
     },
@@ -80292,10 +80300,6 @@
     "PE-01572",
     "PE-01573",
     "PE-01574",
-    "PE-01580",
-    "PE-01581",
-    "PE-01582",
-    "PE-01584",
     "PE-01841",
     "PE-01843",
     "PE-01844",

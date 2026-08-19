@@ -6,9 +6,12 @@ import { useValueState } from '../../../shared/hooks/useValueState'
 import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
-import { useAuth } from '../../auth/useAuth'
+import { usePermissions } from '../../auth/usePermissions'
 import { getSupplyUkraineOrderDisplayNumber } from '../../../shared/supplyUkraineOrderNumbers'
 import {
+  createSupplyOrderUkrainePaymentProtocol,
+  deleteSupplyOrderUkrainePaymentProtocol,
+  getLogisticPaymentTaskResponsibleUsers,
   getResponsibleUsers,
   getSupplyOrderUkraineById,
   getSupplyOrderUkraineProtocolKeys,
@@ -30,12 +33,33 @@ import type {
 import './supply-ukraine-payment-protocols.css'
 
 const BACK_ROUTE = '/orders/ukraine/all'
-const PERMISSION_ADD_PAYMENT_PROTOCOL = PermissionKeys.OrdersUkraine.LogisticWay.CreatePaymentTask
+const PERMISSION_PAGE_VIEW = PermissionKeys.OrdersUkraine.Page.View
+const PERMISSION_CREATE_PAYMENT_PROTOCOL = PermissionKeys.OrdersUkraine.Order.CreatePaymentTask
+const PERMISSION_CREATE_LOGISTIC_PAYMENT_TASK = PermissionKeys.OrdersUkraine.LogisticWay.CreatePaymentTask
 const PERMISSION_REMOVE_PAYMENT_TASK = PermissionKeys.OrdersUkraine.LogisticWay.DeletePaymentTask
 
 export function SupplyUkrainePaymentProtocolsView() {
   const { t } = useI18n()
-  const { hasPermission } = useAuth()
+  const { can, isLoading } = usePermissions()
+
+  if (isLoading) {
+    return <Text c="dimmed">{t('Завантаження')}</Text>
+  }
+
+  if (!can(PERMISSION_PAGE_VIEW)) {
+    return (
+      <Alert color="red" icon={<CircleAlert size={18} />} title={t('Доступ заборонено')} variant="light">
+        {t('Недостатньо прав для перегляду платіжних протоколів')}
+      </Alert>
+    )
+  }
+
+  return <SupplyUkrainePaymentProtocolsContent />
+}
+
+function SupplyUkrainePaymentProtocolsContent() {
+  const { t } = useI18n()
+  const { can } = usePermissions()
   const navigate = useNavigate()
   const { netid } = useParams<{ netid: string }>()
 
@@ -46,8 +70,9 @@ export function SupplyUkrainePaymentProtocolsView() {
   const [isSaving, setSaving] = useValueState(false)
   const [error, setError] = useValueState<string | null>(null)
   const [actionError, setActionError] = useValueState<string | null>(null)
-  const canAddPaymentProtocol = hasPermission(PERMISSION_ADD_PAYMENT_PROTOCOL)
-  const canRemovePaymentTask = hasPermission(PERMISSION_REMOVE_PAYMENT_TASK)
+  const canCreatePaymentProtocol = can(PERMISSION_CREATE_PAYMENT_PROTOCOL)
+  const canCreateLogisticPaymentTask = can(PERMISSION_CREATE_LOGISTIC_PAYMENT_TASK)
+  const canRemovePaymentTask = can(PERMISSION_REMOVE_PAYMENT_TASK)
   const orderNumber = getSupplyUkraineOrderDisplayNumber(order) || netid || ''
 
   function closeSheet() {
@@ -77,8 +102,12 @@ export function SupplyUkrainePaymentProtocolsView() {
       try {
         const [nextOrder, nextKeys, nextUsers] = await Promise.all([
           getSupplyOrderUkraineById(netid),
-          getSupplyOrderUkraineProtocolKeys(),
-          getResponsibleUsers(),
+          canCreatePaymentProtocol ? getSupplyOrderUkraineProtocolKeys() : Promise.resolve([]),
+          canCreatePaymentProtocol
+            ? getResponsibleUsers()
+            : canCreateLogisticPaymentTask
+              ? getLogisticPaymentTaskResponsibleUsers()
+              : Promise.resolve([]),
         ])
 
         if (!cancelled) {
@@ -103,7 +132,7 @@ export function SupplyUkrainePaymentProtocolsView() {
     return () => {
       cancelled = true
     }
-  }, [netid, setError, setLoading, setOrder, setProtocolKeys, setUsers, t])
+  }, [canCreateLogisticPaymentTask, canCreatePaymentProtocol, netid, setError, setLoading, setOrder, setProtocolKeys, setUsers, t])
 
   async function persistOrder(nextOrder: SupplyOrderUkraine): Promise<void> {
     setSaving(true)
@@ -125,7 +154,7 @@ export function SupplyUkrainePaymentProtocolsView() {
   }
 
   async function handleCreateService(service: MergedService, documents: File[]): Promise<void> {
-    if (!canAddPaymentProtocol) {
+    if (!can(PERMISSION_CREATE_LOGISTIC_PAYMENT_TASK)) {
       rejectAction(t('Недостатньо прав для цієї дії'))
     }
 
@@ -152,11 +181,11 @@ export function SupplyUkrainePaymentProtocolsView() {
   }
 
   async function handleRemoveService(service: MergedService): Promise<void> {
-    if (!canRemovePaymentTask) {
+    if (!can(PERMISSION_REMOVE_PAYMENT_TASK)) {
       rejectAction(t('Недостатньо прав для цієї дії'))
     }
 
-    if (!order) {
+    if (!order?.NetUid) {
       rejectAction(t('Не задано замовлення'))
     }
 
@@ -172,11 +201,11 @@ export function SupplyUkrainePaymentProtocolsView() {
     values: { comment: string; payToDate: Date | null; responsible: ProtocolUser | null },
     isAccounting: boolean,
   ): Promise<void> {
-    if (!canAddPaymentProtocol) {
+    if (!can(PERMISSION_CREATE_LOGISTIC_PAYMENT_TASK)) {
       rejectAction(t('Недостатньо прав для цієї дії'))
     }
 
-    if (!order) {
+    if (!order?.NetUid) {
       rejectAction(t('Не задано замовлення'))
     }
 
@@ -197,7 +226,7 @@ export function SupplyUkrainePaymentProtocolsView() {
   }
 
   async function handleRemovePaymentTask(service: MergedService, task: SupplyPaymentTask): Promise<void> {
-    if (!canRemovePaymentTask) {
+    if (!can(PERMISSION_REMOVE_PAYMENT_TASK)) {
       rejectAction(t('Недостатньо прав для цієї дії'))
     }
 
@@ -223,11 +252,11 @@ export function SupplyUkrainePaymentProtocolsView() {
   }
 
   async function handleCreateProtocol(values: NewPaymentProtocolFormValues): Promise<void> {
-    if (!canAddPaymentProtocol) {
+    if (!can(PERMISSION_CREATE_PAYMENT_PROTOCOL)) {
       rejectAction(t('Недостатньо прав для цієї дії'))
     }
 
-    if (!order) {
+    if (!order?.NetUid) {
       rejectAction(t('Не задано замовлення'))
     }
 
@@ -243,27 +272,45 @@ export function SupplyUkrainePaymentProtocolsView() {
       Value: Number(values.value) || 0,
     }
 
-    const nextOrder = createUkrainePaymentMutationPayload(order, {
-      paymentProtocols: [protocol],
-    })
-
-    await persistOrder(nextOrder)
+    setSaving(true)
+    setActionError(null)
+    try {
+      const updated = await createSupplyOrderUkrainePaymentProtocol(order.NetUid, protocol)
+      if (updated) {
+        setOrder(updated)
+      }
+    } catch (requestError) {
+      const message = requestError instanceof Error ? requestError.message : t('Не вдалося виконати запит')
+      setActionError(message)
+      throw new Error(message, { cause: requestError })
+    } finally {
+      setSaving(false)
+    }
   }
 
   async function handleRemoveProtocol(protocol: SupplyOrderUkrainePaymentDeliveryProtocol): Promise<void> {
-    if (!canRemovePaymentTask) {
+    if (!can(PERMISSION_REMOVE_PAYMENT_TASK)) {
       rejectAction(t('Недостатньо прав для цієї дії'))
     }
 
-    if (!order) {
+    if (!order?.NetUid) {
       rejectAction(t('Не задано замовлення'))
     }
 
-    const nextOrder = createUkrainePaymentMutationPayload(order, {
-      paymentProtocols: [{ ...protocol, Deleted: true }],
-    })
-
-    await persistOrder(nextOrder)
+    setSaving(true)
+    setActionError(null)
+    try {
+      const updated = await deleteSupplyOrderUkrainePaymentProtocol(order.NetUid, protocol)
+      if (updated) {
+        setOrder(updated)
+      }
+    } catch (requestError) {
+      const message = requestError instanceof Error ? requestError.message : t('Не вдалося виконати запит')
+      setActionError(message)
+      throw new Error(message, { cause: requestError })
+    } finally {
+      setSaving(false)
+    }
   }
 
   return (
@@ -311,8 +358,8 @@ export function SupplyUkrainePaymentProtocolsView() {
               <MergedServicesSection
                 isSaving={isSaving}
                 permissions={{
-                  canCreatePaymentTask: canAddPaymentProtocol,
-                  canCreateService: canAddPaymentProtocol,
+                  canCreatePaymentTask: canCreateLogisticPaymentTask,
+                  canCreateService: canCreateLogisticPaymentTask,
                   canRemovePaymentTask,
                   canRemoveService: canRemovePaymentTask,
                 }}
@@ -327,7 +374,7 @@ export function SupplyUkrainePaymentProtocolsView() {
 
             <Card className="app-section-card supply-payment-section-card" withBorder radius="md" padding="md">
               <PaymentDeliveryProtocolsSection
-                canCreateProtocol={canAddPaymentProtocol}
+                canCreateProtocol={canCreatePaymentProtocol}
                 canRemoveProtocol={canRemovePaymentTask}
                 isSaving={isSaving}
                 protocolKeys={protocolKeys}

@@ -261,6 +261,7 @@ const migratedConsoleRoutes: ConsoleRoute[] = [
   {
     path: '/orders/ukraine/protocols/:netid',
     element: lazyRoute(<SupplyUkrainePaymentProtocolsPage />),
+    permissionKey: PermissionKeys.OrdersUkraine.Page.View,
   },
   {
     path: '/supply-orders/product-placement/:id',

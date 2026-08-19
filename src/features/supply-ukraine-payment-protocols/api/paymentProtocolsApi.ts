@@ -4,6 +4,7 @@ import type {
   MergedService,
   ProtocolUser,
   SupplyOrderUkraine,
+  SupplyOrderUkrainePaymentDeliveryProtocol,
   SupplyOrderUkrainePaymentDeliveryProtocolKey,
   SupplyOrganization,
 } from '../types'
@@ -47,7 +48,33 @@ function readArrayPayload(result: unknown, keys: string[]): unknown[] {
 }
 
 export async function getSupplyOrderUkraineById(netId: string): Promise<SupplyOrderUkraine | null> {
-  const result = await apiRequest<unknown>('/supplies/ukraine/order/get', {
+  const result = await apiRequest<unknown>('/supplies/ukraine/order/payment-protocols/details', {
+    query: { netId },
+  })
+
+  return normalizeOrder(result)
+}
+
+export async function createSupplyOrderUkrainePaymentProtocol(
+  netId: string,
+  protocol: SupplyOrderUkrainePaymentDeliveryProtocol,
+): Promise<SupplyOrderUkraine | null> {
+  const result = await apiRequest<unknown>('/supplies/ukraine/order/payment-protocols/create', {
+    method: 'POST',
+    body: protocol,
+    query: { netId },
+  })
+
+  return normalizeOrder(result)
+}
+
+export async function deleteSupplyOrderUkrainePaymentProtocol(
+  netId: string,
+  protocol: SupplyOrderUkrainePaymentDeliveryProtocol,
+): Promise<SupplyOrderUkraine | null> {
+  const result = await apiRequest<unknown>('/supplies/ukraine/order/payment-protocols/delete', {
+    method: 'POST',
+    body: protocol,
     query: { netId },
   })
 
@@ -85,13 +112,21 @@ export async function uploadUkraineMergedService(
 }
 
 export async function getSupplyOrderUkraineProtocolKeys(): Promise<SupplyOrderUkrainePaymentDeliveryProtocolKey[]> {
-  const result = await apiRequest<unknown>('/supplies/ukraine/order/protocols/keys/all')
+  const result = await apiRequest<unknown>('/supplies/ukraine/order/payment-protocols/keys')
 
   return readArrayPayload(result, ['Items', 'Keys', 'Data']) as SupplyOrderUkrainePaymentDeliveryProtocolKey[]
 }
 
 export async function getResponsibleUsers(): Promise<ProtocolUser[]> {
-  const result = await apiRequest<unknown>('/usermanagement/profiles/all/by', {
+  const result = await apiRequest<unknown>('/usermanagement/profiles/orders-ukraine/payment-protocols/users', {
+    query: { types: 7 },
+  })
+
+  return readArrayPayload(result, ['Items', 'Users', 'Profiles', 'Data']) as ProtocolUser[]
+}
+
+export async function getLogisticPaymentTaskResponsibleUsers(): Promise<ProtocolUser[]> {
+  const result = await apiRequest<unknown>('/usermanagement/profiles/orders-ukraine/logistic-way/payment-task-users', {
     query: { types: 7 },
   })
 
