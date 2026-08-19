@@ -4,15 +4,15 @@
     "inputRecords": 1902,
     "classifiedRecords": 1902,
     "dispositionCounts": {
-      "technical_ui": 777,
-      "covered_existing": 621,
+      "technical_ui": 778,
+      "covered_existing": 622,
       "duplicate_occurrence": 313,
-      "business_candidate": 119,
+      "business_candidate": 117,
       "needs_human_review": 59,
       "stale_or_aggregated": 13
     },
-    "reviewCandidates": 178,
-    "technicalExcluded": 777,
+    "reviewCandidates": 176,
+    "technicalExcluded": 778,
     "duplicatesExcluded": 313,
     "duplicateOccurrencesTotal": 382,
     "technicalDuplicateOverlap": 69,
@@ -21,8 +21,8 @@
     "currentActionResolved": 1178,
     "currentActionUnresolved": 724,
     "currentProductionActions": 1828,
-    "currentPermissionBoundActions": 348,
-    "currentUnboundActions": 1480
+    "currentPermissionBoundActions": 349,
+    "currentUnboundActions": 1479
   },
   "invariants": {
     "allInputRecordsClassified": true,
@@ -36464,7 +36464,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/product-history/pages/ProductHistoryPage.tsx",
-        "line": 292,
+        "line": 307,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -36493,12 +36493,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-c187772449e7",
-          "distance": 151,
+          "candidateId": "EPC-8c3b1f007be1",
+          "distance": 175,
           "file": "src/features/product-history/pages/ProductHistoryPage.tsx",
           "handler": "{resetFilters}",
           "humanLabel": "Скинути",
-          "line": 369,
+          "line": 404,
           "permissionKeys": [],
           "score": 12
         }
@@ -36506,7 +36506,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/product-history/pages/ProductHistoryPage.tsx",
-        "line": 218,
+        "line": 229,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -36527,28 +36527,32 @@
       "proposedPermission": "products.products_history.void_handle_export.command_export",
       "securityLevel": "medium",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "covered_existing",
+      "dispositionReason": "The final history export handler rechecks document.export and calls only the dedicated read-only document façade.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "products.history.document.export"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-234f7205fd12",
+          "candidateId": "EPC-2e2933e24293",
           "distance": 7,
           "file": "src/features/product-history/pages/ProductHistoryPage.tsx",
           "handler": "{() => void handleExport()}",
           "humanLabel": "Друк PDF",
-          "line": 374,
-          "permissionKeys": [],
+          "line": 410,
+          "permissionKeys": [
+            "products.history.document.export"
+          ],
           "score": 12
         }
       ],
       "source": {
         "status": "resolved",
         "file": "src/features/product-history/pages/ProductHistoryPage.tsx",
-        "line": 381,
+        "line": 417,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -36569,20 +36573,20 @@
       "proposedPermission": "products.products_history.set_opened_current_current.modal_open",
       "securityLevel": "low",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "technical_ui",
+      "dispositionReason": "The storage badge only toggles a popover over placement rows already returned by the page-authorized registry request; it performs no additional API call or business operation.",
       "duplicateOf": null,
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-58d9f499e27f",
+          "candidateId": "EPC-d96a3dfc2e1e",
           "distance": 3,
           "file": "src/features/product-history/pages/ProductHistoryPage.tsx",
           "handler": "{() => setOpened((current) => !current)}",
           "humanLabel": null,
-          "line": 481,
+          "line": 518,
           "permissionKeys": [],
           "score": 23
         }
@@ -36590,7 +36594,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/product-history/pages/ProductHistoryPage.tsx",
-        "line": 484,
+        "line": 521,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -80138,8 +80142,6 @@
     "PE-00137",
     "PE-00152",
     "PE-00163",
-    "PE-00901",
-    "PE-00902",
     "PE-00913",
     "PE-00916",
     "PE-00917",

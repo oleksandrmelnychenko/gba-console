@@ -30,6 +30,8 @@ import { DEFAULT_PAGINATOR_PAGE_SIZE } from '../../../shared/ui/paginator/pagina
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { toDateTimeQuery } from '../../../shared/date/dateTime'
+import { PermissionKeys } from '../../../shared/auth/permissionKeys'
+import { usePermissions } from '../../auth/usePermissions'
 import { exportProductHistory, getProductHistory, getProductHistoryStorages } from '../api/productHistoryApi'
 import type {
   ProductAvailabilityDataHistory,
@@ -61,6 +63,8 @@ const dateTimeFormatter = new Intl.DateTimeFormat('uk-UA', {
 
 function useProductHistoryPageModel() {
   const { t } = useI18n()
+  const { can } = usePermissions()
+  const canExport = can(PermissionKeys.ProductHistory.Document.Export)
   const [historyItems, setHistoryItems] = useValueState<ProductHistoryItem[]>([])
   const [storages, setStorages] = useValueState<ProductHistoryStorage[]>([])
   const [selectedStorageIds, setSelectedStorageIds] = useValueState<string[]>([])
@@ -99,6 +103,13 @@ function useProductHistoryPageModel() {
     setTotal(undefined)
     setLoading(false)
   }, [setHistoryItems, setLoading, setTotal])
+
+  useEffect(() => {
+    if (!canExport) {
+      setDownloadDocument(null)
+      setDownloadModalOpened(false)
+    }
+  }, [canExport, setDownloadDocument, setDownloadModalOpened])
 
   useEffect(() => {
     let cancelled = false
@@ -223,7 +234,10 @@ function useProductHistoryPageModel() {
   }
 
   async function handleExport() {
-    if (filterError) {
+    if (
+      filterError
+      || !can(PermissionKeys.ProductHistory.Document.Export)
+    ) {
       return
     }
 
@@ -260,6 +274,7 @@ function useProductHistoryPageModel() {
   }
 
   return {
+    canExport,
     canMoveForward,
     columns,
     dateTo,
@@ -290,6 +305,25 @@ function useProductHistoryPageModel() {
 }
 
 export function ProductHistoryPage() {
+  const { t } = useI18n()
+  const { can, isLoading } = usePermissions()
+
+  if (isLoading) {
+    return <Text c="dimmed">{t('Завантаження')}</Text>
+  }
+
+  if (!can(PermissionKeys.ProductHistory.Page.View)) {
+    return (
+      <Alert color="red" icon={<CircleAlert size={18} />} title={t('Доступ заборонено')} variant="light">
+        {t('Недостатньо прав для перегляду історії товарів')}
+      </Alert>
+    )
+  }
+
+  return <ProductHistoryPageContent />
+}
+
+function ProductHistoryPageContent() {
   const model = useProductHistoryPageModel()
 
   return <ProductHistoryPageView model={model} />
@@ -299,6 +333,7 @@ function ProductHistoryPageView({ model }: { model: ReturnType<typeof useProduct
   const { t } = useI18n()
   const [tableToolbarSlot, setTableToolbarSlot] = useState<HTMLDivElement | null>(null)
   const {
+    canExport,
     canMoveForward,
     columns,
     dateTo,
@@ -370,19 +405,21 @@ function ProductHistoryPageView({ model }: { model: ReturnType<typeof useProduct
                   <RotateCcw size={17} />
                 </ActionIcon>
               </Tooltip>
-              <Tooltip label={t('Друк PDF')}>
-                <ActionIcon
-                  aria-label={t('Друк PDF')}
-                  color={CREATE_ACTION_COLOR}
-                  variant="light"
-                  size={34}
-                  disabled={Boolean(filterError)}
-                  loading={isExporting}
-                  onClick={() => void handleExport()}
-                >
-                  <FileDown size={18} />
-                </ActionIcon>
-              </Tooltip>
+              {canExport && (
+                <Tooltip label={t('Друк PDF')}>
+                  <ActionIcon
+                    aria-label={t('Друк PDF')}
+                    color={CREATE_ACTION_COLOR}
+                    variant="light"
+                    size={34}
+                    disabled={Boolean(filterError)}
+                    loading={isExporting}
+                    onClick={() => void handleExport()}
+                  >
+                    <FileDown size={18} />
+                  </ActionIcon>
+                </Tooltip>
+              )}
               <Paginator
                 isLoading={isLoading || isLoadingStorages}
                 page={page}
@@ -435,7 +472,7 @@ function ProductHistoryPageView({ model }: { model: ReturnType<typeof useProduct
 
       <DocumentExportModal
         document={downloadDocument}
-        opened={downloadModalOpened}
+        opened={canExport && downloadModalOpened}
         title={t('Друк PDF')}
         onClose={() => setDownloadModalOpened(false)}
       />

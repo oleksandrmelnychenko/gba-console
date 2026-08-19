@@ -285,7 +285,11 @@ const migratedConsoleRoutes: ConsoleRoute[] = [
     path: '/product-delivery-protocols/:id/product-income',
     element: lazyRoute(<ProductDeliveryProtocolIncomePage />),
   },
-  { path: '/products/history', element: lazyRoute(<ProductHistoryPage />) },
+  {
+    path: '/products/history',
+    element: lazyRoute(<ProductHistoryPage />),
+    permissionKey: PermissionKeys.ProductHistory.Page.View,
+  },
   { path: '/products/:netId', element: <ProductCarouselDeepLinkRedirect /> },
   { path: '/product-groups', element: lazyRoute(<ProductGroupsPage />) },
   {

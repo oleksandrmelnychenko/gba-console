@@ -227,6 +227,21 @@ describe('human-reviewed product-assortment actions', () => {
   })
 })
 
+describe('human-reviewed product-history actions', () => {
+  it('reuses the system page right and adds only document export', () => {
+    const actual = [
+      ...Object.values(PermissionKeys.ProductHistory.Page),
+      ...Object.values(PermissionKeys.ProductHistory.Document),
+    ]
+
+    expect(actual).toEqual([
+      'products.history.page.view',
+      'products.history.document.export',
+    ])
+    expect(new Set(actual).size).toBe(actual.length)
+  })
+})
+
 describe('human-reviewed act-reconciliation actions', () => {
   it('contains six independent business actions plus the existing page key', () => {
     const actual = [

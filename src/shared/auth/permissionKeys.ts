@@ -475,6 +475,14 @@ export const PermissionKeys = {
       Execute: 'products.assortment.legacy_77.execute',
     },
   },
+  ProductHistory: {
+    Page: {
+      View: 'products.history.page.view',
+    },
+    Document: {
+      Export: 'products.history.document.export',
+    },
+  },
   ProductPlacements: {
     Page: {
       View: 'products.placements.page.view',
@@ -1179,6 +1187,10 @@ export type ProductsAssortmentPermissionKey =
   | Values<typeof PermissionKeys.ProductsAssortment.Document>
   | Values<typeof PermissionKeys.ProductsAssortment.Legacy77>
 
+export type ProductHistoryPermissionKey =
+  | Values<typeof PermissionKeys.ProductHistory.Page>
+  | Values<typeof PermissionKeys.ProductHistory.Document>
+
 export type ProductPlacementsPermissionKey =
   | Values<typeof PermissionKeys.ProductPlacements.Page>
   | Values<typeof PermissionKeys.ProductPlacements.File>
@@ -1391,6 +1403,7 @@ export type PermissionKey =
   | ProductGroupsPermissionKey
   | ProductPricingPermissionKey
   | ProductsAssortmentPermissionKey
+  | ProductHistoryPermissionKey
   | ProductPlacementsPermissionKey
   | ProductIncomeDocumentsPermissionKey
   | ProductTransfersPermissionKey
@@ -2364,6 +2377,8 @@ const eventPermissionKeys = new Set<string>([
   ...Object.values(PermissionKeys.ProductsAssortment.WriteOffRules),
   ...Object.values(PermissionKeys.ProductsAssortment.Document),
   ...Object.values(PermissionKeys.ProductsAssortment.Legacy77),
+  ...Object.values(PermissionKeys.ProductHistory.Page),
+  ...Object.values(PermissionKeys.ProductHistory.Document),
   ...Object.values(PermissionKeys.ProductPlacements.Page),
   ...Object.values(PermissionKeys.ProductPlacements.File),
   ...Object.values(PermissionKeys.ProductPlacements.Document),

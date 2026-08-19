@@ -4346,6 +4346,15 @@
       "canonicalPermissionKeys": ["accounting.cashflow_articles.article.create"],
       "reason": "The colleague form's movement-article action reuses the single existing article.create capability and its protected accounting façade."
     },
+    "PE-00901": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["products.history.document.export"],
+      "reason": "The final history export handler rechecks document.export and calls only the dedicated read-only document façade."
+    },
+    "PE-00902": {
+      "disposition": "technical_ui",
+      "reason": "The storage badge only toggles a popover over placement rows already returned by the page-authorized registry request; it performs no additional API call or business operation."
+    },
     "PE-00942": {
       "disposition": "covered_existing",
       "canonicalPermissionKeys": ["products.specification_codes.code.edit"],
