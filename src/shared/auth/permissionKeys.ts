@@ -449,7 +449,12 @@ export const PermissionKeys = {
     },
     Supplier: {
       Create: 'services.supplier_organizations.supplier.create',
+      Edit: 'services.supplier_organizations.supplier.edit',
       Delete: 'services.supplier_organizations.supplier.delete',
+    },
+    Agreement: {
+      Create: 'services.supplier_organizations.agreement.create',
+      Edit: 'services.supplier_organizations.agreement.edit',
     },
     Settlements: {
       Open: 'services.supplier_organizations.settlements.open',
@@ -1005,6 +1010,7 @@ export type ConsumableOrdersPermissionKey =
 export type SupplierOrganizationsPermissionKey =
   | Values<typeof PermissionKeys.SupplierOrganizations.Page>
   | Values<typeof PermissionKeys.SupplierOrganizations.Supplier>
+  | Values<typeof PermissionKeys.SupplierOrganizations.Agreement>
   | Values<typeof PermissionKeys.SupplierOrganizations.Settlements>
   | Values<typeof PermissionKeys.SupplierOrganizations.Overview>
 
@@ -2114,6 +2120,7 @@ const eventPermissionKeys = new Set<string>([
   ...Object.values(PermissionKeys.ConsumableOrders.Order),
   ...Object.values(PermissionKeys.SupplierOrganizations.Page),
   ...Object.values(PermissionKeys.SupplierOrganizations.Supplier),
+  ...Object.values(PermissionKeys.SupplierOrganizations.Agreement),
   ...Object.values(PermissionKeys.SupplierOrganizations.Settlements),
   ...Object.values(PermissionKeys.SupplierOrganizations.Overview),
   ...Object.values(PermissionKeys.ProvidingServiceActs.Page),

@@ -7,7 +7,11 @@ import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { I18nProvider } from '../../../shared/i18n/I18nProvider'
 import type { SupplyOrganization } from '../types'
 import {
+  createSupplierOrganizationAgreement,
+  editSupplierOrganization,
+  editSupplierOrganizationAgreement,
   getSupplierOrganizationCurrencies,
+  getSupplierOrganizationOverviewDetails,
   getSupplierOrganizationSettlementsCashFlow,
   getSupplierOrganizationSettlementsDetails,
   getSupplierOrganizationsOwners,
@@ -28,7 +32,9 @@ vi.mock('../../auth/usePermissions', () => ({
 
 vi.mock('../api/supplierOrganizationsApi', () => ({
   createSupplierOrganization: vi.fn(),
-  createSupplyOrganizationAgreement: vi.fn(),
+  createSupplierOrganizationAgreement: vi.fn(),
+  editSupplierOrganization: vi.fn(),
+  editSupplierOrganizationAgreement: vi.fn(),
   exportSupplyOrganizations: vi.fn(),
   getSupplierOrganizationCurrencies: vi.fn(),
   getSupplierOrganizationOverviewDetails: vi.fn(),
@@ -38,8 +44,6 @@ vi.mock('../api/supplierOrganizationsApi', () => ({
   getSupplierOrganizationsRegistry: vi.fn(),
   removeSupplierOrganization: vi.fn(),
   searchSupplierOrganizationsRegistry: vi.fn(),
-  updateSupplyOrganization: vi.fn(),
-  updateSupplyOrganizationAgreement: vi.fn(),
 }))
 
 vi.mock('../../../shared/ui/AppModal', () => ({
@@ -97,8 +101,9 @@ describe('Supplier Organizations canonical permission guards', () => {
     allowedPermissions.clear()
     vi.clearAllMocks()
     vi.mocked(getSupplierOrganizationsRegistry).mockResolvedValue([SUPPLIER])
-    vi.mocked(getSupplierOrganizationCurrencies).mockResolvedValue([])
-    vi.mocked(getSupplierOrganizationsOwners).mockResolvedValue([])
+    vi.mocked(getSupplierOrganizationCurrencies).mockResolvedValue([{ Code: 'EUR', Id: 2 }])
+    vi.mocked(getSupplierOrganizationsOwners).mockResolvedValue([{ Id: 3, Name: 'GBA' }])
+    vi.mocked(getSupplierOrganizationOverviewDetails).mockResolvedValue(SUPPLIER)
     vi.mocked(getSupplierOrganizationSettlementsDetails).mockResolvedValue(SUPPLIER)
     vi.mocked(getSupplierOrganizationSettlementsCashFlow).mockResolvedValue({ AccountingCashFlowHeadItems: [] })
   })
@@ -132,6 +137,81 @@ describe('Supplier Organizations canonical permission guards', () => {
     expect(screen.getByText('Доступ заборонено')).toBeTruthy()
     expect(getSupplierOrganizationCurrencies).not.toHaveBeenCalled()
     expect(getSupplierOrganizationsOwners).not.toHaveBeenCalled()
+  })
+
+  it('keeps supplier profile save independent from overview access', async () => {
+    allowedPermissions.add(PermissionKeys.SupplierOrganizations.Page.View)
+    allowedPermissions.add(PermissionKeys.SupplierOrganizations.Overview.Open)
+    renderRoute('/accounting/supplier-organizations/edit/supplier-1')
+
+    const nameInput = await screen.findByRole('textbox', { name: /Назва/ })
+    fireEvent.submit(nameInput.closest('form') as HTMLFormElement)
+
+    expect(editSupplierOrganization).not.toHaveBeenCalled()
+    expect(getSupplierOrganizationCurrencies).not.toHaveBeenCalled()
+    expect(getSupplierOrganizationsOwners).not.toHaveBeenCalled()
+  })
+
+  it('saves supplier profile only through the canonical edit capability', async () => {
+    allowedPermissions.add(PermissionKeys.SupplierOrganizations.Page.View)
+    allowedPermissions.add(PermissionKeys.SupplierOrganizations.Overview.Open)
+    allowedPermissions.add(PermissionKeys.SupplierOrganizations.Supplier.Edit)
+    renderRoute('/accounting/supplier-organizations/edit/supplier-1')
+
+    const nameInput = await screen.findByRole('textbox', { name: /Назва/ })
+    fireEvent.submit(nameInput.closest('form') as HTMLFormElement)
+
+    await waitFor(() => expect(editSupplierOrganization).toHaveBeenCalledWith(expect.objectContaining({
+      Id: 1,
+      NetUid: 'supplier-1',
+    })))
+  })
+
+  it('keeps agreement create and edit capabilities independent', async () => {
+    allowedPermissions.add(PermissionKeys.SupplierOrganizations.Page.View)
+    allowedPermissions.add(PermissionKeys.SupplierOrganizations.Overview.Open)
+    allowedPermissions.add(PermissionKeys.SupplierOrganizations.Agreement.Create)
+    renderRoute('/accounting/supplier-organizations/edit/supplier-1')
+
+    fireEvent.click(await screen.findByRole('tab', { name: 'Договори' }))
+    await waitFor(() => expect(getSupplierOrganizationCurrencies).toHaveBeenCalled())
+    expect(screen.getByRole('button', { name: 'Новий договір' })).toBeTruthy()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Новий договір' }))
+    const createForm = document.getElementById('supplier-organization-agreement-form')
+    expect(createForm).not.toBeNull()
+    fireEvent.submit(createForm as HTMLFormElement)
+
+    await waitFor(() => expect(createSupplierOrganizationAgreement).toHaveBeenCalled())
+    expect(editSupplierOrganizationAgreement).not.toHaveBeenCalled()
+  })
+
+  it('edits an existing agreement without granting agreement creation', async () => {
+    vi.mocked(getSupplierOrganizationOverviewDetails).mockResolvedValue({
+      ...SUPPLIER,
+      SupplyOrganizationAgreements: [{
+        Currency: { Code: 'EUR', Id: 2 },
+        Id: 10,
+        Name: 'Основний договір',
+        Organization: { Id: 3, Name: 'GBA' },
+        SupplyOrganizationDocuments: [],
+        SupplyOrganizationId: 1,
+      }],
+    })
+    allowedPermissions.add(PermissionKeys.SupplierOrganizations.Page.View)
+    allowedPermissions.add(PermissionKeys.SupplierOrganizations.Overview.Open)
+    allowedPermissions.add(PermissionKeys.SupplierOrganizations.Agreement.Edit)
+    renderRoute('/accounting/supplier-organizations/edit/supplier-1')
+
+    fireEvent.click(await screen.findByRole('tab', { name: 'Договори' }))
+    expect(screen.queryByRole('button', { name: 'Новий договір' })).toBeNull()
+    fireEvent.click(await screen.findByRole('button', { name: 'Основний договір' }))
+    const editForm = document.getElementById('supplier-organization-agreement-form')
+    expect(editForm).not.toBeNull()
+    fireEvent.submit(editForm as HTMLFormElement)
+
+    await waitFor(() => expect(editSupplierOrganizationAgreement).toHaveBeenCalled())
+    expect(createSupplierOrganizationAgreement).not.toHaveBeenCalled()
   })
 
   it('mounts settlements details and ledger only with page plus settlements permissions', async () => {

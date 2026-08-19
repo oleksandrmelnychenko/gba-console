@@ -34,13 +34,13 @@ import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import {
   createSupplierOrganization,
-  createSupplyOrganizationAgreement,
+  createSupplierOrganizationAgreement,
+  editSupplierOrganization,
+  editSupplierOrganizationAgreement,
   getSupplierOrganizationOverviewDetails,
   getSupplierOrganizationCurrencies,
   getSupplierOrganizationsOwners,
   removeSupplierOrganization,
-  updateSupplyOrganization,
-  updateSupplyOrganizationAgreement,
 } from '../api/supplierOrganizationsApi'
 import type {
   Currency,
@@ -111,12 +111,20 @@ export function SupplierOrganizationEditPage() {
 
 function SupplierOrganizationEditPageContent({ canOpenOverview }: { canOpenOverview: boolean }) {
   const { t } = useI18n()
+  const { can } = usePermissions()
   const navigate = useNavigate()
   const location = useLocation()
   const { id } = useParams()
   const routeState = location.state as SupplierOrganizationRouteState | null
   const returnPath = routeState?.returnPath || '/accounting/supplier-organizations'
   const isNew = !id
+  const canCreateAgreement = can(PermissionKeys.SupplierOrganizations.Agreement.Create)
+  const canEditAgreement = can(PermissionKeys.SupplierOrganizations.Agreement.Edit)
+  const canManageAgreements = canCreateAgreement || canEditAgreement
+  const canSaveSupplier = isNew
+    ? can(PermissionKeys.SupplierOrganizations.Supplier.Create)
+    : can(PermissionKeys.SupplierOrganizations.Supplier.Edit)
+  const canDeleteSupplier = can(PermissionKeys.SupplierOrganizations.Supplier.Delete)
   const [organization, setOrganization] = useValueState<SupplyOrganization>(() => createEmptySupplyOrganization())
   const [organizationRevision, setOrganizationRevision] = useValueState(0)
   const [currencies, setCurrencies] = useValueState<Currency[]>([])
@@ -148,8 +156,8 @@ function SupplierOrganizationEditPageContent({ canOpenOverview }: { canOpenOverv
     async function load() {
       try {
         const [nextCurrencies, nextOwnerOrganizations, nextOrganization] = await Promise.all([
-          getSupplierOrganizationCurrencies(),
-          getSupplierOrganizationsOwners(),
+          canManageAgreements ? getSupplierOrganizationCurrencies() : Promise.resolve([]),
+          canManageAgreements ? getSupplierOrganizationsOwners() : Promise.resolve([]),
           id ? getSupplierOrganizationOverviewDetails(id) : Promise.resolve(createEmptySupplyOrganization()),
         ])
 
@@ -171,7 +179,7 @@ function SupplierOrganizationEditPageContent({ canOpenOverview }: { canOpenOverv
     }
 
     void load()
-  }, [id, setCurrencies, setError, setLoading, setOrganization, setOrganizationRevision, setOwnerOrganizations, t])
+  }, [canManageAgreements, id, setCurrencies, setError, setLoading, setOrganization, setOrganizationRevision, setOwnerOrganizations, t])
 
   async function reloadOrganization() {
     if (!id) {
@@ -232,6 +240,11 @@ function SupplierOrganizationEditPageContent({ canOpenOverview }: { canOpenOverv
   }
 
   async function saveOrganizationPayload(values: Partial<SupplyOrganization>) {
+    if (!canSaveSupplier) {
+      setError(t('Недостатньо прав для збереження постачальника послуг'))
+      return
+    }
+
     setSaving(true)
     setError(null)
 
@@ -240,7 +253,7 @@ function SupplierOrganizationEditPageContent({ canOpenOverview }: { canOpenOverv
         ...organization,
         ...values,
       }
-      const savedOrganization = isNew ? await createSupplierOrganization(payload) : await updateSupplyOrganization(payload)
+      const savedOrganization = isNew ? await createSupplierOrganization(payload) : await editSupplierOrganization(payload)
 
       if (isNew && !savedOrganization?.NetUid) {
         notifications.show({
@@ -272,6 +285,12 @@ function SupplierOrganizationEditPageContent({ canOpenOverview }: { canOpenOverv
   }
 
   async function confirmDelete() {
+    if (!canDeleteSupplier) {
+      setError(t('Недостатньо прав для видалення постачальника послуг'))
+      setDeleteOpened(false)
+      return
+    }
+
     if (!organization.NetUid) {
       setError(t('Постачальник не має NetUid для видалення'))
       setDeleteOpened(false)
@@ -326,7 +345,7 @@ function SupplierOrganizationEditPageContent({ canOpenOverview }: { canOpenOverv
       transitionProps={{ duration: DRAWER_TRANSITION_MS }}
       onClose={closeDrawer}
       footer={
-        activeFormId ? (
+        activeFormId && canSaveSupplier ? (
           <Button color={CREATE_ACTION_COLOR} form={activeFormId} leftSection={<Save size={16} />} loading={isSaving} type="submit">
             {t('Зберегти')}
           </Button>
@@ -376,6 +395,8 @@ function SupplierOrganizationEditPageContent({ canOpenOverview }: { canOpenOverv
         <Tabs.Panel value="agreements" pt="md">
           {activeTab === 'agreements' ? (
             <AgreementsPanel
+              canCreateAgreement={canCreateAgreement}
+              canEditAgreement={canEditAgreement}
               currencies={currencies}
               isLoading={isLoading}
               isSaving={isSaving}
@@ -573,6 +594,8 @@ function ContactPersonForm({
 }
 
 function AgreementsPanel({
+  canCreateAgreement,
+  canEditAgreement,
   currencies,
   isLoading,
   isSaving,
@@ -582,6 +605,8 @@ function AgreementsPanel({
   onReload,
   setSaving,
 }: {
+  canCreateAgreement: boolean
+  canEditAgreement: boolean
   currencies: Currency[]
   isLoading: boolean
   isSaving: boolean
@@ -596,7 +621,22 @@ function AgreementsPanel({
   const [editorRevision, setEditorRevision] = useValueState(0)
   const agreementMutationRef = useRef(false)
   const agreements = organization.SupplyOrganizationAgreements || []
-  const columns = useAgreementColumns((agreement) => setEditor(agreement))
+  const columns = useAgreementColumns(canEditAgreement ? (agreement) => setEditor(agreement) : undefined)
+
+  useEffect(() => {
+    if (!editor) {
+      return
+    }
+
+    const hasRequiredPermission = isPersistedSupplyOrganizationAgreement(editor)
+      ? canEditAgreement
+      : canCreateAgreement
+
+    if (!hasRequiredPermission) {
+      setEditorState(null)
+      setEditorRevision((current) => current + 1)
+    }
+  }, [canCreateAgreement, canEditAgreement, editor, setEditorRevision, setEditorState])
 
   function setEditor(nextEditor: SupplyOrganizationAgreement | null) {
     setEditorState(nextEditor)
@@ -604,6 +644,14 @@ function AgreementsPanel({
   }
 
   async function saveAgreement(values: SupplyOrganizationAgreementFormValues) {
+    const isPersisted = isPersistedSupplyOrganizationAgreement(editor)
+    const hasRequiredPermission = isPersisted ? canEditAgreement : canCreateAgreement
+
+    if (!hasRequiredPermission) {
+      onError(t('Недостатньо прав для збереження договору'))
+      return
+    }
+
     const validationError = firstSupplierOrganizationValidationError(
       validateSupplyOrganizationAgreementForm(values),
     )
@@ -649,10 +697,10 @@ function AgreementsPanel({
         SupplyOrganizationDocuments: editor?.SupplyOrganizationDocuments || [],
       }
 
-      if (isPersistedSupplyOrganizationAgreement(editor)) {
-        await updateSupplyOrganizationAgreement(payload, values.files)
+      if (isPersisted) {
+        await editSupplierOrganizationAgreement(payload, values.files)
       } else {
-        await createSupplyOrganizationAgreement(payload, values.files)
+        await createSupplierOrganizationAgreement(payload, values.files)
       }
 
       notifications.show({ color: 'green', message: t('Договір збережено') })
@@ -667,6 +715,11 @@ function AgreementsPanel({
   }
 
   async function markDocumentDeleted(agreement: SupplyOrganizationAgreement, document: SupplyOrganizationDocument) {
+    if (!canEditAgreement) {
+      onError(t('Недостатньо прав для редагування документів договору'))
+      return
+    }
+
     if (agreementMutationRef.current) {
       return
     }
@@ -676,7 +729,7 @@ function AgreementsPanel({
     onError(null)
 
     try {
-      await updateSupplyOrganizationAgreement({
+      await editSupplierOrganizationAgreement({
         ...agreement,
         SupplyOrganizationId: agreement.SupplyOrganizationId || organization.Id,
         SupplyOrganizationDocuments: (agreement.SupplyOrganizationDocuments || []).map((item) =>
@@ -701,9 +754,11 @@ function AgreementsPanel({
             {t('Договорів')}: {agreements.length}
           </Badge>
         </Group>
-        <Button color={CREATE_ACTION_COLOR} leftSection={<Plus size={16} />} onClick={() => setEditor(createEmptyAgreement())}>
-          {t('Новий договір')}
-        </Button>
+        {canCreateAgreement ? (
+          <Button color={CREATE_ACTION_COLOR} leftSection={<Plus size={16} />} onClick={() => setEditor(createEmptyAgreement())}>
+            {t('Новий договір')}
+          </Button>
+        ) : null}
       </Group>
       <DataTable
         columns={columns}
@@ -716,23 +771,25 @@ function AgreementsPanel({
         maxHeight={420}
         minWidth={900}
         tableId={`supplier-organization-agreements-${organization.NetUid || organization.Id || 'new'}`}
-        onRowClick={setEditor}
+        onRowClick={canEditAgreement ? setEditor : undefined}
       />
-      <AgreementDrawer
-        key={`agreement-${editorRevision}-${getLookupKey(ownerOrganizations)}-${getLookupKey(currencies)}`}
-        currencies={currencies}
-        editor={editor}
-        isSubmitting={isSaving}
-        ownerOrganizations={ownerOrganizations}
-        onClose={() => setEditor(null)}
-        onDeleteDocument={markDocumentDeleted}
-        onSubmit={saveAgreement}
-      />
+      {editor && (isPersistedSupplyOrganizationAgreement(editor) ? canEditAgreement : canCreateAgreement) ? (
+        <AgreementDrawer
+          key={`agreement-${editorRevision}-${getLookupKey(ownerOrganizations)}-${getLookupKey(currencies)}`}
+          currencies={currencies}
+          editor={editor}
+          isSubmitting={isSaving}
+          ownerOrganizations={ownerOrganizations}
+          onClose={() => setEditor(null)}
+          onDeleteDocument={markDocumentDeleted}
+          onSubmit={saveAgreement}
+        />
+      ) : null}
     </Stack>
   )
 }
 
-function useAgreementColumns(onEdit: (agreement: SupplyOrganizationAgreement) => void): DataTableColumn<SupplyOrganizationAgreement>[] {
+function useAgreementColumns(onEdit?: (agreement: SupplyOrganizationAgreement) => void): DataTableColumn<SupplyOrganizationAgreement>[] {
   const { t } = useI18n()
 
   return useMemo<DataTableColumn<SupplyOrganizationAgreement>[]>(
@@ -794,11 +851,15 @@ function useAgreementColumns(onEdit: (agreement: SupplyOrganizationAgreement) =>
         minWidth: 105,
         align: 'right',
         enableSorting: false,
-        cell: (agreement) => (
-          <Button size="xs" variant="subtle" onClick={() => onEdit(agreement)}>
-            {(agreement.SupplyOrganizationDocuments || []).filter((document) => !document.Deleted).length}
-          </Button>
-        ),
+        cell: (agreement) => {
+          const documentCount = (agreement.SupplyOrganizationDocuments || []).filter((document) => !document.Deleted).length
+
+          return onEdit ? (
+            <Button size="xs" variant="subtle" onClick={() => onEdit(agreement)}>
+              {documentCount}
+            </Button>
+          ) : <Text size="sm">{documentCount}</Text>
+        },
       },
     ],
     [onEdit, t],

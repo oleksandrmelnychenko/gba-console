@@ -5,24 +5,24 @@
     "classifiedRecords": 1902,
     "dispositionCounts": {
       "technical_ui": 757,
-      "covered_existing": 537,
-      "duplicate_occurrence": 277,
+      "covered_existing": 542,
+      "duplicate_occurrence": 283,
       "business_candidate": 231,
-      "needs_human_review": 88,
+      "needs_human_review": 77,
       "stale_or_aggregated": 12
     },
-    "reviewCandidates": 319,
+    "reviewCandidates": 308,
     "technicalExcluded": 757,
-    "duplicatesExcluded": 277,
-    "duplicateOccurrencesTotal": 346,
+    "duplicatesExcluded": 283,
+    "duplicateOccurrencesTotal": 352,
     "technicalDuplicateOverlap": 69,
     "sourceResolved": 1828,
     "sourceUnresolved": 74,
     "currentActionResolved": 1185,
     "currentActionUnresolved": 717,
     "currentProductionActions": 1829,
-    "currentPermissionBoundActions": 290,
-    "currentUnboundActions": 1539
+    "currentPermissionBoundActions": 293,
+    "currentUnboundActions": 1536
   },
   "invariants": {
     "allInputRecordsClassified": true,
@@ -57453,12 +57453,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-47773177d9af",
+          "candidateId": "EPC-d5a69dcea2a6",
           "distance": 0,
           "file": "src/features/supplier-organizations/pages/SupplierOrganizationEditPage.tsx",
           "handler": "{() => void reloadOrganization()}",
           "humanLabel": "Оновити",
-          "line": 354,
+          "line": 373,
           "permissionKeys": [],
           "score": 18
         }
@@ -57466,7 +57466,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/supplier-organizations/pages/SupplierOrganizationEditPage.tsx",
-        "line": 354,
+        "line": 373,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -57500,12 +57500,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-459ff36b94a7",
+          "candidateId": "EPC-5316838219d5",
           "distance": 0,
           "file": "src/features/supplier-organizations/pages/SupplierOrganizationEditPage.tsx",
           "handler": "{() => setDeleteOpened(true)}",
           "humanLabel": "Видалити",
-          "line": 359,
+          "line": 378,
           "permissionKeys": [
             "services.supplier_organizations.supplier.delete"
           ],
@@ -57515,7 +57515,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/supplier-organizations/pages/SupplierOrganizationEditPage.tsx",
-        "line": 359,
+        "line": 378,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -57539,20 +57539,23 @@
       "proposedPermission": "accounting.accounting_supplier_organizations.save_general.form_submit",
       "securityLevel": "high",
       "rawStatus": "Candidate existing key in component; binding review required",
-      "disposition": "needs_human_review",
-      "dispositionReason": "raw_audit_claims_existing_binding_but_does_not_name_the_key",
+      "disposition": "covered_existing",
+      "dispositionReason": "General profile submit dispatches create or edit by route mode, rechecks the matching canonical permission, and uses its scoped server mutation.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "services.supplier_organizations.supplier.create",
+        "services.supplier_organizations.supplier.edit"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-b376f287989f",
-          "distance": 169,
+          "candidateId": "EPC-008b2492628c",
+          "distance": 180,
           "file": "src/features/supplier-organizations/pages/SupplierOrganizationEditPage.tsx",
           "handler": "{saveGeneral}",
           "humanLabel": null,
-          "line": 373,
+          "line": 392,
           "permissionKeys": [],
           "score": 11
         }
@@ -57560,7 +57563,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/supplier-organizations/pages/SupplierOrganizationEditPage.tsx",
-        "line": 204,
+        "line": 212,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -57584,20 +57587,22 @@
       "proposedPermission": "accounting.accounting_supplier_organizations.save_bank.form_submit",
       "securityLevel": "high",
       "rawStatus": "Candidate existing key in component; binding review required",
-      "disposition": "needs_human_review",
-      "dispositionReason": "raw_audit_claims_existing_binding_but_does_not_name_the_key",
+      "disposition": "covered_existing",
+      "dispositionReason": "Bank details are persisted only for an existing supplier through the canonical profile-edit boundary.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "services.supplier_organizations.supplier.edit"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-2bc8709ca42b",
-          "distance": 175,
+          "candidateId": "EPC-a3953510725c",
+          "distance": 188,
           "file": "src/features/supplier-organizations/pages/SupplierOrganizationEditPage.tsx",
           "handler": "{saveBank}",
           "humanLabel": null,
-          "line": 392,
+          "line": 413,
           "permissionKeys": [],
           "score": 8
         }
@@ -57605,7 +57610,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/supplier-organizations/pages/SupplierOrganizationEditPage.tsx",
-        "line": 217,
+        "line": 225,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -57629,20 +57634,22 @@
       "proposedPermission": "accounting.accounting_supplier_organizations.save_contact.form_submit",
       "securityLevel": "high",
       "rawStatus": "Candidate existing key in component; binding review required",
-      "disposition": "needs_human_review",
-      "dispositionReason": "raw_audit_claims_existing_binding_but_does_not_name_the_key",
+      "disposition": "covered_existing",
+      "dispositionReason": "Contact details are persisted only for an existing supplier through the canonical profile-edit boundary.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "services.supplier_organizations.supplier.edit"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-869fde80ae23",
-          "distance": 175,
+          "candidateId": "EPC-55118b6db682",
+          "distance": 188,
           "file": "src/features/supplier-organizations/pages/SupplierOrganizationEditPage.tsx",
           "handler": "{saveContact}",
           "humanLabel": null,
-          "line": 396,
+          "line": 417,
           "permissionKeys": [],
           "score": 11
         }
@@ -57650,7 +57657,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/supplier-organizations/pages/SupplierOrganizationEditPage.tsx",
-        "line": 221,
+        "line": 229,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -57674,17 +57681,20 @@
       "proposedPermission": "accounting.accounting_supplier_organizations.submit.form_submit",
       "securityLevel": "high",
       "rawStatus": "Candidate existing key in component; binding review required",
-      "disposition": "needs_human_review",
-      "dispositionReason": "raw_audit_claims_existing_binding_but_does_not_name_the_key",
-      "duplicateOf": null,
+      "disposition": "duplicate_occurrence",
+      "dispositionReason": "The reusable general form submit is the component-level occurrence of the route-aware save handled by PE-01431.",
+      "duplicateOf": "PE-01431",
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "services.supplier_organizations.supplier.create",
+        "services.supplier_organizations.supplier.edit"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [],
       "source": {
         "status": "resolved",
         "file": "src/features/supplier-organizations/pages/SupplierOrganizationEditPage.tsx",
-        "line": 330,
+        "line": 349,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -57708,12 +57718,14 @@
       "proposedPermission": "accounting.accounting_supplier_organizations.bank_account_swift_bank_account_eur.form_submit",
       "securityLevel": "high",
       "rawStatus": "Candidate existing key in component; binding review required",
-      "disposition": "needs_human_review",
-      "dispositionReason": "raw_audit_claims_existing_binding_but_does_not_name_the_key",
-      "duplicateOf": null,
+      "disposition": "duplicate_occurrence",
+      "dispositionReason": "The bank form submit is the component occurrence of the same profile edit finalized by PE-01432.",
+      "duplicateOf": "PE-01432",
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "services.supplier_organizations.supplier.edit"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [],
       "source": {
         "status": "resolved",
@@ -57742,12 +57754,14 @@
       "proposedPermission": "accounting.accounting_supplier_organizations.viber_skype.form_submit",
       "securityLevel": "high",
       "rawStatus": "Candidate existing key in component; binding review required",
-      "disposition": "needs_human_review",
-      "dispositionReason": "raw_audit_claims_existing_binding_but_does_not_name_the_key",
-      "duplicateOf": null,
+      "disposition": "duplicate_occurrence",
+      "dispositionReason": "The contact form submit is the component occurrence of the same profile edit finalized by PE-01433.",
+      "duplicateOf": "PE-01433",
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "services.supplier_organizations.supplier.edit"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [],
       "source": {
         "status": "resolved",
@@ -57776,28 +57790,32 @@
       "proposedPermission": "accounting.accounting_supplier_organizations.set_editor_create_empty_agreement.command_submit",
       "securityLevel": "high",
       "rawStatus": "Candidate existing key in component; binding review required",
-      "disposition": "needs_human_review",
-      "dispositionReason": "raw_audit_claims_existing_binding_but_does_not_name_the_key",
-      "duplicateOf": null,
+      "disposition": "duplicate_occurrence",
+      "dispositionReason": "Opening a blank agreement editor is the UI entry step of the create mutation finalized by PE-01439.",
+      "duplicateOf": "PE-01439",
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "services.supplier_organizations.agreement.create"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-6127f2eefbb8",
+          "candidateId": "EPC-1a343a604dee",
           "distance": 0,
           "file": "src/features/supplier-organizations/pages/SupplierOrganizationEditPage.tsx",
           "handler": "{() => setEditor(createEmptyAgreement())}",
           "humanLabel": "Новий договір",
-          "line": 704,
-          "permissionKeys": [],
+          "line": 758,
+          "permissionKeys": [
+            "services.supplier_organizations.agreement.create"
+          ],
           "score": 29
         }
       ],
       "source": {
         "status": "resolved",
         "file": "src/features/supplier-organizations/pages/SupplierOrganizationEditPage.tsx",
-        "line": 704,
+        "line": 758,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -57825,24 +57843,28 @@
       "dispositionReason": "same_normalized_action_as:PE-01437",
       "duplicateOf": "PE-01437",
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
+      "canonicalPermissionKeys": [
+        "services.supplier_organizations.agreement.create"
+      ],
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-6127f2eefbb8",
-          "distance": 109,
+          "candidateId": "EPC-1a343a604dee",
+          "distance": 138,
           "file": "src/features/supplier-organizations/pages/SupplierOrganizationEditPage.tsx",
           "handler": "{() => setEditor(createEmptyAgreement())}",
           "humanLabel": "Новий договір",
-          "line": 704,
-          "permissionKeys": [],
+          "line": 758,
+          "permissionKeys": [
+            "services.supplier_organizations.agreement.create"
+          ],
           "score": 9
         }
       ],
       "source": {
         "status": "resolved",
         "file": "src/features/supplier-organizations/pages/SupplierOrganizationEditPage.tsx",
-        "line": 595,
+        "line": 620,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -57866,28 +57888,34 @@
       "proposedPermission": "accounting.accounting_supplier_organizations.save_agreement.form_submit",
       "securityLevel": "high",
       "rawStatus": "Candidate existing key in component; binding review required",
-      "disposition": "needs_human_review",
-      "dispositionReason": "raw_audit_claims_existing_binding_but_does_not_name_the_key",
+      "disposition": "covered_existing",
+      "dispositionReason": "Agreement submit selects create or edit from persisted identity, rechecks that exact permission, and calls a scoped multipart facade.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "services.supplier_organizations.agreement.create",
+        "services.supplier_organizations.agreement.edit"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-58bfdb1d5c3b",
-          "distance": 115,
+          "candidateId": "EPC-52577b7b803f",
+          "distance": 131,
           "file": "src/features/supplier-organizations/pages/SupplierOrganizationEditPage.tsx",
           "handler": "{saveAgreement}",
           "humanLabel": null,
-          "line": 721,
-          "permissionKeys": [],
+          "line": 777,
+          "permissionKeys": [
+            "services.supplier_organizations.agreement.create",
+            "services.supplier_organizations.agreement.edit"
+          ],
           "score": 13
         }
       ],
       "source": {
         "status": "resolved",
         "file": "src/features/supplier-organizations/pages/SupplierOrganizationEditPage.tsx",
-        "line": 606,
+        "line": 646,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -57911,28 +57939,32 @@
       "proposedPermission": "accounting.accounting_supplier_organizations.on_edit_agreement.button_click",
       "securityLevel": "high",
       "rawStatus": "Candidate existing key in component; binding review required",
-      "disposition": "needs_human_review",
-      "dispositionReason": "raw_audit_claims_existing_binding_but_does_not_name_the_key",
-      "duplicateOf": null,
+      "disposition": "duplicate_occurrence",
+      "dispositionReason": "Opening an existing agreement is the entry occurrence of the edit action finalized by PE-01439.",
+      "duplicateOf": "PE-01439",
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "services.supplier_organizations.agreement.edit"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-332e7dc2f44f",
-          "distance": 63,
+          "candidateId": "EPC-2f97b9363c45",
+          "distance": 29,
           "file": "src/features/supplier-organizations/pages/SupplierOrganizationEditPage.tsx",
-          "handler": "{() => onEdit(agreement)}",
+          "handler": "{canEditAgreement ? setEditor : undefined}",
           "humanLabel": null,
-          "line": 798,
-          "permissionKeys": [],
+          "line": 763,
+          "permissionKeys": [
+            "services.supplier_organizations.agreement.edit"
+          ],
           "score": 13
         }
       ],
       "source": {
         "status": "resolved",
         "file": "src/features/supplier-organizations/pages/SupplierOrganizationEditPage.tsx",
-        "line": 735,
+        "line": 792,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -57966,7 +57998,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/supplier-organizations/pages/SupplierOrganizationEditPage.tsx",
-        "line": 307,
+        "line": 326,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -58000,7 +58032,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/supplier-organizations/pages/SupplierOrganizationEditPage.tsx",
-        "line": 330,
+        "line": 349,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -58024,20 +58056,22 @@
       "proposedPermission": "accounting.accounting_supplier_organizations.on_delete_document_editor_document.command_delete",
       "securityLevel": "high",
       "rawStatus": "Candidate existing key in component; binding review required",
-      "disposition": "needs_human_review",
-      "dispositionReason": "raw_audit_claims_existing_binding_but_does_not_name_the_key",
+      "disposition": "covered_existing",
+      "dispositionReason": "Removing a persisted agreement document is part of agreement editing; the server accepts only persisted deleted document IDs and drops client-supplied document metadata.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "services.supplier_organizations.agreement.edit"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-e0eeb8be2617",
+          "candidateId": "EPC-c848cd938743",
           "distance": 0,
           "file": "src/features/supplier-organizations/pages/SupplierOrganizationEditPage.tsx",
           "handler": "{() => onDeleteDocument(editor, document)}",
           "humanLabel": "Видалити документ",
-          "line": 952,
+          "line": 1013,
           "permissionKeys": [],
           "score": 28
         }
@@ -58045,7 +58079,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/supplier-organizations/pages/SupplierOrganizationEditPage.tsx",
-        "line": 952,
+        "line": 1013,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -58079,7 +58113,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/supplier-organizations/pages/SupplierOrganizationEditPage.tsx",
-        "line": 307,
+        "line": 326,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -58103,17 +58137,19 @@
       "proposedPermission": "accounting.accounting_supplier_organizations.on_confirm.command_submit",
       "securityLevel": "high",
       "rawStatus": "Candidate existing key in component; binding review required",
-      "disposition": "needs_human_review",
-      "dispositionReason": "raw_audit_claims_existing_binding_but_does_not_name_the_key",
-      "duplicateOf": null,
+      "disposition": "duplicate_occurrence",
+      "dispositionReason": "The confirmation callback is the final UI occurrence of the already permission-scoped supplier delete action.",
+      "duplicateOf": "PE-01430",
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "services.supplier_organizations.supplier.delete"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [],
       "source": {
         "status": "resolved",
         "file": "src/features/supplier-organizations/pages/SupplierOrganizationEditPage.tsx",
-        "line": 274,
+        "line": 287,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -80145,17 +80181,6 @@
     "PE-01421",
     "PE-01427",
     "PE-01428",
-    "PE-01431",
-    "PE-01432",
-    "PE-01433",
-    "PE-01434",
-    "PE-01435",
-    "PE-01436",
-    "PE-01437",
-    "PE-01439",
-    "PE-01440",
-    "PE-01443",
-    "PE-01445",
     "PE-01447",
     "PE-01449",
     "PE-01546",

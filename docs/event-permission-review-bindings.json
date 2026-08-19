@@ -3382,6 +3382,76 @@
       "canonicalPermissionKeys": ["orders.ukraine.order.open_products"],
       "reason": "Product-card opening is covered by the page capability and hydrates the product only through its open-products scoped facade."
     },
+    "PE-01431": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": [
+        "services.supplier_organizations.supplier.create",
+        "services.supplier_organizations.supplier.edit"
+      ],
+      "reason": "General profile submit dispatches create or edit by route mode, rechecks the matching canonical permission, and uses its scoped server mutation."
+    },
+    "PE-01432": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["services.supplier_organizations.supplier.edit"],
+      "reason": "Bank details are persisted only for an existing supplier through the canonical profile-edit boundary."
+    },
+    "PE-01433": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["services.supplier_organizations.supplier.edit"],
+      "reason": "Contact details are persisted only for an existing supplier through the canonical profile-edit boundary."
+    },
+    "PE-01434": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-01431",
+      "canonicalPermissionKeys": [
+        "services.supplier_organizations.supplier.create",
+        "services.supplier_organizations.supplier.edit"
+      ],
+      "reason": "The reusable general form submit is the component-level occurrence of the route-aware save handled by PE-01431."
+    },
+    "PE-01435": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-01432",
+      "canonicalPermissionKeys": ["services.supplier_organizations.supplier.edit"],
+      "reason": "The bank form submit is the component occurrence of the same profile edit finalized by PE-01432."
+    },
+    "PE-01436": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-01433",
+      "canonicalPermissionKeys": ["services.supplier_organizations.supplier.edit"],
+      "reason": "The contact form submit is the component occurrence of the same profile edit finalized by PE-01433."
+    },
+    "PE-01437": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-01439",
+      "canonicalPermissionKeys": ["services.supplier_organizations.agreement.create"],
+      "reason": "Opening a blank agreement editor is the UI entry step of the create mutation finalized by PE-01439."
+    },
+    "PE-01439": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": [
+        "services.supplier_organizations.agreement.create",
+        "services.supplier_organizations.agreement.edit"
+      ],
+      "reason": "Agreement submit selects create or edit from persisted identity, rechecks that exact permission, and calls a scoped multipart facade."
+    },
+    "PE-01440": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-01439",
+      "canonicalPermissionKeys": ["services.supplier_organizations.agreement.edit"],
+      "reason": "Opening an existing agreement is the entry occurrence of the edit action finalized by PE-01439."
+    },
+    "PE-01443": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["services.supplier_organizations.agreement.edit"],
+      "reason": "Removing a persisted agreement document is part of agreement editing; the server accepts only persisted deleted document IDs and drops client-supplied document metadata."
+    },
+    "PE-01445": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-01430",
+      "canonicalPermissionKeys": ["services.supplier_organizations.supplier.delete"],
+      "reason": "The confirmation callback is the final UI occurrence of the already permission-scoped supplier delete action."
+    },
     "PE-01458": {
       "disposition": "covered_existing",
       "canonicalPermissionKeys": ["orders.ukraine.logistic_way.create_proforma"],

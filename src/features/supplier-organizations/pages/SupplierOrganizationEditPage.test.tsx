@@ -7,12 +7,12 @@ import { I18nProvider } from '../../../shared/i18n/I18nProvider'
 import type { SupplyOrganization, SupplyOrganizationAgreement } from '../types'
 import {
   createSupplierOrganization,
-  createSupplyOrganizationAgreement,
+  createSupplierOrganizationAgreement,
+  editSupplierOrganization,
+  editSupplierOrganizationAgreement,
   getSupplierOrganizationCurrencies,
   getSupplierOrganizationsOwners,
   getSupplierOrganizationOverviewDetails,
-  updateSupplyOrganization,
-  updateSupplyOrganizationAgreement,
 } from '../api/supplierOrganizationsApi'
 import { SupplierOrganizationEditPage } from './SupplierOrganizationEditPage'
 
@@ -72,13 +72,13 @@ vi.mock('../../../shared/ui/data-table/DataTable', () => ({
 
 vi.mock('../api/supplierOrganizationsApi', () => ({
   createSupplierOrganization: vi.fn(),
-  createSupplyOrganizationAgreement: vi.fn(),
+  createSupplierOrganizationAgreement: vi.fn(),
+  editSupplierOrganization: vi.fn(),
+  editSupplierOrganizationAgreement: vi.fn(),
   removeSupplierOrganization: vi.fn(),
   getSupplierOrganizationCurrencies: vi.fn(),
   getSupplierOrganizationsOwners: vi.fn(),
   getSupplierOrganizationOverviewDetails: vi.fn(),
-  updateSupplyOrganization: vi.fn(),
-  updateSupplyOrganizationAgreement: vi.fn(),
 }))
 
 const EXISTING_SUPPLIER: SupplyOrganization = {
@@ -119,9 +119,9 @@ beforeEach(() => {
   vi.mocked(getSupplierOrganizationsOwners).mockResolvedValue([{ Id: 3, Name: 'GBA' }])
   vi.mocked(getSupplierOrganizationOverviewDetails).mockResolvedValue(EXISTING_SUPPLIER)
   vi.mocked(createSupplierOrganization).mockResolvedValue(EXISTING_SUPPLIER)
-  vi.mocked(updateSupplyOrganization).mockResolvedValue(EXISTING_SUPPLIER)
-  vi.mocked(createSupplyOrganizationAgreement).mockResolvedValue(null)
-  vi.mocked(updateSupplyOrganizationAgreement).mockResolvedValue(null)
+  vi.mocked(editSupplierOrganization).mockResolvedValue(EXISTING_SUPPLIER)
+  vi.mocked(createSupplierOrganizationAgreement).mockResolvedValue(null)
+  vi.mocked(editSupplierOrganizationAgreement).mockResolvedValue(null)
 })
 
 describe('SupplierOrganizationEditPage QA', () => {
@@ -174,7 +174,7 @@ describe('SupplierOrganizationEditPage QA', () => {
     fireEvent.click(await screen.findByRole('button', { name: 'Зберегти' }))
 
     await waitFor(() => {
-      expect(updateSupplyOrganizationAgreement).toHaveBeenCalledWith(
+      expect(editSupplierOrganizationAgreement).toHaveBeenCalledWith(
         expect.objectContaining({
           Name: 'Основний договір',
           NetUid: 'agreement-1',
@@ -183,6 +183,6 @@ describe('SupplierOrganizationEditPage QA', () => {
         [],
       )
     })
-    expect(createSupplyOrganizationAgreement).not.toHaveBeenCalled()
+    expect(createSupplierOrganizationAgreement).not.toHaveBeenCalled()
   })
 })

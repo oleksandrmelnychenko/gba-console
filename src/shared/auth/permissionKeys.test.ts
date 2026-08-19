@@ -21,7 +21,10 @@ const EXPECTED_SALES_UKRAINE_KEYS = [
 const EXPECTED_SUPPLIER_ORGANIZATION_KEYS = [
   'services.supplier_organizations.page.view',
   'services.supplier_organizations.supplier.create',
+  'services.supplier_organizations.supplier.edit',
   'services.supplier_organizations.supplier.delete',
+  'services.supplier_organizations.agreement.create',
+  'services.supplier_organizations.agreement.edit',
   'services.supplier_organizations.settlements.open',
   'services.supplier_organizations.overview.open',
 ] as const
@@ -254,6 +257,7 @@ describe('Services canonical permission catalogs', () => {
     const actual = [
       ...Object.values(PermissionKeys.SupplierOrganizations.Page),
       ...Object.values(PermissionKeys.SupplierOrganizations.Supplier),
+      ...Object.values(PermissionKeys.SupplierOrganizations.Agreement),
       ...Object.values(PermissionKeys.SupplierOrganizations.Settlements),
       ...Object.values(PermissionKeys.SupplierOrganizations.Overview),
     ]

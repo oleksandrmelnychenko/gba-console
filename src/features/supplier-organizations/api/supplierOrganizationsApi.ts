@@ -153,6 +153,16 @@ export async function updateSupplyOrganization(organization: SupplyOrganization)
   return normalizeSupplyOrganization(result)
 }
 
+export async function editSupplierOrganization(organization: SupplyOrganization): Promise<SupplyOrganization | null> {
+  assertSupplyOrganizationPayload(organization, true)
+  const result = await apiRequest<unknown>('/supplies/organizations/edit', {
+    method: 'POST',
+    body: organization,
+  })
+
+  return normalizeSupplyOrganization(result)
+}
+
 export async function deleteSupplyOrganization(netId: string): Promise<void> {
   const normalizedNetId = requireIdentifier(netId, 'постачальника')
   await apiRequest<unknown>('/supplies/organizations/delete', {
@@ -206,6 +216,32 @@ export async function updateSupplyOrganizationAgreement(
 ): Promise<SupplyOrganizationAgreement | null> {
   assertSupplyOrganizationAgreementPayload(agreement, true)
   const result = await apiRequest<unknown>('/supplies/organizations/agreement/update', {
+    method: 'POST',
+    body: buildAgreementFormData(agreement, files),
+  })
+
+  return normalizeSupplyOrganizationAgreement(result)
+}
+
+export async function createSupplierOrganizationAgreement(
+  agreement: SupplyOrganizationAgreement,
+  files: File[],
+): Promise<SupplyOrganizationAgreement | null> {
+  assertSupplyOrganizationAgreementPayload(agreement, false)
+  const result = await apiRequest<unknown>('/supplies/organizations/agreement/create', {
+    method: 'POST',
+    body: buildAgreementFormData(agreement, files),
+  })
+
+  return normalizeSupplyOrganizationAgreement(result)
+}
+
+export async function editSupplierOrganizationAgreement(
+  agreement: SupplyOrganizationAgreement,
+  files: File[] = [],
+): Promise<SupplyOrganizationAgreement | null> {
+  assertSupplyOrganizationAgreementPayload(agreement, true)
+  const result = await apiRequest<unknown>('/supplies/organizations/agreement/edit', {
     method: 'POST',
     body: buildAgreementFormData(agreement, files),
   })

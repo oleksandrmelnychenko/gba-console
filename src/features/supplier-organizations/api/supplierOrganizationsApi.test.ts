@@ -3,6 +3,7 @@ import { apiRequest } from '../../../shared/api/apiClient'
 import {
   createSupplyOrganization,
   createSupplierOrganization,
+  createSupplierOrganizationAgreement,
   createSupplyOrganizationAgreement,
   deleteSupplyOrganization,
   exportSupplyOrganizations,
@@ -15,6 +16,8 @@ import {
   getSupplierOrganizationsOwners,
   getSupplyOrganization,
   getSupplyOrganizations,
+  editSupplierOrganization,
+  editSupplierOrganizationAgreement,
   searchSupplyOrganizations,
   searchSupplierOrganizationsRegistry,
   removeSupplierOrganization,
@@ -246,6 +249,18 @@ describe('supplierOrganizationsApi', () => {
     })
   })
 
+  it('uses a separate permission-scoped supplier edit route', async () => {
+    const supplier = { Id: 1, Name: 'Edited supplier', NetUid: 'supplier-1' }
+    apiRequestMock.mockResolvedValueOnce(supplier)
+
+    await editSupplierOrganization(supplier)
+
+    expect(apiRequestMock).toHaveBeenCalledWith('/supplies/organizations/edit', {
+      body: supplier,
+      method: 'POST',
+    })
+  })
+
   it('creates and updates agreements as multipart requests, including files', async () => {
     const agreement = {
       Currency: { Id: 2, Code: 'EUR' },
@@ -283,6 +298,28 @@ describe('supplierOrganizationsApi', () => {
     expect(updateOptions?.method).toBe('POST')
     expect(updateBody).toBeInstanceOf(FormData)
     expect((updateBody as FormData).getAll('files')).toEqual([])
+  })
+
+  it('uses separate permission-scoped agreement create and edit routes', async () => {
+    const agreement = {
+      Currency: { Id: 2, Code: 'EUR' },
+      Name: 'Основний договір',
+      Organization: { Id: 3, Name: 'GBA' },
+      SupplyOrganizationId: 1,
+    }
+    const file = new File(['contract'], 'contract.pdf', { type: 'application/pdf' })
+    apiRequestMock.mockResolvedValueOnce({ ...agreement, Id: 10 })
+    apiRequestMock.mockResolvedValueOnce({ ...agreement, Id: 10 })
+
+    await createSupplierOrganizationAgreement(agreement, [file])
+    await editSupplierOrganizationAgreement({ ...agreement, Id: 10 }, [])
+
+    expect(apiRequestMock.mock.calls[0][0]).toBe('/supplies/organizations/agreement/create')
+    expect(apiRequestMock.mock.calls[0][1]?.method).toBe('POST')
+    expect(apiRequestMock.mock.calls[0][1]?.body).toBeInstanceOf(FormData)
+    expect(apiRequestMock.mock.calls[1][0]).toBe('/supplies/organizations/agreement/edit')
+    expect(apiRequestMock.mock.calls[1][1]?.method).toBe('POST')
+    expect(apiRequestMock.mock.calls[1][1]?.body).toBeInstanceOf(FormData)
   })
 
   it('loads lookup collections and exports the trimmed current filter', async () => {
