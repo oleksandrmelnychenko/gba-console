@@ -890,11 +890,15 @@ function BasketCartWorkflow() {
       />
 
       <PreviewCartItemsModal
-        opened={isPreviewModalOpen}
+        opened={canImportFile && isPreviewModalOpen}
         previewItems={previewItems}
         t={t}
         onClose={() => setPreviewModalOpen(false)}
-        onLoadValidItems={addPreviewItemsToDestination}
+        onLoadValidItems={(items) => {
+          if (canImportFile) {
+            addPreviewItemsToDestination(items)
+          }
+        }}
       />
 
       <AppModal centered opened={canAssembleDocument && isCreateModalOpen} size="lg" title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Створити документ')}</span>} onClose={closeCreateModal}>
@@ -954,6 +958,7 @@ function SalesWorkflowTab() {
   const { can } = usePermissions()
   const navigate = useNavigate()
   const canOpenSale = can(PermissionKeys.SupplySales.Sale.Open)
+  const canAssembleDocument = can(PermissionKeys.SupplyCart.Document.Assemble)
   const today = useMemo(() => formatLocalDate(new Date()), [])
   const initialFilters = useMemo<BasketSupplySalesFilters>(
     () => ({
@@ -1035,6 +1040,14 @@ function SalesWorkflowTab() {
   const visibleIsTotalsLoading = destinationSales.length ? isTotalsLoading : false
 
   const loadSaleReferenceDocuments = useCallback(async () => {
+    if (!canAssembleDocument) {
+      setNotSentSaleTaxFreePackLists([])
+      setNotSentSaleSads([])
+      setReferenceLoading(false)
+      setReferenceError(null)
+      return
+    }
+
     setReferenceLoading(true)
     setReferenceError(null)
 
@@ -1048,7 +1061,7 @@ function SalesWorkflowTab() {
     } finally {
       setReferenceLoading(false)
     }
-  }, [t])
+  }, [canAssembleDocument, t])
 
   useEffect(() => {
     let cancelled = false
@@ -1235,6 +1248,10 @@ function SalesWorkflowTab() {
   }
 
   async function createSalesDocument() {
+    if (!can(PermissionKeys.SupplyCart.Document.Assemble)) {
+      return
+    }
+
     setCreateError(null)
     setCreatedDocument(null)
 
@@ -1423,9 +1440,13 @@ function SalesWorkflowTab() {
               </Group>
             }
             toolbarRight={
-              <Button color={CREATE_ACTION_COLOR} disabled={!destinationSales.length} loading={isCreatingDocument} onClick={() => setCreateModalOpen(true)}>
-                {isCreatingDocument ? t('Створення') : t('Створити')}
-              </Button>
+              canAssembleDocument
+                ? (
+                    <Button color={CREATE_ACTION_COLOR} disabled={!destinationSales.length} loading={isCreatingDocument} onClick={() => setCreateModalOpen(true)}>
+                      {isCreatingDocument ? t('Створення') : t('Створити')}
+                    </Button>
+                  )
+                : null
             }
             onRowClick={canOpenSale ? openSale : undefined}
           />
@@ -1434,7 +1455,7 @@ function SalesWorkflowTab() {
         </Stack>
       </Card>
 
-      <AppModal centered opened={isCreateModalOpen} size="lg" title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Створити документ')}</span>} onClose={closeCreateModal}>
+      <AppModal centered opened={canAssembleDocument && isCreateModalOpen} size="lg" title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Створити документ')}</span>} onClose={closeCreateModal}>
         <Stack gap="md">
           <DocumentTargetControls
             disabled={isCreatingDocument || isReferenceLoading}

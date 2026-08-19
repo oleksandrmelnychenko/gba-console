@@ -9,6 +9,8 @@ import type { DataTableColumn } from '../../../shared/ui/data-table/types'
 import type { BasketSale, SupplyOrderUkraineCartItem } from '../types'
 import {
   getNotSentSads,
+  getNotSentSaleSads,
+  getNotSentSaleTaxFreePackLists,
   getNotSentTaxFreePackLists,
   getSalesForMovingToUkraine,
   getUkraineCartItems,
@@ -205,6 +207,33 @@ describe('BasketSupplyUkraineOrderPage permissions', () => {
 
     expect(screen.getByText('Доступ заборонено')).not.toBeNull()
     expect(getSalesForMovingToUkraine).not.toHaveBeenCalled()
+  })
+
+  it('keeps sales document assembly independent from sales page access', async () => {
+    allowedPermissions.add(PermissionKeys.SystemPages.SupplySales.View)
+    const view = renderPage('/basket-supply-ukraine-order/sales')
+
+    await waitFor(() => expect(getSalesForMovingToUkraine).toHaveBeenCalledTimes(1))
+    expect(getNotSentSaleTaxFreePackLists).not.toHaveBeenCalled()
+    expect(getNotSentSaleSads).not.toHaveBeenCalled()
+    expect(screen.queryByRole('button', { name: 'Створити' })).toBeNull()
+
+    allowedPermissions.add(PermissionKeys.SupplyCart.Document.Assemble)
+    view.rerender(
+      <MantineProvider>
+        <I18nProvider>
+          <MemoryRouter initialEntries={['/basket-supply-ukraine-order/sales']}>
+            <BasketSupplyUkraineOrderPage />
+          </MemoryRouter>
+        </I18nProvider>
+      </MantineProvider>,
+    )
+
+    await waitFor(() => {
+      expect(getNotSentSaleTaxFreePackLists).toHaveBeenCalledTimes(1)
+      expect(getNotSentSaleSads).toHaveBeenCalledTimes(1)
+    })
+    expect(screen.getByRole('button', { name: 'Створити' })).not.toBeNull()
   })
 
   it('keeps budget-cart access independent from the supply-cart page permission', () => {

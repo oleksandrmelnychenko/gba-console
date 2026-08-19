@@ -147,6 +147,21 @@
       "disposition": "technical_ui",
       "reason": "Showing the bottom sheet only reveals the already loaded in-memory plan and performs no request or business mutation."
     },
+    "PE-00120": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": [
+        "orders.supply_cart.file.import"
+      ],
+      "reason": "Loading validated preview rows into the local destination list is an intermediate step of the existing file-import workflow; the preview and final import remain fail-closed on file.import."
+    },
+    "PE-00124": {
+      "disposition": "technical_ui",
+      "reason": "The dashboard row click only selects one demand series and opens its already-loaded in-memory forecast drawer; it performs no request or business mutation."
+    },
+    "PE-00137": {
+      "disposition": "technical_ui",
+      "reason": "ProcurementWorkspaceState is a generic retry/empty-state control; callers own the authorization boundary for the request repeated by its callback."
+    },
     "PE-00146": {
       "disposition": "covered_existing",
       "canonicalPermissionKeys": [
@@ -172,6 +187,13 @@
       ],
       "reason": "The final upload handler rechecks file.import and calls only the permission-scoped upload or validation façade."
     },
+    "PE-00152": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": [
+        "orders.supply_cart.document.assemble"
+      ],
+      "reason": "The final cart document submit rechecks the existing document-assembly permission and calls only its permission-scoped TaxFree/SAD façade."
+    },
     "PE-00154": {
       "disposition": "covered_existing",
       "canonicalPermissionKeys": [
@@ -185,6 +207,13 @@
         "orders.supply_sales.sale.open"
       ],
       "reason": "Opening the already-loaded sale composition from a row is independently guarded by sale.open."
+    },
+    "PE-00163": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": [
+        "orders.supply_cart.document.assemble"
+      ],
+      "reason": "Sales and cart selections converge on the same TaxFree/SAD document-assembly capability; reference reads, control visibility, modal state, final submit, and backend façades share the existing permission."
     },
     "PE-00165": {
       "disposition": "duplicate_occurrence",
@@ -4437,6 +4466,10 @@
       "disposition": "covered_existing",
       "canonicalPermissionKeys": ["products.assortment.movement.export"],
       "reason": "The shared income/outcome export toolbar is another occurrence of the same movement.export capability and does not define a separate permission."
+    },
+    "PE-01846": {
+      "disposition": "technical_ui",
+      "reason": "The shared bottom-sheet grabber only changes the snap height of content already authorized and loaded by its caller; it performs no request or business mutation."
     },
     "PE-01869": {
       "disposition": "technical_ui",

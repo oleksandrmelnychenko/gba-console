@@ -4,15 +4,15 @@
     "inputRecords": 1902,
     "classifiedRecords": 1902,
     "dispositionCounts": {
-      "technical_ui": 781,
-      "covered_existing": 632,
+      "technical_ui": 784,
+      "covered_existing": 635,
       "duplicate_occurrence": 316,
-      "business_candidate": 107,
-      "needs_human_review": 52,
+      "business_candidate": 104,
+      "needs_human_review": 49,
       "stale_or_aggregated": 14
     },
-    "reviewCandidates": 159,
-    "technicalExcluded": 781,
+    "reviewCandidates": 153,
+    "technicalExcluded": 784,
     "duplicatesExcluded": 316,
     "duplicateOccurrencesTotal": 385,
     "technicalDuplicateOverlap": 69,
@@ -21,8 +21,8 @@
     "currentActionResolved": 1176,
     "currentActionUnresolved": 726,
     "currentProductionActions": 1826,
-    "currentPermissionBoundActions": 349,
-    "currentUnboundActions": 1477
+    "currentPermissionBoundActions": 350,
+    "currentUnboundActions": 1476
   },
   "invariants": {
     "allInputRecordsClassified": true,
@@ -4612,12 +4612,14 @@
       "proposedPermission": "basket_supply_ukraine_order.basket_supply_ukraine_order.load_valid_items.button_click",
       "securityLevel": "low",
       "rawStatus": "No permission candidate found",
-      "disposition": "needs_human_review",
-      "dispositionReason": "insufficient_evidence_for_automatic_permission_or_exclusion",
+      "disposition": "covered_existing",
+      "dispositionReason": "Loading validated preview rows into the local destination list is an intermediate step of the existing file-import workflow; the preview and final import remain fail-closed on file.import.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "orders.supply_cart.file.import"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
           "candidateId": "EPC-3474abfb508b",
@@ -4777,12 +4779,12 @@
       "proposedPermission": "basket_supply_ukraine_order.basket_supply_ukraine_order.series_set_selected_forecast_product_id_series_product_id.row_click",
       "securityLevel": "medium",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "technical_ui",
+      "dispositionReason": "The dashboard row click only selects one demand series and opens its already-loaded in-memory forecast drawer; it performs no request or business mutation.",
       "duplicateOf": null,
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
           "candidateId": "EPC-db3708d0bce2",
@@ -5294,12 +5296,12 @@
       "proposedPermission": "basket_supply_ukraine_order.basket_supply_ukraine_order.action_on_click.button_click",
       "securityLevel": "low",
       "rawStatus": "No permission candidate found",
-      "disposition": "needs_human_review",
-      "dispositionReason": "insufficient_evidence_for_automatic_permission_or_exclusion",
+      "disposition": "technical_ui",
+      "dispositionReason": "ProcurementWorkspaceState is a generic retry/empty-state control; callers own the authorization boundary for the request repeated by its callback.",
       "duplicateOf": null,
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [],
       "source": {
         "status": "resolved",
@@ -5864,12 +5866,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-16fb359445e6",
-          "distance": 280,
+          "candidateId": "EPC-f0ca59b70e79",
+          "distance": 284,
           "file": "src/features/basket-supply-ukraine-order/pages/BasketSupplyUkraineOrderPage.tsx",
           "handler": "{closeCreateModal}",
           "humanLabel": "Скасувати",
-          "line": 915,
+          "line": 919,
           "permissionKeys": [],
           "score": 16
         }
@@ -5902,20 +5904,22 @@
       "proposedPermission": "basket_supply_ukraine_order.basket_supply_ukraine_order.create_document.command_submit",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "covered_existing",
+      "dispositionReason": "The final cart document submit rechecks the existing document-assembly permission and calls only its permission-scoped TaxFree/SAD façade.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "orders.supply_cart.document.assemble"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-242e8d324412",
-          "distance": 326,
+          "candidateId": "EPC-9d5c36a9a90e",
+          "distance": 330,
           "file": "src/features/basket-supply-ukraine-order/pages/BasketSupplyUkraineOrderPage.tsx",
           "handler": "{createDocument}",
           "humanLabel": null,
-          "line": 918,
+          "line": 922,
           "permissionKeys": [],
           "score": 14
         }
@@ -5956,12 +5960,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-6f3a002c6c2a",
-          "distance": 358,
+          "candidateId": "EPC-4f618ce6cf27",
+          "distance": 362,
           "file": "src/features/basket-supply-ukraine-order/pages/BasketSupplyUkraineOrderPage.tsx",
           "handler": "{() => setReserveItem(null)}",
           "humanLabel": "Скасувати",
-          "line": 939,
+          "line": 943,
           "permissionKeys": [],
           "score": 18
         }
@@ -6004,12 +6008,12 @@
       "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-aea9d09b8128",
-          "distance": 391,
+          "candidateId": "EPC-5faf522e3566",
+          "distance": 395,
           "file": "src/features/basket-supply-ukraine-order/pages/BasketSupplyUkraineOrderPage.tsx",
           "handler": "{saveReserveQty}",
           "humanLabel": "Зберегти",
-          "line": 942,
+          "line": 946,
           "permissionKeys": [],
           "score": 14
         }
@@ -6050,12 +6054,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-b5bf6e41dd70",
-          "distance": 161,
+          "candidateId": "EPC-8c0fdf1222fe",
+          "distance": 165,
           "file": "src/features/basket-supply-ukraine-order/pages/BasketSupplyUkraineOrderPage.tsx",
           "handler": "{resetFilters}",
           "humanLabel": "Скинути",
-          "line": 1318,
+          "line": 1335,
           "permissionKeys": [],
           "score": 12
         }
@@ -6063,7 +6067,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/basket-supply-ukraine-order/pages/BasketSupplyUkraineOrderPage.tsx",
-        "line": 1157,
+        "line": 1170,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -6133,12 +6137,12 @@
       "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-6c832618cbb5",
-          "distance": 403,
+          "candidateId": "EPC-f914ea7557b1",
+          "distance": 415,
           "file": "src/features/basket-supply-ukraine-order/pages/BasketSupplyUkraineOrderPage.tsx",
           "handler": "{moveSelectedSalesRight}",
           "humanLabel": "Додати",
-          "line": 1380,
+          "line": 1397,
           "permissionKeys": [],
           "score": 12
         }
@@ -6146,7 +6150,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/basket-supply-ukraine-order/pages/BasketSupplyUkraineOrderPage.tsx",
-        "line": 977,
+        "line": 982,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -6249,12 +6253,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-6c832618cbb5",
-          "distance": 403,
+          "candidateId": "EPC-f914ea7557b1",
+          "distance": 415,
           "file": "src/features/basket-supply-ukraine-order/pages/BasketSupplyUkraineOrderPage.tsx",
           "handler": "{moveSelectedSalesRight}",
           "humanLabel": "Додати",
-          "line": 1380,
+          "line": 1397,
           "permissionKeys": [],
           "score": 12
         }
@@ -6262,7 +6266,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/basket-supply-ukraine-order/pages/BasketSupplyUkraineOrderPage.tsx",
-        "line": 977,
+        "line": 982,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -6345,12 +6349,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-16fb359445e6",
-          "distance": 280,
+          "candidateId": "EPC-f0ca59b70e79",
+          "distance": 284,
           "file": "src/features/basket-supply-ukraine-order/pages/BasketSupplyUkraineOrderPage.tsx",
           "handler": "{closeCreateModal}",
           "humanLabel": "Скасувати",
-          "line": 915,
+          "line": 919,
           "permissionKeys": [],
           "score": 16
         }
@@ -6383,20 +6387,22 @@
       "proposedPermission": "basket_supply_ukraine_order.basket_supply_ukraine_order.create_sales_document.command_submit",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "covered_existing",
+      "dispositionReason": "Sales and cart selections converge on the same TaxFree/SAD document-assembly capability; reference reads, control visibility, modal state, final submit, and backend façades share the existing permission.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "orders.supply_cart.document.assemble"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-677e80b8dd38",
-          "distance": 218,
+          "candidateId": "EPC-78caab39ce1d",
+          "distance": 226,
           "file": "src/features/basket-supply-ukraine-order/pages/BasketSupplyUkraineOrderPage.tsx",
           "handler": "{createSalesDocument}",
           "humanLabel": null,
-          "line": 1455,
+          "line": 1476,
           "permissionKeys": [],
           "score": 19
         }
@@ -6404,7 +6410,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/basket-supply-ukraine-order/pages/BasketSupplyUkraineOrderPage.tsx",
-        "line": 1237,
+        "line": 1250,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -6439,7 +6445,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/basket-supply-ukraine-order/pages/BasketSupplyUkraineOrderPage.tsx",
-        "line": 1561,
+        "line": 1582,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -6474,12 +6480,12 @@
       "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-bb362daa8ae4",
-          "distance": 1210,
+          "candidateId": "EPC-db294f81351b",
+          "distance": 1227,
           "file": "src/features/basket-supply-ukraine-order/pages/BasketSupplyUkraineOrderPage.tsx",
           "handler": "{canOpenSale ? openSale : undefined}",
           "humanLabel": null,
-          "line": 1351,
+          "line": 1368,
           "permissionKeys": [
             "orders.supply_sales.sale.open"
           ],
@@ -6524,7 +6530,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/basket-supply-ukraine-order/pages/BasketSupplyUkraineOrderPage.tsx",
-        "line": 1561,
+        "line": 1582,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -6559,12 +6565,12 @@
       "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-27f7e488ce8f",
-          "distance": 1579,
+          "candidateId": "EPC-642e909ac85f",
+          "distance": 1600,
           "file": "src/features/basket-supply-ukraine-order/pages/BasketSupplyUkraineOrderPage.tsx",
           "handler": "{(event) => { event.stopPropagation() openReserveModal(item) }}",
           "humanLabel": "Резерв",
-          "line": 1720,
+          "line": 1741,
           "permissionKeys": [
             "orders.supply_cart.item.edit_reservation"
           ],
@@ -6609,7 +6615,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/basket-supply-ukraine-order/pages/BasketSupplyUkraineOrderPage.tsx",
-        "line": 1561,
+        "line": 1582,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -6644,7 +6650,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/basket-supply-ukraine-order/pages/BasketSupplyUkraineOrderPage.tsx",
-        "line": 1561,
+        "line": 1582,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -75285,12 +75291,12 @@
       "proposedPermission": "basket_supply_ukraine_order.basket_supply_ukraine_order.handle_grabber_click.button_click",
       "securityLevel": "low",
       "rawStatus": "No permission candidate found",
-      "disposition": "needs_human_review",
-      "dispositionReason": "insufficient_evidence_for_automatic_permission_or_exclusion",
+      "disposition": "technical_ui",
+      "dispositionReason": "The shared bottom-sheet grabber only changes the snap height of content already authorized and loaded by its caller; it performs no request or business mutation.",
       "duplicateOf": null,
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
           "candidateId": "EPC-6b3592fac231",
@@ -80128,8 +80134,6 @@
     "PE-00116",
     "PE-00117",
     "PE-00118",
-    "PE-00120",
-    "PE-00124",
     "PE-00127",
     "PE-00128",
     "PE-00129",
@@ -80138,9 +80142,6 @@
     "PE-00132",
     "PE-00135",
     "PE-00136",
-    "PE-00137",
-    "PE-00152",
-    "PE-00163",
     "PE-01139",
     "PE-01195",
     "PE-01197",
@@ -80280,8 +80281,7 @@
     "PE-01841",
     "PE-01843",
     "PE-01844",
-    "PE-01845",
-    "PE-01846"
+    "PE-01845"
   ],
   "source": {
     "artifact": "docs/permission-event-matrix-audit-2026-08-14.json",
