@@ -1,5 +1,10 @@
 import { describe, expect, it, vi } from 'vitest'
-import { buildExchangeRateGroups, getDefaultFormDate, getDefaultHistoryFromDate } from './utils'
+import {
+  buildExchangeRateGroups,
+  formatHistoryDate,
+  getDefaultFormDate,
+  getDefaultHistoryFromDate,
+} from './utils'
 import type { ExchangeRatesSnapshot } from './types'
 
 describe('exchange rate groups', () => {
@@ -43,5 +48,18 @@ describe('exchange rate groups', () => {
     expect(getDefaultHistoryFromDate(new Date('2026-07-30T18:45:12'))).toEqual(
       new Date('2026-06-30T00:00:00'),
     )
+  })
+
+  it('shows synchronized daily rates without a misleading midnight time', () => {
+    expect(formatHistoryDate('2026-08-18T00:00:00')).toBe('18.08.2026')
+  })
+
+  it('keeps the actual time for intraday rate changes', () => {
+    expect(formatHistoryDate('2026-08-18T14:25:00')).toBe('18.08.2026, 14:25')
+  })
+
+  it('does not render invalid or missing history dates', () => {
+    expect(formatHistoryDate()).toBe('')
+    expect(formatHistoryDate('not-a-date')).toBe('')
   })
 })
