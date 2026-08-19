@@ -3,6 +3,12 @@ export const PermissionKeys = {
     BudgetCart: {
       View: 'orders.budget_cart.page.view',
     },
+    PurchaseCockpit: {
+      View: 'orders.purchase_cockpit.page.view',
+    },
+    SupplyDashboard: {
+      View: 'orders.supply_dashboard.page.view',
+    },
     Dashboard: {
       View: 'dashboard.overview.page.view',
     },
@@ -73,6 +79,23 @@ export const PermissionKeys = {
     },
     Item: {
       EditReservation: 'orders.supply_cart.item.edit_reservation',
+    },
+  },
+  PurchaseCockpit: {
+    Document: {
+      Export: 'orders.purchase_cockpit.document.export',
+    },
+    DraftOrder: {
+      Create: 'orders.purchase_cockpit.draft_order.create',
+    },
+    Feedback: {
+      Submit: 'orders.purchase_cockpit.feedback.submit',
+    },
+    ProducerProfile: {
+      Edit: 'orders.purchase_cockpit.producer_profile.edit',
+    },
+    ProductTerms: {
+      Edit: 'orders.purchase_cockpit.product_terms.edit',
     },
   },
   SupplySales: {
@@ -1070,6 +1093,8 @@ type Values<T> = T[keyof T]
 
 export type SystemPagePermissionKey =
   | Values<typeof PermissionKeys.SystemPages.BudgetCart>
+  | Values<typeof PermissionKeys.SystemPages.PurchaseCockpit>
+  | Values<typeof PermissionKeys.SystemPages.SupplyDashboard>
   | Values<typeof PermissionKeys.SystemPages.Dashboard>
   | Values<typeof PermissionKeys.SystemPages.Users>
   | Values<typeof PermissionKeys.SystemPages.Roles>
@@ -1095,6 +1120,13 @@ export type SupplyCartPermissionKey =
   | Values<typeof PermissionKeys.SupplyCart.Document>
   | Values<typeof PermissionKeys.SupplyCart.File>
   | Values<typeof PermissionKeys.SupplyCart.Item>
+
+export type PurchaseCockpitPermissionKey =
+  | Values<typeof PermissionKeys.PurchaseCockpit.Document>
+  | Values<typeof PermissionKeys.PurchaseCockpit.DraftOrder>
+  | Values<typeof PermissionKeys.PurchaseCockpit.Feedback>
+  | Values<typeof PermissionKeys.PurchaseCockpit.ProducerProfile>
+  | Values<typeof PermissionKeys.PurchaseCockpit.ProductTerms>
 
 export type SupplySalesPermissionKey =
   Values<typeof PermissionKeys.SupplySales.Sale>
@@ -1381,6 +1413,7 @@ export type FinancialAdministrationPermissionKey =
 export type PermissionKey =
   | SystemPagePermissionKey
   | SupplyCartPermissionKey
+  | PurchaseCockpitPermissionKey
   | SupplySalesPermissionKey
   | UsersPermissionKey
   | RolesPermissionKey
@@ -2292,6 +2325,8 @@ const eventPermissionKeys = new Set<string>([
   ...Object.values(PermissionKeys.ActReconciliations.Action),
   ...Object.values(PermissionKeys.ActReconciliations.Disposition),
   ...Object.values(PermissionKeys.SystemPages.BudgetCart),
+  ...Object.values(PermissionKeys.SystemPages.PurchaseCockpit),
+  ...Object.values(PermissionKeys.SystemPages.SupplyDashboard),
   ...Object.values(PermissionKeys.SystemPages.Dashboard),
   ...Object.values(PermissionKeys.SystemPages.Users),
   ...Object.values(PermissionKeys.SystemPages.Roles),
@@ -2315,6 +2350,11 @@ const eventPermissionKeys = new Set<string>([
   ...Object.values(PermissionKeys.SupplyCart.Document),
   ...Object.values(PermissionKeys.SupplyCart.File),
   ...Object.values(PermissionKeys.SupplyCart.Item),
+  ...Object.values(PermissionKeys.PurchaseCockpit.Document),
+  ...Object.values(PermissionKeys.PurchaseCockpit.DraftOrder),
+  ...Object.values(PermissionKeys.PurchaseCockpit.Feedback),
+  ...Object.values(PermissionKeys.PurchaseCockpit.ProducerProfile),
+  ...Object.values(PermissionKeys.PurchaseCockpit.ProductTerms),
   ...Object.values(PermissionKeys.SupplySales.Sale),
   ...Object.values(PermissionKeys.Users.User),
   ...Object.values(PermissionKeys.Roles.Role),

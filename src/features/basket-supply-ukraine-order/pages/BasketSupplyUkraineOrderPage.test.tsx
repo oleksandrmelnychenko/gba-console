@@ -75,6 +75,7 @@ describe('BasketSupplyUkraineOrderPage shell', () => {
   it.each(['/recommendations', '/basket-supply-ukraine-order/recommendations'])(
     'keeps the recommendations alias on the visible constructor tab at %s',
     (pathname) => {
+      allowedPermissions.add(PermissionKeys.SystemPages.PurchaseCockpit.View)
       const { container } = renderPage(pathname)
 
       const shell = container.querySelector('.basket-supply-page > .basket-supply-shell.app-data-card')

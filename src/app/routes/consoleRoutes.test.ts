@@ -94,6 +94,13 @@ describe('newly classified page permissions', () => {
       .toBe(PermissionKeys.SystemPages.BudgetCart.View)
   })
 
+  it('guards procurement cockpit routes with their exact page rights', () => {
+    expect(consoleRoutes.find((route) => route.path === '/basket-supply-ukraine-order/cockpit')?.permissionKey)
+      .toBe(PermissionKeys.SystemPages.PurchaseCockpit.View)
+    expect(consoleRoutes.find((route) => route.path === '/basket-supply-ukraine-order/dashboard')?.permissionKey)
+      .toBe(PermissionKeys.SystemPages.SupplyDashboard.View)
+  })
+
   it('uses the client-payment canonical for shop income without a duplicate right', () => {
     expect(PermissionKeys.OnlineShopPayment.IncomeOrder.Create).toBe(
       PermissionKeys.FinancialAdministration.IncomeCashflows.IncomeOrder.CreateClientPayment,

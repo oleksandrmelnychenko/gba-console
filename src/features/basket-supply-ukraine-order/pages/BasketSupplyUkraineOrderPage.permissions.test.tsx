@@ -30,6 +30,14 @@ vi.mock('../components/BudgetCartTab', () => ({
   BudgetCartTab: () => <div>Budget cart permission fixture</div>,
 }))
 
+vi.mock('../components/ProcurementConstructor', () => ({
+  ProcurementConstructor: () => <div>Purchase cockpit permission fixture</div>,
+}))
+
+vi.mock('../components/ProcureDashboardTab', () => ({
+  ProcureDashboardTab: () => <div>Supply dashboard permission fixture</div>,
+}))
+
 vi.mock('../api/basketSupplyUkraineOrderApi', () => ({
   addOrUpdateSad: vi.fn(),
   addOrUpdateSaleSad: vi.fn(),
@@ -256,6 +264,41 @@ describe('BasketSupplyUkraineOrderPage permissions', () => {
     )
 
     expect(screen.getByText('Budget cart permission fixture')).not.toBeNull()
+    expect(getUkraineCartItems).not.toHaveBeenCalled()
+    expect(getSalesForMovingToUkraine).not.toHaveBeenCalled()
+  })
+
+  it.each([
+    [
+      '/basket-supply-ukraine-order/cockpit',
+      PermissionKeys.SystemPages.PurchaseCockpit.View,
+      'Purchase cockpit permission fixture',
+    ],
+    [
+      '/basket-supply-ukraine-order/dashboard',
+      PermissionKeys.SystemPages.SupplyDashboard.View,
+      'Supply dashboard permission fixture',
+    ],
+  ])('keeps %s independent from supply-cart page access', (pathname, permission, marker) => {
+    allowedPermissions.add(PermissionKeys.SystemPages.SupplyCart.View)
+    const view = renderPage(pathname)
+
+    expect(screen.getByText('Доступ заборонено')).not.toBeNull()
+    expect(screen.queryByText(marker)).toBeNull()
+
+    allowedPermissions.clear()
+    allowedPermissions.add(permission)
+    view.rerender(
+      <MantineProvider>
+        <I18nProvider>
+          <MemoryRouter initialEntries={[pathname]}>
+            <BasketSupplyUkraineOrderPage />
+          </MemoryRouter>
+        </I18nProvider>
+      </MantineProvider>,
+    )
+
+    expect(screen.getByText(marker)).not.toBeNull()
     expect(getUkraineCartItems).not.toHaveBeenCalled()
     expect(getSalesForMovingToUkraine).not.toHaveBeenCalled()
   })

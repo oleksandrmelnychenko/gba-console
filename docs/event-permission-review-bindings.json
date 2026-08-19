@@ -147,6 +147,42 @@
       "disposition": "technical_ui",
       "reason": "Showing the bottom sheet only reveals the already loaded in-memory plan and performs no request or business mutation."
     },
+    "PE-00113": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": [
+        "orders.purchase_cockpit.producer_profile.edit"
+      ],
+      "reason": "The producer profile save is an independent high-impact settings mutation; the control, final handler, and InternalMutationPolicy endpoint share the dedicated permission."
+    },
+    "PE-00114": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-00116",
+      "canonicalPermissionKeys": [
+        "orders.purchase_cockpit.draft_order.create"
+      ],
+      "reason": "Opening the confirmation modal is the first UI step of the same supplier draft-order creation finalized by PE-00116."
+    },
+    "PE-00116": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": [
+        "orders.purchase_cockpit.draft_order.create"
+      ],
+      "reason": "The final submit rechecks draft_order.create and calls the existing cockpit-draft mutation now protected by the same permission and InternalMutationPolicy."
+    },
+    "PE-00117": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": [
+        "orders.purchase_cockpit.feedback.submit"
+      ],
+      "reason": "Accepting a recommendation is one outcome of the shared recommendation-feedback business capability and uses its dedicated guarded mutation."
+    },
+    "PE-00118": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": [
+        "orders.purchase_cockpit.feedback.submit"
+      ],
+      "reason": "Dismissing a recommendation is another outcome of the same recommendation-feedback capability; no duplicate click permission is introduced."
+    },
     "PE-00120": {
       "disposition": "covered_existing",
       "canonicalPermissionKeys": [
@@ -157,6 +193,44 @@
     "PE-00124": {
       "disposition": "technical_ui",
       "reason": "The dashboard row click only selects one demand series and opens its already-loaded in-memory forecast drawer; it performs no request or business mutation."
+    },
+    "PE-00127": {
+      "disposition": "technical_ui",
+      "reason": "Saving a constructor session writes only the user's local browser storage and does not mutate server or shared business state."
+    },
+    "PE-00128": {
+      "disposition": "technical_ui",
+      "reason": "Selecting a saved constructor session only restores local browser state; page access owns the data requests that follow."
+    },
+    "PE-00129": {
+      "disposition": "technical_ui",
+      "reason": "Deleting a constructor session removes only the current user's localStorage entry and has no server-side or shared business effect."
+    },
+    "PE-00130": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": [
+        "orders.purchase_cockpit.document.export"
+      ],
+      "reason": "Exporting the visible procurement plan is an independent document boundary; the control and final in-memory XLSX handler recheck its dedicated permission."
+    },
+    "PE-00131": {
+      "disposition": "stale_or_aggregated",
+      "reason": "The scanner record no longer resolves to a concrete current action: its source points at constructor state initialization and no current candidate or handler can be matched safely."
+    },
+    "PE-00132": {
+      "disposition": "technical_ui",
+      "reason": "The analytics toggle only expands charts already computed from the authorized in-memory plan; it performs no request or mutation."
+    },
+    "PE-00135": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": [
+        "orders.purchase_cockpit.draft_order.create"
+      ],
+      "reason": "Creating a producer-group draft from the constructor is the same server-side draft-order capability and is guarded by one canonical permission."
+    },
+    "PE-00136": {
+      "disposition": "technical_ui",
+      "reason": "Adding a recommendation to the constructor basket only changes local in-memory selection; the final server draft creation has its own permission."
     },
     "PE-00137": {
       "disposition": "technical_ui",

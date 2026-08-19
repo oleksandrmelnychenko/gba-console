@@ -20,6 +20,7 @@ import { notifications } from '@mantine/notifications'
 import { Check, CircleAlert, RefreshCw, School, Settings, TriangleAlert } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
+import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { AiFeatureBadge } from '../../../shared/ai/AiFeatureBadge'
 import { AiHistoryLineageNote } from '../../../shared/ai/AiHistoryLineageNote'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -29,7 +30,8 @@ import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn } from '../../../shared/ui/data-table/types'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { TableRowAction } from '../../../shared/ui/table-row-action'
-import { getSupplyOrderSuppliers } from '../../supply-ukraine-orders/api/supplyUkraineOrdersApi'
+import { usePermissions } from '../../auth/usePermissions'
+import { getPurchaseCockpitSuppliers } from '../../supply-ukraine-orders/api/supplyUkraineOrdersApi'
 import type { Client } from '../../supply-ukraine-orders/types'
 import {
   createCockpitDraftOrder,
@@ -146,6 +148,30 @@ const percentFormatter = new Intl.NumberFormat('uk-UA', {
 
 export function BuyerCockpitTab() {
   const { t } = useI18n()
+  const { can, isLoading } = usePermissions()
+
+  if (isLoading) {
+    return <Text c="dimmed">{t('Завантаження')}</Text>
+  }
+
+  if (!can(PermissionKeys.SystemPages.PurchaseCockpit.View)) {
+    return (
+      <Alert color="red" title={t('Доступ заборонено')} variant="light">
+        {t('Недостатньо прав для перегляду панелі закупівель')}
+      </Alert>
+    )
+  }
+
+  return <BuyerCockpitTabContent />
+}
+
+function BuyerCockpitTabContent() {
+  const { t } = useI18n()
+  const { can } = usePermissions()
+  const canCreateDraft = can(PermissionKeys.PurchaseCockpit.DraftOrder.Create)
+  const canEditProducerProfile = can(PermissionKeys.PurchaseCockpit.ProducerProfile.Edit)
+  const canEditProductTerms = can(PermissionKeys.PurchaseCockpit.ProductTerms.Edit)
+  const canSubmitFeedback = can(PermissionKeys.PurchaseCockpit.Feedback.Submit)
   const [searchParams] = useSearchParams()
   const routeProducerId = searchParams.get('producerId')
   const routeProductId = searchParams.get('productId')
@@ -179,7 +205,7 @@ export function BuyerCockpitTab() {
       setProducersError(null)
 
       try {
-        const loaded = await getSupplyOrderSuppliers()
+        const loaded = await getPurchaseCockpitSuppliers()
 
         if (!cancelled) {
           setProducers(loaded)
@@ -352,6 +378,10 @@ export function BuyerCockpitTab() {
 
   const saveTerms = useCallback(
     async (item: ReorderSuggestion, draft: TermsDraft) => {
+      if (!can(PermissionKeys.PurchaseCockpit.ProductTerms.Edit)) {
+        return
+      }
+
       if (selectedProducerId === null) {
         return
       }
@@ -389,11 +419,15 @@ export function BuyerCockpitTab() {
         })
       }
     },
-    [selectedProducerId, t],
+    [can, selectedProducerId, t],
   )
 
   const submitFeedback = useCallback(
     async (item: ReorderSuggestion, action: Extract<FeedbackAction, 'accept' | 'dismiss'>) => {
+      if (!can(PermissionKeys.PurchaseCockpit.Feedback.Submit)) {
+        return
+      }
+
       if (selectedProducerId === null) {
         return
       }
@@ -435,11 +469,15 @@ export function BuyerCockpitTab() {
         setFeedbackPending((current) => ({ ...current, [item.product_id]: false }))
       }
     },
-    [draftQty, feedbackDecision, feedbackPending, selectedProducerId, t],
+    [can, draftQty, feedbackDecision, feedbackPending, selectedProducerId, t],
   )
 
   const submitEditFeedback = useCallback(
     async (item: ReorderSuggestion) => {
+      if (!can(PermissionKeys.PurchaseCockpit.Feedback.Submit)) {
+        return
+      }
+
       if (selectedProducerId === null) {
         return
       }
@@ -487,10 +525,14 @@ export function BuyerCockpitTab() {
         })
       }
     },
-    [draftQty, feedbackDecision, selectedProducerId, t],
+    [can, draftQty, feedbackDecision, selectedProducerId, t],
   )
 
   async function saveProfile() {
+    if (!can(PermissionKeys.PurchaseCockpit.ProducerProfile.Edit)) {
+      return
+    }
+
     if (selectedProducerId === null) {
       return
     }
@@ -523,6 +565,10 @@ export function BuyerCockpitTab() {
   }
 
   async function submitCockpitDraftOrder() {
+    if (!can(PermissionKeys.PurchaseCockpit.DraftOrder.Create)) {
+      return
+    }
+
     if (selectedProducerId === null || isCreatingOrder) {
       return
     }
@@ -629,6 +675,7 @@ export function BuyerCockpitTab() {
               <NumberInput
                 allowNegative={false}
                 aria-label={t('MOQ')}
+                disabled={!canEditProductTerms}
                 hideControls
                 min={0}
                 onBlur={() => void saveTerms(item, draft)}
@@ -641,6 +688,7 @@ export function BuyerCockpitTab() {
               <NumberInput
                 allowNegative={false}
                 aria-label={t('Кратність')}
+                disabled={!canEditProductTerms}
                 hideControls
                 min={0}
                 onBlur={() => void saveTerms(item, draft)}
@@ -746,13 +794,17 @@ export function BuyerCockpitTab() {
         id: 'action',
         header: t('Дія'),
         cell: (item) => (
-          <FeedbackActionsCell
-            decision={feedbackDecision[item.product_id] ?? null}
-            isPending={Boolean(feedbackPending[item.product_id])}
-            onAccept={() => void submitFeedback(item, 'accept')}
-            onDismiss={() => void submitFeedback(item, 'dismiss')}
-            t={t}
-          />
+          canSubmitFeedback
+            ? (
+                <FeedbackActionsCell
+                  decision={feedbackDecision[item.product_id] ?? null}
+                  isPending={Boolean(feedbackPending[item.product_id])}
+                  onAccept={() => void submitFeedback(item, 'accept')}
+                  onDismiss={() => void submitFeedback(item, 'dismiss')}
+                  t={t}
+                />
+              )
+            : null
         ),
         width: 120,
         align: 'center',
@@ -760,7 +812,7 @@ export function BuyerCockpitTab() {
         enableSorting: false,
       },
     ],
-    [draftQty, editStatus, feedbackDecision, feedbackPending, saveTerms, submitEditFeedback, submitFeedback, termsDraft, termsStatus, t],
+    [canEditProductTerms, canSubmitFeedback, draftQty, editStatus, feedbackDecision, feedbackPending, saveTerms, submitEditFeedback, submitFeedback, termsDraft, termsStatus, t],
   )
 
   const hasSelection = selectedProducerId !== null
@@ -866,6 +918,7 @@ export function BuyerCockpitTab() {
                     <Text className="app-money-meta" size="xs">EUR</Text>
                   </Group>
                 </Stack>
+                {canEditProducerProfile && (
                 <Popover position="bottom-end" shadow="none" withinPortal>
                   <Popover.Target>
                     <Button leftSection={<Settings size={16} />} size="xs" variant="default">
@@ -908,6 +961,7 @@ export function BuyerCockpitTab() {
                     </Stack>
                   </Popover.Dropdown>
                 </Popover>
+                )}
               </Group>
             </Group>
 
@@ -952,7 +1006,7 @@ export function BuyerCockpitTab() {
               tableId="basket-supply-ukraine-order-buyer-cockpit"
             />
 
-            <Group justify="flex-end">
+            {canCreateDraft && <Group justify="flex-end">
               <Button
                 color={CREATE_ACTION_COLOR}
                 disabled={orderableItems.length === 0}
@@ -961,7 +1015,7 @@ export function BuyerCockpitTab() {
               >
                 {t('Створити замовлення постачальнику')}
               </Button>
-            </Group>
+            </Group>}
 
             {hasItems && (
               <Text c="dimmed" size="xs" ta="right">
@@ -977,7 +1031,7 @@ export function BuyerCockpitTab() {
 
       <AppModal
         centered
-        opened={isConfirmOpen}
+        opened={canCreateDraft && isConfirmOpen}
         size="sm"
         title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Створити чернетку замовлення?')}</span>}
         onClose={() => {

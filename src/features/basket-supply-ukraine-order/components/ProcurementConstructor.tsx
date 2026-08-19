@@ -42,6 +42,7 @@ import {
   useState,
 } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
+import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { ExcelIcon } from '../../../shared/ui/ExcelIcon'
 import { TableRowAction } from '../../../shared/ui/table-row-action'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
@@ -49,7 +50,8 @@ import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { getProductAnalytics } from '../../assortment/api/assortmentApi'
 import type { ProductSalesSeriesPoint } from '../../assortment/types'
-import { getSupplyOrderSuppliers } from '../../supply-ukraine-orders/api/supplyUkraineOrdersApi'
+import { usePermissions } from '../../auth/usePermissions'
+import { getPurchaseCockpitSuppliers } from '../../supply-ukraine-orders/api/supplyUkraineOrdersApi'
 import type { Client } from '../../supply-ukraine-orders/types'
 import {
   listSessions,
@@ -59,8 +61,8 @@ import {
 } from '../procurementSessions'
 import {
   createCockpitDraftOrder,
-  getBudgetCartPlan,
-  getProcurementCharts,
+  getPurchaseCockpitCharts,
+  getPurchaseCockpitWarehousePlan,
   getProducerPlan,
 } from '../api/procurementApi'
 import {
@@ -192,6 +194,28 @@ async function exportRowsToXlsx(
 
 export function ProcurementConstructor() {
   const { t } = useI18n()
+  const { can, isLoading } = usePermissions()
+
+  if (isLoading) {
+    return <Text c="dimmed">{t('Завантаження')}</Text>
+  }
+
+  if (!can(PermissionKeys.SystemPages.PurchaseCockpit.View)) {
+    return (
+      <Alert color="red" title={t('Доступ заборонено')} variant="light">
+        {t('Недостатньо прав для перегляду панелі закупівель')}
+      </Alert>
+    )
+  }
+
+  return <ProcurementConstructorContent />
+}
+
+function ProcurementConstructorContent() {
+  const { t } = useI18n()
+  const { can } = usePermissions()
+  const canCreateDraft = can(PermissionKeys.PurchaseCockpit.DraftOrder.Create)
+  const canExport = can(PermissionKeys.PurchaseCockpit.Document.Export)
   const [lens, setLens] = useState<Lens>('warehouse')
   const [searchQuery, setSearchQuery] = useState('')
   const deferredSearchQuery = useDeferredValue(searchQuery)
@@ -267,7 +291,7 @@ export function ProcurementConstructor() {
 
   useEffect(() => {
     let cancelled = false
-    getSupplyOrderSuppliers()
+    getPurchaseCockpitSuppliers()
       .then((list) => {
         if (!cancelled) {
           setProducers(list)
@@ -297,7 +321,7 @@ export function ProcurementConstructor() {
 
       const plan =
         lens === 'warehouse'
-          ? getBudgetCartPlan({ budgetEur: 0, method: 'greedy' }, signal).then((p) => p.items)
+          ? getPurchaseCockpitWarehousePlan({ budgetEur: 0, method: 'greedy' }, signal).then((p) => p.items)
           : producerId
             ? getProducerPlan(producerId, undefined, signal).then((p) => p.items)
             : Promise.resolve<ReorderSuggestion[]>([])
@@ -323,7 +347,7 @@ export function ProcurementConstructor() {
       // computed client-side from the plan rows. Fetch charts only in the producer lens
       // (scoped, cheap) — the all-producer charts build is ~60s cold and would block.
       if (producerId) {
-        getProcurementCharts({ producerId }, signal)
+        getPurchaseCockpitCharts({ producerId }, signal)
           .then((data) => {
             if (!signal.aborted) {
               setCharts(data)
@@ -508,6 +532,10 @@ export function ProcurementConstructor() {
   )
 
   async function createDraft(producerId: number, lines: BasketLine[]) {
+    if (!can(PermissionKeys.PurchaseCockpit.DraftOrder.Create)) {
+      return
+    }
+
     setCreatingProducer(producerId)
     try {
       await createCockpitDraftOrder(
@@ -663,17 +691,23 @@ export function ProcurementConstructor() {
                 ))}
               </Menu.Dropdown>
             </Menu>
-            <Tooltip label={t('Експорт в Excel')}>
-              <ActionIcon
-                aria-label={t('Експорт в Excel')}
-                disabled={visibleRows.length === 0}
-                size={34}
-                variant="default"
-                onClick={() => void exportRowsToXlsx(visibleRows, lens, t, orderQtyFor)}
-              >
-                <ExcelIcon size={22} />
-              </ActionIcon>
-            </Tooltip>
+            {canExport && (
+              <Tooltip label={t('Експорт в Excel')}>
+                <ActionIcon
+                  aria-label={t('Експорт в Excel')}
+                  disabled={visibleRows.length === 0}
+                  size={34}
+                  variant="default"
+                  onClick={() => {
+                    if (can(PermissionKeys.PurchaseCockpit.Document.Export)) {
+                      void exportRowsToXlsx(visibleRows, lens, t, orderQtyFor)
+                    }
+                  }}
+                >
+                  <ExcelIcon size={22} />
+                </ActionIcon>
+              </Tooltip>
+            )}
           </div>
           <div ref={setTableToolbarSlot} className="app-filter-table-toolbar-slot" />
           <Button
@@ -875,14 +909,16 @@ export function ProcurementConstructor() {
                           <span>{group.unpricedCount > 0 ? t('Сума з ціною') : t('Разом')}</span>
                           <strong>{amount.format(group.total)} <small>EUR</small></strong>
                         </div>
-                        <Button
-                          color={CREATE_ACTION_COLOR}
-                          loading={creatingProducer === group.producerId}
-                          size="compact-sm"
-                          onClick={() => void createDraft(group.producerId, group.lines)}
-                        >
-                          {t('Створити чернетку')}
-                        </Button>
+                        {canCreateDraft && (
+                          <Button
+                            color={CREATE_ACTION_COLOR}
+                            loading={creatingProducer === group.producerId}
+                            size="compact-sm"
+                            onClick={() => void createDraft(group.producerId, group.lines)}
+                          >
+                            {t('Створити чернетку')}
+                          </Button>
+                        )}
                       </div>
                     </Box>
                   ))}

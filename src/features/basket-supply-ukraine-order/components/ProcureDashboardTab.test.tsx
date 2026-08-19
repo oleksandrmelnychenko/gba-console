@@ -4,17 +4,25 @@ import { MemoryRouter } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { I18nProvider } from '../../../shared/i18n/I18nProvider'
 import { theme } from '../../../shared/theme/theme'
-import { getSupplyOrderSuppliers } from '../../supply-ukraine-orders/api/supplyUkraineOrdersApi'
-import { getProcurementCharts } from '../api/procurementApi'
+import { getSupplyDashboardSuppliers } from '../../supply-ukraine-orders/api/supplyUkraineOrdersApi'
+import { getSupplyDashboardCharts } from '../api/procurementApi'
 import type { ProcurementCharts } from '../procurementTypes'
 import { ProcureDashboardTab } from './ProcureDashboardTab'
 
+const { canMock } = vi.hoisted(() => ({
+  canMock: vi.fn<(permissionKey: string) => boolean>(),
+}))
+
 vi.mock('../api/procurementApi', () => ({
-  getProcurementCharts: vi.fn(),
+  getSupplyDashboardCharts: vi.fn(),
 }))
 
 vi.mock('../../supply-ukraine-orders/api/supplyUkraineOrdersApi', () => ({
-  getSupplyOrderSuppliers: vi.fn(),
+  getSupplyDashboardSuppliers: vi.fn(),
+}))
+
+vi.mock('../../auth/usePermissions', () => ({
+  usePermissions: () => ({ can: canMock, isLoading: false }),
 }))
 
 const charts: ProcurementCharts = {
@@ -64,10 +72,30 @@ const charts: ProcurementCharts = {
 
 describe('ProcureDashboardTab', () => {
   beforeEach(() => {
-    vi.mocked(getSupplyOrderSuppliers).mockResolvedValue([
+    vi.clearAllMocks()
+    canMock.mockReturnValue(true)
+    vi.mocked(getSupplyDashboardSuppliers).mockResolvedValue([
       { FullName: 'Meyle GmbH', Id: 42 },
     ])
-    vi.mocked(getProcurementCharts).mockResolvedValue(charts)
+    vi.mocked(getSupplyDashboardCharts).mockResolvedValue(charts)
+  })
+
+  it('does not mount dashboard requests without supply-dashboard page access', () => {
+    canMock.mockReturnValue(false)
+
+    render(
+      <MemoryRouter>
+        <I18nProvider>
+          <MantineProvider theme={theme}>
+            <ProcureDashboardTab />
+          </MantineProvider>
+        </I18nProvider>
+      </MemoryRouter>,
+    )
+
+    expect(screen.getByText('Недостатньо прав для перегляду дашборда постачання')).not.toBeNull()
+    expect(getSupplyDashboardSuppliers).not.toHaveBeenCalled()
+    expect(getSupplyDashboardCharts).not.toHaveBeenCalled()
   })
 
   it('renders an actionable procurement summary and applies the dashboard filters', async () => {
@@ -95,7 +123,7 @@ describe('ProcureDashboardTab', () => {
     expect(screen.getAllByText('Meyle').length).toBeGreaterThan(0)
 
     await waitFor(() => {
-      expect(getSupplyOrderSuppliers).toHaveBeenCalledOnce()
+      expect(getSupplyDashboardSuppliers).toHaveBeenCalledOnce()
     })
     fireEvent.click(screen.getByRole('combobox', { name: 'Виробник' }))
     fireEvent.click(await screen.findByText('Meyle GmbH'))
@@ -105,7 +133,7 @@ describe('ProcureDashboardTab', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Застосувати' }))
 
     await waitFor(() => {
-      expect(getProcurementCharts).toHaveBeenLastCalledWith(
+      expect(getSupplyDashboardCharts).toHaveBeenLastCalledWith(
         { producerId: 42, topN: 8 },
         expect.any(AbortSignal),
       )
@@ -113,7 +141,7 @@ describe('ProcureDashboardTab', () => {
   })
 
   it('replaces empty charts with one meaningful operational state', async () => {
-    vi.mocked(getProcurementCharts).mockResolvedValue({
+    vi.mocked(getSupplyDashboardCharts).mockResolvedValue({
       as_of_date: '2026-07-25',
       source_history_start: '2025-01-01',
       effective_start: '2025-07-25',

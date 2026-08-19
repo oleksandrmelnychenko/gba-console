@@ -44,6 +44,8 @@ const EXPECTED_PROVIDING_SERVICE_ACT_KEYS = [
 
 const EXPECTED_NEW_PAGE_KEYS = [
   'orders.budget_cart.page.view',
+  'orders.purchase_cockpit.page.view',
+  'orders.supply_dashboard.page.view',
   'dashboard.overview.page.view',
   'administration.users.page.view',
   'administration.roles.page.view',
@@ -81,7 +83,7 @@ const EXPECTED_ONLINE_SHOP_SEO_ACTION_KEYS = [
 ] as const
 
 describe('newly classified page permission catalog', () => {
-  it('contains twenty-one unique business page keys and no technical controls', () => {
+  it('contains twenty-three unique business page keys and no technical controls', () => {
     const actual = Object.values(PermissionKeys.SystemPages).flatMap(
       Object.values,
     )
@@ -180,6 +182,27 @@ describe('human-reviewed product-group actions', () => {
     expect(PermissionKeys.ProductGroups.Page.View).toBe(
       'products.groups.page.view',
     )
+  })
+})
+
+describe('purchase cockpit business permissions', () => {
+  it('contains five independent business boundaries and no local UI controls', () => {
+    const actual = [
+      ...Object.values(PermissionKeys.PurchaseCockpit.ProducerProfile),
+      ...Object.values(PermissionKeys.PurchaseCockpit.ProductTerms),
+      ...Object.values(PermissionKeys.PurchaseCockpit.Feedback),
+      ...Object.values(PermissionKeys.PurchaseCockpit.DraftOrder),
+      ...Object.values(PermissionKeys.PurchaseCockpit.Document),
+    ]
+
+    expect(actual).toEqual([
+      'orders.purchase_cockpit.producer_profile.edit',
+      'orders.purchase_cockpit.product_terms.edit',
+      'orders.purchase_cockpit.feedback.submit',
+      'orders.purchase_cockpit.draft_order.create',
+      'orders.purchase_cockpit.document.export',
+    ])
+    expect(new Set(actual).size).toBe(5)
   })
 })
 

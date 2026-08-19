@@ -4,9 +4,12 @@ import {
   createCockpitDraftOrder,
   getBudgetCartPlan,
   getProcurementCharts,
+  getPurchaseCockpitCharts,
+  getPurchaseCockpitWarehousePlan,
   getProducerPlan,
   getProducerProfile,
   getProductTerms,
+  getSupplyDashboardCharts,
   recordFeedback,
   upsertProducerProfile,
   upsertProductTerms,
@@ -955,6 +958,35 @@ describe('getBudgetCartPlan', () => {
     await expect(getBudgetCartPlan({ budgetEur: 50000, method: 'milp' })).rejects.toThrow(
       'unpriced_item_count',
     )
+  })
+})
+
+describe('permission-scoped procurement page routes', () => {
+  beforeEach(() => {
+    apiRequestMock.mockReset()
+    apiRequestMock.mockRejectedValue(new Error('route probe'))
+  })
+
+  it('routes cockpit warehouse planning through the purchase-cockpit page boundary', async () => {
+    await expect(
+      getPurchaseCockpitWarehousePlan({ budgetEur: 0, method: 'greedy' }),
+    ).rejects.toThrow('route probe')
+
+    expect(apiRequestMock).toHaveBeenCalledWith('/procurement/purchase-cockpit/cart', {
+      method: 'POST',
+      body: { budget_eur: 0, method: 'greedy', only_needed: true },
+    })
+  })
+
+  it.each([
+    [getPurchaseCockpitCharts, '/procurement/purchase-cockpit/charts'],
+    [getSupplyDashboardCharts, '/procurement/supply-dashboard/charts'],
+  ])('routes charts through %s exact page boundary', async (loadCharts, path) => {
+    await expect(loadCharts({ producerId: 42, topN: 8 })).rejects.toThrow('route probe')
+
+    expect(apiRequestMock).toHaveBeenCalledWith(path, {
+      query: { producerId: 42, topN: 8 },
+    })
   })
 })
 

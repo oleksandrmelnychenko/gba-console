@@ -146,12 +146,18 @@ export function BasketSupplyUkraineOrderPage() {
   const activeTab = getActiveTab(location.pathname)
   const canViewCart = can(PermissionKeys.SystemPages.SupplyCart.View)
   const canViewBudgetCart = can(PermissionKeys.SystemPages.BudgetCart.View)
+  const canViewPurchaseCockpit = can(PermissionKeys.SystemPages.PurchaseCockpit.View)
+  const canViewSupplyDashboard = can(PermissionKeys.SystemPages.SupplyDashboard.View)
   const canViewSales = can(PermissionKeys.SystemPages.SupplySales.View)
   const tabs: Array<{ ai?: boolean; label: string; value: BasketSupplyWorkflowTab }> = [
     ...(canViewSales ? [{ value: 'sales' as const, label: t('Фактура') }] : []),
     ...(canViewCart ? [
       { value: 'cart' as const, label: t('Переміщення на Україну') },
+    ] : []),
+    ...(canViewPurchaseCockpit ? [
       { value: 'cockpit' as const, label: t('Конструктор закупівель'), ai: true },
+    ] : []),
+    ...(canViewSupplyDashboard ? [
       { value: 'dashboard' as const, label: t('Дашборд'), ai: true },
     ] : []),
     ...(canViewBudgetCart ? [
@@ -175,7 +181,11 @@ export function BasketSupplyUkraineOrderPage() {
     ? canViewSales
     : activeTab === 'budget-cart'
       ? canViewBudgetCart
-      : canViewCart
+      : activeTab === 'cockpit'
+        ? canViewPurchaseCockpit
+        : activeTab === 'dashboard'
+          ? canViewSupplyDashboard
+          : canViewCart
 
   if (!canViewActiveTab) {
     return (

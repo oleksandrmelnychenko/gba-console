@@ -62,6 +62,17 @@ export async function getProducerPlan(
 }
 
 export async function getBudgetCartPlan(query: CartPlanQuery, signal?: AbortSignal): Promise<CartPlan> {
+  return getCartPlanAt('/procurement/cart', query, signal)
+}
+
+export async function getPurchaseCockpitWarehousePlan(
+  query: CartPlanQuery,
+  signal?: AbortSignal,
+): Promise<CartPlan> {
+  return getCartPlanAt('/procurement/purchase-cockpit/cart', query, signal)
+}
+
+async function getCartPlanAt(path: string, query: CartPlanQuery, signal?: AbortSignal): Promise<CartPlan> {
   if (!KNOWN_CART_METHODS.includes(query.method)) {
     throw new ProcurementContractError('request.method', 'unsupported optimization method')
   }
@@ -69,7 +80,7 @@ export async function getBudgetCartPlan(query: CartPlanQuery, signal?: AbortSign
   const method = query.method
   const budgetEur = requireNumberInRange(query.budgetEur, 'request.budget_eur', 0, MAX_MONEY_EUR)
 
-  const result = await apiRequest<unknown>('/procurement/cart', {
+  const result = await apiRequest<unknown>(path, {
     method: 'POST',
     body: {
       budget_eur: budgetEur,
@@ -87,7 +98,29 @@ export async function getProcurementCharts(
   query: ProcurementChartsQuery = {},
   signal?: AbortSignal,
 ): Promise<ProcurementCharts> {
-  const result = await apiRequest<unknown>('/procurement/charts', {
+  return getProcurementChartsAt('/procurement/charts', query, signal)
+}
+
+export async function getPurchaseCockpitCharts(
+  query: ProcurementChartsQuery = {},
+  signal?: AbortSignal,
+): Promise<ProcurementCharts> {
+  return getProcurementChartsAt('/procurement/purchase-cockpit/charts', query, signal)
+}
+
+export async function getSupplyDashboardCharts(
+  query: ProcurementChartsQuery = {},
+  signal?: AbortSignal,
+): Promise<ProcurementCharts> {
+  return getProcurementChartsAt('/procurement/supply-dashboard/charts', query, signal)
+}
+
+async function getProcurementChartsAt(
+  path: string,
+  query: ProcurementChartsQuery,
+  signal?: AbortSignal,
+): Promise<ProcurementCharts> {
+  const result = await apiRequest<unknown>(path, {
     query: buildChartsQuery(query),
     ...(signal ? { signal } : {}),
   })
