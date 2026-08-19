@@ -60,7 +60,7 @@ export async function getProductIncomeInfoForRemainings(netId: string): Promise<
 }
 
 export async function getSupplyOrderProductIncomeByNetId(netId: string): Promise<ProductIncomeInfo | null> {
-  const result = await apiRequest<unknown>('/products/incomes/supply/order/get', {
+  const result = await apiRequest<unknown>('/products/incomes/income-documents/page/supply-order/details', {
     query: {
       netId,
     },
@@ -70,7 +70,7 @@ export async function getSupplyOrderProductIncomeByNetId(netId: string): Promise
 }
 
 export async function getSupplyOrderUkraineProductIncomeByNetId(netId: string): Promise<ProductIncomeInfo | null> {
-  const result = await apiRequest<unknown>('/products/incomes/supply/order/ukraine/get', {
+  const result = await apiRequest<unknown>('/products/incomes/orders/ukraine/product-income/details', {
     query: {
       netId,
     },

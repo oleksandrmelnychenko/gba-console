@@ -6,6 +6,8 @@ import {
   getProductIncomeInfo,
   getProductIncomeInfoForRemainings,
   getProductIncomeRemainings,
+  getSupplyOrderProductIncomeByNetId,
+  getSupplyOrderUkraineProductIncomeByNetId,
 } from './productIncomeDocumentsApi'
 
 vi.mock('../../../shared/api/apiClient', () => ({
@@ -58,5 +60,21 @@ describe('product income documents permission-scoped API', () => {
     expect(apiRequestMock).toHaveBeenNthCalledWith(4, '/products/incomes/income-documents/page/document/export', {
       query: { netId: 'income-1' },
     })
+  })
+
+  it('loads source placement drawers only through their permission-scoped routes', async () => {
+    await getSupplyOrderProductIncomeByNetId('income-1')
+    await getSupplyOrderUkraineProductIncomeByNetId('income-2')
+
+    expect(apiRequestMock).toHaveBeenNthCalledWith(
+      1,
+      '/products/incomes/income-documents/page/supply-order/details',
+      { query: { netId: 'income-1' } },
+    )
+    expect(apiRequestMock).toHaveBeenNthCalledWith(
+      2,
+      '/products/incomes/orders/ukraine/product-income/details',
+      { query: { netId: 'income-2' } },
+    )
   })
 })

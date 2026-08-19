@@ -256,6 +256,7 @@ const migratedConsoleRoutes: ConsoleRoute[] = [
   {
     path: '/orders/ukraine/:id/product-income',
     element: lazyRoute(<SupplyOrderUkraineProductPlacementPage />),
+    permissionKey: PermissionKeys.OrdersUkraine.Placement.OpenProductPlacement,
   },
   {
     path: '/orders/ukraine/protocols/:netid',
@@ -264,6 +265,7 @@ const migratedConsoleRoutes: ConsoleRoute[] = [
   {
     path: '/supply-orders/product-placement/:id',
     element: lazyRoute(<SupplyOrderProductPlacementPage />),
+    permissionKey: PermissionKeys.ProductIncomeDocuments.Document.OpenDetails,
   },
   {
     path: '/orders/depreciated',

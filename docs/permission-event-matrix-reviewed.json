@@ -4,15 +4,15 @@
     "inputRecords": 1902,
     "classifiedRecords": 1902,
     "dispositionCounts": {
-      "technical_ui": 778,
-      "covered_existing": 626,
+      "technical_ui": 779,
+      "covered_existing": 627,
       "duplicate_occurrence": 313,
       "needs_human_review": 58,
-      "business_candidate": 114,
+      "business_candidate": 112,
       "stale_or_aggregated": 13
     },
-    "reviewCandidates": 172,
-    "technicalExcluded": 778,
+    "reviewCandidates": 170,
+    "technicalExcluded": 779,
     "duplicatesExcluded": 313,
     "duplicateOccurrencesTotal": 382,
     "technicalDuplicateOverlap": 69,
@@ -37095,11 +37095,11 @@
       "securityLevel": "medium",
       "rawStatus": "No permission candidate found",
       "disposition": "covered_existing",
-      "dispositionReason": "existing_page_permission:orders.ukraine_orders.page.view",
+      "dispositionReason": "existing_page_permission:orders.ukraine.placement.open_product_placement",
       "duplicateOf": null,
       "businessActionId": null,
       "canonicalPermissionKeys": [
-        "orders.ukraine_orders.page.view"
+        "orders.ukraine.placement.open_product_placement"
       ],
       "classificationSource": "automatic",
       "bindingEvidence": [],
@@ -37128,18 +37128,18 @@
       "securityLevel": "medium",
       "rawStatus": "No permission candidate found",
       "disposition": "covered_existing",
-      "dispositionReason": "existing_page_permission:orders.ukraine_orders.page.view",
+      "dispositionReason": "existing_page_permission:warehouse_accounting.income_documents.document.open_details",
       "duplicateOf": null,
       "businessActionId": null,
       "canonicalPermissionKeys": [
-        "orders.ukraine_orders.page.view"
+        "warehouse_accounting.income_documents.document.open_details"
       ],
       "classificationSource": "automatic",
       "bindingEvidence": [],
       "source": {
         "status": "resolved",
         "file": "src/features/product-income-documents/pages/SupplyOrderProductPlacementPage.tsx",
-        "line": 44,
+        "line": 46,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -37161,20 +37161,22 @@
       "proposedPermission": "orders.orders_ukraine_item_product_income.void_handle_export.command_export",
       "securityLevel": "medium",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "covered_existing",
+      "dispositionReason": "The drawer exposes export only with the existing income-document export capability and rechecks it immediately before calling the protected document façade.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "warehouse_accounting.income_documents.document.export"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-535910cf8799",
+          "candidateId": "EPC-69f9a8242472",
           "distance": 0,
           "file": "src/features/product-income-documents/pages/SupplyOrderProductPlacementPage.tsx",
           "handler": "{() => void handleExport()}",
           "humanLabel": "Експорт",
-          "line": 197,
+          "line": 236,
           "permissionKeys": [],
           "score": 12
         }
@@ -37182,7 +37184,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/product-income-documents/pages/SupplyOrderProductPlacementPage.tsx",
-        "line": 197,
+        "line": 236,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -37204,20 +37206,20 @@
       "proposedPermission": "orders.orders_ukraine_item_product_income.on_open_placement_details_row.modal_open",
       "securityLevel": "medium",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "technical_ui",
+      "dispositionReason": "The row location action only opens a drawer over placement values already returned by the independently authorized details request; it performs no additional API call or business operation.",
       "duplicateOf": null,
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-11bfe5f60d2a",
+          "candidateId": "EPC-383cb8c7b857",
           "distance": 183,
           "file": "src/features/product-income-documents/pages/SupplyOrderProductPlacementPage.tsx",
           "handler": "{() => onOpenPlacementDetails(row)}",
           "humanLabel": "Місця зберігання",
-          "line": 466,
+          "line": 505,
           "permissionKeys": [],
           "score": 23
         }
@@ -37225,7 +37227,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/product-income-documents/pages/SupplyOrderProductPlacementPage.tsx",
-        "line": 283,
+        "line": 322,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -80149,8 +80151,6 @@
     "PE-00137",
     "PE-00152",
     "PE-00163",
-    "PE-00916",
-    "PE-00917",
     "PE-01139",
     "PE-01195",
     "PE-01197",

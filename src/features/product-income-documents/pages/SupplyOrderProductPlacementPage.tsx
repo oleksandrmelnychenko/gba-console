@@ -10,6 +10,8 @@ import { DocumentExportModal } from '../../../shared/ui/document-export-modal/Do
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { TableRowAction } from '../../../shared/ui/table-row-action'
+import { PermissionKeys, type PermissionKey } from '../../../shared/auth/permissionKeys'
+import { usePermissions } from '../../auth/usePermissions'
 import {
   exportProductIncomeDocument,
   getSupplyOrderProductIncomeByNetId,
@@ -43,8 +45,9 @@ const rateFormatter = new Intl.NumberFormat('uk-UA', { maximumFractionDigits: 4 
 
 export function SupplyOrderProductPlacementPage() {
   return (
-    <SupplyOrderProductPlacementContent
+    <SupplyOrderProductPlacementGuard
       loadIncome={getSupplyOrderProductIncomeByNetId}
+      permissionKey={PermissionKeys.ProductIncomeDocuments.Document.OpenDetails}
       title="Розміщення приходу по замовленню"
     />
   )
@@ -52,17 +55,53 @@ export function SupplyOrderProductPlacementPage() {
 
 export function SupplyOrderUkraineProductPlacementPage() {
   return (
-    <SupplyOrderProductPlacementContent
+    <SupplyOrderProductPlacementGuard
       loadIncome={getSupplyOrderUkraineProductIncomeByNetId}
+      permissionKey={PermissionKeys.OrdersUkraine.Placement.OpenProductPlacement}
       title="Розміщення приходу поставки в Україну"
     />
   )
 }
 
+function SupplyOrderProductPlacementGuard({
+  loadIncome,
+  permissionKey,
+  title,
+}: {
+  loadIncome: (netId: string) => Promise<ProductIncomeInfo | null>
+  permissionKey: PermissionKey
+  title: string
+}) {
+  const { t } = useI18n()
+  const { can, isLoading } = usePermissions()
+
+  if (isLoading) {
+    return <Text c="dimmed">{t('Завантаження')}</Text>
+  }
+
+  if (!can(permissionKey)) {
+    return (
+      <Alert color="red" icon={<CircleAlert size={18} />} title={t('Доступ заборонено')} variant="light">
+        {t('Недостатньо прав для перегляду розміщення приходу')}
+      </Alert>
+    )
+  }
+
+  return (
+    <SupplyOrderProductPlacementContent
+      canExport={() => can(PermissionKeys.ProductIncomeDocuments.Document.Export)}
+      loadIncome={loadIncome}
+      title={title}
+    />
+  )
+}
+
 function SupplyOrderProductPlacementContent({
+  canExport,
   loadIncome,
   title,
 }: {
+  canExport: () => boolean
   loadIncome: (netId: string) => Promise<ProductIncomeInfo | null>
   title: string
 }) {
@@ -149,7 +188,7 @@ function SupplyOrderProductPlacementContent({
   const status = firstUkraineItem ? getUkrainePlacementStatus(rows) : getPlacementStatus(packingList)
 
   async function handleExport() {
-    if (!income?.NetUid) {
+    if (!canExport() || !income?.NetUid) {
       return
     }
 
@@ -193,7 +232,7 @@ function SupplyOrderProductPlacementContent({
           ) : (
             <span />
           )}
-          {firstUkraineItem && income?.NetUid && (
+          {firstUkraineItem && income?.NetUid && canExport() && (
             <Button color={CREATE_ACTION_COLOR} loading={isExporting} onClick={() => void handleExport()}>
               {t('Експорт')}
             </Button>

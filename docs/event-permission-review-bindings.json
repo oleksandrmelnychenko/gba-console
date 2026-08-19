@@ -19,13 +19,13 @@
     { "route": "/basket-supply-ukraine-order/sales", "permissionKey": "orders.supply_sales.page.view" },
     { "route": "/basket-supply-ukraine-order", "permissionKey": "orders.supply_cart.page.view" },
     { "route": "/orders/ukraine/all", "permissionKey": "orders.ukraine_orders.page.view" },
-    { "route": "/orders/ukraine/:id/product-income", "permissionKey": "orders.ukraine_orders.page.view" },
+    { "route": "/orders/ukraine/:id/product-income", "permissionKey": "orders.ukraine.placement.open_product_placement" },
     { "route": "/orders/ukraine/to-ukraine/new", "permissionKey": "orders.ukraine_orders.page.view" },
     { "route": "/orders/ukraine/view/:id", "permissionKey": "orders.ukraine_orders.page.view" },
     { "route": "/orders/develop/all/edit/:id/specifications", "permissionKey": "orders.ukraine_orders.page.view" },
     { "route": "/orders/ukraine/protocols/:netid", "permissionKey": "orders.ukraine_orders.page.view" },
     { "route": "/orders/ukraine/placement/:id", "permissionKey": "orders.ukraine_orders.page.view" },
-    { "route": "/supply-orders/product-placement/:id", "permissionKey": "orders.ukraine_orders.page.view" },
+    { "route": "/supply-orders/product-placement/:id", "permissionKey": "warehouse_accounting.income_documents.document.open_details" },
     { "route": "/product-delivery-protocols", "permissionKey": "orders.product_delivery_protocols.page.view" },
     { "route": "/ukraine/act/reconcoliation", "permissionKey": "orders.reconciliation_acts.page.view" },
     { "route": "/reports/sale", "permissionKey": "reports.sale_file.page.view" },
@@ -4407,6 +4407,15 @@
     "PE-01870": {
       "disposition": "technical_ui",
       "reason": "The shared PDF format card only selects the requested representation; each caller owns and rechecks the upstream document-generation permission."
+    },
+    "PE-00916": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["warehouse_accounting.income_documents.document.export"],
+      "reason": "The drawer exposes export only with the existing income-document export capability and rechecks it immediately before calling the protected document façade."
+    },
+    "PE-00917": {
+      "disposition": "technical_ui",
+      "reason": "The row location action only opens a drawer over placement values already returned by the independently authorized details request; it performs no additional API call or business operation."
     }
   }
 }
