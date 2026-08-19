@@ -61,6 +61,15 @@ describe('newly classified page permissions', () => {
     expect(consoleRoutes.find((route) => route.path === '/resales/:id')?.permissionKey)
       .toBe(PermissionKeys.Resales.Page.View)
   })
+
+  it('uses independent Company Car create, edit and road-list route guards', () => {
+    expect(consoleRoutes.find((route) => route.path === '/accounting/company-cars/new')?.permissionKey)
+      .toBe(PermissionKeys.Warehouses.CompanyCars.Car.Create)
+    expect(consoleRoutes.find((route) => route.path === '/accounting/company-cars/edit/:id')?.permissionKey)
+      .toBe(PermissionKeys.Warehouses.CompanyCars.Car.Edit)
+    expect(consoleRoutes.find((route) => route.path === '/accounting/company-cars/:id/road-lists')?.permissionKey)
+      .toBe(PermissionKeys.Warehouses.CompanyCars.RoadList.Open)
+  })
 })
 
 describe('console report routes', () => {

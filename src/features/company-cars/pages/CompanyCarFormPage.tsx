@@ -18,10 +18,11 @@ import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/Page
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { useAuth } from '../../auth/useAuth'
+import { PermissionGate } from '../../auth/components/PermissionGate'
 import {
   createCompanyCar,
   deleteCompanyCar,
-  getCompanyCar,
+  getCompanyCarForEdit,
   getCompanyCarOrganizations,
   updateCompanyCar,
 } from '../api/companyCarsApi'
@@ -67,6 +68,27 @@ type CompanyCarFormPageAction =
 const COMPANY_CARS_PATH = '/accounting/company-cars'
 
 export function CompanyCarFormPage() {
+  const { id } = useParams<{ id?: string }>()
+  const permissionKey = id ? COMPANY_CAR_EDIT_PERMISSION : COMPANY_CAR_CREATE_PERMISSION
+
+  return (
+    <PermissionGate permissionKey={permissionKey} fallback={<CompanyCarFormPermissionDenied />}>
+      <CompanyCarFormPageContent />
+    </PermissionGate>
+  )
+}
+
+function CompanyCarFormPermissionDenied() {
+  const { t } = useI18n()
+
+  return (
+    <Alert color="red" icon={<CircleAlert size={18} />} title={t('Доступ заборонено')} variant="light">
+      {t('У вашої ролі немає права на цю дію з автомобілем компанії.')}
+    </Alert>
+  )
+}
+
+function CompanyCarFormPageContent() {
   const { t } = useI18n()
   const { hasPermission } = useAuth()
   const { id } = useParams<{ id?: string }>()
@@ -89,7 +111,7 @@ export function CompanyCarFormPage() {
 
     void Promise.all([
       getCompanyCarOrganizations(),
-      id ? getCompanyCar(id) : Promise.resolve(null),
+      id ? getCompanyCarForEdit(id) : Promise.resolve(null),
     ])
       .then(([nextOrganizations, nextCompanyCar]) => {
         if (controller.signal.aborted) {
@@ -141,7 +163,8 @@ export function CompanyCarFormPage() {
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
 
-    if (!canSave) {
+    const savePermission = isEditMode ? COMPANY_CAR_EDIT_PERMISSION : COMPANY_CAR_CREATE_PERMISSION
+    if (!hasPermission(savePermission)) {
       dispatchPageState({ error: t('Немає прав для збереження автомобіля компанії'), type: 'set-error' })
       return
     }
@@ -201,7 +224,7 @@ export function CompanyCarFormPage() {
   }
 
   async function handleDelete() {
-    if (!canDelete) {
+    if (!hasPermission(COMPANY_CAR_DELETE_PERMISSION)) {
       dispatchPageState({ error: t('Немає прав для видалення автомобіля компанії'), type: 'set-error' })
       return
     }
@@ -236,10 +259,10 @@ export function CompanyCarFormPage() {
       onClose={handleCancel}
       footer={
         <Group gap="xs">
-          {isEditMode && (
+          {isEditMode && canDelete && (
             <Button
               color="red"
-              disabled={isLoading || !canDelete || !companyCar.NetUid}
+              disabled={isLoading || !companyCar.NetUid}
               leftSection={<Trash2 size={16} />}
               loading={isDeleting}
               type="button"

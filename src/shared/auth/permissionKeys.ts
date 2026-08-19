@@ -552,6 +552,14 @@ export const PermissionKeys = {
       },
       Car: {
         Create: 'warehouses.company_cars.car.create',
+        Delete: 'warehouses.company_cars.car.delete',
+        Edit: 'warehouses.company_cars.car.edit',
+      },
+      RoadList: {
+        Create: 'warehouses.company_cars.road_list.create',
+        Delete: 'warehouses.company_cars.road_list.delete',
+        Edit: 'warehouses.company_cars.road_list.edit',
+        Open: 'warehouses.company_cars.road_list.open',
       },
     },
     Premises: {
@@ -1151,6 +1159,7 @@ export type TransportersPermissionKey =
 export type WarehousesPermissionKey =
   | Values<typeof PermissionKeys.Warehouses.CompanyCars.Page>
   | Values<typeof PermissionKeys.Warehouses.CompanyCars.Car>
+  | Values<typeof PermissionKeys.Warehouses.CompanyCars.RoadList>
   | Values<typeof PermissionKeys.Warehouses.Premises.Page>
   | Values<typeof PermissionKeys.Warehouses.Premises.Premise>
   | Values<typeof PermissionKeys.Warehouses.Premises.WriteOff>
@@ -2290,6 +2299,7 @@ const eventPermissionKeys = new Set<string>([
   ...Object.values(PermissionKeys.Transporters.Transporter),
   ...Object.values(PermissionKeys.Warehouses.CompanyCars.Page),
   ...Object.values(PermissionKeys.Warehouses.CompanyCars.Car),
+  ...Object.values(PermissionKeys.Warehouses.CompanyCars.RoadList),
   ...Object.values(PermissionKeys.Warehouses.Premises.Page),
   ...Object.values(PermissionKeys.Warehouses.Premises.Premise),
   ...Object.values(PermissionKeys.Warehouses.Ukraine.Page),

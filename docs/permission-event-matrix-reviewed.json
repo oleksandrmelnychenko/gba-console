@@ -4,22 +4,22 @@
     "inputRecords": 1902,
     "classifiedRecords": 1902,
     "dispositionCounts": {
-      "technical_ui": 775,
-      "covered_existing": 593,
-      "duplicate_occurrence": 299,
-      "business_candidate": 156,
+      "technical_ui": 776,
+      "covered_existing": 597,
+      "duplicate_occurrence": 302,
+      "business_candidate": 148,
       "needs_human_review": 66,
       "stale_or_aggregated": 13
     },
-    "reviewCandidates": 222,
-    "technicalExcluded": 775,
-    "duplicatesExcluded": 299,
-    "duplicateOccurrencesTotal": 368,
+    "reviewCandidates": 214,
+    "technicalExcluded": 776,
+    "duplicatesExcluded": 302,
+    "duplicateOccurrencesTotal": 371,
     "technicalDuplicateOverlap": 69,
     "sourceResolved": 1828,
     "sourceUnresolved": 74,
-    "currentActionResolved": 1184,
-    "currentActionUnresolved": 718,
+    "currentActionResolved": 1183,
+    "currentActionUnresolved": 719,
     "currentProductionActions": 1828,
     "currentPermissionBoundActions": 328,
     "currentUnboundActions": 1500
@@ -15871,20 +15871,20 @@
       "proposedPermission": "accounting.accounting_company_cars.on_remove_driver_driver.command_delete",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "technical_ui",
+      "dispositionReason": "Removing a driver only changes the unsaved road-list draft; the create/edit permission is rechecked by the final save boundary.",
       "duplicateOf": null,
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-3e0268955c6a",
+          "candidateId": "EPC-fa298c973915",
           "distance": 174,
           "file": "src/features/company-cars/components/CompanyCarRoadListFormModal.tsx",
           "handler": "{() => onRemoveDriver(driver)}",
           "humanLabel": "Видалити",
-          "line": 563,
+          "line": 568,
           "permissionKeys": [],
           "score": 18
         }
@@ -15892,7 +15892,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/company-cars/components/CompanyCarRoadListFormModal.tsx",
-        "line": 389,
+        "line": 394,
         "alternatives": []
       }
     },
@@ -15924,7 +15924,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/company-cars/components/CompanyCarRoadListFormModal.tsx",
-        "line": 79,
+        "line": 80,
         "alternatives": []
       }
     },
@@ -15946,17 +15946,20 @@
       "proposedPermission": "accounting.accounting_company_cars.on_save.command_submit",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "covered_existing",
+      "dispositionReason": "The shared modal finalizer selects and rechecks the exact create or edit permission by persisted road-list identity and calls the matching scoped route.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "warehouses.company_cars.road_list.create",
+        "warehouses.company_cars.road_list.edit"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [],
       "source": {
         "status": "resolved",
         "file": "src/features/company-cars/components/CompanyCarRoadListFormModal.tsx",
-        "line": 82,
+        "line": 83,
         "alternatives": []
       }
     },
@@ -16020,7 +16023,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/company-cars/pages/CompanyCarFormPage.tsx",
-        "line": 69,
+        "line": 70,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -16053,7 +16056,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/company-cars/pages/CompanyCarFormPage.tsx",
-        "line": 69,
+        "line": 70,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -16086,7 +16089,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/company-cars/pages/CompanyCarRoadListsPage.tsx",
-        "line": 79,
+        "line": 85,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -16110,20 +16113,22 @@
       "proposedPermission": "accounting.accounting_company_cars.set_delete_modal_opened_true.modal_open",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
-      "duplicateOf": null,
+      "disposition": "duplicate_occurrence",
+      "dispositionReason": "Opening the delete confirmation is only the entry step of the final car deletion in PE-00405.",
+      "duplicateOf": "PE-00405",
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "warehouses.company_cars.car.delete"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-304edab39fb9",
+          "candidateId": "EPC-a01497654978",
           "distance": 7,
           "file": "src/features/company-cars/pages/CompanyCarFormPage.tsx",
           "handler": "{() => setDeleteModalOpened(true)}",
           "humanLabel": "Видалити",
-          "line": 240,
+          "line": 263,
           "permissionKeys": [],
           "score": 24
         }
@@ -16131,7 +16136,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/company-cars/pages/CompanyCarFormPage.tsx",
-        "line": 247,
+        "line": 270,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -16155,20 +16160,23 @@
       "proposedPermission": "accounting.accounting_company_cars.handle_submit.form_submit",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "covered_existing",
+      "dispositionReason": "The shared car form rechecks create or edit according to route mode and calls only the corresponding mutation-policy-protected façade.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "warehouses.company_cars.car.create",
+        "warehouses.company_cars.car.edit"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-32212a6924a5",
-          "distance": 124,
+          "candidateId": "EPC-911b713b773b",
+          "distance": 125,
           "file": "src/features/company-cars/pages/CompanyCarFormPage.tsx",
           "handler": "{handleSubmit}",
           "humanLabel": null,
-          "line": 265,
+          "line": 288,
           "permissionKeys": [],
           "score": 12
         }
@@ -16176,7 +16184,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/company-cars/pages/CompanyCarFormPage.tsx",
-        "line": 141,
+        "line": 163,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -16208,12 +16216,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-a46265081485",
+          "candidateId": "EPC-910b877e23f6",
           "distance": 7,
           "file": "src/features/company-cars/pages/CompanyCarFormPage.tsx",
           "handler": "{() => setDeleteModalOpened(false)}",
           "humanLabel": "Скасувати",
-          "line": 354,
+          "line": 377,
           "permissionKeys": [],
           "score": 25
         }
@@ -16221,7 +16229,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/company-cars/pages/CompanyCarFormPage.tsx",
-        "line": 347,
+        "line": 370,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -16245,20 +16253,22 @@
       "proposedPermission": "accounting.accounting_company_cars.handle_delete.command_delete",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "covered_existing",
+      "dispositionReason": "The final car deletion rechecks car.delete and calls only the dedicated mutation-policy-protected façade.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "warehouses.company_cars.car.delete"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-823132c8b800",
+          "candidateId": "EPC-8104e88a9e2c",
           "distance": 154,
           "file": "src/features/company-cars/pages/CompanyCarFormPage.tsx",
           "handler": "{handleDelete}",
           "humanLabel": "Видалити",
-          "line": 357,
+          "line": 380,
           "permissionKeys": [],
           "score": 12
         }
@@ -16266,7 +16276,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/company-cars/pages/CompanyCarFormPage.tsx",
-        "line": 203,
+        "line": 226,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -16298,12 +16308,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-77f8ea079374",
+          "candidateId": "EPC-25f672206dfe",
           "distance": 0,
           "file": "src/features/company-cars/pages/CompanyCarRoadListsPage.tsx",
           "handler": "{() => navigate(returnPath)}",
           "humanLabel": "Назад",
-          "line": 207,
+          "line": 255,
           "permissionKeys": [],
           "score": 18
         }
@@ -16311,7 +16321,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/company-cars/pages/CompanyCarRoadListsPage.tsx",
-        "line": 207,
+        "line": 255,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -16343,12 +16353,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-f80aabc153f8",
+          "candidateId": "EPC-6cab7a915d7b",
           "distance": 40,
           "file": "src/features/company-cars/pages/CompanyCarRoadListsPage.tsx",
           "handler": "{resetFilters}",
           "humanLabel": "Скинути",
-          "line": 236,
+          "line": 284,
           "permissionKeys": [],
           "score": 12
         }
@@ -16356,7 +16366,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/company-cars/pages/CompanyCarRoadListsPage.tsx",
-        "line": 196,
+        "line": 244,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -16390,7 +16400,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/company-cars/pages/CompanyCarRoadListsPage.tsx",
-        "line": 96,
+        "line": 120,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -16424,7 +16434,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/company-cars/pages/CompanyCarRoadListsPage.tsx",
-        "line": 95,
+        "line": 119,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -16449,23 +16459,23 @@
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
       "disposition": "covered_existing",
-      "dispositionReason": "existing_page_permission:warehouses.company_cars.car.create",
+      "dispositionReason": "Creating a road list is independently exposed only with road_list.create; the modal finalizer rechecks the same permission.",
       "duplicateOf": null,
       "businessActionId": null,
       "canonicalPermissionKeys": [
-        "warehouses.company_cars.car.create"
+        "warehouses.company_cars.road_list.create"
       ],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-969cb4c84537",
-          "distance": 94,
+          "candidateId": "EPC-c4b9d5970c7f",
+          "distance": 95,
           "file": "src/features/company-cars/pages/CompanyCarRoadListsPage.tsx",
           "handler": "{openCreateForm}",
           "humanLabel": "Створення шляхового листа",
-          "line": 247,
+          "line": 296,
           "permissionKeys": [
-            "warehouses.company_cars.car.create"
+            "warehouses.company_cars.road_list.create"
           ],
           "score": 14
         }
@@ -16473,7 +16483,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/company-cars/pages/CompanyCarRoadListsPage.tsx",
-        "line": 153,
+        "line": 201,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -16497,20 +16507,22 @@
       "proposedPermission": "accounting.accounting_company_cars.event_event_stop_propagation_on_edit_road_list.button_click",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
-      "duplicateOf": null,
+      "disposition": "duplicate_occurrence",
+      "dispositionReason": "The row action only enters the edit branch finalized and permission-checked by PE-00397.",
+      "duplicateOf": "PE-00397",
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "warehouses.company_cars.road_list.edit"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-c5a98eb77406",
-          "distance": 410,
+          "candidateId": "EPC-e5b48f0c591f",
+          "distance": 457,
           "file": "src/features/company-cars/pages/CompanyCarRoadListsPage.tsx",
           "handler": "{(event) => { event.stopPropagation() onEdit(roadList) }}",
           "humanLabel": "Редагувати",
-          "line": 489,
+          "line": 542,
           "permissionKeys": [],
           "score": 12
         }
@@ -16518,7 +16530,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/company-cars/pages/CompanyCarRoadListsPage.tsx",
-        "line": 79,
+        "line": 85,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -16542,20 +16554,22 @@
       "proposedPermission": "accounting.accounting_company_cars.event_event_stop_propagation_on_delete_road_list.command_delete",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
-      "duplicateOf": null,
+      "disposition": "duplicate_occurrence",
+      "dispositionReason": "The row action only opens confirmation for the final road-list deletion in PE-00414.",
+      "duplicateOf": "PE-00414",
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "warehouses.company_cars.road_list.delete"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-de992575016b",
-          "distance": 419,
+          "candidateId": "EPC-047322c834e5",
+          "distance": 468,
           "file": "src/features/company-cars/pages/CompanyCarRoadListsPage.tsx",
           "handler": "{(event) => { event.stopPropagation() onDelete(roadList) }}",
           "humanLabel": "Видалити",
-          "line": 498,
+          "line": 553,
           "permissionKeys": [],
           "score": 14
         }
@@ -16563,7 +16577,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/company-cars/pages/CompanyCarRoadListsPage.tsx",
-        "line": 79,
+        "line": 85,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -16597,7 +16611,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/company-cars/pages/CompanyCarRoadListsPage.tsx",
-        "line": 163,
+        "line": 211,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -16621,17 +16635,19 @@
       "proposedPermission": "accounting.accounting_company_cars.on_delete.command_delete",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "covered_existing",
+      "dispositionReason": "The final road-list deletion rechecks road_list.delete and crosses the dedicated mutation-policy-protected façade.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "warehouses.company_cars.road_list.delete"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [],
       "source": {
         "status": "resolved",
         "file": "src/features/company-cars/pages/CompanyCarRoadListsPage.tsx",
-        "line": 100,
+        "line": 146,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -16663,12 +16679,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-8b32a07e0412",
-          "distance": 94,
+          "candidateId": "EPC-574029c14340",
+          "distance": 107,
           "file": "src/features/company-cars/pages/CompanyCarsPage.tsx",
           "handler": "{() => setSearchValue('')}",
           "humanLabel": "Скинути",
-          "line": 182,
+          "line": 195,
           "permissionKeys": [],
           "score": 14
         }
@@ -16738,24 +16754,9 @@
       "dispositionReason": "navigation_is_guarded_by_destination_page",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [
-        "warehouses.company_cars.car.create"
-      ],
+      "canonicalPermissionKeys": [],
       "classificationSource": "automatic",
-      "bindingEvidence": [
-        {
-          "candidateId": "EPC-c4e8ad4df823",
-          "distance": 145,
-          "file": "src/features/company-cars/pages/CompanyCarsPage.tsx",
-          "handler": "{() => navigate(`${COMPANY_CARS_PATH}/new`, { state: { backgroundLocation: location, returnPath: `${location.pathname}${location.search}`, }, }) }",
-          "humanLabel": "Завести нову машину компанії",
-          "line": 208,
-          "permissionKeys": [
-            "warehouses.company_cars.car.create"
-          ],
-          "score": 56
-        }
-      ],
+      "bindingEvidence": [],
       "source": {
         "status": "resolved",
         "file": "src/features/company-cars/pages/CompanyCarsPage.tsx",
@@ -16784,23 +16785,23 @@
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
       "disposition": "covered_existing",
-      "dispositionReason": "existing_page_permission:warehouses.company_cars.car.create",
+      "dispositionReason": "The row edit entry is inert without car.edit and the direct edit route and details read use the same permission.",
       "duplicateOf": null,
       "businessActionId": null,
       "canonicalPermissionKeys": [
-        "warehouses.company_cars.car.create"
+        "warehouses.company_cars.car.edit"
       ],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-227c9ee81e42",
+          "candidateId": "EPC-9c1de3b15de2",
           "distance": 13,
           "file": "src/features/company-cars/pages/CompanyCarsPage.tsx",
           "handler": "{canEditCompanyCars ? openEditor : undefined}",
           "humanLabel": null,
-          "line": 234,
+          "line": 240,
           "permissionKeys": [
-            "warehouses.company_cars.car.create"
+            "warehouses.company_cars.car.edit"
           ],
           "score": 37
         }
@@ -16808,7 +16809,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/company-cars/pages/CompanyCarsPage.tsx",
-        "line": 247,
+        "line": 253,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -16833,23 +16834,23 @@
       "securityLevel": "low",
       "rawStatus": "No permission candidate found",
       "disposition": "covered_existing",
-      "dispositionReason": "existing_page_permission:warehouses.company_cars.car.create",
+      "dispositionReason": "Opening road lists requires road_list.open, and the direct route, car details and list reads are fail-closed on that permission.",
       "duplicateOf": null,
       "businessActionId": null,
       "canonicalPermissionKeys": [
-        "warehouses.company_cars.car.create"
+        "warehouses.company_cars.road_list.open"
       ],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-242214b30e83",
-          "distance": 321,
+          "candidateId": "EPC-909b557e4959",
+          "distance": 328,
           "file": "src/features/company-cars/pages/CompanyCarsPage.tsx",
           "handler": "{(event) => { event.stopPropagation() onRoadLists(companyCar) }}",
           "humanLabel": "Шляхові листи автомобіля",
-          "line": 384,
+          "line": 391,
           "permissionKeys": [
-            "warehouses.company_cars.car.create"
+            "warehouses.company_cars.road_list.open"
           ],
           "score": 19
         }
@@ -16882,23 +16883,23 @@
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
       "disposition": "duplicate_occurrence",
-      "dispositionReason": "same_normalized_action_as:PE-00418",
+      "dispositionReason": "The explicit edit action and row click enter the same car.edit route and are not separate permissions.",
       "duplicateOf": "PE-00418",
       "businessActionId": null,
       "canonicalPermissionKeys": [
-        "warehouses.company_cars.car.create"
+        "warehouses.company_cars.car.edit"
       ],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-227c9ee81e42",
-          "distance": 171,
+          "candidateId": "EPC-9c1de3b15de2",
+          "distance": 177,
           "file": "src/features/company-cars/pages/CompanyCarsPage.tsx",
           "handler": "{canEditCompanyCars ? openEditor : undefined}",
           "humanLabel": null,
-          "line": 234,
+          "line": 240,
           "permissionKeys": [
-            "warehouses.company_cars.car.create"
+            "warehouses.company_cars.car.edit"
           ],
           "score": 14
         }
@@ -80090,14 +80091,6 @@
     "PE-00137",
     "PE-00152",
     "PE-00163",
-    "PE-00395",
-    "PE-00397",
-    "PE-00402",
-    "PE-00403",
-    "PE-00405",
-    "PE-00411",
-    "PE-00412",
-    "PE-00414",
     "PE-00511",
     "PE-00513",
     "PE-00517",

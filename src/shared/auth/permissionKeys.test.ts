@@ -175,6 +175,26 @@ describe('human-reviewed product-group actions', () => {
   })
 })
 
+describe('human-reviewed Company Car actions', () => {
+  it('keeps car and road-list actions independent without technical draft controls', () => {
+    const actual = [
+      ...Object.values(PermissionKeys.Warehouses.CompanyCars.Car),
+      ...Object.values(PermissionKeys.Warehouses.CompanyCars.RoadList),
+    ]
+
+    expect(actual).toEqual([
+      'warehouses.company_cars.car.create',
+      'warehouses.company_cars.car.delete',
+      'warehouses.company_cars.car.edit',
+      'warehouses.company_cars.road_list.create',
+      'warehouses.company_cars.road_list.delete',
+      'warehouses.company_cars.road_list.edit',
+      'warehouses.company_cars.road_list.open',
+    ])
+    expect(new Set(actual).size).toBe(7)
+  })
+})
+
 describe('human-reviewed product-assortment actions', () => {
   it('adds six missing business rights and reuses the existing analytics page right', () => {
     const actual = [

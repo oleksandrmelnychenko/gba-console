@@ -610,14 +610,17 @@ const accountingMigrationRoutes: ConsoleRoute[] = [
   {
     path: '/accounting/company-cars/new',
     element: lazyRoute(<CompanyCarFormPage />),
+    permissionKey: PermissionKeys.Warehouses.CompanyCars.Car.Create,
   },
   {
     path: '/accounting/company-cars/edit/:id',
     element: lazyRoute(<CompanyCarFormPage />),
+    permissionKey: PermissionKeys.Warehouses.CompanyCars.Car.Edit,
   },
   {
     path: '/accounting/company-cars/:id/road-lists',
     element: lazyRoute(<CompanyCarRoadListsPage />),
+    permissionKey: PermissionKeys.Warehouses.CompanyCars.RoadList.Open,
   },
   {
     path: '/accounting/currency-convertors',
