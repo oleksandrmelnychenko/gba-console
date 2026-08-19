@@ -21,6 +21,27 @@ export const PermissionKeys = {
     SalesUkraineInterest: {
       View: 'sales.ukraine_interest.page.view',
     },
+    SalesUkraineCartReserve: {
+      View: 'sales.ukraine_cart_reserve.page.view',
+    },
+    SalesUkraineClientProductMovement: {
+      View: 'sales.ukraine_client_product_movement.page.view',
+    },
+    SalesUkraineDebtors: {
+      View: 'sales.ukraine_debtors.page.view',
+    },
+    SalesUkrainePrediction: {
+      View: 'sales.ukraine_prediction.page.view',
+    },
+    SalesUkraineReturns: {
+      View: 'sales.ukraine_returns.page.view',
+    },
+    SalesCharts: {
+      View: 'sales.charts.page.view',
+    },
+    SalesGeography: {
+      View: 'sales.geography.page.view',
+    },
     Dashboard: {
       View: 'dashboard.overview.page.view',
     },
@@ -32,6 +53,9 @@ export const PermissionKeys = {
     },
     VehicleRegistry: {
       View: 'administration.vehicle_registry.page.view',
+    },
+    SyncDocuments: {
+      View: 'administration.sync_documents.page.view',
     },
     ExpenseArticles: {
       View: 'accounting.expense_articles.page.view',
@@ -53,6 +77,9 @@ export const PermissionKeys = {
     },
     OnlineShopPayment: {
       View: 'payments.online_shop_payment.page.view',
+    },
+    AdvancePayments: {
+      View: 'payments.advance_payments.page.view',
     },
     IncomeCashflows: {
       View: 'accounting.income_cashflows.page.view',
@@ -2390,7 +2417,7 @@ export const PermissionAliases: Readonly<
   ],
 }
 
-const eventPermissionKeys = new Set<string>([
+const eventPermissionKeyList = [
   ...Object.values(PermissionKeys.ActReconciliations.Page),
   ...Object.values(PermissionKeys.ActReconciliations.Act),
   ...Object.values(PermissionKeys.ActReconciliations.History),
@@ -2403,10 +2430,18 @@ const eventPermissionKeys = new Set<string>([
   ...Object.values(PermissionKeys.SystemPages.SalesHeadDashboard),
   ...Object.values(PermissionKeys.SystemPages.SalesUkraineOffers),
   ...Object.values(PermissionKeys.SystemPages.SalesUkraineInterest),
+  ...Object.values(PermissionKeys.SystemPages.SalesUkraineCartReserve),
+  ...Object.values(PermissionKeys.SystemPages.SalesUkraineClientProductMovement),
+  ...Object.values(PermissionKeys.SystemPages.SalesUkraineDebtors),
+  ...Object.values(PermissionKeys.SystemPages.SalesUkrainePrediction),
+  ...Object.values(PermissionKeys.SystemPages.SalesUkraineReturns),
+  ...Object.values(PermissionKeys.SystemPages.SalesCharts),
+  ...Object.values(PermissionKeys.SystemPages.SalesGeography),
   ...Object.values(PermissionKeys.SystemPages.Dashboard),
   ...Object.values(PermissionKeys.SystemPages.Users),
   ...Object.values(PermissionKeys.SystemPages.Roles),
   ...Object.values(PermissionKeys.SystemPages.VehicleRegistry),
+  ...Object.values(PermissionKeys.SystemPages.SyncDocuments),
   ...Object.values(PermissionKeys.SystemPages.ExpenseArticles),
   ...Object.values(PermissionKeys.SystemPages.AdvancedReports),
   ...Object.values(PermissionKeys.SystemPages.OutgoingCashflows),
@@ -2414,6 +2449,7 @@ const eventPermissionKeys = new Set<string>([
   ...Object.values(PermissionKeys.SystemPages.ConsignmentBalances),
   ...Object.values(PermissionKeys.SystemPages.WriteOff),
   ...Object.values(PermissionKeys.SystemPages.OnlineShopPayment),
+  ...Object.values(PermissionKeys.SystemPages.AdvancePayments),
   ...Object.values(PermissionKeys.SystemPages.IncomeCashflows),
   ...Object.values(PermissionKeys.SystemPages.SupplyCart),
   ...Object.values(PermissionKeys.SystemPages.SupplySales),
@@ -2444,7 +2480,9 @@ const eventPermissionKeys = new Set<string>([
   ...Object.values(PermissionKeys.VehicleRegistry.Vehicle),
   ...Object.values(PermissionKeys.VehicleRegistry.Import),
   ...Object.values(PermissionKeys.ClientResources.Page),
+  ...Object.values(PermissionKeys.ClientResources.Country),
   ...Object.values(PermissionKeys.ClientResources.Currency),
+  ...Object.values(PermissionKeys.ClientResources.Incoterm),
   ...Object.values(PermissionKeys.ClientResources.MeasureUnit),
   ...Object.values(PermissionKeys.ClientResources.Organization),
   ...Object.values(PermissionKeys.ClientResources.PerfectClient),
@@ -2469,6 +2507,7 @@ const eventPermissionKeys = new Set<string>([
   ...Object.values(PermissionKeys.Clients.ReservationDays),
   ...Object.values(PermissionKeys.Clients.Structure),
   ...Object.values(PermissionKeys.Clients.IdentityReview),
+  ...Object.values(PermissionKeys.Clients.Recommendations),
   ...Object.values(PermissionKeys.Suppliers.Page),
   ...Object.values(PermissionKeys.Suppliers.Passport),
   ...Object.values(PermissionKeys.Suppliers.Document),
@@ -2535,10 +2574,16 @@ const eventPermissionKeys = new Set<string>([
   ...Object.values(PermissionKeys.Warehouses.CompanyCars.RoadList),
   ...Object.values(PermissionKeys.Warehouses.Premises.Page),
   ...Object.values(PermissionKeys.Warehouses.Premises.Premise),
+  ...Object.values(PermissionKeys.Warehouses.Premises.WriteOff),
   ...Object.values(PermissionKeys.Warehouses.Ukraine.Page),
   ...Object.values(PermissionKeys.Warehouses.Ukraine.Invoices),
   ...Object.values(PermissionKeys.Warehouses.Ukraine.Shipments),
   ...Object.values(PermissionKeys.Warehouses.Ukraine.Orders),
+  ...Object.values(PermissionKeys.Warehouses.Ukraine.Editing),
+  ...Object.values(PermissionKeys.Warehouses.Ukraine.InvoiceRegister),
+  ...Object.values(PermissionKeys.Warehouses.Ukraine.Verification),
+  ...Object.values(PermissionKeys.Warehouses.Ukraine.Shipment),
+  ...Object.values(PermissionKeys.Warehouses.Ukraine.Invoice),
   ...Object.values(PermissionKeys.WarehouseAccounting.Capitalization.Page),
   ...Object.values(PermissionKeys.WarehouseAccounting.WriteOff.Order),
   ...Object.values(PermissionKeys.WarehouseAccounting.WriteOff.Document),
@@ -2658,7 +2703,18 @@ const eventPermissionKeys = new Set<string>([
   ...Object.values(PermissionKeys.AdvancedReports.DocumentStructure),
   ...Object.values(PermissionKeys.OutgoingCashflows.Order),
   ...Object.values(PermissionKeys.ProductAvailabilities.Document),
-])
+] as const
+
+const uniqueEventPermissionKeys = new Set<string>(eventPermissionKeyList)
+if (uniqueEventPermissionKeys.size !== eventPermissionKeyList.length) {
+  throw new Error('Duplicate canonical event permission key in PermissionKeys')
+}
+
+export const EVENT_PERMISSION_KEYS = Object.freeze(
+  [...uniqueEventPermissionKeys].sort((left, right) => left.localeCompare(right, 'en')),
+)
+
+const eventPermissionKeys = uniqueEventPermissionKeys
 
 export function isEventPermissionKey(
   permissionKey: string,

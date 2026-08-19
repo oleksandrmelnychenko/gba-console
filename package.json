@@ -14,6 +14,8 @@
     "audit:event-permissions:matrix:check": "node scripts/classify-event-permission-matrix.mjs --check",
     "audit:event-permissions:matrix:test": "node --test scripts/classify-event-permission-matrix.unit.mjs",
     "audit:event-permissions:matrix:write": "node scripts/classify-event-permission-matrix.mjs --write",
+    "audit:event-permissions:parity": "node scripts/check-event-permission-parity.mjs",
+    "audit:event-permissions:parity:test": "node --test scripts/check-event-permission-parity.unit.mjs",
     "audit:event-permissions:test": "node --test scripts/event-permission-candidates.unit.mjs",
     "audit:event-permissions:write": "node scripts/event-permission-candidates.mjs --write",
     "dev": "vite",

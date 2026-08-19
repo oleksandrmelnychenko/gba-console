@@ -1,8 +1,10 @@
 import { describe, expect, it } from 'vitest'
 import {
+  EVENT_PERMISSION_KEYS,
   LegacyPermissionKeys,
   PermissionAliases,
   PermissionKeys,
+  isEventPermissionKey,
 } from './permissionKeys'
 
 const EXPECTED_SALES_UKRAINE_KEYS = [
@@ -44,6 +46,14 @@ const EXPECTED_SUPPLIER_ORGANIZATION_KEYS = [
   'services.supplier_organizations.document.export',
 ] as const
 
+describe('canonical event permission set', () => {
+  it('contains exactly 479 unique canonical keys', () => {
+    expect(EVENT_PERMISSION_KEYS).toHaveLength(479)
+    expect(new Set(EVENT_PERMISSION_KEYS).size).toBe(479)
+    expect(EVENT_PERMISSION_KEYS.every(isEventPermissionKey)).toBe(true)
+  })
+})
+
 const EXPECTED_PROVIDING_SERVICE_ACT_KEYS = [
   'services.providing_service_acts.page.view',
   'services.providing_service_acts.act.edit',
@@ -59,10 +69,18 @@ const EXPECTED_NEW_PAGE_KEYS = [
   'sales.head_dashboard.page.view',
   'sales.ukraine_offers.page.view',
   'sales.ukraine_interest.page.view',
+  'sales.ukraine_cart_reserve.page.view',
+  'sales.ukraine_client_product_movement.page.view',
+  'sales.ukraine_debtors.page.view',
+  'sales.ukraine_prediction.page.view',
+  'sales.ukraine_returns.page.view',
+  'sales.charts.page.view',
+  'sales.geography.page.view',
   'dashboard.overview.page.view',
   'administration.users.page.view',
   'administration.roles.page.view',
   'administration.vehicle_registry.page.view',
+  'administration.sync_documents.page.view',
   'accounting.expense_articles.page.view',
   'accounting.advanced_reports.page.view',
   'accounting.outgoing_cashflows.page.view',
@@ -70,6 +88,7 @@ const EXPECTED_NEW_PAGE_KEYS = [
   'warehouse_accounting.consignment_balances.page.view',
   'warehouse_accounting.write_off.page.view',
   'payments.online_shop_payment.page.view',
+  'payments.advance_payments.page.view',
   'accounting.income_cashflows.page.view',
   'orders.supply_cart.page.view',
   'orders.supply_sales.page.view',
