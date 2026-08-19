@@ -15,6 +15,7 @@ import { useCallback, useEffect, useMemo, useReducer, useState } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { translate } from '../../../shared/i18n/translate'
 import { useI18n } from '../../../shared/i18n/useI18n'
+import { formatKyivBusinessDate } from '../../../shared/date/dateTime'
 import {
   closePendingExportDocumentWindow,
   openExportDocumentInWindow,
@@ -60,8 +61,9 @@ function useProductAvailabilitiesPageModel() {
   const [availabilities, setAvailabilities] = useValueState<ConsignmentAvailabilityItem[]>([])
   const [storages, setStorages] = useValueState<Storage[]>([])
   const [selectedStorageNetId, setSelectedStorageNetId] = useValueState('')
-  const [dateFrom, setDateFrom] = useValueState('')
-  const [dateTo, setDateTo] = useValueState('')
+  const initialBusinessDate = useMemo(() => formatKyivBusinessDate(), [])
+  const [dateFrom, setDateFrom] = useValueState(initialBusinessDate)
+  const [dateTo, setDateTo] = useValueState(initialBusinessDate)
   const [searchDraft, setSearchDraft] = useValueState('')
   const [searchValue, setSearchValue] = useValueState('')
   const [debouncedSearch] = useDebouncedValue(searchDraft, 400)
@@ -215,9 +217,11 @@ function useProductAvailabilitiesPageModel() {
   }
 
   function resetFilters() {
+    const businessDate = formatKyivBusinessDate()
+
     setPage(1)
-    setDateFrom('')
-    setDateTo('')
+    setDateFrom(businessDate)
+    setDateTo(businessDate)
     setSearchDraft('')
     setSearchValue('')
     setSelectedStorageNetId(storageOptions[0]?.value || '')

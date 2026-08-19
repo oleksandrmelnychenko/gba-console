@@ -2,6 +2,7 @@ import { MantineProvider } from '@mantine/core'
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { I18nProvider } from '../../../shared/i18n/I18nProvider'
+import { formatKyivBusinessDate } from '../../../shared/date/dateTime'
 import {
   exportProductAvailabilities,
   getProductAvailabilities,
@@ -21,6 +22,12 @@ vi.mock('../../../shared/ui/data-table/DataTable', () => ({
 
 vi.mock('../../../shared/ui/paginator/Paginator', () => ({
   Paginator: () => <div data-testid="availability-paginator" />,
+}))
+
+vi.mock('../../../shared/documents/openExportDocument', () => ({
+  closePendingExportDocumentWindow: vi.fn(),
+  openExportDocumentInWindow: vi.fn(() => false),
+  openPendingExportDocumentWindow: vi.fn(() => null),
 }))
 
 function renderPage() {
@@ -47,22 +54,24 @@ describe('ProductAvailabilitiesPage date range', () => {
     })
   })
 
-  it('requests every active lot by default instead of silently limiting availability to seven days', async () => {
+  it('requests exactly the current Kyiv business day by default', async () => {
+    const today = formatKyivBusinessDate()
+
     renderPage()
 
     await waitFor(() => {
       expect(getProductAvailabilities).toHaveBeenCalledWith({
-        from: undefined,
+        from: today,
         limit: expect.any(Number),
         offset: 0,
         storageNetId: 'storage-3',
-        to: undefined,
+        to: today,
         vendorCode: '',
       })
     })
 
-    expect((screen.getByLabelText('Від') as HTMLInputElement).value).toBe('')
-    expect((screen.getByLabelText('До') as HTMLInputElement).value).toBe('')
+    expect((screen.getByLabelText('Від') as HTMLInputElement).value).toBe(today)
+    expect((screen.getByLabelText('До') as HTMLInputElement).value).toBe(today)
   })
 
   it('keeps filtering by Kyiv business dates when the user explicitly selects both bounds', async () => {
@@ -85,6 +94,46 @@ describe('ProductAvailabilitiesPage date range', () => {
         offset: 0,
         storageNetId: 'storage-3',
         to: '2026-08-08',
+        vendorCode: '',
+      })
+    })
+  })
+
+  it('restores the current Kyiv business day when filters are reset', async () => {
+    const today = formatKyivBusinessDate()
+
+    renderPage()
+
+    await waitFor(() => expect(getProductAvailabilities).toHaveBeenCalledTimes(1))
+
+    fireEvent.change(screen.getByLabelText('Від'), {
+      target: { value: '2026-08-01' },
+    })
+    fireEvent.change(screen.getByLabelText('До'), {
+      target: { value: '2026-08-08' },
+    })
+    fireEvent.click(screen.getByLabelText('Скинути'))
+
+    await waitFor(() => {
+      expect((screen.getByLabelText('Від') as HTMLInputElement).value).toBe(today)
+      expect((screen.getByLabelText('До') as HTMLInputElement).value).toBe(today)
+    })
+  })
+
+  it('exports the same one-day Kyiv range shown in the filter', async () => {
+    const today = formatKyivBusinessDate()
+    vi.mocked(exportProductAvailabilities).mockResolvedValue({})
+
+    renderPage()
+
+    await waitFor(() => expect(getProductAvailabilities).toHaveBeenCalledTimes(1))
+    fireEvent.click(screen.getByLabelText('Друк PDF'))
+
+    await waitFor(() => {
+      expect(exportProductAvailabilities).toHaveBeenCalledWith({
+        from: today,
+        storageNetId: 'storage-3',
+        to: today,
         vendorCode: '',
       })
     })

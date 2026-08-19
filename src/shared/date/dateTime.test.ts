@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest'
-import { formatDateInputForQuery, SYNC_DATA_RANGE_START, toDateTimeQuery, toQueryString } from './dateTime'
+import {
+  formatDateInputForQuery,
+  formatKyivBusinessDate,
+  SYNC_DATA_RANGE_START,
+  toDateTimeQuery,
+  toQueryString,
+} from './dateTime'
 
 describe('SYNC_DATA_RANGE_START', () => {
   it('matches the current operational sync baseline', () => {
@@ -19,6 +25,18 @@ describe('formatDateInputForQuery', () => {
   it('passes invalid non-empty values through for server-side validation', () => {
     expect(formatDateInputForQuery('not-a-date')).toBe('not-a-date')
     expect(formatDateInputForQuery('2026-02-31')).toBe('2026-02-31')
+  })
+})
+
+describe('formatKyivBusinessDate', () => {
+  it('uses the Kyiv calendar day around the UTC midnight boundary', () => {
+    expect(formatKyivBusinessDate(new Date('2026-08-18T20:59:59.999Z'))).toBe('2026-08-18')
+    expect(formatKyivBusinessDate(new Date('2026-08-18T21:00:00.000Z'))).toBe('2026-08-19')
+  })
+
+  it('uses the winter Kyiv offset without relying on the workstation timezone', () => {
+    expect(formatKyivBusinessDate(new Date('2026-12-31T21:59:59.999Z'))).toBe('2026-12-31')
+    expect(formatKyivBusinessDate(new Date('2026-12-31T22:00:00.000Z'))).toBe('2027-01-01')
   })
 })
 
