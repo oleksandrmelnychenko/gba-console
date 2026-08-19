@@ -145,8 +145,10 @@
 - [x] Довести binding для всіх реальних covered actions, де audit поки не має
   машинного `bindingEvidence`: `705/705`,
   `coveredWithoutBindingEvidence = 0`.
-- [ ] Фінальний authenticated HTTP matrix: без права `403`, з правом запит
-  проходить до бізнес-валідації.
+- [x] Фінальний authenticated HTTP matrix: 20/20 representative protected
+  calls без права повернули `403`; після versioned assignment 6 canonical
+  keys усі 20/20 пройшли authorization до `200` або business-validation
+  `400`. Окремо підтверджені unauthenticated `401` і stale-version `409`.
 
 ## 6. Аудит і CI
 
@@ -181,6 +183,9 @@
 - [ ] Smoke test `/users/roles`, effective permissions та representative `403`.
 - [ ] Поступове призначення ролям і моніторинг authorization failures.
 - [ ] Зафіксувати before/after/rollback release report.
+  Поточний перевірений checkpoint уже зафіксовано в
+  `docs/event-permissions-release-checkpoint-2026-08-20.md`; фінальний report
+  закривається після production rollout.
 
 ## Поточний етап
 
