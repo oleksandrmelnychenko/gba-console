@@ -140,6 +140,7 @@ import { WizardShoppingCartGrid } from './WizardShoppingCartGrid'
 
 const EMPTY_GUID = '00000000-0000-0000-0000-000000000000'
 const CHANGE_PRODUCT_DESCRIPTION_PERMISSION = PermissionKeys.SalesUkraine.Sale.EditProductComment
+const CREATE_PREORDER_PERMISSION = PermissionKeys.SalesUkraineInterest.Preorder.Create
 const amountFormatter = new Intl.NumberFormat('uk-UA', { maximumFractionDigits: 2, minimumFractionDigits: 2 })
 const qtyFormatter = new Intl.NumberFormat('uk-UA', { maximumFractionDigits: 3 })
 const PRODUCT_SEARCH_MIN_QUERY_LENGTH = 3
@@ -264,6 +265,7 @@ export function NewSaleProductsStep({
 }) {
   const { t } = useI18n()
   const { hasPermission, session, user } = useAuth()
+  const canCreatePreorder = hasPermission(CREATE_PREORDER_PERMISSION)
   const keyboard = useWizardKeyboard(1)
 
   const [searchMode, setSearchMode] = useState('5')
@@ -2509,7 +2511,7 @@ export function NewSaleProductsStep({
   }
 
   function openInterest(product: WizardSaleProduct | null) {
-    if (!product?.NetUid || !agreementNetId) {
+    if (!canCreatePreorder || !product?.NetUid || !agreementNetId) {
       return
     }
 
@@ -3486,7 +3488,7 @@ export function NewSaleProductsStep({
             products={analogueState.items}
             renderExtra={(product) => renderPriceExtra(product)}
             onOpenCard={setProductCardNetId}
-            onProductInterest={agreementNetId ? (product) => openInterest(product) : undefined}
+            onProductInterest={canCreatePreorder && agreementNetId ? (product) => openInterest(product) : undefined}
             onPick={(index) => {
               focusAnalogue(index)
 
@@ -3525,7 +3527,7 @@ export function NewSaleProductsStep({
               </Group>
             )}
             onOpenCard={setProductCardNetId}
-            onProductInterest={agreementNetId ? (product) => openInterest(product) : undefined}
+            onProductInterest={canCreatePreorder && agreementNetId ? (product) => openInterest(product) : undefined}
             onPick={(index) => {
               focusComponent(index)
 
@@ -3893,7 +3895,7 @@ export function NewSaleProductsStep({
 
       <ProductInterestModal
         clientAgreementNetId={agreementNetId ?? ''}
-        opened={Boolean(interestProduct?.NetUid && agreementNetId)}
+        opened={Boolean(canCreatePreorder && interestProduct?.NetUid && agreementNetId)}
         productNetId={interestProduct?.NetUid ?? ''}
         onClose={closeInterest}
         onCreated={closeInterest}

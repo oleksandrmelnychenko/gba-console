@@ -7,11 +7,15 @@ import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { I18nProvider } from '../../../shared/i18n/I18nProvider'
 import {
   createSupplyOrderUkrainePaymentProtocol,
+  createUkraineMergedServicePaymentTask,
+  deleteUkraineMergedService,
+  deleteUkraineMergedServicePaymentTask,
   deleteSupplyOrderUkrainePaymentProtocol,
   getLogisticPaymentTaskResponsibleUsers,
   getResponsibleUsers,
   getSupplyOrderUkraineById,
   getSupplyOrderUkraineProtocolKeys,
+  uploadUkraineMergedService,
 } from '../api/paymentProtocolsApi'
 import { SupplyUkrainePaymentProtocolsView } from './SupplyUkrainePaymentProtocolsView'
 
@@ -26,12 +30,14 @@ vi.mock('../../auth/usePermissions', () => ({
 
 vi.mock('../api/paymentProtocolsApi', () => ({
   createSupplyOrderUkrainePaymentProtocol: vi.fn(),
+  createUkraineMergedServicePaymentTask: vi.fn(),
+  deleteUkraineMergedService: vi.fn(),
+  deleteUkraineMergedServicePaymentTask: vi.fn(),
   deleteSupplyOrderUkrainePaymentProtocol: vi.fn(),
   getLogisticPaymentTaskResponsibleUsers: vi.fn(),
   getResponsibleUsers: vi.fn(),
   getSupplyOrderUkraineById: vi.fn(),
   getSupplyOrderUkraineProtocolKeys: vi.fn(),
-  updateSupplyOrderUkraine: vi.fn(),
   uploadUkraineMergedService: vi.fn(),
 }))
 
@@ -41,7 +47,31 @@ vi.mock('../../../shared/ui/AppDrawer', () => ({
 }))
 
 vi.mock('../components/MergedServicesSection', () => ({
-  MergedServicesSection: () => null,
+  MergedServicesSection: ({
+    onAddPaymentTask,
+    onCreateService,
+    onRemovePaymentTask,
+    onRemoveService,
+    permissions,
+  }: {
+    onAddPaymentTask: (service: { Id: number }, values: { comment: string; payToDate: null; responsible: null }, isAccounting: boolean) => Promise<void>
+    onCreateService: (service: { Id: number }, documents: File[]) => Promise<void>
+    onRemovePaymentTask: (service: { Id: number; SupplyPaymentTask?: { Id: number } }, task: { Id: number }) => Promise<void>
+    onRemoveService: (service: { Id: number }) => Promise<void>
+    permissions: {
+      canCreatePaymentTask: boolean
+      canCreateService: boolean
+      canRemovePaymentTask: boolean
+      canRemoveService: boolean
+    }
+  }) => (
+    <div>
+      {permissions.canCreateService ? <button type="button" onClick={() => void onCreateService({ Id: 14 }, [])}>Додати сервіс</button> : null}
+      {permissions.canRemoveService ? <button type="button" onClick={() => void onRemoveService({ Id: 14 })}>Видалити сервіс</button> : null}
+      {permissions.canCreatePaymentTask ? <button type="button" onClick={() => void onAddPaymentTask({ Id: 14 }, { comment: '', payToDate: null, responsible: null }, false)}>Додати задачу сервісу</button> : null}
+      {permissions.canRemovePaymentTask ? <button type="button" onClick={() => void onRemovePaymentTask({ Id: 14, SupplyPaymentTask: { Id: 21 } }, { Id: 21 })}>Видалити задачу сервісу</button> : null}
+    </div>
+  ),
 }))
 
 vi.mock('../components/PaymentDeliveryProtocolsSection', () => ({
@@ -129,6 +159,10 @@ describe('SupplyUkrainePaymentProtocolsView canonical permission guards', () => 
     vi.mocked(getLogisticPaymentTaskResponsibleUsers).mockResolvedValue([])
     vi.mocked(createSupplyOrderUkrainePaymentProtocol).mockResolvedValue(order)
     vi.mocked(deleteSupplyOrderUkrainePaymentProtocol).mockResolvedValue(order)
+    vi.mocked(createUkraineMergedServicePaymentTask).mockResolvedValue(order)
+    vi.mocked(deleteUkraineMergedService).mockResolvedValue(order)
+    vi.mocked(deleteUkraineMergedServicePaymentTask).mockResolvedValue(order)
+    vi.mocked(uploadUkraineMergedService).mockResolvedValue(order)
   })
 
   it('does not mount the page model without page.view', () => {
@@ -200,5 +234,33 @@ describe('SupplyUkrainePaymentProtocolsView canonical permission guards', () => 
     await waitFor(() => expect(getLogisticPaymentTaskResponsibleUsers).toHaveBeenCalledTimes(1))
     expect(getResponsibleUsers).not.toHaveBeenCalled()
     expect(getSupplyOrderUkraineProtocolKeys).not.toHaveBeenCalled()
+  })
+
+  it('keeps merged-service CRUD independent from its payment-task CRUD', async () => {
+    allowedPermissions.add(PermissionKeys.OrdersUkraine.Page.View)
+    allowedPermissions.add(PermissionKeys.ProductDeliveryProtocols.UnifiedService.Create)
+    allowedPermissions.add(PermissionKeys.ProductDeliveryProtocols.UnifiedService.Delete)
+    const serviceView = renderPage()
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Додати сервіс' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Видалити сервіс' }))
+    await waitFor(() => expect(uploadUkraineMergedService).toHaveBeenCalledWith('order-1', { Id: 14 }, []))
+    expect(deleteUkraineMergedService).toHaveBeenCalledWith('order-1', { Id: 14 })
+    expect(createUkraineMergedServicePaymentTask).not.toHaveBeenCalled()
+    expect(deleteUkraineMergedServicePaymentTask).not.toHaveBeenCalled()
+
+    serviceView.unmount()
+    allowedPermissions.clear()
+    allowedPermissions.add(PermissionKeys.OrdersUkraine.Page.View)
+    allowedPermissions.add(PermissionKeys.OrdersUkraine.LogisticWay.CreatePaymentTask)
+    allowedPermissions.add(PermissionKeys.OrdersUkraine.LogisticWay.DeletePaymentTask)
+    renderPage()
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Додати задачу сервісу' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Видалити задачу сервісу' }))
+    await waitFor(() => expect(createUkraineMergedServicePaymentTask).toHaveBeenCalled())
+    expect(deleteUkraineMergedServicePaymentTask).toHaveBeenCalled()
+    expect(screen.queryByRole('button', { name: 'Додати сервіс' })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Видалити сервіс' })).toBeNull()
   })
 })

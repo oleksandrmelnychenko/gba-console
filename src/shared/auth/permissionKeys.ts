@@ -18,6 +18,9 @@ export const PermissionKeys = {
     SalesUkraineOffers: {
       View: 'sales.ukraine_offers.page.view',
     },
+    SalesUkraineInterest: {
+      View: 'sales.ukraine_interest.page.view',
+    },
     Dashboard: {
       View: 'dashboard.overview.page.view',
     },
@@ -131,6 +134,11 @@ export const PermissionKeys = {
       Edit: 'sales.ukraine.offer.edit',
       Delete: 'sales.ukraine.offer.delete',
       ExtendValidity: 'sales.ukraine.offer.extend_validity',
+    },
+  },
+  SalesUkraineInterest: {
+    Preorder: {
+      Create: 'sales.ukraine_interest.preorder.create',
     },
   },
   SupplySales: {
@@ -1133,6 +1141,7 @@ export type SystemPagePermissionKey =
   | Values<typeof PermissionKeys.SystemPages.SalesCockpit>
   | Values<typeof PermissionKeys.SystemPages.SalesHeadDashboard>
   | Values<typeof PermissionKeys.SystemPages.SalesUkraineOffers>
+  | Values<typeof PermissionKeys.SystemPages.SalesUkraineInterest>
   | Values<typeof PermissionKeys.SystemPages.Dashboard>
   | Values<typeof PermissionKeys.SystemPages.Users>
   | Values<typeof PermissionKeys.SystemPages.Roles>
@@ -1174,6 +1183,9 @@ export type SalesHeadDashboardPermissionKey =
 
 export type SalesUkraineOffersPermissionKey =
   | Values<typeof PermissionKeys.SalesUkraineOffers.Offer>
+
+export type SalesUkraineInterestPermissionKey =
+  | Values<typeof PermissionKeys.SalesUkraineInterest.Preorder>
 
 export type SupplySalesPermissionKey =
   Values<typeof PermissionKeys.SupplySales.Sale>
@@ -1464,6 +1476,7 @@ export type PermissionKey =
   | SalesCockpitPermissionKey
   | SalesHeadDashboardPermissionKey
   | SalesUkraineOffersPermissionKey
+  | SalesUkraineInterestPermissionKey
   | SupplySalesPermissionKey
   | UsersPermissionKey
   | RolesPermissionKey
@@ -2380,6 +2393,7 @@ const eventPermissionKeys = new Set<string>([
   ...Object.values(PermissionKeys.SystemPages.SalesCockpit),
   ...Object.values(PermissionKeys.SystemPages.SalesHeadDashboard),
   ...Object.values(PermissionKeys.SystemPages.SalesUkraineOffers),
+  ...Object.values(PermissionKeys.SystemPages.SalesUkraineInterest),
   ...Object.values(PermissionKeys.SystemPages.Dashboard),
   ...Object.values(PermissionKeys.SystemPages.Users),
   ...Object.values(PermissionKeys.SystemPages.Roles),
@@ -2411,6 +2425,7 @@ const eventPermissionKeys = new Set<string>([
   ...Object.values(PermissionKeys.SalesCockpit.Task),
   ...Object.values(PermissionKeys.SalesHeadDashboard.Task),
   ...Object.values(PermissionKeys.SalesUkraineOffers.Offer),
+  ...Object.values(PermissionKeys.SalesUkraineInterest.Preorder),
   ...Object.values(PermissionKeys.SupplySales.Sale),
   ...Object.values(PermissionKeys.Users.User),
   ...Object.values(PermissionKeys.Roles.Role),

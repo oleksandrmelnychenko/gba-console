@@ -6,6 +6,7 @@ import type {
   SupplyOrderUkraine,
   SupplyOrderUkrainePaymentDeliveryProtocol,
   SupplyOrderUkrainePaymentDeliveryProtocolKey,
+  SupplyPaymentTask,
   SupplyOrganization,
 } from '../types'
 
@@ -85,6 +86,65 @@ export async function updateSupplyOrderUkraine(order: SupplyOrderUkraine): Promi
   const result = await apiRequest<unknown>('/supplies/ukraine/order/update', {
     method: 'POST',
     body: order,
+  })
+
+  return normalizeOrder(result)
+}
+
+function mergedServiceIdentity(orderNetUid: string, service: MergedService) {
+  return {
+    OrderNetUid: orderNetUid,
+    ServiceId: service.Id || 0,
+    ServiceNetUid: service.NetUid || '00000000-0000-0000-0000-000000000000',
+  }
+}
+
+export async function createUkraineMergedServicePaymentTask(
+  orderNetUid: string,
+  service: MergedService,
+  paymentTask: SupplyPaymentTask,
+  isAccounting: boolean,
+): Promise<SupplyOrderUkraine | null> {
+  const result = await apiRequest<unknown>('/supplies/ukraine/order/merged-services/payment-tasks/create', {
+    method: 'POST',
+    body: {
+      ...mergedServiceIdentity(orderNetUid, service),
+      IsAccounting: isAccounting,
+      PaymentTask: paymentTask,
+    },
+  })
+
+  return normalizeOrder(result)
+}
+
+export async function deleteUkraineMergedServicePaymentTask(
+  orderNetUid: string,
+  service: MergedService,
+  paymentTask: SupplyPaymentTask,
+  isAccounting: boolean,
+): Promise<SupplyOrderUkraine | null> {
+  const result = await apiRequest<unknown>('/supplies/ukraine/order/merged-services/payment-tasks/delete', {
+    method: 'POST',
+    body: {
+      ...mergedServiceIdentity(orderNetUid, service),
+      IsAccounting: isAccounting,
+      PaymentTask: {
+        Id: paymentTask.Id || 0,
+        NetUid: paymentTask.NetUid || '00000000-0000-0000-0000-000000000000',
+      },
+    },
+  })
+
+  return normalizeOrder(result)
+}
+
+export async function deleteUkraineMergedService(
+  orderNetUid: string,
+  service: MergedService,
+): Promise<SupplyOrderUkraine | null> {
+  const result = await apiRequest<unknown>('/supplies/ukraine/order/merged-services/delete', {
+    method: 'POST',
+    body: mergedServiceIdentity(orderNetUid, service),
   })
 
   return normalizeOrder(result)

@@ -49,6 +49,7 @@ const EXPECTED_NEW_PAGE_KEYS = [
   'sales.cockpit.page.view',
   'sales.head_dashboard.page.view',
   'sales.ukraine_offers.page.view',
+  'sales.ukraine_interest.page.view',
   'dashboard.overview.page.view',
   'administration.users.page.view',
   'administration.roles.page.view',
@@ -86,7 +87,7 @@ const EXPECTED_ONLINE_SHOP_SEO_ACTION_KEYS = [
 ] as const
 
 describe('newly classified page permission catalog', () => {
-  it('contains twenty-six unique business page keys and no technical controls', () => {
+  it('contains twenty-seven unique business page keys and no technical controls', () => {
     const actual = Object.values(PermissionKeys.SystemPages).flatMap(
       Object.values,
     )
@@ -234,6 +235,17 @@ describe('sales cockpit and offers business permissions', () => {
       'sales.ukraine.offer.extend_validity',
     ])
     expect(new Set(actual).size).toBe(14)
+  })
+})
+
+describe('sales interest business permissions', () => {
+  it('keeps page access and preorder creation as separate boundaries', () => {
+    expect(PermissionKeys.SystemPages.SalesUkraineInterest.View).toBe(
+      'sales.ukraine_interest.page.view',
+    )
+    expect(PermissionKeys.SalesUkraineInterest.Preorder.Create).toBe(
+      'sales.ukraine_interest.preorder.create',
+    )
   })
 })
 

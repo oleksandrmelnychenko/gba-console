@@ -4725,6 +4725,80 @@
       "disposition": "technical_ui",
       "reason": "The row location action only opens a drawer over placement values already returned by the independently authorized details request; it performs no additional API call or business operation."
     },
+    "PE-01139": {
+      "disposition": "technical_ui",
+      "reason": "The KPI tile only navigates to the metric route. It does not load or mutate business data itself, and the destination route/page independently enforces its own page permission."
+    },
+    "PE-01269": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["sales.ukraine_interest.preorder.create"],
+      "reason": "The modal fails closed without preorder.create, rechecks the capability at final submit, and calls the permission- and mutation-policy-protected preorder endpoint."
+    },
+    "PE-01271": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["products.assortment.page.view"],
+      "reason": "The product-card opener is rendered only with the existing assortment page right and loads details through the already protected assortment/details façade."
+    },
+    "PE-01274": {
+      "disposition": "technical_ui",
+      "reason": "Load more only advances pagination for the already authorized interest registry; it defines no separate business capability."
+    },
+    "PE-01567": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["orders.ukraine.logistic_way.delete_payment_task"],
+      "reason": "The payment-task trash action is hidden without delete_payment_task and reaches a final handler that rechecks the right before the narrow server-side delete endpoint."
+    },
+    "PE-01569": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["orders.ukraine.logistic_way.create_payment_task"],
+      "reason": "The payment-task form submit is exposed only with create_payment_task and reaches a final handler that rechecks the right before the narrow server-side create endpoint."
+    },
+    "PE-01570": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-01578",
+      "canonicalPermissionKeys": ["orders.delivery_protocol.unified_service.delete"],
+      "reason": "The card trash icon only selects the merged service for the confirmation workflow finalized by PE-01578."
+    },
+    "PE-01571": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-01569",
+      "canonicalPermissionKeys": ["orders.ukraine.logistic_way.create_payment_task"],
+      "reason": "This component callback is the non-accounting wiring of the same create-payment-task submit finalized by PE-01569."
+    },
+    "PE-01572": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-01569",
+      "canonicalPermissionKeys": ["orders.ukraine.logistic_way.create_payment_task"],
+      "reason": "Opening the non-accounting task form is the first local step of the create-payment-task workflow finalized by PE-01569."
+    },
+    "PE-01573": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-01569",
+      "canonicalPermissionKeys": ["orders.ukraine.logistic_way.create_payment_task"],
+      "reason": "This component callback is the accounting wiring of the same create-payment-task submit finalized by PE-01569."
+    },
+    "PE-01574": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-01569",
+      "canonicalPermissionKeys": ["orders.ukraine.logistic_way.create_payment_task"],
+      "reason": "Opening the accounting task form is the first local step of the create-payment-task workflow finalized by PE-01569."
+    },
+    "PE-01575": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-01576",
+      "canonicalPermissionKeys": ["orders.delivery_protocol.unified_service.create"],
+      "reason": "Opening the merged-service form is the first local step of the unified-service create workflow finalized by PE-01576."
+    },
+    "PE-01576": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["orders.delivery_protocol.unified_service.create"],
+      "reason": "The final service create handler rechecks unified_service.create and calls the protected Ukraine merged-service upload endpoint, which rejects embedded payment-task overposting."
+    },
+    "PE-01578": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["orders.delivery_protocol.unified_service.delete"],
+      "reason": "The final confirmation rechecks unified_service.delete and sends only order/service identities to the narrow server-side delete endpoint."
+    },
     "PE-01580": {
       "disposition": "duplicate_occurrence",
       "duplicateOf": "PE-01584",

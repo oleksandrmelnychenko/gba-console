@@ -3,11 +3,13 @@ import { notifications } from '@mantine/notifications'
 import { CircleAlert } from 'lucide-react'
 import { type FormEvent } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
+import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { AppModal } from '../../../shared/ui/AppModal'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { usePersistentCreateMutation } from '../../sales-ukraine/persistentCreateMutation'
 import { createPreorder } from '../api/salesPreordersApi'
+import { usePermissions } from '../../auth/usePermissions'
 import './product-interest-modal.css'
 
 export type ProductInterestModalProps = {
@@ -41,6 +43,8 @@ export function ProductInterestModal({
   onCreated,
 }: ProductInterestModalProps) {
   const { t } = useI18n()
+  const { can } = usePermissions()
+  const canCreate = can(PermissionKeys.SalesUkraineInterest.Preorder.Create)
   const [form, setForm] = useValueState<InterestFormState>(createInitialForm)
   const [touched, setTouched] = useValueState(false)
   const [isCreating, setCreating] = useValueState(false)
@@ -70,7 +74,7 @@ export function ProductInterestModal({
     event.preventDefault()
     setTouched(true)
 
-    if (!isPositiveNumber(form.qty)) {
+    if (!canCreate || !isPositiveNumber(form.qty)) {
       return
     }
 
@@ -106,7 +110,7 @@ export function ProductInterestModal({
     <AppModal
       centered
       className="product-interest-modal"
-      opened={opened}
+      opened={opened && canCreate}
       size="xs"
       title={<span className="product-interest-modal__title">{t('Зацікавленість')}</span>}
       onClose={closeModal}
@@ -145,7 +149,7 @@ export function ProductInterestModal({
             <Button color="gray" disabled={isCreating} type="button" variant="light" onClick={closeModal}>
               {t('Скасувати')}
             </Button>
-            <Button color={CREATE_ACTION_COLOR} loading={isCreating} type="submit">
+            <Button color={CREATE_ACTION_COLOR} disabled={!canCreate} loading={isCreating} type="submit">
               {t('Створити')}
             </Button>
           </Group>

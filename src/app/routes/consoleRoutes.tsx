@@ -843,6 +843,7 @@ const plannedConsoleRoutes: ConsoleRoute[] = [
   },
   {
     path: '/sales/ukraine/interest',
+    permissionKey: PermissionKeys.SystemPages.SalesUkraineInterest.View,
     element: (
       <SalesDashboardShell>
         {lazyRoute(<SalesPreordersInterestPage />)}

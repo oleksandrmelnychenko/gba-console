@@ -16,6 +16,7 @@ const EXPECTED_NEW_PAGE_PERMISSIONS = {
   '/sales/cockpit': PermissionKeys.SystemPages.SalesCockpit.View,
   '/sales/cockpit/head': PermissionKeys.SystemPages.SalesHeadDashboard.View,
   '/sales/ukraine/offers': PermissionKeys.SystemPages.SalesUkraineOffers.View,
+  '/sales/ukraine/interest': PermissionKeys.SystemPages.SalesUkraineInterest.View,
   '/service/organisations':
     PermissionKeys.SystemPages.ServiceOrganisations.View,
   '/sad/all': PermissionKeys.SystemPages.Sad.View,

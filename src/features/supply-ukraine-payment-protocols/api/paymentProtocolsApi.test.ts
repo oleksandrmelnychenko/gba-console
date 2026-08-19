@@ -2,6 +2,9 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { apiRequest } from '../../../shared/api/apiClient'
 import {
   createSupplyOrderUkrainePaymentProtocol,
+  createUkraineMergedServicePaymentTask,
+  deleteUkraineMergedService,
+  deleteUkraineMergedServicePaymentTask,
   deleteSupplyOrderUkrainePaymentProtocol,
   getLogisticPaymentTaskResponsibleUsers,
   getResponsibleUsers,
@@ -63,5 +66,55 @@ describe('payment protocols permission-scoped API', () => {
       body: protocol,
       query: { netId: 'order-1' },
     })
+  })
+
+  it('uses narrow merged-service and payment-task mutation façades', async () => {
+    const service = { Id: 14, NetUid: 'service-1' }
+    const task = { Id: 21, NetUid: 'task-1' }
+
+    await createUkraineMergedServicePaymentTask('order-1', service, task, true)
+    await deleteUkraineMergedServicePaymentTask('order-1', service, task, false)
+    await deleteUkraineMergedService('order-1', service)
+
+    expect(apiRequestMock).toHaveBeenNthCalledWith(
+      1,
+      '/supplies/ukraine/order/merged-services/payment-tasks/create',
+      {
+        method: 'POST',
+        body: {
+          IsAccounting: true,
+          OrderNetUid: 'order-1',
+          PaymentTask: task,
+          ServiceId: 14,
+          ServiceNetUid: 'service-1',
+        },
+      },
+    )
+    expect(apiRequestMock).toHaveBeenNthCalledWith(
+      2,
+      '/supplies/ukraine/order/merged-services/payment-tasks/delete',
+      {
+        method: 'POST',
+        body: {
+          IsAccounting: false,
+          OrderNetUid: 'order-1',
+          PaymentTask: { Id: 21, NetUid: 'task-1' },
+          ServiceId: 14,
+          ServiceNetUid: 'service-1',
+        },
+      },
+    )
+    expect(apiRequestMock).toHaveBeenNthCalledWith(
+      3,
+      '/supplies/ukraine/order/merged-services/delete',
+      {
+        method: 'POST',
+        body: {
+          OrderNetUid: 'order-1',
+          ServiceId: 14,
+          ServiceNetUid: 'service-1',
+        },
+      },
+    )
   })
 })
