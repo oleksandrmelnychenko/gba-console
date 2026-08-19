@@ -31,6 +31,7 @@ import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn } from '../../../shared/ui/data-table/types'
 import { TableRowAction } from '../../../shared/ui/table-row-action'
 import { upgradeHttpToHttps } from '../../../shared/url/upgradeHttpToHttps'
+import { useAuth } from '../../auth/useAuth'
 import { CashFlowDetailContent } from '../../accounting-cash-flow/components/CashFlowDetailContent'
 import { getAccountingCashFlowPaymentStatus } from '../../accounting-cash-flow/accountingCashFlowPaymentStatus'
 import { getAccountingCashFlowDrilldownRoute } from '../../accounting-cash-flow/cashFlowDrilldown'
@@ -83,6 +84,13 @@ import {
   type SupplyPaymentTask,
 } from '../types'
 import './available-payments-detail-drawer.css'
+import {
+  AVAILABLE_PAYMENTS_CASH_FLOW_OPEN_PERMISSION,
+  AVAILABLE_PAYMENTS_MOVEMENT_CREATE_PERMISSION,
+  AVAILABLE_PAYMENTS_OUTCOME_CREATE_PERMISSION,
+  AVAILABLE_PAYMENTS_TASK_MARK_AVAILABLE_PERMISSION,
+  AVAILABLE_PAYMENTS_TASK_MERGE_PERMISSION,
+} from '../permissions'
 
 type AvailablePaymentsDetailDrawerProps = {
   filesByTaskId: Record<string, File[]>
@@ -187,7 +195,13 @@ function useAvailablePaymentsDetailDrawerModel({
   onToggleMarked,
 }: AvailablePaymentsDetailDrawerProps) {
   const { t } = useI18n()
+  const { hasPermission } = useAuth()
   const navigate = useNavigate()
+  const canCreateOutcome = hasPermission(AVAILABLE_PAYMENTS_OUTCOME_CREATE_PERMISSION)
+  const canMergeTasks = hasPermission(AVAILABLE_PAYMENTS_TASK_MERGE_PERMISSION)
+  const canMarkTaskAvailable = hasPermission(AVAILABLE_PAYMENTS_TASK_MARK_AVAILABLE_PERMISSION)
+  const canOpenCashFlow = hasPermission(AVAILABLE_PAYMENTS_CASH_FLOW_OPEN_PERMISSION)
+  const canCreateMovement = hasPermission(AVAILABLE_PAYMENTS_MOVEMENT_CREATE_PERMISSION)
   const models = useMemo(() => buildTaskModels(group, t), [group, t])
   const [activeTabs, setActiveTabs] = useValueState<Record<string, TaskDetailTab>>({})
   const [cashFlows, setCashFlows] = useValueState<Record<string, CashFlowState>>({})
@@ -232,7 +246,7 @@ function useAvailablePaymentsDetailDrawerModel({
   }, [onChanged, onClearMarked, outcomeOperation, t])
 
   useEffect(() => {
-    if (outcomeModels.length === 0) {
+    if (!canCreateOutcome || outcomeModels.length === 0) {
       return
     }
 
@@ -271,7 +285,7 @@ function useAvailablePaymentsDetailDrawerModel({
     return () => {
       cancelled = true
     }
-  }, [outcomeModels, setError, setForm, setLoadingDictionaries, setMovements, setRegisters, t])
+  }, [canCreateOutcome, outcomeModels, setError, setForm, setLoadingDictionaries, setMovements, setRegisters, t])
 
   useEffect(
     () => () => {
@@ -327,7 +341,7 @@ function useAvailablePaymentsDetailDrawerModel({
   const exchangeFromDate = form.date
 
   useEffect(() => {
-    if (outcomeModels.length === 0) {
+    if (!canCreateOutcome || outcomeModels.length === 0) {
       return
     }
 
@@ -366,6 +380,7 @@ function useAvailablePaymentsDetailDrawerModel({
   }, [
     exchangeFromDate,
     baseOutcomeAmount,
+    canCreateOutcome,
     organizationName,
     outcomeModels.length,
     paymentCurrencyCode,
@@ -376,7 +391,7 @@ function useAvailablePaymentsDetailDrawerModel({
   ])
 
   useEffect(() => {
-    if (outcomeModels.length === 0) {
+    if (!canCreateOutcome || outcomeModels.length === 0) {
       return
     }
 
@@ -416,6 +431,7 @@ function useAvailablePaymentsDetailDrawerModel({
     }
   }, [
     baseOutcomeAmount,
+    canCreateOutcome,
     form.exchangeRate,
     outcomeModels.length,
     paymentCurrencyCode,
@@ -437,6 +453,12 @@ function useAvailablePaymentsDetailDrawerModel({
       movementSearchTimeoutRef.current = null
     }
   }, [])
+
+  useEffect(() => {
+    if (!canCreateOutcome) {
+      resetMovementSearchState()
+    }
+  }, [canCreateOutcome, resetMovementSearchState])
 
   function closeOutcomeForm(): boolean {
     if (outcomeOperation.hasPending()) {
@@ -493,6 +515,10 @@ function useAvailablePaymentsDetailDrawerModel({
   }
 
   function handleMovementSearchChange(nextValue: string) {
+    if (!hasPermission(AVAILABLE_PAYMENTS_OUTCOME_CREATE_PERMISSION)) {
+      return
+    }
+
     const selectedMovementLabel = getPaymentMovementLabel(selectedMovement)
 
     updateForm({
@@ -532,6 +558,14 @@ function useAvailablePaymentsDetailDrawerModel({
 
   async function handleCreateMovement() {
     if (isSaving) {
+      return
+    }
+
+    if (
+      !hasPermission(AVAILABLE_PAYMENTS_OUTCOME_CREATE_PERMISSION) ||
+      !hasPermission(AVAILABLE_PAYMENTS_MOVEMENT_CREATE_PERMISSION)
+    ) {
+      setError(t('Немає права для створення статті руху коштів'))
       return
     }
 
@@ -577,6 +611,11 @@ function useAvailablePaymentsDetailDrawerModel({
       return
     }
 
+    if (!hasPermission(AVAILABLE_PAYMENTS_OUTCOME_CREATE_PERMISSION)) {
+      setError(t('Немає права для створення видаткового ордера'))
+      return
+    }
+
     const payableModels = uniqueOutcomeModels(nextModels)
     const shouldRequireDocuments = options.requireDocuments ?? true
 
@@ -607,6 +646,7 @@ function useAvailablePaymentsDetailDrawerModel({
     setError(null)
   }, [
     getTaskPaymentProofDocumentCount,
+    hasPermission,
     isSaving,
     resetMovementSearchState,
     setError,
@@ -626,6 +666,11 @@ function useAvailablePaymentsDetailDrawerModel({
   }, [openOutcomeForm, outcomeRequest])
 
   async function loadCashFlow(model: AvailablePaymentTaskModel, filters: CashFlowFilters) {
+    if (!hasPermission(AVAILABLE_PAYMENTS_CASH_FLOW_OPEN_PERMISSION)) {
+      setError(t('Немає права для перегляду руху коштів'))
+      return
+    }
+
     if (!model.serviceAgreementNetId) {
       return
     }
@@ -677,7 +722,17 @@ function useAvailablePaymentsDetailDrawerModel({
   }
 
   async function handleCashFlowTab(model: AvailablePaymentTaskModel, tab: string | null) {
-    const nextTab = resolveTaskDetailTab(model, tab)
+    if (tab === 'cash-flow' && !hasPermission(AVAILABLE_PAYMENTS_CASH_FLOW_OPEN_PERMISSION)) {
+      setError(t('Немає права для перегляду руху коштів'))
+      return
+    }
+
+    const nextTab = resolveTaskDetailTab(
+      model,
+      tab,
+      canOpenCashFlow,
+      canCreateOutcome || canMarkTaskAvailable,
+    )
     setActiveTabs((current) => ({ ...current, [model.id]: nextTab }))
 
     if (nextTab !== 'cash-flow' || !model.serviceAgreementNetId || cashFlows[model.id]?.data) {
@@ -694,6 +749,10 @@ function useAvailablePaymentsDetailDrawerModel({
   }
 
   function handleCashFlowFiltersChange(model: AvailablePaymentTaskModel, filters: CashFlowFilters) {
+    if (!hasPermission(AVAILABLE_PAYMENTS_CASH_FLOW_OPEN_PERMISSION)) {
+      return
+    }
+
     setCashFlowFiltersByTaskId((current) => ({ ...current, [model.id]: filters }))
     setSelectedCashFlowItem(null)
     void loadCashFlow(model, filters)
@@ -701,6 +760,11 @@ function useAvailablePaymentsDetailDrawerModel({
 
   async function handleMoveToDone(model: AvailablePaymentTaskModel) {
     if (isSaving) {
+      return
+    }
+
+    if (!hasPermission(AVAILABLE_PAYMENTS_TASK_MARK_AVAILABLE_PERMISSION)) {
+      setError(t('Немає права переводити платіжну задачу в оплату'))
       return
     }
 
@@ -742,6 +806,11 @@ function useAvailablePaymentsDetailDrawerModel({
       return
     }
 
+    if (!hasPermission(AVAILABLE_PAYMENTS_TASK_MERGE_PERMISSION)) {
+      setError(t('Немає права об’єднувати платіжні задачі'))
+      return
+    }
+
     const mergeValidationError = validateAvailablePaymentMerge(models, t)
 
     if (mergeValidationError) {
@@ -773,6 +842,10 @@ function useAvailablePaymentsDetailDrawerModel({
   }
 
   function handleCashFlowRowClick(item: AccountingCashFlowHeadItem) {
+    if (!hasPermission(AVAILABLE_PAYMENTS_CASH_FLOW_OPEN_PERMISSION)) {
+      return
+    }
+
     const route = getAccountingCashFlowDrilldownRoute(item)
 
     if (route) {
@@ -787,6 +860,11 @@ function useAvailablePaymentsDetailDrawerModel({
     event.preventDefault()
 
     if (isSaving) {
+      return
+    }
+
+    if (!hasPermission(AVAILABLE_PAYMENTS_OUTCOME_CREATE_PERMISSION)) {
+      setError(t('Немає права для створення видаткового ордера'))
       return
     }
 
@@ -882,6 +960,11 @@ function useAvailablePaymentsDetailDrawerModel({
 
   return {
     activeTabs,
+    canCreateMovement,
+    canCreateOutcome,
+    canMarkTaskAvailable,
+    canMergeTasks,
+    canOpenCashFlow,
     cashFlowFiltersByTaskId,
     cashFlows,
     confirmCloseOutcomeOpen,
@@ -931,6 +1014,11 @@ function AvailablePaymentsDetailDrawerView({ model }: { model: AvailablePayments
   const { t } = useI18n()
   const {
     activeTabs,
+    canCreateMovement,
+    canCreateOutcome,
+    canMarkTaskAvailable,
+    canMergeTasks,
+    canOpenCashFlow,
     cashFlowFiltersByTaskId,
     cashFlows,
     confirmCloseOutcomeOpen,
@@ -981,7 +1069,7 @@ function AvailablePaymentsDetailDrawerView({ model }: { model: AvailablePayments
       title={title}
       onClose={requestDrawerClose}
       footer={
-        outcomeModels.length > 0 ? (
+        outcomeModels.length > 0 && canCreateOutcome ? (
           <Group gap="xs">
             <Button color="gray" disabled={isSaving} type="button" variant="light" onClick={closeOutcomeForm}>
               {t('Скасувати')}
@@ -1015,6 +1103,10 @@ function AvailablePaymentsDetailDrawerView({ model }: { model: AvailablePayments
           ) : (
             <AvailablePaymentTaskList
               activeTabs={activeTabs}
+              canCreateOutcome={canCreateOutcome}
+              canMarkTaskAvailable={canMarkTaskAvailable}
+              canMergeTasks={canMergeTasks}
+              canOpenCashFlow={canOpenCashFlow}
               cashFlowFiltersByTaskId={cashFlowFiltersByTaskId}
               cashFlows={cashFlows}
               filesByTaskId={filesByTaskId}
@@ -1036,8 +1128,9 @@ function AvailablePaymentsDetailDrawerView({ model }: { model: AvailablePayments
           )
         )}
 
-        {outcomeModels.length > 0 && (
+        {outcomeModels.length > 0 && canCreateOutcome && (
           <AvailablePaymentOutcomeForm
+            canCreateMovement={canCreateMovement}
             filteredRegisters={filteredRegisters}
             form={form}
             isLoadingDictionaries={isLoadingDictionaries}
@@ -1078,10 +1171,12 @@ function AvailablePaymentsDetailDrawerView({ model }: { model: AvailablePayments
           </Stack>
         </AppModal>
 
-        <AvailablePaymentCashFlowDetailDrawer
-          item={selectedCashFlowItem}
-          onClose={() => setSelectedCashFlowItem(null)}
-        />
+        {canOpenCashFlow && (
+          <AvailablePaymentCashFlowDetailDrawer
+            item={selectedCashFlowItem}
+            onClose={() => setSelectedCashFlowItem(null)}
+          />
+        )}
       </Stack>
     </AppDrawer>
   )
@@ -1089,6 +1184,10 @@ function AvailablePaymentsDetailDrawerView({ model }: { model: AvailablePayments
 
 function AvailablePaymentTaskList({
   activeTabs,
+  canCreateOutcome,
+  canMarkTaskAvailable,
+  canMergeTasks,
+  canOpenCashFlow,
   cashFlowFiltersByTaskId,
   cashFlows,
   filesByTaskId,
@@ -1108,6 +1207,10 @@ function AvailablePaymentTaskList({
   onToggleMarked,
 }: {
   activeTabs: Record<string, TaskDetailTab>
+  canCreateOutcome: boolean
+  canMarkTaskAvailable: boolean
+  canMergeTasks: boolean
+  canOpenCashFlow: boolean
   cashFlowFiltersByTaskId: Record<string, CashFlowFilters>
   cashFlows: Record<string, CashFlowState>
   filesByTaskId: Record<string, File[]>
@@ -1128,10 +1231,12 @@ function AvailablePaymentTaskList({
 }) {
   const { t } = useI18n()
   const markedTaskIdSet = useMemo(() => new Set(markedTaskIds), [markedTaskIds])
+  const canSelectTasks = canCreateOutcome || canMergeTasks
   const markedSelectionError = markedModels.length > 0 ? validateAvailablePaymentSelection(markedModels, t) : null
   const markedMergeError = markedModels.length > 0 ? validateAvailablePaymentMerge(markedModels, t) : null
   const columns = useMemo<DataTableColumn<AvailablePaymentTaskModel>[]>(
-    () => [
+    () => {
+      const nextColumns: DataTableColumn<AvailablePaymentTaskModel>[] = [
       {
         id: 'selection',
         header: '',
@@ -1249,8 +1354,14 @@ function AvailablePaymentTaskList({
           <RedirectToSourceButton model={taskModel} onRedirectToSource={onRedirectToSource} />
         ),
       },
-    ],
+      ]
+
+      return canSelectTasks
+        ? nextColumns
+        : nextColumns.filter((column) => column.id !== 'selection')
+    },
     [
+      canSelectTasks,
       isSaving,
       markedModels,
       markedTaskIdSet,
@@ -1262,7 +1373,7 @@ function AvailablePaymentTaskList({
 
   return (
     <Stack className="available-payment-task-list" gap="sm">
-      {markedModels.length > 0 && (
+      {markedModels.length > 0 && canSelectTasks && (
         <div className="available-payment-task-list__selection">
           <Group gap="sm" justify="space-between" wrap="wrap">
             <Group gap="xs">
@@ -1272,31 +1383,35 @@ function AvailablePaymentTaskList({
               </Text>
             </Group>
             <Group gap="xs" wrap="wrap">
-              <Tooltip disabled={!markedSelectionError} label={markedSelectionError}>
-                <span>
-                  <Button
-                    color={CREATE_ACTION_COLOR}
-                    disabled={isSaving || Boolean(markedSelectionError)}
-                    size="xs"
-                    onClick={() => onCreateOutcome(markedModels, { requireDocuments: false })}
-                  >
-                    {t('Створити видатковий')}
-                  </Button>
-                </span>
-              </Tooltip>
-              <Tooltip disabled={!markedMergeError} label={markedMergeError}>
-                <span>
-                  <Button
-                    disabled={isSaving || Boolean(markedMergeError)}
-                    leftSection={<GitMerge size={15} />}
-                    size="xs"
-                    variant="default"
-                    onClick={() => void onMergeMarked(markedModels)}
-                  >
-                    {t('Об’єднати задачі')}
-                  </Button>
-                </span>
-              </Tooltip>
+              {canCreateOutcome && (
+                <Tooltip disabled={!markedSelectionError} label={markedSelectionError}>
+                  <span>
+                    <Button
+                      color={CREATE_ACTION_COLOR}
+                      disabled={isSaving || Boolean(markedSelectionError)}
+                      size="xs"
+                      onClick={() => onCreateOutcome(markedModels, { requireDocuments: false })}
+                    >
+                      {t('Створити видатковий')}
+                    </Button>
+                  </span>
+                </Tooltip>
+              )}
+              {canMergeTasks && (
+                <Tooltip disabled={!markedMergeError} label={markedMergeError}>
+                  <span>
+                    <Button
+                      disabled={isSaving || Boolean(markedMergeError)}
+                      leftSection={<GitMerge size={15} />}
+                      size="xs"
+                      variant="default"
+                      onClick={() => void onMergeMarked(markedModels)}
+                    >
+                      {t('Об’єднати задачі')}
+                    </Button>
+                  </span>
+                </Tooltip>
+              )}
               <Button color="gray" disabled={isSaving} size="xs" variant="subtle" onClick={onClearMarked}>
                 {t('Очистити')}
               </Button>
@@ -1323,7 +1438,15 @@ function AvailablePaymentTaskList({
         tableId="available-payments-detail-tasks"
         renderExpandedRow={(taskModel) => (
           <AvailablePaymentTaskDetails
-            activeTab={resolveTaskDetailTab(taskModel, activeTabs[taskModel.id])}
+            activeTab={resolveTaskDetailTab(
+              taskModel,
+              activeTabs[taskModel.id],
+              canOpenCashFlow,
+              canCreateOutcome || canMarkTaskAvailable,
+            )}
+            canCreateOutcome={canCreateOutcome}
+            canMarkTaskAvailable={canMarkTaskAvailable}
+            canOpenCashFlow={canOpenCashFlow}
             cashFlowFilters={cashFlowFiltersByTaskId[taskModel.id] || createDefaultCashFlowFilters()}
             cashFlowState={cashFlows[taskModel.id]}
             files={filesByTaskId[taskModel.id] || []}
@@ -1344,6 +1467,9 @@ function AvailablePaymentTaskList({
 
 function AvailablePaymentTaskDetails({
   activeTab,
+  canCreateOutcome,
+  canMarkTaskAvailable,
+  canOpenCashFlow,
   cashFlowFilters,
   cashFlowState,
   files,
@@ -1357,6 +1483,9 @@ function AvailablePaymentTaskDetails({
   onTabChange,
 }: {
   activeTab: TaskDetailTab
+  canCreateOutcome: boolean
+  canMarkTaskAvailable: boolean
+  canOpenCashFlow: boolean
   cashFlowFilters: CashFlowFilters
   cashFlowState?: CashFlowState
   files: File[]
@@ -1370,7 +1499,11 @@ function AvailablePaymentTaskDetails({
   onTabChange: (tab: TaskDetailTab) => void
 }) {
   const { t } = useI18n()
-  const tabs = getTaskDetailTabs(model)
+  const tabs = getTaskDetailTabs(
+    model,
+    canOpenCashFlow,
+    canCreateOutcome || canMarkTaskAvailable,
+  )
 
   return (
     <div className="available-payment-task-details">
@@ -1413,6 +1546,8 @@ function AvailablePaymentTaskDetails({
         )}
         {activeTab === 'payment' && (
           <PaymentTab
+            canCreateOutcome={canCreateOutcome}
+            canMarkTaskAvailable={canMarkTaskAvailable}
             files={files}
             isSaving={isSaving}
             model={model}
@@ -1451,8 +1586,15 @@ function AvailablePaymentTaskListFooter({ models }: { models: AvailablePaymentTa
   )
 }
 
-function getTaskDetailTabs(model: AvailablePaymentTaskModel): TaskDetailTab[] {
-  const tabs: TaskDetailTab[] = model.serviceAgreementNetId ? ['invoice', 'cash-flow'] : ['invoice']
+function getTaskDetailTabs(
+  model: AvailablePaymentTaskModel,
+  canOpenCashFlow = true,
+  canUsePayment = true,
+): TaskDetailTab[] {
+  const tabs: TaskDetailTab[] =
+    model.serviceAgreementNetId && canOpenCashFlow
+      ? ['invoice', 'cash-flow']
+      : ['invoice']
 
   if (model.task.TaskStatus === TaskStatusValue.Done) {
     return [...tabs, 'transfer']
@@ -1462,11 +1604,16 @@ function getTaskDetailTabs(model: AvailablePaymentTaskModel): TaskDetailTab[] {
     return tabs
   }
 
-  return [...tabs, 'payment']
+  return canUsePayment ? [...tabs, 'payment'] : tabs
 }
 
-function resolveTaskDetailTab(model: AvailablePaymentTaskModel, tab?: string | null): TaskDetailTab {
-  const tabs = getTaskDetailTabs(model)
+function resolveTaskDetailTab(
+  model: AvailablePaymentTaskModel,
+  tab?: string | null,
+  canOpenCashFlow = true,
+  canUsePayment = true,
+): TaskDetailTab {
+  const tabs = getTaskDetailTabs(model, canOpenCashFlow, canUsePayment)
 
   return tabs.includes(tab as TaskDetailTab) ? tab as TaskDetailTab : 'invoice'
 }
@@ -1488,6 +1635,7 @@ function getTaskDetailTabLabel(tab: TaskDetailTab, t: (key: string) => string): 
 }
 
 function AvailablePaymentOutcomeForm({
+  canCreateMovement,
   filteredRegisters,
   form,
   isLoadingDictionaries,
@@ -1503,6 +1651,7 @@ function AvailablePaymentOutcomeForm({
   onSubmit,
   updateForm,
 }: {
+  canCreateMovement: boolean
   filteredRegisters: AvailablePaymentRegister[]
   form: OutcomeFormState
   isLoadingDictionaries: boolean
@@ -1701,15 +1850,17 @@ function AvailablePaymentOutcomeForm({
                   }}
                   onSearchChange={onMovementSearchChange}
                 />
-                <Button
-                  disabled={isSaving || Boolean(selectedMovement) || !form.movementSearch.trim()}
-                  leftSection={<Plus size={16} />}
-                  size="xs"
-                  type="button"
+                {canCreateMovement && (
+                  <Button
+                    disabled={isSaving || Boolean(selectedMovement) || !form.movementSearch.trim()}
+                    leftSection={<Plus size={16} />}
+                    size="xs"
+                    type="button"
                     onClick={onCreateMovement}
-                >
-                  {t('Створити статтю')}
-                </Button>
+                  >
+                    {t('Створити статтю')}
+                  </Button>
+                )}
               </Stack>
             </SimpleGrid>
 
@@ -2179,6 +2330,8 @@ function stringOrUndefined(value: unknown): string | undefined {
 }
 
 function PaymentTab({
+  canCreateOutcome,
+  canMarkTaskAvailable,
   files,
   isSaving,
   model,
@@ -2186,6 +2339,8 @@ function PaymentTab({
   onFilesChanged,
   onMoveToDone,
 }: {
+  canCreateOutcome: boolean
+  canMarkTaskAvailable: boolean
   files: File[]
   isSaving: boolean
   model: AvailablePaymentTaskModel
@@ -2197,11 +2352,12 @@ function PaymentTab({
   const isDone = model.task.TaskStatus === TaskStatusValue.Done
   const isUnsupported = Boolean(model.isUnsupported)
   const isAvailableForPayment = model.task.IsAvailableForPayment !== false
+  const canManagePaymentDocuments = canCreateOutcome || canMarkTaskAvailable
 
   return (
     <Stack gap="md">
       <Group justify="space-between" align="center">
-        {!isDone && !isUnsupported ? (
+        {!isDone && !isUnsupported && canManagePaymentDocuments ? (
           <FileButton multiple onChange={(nextFiles) => onFilesChanged(mergeLocalFiles(files, nextFiles || []))}>
             {(props) => (
               <Button
@@ -2225,12 +2381,12 @@ function PaymentTab({
           </Text>
         )}
         <Group gap="xs">
-          {!isDone && !isUnsupported && !isAvailableForPayment && (
+          {canMarkTaskAvailable && !isDone && !isUnsupported && !isAvailableForPayment && (
             <Button color="green" disabled={isSaving} loading={isSaving} variant="outline" onClick={onMoveToDone}>
               {t('Перевести в оплату')}
             </Button>
           )}
-          {!isDone && (
+          {canCreateOutcome && !isDone && (
             <Button
               color={CREATE_ACTION_COLOR}
               disabled={isSaving || isUnsupported || !isAvailableForPayment}

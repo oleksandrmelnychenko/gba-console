@@ -70,6 +70,13 @@ describe('newly classified page permissions', () => {
     expect(consoleRoutes.find((route) => route.path === '/accounting/company-cars/:id/road-lists')?.permissionKey)
       .toBe(PermissionKeys.Warehouses.CompanyCars.RoadList.Open)
   })
+
+  it('guards both available-payments route aliases with the same page right', () => {
+    expect(consoleRoutes.find((route) => route.path === '/accounting/available-payments')?.permissionKey)
+      .toBe(PermissionKeys.FinancialAdministration.AvailablePayments.Page.View)
+    expect(consoleRoutes.find((route) => route.path === '/payments/available')?.permissionKey)
+      .toBe(PermissionKeys.FinancialAdministration.AvailablePayments.Page.View)
+  })
 })
 
 describe('console report routes', () => {

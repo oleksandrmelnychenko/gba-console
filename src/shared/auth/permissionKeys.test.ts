@@ -362,3 +362,23 @@ describe('human-reviewed buyer-organization actions', () => {
     )
   })
 })
+
+describe('human-reviewed available-payments actions', () => {
+  it('contains one page boundary and four unique business capabilities', () => {
+    const actual = [
+      ...Object.values(PermissionKeys.FinancialAdministration.AvailablePayments.Page),
+      ...Object.values(PermissionKeys.FinancialAdministration.AvailablePayments.OutcomeOrder),
+      ...Object.values(PermissionKeys.FinancialAdministration.AvailablePayments.Task),
+      ...Object.values(PermissionKeys.FinancialAdministration.AvailablePayments.CashFlow),
+    ]
+
+    expect(actual).toEqual([
+      'payments.available_payments.page.view',
+      'payments.available_payments.outcome_order.create',
+      'payments.available_payments.task.mark_available',
+      'payments.available_payments.task.merge',
+      'payments.available_payments.cash_flow.open',
+    ])
+    expect(new Set(actual).size).toBe(5)
+  })
+})

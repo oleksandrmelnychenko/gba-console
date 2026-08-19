@@ -643,10 +643,12 @@ const accountingMigrationRoutes: ConsoleRoute[] = [
   {
     path: '/accounting/available-payments',
     element: lazyRoute(<AvailablePaymentsPage />),
+    permissionKey: PermissionKeys.FinancialAdministration.AvailablePayments.Page.View,
   },
   {
     path: '/payments/available',
     element: lazyRoute(<AvailablePaymentsPage />),
+    permissionKey: PermissionKeys.FinancialAdministration.AvailablePayments.Page.View,
   },
 ]
 

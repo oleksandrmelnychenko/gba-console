@@ -17,14 +17,10 @@ import type {
   PriceTotal,
   SupplyPaymentTask,
 } from '../types'
-import {
-  ACCOUNTING_OPERATION_ID,
-  getAccountingOperation,
-} from '../../accounting/accountingOperationCatalog'
 import { OUTCOME_OPERATION_TYPE } from '../../outgoing-cashflows/outgoingCreateTypes'
 
 const CREATE_PAYMENT_TASK_OUTCOME_ENDPOINT =
-  getAccountingOperation(ACCOUNTING_OPERATION_ID.OutcomeSupplierPaymentByTask).endpoint
+  '/payments/orders/outcome/available-payments/new/supplies'
 
 export async function getGroupedPaymentTasks(
   params: AvailablePaymentsSearchParams,
@@ -38,8 +34,8 @@ export async function getGroupedPaymentTasks(
     typePaymentTask: params.typePaymentTask,
   }
   const endpoint = params.onlyAvailableForPayment
-    ? '/payments/tasks/grouped/all/available/filtered'
-    : '/payments/tasks/grouped/all/filtered'
+    ? '/payments/tasks/grouped/available-payments/all/available/filtered'
+    : '/payments/tasks/grouped/available-payments/all/filtered'
 
   const result = await apiRequest<unknown>(endpoint, { query })
 
@@ -53,7 +49,7 @@ export async function getAvailablePaymentsOrganizations(): Promise<AvailablePaym
 }
 
 export async function searchAvailablePaymentRegisters(value = ''): Promise<AvailablePaymentRegister[]> {
-  const result = await apiRequest<unknown>('/payments/registers/search', {
+  const result = await apiRequest<unknown>('/payments/registers/available-payments/search', {
     query: {
       value,
     },
@@ -63,13 +59,13 @@ export async function searchAvailablePaymentRegisters(value = ''): Promise<Avail
 }
 
 export async function getAvailablePaymentMovements(): Promise<AvailablePaymentMovement[]> {
-  const result = await apiRequest<unknown>('/payments/movements/all')
+  const result = await apiRequest<unknown>('/payments/movements/available-payments/all')
 
   return readArrayPayload(result, ['Items', 'PaymentMovements', 'Data']) as AvailablePaymentMovement[]
 }
 
 export async function searchAvailablePaymentMovements(value: string): Promise<AvailablePaymentMovement[]> {
-  const result = await apiRequest<unknown>('/payments/movements/all/search', {
+  const result = await apiRequest<unknown>('/payments/movements/available-payments/all/search', {
     query: {
       value,
     },
@@ -79,7 +75,7 @@ export async function searchAvailablePaymentMovements(value: string): Promise<Av
 }
 
 export async function createAvailablePaymentMovement(operationName: string): Promise<AvailablePaymentMovement | null> {
-  const result = await apiRequest<unknown>('/payments/movements/new', {
+  const result = await apiRequest<unknown>('/payments/movements/accounting/new', {
     body: {
       OperationName: operationName,
     },
@@ -95,7 +91,7 @@ export async function getAvailablePaymentAccountingCashFlow(params: {
   to: string
   typePaymentTask: number
 }): Promise<AvailablePaymentAccountingCashFlow | null> {
-  const result = await apiRequest<unknown>('/accounting/cashflow/get/filtered', {
+  const result = await apiRequest<unknown>('/accounting/cashflow/available-payments/get/filtered', {
     query: {
       from: params.from,
       netId: params.netId,
@@ -156,7 +152,7 @@ export async function calculateAvailablePaymentConvertedAmount(params: {
 }
 
 export async function getAvailablePaymentTaskByNetId(netId: string): Promise<SupplyPaymentTask | null> {
-  const result = await apiRequest<unknown>('/payments/tasks/get', {
+  const result = await apiRequest<unknown>('/payments/tasks/available-payments/get', {
     query: {
       netId,
     },
@@ -190,7 +186,7 @@ export async function setAvailablePaymentTaskToActive(
       formData.append('task', JSON.stringify(payload.task))
       documents.forEach((document) => formData.append('documents', document))
 
-      return apiRequest<unknown>('/payments/tasks/available/set', {
+      return apiRequest<unknown>('/payments/tasks/available-payments/available/set', {
         body: formData,
         dedupe: false,
         headers: context.headers,
@@ -204,7 +200,7 @@ export async function setAvailablePaymentTaskToActive(
 }
 
 export async function mergeAvailablePaymentTasks(tasks: SupplyPaymentTask[]): Promise<SupplyPaymentTask | null> {
-  const result = await apiRequest<unknown>('/payments/tasks/merge', {
+  const result = await apiRequest<unknown>('/payments/tasks/available-payments/merge', {
     body: tasks.map(toPersistedPaymentTaskIdentity),
     method: 'POST',
   })

@@ -4,25 +4,25 @@
     "inputRecords": 1902,
     "classifiedRecords": 1902,
     "dispositionCounts": {
-      "technical_ui": 776,
-      "covered_existing": 597,
-      "duplicate_occurrence": 302,
-      "business_candidate": 148,
-      "needs_human_review": 66,
+      "technical_ui": 777,
+      "covered_existing": 603,
+      "duplicate_occurrence": 307,
+      "business_candidate": 139,
+      "needs_human_review": 63,
       "stale_or_aggregated": 13
     },
-    "reviewCandidates": 214,
-    "technicalExcluded": 776,
-    "duplicatesExcluded": 302,
-    "duplicateOccurrencesTotal": 371,
+    "reviewCandidates": 202,
+    "technicalExcluded": 777,
+    "duplicatesExcluded": 307,
+    "duplicateOccurrencesTotal": 376,
     "technicalDuplicateOverlap": 69,
     "sourceResolved": 1828,
     "sourceUnresolved": 74,
     "currentActionResolved": 1183,
     "currentActionUnresolved": 719,
     "currentProductionActions": 1828,
-    "currentPermissionBoundActions": 328,
-    "currentUnboundActions": 1500
+    "currentPermissionBoundActions": 335,
+    "currentUnboundActions": 1493
   },
   "invariants": {
     "allInputRecordsClassified": true,
@@ -2986,24 +2986,28 @@
       "dispositionReason": "current_source_confirms_local_cancel_or_refresh_control",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
+      "canonicalPermissionKeys": [
+        "payments.available_payments.outcome_order.create"
+      ],
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-79dafb9d9e50",
-          "distance": 545,
+          "candidateId": "EPC-6412671c86a1",
+          "distance": 611,
           "file": "src/features/available-payments/components/AvailablePaymentsDetailDrawer.tsx",
           "handler": "{closeOutcomeForm}",
           "humanLabel": "Скасувати",
-          "line": 986,
-          "permissionKeys": [],
+          "line": 1074,
+          "permissionKeys": [
+            "payments.available_payments.outcome_order.create"
+          ],
           "score": 16
         }
       ],
       "source": {
         "status": "resolved",
         "file": "src/features/available-payments/components/AvailablePaymentsDetailDrawer.tsx",
-        "line": 441,
+        "line": 463,
         "alternatives": []
       }
     },
@@ -3023,28 +3027,34 @@
       "proposedPermission": "accounting.accounting_available_payments.handle_create_outcome.form_submit",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "covered_existing",
+      "dispositionReason": "The final outcome-order form rechecks outcome_order.create and submits only to the dedicated idempotent mutation-policy-protected supplies façade.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "accounting.cashflow_articles.article.create",
+        "payments.available_payments.outcome_order.create"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-5857aa495d4a",
-          "distance": 254,
+          "candidateId": "EPC-bc8b2a7bd5d8",
+          "distance": 273,
           "file": "src/features/available-payments/components/AvailablePaymentsDetailDrawer.tsx",
           "handler": "{handleCreateOutcome}",
           "humanLabel": null,
-          "line": 1040,
-          "permissionKeys": [],
+          "line": 1132,
+          "permissionKeys": [
+            "accounting.cashflow_articles.article.create",
+            "payments.available_payments.outcome_order.create"
+          ],
           "score": 19
         }
       ],
       "source": {
         "status": "resolved",
         "file": "src/features/available-payments/components/AvailablePaymentsDetailDrawer.tsx",
-        "line": 786,
+        "line": 859,
         "alternatives": []
       }
     },
@@ -3072,12 +3082,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-ce3b115fa1fe",
-          "distance": 627,
+          "candidateId": "EPC-8dcc805a2cad",
+          "distance": 698,
           "file": "src/features/available-payments/components/AvailablePaymentsDetailDrawer.tsx",
           "handler": "{() => setConfirmCloseOutcomeOpen(false)}",
           "humanLabel": "Залишитися",
-          "line": 1071,
+          "line": 1164,
           "permissionKeys": [],
           "score": 31
         }
@@ -3085,7 +3095,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/available-payments/components/AvailablePaymentsDetailDrawer.tsx",
-        "line": 444,
+        "line": 466,
         "alternatives": []
       }
     },
@@ -3113,12 +3123,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-8fc96d7bd654",
-          "distance": 592,
+          "candidateId": "EPC-3c8ca77c36d7",
+          "distance": 663,
           "file": "src/features/available-payments/components/AvailablePaymentsDetailDrawer.tsx",
           "handler": "{confirmDrawerClose}",
           "humanLabel": "Закрити без збереження",
-          "line": 1074,
+          "line": 1167,
           "permissionKeys": [],
           "score": 18
         }
@@ -3126,7 +3136,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/available-payments/components/AvailablePaymentsDetailDrawer.tsx",
-        "line": 482,
+        "line": 504,
         "alternatives": []
       }
     },
@@ -3146,28 +3156,32 @@
       "proposedPermission": "accounting.accounting_available_payments.on_create_outcome_marked_models_require_documents_false.command_submit",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
-      "duplicateOf": null,
+      "disposition": "duplicate_occurrence",
+      "dispositionReason": "The marked-task button only opens the outcome workflow finalized by PE-00081 and is not a separate permission.",
+      "duplicateOf": "PE-00081",
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "payments.available_payments.outcome_order.create"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-84bd58232959",
+          "candidateId": "EPC-f16bc639a915",
           "distance": 4,
           "file": "src/features/available-payments/components/AvailablePaymentsDetailDrawer.tsx",
           "handler": "{() => onCreateOutcome(markedModels, { requireDocuments: false })}",
           "humanLabel": "Створити видатковий",
-          "line": 1277,
-          "permissionKeys": [],
+          "line": 1389,
+          "permissionKeys": [
+            "payments.available_payments.outcome_order.create"
+          ],
           "score": 46
         }
       ],
       "source": {
         "status": "resolved",
         "file": "src/features/available-payments/components/AvailablePaymentsDetailDrawer.tsx",
-        "line": 1281,
+        "line": 1393,
         "alternatives": []
       }
     },
@@ -3187,28 +3201,32 @@
       "proposedPermission": "accounting.accounting_available_payments.void_on_merge_marked_marked_models.button_click",
       "securityLevel": "low",
       "rawStatus": "No permission candidate found",
-      "disposition": "needs_human_review",
-      "dispositionReason": "insufficient_evidence_for_automatic_permission_or_exclusion",
+      "disposition": "covered_existing",
+      "dispositionReason": "The merge handler rechecks task.merge and sends identity-only task references through the dedicated mutation-policy-protected façade.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "payments.available_payments.task.merge"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-916a09282edd",
+          "candidateId": "EPC-e8a6ab11cb59",
           "distance": 5,
           "file": "src/features/available-payments/components/AvailablePaymentsDetailDrawer.tsx",
           "handler": "{() => void onMergeMarked(markedModels)}",
           "humanLabel": "Об’єднати задачі",
-          "line": 1289,
-          "permissionKeys": [],
+          "line": 1403,
+          "permissionKeys": [
+            "payments.available_payments.task.merge"
+          ],
           "score": 23
         }
       ],
       "source": {
         "status": "resolved",
         "file": "src/features/available-payments/components/AvailablePaymentsDetailDrawer.tsx",
-        "line": 1294,
+        "line": 1408,
         "alternatives": []
       }
     },
@@ -3236,12 +3254,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-11250d27411f",
-          "distance": 1202,
+          "candidateId": "EPC-569e07ea8908",
+          "distance": 1309,
           "file": "src/features/available-payments/components/AvailablePaymentsDetailDrawer.tsx",
           "handler": "{onClearMarked}",
           "humanLabel": "Очистити",
-          "line": 1300,
+          "line": 1415,
           "permissionKeys": [],
           "score": 11
         }
@@ -3249,7 +3267,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/available-payments/components/AvailablePaymentsDetailDrawer.tsx",
-        "line": 98,
+        "line": 106,
         "alternatives": []
       }
     },
@@ -3277,12 +3295,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-d9dc1173375d",
-          "distance": 46,
+          "candidateId": "EPC-9c00374751f6",
+          "distance": 56,
           "file": "src/features/available-payments/components/AvailablePaymentsDetailDrawer.tsx",
           "handler": "{() => onTabChange(tab)}",
           "humanLabel": null,
-          "line": 1383,
+          "line": 1516,
           "permissionKeys": [],
           "score": 12
         }
@@ -3290,7 +3308,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/available-payments/components/AvailablePaymentsDetailDrawer.tsx",
-        "line": 1337,
+        "line": 1460,
         "alternatives": []
       }
     },
@@ -3310,20 +3328,22 @@
       "proposedPermission": "accounting.accounting_available_payments.on_cash_flow_row_click.row_click",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "covered_existing",
+      "dispositionReason": "Cash-flow rows and drilldown are available only inside the cash_flow.open tab whose data uses the dedicated protected façade.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "payments.available_payments.cash_flow.open"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-95085af5a277",
-          "distance": 380,
+          "candidateId": "EPC-edc9d6866b26",
+          "distance": 421,
           "file": "src/features/available-payments/components/AvailablePaymentsDetailDrawer.tsx",
           "handler": "{onCashFlowRowClick}",
           "humanLabel": null,
-          "line": 1407,
+          "line": 1540,
           "permissionKeys": [],
           "score": 16
         }
@@ -3331,7 +3351,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/available-payments/components/AvailablePaymentsDetailDrawer.tsx",
-        "line": 1027,
+        "line": 1119,
         "alternatives": []
       }
     },
@@ -3351,17 +3371,19 @@
       "proposedPermission": "accounting.accounting_available_payments.form.form_submit",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
-      "duplicateOf": null,
+      "disposition": "duplicate_occurrence",
+      "dispositionReason": "The form-submit scanner occurrence is the same final outcome-order action as PE-00081.",
+      "duplicateOf": "PE-00081",
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "payments.available_payments.outcome_order.create"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [],
       "source": {
         "status": "resolved",
         "file": "src/features/available-payments/components/AvailablePaymentsDetailDrawer.tsx",
-        "line": 169,
+        "line": 177,
         "alternatives": []
       }
     },
@@ -3381,28 +3403,32 @@
       "proposedPermission": "accounting.accounting_available_payments.on_create_movement.command_submit",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "covered_existing",
+      "dispositionReason": "Creating a payment-movement article reuses the existing accounting article.create capability and its protected accounting façade.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "accounting.cashflow_articles.article.create"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-088c368ac268",
-          "distance": 653,
+          "candidateId": "EPC-2e93b57c7817",
+          "distance": 710,
           "file": "src/features/available-payments/components/AvailablePaymentsDetailDrawer.tsx",
           "handler": "{onCreateMovement}",
           "humanLabel": "Створити статтю",
-          "line": 1704,
-          "permissionKeys": [],
+          "line": 1854,
+          "permissionKeys": [
+            "accounting.cashflow_articles.article.create"
+          ],
           "score": 14
         }
       ],
       "source": {
         "status": "resolved",
         "file": "src/features/available-payments/components/AvailablePaymentsDetailDrawer.tsx",
-        "line": 1051,
+        "line": 1144,
         "alternatives": []
       }
     },
@@ -3422,20 +3448,22 @@
       "proposedPermission": "accounting.accounting_available_payments.item_on_row_click_item_source.row_click",
       "securityLevel": "medium",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
-      "duplicateOf": null,
+      "disposition": "duplicate_occurrence",
+      "dispositionReason": "The inner table row click is another entry into the cash-flow drilldown already governed by PE-00088.",
+      "duplicateOf": "PE-00088",
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "payments.available_payments.cash_flow.open"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-6433201b0649",
+          "candidateId": "EPC-82222f411caa",
           "distance": 14,
           "file": "src/features/available-payments/components/AvailablePaymentsDetailDrawer.tsx",
           "handler": "{(item) => onRowClick(item.source)}",
           "humanLabel": null,
-          "line": 1974,
+          "line": 2125,
           "permissionKeys": [],
           "score": 18
         }
@@ -3443,7 +3471,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/available-payments/components/AvailablePaymentsDetailDrawer.tsx",
-        "line": 1988,
+        "line": 2139,
         "alternatives": []
       }
     },
@@ -3463,17 +3491,19 @@
       "proposedPermission": "accounting.accounting_available_payments.on_move_to_done.button_click",
       "securityLevel": "low",
       "rawStatus": "No permission candidate found",
-      "disposition": "needs_human_review",
-      "dispositionReason": "insufficient_evidence_for_automatic_permission_or_exclusion",
+      "disposition": "covered_existing",
+      "dispositionReason": "The final transfer-to-payment handler rechecks task.mark_available and calls only the idempotent document-aware task façade.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "payments.available_payments.task.mark_available"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [],
       "source": {
         "status": "resolved",
         "file": "src/features/available-payments/components/AvailablePaymentsDetailDrawer.tsx",
-        "line": 1032,
+        "line": 1124,
         "alternatives": []
       }
     },
@@ -3497,24 +3527,30 @@
       "dispositionReason": "same_normalized_action_as:PE-00081",
       "duplicateOf": "PE-00081",
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
+      "canonicalPermissionKeys": [
+        "accounting.cashflow_articles.article.create",
+        "payments.available_payments.outcome_order.create"
+      ],
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-5857aa495d4a",
+          "candidateId": "EPC-bc8b2a7bd5d8",
           "distance": 11,
           "file": "src/features/available-payments/components/AvailablePaymentsDetailDrawer.tsx",
           "handler": "{handleCreateOutcome}",
           "humanLabel": null,
-          "line": 1040,
-          "permissionKeys": [],
+          "line": 1132,
+          "permissionKeys": [
+            "accounting.cashflow_articles.article.create",
+            "payments.available_payments.outcome_order.create"
+          ],
           "score": 13
         }
       ],
       "source": {
         "status": "resolved",
         "file": "src/features/available-payments/components/AvailablePaymentsDetailDrawer.tsx",
-        "line": 1029,
+        "line": 1121,
         "alternatives": []
       }
     },
@@ -3542,12 +3578,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-f720a25584c3",
+          "candidateId": "EPC-20602448b138",
           "distance": 6,
           "file": "src/features/available-payments/components/AvailablePaymentsDetailDrawer.tsx",
           "handler": "{() => onFilesChanged(files.filter((entry) => getLocalFileKey(entry) !== getLocalFileKey(file)))}",
           "humanLabel": "Видалити",
-          "line": 2259,
+          "line": 2415,
           "permissionKeys": [],
           "score": 51
         }
@@ -3555,7 +3591,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/available-payments/components/AvailablePaymentsDetailDrawer.tsx",
-        "line": 2265,
+        "line": 2421,
         "alternatives": []
       }
     },
@@ -3575,17 +3611,17 @@
       "proposedPermission": "accounting.accounting_available_payments.on_redirect_to_source_model.button_click",
       "securityLevel": "low",
       "rawStatus": "No permission candidate found",
-      "disposition": "needs_human_review",
-      "dispositionReason": "insufficient_evidence_for_automatic_permission_or_exclusion",
+      "disposition": "technical_ui",
+      "dispositionReason": "Redirecting to the source model is navigation only; the destination route owns and enforces its own page/action permissions.",
       "duplicateOf": null,
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [],
       "source": {
         "status": "resolved",
         "file": "src/features/available-payments/components/AvailablePaymentsDetailDrawer.tsx",
-        "line": 1126,
+        "line": 1229,
         "alternatives": []
       }
     },
@@ -3616,7 +3652,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/available-payments/pages/AvailablePaymentsPage.tsx",
-        "line": 537,
+        "line": 550,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -3649,7 +3685,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/available-payments/pages/AvailablePaymentsPage.tsx",
-        "line": 537,
+        "line": 550,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -3679,12 +3715,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-49c750f03aee",
+          "candidateId": "EPC-7904d95ef12d",
           "distance": 5,
           "file": "src/features/available-payments/pages/AvailablePaymentsPage.tsx",
           "handler": "{model.cancelCloseDetail}",
           "humanLabel": "Залишитися",
-          "line": 567,
+          "line": 601,
           "permissionKeys": [],
           "score": 22
         }
@@ -3692,7 +3728,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/available-payments/pages/AvailablePaymentsPage.tsx",
-        "line": 562,
+        "line": 596,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -3722,12 +3758,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-cc2bd4705620",
+          "candidateId": "EPC-1403a9dea287",
           "distance": 10,
           "file": "src/features/available-payments/pages/AvailablePaymentsPage.tsx",
           "handler": "{model.confirmCloseDetail}",
           "humanLabel": "Закрити без збереження",
-          "line": 570,
+          "line": 604,
           "permissionKeys": [],
           "score": 23
         }
@@ -3735,7 +3771,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/available-payments/pages/AvailablePaymentsPage.tsx",
-        "line": 560,
+        "line": 594,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -3765,12 +3801,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-b42ae99c76af",
-          "distance": 482,
+          "candidateId": "EPC-06fa894d3b4d",
+          "distance": 510,
           "file": "src/features/available-payments/pages/AvailablePaymentsPage.tsx",
           "handler": "{resetFilters}",
           "humanLabel": "Скинути",
-          "line": 676,
+          "line": 711,
           "permissionKeys": [],
           "score": 12
         }
@@ -3778,7 +3814,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/available-payments/pages/AvailablePaymentsPage.tsx",
-        "line": 194,
+        "line": 201,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -3800,20 +3836,22 @@
       "proposedPermission": "accounting.accounting_available_payments.open_marked_outcome.modal_open",
       "securityLevel": "low",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
-      "duplicateOf": null,
+      "disposition": "duplicate_occurrence",
+      "dispositionReason": "The page-level marked-task opener enters the same permission-checked outcome workflow finalized by PE-00081.",
+      "duplicateOf": "PE-00081",
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "payments.available_payments.outcome_order.create"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-eb1c0e72f7ff",
-          "distance": 478,
+          "candidateId": "EPC-cc5093be651b",
+          "distance": 507,
           "file": "src/features/available-payments/pages/AvailablePaymentsPage.tsx",
           "handler": "{openMarkedOutcome}",
           "humanLabel": "Створити видатковий",
-          "line": 721,
+          "line": 757,
           "permissionKeys": [],
           "score": 17
         }
@@ -3821,7 +3859,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/available-payments/pages/AvailablePaymentsPage.tsx",
-        "line": 243,
+        "line": 250,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -3851,12 +3889,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-3b4688675447",
-          "distance": 485,
+          "candidateId": "EPC-6eb6a51fa3e6",
+          "distance": 515,
           "file": "src/features/available-payments/pages/AvailablePaymentsPage.tsx",
           "handler": "{clearMarked}",
           "humanLabel": "Очистити",
-          "line": 724,
+          "line": 761,
           "permissionKeys": [],
           "score": 11
         }
@@ -3864,7 +3902,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/available-payments/pages/AvailablePaymentsPage.tsx",
-        "line": 239,
+        "line": 246,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -3894,12 +3932,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-b1f3fa661a8b",
+          "candidateId": "EPC-fb8f09e13bf6",
           "distance": 5,
           "file": "src/features/available-payments/pages/AvailablePaymentsPage.tsx",
           "handler": "{() => toggleMarked(markedModel)}",
           "humanLabel": "Прибрати",
-          "line": 732,
+          "line": 769,
           "permissionKeys": [],
           "score": 23
         }
@@ -3907,7 +3945,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/available-payments/pages/AvailablePaymentsPage.tsx",
-        "line": 737,
+        "line": 774,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -3929,17 +3967,19 @@
       "proposedPermission": "accounting.accounting_available_payments.open_detail.row_click",
       "securityLevel": "medium",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "covered_existing",
+      "dispositionReason": "The detail drawer presents task data already returned by the protected page registry and remains inside the page.view read boundary.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "payments.available_payments.page.view"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [],
       "source": {
         "status": "resolved",
         "file": "src/features/available-payments/pages/AvailablePaymentsPage.tsx",
-        "line": 32,
+        "line": 34,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -3961,20 +4001,22 @@
       "proposedPermission": "accounting.accounting_available_payments.event_event_stop_propagation_on_open_group.modal_open",
       "securityLevel": "low",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
-      "duplicateOf": null,
+      "disposition": "duplicate_occurrence",
+      "dispositionReason": "The explicit details action and row click open the same page-scoped drawer from the same protected registry payload.",
+      "duplicateOf": "PE-00104",
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "payments.available_payments.page.view"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-7af7c7ec1b32",
-          "distance": 375,
+          "candidateId": "EPC-51c789e12f22",
+          "distance": 399,
           "file": "src/features/available-payments/pages/AvailablePaymentsPage.tsx",
           "handler": "{(event) => { event.stopPropagation() onOpen(group) }}",
           "humanLabel": "Деталі",
-          "line": 912,
+          "line": 949,
           "permissionKeys": [],
           "score": 9
         }
@@ -3982,7 +4024,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/available-payments/pages/AvailablePaymentsPage.tsx",
-        "line": 537,
+        "line": 550,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -80059,18 +80101,6 @@
   ],
   "reviewCandidateIds": [
     "PE-00079",
-    "PE-00081",
-    "PE-00084",
-    "PE-00085",
-    "PE-00088",
-    "PE-00089",
-    "PE-00090",
-    "PE-00091",
-    "PE-00092",
-    "PE-00095",
-    "PE-00101",
-    "PE-00104",
-    "PE-00105",
     "PE-00110",
     "PE-00111",
     "PE-00113",

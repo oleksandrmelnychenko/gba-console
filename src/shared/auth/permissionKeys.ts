@@ -288,6 +288,21 @@ export const PermissionKeys = {
     },
   },
   FinancialAdministration: {
+    AvailablePayments: {
+      Page: {
+        View: 'payments.available_payments.page.view',
+      },
+      OutcomeOrder: {
+        Create: 'payments.available_payments.outcome_order.create',
+      },
+      Task: {
+        MarkAvailable: 'payments.available_payments.task.mark_available',
+        Merge: 'payments.available_payments.task.merge',
+      },
+      CashFlow: {
+        Open: 'payments.available_payments.cash_flow.open',
+      },
+    },
     Banks: {
       Page: {
         View: 'payments.banks.page.view',
@@ -1255,6 +1270,14 @@ export type ProductSpecificationCodesPermissionKey =
   | Values<typeof PermissionKeys.ProductSpecificationCodes.Code>
 
 export type FinancialAdministrationPermissionKey =
+  | Values<typeof PermissionKeys.FinancialAdministration.AvailablePayments.Page>
+  | Values<
+      typeof PermissionKeys.FinancialAdministration.AvailablePayments.OutcomeOrder
+    >
+  | Values<typeof PermissionKeys.FinancialAdministration.AvailablePayments.Task>
+  | Values<
+      typeof PermissionKeys.FinancialAdministration.AvailablePayments.CashFlow
+    >
   | Values<typeof PermissionKeys.FinancialAdministration.Banks.Page>
   | Values<typeof PermissionKeys.FinancialAdministration.Banks.Bank>
   | Values<typeof PermissionKeys.FinancialAdministration.CashflowArticles.Page>
@@ -2357,6 +2380,18 @@ const eventPermissionKeys = new Set<string>([
   ...Object.values(PermissionKeys.ProductPricing.CompetitorSearch),
   ...Object.values(PermissionKeys.ProductSpecificationCodes.Page),
   ...Object.values(PermissionKeys.ProductSpecificationCodes.Code),
+  ...Object.values(
+    PermissionKeys.FinancialAdministration.AvailablePayments.Page,
+  ),
+  ...Object.values(
+    PermissionKeys.FinancialAdministration.AvailablePayments.OutcomeOrder,
+  ),
+  ...Object.values(
+    PermissionKeys.FinancialAdministration.AvailablePayments.Task,
+  ),
+  ...Object.values(
+    PermissionKeys.FinancialAdministration.AvailablePayments.CashFlow,
+  ),
   ...Object.values(PermissionKeys.FinancialAdministration.Banks.Page),
   ...Object.values(PermissionKeys.FinancialAdministration.Banks.Bank),
   ...Object.values(

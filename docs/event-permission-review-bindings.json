@@ -4169,6 +4169,70 @@
       "canonicalPermissionKeys": ["warehouses.company_cars.car.edit"],
       "reason": "The explicit edit action and row click enter the same car.edit route and are not separate permissions."
     },
+    "PE-00081": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["payments.available_payments.outcome_order.create"],
+      "reason": "The final outcome-order form rechecks outcome_order.create and submits only to the dedicated idempotent mutation-policy-protected supplies façade."
+    },
+    "PE-00084": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-00081",
+      "canonicalPermissionKeys": ["payments.available_payments.outcome_order.create"],
+      "reason": "The marked-task button only opens the outcome workflow finalized by PE-00081 and is not a separate permission."
+    },
+    "PE-00085": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["payments.available_payments.task.merge"],
+      "reason": "The merge handler rechecks task.merge and sends identity-only task references through the dedicated mutation-policy-protected façade."
+    },
+    "PE-00088": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["payments.available_payments.cash_flow.open"],
+      "reason": "Cash-flow rows and drilldown are available only inside the cash_flow.open tab whose data uses the dedicated protected façade."
+    },
+    "PE-00089": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-00081",
+      "canonicalPermissionKeys": ["payments.available_payments.outcome_order.create"],
+      "reason": "The form-submit scanner occurrence is the same final outcome-order action as PE-00081."
+    },
+    "PE-00090": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["accounting.cashflow_articles.article.create"],
+      "reason": "Creating a payment-movement article reuses the existing accounting article.create capability and its protected accounting façade."
+    },
+    "PE-00091": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-00088",
+      "canonicalPermissionKeys": ["payments.available_payments.cash_flow.open"],
+      "reason": "The inner table row click is another entry into the cash-flow drilldown already governed by PE-00088."
+    },
+    "PE-00092": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["payments.available_payments.task.mark_available"],
+      "reason": "The final transfer-to-payment handler rechecks task.mark_available and calls only the idempotent document-aware task façade."
+    },
+    "PE-00095": {
+      "disposition": "technical_ui",
+      "reason": "Redirecting to the source model is navigation only; the destination route owns and enforces its own page/action permissions."
+    },
+    "PE-00101": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-00081",
+      "canonicalPermissionKeys": ["payments.available_payments.outcome_order.create"],
+      "reason": "The page-level marked-task opener enters the same permission-checked outcome workflow finalized by PE-00081."
+    },
+    "PE-00104": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["payments.available_payments.page.view"],
+      "reason": "The detail drawer presents task data already returned by the protected page registry and remains inside the page.view read boundary."
+    },
+    "PE-00105": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-00104",
+      "canonicalPermissionKeys": ["payments.available_payments.page.view"],
+      "reason": "The explicit details action and row click open the same page-scoped drawer from the same protected registry payload."
+    },
     "PE-01869": {
       "disposition": "technical_ui",
       "reason": "The shared Excel format card only selects the requested representation; each caller owns and rechecks the upstream document-generation permission."
