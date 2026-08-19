@@ -4003,6 +4003,27 @@
       "canonicalPermissionKeys": ["products.placements.page.view"],
       "reason": "Vendor code and product name are two entry controls for the same page-scoped product card."
     },
+    "PE-00936": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["warehouse_accounting.consignment_balances.document.export"],
+      "reason": "The export control and final handler both require the dedicated document.export capability and call only permission-scoped server export façades."
+    },
+    "PE-00937": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["warehouse_accounting.consignment_balances.page.view"],
+      "reason": "Batch details are an in-page read under page.view; the page is fail-closed and all batch data is loaded only through page-scoped server façades."
+    },
+    "PE-00938": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["products.assortment.movement.open"],
+      "reason": "Product movement is hidden and inert without the existing movement.open capability and loads only through its permission-scoped server façade."
+    },
+    "PE-00939": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-00938",
+      "canonicalPermissionKeys": ["products.assortment.movement.open"],
+      "reason": "The row action and row click converge on the same permission-checked product-movement workflow and are not separate permissions."
+    },
     "PE-00968": {
       "disposition": "duplicate_occurrence",
       "duplicateOf": "PE-00970",

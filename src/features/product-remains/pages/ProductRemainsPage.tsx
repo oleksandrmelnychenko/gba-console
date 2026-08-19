@@ -16,6 +16,7 @@ import { AppDrawer } from "../../../shared/ui/AppDrawer"
 import { CircleAlert, Download, RefreshCw, RotateCcw, Search } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
+import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { translate } from '../../../shared/i18n/translate'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -24,6 +25,8 @@ import { DocumentExportModal } from '../../../shared/ui/document-export-modal/Do
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { Paginator } from '../../../shared/ui/paginator/Paginator'
 import { TableRowAction } from '../../../shared/ui/table-row-action'
+import { PermissionGate } from '../../auth/components/PermissionGate'
+import { useAuth } from '../../auth/useAuth'
 import {
   exportGroupedProductRemains,
   exportProductRemains,
@@ -96,6 +99,7 @@ function getProductRemainsInitialTab(routeTab: string | undefined): ProductRemai
 
 function useProductRemainsPageModel() {
   const { t } = useI18n()
+  const { hasPermission } = useAuth()
   const navigate = useNavigate()
   const { tab: routeTab } = useParams()
   const [activeTab, setActiveTab] = useValueState<ProductRemainsTab>(() => getProductRemainsInitialTab(routeTab))
@@ -154,8 +158,10 @@ function useProductRemainsPageModel() {
   const resourceError = storageResourceError || supplierResourceError
   const storageOptions = useMemo(() => buildStorageOptions(storages), [storages])
   const supplierSelectOptions = useMemo(() => buildSupplierOptions(supplierOptions), [supplierOptions])
+  const canExport = hasPermission(PermissionKeys.WarehouseAccounting.ConsignmentBalances.Document.Export)
+  const canOpenMovement = hasPermission(PermissionKeys.ProductsAssortment.Movement.Open)
   const batchColumns = useProductRemainBatchColumns()
-  const productColumns = useProductRemainProductColumns(openMovement)
+  const productColumns = useProductRemainProductColumns(canOpenMovement ? openMovement : undefined)
   const batchPage = getPageFromOffset(batchOffset, pageSize)
   const productPage = getPageFromOffset(productOffset, pageSize)
   const batchTotalPages = getTotalPages(batchTotals, pageSize)
@@ -301,7 +307,7 @@ function useProductRemainsPageModel() {
   }
 
   function openMovement(row: RemainingConsignment) {
-    if (!row.ConsignmentItemNetId) {
+    if (!hasPermission(PermissionKeys.ProductsAssortment.Movement.Open) || !row.ConsignmentItemNetId) {
       return
     }
 
@@ -309,7 +315,7 @@ function useProductRemainsPageModel() {
   }
 
   async function handleExport() {
-    if (exportingTab || filterError) {
+    if (!hasPermission(PermissionKeys.WarehouseAccounting.ConsignmentBalances.Document.Export) || exportingTab || filterError) {
       return
     }
 
@@ -367,7 +373,7 @@ function useProductRemainsPageModel() {
   }
 
   return {
-    activeError, activeTab, batchColumns, batchDetailColumns, batchHasMore, batchPage, batchRows, batchTotals, batchTotalPages,
+    activeError, activeTab, batchColumns, batchDetailColumns, batchHasMore, batchPage, batchRows, batchTotals, batchTotalPages, canExport, canOpenMovement,
     dateFrom, dateTo, downloadDocument, downloadModalOpened, exportingTab, filterError, isActiveLoading,
     isLoadingBatches, isLoadingProducts, isLoadingStorages, isLoadingSuppliers, openMovement, pageSize, productColumns,
     productHasMore, productPage, productRows, productSearchDraft, productTotals, productTotalPages, resourceError,
@@ -678,6 +684,23 @@ function getTotalPages<TItem>(totals: CollectionWithTotals<TItem> | null, pageSi
 }
 
 export function ProductRemainsPage() {
+  return (
+    <PermissionGate
+      permissionKey={PermissionKeys.SystemPages.ConsignmentBalances.View}
+      fallback={<ProductRemainsPermissionDenied />}
+    >
+      <ProductRemainsPageContent />
+    </PermissionGate>
+  )
+}
+
+function ProductRemainsPermissionDenied() {
+  const { t } = useI18n()
+
+  return <Text c="red" p="md">{t('Доступ заборонено')}</Text>
+}
+
+function ProductRemainsPageContent() {
   const model = useProductRemainsPageModel()
 
   return <ProductRemainsPageView model={model} />
@@ -686,7 +709,7 @@ export function ProductRemainsPage() {
 function ProductRemainsPageView({ model }: { model: ReturnType<typeof useProductRemainsPageModel> }) {
   const { t } = useI18n()
   const {
-    activeError, activeTab, batchColumns, batchDetailColumns, batchHasMore, batchPage, batchRows, batchTotals, batchTotalPages,
+    activeError, activeTab, batchColumns, batchDetailColumns, batchHasMore, batchPage, batchRows, batchTotals, batchTotalPages, canExport, canOpenMovement,
     dateFrom, dateTo, downloadDocument, downloadModalOpened, exportingTab, filterError, isActiveLoading,
     isLoadingBatches, isLoadingProducts, isLoadingStorages, isLoadingSuppliers, openMovement, pageSize, productColumns,
     productHasMore, productPage, productRows, productSearchDraft, productTotals, productTotalPages, resourceError,
@@ -790,19 +813,21 @@ function ProductRemainsPageView({ model }: { model: ReturnType<typeof useProduct
                   <RotateCcw size={17} />
                 </ActionIcon>
               </Tooltip>
-              <Tooltip label={t('Експорт')}>
-                <ActionIcon
-                  aria-label={t('Експорт')}
-                  color="gray"
-                  disabled={Boolean(exportingTab || filterError)}
-                  loading={exportingTab === activeTab}
-                  size={34}
-                  variant="light"
-                  onClick={handleExport}
-                >
-                  <Download size={17} />
-                </ActionIcon>
-              </Tooltip>
+              {canExport && (
+                <Tooltip label={t('Експорт')}>
+                  <ActionIcon
+                    aria-label={t('Експорт')}
+                    color="gray"
+                    disabled={Boolean(exportingTab || filterError)}
+                    loading={exportingTab === activeTab}
+                    size={34}
+                    variant="light"
+                    onClick={handleExport}
+                  >
+                    <Download size={17} />
+                  </ActionIcon>
+                </Tooltip>
+              )}
               <Paginator
                 hasNext={activeTab === 'batches' ? batchHasMore : productHasMore}
                 isLoading={isActiveLoading}
@@ -866,7 +891,7 @@ function ProductRemainsPageView({ model }: { model: ReturnType<typeof useProduct
                 showLayoutControls
                 tableId="product-remains-products"
                 toolbarPortalTarget={tableToolbarSlot}
-                onRowClick={openMovement}
+                onRowClick={canOpenMovement ? openMovement : undefined}
               />
               <RemainsTotalsFooter kind="products" totals={productTotals} />
             </Stack>
@@ -895,13 +920,13 @@ function ProductRemainsPageView({ model }: { model: ReturnType<typeof useProduct
       </AppDrawer>
 
       <AppDrawer
-        opened={Boolean(selectedMovementRow)}
+        opened={Boolean(canOpenMovement && selectedMovementRow)}
         position="right"
         size="90vw"
         title={selectedMovementRow ? `${t('Рух товару')}: ${getVendorCode(selectedMovementRow.Product)}` : t('Рух товару')}
         onClose={() => setSelectedMovementRow(null)}
       >
-        {selectedMovementRow && (
+        {canOpenMovement && selectedMovementRow && (
           <ProductRemainMovementsPanel
             key={getProductRowId(selectedMovementRow, 0)}
             row={selectedMovementRow}
@@ -1030,7 +1055,7 @@ function useProductRemainBatchColumns() {
   )
 }
 
-function useProductRemainProductColumns(onOpenMovement: (row: RemainingConsignment) => void) {
+function useProductRemainProductColumns(onOpenMovement?: (row: RemainingConsignment) => void) {
   const { t } = useI18n()
 
   return useMemo<DataTableColumn<RemainingConsignment>[]>(
@@ -1142,7 +1167,7 @@ function useProductRemainProductColumns(onOpenMovement: (row: RemainingConsignme
       accessor: (row) => row.StorageName,
       cell: (row) => displayValue(row.StorageName),
     },
-    {
+    ...(onOpenMovement ? [{
       id: 'actions',
       header: '',
       width: 72,
@@ -1157,7 +1182,7 @@ function useProductRemainProductColumns(onOpenMovement: (row: RemainingConsignme
           onClick={() => onOpenMovement(row)}
         />
       ),
-    },
+    } satisfies DataTableColumn<RemainingConsignment>] : []),
     ],
     [onOpenMovement, t],
   )

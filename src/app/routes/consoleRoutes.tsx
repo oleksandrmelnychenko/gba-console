@@ -176,10 +176,12 @@ const migratedConsoleRoutes: ConsoleRoute[] = [
   {
     path: '/products/storages/incomes',
     element: lazyRoute(<ProductRemainsPage />),
+    permissionKey: PermissionKeys.SystemPages.ConsignmentBalances.View,
   },
   {
     path: '/products/storages/incomes/:tab',
     element: lazyRoute(<ProductRemainsPage />),
+    permissionKey: PermissionKeys.SystemPages.ConsignmentBalances.View,
   },
   {
     path: '/products/transfers',

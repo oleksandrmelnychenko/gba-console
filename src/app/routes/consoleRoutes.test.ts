@@ -25,6 +25,7 @@ const EXPECTED_NEW_PAGE_PERMISSIONS = {
   '/resales': PermissionKeys.Resales.Page.View,
   '/reports/stocks': PermissionKeys.ReportsStocks.Page.View,
   '/products/transfers': PermissionKeys.ProductTransfers.Page.View,
+  '/products/storages/incomes': PermissionKeys.SystemPages.ConsignmentBalances.View,
 } as const
 
 describe('newly classified page permissions', () => {

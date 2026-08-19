@@ -5,24 +5,24 @@
     "classifiedRecords": 1902,
     "dispositionCounts": {
       "technical_ui": 775,
-      "covered_existing": 585,
-      "duplicate_occurrence": 294,
-      "business_candidate": 168,
+      "covered_existing": 588,
+      "duplicate_occurrence": 295,
+      "business_candidate": 164,
       "needs_human_review": 67,
       "stale_or_aggregated": 13
     },
-    "reviewCandidates": 235,
+    "reviewCandidates": 231,
     "technicalExcluded": 775,
-    "duplicatesExcluded": 294,
-    "duplicateOccurrencesTotal": 363,
+    "duplicatesExcluded": 295,
+    "duplicateOccurrencesTotal": 364,
     "technicalDuplicateOverlap": 69,
     "sourceResolved": 1828,
     "sourceUnresolved": 74,
     "currentActionResolved": 1184,
     "currentActionUnresolved": 718,
     "currentProductionActions": 1828,
-    "currentPermissionBoundActions": 324,
-    "currentUnboundActions": 1504
+    "currentPermissionBoundActions": 326,
+    "currentUnboundActions": 1502
   },
   "invariants": {
     "allInputRecordsClassified": true,
@@ -37738,7 +37738,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/product-remains/pages/ProductRemainsPage.tsx",
-        "line": 680,
+        "line": 686,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -37771,7 +37771,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/product-remains/pages/ProductRemainsPage.tsx",
-        "line": 680,
+        "line": 686,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -37801,12 +37801,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-87aebafeb6f7",
+          "candidateId": "EPC-4ec633096243",
           "distance": 6,
           "file": "src/features/product-remains/pages/ProductRemainsPage.tsx",
           "handler": "{() => { selectActiveTab(tab.value) }}",
           "humanLabel": null,
-          "line": 711,
+          "line": 734,
           "permissionKeys": [],
           "score": 23
         }
@@ -37814,7 +37814,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/product-remains/pages/ProductRemainsPage.tsx",
-        "line": 717,
+        "line": 740,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -37844,12 +37844,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-f19d51287dec",
-          "distance": 510,
+          "candidateId": "EPC-6a06e0d76f91",
+          "distance": 527,
           "file": "src/features/product-remains/pages/ProductRemainsPage.tsx",
           "handler": "{resetFilters}",
           "humanLabel": "Скинути",
-          "line": 789,
+          "line": 812,
           "permissionKeys": [],
           "score": 12
         }
@@ -37857,7 +37857,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/product-remains/pages/ProductRemainsPage.tsx",
-        "line": 279,
+        "line": 285,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -37879,28 +37879,32 @@
       "proposedPermission": "products.products_storages_incomes.handle_export.command_export",
       "securityLevel": "medium",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "covered_existing",
+      "dispositionReason": "The export control and final handler both require the dedicated document.export capability and call only permission-scoped server export façades.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "warehouse_accounting.consignment_balances.document.export"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-62b0f3f4d67a",
-          "distance": 483,
+          "candidateId": "EPC-e21e2e42a516",
+          "distance": 501,
           "file": "src/features/product-remains/pages/ProductRemainsPage.tsx",
           "handler": "{handleExport}",
           "humanLabel": "Експорт",
-          "line": 794,
-          "permissionKeys": [],
+          "line": 818,
+          "permissionKeys": [
+            "warehouse_accounting.consignment_balances.document.export"
+          ],
           "score": 12
         }
       ],
       "source": {
         "status": "resolved",
         "file": "src/features/product-remains/pages/ProductRemainsPage.tsx",
-        "line": 311,
+        "line": 317,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -37922,20 +37926,22 @@
       "proposedPermission": "products.products_storages_incomes.set_selected_batch.row_click",
       "securityLevel": "medium",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "covered_existing",
+      "dispositionReason": "Batch details are an in-page read under page.view; the page is fail-closed and all batch data is loaded only through page-scoped server façades.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "warehouse_accounting.consignment_balances.page.view"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-1a1288751583",
-          "distance": 707,
+          "candidateId": "EPC-ff279290da89",
+          "distance": 728,
           "file": "src/features/product-remains/pages/ProductRemainsPage.tsx",
           "handler": "{setSelectedBatch}",
           "humanLabel": null,
-          "line": 831,
+          "line": 856,
           "permissionKeys": [],
           "score": 16
         }
@@ -37943,7 +37949,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/product-remains/pages/ProductRemainsPage.tsx",
-        "line": 124,
+        "line": 128,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -37965,28 +37971,32 @@
       "proposedPermission": "products.products_storages_incomes.open_movement.row_click",
       "securityLevel": "medium",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "covered_existing",
+      "dispositionReason": "Product movement is hidden and inert without the existing movement.open capability and loads only through its permission-scoped server façade.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "products.assortment.movement.open"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-71a789c2f549",
-          "distance": 823,
+          "candidateId": "EPC-5306cbf81b91",
+          "distance": 845,
           "file": "src/features/product-remains/pages/ProductRemainsPage.tsx",
-          "handler": "{openMovement}",
+          "handler": "{canOpenMovement ? openMovement : undefined}",
           "humanLabel": null,
-          "line": 854,
-          "permissionKeys": [],
+          "line": 879,
+          "permissionKeys": [
+            "products.assortment.movement.open"
+          ],
           "score": 8
         }
       ],
       "source": {
         "status": "resolved",
         "file": "src/features/product-remains/pages/ProductRemainsPage.tsx",
-        "line": 31,
+        "line": 34,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -38008,20 +38018,22 @@
       "proposedPermission": "products.products_storages_incomes.on_open_movement_row.modal_open",
       "securityLevel": "low",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
-      "duplicateOf": null,
+      "disposition": "duplicate_occurrence",
+      "dispositionReason": "The row action and row click converge on the same permission-checked product-movement workflow and are not separate permissions.",
+      "duplicateOf": "PE-00938",
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "products.assortment.movement.open"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-60c94e20c762",
-          "distance": 849,
+          "candidateId": "EPC-d22a0cb1249b",
+          "distance": 868,
           "file": "src/features/product-remains/pages/ProductRemainsPage.tsx",
           "handler": "{() => onOpenMovement(row)}",
           "humanLabel": "Рух товару",
-          "line": 1152,
+          "line": 1177,
           "permissionKeys": [],
           "score": 15
         }
@@ -38029,7 +38041,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/product-remains/pages/ProductRemainsPage.tsx",
-        "line": 303,
+        "line": 309,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -38059,12 +38071,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-44fe55274f18",
+          "candidateId": "EPC-9041d538434d",
           "distance": 6,
           "file": "src/features/product-remains/pages/ProductRemainsPage.tsx",
           "handler": "{() => dispatch({ type: 'reloadRequested' })}",
           "humanLabel": "Оновити",
-          "line": 1560,
+          "line": 1585,
           "permissionKeys": [],
           "score": 27
         }
@@ -38072,7 +38084,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/product-remains/pages/ProductRemainsPage.tsx",
-        "line": 1566,
+        "line": 1591,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -80093,10 +80105,6 @@
     "PE-00913",
     "PE-00916",
     "PE-00917",
-    "PE-00936",
-    "PE-00937",
-    "PE-00938",
-    "PE-00939",
     "PE-00942",
     "PE-00948",
     "PE-01064",

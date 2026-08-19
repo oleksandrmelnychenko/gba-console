@@ -24,6 +24,9 @@ export const PermissionKeys = {
     ProductAvailabilities: {
       View: 'products.availability.page.view',
     },
+    ConsignmentBalances: {
+      View: 'warehouse_accounting.consignment_balances.page.view',
+    },
     IncomeCashflows: {
       View: 'accounting.income_cashflows.page.view',
     },
@@ -601,6 +604,11 @@ export const PermissionKeys = {
     },
   },
   WarehouseAccounting: {
+    ConsignmentBalances: {
+      Document: {
+        Export: 'warehouse_accounting.consignment_balances.document.export',
+      },
+    },
     Capitalization: {
       Page: {
         View: 'warehouse_accounting.capitalization.page.view',
@@ -975,6 +983,7 @@ export type SystemPagePermissionKey =
   | Values<typeof PermissionKeys.SystemPages.AdvancedReports>
   | Values<typeof PermissionKeys.SystemPages.OutgoingCashflows>
   | Values<typeof PermissionKeys.SystemPages.ProductAvailabilities>
+  | Values<typeof PermissionKeys.SystemPages.ConsignmentBalances>
   | Values<typeof PermissionKeys.SystemPages.IncomeCashflows>
   | Values<typeof PermissionKeys.SystemPages.SupplyCart>
   | Values<typeof PermissionKeys.SystemPages.SupplySales>
@@ -1138,6 +1147,7 @@ export type WarehousesPermissionKey =
   | Values<typeof PermissionKeys.Warehouses.Ukraine.Orders>
 
 export type WarehouseAccountingPermissionKey =
+  | Values<typeof PermissionKeys.WarehouseAccounting.ConsignmentBalances.Document>
   | Values<typeof PermissionKeys.WarehouseAccounting.Capitalization.Page>
   | Values<typeof PermissionKeys.WarehouseAccounting.Capitalization.Capitalization>
   | Values<typeof PermissionKeys.WarehouseAccounting.Capitalization.Document>
@@ -2154,6 +2164,7 @@ const eventPermissionKeys = new Set<string>([
   ...Object.values(PermissionKeys.SystemPages.AdvancedReports),
   ...Object.values(PermissionKeys.SystemPages.OutgoingCashflows),
   ...Object.values(PermissionKeys.SystemPages.ProductAvailabilities),
+  ...Object.values(PermissionKeys.SystemPages.ConsignmentBalances),
   ...Object.values(PermissionKeys.SystemPages.IncomeCashflows),
   ...Object.values(PermissionKeys.SystemPages.SupplyCart),
   ...Object.values(PermissionKeys.SystemPages.SupplySales),
@@ -2267,6 +2278,7 @@ const eventPermissionKeys = new Set<string>([
   ...Object.values(PermissionKeys.Warehouses.Ukraine.Shipments),
   ...Object.values(PermissionKeys.Warehouses.Ukraine.Orders),
   ...Object.values(PermissionKeys.WarehouseAccounting.Capitalization.Page),
+  ...Object.values(PermissionKeys.WarehouseAccounting.ConsignmentBalances.Document),
   ...Object.values(PermissionKeys.WarehouseAccounting.Capitalization.Capitalization),
   ...Object.values(PermissionKeys.WarehouseAccounting.Capitalization.Document),
   ...Object.values(PermissionKeys.WarehouseAccounting.Storages.Page),
