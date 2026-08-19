@@ -133,7 +133,9 @@
   frontend keys = backend catalog keys = 479. Backend exporter читає фактичний
   code-owned каталог; frontend gate перевіряє дублікати, точний розмір і
   двосторонню різницю множин. Поточний результат: `479/479`, catalog version
-  `2026.08.19.62`.
+  `2026.08.19.62`. Єдиний repository verification entrypoint:
+  `npm run verify:event-permissions`; окремих CI manifest-файлів у цих двох
+  репозиторіях немає, тому entrypoint готовий для виклику зовнішнім pipeline.
 - [x] Довести binding для всіх реальних covered actions, де audit поки не має
   машинного `bindingEvidence`: `705/705`,
   `coveredWithoutBindingEvidence = 0`.
