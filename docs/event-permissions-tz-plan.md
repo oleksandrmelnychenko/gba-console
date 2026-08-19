@@ -163,8 +163,8 @@
 
 ## 7. Фіналізація і rollout
 
-- [ ] Синхронізувати frontend branch з актуальним `main`.
-- [ ] Синхронізувати backend branch з актуальним `development`.
+- [x] Синхронізувати frontend branch з актуальним `main`.
+- [x] Синхронізувати backend branch з актуальним `development`.
 - [x] Повні frontend test, lint, typecheck, build і audit checks.
 - [ ] Повний backend build/test та `verify-event-permissions` у required SQL
   mode.
@@ -178,10 +178,10 @@
 
 **Етап 5 — фінальна перевірка реалізованих 479 прав — у роботі.**
 
-Поточний підетап від 2026-08-19:
+Поточний підетап від 2026-08-20:
 
 - [x] Frontend audit/typecheck/lint/full tests/build — 16 matrix audit tests,
-  4 parity tests і 2520 Vitest tests пройшли; production build успішний.
+  4 parity tests і 2564 Vitest tests пройшли; production build успішний.
 - [x] Backend event-permission verification і Release build — API/security
   contracts 94 passed, 2 opt-in SQL skipped; actor authorization 17 passed.
 - [x] Перевірка runtime-каталогу — API повернув 479 active definitions,
@@ -199,10 +199,11 @@
   gate; виправлено 27 ключів, які існували в backend-каталозі, але не входили
   до frontend effective key set. Фінальний результат: 479 унікальних backend
   keys = 479 унікальних frontend keys, без missing/extra/duplicates.
-- [ ] Upstream sync — frontend відстає від `main` на 2 commits і має 1
-  overlapping file; backend відстає від `development` на 6 commits і має 2
-  overlapping files. Merge/rebase не виконувався поверх незакоміченого
-  verification checkpoint; потрібна окрема контрольована синхронізація.
+- [x] Upstream sync — актуальні `origin/main` і `origin/development` злиті в
+  окремі `codex/event-permissions` гілки; обидві мають `0 behind`. Три
+  frontend-конфлікти поєднали upstream folder-tree/comment logic із
+  permission-scoped API. Backend merge пройшов автоматично. Після merge:
+  frontend 2564/2564, backend verifier 94+17, parity 479/479.
 
 Після завершення цього підетапу продовжити **Етап 6 — legacy integration,
 закриття доказів аудиту та production release gate.**
