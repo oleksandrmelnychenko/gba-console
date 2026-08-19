@@ -13,6 +13,7 @@ import { notifications } from '@mantine/notifications'
 import { CircleAlert, RotateCcw, Search } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useReducer, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
@@ -20,6 +21,7 @@ import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui
 import { Paginator } from '../../../shared/ui/paginator/Paginator'
 import { DEFAULT_PAGINATOR_PAGE_SIZE } from '../../../shared/ui/paginator/paginatorPageSize'
 import { TableRowAction } from '../../../shared/ui/table-row-action'
+import { PermissionGate } from '../../auth/components/PermissionGate'
 import { useAuth } from '../../auth/useAuth'
 import { addPaymentImage, editPaymentImage, getPaymentShopItemsPage } from '../api/paymentOnlineShopApi'
 import { PaymentImageEditModal } from '../components/PaymentImageEditModal'
@@ -63,7 +65,7 @@ const priceFormatter = new Intl.NumberFormat('uk-UA', { minimumFractionDigits: 2
 
 function usePaymentOnlineShopModel() {
   const { t } = useI18n()
-  const { user } = useAuth()
+  const { hasPermission, user } = useAuth()
   const navigate = useNavigate()
   const [filterDraft, setFilterDraft] = useValueState<PaymentShopFilters>(EMPTY_FILTERS)
   const [activeFilters, setActiveFilters] = useValueState<PaymentShopFilters>(EMPTY_FILTERS)
@@ -90,6 +92,9 @@ function usePaymentOnlineShopModel() {
     'payment-online-shop:update',
     classifyRetailPaymentImageMutationFailure,
   )
+  const canCreatePayment = hasPermission(PermissionKeys.OnlineShopPayment.Payment.Create)
+  const canEditPayment = hasPermission(PermissionKeys.OnlineShopPayment.Payment.Edit)
+  const canCreateIncomeOrder = hasPermission(PermissionKeys.OnlineShopPayment.IncomeOrder.Create)
 
   usePaymentShopLoader({ activeFilters, page, pageSize, reloadKey, setError, setItems, setLoading, setTotalRowsQty })
 
@@ -134,14 +139,24 @@ function usePaymentOnlineShopModel() {
 
   const createIncomeOrder = useCallback(
     (item: PaymentShopItem) => {
+      if (!hasPermission(PermissionKeys.OnlineShopPayment.IncomeOrder.Create)) {
+        return
+      }
+
       const path = buildIncomeOrderPath(item)
 
       if (path) {
         navigate(path)
       }
     },
-    [navigate],
+    [hasPermission, navigate],
   )
+
+  const openEditPayment = useCallback((item: RetailClientPaymentImageItem) => {
+    if (hasPermission(PermissionKeys.OnlineShopPayment.Payment.Edit)) {
+      setEditItem(item)
+    }
+  }, [hasPermission, setEditItem])
 
   function applyFilters() {
     setPage(1)
@@ -157,7 +172,7 @@ function usePaymentOnlineShopModel() {
   async function handleAddPayment(
     payload: Omit<AddPaymentImagePayload, 'paymentImageId' | 'user'>,
   ): Promise<boolean> {
-    if (!selectedItem?.Id) {
+    if (!hasPermission(PermissionKeys.OnlineShopPayment.Payment.Create) || !selectedItem?.Id) {
       return false
     }
 
@@ -216,7 +231,7 @@ function usePaymentOnlineShopModel() {
   }
 
   async function handleEditPayment(amount: number, comment: string) {
-    if (!editItem || !selectedItem?.Id) {
+    if (!hasPermission(PermissionKeys.OnlineShopPayment.Payment.Edit) || !editItem || !selectedItem?.Id) {
       return
     }
 
@@ -282,14 +297,17 @@ function usePaymentOnlineShopModel() {
     }
   }
 
-  const columns = usePaymentShopColumns(openDetail, createIncomeOrder)
+  const columns = usePaymentShopColumns(
+    openDetail,
+    canCreateIncomeOrder ? createIncomeOrder : undefined,
+  )
   const totalPages = totalRowsQty > 0 ? Math.max(1, Math.ceil(totalRowsQty / pageSize)) : undefined
   const hasNext = totalPages ? page < totalPages : items.length === pageSize
 
   return {
-    activeFilters, applyFilters, closeDetail, columns, createError, editError, editItem, error, filterDraft,
+    activeFilters, applyFilters, canCreatePayment, canEditPayment, closeDetail, columns, createError, editError, editItem, error, filterDraft,
     handleAddPayment, handleEditPayment, hasNext, isCreating, isLoading, isSaving, items, openDetail, page, pageSize,
-    reload, resetFilters, selectedItem, setEditItem, setFilterDraft, setPage, setPageSize,
+    openEditPayment, reload, resetFilters, selectedItem, setEditItem, setFilterDraft, setPage, setPageSize,
     totalPages,
   }
 }
@@ -355,23 +373,42 @@ function usePaymentShopLoader({
 }
 
 export function PaymentOnlineShopPage() {
+  return (
+    <PermissionGate
+      permissionKey={PermissionKeys.SystemPages.OnlineShopPayment.View}
+      fallback={<PaymentOnlineShopPermissionDenied />}
+    >
+      <PaymentOnlineShopPageContent />
+    </PermissionGate>
+  )
+}
+
+function PaymentOnlineShopPermissionDenied() {
+  const { t } = useI18n()
+
+  return <Text c="red" p="md">{t('Доступ заборонено')}</Text>
+}
+
+function PaymentOnlineShopPageContent() {
   const model = usePaymentOnlineShopModel()
 
   return (
     <Stack className="payment-online-shop-page" gap={6}>
       <PaymentShopTableCard model={model} />
       <PaymentShopDetailDrawer
+        canCreatePayment={model.canCreatePayment}
+        canEditPayment={model.canEditPayment}
         createError={model.createError}
         isCreating={model.isCreating}
         item={model.selectedItem}
         onAddPayment={model.handleAddPayment}
         onClose={model.closeDetail}
-        onEditItem={model.setEditItem}
+        onEditItem={model.openEditPayment}
       />
       <PaymentImageEditModal
         editError={model.editError}
         isSaving={model.isSaving}
-        item={model.editItem}
+        item={model.canEditPayment ? model.editItem : null}
         onClose={() => model.setEditItem(null)}
         onConfirm={model.handleEditPayment}
       />
@@ -493,7 +530,10 @@ function PaymentShopTableCard({ model }: { model: ReturnType<typeof usePaymentOn
   )
 }
 
-function usePaymentShopColumns(onOpenDetail: (item: PaymentShopItem) => void, onCreateIncomeOrder: (item: PaymentShopItem) => void) {
+function usePaymentShopColumns(
+  onOpenDetail: (item: PaymentShopItem) => void,
+  onCreateIncomeOrder?: (item: PaymentShopItem) => void,
+) {
   const { t } = useI18n()
 
   return useMemo<DataTableColumn<PaymentShopItem>[]>(
@@ -612,7 +652,7 @@ function usePaymentShopColumns(onOpenDetail: (item: PaymentShopItem) => void, on
         enableResizing: false,
         enableSorting: false,
         cell: (item) =>
-          canCreateIncomeOrder(item) ? (
+          onCreateIncomeOrder && canCreateIncomeOrder(item) ? (
             <TableRowAction
               action="receipt"
               label={t('Новий прибутковий ордер')}

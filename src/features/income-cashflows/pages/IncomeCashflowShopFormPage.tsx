@@ -17,6 +17,7 @@ import { notifications } from '@mantine/notifications'
 import { CircleAlert, Plus, Save } from 'lucide-react'
 import { type FormEvent, useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
+import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { SearchableSelect } from '../../../shared/ui/SearchableSelect'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
@@ -27,8 +28,8 @@ import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import {
   calculateIncomeCashflowExchange,
-  createIncomeCashflow,
-  createIncomeCashflowPaymentMovement,
+  createIncomeCashflowPaymentMovementForAccounting,
+  createOnlineShopIncomeCashflow,
   getIncomeCashflowPaymentMovements,
   getIncomeCashflowRetailClients,
   getIncomeCashflowRetailClientAgreements,
@@ -37,6 +38,8 @@ import {
   searchIncomeCashflowPaymentRegisters,
   searchIncomeCashflowRetailClients,
 } from '../api/incomeCashflowsApi'
+import { PermissionGate } from '../../auth/components/PermissionGate'
+import { useAuth } from '../../auth/useAuth'
 import type {
   Client,
   ClientAgreement,
@@ -125,7 +128,25 @@ type SelectOption = {
 }
 
 export function IncomeCashflowShopFormPage() {
+  return (
+    <PermissionGate
+      permissionKey={PermissionKeys.OnlineShopPayment.IncomeOrder.Create}
+      fallback={<IncomeCashflowShopPermissionDenied />}
+    >
+      <IncomeCashflowShopFormPageContent />
+    </PermissionGate>
+  )
+}
+
+function IncomeCashflowShopPermissionDenied() {
   const { t } = useI18n()
+
+  return <Text c="red" p="md">{t('Доступ заборонено')}</Text>
+}
+
+function IncomeCashflowShopFormPageContent() {
+  const { t } = useI18n()
+  const { hasPermission } = useAuth()
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const retailClientId = searchParams.get('retailClientId') || ''
@@ -152,6 +173,9 @@ export function IncomeCashflowShopFormPage() {
   )
   const [movementOptionSubmitGuard] = useState(
     createAutocompleteOptionSubmitGuard,
+  )
+  const canCreateMovement = hasPermission(
+    PermissionKeys.FinancialAdministration.CashflowArticles.Article.Create,
   )
 
   const organizations = useMemo(() => collectOrganizations(retailAgreements), [retailAgreements])
@@ -598,6 +622,10 @@ export function IncomeCashflowShopFormPage() {
   }
 
   async function handleCreateMovement() {
+    if (!hasPermission(PermissionKeys.FinancialAdministration.CashflowArticles.Article.Create)) {
+      return
+    }
+
     const operationName = form.movementSearch.trim()
 
     if (!operationName) {
@@ -615,7 +643,7 @@ export function IncomeCashflowShopFormPage() {
     setError(null)
 
     try {
-      const createdMovement = await createIncomeCashflowPaymentMovement(operationName)
+      const createdMovement = await createIncomeCashflowPaymentMovementForAccounting(operationName)
 
       if (createdMovement) {
         setPaymentMovements((current) => includeEntity(current, createdMovement))
@@ -648,6 +676,10 @@ export function IncomeCashflowShopFormPage() {
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
+
+    if (!hasPermission(PermissionKeys.OnlineShopPayment.IncomeOrder.Create)) {
+      return
+    }
 
     const validationError = validateForm({
       activeMovement,
@@ -695,7 +727,7 @@ export function IncomeCashflowShopFormPage() {
     setError(null)
 
     try {
-      await createIncomeCashflow(payload, form.autoAllocate)
+      await createOnlineShopIncomeCashflow(payload, form.autoAllocate)
       notifications.show({
         color: 'green',
         message: t('Оплату магазину створено'),
@@ -840,19 +872,21 @@ export function IncomeCashflowShopFormPage() {
                   onChange={handleMovementSearchChanged}
                   onOptionSubmit={handleMovementSubmit}
                 />
-                <Tooltip label={t('Створити статтю')} withArrow>
-                  <ActionIcon
-                    aria-label={t('Створити статтю')}
-                    color={CREATE_ACTION_COLOR}
-                    disabled={Boolean(activeMovement) || !form.movementSearch.trim() || isLoading || isSaving}
-                    size={36}
-                    type="button"
-                    variant="outline"
-                    onClick={() => void handleCreateMovement()}
-                  >
-                    <Plus size={17} />
-                  </ActionIcon>
-                </Tooltip>
+                {canCreateMovement && (
+                  <Tooltip label={t('Створити статтю')} withArrow>
+                    <ActionIcon
+                      aria-label={t('Створити статтю')}
+                      color={CREATE_ACTION_COLOR}
+                      disabled={Boolean(activeMovement) || !form.movementSearch.trim() || isLoading || isSaving}
+                      size={36}
+                      type="button"
+                      variant="outline"
+                      onClick={() => void handleCreateMovement()}
+                    >
+                      <Plus size={17} />
+                    </ActionIcon>
+                  </Tooltip>
+                )}
               </Group>
             </SimpleGrid>
           </Stack>

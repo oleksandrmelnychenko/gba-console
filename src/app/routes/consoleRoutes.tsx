@@ -564,6 +564,7 @@ const accountingMigrationRoutes: ConsoleRoute[] = [
   {
     path: '/accounting/income-cashflows/new/shop',
     element: lazyRoute(<IncomeCashflowShopFormPage />),
+    permissionKey: PermissionKeys.OnlineShopPayment.IncomeOrder.Create,
   },
   {
     path: '/accounting/income-cashflows/new/user',
@@ -633,6 +634,7 @@ const accountingMigrationRoutes: ConsoleRoute[] = [
   {
     path: '/accounting/payment-online-shop',
     element: lazyRoute(<PaymentOnlineShopPage />),
+    permissionKey: PermissionKeys.SystemPages.OnlineShopPayment.View,
   },
   { path: '/accounting/sync/documents', element: lazyRoute(<BalancesPage />) },
   {

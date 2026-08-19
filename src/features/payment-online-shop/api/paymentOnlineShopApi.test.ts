@@ -33,7 +33,7 @@ describe('paymentOnlineShopApi', () => {
       }),
     ).resolves.toEqual(items)
 
-    expect(apiRequestMock).toHaveBeenCalledWith('/sales/payment/images/get/filtered', {
+    expect(apiRequestMock).toHaveBeenCalledWith('/sales/payment-online-shop/registry', {
       query: {
         limit: 100,
         offset: 0,
@@ -57,7 +57,7 @@ describe('paymentOnlineShopApi', () => {
       saleNumber: 'КИн',
     })
 
-    expect(apiRequestMock).toHaveBeenCalledWith('/sales/payment/images/get/filtered', {
+    expect(apiRequestMock).toHaveBeenCalledWith('/sales/payment-online-shop/registry', {
       query: {
         limit: 50,
         offset: 100,
@@ -114,6 +114,7 @@ describe('paymentOnlineShopApi', () => {
       headers: { 'Idempotency-Key': operationId },
       method: 'POST',
     })
+    expect(apiRequestMock.mock.calls[0]?.[0]).toBe('/retail/clients/payment-online-shop/payment/create')
     expect(body.get('image')).toBe(image)
     expect(JSON.parse(String(body.get('paymentImageItem')))).toEqual({
       Amount: 125.5,
@@ -142,7 +143,7 @@ describe('paymentOnlineShopApi', () => {
     )
 
     expect(apiRequestMock).toHaveBeenCalledWith(
-      '/retail/clients/update/payment/item',
+      '/retail/clients/payment-online-shop/payment/edit',
       {
         body: {
           Amount: 130,

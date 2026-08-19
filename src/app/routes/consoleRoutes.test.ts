@@ -26,6 +26,8 @@ const EXPECTED_NEW_PAGE_PERMISSIONS = {
   '/reports/stocks': PermissionKeys.ReportsStocks.Page.View,
   '/products/transfers': PermissionKeys.ProductTransfers.Page.View,
   '/products/storages/incomes': PermissionKeys.SystemPages.ConsignmentBalances.View,
+  '/accounting/payment-online-shop': PermissionKeys.SystemPages.OnlineShopPayment.View,
+  '/accounting/income-cashflows/new/shop': PermissionKeys.OnlineShopPayment.IncomeOrder.Create,
 } as const
 
 describe('newly classified page permissions', () => {

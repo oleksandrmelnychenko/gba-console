@@ -27,6 +27,9 @@ export const PermissionKeys = {
     ConsignmentBalances: {
       View: 'warehouse_accounting.consignment_balances.page.view',
     },
+    OnlineShopPayment: {
+      View: 'payments.online_shop_payment.page.view',
+    },
     IncomeCashflows: {
       View: 'accounting.income_cashflows.page.view',
     },
@@ -897,6 +900,15 @@ export const PermissionKeys = {
       EditProductComment: 'sales.ukraine.sale.edit_product_comment',
     },
   },
+  OnlineShopPayment: {
+    Payment: {
+      Create: 'payments.online_shop_payment.payment.create',
+      Edit: 'payments.online_shop_payment.payment.edit',
+    },
+    IncomeOrder: {
+      Create: 'payments.online_shop_payment.income_order.create',
+    },
+  },
   Resales: {
     Page: {
       View: 'sales.resales.page.view',
@@ -984,6 +996,7 @@ export type SystemPagePermissionKey =
   | Values<typeof PermissionKeys.SystemPages.OutgoingCashflows>
   | Values<typeof PermissionKeys.SystemPages.ProductAvailabilities>
   | Values<typeof PermissionKeys.SystemPages.ConsignmentBalances>
+  | Values<typeof PermissionKeys.SystemPages.OnlineShopPayment>
   | Values<typeof PermissionKeys.SystemPages.IncomeCashflows>
   | Values<typeof PermissionKeys.SystemPages.SupplyCart>
   | Values<typeof PermissionKeys.SystemPages.SupplySales>
@@ -1202,6 +1215,10 @@ export type OnlineShopClientsPermissionKey =
   | Values<typeof PermissionKeys.OnlineShopClients.Cart>
   | Values<typeof PermissionKeys.OnlineShopClients.Sales>
 
+export type OnlineShopPaymentPermissionKey =
+  | Values<typeof PermissionKeys.OnlineShopPayment.Payment>
+  | Values<typeof PermissionKeys.OnlineShopPayment.IncomeOrder>
+
 export type NewEcommerceClientsPermissionKey =
   Values<typeof PermissionKeys.NewEcommerceClients.Page>
 
@@ -1277,6 +1294,7 @@ export type PermissionKey =
   | IncompleteSalesOnlineShopPermissionKey
   | OnlineShopCitiesPermissionKey
   | OnlineShopClientsPermissionKey
+  | OnlineShopPaymentPermissionKey
   | NewEcommerceClientsPermissionKey
   | OnlineShopSeoPermissionKey
   | ProductDeliveryProtocolsPermissionKey
@@ -2165,6 +2183,7 @@ const eventPermissionKeys = new Set<string>([
   ...Object.values(PermissionKeys.SystemPages.OutgoingCashflows),
   ...Object.values(PermissionKeys.SystemPages.ProductAvailabilities),
   ...Object.values(PermissionKeys.SystemPages.ConsignmentBalances),
+  ...Object.values(PermissionKeys.SystemPages.OnlineShopPayment),
   ...Object.values(PermissionKeys.SystemPages.IncomeCashflows),
   ...Object.values(PermissionKeys.SystemPages.SupplyCart),
   ...Object.values(PermissionKeys.SystemPages.SupplySales),
@@ -2317,6 +2336,8 @@ const eventPermissionKeys = new Set<string>([
   ...Object.values(PermissionKeys.OnlineShopClients.Page),
   ...Object.values(PermissionKeys.OnlineShopClients.Cart),
   ...Object.values(PermissionKeys.OnlineShopClients.Sales),
+  ...Object.values(PermissionKeys.OnlineShopPayment.Payment),
+  ...Object.values(PermissionKeys.OnlineShopPayment.IncomeOrder),
   ...Object.values(PermissionKeys.NewEcommerceClients.Page),
   ...Object.values(PermissionKeys.IncompleteSalesOnlineShop.Page),
   ...Object.values(PermissionKeys.IncompleteSalesOnlineShop.Sale),

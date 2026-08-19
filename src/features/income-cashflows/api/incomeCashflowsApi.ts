@@ -191,6 +191,17 @@ export async function createIncomeCashflowPaymentMovement(operationName: string)
   return result && typeof result === 'object' ? (result as PaymentMovement) : null
 }
 
+export async function createIncomeCashflowPaymentMovementForAccounting(operationName: string): Promise<PaymentMovement | null> {
+  const result = await apiRequest<unknown>('/payments/movements/accounting/new', {
+    method: 'POST',
+    body: {
+      OperationName: operationName,
+    },
+  })
+
+  return result && typeof result === 'object' ? (result as PaymentMovement) : null
+}
+
 export async function searchIncomeCashflowCounterparties(
   value: string,
   type: IncomeCounterpartySearchType,
@@ -406,6 +417,23 @@ export async function createIncomeCashflow(
   isAuto = false,
   operation?: AccountingMutationOperationOptions,
 ): Promise<IncomePaymentOrder | null> {
+  return createIncomeCashflowAtEndpoint(CREATE_INCOME_ENDPOINT, order, isAuto, operation)
+}
+
+export async function createOnlineShopIncomeCashflow(
+  order: IncomePaymentOrder,
+  isAuto = false,
+  operation?: AccountingMutationOperationOptions,
+): Promise<IncomePaymentOrder | null> {
+  return createIncomeCashflowAtEndpoint('/payments/orders/income/online-shop/create', order, isAuto, operation)
+}
+
+async function createIncomeCashflowAtEndpoint(
+  endpoint: string,
+  order: IncomePaymentOrder,
+  isAuto: boolean,
+  operation?: AccountingMutationOperationOptions,
+): Promise<IncomePaymentOrder | null> {
   const result = await executeAccountingMutation({
     identity: order,
     kind: 'income-payment:add',
@@ -414,7 +442,7 @@ export async function createIncomeCashflow(
       isAuto,
       order,
     },
-    request: (payload, context) => apiRequest<unknown>(CREATE_INCOME_ENDPOINT, {
+    request: (payload, context) => apiRequest<unknown>(endpoint, {
       body: payload.order,
       dedupe: false,
       headers: context.headers,

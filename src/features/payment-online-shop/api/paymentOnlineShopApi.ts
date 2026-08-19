@@ -19,7 +19,7 @@ export async function getPaymentShopItems(filters: PaymentShopFilters): Promise<
 }
 
 export async function getPaymentShopItemsPage(filters: PaymentShopFilters): Promise<PaymentShopItemsResponse> {
-  const result = await apiRequest<unknown>('/sales/payment/images/get/filtered', {
+  const result = await apiRequest<unknown>('/sales/payment-online-shop/registry', {
     query: {
       saleDateFrom: formatDateInputForQuery(filters.saleDateFrom),
       saleDateTo: formatDateInputForQuery(filters.saleDateTo),
@@ -50,7 +50,7 @@ export async function addPaymentImage(
   )
   formData.append('image', payload.image)
 
-  const result = await apiRequest<unknown>('/retail/clients/new/payment/item', {
+  const result = await apiRequest<unknown>('/retail/clients/payment-online-shop/payment/create', {
     method: 'POST',
     body: formData,
     headers: getSalesMutationOperationHeaders(operation.operationId),
@@ -64,7 +64,7 @@ export async function editPaymentImage(
   payload: EditPaymentImagePayload,
   operation: SalesMutationOperationOptions,
 ): Promise<PaymentShopItem | null> {
-  const result = await apiRequest<unknown>('/retail/clients/update/payment/item', {
+  const result = await apiRequest<unknown>('/retail/clients/payment-online-shop/payment/edit', {
     method: 'POST',
     body: {
       ...payload.item,

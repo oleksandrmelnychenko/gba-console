@@ -4,6 +4,8 @@ import { IncomeCounterpartySearchType } from '../types'
 import {
   cancelIncomeCashflow,
   createIncomeCashflow,
+  createIncomeCashflowPaymentMovementForAccounting,
+  createOnlineShopIncomeCashflow,
   getIncomeCashflowClientAgreements,
   getIncomeCashflowOrganizations,
   getIncomeCashflowPaymentMovements,
@@ -299,6 +301,27 @@ describe('income cashflow API lookup contracts', () => {
       query: {
         auto: true,
       },
+    })
+  })
+
+  it('uses permission-scoped routes for the online-shop order and article create', async () => {
+    const operationId = '55555555-5555-4555-8555-555555555555'
+    const order = { Amount: 125, AssignedPaymentOrders: [] }
+    apiRequestMock.mockResolvedValue({ NetUid: 'income-shop-1' })
+
+    await createOnlineShopIncomeCashflow(order, false, { operationId })
+    await createIncomeCashflowPaymentMovementForAccounting('Оплата магазину')
+
+    expect(apiRequestMock).toHaveBeenNthCalledWith(1, '/payments/orders/income/online-shop/create', {
+      body: order,
+      dedupe: false,
+      headers: { 'Idempotency-Key': operationId },
+      method: 'POST',
+      query: { auto: false },
+    })
+    expect(apiRequestMock).toHaveBeenNthCalledWith(2, '/payments/movements/accounting/new', {
+      body: { OperationName: 'Оплата магазину' },
+      method: 'POST',
     })
   })
 

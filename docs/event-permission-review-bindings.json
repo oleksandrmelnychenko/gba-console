@@ -4051,6 +4051,55 @@
       "canonicalPermissionKeys": ["warehouse_accounting.transfers.document.export"],
       "reason": "The drawer export control and final handler both require document.export and call only the scoped export façade."
     },
+    "PE-00533": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["payments.online_shop_payment.income_order.create"],
+      "reason": "The final shop income-order submit rechecks income_order.create and uses the dedicated idempotent mutation-policy-protected server façade."
+    },
+    "PE-00534": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["accounting.cashflow_articles.article.create"],
+      "reason": "Creating a custom cash-flow article reuses the existing article.create business capability and calls only its permission-scoped accounting façade."
+    },
+    "PE-00740": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["payments.online_shop_payment.payment.edit"],
+      "reason": "The final payment edit submit rechecks payment.edit and calls only the dedicated mutation-policy-protected server façade."
+    },
+    "PE-00741": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-00740",
+      "canonicalPermissionKeys": ["payments.online_shop_payment.payment.edit"],
+      "reason": "Selecting a payment-image row only enters the edit workflow finalized by PE-00740 and is not a separate technical-click permission."
+    },
+    "PE-00742": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-00740",
+      "canonicalPermissionKeys": ["payments.online_shop_payment.payment.edit"],
+      "reason": "The drawer edit callback converges on the same permission-checked edit submit as PE-00740."
+    },
+    "PE-00743": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["payments.online_shop_payment.payment.create"],
+      "reason": "The final payment create submit rechecks payment.create and uses the dedicated multipart mutation-policy-protected server façade."
+    },
+    "PE-00747": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["payments.online_shop_payment.page.view"],
+      "reason": "Row details reuse data loaded by the fail-closed page registry and therefore stay inside the page.view read boundary."
+    },
+    "PE-00748": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-00533",
+      "canonicalPermissionKeys": ["payments.online_shop_payment.income_order.create"],
+      "reason": "The row action only enters the income-order workflow finalized by PE-00533 and is not a separate permission."
+    },
+    "PE-00749": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-00747",
+      "canonicalPermissionKeys": ["payments.online_shop_payment.page.view"],
+      "reason": "The explicit Details action and row click open the same page-scoped drawer from the same registry data."
+    },
     "PE-01869": {
       "disposition": "technical_ui",
       "reason": "The shared Excel format card only selects the requested representation; each caller owns and rechecks the upstream document-generation permission."

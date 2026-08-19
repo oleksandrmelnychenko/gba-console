@@ -5,24 +5,24 @@
     "classifiedRecords": 1902,
     "dispositionCounts": {
       "technical_ui": 775,
-      "covered_existing": 588,
-      "duplicate_occurrence": 295,
-      "business_candidate": 164,
-      "needs_human_review": 67,
+      "covered_existing": 593,
+      "duplicate_occurrence": 299,
+      "business_candidate": 156,
+      "needs_human_review": 66,
       "stale_or_aggregated": 13
     },
-    "reviewCandidates": 231,
+    "reviewCandidates": 222,
     "technicalExcluded": 775,
-    "duplicatesExcluded": 295,
-    "duplicateOccurrencesTotal": 364,
+    "duplicatesExcluded": 299,
+    "duplicateOccurrencesTotal": 368,
     "technicalDuplicateOverlap": 69,
     "sourceResolved": 1828,
     "sourceUnresolved": 74,
     "currentActionResolved": 1184,
     "currentActionUnresolved": 718,
     "currentProductionActions": 1828,
-    "currentPermissionBoundActions": 326,
-    "currentUnboundActions": 1502
+    "currentPermissionBoundActions": 328,
+    "currentUnboundActions": 1500
   },
   "invariants": {
     "allInputRecordsClassified": true,
@@ -21199,7 +21199,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/income-cashflows/pages/IncomeCashflowShopFormPage.tsx",
-        "line": 127,
+        "line": 130,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -21430,17 +21430,19 @@
       "proposedPermission": "accounting.accounting_income_cashflows.form.form_submit",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "covered_existing",
+      "dispositionReason": "The final shop income-order submit rechecks income_order.create and uses the dedicated idempotent mutation-policy-protected server façade.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "payments.online_shop_payment.income_order.create"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [],
       "source": {
         "status": "resolved",
         "file": "src/features/income-cashflows/pages/IncomeCashflowShopFormPage.tsx",
-        "line": 127,
+        "line": 130,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -21465,28 +21467,32 @@
       "proposedPermission": "accounting.accounting_income_cashflows.void_handle_create_movement.command_submit.3",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "covered_existing",
+      "dispositionReason": "Creating a custom cash-flow article reuses the existing article.create business capability and calls only its permission-scoped accounting façade.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "accounting.cashflow_articles.article.create"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-39d801d16c86",
+          "candidateId": "EPC-901fcd26b0ec",
           "distance": 7,
           "file": "src/features/income-cashflows/pages/IncomeCashflowShopFormPage.tsx",
           "handler": "{() => void handleCreateMovement()}",
           "humanLabel": "Створити статтю",
-          "line": 844,
-          "permissionKeys": [],
+          "line": 877,
+          "permissionKeys": [
+            "accounting.cashflow_articles.article.create"
+          ],
           "score": 20
         }
       ],
       "source": {
         "status": "resolved",
         "file": "src/features/income-cashflows/pages/IncomeCashflowShopFormPage.tsx",
-        "line": 851,
+        "line": 884,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -29849,12 +29855,14 @@
       "proposedPermission": "accounting.accounting_payment_online_shop.handle_confirm.command_submit",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "covered_existing",
+      "dispositionReason": "The final payment edit submit rechecks payment.edit and calls only the dedicated mutation-policy-protected server façade.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "payments.online_shop_payment.payment.edit"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
           "candidateId": "EPC-8ab81da534dc",
@@ -29889,20 +29897,22 @@
       "proposedPermission": "accounting.accounting_payment_online_shop.on_select_row.button_click",
       "securityLevel": "low",
       "rawStatus": "No permission candidate found",
-      "disposition": "needs_human_review",
-      "dispositionReason": "insufficient_evidence_for_automatic_permission_or_exclusion",
-      "duplicateOf": null,
+      "disposition": "duplicate_occurrence",
+      "dispositionReason": "Selecting a payment-image row only enters the edit workflow finalized by PE-00740 and is not a separate technical-click permission.",
+      "duplicateOf": "PE-00740",
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "payments.online_shop_payment.payment.edit"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-c6e82256c6b2",
+          "candidateId": "EPC-865bac6d71a5",
           "distance": 0,
           "file": "src/features/payment-online-shop/components/PaymentImageList.tsx",
           "handler": "{() => onSelect(row)}",
           "humanLabel": "Редагування",
-          "line": 76,
+          "line": 77,
           "permissionKeys": [],
           "score": 9
         }
@@ -29910,7 +29920,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/payment-online-shop/components/PaymentImageList.tsx",
-        "line": 76,
+        "line": 77,
         "alternatives": []
       }
     },
@@ -29929,17 +29939,19 @@
       "proposedPermission": "accounting.accounting_payment_online_shop.on_edit_item.menu_item_select",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
-      "duplicateOf": null,
+      "disposition": "duplicate_occurrence",
+      "dispositionReason": "The drawer edit callback converges on the same permission-checked edit submit as PE-00740.",
+      "duplicateOf": "PE-00740",
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "payments.online_shop_payment.payment.edit"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [],
       "source": {
         "status": "resolved",
         "file": "src/features/payment-online-shop/components/PaymentShopDetailDrawer.tsx",
-        "line": 39,
+        "line": 41,
         "alternatives": []
       }
     },
@@ -29958,20 +29970,22 @@
       "proposedPermission": "accounting.accounting_payment_online_shop.void_handle_create.command_submit",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "covered_existing",
+      "dispositionReason": "The final payment create submit rechecks payment.create and uses the dedicated multipart mutation-policy-protected server façade.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "payments.online_shop_payment.payment.create"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-00fd422db55c",
+          "candidateId": "EPC-ec5719d8f3e0",
           "distance": 0,
           "file": "src/features/payment-online-shop/components/PaymentShopDetailDrawer.tsx",
           "handler": "{() => void handleCreate()}",
           "humanLabel": "Створити",
-          "line": 155,
+          "line": 164,
           "permissionKeys": [],
           "score": 12
         }
@@ -29979,7 +29993,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/payment-online-shop/components/PaymentShopDetailDrawer.tsx",
-        "line": 155,
+        "line": 164,
         "alternatives": []
       }
     },
@@ -30010,7 +30024,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/payment-online-shop/pages/PaymentOnlineShopPage.tsx",
-        "line": 357,
+        "line": 375,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -30039,12 +30053,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-67b84882fa8a",
-          "distance": 293,
+          "candidateId": "EPC-7f77ab5c1171",
+          "distance": 315,
           "file": "src/features/payment-online-shop/pages/PaymentOnlineShopPage.tsx",
           "handler": "{applyFilters}",
           "humanLabel": "Пошук",
-          "line": 439,
+          "line": 476,
           "permissionKeys": [],
           "score": 12
         }
@@ -30052,7 +30066,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/payment-online-shop/pages/PaymentOnlineShopPage.tsx",
-        "line": 146,
+        "line": 161,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -30081,12 +30095,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-725c26964659",
-          "distance": 293,
+          "candidateId": "EPC-d409af00c5f2",
+          "distance": 315,
           "file": "src/features/payment-online-shop/pages/PaymentOnlineShopPage.tsx",
           "handler": "{resetFilters}",
           "humanLabel": "Скинути",
-          "line": 444,
+          "line": 481,
           "permissionKeys": [],
           "score": 12
         }
@@ -30094,7 +30108,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/payment-online-shop/pages/PaymentOnlineShopPage.tsx",
-        "line": 151,
+        "line": 166,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -30115,17 +30129,19 @@
       "proposedPermission": "accounting.accounting_payment_online_shop.open_detail.row_click",
       "securityLevel": "medium",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "covered_existing",
+      "dispositionReason": "Row details reuse data loaded by the fail-closed page registry and therefore stay inside the page.view read boundary.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "payments.online_shop_payment.page.view"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [],
       "source": {
         "status": "resolved",
         "file": "src/features/payment-online-shop/pages/PaymentOnlineShopPage.tsx",
-        "line": 26,
+        "line": 28,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -30146,28 +30162,32 @@
       "proposedPermission": "accounting.accounting_payment_online_shop.on_create_income_order_item.command_submit",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
-      "duplicateOf": null,
+      "disposition": "duplicate_occurrence",
+      "dispositionReason": "The row action only enters the income-order workflow finalized by PE-00533 and is not a separate permission.",
+      "duplicateOf": "PE-00533",
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "payments.online_shop_payment.income_order.create"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-ff8d38a57a3e",
-          "distance": 120,
+          "candidateId": "EPC-af6037ee5c41",
+          "distance": 121,
           "file": "src/features/payment-online-shop/pages/PaymentOnlineShopPage.tsx",
           "handler": "{() => onCreateIncomeOrder(item)}",
           "humanLabel": "Новий прибутковий ордер",
-          "line": 616,
-          "permissionKeys": [],
+          "line": 656,
+          "permissionKeys": [
+            "payments.online_shop_payment.income_order.create"
+          ],
           "score": 21
         }
       ],
       "source": {
         "status": "resolved",
         "file": "src/features/payment-online-shop/pages/PaymentOnlineShopPage.tsx",
-        "line": 496,
+        "line": 535,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -30188,20 +30208,22 @@
       "proposedPermission": "accounting.accounting_payment_online_shop.on_open_detail_item.modal_open",
       "securityLevel": "low",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
-      "duplicateOf": null,
+      "disposition": "duplicate_occurrence",
+      "dispositionReason": "The explicit Details action and row click open the same page-scoped drawer from the same registry data.",
+      "duplicateOf": "PE-00747",
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "payments.online_shop_payment.page.view"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-9a18a36f94df",
-          "distance": 140,
+          "candidateId": "EPC-7d292dde18c4",
+          "distance": 142,
           "file": "src/features/payment-online-shop/pages/PaymentOnlineShopPage.tsx",
           "handler": "{() => onOpenDetail(item)}",
           "humanLabel": "Деталі",
-          "line": 636,
+          "line": 676,
           "permissionKeys": [],
           "score": 14
         }
@@ -30209,7 +30231,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/payment-online-shop/pages/PaymentOnlineShopPage.tsx",
-        "line": 496,
+        "line": 534,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -80085,21 +80107,12 @@
     "PE-00530",
     "PE-00531",
     "PE-00532",
-    "PE-00533",
-    "PE-00534",
     "PE-00540",
     "PE-00541",
     "PE-00543",
     "PE-00548",
     "PE-00549",
     "PE-00550",
-    "PE-00740",
-    "PE-00741",
-    "PE-00742",
-    "PE-00743",
-    "PE-00747",
-    "PE-00748",
-    "PE-00749",
     "PE-00901",
     "PE-00902",
     "PE-00913",

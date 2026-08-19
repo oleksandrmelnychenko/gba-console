@@ -46,6 +46,7 @@ const EXPECTED_NEW_PAGE_KEYS = [
   'accounting.outgoing_cashflows.page.view',
   'products.availability.page.view',
   'warehouse_accounting.consignment_balances.page.view',
+  'payments.online_shop_payment.page.view',
   'accounting.income_cashflows.page.view',
   'orders.supply_cart.page.view',
   'orders.supply_sales.page.view',
@@ -72,7 +73,7 @@ const EXPECTED_ONLINE_SHOP_SEO_ACTION_KEYS = [
 ] as const
 
 describe('newly classified page permission catalog', () => {
-  it('contains eighteen unique business page keys and no technical controls', () => {
+  it('contains nineteen unique business page keys and no technical controls', () => {
     const actual = Object.values(PermissionKeys.SystemPages).flatMap(
       Object.values,
     )

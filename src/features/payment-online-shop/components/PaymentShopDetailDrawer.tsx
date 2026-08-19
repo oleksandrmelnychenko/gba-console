@@ -29,6 +29,8 @@ import {
 const dateTimeFormatter = new Intl.DateTimeFormat('uk-UA', { dateStyle: 'short', timeStyle: 'short' })
 
 export type PaymentShopDetailDrawerProps = {
+  canCreatePayment: boolean
+  canEditPayment: boolean
   createError: string | null
   isCreating: boolean
   item: PaymentShopItem | null
@@ -54,6 +56,8 @@ const INITIAL_DRAFT: CreateFormDraft = {
 }
 
 export function PaymentShopDetailDrawer({
+  canCreatePayment,
+  canEditPayment,
   createError,
   isCreating,
   item,
@@ -111,9 +115,14 @@ export function PaymentShopDetailDrawer({
         </Stack>
 
         <Stack gap="md" style={{ flex: 1 }}>
-          <PaymentImageList isEditing={isEditing} items={items} onSelect={onEditItem} />
+          <PaymentImageList
+            canEdit={canEditPayment}
+            isEditing={isEditing}
+            items={items}
+            onSelect={onEditItem}
+          />
 
-          {isEditing && (
+          {isEditing && canCreatePayment && (
             <Stack gap="sm">
               <Title order={4}>{t('Створення підтвердження оплати')}</Title>
 
