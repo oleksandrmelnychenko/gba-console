@@ -26,3 +26,9 @@ dist-ssr
 
 .claude/
 .playwright-cli/
+
+e2e/.auth/
+e2e/.artifacts/
+playwright-report/
+test-results/
+output/e2e-reports/

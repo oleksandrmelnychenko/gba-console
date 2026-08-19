@@ -248,7 +248,7 @@ function ProtocolIncomePlacementDrawerContent({
             <Button color="gray" variant="light" onClick={onClose}>
               {t('Скасувати')}
             </Button>
-            <Button color={CREATE_ACTION_COLOR} onClick={handleApply}>
+            <Button color={CREATE_ACTION_COLOR} data-testid="placement-apply" onClick={handleApply}>
               {t('Зберегти')}
             </Button>
           </>
@@ -310,7 +310,7 @@ function ProtocolIncomePlacementDrawerContent({
 
         {!draft && (
           <Group>
-              <Button color={CREATE_ACTION_COLOR} disabled={!canAddPlacements} onClick={() => openDraft(null)}>
+              <Button color={CREATE_ACTION_COLOR} data-testid="placement-add-draft" disabled={!canAddPlacements} onClick={() => openDraft(null)}>
               {t('Додати')}
             </Button>
           </Group>
@@ -375,7 +375,7 @@ function ProtocolIncomePlacementDrawerContent({
               <Button color="gray" variant="light" onClick={() => setDraft(null)}>
                 {t('Скасувати')}
               </Button>
-              <Button onClick={acceptDraft}>{t('Зберегти')}</Button>
+              <Button data-testid="placement-accept-draft" onClick={acceptDraft}>{t('Зберегти')}</Button>
             </Group>
           </Stack>
         )}

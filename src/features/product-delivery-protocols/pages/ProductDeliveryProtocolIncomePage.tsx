@@ -1357,6 +1357,9 @@ function useProductIncomeColumns({
           return (
             <UnstyledButton
               disabled={!canOpen}
+              data-testid="placement-cell"
+              data-item-id={gridRow.item.Id}
+              data-placed-qty={row.Qty || 0}
               style={{ cursor: canOpen ? 'pointer' : 'default', display: 'block', width: '100%' }}
               onClick={() => canOpen && model.handleOpenPlacements(gridRow, key, row)}
             >
@@ -1726,6 +1729,7 @@ function ProductIncomeControlsCard({
             <Button
               disabled={!canUseIncome || model.isDirty || model.isSaving}
               variant="default"
+              data-testid="income-ready-all"
               onClick={() => void model.handleAllReadyToPlace()}
             >
               {t('Всі готові до розміщення')}
@@ -1735,6 +1739,7 @@ function ProductIncomeControlsCard({
             <Button
               color={CREATE_ACTION_COLOR}
               disabled={!canUseIncome || model.isDirty || model.isSaving}
+              data-testid="income-add-column"
               onClick={() => model.setColumnModalOpen(true)}
             >
               {t('Додати')}
@@ -1745,6 +1750,7 @@ function ProductIncomeControlsCard({
               color={CREATE_ACTION_COLOR}
               disabled={!canUseIncome || model.isDirty || model.isSaving}
               variant="outline"
+              data-testid="income-capitalize"
               onClick={() => void model.handleProductIncome()}
             >
               {t('Оприходувати')}
