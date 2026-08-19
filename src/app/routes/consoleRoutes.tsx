@@ -518,18 +518,22 @@ const accountingMigrationRoutes: ConsoleRoute[] = [
   {
     path: '/accounting/supplier-organizations',
     element: lazyRoute(<SupplierOrganizationsPage />),
+    permissionKey: PermissionKeys.SupplierOrganizations.Page.View,
   },
   {
     path: '/accounting/supplier-organizations/new',
     element: lazyRoute(<SupplierOrganizationEditPage />),
+    permissionKey: PermissionKeys.SupplierOrganizations.Supplier.Create,
   },
   {
     path: '/accounting/supplier-organizations/edit/:id',
     element: lazyRoute(<SupplierOrganizationEditPage />),
+    permissionKey: PermissionKeys.SupplierOrganizations.Overview.Open,
   },
   {
     path: '/accounting/supplier-organizations/cash-flow/:id',
     element: lazyRoute(<SupplierOrganizationCashFlowPage />),
+    permissionKey: PermissionKeys.SupplierOrganizations.Settlements.Open,
   },
   {
     path: '/accounting/payment-cashflow-articles',

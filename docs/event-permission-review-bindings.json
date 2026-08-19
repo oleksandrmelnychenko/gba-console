@@ -3689,6 +3689,16 @@
       "canonicalPermissionKeys": ["services.supplier_organizations.supplier.edit"],
       "reason": "Bank details are persisted only for an existing supplier through the canonical profile-edit boundary."
     },
+    "PE-01427": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["services.supplier_organizations.settlements.open"],
+      "reason": "Refresh repeats the same permission-scoped settlements details and ledger reads already owned by settlements.open; it is not a separate execution capability."
+    },
+    "PE-01428": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["services.supplier_organizations.settlements.open"],
+      "reason": "The row drawer presents fields already returned by the protected settlements ledger and performs no additional request or mutation."
+    },
     "PE-01433": {
       "disposition": "covered_existing",
       "canonicalPermissionKeys": ["services.supplier_organizations.supplier.edit"],
@@ -3745,6 +3755,15 @@
       "duplicateOf": "PE-01430",
       "canonicalPermissionKeys": ["services.supplier_organizations.supplier.delete"],
       "reason": "The confirmation callback is the final UI occurrence of the already permission-scoped supplier delete action."
+    },
+    "PE-01447": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["services.supplier_organizations.document.export"],
+      "reason": "Registry document generation is independently hidden, rechecked in the final handler, and calls only the exact permission-scoped export façade."
+    },
+    "PE-01449": {
+      "disposition": "technical_ui",
+      "reason": "The row click only opens a local chooser; its settlements and overview actions retain separate permissions and no data request or mutation occurs on row selection."
     },
     "PE-01458": {
       "disposition": "covered_existing",

@@ -552,9 +552,13 @@ export const PermissionKeys = {
     },
     Settlements: {
       Open: 'services.supplier_organizations.settlements.open',
+      Export: 'services.supplier_organizations.settlements.export',
     },
     Overview: {
       Open: 'services.supplier_organizations.overview.open',
+    },
+    Document: {
+      Export: 'services.supplier_organizations.document.export',
     },
   },
   ProvidingServiceActs: {
@@ -1205,6 +1209,7 @@ export type SupplierOrganizationsPermissionKey =
   | Values<typeof PermissionKeys.SupplierOrganizations.Agreement>
   | Values<typeof PermissionKeys.SupplierOrganizations.Settlements>
   | Values<typeof PermissionKeys.SupplierOrganizations.Overview>
+  | Values<typeof PermissionKeys.SupplierOrganizations.Document>
 
 export type ProvidingServiceActsPermissionKey =
   | Values<typeof PermissionKeys.ProvidingServiceActs.Page>
@@ -2378,6 +2383,7 @@ const eventPermissionKeys = new Set<string>([
   ...Object.values(PermissionKeys.SupplierOrganizations.Agreement),
   ...Object.values(PermissionKeys.SupplierOrganizations.Settlements),
   ...Object.values(PermissionKeys.SupplierOrganizations.Overview),
+  ...Object.values(PermissionKeys.SupplierOrganizations.Document),
   ...Object.values(PermissionKeys.ProvidingServiceActs.Page),
   ...Object.values(PermissionKeys.ProvidingServiceActs.Act),
   ...Object.values(PermissionKeys.ProvidingServiceActs.LogisticWay),

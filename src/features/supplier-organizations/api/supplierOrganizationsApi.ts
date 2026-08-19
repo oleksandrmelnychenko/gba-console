@@ -186,11 +186,33 @@ export async function exportSupplyOrganizations(
   filters: SupplyOrganizationsListFilters = {},
 ): Promise<SupplyOrganizationDocumentExport> {
   assertListParams(filters)
-  const result = await apiRequest<unknown>('/supplies/organizations/document', {
+  const result = await apiRequest<unknown>('/supplies/organizations/document/export', {
     query: {
       from: filters.from,
       to: filters.to,
       value: value.trim(),
+    },
+  })
+
+  return normalizeDocumentExport(result)
+}
+
+export async function exportSupplierOrganizationSettlementsDocument(
+  params: SupplierOrganizationCashFlowSearchParams,
+): Promise<SupplyOrganizationDocumentExport> {
+  const normalizedNetId = requireIdentifier(params.netId, 'постачальника або договору')
+  assertDateRange(params.from, params.to)
+
+  if (!Number.isInteger(params.typePaymentTask) || params.typePaymentTask < 0) {
+    throw new RangeError('Тип платіжного завдання має бути невід’ємним цілим числом')
+  }
+
+  const result = await apiRequest<unknown>('/accounting/cashflow/supplier-organizations/document/export', {
+    query: {
+      from: params.from,
+      netId: normalizedNetId,
+      to: params.to,
+      typePaymentTask: params.typePaymentTask,
     },
   })
 

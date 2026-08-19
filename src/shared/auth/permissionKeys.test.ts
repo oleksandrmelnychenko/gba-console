@@ -30,7 +30,9 @@ const EXPECTED_SUPPLIER_ORGANIZATION_KEYS = [
   'services.supplier_organizations.agreement.create',
   'services.supplier_organizations.agreement.edit',
   'services.supplier_organizations.settlements.open',
+  'services.supplier_organizations.settlements.export',
   'services.supplier_organizations.overview.open',
+  'services.supplier_organizations.document.export',
 ] as const
 
 const EXPECTED_PROVIDING_SERVICE_ACT_KEYS = [
@@ -288,6 +290,7 @@ describe('Services canonical permission catalogs', () => {
       ...Object.values(PermissionKeys.SupplierOrganizations.Agreement),
       ...Object.values(PermissionKeys.SupplierOrganizations.Settlements),
       ...Object.values(PermissionKeys.SupplierOrganizations.Overview),
+      ...Object.values(PermissionKeys.SupplierOrganizations.Document),
     ]
 
     expect(actual).toEqual(EXPECTED_SUPPLIER_ORGANIZATION_KEYS)

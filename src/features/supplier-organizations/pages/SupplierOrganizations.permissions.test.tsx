@@ -10,6 +10,8 @@ import {
   createSupplierOrganizationAgreement,
   editSupplierOrganization,
   editSupplierOrganizationAgreement,
+  exportSupplierOrganizationSettlementsDocument,
+  exportSupplyOrganizations,
   getSupplierOrganizationCurrencies,
   getSupplierOrganizationOverviewDetails,
   getSupplierOrganizationSettlementsCashFlow,
@@ -35,6 +37,7 @@ vi.mock('../api/supplierOrganizationsApi', () => ({
   createSupplierOrganizationAgreement: vi.fn(),
   editSupplierOrganization: vi.fn(),
   editSupplierOrganizationAgreement: vi.fn(),
+  exportSupplierOrganizationSettlementsDocument: vi.fn(),
   exportSupplyOrganizations: vi.fn(),
   getSupplierOrganizationCurrencies: vi.fn(),
   getSupplierOrganizationOverviewDetails: vi.fn(),
@@ -72,6 +75,15 @@ vi.mock('../../../shared/ui/data-table/DataTable', () => ({
   ),
 }))
 
+vi.mock('../../../shared/ui/document-export-modal/DocumentExportModal', () => ({
+  DocumentExportModal: ({ opened, onSelectFormat }: {
+    opened: boolean
+    onSelectFormat?: (format: 'excel' | 'pdf') => void
+  }) => opened
+    ? <button type="button" onClick={() => onSelectFormat?.('excel')}>select-export-format</button>
+    : null,
+}))
+
 const SUPPLIER: SupplyOrganization = {
   Id: 1,
   Name: 'Постачальник QA',
@@ -106,6 +118,10 @@ describe('Supplier Organizations canonical permission guards', () => {
     vi.mocked(getSupplierOrganizationOverviewDetails).mockResolvedValue(SUPPLIER)
     vi.mocked(getSupplierOrganizationSettlementsDetails).mockResolvedValue(SUPPLIER)
     vi.mocked(getSupplierOrganizationSettlementsCashFlow).mockResolvedValue({ AccountingCashFlowHeadItems: [] })
+    vi.mocked(exportSupplyOrganizations).mockResolvedValue({ DocumentURL: '/suppliers.xlsx' })
+    vi.mocked(exportSupplierOrganizationSettlementsDocument).mockResolvedValue({
+      DocumentURL: '/settlements.xlsx',
+    })
   })
 
   it('does not mount the registry model without the page permission', () => {
@@ -125,6 +141,30 @@ describe('Supplier Organizations canonical permission guards', () => {
     expect(screen.getByRole('button', { name: 'Взаєморозрахунки' })).toBeTruthy()
     expect(screen.queryByRole('button', { name: 'Перегляд' })).toBeNull()
     expect(screen.queryByRole('button', { name: 'Додати' })).toBeNull()
+  })
+
+  it('keeps registry export independent and rechecks document.export in the final handler', async () => {
+    allowedPermissions.add(PermissionKeys.SupplierOrganizations.Page.View)
+    allowedPermissions.add(PermissionKeys.SupplierOrganizations.Document.Export)
+    renderRoute('/accounting/supplier-organizations')
+
+    const exportButton = await screen.findByRole('button', { name: 'Друк' })
+    allowedPermissions.delete(PermissionKeys.SupplierOrganizations.Document.Export)
+    fireEvent.click(exportButton)
+    expect(exportSupplyOrganizations).not.toHaveBeenCalled()
+
+    allowedPermissions.add(PermissionKeys.SupplierOrganizations.Document.Export)
+    fireEvent.click(exportButton)
+    await waitFor(() => expect(exportSupplyOrganizations).toHaveBeenCalledTimes(1))
+  })
+
+  it('does not turn the registry row chooser into a separate permission boundary', async () => {
+    allowedPermissions.add(PermissionKeys.SupplierOrganizations.Page.View)
+    renderRoute('/accounting/supplier-organizations')
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Постачальник QA' }))
+    expect(screen.queryByRole('button', { name: 'Взаєморозрахунки' })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Перегляд' })).toBeNull()
   })
 
   it.each([
@@ -221,6 +261,27 @@ describe('Supplier Organizations canonical permission guards', () => {
 
     await waitFor(() => expect(getSupplierOrganizationSettlementsDetails).toHaveBeenCalledWith('supplier-1'))
     await waitFor(() => expect(getSupplierOrganizationSettlementsCashFlow).toHaveBeenCalledWith(expect.objectContaining({
+      netId: 'supplier-1',
+      typePaymentTask: 2,
+    })))
+  })
+
+  it('rechecks settlements.export at format selection and keeps it separate from settlements.open', async () => {
+    allowedPermissions.add(PermissionKeys.SupplierOrganizations.Page.View)
+    allowedPermissions.add(PermissionKeys.SupplierOrganizations.Settlements.Open)
+    allowedPermissions.add(PermissionKeys.SupplierOrganizations.Settlements.Export)
+    renderRoute('/accounting/supplier-organizations/cash-flow/supplier-1')
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Друк PDF' }))
+    const selectFormat = screen.getByRole('button', { name: 'select-export-format' })
+
+    allowedPermissions.delete(PermissionKeys.SupplierOrganizations.Settlements.Export)
+    fireEvent.click(selectFormat)
+    expect(exportSupplierOrganizationSettlementsDocument).not.toHaveBeenCalled()
+
+    allowedPermissions.add(PermissionKeys.SupplierOrganizations.Settlements.Export)
+    fireEvent.click(selectFormat)
+    await waitFor(() => expect(exportSupplierOrganizationSettlementsDocument).toHaveBeenCalledWith(expect.objectContaining({
       netId: 'supplier-1',
       typePaymentTask: 2,
     })))

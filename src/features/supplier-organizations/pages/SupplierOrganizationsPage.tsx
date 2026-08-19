@@ -89,8 +89,13 @@ export function SupplierOrganizationsPage() {
 
 function SupplierOrganizationsPageContent() {
   const { t } = useI18n()
+  const { can } = usePermissions()
   const navigate = useNavigate()
   const location = useLocation()
+  const canExport = can(PermissionKeys.SupplierOrganizations.Document.Export)
+  const canOpenActions =
+    can(PermissionKeys.SupplierOrganizations.Settlements.Open)
+    || can(PermissionKeys.SupplierOrganizations.Overview.Open)
 
   function openOrganizationSheet(path: string) {
     navigate(path, {
@@ -118,6 +123,16 @@ function SupplierOrganizationsPageContent() {
   const filterError = getDateFilterError(dateFrom, dateTo)
   const dateFilters = useMemo(() => ({ from: dateFrom || undefined, to: dateTo || undefined }), [dateFrom, dateTo])
   const columns = useSupplierOrganizationColumns()
+
+  useEffect(() => {
+    if (!canOpenActions) {
+      setSelectedOrganization(null)
+    }
+
+    if (!canExport) {
+      setDownloadDocument(null)
+    }
+  }, [canExport, canOpenActions, setDownloadDocument, setSelectedOrganization])
 
   const loadOrganizationsPage = useCallback(async () => {
     const requestId = requestRef.current + 1
@@ -179,7 +194,7 @@ function SupplierOrganizationsPageContent() {
   }
 
   async function exportList() {
-    if (isExporting) {
+    if (isExporting || !can(PermissionKeys.SupplierOrganizations.Document.Export)) {
       return
     }
 
@@ -279,19 +294,21 @@ function SupplierOrganizationsPageContent() {
                 <RotateCcw size={17} />
               </ActionIcon>
             </Tooltip>
-            <Tooltip label={t('Друк')}>
-              <ActionIcon
-                aria-label={t('Друк')}
-                color="gray"
-                disabled={isExporting}
-                loading={isExporting}
-                size={34}
-                variant="light"
-                onClick={exportList}
-              >
-                <Download size={18} />
-              </ActionIcon>
-            </Tooltip>
+            {canExport && (
+              <Tooltip label={t('Друк')}>
+                <ActionIcon
+                  aria-label={t('Друк')}
+                  color="gray"
+                  disabled={isExporting}
+                  loading={isExporting}
+                  size={34}
+                  variant="light"
+                  onClick={exportList}
+                >
+                  <Download size={18} />
+                </ActionIcon>
+              </Tooltip>
+            )}
             <Paginator
               isLoading={isLoading}
               page={page}
@@ -345,13 +362,13 @@ function SupplierOrganizationsPageContent() {
             showLayoutControls
             tableId="supplier-organizations"
             toolbarPortalTarget={tableToolbarSlot}
-            onRowClick={setSelectedOrganization}
+            onRowClick={canOpenActions ? setSelectedOrganization : undefined}
           />
         </div>
       </div>
 
       <SupplierOrganizationActionModal
-        organization={selectedOrganization}
+        organization={canOpenActions ? selectedOrganization : null}
         onClose={() => setSelectedOrganization(null)}
         onOpenCashFlow={(organization) => {
           setSelectedOrganization(null)
@@ -365,7 +382,7 @@ function SupplierOrganizationsPageContent() {
 
       <DocumentExportModal
         document={downloadDocument}
-        opened={Boolean(downloadDocument)}
+        opened={canExport && Boolean(downloadDocument)}
         title={t('Експорт постачальників послуг')}
         onClose={() => setDownloadDocument(null)}
       />

@@ -6,6 +6,7 @@ import {
   createSupplierOrganizationAgreement,
   createSupplyOrganizationAgreement,
   deleteSupplyOrganization,
+  exportSupplierOrganizationSettlementsDocument,
   exportSupplyOrganizations,
   getSupplierOrganizationCashFlow,
   getSupplierOrganizationOverviewDetails,
@@ -342,11 +343,39 @@ describe('supplierOrganizationsApi', () => {
       PdfDocumentURL: '/files/suppliers.pdf',
     })
 
-    expect(apiRequestMock).toHaveBeenNthCalledWith(3, '/supplies/organizations/document', {
+    expect(apiRequestMock).toHaveBeenNthCalledWith(3, '/supplies/organizations/document/export', {
       query: {
         from: '2026-07-01',
         to: '2026-07-24',
         value: 'supplier',
+      },
+    })
+  })
+
+  it('exports settlements through its exact permission-scoped route and accounting type', async () => {
+    apiRequestMock.mockResolvedValueOnce({
+      Data: {
+        DocumentURL: '/files/settlements.xlsx',
+        PdfDocumentURL: '/files/settlements.pdf',
+      },
+    })
+
+    await expect(exportSupplierOrganizationSettlementsDocument({
+      from: '2026-07-01',
+      netId: ' agreement-1 ',
+      to: '2026-07-24',
+      typePaymentTask: 1,
+    })).resolves.toEqual({
+      DocumentURL: '/files/settlements.xlsx',
+      PdfDocumentURL: '/files/settlements.pdf',
+    })
+
+    expect(apiRequestMock).toHaveBeenCalledWith('/accounting/cashflow/supplier-organizations/document/export', {
+      query: {
+        from: '2026-07-01',
+        netId: 'agreement-1',
+        to: '2026-07-24',
+        typePaymentTask: 1,
       },
     })
   })

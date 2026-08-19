@@ -4,15 +4,15 @@
     "inputRecords": 1902,
     "classifiedRecords": 1902,
     "dispositionCounts": {
-      "technical_ui": 776,
-      "covered_existing": 618,
+      "technical_ui": 777,
+      "covered_existing": 621,
       "duplicate_occurrence": 313,
-      "business_candidate": 121,
-      "needs_human_review": 61,
+      "business_candidate": 119,
+      "needs_human_review": 59,
       "stale_or_aggregated": 13
     },
-    "reviewCandidates": 182,
-    "technicalExcluded": 776,
+    "reviewCandidates": 178,
+    "technicalExcluded": 777,
     "duplicatesExcluded": 313,
     "duplicateOccurrencesTotal": 382,
     "technicalDuplicateOverlap": 69,
@@ -21,8 +21,8 @@
     "currentActionResolved": 1178,
     "currentActionUnresolved": 724,
     "currentProductionActions": 1828,
-    "currentPermissionBoundActions": 346,
-    "currentUnboundActions": 1482
+    "currentPermissionBoundActions": 348,
+    "currentUnboundActions": 1480
   },
   "invariants": {
     "allInputRecordsClassified": true,
@@ -57387,12 +57387,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-e32292ca6bc5",
-          "distance": 237,
+          "candidateId": "EPC-7d4233e81f89",
+          "distance": 254,
           "file": "src/features/supplier-organizations/pages/SupplierOrganizationsPage.tsx",
           "handler": "{() => openOrganizationSheet('/accounting/supplier-organizations/new')}",
           "humanLabel": "Додати",
-          "line": 308,
+          "line": 325,
           "permissionKeys": [
             "services.supplier_organizations.supplier.create"
           ],
@@ -57529,17 +57529,21 @@
       "dispositionReason": "local_ui_state_only",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
+      "canonicalPermissionKeys": [
+        "services.supplier_organizations.settlements.export"
+      ],
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-f381354f5320",
-          "distance": 292,
+          "candidateId": "EPC-9e392a030b44",
+          "distance": 308,
           "file": "src/features/supplier-organizations/pages/SupplierOrganizationCashFlowPage.tsx",
           "handler": "{() => { setDownloadDocument(null) setExportModalOpen(true) }}",
           "humanLabel": "Друк PDF",
-          "line": 384,
-          "permissionKeys": [],
+          "line": 400,
+          "permissionKeys": [
+            "services.supplier_organizations.settlements.export"
+          ],
           "score": 45
         }
       ],
@@ -57570,12 +57574,14 @@
       "proposedPermission": "accounting.accounting_supplier_organizations.void_load_organization_void_load_cash_flow.button_click",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "covered_existing",
+      "dispositionReason": "Refresh repeats the same permission-scoped settlements details and ledger reads already owned by settlements.open; it is not a separate execution capability.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "services.supplier_organizations.settlements.open"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [],
       "source": {
         "status": "resolved",
@@ -57604,20 +57610,22 @@
       "proposedPermission": "accounting.accounting_supplier_organizations.row_set_selected_row_row.row_click",
       "securityLevel": "medium",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "covered_existing",
+      "dispositionReason": "The row drawer presents fields already returned by the protected settlements ledger and performs no additional request or mutation.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "services.supplier_organizations.settlements.open"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-3dbd50067d52",
+          "candidateId": "EPC-a48bd5f14ae7",
           "distance": 20,
           "file": "src/features/supplier-organizations/pages/SupplierOrganizationCashFlowPage.tsx",
           "handler": "{(row) => setSelectedRow(row)}",
           "humanLabel": null,
-          "line": 437,
+          "line": 454,
           "permissionKeys": [],
           "score": 20
         }
@@ -57625,7 +57633,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/supplier-organizations/pages/SupplierOrganizationCashFlowPage.tsx",
-        "line": 457,
+        "line": 474,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -58385,12 +58393,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-5582bf0b11f8",
+          "candidateId": "EPC-0a722e49e05c",
           "distance": 54,
           "file": "src/features/supplier-organizations/pages/SupplierOrganizationsPage.tsx",
           "handler": "{resetFilters}",
           "humanLabel": "Скинути",
-          "line": 271,
+          "line": 286,
           "permissionKeys": [],
           "score": 12
         }
@@ -58398,7 +58406,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/supplier-organizations/pages/SupplierOrganizationsPage.tsx",
-        "line": 217,
+        "line": 232,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -58422,28 +58430,32 @@
       "proposedPermission": "accounting.accounting_supplier_organizations.export_list.command_export",
       "securityLevel": "medium",
       "rawStatus": "Candidate existing key in component; binding review required",
-      "disposition": "needs_human_review",
-      "dispositionReason": "raw_audit_claims_existing_binding_but_does_not_name_the_key",
+      "disposition": "covered_existing",
+      "dispositionReason": "Registry document generation is independently hidden, rechecked in the final handler, and calls only the exact permission-scoped export façade.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "services.supplier_organizations.document.export"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-7b6e35e795fd",
-          "distance": 102,
+          "candidateId": "EPC-2a232dff87e3",
+          "distance": 103,
           "file": "src/features/supplier-organizations/pages/SupplierOrganizationsPage.tsx",
           "handler": "{exportList}",
           "humanLabel": "Друк",
-          "line": 283,
-          "permissionKeys": [],
+          "line": 299,
+          "permissionKeys": [
+            "services.supplier_organizations.document.export"
+          ],
           "score": 10
         }
       ],
       "source": {
         "status": "resolved",
         "file": "src/features/supplier-organizations/pages/SupplierOrganizationsPage.tsx",
-        "line": 181,
+        "line": 196,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -58477,12 +58489,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-e32292ca6bc5",
+          "candidateId": "EPC-7d4233e81f89",
           "distance": 5,
           "file": "src/features/supplier-organizations/pages/SupplierOrganizationsPage.tsx",
           "handler": "{() => openOrganizationSheet('/accounting/supplier-organizations/new')}",
           "humanLabel": "Додати",
-          "line": 308,
+          "line": 325,
           "permissionKeys": [
             "services.supplier_organizations.supplier.create"
           ],
@@ -58492,7 +58504,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/supplier-organizations/pages/SupplierOrganizationsPage.tsx",
-        "line": 313,
+        "line": 330,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -58516,20 +58528,20 @@
       "proposedPermission": "accounting.accounting_supplier_organizations.set_selected_organization.row_click",
       "securityLevel": "medium",
       "rawStatus": "Candidate existing key in component; binding review required",
-      "disposition": "needs_human_review",
-      "dispositionReason": "raw_audit_claims_existing_binding_but_does_not_name_the_key",
+      "disposition": "technical_ui",
+      "dispositionReason": "The row click only opens a local chooser; its settlements and overview actions retain separate permissions and no data request or mutation occurs on row selection.",
       "duplicateOf": null,
       "businessActionId": null,
       "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-df40a47bf56f",
-          "distance": 221,
+          "candidateId": "EPC-91a23158748d",
+          "distance": 233,
           "file": "src/features/supplier-organizations/pages/SupplierOrganizationsPage.tsx",
-          "handler": "{setSelectedOrganization}",
+          "handler": "{canOpenActions ? setSelectedOrganization : undefined}",
           "humanLabel": null,
-          "line": 334,
+          "line": 351,
           "permissionKeys": [],
           "score": 23
         }
@@ -58537,7 +58549,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/supplier-organizations/pages/SupplierOrganizationsPage.tsx",
-        "line": 113,
+        "line": 118,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -58571,12 +58583,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-3e3a253e5c21",
+          "candidateId": "EPC-924d1c6b99a2",
           "distance": 236,
           "file": "src/features/supplier-organizations/pages/SupplierOrganizationsPage.tsx",
           "handler": "{() => onOpenCashFlow(organization)}",
           "humanLabel": "Взаєморозрахунки",
-          "line": 592,
+          "line": 609,
           "permissionKeys": [
             "services.supplier_organizations.settlements.open"
           ],
@@ -58586,7 +58598,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/supplier-organizations/pages/SupplierOrganizationsPage.tsx",
-        "line": 356,
+        "line": 373,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -58620,12 +58632,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-983fda338b1a",
+          "candidateId": "EPC-2af36c2ace95",
           "distance": 249,
           "file": "src/features/supplier-organizations/pages/SupplierOrganizationsPage.tsx",
           "handler": "{() => onOpenEdit(organization)}",
           "humanLabel": "Перегляд",
-          "line": 609,
+          "line": 626,
           "permissionKeys": [
             "services.supplier_organizations.overview.open"
           ],
@@ -58635,7 +58647,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/supplier-organizations/pages/SupplierOrganizationsPage.tsx",
-        "line": 360,
+        "line": 377,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -80259,10 +80271,6 @@
     "PE-01419",
     "PE-01420",
     "PE-01421",
-    "PE-01427",
-    "PE-01428",
-    "PE-01447",
-    "PE-01449",
     "PE-01546",
     "PE-01547",
     "PE-01552",
