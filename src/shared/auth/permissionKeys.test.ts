@@ -50,6 +50,7 @@ const EXPECTED_NEW_PAGE_KEYS = [
   'accounting.outgoing_cashflows.page.view',
   'products.availability.page.view',
   'warehouse_accounting.consignment_balances.page.view',
+  'warehouse_accounting.write_off.page.view',
   'payments.online_shop_payment.page.view',
   'accounting.income_cashflows.page.view',
   'orders.supply_cart.page.view',
@@ -77,7 +78,7 @@ const EXPECTED_ONLINE_SHOP_SEO_ACTION_KEYS = [
 ] as const
 
 describe('newly classified page permission catalog', () => {
-  it('contains nineteen unique business page keys and no technical controls', () => {
+  it('contains twenty unique business page keys and no technical controls', () => {
     const actual = Object.values(PermissionKeys.SystemPages).flatMap(
       Object.values,
     )
@@ -425,5 +426,23 @@ describe('human-reviewed sale-file report actions', () => {
       'reports.sale_file.document.print',
     ])
     expect(new Set(actual).size).toBe(3)
+  })
+})
+
+describe('human-reviewed depreciated order actions', () => {
+  it('contains page, create, details, and export without opener or row-click permissions', () => {
+    const actual = [
+      ...Object.values(PermissionKeys.SystemPages.WriteOff),
+      ...Object.values(PermissionKeys.WarehouseAccounting.WriteOff.Order),
+      ...Object.values(PermissionKeys.WarehouseAccounting.WriteOff.Document),
+    ]
+
+    expect(actual).toEqual([
+      'warehouse_accounting.write_off.page.view',
+      'warehouse_accounting.write_off.order.create',
+      'warehouse_accounting.write_off.order.open_details',
+      'warehouse_accounting.write_off.document.export',
+    ])
+    expect(new Set(actual).size).toBe(4)
   })
 })

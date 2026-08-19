@@ -5,24 +5,24 @@
     "classifiedRecords": 1902,
     "dispositionCounts": {
       "technical_ui": 776,
-      "covered_existing": 614,
-      "duplicate_occurrence": 310,
-      "business_candidate": 127,
+      "covered_existing": 617,
+      "duplicate_occurrence": 312,
+      "business_candidate": 122,
       "needs_human_review": 62,
       "stale_or_aggregated": 13
     },
-    "reviewCandidates": 189,
+    "reviewCandidates": 184,
     "technicalExcluded": 776,
-    "duplicatesExcluded": 310,
-    "duplicateOccurrencesTotal": 379,
+    "duplicatesExcluded": 312,
+    "duplicateOccurrencesTotal": 381,
     "technicalDuplicateOverlap": 69,
     "sourceResolved": 1828,
     "sourceUnresolved": 74,
     "currentActionResolved": 1178,
     "currentActionUnresolved": 724,
     "currentProductionActions": 1828,
-    "currentPermissionBoundActions": 341,
-    "currentUnboundActions": 1487
+    "currentPermissionBoundActions": 345,
+    "currentUnboundActions": 1483
   },
   "invariants": {
     "allInputRecordsClassified": true,
@@ -20635,12 +20635,14 @@
       "proposedPermission": "orders.orders_depreciated.submit_form.form_submit",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "covered_existing",
+      "dispositionReason": "The final file-import submit rechecks order.create and crosses only the mutation-policy-protected write-off create façade.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "warehouse_accounting.write_off.order.create"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
           "candidateId": "EPC-39e178e378a1",
@@ -20715,20 +20717,22 @@
       "proposedPermission": "orders.orders_depreciated.on_export_order.command_export",
       "securityLevel": "medium",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "covered_existing",
+      "dispositionReason": "Document generation is independently hidden and its final handler rechecks document.export before calling the protected export façade.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "warehouse_accounting.write_off.document.export"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-a3203d73ad5d",
-          "distance": 60,
+          "candidateId": "EPC-5f5dba7bdf07",
+          "distance": 62,
           "file": "src/features/depreciated-orders/components/DepreciatedOrderDetailDrawer.tsx",
           "handler": "{() => onExport(order)}",
           "humanLabel": "Завантажити",
-          "line": 105,
+          "line": 108,
           "permissionKeys": [],
           "score": 11
         }
@@ -20736,7 +20740,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/depreciated-orders/components/DepreciatedOrderDetailDrawer.tsx",
-        "line": 45,
+        "line": 46,
         "alternatives": []
       }
     },
@@ -20796,7 +20800,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/depreciated-orders/pages/DepreciatedOrdersPage.tsx",
-        "line": 401,
+        "line": 455,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -20825,12 +20829,12 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-48cbd95cf99a",
-          "distance": 252,
+          "candidateId": "EPC-86ab24d76451",
+          "distance": 285,
           "file": "src/features/depreciated-orders/pages/DepreciatedOrdersPage.tsx",
           "handler": "{resetFilters}",
           "humanLabel": "Скинути",
-          "line": 471,
+          "line": 541,
           "permissionKeys": [],
           "score": 12
         }
@@ -20838,7 +20842,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/depreciated-orders/pages/DepreciatedOrdersPage.tsx",
-        "line": 219,
+        "line": 256,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -20859,28 +20863,32 @@
       "proposedPermission": "orders.orders_depreciated.model_open_create_modal.command_submit",
       "securityLevel": "high",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
-      "duplicateOf": null,
+      "disposition": "duplicate_occurrence",
+      "dispositionReason": "The toolbar button only opens the create modal finalized by PE-00511; it is not a separate technical-click permission.",
+      "duplicateOf": "PE-00511",
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "warehouse_accounting.write_off.order.create"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-9ad555a444f3",
+          "candidateId": "EPC-9ea3e332fbc5",
           "distance": 7,
           "file": "src/features/depreciated-orders/pages/DepreciatedOrdersPage.tsx",
           "handler": "{model.openCreateModal}",
           "humanLabel": "Створити акт списання",
-          "line": 490,
-          "permissionKeys": [],
+          "line": 561,
+          "permissionKeys": [
+            "warehouse_accounting.write_off.order.create"
+          ],
           "score": 20
         }
       ],
       "source": {
         "status": "resolved",
         "file": "src/features/depreciated-orders/pages/DepreciatedOrdersPage.tsx",
-        "line": 497,
+        "line": 568,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -20901,17 +20909,19 @@
       "proposedPermission": "orders.orders_depreciated.open_detail.row_click",
       "securityLevel": "medium",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
+      "disposition": "covered_existing",
+      "dispositionReason": "Row details remain inert without open_details and hydrate the selected order only through the protected details façade.",
       "duplicateOf": null,
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "warehouse_accounting.write_off.order.open_details"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [],
       "source": {
         "status": "resolved",
         "file": "src/features/depreciated-orders/pages/DepreciatedOrdersPage.tsx",
-        "line": 35,
+        "line": 37,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -20942,7 +20952,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/depreciated-orders/pages/DepreciatedOrdersPage.tsx",
-        "line": 636,
+        "line": 709,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -20963,28 +20973,32 @@
       "proposedPermission": "orders.orders_depreciated.on_open_detail_order.modal_open",
       "securityLevel": "low",
       "rawStatus": "No permission candidate found",
-      "disposition": "business_candidate",
-      "dispositionReason": "security_relevant_event_requires_business_and_api_boundary_review",
-      "duplicateOf": null,
+      "disposition": "duplicate_occurrence",
+      "dispositionReason": "The explicit Details action and the row click enter the same open_details workflow and do not receive duplicate rights.",
+      "duplicateOf": "PE-00518",
       "businessActionId": null,
-      "canonicalPermissionKeys": [],
-      "classificationSource": "automatic",
+      "canonicalPermissionKeys": [
+        "warehouse_accounting.write_off.order.open_details"
+      ],
+      "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-e91c59bc29c3",
-          "distance": 105,
+          "candidateId": "EPC-edb9760d1c91",
+          "distance": 106,
           "file": "src/features/depreciated-orders/pages/DepreciatedOrdersPage.tsx",
           "handler": "{() => onOpenDetail(order)}",
           "humanLabel": "Деталі",
-          "line": 637,
-          "permissionKeys": [],
+          "line": 710,
+          "permissionKeys": [
+            "warehouse_accounting.write_off.order.open_details"
+          ],
           "score": 15
         }
       ],
       "source": {
         "status": "resolved",
         "file": "src/features/depreciated-orders/pages/DepreciatedOrdersPage.tsx",
-        "line": 532,
+        "line": 604,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -80106,11 +80120,6 @@
     "PE-00137",
     "PE-00152",
     "PE-00163",
-    "PE-00511",
-    "PE-00513",
-    "PE-00517",
-    "PE-00518",
-    "PE-00520",
     "PE-00901",
     "PE-00902",
     "PE-00913",

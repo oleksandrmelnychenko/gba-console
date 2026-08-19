@@ -4233,6 +4233,33 @@
       "canonicalPermissionKeys": ["payments.available_payments.page.view"],
       "reason": "The explicit details action and row click open the same page-scoped drawer from the same protected registry payload."
     },
+    "PE-00511": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["warehouse_accounting.write_off.order.create"],
+      "reason": "The final file-import submit rechecks order.create and crosses only the mutation-policy-protected write-off create façade."
+    },
+    "PE-00513": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["warehouse_accounting.write_off.document.export"],
+      "reason": "Document generation is independently hidden and its final handler rechecks document.export before calling the protected export façade."
+    },
+    "PE-00517": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-00511",
+      "canonicalPermissionKeys": ["warehouse_accounting.write_off.order.create"],
+      "reason": "The toolbar button only opens the create modal finalized by PE-00511; it is not a separate technical-click permission."
+    },
+    "PE-00518": {
+      "disposition": "covered_existing",
+      "canonicalPermissionKeys": ["warehouse_accounting.write_off.order.open_details"],
+      "reason": "Row details remain inert without open_details and hydrate the selected order only through the protected details façade."
+    },
+    "PE-00520": {
+      "disposition": "duplicate_occurrence",
+      "duplicateOf": "PE-00518",
+      "canonicalPermissionKeys": ["warehouse_accounting.write_off.order.open_details"],
+      "reason": "The explicit Details action and the row click enter the same open_details workflow and do not receive duplicate rights."
+    },
     "PE-00529": {
       "disposition": "covered_existing",
       "canonicalPermissionKeys": [

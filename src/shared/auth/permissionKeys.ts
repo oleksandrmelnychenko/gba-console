@@ -27,6 +27,9 @@ export const PermissionKeys = {
     ConsignmentBalances: {
       View: 'warehouse_accounting.consignment_balances.page.view',
     },
+    WriteOff: {
+      View: 'warehouse_accounting.write_off.page.view',
+    },
     OnlineShopPayment: {
       View: 'payments.online_shop_payment.page.view',
     },
@@ -648,6 +651,15 @@ export const PermissionKeys = {
     },
   },
   WarehouseAccounting: {
+    WriteOff: {
+      Order: {
+        Create: 'warehouse_accounting.write_off.order.create',
+        OpenDetails: 'warehouse_accounting.write_off.order.open_details',
+      },
+      Document: {
+        Export: 'warehouse_accounting.write_off.document.export',
+      },
+    },
     ConsignmentBalances: {
       Document: {
         Export: 'warehouse_accounting.consignment_balances.document.export',
@@ -1050,6 +1062,7 @@ export type SystemPagePermissionKey =
   | Values<typeof PermissionKeys.SystemPages.OutgoingCashflows>
   | Values<typeof PermissionKeys.SystemPages.ProductAvailabilities>
   | Values<typeof PermissionKeys.SystemPages.ConsignmentBalances>
+  | Values<typeof PermissionKeys.SystemPages.WriteOff>
   | Values<typeof PermissionKeys.SystemPages.OnlineShopPayment>
   | Values<typeof PermissionKeys.SystemPages.IncomeCashflows>
   | Values<typeof PermissionKeys.SystemPages.SupplyCart>
@@ -1215,6 +1228,8 @@ export type WarehousesPermissionKey =
   | Values<typeof PermissionKeys.Warehouses.Ukraine.Orders>
 
 export type WarehouseAccountingPermissionKey =
+  | Values<typeof PermissionKeys.WarehouseAccounting.WriteOff.Order>
+  | Values<typeof PermissionKeys.WarehouseAccounting.WriteOff.Document>
   | Values<typeof PermissionKeys.WarehouseAccounting.ConsignmentBalances.Document>
   | Values<typeof PermissionKeys.WarehouseAccounting.Capitalization.Page>
   | Values<typeof PermissionKeys.WarehouseAccounting.Capitalization.Capitalization>
@@ -2262,6 +2277,7 @@ const eventPermissionKeys = new Set<string>([
   ...Object.values(PermissionKeys.SystemPages.OutgoingCashflows),
   ...Object.values(PermissionKeys.SystemPages.ProductAvailabilities),
   ...Object.values(PermissionKeys.SystemPages.ConsignmentBalances),
+  ...Object.values(PermissionKeys.SystemPages.WriteOff),
   ...Object.values(PermissionKeys.SystemPages.OnlineShopPayment),
   ...Object.values(PermissionKeys.SystemPages.IncomeCashflows),
   ...Object.values(PermissionKeys.SystemPages.SupplyCart),
@@ -2377,6 +2393,8 @@ const eventPermissionKeys = new Set<string>([
   ...Object.values(PermissionKeys.Warehouses.Ukraine.Shipments),
   ...Object.values(PermissionKeys.Warehouses.Ukraine.Orders),
   ...Object.values(PermissionKeys.WarehouseAccounting.Capitalization.Page),
+  ...Object.values(PermissionKeys.WarehouseAccounting.WriteOff.Order),
+  ...Object.values(PermissionKeys.WarehouseAccounting.WriteOff.Document),
   ...Object.values(PermissionKeys.WarehouseAccounting.ConsignmentBalances.Document),
   ...Object.values(PermissionKeys.WarehouseAccounting.Capitalization.Capitalization),
   ...Object.values(PermissionKeys.WarehouseAccounting.Capitalization.Document),

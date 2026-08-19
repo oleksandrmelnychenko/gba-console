@@ -26,6 +26,7 @@ const EXPECTED_NEW_PAGE_PERMISSIONS = {
   '/reports/stocks': PermissionKeys.ReportsStocks.Page.View,
   '/products/transfers': PermissionKeys.ProductTransfers.Page.View,
   '/products/storages/incomes': PermissionKeys.SystemPages.ConsignmentBalances.View,
+  '/orders/depreciated': PermissionKeys.SystemPages.WriteOff.View,
   '/accounting/payment-online-shop': PermissionKeys.SystemPages.OnlineShopPayment.View,
   '/accounting/income-cashflows': PermissionKeys.SystemPages.IncomeCashflows.View,
   '/accounting/income-cashflows/new/conversion':

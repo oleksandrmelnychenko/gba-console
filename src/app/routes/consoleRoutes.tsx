@@ -265,6 +265,7 @@ const migratedConsoleRoutes: ConsoleRoute[] = [
   {
     path: '/orders/depreciated',
     element: lazyRoute(<DepreciatedOrdersPage />),
+    permissionKey: PermissionKeys.SystemPages.WriteOff.View,
   },
   {
     path: '/product-delivery-protocols',

@@ -13,6 +13,7 @@ import {
 import { notifications } from '@mantine/notifications'
 import { CircleAlert, Plus, RotateCcw } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
+import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { UserRoleType } from '../../../shared/auth/types'
@@ -23,6 +24,7 @@ import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui
 import { Paginator } from '../../../shared/ui/paginator/Paginator'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { TableRowAction } from '../../../shared/ui/table-row-action'
+import { PermissionGate } from '../../auth/components/PermissionGate'
 import { useAuth } from '../../auth/useAuth'
 import {
   createDepreciatedOrderFromFile,
@@ -72,7 +74,10 @@ function useDepreciatedOrdersPageModel() {
     }),
     [],
   )
-  const { user } = useAuth()
+  const { hasPermission, user } = useAuth()
+  const canCreate = hasPermission(PermissionKeys.WarehouseAccounting.WriteOff.Order.Create)
+  const canOpenDetails = hasPermission(PermissionKeys.WarehouseAccounting.WriteOff.Order.OpenDetails)
+  const canExport = hasPermission(PermissionKeys.WarehouseAccounting.WriteOff.Document.Export)
   const isAdmin =
     user?.UserRole?.UserRoleType === UserRoleType.Administrator || user?.UserRole?.UserRoleType === UserRoleType.GBA
   const [filterDraft, setFilterDraft] = useValueState<FilterDraft>(initialFilters)
@@ -93,7 +98,7 @@ function useDepreciatedOrdersPageModel() {
   const [downloadError, setDownloadError] = useValueState<string | null>(null)
   const [isDownloading, setDownloading] = useValueState(false)
   const [isLoading, setLoading] = useValueState(true)
-  const [isLoadingStorages, setLoadingStorages] = useValueState(true)
+  const [isLoadingStorages, setLoadingStorages] = useValueState(false)
   const [page, setPage] = useValueState(1)
   const [pageSize, setPageSize] = useValueState(DEFAULT_PAGE_SIZE)
   const [totalQty, setTotalQty] = useValueState(0)
@@ -121,6 +126,10 @@ function useDepreciatedOrdersPageModel() {
 
   const openDetail = useCallback(
     async (order: DepreciatedOrder) => {
+      if (!hasPermission(PermissionKeys.WarehouseAccounting.WriteOff.Order.OpenDetails)) {
+        return
+      }
+
       const requestId = detailRequestRef.current + 1
       detailRequestRef.current = requestId
       setSelectedOrder(order)
@@ -148,7 +157,7 @@ function useDepreciatedOrdersPageModel() {
         }
       }
     },
-    [setDetailError, setDetailLoading, setSelectedOrder, t],
+    [hasPermission, setDetailError, setDetailLoading, setSelectedOrder, t],
   )
 
   const closeDetail = useCallback(() => {
@@ -161,7 +170,10 @@ function useDepreciatedOrdersPageModel() {
 
   const openDownload = useCallback(
     async (order: DepreciatedOrder) => {
-      if (!order.NetUid) {
+      if (
+        !order.NetUid
+        || !hasPermission(PermissionKeys.WarehouseAccounting.WriteOff.Document.Export)
+      ) {
         return
       }
 
@@ -190,12 +202,37 @@ function useDepreciatedOrdersPageModel() {
         }
       }
     },
-    [setDownloadDocument, setDownloadError, setDownloadOpened, setDownloading, t],
+    [hasPermission, setDownloadDocument, setDownloadError, setDownloadOpened, setDownloading, t],
   )
 
-  const columns = useDepreciatedOrderColumns(openDetail, orderIndexMap)
+  useEffect(() => {
+    if (!canOpenDetails) {
+      closeDetail()
+    }
+  }, [canOpenDetails, closeDetail])
 
-  useDepreciatedOrderStoragesLoader({ reloadKey, setLoadingStorages, setStorageError, setStorages })
+  useEffect(() => {
+    if (!canExport) {
+      closeDownload()
+    }
+  }, [canExport, closeDownload])
+
+  useEffect(() => {
+    if (!canCreate && !isCreating) {
+      setCreateModalOpen(false)
+      setCreateError(null)
+    }
+  }, [canCreate, isCreating, setCreateError, setCreateModalOpen])
+
+  const columns = useDepreciatedOrderColumns(openDetail, orderIndexMap, canOpenDetails)
+
+  useDepreciatedOrderStoragesLoader({
+    enabled: canCreate,
+    reloadKey,
+    setLoadingStorages,
+    setStorageError,
+    setStorages,
+  })
 
   useDepreciatedOrdersLoader({
     activeFilters,
@@ -223,6 +260,10 @@ function useDepreciatedOrdersPageModel() {
   }
 
   function openCreateModal() {
+    if (!hasPermission(PermissionKeys.WarehouseAccounting.WriteOff.Order.Create)) {
+      return
+    }
+
     setCreateError(null)
     setCreateModalOpen(true)
   }
@@ -235,6 +276,10 @@ function useDepreciatedOrdersPageModel() {
   }
 
   async function handleCreate(payload: DepreciatedOrderCreateFromFilePayload) {
+    if (!hasPermission(PermissionKeys.WarehouseAccounting.WriteOff.Order.Create)) {
+      return
+    }
+
     setCreateError(null)
     setCreating(true)
 
@@ -262,7 +307,7 @@ function useDepreciatedOrdersPageModel() {
   }
 
   return {
-    columns, createError, detailError, downloadDocument, downloadError, downloadOpened, error, exceptionMessages,
+    canCreate, canExport, canOpenDetails, columns, createError, detailError, downloadDocument, downloadError, downloadOpened, error, exceptionMessages,
     filterDraft, filterError, isAdmin, isCreateModalOpen, isCreating, isDetailLoading, isDownloading,
     isLoading, isLoadingStorages, orders, page, pageSize, selectedOrder, storageError, storages, totalPages,
     applyFilters, closeCreateModal, closeDetail, closeDownload, handleCreate,
@@ -271,11 +316,13 @@ function useDepreciatedOrdersPageModel() {
 }
 
 function useDepreciatedOrderStoragesLoader({
+  enabled,
   reloadKey,
   setLoadingStorages,
   setStorageError,
   setStorages,
 }: {
+  enabled: boolean
   reloadKey: number
   setLoadingStorages: (value: boolean) => void
   setStorageError: (value: string | null) => void
@@ -284,6 +331,13 @@ function useDepreciatedOrderStoragesLoader({
   const { t } = useI18n()
 
   useEffect(() => {
+    if (!enabled) {
+      setLoadingStorages(false)
+      setStorageError(null)
+      setStorages([])
+      return
+    }
+
     let cancelled = false
 
     async function loadStorages() {
@@ -313,7 +367,7 @@ function useDepreciatedOrderStoragesLoader({
     return () => {
       cancelled = true
     }
-  }, [reloadKey, setLoadingStorages, setStorageError, setStorages, t])
+  }, [enabled, reloadKey, setLoadingStorages, setStorageError, setStorages, t])
 }
 
 function useDepreciatedOrdersLoader({
@@ -399,6 +453,19 @@ function useDepreciatedOrdersLoader({
 }
 
 export function DepreciatedOrdersPage() {
+  const { t } = useI18n()
+
+  return (
+    <PermissionGate
+      fallback={<Alert color="red">{t('Немає права переглядати списання')}</Alert>}
+      permissionKey={PermissionKeys.SystemPages.WriteOff.View}
+    >
+      <DepreciatedOrdersPageContent />
+    </PermissionGate>
+  )
+}
+
+function DepreciatedOrdersPageContent() {
   const model = useDepreciatedOrdersPageModel()
 
   return <DepreciatedOrdersPageView model={model} />
@@ -409,6 +476,7 @@ function DepreciatedOrdersPageView({ model }: { model: ReturnType<typeof useDepr
     <Stack className="depreciated-orders-page" gap={6}>
       <DepreciatedOrdersTableCard model={model} />
       <DepreciatedOrderDetailDrawer
+        canExport={model.canExport}
         detailError={model.detailError}
         downloadDocument={model.downloadDocument}
         downloadError={model.downloadError}
@@ -420,17 +488,19 @@ function DepreciatedOrdersPageView({ model }: { model: ReturnType<typeof useDepr
         onCloseDownload={model.closeDownload}
         onExport={model.openDownload}
       />
-      <DepreciatedOrderCreateModal
-        createError={model.createError}
-        isAdmin={model.isAdmin}
-        isCreating={model.isCreating}
-        isLoadingStorages={model.isLoadingStorages}
-        opened={model.isCreateModalOpen}
-        storageError={model.storageError}
-        storages={model.storages}
-        onClose={model.closeCreateModal}
-        onCreate={model.handleCreate}
-      />
+      {model.canCreate && (
+        <DepreciatedOrderCreateModal
+          createError={model.createError}
+          isAdmin={model.isAdmin}
+          isCreating={model.isCreating}
+          isLoadingStorages={model.isLoadingStorages}
+          opened={model.isCreateModalOpen}
+          storageError={model.storageError}
+          storages={model.storages}
+          onClose={model.closeCreateModal}
+          onCreate={model.handleCreate}
+        />
+      )}
       <DepreciatedOrderExceptionsModal
         exceptions={model.exceptionMessages}
         onClose={() => model.setExceptionMessages([])}
@@ -487,17 +557,19 @@ function DepreciatedOrdersTableCard({ model }: { model: ReturnType<typeof useDep
           />
         </div>
         <div ref={setTableToolbarSlot} className="app-filter-table-toolbar-slot" />
-        <Button
-          color={CREATE_ACTION_COLOR}
-          disabled={!model.isLoadingStorages && model.storages.length === 0}
-          leftSection={<Plus size={16} />}
-          loading={model.isLoadingStorages}
-          size="sm"
-          styles={{ label: { fontFamily: 'var(--font-mono)', letterSpacing: 0 } }}
-          onClick={model.openCreateModal}
-        >
-          {t('Створити акт списання')}
-        </Button>
+        {model.canCreate && (
+          <Button
+            color={CREATE_ACTION_COLOR}
+            disabled={!model.isLoadingStorages && model.storages.length === 0}
+            leftSection={<Plus size={16} />}
+            loading={model.isLoadingStorages}
+            size="sm"
+            styles={{ label: { fontFamily: 'var(--font-mono)', letterSpacing: 0 } }}
+            onClick={model.openCreateModal}
+          >
+            {t('Створити акт списання')}
+          </Button>
+        )}
       </div>
 
       {(error || filterError || storageError) && (
@@ -521,7 +593,7 @@ function DepreciatedOrdersTableCard({ model }: { model: ReturnType<typeof useDep
           showLayoutControls
           tableId="depreciated-orders"
           toolbarPortalTarget={tableToolbarSlot}
-          onRowClick={openDetail}
+          onRowClick={model.canOpenDetails ? openDetail : undefined}
         />
       </div>
     </Card>
@@ -531,6 +603,7 @@ function DepreciatedOrdersTableCard({ model }: { model: ReturnType<typeof useDep
 function useDepreciatedOrderColumns(
   onOpenDetail: (order: DepreciatedOrder) => void,
   indexMap: Map<DepreciatedOrder, number>,
+  canOpenDetails: boolean,
 ) {
   const { t } = useI18n()
 
@@ -632,14 +705,14 @@ function useDepreciatedOrderColumns(
         enableReorder: false,
         enableResizing: false,
         enableSorting: false,
-        cell: (order) => (
+        cell: (order) => canOpenDetails ? (
           <Box onClick={(event) => event.stopPropagation()}>
             <TableRowAction action="details" label={t('Деталі')} onClick={() => onOpenDetail(order)} />
           </Box>
-        ),
+        ) : null,
       },
     ],
-    [indexMap, onOpenDetail, t],
+    [canOpenDetails, indexMap, onOpenDetail, t],
   )
 }
 
