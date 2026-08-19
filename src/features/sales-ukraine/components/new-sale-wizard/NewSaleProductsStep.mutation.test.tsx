@@ -262,14 +262,25 @@ describe('NewSaleProductsStep persistent cart mutations', () => {
       request: {
         clientAgreementNetId: agreementNetId,
         kind: 'add',
-        orderItem: sale.Order?.OrderItems?.[0] as SalesUkraineOrderItem,
+        orderItem: {
+          ...(sale.Order?.OrderItems?.[0] as SalesUkraineOrderItem),
+          Product: createSearchProduct(10),
+        },
         saleNetId: sale.NetUid as string,
       },
     })
     saveSalesPendingMutation(scope, operationId, persisted)
     const onPendingMutationChange = vi.fn()
+    apiMocks.searchSaleProductsWithAvailability.mockResolvedValueOnce([createSearchProduct(10)])
+    apiMocks.getProductAvailabilityBuckets.mockResolvedValueOnce({
+      AvailableQtyUk: 7,
+      AvailableQtyUkReSale: 0,
+    })
 
-    renderStep({ onPendingMutationChange, sale })
+    const view = renderStep({ onPendingMutationChange, sale })
+
+    fireEvent.change(screen.getByPlaceholderText(/пошук/i), { target: { value: 'SEM12081' } })
+    await screen.findByRole('button', { name: 'Скопіювати код: SEM12081' })
 
     fireEvent.click(await screen.findByRole('button', { name: 'Перевірити та повторити' }))
 
@@ -277,6 +288,9 @@ describe('NewSaleProductsStep persistent cart mutations', () => {
     await waitFor(() => expect(loadSalesPendingMutation(scope)).toBe(null))
     expect(apiMocks.addOrderItem.mock.calls[0]?.[3]?.operationId).toBe(operationId)
     expect(onPendingMutationChange).toHaveBeenLastCalledWith(false)
+    await waitFor(() => {
+      expect(view.container.querySelector('.new-sale-product-picker-card__qty')?.textContent).toBe('7')
+    })
   })
 
   it('adds quantity atomically instead of overwriting an existing row with an absolute quantity', async () => {
@@ -301,13 +315,11 @@ describe('NewSaleProductsStep persistent cart mutations', () => {
 
   it('refreshes a retained search result from 254 to 0 after the full quantity enters the cart', async () => {
     apiMocks.acceptedQty = 254
-    apiMocks.getProductAvailabilityBuckets.mockResolvedValue({
-      AvailableQtyUk: 254,
-      AvailableQtyUkReSale: 0,
-    })
+    apiMocks.getProductAvailabilityBuckets
+      .mockResolvedValueOnce({ AvailableQtyUk: 254, AvailableQtyUkReSale: 0 })
+      .mockResolvedValueOnce({ AvailableQtyUk: 0, AvailableQtyUkReSale: 0 })
     apiMocks.searchSaleProductsWithAvailability
-      .mockResolvedValueOnce([createSearchProduct(254)])
-      .mockResolvedValueOnce([createSearchProduct(0)])
+      .mockResolvedValueOnce([createSearchProduct(254, { HasAnalogue: false })])
     const emptySale = createSale(0)
     emptySale.Order = { ...emptySale.Order, OrderItems: [] }
     const view = renderStep({ onCartChanged: vi.fn(async () => createSale(254)), sale: emptySale })
@@ -319,21 +331,21 @@ describe('NewSaleProductsStep persistent cart mutations', () => {
     fireEvent.keyDown(document.body, { key: 'Enter' })
     fireEvent.click(await screen.findByRole('button', { name: 'accept quantity' }))
 
-    await waitFor(() => expect(apiMocks.searchSaleProductsWithAvailability).toHaveBeenCalledTimes(2))
+    await waitFor(() => expect(apiMocks.getProductAvailabilityBuckets).toHaveBeenCalledTimes(2))
     await waitFor(() => {
       expect(view.container.querySelector('.new-sale-product-picker-card__qty')?.textContent).toBe('0')
     })
+    expect((screen.getByPlaceholderText(/пошук/i) as HTMLInputElement).value).toBe('SEM12081')
+    expect(apiMocks.searchSaleProductsWithAvailability).toHaveBeenCalledOnce()
   })
 
   it('refreshes a retained search result to the exact partial remainder', async () => {
     apiMocks.acceptedQty = 16
-    apiMocks.getProductAvailabilityBuckets.mockResolvedValue({
-      AvailableQtyUk: 30,
-      AvailableQtyUkReSale: 0,
-    })
+    apiMocks.getProductAvailabilityBuckets
+      .mockResolvedValueOnce({ AvailableQtyUk: 30, AvailableQtyUkReSale: 0 })
+      .mockResolvedValueOnce({ AvailableQtyUk: 14, AvailableQtyUkReSale: 0 })
     apiMocks.searchSaleProductsWithAvailability
       .mockResolvedValueOnce([createSearchProduct(30)])
-      .mockResolvedValueOnce([createSearchProduct(14)])
     const emptySale = createSale(0)
     emptySale.Order = { ...emptySale.Order, OrderItems: [] }
     const view = renderStep({ onCartChanged: vi.fn(async () => createSale(16)), sale: emptySale })
@@ -349,26 +361,27 @@ describe('NewSaleProductsStep persistent cart mutations', () => {
     })
   })
 
-  it('refreshes the visible search quantity after adding from the product detail view', async () => {
+  it('refreshes only the selected product and preserves a broad search detail view', async () => {
     apiMocks.acceptedQty = 1
-    apiMocks.getProductAvailabilityBuckets.mockResolvedValue({
-      AvailableQtyUk: 59,
-      AvailableQtyUkReSale: 0,
-    })
+    apiMocks.getProductAvailabilityBuckets
+      .mockResolvedValueOnce({ AvailableQtyUk: 59, AvailableQtyUkReSale: 0 })
+      .mockResolvedValueOnce({ AvailableQtyUk: 58, AvailableQtyUkReSale: 0 })
     apiMocks.searchSaleProductsWithAvailability
-      .mockResolvedValueOnce([createSearchProduct(59, {
-        NameUA: 'Болт-шпилька з круглою головкою',
-        VendorCode: '38118103 NR',
-      })])
-      .mockResolvedValueOnce([createSearchProduct(58, {
-        NameUA: 'Болт-шпилька з круглою головкою',
-        VendorCode: '38118103 NR',
-      })])
+      .mockResolvedValueOnce([
+        createSearchProduct(40, { NetUid: 'product-other', VendorCode: '38100000 NR' }),
+        createSearchProduct(59, {
+          NameUA: 'Болт-шпилька з круглою головкою',
+          NetUid: 'product-1',
+          VendorCode: '38118103 NR',
+        }),
+        createSearchProduct(30, { NetUid: 'product-next', VendorCode: '38200000 NR' }),
+      ])
     const emptySale = createSale(0)
     emptySale.Order = { ...emptySale.Order, OrderItems: [] }
     const view = renderStep({ onCartChanged: vi.fn(async () => createSale(1)), sale: emptySale })
 
-    fireEvent.change(screen.getByPlaceholderText(/пошук/i), { target: { value: '38118103 NR' } })
+    fireEvent.change(screen.getByPlaceholderText(/пошук/i), { target: { value: '381' } })
+    fireEvent.click(await screen.findByText('38118103 NR'))
     await screen.findByRole('button', { name: 'Скопіювати код: 38118103 NR' })
     expect(view.container.querySelector('.new-sale-product-picker-card__qty')?.textContent).toBe('59')
 
@@ -376,10 +389,39 @@ describe('NewSaleProductsStep persistent cart mutations', () => {
     fireEvent.keyDown(document.body, { key: 'Enter' })
     fireEvent.click(await screen.findByRole('button', { name: 'accept quantity' }))
 
-    await waitFor(() => expect(apiMocks.searchSaleProductsWithAvailability).toHaveBeenCalledTimes(2))
+    await waitFor(() => expect(apiMocks.getProductAvailabilityBuckets).toHaveBeenCalledTimes(2))
     await waitFor(() => {
       expect(view.container.querySelector('.new-sale-product-picker-card__qty')?.textContent).toBe('58')
     })
+    expect(screen.getByRole('button', { name: 'Деталі' })).toBeTruthy()
+    expect(screen.getByText('38100000 NR')).toBeTruthy()
+    expect(screen.getByText('38200000 NR')).toBeTruthy()
+    expect(apiMocks.searchSaleProductsWithAvailability).toHaveBeenCalledOnce()
+  })
+
+  it('fails closed without retrying a confirmed cart mutation when availability refresh fails', async () => {
+    apiMocks.acceptedQty = 1
+    apiMocks.getProductAvailabilityBuckets
+      .mockResolvedValueOnce({ AvailableQtyUk: 10, AvailableQtyUkReSale: 0 })
+      .mockRejectedValueOnce(new Error('availability unavailable'))
+    apiMocks.searchSaleProductsWithAvailability.mockResolvedValueOnce([
+      createSearchProduct(10, { HasAnalogue: false }),
+    ])
+    const emptySale = createSale(0)
+    emptySale.Order = { ...emptySale.Order, OrderItems: [] }
+    const view = renderStep({ onCartChanged: vi.fn(async () => createSale(1)), sale: emptySale })
+
+    fireEvent.change(screen.getByPlaceholderText(/пошук/i), { target: { value: 'SEM12081' } })
+    await screen.findByRole('button', { name: 'Скопіювати код: SEM12081' })
+    fireEvent.keyDown(document.body, { key: 'Enter' })
+    fireEvent.click(await screen.findByRole('button', { name: 'accept quantity' }))
+
+    await waitFor(() => {
+      expect(view.container.querySelector('.new-sale-product-picker-card__qty')?.textContent).toBe('0')
+    })
+    expect(screen.getAllByText('Не вдалося оновити залишок товару. Повторіть пошук.').length).toBeGreaterThan(0)
+    expect(apiMocks.addOrderItem).toHaveBeenCalledOnce()
+    expect(apiMocks.searchSaleProductsWithAvailability).toHaveBeenCalledOnce()
   })
 
   it('retains an initial submitted 4xx until exact reconciliation succeeds', async () => {
