@@ -23,6 +23,7 @@ import { CircleAlert, Clock, ExternalLink, GitBranch, Network, Plus, RotateCcw, 
 import { useDebouncedValue } from '@mantine/hooks'
 import { type FormEvent, type RefObject, useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { ClientTypeRoleFilter } from '../components/ClientTypeRoleFilter'
+import { ClientFolderChildren } from '../components/ClientFolderChildren'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { translate } from '../../../shared/i18n/translate'
@@ -68,6 +69,7 @@ import { ClientSourceQualityBadge } from '../components/structure/ClientSourceQu
 import type { SolvencyScore } from '../solvencyTypes'
 import { clientNetUidKey, indexByClientNetUid } from '../clientNetUidIndex'
 import { getClientIdentityAttentionTitle } from '../clientIdentityAttentionMessage'
+import { isClientFolder } from '../clientFolder'
 import { isSourceManagedClient } from '../clientSourceOwnership'
 import './clients-page.css'
 
@@ -873,12 +875,20 @@ function ClientsPageView({ model }: { model: ReturnType<typeof useClientsPageMod
             data={clients}
             defaultLayout={CLIENT_TABLE_DEFAULT_LAYOUT}
             emptyText={t('Клієнтів не знайдено')}
+            expandColumnLabels={{
+              collapseRow: t('Згорнути папку клієнтів'),
+              expandRow: t('Розгорнути папку клієнтів'),
+            }}
+            getRowCanExpand={isClientFolder}
             getRowId={(client, index) => String(client.NetUid || client.Id || index)}
             height="100%"
             isLoading={isLoading}
-            layoutVersion="clients-table-12"
+            layoutVersion="clients-table-13"
             loadingText={t('Завантаження клієнтів')}
             minWidth={1570}
+            renderExpandedRow={(client) => (
+              <ClientFolderChildren client={client} onSelect={setSelectedClient} />
+            )}
             showLayoutControls
             tableId="clients"
             toolbarPortalTarget={tableToolbarSlot}

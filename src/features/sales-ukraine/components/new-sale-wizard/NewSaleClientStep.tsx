@@ -11,7 +11,7 @@ import type { SaleAuditStatistic } from '../../../../shared/sale-audit/saleAudit
 import { AppDrawer } from '../../../../shared/ui/AppDrawer'
 import { DocumentExportModal } from '../../../../shared/ui/document-export-modal/DocumentExportModal'
 import { useAuth } from '../../../auth/useAuth'
-import { getClientSubClients, getRootClientBySubClientNetId } from '../../../clients/api/clientCabinetApi'
+import { getClientSubClients } from '../../../clients/api/clientCabinetApi'
 import type { Client, ClientAgreement, ClientInDebt } from '../../../clients/types'
 import { getSaleActProtocolEditDocument, getSaleById, updateSale } from '../../api/salesUkraineApi'
 import { SALES_UKRAINE_EDIT_PERMISSION } from '../../permissions'
@@ -28,6 +28,7 @@ import { WizardClientRegistry } from './WizardClientRegistry'
 import {
   buildWizardClientStacks,
   getWizardAgreementKey,
+  isWizardSaleClientSelectable,
   WIZARD_CLIENT_CAROUSEL_INITIAL,
   type WizardClientCarouselState,
 } from './wizardClientStepModel'
@@ -255,6 +256,34 @@ export function NewSaleClientStep({
         return
       }
 
+      if (!isWizardSaleClientSelectable(client)) {
+        bootstrappedRef.current = true
+        clientDetailsRequestRef.current += 1
+        registryRequestRef.current += 1
+        registryInFlightKeyRef.current = null
+
+        if (clientDetailsTimerRef.current !== null) {
+          window.clearTimeout(clientDetailsTimerRef.current)
+          clientDetailsTimerRef.current = null
+        }
+
+        const { bottom, top } = buildWizardClientStacks(client)
+
+        setCarousel({ dataBottom: bottom, dataTop: top, selected: client, showDetails: true })
+        setSelectedClient(null)
+        onClientResolved?.(null)
+        setGroupedDebts([])
+        setAgreements([])
+        setSelectedAgreementKey('')
+        setRegistryItems([])
+        setRegistryLoading(false)
+        setKeyboardState('ClientSelection')
+        onClientChange(null)
+        onAgreementChange(null, null)
+
+        return
+      }
+
       // A client is now selected, so the one-time bootstrap is done. This prevents the
       // bootstrap effect (which rebuilds the carousel from a single client) from firing
       // when confirmClient updates clientNetId — that would wipe the found-clients list.
@@ -295,7 +324,7 @@ export function NewSaleClientStep({
       onClientChange(client.NetUid ?? null)
       loadClientDetails(client, requestId)
     },
-    [loadClientDetails, onClientChange, onClientResolved, setKeyboardState],
+    [loadClientDetails, onAgreementChange, onClientChange, onClientResolved, setKeyboardState],
   )
 
   // Keep the latest confirmClient and preserved client reachable without making them
@@ -506,7 +535,7 @@ export function NewSaleClientStep({
     }
 
     if (item.SubClients?.length) {
-      const { bottom, top } = buildWizardClientStacks(item, { includeRootClients: false })
+      const { bottom, top } = buildWizardClientStacks(item)
 
       setCarousel({ dataBottom: bottom, dataTop: top, selected: item, showDetails: true })
     }
@@ -1029,17 +1058,11 @@ export function NewSaleClientStep({
         return
       }
 
-      if (!client.IsTradePoint && !client.IsSubClient) {
+      if (!isWizardSaleClientSelectable(client)) {
         const subClients = await getClientSubClients(netId).catch(() => null)
 
         if (subClients) {
           client.SubClients = subClients
-        }
-      } else {
-        const rootClient = await getRootClientBySubClientNetId(netId).catch(() => null)
-
-        if (rootClient) {
-          client.RootClients = [{ RootClient: rootClient }]
         }
       }
 

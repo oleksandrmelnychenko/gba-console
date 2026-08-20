@@ -1,10 +1,39 @@
 import { describe, expect, it } from 'vitest'
-import type { ClientAgreement } from '../../../clients/types'
+import type { Client, ClientAgreement } from '../../../clients/types'
 import {
+  buildWizardClientStacks,
   getWizardAgreementDebtAgeDays,
   getWizardAgreementDebtPresentation,
   getWizardAgreementOverdueDays,
+  isWizardSaleClientSelectable,
 } from './wizardClientStepModel'
+
+describe('wizard client folder selection', () => {
+  it('expands all exact XM05200 children and does not expose the folder as a sale client', () => {
+    const folder = createClient(100, 'XM05200')
+    const children = ['XM05202', 'XM05203', 'XM05205', 'XM05206', 'XM05201', 'XM05204']
+      .map((code, index) => createClient(index + 1, code))
+
+    folder.SubClients = children.map((child, index) => ({
+      Id: index + 1,
+      SubClient: child,
+    }))
+
+    expect(isWizardSaleClientSelectable(folder)).toBe(false)
+    expect(buildWizardClientStacks(folder)).toEqual({
+      bottom: children,
+      top: [],
+    })
+  })
+
+  it('selects a non-00 client directly and does not add a hierarchy level', () => {
+    const client = createClient(1, 'XM05202')
+    client.SubClients = [{ Id: 1, SubClient: createClient(2, 'XM05203') }]
+
+    expect(isWizardSaleClientSelectable(client)).toBe(true)
+    expect(buildWizardClientStacks(client)).toEqual({ bottom: [], top: [] })
+  })
+})
 
 describe('wizard agreement debt presentation', () => {
   it('keeps available advance separate from accounting balance and outstanding debt', () => {
@@ -84,3 +113,12 @@ describe('wizard agreement debt presentation', () => {
     expect(presentation.creditLimit).toBeNull()
   })
 })
+
+function createClient(id: number, code: string): Client {
+  return {
+    FullName: code,
+    Id: id,
+    NetUid: `00000000-0000-0000-0000-${String(id).padStart(12, '0')}`,
+    RegionCode: { Value: code },
+  }
+}

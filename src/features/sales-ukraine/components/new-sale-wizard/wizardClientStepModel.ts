@@ -1,4 +1,5 @@
 import type { Agreement, Client, ClientAgreement, ClientInDebt } from '../../../clients/types'
+import { getClientFolderChildren, isClientFolder } from '../../../clients/clientFolder'
 
 export type WizardClientCarouselState = {
   dataBottom: Client[]
@@ -25,34 +26,14 @@ export const WIZARD_CLIENT_CAROUSEL_INITIAL: WizardClientCarouselState = {
 
 export function buildWizardClientStacks(
   client: Client,
-  { includeRootClients = true }: { includeRootClients?: boolean } = {},
 ): { bottom: Client[]; top: Client[] } {
-  const subClients = Array.isArray(client.SubClients) ? client.SubClients : []
-  const rootClients = includeRootClients && Array.isArray(client.RootClients) ? client.RootClients : []
-  const top: Client[] = []
-  const bottom: Client[] = []
+  return isClientFolder(client)
+    ? { bottom: getClientFolderChildren(client), top: [] }
+    : { bottom: [], top: [] }
+}
 
-  rootClients.forEach((item) => {
-    if (item?.RootClient) {
-      top.push(item.RootClient)
-    }
-  })
-
-  subClients.forEach((item) => {
-    const subClient = item?.SubClient
-
-    if (!subClient) {
-      return
-    }
-
-    if (subClient.IsTradePoint) {
-      top.push(subClient)
-    } else if (subClient.IsSubClient) {
-      bottom.push(subClient)
-    }
-  })
-
-  return { bottom, top }
+export function isWizardSaleClientSelectable(client: Client): boolean {
+  return !isClientFolder(client)
 }
 
 export function getWizardAgreementKey(agreement: ClientAgreement | null | undefined): string {
