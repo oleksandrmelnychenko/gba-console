@@ -32,4 +32,42 @@ describe('SearchableSelect', () => {
     expect(handleOptionSubmit).toHaveBeenCalledWith('storage-1')
     expect(handleChange).toHaveBeenCalledWith('Склад Вітрина')
   })
+
+  it('submits an option when the typed search already exactly matches its label', () => {
+    const handleChange = vi.fn()
+    const handleOptionSubmit = vi.fn()
+    const data = ['Уляна тест 3']
+
+    const { rerender } = render(
+      <MantineProvider>
+        <SearchableSelect
+          data={data}
+          label="Контрагент"
+          value=""
+          onChange={handleChange}
+          onOptionSubmit={handleOptionSubmit}
+        />
+      </MantineProvider>,
+    )
+
+    const select = screen.getByRole('combobox', { name: 'Контрагент' })
+    fireEvent.change(select, { target: { value: 'Уляна тест 3' } })
+
+    rerender(
+      <MantineProvider>
+        <SearchableSelect
+          data={data}
+          label="Контрагент"
+          value="Уляна тест 3"
+          onChange={handleChange}
+          onOptionSubmit={handleOptionSubmit}
+        />
+      </MantineProvider>,
+    )
+
+    fireEvent.click(select)
+    fireEvent.click(screen.getByRole('option', { name: 'Уляна тест 3' }))
+
+    expect(handleOptionSubmit).toHaveBeenCalledWith('Уляна тест 3')
+  })
 })

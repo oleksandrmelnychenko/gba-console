@@ -1,7 +1,7 @@
 import { defineConfig } from '@playwright/test';
 
 const baseURL = process.env.E2E_BASE_URL ?? 'http://localhost:8084';
-const readyWorkflowSpecs = /(?:specs\/00-shell|specs\/f1-income\/.*|specs\/f2-sales\/.*)\.spec\.ts/;
+const readyWorkflowSpecs = /(?:specs\/00-shell|specs\/f1-income\/.*|specs\/f2-sales\/.*|specs\/f3-returns\/.*|specs\/f4-warehouse\/.*|specs\/f5-cash\/.*|specs\/f6-cross\/.*)\.spec\.ts/;
 
 export default defineConfig({
   testDir: './e2e',

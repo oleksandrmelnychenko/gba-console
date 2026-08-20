@@ -7,6 +7,7 @@ import {
   getSalesForReturn,
   getReturnStorages,
   searchReturnProducts,
+  searchSalesReturnClients,
 } from './salesReturnsApi'
 
 vi.mock('../../../shared/api/apiClient', () => ({
@@ -58,6 +59,37 @@ describe('sales returns API', () => {
         orderItemNetId: 'order-item-1',
         organizationNetId: 'organization-1',
         status: 6,
+      },
+    })
+  })
+
+  it('exposes the exact child card returned inside a matching client group', async () => {
+    const child = {
+      Id: 561624,
+      NetUid: '2d988902-a4b9-486a-9557-6d42c5751c3e',
+      FullName: 'АФ-ТРАНС СЕРВІС',
+      RegionCode: { Value: 'CE02501' },
+    }
+    const root = {
+      Id: 561622,
+      NetUid: 'de20e045-562c-43a1-8e20-b4d4c1c8d81d',
+      FullName: 'АФ-ТРАНС',
+      RegionCode: { Value: 'CE02500' },
+      SubClients: [
+        { Id: 1, SubClient: child },
+        { Id: 2, SubClient: child },
+      ],
+    }
+
+    apiRequestMock.mockResolvedValueOnce([root])
+
+    await expect(searchSalesReturnClients(' CE02501 ')).resolves.toEqual([root, child])
+    expect(apiRequestMock).toHaveBeenCalledWith('/clients/all/filtered', {
+      query: {
+        filterSql: 'RegionCode.Value/Client.FullName/Client.USREOU',
+        limit: 20,
+        offset: 0,
+        value: 'CE02501',
       },
     })
   })

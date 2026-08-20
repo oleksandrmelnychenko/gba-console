@@ -4,6 +4,7 @@ export interface WizardSaleInput {
   agreementNetUid: string;
   clientName: string;
   clientNetUid: string;
+  clientSearchValue?: string;
   vendorCode: string;
   qty: number;
 }
@@ -45,15 +46,20 @@ export async function createSaleViaWizard(page: Page, input: WizardSaleInput): P
   await expect(wizard).toBeVisible({ timeout: 20_000 });
 
   const clientSearch = wizard.locator('.new-sale-client-drum__search');
-  await clientSearch.focus();
-  await page.keyboard.type(input.clientName.slice(0, 40), { delay: 40 });
+  await clientSearch.fill(input.clientSearchValue ?? input.clientName.slice(0, 40));
 
   const normalizedClientNetUid = input.clientNetUid.toLowerCase();
   const clientRow = wizard.locator(
     `[data-testid="wizard-client-row"][data-client-net-uid="${normalizedClientNetUid}"]`,
   );
-  await expect(clientRow).toHaveCount(1, { timeout: 30_000 });
-  await clientRow.click({ force: true });
+  const selectedClient = wizard.locator(
+    `[data-testid="wizard-selected-client"][data-client-net-uid="${normalizedClientNetUid}"]`,
+  );
+  await expect(clientRow.or(selectedClient)).toHaveCount(1, { timeout: 30_000 });
+
+  if (await clientRow.count()) {
+    await clientRow.click({ force: true });
+  }
 
   const agreementCards = wizard.locator('.new-sale-agreement-card');
   await expect(agreementCards).toHaveCount(1, { timeout: 20_000 });

@@ -450,13 +450,23 @@ async function waitForPaymentDocument(
 
   while (Date.now() < deadline) {
     await waitForPaymentDocumentPoll(signal)
-    const status = await apiRequest<unknown>(
-      '/sales/update/get/payment/document',
-      {
-        ...(signal ? { signal } : {}),
-        query: { operationNetUid },
-      },
-    )
+    let status: unknown
+
+    try {
+      status = await apiRequest<unknown>(
+        '/sales/update/get/payment/document',
+        {
+          ...(signal ? { signal } : {}),
+          query: { operationNetUid },
+        },
+      )
+    } catch (error) {
+      if (isTransientPaymentDocumentPollError(error)) {
+        continue
+      }
+
+      throw error
+    }
 
     if (!isPaymentDocumentProcessing(status)) {
       return status
@@ -469,6 +479,15 @@ async function waitForPaymentDocument(
     ),
     504,
     { OperationNetUid: operationNetUid, Status: 'processing' },
+  )
+}
+
+function isTransientPaymentDocumentPollError(error: unknown): boolean {
+  return error instanceof ApiError && (
+    error.status === 0 ||
+    error.status === 408 ||
+    error.status === 429 ||
+    error.status >= 500
   )
 }
 

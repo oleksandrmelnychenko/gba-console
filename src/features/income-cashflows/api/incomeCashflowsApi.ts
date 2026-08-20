@@ -195,7 +195,14 @@ export async function searchIncomeCashflowCounterparties(
     ...(signal ? { signal } : {}),
   })
 
-  return readArrayPayload(result, ['Items', 'Clients', 'SupplyOrganizations', 'Organizations', 'Data', 'Collection']) as Client[]
+  const counterparties = readArrayPayload(
+    result,
+    ['Items', 'Clients', 'SupplyOrganizations', 'Organizations', 'Data', 'Collection'],
+  ) as Client[]
+
+  return type === IncomeCounterpartySearchType.Supplier
+    ? counterparties
+    : expandIncomeCashflowClientOptions(counterparties)
 }
 
 export async function searchIncomeCashflowClientPayers(
@@ -217,7 +224,35 @@ export async function searchIncomeCashflowClientPayers(
     signal,
   })
 
-  return readArrayPayload(result, ['Items', 'Clients', 'Data', 'Collection']) as Client[]
+  return expandIncomeCashflowClientOptions(
+    readArrayPayload(result, ['Items', 'Clients', 'Data', 'Collection']) as Client[],
+  )
+}
+
+function expandIncomeCashflowClientOptions(clients: Client[]): Client[] {
+  const options: Client[] = []
+  const seen = new Set<string>()
+
+  const append = (client: Client | null | undefined) => {
+    if (!client) {
+      return
+    }
+
+    const key = client.NetUid || (client.Id ? String(client.Id) : '')
+    if (!key || seen.has(key)) {
+      return
+    }
+
+    seen.add(key)
+    options.push(client)
+  }
+
+  clients.forEach((client) => {
+    append(client)
+    client.SubClients?.forEach((link) => append(link.SubClient))
+  })
+
+  return options
 }
 
 export async function getIncomeCashflowClientAgreements(netId: string): Promise<ClientAgreement[]> {

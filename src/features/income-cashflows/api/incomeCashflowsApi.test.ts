@@ -46,6 +46,32 @@ describe('income cashflow API lookup contracts', () => {
     })
   })
 
+  it('exposes the exact child card returned inside a matching client group', async () => {
+    const child = {
+      Id: 563784,
+      NetUid: '68f29831-908e-4a35-b01f-850c1e609203',
+      FullName: 'ФІЗИЧНА ОСОБА-ПІДПРИЄМЕЦЬ МАМИЧ ДІАНА ОЛЕКСАНДРІВНА',
+    }
+    const root = {
+      Id: 561502,
+      NetUid: '3a0ccabd-a781-45c3-a01c-6b50355c77ff',
+      FullName: 'ТОВАРИСТВО З ОБМЕЖЕНОЮ ВІДПОВІДАЛЬНІСТЮ "МАГРОМ"',
+      SubClients: [
+        { Id: 1, SubClient: child },
+        { Id: 2, SubClient: child },
+      ],
+    }
+
+    apiRequestMock.mockResolvedValueOnce([root])
+
+    await expect(
+      searchIncomeCashflowCounterparties(
+        ' МАМИЧ ДІАНА ',
+        IncomeCounterpartySearchType.Client,
+      ),
+    ).resolves.toEqual([root, child])
+  })
+
   it('searches manufacturer counterparties through the targeted suppliers endpoint', async () => {
     apiRequestMock.mockResolvedValueOnce([{ NetUid: 'manufacturer-1' }])
 

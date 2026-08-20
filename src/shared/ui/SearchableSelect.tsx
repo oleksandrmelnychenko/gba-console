@@ -84,11 +84,11 @@ export function SearchableSelect({
         }
 
         onChange?.(option.label)
-        onOptionSubmit?.(nextValue)
       }}
       onClear={onClear}
       onDropdownClose={onDropdownClose}
       onDropdownOpen={onDropdownOpen}
+      onOptionSubmit={onOptionSubmit}
       onSearchChange={(search) => {
         if (search !== selectedOption?.label) {
           onChange?.(search)

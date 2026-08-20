@@ -162,7 +162,35 @@ export async function searchSalesReturnClients(value: string, signal?: AbortSign
     ...(signal ? { signal } : {}),
   })
 
-  return readArrayPayload(result, ['Items', 'Clients', 'Data']) as SalesReturnClient[]
+  return expandSalesReturnClientOptions(
+    readArrayPayload(result, ['Items', 'Clients', 'Data']) as SalesReturnClient[],
+  )
+}
+
+function expandSalesReturnClientOptions(clients: SalesReturnClient[]): SalesReturnClient[] {
+  const options: SalesReturnClient[] = []
+  const seen = new Set<string>()
+
+  const append = (client: SalesReturnClient | null | undefined) => {
+    if (!client) {
+      return
+    }
+
+    const key = client.NetUid || (client.Id ? String(client.Id) : '')
+    if (!key || seen.has(key)) {
+      return
+    }
+
+    seen.add(key)
+    options.push(client)
+  }
+
+  clients.forEach((client) => {
+    append(client)
+    client.SubClients?.forEach((link) => append(link.SubClient))
+  })
+
+  return options
 }
 
 export async function getSalesReturnOrganizations(): Promise<SalesReturnOrganization[]> {

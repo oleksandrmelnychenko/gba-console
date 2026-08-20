@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { apiRequest } from '../../../shared/api/apiClient'
+import { ApiError, apiRequest } from '../../../shared/api/apiClient'
 import {
   acceptSaleForPacking,
   addOrderItem,
@@ -25,9 +25,14 @@ import {
   updateSaleDiscount,
 } from './salesUkraineApi'
 
-vi.mock('../../../shared/api/apiClient', () => ({
-  apiRequest: vi.fn(),
-}))
+vi.mock('../../../shared/api/apiClient', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../../shared/api/apiClient')>()
+
+  return {
+    ...actual,
+    apiRequest: vi.fn(),
+  }
+})
 
 const apiRequestMock = vi.mocked(apiRequest)
 const paymentDocumentOperation = {
@@ -483,6 +488,78 @@ describe('sales Ukraine document request contracts', () => {
         '/sales/update/get/payment/document',
         { query: { operationNetUid: operationId } },
       ])
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it('keeps polling the same durable operation after a transient status failure', async () => {
+    vi.useFakeTimers()
+    const operationId = 'ffffffff-ffff-4fff-8fff-ffffffffffff'
+    apiRequestMock
+      .mockResolvedValueOnce({
+        IsCompleted: false,
+        OperationNetUid: operationId,
+        Status: 'processing',
+      })
+      .mockRejectedValueOnce(new ApiError(
+        'Document generation is temporarily unavailable.',
+        503,
+        null,
+      ))
+      .mockResolvedValueOnce({
+        InvoiceDocumentURL: 'https://example.test/invoice.xlsx',
+        PdfInvoiceDocumentURL: 'https://example.test/invoice.pdf',
+        Status: 'completed',
+      })
+
+    try {
+      const resultPromise = convertVatSaleAndGetPaymentDocument(
+        { NetUid: 'sale-1' },
+        null,
+        { operationId },
+      )
+      await vi.advanceTimersByTimeAsync(2_000)
+
+      await expect(resultPromise).resolves.toMatchObject({
+        invoiceExcelUrl: 'https://example.test/invoice.xlsx',
+        invoicePdfUrl: 'https://example.test/invoice.pdf',
+      })
+      expect(apiRequestMock).toHaveBeenCalledTimes(3)
+      expect(apiRequestMock.mock.calls.slice(1)).toEqual([
+        [
+          '/sales/update/get/payment/document',
+          { query: { operationNetUid: operationId } },
+        ],
+        [
+          '/sales/update/get/payment/document',
+          { query: { operationNetUid: operationId } },
+        ],
+      ])
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it('does not hide a definitive payment-document status rejection', async () => {
+    vi.useFakeTimers()
+    const operationId = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'
+    const rejection = new ApiError('Operation belongs to another request.', 409, null)
+    apiRequestMock
+      .mockResolvedValueOnce({ IsCompleted: false, Status: 'processing' })
+      .mockRejectedValueOnce(rejection)
+
+    try {
+      const resultPromise = convertVatSaleAndGetPaymentDocument(
+        { NetUid: 'sale-1' },
+        null,
+        { operationId },
+      )
+      const rejectionExpectation = expect(resultPromise).rejects.toBe(rejection)
+      await vi.advanceTimersByTimeAsync(1_000)
+
+      await rejectionExpectation
+      expect(apiRequestMock).toHaveBeenCalledTimes(2)
     } finally {
       vi.useRealTimers()
     }

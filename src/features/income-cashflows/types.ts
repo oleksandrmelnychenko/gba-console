@@ -203,6 +203,11 @@ export type Client = NamedEntity & {
   ClientAgreements?: ClientAgreement[]
   ClientInDebts?: ClientInDebt[]
   PhoneNumber?: string
+  SubClients?: ClientSubClient[]
+}
+
+export type ClientSubClient = EntityFields & {
+  SubClient?: Client | null
 }
 
 export type RetailClient = NamedEntity & {

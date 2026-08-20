@@ -299,7 +299,11 @@ export function NewUkraineSaleReturnPage() {
   useEffect(() => {
     const normalizedSearch = clientSearch.trim()
 
-    if (!createOpened || normalizedSearch.length < 2) {
+    if (
+      !createOpened ||
+      normalizedSearch.length < 2 ||
+      selectedClient && normalizedSearch === getClientOptionLabel(selectedClient)
+    ) {
       return
     }
 
@@ -307,7 +311,17 @@ export function NewUkraineSaleReturnPage() {
     const timeout = window.setTimeout(() => {
       searchSalesReturnClients(normalizedSearch, controller.signal)
         .then((nextClients) => {
-          setClients(nextClients)
+          // Mantine replaces the search text with the rendered option label
+          // after selection. A request for that decorated label can resolve
+          // empty; retain the selected entity so its NetUid remains available
+          // to the sales-for-return request.
+          setClients((currentClients) => {
+            const currentSelection = clientId
+              ? currentClients.find((client) => getEntityKey(client) === clientId) || null
+              : null
+
+            return mergeSelectedClient(nextClients, currentSelection)
+          })
           setCreateError(null)
         })
         .catch((searchError: unknown) => {
@@ -321,7 +335,7 @@ export function NewUkraineSaleReturnPage() {
       window.clearTimeout(timeout)
       controller.abort()
     }
-  }, [clientSearch, createOpened, selectedClient, t])
+  }, [clientId, clientSearch, createOpened, selectedClient, t])
 
   function updateListSearch(nextSearchValue: string) {
     setPage(1)
@@ -814,7 +828,7 @@ export function NewUkraineSaleReturnPage() {
             <Select
               clearable
               data={clientOptions.map((client) => ({
-                label: [client.FullName || client.Name, client.RegionCode?.Value].filter(Boolean).join(' · '),
+                label: getClientOptionLabel(client),
                 value: getEntityKey(client),
               }))}
               label={t('Клієнт')}
@@ -1858,6 +1872,10 @@ function mergeSelectedClient(clients: SalesReturnClient[], selectedClient: Sales
   }
 
   return [selectedClient, ...clients]
+}
+
+function getClientOptionLabel(client: SalesReturnClient): string {
+  return [client.FullName || client.Name, client.RegionCode?.Value].filter(Boolean).join(' · ')
 }
 
 function shiftDateInput(days: number): string {

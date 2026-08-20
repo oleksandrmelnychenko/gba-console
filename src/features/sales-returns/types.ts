@@ -50,6 +50,11 @@ export type SalesReturnRegionCode = {
 export type SalesReturnClient = NamedEntity & {
   ClientAgreements?: SalesReturnClientAgreement[]
   RegionCode?: SalesReturnRegionCode | null
+  SubClients?: SalesReturnClientSubClient[]
+}
+
+export type SalesReturnClientSubClient = EntityFields & {
+  SubClient?: SalesReturnClient | null
 }
 
 export type SalesReturnUser = NamedEntity

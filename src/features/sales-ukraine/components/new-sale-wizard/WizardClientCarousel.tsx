@@ -168,7 +168,11 @@ function ClientMiniCard({ client, hasDebt, hideName }: { client: Client; hasDebt
   const code = client.RegionCode?.Value || client.ClientNumber || client.USREOU || ''
 
   return (
-    <Box className={`new-sale-client-drum-card ${isDebt ? 'has-debt' : ''}`}>
+    <Box
+      className={`new-sale-client-drum-card ${isDebt ? 'has-debt' : ''}`}
+      data-client-net-uid={String(client.NetUid ?? '').toLowerCase()}
+      data-testid="wizard-selected-client"
+    >
       <Box className="new-sale-client-drum-card__top">
         <Box className="new-sale-client-drum-card__head">
           {code && (
