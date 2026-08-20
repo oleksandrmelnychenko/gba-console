@@ -252,7 +252,9 @@
 
 ## Поточний етап
 
-**Етап 6 — legacy integration і reconciliation — у роботі.**
+**Етап 6 — legacy integration і reconciliation — завершений. Етап 7 —
+production acceptance і rollout — підготовлений, операційне виконання
+очікується.**
 
 Поточний підетап від 2026-08-20:
 
@@ -324,9 +326,12 @@
   permission-scoped API. Backend merge пройшов автоматично. Після merge:
   frontend 2564/2564, backend verifier 94+17, parity 479/479.
 
-Після завершення цього підетапу продовжити **Етап 6 — legacy integration,
-закриття доказів аудиту та production release gate.**
+Legacy integration, role reconciliation, code-owned catalog, API/UI
+enforcement, runtime smoke runner, denial telemetry і production runbook
+завершені. Нова масова генерація пермішенів не потрібна: основний каталог
+містить 479 унікальних активних прав і має повний frontend/backend parity.
 
-Нова масова генерація пермішенів не потрібна. Основний каталог реалізований;
-залишок роботи — довести повну інтеграцію старих прав і рольових призначень,
-закрити перевірки та безпечно підготувати production rollout.
+Залишок — не розробка каталогу, а фактичний **Етап 7**: відновити browser
+click-through, зробити backup/dry-run на фінальній production-копії, виконати
+deploy у зафіксованому порядку, запустити read-only smoke, поступово призначити
+ролі з моніторингом і заповнити фінальний release report.
