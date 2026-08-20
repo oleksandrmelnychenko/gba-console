@@ -28,6 +28,14 @@
   stale write `409`, unauthenticated `401`, insufficient role `403`.
 - Protected HTTP matrix: 20/20 calls returned `403` before assignment;
   after assignment 20/20 reached `200` or business-validation `400`.
+- Added a read-only, fail-closed post-deployment runtime smoke runner. It
+  validates the console shell, anonymous `401`, exact 479-key catalog, role
+  GET, `/permissions/me` and a representative `403`; a deterministic loopback
+  run passed `200/401/200/200/200/403`. Its receipt omits tokens and bodies.
+- Runtime-smoke validation has 6/6 focused behavioral/contract tests. The
+  latest CI-neutral verifier passed 104 API/security tests with the four SQL
+  integration facts skipped because Docker was off, plus 17/17 actor tests;
+  both release tools built with 0 warnings/errors.
 
 ## БД та migration safety
 
@@ -97,6 +105,8 @@
   complete and legacy aliases remain effective during rollout.
 - Production backup and complete migration dry-run on the final restore point.
 - Deploy in order: migrations → backend/catalog sync → frontend → role rollout.
+- Execute `gba-server/docs/event-permissions-runtime-smoke.md` with
+  environment-owned production URLs/tokens and archive its receipt.
 - Monitor authorization failures and complete the final before/after/rollback
   report after production smoke tests.
 

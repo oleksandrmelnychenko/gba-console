@@ -227,6 +227,12 @@
 - [ ] Backup і dry-run міграцій на фінальній копії актуальної БД.
 - [ ] Deploy order: БД/міграції → backend → catalog sync → frontend.
 - [ ] Smoke test `/users/roles`, effective permissions та representative `403`.
+  Read-only fail-closed runner реалізований у
+  `gba-server/tools/Gba.EventPermissionRuntimeSmoke`: тільки GET, redirects
+  disabled, response-size limit, exact 479-key/catalog-version parity, role
+  state, `/permissions/me`, anonymous `401` та representative `403`.
+  Його end-to-end loopback self-check пройшов
+  `200/401/200/200/200/403`; production receipt закривається після deploy.
 - [ ] Поступове призначення ролям і моніторинг authorization failures.
 - [ ] Зафіксувати before/after/rollback release report.
   Поточний перевірений checkpoint уже зафіксовано в
@@ -269,6 +275,13 @@
   role `403` і stale `409`; frontend `/users/roles` та його API proxy
   повертають `200`, proxy бачить 479 definitions. Формальна click-through
   UI-автоматизація очікує відновлення локального browser-control plugin.
+- [x] Відтворюваний post-deploy runtime smoke runner — read-only tool бере
+  URL, два bearer tokens, role NetUID і denied GET path лише з env, не слідує
+  redirects, не виконує POST/PUT/PATCH/DELETE і друкує secret-free JSON
+  receipt. Deterministic local HTTP self-check: catalog 479 exact keys,
+  statuses `200/401/200/200/200/403`; focused behavioral/contract tests 6/6,
+  CI-neutral verifier 104 passed + 4 SQL skipped при вимкненому Docker,
+  actor authorization 17/17.
 - [x] Виправлення знайдених дефектів та повторний regression — виправлено
   застарілий contract-тест незалежних прав авто/шляхових листів; focused 5/5
   і повний backend verifier пройшли; runtime API acceptance також зелена.
