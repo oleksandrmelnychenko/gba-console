@@ -40,41 +40,83 @@ export type WizardCarouselEntry = {
   setQty?: number
 }
 
-export type WizardProductAvailability = Pick<
+export type WizardProductAvailability = Partial<Pick<
   WizardSaleProduct,
   'AvailableQtyPl' | 'AvailableQtyUk' | 'AvailableQtyUkReSale' | 'AvailableQtyUkVAT'
->
+>>
 
-export const EMPTY_WIZARD_PRODUCT_AVAILABILITY: WizardProductAvailability = {
-  AvailableQtyPl: 0,
-  AvailableQtyUk: 0,
-  AvailableQtyUkReSale: 0,
-  AvailableQtyUkVAT: 0,
+const WIZARD_PRODUCT_AVAILABILITY_KEYS = [
+  'AvailableQtyPl',
+  'AvailableQtyUk',
+  'AvailableQtyUkReSale',
+  'AvailableQtyUkVAT',
+] as const
+
+export function normalizeWizardProductAvailability(
+  value: WizardProductAvailability | null | undefined,
+  isVatSale: boolean,
+): WizardProductAvailability | null {
+  if (!value) {
+    return null
+  }
+
+  const normalized: WizardProductAvailability = {}
+
+  for (const key of WIZARD_PRODUCT_AVAILABILITY_KEYS) {
+    const raw = value[key]
+
+    if (raw == null) {
+      continue
+    }
+
+    const amount = getWizardProductNumber(raw)
+
+    if (amount === null || amount < 0) {
+      return null
+    }
+
+    normalized[key] = amount
+  }
+
+  if (isVatSale) {
+    return normalized.AvailableQtyUkVAT == null ? null : normalized
+  }
+
+  return normalized.AvailableQtyUk == null || normalized.AvailableQtyUkReSale == null
+    ? null
+    : normalized
 }
 
 export function patchWizardProductAvailability(
   product: WizardSaleProduct,
   productNetUid: string,
-  buckets: WizardProductAvailability,
+  availability: WizardProductAvailability,
 ): WizardSaleProduct {
   const targetNetUid = normalizeProductNetUid(productNetUid)
+
+  if (!targetNetUid) {
+    return product
+  }
+
   const matchesTarget = normalizeProductNetUid(product.NetUid) === targetNetUid
   let changed = matchesTarget
 
   const nextSearchedProducts = product.NextSearchedProducts?.map((child) => {
-    const next = patchWizardProductAvailability(child, productNetUid, buckets)
+    const next = patchWizardProductAvailability(child, targetNetUid, availability)
     changed ||= next !== child
 
     return next
   })
   const analogueProducts = product.AnalogueProducts?.map((entry) => {
-    if (!entry.AnalogueProduct) {
+    const child = entry.AnalogueProduct
+
+    if (!child) {
       return entry
     }
 
-    const next = patchWizardProductAvailability(entry.AnalogueProduct, productNetUid, buckets)
+    const next = patchWizardProductAvailability(child, targetNetUid, availability)
 
-    if (next === entry.AnalogueProduct) {
+    if (next === child) {
       return entry
     }
 
@@ -83,13 +125,15 @@ export function patchWizardProductAvailability(
     return { ...entry, AnalogueProduct: next }
   })
   const componentProducts = product.ComponentProducts?.map((entry) => {
-    if (!entry.ComponentProduct) {
+    const child = entry.ComponentProduct
+
+    if (!child) {
       return entry
     }
 
-    const next = patchWizardProductAvailability(entry.ComponentProduct, productNetUid, buckets)
+    const next = patchWizardProductAvailability(child, targetNetUid, availability)
 
-    if (next === entry.ComponentProduct) {
+    if (next === child) {
       return entry
     }
 
@@ -98,13 +142,15 @@ export function patchWizardProductAvailability(
     return { ...entry, ComponentProduct: next }
   })
   const baseSetProducts = product.BaseSetProducts?.map((entry) => {
-    if (!entry.BaseProduct) {
+    const child = entry.BaseProduct
+
+    if (!child) {
       return entry
     }
 
-    const next = patchWizardProductAvailability(entry.BaseProduct, productNetUid, buckets)
+    const next = patchWizardProductAvailability(child, targetNetUid, availability)
 
-    if (next === entry.BaseProduct) {
+    if (next === child) {
       return entry
     }
 
@@ -119,14 +165,7 @@ export function patchWizardProductAvailability(
 
   return {
     ...product,
-    ...(matchesTarget
-      ? {
-          AvailableQtyPl: buckets.AvailableQtyPl ?? 0,
-          AvailableQtyUk: buckets.AvailableQtyUk ?? 0,
-          AvailableQtyUkReSale: buckets.AvailableQtyUkReSale ?? 0,
-          AvailableQtyUkVAT: buckets.AvailableQtyUkVAT ?? 0,
-        }
-      : {}),
+    ...(matchesTarget ? availability : {}),
     ...(nextSearchedProducts ? { NextSearchedProducts: nextSearchedProducts } : {}),
     ...(analogueProducts ? { AnalogueProducts: analogueProducts } : {}),
     ...(componentProducts ? { ComponentProducts: componentProducts } : {}),

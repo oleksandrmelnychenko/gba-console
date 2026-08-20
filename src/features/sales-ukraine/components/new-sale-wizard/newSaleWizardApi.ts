@@ -225,6 +225,7 @@ export async function getProductAvailabilityBuckets(
   clientAgreementNetId: string,
 ): Promise<WizardProductAvailabilityBuckets | null> {
   const result = await apiRequest<unknown>('/products/all/availabilities/product', {
+    cache: 'no-store',
     query: { clientAgreementNetId, netId: productNetId },
   })
 

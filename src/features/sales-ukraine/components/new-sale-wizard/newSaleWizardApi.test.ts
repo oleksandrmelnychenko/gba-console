@@ -4,6 +4,7 @@ import {
   createFutureReservation,
   getClientDeliveryRecipients,
   getNearestSupplyOrder,
+  getProductAvailabilityBuckets,
   getProductCalculatedPricingsByAgreement,
   getProductCurrentPriceByAgreement,
   getProductReservationsByAgreement,
@@ -75,6 +76,22 @@ describe('new sale wizard pricing API contracts', () => {
         value: 'sem94',
       },
       signal: controller.signal,
+    })
+  })
+
+  it('bypasses the browser cache when reading live agreement-scoped availability', async () => {
+    apiRequestMock.mockResolvedValueOnce({ AvailableQtyUk: 1, AvailableQtyUkReSale: 0 })
+
+    await expect(getProductAvailabilityBuckets('product-1', 'agreement-1')).resolves.toEqual({
+      AvailableQtyUk: 1,
+      AvailableQtyUkReSale: 0,
+    })
+    expect(apiRequestMock).toHaveBeenCalledWith('/products/all/availabilities/product', {
+      cache: 'no-store',
+      query: {
+        clientAgreementNetId: 'agreement-1',
+        netId: 'product-1',
+      },
     })
   })
 

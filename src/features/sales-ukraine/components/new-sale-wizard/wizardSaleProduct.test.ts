@@ -3,6 +3,7 @@ import {
   getWizardDisplayQty,
   getWizardSellableQty,
   getWizardStorageQty,
+  normalizeWizardProductAvailability,
   patchWizardProductAvailability,
   type WizardSaleProduct,
 } from './wizardSaleProduct'
@@ -58,33 +59,50 @@ describe('wizard sale product availability', () => {
     expect(getWizardSellableQty(productWithoutAgreementQty, true)).toBeUndefined()
   })
 
-  it('patches an exact nested product without replacing unrelated search nodes', () => {
+  it('normalizes the exact buckets required by the current agreement mode', () => {
+    expect(normalizeWizardProductAvailability({
+      AvailableQtyUk: 1,
+      AvailableQtyUkReSale: 0,
+    }, false)).toEqual({
+      AvailableQtyUk: 1,
+      AvailableQtyUkReSale: 0,
+    })
+    expect(normalizeWizardProductAvailability({ AvailableQtyUkVAT: 3 }, true)).toEqual({
+      AvailableQtyUkVAT: 3,
+    })
+  })
+
+  it('rejects missing, negative, and non-finite sellable buckets instead of inventing zero', () => {
+    expect(normalizeWizardProductAvailability({ AvailableQtyUk: 1 }, false)).toBeNull()
+    expect(normalizeWizardProductAvailability({
+      AvailableQtyUk: -1,
+      AvailableQtyUkReSale: 0,
+    }, false)).toBeNull()
+    expect(normalizeWizardProductAvailability({ AvailableQtyUkVAT: Number.NaN }, true)).toBeNull()
+  })
+
+  it('patches the exact stable product id without changing unrelated search nodes', () => {
     const untouched = { NetUid: 'product-untouched', AvailableQtyUk: 8 } as WizardSaleProduct
-    const nested = { NetUid: 'PRODUCT-TARGET', AvailableQtyUk: 59 } as WizardSaleProduct
+    const nested = { NetUid: 'PRODUCT-TARGET', AvailableQtyUk: 2, AvailableQtyUkReSale: 0 } as WizardSaleProduct
     const root = {
       NetUid: 'product-root',
       AvailableQtyUk: 40,
       AnalogueProducts: [{ AnalogueProduct: nested }],
       ComponentProducts: [{ ComponentProduct: untouched }],
-      NextSearchedProducts: [untouched],
     } as WizardSaleProduct
 
     const patched = patchWizardProductAvailability(root, ' product-target ', {
-      AvailableQtyPl: 2,
-      AvailableQtyUk: 58,
-      AvailableQtyUkReSale: 1,
-      AvailableQtyUkVAT: 3,
+      AvailableQtyUk: 1,
+      AvailableQtyUkReSale: 0,
     })
 
     expect(patched).not.toBe(root)
     expect(patched.AvailableQtyUk).toBe(40)
     expect(patched.AnalogueProducts?.[0]?.AnalogueProduct).toMatchObject({
-      AvailableQtyPl: 2,
-      AvailableQtyUk: 58,
-      AvailableQtyUkReSale: 1,
-      AvailableQtyUkVAT: 3,
+      AvailableQtyUk: 1,
+      AvailableQtyUkReSale: 0,
     })
     expect(patched.ComponentProducts?.[0]?.ComponentProduct).toBe(untouched)
-    expect(patched.NextSearchedProducts?.[0]).toBe(untouched)
+    expect(nested.AvailableQtyUk).toBe(2)
   })
 })

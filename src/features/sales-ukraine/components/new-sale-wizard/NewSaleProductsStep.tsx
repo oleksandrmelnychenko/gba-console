@@ -100,9 +100,10 @@ import {
   getWizardProductNumber,
   getWizardSellableQty,
   getWizardStorageQty,
+  normalizeWizardProductAvailability,
   patchWizardProductAvailability,
-  type WizardProductAvailability,
   type WizardCarouselEntry,
+  type WizardProductAvailability,
   type WizardSaleProduct,
 } from './wizardSaleProduct'
 import { findUniqueExactWizardProductSearchMatch } from './wizardProductSearchSelection'
@@ -1216,7 +1217,9 @@ export function NewSaleProductsStep({
     }
 
     const persisted = toPersistedCartMutation(operation)
-    const productNetUid = getCartMutationProductNetUid(operation.request, orderItems)
+    const visibleProductNetUid = results.length > 0
+      ? getCartMutationProductNetUid(operation.request, orderItems)
+      : null
 
     const completed = await withSalesPendingMutationLock(scope, operation.operationId, persisted, async (lease) => {
       if (!isPersistedWizardCartMutation(lease.entry.payload)) {
@@ -1258,42 +1261,57 @@ export function NewSaleProductsStep({
       }
     })
 
-    if (completed && productNetUid && isCurrentMutationContext(context)) {
-      await refreshProductAvailabilityAfterCartMutation(context, productNetUid)
+    if (completed && visibleProductNetUid && isCurrentMutationContext(context)) {
+      await refreshVisibleProductAvailability(context, visibleProductNetUid)
     }
 
     return completed
   }
 
-  async function refreshProductAvailabilityAfterCartMutation(context: string, productNetUid: string) {
+  async function refreshVisibleProductAvailability(context: string, productNetUid: string) {
+    const refreshErrorMessage = t('Не вдалося оновити залишок товару. Повторіть пошук.')
+
     if (!agreementNetId) {
+      handleVisibleProductAvailabilityFailure(refreshErrorMessage)
+
       return
     }
 
+    searchGenerationRef.current += 1
+    searchAbortRef.current?.abort()
+    loadMoreAbortRef.current?.abort()
+    recommendationsAbortRef.current?.abort()
+    searchAbortRef.current = null
+    loadMoreAbortRef.current = null
+    recommendationsAbortRef.current = null
+    virtualLoadingRef.current = false
+    setSearching(false)
+    setLoadingRecommendations(false)
+
     try {
       const buckets = await getProductAvailabilityBuckets(productNetUid, agreementNetId)
+      const availability = normalizeWizardProductAvailability(buckets, isVatSale)
+
+      if (!availability) {
+        throw new Error('Product availability response is incomplete or invalid.')
+      }
 
       if (!isCurrentMutationContext(context)) {
         return
       }
 
-      applyAvailabilityBuckets(productNetUid, buckets ?? EMPTY_WIZARD_PRODUCT_AVAILABILITY)
+      applyVisibleProductAvailability(productNetUid, availability)
+      setSearchError(null)
     } catch {
-      if (!isCurrentMutationContext(context)) {
-        return
+      if (isCurrentMutationContext(context)) {
+        handleVisibleProductAvailabilityFailure(refreshErrorMessage)
       }
-
-      // A confirmed cart mutation must never leave a stale sellable quantity on
-      // screen. Zero is the conservative fallback until the user repeats the
-      // search; the mutation itself remains committed and is not retried.
-      applyAvailabilityBuckets(productNetUid, EMPTY_WIZARD_PRODUCT_AVAILABILITY)
-      setSearchError(t('Не вдалося оновити залишок товару. Повторіть пошук.'))
-      notifications.show({ color: 'red', message: t('Не вдалося оновити залишок товару. Повторіть пошук.') })
     }
   }
 
-  function applyAvailabilityBuckets(productNetUid: string, buckets: WizardProductAvailability) {
-    const patchProduct = (product: WizardSaleProduct) => patchWizardProductAvailability(product, productNetUid, buckets)
+  function applyVisibleProductAvailability(productNetUid: string, availability: WizardProductAvailability) {
+    const patchProduct = (product: WizardSaleProduct) =>
+      patchWizardProductAvailability(product, productNetUid, availability)
 
     setResults((previous) => previous.map(patchProduct))
     setActive((previous) => (previous ? { ...previous, product: patchProduct(previous.product) } : previous))
@@ -1302,6 +1320,30 @@ export function NewSaleProductsStep({
     setCrossSellProduct((previous) => (previous ? patchProduct(previous) : previous))
     setInterestProduct((previous) => (previous ? patchProduct(previous) : previous))
     setFutureProduct((previous) => (previous ? patchProduct(previous) : previous))
+    setProductDetailState((previous) => {
+      const values = new Map(previous.values)
+      const normalizedNetUid = productNetUid.trim().toLowerCase()
+
+      for (const key of values.keys()) {
+        if (key.trim().toLowerCase() === normalizedNetUid) {
+          values.delete(key)
+        }
+      }
+
+      return values.size === previous.values.size ? previous : { ...previous, values }
+    })
+    setRefreshTick((tick) => tick + 1)
+  }
+
+  function handleVisibleProductAvailabilityFailure(message: string) {
+    setResults([])
+    clearActiveProductData()
+    setSearchError(message)
+    setSearching(false)
+    setLoadingRecommendations(false)
+    keyboard.setState('ProductSearch')
+    focusSearchInput()
+    notifications.show({ color: 'red', message })
   }
 
   function createCartMutation(
@@ -3708,7 +3750,18 @@ export function NewSaleProductsStep({
               <Alert color="red" title={t('Не вдалося виконати пошук товарів')} variant="light">
                 <Group align="center" justify="space-between" wrap="nowrap">
                   <Text size="sm">{searchError}</Text>
-                  <Button color="red" size="xs" variant="light" onClick={retryProductSearch}>
+                  <Button
+                    color="red"
+                    size="xs"
+                    variant="light"
+                    onClick={() => {
+                      if (query.trim().length >= PRODUCT_SEARCH_MIN_QUERY_LENGTH) {
+                        retryProductSearch()
+                      } else {
+                        void loadClientRecommendations()
+                      }
+                    }}
+                  >
                     {t('Повторити')}
                   </Button>
                 </Group>
