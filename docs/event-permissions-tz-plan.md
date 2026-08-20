@@ -224,6 +224,12 @@
 - [x] Повні frontend test, lint, typecheck, build і audit checks.
 - [x] Повний backend build/test та `verify-event-permissions` у required SQL
   mode — 104/104 API/security/SQL та 17/17 actor authorization tests.
+- [x] Підготувати fail-closed production rollout runbook і report template —
+  `gba-server/docs/event-permissions-production-rollout.md` фіксує порядок
+  backup → clone migration/REQUIRED SQL → production migration/backend/catalog
+  → reconciliation → frontend → smoke → cohorts/monitoring → decision;
+  machine-readable template стартує `pending` і не дозволяє підмінити
+  production acceptance тестовими receipt. Contract tests 2/2.
 - [ ] Backup і dry-run міграцій на фінальній копії актуальної БД.
 - [ ] Deploy order: БД/міграції → backend → catalog sync → frontend.
 - [ ] Smoke test `/users/roles`, effective permissions та representative `403`.
@@ -285,13 +291,18 @@
   redirects, не виконує POST/PUT/PATCH/DELETE і друкує secret-free JSON
   receipt. Deterministic local HTTP self-check: catalog 479 exact keys,
   statuses `200/401/200/200/200/403`; focused behavioral/contract tests 6/6,
-  CI-neutral verifier 106 passed + 4 SQL skipped при вимкненому Docker,
+  CI-neutral verifier 108 passed + 4 SQL skipped при вимкненому Docker,
   actor authorization 17/17.
 - [x] Rollout denial telemetry і stop contract — handler emit-ить лише
   authenticated event-permission denials як structured warning
   `46001/EventPermissionDenied`; query string, body та authorization header не
   потрапляють у подію. Monitoring contract/runbook tests 2/2, full
-  CI-neutral verifier 106 passed + 4 SQL skipped, actors 17/17.
+  CI-neutral verifier 108 passed + 4 SQL skipped, actors 17/17.
+- [x] Production rollout/report contract — ordered fail-closed runbook і
+  deliberately pending JSON template містять exact commits/target/backup,
+  migration, catalog 479/version, reconciliation receipts, runtime smoke,
+  monitoring, rollback та explicit decision fields. Template перевіряється
+  проти code-owned catalog/mapping/EventId; focused tests 2/2.
 - [x] Виправлення знайдених дефектів та повторний regression — виправлено
   застарілий contract-тест незалежних прав авто/шляхових листів; focused 5/5
   і повний backend verifier пройшли; runtime API acceptance також зелена.

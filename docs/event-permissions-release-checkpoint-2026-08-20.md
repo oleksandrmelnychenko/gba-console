@@ -33,7 +33,7 @@
   GET, `/permissions/me` and a representative `403`; a deterministic loopback
   run passed `200/401/200/200/200/403`. Its receipt omits tokens and bodies.
 - Runtime-smoke and monitoring validation have 6/6 focused tests. The latest
-  CI-neutral verifier passed 106 API/security tests with the four SQL
+  CI-neutral verifier passed 108 API/security tests with the four SQL
   integration facts skipped because Docker was off, plus 17/17 actor tests;
   both release tools built with 0 warnings/errors.
 - Authenticated event-permission denials now emit structured warning
@@ -42,6 +42,11 @@
   baseline/cohort/stop runbook is
   `gba-server/docs/event-permissions-rollout-monitoring.md`; actual production
   observation remains a rollout step.
+- Production preparation now has one ordered fail-closed runbook and a
+  machine-readable report template that starts `pending`. Contract tests prove
+  backup → clone migration/REQUIRED SQL → production migration/backend/catalog
+  → reconciliation → frontend → smoke → monitoring → explicit decision order,
+  plus code-aligned catalog/mapping/telemetry versions and secret-free fields.
 
 ## БД та migration safety
 
