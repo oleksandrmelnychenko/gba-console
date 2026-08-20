@@ -234,6 +234,11 @@
   Його end-to-end loopback self-check пройшов
   `200/401/200/200/200/403`; production receipt закривається після deploy.
 - [ ] Поступове призначення ролям і моніторинг authorization failures.
+  Telemetry готова: authenticated event-permission deny пише structured
+  warning `46001/EventPermissionDenied` з canonical key, user NetUID, method
+  і path без query/body/token. Runbook baseline/cohort/stop conditions:
+  `gba-server/docs/event-permissions-rollout-monitoring.md`. Фактичне
+  production-призначення ролям і observation window ще не виконані.
 - [ ] Зафіксувати before/after/rollback release report.
   Поточний перевірений checkpoint уже зафіксовано в
   `docs/event-permissions-release-checkpoint-2026-08-20.md`; фінальний report
@@ -280,8 +285,13 @@
   redirects, не виконує POST/PUT/PATCH/DELETE і друкує secret-free JSON
   receipt. Deterministic local HTTP self-check: catalog 479 exact keys,
   statuses `200/401/200/200/200/403`; focused behavioral/contract tests 6/6,
-  CI-neutral verifier 104 passed + 4 SQL skipped при вимкненому Docker,
+  CI-neutral verifier 106 passed + 4 SQL skipped при вимкненому Docker,
   actor authorization 17/17.
+- [x] Rollout denial telemetry і stop contract — handler emit-ить лише
+  authenticated event-permission denials як structured warning
+  `46001/EventPermissionDenied`; query string, body та authorization header не
+  потрапляють у подію. Monitoring contract/runbook tests 2/2, full
+  CI-neutral verifier 106 passed + 4 SQL skipped, actors 17/17.
 - [x] Виправлення знайдених дефектів та повторний regression — виправлено
   застарілий contract-тест незалежних прав авто/шляхових листів; focused 5/5
   і повний backend verifier пройшли; runtime API acceptance також зелена.
