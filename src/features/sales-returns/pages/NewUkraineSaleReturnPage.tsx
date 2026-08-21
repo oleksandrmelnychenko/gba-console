@@ -363,9 +363,16 @@ export function NewUkraineSaleReturnPage() {
       return
     }
 
-    // The create-return modal auto-loads the recent-sales window on open (legacy behaviour) so
-    // the user can browse/narrow — an earlier empty-filter guard suppressed this and left the
-    // grid blank («не находить товар»).
+    if (!normalizedSaleSearch && !selectedClientNetUid) {
+      setSalesState({
+        isLoading: false,
+        sales: [],
+      })
+      setCreateError(null)
+      setCreateWarning(t('Введіть артикул або виберіть клієнта'))
+      return
+    }
+
     setSalesState((currentState) => ({
       ...currentState,
       isLoading: true,
