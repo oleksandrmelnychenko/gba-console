@@ -1431,7 +1431,12 @@ function PackingListProductIncomePage({
   const canUseIncome = model.canUseIncome
   const hasColumns = (model.packingList?.DynamicProductPlacementColumns.length || 0) > 0
   const hasItemsNotReadyToPlace = (model.packingList?.PackingListPackageOrderItems || []).some((item) => !item.IsReadyToPlaced)
-  const canAddDynamicColumn = canUseIncome && hasPermission(PERMISSION_ADD_DYNAMIC_INCOME_COLUMN)
+  // The invoice and its packing-list grid are loaded by a second request after the
+  // source header. Do not expose an actionable button during that gap: the handler
+  // cannot create a column without the hydrated packing list.
+  const canAddDynamicColumn = canUseIncome
+    && Boolean(model.packingList)
+    && hasPermission(PERMISSION_ADD_DYNAMIC_INCOME_COLUMN)
   const canCapitalizeDynamicIncome = canUseIncome && hasPermission(PERMISSION_CAPITALIZE_DYNAMIC_INCOME)
   const canCarryOutDynamicIncome = canUseIncome && hasPermission(PERMISSION_CARRY_OUT_DYNAMIC_INCOME)
   const filteredGridRows = useMemo(() => {

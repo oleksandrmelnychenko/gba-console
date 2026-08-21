@@ -1,9 +1,57 @@
+import type { Route } from '@playwright/test';
 import { TEST_INCOME_SUPPLIERS } from '../../data/testIncome';
 import { expect, test } from '../../fixtures/test';
 import type { CreatedInvoiceRef, CreatedOrderRef } from '../../flows/income';
 import { postIncome } from '../../flows/income';
 
 test.describe.configure({ mode: 'serial' });
+
+test('прихід: додавання колонки чекає завантаження паклиста @smoke', async ({ page, entities }) => {
+  const order = entities.require<CreatedOrderRef>(
+    'income.AYMEKS.order',
+    'спочатку має пройти 10-order-invoice',
+  );
+  const packingListPattern = '**/supplies/packinglists/specification/products/get?**';
+
+  let signalRequestStarted: () => void = () => undefined;
+  const requestStarted = new Promise<void>((resolve) => {
+    signalRequestStarted = resolve;
+  });
+
+  let releasePackingList: () => void = () => undefined;
+  const packingListGate = new Promise<void>((resolve) => {
+    releasePackingList = resolve;
+  });
+
+  let signalRouteFinished: () => void = () => undefined;
+  const routeFinished = new Promise<void>((resolve) => {
+    signalRouteFinished = resolve;
+  });
+
+  const delayPackingList = async (route: Route) => {
+    signalRequestStarted();
+    try {
+      await packingListGate;
+      await route.continue();
+    } finally {
+      signalRouteFinished();
+    }
+  };
+
+  await page.route(packingListPattern, delayPackingList);
+  await page.goto(`/orders/ukraine/all/edit/${order.orderNetId}/product-income`);
+
+  try {
+    await requestStarted;
+    await expect(page.getByTestId('income-add-column')).toHaveCount(0);
+  } finally {
+    releasePackingList();
+    await routeFinished;
+    await page.unroute(packingListPattern, delayPackingList);
+  }
+
+  await expect(page.getByTestId('income-add-column')).toBeVisible({ timeout: 20_000 });
+});
 
 for (const supplier of TEST_INCOME_SUPPLIERS) {
   const tag = supplier.key === 'AYMEKS' ? ' @smoke' : '';

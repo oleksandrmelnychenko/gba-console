@@ -267,15 +267,24 @@ export async function uploadCustomsCodes(
 export async function placeAllItems(page: Page): Promise<void> {
   const addColumn = page.getByTestId('income-add-column');
   await expect(addColumn).toBeVisible({ timeout: 20_000 });
+  await expect(addColumn).toBeEnabled();
   await addColumn.click();
 
   const columnModal = page.getByRole('dialog').filter({ hasText: 'Додати нову колонку' });
+  await expect(columnModal).toBeVisible();
+
+  const fromDate = columnModal.getByRole('textbox', { name: 'Від якої дати' });
+  await expect(fromDate).toHaveValue(/^\d{4}-\d{2}-\d{2}$/);
+
+  const submitColumn = columnModal.getByRole('button', { name: 'Додати', exact: true });
+  await expect(submitColumn).toBeEnabled();
+
   const [columnResponse] = await Promise.all([
     page.waitForResponse(
       (res) => res.url().includes('/supplies/packinglists/update') && res.request().method() === 'POST',
       { timeout: 60_000 },
     ),
-    columnModal.getByRole('button', { name: 'Додати', exact: true }).click(),
+    submitColumn.click(),
   ]);
   expect(columnResponse.ok(), `add column HTTP ${columnResponse.status()}`).toBe(true);
 
