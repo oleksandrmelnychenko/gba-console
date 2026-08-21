@@ -97,7 +97,7 @@ describe('SalesUkrainePage unlock state', () => {
     mocks.unlockSale.mockResolvedValueOnce(null)
 
     const { container } = render(
-      <MantineProvider theme={theme}>
+      <MantineProvider env="test" theme={theme}>
         <Notifications />
         <I18nProvider>
           <MemoryRouter>
@@ -132,7 +132,7 @@ describe('SalesUkrainePage unlock state', () => {
     mocks.acceptSaleForPacking.mockResolvedValueOnce(null)
 
     render(
-      <MantineProvider theme={theme}>
+      <MantineProvider env="test" theme={theme}>
         <Notifications />
         <I18nProvider>
           <MemoryRouter>
