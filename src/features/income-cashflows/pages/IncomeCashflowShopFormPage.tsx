@@ -164,8 +164,8 @@ export function IncomeCashflowShopFormPage() {
     [paymentRegisters, selectedOrganization],
   )
   const selectedRegister = useMemo(
-    () => paymentRegisters.find((register) => getEntityValue(register) === form.paymentRegisterValue) || null,
-    [form.paymentRegisterValue, paymentRegisters],
+    () => filteredPaymentRegisters.find((register) => getEntityValue(register) === form.paymentRegisterValue) || null,
+    [filteredPaymentRegisters, form.paymentRegisterValue],
   )
   const selectedCurrencyRegister = useMemo(
     () =>
@@ -176,7 +176,7 @@ export function IncomeCashflowShopFormPage() {
   )
   const selectedCurrency = selectedCurrencyRegister?.Currency || null
   const organizationAgreements = useMemo(
-    () => (selectedOrganization ? filterClientAgreementsByOrganization(retailAgreements, selectedOrganization) : retailAgreements),
+    () => (selectedOrganization ? filterClientAgreementsByOrganization(retailAgreements, selectedOrganization) : []),
     [retailAgreements, selectedOrganization],
   )
   const selectedAgreement = useMemo(
@@ -232,9 +232,14 @@ export function IncomeCashflowShopFormPage() {
       selectedAgreementId,
       selectedSaleId,
     }: ApplyRetailAgreementsParams) => {
-      const nextAgreement = selectClientAgreement(agreements, selectedAgreementId)
-      const nextOrganization = nextAgreement?.Agreement?.Organization || collectOrganizations(agreements)[0] || null
-      const nextRegister = selectDefaultRegister(nextPaymentRegisters, nextOrganization, Boolean(selectedAgreementId || selectedSaleId))
+      const hasLinkedPaymentContext = Boolean(selectedAgreementId || selectedSaleId)
+      const nextAgreement = hasLinkedPaymentContext
+        ? selectClientAgreement(agreements, selectedAgreementId, selectedSaleId)
+        : null
+      const nextOrganization = nextAgreement?.Agreement?.Organization || null
+      const nextRegister = hasLinkedPaymentContext
+        ? selectDefaultRegister(nextPaymentRegisters, nextOrganization, true)
+        : null
       const nextCurrency = nextRegister?.PaymentCurrencyRegisters?.[0]?.Currency || null
       const nextDebts = filterClientDebts(collectClientDebts(readPaymentClient(nextAgreement, retailClient), agreements), nextOrganization, nextAgreement)
       const nextSelectedDebtValues = selectedSaleId ? getDebtValuesBySaleId(nextDebts, selectedSaleId) : []
@@ -536,22 +541,20 @@ export function IncomeCashflowShopFormPage() {
 
   function handleOrganizationChanged(value: string | null) {
     const organization = organizations.find((item) => getEntityValue(item) === value) || null
-    const agreements = organization ? filterClientAgreementsByOrganization(retailAgreements, organization) : retailAgreements
+    const agreements = organization ? filterClientAgreementsByOrganization(retailAgreements, organization) : []
     const agreement = selectDefaultClientAgreement(agreements)
-    const register = selectDefaultRegister(paymentRegisters, organization, false)
-    const currency = register?.PaymentCurrencyRegisters?.[0]?.Currency || null
 
     updateForm({
       organizationValue: value || '',
-      paymentRegisterValue: register ? getEntityValue(register) : '',
+      paymentRegisterValue: '',
       selectedAgreementValue: agreement?.Agreement ? getEntityValue(agreement.Agreement) : '',
-      selectedCurrencyValue: currency ? getEntityValue(currency) : '',
+      selectedCurrencyValue: '',
       selectedDebtValues: [],
     })
   }
 
   function handleRegisterChanged(value: string | null) {
-    const register = paymentRegisters.find((item) => getEntityValue(item) === value) || null
+    const register = filteredPaymentRegisters.find((item) => getEntityValue(item) === value) || null
     const currency = register?.PaymentCurrencyRegisters?.[0]?.Currency || null
 
     updateForm({
@@ -1295,7 +1298,11 @@ function filterClientAgreementsByOrganization(agreements: ClientAgreement[], org
   )
 }
 
-function selectClientAgreement(agreements: ClientAgreement[], selectedAgreementId?: string): ClientAgreement | null {
+function selectClientAgreement(
+  agreements: ClientAgreement[],
+  selectedAgreementId?: string,
+  selectedSaleId?: string,
+): ClientAgreement | null {
   if (selectedAgreementId) {
     const agreement = agreements.find(
       (item) =>
@@ -1309,13 +1316,21 @@ function selectClientAgreement(agreements: ClientAgreement[], selectedAgreementI
     }
   }
 
+  if (selectedSaleId) {
+    const agreement = agreements.find((item) =>
+      (item.Agreement?.ClientInDebts || []).some((debt) => matchesDebtSaleId(debt, selectedSaleId)),
+    )
+
+    if (agreement) {
+      return agreement
+    }
+  }
+
   return selectDefaultClientAgreement(agreements)
 }
 
 function selectDefaultClientAgreement(agreements: ClientAgreement[]): ClientAgreement | null {
-  const agreementsWithDebt = agreements.filter((agreement) => (agreement.Agreement?.ClientInDebts || []).length > 0)
-
-  return agreementsWithDebt.length === 1 ? agreementsWithDebt[0] : agreements[0] || null
+  return agreements[0] || null
 }
 
 function readPaymentClient(agreement: ClientAgreement | null, retailClient?: RetailClient | null): Client | null {
