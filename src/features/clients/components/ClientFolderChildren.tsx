@@ -28,7 +28,7 @@ export function ClientFolderChildren({
     <Box
       aria-label={`${t('Клієнти папки')} ${folderCode}`.trim()}
       className="client-folder-children"
-      role="list"
+      component="ul"
     >
       {children.map((child) => {
         const code = getClientRegionCode(child)
@@ -37,7 +37,7 @@ export function ClientFolderChildren({
         const isActive = child.IsActive !== false
 
         return (
-          <div className="client-folder-children__item" key={getClientStableKey(child)} role="listitem">
+          <li className="client-folder-children__item" key={getClientStableKey(child)}>
             <UnstyledButton
               aria-label={[code, name].filter(Boolean).join(' · ')}
               className="client-folder-children__button"
@@ -58,7 +58,7 @@ export function ClientFolderChildren({
               {role ? <span className="client-folder-children__role">{role}</span> : null}
               <ChevronRight aria-hidden="true" className="client-folder-children__chevron" size={15} />
             </UnstyledButton>
-          </div>
+          </li>
         )
       })}
     </Box>

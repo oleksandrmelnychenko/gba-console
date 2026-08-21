@@ -410,6 +410,8 @@ describe('NewSaleProductsStep persistent cart mutations', () => {
     fireEvent.click(await screen.findByText('38118103 NR'))
     await screen.findByRole('button', { name: 'Скопіювати код: 38118103 NR' })
     expect(view.container.querySelector('.new-sale-product-picker-card__qty')?.textContent).toBe('59')
+    await waitFor(() => expect(apiMocks.searchSaleProductsWithAvailability).toHaveBeenCalledTimes(2))
+    const searchCallsBeforeMutation = apiMocks.searchSaleProductsWithAvailability.mock.calls.length
 
     fireEvent.click(screen.getByRole('button', { name: 'Деталі' }))
     fireEvent.keyDown(document.body, { key: 'Enter' })
@@ -419,7 +421,7 @@ describe('NewSaleProductsStep persistent cart mutations', () => {
     await waitFor(() => {
       expect(view.container.querySelector('.new-sale-product-picker-card__qty')?.textContent).toBe('58')
     })
-    expect(apiMocks.searchSaleProductsWithAvailability).toHaveBeenCalledOnce()
+    expect(apiMocks.searchSaleProductsWithAvailability).toHaveBeenCalledTimes(searchCallsBeforeMutation)
   })
 
   it('removes stale availability without fabricating zero when the exact refresh fails', async () => {

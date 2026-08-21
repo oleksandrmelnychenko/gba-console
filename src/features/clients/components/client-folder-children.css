@@ -1,6 +1,8 @@
 .client-folder-children {
   background: var(--mantine-color-gray-0);
   border-block: 1px solid var(--mantine-color-gray-2);
+  list-style: none;
+  margin: 0;
   padding: 5px 12px 6px 50px;
 }
 

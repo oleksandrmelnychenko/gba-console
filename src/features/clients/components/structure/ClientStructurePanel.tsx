@@ -184,9 +184,10 @@ export function ClientStructurePanel({ client, onChange }: ClientStructurePanelP
       )}
 
       <Card className="app-section-card client-structure-card" withBorder padding={0} radius="md">
-        <Tabs className="client-structure-tabs-root" defaultValue="subClients" keepMounted={false}>
+        <Tabs className="client-structure-tabs-root" defaultValue="structuralUnits" keepMounted={false}>
           <Tabs.List className="pill-tabs client-structure-tabs">
-            <Tabs.Tab value="subClients">{t('Субклієнти')}</Tabs.Tab>
+            <Tabs.Tab value="structuralUnits">{t('Структурні підрозділи')}</Tabs.Tab>
+            <Tabs.Tab value="subClients">{t('Сабклієнти')}</Tabs.Tab>
             <Tabs.Tab value="workplaces">{t('Робочі місця')}</Tabs.Tab>
           </Tabs.List>
 
@@ -213,8 +214,12 @@ export function ClientStructurePanel({ client, onChange }: ClientStructurePanelP
             </Tooltip>
           </Group>
 
+          <Tabs.Panel className="client-structure-panel" value="structuralUnits">
+            <SubClientsPanel client={client} relationKind="structural-unit" />
+          </Tabs.Panel>
+
           <Tabs.Panel className="client-structure-panel" value="subClients">
-            <SubClientsPanel client={client} />
+            <SubClientsPanel client={client} relationKind="subclient" />
           </Tabs.Panel>
 
           <Tabs.Panel className="client-structure-panel" value="workplaces">

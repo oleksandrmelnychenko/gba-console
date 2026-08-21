@@ -95,7 +95,6 @@ import {
   type WizardProductKeyboardState,
 } from './wizardKeyboard'
 import {
-  EMPTY_WIZARD_PRODUCT_AVAILABILITY,
   getComponentCarouselEntries,
   getWizardProductNumber,
   getWizardSellableQty,

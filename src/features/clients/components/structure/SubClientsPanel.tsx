@@ -8,9 +8,15 @@ import { CREATE_ACTION_COLOR } from '../../../../shared/ui/page-header-actions/P
 import { TreeView, type TreeViewNode } from '../../../../shared/ui/tree/TreeView'
 import { getClientSubClients } from '../../api/clientCabinetApi'
 import type { Client } from '../../types'
+import {
+  extractRelatedClients,
+  extractRelatedClientsFromLinks,
+  type ClientRelationshipKind,
+} from './clientRelationship'
 
 export type SubClientsPanelProps = {
   client: Client
+  relationKind?: ClientRelationshipKind
 }
 
 /**
@@ -18,12 +24,12 @@ export type SubClientsPanelProps = {
  * tree pattern). The current client's direct sub-clients are the top level;
  * each node lazy-loads its own sub-clients on expand.
  */
-export function SubClientsPanel({ client }: SubClientsPanelProps) {
+export function SubClientsPanel({ client, relationKind = 'subclient' }: SubClientsPanelProps) {
   const { t } = useI18n()
   const navigate = useNavigate()
   const location = useLocation()
   const netId = client.NetUid
-  const [rootChildren, setRootChildren] = useValueState<Client[]>(() => extractSubClients(client))
+  const [rootChildren, setRootChildren] = useValueState<Client[]>(() => extractRelatedClients(client, relationKind))
   const [childrenByKey, setChildrenByKey] = useValueState<Record<string, Client[]>>({})
   const [loadingKeys, setLoadingKeys] = useValueState<ReadonlySet<string>>(() => new Set())
   const [loadedKeys, setLoadedKeys] = useValueState<ReadonlySet<string>>(() => new Set())
@@ -42,12 +48,12 @@ export function SubClientsPanel({ client }: SubClientsPanelProps) {
     void getClientSubClients(netId)
       .then((items) => {
         if (!cancelled) {
-          setRootChildren(items.reduce<Client[]>((acc, link) => (link.SubClient ? [...acc, link.SubClient] : acc), []))
+          setRootChildren(extractRelatedClientsFromLinks(items, relationKind))
         }
       })
       .catch((loadError: unknown) => {
         if (!cancelled) {
-          setError(loadError instanceof Error ? loadError.message : t('Не вдалося завантажити субклієнтів'))
+          setError(loadError instanceof Error ? loadError.message : getRelationshipLoadError(relationKind, t))
           setRootChildren([])
         }
       })
@@ -60,7 +66,7 @@ export function SubClientsPanel({ client }: SubClientsPanelProps) {
     return () => {
       cancelled = true
     }
-  }, [netId, setError, setLoading, setRootChildren, t])
+  }, [netId, relationKind, setError, setLoading, setRootChildren, t])
 
   const loadChildren = useCallback(
     (subNetId: string) => {
@@ -73,7 +79,7 @@ export function SubClientsPanel({ client }: SubClientsPanelProps) {
         .then((links) => {
           setChildrenByKey((current) => ({
             ...current,
-            [subNetId]: links.reduce<Client[]>((acc, link) => (link.SubClient ? [...acc, link.SubClient] : acc), []),
+            [subNetId]: extractRelatedClientsFromLinks(links, relationKind),
           }))
         })
         .catch(() => {
@@ -88,7 +94,7 @@ export function SubClientsPanel({ client }: SubClientsPanelProps) {
           })
         })
     },
-    [loadedKeys, loadingKeys, setChildrenByKey, setLoadedKeys, setLoadingKeys],
+    [loadedKeys, loadingKeys, relationKind, setChildrenByKey, setLoadedKeys, setLoadingKeys],
   )
 
   const openSubClient = useCallback(
@@ -137,11 +143,13 @@ export function SubClientsPanel({ client }: SubClientsPanelProps) {
 
   return (
     <Stack gap="sm">
-      <Group justify="flex-end" align="center">
-        <Button color={CREATE_ACTION_COLOR} leftSection={<Plus size={16} />} size="xs" onClick={openNewUser}>
-          {t('Новий користувач')}
-        </Button>
-      </Group>
+      {relationKind === 'subclient' ? (
+        <Group justify="flex-end" align="center">
+          <Button color={CREATE_ACTION_COLOR} leftSection={<Plus size={16} />} size="xs" onClick={openNewUser}>
+            {t('Новий користувач')}
+          </Button>
+        </Group>
+      ) : null}
 
       {error && (
         <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
@@ -157,14 +165,32 @@ export function SubClientsPanel({ client }: SubClientsPanelProps) {
           </Text>
         </Group>
       ) : (
-        <TreeView defaultExpandedDepth={0} emptyText={t('Субклієнтів не додано')} nodes={nodes} />
+        <TreeView
+          defaultExpandedDepth={0}
+          emptyText={getRelationshipEmptyText(relationKind, t)}
+          nodes={nodes}
+        />
       )}
     </Stack>
   )
 }
 
-function extractSubClients(client: Client): Client[] {
-  return (client.SubClients || []).reduce<Client[]>((acc, link) => (link.SubClient ? [...acc, link.SubClient] : acc), [])
+function getRelationshipLoadError(
+  relationKind: ClientRelationshipKind,
+  t: (value: string) => string,
+): string {
+  return relationKind === 'structural-unit'
+    ? t('Не вдалося завантажити структурні підрозділи')
+    : t('Не вдалося завантажити сабклієнтів')
+}
+
+function getRelationshipEmptyText(
+  relationKind: ClientRelationshipKind,
+  t: (value: string) => string,
+): string {
+  return relationKind === 'structural-unit'
+    ? t('Структурних підрозділів не додано')
+    : t('Сабклієнтів не додано')
 }
 
 function getSubClientName(client: Client, t: (value: string) => string): string {
