@@ -26,12 +26,13 @@ describe('wizard client folder selection', () => {
     })
   })
 
-  it('selects a non-00 client directly and does not add a hierarchy level', () => {
-    const client = createClient(1, 'XM05202')
-    client.SubClients = [{ Id: 1, SubClient: createClient(2, 'XM05203') }]
+  it('keeps a consolidated non-00 root selectable while exposing its persisted children', () => {
+    const client = createClient(1, 'VI03501')
+    const child = createClient(2, 'VI03503')
+    client.SubClients = [{ Id: 1, SubClient: child }]
 
     expect(isWizardSaleClientSelectable(client)).toBe(true)
-    expect(buildWizardClientStacks(client)).toEqual({ bottom: [], top: [] })
+    expect(buildWizardClientStacks(client)).toEqual({ bottom: [child], top: [] })
   })
 })
 

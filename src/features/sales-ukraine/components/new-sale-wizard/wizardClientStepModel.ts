@@ -1,5 +1,9 @@
 import type { Agreement, Client, ClientAgreement, ClientInDebt } from '../../../clients/types'
-import { getClientFolderChildren, isClientFolder } from '../../../clients/clientFolder'
+import {
+  getClientFolderChildren,
+  getClientRegionCode,
+  isClientFolder,
+} from '../../../clients/clientFolder'
 
 export type WizardClientCarouselState = {
   dataBottom: Client[]
@@ -33,7 +37,12 @@ export function buildWizardClientStacks(
 }
 
 export function isWizardSaleClientSelectable(client: Client): boolean {
-  return !isClientFolder(client)
+  // A persisted hierarchy does not automatically make its root a 1C-only
+  // folder. Consolidated roots such as VI03501 keep their own agreements and
+  // must remain selectable while exposing their linked children. Only the
+  // source structural cards identified by the trailing `00` are navigation
+  // nodes rather than sale clients.
+  return !/^.+00$/u.test(getClientRegionCode(client))
 }
 
 export function getWizardAgreementKey(agreement: ClientAgreement | null | undefined): string {
