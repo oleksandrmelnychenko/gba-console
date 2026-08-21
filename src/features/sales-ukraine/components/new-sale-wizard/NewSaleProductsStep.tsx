@@ -112,6 +112,7 @@ import {
   ensureWizardSplitRestoreOperationNetUids,
   findRestorableWizardOrderItem,
   getWizardMutationContextKey,
+  isWizardMutationAgreementContextCurrent,
   isWizardMutationContextCurrent,
   mapWizardSplitOrderItem,
   resizeWizardSplitOrderItem,
@@ -1026,6 +1027,14 @@ export function NewSaleProductsStep({
     return isWizardMutationContextCurrent(context, mutationContextRef.current, mountedRef.current)
   }
 
+  function isCurrentAvailabilityContext(context: string): boolean {
+    return isWizardMutationAgreementContextCurrent(
+      context,
+      mutationContextRef.current,
+      mountedRef.current,
+    )
+  }
+
   function hydrateCartMutation(
     persisted: PersistedWizardCartMutation,
     beforeMutate?: () => void,
@@ -1216,8 +1225,13 @@ export function NewSaleProductsStep({
     }
 
     const persisted = toPersistedCartMutation(operation)
-    const visibleProductNetUid = results.length > 0
-      ? getCartMutationProductNetUid(operation.request, orderItems)
+    const cartMutationProductNetUid = getCartMutationProductNetUid(operation.request, orderItems)
+    const normalizedCartProductNetUid = cartMutationProductNetUid?.trim().toLowerCase() || ''
+    const visibleProductNetUid = (
+      results.length > 0
+      || active?.product.NetUid?.trim().toLowerCase() === normalizedCartProductNetUid
+    )
+      ? cartMutationProductNetUid
       : null
 
     const completed = await withSalesPendingMutationLock(scope, operation.operationId, persisted, async (lease) => {
@@ -1260,7 +1274,7 @@ export function NewSaleProductsStep({
       }
     })
 
-    if (completed && visibleProductNetUid && isCurrentMutationContext(context)) {
+    if (completed && visibleProductNetUid && isCurrentAvailabilityContext(context)) {
       await refreshVisibleProductAvailability(context, visibleProductNetUid)
     }
 
@@ -1295,14 +1309,14 @@ export function NewSaleProductsStep({
         throw new Error('Product availability response is incomplete or invalid.')
       }
 
-      if (!isCurrentMutationContext(context)) {
+      if (!isCurrentAvailabilityContext(context)) {
         return
       }
 
       applyVisibleProductAvailability(productNetUid, availability)
       setSearchError(null)
     } catch {
-      if (isCurrentMutationContext(context)) {
+      if (isCurrentAvailabilityContext(context)) {
         handleVisibleProductAvailabilityFailure(refreshErrorMessage)
       }
     }

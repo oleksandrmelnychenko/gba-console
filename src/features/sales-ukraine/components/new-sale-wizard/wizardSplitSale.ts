@@ -898,6 +898,25 @@ export function isWizardMutationContextCurrent(captured: string, current: string
   return mounted && captured === current
 }
 
+export function isWizardMutationAgreementContextCurrent(
+  captured: string,
+  current: string,
+  mounted = true,
+): boolean {
+  if (!mounted) {
+    return false
+  }
+
+  const capturedSeparator = captured.indexOf(':')
+  const currentSeparator = current.indexOf(':')
+
+  if (capturedSeparator <= 0 || currentSeparator <= 0) {
+    return false
+  }
+
+  return captured.slice(0, capturedSeparator) === current.slice(0, currentSeparator)
+}
+
 function getProductIdentity(item: SalesUkraineOrderItem): string {
   const netUid = normalizeNetUid(item.Product?.NetUid)
 

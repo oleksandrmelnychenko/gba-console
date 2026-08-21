@@ -10,6 +10,7 @@ import {
   ensureWizardSplitRestoreOperationNetUids,
   findRestorableWizardOrderItem,
   getWizardMutationContextKey,
+  isWizardMutationAgreementContextCurrent,
   isWizardMutationContextCurrent,
   mapWizardSplitOrderItem,
   resolveWizardPendingSplitExtraction,
@@ -493,5 +494,15 @@ describe('wizard split sale mapping', () => {
     expect(isWizardMutationContextCurrent(captured, getWizardMutationContextKey('agreement-b', 'sale-a'))).toBe(false)
     expect(isWizardMutationContextCurrent(captured, getWizardMutationContextKey('agreement-a', 'sale-b'))).toBe(false)
     expect(isWizardMutationContextCurrent(captured, captured, false)).toBe(false)
+  })
+
+  it('keeps an availability refresh current when the first item creates the persisted sale', () => {
+    const draft = getWizardMutationContextKey('agreement-a', null)
+    const persisted = getWizardMutationContextKey('agreement-a', 'sale-a')
+
+    expect(isWizardMutationAgreementContextCurrent(draft, persisted)).toBe(true)
+    expect(isWizardMutationAgreementContextCurrent(draft, getWizardMutationContextKey('agreement-b', 'sale-a'))).toBe(false)
+    expect(isWizardMutationAgreementContextCurrent(draft, persisted, false)).toBe(false)
+    expect(isWizardMutationAgreementContextCurrent(':', persisted)).toBe(false)
   })
 })
