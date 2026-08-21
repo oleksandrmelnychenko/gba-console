@@ -599,7 +599,11 @@ export function IncomeCashflowClientFormPage() {
 
       const debts = collectClientDebts(client, nextAgreements)
       const nextOrganizations = pickOrganizationsByClientAgreements(organizations, nextAgreements)
-      const nextOrganization = nextOrganizations[0] || organizations[0] || null
+      const organizationCandidates = nextOrganizations.length ? nextOrganizations : organizations
+      const nextOrganization = selectPreferredOrganization(
+        organizationCandidates,
+        form.organizationValue,
+      )
       const nextClientAgreements = nextOrganization ? filterClientAgreementsByOrganization(nextAgreements, nextOrganization) : nextAgreements
       const nextAgreement = selectDefaultClientAgreement(nextClientAgreements)
       const nextRegister = selectDefaultRegister(paymentRegisters, nextOrganization, registerType)
@@ -607,8 +611,8 @@ export function IncomeCashflowClientFormPage() {
 
       setSelectedClient({
         ...client,
-        ClientAgreements: nextClientAgreements,
-        ClientInDebts: filterClientDebts(debts, nextOrganization, nextAgreement),
+        ClientAgreements: nextAgreements,
+        ClientInDebts: debts,
       })
       setSelectedSupplyOrganization(null)
       setClientAgreements(nextClientAgreements)
@@ -667,7 +671,11 @@ export function IncomeCashflowClientFormPage() {
       }
 
       const nextOrganizations = pickOrganizationsBySupplyAgreements(organizations, nextAgreements)
-      const nextOrganization = nextOrganizations[0] || organizations[0] || null
+      const organizationCandidates = nextOrganizations.length ? nextOrganizations : organizations
+      const nextOrganization = selectPreferredOrganization(
+        organizationCandidates,
+        form.organizationValue,
+      )
       const nextSupplyAgreements = nextOrganization ? filterSupplyAgreementsByOrganization(nextAgreements, nextOrganization) : nextAgreements
       const nextAgreement = nextSupplyAgreements[0] || null
       const nextRegister = selectDefaultRegister(paymentRegisters, nextOrganization, registerType)
@@ -675,7 +683,7 @@ export function IncomeCashflowClientFormPage() {
 
       setSelectedSupplyOrganization({
         ...supplyOrganization,
-        SupplyOrganizationAgreements: nextSupplyAgreements,
+        SupplyOrganizationAgreements: nextAgreements,
       })
       setSelectedClient(null)
       setClientAgreements([])
@@ -726,10 +734,8 @@ export function IncomeCashflowClientFormPage() {
     const sourceAgreements = selectedClient?.ClientAgreements || clientAgreements
     const nextClientAgreements = organization ? filterClientAgreementsByOrganization(sourceAgreements, organization) : []
     const nextAgreement = selectDefaultClientAgreement(nextClientAgreements)
-    const nextDebts = filterClientDebts(collectClientDebts(selectedClient, sourceAgreements), organization, nextAgreement)
 
     setClientAgreements(nextClientAgreements)
-    setSelectedClient((current) => (current ? { ...current, ClientInDebts: nextDebts } : current))
     updateForm({
       organizationValue: value || '',
       paymentRegisterValue: nextRegister ? getEntityValue(nextRegister) : '',
@@ -757,10 +763,6 @@ export function IncomeCashflowClientFormPage() {
       return
     }
 
-    const agreement = clientAgreements.find((item) => getEntityValue(item.Agreement) === value) || null
-    const debts = filterClientDebts(collectClientDebts(selectedClient, clientAgreements), selectedOrganization, agreement)
-
-    setSelectedClient((current) => (current ? { ...current, ClientInDebts: debts } : current))
     updateForm({
       selectedAgreementValue: value || '',
       selectedDebtValues: [],
@@ -946,7 +948,7 @@ export function IncomeCashflowClientFormPage() {
         <Group className="income-cashflow-client-form__titlebar" gap="sm" wrap="nowrap">
           <span className="income-cashflow-client-form__title">{title}</span>
           <SegmentedControl
-            aria-label={t('Тип рахунку')}
+            aria-label={t('Тип оплати')}
             className="income-cashflow-client-form__tabs income-cashflow-client-form__register-tabs"
             data={[
               { label: t('Каса'), value: String(PaymentRegisterType.Cash) },
@@ -998,40 +1000,26 @@ export function IncomeCashflowClientFormPage() {
 
           <Stack gap="sm">
             <Text className="app-section-title" fw={600} size="sm">
-              {t('Контрагент')}
+              {t('Організація та контрагент')}
             </Text>
 
-            {operationType === IncomePaymentOperationType.ClientPayment && (
-              <SearchableSelect
-                data={payerOptions}
-                disabled={isLoading || isSaving}
-                label={t('Пошук за платниками')}
-                placeholder={t('Почніть вводити платника')}
-                value={form.payerSearch}
-                onChange={handlePayerSearchChanged}
-                onOptionSubmit={handleCounterpartySubmit}
+            <SimpleGrid
+              className="income-cashflow-client-form__primary-fields"
+              cols={{ base: 1, md: 2 }}
+              style={{ alignItems: 'end' }}
+            >
+              <Select
+                data={organizationOptions}
+                disabled={!organizationOptions.length || isLoading || isResolvingCounterparty || isSaving}
+                label={t('Організація')}
+                required
+                searchable
+                value={form.organizationValue || null}
+                onChange={handleOrganizationChanged}
               />
-            )}
-
-            <SimpleGrid cols={{ base: 1, md: 2 }} style={{ alignItems: 'end' }}>
-              <Stack gap={6}>
-                <Text className="income-cashflow-client-form__field-label" size="sm">
-                  {t('Тип контрагента')}
-                </Text>
-                <div className="income-cashflow-client-form__tabs-scroll">
-                  <SegmentedControl
-                    aria-label={t('Тип контрагента')}
-                    className="income-cashflow-client-form__tabs income-cashflow-client-form__counterparty-tabs"
-                    data={searchTypeOptions}
-                    disabled={isLoading || isSaving}
-                    value={String(form.searchType)}
-                    onChange={handleSearchTypeChanged}
-                  />
-                </div>
-              </Stack>
               <SearchableSelect
                 data={counterpartyOptions}
-                disabled={isLoading || isSaving}
+                disabled={isLoading || isResolvingCounterparty || isSaving}
                 label={t('Контрагент')}
                 placeholder={t('Почніть вводити назву')}
                 required
@@ -1040,6 +1028,34 @@ export function IncomeCashflowClientFormPage() {
                 onOptionSubmit={handleCounterpartySubmit}
               />
             </SimpleGrid>
+
+            {operationType === IncomePaymentOperationType.ClientPayment && (
+              <SearchableSelect
+                data={payerOptions}
+                disabled={isLoading || isResolvingCounterparty || isSaving}
+                label={t('Пошук за платниками')}
+                placeholder={t('Почніть вводити платника')}
+                value={form.payerSearch}
+                onChange={handlePayerSearchChanged}
+                onOptionSubmit={handleCounterpartySubmit}
+              />
+            )}
+
+            <Stack gap={6}>
+              <Text className="income-cashflow-client-form__field-label" size="sm">
+                {t('Тип контрагента')}
+              </Text>
+              <div className="income-cashflow-client-form__tabs-scroll">
+                <SegmentedControl
+                  aria-label={t('Тип контрагента')}
+                  className="income-cashflow-client-form__tabs income-cashflow-client-form__counterparty-tabs"
+                  data={searchTypeOptions}
+                  disabled={isLoading || isResolvingCounterparty || isSaving}
+                  value={String(form.searchType)}
+                  onChange={handleSearchTypeChanged}
+                />
+              </div>
+            </Stack>
           </Stack>
 
           <Stack gap="sm">
@@ -1070,15 +1086,6 @@ export function IncomeCashflowClientFormPage() {
                 type="time"
                 value={form.time}
                 onChange={(event) => updateForm({ time: event.currentTarget.value })}
-              />
-              <Select
-                data={organizationOptions}
-                disabled={!organizationOptions.length || isLoading || isSaving}
-                label={t('Організація')}
-                required
-                searchable
-                value={form.organizationValue || null}
-                onChange={handleOrganizationChanged}
               />
               <Select
                 data={registerOptions}
@@ -1712,6 +1719,15 @@ function pickOrganizationsBySupplyAgreements(organizations: OrganizationWithDefa
   const organizationIds = collectTruthyIds(agreements, (agreement) => agreement.Organization?.Id)
 
   return organizations.filter((organization) => organization.Id && organizationIds.has(organization.Id))
+}
+
+function selectPreferredOrganization(
+  organizations: OrganizationWithDefaults[],
+  selectedValue: string,
+): OrganizationWithDefaults | null {
+  return organizations.find(
+    (organization) => getEntityValue(organization) === selectedValue,
+  ) || organizations[0] || null
 }
 
 function collectTruthyIds<T>(items: T[], readId: (item: T) => number | undefined): Set<number> {
