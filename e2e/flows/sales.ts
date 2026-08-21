@@ -1,4 +1,4 @@
-import { expect, type Page } from '@playwright/test';
+import { expect, type Locator, type Page } from '@playwright/test';
 
 export interface WizardSaleInput {
   agreementNetUid: string;
@@ -10,7 +10,15 @@ export interface WizardSaleInput {
 }
 
 export interface CreatedSaleRef {
+  availabilityAfter: number;
+  availabilityBefore: number;
   saleNetId: string;
+}
+
+export interface PackingAcceptanceInput {
+  alreadyAccepted?: boolean;
+  saleNetId: string;
+  saleNumber: string;
 }
 
 function apiPath(responseUrl: string): string {
@@ -34,6 +42,39 @@ function readPersistedSaleNetId(payload: unknown): string {
   }
 
   return netId.toLowerCase();
+}
+
+function readAvailability(payload: unknown, before: number): number {
+  const envelope = payload && typeof payload === 'object' && !Array.isArray(payload)
+    ? payload as Record<string, unknown>
+    : {};
+  const body = envelope.Body && typeof envelope.Body === 'object' && !Array.isArray(envelope.Body)
+    ? envelope.Body as Record<string, unknown>
+    : envelope;
+  const candidates = [
+    Number(body.AvailableQtyUkVAT),
+    Number(body.AvailableQtyUk) + Number(body.AvailableQtyUkReSale),
+  ].filter((value) => Number.isFinite(value) && value >= 0);
+  const exact = candidates.find((value) => value <= before);
+
+  if (exact === undefined) {
+    throw new Error(`Availability response was incomplete: ${JSON.stringify(payload).slice(0, 1000)}`);
+  }
+
+  return exact;
+}
+
+async function readDisplayedProductQty(productRow: Locator): Promise<number> {
+  const text = (await productRow.locator(
+    '.new-sale-product-picker-row__qty, .new-sale-product-picker-card__qty',
+  ).textContent())?.trim() ?? '';
+  const value = Number(text.replace(/\s/gu, '').replace(',', '.'));
+
+  if (!Number.isFinite(value)) {
+    throw new Error(`Product row quantity is not numeric: ${JSON.stringify(text)}`);
+  }
+
+  return value;
 }
 
 export async function createSaleViaWizard(page: Page, input: WizardSaleInput): Promise<CreatedSaleRef> {
@@ -71,6 +112,12 @@ export async function createSaleViaWizard(page: Page, input: WizardSaleInput): P
   await productSearch.focus();
   await page.keyboard.type(input.vendorCode, { delay: 40 });
   await expect(wizard.getByText(/Дост\./).first()).toBeVisible({ timeout: 30_000 });
+  const productRow = wizard.locator(
+    '.new-sale-product-picker-row, .new-sale-product-picker-card',
+  ).filter({ hasText: input.vendorCode });
+  await expect(productRow).toHaveCount(1, { timeout: 20_000 });
+  const availabilityBefore = await readDisplayedProductQty(productRow);
+  expect(availabilityBefore).toBeGreaterThanOrEqual(input.qty);
   await productSearch.focus();
   await page.keyboard.press('Enter');
 
@@ -90,12 +137,31 @@ export async function createSaleViaWizard(page: Page, input: WizardSaleInput): P
     },
     { timeout: 30_000 },
   );
+  const availabilityRefreshPromise = page.waitForResponse(
+    (response) => {
+      const url = new URL(response.url());
+      return response.request().method() === 'GET' &&
+        url.pathname.endsWith('/products/all/availabilities/product') &&
+        url.searchParams.get('clientAgreementNetId')?.toLowerCase() === input.agreementNetUid.toLowerCase();
+    },
+    { timeout: 30_000 },
+  );
   await qtyModal.getByRole('button', { name: 'Додати', exact: true }).click();
   const cartResponse = await cartResponsePromise;
   expect(cartResponse.ok(), `cart mutation HTTP ${cartResponse.status()}`).toBe(true);
   const refreshedSaleResponse = await refreshedSalePromise;
   expect(refreshedSaleResponse.ok(), `current-sale refresh HTTP ${refreshedSaleResponse.status()}`).toBe(true);
   const saleNetId = readPersistedSaleNetId(await refreshedSaleResponse.json());
+  const availabilityResponse = await availabilityRefreshPromise;
+  expect(availabilityResponse.ok(), `availability refresh HTTP ${availabilityResponse.status()}`).toBe(true);
+  const availabilityAfter = readAvailability(await availabilityResponse.json(), availabilityBefore);
+  expect(availabilityAfter).toBe(availabilityBefore - input.qty);
+
+  const refreshedProductRow = wizard.locator(
+    '.new-sale-product-picker-row, .new-sale-product-picker-card',
+  ).filter({ hasText: input.vendorCode });
+  await expect(refreshedProductRow).toHaveCount(1, { timeout: 20_000 });
+  await expect.poll(() => readDisplayedProductQty(refreshedProductRow)).toBe(availabilityAfter);
 
   const nextButton = wizard.getByRole('button', { name: 'Далі', exact: true });
   await expect(nextButton).toBeEnabled({ timeout: 20_000 });
@@ -127,5 +193,50 @@ export async function createSaleViaWizard(page: Page, input: WizardSaleInput): P
   expect(saleResponse.ok(), `sale mutation HTTP ${saleResponse.status()}`).toBe(true);
   await expect(wizard).toBeHidden({ timeout: 60_000 });
 
-  return { saleNetId };
+  return { availabilityAfter, availabilityBefore, saleNetId };
+}
+
+export async function acceptSaleForPackingViaList(
+  page: Page,
+  input: PackingAcceptanceInput,
+): Promise<void> {
+  if (input.alreadyAccepted) {
+    return;
+  }
+
+  await page.goto('/sales/ukraine/all');
+
+  const filteredSalesPromise = page.waitForResponse(
+    (response) => {
+      const url = new URL(response.url());
+
+      return response.request().method() === 'GET' &&
+        url.pathname.endsWith('/sales/all/filtered') &&
+        url.searchParams.get('value') === input.saleNumber;
+    },
+    { timeout: 30_000 },
+  );
+  await page.getByLabel('Пошук', { exact: true }).fill(input.saleNumber);
+  const filteredSalesResponse = await filteredSalesPromise;
+  expect(filteredSalesResponse.ok(), `sales filter HTTP ${filteredSalesResponse.status()}`).toBe(true);
+
+  const saleRow = page.locator('.sales-grid-row').filter({ hasText: input.saleNumber });
+  await expect(saleRow, `sale row ${input.saleNumber}/${input.saleNetId}`).toHaveCount(1, { timeout: 30_000 });
+
+  const acceptButton = saleRow.getByRole('button', { name: 'Розблокувати для відвантаження', exact: true });
+  await expect(acceptButton).toBeVisible({ timeout: 20_000 });
+  await expect(acceptButton).toBeEnabled();
+  await acceptButton.click();
+
+  const confirmation = page.getByRole('dialog', { name: 'Підтвердження відвантаження', exact: true });
+  await expect(confirmation).toBeVisible({ timeout: 20_000 });
+  const mutationPromise = page.waitForResponse(
+    (response) => response.request().method() === 'PATCH' &&
+      apiPath(response.url()).endsWith('/sales/accept-for-packing'),
+    { timeout: 120_000 },
+  );
+  await confirmation.getByRole('button', { name: 'Підтвердити', exact: true }).click();
+  const mutationResponse = await mutationPromise;
+  expect(mutationResponse.ok(), `accept-for-packing HTTP ${mutationResponse.status()}`).toBe(true);
+  await expect(confirmation).toBeHidden({ timeout: 60_000 });
 }

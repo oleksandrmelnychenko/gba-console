@@ -11,7 +11,7 @@ import {
   type CreatedOrderRef,
 } from '../../flows/income';
 import { createClientReturn } from '../../flows/returns';
-import { createSaleViaWizard } from '../../flows/sales';
+import { acceptSaleForPackingViaList, createSaleViaWizard } from '../../flows/sales';
 import { createProductTransfer } from '../../flows/transfers';
 
 test.describe.configure({ mode: 'serial' });
@@ -111,6 +111,15 @@ interface SaleMovementProjection {
   SaleNumber: string;
   SourceLotRemaining: number;
   TargetAvailability: number;
+}
+
+interface CreatedInvoiceProjection {
+  ChangedToInvoice: string | null;
+  IsAcceptedToPacking: boolean;
+  LifeCycleType: number;
+  PaymentFinalizeCompleted: number;
+  SaleNetUid: string;
+  SaleNumber: string;
 }
 
 interface ReturnProjection {
@@ -476,6 +485,32 @@ test('наскрізний: прихід → переміщення → прод
     clientSearchValue: client.ClientSearchValue,
     qty: SALE_QTY,
     vendorCode: income.VendorCode,
+  });
+  const invoiceRows = await db.poll<CreatedInvoiceProjection>(
+    `SELECT
+       LOWER(CONVERT(varchar(36), sale.NetUID)) AS SaleNetUid,
+       saleNumber.Value AS SaleNumber,
+       sale.ChangedToInvoice,
+       sale.IsAcceptedToPacking,
+       status.SaleLifeCycleType AS LifeCycleType,
+       (SELECT COUNT(*) FROM dbo.SalesMutationOperation operation
+        WHERE operation.SaleID = sale.ID
+          AND operation.SaleNetUid = sale.NetUID
+          AND operation.OperationKind = N'sale:finalize-payment-documents'
+          AND operation.IsCompleted = 1) AS PaymentFinalizeCompleted
+     FROM dbo.Sale sale
+     JOIN dbo.SaleNumber saleNumber ON saleNumber.ID = sale.SaleNumberID
+     JOIN dbo.BaseLifeCycleStatus status ON status.ID = sale.BaseLifeCycleStatusID
+     WHERE sale.Deleted = 0 AND sale.NetUID = @saleNetUid`,
+    (rows) => rows.length === 1 && Boolean(rows[0].ChangedToInvoice) &&
+      rows[0].LifeCycleType === 1 && rows[0].PaymentFinalizeCompleted === 1,
+    { timeoutMs: 30_000, label: 'cross-chain invoice finalization' },
+    { saleNetUid: createdSale.saleNetId },
+  );
+  await acceptSaleForPackingViaList(page, {
+    alreadyAccepted: invoiceRows[0].IsAcceptedToPacking,
+    saleNetId: invoiceRows[0].SaleNetUid,
+    saleNumber: invoiceRows[0].SaleNumber,
   });
   const saleRows = await db.poll<SaleMovementProjection>(
     `SELECT

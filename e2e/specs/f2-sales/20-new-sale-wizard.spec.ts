@@ -1,5 +1,5 @@
 import { expect, test } from '../../fixtures/test';
-import { createSaleViaWizard } from '../../flows/sales';
+import { acceptSaleForPackingViaList, createSaleViaWizard } from '../../flows/sales';
 
 test.describe.configure({ mode: 'serial' });
 
@@ -17,17 +17,29 @@ interface SaleCandidate {
 
 interface CreatedSaleProjection {
   AgreementID: number;
+  ChangedToInvoice: string | null;
   ClientID: number;
+  DispatchedOutboxCount: number;
+  FailedOutboxCount: number;
+  IsAcceptedToPacking: boolean;
+  LastOutboxError: string | null;
   LifeCycleType: number;
   MovementCount: number;
+  MovementQty: number;
+  OutboxCount: number;
+  PaymentFinalizeCompleted: number;
+  ReceiptCount: number;
   SaleID: number;
   SaleNetUid: string;
+  SaleNumber: string;
   TargetLines: number;
   TargetQty: number;
   TotalLines: number;
 }
 
 test('продаж: візард створює точну накладну для вибраного клієнта @smoke', async ({ page, db, entities }) => {
+  test.setTimeout(300_000);
+
   const candidates = await db.query<SaleCandidate>(
     `SELECT TOP 1
        ca.ID AS AgreementID,
@@ -76,6 +88,9 @@ test('продаж: візард створює точну накладну дл
     vendorCode: candidate.VendorCode,
     qty: SALE_QTY,
   });
+  expect(created.availabilityAfter, 'BUG-1130: список показує залишок після кошика').toBe(
+    created.availabilityBefore - SALE_QTY,
+  );
 
   const rows = await db.poll<CreatedSaleProjection>(
     `SELECT
@@ -83,20 +98,72 @@ test('продаж: візард створює точну накладну дл
        LOWER(CONVERT(varchar(36), s.NetUID)) AS SaleNetUid,
        ca.ID AS AgreementID,
        ca.ClientID,
+       s.ChangedToInvoice,
+       s.IsAcceptedToPacking,
        status.SaleLifeCycleType AS LifeCycleType,
-       COUNT(DISTINCT movement.ID) AS MovementCount,
-       COUNT(oi.ID) AS TotalLines,
-       SUM(CASE WHEN oi.ProductID = @productId THEN 1 ELSE 0 END) AS TargetLines,
-       COALESCE(SUM(CASE WHEN oi.ProductID = @productId THEN oi.Qty ELSE 0 END), 0) AS TargetQty
+       saleNumber.Value AS SaleNumber,
+       (SELECT COUNT(*) FROM dbo.SalesMutationOperation operation
+        WHERE operation.SaleID = s.ID
+          AND operation.SaleNetUid = s.NetUID
+          AND operation.OperationKind = N'sale:finalize-payment-documents'
+          AND operation.IsCompleted = 1) AS PaymentFinalizeCompleted,
+       (SELECT COUNT(*) FROM dbo.SalesDurableEffectOutbox outbox
+        WHERE outbox.SaleID = s.ID
+          AND outbox.EffectType = N'sale:consignment-movement') AS OutboxCount,
+       (SELECT COUNT(*) FROM dbo.SalesDurableEffectOutbox outbox
+        WHERE outbox.SaleID = s.ID
+          AND outbox.EffectType = N'sale:consignment-movement'
+          AND outbox.DispatchedAt IS NOT NULL) AS DispatchedOutboxCount,
+       (SELECT COUNT(*) FROM dbo.SalesDurableEffectOutbox outbox
+        WHERE outbox.SaleID = s.ID
+          AND outbox.EffectType = N'sale:consignment-movement'
+          AND (outbox.DispatchedAt IS NULL OR outbox.LastError IS NOT NULL)) AS FailedOutboxCount,
+       (SELECT TOP 1 outbox.LastError FROM dbo.SalesDurableEffectOutbox outbox
+        WHERE outbox.SaleID = s.ID
+          AND outbox.EffectType = N'sale:consignment-movement'
+        ORDER BY outbox.ID DESC) AS LastOutboxError,
+       (SELECT COUNT(*)
+        FROM dbo.SalesDurableEffectReceipt receipt
+        JOIN dbo.SalesDurableEffectOutbox outbox
+          ON outbox.EventNetUid = receipt.EventNetUid
+        WHERE outbox.SaleID = s.ID
+          AND outbox.EffectType = N'sale:consignment-movement'
+          AND receipt.ConsumerName = N'sales-consignment-movement') AS ReceiptCount,
+       (SELECT COUNT(*)
+        FROM dbo.ConsignmentItemMovement movement
+        JOIN dbo.OrderItem movementItem
+          ON movementItem.ID = movement.OrderItemID
+         AND movementItem.OrderID = o.ID
+         AND movementItem.ProductID = @productId
+         AND movementItem.Deleted = 0
+        WHERE movement.Deleted = 0
+          AND movement.MovementType = 0
+          AND movement.IsIncomeMovement = 0) AS MovementCount,
+       (SELECT COALESCE(SUM(movement.Qty), 0)
+        FROM dbo.ConsignmentItemMovement movement
+        JOIN dbo.OrderItem movementItem
+          ON movementItem.ID = movement.OrderItemID
+         AND movementItem.OrderID = o.ID
+         AND movementItem.ProductID = @productId
+         AND movementItem.Deleted = 0
+        WHERE movement.Deleted = 0
+          AND movement.MovementType = 0
+          AND movement.IsIncomeMovement = 0) AS MovementQty,
+       (SELECT COUNT(*) FROM dbo.OrderItem item
+        WHERE item.OrderID = o.ID AND item.Deleted = 0) AS TotalLines,
+       (SELECT COUNT(*) FROM dbo.OrderItem item
+        WHERE item.OrderID = o.ID AND item.ProductID = @productId AND item.Deleted = 0) AS TargetLines,
+       (SELECT COALESCE(SUM(item.Qty), 0) FROM dbo.OrderItem item
+        WHERE item.OrderID = o.ID AND item.ProductID = @productId AND item.Deleted = 0) AS TargetQty
      FROM dbo.Sale s
      JOIN dbo.[Order] o ON o.ID = s.OrderID AND o.Deleted = 0
      JOIN dbo.ClientAgreement ca ON ca.ID = o.ClientAgreementID AND ca.Deleted = 0
      JOIN dbo.BaseLifeCycleStatus status ON status.ID = s.BaseLifeCycleStatusID
-     LEFT JOIN dbo.OrderItem oi ON oi.OrderID = o.ID AND oi.Deleted = 0
-     LEFT JOIN dbo.ConsignmentItemMovement movement ON movement.OrderItemID = oi.ID AND movement.Deleted = 0
+     JOIN dbo.SaleNumber saleNumber ON saleNumber.ID = s.SaleNumberID
      WHERE s.Deleted = 0 AND s.NetUID = @saleNetId
-     GROUP BY s.ID, s.NetUID, ca.ID, ca.ClientID, status.SaleLifeCycleType`,
-    (result) => result.length === 1,
+     `,
+    (result) => result.length === 1 && Boolean(result[0].ChangedToInvoice) &&
+      result[0].LifeCycleType === 1 && result[0].PaymentFinalizeCompleted === 1,
     { timeoutMs: 30_000, label: 'exact created sale projection' },
     { productId: candidate.ProductID, saleNetId: created.saleNetId },
   );
@@ -106,16 +173,111 @@ test('продаж: візард створює точну накладну дл
   expect(sale.ClientID).toBe(candidate.ClientID);
   expect(sale.AgreementID).toBe(candidate.AgreementID);
   expect(sale.LifeCycleType, 'ПДВ-гілка створює видаткову накладну').toBe(1);
+  expect(sale.ChangedToInvoice).toBeTruthy();
+  expect(sale.IsAcceptedToPacking).toBe(false);
   expect(sale.MovementCount, 'стік списується на пізнішому lifecycle, а не при створенні').toBe(0);
   expect(sale.TotalLines).toBe(1);
   expect(sale.TargetLines).toBe(1);
   expect(sale.TargetQty).toBe(SALE_QTY);
 
-  entities.record('sale.smoke', {
-    saleId: sale.SaleID,
+  await acceptSaleForPackingViaList(page, {
     saleNetId: sale.SaleNetUid,
-    agreementId: sale.AgreementID,
-    clientId: sale.ClientID,
+    saleNumber: sale.SaleNumber,
+  });
+
+  const acceptedRows = await db.poll<CreatedSaleProjection>(
+    `SELECT
+       s.ID AS SaleID,
+       LOWER(CONVERT(varchar(36), s.NetUID)) AS SaleNetUid,
+       ca.ID AS AgreementID,
+       ca.ClientID,
+       s.ChangedToInvoice,
+       s.IsAcceptedToPacking,
+       status.SaleLifeCycleType AS LifeCycleType,
+       saleNumber.Value AS SaleNumber,
+       (SELECT COUNT(*) FROM dbo.SalesMutationOperation operation
+        WHERE operation.SaleID = s.ID
+          AND operation.SaleNetUid = s.NetUID
+          AND operation.OperationKind = N'sale:finalize-payment-documents'
+          AND operation.IsCompleted = 1) AS PaymentFinalizeCompleted,
+       (SELECT COUNT(*) FROM dbo.SalesDurableEffectOutbox outbox
+        WHERE outbox.SaleID = s.ID
+          AND outbox.EffectType = N'sale:consignment-movement') AS OutboxCount,
+       (SELECT COUNT(*) FROM dbo.SalesDurableEffectOutbox outbox
+        WHERE outbox.SaleID = s.ID
+          AND outbox.EffectType = N'sale:consignment-movement'
+          AND outbox.DispatchedAt IS NOT NULL) AS DispatchedOutboxCount,
+       (SELECT COUNT(*) FROM dbo.SalesDurableEffectOutbox outbox
+        WHERE outbox.SaleID = s.ID
+          AND outbox.EffectType = N'sale:consignment-movement'
+          AND (outbox.DispatchedAt IS NULL OR outbox.LastError IS NOT NULL)) AS FailedOutboxCount,
+       (SELECT TOP 1 outbox.LastError FROM dbo.SalesDurableEffectOutbox outbox
+        WHERE outbox.SaleID = s.ID
+          AND outbox.EffectType = N'sale:consignment-movement'
+        ORDER BY outbox.ID DESC) AS LastOutboxError,
+       (SELECT COUNT(*)
+        FROM dbo.SalesDurableEffectReceipt receipt
+        JOIN dbo.SalesDurableEffectOutbox outbox
+          ON outbox.EventNetUid = receipt.EventNetUid
+        WHERE outbox.SaleID = s.ID
+          AND outbox.EffectType = N'sale:consignment-movement'
+          AND receipt.ConsumerName = N'sales-consignment-movement') AS ReceiptCount,
+       (SELECT COUNT(*)
+        FROM dbo.ConsignmentItemMovement movement
+        JOIN dbo.OrderItem movementItem
+          ON movementItem.ID = movement.OrderItemID
+         AND movementItem.OrderID = o.ID
+         AND movementItem.ProductID = @productId
+         AND movementItem.Deleted = 0
+        WHERE movement.Deleted = 0
+          AND movement.MovementType = 0
+          AND movement.IsIncomeMovement = 0) AS MovementCount,
+       (SELECT COALESCE(SUM(movement.Qty), 0)
+        FROM dbo.ConsignmentItemMovement movement
+        JOIN dbo.OrderItem movementItem
+          ON movementItem.ID = movement.OrderItemID
+         AND movementItem.OrderID = o.ID
+         AND movementItem.ProductID = @productId
+         AND movementItem.Deleted = 0
+        WHERE movement.Deleted = 0
+          AND movement.MovementType = 0
+          AND movement.IsIncomeMovement = 0) AS MovementQty,
+       (SELECT COUNT(*) FROM dbo.OrderItem item
+        WHERE item.OrderID = o.ID AND item.Deleted = 0) AS TotalLines,
+       (SELECT COUNT(*) FROM dbo.OrderItem item
+        WHERE item.OrderID = o.ID AND item.ProductID = @productId AND item.Deleted = 0) AS TargetLines,
+       (SELECT COALESCE(SUM(item.Qty), 0) FROM dbo.OrderItem item
+        WHERE item.OrderID = o.ID AND item.ProductID = @productId AND item.Deleted = 0) AS TargetQty
+     FROM dbo.Sale s
+     JOIN dbo.[Order] o ON o.ID = s.OrderID AND o.Deleted = 0
+     JOIN dbo.ClientAgreement ca ON ca.ID = o.ClientAgreementID AND ca.Deleted = 0
+     JOIN dbo.BaseLifeCycleStatus status ON status.ID = s.BaseLifeCycleStatusID
+     JOIN dbo.SaleNumber saleNumber ON saleNumber.ID = s.SaleNumberID
+     WHERE s.Deleted = 0 AND s.NetUID = @saleNetId
+     `,
+    (result) => result.length === 1 && result[0].IsAcceptedToPacking &&
+      result[0].OutboxCount === 1 && result[0].DispatchedOutboxCount === 1 &&
+      result[0].FailedOutboxCount === 0 && result[0].ReceiptCount === 1 &&
+      result[0].MovementCount > 0 && result[0].MovementQty === SALE_QTY,
+    { timeoutMs: 120_000, label: 'accepted sale durable consignment movement' },
+    { productId: candidate.ProductID, saleNetId: sale.SaleNetUid },
+  );
+  const acceptedSale = acceptedRows[0];
+  expect(acceptedSale.IsAcceptedToPacking).toBe(true);
+  expect(acceptedSale.OutboxCount).toBe(1);
+  expect(acceptedSale.DispatchedOutboxCount).toBe(1);
+  expect(acceptedSale.FailedOutboxCount).toBe(0);
+  expect(acceptedSale.LastOutboxError).toBeNull();
+  expect(acceptedSale.ReceiptCount).toBe(1);
+  expect(acceptedSale.MovementCount).toBe(1);
+  expect(acceptedSale.MovementQty).toBe(SALE_QTY);
+
+  entities.record('sale.smoke', {
+    saleId: acceptedSale.SaleID,
+    saleNetId: acceptedSale.SaleNetUid,
+    saleNumber: acceptedSale.SaleNumber,
+    agreementId: acceptedSale.AgreementID,
+    clientId: acceptedSale.ClientID,
     productId: candidate.ProductID,
     vendorCode: candidate.VendorCode,
     qty: SALE_QTY,
