@@ -9,6 +9,11 @@ for (const supplier of TEST_INCOME_SUPPLIERS) {
   const tag = supplier.key === 'AYMEKS' ? ' @smoke' : '';
 
   test(`прихід ${supplier.key}: оприходування + консигнація${tag}`, async ({ page, db, entities }) => {
+    // Placement deliberately exercises one UI drawer + persisted row per invoice line.
+    // Large real invoices (FSS/REMI MAY contain 100+ lines) cannot fit the global
+    // two-minute default even when every request succeeds, so scale only this scenario.
+    test.setTimeout(180_000 + supplier.rows * 4_000);
+
     const order = entities.require<CreatedOrderRef>(
       `income.${supplier.key}.order`,
       'спочатку має пройти 10-order-invoice',

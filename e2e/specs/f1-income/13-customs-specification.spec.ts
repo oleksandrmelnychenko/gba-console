@@ -1,4 +1,4 @@
-import { NBU_EUR_RATE, TEST_INCOME_SUPPLIERS } from '../../data/testIncome';
+import { NBU_EUR_RATE, NBU_USD_RATE, TEST_INCOME_SUPPLIERS } from '../../data/testIncome';
 import { expect, test } from '../../fixtures/test';
 import type { CreatedInvoiceRef, CreatedOrderRef } from '../../flows/income';
 import { uploadCustomsCodes } from '../../flows/income';
@@ -53,8 +53,9 @@ for (const supplier of TEST_INCOME_SUPPLIERS) {
     );
     expect(fkDistinct[0].distinctFk, 'кожна реальна специфікація на своєму рядку інвойса').toBe(fkDistinct[0].realCnt);
 
-    // Rate invariant: every packing row must carry the official NBU rate for the exact
-    // date-only МД value. This also rejects the next day's 51.0955 regression.
+    // Rate invariant: every packing row must carry the official NBU rate for its invoice
+    // currency on the exact date-only МД value. For EUR this also rejects the next day's
+    // 51.0955 regression; USD suppliers must retain their independent 44.6676 rate.
     const rate = await db.query<{ distinctRates: number; rateValue: number }>(
       `SELECT COUNT(DISTINCT pli.ExchangeRateAmount) AS distinctRates,
               MIN(pli.ExchangeRateAmount) AS rateValue
@@ -65,6 +66,7 @@ for (const supplier of TEST_INCOME_SUPPLIERS) {
       { number: invoice.invoiceNumber },
     );
     expect(rate[0].distinctRates, 'усі рядки паклиста мають один курс (без розбіжності по рядках)').toBe(1);
-    expect(Math.abs(rate[0].rateValue - NBU_EUR_RATE), `курс ${rate[0].rateValue} vs очікуваний ${NBU_EUR_RATE}`).toBeLessThanOrEqual(0.0001);
+    const expectedRate = supplier.invoiceCurrency === 'USD' ? NBU_USD_RATE : NBU_EUR_RATE;
+    expect(Math.abs(rate[0].rateValue - expectedRate), `курс ${rate[0].rateValue} vs очікуваний ${expectedRate}`).toBeLessThanOrEqual(0.0001);
   });
 }
