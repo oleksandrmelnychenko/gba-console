@@ -52,12 +52,36 @@ describe('sales Ukraine document request contracts', () => {
 
     await expect(acceptSaleForPacking(saleNetId, paymentDocumentOperation)).resolves.toEqual(acceptedSale)
 
+    expect(apiRequestMock).toHaveBeenCalledTimes(1)
     expect(apiRequestMock).toHaveBeenCalledWith('/sales/accept-for-packing', {
       headers: { 'Idempotency-Key': paymentDocumentOperation.operationId },
       method: 'PATCH',
       query: { netId: saleNetId },
       signal: undefined,
     })
+  })
+
+  it('reconciles transient packing acceptance failures within one confirmation', async () => {
+    const saleNetId = 'dc8d6ccc-e2f3-4011-a73f-9be8a570b2ae'
+    const acceptedSale = { IsAcceptedToPacking: true, NetUid: saleNetId }
+
+    apiRequestMock
+      .mockRejectedValueOnce(new ApiError('temporary failure', 503, null))
+      .mockRejectedValueOnce(new ApiError('gateway timeout', 504, null))
+      .mockResolvedValueOnce(acceptedSale)
+
+    await expect(acceptSaleForPacking(saleNetId, paymentDocumentOperation)).resolves.toEqual(acceptedSale)
+
+    expect(apiRequestMock).toHaveBeenCalledTimes(3)
+    expect(apiRequestMock.mock.calls).toEqual(Array.from({ length: 3 }, () => [
+      '/sales/accept-for-packing',
+      {
+        headers: { 'Idempotency-Key': paymentDocumentOperation.operationId },
+        method: 'PATCH',
+        query: { netId: saleNetId },
+        signal: undefined,
+      },
+    ]))
   })
 
   it('returns the unlocked sale supplied by the mutation response', async () => {

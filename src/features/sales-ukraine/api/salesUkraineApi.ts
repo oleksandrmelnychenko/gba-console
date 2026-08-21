@@ -34,6 +34,7 @@ import type {
 } from '../types'
 
 const CONSIGNMENT_QUERY = { forReSale: false }
+const PACKING_ACCEPTANCE_REQUEST_ATTEMPTS = 3
 const PAYMENT_DOCUMENT_POLL_INTERVAL_MS = 1_000
 const PAYMENT_DOCUMENT_POLL_TIMEOUT_MS = 6 * 60 * 1_000
 
@@ -117,14 +118,42 @@ export async function acceptSaleForPacking(
     'Не вдалося визначити продаж для відвантаження',
   )
 
-  const result = await apiRequest<unknown>('/sales/accept-for-packing', {
+  const requestOptions = {
     headers: getSalesMutationOperationHeaders(operation.operationId),
     method: 'PATCH',
     query: { netId: saleNetUid },
     signal: operation.signal,
-  })
+  } as const
 
-  return normalizeSale(result)
+  // The server records this transition under the idempotency key before
+  // replying. If a proxy timeout or transient 5xx loses that reply, replay the
+  // exact request here instead of making the operator confirm it two or three
+  // times manually.
+  for (let attempt = 1; attempt <= PACKING_ACCEPTANCE_REQUEST_ATTEMPTS; attempt += 1) {
+    try {
+      const result = await apiRequest<unknown>('/sales/accept-for-packing', requestOptions)
+
+      return normalizeSale(result)
+    } catch (error) {
+      if (
+        attempt === PACKING_ACCEPTANCE_REQUEST_ATTEMPTS ||
+        operation.signal?.aborted ||
+        !isTransientPackingAcceptanceFailure(error)
+      ) {
+        throw error
+      }
+    }
+  }
+
+  throw new Error('Packing acceptance retry policy did not execute')
+}
+
+function isTransientPackingAcceptanceFailure(error: unknown): boolean {
+  return error instanceof ApiError && (
+    error.status === 0 ||
+    error.status === 408 ||
+    error.status >= 500
+  )
 }
 
 export async function getSaleById(netId: string, signal?: AbortSignal): Promise<SalesUkraineSale | null> {
