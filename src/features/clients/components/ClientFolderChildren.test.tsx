@@ -35,6 +35,24 @@ describe('ClientFolderChildren', () => {
     fireEvent.click(within(list).getByRole('button', { name: 'XM05202 · МАГРОМ ТОВ' }))
     expect(onSelect).toHaveBeenCalledWith(magrom)
   })
+
+  it('renders persisted children for a consolidated root whose code does not end in 00', () => {
+    const child = createClient(3, 'VI03503', 'РЕШЕТНІК ВАДИМ ІГОРОВИЧ ФОП')
+    const root = createClient(1, 'VI03501', 'РЕШЕТНІК ІГОР ВОЛОДИМИРОВИЧ ФОП')
+    root.SubClients = [{ Id: 1, SubClient: child }]
+    const onSelect = vi.fn()
+
+    render(
+      <MantineProvider env="test" theme={theme}>
+        <I18nProvider>
+          <ClientFolderChildren client={root} onSelect={onSelect} />
+        </I18nProvider>
+      </MantineProvider>,
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: 'VI03503 · РЕШЕТНІК ВАДИМ ІГОРОВИЧ ФОП' }))
+    expect(onSelect).toHaveBeenCalledWith(child)
+  })
 })
 
 function createClient(id: number, code: string, fullName: string): Client {

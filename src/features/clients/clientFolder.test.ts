@@ -30,12 +30,35 @@ describe('1C client folder policy', () => {
     ])
   })
 
-  it('treats a non-00 card as a direct client even if stale nested links are present', () => {
+  it('expands a consolidated non-00 root when persisted relationships exist', () => {
+    const root = createClient(1, 'VI03501', 'РЕШЕТНІК ІГОР ВОЛОДИМИРОВИЧ ФОП')
+    root.SubClients = [
+      createLink(1, createClient(2, 'VI03503', 'РЕШЕТНІК ВАДИМ ІГОРОВИЧ ФОП')),
+      createLink(2, createClient(3, 'VI03504', 'РЕШЕТНІК ЮЛІЯ ВАСИЛІВНА ФОП')),
+      createLink(3, createClient(4, 'VI03505', 'ТРЕТЯК ІННА ІГОРІВНА ФОП')),
+    ]
+
+    expect(isClientFolder(root)).toBe(true)
+    expect(getClientFolderChildren(root).map((child) => child.RegionCode?.Value)).toEqual([
+      'VI03503',
+      'VI03504',
+      'VI03505',
+    ])
+  })
+
+  it('does not expand a regular client without persisted relationships', () => {
     const directClient = createClient(1, 'XM05201', 'ФОП Назаришин')
-    directClient.SubClients = [createLink(1, createClient(2, 'XM05202', 'МАГРОМ ТОВ'))]
 
     expect(isClientFolder(directClient)).toBe(false)
     expect(getClientFolderChildren(directClient)).toEqual([])
+  })
+
+  it('ignores a malformed self-link instead of creating a recursive row', () => {
+    const client = createClient(1, 'VI03501', 'РЕШЕТНІК ІГОР ВОЛОДИМИРОВИЧ ФОП')
+    client.SubClients = [createLink(1, client)]
+
+    expect(isClientFolder(client)).toBe(false)
+    expect(getClientFolderChildren(client)).toEqual([])
   })
 })
 
