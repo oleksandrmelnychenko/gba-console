@@ -15,6 +15,8 @@ export interface TestIncomeParseConfig {
 export interface TestIncomeSupplier {
   key: string;
   dirPrefix: string;
+  supplierName: string;
+  supplierSearch?: string;
   invoiceNumber: string;
   invoiceDate: string;
   md: string;
@@ -49,6 +51,7 @@ export const TEST_INCOME_SUPPLIERS: TestIncomeSupplier[] = [
   {
     key: 'AYMEKS',
     dirPrefix: 'AYMEKS',
+    supplierName: 'AYMEKS IC VE DIS TICARET LTD. STI.,Туреччина',
     invoiceNumber: 'AYM2026000000665',
     invoiceDate: '2026-07-03',
     md: '26UA400040014346U4',
@@ -65,6 +68,8 @@ export const TEST_INCOME_SUPPLIERS: TestIncomeSupplier[] = [
   {
     key: 'FSS',
     dirPrefix: 'FSS',
+    supplierName: 'F.S.S. FREN SISTEMLERI SAN VE TIC LTD STI',
+    supplierSearch: 'F.S.S.',
     invoiceNumber: 'FS32026000000137',
     invoiceDate: '2026-07-03',
     md: '26UA400040014350U4',
@@ -81,6 +86,8 @@ export const TEST_INCOME_SUPPLIERS: TestIncomeSupplier[] = [
   {
     key: 'HP',
     dirPrefix: 'HP',
+    supplierName: 'HP HAKAN OTOMOTIV SAN. IC VE DIS TIC. LTD. STI. Turkey',
+    supplierSearch: 'HP HAKAN',
     invoiceNumber: 'HP32026000000026',
     invoiceDate: '2026-07-10',
     md: '26UA400040014352U2',
@@ -97,6 +104,8 @@ export const TEST_INCOME_SUPPLIERS: TestIncomeSupplier[] = [
   {
     key: 'MAYER',
     dirPrefix: 'MAYER',
+    supplierName: 'MAYER OTOMOTİV SANAYİ TİCARET LİMİTED ŞİRKETİ',
+    supplierSearch: 'MAYER OTOMOTİV SANAYİ',
     invoiceNumber: 'MYR2026000000008',
     invoiceDate: '2026-07-08',
     md: '26UA400040014349U1',
@@ -113,6 +122,8 @@ export const TEST_INCOME_SUPPLIERS: TestIncomeSupplier[] = [
   {
     key: 'NOIR',
     dirPrefix: 'NOIR',
+    supplierName: 'NRSP OTOMOTIV NAK. TURZ. LTD. STI.',
+    supplierSearch: 'NRSP OTOMOTIV',
     invoiceNumber: 'IHR20260000000034',
     invoiceDate: '2026-07-08',
     md: '26UA400040014348U2',
@@ -129,6 +140,8 @@ export const TEST_INCOME_SUPPLIERS: TestIncomeSupplier[] = [
   {
     key: 'OSMANLI',
     dirPrefix: 'OSMANLI',
+    supplierName: 'OSMANLI OTOMOTIV SAN. VE DIS TIC.LTD.STI.',
+    supplierSearch: 'OSMANLI OTOMOTIV',
     invoiceNumber: 'OSD2026000000030',
     invoiceDate: '2026-06-19',
     md: '26UA400040014347U3',
@@ -145,6 +158,8 @@ export const TEST_INCOME_SUPPLIERS: TestIncomeSupplier[] = [
   {
     key: 'REMI MAY',
     dirPrefix: 'REMI MAY',
+    supplierName: 'REMI IC VE DIS TIC.LTD.STI.',
+    supplierSearch: 'REMI IC VE DIS',
     invoiceNumber: 'RE02026000000150',
     invoiceDate: '2026-07-09',
     md: '26UA400040014351U3',

@@ -12,12 +12,22 @@ async function selectFirstCombobox(page: Page, name: string): Promise<void> {
   await page.getByRole('option').first().click();
 }
 
-async function selectComboboxBySearch(page: Page, name: string, query: string): Promise<void> {
+async function selectComboboxBySearch(
+  page: Page,
+  name: string,
+  query: string,
+  expectedOption?: string,
+): Promise<void> {
   const combobox = page.getByRole('combobox', { name });
   await expect(combobox).toBeEnabled({ timeout: 30_000 });
   await combobox.click();
   await combobox.fill(query);
-  await page.getByRole('option').first().click();
+  const option = expectedOption
+    ? page.getByRole('option', { name: expectedOption, exact: true })
+    : page.getByRole('option').first();
+  await expect(option).toHaveCount(1, { timeout: 30_000 });
+  await option.click();
+  await expect(combobox).toHaveValue(expectedOption ?? /.+/);
 }
 
 async function ensureComboboxSelected(page: Page, name: string): Promise<void> {
@@ -55,7 +65,12 @@ export async function createDirectOrderFromCcd(
   await page.goto('/orders/ukraine/all/new');
   await expect(page.getByRole('button', { name: 'Створити' })).toBeVisible({ timeout: 30_000 });
 
-  await selectComboboxBySearch(page, 'Постачальник', supplier.dirPrefix);
+  await selectComboboxBySearch(
+    page,
+    'Постачальник',
+    supplier.supplierSearch ?? supplier.dirPrefix,
+    supplier.supplierName,
+  );
   await ensureComboboxSelected(page, 'Організація');
   await ensureComboboxSelected(page, 'Договір');
 
