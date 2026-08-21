@@ -1,4 +1,5 @@
 import { expect, test } from '../../fixtures/test';
+import { selectPricingHealthyCandidate } from '../../flows/pricing';
 import { acceptSaleForPackingViaList, createSaleViaWizard } from '../../flows/sales';
 
 test.describe.configure({ mode: 'serial' });
@@ -12,6 +13,8 @@ interface SaleCandidate {
   ClientName: string;
   ClientNetUid: string;
   ProductID: number;
+  ProductNetUid: string;
+  PriceSourceIsAmg: boolean;
   VendorCode: string;
 }
 
@@ -26,6 +29,7 @@ interface CreatedSaleProjection {
   LifeCycleType: number;
   MovementCount: number;
   MovementQty: number;
+  OrganizationPriceSourceIsAmg: boolean;
   OutboxCount: number;
   PaymentFinalizeCompleted: number;
   ReceiptCount: number;
@@ -41,18 +45,24 @@ test('продаж: візард створює точну накладну дл
   test.setTimeout(300_000);
 
   const candidates = await db.query<SaleCandidate>(
-    `SELECT TOP 1
+    `SELECT TOP 10
        ca.ID AS AgreementID,
        LOWER(CONVERT(varchar(36), ca.NetUID)) AS AgreementNetUid,
        c.ID AS ClientID,
        c.FullName AS ClientName,
        LOWER(CONVERT(varchar(36), c.NetUID)) AS ClientNetUid,
        p.ID AS ProductID,
+       LOWER(CONVERT(varchar(36), p.NetUID)) AS ProductNetUid,
+       organization.PriceSourceIsAmg,
        p.VendorCode
      FROM dbo.Sale s
      JOIN dbo.[Order] o ON o.ID = s.OrderID AND o.Deleted = 0
      JOIN dbo.ClientAgreement ca ON ca.ID = o.ClientAgreementID AND ca.Deleted = 0
      JOIN dbo.Agreement agreement ON agreement.ID = ca.AgreementID AND agreement.Deleted = 0
+     JOIN dbo.Organization organization
+       ON organization.ID = agreement.OrganizationID
+      AND organization.Deleted = 0
+      AND organization.PriceSourceIsAmg = 1
      JOIN dbo.Client c ON c.ID = ca.ClientID AND c.Deleted = 0
      JOIN dbo.OrderItem oi ON oi.OrderID = o.ID AND oi.Deleted = 0
      JOIN dbo.Product p ON p.ID = oi.ProductID AND p.Deleted = 0
@@ -73,13 +83,16 @@ test('продаж: візард створює точну накладну дл
            AND openSale.Updated >= CONVERT(date, GETDATE()))
        AND (SELECT COALESCE(SUM(ci.RemainingQty), 0)
             FROM dbo.ConsignmentItem ci
-            JOIN dbo.Consignment cn ON cn.ID = ci.ConsignmentID AND cn.Deleted = 0
+            JOIN dbo.Consignment cn
+              ON cn.ID = ci.ConsignmentID
+             AND cn.Deleted = 0
+             AND cn.StorageID = organization.StorageID
             WHERE ci.Deleted = 0 AND ci.ProductID = p.ID) > @qty
      ORDER BY s.ID DESC`,
     { qty: SALE_QTY },
   );
-  expect(candidates, 'однозначна пара клієнт+договір+товар зі стоком знайдена').toHaveLength(1);
-  const candidate = candidates[0];
+  expect(candidates.length, 'кандидати клієнт+договір+товар зі стоком знайдені').toBeGreaterThan(0);
+  const candidate = await selectPricingHealthyCandidate(db, candidates);
 
   const created = await createSaleViaWizard(page, {
     agreementNetUid: candidate.AgreementNetUid,
@@ -100,6 +113,7 @@ test('продаж: візард створює точну накладну дл
        ca.ClientID,
        s.ChangedToInvoice,
        s.IsAcceptedToPacking,
+       organization.PriceSourceIsAmg AS OrganizationPriceSourceIsAmg,
        status.SaleLifeCycleType AS LifeCycleType,
        saleNumber.Value AS SaleNumber,
        (SELECT COUNT(*) FROM dbo.SalesMutationOperation operation
@@ -158,6 +172,10 @@ test('продаж: візард створює точну накладну дл
      FROM dbo.Sale s
      JOIN dbo.[Order] o ON o.ID = s.OrderID AND o.Deleted = 0
      JOIN dbo.ClientAgreement ca ON ca.ID = o.ClientAgreementID AND ca.Deleted = 0
+     JOIN dbo.Agreement agreement ON agreement.ID = ca.AgreementID AND agreement.Deleted = 0
+     JOIN dbo.Organization organization
+       ON organization.ID = agreement.OrganizationID
+      AND organization.Deleted = 0
      JOIN dbo.BaseLifeCycleStatus status ON status.ID = s.BaseLifeCycleStatusID
      JOIN dbo.SaleNumber saleNumber ON saleNumber.ID = s.SaleNumberID
      WHERE s.Deleted = 0 AND s.NetUID = @saleNetId
@@ -172,6 +190,7 @@ test('продаж: візард створює точну накладну дл
   expect(sale.SaleNetUid).toBe(created.saleNetId);
   expect(sale.ClientID).toBe(candidate.ClientID);
   expect(sale.AgreementID).toBe(candidate.AgreementID);
+  expect(sale.OrganizationPriceSourceIsAmg, 'продаж створений у контурі AMG').toBe(true);
   expect(sale.LifeCycleType, 'ПДВ-гілка створює видаткову накладну').toBe(1);
   expect(sale.ChangedToInvoice).toBeTruthy();
   expect(sale.IsAcceptedToPacking).toBe(false);
@@ -193,6 +212,7 @@ test('продаж: візард створює точну накладну дл
        ca.ClientID,
        s.ChangedToInvoice,
        s.IsAcceptedToPacking,
+       organization.PriceSourceIsAmg AS OrganizationPriceSourceIsAmg,
        status.SaleLifeCycleType AS LifeCycleType,
        saleNumber.Value AS SaleNumber,
        (SELECT COUNT(*) FROM dbo.SalesMutationOperation operation
@@ -251,6 +271,10 @@ test('продаж: візард створює точну накладну дл
      FROM dbo.Sale s
      JOIN dbo.[Order] o ON o.ID = s.OrderID AND o.Deleted = 0
      JOIN dbo.ClientAgreement ca ON ca.ID = o.ClientAgreementID AND ca.Deleted = 0
+     JOIN dbo.Agreement agreement ON agreement.ID = ca.AgreementID AND agreement.Deleted = 0
+     JOIN dbo.Organization organization
+       ON organization.ID = agreement.OrganizationID
+      AND organization.Deleted = 0
      JOIN dbo.BaseLifeCycleStatus status ON status.ID = s.BaseLifeCycleStatusID
      JOIN dbo.SaleNumber saleNumber ON saleNumber.ID = s.SaleNumberID
      WHERE s.Deleted = 0 AND s.NetUID = @saleNetId

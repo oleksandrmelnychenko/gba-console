@@ -1,4 +1,5 @@
 import { expect, test } from '../../fixtures/test';
+import { selectPricingHealthyCandidate } from '../../flows/pricing';
 import { createClientReturn } from '../../flows/returns';
 import { acceptSaleForPackingViaList, createSaleViaWizard } from '../../flows/sales';
 
@@ -6,8 +7,8 @@ test.describe.configure({ mode: 'serial' });
 
 const RETURN_QTY = 1;
 const SALE_QTY = 2;
-const RETURN_STATUS = 4;
-const RETURN_STATUS_LABEL = 'Відмова від товару кінцевим покупцем';
+const RETURN_STATUS = 3;
+const RETURN_STATUS_LABEL = 'Неправильний крос-код';
 
 interface ReturnCandidate {
   AgreementID: number;
@@ -62,6 +63,8 @@ interface SaleSeedCandidate {
   ClientName: string;
   ClientNetUid: string;
   ProductID: number;
+  ProductNetUid: string;
+  PriceSourceIsAmg: boolean;
   VendorCode: string;
 }
 
@@ -110,18 +113,24 @@ test('повернення: точна позиція продажу повер�
   let saleNetUid = entities.get<RecordedSale>('sale.smoke')?.saleNetUid;
   if (!saleNetUid) {
     const seedCandidates = await db.query<SaleSeedCandidate>(
-      `SELECT TOP 1
+      `SELECT TOP 10
          ca.ID AS AgreementID,
          LOWER(CONVERT(varchar(36), ca.NetUID)) AS AgreementNetUid,
          c.ID AS ClientID,
          c.FullName AS ClientName,
          LOWER(CONVERT(varchar(36), c.NetUID)) AS ClientNetUid,
          p.ID AS ProductID,
+         LOWER(CONVERT(varchar(36), p.NetUID)) AS ProductNetUid,
+         organization.PriceSourceIsAmg,
          p.VendorCode
        FROM dbo.Sale s
        JOIN dbo.[Order] o ON o.ID = s.OrderID AND o.Deleted = 0
        JOIN dbo.ClientAgreement ca ON ca.ID = o.ClientAgreementID AND ca.Deleted = 0
        JOIN dbo.Agreement agreement ON agreement.ID = ca.AgreementID AND agreement.Deleted = 0
+       JOIN dbo.Organization organization
+         ON organization.ID = agreement.OrganizationID
+        AND organization.Deleted = 0
+        AND organization.PriceSourceIsAmg = 1
        JOIN dbo.Client c ON c.ID = ca.ClientID AND c.Deleted = 0
        JOIN dbo.OrderItem oi ON oi.OrderID = o.ID AND oi.Deleted = 0
        JOIN dbo.Product p ON p.ID = oi.ProductID AND p.Deleted = 0
@@ -142,13 +151,16 @@ test('повернення: точна позиція продажу повер�
              AND openSale.Updated >= CONVERT(date, GETDATE()))
          AND (SELECT COALESCE(SUM(ci.RemainingQty), 0)
               FROM dbo.ConsignmentItem ci
-              JOIN dbo.Consignment cn ON cn.ID = ci.ConsignmentID AND cn.Deleted = 0
+              JOIN dbo.Consignment cn
+                ON cn.ID = ci.ConsignmentID
+               AND cn.Deleted = 0
+               AND cn.StorageID = organization.StorageID
               WHERE ci.Deleted = 0 AND ci.ProductID = p.ID) > @qty
        ORDER BY s.ID DESC`,
       { qty: SALE_QTY },
     );
-    expect(seedCandidates, 'однозначна пара клієнт+договір+товар для повертабельного продажу знайдена').toHaveLength(1);
-    const seed = seedCandidates[0];
+    expect(seedCandidates.length, 'кандидати клієнт+договір+товар для повернення знайдені').toBeGreaterThan(0);
+    const seed = await selectPricingHealthyCandidate(db, seedCandidates);
     const createdSale = await createSaleViaWizard(page, {
       agreementNetUid: seed.AgreementNetUid,
       clientName: seed.ClientName,
@@ -340,6 +352,7 @@ test('повернення: точна позиція продажу повер�
     qty: RETURN_QTY,
     saleNetUid: candidate.SaleNetUid,
     saleNumber: candidate.SaleNumber,
+    searchByArticleOnly: true,
     status: RETURN_STATUS,
     statusLabel: RETURN_STATUS_LABEL,
     storageId: candidate.StorageID,

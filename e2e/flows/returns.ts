@@ -11,6 +11,7 @@ export interface ClientReturnInput {
   qty: number;
   saleNetUid: string;
   saleNumber: string;
+  searchByArticleOnly?: boolean;
   status: number;
   statusLabel: string;
   storageId: number;
@@ -170,27 +171,29 @@ export async function createClientReturn(page: Page, input: ClientReturnInput): 
   await expect(organizationOption).toHaveCount(1);
   await organizationOption.click();
 
-  const clientSelect = createDrawer.getByLabel('Клієнт', { exact: true });
-  const clientResponsePromise = page.waitForResponse(
-    (response) => {
-      const url = new URL(response.url());
+  if (!input.searchByArticleOnly) {
+    const clientSelect = createDrawer.getByLabel('Клієнт', { exact: true });
+    const clientResponsePromise = page.waitForResponse(
+      (response) => {
+        const url = new URL(response.url());
 
-      return response.request().method() === 'GET' &&
-        url.pathname.endsWith('/clients/all/filtered') &&
-        url.searchParams.get('value') === input.clientSearchValue;
-    },
-    { timeout: 30_000 },
-  );
-  await clientSelect.fill(input.clientSearchValue);
-  const clientResponse = await clientResponsePromise;
-  expect(clientResponse.ok(), `client search HTTP ${clientResponse.status()}`).toBe(true);
+        return response.request().method() === 'GET' &&
+          url.pathname.endsWith('/clients/all/filtered') &&
+          url.searchParams.get('value') === input.clientSearchValue;
+      },
+      { timeout: 30_000 },
+    );
+    await clientSelect.fill(input.clientSearchValue);
+    const clientResponse = await clientResponsePromise;
+    expect(clientResponse.ok(), `client search HTTP ${clientResponse.status()}`).toBe(true);
 
-  const clientOption = page
-    .getByRole('option')
-    .filter({ hasText: input.clientName })
-    .filter({ hasText: input.clientSearchValue });
-  await expect(clientOption).toHaveCount(1, { timeout: 20_000 });
-  await clientOption.click();
+    const clientOption = page
+      .getByRole('option')
+      .filter({ hasText: input.clientName })
+      .filter({ hasText: input.clientSearchValue });
+    await expect(clientOption).toHaveCount(1, { timeout: 20_000 });
+    await clientOption.click();
+  }
 
   const salesResponsePromise = page.waitForResponse(
     (response) => {
@@ -199,7 +202,9 @@ export async function createClientReturn(page: Page, input: ClientReturnInput): 
       return response.request().method() === 'GET' &&
         url.pathname.endsWith('/sales/all/returns/search') &&
         url.searchParams.get('value') === input.vendorCode &&
-        url.searchParams.get('netId')?.toLowerCase() === input.clientNetUid.toLowerCase() &&
+        (input.searchByArticleOnly
+          ? url.searchParams.get('netId') === ''
+          : url.searchParams.get('netId')?.toLowerCase() === input.clientNetUid.toLowerCase()) &&
         url.searchParams.get('organizationNetId')?.toLowerCase() === input.organizationNetUid.toLowerCase();
     },
     { timeout: 60_000 },
