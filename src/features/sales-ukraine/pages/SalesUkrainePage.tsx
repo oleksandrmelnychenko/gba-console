@@ -881,7 +881,10 @@ export function SalesUkrainePage() {
           setError(loadError instanceof Error ? loadError.message : t('Не вдалося завантажити продажі'))
         }
       } finally {
-        if (!cancelled && !isBackgroundReload) {
+        // A realtime reload can supersede a foreground post-create reload after
+        // it has activated the grid blocker. The latest request must always
+        // release that shared state, even when the request itself was silent.
+        if (!cancelled) {
           setLoading(false)
         }
       }
