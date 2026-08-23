@@ -51,6 +51,7 @@ import { RecommendationsPanel } from '../components/recommendations/Recommendati
 import { SolvencyPanel } from '../components/solvency/SolvencyPanel'
 import { SalesPanel } from '../components/sales/SalesPanel'
 import { ClientStructurePanel } from '../components/structure/ClientStructurePanel'
+import { SubClientsPanel } from '../components/structure/SubClientsPanel'
 import { ClientFolderTreeNav } from '../components/ClientFolderTreeNav'
 import { buildClientFolderTree, type ClientFolderTree } from '../clientFolderTree'
 import { type ClientFormErrors, validateClientForm } from '../components/form/validateClientForm'
@@ -97,11 +98,14 @@ const ROOT_SHARED_EDIT_STEPS = new Set([
   'contact-information',
   'bank-details',
   'analysts',
+  'structural-units',
+  'subclients',
 ])
 
 type EditStep = {
   isAi?: boolean
   label: string
+  placement?: 'header'
   value: string
 }
 
@@ -1359,6 +1363,11 @@ function ClientEditBody({
 
   return (
     <form id="client-edit-form" onSubmit={onSubmit}>
+      <ClientRelationshipActions
+        selectedStep={selectedStepValue}
+        steps={steps}
+        onGoToStep={onGoToStep}
+      />
       <Grid gap="md">
         <Grid.Col span={{ base: 12, lg: 3 }}>
           <Card className="app-section-card client-edit-shell-card" withBorder radius="md" padding="md">
@@ -1439,19 +1448,20 @@ function ClientEditNavigation({
   onGoToStep: (nextStep: string) => void
 }) {
   const { t } = useI18n()
+  const navigationSteps = steps.filter((item) => item.placement !== 'header')
 
   if (!folderTree) {
     return (
       <ClientEditStepButtons
         selectedStep={selectedStep}
-        steps={steps}
+        steps={navigationSteps}
         onGoToStep={onGoToStep}
       />
     )
   }
 
-  const sharedSteps = steps.filter((item) => isRootSharedEditStep(item.value))
-  const individualSteps = steps.filter((item) => !isRootSharedEditStep(item.value))
+  const sharedSteps = navigationSteps.filter((item) => isRootSharedEditStep(item.value))
+  const individualSteps = navigationSteps.filter((item) => !isRootSharedEditStep(item.value))
 
   return (
     <>
@@ -1474,6 +1484,50 @@ function ClientEditNavigation({
         onGoToStep={onGoToStep}
       />
     </>
+  )
+}
+
+function ClientRelationshipActions({
+  selectedStep,
+  steps,
+  onGoToStep,
+}: {
+  selectedStep: string
+  steps: EditStep[]
+  onGoToStep: (nextStep: string) => void
+}) {
+  const { t } = useI18n()
+  const relationshipSteps = steps.filter((item) => item.placement === 'header')
+
+  if (relationshipSteps.length === 0) {
+    return null
+  }
+
+  return (
+    <Group
+      aria-label={t('Зв’язки клієнта')}
+      className="client-edit-relationship-actions"
+      component="nav"
+      gap="xs"
+    >
+      {relationshipSteps.map((item) => {
+        const isActive = item.value === selectedStep
+
+        return (
+          <Button
+            key={item.value}
+            aria-pressed={isActive}
+            color={isActive ? CREATE_ACTION_COLOR : 'gray'}
+            size="xs"
+            type="button"
+            variant={isActive ? 'filled' : 'light'}
+            onClick={() => onGoToStep(item.value)}
+          >
+            {item.label}
+          </Button>
+        )
+      })}
+    </Group>
   )
 }
 
@@ -1571,6 +1625,8 @@ function buildEditSteps(client: Client | null, hasPermission: (permissionKey: st
 
   if (getClientType(client) === CLIENT_TYPE_BUYER) {
     steps.push(
+      { placement: 'header', value: 'structural-units', label: translate('Структурні підрозділи') },
+      { placement: 'header', value: 'subclients', label: translate('Сабклієнти') },
       { value: 'sales', label: translate('Продажі') },
       { value: 'perfect-client', label: translate('Ідеальний клієнт') },
       { value: 'client-types', label: translate('Структура клієнта') },
@@ -1654,6 +1710,17 @@ function EditStepContent({
 
   if (step === 'client-types') {
     return <ClientStructurePanel client={client} onChange={onClientChange} />
+  }
+
+  if (step === 'structural-units' || step === 'subclients') {
+    return (
+      <Card className="app-section-card client-relationship-card" withBorder padding="md" radius="md">
+        <SubClientsPanel
+          client={client}
+          relationKind={step === 'structural-units' ? 'structural-unit' : 'subclient'}
+        />
+      </Card>
+    )
   }
 
   if (step === 'perfect-client') {

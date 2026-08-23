@@ -97,6 +97,16 @@ vi.mock('../components/structure/ClientStructurePanel', () => ({
   ),
 }))
 
+vi.mock('../components/structure/SubClientsPanel', () => ({
+  SubClientsPanel: ({
+    client,
+    relationKind,
+  }: {
+    client: Client
+    relationKind: string
+  }) => <div>relationship:{relationKind}:{client.NetUid}</div>,
+}))
+
 vi.mock('../components/ecommerce/EcommercePanel', () => ({
   EcommercePanel: ({ client }: { client: Client }) => (
     <div>ecommerce:{client.NetUid}</div>
@@ -196,11 +206,32 @@ describe('ClientEditPage root folder form', () => {
     })
   })
 
+  it('keeps structural-unit and subclient actions visible across the client card', async () => {
+    renderPage(ROOT_NET_UID)
+
+    expect(await screen.findByText(`general:${ROOT_NET_UID}`)).toBeTruthy()
+    const structuralUnits = screen.getByRole('button', { name: 'Структурні підрозділи' })
+    const subclients = screen.getByRole('button', { name: 'Сабклієнти' })
+
+    expect(structuralUnits.getAttribute('aria-pressed')).toBe('false')
+    expect(subclients.getAttribute('aria-pressed')).toBe('false')
+
+    fireEvent.click(structuralUnits)
+    expect(await screen.findByText(`relationship:structural-unit:${ROOT_NET_UID}`)).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Структурні підрозділи' }).getAttribute('aria-pressed')).toBe('true')
+
+    fireEvent.click(screen.getByRole('button', { name: 'Сабклієнти' }))
+    expect(await screen.findByText(`relationship:subclient:${ROOT_NET_UID}`)).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Сабклієнти' }).getAttribute('aria-pressed')).toBe('true')
+  })
+
   it('keeps the standard flat form for a client that is not a root folder', async () => {
     renderPage(ORDINARY_NET_UID)
 
     expect(await screen.findByText(`general:${ORDINARY_NET_UID}`)).toBeTruthy()
     expect(screen.queryByText('Дерево клієнтів')).toBeNull()
+    expect(screen.getByRole('button', { name: 'Структурні підрозділи' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Сабклієнти' })).toBeTruthy()
 
     fireEvent.click(screen.getByRole('button', { name: /Договори$/ }))
     expect(await screen.findByText(`agreements:${ORDINARY_NET_UID}`)).toBeTruthy()
