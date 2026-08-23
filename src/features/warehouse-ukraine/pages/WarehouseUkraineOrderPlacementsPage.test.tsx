@@ -83,7 +83,7 @@ vi.mock('../components/PlacementEditDrawer', () => ({
 
 function renderPage() {
   return render(
-    <MantineProvider>
+    <MantineProvider env="test">
       <I18nProvider>
         <MemoryRouter initialEntries={['/orders/ukraine/placement/order-1']}>
           <Routes>
