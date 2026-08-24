@@ -117,6 +117,7 @@ const SALE_REVIEW_ISSUE_MESSAGES: Record<SaleReviewIssueCode, string> = {
   recipient: 'Не вибраний одержувач',
   recipientPhone: 'Вкажіть мобільний телефон одержувача',
   retailPaymentAmount: 'Замовлення не можна відвантажити без передплати',
+  retailPaymentConfirmation: 'Оплату інтернет-магазину ще не підтверджено менеджером',
   retailPaymentStatus: 'Не вдалося перевірити оплату роздрібного клієнта',
   transporter: 'Не вибраний перевізник',
 }

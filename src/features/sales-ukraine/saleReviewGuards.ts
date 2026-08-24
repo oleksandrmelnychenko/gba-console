@@ -9,6 +9,7 @@ export type SaleReviewIssueCode =
   | 'recipient'
   | 'recipientPhone'
   | 'retailPaymentAmount'
+  | 'retailPaymentConfirmation'
   | 'retailPaymentStatus'
   | 'transporter'
 
@@ -56,6 +57,8 @@ export function getSaleReviewIssues(sale: SalesUkraineSale, context: SaleReviewC
       issues.push('retailPaymentStatus')
     } else if (!isPositiveNumber(retailPaymentStatus?.Amount)) {
       issues.push('retailPaymentAmount')
+    } else if (!isConfirmedRetailPaymentStatus(retailPaymentStatus?.RetailPaymentStatusType)) {
+      issues.push('retailPaymentConfirmation')
     }
   }
 
@@ -98,4 +101,20 @@ function hasText(value: string | undefined): boolean {
 
 function isPositiveNumber(value: number | undefined): boolean {
   return typeof value === 'number' && Number.isFinite(value) && value > 0
+}
+
+function isConfirmedRetailPaymentStatus(value: number | string | undefined): boolean {
+  if (value === undefined || value === null || value === '') {
+    return false
+  }
+
+  const normalized = typeof value === 'string' ? value.trim().toLowerCase() : value
+
+  if (normalized === 'new') {
+    return false
+  }
+
+  const parsed = Number(normalized)
+
+  return Number.isInteger(parsed) && parsed >= 1 && parsed <= 4
 }

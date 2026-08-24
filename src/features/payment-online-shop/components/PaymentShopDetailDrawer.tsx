@@ -1,11 +1,15 @@
 import {
   Alert,
+  Badge,
   Button,
   FileInput,
   Group,
   NumberInput,
+  Paper,
   Select,
+  SimpleGrid,
   Stack,
+  Text,
   Textarea,
   Title,
 } from '@mantine/core'
@@ -25,6 +29,10 @@ import {
   type PaymentTypeValue,
   type RetailClientPaymentImageItem,
 } from '../types'
+import {
+  getRetailPaymentStatusPresentation,
+  isRetailPaymentManagerConfirmed,
+} from '../retailPaymentStatus'
 
 const dateTimeFormatter = new Intl.DateTimeFormat('uk-UA', { dateStyle: 'short', timeStyle: 'short' })
 
@@ -63,6 +71,7 @@ export function PaymentShopDetailDrawer({
 }: PaymentShopDetailDrawerProps) {
   const { t } = useI18n()
   const [draft, setDraft] = useValueState<CreateFormDraft>(INITIAL_DRAFT)
+  const [validationError, setValidationError] = useValueState<string | null>(null)
 
   const statusType = item?.RetailPaymentStatus?.RetailPaymentStatusType
   const isEditing = statusType !== RetailPaymentStatusType.Paid
@@ -70,21 +79,35 @@ export function PaymentShopDetailDrawer({
   const orderItems = useMemo(() => item?.Sale?.Order?.OrderItems || [], [item?.Sale?.Order?.OrderItems])
 
   const paymentTypeOptions = [
-    { label: t('Предоплата'), value: String(PaymentType.Prepayment) },
-    { label: t('Наложений платіж'), value: String(PaymentType.CashOnDelivery) },
+    { label: t('Передплата'), value: String(PaymentType.Prepayment) },
+    { label: t('Накладений платіж'), value: String(PaymentType.CashOnDelivery) },
   ]
 
   function handleClose() {
     setDraft(INITIAL_DRAFT)
+    setValidationError(null)
     onClose()
   }
 
   async function handleCreate() {
     const amount = typeof draft.amount === 'number' ? draft.amount : Number.parseFloat(String(draft.amount))
 
-    if (!(amount > 0) || draft.paymentType === null || !draft.image) {
+    if (!(amount > 0)) {
+      setValidationError(t('Вкажіть суму оплати або передплати'))
       return
     }
+
+    if (draft.paymentType === null) {
+      setValidationError(t('Оберіть тип оплати'))
+      return
+    }
+
+    if (!draft.image) {
+      setValidationError(t('Додайте зображення підтвердження оплати'))
+      return
+    }
+
+    setValidationError(null)
 
     const created = await onAddPayment({
       amount,
@@ -111,16 +134,23 @@ export function PaymentShopDetailDrawer({
         </Stack>
 
         <Stack gap="md" style={{ flex: 1 }}>
+          <PaymentStatusSummary item={item} />
           <PaymentImageList isEditing={isEditing} items={items} onSelect={onEditItem} />
 
           {isEditing && (
             <Stack gap="sm">
-              <Title order={4}>{t('Створення підтвердження оплати')}</Title>
+              <Title order={4}>{t('Підтвердження оплати менеджером')}</Title>
 
-              {createError && (
+              {(createError || validationError) && (
                 <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
-                  {createError}
+                  {createError || validationError}
                 </Alert>
+              )}
+
+              {!isRetailPaymentManagerConfirmed(statusType) && (
+                <Text c="dimmed" size="sm">
+                  {t('Після збереження суми статус стане підтвердженим, і рахунок можна буде змінити на накладну.')}
+                </Text>
               )}
 
               <NumberInput
@@ -147,13 +177,14 @@ export function PaymentShopDetailDrawer({
                 onChange={(event) => { const nextValue = event.currentTarget.value; setDraft((current) => ({ ...current, comment: nextValue })) }}
               />
               <FileInput
+                accept="image/*"
                 label={t('Зображення')}
                 value={draft.image}
                 onChange={(value) => setDraft((current) => ({ ...current, image: value }))}
               />
               <Group justify="flex-end">
                 <Button color={CREATE_ACTION_COLOR} loading={isCreating} onClick={() => void handleCreate()}>
-                  {t('Створити')}
+                  {t('Підтвердити оплату')}
                 </Button>
               </Group>
             </Stack>
@@ -162,6 +193,60 @@ export function PaymentShopDetailDrawer({
       </Group>
     </AppDrawer>
   )
+}
+
+function PaymentStatusSummary({ item }: { item: PaymentShopItem | null }) {
+  const { t } = useI18n()
+  const status = getRetailPaymentStatusPresentation(
+    item?.RetailPaymentStatus?.RetailPaymentStatusType,
+  )
+
+  return (
+    <Paper p="md" radius="md" withBorder>
+      <Stack gap="sm">
+        <Group justify="space-between">
+          <Text fw={600}>{t('Статус оплати')}</Text>
+          <Badge color={status.color} variant="light">
+            {t(status.label)}
+          </Badge>
+        </Group>
+        <SimpleGrid cols={3} spacing="sm">
+          <PaymentAmountMetric
+            label={t('Підтверджено менеджером')}
+            value={item?.RetailPaymentStatus?.Amount}
+          />
+          <PaymentAmountMetric
+            label={t('Проведено бухгалтерією')}
+            value={item?.RetailPaymentStatus?.PaidAmount}
+          />
+          <PaymentAmountMetric
+            label={t('Залишок до оплати')}
+            value={item?.RetailPaymentStatus?.AmountToPay}
+          />
+        </SimpleGrid>
+      </Stack>
+    </Paper>
+  )
+}
+
+function PaymentAmountMetric({ label, value }: { label: string; value: number | undefined }) {
+  return (
+    <Stack gap={2}>
+      <Text c="dimmed" size="xs">
+        {label}
+      </Text>
+      <Text fw={600}>{formatAmount(value)} UAH</Text>
+    </Stack>
+  )
+}
+
+const paymentAmountFormatter = new Intl.NumberFormat('uk-UA', {
+  maximumFractionDigits: 2,
+  minimumFractionDigits: 2,
+})
+
+function formatAmount(value: number | undefined): string {
+  return paymentAmountFormatter.format(value ?? 0)
 }
 
 function getDrawerTitle(item: PaymentShopItem | null, t: (value: string) => string): string {

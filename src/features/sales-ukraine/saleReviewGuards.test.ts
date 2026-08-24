@@ -78,8 +78,35 @@ describe('getSaleReviewIssues', () => {
           RetailClient: { Id: 11 },
           Transporter: { CssClass: 'self_checkout_item_class', Id: 3 },
         },
-        { retailPaymentStatus: { Amount: 100, Id: 5 } },
+        {
+          retailPaymentStatus: {
+            Amount: 100,
+            Id: 5,
+            RetailPaymentStatusType: 1,
+          },
+        },
       ),
     ).toEqual([])
   })
+
+  it.each([0, '0', 'New', undefined])(
+    'blocks a positive shop amount until a manager confirms status %s',
+    (statusType) => {
+      expect(
+        getSaleReviewIssues(
+          {
+            RetailClient: { Id: 11 },
+            Transporter: { CssClass: 'self_checkout_item_class', Id: 3 },
+          },
+          {
+            retailPaymentStatus: {
+              Amount: 100,
+              Id: 5,
+              RetailPaymentStatusType: statusType,
+            },
+          },
+        ),
+      ).toEqual(['retailPaymentConfirmation'])
+    },
+  )
 })

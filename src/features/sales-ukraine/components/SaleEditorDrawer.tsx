@@ -738,6 +738,8 @@ function getReviewIssueLabel(issue: SaleReviewIssueCode, t: (message: string) =>
       return t('Вкажіть номер власної ТТН')
     case 'retailPaymentStatus':
       return t('Не вдалося перевірити оплату інтернет-магазину')
+    case 'retailPaymentConfirmation':
+      return t('Оплату інтернет-магазину ще не підтверджено менеджером')
     case 'retailPaymentAmount':
       return t('Продаж інтернет-магазину не оплачений')
     default:

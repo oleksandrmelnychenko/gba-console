@@ -1,6 +1,7 @@
 import {
   ActionIcon,
   Alert,
+  Badge,
   Card,
   Group,
   Stack,
@@ -31,6 +32,7 @@ import {
   isDefinitiveRetailPaymentImageConcurrencyConflict,
 } from '../paymentImageMutation'
 import { RetailPaymentStatusType } from '../types'
+import { getRetailPaymentStatusPresentation } from '../retailPaymentStatus'
 import type {
   AddPaymentImagePayload,
   PaymentShopFilters,
@@ -475,7 +477,7 @@ function PaymentShopTableCard({ model }: { model: ReturnType<typeof usePaymentOn
             columns={columns}
             data={items}
             defaultLayout={PAYMENT_SHOP_TABLE_DEFAULT_LAYOUT}
-            emptyText={t('Оплата магазину')}
+            emptyText={t('Замовлень магазину не знайдено')}
             getRowId={(item, index) => String(item.NetUid || item.Id || index)}
             height="100%"
             isLoading={isLoading}
@@ -573,6 +575,24 @@ function usePaymentShopColumns(onOpenDetail: (item: PaymentShopItem) => void, on
             </Text>
           </Tooltip>
         ),
+      },
+      {
+        id: 'status',
+        header: t('Статус оплати'),
+        width: 210,
+        minWidth: 190,
+        accessor: (item) => item.RetailPaymentStatus?.RetailPaymentStatusType,
+        cell: (item) => {
+          const status = getRetailPaymentStatusPresentation(
+            item.RetailPaymentStatus?.RetailPaymentStatusType,
+          )
+
+          return (
+            <Badge color={status.color} variant="light">
+              {t(status.label)}
+            </Badge>
+          )
+        },
       },
       {
         id: 'paid',
