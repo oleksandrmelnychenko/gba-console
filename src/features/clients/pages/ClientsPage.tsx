@@ -893,7 +893,11 @@ function ClientsPageView({ model }: { model: ReturnType<typeof useClientsPageMod
             tableId="clients"
             toolbarPortalTarget={tableToolbarSlot}
             sorting={sorting}
-            onRowClick={setSelectedClient}
+            onRowClick={(client) => {
+              if (!isClientFolder(client)) {
+                setSelectedClient(client)
+              }
+            }}
             onSortingChange={(nextSorting) => {
               setPage(1)
               setSorting(nextSorting)
