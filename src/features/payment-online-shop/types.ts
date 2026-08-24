@@ -145,5 +145,6 @@ export type EditPaymentImagePayload = {
   comment: string
   item: RetailClientPaymentImageItem
   paymentImageId: number
+  paymentType: PaymentTypeValue | number
   user: PaymentShopUser | null
 }

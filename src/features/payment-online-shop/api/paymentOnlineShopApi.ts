@@ -33,6 +33,26 @@ export async function getPaymentShopItemsPage(filters: PaymentShopFilters): Prom
   return normalizePaymentShopItemsResponse(result)
 }
 
+export async function getPaymentShopItemForRefresh(
+  paymentImageId: number,
+  saleNumber: string,
+): Promise<PaymentShopItem | null> {
+  if (!(paymentImageId > 0) || !saleNumber.trim()) {
+    return null
+  }
+
+  const page = await getPaymentShopItemsPage({
+    limit: 200,
+    offset: 0,
+    phoneNumber: '',
+    saleDateFrom: '',
+    saleDateTo: '',
+    saleNumber: saleNumber.trim(),
+  })
+
+  return page.items.find((item) => item.Id === paymentImageId) ?? null
+}
+
 export async function addPaymentImage(
   payload: AddPaymentImagePayload,
   operation: SalesMutationOperationOptions,
@@ -71,6 +91,7 @@ export async function editPaymentImage(
       RetailClientPaymentImageId: payload.paymentImageId,
       Amount: payload.amount,
       User: payload.user,
+      PaymentType: payload.paymentType,
       Comment: payload.comment,
     },
     headers: getSalesMutationOperationHeaders(operation.operationId),

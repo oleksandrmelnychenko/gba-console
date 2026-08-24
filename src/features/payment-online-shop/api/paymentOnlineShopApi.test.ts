@@ -3,6 +3,7 @@ import { apiRequest } from '../../../shared/api/apiClient'
 import {
   addPaymentImage,
   editPaymentImage,
+  getPaymentShopItemForRefresh,
   getPaymentShopItems,
   getPaymentShopItemsPage,
 } from './paymentOnlineShopApi'
@@ -90,6 +91,32 @@ describe('paymentOnlineShopApi', () => {
     })
   })
 
+  it('reloads one payment aggregate by its sale number and stable id', async () => {
+    apiRequestMock.mockResolvedValueOnce({
+      Collection: [
+        { Id: 4, Sale: { SaleNumber: { Value: 'OTHER' } } },
+        { Id: 7, Sale: { SaleNumber: { Value: 'КАв00009639' } } },
+      ],
+    })
+
+    await expect(
+      getPaymentShopItemForRefresh(7, ' КАв00009639 '),
+    ).resolves.toMatchObject({ Id: 7 })
+    expect(apiRequestMock).toHaveBeenCalledWith(
+      '/sales/payment/images/get/filtered',
+      {
+        query: {
+          limit: 200,
+          offset: 0,
+          phoneNumber: '',
+          saleDateFrom: '',
+          saleDateTo: '',
+          saleNumber: 'КАв00009639',
+        },
+      },
+    )
+  })
+
   it('uploads an image with a durable idempotency key', async () => {
     const image = new File(['image'], 'payment.png', { type: 'image/png' })
 
@@ -136,6 +163,7 @@ describe('paymentOnlineShopApi', () => {
           RowVersion: 'AQIDBAUGBwg=',
         },
         paymentImageId: 7,
+        paymentType: 1,
         user: { Id: 3 },
       },
       { operationId },
@@ -148,6 +176,7 @@ describe('paymentOnlineShopApi', () => {
           Amount: 130,
           Comment: 'corrected',
           Id: 9,
+          PaymentType: 1,
           RetailClientPaymentImageId: 7,
           RowVersion: 'AQIDBAUGBwg=',
           User: { Id: 3 },

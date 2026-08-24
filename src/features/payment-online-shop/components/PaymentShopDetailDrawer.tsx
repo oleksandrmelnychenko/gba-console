@@ -123,8 +123,8 @@ export function PaymentShopDetailDrawer({
 
   return (
     <AppDrawer opened={Boolean(item)} padding="lg" position="right" size="86rem" title={getDrawerTitle(item, t)} onClose={handleClose}>
-      <Group align="flex-start" gap="lg" grow wrap="nowrap">
-        <Stack gap="md" style={{ flex: 1.4 }}>
+      <SimpleGrid cols={{ base: 1, xl: 2 }} spacing="lg" verticalSpacing="lg">
+        <Stack gap="md">
           <PaymentShopOrderItemsTable
             currencyCode="EUR"
             localCurrencyCode="UAH"
@@ -133,7 +133,7 @@ export function PaymentShopDetailDrawer({
           />
         </Stack>
 
-        <Stack gap="md" style={{ flex: 1 }}>
+        <Stack gap="md">
           <PaymentStatusSummary item={item} />
           <PaymentImageList isEditing={isEditing} items={items} onSelect={onEditItem} />
 
@@ -190,7 +190,7 @@ export function PaymentShopDetailDrawer({
             </Stack>
           )}
         </Stack>
-      </Group>
+      </SimpleGrid>
     </AppDrawer>
   )
 }

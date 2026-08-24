@@ -3,9 +3,12 @@ import { ApiError } from '../../shared/api/apiClient'
 import {
   classifyRetailPaymentImageMutationFailure,
   ensurePaymentImageReplayFileMatches,
+  getRetailPaymentImageConcurrencyCode,
   isDefinitiveRetailPaymentImageConcurrencyConflict,
   isRetailPaymentImageConcurrencyConflict,
   PaymentImageReplayFileMismatchError,
+  RETAIL_PAYMENT_IMAGE_ITEM_VERSION_CONFLICT,
+  RETAIL_PAYMENT_STATUS_VERSION_CONFLICT,
 } from './paymentImageMutation'
 
 describe('paymentImageMutation', () => {
@@ -13,7 +16,7 @@ describe('paymentImageMutation', () => {
     const conflict = new ApiError(
       'conflict',
       409,
-      null,
+      { ErrorCode: RETAIL_PAYMENT_IMAGE_ITEM_VERSION_CONFLICT },
       { 'X-Mutation-Ledger-State': 'not-entered' },
     )
 
@@ -26,6 +29,9 @@ describe('paymentImageMutation', () => {
     expect(
       isDefinitiveRetailPaymentImageConcurrencyConflict(conflict),
     ).toBe(true)
+    expect(getRetailPaymentImageConcurrencyCode(conflict)).toBe(
+      RETAIL_PAYMENT_IMAGE_ITEM_VERSION_CONFLICT,
+    )
   })
 
   it('keeps infrastructure failures pending reconciliation', () => {
@@ -55,7 +61,7 @@ describe('paymentImageMutation', () => {
     ).toBe('pending-reconciliation')
   })
 
-  it('keeps an unproven 409 open for reconciliation', () => {
+  it('does not treat an unrelated 409 as a reloadable version conflict', () => {
     const conflict = new ApiError(
       'conflict',
       409,
@@ -64,10 +70,39 @@ describe('paymentImageMutation', () => {
 
     expect(
       isRetailPaymentImageConcurrencyConflict(conflict),
-    ).toBe(true)
+    ).toBe(false)
     expect(
       isDefinitiveRetailPaymentImageConcurrencyConflict(conflict),
     ).toBe(false)
+  })
+
+  it('distinguishes a parent payment status conflict', () => {
+    const conflict = new ApiError(
+      'status changed',
+      409,
+      { ErrorCode: RETAIL_PAYMENT_STATUS_VERSION_CONFLICT },
+      { 'X-Mutation-Ledger-State': 'rolled-back' },
+    )
+
+    expect(getRetailPaymentImageConcurrencyCode(conflict)).toBe(
+      RETAIL_PAYMENT_STATUS_VERSION_CONFLICT,
+    )
+    expect(
+      isDefinitiveRetailPaymentImageConcurrencyConflict(conflict),
+    ).toBe(true)
+  })
+
+  it('supports the old safe message only during a rolling deployment', () => {
+    const conflict = new ApiError(
+      'The payment image item changed. Reload it before retrying.',
+      409,
+      null,
+      { 'X-Mutation-Ledger-State': 'not-entered' },
+    )
+
+    expect(getRetailPaymentImageConcurrencyCode(conflict)).toBe(
+      RETAIL_PAYMENT_IMAGE_ITEM_VERSION_CONFLICT,
+    )
   })
 
   it('allows replay only with the same file bytes and extension', () => {

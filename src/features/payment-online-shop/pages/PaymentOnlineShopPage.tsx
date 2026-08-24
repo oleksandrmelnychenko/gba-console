@@ -12,7 +12,14 @@ import {
 import { useDebouncedValue } from '@mantine/hooks'
 import { notifications } from '@mantine/notifications'
 import { CircleAlert, RotateCcw, Search } from 'lucide-react'
-import { useCallback, useEffect, useMemo, useReducer, useState } from 'react'
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useReducer,
+  useRef,
+  useState,
+} from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -22,14 +29,21 @@ import { Paginator } from '../../../shared/ui/paginator/Paginator'
 import { DEFAULT_PAGINATOR_PAGE_SIZE } from '../../../shared/ui/paginator/paginatorPageSize'
 import { TableRowAction } from '../../../shared/ui/table-row-action'
 import { useAuth } from '../../auth/useAuth'
-import { addPaymentImage, editPaymentImage, getPaymentShopItemsPage } from '../api/paymentOnlineShopApi'
+import {
+  addPaymentImage,
+  editPaymentImage,
+  getPaymentShopItemForRefresh,
+  getPaymentShopItemsPage,
+} from '../api/paymentOnlineShopApi'
 import { PaymentImageEditModal } from '../components/PaymentImageEditModal'
 import { PaymentShopDetailDrawer } from '../components/PaymentShopDetailDrawer'
 import {
   classifyRetailPaymentImageMutationFailure,
   createAddPaymentImageMutationPayload,
   ensurePaymentImageReplayFileMatches,
+  getRetailPaymentImageConcurrencyCode,
   isDefinitiveRetailPaymentImageConcurrencyConflict,
+  RETAIL_PAYMENT_IMAGE_ITEM_VERSION_CONFLICT,
 } from '../paymentImageMutation'
 import { RetailPaymentStatusType } from '../types'
 import { getRetailPaymentStatusPresentation } from '../retailPaymentStatus'
@@ -37,6 +51,7 @@ import type {
   AddPaymentImagePayload,
   PaymentShopFilters,
   PaymentShopItem,
+  PaymentTypeValue,
   RetailClientPaymentImageItem,
 } from '../types'
 import {
@@ -78,9 +93,12 @@ function usePaymentOnlineShopModel() {
   const [error, setError] = useValueState<string | null>(null)
   const [createError, setCreateError] = useValueState<string | null>(null)
   const [editError, setEditError] = useValueState<string | null>(null)
+  const [editNotice, setEditNotice] = useValueState<string | null>(null)
   const [isLoading, setLoading] = useValueState(false)
   const [isCreating, setCreating] = useValueState(false)
   const [isSaving, setSaving] = useValueState(false)
+  const [isRefreshingEdit, setRefreshingEdit] = useValueState(false)
+  const isEditOpenRef = useRef(false)
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
   const runAddPaymentMutation = usePersistentSalesMutation(
     'retail-payment-image-add',
@@ -144,6 +162,24 @@ function usePaymentOnlineShopModel() {
     },
     [navigate],
   )
+
+  const openEditItem = useCallback(
+    (item: RetailClientPaymentImageItem) => {
+      isEditOpenRef.current = true
+      setEditError(null)
+      setEditNotice(null)
+      setEditItem(item)
+    },
+    [setEditError, setEditItem, setEditNotice],
+  )
+
+  const closeEditItem = useCallback(() => {
+    isEditOpenRef.current = false
+    setRefreshingEdit(false)
+    setEditError(null)
+    setEditNotice(null)
+    setEditItem(null)
+  }, [setEditError, setEditItem, setEditNotice, setRefreshingEdit])
 
   function applyFilters() {
     setPage(1)
@@ -217,7 +253,92 @@ function usePaymentOnlineShopModel() {
     }
   }
 
-  async function handleEditPayment(amount: number, comment: string) {
+  async function refreshEditingPayment(
+    successMessage = t(
+      'Актуальні дані завантажено. Перевірте введені значення та повторіть збереження.',
+    ),
+  ): Promise<boolean> {
+    const paymentImageId = selectedItem?.Id
+    const paymentImageItemId = editItem?.Id
+    const saleNumber = selectedItem?.Sale?.SaleNumber?.Value || ''
+
+    if (!paymentImageId || !paymentImageItemId || !saleNumber) {
+      setEditError(
+        t('Не вдалося визначити платіж для оновлення. Закрийте форму та відкрийте її повторно.'),
+      )
+      return false
+    }
+
+    if (!isEditOpenRef.current) {
+      return false
+    }
+
+    setRefreshingEdit(true)
+
+    try {
+      const freshPayment = await getPaymentShopItemForRefresh(
+        paymentImageId,
+        saleNumber,
+      )
+      const freshItem = freshPayment?.RetailClientPaymentImageItems?.find(
+        (item) => item.Id === paymentImageItemId,
+      )
+
+      if (!isEditOpenRef.current) {
+        return false
+      }
+
+      if (!freshPayment || !freshItem) {
+        isEditOpenRef.current = false
+        setEditItem(null)
+        setEditNotice(null)
+        setEditError(
+          t('Підтвердження оплати вже видалено або недоступне. Список оновлено.'),
+        )
+        reload()
+        return false
+      }
+
+      setSelectedItem(freshPayment)
+      setItems((current) => replacePaymentShopItem(current, freshPayment))
+
+      if (freshItem.IsLocked) {
+        isEditOpenRef.current = false
+        setEditItem(null)
+        setEditNotice(null)
+        notifications.show({
+          color: 'yellow',
+          message: t(
+            'Оплату вже проведено бухгалтерією. Редагування більше недоступне.',
+          ),
+        })
+        return false
+      }
+
+      // The edit form key is the stable item identity, not RowVersion, so the
+      // user's amount/comment draft survives while the concurrency token and
+      // server summary are refreshed underneath it.
+      setEditItem(freshItem)
+      setEditError(null)
+      setEditNotice(successMessage)
+      return true
+    } catch (refreshError) {
+      setEditError(
+        refreshError instanceof Error
+          ? refreshError.message
+          : t('Не вдалося оновити дані оплати'),
+      )
+      return false
+    } finally {
+      setRefreshingEdit(false)
+    }
+  }
+
+  async function handleEditPayment(
+    amount: number,
+    comment: string,
+    paymentType: PaymentTypeValue,
+  ) {
     if (!editItem || !selectedItem?.Id) {
       return
     }
@@ -236,6 +357,7 @@ function usePaymentOnlineShopModel() {
         comment,
         item: editItem,
         paymentImageId: selectedItem.Id,
+        paymentType,
         user: user,
       }
       const updatedItem = await runEditPaymentMutation(
@@ -251,9 +373,12 @@ function usePaymentOnlineShopModel() {
         setSelectedItem(null)
       }
       setEditItem(null)
+      isEditOpenRef.current = false
+      setEditNotice(null)
       reload()
     } catch (saveError) {
       if (saveError instanceof SalesPendingMutationRecoveredError) {
+        isEditOpenRef.current = false
         setEditItem(null)
         setSelectedItem(null)
         reload()
@@ -263,22 +388,32 @@ function usePaymentOnlineShopModel() {
         })
         return
       }
+      if (isDefinitiveRetailPaymentImageConcurrencyConflict(saveError)) {
+        const conflictCode = getRetailPaymentImageConcurrencyCode(saveError)
+        const conflictMessage =
+          conflictCode === RETAIL_PAYMENT_IMAGE_ITEM_VERSION_CONFLICT
+            ? t(
+                'Це підтвердження оплати змінив інший користувач. Ми завантажили актуальну версію; ваші введені значення збережено у формі.',
+              )
+            : t(
+                'Загальний статус оплати змінився під час збереження. Ми оновили платіж; перевірте дані та повторіть дію.',
+              )
+
+        setEditError(null)
+        setEditNotice(conflictMessage)
+        await refreshEditingPayment(conflictMessage)
+        notifications.show({
+          color: 'yellow',
+          message: conflictMessage,
+        })
+        return
+      }
+
       const message =
         saveError instanceof Error
           ? saveError.message
           : t('Не вдалося виконати запит')
       setEditError(message)
-      if (isDefinitiveRetailPaymentImageConcurrencyConflict(saveError)) {
-        setEditItem(null)
-        setSelectedItem(null)
-        reload()
-        notifications.show({
-          color: 'red',
-          message: t(
-            'Платіж уже змінено іншим користувачем. Дані оновлено.',
-          ),
-        })
-      }
     } finally {
       setSaving(false)
     }
@@ -289,9 +424,10 @@ function usePaymentOnlineShopModel() {
   const hasNext = totalPages ? page < totalPages : items.length === pageSize
 
   return {
-    activeFilters, applyFilters, closeDetail, columns, createError, editError, editItem, error, filterDraft,
-    handleAddPayment, handleEditPayment, hasNext, isCreating, isLoading, isSaving, items, openDetail, page, pageSize,
-    reload, resetFilters, selectedItem, setEditItem, setFilterDraft, setPage, setPageSize,
+    activeFilters, applyFilters, closeDetail, closeEditItem, columns, createError, editError, editItem, editNotice,
+    error, filterDraft, handleAddPayment, handleEditPayment, hasNext, isCreating, isLoading, isRefreshingEdit,
+    isSaving, items, openDetail, openEditItem, page, pageSize, refreshEditingPayment, reload, resetFilters,
+    selectedItem, setFilterDraft, setPage, setPageSize,
     totalPages,
   }
 }
@@ -368,14 +504,17 @@ export function PaymentOnlineShopPage() {
         item={model.selectedItem}
         onAddPayment={model.handleAddPayment}
         onClose={model.closeDetail}
-        onEditItem={model.setEditItem}
+        onEditItem={model.openEditItem}
       />
       <PaymentImageEditModal
         editError={model.editError}
+        editNotice={model.editNotice}
+        isRefreshing={model.isRefreshingEdit}
         isSaving={model.isSaving}
         item={model.editItem}
-        onClose={() => model.setEditItem(null)}
+        onClose={model.closeEditItem}
         onConfirm={model.handleEditPayment}
+        onRefresh={() => void model.refreshEditingPayment()}
       />
     </Stack>
   )

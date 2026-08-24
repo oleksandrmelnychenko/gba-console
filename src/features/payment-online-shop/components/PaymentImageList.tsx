@@ -1,10 +1,11 @@
-import { ActionIcon, Anchor, Text, Tooltip } from '@mantine/core'
-import { Image, Lock } from 'lucide-react'
+import { ActionIcon, Anchor, Image, Text, Tooltip } from '@mantine/core'
+import { Lock } from 'lucide-react'
 import { useMemo } from 'react'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn } from '../../../shared/ui/data-table/types'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { TableRowAction } from '../../../shared/ui/table-row-action'
+import { toProxiedAssetUrl } from '../../../shared/url/proxiedAssetUrl'
 import { PaymentType, type RetailClientPaymentImageItem } from '../types'
 
 export type PaymentImageListProps = {
@@ -20,15 +21,32 @@ export function PaymentImageList({ isEditing, items, onSelect }: PaymentImageLis
     {
       id: 'image',
       header: 'IMG',
+      minWidth: 72,
+      width: 72,
       accessor: (row) => row.ImgUrl,
-      cell: (row) =>
-        row.ImgUrl ? (
-          <Anchor href={row.ImgUrl} target="_blank" rel="noreferrer">
-            <Image size={18} />
+      cell: (row) => {
+        const imageUrl = toProxiedAssetUrl(row.ImgUrl?.trim())
+
+        return imageUrl ? (
+          <Anchor
+            aria-label={t('Відкрити підтвердження оплати')}
+            href={imageUrl}
+            rel="noreferrer"
+            target="_blank"
+          >
+            <Image
+              alt={t('Підтвердження оплати')}
+              fit="cover"
+              h={42}
+              radius="sm"
+              src={imageUrl}
+              w={54}
+            />
           </Anchor>
         ) : (
           ''
-        ),
+        )
+      },
     },
     {
       id: 'amount',
@@ -59,7 +77,11 @@ export function PaymentImageList({ isEditing, items, onSelect }: PaymentImageLis
       header: t('Тип'),
       accessor: (row) => row.PaymentType,
       cell: (row) =>
-        row.PaymentType === PaymentType.Prepayment ? t('Предоплата') : t('Наложений платіж'),
+        row.PaymentType === PaymentType.Prepayment
+          ? t('Передплата')
+          : row.PaymentType === PaymentType.CashOnDelivery
+            ? t('Накладений платіж')
+            : t('Не вказано'),
     },
     {
       id: 'actions',

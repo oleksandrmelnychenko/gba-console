@@ -9,6 +9,15 @@ import type {
   PaymentTypeValue,
 } from './types'
 
+export const RETAIL_PAYMENT_IMAGE_ITEM_VERSION_CONFLICT =
+  'RETAIL_PAYMENT_IMAGE_ITEM_VERSION_CONFLICT'
+export const RETAIL_PAYMENT_STATUS_VERSION_CONFLICT =
+  'RETAIL_PAYMENT_STATUS_VERSION_CONFLICT'
+
+export type RetailPaymentImageConcurrencyCode =
+  | typeof RETAIL_PAYMENT_IMAGE_ITEM_VERSION_CONFLICT
+  | typeof RETAIL_PAYMENT_STATUS_VERSION_CONFLICT
+
 export type PaymentImageFileMetadata = {
   lastModified: number
   name: string
@@ -77,7 +86,37 @@ export function classifyRetailPaymentImageMutationFailure(
 export function isRetailPaymentImageConcurrencyConflict(
   error: unknown,
 ): boolean {
-  return error instanceof ApiError && error.status === 409
+  return getRetailPaymentImageConcurrencyCode(error) !== null
+}
+
+export function getRetailPaymentImageConcurrencyCode(
+  error: unknown,
+): RetailPaymentImageConcurrencyCode | null {
+  if (!(error instanceof ApiError) || error.status !== 409) {
+    return null
+  }
+
+  const payloadCode = readErrorCode(error.payload)
+
+  if (
+    payloadCode === RETAIL_PAYMENT_IMAGE_ITEM_VERSION_CONFLICT ||
+    payloadCode === RETAIL_PAYMENT_STATUS_VERSION_CONFLICT
+  ) {
+    return payloadCode
+  }
+
+  // Compatibility with a rolling deployment where the old server may not
+  // expose ErrorCode yet. Keep this deliberately narrow: other 409 responses
+  // (locked item or reused idempotency key) need different recovery.
+  if (error.message.includes('payment image item changed')) {
+    return RETAIL_PAYMENT_IMAGE_ITEM_VERSION_CONFLICT
+  }
+
+  if (error.message.includes('shop payment status changed')) {
+    return RETAIL_PAYMENT_STATUS_VERSION_CONFLICT
+  }
+
+  return null
 }
 
 export function isDefinitiveRetailPaymentImageConcurrencyConflict(
@@ -120,4 +159,14 @@ function getFileExtension(fileName: string): string {
   return separatorIndex >= 0
     ? fileName.slice(separatorIndex + 1).toLowerCase()
     : ''
+}
+
+function readErrorCode(payload: unknown): string {
+  if (!payload || typeof payload !== 'object' || Array.isArray(payload)) {
+    return ''
+  }
+
+  const value = (payload as { ErrorCode?: unknown }).ErrorCode
+
+  return typeof value === 'string' ? value.trim() : ''
 }
