@@ -38,6 +38,7 @@ const dateTimeFormatter = new Intl.DateTimeFormat('uk-UA', { dateStyle: 'short',
 
 export type PaymentShopDetailDrawerProps = {
   createError: string | null
+  createNotice: string | null
   isCreating: boolean
   item: PaymentShopItem | null
   onAddPayment: (
@@ -63,6 +64,7 @@ const INITIAL_DRAFT: CreateFormDraft = {
 
 export function PaymentShopDetailDrawer({
   createError,
+  createNotice,
   isCreating,
   item,
   onAddPayment,
@@ -140,6 +142,12 @@ export function PaymentShopDetailDrawer({
           {isEditing && (
             <Stack gap="sm">
               <Title order={4}>{t('Підтвердження оплати менеджером')}</Title>
+
+              {createNotice && (
+                <Alert color="yellow" icon={<CircleAlert size={18} />} variant="light">
+                  {createNotice}
+                </Alert>
+              )}
 
               {(createError || validationError) && (
                 <Alert color="red" icon={<CircleAlert size={18} />} variant="light">

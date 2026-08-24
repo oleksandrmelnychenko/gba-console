@@ -92,6 +92,7 @@ function usePaymentOnlineShopModel() {
   const [editItem, setEditItem] = useValueState<RetailClientPaymentImageItem | null>(null)
   const [error, setError] = useValueState<string | null>(null)
   const [createError, setCreateError] = useValueState<string | null>(null)
+  const [createNotice, setCreateNotice] = useValueState<string | null>(null)
   const [editError, setEditError] = useValueState<string | null>(null)
   const [editNotice, setEditNotice] = useValueState<string | null>(null)
   const [isLoading, setLoading] = useValueState(false)
@@ -141,16 +142,18 @@ function usePaymentOnlineShopModel() {
   const openDetail = useCallback(
     (item: PaymentShopItem) => {
       setCreateError(null)
+      setCreateNotice(null)
       setSelectedItem(item)
     },
-    [setCreateError, setSelectedItem],
+    [setCreateError, setCreateNotice, setSelectedItem],
   )
 
   const closeDetail = useCallback(() => {
     setSelectedItem(null)
     setCreateError(null)
+    setCreateNotice(null)
     reload()
-  }, [setCreateError, setSelectedItem])
+  }, [setCreateError, setCreateNotice, setSelectedItem])
 
   const createIncomeOrder = useCallback(
     (item: PaymentShopItem) => {
@@ -200,6 +203,7 @@ function usePaymentOnlineShopModel() {
     }
 
     setCreateError(null)
+    setCreateNotice(null)
     setCreating(true)
 
     try {
@@ -246,10 +250,70 @@ function usePaymentOnlineShopModel() {
         })
         return true
       }
+
+      if (isDefinitiveRetailPaymentImageConcurrencyConflict(addError)) {
+        const conflictMessage = t(
+          'Статус оплати змінився під час збереження. Ми оновили платіж; введені сума, тип, коментар і файл залишилися у формі. Перевірте дані та повторіть дію.',
+        )
+        const refreshed = await refreshSelectedPaymentForCreate(
+          conflictMessage,
+        )
+
+        notifications.show({
+          color: refreshed ? 'yellow' : 'red',
+          message: conflictMessage,
+        })
+        return false
+      }
+
       setCreateError(addError instanceof Error ? addError.message : t('Сталася помилка, заповніть поля!'))
       return false
     } finally {
       setCreating(false)
+    }
+  }
+
+  async function refreshSelectedPaymentForCreate(
+    successMessage: string,
+  ): Promise<boolean> {
+    const paymentImageId = selectedItem?.Id
+    const saleNumber = selectedItem?.Sale?.SaleNumber?.Value || ''
+
+    if (!paymentImageId || !saleNumber) {
+      setCreateError(
+        t('Не вдалося визначити платіж для оновлення. Закрийте форму та відкрийте її повторно.'),
+      )
+      return false
+    }
+
+    try {
+      const freshPayment = await getPaymentShopItemForRefresh(
+        paymentImageId,
+        saleNumber,
+      )
+
+      if (!freshPayment) {
+        setSelectedItem(null)
+        setCreateNotice(null)
+        setCreateError(
+          t('Оплату вже видалено або вона недоступна. Список оновлено.'),
+        )
+        reload()
+        return false
+      }
+
+      setSelectedItem(freshPayment)
+      setItems((current) => replacePaymentShopItem(current, freshPayment))
+      setCreateError(null)
+      setCreateNotice(successMessage)
+      return true
+    } catch (refreshError) {
+      setCreateError(
+        refreshError instanceof Error
+          ? refreshError.message
+          : t('Не вдалося оновити дані оплати'),
+      )
+      return false
     }
   }
 
@@ -424,7 +488,7 @@ function usePaymentOnlineShopModel() {
   const hasNext = totalPages ? page < totalPages : items.length === pageSize
 
   return {
-    activeFilters, applyFilters, closeDetail, closeEditItem, columns, createError, editError, editItem, editNotice,
+    activeFilters, applyFilters, closeDetail, closeEditItem, columns, createError, createNotice, editError, editItem, editNotice,
     error, filterDraft, handleAddPayment, handleEditPayment, hasNext, isCreating, isLoading, isRefreshingEdit,
     isSaving, items, openDetail, openEditItem, page, pageSize, refreshEditingPayment, reload, resetFilters,
     selectedItem, setFilterDraft, setPage, setPageSize,
@@ -500,6 +564,7 @@ export function PaymentOnlineShopPage() {
       <PaymentShopTableCard model={model} />
       <PaymentShopDetailDrawer
         createError={model.createError}
+        createNotice={model.createNotice}
         isCreating={model.isCreating}
         item={model.selectedItem}
         onAddPayment={model.handleAddPayment}
