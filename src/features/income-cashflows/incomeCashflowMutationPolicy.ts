@@ -60,6 +60,12 @@ export function shouldAllocateIncomePaymentToSales(
   )
 }
 
+export function shouldAutoAllocateIncomePaymentByDefault(
+  operationType: IncomePaymentOperationType,
+): boolean {
+  return operationType === IncomePaymentOperationType.ClientPayment
+}
+
 export function getAllowedIncomeCounterpartySearchTypes(
   operationType: IncomePaymentOperationType,
 ): IncomeCounterpartySearchType[] {

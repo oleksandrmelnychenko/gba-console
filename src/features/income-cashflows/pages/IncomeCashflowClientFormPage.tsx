@@ -75,6 +75,7 @@ import {
   resolveIncomePaymentOrderType,
   selectDefaultIncomePaymentMovement,
   shouldAllocateIncomePaymentToSales,
+  shouldAutoAllocateIncomePaymentByDefault,
 } from '../incomeCashflowMutationPolicy'
 import {
   attachIncomeCounterpartyToOrder,
@@ -1454,7 +1455,7 @@ function createInitialForm(operationType: IncomePaymentOperationType): FormState
 
   return {
     amount: 0,
-    autoAllocate: false,
+    autoAllocate: shouldAutoAllocateIncomePaymentByDefault(operationType),
     calculatedValue: 0,
     comment: '',
     counterpartySearch: '',

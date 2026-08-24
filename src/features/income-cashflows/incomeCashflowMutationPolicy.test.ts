@@ -5,6 +5,7 @@ import {
   resolveIncomeCounterpartyPayloadKind,
   selectDefaultIncomePaymentMovement,
   shouldAllocateIncomePaymentToSales,
+  shouldAutoAllocateIncomePaymentByDefault,
 } from './incomeCashflowMutationPolicy'
 import {
   IncomeCounterpartySearchType,
@@ -53,6 +54,28 @@ describe('income cash-flow mutation policy', () => {
       ).toBe(false)
     }
   })
+
+  it('defaults customer payments to automatic debt allocation', () => {
+    expect(
+      shouldAutoAllocateIncomePaymentByDefault(
+        IncomePaymentOperationType.ClientPayment,
+      ),
+    ).toBe(true)
+  })
+
+  it.each([
+    IncomePaymentOperationType.SupplierReturn,
+    IncomePaymentOperationType.OtherAccountingWithCounterparts,
+    IncomePaymentOperationType.OtherIncome,
+    IncomePaymentOperationType.ReturnFromColleague,
+  ])(
+    'keeps automatic debt allocation off for non-customer operation %s',
+    (operationType) => {
+      expect(
+        shouldAutoAllocateIncomePaymentByDefault(operationType),
+      ).toBe(false)
+    },
+  )
 
   it('allows supplier organizations and manufacturer clients for SupplierReturn payloads', () => {
     expect(
