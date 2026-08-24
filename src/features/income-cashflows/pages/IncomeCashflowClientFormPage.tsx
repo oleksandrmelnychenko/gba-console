@@ -91,6 +91,7 @@ import { getPaymentPurposeSuggestionScope } from '../paymentPurposeSuggestionSco
 import {
   buildIncomeCashflowSaleTargets,
   getIncomeCashflowDebtTargetValue,
+  resolveIncomeCashflowPaymentTargets,
   selectIncomeCashflowDebtTargets,
 } from '../incomeCashflowDebtTargets'
 import {
@@ -892,6 +893,13 @@ export function IncomeCashflowClientFormPage() {
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
 
+    const paymentAmountInDebtCurrency = currenciesMatch(
+      selectedCurrency,
+      agreementCurrency,
+    )
+      ? form.amount
+      : null
+
     const validationError = validateForm({
       activeMovement,
       agreementsLoadState,
@@ -921,6 +929,7 @@ export function IncomeCashflowClientFormPage() {
     ) || validateDebtSelection({
       autoAllocate: form.autoAllocate,
       operationType,
+      paymentAmountInDebtCurrency,
       selectedDebtValues: form.selectedDebtValues,
       t,
       visibleDebts,
@@ -936,6 +945,7 @@ export function IncomeCashflowClientFormPage() {
       form,
       counterpartyPayloadKind,
       operationType,
+      paymentAmountInDebtCurrency,
       registerType,
       selectedClient,
       selectedClientAgreement,
@@ -1491,6 +1501,7 @@ function buildIncomePaymentOrder({
   debts,
   form,
   operationType,
+  paymentAmountInDebtCurrency,
   registerType,
   selectedClient,
   selectedClientAgreement,
@@ -1506,6 +1517,7 @@ function buildIncomePaymentOrder({
   debts: ClientInDebt[]
   form: FormState
   operationType: IncomePaymentOperationType
+  paymentAmountInDebtCurrency: number | null
   registerType: PaymentRegisterType
   selectedClient: Client | null
   selectedClientAgreement: ClientAgreement | null
@@ -1521,9 +1533,14 @@ function buildIncomePaymentOrder({
     operationType,
     counterpartyPayloadKind !== 'client',
   )
-  const selectedClientDebts = shouldAllocateSales
-    ? selectIncomeCashflowDebtTargets(debts, form.selectedDebtValues)
-    : []
+  const paymentTargets = shouldAllocateSales
+    ? resolveIncomeCashflowPaymentTargets({
+        autoAllocate: form.autoAllocate,
+        debts,
+        paymentAmountInDebtCurrency,
+        selectedDebtValues: form.selectedDebtValues,
+      })
+    : { clientDebts: [], saleTargets: [] }
   const order: IncomePaymentOrder = {
     Amount: form.amount,
     ArrivalNumber: form.entranceNumber.trim(),
@@ -1534,9 +1551,7 @@ function buildIncomePaymentOrder({
     IncomePaymentOrderType: resolveIncomePaymentOrderType(
       selectedRegister.Type ?? registerType,
     ),
-    IncomePaymentOrderSales: shouldAllocateSales
-      ? buildIncomeCashflowSaleTargets(debts, form.selectedDebtValues)
-      : [],
+    IncomePaymentOrderSales: paymentTargets.saleTargets,
     IsAccounting: form.isAccounting,
     IsManagementAccounting: form.isManagementAccounting,
     OperationType: operationType,
@@ -1555,7 +1570,7 @@ function buildIncomePaymentOrder({
     counterpartyPayloadKind,
     selectedClient,
     selectedClientAgreement,
-    selectedClientDebts,
+    selectedClientDebts: paymentTargets.clientDebts,
     selectedSupplyAgreement,
     selectedSupplyOrganization,
   })
@@ -1645,12 +1660,14 @@ function validateForm({
 function validateDebtSelection({
   autoAllocate,
   operationType,
+  paymentAmountInDebtCurrency,
   selectedDebtValues,
   t,
   visibleDebts,
 }: {
   autoAllocate: boolean
   operationType: IncomePaymentOperationType
+  paymentAmountInDebtCurrency: number | null
   selectedDebtValues: string[]
   t: (value: string) => string
   visibleDebts: ClientInDebt[]
@@ -1663,9 +1680,21 @@ function validateDebtSelection({
   }
 
   if (!selectedDebtValues.length) {
-    return autoAllocate
-      ? t('Оберіть рахунок для автоматичного рознесення')
-      : null
+    if (!autoAllocate) {
+      return null
+    }
+
+    const paymentTargets = resolveIncomeCashflowPaymentTargets({
+      autoAllocate,
+      debts: visibleDebts,
+      paymentAmountInDebtCurrency,
+      selectedDebtValues,
+    })
+
+    return paymentTargets.clientDebts.length > 0 &&
+      paymentTargets.clientDebts.length === paymentTargets.saleTargets.length
+      ? null
+      : t('Не вдалося визначити продаж для вибраного боргу')
   }
 
   const visibleDebtValues = new Set(
@@ -1970,6 +1999,29 @@ function getEntityValue(entity?: NamedEntity | null): string {
 
 function getEntityName(entity?: NamedEntity | null): string {
   return entity?.FullName || entity?.LastName || entity?.Name || entity?.OperationName || entity?.Code || entity?.Number || ''
+}
+
+function currenciesMatch(
+  left?: Currency | null,
+  right?: Currency | null,
+): boolean {
+  if (!left || !right) {
+    return false
+  }
+
+  if (left.Id && right.Id) {
+    return left.Id === right.Id
+  }
+
+  if (left.NetUid && right.NetUid) {
+    return left.NetUid === right.NetUid
+  }
+
+  return Boolean(
+    left.Code &&
+    right.Code &&
+    left.Code.trim().toUpperCase() === right.Code.trim().toUpperCase(),
+  )
 }
 
 function joinTruthyParts(parts: Array<string | null | undefined>, separator = ' '): string {
