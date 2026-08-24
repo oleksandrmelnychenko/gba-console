@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest'
 import type { Client, ClientSubClient } from './types'
-import { getClientFolderChildren, isClientFolder } from './clientFolder'
+import {
+  getClientFolderChildren,
+  getClientFolderSelection,
+  isClientFolder,
+} from './clientFolder'
 
 describe('1C client folder policy', () => {
   it('keeps every explicitly linked XM05200 child even without legacy hierarchy flags', () => {
@@ -59,6 +63,26 @@ describe('1C client folder policy', () => {
 
     expect(isClientFolder(client)).toBe(false)
     expect(getClientFolderChildren(client)).toEqual([])
+  })
+
+  it('opens a virtual source folder through its deterministic persisted anchor', () => {
+    const anchor = createClient(1, 'TE01401', 'ФОП Варченко Олег Іванович')
+    const folder = createClient(100, 'TE01400', 'Тернопіль - Варченко')
+    folder.NetUid = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'
+    folder.SubClients = [
+      createLink(1, anchor),
+      createLink(2, createClient(2, 'TE01402', 'ФОП Закусіло Марія Ігорівна')),
+    ]
+
+    expect(getClientFolderSelection(folder)).toBe(anchor)
+    expect(getClientFolderSelection(anchor)).toBe(anchor)
+  })
+
+  it('does not open a suffix-only virtual folder without a persisted anchor', () => {
+    const emptyFolder = createClient(100, 'TE01400', 'Тернопіль - Варченко')
+
+    expect(isClientFolder(emptyFolder)).toBe(true)
+    expect(getClientFolderSelection(emptyFolder)).toBeNull()
   })
 })
 

@@ -69,7 +69,7 @@ import { ClientSourceQualityBadge } from '../components/structure/ClientSourceQu
 import type { SolvencyScore } from '../solvencyTypes'
 import { clientNetUidKey, indexByClientNetUid } from '../clientNetUidIndex'
 import { getClientIdentityAttentionTitle } from '../clientIdentityAttentionMessage'
-import { isClientFolder } from '../clientFolder'
+import { getClientFolderSelection, isClientFolder } from '../clientFolder'
 import { isSourceManagedClient } from '../clientSourceOwnership'
 import './clients-page.css'
 
@@ -894,8 +894,10 @@ function ClientsPageView({ model }: { model: ReturnType<typeof useClientsPageMod
             toolbarPortalTarget={tableToolbarSlot}
             sorting={sorting}
             onRowClick={(client) => {
-              if (!isClientFolder(client)) {
-                setSelectedClient(client)
+              const selected = getClientFolderSelection(client)
+
+              if (selected) {
+                setSelectedClient(selected)
               }
             }}
             onSortingChange={(nextSorting) => {

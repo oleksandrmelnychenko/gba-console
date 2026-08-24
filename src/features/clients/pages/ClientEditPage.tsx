@@ -879,6 +879,12 @@ export function ClientEditPage() {
     })
   }
 
+  function openFolderClient(clientNetUid: string) {
+    navigate(`${basePath}/${clientNetUid}/general-information${location.search}`, {
+      state: location.state,
+    })
+  }
+
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
 
@@ -1071,6 +1077,7 @@ export function ClientEditPage() {
         onCreateIncoterm={handleCreateIncoterm}
         onCreateRegion={handleCreateRegion}
         onFolderClientSelect={handleFolderClientSelect}
+        onFolderClientOpen={openFolderClient}
         onGoToStep={goToStep}
         onPendingDiscountDraftChange={(draft) => {
           if (!contentClient?.NetUid) {
@@ -1292,6 +1299,7 @@ function ClientEditBody({
   onCreateIncoterm,
   onCreateRegion,
   onFolderClientSelect,
+  onFolderClientOpen,
   onGoToStep,
   onPendingDiscountDraftChange,
   onRegionChange,
@@ -1326,6 +1334,7 @@ function ClientEditBody({
   onCreateIncoterm: (name: string) => void
   onCreateRegion: (name: string) => void
   onFolderClientSelect: (clientNetUid: string) => void
+  onFolderClientOpen: (clientNetUid: string) => void
   onGoToStep: (nextStep: string) => void
   onPendingDiscountDraftChange: (draft: DiscountsTreeDraft | null) => void
   onRegionChange: (region: Region | null) => void
@@ -1397,33 +1406,47 @@ function ClientEditBody({
                   </div>
                 </div>
               ) : null}
-              <EditStepContent
-                allowSourceOverride={allowSourceOverride}
-                client={client}
-                errors={errors}
-                isLoadingRegionCode={isLoadingRegionCode}
-                isUploadingDocuments={isUploadingDocuments}
-                lookups={lookups}
-                productNetId={productNetId}
-                role={role}
-                setAccountNumber={setAccountNumber}
-                setAccountNumberCurrency={setAccountNumberCurrency}
-                setBankField={setBankField}
-                setField={setField}
-                setIbanNumber={setIbanNumber}
-                setIbanNumberCurrency={setIbanNumberCurrency}
-                step={selectedStepValue}
-                onAddDocuments={onAddDocuments}
-                onClientChange={onClientChange}
-                onCreateCountry={onCreateCountry}
-                onCreateIncoterm={onCreateIncoterm}
-                onCreateRegion={onCreateRegion}
-                onPendingDiscountDraftChange={onPendingDiscountDraftChange}
-                onRegionChange={onRegionChange}
-                onRegionCodeFieldChange={onRegionCodeFieldChange}
-                onRemoveDocument={onRemoveDocument}
-                onSaveDocuments={onSaveDocuments}
-              />
+              {selectedStepValue === 'structural-units' && folderTree ? (
+                <div
+                  aria-label={t('Структурні підрозділи клієнта')}
+                  className="client-relationship-card"
+                  role="region"
+                >
+                  <ClientFolderTreeNav
+                    selectedClientNetUid={selectedFolderClientNetUid}
+                    tree={folderTree}
+                    onSelect={onFolderClientOpen}
+                  />
+                </div>
+              ) : (
+                <EditStepContent
+                  allowSourceOverride={allowSourceOverride}
+                  client={client}
+                  errors={errors}
+                  isLoadingRegionCode={isLoadingRegionCode}
+                  isUploadingDocuments={isUploadingDocuments}
+                  lookups={lookups}
+                  productNetId={productNetId}
+                  role={role}
+                  setAccountNumber={setAccountNumber}
+                  setAccountNumberCurrency={setAccountNumberCurrency}
+                  setBankField={setBankField}
+                  setField={setField}
+                  setIbanNumber={setIbanNumber}
+                  setIbanNumberCurrency={setIbanNumberCurrency}
+                  step={selectedStepValue}
+                  onAddDocuments={onAddDocuments}
+                  onClientChange={onClientChange}
+                  onCreateCountry={onCreateCountry}
+                  onCreateIncoterm={onCreateIncoterm}
+                  onCreateRegion={onCreateRegion}
+                  onPendingDiscountDraftChange={onPendingDiscountDraftChange}
+                  onRegionChange={onRegionChange}
+                  onRegionCodeFieldChange={onRegionCodeFieldChange}
+                  onRemoveDocument={onRemoveDocument}
+                  onSaveDocuments={onSaveDocuments}
+                />
+              )}
             </Stack>
           </Card>
         </Grid.Col>

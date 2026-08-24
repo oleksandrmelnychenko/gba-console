@@ -21,6 +21,20 @@ export function getClientFolderChildren(client: Client): Client[] {
   return getLinkedChildren(client)
 }
 
+/**
+ * Resolves the persisted card that represents a row selection. Source-folder
+ * rows are virtual and use the 1C folder identifier as NetUid, so opening the
+ * virtual row directly would request a client that does not exist. The first
+ * linked card is the deterministic folder anchor returned by the server.
+ */
+export function getClientFolderSelection(client: Client): Client | null {
+  if (!isClientFolder(client)) {
+    return client
+  }
+
+  return getLinkedChildren(client)[0] || null
+}
+
 function getLinkedChildren(client: Client): Client[] {
   if (!Array.isArray(client.SubClients)) return []
 

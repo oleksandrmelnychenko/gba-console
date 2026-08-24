@@ -1,5 +1,5 @@
 import { MantineProvider } from '@mantine/core'
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import type { ReactNode } from 'react'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
@@ -217,11 +217,19 @@ describe('ClientEditPage root folder form', () => {
     expect(subclients.getAttribute('aria-pressed')).toBe('false')
 
     fireEvent.click(structuralUnits)
-    expect(await screen.findByText(`relationship:structural-unit:${ROOT_NET_UID}`)).toBeTruthy()
+    const structuralUnitsPanel = await screen.findByRole('region', {
+      name: 'Структурні підрозділи клієнта',
+    })
+    expect(within(structuralUnitsPanel).getByText('Дерево клієнтів')).toBeTruthy()
     expect(screen.getByRole('button', { name: 'Структурні підрозділи' }).getAttribute('aria-pressed')).toBe('true')
 
+    fireEvent.click(within(structuralUnitsPanel).getByRole('button', {
+      name: 'XM05202 — МАГРОМ ТОВ',
+    }))
+    expect(await screen.findByText(`general:${CHILD_NET_UID}`)).toBeTruthy()
+
     fireEvent.click(screen.getByRole('button', { name: 'Сабклієнти' }))
-    expect(await screen.findByText(`relationship:subclient:${ROOT_NET_UID}`)).toBeTruthy()
+    expect(await screen.findByText(`relationship:subclient:${CHILD_NET_UID}`)).toBeTruthy()
     expect(screen.getByRole('button', { name: 'Сабклієнти' }).getAttribute('aria-pressed')).toBe('true')
   })
 
