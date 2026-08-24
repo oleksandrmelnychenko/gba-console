@@ -19,6 +19,7 @@ import { CircleAlert, Plus, Save } from 'lucide-react'
 import { type FormEvent, useEffect, useMemo, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
+import { AppModal, AppModalFooter } from '../../../shared/ui/AppModal'
 import { SearchableSelect } from '../../../shared/ui/SearchableSelect'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
@@ -142,6 +143,11 @@ type DebtSummary = {
 
 type AgreementsLoadState = 'idle' | 'loading' | 'loaded' | 'failed'
 
+type PendingIncomeCashflowSubmission = {
+  autoAllocate: boolean
+  payload: IncomePaymentOrder
+}
+
 const INCOME_CASHFLOWS_PATH = '/accounting/income-cashflows'
 const SEARCH_DEBOUNCE_MS = 300
 const CLIENT_DEBTS_TABLE_DEFAULT_LAYOUT = {
@@ -182,6 +188,8 @@ export function IncomeCashflowClientFormPage() {
   const [isLoading, setLoading] = useValueState(true)
   const [isResolvingCounterparty, setResolvingCounterparty] = useValueState(false)
   const [isSaving, setSaving] = useValueState(false)
+  const [pendingSubmission, setPendingSubmission] =
+    useValueState<PendingIncomeCashflowSubmission | null>(null)
   const [counterpartySelectionRequestGuard] = useState(
     () => createLatestRequestGuard<string>(),
   )
@@ -958,15 +966,26 @@ export function IncomeCashflowClientFormPage() {
       selectedSupplyOrganization,
     })
 
+    setError(null)
+    setPendingSubmission({
+      autoAllocate:
+        operationType === IncomePaymentOperationType.ClientPayment &&
+        form.autoAllocate,
+      payload,
+    })
+  }
+
+  async function confirmSubmission() {
+    if (!pendingSubmission || isSaving) {
+      return
+    }
+
+    const submission = pendingSubmission
     setSaving(true)
     setError(null)
 
     try {
-      await createIncomeCashflow(
-        payload,
-        operationType === IncomePaymentOperationType.ClientPayment &&
-          form.autoAllocate,
-      )
+      await createIncomeCashflow(submission.payload, submission.autoAllocate)
       notifications.show({
         color: 'green',
         message: t('Прибутковий ордер створено'),
@@ -976,45 +995,47 @@ export function IncomeCashflowClientFormPage() {
       setError(saveError instanceof Error ? saveError.message : t('Не вдалося створити прибутковий ордер'))
     } finally {
       setSaving(false)
+      setPendingSubmission(null)
     }
   }
 
   return (
-    <AppDrawer
-      className="income-cashflow-client-form-drawer"
-      opened
-      position="right"
-      size="wide"
-      title={
-        <Group className="income-cashflow-client-form__titlebar" gap="sm" wrap="nowrap">
-          <span className="income-cashflow-client-form__title">{title}</span>
-          <SegmentedControl
-            aria-label={t('Тип оплати')}
-            className="income-cashflow-client-form__tabs income-cashflow-client-form__register-tabs"
-            data={[
-              { label: t('Каса'), value: String(PaymentRegisterType.Cash) },
-              { label: t('Банк'), value: String(PaymentRegisterType.Bank) },
-            ]}
-            disabled={isLoading || isSaving}
-            value={String(registerType)}
-            onChange={handleRegisterTypeChanged}
-          />
-        </Group>
-      }
-      onClose={() => navigate(INCOME_CASHFLOWS_PATH)}
-      footer={
-        <Button
-          color={CREATE_ACTION_COLOR}
-          disabled={isLoading || isResolvingCounterparty || isSaving}
-          form="income-cashflow-client-form"
-          leftSection={<Save size={16} />}
-          loading={isSaving}
-          type="submit"
-        >
-          {t('Зберегти')}
-        </Button>
-      }
-    >
+    <>
+      <AppDrawer
+        className="income-cashflow-client-form-drawer"
+        opened
+        position="right"
+        size="wide"
+        title={
+          <Group className="income-cashflow-client-form__titlebar" gap="sm" wrap="nowrap">
+            <span className="income-cashflow-client-form__title">{title}</span>
+            <SegmentedControl
+              aria-label={t('Тип оплати')}
+              className="income-cashflow-client-form__tabs income-cashflow-client-form__register-tabs"
+              data={[
+                { label: t('Каса'), value: String(PaymentRegisterType.Cash) },
+                { label: t('Банк'), value: String(PaymentRegisterType.Bank) },
+              ]}
+              disabled={isLoading || isSaving || Boolean(pendingSubmission)}
+              value={String(registerType)}
+              onChange={handleRegisterTypeChanged}
+            />
+          </Group>
+        }
+        onClose={() => navigate(INCOME_CASHFLOWS_PATH)}
+        footer={
+          <Button
+            color={CREATE_ACTION_COLOR}
+            disabled={isLoading || isResolvingCounterparty || isSaving || Boolean(pendingSubmission)}
+            form="income-cashflow-client-form"
+            leftSection={<Save size={16} />}
+            loading={isSaving}
+            type="submit"
+          >
+            {t('Зберегти')}
+          </Button>
+        }
+      >
       <form className="income-cashflow-client-form" id="income-cashflow-client-form" onSubmit={handleSubmit}>
         <Stack gap="md">
           <Stack gap={6}>
@@ -1347,7 +1368,40 @@ export function IncomeCashflowClientFormPage() {
           )}
         </Stack>
       </form>
-    </AppDrawer>
+      </AppDrawer>
+
+      <AppModal
+        opened={Boolean(pendingSubmission)}
+        title={t('Підтвердити створення прибуткового ордера')}
+        onClose={() => {
+          if (!isSaving) {
+            setPendingSubmission(null)
+          }
+        }}
+      >
+        <Stack gap="md">
+          <Text size="sm">{t('Створити прибутковий ордер із вказаними даними?')}</Text>
+          <AppModalFooter>
+            <Button
+              color="gray"
+              disabled={isSaving}
+              variant="light"
+              onClick={() => setPendingSubmission(null)}
+            >
+              {t('Скасувати')}
+            </Button>
+            <Button
+              color={CREATE_ACTION_COLOR}
+              disabled={isSaving}
+              loading={isSaving}
+              onClick={() => void confirmSubmission()}
+            >
+              {t('Підтвердити')}
+            </Button>
+          </AppModalFooter>
+        </Stack>
+      </AppModal>
+    </>
   )
 }
 

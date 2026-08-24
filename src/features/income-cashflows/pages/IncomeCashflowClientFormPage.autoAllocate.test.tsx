@@ -4,6 +4,7 @@ import { MemoryRouter } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { I18nProvider } from '../../../shared/i18n/I18nProvider'
 import {
+  createIncomeCashflow,
   getIncomeCashflowClientAgreements,
   getIncomeCashflowClientDebtTotal,
   getIncomeCashflowOrganizations,
@@ -26,6 +27,7 @@ import { IncomeCashflowClientFormPage } from './IncomeCashflowClientFormPage'
 
 vi.mock('../api/incomeCashflowsApi', async (importOriginal) => ({
   ...await importOriginal<typeof import('../api/incomeCashflowsApi')>(),
+  createIncomeCashflow: vi.fn(),
   getIncomeCashflowClientAgreements: vi.fn(),
   getIncomeCashflowClientDebtTotal: vi.fn(),
   getIncomeCashflowOrganizations: vi.fn(),
@@ -176,6 +178,7 @@ describe('IncomeCashflowClientFormPage automatic debt allocation', () => {
       TotalLocal: 9533.39,
     })
     vi.mocked(getIncomeCashflowSpecificExchangeRate).mockResolvedValue(1)
+    vi.mocked(createIncomeCashflow).mockResolvedValue(null)
   })
 
   it('checks automatic debt allocation by default for a customer payment and allows opting out', async () => {
@@ -209,5 +212,61 @@ describe('IncomeCashflowClientFormPage automatic debt allocation', () => {
 
     fireEvent.click(autoAllocate)
     expect((autoAllocate as HTMLInputElement).checked).toBe(false)
+  })
+
+  it('requires an explicit confirmation before creating the payment', async () => {
+    renderPage()
+
+    const counterpartyInput = await screen.findByRole('combobox', {
+      name: 'Контрагент',
+    })
+    await waitFor(() =>
+      expect((counterpartyInput as HTMLInputElement).disabled).toBe(false),
+    )
+
+    fireEvent.change(counterpartyInput, {
+      target: { value: client.FullName },
+    })
+    await waitFor(() =>
+      expect(searchIncomeCashflowCounterparties).toHaveBeenCalled(),
+    )
+    fireEvent.click(
+      await screen.findByRole('option', { name: client.FullName }),
+    )
+    await waitFor(() =>
+      expect(getIncomeCashflowClientAgreements).toHaveBeenCalledWith(
+        client.NetUid,
+      ),
+    )
+
+    fireEvent.change(screen.getByRole('textbox', { name: 'Сума' }), {
+      target: { value: '1250' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: 'Зберегти' }))
+
+    expect(createIncomeCashflow).not.toHaveBeenCalled()
+    expect(
+      await screen.findByRole('dialog', {
+        name: 'Підтвердити створення прибуткового ордера',
+      }),
+    ).toBeTruthy()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Скасувати' }))
+    expect(createIncomeCashflow).not.toHaveBeenCalled()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Зберегти' }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Підтвердити' }))
+
+    await waitFor(() => expect(createIncomeCashflow).toHaveBeenCalledOnce())
+    expect(createIncomeCashflow).toHaveBeenCalledWith(
+      expect.objectContaining({
+        Amount: 1250,
+        Client: expect.objectContaining({ NetUid: client.NetUid }),
+        ClientAgreement: expect.objectContaining({
+          NetUid: agreement.NetUid,
+        }),
+      }),
+      true,
+    )
   })
 })
