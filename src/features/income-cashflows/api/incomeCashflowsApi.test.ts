@@ -30,10 +30,16 @@ describe('income cashflow API lookup contracts', () => {
     apiRequestMock.mockReset()
   })
 
-  it('searches client counterparties through the targeted clients endpoint', async () => {
-    apiRequestMock.mockResolvedValueOnce([{ NetUid: 'client-1' }])
+  it('searches client counterparties by region code through the targeted clients endpoint', async () => {
+    apiRequestMock.mockResolvedValueOnce([{
+      NetUid: 'client-1',
+      RegionCode: { Value: 'CE02501' },
+    }])
 
-    await expect(searchIncomeCashflowCounterparties(' конкорд ', IncomeCounterpartySearchType.Client)).resolves.toEqual([{ NetUid: 'client-1' }])
+    await expect(searchIncomeCashflowCounterparties(' CE02501 ', IncomeCounterpartySearchType.Client)).resolves.toEqual([{
+      NetUid: 'client-1',
+      RegionCode: { Value: 'CE02501' },
+    }])
 
     expect(apiRequestMock).toHaveBeenCalledWith('/clients/all/filtered', {
       query: {
@@ -41,7 +47,32 @@ describe('income cashflow API lookup contracts', () => {
         limit: 20,
         offset: 0,
         typeRoleFilter: '',
-        value: 'конкорд',
+        value: 'CE02501',
+      },
+    })
+  })
+
+  it('preserves client counterparty search by name', async () => {
+    apiRequestMock.mockResolvedValueOnce([{
+      FullName: 'ТОВ «АФ-ТРАНС»',
+      NetUid: 'client-1',
+    }])
+
+    await expect(searchIncomeCashflowCounterparties(
+      ' аф-транс ',
+      IncomeCounterpartySearchType.Client,
+    )).resolves.toEqual([{
+      FullName: 'ТОВ «АФ-ТРАНС»',
+      NetUid: 'client-1',
+    }])
+
+    expect(apiRequestMock).toHaveBeenCalledWith('/clients/all/filtered', {
+      query: {
+        filterSql: 'RegionCode.Value/Client.FullName',
+        limit: 20,
+        offset: 0,
+        typeRoleFilter: '',
+        value: 'аф-транс',
       },
     })
   })

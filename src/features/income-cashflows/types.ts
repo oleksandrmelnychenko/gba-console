@@ -79,6 +79,10 @@ export type PaymentMovementOperation = EntityFields & {
   PaymentMovement?: PaymentMovement | null
 }
 
+export type ClientRegionCode = EntityFields & {
+  Value?: string
+}
+
 export type Debt = EntityFields & {
   Days?: number
   Total?: number
@@ -203,6 +207,7 @@ export type Client = NamedEntity & {
   ClientAgreements?: ClientAgreement[]
   ClientInDebts?: ClientInDebt[]
   PhoneNumber?: string
+  RegionCode?: ClientRegionCode | null
   SubClients?: ClientSubClient[]
 }
 

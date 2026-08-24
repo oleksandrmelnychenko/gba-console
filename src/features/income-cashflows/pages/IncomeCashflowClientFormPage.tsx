@@ -80,6 +80,12 @@ import {
   attachIncomeCounterpartyToOrder,
   validateIncomeCounterpartySelection,
 } from '../incomeCashflowCounterpartyContract'
+import {
+  findIncomeCashflowCounterpartyByOption,
+  getIncomeCashflowCounterpartyLabel,
+  getIncomeCashflowCounterpartyOptions,
+  getIncomeCashflowCounterpartySearchValue,
+} from '../incomeCashflowCounterpartyOptions'
 import { getPaymentPurposeSuggestionScope } from '../paymentPurposeSuggestionScope'
 import {
   buildIncomeCashflowSaleTargets,
@@ -222,11 +228,20 @@ export function IncomeCashflowClientFormPage() {
     [form.selectedMovementValue, paymentMovements],
   )
   const activeMovement = selectedMovement
+  const counterpartySearchValue = useMemo(
+    () => getIncomeCashflowCounterpartySearchValue(
+      counterparties,
+      form.counterpartySearch,
+    ),
+    [counterparties, form.counterpartySearch],
+  )
   const paymentPurposeSuggestionScope = getPaymentPurposeSuggestionScope({
     clientAgreementNetId: selectedClientAgreement?.NetUid,
     clientNetId: selectedClient?.NetUid,
     counterpartySearch: form.counterpartySearch,
-    selectedClientName: selectedClient ? getEntityName(selectedClient) : '',
+    selectedClientName: selectedClient
+      ? getIncomeCashflowCounterpartyLabel(selectedClient)
+      : '',
   })
   const visibleDebts = useMemo(() => {
     if (!selectedClient || !selectedClientAgreement?.Agreement) {
@@ -248,7 +263,10 @@ export function IncomeCashflowClientFormPage() {
     () => (isSupplierSearch ? toSupplyAgreementOptions(supplyOrganizationAgreements) : toClientAgreementOptions(clientAgreements)),
     [clientAgreements, isSupplierSearch, supplyOrganizationAgreements],
   )
-  const counterpartyOptions = useMemo(() => toUniqueLabels(counterparties), [counterparties])
+  const counterpartyOptions = useMemo(
+    () => getIncomeCashflowCounterpartyOptions(counterparties),
+    [counterparties],
+  )
   const payerOptions = useMemo(() => toUniqueLabels(payerClients), [payerClients])
   const movementOptions = useMemo(() => toUniqueLabels(paymentMovements), [paymentMovements])
 
@@ -332,7 +350,7 @@ export function IncomeCashflowClientFormPage() {
   ])
 
   useEffect(() => {
-    const value = form.counterpartySearch.trim()
+    const value = counterpartySearchValue
     let cancelled = false
     const controller = new AbortController()
     const timeoutId = window.setTimeout(() => {
@@ -359,7 +377,7 @@ export function IncomeCashflowClientFormPage() {
       controller.abort()
       window.clearTimeout(timeoutId)
     }
-  }, [form.counterpartySearch, form.searchType, setCounterparties])
+  }, [counterpartySearchValue, form.searchType, setCounterparties])
 
   useEffect(() => {
     if (operationType !== IncomePaymentOperationType.ClientPayment) {
@@ -544,7 +562,10 @@ export function IncomeCashflowClientFormPage() {
   }
 
   async function handleCounterpartySubmit(value: string) {
-    const counterparty = [...counterparties, ...payerClients].find((item) => getEntityName(item) === value)
+    const counterparty = findIncomeCashflowCounterpartyByOption(
+      counterparties,
+      value,
+    ) || payerClients.find((item) => getEntityName(item) === value)
 
     if (!counterparty) {
       return
