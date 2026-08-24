@@ -120,12 +120,14 @@ const fenix: OrganizationWithDefaults = {
   Id: 10,
   Name: 'Fenix',
   NetUid: 'organization-fenix',
+  PriceSourceIsAmg: false,
 }
 
 const amg: OrganizationWithDefaults = {
   Id: 20,
   Name: 'AMG',
   NetUid: 'organization-amg',
+  PriceSourceIsAmg: true,
 }
 
 function createRegister(
@@ -332,5 +334,43 @@ describe('IncomeCashflowClientFormPage payment dependencies', () => {
     expect(
       screen.queryByRole('option', { hidden: true, name: 'Fenix банк' }),
     ).toBeNull()
+  })
+
+  it('checks accounting automatically when the selected organization belongs to AMG', async () => {
+    renderPage()
+
+    const organizationInput = await screen.findByRole<HTMLInputElement>(
+      'combobox',
+      { name: 'Організація' },
+    )
+    const accountingCheckbox = screen.getByRole<HTMLInputElement>('checkbox', {
+      name: 'Бухгалтерський облік',
+    })
+
+    await waitFor(() => expect(organizationInput.disabled).toBe(false))
+    expect(accountingCheckbox.checked).toBe(false)
+
+    fireEvent.click(organizationInput)
+    fireEvent.change(organizationInput, { target: { value: amg.Name } })
+    fireEvent.click(
+      await screen.findByRole('option', { hidden: true, name: amg.Name }),
+    )
+
+    await waitFor(() => expect(accountingCheckbox.checked).toBe(true))
+  })
+
+  it('applies the AMG default on initial selection without locking the checkbox', async () => {
+    vi.mocked(getIncomeCashflowOrganizations).mockResolvedValueOnce([amg, fenix])
+
+    renderPage()
+
+    const accountingCheckbox = await screen.findByRole<HTMLInputElement>(
+      'checkbox',
+      { name: 'Бухгалтерський облік' },
+    )
+
+    await waitFor(() => expect(accountingCheckbox.checked).toBe(true))
+    fireEvent.click(accountingCheckbox)
+    expect(accountingCheckbox.checked).toBe(false)
   })
 })

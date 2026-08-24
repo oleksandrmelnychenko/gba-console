@@ -26,7 +26,9 @@ export type NamedEntity = EntityFields & {
 
 export type Currency = NamedEntity
 
-export type Organization = NamedEntity
+export type Organization = NamedEntity & {
+  PriceSourceIsAmg?: boolean
+}
 
 export type OrganizationWithDefaults = Organization & {
   MainPaymentRegister?: PaymentRegister | null

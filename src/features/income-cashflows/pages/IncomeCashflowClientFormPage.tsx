@@ -306,6 +306,7 @@ export function IncomeCashflowClientFormPage() {
         setPaymentMovements(nextMovements)
         setForm(() => ({
           ...createInitialForm(operationType),
+          isAccounting: isAmgOrganization(defaultOrganization),
           organizationValue: defaultOrganization ? getEntityValue(defaultOrganization) : '',
           paymentRegisterValue: defaultRegister ? getEntityValue(defaultRegister) : '',
           selectedCurrencyValue: defaultCurrency ? getEntityValue(defaultCurrency) : '',
@@ -648,6 +649,7 @@ export function IncomeCashflowClientFormPage() {
       setForm((current) => ({
         ...current,
         counterpartySearch: label,
+        isAccounting: isAmgOrganization(nextOrganization),
         organizationValue: nextOrganization ? getEntityValue(nextOrganization) : '',
         paymentRegisterValue: nextRegister ? getEntityValue(nextRegister) : '',
         selectedAgreementValue: nextAgreement?.Agreement ? getEntityValue(nextAgreement.Agreement) : '',
@@ -719,6 +721,7 @@ export function IncomeCashflowClientFormPage() {
       setForm((current) => ({
         ...current,
         counterpartySearch: label,
+        isAccounting: isAmgOrganization(nextOrganization),
         organizationValue: nextOrganization ? getEntityValue(nextOrganization) : '',
         paymentRegisterValue: nextRegister ? getEntityValue(nextRegister) : '',
         selectedAgreementValue: nextAgreement ? getEntityValue(nextAgreement) : '',
@@ -748,6 +751,7 @@ export function IncomeCashflowClientFormPage() {
 
       setSupplyOrganizationAgreements(nextAgreements)
       updateForm({
+        isAccounting: isAmgOrganization(organization),
         organizationValue: value || '',
         paymentRegisterValue: nextRegister ? getEntityValue(nextRegister) : '',
         selectedAgreementValue: nextAgreement ? getEntityValue(nextAgreement) : '',
@@ -762,6 +766,7 @@ export function IncomeCashflowClientFormPage() {
 
     setClientAgreements(nextClientAgreements)
     updateForm({
+      isAccounting: isAmgOrganization(organization),
       organizationValue: value || '',
       paymentRegisterValue: nextRegister ? getEntityValue(nextRegister) : '',
       selectedAgreementValue: nextAgreement?.Agreement ? getEntityValue(nextAgreement.Agreement) : '',
@@ -1472,6 +1477,12 @@ function createInitialForm(operationType: IncomePaymentOperationType): FormState
     vatAmount: 0,
     vatRate: 0,
   }
+}
+
+function isAmgOrganization(
+  organization: Organization | null | undefined,
+): boolean {
+  return organization?.PriceSourceIsAmg === true
 }
 
 function buildIncomePaymentOrder({
