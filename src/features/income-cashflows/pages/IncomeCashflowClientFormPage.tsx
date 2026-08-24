@@ -99,6 +99,7 @@ import {
 } from '../incomeCashflowFormValidation'
 import { createLatestRequestGuard } from '../latestRequestGuard'
 import { createAutocompleteOptionSubmitGuard } from '../autocompleteOptionSubmitGuard'
+import { buildIncomeCashflowCurrencyOptions } from '../incomeCashflowCurrencyOptions'
 import './income-cashflows-page.css'
 
 type FormState = {
@@ -258,7 +259,10 @@ export function IncomeCashflowClientFormPage() {
   const searchTypeOptions = useMemo(() => getSearchTypeOptions(operationType, t), [operationType, t])
   const organizationOptions = useMemo(() => toEntityOptions(availableOrganizations), [availableOrganizations])
   const registerOptions = useMemo(() => toEntityOptions(filteredPaymentRegisters), [filteredPaymentRegisters])
-  const currencyOptions = useMemo(() => toCurrencyOptions(selectedRegister), [selectedRegister])
+  const currencyOptions = useMemo(
+    () => buildIncomeCashflowCurrencyOptions(selectedRegister),
+    [selectedRegister],
+  )
   const agreementOptions = useMemo(
     () => (isSupplierSearch ? toSupplyAgreementOptions(supplyOrganizationAgreements) : toClientAgreementOptions(clientAgreements)),
     [clientAgreements, isSupplierSearch, supplyOrganizationAgreements],
@@ -1872,27 +1876,6 @@ function toEntityOptions<T extends NamedEntity>(entities: T[]): SelectOption[] {
 
     options.push({
       label: getEntityName(entity) || value,
-      value,
-    })
-  }
-
-  return options
-}
-
-function toCurrencyOptions(register?: PaymentRegister | null): SelectOption[] {
-  const options: SelectOption[] = []
-
-  for (const currencyRegister of register?.PaymentCurrencyRegisters || []) {
-    const currency = currencyRegister.Currency
-    const value = getEntityValue(currency)
-    const balance = typeof currencyRegister.Amount === 'number' ? ` (${moneyFormatter.format(currencyRegister.Amount)})` : ''
-
-    if (!value) {
-      continue
-    }
-
-    options.push({
-      label: `${currency?.Code || currency?.Name || value}${balance}`,
       value,
     })
   }

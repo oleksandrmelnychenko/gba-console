@@ -8,6 +8,7 @@ const { configDefaults, defineConfig } = require('vitest/config')
 module.exports = defineConfig({
   plugins: [react()],
   test: {
+    exclude: [...configDefaults.exclude, '**/e2e/**'],
     globals: true,
     environment: 'jsdom',
     exclude: [...configDefaults.exclude, 'e2e/**'],
