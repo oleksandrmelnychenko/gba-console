@@ -146,13 +146,25 @@ export async function getSalesForReturn(
 }
 
 export async function searchSalesReturnClients(value: string, signal?: AbortSignal): Promise<SalesReturnClient[]> {
+  return searchSalesReturnClientsAt('/clients/sales-returns/search', value, signal)
+}
+
+export async function searchSalesReturnReportClients(value: string, signal?: AbortSignal): Promise<SalesReturnClient[]> {
+  return searchSalesReturnClientsAt('/clients/sales-returns/report/search', value, signal)
+}
+
+async function searchSalesReturnClientsAt(
+  route: string,
+  value: string,
+  signal?: AbortSignal,
+): Promise<SalesReturnClient[]> {
   const searchValue = value.trim()
 
   if (!searchValue) {
     return []
   }
 
-  const result = await apiRequest<unknown>('/clients/all/filtered', {
+  const result = await apiRequest<unknown>(route, {
     query: {
       filterSql: CLIENT_SEARCH_SQL,
       limit: CLIENT_SEARCH_LIMIT,
@@ -175,7 +187,7 @@ export async function getStoragesByOrganization(
   organizationNetId: string,
   skipDefective = false,
 ): Promise<SalesReturnStorage[]> {
-  const result = await apiRequest<unknown>('/storages/get/all/filtered', {
+  const result = await apiRequest<unknown>('/storages/sales-returns/create/filtered', {
     query: {
       organizationNetId,
       skipDefective,
@@ -244,7 +256,7 @@ export async function searchReturnProducts(value: string): Promise<SalesReturnPr
 }
 
 export async function getReturnProductByNetId(netId: string): Promise<SalesReturnProduct | null> {
-  const result = await apiRequest<unknown>('/products/get', {
+  const result = await apiRequest<unknown>('/products/sales-returns/create/details', {
     query: {
       netId,
     },

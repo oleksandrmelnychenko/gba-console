@@ -181,7 +181,7 @@ export async function searchOrganizationClients(value: string): Promise<SadOrgan
 }
 
 export async function searchStathams(value: string): Promise<SadStatham[]> {
-  const result = await apiRequest<unknown>('/supplies/ukraine/carriers/statham/all/search', {
+  const result = await apiRequest<unknown>('/supplies/ukraine/carriers/statham/sad/edit/search', {
     query: {
       value,
     },

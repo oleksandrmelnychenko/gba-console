@@ -1,8 +1,16 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { apiRequest } from '../../../shared/api/apiClient'
-import { getDocumentVerification } from './documentVerificationApi'
+import {
+  getDocumentVerification,
+  getDocumentVerificationStorages,
+} from './documentVerificationApi'
 import { getWarehouseUkraineOrders } from './ordersApi'
-import { getSaleActProtocolEditDocument, getSalePrintDocument, updateWarehouseUkraineSale } from './salesApi'
+import {
+  getSaleActProtocolEditDocument,
+  getSalePrintDocument,
+  getWarehouseUkraineSaleDetails,
+  updateWarehouseUkraineSale,
+} from './salesApi'
 import { getAllShipmentLists, getManualShipmentSales, getShipmentDocument } from './shipmentsApi'
 
 vi.mock('../../../shared/api/apiClient', () => ({
@@ -142,7 +150,7 @@ describe('warehouse Ukraine migrated gap request contracts', () => {
     })
   })
 
-  it('requests the warehouse sale print document with storage context', async () => {
+  it('requests the warehouse sale print document through the storage-scoped facade', async () => {
     apiRequestMock.mockResolvedValueOnce({ PdfDocumentURL: 'https://example.test/sale.pdf' })
 
     await getSalePrintDocument('sale-net-id')
@@ -150,7 +158,6 @@ describe('warehouse Ukraine migrated gap request contracts', () => {
     expect(apiRequestMock).toHaveBeenCalledWith('/sales/warehouse-ukraine/invoices/print', {
       query: {
         netId: 'sale-net-id',
-        isFromStorages: true,
       },
     })
   })
@@ -168,21 +175,43 @@ describe('warehouse Ukraine migrated gap request contracts', () => {
     })
   })
 
-  it('fences warehouse full-sale updates with the same operation marker in body and header', async () => {
+  it('loads verification storages through the verification-open scope', async () => {
+    apiRequestMock.mockResolvedValueOnce({ Items: [] })
+
+    await getDocumentVerificationStorages()
+
+    expect(apiRequestMock).toHaveBeenCalledWith(
+      '/storages/warehouse-ukraine/verification/all',
+    )
+  })
+
+  it('loads warehouse invoice details through its exact scoped facade', async () => {
+    apiRequestMock.mockResolvedValueOnce({ NetUid: 'sale-net-id' })
+
+    await getWarehouseUkraineSaleDetails('sale-net-id')
+
+    expect(apiRequestMock).toHaveBeenCalledWith('/sales/warehouse-ukraine/invoices/details', {
+      query: { netId: 'sale-net-id' },
+    })
+  })
+
+  it.each([
+    ['invoice', '/sales/warehouse-ukraine/invoices/mark-printed'],
+    ['act-protocol', '/sales/warehouse-ukraine/invoices/mark-edit-act-printed'],
+  ] as const)('fences the %s print marker with the same operation id', async (printIntent, path) => {
     apiRequestMock.mockResolvedValueOnce({ NetUid: 'sale-net-id' })
     const operationId = 'EEEEEEEE-EEEE-4EEE-8EEE-EEEEEEEEEEEE'
 
     await updateWarehouseUkraineSale(
       { IsPrinted: true, NetUid: 'sale-net-id', Order: { OrderItems: [{ NetUid: 'row-1' }] } },
+      printIntent,
       { operationId },
     )
 
-    expect(apiRequestMock).toHaveBeenCalledWith('/sales/update', {
+    expect(apiRequestMock).toHaveBeenCalledWith(path, {
       body: {
-        IsPrinted: true,
         NetUid: 'sale-net-id',
         OperationNetUid: operationId.toLowerCase(),
-        Order: null,
       },
       headers: { 'Idempotency-Key': operationId.toLowerCase() },
       method: 'POST',

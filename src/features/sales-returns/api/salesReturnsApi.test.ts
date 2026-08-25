@@ -5,7 +5,9 @@ import {
   createDirectSaleReturn,
   createSaleReturn,
   getSalesForReturn,
+  getStoragesByOrganization,
   getReturnStorages,
+  getReturnProductByNetId,
   searchReturnProducts,
 } from './salesReturnsApi'
 
@@ -60,6 +62,29 @@ describe('sales returns API', () => {
         status: 6,
       },
     })
+  })
+
+  it('uses sale-return-create scoped product and storage lookups', async () => {
+    apiRequestMock.mockResolvedValue({ Items: [] })
+
+    await getStoragesByOrganization('organization-1', true)
+    await getReturnProductByNetId('product-1')
+
+    expect(apiRequestMock.mock.calls).toEqual([
+      [
+        '/storages/sales-returns/create/filtered',
+        {
+          query: {
+            organizationNetId: 'organization-1',
+            skipDefective: true,
+          },
+        },
+      ],
+      [
+        '/products/sales-returns/create/details',
+        { query: { netId: 'product-1' } },
+      ],
+    ])
   })
 
   it('bounds the detailed sales search used by the return drawer', async () => {

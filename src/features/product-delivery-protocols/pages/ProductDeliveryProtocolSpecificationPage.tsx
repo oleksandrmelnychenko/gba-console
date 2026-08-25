@@ -23,7 +23,7 @@ import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { useAuth } from '../../auth/useAuth'
 import { getProtocolForSpecification } from '../api/productDeliveryProtocolsApi'
-import { searchSupplyOrganizations } from '../api/protocolDetailApi'
+import { searchDirectSupplyOrderSpecificationOrganizations } from '../api/protocolDetailApi'
 import {
   addDeliveryDocumentsToInvoice,
   addOrUpdateProductSpecification,
@@ -349,7 +349,7 @@ function useSpecificationModel(netId: string | undefined) {
 
     async function loadDocumentOrganizations() {
       try {
-        const organizations = await searchSupplyOrganizations(value)
+        const organizations = await searchDirectSupplyOrderSpecificationOrganizations(value)
 
         if (!cancelled) {
           setDocumentOrganizations(includeSupplyOrganization(organizations, currentOrganization))

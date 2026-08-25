@@ -22,7 +22,13 @@ import { useI18n } from '../../../../shared/i18n/useI18n'
 import { PermissionKeys } from '../../../../shared/auth/permissionKeys'
 import { useAuth } from '../../../auth/useAuth'
 import { SaleAuditDetail } from '../../../../shared/sale-audit'
-import { getSaleStatisticBySaleId, getSalesByClient } from '../../api/clientSalesApi'
+import {
+  confirmSaleActForEditing,
+  getSaleStatisticBySaleId,
+  getSalesByClient,
+  getShiftedSaleDocument,
+  getShiftedSaleHistoryDocument,
+} from '../../api/clientSalesApi'
 import { SaleLifeCycleType, SaleOrderSource, SalePaymentStatusType } from '../../salesTypes'
 import type { Sale, SaleOrderItem, SaleReturnItem, SaleStatistic } from '../../salesTypes'
 
@@ -45,11 +51,17 @@ type SalesPanelProps = {
 
 type DetailKind = 'audit' | 'edit' | 'carrier'
 
+const CLIENT_SALES_AUDIT_DOCUMENT_API = {
+  confirm: confirmSaleActForEditing,
+  getInvoice: getShiftedSaleDocument,
+  getShifted: getShiftedSaleHistoryDocument,
+}
+
 export function SalesPanel({ netId }: SalesPanelProps) {
   const { t } = useI18n()
   const { hasPermission } = useAuth()
   const canView = hasPermission(PermissionKeys.SalesUkraine.Sale.View)
-  const canOpenDetails = hasPermission(PermissionKeys.SalesUkraine.Sale.OpenDetails)
+  const canEdit = hasPermission(PermissionKeys.SalesUkraine.Sale.Edit)
   const canViewAudit = hasPermission(PermissionKeys.SalesUkraine.Sale.ViewAudit)
   const canOpenDelivery = hasPermission(PermissionKeys.SalesUkraine.Sale.OpenDeliveryDetails)
   const [fromDate, setFromDate] = useValueState(() => new Date())
@@ -120,7 +132,7 @@ export function SalesPanel({ netId }: SalesPanelProps) {
   }
 
   function openEdit(sale: Sale) {
-    if (!canOpenDetails) return
+    if (!canEdit) return
     setDetailSale(sale)
     setDetailKind('edit')
   }
@@ -229,7 +241,7 @@ export function SalesPanel({ netId }: SalesPanelProps) {
                 key={statistic.NetUid || statistic.Sale?.NetUid || statistic.SaleReturn?.NetUid || index}
                 isOpen={openIndex === index}
                 statistic={statistic}
-                canOpenDetails={canOpenDetails}
+                canEdit={canEdit}
                 canOpenDelivery={canOpenDelivery}
                 canViewAudit={canViewAudit}
                 onAudit={openAudit}
@@ -251,8 +263,10 @@ export function SalesPanel({ netId }: SalesPanelProps) {
       >
         {detailKind === 'audit' && (
           <SaleAuditDetail
+            documentApi={CLIENT_SALES_AUDIT_DOCUMENT_API}
             error={auditError}
             isLoading={isAuditLoading}
+            showConfirm={canEdit}
             statistic={auditStatistic}
           />
         )}
@@ -295,7 +309,7 @@ function DateFilter({
 }
 
 function SaleAccordionItem({
-  canOpenDetails,
+  canEdit,
   canOpenDelivery,
   canViewAudit,
   isOpen,
@@ -305,7 +319,7 @@ function SaleAccordionItem({
   onEdit,
   onToggle,
 }: {
-  canOpenDetails: boolean
+  canEdit: boolean
   canOpenDelivery: boolean
   canViewAudit: boolean
   isOpen: boolean
@@ -441,7 +455,7 @@ function SaleAccordionItem({
 
         {showActions && (
           <Group gap={4} wrap="nowrap">
-            {canOpenDetails && !hasMerges && sale.TotalCount !== 0 && (
+            {canEdit && !hasMerges && sale.TotalCount !== 0 && (
               <Tooltip label={t('Редагувати')}>
                 <ActionIcon aria-label={t('Переглянути продаж')} color="gray" variant="subtle" onClick={() => onEdit(sale)}>
                   <SquarePen size={18} />

@@ -299,7 +299,7 @@ export async function deleteClientResourceTaxInspection(netId: string): Promise<
 }
 
 export async function getClientResourceStorages(): Promise<ClientResourceStorage[]> {
-  return getResourceList<ClientResourceStorage>('/storages/all')
+  return getResourceList<ClientResourceStorage>('/storages/client-resources/page/all')
 }
 
 export async function createClientResourceStorage(storage: ClientResourceStorage): Promise<ClientResourceStorage | null> {

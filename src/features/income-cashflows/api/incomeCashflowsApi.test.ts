@@ -15,7 +15,9 @@ import {
   getIncomeCashflowSupplyOrganizationAgreements,
   getIncomeCashflowByNetId,
   getIncomeCashflowForAccountingCashFlow,
-  searchIncomeCashflowCounterparties,
+  searchIncomeCashflowCounterpartiesForOperation,
+  searchOtherIncomeCashflowCounterparties,
+  searchOutgoingCashflowCounterparties,
   searchIncomeCashflowPaymentMovements,
   searchIncomeCashflowPaymentRegisters,
   searchIncomeCashflowPaymentPurposes,
@@ -37,9 +39,9 @@ describe('income cashflow API lookup contracts', () => {
   it('searches client counterparties through the targeted clients endpoint', async () => {
     apiRequestMock.mockResolvedValueOnce([{ NetUid: 'client-1' }])
 
-    await expect(searchIncomeCashflowCounterparties(' конкорд ', IncomeCounterpartySearchType.Client)).resolves.toEqual([{ NetUid: 'client-1' }])
+    await expect(searchOtherIncomeCashflowCounterparties(' конкорд ', IncomeCounterpartySearchType.Client)).resolves.toEqual([{ NetUid: 'client-1' }])
 
-    expect(apiRequestMock).toHaveBeenCalledWith('/clients/all/filtered', {
+    expect(apiRequestMock).toHaveBeenCalledWith('/clients/income-cashflows/other-income/search', {
       query: {
         filterSql: 'RegionCode.Value/Client.FullName',
         limit: 20,
@@ -53,9 +55,9 @@ describe('income cashflow API lookup contracts', () => {
   it('searches manufacturer counterparties through the targeted suppliers endpoint', async () => {
     apiRequestMock.mockResolvedValueOnce([{ NetUid: 'manufacturer-1' }])
 
-    await expect(searchIncomeCashflowCounterparties(' sem ', IncomeCounterpartySearchType.Manufacturer)).resolves.toEqual([{ NetUid: 'manufacturer-1' }])
+    await expect(searchOtherIncomeCashflowCounterparties(' sem ', IncomeCounterpartySearchType.Manufacturer)).resolves.toEqual([{ NetUid: 'manufacturer-1' }])
 
-    expect(apiRequestMock).toHaveBeenCalledWith('/clients/suppliers/all/filtered', {
+    expect(apiRequestMock).toHaveBeenCalledWith('/clients/income-cashflows/other-income/suppliers/search', {
       query: {
         filterSql: 'RegionCode.Value/Client.FullName',
         limit: 20,
@@ -69,9 +71,9 @@ describe('income cashflow API lookup contracts', () => {
   it('searches supply organization counterparties through the supply organizations endpoint', async () => {
     apiRequestMock.mockResolvedValueOnce({ Items: [{ NetUid: 'supplier-1' }] })
 
-    await expect(searchIncomeCashflowCounterparties(' dhl ', IncomeCounterpartySearchType.Supplier)).resolves.toEqual([{ NetUid: 'supplier-1' }])
+    await expect(searchOtherIncomeCashflowCounterparties(' dhl ', IncomeCounterpartySearchType.Supplier)).resolves.toEqual([{ NetUid: 'supplier-1' }])
 
-    expect(apiRequestMock).toHaveBeenCalledWith('/supplies/organizations/all/search', {
+    expect(apiRequestMock).toHaveBeenCalledWith('/supplies/organizations/income-cashflows/other-income/search', {
       query: {
         limit: 20,
         offset: 0,
@@ -126,11 +128,11 @@ describe('income cashflow API lookup contracts', () => {
     )
     expect(apiRequestMock).toHaveBeenNthCalledWith(
       3,
-      '/payments/movements/all',
+      '/payments/movements/accounting/all',
     )
     expect(apiRequestMock).toHaveBeenNthCalledWith(
       4,
-      '/payments/movements/all/search',
+      '/payments/movements/accounting/all/search',
       {
         query: {
           value: 'постачальнику',
@@ -309,6 +311,56 @@ describe('income cashflow API lookup contracts', () => {
       query: {
         auto: true,
       },
+    })
+  })
+
+  it('uses outgoing-create permission facades for every counterparty kind', async () => {
+    apiRequestMock.mockResolvedValue([])
+
+    await searchOutgoingCashflowCounterparties(' client ', IncomeCounterpartySearchType.Client)
+    await searchOutgoingCashflowCounterparties(' manufacturer ', IncomeCounterpartySearchType.Manufacturer)
+    await searchOutgoingCashflowCounterparties(' supplier ', IncomeCounterpartySearchType.Supplier)
+
+    expect(apiRequestMock.mock.calls.map(([path]) => path)).toEqual([
+      '/clients/outgoing-cashflows/create/search',
+      '/clients/outgoing-cashflows/create/suppliers/search',
+      '/supplies/organizations/outgoing-cashflows/create/search',
+    ])
+  })
+
+  it.each([
+    [
+      IncomeCounterpartySearchType.Client,
+      INCOME_PAYMENT_OPERATION_CODE.ClientPayment,
+      '/clients/income-cashflows/client-payment/search',
+    ],
+    [
+      IncomeCounterpartySearchType.Manufacturer,
+      INCOME_PAYMENT_OPERATION_CODE.SupplierReturn,
+      '/clients/income-cashflows/supplier-return/suppliers/search',
+    ],
+    [
+      IncomeCounterpartySearchType.Supplier,
+      INCOME_PAYMENT_OPERATION_CODE.OtherAccountingWithCounterparts,
+      '/supplies/organizations/income-cashflows/counterparty-income/search',
+    ],
+  ])('uses the operation-scoped counterparty facade for type %s and operation %s', async (type, operationType, route) => {
+    apiRequestMock.mockResolvedValueOnce([])
+
+    await expect(
+      searchIncomeCashflowCounterpartiesForOperation('  query  ', type, operationType),
+    ).resolves.toEqual([])
+
+    expect(apiRequestMock).toHaveBeenCalledWith(route, {
+      query: type === IncomeCounterpartySearchType.Supplier
+        ? { limit: 20, offset: 0, value: 'query' }
+        : {
+            filterSql: 'RegionCode.Value/Client.FullName',
+            limit: 20,
+            offset: 0,
+            typeRoleFilter: type === IncomeCounterpartySearchType.Manufacturer ? '4' : '',
+            value: 'query',
+          },
     })
   })
 

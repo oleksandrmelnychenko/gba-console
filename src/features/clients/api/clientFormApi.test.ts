@@ -40,7 +40,7 @@ describe('client form API contracts', () => {
     apiRequestMock.mockResolvedValueOnce(client)
 
     await expect(getClientById('client-net-id')).resolves.toEqual(client)
-    expect(apiRequestMock).toHaveBeenCalledWith('/clients/get', {
+    expect(apiRequestMock).toHaveBeenCalledWith('/clients/registry/details', {
       query: {
         netId: 'client-net-id',
         includeDebts: false,

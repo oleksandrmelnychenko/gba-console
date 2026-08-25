@@ -36,7 +36,7 @@ import {
   getIncomeCashflowPaymentMovements,
   getIncomeCashflowSpecificExchangeRate,
   getIncomeCashflowSupplyOrganizationAgreements,
-  searchIncomeCashflowCounterparties,
+  searchOutgoingCashflowCounterparties,
   searchIncomeCashflowPaymentMovements,
   searchIncomeCashflowPaymentRegisters,
 } from '../../income-cashflows/api/incomeCashflowsApi'
@@ -329,7 +329,7 @@ export function OutgoingPaymentGroupForm({
         return
       }
 
-      void searchIncomeCashflowCounterparties(value, form.searchType, controller.signal)
+      void searchOutgoingCashflowCounterparties(value, form.searchType, controller.signal)
         .then((items) => {
           if (!cancelled) {
             setCounterparties(items)

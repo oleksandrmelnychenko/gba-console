@@ -116,7 +116,7 @@ export async function addDocumentsToSupplyInvoice(
     formData.append('documents', document)
   }
 
-  const result = await apiRequest<unknown>('/supplies/invoices/documents/add', {
+  const result = await apiRequest<unknown>('/supplies/invoices/product-delivery-protocol/documents/add', {
     method: 'POST',
     body: formData,
   })
@@ -197,11 +197,30 @@ export async function removeMergedService(serviceNetId: string): Promise<Protoco
   return normalizeProtocol(result)
 }
 
-export async function searchSupplyOrganizations(value: string): Promise<SupplyOrganization[]> {
+export async function searchUnifiedServiceCreateSupplyOrganizations(value: string): Promise<SupplyOrganization[]> {
+  return searchSupplyOrganizationsAt(
+    '/supplies/organizations/product-delivery-protocols/unified-service/create/search',
+    value,
+  )
+}
+
+export async function searchUnifiedServiceEditSupplyOrganizations(value: string): Promise<SupplyOrganization[]> {
+  return searchSupplyOrganizationsAt(
+    '/supplies/organizations/product-delivery-protocols/unified-service/edit/search',
+    value,
+  )
+}
+
+export async function searchDirectSupplyOrderSpecificationOrganizations(value: string): Promise<SupplyOrganization[]> {
+  return searchSupplyOrganizationsAt(
+    '/supplies/organizations/direct-supply-order/specification/search',
+    value,
+  )
+}
+
+async function searchSupplyOrganizationsAt(route: string, value: string): Promise<SupplyOrganization[]> {
   const searchValue = value.trim()
-  const result = await apiRequest<unknown>(searchValue
-    ? '/supplies/organizations/all/search'
-    : '/supplies/organizations/all', {
+  const result = await apiRequest<unknown>(route, {
     query: {
       limit: SUPPLY_ORGANIZATION_LOOKUP_LIMIT,
       offset: 0,
@@ -226,10 +245,16 @@ export async function getSupplyServiceConsumableProducts(value = ''): Promise<Co
   return readArrayPayload(result, ['ConsumableProducts', 'Items', 'Data']) as ConsumableProduct[]
 }
 
-export async function getResponsibleUsers(): Promise<ProtocolUser[]> {
-  const result = await apiRequest<unknown>('/usermanagement/profiles/all/by', {
-    query: { types: 7 },
-  })
+export async function getUnifiedServiceCreateResponsibleUsers(): Promise<ProtocolUser[]> {
+  return getResponsibleUsersAt('/usermanagement/profiles/product-delivery-protocols/unified-service/create/responsible-users')
+}
+
+export async function getUnifiedServiceEditResponsibleUsers(): Promise<ProtocolUser[]> {
+  return getResponsibleUsersAt('/usermanagement/profiles/product-delivery-protocols/unified-service/edit/responsible-users')
+}
+
+async function getResponsibleUsersAt(route: string): Promise<ProtocolUser[]> {
+  const result = await apiRequest<unknown>(route)
 
   return readArrayPayload(result, ['Items', 'Users', 'Profiles', 'Data']) as ProtocolUser[]
 }

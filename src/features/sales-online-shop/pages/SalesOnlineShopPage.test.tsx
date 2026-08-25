@@ -76,7 +76,7 @@ describe('SalesOnlineShopGridRow shipment acceptance', () => {
             canUnlock={false}
             canViewAudit={false}
             canWillNotShip
-            isAdmin={false}
+            canExportBeforePacking={false}
             isExpanded={false}
             sale={sale}
             saleKey="sale-1"
@@ -126,7 +126,7 @@ describe('SalesOnlineShopGridRow shipment acceptance', () => {
             canUnlock={false}
             canViewAudit={false}
             canWillNotShip={false}
-            isAdmin={false}
+            canExportBeforePacking={false}
             isExpanded={false}
             sale={sale}
             saleKey="sale-1"
@@ -145,6 +145,65 @@ describe('SalesOnlineShopGridRow shipment acceptance', () => {
     )
 
     expect(screen.getByRole('button', { name: 'Документи' })).toBeTruthy()
+  })
+
+  it('uses export_before_packing instead of role type for VAT documents and TTN', async () => {
+    const sale = {
+      BaseLifeCycleStatus: { Name: 'Packaging', SaleLifeCycleType: 1 },
+      ClientAgreement: { Agreement: { Name: 'Договір' }, Client: { FullName: 'Клієнт' } },
+      IsAcceptedToPacking: false,
+      IsVatSale: true,
+      NetUid: 'dc8d6ccc-e2f3-4011-a73f-9be8a570b2ae',
+      Order: { OrderItems: [] },
+      SaleNumber: { Value: 'КАв00002566' },
+      TransporterId: 1,
+    } as unknown as SalesOnlineShopSale
+    const noop = vi.fn()
+    const props = {
+      canEditSale: false,
+      canExpand: false,
+      canExportSaleDocuments: true,
+      canOpenDeliveryDetails: false,
+      canOpenSale: false,
+      canPrintConsignmentNote: true,
+      canUnlock: false,
+      canViewAudit: false,
+      canWillNotShip: false,
+      isExpanded: false,
+      onOpenAudit: noop,
+      onOpenConsignment: noop,
+      onOpenDetails: noop,
+      onOpenDiscount: noop,
+      onOpenEditor: noop,
+      onOpenSale: noop,
+      onToggleExpand: noop,
+      onUnlock: noop,
+      onWillNotShip: noop,
+      sale,
+      saleKey: 'sale-1',
+    }
+    const view = render(
+      <MantineProvider theme={theme}>
+        <I18nProvider>
+          <SalesOnlineShopGridRow {...props} canExportBeforePacking={false} />
+        </I18nProvider>
+      </MantineProvider>,
+    )
+
+    expect(screen.queryByRole('button', { name: 'Документи' })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Дії' })).toBeNull()
+
+    view.rerender(
+      <MantineProvider theme={theme}>
+        <I18nProvider>
+          <SalesOnlineShopGridRow {...props} canExportBeforePacking />
+        </I18nProvider>
+      </MantineProvider>,
+    )
+
+    expect(screen.getByRole('button', { name: 'Документи' })).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: 'Дії' }))
+    expect(await screen.findByText('Друк ТТН')).toBeTruthy()
   })
 
   it.each([
@@ -178,7 +237,7 @@ describe('SalesOnlineShopGridRow shipment acceptance', () => {
             canUnlock={false}
             canViewAudit={false}
             canWillNotShip
-            isAdmin={false}
+            canExportBeforePacking={false}
             isExpanded={false}
             sale={sale}
             saleKey="sale-1"
@@ -238,7 +297,7 @@ describe('SalesOnlineShopGridRow shipment acceptance', () => {
             canUnlock={false}
             canViewAudit={false}
             canWillNotShip={false}
-            isAdmin={false}
+            canExportBeforePacking={false}
             isExpanded={false}
             sale={sale}
             saleKey="sale-1"
@@ -266,7 +325,7 @@ describe('SalesOnlineShopGridRow shipment acceptance', () => {
             canUnlock={false}
             canViewAudit
             canWillNotShip={false}
-            isAdmin={false}
+            canExportBeforePacking={false}
             isExpanded={false}
             sale={sale}
             saleKey="sale-1"

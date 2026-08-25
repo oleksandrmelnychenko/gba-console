@@ -42,7 +42,7 @@ describe('actProvidingServicesApi', () => {
       Total: undefined,
     })
 
-    expect(apiRequestMock).toHaveBeenCalledWith('/act/providing/services/all', {
+    expect(apiRequestMock).toHaveBeenCalledWith('/act/providing/services/registry', {
       query: {
         from: expect.stringContaining('T00:00:00.000'),
         isFiltered: true,

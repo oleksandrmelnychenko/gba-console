@@ -134,6 +134,7 @@ export function NewSaleWizard({
   canViewAudit = true,
   canSubmitCreate = true,
   canSubmitEdit = true,
+  canConvertMergedToBill = false,
   permissionScopedSalesUkraineApi = false,
   onClose,
   onCreated,
@@ -144,6 +145,7 @@ export function NewSaleWizard({
   canViewAudit?: boolean
   canSubmitCreate?: boolean
   canSubmitEdit?: boolean
+  canConvertMergedToBill?: boolean
   onClose: () => void
   onCreated: () => void
   opened: boolean
@@ -405,6 +407,7 @@ export function NewSaleWizard({
             canViewAudit={canViewAudit}
             canSubmitCreate={canSubmitCreate}
             canSubmitEdit={canSubmitEdit}
+            canConvertMergedToBill={canConvertMergedToBill}
             initialSale={editSale ?? null}
             permissionScopedSalesUkraineApi={permissionScopedSalesUkraineApi}
             prefill={prefill ?? null}
@@ -491,6 +494,7 @@ function NewSaleWizardContent({
   canViewAudit,
   canSubmitCreate,
   canSubmitEdit,
+  canConvertMergedToBill,
   initialSale,
   permissionScopedSalesUkraineApi,
   prefill,
@@ -505,6 +509,7 @@ function NewSaleWizardContent({
   canViewAudit: boolean
   canSubmitCreate: boolean
   canSubmitEdit: boolean
+  canConvertMergedToBill: boolean
   initialSale?: SalesUkraineSale | null
   permissionScopedSalesUkraineApi: boolean
   prefill?: NewSaleWizardPrefill | null
@@ -1267,6 +1272,7 @@ function NewSaleWizardContent({
           clientNetId={state.clientNetId}
           hideAgreementsAction
           mode="inline"
+          permissionFlow={permissionFlow}
           reassignDisabled={shellBusy || productsPending || splitItems.length > 0 || Boolean(getWizardSplitRecovery())}
           sale={state.sale}
           withVatAccounting={withVatAccounting}
@@ -1275,7 +1281,7 @@ function NewSaleWizardContent({
         />
       </Group>
     ),
-    [onSaleReassigned, productsPending, shellBusy, splitItems.length, state.clientNetId, state.sale, withVatAccounting],
+    [onSaleReassigned, permissionFlow, productsPending, shellBusy, splitItems.length, state.clientNetId, state.sale, withVatAccounting],
   )
 
   return (
@@ -1293,6 +1299,7 @@ function NewSaleWizardContent({
           client={wizardClient}
           clientNetId={state.clientNetId}
           headerTools={wizardHeaderTools}
+          permissionFlow={permissionFlow}
         />
       )}
 
@@ -1304,7 +1311,7 @@ function NewSaleWizardContent({
       >
         {active === 0 && (
           <NewSaleClientStep
-            canCreate={canSubmitCreate}
+            canConvertMergedToBill={canConvertMergedToBill}
             canEdit={canSubmitEdit}
             canOpenDeliveryDetails={canOpenDeliveryDetails}
             canOpenDetails={canOpenDetails}
@@ -1312,6 +1319,7 @@ function NewSaleWizardContent({
             clientNetId={state.clientNetId}
             headerTools={wizardHeaderTools}
             initialClient={selectedClient}
+            permissionFlow={permissionFlow}
             permissionScopedSalesUkraineApi={permissionScopedSalesUkraineApi}
             onClientResolved={setSelectedClient}
             onAgreementChange={(agreementNetId, agreement) => {
@@ -1343,6 +1351,7 @@ function NewSaleWizardContent({
             agreementNetId={state.agreementNetId}
             client={wizardClient}
             clientNetId={state.clientNetId}
+            permissionFlow={permissionFlow}
             headerTools={wizardHeaderTools}
             sale={productsCart}
             onBusyChange={handleProductsBusyChange}
@@ -1355,6 +1364,7 @@ function NewSaleWizardContent({
         {active === 2 && (
           <NewSaleReviewStep
             canSubmit={permissionFlow === 'create' ? canSubmitCreate : canSubmitEdit}
+            canConvertMergedToBill={canConvertMergedToBill}
             submitDeniedReason={permissionFlow === 'create'
               ? t('Недостатньо прав для створення продажу')
               : t('Недостатньо прав для редагування продажу')}

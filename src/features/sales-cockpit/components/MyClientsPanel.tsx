@@ -46,7 +46,6 @@ import { useOfferFromRecommendations } from '../../sales-offers/useOfferFromReco
 import type { OfferClientAgreement } from '../../sales-offers/types'
 import { NewSaleWizard, type NewSaleWizardPrefill } from '../../sales-ukraine/components/new-sale-wizard/NewSaleWizard'
 import { getWizardClientAgreements } from '../../sales-ukraine/components/new-sale-wizard/wizardClientStepApi'
-import { SALES_UKRAINE_EDIT_PERMISSION } from '../../sales-ukraine/permissions'
 import type { SalesUkraineClientAgreement, SalesUkraineProduct } from '../../sales-ukraine/types'
 import { getCockpitClients } from '../api/salesCockpitApi'
 import type { CockpitClient } from '../types'
@@ -303,7 +302,7 @@ function ClientRecommendationsInline({ client }: { client: CockpitClient }) {
   const { clearCreatedOffer, createdOffer, createOfferFromSelection, isCreatingOffer } =
     useOfferFromRecommendations()
 
-  const canCreateSale = hasPermission(SALES_UKRAINE_EDIT_PERMISSION)
+  const canCreateSale = hasPermission(PermissionKeys.SalesUkraine.Sale.OpenCreateDialog)
   const canCreateOffer = can(PermissionKeys.SalesUkraineOffers.Offer.Create)
   const canExcludeProduct = can(PermissionKeys.Clients.Recommendations.ExcludeProduct)
   const clientNetId = client.client_net_uid
@@ -589,7 +588,9 @@ function ClientRecommendationsInline({ client }: { client: CockpitClient }) {
 
       {canCreateSale && (
         <NewSaleWizard
+          canConvertMergedToBill={hasPermission(PermissionKeys.SalesUkraine.Sale.ConvertMergedToBill)}
           opened={Boolean(wizardPrefill)}
+          permissionScopedSalesUkraineApi
           prefill={wizardPrefill}
           onClose={() => setWizardPrefill(null)}
           onCreated={() => setWizardPrefill(null)}

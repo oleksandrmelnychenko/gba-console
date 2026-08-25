@@ -47,7 +47,6 @@ vi.mock('../../auth/components/PermissionGate', () => ({
 vi.mock('../../auth/useAuth', () => ({
   useAuth: () => ({
     hasPermission: (permission: string) => allowedPermissions.has(permission),
-    user: { UserRole: { UserRoleType: 1 } },
   }),
 }))
 
@@ -60,11 +59,22 @@ vi.mock('../api/depreciatedOrdersApi', () => ({
 }))
 
 vi.mock('../components/DepreciatedOrderCreateModal', () => ({
-  DepreciatedOrderCreateModal: ({ opened, onCreate }: {
+  DepreciatedOrderCreateModal: ({ canCreateManagement, opened, onCreate }: {
+    canCreateManagement: boolean
     opened: boolean
     onCreate: (payload: DepreciatedOrderCreateFromFilePayload) => void
   }) => opened ? (
-    <button type="button" onClick={() => onCreate(createPayload)}>submit-create</button>
+    <div>
+      {canCreateManagement ? <span>management-create-enabled</span> : null}
+      <button type="button" onClick={() => onCreate(createPayload)}>submit-create</button>
+      <button
+        type="button"
+        onClick={() => onCreate({
+          ...createPayload,
+          depreciatedOrder: { ...createPayload.depreciatedOrder, IsManagement: true },
+        })}
+      >submit-management</button>
+    </div>
   ) : null,
 }))
 
@@ -150,6 +160,28 @@ describe('Depreciated orders canonical permission guards', () => {
     fireEvent.click(submit)
 
     expect(createDepreciatedOrderFromFile).not.toHaveBeenCalled()
+  })
+
+  it('requires the independent management-create key at render and final submit', async () => {
+    allowedPermissions.add(PermissionKeys.SystemPages.WriteOff.View)
+    allowedPermissions.add(PermissionKeys.WarehouseAccounting.WriteOff.Order.Create)
+    allowedPermissions.add(PermissionKeys.WarehouseAccounting.WriteOff.Order.CreateManagement)
+    renderPage()
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Створити акт списання' }))
+    expect(screen.getByText('management-create-enabled')).toBeTruthy()
+
+    allowedPermissions.delete(PermissionKeys.WarehouseAccounting.WriteOff.Order.CreateManagement)
+    fireEvent.click(screen.getByRole('button', { name: 'submit-management' }))
+    expect(createDepreciatedOrderFromFile).not.toHaveBeenCalled()
+
+    allowedPermissions.add(PermissionKeys.WarehouseAccounting.WriteOff.Order.CreateManagement)
+    fireEvent.click(screen.getByRole('button', { name: 'submit-management' }))
+    await waitFor(() => expect(createDepreciatedOrderFromFile).toHaveBeenCalledWith(
+      expect.objectContaining({
+        depreciatedOrder: expect.objectContaining({ IsManagement: true }),
+      }),
+    ))
   })
 
   it('keeps details and export independent and rechecks export in the final handler', async () => {

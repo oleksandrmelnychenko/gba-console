@@ -75,7 +75,7 @@ export async function getProductById(
   netId: string,
   signal?: AbortSignal,
 ): Promise<RecommendationProduct | null> {
-  const result = await apiRequest<unknown>('/products/get', {
+  const result = await apiRequest<unknown>('/products/clients/details', {
     query: {
       netId,
     },

@@ -166,14 +166,17 @@ export async function searchConsumableStorages(value: string): Promise<Consumabl
   return readArrayPayload(result, ['Items', 'ConsumablesStorages', 'Storages', 'Data']) as ConsumablesStorage[]
 }
 
-export async function searchSupplyOrganizations(value: string): Promise<SupplyOrganization[]> {
+export async function searchSupplyOrganizations(
+  value: string,
+  mode: 'create' | 'edit',
+): Promise<SupplyOrganization[]> {
   const searchValue = value.trim()
 
   if (!searchValue) {
     return []
   }
 
-  const result = await apiRequest<unknown>('/supplies/organizations/all/search', {
+  const result = await apiRequest<unknown>(`/supplies/organizations/consumable-orders/${mode}/search`, {
     query: {
       limit: SUPPLY_ORGANIZATION_LOOKUP_LIMIT,
       offset: 0,
@@ -185,7 +188,7 @@ export async function searchSupplyOrganizations(value: string): Promise<SupplyOr
 }
 
 export async function searchConsumableProductCategories(value: string): Promise<ConsumableProductCategory[]> {
-  const result = await apiRequest<unknown>('/consumables/categories/search', {
+  const result = await apiRequest<unknown>('/consumables/categories/accounting/search', {
     query: {
       value,
     },
@@ -207,7 +210,7 @@ export async function searchConsumableProductsByVendorCode(value: string): Promi
 }
 
 export async function searchPaymentCostMovements(value: string): Promise<PaymentCostMovement[]> {
-  const result = await apiRequest<unknown>('/payments/costs/movements/all/search', {
+  const result = await apiRequest<unknown>('/payments/costs/movements/accounting/all/search', {
     query: {
       value,
     },
@@ -233,13 +236,13 @@ export async function searchPaymentRegisters(value = ''): Promise<PaymentRegiste
 }
 
 export async function getPaymentMovements(): Promise<PaymentMovement[]> {
-  const result = await apiRequest<unknown>('/payments/movements/all')
+  const result = await apiRequest<unknown>('/payments/movements/consumable-orders/order/pay/all')
 
   return readArrayPayload(result, ['Items', 'PaymentMovements', 'PaymentMovements', 'Data']) as PaymentMovement[]
 }
 
 export async function searchPaymentMovements(value: string): Promise<PaymentMovement[]> {
-  const result = await apiRequest<unknown>('/payments/movements/all/search', {
+  const result = await apiRequest<unknown>('/payments/movements/consumable-orders/order/pay/all/search', {
     query: {
       value,
     },
@@ -285,11 +288,7 @@ export async function createOutcomePaymentOrder(
 }
 
 export async function getFinanceDirectorUsers(): Promise<User[]> {
-  const result = await apiRequest<unknown>('/usermanagement/profiles/all/by', {
-    query: {
-      types: 7,
-    },
-  })
+  const result = await apiRequest<unknown>('/usermanagement/profiles/consumable-orders/payment/responsible-users')
 
   return readArrayPayload(result, ['Items', 'Users', 'Profiles', 'Data']) as User[]
 }

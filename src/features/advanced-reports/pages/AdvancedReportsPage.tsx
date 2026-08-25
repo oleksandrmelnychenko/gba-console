@@ -163,7 +163,7 @@ function AdvancedReportsPageContent() {
       const [nextCurrencies, nextRegisters, nextMovements] = await Promise.all([
         getAdvancedReportCurrencies(),
         searchAdvancedReportPaymentRegisters(''),
-        getAdvancedReportPaymentMovements(),
+        getAdvancedReportPaymentMovements('open'),
       ])
 
       if (lookupRequestRef.current === requestId) {

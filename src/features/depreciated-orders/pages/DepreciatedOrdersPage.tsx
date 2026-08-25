@@ -16,7 +16,6 @@ import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'r
 import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
-import { UserRoleType } from '../../../shared/auth/types'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { translate } from '../../../shared/i18n/translate'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
@@ -74,12 +73,13 @@ function useDepreciatedOrdersPageModel() {
     }),
     [],
   )
-  const { hasPermission, user } = useAuth()
+  const { hasPermission } = useAuth()
   const canCreate = hasPermission(PermissionKeys.WarehouseAccounting.WriteOff.Order.Create)
+  const canCreateManagement = hasPermission(
+    PermissionKeys.WarehouseAccounting.WriteOff.Order.CreateManagement,
+  )
   const canOpenDetails = hasPermission(PermissionKeys.WarehouseAccounting.WriteOff.Order.OpenDetails)
   const canExport = hasPermission(PermissionKeys.WarehouseAccounting.WriteOff.Document.Export)
-  const isAdmin =
-    user?.UserRole?.UserRoleType === UserRoleType.Administrator || user?.UserRole?.UserRoleType === UserRoleType.GBA
   const [filterDraft, setFilterDraft] = useValueState<FilterDraft>(initialFilters)
   const [activeFilters, setActiveFilters] = useValueState<FilterDraft>(initialFilters)
   const [orders, setOrders] = useValueState<DepreciatedOrder[]>([])
@@ -276,7 +276,13 @@ function useDepreciatedOrdersPageModel() {
   }
 
   async function handleCreate(payload: DepreciatedOrderCreateFromFilePayload) {
-    if (!hasPermission(PermissionKeys.WarehouseAccounting.WriteOff.Order.Create)) {
+    if (
+      !hasPermission(PermissionKeys.WarehouseAccounting.WriteOff.Order.Create)
+      || (
+        payload.depreciatedOrder.IsManagement
+        && !hasPermission(PermissionKeys.WarehouseAccounting.WriteOff.Order.CreateManagement)
+      )
+    ) {
       return
     }
 
@@ -307,8 +313,8 @@ function useDepreciatedOrdersPageModel() {
   }
 
   return {
-    canCreate, canExport, canOpenDetails, columns, createError, detailError, downloadDocument, downloadError, downloadOpened, error, exceptionMessages,
-    filterDraft, filterError, isAdmin, isCreateModalOpen, isCreating, isDetailLoading, isDownloading,
+    canCreate, canCreateManagement, canExport, canOpenDetails, columns, createError, detailError, downloadDocument, downloadError, downloadOpened, error, exceptionMessages,
+    filterDraft, filterError, isCreateModalOpen, isCreating, isDetailLoading, isDownloading,
     isLoading, isLoadingStorages, orders, page, pageSize, selectedOrder, storageError, storages, totalPages,
     applyFilters, closeCreateModal, closeDetail, closeDownload, handleCreate,
     openCreateModal, openDetail, openDownload, reload, resetFilters, setExceptionMessages, setPage, setPageSize,
@@ -490,8 +496,8 @@ function DepreciatedOrdersPageView({ model }: { model: ReturnType<typeof useDepr
       />
       {model.canCreate && (
         <DepreciatedOrderCreateModal
+          canCreateManagement={model.canCreateManagement}
           createError={model.createError}
-          isAdmin={model.isAdmin}
           isCreating={model.isCreating}
           isLoadingStorages={model.isLoadingStorages}
           opened={model.isCreateModalOpen}

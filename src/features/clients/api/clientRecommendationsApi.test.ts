@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { apiRequest } from '../../../shared/api/apiClient'
 import {
+  getProductById,
   getMostPurchasedProductsByClientId,
   RecommendationContractError,
   sendRecommendationFeedback,
@@ -95,5 +96,15 @@ describe('clientRecommendationsApi recommendation evidence', () => {
         method: 'POST',
       },
     )
+  })
+
+  it('hydrates recommendation products through the client-details scope', async () => {
+    apiRequestMock.mockResolvedValueOnce({ NetUid: 'product-1' })
+
+    await getProductById('product-1')
+
+    expect(apiRequestMock).toHaveBeenCalledWith('/products/clients/details', {
+      query: { netId: 'product-1' },
+    })
   })
 })

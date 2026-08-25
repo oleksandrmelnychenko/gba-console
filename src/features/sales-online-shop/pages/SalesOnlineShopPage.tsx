@@ -50,10 +50,8 @@ import {
   getSalesUkraineSaleAuditShiftedDocument,
 } from '../../../shared/sale-audit/saleAuditApi'
 import { PermissionKeys } from '../../../shared/auth/permissionKeys'
-import { UserRoleType } from '../../../shared/auth/types'
 import '../../sales-ukraine/pages/sales-grid.css'
 import '../../sales-ukraine/pages/sale-detail-sheet.css'
-import { useAuth } from '../../auth/useAuth'
 import { usePermissions } from '../../auth/usePermissions'
 import {
   acceptSaleForPacking,
@@ -251,12 +249,12 @@ function SalesOnlineShopPageContent() {
 
 function SalesOnlineShopOrdersPage() {
   const { t } = useI18n()
-  const { user } = useAuth()
   const { can } = usePermissions()
   const runSaleUnlock = usePersistentSaleJsonMutationRunner('sale-unlock')
   const runSaleAcceptForPacking = usePersistentSaleJsonMutationRunner('sale-accept-for-packing')
-  const isAdmin =
-    user?.UserRole?.UserRoleType === UserRoleType.Administrator || user?.UserRole?.UserRoleType === UserRoleType.GBA
+  const canExportBeforePacking = can(
+    PermissionKeys.SalesUkraine.Sale.ExportBeforePacking,
+  )
   const canOpenSale = can(PermissionKeys.SalesUkraine.Sale.OpenDetails)
   const canEditSale = can(PermissionKeys.SalesUkraine.Sale.Edit)
   const canOpenDeliveryDetails = can(PermissionKeys.SalesUkraine.Sale.OpenDeliveryDetails)
@@ -951,7 +949,7 @@ function SalesOnlineShopOrdersPage() {
                         canUnlock={canUnlock}
                         canViewAudit={canViewAudit}
                         canWillNotShip={canWillNotShip}
-                        isAdmin={isAdmin}
+                        canExportBeforePacking={canExportBeforePacking}
                         canExpand={canExpand}
                         isExpanded={isExpanded}
                         onToggleExpand={handleRowToggleExpand}
@@ -1092,7 +1090,7 @@ type SalesOnlineShopGridRowProps = {
   canUnlock: boolean
   canViewAudit: boolean
   canWillNotShip: boolean
-  isAdmin: boolean
+  canExportBeforePacking: boolean
   canExpand: boolean
   isExpanded: boolean
   onToggleExpand: (key: string, sale: SalesOnlineShopSale) => void
@@ -1120,7 +1118,7 @@ export const SalesOnlineShopGridRow = memo(function SalesOnlineShopGridRow({
   canUnlock,
   canViewAudit,
   canWillNotShip,
-  isAdmin,
+  canExportBeforePacking,
   canExpand,
   isExpanded,
   onToggleExpand,
@@ -1149,7 +1147,10 @@ export const SalesOnlineShopGridRow = memo(function SalesOnlineShopGridRow({
     sale.BaseLifeCycleStatus?.SaleLifeCycleType ?? sale.BaseLifeCycleStatus?.Name,
   )
   const isPackaging = lifecycleStatusKey === 'Packaging' || lifecycleStatusKey === 'Packaged'
-  const packingDocumentsRestricted = Boolean(sale.IsVatSale) && !sale.IsAcceptedToPacking && !isAdmin
+  const packingDocumentsRestricted =
+    Boolean(sale.IsVatSale)
+    && !sale.IsAcceptedToPacking
+    && !canExportBeforePacking
   const showDocuments = canExportSaleDocuments && (lifecycleStatusKey === 'New' || !packingDocumentsRestricted)
   const showTtn = canPrintConsignmentNote && Boolean(sale.TransporterId) && isPackaging && !packingDocumentsRestricted
   const showWillNotShip = packingAcceptanceLifecycleEligible && canWillNotShip && Boolean(sale.IsVatSale) && !sale.IsAcceptedToPacking

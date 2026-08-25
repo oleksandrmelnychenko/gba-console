@@ -34,7 +34,7 @@ export type ClientUpdateOptions = {
 }
 
 export async function getClientById(netId: string): Promise<Client | null> {
-  const result = await apiRequest<unknown>('/clients/get', {
+  const result = await apiRequest<unknown>('/clients/registry/details', {
     query: {
       netId,
       includeDebts: false,

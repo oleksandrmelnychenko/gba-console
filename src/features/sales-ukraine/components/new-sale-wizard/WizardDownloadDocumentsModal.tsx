@@ -1,4 +1,4 @@
-import { UserRoleType } from '../../../../shared/auth/types'
+import { PermissionKeys } from '../../../../shared/auth/permissionKeys'
 import { useI18n } from '../../../../shared/i18n/useI18n'
 import {
   DocumentExportModal,
@@ -6,13 +6,6 @@ import {
 } from '../../../../shared/ui/document-export-modal/DocumentExportModal'
 import { useAuth } from '../../../auth/useAuth'
 import type { SaleDocumentResult } from '../../types'
-
-const INVOICE_DOCUMENT_ROLES: ReadonlyArray<UserRoleType> = [
-  UserRoleType.GBA,
-  UserRoleType.Administrator,
-  UserRoleType.FinanceDirector,
-  UserRoleType.Accountant,
-]
 
 type WizardDownloadDocument = {
   excelUrl: string | null
@@ -28,17 +21,15 @@ export function WizardDownloadDocumentsModal({
   result: SaleDocumentResult | null
 }) {
   const { t } = useI18n()
-  const { user } = useAuth()
-
-  const roleType = user?.UserRole?.UserRoleType
-  const isAbleToInvoiceDocument = roleType !== undefined && INVOICE_DOCUMENT_ROLES.includes(roleType)
+  const { hasPermission } = useAuth()
+  const canExportInvoice = hasPermission(PermissionKeys.SalesUkraine.Sale.ExportInvoice)
   const documents: WizardDownloadDocument[] = []
 
   if (result) {
     documents.push({ excelUrl: result.excelUrl, label: t('Рахунок на оплату'), pdfUrl: result.pdfUrl })
 
     if (
-      (result.isAcceptedToPacking || isAbleToInvoiceDocument) &&
+      (result.isAcceptedToPacking || canExportInvoice) &&
       (result.invoiceExcelUrl || result.invoicePdfUrl)
     ) {
       documents.push({ excelUrl: result.invoiceExcelUrl, label: t('Видаткова накладна'), pdfUrl: result.invoicePdfUrl })

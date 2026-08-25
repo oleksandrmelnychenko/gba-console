@@ -37,7 +37,7 @@ import {
 } from '../supplyOrderCommentValidation'
 import {
   getSupplyOrderOrganizations,
-  getSupplyOrderSuppliers,
+  getSupplyOrderCreateSuppliers,
   uploadDirectSupplyOrderFromFile,
   uploadSupplyOrderUkraineFromSupplierFile,
 } from '../api/supplyUkraineOrdersApi'
@@ -256,7 +256,7 @@ function SupplyUkraineOrderFileCreatePage({ mode }: { mode: CreateMode }) {
       try {
         const [nextOrganizations, nextSuppliers] = await Promise.all([
           getSupplyOrderOrganizations(),
-          getSupplyOrderSuppliers(),
+          getSupplyOrderCreateSuppliers(mode),
         ])
 
         if (cancelled) {
@@ -295,7 +295,7 @@ function SupplyUkraineOrderFileCreatePage({ mode }: { mode: CreateMode }) {
     return () => {
       cancelled = true
     }
-  }, [t])
+  }, [mode, t])
 
   const filteredSuppliers = useMemo(() => {
     const normalizedSearch = supplierSearch.trim().toLowerCase()

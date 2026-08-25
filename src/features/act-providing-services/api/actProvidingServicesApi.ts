@@ -12,7 +12,7 @@ export async function getActProvidingServices(
   const responseLimit = params.limit
   const requestLimit = responseLimit + 1
 
-  const result = await apiRequest<unknown>('/act/providing/services/all', {
+  const result = await apiRequest<unknown>('/act/providing/services/registry', {
     query: {
       from: toDateTimeQuery(params.from, 'start'),
       isFiltered: params.isFiltered,
@@ -44,7 +44,7 @@ export async function getProvidingServiceActsRegistry(
 }
 
 export async function getActProvidingService(netId: string): Promise<ActProvidingService | null> {
-  const result = await apiRequest<unknown>('/act/providing/services/get/', {
+  const result = await apiRequest<unknown>('/act/providing/services/overview/details', {
     query: {
       netId,
     },

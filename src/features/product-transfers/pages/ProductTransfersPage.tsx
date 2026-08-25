@@ -26,7 +26,6 @@ import { CircleAlert, Download, FileSpreadsheet, Plus, RotateCcw } from 'lucide-
 import { type FormEvent, useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { PermissionKeys } from '../../../shared/auth/permissionKeys'
-import { UserRoleType } from '../../../shared/auth/types'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { translate } from '../../../shared/i18n/translate'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -35,7 +34,6 @@ import { DocumentExportModal } from '../../../shared/ui/document-export-modal/Do
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { Paginator } from '../../../shared/ui/paginator/Paginator'
 import { TableRowAction } from '../../../shared/ui/table-row-action'
-import { useAuth } from '../../auth/useAuth'
 import { usePermissions } from '../../auth/usePermissions'
 import {
   addProductTransferFromFile,
@@ -95,10 +93,12 @@ const amountFormatter = new Intl.NumberFormat('uk-UA', {
 
 function useProductTransfersPageModel({
   canCreate,
+  canCreateManagement,
   canExport,
   canOpenDetails,
 }: {
   canCreate: boolean
+  canCreateManagement: boolean
   canExport: boolean
   canOpenDetails: boolean
 }) {
@@ -111,9 +111,6 @@ function useProductTransfersPageModel({
     }),
     [today],
   )
-  const { user } = useAuth()
-  const isAdmin =
-    user?.UserRole?.UserRoleType === UserRoleType.Administrator || user?.UserRole?.UserRoleType === UserRoleType.GBA
   const [filterDraft, setFilterDraft] = useValueState<FilterDraft>(initialFilters)
   const [activeFilters, setActiveFilters] = useValueState<FilterDraft>(initialFilters)
   const [transfers, setTransfers] = useValueState<ProductTransfer[]>([])
@@ -309,7 +306,7 @@ function useProductTransfersPageModel({
   }
 
   function openCreateModal() {
-    if (!canCreate) {
+    if (!canCreate || (createForm.isManagement && !canCreateManagement)) {
       return
     }
 
@@ -394,8 +391,8 @@ function useProductTransfersPageModel({
   }
 
   return {
-    canCreate, canExport, canOpenDetails, columns, createError, createForm, detailError, downloadDocument, downloadError, downloadOpened,
-    effectiveToStorageNetUid, error, exceptionMessages, filterDraft, filterError, isAdmin, isCreateModalOpen,
+    canCreate, canCreateManagement, canExport, canOpenDetails, columns, createError, createForm, detailError, downloadDocument, downloadError, downloadOpened,
+    effectiveToStorageNetUid, error, exceptionMessages, filterDraft, filterError, isCreateModalOpen,
     isCreating, isDetailLoading, isDownloading, isLoading, isLoadingStorages, page, pageSize, selectedTransfer,
     setPage, setPageSize: handlePageSizeChange, storageError, storageOptions, storages, toStorageOptions,
     totalPages, transfers, closeCreateModal, closeDownload, handleCreate, openCreateModal, openDetail,
@@ -570,6 +567,9 @@ function ProductTransfersPageContent() {
   const { can } = usePermissions()
   const model = useProductTransfersPageModel({
     canCreate: can(PermissionKeys.ProductTransfers.Transfer.Create),
+    canCreateManagement: can(
+      PermissionKeys.ProductTransfers.Transfer.CreateManagement,
+    ),
     canExport: can(PermissionKeys.ProductTransfers.Document.Export),
     canOpenDetails: can(PermissionKeys.ProductTransfers.Transfer.OpenDetails),
   })
@@ -722,7 +722,7 @@ function ProductTransferDetailDrawer({ model }: { model: ReturnType<typeof usePr
 function ProductTransferCreateModal({ model }: { model: ReturnType<typeof useProductTransfersPageModel> }) {
   const { t } = useI18n()
   const {
-    closeCreateModal, createError, createForm, effectiveToStorageNetUid, handleCreate, isAdmin, isCreateModalOpen,
+    canCreateManagement, closeCreateModal, createError, createForm, effectiveToStorageNetUid, handleCreate, isCreateModalOpen,
     isCreating, isLoadingStorages, setCreateForm, storageError, storageOptions, storages, toStorageOptions,
   } = model
 
@@ -787,7 +787,7 @@ function ProductTransferCreateModal({ model }: { model: ReturnType<typeof usePro
               />
               <Switch
                 checked={createForm.isManagement}
-                disabled={!isAdmin || isCreating}
+                disabled={!canCreateManagement || isCreating}
                 label={t('Управлінське переміщення')}
                 mt={30}
                 onChange={(event) => {
@@ -862,9 +862,9 @@ function ProductTransferCreateModal({ model }: { model: ReturnType<typeof usePro
               onChange={(file) => setCreateForm((current) => ({ ...current, file }))}
             />
 
-            {!isAdmin && (
+            {!canCreateManagement && (
               <Text c="dimmed" size="xs">
-                {t('Управлінське переміщення доступне тільки для ролей Administrator або GBA.')}
+                {t('Немає права створювати управлінське переміщення.')}
               </Text>
             )}
 

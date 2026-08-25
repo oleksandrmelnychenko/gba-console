@@ -3,7 +3,7 @@ import { formatDateForQuery, formatDateInputForQuery } from '../../../shared/dat
 import type { ClientPrintDocument } from '../types'
 import type { ClientSalesParams, SaleStatistic } from '../salesTypes'
 import {
-  confirmSaleAuditHistory,
+  confirmSalesUkraineSaleAuditHistory,
   type SaleAuditHistoryMutationPayload,
 } from '../../../shared/sale-audit/saleAuditApi'
 import type { SalesMutationOperationOptions } from '../../sales-ukraine/salesMutationOperation'
@@ -38,10 +38,11 @@ export async function getShiftedSaleDocument(
   netId: string,
   historyNetId: string,
 ): Promise<ClientPrintDocument | null> {
-  const result = await apiRequest<unknown>('/sales/get/document/history', {
+  const result = await apiRequest<unknown>('/sales/ukraine/audit/invoice-document', {
     query: {
-      netId,
       historyNetId,
+      isFromStorages: false,
+      netId,
     },
   })
 
@@ -52,7 +53,7 @@ export async function getShiftedSaleHistoryDocument(
   netId: string,
   historyNetId: string,
 ): Promise<ClientPrintDocument | null> {
-  const result = await apiRequest<unknown>('/sales/get/shifted/hisotry/document', {
+  const result = await apiRequest<unknown>('/sales/ukraine/audit/shifted-document', {
     query: {
       netId,
       historyNetId,
@@ -66,7 +67,7 @@ export async function confirmSaleActForEditing(
   payload: SaleAuditHistoryMutationPayload,
   operation: SalesMutationOperationOptions,
 ): Promise<void> {
-  return confirmSaleAuditHistory(payload, operation)
+  return confirmSalesUkraineSaleAuditHistory(payload, operation)
 }
 
 function normalizeDocument(result: unknown): ClientPrintDocument | null {

@@ -257,7 +257,7 @@ export const ACCOUNTING_OPERATION_CATALOG: readonly AccountingOperationDefinitio
       source: 'document',
     },
     direction: 'outcome',
-    endpoint: '/payments/orders/outcome/new/supplies',
+    endpoint: '/payments/orders/outcome/available-payments/new/supplies',
     id: ACCOUNTING_OPERATION_ID.OutcomeSupplierPaymentByTask,
     labels: {
       form: 'Оплата постачальнику по платіжній задачі',

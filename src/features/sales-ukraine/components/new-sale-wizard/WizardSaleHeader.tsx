@@ -42,6 +42,7 @@ export const WizardSaleHeader = memo(function WizardSaleHeader({
   clientNetId,
   hideAgreementsAction = false,
   mode = 'strip',
+  permissionFlow = 'create',
   reassignDisabled,
   sale,
   withVatAccounting,
@@ -51,6 +52,7 @@ export const WizardSaleHeader = memo(function WizardSaleHeader({
   clientNetId: string | null
   hideAgreementsAction?: boolean
   mode?: 'inline' | 'strip'
+  permissionFlow?: 'create' | 'edit'
   reassignDisabled?: boolean
   sale: SalesUkraineSale | null
   withVatAccounting: boolean
@@ -67,6 +69,7 @@ export const WizardSaleHeader = memo(function WizardSaleHeader({
       clientNetId={clientNetId}
       hideAgreementsAction={hideAgreementsAction}
       mode={mode}
+      permissionFlow={permissionFlow}
       reassignDisabled={reassignDisabled}
       sale={sale}
       withVatAccounting={withVatAccounting}
@@ -80,6 +83,7 @@ function WizardSaleHeaderContent({
   clientNetId,
   hideAgreementsAction,
   mode,
+  permissionFlow,
   reassignDisabled,
   sale,
   withVatAccounting,
@@ -89,6 +93,7 @@ function WizardSaleHeaderContent({
   clientNetId: string
   hideAgreementsAction: boolean
   mode: 'inline' | 'strip'
+  permissionFlow: 'create' | 'edit'
   reassignDisabled?: boolean
   sale: SalesUkraineSale | null
   withVatAccounting: boolean
@@ -112,7 +117,7 @@ function WizardSaleHeaderContent({
 
     async function load(id: string) {
       try {
-        const nextClient = await getWizardHeaderClient(id)
+        const nextClient = await getWizardHeaderClient(id, permissionFlow)
 
         if (!cancelled) {
           setClient(nextClient)
@@ -129,7 +134,7 @@ function WizardSaleHeaderContent({
     return () => {
       cancelled = true
     }
-  }, [clientNetId])
+  }, [clientNetId, permissionFlow])
 
   useEffect(() => {
     let cancelled = false
@@ -416,6 +421,7 @@ function WizardSaleHeaderContent({
         <WizardReassignSaleModal
           client={client}
           opened={isReassignOpen}
+          permissionFlow={permissionFlow}
           sale={sale}
           onClose={() => setReassignOpened(false)}
           onReassigned={(movedSale) => {

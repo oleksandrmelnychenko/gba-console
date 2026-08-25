@@ -8,8 +8,8 @@ import {
 import { requirePersistedGuid } from '../../features/sales-ukraine/salesPayloadGuards'
 import type { SaleAuditPrintDocument, SaleAuditStatistic } from './saleAuditTypes'
 
-export async function getSaleStatisticBySaleId(netId: string): Promise<SaleAuditStatistic | null> {
-  const result = await apiRequest<unknown>('/sales/get/shifted', {
+export async function getWarehouseUkraineSaleAudit(netId: string): Promise<SaleAuditStatistic | null> {
+  const result = await apiRequest<unknown>('/sales/warehouse-ukraine/editing/audit', {
     query: {
       netId,
     },
@@ -34,8 +34,11 @@ export async function getSalesUkraineEditSaleStatistic(netId: string): Promise<S
   return normalizeObject<SaleAuditStatistic>(result)
 }
 
-export async function getShiftedSaleDocument(netId: string, historyNetId: string): Promise<SaleAuditPrintDocument | null> {
-  const result = await apiRequest<unknown>('/sales/get/document/history', {
+export async function getWarehouseUkraineAuditInvoiceDocument(
+  netId: string,
+  historyNetId: string,
+): Promise<SaleAuditPrintDocument | null> {
+  const result = await apiRequest<unknown>('/sales/warehouse-ukraine/editing/audit/invoice-document', {
     query: {
       historyNetId,
       netId,
@@ -52,7 +55,6 @@ export async function getSalesUkraineSaleAuditInvoiceDocument(
   const result = await apiRequest<unknown>('/sales/ukraine/audit/invoice-document', {
     query: {
       historyNetId,
-      isFromStorages: false,
       netId,
     },
   })
@@ -60,11 +62,11 @@ export async function getSalesUkraineSaleAuditInvoiceDocument(
   return normalizeDocument(result)
 }
 
-export async function getShiftedSaleHistoryDocument(
+export async function getWarehouseUkraineAuditShiftedDocument(
   netId: string,
   historyNetId: string,
 ): Promise<SaleAuditPrintDocument | null> {
-  const result = await apiRequest<unknown>('/sales/get/shifted/hisotry/document', {
+  const result = await apiRequest<unknown>('/sales/warehouse-ukraine/editing/audit/shifted-document', {
     query: {
       historyNetId,
       netId,
@@ -91,17 +93,6 @@ export async function getSalesUkraineSaleAuditShiftedDocument(
 export type SaleAuditHistoryMutationPayload = {
   NetId: string
 } & SalesMutationOperationPayload
-
-export async function confirmSaleAuditHistory(
-  payload: SaleAuditHistoryMutationPayload,
-  operation: SalesMutationOperationOptions,
-): Promise<void> {
-  return confirmSaleAuditHistoryAt(
-    '/protocol/act/invoice/set/edit/act/for/editing',
-    payload,
-    operation,
-  )
-}
 
 export async function confirmSalesUkraineSaleAuditHistory(
   payload: SaleAuditHistoryMutationPayload,

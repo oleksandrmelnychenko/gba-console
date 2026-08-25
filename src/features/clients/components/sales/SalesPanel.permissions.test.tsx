@@ -1,14 +1,24 @@
 import { MantineProvider } from '@mantine/core'
-import { render, screen, waitFor } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { PermissionKeys } from '../../../../shared/auth/permissionKeys'
-import { getSaleStatisticBySaleId, getSalesByClient } from '../../api/clientSalesApi'
+import {
+  confirmSaleActForEditing,
+  getSaleStatisticBySaleId,
+  getSalesByClient,
+  getShiftedSaleDocument,
+  getShiftedSaleHistoryDocument,
+} from '../../api/clientSalesApi'
 import { SaleLifeCycleType, SalePaymentStatusType } from '../../salesTypes'
 import { SalesPanel } from './SalesPanel'
 
 const authState = vi.hoisted(() => ({
   permissions: new Set<string>(),
   t: (value: string) => value,
+}))
+
+const auditDetailState = vi.hoisted(() => ({
+  props: null as null | Record<string, unknown>,
 }))
 
 vi.mock('../../../auth/useAuth', () => ({
@@ -20,13 +30,24 @@ vi.mock('../../../../shared/i18n/useI18n', () => ({
 }))
 
 vi.mock('../../api/clientSalesApi', () => ({
+  confirmSaleActForEditing: vi.fn(),
   getSaleStatisticBySaleId: vi.fn(),
   getSalesByClient: vi.fn(),
+  getShiftedSaleDocument: vi.fn(),
+  getShiftedSaleHistoryDocument: vi.fn(),
+}))
+
+vi.mock('../../../../shared/sale-audit', () => ({
+  SaleAuditDetail: (props: Record<string, unknown>) => {
+    auditDetailState.props = props
+    return <div data-testid="sale-audit-detail" />
+  },
 }))
 
 describe('SalesPanel permissions', () => {
   beforeEach(() => {
     authState.permissions = new Set()
+    auditDetailState.props = null
     vi.mocked(getSaleStatisticBySaleId).mockReset().mockResolvedValue(null)
     vi.mocked(getSalesByClient).mockReset().mockResolvedValue([
       {
@@ -62,12 +83,22 @@ describe('SalesPanel permissions', () => {
     expect(screen.queryByLabelText('Переглянути продаж')).toBeNull()
     expect(screen.getByLabelText('Рух ТМЦ')).toBeTruthy()
     expect(screen.queryByLabelText('Нова пошта')).toBeNull()
+
+    fireEvent.click(screen.getByLabelText('Рух ТМЦ'))
+    await waitFor(() => expect(screen.getByTestId('sale-audit-detail')).toBeTruthy())
+
+    expect(auditDetailState.props?.showConfirm).toBe(false)
+    expect(auditDetailState.props?.documentApi).toEqual({
+      confirm: confirmSaleActForEditing,
+      getInvoice: getShiftedSaleDocument,
+      getShifted: getShiftedSaleHistoryDocument,
+    })
   })
 
-  it('maps details and delivery to their existing Sales Ukraine rights', async () => {
+  it('maps edit and delivery to their exact Sales Ukraine rights', async () => {
     authState.permissions = new Set([
       PermissionKeys.SalesUkraine.Sale.View,
-      PermissionKeys.SalesUkraine.Sale.OpenDetails,
+      PermissionKeys.SalesUkraine.Sale.Edit,
       PermissionKeys.SalesUkraine.Sale.OpenDeliveryDetails,
     ])
     renderPanel()
@@ -77,6 +108,21 @@ describe('SalesPanel permissions', () => {
     expect(screen.getByLabelText('Переглянути продаж')).toBeTruthy()
     expect(screen.queryByLabelText('Рух ТМЦ')).toBeNull()
     expect(screen.getByLabelText('Нова пошта')).toBeTruthy()
+  })
+
+  it('allows audit confirmation only with sale.edit', async () => {
+    authState.permissions = new Set([
+      PermissionKeys.SalesUkraine.Sale.View,
+      PermissionKeys.SalesUkraine.Sale.ViewAudit,
+      PermissionKeys.SalesUkraine.Sale.Edit,
+    ])
+    renderPanel()
+
+    await waitFor(() => expect(screen.getByText('S-1')).toBeTruthy())
+    fireEvent.click(screen.getByLabelText('Рух ТМЦ'))
+    await waitFor(() => expect(screen.getByTestId('sale-audit-detail')).toBeTruthy())
+
+    expect(auditDetailState.props?.showConfirm).toBe(true)
   })
 })
 

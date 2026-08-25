@@ -25,7 +25,7 @@ vi.mock('../api/productDeliveryProtocolsApi', () => ({
 }))
 
 vi.mock('../api/protocolDetailApi', () => ({
-  searchSupplyOrganizations: vi.fn(async () => []),
+  searchDirectSupplyOrderSpecificationOrganizations: vi.fn(async () => []),
 }))
 
 vi.mock('../api/protocolSpecificationApi', () => ({

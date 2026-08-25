@@ -30,7 +30,7 @@ import {
   getCurrentEuroExchangeRate,
   getIncomeCashflowOrganizations,
   getIncomeCashflowPaymentMovements,
-  searchIncomeCashflowCounterparties,
+  searchOtherIncomeCashflowCounterparties,
   searchIncomeCashflowPaymentMovements,
   searchIncomeCashflowPaymentRegisters,
 } from '../api/incomeCashflowsApi'
@@ -272,7 +272,7 @@ function IncomeCashflowConversionFormPageContent() {
         return
       }
 
-      void searchIncomeCashflowCounterparties(
+      void searchOtherIncomeCashflowCounterparties(
         value,
         form.searchType,
         controller.signal,

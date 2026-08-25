@@ -8,7 +8,6 @@ import { realtimeEvents, useRealtimeEvent } from '../../../../shared/realtime/ev
 import { SaleAuditDetail } from '../../../../shared/sale-audit/SaleAuditDetail'
 import {
   confirmSalesUkraineSaleAuditHistory,
-  getSaleStatisticBySaleId,
   getSalesUkraineEditSaleStatistic,
   getSalesUkraineSaleAudit,
   getSalesUkraineSaleAuditInvoiceDocument,
@@ -57,7 +56,7 @@ import {
   type WizardSaleRegisterStatistic,
 } from './wizardClientStepApi'
 import { WizardOrderedProductsDrawer } from './WizardOrderedProductsDrawer'
-import { getWizardHeaderClient } from './wizardSaleHeaderApi'
+import { getWizardHeaderClient, type WizardSalesPermissionFlow } from './wizardSaleHeaderApi'
 import { setWizardKeyboardState, useWizardKeyboard, useWizardKeyHandler, type WizardKeyEvent } from './wizardKeyboard'
 
 type WizardPrintState = {
@@ -77,7 +76,7 @@ const SALES_UKRAINE_AUDIT_DOCUMENT_API = {
 }
 
 export function NewSaleClientStep({
-  canCreate = true,
+  canConvertMergedToBill = false,
   canEdit = true,
   canOpenDeliveryDetails = true,
   canOpenDetails = true,
@@ -94,9 +93,10 @@ export function NewSaleClientStep({
   onEditMergedSale,
   onInvoiceMergedSale,
   onRequestClose,
+  permissionFlow = 'create',
   permissionScopedSalesUkraineApi = false,
 }: {
-  canCreate?: boolean
+  canConvertMergedToBill?: boolean
   canEdit?: boolean
   canOpenDeliveryDetails?: boolean
   canOpenDetails?: boolean
@@ -113,6 +113,7 @@ export function NewSaleClientStep({
   onInvoiceMergedSale?: (sale: SalesUkraineSale, unionSale: SalesUkraineSale | null) => void
   onOpenSale: (sale: SalesUkraineSale) => void
   onRequestClose?: () => void
+  permissionFlow?: WizardSalesPermissionFlow
   permissionScopedSalesUkraineApi?: boolean
 }) {
   const { t } = useI18n()
@@ -410,7 +411,7 @@ export function NewSaleClientStep({
     searchAbortRef.current = controller
 
     try {
-      const data = await searchWizardClients(value, 20, 0, controller.signal)
+      const data = await searchWizardClients(value, 20, 0, controller.signal, permissionFlow)
 
       if (searchRequestRef.current === requestId && !controller.signal.aborted) {
         loadedCountRef.current = data.length
@@ -505,7 +506,7 @@ export function NewSaleClientStep({
     virtualSearchAbortRef.current = controller
 
     try {
-      const data = await searchWizardClients(query, 10, loadedCountRef.current, controller.signal)
+      const data = await searchWizardClients(query, 10, loadedCountRef.current, controller.signal, permissionFlow)
 
       if (!data.length) {
         loadedCountRef.current = 0
@@ -877,11 +878,9 @@ export function NewSaleClientStep({
       return
     }
 
-    const loadStatistic = permissionScopedSalesUkraineApi
-      ? semantic === 'audit'
-        ? getSalesUkraineSaleAudit
-        : getSalesUkraineEditSaleStatistic
-      : getSaleStatisticBySaleId
+    const loadStatistic = semantic === 'audit'
+      ? getSalesUkraineSaleAudit
+      : getSalesUkraineEditSaleStatistic
     const statistic = await loadStatistic(sale.NetUid).catch(() => null)
 
     if (statistic?.Sale) {
@@ -913,9 +912,7 @@ export function NewSaleClientStep({
 
     void (async () => {
       try {
-        const statistic = await (permissionScopedSalesUkraineApi
-          ? getSalesUkraineSaleAudit
-          : getSaleStatisticBySaleId)(sale.NetUid as string)
+        const statistic = await getSalesUkraineSaleAudit(sale.NetUid as string)
 
         if (auditRequestRef.current === requestId) {
           setAuditStatistic(statistic)
@@ -1081,7 +1078,7 @@ export function NewSaleClientStep({
     let cancelled = false
 
     async function restore(netId: string) {
-      const client = await getWizardHeaderClient(netId).catch(() => null)
+      const client = await getWizardHeaderClient(netId, permissionFlow).catch(() => null)
 
       if (cancelled || !client || (client.Id ?? 0) <= 0) {
         return
@@ -1116,7 +1113,7 @@ export function NewSaleClientStep({
     return () => {
       cancelled = true
     }
-  }, [clientNetId])
+  }, [clientNetId, permissionFlow])
 
   useEffect(
     () => () => {
@@ -1147,6 +1144,7 @@ export function NewSaleClientStep({
             debts={groupedDebts}
             headerClose={headerClose}
             headerTools={headerTools}
+            permissionFlow={permissionFlow}
             registryCount={registryItems.length}
           />
         )}
@@ -1258,7 +1256,7 @@ export function NewSaleClientStep({
       />
 
       <MergedSalesDrawer
-        canCreateInvoice={canCreate}
+        canCreateInvoice={canConvertMergedToBill}
         canEdit={canEdit}
         clientAgreementNetId={mergedSale?.ClientAgreement?.NetUid ?? null}
         loadCurrentUnmergedSale={permissionScopedSalesUkraineApi

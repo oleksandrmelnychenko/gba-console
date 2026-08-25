@@ -4,7 +4,7 @@ import type { DirectOrderProductIncome } from '../types'
 export type SupplyOrderProductIncomeSource = 'direct' | 'toUkraine'
 
 const productIncomeEndpointBySource: Record<SupplyOrderProductIncomeSource, string> = {
-  direct: '/products/incomes/get/supply/order',
+  direct: '/products/incomes/product-income/direct-supply-order/header',
   toUkraine: '/products/incomes/supply/order/ukraine/get',
 }
 

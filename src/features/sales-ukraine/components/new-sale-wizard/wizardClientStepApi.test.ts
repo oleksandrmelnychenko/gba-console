@@ -26,7 +26,7 @@ describe('wizard client step API contracts', () => {
 
     await expect(searchWizardClients('конкорд', 10, 20)).resolves.toEqual([{ NetUid: 'client-1' }])
 
-    expect(apiRequestMock).toHaveBeenCalledWith('/clients/all/filtered', {
+    expect(apiRequestMock).toHaveBeenCalledWith('/clients/sales-ukraine/create/search', {
       query: {
         filterSql: 'RegionCode.Value/Client.FullName/Client.USREOU/Client.TIN',
         limit: 10,
@@ -35,6 +35,14 @@ describe('wizard client step API contracts', () => {
       },
       signal: undefined,
     })
+  })
+
+  it('uses the edit-scoped client search when editing a sale', async () => {
+    apiRequestMock.mockResolvedValueOnce([])
+
+    await searchWizardClients('client', 20, 0, undefined, 'edit')
+
+    expect(apiRequestMock).toHaveBeenCalledWith('/clients/sales-ukraine/edit/search', expect.any(Object))
   })
 
   it('does not call the client search endpoint for blank wizard search values', async () => {

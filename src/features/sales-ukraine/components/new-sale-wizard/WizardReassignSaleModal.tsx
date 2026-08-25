@@ -18,12 +18,14 @@ import { getWizardClientStructure, getWizardHeaderClient } from './wizardSaleHea
 export function WizardReassignSaleModal({
   client,
   opened,
+  permissionFlow,
   sale,
   onClose,
   onReassigned,
 }: {
   client: Client
   opened: boolean
+  permissionFlow: 'create' | 'edit'
   sale: SalesUkraineSale
   onClose: () => void
   onReassigned: (movedSale: SalesUkraineSale | null) => void
@@ -41,7 +43,13 @@ export function WizardReassignSaleModal({
       onClose={onClose}
     >
       {opened && canReassign && (
-        <WizardReassignSaleForm client={client} sale={sale} onCancel={onClose} onReassigned={onReassigned} />
+        <WizardReassignSaleForm
+          client={client}
+          permissionFlow={permissionFlow}
+          sale={sale}
+          onCancel={onClose}
+          onReassigned={onReassigned}
+        />
       )}
     </AppModal>
   )
@@ -49,11 +57,13 @@ export function WizardReassignSaleModal({
 
 function WizardReassignSaleForm({
   client,
+  permissionFlow,
   sale,
   onCancel,
   onReassigned,
 }: {
   client: Client
+  permissionFlow: 'create' | 'edit'
   sale: SalesUkraineSale
   onCancel: () => void
   onReassigned: (movedSale: SalesUkraineSale | null) => void
@@ -79,7 +89,7 @@ function WizardReassignSaleForm({
           rootNetId = rootLink?.RootClient?.NetUid ?? rootLink?.NetUid ?? rootNetId
         }
 
-        const root = rootNetId ? await getWizardHeaderClient(rootNetId) : null
+        const root = rootNetId ? await getWizardHeaderClient(rootNetId, permissionFlow) : null
         const structure = root?.NetUid ? await getWizardClientStructure(root.NetUid) : []
 
         if (!cancelled) {
@@ -109,7 +119,7 @@ function WizardReassignSaleForm({
     return () => {
       cancelled = true
     }
-  }, [client, t])
+  }, [client, permissionFlow, t])
 
   async function save() {
     if (!selectedNetUid) {

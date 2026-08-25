@@ -221,7 +221,7 @@ function SaleDetailsContent({
     }
 
     try {
-      const types = await getSaleTransporterTypes()
+      const types = await getSaleTransporterTypes('edit')
       const firstNetUid = types[0]?.NetUid
 
       if (firstNetUid) {

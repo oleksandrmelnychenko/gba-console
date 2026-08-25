@@ -9,7 +9,7 @@ import { useI18n } from '../../../shared/i18n/useI18n'
 import { translate } from '../../../shared/i18n/translate'
 import type { TranslateFunction } from '../../../shared/i18n/types'
 import { SaleAuditDetail } from '../../../shared/sale-audit/SaleAuditDetail'
-import { getSaleStatisticBySaleId } from '../../../shared/sale-audit/saleAuditApi'
+import { getWarehouseUkraineSaleAudit } from '../../../shared/sale-audit/saleAuditApi'
 import type { SaleAuditStatistic } from '../../../shared/sale-audit/saleAuditTypes'
 import { AppModal } from '../../../shared/ui/AppModal'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
@@ -202,7 +202,7 @@ export function EditingList({ canProcess, kind, layoutVersion, loader, onLoaded,
 
     void (async () => {
       try {
-        const statistic = await getSaleStatisticBySaleId(saleNetId)
+        const statistic = await getWarehouseUkraineSaleAudit(saleNetId)
 
         if (auditRequestRef.current === requestId) {
           setAuditStatistic(statistic)

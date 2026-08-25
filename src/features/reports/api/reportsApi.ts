@@ -109,7 +109,7 @@ export async function searchReportClients(
     return []
   }
 
-  const result = await apiRequest<unknown>('/clients/all/filtered', {
+  const result = await apiRequest<unknown>('/clients/reports/stocks/search', {
     query: {
       filterSql: CLIENT_FILTER_SQL,
       limit: params.limit,

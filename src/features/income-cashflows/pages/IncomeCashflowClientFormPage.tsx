@@ -43,7 +43,7 @@ import {
   getIncomeCashflowSpecificExchangeRate,
   getIncomeCashflowSupplyOrganizationAgreements,
   searchIncomeCashflowClientPayers,
-  searchIncomeCashflowCounterparties,
+  searchIncomeCashflowCounterpartiesForOperation,
   searchIncomeCashflowPaymentMovements,
   searchIncomeCashflowPaymentRegisters,
 } from '../api/incomeCashflowsApi'
@@ -367,9 +367,10 @@ function IncomeCashflowClientFormPageContent() {
         return
       }
 
-      void searchIncomeCashflowCounterparties(
+      void searchIncomeCashflowCounterpartiesForOperation(
         value,
         form.searchType,
+        operationType,
         controller.signal,
       )
         .then((nextCounterparties) => {
@@ -385,7 +386,7 @@ function IncomeCashflowClientFormPageContent() {
       controller.abort()
       window.clearTimeout(timeoutId)
     }
-  }, [form.counterpartySearch, form.searchType, setCounterparties])
+  }, [form.counterpartySearch, form.searchType, operationType, setCounterparties])
 
   useEffect(() => {
     if (operationType !== IncomePaymentOperationType.ClientPayment) {

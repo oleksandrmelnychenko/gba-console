@@ -157,6 +157,7 @@ type BlockedFinalFileMutation = {
 
 export function NewSaleReviewStep({
   canSubmit = true,
+  canConvertMergedToBill = false,
   clientNetId,
   sale,
   value,
@@ -173,6 +174,7 @@ export function NewSaleReviewStep({
   withVatAccounting,
 }: {
   canSubmit?: boolean
+  canConvertMergedToBill?: boolean
   clientNetId: string | null
   onBusyChange?: (busy: boolean) => void
   onChange: (patch: Partial<NewSaleReviewValue>) => void
@@ -214,7 +216,11 @@ export function NewSaleReviewStep({
   const splitItems = useWizardSplitOrderItems()
   const mergedSale = useWizardMergedSale()
   const isMergedMode = Boolean(mergedSale)
-  const submitPermissionDenied = !canSubmit
+  const mergedConversionDenied = submitFlow === 'edit' && isMergedMode && !canConvertMergedToBill
+  const submitPermissionDenied = !canSubmit || mergedConversionDenied
+  const effectiveSubmitDeniedReason = mergedConversionDenied
+    ? t('Недостатньо прав для перетворення обʼєднаного продажу на рахунок')
+    : submitDeniedReason
   const submitSaleFromData = submitFlow === 'create'
     ? createSalesUkraineSaleFromData
     : updateSaleFromData
@@ -518,7 +524,7 @@ export function NewSaleReviewStep({
 
     async function load() {
       try {
-        const types = await getSaleTransporterTypes()
+        const types = await getSaleTransporterTypes(submitFlow)
         const firstType = types[0]
 
         if (!firstType?.NetUid) {
@@ -546,7 +552,7 @@ export function NewSaleReviewStep({
     return () => {
       cancelled = true
     }
-  }, [])
+  }, [submitFlow])
 
   useEffect(() => {
     const { onChange: change, sale: currentSale, value: current } = latestRef.current
@@ -1339,7 +1345,7 @@ export function NewSaleReviewStep({
       }
 
       if (submitPermissionDenied) {
-        notifications.show({ color: 'red', message: submitDeniedReason })
+        notifications.show({ color: 'red', message: effectiveSubmitDeniedReason })
 
         return
       }
@@ -1838,7 +1844,7 @@ export function NewSaleReviewStep({
               className="new-sale-review-actions__primary"
               disabled={submitPermissionDenied || Boolean(blockedFileMutation && !blockedFileMutation.canResume)}
               loading={submitting}
-              title={submitPermissionDenied ? submitDeniedReason : undefined}
+              title={submitPermissionDenied ? effectiveSubmitDeniedReason : undefined}
               onClick={() => void submitSale()}
             >
               {primaryLabel}

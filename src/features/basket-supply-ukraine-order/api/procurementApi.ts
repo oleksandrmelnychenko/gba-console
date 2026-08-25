@@ -98,7 +98,7 @@ export async function getProcurementCharts(
   query: ProcurementChartsQuery = {},
   signal?: AbortSignal,
 ): Promise<ProcurementCharts> {
-  return getProcurementChartsAt('/procurement/charts', query, signal)
+  return getPurchaseCockpitCharts(query, signal)
 }
 
 export async function getPurchaseCockpitCharts(

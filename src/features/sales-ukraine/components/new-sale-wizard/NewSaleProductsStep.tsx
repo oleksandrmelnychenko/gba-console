@@ -248,6 +248,7 @@ export function NewSaleProductsStep({
   clientNetId,
   headerClose,
   headerTools,
+  permissionFlow = 'create',
   sale,
   onBusyChange,
   onCartChanged,
@@ -260,6 +261,7 @@ export function NewSaleProductsStep({
   clientNetId: string | null
   headerClose?: ReactNode
   headerTools?: ReactNode
+  permissionFlow?: 'create' | 'edit'
   onBusyChange?: (busy: boolean) => void
   onCartChanged: () => SalesUkraineSale | null | void | Promise<SalesUkraineSale | null | void>
   onPendingMutationChange?: (pending: boolean) => void
@@ -3614,6 +3616,7 @@ export function NewSaleProductsStep({
         clientNetId={clientNetId}
         headerClose={headerClose}
         headerTools={headerTools}
+        permissionFlow={permissionFlow}
       />
       {pendingMutationError ? (
         <Alert color="orange" title={t('Результат операції потребує перевірки')}>

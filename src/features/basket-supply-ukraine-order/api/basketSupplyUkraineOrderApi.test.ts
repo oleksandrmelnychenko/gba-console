@@ -1,7 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { apiRequest } from '../../../shared/api/apiClient'
 import {
-  addOrUpdateSad,
   addOrUpdateSaleSad,
   assembleCartSadDocument,
   assembleCartTaxFreeDocument,
@@ -33,41 +32,7 @@ describe('basketSupplyUkraineOrderApi SAD mutations', () => {
     )
   })
 
-  it('uses a durable create key for cart-backed SADs', async () => {
-    apiRequestMock.mockResolvedValueOnce({
-      Body: {
-        Id: 51,
-      },
-    })
-
-    await addOrUpdateSad({
-      Id: 0,
-      SadItems: [],
-    })
-
-    const options = apiRequestMock.mock
-      .calls[0]?.[1]
-    const operationId =
-      new Headers(options?.headers)
-        .get('Idempotency-Key')
-
-    expect(operationId).toMatch(
-      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i,
-    )
-    expect(options).toEqual({
-      body: {
-        Id: 0,
-        SadItems: [],
-      },
-      dedupe: false,
-      headers: {
-        'Idempotency-Key': operationId,
-      },
-      method: 'POST',
-    })
-  })
-
-  it('leaves the legacy sale mutation flow unchanged', async () => {
+  it('uses the sale-assembly facade for cart-backed sale SADs', async () => {
     apiRequestMock.mockResolvedValueOnce({
       Body: {
         Id: 52,
@@ -80,7 +45,7 @@ describe('basketSupplyUkraineOrderApi SAD mutations', () => {
     })
 
     expect(apiRequestMock).toHaveBeenCalledWith(
-      '/supplies/ukraine/order/packlists/sad/update/sale',
+      '/supplies/ukraine/order/packlists/sad/page/documents/sad/assemble/sales',
       {
         body: {
           Id: 0,

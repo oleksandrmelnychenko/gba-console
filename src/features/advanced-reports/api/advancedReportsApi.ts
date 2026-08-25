@@ -42,8 +42,12 @@ export async function getAdvancedReportCurrencies(): Promise<Currency[]> {
   return readArrayPayload(result, ['Items', 'Currencies', 'Data']) as Currency[]
 }
 
-export async function getAdvancedReportPaymentMovements(): Promise<PaymentMovement[]> {
-  const result = await apiRequest<unknown>('/payments/movements/all')
+export async function getAdvancedReportPaymentMovements(
+  context: 'open' | 'edit',
+): Promise<PaymentMovement[]> {
+  const result = await apiRequest<unknown>(
+    `/payments/movements/advanced-reports/report/${context}/all`,
+  )
 
   return readArrayPayload(result, ['Items', 'PaymentMovements', 'Data']) as PaymentMovement[]
 }

@@ -29,6 +29,7 @@ import {
   getSupplyInvoiceItemsForSpecifications,
   getSupplyOrderInvoiceTotalsForInvoices,
   getSupplyOrderItemsForInvoices,
+  getSupplyOrderCreateSuppliers,
   getSupplyOrderServiceConsumableProducts,
   getSupplyUkraineOrders,
   getSupplyUkraineOrderForOverview,
@@ -189,9 +190,7 @@ describe('supplyUkraineOrdersApi', () => {
     })
     expect(apiRequestMock).toHaveBeenNthCalledWith(5, '/supplies/orders/direct-supply-order/invoices/payment-protocol-keys')
     expect(apiRequestMock).toHaveBeenNthCalledWith(6, '/supplies/orders/direct-supply-order/invoices/information-protocol-keys')
-    expect(apiRequestMock).toHaveBeenNthCalledWith(7, '/usermanagement/profiles/orders-ukraine/invoices/responsible-users', {
-      query: { types: 7 },
-    })
+    expect(apiRequestMock).toHaveBeenNthCalledWith(7, '/usermanagement/profiles/orders-ukraine/invoices/responsible-users')
     expect(apiRequestMock).toHaveBeenNthCalledWith(8, '/supplies/invoices/direct-supply-order/items/update', {
       body: invoice,
       method: 'POST',
@@ -260,6 +259,10 @@ describe('supplyUkraineOrdersApi', () => {
       '/supplies/invoices/direct-supply-order/logistic-way/payment-tasks/create',
       '/supplies/invoices/direct-supply-order/logistic-way/payment-tasks/delete',
     ])
+    expect(apiRequestMock).toHaveBeenNthCalledWith(
+      12,
+      '/usermanagement/profiles/orders-ukraine/logistic-way/payment-task-users',
+    )
     expect(apiRequestMock).toHaveBeenNthCalledWith(13, expect.any(String), {
       body: invoice,
       method: 'POST',
@@ -579,7 +582,7 @@ describe('supplyUkraineOrdersApi', () => {
       proForm,
     })
 
-    expect(apiRequestMock).toHaveBeenCalledWith('/supplies/proforms/upload/documents', {
+    expect(apiRequestMock).toHaveBeenCalledWith('/supplies/proforms/direct-supply-order/logistic-way/upload/documents', {
       body: expect.any(FormData),
       method: 'POST',
       query: { netId: 'direct-order-1' },
@@ -715,7 +718,7 @@ describe('supplyUkraineOrdersApi', () => {
 
     await deleteSupplyProformDocument('document-1')
 
-    expect(apiRequestMock).toHaveBeenCalledWith('/supplies/proforms/delete/document', {
+    expect(apiRequestMock).toHaveBeenCalledWith('/supplies/proforms/direct-supply-order/logistic-way/delete/document', {
       method: 'DELETE',
       query: { netId: 'document-1' },
     })
@@ -841,6 +844,8 @@ describe('supplyUkraineOrdersApi', () => {
         ClientAgreements: [ukrainianAgreement],
       },
     ])
+
+    expect(apiRequestMock).toHaveBeenCalledWith('/clients/sad/supply-order/manufacturers')
   })
 
   it('loads budget-cart manufacturers through the exact page-permission facade', async () => {
@@ -849,6 +854,17 @@ describe('supplyUkraineOrdersApi', () => {
     await expect(getBudgetCartSuppliers()).resolves.toEqual([])
 
     expect(apiRequestMock).toHaveBeenCalledWith('/clients/budget-cart/manufacturers')
+  })
+
+  it.each([
+    ['direct' as const, '/clients/orders-ukraine/direct/manufacturers'],
+    ['toUkraine' as const, '/clients/orders-ukraine/to-ukraine/manufacturers'],
+  ])('loads %s order manufacturers through its exact permission facade', async (mode, path) => {
+    apiRequestMock.mockResolvedValueOnce([])
+
+    await expect(getSupplyOrderCreateSuppliers(mode)).resolves.toEqual([])
+
+    expect(apiRequestMock).toHaveBeenCalledWith(path)
   })
 
   it.each([

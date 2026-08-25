@@ -11,6 +11,7 @@ import {
   getSaleActForEditingHistoryDocument,
   getSaleActProtocolEditDocument,
   getSaleById,
+  getSaleTransporterTypes,
   getSalesUkraine,
   getSalesUkraineConsignmentNoteSettings,
   getSalesUkraineCreateCurrentCart,
@@ -29,7 +30,9 @@ import {
   getSaleShipmentListDocument,
   getSaleShipmentListHistoryDocument,
   getShiftedSaleById,
+  searchProductPricingClients,
   searchSalesUkraineClients,
+  searchSalesUkraineEditClients,
   printSalesUkraineConsignmentNoteDocument,
   removeSalesUkraineConsignmentNoteSetting,
   shiftOrderItemsCurrent,
@@ -102,7 +105,7 @@ describe('sales Ukraine document request contracts', () => {
     [
       'current act edit',
       () => getSaleActProtocolEditDocument('sale-net-id'),
-      '/sales/get/shifted/document',
+      '/sales/ukraine/audit/edit-act-document',
       { netId: 'sale-net-id' },
     ],
     [
@@ -233,7 +236,7 @@ describe('sales Ukraine document request contracts', () => {
       Order: { OrderItems: [] },
     })
 
-    expect(apiRequestMock).toHaveBeenCalledWith('/sales/get/shifted', { query: { netId: 'sale-net-id' } })
+    expect(apiRequestMock).toHaveBeenCalledWith('/sales/ukraine/edit/shifted', { query: { netId: 'sale-net-id' } })
   })
 
   it('loads sale by id from the sale statistic envelope', async () => {
@@ -249,7 +252,7 @@ describe('sales Ukraine document request contracts', () => {
       Order: { OrderItems: [{ NetUid: 'order-item-1' }] },
     })
 
-    expect(apiRequestMock).toHaveBeenCalledWith('/sales/get', { query: { netId: 'sale-net-id' } })
+    expect(apiRequestMock).toHaveBeenCalledWith('/sales/ukraine/details', { query: { netId: 'sale-net-id' } })
   })
 
   it('loads the Sales Ukraine registry through the permission-protected facade', async () => {
@@ -309,7 +312,7 @@ describe('sales Ukraine document request contracts', () => {
 
     await expect(searchSalesUkraineClients(' конкорд ')).resolves.toEqual([{ NetUid: 'client-1' }])
 
-    expect(apiRequestMock).toHaveBeenCalledWith('/clients/all/filtered', {
+    expect(apiRequestMock).toHaveBeenCalledWith('/clients/sales-ukraine/registry/search', {
       query: {
         filterSql: 'RegionCode.Value/Client.FullName',
         limit: 50,
@@ -318,6 +321,36 @@ describe('sales Ukraine document request contracts', () => {
       },
       signal: undefined,
     })
+  })
+
+  it('searches pricing clients through the product-pricing permission facade', async () => {
+    apiRequestMock.mockResolvedValueOnce([{ NetUid: 'client-1' }])
+
+    await expect(searchProductPricingClients(' client ')).resolves.toEqual([{ NetUid: 'client-1' }])
+
+    expect(apiRequestMock).toHaveBeenCalledWith('/clients/product-pricing/search', {
+      query: {
+        filterSql: 'RegionCode.Value/Client.FullName',
+        limit: 50,
+        offset: 0,
+        value: 'client',
+      },
+      signal: undefined,
+    })
+  })
+
+  it('uses the edit-scoped client and transporter-type facades', async () => {
+    apiRequestMock.mockResolvedValue([])
+
+    await searchSalesUkraineEditClients(' client ')
+    await getSaleTransporterTypes('create')
+    await getSaleTransporterTypes('edit')
+
+    expect(apiRequestMock.mock.calls.map(([route]) => route)).toEqual([
+      '/clients/sales-ukraine/edit/search',
+      '/transporters/types/sales-ukraine/create',
+      '/transporters/types/sales-ukraine/edit',
+    ])
   })
 
   it('posts edit-shift payload to the current shift endpoint', async () => {
@@ -462,7 +495,7 @@ describe('sales Ukraine document request contracts', () => {
       { operationId: 'CCCCCCCC-CCCC-4CCC-8CCC-CCCCCCCCCCCC' },
     )
 
-    expect(apiRequestMock).toHaveBeenCalledWith('/sales/update/merged', {
+    expect(apiRequestMock).toHaveBeenCalledWith('/sales/ukraine/edit/merged', {
       body: {
         NetUid: 'sale-1',
         OperationNetUid: 'cccccccc-cccc-4ccc-8ccc-cccccccccccc',
@@ -593,7 +626,7 @@ describe('sales Ukraine document request contracts', () => {
       { operationId },
     )
 
-    expect(apiRequestMock).toHaveBeenCalledWith('/sales/update', {
+    expect(apiRequestMock).toHaveBeenCalledWith('/sales/ukraine/edit', {
       body: {
         IsAcceptedToPacking: true,
         NetUid: 'sale-1',
@@ -651,7 +684,7 @@ describe('sales Ukraine document request contracts', () => {
       })
       expect(apiRequestMock).toHaveBeenCalledTimes(2)
       expect(apiRequestMock.mock.calls[1]).toEqual([
-        '/sales/update/get/payment/document',
+        '/sales/ukraine/edit/vat-document',
         { query: { operationNetUid: operationId } },
       ])
     } finally {

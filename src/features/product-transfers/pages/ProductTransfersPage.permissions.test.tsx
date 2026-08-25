@@ -22,10 +22,6 @@ vi.mock('../../auth/usePermissions', () => ({
   }),
 }))
 
-vi.mock('../../auth/useAuth', () => ({
-  useAuth: () => ({ user: null }),
-}))
-
 vi.mock('../api/productTransfersApi', () => ({
   addProductTransferFromFile: vi.fn(),
   exportProductTransferDocument: vi.fn(),
@@ -151,9 +147,25 @@ describe('ProductTransfersPage canonical permission guards', () => {
     await waitFor(() => expect(exportProductTransferDocument).toHaveBeenCalledWith(transfer.NetUid))
   })
 
+  it('keeps management transfer disabled without its independent key', async () => {
+    allowedPermissions.add(PermissionKeys.ProductTransfers.Page.View)
+    allowedPermissions.add(PermissionKeys.ProductTransfers.Transfer.Create)
+    renderPage()
+
+    const createButton = await screen.findByRole('button', { name: 'Нове переміщення' })
+    await waitFor(() => expect(createButton.hasAttribute('disabled')).toBe(false))
+    fireEvent.click(createButton)
+
+    expect((screen.getByRole('switch', {
+      name: 'Управлінське переміщення',
+    }) as HTMLInputElement).disabled).toBe(true)
+    expect(screen.getByText('Немає права створювати управлінське переміщення.')).toBeTruthy()
+  })
+
   it('loads create dictionaries and submits only with create access', async () => {
     allowedPermissions.add(PermissionKeys.ProductTransfers.Page.View)
     allowedPermissions.add(PermissionKeys.ProductTransfers.Transfer.Create)
+    allowedPermissions.add(PermissionKeys.ProductTransfers.Transfer.CreateManagement)
     const { container } = renderPage()
 
     const createButton = await screen.findByRole('button', { name: 'Нове переміщення' })
@@ -165,6 +177,7 @@ describe('ProductTransfersPage canonical permission guards', () => {
     fireEvent.change(screen.getByLabelText('Колонка кількості'), { target: { value: '2' } })
     fireEvent.change(screen.getByLabelText('Початковий рядок'), { target: { value: '1' } })
     fireEvent.change(screen.getByLabelText('Кінцевий рядок'), { target: { value: '2' } })
+    fireEvent.click(screen.getByRole('switch', { name: 'Управлінське переміщення' }))
     const fileInput = container.querySelector('input[type="file"]')
     expect(fileInput).not.toBeNull()
     fireEvent.change(fileInput!, {
@@ -176,6 +189,7 @@ describe('ProductTransfersPage canonical permission guards', () => {
       expect.objectContaining({
         productTransfer: expect.objectContaining({
           FromStorageNetUid: storages[0].NetUid,
+          IsManagement: true,
           ToStorageNetUid: storages[1].NetUid,
         }),
       }),

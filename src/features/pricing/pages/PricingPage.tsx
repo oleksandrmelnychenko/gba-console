@@ -7,7 +7,7 @@ import { AiFeatureBadge } from '../../../shared/ai/AiFeatureBadge'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import {
   getSaleClientAgreements,
-  searchSalesUkraineClients,
+  searchProductPricingClients,
   searchSaleProducts,
 } from '../../sales-ukraine/api/salesUkraineApi'
 import type {
@@ -157,7 +157,7 @@ export function PricingPage() {
 
     let cancelled = false
     const controller = new AbortController()
-    searchSalesUkraineClients(value, controller.signal)
+    searchProductPricingClients(value, controller.signal)
       .then((list) => {
         if (!cancelled) {
           setClientSearchResult({ query: value, items: list })

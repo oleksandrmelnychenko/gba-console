@@ -11,7 +11,7 @@ export function getProductWriteOffBaseRules(): Promise<ProductWriteOffRule[]> {
 }
 
 export function deleteProductWriteOffRule(netUid: string): Promise<void> {
-  return apiRequest<void>('/products/writeoff/rules/delete', {
+  return apiRequest<void>('/products/writeoff/rules/assortment/delete', {
     method: 'DELETE',
     query: {
       netId: netUid,

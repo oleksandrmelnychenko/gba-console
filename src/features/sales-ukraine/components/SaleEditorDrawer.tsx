@@ -34,7 +34,7 @@ import {
   getSaleClientDebtTotal,
   getRetailPaymentStatusBySaleId,
   searchSaleProducts,
-  searchSalesUkraineClients,
+  searchSalesUkraineEditClients,
   switchSale,
   type SwitchSalePayload,
   updateSaleFromData,
@@ -124,7 +124,7 @@ export function SaleEditorDrawer({
 function SaleEditorContent({ initialSale, loadSale }: { initialSale: SalesUkraineSale; loadSale: typeof getSaleById }) {
   const { t } = useI18n()
   const { can } = usePermissions()
-  const canCreateInvoice = can(PermissionKeys.SalesUkraine.Sale.Create)
+  const canConvertMergedToBill = can(PermissionKeys.SalesUkraine.Sale.ConvertMergedToBill)
   const canReassign = can(PermissionKeys.SalesUkraine.Sale.Reassign)
   const [sale, setSale] = useValueState<SalesUkraineSale>(initialSale)
   const [retailPaymentState, setRetailPaymentState] =
@@ -605,7 +605,7 @@ function SaleEditorContent({ initialSale, loadSale }: { initialSale: SalesUkrain
       />
 
       <MergedSalesDrawer
-        canCreateInvoice={canCreateInvoice}
+        canCreateInvoice={canConvertMergedToBill}
         canEdit={isEditable}
         saleNetId={isMergedOpen ? sale.NetUid ?? null : null}
         onChanged={reload}
@@ -1256,7 +1256,7 @@ function ReassignSaleForm({
     const controller = new AbortController()
     const handle = setTimeout(async () => {
       try {
-        const next = await searchSalesUkraineClients(value, controller.signal)
+        const next = await searchSalesUkraineEditClients(value, controller.signal)
 
         if (!cancelled) {
           setClients(next)

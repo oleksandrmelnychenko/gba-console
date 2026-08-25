@@ -28,7 +28,6 @@ import { AppModal } from '../../../../shared/ui/AppModal'
 import { CREATE_ACTION_COLOR } from '../../../../shared/ui/page-header-actions/PageHeaderActions'
 import { useAuth } from '../../../auth/useAuth'
 import { PermissionKeys } from '../../../../shared/auth/permissionKeys'
-import { SALES_UKRAINE_EDIT_PERMISSION } from '../../../sales-ukraine/permissions'
 import { NewSaleWizard, type NewSaleWizardPrefill } from '../../../sales-ukraine/components/new-sale-wizard/NewSaleWizard'
 import { getWizardClientAgreements } from '../../../sales-ukraine/components/new-sale-wizard/wizardClientStepApi'
 import type { SalesUkraineClientAgreement, SalesUkraineProduct } from '../../../sales-ukraine/types'
@@ -160,7 +159,7 @@ export function RecommendationsPanel({ client, productNetId }: RecommendationsPa
     useOfferFromRecommendations()
 
   const clientNetId = client.NetUid || ''
-  const canCreateSale = hasPermission(SALES_UKRAINE_EDIT_PERMISSION)
+  const canCreateSale = hasPermission(PermissionKeys.SalesUkraine.Sale.OpenCreateDialog)
   const canExcludeProduct = hasPermission(PermissionKeys.Clients.Recommendations.ExcludeProduct)
   const isVatSale = Boolean(agreement?.Agreement?.WithVATAccounting)
   const selectedCount = selectedKeys.size
@@ -446,7 +445,9 @@ export function RecommendationsPanel({ client, productNetId }: RecommendationsPa
 
       {canCreateSale && (
         <NewSaleWizard
+          canConvertMergedToBill={hasPermission(PermissionKeys.SalesUkraine.Sale.ConvertMergedToBill)}
           opened={Boolean(wizardPrefill)}
+          permissionScopedSalesUkraineApi
           prefill={wizardPrefill}
           onClose={() => setWizardPrefill(null)}
           onCreated={() => setWizardPrefill(null)}

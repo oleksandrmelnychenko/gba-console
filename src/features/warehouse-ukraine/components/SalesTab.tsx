@@ -2,7 +2,6 @@ import { ActionIcon, Alert, Anchor, Badge, Button, Group, Stack, Text, TextInput
 import { useDebouncedValue } from '@mantine/hooks'
 import { CircleAlert, Pencil, Plus, RotateCcw } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
-import { getSaleById } from '../../sales-ukraine/api/salesUkraineApi'
 import { SaleDetailsDrawer } from '../../sales-ukraine/components/SaleDetailsDrawer'
 import { usePersistentSaleJsonMutationRunner } from '../../sales-ukraine/usePersistentSaleJsonMutation'
 import type { SalesUkraineSale } from '../../sales-ukraine/types'
@@ -20,6 +19,7 @@ import { TransporterIcon } from '../../../shared/transporter-icons/TransporterIc
 import {
   getSaleActProtocolEditDocument,
   getSalePrintDocument,
+  getWarehouseUkraineSaleDetails,
   getWarehouseUkraineSales,
   updateWarehouseUkraineSale,
 } from '../api/salesApi'
@@ -245,7 +245,11 @@ function useSalesTabModel(canPrintInvoice: boolean, canPrintEditAct: boolean, ca
         const attempt = await runSaleUpdate(
           `sale-update:warehouse-${printIntent}-print:${String(sale.NetUid || sale.Id || '')}`,
           optimisticSale as unknown as SalesUkraineSale,
-          (payload, operation) => updateWarehouseUkraineSale(payload as unknown as Sale, operation),
+          (payload, operation) => updateWarehouseUkraineSale(
+            payload as unknown as Sale,
+            printIntent,
+            operation,
+          ),
         )
 
         if (!attempt.completed) {
@@ -320,7 +324,7 @@ function useSalesTabModel(canPrintInvoice: boolean, canPrintEditAct: boolean, ca
       carrierRequestRef.current = requestId
 
       try {
-        const hydratedSale = await getSaleById(netUid)
+        const hydratedSale = await getWarehouseUkraineSaleDetails(netUid)
 
         if (carrierRequestRef.current !== requestId) {
           return
@@ -508,6 +512,7 @@ export function SalesTab({ canCreateShipment, canPrintEditAct, canPrintInvoice, 
       </div>
 
       <SaleDetailsDrawer
+        loadSale={getWarehouseUkraineSaleDetails}
         sale={model.carrierSale as unknown as SalesUkraineSale | null}
         onClose={() => model.setCarrierSale(null)}
         onSaved={() => {

@@ -28,13 +28,13 @@ export async function searchOutgoingCreatePaymentRegisters(value = ''): Promise<
 }
 
 export async function getOutgoingCreatePaymentMovements(): Promise<PaymentMovement[]> {
-  const result = await apiRequest<unknown>('/payments/movements/all')
+  const result = await apiRequest<unknown>('/payments/movements/accounting/all')
 
   return readArrayPayload(result, ['Items', 'PaymentMovements', 'Data']) as PaymentMovement[]
 }
 
 export async function searchOutgoingCreatePaymentMovements(value: string): Promise<PaymentMovement[]> {
-  const result = await apiRequest<unknown>('/payments/movements/all/search', {
+  const result = await apiRequest<unknown>('/payments/movements/accounting/all/search', {
     query: {
       value,
     },

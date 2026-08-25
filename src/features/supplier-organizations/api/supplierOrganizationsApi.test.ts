@@ -42,7 +42,7 @@ describe('supplierOrganizationsApi', () => {
 
     await expect(getSupplyOrganizations()).resolves.toEqual([{ NetUid: 'supplier-1', SupplyOrganizationAgreements: [] }])
 
-    expect(apiRequestMock).toHaveBeenCalledWith('/supplies/organizations/all/search', {
+    expect(apiRequestMock).toHaveBeenCalledWith('/supplies/organizations/registry', {
       query: {
         from: undefined,
         limit: undefined,
@@ -62,7 +62,7 @@ describe('supplierOrganizationsApi', () => {
       offset: 80,
     })).resolves.toEqual([{ NetUid: 'supplier-1', SupplyOrganizationAgreements: [] }])
 
-    expect(apiRequestMock).toHaveBeenCalledWith('/supplies/organizations/all/search', {
+    expect(apiRequestMock).toHaveBeenCalledWith('/supplies/organizations/registry', {
       query: {
         from: '2025-01-17',
         limit: 40,
@@ -81,7 +81,7 @@ describe('supplierOrganizationsApi', () => {
       offset: 0,
     })).resolves.toEqual([{ NetUid: 'supplier-1', SupplyOrganizationAgreements: [] }])
 
-    expect(apiRequestMock).toHaveBeenCalledWith('/supplies/organizations/all/search', {
+    expect(apiRequestMock).toHaveBeenCalledWith('/supplies/organizations/registry', {
       query: {
         from: undefined,
         limit: 40,
@@ -111,7 +111,7 @@ describe('supplierOrganizationsApi', () => {
       }],
     })
 
-    expect(apiRequestMock).toHaveBeenCalledWith('/supplies/organizations/get', {
+    expect(apiRequestMock).toHaveBeenCalledWith('/supplies/organizations/overview/details', {
       query: { netId: 'supplier-1' },
     })
   })
@@ -209,11 +209,11 @@ describe('supplierOrganizationsApi', () => {
       SupplyOrganizationAgreements: [],
     })
 
-    expect(apiRequestMock).toHaveBeenNthCalledWith(1, '/supplies/organizations/new', {
+    expect(apiRequestMock).toHaveBeenNthCalledWith(1, '/supplies/organizations/create', {
       body: { Name: 'Новий постачальник' },
       method: 'POST',
     })
-    expect(apiRequestMock).toHaveBeenNthCalledWith(2, '/supplies/organizations/update', {
+    expect(apiRequestMock).toHaveBeenNthCalledWith(2, '/supplies/organizations/edit', {
       body: {
         ...created,
         Name: 'Оновлений постачальник',
@@ -227,7 +227,7 @@ describe('supplierOrganizationsApi', () => {
 
     await deleteSupplyOrganization(' supplier-1 ')
 
-    expect(apiRequestMock).toHaveBeenCalledWith('/supplies/organizations/delete', {
+    expect(apiRequestMock).toHaveBeenCalledWith('/supplies/organizations/remove', {
       method: 'DELETE',
       query: { netId: 'supplier-1' },
     })
@@ -287,7 +287,7 @@ describe('supplierOrganizationsApi', () => {
 
     const createOptions = apiRequestMock.mock.calls[0][1]
     const createBody = createOptions?.body
-    expect(apiRequestMock.mock.calls[0][0]).toBe('/supplies/organizations/agreement/new')
+    expect(apiRequestMock.mock.calls[0][0]).toBe('/supplies/organizations/agreement/create')
     expect(createOptions?.method).toBe('POST')
     expect(createBody).toBeInstanceOf(FormData)
     expect((createBody as FormData).get('agreementInString')).toBe(JSON.stringify(agreement))
@@ -295,7 +295,7 @@ describe('supplierOrganizationsApi', () => {
 
     const updateOptions = apiRequestMock.mock.calls[1][1]
     const updateBody = updateOptions?.body
-    expect(apiRequestMock.mock.calls[1][0]).toBe('/supplies/organizations/agreement/update')
+    expect(apiRequestMock.mock.calls[1][0]).toBe('/supplies/organizations/agreement/edit')
     expect(updateOptions?.method).toBe('POST')
     expect(updateBody).toBeInstanceOf(FormData)
     expect((updateBody as FormData).getAll('files')).toEqual([])
@@ -398,7 +398,7 @@ describe('supplierOrganizationsApi', () => {
       CurrentAmount: 12,
     })
 
-    expect(apiRequestMock).toHaveBeenCalledWith('/accounting/cashflow/get/filtered', {
+    expect(apiRequestMock).toHaveBeenCalledWith('/supplies/organizations/settlements/cash-flow', {
       query: {
         from: '2026-07-01',
         netId: 'agreement-1',

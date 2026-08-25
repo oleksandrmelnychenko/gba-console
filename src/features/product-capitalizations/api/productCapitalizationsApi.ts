@@ -118,8 +118,9 @@ export async function getProductCapitalizationOrganizations(): Promise<ClientRes
 
 export async function getProductCapitalizationStoragesByOrganization(
   organizationNetId: string,
+  context: 'create' | 'open-details',
 ): Promise<ClientResourceStorage[]> {
-  const result = await apiRequest<unknown>('/storages/get/all/filtered', {
+  const result = await apiRequest<unknown>(`/storages/capitalization/${context}/search`, {
     query: {
       organizationNetId,
       skipDefective: false,

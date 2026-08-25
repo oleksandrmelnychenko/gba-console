@@ -9,8 +9,12 @@ import {
   getConsumableOrder,
   getConsumableOrderForPayment,
   getConsumableOrders,
+  getFinanceDirectorUsers,
+  getPaymentMovements,
   getUnpaidConsumableOrdersByOrganization,
   searchConsumableOrders,
+  searchSupplyOrganizations,
+  searchPaymentMovements,
   searchConsumableStorages,
   updateConsumableOrder,
 } from './consumableOrdersApi'
@@ -28,6 +32,24 @@ describe('consumableOrdersApi', () => {
     localStorage.setItem('gba_console_session', JSON.stringify({
       userNetUid: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
     }))
+  })
+
+  it('uses context-specific supplier and responsible-user lookup facades', async () => {
+    apiRequestMock.mockResolvedValue([])
+
+    await searchSupplyOrganizations(' supplier ', 'create')
+    await searchSupplyOrganizations(' supplier ', 'edit')
+    await getFinanceDirectorUsers()
+
+    expect(apiRequestMock.mock.calls.map(([route]) => route)).toEqual([
+      '/supplies/organizations/consumable-orders/create/search',
+      '/supplies/organizations/consumable-orders/edit/search',
+      '/usermanagement/profiles/consumable-orders/payment/responsible-users',
+    ])
+    expect(apiRequestMock).toHaveBeenNthCalledWith(
+      3,
+      '/usermanagement/profiles/consumable-orders/payment/responsible-users',
+    )
   })
 
   it('strips UI-only local NetUid values before calculating an order', async () => {
@@ -194,6 +216,21 @@ describe('consumableOrdersApi', () => {
     expect(apiRequestMock).toHaveBeenCalledWith('/payments/movements/accounting/new', {
       body: { OperationName: 'Послуги' },
       method: 'POST',
+    })
+  })
+
+  it('uses order-pay scoped payment movement lookups', async () => {
+    apiRequestMock.mockResolvedValue({ Items: [] })
+
+    await getPaymentMovements()
+    await searchPaymentMovements('service')
+
+    expect(apiRequestMock.mock.calls.map(([path]) => path)).toEqual([
+      '/payments/movements/consumable-orders/order/pay/all',
+      '/payments/movements/consumable-orders/order/pay/all/search',
+    ])
+    expect(apiRequestMock.mock.calls[1][1]).toEqual({
+      query: { value: 'service' },
     })
   })
 })

@@ -281,6 +281,33 @@ describe('SalesUkrainePage event permissions', () => {
 
     expect(await screen.findByRole('menuitem', { name: 'Розблокувати для відвантаження' })).toBeTruthy()
   })
+
+  it('uses export_before_packing instead of role type for VAT documents and TTN', async () => {
+    grant(
+      PermissionKeys.SalesUkraine.Sale.View,
+      PermissionKeys.SalesUkraine.Sale.OpenContextMenu,
+      PermissionKeys.SalesUkraine.Sale.ExportInvoice,
+      PermissionKeys.SalesUkraine.Sale.PrintConsignmentNote,
+    )
+    mocks.getSalesUkraine.mockResolvedValue([actionableSale({
+      IsAcceptedToPacking: false,
+      IsVatSale: true,
+    })])
+    const firstView = renderPage()
+
+    await screen.findByText('Клієнт без granular прав')
+    expect(screen.queryByRole('button', { name: 'Документи' })).toBeNull()
+    fireEvent.click(screen.getByRole('button', { name: 'Дії' }))
+    expect(await screen.findByRole('menuitem', { name: 'Дії недоступні' })).toBeTruthy()
+
+    firstView.unmount()
+    mocks.granted.add(PermissionKeys.SalesUkraine.Sale.ExportBeforePacking)
+    renderPage()
+
+    expect(await screen.findByRole('button', { name: 'Документи' })).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: 'Дії' }))
+    expect(await screen.findByRole('menuitem', { name: 'Друк ТТН' })).toBeTruthy()
+  })
 })
 
 function grant(...permissions: string[]) {

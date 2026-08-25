@@ -13,6 +13,7 @@ import type {
   IncomeExchangeCalculation,
   IncomeCashflowsSearchParams,
   IncomePaymentOrder,
+  IncomePaymentOperationType,
   NamedEntity,
   Organization,
   PaymentMovement,
@@ -159,13 +160,13 @@ export async function searchIncomeCashflowPaymentRegisters(value = ''): Promise<
 }
 
 export async function getIncomeCashflowPaymentMovements(): Promise<PaymentMovement[]> {
-  const result = await apiRequest<unknown>('/payments/movements/all')
+  const result = await apiRequest<unknown>('/payments/movements/accounting/all')
 
   return readArrayPayload(result, ['Items', 'PaymentMovements', 'Data']) as PaymentMovement[]
 }
 
 export async function searchIncomeCashflowPaymentMovements(value: string): Promise<PaymentMovement[]> {
-  const result = await apiRequest<unknown>('/payments/movements/all/search', {
+  const result = await apiRequest<unknown>('/payments/movements/accounting/all/search', {
     query: {
       value,
     },
@@ -175,7 +176,7 @@ export async function searchIncomeCashflowPaymentMovements(value: string): Promi
 }
 
 export async function createIncomeCashflowPaymentMovement(operationName: string): Promise<PaymentMovement | null> {
-  const result = await apiRequest<unknown>('/payments/movements/new', {
+  const result = await apiRequest<unknown>('/payments/movements/accounting/new', {
     method: 'POST',
     body: {
       OperationName: operationName,
@@ -196,9 +197,36 @@ export async function createIncomeCashflowPaymentMovementForAccounting(operation
   return result && typeof result === 'object' ? (result as PaymentMovement) : null
 }
 
-export async function searchIncomeCashflowCounterparties(
+export async function searchOtherIncomeCashflowCounterparties(
   value: string,
   type: IncomeCounterpartySearchType,
+  signal?: AbortSignal,
+): Promise<Client[]> {
+  return searchIncomeCashflowCounterpartiesAt(
+    value,
+    type,
+    getOtherIncomeCounterpartySearchPath(type),
+    signal,
+  )
+}
+
+export async function searchOutgoingCashflowCounterparties(
+  value: string,
+  type: IncomeCounterpartySearchType,
+  signal?: AbortSignal,
+): Promise<Client[]> {
+  return searchIncomeCashflowCounterpartiesAt(
+    value,
+    type,
+    getOutgoingCounterpartySearchPath(type),
+    signal,
+  )
+}
+
+async function searchIncomeCashflowCounterpartiesAt(
+  value: string,
+  type: IncomeCounterpartySearchType,
+  path: string,
   signal?: AbortSignal,
 ): Promise<Client[]> {
   const searchValue = value.trim()
@@ -207,7 +235,27 @@ export async function searchIncomeCashflowCounterparties(
     return []
   }
 
-  const result = await apiRequest<unknown>(getCounterpartySearchPath(type), {
+  const result = await apiRequest<unknown>(path, {
+    query: getCounterpartySearchQuery(searchValue, type),
+    ...(signal ? { signal } : {}),
+  })
+
+  return readArrayPayload(result, ['Items', 'Clients', 'SupplyOrganizations', 'Organizations', 'Data', 'Collection']) as Client[]
+}
+
+export async function searchIncomeCashflowCounterpartiesForOperation(
+  value: string,
+  type: IncomeCounterpartySearchType,
+  operationType: IncomePaymentOperationType,
+  signal?: AbortSignal,
+): Promise<Client[]> {
+  const searchValue = value.trim()
+
+  if (!searchValue) {
+    return []
+  }
+
+  const result = await apiRequest<unknown>(getIncomeCounterpartySearchPath(type, operationType), {
     query: getCounterpartySearchQuery(searchValue, type),
     ...(signal ? { signal } : {}),
   })
@@ -522,16 +570,61 @@ function normalizePaymentRegister(result: unknown): PaymentRegister | null {
   }
 }
 
-function getCounterpartySearchPath(type: IncomeCounterpartySearchType): string {
+function getIncomeCounterpartySearchPath(
+  type: IncomeCounterpartySearchType,
+  operationType: IncomePaymentOperationType,
+): string {
+  if (operationType === INCOME_PAYMENT_OPERATION_CODE.ClientPayment) {
+    if (type !== IncomeCounterpartySearchType.Client) {
+      throw new Error('Client-payment search only supports client counterparties.')
+    }
+
+    return '/clients/income-cashflows/client-payment/search'
+  }
+
+  const operationSegment = operationType === INCOME_PAYMENT_OPERATION_CODE.SupplierReturn
+    ? 'supplier-return'
+    : operationType === INCOME_PAYMENT_OPERATION_CODE.OtherAccountingWithCounterparts
+      ? 'counterparty-income'
+      : null
+
+  if (!operationSegment) {
+    throw new Error('Unsupported income counterparty search operation type.')
+  }
+
   if (type === IncomeCounterpartySearchType.Supplier) {
-    return '/supplies/organizations/all/search'
+    return `/supplies/organizations/income-cashflows/${operationSegment}/search`
   }
 
   if (type === IncomeCounterpartySearchType.Manufacturer) {
-    return '/clients/suppliers/all/filtered'
+    return `/clients/income-cashflows/${operationSegment}/suppliers/search`
   }
 
-  return '/clients/all/filtered'
+  return `/clients/income-cashflows/${operationSegment}/search`
+}
+
+function getOtherIncomeCounterpartySearchPath(type: IncomeCounterpartySearchType): string {
+  if (type === IncomeCounterpartySearchType.Supplier) {
+    return '/supplies/organizations/income-cashflows/other-income/search'
+  }
+
+  if (type === IncomeCounterpartySearchType.Manufacturer) {
+    return '/clients/income-cashflows/other-income/suppliers/search'
+  }
+
+  return '/clients/income-cashflows/other-income/search'
+}
+
+function getOutgoingCounterpartySearchPath(type: IncomeCounterpartySearchType): string {
+  if (type === IncomeCounterpartySearchType.Supplier) {
+    return '/supplies/organizations/outgoing-cashflows/create/search'
+  }
+
+  if (type === IncomeCounterpartySearchType.Manufacturer) {
+    return '/clients/outgoing-cashflows/create/suppliers/search'
+  }
+
+  return '/clients/outgoing-cashflows/create/search'
 }
 
 function getCounterpartySearchQuery(value: string, type: IncomeCounterpartySearchType) {

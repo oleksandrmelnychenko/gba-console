@@ -19,13 +19,13 @@ import type {
 import { normalizeExportDocument } from './salesApi'
 
 export async function getShipmentTransporterTypes(): Promise<ShipmentTransporterType[]> {
-  const result = await apiRequest<unknown>('/transporters/types/all')
+  const result = await apiRequest<unknown>('/transporters/types/warehouse-ukraine/shipments')
 
   return normalizeArray<ShipmentTransporterType>(result)
 }
 
 export async function getShipmentTransportersByType(typeNetId: string): Promise<ShipmentTransporter[]> {
-  const result = await apiRequest<unknown>('/transporters/all/type', {
+  const result = await apiRequest<unknown>('/transporters/warehouse-ukraine/shipments/by-type', {
     query: {
       netId: typeNetId,
     },

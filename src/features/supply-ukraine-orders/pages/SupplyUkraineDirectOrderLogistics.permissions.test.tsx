@@ -7,8 +7,8 @@ import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { I18nProvider } from '../../../shared/i18n/I18nProvider'
 import {
   getDirectSupplyOrderForLogisticWay,
+  getSupplyOrderCreateSuppliers,
   getSupplyOrderOrganizations,
-  getSupplyOrderSuppliers,
 } from '../api/supplyUkraineOrdersApi'
 import {
   SupplyUkraineDirectOrderCreatePage,
@@ -29,8 +29,8 @@ vi.mock('../api/supplyUkraineOrdersApi', () => ({
   clearDirectSupplyOrderDeliveryDocumentFile: vi.fn(),
   createSupplyCreditNote: vi.fn(),
   getDirectSupplyOrderForLogisticWay: vi.fn(),
+  getSupplyOrderCreateSuppliers: vi.fn(),
   getSupplyOrderOrganizations: vi.fn(),
-  getSupplyOrderSuppliers: vi.fn(),
   updateDirectSupplyOrderDeliveryDocumentStatus: vi.fn(),
   updateDirectSupplyOrderLogisticAmount: vi.fn(),
   uploadDirectSupplyOrderFromFile: vi.fn(),
@@ -79,8 +79,8 @@ describe('Supply Ukraine direct-order logistics permissions', () => {
     allowedPermissions.clear()
     vi.clearAllMocks()
     vi.mocked(getDirectSupplyOrderForLogisticWay).mockResolvedValue(null)
+    vi.mocked(getSupplyOrderCreateSuppliers).mockResolvedValue([])
     vi.mocked(getSupplyOrderOrganizations).mockResolvedValue([])
-    vi.mocked(getSupplyOrderSuppliers).mockResolvedValue([])
   })
 
   it('does not mount logistic-way model without page access', () => {
@@ -113,6 +113,6 @@ describe('Supply Ukraine direct-order logistics permissions', () => {
 
     expect(screen.getByText('Доступ заборонено')).toBeTruthy()
     expect(getSupplyOrderOrganizations).not.toHaveBeenCalled()
-    expect(getSupplyOrderSuppliers).not.toHaveBeenCalled()
+    expect(getSupplyOrderCreateSuppliers).not.toHaveBeenCalled()
   })
 })

@@ -105,7 +105,7 @@ export async function getPaymentAccountOrganizations(): Promise<Organization[]> 
 }
 
 export async function getPaymentAccountBanks(): Promise<BankItem[]> {
-  const result = await apiRequest<unknown>('/bank/all')
+  const result = await apiRequest<unknown>('/bank/accounting/all')
 
   return readArrayPayload(result, ['Items', 'Banks', 'Data']) as BankItem[]
 }
@@ -121,7 +121,7 @@ export async function getPaymentAccountsByBank(paymentRegisterNetId: string): Pr
 }
 
 export async function getPaymentAccountPaymentMovements(): Promise<PaymentMovement[]> {
-  const result = await apiRequest<unknown>('/payments/movements/all')
+  const result = await apiRequest<unknown>('/payments/movements/payment-accounts/page/all')
 
   return readArrayPayload(result, ['Items', 'PaymentMovements', 'Data']) as PaymentMovement[]
 }

@@ -1,6 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { apiRequest } from '../../../shared/api/apiClient'
-import { calculateAdvancedReportOrder, getAdvancedReports } from './advancedReportsApi'
+import {
+  calculateAdvancedReportOrder,
+  getAdvancedReportPaymentMovements,
+  getAdvancedReports,
+} from './advancedReportsApi'
 import type { OutcomePaymentOrder } from '../types'
 
 vi.mock('../../../shared/api/apiClient', () => ({
@@ -89,5 +93,17 @@ describe('advancedReportsApi', () => {
     })
     expect(result.Collection).toHaveLength(1)
     expect(result.TotalRowsQty).toBe(42)
+  })
+
+  it('selects one exact advanced-report lookup scope without OR authorization', async () => {
+    apiRequestMock.mockResolvedValue({ Items: [] })
+
+    await getAdvancedReportPaymentMovements('open')
+    await getAdvancedReportPaymentMovements('edit')
+
+    expect(apiRequestMock.mock.calls.map(([path]) => path)).toEqual([
+      '/payments/movements/advanced-reports/report/open/all',
+      '/payments/movements/advanced-reports/report/edit/all',
+    ])
   })
 })

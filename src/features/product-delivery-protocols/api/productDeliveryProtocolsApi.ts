@@ -26,14 +26,6 @@ export async function getProtocols(params: ProtocolsSearchParams): Promise<Deliv
   return normalizeListResult(result)
 }
 
-export async function getProtocolByNetId(netId: string): Promise<DeliveryProductProtocol | null> {
-  const result = await apiRequest<unknown>('/delivery/product/protocol/get/', {
-    query: { netId },
-  })
-
-  return normalizeProtocol(result)
-}
-
 export async function getProtocolForSpecification(netId: string): Promise<DeliveryProductProtocol | null> {
   const result = await apiRequest<unknown>('/delivery/product/protocol/specification/get', {
     query: { netId },

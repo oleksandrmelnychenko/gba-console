@@ -22,8 +22,8 @@ import type { DepreciatedOrderCreateFromFilePayload, DepreciatedOrderStorage } f
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 
 export type DepreciatedOrderCreateModalProps = {
+  canCreateManagement: boolean
   createError: string | null
-  isAdmin: boolean
   isCreating: boolean
   isLoadingStorages: boolean
   opened: boolean
@@ -60,8 +60,8 @@ function createInitialForm(): CreateFormState {
 }
 
 export function DepreciatedOrderCreateModal({
+  canCreateManagement,
   createError,
-  isAdmin,
   isCreating,
   isLoadingStorages,
   opened,
@@ -156,7 +156,7 @@ export function DepreciatedOrderCreateModal({
             />
           </SimpleGrid>
 
-          {isAdmin && (
+          {canCreateManagement && (
             <Checkbox
               checked={form.isManagement}
               disabled={isCreating}
@@ -226,9 +226,9 @@ export function DepreciatedOrderCreateModal({
             onChange={(file) => setForm((current) => ({ ...current, file }))}
           />
 
-          {!isAdmin && (
+          {!canCreateManagement && (
             <Text c="dimmed" size="xs">
-              {t('Управлінське списання доступне тільки для ролей Administrator або GBA.')}
+              {t('Немає права створювати управлінське списання.')}
             </Text>
           )}
 

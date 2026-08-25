@@ -6,8 +6,13 @@ import { useRef } from 'react'
 import { useValueState } from '../hooks/useValueState'
 import { useI18n } from '../i18n/useI18n'
 import { usePersistentSaleJsonMutationRunner } from '../../features/sales-ukraine/usePersistentSaleJsonMutation'
+import type { SalesMutationOperationOptions } from '../../features/sales-ukraine/salesMutationOperation'
 import { AppModal } from '../ui/AppModal'
-import { confirmSaleAuditHistory, getShiftedSaleDocument, getShiftedSaleHistoryDocument } from './saleAuditApi'
+import {
+  getWarehouseUkraineAuditInvoiceDocument,
+  getWarehouseUkraineAuditShiftedDocument,
+  type SaleAuditHistoryMutationPayload,
+} from './saleAuditApi'
 import {
   SaleAuditShiftStatusType,
   type SaleAuditLifeCycleLineItem,
@@ -20,15 +25,22 @@ import {
 type AuditPrintKind = 'act' | 'invoice'
 
 export type SaleAuditDocumentApi = {
-  confirm: typeof confirmSaleAuditHistory
-  getInvoice: typeof getShiftedSaleDocument
-  getShifted: typeof getShiftedSaleHistoryDocument
+  confirm: (
+    payload: SaleAuditHistoryMutationPayload,
+    operation: SalesMutationOperationOptions,
+  ) => Promise<void>
+  getInvoice: typeof getWarehouseUkraineAuditInvoiceDocument
+  getShifted: typeof getWarehouseUkraineAuditShiftedDocument
 }
 
 const DEFAULT_SALE_AUDIT_DOCUMENT_API: SaleAuditDocumentApi = {
-  confirm: confirmSaleAuditHistory,
-  getInvoice: getShiftedSaleDocument,
-  getShifted: getShiftedSaleHistoryDocument,
+  confirm: rejectUnscopedAuditConfirmation,
+  getInvoice: getWarehouseUkraineAuditInvoiceDocument,
+  getShifted: getWarehouseUkraineAuditShiftedDocument,
+}
+
+async function rejectUnscopedAuditConfirmation(): Promise<void> {
+  throw new Error('Scoped sale-audit confirmation API is not configured')
 }
 
 type SaleAuditDetailProps = {

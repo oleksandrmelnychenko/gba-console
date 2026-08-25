@@ -5,6 +5,7 @@ import {
   withSalesMutationOperationNetUid,
   type SalesMutationOperationOptions,
 } from '../../sales-ukraine/salesMutationOperation'
+import type { SalesUkraineSale } from '../../sales-ukraine/types'
 import type { Sale, SalesResponse, WarehouseUkraineExportDocument } from '../types'
 
 const PACKAGING_STATUS = 'Packaging'
@@ -41,11 +42,22 @@ export async function getWarehouseUkraineSales(
   return normalizeSalesResponse(result)
 }
 
+export async function getWarehouseUkraineSaleDetails(
+  netId: string,
+  signal?: AbortSignal,
+): Promise<SalesUkraineSale | null> {
+  const result = await apiRequest<unknown>('/sales/warehouse-ukraine/invoices/details', {
+    query: { netId },
+    ...(signal ? { signal } : {}),
+  })
+
+  return result && typeof result === 'object' && !Array.isArray(result) ? (result as SalesUkraineSale) : null
+}
+
 export async function getSalePrintDocument(saleNetId: string): Promise<WarehouseUkraineExportDocument> {
   const result = await apiRequest<unknown>('/sales/warehouse-ukraine/invoices/print', {
     query: {
       netId: saleNetId,
-      isFromStorages: true,
     },
   })
 
@@ -68,15 +80,15 @@ export async function getSaleActProtocolEditDocument(
 
 export async function updateWarehouseUkraineSale(
   sale: Sale,
+  printIntent: 'invoice' | 'act-protocol',
   operation: SalesMutationOperationOptions,
 ): Promise<Sale> {
-  // The list projection loads with includeDetails=false, so Order.OrderPackages arrives empty.
-  // Posting that back would make the server treat the sale as having zero packages and soft-delete
-  // every real OrderPackage (RemoveAllByOrderId). Strip Order so the packing block is skipped while
-  // the flag/status/TTN updates still apply.
-  const result = await apiRequest<unknown>('/sales/update', {
+  const path = printIntent === 'act-protocol'
+    ? '/sales/warehouse-ukraine/invoices/mark-edit-act-printed'
+    : '/sales/warehouse-ukraine/invoices/mark-printed'
+  const result = await apiRequest<unknown>(path, {
     method: 'POST',
-    body: withSalesMutationOperationNetUid({ ...sale, Order: null }, operation.operationId),
+    body: withSalesMutationOperationNetUid({ NetUid: sale.NetUid }, operation.operationId),
     headers: getSalesMutationOperationHeaders(operation.operationId),
     ...(operation.signal ? { signal: operation.signal } : {}),
   })

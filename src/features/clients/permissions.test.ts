@@ -17,8 +17,8 @@ describe('client permission mapping', () => {
     )
   })
 
-  it('keeps unknown legacy keys available during staged migration', () => {
-    expect(getClientTypePermission('custom_icon')).toBe('custom_icon_clientsNew_PKEY')
-    expect(getClientTypeRolePermission('Custom role')).toBe('Customrole_sub_clientsNew_PKEY')
+  it('fails closed for unknown database values instead of inventing legacy PKEYs', () => {
+    expect(getClientTypePermission('custom_icon')).toBe('')
+    expect(getClientTypeRolePermission('Custom role')).toBe('')
   })
 })

@@ -242,7 +242,7 @@ function ConsumableOrderFormPageContent({ canMutate }: { canMutate: boolean }) {
         return
       }
 
-      void searchSupplyOrganizations(value).then((nextSuppliers) => {
+      void searchSupplyOrganizations(value, isEditMode ? 'edit' : 'create').then((nextSuppliers) => {
         if (searchRequestRef.current.supplier === requestId) {
           setSuppliers((current) => includeEntity(nextSuppliers, current.find((item) => getEntityValue(item) === form.selectedSupplierValue) || null))
         }
@@ -250,7 +250,7 @@ function ConsumableOrderFormPageContent({ canMutate }: { canMutate: boolean }) {
     }, SEARCH_DEBOUNCE_MS)
 
     return () => window.clearTimeout(timeoutId)
-  }, [form.selectedSupplierValue, form.supplierSearch, setSuppliers])
+  }, [form.selectedSupplierValue, form.supplierSearch, isEditMode, setSuppliers])
 
   useEffect(() => {
     const value = form.storageSearch.trim()

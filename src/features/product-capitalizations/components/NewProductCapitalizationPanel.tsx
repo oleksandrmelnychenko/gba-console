@@ -446,7 +446,10 @@ function useNewProductCapitalizationModel(
       setError(null)
 
       try {
-        const loadedStorages = await getProductCapitalizationStoragesByOrganization(selectedOrganizationNetId as string)
+        const loadedStorages = await getProductCapitalizationStoragesByOrganization(
+          selectedOrganizationNetId as string,
+          'create',
+        )
 
         if (cancelled) {
           return

@@ -5,7 +5,7 @@ import { type ReactNode, useEffect, useMemo, useState } from 'react'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
-import { exportSaleReturnsReport, searchSalesReturnClients } from '../api/salesReturnsApi'
+import { exportSaleReturnsReport, searchSalesReturnReportClients } from '../api/salesReturnsApi'
 import type { SalesReturnClient, SalesReturnDocument } from '../types'
 import { getEntityName } from '../utils'
 
@@ -40,7 +40,7 @@ export function ClientReturnsReportPanel({ opened, onClose }: ClientReturnsRepor
 
     const controller = new AbortController()
     const timeout = window.setTimeout(() => {
-      searchSalesReturnClients(value, controller.signal)
+      searchSalesReturnReportClients(value, controller.signal)
         .then((next) => setClients(next))
         .catch(() => {
           if (!controller.signal.aborted) {

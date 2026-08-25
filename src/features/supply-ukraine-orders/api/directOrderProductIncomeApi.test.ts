@@ -38,7 +38,7 @@ describe('direct order product income api helpers', () => {
 
     await getDirectOrderProductIncome('direct-order-1')
 
-    expect(apiRequestMock).toHaveBeenCalledWith('/products/incomes/get/supply/order', {
+    expect(apiRequestMock).toHaveBeenCalledWith('/products/incomes/product-income/direct-supply-order/header', {
       query: { netId: 'direct-order-1' },
       errorMessages: {
         default: 'Не вдалося завантажити оприходування',

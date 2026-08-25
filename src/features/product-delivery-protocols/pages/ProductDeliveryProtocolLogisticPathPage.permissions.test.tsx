@@ -214,4 +214,21 @@ describe('Product delivery protocol logistic-path permission guards', () => {
       allowedPermissions.delete(testCase.permission)
     }
   })
+
+  it('requires the completed-protocol override in addition to the exact mutation key', async () => {
+    vi.mocked(getProtocolForLogisticPath).mockResolvedValue({ ...PROTOCOL, IsCompleted: true })
+    allowedPermissions.add(PermissionKeys.ProductDeliveryProtocols.LogisticWay.Open)
+    allowedPermissions.add(PermissionKeys.ProductDeliveryProtocols.UnifiedService.ChangeStatus)
+    const firstView = renderPage()
+
+    fireEvent.click(await screen.findByRole('button', { name: 'status-final' }))
+    expect(updateProtocolStatus).not.toHaveBeenCalled()
+
+    firstView.unmount()
+    allowedPermissions.add(PermissionKeys.ProductDeliveryProtocols.Protocol.EditCompleted)
+    renderPage()
+
+    fireEvent.click(await screen.findByRole('button', { name: 'status-final' }))
+    await waitFor(() => expect(updateProtocolStatus).toHaveBeenCalledWith('protocol-1'))
+  })
 })

@@ -40,11 +40,11 @@ const CYRILLIC_CLIENT_CODE_HOMOGLYPHS: Readonly<Record<string, string>> = {
   Х: 'X',
 }
 
-export async function getClients(
+export async function searchClientsForResale(
   params: ClientSearchParams,
   signal?: AbortSignal,
 ): Promise<Client[]> {
-  return getClientsFromRoute('/clients/all/filtered', params, signal)
+  return getClientsFromRoute('/clients/resales/create/search', params, signal)
 }
 
 export async function getClientsForRegistry(
@@ -298,7 +298,7 @@ async function getFilterItems(type: number): Promise<ClientFilterItem[]> {
 }
 
 export async function exportClientsDocument(params: ClientSearchParams): Promise<ClientPrintDocument | null> {
-  const result = await apiRequest<unknown>('/clients/document', {
+  const result = await apiRequest<unknown>('/clients/registry/document/export', {
     query: {
       filter: buildClientsSearchFilter(params),
     },
@@ -333,7 +333,7 @@ export async function exportSuppliersDocument(params: ClientSearchParams): Promi
 }
 
 export async function switchClientActiveState(netId: string): Promise<void> {
-  await apiRequest<unknown>('/clients/switch/active', {
+  await apiRequest<unknown>('/clients/registry/switch/active', {
     query: {
       netId,
     },

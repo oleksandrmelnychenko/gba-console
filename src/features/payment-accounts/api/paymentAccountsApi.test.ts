@@ -10,6 +10,7 @@ import {
   getPaymentAccountCurrencyActivity,
   getPaymentAccountCurrencyTraders,
   getPaymentAccountExchanges,
+  getPaymentAccountPaymentMovements,
   getPaymentAccountTransfers,
   getPaymentAccountsByBank,
   updatePaymentAccount,
@@ -118,6 +119,16 @@ describe('paymentAccountsApi', () => {
       '/payments/registers/exchanges/accounting/all',
       '/payments/registers/accounting/currencies/get/filtered',
     ])
+  })
+
+  it('loads payment movements through the payment-accounts page scope', async () => {
+    apiRequestMock.mockResolvedValueOnce({ Items: [] })
+
+    await getPaymentAccountPaymentMovements()
+
+    expect(apiRequestMock).toHaveBeenCalledWith(
+      '/payments/movements/payment-accounts/page/all',
+    )
   })
 
   it.each([

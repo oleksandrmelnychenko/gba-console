@@ -44,7 +44,9 @@ export async function exportAccountingCashFlowDocument(
   params: AccountingCashFlowExportParams,
 ): Promise<AccountingCashFlowDocument> {
   const result = await apiRequest<unknown>(
-    params.mode === 'supplier' ? '/accounting/cashflow/suppliers/document/export' : '/accounting/cashflow/document/export',
+    params.mode === 'supplier'
+      ? '/accounting/cashflow/suppliers/document/export'
+      : '/accounting/cashflow/counterparties/document/export',
     {
     query: {
       netId: params.netId,

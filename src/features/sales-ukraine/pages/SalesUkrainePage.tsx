@@ -53,10 +53,8 @@ import {
 import type { SaleAuditStatistic } from '../../../shared/sale-audit/saleAuditTypes'
 import './sales-grid.css'
 import './sale-detail-sheet.css'
-import { useAuth } from '../../auth/useAuth'
 import { Can } from '../../auth/components/Can'
 import { usePermissions } from '../../auth/usePermissions'
-import { UserRoleType } from '../../../shared/auth/types'
 import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import {
   acceptSaleForPacking,
@@ -326,14 +324,15 @@ function SalesUkrainePageContent() {
   const { t } = useI18n()
   const [searchParams] = useSearchParams()
   const focusedSaleNetId = searchParams.get('saleNetId') || ''
-  const { user } = useAuth()
   const { can } = usePermissions()
   const runSaleUnlock = usePersistentSaleJsonMutationRunner('sale-unlock')
   const runSaleAcceptForPacking = usePersistentSaleJsonMutationRunner('sale-accept-for-packing')
-  const isAdmin =
-    user?.UserRole?.UserRoleType === UserRoleType.Administrator || user?.UserRole?.UserRoleType === UserRoleType.GBA
+  const canExportBeforePacking = can(
+    PermissionKeys.SalesUkraine.Sale.ExportBeforePacking,
+  )
   const canOpenCreateDialog = can(PermissionKeys.SalesUkraine.Sale.OpenCreateDialog)
   const canCreateSale = can(PermissionKeys.SalesUkraine.Sale.Create)
+  const canConvertMergedToBill = can(PermissionKeys.SalesUkraine.Sale.ConvertMergedToBill)
   const canOpenSale = can(PermissionKeys.SalesUkraine.Sale.OpenDetails)
   const canOpenContextMenu = can(PermissionKeys.SalesUkraine.Sale.OpenContextMenu)
   const canEditSale = can(PermissionKeys.SalesUkraine.Sale.Edit)
@@ -1354,7 +1353,7 @@ function SalesUkrainePageContent() {
                         canExportSaleDocuments={canExportSaleDocuments}
                         canOpenSale={canOpenSale}
                         canWillNotShip={canWillNotShip}
-                        isAdmin={isAdmin}
+                        canExportBeforePacking={canExportBeforePacking}
                         canExpand={canExpand}
                         isExpanded={isExpanded}
                         onToggleExpand={handleRowToggleExpand}
@@ -1407,7 +1406,7 @@ function SalesUkrainePageContent() {
           canViewAudit={canViewAudit}
           canUnlock={canUnlock}
           canWillNotShip={canWillNotShip}
-          isAdmin={isAdmin}
+          canExportBeforePacking={canExportBeforePacking}
           state={rowActionsMenuState}
           onClose={handleRowActionsMenuClose}
           onOpenAudit={handleRowOpenAudit}
@@ -1523,6 +1522,7 @@ function SalesUkrainePageContent() {
             canOpenDetails={canOpenSale}
             canSubmitCreate={canCreateSale}
             canSubmitEdit={canEditSale}
+            canConvertMergedToBill={canConvertMergedToBill}
             canViewAudit={canViewAudit}
             editSale={wizardEditSale}
             opened
@@ -1575,7 +1575,7 @@ type SaleGridRowProps = {
   canExportSaleDocuments: boolean
   canOpenSale: boolean
   canWillNotShip: boolean
-  isAdmin: boolean
+  canExportBeforePacking: boolean
   canExpand: boolean
   isExpanded: boolean
   onToggleExpand: (key: string, sale: SalesUkraineSale) => void
@@ -1600,7 +1600,7 @@ const SaleGridRow = memo(function SaleGridRow({
   canExportSaleDocuments,
   canOpenSale,
   canWillNotShip,
-  isAdmin,
+  canExportBeforePacking,
   canExpand,
   isExpanded,
   onToggleExpand,
@@ -1633,7 +1633,12 @@ const SaleGridRow = memo(function SaleGridRow({
     showBang,
     showEdit,
     unpaid,
-  } = getSaleActionAvailability(sale, { canEditSale, canUnlock: false, canWillNotShip, isAdmin })
+  } = getSaleActionAvailability(sale, {
+    canEditSale,
+    canExportBeforePacking,
+    canUnlock: false,
+    canWillNotShip,
+  })
   const discountEditable = canEditSale && isNewOrPackagingStatus(sale) && positions > 0
   const discountPercentageEditable =
     canEditSale &&
@@ -1947,7 +1952,7 @@ function SaleRowActionsMenu({
   canUnlock,
   canViewAudit,
   canWillNotShip,
-  isAdmin,
+  canExportBeforePacking,
   state,
   onClose,
   onOpenAudit,
@@ -1964,7 +1969,7 @@ function SaleRowActionsMenu({
   canUnlock: boolean
   canViewAudit: boolean
   canWillNotShip: boolean
-  isAdmin: boolean
+  canExportBeforePacking: boolean
   state: SaleRowActionsMenuState
   onClose: () => void
   onOpenAudit: (sale: SalesUkraineSale) => void
@@ -1993,7 +1998,7 @@ function SaleRowActionsMenu({
     canUnlock,
     canViewAudit,
     canWillNotShip,
-    isAdmin,
+    canExportBeforePacking,
   })
   const hasActions = showEdit
     || showEditShift
@@ -2089,7 +2094,7 @@ function getSaleActionAvailability(
     canUnlock,
     canViewAudit = true,
     canWillNotShip,
-    isAdmin,
+    canExportBeforePacking,
   }: {
     canEditSale: boolean
     canOpenDeliveryDetails?: boolean
@@ -2097,7 +2102,7 @@ function getSaleActionAvailability(
     canUnlock: boolean
     canViewAudit?: boolean
     canWillNotShip: boolean
-    isAdmin: boolean
+    canExportBeforePacking: boolean
   },
 ) {
   const positions = getOrderItemCount(sale)
@@ -2110,7 +2115,10 @@ function getSaleActionAvailability(
   // A strictly NotPaid sale that has already been received hides edit-act,
   // print, audit, and delivery actions. PartialPaid stays available.
   const hideEditActActions = lifecycleStatusKey === 'Received' && unpaid
-  const hidePrintBlock = Boolean(sale.IsVatSale) && !sale.IsAcceptedToPacking && !isAdmin
+  const hidePrintBlock =
+    Boolean(sale.IsVatSale)
+    && !sale.IsAcceptedToPacking
+    && !canExportBeforePacking
   const showEdit = canEditSale && (sale.InputSaleMerges?.length ?? 0) === 0
 
   return {

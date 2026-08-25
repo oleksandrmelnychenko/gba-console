@@ -112,11 +112,11 @@ describe('outgoingCashflowCreateApi mutation contract', () => {
     )
     expect(apiRequestMock).toHaveBeenNthCalledWith(
       3,
-      '/payments/movements/all',
+      '/payments/movements/accounting/all',
     )
     expect(apiRequestMock).toHaveBeenNthCalledWith(
       4,
-      '/payments/movements/all/search',
+      '/payments/movements/accounting/all/search',
       {
         query: {
           value: 'госп',

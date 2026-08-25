@@ -73,7 +73,7 @@ export async function getOutgoingCashflowCurrencies(): Promise<Currency[]> {
 }
 
 export async function getOutgoingCashflowPaymentMovements(): Promise<PaymentMovement[]> {
-  const result = await apiRequest<unknown>('/payments/movements/all')
+  const result = await apiRequest<unknown>('/payments/movements/accounting/all')
 
   return readArrayPayload(result, ['Items', 'PaymentMovements', 'Data']) as PaymentMovement[]
 }

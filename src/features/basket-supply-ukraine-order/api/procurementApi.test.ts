@@ -655,7 +655,7 @@ describe('getProcurementCharts', () => {
 
     const charts = await getProcurementCharts({ producerId: 42, topN: 8 })
 
-    expect(apiRequestMock).toHaveBeenCalledWith('/procurement/charts', {
+    expect(apiRequestMock).toHaveBeenCalledWith('/procurement/purchase-cockpit/charts', {
       query: { producerId: 42, topN: 8 },
     })
     expect(charts.top_items[0]).toMatchObject({

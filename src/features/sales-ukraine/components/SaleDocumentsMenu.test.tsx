@@ -151,6 +151,39 @@ describe('SaleDocumentsMenu legacy document semantics', () => {
     expect(screen.queryByText('Лист відвантаження')).toBeNull()
   })
 
+  it('bundles the invoice only when export_invoice is assigned before packing', async () => {
+    mocks.permissionKeys.clear()
+    mocks.permissionKeys.add(PermissionKeys.SalesUkraine.Sale.ExportPaymentInvoice)
+    mocks.getSalePaymentDocument.mockResolvedValueOnce({
+      ...documentResult,
+      invoiceExcelUrl: 'https://example.test/invoice.xlsx',
+      invoicePdfUrl: 'https://example.test/invoice.pdf',
+      isAcceptedToPacking: false,
+    })
+
+    renderMenu(createSale({ BaseLifeCycleStatus: { SaleLifeCycleType: 'New' } }))
+    fireEvent.click(screen.getByRole('button', { name: 'Документи' }))
+    fireEvent.click(await screen.findByText('Рахунок на оплату'))
+
+    await waitFor(() => expect(mocks.getSalePaymentDocument).toHaveBeenCalledTimes(1))
+    expect(screen.queryByText('Видаткова накладна')).toBeNull()
+
+    cleanup()
+    mocks.permissionKeys.add(PermissionKeys.SalesUkraine.Sale.ExportInvoice)
+    mocks.getSalePaymentDocument.mockResolvedValueOnce({
+      ...documentResult,
+      invoiceExcelUrl: 'https://example.test/invoice.xlsx',
+      invoicePdfUrl: 'https://example.test/invoice.pdf',
+      isAcceptedToPacking: false,
+    })
+
+    renderMenu(createSale({ BaseLifeCycleStatus: { SaleLifeCycleType: 'New' } }))
+    fireEvent.click(screen.getByRole('button', { name: 'Документи' }))
+    fireEvent.click(await screen.findByText('Рахунок на оплату'))
+
+    expect(await screen.findByText('Видаткова накладна')).toBeTruthy()
+  })
+
   it('keeps the first revision bundle on the revision permission facade', async () => {
     mocks.permissionKeys.clear()
     mocks.permissionKeys.add(PermissionKeys.SalesUkraine.Sale.ExportRevisionDocuments)

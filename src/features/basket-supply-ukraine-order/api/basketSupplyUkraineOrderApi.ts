@@ -207,29 +207,8 @@ export async function getNotSentSaleSads(): Promise<Sad[]> {
   return normalizeArray<Sad>(result)
 }
 
-export async function addOrUpdateSad(sad: Sad): Promise<Sad | null> {
-  const result = await executeSadMutation({
-    sad,
-    request: (payload, context) => apiRequest<unknown>(
-      '/supplies/ukraine/order/packlists/sad/update',
-      {
-        method: 'POST',
-        body: payload,
-        ...(context.isCreate
-          ? {
-              dedupe: false,
-              headers: context.headers,
-            }
-          : {}),
-      },
-    ),
-  })
-
-  return normalizeItem<Sad>(result)
-}
-
 export async function addOrUpdateSaleSad(sad: Sad): Promise<Sad | null> {
-  const result = await apiRequest<unknown>('/supplies/ukraine/order/packlists/sad/update/sale', {
+  const result = await apiRequest<unknown>('/supplies/ukraine/order/packlists/sad/page/documents/sad/assemble/sales', {
     method: 'POST',
     body: sad,
   })

@@ -224,7 +224,7 @@ export async function getCarrierById(netId: string): Promise<Statham | null> {
 }
 
 export async function getSupplierClients(): Promise<Client[]> {
-  const result = await apiRequest<unknown>('/clients/all/manufacturers')
+  const result = await apiRequest<unknown>('/clients/tax-free-pack-lists/manufacturers')
 
   return readList<Client>(result)
 }

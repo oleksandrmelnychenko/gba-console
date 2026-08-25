@@ -1,6 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { apiRequest } from '../../../shared/api/apiClient'
-import { getSaleStatisticBySaleId, getSalesByClient } from './clientSalesApi'
+import {
+  getSaleStatisticBySaleId,
+  getSalesByClient,
+  getShiftedSaleDocument,
+  getShiftedSaleHistoryDocument,
+} from './clientSalesApi'
 
 vi.mock('../../../shared/api/apiClient', () => ({ apiRequest: vi.fn() }))
 
@@ -38,6 +43,30 @@ describe('client sales permission facade contracts', () => {
     expect(apiRequestMock).toHaveBeenCalledWith(
       '/sales/ukraine/audit',
       { query: { netId: 'sale-1' } },
+    )
+  })
+
+  it('exports both audit document kinds through the Sales Ukraine audit facade', async () => {
+    apiRequestMock.mockResolvedValue({ FileName: 'audit.xlsx' })
+
+    await getShiftedSaleDocument('sale-1', 'history-1')
+    await getShiftedSaleHistoryDocument('sale-1', 'history-1')
+
+    expect(apiRequestMock).toHaveBeenNthCalledWith(
+      1,
+      '/sales/ukraine/audit/invoice-document',
+      {
+        query: {
+          historyNetId: 'history-1',
+          isFromStorages: false,
+          netId: 'sale-1',
+        },
+      },
+    )
+    expect(apiRequestMock).toHaveBeenNthCalledWith(
+      2,
+      '/sales/ukraine/audit/shifted-document',
+      { query: { historyNetId: 'history-1', netId: 'sale-1' } },
     )
   })
 })

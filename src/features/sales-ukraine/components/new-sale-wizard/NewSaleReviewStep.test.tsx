@@ -201,6 +201,7 @@ function reviewValue(ttnFile: File | null = null): NewSaleReviewValue {
 }
 
 function renderStep({
+  canConvertMergedToBill = false,
   canSubmit = true,
   onBusyChange = vi.fn(),
   onChange = vi.fn(),
@@ -212,6 +213,7 @@ function renderStep({
   submitFlow = 'edit',
   value = reviewValue(),
 }: {
+  canConvertMergedToBill?: boolean
   canSubmit?: boolean
   onBusyChange?: (busy: boolean) => void
   onChange?: (patch: Partial<NewSaleReviewValue>) => void
@@ -227,6 +229,7 @@ function renderStep({
     ...render(
       <MantineProvider theme={theme}>
         <NewSaleReviewStep
+          canConvertMergedToBill={canConvertMergedToBill}
           canSubmit={canSubmit}
           clientNetId="client-1"
           sale={saleValue}
@@ -598,7 +601,7 @@ describe('NewSaleReviewStep persistent file reconciliation', () => {
         { MutationLedgerState: 'not-entered' },
       ))
       .mockResolvedValueOnce(undefined)
-    const { onCreated } = renderStep()
+    const { onCreated } = renderStep({ canConvertMergedToBill: true })
     const submit = screen.getByRole('button', { name: 'Створити накладну' })
 
     fireEvent.click(submit)
@@ -620,6 +623,21 @@ describe('NewSaleReviewStep persistent file reconciliation', () => {
     expect(mocks.updateMergedSale.mock.calls[1]?.[1].operationId).not.toBe(
       mocks.updateMergedSale.mock.calls[0]?.[1].operationId,
     )
+  })
+
+  it('blocks an edit-flow merged conversion without the dedicated permission', () => {
+    mocks.mergedSale = {
+      netUid: 'sale-1',
+      orderItems: [{ NetUid: 'item-1', Product: { NetUid: 'product-1' }, Qty: 1 }],
+      unionSale: null,
+    }
+
+    renderStep()
+
+    const submit = screen.getByRole('button', { name: 'Створити накладну' })
+    expect((submit as HTMLButtonElement).disabled).toBe(true)
+    expect(submit.getAttribute('title')).toBe('Недостатньо прав для перетворення обʼєднаного продажу на рахунок')
+    expect(mocks.updateMergedSale).not.toHaveBeenCalled()
   })
 
   it('does not close until close-and-save succeeds and clears its persisted operation', async () => {

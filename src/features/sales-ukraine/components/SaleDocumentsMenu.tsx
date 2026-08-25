@@ -2,11 +2,9 @@ import { Button, Group, Menu, Stack } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import { ClipboardList, FileText, Printer, Receipt } from 'lucide-react'
 import { useMemo, useRef, useState } from 'react'
-import { useAuth } from '../../auth/useAuth'
 import { usePermissions } from '../../auth/usePermissions'
 import { getApiLanguage } from '../../../shared/api/apiClient'
 import { PermissionKeys, type SalesUkraineSalePermissionKey } from '../../../shared/auth/permissionKeys'
-import { UserRoleType } from '../../../shared/auth/types'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppModal } from '../../../shared/ui/AppModal'
@@ -61,13 +59,6 @@ export type SaleDocumentsMenuAnchor = {
   top: number
 }
 
-const INVOICE_BUNDLE_ROLES: ReadonlyArray<UserRoleType> = [
-  UserRoleType.Administrator,
-  UserRoleType.GBA,
-  UserRoleType.FinanceDirector,
-  UserRoleType.Accountant,
-]
-
 export function SaleDocumentsMenu({
   anchor,
   opened,
@@ -80,17 +71,13 @@ export function SaleDocumentsMenu({
   onMenuClose?: () => void
 }) {
   const { t } = useI18n()
-  const { user } = useAuth()
   const { can } = usePermissions()
   const [resultState, setResultState] = useValueState<DocumentResultState | null>(null)
   const [runningActionKey, setRunningActionKey] = useState<string | null>(null)
   const runningActionRef = useRef(false)
   const runPaymentDocumentMutation = usePersistentSaleJsonMutationRunner('sale-payment-document')
 
-  const isAbleToInvoiceDocument = useMemo(() => {
-    const roleType = user?.UserRole?.UserRoleType
-    return roleType !== undefined && INVOICE_BUNDLE_ROLES.includes(roleType)
-  }, [user])
+  const canExportInvoice = can(PermissionKeys.SalesUkraine.Sale.ExportInvoice)
 
   const apiLanguage = getApiLanguage()
   const actions = useMemo(
@@ -123,7 +110,7 @@ export function SaleDocumentsMenu({
 
         documents = settled.flatMap((entry) =>
           entry.status === 'fulfilled'
-            ? buildDocumentFiles({ key: action.key, label: entry.value.label }, entry.value.result, isAbleToInvoiceDocument, t)
+            ? buildDocumentFiles({ key: action.key, label: entry.value.label }, entry.value.result, canExportInvoice, t)
             : [],
         )
 
@@ -138,7 +125,7 @@ export function SaleDocumentsMenu({
         const result = action.requiresOperationId
           ? await runPaymentDocumentAction(currentSale, action, runPaymentDocumentMutation)
           : await action.fetch()
-        documents = buildDocumentFiles(action, result, isAbleToInvoiceDocument, t)
+        documents = buildDocumentFiles(action, result, canExportInvoice, t)
       } else {
         documents = []
       }
@@ -401,7 +388,7 @@ function buildDocumentActions(sale: SalesUkraineSale, apiLanguage: string, t: (k
 function buildDocumentFiles(
   action: Pick<DocumentAction, 'bundlesInvoice' | 'key' | 'label'>,
   result: SaleDocumentResult,
-  isAbleToInvoiceDocument: boolean,
+  canExportInvoice: boolean,
   t: (key: string) => string,
 ): DocumentFile[] {
   const documents: DocumentFile[] = []
@@ -410,7 +397,7 @@ function buildDocumentFiles(
     documents.push({ excelUrl: result.excelUrl, label: action.label, pdfUrl: result.pdfUrl })
   }
 
-  if (action.bundlesInvoice && (result.isAcceptedToPacking || isAbleToInvoiceDocument)) {
+  if (action.bundlesInvoice && (result.isAcceptedToPacking || canExportInvoice)) {
     if (result.invoiceExcelUrl || result.invoicePdfUrl) {
       documents.push({
         excelUrl: result.invoiceExcelUrl,

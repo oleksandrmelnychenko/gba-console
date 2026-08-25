@@ -5,6 +5,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { I18nProvider } from '../../../shared/i18n/I18nProvider'
 import {
+  createProductStorageTransfer,
   exportProductStorageAvailability,
   getAvailableProductsByStorage,
   getProductStorageStorages,
@@ -31,12 +32,22 @@ vi.mock('../api/productStoragesApi', () => ({
 }))
 
 vi.mock('../../../shared/ui/AppDrawer', () => ({
-  AppDrawer: ({ children, opened }: { children: ReactNode; opened: boolean }) =>
-    opened ? <section>{children}</section> : null,
+  AppDrawer: ({ children, footer, opened }: { children: ReactNode; footer?: ReactNode; opened: boolean }) =>
+    opened ? <section>{children}{footer}</section> : null,
 }))
 
 vi.mock('../../../shared/ui/data-table/DataTable', () => ({
-  DataTable: () => <div data-testid="product-storages-table" />,
+  DataTable: ({ columns = [], data = [], tableId }: {
+    columns?: Array<{ cell?: (row: unknown) => ReactNode; id: string }>
+    data?: unknown[]
+    tableId?: string
+  }) => (
+    <div data-testid={tableId || 'data-table'}>
+      {tableId === 'product-storages' && data[0]
+        ? columns.find((column) => column.id === 'actions')?.cell?.(data[0])
+        : null}
+    </div>
+  ),
 }))
 
 vi.mock('../../../shared/ui/document-export-modal/DocumentExportModal', () => ({
@@ -62,13 +73,23 @@ describe('Product storages canonical permission guards', () => {
     allowedPermissions.clear()
     vi.clearAllMocks()
     vi.mocked(getProductStorageStorages).mockResolvedValue([
-      { Name: 'Основний склад', NetUid: 'storage-1' },
+      { Name: 'Основний склад', NetUid: 'storage-1', Organization: { Id: 1, Name: 'Організація 1' } },
+      { Name: 'Інший склад', NetUid: 'storage-2', Organization: { Id: 2, Name: 'Організація 2' } },
     ])
-    vi.mocked(getAvailableProductsByStorage).mockResolvedValue({ items: [], totalQty: 0 })
+    vi.mocked(getAvailableProductsByStorage).mockResolvedValue({
+      items: [{
+        NetUid: 'availability-1',
+        Product: { NetUid: 'product-1', VendorCode: 'P-1' },
+        Qty: 5,
+        Storage: { Name: 'Основний склад', NetUid: 'storage-1', Organization: { Id: 1, Name: 'Організація 1' } },
+      }],
+      totalQty: 1,
+    })
     vi.mocked(exportProductStorageAvailability).mockResolvedValue({
       PdfDocumentURL: '/storage.pdf',
       XlsxDocument: '/storage.xlsx',
     })
+    vi.mocked(createProductStorageTransfer).mockResolvedValue(undefined)
   })
 
   it('does not mount storage data without page access', () => {
@@ -82,7 +103,7 @@ describe('Product storages canonical permission guards', () => {
     allowedPermissions.add(PermissionKeys.WarehouseAccounting.Storages.Page.View)
     renderPage()
 
-    await screen.findByTestId('product-storages-table')
+    await screen.findByTestId('product-storages')
     expect(screen.queryByRole('button', { name: 'Експорт' })).toBeNull()
     expect(exportProductStorageAvailability).not.toHaveBeenCalled()
   })
@@ -99,5 +120,35 @@ describe('Product storages canonical permission guards', () => {
         expect.objectContaining({ storageNetId: 'storage-1' }),
       ),
     )
+  })
+
+  it('keeps management actions hidden without the independent key', async () => {
+    allowedPermissions.add(PermissionKeys.WarehouseAccounting.Storages.Page.View)
+    allowedPermissions.add(PermissionKeys.WarehouseAccounting.Storages.PositionAction.Open)
+    renderPage()
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Операція зі складської позиції' }))
+
+    expect(screen.queryByRole('switch', { name: 'Управлінська операція' })).toBeNull()
+  })
+
+  it('submits a management cross-organization action only with its canonical key', async () => {
+    allowedPermissions.add(PermissionKeys.WarehouseAccounting.Storages.Page.View)
+    allowedPermissions.add(PermissionKeys.WarehouseAccounting.Storages.PositionAction.Open)
+    allowedPermissions.add(PermissionKeys.WarehouseAccounting.Storages.PositionAction.Management)
+    renderPage()
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Операція зі складської позиції' }))
+    fireEvent.click(screen.getByRole('switch', { name: 'Управлінська операція' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Перемістити' }))
+
+    await waitFor(() => expect(createProductStorageTransfer).toHaveBeenCalledWith(
+      expect.objectContaining({
+        productTransfer: expect.objectContaining({
+          IsManagement: true,
+          ToStorage: expect.objectContaining({ NetUid: 'storage-2' }),
+        }),
+      }),
+    ))
   })
 })

@@ -3,7 +3,6 @@ import { notifications } from '@mantine/notifications'
 import { CircleAlert } from 'lucide-react'
 import { useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { UserRoleType } from '../../../shared/auth/types'
 import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -42,6 +41,7 @@ const INITIAL_LOGISTIC_PATH_LOAD_STATE: LogisticPathLoadState = {
   protocol: null,
 }
 const PERMISSION_OPEN_LOGISTIC_PATH = PermissionKeys.ProductDeliveryProtocols.LogisticWay.Open
+const PERMISSION_EDIT_COMPLETED_PROTOCOL = PermissionKeys.ProductDeliveryProtocols.Protocol.EditCompleted
 const PERMISSION_CHANGE_STATUS = PermissionKeys.ProductDeliveryProtocols.UnifiedService.ChangeStatus
 const PERMISSION_MANAGE_INVOICES = PermissionKeys.ProductDeliveryProtocols.InvoiceManagement.Open
 const PERMISSION_UPLOAD_DELIVERY_DOCUMENTS = PermissionKeys.ProductDeliveryProtocols.DeliveryDocuments.Download
@@ -53,8 +53,7 @@ const PERMISSION_DELETE_SERVICE = PermissionKeys.ProductDeliveryProtocols.Unifie
 
 function useLogisticPathModel(netId: string | undefined) {
   const { t } = useI18n()
-  const { hasPermission, user } = useAuth()
-  const isGba = user?.UserRole?.UserRoleType === UserRoleType.GBA
+  const { hasPermission } = useAuth()
   const [loadState, setLoadState] = useValueState<LogisticPathLoadState>(INITIAL_LOGISTIC_PATH_LOAD_STATE)
   const [isUpdating, setUpdating] = useValueState(false)
   const [isAssigning, setAssigning] = useValueState(false)
@@ -134,11 +133,11 @@ function useLogisticPathModel(netId: string | undefined) {
     }
   }, [netId, setLoadState, t])
 
-  const canEdit = isGba || !protocol?.IsCompleted
+  const canEdit = !protocol?.IsCompleted || hasPermission(PERMISSION_EDIT_COMPLETED_PROTOCOL)
   const canEditDeliveryDocuments = canEdit && hasPermission(PERMISSION_UPLOAD_DELIVERY_DOCUMENTS)
 
   async function changeStatus() {
-    if (!hasPermission(PERMISSION_CHANGE_STATUS) || !protocol?.NetUid) {
+    if (!canEdit || !hasPermission(PERMISSION_CHANGE_STATUS) || !protocol?.NetUid) {
       return
     }
 
@@ -161,7 +160,7 @@ function useLogisticPathModel(netId: string | undefined) {
   }
 
   async function assignInvoices(invoices: SupplyInvoice[]) {
-    if (!hasPermission(PERMISSION_MANAGE_INVOICES) || !protocol) {
+    if (!canEdit || !hasPermission(PERMISSION_MANAGE_INVOICES) || !protocol) {
       return
     }
 
@@ -185,7 +184,7 @@ function useLogisticPathModel(netId: string | undefined) {
   }
 
   async function saveInvoiceDocuments(invoice: SupplyInvoice, documents: File[]) {
-    if (!hasPermission(PERMISSION_UPLOAD_DELIVERY_DOCUMENTS)) {
+    if (!canEdit || !hasPermission(PERMISSION_UPLOAD_DELIVERY_DOCUMENTS)) {
       return
     }
 
@@ -211,7 +210,7 @@ function useLogisticPathModel(netId: string | undefined) {
   async function saveService(payload: SaveMergedServicePayload) {
     const permission = payload.service.NetUid ? PERMISSION_EDIT_SERVICE : PERMISSION_CREATE_SERVICE
 
-    if (!hasPermission(permission) || !protocol?.NetUid) {
+    if (!canEdit || !hasPermission(permission) || !protocol?.NetUid) {
       return
     }
 
@@ -235,7 +234,7 @@ function useLogisticPathModel(netId: string | undefined) {
   }
 
   async function calculate(payload: CalculateMergedServicePayload) {
-    if (!hasPermission(PERMISSION_CALCULATE_SERVICE)) {
+    if (!canEdit || !hasPermission(PERMISSION_CALCULATE_SERVICE)) {
       return
     }
 
@@ -262,7 +261,7 @@ function useLogisticPathModel(netId: string | undefined) {
   }
 
   async function assignServiceInvoices(service: MergedService, invoices: SupplyInvoice[]) {
-    if (!hasPermission(PERMISSION_ASSIGN_SERVICE_INVOICES)) {
+    if (!canEdit || !hasPermission(PERMISSION_ASSIGN_SERVICE_INVOICES)) {
       return
     }
 
@@ -286,7 +285,7 @@ function useLogisticPathModel(netId: string | undefined) {
   }
 
   async function removeService(service: MergedService) {
-    if (!hasPermission(PERMISSION_DELETE_SERVICE) || !service.NetUid) {
+    if (!canEdit || !hasPermission(PERMISSION_DELETE_SERVICE) || !service.NetUid) {
       return
     }
 

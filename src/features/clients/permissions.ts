@@ -33,12 +33,12 @@ const CLIENT_ROLE_PERMISSION_BY_NAME: Readonly<Record<string, string>> = {
 export function getClientTypePermission(clientTypeIcon?: string) {
   if (!clientTypeIcon) return ''
 
-  return CLIENT_TYPE_PERMISSION_BY_ICON[clientTypeIcon] ?? `${clientTypeIcon}_clientsNew_PKEY`
+  return CLIENT_TYPE_PERMISSION_BY_ICON[clientTypeIcon] ?? ''
 }
 
 export function getClientTypeRolePermission(roleName?: string) {
   if (!roleName) return ''
 
   const normalizedRoleName = roleName.replace(/\s/g, '')
-  return CLIENT_ROLE_PERMISSION_BY_NAME[normalizedRoleName] ?? `${normalizedRoleName}_sub_clientsNew_PKEY`
+  return CLIENT_ROLE_PERMISSION_BY_NAME[normalizedRoleName] ?? ''
 }

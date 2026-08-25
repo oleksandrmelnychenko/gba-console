@@ -6,6 +6,7 @@ import {
   getProductCapitalization,
   getProductCapitalizationForIncomeDocuments,
   getProductCapitalizations,
+  getProductCapitalizationStoragesByOrganization,
   parseProductCapitalizationItemsFromFile,
 } from './productCapitalizationsApi'
 
@@ -69,6 +70,30 @@ describe('productCapitalizationsApi', () => {
 
     expect(apiRequestMock).toHaveBeenCalledWith('/products/capitalizations/income-documents/details', {
       query: { netId: 'capitalization-1' },
+    })
+  })
+
+  it('selects exact create or open-details storage lookup scope', async () => {
+    apiRequestMock.mockResolvedValue({ Items: [] })
+
+    await getProductCapitalizationStoragesByOrganization(
+      'organization-1',
+      'create',
+    )
+    await getProductCapitalizationStoragesByOrganization(
+      'organization-1',
+      'open-details',
+    )
+
+    expect(apiRequestMock.mock.calls.map(([path]) => path)).toEqual([
+      '/storages/capitalization/create/search',
+      '/storages/capitalization/open-details/search',
+    ])
+    expect(apiRequestMock.mock.calls[0][1]).toEqual({
+      query: {
+        organizationNetId: 'organization-1',
+        skipDefective: false,
+      },
     })
   })
 

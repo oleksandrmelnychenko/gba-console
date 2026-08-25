@@ -1,7 +1,7 @@
 import { apiRequest } from '../../../shared/api/apiClient'
 import { readSession } from '../../../shared/auth/session'
 import { normalizeExportDocument as normalizeSharedExportDocument } from '../../../shared/documents/exportDocument'
-import { getClients } from '../../clients/api/clientsApi'
+import { searchClientsForResale } from '../../clients/api/clientsApi'
 import type {
   CreatedResaleAvailabilityWithTotals,
   GenerateAutomaticallyResalePayload,
@@ -816,7 +816,7 @@ function readErrorHeader(
 }
 
 export async function searchResaleClients(value: string, signal?: AbortSignal): Promise<ResaleClient[]> {
-  const clients = await getClients({
+  const clients = await searchClientsForResale({
     active: true,
     forReSale: true,
     limit: 20,

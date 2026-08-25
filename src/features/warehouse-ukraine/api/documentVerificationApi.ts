@@ -16,7 +16,7 @@ export type DocumentVerificationSearchParams = {
 }
 
 export async function getDocumentVerificationStorages(): Promise<WarehouseUkraineStorage[]> {
-  const result = await apiRequest<unknown>('/storages/all')
+  const result = await apiRequest<unknown>('/storages/warehouse-ukraine/verification/all')
 
   return readArrayPayload(result, ['Items', 'Storages', 'Data']) as WarehouseUkraineStorage[]
 }
