@@ -39,6 +39,7 @@ import {
   uploadSupplyOrderDocument,
 } from '../api/supplyUkraineOrdersApi'
 import { DirectOrderProductIncomeStatus } from '../components/DirectOrderProductIncomeStatus'
+import { DirectOrderInvoicesSummary } from '../components/DirectOrderInvoicesSummary'
 import { DirectOrderPaymentTasksCard } from '../components/DirectOrderPaymentTasksCard'
 import { DirectSupplyOrderProFormCard } from '../components/DirectSupplyOrderProFormCard'
 import { canOpenDirectProductIncomeFromOrder } from '../directOrderActions'
@@ -740,6 +741,8 @@ export function SupplyUkraineDirectOrderDetailPage() {
             }}
             onReload={reloadOrder}
           />
+
+          <DirectOrderInvoicesSummary order={order} />
 
           <DirectOrderPaymentTasksCard canEdit={!isLocked} order={order} onError={setError} />
 

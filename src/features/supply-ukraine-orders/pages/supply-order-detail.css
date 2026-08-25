@@ -604,6 +604,28 @@
   letter-spacing: 0;
 }
 
+/* Uploaded invoice facts stay visible on the order's logistics path. */
+.supply-order-invoice-summary svg {
+  color: var(--brand-orange);
+  flex: 0 0 auto;
+}
+
+.supply-order-invoice-value {
+  color: var(--mantine-color-gray-9);
+  font-family: var(--font-mono);
+  font-weight: 600;
+  letter-spacing: 0;
+  overflow-wrap: anywhere;
+}
+
+.supply-order-invoice-document {
+  border: 1px solid var(--mantine-color-gray-2);
+  border-radius: 6px;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  padding: 8px 10px;
+}
+
 /* ---- «Замовлення на поставку в Україну» overview right sheet ------------ */
 .supply-order-overview-title {
   display: grid;
