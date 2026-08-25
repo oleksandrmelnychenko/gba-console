@@ -7,8 +7,8 @@
 - UI керування ролями: `/users/roles`.
 - Цільовий code-owned каталог: 499 versioned definitions, з них 495 активних
   подієвих пермішенів і 4 явно retired технічних UI keys; version
-  `2026.08.25.67`. Фінальний v5 migrator і required-SQL postflight пройдені.
-- Після v5 на тестовій копії актуальної БД: `0` active legacy definitions,
+  `2026.08.25.67`. Фінальний v6 migrator і required-SQL postflight пройдені.
+- Після v6 на тестовій копії актуальної БД: `0` active legacy definitions,
   `0` active legacy role links, `0` active aliases, `0` active dashboard-role
   links і `0` duplicate active event keys.
 - Legacy mapping у поточному каталозі: 159 explicit mappings: 155
@@ -575,6 +575,9 @@ Backend (`D:\\work\\gba-server`, `codex/event-permissions`):
   disposition;
 - `b272496ac` — v5 production deploy/runbook gates для `495 active / 499`
   versioned definitions.
+- `af72e248b` — v6 identity administration runtime cutover на exact event
+  permissions і видалення останнього hardcoded identity role policy;
+- `7df69520f` — повторювана pre/post-cutover required-SQL verification.
 
 Frontend (`D:\\work\\gba_console`, `codex/event-permissions`):
 
@@ -628,7 +631,36 @@ Frontend (`D:\\work\\gba_console`, `codex/event-permissions`):
 - [x] Нові зміни розкладені на окремі логічні commits backend runtime,
   backend migrator, backend runbooks і frontend runtime; hashes зафіксовані у
   розділі 9.2.
-- [ ] Окремий залишок поза погодженим v5 scope: заміна
-  `IdentityAdministrationPolicy` на точні administration event permissions.
+- [x] Окремий v6 cutover: `IdentityAdministrationPolicy` повністю видалений,
+  а 4 identity administration routes переведені на точні administration
+  event permissions.
   `InternalMutationPolicy` не є business-role bypass: це окремий machine/user
   trust boundary для внутрішніх mutation endpoints.
+
+### 9.4. Identity administration v6 cutover (2026-08-25)
+
+- [x] `GetAllRolesAsync` використовує лише
+  `administration.roles.page.view`; legacy assign/unassign/old-shop HTTP 410
+  routes використовують `administration.users.user.edit`.
+- [x] `IdentityAdministrationPolicy`, `IdentityAdministrationRolesPolicy` і
+  DI registration видалені; runtime більше не має hardcoded whitelist
+  `GBA,Administrator` для цих операцій.
+- [x] Одноразовий
+  `2026.08.25.identity-administration-cutover.v6` materializes обидва вже
+  існуючі права для GBA й Administrator. Нових permission definitions і
+  schema migrations немає; каталог незмінний: `495 active / 499 versioned`,
+  version `2026.08.25.67`.
+- [x] Перший migrator receipt: `EligibleRoles=6`, `AppliedRoles=2`,
+  `RequiredAssignments=4`, `AlreadyActive=4`, `Created=0`,
+  `RevisionsBumped=2`. Повторний receipt ідемпотентний:
+  `AppliedRoles=0`, `RequiredAssignments=0`, `RevisionsBumped=0`.
+- [x] Required SQL suite зроблений повторюваним і на pre-cutover, і на
+  post-cutover disposable DB: legacy fixtures відновлюються тільки всередині
+  rollback-транзакції; результат `6/6` PASS.
+- [x] Backend targeted cutover contracts `35/35` PASS; full backend
+  regression `942/942` PASS (`8` opt-in skipped). Frontend regression
+  `467/467` files, `2603/2603` tests PASS; audit matrix `1902/1902`, parity
+  `499/499`, lint, frontend production build і backend Release builds PASS.
+- [x] Live UI після точкового оновлення чотирьох DLL без нового Docker image:
+  `/users/roles` показує `495/495`; GBA має `494/495`, обидва v6 keys checked,
+  Save disabled без змін. API writable layer лишився `51.7 MB`.

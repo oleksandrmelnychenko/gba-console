@@ -91,7 +91,7 @@ One-shot migrator також soft-delete-ить active `RolePermission` links і
   lint і production build PASS.
 - Permission snapshots/parity: candidates current, matrix `1902/1902`,
   parity `499/499`, catalog version `2026.08.25.67`.
-- Full backend non-SQL regression: `945/945` PASS; required event-permission
+- Full backend non-SQL regression після v6: `942/942` PASS; required event-permission
   SQL suite: `6/6` PASS.
 - Migrator final cleanup + idempotency run PASS. SQL postflight:
   `495` active rows, `495` unique active keys, `4` retired technical rows,
@@ -104,6 +104,11 @@ One-shot migrator також soft-delete-ить active `RolePermission` links і
   історичного `Header_NewRemoveStatham_carriersAllView_PKEY` повертає
   `0/495`. Catalog/role reads виконуються після фізичного retirement legacy
   storage без fallback на aliases або dashboard links.
+- Final v6 live addendum: `IdentityAdministrationPolicy` видалений; GBA має
+  exact `administration.roles.page.view` і `administration.users.user.edit`.
+  `/users/roles` лишився `495/495`, роль GBA має `494/495`, обидва v6 keys
+  checked, Save disabled без локальних змін. Migrator повторний run дає
+  `0` applied roles і `0` revision bumps.
 - Окремий login-as-limited-role browser E2E з фактичним рядком продажу і
   подальшим grant/revoke залишається пунктом основного ТЗ; статичні,
   component, API-contract, SQL і read-only live gates завершені.
