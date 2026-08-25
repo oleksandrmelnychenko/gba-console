@@ -1,6 +1,7 @@
 import { Alert, Button, Group, Select, Stack, Textarea, TextInput } from '@mantine/core'
 import { CircleAlert } from 'lucide-react'
 import { useMemo, useState } from 'react'
+import { isBusinessOrganizationVisible } from '../../client-resources/clientResourcePolicies'
 import { formatLocalDateTime, formatLocalInputDateTime } from '../../../shared/date/dateTime'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppModal } from '../../../shared/ui/AppModal'
@@ -88,7 +89,7 @@ function NewProductDeliveryProtocolForm({
 
   const organizationOptions = useMemo(
     () =>
-      organizations.reduce<{ label: string; value: string }[]>((options, organization) => {
+      organizations.filter(isBusinessOrganizationVisible).reduce<{ label: string; value: string }[]>((options, organization) => {
         if (organization.NetUid || organization.Id) {
           options.push({
             label: organization.Name || organization.FullName || String(organization.NetUid || organization.Id),
