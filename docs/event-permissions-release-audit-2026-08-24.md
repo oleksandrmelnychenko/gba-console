@@ -7,9 +7,10 @@
 - frontend: `D:\work\gba_console`, `codex/event-permissions`;
 - backend: `D:\work\gba-server`, `codex/event-permissions`.
 
-Статус документа: **поточний verdict `NO-GO` до required-SQL, migrator ×2 і
-фінального runtime/browser E2E**. Погоджений breaking cutover та v4 role grant
-вже реалізовані. Розділи 1–7 нижче
+Статус документа: **поточний verdict `NO-GO` до фінального browser E2E та
+owner-рішення для `11` financial create routes**. Required-SQL, migrator ×2,
+DB postflight, runtime API acceptance, breaking cutover і v4 role grant вже
+завершені. Розділи 1–7 нижче
 зберігають історичні checkpoints аудиту; актуальний консолідований стан після
 remediation наведено в розділі 8 і має пріоритет над старими числами.
 
@@ -169,10 +170,12 @@ release-safe:
 До підтвердження ці пункти не виконуються; поточний verdict лишається
 `NO-GO`, навіть попри зелені safe-checkpoint тести.
 
-- [ ] P0 elevated materialization/repair реалізовано і перевірено.
-- [ ] Backend build/security/contract/actor tests PASS після fix.
-- [ ] Required-SQL integration PASS після fix.
-- [ ] Clean migrator first/second run та DB invariants PASS.
+- [x] P0 elevated materialization/repair реалізовано і перевірено.
+- [x] Permission-relevant backend build/security/contract/actor regressions
+  PASS після fix.
+- [x] Required-SQL integration `6/6` PASS після двох знайдених і виправлених
+  transaction/idempotency дроперів.
+- [x] Clean migrator first/second run та DB invariants PASS.
 - [ ] Залишкові direct role-type business rules класифіковано як permission
   bypass або workflow invariant; permission bypass замінено canonical gates.
 - [x] Frontend full regression повторено після frontend remediation.
@@ -198,8 +201,8 @@ release-safe:
 
 Остання незалежна ревалідація перед breaking cutover дала **7 CLOSED / 2
 PARTIAL / 1 OPEN**; нових high/critical регресій не знайдено. Три залишкові
-route blockers після цього погоджено й закрито HTTP `410`; фінальна
-ревалідація після required-SQL/runtime acceptance ще потрібна.
+route blockers після цього погоджено й закрито HTTP `410`; required-SQL і
+runtime API acceptance зелені, фінальна browser-перевірка ще потрібна.
 
 - CLOSED: SEC01/02 exact Sales update gates; SEC04 server-owned warehouse
   context; SEC05 actor/ledger/eligibility warehouse print-state; SEC06
@@ -223,28 +226,47 @@ route blockers після цього погоджено й закрито HTTP `
   retired, `0` single-context, `0` multi-context, `0` unresolved.
 - Manifest regenerated з compiled API; drift contract PASS.
 - Повний non-SQL API suite після route retirement, exact-policy cutover та v4
-  grant: `944` PASS, `0` FAIL, `2` opt-in live-dev SQL skipped.
+  grant: `944` PASS, `0` FAIL, `8` opt-in SQL skipped (`6` permission SQL,
+  `2` financial SQL). Окремий required-SQL прогін: `6/6` PASS.
 - API Release build: `0 warnings / 0 errors`; focused actor authorization:
   `65/65` PASS.
 - Frontend route cutover contract: `3/3` PASS; focused lookup regression:
   `153/153` PASS; full suite `2598/2598`, lint/build/parity PASS.
 
-### Test-only DB preflight
+### Test-only DB migration і postflight
 
-`ConcordDb_EventPermissionsCurrent` ще на catalog `479`/`.62`, latest
-migration `20260819212020_EnforceActiveRolePermissionUniqueness`.
+`ConcordDb_EventPermissionsCurrent` оновлена штатним migrator до
+`20260824145922_AddRoleEventPermissionCatalogUpgrade` і catalog
+`490`/`2026.08.24.65`.
 
-- active RolePermission: `3010`;
-- active Event role links: `1912`;
-- рівно `24` test-created links: IDs `43240..43263`, role `2`, timestamp
-  `2026-08-24T14:12:55.6318541`;
-- link `12617`/permission `159` тимчасово revived; історичний стан
-  `Deleted=1`, `Updated=2026-08-17T16:32:13.2594154`;
-- role `2` revision: ID `1`, version `4`, identity fields незмінні.
+- first run: `276` elevated links created, `5` upgrade links created,
+  `3` upgrade roles applied, `3` revisions bumped;
+- second run: migrations `0`, created/revived `0`, upgrades `0`, revision
+  bumps `0`;
+- active RolePermission: `3291`;
+- active permission duplicate groups: `0`;
+- active revision duplicate groups: `0`;
+- filtered unique index `IX_RolePermission_UserRoleID_PermissionID` active;
+- v4 markers: `3`; Administrator, GBA і HeadSalesAnalytic мають рівно по
+  одному active `sales.ukraine.sale.convert_merged_to_bill` grant.
 
-Cleanup не виконаний: safety gate очікує явної згоди власника. Після
-транзакційного cleanup очікуються `2985` active links, `1887` active Event
-links і `20` Event links role `2`, revision не змінюється.
+Exact cleanup `25` раніше створених test-only link changes не виконаний:
+safety gate досі очікує окремої явної згоди власника. Це не входило до
+штатного migrator й не впливає на clean deploy іншої БД.
+
+### Runtime API acceptance
+
+- console `/users/roles`: `200`; anonymous catalog/me: `401`;
+- admin catalog: `200`, catalog `490`; limited `/permissions/me`: `200`;
+- limited catalog: `403`;
+- контрольований role GET/PUT/stale PUT/restore/GET:
+  `200/200/409/200/200`;
+- початкові `53` assignments відновлено точно, revision version збільшився на
+  очікувані `2`.
+
+Фінальний browser E2E не виконано: browser runtime двічі впав до підключення
+через відсутній локальний kernel-assets path. API/console/SQL стенд при цьому
+працює на `18084/37986/23433`.
 
 ### Approval-gated пакети
 
@@ -260,14 +282,14 @@ links і `20` Event links role `2`, revision не змінюється.
    `sales.ukraine.sale.convert_merged_to_bill` лише `Administrator`, `GBA`,
    `HeadSalesAnalytic`.
 
-Поточний залишок: exact cleanup `25` test-only link changes (лише після
-окремого approval) → Database.Migrator ×2 → required SQL → rebuild існуючого
-Docker стенду → runtime `401/403/409` + GET/PUT/GET → browser E2E → остаточний
-`GO/NO-GO`. Окремо залишаються `11` financial create calls, для яких owner ще
-не визначив exact access policy.
+Поточний залишок: browser E2E → остаточний `GO/NO-GO`. Окремо залишаються
+`11` financial create calls, для яких owner ще не визначив exact access
+policy, та необов’язковий для clean deploy exact cleanup `25` test-only link
+changes, що потребує окремого approval.
 
 ### Code commits checkpoint
 
-Backend: `b8f825725`, `1afac15df`, `96585af3c`, `27c9a962b`.
+Backend: `b8f825725`, `1afac15df`, `96585af3c`, `27c9a962b`, `9ea0e9762`,
+`4282ba7cd`.
 
-Frontend: `4061be85`, `a5ef53dc`, `99ed7621`, `7b250e32`.
+Frontend: `4061be85`, `a5ef53dc`, `99ed7621`, `7b250e32`, `2345ea25`.

@@ -402,8 +402,9 @@ Commit-to-running deployment:
 ## 9. Повний release-аудит перед передачею модуля (2026-08-24)
 
 Поточний статус: **code checkpoint зафіксовано логічними commit у гілках
-`codex/event-permissions`**. Фінальний release verdict залишається pending до
-required-SQL, migrator ×2 та runtime/browser acceptance на актуальній БД.
+`codex/event-permissions`**. Required-SQL, migrator ×2, DB postflight і
+runtime API acceptance завершені; фінальний release verdict залишається
+pending до browser E2E та owner-рішення для `11` financial create routes.
 
 - [x] Frontend/backend catalog alignment — catalog розширено до `490`
   canonical permissions, version `2026.08.24.65`; додані окремі high-risk
@@ -415,20 +416,32 @@ required-SQL, migrator ×2 та runtime/browser acceptance на актуальн
   `490/490/490`, reviewed matrix `1902/1902`.
 - [x] Поточний safe-checkpoint backend security/contract — після retirement
   legacy routes та exact-policy cutover повний non-SQL API regression має
-  `944` PASS, `0` FAIL, `2` opt-in live-dev SQL skipped. Повний Security suite:
+  `944` PASS, `0` FAIL, `8` opt-in SQL skipped (`6` event-permission і `2`
+  financial). Повний Security suite:
   `232` PASS, `0` FAIL, `6` opt-in SQL skipped; release gates для
   multi-context routes та exact/legacy policy intersections тепер зелені.
   Останній API Release build: `0 warnings / 0 errors`; actor authorization
   regression: `65/65` PASS.
-- [ ] Required-SQL integration на актуальній test-only БД.
-- [ ] Штатний migrator clean-deploy і повторний idempotency run.
-- [ ] Перевірка catalog/metadata/duplicates/indexes/role revisions у БД.
-- [ ] Runtime API acceptance: `401`, `403`, `409`, GET/PUT/GET і effective
-  permissions.
+- [x] Required-SQL integration на актуальній test-only БД: перший прогін
+  виявив два transaction/idempotency дропери; після fix `6/6` PASS.
+- [x] Штатний migrator clean-deploy і повторний idempotency run. Перший receipt:
+  `490/490`, `276` elevated links, `5` role-upgrade links, `3` applied roles і
+  `3` revision bumps. Другий receipt: pending migrations `0`, created/revived
+  `0`, applied upgrades `0`, revision bumps `0`.
+- [x] DB postflight: latest migration
+  `20260824145922_AddRoleEventPermissionCatalogUpgrade`, catalog `490/490`,
+  active duplicate groups `0`, active revision duplicate groups `0`, filtered
+  unique index active, v4 markers `3`; Administrator/GBA/HeadSalesAnalytic
+  мають рівно по одному active `convert_merged_to_bill` grant.
+- [x] Runtime API acceptance: anonymous `401`, limited-user `403`, catalog і
+  `/permissions/me` `200`; role GET/PUT/stale PUT/restore/GET =
+  `200/200/409/200/200`, початкові `53` assignments повністю відновлені,
+  revision contract `+2` підтверджено.
 - [ ] Browser E2E на фінальному `490` runtime: edit role name, permission
   save, refresh і відновлення збереженого стану без впливу на production.
-  Попередній formal E2E на checkpoint `479` пройшов; потрібен повтор після
-  migrator/rebuild.
+  Попередній formal E2E на checkpoint `479` пройшов. Фінальний runtime `490`
+  піднято на `localhost:18084`, але дозволений browser runtime двічі не зміг
+  ініціалізувати локальні kernel assets; це єдиний технічний blocker UI E2E.
 - [x] Додано deterministic compiled-IL gate і checked-in manifest для всіх
   permission facade → public routed core edges, включно з async state
   machines. Початковий discovery checkpoint: `464` cores = `37`
@@ -485,7 +498,8 @@ required-SQL, migrator ×2 та runtime/browser acceptance на актуальн
   `7/7` PASS; повторний запуск idempotent.
 - [ ] Отримати явне підтвердження власника на exact cleanup `25` test-only DB
   link changes.
-- [ ] Перевірка clean-deploy/rollback/runbook та комплекту передачі.
+- [x] Clean-deploy/rollback/runtime runbook звірено з catalog `490` і всіма
+  upgrade steps v1-v4.
 - [ ] Фінальний release verdict з exact commits і відомими ризиками.
 
 ### 9.1. Зафіксовані code commits
@@ -496,6 +510,8 @@ Backend (`D:\\work\\gba-server`, `codex/event-permissions`):
 - `1afac15df` — actor/domain authorization hardening;
 - `96585af3c` — exact API gates, legacy HTTP 410 та policy cutover;
 - `27c9a962b` — deployment/rollback runbooks.
+- `9ea0e9762` — ambient transaction support і required-SQL idempotency fix.
+- `4282ba7cd` — catalog `490` rollout/runtime runbook update.
 
 Frontend (`D:\\work\\gba_console`, `codex/event-permissions`):
 
@@ -503,3 +519,4 @@ Frontend (`D:\\work\\gba_console`, `codex/event-permissions`):
 - `a5ef53dc` — feature routes та UI guards на exact permissions;
 - `99ed7621` — reviewed matrix і validation tooling;
 - `7b250e32` — dependency security patches.
+- `2345ea25` — cutover/release checkpoint documentation.
