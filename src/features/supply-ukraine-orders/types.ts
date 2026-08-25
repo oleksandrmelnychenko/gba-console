@@ -307,6 +307,7 @@ export type DirectSupplyOrder = EntityFields & {
   Client?: Client | null
   ClientAgreement?: ClientAgreement | null
   DateFrom?: Date | string
+  HasArrivedDeliveryProtocol?: boolean
   IsApproved?: boolean
   IsCompleted?: boolean
   IsFullyPlaced?: boolean

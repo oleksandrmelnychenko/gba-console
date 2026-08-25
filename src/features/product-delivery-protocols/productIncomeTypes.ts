@@ -120,7 +120,12 @@ export type IncomeSupplyOrder = EntityFields & {
   Number?: string
 }
 
+export type IncomeDeliveryProductProtocol = EntityFields & {
+  IsCompleted?: boolean
+}
+
 export type IncomeSupplyInvoice = EntityFields & {
+  DeliveryProductProtocol?: IncomeDeliveryProductProtocol | null
   Number?: string
   IsPartiallyPlaced?: boolean
   IsFullyPlaced?: boolean
@@ -178,6 +183,7 @@ export type IncomeProtocol = EntityFields & {
   ClientAgreement?: IncomeClientAgreement | null
   DeliveryProductProtocolNumber?: ProtocolNumber | null
   FromDate?: Date | string
+  HasArrivedDeliveryProtocol?: boolean
   IsCompleted?: boolean
   IsPartiallyPlaced?: boolean
   IsPlaced?: boolean

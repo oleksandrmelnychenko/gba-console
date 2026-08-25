@@ -28,6 +28,7 @@ import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/Page
 import { DocumentExportModal } from '../../../shared/ui/document-export-modal/DocumentExportModal'
 import { useAuth } from '../../auth/useAuth'
 import { getDirectSupplyOrderById } from '../../supply-ukraine-orders/api/supplyUkraineOrdersApi'
+import { hasArrivedDeliveryProtocolForInvoice } from '../../supply-ukraine-orders/directOrderActions'
 import type { DirectSupplyOrder } from '../../supply-ukraine-orders/types'
 import { getProtocolByNetId } from '../api/productDeliveryProtocolsApi'
 import {
@@ -601,7 +602,9 @@ function useProtocolIncomeModel(source: ProductIncomeSource, sourceId?: string) 
     () => storages.find((storage) => storage.NetUid === selectedStorageId) || null,
     [selectedStorageId, storages],
   )
-  const canUseIncome = source === 'direct-supply-order' || Boolean(protocol?.IsCompleted)
+  const canUseIncome = source === 'direct-supply-order'
+    ? protocol?.HasArrivedDeliveryProtocol === true && hasArrivedDeliveryProtocolForInvoice(invoice)
+    : Boolean(protocol?.IsCompleted)
 
   const handleOpenPlacements = useCallback(
     (gridRow: IncomeGridRow, columnId: string, row: DynamicProductPlacementRow) => {
@@ -1464,7 +1467,7 @@ function PackingListProductIncomePage({
 
       {!model.isLoading && model.protocol && !canUseIncome && (
         <Alert className="product-income-alert" color="yellow" icon={<CircleAlert size={18} />} variant="light">
-          {t('Оприходування доступне після завершення протоколу')}
+          {t('Оприходування доступне після того, як протокол доставки має статус «Прибув»')}
         </Alert>
       )}
 
