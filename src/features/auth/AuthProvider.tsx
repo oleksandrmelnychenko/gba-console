@@ -145,8 +145,8 @@ export function AuthProvider({ children }: PropsWithChildren) {
   }, [enrichSession])
 
   const permissions = useMemo(
-    () => getEffectivePermissionKeys(session?.user, runtimePermissionKeys),
-    [runtimePermissionKeys, session?.user],
+    () => getEffectivePermissionKeys(runtimePermissionKeys),
+    [runtimePermissionKeys],
   )
 
   const value = useMemo<AuthContextValue>(
@@ -157,7 +157,10 @@ export function AuthProvider({ children }: PropsWithChildren) {
       isLoading,
       isPermissionsLoading,
       permissions,
-      hasPermission: (permissionKey) => checkPermission(session?.user, permissionKey, runtimePermissionKeys),
+      hasPermission: (permissionKey) => checkPermission(
+        permissionKey,
+        runtimePermissionKeys,
+      ),
       login: async (username, password) => {
         setLoading(true)
 

@@ -1,5 +1,5 @@
-/* Generic hierarchical tree — generalized from the Roles permission tree
-   (features/users RolePermissionsEditor). Recursive expand/collapse rows with
+/* Generic hierarchical tree for permissions, navigation, and other nested data.
+   Recursive expand/collapse rows with
    indentation (--app-tree-indent), an optional tri-state selection mark, and
    optional per-node icon / meta / badges / actions. Reusable across domains. */
 .app-tree {

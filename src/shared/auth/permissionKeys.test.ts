@@ -1,19 +1,20 @@
 import { describe, expect, it } from 'vitest'
 import {
   EVENT_PERMISSION_KEYS,
-  LegacyPermissionKeys,
-  PermissionAliases,
   PermissionKeys,
   isEventPermissionKey,
 } from './permissionKeys'
 
 const EXPECTED_SALES_UKRAINE_KEYS = [
   'sales.ukraine.sale.view',
+  'sales.ukraine.sale_return.cancel_any',
+  'sales.ukraine.sale_return.create_any',
   'sales.ukraine.sale.open_create_dialog',
   'sales.ukraine.sale.create',
   'sales.ukraine.sale.open_details',
   'sales.ukraine.sale.open_context_menu',
   'sales.ukraine.sale.edit',
+  'sales.ukraine.sale.convert_merged_to_bill',
   'sales.ukraine.sale.delete',
   'sales.ukraine.sale.open_delivery_details',
   'sales.ukraine.sale.unlock',
@@ -24,6 +25,7 @@ const EXPECTED_SALES_UKRAINE_KEYS = [
   'sales.ukraine.future_reservation.create',
   'sales.ukraine.sale.reassign',
   'sales.ukraine.sale.export_invoice',
+  'sales.ukraine.sale.export_before_packing',
   'sales.ukraine.sale.export_shipment_list',
   'sales.ukraine.sale.export_payment_invoice',
   'sales.ukraine.sale.export_pz',
@@ -47,10 +49,26 @@ const EXPECTED_SUPPLIER_ORGANIZATION_KEYS = [
 ] as const
 
 describe('canonical event permission set', () => {
-  it('contains exactly 479 unique canonical keys', () => {
-    expect(EVENT_PERMISSION_KEYS).toHaveLength(479)
-    expect(new Set(EVENT_PERMISSION_KEYS).size).toBe(479)
+  it('contains exactly 490 unique canonical keys', () => {
+    expect(EVENT_PERMISSION_KEYS).toHaveLength(490)
+    expect(new Set(EVENT_PERMISSION_KEYS).size).toBe(490)
     expect(EVENT_PERMISSION_KEYS.every(isEventPermissionKey)).toBe(true)
+  })
+
+  it('contains the seven granular legacy-role cutover boundaries', () => {
+    expect(EVENT_PERMISSION_KEYS).toEqual(expect.arrayContaining([
+      'counterparties.clients.contract.accounting_settings.edit',
+      'counterparties.clients.contract.pricing_scope.override',
+      'orders.delivery_protocol.completed_protocol.edit',
+      'orders.ukraine.order.completed_service_mutation',
+      'sales.ukraine.sale_return.cancel_any',
+      'sales.ukraine.sale_return.create_any',
+      'sales.ukraine.sale.convert_merged_to_bill',
+      'sales.ukraine.sale.export_before_packing',
+      'warehouse_accounting.storages.position_action.management',
+      'warehouse_accounting.transfers.transfer.create_management',
+      'warehouse_accounting.write_off.order.create_management',
+    ]))
   })
 })
 
@@ -520,25 +538,6 @@ describe('human-reviewed income cashflow actions', () => {
     ])
     expect(new Set(actual).size).toBe(8)
     expect(PermissionKeys.OnlineShopPayment.IncomeOrder.Create).toBe(actual[0])
-    expect(PermissionAliases[actual[0]]).toEqual([
-      LegacyPermissionKeys.OnlineShopPayment.IncomeOrder.Create,
-    ])
-  })
-})
-
-describe('tax-free carrier legacy compatibility', () => {
-  it('splits the old add/remove capability and maps document export once', () => {
-    const createDelete =
-      LegacyPermissionKeys.TaxFreeCarriers.Carrier.CreateDelete
-
-    expect(PermissionAliases[PermissionKeys.TaxFreeCarriers.Carrier.Create])
-      .toEqual([createDelete])
-    expect(PermissionAliases[PermissionKeys.TaxFreeCarriers.Carrier.Delete])
-      .toEqual([createDelete])
-    expect(PermissionAliases[PermissionKeys.TaxFreeCarriers.Carrier.Edit])
-      .toBeUndefined()
-    expect(PermissionAliases[PermissionKeys.TaxFreeCarriers.Document.Export])
-      .toEqual([LegacyPermissionKeys.TaxFreeCarriers.Document.Export])
   })
 })
 
@@ -559,7 +558,7 @@ describe('human-reviewed sale-file report actions', () => {
 })
 
 describe('human-reviewed depreciated order actions', () => {
-  it('contains page, create, details, and export without opener or row-click permissions', () => {
+  it('contains page, standard/management create, details, and export without opener or row-click permissions', () => {
     const actual = [
       ...Object.values(PermissionKeys.SystemPages.WriteOff),
       ...Object.values(PermissionKeys.WarehouseAccounting.WriteOff.Order),
@@ -569,9 +568,10 @@ describe('human-reviewed depreciated order actions', () => {
     expect(actual).toEqual([
       'warehouse_accounting.write_off.page.view',
       'warehouse_accounting.write_off.order.create',
+      'warehouse_accounting.write_off.order.create_management',
       'warehouse_accounting.write_off.order.open_details',
       'warehouse_accounting.write_off.document.export',
     ])
-    expect(new Set(actual).size).toBe(4)
+    expect(new Set(actual).size).toBe(5)
   })
 })

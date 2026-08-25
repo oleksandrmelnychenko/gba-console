@@ -1,5 +1,5 @@
 import { apiRequest } from '../../../shared/api/apiClient'
-import type { DashboardNodeModule, IdentityResponse, UserPermission, UserProfile, UserRole } from '../types'
+import type { IdentityResponse, UserProfile, UserRole } from '../types'
 
 export async function getUsers(value?: string, signal?: AbortSignal): Promise<UserProfile[]> {
   const normalizedValue = value?.trim()
@@ -76,8 +76,14 @@ export async function resetUserPassword(netId: string, password: string): Promis
   return normalizeIdentityResponse(result)
 }
 
-export async function getUserRoles(): Promise<UserRole[]> {
-  const result = await apiRequest<unknown>('/usermanagement/profiles/roles/all')
+export async function getUserRolesForCreate(): Promise<UserRole[]> {
+  const result = await apiRequest<unknown>('/usermanagement/profiles/users/create/roles')
+
+  return normalizeUserRoles(result)
+}
+
+export async function getUserRolesForEdit(): Promise<UserRole[]> {
+  const result = await apiRequest<unknown>('/usermanagement/profiles/users/edit/roles')
 
   return normalizeUserRoles(result)
 }
@@ -115,43 +121,6 @@ export async function deleteUserRole(netId: string): Promise<void> {
   })
 }
 
-export async function getDashboardModules(): Promise<DashboardNodeModule[]> {
-  const result = await apiRequest<unknown>('/dashboards/roles/modules')
-
-  return normalizeModules(result)
-}
-
-export async function changePermissionsToRole(role: UserRole): Promise<UserRole | null> {
-  const result = await apiRequest<unknown>('/usermanagement/profiles/roles/page-permissions', {
-    method: 'POST',
-    body: role,
-  })
-
-  return normalizeRole(result)
-}
-
-export async function addPermissionToNode(permission: UserPermission, image?: File | null): Promise<void> {
-  await apiRequest<unknown>('/permissions/roles/definitions/create', {
-    method: 'POST',
-    body: buildPermissionFormData(permission, image),
-  })
-}
-
-export async function updatePermissionToNode(permission: UserPermission, image?: File | null): Promise<void> {
-  await apiRequest<unknown>('/permissions/roles/definitions/edit', {
-    method: 'POST',
-    body: buildPermissionFormData(permission, image),
-  })
-}
-
-function buildPermissionFormData(permission: UserPermission, image?: File | null): FormData {
-  const formData = new FormData()
-  formData.append('image', image || '')
-  formData.append('permission', JSON.stringify(permission))
-
-  return formData
-}
-
 function normalizeUsers(result: unknown): UserProfile[] {
   if (Array.isArray(result)) {
     return result as UserProfile[]
@@ -171,7 +140,6 @@ function normalizeUser(result: unknown): UserProfile | null {
 
   return null
 }
-
 function normalizeUserRoles(result: unknown): UserRole[] {
   if (Array.isArray(result)) {
     return result as UserRole[]
@@ -198,16 +166,4 @@ function normalizeRole(result: unknown): UserRole | null {
   }
 
   return null
-}
-
-function normalizeModules(result: unknown): DashboardNodeModule[] {
-  if (Array.isArray(result)) {
-    return result as DashboardNodeModule[]
-  }
-
-  if (result && typeof result === 'object' && 'Items' in result && Array.isArray(result.Items)) {
-    return result.Items as DashboardNodeModule[]
-  }
-
-  return []
 }

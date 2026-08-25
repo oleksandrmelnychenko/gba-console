@@ -107,7 +107,10 @@ const navigationRouteAliasRules: Array<{ source: string; targets: RegExp[] }> = 
   },
 ]
 
-export function normalizeNavigation(modules: NavigationModule[] | null | undefined): NavigationModule[] {
+export function normalizeNavigation(
+  modules: NavigationModule[] | null | undefined,
+  { includeVehicleRegistry = false }: { includeVehicleRegistry?: boolean } = {},
+): NavigationModule[] {
   const normalizedModules: NavigationModule[] = []
 
   for (const module of modules || []) {
@@ -115,8 +118,9 @@ export function normalizeNavigation(modules: NavigationModule[] | null | undefin
       continue
     }
 
-    const children = normalizeNavigationNodes(module.Children)
+    const children = normalizeNavigationNodes(module.Children, includeVehicleRegistry)
     const moduleChildren =
+      includeVehicleRegistry &&
       administrationModulePattern.test(module.Module) &&
       !children.some((node) => normalizePath(node.Route) === vehicleRegistryNavigationNode.Route)
         ? [...children, vehicleRegistryNavigationNode]
@@ -138,18 +142,28 @@ export function normalizeNavigation(modules: NavigationModule[] | null | undefin
   return normalizedModules
 }
 
-function normalizeNavigationNodes(nodes: NavigationNode[] | null | undefined): NavigationNode[] {
+function normalizeNavigationNodes(
+  nodes: NavigationNode[] | null | undefined,
+  includeVehicleRegistry: boolean,
+): NavigationNode[] {
   const normalizedNodes: NavigationNode[] = []
 
   for (const node of nodes || []) {
-    if (!node?.Module || isRemovedNavigationNode(node)) {
+    if (
+      !node?.Module
+      || isRemovedNavigationNode(node)
+      || (
+        !includeVehicleRegistry
+        && normalizePath(node.Route) === vehicleRegistryNavigationNode.Route
+      )
+    ) {
       continue
     }
 
     normalizedNodes.push({
       ...node,
       Module: overrideNavigationLabel(node.Module),
-      Children: normalizeNavigationNodes(node.Children),
+      Children: normalizeNavigationNodes(node.Children, includeVehicleRegistry),
     })
   }
 

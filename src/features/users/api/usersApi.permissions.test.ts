@@ -5,18 +5,16 @@ import {
   createUserRole,
   deleteUser,
   deleteUserRole,
-  getDashboardModules,
   getRoleManagementRoles,
   getUser,
+  getUserRolesForCreate,
+  getUserRolesForEdit,
   getUsers,
   resetUserPassword,
-  changePermissionsToRole,
-  addPermissionToNode,
-  updatePermissionToNode,
   updateUser,
   updateUserRole,
 } from './usersApi'
-import type { UserPermission, UserProfile, UserRole } from '../types'
+import type { UserProfile, UserRole } from '../types'
 
 vi.mock('../../../shared/api/apiClient', () => ({
   apiRequest: vi.fn(),
@@ -83,28 +81,29 @@ describe('users permission-scoped transport', () => {
     )
   })
 
-  it('uses role-management scoped read and mutation façades', async () => {
+  it('uses canonical role-management read and role CRUD façades', async () => {
     const role = { NetUid: 'role-net-id' } as UserRole
-    const permission = { ControlId: 'control' } as UserPermission
 
     await getRoleManagementRoles()
-    await getDashboardModules()
     await createUserRole(role)
     await updateUserRole(role)
     await deleteUserRole('role-net-id')
-    await changePermissionsToRole(role)
-    await addPermissionToNode(permission)
-    await updatePermissionToNode(permission)
 
     expect(vi.mocked(apiRequest).mock.calls.map(([path]) => path)).toEqual([
       '/usermanagement/profiles/roles/registry',
-      '/dashboards/roles/modules',
       '/usermanagement/profiles/roles/create',
       '/usermanagement/profiles/roles/edit',
       '/usermanagement/profiles/roles/remove',
-      '/usermanagement/profiles/roles/page-permissions',
-      '/permissions/roles/definitions/create',
-      '/permissions/roles/definitions/edit',
+    ])
+  })
+
+  it('uses separate exact role-option façades for user create and edit', async () => {
+    await getUserRolesForCreate()
+    await getUserRolesForEdit()
+
+    expect(vi.mocked(apiRequest).mock.calls.map(([path]) => path)).toEqual([
+      '/usermanagement/profiles/users/create/roles',
+      '/usermanagement/profiles/users/edit/roles',
     ])
   })
 })

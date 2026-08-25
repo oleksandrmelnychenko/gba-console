@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useReducer, type PropsWithChildren } from 'react'
 import { useLocation } from 'react-router-dom'
+import { PermissionKeys } from '../../shared/auth/permissionKeys'
 import { useAuth } from '../auth/useAuth'
 import { getNavigation } from './api/navigationApi'
 import { NavigationContext, type NavigationContextValue } from './NavigationContext'
@@ -69,11 +70,14 @@ function navigationReducer(state: NavigationState, action: NavigationAction): Na
 }
 
 export function NavigationProvider({ children }: PropsWithChildren) {
-  const { isAuthenticated, session } = useAuth()
+  const { hasPermission, isAuthenticated, session } = useAuth()
   const routerLocation = useLocation()
   const [state, dispatch] = useReducer(navigationReducer, initialNavigationState)
   const sessionKey = session?.csrfToken || null
   const canLoadMenu = isAuthenticated && Boolean(sessionKey)
+  const canViewVehicleRegistry = hasPermission(
+    PermissionKeys.SystemPages.VehicleRegistry.View,
+  )
 
   useEffect(() => {
     if (!canLoadMenu || !sessionKey) {
@@ -87,7 +91,7 @@ export function NavigationProvider({ children }: PropsWithChildren) {
         if (!cancelled) {
           dispatch({
             type: 'menuLoaded',
-            modules: normalizeNavigation(items),
+            modules: normalizeNavigation(items, { includeVehicleRegistry: canViewVehicleRegistry }),
             sessionKey,
           })
         }
@@ -105,7 +109,7 @@ export function NavigationProvider({ children }: PropsWithChildren) {
     return () => {
       cancelled = true
     }
-  }, [canLoadMenu, sessionKey])
+  }, [canLoadMenu, canViewVehicleRegistry, sessionKey])
 
   const isMenuReady = canLoadMenu && state.loadedSessionKey === sessionKey
   const currentError = state.errorSessionKey === sessionKey ? state.error : null

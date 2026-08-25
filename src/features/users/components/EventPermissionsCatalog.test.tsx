@@ -147,7 +147,8 @@ describe('EventPermissionsCatalog', () => {
     expect(mockedUpdateRolePermissions).not.toHaveBeenCalled()
   })
 
-  it('shows legacy-backed rights as inherited and prevents a false removal', async () => {
+  it('treats every canonical right as editable even if the API sends an obsolete inherited marker', async () => {
+    const editorRef = createRef<EventPermissionsCatalogHandle>()
     mockedGetRolePermissions.mockResolvedValue({
       catalogVersion: 'catalog-1',
       inheritedPermissionKeys: ['sales.ukraine.sale.edit'],
@@ -160,30 +161,37 @@ describe('EventPermissionsCatalog', () => {
       <MantineProvider env="test">
         <I18nProvider>
           <EventPermissionsCatalog
+            ref={editorRef}
             role={{ Name: 'Legacy роль', NetUid: 'role-legacy' }}
           />
         </I18nProvider>
       </MantineProvider>,
     )
 
-    expect(
-      await screen.findByText(
-        'Успадковані права з вкладки «Права сторінок»',
-        { exact: false },
-      ),
-    ).not.toBeNull()
+    expect(await screen.findByText('Продажі')).not.toBeNull()
+    expect(screen.queryByText('Успадковані історичні права', { exact: false })).toBeNull()
 
     fireEvent.change(screen.getByRole('textbox', { name: 'Пошук права' }), {
       target: { value: 'sales.ukraine.sale.edit' },
     })
-    const inheritedCheckbox = await screen.findByRole('checkbox', {
+    const permissionCheckbox = await screen.findByRole('checkbox', {
       name: 'Вибрати право: Редагувати продаж (sales.ukraine.sale.edit)',
     })
 
-    expect((inheritedCheckbox as HTMLButtonElement).disabled).toBe(true)
-    expect(inheritedCheckbox.getAttribute('aria-checked')).toBe('true')
-    expect((screen.getByRole('button', { name: 'Очистити' }) as HTMLButtonElement).disabled).toBe(true)
-    expect(mockedUpdateRolePermissions).not.toHaveBeenCalled()
+    expect((permissionCheckbox as HTMLButtonElement).disabled).toBe(false)
+    expect(permissionCheckbox.getAttribute('aria-checked')).toBe('true')
+    fireEvent.click(permissionCheckbox)
+    expect(permissionCheckbox.getAttribute('aria-checked')).toBe('false')
+
+    await act(async () => {
+      await editorRef.current?.save()
+    })
+
+    expect(mockedUpdateRolePermissions).toHaveBeenCalledWith(
+      'role-legacy',
+      2,
+      [],
+    )
   })
 
   it('keeps a 1920-permission catalog lazy while preserving search and batch semantics', async () => {

@@ -25,7 +25,7 @@ import { useAuth } from '../../auth/useAuth'
 import {
   deleteUser,
   getUser,
-  getUserRoles,
+  getUserRolesForEdit,
   resetUserPassword,
   updateUser,
 } from '../api/usersApi'
@@ -112,7 +112,10 @@ function UserEditPageContent() {
       setError(null)
 
       try {
-        const [nextUser, nextRoles] = await Promise.all([getUser(netid), getUserRoles()])
+        const [nextUser, nextRoles] = await Promise.all([
+          getUser(netid),
+          canEdit ? getUserRolesForEdit() : Promise.resolve([]),
+        ])
 
         if (!cancelled) {
           setUser(nextUser)
@@ -136,7 +139,7 @@ function UserEditPageContent() {
     return () => {
       cancelled = true
     }
-  }, [netid, setError, setLoading, setRoles, setUser, t])
+  }, [canEdit, netid, setError, setLoading, setRoles, setUser, t])
 
   if (!netid) {
     return <Navigate to="/users" replace />

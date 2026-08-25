@@ -9,7 +9,8 @@ import {
   createUser,
   deleteUser,
   getUser,
-  getUserRoles,
+  getUserRolesForCreate,
+  getUserRolesForEdit,
   resetUserPassword,
   updateUser,
 } from '../api/usersApi'
@@ -45,7 +46,8 @@ vi.mock('../api/usersApi', () => ({
   createUser: vi.fn(),
   deleteUser: vi.fn(),
   getUser: vi.fn(),
-  getUserRoles: vi.fn(),
+  getUserRolesForCreate: vi.fn(),
+  getUserRolesForEdit: vi.fn(),
   resetUserPassword: vi.fn(),
   updateUser: vi.fn(),
 }))
@@ -81,11 +83,13 @@ beforeEach(() => {
   vi.mocked(createUser).mockReset()
   vi.mocked(deleteUser).mockReset()
   vi.mocked(getUser).mockReset()
-  vi.mocked(getUserRoles).mockReset()
+  vi.mocked(getUserRolesForCreate).mockReset()
+  vi.mocked(getUserRolesForEdit).mockReset()
   vi.mocked(resetUserPassword).mockReset()
   vi.mocked(updateUser).mockReset()
   vi.mocked(getUser).mockResolvedValue(user)
-  vi.mocked(getUserRoles).mockResolvedValue([])
+  vi.mocked(getUserRolesForCreate).mockResolvedValue([])
+  vi.mocked(getUserRolesForEdit).mockResolvedValue([])
 })
 
 describe('user page permissions', () => {
@@ -93,13 +97,13 @@ describe('user page permissions', () => {
     renderRoute('/users/new', <UserNewPage />)
 
     expect(screen.getByText('Недостатньо прав для перегляду користувачів')).not.toBeNull()
-    expect(getUserRoles).not.toHaveBeenCalled()
+    expect(getUserRolesForCreate).not.toHaveBeenCalled()
 
     allowedPermissions.add(PermissionKeys.SystemPages.Users.View)
     renderRoute('/users/new', <UserNewPage />)
 
     expect(screen.getByText('Недостатньо прав для створення користувача')).not.toBeNull()
-    expect(getUserRoles).not.toHaveBeenCalled()
+    expect(getUserRolesForCreate).not.toHaveBeenCalled()
   })
 
   it('rechecks create permission on final submit after the drawer mounted', async () => {
@@ -107,7 +111,7 @@ describe('user page permissions', () => {
     allowedPermissions.add(PermissionKeys.Users.User.Create)
     renderRoute('/users/new', <UserNewPage />)
 
-    await waitFor(() => expect(getUserRoles).toHaveBeenCalledTimes(1))
+    await waitFor(() => expect(getUserRolesForCreate).toHaveBeenCalledTimes(1))
     allowedPermissions.delete(PermissionKeys.Users.User.Create)
     fireEvent.submit(document.getElementById('user-new-form')!)
 
@@ -121,7 +125,7 @@ describe('user page permissions', () => {
 
     expect(screen.getByText('Недостатньо прав для відкриття користувача')).not.toBeNull()
     expect(getUser).not.toHaveBeenCalled()
-    expect(getUserRoles).not.toHaveBeenCalled()
+    expect(getUserRolesForEdit).not.toHaveBeenCalled()
   })
 
   it('keeps open-details read-only and exposes each mutation independently', async () => {
@@ -134,6 +138,7 @@ describe('user page permissions', () => {
     expect(screen.queryByRole('button', { name: 'Зберегти' })).toBeNull()
     expect(screen.queryByRole('button', { name: 'Видалити' })).toBeNull()
     expect(screen.queryByRole('button', { name: 'Зміна пароля' })).toBeNull()
+    expect(getUserRolesForEdit).not.toHaveBeenCalled()
 
     view.unmount()
     allowedPermissions.add(PermissionKeys.Users.User.Edit)
@@ -142,6 +147,7 @@ describe('user page permissions', () => {
     renderRoute('/users/edit/user-net-id', <UserEditPage />)
 
     expect((await screen.findByRole('textbox', { name: 'Профіль користувача' }) as HTMLInputElement).disabled).toBe(false)
+    expect(getUserRolesForEdit).toHaveBeenCalledTimes(1)
     expect(screen.getByRole('button', { name: 'Зберегти' })).not.toBeNull()
     expect(screen.getByRole('button', { name: 'Видалити' })).not.toBeNull()
     expect(screen.getByRole('button', { name: 'Зміна пароля' })).not.toBeNull()

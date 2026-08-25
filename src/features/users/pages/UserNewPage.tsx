@@ -18,7 +18,7 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { PermissionGate } from '../../auth/components/PermissionGate'
 import { useAuth } from '../../auth/useAuth'
-import { createUser, getUserRoles } from '../api/usersApi'
+import { createUser, getUserRolesForCreate } from '../api/usersApi'
 import { UserForm } from '../components/UserForm'
 import type { UserProfile, UserRole } from '../types'
 import {
@@ -83,7 +83,7 @@ function UserNewPageContent() {
       setError(null)
 
       try {
-        const nextRoles = await getUserRoles()
+        const nextRoles = await getUserRolesForCreate()
 
         if (!cancelled) {
           setRoles(nextRoles)

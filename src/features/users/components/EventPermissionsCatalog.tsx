@@ -60,7 +60,7 @@ import {
   type EventPermissionStateFilter,
 } from '../eventPermissionsTree'
 import type { UserRole } from '../types'
-import { SelectionMark } from './RolePermissionsEditor'
+import { SelectionMark } from './SelectionMark'
 import './role-permissions-editor.css'
 import './event-permissions-catalog.css'
 
@@ -156,10 +156,6 @@ export const EventPermissionsCatalog = forwardRef<
     () => new Set(activePermissions.map((permission) => permission.key)),
     [activePermissions],
   )
-  const inheritedKeys = useMemo(
-    () => new Set(rolePermissions?.inheritedPermissionKeys || []),
-    [rolePermissions],
-  )
   const assignedKnownCount = useMemo(
     () => Array.from(selectedKeys).filter((key) => knownKeys.has(key)).length,
     [knownKeys, selectedKeys],
@@ -167,10 +163,6 @@ export const EventPermissionsCatalog = forwardRef<
   const unavailableAssignedCount = Math.max(
     0,
     selectedKeys.size - assignedKnownCount,
-  )
-  const selectedEditableCount = useMemo(
-    () => Array.from(selectedKeys).filter((key) => !inheritedKeys.has(key)).length,
-    [inheritedKeys, selectedKeys],
   )
   const dirty = !haveSamePermissionKeys(baselineKeys, selectedKeys)
   const hasActiveFilters = Boolean(deferredQuery.trim()) || riskFilter !== 'all' || stateFilter !== 'all'
@@ -383,12 +375,7 @@ export const EventPermissionsCatalog = forwardRef<
 
   function toggleKeys(keys: readonly string[]) {
     if (readOnly) return
-    const editableKeys = keys.filter((key) => !inheritedKeys.has(key))
-    if (editableKeys.length === 0) {
-      return
-    }
-
-    setSelectedKeys((current) => togglePermissionKeys(current, editableKeys))
+    setSelectedKeys((current) => togglePermissionKeys(current, keys))
     setConflict(null)
   }
 
@@ -400,7 +387,7 @@ export const EventPermissionsCatalog = forwardRef<
 
   function clearKeys() {
     if (readOnly) return
-    setSelectedKeys(new Set(inheritedKeys))
+    setSelectedKeys(new Set())
     setConflict(null)
   }
 
@@ -494,13 +481,6 @@ export const EventPermissionsCatalog = forwardRef<
         </Alert>
       ) : null}
 
-      {inheritedKeys.size > 0 ? (
-        <Alert className="event-permissions-alert" color="blue" variant="light">
-          {t('Успадковані права з вкладки «Права сторінок»')}: {inheritedKeys.size}.{' '}
-          {t('Щоб зняти таке право, спочатку приберіть його у вкладці «Права сторінок».')}
-        </Alert>
-      ) : null}
-
       {conflict ? (
         <Alert
           className="event-permissions-alert"
@@ -554,7 +534,7 @@ export const EventPermissionsCatalog = forwardRef<
           </button>
           <button
             className="role-tree-text-action"
-            disabled={readOnly || selectedEditableCount === 0 || isSaving}
+            disabled={readOnly || selectedKeys.size === 0 || isSaving}
             type="button"
             onClick={clearKeys}
           >
@@ -594,7 +574,6 @@ export const EventPermissionsCatalog = forwardRef<
                 key={section.id}
                 expandedKeys={expandedKeys}
                 forceExpanded={hasActiveFilters}
-                inheritedKeys={inheritedKeys}
                 readOnly={readOnly}
                 section={section}
                 selectedKeys={selectedKeys}
@@ -616,7 +595,6 @@ export const EventPermissionsCatalog = forwardRef<
 type TreeRowProps = {
   expandedKeys: ReadonlySet<string>
   forceExpanded: boolean
-  inheritedKeys: ReadonlySet<string>
   readOnly: boolean
   selectedKeys: ReadonlySet<string>
   onToggleExpanded: (key: string) => void
@@ -626,7 +604,6 @@ type TreeRowProps = {
 function SectionRow({
   expandedKeys,
   forceExpanded,
-  inheritedKeys,
   readOnly,
   section,
   selectedKeys,
@@ -650,7 +627,7 @@ function SectionRow({
         />
         <SelectionMark
           checked={selection.checked}
-          disabled={readOnly || keys.every((key) => inheritedKeys.has(key))}
+          disabled={readOnly}
           indeterminate={selection.indeterminate}
           label={`${t('Вибрати розділ')}: ${section.label}`}
           onChange={() => onToggleKeys(keys)}
@@ -680,7 +657,6 @@ function SectionRow({
                 key={page.id}
                 expandedKeys={expandedKeys}
                 forceExpanded={forceExpanded}
-                inheritedKeys={inheritedKeys}
                 readOnly={readOnly}
                 page={page}
                 sectionId={section.id}
@@ -699,7 +675,6 @@ function SectionRow({
 function PageRow({
   expandedKeys,
   forceExpanded,
-  inheritedKeys,
   readOnly,
   page,
   sectionId,
@@ -724,7 +699,7 @@ function PageRow({
         />
         <SelectionMark
           checked={selection.checked}
-          disabled={readOnly || keys.every((key) => inheritedKeys.has(key))}
+          disabled={readOnly}
           indeterminate={selection.indeterminate}
           label={`${t('Вибрати сторінку')}: ${page.label}`}
           onChange={() => onToggleKeys(keys)}
@@ -759,7 +734,6 @@ function PageRow({
                 key={group.id}
                 expandedKeys={expandedKeys}
                 forceExpanded={forceExpanded}
-                inheritedKeys={inheritedKeys}
                 readOnly={readOnly}
                 group={group}
                 pageId={page.id}
@@ -779,7 +753,6 @@ function PageRow({
 function GroupRow({
   expandedKeys,
   forceExpanded,
-  inheritedKeys,
   readOnly,
   group,
   pageId,
@@ -813,7 +786,7 @@ function GroupRow({
         />
         <SelectionMark
           checked={selection.checked}
-          disabled={readOnly || keys.every((key) => inheritedKeys.has(key))}
+          disabled={readOnly}
           indeterminate={selection.indeterminate}
           label={`${t('Вибрати групу')}: ${group.label}`}
           onChange={() => onToggleKeys(keys)}
@@ -837,7 +810,6 @@ function GroupRow({
               <PermissionRow
                 key={permission.key}
                 permission={permission}
-                inherited={inheritedKeys.has(permission.key)}
                 readOnly={readOnly}
                 selected={selectedKeys.has(permission.key)}
                 onToggle={() => onToggleKeys([permission.key])}
@@ -851,13 +823,11 @@ function GroupRow({
 }
 
 function PermissionRow({
-  inherited,
   readOnly,
   permission,
   selected,
   onToggle,
 }: {
-  inherited: boolean
   readOnly: boolean
   permission: EventPermissionDefinition
   selected: boolean
@@ -874,7 +844,7 @@ function PermissionRow({
       <span className="role-tree-connector" aria-hidden />
       <SelectionMark
         checked={selected}
-        disabled={readOnly || inherited}
+        disabled={readOnly}
         label={`${t('Вибрати право')}: ${permission.name} (${permission.key})`}
         size="sm"
         onChange={onToggle}
@@ -895,11 +865,6 @@ function PermissionRow({
         <span className="role-tree-permission-body-line" aria-hidden />
       </div>
       <div className="role-tree-permission-actions">
-        {inherited ? (
-          <Badge color="blue" size="xs" variant="light">
-            {t('Успадковано')}
-          </Badge>
-        ) : null}
         <Badge color={permission.risk === 'high' ? 'red' : permission.risk === 'medium' ? 'yellow' : 'gray'} size="xs" variant="light">
           {getRiskLabel(permission.risk, t)}
         </Badge>
