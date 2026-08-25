@@ -26,8 +26,8 @@
 - Повна reviewed event matrix: `1902/1902` подій, `0` review candidates.
 - Після виправлень: `825 technical_ui`, `702 covered_existing`,
   `359 duplicate_occurrence`, `16 stale_or_aggregated`.
-- Code-owned catalog: `490` versioned definitions, з них `486` активних і
-  `4` явно retired технічних keys; catalog version `2026.08.25.66`.
+- Code-owned catalog: `499` versioned definitions, з них `495` активних і
+  `4` явно retired технічних keys; catalog version `2026.08.25.67`.
 - Статичний UI-зріз: `117` feature-файлів споживають shared `DataTable`,
   `68` feature-файлів містять row-click entry points, `40` сторінок мають
   прямі permission regression tests. Спільний контракт тепер діє для всіх
@@ -90,16 +90,20 @@ One-shot migrator також soft-delete-ить active `RolePermission` links і
 - Full frontend regression: `467/467` files, `2603/2603` tests PASS;
   lint і production build PASS.
 - Permission snapshots/parity: candidates current, matrix `1902/1902`,
-  parity `490/490`, catalog version `2026.08.25.66`.
-- Full backend non-SQL regression: `944/944` PASS; required event-permission
+  parity `499/499`, catalog version `2026.08.25.67`.
+- Full backend non-SQL regression: `945/945` PASS; required event-permission
   SQL suite: `6/6` PASS.
 - Migrator final cleanup + idempotency run PASS. SQL postflight:
-  `486` active rows, `486` unique active keys, `4` retired technical rows,
+  `495` active rows, `495` unique active keys, `4` retired technical rows,
   `0` active links і `0` active aliases до retired permissions.
 - Live browser smoke після rebuild runtime PASS: `/users/roles` показує
-  `486/486`, 4 retired keys не рендеряться; GBA не має `sale.create`, тому
+  `495/495`, 4 retired keys не рендеряться; GBA не має `sale.create`, тому
   видима кнопка «Новий продаж» disabled. Role-boundary audit знайшов 7
   чинних ролей із `sale.view=true` та `sale.open_details=false`.
+- Final v5 live addendum: GBA має `integration.gba_data.dataset.read`, а пошук
+  історичного `Header_NewRemoveStatham_carriersAllView_PKEY` повертає
+  `0/495`. Catalog/role reads виконуються після фізичного retirement legacy
+  storage без fallback на aliases або dashboard links.
 - Окремий login-as-limited-role browser E2E з фактичним рядком продажу і
   подальшим grant/revoke залишається пунктом основного ТЗ; статичні,
   component, API-contract, SQL і read-only live gates завершені.

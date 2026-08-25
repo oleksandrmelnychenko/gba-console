@@ -5,9 +5,12 @@
 - Робочі проєкти: `D:\work\gba_console`, `D:\work\gba-server`.
 - Робочі гілки: `codex/event-permissions` у кожному репозиторії.
 - UI керування ролями: `/users/roles`.
-- Цільовий code-owned каталог: 490 versioned definitions, з них 486 активних
+- Цільовий code-owned каталог: 499 versioned definitions, з них 495 активних
   подієвих пермішенів і 4 явно retired технічних UI keys; version
-  `2026.08.25.66`. Фінальний migrator і required-SQL postflight пройдені.
+  `2026.08.25.67`. Фінальний v5 migrator і required-SQL postflight пройдені.
+- Після v5 на тестовій копії актуальної БД: `0` active legacy definitions,
+  `0` active legacy role links, `0` active aliases, `0` active dashboard-role
+  links і `0` duplicate active event keys.
 - Legacy mapping у поточному каталозі: 159 explicit mappings: 155
   `alias_to_canonical`, 1 `split_to_canonical`, 3 `inactive_orphan`.
 - Останнє оновлення статусу: 2026-08-25.
@@ -566,6 +569,12 @@ Backend (`D:\\work\\gba-server`, `codex/event-permissions`):
   definitions/aliases/role links та idempotent migrator reconciliation.
 - `4c916596a` — clean deploy, rollout, runtime smoke і release-report contract
   для `486 active / 490 versioned`.
+- `6d5ace27e` — final v5 catalog/runtime cutover і видалення
+  `AdministrativePolicy`;
+- `2ac2c77dc` — транзакційний retirement legacy storage та dashboard route
+  disposition;
+- `b272496ac` — v5 production deploy/runbook gates для `495 active / 499`
+  versioned definitions.
 
 Frontend (`D:\\work\\gba_console`, `codex/event-permissions`):
 
@@ -577,3 +586,49 @@ Frontend (`D:\\work\\gba_console`, `codex/event-permissions`):
 - `7478555d` — financial catalog metadata переведено на scoped endpoints.
 - `d52d8aec` — єдиний UI read/action contract, clickable-state shared таблиць
   та заміна technical container permissions реальними дочірніми правами.
+- `6ec651c1` — frontend v5 keys і заміна останнього realtime role-name bypass
+  на exact event permission.
+
+### 9.3. Final v5 cutover (2026-08-25)
+
+- [x] Власник явно погодив `2026.08.25.final-role-policy-cutover.v5` для
+  Administrator, GBA, FinanceDirector, HeadSalesAnalytic,
+  HeadPurchaseAnalytic і HeadPolishLogistic.
+- [x] Сім scheduler operations, SEO page operations, читання всіх shop orders
+  і GBA Data переведені з role-name bypass на точні event permissions. Для
+  зовнішньої 1C identity GBA Data зберігає окремий machine-role boundary.
+- [x] Шість legacy dashboard writer routes повертають HTTP `410`; старий
+  `AdministrativePolicy` видалений з runtime і DI.
+- [x] Catalog parity: `499/499`, `495` active unique keys, version
+  `2026.08.25.67`.
+- [x] Required pre-cutover SQL suite: `6/6` PASS. Тест синхронізує актуальний
+  code-owned каталог усередині rollback-транзакції, тому не залежить від
+  попередньої версії каталогу в disposable DB.
+- [x] Strict dashboard preflight fail-closed виявив `/clients?roleIds=1`;
+  додано явний route disposition до канонічної `/clients`, контрактний тест
+  і повторний strict run.
+- [x] Перший успішний migrator receipt: `155` legacy definitions, `156`
+  aliases, `1084` legacy role links і `589` dashboard-role links soft-deleted;
+  `495/495` active/unique event rows; `66` нових v5 grants; `6` v5 role
+  markers; `0` unmapped dashboard assignments.
+- [x] Повторний migrator receipt ідемпотентний: `0` created/revived/retired,
+  `0` applied roles і `0` revision bumps.
+- [x] SQL postflight: `495` active event rows, `495` distinct keys, `0`
+  active legacy definitions/links/aliases/dashboard links, `0` duplicate
+  active event keys.
+- [x] Повний regression: backend `945/945` PASS (`8` opt-in SQL skipped,
+  required SQL окремо `6/6` PASS); frontend `467/467` files і `2603/2603`
+  tests PASS; permission audit `1902/1902`, parity `499/499`, lint і
+  production builds PASS.
+- [x] Live runtime smoke після оновлення наявних test containers без нового
+  Docker image: `/users/roles` показує `495/495`; v5 GBA Data grant присутній
+  у GBA; відомий legacy ControlId дає `0/495`; save лишається disabled без
+  змін. Тимчасовий 908,677,170-byte publish видалено; API writable layer
+  зменшено з `910 MB` до `51.7 MB` через точкове оновлення DLL.
+- [x] Нові зміни розкладені на окремі логічні commits backend runtime,
+  backend migrator, backend runbooks і frontend runtime; hashes зафіксовані у
+  розділі 9.2.
+- [ ] Окремий залишок поза погодженим v5 scope: заміна
+  `IdentityAdministrationPolicy` на точні administration event permissions.
+  `InternalMutationPolicy` не є business-role bypass: це окремий machine/user
+  trust boundary для внутрішніх mutation endpoints.
