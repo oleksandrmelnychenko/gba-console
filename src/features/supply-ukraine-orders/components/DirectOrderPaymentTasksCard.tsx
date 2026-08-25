@@ -22,6 +22,7 @@ import {
   sanitizeInvoicePaymentDeliveryProtocols,
   sanitizeProFormPaymentDeliveryProtocols,
 } from '../invoicePaymentProtocolPayload'
+import { getInvoicePaymentAmount } from '../orderAmountBreakdown'
 import { hasSupplyProForm } from '../proFormHelpers'
 import type {
   DirectSupplyOrder,
@@ -66,6 +67,7 @@ export function DirectOrderPaymentTasksCard({
   const [isLoading, setLoading] = useValueState(false)
   const [isSaving, setSaving] = useValueState(false)
   const [error, setLocalError] = useValueState<string | null>(null)
+  const selectedInvoice = invoice?.NetUid === selectedInvoiceNetId ? invoice : null
 
   const reportError = useCallback((cause: unknown, fallback: string) => {
     const message = cause instanceof Error ? cause.message : fallback
@@ -226,12 +228,12 @@ export function DirectOrderPaymentTasksCard({
       return
     }
 
-    if (!invoice) {
+    if (!selectedInvoice) {
       return
     }
 
-    const nextInvoice = addPaymentProtocol(invoice, values, {
-      SupplyInvoiceId: invoice.Id,
+    const nextInvoice = addPaymentProtocol(selectedInvoice, values, {
+      SupplyInvoiceId: selectedInvoice.Id,
       SupplyProFormId: null,
     })
     const targetProtocol = nextInvoice.PaymentDeliveryProtocols?.at(-1)
@@ -256,11 +258,11 @@ export function DirectOrderPaymentTasksCard({
       return
     }
 
-    if (!invoice) {
+    if (!selectedInvoice) {
       return
     }
 
-    const nextInvoice = removePaymentProtocol(invoice, protocol.NetUid, protocol.Id)
+    const nextInvoice = removePaymentProtocol(selectedInvoice, protocol.NetUid, protocol.Id)
     const targetProtocol = findDeletedPaymentProtocol(nextInvoice, protocol)
 
     if (!targetProtocol) {
@@ -270,11 +272,14 @@ export function DirectOrderPaymentTasksCard({
     await persistInvoice(nextInvoice, [targetProtocol])
   }
 
-  const activePaymentDocument = selectedPaymentSource === PRO_FORM_PAYMENT_SOURCE ? proForm : invoice
+  const activePaymentDocument = selectedPaymentSource === PRO_FORM_PAYMENT_SOURCE ? proForm : selectedInvoice
   const displayProtocols = mapToDisplayProtocols(activePaymentDocument)
   const totalGrossPriceLocal = selectedPaymentSource === PRO_FORM_PAYMENT_SOURCE
     ? Number(proForm?.NetPrice) || 0
-    : Number(order.TotalNetPrice) || Number(order.NetPrice) || 0
+    : selectedInvoice
+      ? getInvoicePaymentAmount(selectedInvoice)
+      : 0
+  const isPaymentDocumentLoading = Boolean(selectedInvoiceNetId && !selectedInvoice) || isLoading
 
   return (
     <Card className="supply-detail-card" withBorder radius="md" padding="lg">
@@ -305,7 +310,7 @@ export function DirectOrderPaymentTasksCard({
               />
             )}
 
-            {isLoading ? (
+            {isPaymentDocumentLoading ? (
               <Group justify="center" py="md">
                 <Loader size="sm" />
               </Group>

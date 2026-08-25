@@ -34,6 +34,15 @@ export function getInvoiceAmountBreakdown(invoice: SupplyInvoice): OrderAmountBr
   }
 }
 
+/** Legacy invoice payment tasks use invoice net + delivery - discount as their default amount. */
+export function getInvoicePaymentAmount(invoice: SupplyInvoice): number {
+  const net = getInvoiceAmountBreakdown(invoice).net ?? 0
+  const delivery = finiteNumber(invoice.DeliveryAmount) ?? 0
+  const discount = finiteNumber(invoice.DiscountAmount) ?? 0
+
+  return net + delivery - discount
+}
+
 export function getPackingListAmountBreakdown(packList: PackingList): OrderAmountBreakdown {
   const net = finiteNumber(packList.TotalNetPrice)
   const vat = finiteNumber(packList.TotalVatAmount)

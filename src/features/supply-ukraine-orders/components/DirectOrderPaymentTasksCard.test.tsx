@@ -33,12 +33,15 @@ vi.mock('../../supply-ukraine-payment-protocols/components/PaymentDeliveryProtoc
     onCreateProtocol,
     onRemoveProtocol,
     protocols,
+    totalGrossPriceLocal,
   }: {
     onCreateProtocol: (values: NewPaymentProtocolFormValues) => Promise<void>
     onRemoveProtocol: (protocol: SupplyOrderUkrainePaymentDeliveryProtocol) => Promise<void>
     protocols: SupplyOrderUkrainePaymentDeliveryProtocol[]
+    totalGrossPriceLocal: number
   }) => (
     <div>
+      <output aria-label="Сума платіжної задачі">{totalGrossPriceLocal}</output>
       <button type="button" onClick={() => void onCreateProtocol(createPaymentValues())}>
         Створити платіжну задачу
       </button>
@@ -113,10 +116,14 @@ describe('DirectOrderPaymentTasksCard', () => {
 
   it('keeps invoice payment-task creation working when there is no proforma', async () => {
     const invoice: SupplyInvoice = {
+      DeliveryAmount: 125.5,
+      DiscountAmount: 25,
       Id: 27,
       NetUid: invoiceNetUid,
+      NetPrice: 99999,
       Number: 'INV-27',
       PaymentDeliveryProtocols: [],
+      TotalNetPrice: 31439.43,
     }
     mocks.getSupplyInvoiceItems.mockResolvedValue(invoice)
     mocks.updateSupplyInvoice.mockResolvedValue(invoice)
@@ -131,6 +138,7 @@ describe('DirectOrderPaymentTasksCard', () => {
     fireEvent.click(await screen.findByRole('button', { name: 'Створити платіжну задачу' }))
 
     await waitFor(() => expect(mocks.updateSupplyInvoice).toHaveBeenCalledTimes(1))
+    expect(screen.getByRole('status', { name: 'Сума платіжної задачі' }).textContent).toBe('31539.93')
     expect(mocks.updateSupplyProForm).not.toHaveBeenCalled()
     expect(mocks.updateSupplyInvoice).toHaveBeenCalledWith(
       orderNetUid,
