@@ -61,6 +61,11 @@ export function DirectOrderPaymentTasksCard({
     () => paymentSources[0]?.value || null,
   )
   const selectedInvoiceNetId = getInvoiceNetId(selectedPaymentSource)
+  const selectedInvoiceSummary = invoices.find((entry) => entry.NetUid === selectedInvoiceNetId)
+  const selectedInvoiceUpdated = selectedInvoiceSummary?.Updated
+  const selectedInvoiceNetPrice = selectedInvoiceSummary?.NetPrice
+  const selectedInvoiceDeliveryAmount = selectedInvoiceSummary?.DeliveryAmount
+  const selectedInvoiceDiscountAmount = selectedInvoiceSummary?.DiscountAmount
   const [invoice, setInvoice] = useValueState<SupplyInvoice | null>(null)
   const [protocolKeys, setProtocolKeys] = useValueState<SupplyOrderPaymentDeliveryProtocolKey[]>([])
   const [users, setUsers] = useValueState<User[]>([])
@@ -154,7 +159,18 @@ export function DirectOrderPaymentTasksCard({
     return () => {
       cancelled = true
     }
-  }, [reportError, selectedInvoiceNetId, setInvoice, setLoading, setLocalError, t])
+  }, [
+    reportError,
+    selectedInvoiceDeliveryAmount,
+    selectedInvoiceDiscountAmount,
+    selectedInvoiceNetId,
+    selectedInvoiceNetPrice,
+    selectedInvoiceUpdated,
+    setInvoice,
+    setLoading,
+    setLocalError,
+    t,
+  ])
 
   async function persistInvoice(
     nextInvoice: SupplyInvoice,

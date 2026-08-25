@@ -1,7 +1,7 @@
 import { MantineProvider } from '@mantine/core'
-import { render, screen, within } from '@testing-library/react'
+import { fireEvent, render, screen, within } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
-import type { DirectSupplyOrder } from '../types'
+import type { DirectSupplyOrder, SupplyInvoice } from '../types'
 import { DirectOrderInvoicesSummary } from './DirectOrderInvoicesSummary'
 
 vi.mock('../../../shared/i18n/useI18n', () => ({
@@ -54,7 +54,7 @@ describe('DirectOrderInvoicesSummary', () => {
     expect(within(invoice).getByText(/25\.08\.26/)).not.toBeNull()
     expect(within(invoice).getByText('USD')).not.toBeNull()
     expect(within(invoice).getByText('47')).not.toBeNull()
-    expect(within(invoice).getByText(/31\s439,43/)).not.toBeNull()
+    expect(within(invoice).getByRole('group', { name: 'Сума нетто' }).textContent).toMatch(/31\s439,43/)
     expect(within(invoice).getByText(/6\s287,89/)).not.toBeNull()
     expect(within(invoice).getByText(/37\s727,32/)).not.toBeNull()
     expect(within(invoice).getByRole('link', { name: 'invoice.jpg' }).getAttribute('href'))
@@ -86,6 +86,64 @@ describe('DirectOrderInvoicesSummary', () => {
     expect(within(secondInvoice).getByRole('group', { name: 'Сума нетто' }).textContent).toContain('200,02')
   })
 
+  it('allows the discount to be edited after the invoice exists', () => {
+    const onSaveDiscount = vi.fn().mockResolvedValue(undefined)
+
+    renderSummary({
+      SupplyInvoices: [
+        {
+          DeliveryAmount: 50,
+          DiscountAmount: 25,
+          NetPrice: 1_000,
+          NetUid: 'a7c7de11-1c08-4835-8a69-d217b808a53e',
+          Number: 'INV-EDIT',
+          TotalNetPrice: 0,
+        },
+      ],
+    }, { canEditDiscount: true, onSaveDiscount })
+
+    const invoice = screen.getByRole('group', { name: 'Інвойс INV-EDIT' })
+    const discountInput = within(invoice).getByRole('textbox', { name: 'Знижка' })
+
+    expect(within(invoice).getByRole('group', { name: 'Сума нетто' }).textContent).toMatch(/1\s000,00/)
+    expect(within(invoice).getByRole('group', { name: 'До сплати' }).textContent).toMatch(/1\s025,00/)
+
+    fireEvent.change(discountInput, { target: { value: '125.37' } })
+    fireEvent.click(within(invoice).getByRole('button', { name: 'Зберегти знижку' }))
+
+    expect(onSaveDiscount).toHaveBeenCalledWith(
+      expect.objectContaining({ Number: 'INV-EDIT' }),
+      125.37,
+    )
+    expect(within(invoice).getByRole('group', { name: 'До сплати' }).textContent).toContain('924,63')
+  })
+
+  it('rejects a discount greater than invoice net plus delivery', () => {
+    const onSaveDiscount = vi.fn().mockResolvedValue(undefined)
+
+    renderSummary({
+      SupplyInvoices: [
+        {
+          DeliveryAmount: 50,
+          DiscountAmount: 0,
+          NetPrice: 1_000,
+          NetUid: 'a7c7de11-1c08-4835-8a69-d217b808a53e',
+          Number: 'INV-LIMIT',
+        },
+      ],
+    }, { canEditDiscount: true, onSaveDiscount })
+
+    const invoice = screen.getByRole('group', { name: 'Інвойс INV-LIMIT' })
+
+    fireEvent.change(within(invoice).getByRole('textbox', { name: 'Знижка' }), {
+      target: { value: '1050.01' },
+    })
+
+    expect(within(invoice).getByText(/Знижка не може перевищувати/)).not.toBeNull()
+    expect((within(invoice).getByRole('button', { name: 'Зберегти знижку' }) as HTMLButtonElement).disabled).toBe(true)
+    expect(onSaveDiscount).not.toHaveBeenCalled()
+  })
+
   it('renders no invoice block before an invoice is attached', () => {
     renderSummary({ SupplyInvoices: [] })
 
@@ -94,10 +152,20 @@ describe('DirectOrderInvoicesSummary', () => {
   })
 })
 
-function renderSummary(order: DirectSupplyOrder) {
+function renderSummary(
+  order: DirectSupplyOrder,
+  options: {
+    canEditDiscount?: boolean
+    onSaveDiscount?: (invoice: SupplyInvoice, discountAmount: number) => Promise<void>
+  } = {},
+) {
   render(
     <MantineProvider env="test">
-      <DirectOrderInvoicesSummary order={order} />
+      <DirectOrderInvoicesSummary
+        canEditDiscount={options.canEditDiscount}
+        order={order}
+        onSaveDiscount={options.onSaveDiscount}
+      />
     </MantineProvider>,
   )
 }

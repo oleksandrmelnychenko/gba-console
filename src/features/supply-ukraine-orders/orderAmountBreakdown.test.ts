@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   getDirectOrderAmountBreakdown,
   getInvoiceAmountBreakdown,
+  getInvoiceDiscountLimit,
   getInvoicePaymentAmount,
   getPackingListAmountBreakdown,
   getToUkraineOrderAmountBreakdown,
@@ -46,13 +47,23 @@ describe('order amount breakdowns', () => {
     })
   })
 
+  it('falls back to the persisted invoice amount before packing-list totals are hydrated', () => {
+    expect(getInvoiceAmountBreakdown({
+      NetPrice: 29187.93,
+      TotalNetPrice: 0,
+    }).net).toBe(29187.93)
+  })
+
   it('uses the legacy invoice net + delivery - discount amount for payment tasks', () => {
-    expect(getInvoicePaymentAmount({
+    const invoice = {
       DeliveryAmount: 125.5,
       DiscountAmount: 25,
       NetPrice: 99999,
       TotalNetPrice: 31439.43,
-    })).toBe(31539.93)
+    }
+
+    expect(getInvoiceDiscountLimit(invoice)).toBe(100124.5)
+    expect(getInvoicePaymentAmount(invoice)).toBe(100099.5)
   })
 
   it('uses explicit packing-list VAT totals without relabelling gross cost', () => {

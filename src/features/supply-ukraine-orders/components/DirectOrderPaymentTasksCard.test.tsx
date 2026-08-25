@@ -12,12 +12,13 @@ const mocks = vi.hoisted(() => ({
   getSupplyInvoiceItems: vi.fn(),
   getSupplyPaymentDeliveryProtocolKeys: vi.fn(),
   getSupplyProtocolResponsibleUsers: vi.fn(),
+  t: (key: string) => key,
   updateSupplyInvoice: vi.fn(),
   updateSupplyProForm: vi.fn(),
 }))
 
 vi.mock('../../../shared/i18n/useI18n', () => ({
-  useI18n: () => ({ t: (key: string) => key }),
+  useI18n: () => ({ t: mocks.t }),
 }))
 
 vi.mock('../api/supplyUkraineOrdersApi', () => ({
@@ -138,7 +139,7 @@ describe('DirectOrderPaymentTasksCard', () => {
     fireEvent.click(await screen.findByRole('button', { name: 'Створити платіжну задачу' }))
 
     await waitFor(() => expect(mocks.updateSupplyInvoice).toHaveBeenCalledTimes(1))
-    expect(screen.getByRole('status', { name: 'Сума платіжної задачі' }).textContent).toBe('31539.93')
+    expect(screen.getByRole('status', { name: 'Сума платіжної задачі' }).textContent).toBe('100099.5')
     expect(mocks.updateSupplyProForm).not.toHaveBeenCalled()
     expect(mocks.updateSupplyInvoice).toHaveBeenCalledWith(
       orderNetUid,
@@ -191,6 +192,45 @@ describe('DirectOrderPaymentTasksCard', () => {
 
     await waitFor(() => expect(mocks.updateSupplyInvoice).toHaveBeenCalledTimes(1))
     expect(mocks.updateSupplyProForm).not.toHaveBeenCalled()
+  })
+
+  it('reloads the selected invoice after its discount changes on the logistics path', async () => {
+    const invoice: SupplyInvoice = {
+      DiscountAmount: 0,
+      Id: 27,
+      NetPrice: 1_000,
+      NetUid: invoiceNetUid,
+      Number: 'INV-27',
+      PaymentDeliveryProtocols: [],
+      Updated: '2026-08-25T10:00:00',
+    }
+    mocks.getSupplyInvoiceItems
+      .mockResolvedValueOnce(invoice)
+      .mockResolvedValueOnce({ ...invoice, DiscountAmount: 100, Updated: '2026-08-25T10:01:00' })
+
+    const { rerender } = renderCard({
+      NetUid: orderNetUid,
+      SupplyInvoices: [invoice],
+      SupplyProForm: null,
+    })
+
+    await waitFor(() => expect(mocks.getSupplyInvoiceItems).toHaveBeenCalledTimes(1))
+
+    rerender(
+      <MantineProvider>
+        <DirectOrderPaymentTasksCard
+          canEdit
+          order={{
+            NetUid: orderNetUid,
+            SupplyInvoices: [{ ...invoice, DiscountAmount: 100, Updated: '2026-08-25T10:01:00' }],
+            SupplyProForm: null,
+          }}
+        />
+      </MantineProvider>,
+    )
+
+    await waitFor(() => expect(mocks.getSupplyInvoiceItems).toHaveBeenCalledTimes(2))
+    expect((await screen.findByRole('status', { name: 'Сума платіжної задачі' })).textContent).toBe('900')
   })
 
   it('removes an existing proforma payment task without routing it through an invoice', async () => {
@@ -249,7 +289,7 @@ describe('DirectOrderPaymentTasksCard', () => {
 })
 
 function renderCard(order: DirectSupplyOrder) {
-  render(
+  return render(
     <MantineProvider>
       <DirectOrderPaymentTasksCard canEdit order={order} />
     </MantineProvider>,

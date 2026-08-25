@@ -19,17 +19,38 @@ export function createInvoiceMetadataPayload(
   form: InvoiceMetadataForm,
 ): SupplyInvoice {
   return {
-    ...stripEntityGraph(invoice),
+    ...createInvoiceMutationSnapshot(invoice),
     DateFrom: normalizeDateTimeInput(form.dateFrom),
     DeliveryAmount: toAmountNumber(form.deliveryAmount),
     DiscountAmount: toAmountNumber(form.discountAmount),
     InformationDeliveryProtocols: invoice.InformationDeliveryProtocols || [],
     InvoiceDocuments: form.documents,
     Number: form.number.trim(),
+  }
+}
+
+/** Actor-safe full invoice snapshot for the inline discount editor. */
+export function createInvoiceDiscountPayload(
+  invoice: SupplyInvoice,
+  discountAmount: NumberFieldValue,
+): SupplyInvoice {
+  return {
+    ...createInvoiceMutationSnapshot(invoice),
+    DiscountAmount: toAmountNumber(discountAmount),
+  }
+}
+
+/**
+ * The invoice actor expects collection properties to be present, but treats
+ * supplied protocols as mutations. Preserve the entity snapshot while keeping
+ * protocol collections empty unless a dedicated editor explicitly overrides one.
+ */
+function createInvoiceMutationSnapshot(invoice: SupplyInvoice): SupplyInvoice {
+  return {
+    ...stripEntityGraph(invoice),
+    InformationDeliveryProtocols: [],
+    InvoiceDocuments: invoice.InvoiceDocuments || [],
     PackingLists: invoice.PackingLists || [],
-    // Metadata edits must not re-submit the financial subgraph. The shared
-    // invoice actor processes every supplied protocol as a payment-task
-    // mutation, while an empty collection preserves the persisted protocols.
     PaymentDeliveryProtocols: [],
     SupplyInvoiceDeliveryDocuments: invoice.SupplyInvoiceDeliveryDocuments || [],
     SupplyInvoiceOrderItems: invoice.SupplyInvoiceOrderItems || [],

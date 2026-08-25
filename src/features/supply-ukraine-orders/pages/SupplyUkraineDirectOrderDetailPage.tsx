@@ -36,6 +36,7 @@ import {
   createSupplyCreditNote,
   getDirectSupplyOrderById,
   updateDirectSupplyOrder,
+  updateSupplyInvoice,
   uploadSupplyOrderDocument,
 } from '../api/supplyUkraineOrdersApi'
 import { DirectOrderProductIncomeStatus } from '../components/DirectOrderProductIncomeStatus'
@@ -43,9 +44,12 @@ import { DirectOrderInvoicesSummary } from '../components/DirectOrderInvoicesSum
 import { DirectOrderPaymentTasksCard } from '../components/DirectOrderPaymentTasksCard'
 import { DirectSupplyOrderProFormCard } from '../components/DirectSupplyOrderProFormCard'
 import { canOpenDirectProductIncomeFromOrder } from '../directOrderActions'
+import { createInvoiceDiscountPayload } from '../invoiceMetadataPayload'
+import { getInvoiceDiscountLimit } from '../orderAmountBreakdown'
 import type {
   CreditNoteDocument,
   DirectSupplyOrder,
+  SupplyInvoice,
   SupplyOrderDeliveryDocument,
 } from '../types'
 import { hasSupplyProForm } from '../proFormHelpers'
@@ -58,6 +62,7 @@ const TRANSPORTATION_OPTIONS: Array<{ label: string, value: string }> = [
 const PERMISSION_APPROVE_ORDER = 'LOGISTIC_WAY_ordersUkraineAllEdit_ApprovedSupplyOrderStatus_PKEY'
 const PERMISSION_CREDIT_NOTES = 'LOGISTIC_WAY_ordersUkraineAllEdit_CreditNotes_PKEY'
 const PERMISSION_EDIT_ORDER_AMOUNT = 'LOGISTIC_WAY_ordersUkraineAllEdit_EditSupplyNewAmount_PKEY'
+const PERMISSION_EDIT_INVOICE = 'LOGISTIC_WAY_ordersUkraineAllEdit_EditInvoice_PKEY'
 const PERMISSION_OPEN_DIRECT_INVOICES = 'UkraineAllOrders_SelectAnOption_Products_PKEY'
 const PERMISSION_OPEN_DIRECT_PRODUCT_INCOME = 'UkraineAllOrders_SelectAnOption_PlacementSupplyOrder_PKEY'
 const dateTimeFormatter = new Intl.DateTimeFormat('uk-UA', { dateStyle: 'short', timeStyle: 'short' })
@@ -247,6 +252,7 @@ export function SupplyUkraineDirectOrderDetailPage() {
   const canApproveOrder = hasPermission(PERMISSION_APPROVE_ORDER)
   const canOpenCreditNotes = hasPermission(PERMISSION_CREDIT_NOTES)
   const canEditAmount = hasPermission(PERMISSION_EDIT_ORDER_AMOUNT)
+  const canEditInvoice = hasPermission(PERMISSION_EDIT_INVOICE)
   const canOpenInvoices = hasPermission(PERMISSION_OPEN_DIRECT_INVOICES) && hasSupplyProForm(order)
   const canOpenProductIncome = canOpenDirectProductIncomeFromOrder(
     order,
@@ -315,6 +321,45 @@ export function SupplyUkraineDirectOrderDetailPage() {
 
   function syncAmountInputs(nextOrder: DirectSupplyOrder | null) {
     dispatchAmountEdit({ type: 'syncAmountInputs', order: nextOrder })
+  }
+
+  async function saveInvoiceDiscount(invoice: SupplyInvoice, discountAmount: number) {
+    if (!order?.NetUid) {
+      return
+    }
+
+    const normalizedDiscount = Math.round(discountAmount * 100) / 100
+    const discountLimit = getInvoiceDiscountLimit(invoice)
+
+    if (
+      !Number.isFinite(normalizedDiscount)
+      || normalizedDiscount < 0
+      || normalizedDiscount > discountLimit
+    ) {
+      setError(t('Некоректна сума знижки'))
+      return
+    }
+
+    setSaving(true)
+    setError(null)
+
+    try {
+      const updatedInvoice = await updateSupplyInvoice(
+        order.NetUid,
+        createInvoiceDiscountPayload(invoice, normalizedDiscount),
+      )
+
+      if (!updatedInvoice) {
+        throw new Error(t('Не вдалося завантажити оновлений інвойс'))
+      }
+
+      await reloadOrder()
+      notifications.show({ color: 'green', message: t('Знижку інвойсу збережено') })
+    } catch (saveError) {
+      setError(saveError instanceof Error ? saveError.message : t('Не вдалося зберегти знижку інвойсу'))
+    } finally {
+      setSaving(false)
+    }
   }
 
   async function savePatch(patch: Partial<DirectSupplyOrder>, successMessage: string) {
@@ -742,7 +787,12 @@ export function SupplyUkraineDirectOrderDetailPage() {
             onReload={reloadOrder}
           />
 
-          <DirectOrderInvoicesSummary order={order} />
+          <DirectOrderInvoicesSummary
+            canEditDiscount={canEditInvoice}
+            isSaving={isSaving}
+            order={order}
+            onSaveDiscount={saveInvoiceDiscount}
+          />
 
           <DirectOrderPaymentTasksCard canEdit={!isLocked} order={order} onError={setError} />
 
