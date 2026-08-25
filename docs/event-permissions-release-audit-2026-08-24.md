@@ -7,8 +7,8 @@
 - frontend: `D:\work\gba_console`, `codex/event-permissions`;
 - backend: `D:\work\gba-server`, `codex/event-permissions`.
 
-Статус документа: **поточний verdict `NO-GO` до фінального browser E2E та
-owner-рішення для `11` financial create routes**. Required-SQL, migrator ×2,
+Статус документа: **поточний verdict `NO-GO` лише до фінального browser
+E2E**. Required-SQL, migrator ×2,
 DB postflight, runtime API acceptance, breaking cutover і v4 role grant вже
 завершені. Розділи 1–7 нижче
 зберігають історичні checkpoints аудиту; актуальний консолідований стан після
@@ -190,12 +190,13 @@ release-safe:
 - Code-owned catalog: `490` canonical keys, version `2026.08.24.65`.
 - Parity: backend `490` = frontend definitions `490` = effective keys `490`.
 - Matrix: `1902/1902`, `reviewCandidates=0`.
-- Full frontend: `466/466` files, `2598/2598` tests PASS; lint, production
+- Full frontend: `466/466` files, `2599/2599` tests PASS; lint, production
   build, catalog verification і parity PASS.
-- Підтримуваний Console перенесений на всі нефінансові exact facades,
-  включно з Resale, Sales registry, Pricing, SAD-to-order, Outgoing та Other
-  Income. Fail-closed allowlist скорочено з `17` до `11`: лишилися тільки
-  financial create calls, що очікують access approval.
+- Підтримуваний Console перенесений на всі exact facades. Останні `11`
+  financial literals були не live HTTP calls, а застарілою metadata каталогу:
+  фактичні income/outcome submit API вже використовували scoped routes і exact
+  permissions. Metadata вирівняно з runtime, fail-closed allowlist скорочено
+  `17 → 11 → 0`; role grants та access policy не змінювалися.
 
 ### Security findings
 
@@ -230,8 +231,9 @@ runtime API acceptance зелені, фінальна browser-перевірка
   `2` financial SQL). Окремий required-SQL прогін: `6/6` PASS.
 - API Release build: `0 warnings / 0 errors`; focused actor authorization:
   `65/65` PASS.
-- Frontend route cutover contract: `3/3` PASS; focused lookup regression:
-  `153/153` PASS; full suite `2598/2598`, lint/build/parity PASS.
+- Frontend route cutover contract: `3/3` PASS; focused accounting/cutover
+  contracts `14/14`; focused lookup regression `153/153` PASS; full suite
+  `2599/2599`, lint/build/parity PASS.
 
 ### Test-only DB migration і postflight
 
@@ -264,7 +266,7 @@ safety gate досі очікує окремої явної згоди влас�
 - початкові `53` assignments відновлено точно, revision version збільшився на
   очікувані `2`.
 
-Фінальний browser E2E не виконано: browser runtime двічі впав до підключення
+Фінальний browser E2E не виконано: browser runtime повторно впав до підключення
 через відсутній локальний kernel-assets path. API/console/SQL стенд при цьому
 працює на `18084/37986/23433`.
 
@@ -275,21 +277,22 @@ safety gate досі очікує окремої явної згоди влас�
    інтеграції на цих URL перестануть працювати.
 2. **Виконано:** прибрати `586` старих role-policy intersections лише з exact-protected
    actions; ungated whitelist actions не відкривати.
-3. Переприв'язати `11` financial create calls на exact context routes;
-   користувач без нового key отримає `403`.
+3. **Виконано без зміни доступу:** вирівняти `11` застарілих financial catalog
+   metadata entries з уже активними scoped submit routes; live callers і
+   exact permission gates були мігровані раніше.
 4. Виконати exact cleanup `25` test-only link changes за наведеним preflight.
 5. **Виконано через v4:** одноразово видати
    `sales.ukraine.sale.convert_merged_to_bill` лише `Administrator`, `GBA`,
    `HeadSalesAnalytic`.
 
-Поточний залишок: browser E2E → остаточний `GO/NO-GO`. Окремо залишаються
-`11` financial create calls, для яких owner ще не визначив exact access
-policy, та необов’язковий для clean deploy exact cleanup `25` test-only link
-changes, що потребує окремого approval.
+Поточний залишок: browser E2E → остаточний `GO/NO-GO`. Окремо залишається
+необов'язковий для clean deploy exact cleanup `25` test-only link changes, що
+потребує окремого approval.
 
 ### Code commits checkpoint
 
 Backend: `b8f825725`, `1afac15df`, `96585af3c`, `27c9a962b`, `9ea0e9762`,
 `4282ba7cd`.
 
-Frontend: `4061be85`, `a5ef53dc`, `99ed7621`, `7b250e32`, `2345ea25`.
+Frontend: `4061be85`, `a5ef53dc`, `99ed7621`, `7b250e32`, `2345ea25`,
+`8443aed3`, `7478555d`.

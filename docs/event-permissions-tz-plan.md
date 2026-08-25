@@ -404,14 +404,14 @@ Commit-to-running deployment:
 Поточний статус: **code checkpoint зафіксовано логічними commit у гілках
 `codex/event-permissions`**. Required-SQL, migrator ×2, DB postflight і
 runtime API acceptance завершені; фінальний release verdict залишається
-pending до browser E2E та owner-рішення для `11` financial create routes.
+pending лише до фінального browser E2E.
 
 - [x] Frontend/backend catalog alignment — catalog розширено до `490`
   canonical permissions, version `2026.08.24.65`; додані окремі high-risk
   keys для cross-owner SaleReturn create/cancel і mutation завершеного
   SupplyOrder. Фінальний parity gate `490/490/490` PASS.
 - [x] Повні frontend tests, lint, typecheck і production build —
-  `466/466` files, `2598/2598` tests PASS у стабільному режимі
+  `466/466` files, `2599/2599` tests PASS у стабільному режимі
   `--maxWorkers=4 --testTimeout=10000`; lint/build PASS; catalog parity
   `490/490/490`, reviewed matrix `1902/1902`.
 - [x] Поточний safe-checkpoint backend security/contract — після retirement
@@ -440,7 +440,7 @@ pending до browser E2E та owner-рішення для `11` financial create 
 - [ ] Browser E2E на фінальному `490` runtime: edit role name, permission
   save, refresh і відновлення збереженого стану без впливу на production.
   Попередній formal E2E на checkpoint `479` пройшов. Фінальний runtime `490`
-  піднято на `localhost:18084`, але дозволений browser runtime двічі не зміг
+  піднято на `localhost:18084`, але дозволений browser runtime повторно не зміг
   ініціалізувати локальні kernel assets; це єдиний технічний blocker UI E2E.
 - [x] Додано deterministic compiled-IL gate і checked-in manifest для всіх
   permission facade → public routed core edges, включно з async state
@@ -458,12 +458,14 @@ pending до browser E2E та owner-рішення для `11` financial create 
   permission OR між контекстами не додано. Generic
   `/usermanagement/profiles/all/by` retired окремо, тому manifest містить
   загалом `78` retired routes; focused route regression `8/8` PASS.
-- [x] Усі нефінансові frontend generic callers перенесені на exact facades:
-  Resale, Sales registry, Pricing, SAD-to-order, Outgoing та Other Income.
-  Deterministic route contract `3/3` PASS; allowlist скорочено з `17` до `11`.
-  Залишилися лише `11` financial mutation literals (`income/new` ×6,
-  `outcome/new` ×5), які очікують явного owner approval. Глобальна заміна або
-  permission OR між контекстами заборонені.
+- [x] Усі frontend generic callers перенесені на exact facades. Останні `11`
+  financial literals виявилися застарілою metadata каталогу, а не live HTTP
+  calls: шість income-операцій уже виконувалися через п'ять operation-scoped
+  routes і окремий online-shop route; п'ять outcome-операцій — через
+  `outgoing-cashflows/create`. Metadata вирівняно з фактичними endpoints,
+  тимчасовий allowlist зменшено `17 → 11 → 0`. Зміни role grants або runtime
+  access policy не було. Deterministic route contract `3/3`, focused catalog
+  contracts `14/14`, full frontend `2599/2599`, lint/build/parity PASS.
 - [x] Після явного owner approval усунуто всі `586` old-role-policy
   intersections на `1182` exact-protected actions. Видалено `13`
   controller-level і `438` method-level legacy attributes; старий захист
@@ -519,4 +521,5 @@ Frontend (`D:\\work\\gba_console`, `codex/event-permissions`):
 - `a5ef53dc` — feature routes та UI guards на exact permissions;
 - `99ed7621` — reviewed matrix і validation tooling;
 - `7b250e32` — dependency security patches.
-- `2345ea25` — cutover/release checkpoint documentation.
+- `2345ea25` — cutover/release checkpoint documentation;
+- `7478555d` — financial catalog metadata переведено на scoped endpoints.
