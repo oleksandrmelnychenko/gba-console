@@ -3594,8 +3594,12 @@
     },
     "PE-00955": {
       "disposition": "covered_existing",
-      "canonicalPermissionKeys": ["warehouse_accounting.storages.position_action.open"],
-      "reason": "Final transfer, write-off, or return submission rechecks the position-action right and uses protected mutation facades."
+      "canonicalPermissionKeys": ["warehouse_accounting.storages.position_action.management"],
+      "reason": "Final transfer, write-off, or return submission rechecks the business-operation right and uses protected mutation facades."
+    },
+    "PE-00965": {
+      "disposition": "technical_ui",
+      "reason": "Opening the position-action dialog is local UI state; the management permission owns both the entry point and final mutation."
     },
     "PE-00957": {
       "disposition": "technical_ui",
@@ -3672,6 +3676,10 @@
     "PE-00853": {
       "disposition": "technical_ui",
       "reason": "Discard confirmation only chooses whether to abandon local unsaved state and does not call a business mutation."
+    },
+    "PE-00857": {
+      "disposition": "technical_ui",
+      "reason": "The protocol row only opens a container whose child destinations are independently permission-gated."
     },
     "PE-00858": {
       "disposition": "technical_ui",
@@ -5276,9 +5284,8 @@
       "reason": "The generic documents opener is rendered only when at least one exact document right is effective; individual actions are finalized by PE-01361."
     },
     "PE-01414": {
-      "disposition": "covered_existing",
-      "canonicalPermissionKeys": ["sales.ukraine.sale.open_context_menu"],
-      "reason": "The row actions menu cannot open without the existing context-menu right."
+      "disposition": "technical_ui",
+      "reason": "The row menu is a technical container rendered only when at least one independently protected child action is available."
     },
     "PE-01415": {
       "disposition": "duplicate_occurrence",

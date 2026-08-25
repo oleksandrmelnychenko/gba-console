@@ -5,12 +5,12 @@
 - Робочі проєкти: `D:\work\gba_console`, `D:\work\gba-server`.
 - Робочі гілки: `codex/event-permissions` у кожному репозиторії.
 - UI керування ролями: `/users/roles`.
-- Цільовий code-owned каталог: 490 активних подієвих пермішенів, version
-  `2026.08.24.65`. Поточний запущений test-only runtime ще на попередньому
-  checkpoint `479`/`2026.08.19.62` до фінального migrator/rebuild.
-- Legacy mapping у поточному каталозі: 158 distinct keys / 159 target
-  bindings (один старий широкий ключ явно split на два canonical права).
-- Останнє оновлення статусу: 2026-08-24.
+- Цільовий code-owned каталог: 490 versioned definitions, з них 486 активних
+  подієвих пермішенів і 4 явно retired технічних UI keys; version
+  `2026.08.25.66`. Фінальний migrator і required-SQL postflight пройдені.
+- Legacy mapping у поточному каталозі: 159 explicit mappings: 155
+  `alias_to_canonical`, 1 `split_to_canonical`, 3 `inactive_orphan`.
+- Останнє оновлення статусу: 2026-08-25.
 
 Цей файл є єдиним робочим ТЗ і чеклістом виконання. Позначка `[x]`
 означає, що пункт реалізований у робочих гілках; `[ ]` — що робота або
@@ -47,12 +47,12 @@
 - [x] Для кожного старого ключа зафіксувати рівно один статус:
   `same_canonical`, `alias_to_canonical`, `split_to_canonical`,
   `merged_into_canonical`, `inactive_orphan`, `requires_product_decision`.
-  Поточний результат: 157 `alias_to_canonical`, 1
-  `split_to_canonical`, 1 `inactive_orphan`, 0 невідомих активних ключів.
+  Поточний результат: 155 `alias_to_canonical`, 1
+  `split_to_canonical`, 3 `inactive_orphan`, 0 невідомих активних ключів.
 - [x] Жоден старий ключ не може залишитися без явного mapping/status.
 - [x] Результат mapping зберігати як відтворюваний versioned artifact і
   перевіряти в CI.
-  Code-owned version `2026.08.20.1` та snapshot
+  Code-owned version `2026.08.25.2` та snapshot
   `gba-server/docs/event-permission-legacy-mapping.v1.json` містять 159
   dispositions; default contract перевіряє snapshot drift, required SQL gate
   — точну повноту definitions/aliases/active links актуальної test-only БД.
@@ -437,11 +437,11 @@ pending лише до фінального browser E2E.
   `/permissions/me` `200`; role GET/PUT/stale PUT/restore/GET =
   `200/200/409/200/200`, початкові `53` assignments повністю відновлені,
   revision contract `+2` підтверджено.
-- [ ] Browser E2E на фінальному `490` runtime: edit role name, permission
+- [ ] Повний browser E2E на фінальному runtime: edit role name, permission
   save, refresh і відновлення збереженого стану без впливу на production.
-  Попередній formal E2E на checkpoint `479` пройшов. Фінальний runtime `490`
-  піднято на `localhost:18084`, але дозволений browser runtime повторно не зміг
-  ініціалізувати локальні kernel assets; це єдиний технічний blocker UI E2E.
+  Попередній formal E2E на checkpoint `479` пройшов; поточний read-only live
+  smoke на `486 active / 490 versioned` також PASS. Мутаційний save/restore
+  прогін у цьому checkpoint не повторювався.
 - [x] Додано deterministic compiled-IL gate і checked-in manifest для всіх
   permission facade → public routed core edges, включно з async state
   machines. Початковий discovery checkpoint: `464` cores = `37`
@@ -502,9 +502,57 @@ pending лише до фінального browser E2E.
   link changes.
 - [x] Clean-deploy/rollback/runtime runbook звірено з catalog `490` і всіма
   upgrade steps v1-v4.
-- [ ] Фінальний release verdict з exact commits і відомими ризиками.
+- [x] Фінальний release verdict: модуль готовий до перенесення через migrator;
+  exact commits зафіксовані нижче. Відомий неблокуючий залишок — окремий
+  browser E2E із тимчасовим limited-role grant/revoke на реальному рядку.
 
-### 9.1. Зафіксовані code commits
+### 9.1. UI interaction/read-boundary аудит (2026-08-25)
+
+- [x] Перевірено `66` open-like keys на всіх сторінках reviewed matrix:
+  `62` підтверджені як реальні data/business boundaries, `4` технічні
+  modal/context-menu keys переведені в `Active=false`.
+- [x] Зафіксовано єдиний контракт: базовий реєстр може залишатися видимим,
+  але без `open_details`/іншого read-boundary рядок не має click, hover,
+  pointer або API-запиту деталей.
+- [x] Shared `DataTable` (117 feature consumers) показує clickable state і
+  pointer лише за наявності `onRowClick`.
+- [x] Shared `CashFlowGrid` без дозволеного callback лишає фінансові дані
+  видимими, але рендерить row disabled і без pointer.
+- [x] `sale.open_create_dialog`, `sale.open_context_menu`,
+  `delivery_protocol.options.open` і `storages.position_action.open` retired;
+  entry points тепер використовують реальні дочірні/business permissions.
+- [x] Порожнє меню продажу не рендериться; availability враховує і права, і
+  lifecycle конкретного продажу.
+- [x] Reviewed matrix перегенеровано: `1902/1902`, `0` review candidates;
+  `825 technical_ui`, `702 covered_existing`, `359 duplicate_occurrence`,
+  `16 stale_or_aggregated`.
+- [x] Targeted UI interaction/permission regression `28/28` PASS; backend
+  catalog/rollout/cutover contracts `88/88` PASS.
+- [x] Повний frontend regression, lint, build і permission verification:
+  `467/467` files, `2603/2603` tests, lint/build PASS; parity
+  `490/490`, catalog `486 active / 490 versioned definitions`, reviewed
+  matrix `1902/1902`.
+- [x] Повний backend regression: `944/944` PASS, `8` opt-in SQL skipped;
+  required event-permission SQL suite окремо `6/6` PASS.
+- [x] Required-SQL migrator і контрольний idempotency run: перший фінальний
+  cleanup retire-нув `2` aliases і `20` event links, повторний receipt має
+  `0` retired/created/revived. Попередній крок того самого disposable cutover
+  retire-нув `2` legacy definitions і `14` legacy links.
+- [x] DB postflight: `486` active unique event rows, `4` retired technical
+  rows, `0` active links і `0` active aliases до retired permissions.
+- [x] Live browser smoke після точкового rebuild API/Console:
+  `/users/roles` показує `486/486`; усі 4 retired keys відсутні; для GBA
+  `sale.create` unchecked, а «Новий продаж» видимий, але disabled.
+- [x] Live role-boundary audit: 7 чинних ролей мають
+  `sales.ukraine.sale.view=true` і `sale.open_details=false`, тобто сценарій
+  «реєстр видно, але row details не клікаються» реально представлений у БД.
+- [ ] Browser E2E limited-role: список видно, row details недоступні без
+  read-boundary; після grant клік і детальний API стають доступними.
+
+Повний звіт:
+`docs/event-permissions-ui-interaction-audit-2026-08-25.md`.
+
+### 9.2. Зафіксовані code commits
 
 Backend (`D:\\work\\gba-server`, `codex/event-permissions`):
 
@@ -514,6 +562,10 @@ Backend (`D:\\work\\gba-server`, `codex/event-permissions`):
 - `27c9a962b` — deployment/rollback runbooks.
 - `9ea0e9762` — ambient transaction support і required-SQL idempotency fix.
 - `4282ba7cd` — catalog `490` rollout/runtime runbook update.
+- `77f9d5413` — retirement 4 technical UI permissions, cleanup legacy
+  definitions/aliases/role links та idempotent migrator reconciliation.
+- `4c916596a` — clean deploy, rollout, runtime smoke і release-report contract
+  для `486 active / 490 versioned`.
 
 Frontend (`D:\\work\\gba_console`, `codex/event-permissions`):
 
@@ -523,3 +575,5 @@ Frontend (`D:\\work\\gba_console`, `codex/event-permissions`):
 - `7b250e32` — dependency security patches.
 - `2345ea25` — cutover/release checkpoint documentation;
 - `7478555d` — financial catalog metadata переведено на scoped endpoints.
+- `d52d8aec` — єдиний UI read/action contract, clickable-state shared таблиць
+  та заміна technical container permissions реальними дочірніми правами.
