@@ -31,6 +31,7 @@ import type {
   SupplyOrganizationAgreement,
 } from '../detailTypes'
 import type { ProtocolUser } from '../types'
+import { getMergedServiceExchangeRatePresentation } from './mergedServiceExchangeRatePresentation'
 import { responsibleName } from './protocolDetailHelpers'
 import './new-merged-service-form.css'
 
@@ -223,6 +224,10 @@ export function NewMergedServiceForm({
       }, [])
     },
     [organizations, values.supplyOrganization],
+  )
+  const exchangeRatePresentation = getMergedServiceExchangeRatePresentation(
+    values.agreement?.Currency?.Code,
+    t,
   )
 
   const agreementOptions = useMemo(() => {
@@ -472,8 +477,10 @@ export function NewMergedServiceForm({
             />
             <TextInput
               className="new-merged-service-control is-number"
+              description={exchangeRatePresentation.description}
               disabled={isSaving}
-              label={t('Курс валют')}
+              label={`${t('Курс управлінських витрат')}${exchangeRatePresentation.labelSuffix}`}
+              placeholder={t('Автоматично за офіційним курсом')}
               type="number"
               value={values.exchangeRate}
               onChange={(event) => update('exchangeRate', event.currentTarget.value)}
@@ -498,8 +505,10 @@ export function NewMergedServiceForm({
             />
             <TextInput
               className="new-merged-service-control is-number"
+              description={exchangeRatePresentation.description}
               disabled={isSaving}
-              label={t('Курс валют (Бух.)')}
+              label={`${t('Курс бухгалтерських витрат')}${exchangeRatePresentation.labelSuffix}`}
+              placeholder={t('Автоматично за офіційним курсом')}
               type="number"
               value={values.accountingExchangeRate}
               onChange={(event) => update('accountingExchangeRate', event.currentTarget.value)}

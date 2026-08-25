@@ -58,6 +58,27 @@ describe('MergedServiceEditCard validation', () => {
     mocks.searchSupplyOrganizations.mockResolvedValue([])
   })
 
+  it('shows the agreement currency and automatic fallback on both rate overrides', () => {
+    render(
+      <MantineProvider>
+        <MergedServiceEditCard
+          isSaving={false}
+          opened
+          service={service}
+          onClose={vi.fn()}
+          onSave={vi.fn()}
+        />
+      </MantineProvider>,
+    )
+
+    const managementRate = screen.getByLabelText('Курс управлінських витрат (UAH = 1)') as HTMLInputElement
+    const accountingRate = screen.getByLabelText('Курс бухгалтерських витрат (UAH = 1)') as HTMLInputElement
+
+    expect(managementRate.getAttribute('placeholder')).toBe('Автоматично за офіційним курсом')
+    expect(accountingRate.getAttribute('placeholder')).toBe('Автоматично за офіційним курсом')
+    expect(screen.getAllByText(/Договір у гривні: автоматичний курс дорівнює 1/)).toHaveLength(2)
+  })
+
   it('blocks save and identifies a conditionally required task user', () => {
     const onSave = vi.fn()
     render(

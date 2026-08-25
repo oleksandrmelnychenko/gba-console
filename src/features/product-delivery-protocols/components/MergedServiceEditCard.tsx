@@ -36,6 +36,7 @@ import type {
 } from '../detailTypes'
 import { toMergedServiceDateTimeInput } from '../mergedServiceDateInput'
 import type { ProtocolUser } from '../types'
+import { getMergedServiceExchangeRatePresentation } from './mergedServiceExchangeRatePresentation'
 import { responsibleName } from './protocolDetailHelpers'
 
 const SUPPLY_ORGANIZATION_SEARCH_DEBOUNCE_MS = 300
@@ -904,6 +905,10 @@ function MergedServicePrimaryFields({
   userOptions: SelectOption[]
 }) {
   const { t } = useI18n()
+  const exchangeRatePresentation = getMergedServiceExchangeRatePresentation(
+    draft.agreement?.Currency?.Code,
+    t,
+  )
 
   return (
     <>
@@ -1004,15 +1009,19 @@ function MergedServicePrimaryFields({
 
       <Group grow>
         <TextInput
+          description={exchangeRatePresentation.description}
           disabled={isSaving}
-          label={t('Курс валют')}
+          label={`${t('Курс управлінських витрат')}${exchangeRatePresentation.labelSuffix}`}
+          placeholder={t('Автоматично за офіційним курсом')}
           type="number"
           value={draft.exchangeRate}
           onChange={(event) => update('exchangeRate', event.currentTarget.value)}
         />
         <TextInput
+          description={exchangeRatePresentation.description}
           disabled={isSaving}
-          label={t('Курс валют (Бух.)')}
+          label={`${t('Курс бухгалтерських витрат')}${exchangeRatePresentation.labelSuffix}`}
+          placeholder={t('Автоматично за офіційним курсом')}
           type="number"
           value={draft.accountingExchangeRate}
           onChange={(event) => update('accountingExchangeRate', event.currentTarget.value)}

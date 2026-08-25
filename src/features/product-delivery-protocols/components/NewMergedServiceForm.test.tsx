@@ -52,6 +52,20 @@ describe('product-delivery NewMergedServiceForm validation', () => {
     mocks.searchSupplyOrganizations.mockResolvedValue([])
   })
 
+  it('explains that both exchange-rate fields are optional manual overrides', () => {
+    renderForm()
+
+    const managementRate = getInput('Курс управлінських витрат')
+    const accountingRate = getInput('Курс бухгалтерських витрат')
+    const automaticRateHelp = 'Необов’язково. Залиште порожнім — система застосує офіційний курс на дату митної декларації, а якщо її немає — на дату створення сервісу. Введене значення буде ручним курсом.'
+
+    expect(managementRate.getAttribute('aria-required')).not.toBe('true')
+    expect(accountingRate.getAttribute('aria-required')).not.toBe('true')
+    expect(managementRate.getAttribute('placeholder')).toBe('Автоматично за офіційним курсом')
+    expect(accountingRate.getAttribute('placeholder')).toBe('Автоматично за офіційним курсом')
+    expect(screen.getAllByText(automaticRateHelp)).toHaveLength(2)
+  })
+
   it('marks static requirements and blocks submit with accessible field errors', () => {
     const onSubmit = renderForm()
     const supplier = getInput('Постачальник послуг')
