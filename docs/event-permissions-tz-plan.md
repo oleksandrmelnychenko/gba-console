@@ -5,10 +5,12 @@
 - Робочі проєкти: `D:\work\gba_console`, `D:\work\gba-server`.
 - Робочі гілки: `codex/event-permissions` у кожному репозиторії.
 - UI керування ролями: `/users/roles`.
-- Канонічний каталог: 479 активних подієвих пермішенів.
+- Цільовий code-owned каталог: 490 активних подієвих пермішенів, version
+  `2026.08.24.65`. Поточний запущений test-only runtime ще на попередньому
+  checkpoint `479`/`2026.08.19.62` до фінального migrator/rebuild.
 - Legacy mapping у поточному каталозі: 158 distinct keys / 159 target
   bindings (один старий широкий ключ явно split на два canonical права).
-- Останнє оновлення статусу: 2026-08-20.
+- Останнє оновлення статусу: 2026-08-24.
 
 Цей файл є єдиним робочим ТЗ і чеклістом виконання. Позначка `[x]`
 означає, що пункт реалізований у робочих гілках; `[ ]` — що робота або
@@ -131,7 +133,8 @@
 
 ## 3. UI `/users/roles`
 
-- [x] Два повноцінні таби: наявні права і подієві права.
+- [x] Єдиний редактор «Подієві права»; старий редактор сторінкових прав
+  видалений з UI та frontend bundle.
 - [x] Спільна ліва панель ролей і двопанельний layout у чинному стилі.
 - [x] Дерево секція → сторінка → група → конкретний пермішен.
 - [x] Checked/unchecked/indeterminate для всіх рівнів.
@@ -202,16 +205,17 @@
 - [x] Немає нерозібраних `reviewCandidates` у поточному snapshot.
 - [x] Каталог перевіряє унікальність, naming, metadata, aliases і policies.
 - [x] Відтворювані audit scripts і snapshot drift check.
-- [x] Розв'язати 74 `sourceUnresolved` records — автоматичний fail-closed
-  resolver і 6 aggregate component→source bindings дали 1902/1902 resolved;
-  missing source file або рівний score не маскуються випадковим вибором.
+- [x] Усі актуальні business/covered records мають визначене джерело; після
+  фізичного видалення старого editor 1893/1902 audit records source-resolved,
+  а 9 historical unresolved належать лише до виключених категорій і не є
+  `reviewCandidates`.
 - [x] Додати/підтвердити `bindingEvidence` для всіх covered records —
   705/705 мають evidence: 147 page-route records, 452 direct current-action
   records і 110 explicit reviewed overrides; CI invariant вимагає
   `coveredWithoutBindingEvidence = 0`.
-- [x] Звести до поясненого нуля релевантні handler resolution gaps — 431
-  records без evidence належать лише до виключених категорій: 320
-  `technical_ui`, 98 `duplicate_occurrence`, 13 `stale_or_aggregated`.
+- [x] Звести до поясненого нуля релевантні handler resolution gaps — усі 439
+  records без binding evidence належать лише до виключених категорій;
+  `coveredWithoutBindingEvidence = 0`, `reviewCandidates = 0`.
 - [x] Додати CI-перевірку повноти legacy mapping із розділу 2.
   Versioned snapshot має 159 унікальних dispositions; contract і required SQL
   integration fail-closed перевіряють target keys, активні definitions,
@@ -252,9 +256,9 @@
 
 ## Поточний етап
 
-**Етап 6 — legacy integration і reconciliation — завершений. Етап 7 —
-production acceptance і rollout — підготовлений, операційне виконання
-очікується.**
+**Етап 6 — legacy integration і одноразовий cutover — завершений. Нова
+система працює у strict runtime на локальному стенді; production acceptance
+і rollout ще очікуються.**
 
 Поточний підетап від 2026-08-20:
 
@@ -335,3 +339,167 @@ enforcement, runtime smoke runner, denial telemetry і production runbook
 click-through, зробити backup/dry-run на фінальній production-копії, виконати
 deploy у зафіксованому порядку, запустити read-only smoke, поступово призначити
 ролі з моніторингом і заповнити фінальний release report.
+
+## 8. Аудит і підготовка вимкнення старої логіки (2026-08-24)
+
+- [x] Повторно інвентаризувати legacy runtime paths у frontend, API,
+  Analytics, БД та старому role/page editor.
+- [x] Підтвердити ControlId mapping/reconciliation: 159/159 status,
+  1098 active legacy links, 1104 required canonical assignments, 945 created,
+  0 create/revive на повторному dry-run.
+- [x] Видалити API compatibility flag і runtime alias/page-route fallback:
+  GET/PUT/policy читають лише точні active canonical `RolePermission`.
+- [x] Видалити frontend compatibility flag, aliases, profile `ControlId`
+  fallback та GBA/Admin bypass; без `/permissions/me` клієнт fail-closed.
+- [x] Замінити останні дві реальні перевірки відкриття sale wizard зі старого
+  edit PKEY на `sales.ukraine.sale.open_create_dialog`.
+- [x] Оновити strict contract tests; frontend full regression 2554/2554,
+  typecheck/lint/production build green; backend event-permission suite
+  113 passed + 4 opt-in SQL skipped.
+- [x] Вирівняти Analytics authorization з main API: старий handler знято з
+  DI, активний canonical handler використовує однакові config/revision gates.
+- [x] Додати ідемпотентний `UserRoleDashboardNode` → canonical page
+  reconciliation; unmapped/empty routes входять у receipt, strict gate може
+  fail-closed.
+- [x] Інтегрувати catalog sync + legacy/page reconciliation у штатний
+  Database.Migrator з default-on postflight, 479 active/unique gate і
+  secret-free JSON receipt; ручний SQL на іншому ПК не потрібен.
+- [x] Прибрати останній dynamic frontend `*_PKEY` fallback для невідомих
+  client type/role; unknown значення fail-closed.
+- [x] Видалити старе відображення «Права сторінок» і його frontend API/types/
+  selection utils; canonical editor «Подієві права» є єдиною вкладкою.
+- [x] На актуальній disposable БД виконати штатний migrator: 16 ролей
+  зафіксовано revision, 462 page assignments матеріалізовано; повторний запуск
+  дав `cutoverRoles=0`, `Created=0`, `Revived=0`.
+- [x] Оновити API/UI стенд `localhost:18084` і browser-перевіркою підтвердити,
+  що `products.assortment.image.delete/upload` активні та перемикаються.
+- [x] Прибрати UI-блокування `InheritedPermissionKeys`: obsolete wire field
+  ігнорується, усі 479 canonical checkboxes редаговані за наявності права
+  `administration.roles.event_permissions.edit`.
+- [x] Старі role/page та permission-definition mutation routes повертають
+  `410 Gone`; runtime більше не використовує старі writers.
+- [x] Спрощено створення/редагування ролі: у модалці залишено тільки поле
+  `Найменування`; технічні `Dashboard` і `UserRoleType` не показуються, але
+  на edit зберігаються без змін, а для нової ролі застосовуються штатні
+  defaults.
+- [x] Виправлено накладання active-marker на олівець у лівому списку ролей:
+  крапка має окрему позицію перед edit action. Focused UI regression 2/2,
+  lint і production build пройшли; результат перевірено на
+  `localhost:18084/users/roles` у браузері.
+- [x] Формальний browser E2E на тимчасовій ролі: create → `0/479` → assign
+  `dashboard.overview.page.view` → save → full refresh → persisted `1/479` →
+  rename через модалку з одним полем → delete. Тимчасову роль і призначення
+  повністю прибрано; робочі ролі не змінювалися.
+- [ ] Після production rollback window окремою погодженою міграцією можна
+  архівувати legacy definitions/links; strict runtime від них уже не залежить.
+
+Повний звіт:
+`docs/event-permissions-legacy-cutover-audit-2026-08-24.md`.
+
+Commit-to-running deployment:
+`gba-server/docs/event-permissions-clean-deploy.md`.
+
+## 9. Повний release-аудит перед передачею модуля (2026-08-24)
+
+Поточний статус: **code checkpoint зафіксовано логічними commit у гілках
+`codex/event-permissions`**. Фінальний release verdict залишається pending до
+required-SQL, migrator ×2 та runtime/browser acceptance на актуальній БД.
+
+- [x] Frontend/backend catalog alignment — catalog розширено до `490`
+  canonical permissions, version `2026.08.24.65`; додані окремі high-risk
+  keys для cross-owner SaleReturn create/cancel і mutation завершеного
+  SupplyOrder. Фінальний parity gate `490/490/490` PASS.
+- [x] Повні frontend tests, lint, typecheck і production build —
+  `466/466` files, `2598/2598` tests PASS у стабільному режимі
+  `--maxWorkers=4 --testTimeout=10000`; lint/build PASS; catalog parity
+  `490/490/490`, reviewed matrix `1902/1902`.
+- [x] Поточний safe-checkpoint backend security/contract — після retirement
+  legacy routes та exact-policy cutover повний non-SQL API regression має
+  `944` PASS, `0` FAIL, `2` opt-in live-dev SQL skipped. Повний Security suite:
+  `232` PASS, `0` FAIL, `6` opt-in SQL skipped; release gates для
+  multi-context routes та exact/legacy policy intersections тепер зелені.
+  Останній API Release build: `0 warnings / 0 errors`; actor authorization
+  regression: `65/65` PASS.
+- [ ] Required-SQL integration на актуальній test-only БД.
+- [ ] Штатний migrator clean-deploy і повторний idempotency run.
+- [ ] Перевірка catalog/metadata/duplicates/indexes/role revisions у БД.
+- [ ] Runtime API acceptance: `401`, `403`, `409`, GET/PUT/GET і effective
+  permissions.
+- [ ] Browser E2E на фінальному `490` runtime: edit role name, permission
+  save, refresh і відновлення збереженого стану без впливу на production.
+  Попередній formal E2E на checkpoint `479` пройшов; потрібен повтор після
+  migrator/rebuild.
+- [x] Додано deterministic compiled-IL gate і checked-in manifest для всіх
+  permission facade → public routed core edges, включно з async state
+  machines. Початковий discovery checkpoint: `464` cores = `37`
+  exact-gated + `347` single-context ungated + `79` multi-context ungated +
+  `1` retired; `0` unresolved. Будь-яка непогоджена зміна route/key/edge або
+  classification тепер падає в CI.
+- [x] Усі початкові single-context routed cores автоматизовано закриті exact
+  key; після переведення частини facade-ів на private fixed-context cores і
+  погодженого retirement актуальний compiled-IL manifest має `458` edges =
+  `380` exact-gated + `78` retired, `0` single-context, `0` multi-context,
+  `0` unresolved. Manifest regenerated і drift-contract PASS.
+- [x] Після явного owner approval усі `77` multi-context legacy cores
+  відключено через HTTP `410`; підтримуваних Console callers немає,
+  permission OR між контекстами не додано. Generic
+  `/usermanagement/profiles/all/by` retired окремо, тому manifest містить
+  загалом `78` retired routes; focused route regression `8/8` PASS.
+- [x] Усі нефінансові frontend generic callers перенесені на exact facades:
+  Resale, Sales registry, Pricing, SAD-to-order, Outgoing та Other Income.
+  Deterministic route contract `3/3` PASS; allowlist скорочено з `17` до `11`.
+  Залишилися лише `11` financial mutation literals (`income/new` ×6,
+  `outcome/new` ×5), які очікують явного owner approval. Глобальна заміна або
+  permission OR між контекстами заборонені.
+- [x] Після явного owner approval усунуто всі `586` old-role-policy
+  intersections на `1182` exact-protected actions. Видалено `13`
+  controller-level і `438` method-level legacy attributes; старий захист
+  перенесено на `35` ungated public actions у mixed controllers, тому ще не
+  мігровані маршрути не стали відкритими. Повторний deterministic dry-run:
+  `0` intersections / `0` changed files; non-SQL API regression
+  `944/944` PASS. Самі permission definitions і role links не видалялися.
+- [x] Перевести live navigation/route guard з `UserRoleDashboardNode` на
+  canonical `*.page.view`, прибрати GBA bypass і legacy dashboard writer.
+  Додано focused canonical-navigation contracts — `4/4` разом зі strict
+  migrator defaults PASS.
+- [x] Виправити semantic gaps: ProtocolAct generic multi-context routes
+  retired/split на private cores; SaleReturns high-risk overrides отримали
+  окремі exact keys; completed SupplyOrder mutation використовує order-domain
+  key; Delivery generic details виправлено на page-view key. API Release
+  build `0/0`, focused semantic/actor suites PASS (`14/14`, `18/18`, `6/6`).
+- [x] Security remediation без breaking retirement: SEC01/02 закрито exact
+  Edit gate на generic Sales update/file; SEC04 закрито server-owned storage
+  context; SEC05 — вузькою actor/ledger/eligibility mutation; SEC06 —
+  persisted payment-graph policy; SEC08/10 — retired identity writers та
+  exact role-details key; supported SEC09 lookup тепер zero-parameter,
+  server-fixed `FinanceDirector`, active-only і без PII. Незалежна
+  ревалідація: `7 CLOSED / 2 PARTIAL / 1 OPEN`, нових high/critical немає.
+- [x] Після breaking approval critical legacy sinks
+  `/sales/get/shifted/document`, `/supplies/invoices/delete/document` і
+  `/usermanagement/profiles/all/by` повертають HTTP `410`; підтримуваний
+  Console працює через exact facades.
+- [x] Після явного owner approval додано одноразовий v4 grant high-risk
+  `sales.ukraine.sale.convert_merged_to_bill` ролям Administrator, GBA і
+  HeadSalesAnalytic через upgrade
+  `2026.08.25.exact-policy-intersection-cutover.v4`. Focused migrator contract:
+  `7/7` PASS; повторний запуск idempotent.
+- [ ] Отримати явне підтвердження власника на exact cleanup `25` test-only DB
+  link changes.
+- [ ] Перевірка clean-deploy/rollback/runbook та комплекту передачі.
+- [ ] Фінальний release verdict з exact commits і відомими ризиками.
+
+### 9.1. Зафіксовані code commits
+
+Backend (`D:\\work\\gba-server`, `codex/event-permissions`):
+
+- `b8f825725` — canonical catalog, auth runtime, DB/migrator та v4 grant;
+- `1afac15df` — actor/domain authorization hardening;
+- `96585af3c` — exact API gates, legacy HTTP 410 та policy cutover;
+- `27c9a962b` — deployment/rollback runbooks.
+
+Frontend (`D:\\work\\gba_console`, `codex/event-permissions`):
+
+- `4061be85` — canonical runtime, navigation і role editor UI;
+- `a5ef53dc` — feature routes та UI guards на exact permissions;
+- `99ed7621` — reviewed matrix і validation tooling;
+- `7b250e32` — dependency security patches.
