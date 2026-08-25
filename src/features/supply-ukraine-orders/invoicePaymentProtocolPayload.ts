@@ -2,6 +2,7 @@ import type {
   SupplyInvoice,
   SupplyOrderPaymentDeliveryProtocol,
   SupplyPaymentTask,
+  SupplyProForm,
 } from './types'
 
 const GUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
@@ -12,12 +13,22 @@ export function sanitizeInvoicePaymentDeliveryProtocols(
   protocols: SupplyOrderPaymentDeliveryProtocol[] = invoice.PaymentDeliveryProtocols || [],
 ): SupplyOrderPaymentDeliveryProtocol[] {
   return protocols.map((protocol) =>
-    sanitizePaymentDeliveryProtocol(invoice, protocol),
+    sanitizePaymentDeliveryProtocol(invoice.Id, 'invoice', protocol),
+  )
+}
+
+export function sanitizeProFormPaymentDeliveryProtocols(
+  proForm: SupplyProForm,
+  protocols: SupplyOrderPaymentDeliveryProtocol[] = proForm.PaymentDeliveryProtocols || [],
+): SupplyOrderPaymentDeliveryProtocol[] {
+  return protocols.map((protocol) =>
+    sanitizePaymentDeliveryProtocol(proForm.Id, 'pro-form', protocol),
   )
 }
 
 function sanitizePaymentDeliveryProtocol(
-  invoice: SupplyInvoice,
+  sourceId: number | undefined,
+  sourceKind: 'invoice' | 'pro-form',
   protocol: SupplyOrderPaymentDeliveryProtocol,
 ): SupplyOrderPaymentDeliveryProtocol {
   const key = protocol.SupplyOrderPaymentDeliveryProtocolKey || null
@@ -34,10 +45,10 @@ function sanitizePaymentDeliveryProtocol(
     const payload: SupplyOrderPaymentDeliveryProtocol = {
       ...base,
       IsAccounting: Boolean(protocol.IsAccounting),
-      SupplyInvoiceId: protocol.SupplyInvoiceId || invoice.Id,
+      ...paymentSourceLink(sourceId, sourceKind, protocol),
       SupplyOrderPaymentDeliveryProtocolKey: key,
       SupplyOrderPaymentDeliveryProtocolKeyId: protocol.SupplyOrderPaymentDeliveryProtocolKeyId || key?.Id,
-      SupplyPaymentTask: task ? sanitizeTrueNewTask(task, protocol, user, value) : null,
+      SupplyPaymentTask: task ? sanitizeTrueNewTask(task, protocol, user, value, sourceKind) : null,
       User: protocol.User || user,
       UserId: protocol.UserId || user?.Id,
       Value: value,
@@ -47,7 +58,7 @@ function sanitizePaymentDeliveryProtocol(
     return payload
   }
 
-  assertPersistedIdentity(protocol, 'invoice payment protocol')
+  assertPersistedIdentity(protocol, `${sourceKind} payment protocol`)
 
   if (protocol.Deleted) {
     const payload: SupplyOrderPaymentDeliveryProtocol = {
@@ -60,18 +71,18 @@ function sanitizePaymentDeliveryProtocol(
   }
 
   const taskPayload = task
-    ? sanitizePersistedTask(task, protocol, user, value)
+    ? sanitizePersistedTask(task, protocol, user, value, sourceKind)
     : null
   const scalarTaskId = positiveId(protocol.SupplyPaymentTaskId)
 
   if (taskPayload && scalarTaskId && scalarTaskId !== taskPayload.Id) {
-    throw new Error('Invoice payment protocol task identity is inconsistent')
+    throw new Error(`${sourceKind === 'invoice' ? 'Invoice' : 'Pro-form'} payment protocol task identity is inconsistent`)
   }
 
   return {
     ...base,
     IsAccounting: Boolean(protocol.IsAccounting),
-    SupplyInvoiceId: protocol.SupplyInvoiceId || invoice.Id,
+    ...paymentSourceLink(sourceId, sourceKind, protocol),
     SupplyOrderPaymentDeliveryProtocolKey: key,
     SupplyOrderPaymentDeliveryProtocolKeyId: protocol.SupplyOrderPaymentDeliveryProtocolKeyId || key?.Id,
     SupplyPaymentTask: taskPayload,
@@ -87,11 +98,12 @@ function sanitizeTrueNewTask(
   protocol: SupplyOrderPaymentDeliveryProtocol,
   user: SupplyPaymentTask['User'],
   value: number,
+  sourceKind: 'invoice' | 'pro-form',
 ): SupplyPaymentTask {
   const netUid = typeof task.NetUid === 'string' ? task.NetUid.trim() : ''
 
   if (hasPersistedId(task.Id) || (netUid && netUid.toLowerCase() !== EMPTY_GUID) || task.Deleted) {
-    throw new Error('A new invoice payment protocol requires a true-new payment task')
+    throw new Error(`A new ${sourceKind} payment protocol requires a true-new payment task`)
   }
 
   const payload = stripEntityGraph(task)
@@ -113,8 +125,9 @@ function sanitizePersistedTask(
   protocol: SupplyOrderPaymentDeliveryProtocol,
   user: SupplyPaymentTask['User'],
   value: number,
+  sourceKind: 'invoice' | 'pro-form',
 ): SupplyPaymentTask {
-  const identity = assertPersistedIdentity(task, 'invoice payment task')
+  const identity = assertPersistedIdentity(task, `${sourceKind} payment task`)
 
   return {
     ...stripEntityGraph(task),
@@ -125,6 +138,22 @@ function sanitizePersistedTask(
     User: user,
     UserId: task.UserId || user?.Id,
   }
+}
+
+function paymentSourceLink(
+  sourceId: number | undefined,
+  sourceKind: 'invoice' | 'pro-form',
+  protocol: SupplyOrderPaymentDeliveryProtocol,
+): Pick<SupplyOrderPaymentDeliveryProtocol, 'SupplyInvoiceId' | 'SupplyProFormId'> {
+  return sourceKind === 'pro-form'
+    ? {
+        SupplyInvoiceId: null,
+        SupplyProFormId: protocol.SupplyProFormId || sourceId,
+      }
+    : {
+        SupplyInvoiceId: protocol.SupplyInvoiceId || sourceId,
+        SupplyProFormId: null,
+      }
 }
 
 function assertPersistedIdentity(
@@ -157,6 +186,7 @@ function stripEntityGraph<T extends object>(entity: T): T {
 
   delete result.SupplyOrder
   delete result.SupplyInvoice
+  delete result.SupplyProForm
   delete result.PackingList
   delete result.PackingListPackage
 

@@ -12,6 +12,7 @@ import {
   uploadSupplyInvoiceFile,
   uploadSupplyOrderProformDocuments,
   uploadSupplyOrderUkraineFromSupplierFile,
+  updateSupplyProForm,
 } from './supplyUkraineOrdersApi'
 import type {
   Client,
@@ -354,6 +355,31 @@ describe('supplyUkraineOrdersApi', () => {
     })
     expect(response?.SupplyProFormId).toBe('proform-1')
     expect(response?.SupplyProForm?.ProFormDocuments).toEqual([])
+  })
+
+  it('updates proforma payment protocols through the dedicated proforms endpoint', async () => {
+    const proForm: SupplyProForm = {
+      Id: 17,
+      NetUid: '4d13e9d8-e66b-4e40-bf68-e946954b8809',
+      Number: 'PF-17',
+      PaymentDeliveryProtocols: [{ Value: 1_250.5 }],
+    }
+    apiRequestMock.mockResolvedValueOnce(proForm)
+
+    const response = await updateSupplyProForm('direct-order-1', proForm)
+
+    expect(apiRequestMock).toHaveBeenCalledWith('/supplies/proforms/update', {
+      body: proForm,
+      method: 'POST',
+      query: { netId: 'direct-order-1' },
+    })
+    expect(response).toMatchObject({
+      Id: 17,
+      NetUid: '4d13e9d8-e66b-4e40-bf68-e946954b8809',
+      PaymentDeliveryProtocols: [{ Value: 1_250.5 }],
+    })
+    expect(response?.InformationDeliveryProtocols).toEqual([])
+    expect(response?.ProFormDocuments).toEqual([])
   })
 
   it('normalizes invoice upload responses that return the parent order', async () => {

@@ -118,6 +118,19 @@ export async function updateDirectSupplyOrder(order: DirectSupplyOrder): Promise
   return normalizeDirectSupplyOrder(result)
 }
 
+export async function updateSupplyProForm(
+  supplyOrderNetId: string,
+  proForm: SupplyProForm,
+): Promise<SupplyProForm | null> {
+  const result = await apiRequest<unknown>('/supplies/proforms/update', {
+    body: proForm,
+    method: 'POST',
+    query: { netId: supplyOrderNetId },
+  })
+
+  return normalizeSupplyProForm(result as SupplyProForm | null)
+}
+
 export async function uploadSupplyOrderDocument(formData: FormData): Promise<DirectSupplyOrder | null> {
   const result = await apiRequest<unknown>('/supplies/documents/upload', {
     body: formData,
@@ -1086,6 +1099,12 @@ function normalizeSupplyProForm(proForm: SupplyProForm | null | undefined): Supp
 
   return {
     ...proForm,
+    InformationDeliveryProtocols: Array.isArray(proForm.InformationDeliveryProtocols)
+      ? proForm.InformationDeliveryProtocols
+      : [],
+    PaymentDeliveryProtocols: Array.isArray(proForm.PaymentDeliveryProtocols)
+      ? proForm.PaymentDeliveryProtocols
+      : [],
     ProFormDocuments: Array.isArray(proForm.ProFormDocuments) ? proForm.ProFormDocuments : [],
   }
 }

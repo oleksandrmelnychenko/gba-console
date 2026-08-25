@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest'
-import { sanitizeInvoicePaymentDeliveryProtocols } from './invoicePaymentProtocolPayload'
-import type { SupplyInvoice } from './types'
+import {
+  sanitizeInvoicePaymentDeliveryProtocols,
+  sanitizeProFormPaymentDeliveryProtocols,
+} from './invoicePaymentProtocolPayload'
+import type { SupplyInvoice, SupplyProForm } from './types'
 
 describe('sanitizeInvoicePaymentDeliveryProtocols', () => {
   it('omits a stale task scalar and keeps a true-new task for a new protocol', () => {
@@ -174,6 +177,41 @@ describe('sanitizeInvoicePaymentDeliveryProtocols', () => {
         }),
       ]),
     )
+  })
+})
+
+describe('sanitizeProFormPaymentDeliveryProtocols', () => {
+  it('links a true-new payment task only to its persisted proforma', () => {
+    const proForm: SupplyProForm = {
+      Id: 17,
+      NetUid: '4d13e9d8-e66b-4e40-bf68-e946954b8809',
+      PaymentDeliveryProtocols: [
+        {
+          SupplyInvoiceId: 27,
+          SupplyPaymentTaskId: 91,
+          SupplyPaymentTask: {
+            Comment: 'Оплатити проформу',
+          },
+          Value: 1_250.5,
+        },
+      ],
+    }
+
+    const [protocol] = sanitizeProFormPaymentDeliveryProtocols(proForm)
+
+    expect(protocol).toMatchObject({
+      SupplyInvoiceId: null,
+      SupplyProFormId: 17,
+      SupplyPaymentTask: {
+        Comment: 'Оплатити проформу',
+        GrossPrice: 1_250.5,
+        NetPrice: 1_250.5,
+      },
+      Value: 1_250.5,
+    })
+    expect(protocol).not.toHaveProperty('SupplyPaymentTaskId')
+    expect(protocol?.SupplyPaymentTask).not.toHaveProperty('Id')
+    expect(protocol?.SupplyPaymentTask).not.toHaveProperty('NetUid')
   })
 })
 

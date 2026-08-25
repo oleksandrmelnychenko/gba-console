@@ -59,11 +59,12 @@ export type SupplyOrderPaymentDeliveryProtocolKey = EntityFields & {
 export type SupplyOrderPaymentDeliveryProtocol = EntityFields & {
   Discount?: number
   IsAccounting?: boolean
-  SupplyInvoiceId?: number
+  SupplyInvoiceId?: number | null
   SupplyOrderPaymentDeliveryProtocolKey?: SupplyOrderPaymentDeliveryProtocolKey | null
   SupplyOrderPaymentDeliveryProtocolKeyId?: number
   SupplyPaymentTask?: SupplyPaymentTask | null
   SupplyPaymentTaskId?: number
+  SupplyProFormId?: number | null
   User?: User | null
   UserId?: number
   Value?: number
@@ -81,6 +82,7 @@ export type SupplyInformationDeliveryProtocol = EntityFields & {
   SupplyInformationDeliveryProtocolKey?: SupplyInformationDeliveryProtocolKey | null
   SupplyInformationDeliveryProtocolKeyId?: number
   SupplyInvoiceId?: number
+  SupplyProFormId?: number
   User?: User | null
   UserId?: number
   Value?: string
@@ -293,13 +295,13 @@ export type SupplyProFormDocument = EntityFields & {
 
 export type SupplyProForm = EntityFields & {
   DateFrom?: Date | string
+  InformationDeliveryProtocols?: SupplyInformationDeliveryProtocol[]
   IsSkipped?: boolean
   NetPrice?: number
   Number?: string
+  PaymentDeliveryProtocols?: SupplyOrderPaymentDeliveryProtocol[]
   ProFormDocuments?: SupplyProFormDocument[]
   ServiceNumber?: string
-  SupplyInformationProtocols?: EntityFields[]
-  SupplyPaymentProtocols?: EntityFields[]
 }
 
 export type DirectSupplyOrder = EntityFields & {

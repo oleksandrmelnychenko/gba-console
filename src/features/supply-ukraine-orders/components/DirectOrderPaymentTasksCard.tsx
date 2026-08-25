@@ -16,23 +16,29 @@ import {
   getSupplyPaymentDeliveryProtocolKeys,
   getSupplyProtocolResponsibleUsers,
   updateSupplyInvoice,
+  updateSupplyProForm,
 } from '../api/supplyUkraineOrdersApi'
-import { sanitizeInvoicePaymentDeliveryProtocols } from '../invoicePaymentProtocolPayload'
+import {
+  sanitizeInvoicePaymentDeliveryProtocols,
+  sanitizeProFormPaymentDeliveryProtocols,
+} from '../invoicePaymentProtocolPayload'
+import { hasSupplyProForm } from '../proFormHelpers'
 import type {
   DirectSupplyOrder,
   SupplyInformationDeliveryProtocol,
   SupplyInvoice,
   SupplyOrderPaymentDeliveryProtocol,
   SupplyOrderPaymentDeliveryProtocolKey,
+  SupplyProForm,
   User,
 } from '../types'
 
+const PRO_FORM_PAYMENT_SOURCE = 'pro-form'
+const INVOICE_PAYMENT_SOURCE_PREFIX = 'invoice:'
+
 /**
- * «Платіжні задачі» block for the direct-order detail page — the legacy «Платіжні задачі»
- * section ported here. On the direct order, payment delivery protocols live on the order's
- * INVOICE (there is no order-level protocol field), so this block loads the order's invoice
- * (the same loader/save endpoint the «Інвойси і пак листи» page uses), renders the shared
- * PaymentDeliveryProtocolsSection (list + create + delete), and persists via /supplies/invoices/update.
+ * Direct-order payment protocols can belong either to the saved proforma or to an invoice.
+ * Keep those sources explicit so a proforma payment task is never silently attached to an invoice.
  */
 export function DirectOrderPaymentTasksCard({
   canEdit,
@@ -45,7 +51,15 @@ export function DirectOrderPaymentTasksCard({
 }) {
   const { t } = useI18n()
   const invoices = useMemo(() => order.SupplyInvoices || [], [order.SupplyInvoices])
-  const [selectedInvoiceNetId, setSelectedInvoiceNetId] = useValueState<string | null>(invoices[0]?.NetUid || null)
+  const [proForm, setProForm] = useValueState<SupplyProForm | null>(() => getSavedProForm(order))
+  const paymentSources = useMemo(
+    () => createPaymentSourceOptions(proForm, invoices, t),
+    [invoices, proForm, t],
+  )
+  const [selectedPaymentSource, setSelectedPaymentSource] = useValueState<string | null>(
+    () => paymentSources[0]?.value || null,
+  )
+  const selectedInvoiceNetId = getInvoiceNetId(selectedPaymentSource)
   const [invoice, setInvoice] = useValueState<SupplyInvoice | null>(null)
   const [protocolKeys, setProtocolKeys] = useValueState<SupplyOrderPaymentDeliveryProtocolKey[]>([])
   const [users, setUsers] = useValueState<User[]>([])
@@ -59,12 +73,18 @@ export function DirectOrderPaymentTasksCard({
     onError?.(message)
   }, [onError, setLocalError])
 
-  // Keep the selected invoice valid as the order reloads.
   useEffect(() => {
-    setSelectedInvoiceNetId((current) =>
-      invoices.some((entry) => entry.NetUid === current) ? current : invoices[0]?.NetUid || null,
+    setProForm(getSavedProForm(order))
+  }, [order, setProForm])
+
+  // Keep the selected payment document valid as the order reloads or a proforma is saved.
+  useEffect(() => {
+    setSelectedPaymentSource((current) =>
+      paymentSources.some((source) => source.value === current)
+        ? current
+        : paymentSources[0]?.value || null,
     )
-  }, [invoices, setSelectedInvoiceNetId])
+  }, [paymentSources, setSelectedPaymentSource])
 
   // Protocol-type keys + responsible users (loaded once).
   useEffect(() => {
@@ -99,10 +119,12 @@ export function DirectOrderPaymentTasksCard({
   useEffect(() => {
     if (!selectedInvoiceNetId) {
       setInvoice(null)
+      setLoading(false)
       return
     }
 
     let cancelled = false
+    setInvoice(null)
 
     async function loadInvoice(netId: string) {
       setLoading(true)
@@ -158,12 +180,60 @@ export function DirectOrderPaymentTasksCard({
     }
   }
 
+  async function persistProForm(
+    nextProForm: SupplyProForm,
+    targetProtocols: SupplyOrderPaymentDeliveryProtocol[],
+  ): Promise<void> {
+    if (!order.NetUid) {
+      return
+    }
+
+    setSaving(true)
+    setLocalError(null)
+
+    try {
+      const updated = await updateSupplyProForm(
+        order.NetUid,
+        createProFormProtocolsPayload(nextProForm, targetProtocols),
+      )
+
+      if (!updated) {
+        throw new Error(t('Не вдалося завантажити оновлену проформу'))
+      }
+
+      setProForm(updated)
+    } catch (cause) {
+      reportError(cause, t('Не вдалося зберегти протоколи'))
+      throw cause
+    } finally {
+      setSaving(false)
+    }
+  }
+
   async function handleCreate(values: NewPaymentProtocolFormValues): Promise<void> {
+    if (selectedPaymentSource === PRO_FORM_PAYMENT_SOURCE && proForm) {
+      const nextProForm = addPaymentProtocol(proForm, values, {
+        SupplyInvoiceId: null,
+        SupplyProFormId: proForm.Id,
+      })
+      const targetProtocol = nextProForm.PaymentDeliveryProtocols?.at(-1)
+
+      if (!targetProtocol) {
+        throw new Error(t('Не вдалося підготувати платіжний протокол'))
+      }
+
+      await persistProForm(nextProForm, [targetProtocol])
+      return
+    }
+
     if (!invoice) {
       return
     }
 
-    const nextInvoice = addPaymentProtocol(invoice, values)
+    const nextInvoice = addPaymentProtocol(invoice, values, {
+      SupplyInvoiceId: invoice.Id,
+      SupplyProFormId: null,
+    })
     const targetProtocol = nextInvoice.PaymentDeliveryProtocols?.at(-1)
 
     if (!targetProtocol) {
@@ -174,17 +244,24 @@ export function DirectOrderPaymentTasksCard({
   }
 
   async function handleRemove(protocol: SupplyOrderUkrainePaymentDeliveryProtocol): Promise<void> {
+    if (selectedPaymentSource === PRO_FORM_PAYMENT_SOURCE && proForm) {
+      const nextProForm = removePaymentProtocol(proForm, protocol.NetUid, protocol.Id)
+      const targetProtocol = findDeletedPaymentProtocol(nextProForm, protocol)
+
+      if (!targetProtocol) {
+        throw new Error(t('Не вдалося знайти платіжний протокол'))
+      }
+
+      await persistProForm(nextProForm, [targetProtocol])
+      return
+    }
+
     if (!invoice) {
       return
     }
 
     const nextInvoice = removePaymentProtocol(invoice, protocol.NetUid, protocol.Id)
-    const targetProtocol = nextInvoice.PaymentDeliveryProtocols?.find(
-      (candidate) =>
-        candidate.Deleted &&
-        ((protocol.NetUid && candidate.NetUid === protocol.NetUid) ||
-          (protocol.Id && candidate.Id === protocol.Id)),
-    )
+    const targetProtocol = findDeletedPaymentProtocol(nextInvoice, protocol)
 
     if (!targetProtocol) {
       throw new Error(t('Не вдалося знайти платіжний протокол'))
@@ -193,8 +270,11 @@ export function DirectOrderPaymentTasksCard({
     await persistInvoice(nextInvoice, [targetProtocol])
   }
 
-  const displayProtocols = mapToDisplayProtocols(invoice)
-  const totalGrossPriceLocal = Number(order.TotalNetPrice) || Number(order.NetPrice) || 0
+  const activePaymentDocument = selectedPaymentSource === PRO_FORM_PAYMENT_SOURCE ? proForm : invoice
+  const displayProtocols = mapToDisplayProtocols(activePaymentDocument)
+  const totalGrossPriceLocal = selectedPaymentSource === PRO_FORM_PAYMENT_SOURCE
+    ? Number(proForm?.NetPrice) || 0
+    : Number(order.TotalNetPrice) || Number(order.NetPrice) || 0
 
   return (
     <Card className="supply-detail-card" withBorder radius="md" padding="lg">
@@ -209,19 +289,19 @@ export function DirectOrderPaymentTasksCard({
           </Alert>
         )}
 
-        {invoices.length === 0 ? (
+        {paymentSources.length === 0 ? (
           <Text c="dimmed" size="sm">
-            {t('Спочатку створіть інвойс для замовлення')}
+            {t('Спочатку створіть проформу або інвойс для замовлення')}
           </Text>
         ) : (
           <>
-            {invoices.length > 1 && (
+            {paymentSources.length > 1 && (
               <Select
-                data={invoices.map((entry) => ({ value: entry.NetUid || '', label: entry.Number || entry.NetUid || '' }))}
-                label={t('Інвойс')}
-                value={selectedInvoiceNetId}
-                w={260}
-                onChange={(value) => setSelectedInvoiceNetId(value)}
+                data={paymentSources}
+                label={t('Документ для платіжної задачі')}
+                value={selectedPaymentSource}
+                w={320}
+                onChange={(value) => setSelectedPaymentSource(value)}
               />
             )}
 
@@ -249,11 +329,24 @@ export function DirectOrderPaymentTasksCard({
   )
 }
 
-/** Map the direct-order invoice protocols into the shape PaymentDeliveryProtocolsSection renders. */
-function mapToDisplayProtocols(invoice: SupplyInvoice | null): SupplyOrderUkrainePaymentDeliveryProtocol[] {
+type PaymentProtocolDocument = {
+  PaymentDeliveryProtocols?: SupplyOrderPaymentDeliveryProtocol[]
+}
+
+type PaymentSourceLink = Pick<
+  SupplyOrderPaymentDeliveryProtocol,
+  'SupplyInvoiceId' | 'SupplyProFormId'
+>
+
+type PaymentSourceOption = {
+  label: string
+  value: string
+}
+
+function mapToDisplayProtocols(document: PaymentProtocolDocument | null): SupplyOrderUkrainePaymentDeliveryProtocol[] {
   const displayProtocols: SupplyOrderUkrainePaymentDeliveryProtocol[] = []
 
-  for (const protocol of invoice?.PaymentDeliveryProtocols || []) {
+  for (const protocol of document?.PaymentDeliveryProtocols || []) {
     if (protocol.Deleted) {
       continue
     }
@@ -281,7 +374,11 @@ function mapToDisplayProtocols(invoice: SupplyInvoice | null): SupplyOrderUkrain
   return displayProtocols
 }
 
-function addPaymentProtocol(invoice: SupplyInvoice, values: NewPaymentProtocolFormValues): SupplyInvoice {
+function addPaymentProtocol<TDocument extends PaymentProtocolDocument>(
+  document: TDocument,
+  values: NewPaymentProtocolFormValues,
+  sourceLink: PaymentSourceLink,
+): TDocument {
   const value = Number(values.value) || 0
   const discount = Number(values.discount) || 0
   const key = (values.protocolKey as unknown as SupplyOrderPaymentDeliveryProtocolKey | null) || null
@@ -292,7 +389,7 @@ function addPaymentProtocol(invoice: SupplyInvoice, values: NewPaymentProtocolFo
     Deleted: false,
     Discount: discount,
     IsAccounting: values.isAccounting,
-    SupplyInvoiceId: invoice.Id,
+    ...sourceLink,
     SupplyOrderPaymentDeliveryProtocolKey: key,
     SupplyOrderPaymentDeliveryProtocolKeyId: key?.Id,
     SupplyPaymentTask: {
@@ -311,19 +408,23 @@ function addPaymentProtocol(invoice: SupplyInvoice, values: NewPaymentProtocolFo
   }
 
   return {
-    ...invoice,
-    PaymentDeliveryProtocols: [...(invoice.PaymentDeliveryProtocols || []), nextProtocol],
+    ...document,
+    PaymentDeliveryProtocols: [...(document.PaymentDeliveryProtocols || []), nextProtocol],
   }
 }
 
-function removePaymentProtocol(invoice: SupplyInvoice, netUid?: string, id?: number): SupplyInvoice {
-  const protocols = [...(invoice.PaymentDeliveryProtocols || [])]
+function removePaymentProtocol<TDocument extends PaymentProtocolDocument>(
+  document: TDocument,
+  netUid?: string,
+  id?: number,
+): TDocument {
+  const protocols = [...(document.PaymentDeliveryProtocols || [])]
   const index = protocols.findIndex(
     (protocol) => !protocol.Deleted && ((netUid && protocol.NetUid === netUid) || (id && protocol.Id === id)),
   )
 
   if (index === -1) {
-    return invoice
+    return document
   }
 
   const protocol = protocols[index]
@@ -341,9 +442,21 @@ function removePaymentProtocol(invoice: SupplyInvoice, netUid?: string, id?: num
   }
 
   return {
-    ...invoice,
+    ...document,
     PaymentDeliveryProtocols: protocols,
   }
+}
+
+function findDeletedPaymentProtocol(
+  document: PaymentProtocolDocument,
+  protocol: SupplyOrderUkrainePaymentDeliveryProtocol,
+): SupplyOrderPaymentDeliveryProtocol | undefined {
+  return document.PaymentDeliveryProtocols?.find(
+    (candidate) =>
+      candidate.Deleted &&
+      ((protocol.NetUid && candidate.NetUid === protocol.NetUid) ||
+        (protocol.Id && candidate.Id === protocol.Id)),
+  )
 }
 
 /** Mirror the «Інвойси і пак листи» save payload so the server contract is identical. */
@@ -364,6 +477,21 @@ function createInvoiceProtocolsPayload(
     SupplyInvoiceOrderItems: invoice.SupplyInvoiceOrderItems || [],
     SupplyOrder: null,
   } as SupplyInvoice
+}
+
+function createProFormProtocolsPayload(
+  proForm: SupplyProForm,
+  targetProtocols: SupplyOrderPaymentDeliveryProtocol[],
+): SupplyProForm {
+  return {
+    ...stripEntityGraph(proForm),
+    InformationDeliveryProtocols: proForm.InformationDeliveryProtocols || [],
+    PaymentDeliveryProtocols: sanitizeProFormPaymentDeliveryProtocols(
+      proForm,
+      targetProtocols,
+    ),
+    ProFormDocuments: proForm.ProFormDocuments || [],
+  }
 }
 
 function sanitizeInformationDeliveryProtocols(invoice: SupplyInvoice): SupplyInformationDeliveryProtocol[] {
@@ -389,8 +517,56 @@ function stripEntityGraph<T extends object>(entity: T): T {
 
   delete result.SupplyOrder
   delete result.SupplyInvoice
+  delete result.SupplyProForm
   delete result.PackingList
   delete result.PackingListPackage
 
   return result as T
+}
+
+function getSavedProForm(order: DirectSupplyOrder): SupplyProForm | null {
+  return hasSupplyProForm(order) && order.SupplyProForm ? order.SupplyProForm : null
+}
+
+function createPaymentSourceOptions(
+  proForm: SupplyProForm | null,
+  invoices: SupplyInvoice[],
+  t: (value: string) => string,
+): PaymentSourceOption[] {
+  const options: PaymentSourceOption[] = []
+
+  for (const entry of invoices) {
+    if (!entry.NetUid) {
+      continue
+    }
+
+    options.push({
+      label: formatPaymentSourceLabel(t('Інвойс'), entry.Number, entry.NetUid),
+      value: `${INVOICE_PAYMENT_SOURCE_PREFIX}${entry.NetUid}`,
+    })
+  }
+
+  // Preserve the existing invoice default when both document types exist.
+  if (proForm) {
+    options.push({
+      label: formatPaymentSourceLabel(t('Проформа'), proForm.Number, proForm.NetUid),
+      value: PRO_FORM_PAYMENT_SOURCE,
+    })
+  }
+
+  return options
+}
+
+function formatPaymentSourceLabel(kind: string, number?: string, netUid?: string): string {
+  const identifier = number?.trim() || netUid?.trim() || ''
+
+  return identifier ? `${kind} ${identifier}` : kind
+}
+
+function getInvoiceNetId(paymentSource: string | null): string | null {
+  if (!paymentSource?.startsWith(INVOICE_PAYMENT_SOURCE_PREFIX)) {
+    return null
+  }
+
+  return paymentSource.slice(INVOICE_PAYMENT_SOURCE_PREFIX.length) || null
 }
