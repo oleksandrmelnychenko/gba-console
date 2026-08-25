@@ -760,7 +760,7 @@ function ProductEditorModal({
   )
 }
 
-function ProductEditorForm({
+export function ProductEditorForm({
   editor,
   isSubmitting,
   onClose,
@@ -781,15 +781,13 @@ function ProductEditorForm({
 
   useEffect(() => {
     const value = measureUnitSearch.trim()
-
-    if (value.length === 0 || (selectedMeasureUnit && getMeasureUnitLabel(selectedMeasureUnit) === value)) {
-      return
-    }
+    const shouldLoadAll = value.length === 0
+      || Boolean(selectedMeasureUnit && getMeasureUnitLabel(selectedMeasureUnit) === value)
 
     let cancelled = false
 
     const timeoutId = window.setTimeout(() => {
-      searchMeasureUnits(value)
+      searchMeasureUnits(shouldLoadAll ? '' : value)
         .then((nextMeasureUnits) => {
           if (!cancelled) {
             setMeasureUnits(nextMeasureUnits)
@@ -800,7 +798,7 @@ function ProductEditorForm({
             setMeasureUnits([])
           }
         })
-    }, 250)
+    }, shouldLoadAll ? 0 : 250)
 
     return () => {
       cancelled = true
@@ -836,6 +834,10 @@ function ProductEditorForm({
         label={t('Одиниця виміру')}
         value={measureUnitSearch}
         onChange={(value) => {
+          if (value === measureUnitSearch) {
+            return
+          }
+
           setMeasureUnitSearch(value)
           setSelectedMeasureUnit(null)
           setMeasureUnits([])

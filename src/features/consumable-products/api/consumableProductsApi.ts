@@ -94,11 +94,12 @@ export async function deleteConsumableProduct(netId: string): Promise<void> {
 }
 
 export async function searchMeasureUnits(value: string): Promise<MeasureUnit[]> {
-  const result = await apiRequest<unknown>('/measureunits/search', {
-    query: {
-      value: value.trim(),
-    },
-  })
+  const normalizedValue = value.trim()
+  const result = normalizedValue
+    ? await apiRequest<unknown>('/measureunits/search', {
+        query: { value: normalizedValue },
+      })
+    : await apiRequest<unknown>('/measureunits/all')
 
   return readArrayPayload(result, ['Items', 'MeasureUnits', 'Data']) as MeasureUnit[]
 }
