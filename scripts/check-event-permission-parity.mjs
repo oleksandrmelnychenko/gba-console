@@ -4,7 +4,7 @@ import { join, resolve } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import ts from 'typescript'
 
-const EXPECTED_PERMISSION_COUNT = 479
+const EXPECTED_PERMISSION_COUNT = 490
 const FRONTEND_KEYS_SOURCE = 'src/shared/auth/permissionKeys.ts'
 const BACKEND_EXPORTER =
   'tools/Gba.EventPermissionCatalogExporter/Gba.EventPermissionCatalogExporter.csproj'

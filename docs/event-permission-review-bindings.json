@@ -2416,12 +2416,16 @@
       "disposition": "technical_ui",
       "reason": "A tree checkbox changes only the local assignment draft; no server mutation occurs before the guarded save."
     },
+    "PE-01724": {
+      "disposition": "technical_ui",
+      "reason": "Cancel only restores the last loaded canonical role draft locally and performs no delete or server mutation."
+    },
     "PE-01725": {
       "disposition": "covered_existing",
       "canonicalPermissionKeys": [
-        "administration.roles.page_permissions.edit"
+        "administration.roles.event_permissions.edit"
       ],
-      "reason": "This is the single final mutation that persists page and legacy-permission assignments for a role."
+      "reason": "This is the single final mutation that persists canonical event-permission assignments for a role."
     },
     "PE-01727": {
       "disposition": "duplicate_occurrence",

@@ -12,15 +12,15 @@
   "summary": {
     "actions": 36,
     "boundActions": 3,
-    "permissionChecks": 16,
+    "permissionChecks": 18,
     "unboundActions": 33
   },
   "candidates": [
     {
-      "id": "EPC-216a150e54ed",
+      "id": "EPC-311ef831d5be",
       "column": 15,
       "file": "src/features/sales-ukraine/components/new-sale-wizard/NewSaleReviewStep.tsx",
-      "line": 1638,
+      "line": 1644,
       "component": "Button",
       "controlType": "button",
       "event": "button.click",
@@ -33,10 +33,10 @@
       "status": "needs-review"
     },
     {
-      "id": "EPC-de22d5856fa9",
+      "id": "EPC-bcbd7f45eaf2",
       "column": 27,
       "file": "src/features/sales-ukraine/components/new-sale-wizard/NewSaleReviewStep.tsx",
-      "line": 1707,
+      "line": 1713,
       "component": "ActionIcon",
       "controlType": "button",
       "event": "button.click",
@@ -49,10 +49,10 @@
       "status": "needs-review"
     },
     {
-      "id": "EPC-a8fa417f0204",
+      "id": "EPC-9fab61b104af",
       "column": 15,
       "file": "src/features/sales-ukraine/components/new-sale-wizard/NewSaleReviewStep.tsx",
-      "line": 1832,
+      "line": 1838,
       "component": "Button",
       "controlType": "button",
       "event": "button.click",
@@ -65,10 +65,10 @@
       "status": "needs-review"
     },
     {
-      "id": "EPC-1f5b5233e111",
+      "id": "EPC-ed4e352f694f",
       "column": 13,
       "file": "src/features/sales-ukraine/components/new-sale-wizard/NewSaleReviewStep.tsx",
-      "line": 1836,
+      "line": 1842,
       "component": "Button",
       "controlType": "button",
       "event": "button.click",
@@ -81,10 +81,10 @@
       "status": "needs-review"
     },
     {
-      "id": "EPC-2aaab80d3915",
+      "id": "EPC-f392e78ff5f6",
       "column": 19,
       "file": "src/features/sales-ukraine/components/new-sale-wizard/NewSaleWizard.tsx",
-      "line": 437,
+      "line": 440,
       "component": "Button",
       "controlType": "button",
       "event": "button.click",
@@ -97,10 +97,10 @@
       "status": "needs-review"
     },
     {
-      "id": "EPC-be6fc9d5a42b",
+      "id": "EPC-706f0571eca4",
       "column": 21,
       "file": "src/features/sales-ukraine/components/new-sale-wizard/NewSaleWizard.tsx",
-      "line": 439,
+      "line": 442,
       "component": "Button",
       "controlType": "button",
       "event": "button.click",
@@ -113,10 +113,10 @@
       "status": "needs-review"
     },
     {
-      "id": "EPC-d8537c22440b",
+      "id": "EPC-9e882d02123c",
       "column": 19,
       "file": "src/features/sales-ukraine/components/new-sale-wizard/NewSaleWizard.tsx",
-      "line": 443,
+      "line": 446,
       "component": "Button",
       "controlType": "button",
       "event": "button.click",
@@ -129,10 +129,10 @@
       "status": "needs-review"
     },
     {
-      "id": "EPC-7bab4d8a1e13",
+      "id": "EPC-dc08f0beee11",
       "column": 5,
       "file": "src/features/sales-ukraine/components/new-sale-wizard/NewSaleWizard.tsx",
-      "line": 1248,
+      "line": 1253,
       "component": "ActionIcon",
       "controlType": "button",
       "event": "button.click",
@@ -145,10 +145,10 @@
       "status": "needs-review"
     },
     {
-      "id": "EPC-7325460e8c71",
+      "id": "EPC-250587224f2c",
       "column": 15,
       "file": "src/features/sales-ukraine/components/new-sale-wizard/NewSaleWizard.tsx",
-      "line": 1391,
+      "line": 1401,
       "component": "UnstyledButton",
       "controlType": "button",
       "event": "button.click",
@@ -161,10 +161,10 @@
       "status": "needs-review"
     },
     {
-      "id": "EPC-cb1c110266f9",
+      "id": "EPC-fe1d4e0f0ba6",
       "column": 13,
       "file": "src/features/sales-ukraine/components/new-sale-wizard/NewSaleWizard.tsx",
-      "line": 1406,
+      "line": 1416,
       "component": "Button",
       "controlType": "button",
       "event": "button.click",
@@ -177,10 +177,10 @@
       "status": "needs-review"
     },
     {
-      "id": "EPC-022a59d17a5a",
+      "id": "EPC-2e4b43362e22",
       "column": 13,
       "file": "src/features/sales-ukraine/components/new-sale-wizard/NewSaleWizard.tsx",
-      "line": 1415,
+      "line": 1425,
       "component": "Button",
       "controlType": "button",
       "event": "button.click",
@@ -193,10 +193,10 @@
       "status": "needs-review"
     },
     {
-      "id": "EPC-162fbe806822",
+      "id": "EPC-81b2a649ecee",
       "column": 8,
       "file": "src/features/sales-ukraine/pages/SalesUkrainePage.tsx",
-      "line": 314,
+      "line": 312,
       "component": "permission-check",
       "controlType": "permission-check",
       "event": "permission.evaluate",
@@ -213,10 +213,30 @@
       "status": "resolved"
     },
     {
-      "id": "EPC-86b9dc292ded",
+      "id": "EPC-fc2b80252d25",
+      "column": 34,
+      "file": "src/features/sales-ukraine/pages/SalesUkrainePage.tsx",
+      "line": 330,
+      "component": "permission-check",
+      "controlType": "permission-check",
+      "event": "permission.evaluate",
+      "handler": "can(PermissionKeys.SalesUkraine.Sale.ExportBeforePacking)",
+      "humanLabel": "canExportBeforePacking",
+      "kind": "permission-check",
+      "permissionKeys": [
+        "sales.ukraine.sale.export_before_packing"
+      ],
+      "permissionReferences": [
+        "PermissionKeys.SalesUkraine.Sale.ExportBeforePacking"
+      ],
+      "route": "/sales/ukraine/all",
+      "status": "resolved"
+    },
+    {
+      "id": "EPC-80bf864d708c",
       "column": 31,
       "file": "src/features/sales-ukraine/pages/SalesUkrainePage.tsx",
-      "line": 335,
+      "line": 333,
       "component": "permission-check",
       "controlType": "permission-check",
       "event": "permission.evaluate",
@@ -233,10 +253,10 @@
       "status": "resolved"
     },
     {
-      "id": "EPC-e2b24178bc9d",
+      "id": "EPC-6b7365413a56",
       "column": 25,
       "file": "src/features/sales-ukraine/pages/SalesUkrainePage.tsx",
-      "line": 336,
+      "line": 334,
       "component": "permission-check",
       "controlType": "permission-check",
       "event": "permission.evaluate",
@@ -253,10 +273,30 @@
       "status": "resolved"
     },
     {
-      "id": "EPC-3958e6e7c3a0",
+      "id": "EPC-595669c075b3",
+      "column": 34,
+      "file": "src/features/sales-ukraine/pages/SalesUkrainePage.tsx",
+      "line": 335,
+      "component": "permission-check",
+      "controlType": "permission-check",
+      "event": "permission.evaluate",
+      "handler": "can(PermissionKeys.SalesUkraine.Sale.ConvertMergedToBill)",
+      "humanLabel": "canConvertMergedToBill",
+      "kind": "permission-check",
+      "permissionKeys": [
+        "sales.ukraine.sale.convert_merged_to_bill"
+      ],
+      "permissionReferences": [
+        "PermissionKeys.SalesUkraine.Sale.ConvertMergedToBill"
+      ],
+      "route": "/sales/ukraine/all",
+      "status": "resolved"
+    },
+    {
+      "id": "EPC-747ebdc40602",
       "column": 23,
       "file": "src/features/sales-ukraine/pages/SalesUkrainePage.tsx",
-      "line": 337,
+      "line": 336,
       "component": "permission-check",
       "controlType": "permission-check",
       "event": "permission.evaluate",
@@ -273,10 +313,10 @@
       "status": "resolved"
     },
     {
-      "id": "EPC-0832a6de3099",
+      "id": "EPC-4f696e92ae98",
       "column": 30,
       "file": "src/features/sales-ukraine/pages/SalesUkrainePage.tsx",
-      "line": 338,
+      "line": 337,
       "component": "permission-check",
       "controlType": "permission-check",
       "event": "permission.evaluate",
@@ -293,10 +333,10 @@
       "status": "resolved"
     },
     {
-      "id": "EPC-451aa7a776c1",
+      "id": "EPC-9dc4b38da525",
       "column": 23,
       "file": "src/features/sales-ukraine/pages/SalesUkrainePage.tsx",
-      "line": 339,
+      "line": 338,
       "component": "permission-check",
       "controlType": "permission-check",
       "event": "permission.evaluate",
@@ -313,10 +353,10 @@
       "status": "resolved"
     },
     {
-      "id": "EPC-f9bbdd95ddfa",
+      "id": "EPC-3a9a5af70dda",
       "column": 34,
       "file": "src/features/sales-ukraine/pages/SalesUkrainePage.tsx",
-      "line": 340,
+      "line": 339,
       "component": "permission-check",
       "controlType": "permission-check",
       "event": "permission.evaluate",
@@ -333,10 +373,10 @@
       "status": "resolved"
     },
     {
-      "id": "EPC-91261718f1d3",
+      "id": "EPC-b14818b40940",
       "column": 21,
       "file": "src/features/sales-ukraine/pages/SalesUkrainePage.tsx",
-      "line": 341,
+      "line": 340,
       "component": "permission-check",
       "controlType": "permission-check",
       "event": "permission.evaluate",
@@ -353,10 +393,10 @@
       "status": "resolved"
     },
     {
-      "id": "EPC-fe7582bd91e5",
+      "id": "EPC-f3b48fe5bbcb",
       "column": 26,
       "file": "src/features/sales-ukraine/pages/SalesUkrainePage.tsx",
-      "line": 342,
+      "line": 341,
       "component": "permission-check",
       "controlType": "permission-check",
       "event": "permission.evaluate",
@@ -373,10 +413,10 @@
       "status": "resolved"
     },
     {
-      "id": "EPC-a8abc30d385f",
+      "id": "EPC-f298aa6be4bc",
       "column": 35,
       "file": "src/features/sales-ukraine/pages/SalesUkrainePage.tsx",
-      "line": 343,
+      "line": 342,
       "component": "permission-check",
       "controlType": "permission-check",
       "event": "permission.evaluate",
@@ -393,10 +433,10 @@
       "status": "resolved"
     },
     {
-      "id": "EPC-8247aa836fd4",
+      "id": "EPC-60bbffe09988",
       "column": 24,
       "file": "src/features/sales-ukraine/pages/SalesUkrainePage.tsx",
-      "line": 344,
+      "line": 343,
       "component": "permission-check",
       "controlType": "permission-check",
       "event": "permission.evaluate",
@@ -413,10 +453,10 @@
       "status": "resolved"
     },
     {
-      "id": "EPC-32a17067f947",
+      "id": "EPC-af530dcb918b",
       "column": 34,
       "file": "src/features/sales-ukraine/pages/SalesUkrainePage.tsx",
-      "line": 345,
+      "line": 344,
       "component": "permission-check",
       "controlType": "permission-check",
       "event": "permission.evaluate",
@@ -433,10 +473,10 @@
       "status": "resolved"
     },
     {
-      "id": "EPC-de0c5cce5abf",
+      "id": "EPC-e84cca14b717",
       "column": 8,
       "file": "src/features/sales-ukraine/pages/SalesUkrainePage.tsx",
-      "line": 346,
+      "line": 345,
       "component": "permission-check",
       "controlType": "permission-check",
       "event": "permission.evaluate",
@@ -453,10 +493,10 @@
       "status": "resolved"
     },
     {
-      "id": "EPC-f51b1f75e4fc",
+      "id": "EPC-b3146a3eb074",
       "column": 8,
       "file": "src/features/sales-ukraine/pages/SalesUkrainePage.tsx",
-      "line": 347,
+      "line": 346,
       "component": "permission-check",
       "controlType": "permission-check",
       "event": "permission.evaluate",
@@ -473,10 +513,10 @@
       "status": "resolved"
     },
     {
-      "id": "EPC-d9a780f6db54",
+      "id": "EPC-e36aa4c96cb9",
       "column": 8,
       "file": "src/features/sales-ukraine/pages/SalesUkrainePage.tsx",
-      "line": 348,
+      "line": 347,
       "component": "permission-check",
       "controlType": "permission-check",
       "event": "permission.evaluate",
@@ -493,10 +533,10 @@
       "status": "resolved"
     },
     {
-      "id": "EPC-a3a583b5728d",
+      "id": "EPC-67b883907ab3",
       "column": 8,
       "file": "src/features/sales-ukraine/pages/SalesUkrainePage.tsx",
-      "line": 349,
+      "line": 348,
       "component": "permission-check",
       "controlType": "permission-check",
       "event": "permission.evaluate",
@@ -513,10 +553,10 @@
       "status": "resolved"
     },
     {
-      "id": "EPC-2bfa859aa6f8",
+      "id": "EPC-9a79b3d303ba",
       "column": 29,
       "file": "src/features/sales-ukraine/pages/SalesUkrainePage.tsx",
-      "line": 1201,
+      "line": 1200,
       "component": "button",
       "controlType": "button",
       "event": "button.click",
@@ -529,10 +569,10 @@
       "status": "needs-review"
     },
     {
-      "id": "EPC-72ebf3a05075",
+      "id": "EPC-29265e1c4bfe",
       "column": 21,
       "file": "src/features/sales-ukraine/pages/SalesUkrainePage.tsx",
-      "line": 1230,
+      "line": 1229,
       "component": "button",
       "controlType": "button",
       "event": "button.click",
@@ -545,10 +585,10 @@
       "status": "needs-review"
     },
     {
-      "id": "EPC-a715a6bd06e3",
+      "id": "EPC-b0b0fe7ddee2",
       "column": 19,
       "file": "src/features/sales-ukraine/pages/SalesUkrainePage.tsx",
-      "line": 1257,
+      "line": 1256,
       "component": "ActionIcon",
       "controlType": "button",
       "event": "button.click",
@@ -561,10 +601,10 @@
       "status": "needs-review"
     },
     {
-      "id": "EPC-382a37d36b20",
+      "id": "EPC-4c2f34f5e9b7",
       "column": 17,
       "file": "src/features/sales-ukraine/pages/SalesUkrainePage.tsx",
-      "line": 1275,
+      "line": 1274,
       "component": "Button",
       "controlType": "button",
       "event": "button.click",
@@ -581,10 +621,10 @@
       "status": "binding-candidate"
     },
     {
-      "id": "EPC-954e589e83d4",
+      "id": "EPC-e615c305eab0",
       "column": 25,
       "file": "src/features/sales-ukraine/pages/SalesUkrainePage.tsx",
-      "line": 1330,
+      "line": 1329,
       "component": "span",
       "controlType": "span",
       "event": "row.double_click",
@@ -629,10 +669,10 @@
       "status": "needs-review"
     },
     {
-      "id": "EPC-bbd2e2a5c199",
+      "id": "EPC-1087e2a3dff1",
       "column": 5,
       "file": "src/features/sales-ukraine/pages/SalesUkrainePage.tsx",
-      "line": 1703,
+      "line": 1708,
       "component": "div",
       "controlType": "div",
       "event": "button.click",
@@ -649,10 +689,10 @@
       "status": "binding-candidate"
     },
     {
-      "id": "EPC-bf2a4dcf16cd",
+      "id": "EPC-140b28588731",
       "column": 15,
       "file": "src/features/sales-ukraine/pages/SalesUkrainePage.tsx",
-      "line": 1732,
+      "line": 1737,
       "component": "TableRowAction",
       "controlType": "row-action",
       "event": "button.click",
@@ -665,10 +705,10 @@
       "status": "needs-review"
     },
     {
-      "id": "EPC-35054072d7f7",
+      "id": "EPC-e20ece2271e6",
       "column": 15,
       "file": "src/features/sales-ukraine/pages/SalesUkrainePage.tsx",
-      "line": 1739,
+      "line": 1744,
       "component": "TableRowAction",
       "controlType": "row-action",
       "event": "button.click",
@@ -681,10 +721,10 @@
       "status": "needs-review"
     },
     {
-      "id": "EPC-10908f2069ce",
+      "id": "EPC-4654da7b4a3a",
       "column": 17,
       "file": "src/features/sales-ukraine/pages/SalesUkrainePage.tsx",
-      "line": 1751,
+      "line": 1756,
       "component": "TableRowAction",
       "controlType": "row-action",
       "event": "button.click",
@@ -697,10 +737,10 @@
       "status": "needs-review"
     },
     {
-      "id": "EPC-0cf3f8d3ebb8",
+      "id": "EPC-302ea0e403b3",
       "column": 17,
       "file": "src/features/sales-ukraine/pages/SalesUkrainePage.tsx",
-      "line": 1861,
+      "line": 1866,
       "component": "button",
       "controlType": "button",
       "event": "button.click",
@@ -713,10 +753,10 @@
       "status": "needs-review"
     },
     {
-      "id": "EPC-4b27330803b7",
+      "id": "EPC-4a6e9ecf4ec6",
       "column": 15,
       "file": "src/features/sales-ukraine/pages/SalesUkrainePage.tsx",
-      "line": 1869,
+      "line": 1874,
       "component": "TableRowAction",
       "controlType": "row-action",
       "event": "button.click",
@@ -729,10 +769,10 @@
       "status": "needs-review"
     },
     {
-      "id": "EPC-dc0534f94948",
+      "id": "EPC-7104b43975a7",
       "column": 11,
       "file": "src/features/sales-ukraine/pages/SalesUkrainePage.tsx",
-      "line": 1877,
+      "line": 1882,
       "component": "TableRowAction",
       "controlType": "row-action",
       "event": "button.click",
@@ -745,10 +785,10 @@
       "status": "needs-review"
     },
     {
-      "id": "EPC-00758ab20c55",
+      "id": "EPC-efb6a08eabe2",
       "column": 11,
       "file": "src/features/sales-ukraine/pages/SalesUkrainePage.tsx",
-      "line": 1883,
+      "line": 1888,
       "component": "TableRowAction",
       "controlType": "row-action",
       "event": "button.click",
@@ -761,10 +801,10 @@
       "status": "needs-review"
     },
     {
-      "id": "EPC-878e6fd06605",
+      "id": "EPC-c1f63832e543",
       "column": 11,
       "file": "src/features/sales-ukraine/pages/SalesUkrainePage.tsx",
-      "line": 1901,
+      "line": 1906,
       "component": "TableRowAction",
       "controlType": "row-action",
       "event": "button.click",
@@ -781,10 +821,10 @@
       "status": "binding-candidate"
     },
     {
-      "id": "EPC-b536fc41df73",
+      "id": "EPC-3617566f12be",
       "column": 11,
       "file": "src/features/sales-ukraine/pages/SalesUkrainePage.tsx",
-      "line": 1911,
+      "line": 1916,
       "component": "TableRowAction",
       "controlType": "row-action",
       "event": "button.click",
@@ -797,10 +837,10 @@
       "status": "needs-review"
     },
     {
-      "id": "EPC-95541eff0544",
+      "id": "EPC-ff790d60d97f",
       "column": 11,
       "file": "src/features/sales-ukraine/pages/SalesUkrainePage.tsx",
-      "line": 1919,
+      "line": 1924,
       "component": "TableRowAction",
       "controlType": "row-action",
       "event": "button.click",
@@ -813,10 +853,10 @@
       "status": "needs-review"
     },
     {
-      "id": "EPC-8699b828e9a4",
+      "id": "EPC-f728b3937dd9",
       "column": 11,
       "file": "src/features/sales-ukraine/pages/SalesUkrainePage.tsx",
-      "line": 2038,
+      "line": 2043,
       "component": "Menu.Item",
       "controlType": "menu-item",
       "event": "button.click",
@@ -829,10 +869,10 @@
       "status": "needs-review"
     },
     {
-      "id": "EPC-41735760d3f6",
+      "id": "EPC-334afad2b744",
       "column": 11,
       "file": "src/features/sales-ukraine/pages/SalesUkrainePage.tsx",
-      "line": 2043,
+      "line": 2048,
       "component": "Menu.Item",
       "controlType": "menu-item",
       "event": "button.click",
@@ -845,10 +885,10 @@
       "status": "needs-review"
     },
     {
-      "id": "EPC-8e9e97a415fa",
+      "id": "EPC-07e1f1c335b0",
       "column": 11,
       "file": "src/features/sales-ukraine/pages/SalesUkrainePage.tsx",
-      "line": 2048,
+      "line": 2053,
       "component": "Menu.Item",
       "controlType": "menu-item",
       "event": "button.click",
@@ -861,10 +901,10 @@
       "status": "needs-review"
     },
     {
-      "id": "EPC-2e58dd24e896",
+      "id": "EPC-4b099066fbf6",
       "column": 11,
       "file": "src/features/sales-ukraine/pages/SalesUkrainePage.tsx",
-      "line": 2053,
+      "line": 2058,
       "component": "Menu.Item",
       "controlType": "menu-item",
       "event": "button.click",
@@ -877,10 +917,10 @@
       "status": "needs-review"
     },
     {
-      "id": "EPC-fe9285465a37",
+      "id": "EPC-c73c1df226ea",
       "column": 11,
       "file": "src/features/sales-ukraine/pages/SalesUkrainePage.tsx",
-      "line": 2058,
+      "line": 2063,
       "component": "Menu.Item",
       "controlType": "menu-item",
       "event": "button.click",
@@ -893,10 +933,10 @@
       "status": "needs-review"
     },
     {
-      "id": "EPC-d3cea7c08b5b",
+      "id": "EPC-abfa34ffe6ef",
       "column": 11,
       "file": "src/features/sales-ukraine/pages/SalesUkrainePage.tsx",
-      "line": 2068,
+      "line": 2073,
       "component": "Menu.Item",
       "controlType": "menu-item",
       "event": "button.click",
@@ -909,10 +949,10 @@
       "status": "needs-review"
     },
     {
-      "id": "EPC-491e8a889b18",
+      "id": "EPC-da8bf71632e7",
       "column": 11,
       "file": "src/features/sales-ukraine/pages/SalesUkrainePage.tsx",
-      "line": 2073,
+      "line": 2078,
       "component": "Menu.Item",
       "controlType": "menu-item",
       "event": "button.click",
