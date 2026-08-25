@@ -88,23 +88,7 @@ const MIGRATED_DEPRECATED_ROUTES = [
   '/usermanagement/profiles/roles/all',
 ]
 
-const ALLOWED_DEPRECATED_ROUTE_USAGES = [
-  blocker('/payments/orders/income/new', 'src/features/accounting/accountingOperationCatalog.ts', 'Financial mutation cutover requires explicitly approved per-operation endpoint routing.', 1),
-  blocker('/payments/orders/income/new', 'src/features/accounting/accountingOperationCatalog.ts', 'Financial mutation cutover requires explicitly approved per-operation endpoint routing.', 2),
-  blocker('/payments/orders/income/new', 'src/features/accounting/accountingOperationCatalog.ts', 'Financial mutation cutover requires explicitly approved per-operation endpoint routing.', 3),
-  blocker('/payments/orders/income/new', 'src/features/accounting/accountingOperationCatalog.ts', 'Financial mutation cutover requires explicitly approved per-operation endpoint routing.', 4),
-  blocker('/payments/orders/income/new', 'src/features/accounting/accountingOperationCatalog.ts', 'Financial mutation cutover requires explicitly approved per-operation endpoint routing.', 5),
-  blocker('/payments/orders/income/new', 'src/features/accounting/accountingOperationCatalog.ts', 'Financial mutation cutover requires explicitly approved per-operation endpoint routing.', 6),
-  blocker('/payments/orders/outcome/new', 'src/features/accounting/accountingOperationCatalog.ts', 'Financial mutation cutover requires explicitly approved per-operation endpoint routing.', 1),
-  blocker('/payments/orders/outcome/new', 'src/features/accounting/accountingOperationCatalog.ts', 'Financial mutation cutover requires explicitly approved per-operation endpoint routing.', 2),
-  blocker('/payments/orders/outcome/new', 'src/features/accounting/accountingOperationCatalog.ts', 'Financial mutation cutover requires explicitly approved per-operation endpoint routing.', 3),
-  blocker('/payments/orders/outcome/new', 'src/features/accounting/accountingOperationCatalog.ts', 'Financial mutation cutover requires explicitly approved per-operation endpoint routing.', 4),
-  blocker('/payments/orders/outcome/new', 'src/features/accounting/accountingOperationCatalog.ts', 'Financial mutation cutover requires explicitly approved per-operation endpoint routing.', 5),
-]
-
-function blocker(route, file, reason, occurrence = 1) {
-  return { file, occurrence, reason, route }
-}
+const ALLOWED_DEPRECATED_ROUTE_USAGES = []
 
 describe('legacy API route cutover contract', () => {
   const usages = scanApiRouteUsages()

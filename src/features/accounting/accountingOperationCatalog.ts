@@ -116,7 +116,7 @@ export const ACCOUNTING_OPERATION_CATALOG: readonly AccountingOperationDefinitio
   {
     counterparty: { kinds: [], required: false, source: 'none' },
     direction: 'income',
-    endpoint: '/payments/orders/income/new',
+    endpoint: '/payments/orders/income/accounting/create/other-income',
     id: ACCOUNTING_OPERATION_ID.IncomeOther,
     labels: {
       bankMenu: 'Інші надходження на рахунок',
@@ -139,7 +139,7 @@ export const ACCOUNTING_OPERATION_CATALOG: readonly AccountingOperationDefinitio
   {
     counterparty: { kinds: ['client'], required: true, source: 'form' },
     direction: 'income',
-    endpoint: '/payments/orders/income/new',
+    endpoint: '/payments/orders/income/accounting/create/client-payment',
     id: ACCOUNTING_OPERATION_ID.IncomeClientPayment,
     labels: {
       form: 'Оплата покупця',
@@ -164,7 +164,7 @@ export const ACCOUNTING_OPERATION_CATALOG: readonly AccountingOperationDefinitio
       source: 'form',
     },
     direction: 'income',
-    endpoint: '/payments/orders/income/new',
+    endpoint: '/payments/orders/income/accounting/create/supplier-return',
     id: ACCOUNTING_OPERATION_ID.IncomeSupplierReturn,
     labels: {
       form: 'Повернення від постачальника',
@@ -189,7 +189,7 @@ export const ACCOUNTING_OPERATION_CATALOG: readonly AccountingOperationDefinitio
       source: 'form',
     },
     direction: 'income',
-    endpoint: '/payments/orders/income/new',
+    endpoint: '/payments/orders/income/accounting/create/counterparty-income',
     id: ACCOUNTING_OPERATION_ID.IncomeOtherWithCounterparties,
     labels: {
       form: 'Інші надходження з контрагентами',
@@ -210,7 +210,7 @@ export const ACCOUNTING_OPERATION_CATALOG: readonly AccountingOperationDefinitio
   {
     counterparty: { kinds: ['colleague'], required: true, source: 'form' },
     direction: 'income',
-    endpoint: '/payments/orders/income/new',
+    endpoint: '/payments/orders/income/accounting/create/colleague-return',
     id: ACCOUNTING_OPERATION_ID.IncomeReturnFromColleague,
     labels: {
       form: 'Повернення від колеги',
@@ -232,7 +232,7 @@ export const ACCOUNTING_OPERATION_CATALOG: readonly AccountingOperationDefinitio
     canonicalOperationId: ACCOUNTING_OPERATION_ID.IncomeClientPayment,
     counterparty: { kinds: ['client'], required: true, source: 'document' },
     direction: 'income',
-    endpoint: '/payments/orders/income/new',
+    endpoint: '/payments/orders/income/online-shop/create',
     id: ACCOUNTING_OPERATION_ID.IncomeShopPayment,
     labels: {
       form: 'Оплата магазину',
@@ -282,7 +282,7 @@ export const ACCOUNTING_OPERATION_CATALOG: readonly AccountingOperationDefinitio
       source: 'form',
     },
     direction: 'outcome',
-    endpoint: '/payments/orders/outcome/new',
+    endpoint: '/payments/orders/outcome/outgoing-cashflows/create',
     id: ACCOUNTING_OPERATION_ID.OutcomeSupplierPayment,
     labels: {
       form: 'Оплата постачальнику',
@@ -304,7 +304,7 @@ export const ACCOUNTING_OPERATION_CATALOG: readonly AccountingOperationDefinitio
   {
     counterparty: { kinds: ['client'], required: true, source: 'form' },
     direction: 'outcome',
-    endpoint: '/payments/orders/outcome/new',
+    endpoint: '/payments/orders/outcome/outgoing-cashflows/create',
     id: ACCOUNTING_OPERATION_ID.OutcomeCustomerRefund,
     labels: {
       form: 'Повернення клієнту',
@@ -330,7 +330,7 @@ export const ACCOUNTING_OPERATION_CATALOG: readonly AccountingOperationDefinitio
       source: 'form',
     },
     direction: 'outcome',
-    endpoint: '/payments/orders/outcome/new',
+    endpoint: '/payments/orders/outcome/outgoing-cashflows/create',
     id: ACCOUNTING_OPERATION_ID.OutcomeOtherWithCounterparties,
     labels: {
       form: 'Інші розрахунки з контрагентами',
@@ -352,7 +352,7 @@ export const ACCOUNTING_OPERATION_CATALOG: readonly AccountingOperationDefinitio
   {
     counterparty: { kinds: [], required: false, source: 'none' },
     direction: 'outcome',
-    endpoint: '/payments/orders/outcome/new',
+    endpoint: '/payments/orders/outcome/outgoing-cashflows/create',
     id: ACCOUNTING_OPERATION_ID.OutcomeOther,
     labels: {
       bankMenu: 'Інше списання безготівкових грошових коштів',
@@ -376,7 +376,7 @@ export const ACCOUNTING_OPERATION_CATALOG: readonly AccountingOperationDefinitio
   {
     counterparty: { kinds: ['colleague'], required: true, source: 'form' },
     direction: 'outcome',
-    endpoint: '/payments/orders/outcome/new',
+    endpoint: '/payments/orders/outcome/outgoing-cashflows/create',
     id: ACCOUNTING_OPERATION_ID.OutcomeTransferToColleague,
     labels: {
       form: 'Перерахування грошових коштів підзвітнику',
