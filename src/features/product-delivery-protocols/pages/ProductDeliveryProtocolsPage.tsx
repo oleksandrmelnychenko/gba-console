@@ -68,7 +68,6 @@ const dateTimeFormatter = new Intl.DateTimeFormat('uk-UA', { dateStyle: 'short',
 
 const PERMISSION_EXPORT = PermissionKeys.ProductDeliveryProtocols.Document.Download
 const PERMISSION_CREATE = PermissionKeys.ProductDeliveryProtocols.Protocol.Create
-const PERMISSION_SELECT_OPTIONS = PermissionKeys.ProductDeliveryProtocols.Options.Open
 const PERMISSION_OPEN_LOGISTIC_PATH = PermissionKeys.ProductDeliveryProtocols.LogisticWay.Open
 const PERMISSION_OPEN_SPECIFICATIONS = PermissionKeys.ProductDeliveryProtocols.SpecificationCodes.Open
 const PERMISSION_OPEN_INCOME = PermissionKeys.ProductDeliveryProtocols.ProductIncome.Open
@@ -119,10 +118,10 @@ function useProtocolsPageModel() {
   const totalPages = Math.max(1, Math.ceil(totalQty / pageSize))
   const canExport = hasPermission(PERMISSION_EXPORT)
   const canCreate = hasPermission(PERMISSION_CREATE)
-  const canOpenOptions = hasPermission(PERMISSION_SELECT_OPTIONS)
   const canOpenLogisticPath = hasPermission(PERMISSION_OPEN_LOGISTIC_PATH)
   const canOpenSpecifications = hasPermission(PERMISSION_OPEN_SPECIFICATIONS)
   const canOpenIncome = hasPermission(PERMISSION_OPEN_INCOME)
+  const canOpenOptions = canOpenLogisticPath || canOpenSpecifications || canOpenIncome
   const exportScopeWarning = getExportScopeWarning(activeFilters, t)
 
   const resetProtocols = useCallback(() => {

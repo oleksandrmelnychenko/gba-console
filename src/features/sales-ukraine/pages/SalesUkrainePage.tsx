@@ -330,17 +330,21 @@ function SalesUkrainePageContent() {
   const canExportBeforePacking = can(
     PermissionKeys.SalesUkraine.Sale.ExportBeforePacking,
   )
-  const canOpenCreateDialog = can(PermissionKeys.SalesUkraine.Sale.OpenCreateDialog)
   const canCreateSale = can(PermissionKeys.SalesUkraine.Sale.Create)
   const canConvertMergedToBill = can(PermissionKeys.SalesUkraine.Sale.ConvertMergedToBill)
   const canOpenSale = can(PermissionKeys.SalesUkraine.Sale.OpenDetails)
-  const canOpenContextMenu = can(PermissionKeys.SalesUkraine.Sale.OpenContextMenu)
   const canEditSale = can(PermissionKeys.SalesUkraine.Sale.Edit)
   const canOpenDeliveryDetails = can(PermissionKeys.SalesUkraine.Sale.OpenDeliveryDetails)
   const canUnlock = can(PermissionKeys.SalesUkraine.Sale.Unlock)
   const canWillNotShip = can(PermissionKeys.SalesUkraine.Sale.UnlockForShipping)
   const canPrintConsignmentNote = can(PermissionKeys.SalesUkraine.Sale.PrintConsignmentNote)
   const canViewAudit = can(PermissionKeys.SalesUkraine.Sale.ViewAudit)
+  const canOpenContextMenu = canEditSale
+    || canOpenDeliveryDetails
+    || canUnlock
+    || canWillNotShip
+    || canPrintConsignmentNote
+    || canViewAudit
   const canExportSaleDocuments = can(PermissionKeys.SalesUkraine.Sale.ExportInvoice)
     || can(PermissionKeys.SalesUkraine.Sale.ExportShipmentList)
     || can(PermissionKeys.SalesUkraine.Sale.ExportPaymentInvoice)
@@ -1269,7 +1273,7 @@ function SalesUkrainePageContent() {
               <Can
                 deniedReason={t('Недостатньо прав для відкриття форми створення продажу')}
                 mode="disable"
-                permission={PermissionKeys.SalesUkraine.Sale.OpenCreateDialog}
+                permission={PermissionKeys.SalesUkraine.Sale.Create}
               >
                 <Button
                   className="sales-filter-create"
@@ -1277,7 +1281,7 @@ function SalesUkrainePageContent() {
                   leftSection={<Plus size={16} />}
                   size="sm"
                   onClick={() => {
-                    if (canOpenCreateDialog) {
+                    if (canCreateSale) {
                       setNewSaleOpen(true)
                     }
                   }}
@@ -1348,7 +1352,15 @@ function SalesUkrainePageContent() {
                         sale={sale}
                         saleKey={key}
                         canEditSale={canEditSale}
-                        canOpenActions={canOpenContextMenu}
+                        canOpenActions={canOpenContextMenu && hasAvailableSaleActions(sale, {
+                          canEditSale,
+                          canOpenDeliveryDetails,
+                          canPrintConsignmentNote,
+                          canUnlock,
+                          canViewAudit,
+                          canWillNotShip,
+                          canExportBeforePacking,
+                        })}
                         canOpenDeliveryDetails={canOpenDeliveryDetails}
                         canExportSaleDocuments={canExportSaleDocuments}
                         canOpenSale={canOpenSale}
@@ -1515,7 +1527,7 @@ function SalesUkrainePageContent() {
         </AppDrawer>
       ) : null}
 
-      {(canOpenCreateDialog && isNewSaleOpen) || wizardEditSale ? (
+      {(canCreateSale && isNewSaleOpen) || wizardEditSale ? (
         <Suspense fallback={null}>
           <LazyNewSaleWizard
             canOpenDeliveryDetails={canOpenDeliveryDetails}
@@ -2141,6 +2153,21 @@ function getSaleActionAvailability(
       && !sale.IsAcceptedToPacking,
     unpaid,
   }
+}
+
+function hasAvailableSaleActions(
+  sale: SalesUkraineSale,
+  permissions: Parameters<typeof getSaleActionAvailability>[1],
+) {
+  const availability = getSaleActionAvailability(sale, permissions)
+
+  return availability.showEdit
+    || availability.showEditShift
+    || availability.showOpenDeliveryDetails
+    || availability.showTtn
+    || availability.showUnlock
+    || availability.showViewAudit
+    || availability.showWillNotShip
 }
 
 function getFloatingMenuAnchor(target: HTMLElement): FloatingMenuAnchor {

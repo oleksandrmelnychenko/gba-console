@@ -68,7 +68,7 @@ const PRODUCT_STORAGES_TABLE_DEFAULT_LAYOUT = {
 
 const pageSizeOptions = ['50', '100', '150']
 const PRODUCT_STORAGES_SEARCH_DEBOUNCE_MS = 200
-const PRODUCT_STORAGES_ACTION_PERMISSION = PermissionKeys.WarehouseAccounting.Storages.PositionAction.Open
+const PRODUCT_STORAGES_ACTION_PERMISSION = PermissionKeys.WarehouseAccounting.Storages.PositionAction.Management
 const PRODUCT_STORAGES_EXPORT_PERMISSION = PermissionKeys.WarehouseAccounting.Storages.Document.Export
 const PRODUCT_STORAGES_PREVIEW_PERMISSION = PermissionKeys.WarehouseAccounting.Storages.Preview.Open
 const amountFormatter = new Intl.NumberFormat('uk-UA', {

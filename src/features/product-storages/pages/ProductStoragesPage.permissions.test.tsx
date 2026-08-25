@@ -122,19 +122,17 @@ describe('Product storages canonical permission guards', () => {
     )
   })
 
-  it('keeps management actions hidden without the independent key', async () => {
+  it('does not render a technical action opener without the business permission', async () => {
     allowedPermissions.add(PermissionKeys.WarehouseAccounting.Storages.Page.View)
     allowedPermissions.add(PermissionKeys.WarehouseAccounting.Storages.PositionAction.Open)
     renderPage()
 
-    fireEvent.click(await screen.findByRole('button', { name: 'Операція зі складської позиції' }))
-
-    expect(screen.queryByRole('switch', { name: 'Управлінська операція' })).toBeNull()
+    await screen.findByTestId('product-storages')
+    expect(screen.queryByRole('button', { name: 'Операція зі складської позиції' })).toBeNull()
   })
 
   it('submits a management cross-organization action only with its canonical key', async () => {
     allowedPermissions.add(PermissionKeys.WarehouseAccounting.Storages.Page.View)
-    allowedPermissions.add(PermissionKeys.WarehouseAccounting.Storages.PositionAction.Open)
     allowedPermissions.add(PermissionKeys.WarehouseAccounting.Storages.PositionAction.Management)
     renderPage()
 

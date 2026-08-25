@@ -159,7 +159,7 @@ export function RecommendationsPanel({ client, productNetId }: RecommendationsPa
     useOfferFromRecommendations()
 
   const clientNetId = client.NetUid || ''
-  const canCreateSale = hasPermission(PermissionKeys.SalesUkraine.Sale.OpenCreateDialog)
+  const canCreateSale = hasPermission(PermissionKeys.SalesUkraine.Sale.Create)
   const canExcludeProduct = hasPermission(PermissionKeys.Clients.Recommendations.ExcludeProduct)
   const isVatSale = Boolean(agreement?.Agreement?.WithVATAccounting)
   const selectedCount = selectedKeys.size

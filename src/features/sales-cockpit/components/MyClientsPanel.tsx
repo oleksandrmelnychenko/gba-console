@@ -302,7 +302,7 @@ function ClientRecommendationsInline({ client }: { client: CockpitClient }) {
   const { clearCreatedOffer, createdOffer, createOfferFromSelection, isCreatingOffer } =
     useOfferFromRecommendations()
 
-  const canCreateSale = hasPermission(PermissionKeys.SalesUkraine.Sale.OpenCreateDialog)
+  const canCreateSale = hasPermission(PermissionKeys.SalesUkraine.Sale.Create)
   const canCreateOffer = can(PermissionKeys.SalesUkraineOffers.Offer.Create)
   const canExcludeProduct = can(PermissionKeys.Clients.Recommendations.ExcludeProduct)
   const clientNetId = client.client_net_uid

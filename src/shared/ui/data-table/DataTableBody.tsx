@@ -90,7 +90,7 @@ function DataTableBodyRowInner<TData>({
   return (
     <Fragment>
       <Table.Tr
-        className={`data-table-row ${rowClassName?.(row.original) ?? ''}`}
+        className={`data-table-row ${onRowClick ? 'data-table-row-clickable' : ''} ${rowClassName?.(row.original) ?? ''}`}
         onClick={onRowClick
           ? (event) => {
               if (!hasTextSelectionWithin(event.currentTarget)) {

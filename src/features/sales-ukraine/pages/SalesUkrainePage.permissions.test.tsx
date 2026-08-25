@@ -125,10 +125,10 @@ describe('SalesUkrainePage event permissions', () => {
     expect(mocks.getSalesUkraineSaleDetails).not.toHaveBeenCalled()
   })
 
-  it('opens the create dialog without granting the independent final create submit', async () => {
+  it('uses the create permission for both the entry point and final submit', async () => {
     grant(
       PermissionKeys.SalesUkraine.Sale.View,
-      PermissionKeys.SalesUkraine.Sale.OpenCreateDialog,
+      PermissionKeys.SalesUkraine.Sale.Create,
     )
     renderPage()
 
@@ -139,13 +139,13 @@ describe('SalesUkrainePage event permissions', () => {
     const dialog = await screen.findByRole('dialog', { name: 'Майстер продажу' })
     const finalSubmit = dialog.querySelector<HTMLButtonElement>('button')
 
-    expect(finalSubmit?.disabled).toBe(true)
+    expect(finalSubmit?.disabled).toBe(false)
   })
 
-  it('does not open the create dialog when only final create submit permission is granted', async () => {
+  it('does not treat the retired modal-opener key as permission to create', async () => {
     grant(
       PermissionKeys.SalesUkraine.Sale.View,
-      PermissionKeys.SalesUkraine.Sale.Create,
+      PermissionKeys.SalesUkraine.Sale.OpenCreateDialog,
     )
     renderPage()
 
@@ -186,7 +186,7 @@ describe('SalesUkrainePage event permissions', () => {
     await waitFor(() => expect(mocks.getSalesUkraineSaleDetails).toHaveBeenCalledWith('deep-linked-sale'))
   })
 
-  it('keeps the context-menu opener independent from all menu-item permissions', async () => {
+  it('does not render an empty context-menu opener', async () => {
     grant(
       PermissionKeys.SalesUkraine.Sale.View,
       PermissionKeys.SalesUkraine.Sale.OpenContextMenu,
@@ -194,13 +194,8 @@ describe('SalesUkrainePage event permissions', () => {
     mocks.getSalesUkraine.mockResolvedValue([actionableSale()])
     renderPage()
 
-    fireEvent.click(await screen.findByRole('button', { name: 'Дії' }))
-
-    expect(await screen.findByRole('menuitem', { name: 'Дії недоступні' })).toBeTruthy()
-    expect(screen.queryByRole('menuitem', { name: 'Дані доставки' })).toBeNull()
-    expect(screen.queryByRole('menuitem', { name: 'Розблокувати' })).toBeNull()
-    expect(screen.queryByRole('menuitem', { name: 'Друк ТТН' })).toBeNull()
-    expect(screen.queryByRole('menuitem', { name: 'Історія редагувань' })).toBeNull()
+    await screen.findByText('Клієнт без granular прав')
+    expect(screen.queryByRole('button', { name: 'Дії' })).toBeNull()
   })
 
   it.each([
@@ -211,7 +206,6 @@ describe('SalesUkrainePage event permissions', () => {
   ] as const)('shows only the independently granted %s context action', async (permission, label) => {
     grant(
       PermissionKeys.SalesUkraine.Sale.View,
-      PermissionKeys.SalesUkraine.Sale.OpenContextMenu,
       permission,
     )
     mocks.getSalesUkraine.mockResolvedValue([actionableSale()])
@@ -230,7 +224,6 @@ describe('SalesUkrainePage event permissions', () => {
   it('opens delivery through its own backend boundary and keeps edit independently denied', async () => {
     grant(
       PermissionKeys.SalesUkraine.Sale.View,
-      PermissionKeys.SalesUkraine.Sale.OpenContextMenu,
       PermissionKeys.SalesUkraine.Sale.OpenDeliveryDetails,
     )
     mocks.getSalesUkraine.mockResolvedValue([actionableSale()])
@@ -247,7 +240,6 @@ describe('SalesUkrainePage event permissions', () => {
   it('does not show shipping unlock for an eligible sale without its own key', async () => {
     grant(
       PermissionKeys.SalesUkraine.Sale.View,
-      PermissionKeys.SalesUkraine.Sale.OpenContextMenu,
     )
     mocks.getSalesUkraine.mockResolvedValue([actionableSale({
       BaseLifeCycleStatus: { Name: 'New', SaleLifeCycleType: 0 },
@@ -257,16 +249,13 @@ describe('SalesUkrainePage event permissions', () => {
     })])
     renderPage()
 
-    fireEvent.click(await screen.findByRole('button', { name: 'Дії' }))
-
-    expect(await screen.findByRole('menuitem', { name: 'Дії недоступні' })).toBeTruthy()
-    expect(screen.queryByRole('menuitem', { name: 'Розблокувати для відвантаження' })).toBeNull()
+    await screen.findByText('Клієнт без granular прав')
+    expect(screen.queryByRole('button', { name: 'Дії' })).toBeNull()
   })
 
   it('shows shipping unlock only with its own key and eligible sale state', async () => {
     grant(
       PermissionKeys.SalesUkraine.Sale.View,
-      PermissionKeys.SalesUkraine.Sale.OpenContextMenu,
       PermissionKeys.SalesUkraine.Sale.UnlockForShipping,
     )
     mocks.getSalesUkraine.mockResolvedValue([actionableSale({
@@ -285,7 +274,6 @@ describe('SalesUkrainePage event permissions', () => {
   it('uses export_before_packing instead of role type for VAT documents and TTN', async () => {
     grant(
       PermissionKeys.SalesUkraine.Sale.View,
-      PermissionKeys.SalesUkraine.Sale.OpenContextMenu,
       PermissionKeys.SalesUkraine.Sale.ExportInvoice,
       PermissionKeys.SalesUkraine.Sale.PrintConsignmentNote,
     )
@@ -297,8 +285,7 @@ describe('SalesUkrainePage event permissions', () => {
 
     await screen.findByText('Клієнт без granular прав')
     expect(screen.queryByRole('button', { name: 'Документи' })).toBeNull()
-    fireEvent.click(screen.getByRole('button', { name: 'Дії' }))
-    expect(await screen.findByRole('menuitem', { name: 'Дії недоступні' })).toBeTruthy()
+    expect(screen.queryByRole('button', { name: 'Дії' })).toBeNull()
 
     firstView.unmount()
     mocks.granted.add(PermissionKeys.SalesUkraine.Sale.ExportBeforePacking)
