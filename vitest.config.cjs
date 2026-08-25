@@ -11,10 +11,8 @@ module.exports = defineConfig({
     exclude: [...configDefaults.exclude, '**/e2e/**'],
     globals: true,
     environment: 'jsdom',
-    exclude: [...configDefaults.exclude, 'e2e/**'],
     setupFiles: ['./src/test/setup.ts'],
     include: ['src/**/*.{test,spec}.{ts,tsx}', 'tests/**/*.{test,spec}.{ts,tsx}'],
     css: false,
-    exclude: [...configDefaults.exclude, 'e2e/**'],
   },
 })
