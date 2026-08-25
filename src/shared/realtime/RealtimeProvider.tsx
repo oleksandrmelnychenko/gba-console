@@ -10,7 +10,7 @@ import {
 import { useEffect, type PropsWithChildren } from 'react'
 import { useAuth } from '../../features/auth/useAuth'
 import { apiRequest } from '../api/apiClient'
-import { UserRoleType, type AuthUser } from '../auth/types'
+import { PermissionKeys } from '../auth/permissionKeys'
 import { useI18n } from '../i18n/useI18n'
 import {
   realtimeBus,
@@ -53,9 +53,12 @@ const amountFormatter = new Intl.NumberFormat('uk-UA', {
 })
 
 export function RealtimeProvider({ children }: PropsWithChildren) {
-  const { isAuthenticated, isLoading, session, user } = useAuth()
+  const { hasPermission, isAuthenticated, isLoading, session, user } = useAuth()
   const { t } = useI18n()
   const userKey = user?.NetUid || user?.Id?.toString() || session?.userNetUid
+  const canViewDataSyncErrors = hasPermission(
+    PermissionKeys.OnlineShopSeo.Synchronization.Run,
+  )
 
   useEffect(() => {
     if (!isAuthenticated || isLoading) {
@@ -69,7 +72,7 @@ export function RealtimeProvider({ children }: PropsWithChildren) {
       createExchangeRatesConnection(),
       createResaleConnection(),
       createSalesCockpitConnection(),
-      createDataSyncConnection(t, user),
+      createDataSyncConnection(t, canViewDataSyncErrors),
     ]
     const stopManagedConnections = manageConnections(connections, () => disposed)
 
@@ -79,7 +82,7 @@ export function RealtimeProvider({ children }: PropsWithChildren) {
       disposed = true
       stopManagedConnections()
     }
-  }, [isAuthenticated, isLoading, t, user, userKey])
+  }, [canViewDataSyncErrors, isAuthenticated, isLoading, t, userKey])
 
   return children
 }
@@ -218,14 +221,17 @@ function createSalesCockpitConnection(): HubConnection {
   return connection
 }
 
-function createDataSyncConnection(t: (key: string) => string, user: AuthUser | null): HubConnection {
+function createDataSyncConnection(
+  t: (key: string) => string,
+  canViewDataSyncErrors: boolean,
+): HubConnection {
   const connection = createConnection(hubPaths.dataSync)
 
   connection.on('ProcessNotificationMessage', (payload: unknown) => {
     const notification = parseRealtimePayload<DataSyncNotification>(payload)
     applyDataSyncNotification(notification)
     realtimeBus.emit(realtimeEvents.dataSyncNotification, notification)
-    showDataSyncNotification(notification, user, t)
+    showDataSyncNotification(notification, canViewDataSyncErrors, t)
   })
   connection.onreconnected(() => {
     void reconcileDataSyncProgressWithServer()
@@ -384,10 +390,10 @@ function showPaymentTaskNotification(notification: SupplyPaymentTaskNotification
 
 function showDataSyncNotification(
   notification: DataSyncNotification,
-  user: AuthUser | null,
+  canViewDataSyncErrors: boolean,
   t: (key: string) => string,
 ): void {
-  if (!shouldShowDataSyncErrorNotification(notification, user)) {
+  if (!notification.IsError || !canViewDataSyncErrors) {
     return
   }
 
@@ -399,20 +405,6 @@ function showDataSyncNotification(
     message: description || title,
     title,
   })
-}
-
-function shouldShowDataSyncErrorNotification(notification: DataSyncNotification, user: AuthUser | null): boolean {
-  if (!notification.IsError) {
-    return false
-  }
-
-  const roleType = user?.UserRole?.UserRoleType
-  const roleName = user?.UserRole?.Name
-
-  return roleType === UserRoleType.Administrator
-    || roleType === UserRoleType.GBA
-    || roleName === 'Administrator'
-    || roleName === 'GBA'
 }
 
 function splitDataSyncMessage(message: string | undefined, t: (key: string) => string) {

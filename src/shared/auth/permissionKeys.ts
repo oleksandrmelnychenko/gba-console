@@ -109,6 +109,29 @@ export const PermissionKeys = {
       View: 'sales.online_shop_sales.page.view',
     },
   },
+  Operational: {
+    SchedulerTasks: {
+      MergeAllSales: 'administration.scheduler_tasks.sales.merge_all',
+      ClearInvalidShoppingCarts:
+        'administration.scheduler_tasks.shopping_carts.clear_invalid',
+      GenerateExpiredBillNotifications:
+        'administration.scheduler_tasks.expired_bill_notifications.generate',
+      DeferExpiredBillNotifications:
+        'administration.scheduler_tasks.expired_bill_notifications.defer',
+      UpdateProductPrices:
+        'administration.scheduler_tasks.product_prices.update',
+      UpdateProductAvailabilityPl:
+        'administration.scheduler_tasks.product_availability_pl.update',
+      UpdateProductAvailabilityUa:
+        'administration.scheduler_tasks.product_availability_ua.update',
+    },
+    ShopOrders: {
+      ReadAll: 'sales.online_shop_sales.order.read_all',
+    },
+    GbaData: {
+      Read: 'integration.gba_data.dataset.read',
+    },
+  },
   SupplyCart: {
     Document: {
       Assemble: 'orders.supply_cart.document.assemble',
@@ -1216,6 +1239,11 @@ export type SystemPagePermissionKey =
   | Values<typeof PermissionKeys.SystemPages.TaxFreePackLists>
   | Values<typeof PermissionKeys.SystemPages.SalesOnlineShop>
 
+export type OperationalPermissionKey =
+  | Values<typeof PermissionKeys.Operational.SchedulerTasks>
+  | Values<typeof PermissionKeys.Operational.ShopOrders>
+  | Values<typeof PermissionKeys.Operational.GbaData>
+
 export type SupplyCartPermissionKey =
   | Values<typeof PermissionKeys.SupplyCart.Document>
   | Values<typeof PermissionKeys.SupplyCart.File>
@@ -1524,6 +1552,7 @@ export type FinancialAdministrationPermissionKey =
 
 export type PermissionKey =
   | SystemPagePermissionKey
+  | OperationalPermissionKey
   | SupplyCartPermissionKey
   | PurchaseCockpitPermissionKey
   | SalesCockpitPermissionKey
@@ -1576,6 +1605,9 @@ export type PermissionKey =
   | WarehousesPermissionKey
 
 const eventPermissionKeyList = [
+  ...Object.values(PermissionKeys.Operational.SchedulerTasks),
+  ...Object.values(PermissionKeys.Operational.ShopOrders),
+  ...Object.values(PermissionKeys.Operational.GbaData),
   ...Object.values(PermissionKeys.ActReconciliations.Page),
   ...Object.values(PermissionKeys.ActReconciliations.Act),
   ...Object.values(PermissionKeys.ActReconciliations.History),
