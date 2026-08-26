@@ -664,3 +664,42 @@ Frontend (`D:\\work\\gba_console`, `codex/event-permissions`):
 - [x] Live UI після точкового оновлення чотирьох DLL без нового Docker image:
   `/users/roles` показує `495/495`; GBA має `494/495`, обидва v6 keys checked,
   Save disabled без змін. API writable layer лишився `51.7 MB`.
+
+### 9.5. Global verification rerun (2026-08-25)
+
+- [x] Повторний repository entrypoint у вже наявному локальному .NET 10
+  image, без завантаження нового Docker image: permission API/security
+  `158/158`, focused actor authorization `97/97`; legacy reconciler, runtime
+  smoke і database migrator зібралися з `0` warnings / `0` errors.
+- [x] Повний backend API regression: `942/942` PASS, `8` unrelated opt-in
+  SQL tests skipped. Domain regression: `20/20` PASS.
+- [x] Required event-permission SQL suite на disposable
+  `ConcordDb_EventPermissionsCurrent`: `6/6` PASS. Контрольний migrator run:
+  pending migrations `0`, `495` active / `499` versioned definitions,
+  duplicate/unmapped/legacy/dashboard changes `0`, v1-v6 already applied,
+  revision bumps `0`.
+- [x] Frontend permission verification: candidate snapshot current, reviewed
+  matrix `1902/1902`, `0` review candidates, parity `499/499`, catalog version
+  `2026.08.25.67`; lint і production build PASS.
+- [x] Діагностичний повний frontend regression з test timeout `20s`:
+  `467/467` files, `2603/2603` tests PASS. Це підтвердило відсутність
+  функціонального падіння в єдиному повільному source-scan тесті.
+- [ ] Штатний `npm test` поки червоний: тільки
+  `tests/tableRowActionPattern.test.ts` стабільно завершує source scan за
+  `6.4-6.5s`, але test case має hard limit `5s`. Ізольований повтор відтворює
+  той самий timeout; потрібне окреме виправлення test budget/реалізації scan.
+- [x] Live read-only browser smoke на свіжих вкладках: `/users/roles`
+  завантажує `495/495` без console errors; GBA має `494/495`; перемикання ролей
+  і exact-key search працюють; відомий legacy key та всі 4 retired technical
+  keys дають `0/495`; modal редагування ролі містить лише поле
+  `Найменування`; `/sales/ukraine/all` показує дані сторінки, а
+  `Новий продаж` disabled без `sales.ukraine.sale.create`.
+- [ ] Mutating browser E2E `grant -> save -> refresh -> allow -> revoke ->
+  save -> refresh -> deny` підготовлений, але не виконувався без окремого
+  action-time підтвердження зміни role access у disposable БД.
+- [ ] Повний unfiltered actor repository regression поза permission scope:
+  `3170` PASS, `127` FAIL, `258` opt-in skipped. Permission-focused actor gate
+  лишається `97/97` PASS; representative зовнішні failures належать до
+  DataSync/Supply/PaymentOrders source-contract scans і переважно відтворюють
+  CRLF-vs-LF marker mismatch у Linux test container. Це не permission
+  regression, але загальний repository gate формально не зелений.
