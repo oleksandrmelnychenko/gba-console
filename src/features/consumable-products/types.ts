@@ -37,6 +37,7 @@ export type ConsumableProductCategoryDraft = {
 }
 
 export type ConsumableProductDraft = {
+  category: ConsumableProductCategory | null
   measureUnit: MeasureUnit | null
   name: string
   vendorCode: string

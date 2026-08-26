@@ -39,6 +39,7 @@ import type {
   ConsumableProductDraft,
   MeasureUnit,
 } from '../types'
+import { addProductToCategory } from './consumableProductCollections'
 import '../../../shared/ui/console-table-page.css'
 import './consumable-products-page.css'
 
@@ -199,27 +200,45 @@ export function ConsumableProductsPage() {
       return
     }
 
+    if (editor.mode === 'create' && !draft.category) {
+      setError(t('Оберіть категорію товару'))
+      return
+    }
+
+    if (editor.mode === 'edit' && !draft.measureUnit) {
+      setError(t('Оберіть одиницю виміру'))
+      return
+    }
+
     setSaving(true)
     setError(null)
 
     try {
-      const category = editor.category
+      const category = editor.mode === 'create' ? draft.category || editor.category : editor.category
+      let shouldReloadCategories = editor.mode === 'edit'
 
       if (editor.mode === 'edit') {
         await updateConsumableProduct({
           ...editor.product,
-          MeasureUnit: draft.measureUnit || editor.product.MeasureUnit || null,
+          MeasureUnit: draft.measureUnit,
           Name: draft.name.trim(),
           VendorCode: draft.vendorCode.trim(),
         })
       } else {
-        await createConsumableProduct({
+        const savedProduct = await createConsumableProduct({
           ConsumableProductCategory: category,
           ConsumableProductCategoryId: category.Id,
           MeasureUnit: draft.measureUnit,
           Name: draft.name.trim(),
           VendorCode: draft.vendorCode.trim(),
         })
+
+        if (savedProduct) {
+          requestRef.current += 1
+          setCategories((currentCategories) => addProductToCategory(currentCategories, category, savedProduct))
+        } else {
+          shouldReloadCategories = true
+        }
       }
 
       notifications.show({
@@ -227,7 +246,10 @@ export function ConsumableProductsPage() {
         message: editor.mode === 'edit' ? t('Товар оновлено') : t('Товар створено'),
       })
       setProductEditor(null)
-      await reloadCategories()
+
+      if (shouldReloadCategories) {
+        await reloadCategories()
+      }
     } catch (saveError) {
       setError(saveError instanceof Error ? saveError.message : t('Не вдалося зберегти товар'))
     } finally {
@@ -412,6 +434,7 @@ export function ConsumableProductsPage() {
       />
 
       <ProductEditorModal
+        categories={categories}
         editor={productEditor}
         error={error}
         isSubmitting={isSaving}
@@ -721,12 +744,14 @@ function CategoryEditorForm({
 }
 
 function ProductEditorModal({
+  categories,
   editor,
   error,
   isSubmitting,
   onClose,
   onSubmit,
 }: {
+  categories: ConsumableProductCategory[]
   editor: ProductEditor | null
   error?: string | null
   isSubmitting: boolean
@@ -750,6 +775,7 @@ function ProductEditorModal({
       {editor && (
         <ProductEditorForm
           key={getProductEditorKey(editor)}
+          categories={categories}
           editor={editor}
           isSubmitting={isSubmitting}
           onClose={onClose}
@@ -761,11 +787,13 @@ function ProductEditorModal({
 }
 
 export function ProductEditorForm({
+  categories,
   editor,
   isSubmitting,
   onClose,
   onSubmit,
 }: {
+  categories: ConsumableProductCategory[]
   editor: ProductEditor
   isSubmitting: boolean
   onClose: () => void
@@ -775,6 +803,8 @@ export function ProductEditorForm({
   const product = editor.product
   const [name, setName] = useValueState(product?.Name || '')
   const [vendorCode, setVendorCode] = useValueState(product?.VendorCode || '')
+  const [categorySearch, setCategorySearch] = useValueState(editor.category.Name || '')
+  const [selectedCategory, setSelectedCategory] = useValueState<ConsumableProductCategory | null>(editor.category)
   const [measureUnitSearch, setMeasureUnitSearch] = useValueState(product?.MeasureUnit?.Name || '')
   const [measureUnits, setMeasureUnits] = useValueState<MeasureUnit[]>(product?.MeasureUnit ? [product.MeasureUnit] : [])
   const [selectedMeasureUnit, setSelectedMeasureUnit] = useValueState<MeasureUnit | null>(product?.MeasureUnit || null)
@@ -815,11 +845,34 @@ export function ProductEditorForm({
     [measureUnits],
   )
 
+  const categoryOptions = useMemo(
+    () =>
+      categories.map((category) => ({
+        label: displayValue(category.Name),
+        value: getCategoryKey(category),
+      })),
+    [categories],
+  )
+
+  const isMeasureUnitSelected = Boolean(
+    selectedMeasureUnit && getMeasureUnitLabel(selectedMeasureUnit) === measureUnitSearch.trim(),
+  )
+  const isSubmitDisabled = isSubmitting
+    || (editor.mode === 'create' && !selectedCategory)
+    || (editor.mode === 'edit' && !isMeasureUnitSelected)
+
   function submit() {
-    const measureUnit = resolveMeasureUnit(measureUnits, measureUnitSearch, selectedMeasureUnit)
+    if (editor.mode === 'create' && !selectedCategory) {
+      return
+    }
+
+    if (editor.mode === 'edit' && !isMeasureUnitSelected) {
+      return
+    }
 
     onSubmit(editor, {
-      measureUnit,
+      category: selectedCategory,
+      measureUnit: isMeasureUnitSelected ? selectedMeasureUnit : null,
       name,
       vendorCode,
     })
@@ -829,7 +882,29 @@ export function ProductEditorForm({
     <Stack gap="md">
       <TextInput label={t('Назва')} value={name} onChange={(event) => setName(event.currentTarget.value)} />
       <TextInput label={t('Артикул')} value={vendorCode} onChange={(event) => setVendorCode(event.currentTarget.value)} />
+      {editor.mode === 'create' && (
+        <SearchableSelect
+          required
+          data={categoryOptions}
+          label={t('Категорія')}
+          value={categorySearch}
+          onChange={(value) => {
+            if (value === categorySearch) {
+              return
+            }
+
+            setCategorySearch(value)
+            setSelectedCategory(null)
+          }}
+          onOptionSubmit={(value) => {
+            const category = categories.find((item) => getCategoryKey(item) === value) || null
+            setCategorySearch(category ? displayValue(category.Name) : value)
+            setSelectedCategory(category)
+          }}
+        />
+      )}
       <SearchableSelect
+        required={editor.mode === 'edit'}
         data={measureUnitOptions}
         label={t('Одиниця виміру')}
         value={measureUnitSearch}
@@ -860,7 +935,13 @@ export function ProductEditorForm({
         <Button color="gray" leftSection={<X size={16} />} variant="subtle" onClick={onClose}>
           {t('Скасувати')}
         </Button>
-        <Button color={CREATE_ACTION_COLOR} leftSection={<Plus size={16} />} loading={isSubmitting} onClick={submit}>
+        <Button
+          color={CREATE_ACTION_COLOR}
+          disabled={isSubmitDisabled}
+          leftSection={<Plus size={16} />}
+          loading={isSubmitting}
+          onClick={submit}
+        >
           {t('Зберегти')}
         </Button>
       </Group>
@@ -980,24 +1061,6 @@ function categoriesMatch(category: ConsumableProductCategory, serviceCategory: C
   }
 
   return Boolean(category.Name && serviceCategory.Name && category.Name === serviceCategory.Name)
-}
-
-function resolveMeasureUnit(
-  measureUnits: MeasureUnit[],
-  value: string,
-  selectedMeasureUnit: MeasureUnit | null,
-): MeasureUnit | null {
-  if (selectedMeasureUnit && getMeasureUnitLabel(selectedMeasureUnit) === value) {
-    return selectedMeasureUnit
-  }
-
-  const exactMatches = measureUnits.filter((measureUnit) => getMeasureUnitLabel(measureUnit) === value)
-
-  if (exactMatches.length === 1) {
-    return exactMatches[0]
-  }
-
-  return resolveSingleFilteredMeasureUnit(measureUnits, value)
 }
 
 function resolveSingleFilteredMeasureUnit(measureUnits: MeasureUnit[], value: string): MeasureUnit | null {
