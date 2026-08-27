@@ -907,7 +907,7 @@ export function ProductDeliveryProtocolSpecificationPage() {
       opened
       keepMounted={false}
       position="right"
-      size="min(1500px, 97vw)"
+      size="full"
       title={
         <span className="app-sheet-title-mono">
           {t('Митні коди згідно протоколу')}
