@@ -364,7 +364,7 @@ export function ProductDetailPage() {
             </ActionIcon>
           </Tooltip>
           <Box>
-            <Text fw={600} size="sm">
+            <Text c={product && !product.VendorCode?.trim() ? 'dimmed' : undefined} fw={600} size="sm">
               {product ? getProductCode(product) : t('Товар')}
             </Text>
             <Text c="dimmed" size="sm">
@@ -456,7 +456,7 @@ export function ProductDetailPage() {
             <Card className="app-section-card" withBorder radius="md" padding="md">
               <Stack gap="xs">
                 <Title order={4}>{t('Основне')}</Title>
-                <InfoRow label="Код" value={getProductCode(product)} />
+                <InfoRow label="Код" value={getProductCode(product)} dimmed={!product.VendorCode?.trim()} />
                 <InfoRow label="Назва" value={getProductTitle(product)} />
                 <InfoRow label="Групи" value={getProductGroupNames(product)} />
                 <InfoRow label="Оригінальний номер" value={getProductMainOriginalNumber(product)} />
@@ -2406,7 +2406,7 @@ function LoadingState({ label }: { label: string }) {
   )
 }
 
-function InfoRow({ label, multiline, value }: { label: string; multiline?: boolean; value?: number | string | null }) {
+function InfoRow({ dimmed, label, multiline, value }: { dimmed?: boolean; label: string; multiline?: boolean; value?: number | string | null }) {
   const { t } = useI18n()
 
   return (
@@ -2415,6 +2415,7 @@ function InfoRow({ label, multiline, value }: { label: string; multiline?: boole
         {t(label)}
       </Text>
       <Text
+        c={dimmed ? 'dimmed' : undefined}
         size="sm"
         style={{
           flex: '1 1 220px',

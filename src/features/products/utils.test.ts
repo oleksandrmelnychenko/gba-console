@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   formatExchangeRate,
   formatPrice,
+  getProductCode,
   getProductGroupNames,
   getProductMainImage,
   getProductMainOriginalNumber,
@@ -13,6 +14,19 @@ import {
 import type { Product } from './types'
 
 describe('product utils', () => {
+  it('shows the trimmed vendor code when it is present', () => {
+    expect(getProductCode({ VendorCode: '  TEST-42  ', NetUid: 'internal-id' })).toBe('TEST-42')
+  })
+
+  it.each([undefined, '', '   '])('does not substitute the internal ID for a missing vendor code (%j)', (VendorCode) => {
+    expect(getProductCode({ VendorCode, NetUid: '608b1fef-f84f-498e-8ff9-2f5d6a621814' })).toBe('Код відсутній')
+  })
+
+  it('handles missing products without exposing an ID', () => {
+    expect(getProductCode()).toBe('Код відсутній')
+    expect(getProductCode(null)).toBe('Код відсутній')
+  })
+
   it('keeps monetary totals at cents', () => {
     expect(formatPrice(299.399716365536)).toBe('299,40')
   })

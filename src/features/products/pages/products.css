@@ -1216,6 +1216,16 @@
   white-space: nowrap;
 }
 
+.product-assortment-selected:disabled {
+  cursor: default;
+}
+
+.product-assortment-selected .product-assortment-selected-code[data-code-missing],
+.product-carousel-row .product-carousel-row-code[data-code-missing],
+.product-inline-code[data-code-missing] {
+  color: var(--mantine-color-dimmed);
+}
+
 @media (max-width: 980px) {
   .product-assortment-column {
     z-index: auto;
