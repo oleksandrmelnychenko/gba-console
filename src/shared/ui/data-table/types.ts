@@ -86,6 +86,8 @@ export type DataTableProps<TData> = {
   loadingText?: ReactNode
   labels?: DataTableLabels
   showLayoutControls?: boolean
+  /** Hides the toolbar without disabling layout controls in column headers. Defaults to true. */
+  showToolbar?: boolean
   /** Allows table columns to be pinned left/right. Defaults to true. */
   enablePinning?: boolean
   /** Shows a built-in compact/normal density toggle in the toolbar. Defaults to true. */

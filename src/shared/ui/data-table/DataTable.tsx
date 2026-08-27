@@ -87,6 +87,7 @@ export function DataTable<TData>({
   emptyText,
   labels: labelsOverride,
   showLayoutControls = true,
+  showToolbar = true,
   enablePinning = true,
   showDensityToggle = true,
   density: controlledDensity,
@@ -539,7 +540,7 @@ export function DataTable<TData>({
   }
 
   const toolbarNode =
-    showLayoutControls || toolbarLeft || toolbarRight ? (
+    showToolbar && (showLayoutControls || toolbarLeft || toolbarRight) ? (
       <DataTableToolbar
         columnTitles={columnTitles}
         density={effectiveDensity}
