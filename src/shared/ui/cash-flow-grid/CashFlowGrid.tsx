@@ -51,13 +51,13 @@ export function CashFlowGrid<TItem extends CashFlowGridItem>({
           <div className="cfg-sub">
             <span className="cfg-sub-note">({labels.income})</span> {labels.debit}
           </div>
-          <div className="cfg-cell-value">{money(summary?.beforeInAmount)}</div>
+          <div className="cfg-cell-value app-money">{money(summary?.beforeInAmount)}</div>
         </div>
         <div className="cfg-cell cfg-align-right" style={valueColumnStyle}>
           <div className="cfg-sub">
             <span className="cfg-sub-note">({labels.outcome})</span> {labels.credit}
           </div>
-          <div className="cfg-cell-value">{money(summary?.beforeOutAmount)}</div>
+          <div className="cfg-cell-value app-money">{money(summary?.beforeOutAmount)}</div>
         </div>
         <div className="cfg-cell cfg-align-right" style={valueColumnStyle}>
           <div className="cfg-sub">{labels.balance}</div>
@@ -121,12 +121,12 @@ export function CashFlowGrid<TItem extends CashFlowGridItem>({
                   </div>
                 ))}
                 <div className="cfg-cell cfg-align-right" style={valueColumnStyle}>
-                  <span className="cfg-cell-value">
+                  <span className="cfg-cell-value app-money">
                     {isCredit ? '' : renderMoneyValue(item.CurrentValue, item.CurrentValueLocal, money)}
                   </span>
                 </div>
                 <div className="cfg-cell cfg-align-right" style={valueColumnStyle}>
-                  <span className="cfg-cell-value">
+                  <span className="cfg-cell-value app-money">
                     {isCredit ? renderMoneyValue(item.CurrentValue, item.CurrentValueLocal, money) : ''}
                   </span>
                 </div>
@@ -146,10 +146,10 @@ export function CashFlowGrid<TItem extends CashFlowGridItem>({
           </div>
         ))}
         <div className="cfg-cell cfg-align-right" style={valueColumnStyle}>
-          <span className="cfg-cell-value">{money(summary?.afterInAmount)}</span>
+          <span className="cfg-cell-value app-money">{money(summary?.afterInAmount)}</span>
         </div>
         <div className="cfg-cell cfg-align-right" style={valueColumnStyle}>
-          <span className="cfg-cell-value">{money(summary?.afterOutAmount)}</span>
+          <span className="cfg-cell-value app-money">{money(summary?.afterOutAmount)}</span>
         </div>
         <div className="cfg-cell cfg-align-right" style={valueColumnStyle}>
           <span className={valueClassName(summary?.closingBalance)}>{money(summary?.closingBalance)}</span>
@@ -211,10 +211,10 @@ function dataRowClassName(isCredit: boolean, isActive: boolean): string {
 
 function valueClassName(value?: number): string {
   if (value === undefined || value === null) {
-    return 'cfg-cell-value'
+    return 'cfg-cell-value app-money'
   }
 
-  return `cfg-cell-value ${value >= 0 ? 'cfg-positive' : 'cfg-negative'}`
+  return `cfg-cell-value app-money ${value >= 0 ? 'cfg-positive' : 'cfg-negative'}`
 }
 
 function defaultMoney(value?: number): ReactNode {
@@ -237,7 +237,7 @@ function renderMoneyValue(
   return (
     <span className="cfg-money-stack">
       <span>{money(value)}</span>
-      <span className="cfg-cell-subvalue">UAH {money(localValue)}</span>
+      <span className="cfg-cell-subvalue app-money-meta">UAH {money(localValue)}</span>
     </span>
   )
 }

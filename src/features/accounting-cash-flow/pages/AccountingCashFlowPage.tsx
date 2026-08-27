@@ -63,6 +63,7 @@ type FilterDraft = {
 
 type DetailField = {
   label: string
+  mono?: boolean
   value: ReactNode
 }
 
@@ -1217,7 +1218,7 @@ function AccountingCashFlowDetailDrawer({
         <Stack gap="md">
           <div className="app-detail-grid">
             {detailFields.map((field) => (
-              <DetailValue key={field.label} label={field.label} value={field.value} />
+              <DetailValue key={field.label} label={field.label} mono={field.mono} value={field.value} />
             ))}
           </div>
 
@@ -1238,12 +1239,12 @@ function buildHeadItemFields(item: AccountingCashFlowHeadItem, t: (key: string) 
     { label: 'Організація', value: displayValue(item.OrganizationName) },
     { label: 'Тип', value: getCashFlowTypeLabel(item.Type) },
     { label: 'Операція', value: item.IsCreditValue ? 'Кредит' : 'Дебет' },
-    { label: 'Сума', value: formatMoney(item.CurrentValue) },
-    { label: 'Поточний баланс', value: formatMoney(item.CurrentBalance) },
+    { label: 'Сума', mono: true, value: formatMoney(item.CurrentValue) },
+    { label: 'Поточний баланс', mono: true, value: formatMoney(item.CurrentBalance) },
   ]
 
   if (localAmount !== undefined) {
-    fields.splice(8, 0, { label: 'Сума, грн', value: `UAH ${formatMoney(localAmount)}` })
+    fields.splice(8, 0, { label: 'Сума, грн', mono: true, value: `UAH ${formatMoney(localAmount)}` })
   }
 
   if (paymentStatus) {
@@ -1280,9 +1281,9 @@ function getVisibleLocalAmount(item: AccountingCashFlowHeadItem): number | undef
     : undefined
 }
 
-function DetailValue({ label, value }: { label: string; value: ReactNode }) {
+function DetailValue({ label, mono, value }: DetailField) {
   return (
-    <div className="app-detail-field">
+    <div className={`app-detail-field${mono ? ' is-mono' : ''}`}>
       <span>{label}</span>
       <strong>{value || '-'}</strong>
     </div>
@@ -1315,7 +1316,7 @@ function SaleReturnDetailContent({
     { label: t('Договір'), value: agreementName || '—' },
     { label: t('Тип документа'), value: getCashFlowTypeLabel(item.Type) },
     { label: t('Операція'), value: item.IsCreditValue ? t('Кредит') : t('Дебет') },
-    { label: t('Поточний баланс'), value: formatMoney(item.CurrentBalance) },
+    { label: t('Поточний баланс'), mono: true, value: formatMoney(item.CurrentBalance) },
   ]
 
   return (
@@ -1344,7 +1345,7 @@ function SaleReturnDetailContent({
         </Text>
         <div className="accounting-cash-flow-return__requisites">
           {requisites.map((field) => (
-            <DetailValue key={field.label} label={field.label} value={field.value} />
+            <DetailValue key={field.label} label={field.label} mono={field.mono} value={field.value} />
           ))}
         </div>
       </section>

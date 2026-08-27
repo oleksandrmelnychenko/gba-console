@@ -36,7 +36,7 @@ export function SupplierUnpaidConsumableOrdersPicker({
         <Text fw={600}>{t('Неоплачені накладні постачальника')}</Text>
         <Badge color={selectedCount ? 'blue' : 'gray'} variant="light">
           {selectedCount}/{orders.length}
-          {selectedAmount > 0 ? ` · ${moneyFormatter.format(selectedAmount)}` : ''}
+          {selectedAmount > 0 && <> · <span className="app-money">{moneyFormatter.format(selectedAmount)}</span></>}
         </Badge>
       </Group>
       {isLoading ? (

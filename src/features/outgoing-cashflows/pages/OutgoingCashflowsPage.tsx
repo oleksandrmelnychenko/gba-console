@@ -1069,13 +1069,13 @@ function OutgoingCashflowDetailDrawer({ row, onClose }: { row: OutgoingCashflowR
             </OutgoingDetailSection>
 
             <OutgoingDetailSection subtitle={displayValue(row.currency)} title={t('Суми та валюта')}>
-              <OutgoingDetailRow label={t('Сума')} value={formatMoneyWithCurrency(row.amount, row.currency)} />
+              <OutgoingDetailRow mono label={t('Сума')} value={formatMoneyWithCurrency(row.amount, row.currency)} />
               <OutgoingDetailRow label={t('Валюта')} value={displayValue(row.currency)} />
               <OutgoingDetailRow label={t('Курс')} value={displayValue(row.order.ExchangeRate)} />
-              <OutgoingDetailRow label={t('Сума в EUR')} value={formatMoneyOptional(row.order.EuroAmount ?? row.order.AfterExchangeAmount)} />
+              <OutgoingDetailRow mono label={t('Сума в EUR')} value={formatMoneyOptional(row.order.EuroAmount ?? row.order.AfterExchangeAmount)} />
               <OutgoingDetailRow label={t('ПДВ %')} value={hasNumber(row.order.VatPercent) ? displayValue(row.order.VatPercent) : displayValue(undefined)} />
-              <OutgoingDetailRow label={t('ПДВ')} value={formatMoneyOptional(row.order.VAT)} />
-              <OutgoingDetailRow label={t('Різниця')} tone={row.differenceAmount ? 'danger' : undefined} value={formatMoney(row.differenceAmount)} />
+              <OutgoingDetailRow mono label={t('ПДВ')} value={formatMoneyOptional(row.order.VAT)} />
+              <OutgoingDetailRow mono label={t('Різниця')} tone={row.differenceAmount ? 'danger' : undefined} value={formatMoney(row.differenceAmount)} />
             </OutgoingDetailSection>
 
             <OutgoingDetailSection subtitle={displayValue(row.organization)} title={t('Учасники та рахунки')}>
@@ -1115,8 +1115,8 @@ function OutgoingCashflowDetailDrawer({ row, onClose }: { row: OutgoingCashflowR
                           <OutgoingDetailRow label={t('Постачальник/отримувач')} value={displayValue(getEntityName(order?.ConsumableProductOrganization))} />
                           <OutgoingDetailRow label={t('Склад')} value={displayValue(getEntityName(order?.ConsumablesStorage))} />
                           <OutgoingDetailRow label={t('Позицій')} value={String(itemsCount)} />
-                          <OutgoingDetailRow label={t('Сума без ПДВ')} value={formatMoneyOptional(order?.TotalAmountWithoutVAT)} />
-                          <OutgoingDetailRow label={t('Сума з ПДВ')} value={formatMoneyOptional(order?.TotalAmount)} />
+                          <OutgoingDetailRow mono label={t('Сума без ПДВ')} value={formatMoneyOptional(order?.TotalAmountWithoutVAT)} />
+                          <OutgoingDetailRow mono label={t('Сума з ПДВ')} value={formatMoneyOptional(order?.TotalAmount)} />
                         </div>
                       </article>
                     )
@@ -1169,11 +1169,13 @@ function OutgoingDetailSection({ children, subtitle, title }: { children: ReactN
 
 function OutgoingDetailRow({
   label,
+  mono,
   tone,
   value,
   wide,
 }: {
   label: string
+  mono?: boolean
   tone?: 'danger'
   value: string
   wide?: boolean
@@ -1182,7 +1184,7 @@ function OutgoingDetailRow({
     <div className={`outgoing-detail-row${wide ? ' is-wide' : ''}`}>
       <span className="outgoing-detail-row__label">{label}</span>
       <span className="outgoing-detail-row__line" aria-hidden />
-      <span className={`outgoing-detail-row__value${tone ? ` is-${tone}` : ''}`}>{displayValue(value) || '-'}</span>
+      <span className={`outgoing-detail-row__value${mono ? ' app-money' : ''}${tone ? ` is-${tone}` : ''}`}>{displayValue(value) || '-'}</span>
     </div>
   )
 }

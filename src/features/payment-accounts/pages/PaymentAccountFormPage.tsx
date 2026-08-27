@@ -1052,6 +1052,7 @@ function CurrencySelector({
                   onChange={(event) => onChange(index, { selected: event.currentTarget.checked })}
                 />
                 <TextInput
+                  classNames={{ input: 'app-money' }}
                   disabled={isDisabled || !draft.selected}
                   inputMode="decimal"
                   label={t('Сума')}
@@ -1444,6 +1445,7 @@ export function PaymentAccountTransferModal({
               onChange={(value) => setDraft((current) => ({ ...current, toPaymentCurrencyRegisterNetId: value || '' }))}
             />
             <TextInput
+              classNames={{ input: 'app-money' }}
               disabled={isSubmitting}
               inputMode="decimal"
               label={t('Сума')}
@@ -1785,6 +1787,7 @@ export function PaymentAccountExchangeModal({
               }))}
             />
             <TextInput
+              classNames={{ input: 'app-money' }}
               disabled={isSubmitting}
               inputMode="decimal"
               label={t('Сума')}

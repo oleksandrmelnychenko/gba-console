@@ -624,6 +624,7 @@ function AdvanceReportContent({ model }: { model: ReturnType<typeof useAdvanceRe
           <AdvanceReportDetailRow label={t('Авансовий звіт')} value={displayValue(reportNumber)} />
           <AdvanceReportDetailRow label={t('Відповідальний')} value={displayValue(responsible)} wide />
           <AdvanceReportDetailRow
+            mono
             label={t('Сума')}
             value={`${formatMoney(model.orderAmount)}${model.currencyCode ? ` ${model.currencyCode}` : ''}`}
           />
@@ -727,10 +728,12 @@ function AdvanceReportDetailSection({
 
 function AdvanceReportDetailRow({
   label,
+  mono,
   value,
   wide,
 }: {
   label: string
+  mono?: boolean
   value: string
   wide?: boolean
 }) {
@@ -738,7 +741,7 @@ function AdvanceReportDetailRow({
     <div className={`outgoing-detail-row${wide ? ' is-wide' : ''}`}>
       <span className="outgoing-detail-row__label">{label}</span>
       <span className="outgoing-detail-row__line" aria-hidden />
-      <span className="outgoing-detail-row__value">{displayValue(value)}</span>
+      <span className={`outgoing-detail-row__value${mono ? ' app-money' : ''}`}>{displayValue(value)}</span>
     </div>
   )
 }
@@ -773,7 +776,7 @@ function IncomeMessage({ model }: { model: ReturnType<typeof useAdvanceReportVie
       <Text>{t('Буде створений новий')}</Text>
       <Text fw={600}>{orderTypeLabel}</Text>
       <Text c="dimmed">{t('на сумму')}</Text>
-      <Text fw={700}>
+      <Text className="app-money" fw={700}>
         {formatMoney(difference)} {model.currencyCode || ''}
       </Text>
     </Group>

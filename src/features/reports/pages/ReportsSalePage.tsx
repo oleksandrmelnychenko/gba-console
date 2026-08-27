@@ -17,6 +17,7 @@ import { type ChangeEvent, type ReactNode, useMemo } from 'react'
 import readXlsxFile from 'read-excel-file/browser'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
+import { isMoneyField } from '../../../shared/ui/moneyTypography'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import { DataTableDensityToggle } from '../../../shared/ui/data-table/DataTableDensityToggle'
 import type { DataTableColumn, DataTableDensity } from '../../../shared/ui/data-table/types'
@@ -300,7 +301,7 @@ function TotalsBar({ columns, totals }: { columns: string[]; totals: Array<numbe
     <Group gap="xs">
       {totalEntries.map((entry) => (
         <Badge key={entry.column} color="gray" variant="light">
-          {entry.column}: {displayValue(entry.total)}
+          {entry.column}: <span className={isMoneyField(entry.column) ? 'app-money' : undefined}>{displayValue(entry.total)}</span>
         </Badge>
       ))}
     </Group>

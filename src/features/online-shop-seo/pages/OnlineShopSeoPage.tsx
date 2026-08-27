@@ -83,6 +83,7 @@ import {
   validatePage,
 } from '../utils'
 import { hasCompatibleEcommerceStorage, hasValidRetailConfiguration } from '../retailConfiguration'
+import { isMoneyValue } from '../../../shared/ui/moneyTypography'
 import './online-shop-seo-page.css'
 import '../../../shared/ui/console-table-page.css'
 
@@ -1728,6 +1729,8 @@ function renderOnlineShopSeoPage(model: ReturnType<typeof useOnlineShopSeoPageMo
                                     {section.fields.map((field) => {
                                       const value = getSeoGeneralMatrixValue(entry, field)
                                       const isMissingRecord = !isSeoGeneralMatrixFieldEditable(entry, field)
+                                      const isMoney = !isMissingRecord && field.group === 'payment' &&
+                                        (field.id === 'LowPrice' || field.id === 'FullPrice') && isMoneyValue(value)
 
                                       return (
                                         <div
@@ -1740,7 +1743,7 @@ function renderOnlineShopSeoPage(model: ReturnType<typeof useOnlineShopSeoPageMo
                                               <Text className="seo-settings-tree-field-name">{t(field.label)}</Text>
                                             </div>
                                             <span className="seo-settings-tree-field-line" aria-hidden />
-                                            <span className="seo-settings-tree-field-value">
+                                            <span className={`seo-settings-tree-field-value${isMoney ? ' app-money' : ''}`}>
                                               {isMissingRecord ? t('Запис відсутній') : displayValue(value, t('Не заповнено'))}
                                             </span>
                                           </div>

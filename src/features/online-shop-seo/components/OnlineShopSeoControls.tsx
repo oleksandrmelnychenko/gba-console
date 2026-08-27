@@ -16,6 +16,7 @@ import { CircleAlert, RotateCcw, Save, Search } from 'lucide-react'
 import { type FormEvent, type ReactNode } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
+import { isMoneyValue } from '../../../shared/ui/moneyTypography'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import type {
   SeoContactInfo,
@@ -193,11 +194,13 @@ export function PaymentInfoForm({ isSaving, locale, onSave, payment }: PaymentIn
         )}
         <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
           <TextInput
+            classNames={{ input: isMoneyValue(values.LowPrice) ? 'app-money' : undefined }}
             label={t('Передплата')}
             value={values.LowPrice}
             onChange={(event) => setField('LowPrice', event.currentTarget.value)}
           />
           <TextInput
+            classNames={{ input: isMoneyValue(values.FullPrice) ? 'app-money' : undefined }}
             label={t('Повна ціна')}
             value={values.FullPrice}
             onChange={(event) => setField('FullPrice', event.currentTarget.value)}

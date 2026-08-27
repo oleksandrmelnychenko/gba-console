@@ -627,7 +627,7 @@ function SummaryValue({ label, value }: { label: string; value: number }) {
       <Text c="dimmed" size="sm">
         {label}
       </Text>
-      <Badge color={color} size="lg" variant="light">
+      <Badge className="app-money" color={color} size="lg" variant="light">
         {moneyFormatter.format(value)}
       </Badge>
     </Group>
@@ -662,12 +662,12 @@ function OrganisationServiceDetailDrawer({ row, onClose }: { row: PaymentTaskRow
             <DetailItem label={t('Організація')} value={displayValue(getServiceOrganizationName(service))} />
             <DetailItem label={t('Договір')} value={displayValue(getAgreementLabel(service))} />
             <DetailItem label={t('Валюта')} value={displayValue(getServiceCurrencyCode(service))} />
-            <DetailItem label={t('Сума нетто')} value={displayMoney(service.NetPrice)} />
-            <DetailItem label={t('Сума')} value={displayMoney(service.GrossPrice)} />
-            <DetailItem label={t('Бух. нетто')} value={displayMoney(service.AccountingNetPrice)} />
-            <DetailItem label={t('Бух. сума')} value={displayMoney(service.AccountingGrossPrice)} />
+            <DetailItem mono label={t('Сума нетто')} value={displayMoney(service.NetPrice)} />
+            <DetailItem mono label={t('Сума')} value={displayMoney(service.GrossPrice)} />
+            <DetailItem mono label={t('Бух. нетто')} value={displayMoney(service.AccountingNetPrice)} />
+            <DetailItem mono label={t('Бух. сума')} value={displayMoney(service.AccountingGrossPrice)} />
             <DetailItem label={`${t('ПДВ')} %`} value={displayNumber(service.VatPercent ?? service.AccountingVatPercent)} />
-            <DetailItem label={t('ПДВ')} value={displayMoney(service.Vat ?? service.AccountingVat)} />
+            <DetailItem mono label={t('ПДВ')} value={displayMoney(service.Vat ?? service.AccountingVat)} />
             <DetailItem label={t('Контейнер / авто')} value={displayValue(getServiceTransportNumber(service))} />
             <DetailItem label={t('Дата завантаження')} value={displayDate(service.LoadDate)} />
             <DetailItem label={t('Днів доставки')} value={displayNumber(service.TermDeliveryInDays)} />
@@ -737,9 +737,9 @@ function OrganisationServiceDetailDrawer({ row, onClose }: { row: PaymentTaskRow
   )
 }
 
-function DetailItem({ label, value }: { label: string; value: string }) {
+function DetailItem({ label, mono, value }: { label: string; mono?: boolean; value: string }) {
   return (
-    <div className="app-detail-field">
+    <div className={`app-detail-field${mono ? ' is-mono' : ''}`}>
       <span>{label}</span>
       <strong>{value}</strong>
     </div>

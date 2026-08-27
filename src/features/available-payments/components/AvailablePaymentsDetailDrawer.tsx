@@ -2019,8 +2019,8 @@ function AvailablePaymentCashFlowDetailDrawer({
             <CashFlowDetailValue label={t('Організація')} value={displayValue(item.OrganizationName)} />
             <CashFlowDetailValue label={t('Операція')} value={item.IsCreditValue ? t('Кредит') : t('Дебет')} />
             <CashFlowDetailValue label={t('Статус накладної')} value={<CashFlowPaymentStatusBadge item={item} />} />
-            <CashFlowDetailValue label={t('Сума')} value={formatAmount(item.CurrentValue)} />
-            <CashFlowDetailValue label={t('Поточний баланс')} value={formatAmount(item.CurrentBalance)} />
+            <CashFlowDetailValue mono label={t('Сума')} value={formatAmount(item.CurrentValue)} />
+            <CashFlowDetailValue mono label={t('Поточний баланс')} value={formatAmount(item.CurrentBalance)} />
           </SimpleGrid>
 
           <CashFlowDetailContent item={item} />
@@ -2030,13 +2030,13 @@ function AvailablePaymentCashFlowDetailDrawer({
   )
 }
 
-function CashFlowDetailValue({ label, value }: { label: string; value: ReactNode }) {
+function CashFlowDetailValue({ label, mono, value }: { label: string; mono?: boolean; value: ReactNode }) {
   return (
     <Stack gap={2}>
       <Text size="xs" c="dimmed">
         {label}
       </Text>
-      <Text size="sm" fw={600} lineClamp={2}>
+      <Text className={mono ? 'app-money' : undefined} size="sm" fw={600} lineClamp={2}>
         {value || '-'}
       </Text>
     </Stack>

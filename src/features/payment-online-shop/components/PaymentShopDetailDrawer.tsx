@@ -243,7 +243,7 @@ function PaymentAmountMetric({ label, value }: { label: string; value: number | 
       <Text c="dimmed" size="xs">
         {label}
       </Text>
-      <Text fw={600}>{formatAmount(value)} UAH</Text>
+      <Text className="app-money" fw={600}>{formatAmount(value)} UAH</Text>
     </Stack>
   )
 }

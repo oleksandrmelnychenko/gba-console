@@ -214,7 +214,7 @@ function PaymentImageEditServerSummary({
             {t('Поточні дані сервера')}
           </Text>
           <Text size="sm">
-            {t('Сума')}: <strong>{formatAmount(item.Amount)} UAH</strong>
+            {t('Сума')}: <strong className="app-money">{formatAmount(item.Amount)} UAH</strong>
           </Text>
           <Text size="sm">
             {t('Тип')}: <strong>{getPaymentTypeLabel(item.PaymentType, t)}</strong>
