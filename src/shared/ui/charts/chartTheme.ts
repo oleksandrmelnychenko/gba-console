@@ -16,6 +16,14 @@ export const CHART_GRID_COLOR = 'var(--mantine-color-gray-2)'
 export const CHART_LABEL_COLOR = 'var(--mantine-color-gray-7)'
 export const CHART_MUTED_COLOR = 'var(--mantine-color-gray-5)'
 
+// Preserve Mantine's left-axis tick size/offset while using the shared money style.
+export const MONEY_AXIS_TICK = {
+  className: 'app-money',
+  fill: 'currentColor',
+  fontSize: 12,
+  transform: 'translate(-10, 0)',
+}
+
 export const SERIES_PALETTE = [
   'violet.6',
   'teal.6',

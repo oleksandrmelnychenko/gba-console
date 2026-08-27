@@ -227,8 +227,10 @@ select {
 
 /* Money values (docs/ui-patterns.md §5.1): mono 600, neutral gray in grids
    and money blocks. Apply .app-money to the element holding the formatted
-   amount; .is-negative is kept only as a semantic hook, not for color. */
-.app-money {
+   amount; .is-negative is kept only as a semantic hook, not for color.
+   The SVG selector also wins over Mantine Charts' default text font. */
+.app-money,
+text.app-money {
   color: var(--mantine-color-gray-8) !important;
   font-family: var(--font-mono);
   font-weight: 600;
