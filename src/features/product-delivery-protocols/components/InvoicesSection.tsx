@@ -245,6 +245,7 @@ function InvoiceViewCard({
         )}
       </Stack>
       <InvoiceExpensesDrawer
+        invoiceSummary={invoice}
         invoiceNetUid={invoice.NetUid || ''}
         opened={expensesOpened}
         onClose={() => setExpensesOpened(false)}
@@ -254,10 +255,12 @@ function InvoiceViewCard({
 }
 
 function InvoiceExpensesDrawer({
+  invoiceSummary,
   invoiceNetUid,
   opened,
   onClose,
 }: {
+  invoiceSummary: SupplyInvoice
   invoiceNetUid: string
   onClose: () => void
   opened: boolean
@@ -307,7 +310,12 @@ function InvoiceExpensesDrawer({
   const mergedServices = invoice?.SupplyInvoiceMergedServices || []
 
   return (
-    <AppDrawer opened={opened} size="lg" title={`${t('Витрати')}. ${t('Інвойс')} ${invoice?.Number || ''}`.trim()} onClose={onClose}>
+    <AppDrawer
+      opened={opened}
+      size="lg"
+      title={`${t('Витрати')}. ${t('Інвойс')} ${invoice?.Number || invoiceSummary.Number || ''}`.trim()}
+      onClose={onClose}
+    >
       <Stack gap="md">
         {error && (
           <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
@@ -324,6 +332,7 @@ function InvoiceExpensesDrawer({
           </Text>
         ) : (
           <>
+            <InvoiceExpenseSummary invoice={invoiceSummary} />
             {billOfLadingServices.map((service) => (
               <BillOfLadingExpenseCard key={service.NetUid || service.Id} service={service} />
             ))}
@@ -339,6 +348,23 @@ function InvoiceExpensesDrawer({
         )}
       </Stack>
     </AppDrawer>
+  )
+}
+
+function InvoiceExpenseSummary({ invoice }: { invoice: SupplyInvoice }) {
+  const { t } = useI18n()
+  const currencyCode = getInvoiceCurrencyCode(invoice)
+
+  return (
+    <Card aria-label={t('Інформація про інвойс')} withBorder radius="md" padding="md">
+      <SimpleGrid cols={{ base: 1, sm: 2, lg: 5 }} spacing="xs">
+        <LabelValueRow label={t('Постачальник')}>{invoice.SupplyOrder?.Client?.FullName || ''}</LabelValueRow>
+        <LabelValueRow label={t('Номер інвойса')} mono>{invoice.Number || ''}</LabelValueRow>
+        <LabelValueRow label={t('Дата інвойса')} mono>{formatDateTime(invoice.DateFrom)}</LabelValueRow>
+        <LabelValueRow label={t('Сума інвойса')} mono>{formatMoney(getInvoiceTotalNetPrice(invoice))}</LabelValueRow>
+        <LabelValueRow label={t('Валюта інвойса')} mono>{currencyCode}</LabelValueRow>
+      </SimpleGrid>
+    </Card>
   )
 }
 
