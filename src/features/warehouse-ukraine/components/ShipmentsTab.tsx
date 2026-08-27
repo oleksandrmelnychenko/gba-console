@@ -62,6 +62,11 @@ import {
   isValidManualQtyPlaces,
   toManualShipmentQueryDate,
 } from '../shipmentManualSelection'
+import {
+  applyShipmentQtyPlacesEdits,
+  buildShipmentCarryOutPayload,
+  getShipmentQtyPlacesEditKey,
+} from '../shipmentQtyPlaces'
 import { ChangeCommentModal } from './ChangeCommentModal'
 import { displayValue, formatDateTime, getDateShiftedByDays, toDateTimeQuery } from './dateHelpers'
 import { DownloadDocumentModal } from './DownloadDocumentModal'
@@ -98,6 +103,7 @@ const MANUAL_SHIPMENT_SALES_TABLE_DEFAULT_LAYOUT = {
 const ALL_TRANSPORTERS_VALUE = '__all_transporters__'
 const SHIPMENTS_TAB_ALL = 'all'
 const SHIPMENTS_TAB_AUTO = 'auto'
+const SHIPMENT_CARRY_OUT_SELECTOR = '[data-shipment-carry-out="true"]'
 const DEFAULT_SHIPMENT_LOOKBACK_DAYS = 7
 const DEFAULT_ALL_SHIPMENTS_LIMIT = 20
 const ALL_SHIPMENTS_PAGE_SIZE_OPTIONS = ['20', '50', '100']
@@ -119,7 +125,11 @@ type ActiveModal =
   | null
 
 function getRowId(item: ShipmentListItem, index: number): string {
-  return String(item.NetUid || item.Id || index)
+  return getShipmentQtyPlacesEditKey(item, index)
+}
+
+function isShipmentCarryOutTarget(target: EventTarget | null): boolean {
+  return target instanceof Element && Boolean(target.closest(SHIPMENT_CARRY_OUT_SELECTOR))
 }
 
 function getShipmentListRowId(item: ShipmentList, index: number): string {
@@ -452,7 +462,7 @@ function useShipmentsTabModel({ onCarriedOut }: ShipmentsTabModelOptions = {}) {
   const filterError = getFilterError(filterDraft.from, filterDraft.to)
   const items = shipmentList.ShipmentListItems
   const itemIndexMap = useMemo(() => buildIndexMap(items), [items])
-  const canEditShipment = !shipmentList.IsSent
+  const canEditShipment = !shipmentList.IsSent && !isSaving
 
   useEffect(() => {
     let cancelled = false
@@ -592,7 +602,7 @@ function useShipmentsTabModel({ onCarriedOut }: ShipmentsTabModelOptions = {}) {
     refreshList()
   }
 
-  function commitQtyPlaces(item: ShipmentListItem, rowId: string) {
+  function commitQtyPlaces(item: ShipmentListItem, rowId: string, persistImmediately = true) {
     if (!canEditShipment) {
       return
     }
@@ -618,14 +628,16 @@ function useShipmentsTabModel({ onCarriedOut }: ShipmentsTabModelOptions = {}) {
       return
     }
 
-    const nextShipmentList = updateShipmentListItem(shipmentList, item, (currentItem) => ({
-      ...currentItem,
-      IsDirty: true,
-      QtyPlaces: parsed,
-    }))
+    const nextShipmentList = applyShipmentQtyPlacesEdits(shipmentList, { [rowId]: draft })
 
     setShipmentList(nextShipmentList)
-    void saveShipmentList(nextShipmentList)
+
+    // Clicking «Провести і закрити» blurs the quantity input before the click handler runs.
+    // Keep that path atomic: carryOut sends the edited quantity and IsSent together instead of
+    // racing an automatic blur-save against a second update with the same concurrency token.
+    if (persistImmediately) {
+      void saveShipmentList(nextShipmentList)
+    }
   }
 
   async function saveShipmentList(nextShipmentList = shipmentList) {
@@ -644,7 +656,7 @@ function useShipmentsTabModel({ onCarriedOut }: ShipmentsTabModelOptions = {}) {
           to: toDateTimeQuery(filterDraft.to, 'end'),
         },
       }
-      const attempt = await runShipmentListMutation<ShipmentListUpdateRequest, void>(
+      const attempt = await runShipmentListMutation<ShipmentListUpdateRequest, ShipmentList>(
         `shipment-list-update:${nextShipmentList.NetUid ?? nextShipmentList.Id ?? 'unknown'}`,
         request,
         (payload, operation) => updateShipmentList(
@@ -658,6 +670,8 @@ function useShipmentsTabModel({ onCarriedOut }: ShipmentsTabModelOptions = {}) {
         throw attempt.error
       }
 
+      setShipmentList(attempt.result)
+      setQtyEdits({})
       refreshList()
     } catch (saveError) {
       setError(saveError instanceof Error ? saveError.message : t('Не вдалося виконати запит'))
@@ -677,7 +691,7 @@ function useShipmentsTabModel({ onCarriedOut }: ShipmentsTabModelOptions = {}) {
     setError(null)
 
     try {
-      const nextShipmentList = { ...shipmentList, IsSent: true }
+      const nextShipmentList = buildShipmentCarryOutPayload(shipmentList, qtyEdits)
       const request: ShipmentListUpdateRequest = {
         shipmentList: nextShipmentList,
         window: {
@@ -685,7 +699,7 @@ function useShipmentsTabModel({ onCarriedOut }: ShipmentsTabModelOptions = {}) {
           to: toDateTimeQuery(filterDraft.to, 'end'),
         },
       }
-      const attempt = await runShipmentListMutation<ShipmentListUpdateRequest, void>(
+      const attempt = await runShipmentListMutation<ShipmentListUpdateRequest, ShipmentList>(
         `shipment-list-update:${nextShipmentList.NetUid ?? nextShipmentList.Id ?? 'unknown'}`,
         request,
         (payload, operation) => updateShipmentList(
@@ -699,6 +713,8 @@ function useShipmentsTabModel({ onCarriedOut }: ShipmentsTabModelOptions = {}) {
         throw attempt.error
       }
 
+      setShipmentList(attempt.result)
+      setQtyEdits({})
       refreshList()
       onCarriedOut?.()
     } catch (saveError) {
@@ -1035,6 +1051,7 @@ function AutoShipmentsPanel({ onCarriedOut }: AutoShipmentsPanelProps) {
               )}
               <Button
                 color="green"
+                data-shipment-carry-out="true"
                 disabled={!model.shipmentList.NetUid || !model.canEditShipment || model.items.length === 0}
                 loading={model.isSaving}
                 styles={{ label: { fontFamily: 'var(--font-mono)', letterSpacing: 0 } }}
@@ -1637,7 +1654,7 @@ function AllShipmentsPanel({ onCreate }: AllShipmentsPanelProps) {
           to: toDateTimeQuery(filterDraft.to, 'end'),
         },
       }
-      const attempt = await runShipmentListMutation<ShipmentListUpdateRequest, void>(
+      const attempt = await runShipmentListMutation<ShipmentListUpdateRequest, ShipmentList>(
         `shipment-list-update:${shipmentDraft.NetUid ?? shipmentDraft.Id ?? 'unknown'}`,
         request,
         (payload, operation) => updateShipmentList(
@@ -2740,7 +2757,7 @@ function useEditShipmentColumns(model: EditShipmentColumnsModel): DataTableColum
 
 type ShipmentColumnsModel = {
   canEditShipment: boolean
-  commitQtyPlaces: (item: ShipmentListItem, rowId: string) => void
+  commitQtyPlaces: (item: ShipmentListItem, rowId: string, persistImmediately?: boolean) => void
   itemIndexMap: Map<ShipmentListItem, number>
   qtyEdits: Record<string, string>
   setActiveModal: (modal: ActiveModal) => void
@@ -2815,7 +2832,11 @@ function useShipmentColumns(model: ShipmentColumnsModel): DataTableColumn<Shipme
               size="xs"
               type="number"
               value={value}
-              onBlur={() => model.commitQtyPlaces(item, id)}
+              onBlur={(event) => model.commitQtyPlaces(
+                item,
+                id,
+                !isShipmentCarryOutTarget(event.relatedTarget),
+              )}
               onChange={(event) => {
                 const next = event.currentTarget.value
                 model.setQtyEdits((current) => ({ ...current, [id]: next }))
