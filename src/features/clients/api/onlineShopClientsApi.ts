@@ -35,6 +35,17 @@ export async function getRetailClientsPage(params: RetailClientsPageParams): Pro
   return normalizeRetailClientsPage(result)
 }
 
+export async function getOnlineShopClientsPage(params: RetailClientsPageParams): Promise<RetailClientsPage> {
+  const result = await apiRequest<unknown>('/retail/clients/online-shop/all', {
+    query: {
+      limit: params.limit,
+      offset: params.offset,
+    },
+  })
+
+  return normalizeRetailClientsPage(result)
+}
+
 export async function searchRetailClients(value: string): Promise<RetailClient[]> {
   const result = await apiRequest<unknown>('/retail/clients/sales/filtered', {
     query: {
@@ -47,6 +58,19 @@ export async function searchRetailClients(value: string): Promise<RetailClient[]
 
 export async function searchRetailClientsPage(value: string, params: RetailClientsPageParams): Promise<RetailClientsPage> {
   const result = await apiRequest<unknown>('/retail/clients/sales/filtered', {
+    query: {
+      value: value.trim(),
+      limit: params.limit,
+      offset: params.offset,
+      paged: true,
+    },
+  })
+
+  return normalizeRetailClientsPage(result)
+}
+
+export async function searchOnlineShopClientsPage(value: string, params: RetailClientsPageParams): Promise<RetailClientsPage> {
+  const result = await apiRequest<unknown>('/retail/clients/online-shop/sales/filtered', {
     query: {
       value: value.trim(),
       limit: params.limit,
@@ -89,7 +113,7 @@ export async function getIncompleteSaleByNetUid(netId: string): Promise<Incomple
 }
 
 export async function getIncompleteSales(params: IncompleteSalesSearchParams = {}): Promise<IncompleteSale[]> {
-  const result = await apiRequest<unknown>('/sales/misplaced/get/all', {
+  const result = await apiRequest<unknown>('/sales/misplaced/online-shop/get/all', {
     query: {
       number: params.number?.trim() || undefined,
       from: params.from,
@@ -111,11 +135,14 @@ export async function updateIncompleteSale(
   )
   const status = incompleteSale.MisplacedSaleStatus
 
-  if (status !== 0 && status !== 1 && status !== 2) {
+  if (status !== 1 && status !== 2) {
     throw new Error('Некоректний статус незавершеного продажу')
   }
 
-  const result = await apiRequest<unknown>('/sales/misplaced/update', {
+  const route = status === 1
+    ? '/sales/misplaced/online-shop/assign-to-self'
+    : '/sales/misplaced/online-shop/mark-completed'
+  const result = await apiRequest<unknown>(route, {
     method: 'POST',
     body: {
       MisplacedSaleStatus: status,

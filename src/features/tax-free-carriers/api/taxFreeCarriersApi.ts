@@ -7,13 +7,13 @@ import type {
 } from '../types'
 
 export async function getTaxFreeCarriers(): Promise<TaxFreeCarrier[]> {
-  const result = await apiRequest<unknown>('/supplies/ukraine/carriers/statham/all')
+  const result = await apiRequest<unknown>('/supplies/ukraine/carriers/statham/registry')
 
   return normalizeCarriers(result)
 }
 
 export async function searchTaxFreeCarriers(value: string): Promise<TaxFreeCarrier[]> {
-  const result = await apiRequest<unknown>('/supplies/ukraine/carriers/statham/all/search', {
+  const result = await apiRequest<unknown>('/supplies/ukraine/carriers/statham/registry/search', {
     query: { value },
   })
 
@@ -21,7 +21,7 @@ export async function searchTaxFreeCarriers(value: string): Promise<TaxFreeCarri
 }
 
 export async function getTaxFreeCarrier(netId: string): Promise<TaxFreeCarrier | null> {
-  const result = await apiRequest<unknown>('/supplies/ukraine/carriers/statham/get', {
+  const result = await apiRequest<unknown>('/supplies/ukraine/carriers/statham/details', {
     query: { netId },
   })
 
@@ -29,7 +29,7 @@ export async function getTaxFreeCarrier(netId: string): Promise<TaxFreeCarrier |
 }
 
 export async function createTaxFreeCarrier(payload: TaxFreeCarrierPayload): Promise<TaxFreeCarrier | null> {
-  const result = await apiRequest<unknown>('/supplies/ukraine/carriers/statham/new', {
+  const result = await apiRequest<unknown>('/supplies/ukraine/carriers/statham/create', {
     body: payload,
     method: 'POST',
   })
@@ -38,7 +38,7 @@ export async function createTaxFreeCarrier(payload: TaxFreeCarrierPayload): Prom
 }
 
 export async function updateTaxFreeCarrier(payload: TaxFreeCarrierPayload): Promise<TaxFreeCarrier | null> {
-  const result = await apiRequest<unknown>('/supplies/ukraine/carriers/statham/update', {
+  const result = await apiRequest<unknown>('/supplies/ukraine/carriers/statham/edit', {
     body: payload,
     method: 'POST',
   })
@@ -47,7 +47,7 @@ export async function updateTaxFreeCarrier(payload: TaxFreeCarrierPayload): Prom
 }
 
 export async function deleteTaxFreeCarrier(netId: string): Promise<void> {
-  await apiRequest<unknown>('/supplies/ukraine/carriers/statham/delete', {
+  await apiRequest<unknown>('/supplies/ukraine/carriers/statham/remove', {
     method: 'DELETE',
     query: { netId },
   })
@@ -56,7 +56,7 @@ export async function deleteTaxFreeCarrier(netId: string): Promise<void> {
 export async function exportTaxFreeCarriersDocument(
   columns: TaxFreeCarrierExportColumn[],
 ): Promise<TaxFreeCarrierExportDocument> {
-  const result = await apiRequest<unknown>('/supplies/ukraine/carriers/statham/print/documents', {
+  const result = await apiRequest<unknown>('/supplies/ukraine/carriers/statham/document/export', {
     body: columns,
     method: 'POST',
   })

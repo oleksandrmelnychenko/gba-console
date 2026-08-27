@@ -13,9 +13,11 @@ const numberFormatter = new Intl.NumberFormat('uk-UA', { maximumFractionDigits: 
 const moneyFormatter = new Intl.NumberFormat('uk-UA', { maximumFractionDigits: 2, minimumFractionDigits: 2 })
 
 export function ProductCardModal({
+  loadProduct = getProductByNetId,
   productNetId,
   onClose,
 }: {
+  loadProduct?: typeof getProductByNetId
   onClose: () => void
   productNetId: string | null
 }) {
@@ -23,12 +25,18 @@ export function ProductCardModal({
 
   return (
     <AppModal centered opened={Boolean(productNetId)} size="lg" title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Картка товару')}</span>} onClose={onClose}>
-      {productNetId && <ProductCardContent key={productNetId} productNetId={productNetId} />}
+      {productNetId && <ProductCardContent key={productNetId} loadProduct={loadProduct} productNetId={productNetId} />}
     </AppModal>
   )
 }
 
-function ProductCardContent({ productNetId }: { productNetId: string }) {
+function ProductCardContent({
+  loadProduct,
+  productNetId,
+}: {
+  loadProduct: typeof getProductByNetId
+  productNetId: string
+}) {
   const { t } = useI18n()
   const [product, setProduct] = useState<Product | null>(null)
   const [isLoading, setLoading] = useState(true)
@@ -43,7 +51,7 @@ function ProductCardContent({ productNetId }: { productNetId: string }) {
       setError(null)
 
       try {
-        const next = await getProductByNetId(productNetId, controller.signal)
+        const next = await loadProduct(productNetId, controller.signal)
 
         if (!cancelled) {
           setProduct(next)
@@ -65,7 +73,7 @@ function ProductCardContent({ productNetId }: { productNetId: string }) {
       cancelled = true
       controller.abort()
     }
-  }, [productNetId, t])
+  }, [loadProduct, productNetId, t])
 
   if (isLoading) {
     return (

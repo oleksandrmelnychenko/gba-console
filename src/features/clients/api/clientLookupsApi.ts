@@ -86,7 +86,7 @@ export async function checkRegionCodeAvailability(regionNetUid: string, code: st
 }
 
 export async function createIncoterm(incoterm: Incoterm): Promise<Incoterm | null> {
-  const result = await apiRequest<unknown>('/incoterms/new', {
+  const result = await apiRequest<unknown>('/incoterms/clients/new', {
     method: 'POST',
     body: incoterm,
   })
@@ -99,7 +99,7 @@ export async function createIncoterm(incoterm: Incoterm): Promise<Incoterm | nul
 }
 
 export async function createCountry(country: Country): Promise<Country | null> {
-  const result = await apiRequest<unknown>('/countries/new', {
+  const result = await apiRequest<unknown>('/countries/clients/new', {
     method: 'POST',
     body: country,
   })
@@ -112,7 +112,7 @@ export async function createCountry(country: Country): Promise<Country | null> {
 }
 
 export async function createRegion(region: Region): Promise<Region | null> {
-  const result = await apiRequest<unknown>('/regions/new', {
+  const result = await apiRequest<unknown>('/regions/clients/new', {
     method: 'POST',
     body: region,
   })
@@ -133,7 +133,7 @@ export async function getPurchaseManagers(): Promise<Manager[]> {
 }
 
 export async function getClientGroups(clientNetId: string): Promise<ClientGroup[]> {
-  const result = await apiRequest<unknown>('/clients/all/groups', {
+  const result = await apiRequest<unknown>('/clients/structure/card/groups', {
     query: {
       clientNetId,
     },
@@ -143,7 +143,7 @@ export async function getClientGroups(clientNetId: string): Promise<ClientGroup[
 }
 
 export async function getClientWorkplaces(netId: string): Promise<ClientWorkplace[]> {
-  const result = await apiRequest<unknown>('/clients/all/workplaces/by/client', {
+  const result = await apiRequest<unknown>('/clients/structure/card/workplaces', {
     query: {
       netId,
     },
@@ -153,7 +153,7 @@ export async function getClientWorkplaces(netId: string): Promise<ClientWorkplac
 }
 
 export async function getClientDeliveryRecipients(netId: string): Promise<DeliveryRecipient[]> {
-  const result = await apiRequest<unknown>('/deliveries/recipients/all/client', {
+  const result = await apiRequest<unknown>('/deliveries/recipients/structure/all/client', {
     query: {
       netId,
     },

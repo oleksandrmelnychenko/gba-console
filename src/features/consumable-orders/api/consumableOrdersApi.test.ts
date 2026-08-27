@@ -3,8 +3,18 @@ import { OUTCOME_OPERATION_TYPE } from '../../outgoing-cashflows/outgoingCreateT
 import { apiRequest } from '../../../shared/api/apiClient'
 import {
   calculateConsumableOrder,
+  calculateConsumableOrderForPayment,
   createOutcomePaymentOrder,
+  createPaymentMovement,
+  getConsumableOrder,
+  getConsumableOrderForPayment,
+  getConsumableOrders,
+  getFinanceDirectorUsers,
+  getPaymentMovements,
   getUnpaidConsumableOrdersByOrganization,
+  searchConsumableOrders,
+  searchSupplyOrganizations,
+  searchPaymentMovements,
   searchConsumableStorages,
   updateConsumableOrder,
 } from './consumableOrdersApi'
@@ -24,6 +34,24 @@ describe('consumableOrdersApi', () => {
     }))
   })
 
+  it('uses context-specific supplier and responsible-user lookup facades', async () => {
+    apiRequestMock.mockResolvedValue([])
+
+    await searchSupplyOrganizations(' supplier ', 'create')
+    await searchSupplyOrganizations(' supplier ', 'edit')
+    await getFinanceDirectorUsers()
+
+    expect(apiRequestMock.mock.calls.map(([route]) => route)).toEqual([
+      '/supplies/organizations/consumable-orders/create/search',
+      '/supplies/organizations/consumable-orders/edit/search',
+      '/usermanagement/profiles/consumable-orders/payment/responsible-users',
+    ])
+    expect(apiRequestMock).toHaveBeenNthCalledWith(
+      3,
+      '/usermanagement/profiles/consumable-orders/payment/responsible-users',
+    )
+  })
+
   it('strips UI-only local NetUid values before calculating an order', async () => {
     const order = createOrderWithLocalNetUids()
 
@@ -34,7 +62,7 @@ describe('consumableOrdersApi', () => {
 
     await calculateConsumableOrder(order)
 
-    expect(apiRequestMock).toHaveBeenCalledWith('/consumables/orders/calculate', {
+    expect(apiRequestMock).toHaveBeenCalledWith('/consumables/orders/accounting/calculate', {
       body: [
         expect.objectContaining({
           ConsumablesOrderItems: [
@@ -61,7 +89,7 @@ describe('consumableOrdersApi', () => {
     const body = options?.body as FormData
     const payload = JSON.parse(String(body.get('order'))) as ConsumablesOrder
 
-    expect(apiRequestMock).toHaveBeenCalledWith('/consumables/orders/upload/update', {
+    expect(apiRequestMock).toHaveBeenCalledWith('/consumables/orders/accounting/upload/update', {
       body,
       dedupe: false,
       headers: {
@@ -154,11 +182,55 @@ describe('consumableOrdersApi', () => {
 
     await createOutcomePaymentOrder(order, { operationId })
 
-    expect(apiRequestMock).toHaveBeenCalledWith('/payments/orders/outcome/new', {
+    expect(apiRequestMock).toHaveBeenCalledWith('/payments/orders/outcome/consumable-orders/pay', {
       body: order,
       dedupe: false,
       headers: { 'Idempotency-Key': operationId },
       method: 'POST',
+    })
+  })
+
+  it('uses permission-scoped registry, detail and payment read routes', async () => {
+    apiRequestMock.mockResolvedValue({ Items: [] })
+
+    await getConsumableOrders({ from: '2026-08-01', limit: 25, offset: 0, to: '2026-08-18' })
+    await searchConsumableOrders('invoice', { from: '2026-08-01', limit: 25, offset: 0, to: '2026-08-18' })
+    await getConsumableOrder('order-1')
+    await getConsumableOrderForPayment('order-1')
+    await calculateConsumableOrderForPayment({ NetUid: 'order-1' })
+
+    expect(apiRequestMock.mock.calls.map(([path]) => path)).toEqual([
+      '/consumables/orders/accounting/all',
+      '/consumables/orders/accounting/search',
+      '/consumables/orders/accounting/get',
+      '/consumables/orders/accounting/pay/get',
+      '/consumables/orders/accounting/pay/calculate',
+    ])
+  })
+
+  it('creates cashflow articles through the already protected accounting route', async () => {
+    apiRequestMock.mockResolvedValueOnce({ NetUid: 'movement-1', OperationName: 'Послуги' })
+
+    await createPaymentMovement('Послуги')
+
+    expect(apiRequestMock).toHaveBeenCalledWith('/payments/movements/accounting/new', {
+      body: { OperationName: 'Послуги' },
+      method: 'POST',
+    })
+  })
+
+  it('uses order-pay scoped payment movement lookups', async () => {
+    apiRequestMock.mockResolvedValue({ Items: [] })
+
+    await getPaymentMovements()
+    await searchPaymentMovements('service')
+
+    expect(apiRequestMock.mock.calls.map(([path]) => path)).toEqual([
+      '/payments/movements/consumable-orders/order/pay/all',
+      '/payments/movements/consumable-orders/order/pay/all/search',
+    ])
+    expect(apiRequestMock.mock.calls[1][1]).toEqual({
+      query: { value: 'service' },
     })
   })
 })

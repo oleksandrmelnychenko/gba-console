@@ -4,9 +4,11 @@ import { CircleAlert, Folder, Folders, RefreshCw, RotateCcw, Search } from 'luci
 import { useEffect, useMemo, useReducer } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { useValueState } from '../../../shared/hooks/useValueState'
+import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { ListTreeItem, ListTreeLayout } from '../../../shared/ui/tree/ListTreeLayout'
 import { TreeView, type TreeViewNode } from '../../../shared/ui/tree/TreeView'
 import { getProductGroupWithRoot, getProductGroups } from '../api/productGroupsApi'
+import { PermissionGate } from '../../auth/components/PermissionGate'
 import type { ProductGroup } from '../types'
 import { getProductGroupName } from '../utils'
 import './product-groups-page.css'
@@ -19,6 +21,24 @@ const SEARCH_DEBOUNCE_MS = 300
  * group's subgroup hierarchy as an expand/collapse tree.
  */
 export function ProductGroupsTreePage() {
+  return (
+    <PermissionGate permissionKey={PermissionKeys.ProductGroups.Page.View} fallback={<ProductGroupsTreePermissionDenied />}>
+      <ProductGroupsTreePageContent />
+    </PermissionGate>
+  )
+}
+
+function ProductGroupsTreePermissionDenied() {
+  const { t } = useI18n()
+
+  return (
+    <Alert color="red" icon={<CircleAlert size={18} />} title={t('Доступ заборонено')} variant="light">
+      {t('У вашої ролі немає права переглядати дерево товарних груп.')}
+    </Alert>
+  )
+}
+
+function ProductGroupsTreePageContent() {
   const { t } = useI18n()
   const [groups, setGroups] = useValueState<ProductGroup[]>([])
   const [selectedNetUid, setSelectedNetUid] = useValueState<string | null>(null)

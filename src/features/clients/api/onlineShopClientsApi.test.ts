@@ -4,12 +4,14 @@ import type { IncompleteSale, RetailCartItem, RetailClient, RetailSale } from '.
 import {
   getIncompleteSaleByNetUid,
   getIncompleteSales,
+  getOnlineShopClientsPage,
   getRetailClientCart,
   getRetailClientSales,
   getRetailClients,
   getRetailClientsPage,
   searchRetailClients,
   searchRetailClientsPage,
+  searchOnlineShopClientsPage,
   updateIncompleteSale,
 } from './onlineShopClientsApi'
 
@@ -50,6 +52,18 @@ describe('online-shop clients API query contracts', () => {
     })
   })
 
+  it('loads the online-shop client registry through its page-scoped endpoint', async () => {
+    apiRequestMock.mockResolvedValueOnce({ Collection: [], TotalQty: 0 })
+
+    await expect(getOnlineShopClientsPage({ limit: 20, offset: 40 })).resolves.toEqual({
+      Items: [],
+      Total: 0,
+    })
+    expect(apiRequestMock).toHaveBeenCalledWith('/retail/clients/online-shop/all', {
+      query: { limit: 20, offset: 40 },
+    })
+  })
+
   it('searches retail clients with the source value query parameter', async () => {
     const clients: RetailClient[] = [{ NetUid: 'searched-client', FullName: 'Search Client' }]
 
@@ -73,6 +87,23 @@ describe('online-shop clients API query contracts', () => {
       Total: 7,
     })
     expect(apiRequestMock).toHaveBeenCalledWith('/retail/clients/sales/filtered', {
+      query: {
+        value: 'Search',
+        limit: 20,
+        offset: 20,
+        paged: true,
+      },
+    })
+  })
+
+  it('searches the online-shop registry through its page-scoped endpoint', async () => {
+    apiRequestMock.mockResolvedValueOnce({ Collection: [], TotalQty: 0 })
+
+    await expect(searchOnlineShopClientsPage('  Search  ', { limit: 20, offset: 20 })).resolves.toEqual({
+      Items: [],
+      Total: 0,
+    })
+    expect(apiRequestMock).toHaveBeenCalledWith('/retail/clients/online-shop/sales/filtered', {
       query: {
         value: 'Search',
         limit: 20,
@@ -132,7 +163,7 @@ describe('online-shop clients API query contracts', () => {
       number: '  123  ',
       to: '2026-05-27',
     })).resolves.toEqual(incompleteSales)
-    expect(apiRequestMock).toHaveBeenCalledWith('/sales/misplaced/get/all', {
+    expect(apiRequestMock).toHaveBeenCalledWith('/sales/misplaced/online-shop/get/all', {
       query: {
         number: '123',
         from: '2026-05-01',
@@ -152,7 +183,7 @@ describe('online-shop clients API query contracts', () => {
     apiRequestMock.mockResolvedValueOnce([incompleteSale])
 
     await expect(updateIncompleteSale(incompleteSale, { operationId })).resolves.toEqual([incompleteSale])
-    expect(apiRequestMock).toHaveBeenCalledWith('/sales/misplaced/update', {
+    expect(apiRequestMock).toHaveBeenCalledWith('/sales/misplaced/online-shop/assign-to-self', {
       method: 'POST',
       body: {
         MisplacedSaleStatus: 1,
@@ -161,6 +192,36 @@ describe('online-shop clients API query contracts', () => {
       headers: { 'Idempotency-Key': operationId },
       signal: undefined,
     })
+  })
+
+  it('marks an incomplete sale completed through the dedicated permission endpoint', async () => {
+    const incompleteSale: IncompleteSale = {
+      NetUid: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+      MisplacedSaleStatus: 2,
+    }
+    const operationId = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb'
+
+    apiRequestMock.mockResolvedValueOnce([incompleteSale])
+
+    await expect(updateIncompleteSale(incompleteSale, { operationId })).resolves.toEqual([incompleteSale])
+    expect(apiRequestMock).toHaveBeenCalledWith('/sales/misplaced/online-shop/mark-completed', {
+      method: 'POST',
+      body: {
+        MisplacedSaleStatus: 2,
+        NetUid: incompleteSale.NetUid,
+      },
+      headers: { 'Idempotency-Key': operationId },
+      signal: undefined,
+    })
+  })
+
+  it('rejects a status without a business transition before the API call', async () => {
+    await expect(updateIncompleteSale(
+      { NetUid: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', MisplacedSaleStatus: 0 },
+      { operationId: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb' },
+    )).rejects.toThrow('Некоректний статус незавершеного продажу')
+
+    expect(apiRequestMock).not.toHaveBeenCalled()
   })
 
   it('rejects a misplaced update without a persisted identity before the API call', async () => {

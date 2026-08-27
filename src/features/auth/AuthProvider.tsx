@@ -1,6 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type PropsWithChildren } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { hasPermission as checkPermission } from '../../shared/auth/permissions'
+import {
+  getEffectivePermissionKeys,
+  hasPermission as checkPermission,
+  type RuntimePermissionKeys,
+} from '../../shared/auth/permissions'
 import {
   AUTH_SESSION_CHANGED_EVENT,
   AUTH_UNAUTHORIZED_EVENT,
@@ -9,6 +13,7 @@ import {
   saveSession,
 } from '../../shared/auth/session'
 import { getCurrentUserProfile, getServerSession, signIn, signOut } from './api/authApi'
+import { getMyPermissions } from './api/permissionsApi'
 import {
   clearAuthReturnPath,
   consumeAuthReturnPath,
@@ -22,6 +27,8 @@ export function AuthProvider({ children }: PropsWithChildren) {
   const location = useLocation()
   const [session, setSession] = useState<AuthSession | null>(() => readSession())
   const [isLoading, setLoading] = useState(true)
+  const [runtimePermissionKeys, setRuntimePermissionKeys] = useState<RuntimePermissionKeys>(null)
+  const [isPermissionsLoading, setPermissionsLoading] = useState(false)
 
   const syncSession = useCallback(() => {
     setSession(readSession())
@@ -35,6 +42,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
     clearAuthReturnPath()
     clearSession()
     setSession(null)
+    setRuntimePermissionKeys(null)
     navigate('/login', { replace: true })
   }, [navigate])
   const logoutAfterUnauthorized = useCallback(() => {
@@ -46,6 +54,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
 
     clearSession()
     setSession(null)
+    setRuntimePermissionKeys(null)
     navigate('/login', { replace: true })
   }, [location, navigate])
   const syncSessionRef = useRef(syncSession)
@@ -62,7 +71,12 @@ export function AuthProvider({ children }: PropsWithChildren) {
     saveSession(baseSession)
     setSession(baseSession)
 
-    const user = await getCurrentUserProfile(baseSession)
+    setPermissionsLoading(true)
+    const [user, myPermissions] = await Promise.all([
+      getCurrentUserProfile(baseSession),
+      getMyPermissions().catch(() => null),
+    ]).finally(() => setPermissionsLoading(false))
+    setRuntimePermissionKeys(myPermissions?.permissionKeys ?? null)
     const nextSession = user
       ? {
           ...baseSession,
@@ -108,11 +122,13 @@ export function AuthProvider({ children }: PropsWithChildren) {
         } else {
           clearSession()
           setSession(null)
+          setRuntimePermissionKeys(null)
         }
       } catch {
         if (!cancelled) {
           clearSession()
           setSession(null)
+          setRuntimePermissionKeys(null)
         }
       } finally {
         if (!cancelled) {
@@ -128,13 +144,23 @@ export function AuthProvider({ children }: PropsWithChildren) {
     }
   }, [enrichSession])
 
+  const permissions = useMemo(
+    () => getEffectivePermissionKeys(runtimePermissionKeys),
+    [runtimePermissionKeys],
+  )
+
   const value = useMemo<AuthContextValue>(
     () => ({
       session,
       user: session?.user || null,
       isAuthenticated: Boolean(session?.csrfToken),
       isLoading,
-      hasPermission: (permissionKey) => checkPermission(session?.user, permissionKey),
+      isPermissionsLoading,
+      permissions,
+      hasPermission: (permissionKey) => checkPermission(
+        permissionKey,
+        runtimePermissionKeys,
+      ),
       login: async (username, password) => {
         setLoading(true)
 
@@ -148,7 +174,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
       },
       logout,
     }),
-    [enrichSession, isLoading, logout, navigate, session],
+    [enrichSession, isLoading, isPermissionsLoading, logout, navigate, permissions, runtimePermissionKeys, session],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

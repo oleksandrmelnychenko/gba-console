@@ -14,10 +14,12 @@
   Tooltip,
 } from '@mantine/core'
 import { useDebouncedValue } from '@mantine/hooks'
+import { notifications } from '@mantine/notifications'
 import { Banknote, ChevronDown, CircleAlert, Landmark, Plus, RotateCcw, Search } from 'lucide-react'
-import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { formatLocalDate } from '../../../shared/date/dateTime'
+import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import {
   buildOutgoingRegisterItems,
@@ -27,13 +29,23 @@ import { useI18n } from '../../../shared/i18n/useI18n'
 import { useMutatedListRefresh } from '../../../shared/router/useMutatedListRefresh'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
+import {
+  DocumentDetailFlag,
+  DocumentDetailLayout,
+  DocumentDetailMetric,
+  DocumentDetailRow,
+  DocumentDetailSection,
+  DocumentDetailSummary,
+} from '../../../shared/ui/document-detail/DocumentDetail'
 import { AppModal } from '../../../shared/ui/AppModal'
 import { CheckboxMultiSelect } from '../../../shared/ui/CheckboxMultiSelect'
 import { Paginator } from '../../../shared/ui/paginator/Paginator'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { TableRowAction } from '../../../shared/ui/table-row-action'
-import { calculateAdvanceReportOrder } from '../api/advanceReportApi'
+import { PermissionGate } from '../../auth/components/PermissionGate'
+import { useAuth } from '../../auth/useAuth'
+import { calculateAdvanceReportDocumentStructure } from '../api/advanceReportApi'
 import {
   cancelOutgoingCashflow,
   getOutgoingCashflowByNetId,
@@ -81,6 +93,7 @@ const moneyFormatter = new Intl.NumberFormat('uk-UA', {
 
 function useOutgoingCashflowsPageModel(): OutgoingCashflowsPageModel {
   const { t } = useI18n()
+  const { hasPermission } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
 
@@ -269,6 +282,11 @@ function useOutgoingCashflowsPageModel(): OutgoingCashflowsPageModel {
 
   const openAdvanceReport = useCallback(
     (row: OutgoingCashflowRow) => {
+      if (!hasPermission(PermissionKeys.AdvancedReports.Report.Open)) {
+        notifications.show({ color: 'red', message: t('Немає прав для перегляду авансового звіту') })
+        return
+      }
+
       if (row.order.NetUid) {
         navigate(`${ADVANCE_REPORT_ROUTE}/${encodeURIComponent(row.order.NetUid)}/advanced-report/view`, {
           state: {
@@ -278,11 +296,16 @@ function useOutgoingCashflowsPageModel(): OutgoingCashflowsPageModel {
         })
       }
     },
-    [location, navigate],
+    [hasPermission, location, navigate, t],
   )
 
   const openDocumentStructure = useCallback(
     (row: OutgoingCashflowRow) => {
+      if (!hasPermission(PermissionKeys.AdvancedReports.DocumentStructure.Open)) {
+        notifications.show({ color: 'red', message: t('Немає прав для перегляду структури документів') })
+        return
+      }
+
       const orderToCalculate = getDocumentStructureOutcomeToCalculate(row.order)
       const requestId = structureCalculationRequestRef.current + 1
       structureCalculationRequestRef.current = requestId
@@ -297,7 +320,7 @@ function useOutgoingCashflowsPageModel(): OutgoingCashflowsPageModel {
       }
 
       setCalculatingStructure(true)
-      void calculateAdvanceReportOrder(orderToCalculate)
+      void calculateAdvanceReportDocumentStructure(orderToCalculate)
         .then((calculatedOrder) => {
           if (structureCalculationRequestRef.current === requestId) {
             setStructureCalculatedOrder(calculatedOrder)
@@ -323,6 +346,7 @@ function useOutgoingCashflowsPageModel(): OutgoingCashflowsPageModel {
       setStructureCalculatedOrder,
       setStructureCalculationError,
       setStructureRow,
+      hasPermission,
       t,
     ],
   )
@@ -351,6 +375,9 @@ function useOutgoingCashflowsPageModel(): OutgoingCashflowsPageModel {
     setSelectedRow(null)
   }, [focusedOrderNetId, selectedRow?.order.NetUid, setSelectedRow])
   const columns = useOutgoingCashflowColumns({
+    canCancel: hasPermission(PermissionKeys.OutgoingCashflows.Order.Cancel),
+    canOpenDocumentStructure: hasPermission(PermissionKeys.AdvancedReports.DocumentStructure.Open),
+    canOpenReport: hasPermission(PermissionKeys.AdvancedReports.Report.Open),
     onCancel: setCancelRow,
     onEditReport: openAdvanceReport,
     onOpenDocumentStructure: openDocumentStructure,
@@ -429,6 +456,12 @@ function useOutgoingCashflowsPageModel(): OutgoingCashflowsPageModel {
       return
     }
 
+    if (!hasPermission(PermissionKeys.OutgoingCashflows.Order.Cancel)) {
+      setCancelRow(null)
+      notifications.show({ color: 'red', message: t('Немає прав для скасування видаткового ордера') })
+      return
+    }
+
     setCanceling(true)
     setError(null)
 
@@ -441,7 +474,7 @@ function useOutgoingCashflowsPageModel(): OutgoingCashflowsPageModel {
     } finally {
       setCanceling(false)
     }
-  }, [cancelRow, isCanceling, loadCashflows, page, setCancelRow, setCanceling, setError, t])
+  }, [cancelRow, hasPermission, isCanceling, loadCashflows, page, setCancelRow, setCanceling, setError, t])
 
   return {
     cancelRow,
@@ -498,6 +531,23 @@ function useOutgoingCashflowsPageModel(): OutgoingCashflowsPageModel {
 }
 
 export function OutgoingCashflowsPage() {
+  return (
+    <PermissionGate
+      permissionKey={PermissionKeys.SystemPages.OutgoingCashflows.View}
+      fallback={<OutgoingCashflowsPermissionDenied />}
+    >
+      <OutgoingCashflowsPageContent />
+    </PermissionGate>
+  )
+}
+
+function OutgoingCashflowsPermissionDenied() {
+  const { t } = useI18n()
+
+  return <Text c="red" p="md">{t('Доступ заборонено')}</Text>
+}
+
+function OutgoingCashflowsPageContent() {
   const model = useOutgoingCashflowsPageModel()
 
   return <OutgoingCashflowsContent model={model} />
@@ -604,11 +654,17 @@ function OutgoingCashflowsContent({ model }: { model: OutgoingCashflowsPageModel
     onSetToDate,
   } = model
   const { t } = useI18n()
+  const { hasPermission } = useAuth()
   const navigate = useNavigate()
   const [tableToolbarSlot, setTableToolbarSlot] = useState<HTMLDivElement | null>(null)
   const location = useLocation()
 
   function navigateToCreateItem(path: string) {
+    if (!hasPermission(PermissionKeys.OutgoingCashflows.Order.Create)) {
+      notifications.show({ color: 'red', message: t('Немає прав для створення видаткового ордера') })
+      return
+    }
+
     if (path.startsWith('/accounting/outgoing-cashflow/new')) {
       navigate(path, { state: { backgroundLocation: location } })
       return
@@ -696,8 +752,9 @@ function OutgoingCashflowsContent({ model }: { model: OutgoingCashflowsPageModel
               ref={setTableToolbarSlot}
               className="app-filter-table-toolbar-slot outgoing-cashflows-table-toolbar-slot"
             />
-            <div className="outgoing-cashflows-create-actions">
-              <Menu position="bottom-end" shadow="md" width={340} withinPortal>
+            {hasPermission(PermissionKeys.OutgoingCashflows.Order.Create) && (
+              <div className="outgoing-cashflows-create-actions">
+                <Menu position="bottom-end" shadow="md" width={340} withinPortal>
                 <Menu.Target>
                   <Button
                     color={CREATE_ACTION_COLOR}
@@ -732,8 +789,9 @@ function OutgoingCashflowsContent({ model }: { model: OutgoingCashflowsPageModel
                     </Menu.Item>
                   ))}
                 </Menu.Dropdown>
-              </Menu>
-            </div>
+                </Menu>
+              </div>
+            )}
           </Group>
         </div>
 
@@ -800,11 +858,17 @@ function OutgoingCashflowsContent({ model }: { model: OutgoingCashflowsPageModel
 }
 
 function useOutgoingCashflowColumns({
+  canCancel,
+  canOpenDocumentStructure,
+  canOpenReport,
   onCancel,
   onEditReport,
   onOpenDocumentStructure,
   onOpen,
 }: {
+  canCancel: boolean
+  canOpenDocumentStructure: boolean
+  canOpenReport: boolean
   onCancel: (row: OutgoingCashflowRow) => void
   onEditReport: (row: OutgoingCashflowRow) => void
   onOpenDocumentStructure: (row: OutgoingCashflowRow) => void
@@ -967,14 +1031,14 @@ function useOutgoingCashflowColumns({
         enableReorder: false,
         cell: (row) => (
           <Group className="outgoing-cashflows-row-actions" gap={4} justify="flex-end" wrap="nowrap">
-            {row.hasDocumentStructure && (
+            {canOpenDocumentStructure && row.hasDocumentStructure && (
               <TableRowAction
                 action="status"
                 label={t('Структура документів')}
                 onClick={() => onOpenDocumentStructure(row)}
               />
             )}
-            {row.isUnderReport && (
+            {canOpenReport && row.isUnderReport && (
               <TableRowAction
                 action="edit"
                 disabled={!row.order.NetUid}
@@ -982,19 +1046,21 @@ function useOutgoingCashflowColumns({
                 onClick={() => onEditReport(row)}
               />
             )}
-            <TableRowAction
-              action="cancel"
-              disabled={row.isCanceled || !row.order.NetUid}
-              hint={row.isCanceled ? t('Уже скасовано') : undefined}
-              label={t('Скасувати')}
-              onClick={() => onCancel(row)}
-            />
+            {canCancel && (
+              <TableRowAction
+                action="cancel"
+                disabled={row.isCanceled || !row.order.NetUid}
+                hint={row.isCanceled ? t('Уже скасовано') : undefined}
+                label={t('Скасувати')}
+                onClick={() => onCancel(row)}
+              />
+            )}
             <TableRowAction action="details" label={t('Деталі')} onClick={() => onOpen(row)} />
           </Group>
         ),
       },
     ],
-    [onCancel, onEditReport, onOpen, onOpenDocumentStructure, t],
+    [canCancel, canOpenDocumentStructure, canOpenReport, onCancel, onEditReport, onOpen, onOpenDocumentStructure, t],
   )
 }
 
@@ -1042,159 +1108,92 @@ function OutgoingCashflowDetailDrawer({ row, onClose }: { row: OutgoingCashflowR
   return (
     <AppDrawer opened={Boolean(row)} padding="md" size="xl" title={t('Видатковий ордер')} onClose={onClose}>
       {row && (
-        <div className="outgoing-detail-drawer">
-          <section className="outgoing-detail-summary">
-            <div className="outgoing-detail-summary__main">
-              <span className="outgoing-detail-eyebrow">{t('Документ')}</span>
-              <Text className="outgoing-detail-summary__title">{displayValue(row.number)}</Text>
-              <Text className="outgoing-detail-summary__meta">
-                {formatDateTime(row.fromDate)} · {displayValue(row.operationType)}
-              </Text>
+        <DocumentDetailLayout
+          summary={
+            <DocumentDetailSummary
+              eyebrow={t('Документ')}
+              title={displayValue(row.number)}
+              meta={<>{formatDateTime(row.fromDate)} · {displayValue(row.operationType)}</>}
+              metrics={
+                <>
+                  <DocumentDetailMetric label={t('Сума')} value={formatMoney(row.amount)} suffix={row.currency} />
+                  <DocumentDetailMetric label={t('Різниця')} tone={row.differenceAmount ? 'danger' : undefined} value={formatMoney(row.differenceAmount)} />
+                  <DocumentDetailMetric label={t('ПДВ')} value={formatMoneyOptional(row.order.VAT)} />
+                </>
+              }
+            />
+          }
+        >
+          <DocumentDetailSection subtitle={displayValue(row.number)} title={t('Документ')}>
+            <DocumentDetailRow label={t('Дата')} value={formatDateTime(row.fromDate)} />
+            <DocumentDetailRow label={t('Номер')} value={displayValue(row.number)} />
+            <DocumentDetailRow label={t('Вхідний номер')} value={displayValue(row.order.ArrivalNumber)} />
+            <DocumentDetailRow label={t('Тип операції')} value={displayValue(row.operationType)} />
+            <DocumentDetailRow label={t('Призначення платежу')} value={displayValue(row.order.PaymentPurpose)} wide />
+            <DocumentDetailRow label={t('Коментар')} value={displayValue(row.comment)} wide />
+          </DocumentDetailSection>
+
+          <DocumentDetailSection subtitle={displayValue(row.currency)} title={t('Суми та валюта')}>
+            <DocumentDetailRow mono label={t('Сума')} value={formatMoneyWithCurrency(row.amount, row.currency)} />
+            <DocumentDetailRow label={t('Валюта')} value={displayValue(row.currency)} />
+            <DocumentDetailRow label={t('Курс')} value={displayValue(row.order.ExchangeRate)} />
+            <DocumentDetailRow mono label={t('Сума в EUR')} value={formatMoneyOptional(row.order.EuroAmount ?? row.order.AfterExchangeAmount)} />
+            <DocumentDetailRow label={t('ПДВ %')} value={hasNumber(row.order.VatPercent) ? displayValue(row.order.VatPercent) : displayValue(undefined)} />
+            <DocumentDetailRow mono label={t('ПДВ')} value={formatMoneyOptional(row.order.VAT)} />
+            <DocumentDetailRow mono label={t('Різниця')} tone={row.differenceAmount ? 'danger' : undefined} value={formatMoney(row.differenceAmount)} />
+          </DocumentDetailSection>
+
+          <DocumentDetailSection subtitle={displayValue(row.organization)} title={t('Учасники та рахунки')}>
+            <DocumentDetailRow label={t('Кому видано')} value={displayValue(row.payedTo)} wide />
+            <DocumentDetailRow label={t('Організація')} value={displayValue(row.organization)} wide />
+            <DocumentDetailRow label={t('Рахунок')} value={displayValue(row.paymentRegister)} wide />
+            <DocumentDetailRow label={t('Стаття руху')} value={displayValue(row.paymentMovement)} wide />
+            <DocumentDetailRow label={t('Відповідальний')} value={displayValue(row.responsible)} wide />
+            <DocumentDetailRow label={t('Клієнт')} value={displayValue(getEntityName(row.order.ClientAgreement?.Client) || getEntityName(row.order.Client))} wide />
+          </DocumentDetailSection>
+
+          <DocumentDetailSection title={t('Стани')}>
+            <div className="document-detail-flags">
+              <DocumentDetailFlag active={Boolean(row.isUnderReport)} label={t('Підзвіт')} />
+              <DocumentDetailFlag active={Boolean(row.order.IsUnderReportDone)} label={t('Закрито')} />
+              <DocumentDetailFlag active={Boolean(row.isCanceled)} label={t('Скасовано')} />
+              <DocumentDetailFlag active={Boolean(row.isAccounting)} label={t('Бухгалтерський')} />
+              <DocumentDetailFlag active={Boolean(row.isManagementAccounting)} label={t('Управлінський')} />
             </div>
-            <div className="outgoing-detail-summary__metrics">
-              <OutgoingDetailMetric label={t('Сума')} value={formatMoney(row.amount)} suffix={row.currency} />
-              <OutgoingDetailMetric label={t('Різниця')} tone={row.differenceAmount ? 'danger' : undefined} value={formatMoney(row.differenceAmount)} />
-              <OutgoingDetailMetric label={t('ПДВ')} value={formatMoneyOptional(row.order.VAT)} />
-            </div>
-          </section>
+          </DocumentDetailSection>
 
-          <div className="outgoing-detail-tree">
-            <OutgoingDetailSection subtitle={displayValue(row.number)} title={t('Документ')}>
-              <OutgoingDetailRow label={t('Дата')} value={formatDateTime(row.fromDate)} />
-              <OutgoingDetailRow label={t('Номер')} value={displayValue(row.number)} />
-              <OutgoingDetailRow label={t('Вхідний номер')} value={displayValue(row.order.ArrivalNumber)} />
-              <OutgoingDetailRow label={t('Тип операції')} value={displayValue(row.operationType)} />
-              <OutgoingDetailRow label={t('Призначення платежу')} value={displayValue(row.order.PaymentPurpose)} wide />
-              <OutgoingDetailRow label={t('Коментар')} value={displayValue(row.comment)} wide />
-            </OutgoingDetailSection>
+          <DocumentDetailSection subtitle={`${relatedOrders.length}`} title={t('Пов’язані документи')}>
+            {relatedOrders.length > 0 ? (
+              <div className="document-detail-related-list">
+                {relatedOrders.map((item, index) => {
+                  const order = item.ConsumablesOrder
+                  const itemsCount = getActiveConsumablesItemsCount(order)
 
-            <OutgoingDetailSection subtitle={displayValue(row.currency)} title={t('Суми та валюта')}>
-              <OutgoingDetailRow mono label={t('Сума')} value={formatMoneyWithCurrency(row.amount, row.currency)} />
-              <OutgoingDetailRow label={t('Валюта')} value={displayValue(row.currency)} />
-              <OutgoingDetailRow label={t('Курс')} value={displayValue(row.order.ExchangeRate)} />
-              <OutgoingDetailRow mono label={t('Сума в EUR')} value={formatMoneyOptional(row.order.EuroAmount ?? row.order.AfterExchangeAmount)} />
-              <OutgoingDetailRow label={t('ПДВ %')} value={hasNumber(row.order.VatPercent) ? displayValue(row.order.VatPercent) : displayValue(undefined)} />
-              <OutgoingDetailRow mono label={t('ПДВ')} value={formatMoneyOptional(row.order.VAT)} />
-              <OutgoingDetailRow mono label={t('Різниця')} tone={row.differenceAmount ? 'danger' : undefined} value={formatMoney(row.differenceAmount)} />
-            </OutgoingDetailSection>
-
-            <OutgoingDetailSection subtitle={displayValue(row.organization)} title={t('Учасники та рахунки')}>
-              <OutgoingDetailRow label={t('Кому видано')} value={displayValue(row.payedTo)} wide />
-              <OutgoingDetailRow label={t('Організація')} value={displayValue(row.organization)} wide />
-              <OutgoingDetailRow label={t('Рахунок')} value={displayValue(row.paymentRegister)} wide />
-              <OutgoingDetailRow label={t('Стаття руху')} value={displayValue(row.paymentMovement)} wide />
-              <OutgoingDetailRow label={t('Відповідальний')} value={displayValue(row.responsible)} wide />
-              <OutgoingDetailRow label={t('Клієнт')} value={displayValue(getEntityName(row.order.ClientAgreement?.Client) || getEntityName(row.order.Client))} wide />
-            </OutgoingDetailSection>
-
-            <OutgoingDetailSection title={t('Стани')}>
-              <div className="outgoing-detail-flags">
-                <OutgoingDetailFlag active={Boolean(row.isUnderReport)} label={t('Підзвіт')} />
-                <OutgoingDetailFlag active={Boolean(row.order.IsUnderReportDone)} label={t('Закрито')} />
-                <OutgoingDetailFlag active={Boolean(row.isCanceled)} label={t('Скасовано')} />
-                <OutgoingDetailFlag active={Boolean(row.isAccounting)} label={t('Бухгалтерський')} />
-                <OutgoingDetailFlag active={Boolean(row.isManagementAccounting)} label={t('Управлінський')} />
+                  return (
+                    <article key={getRelatedOrderKey(row, item, index)} className="document-detail-related-card">
+                      <div className="document-detail-related-card__head">
+                        <span>{displayValue(order?.Number)}</span>
+                        <span>{formatDateTime(order?.OrganizationFromDate)}</span>
+                      </div>
+                      <div className="document-detail-related-card__grid">
+                        <DocumentDetailRow label={t('Номер організації')} value={displayValue(order?.OrganizationNumber)} />
+                        <DocumentDetailRow label={t('Постачальник/отримувач')} value={displayValue(getEntityName(order?.ConsumableProductOrganization))} />
+                        <DocumentDetailRow label={t('Склад')} value={displayValue(getEntityName(order?.ConsumablesStorage))} />
+                        <DocumentDetailRow label={t('Позицій')} value={String(itemsCount)} />
+                        <DocumentDetailRow mono label={t('Сума без ПДВ')} value={formatMoneyOptional(order?.TotalAmountWithoutVAT)} />
+                        <DocumentDetailRow mono label={t('Сума з ПДВ')} value={formatMoneyOptional(order?.TotalAmount)} />
+                      </div>
+                    </article>
+                  )
+                })}
               </div>
-            </OutgoingDetailSection>
-
-            <OutgoingDetailSection subtitle={`${relatedOrders.length}`} title={t('Пов’язані документи')}>
-              {relatedOrders.length > 0 ? (
-                <div className="outgoing-detail-related-list">
-                  {relatedOrders.map((item, index) => {
-                    const order = item.ConsumablesOrder
-                    const itemsCount = getActiveConsumablesItemsCount(order)
-
-                    return (
-                      <article key={getRelatedOrderKey(row, item, index)} className="outgoing-detail-related-card">
-                        <div className="outgoing-detail-related-card__head">
-                          <span>{displayValue(order?.Number)}</span>
-                          <span>{formatDateTime(order?.OrganizationFromDate)}</span>
-                        </div>
-                        <div className="outgoing-detail-related-card__grid">
-                          <OutgoingDetailRow label={t('Номер організації')} value={displayValue(order?.OrganizationNumber)} />
-                          <OutgoingDetailRow label={t('Постачальник/отримувач')} value={displayValue(getEntityName(order?.ConsumableProductOrganization))} />
-                          <OutgoingDetailRow label={t('Склад')} value={displayValue(getEntityName(order?.ConsumablesStorage))} />
-                          <OutgoingDetailRow label={t('Позицій')} value={String(itemsCount)} />
-                          <OutgoingDetailRow mono label={t('Сума без ПДВ')} value={formatMoneyOptional(order?.TotalAmountWithoutVAT)} />
-                          <OutgoingDetailRow mono label={t('Сума з ПДВ')} value={formatMoneyOptional(order?.TotalAmount)} />
-                        </div>
-                      </article>
-                    )
-                  })}
-                </div>
-              ) : (
-                <div className="outgoing-detail-empty">{t('Пов’язаних документів немає')}</div>
-              )}
-            </OutgoingDetailSection>
-          </div>
-        </div>
+            ) : (
+              <div className="document-detail-empty">{t('Пов’язаних документів немає')}</div>
+            )}
+          </DocumentDetailSection>
+        </DocumentDetailLayout>
       )}
     </AppDrawer>
-  )
-}
-
-function OutgoingDetailMetric({
-  label,
-  suffix,
-  tone,
-  value,
-}: {
-  label: string
-  suffix?: string
-  tone?: 'danger'
-  value: string
-}) {
-  return (
-    <div className={`outgoing-detail-metric${tone ? ` is-${tone}` : ''}`}>
-      <span>{label}</span>
-      <strong>
-        {displayValue(value)}
-        {suffix ? <em>{suffix}</em> : null}
-      </strong>
-    </div>
-  )
-}
-
-function OutgoingDetailSection({ children, subtitle, title }: { children: ReactNode; subtitle?: string; title: string }) {
-  return (
-    <section className="outgoing-detail-section">
-      <div className="outgoing-detail-section__head">
-        <span className="outgoing-detail-section__title">{title}</span>
-        {subtitle ? <span className="outgoing-detail-section__subtitle">{subtitle}</span> : null}
-      </div>
-      <div className="outgoing-detail-section__body">{children}</div>
-    </section>
-  )
-}
-
-function OutgoingDetailRow({
-  label,
-  mono,
-  tone,
-  value,
-  wide,
-}: {
-  label: string
-  mono?: boolean
-  tone?: 'danger'
-  value: string
-  wide?: boolean
-}) {
-  return (
-    <div className={`outgoing-detail-row${wide ? ' is-wide' : ''}`}>
-      <span className="outgoing-detail-row__label">{label}</span>
-      <span className="outgoing-detail-row__line" aria-hidden />
-      <span className={`outgoing-detail-row__value${mono ? ' app-money' : ''}${tone ? ` is-${tone}` : ''}`}>{displayValue(value) || '-'}</span>
-    </div>
-  )
-}
-
-function OutgoingDetailFlag({ active, label }: { active: boolean; label: string }) {
-  return (
-    <span className={`outgoing-detail-flag${active ? ' is-active' : ''}`}>
-      <span aria-hidden />
-      {label}
-    </span>
   )
 }
 

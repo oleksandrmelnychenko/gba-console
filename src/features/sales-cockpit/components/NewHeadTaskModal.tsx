@@ -2,9 +2,11 @@ import { Button, Group, Select, Stack, Text, TextInput, Textarea } from '@mantin
 import { notifications } from '@mantine/notifications'
 import { useEffect, useMemo, useState } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
+import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppModal } from '../../../shared/ui/AppModal'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
+import { usePermissions } from '../../auth/usePermissions'
 import { createHeadTask, getHeadClients } from '../api/salesCockpitApi'
 import type { CockpitUrgency, HeadClient, HeadTaskManager } from '../types'
 
@@ -27,6 +29,8 @@ export function NewHeadTaskModal({
   onCreated: () => void
 }) {
   const { t } = useI18n()
+  const { can } = usePermissions()
+  const isOpen = can(PermissionKeys.SalesHeadDashboard.Task.Create) && opened
   const [managerId, setManagerId] = useValueState<string | null>(null)
   const [clientId, setClientId] = useValueState<string | null>(null)
   const [clients, setClients] = useValueState<HeadClient[]>([])
@@ -38,7 +42,7 @@ export function NewHeadTaskModal({
   const [saving, setSaving] = useState(false)
 
   useEffect(() => {
-    if (!opened) {
+    if (!isOpen) {
       setManagerId(null)
       setClientId(null)
       setClients([])
@@ -47,7 +51,7 @@ export function NewHeadTaskModal({
       setUrgency('high')
       setDueDate('')
     }
-  }, [opened, setClientId, setClients, setDescription, setDueDate, setManagerId, setTitle, setUrgency])
+  }, [isOpen, setClientId, setClients, setDescription, setDueDate, setManagerId, setTitle, setUrgency])
 
   useEffect(() => {
     setClientId(null)
@@ -102,7 +106,7 @@ export function NewHeadTaskModal({
   const clientsLoading = Boolean(managerId && loadedClientsManagerId !== managerId)
 
   async function handleSubmit() {
-    if (!managerId || !trimmedTitle) {
+    if (!can(PermissionKeys.SalesHeadDashboard.Task.Create) || !managerId || !trimmedTitle) {
       return
     }
 
@@ -133,7 +137,7 @@ export function NewHeadTaskModal({
 
   return (
     <AppModal
-      opened={opened}
+      opened={isOpen}
       title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Нова задача для менеджера')}</span>}
       onClose={() => {
         if (!saving) {

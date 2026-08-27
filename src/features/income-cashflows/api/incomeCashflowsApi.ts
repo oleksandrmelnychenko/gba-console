@@ -3,10 +3,7 @@ import {
   executeAccountingMutation,
   type AccountingMutationOperationOptions,
 } from '../../../shared/api/accountingMutationOperation'
-import {
-  ACCOUNTING_OPERATION_ID,
-  getAccountingOperation,
-} from '../../accounting/accountingOperationCatalog'
+import { INCOME_PAYMENT_OPERATION_CODE } from '../../accounting/accountingOperationCatalog'
 import { IncomeCounterpartySearchType } from '../types'
 import type {
   Client,
@@ -16,6 +13,7 @@ import type {
   IncomeExchangeCalculation,
   IncomeCashflowsSearchParams,
   IncomePaymentOrder,
+  IncomePaymentOperationType,
   NamedEntity,
   Organization,
   PaymentMovement,
@@ -27,11 +25,8 @@ import type {
 const MANUFACTURER_CLIENT_TYPE_ROLE_ID = 4
 const RETAIL_CLIENT_INITIAL_PAGE_SIZE = 100
 const RETAIL_CLIENT_INITIAL_MAX_PAGES = 100
-const CREATE_INCOME_ENDPOINT =
-  getAccountingOperation(ACCOUNTING_OPERATION_ID.IncomeClientPayment).endpoint
-
 export async function getIncomeCashflows(params: IncomeCashflowsSearchParams): Promise<IncomePaymentOrder[]> {
-  const result = await apiRequest<unknown>('/payments/orders/income/all', {
+  const result = await apiRequest<unknown>('/payments/orders/income/accounting/registry', {
     query: {
       currencyNetId: params.currencyNetId || undefined,
       from: params.from,
@@ -48,10 +43,22 @@ export async function getIncomeCashflows(params: IncomeCashflowsSearchParams): P
 }
 
 export async function getIncomeCashflowByNetId(netId: string, signal?: AbortSignal): Promise<IncomePaymentOrder | null> {
-  const result = await apiRequest<unknown>('/payments/orders/income/get', {
+  const result = await apiRequest<unknown>('/payments/orders/income/accounting/details', {
     query: {
       netId,
     },
+    ...(signal ? { signal } : {}),
+  })
+
+  return normalizeIncomePaymentOrder(result)
+}
+
+export async function getIncomeCashflowForAccountingCashFlow(
+  netId: string,
+  signal?: AbortSignal,
+): Promise<IncomePaymentOrder | null> {
+  const result = await apiRequest<unknown>('/payments/orders/income/accounting-cash-flow/get', {
+    query: { netId },
     ...(signal ? { signal } : {}),
   })
 
@@ -66,7 +73,7 @@ export async function cancelIncomeCashflow(
     kind: 'income-payment:cancel',
     operation,
     payload: { netId },
-    request: (payload, context) => apiRequest<unknown>('/payments/orders/income/cancel', {
+    request: (payload, context) => apiRequest<unknown>('/payments/orders/income/accounting/cancel', {
       dedupe: false,
       headers: context.headers,
       method: 'PUT',
@@ -93,7 +100,7 @@ export async function updateIncomeCashflowClient(
     kind: 'income-payment:change-client',
     operation,
     payload: params,
-    request: (payload, context) => apiRequest<unknown>('/payments/orders/income/update/client', {
+    request: (payload, context) => apiRequest<unknown>('/payments/orders/income/accounting/reassign-client', {
       dedupe: false,
       headers: context.headers,
       method: 'PUT',
@@ -153,13 +160,13 @@ export async function searchIncomeCashflowPaymentRegisters(value = ''): Promise<
 }
 
 export async function getIncomeCashflowPaymentMovements(): Promise<PaymentMovement[]> {
-  const result = await apiRequest<unknown>('/payments/movements/all')
+  const result = await apiRequest<unknown>('/payments/movements/accounting/all')
 
   return readArrayPayload(result, ['Items', 'PaymentMovements', 'Data']) as PaymentMovement[]
 }
 
 export async function searchIncomeCashflowPaymentMovements(value: string): Promise<PaymentMovement[]> {
-  const result = await apiRequest<unknown>('/payments/movements/all/search', {
+  const result = await apiRequest<unknown>('/payments/movements/accounting/all/search', {
     query: {
       value,
     },
@@ -169,7 +176,7 @@ export async function searchIncomeCashflowPaymentMovements(value: string): Promi
 }
 
 export async function createIncomeCashflowPaymentMovement(operationName: string): Promise<PaymentMovement | null> {
-  const result = await apiRequest<unknown>('/payments/movements/new', {
+  const result = await apiRequest<unknown>('/payments/movements/accounting/new', {
     method: 'POST',
     body: {
       OperationName: operationName,
@@ -179,9 +186,47 @@ export async function createIncomeCashflowPaymentMovement(operationName: string)
   return result && typeof result === 'object' ? (result as PaymentMovement) : null
 }
 
-export async function searchIncomeCashflowCounterparties(
+export async function createIncomeCashflowPaymentMovementForAccounting(operationName: string): Promise<PaymentMovement | null> {
+  const result = await apiRequest<unknown>('/payments/movements/accounting/new', {
+    method: 'POST',
+    body: {
+      OperationName: operationName,
+    },
+  })
+
+  return result && typeof result === 'object' ? (result as PaymentMovement) : null
+}
+
+export async function searchOtherIncomeCashflowCounterparties(
   value: string,
   type: IncomeCounterpartySearchType,
+  signal?: AbortSignal,
+): Promise<Client[]> {
+  return searchIncomeCashflowCounterpartiesAt(
+    value,
+    type,
+    getOtherIncomeCounterpartySearchPath(type),
+    signal,
+  )
+}
+
+export async function searchOutgoingCashflowCounterparties(
+  value: string,
+  type: IncomeCounterpartySearchType,
+  signal?: AbortSignal,
+): Promise<Client[]> {
+  return searchIncomeCashflowCounterpartiesAt(
+    value,
+    type,
+    getOutgoingCounterpartySearchPath(type),
+    signal,
+  )
+}
+
+async function searchIncomeCashflowCounterpartiesAt(
+  value: string,
+  type: IncomeCounterpartySearchType,
+  path: string,
   signal?: AbortSignal,
 ): Promise<Client[]> {
   const searchValue = value.trim()
@@ -190,7 +235,34 @@ export async function searchIncomeCashflowCounterparties(
     return []
   }
 
-  const result = await apiRequest<unknown>(getCounterpartySearchPath(type), {
+  const result = await apiRequest<unknown>(path, {
+    query: getCounterpartySearchQuery(searchValue, type),
+    ...(signal ? { signal } : {}),
+  })
+
+  const counterparties = readArrayPayload(
+    result,
+    ['Items', 'Clients', 'SupplyOrganizations', 'Organizations', 'Data', 'Collection'],
+  ) as Client[]
+
+  return type === IncomeCounterpartySearchType.Supplier
+    ? counterparties
+    : expandIncomeCashflowClientOptions(counterparties)
+}
+
+export async function searchIncomeCashflowCounterpartiesForOperation(
+  value: string,
+  type: IncomeCounterpartySearchType,
+  operationType: IncomePaymentOperationType,
+  signal?: AbortSignal,
+): Promise<Client[]> {
+  const searchValue = value.trim()
+
+  if (!searchValue) {
+    return []
+  }
+
+  const result = await apiRequest<unknown>(getIncomeCounterpartySearchPath(type, operationType), {
     query: getCounterpartySearchQuery(searchValue, type),
     ...(signal ? { signal } : {}),
   })
@@ -429,6 +501,28 @@ export async function createIncomeCashflow(
   isAuto = false,
   operation?: AccountingMutationOperationOptions,
 ): Promise<IncomePaymentOrder | null> {
+  return createIncomeCashflowAtEndpoint(
+    getIncomeCreateEndpoint(order.OperationType),
+    order,
+    isAuto,
+    operation,
+  )
+}
+
+export async function createOnlineShopIncomeCashflow(
+  order: IncomePaymentOrder,
+  isAuto = false,
+  operation?: AccountingMutationOperationOptions,
+): Promise<IncomePaymentOrder | null> {
+  return createIncomeCashflowAtEndpoint('/payments/orders/income/online-shop/create', order, isAuto, operation)
+}
+
+async function createIncomeCashflowAtEndpoint(
+  endpoint: string,
+  order: IncomePaymentOrder,
+  isAuto: boolean,
+  operation?: AccountingMutationOperationOptions,
+): Promise<IncomePaymentOrder | null> {
   const result = await executeAccountingMutation({
     identity: order,
     kind: 'income-payment:add',
@@ -437,7 +531,7 @@ export async function createIncomeCashflow(
       isAuto,
       order,
     },
-    request: (payload, context) => apiRequest<unknown>(CREATE_INCOME_ENDPOINT, {
+    request: (payload, context) => apiRequest<unknown>(endpoint, {
       body: payload.order,
       dedupe: false,
       headers: context.headers,
@@ -450,6 +544,23 @@ export async function createIncomeCashflow(
   })
 
   return normalizeIncomePaymentOrder(result)
+}
+
+function getIncomeCreateEndpoint(operationType: string | number | undefined): string {
+  switch (Number(operationType)) {
+    case INCOME_PAYMENT_OPERATION_CODE.ClientPayment:
+      return '/payments/orders/income/accounting/create/client-payment'
+    case INCOME_PAYMENT_OPERATION_CODE.SupplierReturn:
+      return '/payments/orders/income/accounting/create/supplier-return'
+    case INCOME_PAYMENT_OPERATION_CODE.OtherAccountingWithCounterparts:
+      return '/payments/orders/income/accounting/create/counterparty-income'
+    case INCOME_PAYMENT_OPERATION_CODE.OtherIncome:
+      return '/payments/orders/income/accounting/create/other-income'
+    case INCOME_PAYMENT_OPERATION_CODE.ReturnFromColleague:
+      return '/payments/orders/income/accounting/create/colleague-return'
+    default:
+      throw new Error('Unsupported income payment operation type.')
+  }
 }
 
 function normalizeIncomePaymentOrders(result: unknown): IncomePaymentOrder[] {
@@ -501,16 +612,61 @@ function normalizePaymentRegister(result: unknown): PaymentRegister | null {
   }
 }
 
-function getCounterpartySearchPath(type: IncomeCounterpartySearchType): string {
+function getIncomeCounterpartySearchPath(
+  type: IncomeCounterpartySearchType,
+  operationType: IncomePaymentOperationType,
+): string {
+  if (operationType === INCOME_PAYMENT_OPERATION_CODE.ClientPayment) {
+    if (type !== IncomeCounterpartySearchType.Client) {
+      throw new Error('Client-payment search only supports client counterparties.')
+    }
+
+    return '/clients/income-cashflows/client-payment/search'
+  }
+
+  const operationSegment = operationType === INCOME_PAYMENT_OPERATION_CODE.SupplierReturn
+    ? 'supplier-return'
+    : operationType === INCOME_PAYMENT_OPERATION_CODE.OtherAccountingWithCounterparts
+      ? 'counterparty-income'
+      : null
+
+  if (!operationSegment) {
+    throw new Error('Unsupported income counterparty search operation type.')
+  }
+
   if (type === IncomeCounterpartySearchType.Supplier) {
-    return '/supplies/organizations/all/search'
+    return `/supplies/organizations/income-cashflows/${operationSegment}/search`
   }
 
   if (type === IncomeCounterpartySearchType.Manufacturer) {
-    return '/clients/suppliers/all/filtered'
+    return `/clients/income-cashflows/${operationSegment}/suppliers/search`
   }
 
-  return '/clients/all/filtered'
+  return `/clients/income-cashflows/${operationSegment}/search`
+}
+
+function getOtherIncomeCounterpartySearchPath(type: IncomeCounterpartySearchType): string {
+  if (type === IncomeCounterpartySearchType.Supplier) {
+    return '/supplies/organizations/income-cashflows/other-income/search'
+  }
+
+  if (type === IncomeCounterpartySearchType.Manufacturer) {
+    return '/clients/income-cashflows/other-income/suppliers/search'
+  }
+
+  return '/clients/income-cashflows/other-income/search'
+}
+
+function getOutgoingCounterpartySearchPath(type: IncomeCounterpartySearchType): string {
+  if (type === IncomeCounterpartySearchType.Supplier) {
+    return '/supplies/organizations/outgoing-cashflows/create/search'
+  }
+
+  if (type === IncomeCounterpartySearchType.Manufacturer) {
+    return '/clients/outgoing-cashflows/create/suppliers/search'
+  }
+
+  return '/clients/outgoing-cashflows/create/search'
 }
 
 function getCounterpartySearchQuery(value: string, type: IncomeCounterpartySearchType) {

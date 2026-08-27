@@ -1,9 +1,15 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { apiRequest } from '../../../shared/api/apiClient'
 import {
-  addOrUpdateSad,
   addOrUpdateSaleSad,
+  assembleCartSadDocument,
+  assembleCartTaxFreeDocument,
+  getNotSentSads,
+  getNotSentTaxFreePackLists,
+  getSalesForMovingToUkraine,
+  getUkraineCartItems,
   updateUkraineCartItem,
+  uploadPreviewUkraineCartItemsFromFile,
   uploadUkraineCartItemsFromFile,
 } from './basketSupplyUkraineOrderApi'
 
@@ -26,41 +32,7 @@ describe('basketSupplyUkraineOrderApi SAD mutations', () => {
     )
   })
 
-  it('uses a durable create key for cart-backed SADs', async () => {
-    apiRequestMock.mockResolvedValueOnce({
-      Body: {
-        Id: 51,
-      },
-    })
-
-    await addOrUpdateSad({
-      Id: 0,
-      SadItems: [],
-    })
-
-    const options = apiRequestMock.mock
-      .calls[0]?.[1]
-    const operationId =
-      new Headers(options?.headers)
-        .get('Idempotency-Key')
-
-    expect(operationId).toMatch(
-      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i,
-    )
-    expect(options).toEqual({
-      body: {
-        Id: 0,
-        SadItems: [],
-      },
-      dedupe: false,
-      headers: {
-        'Idempotency-Key': operationId,
-      },
-      method: 'POST',
-    })
-  })
-
-  it('leaves the legacy sale mutation flow unchanged', async () => {
+  it('uses the sale-assembly facade for cart-backed sale SADs', async () => {
     apiRequestMock.mockResolvedValueOnce({
       Body: {
         Id: 52,
@@ -73,7 +45,7 @@ describe('basketSupplyUkraineOrderApi SAD mutations', () => {
     })
 
     expect(apiRequestMock).toHaveBeenCalledWith(
-      '/supplies/ukraine/order/packlists/sad/update/sale',
+      '/supplies/ukraine/order/packlists/sad/page/documents/sad/assemble/sales',
       {
         body: {
           Id: 0,
@@ -125,6 +97,9 @@ describe('basketSupplyUkraineOrderApi cart reservation mutations', () => {
 
     expect(firstOperation).toMatch(
       /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i,
+    )
+    expect(apiRequestMock.mock.calls[0]?.[0]).toBe(
+      '/supplies/ukraine/order/cart/items/page/item/reservation',
     )
     expect(retryOptions).toEqual({
       body: {
@@ -181,6 +156,9 @@ describe('basketSupplyUkraineOrderApi cart reservation mutations', () => {
       /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i,
     )
     expect(options?.body).toBeInstanceOf(FormData)
+    expect(apiRequestMock.mock.calls[0]?.[0]).toBe(
+      '/supplies/ukraine/order/cart/items/page/file/upload',
+    )
     expect(options).toMatchObject({
       dedupe: false,
       headers: {
@@ -191,5 +169,93 @@ describe('basketSupplyUkraineOrderApi cart reservation mutations', () => {
         operationNetUid: operation,
       },
     })
+  })
+
+  it('uses only permission-scoped registry and preview routes', async () => {
+    apiRequestMock.mockResolvedValue({ Body: [] })
+
+    await getUkraineCartItems()
+    await getSalesForMovingToUkraine({
+      from: '2026-08-01',
+      to: '2026-08-19',
+      value: 'QA',
+    })
+    await uploadPreviewUkraineCartItemsFromFile(
+      new File(['workbook'], 'cart.xlsx'),
+      {
+        EndRow: 10,
+        QtyColumnNumber: 2,
+        StartRow: 2,
+        VendorCodeColumnNumber: 1,
+      },
+    )
+
+    expect(apiRequestMock.mock.calls.map(([path]) => path)).toEqual([
+      '/supplies/ukraine/order/cart/items/page/all',
+      '/sales/supply-ukraine/registry',
+      '/supplies/ukraine/order/cart/items/page/file/select/preview',
+    ])
+  })
+
+  it('uses scoped narrow routes for cart document references and TaxFree assembly', async () => {
+    apiRequestMock
+      .mockResolvedValueOnce({ Body: [] })
+      .mockResolvedValueOnce({ Body: [] })
+      .mockResolvedValueOnce({ Body: { Id: 61 } })
+
+    await getNotSentTaxFreePackLists()
+    await getNotSentSads()
+    await assembleCartTaxFreeDocument({
+      existingDocumentNetUid:
+        '11111111-1111-4111-8111-111111111111',
+      items: [{ cartItemId: 41, quantity: 7 }],
+    })
+
+    expect(apiRequestMock.mock.calls).toEqual([
+      ['/supplies/ukraine/order/packlists/taxfree/page/documents/taxfree/not-sent'],
+      ['/supplies/ukraine/order/packlists/sad/page/documents/sad/not-sent'],
+      [
+        '/supplies/ukraine/order/packlists/taxfree/page/documents/taxfree/assemble',
+        {
+          body: {
+            existingDocumentNetUid:
+              '11111111-1111-4111-8111-111111111111',
+            items: [{ cartItemId: 41, quantity: 7 }],
+          },
+          method: 'POST',
+        },
+      ],
+    ])
+  })
+
+  it('keeps a durable operation for narrow cart SAD assembly without sending a broad aggregate', async () => {
+    apiRequestMock.mockResolvedValueOnce({ Body: { Id: 62 } })
+
+    await assembleCartSadDocument({
+      items: [{ cartItemId: 42, quantity: 5 }],
+      sadType: 1,
+    })
+
+    const options = apiRequestMock.mock.calls[0]?.[1]
+    const operationId = new Headers(options?.headers)
+      .get('Idempotency-Key')
+
+    expect(operationId).toMatch(
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i,
+    )
+    expect(apiRequestMock).toHaveBeenCalledWith(
+      '/supplies/ukraine/order/packlists/sad/page/documents/sad/assemble',
+      {
+        body: {
+          items: [{ cartItemId: 42, quantity: 5 }],
+          sadType: 1,
+        },
+        dedupe: false,
+        headers: {
+          'Idempotency-Key': operationId,
+        },
+        method: 'POST',
+      },
+    )
   })
 })

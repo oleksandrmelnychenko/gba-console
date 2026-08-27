@@ -22,7 +22,7 @@ import { useI18n } from '../../../shared/i18n/useI18n'
 import { useAuth } from '../../auth/useAuth'
 import { getClientTypes } from '../api/clientsApi'
 import { createClient } from '../api/clientFormApi'
-import { uploadClientContract } from '../api/clientCabinetApi'
+import { uploadNewClientContract } from '../api/clientCabinetApi'
 import {
   checkRegionCodeAvailability,
   createCountry,
@@ -31,7 +31,14 @@ import {
   getAvailableRegionCode,
 } from '../api/clientLookupsApi'
 import { useClientFormLookups } from '../hooks/useClientFormLookups'
-import { getClientTypePermission, getClientTypeRolePermission } from '../permissions'
+import {
+  CREATE_CLIENT_COUNTRY_PERMISSION,
+  CREATE_CLIENT_INCOTERM_PERMISSION,
+  CREATE_CLIENT_REGION_PERMISSION,
+  getClientTypePermission,
+  getClientTypeRolePermission,
+} from '../permissions'
+import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { BankDetailsFields } from '../components/form/BankDetailsFields'
 import { ContactInfoFields } from '../components/form/ContactInfoFields'
 import { GeneralInfoFields, type ClientFormRole } from '../components/form/GeneralInfoFields'
@@ -252,6 +259,7 @@ export function ClientNewPage() {
   const navigate = useNavigate()
   const location = useLocation()
   const { hasPermission } = useAuth()
+  const canCreateClient = hasPermission(PermissionKeys.Clients.Client.Create)
   const explicitRouteState = location.state as ClientNewRouteState | null
   const savedSession = useMemo(() => readNewClientSession(), [])
   const canRestoreSession = Boolean(savedSession && isSameNewClientSessionContext(savedSession.routeState || null, explicitRouteState))
@@ -677,6 +685,11 @@ export function ClientNewPage() {
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
 
+    if (!canCreateClient) {
+      setError(t('Недостатньо прав для створення клієнта'))
+      return
+    }
+
     if (!draft.ClientInRole.ClientTypeRole) {
       setError(t('Оберіть роль'))
       return
@@ -725,7 +738,7 @@ export function ClientNewPage() {
         documentsWereSaved = false
       } else if (createdClient && pendingDocuments.length > 0) {
         try {
-          await uploadClientContract(
+          await uploadNewClientContract(
             {
               ...createdClient,
               ClientContractDocuments: [
@@ -891,7 +904,7 @@ export function ClientNewPage() {
                 <Button
                   type="submit"
                   color={CREATE_ACTION_COLOR}
-                  disabled={!isPricingValid || isLoadingRegionCode || Boolean(regionCodeError)}
+                  disabled={!canCreateClient || !isPricingValid || isLoadingRegionCode || Boolean(regionCodeError)}
                   leftSection={<Check size={16} />}
                   loading={isSaving}
                 >
@@ -1033,7 +1046,13 @@ function NewStepContent({
   }
 
   if (step === 'perfect-client') {
-    return <PerfectClientPanel client={draft} onChange={onDraftChange} />
+    return (
+      <PerfectClientPanel
+        canCreateDefinition={hasPermission(PermissionKeys.ClientResources.PerfectClient.Create)}
+        client={draft}
+        onChange={onDraftChange}
+      />
+    )
   }
 
   return (
@@ -1042,6 +1061,9 @@ function NewStepContent({
         {t('Загальна інформація')}
       </Title>
       <GeneralInfoFields
+        canCreateCountry={hasPermission(CREATE_CLIENT_COUNTRY_PERMISSION)}
+        canCreateIncoterm={hasPermission(CREATE_CLIENT_INCOTERM_PERMISSION)}
+        canCreateRegion={hasPermission(CREATE_CLIENT_REGION_PERMISSION)}
         client={draft}
         countries={lookups.countries}
         errors={errors}

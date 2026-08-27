@@ -10,7 +10,7 @@ import type {
 } from '../types'
 
 export async function getDepreciatedOrders(params: DepreciatedOrdersSearchParams): Promise<DepreciatedOrdersResponse> {
-  const result = await apiRequest<unknown>('/orders/depreciated/all/filtered', {
+  const result = await apiRequest<unknown>('/orders/depreciated/write-off/registry', {
     query: {
       from: params.from,
       limit: params.limit,
@@ -23,7 +23,7 @@ export async function getDepreciatedOrders(params: DepreciatedOrdersSearchParams
 }
 
 export async function getDepreciatedOrderByNetId(netId: string): Promise<DepreciatedOrder | null> {
-  const result = await apiRequest<unknown>('/orders/depreciated/get', {
+  const result = await apiRequest<unknown>('/orders/depreciated/write-off/details', {
     query: {
       netId,
     },
@@ -33,13 +33,13 @@ export async function getDepreciatedOrderByNetId(netId: string): Promise<Depreci
 }
 
 export async function getDepreciatedOrderStorages(): Promise<DepreciatedOrderStorage[]> {
-  const result = await apiRequest<unknown>('/storages/get/all')
+  const result = await apiRequest<unknown>('/storages/write-off/create/all')
 
   return normalizeStorages(result)
 }
 
 export async function exportDepreciatedOrderDocument(netId: string): Promise<DepreciatedOrderExportDocument> {
-  const result = await apiRequest<unknown>('/orders/depreciated/document/export', {
+  const result = await apiRequest<unknown>('/orders/depreciated/write-off/document/export', {
     query: {
       netId,
     },
@@ -56,7 +56,7 @@ export async function createDepreciatedOrderFromFile(
   formData.append('depreciatedOrderInString', JSON.stringify(payload.depreciatedOrder))
   formData.append('file', payload.file)
 
-  const result = await apiRequest<unknown>('/orders/depreciated/file/new', {
+  const result = await apiRequest<unknown>('/orders/depreciated/write-off/file/create', {
     method: 'POST',
     body: formData,
   })

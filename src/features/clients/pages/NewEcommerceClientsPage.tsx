@@ -3,6 +3,8 @@ import { CircleAlert, RotateCcw, Search } from 'lucide-react'
 import { useEffect, useMemo, useReducer, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useI18n } from '../../../shared/i18n/useI18n'
+import { PermissionKeys } from '../../../shared/auth/permissionKeys'
+import { usePermissions } from '../../auth/usePermissions'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { Paginator } from '../../../shared/ui/paginator/Paginator'
@@ -48,6 +50,27 @@ const NEW_ECOMMERCE_CLIENTS_TABLE_DEFAULT_LAYOUT = {
 
 export function NewEcommerceClientsPage() {
   const { t } = useI18n()
+  const { can, isLoading } = usePermissions()
+
+  if (isLoading) {
+    return <Text c="dimmed">{t('Завантаження')}</Text>
+  }
+
+  if (!can(PermissionKeys.NewEcommerceClients.Page.View)) {
+    return (
+      <Alert color="red" icon={<CircleAlert size={18} />} title={t('Доступ заборонено')} variant="light">
+        {t('Недостатньо прав для перегляду нових e-commerce клієнтів')}
+      </Alert>
+    )
+  }
+
+  return <NewEcommerceClientsPageContent />
+}
+
+function NewEcommerceClientsPageContent() {
+  const { t } = useI18n()
+  const { can } = usePermissions()
+  const canOpenClient = can(PermissionKeys.Clients.Details.Open)
   const location = useLocation()
   const navigate = useNavigate()
   const [tableToolbarSlot, setTableToolbarSlot] = useState<HTMLDivElement | null>(null)
@@ -200,7 +223,7 @@ export function NewEcommerceClientsPage() {
   )
 
   function openClient(client: Client) {
-    if (!client.NetUid) {
+    if (!canOpenClient || !client.NetUid) {
       return
     }
 
@@ -293,7 +316,7 @@ export function NewEcommerceClientsPage() {
             showLayoutControls
             tableId="new-ecommerce-clients"
             toolbarPortalTarget={tableToolbarSlot}
-            onRowClick={openClient}
+            onRowClick={canOpenClient ? openClient : undefined}
           />
         </div>
       </div>

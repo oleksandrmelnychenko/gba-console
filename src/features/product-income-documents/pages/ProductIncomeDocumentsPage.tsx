@@ -1,10 +1,8 @@
 import {
   ActionIcon,
   Alert,
-  Badge,
   Button,
   Card,
-  Divider,
   Group,
   SimpleGrid,
   Stack,
@@ -16,11 +14,19 @@ import { CircleAlert, Download, ExternalLink, Eye, Layers, RotateCcw, Search } f
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { formatLocalDate, toDateTimeQuery } from '../../../shared/date/dateTime'
+import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { translate } from '../../../shared/i18n/translate'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { AppModal } from '../../../shared/ui/AppModal'
+import {
+  DocumentDetailLayout,
+  DocumentDetailMetric,
+  DocumentDetailRow,
+  DocumentDetailSection,
+  DocumentDetailSummary,
+} from '../../../shared/ui/document-detail/DocumentDetail'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import { DocumentExportModal } from '../../../shared/ui/document-export-modal/DocumentExportModal'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
@@ -31,15 +37,17 @@ import {
   ProductStorageLocationHistoryDrawer,
   type MovementHistoryProduct,
 } from '../../../shared/ui/product-movement-history/ProductMovementHistoryDrawers'
+import { assortmentMovementRequestPaths } from '../../../shared/ui/product-movement-history/productMovementHistoryRequestPaths'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { TableRowAction } from '../../../shared/ui/table-row-action'
-import { useAuth } from '../../auth/useAuth'
-import { getProductCapitalization } from '../../product-capitalizations/api/productCapitalizationsApi'
+import { usePermissions } from '../../auth/usePermissions'
+import { getProductCapitalizationForIncomeDocuments } from '../../product-capitalizations/api/productCapitalizationsApi'
 import type { ProductCapitalization } from '../../product-capitalizations/types'
 import {
   exportProductIncomeDocument,
   getProductIncomeDocuments,
   getProductIncomeInfo,
+  getProductIncomeInfoForRemainings,
   getProductIncomeRemainings,
 } from '../api/productIncomeDocumentsApi'
 import { getProductIncomeDocumentSourceLink } from '../productIncomeDocumentSourceLink'
@@ -63,7 +71,6 @@ import type {
 import './product-income-documents-page.css'
 
 const FILTER_STORAGE_KEY = 'documentsFilters'
-const PRODUCT_MOVEMENT_PERMISSION = 'Product_Entire_Assortment_Product_Movement_Btn_PKEY'
 const PAGE_SIZE = DEFAULT_PAGINATOR_PAGE_SIZE
 
 const DOCUMENTS_TABLE_DEFAULT_LAYOUT = {
@@ -110,9 +117,22 @@ type DocumentsListState = {
   total?: number
 }
 
-function useProductIncomeDocumentsPageModel() {
+function useProductIncomeDocumentsPageModel({
+  canExportDocument,
+  canExportMovement,
+  canOpenDetails,
+  canOpenMovement,
+  canOpenRemainings,
+  canOpenStorageHistory,
+}: {
+  canExportDocument: boolean
+  canExportMovement: boolean
+  canOpenDetails: boolean
+  canOpenMovement: boolean
+  canOpenRemainings: boolean
+  canOpenStorageHistory: boolean
+}) {
   const { t } = useI18n()
-  const { hasPermission } = useAuth()
   const restoredFilters = useMemo(() => readStoredFilters(), [])
   const [documentsState, setDocumentsState] = useValueState<DocumentsListState>({
     documents: [],
@@ -155,8 +175,6 @@ function useProductIncomeDocumentsPageModel() {
     typeof total === 'number' && total > 0
       ? Math.max(1, Math.ceil(total / pageSize))
       : page + (canMoveForward ? 1 : 0)
-  const canOpenProductMovement = hasPermission(PRODUCT_MOVEMENT_PERMISSION)
-
   const openOptions = useCallback(
     (document: ProductIncomeDocument) => {
       setOptionsDocument(document)
@@ -173,7 +191,7 @@ function useProductIncomeDocumentsPageModel() {
 
       async function run() {
         try {
-          const detail = await getProductCapitalization(capitalizationNetUid)
+          const detail = await getProductCapitalizationForIncomeDocuments(capitalizationNetUid)
 
           if (capitalizationRequestRef.current === requestId) {
             setCapitalization(detail)
@@ -196,7 +214,7 @@ function useProductIncomeDocumentsPageModel() {
     [setCapitalization, setCapitalizationError, setLoadingCapitalization, t],
   )
   const loadDocumentInfo = useCallback(
-    (document: ProductIncomeDocument, options: { loadCapitalizationDetail: boolean }) => {
+    (document: ProductIncomeDocument, options: { loadCapitalizationDetail: boolean; scope: 'details' | 'remainings' }) => {
       const requestId = infoRequestRef.current + 1
       infoRequestRef.current = requestId
       const isCurrentInfoRequest = () => infoRequestRef.current === requestId
@@ -211,7 +229,9 @@ function useProductIncomeDocumentsPageModel() {
 
       async function run(netUid: string) {
         try {
-          const info = await getProductIncomeInfo(netUid)
+          const info = options.scope === 'remainings'
+            ? await getProductIncomeInfoForRemainings(netUid)
+            : await getProductIncomeInfo(netUid)
 
           if (isCurrentInfoRequest()) {
             const detailedDocument = mergeProductIncomeInfo(document, info)
@@ -247,6 +267,9 @@ function useProductIncomeDocumentsPageModel() {
   )
   const openOverview = useCallback(
     (document: ProductIncomeDocument) => {
+      if (!canOpenDetails) {
+        return
+      }
       remainingsRequestRef.current += 1
       capitalizationRequestRef.current += 1
       setOptionsDocument(null)
@@ -264,9 +287,10 @@ function useProductIncomeDocumentsPageModel() {
         loadCapitalization(capitalizationNetUid)
       }
 
-      loadDocumentInfo(document, { loadCapitalizationDetail: !capitalizationNetUid })
+      loadDocumentInfo(document, { loadCapitalizationDetail: !capitalizationNetUid, scope: 'details' })
     },
     [
+      canOpenDetails,
       loadCapitalization,
       loadDocumentInfo,
       setCapitalization,
@@ -319,6 +343,9 @@ function useProductIncomeDocumentsPageModel() {
   )
   const openRemainings = useCallback(
     (document: ProductIncomeDocument) => {
+      if (!canOpenRemainings) {
+        return
+      }
       capitalizationRequestRef.current += 1
       setOptionsDocument(null)
       setDetailMode('remainings')
@@ -328,10 +355,11 @@ function useProductIncomeDocumentsPageModel() {
       setDocumentInfoError(null)
       setCapitalization(null)
       setCapitalizationError(null)
-      loadDocumentInfo(document, { loadCapitalizationDetail: false })
+      loadDocumentInfo(document, { loadCapitalizationDetail: false, scope: 'remainings' })
       fetchRemainings(document)
     },
     [
+      canOpenRemainings,
       fetchRemainings,
       loadDocumentInfo,
       setCapitalization,
@@ -346,17 +374,20 @@ function useProductIncomeDocumentsPageModel() {
   )
   const rows = useMemo(() => documents.map(mapDocumentRow), [documents])
   const columns = useProductIncomeDocumentColumns({
+    canExport: canExportDocument,
     exportingNetId,
     onExport: handleExport,
     onOpen: openOptions,
   })
   const itemColumns = useProductIncomeItemColumns({
-    canOpenProductMovement,
+    canOpenMovement,
+    canOpenStorageHistory,
     onOpenMovementHistory: setMovementHistoryProduct,
     onOpenStorageLocationHistory: setStorageLocationHistoryProduct,
   })
   const remainingColumns = useRemainingConsignmentColumns({
-    canOpenProductMovement,
+    canOpenMovement,
+    canOpenStorageHistory,
     onOpenMovementHistory: setMovementHistoryProduct,
     onOpenStorageLocationHistory: setStorageLocationHistoryProduct,
   })
@@ -425,7 +456,7 @@ function useProductIncomeDocumentsPageModel() {
   }, [dateFrom, dateTo, filterError, offset, pageSize, reloadKey, searchValue, setDocumentsState, setError, t])
 
   async function handleExport(document: ProductIncomeDocument) {
-    if (!document.NetUid) {
+    if (!canExportDocument || !document.NetUid) {
       return
     }
 
@@ -512,6 +543,10 @@ function useProductIncomeDocumentsPageModel() {
     capitalization,
     capitalizationError,
     capitalizationItemColumns,
+    canExportDocument,
+    canExportMovement,
+    canOpenDetails,
+    canOpenRemainings,
     columns,
     dateFrom,
     dateTo,
@@ -560,7 +595,34 @@ function useProductIncomeDocumentsPageModel() {
 }
 
 export function ProductIncomeDocumentsPage() {
-  const model = useProductIncomeDocumentsPageModel()
+  const { t } = useI18n()
+  const { can, isLoading } = usePermissions()
+
+  if (isLoading) {
+    return <Text c="dimmed">{t('Завантаження')}</Text>
+  }
+
+  if (!can(PermissionKeys.ProductIncomeDocuments.Page.View)) {
+    return (
+      <Alert color="red" icon={<CircleAlert size={18} />} title={t('Доступ заборонено')} variant="light">
+        {t('Недостатньо прав для перегляду прихідних накладних')}
+      </Alert>
+    )
+  }
+
+  return <ProductIncomeDocumentsPageContent />
+}
+
+function ProductIncomeDocumentsPageContent() {
+  const { can } = usePermissions()
+  const model = useProductIncomeDocumentsPageModel({
+    canExportDocument: can(PermissionKeys.ProductIncomeDocuments.Document.Export),
+    canExportMovement: can(PermissionKeys.ProductsAssortment.Movement.Export),
+    canOpenDetails: can(PermissionKeys.ProductIncomeDocuments.Document.OpenDetails),
+    canOpenMovement: can(PermissionKeys.ProductsAssortment.Movement.Open),
+    canOpenRemainings: can(PermissionKeys.ProductIncomeDocuments.Document.OpenRemainings),
+    canOpenStorageHistory: can(PermissionKeys.ProductsAssortment.StorageHistory.Open),
+  })
 
   return <ProductIncomeDocumentsPageView model={model} />
 }
@@ -572,6 +634,10 @@ function ProductIncomeDocumentsPageView({ model }: { model: ReturnType<typeof us
     capitalization,
     capitalizationError,
     capitalizationItemColumns,
+    canExportDocument,
+    canExportMovement,
+    canOpenDetails,
+    canOpenRemainings,
     columns,
     dateFrom,
     dateTo,
@@ -718,6 +784,8 @@ function ProductIncomeDocumentsPageView({ model }: { model: ReturnType<typeof us
       </Card>
 
       <ProductIncomeOptionsModal
+        canOpenDetails={canOpenDetails}
+        canOpenRemainings={canOpenRemainings}
         document={optionsDocument}
         onClose={() => setOptionsDocument(null)}
         onOverview={openOverview}
@@ -725,6 +793,8 @@ function ProductIncomeDocumentsPageView({ model }: { model: ReturnType<typeof us
       />
 
       <ProductIncomeDocumentDrawer
+        canExport={canExportDocument}
+        canOpenRemainings={canOpenRemainings}
         capitalization={capitalization}
         capitalizationError={capitalizationError}
         capitalizationItemColumns={capitalizationItemColumns}
@@ -745,14 +815,17 @@ function ProductIncomeDocumentsPageView({ model }: { model: ReturnType<typeof us
       />
 
       <ProductMovementHistoryDrawer
+        canExport={canExportMovement}
         opened={Boolean(movementHistoryProduct)}
         product={movementHistoryProduct}
+        requestPaths={assortmentMovementRequestPaths}
         onClose={() => setMovementHistoryProduct(null)}
       />
 
       <ProductStorageLocationHistoryDrawer
         opened={Boolean(storageLocationHistoryProduct)}
         product={storageLocationHistoryProduct}
+        requestPath="/products/placements/history/assortment/all/filtered"
         onClose={() => setStorageLocationHistoryProduct(null)}
       />
 
@@ -767,11 +840,15 @@ function ProductIncomeDocumentsPageView({ model }: { model: ReturnType<typeof us
 }
 
 function ProductIncomeOptionsModal({
+  canOpenDetails,
+  canOpenRemainings,
   document,
   onClose,
   onOverview,
   onRemainings,
 }: {
+  canOpenDetails: boolean
+  canOpenRemainings: boolean
   document: ProductIncomeDocument | null
   onClose: () => void
   onOverview: (document: ProductIncomeDocument) => void
@@ -810,37 +887,41 @@ function ProductIncomeOptionsModal({
               {t('Відкрити джерело')}
             </Button>
           )}
-          <Button
-            fullWidth
-            justify="flex-start"
-            color="dark"
-            size="md"
-            leftSection={
-              <span className="app-action-icon">
-                <Eye size={20} color="var(--mantine-color-gray-7)" />
-              </span>
-            }
-            variant="subtle"
-            onClick={() => onOverview(document)}
-          >
-            {t('Деталі документа')}
-          </Button>
-          <Button
-            disabled={!document.NetUid}
-            fullWidth
-            justify="flex-start"
-            color="dark"
-            size="md"
-            leftSection={
-              <span className="app-action-icon">
-                <Layers size={20} color="var(--mantine-color-gray-7)" />
-              </span>
-            }
-            variant="subtle"
-            onClick={() => onRemainings(document)}
-          >
-            {t('Залишки по партіям')}
-          </Button>
+          {canOpenDetails ? (
+            <Button
+              fullWidth
+              justify="flex-start"
+              color="dark"
+              size="md"
+              leftSection={
+                <span className="app-action-icon">
+                  <Eye size={20} color="var(--mantine-color-gray-7)" />
+                </span>
+              }
+              variant="subtle"
+              onClick={() => onOverview(document)}
+            >
+              {t('Деталі документа')}
+            </Button>
+          ) : null}
+          {canOpenRemainings ? (
+            <Button
+              disabled={!document.NetUid}
+              fullWidth
+              justify="flex-start"
+              color="dark"
+              size="md"
+              leftSection={
+                <span className="app-action-icon">
+                  <Layers size={20} color="var(--mantine-color-gray-7)" />
+                </span>
+              }
+              variant="subtle"
+              onClick={() => onRemainings(document)}
+            >
+              {t('Залишки по партіям')}
+            </Button>
+          ) : null}
         </Stack>
       )}
     </AppModal>
@@ -853,7 +934,9 @@ function getPrimaryProductIncomeSourceLink(document: ProductIncomeDocument): str
   return sourceLink && sourceLink !== '/sales/return/client' ? sourceLink : null
 }
 
-function ProductIncomeDocumentDrawer({
+export function ProductIncomeDocumentDrawer({
+  canExport,
+  canOpenRemainings,
   capitalization,
   capitalizationError,
   capitalizationItemColumns,
@@ -872,6 +955,8 @@ function ProductIncomeDocumentDrawer({
   onExport,
   onLoadRemainings,
 }: {
+  canExport: boolean
+  canOpenRemainings: boolean
   capitalization: ProductCapitalization | null
   capitalizationError: string | null
   capitalizationItemColumns: DataTableColumn<CapitalizationOverviewItem>[]
@@ -900,17 +985,28 @@ function ProductIncomeDocumentDrawer({
     <AppDrawer
       opened={Boolean(document)}
       position="right"
-      size="min(1120px, 96vw)"
-      title={document?.Number ? `${t('Документ')} ${document.Number}` : t('Документ приходу')}
+      size="wide"
+      title={t('Документ приходу')}
       onClose={onClose}
     >
       {document && row && (
-        <Stack gap="lg">
-          <Group justify="space-between" align="start" gap="sm">
-            <Badge className="app-role-pill is-orange" variant="light">
-              {displayValue(row.type)}
-            </Badge>
-            <Group gap="xs">
+        <DocumentDetailLayout
+          summary={
+            <DocumentDetailSummary
+              eyebrow={t('Документ')}
+              title={displayValue(document.Number)}
+              meta={<>{formatDateTime(document.FromDate)} · {displayValue(row.type)}</>}
+              metrics={
+                <>
+                  <DocumentDetailMetric label={t('Сума')} suffix={row.currency} value={formatMoney(row.amount)} />
+                  <DocumentDetailMetric label={t('Кількість')} value={formatAmount(row.qty)} />
+                  <DocumentDetailMetric label={t('Стан')} value={displayValue(row.docState)} />
+                </>
+              }
+            />
+          }
+          actions={
+            <Group justify="flex-end" gap="xs">
               {sourceLink && (
                 <Button
                   component={Link}
@@ -921,40 +1017,46 @@ function ProductIncomeDocumentDrawer({
                   {t('Джерело')}
                 </Button>
               )}
-              <Button
-                disabled={!document.NetUid}
-                leftSection={<Download size={16} />}
-                loading={exportingNetId === document.NetUid}
-                variant="outline"
-                onClick={() => onExport(document)}
-              >
-                {t('Експорт')}
-              </Button>
-              <Button
-                disabled={!document.NetUid || isLoadingRemainings}
-                loading={isLoadingRemainings}
-                variant="filled"
-                onClick={() => onLoadRemainings(document)}
-              >
-                {t('Залишки по партіям')}
-              </Button>
+              {canExport ? (
+                <Button
+                  disabled={!document.NetUid}
+                  leftSection={<Download size={16} />}
+                  loading={exportingNetId === document.NetUid}
+                  variant="outline"
+                  onClick={() => onExport(document)}
+                >
+                  {t('Експорт')}
+                </Button>
+              ) : null}
+              {canOpenRemainings ? (
+                <Button
+                  disabled={!document.NetUid || isLoadingRemainings}
+                  loading={isLoadingRemainings}
+                  variant="filled"
+                  onClick={() => onLoadRemainings(document)}
+                >
+                  {t('Залишки по партіям')}
+                </Button>
+              ) : null}
             </Group>
-          </Group>
+          }
+        >
+          <DocumentDetailSection subtitle={displayValue(document.Number)} title={t('Документ')}>
+            <DocumentDetailRow label={t('Дата')} mono value={formatDateTime(document.FromDate)} />
+            <DocumentDetailRow label={t('Номер')} mono value={document.Number} />
+            <DocumentDetailRow label={t('Номер інвойсу')} mono value={row.invNumber} />
+            <DocumentDetailRow label={t('Дата інвойсу')} mono value={formatDateTime(row.invDate)} />
+            <DocumentDetailRow label={t('Дата МД')} mono value={formatDateTime(row.specificationDate)} />
+            <DocumentDetailRow label={t('Валюта')} mono value={row.currency} />
+            <DocumentDetailRow label={t('Коментар')} value={row.comment || document.Comment} wide />
+          </DocumentDetailSection>
 
-          <SimpleGrid cols={{ base: 1, sm: 2 }} spacing={28} verticalSpacing={12}>
-            <DetailValue label={t('Постачальник / клієнт')} value={row.client} />
-            <DetailValue label={t('Організація')} value={row.organization} />
-            <DetailValue label={t('Склад')} value={document.Storage?.Name} />
-            <DetailValue label={t('Відповідальний')} value={getEntityName(document.User)} />
-            <DetailValue label={t('Кількість')} mono value={formatAmount(row.qty)} />
-            <DetailValue label={t('Сума')} mono value={formatMoney(row.amount)} />
-            <DetailValue label={t('Валюта')} mono value={row.currency} />
-            <DetailValue label={t('Стан')} value={row.docState} />
-            <DetailValue label={t('Номер інвойсу')} mono value={row.invNumber} />
-            <DetailValue label={t('Дата інвойсу')} mono value={formatDateTime(row.invDate)} />
-            <DetailValue label={t('Дата МД')} mono value={formatDateTime(row.specificationDate)} />
-            <DetailValue label={t('Коментар')} value={row.comment || document.Comment} />
-          </SimpleGrid>
+          <DocumentDetailSection title={t('Учасники та склад')}>
+            <DocumentDetailRow label={t('Постачальник / клієнт')} value={row.client} wide />
+            <DocumentDetailRow label={t('Організація')} value={row.organization} wide />
+            <DocumentDetailRow label={t('Склад')} value={document.Storage?.Name} />
+            <DocumentDetailRow label={t('Відповідальний')} value={getEntityName(document.User)} />
+          </DocumentDetailSection>
 
           {detailMode === 'view' && deferredOverviewNote && (
             <Alert color={CREATE_ACTION_COLOR} icon={<CircleAlert size={18} />} variant="light">
@@ -977,11 +1079,8 @@ function ProductIncomeDocumentDrawer({
 
           {detailMode === 'view' && overviewKind === 'saleReturn' && <SaleReturnOverview document={document} />}
 
-          <Divider />
-
           {detailMode === 'view' && (
-            <Stack gap="sm">
-              <Text className="app-section-title" fw={600} size="sm">{t('Позиції документа')}</Text>
+            <DocumentDetailSection stacked subtitle={String(getActiveProductIncomeItems(document).length)} title={t('Позиції документа')}>
               {documentInfoError && (
                 <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
                   {documentInfoError}
@@ -1000,12 +1099,11 @@ function ProductIncomeDocumentDrawer({
                 minWidth={720}
                 tableId="product-income-document-items"
               />
-            </Stack>
+            </DocumentDetailSection>
           )}
 
           {detailMode === 'remainings' && (
-            <Stack gap="sm">
-              <Text className="app-section-title" fw={600} size="sm">{t('Залишки по партіям')}</Text>
+            <DocumentDetailSection stacked subtitle={String(remainings.length)} title={t('Залишки по партіям')}>
               {documentInfoError && (
                 <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
                   {documentInfoError}
@@ -1031,21 +1129,11 @@ function ProductIncomeDocumentDrawer({
                 minWidth={1180}
                 tableId="product-income-document-remainings"
               />
-            </Stack>
+            </DocumentDetailSection>
           )}
-        </Stack>
+        </DocumentDetailLayout>
       )}
     </AppDrawer>
-  )
-}
-
-/* §7.2 leader row: «label ——— value»; mono for numbers/money/dates. */
-function DetailValue({ label, mono, value }: { label: string; mono?: boolean; value?: string | number }) {
-  return (
-    <span className="app-leader-row">
-      <span className="app-leader-row-label">{label}</span>
-      <span className={`app-leader-row-value${mono ? ' is-mono' : ''}`}>{displayValue(value)}</span>
-    </span>
   )
 }
 
@@ -1066,39 +1154,35 @@ function CapitalizationOverview({
   const items = capitalization?.ProductCapitalizationItems || []
 
   return (
-    <Card withBorder radius="md" padding="md">
-      <Stack gap="sm">
-        <Group justify="space-between" align="start">
-          <Text className="app-section-title" fw={600} size="sm">{t('Прихідна накладна (Оприходування)')}</Text>
-          <Text c="dimmed" size="sm">
-            {displayValue(capitalization?.Number)} · <span className="app-money app-money-meta">{formatMoney(capitalization?.TotalAmount)}</span>
-          </Text>
-        </Group>
-        {error && (
-          <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
-            {error}
-          </Alert>
-        )}
-        <DataTable
-          columns={itemColumns}
-          data={items}
-          emptyText={t('Позицій не знайдено')}
-          getRowId={(item, index) => String(item.NetUid || item.Id || index)}
-          isLoading={isLoading}
-          layoutVersion="product-income-capitalization-overview-1"
-          loadingText={t('Завантаження позицій оприбуткування')}
-          maxHeight={320}
-          minWidth={760}
-          tableId="product-income-capitalization-overview"
-        />
+    <DocumentDetailSection
+      stacked
+      subtitle={<>{displayValue(capitalization?.Number)} · <span className="app-money app-money-meta">{formatMoney(capitalization?.TotalAmount)}</span></>}
+      title={t('Прихідна накладна (Оприходування)')}
+    >
+      {error && (
+        <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
+          {error}
+        </Alert>
+      )}
+      <DataTable
+        columns={itemColumns}
+        data={items}
+        emptyText={t('Позицій не знайдено')}
+        getRowId={(item, index) => String(item.NetUid || item.Id || index)}
+        isLoading={isLoading}
+        layoutVersion="product-income-capitalization-overview-1"
+        loadingText={t('Завантаження позицій оприбуткування')}
+        maxHeight={320}
+        minWidth={760}
+        tableId="product-income-capitalization-overview"
+      />
 
-        <SimpleGrid cols={{ base: 1, sm: 3 }} spacing="sm">
-          <DetailValue label={t('Вся кількість')} mono value={formatAmount(sumRows(items, (item) => item.Qty))} />
-          <DetailValue label={t('Загальна сума')} mono value={formatMoney(sumRows(items, (item) => item.TotalAmount))} />
-          <DetailValue label={t('Загальна вага')} mono value={formatAmount(sumRows(items, (item) => (item.Weight || 0) * (item.Qty || 0)))} />
-        </SimpleGrid>
-      </Stack>
-    </Card>
+      <SimpleGrid cols={{ base: 1, sm: 3 }} spacing="sm">
+        <DocumentDetailRow label={t('Вся кількість')} mono value={formatAmount(sumRows(items, (item) => item.Qty))} />
+        <DocumentDetailRow label={t('Загальна сума')} mono value={formatMoney(sumRows(items, (item) => item.TotalAmount))} />
+        <DocumentDetailRow label={t('Загальна вага')} mono value={formatAmount(sumRows(items, (item) => (item.Weight || 0) * (item.Qty || 0)))} />
+      </SimpleGrid>
+    </DocumentDetailSection>
   )
 }
 
@@ -1189,48 +1273,44 @@ function SaleReturnOverview({ document }: { document: ProductIncomeDocument }) {
   const columns = getSaleReturnOverviewColumns(t, currencyCode, isVat, items)
 
   return (
-    <Card withBorder radius="md" padding="md">
-      <Stack gap="sm">
-        <Group justify="space-between" align="start">
-          <Text className="app-section-title" fw={600} size="sm">{t('Прихідна накладна (повернення)')}</Text>
-          <Text c="dimmed" size="sm">
-            {displayValue(firstItem?.SaleReturn?.Number)} · {displayValue(getEntityName(firstItem?.SaleReturn?.Client))}
-          </Text>
-        </Group>
+    <DocumentDetailSection
+      stacked
+      subtitle={<>{displayValue(firstItem?.SaleReturn?.Number)} · {displayValue(getEntityName(firstItem?.SaleReturn?.Client))}</>}
+      title={t('Прихідна накладна (повернення)')}
+    >
 
-        <SimpleGrid cols={{ base: 1, sm: 2 }} spacing={28} verticalSpacing={12}>
-          <DetailValue label={t('Угода')} value={agreement?.Name} />
-          <DetailValue label={t('Валюта')} mono value={currencyCode} />
-          <DetailValue label={t('Дата інвойсу')} mono value={formatDateTime(firstItem?.SaleReturn?.FromDate)} />
-          <DetailValue label={t('Коментар')} value={firstItem?.Comment || document.Comment} />
-        </SimpleGrid>
+      <SimpleGrid cols={{ base: 1, sm: 2 }} spacing={28} verticalSpacing={12}>
+        <DocumentDetailRow label={t('Угода')} value={agreement?.Name} />
+        <DocumentDetailRow label={t('Валюта')} mono value={currencyCode} />
+        <DocumentDetailRow label={t('Дата інвойсу')} mono value={formatDateTime(firstItem?.SaleReturn?.FromDate)} />
+        <DocumentDetailRow label={t('Коментар')} value={firstItem?.Comment || document.Comment} />
+      </SimpleGrid>
 
-        {items.length === 0 ? (
-          <Text c="dimmed" size="sm">
-            {t('Позицій не знайдено')}
-          </Text>
-        ) : (
-          <DataTable
-            columns={columns}
-            data={items}
-            defaultLayout={{ density: 'normal' }}
-            emptyText={t('Позицій не знайдено')}
-            getRowId={(item) => getSaleReturnIncomeItemKey(item)}
-            layoutVersion="product-income-sale-return-items-1"
-            maxHeight={420}
-            minWidth={isVat ? 1010 : 886}
-            tableId="product-income-sale-return-items"
-          />
-        )}
+      {items.length === 0 ? (
+        <Text c="dimmed" size="sm">
+          {t('Позицій не знайдено')}
+        </Text>
+      ) : (
+        <DataTable
+          columns={columns}
+          data={items}
+          defaultLayout={{ density: 'normal' }}
+          emptyText={t('Позицій не знайдено')}
+          getRowId={(item) => getSaleReturnIncomeItemKey(item)}
+          layoutVersion="product-income-sale-return-items-1"
+          maxHeight={420}
+          minWidth={isVat ? 1010 : 886}
+          tableId="product-income-sale-return-items"
+        />
+      )}
 
-        <SimpleGrid cols={{ base: 1, sm: 2 }} spacing={28} verticalSpacing={12}>
-          <DetailValue label={t('Всього позицій')} mono value={String(items.length)} />
-          <DetailValue label={t('Вся кількість')} mono value={formatAmount(document.TotalQty || sumRows(items, (item) => item.SaleReturnItem?.Qty ?? item.Qty))} />
-          <DetailValue label={t('Загальна сума')} mono value={formatMoney(totalAmount)} />
-          {isVat && <DetailValue label={t('ПДВ')} mono value={formatMoney(totalVat)} />}
-        </SimpleGrid>
-      </Stack>
-    </Card>
+      <SimpleGrid cols={{ base: 1, sm: 2 }} spacing={28} verticalSpacing={12}>
+        <DocumentDetailRow label={t('Всього позицій')} mono value={String(items.length)} />
+        <DocumentDetailRow label={t('Вся кількість')} mono value={formatAmount(document.TotalQty || sumRows(items, (item) => item.SaleReturnItem?.Qty ?? item.Qty))} />
+        <DocumentDetailRow label={t('Загальна сума')} mono value={formatMoney(totalAmount)} />
+        {isVat && <DocumentDetailRow label={t('ПДВ')} mono value={formatMoney(totalVat)} />}
+      </SimpleGrid>
+    </DocumentDetailSection>
   )
 }
 
@@ -1396,36 +1476,32 @@ function ActReconciliationOverview({
   )
 
   return (
-    <Card withBorder radius="md" padding="md">
-      <Stack gap="sm">
-        <Group justify="space-between" align="start">
-          <Text className="app-section-title" fw={600} size="sm">{t('Прихідна накладна (акт звірки)')}</Text>
-          <Text c="dimmed" size="sm">
-            {displayValue(document.Number)} · <span className="app-money app-money-meta">{formatMoney(document.TotalNetPrice)}</span>
-          </Text>
-        </Group>
+    <DocumentDetailSection
+      stacked
+      subtitle={<>{displayValue(document.Number)} · <span className="app-money app-money-meta">{formatMoney(document.TotalNetPrice)}</span></>}
+      title={t('Прихідна накладна (акт звірки)')}
+    >
 
-        <DataTable
-          columns={columns}
-          data={rows}
-          emptyText={t('Позицій не знайдено')}
-          getRowId={(row) => row.key}
-          isLoading={isLoading}
-          layoutVersion="product-income-act-reconciliation-overview-1"
-          loadingText={t('Завантаження позицій акта звірки')}
-          maxHeight={320}
-          minWidth={820}
-          tableId="product-income-act-reconciliation-overview"
-        />
+      <DataTable
+        columns={columns}
+        data={rows}
+        emptyText={t('Позицій не знайдено')}
+        getRowId={(row) => row.key}
+        isLoading={isLoading}
+        layoutVersion="product-income-act-reconciliation-overview-1"
+        loadingText={t('Завантаження позицій акта звірки')}
+        maxHeight={320}
+        minWidth={820}
+        tableId="product-income-act-reconciliation-overview"
+      />
 
-        <SimpleGrid cols={{ base: 2, sm: 4 }} spacing="sm">
-          <DetailValue label={t('Всього товарів')} value={rows.length} />
-          <DetailValue label={t('Вся кількість')} mono value={formatAmount(document.TotalQty)} />
-          <DetailValue label={t('Вага нетто')} value={formatAmount(document.TotalNetWeight || sumRows(rows, (row) => row.netWeight))} />
-          <DetailValue label={t('Сума')} mono value={formatMoney(document.TotalNetPrice)} />
-        </SimpleGrid>
-      </Stack>
-    </Card>
+      <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
+        <DocumentDetailRow label={t('Всього товарів')} value={rows.length} />
+        <DocumentDetailRow label={t('Вся кількість')} mono value={formatAmount(document.TotalQty)} />
+        <DocumentDetailRow label={t('Вага нетто')} value={formatAmount(document.TotalNetWeight || sumRows(rows, (row) => row.netWeight))} />
+        <DocumentDetailRow label={t('Сума')} mono value={formatMoney(document.TotalNetPrice)} />
+      </SimpleGrid>
+    </DocumentDetailSection>
   )
 }
 
@@ -1467,10 +1543,12 @@ function getDeferredOverviewNote(
 }
 
 function useProductIncomeDocumentColumns({
+  canExport,
   exportingNetId,
   onExport,
   onOpen,
 }: {
+  canExport: boolean
   exportingNetId: string | null
   onExport: (document: ProductIncomeDocument) => void
   onOpen: (document: ProductIncomeDocument) => void
@@ -1612,27 +1690,31 @@ function useProductIncomeDocumentColumns({
         cell: (row) => (
           <Group gap={4} justify="flex-end" wrap="nowrap">
             <TableRowAction action="open" label={t('Відкрити')} onClick={() => onOpen(row.document)} />
-            <TableRowAction
-              action="download"
-              disabled={!row.document.NetUid}
-              label={t('Експорт')}
-              loading={exportingNetId === row.document.NetUid}
-              onClick={() => onExport(row.document)}
-            />
+            {canExport ? (
+              <TableRowAction
+                action="download"
+                disabled={!row.document.NetUid}
+                label={t('Експорт')}
+                loading={exportingNetId === row.document.NetUid}
+                onClick={() => onExport(row.document)}
+              />
+            ) : null}
           </Group>
         ),
       },
     ],
-    [exportingNetId, onExport, onOpen, t],
+    [canExport, exportingNetId, onExport, onOpen, t],
   )
 }
 
 function useProductIncomeItemColumns({
-  canOpenProductMovement,
+  canOpenMovement,
+  canOpenStorageHistory,
   onOpenMovementHistory,
   onOpenStorageLocationHistory,
 }: {
-  canOpenProductMovement: boolean
+  canOpenMovement: boolean
+  canOpenStorageHistory: boolean
   onOpenMovementHistory: (product: MovementHistoryProduct) => void
   onOpenStorageLocationHistory: (product: MovementHistoryProduct) => void
 }): DataTableColumn<ProductIncomeItem>[] {
@@ -1689,7 +1771,8 @@ function useProductIncomeItemColumns({
         enableReorder: false,
         cell: (item) => (
           <ProductHistoryActionButtons
-            canOpenProductMovement={canOpenProductMovement}
+            canOpenMovement={canOpenMovement}
+            canOpenStorageHistory={canOpenStorageHistory}
             product={getMovementHistoryProductFromNamedEntity(getIncomeItemProduct(item))}
             onOpenMovementHistory={onOpenMovementHistory}
             onOpenStorageLocationHistory={onOpenStorageLocationHistory}
@@ -1697,16 +1780,18 @@ function useProductIncomeItemColumns({
         ),
       },
     ],
-    [canOpenProductMovement, onOpenMovementHistory, onOpenStorageLocationHistory, t],
+    [canOpenMovement, canOpenStorageHistory, onOpenMovementHistory, onOpenStorageLocationHistory, t],
   )
 }
 
 function useRemainingConsignmentColumns({
-  canOpenProductMovement,
+  canOpenMovement,
+  canOpenStorageHistory,
   onOpenMovementHistory,
   onOpenStorageLocationHistory,
 }: {
-  canOpenProductMovement: boolean
+  canOpenMovement: boolean
+  canOpenStorageHistory: boolean
   onOpenMovementHistory: (product: MovementHistoryProduct) => void
   onOpenStorageLocationHistory: (product: MovementHistoryProduct) => void
 }): DataTableColumn<RemainingConsignment>[] {
@@ -1856,7 +1941,8 @@ function useRemainingConsignmentColumns({
         enableReorder: false,
         cell: (item) => (
           <ProductHistoryActionButtons
-            canOpenProductMovement={canOpenProductMovement}
+            canOpenMovement={canOpenMovement}
+            canOpenStorageHistory={canOpenStorageHistory}
             product={getMovementHistoryProductFromNamedEntity(item.Product)}
             onOpenMovementHistory={onOpenMovementHistory}
             onOpenStorageLocationHistory={onOpenStorageLocationHistory}
@@ -1864,17 +1950,19 @@ function useRemainingConsignmentColumns({
         ),
       },
     ],
-    [canOpenProductMovement, onOpenMovementHistory, onOpenStorageLocationHistory, t],
+    [canOpenMovement, canOpenStorageHistory, onOpenMovementHistory, onOpenStorageLocationHistory, t],
   )
 }
 
 function ProductHistoryActionButtons({
-  canOpenProductMovement,
+  canOpenMovement,
+  canOpenStorageHistory,
   product,
   onOpenMovementHistory,
   onOpenStorageLocationHistory,
 }: {
-  canOpenProductMovement: boolean
+  canOpenMovement: boolean
+  canOpenStorageHistory: boolean
   product: MovementHistoryProduct
   onOpenMovementHistory: (product: MovementHistoryProduct) => void
   onOpenStorageLocationHistory: (product: MovementHistoryProduct) => void
@@ -1885,14 +1973,16 @@ function ProductHistoryActionButtons({
 
   return (
     <Group gap={4} justify="flex-end" wrap="nowrap">
-      <TableRowAction
-        action="history"
-        disabled={!hasProductNetUid}
-        hint={hasProductNetUid ? undefined : missingProductLabel}
-        label={t('Історія місця зберігання')}
-        onClick={() => onOpenStorageLocationHistory(product)}
-      />
-      {canOpenProductMovement ? (
+      {canOpenStorageHistory ? (
+        <TableRowAction
+          action="history"
+          disabled={!hasProductNetUid}
+          hint={hasProductNetUid ? undefined : missingProductLabel}
+          label={t('Історія місця зберігання')}
+          onClick={() => onOpenStorageLocationHistory(product)}
+        />
+      ) : null}
+      {canOpenMovement ? (
         <TableRowAction
           action="transfer"
           disabled={!hasProductNetUid}

@@ -23,7 +23,7 @@ vi.mock('../../../shared/ui/AppDrawer', () => ({
 }))
 
 vi.mock('../../auth/useAuth', () => ({
-  useAuth: () => ({ hasPermission: () => false }),
+  useAuth: () => ({ hasPermission: () => true }),
 }))
 
 vi.mock('../api/protocolDetailApi', () => ({

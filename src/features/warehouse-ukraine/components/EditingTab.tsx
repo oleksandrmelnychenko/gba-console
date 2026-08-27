@@ -15,7 +15,7 @@ import { EditingList } from './EditingList'
 const ACT_TAB = 'act'
 const CARRIER_TAB = 'carrier'
 
-export function EditingTab({ onCountChanged }: { onCountChanged?: () => void }) {
+export function EditingTab({ canProcess, onCountChanged }: { canProcess: boolean; onCountChanged?: () => void }) {
   const { t } = useI18n()
   const [actQty, setActQty] = useValueState(0)
   const [carrierQty, setCarrierQty] = useValueState(0)
@@ -90,6 +90,7 @@ export function EditingTab({ onCountChanged }: { onCountChanged?: () => void }) 
       <Box className="warehouse-ukraine-editing-panel">
         {activeTab === ACT_TAB ? (
           <EditingList
+            canProcess={canProcess}
             kind="act"
             layoutVersion="warehouse-ukraine-editing-act-1"
             loader={getEditingActList}
@@ -100,6 +101,7 @@ export function EditingTab({ onCountChanged }: { onCountChanged?: () => void }) 
           />
         ) : (
           <EditingList
+            canProcess={canProcess}
             kind="carrier"
             layoutVersion="warehouse-ukraine-editing-carrier-1"
             loader={getEditingCarrierList}

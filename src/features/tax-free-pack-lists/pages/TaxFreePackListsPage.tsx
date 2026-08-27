@@ -15,6 +15,8 @@ import { CircleAlert, Download, PackageMinus, RotateCcw, SquarePen } from 'lucid
 import { notifications } from '@mantine/notifications'
 import { useEffect, useMemo, useReducer, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { usePermissions } from '../../auth/usePermissions'
+import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { formatLocalDate, SYNC_DATA_RANGE_START } from '../../../shared/date/dateTime'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
@@ -102,6 +104,11 @@ type ListAction =
 export function TaxFreePackListsPage() {
   const { t } = useI18n()
   const navigate = useNavigate()
+  const { can } = usePermissions()
+  const canOpenDetails = can(PermissionKeys.TaxFreePackLists.PackList.OpenDetails)
+  const canDelete = can(PermissionKeys.TaxFreePackLists.PackList.Delete)
+  const canExport = can(PermissionKeys.TaxFreePackLists.Document.Export)
+  const canCreateSupplyOrder = can(PermissionKeys.TaxFreePackLists.SupplyOrder.Create)
   const [listState, dispatchList] = useReducer(listReducer, undefined, createInitialListState)
   const [selectedPackList, setSelectedPackList] = useState<TaxFreePackList | null>(null)
   const [deleteCandidate, setDeleteCandidate] = useState<TaxFreePackList | null>(null)
@@ -116,8 +123,16 @@ export function TaxFreePackListsPage() {
     ? Math.max(1, Math.ceil(totalQty / pageSize))
     : page + (canMoveForward ? 1 : 0)
   const columns = usePackListColumns({
-    onDelete: setDeleteCandidate,
-    onOpen: setSelectedPackList,
+    canDelete,
+    canOpenDetails,
+    onDelete: (packList) => {
+      if (canDelete) setDeleteCandidate(packList)
+    },
+    onOpen: (packList) => {
+      if (canOpenDetails || (canCreateSupplyOrder && packList.IsSent && !packList.SupplyOrderUkraineId)) {
+        setSelectedPackList(packList)
+      }
+    },
   })
   useEffect(() => {
     writeStoredFilters(filters)
@@ -166,7 +181,7 @@ export function TaxFreePackListsPage() {
   }
 
   async function confirmDelete() {
-    if (!deleteCandidate?.NetUid) {
+    if (!canDelete || !deleteCandidate?.NetUid) {
       return
     }
 
@@ -184,6 +199,10 @@ export function TaxFreePackListsPage() {
   }
 
   async function exportPackLists() {
+    if (!canExport) {
+      return
+    }
+
     if (filterError) {
       dispatchList({ type: 'errorChanged', error: filterError })
       return
@@ -250,7 +269,7 @@ export function TaxFreePackListsPage() {
                   <RotateCcw size={17} />
                 </ActionIcon>
               </Tooltip>
-              <Tooltip label={t('Завантажити')}>
+              {canExport && <Tooltip label={t('Завантажити')}>
                 <ActionIcon
                   variant="default"
                   size={34}
@@ -260,7 +279,7 @@ export function TaxFreePackListsPage() {
                 >
                   <Download size={18} />
                 </ActionIcon>
-              </Tooltip>
+              </Tooltip>}
               <Paginator
                 isLoading={isLoading}
                 page={page}
@@ -298,7 +317,11 @@ export function TaxFreePackListsPage() {
             showLayoutControls
             showDensityToggle={false}
             tableId="tax-free-pack-lists"
-            onRowClick={setSelectedPackList}
+            onRowClick={canOpenDetails || canCreateSupplyOrder ? (packList) => {
+              if (canOpenDetails || (canCreateSupplyOrder && packList.IsSent && !packList.SupplyOrderUkraineId)) {
+                setSelectedPackList(packList)
+              }
+            } : undefined}
           />
         </div>
       </Card>
@@ -316,7 +339,7 @@ export function TaxFreePackListsPage() {
       >
         {selectedPackList && (
           <Stack className="app-modal-actions" gap="xs">
-            <Button
+            {canOpenDetails && <Button
               fullWidth
               justify="flex-start"
               color="dark"
@@ -327,11 +350,13 @@ export function TaxFreePackListsPage() {
                 </span>
               }
               variant="subtle"
-              onClick={() => navigate(`/tax-free/pack-list/edit/${selectedPackList.NetUid}`)}
+              onClick={() => {
+                if (canOpenDetails) navigate(`/tax-free/pack-list/edit/${selectedPackList.NetUid}`)
+              }}
             >
               {t('Переглянути')}
-            </Button>
-            <Button
+            </Button>}
+            {canCreateSupplyOrder && <Button
               disabled={!selectedPackList.IsSent || Boolean(selectedPackList.SupplyOrderUkraineId)}
               fullWidth
               justify="flex-start"
@@ -344,13 +369,14 @@ export function TaxFreePackListsPage() {
               }
               variant="subtle"
               onClick={() => {
+                if (!canCreateSupplyOrder) return
                 setOrderPackList(selectedPackList)
                 setSelectedPackList(null)
               }}
             >
               {t('Створити замовлення в Україну')}
-            </Button>
-            {(!selectedPackList.IsSent || selectedPackList.SupplyOrderUkraineId) && (
+            </Button>}
+            {canCreateSupplyOrder && (!selectedPackList.IsSent || selectedPackList.SupplyOrderUkraineId) && (
               <Text size="xs" c="dimmed">
                 {selectedPackList.IsSent
                   ? t('Замовлення вже створено для цього листа')
@@ -361,7 +387,7 @@ export function TaxFreePackListsPage() {
         )}
       </AppModal>
 
-      <AppModal centered opened={Boolean(deleteCandidate)} title={t('Підтвердити видалення')} onClose={() => setDeleteCandidate(null)}>
+      <AppModal centered opened={canDelete && Boolean(deleteCandidate)} title={t('Підтвердити видалення')} onClose={() => setDeleteCandidate(null)}>
         <Stack>
           <Text size="sm">{t('Видалити пакувальний лист')} {deleteCandidate?.Number || ''}?</Text>
           <Group justify="flex-end">
@@ -372,7 +398,8 @@ export function TaxFreePackListsPage() {
       </AppModal>
 
       <CreateSupplyOrderModal
-        opened={Boolean(orderPackList)}
+        canCreate={canCreateSupplyOrder}
+        opened={canCreateSupplyOrder && Boolean(orderPackList)}
         packList={orderPackList}
         onClose={() => setOrderPackList(null)}
         onCreated={(netUid) => {
@@ -469,9 +496,13 @@ function listReducer(state: ListState, action: ListAction): ListState {
 }
 
 function usePackListColumns({
+  canDelete,
+  canOpenDetails,
   onDelete,
   onOpen,
 }: {
+  canDelete: boolean
+  canOpenDetails: boolean
   onDelete: (packList: TaxFreePackList) => void
   onOpen: (packList: TaxFreePackList) => void
 }) {
@@ -486,18 +517,18 @@ function usePackListColumns({
         enableSorting: false,
         cell: (packList) => (
           <Group gap={4} wrap="nowrap">
-            <TableRowAction
+            {canOpenDetails && <TableRowAction
               action="view"
               label={t('Переглянути')}
               onClick={() => onOpen(packList)}
-            />
-            <TableRowAction
+            />}
+            {canDelete && <TableRowAction
               action="delete"
               disabled={packList.IsSent}
               hint={packList.IsSent ? t('Проведений лист не можна видалити') : undefined}
               label={t('Видалити')}
               onClick={() => onDelete(packList)}
-            />
+            />}
           </Group>
         ),
       },
@@ -581,7 +612,7 @@ function usePackListColumns({
         cell: (packList) => <PackListTableValue value={displayValue(packList.Comment)} />,
       },
     ],
-    [onDelete, onOpen, t],
+    [canDelete, canOpenDetails, onDelete, onOpen, t],
   )
 }
 

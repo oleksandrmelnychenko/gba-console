@@ -49,6 +49,10 @@ export type GeneralInfoFieldsProps = {
   isLoadingRegionCode?: boolean
   isUploadingDocuments?: boolean
   canSaveDocuments?: boolean
+  canEditDocuments?: boolean
+  canCreateCountry?: boolean
+  canCreateIncoterm?: boolean
+  canCreateRegion?: boolean
   isNew?: boolean
   sourceManaged?: boolean
   sourceStructureManaged?: boolean
@@ -161,7 +165,9 @@ function ProviderFields(props: GeneralInfoFieldsProps) {
                 props.onChange('Incoterm', next)
               }}
             />
-            <NewIncotermControl onCreate={props.onCreateIncoterm} />
+            {props.canCreateIncoterm && !props.sourceManaged && (
+              <NewIncotermControl onCreate={props.onCreateIncoterm} />
+            )}
           </Group>
 
           <Group gap="xl">
@@ -235,7 +241,9 @@ function ProviderFields(props: GeneralInfoFieldsProps) {
                   props.onChange('Country', next)
                 }}
               />
-              <NewCountryControl onCreate={props.onCreateCountry} />
+              {props.canCreateCountry && !props.sourceManaged && (
+                <NewCountryControl onCreate={props.onCreateCountry} />
+              )}
             </Group>
           </SimpleGrid>
         </Stack>
@@ -337,7 +345,9 @@ function BuyerFields(props: GeneralInfoFieldsProps) {
                   <Trash2 size={16} />
                 </ActionIcon>
               )}
-              {!props.sourceManaged && <NewRegionControl onCreate={props.onCreateRegion} />}
+              {props.canCreateRegion && !props.sourceManaged && (
+                <NewRegionControl onCreate={props.onCreateRegion} />
+              )}
             </Group>
 
             <SimpleGrid cols={{ base: 1, md: 3 }} spacing="sm">
@@ -399,6 +409,7 @@ function BuyerFields(props: GeneralInfoFieldsProps) {
           <Text fw={600}>{t('Документи договору')}</Text>
           <ContractDocuments
             canSave={props.canSaveDocuments !== false}
+            disabled={props.canEditDocuments === false}
             documents={client.ClientContractDocuments || []}
             isUploading={props.isUploadingDocuments}
             onAdd={props.onAddDocuments}
@@ -415,6 +426,7 @@ function ContractDocuments({
   documents,
   isUploading,
   canSave,
+  disabled,
   onAdd,
   onRemove,
   onSave,
@@ -422,6 +434,7 @@ function ContractDocuments({
   documents: ClientContractDocument[]
   isUploading?: boolean
   canSave: boolean
+  disabled: boolean
   onAdd: (files: File[]) => void
   onRemove: (document: ClientContractDocument) => void
   onSave: () => void
@@ -431,9 +444,9 @@ function ContractDocuments({
 
   return (
     <Stack gap="xs">
-      <FileButton multiple onChange={(files) => files.length > 0 && onAdd(files)}>
+      <FileButton disabled={disabled} multiple onChange={(files) => files.length > 0 && onAdd(files)}>
         {(buttonProps) => (
-          <Button color="gray" variant="light" {...buttonProps}>
+          <Button color="gray" disabled={disabled} variant="light" {...buttonProps}>
             {t('Завантажити документи договору')}
           </Button>
         )}
@@ -445,6 +458,7 @@ function ContractDocuments({
           <ActionIcon
             aria-label={t('Видалити')}
             color="red"
+            disabled={disabled}
             variant="subtle"
             onClick={() => onRemove(document)}
           >
@@ -453,7 +467,7 @@ function ContractDocuments({
         </Group>
       ))}
 
-      {canSave && visibleDocuments.length > 0 && (
+      {canSave && !disabled && visibleDocuments.length > 0 && (
         <Group justify="flex-end">
           <Button color={CREATE_ACTION_COLOR} loading={isUploading} onClick={onSave}>
             {t('Зберегти')}

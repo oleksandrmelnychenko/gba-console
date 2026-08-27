@@ -22,6 +22,10 @@ vi.mock('@mantine/notifications', () => ({
   notifications: { show: vi.fn() },
 }))
 
+vi.mock('../../auth/useAuth', () => ({
+  useAuth: () => ({ hasPermission: () => true }),
+}))
+
 vi.mock('../../../shared/ui/AppModal', () => ({
   AppModal: ({ children, opened, title }: { children: React.ReactNode; opened: boolean; title: React.ReactNode }) => (
     opened ? <div aria-label={String(title)} role="dialog">{children}</div> : null
@@ -86,6 +90,7 @@ function renderModal(client: Client) {
       <WizardReassignSaleModal
         client={client}
         opened
+        permissionFlow="edit"
         sale={sale}
         onClose={vi.fn()}
         onReassigned={mocks.onReassigned}
@@ -106,7 +111,7 @@ describe('online-shop sale editor reassignment structure', () => {
   it('automatically loads the root, sub-client, and trade-point list instead of requiring the empty search from Screenshot_274.png', async () => {
     renderModal({ NetUid: 'client-root' } as Client)
 
-    await waitFor(() => expect(mocks.getWizardHeaderClient).toHaveBeenCalledWith('client-root'))
+    await waitFor(() => expect(mocks.getWizardHeaderClient).toHaveBeenCalledWith('client-root', 'edit'))
     expect(mocks.getWizardClientStructure).toHaveBeenCalledWith('client-root')
     expect(await screen.findByText('ShopClient')).toBeTruthy()
     expect(screen.getByText('Клієнт 4')).toBeTruthy()
@@ -121,7 +126,7 @@ describe('online-shop sale editor reassignment structure', () => {
     renderModal({ IsSubClient: true, NetUid: 'current-sub-client' } as Client)
 
     await waitFor(() => expect(mocks.getRootClientBySubClientNetId).toHaveBeenCalledWith('current-sub-client'))
-    expect(mocks.getWizardHeaderClient).toHaveBeenCalledWith('client-root')
+    expect(mocks.getWizardHeaderClient).toHaveBeenCalledWith('client-root', 'edit')
 
     const agreementLabel = await screen.findByText('Цільовий договір')
     const agreementButton = agreementLabel.closest('button')

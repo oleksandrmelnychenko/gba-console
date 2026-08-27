@@ -6,9 +6,9 @@ import type { MergedService } from '../detailTypes'
 import { MergedServiceEditCard } from './MergedServiceEditCard'
 
 const mocks = vi.hoisted(() => ({
-  getResponsibleUsers: vi.fn(),
+  getUnifiedServiceEditResponsibleUsers: vi.fn(),
   getSupplyServiceConsumableProducts: vi.fn(),
-  searchSupplyOrganizations: vi.fn(),
+  searchUnifiedServiceEditSupplyOrganizations: vi.fn(),
 }))
 
 vi.mock('../../../shared/i18n/useI18n', () => ({
@@ -25,9 +25,9 @@ vi.mock('../../../shared/ui/AppDrawer', () => ({
 }))
 
 vi.mock('../api/protocolDetailApi', () => ({
-  getResponsibleUsers: mocks.getResponsibleUsers,
+  getUnifiedServiceEditResponsibleUsers: mocks.getUnifiedServiceEditResponsibleUsers,
   getSupplyServiceConsumableProducts: mocks.getSupplyServiceConsumableProducts,
-  searchSupplyOrganizations: mocks.searchSupplyOrganizations,
+  searchUnifiedServiceEditSupplyOrganizations: mocks.searchUnifiedServiceEditSupplyOrganizations,
 }))
 
 const requiredLabel = (label: string) => new RegExp(`^${label}(?: \\*)?$`)
@@ -53,9 +53,9 @@ const service: MergedService = {
 describe('MergedServiceEditCard validation', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    mocks.getResponsibleUsers.mockReturnValue(new Promise(() => {}))
+    mocks.getUnifiedServiceEditResponsibleUsers.mockReturnValue(new Promise(() => {}))
     mocks.getSupplyServiceConsumableProducts.mockReturnValue(new Promise(() => {}))
-    mocks.searchSupplyOrganizations.mockResolvedValue([])
+    mocks.searchUnifiedServiceEditSupplyOrganizations.mockResolvedValue([])
   })
 
   it('shows the agreement currency and automatic fallback on both rate overrides', () => {

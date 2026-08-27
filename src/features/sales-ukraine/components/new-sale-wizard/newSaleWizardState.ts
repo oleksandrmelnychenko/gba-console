@@ -129,6 +129,7 @@ export type WizardSplitRecovery = WizardSplitRecoverySource & {
 export type WizardSplitFinalMutation = {
   context: string
   fencingToken?: string
+  flow?: 'create' | 'edit'
   generation?: number
   kind: 'create-sale' | 'sale-update-file' | 'sale-vat-document'
   operationId: string
@@ -294,7 +295,8 @@ export function stageWizardSplitFinalMutation(
     (
       durableRecovery.finalMutation.operationId !== normalized.operationId ||
       durableRecovery.finalMutation.context !== normalized.context ||
-      durableRecovery.finalMutation.kind !== normalized.kind
+      durableRecovery.finalMutation.kind !== normalized.kind ||
+      durableRecovery.finalMutation.flow !== normalized.flow
     )
   ) {
     throw new Error('Another final sale mutation is already linked to the split recovery')
@@ -1081,6 +1083,10 @@ function normalizeWizardSplitFinalMutation(
     throw new Error('Unsupported final sale mutation phase')
   }
 
+  if (mutation.flow !== undefined && mutation.flow !== 'create' && mutation.flow !== 'edit') {
+    throw new Error('Unsupported final sale mutation permission flow')
+  }
+
   const hasFence = typeof mutation.fencingToken === 'string' && Boolean(normalizeIdentity(mutation.fencingToken))
   const hasGeneration = typeof mutation.generation === 'number' && Number.isInteger(mutation.generation) && mutation.generation > 0
 
@@ -1091,6 +1097,7 @@ function normalizeWizardSplitFinalMutation(
   return {
     context,
     ...(hasFence ? { fencingToken: mutation.fencingToken, generation: mutation.generation } : {}),
+    ...(mutation.flow ? { flow: mutation.flow } : {}),
     kind: mutation.kind,
     operationId,
     ownerId,

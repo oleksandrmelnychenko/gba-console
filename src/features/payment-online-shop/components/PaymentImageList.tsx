@@ -9,12 +9,13 @@ import { toProxiedAssetUrl } from '../../../shared/url/proxiedAssetUrl'
 import { PaymentType, type RetailClientPaymentImageItem } from '../types'
 
 export type PaymentImageListProps = {
+  canEdit: boolean
   isEditing: boolean
   items: RetailClientPaymentImageItem[]
   onSelect: (item: RetailClientPaymentImageItem) => void
 }
 
-export function PaymentImageList({ isEditing, items, onSelect }: PaymentImageListProps) {
+export function PaymentImageList({ canEdit, isEditing, items, onSelect }: PaymentImageListProps) {
   const { t } = useI18n()
 
   const columns = useMemo<DataTableColumn<RetailClientPaymentImageItem>[]>(() => [
@@ -88,7 +89,7 @@ export function PaymentImageList({ isEditing, items, onSelect }: PaymentImageLis
       header: '',
       accessor: (row) => row.IsLocked,
       cell: (row) =>
-        !isEditing || row.IsLocked ? (
+        !canEdit ? null : !isEditing || row.IsLocked ? (
           <Tooltip label={t('Змінити неможливо, оплата проведена')} position="left">
             <ActionIcon color="gray" variant="subtle" aria-label={t('Змінити неможливо, оплата проведена')}>
               <Lock size={16} />
@@ -98,7 +99,7 @@ export function PaymentImageList({ isEditing, items, onSelect }: PaymentImageLis
           <TableRowAction action="edit" label={t('Редагування')} onClick={() => onSelect(row)} />
         ),
     },
-  ], [isEditing, onSelect, t])
+  ], [canEdit, isEditing, onSelect, t])
 
   return (
     <DataTable

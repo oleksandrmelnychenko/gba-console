@@ -13,6 +13,7 @@ import {
   Tooltip,
 } from '@mantine/core'
 import { CircleAlert, Plus, Trash2 } from 'lucide-react'
+import { useEffect } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
@@ -138,6 +139,18 @@ export function PaymentDeliveryProtocolsSection({
   const [validationError, setValidationError] = useValueState<string | null>(null)
   const [prevOpened, setPrevOpened] = useValueState(isFormOpen)
 
+  useEffect(() => {
+    if (!canCreateProtocol) {
+      setFormOpen(false)
+    }
+  }, [canCreateProtocol, setFormOpen])
+
+  useEffect(() => {
+    if (!canRemoveProtocol) {
+      setRemoveTarget(null)
+    }
+  }, [canRemoveProtocol, setRemoveTarget])
+
   if (isFormOpen !== prevOpened) {
       setPrevOpened(isFormOpen)
 
@@ -195,6 +208,10 @@ export function PaymentDeliveryProtocolsSection({
   }
 
   async function handleSubmit() {
+    if (!canCreateProtocol) {
+      return
+    }
+
     if (!protocolKey?.Key) {
       setValidationError(t('Оберіть форму платежу'))
 
@@ -243,7 +260,7 @@ export function PaymentDeliveryProtocolsSection({
   }
 
   async function handleRemoveConfirm() {
-    if (!removeTarget) {
+    if (!canRemoveProtocol || !removeTarget) {
       return
     }
 

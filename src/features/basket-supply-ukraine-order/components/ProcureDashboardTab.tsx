@@ -19,6 +19,7 @@ import {
 } from 'lucide-react'
 import { useEffect, useMemo, useReducer, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { AiFeatureBadge } from '../../../shared/ai/AiFeatureBadge'
 import { AiHistoryLineageNote } from '../../../shared/ai/AiHistoryLineageNote'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -33,9 +34,10 @@ import type { UrgencySliceInput } from '../../../shared/ui/charts/donutData'
 import type { ForecastPoint } from '../../../shared/ui/charts/forecastData'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { TableRowAction } from '../../../shared/ui/table-row-action'
-import { getSupplyOrderSuppliers } from '../../supply-ukraine-orders/api/supplyUkraineOrdersApi'
+import { usePermissions } from '../../auth/usePermissions'
+import { getSupplyDashboardSuppliers } from '../../supply-ukraine-orders/api/supplyUkraineOrdersApi'
 import type { Client } from '../../supply-ukraine-orders/types'
-import { getProcurementCharts } from '../api/procurementApi'
+import { getSupplyDashboardCharts } from '../api/procurementApi'
 import { summarizeProcurementCharts } from '../procureDashboardModel'
 import type {
   ProcurementCharts,
@@ -107,6 +109,25 @@ const snapshotDateFormatter = new Intl.DateTimeFormat('uk-UA', {
 
 export function ProcureDashboardTab() {
   const { t } = useI18n()
+  const { can, isLoading } = usePermissions()
+
+  if (isLoading) {
+    return <Text c="dimmed">{t('Завантаження')}</Text>
+  }
+
+  if (!can(PermissionKeys.SystemPages.SupplyDashboard.View)) {
+    return (
+      <Alert color="red" title={t('Доступ заборонено')} variant="light">
+        {t('Недостатньо прав для перегляду дашборда постачання')}
+      </Alert>
+    )
+  }
+
+  return <ProcureDashboardTabContent />
+}
+
+function ProcureDashboardTabContent() {
+  const { t } = useI18n()
   const navigate = useNavigate()
   const [state, dispatch] = useReducer(dashboardReducer, initialState)
   const [producers, setProducers] = useState<Client[]>([])
@@ -124,7 +145,7 @@ export function ProcureDashboardTab() {
   useEffect(() => {
     let cancelled = false
 
-    getSupplyOrderSuppliers()
+    getSupplyDashboardSuppliers()
       .then((loaded) => {
         if (!cancelled) {
           setProducers(loaded)
@@ -149,7 +170,7 @@ export function ProcureDashboardTab() {
       dispatch({ type: 'loading' })
 
       try {
-        const loaded = await getProcurementCharts(
+        const loaded = await getSupplyDashboardCharts(
           {
             ...(typeof appliedProducerId === 'number' ? { producerId: appliedProducerId } : {}),
             topN: appliedTopN,

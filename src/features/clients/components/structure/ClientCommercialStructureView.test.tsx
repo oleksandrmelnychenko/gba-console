@@ -369,7 +369,12 @@ describe('ClientCommercialStructureView', () => {
 
     render(
       <MantineProvider env="test" theme={theme}>
-        <ClientCommercialStructureView structure={structure} t={t} onChanged={onChanged} />
+        <ClientCommercialStructureView
+          canManageIdentity
+          structure={structure}
+          t={t}
+          onChanged={onChanged}
+        />
       </MantineProvider>,
     )
 

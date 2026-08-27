@@ -24,6 +24,9 @@ import {
   UserRoundSearch,
 } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useReducer, useState } from 'react'
+import { PermissionGate } from '../../auth/components/PermissionGate'
+import { usePermissions } from '../../auth/usePermissions'
+import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
@@ -102,6 +105,11 @@ const numberFormatter = new Intl.NumberFormat('uk-UA')
 
 export function VehicleRegistryPage() {
   const { t } = useI18n()
+  const { can } = usePermissions()
+  const canImport = can(PermissionKeys.VehicleRegistry.Import.Create)
+  const canOpenDetails = can(PermissionKeys.VehicleRegistry.Vehicle.OpenDetails)
+  const canUpdateWorkflow = can(PermissionKeys.VehicleRegistry.Vehicle.UpdateWorkflow)
+  const canViewImportIssues = can(PermissionKeys.VehicleRegistry.Import.ViewIssues)
   const [view, setView] = useState<RegistryView>('vehicles')
   const [searchDraft, setSearchDraft] = useState('')
   const [debouncedSearch] = useDebouncedValue(searchDraft, SEARCH_DEBOUNCE_MS)
@@ -132,12 +140,12 @@ export function VehicleRegistryPage() {
     Math.ceil((view === 'vehicles' ? vehicleTotal : (importTotal ?? 0)) / PAGE_SIZE),
   )
   const vehicleColumns = useMemo(
-    () => createVehicleColumns(t, setSelectedVehicleId),
-    [t],
+    () => createVehicleColumns(t, canOpenDetails ? setSelectedVehicleId : undefined),
+    [canOpenDetails, t],
   )
   const importColumns = useMemo(
-    () => createImportColumns(t, setSelectedImport),
-    [t],
+    () => createImportColumns(t, canViewImportIssues ? setSelectedImport : undefined),
+    [canViewImportIssues, t],
   )
 
   useEffect(() => {
@@ -246,7 +254,7 @@ export function VehicleRegistryPage() {
   }
 
   async function handleFiles(files: File[]) {
-    if (files.length === 0) {
+    if (!canImport || files.length === 0) {
       return
     }
 
@@ -410,7 +418,9 @@ export function VehicleRegistryPage() {
               />
             </div>
             <div ref={setTableToolbarSlot} className="app-filter-table-toolbar-slot" />
-            <RegistryImportButton isUploading={isUploading} onFiles={handleFiles} />
+            <PermissionGate permissionKey={PermissionKeys.VehicleRegistry.Import.Create}>
+              <RegistryImportButton isUploading={isUploading} onFiles={handleFiles} />
+            </PermissionGate>
           </div>
         ) : (
           <div className="app-filter-bar vehicle-registry-import-bar">
@@ -431,7 +441,9 @@ export function VehicleRegistryPage() {
               />
             </div>
             <div ref={setTableToolbarSlot} className="app-filter-table-toolbar-slot" />
-            <RegistryImportButton isUploading={isUploading} onFiles={handleFiles} />
+            <PermissionGate permissionKey={PermissionKeys.VehicleRegistry.Import.Create}>
+              <RegistryImportButton isUploading={isUploading} onFiles={handleFiles} />
+            </PermissionGate>
           </div>
         )}
 
@@ -458,7 +470,7 @@ export function VehicleRegistryPage() {
               showLayoutControls
               tableId="vehicle-registry"
               toolbarPortalTarget={tableToolbarSlot}
-              onRowClick={(vehicle) => setSelectedVehicleId(vehicle.NetUid)}
+              onRowClick={canOpenDetails ? (vehicle) => setSelectedVehicleId(vehicle.NetUid) : undefined}
             />
           ) : (
             <DataTable
@@ -476,21 +488,25 @@ export function VehicleRegistryPage() {
               showLayoutControls
               tableId="vehicle-registry-imports"
               toolbarPortalTarget={tableToolbarSlot}
-              onRowClick={setSelectedImport}
+              onRowClick={canViewImportIssues ? setSelectedImport : undefined}
             />
           )}
         </div>
       </div>
 
       <VehicleDetailDrawer
-        netUid={selectedVehicleId}
+        canEdit={canUpdateWorkflow}
+        netUid={canOpenDetails ? selectedVehicleId : null}
         onClose={() => setSelectedVehicleId(null)}
         onUpdated={() => {
           reload()
           setSelectedVehicleId(null)
         }}
       />
-      <ImportIssuesDrawer item={selectedImport} onClose={() => setSelectedImport(null)} />
+      <ImportIssuesDrawer
+        item={canViewImportIssues ? selectedImport : null}
+        onClose={() => setSelectedImport(null)}
+      />
     </Stack>
   )
 }
@@ -566,10 +582,12 @@ function RegistryImportButton({
 }
 
 function VehicleDetailDrawer({
+  canEdit,
   netUid,
   onClose,
   onUpdated,
 }: {
+  canEdit: boolean
   netUid: string | null
   onClose: () => void
   onUpdated: () => void
@@ -618,7 +636,7 @@ function VehicleDetailDrawer({
   }, [netUid, t])
 
   async function saveWorkflow() {
-    if (!netUid) {
+    if (!canEdit || !netUid) {
       return
     }
 
@@ -643,7 +661,7 @@ function VehicleDetailDrawer({
   return (
     <AppDrawer
       footer={
-        detail ? (
+        detail && canEdit ? (
           <Group justify="space-between" wrap="nowrap">
             <Button color="gray" variant="subtle" onClick={onClose}>{t('Закрити')}</Button>
             <Button color={CREATE_ACTION_COLOR} loading={isSaving} onClick={() => void saveWorkflow()}>
@@ -707,40 +725,44 @@ function VehicleDetailDrawer({
                 </div>
               </section>
 
-              <ClientMatchSection
-                matches={detail.ClientMatches || []}
-                selectedClientNetUid={selectedClientNetUid}
-                onSelect={(clientNetUid) => {
-                  setSelectedClientNetUid(clientNetUid)
-                  if (clientNetUid) {
-                    setStatus('client_matched')
-                  } else if (status === 'client_matched') {
-                    setStatus('in_progress')
-                  }
-                }}
-              />
+              {canEdit && (
+                <>
+                  <ClientMatchSection
+                    matches={detail.ClientMatches || []}
+                    selectedClientNetUid={selectedClientNetUid}
+                    onSelect={(clientNetUid) => {
+                      setSelectedClientNetUid(clientNetUid)
+                      if (clientNetUid) {
+                        setStatus('client_matched')
+                      } else if (status === 'client_matched') {
+                        setStatus('in_progress')
+                      }
+                    }}
+                  />
 
-              <section className="vehicle-registry-workflow">
-                <div className="app-detail-section-head">
-                  <Text fw={650}>{t('Обробка')}</Text>
-                </div>
-                <Select
-                  allowDeselect={false}
-                  data={workflowOptions(t)}
-                  label={t('Статус')}
-                  value={status}
-                  onChange={(value) => setStatus((value || 'new') as VehicleRegistryWorkflowStatus)}
-                />
-                <Textarea
-                  autosize
-                  label={t('Коментар')}
-                  maxLength={2000}
-                  minRows={3}
-                  placeholder={t('Результат перевірки або наступна дія')}
-                  value={note}
-                  onChange={(event) => setNote(event.currentTarget.value)}
-                />
-              </section>
+                  <section className="vehicle-registry-workflow">
+                    <div className="app-detail-section-head">
+                      <Text fw={650}>{t('Обробка')}</Text>
+                    </div>
+                    <Select
+                      allowDeselect={false}
+                      data={workflowOptions(t)}
+                      label={t('Статус')}
+                      value={status}
+                      onChange={(value) => setStatus((value || 'new') as VehicleRegistryWorkflowStatus)}
+                    />
+                    <Textarea
+                      autosize
+                      label={t('Коментар')}
+                      maxLength={2000}
+                      minRows={3}
+                      placeholder={t('Результат перевірки або наступна дія')}
+                      value={note}
+                      onChange={(event) => setNote(event.currentTarget.value)}
+                    />
+                  </section>
+                </>
+              )}
 
               <section>
                 <div className="app-detail-section-head">
@@ -969,7 +991,7 @@ function ImportIssuesDrawer({
 
 function createVehicleColumns(
   t: (value: string) => string,
-  open: (netUid: string) => void,
+  open?: (netUid: string) => void,
 ): DataTableColumn<VehicleRegistryVehicle>[] {
   return [
     {
@@ -1087,13 +1109,13 @@ function createVehicleColumns(
     },
     {
       align: 'center',
-      cell: (item) => (
+      cell: (item) => open ? (
         <TableRowAction
           action="view"
           label={t('Відкрити')}
           onClick={() => open(item.NetUid)}
         />
-      ),
+      ) : null,
       enableHiding: false,
       enablePinning: false,
       enableReorder: false,
@@ -1138,7 +1160,7 @@ function ClientMatchBadge({
 
 function createImportColumns(
   t: (value: string) => string,
-  open: (item: VehicleRegistryImport) => void,
+  open?: (item: VehicleRegistryImport) => void,
 ): DataTableColumn<VehicleRegistryImport>[] {
   return [
     {
@@ -1205,13 +1227,13 @@ function createImportColumns(
     },
     {
       align: 'center',
-      cell: (item) => (
+      cell: (item) => open ? (
         <TableRowAction
           action="view"
           label={t('Переглянути проблеми')}
           onClick={() => open(item)}
         />
-      ),
+      ) : null,
       enableHiding: false,
       enablePinning: false,
       enableReorder: false,

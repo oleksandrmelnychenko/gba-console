@@ -7,13 +7,13 @@ import type {
 } from '../types'
 
 export async function getAllCurrencyTraders(): Promise<CurrencyTrader[]> {
-  const result = await apiRequest<unknown>('/currencies/traders/all')
+  const result = await apiRequest<unknown>('/currencies/traders/accounting/all')
 
   return normalizeCurrencyTraders(result)
 }
 
 export async function getCurrencyTrader(netId: string): Promise<CurrencyTrader | null> {
-  const result = await apiRequest<unknown>('/currencies/traders/get', {
+  const result = await apiRequest<unknown>('/currencies/traders/accounting/get', {
     query: {
       netId,
     },
@@ -25,7 +25,7 @@ export async function getCurrencyTrader(netId: string): Promise<CurrencyTrader |
 export async function getCurrencyTraderExchangeRates(
   params: CurrencyTraderExchangeRatesSearchParams,
 ): Promise<CurrencyTraderExchangeRate[]> {
-  const result = await apiRequest<unknown>('/currencies/traders/exchangerates/get/filtered', {
+  const result = await apiRequest<unknown>('/currencies/traders/accounting/exchangerates/get/filtered', {
     query: {
       from: params.from,
       netId: params.netId,
@@ -37,7 +37,7 @@ export async function getCurrencyTraderExchangeRates(
 }
 
 export async function createCurrencyTrader(payload: CurrencyTraderPayload): Promise<CurrencyTrader | null> {
-  const result = await apiRequest<unknown>('/currencies/traders/new', {
+  const result = await apiRequest<unknown>('/currencies/traders/accounting/new', {
     method: 'POST',
     body: payload,
   })
@@ -46,7 +46,7 @@ export async function createCurrencyTrader(payload: CurrencyTraderPayload): Prom
 }
 
 export async function updateCurrencyTrader(payload: CurrencyTraderPayload): Promise<CurrencyTrader | null> {
-  const result = await apiRequest<unknown>('/currencies/traders/update', {
+  const result = await apiRequest<unknown>('/currencies/traders/accounting/update', {
     method: 'POST',
     body: payload,
   })
@@ -55,7 +55,7 @@ export async function updateCurrencyTrader(payload: CurrencyTraderPayload): Prom
 }
 
 export async function deleteCurrencyTrader(netId: string): Promise<void> {
-  await apiRequest<unknown>('/currencies/traders/delete', {
+  await apiRequest<unknown>('/currencies/traders/accounting/delete', {
     method: 'DELETE',
     query: { netId },
   })

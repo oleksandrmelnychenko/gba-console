@@ -18,6 +18,9 @@ import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { AppModal } from '../../../shared/ui/AppModal'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { upgradeHttpToHttps } from '../../../shared/url/upgradeHttpToHttps'
+import { PermissionKeys } from '../../../shared/auth/permissionKeys'
+import { PermissionGate } from '../../auth/components/PermissionGate'
+import { useAuth } from '../../auth/useAuth'
 import {
   calculateAdvanceReportOrder,
   getAdvanceReportOrder,
@@ -40,6 +43,7 @@ import { AdvanceReportConsumableOrderModal } from '../components/AdvanceReportCo
 import { AdvanceReportFuelGrid } from '../components/AdvanceReportFuelGrid'
 import { AdvanceReportFuelModal } from '../components/AdvanceReportFuelModal'
 import { AdvanceReportProductsGrid } from '../components/AdvanceReportProductsGrid'
+import '../../../shared/ui/document-detail/document-detail.css'
 import './outgoing-cashflows-page.css'
 import './advance-report-view-page.css'
 
@@ -73,6 +77,7 @@ const INITIAL_ADVANCE_REPORT_VIEW_STATE: AdvanceReportViewState = {
 
 function useAdvanceReportViewModel() {
   const { t } = useI18n()
+  const { hasPermission } = useAuth()
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const routeLocation = useLocation()
@@ -154,6 +159,15 @@ function useAdvanceReportViewModel() {
   const currencyCode = order?.PaymentCurrencyRegister?.Currency?.Code || order?.PaymentCurrencyRegister?.Currency?.Name
   const headerTitle = useMemo(() => buildHeaderTitle(order, t), [order, t])
   const reportTitle = useMemo(() => buildReportTitle(order, t), [order, t])
+  const canEdit = hasPermission(PermissionKeys.AdvancedReports.Report.Edit)
+  const ensureEditPermission = useCallback(() => {
+    if (hasPermission(PermissionKeys.AdvancedReports.Report.Edit)) {
+      return true
+    }
+
+    notifications.show({ color: 'red', message: t('Немає прав для редагування авансового звіту') })
+    return false
+  }, [hasPermission, t])
 
   const goBack = useCallback(() => {
     if (isBusy) {
@@ -229,7 +243,7 @@ function useAdvanceReportViewModel() {
 
   const removeConsumableRow = useCallback(
     (row: AdvanceReportConsumableRow) => {
-      if (!order || isBusy) {
+      if (!ensureEditPermission() || !order || isBusy) {
         return
       }
 
@@ -242,12 +256,12 @@ function useAdvanceReportViewModel() {
       }))
       void recalculate(nextOrder)
     },
-    [isBusy, order, recalculate, setViewState],
+    [ensureEditPermission, isBusy, order, recalculate, setViewState],
   )
 
   const removeFuelRow = useCallback(
     (row: AdvanceReportFuelRow) => {
-      if (!order || isBusy) {
+      if (!ensureEditPermission() || !order || isBusy) {
         return
       }
 
@@ -259,12 +273,12 @@ function useAdvanceReportViewModel() {
       }))
       void recalculate(nextOrder)
     },
-    [isBusy, order, recalculate, setViewState],
+    [ensureEditPermission, isBusy, order, recalculate, setViewState],
   )
 
   const addConsumableOrder = useCallback(
     (consumablesOrder: AdvanceReportConsumablesOrder, documentFiles: File[]) => {
-      if (!order || isBusy) {
+      if (!ensureEditPermission() || !order || isBusy) {
         return
       }
 
@@ -296,12 +310,12 @@ function useAdvanceReportViewModel() {
       }))
       void recalculate(nextOrder)
     },
-    [isBusy, order, recalculate, setViewState],
+    [ensureEditPermission, isBusy, order, recalculate, setViewState],
   )
 
   const addFueling = useCallback(
     (fueling: CompanyCarFueling) => {
-      if (!order || isBusy) {
+      if (!ensureEditPermission() || !order || isBusy) {
         return
       }
 
@@ -324,12 +338,12 @@ function useAdvanceReportViewModel() {
       }))
       void recalculate(nextOrder)
     },
-    [isBusy, order, recalculate, setViewState],
+    [ensureEditPermission, isBusy, order, recalculate, setViewState],
   )
 
   const save = useCallback(
     async (auto: boolean) => {
-      if (!order || isBusy) {
+      if (!ensureEditPermission() || !order || isBusy) {
         return
       }
 
@@ -373,6 +387,7 @@ function useAdvanceReportViewModel() {
     },
     [
       consumableDocumentFilesByOrderKey,
+      ensureEditPermission,
       isBusy,
       navigate,
       order,
@@ -384,7 +399,7 @@ function useAdvanceReportViewModel() {
   )
 
   const settleDifference = useCallback(async () => {
-    if (!order || isBusy) {
+    if (!ensureEditPermission() || !order || isBusy) {
       return
     }
 
@@ -411,6 +426,7 @@ function useAdvanceReportViewModel() {
     }
   }, [
     consumableDocumentFilesByOrderKey,
+    ensureEditPermission,
     isBusy,
     navigate,
     order,
@@ -423,6 +439,7 @@ function useAdvanceReportViewModel() {
   return {
     addConsumableOrder,
     addFueling,
+    canEdit,
     canAppendRows,
     canSave,
     confirmLeave,
@@ -447,12 +464,12 @@ function useAdvanceReportViewModel() {
     totals,
     goBack,
     openConsumableModal: () => {
-      if (!isBusy) {
+      if (ensureEditPermission() && !isBusy) {
         setConsumableModalOpen(true)
       }
     },
     openFuelModal: () => {
-      if (!isBusy) {
+      if (ensureEditPermission() && !isBusy) {
         setFuelModalOpen(true)
       }
     },
@@ -468,12 +485,33 @@ function useAdvanceReportViewModel() {
 }
 
 export function AdvanceReportViewPage() {
+  return (
+    <PermissionGate
+      permissionKey={PermissionKeys.AdvancedReports.Report.Open}
+      fallback={<AdvanceReportPermissionDenied />}
+    >
+      <AdvanceReportViewPageContent />
+    </PermissionGate>
+  )
+}
+
+function AdvanceReportPermissionDenied() {
+  const { t } = useI18n()
+
+  return (
+    <Alert color="red" icon={<CircleAlert size={18} />} title={t('Доступ заборонено')} variant="light">
+      {t('У вашої ролі немає права переглядати авансовий звіт.')}
+    </Alert>
+  )
+}
+
+function AdvanceReportViewPageContent() {
   const model = useAdvanceReportViewModel()
   const { t } = useI18n()
 
   return (
     <AppDrawer
-      footer={model.canSave ? (
+      footer={model.canEdit && model.canSave ? (
         <Group justify="flex-end">
           <Button
             color={CREATE_ACTION_COLOR}
@@ -491,9 +529,9 @@ export function AdvanceReportViewPage() {
       title={t('Авансовий звіт')}
       onClose={model.goBack}
     >
-    <div className="outgoing-detail-drawer advance-report-detail-drawer">
+    <div className="document-detail-drawer advance-report-detail-drawer">
       <Group className="advance-report-detail-actions" gap="xs" justify="flex-end">
-        {!model.isDone && (
+        {!model.isDone && model.canEdit && (
           <>
             <Button color={CREATE_ACTION_COLOR} disabled={model.isBusy} leftSection={<Receipt size={16} />} onClick={model.openConsumableModal}>
               {t('Додати товар / послугу')}
@@ -519,7 +557,7 @@ export function AdvanceReportViewPage() {
         <AdvanceReportContent model={model} />
       ) : null}
 
-      {model.order && (
+      {model.order && model.canEdit && (
         <>
           <AdvanceReportConsumableOrderModal
             opened={model.isConsumableModalOpen}
@@ -589,15 +627,15 @@ function AdvanceReportContent({ model }: { model: ReturnType<typeof useAdvanceRe
 
   return (
     <>
-      <section className="outgoing-detail-summary">
-        <div className="outgoing-detail-summary__main">
-          <span className="outgoing-detail-eyebrow">{t('Авансовий звіт')}</span>
-          <Text className="outgoing-detail-summary__title">{displayValue(reportNumber)}</Text>
-          <Text className="outgoing-detail-summary__meta">
+      <section className="document-detail-summary">
+        <div className="document-detail-summary__main">
+          <span className="document-detail-eyebrow">{t('Авансовий звіт')}</span>
+          <Text className="document-detail-summary__title">{displayValue(reportNumber)}</Text>
+          <Text className="document-detail-summary__meta">
             {formatDateTime(reportDate)} · {model.headerTitle}
           </Text>
         </div>
-        <div className="outgoing-detail-summary__metrics">
+        <div className="document-detail-summary__metrics">
           <AdvanceReportDetailMetric
             label={t('Сума ордера')}
             suffix={model.currencyCode}
@@ -617,7 +655,7 @@ function AdvanceReportContent({ model }: { model: ReturnType<typeof useAdvanceRe
         </div>
       </section>
 
-      <div className="outgoing-detail-tree advance-report-detail-tree">
+      <div className="document-detail-tree advance-report-detail-tree">
         <AdvanceReportDetailSection subtitle={displayValue(order.Number)} title={model.headerTitle}>
           <AdvanceReportDetailRow label={t('Дата')} value={formatDateTime(order.FromDate)} />
           <AdvanceReportDetailRow label={t('Номер')} value={displayValue(order.Number)} />
@@ -637,7 +675,7 @@ function AdvanceReportContent({ model }: { model: ReturnType<typeof useAdvanceRe
           >
             <div className="advance-report-detail-section__table">
             <AdvanceReportProductsGrid
-              canRemove={!model.isBusy}
+              canRemove={model.canEdit && !model.isBusy}
               rows={model.consumableRows}
               onRemove={model.removeConsumableRow}
             />
@@ -648,14 +686,14 @@ function AdvanceReportContent({ model }: { model: ReturnType<typeof useAdvanceRe
       {hasFuel && (
           <AdvanceReportDetailSection subtitle={`${model.fuelRows.length}`} title={t('Пальне')}>
             <div className="advance-report-detail-section__table">
-            <AdvanceReportFuelGrid canRemove={!model.isBusy} rows={model.fuelRows} onRemove={model.removeFuelRow} />
+            <AdvanceReportFuelGrid canRemove={model.canEdit && !model.isBusy} rows={model.fuelRows} onRemove={model.removeFuelRow} />
             </div>
           </AdvanceReportDetailSection>
       )}
 
         {positionsCount === 0 ? (
           <AdvanceReportDetailSection subtitle="0" title={t('Позиції')}>
-            <div className="outgoing-detail-empty">{t('Позицій немає')}</div>
+            <div className="document-detail-empty">{t('Позицій немає')}</div>
           </AdvanceReportDetailSection>
         ) : null}
 
@@ -696,7 +734,7 @@ function AdvanceReportDetailMetric({
   value: string
 }) {
   return (
-    <div className={`outgoing-detail-metric${tone ? ` is-${tone}` : ''}`}>
+    <div className={`document-detail-metric${tone ? ` is-${tone}` : ''}`}>
       <span>{label}</span>
       <strong>
         {displayValue(value)}
@@ -716,12 +754,12 @@ function AdvanceReportDetailSection({
   title: string
 }) {
   return (
-    <section className="outgoing-detail-section">
-      <div className="outgoing-detail-section__head">
-        <span className="outgoing-detail-section__title">{title}</span>
-        {subtitle ? <span className="outgoing-detail-section__subtitle">{subtitle}</span> : null}
+    <section className="document-detail-section">
+      <div className="document-detail-section__head">
+        <span className="document-detail-section__title">{title}</span>
+        {subtitle ? <span className="document-detail-section__subtitle">{subtitle}</span> : null}
       </div>
-      <div className="outgoing-detail-section__body">{children}</div>
+      <div className="document-detail-section__body">{children}</div>
     </section>
   )
 }
@@ -738,10 +776,10 @@ function AdvanceReportDetailRow({
   wide?: boolean
 }) {
   return (
-    <div className={`outgoing-detail-row${wide ? ' is-wide' : ''}`}>
-      <span className="outgoing-detail-row__label">{label}</span>
-      <span className="outgoing-detail-row__line" aria-hidden />
-      <span className={`outgoing-detail-row__value${mono ? ' app-money' : ''}`}>{displayValue(value)}</span>
+    <div className={`document-detail-row${wide ? ' is-wide' : ''}`}>
+      <span className="document-detail-row__label">{label}</span>
+      <span className="document-detail-row__line" aria-hidden />
+      <span className={`document-detail-row__value${mono ? ' app-money' : ''}`}>{displayValue(value)}</span>
     </div>
   )
 }
@@ -769,7 +807,7 @@ function IncomeMessage({ model }: { model: ReturnType<typeof useAdvanceReportVie
     <Group align="center" gap="sm" wrap="wrap">
       <Checkbox
         checked={model.createIncomeAutomatically}
-        disabled={model.isBusy}
+        disabled={!model.canEdit || model.isBusy}
         label={t('Створити автоматично')}
         onChange={(event) => model.setCreateIncomeAutomatically(event.currentTarget.checked)}
       />
@@ -798,17 +836,19 @@ function DifferenceMessage({ model }: { model: ReturnType<typeof useAdvanceRepor
         <Badge color="red" variant="light">
           {t('Борг колеги')}: <span className="app-money">{formatMoney(difference)}</span>
         </Badge>
-        <Button
-          color="green"
-          disabled={model.isBusy}
-          loading={model.isSaving || model.isRecalculating}
-          size="xs"
-          variant="outline"
-          onClick={model.settleDifference}
-        >
-          {t('Оплатив')}
-        </Button>
-        {model.canAppendRows && (
+        {model.canEdit && (
+          <Button
+            color="green"
+            disabled={model.isBusy}
+            loading={model.isSaving || model.isRecalculating}
+            size="xs"
+            variant="outline"
+            onClick={model.settleDifference}
+          >
+            {t('Оплатив')}
+          </Button>
+        )}
+        {model.canEdit && model.canAppendRows && (
           <>
                 <Button color={CREATE_ACTION_COLOR} disabled={model.isBusy} leftSection={<Receipt size={14} />} size="xs" onClick={model.openConsumableModal}>
                   {t('Прикріпити накладну')}
@@ -827,15 +867,17 @@ function DifferenceMessage({ model }: { model: ReturnType<typeof useAdvanceRepor
       <Badge color="green" variant="light">
         {t('Винні колезі')}: <span className="app-money">{formatMoney(difference)}</span>
       </Badge>
-      <Button
-        color={CREATE_ACTION_COLOR}
-        disabled={model.isBusy}
-        loading={model.isSaving || model.isRecalculating}
-        size="xs"
-        onClick={model.settleDifference}
-      >
-        {t('Погасити борг')}
-      </Button>
+      {model.canEdit && (
+        <Button
+          color={CREATE_ACTION_COLOR}
+          disabled={model.isBusy}
+          loading={model.isSaving || model.isRecalculating}
+          size="xs"
+          onClick={model.settleDifference}
+        >
+          {t('Погасити борг')}
+        </Button>
+      )}
     </Group>
   )
 }

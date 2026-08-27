@@ -5,9 +5,9 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { NewMergedServiceForm } from './NewMergedServiceForm'
 
 const mocks = vi.hoisted(() => ({
-  getResponsibleUsers: vi.fn(),
+  getUnifiedServiceCreateResponsibleUsers: vi.fn(),
   getSupplyServiceConsumableProducts: vi.fn(),
-  searchSupplyOrganizations: vi.fn(),
+  searchUnifiedServiceCreateSupplyOrganizations: vi.fn(),
 }))
 
 vi.mock('../../../shared/i18n/useI18n', () => ({
@@ -19,9 +19,9 @@ vi.mock('../../../shared/ui/AppModal', () => ({
 }))
 
 vi.mock('../api/protocolDetailApi', () => ({
-  getResponsibleUsers: mocks.getResponsibleUsers,
+  getUnifiedServiceCreateResponsibleUsers: mocks.getUnifiedServiceCreateResponsibleUsers,
   getSupplyServiceConsumableProducts: mocks.getSupplyServiceConsumableProducts,
-  searchSupplyOrganizations: mocks.searchSupplyOrganizations,
+  searchUnifiedServiceCreateSupplyOrganizations: mocks.searchUnifiedServiceCreateSupplyOrganizations,
 }))
 
 const requiredLabel = (label: string) => new RegExp(`^${label}(?: \\*)?$`)
@@ -47,9 +47,9 @@ function renderForm(onSubmit = vi.fn()) {
 describe('product-delivery NewMergedServiceForm validation', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    mocks.getResponsibleUsers.mockReturnValue(new Promise(() => {}))
+    mocks.getUnifiedServiceCreateResponsibleUsers.mockReturnValue(new Promise(() => {}))
     mocks.getSupplyServiceConsumableProducts.mockReturnValue(new Promise(() => {}))
-    mocks.searchSupplyOrganizations.mockResolvedValue([])
+    mocks.searchUnifiedServiceCreateSupplyOrganizations.mockResolvedValue([])
   })
 
   it('explains that both exchange-rate fields are optional manual overrides', () => {
@@ -93,7 +93,7 @@ describe('product-delivery NewMergedServiceForm validation', () => {
   })
 
   it('loads the initial supplier list and allows selecting a supplier and its agreement', async () => {
-    mocks.searchSupplyOrganizations.mockResolvedValueOnce([{
+    mocks.searchUnifiedServiceCreateSupplyOrganizations.mockResolvedValueOnce([{
       Name: 'LMAX ATL SP.',
       NetUid: 'supplier-1',
       SupplyOrganizationAgreements: [
@@ -102,7 +102,7 @@ describe('product-delivery NewMergedServiceForm validation', () => {
     }])
     renderForm()
 
-    await waitFor(() => expect(mocks.searchSupplyOrganizations).toHaveBeenCalledWith(''))
+    await waitFor(() => expect(mocks.searchUnifiedServiceCreateSupplyOrganizations).toHaveBeenCalledWith(''))
 
     const supplier = getInput('Постачальник послуг')
     fireEvent.click(supplier)

@@ -11,13 +11,13 @@ import type {
 } from '../types'
 
 export async function getCompanyCars(): Promise<CompanyCar[]> {
-  const result = await apiRequest<unknown>('/consumables/company/cars/all')
+  const result = await apiRequest<unknown>('/consumables/company/cars/accounting/all')
 
   return normalizeCompanyCars(result)
 }
 
 export async function searchCompanyCars(value: string): Promise<CompanyCar[]> {
-  const result = await apiRequest<unknown>('/consumables/company/cars/all/search', {
+  const result = await apiRequest<unknown>('/consumables/company/cars/accounting/all/search', {
     query: {
       value,
     },
@@ -26,8 +26,18 @@ export async function searchCompanyCars(value: string): Promise<CompanyCar[]> {
   return normalizeCompanyCars(result)
 }
 
-export async function getCompanyCar(netId: string): Promise<CompanyCar | null> {
-  const result = await apiRequest<unknown>('/consumables/company/cars/get', {
+export async function getCompanyCarForEdit(netId: string): Promise<CompanyCar | null> {
+  const result = await apiRequest<unknown>('/consumables/company/cars/accounting/edit/details', {
+    query: {
+      netId,
+    },
+  })
+
+  return normalizeCompanyCar(result)
+}
+
+export async function getCompanyCarForRoadLists(netId: string): Promise<CompanyCar | null> {
+  const result = await apiRequest<unknown>('/consumables/company/cars/accounting/road-lists/details', {
     query: {
       netId,
     },
@@ -37,7 +47,7 @@ export async function getCompanyCar(netId: string): Promise<CompanyCar | null> {
 }
 
 export async function createCompanyCar(companyCar: CompanyCarPayload): Promise<CompanyCar | null> {
-  const result = await apiRequest<unknown>('/consumables/company/cars/new', {
+  const result = await apiRequest<unknown>('/consumables/company/cars/accounting/new', {
     method: 'POST',
     body: companyCar,
   })
@@ -46,7 +56,7 @@ export async function createCompanyCar(companyCar: CompanyCarPayload): Promise<C
 }
 
 export async function updateCompanyCar(companyCar: CompanyCarPayload): Promise<CompanyCar | null> {
-  const result = await apiRequest<unknown>('/consumables/company/cars/update', {
+  const result = await apiRequest<unknown>('/consumables/company/cars/accounting/update', {
     method: 'POST',
     body: companyCar,
   })
@@ -55,7 +65,7 @@ export async function updateCompanyCar(companyCar: CompanyCarPayload): Promise<C
 }
 
 export async function deleteCompanyCar(netId: string): Promise<void> {
-  await apiRequest<unknown>('/consumables/company/cars/delete', {
+  await apiRequest<unknown>('/consumables/company/cars/accounting/delete', {
     method: 'DELETE',
     query: {
       netId,
@@ -64,7 +74,7 @@ export async function deleteCompanyCar(netId: string): Promise<void> {
 }
 
 export async function getCompanyCarRoadLists(filter: CompanyCarRoadListFilter): Promise<CompanyCarRoadList[]> {
-  const result = await apiRequest<unknown>('/consumables/company/cars/roadlists/all/filtered', {
+  const result = await apiRequest<unknown>('/consumables/company/cars/roadlists/accounting/all/filtered', {
     query: {
       companyCarNetId: filter.companyCarNetId,
       from: filter.from,
@@ -76,7 +86,7 @@ export async function getCompanyCarRoadLists(filter: CompanyCarRoadListFilter): 
 }
 
 export async function createCompanyCarRoadList(roadList: CompanyCarRoadListPayload): Promise<CompanyCarRoadList | null> {
-  const result = await apiRequest<unknown>('/consumables/company/cars/roadlists/new', {
+  const result = await apiRequest<unknown>('/consumables/company/cars/roadlists/accounting/new', {
     method: 'POST',
     body: roadList,
   })
@@ -85,7 +95,7 @@ export async function createCompanyCarRoadList(roadList: CompanyCarRoadListPaylo
 }
 
 export async function updateCompanyCarRoadList(roadList: CompanyCarRoadListPayload): Promise<CompanyCarRoadList | null> {
-  const result = await apiRequest<unknown>('/consumables/company/cars/roadlists/update', {
+  const result = await apiRequest<unknown>('/consumables/company/cars/roadlists/accounting/update', {
     method: 'POST',
     body: roadList,
   })
@@ -93,8 +103,17 @@ export async function updateCompanyCarRoadList(roadList: CompanyCarRoadListPaylo
   return normalizeCompanyCarRoadList(result)
 }
 
-export async function calculateCompanyCarRoadList(roadList: CompanyCarRoadListPayload): Promise<CompanyCarRoadList | null> {
-  const result = await apiRequest<unknown>('/consumables/company/cars/roadlists/calculate', {
+export async function calculateCompanyCarRoadListForCreate(roadList: CompanyCarRoadListPayload): Promise<CompanyCarRoadList | null> {
+  const result = await apiRequest<unknown>('/consumables/company/cars/roadlists/accounting/create/calculate', {
+    method: 'POST',
+    body: roadList,
+  })
+
+  return normalizeCompanyCarRoadList(result)
+}
+
+export async function calculateCompanyCarRoadListForEdit(roadList: CompanyCarRoadListPayload): Promise<CompanyCarRoadList | null> {
+  const result = await apiRequest<unknown>('/consumables/company/cars/roadlists/accounting/edit/calculate', {
     method: 'POST',
     body: roadList,
   })
@@ -103,7 +122,7 @@ export async function calculateCompanyCarRoadList(roadList: CompanyCarRoadListPa
 }
 
 export async function deleteCompanyCarRoadList(netId: string): Promise<CompanyCar | null> {
-  const result = await apiRequest<unknown>('/consumables/company/cars/roadlists/delete', {
+  const result = await apiRequest<unknown>('/consumables/company/cars/roadlists/accounting/delete', {
     method: 'DELETE',
     query: {
       netId,

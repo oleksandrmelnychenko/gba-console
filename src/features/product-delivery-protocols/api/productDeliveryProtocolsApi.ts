@@ -12,7 +12,7 @@ import type {
 } from '../types'
 
 export async function getProtocols(params: ProtocolsSearchParams): Promise<DeliveryProductProtocolListResult> {
-  const result = await apiRequest<unknown>('/delivery/product/protocol/all', {
+  const result = await apiRequest<unknown>('/delivery/product/protocol/registry/all', {
     query: {
       limit: params.limit,
       offset: params.offset,
@@ -26,8 +26,24 @@ export async function getProtocols(params: ProtocolsSearchParams): Promise<Deliv
   return normalizeListResult(result)
 }
 
-export async function getProtocolByNetId(netId: string): Promise<DeliveryProductProtocol | null> {
-  const result = await apiRequest<unknown>('/delivery/product/protocol/get/', {
+export async function getProtocolForSpecification(netId: string): Promise<DeliveryProductProtocol | null> {
+  const result = await apiRequest<unknown>('/delivery/product/protocol/specification/get', {
+    query: { netId },
+  })
+
+  return normalizeProtocol(result)
+}
+
+export async function getProtocolForLogisticPath(netId: string): Promise<DeliveryProductProtocol | null> {
+  const result = await apiRequest<unknown>('/delivery/product/protocol/logistic/get', {
+    query: { netId },
+  })
+
+  return normalizeProtocol(result)
+}
+
+export async function getProtocolForProductIncome(netId: string): Promise<DeliveryProductProtocol | null> {
+  const result = await apiRequest<unknown>('/delivery/product/protocol/income/get', {
     query: { netId },
   })
 
@@ -48,7 +64,7 @@ export async function createProtocol(payload: CreateProtocolPayload): Promise<De
   const formData = new FormData()
   formData.append('deliveryProductProtocolString', JSON.stringify({ ...payload, Created: now, Updated: now }))
 
-  const result = await apiRequest<unknown>('/delivery/product/protocol/new', {
+  const result = await apiRequest<unknown>('/delivery/product/protocol/registry/new', {
     method: 'POST',
     body: formData,
   })
@@ -61,7 +77,7 @@ export async function exportProtocolsDocument(
   to: string,
   columns: ProtocolExportColumn[],
 ): Promise<ProtocolExportDocument> {
-  const result = await apiRequest<unknown>('/delivery/product/protocol/print/documents', {
+  const result = await apiRequest<unknown>('/delivery/product/protocol/registry/print/documents', {
     method: 'POST',
     body: columns,
     query: {

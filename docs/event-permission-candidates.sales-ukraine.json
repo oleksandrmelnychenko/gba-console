@@ -1,0 +1,928 @@
+{
+  "schemaVersion": 1,
+  "scope": {
+    "files": [
+      "src/features/sales-ukraine/components/new-sale-wizard/NewSaleReviewStep.tsx",
+      "src/features/sales-ukraine/components/new-sale-wizard/NewSaleWizard.tsx",
+      "src/features/sales-ukraine/pages/SalesUkrainePage.tsx"
+    ],
+    "name": "sales-ukraine-first-slice",
+    "route": "/sales/ukraine/all"
+  },
+  "summary": {
+    "actions": 36,
+    "boundActions": 3,
+    "permissionChecks": 16,
+    "unboundActions": 33
+  },
+  "candidates": [
+    {
+      "id": "EPC-d053f68bf766",
+      "column": 15,
+      "file": "src/features/sales-ukraine/components/new-sale-wizard/NewSaleReviewStep.tsx",
+      "line": 1645,
+      "component": "Button",
+      "controlType": "button",
+      "event": "button.click",
+      "handler": "{() => void submitSale()}",
+      "humanLabel": "Перевірити результат",
+      "kind": "action",
+      "permissionKeys": [],
+      "permissionReferences": [],
+      "route": "/sales/ukraine/all",
+      "status": "needs-review"
+    },
+    {
+      "id": "EPC-61108002b1ad",
+      "column": 27,
+      "file": "src/features/sales-ukraine/components/new-sale-wizard/NewSaleReviewStep.tsx",
+      "line": 1714,
+      "component": "ActionIcon",
+      "controlType": "button",
+      "event": "button.click",
+      "handler": "{clearAddress}",
+      "humanLabel": "Очистити адресу",
+      "kind": "action",
+      "permissionKeys": [],
+      "permissionReferences": [],
+      "route": "/sales/ukraine/all",
+      "status": "needs-review"
+    },
+    {
+      "id": "EPC-70a7453a0566",
+      "column": 15,
+      "file": "src/features/sales-ukraine/components/new-sale-wizard/NewSaleReviewStep.tsx",
+      "line": 1839,
+      "component": "Button",
+      "controlType": "button",
+      "event": "button.click",
+      "handler": "{() => void handleSave()}",
+      "humanLabel": "Зберегти",
+      "kind": "action",
+      "permissionKeys": [],
+      "permissionReferences": [],
+      "route": "/sales/ukraine/all",
+      "status": "needs-review"
+    },
+    {
+      "id": "EPC-ae380f50a1ad",
+      "column": 13,
+      "file": "src/features/sales-ukraine/components/new-sale-wizard/NewSaleReviewStep.tsx",
+      "line": 1843,
+      "component": "Button",
+      "controlType": "button",
+      "event": "button.click",
+      "handler": "{() => void submitSale()}",
+      "humanLabel": null,
+      "kind": "action",
+      "permissionKeys": [],
+      "permissionReferences": [],
+      "route": "/sales/ukraine/all",
+      "status": "needs-review"
+    },
+    {
+      "id": "EPC-f392e78ff5f6",
+      "column": 19,
+      "file": "src/features/sales-ukraine/components/new-sale-wizard/NewSaleWizard.tsx",
+      "line": 440,
+      "component": "Button",
+      "controlType": "button",
+      "event": "button.click",
+      "handler": "{onClose}",
+      "humanLabel": "Закрити без змін",
+      "kind": "action",
+      "permissionKeys": [],
+      "permissionReferences": [],
+      "route": "/sales/ukraine/all",
+      "status": "needs-review"
+    },
+    {
+      "id": "EPC-706f0571eca4",
+      "column": 21,
+      "file": "src/features/sales-ukraine/components/new-sale-wizard/NewSaleWizard.tsx",
+      "line": 442,
+      "component": "Button",
+      "controlType": "button",
+      "event": "button.click",
+      "handler": "{confirmManualSplitDestination}",
+      "humanLabel": "Продаж існує: не повертати позиції",
+      "kind": "action",
+      "permissionKeys": [],
+      "permissionReferences": [],
+      "route": "/sales/ukraine/all",
+      "status": "needs-review"
+    },
+    {
+      "id": "EPC-9e882d02123c",
+      "column": 19,
+      "file": "src/features/sales-ukraine/components/new-sale-wizard/NewSaleWizard.tsx",
+      "line": 446,
+      "component": "Button",
+      "controlType": "button",
+      "event": "button.click",
+      "handler": "{() => void runAutomaticSplitRecovery(splitRecoveryFile)}",
+      "humanLabel": "Повторити",
+      "kind": "action",
+      "permissionKeys": [],
+      "permissionReferences": [],
+      "route": "/sales/ukraine/all",
+      "status": "needs-review"
+    },
+    {
+      "id": "EPC-dc08f0beee11",
+      "column": 5,
+      "file": "src/features/sales-ukraine/components/new-sale-wizard/NewSaleWizard.tsx",
+      "line": 1253,
+      "component": "ActionIcon",
+      "controlType": "button",
+      "event": "button.click",
+      "handler": "{requestExit}",
+      "humanLabel": "Закрити",
+      "kind": "action",
+      "permissionKeys": [],
+      "permissionReferences": [],
+      "route": "/sales/ukraine/all",
+      "status": "needs-review"
+    },
+    {
+      "id": "EPC-250587224f2c",
+      "column": 15,
+      "file": "src/features/sales-ukraine/components/new-sale-wizard/NewSaleWizard.tsx",
+      "line": 1401,
+      "component": "UnstyledButton",
+      "controlType": "button",
+      "event": "button.click",
+      "handler": "{() => onStepClick(index)}",
+      "humanLabel": null,
+      "kind": "action",
+      "permissionKeys": [],
+      "permissionReferences": [],
+      "route": "/sales/ukraine/all",
+      "status": "needs-review"
+    },
+    {
+      "id": "EPC-fe1d4e0f0ba6",
+      "column": 13,
+      "file": "src/features/sales-ukraine/components/new-sale-wizard/NewSaleWizard.tsx",
+      "line": 1416,
+      "component": "Button",
+      "controlType": "button",
+      "event": "button.click",
+      "handler": "{active === 0 ? requestExit : active === 1 ? () => void goToClients() : () => setActive(1)}",
+      "humanLabel": null,
+      "kind": "action",
+      "permissionKeys": [],
+      "permissionReferences": [],
+      "route": "/sales/ukraine/all",
+      "status": "needs-review"
+    },
+    {
+      "id": "EPC-2e4b43362e22",
+      "column": 13,
+      "file": "src/features/sales-ukraine/components/new-sale-wizard/NewSaleWizard.tsx",
+      "line": 1425,
+      "component": "Button",
+      "controlType": "button",
+      "event": "button.click",
+      "handler": "{handleNext}",
+      "humanLabel": null,
+      "kind": "action",
+      "permissionKeys": [],
+      "permissionReferences": [],
+      "route": "/sales/ukraine/all",
+      "status": "needs-review"
+    },
+    {
+      "id": "EPC-81b2a649ecee",
+      "column": 8,
+      "file": "src/features/sales-ukraine/pages/SalesUkrainePage.tsx",
+      "line": 312,
+      "component": "permission-check",
+      "controlType": "permission-check",
+      "event": "permission.evaluate",
+      "handler": "can(PermissionKeys.SalesUkraine.Sale.View)",
+      "humanLabel": "PermissionKeys.SalesUkraine.Sale.View",
+      "kind": "permission-check",
+      "permissionKeys": [
+        "sales.ukraine.sale.view"
+      ],
+      "permissionReferences": [
+        "PermissionKeys.SalesUkraine.Sale.View"
+      ],
+      "route": "/sales/ukraine/all",
+      "status": "resolved"
+    },
+    {
+      "id": "EPC-fc2b80252d25",
+      "column": 34,
+      "file": "src/features/sales-ukraine/pages/SalesUkrainePage.tsx",
+      "line": 330,
+      "component": "permission-check",
+      "controlType": "permission-check",
+      "event": "permission.evaluate",
+      "handler": "can(PermissionKeys.SalesUkraine.Sale.ExportBeforePacking)",
+      "humanLabel": "canExportBeforePacking",
+      "kind": "permission-check",
+      "permissionKeys": [
+        "sales.ukraine.sale.export_before_packing"
+      ],
+      "permissionReferences": [
+        "PermissionKeys.SalesUkraine.Sale.ExportBeforePacking"
+      ],
+      "route": "/sales/ukraine/all",
+      "status": "resolved"
+    },
+    {
+      "id": "EPC-969f1071d18d",
+      "column": 25,
+      "file": "src/features/sales-ukraine/pages/SalesUkrainePage.tsx",
+      "line": 333,
+      "component": "permission-check",
+      "controlType": "permission-check",
+      "event": "permission.evaluate",
+      "handler": "can(PermissionKeys.SalesUkraine.Sale.Create)",
+      "humanLabel": "canCreateSale",
+      "kind": "permission-check",
+      "permissionKeys": [
+        "sales.ukraine.sale.create"
+      ],
+      "permissionReferences": [
+        "PermissionKeys.SalesUkraine.Sale.Create"
+      ],
+      "route": "/sales/ukraine/all",
+      "status": "resolved"
+    },
+    {
+      "id": "EPC-bcbe91d7e6ce",
+      "column": 34,
+      "file": "src/features/sales-ukraine/pages/SalesUkrainePage.tsx",
+      "line": 334,
+      "component": "permission-check",
+      "controlType": "permission-check",
+      "event": "permission.evaluate",
+      "handler": "can(PermissionKeys.SalesUkraine.Sale.ConvertMergedToBill)",
+      "humanLabel": "canConvertMergedToBill",
+      "kind": "permission-check",
+      "permissionKeys": [
+        "sales.ukraine.sale.convert_merged_to_bill"
+      ],
+      "permissionReferences": [
+        "PermissionKeys.SalesUkraine.Sale.ConvertMergedToBill"
+      ],
+      "route": "/sales/ukraine/all",
+      "status": "resolved"
+    },
+    {
+      "id": "EPC-39e19943197a",
+      "column": 23,
+      "file": "src/features/sales-ukraine/pages/SalesUkrainePage.tsx",
+      "line": 335,
+      "component": "permission-check",
+      "controlType": "permission-check",
+      "event": "permission.evaluate",
+      "handler": "can(PermissionKeys.SalesUkraine.Sale.OpenDetails)",
+      "humanLabel": "canOpenSale",
+      "kind": "permission-check",
+      "permissionKeys": [
+        "sales.ukraine.sale.open_details"
+      ],
+      "permissionReferences": [
+        "PermissionKeys.SalesUkraine.Sale.OpenDetails"
+      ],
+      "route": "/sales/ukraine/all",
+      "status": "resolved"
+    },
+    {
+      "id": "EPC-ee99f4c4bc88",
+      "column": 23,
+      "file": "src/features/sales-ukraine/pages/SalesUkrainePage.tsx",
+      "line": 336,
+      "component": "permission-check",
+      "controlType": "permission-check",
+      "event": "permission.evaluate",
+      "handler": "can(PermissionKeys.SalesUkraine.Sale.Edit)",
+      "humanLabel": "canEditSale",
+      "kind": "permission-check",
+      "permissionKeys": [
+        "sales.ukraine.sale.edit"
+      ],
+      "permissionReferences": [
+        "PermissionKeys.SalesUkraine.Sale.Edit"
+      ],
+      "route": "/sales/ukraine/all",
+      "status": "resolved"
+    },
+    {
+      "id": "EPC-6b2e61fc1dda",
+      "column": 34,
+      "file": "src/features/sales-ukraine/pages/SalesUkrainePage.tsx",
+      "line": 337,
+      "component": "permission-check",
+      "controlType": "permission-check",
+      "event": "permission.evaluate",
+      "handler": "can(PermissionKeys.SalesUkraine.Sale.OpenDeliveryDetails)",
+      "humanLabel": "canOpenDeliveryDetails",
+      "kind": "permission-check",
+      "permissionKeys": [
+        "sales.ukraine.sale.open_delivery_details"
+      ],
+      "permissionReferences": [
+        "PermissionKeys.SalesUkraine.Sale.OpenDeliveryDetails"
+      ],
+      "route": "/sales/ukraine/all",
+      "status": "resolved"
+    },
+    {
+      "id": "EPC-94f7d274ab3d",
+      "column": 21,
+      "file": "src/features/sales-ukraine/pages/SalesUkrainePage.tsx",
+      "line": 338,
+      "component": "permission-check",
+      "controlType": "permission-check",
+      "event": "permission.evaluate",
+      "handler": "can(PermissionKeys.SalesUkraine.Sale.Unlock)",
+      "humanLabel": "canUnlock",
+      "kind": "permission-check",
+      "permissionKeys": [
+        "sales.ukraine.sale.unlock"
+      ],
+      "permissionReferences": [
+        "PermissionKeys.SalesUkraine.Sale.Unlock"
+      ],
+      "route": "/sales/ukraine/all",
+      "status": "resolved"
+    },
+    {
+      "id": "EPC-51ce40d2e2af",
+      "column": 26,
+      "file": "src/features/sales-ukraine/pages/SalesUkrainePage.tsx",
+      "line": 339,
+      "component": "permission-check",
+      "controlType": "permission-check",
+      "event": "permission.evaluate",
+      "handler": "can(PermissionKeys.SalesUkraine.Sale.UnlockForShipping)",
+      "humanLabel": "canWillNotShip",
+      "kind": "permission-check",
+      "permissionKeys": [
+        "sales.ukraine.sale.unlock_for_shipping"
+      ],
+      "permissionReferences": [
+        "PermissionKeys.SalesUkraine.Sale.UnlockForShipping"
+      ],
+      "route": "/sales/ukraine/all",
+      "status": "resolved"
+    },
+    {
+      "id": "EPC-d63d9004ec78",
+      "column": 35,
+      "file": "src/features/sales-ukraine/pages/SalesUkrainePage.tsx",
+      "line": 340,
+      "component": "permission-check",
+      "controlType": "permission-check",
+      "event": "permission.evaluate",
+      "handler": "can(PermissionKeys.SalesUkraine.Sale.PrintConsignmentNote)",
+      "humanLabel": "canPrintConsignmentNote",
+      "kind": "permission-check",
+      "permissionKeys": [
+        "sales.ukraine.sale.print_consignment_note"
+      ],
+      "permissionReferences": [
+        "PermissionKeys.SalesUkraine.Sale.PrintConsignmentNote"
+      ],
+      "route": "/sales/ukraine/all",
+      "status": "resolved"
+    },
+    {
+      "id": "EPC-4a8d2908fe16",
+      "column": 24,
+      "file": "src/features/sales-ukraine/pages/SalesUkrainePage.tsx",
+      "line": 341,
+      "component": "permission-check",
+      "controlType": "permission-check",
+      "event": "permission.evaluate",
+      "handler": "can(PermissionKeys.SalesUkraine.Sale.ViewAudit)",
+      "humanLabel": "canViewAudit",
+      "kind": "permission-check",
+      "permissionKeys": [
+        "sales.ukraine.sale.view_audit"
+      ],
+      "permissionReferences": [
+        "PermissionKeys.SalesUkraine.Sale.ViewAudit"
+      ],
+      "route": "/sales/ukraine/all",
+      "status": "resolved"
+    },
+    {
+      "id": "EPC-223165ebaa0c",
+      "column": 34,
+      "file": "src/features/sales-ukraine/pages/SalesUkrainePage.tsx",
+      "line": 348,
+      "component": "permission-check",
+      "controlType": "permission-check",
+      "event": "permission.evaluate",
+      "handler": "can(PermissionKeys.SalesUkraine.Sale.ExportInvoice)",
+      "humanLabel": "PermissionKeys.SalesUkraine.Sale.ExportInvoice",
+      "kind": "permission-check",
+      "permissionKeys": [
+        "sales.ukraine.sale.export_invoice"
+      ],
+      "permissionReferences": [
+        "PermissionKeys.SalesUkraine.Sale.ExportInvoice"
+      ],
+      "route": "/sales/ukraine/all",
+      "status": "resolved"
+    },
+    {
+      "id": "EPC-3b9ada83f63a",
+      "column": 8,
+      "file": "src/features/sales-ukraine/pages/SalesUkrainePage.tsx",
+      "line": 349,
+      "component": "permission-check",
+      "controlType": "permission-check",
+      "event": "permission.evaluate",
+      "handler": "can(PermissionKeys.SalesUkraine.Sale.ExportShipmentList)",
+      "humanLabel": "PermissionKeys.SalesUkraine.Sale.ExportShipmentList",
+      "kind": "permission-check",
+      "permissionKeys": [
+        "sales.ukraine.sale.export_shipment_list"
+      ],
+      "permissionReferences": [
+        "PermissionKeys.SalesUkraine.Sale.ExportShipmentList"
+      ],
+      "route": "/sales/ukraine/all",
+      "status": "resolved"
+    },
+    {
+      "id": "EPC-116f51c76233",
+      "column": 8,
+      "file": "src/features/sales-ukraine/pages/SalesUkrainePage.tsx",
+      "line": 350,
+      "component": "permission-check",
+      "controlType": "permission-check",
+      "event": "permission.evaluate",
+      "handler": "can(PermissionKeys.SalesUkraine.Sale.ExportPaymentInvoice)",
+      "humanLabel": "PermissionKeys.SalesUkraine.Sale.ExportPaymentInvoice",
+      "kind": "permission-check",
+      "permissionKeys": [
+        "sales.ukraine.sale.export_payment_invoice"
+      ],
+      "permissionReferences": [
+        "PermissionKeys.SalesUkraine.Sale.ExportPaymentInvoice"
+      ],
+      "route": "/sales/ukraine/all",
+      "status": "resolved"
+    },
+    {
+      "id": "EPC-b07a329bd9a2",
+      "column": 8,
+      "file": "src/features/sales-ukraine/pages/SalesUkrainePage.tsx",
+      "line": 351,
+      "component": "permission-check",
+      "controlType": "permission-check",
+      "event": "permission.evaluate",
+      "handler": "can(PermissionKeys.SalesUkraine.Sale.ExportPz)",
+      "humanLabel": "PermissionKeys.SalesUkraine.Sale.ExportPz",
+      "kind": "permission-check",
+      "permissionKeys": [
+        "sales.ukraine.sale.export_pz"
+      ],
+      "permissionReferences": [
+        "PermissionKeys.SalesUkraine.Sale.ExportPz"
+      ],
+      "route": "/sales/ukraine/all",
+      "status": "resolved"
+    },
+    {
+      "id": "EPC-abe6a396c04c",
+      "column": 8,
+      "file": "src/features/sales-ukraine/pages/SalesUkrainePage.tsx",
+      "line": 352,
+      "component": "permission-check",
+      "controlType": "permission-check",
+      "event": "permission.evaluate",
+      "handler": "can(PermissionKeys.SalesUkraine.Sale.ExportRevisionDocuments)",
+      "humanLabel": "PermissionKeys.SalesUkraine.Sale.ExportRevisionDocuments",
+      "kind": "permission-check",
+      "permissionKeys": [
+        "sales.ukraine.sale.export_revision_documents"
+      ],
+      "permissionReferences": [
+        "PermissionKeys.SalesUkraine.Sale.ExportRevisionDocuments"
+      ],
+      "route": "/sales/ukraine/all",
+      "status": "resolved"
+    },
+    {
+      "id": "EPC-18edfee6c60b",
+      "column": 29,
+      "file": "src/features/sales-ukraine/pages/SalesUkrainePage.tsx",
+      "line": 1207,
+      "component": "button",
+      "controlType": "button",
+      "event": "button.click",
+      "handler": "{() => applyFilters({ ...filterDraft, organisationIds: checked ? filterDraft.organisationIds.filter((id) => id !== option.value) : [...filterDraft.organisationIds, option.value], }) }",
+      "humanLabel": null,
+      "kind": "action",
+      "permissionKeys": [],
+      "permissionReferences": [],
+      "route": "/sales/ukraine/all",
+      "status": "needs-review"
+    },
+    {
+      "id": "EPC-9bca694cce2f",
+      "column": 21,
+      "file": "src/features/sales-ukraine/pages/SalesUkrainePage.tsx",
+      "line": 1236,
+      "component": "button",
+      "controlType": "button",
+      "event": "button.click",
+      "handler": "{() => applyFilters({ ...filterDraft, organisationIds: [] })}",
+      "humanLabel": "Очистити",
+      "kind": "action",
+      "permissionKeys": [],
+      "permissionReferences": [],
+      "route": "/sales/ukraine/all",
+      "status": "needs-review"
+    },
+    {
+      "id": "EPC-1a63bdd3adcb",
+      "column": 19,
+      "file": "src/features/sales-ukraine/pages/SalesUkrainePage.tsx",
+      "line": 1263,
+      "component": "ActionIcon",
+      "controlType": "button",
+      "event": "button.click",
+      "handler": "{resetFilters}",
+      "humanLabel": "Скинути",
+      "kind": "action",
+      "permissionKeys": [],
+      "permissionReferences": [],
+      "route": "/sales/ukraine/all",
+      "status": "needs-review"
+    },
+    {
+      "id": "EPC-31be1bb11c7a",
+      "column": 17,
+      "file": "src/features/sales-ukraine/pages/SalesUkrainePage.tsx",
+      "line": 1281,
+      "component": "Button",
+      "controlType": "button",
+      "event": "button.click",
+      "handler": "{() => { if (canCreateSale) { setNewSaleOpen(true) } }}",
+      "humanLabel": "Новий продаж",
+      "kind": "action",
+      "permissionKeys": [
+        "sales.ukraine.sale.create"
+      ],
+      "permissionReferences": [
+        "PermissionKeys.SalesUkraine.Sale.Create"
+      ],
+      "route": "/sales/ukraine/all",
+      "status": "binding-candidate"
+    },
+    {
+      "id": "EPC-da3c7b9e3de8",
+      "column": 25,
+      "file": "src/features/sales-ukraine/pages/SalesUkrainePage.tsx",
+      "line": 1336,
+      "component": "span",
+      "controlType": "span",
+      "event": "row.double_click",
+      "handler": "{() => resetGridColumn(columnIndex)}",
+      "humanLabel": "Перетягніть, щоб змінити ширину · подвійний клік — скинути",
+      "kind": "action",
+      "permissionKeys": [],
+      "permissionReferences": [],
+      "route": "/sales/ukraine/all",
+      "status": "needs-review"
+    },
+    {
+      "id": "EPC-2e4505342ff3",
+      "column": 15,
+      "file": "src/features/sales-ukraine/pages/SalesUkrainePage.tsx",
+      "line": 1570,
+      "component": "Button",
+      "controlType": "button",
+      "event": "button.click",
+      "handler": "{() => setConfirmState(null)}",
+      "humanLabel": "Скасувати",
+      "kind": "action",
+      "permissionKeys": [],
+      "permissionReferences": [],
+      "route": "/sales/ukraine/all",
+      "status": "needs-review"
+    },
+    {
+      "id": "EPC-81b5b6f471e1",
+      "column": 15,
+      "file": "src/features/sales-ukraine/pages/SalesUkrainePage.tsx",
+      "line": 1573,
+      "component": "Button",
+      "controlType": "button",
+      "event": "button.click",
+      "handler": "{runConfirm}",
+      "humanLabel": null,
+      "kind": "action",
+      "permissionKeys": [],
+      "permissionReferences": [],
+      "route": "/sales/ukraine/all",
+      "status": "needs-review"
+    },
+    {
+      "id": "EPC-e78917f6267b",
+      "column": 5,
+      "file": "src/features/sales-ukraine/pages/SalesUkrainePage.tsx",
+      "line": 1723,
+      "component": "div",
+      "controlType": "div",
+      "event": "button.click",
+      "handler": "{(event) => { const target = event.target as HTMLElement // Ignore clicks coming from portaled content (menus, modals) that React bubbles // through the component tree even though they live outside the row in the DOM. if (!event.currentT...",
+      "humanLabel": null,
+      "kind": "action",
+      "permissionKeys": [
+        "sales.ukraine.sale.open_details"
+      ],
+      "permissionReferences": [
+        "PermissionKeys.SalesUkraine.Sale.OpenDetails"
+      ],
+      "route": "/sales/ukraine/all",
+      "status": "binding-candidate"
+    },
+    {
+      "id": "EPC-c21d16872d20",
+      "column": 15,
+      "file": "src/features/sales-ukraine/pages/SalesUkrainePage.tsx",
+      "line": 1752,
+      "component": "TableRowAction",
+      "controlType": "row-action",
+      "event": "button.click",
+      "handler": "{() => onOpenEditor(sale)}",
+      "humanLabel": "Редагування",
+      "kind": "action",
+      "permissionKeys": [],
+      "permissionReferences": [],
+      "route": "/sales/ukraine/all",
+      "status": "needs-review"
+    },
+    {
+      "id": "EPC-32e75a6dab0a",
+      "column": 15,
+      "file": "src/features/sales-ukraine/pages/SalesUkrainePage.tsx",
+      "line": 1759,
+      "component": "TableRowAction",
+      "controlType": "row-action",
+      "event": "button.click",
+      "handler": "{() => onToggleExpand(saleKey, sale)}",
+      "humanLabel": null,
+      "kind": "action",
+      "permissionKeys": [],
+      "permissionReferences": [],
+      "route": "/sales/ukraine/all",
+      "status": "needs-review"
+    },
+    {
+      "id": "EPC-30d996c2fea1",
+      "column": 17,
+      "file": "src/features/sales-ukraine/pages/SalesUkrainePage.tsx",
+      "line": 1771,
+      "component": "TableRowAction",
+      "controlType": "row-action",
+      "event": "button.click",
+      "handler": "{() => onWillNotShip(sale)}",
+      "humanLabel": "Розблокувати для відвантаження",
+      "kind": "action",
+      "permissionKeys": [],
+      "permissionReferences": [],
+      "route": "/sales/ukraine/all",
+      "status": "needs-review"
+    },
+    {
+      "id": "EPC-05991c2f6ad7",
+      "column": 17,
+      "file": "src/features/sales-ukraine/pages/SalesUkrainePage.tsx",
+      "line": 1881,
+      "component": "button",
+      "controlType": "button",
+      "event": "button.click",
+      "handler": "{() => onOpenDiscount(sale)}",
+      "humanLabel": null,
+      "kind": "action",
+      "permissionKeys": [],
+      "permissionReferences": [],
+      "route": "/sales/ukraine/all",
+      "status": "needs-review"
+    },
+    {
+      "id": "EPC-f1553a8d4189",
+      "column": 15,
+      "file": "src/features/sales-ukraine/pages/SalesUkrainePage.tsx",
+      "line": 1889,
+      "component": "TableRowAction",
+      "controlType": "row-action",
+      "event": "button.click",
+      "handler": "{() => onOpenDiscount(sale)}",
+      "humanLabel": "Редагувати коментар до знижки",
+      "kind": "action",
+      "permissionKeys": [],
+      "permissionReferences": [],
+      "route": "/sales/ukraine/all",
+      "status": "needs-review"
+    },
+    {
+      "id": "EPC-83d3137d9826",
+      "column": 11,
+      "file": "src/features/sales-ukraine/pages/SalesUkrainePage.tsx",
+      "line": 1897,
+      "component": "TableRowAction",
+      "controlType": "row-action",
+      "event": "button.click",
+      "handler": "{() => onOpenDiscount(sale)}",
+      "humanLabel": "Додати знижку",
+      "kind": "action",
+      "permissionKeys": [],
+      "permissionReferences": [],
+      "route": "/sales/ukraine/all",
+      "status": "needs-review"
+    },
+    {
+      "id": "EPC-8a6610d5b2f8",
+      "column": 11,
+      "file": "src/features/sales-ukraine/pages/SalesUkrainePage.tsx",
+      "line": 1903,
+      "component": "TableRowAction",
+      "controlType": "row-action",
+      "event": "button.click",
+      "handler": "{() => onOpenDiscount(sale)}",
+      "humanLabel": "Редагувати коментар до знижки",
+      "kind": "action",
+      "permissionKeys": [],
+      "permissionReferences": [],
+      "route": "/sales/ukraine/all",
+      "status": "needs-review"
+    },
+    {
+      "id": "EPC-811436c68f28",
+      "column": 11,
+      "file": "src/features/sales-ukraine/pages/SalesUkrainePage.tsx",
+      "line": 1921,
+      "component": "TableRowAction",
+      "controlType": "row-action",
+      "event": "button.click",
+      "handler": "{() => onOpenDetails(sale)}",
+      "humanLabel": null,
+      "kind": "action",
+      "permissionKeys": [
+        "sales.ukraine.sale.open_delivery_details"
+      ],
+      "permissionReferences": [
+        "PermissionKeys.SalesUkraine.Sale.OpenDeliveryDetails"
+      ],
+      "route": "/sales/ukraine/all",
+      "status": "binding-candidate"
+    },
+    {
+      "id": "EPC-5f48de50ffb6",
+      "column": 11,
+      "file": "src/features/sales-ukraine/pages/SalesUkrainePage.tsx",
+      "line": 1931,
+      "component": "TableRowAction",
+      "controlType": "row-action",
+      "event": "button.click",
+      "handler": "{(event) => onOpenDocuments(sale, event.currentTarget)}",
+      "humanLabel": "Документи",
+      "kind": "action",
+      "permissionKeys": [],
+      "permissionReferences": [],
+      "route": "/sales/ukraine/all",
+      "status": "needs-review"
+    },
+    {
+      "id": "EPC-fcc297a2ddb1",
+      "column": 11,
+      "file": "src/features/sales-ukraine/pages/SalesUkrainePage.tsx",
+      "line": 1939,
+      "component": "TableRowAction",
+      "controlType": "row-action",
+      "event": "button.click",
+      "handler": "{(event) => onOpenActions(sale, event.currentTarget)}",
+      "humanLabel": "Дії",
+      "kind": "action",
+      "permissionKeys": [],
+      "permissionReferences": [],
+      "route": "/sales/ukraine/all",
+      "status": "needs-review"
+    },
+    {
+      "id": "EPC-b0c4ef92c18a",
+      "column": 11,
+      "file": "src/features/sales-ukraine/pages/SalesUkrainePage.tsx",
+      "line": 2058,
+      "component": "Menu.Item",
+      "controlType": "menu-item",
+      "event": "button.click",
+      "handler": "{() => runAction(onOpenEditor)}",
+      "humanLabel": "Редагування",
+      "kind": "action",
+      "permissionKeys": [],
+      "permissionReferences": [],
+      "route": "/sales/ukraine/all",
+      "status": "needs-review"
+    },
+    {
+      "id": "EPC-92c26927ad75",
+      "column": 11,
+      "file": "src/features/sales-ukraine/pages/SalesUkrainePage.tsx",
+      "line": 2063,
+      "component": "Menu.Item",
+      "controlType": "menu-item",
+      "event": "button.click",
+      "handler": "{() => runAction(onOpenEditShift)}",
+      "humanLabel": null,
+      "kind": "action",
+      "permissionKeys": [],
+      "permissionReferences": [],
+      "route": "/sales/ukraine/all",
+      "status": "needs-review"
+    },
+    {
+      "id": "EPC-50dde4a7fa4c",
+      "column": 11,
+      "file": "src/features/sales-ukraine/pages/SalesUkrainePage.tsx",
+      "line": 2068,
+      "component": "Menu.Item",
+      "controlType": "menu-item",
+      "event": "button.click",
+      "handler": "{() => runAction(onOpenDetails)}",
+      "humanLabel": "Дані доставки",
+      "kind": "action",
+      "permissionKeys": [],
+      "permissionReferences": [],
+      "route": "/sales/ukraine/all",
+      "status": "needs-review"
+    },
+    {
+      "id": "EPC-abe0777a01b5",
+      "column": 11,
+      "file": "src/features/sales-ukraine/pages/SalesUkrainePage.tsx",
+      "line": 2073,
+      "component": "Menu.Item",
+      "controlType": "menu-item",
+      "event": "button.click",
+      "handler": "{() => runAction(onOpenConsignment)}",
+      "humanLabel": "Друк ТТН",
+      "kind": "action",
+      "permissionKeys": [],
+      "permissionReferences": [],
+      "route": "/sales/ukraine/all",
+      "status": "needs-review"
+    },
+    {
+      "id": "EPC-003c0c5a607d",
+      "column": 11,
+      "file": "src/features/sales-ukraine/pages/SalesUkrainePage.tsx",
+      "line": 2078,
+      "component": "Menu.Item",
+      "controlType": "menu-item",
+      "event": "button.click",
+      "handler": "{() => runAction(onWillNotShip)}",
+      "humanLabel": "Розблокувати для відвантаження",
+      "kind": "action",
+      "permissionKeys": [],
+      "permissionReferences": [],
+      "route": "/sales/ukraine/all",
+      "status": "needs-review"
+    },
+    {
+      "id": "EPC-d08c7dc36660",
+      "column": 11,
+      "file": "src/features/sales-ukraine/pages/SalesUkrainePage.tsx",
+      "line": 2088,
+      "component": "Menu.Item",
+      "controlType": "menu-item",
+      "event": "button.click",
+      "handler": "{() => runAction(onUnlock)}",
+      "humanLabel": "Розблокувати",
+      "kind": "action",
+      "permissionKeys": [],
+      "permissionReferences": [],
+      "route": "/sales/ukraine/all",
+      "status": "needs-review"
+    },
+    {
+      "id": "EPC-cfc6eccc36a9",
+      "column": 11,
+      "file": "src/features/sales-ukraine/pages/SalesUkrainePage.tsx",
+      "line": 2093,
+      "component": "Menu.Item",
+      "controlType": "menu-item",
+      "event": "button.click",
+      "handler": "{() => runAction(onOpenAudit)}",
+      "humanLabel": "Історія редагувань",
+      "kind": "action",
+      "permissionKeys": [],
+      "permissionReferences": [],
+      "route": "/sales/ukraine/all",
+      "status": "needs-review"
+    }
+  ]
+}

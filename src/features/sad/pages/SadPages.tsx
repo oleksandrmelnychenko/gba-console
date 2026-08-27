@@ -24,7 +24,9 @@ import { ArrowLeft, ArrowRight, Banknote, CircleAlert, Download, Eye, FileUp, Pa
 import { useCallback, useEffect, useMemo, useReducer, useState, type ReactNode } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { formatDateInputForQuery, formatLocalDate, SYNC_DATA_RANGE_START } from '../../../shared/date/dateTime'
+import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { useI18n } from '../../../shared/i18n/useI18n'
+import { usePermissions } from '../../auth/usePermissions'
 import { DocumentOutcomePaymentModal } from '../../document-outcome-payment/components/DocumentOutcomePaymentModal'
 import type { DocumentOutcomePaymentSource } from '../../document-outcome-payment/types'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
@@ -50,11 +52,13 @@ import {
   getSadPalletTypes,
   getSads,
   getSadWithSpecifications,
+  sendSad,
   searchClients,
   searchOrganizationClients,
   searchStathams,
   updateProductSpecification,
   updateSad,
+  updateSadPallets,
   updateSaleSad,
   uploadProductSpecificationForSad,
   uploadSadDocuments,
@@ -173,7 +177,17 @@ function displayValue(value: unknown): string {
 
 export function AllSadsPage() {
   const { t } = useI18n()
+  const { can } = usePermissions()
   const navigate = useNavigate()
+  const canOpenDetails = can(PermissionKeys.Sad.Sad.OpenDetails)
+  const canDelete = can(PermissionKeys.Sad.Sad.Delete)
+  const canCreateSupplyOrder = can(PermissionKeys.Sad.SupplyOrder.Create)
+  const canCreateIncomePayment = can(PermissionKeys.Sad.Accounting.CreateIncome)
+  const canCreateOutcomePayment = can(PermissionKeys.Sad.Accounting.CreateOutcome)
+  const canOpenActions = canOpenDetails
+    || canCreateSupplyOrder
+    || canCreateIncomePayment
+    || canCreateOutcomePayment
   const [filters, setFilters] = useState(() => ({
     from: SYNC_DATA_RANGE_START,
     to: formatLocalDate(new Date()),
@@ -317,28 +331,32 @@ export function AllSadsPage() {
         header: '',
         cell: (sad) => (
           <Group gap={4} justify="flex-end" wrap="nowrap">
-            <TableRowAction action="view" label={t('Переглянути')} onClick={() => setSelectedSad(sad)} />
-            {sad.IsSend && sad.Client ? (
+            {canOpenActions && (
+              <TableRowAction action="view" label={t('Переглянути')} onClick={() => setSelectedSad(sad)} />
+            )}
+            {canCreateOutcomePayment && sad.IsSend && sad.Client ? (
               <TableRowAction
                 action="payment"
                 label={t('Створити видатковий ордер')}
                 onClick={() => setOutcomeSource(buildSadOutcomeSource(sad))}
               />
             ) : null}
-            <TableRowAction
-              action="delete"
-              disabled={sad.IsSend}
-              hint={sad.IsSend ? t('Проведений SAD не можна видалити') : undefined}
-              label={t('Видалити')}
-              onClick={() => setDeleteTarget(sad)}
-            />
+            {canDelete && (
+              <TableRowAction
+                action="delete"
+                disabled={sad.IsSend}
+                hint={sad.IsSend ? t('Проведений SAD не можна видалити') : undefined}
+                label={t('Видалити')}
+                onClick={() => setDeleteTarget(sad)}
+              />
+            )}
           </Group>
         ),
         enableSorting: false,
         width: 120,
       },
     ],
-    [t],
+    [canCreateOutcomePayment, canDelete, canOpenActions, t],
   )
 
   async function handleDeleteSad() {
@@ -439,12 +457,16 @@ export function AllSadsPage() {
             showDensityToggle={false}
             showLayoutControls
             tableId="sad-all"
-            onRowClick={setSelectedSad}
+            onRowClick={canOpenActions ? setSelectedSad : undefined}
           />
         </div>
       </div>
 
       <SadActionModal
+        canCreateIncomePayment={canCreateIncomePayment}
+        canCreateOutcomePayment={canCreateOutcomePayment}
+        canCreateSupplyOrder={canCreateSupplyOrder}
+        canOpenDetails={canOpenDetails}
         sad={selectedSad}
         onClose={() => setSelectedSad(null)}
         onCreateIncomePayment={(sad) => {
@@ -465,21 +487,25 @@ export function AllSadsPage() {
         }}
       />
 
-      <DocumentOutcomePaymentModal
-        opened={Boolean(outcomeSource)}
-        source={outcomeSource}
-        onClose={() => setOutcomeSource(null)}
-        onCreated={reload}
-      />
+      {canCreateOutcomePayment && (
+        <DocumentOutcomePaymentModal
+          canCreateMovement={false}
+          canSubmit
+          opened={Boolean(outcomeSource)}
+          source={outcomeSource}
+          onClose={() => setOutcomeSource(null)}
+          onCreated={reload}
+        />
+      )}
 
-      <SadPaymentFromSadModal
+      {canCreateIncomePayment && <SadPaymentFromSadModal
         opened={Boolean(incomePaymentSad)}
         sad={incomePaymentSad}
         onClose={() => setIncomePaymentSad(null)}
         onCreated={reload}
-      />
+      />}
 
-      <SadSupplyOrderFromSadModal
+      {canCreateSupplyOrder && <SadSupplyOrderFromSadModal
         opened={Boolean(supplyOrderSad)}
         sad={supplyOrderSad}
         onClose={() => setSupplyOrderSad(null)}
@@ -489,9 +515,9 @@ export function AllSadsPage() {
             navigate(`/orders/ukraine/view/${netUid}`)
           }
         }}
-      />
+      />}
 
-      <AppModal centered opened={Boolean(deleteTarget)} title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Видалити SAD')}</span>} onClose={() => setDeleteTarget(null)}>
+      {canDelete && <AppModal centered opened={Boolean(deleteTarget)} title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Видалити SAD')}</span>} onClose={() => setDeleteTarget(null)}>
         <Stack>
           <Text>{t('Видалити обраний SAD?')}</Text>
           <Group justify="flex-end">
@@ -503,7 +529,7 @@ export function AllSadsPage() {
             </Button>
           </Group>
         </Stack>
-      </AppModal>
+      </AppModal>}
     </Stack>
   )
 }
@@ -528,6 +554,15 @@ export function EditTirSadPage() {
 
 function SadEditorPage({ mode, netId }: { mode: EditorMode; netId?: string }) {
   const { t } = useI18n()
+  const { can } = usePermissions()
+  const canOpenDetails = can(PermissionKeys.Sad.Sad.OpenDetails)
+  const canEdit = can(PermissionKeys.Sad.Sad.Edit)
+  const canSend = can(PermissionKeys.Sad.Sad.Send)
+  const canEditPallets = can(PermissionKeys.Sad.Pallet.Edit)
+  const canExportDocuments = can(PermissionKeys.Sad.Document.Export)
+  const canUploadDocuments = can(PermissionKeys.Sad.Document.Upload)
+  const canDeleteDocuments = can(PermissionKeys.Sad.Document.Delete)
+  const canManageDocuments = canUploadDocuments || canDeleteDocuments
   const [sad, setSad] = useState<Sad | null>(null)
   const [organizations, setOrganizations] = useState<SadOrganization[]>([])
   const [clients, setClients] = useState<SadClient[]>([])
@@ -628,10 +663,15 @@ function SadEditorPage({ mode, netId }: { mode: EditorMode; netId?: string }) {
     selectedStathamNetId,
   ])
 
-  const isReadonly = Boolean(sad?.IsSend)
-  const status = isLoading ? t('Завантаження') : isReadonly ? t('Проведено') : t('Чернетка')
+  const isSent = Boolean(sad?.IsSend)
+  const isReadonly = isSent || !canEdit
+  const status = isLoading ? t('Завантаження') : isSent ? t('Проведено') : t('Чернетка')
 
   useEffect(() => {
+    if (!canOpenDetails) {
+      return
+    }
+
     let ignore = false
 
     async function load() {
@@ -652,11 +692,14 @@ function SadEditorPage({ mode, netId }: { mode: EditorMode; netId?: string }) {
             setSad(null)
           }
         } else if (!ignore) {
-          const agreementsPromise = loadedSad.Client?.NetUid
+          const agreementsPromise = canEdit && loadedSad.Client?.NetUid
             ? getClientAgreements(loadedSad.Client.NetUid)
             : Promise.resolve<SadClientAgreement[] | null>(null)
 
-          const [loadedOrganizations, agreements] = await Promise.all([getOrganizations(), agreementsPromise])
+          const [loadedOrganizations, agreements] = await Promise.all([
+            canEdit ? getOrganizations() : Promise.resolve<SadOrganization[]>([]),
+            agreementsPromise,
+          ])
 
           if (!ignore) {
             setSad(loadedSad)
@@ -684,7 +727,7 @@ function SadEditorPage({ mode, netId }: { mode: EditorMode; netId?: string }) {
     return () => {
       ignore = true
     }
-  }, [netId, reloadKey, t])
+  }, [canEdit, canOpenDetails, netId, reloadKey, t])
 
   function hydrateEditorState(loadedSad: Sad, loadedOrganizations: SadOrganization[]) {
     const firstOrganization = loadedSad.Organization || loadedOrganizations[0] || null
@@ -712,7 +755,7 @@ function SadEditorPage({ mode, netId }: { mode: EditorMode; netId?: string }) {
   }
 
   async function handleClientSearch(value: string) {
-    if (value.trim().length < 2) {
+    if (!canEdit || value.trim().length < 2) {
       return
     }
 
@@ -724,7 +767,7 @@ function SadEditorPage({ mode, netId }: { mode: EditorMode; netId?: string }) {
   }
 
   async function handleOrganizationClientSearch(value: string) {
-    if (value.trim().length < 2) {
+    if (!canEdit || value.trim().length < 2) {
       return
     }
 
@@ -736,7 +779,7 @@ function SadEditorPage({ mode, netId }: { mode: EditorMode; netId?: string }) {
   }
 
   async function handleStathamSearch(value: string) {
-    if (value.trim().length < 2) {
+    if (!canEdit || value.trim().length < 2) {
       return
     }
 
@@ -788,6 +831,19 @@ function SadEditorPage({ mode, netId }: { mode: EditorMode; netId?: string }) {
       return
     }
 
+    if (isSend && (!canSend || !sad.NetUid)) {
+      return
+    }
+
+    if (!isSend && !canEdit) {
+      return
+    }
+
+    if (isSend && isEditorDirty) {
+      notifications.show({ color: 'yellow', message: t('Спочатку збережіть зміни SAD') })
+      return
+    }
+
     const validationError = validateSadBeforeSave({
       isSend,
       mode,
@@ -806,23 +862,26 @@ function SadEditorPage({ mode, netId }: { mode: EditorMode; netId?: string }) {
       return
     }
 
-    const payload = buildSadPayload({
-      isSend,
-      marginAmount,
-      sad,
-      selectedClient,
-      selectedClientAgreement,
-      selectedOrganization,
-      selectedOrganizationClient,
-      selectedOrganizationClientAgreement,
-      selectedStatham,
-      selectedStathamCar,
-    })
-
     setSaving(true)
 
     try {
-      const updatedSad = shouldUseSaleUpdate(payload, mode) ? await updateSaleSad(payload) : await updateSad(payload)
+      const payload = isSend ? null : buildSadPayload({
+        isSend: false,
+        marginAmount,
+        sad,
+        selectedClient,
+        selectedClientAgreement,
+        selectedOrganization,
+        selectedOrganizationClient,
+        selectedOrganizationClientAgreement,
+        selectedStatham,
+        selectedStathamCar,
+      })
+      const updatedSad = isSend
+        ? await sendSad(sad.NetUid as string)
+        : shouldUseSaleUpdate(payload as Sad, mode)
+          ? await updateSaleSad(payload as Sad)
+          : await updateSad(payload as Sad)
 
       if (updatedSad) {
         setSad(updatedSad)
@@ -850,7 +909,7 @@ function SadEditorPage({ mode, netId }: { mode: EditorMode; netId?: string }) {
   }
 
   async function addSadItems(items: SadItem[]) {
-    if (!sad || items.length === 0) {
+    if (!canEdit || !sad || items.length === 0) {
       return
     }
 
@@ -924,14 +983,14 @@ function SadEditorPage({ mode, netId }: { mode: EditorMode; netId?: string }) {
     <Stack gap="md">
       <Group align="center" justify="space-between">
         <Group gap="sm">
-          <Badge className={`app-role-pill ${isReadonly ? 'is-green' : 'is-gray'}`} variant="light">{status}</Badge>
+          <Badge className={`app-role-pill ${isSent ? 'is-green' : 'is-gray'}`} variant="light">{status}</Badge>
           <Badge className="app-role-pill is-gray" variant="light">{getSadTypeLabel(sad.SadType)}</Badge>
         </Group>
         <Group>
-          <Button leftSection={<FileUp size={16} />} variant="outline" onClick={() => setDocumentsOpen(true)}>
+          {canManageDocuments && <Button leftSection={<FileUp size={16} />} variant="outline" onClick={() => setDocumentsOpen(true)}>
             {t('Документи')}
-          </Button>
-          <Button
+          </Button>}
+          {canExportDocuments && <Button
             leftSection={<Download size={16} />}
             variant="outline"
             onClick={async () => {
@@ -947,24 +1006,24 @@ function SadEditorPage({ mode, netId }: { mode: EditorMode; netId?: string }) {
             }}
           >
             {t('Завантажити')}
-          </Button>
-          {!isReadonly && mode !== 'sale' && !sad.IsFromSale && (
+          </Button>}
+          {canEdit && !isSent && mode !== 'sale' && !sad.IsFromSale && (
               <Button leftSection={<Plus size={16} />} onClick={() => setAddItemsOpen(true)}>
               {t('Додати товар')}
             </Button>
           )}
-          {!isReadonly && mode === 'base' && isEditorDirty && (
+          {canEdit && !isSent && mode === 'base' && isEditorDirty && (
             <Button color="gray" disabled={isSaving} variant="subtle" onClick={revertEditorChanges}>
               {t('Скасувати')}
             </Button>
           )}
-          {!isReadonly && mode !== 'tir' && (
+          {canEdit && !isSent && mode !== 'tir' && (
             <Button disabled={isSaving || (mode === 'base' && !isEditorDirty)} variant="outline" onClick={() => saveSad(false)}>
               {t('Зберегти')}
             </Button>
           )}
-          {!isReadonly && (
-            <Button loading={isSaving} onClick={() => saveSad(true)}>
+          {canSend && !isSent && (
+            <Button disabled={isEditorDirty} loading={isSaving} onClick={() => saveSad(true)}>
               {t('Провести')}
             </Button>
           )}
@@ -1061,13 +1120,13 @@ function SadEditorPage({ mode, netId }: { mode: EditorMode; netId?: string }) {
       {mode === 'tir' ? (
         <TirMovementPanel
           isSaving={isSaving}
-          readonly={isReadonly}
+          readonly={isSent || !canEditPallets}
           sad={sad}
           setSad={setSad}
           onPersist={async (nextSad) => {
             setSaving(true)
             try {
-              const updatedSad = nextSad.IsFromSale ? await updateSaleSad(nextSad) : await updateSad(nextSad)
+              const updatedSad = await updateSadPallets(nextSad)
               if (updatedSad) {
                 setSad(updatedSad)
               }
@@ -1100,6 +1159,8 @@ function SadEditorPage({ mode, netId }: { mode: EditorMode; netId?: string }) {
 
       {documentsOpen && (
         <SadDocumentsModal
+          canDelete={canDeleteDocuments}
+          canUpload={canUploadDocuments}
           opened={documentsOpen}
           sad={sad}
           onClose={() => setDocumentsOpen(false)}
@@ -1107,20 +1168,20 @@ function SadEditorPage({ mode, netId }: { mode: EditorMode; netId?: string }) {
         />
       )}
 
-      <DownloadDocumentsModal
+      {canExportDocuments && <DownloadDocumentsModal
         document={downloadDocument}
         opened={Boolean(downloadDocument)}
         onClose={() => setDownloadDocument(null)}
-      />
+      />}
 
-      <SadAddItemsModal
+      {canEdit && <SadAddItemsModal
         opened={addItemsOpen}
         sad={sad}
         onAdd={(items) => void addSadItems(items)}
         onClose={() => setAddItemsOpen(false)}
-      />
+      />}
 
-      <AppModal centered opened={Boolean(deleteItemTarget)} title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Видалити позицію')}</span>} onClose={() => setDeleteItemTarget(null)}>
+      {canEdit && <AppModal centered opened={Boolean(deleteItemTarget)} title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Видалити позицію')}</span>} onClose={() => setDeleteItemTarget(null)}>
         <Stack>
           <Text>{t('Позицію буде прибрано з SAD після наступного збереження.')}</Text>
           <Group justify="flex-end">
@@ -1132,7 +1193,7 @@ function SadEditorPage({ mode, netId }: { mode: EditorMode; netId?: string }) {
             </Button>
           </Group>
         </Stack>
-      </AppModal>
+      </AppModal>}
     </Stack>
   )
 }
@@ -1289,6 +1350,10 @@ function TirMovementPanel({
   )
 
   useEffect(() => {
+    if (readonly) {
+      return
+    }
+
     let ignore = false
 
     async function loadPalletTypes() {
@@ -1307,7 +1372,7 @@ function TirMovementPanel({
     return () => {
       ignore = true
     }
-  }, [t])
+  }, [readonly, t])
 
   function updateSourceItem(item: SadItem) {
     setSad({
@@ -1797,6 +1862,11 @@ function MoveItemsModalContent({
 export function SadSpecificationsPage() {
   const { id } = useParams<{ id?: string }>()
   const { t } = useI18n()
+  const { can } = usePermissions()
+  const canOpenDetails = can(PermissionKeys.Sad.Sad.OpenDetails)
+  const canEditSpecification = can(PermissionKeys.Sad.Specification.Edit)
+  const canImportSpecification = can(PermissionKeys.Sad.Specification.Import)
+  const canExportDocuments = can(PermissionKeys.Sad.Document.Export)
   const [sad, setSad] = useState<Sad | null>(null)
   const [isLoading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -1807,6 +1877,10 @@ export function SadSpecificationsPage() {
   const { density, toggleDensity } = useDataTableDensity('sad-specifications', SAD_SPEC_TABLE_DEFAULT_LAYOUT.density)
 
   useEffect(() => {
+    if (!canOpenDetails) {
+      return
+    }
+
     let ignore = false
 
     async function load() {
@@ -1840,7 +1914,7 @@ export function SadSpecificationsPage() {
     return () => {
       ignore = true
     }
-  }, [id, reloadKey, t])
+  }, [canOpenDetails, id, reloadKey, t])
 
   const columns = useMemo<DataTableColumn<SadItem>[]>(
     () => [
@@ -1923,7 +1997,7 @@ export function SadSpecificationsPage() {
         cell: (item) => {
           const product = getItemProduct(item)
 
-          return product ? (
+          return product && canEditSpecification ? (
             <Group justify="flex-end">
               <TableRowAction
                 action="edit"
@@ -1937,7 +2011,7 @@ export function SadSpecificationsPage() {
         width: 80,
       },
     ],
-    [t],
+    [canEditSpecification, t],
   )
 
   if (isLoading) {
@@ -1980,10 +2054,10 @@ export function SadSpecificationsPage() {
       <Group align="center" justify="space-between">
         <StatusBadge sad={sad} />
         <Group>
-          <Button leftSection={<FileUp size={16} />} variant="outline" onClick={() => setUploadOpen(true)}>
+          {canImportSpecification && <Button leftSection={<FileUp size={16} />} variant="outline" onClick={() => setUploadOpen(true)}>
             {t('Імпорт')}
-          </Button>
-          <Button
+          </Button>}
+          {canExportDocuments && <Button
             leftSection={<Download size={16} />}
             variant="outline"
             onClick={async () => {
@@ -1999,7 +2073,7 @@ export function SadSpecificationsPage() {
             }}
           >
             {t('Документи')}
-          </Button>
+          </Button>}
           <Tooltip label={t('Оновити')}>
             <ActionIcon aria-label={t('Оновити')} variant="subtle" onClick={() => reload()}>
               <RefreshCw size={18} />
@@ -2022,7 +2096,7 @@ export function SadSpecificationsPage() {
         />
       </Card>
 
-      {editingSpec && (
+      {canEditSpecification && editingSpec && (
         <SpecificationEditorModal
           editor={editingSpec}
           sadNetId={sad.NetUid}
@@ -2034,7 +2108,7 @@ export function SadSpecificationsPage() {
         />
       )}
 
-      <SpecificationUploadModal
+      {canImportSpecification && <SpecificationUploadModal
         opened={uploadOpen}
         sadNetId={sad.NetUid}
         onClose={() => setUploadOpen(false)}
@@ -2042,23 +2116,27 @@ export function SadSpecificationsPage() {
           setUploadOpen(false)
           reload()
         }}
-      />
+      />}
 
-      <DownloadDocumentsModal
+      {canExportDocuments && <DownloadDocumentsModal
         document={downloadDocument}
         opened={Boolean(downloadDocument)}
         onClose={() => setDownloadDocument(null)}
-      />
+      />}
     </Stack>
   )
 }
 
 function SadDocumentsModal({
+  canDelete,
+  canUpload,
   onClose,
   onUpdated,
   opened,
   sad,
 }: {
+  canDelete: boolean
+  canUpload: boolean
   onClose: () => void
   onUpdated: (sad: Sad | null) => void
   opened: boolean
@@ -2069,7 +2147,7 @@ function SadDocumentsModal({
   const [isSaving, setSaving] = useState(false)
 
   async function uploadFiles() {
-    if (!sad.NetUid || !files.length) {
+    if (!canUpload || !sad.NetUid || !files.length) {
       return
     }
 
@@ -2088,7 +2166,7 @@ function SadDocumentsModal({
   }
 
   async function removeDocument(document: SadDocument) {
-    if (!document.NetUid) {
+    if (!canDelete || !document.NetUid) {
       return
     }
 
@@ -2107,13 +2185,13 @@ function SadDocumentsModal({
   return (
     <AppModal centered opened={opened} size="lg" title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Документи SAD')}</span>} onClose={onClose}>
       <Stack>
-        <FileInput
+        {canUpload && <FileInput
           clearable
           label={t('Файли')}
           multiple
           value={files}
           onChange={(value) => setFiles(value || [])}
-        />
+        />}
         <Divider />
         <Stack gap={6}>
           {(sad.SadDocuments || []).length === 0 && (
@@ -2125,11 +2203,11 @@ function SadDocumentsModal({
                 <Text size="sm">{document.FileName || t('Документ')}</Text>
                 <Text c="dimmed" size="xs">{document.ContentType}</Text>
               </Box>
-              <Tooltip label={t('Видалити')}>
+              {canDelete && <Tooltip label={t('Видалити')}>
                 <ActionIcon aria-label={t('Видалити')} color="red" size="sm" variant="subtle" onClick={() => removeDocument(document)}>
                   <Trash2 size={16} />
                 </ActionIcon>
-              </Tooltip>
+              </Tooltip>}
             </Group>
           ))}
         </Stack>
@@ -2137,9 +2215,9 @@ function SadDocumentsModal({
           <Button color="gray" disabled={isSaving} variant="subtle" onClick={onClose}>
             {t('Закрити')}
           </Button>
-          <Button disabled={!files.length} loading={isSaving} onClick={uploadFiles}>
+          {canUpload && <Button disabled={!files.length} loading={isSaving} onClick={uploadFiles}>
             {t('Завантажити')}
-          </Button>
+          </Button>}
         </Group>
       </Stack>
     </AppModal>
@@ -2345,6 +2423,10 @@ function SpecificationUploadModal({
 }
 
 function SadActionModal({
+  canCreateIncomePayment,
+  canCreateOutcomePayment,
+  canCreateSupplyOrder: canCreateSupplyOrderPermission,
+  canOpenDetails,
   onClose,
   onCreateIncomePayment,
   onCreateOutcomePayment,
@@ -2352,6 +2434,10 @@ function SadActionModal({
   onNavigate,
   sad,
 }: {
+  canCreateIncomePayment: boolean
+  canCreateOutcomePayment: boolean
+  canCreateSupplyOrder: boolean
+  canOpenDetails: boolean
   onClose: () => void
   onCreateIncomePayment: (sad: Sad) => void
   onCreateOutcomePayment: (sad: Sad) => void
@@ -2391,7 +2477,7 @@ function SadActionModal({
       onClose={onClose}
     >
       <Stack className="app-modal-actions" gap="xs">
-        <Button
+        {canOpenDetails && <Button
           fullWidth
           justify="flex-start"
           color="dark"
@@ -2405,8 +2491,8 @@ function SadActionModal({
           onClick={() => onNavigate(editPath)}
         >
           {t('Перегляд / редагування')}
-        </Button>
-        <Button
+        </Button>}
+        {canOpenDetails && <Button
           fullWidth
           justify="flex-start"
           color="dark"
@@ -2420,8 +2506,8 @@ function SadActionModal({
           onClick={() => sad.NetUid && onNavigate(`/sad/edit/${sad.NetUid}/specifications`)}
         >
           {t('Коди специфікацій')}
-        </Button>
-        {canCreateSupplyOrder && (
+        </Button>}
+        {canCreateSupplyOrderPermission && canCreateSupplyOrder && (
           <Button
             fullWidth
             justify="flex-start"
@@ -2438,10 +2524,11 @@ function SadActionModal({
             {t('Створити замовлення постачання')}
           </Button>
         )}
-        {sad.IsSend && (sad.Client || sad.OrganizationClient) && (
+        {sad.IsSend && (sad.Client || sad.OrganizationClient)
+          && (canCreateIncomePayment || canCreateOutcomePayment) && (
           <>
             <Divider />
-            <Button
+            {canCreateIncomePayment && <Button
               fullWidth
               justify="flex-start"
               color="dark"
@@ -2455,8 +2542,8 @@ function SadActionModal({
               onClick={() => onCreateIncomePayment(sad)}
             >
               {t('Прибутковий касовий ордер')}
-            </Button>
-            <Button
+            </Button>}
+            {canCreateOutcomePayment && <Button
               fullWidth
               justify="flex-start"
               color="dark"
@@ -2470,7 +2557,7 @@ function SadActionModal({
               onClick={() => onCreateOutcomePayment(sad)}
             >
               {t('Видатковий касовий ордер')}
-            </Button>
+            </Button>}
           </>
         )}
       </Stack>

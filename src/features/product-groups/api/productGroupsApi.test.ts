@@ -2,6 +2,13 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { apiRequest } from '../../../shared/api/apiClient'
 import {
   createProductGroup,
+  getProductGroupCreateRootGroups,
+  getProductGroupDetailsRootGroups,
+  getProductGroupProducts,
+  getProductGroupWithRoot,
+  getProductSubGroups,
+  getRedirectedProductByNetId,
+  updateProductGroup,
 } from './productGroupsApi'
 import {
   ProductGroupCreateOperationStorageError,
@@ -14,6 +21,71 @@ vi.mock('../../../shared/api/apiClient', () => ({
 }))
 
 const apiRequestMock = vi.mocked(apiRequest)
+
+describe('productGroupsApi permission-scoped route contract', () => {
+  beforeEach(() => {
+    apiRequestMock.mockReset()
+    apiRequestMock.mockResolvedValue(null)
+  })
+
+  it('uses separate create and detail hydration routes', async () => {
+    await getProductGroupCreateRootGroups()
+    await getProductGroupWithRoot('group-1')
+    await getProductGroupDetailsRootGroups('group-1')
+    await getProductSubGroups({
+      limit: 15,
+      netId: 'group-1',
+      offset: 0,
+      value: 'child',
+    })
+    await getProductGroupProducts({
+      limit: 25,
+      netId: 'group-1',
+      offset: 5,
+      value: 'brake',
+    })
+
+    expect(apiRequestMock.mock.calls.map(([path]) => path)).toEqual([
+      '/products/groups/page/create/root/groups/get',
+      '/products/groups/page/details/get',
+      '/products/groups/page/details/root/groups/get',
+      '/products/groups/page/details/sub/groups/get',
+      '/products/groups/page/details/products/get',
+    ])
+    expect(apiRequestMock.mock.calls[1][1]?.query).toEqual({ netId: 'group-1' })
+    expect(apiRequestMock.mock.calls[3][1]?.query).toEqual({
+      limit: 15,
+      netId: 'group-1',
+      offset: 0,
+      value: 'child',
+    })
+  })
+
+  it('uses the edit facade and the existing assortment detail boundary', async () => {
+    const productGroup = createPayload()
+
+    await updateProductGroup(productGroup)
+    await getRedirectedProductByNetId('product-1')
+
+    expect(apiRequestMock).toHaveBeenNthCalledWith(
+      1,
+      '/products/groups/page/details/edit',
+      {
+        method: 'POST',
+        body: productGroup,
+      },
+    )
+    expect(apiRequestMock).toHaveBeenNthCalledWith(
+      2,
+      '/products/assortment/details',
+      {
+        query: {
+          netId: 'product-1',
+        },
+      },
+    )
+  })
+})
 
 describe('productGroupsApi create retry safety', () => {
   beforeEach(() => {
@@ -37,13 +109,14 @@ describe('productGroupsApi create retry safety', () => {
 
     await createProductGroup(createPayload())
 
-    const [, request] = apiRequestMock.mock.calls[0]
+    const [path, request] = apiRequestMock.mock.calls[0]
     const operationNetUid = new Headers(request?.headers)
       .get('Idempotency-Key')
 
     expect(operationNetUid).toMatch(
       /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i,
     )
+    expect(path).toBe('/products/groups/page/new')
     expect(request).toEqual(expect.objectContaining({
       method: 'POST',
       query: {

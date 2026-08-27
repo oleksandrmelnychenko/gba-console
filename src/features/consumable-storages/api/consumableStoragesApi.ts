@@ -14,13 +14,13 @@ import type {
 } from '../types'
 
 export async function getConsumableStorages(): Promise<ConsumablesStorage[]> {
-  const result = await apiRequest<unknown>('/consumables/storages/all')
+  const result = await apiRequest<unknown>('/consumables/storages/accounting/all')
 
   return normalizeStorages(result)
 }
 
 export async function searchConsumableStorages(value: string): Promise<ConsumablesStorage[]> {
-  const result = await apiRequest<unknown>('/consumables/storages/search', {
+  const result = await apiRequest<unknown>('/consumables/storages/accounting/search', {
     query: {
       value,
     },
@@ -30,7 +30,7 @@ export async function searchConsumableStorages(value: string): Promise<Consumabl
 }
 
 export async function getConsumableStorage(netId: string): Promise<ConsumablesStorage | null> {
-  const result = await apiRequest<unknown>('/consumables/storages/get', {
+  const result = await apiRequest<unknown>('/consumables/storages/accounting/get', {
     query: {
       netId,
     },
@@ -40,7 +40,7 @@ export async function getConsumableStorage(netId: string): Promise<ConsumablesSt
 }
 
 export async function createConsumableStorage(storage: ConsumablesStoragePayload): Promise<ConsumablesStorage | null> {
-  const result = await apiRequest<unknown>('/consumables/storages/new', {
+  const result = await apiRequest<unknown>('/consumables/storages/accounting/new', {
     method: 'POST',
     body: storage,
   })
@@ -49,7 +49,7 @@ export async function createConsumableStorage(storage: ConsumablesStoragePayload
 }
 
 export async function updateConsumableStorage(storage: ConsumablesStoragePayload): Promise<ConsumablesStorage | null> {
-  const result = await apiRequest<unknown>('/consumables/storages/update', {
+  const result = await apiRequest<unknown>('/consumables/storages/accounting/update', {
     method: 'POST',
     body: storage,
   })
@@ -58,7 +58,7 @@ export async function updateConsumableStorage(storage: ConsumablesStoragePayload
 }
 
 export async function deleteConsumableStorage(netId: string): Promise<void> {
-  await apiRequest<unknown>('/consumables/storages/delete', {
+  await apiRequest<unknown>('/consumables/storages/accounting/delete', {
     method: 'DELETE',
     query: {
       netId,
@@ -85,7 +85,7 @@ export async function searchConsumableStorageUsers(value: string): Promise<UserP
 export async function getDeprecatedConsumableOrders(
   params: DeprecatedConsumableOrdersParams,
 ): Promise<DeprecatedConsumableOrder[]> {
-  const result = await apiRequest<unknown>('/consumables/orders/depreciated/all/filtered', {
+  const result = await apiRequest<unknown>('/consumables/orders/depreciated/accounting/all/filtered', {
     query: {
       from: params.from,
       storageNetId: params.storageNetId,
@@ -101,7 +101,7 @@ export async function createDeprecatedConsumableOrder(
   order: DeprecatedConsumableOrder,
   expensiveFirst: boolean,
 ): Promise<DeprecatedConsumableOrder | null> {
-  const result = await apiRequest<unknown>('/consumables/orders/depreciated/new', {
+  const result = await apiRequest<unknown>('/consumables/orders/depreciated/accounting/new', {
     body: order,
     method: 'POST',
     query: {
@@ -116,7 +116,7 @@ export async function updateDeprecatedConsumableOrder(
   order: DeprecatedConsumableOrder,
   expensiveFirst: boolean,
 ): Promise<DeprecatedConsumableOrder | null> {
-  const result = await apiRequest<unknown>('/consumables/orders/depreciated/update', {
+  const result = await apiRequest<unknown>('/consumables/orders/depreciated/accounting/update', {
     body: order,
     method: 'POST',
     query: {
@@ -128,7 +128,7 @@ export async function updateDeprecatedConsumableOrder(
 }
 
 export async function deleteDeprecatedConsumableOrder(netId: string): Promise<void> {
-  await apiRequest<unknown>('/consumables/orders/depreciated/delete', {
+  await apiRequest<unknown>('/consumables/orders/depreciated/accounting/delete', {
     method: 'DELETE',
     query: {
       netId,

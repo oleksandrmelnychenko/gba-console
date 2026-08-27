@@ -16,7 +16,9 @@ import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useAuth } from '../../auth/useAuth'
 import { ProductCardModal } from '../../products/components/ProductCardModal'
+import { getProductForOrderOverview } from '../../products/api/productsApi'
 import { useI18n } from '../../../shared/i18n/useI18n'
+import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { getSupplyOrderIncomeStatusLabel } from '../../../shared/supplyOrderIncomeStatus'
 import { getSupplyUkraineOrderDisplayNumber } from '../../../shared/supplyUkraineOrderNumbers'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
@@ -29,7 +31,7 @@ import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui
 import { TableRowAction } from '../../../shared/ui/table-row-action'
 import {
   addVatPercentToSupplyOrderUkraine,
-  getSupplyUkraineOrderById,
+  getSupplyUkraineOrderForOverview,
   manageSupplyOrderUkraineDocuments,
   updateSupplyOrderUkraineItems,
 } from '../api/supplyUkraineOrdersApi'
@@ -48,8 +50,11 @@ const TABLE_DEFAULT_LAYOUT = {
   density: 'normal',
 } satisfies DataTableDefaultLayout
 
-const PLACEMENT_PERMISSION = 'PlacementHeader_ProductPlacement_ordersUkraineView_PKEY'
-const MANAGE_DOCUMENTS_PERMISSION = 'PlacementHeader_LoadingSales_ordersUkraineView_PKEY'
+const PLACEMENT_PERMISSION = PermissionKeys.OrdersUkraine.Placement.OpenProductPlacement
+const MANAGE_DOCUMENTS_PERMISSION = PermissionKeys.OrdersUkraine.Placement.UploadDocuments
+const CALCULATE_VAT_PERMISSION = PermissionKeys.OrdersUkraine.Placement.Calculate
+const OPEN_OVERVIEW_PERMISSION = PermissionKeys.OrdersUkraine.Order.OpenOverview
+const OPEN_PRODUCTS_PERMISSION = PermissionKeys.OrdersUkraine.Order.OpenProducts
 const BACK_ROUTE = '/orders/ukraine/all'
 
 const dateFormatter = new Intl.DateTimeFormat('uk-UA', {
@@ -93,6 +98,21 @@ type OverviewRow = {
 
 export function SupplyUkraineOrderOverviewPage() {
   const { t } = useI18n()
+  const { hasPermission } = useAuth()
+
+  if (!hasPermission(OPEN_OVERVIEW_PERMISSION)) {
+    return (
+      <Alert color="red" icon={<CircleAlert size={18} />} title={t('Доступ заборонено')} variant="light">
+        {t('У вашої ролі немає права переглядати огляд замовлення.')}
+      </Alert>
+    )
+  }
+
+  return <SupplyUkraineOrderOverviewPageContent />
+}
+
+function SupplyUkraineOrderOverviewPageContent() {
+  const { t } = useI18n()
   const navigate = useNavigate()
   const { id } = useParams<{ id: string }>()
   const { hasPermission } = useAuth()
@@ -111,6 +131,8 @@ export function SupplyUkraineOrderOverviewPage() {
   const [productCardNetId, setProductCardNetId] = useState<string | null>(null)
   const canManageDocuments = hasPermission(MANAGE_DOCUMENTS_PERMISSION)
   const canOpenPlacement = hasPermission(PLACEMENT_PERMISSION)
+  const canCalculateVat = hasPermission(CALCULATE_VAT_PERMISSION)
+  const canOpenProducts = hasPermission(OPEN_PRODUCTS_PERMISSION)
 
   useEffect(() => {
     let cancelled = false
@@ -127,7 +149,7 @@ export function SupplyUkraineOrderOverviewPage() {
       setError(null)
 
       try {
-        const nextOrder = await getSupplyUkraineOrderById(id)
+        const nextOrder = await getSupplyUkraineOrderForOverview(id)
 
         if (!cancelled) {
           setOrder(hydrateSupplyUkraineOrder(nextOrder))
@@ -161,7 +183,7 @@ export function SupplyUkraineOrderOverviewPage() {
     setError(null)
 
     try {
-      const nextOrder = await getSupplyUkraineOrderById(id)
+      const nextOrder = await getSupplyUkraineOrderForOverview(id)
       setOrder(hydrateSupplyUkraineOrder(nextOrder))
       setVatItemChanges(false)
     } catch (requestError) {
@@ -196,6 +218,11 @@ export function SupplyUkraineOrderOverviewPage() {
   // like the legacy "add VAT for all" (#30). The rows become editable/dirty so
   // "Зберегти ПДВ" persists them.
   function applyOrderVatToAllItems() {
+    if (!hasPermission(CALCULATE_VAT_PERMISSION)) {
+      setError(t('Право на цю дію було відкликано'))
+      return
+    }
+
     const percent = toPercentNumber(order?.VatPercent ?? 0, 0)
 
     setOrder((currentOrder) => {
@@ -217,6 +244,11 @@ export function SupplyUkraineOrderOverviewPage() {
 
   async function calculateVatPercentForOrder() {
     if (!order || isSavingVat) {
+      return
+    }
+
+    if (!hasPermission(CALCULATE_VAT_PERMISSION)) {
+      setError(t('Право на цю дію було відкликано'))
       return
     }
 
@@ -243,6 +275,10 @@ export function SupplyUkraineOrderOverviewPage() {
   }
 
   function changeItemVatPercent(row: OverviewRow, value: string | number) {
+    if (!hasPermission(CALCULATE_VAT_PERMISSION)) {
+      return
+    }
+
     setOrder((currentOrder) => {
       if (!currentOrder) {
         return currentOrder
@@ -270,6 +306,11 @@ export function SupplyUkraineOrderOverviewPage() {
 
   async function saveItemVatPercentChanges() {
     if (!order || isSavingVatItems) {
+      return
+    }
+
+    if (!hasPermission(CALCULATE_VAT_PERMISSION)) {
+      setError(t('Право на цю дію було відкликано'))
       return
     }
 
@@ -418,6 +459,11 @@ export function SupplyUkraineOrderOverviewPage() {
       return
     }
 
+    if (!hasPermission(MANAGE_DOCUMENTS_PERMISSION)) {
+      setError(t('Право на цю дію було відкликано'))
+      return
+    }
+
     setSavingDocuments(true)
     setError(null)
 
@@ -446,6 +492,8 @@ export function SupplyUkraineOrderOverviewPage() {
   const rows = useMemo(() => mapRows(order?.SupplyOrderUkraineItems || []), [order?.SupplyOrderUkraineItems])
   const visibleRows = useMemo(() => filterRows(rows, search), [rows, search])
   const columns = useOverviewColumns({
+    canCalculateVat,
+    canOpenProducts,
     isSavingVatItems,
     onChangeVatPercent: changeItemVatPercent,
     onOpenProductCard: setProductCardNetId,
@@ -547,7 +595,7 @@ export function SupplyUkraineOrderOverviewPage() {
               <NumberInput
                 allowDecimal={false}
                 className="supply-order-overview-control is-mono"
-                disabled={!order || isSavingVat || isSavingVatItems}
+                disabled={!canCalculateVat || !order || isSavingVat || isSavingVatItems}
                 label={t('Відсоток ПДВ')}
                 max={100}
                 min={0}
@@ -566,7 +614,7 @@ export function SupplyUkraineOrderOverviewPage() {
                   className="supply-order-overview-action-button"
                   variant="default"
                   leftSection={<ListCheck size={16} />}
-                  disabled={!order || isSavingVat || isSavingVatItems}
+                  disabled={!canCalculateVat || !order || isSavingVat || isSavingVatItems}
                   onClick={applyOrderVatToAllItems}
                 >
                   {t('До всіх рядків')}
@@ -576,7 +624,7 @@ export function SupplyUkraineOrderOverviewPage() {
                   color={CREATE_ACTION_COLOR}
                   leftSection={<Calculator size={16} />}
                   // "+ ПДВ" is the server recalc; kept usable mid-edit (#30).
-                  disabled={!order || isSavingVat || isSavingVatItems}
+                  disabled={!canCalculateVat || !order || isSavingVat || isSavingVatItems}
                   loading={isSavingVat}
                   onClick={calculateVatPercentForOrder}
                 >
@@ -626,7 +674,7 @@ export function SupplyUkraineOrderOverviewPage() {
               <Text className="app-section-title" fw={600} size="sm">{t('Товари')}</Text>
             </Stack>
             <Group justify="flex-end" align="flex-end">
-              {hasVatItemChanges && (
+              {canCalculateVat && hasVatItemChanges && (
                 <Group gap="xs">
                   <Button
                     className="supply-order-overview-action-button"
@@ -726,17 +774,25 @@ export function SupplyUkraineOrderOverviewPage() {
           </Group>
         </Stack>
       </AppModal>
-      <ProductCardModal productNetId={productCardNetId} onClose={() => setProductCardNetId(null)} />
+      <ProductCardModal
+        loadProduct={getProductForOrderOverview}
+        productNetId={canOpenProducts ? productCardNetId : null}
+        onClose={() => setProductCardNetId(null)}
+      />
       </Stack>
     </AppDrawer>
   )
 }
 
 function useOverviewColumns({
+  canCalculateVat,
+  canOpenProducts,
   isSavingVatItems,
   onChangeVatPercent,
   onOpenProductCard,
 }: {
+  canCalculateVat: boolean
+  canOpenProducts: boolean
   isSavingVatItems: boolean
   onChangeVatPercent: (row: OverviewRow, value: string | number) => void
   onOpenProductCard: (productNetId: string) => void
@@ -752,7 +808,7 @@ function useOverviewColumns({
         width: 150,
         accessor: (row) => row.vendorCode,
         cell: (row) =>
-          row.productNetId ? (
+          canOpenProducts && row.productNetId ? (
             <Anchor
               className="supply-order-overview-code-link"
               component="button"
@@ -774,7 +830,7 @@ function useOverviewColumns({
         minWidth: 240,
         accessor: (row) => row.productName,
         cell: (row) =>
-          row.productNetId ? (
+          canOpenProducts && row.productNetId ? (
             <Anchor
               className="supply-order-overview-product-name"
               component="button"
@@ -846,7 +902,7 @@ function useOverviewColumns({
             allowDecimal
             className="supply-order-overview-vat-input"
             decimalScale={2}
-            disabled={isSavingVatItems}
+            disabled={!canCalculateVat || isSavingVatItems}
             hideControls
             max={100}
             min={0}
@@ -923,7 +979,7 @@ function useOverviewColumns({
         cell: (row) => <span className="app-money">{formatMoney(row.managementCost)}</span>,
       },
     ],
-    [isSavingVatItems, onChangeVatPercent, onOpenProductCard, t],
+    [canCalculateVat, canOpenProducts, isSavingVatItems, onChangeVatPercent, onOpenProductCard, t],
   )
 }
 

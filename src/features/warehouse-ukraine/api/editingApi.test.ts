@@ -29,7 +29,7 @@ describe('protocol invoice-edit mutation contracts', () => {
     )
 
     expect(apiRequestMock).toHaveBeenCalledWith(
-      '/protocol/act/invoice/set/edit/act/for/editing',
+      '/protocol/act/invoice/warehouse-ukraine/process-act',
       {
         body: {
           NetId: historyNetId,
@@ -53,7 +53,7 @@ describe('protocol invoice-edit mutation contracts', () => {
     )
 
     expect(apiRequestMock).toHaveBeenCalledWith(
-      '/protocol/act/invoice/set/warehouses/shipment/history',
+      '/protocol/act/invoice/warehouse-ukraine/process-carrier',
       {
         body: {
           NetId: historyNetId,

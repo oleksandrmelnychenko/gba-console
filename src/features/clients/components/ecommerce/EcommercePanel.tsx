@@ -21,11 +21,19 @@ const DEFAULT_CLEAR_CART_AFTER_DAYS = 3
 
 export type EcommercePanelProps = {
   client: Client
+  canChangePassword?: boolean
+  canEditSettings?: boolean
   sourceManaged?: boolean
   onChange: (client: Client) => void
 }
 
-export function EcommercePanel({ client, sourceManaged = false, onChange }: EcommercePanelProps) {
+export function EcommercePanel({
+  client,
+  canChangePassword = false,
+  canEditSettings = false,
+  sourceManaged = false,
+  onChange,
+}: EcommercePanelProps) {
   const { t } = useI18n()
   const [mobileNumber, setMobileNumber] = useValueState(client.MobileNumber ?? '')
   const [password, setPassword] = useValueState('')
@@ -41,6 +49,10 @@ export function EcommercePanel({ client, sourceManaged = false, onChange }: Ecom
   }
 
   async function handleChangePassword() {
+    if (!canChangePassword) {
+      return
+    }
+
     if (password !== confirmPassword) {
       notifications.show({
         color: 'red',
@@ -89,7 +101,7 @@ export function EcommercePanel({ client, sourceManaged = false, onChange }: Ecom
           <Text fw={600}>{t('Зміна пароля')}</Text>
           <TextInput
             autoFocus
-            disabled={sourceManaged}
+            disabled={sourceManaged || !canChangePassword}
             label={t('Мобільний телефон')}
             value={mobileNumber}
             onChange={(event) => setMobileNumber(event.currentTarget.value)}
@@ -102,6 +114,7 @@ export function EcommercePanel({ client, sourceManaged = false, onChange }: Ecom
           )}
           <PasswordInput
             autoComplete="new-password"
+            disabled={!canChangePassword}
             label={t('Пароль')}
             value={password}
             onChange={(event) => setPassword(event.currentTarget.value)}
@@ -109,6 +122,7 @@ export function EcommercePanel({ client, sourceManaged = false, onChange }: Ecom
           />
           <PasswordInput
             autoComplete="new-password"
+            disabled={!canChangePassword}
             label={t('Підтвердити пароль')}
             value={confirmPassword}
             onChange={(event) => setConfirmPassword(event.currentTarget.value)}
@@ -117,7 +131,7 @@ export function EcommercePanel({ client, sourceManaged = false, onChange }: Ecom
           <Group justify="flex-end">
             <Button
               color={CREATE_ACTION_COLOR}
-              disabled={isChanging}
+              disabled={isChanging || !canChangePassword}
               leftSection={<Key size={16} />}
               loading={isChanging}
               onClick={() => void handleChangePassword()}
@@ -133,6 +147,7 @@ export function EcommercePanel({ client, sourceManaged = false, onChange }: Ecom
           <Text fw={600}>{t('Налаштування магазину')}</Text>
           <NumberInput
             allowNegative={false}
+            disabled={!canEditSettings}
             label={t('Резервація корзини інтернет магазина (днів)')}
             min={0}
             value={client.ClearCartAfterDays ?? ''}

@@ -59,7 +59,7 @@ export async function searchClientProductMovementClients(
     return []
   }
 
-  const result = await apiRequest<unknown>('/clients/all/filtered', {
+  const result = await apiRequest<unknown>('/clients/client-product-movement/search', {
     query: {
       filterSql: CLIENT_SEARCH_SQL,
       limit: CLIENT_SEARCH_PAGE_SIZE,

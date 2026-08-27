@@ -17,12 +17,14 @@ import { notifications } from '@mantine/notifications'
 import { ChevronRight, CircleAlert, Plus, RefreshCw, RotateCcw, Save, Search, Trash2 } from 'lucide-react'
 import { type FormEvent, useCallback, useEffect, useMemo, useReducer, useState } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
+import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { translate } from '../../../shared/i18n/translate'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { TableRowAction } from '../../../shared/ui/table-row-action'
+import { usePermissions } from '../../auth/usePermissions'
 import { getOnlineShopCities, saveOnlineShopCity } from '../api/onlineShopCitiesApi'
 import type { OnlineShopCity } from '../types'
 import './online-shop-cities-page.css'
@@ -68,6 +70,10 @@ const dateTimeFormatter = new Intl.DateTimeFormat('uk-UA', {
 
 export function OnlineShopCitiesPage() {
   const { t } = useI18n()
+  const { can } = usePermissions()
+  const canCreateCity = can(PermissionKeys.OnlineShopCities.City.Create)
+  const canEditCity = can(PermissionKeys.OnlineShopCities.City.Edit)
+  const canArchiveCity = can(PermissionKeys.OnlineShopCities.City.Archive)
   const [cities, setCities] = useValueState<OnlineShopCity[]>([])
   const [searchDraft, setSearchDraft] = useValueState('')
   const [searchValue, setSearchValue] = useValueState('')
@@ -116,16 +122,24 @@ export function OnlineShopCitiesPage() {
     [cities, t],
   )
   const openEditor = useCallback((city?: OnlineShopCity) => {
+    if (city ? !canEditCity : !canCreateCity) {
+      return
+    }
+
     setEditingCity(city || null)
     setFormValues(cityToFormValues(city))
     setFormError(null)
     setEditorOpen(true)
-  }, [setEditingCity, setEditorOpen, setFormError, setFormValues])
+  }, [canCreateCity, canEditCity, setEditingCity, setEditorOpen, setFormError, setFormValues])
   const requestArchive = useCallback((city: OnlineShopCity) => {
+    if (!canArchiveCity) {
+      return
+    }
+
     setArchiveTarget(city)
     setEditorOpen(false)
     setFormError(null)
-  }, [setArchiveTarget, setEditorOpen, setFormError])
+  }, [canArchiveCity, setArchiveTarget, setEditorOpen, setFormError])
   const hasActiveFilters = Boolean(searchValue.trim()) || cityFilter !== CITY_FILTER_ALL
 
   useEffect(() => {
@@ -192,6 +206,11 @@ export function OnlineShopCitiesPage() {
   async function handleSaveCity(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
 
+    const action = editingCity?.Id ? 'edit' : 'create'
+    if (action === 'edit' ? !canEditCity : !canCreateCity) {
+      return
+    }
+
     const payload = buildCityPayload(editingCity, formValues)
     const validationError = validateCity(payload)
 
@@ -205,7 +224,7 @@ export function OnlineShopCitiesPage() {
     setFormError(null)
 
     try {
-      const nextCities = await saveOnlineShopCity(payload)
+      const nextCities = await saveOnlineShopCity(payload, action)
 
       setCities(nextCities)
       notifications.show({
@@ -221,7 +240,7 @@ export function OnlineShopCitiesPage() {
   }
 
   async function handleArchiveCity() {
-    if (!archiveTarget) {
+    if (!canArchiveCity || !archiveTarget) {
       return
     }
 
@@ -232,7 +251,7 @@ export function OnlineShopCitiesPage() {
       const nextCities = await saveOnlineShopCity({
         ...archiveTarget,
         Deleted: true,
-      })
+      }, 'archive')
 
       setCities(nextCities)
       notifications.show({
@@ -258,9 +277,9 @@ export function OnlineShopCitiesPage() {
         searchDraft={searchDraft}
         visibleCities={visibleCities}
         onCityFilterChange={setCityFilter}
-        onCreateCity={() => openEditor()}
-        onOpenEditor={openEditor}
-        onRequestArchive={requestArchive}
+        onCreateCity={canCreateCity ? () => openEditor() : undefined}
+        onOpenEditor={canEditCity ? openEditor : undefined}
+        onRequestArchive={canArchiveCity ? requestArchive : undefined}
         onReload={reload}
         onResetSearch={resetSearch}
         onSearchChange={updateSearch}
@@ -269,17 +288,17 @@ export function OnlineShopCitiesPage() {
       <CityEditorModal
         city={editingCity}
         error={formError}
-        isOpen={isEditorOpen}
+        isOpen={isEditorOpen && (editingCity ? canEditCity : canCreateCity)}
         isSaving={isSaving}
         values={formValues}
-        onArchive={requestArchive}
+        onArchive={canArchiveCity ? requestArchive : undefined}
         onClose={closeEditor}
         onFieldChange={setFormField}
         onSubmit={handleSaveCity}
       />
 
       <CityArchiveModal
-        city={archiveTarget}
+        city={canArchiveCity ? archiveTarget : null}
         isSaving={isSaving}
         onArchive={handleArchiveCity}
         onClose={() => setArchiveTarget(null)}
@@ -303,9 +322,9 @@ type OnlineShopCitiesRegistryProps = {
   searchDraft: string
   visibleCities: OnlineShopCity[]
   onCityFilterChange: (filter: CityFilter) => void
-  onCreateCity: () => void
-  onOpenEditor: (city?: OnlineShopCity) => void
-  onRequestArchive: (city: OnlineShopCity) => void
+  onCreateCity?: () => void
+  onOpenEditor?: (city?: OnlineShopCity) => void
+  onRequestArchive?: (city: OnlineShopCity) => void
   onReload: () => void
   onResetSearch: () => void
   onSearchChange: (value: string) => void
@@ -374,7 +393,7 @@ function OnlineShopCitiesRegistry({
           </Tooltip>
         </div>
         <div ref={setTableToolbarSlot} className="app-filter-table-toolbar-slot online-shop-cities-table-toolbar-slot" />
-        <div className="online-shop-cities-create-actions">
+        {onCreateCity && <div className="online-shop-cities-create-actions">
           <Button
             color={CREATE_ACTION_COLOR}
             size="sm"
@@ -384,7 +403,7 @@ function OnlineShopCitiesRegistry({
           >
             {t('Нове місто')}
           </Button>
-        </div>
+        </div>}
       </div>
 
       {error && (
@@ -442,7 +461,7 @@ function OnlineShopCitiesRegistry({
 function useCityColumns({
   onRequestArchive,
 }: {
-  onRequestArchive: (city: OnlineShopCity) => void
+  onRequestArchive?: (city: OnlineShopCity) => void
 }): DataTableColumn<OnlineShopCity>[] {
   const { t } = useI18n()
 
@@ -541,14 +560,14 @@ function useCityColumns({
         cell: (city) => {
           const isArchived = city.Deleted === true
 
-          return (
+          return onRequestArchive ? (
             <TableRowAction
               action="archive"
               disabled={!city.Id || isArchived}
               label={t('Архівувати')}
               onClick={() => onRequestArchive(city)}
             />
-          )
+          ) : null
         },
       },
     ],
@@ -562,7 +581,7 @@ type CityEditorModalProps = {
   isOpen: boolean
   isSaving: boolean
   values: CityFormValues
-  onArchive: (city: OnlineShopCity) => void
+  onArchive?: (city: OnlineShopCity) => void
   onClose: () => void
   onFieldChange: <K extends keyof CityFormValues>(key: K, value: CityFormValues[K]) => void
   onSubmit: (event: FormEvent<HTMLFormElement>) => void
@@ -616,7 +635,7 @@ function CityEditorModal({
           />
           <Group justify="space-between">
             <Box>
-              {city?.Id && (
+              {city?.Id && onArchive && (
                 <Button
                   color="red"
                   disabled={isSaving}

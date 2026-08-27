@@ -14,10 +14,17 @@ import { notifications } from '@mantine/notifications'
 import { Ban, CircleAlert, CircleDashed, MessageSquare, MessageSquarePlus, Plus, RefreshCw, Sparkles } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useReducer, useState } from 'react'
 import { ApiError } from '../../../shared/api/apiClient'
+import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
-import { addTaskNote, getHeadTasks, regenerateCockpit, setTaskStatus } from '../api/salesCockpitApi'
+import { usePermissions } from '../../auth/usePermissions'
+import {
+  addHeadTaskNote,
+  dismissHeadTask,
+  getHeadTasks,
+  regenerateHeadCockpit,
+} from '../api/salesCockpitApi'
 import type { HeadTask, HeadTaskByStatus, HeadTaskManager, HeadTasksResponse } from '../types'
 import { useCockpitRealtimeReload } from '../hooks/useCockpitRealtimeReload'
 import { BoardCancelModal, BoardNoteModal } from './HeadTaskBoardModals'
@@ -103,6 +110,11 @@ export function HeadTaskBoard({
   onManagerChange: (managerId: number | null) => void
 }) {
   const { t } = useI18n()
+  const { can } = usePermissions()
+  const canCreateTask = can(PermissionKeys.SalesHeadDashboard.Task.Create)
+  const canAddNote = can(PermissionKeys.SalesHeadDashboard.Task.AddNote)
+  const canDismissTask = can(PermissionKeys.SalesHeadDashboard.Task.Dismiss)
+  const canGenerateTasks = can(PermissionKeys.SalesHeadDashboard.Task.Generate)
   const [data, setData] = useValueState<HeadTasksResponse>(EMPTY_RESPONSE)
   const [status, setStatus] = useValueState<BoardStatus>('ready')
   const [urgency, setUrgency] = useValueState<string | null>(null)
@@ -238,10 +250,14 @@ export function HeadTaskBoard({
 
   const handleBoardNoteSubmit = useCallback(
     async (task: HeadTask, text: string) => {
+      if (!can(PermissionKeys.SalesHeadDashboard.Task.AddNote)) {
+        return
+      }
+
       setActionPending(true)
 
       try {
-        await addTaskNote(task.TaskKey, { Text: text })
+        await addHeadTaskNote(task.TaskKey, { Text: text })
         notifications.show({ color: 'green', message: t('Коментар додано') })
         setNoteTask(null)
         scheduleReload()
@@ -254,15 +270,19 @@ export function HeadTaskBoard({
         setActionPending(false)
       }
     },
-    [scheduleReload, t],
+    [can, scheduleReload, t],
   )
 
   const handleBoardCancelSubmit = useCallback(
     async (task: HeadTask, reason: string | null) => {
+      if (!can(PermissionKeys.SalesHeadDashboard.Task.Dismiss)) {
+        return
+      }
+
       setActionPending(true)
 
       try {
-        await setTaskStatus(task.TaskKey, { To: 'dismissed', Reason: reason ?? undefined })
+        await dismissHeadTask(task.TaskKey, reason)
         notifications.show({ color: 'green', message: t('Задачу скасовано') })
         setCancelTask(null)
         scheduleReload()
@@ -275,14 +295,18 @@ export function HeadTaskBoard({
         setActionPending(false)
       }
     },
-    [scheduleReload, t],
+    [can, scheduleReload, t],
   )
 
   const handleGenerate = useCallback(async () => {
+    if (!can(PermissionKeys.SalesHeadDashboard.Task.Generate)) {
+      return
+    }
+
     setGenerating(true)
 
     try {
-      await regenerateCockpit()
+      await regenerateHeadCockpit()
       notifications.show({
         color: 'green',
         message: t('AI задачі поставлено на перерахунок. Борд оновиться автоматично.'),
@@ -298,7 +322,7 @@ export function HeadTaskBoard({
     } finally {
       setGenerating(false)
     }
-  }, [scheduleReload, t])
+  }, [can, scheduleReload, t])
 
   if (forbidden) {
     return null
@@ -372,23 +396,27 @@ export function HeadTaskBoard({
           onChange={handleTaskTypeChange}
         />
         <div className="app-filter-actions cockpit-command-actions">
-          <Button
-            color={CREATE_ACTION_COLOR}
-            leftSection={<Plus size={16} />}
-            size="sm"
-            onClick={() => setCreateOpen(true)}
-          >
-            {t('Нова задача')}
-          </Button>
-          <Button
-            leftSection={<Sparkles size={16} />}
-            loading={isGenerating}
-            size="sm"
-            variant="light"
-            onClick={handleGenerate}
-          >
-            {t('Перерахувати AI задачі')}
-          </Button>
+          {canCreateTask && (
+            <Button
+              color={CREATE_ACTION_COLOR}
+              leftSection={<Plus size={16} />}
+              size="sm"
+              onClick={() => setCreateOpen(true)}
+            >
+              {t('Нова задача')}
+            </Button>
+          )}
+          {canGenerateTasks && (
+            <Button
+              leftSection={<Sparkles size={16} />}
+              loading={isGenerating}
+              size="sm"
+              variant="light"
+              onClick={handleGenerate}
+            >
+              {t('Перерахувати AI задачі')}
+            </Button>
+          )}
           <Tooltip label={t('Оновити')}>
             <ActionIcon
               aria-label={t('Оновити')}
@@ -424,6 +452,8 @@ export function HeadTaskBoard({
         <div className="cockpit-board-list">
           {data.Tasks.map((task) => (
             <HeadTaskRow
+              canAddNote={canAddNote}
+              canDismiss={canDismissTask}
               key={task.TaskKey}
               task={task}
               onAddNote={setNoteTask}
@@ -452,21 +482,21 @@ export function HeadTaskBoard({
 
       <NewHeadTaskModal
         managers={data.Managers}
-        opened={isCreateOpen}
+        opened={canCreateTask && isCreateOpen}
         onClose={() => setCreateOpen(false)}
         onCreated={scheduleReload}
       />
 
       <BoardNoteModal
         saving={isActionPending}
-        task={noteTask}
+        task={canAddNote ? noteTask : null}
         onClose={() => setNoteTask(null)}
         onSubmit={handleBoardNoteSubmit}
       />
 
       <BoardCancelModal
         saving={isActionPending}
-        task={cancelTask}
+        task={canDismissTask ? cancelTask : null}
         onClose={() => setCancelTask(null)}
         onSubmit={handleBoardCancelSubmit}
       />
@@ -553,10 +583,14 @@ function ProgressMetric({
 }
 
 function HeadTaskRow({
+  canAddNote,
+  canDismiss,
   task,
   onAddNote,
   onCancel,
 }: {
+  canAddNote: boolean
+  canDismiss: boolean
   task: HeadTask
   onAddNote: (task: HeadTask) => void
   onCancel: (task: HeadTask) => void
@@ -646,7 +680,7 @@ function HeadTaskRow({
       </div>
 
       <Group gap={4} wrap="nowrap">
-        <Tooltip label={t('Коментар керівника')}>
+        {canAddNote && <Tooltip label={t('Коментар керівника')}>
           <ActionIcon
             aria-label={t('Коментар керівника')}
             color="blue"
@@ -656,8 +690,8 @@ function HeadTaskRow({
           >
             <MessageSquarePlus size={16} />
           </ActionIcon>
-        </Tooltip>
-        {isManual && isActive && (
+        </Tooltip>}
+        {canDismiss && isManual && isActive && (
           <Tooltip label={t('Скасувати задачу')}>
             <ActionIcon
               aria-label={t('Скасувати задачу')}

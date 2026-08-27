@@ -10,13 +10,22 @@ import {
   TextInput,
   Tooltip,
 } from '@mantine/core'
-import { AppDrawer } from "../../../shared/ui/AppDrawer"
+import { AppDrawer } from '../../../shared/ui/AppDrawer'
+import {
+  DocumentDetailLayout,
+  DocumentDetailMetric,
+  DocumentDetailRow,
+  DocumentDetailSection,
+  DocumentDetailSummary,
+} from '../../../shared/ui/document-detail/DocumentDetail'
 import { CircleAlert, FileDown, Plus, RotateCcw } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
+import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { formatLocalDate, toDateTimeQuery } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
+import { usePermissions } from '../../auth/usePermissions'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import { DocumentExportModal } from '../../../shared/ui/document-export-modal/DocumentExportModal'
 import { Paginator } from '../../../shared/ui/paginator/Paginator'
@@ -113,6 +122,10 @@ function productCapitalizationsListReducer(
 
 function useProductCapitalizationsPageModel() {
   const { t } = useI18n()
+  const { can } = usePermissions()
+  const canCreate = can(PermissionKeys.WarehouseAccounting.Capitalization.Capitalization.Create)
+  const canOpenDetails = can(PermissionKeys.WarehouseAccounting.Capitalization.Capitalization.OpenDetails)
+  const canExport = can(PermissionKeys.WarehouseAccounting.Capitalization.Document.Export)
   const [searchParams, setSearchParams] = useSearchParams()
   const sourceCapitalizationNetId = searchParams.get('netId') || ''
   const initialFilters = useMemo<FilterDraft>(
@@ -143,6 +156,10 @@ function useProductCapitalizationsPageModel() {
   const offset = (page - 1) * pageSize
   const filterError = getFilterError(activeFilters.from, activeFilters.to)
   const openDetail = useCallback(async (capitalization: ProductCapitalization) => {
+    if (!canOpenDetails) {
+      return
+    }
+
     const requestId = detailRequestRef.current + 1
     detailRequestRef.current = requestId
     setSelectedCapitalization(capitalization)
@@ -173,7 +190,7 @@ function useProductCapitalizationsPageModel() {
         setDetailLoading(false)
       }
     }
-  }, [setDetailError, setDetailLoading, setSelectedCapitalization, t])
+  }, [canOpenDetails, setDetailError, setDetailLoading, setSelectedCapitalization, t])
   const closeDetail = useCallback(() => {
     detailRequestRef.current += 1
     sourceCapitalizationNetIdRef.current = ''
@@ -188,7 +205,7 @@ function useProductCapitalizationsPageModel() {
     }, { replace: true })
   }, [setDetailError, setDetailLoading, setSearchParams, setSelectedCapitalization])
   const handleExport = useCallback(async (capitalization: ProductCapitalization) => {
-    if (!capitalization.NetUid || exportingNetId) {
+    if (!canExport || !capitalization.NetUid || exportingNetId) {
       return
     }
 
@@ -220,6 +237,7 @@ function useProductCapitalizationsPageModel() {
       }
     }
   }, [
+    canExport,
     exportingNetId,
     setDetailError,
     setDownloadDocument,
@@ -229,7 +247,14 @@ function useProductCapitalizationsPageModel() {
     setExportingNetId,
     t,
   ])
-  const columns = useProductCapitalizationColumns(capitalizations, openDetail, handleExport, exportingNetId)
+  const columns = useProductCapitalizationColumns(
+    capitalizations,
+    openDetail,
+    handleExport,
+    exportingNetId,
+    canOpenDetails,
+    canExport,
+  )
   const detailItems = useMemo(
     () => selectedCapitalization?.ProductCapitalizationItems || [],
     [selectedCapitalization?.ProductCapitalizationItems],
@@ -306,6 +331,9 @@ function useProductCapitalizationsPageModel() {
 
   return {
     activeFilters,
+    canCreate,
+    canExport,
+    canOpenDetails,
     canMoveForward,
     capitalizations,
     columns,
@@ -337,6 +365,25 @@ function useProductCapitalizationsPageModel() {
 }
 
 export function ProductCapitalizationsPage() {
+  const { t } = useI18n()
+  const { can, isLoading } = usePermissions()
+
+  if (isLoading) {
+    return <Text c="dimmed">{t('Завантаження')}</Text>
+  }
+
+  if (!can(PermissionKeys.WarehouseAccounting.Capitalization.Page.View)) {
+    return (
+      <Alert color="red" icon={<CircleAlert size={18} />} title={t('Доступ заборонено')} variant="light">
+        {t('Недостатньо прав для перегляду оприбуткувань товарів')}
+      </Alert>
+    )
+  }
+
+  return <ProductCapitalizationsPageContent />
+}
+
+function ProductCapitalizationsPageContent() {
   const model = useProductCapitalizationsPageModel()
 
   return <ProductCapitalizationsPageView model={model} />
@@ -347,6 +394,9 @@ function ProductCapitalizationsPageView({ model }: { model: ReturnType<typeof us
   const [tableToolbarSlot, setTableToolbarSlot] = useState<HTMLDivElement | null>(null)
   const {
     activeFilters,
+    canCreate,
+    canExport,
+    canOpenDetails,
     canMoveForward,
     capitalizations,
     columns,
@@ -416,15 +466,17 @@ function ProductCapitalizationsPageView({ model }: { model: ReturnType<typeof us
               />
             </div>
             <div ref={setTableToolbarSlot} className="app-filter-table-toolbar-slot" />
-            <Button
-              color={CREATE_ACTION_COLOR}
-              leftSection={<Plus size={16} />}
-              size="sm"
-              styles={{ label: { fontFamily: 'var(--font-mono)', letterSpacing: 0 } }}
-              onClick={() => setCreatePanelOpened(true)}
-            >
-              {t('Нове оприбуткування')}
-            </Button>
+            {canCreate && (
+              <Button
+                color={CREATE_ACTION_COLOR}
+                leftSection={<Plus size={16} />}
+                size="sm"
+                styles={{ label: { fontFamily: 'var(--font-mono)', letterSpacing: 0 } }}
+                onClick={() => setCreatePanelOpened(true)}
+              >
+                {t('Нове оприбуткування')}
+              </Button>
+            )}
           </Group>
         </div>
 
@@ -454,13 +506,14 @@ function ProductCapitalizationsPageView({ model }: { model: ReturnType<typeof us
             showLayoutControls
             tableId="product-capitalizations"
             toolbarPortalTarget={tableToolbarSlot}
-            onRowClick={openDetail}
+            onRowClick={canOpenDetails ? openDetail : undefined}
           />
         </div>
       </Card>
 
-      {createPanelOpened && (
+      {createPanelOpened && canCreate && (
         <NewProductCapitalizationPanel
+          canCreate={canCreate}
           opened={createPanelOpened}
           onClose={() => setCreatePanelOpened(false)}
           onCreated={() => {
@@ -477,7 +530,7 @@ function ProductCapitalizationsPageView({ model }: { model: ReturnType<typeof us
         isLoading={isDetailLoading}
         itemColumns={itemColumns}
         onClose={closeDetail}
-        onExport={handleExport}
+        onExport={canExport ? handleExport : undefined}
       />
 
       <DocumentExportModal
@@ -492,7 +545,7 @@ function ProductCapitalizationsPageView({ model }: { model: ReturnType<typeof us
   )
 }
 
-function ProductCapitalizationDetailDrawer({
+export function ProductCapitalizationDetailDrawer({
   capitalization,
   detailError,
   exportingNetId,
@@ -507,7 +560,7 @@ function ProductCapitalizationDetailDrawer({
   isLoading: boolean
   itemColumns: DataTableColumn<ProductCapitalizationItem>[]
   onClose: () => void
-  onExport: (capitalization: ProductCapitalization) => void
+  onExport?: (capitalization: ProductCapitalization) => void
 }) {
   const { t } = useI18n()
   const items = useMemo(
@@ -518,64 +571,65 @@ function ProductCapitalizationDetailDrawer({
 
   return (
     <AppDrawer
-      className="product-capitalization-detail-drawer"
       opened={Boolean(capitalization)}
       position="right"
-      size="78rem"
-      title={
-        capitalization?.Number
-          ? `${t('Оприбуткування')} ${displayValue(capitalization.Number)}`
-          : t('Оприбуткування')
-      }
+      size="wide"
+      title={t('Оприбуткування')}
       onClose={onClose}
     >
       {capitalization && (
-        <Stack className="product-capitalization-detail-body" gap={12}>
-          <div className="product-capitalization-detail-header">
-            <Text className="product-capitalization-detail-date">
-              {formatDateTime(capitalization.FromDate)}
-            </Text>
-            <Button
-              className="product-capitalization-detail-export"
-              color={CREATE_ACTION_COLOR}
-              disabled={!capitalization.NetUid || Boolean(exportingNetId)}
-              leftSection={<FileDown size={16} />}
-              loading={exportingNetId === capitalization.NetUid}
-              onClick={() => onExport(capitalization)}
-            >
-              {t('Друк PDF')}
-            </Button>
-          </div>
+        <DocumentDetailLayout
+          summary={
+            <DocumentDetailSummary
+              eyebrow={t('Оприбуткування')}
+              title={displayValue(capitalization.Number)}
+              meta={formatDateTime(capitalization.FromDate)}
+              metrics={
+                <>
+                  <DocumentDetailMetric label={t('Кількість')} value={formatAmount(totals.qty)} />
+                  <DocumentDetailMetric label={t('Сума')} value={formatMoney(totals.amount)} />
+                  <DocumentDetailMetric label={t('Вага')} value={formatAmount(totals.weight)} />
+                </>
+              }
+            />
+          }
+          actions={
+            <Group justify="flex-end">
+              {onExport && (
+                <Button
+                  color={CREATE_ACTION_COLOR}
+                  disabled={!capitalization.NetUid || Boolean(exportingNetId)}
+                  leftSection={<FileDown size={16} />}
+                  loading={exportingNetId === capitalization.NetUid}
+                  onClick={() => onExport(capitalization)}
+                >
+                  {t('Друк PDF')}
+                </Button>
+              )}
+            </Group>
+          }
+        >
+          <DocumentDetailSection subtitle={displayValue(capitalization.Number)} title={t('Документ')}>
+            <DocumentDetailRow label={t('Дата')} mono value={formatDateTime(capitalization.FromDate)} />
+            <DocumentDetailRow label={t('Номер')} mono value={capitalization.Number} />
+            <DocumentDetailRow label={t('Сума')} mono value={formatMoney(capitalization.TotalAmount)} />
+            {capitalization.Comment && (
+              <DocumentDetailRow label={t('Коментар')} value={capitalization.Comment} wide />
+            )}
+          </DocumentDetailSection>
 
-          {detailError && (
-            <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
-              {detailError}
-            </Alert>
-          )}
+          <DocumentDetailSection title={t('Учасники та склад')}>
+            <DocumentDetailRow label={t('Організація')} value={capitalization.Organization?.Name} wide />
+            <DocumentDetailRow label={t('Склад')} value={capitalization.Storage?.Name} />
+            <DocumentDetailRow label={t('Відповідальний')} value={getResponsibleName(capitalization)} />
+          </DocumentDetailSection>
 
-          <div className="app-detail-grid product-capitalization-detail-grid">
-            <DetailValue label={t('Склад')} value={capitalization.Storage?.Name} />
-            <DetailValue label={t('Організація')} value={capitalization.Organization?.Name} />
-            <DetailValue label={t('Відповідальний')} value={getResponsibleName(capitalization)} />
-            <DetailValue label={t('Сума')} tone="money" value={formatMoney(capitalization.TotalAmount)} />
-          </div>
-
-          {capitalization.Comment && (
-            <Box className="product-capitalization-detail-comment">
-              <Text className="product-capitalization-detail-comment-label">
-                {t('Коментар')}
-              </Text>
-              <Text className="product-capitalization-detail-comment-value">{capitalization.Comment}</Text>
-            </Box>
-          )}
-
-          <Group className="product-capitalization-detail-totals" gap={8}>
-            <TotalValue label={t('Кількість')} value={formatAmount(totals.qty)} />
-            <TotalValue label={t('Сума')} value={formatMoney(totals.amount)} />
-            <TotalValue label={t('Вага')} value={formatAmount(totals.weight)} />
-          </Group>
-
-          <div className="product-capitalization-detail-table">
+          <DocumentDetailSection stacked subtitle={String(items.length)} title={t('Позиції')}>
+            {detailError && (
+              <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
+                {detailError}
+              </Alert>
+            )}
             <DataTable
               columns={itemColumns}
               data={items}
@@ -589,32 +643,10 @@ function ProductCapitalizationDetailDrawer({
               minWidth={920}
               tableId="product-capitalization-items"
             />
-          </div>
-        </Stack>
+          </DocumentDetailSection>
+        </DocumentDetailLayout>
       )}
     </AppDrawer>
-  )
-}
-
-function DetailValue({ label, tone, value }: { label: string; tone?: 'money'; value: unknown }) {
-  return (
-    <div className={`app-detail-field${tone === 'money' ? ' is-mono' : ''}`}>
-      <span>{label}</span>
-      <strong>{displayValue(value)}</strong>
-    </div>
-  )
-}
-
-function TotalValue({ label, value }: { label: string; value: string }) {
-  return (
-    <Box className="product-capitalization-detail-total">
-      <Text className="product-capitalization-detail-total-label">
-        {label}
-      </Text>
-      <Text className="product-capitalization-detail-total-value">
-        {value}
-      </Text>
-    </Box>
   )
 }
 
@@ -623,6 +655,8 @@ function useProductCapitalizationColumns(
   onOpenDetail: (capitalization: ProductCapitalization) => void,
   onExport: (capitalization: ProductCapitalization) => void,
   exportingNetId: string | null,
+  canOpenDetails: boolean,
+  canExport: boolean,
 ): DataTableColumn<ProductCapitalization>[] {
   return useMemo<DataTableColumn<ProductCapitalization>[]>(
     () => [
@@ -714,21 +748,25 @@ function useProductCapitalizationColumns(
         cell: (capitalization) => (
           <Box onClick={(event) => event.stopPropagation()}>
             <Group gap={4} justify="center" wrap="nowrap">
-              <TableRowAction action="details" label="Деталі" onClick={() => onOpenDetail(capitalization)} />
-              <TableRowAction
-                action="print"
-                disabled={!capitalization.NetUid || Boolean(exportingNetId)}
-                label="Друк PDF"
-                loading={exportingNetId === capitalization.NetUid}
-                tone="brand"
-                onClick={() => onExport(capitalization)}
-              />
+              {canOpenDetails && (
+                <TableRowAction action="details" label="Деталі" onClick={() => onOpenDetail(capitalization)} />
+              )}
+              {canExport && (
+                <TableRowAction
+                  action="print"
+                  disabled={!capitalization.NetUid || Boolean(exportingNetId)}
+                  label="Друк PDF"
+                  loading={exportingNetId === capitalization.NetUid}
+                  tone="brand"
+                  onClick={() => onExport(capitalization)}
+                />
+              )}
             </Group>
           </Box>
         ),
       },
     ],
-    [capitalizations, exportingNetId, onExport, onOpenDetail],
+    [canExport, canOpenDetails, capitalizations, exportingNetId, onExport, onOpenDetail],
   )
 }
 

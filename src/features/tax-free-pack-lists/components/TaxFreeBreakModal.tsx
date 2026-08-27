@@ -17,13 +17,14 @@ type BreakForm = {
 }
 
 type TaxFreeBreakModalProps = {
+  canBreak: boolean
   opened: boolean
   packList: TaxFreePackList | null
   onClose: () => void
   onUpdated: (packList: TaxFreePackList) => void
 }
 
-export function TaxFreeBreakModal({ opened, packList, onClose, onUpdated }: TaxFreeBreakModalProps) {
+export function TaxFreeBreakModal({ canBreak, opened, packList, onClose, onUpdated }: TaxFreeBreakModalProps) {
   const { t } = useI18n()
   const [form, setForm] = useState<BreakForm>(() => createForm(packList))
   const [isSaving, setSaving] = useState(false)
@@ -41,7 +42,7 @@ export function TaxFreeBreakModal({ opened, packList, onClose, onUpdated }: TaxF
   }, [opened, packList])
 
   async function submitBreak() {
-    if (!packList) {
+    if (!canBreak || !packList) {
       return
     }
 
@@ -119,7 +120,7 @@ export function TaxFreeBreakModal({ opened, packList, onClose, onUpdated }: TaxF
 
         <Group justify="flex-end">
           <Button disabled={isSaving} variant="subtle" onClick={onClose}>{t('Скасувати')}</Button>
-          <Button loading={isSaving} onClick={submitBreak}>{t('Розбити')}</Button>
+          <Button disabled={!canBreak} loading={isSaving} onClick={submitBreak}>{t('Розбити')}</Button>
         </Group>
       </Stack>
     </AppModal>

@@ -9,7 +9,7 @@ import type {
 } from '../types'
 
 export async function getProductHistoryStorages(): Promise<ProductHistoryStorage[]> {
-  const result = await apiRequest<unknown>('/storages/get/all')
+  const result = await apiRequest<unknown>('/storages/product-history/all')
 
   return normalizeStorages(result)
 }
@@ -18,7 +18,7 @@ export async function getProductHistory(
   params: ProductHistorySearchParams,
   signal?: AbortSignal,
 ): Promise<ProductHistoryResponse> {
-  const result = await apiRequest<unknown>('/history/order/item/get', {
+  const result = await apiRequest<unknown>('/history/order/item/product-history/registry', {
     query: {
       from: params.from,
       limit: params.limit,
@@ -36,7 +36,7 @@ export async function getProductHistory(
 export async function exportProductHistory(
   params: ProductHistorySearchParams,
 ): Promise<ProductHistoryExportDocument> {
-  const result = await apiRequest<unknown>('/history/order/item/document/create/export', {
+  const result = await apiRequest<unknown>('/history/order/item/product-history/document/export', {
     query: {
       from: params.from,
       limit: params.limit,

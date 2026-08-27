@@ -3,6 +3,7 @@ import {
   Alert,
   Button,
   Stack,
+  Text,
   TextInput,
   Tooltip,
 } from '@mantine/core'
@@ -18,16 +19,18 @@ import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { Paginator } from '../../../shared/ui/paginator/Paginator'
 import { DEFAULT_PAGINATOR_PAGE_SIZE } from '../../../shared/ui/paginator/paginatorPageSize'
-import { useAuth } from '../../auth/useAuth'
-import { getActProvidingServices } from '../api/actProvidingServicesApi'
+import { PermissionKeys } from '../../../shared/auth/permissionKeys'
+import { usePermissions } from '../../auth/usePermissions'
+import {
+  getProvidingServiceActLogisticWayDetails,
+  getProvidingServiceActsRegistry,
+} from '../api/actProvidingServicesApi'
 import type { ActProvidingService } from '../types'
 import { toActProvidingServiceDisplayModel, type ActProvidingServiceDisplayModel } from '../utils'
 import './act-providing-services-page.css'
 import '../../../shared/ui/console-table-page.css'
 
 const PAGE_SIZE = DEFAULT_PAGINATOR_PAGE_SIZE
-const PERMISSION_LOGISTIC_WAY = 'ActProvidingServices_SelectAnOption_LogisticWayBtn_PKEY'
-const PERMISSION_VIEW_ACT = 'ActProvidingServices_SelectAnOption_viewBtn_PKEY'
 const ACT_PROVIDING_SERVICES_TABLE_MIN_WIDTH = 1120
 const ACT_PROVIDING_SERVICES_TABLE_DEFAULT_LAYOUT = {
   columnPinning: {
@@ -111,7 +114,7 @@ function useActProvidingServicesPageModel() {
 
     setLoadState((currentState) => ({ ...currentState, error: null, isLoading: true }))
 
-    void getActProvidingServices({
+    void getProvidingServiceActsRegistry({
       from: dateFrom,
       isFiltered: offset === 0,
       limit: pageSize,
@@ -183,6 +186,25 @@ function useActProvidingServicesPageModel() {
 }
 
 export function ActProvidingServicesPage() {
+  const { t } = useI18n()
+  const { can, isLoading } = usePermissions()
+
+  if (isLoading) {
+    return <Text c="dimmed">{t('Завантаження')}</Text>
+  }
+
+  if (!can(PermissionKeys.ProvidingServiceActs.Page.View)) {
+    return (
+      <Alert color="red" icon={<CircleAlert size={18} />} title={t('Доступ заборонено')} variant="light">
+        {t('Недостатньо прав для перегляду актів надання послуг')}
+      </Alert>
+    )
+  }
+
+  return <ActProvidingServicesPageContent />
+}
+
+function ActProvidingServicesPageContent() {
   const model = useActProvidingServicesPageModel()
 
   return <ActProvidingServicesPageView model={model} />
@@ -393,14 +415,43 @@ function ActProvidingServiceOptionsModal({
 }) {
   const { t } = useI18n()
   const navigate = useNavigate()
-  const { hasPermission } = useAuth()
-  const canOpenLogisticWay = hasPermission(PERMISSION_LOGISTIC_WAY)
-  const canViewAct = hasPermission(PERMISSION_VIEW_ACT)
+  const { can } = usePermissions()
+  const [isOpeningLogisticWay, setOpeningLogisticWay] = useState(false)
+  const canOpenLogisticWay = can(PermissionKeys.ProvidingServiceActs.LogisticWay.Open)
+  const canViewAct = can(PermissionKeys.ProvidingServiceActs.Overview.Open)
   const canOpenSupplyOrder = Boolean(row?.supplyOrderUkraineNetUid)
-  const canOpenViewOption = Boolean(row?.netId) && (canViewAct || canOpenSupplyOrder)
+    && can(PermissionKeys.OrdersUkraine.Order.OpenOverview)
+  const canOpenViewOption = Boolean(row?.netId) && canViewAct
   const canOpenProtocol = Boolean(row?.protocolNetId) && canOpenLogisticWay
   const hasAvailableActions = Boolean(canOpenViewOption || canOpenSupplyOrder || canOpenProtocol)
   const isActive = row?.act.Deleted !== true
+
+  async function openLogisticWay() {
+    if (!row?.netId || !canOpenLogisticWay || isOpeningLogisticWay) {
+      return
+    }
+
+    setOpeningLogisticWay(true)
+
+    try {
+      const act = await getProvidingServiceActLogisticWayDetails(row.netId)
+      const protocolNetId = act ? toActProvidingServiceDisplayModel(act, t).protocolNetId : undefined
+
+      if (!protocolNetId) {
+        throw new Error(t('Логістичний шлях не знайдено'))
+      }
+
+      navigate(`/product-delivery-protocols/${protocolNetId}`)
+      onClose()
+    } catch (openError) {
+      notifications.show({
+        color: 'red',
+        message: openError instanceof Error ? openError.message : t('Не вдалося відкрити логістичний шлях'),
+      })
+    } finally {
+      setOpeningLogisticWay(false)
+    }
+  }
 
   return (
     <AppModal
@@ -462,6 +513,7 @@ function ActProvidingServiceOptionsModal({
             <Button
               fullWidth
               color="dark"
+              loading={isOpeningLogisticWay}
               justify="flex-start"
               leftSection={
                 <span className="app-action-icon">
@@ -470,10 +522,7 @@ function ActProvidingServiceOptionsModal({
               }
               size="md"
               variant="subtle"
-              onClick={() => {
-                navigate(`/product-delivery-protocols/${row.protocolNetId}`)
-                onClose()
-              }}
+              onClick={() => void openLogisticWay()}
             >
               {t('Логістичний шлях')}
             </Button>

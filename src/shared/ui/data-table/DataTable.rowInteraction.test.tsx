@@ -8,7 +8,7 @@ type ProductRow = {
   code: string
 }
 
-function renderTable(onRowClick: (row: ProductRow) => void) {
+function renderTable(onRowClick?: (row: ProductRow) => void) {
   render(
     <MantineProvider>
       <I18nProvider>
@@ -32,6 +32,24 @@ function renderTable(onRowClick: (row: ProductRow) => void) {
 }
 
 describe('DataTable row text selection', () => {
+  it('does not advertise a row click when the consumer has no permitted action', () => {
+    renderTable()
+
+    const row = screen.getByText('0103002797-MG').closest('tr')
+
+    expect(row?.classList.contains('data-table-row-clickable')).toBe(false)
+    fireEvent.click(screen.getByText('0103002797-MG'))
+  })
+
+  it('advertises a row click only when the consumer provides an action', () => {
+    const onRowClick = vi.fn()
+    renderTable(onRowClick)
+
+    const row = screen.getByText('0103002797-MG').closest('tr')
+
+    expect(row?.classList.contains('data-table-row-clickable')).toBe(true)
+  })
+
   it('keeps drag-selected product text from triggering the row action', () => {
     const onRowClick = vi.fn()
     renderTable(onRowClick)

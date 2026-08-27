@@ -25,6 +25,8 @@ import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { Paginator } from '../../../shared/ui/paginator/Paginator'
 import { TableRowAction } from '../../../shared/ui/table-row-action'
+import { PermissionGate } from '../../auth/components/PermissionGate'
+import { useAuth } from '../../auth/useAuth'
 import {
   getAvailablePaymentsOrganizations,
   getGroupedPaymentTasks,
@@ -50,6 +52,10 @@ import {
   type SupplyPaymentTask,
 } from '../types'
 import './available-payments-page.css'
+import {
+  AVAILABLE_PAYMENTS_OUTCOME_CREATE_PERMISSION,
+  AVAILABLE_PAYMENTS_PAGE_PERMISSION,
+} from '../permissions'
 
 type FilterDraft = {
   from: string
@@ -79,6 +85,7 @@ const dateFormatter = new Intl.DateTimeFormat('uk-UA', { dateStyle: 'short' })
 
 function useAvailablePaymentsPageModel() {
   const { t } = useI18n()
+  const { hasPermission } = useAuth()
   const [searchParams] = useSearchParams()
   const isOutcomeMode = isOutcomePaymentTasksMode(searchParams)
   const onlyAvailableForPayment = isOutcomeMode
@@ -241,6 +248,11 @@ function useAvailablePaymentsPageModel() {
     setFilesByTaskId({})
   }, [setFilesByTaskId, setMarkedModels])
   const openMarkedOutcome = useCallback(() => {
+    if (!hasPermission(AVAILABLE_PAYMENTS_OUTCOME_CREATE_PERMISSION)) {
+      setError(t('Немає права для створення видаткового ордера'))
+      return
+    }
+
     const selectionError = validateAvailablePaymentSelection(markedModels, t)
 
     if (selectionError) {
@@ -249,7 +261,7 @@ function useAvailablePaymentsPageModel() {
     }
 
     setOutcomeRequest({ key: Date.now(), models: markedModels })
-  }, [markedModels, setError, setOutcomeRequest, t])
+  }, [hasPermission, markedModels, setError, setOutcomeRequest, t])
   const toggleMarked = useCallback(
     (model: AvailablePaymentTaskModel) => {
       setMarkedModels((current) => {
@@ -351,6 +363,7 @@ function useAvailablePaymentsPageModel() {
     totalsByCurrency,
     applyFilters,
     clearMarked,
+    canCreateOutcome: hasPermission(AVAILABLE_PAYMENTS_OUTCOME_CREATE_PERMISSION),
     handlePaymentChanged,
     handleFilesChanged,
     handleTaskUpdated,
@@ -535,6 +548,27 @@ function useAvailablePaymentsLoader({
 }
 
 export function AvailablePaymentsPage() {
+  return (
+    <PermissionGate
+      permissionKey={AVAILABLE_PAYMENTS_PAGE_PERMISSION}
+      fallback={<AvailablePaymentsPermissionDenied />}
+    >
+      <AvailablePaymentsPageContent />
+    </PermissionGate>
+  )
+}
+
+function AvailablePaymentsPermissionDenied() {
+  const { t } = useI18n()
+
+  return (
+    <Alert color="red" icon={<CircleAlert size={18} />} title={t('Доступ заборонено')} variant="light">
+      {t('У вашої ролі немає права переглядати доступні платежі.')}
+    </Alert>
+  )
+}
+
+function AvailablePaymentsPageContent() {
   const model = useAvailablePaymentsPageModel()
 
   return (
@@ -582,6 +616,7 @@ function AvailablePaymentsTableCard({ model }: { model: ReturnType<typeof useAva
   const [tableToolbarSlot, setTableToolbarSlot] = useState<HTMLDivElement | null>(null)
   const {
     applyFilters,
+    canCreateOutcome,
     columns,
     error,
     filterDraft,
@@ -718,9 +753,11 @@ function AvailablePaymentsTableCard({ model }: { model: ReturnType<typeof useAva
                   {t('Вибрано платіжних задач')}: {markedModels.length}
                 </Text>
                 <Group gap="xs">
+                  {canCreateOutcome && (
                     <Button size="xs" onClick={openMarkedOutcome}>
-                    {t('Створити видатковий')}
-                  </Button>
+                      {t('Створити видатковий')}
+                    </Button>
+                  )}
                   <Button color="gray" size="xs" variant="subtle" onClick={clearMarked}>
                     {t('Очистити')}
                   </Button>

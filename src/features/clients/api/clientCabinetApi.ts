@@ -30,7 +30,7 @@ const WORKPLACE_SAVE_OMIT_KEYS = ['MainClient', 'WorkplaceClient', 'ClientGroup'
 const WORKPLACE_AGREEMENT_SAVE_OMIT_KEYS = ['Workplace', 'ClientAgreement']
 
 export async function createClientGroup(name: string, clientId: number): Promise<ClientGroup | null> {
-  const result = await apiRequest<unknown>('/clients/new/group', {
+  const result = await apiRequest<unknown>('/clients/structure/card/groups/create', {
     method: 'POST',
     query: {
       name: '',
@@ -45,7 +45,7 @@ export async function createClientGroup(name: string, clientId: number): Promise
 }
 
 export async function changeClientGroup(group: ClientGroup): Promise<ClientGroup | null> {
-  const result = await apiRequest<unknown>('/clients/update/client/group', {
+  const result = await apiRequest<unknown>('/clients/structure/card/groups/update', {
     method: 'POST',
     body: group,
   })
@@ -61,7 +61,7 @@ export async function deleteClientGroup(group: ClientGroup): Promise<ClientGroup
 }
 
 export async function createClientWorkplace(workplace: ClientWorkplace): Promise<ClientWorkplace | null> {
-  const result = await apiRequest<unknown>('/clients/new/workplace', {
+  const result = await apiRequest<unknown>('/clients/structure/card/workplaces/create', {
     method: 'POST',
     body: prepareClientWorkplaceSavePayload(workplace),
   })
@@ -70,7 +70,7 @@ export async function createClientWorkplace(workplace: ClientWorkplace): Promise
 }
 
 export async function updateClientWorkplace(workplace: ClientWorkplace): Promise<ClientWorkplace | null> {
-  const result = await apiRequest<unknown>('/clients/update/workplace', {
+  const result = await apiRequest<unknown>('/clients/structure/card/workplaces/update', {
     method: 'POST',
     body: prepareClientWorkplaceSavePayload(workplace),
   })
@@ -79,8 +79,8 @@ export async function updateClientWorkplace(workplace: ClientWorkplace): Promise
 }
 
 export async function removeClientWorkplace(netId: string): Promise<ClientWorkplace | null> {
-  const result = await apiRequest<unknown>('/clients/remove/workplace', {
-    method: 'POST',
+  const result = await apiRequest<unknown>('/clients/structure/card/workplaces/remove', {
+    method: 'DELETE',
     query: {
       netId,
     },
@@ -91,7 +91,7 @@ export async function removeClientWorkplace(netId: string): Promise<ClientWorkpl
 }
 
 export async function getClientDeliveryRecipientsWithDeleted(netId: string): Promise<DeliveryRecipient[]> {
-  const result = await apiRequest<unknown>('/deliveries/recipients/all/client/deleted', {
+  const result = await apiRequest<unknown>('/deliveries/recipients/structure/all/client/deleted', {
     query: {
       netId,
     },
@@ -101,7 +101,7 @@ export async function getClientDeliveryRecipientsWithDeleted(netId: string): Pro
 }
 
 export async function createDeliveryRecipient(recipient: DeliveryRecipient): Promise<DeliveryRecipient | null> {
-  const result = await apiRequest<unknown>('/deliveries/recipients/new', {
+  const result = await apiRequest<unknown>('/deliveries/recipients/structure/new', {
     method: 'POST',
     body: recipient,
   })
@@ -121,7 +121,8 @@ export async function createDeliveryRecipientAddress(
 }
 
 export async function removeDeliveryRecipient(netId: string): Promise<DeliveryRecipient | null> {
-  const result = await apiRequest<unknown>('/deliveries/recipients/remove', {
+  const result = await apiRequest<unknown>('/deliveries/recipients/structure/remove', {
+    method: 'DELETE',
     query: {
       netId,
     },
@@ -147,7 +148,7 @@ export async function searchServicePayers(
 }
 
 export async function getClientSubClients(netId: string): Promise<ClientSubClient[]> {
-  const result = await apiRequest<unknown>('/clients/all/clientsubclients/client', {
+  const result = await apiRequest<unknown>('/clients/structure/card/subclients', {
     query: {
       netId,
     },
@@ -191,7 +192,7 @@ export async function changeClientPassword(
   password: string,
   mobileNumber: string,
 ): Promise<ClientUpsertResult> {
-  const result = await apiRequest<unknown>('/clients/update/password', {
+  const result = await apiRequest<unknown>('/clients/ecommerce/password', {
     method: 'PATCH',
     body: {
       netId,
@@ -207,6 +208,21 @@ export async function uploadClientContract(
   client: Client,
   documents: File[],
 ): Promise<ClientUpsertResult> {
+  return uploadClientContractTo('/clients/documents/contracts/edit', client, documents)
+}
+
+export async function uploadNewClientContract(
+  client: Client,
+  documents: File[],
+): Promise<ClientUpsertResult> {
+  return uploadClientContractTo('/clients/documents/contracts/create', client, documents)
+}
+
+async function uploadClientContractTo(
+  route: string,
+  client: Client,
+  documents: File[],
+): Promise<ClientUpsertResult> {
   const formData = new FormData()
 
   documents.forEach((document) => {
@@ -215,7 +231,7 @@ export async function uploadClientContract(
 
   formData.append('client', JSON.stringify(prepareClientContractUploadPayload(client)))
 
-  const result = await apiRequest<unknown>('/clients/documents/upload/contracts', {
+  const result = await apiRequest<unknown>(route, {
     method: 'POST',
     body: formData,
   })

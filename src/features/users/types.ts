@@ -12,33 +12,9 @@ export type UserRoleTranslation = EntityFields & {
   UserRoleId?: number
 }
 
-export type UserPermission = EntityFields & {
-  ControlId?: string
-  DashboardNodeId?: number | string
-  Description?: string
-  ImageUrl?: string
-  Name?: string
-}
-
-export type DashboardNode = EntityFields & {
-  Children?: DashboardNode[]
-  Module?: string
-  Permissions?: UserPermission[]
-  Route?: string
-}
-
-export type DashboardNodeModule = EntityFields & {
-  Children?: DashboardNode[]
-  Description?: string
-  Module?: string
-}
-
 export type UserRole = EntityFields & {
   Dashboard?: string
-  DashboardNodeModules?: DashboardNodeModule[]
-  DashboardNodes?: DashboardNode[]
   Name?: string
-  Permissions?: UserPermission[]
   UserRoleTranslations?: UserRoleTranslation[]
   UserRoleType?: number
 }

@@ -7,12 +7,12 @@ import type { DirectSupplyOrder, SupplyOrderItem } from '../types'
 import { SupplyUkraineDirectOrderInvoicesPage } from './SupplyUkraineDirectOrderInvoicesPage'
 
 const apiMocks = vi.hoisted(() => ({
-  getDirectSupplyOrderById: vi.fn(),
-  getSupplyInformationDeliveryProtocolKeys: vi.fn(),
-  getSupplyOrderInvoiceTotals: vi.fn(),
-  getSupplyOrderItems: vi.fn(),
-  getSupplyPaymentDeliveryProtocolKeys: vi.fn(),
-  getSupplyProtocolResponsibleUsers: vi.fn(),
+  getDirectSupplyOrderForInvoices: vi.fn(),
+  getDirectSupplyOrderInvoiceInformationProtocolKeys: vi.fn(),
+  getDirectSupplyOrderInvoicePaymentProtocolKeys: vi.fn(),
+  getDirectSupplyOrderInvoiceResponsibleUsers: vi.fn(),
+  getSupplyOrderInvoiceTotalsForInvoices: vi.fn(),
+  getSupplyOrderItemsForInvoices: vi.fn(),
 }))
 
 vi.mock('../api/supplyUkraineOrdersApi', async (importOriginal) => ({
@@ -70,12 +70,12 @@ function renderReviewPage() {
 describe('BUG-1187 direct-order products page', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    apiMocks.getDirectSupplyOrderById.mockResolvedValue(createOrder())
-    apiMocks.getSupplyInformationDeliveryProtocolKeys.mockResolvedValue([])
-    apiMocks.getSupplyOrderInvoiceTotals.mockResolvedValue({})
-    apiMocks.getSupplyOrderItems.mockResolvedValue([ORDER_ITEM])
-    apiMocks.getSupplyPaymentDeliveryProtocolKeys.mockResolvedValue([])
-    apiMocks.getSupplyProtocolResponsibleUsers.mockResolvedValue([])
+    apiMocks.getDirectSupplyOrderForInvoices.mockResolvedValue(createOrder())
+    apiMocks.getDirectSupplyOrderInvoiceInformationProtocolKeys.mockResolvedValue([])
+    apiMocks.getDirectSupplyOrderInvoicePaymentProtocolKeys.mockResolvedValue([])
+    apiMocks.getDirectSupplyOrderInvoiceResponsibleUsers.mockResolvedValue([])
+    apiMocks.getSupplyOrderInvoiceTotalsForInvoices.mockResolvedValue({})
+    apiMocks.getSupplyOrderItemsForInvoices.mockResolvedValue([ORDER_ITEM])
   })
 
   it('loads the exact products tab before a proforma and keeps invoice creation read-only', async () => {
@@ -89,13 +89,13 @@ describe('BUG-1187 direct-order products page', () => {
     expect(screen.getAllByText('Ціна').length).toBeGreaterThan(0)
     expect(screen.getAllByText('Сума нетто').length).toBeGreaterThan(0)
     expect(screen.queryByRole('button', { name: 'Додати інвойс' })).toBeNull()
-    expect(apiMocks.getDirectSupplyOrderById).toHaveBeenCalledWith(ORDER_NET_UID)
-    expect(apiMocks.getSupplyOrderItems).toHaveBeenCalledWith(ORDER_NET_UID)
-    expect(apiMocks.getSupplyOrderInvoiceTotals).toHaveBeenCalledWith(ORDER_NET_UID)
+    expect(apiMocks.getDirectSupplyOrderForInvoices).toHaveBeenCalledWith(ORDER_NET_UID)
+    expect(apiMocks.getSupplyOrderItemsForInvoices).toHaveBeenCalledWith(ORDER_NET_UID)
+    expect(apiMocks.getSupplyOrderInvoiceTotalsForInvoices).toHaveBeenCalledWith(ORDER_NET_UID)
   })
 
   it('restores invoice creation after a proforma exists', async () => {
-    apiMocks.getDirectSupplyOrderById.mockResolvedValue(createOrder({
+    apiMocks.getDirectSupplyOrderForInvoices.mockResolvedValue(createOrder({
       IsApproved: true,
       SupplyProForm: { Id: 17, Number: 'PF-17' },
       SupplyProFormId: 17,

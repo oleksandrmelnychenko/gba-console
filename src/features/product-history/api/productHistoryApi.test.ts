@@ -1,6 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { apiRequest } from '../../../shared/api/apiClient'
-import { exportProductHistory, getProductHistory } from './productHistoryApi'
+import {
+  exportProductHistory,
+  getProductHistory,
+  getProductHistoryStorages,
+} from './productHistoryApi'
 
 vi.mock('../../../shared/api/apiClient', () => ({
   apiRequest: vi.fn(),
@@ -11,6 +15,18 @@ const apiRequestMock = vi.mocked(apiRequest)
 describe('product history API contracts', () => {
   beforeEach(() => {
     apiRequestMock.mockReset()
+  })
+
+  it('loads storages through the page-scoped route', async () => {
+    apiRequestMock.mockResolvedValueOnce([{ Id: 7, Name: 'Основний' }])
+
+    await expect(getProductHistoryStorages()).resolves.toEqual([
+      { Id: 7, Name: 'Основний' },
+    ])
+
+    expect(apiRequestMock).toHaveBeenCalledWith(
+      '/storages/product-history/all',
+    )
   })
 
   it('loads product history with an explicit bounded date range', async () => {
@@ -30,7 +46,7 @@ describe('product history API contracts', () => {
       ),
     ).resolves.toEqual({ Items: [], Total: undefined })
 
-    expect(apiRequestMock).toHaveBeenCalledWith('/history/order/item/get', {
+    expect(apiRequestMock).toHaveBeenCalledWith('/history/order/item/product-history/registry', {
       query: {
         from: '2026-06-24T00:00:00.000',
         limit: 20,
@@ -63,7 +79,7 @@ describe('product history API contracts', () => {
       PdfDocumentURL: 'https://example.test/product-history.pdf',
     })
 
-    expect(apiRequestMock).toHaveBeenCalledWith('/history/order/item/document/create/export', {
+    expect(apiRequestMock).toHaveBeenCalledWith('/history/order/item/product-history/document/export', {
       query: {
         from: '2026-06-24T00:00:00.000',
         limit: 20,

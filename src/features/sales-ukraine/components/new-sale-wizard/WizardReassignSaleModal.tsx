@@ -3,7 +3,9 @@ import { notifications } from '@mantine/notifications'
 import { useEffect, useState } from 'react'
 import type { ReactNode } from 'react'
 import { useI18n } from '../../../../shared/i18n/useI18n'
+import { PermissionKeys } from '../../../../shared/auth/permissionKeys'
 import { AppModal } from '../../../../shared/ui/AppModal'
+import { usePermissions } from '../../../auth/usePermissions'
 import { switchSale, type SwitchSalePayload } from '../../api/salesUkraineApi'
 import type { SalesUkraineSale } from '../../types'
 import { usePersistentSaleJsonMutationRunner } from '../../usePersistentSaleJsonMutation'
@@ -16,38 +18,52 @@ import { getWizardClientStructure, getWizardHeaderClient } from './wizardSaleHea
 export function WizardReassignSaleModal({
   client,
   opened,
+  permissionFlow,
   sale,
   onClose,
   onReassigned,
 }: {
   client: Client
   opened: boolean
+  permissionFlow: 'create' | 'edit'
   sale: SalesUkraineSale
   onClose: () => void
   onReassigned: (movedSale: SalesUkraineSale | null) => void
 }) {
   const { t } = useI18n()
+  const { can } = usePermissions()
+  const canReassign = can(PermissionKeys.SalesUkraine.Sale.Reassign)
 
   return (
     <AppModal
       centered
-      opened={opened}
+      opened={opened && canReassign}
       size="lg"
       title={`${t('Переміщення продажі')} ${sale.SaleNumber?.Value ?? ''}`.trim()}
       onClose={onClose}
     >
-      {opened && <WizardReassignSaleForm client={client} sale={sale} onCancel={onClose} onReassigned={onReassigned} />}
+      {opened && canReassign && (
+        <WizardReassignSaleForm
+          client={client}
+          permissionFlow={permissionFlow}
+          sale={sale}
+          onCancel={onClose}
+          onReassigned={onReassigned}
+        />
+      )}
     </AppModal>
   )
 }
 
 function WizardReassignSaleForm({
   client,
+  permissionFlow,
   sale,
   onCancel,
   onReassigned,
 }: {
   client: Client
+  permissionFlow: 'create' | 'edit'
   sale: SalesUkraineSale
   onCancel: () => void
   onReassigned: (movedSale: SalesUkraineSale | null) => void
@@ -73,7 +89,7 @@ function WizardReassignSaleForm({
           rootNetId = rootLink?.RootClient?.NetUid ?? rootLink?.NetUid ?? rootNetId
         }
 
-        const root = rootNetId ? await getWizardHeaderClient(rootNetId) : null
+        const root = rootNetId ? await getWizardHeaderClient(rootNetId, permissionFlow) : null
         const structure = root?.NetUid ? await getWizardClientStructure(root.NetUid) : []
 
         if (!cancelled) {
@@ -103,7 +119,7 @@ function WizardReassignSaleForm({
     return () => {
       cancelled = true
     }
-  }, [client, t])
+  }, [client, permissionFlow, t])
 
   async function save() {
     if (!selectedNetUid) {

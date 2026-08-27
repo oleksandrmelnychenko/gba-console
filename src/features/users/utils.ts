@@ -1,4 +1,4 @@
-import type { DashboardNode, DashboardNodeModule, IdentityResponse, UserPermission, UserProfile, UserRole } from './types'
+import type { IdentityResponse, UserProfile, UserRole } from './types'
 import { translate } from '../../shared/i18n/translate'
 
 const EMPTY_NET_UID = '00000000-0000-0000-0000-000000000000'
@@ -177,80 +177,4 @@ const MIN_DELETABLE_USER_ROLE_TYPE = 12
 
 export function canDeleteUserRole(role?: UserRole | null): boolean {
   return typeof role?.UserRoleType === 'number' && role.UserRoleType > MIN_DELETABLE_USER_ROLE_TYPE
-}
-
-export function isNodeSelected(selectedNodes: DashboardNode[], node: DashboardNode): boolean {
-  return selectedNodes.some((item) => item.NetUid === node.NetUid)
-}
-
-export function isPermissionSelected(selectedPermissions: UserPermission[], permission: UserPermission): boolean {
-  return selectedPermissions.some((item) => item.NetUid === permission.NetUid)
-}
-
-export function toggleNodeSelection(selectedNodes: DashboardNode[], node: DashboardNode): DashboardNode[] {
-  return isNodeSelected(selectedNodes, node)
-    ? selectedNodes.filter((item) => item.NetUid !== node.NetUid)
-    : [...selectedNodes, node]
-}
-
-export function togglePermissionSelection(selectedPermissions: UserPermission[], permission: UserPermission): UserPermission[] {
-  return isPermissionSelected(selectedPermissions, permission)
-    ? selectedPermissions.filter((item) => item.NetUid !== permission.NetUid)
-    : [...selectedPermissions, permission]
-}
-
-export function getDashboardNodeTree(node: DashboardNode): DashboardNode[] {
-  return [node, ...(node.Children || []).flatMap(getDashboardNodeTree)]
-}
-
-export function getDashboardModuleNodes(module: DashboardNodeModule): DashboardNode[] {
-  return (module.Children || []).flatMap(getDashboardNodeTree)
-}
-
-export function getDashboardModulesNodes(modules: DashboardNodeModule[]): DashboardNode[] {
-  return modules.flatMap(getDashboardModuleNodes)
-}
-
-export function getDashboardNodePermissions(node: DashboardNode): UserPermission[] {
-  return [...(node.Permissions || []), ...(node.Children || []).flatMap(getDashboardNodePermissions)]
-}
-
-export function getDashboardModulePermissions(module: DashboardNodeModule): UserPermission[] {
-  return (module.Children || []).flatMap(getDashboardNodePermissions)
-}
-
-export function toggleAllPages(selectedNodes: DashboardNode[], modules: DashboardNodeModule[]): DashboardNode[] {
-  const allNodes = getDashboardModulesNodes(modules)
-  const allSelected = allNodes.length > 0 && allNodes.every((node) => isNodeSelected(selectedNodes, node))
-
-  if (allSelected) {
-    return selectedNodes.filter((node) => !allNodes.some((item) => item.NetUid === node.NetUid))
-  }
-
-  const missing = allNodes.filter((node) => !isNodeSelected(selectedNodes, node))
-
-  return [...selectedNodes, ...missing]
-}
-
-export function toggleModuleNodes(selectedNodes: DashboardNode[], module: DashboardNodeModule): DashboardNode[] {
-  const children = getDashboardModuleNodes(module)
-  const allSelected = children.length > 0 && children.every((child) => isNodeSelected(selectedNodes, child))
-
-  if (allSelected) {
-    return selectedNodes.filter((item) => !children.some((child) => child.NetUid === item.NetUid))
-  }
-
-  const missing = children.filter((child) => !isNodeSelected(selectedNodes, child))
-
-  return [...selectedNodes, ...missing]
-}
-
-export function toggleSubPermissions(selectedPermissions: UserPermission[], permissions: UserPermission[]): UserPermission[] {
-  const missing = permissions.filter((permission) => !isPermissionSelected(selectedPermissions, permission))
-
-  if (missing.length === 0 && permissions.length > 0) {
-    return selectedPermissions.filter((permission) => !permissions.some((item) => item.NetUid === permission.NetUid))
-  }
-
-  return [...selectedPermissions, ...missing]
 }

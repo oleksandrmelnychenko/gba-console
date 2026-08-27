@@ -33,12 +33,18 @@ export type ActionTarget =
   | { mode: 'multi'; items: ActReconciliationItem[] }
 
 export function ActReconciliationActionsModal({
+  canCreateProductIncome,
+  canCreateProductTransfer,
+  canCreateWriteOff,
   organizationNetId,
   target,
   opened,
   onClose,
   onApplied,
 }: {
+  canCreateProductIncome: boolean
+  canCreateProductTransfer: boolean
+  canCreateWriteOff: boolean
   organizationNetId: string
   target: ActionTarget | null
   opened: boolean
@@ -46,6 +52,7 @@ export function ActReconciliationActionsModal({
   onApplied: () => void
 }) {
   const { t } = useI18n()
+  const canCreateAny = canCreateProductIncome || canCreateProductTransfer || canCreateWriteOff
   const [storages, setStorages] = useValueState<ReconciliationStorageOption[]>([])
   const [storagesLoading, setStoragesLoading] = useValueState(false)
   const [storagesError, setStoragesError] = useValueState<string | null>(null)
@@ -55,7 +62,7 @@ export function ActReconciliationActionsModal({
   const [activeTab, setActiveTab] = useValueState<ActionTab>('placement')
 
   useEffect(() => {
-    if (!opened) {
+    if (!opened || !canCreateAny) {
       return
     }
 
@@ -87,13 +94,18 @@ export function ActReconciliationActionsModal({
     return () => {
       cancelled = true
     }
-  }, [opened, organizationNetId, setStorages, setStoragesError, setStoragesLoading, t])
+  }, [canCreateAny, opened, organizationNetId, setStorages, setStoragesError, setStoragesLoading, t])
 
   const singleItem = target?.mode === 'single' ? target.item : null
   const maxAvailableQty = singleItem?.QtyDifference
   const actionItems = getActionItems(target)
   const hasWriteOffItems = actionItems.writeoff.length > 0
-  const activeTabValue = activeTab === 'writeoff' && !hasWriteOffItems ? 'placement' : activeTab
+  const allowedTabs: ActionTab[] = [
+    ...(canCreateProductIncome ? ['placement' as const] : []),
+    ...(canCreateProductTransfer ? ['shift' as const] : []),
+    ...(canCreateWriteOff && hasWriteOffItems ? ['writeoff' as const] : []),
+  ]
+  const activeTabValue = allowedTabs.includes(activeTab) ? activeTab : allowedTabs[0] || 'placement'
   const activeItems = getItemsForActiveTab(actionItems, activeTabValue)
   const previewState =
     target?.mode === 'multi'
@@ -134,7 +146,7 @@ export function ActReconciliationActionsModal({
   }
 
   function handlePlacementSubmit(values: ProductPlacementFormValues) {
-    if (!target) {
+    if (!canCreateProductIncome || !target) {
       return
     }
 
@@ -176,7 +188,7 @@ export function ActReconciliationActionsModal({
   }
 
   function handleShiftSubmit(values: ShiftFormValues) {
-    if (!target) {
+    if (!canCreateProductTransfer || !target) {
       return
     }
 
@@ -222,7 +234,7 @@ export function ActReconciliationActionsModal({
   }
 
   function handleWriteOffSubmit(values: WriteOffFormValues) {
-    if (!target || !hasWriteOffItems) {
+    if (!canCreateWriteOff || !target || !hasWriteOffItems) {
       return
     }
 
@@ -286,11 +298,11 @@ export function ActReconciliationActionsModal({
       )}
       <Tabs keepMounted={false} value={activeTabValue} onChange={(value) => setActiveTab((value as ActionTab) || 'placement')}>
         <Tabs.List mb="md">
-          <Tabs.Tab value="placement">{t('Оприходування')}</Tabs.Tab>
-          <Tabs.Tab value="shift">{t('Переміщення')}</Tabs.Tab>
-          {hasWriteOffItems && <Tabs.Tab value="writeoff">{t('Списання')}</Tabs.Tab>}
+          {canCreateProductIncome && <Tabs.Tab value="placement">{t('Оприходування')}</Tabs.Tab>}
+          {canCreateProductTransfer && <Tabs.Tab value="shift">{t('Переміщення')}</Tabs.Tab>}
+          {canCreateWriteOff && hasWriteOffItems && <Tabs.Tab value="writeoff">{t('Списання')}</Tabs.Tab>}
         </Tabs.List>
-        <Tabs.Panel value="placement">
+        {canCreateProductIncome && <Tabs.Panel value="placement">
           <ProductPlacementForm
             isSubmitting={isSubmitting}
             maxAvailableQty={maxAvailableQty}
@@ -299,8 +311,8 @@ export function ActReconciliationActionsModal({
             storagesLoading={storagesLoading}
             onSubmit={handlePlacementSubmit}
           />
-        </Tabs.Panel>
-        <Tabs.Panel value="shift">
+        </Tabs.Panel>}
+        {canCreateProductTransfer && <Tabs.Panel value="shift">
           <ShiftForm
             isSubmitting={isSubmitting}
             maxAvailableQty={maxAvailableQty}
@@ -309,8 +321,8 @@ export function ActReconciliationActionsModal({
             storagesLoading={storagesLoading}
             onSubmit={handleShiftSubmit}
           />
-        </Tabs.Panel>
-        {hasWriteOffItems && (
+        </Tabs.Panel>}
+        {canCreateWriteOff && hasWriteOffItems && (
           <Tabs.Panel value="writeoff">
             <WriteOffForm
               isSubmitting={isSubmitting}

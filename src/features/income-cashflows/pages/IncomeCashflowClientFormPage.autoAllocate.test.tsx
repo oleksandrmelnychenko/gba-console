@@ -10,7 +10,7 @@ import {
   getIncomeCashflowOrganizations,
   getIncomeCashflowPaymentMovements,
   getIncomeCashflowSpecificExchangeRate,
-  searchIncomeCashflowCounterparties,
+  searchIncomeCashflowCounterpartiesForOperation,
   searchIncomeCashflowPaymentMovements,
   searchIncomeCashflowPaymentRegisters,
 } from '../api/incomeCashflowsApi'
@@ -33,9 +33,13 @@ vi.mock('../api/incomeCashflowsApi', async (importOriginal) => ({
   getIncomeCashflowOrganizations: vi.fn(),
   getIncomeCashflowPaymentMovements: vi.fn(),
   getIncomeCashflowSpecificExchangeRate: vi.fn(),
-  searchIncomeCashflowCounterparties: vi.fn(),
+  searchIncomeCashflowCounterpartiesForOperation: vi.fn(),
   searchIncomeCashflowPaymentMovements: vi.fn(),
   searchIncomeCashflowPaymentRegisters: vi.fn(),
+}))
+
+vi.mock('../../auth/useAuth', () => ({
+  useAuth: () => ({ hasPermission: () => true }),
 }))
 
 vi.mock('../../../shared/ui/SearchableSelect', () => ({
@@ -172,7 +176,7 @@ describe('IncomeCashflowClientFormPage automatic debt allocation', () => {
     vi.mocked(searchIncomeCashflowPaymentRegisters).mockResolvedValue([register])
     vi.mocked(getIncomeCashflowPaymentMovements).mockResolvedValue([movement])
     vi.mocked(searchIncomeCashflowPaymentMovements).mockResolvedValue([movement])
-    vi.mocked(searchIncomeCashflowCounterparties).mockResolvedValue([client])
+    vi.mocked(searchIncomeCashflowCounterpartiesForOperation).mockResolvedValue([client])
     vi.mocked(getIncomeCashflowClientAgreements).mockResolvedValue([agreement])
     vi.mocked(getIncomeCashflowClientDebtTotal).mockResolvedValue({
       TotalLocal: 9533.39,
@@ -195,8 +199,9 @@ describe('IncomeCashflowClientFormPage automatic debt allocation', () => {
       target: { value: client.FullName },
     })
     await waitFor(() =>
-      expect(searchIncomeCashflowCounterparties).toHaveBeenCalledWith(
+      expect(searchIncomeCashflowCounterpartiesForOperation).toHaveBeenCalledWith(
         client.FullName,
+        0,
         0,
         expect.any(AbortSignal),
       ),
@@ -265,7 +270,7 @@ describe('IncomeCashflowClientFormPage automatic debt allocation', () => {
       target: { value: client.FullName },
     })
     await waitFor(() =>
-      expect(searchIncomeCashflowCounterparties).toHaveBeenCalled(),
+      expect(searchIncomeCashflowCounterpartiesForOperation).toHaveBeenCalled(),
     )
     fireEvent.click(
       await screen.findByRole('option', { name: client.FullName }),

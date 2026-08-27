@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { PermissionKeys } from '../../shared/auth/permissionKeys'
 import { PaymentRegisterType } from './types'
 import {
   buildIncomeColleagueItem,
@@ -29,16 +30,24 @@ describe('income create menu catalog wiring', () => {
       `/accounting/income-cashflows/new/client?type=${registerType}&operationType=1`,
       `/accounting/income-cashflows/new/client?type=${registerType}&operationType=2`,
     ])
+    expect(items.map((item) => item.permissionKey)).toEqual([
+      PermissionKeys.FinancialAdministration.IncomeCashflows.IncomeOrder.CreateOtherIncome,
+      PermissionKeys.FinancialAdministration.IncomeCashflows.IncomeOrder.CreateClientPayment,
+      PermissionKeys.FinancialAdministration.IncomeCashflows.IncomeOrder.CreateSupplierReturn,
+      PermissionKeys.FinancialAdministration.IncomeCashflows.IncomeOrder.CreateCounterpartyIncome,
+    ])
   })
 
   it('keeps colleague and shop variants on their dedicated routes', () => {
     expect(buildIncomeColleagueItem(t)).toEqual({
       label: 'Повернення від колеги',
       path: '/accounting/income-cashflows/new/user',
+      permissionKey: PermissionKeys.FinancialAdministration.IncomeCashflows.IncomeOrder.CreateColleagueReturn,
     })
     expect(buildIncomeShopItem(t)).toEqual({
       label: 'Оплата магазину',
       path: '/accounting/income-cashflows/new/shop',
+      permissionKey: PermissionKeys.FinancialAdministration.IncomeCashflows.IncomeOrder.CreateClientPayment,
     })
   })
 })

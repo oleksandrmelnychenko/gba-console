@@ -18,19 +18,19 @@ export type EditingListSearchParams = {
 }
 
 export async function getEditingActQty(): Promise<number> {
-  const result = await apiRequest<unknown>('/protocol/act/invoice/get/edit/act/for/editing/qty')
+  const result = await apiRequest<unknown>('/protocol/act/invoice/warehouse-ukraine/acts/qty')
 
   return readQty(result)
 }
 
 export async function getEditingCarrierQty(): Promise<number> {
-  const result = await apiRequest<unknown>('/protocol/act/invoice/get/edit/transporters/qty')
+  const result = await apiRequest<unknown>('/protocol/act/invoice/warehouse-ukraine/carriers/qty')
 
   return readQty(result)
 }
 
 export async function getEditingActList(params: EditingListSearchParams): Promise<EditingItemsResponse> {
-  const result = await apiRequest<unknown>('/protocol/act/invoice/get/edit/act/for/editing', {
+  const result = await apiRequest<unknown>('/protocol/act/invoice/warehouse-ukraine/acts', {
     query: buildQuery(params),
   })
 
@@ -38,7 +38,7 @@ export async function getEditingActList(params: EditingListSearchParams): Promis
 }
 
 export async function getEditingCarrierList(params: EditingListSearchParams): Promise<EditingItemsResponse> {
-  const result = await apiRequest<unknown>('/protocol/act/invoice/get/edit/transporters', {
+  const result = await apiRequest<unknown>('/protocol/act/invoice/warehouse-ukraine/carriers', {
     query: buildQuery(params),
   })
 
@@ -61,7 +61,7 @@ export async function approveEditingAct(
     'Не вдалося визначити акт редагування накладної',
   )
 
-  await apiRequest<unknown>('/protocol/act/invoice/set/edit/act/for/editing', {
+  await apiRequest<unknown>('/protocol/act/invoice/warehouse-ukraine/process-act', {
     body: withSalesMutationOperationNetUid(
       { NetId: historyNetId },
       operation.operationId,
@@ -81,7 +81,7 @@ export async function approveEditingCarrier(
     'Не вдалося визначити історію зміни перевізника',
   )
 
-  await apiRequest<unknown>('/protocol/act/invoice/set/warehouses/shipment/history', {
+  await apiRequest<unknown>('/protocol/act/invoice/warehouse-ukraine/process-carrier', {
     body: withSalesMutationOperationNetUid(
       { NetId: historyNetId },
       operation.operationId,

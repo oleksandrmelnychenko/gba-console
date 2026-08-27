@@ -5,6 +5,7 @@ import { useEffect, useMemo } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { translate } from '../../../shared/i18n/translate'
 import { useI18n } from '../../../shared/i18n/useI18n'
+import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { DocumentExportModal } from '../../../shared/ui/document-export-modal/DocumentExportModal'
@@ -16,6 +17,7 @@ import {
   updateSaleConsignmentNoteSetting,
 } from '../api/salesUkraineApi'
 import type { SaleConsignmentDocument, SaleConsignmentNoteSetting, SalesUkraineSale } from '../types'
+import { usePermissions } from '../../auth/usePermissions'
 import './sales-drawers.css'
 
 type ConsignmentNoteDrawerState = {
@@ -26,16 +28,38 @@ type ConsignmentNoteDrawerState = {
   setting: SaleConsignmentNoteSetting
 }
 
+export type ConsignmentNoteSettingsApi = {
+  add: typeof addSaleConsignmentNoteSetting
+  getAll: typeof getSaleConsignmentNoteSettings
+  print: typeof printSaleConsignmentNoteDocument
+  remove: typeof removeSaleConsignmentNoteSetting
+  update: typeof updateSaleConsignmentNoteSetting
+}
+
+const DEFAULT_CONSIGNMENT_NOTE_SETTINGS_API: ConsignmentNoteSettingsApi = {
+  add: addSaleConsignmentNoteSetting,
+  getAll: getSaleConsignmentNoteSettings,
+  print: printSaleConsignmentNoteDocument,
+  remove: removeSaleConsignmentNoteSetting,
+  update: updateSaleConsignmentNoteSetting,
+}
+
 export function ConsignmentNoteSettingsDrawer({
+  api = DEFAULT_CONSIGNMENT_NOTE_SETTINGS_API,
   opened,
   sale,
   onClose,
 }: {
+  api?: ConsignmentNoteSettingsApi
   onClose: () => void
   opened: boolean
   sale: SalesUkraineSale | null
 }) {
   const { t } = useI18n()
+  const { can } = usePermissions()
+  const canPrint = can(PermissionKeys.SalesUkraine.Sale.PrintConsignmentNote)
+  const canSaveSetting = can(PermissionKeys.SalesUkraine.Sale.SaveConsignmentNoteSetting)
+  const canDeleteSetting = can(PermissionKeys.SalesUkraine.Sale.DeleteConsignmentNoteSetting)
   const defaultSetting = useMemo(() => buildDefaultConsignmentNoteSetting(sale), [sale])
   const [settings, setSettings] = useValueState<SaleConsignmentNoteSetting[]>([])
   const [noteState, setNoteState] = useValueState<ConsignmentNoteDrawerState>(() =>
@@ -50,7 +74,7 @@ export function ConsignmentNoteSettingsDrawer({
   const hasExistingSetting = Boolean(noteState.setting.NetUid || noteState.setting.Id)
 
   useEffect(() => {
-    if (!opened) {
+    if (!opened || !canPrint) {
       return
     }
 
@@ -62,7 +86,7 @@ export function ConsignmentNoteSettingsDrawer({
       setLoading(true)
 
       try {
-        const nextSettings = await getSaleConsignmentNoteSettings()
+        const nextSettings = await api.getAll()
 
         if (!cancelled) {
           setSettings(nextSettings)
@@ -86,7 +110,7 @@ export function ConsignmentNoteSettingsDrawer({
     return () => {
       cancelled = true
     }
-  }, [defaultSetting, opened, setLoading, setNoteState, setSettings, t])
+  }, [api, canPrint, defaultSetting, opened, setLoading, setNoteState, setSettings, t])
 
   function selectSetting(value: string | null) {
     if (!value) {
@@ -127,6 +151,10 @@ export function ConsignmentNoteSettingsDrawer({
   }
 
   async function saveSetting() {
+    if (!canSaveSetting) {
+      return
+    }
+
     const validationError = getConsignmentValidationError(noteState.setting, t)
 
     if (validationError) {
@@ -140,8 +168,8 @@ export function ConsignmentNoteSettingsDrawer({
 
     try {
       const nextSettings = hasExistingSetting
-        ? await updateSaleConsignmentNoteSetting(noteState.setting)
-        : await addSaleConsignmentNoteSetting(noteState.setting)
+        ? await api.update(noteState.setting)
+        : await api.add(noteState.setting)
       const nextSetting = applyConsignmentDocumentDefaults(
         findMatchingConsignmentSetting(nextSettings, noteState.setting) || noteState.setting,
         defaultSetting,
@@ -170,6 +198,10 @@ export function ConsignmentNoteSettingsDrawer({
   }
 
   async function deleteSetting() {
+    if (!canDeleteSetting) {
+      return
+    }
+
     if (!noteState.setting.NetUid) {
       setNoteState((currentState) => ({ ...currentState, error: t('Налаштування без NetUid не можна видалити') }))
 
@@ -180,7 +212,7 @@ export function ConsignmentNoteSettingsDrawer({
     setNoteState((currentState) => ({ ...currentState, error: null }))
 
     try {
-      const nextSettings = await removeSaleConsignmentNoteSetting(noteState.setting.NetUid)
+      const nextSettings = await api.remove(noteState.setting.NetUid)
 
       setSettings(nextSettings)
       setNoteState(createConsignmentNoteDrawerState(defaultSetting))
@@ -196,6 +228,10 @@ export function ConsignmentNoteSettingsDrawer({
   }
 
   async function printDocument() {
+    if (!canPrint) {
+      return
+    }
+
     const validationError = getConsignmentValidationError(noteState.setting, t)
 
     if (validationError) {
@@ -214,7 +250,7 @@ export function ConsignmentNoteSettingsDrawer({
     setNoteState((currentState) => ({ ...currentState, error: null }))
 
     try {
-      const document = await printSaleConsignmentNoteDocument(sale.NetUid, noteState.setting)
+      const document = await api.print(sale.NetUid, noteState.setting)
 
       setDownloadDocument(document)
       setDownloadModalOpened(true)
@@ -236,26 +272,28 @@ export function ConsignmentNoteSettingsDrawer({
           <Button disabled={!noteState.isEdited || isSaving} variant="default" onClick={resetChanges}>
             {t('Скасувати')}
           </Button>
-          {hasExistingSetting && (
+          {hasExistingSetting && canDeleteSetting && (
             <Button color="red" disabled={isSaving || isPrinting} variant="light" onClick={deleteSetting}>
               {t('Видалити')}
             </Button>
           )}
-          <Button
-            color={CREATE_ACTION_COLOR}
-            disabled={!noteState.isEdited || isPrinting}
-            loading={isSaving}
-            variant={hasExistingSetting ? 'filled' : 'outline'}
-            onClick={saveSetting}
-          >
-            {hasExistingSetting ? t('Зберегти') : t('Створити')}
-          </Button>
+          {canSaveSetting && (
+            <Button
+              color={CREATE_ACTION_COLOR}
+              disabled={!noteState.isEdited || isPrinting}
+              loading={isSaving}
+              variant={hasExistingSetting ? 'filled' : 'outline'}
+              onClick={saveSetting}
+            >
+              {hasExistingSetting ? t('Зберегти') : t('Створити')}
+            </Button>
+          )}
           <Button color={CREATE_ACTION_COLOR} leftSection={<Truck size={16} />} loading={isPrinting} onClick={printDocument}>
             {t('Друк')}
           </Button>
         </Group>
       )}
-      opened={opened}
+      opened={opened && canPrint}
       position="right"
       size="min(760px, 96vw)"
       title={t('Друк ТТН')}

@@ -13,11 +13,14 @@ import { notifications } from '@mantine/notifications'
 import { ChevronLeft, CircleAlert, RotateCcw, Save } from 'lucide-react'
 import { type FormEvent, useEffect, useMemo } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
+import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { Navigate, useLocation, useNavigate, useParams } from 'react-router-dom'
+import { PermissionGate } from '../../auth/components/PermissionGate'
+import { usePermissions } from '../../auth/usePermissions'
 import {
+  getProductGroupDetailsRootGroups,
   getProductGroupWithRoot,
-  getRootProductGroups,
   updateProductGroup,
 } from '../api/productGroupsApi'
 import { ProductGroupForm } from '../components/ProductGroupForm'
@@ -39,7 +42,30 @@ type ProductGroupDetailRouteState = {
 }
 
 export function ProductGroupDetailPage() {
+  return (
+    <PermissionGate permissionKey={PermissionKeys.ProductGroups.Page.View} fallback={<ProductGroupDetailPermissionDenied />}>
+      <PermissionGate permissionKey={PermissionKeys.ProductGroups.Group.OpenDetails} fallback={<ProductGroupDetailPermissionDenied />}>
+        <ProductGroupDetailPageContent />
+      </PermissionGate>
+    </PermissionGate>
+  )
+}
+
+function ProductGroupDetailPermissionDenied() {
   const { t } = useI18n()
+
+  return (
+    <Alert color="red" icon={<CircleAlert size={18} />} title={t('Доступ заборонено')} variant="light">
+      {t('У вашої ролі немає права переглядати товарні групи.')}
+    </Alert>
+  )
+}
+
+function ProductGroupDetailPageContent() {
+  const { t } = useI18n()
+  const { can } = usePermissions()
+  const canEdit = can(PermissionKeys.ProductGroups.Group.Edit)
+  const canOpenProduct = can(PermissionKeys.ProductsAssortment.Page.View)
   const { id } = useParams<{ id?: string }>()
   const navigate = useNavigate()
   const location = useLocation()
@@ -98,7 +124,7 @@ export function ProductGroupDetailPage() {
       try {
         const [nextProductGroup, nextRootGroups] = await Promise.all([
           getProductGroupWithRoot(productGroupNetId),
-          getRootProductGroups(productGroupNetId),
+          getProductGroupDetailsRootGroups(productGroupNetId),
         ])
 
         if (!cancelled) {
@@ -154,7 +180,7 @@ export function ProductGroupDetailPage() {
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
 
-    if (!productGroup || !formProductGroup) {
+    if (!canEdit || !productGroup || !formProductGroup) {
       return
     }
 
@@ -214,7 +240,7 @@ export function ProductGroupDetailPage() {
           >
             {t('Закрити')}
           </Button>
-          <Group gap="xs">
+          {canEdit && <Group gap="xs">
             <Button
               color="gray"
               disabled={!isEdited || isSaving}
@@ -235,7 +261,7 @@ export function ProductGroupDetailPage() {
             >
               {t('Зберегти')}
             </Button>
-          </Group>
+          </Group>}
         </>
       }
       keepMounted={false}
@@ -264,7 +290,7 @@ export function ProductGroupDetailPage() {
         <form id="product-group-edit-form" onSubmit={handleSubmit}>
           <Card className="app-section-card" withBorder radius="md" padding="md">
             <ProductGroupForm
-              disabled={isSaving}
+              disabled={!canEdit || isSaving}
               isLoadingRootGroups={isLoadingRootGroups}
               productGroup={formProductGroup}
               rootGroups={rootGroupsForForm}
@@ -310,7 +336,12 @@ export function ProductGroupDetailPage() {
           </div>
 
           {activeTab === 'subGroups' && <ProductGroupSubGroupsPanel productGroupNetId={productGroup.NetUid} />}
-          {activeTab === 'products' && <ProductGroupProductsPanel productGroupNetId={productGroup.NetUid} />}
+          {activeTab === 'products' && (
+            <ProductGroupProductsPanel
+              canOpenProduct={canOpenProduct}
+              productGroupNetId={productGroup.NetUid}
+            />
+          )}
         </Card>
       )}
 

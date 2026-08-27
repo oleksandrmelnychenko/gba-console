@@ -18,14 +18,22 @@ import {
   TextInput,
   Tooltip,
 } from '@mantine/core'
-import { AppDrawer } from "../../../shared/ui/AppDrawer"
+import { AppDrawer } from '../../../shared/ui/AppDrawer'
+import {
+  DocumentDetailFlag,
+  DocumentDetailLayout,
+  DocumentDetailMetric,
+  DocumentDetailRow,
+  DocumentDetailSection,
+  DocumentDetailSummary,
+} from '../../../shared/ui/document-detail/DocumentDetail'
 import { AppModal } from "../../../shared/ui/AppModal"
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { notifications } from '@mantine/notifications'
 import { CircleAlert, Download, FileSpreadsheet, Plus, RotateCcw } from 'lucide-react'
 import { type FormEvent, useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
-import { UserRoleType } from '../../../shared/auth/types'
+import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { translate } from '../../../shared/i18n/translate'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -34,7 +42,7 @@ import { DocumentExportModal } from '../../../shared/ui/document-export-modal/Do
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { Paginator } from '../../../shared/ui/paginator/Paginator'
 import { TableRowAction } from '../../../shared/ui/table-row-action'
-import { useAuth } from '../../auth/useAuth'
+import { usePermissions } from '../../auth/usePermissions'
 import {
   addProductTransferFromFile,
   exportProductTransferDocument,
@@ -91,7 +99,17 @@ const amountFormatter = new Intl.NumberFormat('uk-UA', {
   maximumFractionDigits: 3,
 })
 
-function useProductTransfersPageModel() {
+function useProductTransfersPageModel({
+  canCreate,
+  canCreateManagement,
+  canExport,
+  canOpenDetails,
+}: {
+  canCreate: boolean
+  canCreateManagement: boolean
+  canExport: boolean
+  canOpenDetails: boolean
+}) {
   const { t } = useI18n()
   const today = useMemo(() => formatLocalDate(new Date()), [])
   const initialFilters = useMemo<FilterDraft>(
@@ -101,9 +119,6 @@ function useProductTransfersPageModel() {
     }),
     [today],
   )
-  const { user } = useAuth()
-  const isAdmin =
-    user?.UserRole?.UserRoleType === UserRoleType.Administrator || user?.UserRole?.UserRoleType === UserRoleType.GBA
   const [filterDraft, setFilterDraft] = useValueState<FilterDraft>(initialFilters)
   const [activeFilters, setActiveFilters] = useValueState<FilterDraft>(initialFilters)
   const [transfers, setTransfers] = useValueState<ProductTransfer[]>([])
@@ -123,7 +138,7 @@ function useProductTransfersPageModel() {
   const [downloadError, setDownloadError] = useValueState<string | null>(null)
   const [isDownloading, setDownloading] = useValueState(false)
   const [isLoading, setLoading] = useValueState(true)
-  const [isLoadingStorages, setLoadingStorages] = useValueState(true)
+  const [isLoadingStorages, setLoadingStorages] = useValueState(canCreate)
   const [page, setPage] = useValueState(1)
   const [pageSize, setPageSize] = useValueState(DEFAULT_PAGE_SIZE)
   const [totalQty, setTotalQty] = useValueState(0)
@@ -172,6 +187,10 @@ function useProductTransfersPageModel() {
     : toStorageOptions[0]?.value || ''
 
   const openDetail = useCallback(async (transfer: ProductTransfer) => {
+    if (!canOpenDetails) {
+      return
+    }
+
     const requestId = detailRequestRef.current + 1
     detailRequestRef.current = requestId
     setSelectedTransfer(transfer)
@@ -198,7 +217,7 @@ function useProductTransfersPageModel() {
         setDetailLoading(false)
       }
     }
-  }, [setDetailError, setDetailLoading, setSelectedTransfer, t])
+  }, [canOpenDetails, setDetailError, setDetailLoading, setSelectedTransfer, t])
 
   const closeDownload = useCallback(() => {
     downloadRequestRef.current += 1
@@ -217,7 +236,7 @@ function useProductTransfersPageModel() {
   }, [closeDownload, setDetailError, setDetailLoading, setSelectedTransfer])
 
   const openDownload = useCallback(async (transfer: ProductTransfer) => {
-    if (!transfer.NetUid) {
+    if (!canExport || !transfer.NetUid) {
       return
     }
 
@@ -245,12 +264,13 @@ function useProductTransfersPageModel() {
         setDownloading(false)
       }
     }
-  }, [setDownloadDocument, setDownloadError, setDownloadOpened, setDownloading, t])
+  }, [canExport, setDownloadDocument, setDownloadError, setDownloadOpened, setDownloading, t])
 
   const transferIndexMap = useMemo(() => buildTransferIndexMap(transfers, pageOffset), [pageOffset, transfers])
-  const columns = useProductTransferColumns(openDetail, transferIndexMap)
+  const columns = useProductTransferColumns(canOpenDetails, openDetail, transferIndexMap)
 
   useProductTransferStoragesLoader({
+    canCreate,
     reloadKey,
     setCreateForm,
     setLoadingStorages,
@@ -294,6 +314,10 @@ function useProductTransfersPageModel() {
   }
 
   function openCreateModal() {
+    if (!canCreate || (createForm.isManagement && !canCreateManagement)) {
+      return
+    }
+
     setCreateError(null)
     setCreateForm((current) => resolveStorageDefaults(current, storages))
     setCreateModalOpen(true)
@@ -309,6 +333,10 @@ function useProductTransfersPageModel() {
   async function handleCreate(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     setCreateError(null)
+
+    if (!canCreate) {
+      return
+    }
 
     const createFormForSave = {
       ...createForm,
@@ -343,9 +371,9 @@ function useProductTransfersPageModel() {
         productTransfer: {
           Comment: createForm.comment.trim(),
           FromDate: createForm.fromDate,
-          FromStorage: selectedFromStorage,
+          FromStorageNetUid: selectedFromStorage.NetUid || '',
           IsManagement: createForm.isManagement,
-          ToStorage: selectedToStorage,
+          ToStorageNetUid: selectedToStorage.NetUid || '',
         },
       })
 
@@ -371,8 +399,8 @@ function useProductTransfersPageModel() {
   }
 
   return {
-    columns, createError, createForm, detailError, downloadDocument, downloadError, downloadOpened,
-    effectiveToStorageNetUid, error, exceptionMessages, filterDraft, filterError, isAdmin, isCreateModalOpen,
+    canCreate, canCreateManagement, canExport, canOpenDetails, columns, createError, createForm, detailError, downloadDocument, downloadError, downloadOpened,
+    effectiveToStorageNetUid, error, exceptionMessages, filterDraft, filterError, isCreateModalOpen,
     isCreating, isDetailLoading, isDownloading, isLoading, isLoadingStorages, page, pageSize, selectedTransfer,
     setPage, setPageSize: handlePageSizeChange, storageError, storageOptions, storages, toStorageOptions,
     totalPages, transfers, closeCreateModal, closeDownload, handleCreate, openCreateModal, openDetail,
@@ -385,12 +413,14 @@ type ProductTransferCreateFormSetter =
   (value: CreateFormState | ((current: CreateFormState) => CreateFormState)) => void
 
 function useProductTransferStoragesLoader({
+  canCreate,
   reloadKey,
   setCreateForm,
   setLoadingStorages,
   setStorageError,
   setStorages,
 }: {
+  canCreate: boolean
   reloadKey: number
   setCreateForm: ProductTransferCreateFormSetter
   setLoadingStorages: (value: boolean) => void
@@ -400,6 +430,13 @@ function useProductTransferStoragesLoader({
   const { t } = useI18n()
 
   useEffect(() => {
+    if (!canCreate) {
+      setStorages([])
+      setStorageError(null)
+      setLoadingStorages(false)
+      return
+    }
+
     let cancelled = false
 
     async function loadStorages() {
@@ -430,7 +467,7 @@ function useProductTransferStoragesLoader({
     return () => {
       cancelled = true
     }
-  }, [reloadKey, setCreateForm, setLoadingStorages, setStorageError, setStorages, t])
+  }, [canCreate, reloadKey, setCreateForm, setLoadingStorages, setStorageError, setStorages, t])
 }
 
 function useProductTransfersLoader({
@@ -516,7 +553,34 @@ function useProductTransfersLoader({
 }
 
 export function ProductTransfersPage() {
-  const model = useProductTransfersPageModel()
+  const { t } = useI18n()
+  const { can, isLoading } = usePermissions()
+
+  if (isLoading) {
+    return <Text c="dimmed">{t('Завантаження')}</Text>
+  }
+
+  if (!can(PermissionKeys.ProductTransfers.Page.View)) {
+    return (
+      <Alert color="red" icon={<CircleAlert size={18} />} title={t('Доступ заборонено')} variant="light">
+        {t('Недостатньо прав для перегляду переміщень товарів')}
+      </Alert>
+    )
+  }
+
+  return <ProductTransfersPageContent />
+}
+
+function ProductTransfersPageContent() {
+  const { can } = usePermissions()
+  const model = useProductTransfersPageModel({
+    canCreate: can(PermissionKeys.ProductTransfers.Transfer.Create),
+    canCreateManagement: can(
+      PermissionKeys.ProductTransfers.Transfer.CreateManagement,
+    ),
+    canExport: can(PermissionKeys.ProductTransfers.Document.Export),
+    canOpenDetails: can(PermissionKeys.ProductTransfers.Transfer.OpenDetails),
+  })
 
   return <ProductTransfersPageView model={model} />
 }
@@ -526,7 +590,7 @@ function ProductTransfersPageView({ model }: { model: ReturnType<typeof useProdu
     <Stack className="product-transfers-page" gap={6}>
       <ProductTransfersTableCard model={model} />
       <ProductTransferDetailDrawer model={model} />
-      <ProductTransferCreateModal model={model} />
+      {model.canCreate ? <ProductTransferCreateModal model={model} /> : null}
       <ProductTransferImportResultModal model={model} />
     </Stack>
   )
@@ -536,7 +600,7 @@ function ProductTransfersTableCard({ model }: { model: ReturnType<typeof useProd
   const { t } = useI18n()
   const [tableToolbarSlot, setTableToolbarSlot] = useState<HTMLDivElement | null>(null)
   const {
-    columns, error, filterDraft, filterError, isLoading, isLoadingStorages, openCreateModal, openDetail, page,
+    canCreate, canOpenDetails, columns, error, filterDraft, filterError, isLoading, isLoadingStorages, openCreateModal, openDetail, page,
     pageSize, reload, resetFilters, applyFilters, setPage, setPageSize, storageError, storageOptions, totalPages,
     transfers,
   } = model
@@ -579,17 +643,19 @@ function ProductTransfersTableCard({ model }: { model: ReturnType<typeof useProd
             />
           </div>
           <div ref={setTableToolbarSlot} className="app-filter-table-toolbar-slot" />
-          <Button
-            color={CREATE_ACTION_COLOR}
-            disabled={!isLoadingStorages && storageOptions.length === 0}
-            leftSection={<Plus size={16} />}
-            loading={isLoadingStorages}
-            size="sm"
-            styles={{ label: { fontFamily: 'var(--font-mono)', letterSpacing: 0 } }}
-            onClick={openCreateModal}
-          >
-            {t('Нове переміщення')}
-          </Button>
+          {canCreate ? (
+            <Button
+              color={CREATE_ACTION_COLOR}
+              disabled={!isLoadingStorages && storageOptions.length === 0}
+              leftSection={<Plus size={16} />}
+              loading={isLoadingStorages}
+              size="sm"
+              styles={{ label: { fontFamily: 'var(--font-mono)', letterSpacing: 0 } }}
+              onClick={openCreateModal}
+            >
+              {t('Нове переміщення')}
+            </Button>
+          ) : null}
         </Group>
       </div>
 
@@ -615,7 +681,7 @@ function ProductTransfersTableCard({ model }: { model: ReturnType<typeof useProd
             showLayoutControls
             tableId="product-transfers"
             toolbarPortalTarget={tableToolbarSlot}
-            onRowClick={openDetail}
+            onRowClick={canOpenDetails ? openDetail : undefined}
           />
         </div>
       </Stack>
@@ -626,7 +692,7 @@ function ProductTransfersTableCard({ model }: { model: ReturnType<typeof useProd
 function ProductTransferDetailDrawer({ model }: { model: ReturnType<typeof useProductTransfersPageModel> }) {
   const { t } = useI18n()
   const {
-    closeDetail, closeDownload, detailError, downloadDocument, downloadError, downloadOpened, isDetailLoading,
+    canExport, closeDetail, closeDownload, detailError, downloadDocument, downloadError, downloadOpened, isDetailLoading,
     isDownloading, openDownload, selectedTransfer,
   } = model
 
@@ -640,6 +706,7 @@ function ProductTransferDetailDrawer({ model }: { model: ReturnType<typeof usePr
     >
       {selectedTransfer && (
         <TransferDetail
+          canDownload={canExport}
           error={detailError}
           isDownloading={isDownloading}
           isLoading={isDetailLoading}
@@ -663,7 +730,7 @@ function ProductTransferDetailDrawer({ model }: { model: ReturnType<typeof usePr
 function ProductTransferCreateModal({ model }: { model: ReturnType<typeof useProductTransfersPageModel> }) {
   const { t } = useI18n()
   const {
-    closeCreateModal, createError, createForm, effectiveToStorageNetUid, handleCreate, isAdmin, isCreateModalOpen,
+    canCreateManagement, closeCreateModal, createError, createForm, effectiveToStorageNetUid, handleCreate, isCreateModalOpen,
     isCreating, isLoadingStorages, setCreateForm, storageError, storageOptions, storages, toStorageOptions,
   } = model
 
@@ -728,7 +795,7 @@ function ProductTransferCreateModal({ model }: { model: ReturnType<typeof usePro
               />
               <Switch
                 checked={createForm.isManagement}
-                disabled={!isAdmin || isCreating}
+                disabled={!canCreateManagement || isCreating}
                 label={t('Управлінське переміщення')}
                 mt={30}
                 onChange={(event) => {
@@ -803,9 +870,9 @@ function ProductTransferCreateModal({ model }: { model: ReturnType<typeof usePro
               onChange={(file) => setCreateForm((current) => ({ ...current, file }))}
             />
 
-            {!isAdmin && (
+            {!canCreateManagement && (
               <Text c="dimmed" size="xs">
-                {t('Управлінське переміщення доступне тільки для ролей Administrator або GBA.')}
+                {t('Немає права створювати управлінське переміщення.')}
               </Text>
             )}
 
@@ -859,6 +926,7 @@ function ProductTransferImportResultModal({ model }: { model: ReturnType<typeof 
 }
 
 function useProductTransferColumns(
+  canOpenDetails: boolean,
   onOpenDetail: (transfer: ProductTransfer) => void,
   indexMap: Map<ProductTransfer, number>,
 ) {
@@ -994,14 +1062,14 @@ function useProductTransferColumns(
         enableReorder: false,
         enableResizing: false,
         enableSorting: false,
-        cell: (transfer) => (
+        cell: (transfer) => canOpenDetails ? (
           <Box onClick={(event) => event.stopPropagation()}>
             <TableRowAction action="details" label={t('Деталі')} onClick={() => onOpenDetail(transfer)} />
           </Box>
-        ),
+        ) : null,
       },
     ],
-    [indexMap, onOpenDetail, t],
+    [canOpenDetails, indexMap, onOpenDetail, t],
   )
 }
 
@@ -1013,13 +1081,15 @@ function buildTransferIndexMap(transfers: ProductTransfer[], offset = 0): Map<Pr
   }, new Map<ProductTransfer, number>())
 }
 
-function TransferDetail({
+export function TransferDetail({
+  canDownload,
   error,
   isDownloading,
   isLoading,
   transfer,
   onDownload,
 }: {
+  canDownload: boolean
   error: string | null
   isDownloading: boolean
   isLoading: boolean
@@ -1099,83 +1169,63 @@ function TransferDetail({
   const routeLine = [transfer.FromStorage?.Name, transfer.ToStorage?.Name].filter(Boolean).join(' → ')
 
   return (
-    <Stack gap="md">
-      {error && (
-        <Alert color="yellow" icon={<CircleAlert size={18} />} variant="light">
-          {error}
-        </Alert>
-      )}
-
-      <div className="app-detail-hero">
-        <div>
-          <span className="app-detail-eyebrow">{t('Переміщення')}</span>
-          <div className="app-detail-title">
-            <strong>
-              {transfer.Number ? `№ ${transfer.Number}` : t('Переміщення')}
-              {transferDate ? ` · ${t('Від')} ${transferDate}` : ''}
-            </strong>
-            {routeLine && <span>{routeLine}</span>}
-          </div>
-          {(transfer.IsManagement || isLoading) && (
-            <div className="app-detail-badges">
-              {transfer.IsManagement && (
-                <Badge className="app-role-pill" variant="light">
-                  {t('Управлінське')}
-                </Badge>
-              )}
-              {isLoading && (
-                <Badge className="app-role-pill is-gray" variant="light">
-                  {t('Завантаження деталей')}
-                </Badge>
-              )}
-            </div>
-          )}
-        </div>
-        <div className="app-detail-hero__side">
-          <Button
-            disabled={!transfer.NetUid}
-            leftSection={<Download size={16} />}
-            loading={isDownloading}
-            variant="default"
-            onClick={onDownload}
-          >
-            {t('Завантажити')}
-          </Button>
-          <div className="app-detail-metrics">
-            <div className="app-detail-metric">
-              <span>{t('Позицій')}</span>
-              <strong>{items.length}</strong>
-            </div>
-            <div className="app-detail-metric">
-              <span>{t('Кількість')}</span>
-              <strong>{formatAmount(getTransferQty(transfer))}</strong>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="app-detail-grid">
-        <DetailField label={t('Організація')} value={transfer.Organization?.Name} />
-        <DetailField label={t('Відповідальний')} value={getResponsibleName(transfer)} />
-        <DetailField label={t('Зі складу')} value={transfer.FromStorage?.Name} />
-        <DetailField label={t('На склад')} value={transfer.ToStorage?.Name} />
+    <DocumentDetailLayout
+      summary={
+        <DocumentDetailSummary
+          eyebrow={t('Переміщення')}
+          title={displayValue(transfer.Number)}
+          meta={[transferDate, routeLine].filter(Boolean).join(' · ')}
+          metrics={
+            <>
+              <DocumentDetailMetric label={t('Позицій')} value={String(items.length)} />
+              <DocumentDetailMetric label={t('Кількість')} value={formatAmount(getTransferQty(transfer))} />
+            </>
+          }
+        />
+      }
+      actions={
+        <Group justify="space-between">
+          <Group gap="xs">
+            {transfer.IsManagement && <DocumentDetailFlag active label={t('Управлінське')} />}
+            {isLoading && (
+              <Badge className="app-role-pill is-gray" variant="light">{t('Завантаження деталей')}</Badge>
+            )}
+          </Group>
+          {canDownload ? (
+            <Button
+              disabled={!transfer.NetUid}
+              leftSection={<Download size={16} />}
+              loading={isDownloading}
+              variant="default"
+              onClick={onDownload}
+            >
+              {t('Завантажити')}
+            </Button>
+          ) : null}
+        </Group>
+      }
+    >
+      <DocumentDetailSection subtitle={displayValue(transfer.Number)} title={t('Документ')}>
+        <DocumentDetailRow label={t('Дата')} mono value={transferDate} />
+        <DocumentDetailRow label={t('Номер')} mono value={transfer.Number} />
         {transfer.Comment && (
-          <div className="app-detail-field" style={{ gridColumn: '1 / -1' }}>
-            <span>{t('Коментар')}</span>
-            <strong>{transfer.Comment}</strong>
-          </div>
+          <DocumentDetailRow label={t('Коментар')} value={transfer.Comment} wide />
         )}
-      </div>
+      </DocumentDetailSection>
 
-      <Stack gap="xs">
-        <div className="app-detail-section-head">
-          <Text className="app-section-title" fw={600} size="sm">
-            {t('Позиції')}
-          </Text>
-          <Badge className="app-role-pill is-gray" variant="light">
-            {items.length}
-          </Badge>
-        </div>
+      <DocumentDetailSection title={t('Учасники та склади')}>
+        <DocumentDetailRow label={t('Організація')} value={transfer.Organization?.Name} wide />
+        <DocumentDetailRow label={t('Відповідальний')} value={getResponsibleName(transfer)} wide />
+        <DocumentDetailRow label={t('Зі складу')} value={transfer.FromStorage?.Name} />
+        <DocumentDetailRow label={t('На склад')} value={transfer.ToStorage?.Name} />
+      </DocumentDetailSection>
+
+      <DocumentDetailSection stacked subtitle={String(items.length)} title={t('Позиції')}>
+        {error && (
+          <Alert color="yellow" icon={<CircleAlert size={18} />} variant="light">
+            {error}
+          </Alert>
+        )}
         <DataTable
           columns={itemColumns}
           data={items}
@@ -1189,17 +1239,8 @@ function TransferDetail({
           minWidth={900}
           tableId="product-transfer-items"
         />
-      </Stack>
-    </Stack>
-  )
-}
-
-function DetailField({ label, value }: { label: string; value: unknown }) {
-  return (
-    <div className="app-detail-field">
-      <span>{label}</span>
-      <strong>{displayValue(value)}</strong>
-    </div>
+      </DocumentDetailSection>
+    </DocumentDetailLayout>
   )
 }
 

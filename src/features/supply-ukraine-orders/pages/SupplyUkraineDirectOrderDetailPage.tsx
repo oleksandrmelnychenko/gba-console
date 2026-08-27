@@ -22,6 +22,7 @@ import { useEffect, useReducer, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import './supply-order-detail.css'
 import { formatLocalDate, formatLocalDateTime } from '../../../shared/date/dateTime'
+import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { SUPPLY_ORDER_INCOME_STATUS_LABEL } from '../../../shared/supplyOrderIncomeStatus'
 import { upgradeHttpToHttps } from '../../../shared/url/upgradeHttpToHttps'
@@ -33,11 +34,14 @@ import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/Page
 import { TableRowAction } from '../../../shared/ui/table-row-action'
 import { useAuth } from '../../auth/useAuth'
 import {
+  approveDirectSupplyOrderLogistic,
+  clearDirectSupplyOrderDeliveryDocumentFile,
   createSupplyCreditNote,
-  getDirectSupplyOrderById,
-  updateDirectSupplyOrder,
+  getDirectSupplyOrderForLogisticWay,
+  updateDirectSupplyOrderDeliveryDocumentStatus,
+  updateDirectSupplyOrderLogisticAmount,
   updateSupplyInvoice,
-  uploadSupplyOrderDocument,
+  uploadDirectSupplyOrderLogisticDocument,
 } from '../api/supplyUkraineOrdersApi'
 import { DirectOrderProductIncomeStatus } from '../components/DirectOrderProductIncomeStatus'
 import { DirectOrderInvoicesSummary } from '../components/DirectOrderInvoicesSummary'
@@ -59,12 +63,16 @@ const TRANSPORTATION_OPTIONS: Array<{ label: string, value: string }> = [
   { label: 'Море', value: '1' },
   { label: 'Авіа', value: '2' },
 ]
-const PERMISSION_APPROVE_ORDER = 'LOGISTIC_WAY_ordersUkraineAllEdit_ApprovedSupplyOrderStatus_PKEY'
-const PERMISSION_CREDIT_NOTES = 'LOGISTIC_WAY_ordersUkraineAllEdit_CreditNotes_PKEY'
-const PERMISSION_EDIT_ORDER_AMOUNT = 'LOGISTIC_WAY_ordersUkraineAllEdit_EditSupplyNewAmount_PKEY'
-const PERMISSION_EDIT_INVOICE = 'LOGISTIC_WAY_ordersUkraineAllEdit_EditInvoice_PKEY'
-const PERMISSION_OPEN_DIRECT_INVOICES = 'UkraineAllOrders_SelectAnOption_Products_PKEY'
-const PERMISSION_OPEN_DIRECT_PRODUCT_INCOME = 'UkraineAllOrders_SelectAnOption_PlacementSupplyOrder_PKEY'
+const PERMISSION_APPROVE_ORDER = PermissionKeys.OrdersUkraine.LogisticWay.ApproveOrder
+const PERMISSION_CREDIT_NOTES = PermissionKeys.OrdersUkraine.LogisticWay.CreateCreditNote
+const PERMISSION_EDIT_ORDER_AMOUNT = PermissionKeys.OrdersUkraine.LogisticWay.EditOrderQuantity
+const PERMISSION_EDIT_INVOICE = PermissionKeys.OrdersUkraine.LogisticWay.EditInvoice
+const PERMISSION_UPLOAD_DELIVERY_DOCUMENT = PermissionKeys.OrdersUkraine.LogisticWay.UploadDeliveryDocument
+const PERMISSION_CHANGE_DELIVERY_DOCUMENT_STATUS = PermissionKeys.OrdersUkraine.LogisticWay.ChangeDeliveryDocumentStatus
+const PERMISSION_CREATE_PROFORM = PermissionKeys.OrdersUkraine.LogisticWay.CreateProforma
+const PERMISSION_OPEN_LOGISTIC_WAY = PermissionKeys.OrdersUkraine.Order.OpenLogisticWay
+const PERMISSION_OPEN_DIRECT_INVOICES = PermissionKeys.OrdersUkraine.Order.OpenProducts
+const PERMISSION_OPEN_DIRECT_PRODUCT_INCOME = PermissionKeys.OrdersUkraine.Order.OpenProductIncome
 const dateTimeFormatter = new Intl.DateTimeFormat('uk-UA', { dateStyle: 'short', timeStyle: 'short' })
 const numberFormatter = new Intl.NumberFormat('uk-UA')
 const moneyFormatter = new Intl.NumberFormat('uk-UA', {
@@ -218,6 +226,21 @@ function creditNoteReducer(state: CreditNoteState, action: CreditNoteAction): Cr
 export function SupplyUkraineDirectOrderDetailPage() {
   const { t } = useI18n()
   const { hasPermission } = useAuth()
+
+  if (!hasPermission(PERMISSION_OPEN_LOGISTIC_WAY)) {
+    return (
+      <Alert color="red" icon={<CircleAlert size={18} />} title={t('Доступ заборонено')} variant="light">
+        {t('У вашої ролі немає права переглядати логістичний шлях замовлення.')}
+      </Alert>
+    )
+  }
+
+  return <SupplyUkraineDirectOrderDetailPageContent />
+}
+
+function SupplyUkraineDirectOrderDetailPageContent() {
+  const { t } = useI18n()
+  const { hasPermission } = useAuth()
   const navigate = useNavigate()
   const { id } = useParams<{ id: string }>()
   const [order, setOrder] = useState<DirectSupplyOrder | null>(null)
@@ -253,6 +276,9 @@ export function SupplyUkraineDirectOrderDetailPage() {
   const canOpenCreditNotes = hasPermission(PERMISSION_CREDIT_NOTES)
   const canEditAmount = hasPermission(PERMISSION_EDIT_ORDER_AMOUNT)
   const canEditInvoice = hasPermission(PERMISSION_EDIT_INVOICE)
+  const canUploadDeliveryDocument = hasPermission(PERMISSION_UPLOAD_DELIVERY_DOCUMENT)
+  const canChangeDeliveryDocumentStatus = hasPermission(PERMISSION_CHANGE_DELIVERY_DOCUMENT_STATUS)
+  const canCreateProForm = hasPermission(PERMISSION_CREATE_PROFORM)
   const canOpenInvoices = hasPermission(PERMISSION_OPEN_DIRECT_INVOICES) && hasSupplyProForm(order)
   const canOpenProductIncome = canOpenDirectProductIncomeFromOrder(
     order,
@@ -273,7 +299,7 @@ export function SupplyUkraineDirectOrderDetailPage() {
       setError(null)
 
       try {
-        const nextOrder = await getDirectSupplyOrderById(id)
+        const nextOrder = await getDirectSupplyOrderForLogisticWay(id)
 
         if (!cancelled) {
           setOrder(nextOrder)
@@ -308,7 +334,7 @@ export function SupplyUkraineDirectOrderDetailPage() {
     setError(null)
 
     try {
-      const nextOrder = await getDirectSupplyOrderById(id)
+      const nextOrder = await getDirectSupplyOrderForLogisticWay(id)
       setOrder(nextOrder)
       dispatchAmountEdit({ type: 'setTransportationType', value: String(nextOrder?.TransportationType ?? 0) })
       syncAmountInputs(nextOrder)
@@ -325,6 +351,11 @@ export function SupplyUkraineDirectOrderDetailPage() {
 
   async function saveInvoiceDiscount(invoice: SupplyInvoice, discountAmount: number) {
     if (!order?.NetUid) {
+      return
+    }
+
+    if (!hasPermission(PERMISSION_EDIT_INVOICE)) {
+      setError(t('Право на цю дію було відкликано'))
       return
     }
 
@@ -362,8 +393,18 @@ export function SupplyUkraineDirectOrderDetailPage() {
     }
   }
 
-  async function savePatch(patch: Partial<DirectSupplyOrder>, successMessage: string) {
+  async function savePatch(
+    patch: Partial<DirectSupplyOrder>,
+    permission: string,
+    update: (order: DirectSupplyOrder) => Promise<DirectSupplyOrder | null>,
+    successMessage: string,
+  ) {
     if (!order) {
+      return
+    }
+
+    if (!hasPermission(permission)) {
+      setError(t('Право на цю дію було відкликано'))
       return
     }
 
@@ -371,7 +412,7 @@ export function SupplyUkraineDirectOrderDetailPage() {
     setError(null)
 
     try {
-      const updated = await updateDirectSupplyOrder({ ...order, ...patch })
+      const updated = await update({ ...order, ...patch })
       setOrder(updated)
       if (updated) {
         dispatchAmountEdit({ type: 'setTransportationType', value: String(updated.TransportationType ?? 0) })
@@ -395,7 +436,16 @@ export function SupplyUkraineDirectOrderDetailPage() {
 
     const isoDate = dateValue ? new Date(dateValue).toISOString() : undefined
 
-    savePatch({ DateFrom: isoDate, NetPrice: amount }, t('Замовлення оновлено'))
+    void savePatch(
+      {
+        DateFrom: isoDate,
+        NetPrice: amount,
+        TransportationType: Number(transportationType) as DirectSupplyOrder['TransportationType'],
+      },
+      PERMISSION_EDIT_ORDER_AMOUNT,
+      updateDirectSupplyOrderLogisticAmount,
+      t('Замовлення оновлено'),
+    )
   }
 
   function cancelAmountEdit() {
@@ -404,6 +454,11 @@ export function SupplyUkraineDirectOrderDetailPage() {
 
   async function uploadDocumentFile(document: SupplyOrderDeliveryDocument, file: File | null) {
     if (!file) {
+      return
+    }
+
+    if (!hasPermission(PERMISSION_UPLOAD_DELIVERY_DOCUMENT)) {
+      setError(t('Право на цю дію було відкликано'))
       return
     }
 
@@ -420,7 +475,7 @@ export function SupplyUkraineDirectOrderDetailPage() {
         FileName: file.name,
       }))
 
-      await uploadSupplyOrderDocument(formData)
+      await uploadDirectSupplyOrderLogisticDocument(formData)
       await reloadOrder()
       notifications.show({ color: 'green', message: t('Документ завантажено') })
     } catch (uploadError) {
@@ -431,6 +486,10 @@ export function SupplyUkraineDirectOrderDetailPage() {
   }
 
   function openStatusModal(document: SupplyOrderDeliveryDocument) {
+    if (!hasPermission(PERMISSION_CHANGE_DELIVERY_DOCUMENT_STATUS)) {
+      setError(t('Право на цю дію було відкликано'))
+      return
+    }
     dispatchStatusModal({ type: 'open', document })
   }
 
@@ -439,6 +498,10 @@ export function SupplyUkraineDirectOrderDetailPage() {
   }
 
   function openCreditNoteModal() {
+    if (!hasPermission(PERMISSION_CREDIT_NOTES)) {
+      setError(t('Право на цю дію було відкликано'))
+      return
+    }
     dispatchCreditNote({ type: 'openModal' })
   }
 
@@ -463,7 +526,12 @@ export function SupplyUkraineDirectOrderDetailPage() {
         : document)
 
     closeStatusModal()
-    savePatch({ SupplyOrderDeliveryDocuments: documents }, t('Зміна статуса документа'))
+    void savePatch(
+      { SupplyOrderDeliveryDocuments: documents },
+      PERMISSION_CHANGE_DELIVERY_DOCUMENT_STATUS,
+      updateDirectSupplyOrderDeliveryDocumentStatus,
+      t('Зміна статуса документа'),
+    )
   }
 
   function clearDocumentFile(document: SupplyOrderDeliveryDocument) {
@@ -476,11 +544,21 @@ export function SupplyUkraineDirectOrderDetailPage() {
         ? { ...current, ContentType: '', Deleted: false, DocumentUrl: '', FileName: '' }
         : current)
 
-    savePatch({ SupplyOrderDeliveryDocuments: documents }, t('Файл видалено'))
+    void savePatch(
+      { SupplyOrderDeliveryDocuments: documents },
+      PERMISSION_UPLOAD_DELIVERY_DOCUMENT,
+      clearDirectSupplyOrderDeliveryDocumentFile,
+      t('Файл видалено'),
+    )
   }
 
   async function saveCreditNote() {
     if (!order?.NetUid) {
+      return
+    }
+
+    if (!hasPermission(PERMISSION_CREDIT_NOTES)) {
+      setError(t('Право на цю дію було відкликано'))
       return
     }
 
@@ -528,7 +606,12 @@ export function SupplyUkraineDirectOrderDetailPage() {
   }
 
   function approveOrder() {
-    savePatch({ IsApproved: true }, t('Замовлення погоджено'))
+    void savePatch(
+      { IsApproved: true },
+      PERMISSION_APPROVE_ORDER,
+      approveDirectSupplyOrderLogistic,
+      t('Замовлення погоджено'),
+    )
   }
 
   const documentColumns: DataTableColumn<SupplyOrderDeliveryDocument>[] = [
@@ -585,33 +668,37 @@ export function SupplyUkraineDirectOrderDetailPage() {
       accessor: (document) => document.NetUid,
       cell: (document) => (
         <Group gap={4} wrap="nowrap">
-          <FileButton onChange={(file) => uploadDocumentFile(document, file)}>
-            {(fileProps) => (
-              <TableRowAction
-                {...fileProps}
-                action="upload"
-                disabled={
-                  isSaving ||
-                  areDeliveryDocumentActionsLocked ||
-                  document.Deleted ||
-                  Boolean(document.IsProcessed && document.IsReceived)
-                }
-                label={t('Завантажити файл')}
-              />
-            )}
-          </FileButton>
-          <TableRowAction
-            action="status"
-            disabled={
-              isSaving ||
-              areDeliveryDocumentActionsLocked ||
-              document.Deleted ||
-              Boolean(document.IsProcessed && document.IsReceived)
-            }
-            label={t('Зміна статуса документа')}
-            onClick={() => openStatusModal(document)}
-          />
-          {(document.FileName || document.DocumentUrl) && (
+          {canUploadDeliveryDocument && (
+            <FileButton onChange={(file) => uploadDocumentFile(document, file)}>
+              {(fileProps) => (
+                <TableRowAction
+                  {...fileProps}
+                  action="upload"
+                  disabled={
+                    isSaving ||
+                    areDeliveryDocumentActionsLocked ||
+                    document.Deleted ||
+                    Boolean(document.IsProcessed && document.IsReceived)
+                  }
+                  label={t('Завантажити файл')}
+                />
+              )}
+            </FileButton>
+          )}
+          {canChangeDeliveryDocumentStatus && (
+            <TableRowAction
+              action="status"
+              disabled={
+                isSaving ||
+                areDeliveryDocumentActionsLocked ||
+                document.Deleted ||
+                Boolean(document.IsProcessed && document.IsReceived)
+              }
+              label={t('Зміна статуса документа')}
+              onClick={() => openStatusModal(document)}
+            />
+          )}
+          {canUploadDeliveryDocument && (document.FileName || document.DocumentUrl) && (
             <TableRowAction
               action="delete"
               disabled={isSaving || areDeliveryDocumentActionsLocked}
@@ -776,7 +863,7 @@ export function SupplyUkraineDirectOrderDetailPage() {
           </Card>
 
           <DirectSupplyOrderProFormCard
-            canEdit={canEditAmount && !isLocked}
+            canEdit={canCreateProForm && !isLocked}
             order={order}
             onError={setError}
             onOrderUpdated={(updatedOrder) => {
@@ -794,7 +881,7 @@ export function SupplyUkraineDirectOrderDetailPage() {
             onSaveDiscount={saveInvoiceDiscount}
           />
 
-          <DirectOrderPaymentTasksCard canEdit={!isLocked} order={order} onError={setError} />
+          <DirectOrderPaymentTasksCard disabled={isLocked} order={order} onError={setError} />
 
           {/* Order metrics — kept below the three primary blocks */}
           <Card className="supply-detail-card" withBorder radius="md" padding="lg">

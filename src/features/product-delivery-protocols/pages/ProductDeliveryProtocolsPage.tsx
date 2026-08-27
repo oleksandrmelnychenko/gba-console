@@ -4,6 +4,7 @@ import {
   Button,
   Select,
   Stack,
+  Text,
   TextInput,
   Tooltip,
 } from '@mantine/core'
@@ -23,6 +24,8 @@ import { Paginator } from '../../../shared/ui/paginator/Paginator'
 import { DEFAULT_PAGINATOR_PAGE_SIZE } from '../../../shared/ui/paginator/paginatorPageSize'
 import { DocumentExportModal } from '../../../shared/ui/document-export-modal/DocumentExportModal'
 import { useAuth } from '../../auth/useAuth'
+import { usePermissions } from '../../auth/usePermissions'
+import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import {
   createProtocol,
   exportProtocolsDocument,
@@ -63,12 +66,11 @@ const EXPORT_COLUMNS: ProtocolExportColumn[] = [
 const dateFormatter = new Intl.DateTimeFormat('uk-UA', { dateStyle: 'short' })
 const dateTimeFormatter = new Intl.DateTimeFormat('uk-UA', { dateStyle: 'short', timeStyle: 'short' })
 
-const PERMISSION_EXPORT = 'ProductDeliveryProtocols_Load_PKEY'
-const PERMISSION_CREATE = 'ProductDeliveryProtocols_AddNew_PKEY'
-const PERMISSION_SELECT_OPTIONS = 'ProductDeliveryProtocols_SelectAnOption_SelectOptionBtn_PKEY'
-const PERMISSION_OPEN_LOGISTIC_PATH = 'ProductDeliveryProtocols_SelectAnOption_LogisticWay_PKEY'
-const PERMISSION_OPEN_SPECIFICATIONS = 'ProductDeliveryProtocols_SelectAnOption_ProductSpecificationCodes_PKEY'
-const PERMISSION_OPEN_INCOME = 'ProductDeliveryProtocols_SelectAnOption_PlacementSupplyOrder_PKEY'
+const PERMISSION_EXPORT = PermissionKeys.ProductDeliveryProtocols.Document.Download
+const PERMISSION_CREATE = PermissionKeys.ProductDeliveryProtocols.Protocol.Create
+const PERMISSION_OPEN_LOGISTIC_PATH = PermissionKeys.ProductDeliveryProtocols.LogisticWay.Open
+const PERMISSION_OPEN_SPECIFICATIONS = PermissionKeys.ProductDeliveryProtocols.SpecificationCodes.Open
+const PERMISSION_OPEN_INCOME = PermissionKeys.ProductDeliveryProtocols.ProductIncome.Open
 const PRODUCT_DELIVERY_PROTOCOLS_TABLE_MIN_WIDTH = 1212
 const PRODUCT_DELIVERY_PROTOCOLS_TABLE_DEFAULT_LAYOUT = {
   columnPinning: {
@@ -116,10 +118,10 @@ function useProtocolsPageModel() {
   const totalPages = Math.max(1, Math.ceil(totalQty / pageSize))
   const canExport = hasPermission(PERMISSION_EXPORT)
   const canCreate = hasPermission(PERMISSION_CREATE)
-  const canOpenOptions = hasPermission(PERMISSION_SELECT_OPTIONS)
   const canOpenLogisticPath = hasPermission(PERMISSION_OPEN_LOGISTIC_PATH)
   const canOpenSpecifications = hasPermission(PERMISSION_OPEN_SPECIFICATIONS)
   const canOpenIncome = hasPermission(PERMISSION_OPEN_INCOME)
+  const canOpenOptions = canOpenLogisticPath || canOpenSpecifications || canOpenIncome
   const exportScopeWarning = getExportScopeWarning(activeFilters, t)
 
   const resetProtocols = useCallback(() => {
@@ -429,6 +431,25 @@ function useProtocolsLoader({
 }
 
 export function ProductDeliveryProtocolsPage() {
+  const { t } = useI18n()
+  const { can, isLoading } = usePermissions()
+
+  if (isLoading) {
+    return <Text c="dimmed">{t('Завантаження')}</Text>
+  }
+
+  if (!can(PermissionKeys.ProductDeliveryProtocols.Page.View)) {
+    return (
+      <Alert color="red" icon={<CircleAlert size={18} />} title={t('Доступ заборонено')} variant="light">
+        {t('Недостатньо прав для перегляду протоколів доставки')}
+      </Alert>
+    )
+  }
+
+  return <ProductDeliveryProtocolsPageContent />
+}
+
+function ProductDeliveryProtocolsPageContent() {
   const model = useProtocolsPageModel()
   const { t } = useI18n()
   const incomeProtocolNumber = model.incomeProtocol?.DeliveryProductProtocolNumber?.Number || ''

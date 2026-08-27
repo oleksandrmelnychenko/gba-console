@@ -27,6 +27,7 @@ import { AppModal } from '../../../shared/ui/AppModal'
 import { SearchableSelect } from '../../../shared/ui/SearchableSelect'
 import { TableRowAction } from '../../../shared/ui/table-row-action'
 import { upgradeHttpToHttps } from '../../../shared/url/upgradeHttpToHttps'
+import { usePermissions } from '../../auth/usePermissions'
 import {
   calculateConsumableOrder,
   createConsumableOrder,
@@ -62,6 +63,11 @@ import type {
   SupplyOrganizationAgreement,
   User,
 } from '../types'
+import {
+  CONSUMABLE_ORDERS_PAGE_PERMISSION,
+  CONSUMABLE_ORDER_CREATE_PERMISSION,
+  CONSUMABLE_ORDER_EDIT_PERMISSION,
+} from '../permissions'
 import './consumable-order-form-page.css'
 
 type LocationState = {
@@ -97,6 +103,29 @@ const moneyFormatter = new Intl.NumberFormat('uk-UA', {
 })
 
 export function ConsumableOrderFormPage() {
+  const { t } = useI18n()
+  const { id } = useParams<{ id?: string }>()
+  const { can, isLoading } = usePermissions()
+  const isEditMode = Boolean(id)
+  const canOpenPage = can(CONSUMABLE_ORDERS_PAGE_PERMISSION)
+  const canMutate = can(isEditMode ? CONSUMABLE_ORDER_EDIT_PERMISSION : CONSUMABLE_ORDER_CREATE_PERMISSION)
+
+  if (isLoading) {
+    return <Text c="dimmed">{t('Завантаження')}</Text>
+  }
+
+  if (!canOpenPage || (!isEditMode && !canMutate)) {
+    return (
+      <Alert color="red" icon={<CircleAlert size={18} />} title={t('Доступ заборонено')} variant="light">
+        {t('Недостатньо прав для відкриття прибуткової накладної')}
+      </Alert>
+    )
+  }
+
+  return <ConsumableOrderFormPageContent canMutate={canMutate} />
+}
+
+function ConsumableOrderFormPageContent({ canMutate }: { canMutate: boolean }) {
   const { t } = useI18n()
   const { id } = useParams<{ id?: string }>()
   const routeLocation = useLocation()
@@ -145,13 +174,13 @@ export function ConsumableOrderFormPage() {
   const visibleItems = useMemo(() => activeItems.filter((item) => !item.Deleted), [activeItems])
   const totals = useMemo(() => calculateLocalTotals(visibleItems), [visibleItems])
   const isPaid = Boolean(order.IsPayed)
-  const isFormLocked = isLoading || isSaving || isCalculating
-  const isMutationLocked = isSaving || isCalculating
+  const isFormLocked = !canMutate || isLoading || isSaving || isCalculating
+  const isMutationLocked = !canMutate || isSaving || isCalculating
   const {
     isEconomicMutationLocked,
     isTaskMutationLocked,
   } = getConsumableOrderMutationLocks({ isEditMode, isPaid })
-  const canSave = !isFormLocked
+  const canSave = canMutate && !isFormLocked
 
   useEffect(() => {
     let cancelled = false
@@ -213,7 +242,7 @@ export function ConsumableOrderFormPage() {
         return
       }
 
-      void searchSupplyOrganizations(value).then((nextSuppliers) => {
+      void searchSupplyOrganizations(value, isEditMode ? 'edit' : 'create').then((nextSuppliers) => {
         if (searchRequestRef.current.supplier === requestId) {
           setSuppliers((current) => includeEntity(nextSuppliers, current.find((item) => getEntityValue(item) === form.selectedSupplierValue) || null))
         }
@@ -221,7 +250,7 @@ export function ConsumableOrderFormPage() {
     }, SEARCH_DEBOUNCE_MS)
 
     return () => window.clearTimeout(timeoutId)
-  }, [form.selectedSupplierValue, form.supplierSearch, setSuppliers])
+  }, [form.selectedSupplierValue, form.supplierSearch, isEditMode, setSuppliers])
 
   useEffect(() => {
     const value = form.storageSearch.trim()
@@ -380,7 +409,7 @@ export function ConsumableOrderFormPage() {
   }
 
   function handleFilesAdded(files: File[] | null) {
-    if (!files?.length) {
+    if (!canMutate || !files?.length) {
       return
     }
 
@@ -399,6 +428,10 @@ export function ConsumableOrderFormPage() {
   }
 
   function toggleDocumentDeleted(document: ConsumablesOrderDocument) {
+    if (!canMutate) {
+      return
+    }
+
     setOrder((current) => {
       const documents = current.ConsumablesOrderDocuments || []
 
@@ -570,7 +603,7 @@ export function ConsumableOrderFormPage() {
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
 
-    if (isMutationLocked) {
+    if (!canMutate || isMutationLocked) {
       return
     }
 
@@ -649,7 +682,7 @@ export function ConsumableOrderFormPage() {
         </span>
       }
       onClose={handleCancel}
-      footer={
+      footer={canMutate ? (
         <Button
           color={CREATE_ACTION_COLOR}
           disabled={!canSave}
@@ -661,7 +694,7 @@ export function ConsumableOrderFormPage() {
         >
           {t('Зберегти')}
         </Button>
-      }
+      ) : undefined}
     >
       <form className="consumable-order-form" id="consumable-order-form" onSubmit={handleSubmit}>
         <Stack gap="md">
@@ -705,7 +738,9 @@ export function ConsumableOrderFormPage() {
 
           {isEditMode && (
             <Alert color="orange" icon={<CircleAlert size={18} />} variant="light">
-              {t(EXISTING_ORDER_MUTATION_DISCLOSURE)}
+              {canMutate
+                ? t(EXISTING_ORDER_MUTATION_DISCLOSURE)
+                : t('Режим перегляду: для редагування накладної потрібне окреме право.')}
             </Alert>
           )}
 

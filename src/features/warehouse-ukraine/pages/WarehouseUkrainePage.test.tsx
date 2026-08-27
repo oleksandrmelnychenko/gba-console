@@ -2,11 +2,14 @@ import { MantineProvider } from '@mantine/core'
 import { fireEvent, render, screen, within } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { I18nProvider } from '../../../shared/i18n/I18nProvider'
+import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { getTotalActForEditing } from '../api/shellApi'
 import { WarehouseUkrainePage } from './WarehouseUkrainePage'
 
+const permissionState = vi.hoisted(() => ({ granted: new Set<string>() }))
+
 vi.mock('../../auth/useAuth', () => ({
-  useAuth: () => ({ hasPermission: () => true }),
+  useAuth: () => ({ hasPermission: (permissionKey: string) => permissionState.granted.has(permissionKey) }),
 }))
 
 vi.mock('../api/shellApi', () => ({
@@ -14,18 +17,28 @@ vi.mock('../api/shellApi', () => ({
 }))
 
 vi.mock('../components/SalesTab', () => ({
-  SalesTab: ({ onCreateShipment }: { onCreateShipment: () => void }) => (
+  SalesTab: ({ canCreateShipment, canPrintEditAct, canPrintInvoice, onCreateShipment }: {
+    canCreateShipment: boolean
+    canPrintEditAct: boolean
+    canPrintInvoice: boolean
+    onCreateShipment: () => void
+  }) => (
     <div data-testid="sales-tab-content">
       <div className="app-filter-bar" data-testid="sales-filter" />
       <div className="console-table-body" data-testid="sales-table" />
-      <button type="button" onClick={onCreateShipment}>Create shipment</button>
+      <span data-testid="invoice-print-right">{String(canPrintInvoice)}</span>
+      <span data-testid="edit-act-print-right">{String(canPrintEditAct)}</span>
+      <button disabled={!canCreateShipment} type="button" onClick={onCreateShipment}>Create shipment</button>
     </div>
   ),
 }))
 
 vi.mock('../components/ShipmentsTab', () => ({
-  ShipmentsTab: ({ createRequest }: { createRequest?: number }) => (
-    <div data-create-request={createRequest} data-testid="shipments-tab-content">
+  ShipmentsTab: ({ createRequest, permissions }: {
+    createRequest?: number
+    permissions: Record<string, boolean>
+  }) => (
+    <div data-create-request={createRequest} data-permissions={JSON.stringify(permissions)} data-testid="shipments-tab-content">
       <div className="app-filter-bar" data-testid="shipments-filter" />
       <div className="console-table-body" data-testid="shipments-table" />
     </div>
@@ -59,6 +72,10 @@ function renderPage() {
 }
 
 beforeEach(() => {
+  permissionState.granted = new Set(Object.values(PermissionKeys.Warehouses.Ukraine).flatMap((value) =>
+    typeof value === 'object' ? Object.values(value) : [],
+  ))
+  permissionState.granted.add(PermissionKeys.SalesUkraine.Sale.Edit)
   vi.mocked(getTotalActForEditing).mockReset()
   vi.mocked(getTotalActForEditing).mockResolvedValue(0)
 })
@@ -121,5 +138,35 @@ describe('WarehouseUkrainePage layout', () => {
     expect(shipments.dataset.createRequest).toBe('1')
     expect(shipmentsPanel?.style.display).toBe('')
     expect(screen.getByRole('button', { name: 'Відвантаження' }).getAttribute('aria-pressed')).toBe('true')
+  })
+
+  it('keeps tab access independent from create, edit, carry-out and print actions', async () => {
+    permissionState.granted = new Set([
+      PermissionKeys.Warehouses.Ukraine.Page.View,
+      PermissionKeys.Warehouses.Ukraine.Invoices.Open,
+      PermissionKeys.Warehouses.Ukraine.Shipments.Open,
+      PermissionKeys.Warehouses.Ukraine.Shipment.Create,
+    ])
+
+    renderPage()
+
+    expect(screen.queryByRole('button', { name: 'Протокол актів редагування накладних' })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Реєстр накладних' })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Звірка' })).toBeNull()
+    expect((screen.getByRole('button', { name: 'Create shipment' }) as HTMLButtonElement).disabled).toBe(false)
+    expect(screen.getByTestId('invoice-print-right').textContent).toBe('false')
+    expect(screen.getByTestId('edit-act-print-right').textContent).toBe('false')
+    expect(getTotalActForEditing).not.toHaveBeenCalled()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Відвантаження' }))
+    const permissions = JSON.parse((await screen.findByTestId('shipments-tab-content')).dataset.permissions || '{}')
+
+    expect(permissions).toEqual({
+      canCarryOut: false,
+      canCreate: true,
+      canEdit: false,
+      canPrintInvoice: false,
+      canPrintShipment: false,
+    })
   })
 })

@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { apiRequest } from '../../../shared/api/apiClient'
 import {
+  carryOutShipmentList,
   getAutoShipmentList,
   getShipmentCreatePageDocument,
   updateDeliveryRecipient,
@@ -27,7 +28,7 @@ describe('shipment sale mutation contracts', () => {
 
     await updateSaleComment('sale-1', 'comment', { operationId })
 
-    expect(apiRequestMock).toHaveBeenCalledWith('/sales/update/comment', {
+    expect(apiRequestMock).toHaveBeenCalledWith('/sales/warehouse-ukraine/shipments/edit-comment', {
       body: { Comment: 'comment', NetUid: 'sale-1', OperationNetUid: operationId },
       headers: { 'Idempotency-Key': operationId },
       method: 'POST',
@@ -40,7 +41,7 @@ describe('shipment sale mutation contracts', () => {
 
     await updateDeliveryRecipient('sale-1', { FullName: 'Recipient', SaleNetId: 'sale-1' }, { operationId })
 
-    expect(apiRequestMock).toHaveBeenCalledWith('/sales/update/recipient', {
+    expect(apiRequestMock).toHaveBeenCalledWith('/sales/warehouse-ukraine/shipments/edit-recipient', {
       body: { FullName: 'Recipient', OperationNetUid: operationId, SaleNetId: 'sale-1' },
       headers: { 'Idempotency-Key': operationId },
       method: 'POST',
@@ -53,7 +54,7 @@ describe('shipment sale mutation contracts', () => {
 
     await updateDeliveryRecipientAddress('sale-1', { City: 'Kyiv', SaleNetId: 'sale-1' }, { operationId })
 
-    expect(apiRequestMock).toHaveBeenCalledWith('/sales/update/recipient/address', {
+    expect(apiRequestMock).toHaveBeenCalledWith('/sales/warehouse-ukraine/shipments/edit-address', {
       body: { City: 'Kyiv', OperationNetUid: operationId, SaleNetId: 'sale-1' },
       headers: { 'Idempotency-Key': operationId },
       method: 'POST',
@@ -70,7 +71,7 @@ describe('shipment sale mutation contracts', () => {
       { operationId },
     )
 
-    expect(apiRequestMock).toHaveBeenCalledWith('/sales/shipments/update/filtered/auto', {
+    expect(apiRequestMock).toHaveBeenCalledWith('/sales/shipments/warehouse-ukraine/create/auto', {
       headers: { 'Idempotency-Key': operationId },
       query: { netId: transporterNetId, from: '2026-07-01', to: '2026-07-08' },
     })
@@ -92,13 +93,31 @@ describe('shipment sale mutation contracts', () => {
       { from: '2026-07-01T00:00:00', to: '2026-07-08T23:59:59' },
     )
 
-    expect(apiRequestMock).toHaveBeenCalledWith('/sales/shipments/update', {
+    expect(apiRequestMock).toHaveBeenCalledWith('/sales/shipments/warehouse-ukraine/edit', {
       body: shipmentList,
       headers: { 'Idempotency-Key': operationId },
       method: 'POST',
       query: { from: '2026-07-01T00:00:00', to: '2026-07-08T23:59:59' },
     })
     expect(result).toEqual(persistedShipmentList)
+  })
+
+  it('uses an independent carry-out endpoint with the unchanged update contract', async () => {
+    const operationId = '99999999-9999-4999-8999-999999999999'
+    const shipmentList = { ...buildShipmentList(), IsSent: true }
+
+    await carryOutShipmentList(
+      shipmentList,
+      { operationId },
+      { from: '2026-07-01T00:00:00', to: '2026-07-08T23:59:59' },
+    )
+
+    expect(apiRequestMock).toHaveBeenCalledWith('/sales/shipments/warehouse-ukraine/carry-out', {
+      body: shipmentList,
+      headers: { 'Idempotency-Key': operationId },
+      method: 'POST',
+      query: { from: '2026-07-01T00:00:00', to: '2026-07-08T23:59:59' },
+    })
   })
 
   it('uses one operation id when create-page document generation mutates the shipment list', async () => {
@@ -110,7 +129,7 @@ describe('shipment sale mutation contracts', () => {
       { operationId },
     )
 
-    expect(apiRequestMock).toHaveBeenCalledWith('/sales/shipments/document/create/export', {
+    expect(apiRequestMock).toHaveBeenCalledWith('/sales/shipments/warehouse-ukraine/print/create', {
       headers: { 'Idempotency-Key': operationId },
       query: { netId: transporterNetId, from: '2026-07-01', to: '2026-07-08' },
     })

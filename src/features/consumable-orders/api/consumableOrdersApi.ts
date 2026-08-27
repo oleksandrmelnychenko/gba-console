@@ -31,7 +31,7 @@ import { isGeneralOutcomeOperationType } from '../../outgoing-cashflows/outgoing
 const SUPPLY_ORGANIZATION_LOOKUP_LIMIT = 20
 
 export async function getConsumableOrders(params: ConsumableOrdersSearchParams): Promise<ConsumableOrdersResponse> {
-  const result = await apiRequest<unknown>('/consumables/orders/all', {
+  const result = await apiRequest<unknown>('/consumables/orders/accounting/all', {
     query: {
       from: params.from,
       limit: params.limit,
@@ -44,7 +44,7 @@ export async function getConsumableOrders(params: ConsumableOrdersSearchParams):
 }
 
 export async function searchConsumableOrders(value: string, params?: ConsumableOrdersSearchParams): Promise<ConsumableOrdersResponse> {
-  const result = await apiRequest<unknown>('/consumables/orders/search', {
+  const result = await apiRequest<unknown>('/consumables/orders/accounting/search', {
     query: {
       from: params?.from,
       limit: params?.limit,
@@ -58,7 +58,17 @@ export async function searchConsumableOrders(value: string, params?: ConsumableO
 }
 
 export async function getConsumableOrder(netId: string): Promise<ConsumablesOrder | null> {
-  const result = await apiRequest<unknown>('/consumables/orders/get', {
+  const result = await apiRequest<unknown>('/consumables/orders/accounting/get', {
+    query: {
+      netId,
+    },
+  })
+
+  return normalizeConsumablesOrder(result)
+}
+
+export async function getConsumableOrderForPayment(netId: string): Promise<ConsumablesOrder | null> {
+  const result = await apiRequest<unknown>('/consumables/orders/accounting/pay/get', {
     query: {
       netId,
     },
@@ -91,7 +101,7 @@ export async function createConsumableOrder(
     kind: 'add',
     operation,
     order,
-    request: (context) => apiRequest<unknown>('/consumables/orders/upload/new', {
+    request: (context) => apiRequest<unknown>('/consumables/orders/accounting/upload/new', {
       body: context.body,
       dedupe: false,
       headers: context.headers,
@@ -113,7 +123,7 @@ export async function updateConsumableOrder(
     kind: 'update',
     operation,
     order,
-    request: (context) => apiRequest<unknown>('/consumables/orders/upload/update', {
+    request: (context) => apiRequest<unknown>('/consumables/orders/accounting/upload/update', {
       body: context.body,
       dedupe: false,
       headers: context.headers,
@@ -126,7 +136,16 @@ export async function updateConsumableOrder(
 }
 
 export async function calculateConsumableOrder(order: ConsumablesOrder): Promise<ConsumableOrderCalculation> {
-  const result = await apiRequest<unknown>('/consumables/orders/calculate', {
+  const result = await apiRequest<unknown>('/consumables/orders/accounting/calculate', {
+    method: 'POST',
+    body: [sanitizeConsumableOrderPayload(order)],
+  })
+
+  return normalizeConsumableOrderCalculation(result)
+}
+
+export async function calculateConsumableOrderForPayment(order: ConsumablesOrder): Promise<ConsumableOrderCalculation> {
+  const result = await apiRequest<unknown>('/consumables/orders/accounting/pay/calculate', {
     method: 'POST',
     body: [sanitizeConsumableOrderPayload(order)],
   })
@@ -147,14 +166,17 @@ export async function searchConsumableStorages(value: string): Promise<Consumabl
   return readArrayPayload(result, ['Items', 'ConsumablesStorages', 'Storages', 'Data']) as ConsumablesStorage[]
 }
 
-export async function searchSupplyOrganizations(value: string): Promise<SupplyOrganization[]> {
+export async function searchSupplyOrganizations(
+  value: string,
+  mode: 'create' | 'edit',
+): Promise<SupplyOrganization[]> {
   const searchValue = value.trim()
 
   if (!searchValue) {
     return []
   }
 
-  const result = await apiRequest<unknown>('/supplies/organizations/all/search', {
+  const result = await apiRequest<unknown>(`/supplies/organizations/consumable-orders/${mode}/search`, {
     query: {
       limit: SUPPLY_ORGANIZATION_LOOKUP_LIMIT,
       offset: 0,
@@ -166,7 +188,7 @@ export async function searchSupplyOrganizations(value: string): Promise<SupplyOr
 }
 
 export async function searchConsumableProductCategories(value: string): Promise<ConsumableProductCategory[]> {
-  const result = await apiRequest<unknown>('/consumables/categories/search', {
+  const result = await apiRequest<unknown>('/consumables/categories/accounting/search', {
     query: {
       value,
     },
@@ -188,7 +210,7 @@ export async function searchConsumableProductsByVendorCode(value: string): Promi
 }
 
 export async function searchPaymentCostMovements(value: string): Promise<PaymentCostMovement[]> {
-  const result = await apiRequest<unknown>('/payments/costs/movements/all/search', {
+  const result = await apiRequest<unknown>('/payments/costs/movements/accounting/all/search', {
     query: {
       value,
     },
@@ -214,13 +236,13 @@ export async function searchPaymentRegisters(value = ''): Promise<PaymentRegiste
 }
 
 export async function getPaymentMovements(): Promise<PaymentMovement[]> {
-  const result = await apiRequest<unknown>('/payments/movements/all')
+  const result = await apiRequest<unknown>('/payments/movements/consumable-orders/order/pay/all')
 
   return readArrayPayload(result, ['Items', 'PaymentMovements', 'PaymentMovements', 'Data']) as PaymentMovement[]
 }
 
 export async function searchPaymentMovements(value: string): Promise<PaymentMovement[]> {
-  const result = await apiRequest<unknown>('/payments/movements/all/search', {
+  const result = await apiRequest<unknown>('/payments/movements/consumable-orders/order/pay/all/search', {
     query: {
       value,
     },
@@ -230,7 +252,7 @@ export async function searchPaymentMovements(value: string): Promise<PaymentMove
 }
 
 export async function createPaymentMovement(operationName: string): Promise<PaymentMovement | null> {
-  const result = await apiRequest<unknown>('/payments/movements/new', {
+  const result = await apiRequest<unknown>('/payments/movements/accounting/new', {
     method: 'POST',
     body: {
       OperationName: operationName,
@@ -253,7 +275,7 @@ export async function createOutcomePaymentOrder(
     kind: 'outcome-payment:add',
     operation,
     payload: order,
-    request: (payload, context) => apiRequest<unknown>('/payments/orders/outcome/new', {
+    request: (payload, context) => apiRequest<unknown>('/payments/orders/outcome/consumable-orders/pay', {
       body: payload,
       dedupe: false,
       headers: context.headers,
@@ -266,11 +288,7 @@ export async function createOutcomePaymentOrder(
 }
 
 export async function getFinanceDirectorUsers(): Promise<User[]> {
-  const result = await apiRequest<unknown>('/usermanagement/profiles/all/by', {
-    query: {
-      types: 7,
-    },
-  })
+  const result = await apiRequest<unknown>('/usermanagement/profiles/consumable-orders/payment/responsible-users')
 
   return readArrayPayload(result, ['Items', 'Users', 'Profiles', 'Data']) as User[]
 }

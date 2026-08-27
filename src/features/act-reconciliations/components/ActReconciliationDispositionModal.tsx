@@ -36,6 +36,7 @@ export function ActReconciliationDispositionModal({
   items,
   mode,
   opened,
+  permitted,
   onApplied,
   onClose,
 }: {
@@ -43,6 +44,7 @@ export function ActReconciliationDispositionModal({
   items: ActReconciliationItem[]
   mode: ActReconciliationDispositionMode
   opened: boolean
+  permitted: boolean
   onApplied: () => void
   onClose: () => void
 }) {
@@ -63,7 +65,7 @@ export function ActReconciliationDispositionModal({
   const isDismiss = mode === 'dismiss'
   const requiresComment = reasonCode === ActReconciliationDispositionReason.Other
   const canSubmit =
-    Boolean(actNetId && operationNetUid && items.length > 0) &&
+    permitted && Boolean(actNetId && operationNetUid && items.length > 0) &&
     (!isDismiss || Boolean(reasonCode)) &&
     (!requiresComment || Boolean(comment.trim())) &&
     !isSubmitting
@@ -86,7 +88,7 @@ export function ActReconciliationDispositionModal({
   }, [itemKey, mode, opened, setComment, setOperationNetUid, setReasonCode, setSubmitError, setSubmitting, t])
 
   async function handleSubmit() {
-    if (!canSubmit) {
+    if (!permitted || !canSubmit) {
       return
     }
 

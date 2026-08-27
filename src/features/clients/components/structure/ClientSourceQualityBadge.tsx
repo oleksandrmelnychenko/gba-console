@@ -5,7 +5,7 @@ import type { ClientSourceQualitySummary } from '../../types'
 type ClientSourceQualityBadgeProps = {
   quality?: ClientSourceQualitySummary
   t: (value: string) => string
-  onClick: () => void
+  onClick?: () => void
 }
 
 export function ClientSourceQualityBadge({
@@ -41,6 +41,22 @@ export function ClientSourceQualityBadge({
     ...quality.Reasons.map((reason) =>
       getSourceQualityReasonLabel(reason, t)),
   ].filter(Boolean).join(' · ')
+
+  if (!onClick) {
+    return (
+      <Badge
+        aria-label={title}
+        className="client-source-quality-badge"
+        color={color}
+        leftSection={<Network size={11} />}
+        size="xs"
+        title={title}
+        variant="light"
+      >
+        {label}
+      </Badge>
+    )
+  }
 
   return (
     <Badge

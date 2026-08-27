@@ -1,6 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { apiRequest } from '../../../shared/api/apiClient'
-import { getActProvidingServices } from './actProvidingServicesApi'
+import {
+  getActProvidingServices,
+  getProvidingServiceActLogisticWayDetails,
+  getProvidingServiceActOverviewDetails,
+  getProvidingServiceActsRegistry,
+} from './actProvidingServicesApi'
 
 vi.mock('../../../shared/api/apiClient', () => ({
   apiRequest: vi.fn(),
@@ -37,7 +42,7 @@ describe('actProvidingServicesApi', () => {
       Total: undefined,
     })
 
-    expect(apiRequestMock).toHaveBeenCalledWith('/act/providing/services/all', {
+    expect(apiRequestMock).toHaveBeenCalledWith('/act/providing/services/registry', {
       query: {
         from: expect.stringContaining('T00:00:00.000'),
         isFiltered: true,
@@ -45,6 +50,38 @@ describe('actProvidingServicesApi', () => {
         offset: 0,
         to: expect.stringContaining('T23:59:59.999'),
       },
+    })
+  })
+
+  it('uses separate canonical registry, overview and logistic-way routes', async () => {
+    apiRequestMock.mockResolvedValueOnce({ Items: [{ NetUid: 'act-1' }] })
+    apiRequestMock.mockResolvedValueOnce({ NetUid: 'act-1' })
+    apiRequestMock.mockResolvedValueOnce({ NetUid: 'act-1' })
+
+    await getProvidingServiceActsRegistry({
+      from: '2026-06-01',
+      isFiltered: true,
+      limit: 20,
+      offset: 0,
+      to: '2026-06-30',
+    })
+    await getProvidingServiceActOverviewDetails('act-1')
+    await getProvidingServiceActLogisticWayDetails('act-1')
+
+    expect(apiRequestMock).toHaveBeenNthCalledWith(1, '/act/providing/services/registry', {
+      query: {
+        from: expect.stringContaining('T00:00:00.000'),
+        isFiltered: true,
+        limit: 21,
+        offset: 0,
+        to: expect.stringContaining('T23:59:59.999'),
+      },
+    })
+    expect(apiRequestMock).toHaveBeenNthCalledWith(2, '/act/providing/services/overview/details', {
+      query: { netId: 'act-1' },
+    })
+    expect(apiRequestMock).toHaveBeenNthCalledWith(3, '/act/providing/services/logistic-way/details', {
+      query: { netId: 'act-1' },
     })
   })
 })

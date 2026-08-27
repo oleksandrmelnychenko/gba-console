@@ -29,12 +29,14 @@ import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/Page
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { useMutatedListRefresh } from '../../../shared/router/useMutatedListRefresh'
+import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import { DataTableDensityToggle } from '../../../shared/ui/data-table/DataTableDensityToggle'
 import { useDataTableDensity } from '../../../shared/ui/data-table/useDataTableDensity'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { TableRowAction } from '../../../shared/ui/table-row-action'
 import { PermissionGate } from '../../auth/components/PermissionGate'
+import { useAuth } from '../../auth/useAuth'
 import {
   createDeprecatedConsumableOrder,
   deleteConsumableStorage,
@@ -50,6 +52,9 @@ import {
   CONSUMABLE_STORAGE_CREATE_PERMISSION,
   CONSUMABLE_STORAGE_DELETE_PERMISSION,
   CONSUMABLE_STORAGE_EDIT_PERMISSION,
+  CONSUMABLE_STORAGE_WRITE_OFF_CREATE_PERMISSION,
+  CONSUMABLE_STORAGE_WRITE_OFF_DELETE_PERMISSION,
+  CONSUMABLE_STORAGE_WRITE_OFF_EDIT_PERMISSION,
 } from '../permissions'
 import type {
   ConsumableProduct,
@@ -96,7 +101,26 @@ const dateTimeFormatter = new Intl.DateTimeFormat('uk-UA', {
 })
 
 export function ConsumableStoragesPage() {
+  return (
+    <PermissionGate permissionKey={PermissionKeys.Warehouses.Premises.Page.View} fallback={<ConsumableStoragesPermissionDenied />}>
+      <ConsumableStoragesPageContent />
+    </PermissionGate>
+  )
+}
+
+function ConsumableStoragesPermissionDenied() {
   const { t } = useI18n()
+
+  return (
+    <Alert color="red" icon={<CircleAlert size={18} />} title={t('Доступ заборонено')} variant="light">
+      {t('У вашої ролі немає права переглядати складські приміщення.')}
+    </Alert>
+  )
+}
+
+function ConsumableStoragesPageContent() {
+  const { t } = useI18n()
+  const { hasPermission } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
   const [storages, setStorages] = useValueState<ConsumablesStorage[]>([])
@@ -182,6 +206,12 @@ export function ConsumableStoragesPage() {
 
   async function handleDelete() {
     if (!deleteStorageTarget?.NetUid) {
+      return
+    }
+
+    if (!hasPermission(CONSUMABLE_STORAGE_DELETE_PERMISSION)) {
+      setError(t('Немає прав для видалення складу'))
+      setDeleteStorageTarget(null)
       return
     }
 
@@ -716,6 +746,7 @@ function DeprecatedConsumableOrdersPanel({
   onChanged: () => void
 }) {
   const { t } = useI18n()
+  const { hasPermission } = useAuth()
   const [fromDate, setFromDate] = useValueState(() => shiftDate(-7))
   const [toDate, setToDate] = useValueState(() => formatLocalDate(new Date()))
   const [searchValue, setSearchValue] = useValueState('')
@@ -799,6 +830,12 @@ function DeprecatedConsumableOrdersPanel({
       return
     }
 
+    if (!hasPermission(CONSUMABLE_STORAGE_WRITE_OFF_DELETE_PERMISSION)) {
+      setOrdersState((current) => ({ ...current, error: t('Немає прав для видалення списання') }))
+      setDeleteOrderTarget(null)
+      return
+    }
+
     setDeletingOrder(true)
     setOrdersState((current) => ({ ...current, error: null }))
 
@@ -841,9 +878,11 @@ function DeprecatedConsumableOrdersPanel({
           <DataTableDensityToggle density={density} onToggle={toggleDensity} size={36} />
         </Group>
 
-        <Button leftSection={<Plus size={16} />} onClick={() => setEditorOrder(createDeprecatedConsumableOrderDraft(storage))}>
-          {t('Списати')}
-        </Button>
+        <PermissionGate permissionKey={CONSUMABLE_STORAGE_WRITE_OFF_CREATE_PERMISSION}>
+          <Button leftSection={<Plus size={16} />} onClick={() => setEditorOrder(createDeprecatedConsumableOrderDraft(storage))}>
+            {t('Списати')}
+          </Button>
+        </PermissionGate>
       </Group>
       </div>
 
@@ -1012,24 +1051,28 @@ function useDeprecatedConsumableOrderColumns({
         enableReorder: false,
         cell: (row) => (
           <Group gap={4} justify="flex-end" wrap="nowrap">
-            <TableRowAction
-              action="edit"
-              disabled={!row.order.NetUid}
-              label={t('Редагувати')}
-              onClick={(event) => {
-                event.stopPropagation()
-                onEdit(row.order)
-              }}
-            />
-            <TableRowAction
-              action="delete"
-              disabled={!row.order.NetUid}
-              label={t('Видалити')}
-              onClick={(event) => {
-                event.stopPropagation()
-                onDelete(row.order)
-              }}
-            />
+            <PermissionGate permissionKey={CONSUMABLE_STORAGE_WRITE_OFF_EDIT_PERMISSION}>
+              <TableRowAction
+                action="edit"
+                disabled={!row.order.NetUid}
+                label={t('Редагувати')}
+                onClick={(event) => {
+                  event.stopPropagation()
+                  onEdit(row.order)
+                }}
+              />
+            </PermissionGate>
+            <PermissionGate permissionKey={CONSUMABLE_STORAGE_WRITE_OFF_DELETE_PERMISSION}>
+              <TableRowAction
+                action="delete"
+                disabled={!row.order.NetUid}
+                label={t('Видалити')}
+                onClick={(event) => {
+                  event.stopPropagation()
+                  onDelete(row.order)
+                }}
+              />
+            </PermissionGate>
           </Group>
         ),
       },
@@ -1050,6 +1093,7 @@ function DeprecatedConsumableOrderEditorModal({
   onClose: () => void
 }) {
   const { t } = useI18n()
+  const { hasPermission } = useAuth()
   const initialDraft = useMemo(() => normalizeDeprecatedOrderForEditing(order, storage), [order, storage])
   const [draft, setDraft] = useValueState<DeprecatedConsumableOrder>(() => initialDraft)
   const [users, setUsers] = useValueState<UserProfile[]>(() => collectDeprecatedOrderUsers(initialDraft))
@@ -1062,6 +1106,10 @@ function DeprecatedConsumableOrderEditorModal({
   const [error, setError] = useValueState<string | null>(null)
   const [isSaving, setSaving] = useValueState(false)
   const isEditMode = Boolean(order?.Id || order?.NetUid)
+  const savePermission = isEditMode
+    ? CONSUMABLE_STORAGE_WRITE_OFF_EDIT_PERMISSION
+    : CONSUMABLE_STORAGE_WRITE_OFF_CREATE_PERMISSION
+  const canSave = hasPermission(savePermission)
   const products = useMemo(() => storage.ConsumableProducts || [], [storage.ConsumableProducts])
   const consumableOrders = useMemo(() => storage.ConsumablesOrders || [], [storage.ConsumablesOrders])
   const productOptions = useMemo(
@@ -1171,6 +1219,11 @@ function DeprecatedConsumableOrderEditorModal({
 
   async function handleSave() {
     if (isSaving) {
+      return
+    }
+
+    if (!hasPermission(savePermission)) {
+      setError(t('Немає прав для збереження списання'))
       return
     }
 
@@ -1319,7 +1372,7 @@ function DeprecatedConsumableOrderEditorModal({
           <Button color="gray" disabled={isSaving} leftSection={<X size={16} />} variant="light" onClick={onClose}>
             {t('Скасувати')}
           </Button>
-          <Button leftSection={<Save size={16} />} loading={isSaving} onClick={handleSave}>
+          <Button disabled={!canSave} leftSection={<Save size={16} />} loading={isSaving} onClick={handleSave}>
             {t('Зберегти')}
           </Button>
         </AppModalFooter>

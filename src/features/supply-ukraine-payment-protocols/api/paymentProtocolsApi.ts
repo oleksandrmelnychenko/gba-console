@@ -4,7 +4,9 @@ import type {
   MergedService,
   ProtocolUser,
   SupplyOrderUkraine,
+  SupplyOrderUkrainePaymentDeliveryProtocol,
   SupplyOrderUkrainePaymentDeliveryProtocolKey,
+  SupplyPaymentTask,
   SupplyOrganization,
 } from '../types'
 
@@ -47,17 +49,93 @@ function readArrayPayload(result: unknown, keys: string[]): unknown[] {
 }
 
 export async function getSupplyOrderUkraineById(netId: string): Promise<SupplyOrderUkraine | null> {
-  const result = await apiRequest<unknown>('/supplies/ukraine/order/get', {
+  const result = await apiRequest<unknown>('/supplies/ukraine/order/payment-protocols/details', {
     query: { netId },
   })
 
   return normalizeOrder(result)
 }
 
-export async function updateSupplyOrderUkraine(order: SupplyOrderUkraine): Promise<SupplyOrderUkraine | null> {
-  const result = await apiRequest<unknown>('/supplies/ukraine/order/update', {
+export async function createSupplyOrderUkrainePaymentProtocol(
+  netId: string,
+  protocol: SupplyOrderUkrainePaymentDeliveryProtocol,
+): Promise<SupplyOrderUkraine | null> {
+  const result = await apiRequest<unknown>('/supplies/ukraine/order/payment-protocols/create', {
     method: 'POST',
-    body: order,
+    body: protocol,
+    query: { netId },
+  })
+
+  return normalizeOrder(result)
+}
+
+export async function deleteSupplyOrderUkrainePaymentProtocol(
+  netId: string,
+  protocol: SupplyOrderUkrainePaymentDeliveryProtocol,
+): Promise<SupplyOrderUkraine | null> {
+  const result = await apiRequest<unknown>('/supplies/ukraine/order/payment-protocols/delete', {
+    method: 'POST',
+    body: protocol,
+    query: { netId },
+  })
+
+  return normalizeOrder(result)
+}
+
+function mergedServiceIdentity(orderNetUid: string, service: MergedService) {
+  return {
+    OrderNetUid: orderNetUid,
+    ServiceId: service.Id || 0,
+    ServiceNetUid: service.NetUid || '00000000-0000-0000-0000-000000000000',
+  }
+}
+
+export async function createUkraineMergedServicePaymentTask(
+  orderNetUid: string,
+  service: MergedService,
+  paymentTask: SupplyPaymentTask,
+  isAccounting: boolean,
+): Promise<SupplyOrderUkraine | null> {
+  const result = await apiRequest<unknown>('/supplies/ukraine/order/merged-services/payment-tasks/create', {
+    method: 'POST',
+    body: {
+      ...mergedServiceIdentity(orderNetUid, service),
+      IsAccounting: isAccounting,
+      PaymentTask: paymentTask,
+    },
+  })
+
+  return normalizeOrder(result)
+}
+
+export async function deleteUkraineMergedServicePaymentTask(
+  orderNetUid: string,
+  service: MergedService,
+  paymentTask: SupplyPaymentTask,
+  isAccounting: boolean,
+): Promise<SupplyOrderUkraine | null> {
+  const result = await apiRequest<unknown>('/supplies/ukraine/order/merged-services/payment-tasks/delete', {
+    method: 'POST',
+    body: {
+      ...mergedServiceIdentity(orderNetUid, service),
+      IsAccounting: isAccounting,
+      PaymentTask: {
+        Id: paymentTask.Id || 0,
+        NetUid: paymentTask.NetUid || '00000000-0000-0000-0000-000000000000',
+      },
+    },
+  })
+
+  return normalizeOrder(result)
+}
+
+export async function deleteUkraineMergedService(
+  orderNetUid: string,
+  service: MergedService,
+): Promise<SupplyOrderUkraine | null> {
+  const result = await apiRequest<unknown>('/supplies/ukraine/order/merged-services/delete', {
+    method: 'POST',
+    body: mergedServiceIdentity(orderNetUid, service),
   })
 
   return normalizeOrder(result)
@@ -85,15 +163,19 @@ export async function uploadUkraineMergedService(
 }
 
 export async function getSupplyOrderUkraineProtocolKeys(): Promise<SupplyOrderUkrainePaymentDeliveryProtocolKey[]> {
-  const result = await apiRequest<unknown>('/supplies/ukraine/order/protocols/keys/all')
+  const result = await apiRequest<unknown>('/supplies/ukraine/order/payment-protocols/keys')
 
   return readArrayPayload(result, ['Items', 'Keys', 'Data']) as SupplyOrderUkrainePaymentDeliveryProtocolKey[]
 }
 
 export async function getResponsibleUsers(): Promise<ProtocolUser[]> {
-  const result = await apiRequest<unknown>('/usermanagement/profiles/all/by', {
-    query: { types: 7 },
-  })
+  const result = await apiRequest<unknown>('/usermanagement/profiles/orders-ukraine/payment-protocols/users')
+
+  return readArrayPayload(result, ['Items', 'Users', 'Profiles', 'Data']) as ProtocolUser[]
+}
+
+export async function getLogisticPaymentTaskResponsibleUsers(): Promise<ProtocolUser[]> {
+  const result = await apiRequest<unknown>('/usermanagement/profiles/orders-ukraine/logistic-way/payment-task-users')
 
   return readArrayPayload(result, ['Items', 'Users', 'Profiles', 'Data']) as ProtocolUser[]
 }
@@ -105,7 +187,7 @@ export async function searchSupplyOrganizations(value: string): Promise<SupplyOr
     return []
   }
 
-  const result = await apiRequest<unknown>('/supplies/organizations/all/search', {
+  const result = await apiRequest<unknown>('/supplies/organizations/orders-ukraine/payment-tasks/search', {
     query: {
       limit: SUPPLY_ORGANIZATION_LOOKUP_LIMIT,
       offset: 0,

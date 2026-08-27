@@ -16,12 +16,15 @@ import { notifications } from '@mantine/notifications'
 import { CircleAlert, RotateCcw, Search } from 'lucide-react'
 import { useEffect, useMemo, useReducer, useState } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
+import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppModal } from '../../../shared/ui/AppModal'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { ExcelIcon } from '../../../shared/ui/ExcelIcon'
 import { Paginator } from '../../../shared/ui/paginator/Paginator'
+import { PermissionGate } from '../../auth/components/PermissionGate'
+import { useAuth } from '../../auth/useAuth'
 import { DEFAULT_PAGINATOR_PAGE_SIZE, PAGINATOR_PAGE_SIZE_OPTIONS } from '../../../shared/ui/paginator/paginatorPageSize'
 import { getProductSpecifications, uploadSpecificationCodesFile } from '../api/productSpecificationCodesApi'
 import { ChangeProductSpecificationPanel } from '../components/ChangeProductSpecificationPanel'
@@ -139,15 +142,44 @@ function useProductSpecificationCodesModel() {
 }
 
 export function ProductSpecificationCodesPage() {
+  return (
+    <PermissionGate permissionKey={PermissionKeys.ProductSpecificationCodes.Page.View} fallback={<ProductSpecificationCodesPermissionDenied />}>
+      <ProductSpecificationCodesPageContent />
+    </PermissionGate>
+  )
+}
+
+function ProductSpecificationCodesPermissionDenied() {
   const { t } = useI18n()
+
+  return (
+    <Alert color="red" icon={<CircleAlert size={18} />} title={t('Доступ заборонено')} variant="light">
+      {t('У вашої ролі немає права переглядати митні коди.')}
+    </Alert>
+  )
+}
+
+function ProductSpecificationCodesPageContent() {
+  const { t } = useI18n()
+  const { hasPermission } = useAuth()
   const model = useProductSpecificationCodesModel()
+  const canChange = hasPermission(PermissionKeys.ProductSpecificationCodes.Code.Edit)
+  const canImport = hasPermission(PermissionKeys.ProductSpecificationCodes.Code.Import)
+  const selectedSpecification = model.selected
+  const setSelectedSpecification = model.setSelected
   const columns = useProductSpecificationColumns(model.specifications)
   const [tableToolbarSlot, setTableToolbarSlot] = useState<HTMLDivElement | null>(null)
   const [uploadResult, setUploadResult] = useValueState<SpecificationCodeUploadResult | null>(null)
   const [isUploading, setUploading] = useValueState(false)
 
+  useEffect(() => {
+    if (!canChange && selectedSpecification) {
+      setSelectedSpecification(null)
+    }
+  }, [canChange, selectedSpecification, setSelectedSpecification])
+
   async function handleUpload(file: File | null) {
-    if (!file) {
+    if (!file || !hasPermission(PermissionKeys.ProductSpecificationCodes.Code.Import)) {
       return
     }
 
@@ -200,21 +232,23 @@ export function ProductSpecificationCodesPage() {
                   <RotateCcw size={17} />
                 </ActionIcon>
               </Tooltip>
-              <FileButton accept=".xlsx,.xls,.csv" onChange={handleUpload}>
-                {(props) => (
-                  <Tooltip label={t('Завантажити Excel')}>
-                    <ActionIcon
-                      {...props}
-                      aria-label={t('Завантажити Excel')}
-                      loading={isUploading}
-                      size={34}
-                      variant="default"
-                    >
-                      <ExcelIcon size={22} />
-                    </ActionIcon>
-                  </Tooltip>
-                )}
-              </FileButton>
+              {canImport && (
+                <FileButton accept=".xlsx,.xls,.csv" onChange={handleUpload}>
+                  {(props) => (
+                    <Tooltip label={t('Завантажити Excel')}>
+                      <ActionIcon
+                        {...props}
+                        aria-label={t('Завантажити Excel')}
+                        loading={isUploading}
+                        size={34}
+                        variant="default"
+                      >
+                        <ExcelIcon size={22} />
+                      </ActionIcon>
+                    </Tooltip>
+                  )}
+                </FileButton>
+              )}
               <Paginator
                 hasNext={model.hasMore}
                 isLoading={model.isLoading}
@@ -252,13 +286,13 @@ export function ProductSpecificationCodesPage() {
             tableId="product-specification-codes"
             toolbarPortalTarget={tableToolbarSlot}
             distributeAvailableWidth
-            onRowClick={(specification) => model.setSelected(specification)}
+            onRowClick={canChange ? (specification) => model.setSelected(specification) : undefined}
           />
         </div>
       </Card>
 
       <ChangeProductSpecificationPanel
-        productSpecification={model.selected}
+        productSpecification={canChange ? selectedSpecification : null}
         onChanged={() => model.reload()}
         onClose={() => model.setSelected(null)}
       />

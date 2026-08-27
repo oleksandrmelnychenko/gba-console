@@ -1,6 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { apiRequest } from '../../../shared/api/apiClient'
-import { getSupplyOrderUkraineById, saveDynamicPlacementRow } from './orderPlacementsApi'
+import {
+  createProductIncomeFromDynamicPlacements,
+  getSupplyOrderUkraineById,
+  saveDynamicPlacementRow,
+  updateSupplyOrderUkraine,
+  updateSupplyOrderUkraineForReconciliation,
+} from './orderPlacementsApi'
 
 vi.mock('../../../shared/api/apiClient', () => ({
   apiRequest: vi.fn(),
@@ -43,7 +49,7 @@ describe('orderPlacementsApi', () => {
       ],
     })
 
-    expect(apiRequestMock).toHaveBeenCalledWith('/supplies/ukraine/order/get', {
+    expect(apiRequestMock).toHaveBeenCalledWith('/supplies/ukraine/order/warehouse-ukraine/placement', {
       query: { netId: 'order-1' },
     })
   })
@@ -67,7 +73,7 @@ describe('orderPlacementsApi', () => {
 
     await expect(saveDynamicPlacementRow(row)).resolves.toEqual(row)
     expect(apiRequestMock).toHaveBeenCalledWith(
-      '/supplies/ukraine/order/placements/dynamic/rows/update',
+      '/supplies/ukraine/order/placements/dynamic/rows/warehouse-ukraine/update',
       { method: 'POST', body: row },
     )
   })
@@ -89,8 +95,36 @@ describe('orderPlacementsApi', () => {
 
     await expect(saveDynamicPlacementRow(row)).resolves.toMatchObject({ Id: 32, ...row })
     expect(apiRequestMock).toHaveBeenCalledWith(
-      '/supplies/ukraine/order/placements/dynamic/rows/new',
+      '/supplies/ukraine/order/placements/dynamic/rows/warehouse-ukraine/new',
       { method: 'POST', body: row },
     )
+  })
+
+  it('separates placement save from reconciliation mutations', async () => {
+    const order = { NetUid: 'order-1', SupplyOrderUkraineItems: [], DynamicProductPlacementColumns: [] }
+    apiRequestMock.mockResolvedValue(order)
+
+    await updateSupplyOrderUkraine(order)
+    await updateSupplyOrderUkraineForReconciliation(order)
+
+    expect(apiRequestMock).toHaveBeenNthCalledWith(1, '/supplies/ukraine/order/warehouse-ukraine/placement/save', {
+      body: order,
+      method: 'POST',
+    })
+    expect(apiRequestMock).toHaveBeenNthCalledWith(2, '/supplies/ukraine/order/warehouse-ukraine/placement/reconciliation', {
+      body: order,
+      method: 'POST',
+    })
+  })
+
+  it('routes full post and capitalization through independent permission boundaries', async () => {
+    const baseOrder = { NetUid: 'order-1', SupplyOrderUkraineItems: [], DynamicProductPlacementColumns: [] }
+    apiRequestMock.mockResolvedValue(baseOrder)
+
+    await createProductIncomeFromDynamicPlacements({ ...baseOrder, IsPlaced: true }, '2026-08-18', 'storage-1')
+    await createProductIncomeFromDynamicPlacements({ ...baseOrder, IsPlaced: false }, '2026-08-18', 'storage-1')
+
+    expect(apiRequestMock.mock.calls[0]?.[0]).toBe('/products/incomes/warehouse-ukraine/dynamic/post')
+    expect(apiRequestMock.mock.calls[1]?.[0]).toBe('/products/incomes/warehouse-ukraine/dynamic/capitalize')
   })
 })

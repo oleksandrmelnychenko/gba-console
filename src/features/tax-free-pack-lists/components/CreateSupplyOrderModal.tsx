@@ -14,6 +14,7 @@ import type { Client, Organization, TaxFreePackList } from '../types'
 import { formatDateTime, getClientAgreementLabel, getClientLabel } from '../utils'
 
 type CreateSupplyOrderModalProps = {
+  canCreate: boolean
   opened: boolean
   packList: TaxFreePackList | null
   onClose: () => void
@@ -47,7 +48,7 @@ type CreateSupplyOrderAction =
   | { type: 'supplierSearchChanged'; value: string }
   | { type: 'supplierSelected'; value: string | null }
 
-export function CreateSupplyOrderModal({ opened, packList, onClose, onCreated }: CreateSupplyOrderModalProps) {
+export function CreateSupplyOrderModal({ canCreate, opened, packList, onClose, onCreated }: CreateSupplyOrderModalProps) {
   const { t } = useI18n()
   const [state, dispatch] = useReducer(createSupplyOrderReducer, undefined, createInitialCreateSupplyOrderState)
   const {
@@ -78,6 +79,10 @@ export function CreateSupplyOrderModal({ opened, packList, onClose, onCreated }:
   const effectiveAgreementValue = getEffectiveAgreementValue(selectedAgreementNetUid, agreements)
 
   useEffect(() => {
+    if (!opened || !canCreate) {
+      return undefined
+    }
+
     let isActive = true
 
     async function loadDictionaries() {
@@ -104,7 +109,7 @@ export function CreateSupplyOrderModal({ opened, packList, onClose, onCreated }:
     return () => {
       isActive = false
     }
-  }, [t])
+  }, [canCreate, opened, t])
 
   const filteredSuppliers = useMemo(() => {
     const normalizedSearch = supplierSearch.trim().toLowerCase()
@@ -119,7 +124,7 @@ export function CreateSupplyOrderModal({ opened, packList, onClose, onCreated }:
   }, [supplierSearch, suppliers])
 
   async function createOrder() {
-    if (!packList?.NetUid) {
+    if (!canCreate || !packList?.NetUid) {
       return
     }
 
@@ -232,7 +237,7 @@ export function CreateSupplyOrderModal({ opened, packList, onClose, onCreated }:
 
         <Group justify="flex-end">
           <Button disabled={isSaving} variant="subtle" onClick={onClose}>{t('Скасувати')}</Button>
-          <Button loading={isSaving} onClick={createOrder}>{t('Створити')}</Button>
+          <Button disabled={!canCreate} loading={isSaving} onClick={createOrder}>{t('Створити')}</Button>
         </Group>
       </Stack>
     </AppModal>

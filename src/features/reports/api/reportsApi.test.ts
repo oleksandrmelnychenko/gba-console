@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { apiRequest } from '../../../shared/api/apiClient'
-import { searchReportUsers } from './reportsApi'
+import { createStockReport, searchReportUsers } from './reportsApi'
+import type { ReportRequestBody } from '../types'
 
 vi.mock('../../../shared/api/apiClient', () => ({
   apiRequest: vi.fn(),
@@ -44,6 +45,34 @@ describe('reportsApi', () => {
         value: 'ivan',
       },
       signal,
+    })
+  })
+
+  it('uses the permission-scoped stock report generation route', async () => {
+    const body: ReportRequestBody = {
+      from: '2026-08-01',
+      selections: [],
+      sorted: {
+        Col: [],
+        Measurements: [],
+        Row: [],
+      },
+      to: '2026-08-18',
+    }
+    apiRequestMock.mockResolvedValueOnce({
+      DocumentURL: '/reports/result.xlsx',
+      PdfDocumentURL: '/reports/result.pdf',
+    })
+
+    await expect(createStockReport(body)).resolves.toMatchObject({
+      document: {
+        DocumentURL: '/reports/result.xlsx',
+        PdfDocumentURL: '/reports/result.pdf',
+      },
+    })
+    expect(apiRequestMock).toHaveBeenCalledWith('/report/stocks/generate', {
+      method: 'POST',
+      body,
     })
   })
 })

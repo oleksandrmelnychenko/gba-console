@@ -33,10 +33,13 @@ import {
   getSupplierFilterItems,
   getSupplierCount,
   getSuppliers,
-  switchClientActiveState,
+  switchClientActiveStateForRegistry,
 } from '../api/clientsApi'
+import { getSupplierPassportById } from '../api/clientFormApi'
 import type { Client, ClientAgreement, ClientFilterItem, ClientPrintDocument } from '../types'
 import { isSourceManagedClient } from '../clientSourceOwnership'
+import { PermissionKeys } from '../../../shared/auth/permissionKeys'
+import { usePermissions } from '../../auth/usePermissions'
 import '../../../shared/ui/console-table-page.css'
 import './suppliers-page.css'
 
@@ -192,7 +195,16 @@ const SUPPLIER_SEARCH_FIELD_LABELS_BY_NAME: Record<string, string> = {
   title: 'Назва',
 }
 
-function useSuppliersPageModel() {
+type SupplierPermissions = {
+  canCreate: boolean
+  canExport: boolean
+  canOpenCashFlow: boolean
+  canOpenDetails: boolean
+  canOpenPassport: boolean
+  canSwitchActive: boolean
+}
+
+function useSuppliersPageModel(permissions: SupplierPermissions) {
   const { t } = useI18n()
   const location = useLocation()
   const navigate = useNavigate()
@@ -278,6 +290,10 @@ function useSuppliersPageModel() {
   }
 
   function openNewSupplier() {
+    if (!permissions.canCreate) {
+      return
+    }
+
     navigate('/clients/new/role', {
       state: {
         backgroundLocation: location,
@@ -289,7 +305,7 @@ function useSuppliersPageModel() {
   }
 
   function openSupplier(supplier: Client) {
-    if (!supplier.NetUid) {
+    if (!permissions.canOpenDetails || !supplier.NetUid) {
       return
     }
 
@@ -305,12 +321,16 @@ function useSuppliersPageModel() {
   }
 
   function openPassport(supplier: Client) {
+    if (!permissions.canOpenPassport) {
+      return
+    }
+
     setPassportSupplier(supplier)
     setSelectedSupplier(null)
   }
 
   function openCashFlow(supplier: Client) {
-    if (!supplier.NetUid) {
+    if (!permissions.canOpenCashFlow || !supplier.NetUid) {
       return
     }
 
@@ -324,7 +344,7 @@ function useSuppliersPageModel() {
   }
 
   async function handleSwitchActive(supplier: Client) {
-    if (!supplier.NetUid || isSourceManagedClient(supplier)) {
+    if (!permissions.canSwitchActive || !supplier.NetUid || isSourceManagedClient(supplier)) {
       return
     }
 
@@ -332,7 +352,7 @@ function useSuppliersPageModel() {
     setError(null)
 
     try {
-      await switchClientActiveState(supplier.NetUid)
+      await switchClientActiveStateForRegistry(supplier.NetUid)
       setSuppliers((currentSuppliers) =>
         currentSuppliers.reduce<Client[]>((nextSuppliers, currentSupplier) => {
           const nextSupplier =
@@ -372,6 +392,10 @@ function useSuppliersPageModel() {
   }
 
   async function handleExport() {
+    if (!permissions.canExport) {
+      return
+    }
+
     setSupplierAction('export')
     setError(null)
 
@@ -409,6 +433,7 @@ function useSuppliersPageModel() {
     supplierAction,
     suppliers,
     totalPages,
+    permissions,
     changePageSize,
     reload,
     handleExport,
@@ -539,7 +564,37 @@ function useSupplierMetaLoader({
 }
 
 export function SuppliersPage() {
-  const model = useSuppliersPageModel()
+  const { t } = useI18n()
+  const { can, isLoading } = usePermissions()
+
+  if (isLoading) {
+    return <Text c="dimmed">{t('Завантаження')}</Text>
+  }
+
+  if (!can(PermissionKeys.Suppliers.Page.View)) {
+    return (
+      <Alert color="red" icon={<CircleAlert size={18} />} title={t('Доступ заборонено')} variant="light">
+        {t('Недостатньо прав для перегляду постачальників')}
+      </Alert>
+    )
+  }
+
+  return (
+    <SuppliersPageContent
+      permissions={{
+        canCreate: can(PermissionKeys.Clients.Client.Create),
+        canExport: can(PermissionKeys.Suppliers.Document.Export),
+        canOpenCashFlow: can(PermissionKeys.Clients.AccountingCashFlow.Open),
+        canOpenDetails: can(PermissionKeys.Clients.Details.Open),
+        canOpenPassport: can(PermissionKeys.Suppliers.Passport.Open),
+        canSwitchActive: can(PermissionKeys.Clients.Status.ToggleActive),
+      }}
+    />
+  )
+}
+
+function SuppliersPageContent({ permissions }: { permissions: SupplierPermissions }) {
+  const model = useSuppliersPageModel(permissions)
 
   return <SuppliersPageView model={model} />
 }
@@ -566,6 +621,7 @@ function SuppliersPageView({ model }: { model: ReturnType<typeof useSuppliersPag
     totalPages,
     page,
     pageSize,
+    permissions,
     changePageSize,
     reload,
     handleExport,
@@ -601,6 +657,7 @@ function SuppliersPageView({ model }: { model: ReturnType<typeof useSuppliersPag
             totalPages={totalPages}
             onChangePageSize={changePageSize}
             onExport={handleExport}
+            canExport={permissions.canExport}
             onRefresh={reload}
             onReset={resetSearch}
             onSetActiveFilter={setActiveFilter}
@@ -609,15 +666,17 @@ function SuppliersPageView({ model }: { model: ReturnType<typeof useSuppliersPag
             onSetSearchValue={setSearchValue}
           />
           <div ref={setTableToolbarSlot} className="app-filter-table-toolbar-slot suppliers-table-toolbar-slot" />
-          <Button
-            className="suppliers-create-button"
-            color={CREATE_ACTION_COLOR}
-            size="sm"
-            leftSection={<Plus size={16} />}
-            onClick={openNewSupplier}
-          >
-            {t('Добавити')}
-          </Button>
+          {permissions.canCreate && (
+            <Button
+              className="suppliers-create-button"
+              color={CREATE_ACTION_COLOR}
+              size="sm"
+              leftSection={<Plus size={16} />}
+              onClick={openNewSupplier}
+            >
+              {t('Добавити')}
+            </Button>
+          )}
         </div>
 
         {error && (
@@ -642,12 +701,23 @@ function SuppliersPageView({ model }: { model: ReturnType<typeof useSuppliersPag
             showLayoutControls
             tableId="suppliers"
             toolbarPortalTarget={tableToolbarSlot}
-            onRowClick={setSelectedSupplier}
+            onRowClick={
+              permissions.canOpenCashFlow
+              || permissions.canOpenDetails
+              || permissions.canOpenPassport
+              || permissions.canSwitchActive
+                ? setSelectedSupplier
+                : undefined
+            }
           />
         </div>
       </div>
 
       <SupplierDetailDrawer
+        canOpenCashFlow={permissions.canOpenCashFlow}
+        canOpenDetails={permissions.canOpenDetails}
+        canOpenPassport={permissions.canOpenPassport}
+        canSwitchActivePermission={permissions.canSwitchActive}
         supplier={selectedSupplier}
         isActiveLoading={supplierAction === 'active'}
         onCashFlow={openCashFlow}
@@ -684,12 +754,22 @@ function SupplierPassportModal({ supplier, onClose }: { supplier: Client | null;
       }
       onClose={onClose}
     >
-      {supplier && <SupplierPassport client={supplier} netUid={supplier.NetUid} />}
+      {supplier && (
+        <SupplierPassport
+          client={supplier}
+          loadClientRequest={getSupplierPassportById}
+          netUid={supplier.NetUid}
+        />
+      )}
     </AppModal>
   )
 }
 
 type SupplierDetailDrawerProps = {
+  canOpenCashFlow: boolean
+  canOpenDetails: boolean
+  canOpenPassport: boolean
+  canSwitchActivePermission: boolean
   supplier: Client | null
   isActiveLoading: boolean
   onCashFlow: (supplier: Client) => void
@@ -700,6 +780,10 @@ type SupplierDetailDrawerProps = {
 }
 
 function SupplierDetailDrawer({
+  canOpenCashFlow,
+  canOpenDetails,
+  canOpenPassport,
+  canSwitchActivePermission,
   supplier,
   isActiveLoading,
   onCashFlow,
@@ -710,7 +794,7 @@ function SupplierDetailDrawer({
 }: SupplierDetailDrawerProps) {
   const { t } = useI18n()
   const isActive = supplier?.IsActive !== false
-  const canSwitchActive = !isSourceManagedClient(supplier)
+  const canSwitchActive = canSwitchActivePermission && !isSourceManagedClient(supplier)
 
   return (
     <AppModal
@@ -737,7 +821,7 @@ function SupplierDetailDrawer({
       {supplier && (
         <div className="suppliers-detail">
           <section className="suppliers-detail-section suppliers-detail-actions">
-            <Button
+            {canOpenDetails && <Button
               fullWidth
               justify="flex-start"
               color="dark"
@@ -747,8 +831,8 @@ function SupplierDetailDrawer({
               onClick={() => onEdit(supplier)}
             >
               {t('Відкрити картку')}
-            </Button>
-            <Button
+            </Button>}
+            {canOpenCashFlow && <Button
               fullWidth
               justify="flex-start"
               color="dark"
@@ -758,8 +842,8 @@ function SupplierDetailDrawer({
               onClick={() => onCashFlow(supplier)}
             >
               {t('Взаєморозрахунки')}
-            </Button>
-            <Button
+            </Button>}
+            {canOpenPassport && <Button
               fullWidth
               justify="flex-start"
               color="dark"
@@ -769,28 +853,30 @@ function SupplierDetailDrawer({
               onClick={() => onPassport(supplier)}
             >
               {t('Паспорт постачальника')}
-            </Button>
+            </Button>}
           </section>
 
-          {canSwitchActive ? (
-            <>
-              <Divider />
-              <Button
-                fullWidth
-                color={isActive ? 'gray' : 'green'}
-                justify="flex-start"
-                leftSection={isActive ? <ToggleLeft size={16} /> : <ToggleRight size={16} />}
-                loading={isActiveLoading}
-                variant="light"
-                onClick={() => onSwitchActive(supplier)}
-              >
-                {isActive ? t('Позначити неактивним') : t('Позначити активним')}
-              </Button>
-            </>
-          ) : (
-            <Text c="dimmed" size="xs">
-              {t('Статус керується синхронізацією з 1С')}
-            </Text>
+          {canSwitchActivePermission && (
+            canSwitchActive ? (
+              <>
+                <Divider />
+                <Button
+                  fullWidth
+                  color={isActive ? 'gray' : 'green'}
+                  justify="flex-start"
+                  leftSection={isActive ? <ToggleLeft size={16} /> : <ToggleRight size={16} />}
+                  loading={isActiveLoading}
+                  variant="light"
+                  onClick={() => onSwitchActive(supplier)}
+                >
+                  {isActive ? t('Позначити неактивним') : t('Позначити активним')}
+                </Button>
+              </>
+            ) : (
+              <Text c="dimmed" size="xs">
+                {t('Статус керується синхронізацією з 1С')}
+              </Text>
+            )
           )}
         </div>
       )}
@@ -799,6 +885,7 @@ function SupplierDetailDrawer({
 }
 
 function SuppliersFilterToolbar({
+  canExport,
   activeFilter,
   isExporting,
   isTableBusy,
@@ -818,6 +905,7 @@ function SuppliersFilterToolbar({
   onSetSearchField,
   onSetSearchValue,
 }: {
+  canExport: boolean
   activeFilter: ActiveFilter
   isExporting: boolean
   isTableBusy: boolean
@@ -893,7 +981,7 @@ function SuppliersFilterToolbar({
             <RotateCcw size={17} />
           </ActionIcon>
         </Tooltip>
-        <Tooltip label={t('Експорт в Excel')}>
+        {canExport && <Tooltip label={t('Експорт в Excel')}>
           <ActionIcon
             variant="default"
             size={34}
@@ -903,7 +991,7 @@ function SuppliersFilterToolbar({
           >
             <ExcelIcon size={22} />
           </ActionIcon>
-        </Tooltip>
+        </Tooltip>}
         <Paginator
           isLoading={isTableBusy}
           page={page}

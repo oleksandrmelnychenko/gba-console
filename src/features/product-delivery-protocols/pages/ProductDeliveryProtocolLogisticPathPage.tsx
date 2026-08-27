@@ -3,12 +3,12 @@ import { notifications } from '@mantine/notifications'
 import { CircleAlert } from 'lucide-react'
 import { useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { UserRoleType } from '../../../shared/auth/types'
+import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { useAuth } from '../../auth/useAuth'
-import { getProtocolByNetId } from '../api/productDeliveryProtocolsApi'
+import { getProtocolForLogisticPath } from '../api/productDeliveryProtocolsApi'
 import {
   assignInvoicesToMergedService,
   assignInvoicesToProtocol,
@@ -40,13 +40,20 @@ const INITIAL_LOGISTIC_PATH_LOAD_STATE: LogisticPathLoadState = {
   isLoading: true,
   protocol: null,
 }
-const PERMISSION_UPLOAD_DELIVERY_DOCUMENTS =
-  'ProductDeliveryProtocols_specifications_download_exel_upload_documents_PKEY'
+const PERMISSION_OPEN_LOGISTIC_PATH = PermissionKeys.ProductDeliveryProtocols.LogisticWay.Open
+const PERMISSION_EDIT_COMPLETED_PROTOCOL = PermissionKeys.ProductDeliveryProtocols.Protocol.EditCompleted
+const PERMISSION_CHANGE_STATUS = PermissionKeys.ProductDeliveryProtocols.UnifiedService.ChangeStatus
+const PERMISSION_MANAGE_INVOICES = PermissionKeys.ProductDeliveryProtocols.InvoiceManagement.Open
+const PERMISSION_UPLOAD_DELIVERY_DOCUMENTS = PermissionKeys.ProductDeliveryProtocols.DeliveryDocuments.Download
+const PERMISSION_CREATE_SERVICE = PermissionKeys.ProductDeliveryProtocols.UnifiedService.Create
+const PERMISSION_EDIT_SERVICE = PermissionKeys.ProductDeliveryProtocols.UnifiedService.Edit
+const PERMISSION_CALCULATE_SERVICE = PermissionKeys.ProductDeliveryProtocols.UnifiedService.Calculate
+const PERMISSION_ASSIGN_SERVICE_INVOICES = PermissionKeys.ProductDeliveryProtocols.UnifiedService.AddInvoice
+const PERMISSION_DELETE_SERVICE = PermissionKeys.ProductDeliveryProtocols.UnifiedService.Delete
 
 function useLogisticPathModel(netId: string | undefined) {
   const { t } = useI18n()
-  const { hasPermission, user } = useAuth()
-  const isGba = user?.UserRole?.UserRoleType === UserRoleType.GBA
+  const { hasPermission } = useAuth()
   const [loadState, setLoadState] = useValueState<LogisticPathLoadState>(INITIAL_LOGISTIC_PATH_LOAD_STATE)
   const [isUpdating, setUpdating] = useValueState(false)
   const [isAssigning, setAssigning] = useValueState(false)
@@ -75,7 +82,7 @@ function useLogisticPathModel(netId: string | undefined) {
       }))
 
       try {
-        const result = await getProtocolByNetId(currentNetId)
+        const result = await getProtocolForLogisticPath(currentNetId)
 
         if (cancelled) {
           return
@@ -126,11 +133,11 @@ function useLogisticPathModel(netId: string | undefined) {
     }
   }, [netId, setLoadState, t])
 
-  const canEdit = isGba || !protocol?.IsCompleted
+  const canEdit = !protocol?.IsCompleted || hasPermission(PERMISSION_EDIT_COMPLETED_PROTOCOL)
   const canEditDeliveryDocuments = canEdit && hasPermission(PERMISSION_UPLOAD_DELIVERY_DOCUMENTS)
 
   async function changeStatus() {
-    if (!protocol?.NetUid) {
+    if (!canEdit || !hasPermission(PERMISSION_CHANGE_STATUS) || !protocol?.NetUid) {
       return
     }
 
@@ -153,7 +160,7 @@ function useLogisticPathModel(netId: string | undefined) {
   }
 
   async function assignInvoices(invoices: SupplyInvoice[]) {
-    if (!protocol) {
+    if (!canEdit || !hasPermission(PERMISSION_MANAGE_INVOICES) || !protocol) {
       return
     }
 
@@ -177,6 +184,10 @@ function useLogisticPathModel(netId: string | undefined) {
   }
 
   async function saveInvoiceDocuments(invoice: SupplyInvoice, documents: File[]) {
+    if (!canEdit || !hasPermission(PERMISSION_UPLOAD_DELIVERY_DOCUMENTS)) {
+      return
+    }
+
     setSavingInvoiceDocuments(true)
 
     try {
@@ -197,7 +208,9 @@ function useLogisticPathModel(netId: string | undefined) {
   }
 
   async function saveService(payload: SaveMergedServicePayload) {
-    if (!protocol?.NetUid) {
+    const permission = payload.service.NetUid ? PERMISSION_EDIT_SERVICE : PERMISSION_CREATE_SERVICE
+
+    if (!canEdit || !hasPermission(permission) || !protocol?.NetUid) {
       return
     }
 
@@ -221,6 +234,10 @@ function useLogisticPathModel(netId: string | undefined) {
   }
 
   async function calculate(payload: CalculateMergedServicePayload) {
+    if (!canEdit || !hasPermission(PERMISSION_CALCULATE_SERVICE)) {
+      return null
+    }
+
     setSavingService(true)
 
     try {
@@ -252,6 +269,10 @@ function useLogisticPathModel(netId: string | undefined) {
   }
 
   async function assignServiceInvoices(service: MergedService, invoices: SupplyInvoice[]) {
+    if (!canEdit || !hasPermission(PERMISSION_ASSIGN_SERVICE_INVOICES)) {
+      return
+    }
+
     setSavingService(true)
 
     try {
@@ -272,7 +293,7 @@ function useLogisticPathModel(netId: string | undefined) {
   }
 
   async function removeService(service: MergedService) {
-    if (!service.NetUid) {
+    if (!canEdit || !hasPermission(PERMISSION_DELETE_SERVICE) || !service.NetUid) {
       return
     }
 
@@ -303,6 +324,21 @@ function useLogisticPathModel(netId: string | undefined) {
 }
 
 export function ProductDeliveryProtocolLogisticPathPage() {
+  const { t } = useI18n()
+  const { hasPermission } = useAuth()
+
+  if (!hasPermission(PERMISSION_OPEN_LOGISTIC_PATH)) {
+    return (
+      <Alert color="red" icon={<CircleAlert size={18} />} title={t('Доступ заборонено')} variant="light">
+        {t('У вашої ролі немає права переглядати логістичний шлях протоколу доставки.')}
+      </Alert>
+    )
+  }
+
+  return <ProductDeliveryProtocolLogisticPathPageContent />
+}
+
+function ProductDeliveryProtocolLogisticPathPageContent() {
   const { t } = useI18n()
   const { id } = useParams()
   const navigate = useNavigate()

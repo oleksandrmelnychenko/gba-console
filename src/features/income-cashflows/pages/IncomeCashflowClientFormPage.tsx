@@ -44,7 +44,7 @@ import {
   getIncomeCashflowSpecificExchangeRate,
   getIncomeCashflowSupplyOrganizationAgreements,
   searchIncomeCashflowClientPayers,
-  searchIncomeCashflowCounterparties,
+  searchIncomeCashflowCounterpartiesForOperation,
   searchIncomeCashflowPaymentMovements,
   searchIncomeCashflowPaymentRegisters,
 } from '../api/incomeCashflowsApi'
@@ -103,6 +103,12 @@ import {
 import { createLatestRequestGuard } from '../latestRequestGuard'
 import { createAutocompleteOptionSubmitGuard } from '../autocompleteOptionSubmitGuard'
 import { buildIncomeCashflowCurrencyOptions } from '../incomeCashflowCurrencyOptions'
+import { PermissionGate } from '../../auth/components/PermissionGate'
+import { useAuth } from '../../auth/useAuth'
+import {
+  getIncomeCreatePermissionByOperationType,
+  INCOME_CASHFLOWS_MOVEMENT_CREATE_PERMISSION,
+} from '../permissions'
 import './income-cashflows-page.css'
 
 type FormState = {
@@ -166,10 +172,30 @@ const dateTimeFormatter = new Intl.DateTimeFormat('uk-UA', {
 
 export function IncomeCashflowClientFormPage() {
   const { t } = useI18n()
+  const [searchParams] = useSearchParams()
+  const operationType = parseOperationType(searchParams.get('operationType'))
+
+  return (
+    <PermissionGate
+      fallback={<Alert color="red">{t('Немає права створювати цей прибутковий ордер')}</Alert>}
+      permissionKey={getIncomeCreatePermissionByOperationType(operationType)}
+    >
+      <IncomeCashflowClientFormPageContent />
+    </PermissionGate>
+  )
+}
+
+function IncomeCashflowClientFormPageContent() {
+  const { t } = useI18n()
+  const { hasPermission } = useAuth()
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const registerType = parseRegisterType(searchParams.get('type'))
   const operationType = parseOperationType(searchParams.get('operationType'))
+  const createPermission = getIncomeCreatePermissionByOperationType(operationType)
+  const canCreateMovement = hasPermission(
+    INCOME_CASHFLOWS_MOVEMENT_CREATE_PERMISSION,
+  )
   const [organizations, setOrganizations] = useValueState<OrganizationWithDefaults[]>([])
   const [availableOrganizations, setAvailableOrganizations] = useValueState<OrganizationWithDefaults[]>([])
   const [paymentRegisters, setPaymentRegisters] = useValueState<PaymentRegister[]>([])
@@ -374,9 +400,10 @@ export function IncomeCashflowClientFormPage() {
         return
       }
 
-      void searchIncomeCashflowCounterparties(
+      void searchIncomeCashflowCounterpartiesForOperation(
         value,
         form.searchType,
+        operationType,
         controller.signal,
       )
         .then((nextCounterparties) => {
@@ -392,7 +419,7 @@ export function IncomeCashflowClientFormPage() {
       controller.abort()
       window.clearTimeout(timeoutId)
     }
-  }, [counterpartySearchValue, form.searchType, setCounterparties])
+  }, [counterpartySearchValue, form.searchType, operationType, setCounterparties])
 
   useEffect(() => {
     if (operationType !== IncomePaymentOperationType.ClientPayment) {
@@ -865,6 +892,11 @@ export function IncomeCashflowClientFormPage() {
   }
 
   async function handleCreateMovement() {
+    if (!hasPermission(INCOME_CASHFLOWS_MOVEMENT_CREATE_PERMISSION)) {
+      setError(t('Немає права створювати статтю руху коштів'))
+      return
+    }
+
     const operationName = form.movementSearch.trim()
 
     if (!operationName) {
@@ -900,6 +932,11 @@ export function IncomeCashflowClientFormPage() {
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
+
+    if (!hasPermission(createPermission)) {
+      setError(t('Немає права створювати цей прибутковий ордер'))
+      return
+    }
 
     const paymentAmountInDebtCurrency = currenciesMatch(
       selectedCurrency,
@@ -1227,19 +1264,21 @@ export function IncomeCashflowClientFormPage() {
                   onChange={handleMovementSearchChanged}
                   onOptionSubmit={handleMovementSubmit}
                 />
-                <Tooltip label={t('Створити статтю')} withArrow>
-                  <ActionIcon
-                    aria-label={t('Створити статтю')}
-                    color={CREATE_ACTION_COLOR}
-                    disabled={Boolean(activeMovement) || !form.movementSearch.trim() || isLoading || isSaving}
-                    size={36}
-                    type="button"
-                    variant="outline"
-                    onClick={() => void handleCreateMovement()}
-                  >
-                    <Plus size={17} />
-                  </ActionIcon>
-                </Tooltip>
+                {canCreateMovement && (
+                  <Tooltip label={t('Створити статтю')} withArrow>
+                    <ActionIcon
+                      aria-label={t('Створити статтю')}
+                      color={CREATE_ACTION_COLOR}
+                      disabled={Boolean(activeMovement) || !form.movementSearch.trim() || isLoading || isSaving}
+                      size={36}
+                      type="button"
+                      variant="outline"
+                      onClick={() => void handleCreateMovement()}
+                    >
+                      <Plus size={17} />
+                    </ActionIcon>
+                  </Tooltip>
+                )}
               </Group>
             </SimpleGrid>
           </Stack>

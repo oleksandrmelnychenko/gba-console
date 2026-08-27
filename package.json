@@ -8,6 +8,17 @@
     "npm": ">=11"
   },
   "scripts": {
+    "audit:event-permissions": "node scripts/event-permission-candidates.mjs",
+    "audit:event-permissions:check": "node scripts/event-permission-candidates.mjs --check",
+    "audit:event-permissions:matrix": "node scripts/classify-event-permission-matrix.mjs",
+    "audit:event-permissions:matrix:check": "node scripts/classify-event-permission-matrix.mjs --check",
+    "audit:event-permissions:matrix:test": "node --test scripts/classify-event-permission-matrix.unit.mjs",
+    "audit:event-permissions:matrix:write": "node scripts/classify-event-permission-matrix.mjs --write",
+    "audit:event-permissions:parity": "node scripts/check-event-permission-parity.mjs",
+    "audit:event-permissions:parity:test": "node --test scripts/check-event-permission-parity.unit.mjs",
+    "audit:event-permissions:test": "node --test scripts/event-permission-candidates.unit.mjs",
+    "audit:event-permissions:write": "node scripts/event-permission-candidates.mjs --write",
+    "verify:event-permissions": "npm run audit:event-permissions:check && npm run audit:event-permissions:matrix:check && npm run audit:event-permissions:test && npm run audit:event-permissions:matrix:test && npm run audit:event-permissions:parity:test && npm run audit:event-permissions:parity",
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
@@ -35,7 +46,7 @@
     "lucide-react": "^1.23.0",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
-    "react-router-dom": "^7.18.1",
+    "react-router-dom": "^7.18.2",
     "read-excel-file": "^9.2.0",
     "recharts": "^3.9.1",
     "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz"

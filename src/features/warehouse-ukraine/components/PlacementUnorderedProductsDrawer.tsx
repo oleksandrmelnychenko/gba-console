@@ -17,7 +17,7 @@ import { useEffect, useState } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppDrawer, AppDrawerFooter } from '../../../shared/ui/AppDrawer'
 import { TableRowAction } from '../../../shared/ui/table-row-action'
-import { searchPlacementProducts, updateSupplyOrderUkraine } from '../api/orderPlacementsApi'
+import { searchPlacementProducts, updateSupplyOrderUkraineForReconciliation } from '../api/orderPlacementsApi'
 import type { PlacementOrderItem, PlacementProduct, PlacementSupplyOrder } from '../placementsTypes'
 
 const EMPTY_GUID = '00000000-0000-0000-0000-000000000000'
@@ -66,7 +66,7 @@ function PlacementUnorderedProductsContent({
     setSaving(true)
 
     try {
-      const updated = await updateSupplyOrderUkraine({ ...order, SupplyOrderUkraineItems: nextItems })
+      const updated = await updateSupplyOrderUkraineForReconciliation({ ...order, SupplyOrderUkraineItems: nextItems })
       notifications.show({ color: 'green', message: t('Збережено') })
       onSaved(updated)
       setAdding(false)

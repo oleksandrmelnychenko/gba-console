@@ -143,6 +143,44 @@ describe('wizard split abandonment recovery', () => {
     },
   )
 
+  it('uses an injected create-details loader while restoring a create-flow split', async () => {
+    const source: WizardSplitRecoverySource = {
+      agreementNetId: 'agreement-1',
+      origin: 'ordinary',
+      saleNetUid: 'create-source-sale',
+      userKey: 'net:user-1',
+    }
+    const splitItem = createWizardSplitOrderItem(sourceRow(5), 2, undefined)
+    let serverSale: SalesUkraineSale = {
+      NetUid: source.saleNetUid,
+      Order: { OrderItems: [sourceRow(3)] },
+    }
+    const loadCreateDetails = vi.fn(async () => structuredClone(serverSale))
+
+    setWizardSplitOrderItems([splitItem], source.agreementNetId, source)
+    vi.mocked(executeWizardCartMutationRequest).mockImplementation(async (
+      request: WizardCartMutationRequest,
+      operationId: string,
+    ) => {
+      if (request.kind === 'update') {
+        serverSale = {
+          ...serverSale,
+          Order: {
+            ...serverSale.Order,
+            OrderItems: [{ ...request.orderItem, OperationNetUid: operationId }],
+          },
+        }
+      }
+    })
+
+    const result = await restorePersistedWizardSplitRecovery(source.userKey, loadCreateDetails)
+
+    expect(result).toMatchObject({ changed: true, error: null, succeeded: true })
+    expect(loadCreateDetails).toHaveBeenCalledWith(source.saleNetUid)
+    expect(getSaleById).not.toHaveBeenCalled()
+    expect(serverSale.Order?.OrderItems?.[0]?.Qty).toBe(5)
+  })
+
   it('recovers a reload after the persisted source row was deleted but before the split committed locally', async () => {
     const source: WizardSplitRecoverySource = {
       agreementNetId: 'agreement-1',

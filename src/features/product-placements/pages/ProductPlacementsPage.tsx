@@ -20,11 +20,14 @@ import { notifications } from '@mantine/notifications'
 import { CircleAlert, Download, FileInput as FileInputIcon, RotateCcw, Search, TriangleAlert, Upload } from 'lucide-react'
 import { useDebouncedValue } from '@mantine/hooks'
 import { type FormEvent, useCallback, useEffect, useMemo, useReducer, useState } from 'react'
+import { usePermissions } from '../../auth/usePermissions'
+import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { translate } from '../../../shared/i18n/translate'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { ProductCardModal } from '../../products/components/ProductCardModal'
+import { getProductForPlacements } from '../../products/api/productsApi'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import { DocumentExportModal } from '../../../shared/ui/document-export-modal/DocumentExportModal'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
@@ -84,7 +87,13 @@ type PlacementImportForm = ProductPlacementParseConfiguration & {
   storageId: string
 }
 
-function useProductPlacementsPageModel() {
+function useProductPlacementsPageModel({
+  canExport,
+  canImport,
+}: {
+  canExport: boolean
+  canImport: boolean
+}) {
   const { t } = useI18n()
   const [storages, setStorages] = useValueState<ProductPlacementStorageLocation[]>([])
   const [selectedStorageIds, setSelectedStorageIds] = useValueState<string[]>([])
@@ -250,6 +259,10 @@ function useProductPlacementsPageModel() {
   ])
 
   async function handleExport() {
+    if (!canExport) {
+      return
+    }
+
     setExporting(true)
     setError(null)
 
@@ -266,6 +279,10 @@ function useProductPlacementsPageModel() {
   }
 
   async function handleImport(form: PlacementImportForm) {
+    if (!canImport) {
+      return
+    }
+
     if (!form.file) {
       setImportError(t('Оберіть файл для імпорту'))
       return
@@ -324,7 +341,14 @@ function useProductPlacementsPageModel() {
   }
 
   async function handleSubmitReturned() {
-    if (returnedRows.length === 0) {
+    if (!canImport || returnedRows.length === 0) {
+      return
+    }
+
+    const storageId = Number(returnedRows[0]?.StorageId)
+
+    if (!Number.isFinite(storageId) || storageId <= 0) {
+      setReturnError(t('Не вдалося визначити склад для повторного імпорту'))
       return
     }
 
@@ -333,8 +357,12 @@ function useProductPlacementsPageModel() {
 
     try {
       const result = await submitReturnedProductPlacements({
-        productPlacementStorages: returnedRows,
-        storageId: returnedRows[0]?.StorageId,
+        items: returnedRows.map((row) => ({
+          placement: row.Placement?.trim() || '',
+          qty: Number(row.Qty) || 0,
+          vendorCode: row.VendorCode?.trim() || row.Product?.VendorCode?.trim() || '',
+        })),
+        storageId,
       })
 
       if (result.ReturnedProducts.length > 0) {
@@ -356,7 +384,7 @@ function useProductPlacementsPageModel() {
   }
 
   async function handleExportReturned() {
-    if (returnedRows.length === 0) {
+    if (!canExport || returnedRows.length === 0) {
       return
     }
 
@@ -409,6 +437,8 @@ function useProductPlacementsPageModel() {
   }
 
   return {
+    canExport,
+    canImport,
     canMoveForward,
     columns,
     dateTo,
@@ -456,7 +486,30 @@ function useProductPlacementsPageModel() {
 }
 
 export function ProductPlacementsPage() {
-  const model = useProductPlacementsPageModel()
+  const { t } = useI18n()
+  const { can, isLoading } = usePermissions()
+
+  if (isLoading) {
+    return <Text c="dimmed">{t('Завантаження')}</Text>
+  }
+
+  if (!can(PermissionKeys.ProductPlacements.Page.View)) {
+    return (
+      <Alert color="red" icon={<CircleAlert size={18} />} title={t('Доступ заборонено')} variant="light">
+        {t('Недостатньо прав для перегляду розміщень товарів')}
+      </Alert>
+    )
+  }
+
+  return <ProductPlacementsPageContent />
+}
+
+function ProductPlacementsPageContent() {
+  const { can } = usePermissions()
+  const model = useProductPlacementsPageModel({
+    canExport: can(PermissionKeys.ProductPlacements.Document.Export),
+    canImport: can(PermissionKeys.ProductPlacements.File.Import),
+  })
 
   return <ProductPlacementsPageView model={model} />
 }
@@ -465,6 +518,8 @@ function ProductPlacementsPageView({ model }: { model: ReturnType<typeof useProd
   const { t } = useI18n()
   const [tableToolbarSlot, setTableToolbarSlot] = useState<HTMLDivElement | null>(null)
   const {
+    canExport,
+    canImport,
     canMoveForward,
     columns,
     dateTo,
@@ -554,7 +609,7 @@ function ProductPlacementsPageView({ model }: { model: ReturnType<typeof useProd
                   <RotateCcw size={17} />
                 </ActionIcon>
               </Tooltip>
-              <Tooltip label={t('Імпорт')}>
+              {canImport && <Tooltip label={t('Імпорт')}>
                 <ActionIcon
                   aria-label={t('Імпорт')}
                   color="gray"
@@ -565,8 +620,8 @@ function ProductPlacementsPageView({ model }: { model: ReturnType<typeof useProd
                 >
                   <FileInputIcon size={18} />
                 </ActionIcon>
-              </Tooltip>
-              <Tooltip label={t('Експорт')}>
+              </Tooltip>}
+              {canExport && <Tooltip label={t('Експорт')}>
                 <ActionIcon
                   aria-label={t('Експорт')}
                   color="gray"
@@ -577,7 +632,7 @@ function ProductPlacementsPageView({ model }: { model: ReturnType<typeof useProd
                 >
                   <Download size={18} />
                 </ActionIcon>
-              </Tooltip>
+              </Tooltip>}
               <Paginator
                 hasNext={canMoveForward}
                 isLoading={isLoading || isLoadingStorages}
@@ -592,7 +647,7 @@ function ProductPlacementsPageView({ model }: { model: ReturnType<typeof useProd
               />
             </div>
             <div ref={setTableToolbarSlot} className="app-filter-table-toolbar-slot" />
-            {returnedRows.length > 0 && (
+            {canImport && returnedRows.length > 0 && (
               <Button
                 color="red"
                 leftSection={<TriangleAlert size={16} />}
@@ -642,7 +697,7 @@ function ProductPlacementsPageView({ model }: { model: ReturnType<typeof useProd
       <ProductPlacementImportModal
         error={importError}
         isUploading={isUploading}
-        opened={importModalOpened}
+        opened={canImport && importModalOpened}
         storageOptions={storageOptions}
         onClose={() => {
           setImportModalOpened(false)
@@ -652,11 +707,13 @@ function ProductPlacementsPageView({ model }: { model: ReturnType<typeof useProd
       />
 
       <ReturnedProductsModal
+        canExport={canExport}
+        canSubmit={canImport}
         columns={returnedColumns}
         error={returnError}
         isExporting={isExporting}
         isSubmitting={isSubmittingReturned}
-        opened={returnModalOpened}
+        opened={canImport && returnModalOpened}
         rows={returnedRows}
         onClose={() => {
           setReturnModalOpened(false)
@@ -668,12 +725,16 @@ function ProductPlacementsPageView({ model }: { model: ReturnType<typeof useProd
 
       <DocumentExportModal
         document={downloadDocument}
-        opened={downloadModalOpened}
+        opened={canExport && downloadModalOpened}
         title={t('Документи розміщень')}
         onClose={() => setDownloadModalOpened(false)}
       />
 
-      <ProductCardModal productNetId={productCardNetId} onClose={() => setProductCardNetId(null)} />
+      <ProductCardModal
+        loadProduct={getProductForPlacements}
+        productNetId={productCardNetId}
+        onClose={() => setProductCardNetId(null)}
+      />
     </Stack>
   )
 }
@@ -796,6 +857,8 @@ function ProductPlacementImportModal({
 }
 
 function ReturnedProductsModal({
+  canExport,
+  canSubmit,
   columns,
   error,
   isExporting,
@@ -806,6 +869,8 @@ function ReturnedProductsModal({
   onExport,
   onSubmit,
 }: {
+  canExport: boolean
+  canSubmit: boolean
   columns: DataTableColumn<ProductPlacementRow>[]
   error: string | null
   isExporting: boolean
@@ -854,12 +919,12 @@ function ReturnedProductsModal({
           toolbarLeft={toolbarLeft}
         />
         <Group justify="flex-end">
-          <Button leftSection={<Download size={16} />} loading={isExporting} variant="outline" onClick={onExport}>
+          {canExport && <Button leftSection={<Download size={16} />} loading={isExporting} variant="outline" onClick={onExport}>
             {t('Експорт')}
-          </Button>
-          <Button loading={isSubmitting} onClick={onSubmit}>
+          </Button>}
+          {canSubmit && <Button loading={isSubmitting} onClick={onSubmit}>
             {t('Оновити')}
-          </Button>
+          </Button>}
         </Group>
       </Stack>
     </AppModal>

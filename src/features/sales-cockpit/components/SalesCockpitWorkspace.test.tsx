@@ -39,6 +39,11 @@ describe('Sales cockpit workspace', () => {
   it('shows a compact actionable empty state for the task queue', () => {
     renderWithTheme(
       <CockpitTaskList
+        canAddNote
+        canComplete
+        canDismiss
+        canSnooze
+        canTakeInProgress
         isLoading={false}
         pendingTaskKey={null}
         tasks={[]}

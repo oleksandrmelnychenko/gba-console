@@ -1,6 +1,8 @@
 import { notifications } from '@mantine/notifications'
 import { useCallback, useState } from 'react'
 import { useI18n } from '../../shared/i18n/useI18n'
+import { PermissionKeys } from '../../shared/auth/permissionKeys'
+import { usePermissions } from '../auth/usePermissions'
 import { usePersistentCreateMutation } from '../sales-ukraine/persistentCreateMutation'
 import { createOffer } from './api/salesOffersApi'
 import { buildOfferFromRecommendations } from './offerFromRecommendations'
@@ -11,6 +13,7 @@ import type { ClientShoppingCart, OfferClientAgreement } from './types'
 // build the cart, run the idempotent create mutation, hand back the persisted offer for the link modal.
 export function useOfferFromRecommendations() {
   const { t } = useI18n()
+  const { can } = usePermissions()
   const runCreateOffer = usePersistentCreateMutation('offer', 'new')
   const [createdOffer, setCreatedOffer] = useState<ClientShoppingCart | null>(null)
   const [isCreatingOffer, setCreatingOffer] = useState(false)
@@ -21,6 +24,10 @@ export function useOfferFromRecommendations() {
       products: RecommendationProduct[],
       validDays?: number,
     ): Promise<boolean> => {
+      if (!can(PermissionKeys.SalesUkraineOffers.Offer.Create)) {
+        return false
+      }
+
       setCreatingOffer(true)
 
       try {
@@ -47,7 +54,7 @@ export function useOfferFromRecommendations() {
         setCreatingOffer(false)
       }
     },
-    [runCreateOffer, t],
+    [can, runCreateOffer, t],
   )
 
   const clearCreatedOffer = useCallback(() => setCreatedOffer(null), [])

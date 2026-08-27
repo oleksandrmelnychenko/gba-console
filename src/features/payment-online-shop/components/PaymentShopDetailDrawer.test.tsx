@@ -65,6 +65,8 @@ describe('PaymentShopDetailDrawer', () => {
     render(
       <MantineProvider env="test">
         <PaymentShopDetailDrawer
+          canCreatePayment
+          canEditPayment
           createError={null}
           createNotice={null}
           isCreating={false}
@@ -94,6 +96,8 @@ describe('PaymentShopDetailDrawer', () => {
     render(
       <MantineProvider env="test">
         <PaymentShopDetailDrawer
+          canCreatePayment
+          canEditPayment
           createError={null}
           createNotice={null}
           isCreating={false}
@@ -114,6 +118,8 @@ describe('PaymentShopDetailDrawer', () => {
   it('keeps the manager draft when a status conflict refreshes the payment', async () => {
     const onAddPayment = vi.fn().mockResolvedValue(false)
     const props = {
+      canCreatePayment: true,
+      canEditPayment: true,
       createError: null,
       createNotice: null,
       isCreating: false,

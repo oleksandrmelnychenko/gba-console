@@ -1,10 +1,3 @@
-export type AuthPermission = {
-  ControlId?: string
-  Name?: string
-  Description?: string
-  DashboardNodeId?: string
-}
-
 export const UserRoleType = {
   SalesAnalytic: 0,
   PurchaseAnalytic: 1,
@@ -27,7 +20,6 @@ export type UserRoleType = (typeof UserRoleType)[keyof typeof UserRoleType]
 export type AuthUserRole = {
   Name?: string
   UserRoleType?: UserRoleType
-  Permissions?: AuthPermission[]
 }
 
 export type AuthUser = {

@@ -23,7 +23,13 @@ const moneyFormatter = new Intl.NumberFormat('uk-UA', {
   minimumFractionDigits: 2,
 })
 
-export function ActProvidingServiceDetailBody({ model }: { model: ActProvidingServiceDetailModel }) {
+export function ActProvidingServiceDetailBody({
+  canEdit,
+  model,
+}: {
+  canEdit: boolean
+  model: ActProvidingServiceDetailModel
+}) {
   const { t } = useI18n()
   const {
     comment,
@@ -79,7 +85,7 @@ export function ActProvidingServiceDetailBody({ model }: { model: ActProvidingSe
 
             <SimpleGrid cols={{ base: 1, md: 2 }} spacing="sm">
               <TextInput
-                disabled={isLoading || isSaving}
+                disabled={!canEdit || isLoading || isSaving}
                 label={t('Дата акта')}
                 type="datetime-local"
                 value={fromDate}
@@ -87,7 +93,7 @@ export function ActProvidingServiceDetailBody({ model }: { model: ActProvidingSe
               />
               <Textarea
                 autosize
-                disabled={isLoading || isSaving}
+                disabled={!canEdit || isLoading || isSaving}
                 label={t('Коментар')}
                 minRows={2}
                 value={comment}

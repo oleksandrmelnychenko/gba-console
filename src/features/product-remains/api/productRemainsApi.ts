@@ -18,7 +18,7 @@ const REMAINING_BASE = '/consignments/remaining'
 const SUPPLIER_FILTER_SQL = 'RegionCode.Value/Client.FullName'
 
 export async function getProductRemainStorages(): Promise<ProductRemainStorage[]> {
-  const result = await apiRequest<unknown>('/storages/get/all')
+  const result = await apiRequest<unknown>('/storages/consignment-balances/page/all')
 
   return normalizeStorages(result)
 }
@@ -31,7 +31,7 @@ export async function getProductRemainSuppliers(
     return []
   }
 
-  const result = await apiRequest<unknown>('/clients/suppliers/all/filtered', {
+  const result = await apiRequest<unknown>('/clients/suppliers/consignment-balances/all/filtered', {
     query: {
       filterSql: SUPPLIER_FILTER_SQL,
       limit: params.limit,
@@ -47,7 +47,7 @@ export async function getProductRemainSuppliers(
 export async function getGroupedProductRemains(
   params: ProductRemainsSearchParams,
 ): Promise<CollectionWithTotals<GroupedConsignment>> {
-  const result = await apiRequest<unknown>(`${REMAINING_BASE}/grouped/storage/filtered`, {
+  const result = await apiRequest<unknown>(`${REMAINING_BASE}/consignment-balances/grouped/storage/filtered`, {
     query: {
       from: params.from,
       includeItems: params.includeItems,
@@ -65,7 +65,7 @@ export async function getGroupedProductRemains(
 export async function getProductRemains(
   params: ProductRemainsByProductSearchParams,
 ): Promise<CollectionWithTotals<RemainingConsignment>> {
-  const result = await apiRequest<unknown>(`${REMAINING_BASE}/all/storage/filtered`, {
+  const result = await apiRequest<unknown>(`${REMAINING_BASE}/consignment-balances/all/storage/filtered`, {
     query: {
       from: params.from,
       limit: params.limit,
@@ -83,7 +83,7 @@ export async function getProductRemains(
 export async function getProductRemainMovements(
   params: ProductRemainMovementSearchParams,
 ): Promise<ProductRemainMovement[]> {
-  const result = await apiRequest<unknown>('/consignments/info/movement/specific', {
+  const result = await apiRequest<unknown>('/consignments/info/consignment-balances/movement/specific', {
     query: {
       consignmentItemNetId: params.consignmentItemNetId,
       from: params.from,
@@ -101,7 +101,7 @@ export async function getProductRemainMovements(
 export async function exportGroupedProductRemains(
   params: Omit<ProductRemainsSearchParams, 'limit' | 'offset'>,
 ): Promise<ProductRemainsExportDocument> {
-  const result = await apiRequest<unknown>(`${REMAINING_BASE}/grouped/storage/document/export`, {
+  const result = await apiRequest<unknown>(`${REMAINING_BASE}/consignment-balances/grouped/storage/document/export`, {
     query: {
       from: params.from,
       ...storageQuery(params.storageNetIds),
@@ -116,7 +116,7 @@ export async function exportGroupedProductRemains(
 export async function exportProductRemains(
   params: Omit<ProductRemainsByProductSearchParams, 'limit' | 'offset'>,
 ): Promise<ProductRemainsExportDocument> {
-  const result = await apiRequest<unknown>(`${REMAINING_BASE}/document/export`, {
+  const result = await apiRequest<unknown>(`${REMAINING_BASE}/consignment-balances/document/export`, {
     query: {
       from: params.from,
       searchValue: params.searchValue.trim(),

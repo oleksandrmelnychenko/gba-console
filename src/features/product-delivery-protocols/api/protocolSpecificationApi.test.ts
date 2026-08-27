@@ -1,7 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { apiRequest } from '../../../shared/api/apiClient'
 import {
+  addOrUpdateProductSpecification,
+  getPackingListSpecificationProducts,
   getSpecificationDownloadUrls,
+  mergeSupplyInvoices,
   uploadProductSpecificationForInvoice,
 } from './protocolSpecificationApi'
 
@@ -27,7 +30,7 @@ describe('protocol specification API contracts', () => {
       PdfDocumentURL: 'https://example.test/specification.pdf',
     })
 
-    expect(apiRequestMock).toHaveBeenCalledWith('/supplies/packinglists/specification/get', {
+    expect(apiRequestMock).toHaveBeenCalledWith('/supplies/packinglists/product-delivery-protocol/specification/get', {
       query: {
         netId: 'pack-list-net-id',
       },
@@ -60,5 +63,77 @@ describe('protocol specification API contracts', () => {
 
     expect(formData.get('dateCustomDeclaration')).toBe('2026-08-01')
     expect(formData.get('file')).toBe(file)
+    expect(apiRequestMock).toHaveBeenCalledWith(
+      '/supplies/invoices/product-delivery-protocol/specification/upload',
+      expect.objectContaining({ method: 'POST' }),
+    )
+  })
+
+  it('merges invoices through the independently protected specification facade', async () => {
+    apiRequestMock.mockResolvedValueOnce(undefined)
+
+    await mergeSupplyInvoices('protocol-net-id', ['invoice-1', 'invoice-2'])
+
+    expect(apiRequestMock).toHaveBeenCalledWith(
+      '/delivery/product/protocol/specification/merge/supply/invoices',
+      {
+        method: 'POST',
+        query: {
+          invoiceNetIds: ['invoice-1', 'invoice-2'],
+          netId: 'protocol-net-id',
+        },
+      },
+    )
+  })
+
+  it('uses direct-order scoped routes for specification reads and mutations', async () => {
+    apiRequestMock.mockResolvedValue({})
+    const file = new File(['sheet'], 'customs.xlsx')
+
+    await getPackingListSpecificationProducts('pack-1', 'direct-supply-order')
+    await getSpecificationDownloadUrls('pack-1', 'direct-supply-order')
+    await uploadProductSpecificationForInvoice(
+      'invoice-1',
+      {
+        CustomsValue: 2,
+        Duty: 3,
+        EndRow: 10,
+        Price: 4,
+        Qty: 5,
+        SpecificationCode: 6,
+        StartRow: 2,
+        VATValue: 7,
+        VendorCode: 1,
+      },
+      '2026-08-18',
+      file,
+      'direct-supply-order',
+    )
+    await addOrUpdateProductSpecification('invoice-1', { SpecificationCode: '8708' }, 'direct-supply-order')
+
+    expect(apiRequestMock).toHaveBeenNthCalledWith(
+      1,
+      '/supplies/packinglists/direct-supply-order/specification/products/get',
+      { query: { netId: 'pack-1' } },
+    )
+    expect(apiRequestMock).toHaveBeenNthCalledWith(
+      2,
+      '/supplies/packinglists/direct-supply-order/specification/get',
+      { query: { netId: 'pack-1' } },
+    )
+    expect(apiRequestMock).toHaveBeenNthCalledWith(
+      3,
+      '/supplies/invoices/direct-supply-order/specification/upload',
+      expect.objectContaining({ method: 'POST', query: { invoiceNetId: 'invoice-1' } }),
+    )
+    expect(apiRequestMock).toHaveBeenNthCalledWith(
+      4,
+      '/specifications/direct-supply-order/update',
+      {
+        body: { SpecificationCode: '8708' },
+        method: 'POST',
+        query: { supplyInvoiceNetId: 'invoice-1' },
+      },
+    )
   })
 })

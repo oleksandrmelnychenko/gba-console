@@ -2,13 +2,13 @@ import { apiRequest } from '../../../shared/api/apiClient'
 import type { PaymentCashflowArticle, PaymentCashflowArticlePayload } from '../types'
 
 export async function getPaymentCashflowArticles(): Promise<PaymentCashflowArticle[]> {
-  const result = await apiRequest<unknown>('/payments/movements/all')
+  const result = await apiRequest<unknown>('/payments/movements/accounting/all')
 
   return normalizeArticles(result)
 }
 
 export async function searchPaymentCashflowArticles(value: string): Promise<PaymentCashflowArticle[]> {
-  const result = await apiRequest<unknown>('/payments/movements/all/search', {
+  const result = await apiRequest<unknown>('/payments/movements/accounting/all/search', {
     query: {
       value,
     },
@@ -18,7 +18,7 @@ export async function searchPaymentCashflowArticles(value: string): Promise<Paym
 }
 
 export async function getPaymentCashflowArticle(netId: string): Promise<PaymentCashflowArticle | null> {
-  const result = await apiRequest<unknown>('/payments/movements/get', {
+  const result = await apiRequest<unknown>('/payments/movements/accounting/get', {
     query: {
       netId,
     },
@@ -30,7 +30,7 @@ export async function getPaymentCashflowArticle(netId: string): Promise<PaymentC
 export async function createPaymentCashflowArticle(
   article: PaymentCashflowArticlePayload,
 ): Promise<PaymentCashflowArticle | null> {
-  const result = await apiRequest<unknown>('/payments/movements/new', {
+  const result = await apiRequest<unknown>('/payments/movements/accounting/new', {
     method: 'POST',
     body: article,
   })
@@ -41,7 +41,7 @@ export async function createPaymentCashflowArticle(
 export async function updatePaymentCashflowArticle(
   article: PaymentCashflowArticlePayload,
 ): Promise<PaymentCashflowArticle | null> {
-  const result = await apiRequest<unknown>('/payments/movements/update', {
+  const result = await apiRequest<unknown>('/payments/movements/accounting/update', {
     method: 'POST',
     body: article,
   })
@@ -50,7 +50,7 @@ export async function updatePaymentCashflowArticle(
 }
 
 export async function deletePaymentCashflowArticle(netId: string): Promise<void> {
-  await apiRequest<unknown>('/payments/movements/delete', {
+  await apiRequest<unknown>('/payments/movements/accounting/delete', {
     method: 'DELETE',
     query: {
       netId,

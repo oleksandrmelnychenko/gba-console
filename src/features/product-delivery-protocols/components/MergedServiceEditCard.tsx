@@ -23,7 +23,11 @@ import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { upgradeHttpToHttps } from '../../../shared/url/upgradeHttpToHttps'
-import { getResponsibleUsers, getSupplyServiceConsumableProducts, searchSupplyOrganizations } from '../api/protocolDetailApi'
+import {
+  getSupplyServiceConsumableProducts,
+  getUnifiedServiceEditResponsibleUsers,
+  searchUnifiedServiceEditSupplyOrganizations,
+} from '../api/protocolDetailApi'
 import type {
   ActProvidingService,
   ConsumableProduct,
@@ -461,7 +465,7 @@ function useMergedServiceLookups(opened: boolean, t: (value: string) => string, 
       try {
         const [nextProducts, nextUsers] = await Promise.all([
           getSupplyServiceConsumableProducts(''),
-          getResponsibleUsers(),
+          getUnifiedServiceEditResponsibleUsers(),
         ])
 
         if (!cancelled) {
@@ -493,7 +497,7 @@ function useMergedServiceLookups(opened: boolean, t: (value: string) => string, 
 
     async function loadOrganizations() {
       try {
-        const nextOrganizations = await searchSupplyOrganizations(value)
+        const nextOrganizations = await searchUnifiedServiceEditSupplyOrganizations(value)
 
         if (!cancelled) {
           setOrganizations(nextOrganizations)

@@ -31,7 +31,7 @@ export async function createClientResourceRegion(region: ClientResourceRegion): 
   const operation = await regionCreateOperation.prepare(region)
 
   try {
-    const result = await apiRequest<unknown>('/regions/new', {
+    const result = await apiRequest<unknown>('/regions/client-resources/new', {
       method: 'POST',
       body: region,
       headers: {
@@ -47,7 +47,7 @@ export async function createClientResourceRegion(region: ClientResourceRegion): 
 }
 
 export async function updateClientResourceRegion(region: ClientResourceRegion): Promise<ClientResourceRegion | null> {
-  const result = await apiRequest<unknown>('/regions/update', {
+  const result = await apiRequest<unknown>('/regions/client-resources/update', {
     method: 'PUT',
     body: region,
   })
@@ -62,7 +62,7 @@ export async function deleteClientResourceRegion(
     throw new Error('Регіон потрібно оновити перед видаленням')
   }
 
-  const result = await apiRequest<unknown>('/regions/delete', {
+  const result = await apiRequest<unknown>('/regions/client-resources/delete', {
     method: 'DELETE',
     query: {
       netId: region.NetUid,
@@ -79,7 +79,7 @@ export async function createClientResourceRegionCode(
   const operation = await regionCodeCreateOperation.prepare(regionCode)
 
   try {
-    const result = await apiRequest<unknown>('/regions/codes/new', {
+    const result = await apiRequest<unknown>('/regions/codes/client-resources/new', {
       method: 'POST',
       body: regionCode,
       headers: {
@@ -97,7 +97,7 @@ export async function createClientResourceRegionCode(
 export async function updateClientResourceRegionCode(
   regionCode: ClientResourceRegionCode,
 ): Promise<ClientResourceRegionCode | null> {
-  const result = await apiRequest<unknown>('/regions/codes/update', {
+  const result = await apiRequest<unknown>('/regions/codes/client-resources/update', {
     method: 'PUT',
     body: regionCode,
   })
@@ -112,7 +112,7 @@ export async function deleteClientResourceRegionCode(
     throw new Error('Код регіону потрібно оновити перед видаленням')
   }
 
-  await apiRequest<unknown>('/regions/codes/delete', {
+  await apiRequest<unknown>('/regions/codes/client-resources/delete', {
     method: 'DELETE',
     query: {
       netId: regionCode.NetUid,
@@ -131,7 +131,7 @@ export async function createClientResourceCurrency(
   const operation = await currencyCreateOperation.prepare(currency)
 
   try {
-    const result = await apiRequest<unknown>('/currencies/new', {
+    const result = await apiRequest<unknown>('/currencies/client-resources/new', {
       method: 'POST',
       body: currency,
       headers: {
@@ -150,7 +150,7 @@ export async function createClientResourceCurrency(
 export async function updateClientResourceCurrency(
   currency: ClientResourceCurrency,
 ): Promise<ClientResourceCurrency | null> {
-  const result = await apiRequest<unknown>('/currencies/update', {
+  const result = await apiRequest<unknown>('/currencies/client-resources/update', {
     method: 'PUT',
     body: currency,
   })
@@ -159,7 +159,7 @@ export async function updateClientResourceCurrency(
 }
 
 export async function deleteClientResourceCurrency(netId: string): Promise<ClientResourceCurrency | null> {
-  const result = await apiRequest<unknown>('/currencies/delete', {
+  const result = await apiRequest<unknown>('/currencies/client-resources/delete', {
     method: 'DELETE',
     query: {
       netId,
@@ -176,7 +176,7 @@ export async function getClientResourceOrganizations(): Promise<ClientResourceOr
 export async function createClientResourceOrganization(
   organization: ClientResourceOrganization,
 ): Promise<ClientResourceOrganization | null> {
-  const result = await apiRequest<unknown>('/organizations/new', {
+  const result = await apiRequest<unknown>('/organizations/client-resources/new', {
     method: 'POST',
     body: organization,
   })
@@ -187,7 +187,7 @@ export async function createClientResourceOrganization(
 export async function updateClientResourceOrganization(
   organization: ClientResourceOrganization,
 ): Promise<ClientResourceOrganization | null> {
-  const result = await apiRequest<unknown>('/organizations/update', {
+  const result = await apiRequest<unknown>('/organizations/client-resources/update', {
     method: 'POST',
     body: organization,
   })
@@ -196,7 +196,7 @@ export async function updateClientResourceOrganization(
 }
 
 export async function deleteClientResourceOrganization(netId: string): Promise<ClientResourceOrganization | null> {
-  const result = await apiRequest<unknown>('/organizations/delete', {
+  const result = await apiRequest<unknown>('/organizations/client-resources/delete', {
     method: 'DELETE',
     query: {
       netId,
@@ -219,7 +219,7 @@ export async function getClientResourcePricingTypes(): Promise<ClientResourcePri
 }
 
 export async function createClientResourcePricing(pricing: ClientResourcePricing): Promise<ClientResourcePricing | null> {
-  const result = await apiRequest<unknown>('/pricings/new', {
+  const result = await apiRequest<unknown>('/pricings/client-resources/new', {
     method: 'POST',
     body: pricing,
   })
@@ -228,7 +228,7 @@ export async function createClientResourcePricing(pricing: ClientResourcePricing
 }
 
 export async function updateClientResourcePricing(pricing: ClientResourcePricing): Promise<ClientResourcePricing | null> {
-  const result = await apiRequest<unknown>('/pricings/update', {
+  const result = await apiRequest<unknown>('/pricings/client-resources/update', {
     method: 'POST',
     body: pricing,
   })
@@ -237,7 +237,7 @@ export async function updateClientResourcePricing(pricing: ClientResourcePricing
 }
 
 export async function deleteClientResourcePricing(netId: string): Promise<ClientResourcePricing | null> {
-  const result = await apiRequest<unknown>('/pricings/delete', {
+  const result = await apiRequest<unknown>('/pricings/client-resources/delete', {
     method: 'DELETE',
     query: {
       netId,
@@ -251,7 +251,7 @@ export async function changeClientResourcePricingPriority(
   pricingId: number,
   raise: boolean,
 ): Promise<ClientResourcePricing[]> {
-  const result = await apiRequest<unknown>('/pricings/update/priority', {
+  const result = await apiRequest<unknown>('/pricings/client-resources/update/priority', {
     method: 'POST',
     body: {},
     query: {
@@ -270,7 +270,7 @@ export async function getClientResourceTaxInspections(): Promise<ClientResourceT
 export async function createClientResourceTaxInspection(
   taxInspection: ClientResourceTaxInspection,
 ): Promise<ClientResourceTaxInspection | null> {
-  const result = await apiRequest<unknown>('/tax/inspections/new', {
+  const result = await apiRequest<unknown>('/tax/inspections/client-resources/new', {
     method: 'POST',
     body: taxInspection,
   })
@@ -281,7 +281,7 @@ export async function createClientResourceTaxInspection(
 export async function updateClientResourceTaxInspection(
   taxInspection: ClientResourceTaxInspection,
 ): Promise<ClientResourceTaxInspection | null> {
-  const result = await apiRequest<unknown>('/tax/inspections/update', {
+  const result = await apiRequest<unknown>('/tax/inspections/client-resources/update', {
     method: 'POST',
     body: taxInspection,
   })
@@ -290,7 +290,7 @@ export async function updateClientResourceTaxInspection(
 }
 
 export async function deleteClientResourceTaxInspection(netId: string): Promise<void> {
-  await apiRequest<unknown>('/tax/inspections/delete', {
+  await apiRequest<unknown>('/tax/inspections/client-resources/delete', {
     method: 'DELETE',
     query: {
       netId,
@@ -299,11 +299,11 @@ export async function deleteClientResourceTaxInspection(netId: string): Promise<
 }
 
 export async function getClientResourceStorages(): Promise<ClientResourceStorage[]> {
-  return getResourceList<ClientResourceStorage>('/storages/all')
+  return getResourceList<ClientResourceStorage>('/storages/client-resources/page/all')
 }
 
 export async function createClientResourceStorage(storage: ClientResourceStorage): Promise<ClientResourceStorage | null> {
-  const result = await apiRequest<unknown>('/storages/new', {
+  const result = await apiRequest<unknown>('/storages/client-resources/new', {
     method: 'POST',
     body: storage,
   })
@@ -312,7 +312,7 @@ export async function createClientResourceStorage(storage: ClientResourceStorage
 }
 
 export async function updateClientResourceStorage(storage: ClientResourceStorage): Promise<ClientResourceStorage | null> {
-  const result = await apiRequest<unknown>('/storages/update', {
+  const result = await apiRequest<unknown>('/storages/client-resources/update', {
     method: 'POST',
     body: storage,
   })
@@ -321,7 +321,7 @@ export async function updateClientResourceStorage(storage: ClientResourceStorage
 }
 
 export async function deleteClientResourceStorage(netId: string): Promise<ClientResourceStorage | null> {
-  const result = await apiRequest<unknown>('/storages/delete', {
+  const result = await apiRequest<unknown>('/storages/client-resources/delete', {
     method: 'DELETE',
     query: {
       netId,
@@ -338,7 +338,7 @@ export async function getClientResourceMeasureUnits(): Promise<ClientResourceMea
 export async function createClientResourceMeasureUnit(
   measureUnit: ClientResourceMeasureUnit,
 ): Promise<ClientResourceMeasureUnit[]> {
-  const result = await apiRequest<unknown>('/measureunits/new', {
+  const result = await apiRequest<unknown>('/measureunits/client-resources/new', {
     method: 'POST',
     body: measureUnit,
   })
@@ -349,7 +349,7 @@ export async function createClientResourceMeasureUnit(
 export async function updateClientResourceMeasureUnit(
   measureUnit: ClientResourceMeasureUnit,
 ): Promise<ClientResourceMeasureUnit[]> {
-  const result = await apiRequest<unknown>('/measureunits/update', {
+  const result = await apiRequest<unknown>('/measureunits/client-resources/update', {
     method: 'POST',
     body: measureUnit,
   })
@@ -358,7 +358,7 @@ export async function updateClientResourceMeasureUnit(
 }
 
 export async function deleteClientResourceMeasureUnit(netId: string): Promise<ClientResourceMeasureUnit[]> {
-  const result = await apiRequest<unknown>('/measureunits/delete', {
+  const result = await apiRequest<unknown>('/measureunits/client-resources/delete', {
     method: 'DELETE',
     query: {
       netId,
@@ -396,7 +396,7 @@ export async function getClientResourcePerfectClients(
 export async function createClientResourcePerfectClient(
   perfectClient: ClientResourcePerfectClient,
 ): Promise<ClientResourcePerfectClient | null> {
-  const result = await apiRequest<unknown>('/clients/perfect/new', {
+  const result = await apiRequest<unknown>('/clients/perfect/client-resources/new', {
     method: 'POST',
     body: perfectClient,
   })
@@ -407,7 +407,7 @@ export async function createClientResourcePerfectClient(
 export async function updateClientResourcePerfectClient(
   perfectClient: ClientResourcePerfectClient,
 ): Promise<ClientResourcePerfectClient | null> {
-  const result = await apiRequest<unknown>('/clients/perfect/update', {
+  const result = await apiRequest<unknown>('/clients/perfect/client-resources/update', {
     method: 'POST',
     body: perfectClient,
   })
@@ -416,7 +416,7 @@ export async function updateClientResourcePerfectClient(
 }
 
 export async function deleteClientResourcePerfectClient(netId: string): Promise<ClientResourcePerfectClient | null> {
-  const result = await apiRequest<unknown>('/clients/perfect/delete', {
+  const result = await apiRequest<unknown>('/clients/perfect/client-resources/delete', {
     method: 'DELETE',
     query: {
       netId,
@@ -427,17 +427,17 @@ export async function deleteClientResourcePerfectClient(netId: string): Promise<
 }
 
 export async function getClientResourceTransporterTypes(): Promise<ClientResourceTransporterType[]> {
-  return getResourceList<ClientResourceTransporterType>('/transporters/types/all')
+  return getResourceList<ClientResourceTransporterType>('/transporters/types/client-resources/all')
 }
 
 export async function getClientResourceVatRates(): Promise<ClientResourceVatRate[]> {
-  return getResourceList<ClientResourceVatRate>('/vat/rates/all/get')
+  return getResourceList<ClientResourceVatRate>('/vat/rates/client-resources/all')
 }
 
 export async function createClientResourceVatRate(value: number): Promise<ClientResourceVatRate | null> {
   // The endpoint returns the FULL rate list (not the single created row), so pick the newest rate that
   // matches the requested value.
-  const result = await apiRequest<unknown>('/vat/rates/new', {
+  const result = await apiRequest<unknown>('/vat/rates/client-resources/create', {
     method: 'POST',
     body: { Value: value },
   })
@@ -453,7 +453,7 @@ export async function createClientResourceVatRate(value: number): Promise<Client
 }
 
 export async function getClientResourceTransporters(typeNetId: string): Promise<ClientResourceTransporter[]> {
-  const result = await apiRequest<unknown>('/transporters/all/type', {
+  const result = await apiRequest<unknown>('/transporters/client-resources/all/type', {
     query: {
       netId: typeNetId,
     },
@@ -468,7 +468,7 @@ export async function createClientResourceTransporter(
   const operation = await transporterCreateOperation.prepare(transporter)
 
   try {
-    const result = await apiRequest<unknown>('/transporters/new', {
+    const result = await apiRequest<unknown>('/transporters/client-resources/create', {
       method: 'POST',
       body: transporter,
       headers: {
@@ -487,7 +487,7 @@ export async function createClientResourceTransporter(
 export async function updateClientResourceTransporter(
   transporter: FormData,
 ): Promise<ClientResourceTransporter | null> {
-  const result = await apiRequest<unknown>('/transporters/update', {
+  const result = await apiRequest<unknown>('/transporters/client-resources/update', {
     method: 'POST',
     body: transporter,
   })
@@ -496,7 +496,7 @@ export async function updateClientResourceTransporter(
 }
 
 export async function deleteClientResourceTransporter(netId: string): Promise<ClientResourceTransporter | null> {
-  const result = await apiRequest<unknown>('/transporters/delete', {
+  const result = await apiRequest<unknown>('/transporters/client-resources/remove', {
     method: 'DELETE',
     query: {
       netId,

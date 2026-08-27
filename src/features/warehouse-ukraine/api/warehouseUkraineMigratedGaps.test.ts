@@ -1,8 +1,16 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { apiRequest } from '../../../shared/api/apiClient'
-import { getDocumentVerification } from './documentVerificationApi'
+import {
+  getDocumentVerification,
+  getDocumentVerificationStorages,
+} from './documentVerificationApi'
 import { getWarehouseUkraineOrders } from './ordersApi'
-import { getSaleActProtocolEditDocument, getSalePrintDocument, updateWarehouseUkraineSale } from './salesApi'
+import {
+  getSaleActProtocolEditDocument,
+  getSalePrintDocument,
+  getWarehouseUkraineSaleDetails,
+  updateWarehouseUkraineSale,
+} from './salesApi'
 import { getAllShipmentLists, getManualShipmentSales, getShipmentDocument } from './shipmentsApi'
 
 vi.mock('../../../shared/api/apiClient', () => ({
@@ -27,7 +35,7 @@ describe('warehouse Ukraine migrated gap request contracts', () => {
       placed: true,
     })
 
-    expect(apiRequestMock).toHaveBeenCalledWith('/supplies/ukraine/order/all/filtered', {
+    expect(apiRequestMock).toHaveBeenCalledWith('/supplies/ukraine/order/warehouse-ukraine/all/filtered', {
       query: {
         from: '2026-06-01T00:00:00',
         to: '2026-06-08T00:00:00',
@@ -51,7 +59,7 @@ describe('warehouse Ukraine migrated gap request contracts', () => {
       placed: false,
     })
 
-    expect(apiRequestMock).toHaveBeenCalledWith('/supplies/ukraine/order/all/filtered', {
+    expect(apiRequestMock).toHaveBeenCalledWith('/supplies/ukraine/order/warehouse-ukraine/all/filtered', {
       query: {
         from: '2026-06-01T00:00:00',
         to: '2026-06-08T00:00:00',
@@ -75,7 +83,7 @@ describe('warehouse Ukraine migrated gap request contracts', () => {
       storageIds: [1, 3, 5],
     })
 
-    expect(apiRequestMock).toHaveBeenCalledWith('/history/order/item/get/verification', {
+    expect(apiRequestMock).toHaveBeenCalledWith('/history/order/item/warehouse-ukraine/verification/registry', {
       query: {
         from: 'Mon Jun 01 2026',
         to: 'Mon Jun 08 2026',
@@ -96,7 +104,7 @@ describe('warehouse Ukraine migrated gap request contracts', () => {
       offset: 40,
     })
 
-    expect(apiRequestMock).toHaveBeenCalledWith('/sales/shipments/all/filtered', {
+    expect(apiRequestMock).toHaveBeenCalledWith('/sales/shipments/warehouse-ukraine/registry', {
       query: {
         from: '2026-06-01',
         to: '2026-06-08',
@@ -115,7 +123,7 @@ describe('warehouse Ukraine migrated gap request contracts', () => {
       to: '2026-06-08T00:00:00.000Z',
     })
 
-    expect(apiRequestMock).toHaveBeenCalledWith('/sales/all/transporter/filtered', {
+    expect(apiRequestMock).toHaveBeenCalledWith('/sales/warehouse-ukraine/shipments/sales', {
       query: {
         netId: 'transporter-net-id',
         from: '2026-06-01T00:00:00.000Z',
@@ -135,22 +143,21 @@ describe('warehouse Ukraine migrated gap request contracts', () => {
       PdfDocumentURL: 'https://example.test/shipment.pdf',
     })
 
-    expect(apiRequestMock).toHaveBeenCalledWith('/sales/shipments/document/export', {
+    expect(apiRequestMock).toHaveBeenCalledWith('/sales/shipments/warehouse-ukraine/print', {
       query: {
         netId: 'shipment-net-id',
       },
     })
   })
 
-  it('requests the warehouse sale print document with storage context', async () => {
+  it('requests the warehouse sale print document through the storage-scoped facade', async () => {
     apiRequestMock.mockResolvedValueOnce({ PdfDocumentURL: 'https://example.test/sale.pdf' })
 
     await getSalePrintDocument('sale-net-id')
 
-    expect(apiRequestMock).toHaveBeenCalledWith('/sales/get/document', {
+    expect(apiRequestMock).toHaveBeenCalledWith('/sales/warehouse-ukraine/invoices/print', {
       query: {
         netId: 'sale-net-id',
-        isFromStorages: true,
       },
     })
   })
@@ -160,7 +167,7 @@ describe('warehouse Ukraine migrated gap request contracts', () => {
 
     await getSaleActProtocolEditDocument('sale-net-id', true)
 
-    expect(apiRequestMock).toHaveBeenCalledWith('/sales/get/shifted/document', {
+    expect(apiRequestMock).toHaveBeenCalledWith('/sales/warehouse-ukraine/invoices/print-edit-act', {
       query: {
         netId: 'sale-net-id',
         IsPrintedActProtocolEdit: true,
@@ -168,21 +175,43 @@ describe('warehouse Ukraine migrated gap request contracts', () => {
     })
   })
 
-  it('fences warehouse full-sale updates with the same operation marker in body and header', async () => {
+  it('loads verification storages through the verification-open scope', async () => {
+    apiRequestMock.mockResolvedValueOnce({ Items: [] })
+
+    await getDocumentVerificationStorages()
+
+    expect(apiRequestMock).toHaveBeenCalledWith(
+      '/storages/warehouse-ukraine/verification/all',
+    )
+  })
+
+  it('loads warehouse invoice details through its exact scoped facade', async () => {
+    apiRequestMock.mockResolvedValueOnce({ NetUid: 'sale-net-id' })
+
+    await getWarehouseUkraineSaleDetails('sale-net-id')
+
+    expect(apiRequestMock).toHaveBeenCalledWith('/sales/warehouse-ukraine/invoices/details', {
+      query: { netId: 'sale-net-id' },
+    })
+  })
+
+  it.each([
+    ['invoice', '/sales/warehouse-ukraine/invoices/mark-printed'],
+    ['act-protocol', '/sales/warehouse-ukraine/invoices/mark-edit-act-printed'],
+  ] as const)('fences the %s print marker with the same operation id', async (printIntent, path) => {
     apiRequestMock.mockResolvedValueOnce({ NetUid: 'sale-net-id' })
     const operationId = 'EEEEEEEE-EEEE-4EEE-8EEE-EEEEEEEEEEEE'
 
     await updateWarehouseUkraineSale(
       { IsPrinted: true, NetUid: 'sale-net-id', Order: { OrderItems: [{ NetUid: 'row-1' }] } },
+      printIntent,
       { operationId },
     )
 
-    expect(apiRequestMock).toHaveBeenCalledWith('/sales/update', {
+    expect(apiRequestMock).toHaveBeenCalledWith(path, {
       body: {
-        IsPrinted: true,
         NetUid: 'sale-net-id',
         OperationNetUid: operationId.toLowerCase(),
-        Order: null,
       },
       headers: { 'Idempotency-Key': operationId.toLowerCase() },
       method: 'POST',

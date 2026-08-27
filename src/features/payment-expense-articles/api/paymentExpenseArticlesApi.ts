@@ -2,13 +2,13 @@ import { apiRequest } from '../../../shared/api/apiClient'
 import type { PaymentExpenseArticle, PaymentExpenseArticlePayload } from '../types'
 
 export async function getPaymentExpenseArticles(): Promise<PaymentExpenseArticle[]> {
-  const result = await apiRequest<unknown>('/payments/costs/movements/all')
+  const result = await apiRequest<unknown>('/payments/costs/movements/accounting/all')
 
   return normalizeArticles(result)
 }
 
 export async function searchPaymentExpenseArticles(value: string): Promise<PaymentExpenseArticle[]> {
-  const result = await apiRequest<unknown>('/payments/costs/movements/all/search', {
+  const result = await apiRequest<unknown>('/payments/costs/movements/accounting/all/search', {
     query: {
       value,
     },
@@ -18,7 +18,7 @@ export async function searchPaymentExpenseArticles(value: string): Promise<Payme
 }
 
 export async function getPaymentExpenseArticle(netId: string): Promise<PaymentExpenseArticle | null> {
-  const result = await apiRequest<unknown>('/payments/costs/movements/get', {
+  const result = await apiRequest<unknown>('/payments/costs/movements/accounting/get', {
     query: {
       netId,
     },
@@ -30,7 +30,7 @@ export async function getPaymentExpenseArticle(netId: string): Promise<PaymentEx
 export async function createPaymentExpenseArticle(
   article: PaymentExpenseArticlePayload,
 ): Promise<PaymentExpenseArticle | null> {
-  const result = await apiRequest<unknown>('/payments/costs/movements/new', {
+  const result = await apiRequest<unknown>('/payments/costs/movements/accounting/new', {
     method: 'POST',
     body: article,
   })
@@ -41,7 +41,7 @@ export async function createPaymentExpenseArticle(
 export async function updatePaymentExpenseArticle(
   article: PaymentExpenseArticlePayload,
 ): Promise<PaymentExpenseArticle | null> {
-  const result = await apiRequest<unknown>('/payments/costs/movements/update', {
+  const result = await apiRequest<unknown>('/payments/costs/movements/accounting/update', {
     method: 'POST',
     body: article,
   })
@@ -50,7 +50,7 @@ export async function updatePaymentExpenseArticle(
 }
 
 export async function deletePaymentExpenseArticle(netId: string): Promise<void> {
-  await apiRequest<unknown>('/payments/costs/movements/delete', {
+  await apiRequest<unknown>('/payments/costs/movements/accounting/delete', {
     method: 'DELETE',
     query: {
       netId,

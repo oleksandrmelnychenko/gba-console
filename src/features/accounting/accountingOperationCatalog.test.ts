@@ -175,6 +175,37 @@ describe('accounting operation catalog', () => {
     ])
   })
 
+  it('keeps manual cashflow metadata on permission-scoped create routes', () => {
+    const endpointsByOperation = Object.fromEntries(
+      ACCOUNTING_OPERATION_CATALOG.map((operation) => [operation.id, operation.endpoint]),
+    )
+
+    expect(endpointsByOperation).toMatchObject({
+      [ACCOUNTING_OPERATION_ID.IncomeOther]:
+        '/payments/orders/income/accounting/create/other-income',
+      [ACCOUNTING_OPERATION_ID.IncomeClientPayment]:
+        '/payments/orders/income/accounting/create/client-payment',
+      [ACCOUNTING_OPERATION_ID.IncomeSupplierReturn]:
+        '/payments/orders/income/accounting/create/supplier-return',
+      [ACCOUNTING_OPERATION_ID.IncomeOtherWithCounterparties]:
+        '/payments/orders/income/accounting/create/counterparty-income',
+      [ACCOUNTING_OPERATION_ID.IncomeReturnFromColleague]:
+        '/payments/orders/income/accounting/create/colleague-return',
+      [ACCOUNTING_OPERATION_ID.IncomeShopPayment]:
+        '/payments/orders/income/online-shop/create',
+      [ACCOUNTING_OPERATION_ID.OutcomeSupplierPayment]:
+        '/payments/orders/outcome/outgoing-cashflows/create',
+      [ACCOUNTING_OPERATION_ID.OutcomeCustomerRefund]:
+        '/payments/orders/outcome/outgoing-cashflows/create',
+      [ACCOUNTING_OPERATION_ID.OutcomeOtherWithCounterparties]:
+        '/payments/orders/outcome/outgoing-cashflows/create',
+      [ACCOUNTING_OPERATION_ID.OutcomeOther]:
+        '/payments/orders/outcome/outgoing-cashflows/create',
+      [ACCOUNTING_OPERATION_ID.OutcomeTransferToColleague]:
+        '/payments/orders/outcome/outgoing-cashflows/create',
+    })
+  })
+
   it('does not expose the retired non-posting advance-payment workflow', () => {
     expect(
       ACCOUNTING_OPERATION_CATALOG.some(

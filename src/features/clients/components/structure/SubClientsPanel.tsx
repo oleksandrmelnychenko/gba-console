@@ -15,6 +15,8 @@ import {
 } from './clientRelationship'
 
 export type SubClientsPanelProps = {
+  canCreateClient: boolean
+  canOpenDetails: boolean
   client: Client
   relationKind?: ClientRelationshipKind
 }
@@ -24,7 +26,12 @@ export type SubClientsPanelProps = {
  * tree pattern). The current client's direct sub-clients are the top level;
  * each node lazy-loads its own sub-clients on expand.
  */
-export function SubClientsPanel({ client, relationKind = 'subclient' }: SubClientsPanelProps) {
+export function SubClientsPanel({
+  canCreateClient,
+  canOpenDetails,
+  client,
+  relationKind = 'subclient',
+}: SubClientsPanelProps) {
   const { t } = useI18n()
   const navigate = useNavigate()
   const location = useLocation()
@@ -99,14 +106,18 @@ export function SubClientsPanel({ client, relationKind = 'subclient' }: SubClien
 
   const openSubClient = useCallback(
     (subClientNetId?: string) => {
-      if (subClientNetId) {
+      if (canOpenDetails && subClientNetId) {
         navigate(`/clients/edit/${subClientNetId}`)
       }
     },
-    [navigate],
+    [canOpenDetails, navigate],
   )
 
   function openNewUser() {
+    if (!canCreateClient) {
+      return
+    }
+
     navigate('/clients/new/role', {
       state: {
         ...(location.state && typeof location.state === 'object' ? location.state : {}),
@@ -143,7 +154,7 @@ export function SubClientsPanel({ client, relationKind = 'subclient' }: SubClien
 
   return (
     <Stack gap="sm">
-      {relationKind === 'subclient' ? (
+      {relationKind === 'subclient' && canCreateClient ? (
         <Group justify="flex-end" align="center">
           <Button color={CREATE_ACTION_COLOR} leftSection={<Plus size={16} />} size="xs" onClick={openNewUser}>
             {t('Новий користувач')}

@@ -20,6 +20,7 @@ import { CircleAlert, Copy, Merge, Plus, ReceiptText, Search, Share2, TriangleAl
 import { useEffect, useReducer, useState } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
+import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { AppModal } from '../../../shared/ui/AppModal'
 import { TransporterNameWithIcon } from '../../../shared/transporter-icons/TransporterIcon'
@@ -64,6 +65,7 @@ import type { WizardCartMutationExpectation } from './new-sale-wizard/wizardMuta
 import { WizardReassignSaleModal } from './new-sale-wizard/WizardReassignSaleModal'
 import { MergedSalesDrawer } from './MergedSalesDrawer'
 import { SaleDetailsDrawer } from './SaleDetailsDrawer'
+import { usePermissions } from '../../auth/usePermissions'
 import './sale-editor-drawer.css'
 import type {
   SaleClientDebtTotal,
@@ -95,7 +97,15 @@ type SaleCartMutationRunner = (
   fallbackMessage: string,
 ) => Promise<boolean>
 
-export function SaleEditorDrawer({ sale, onClose }: { onClose: () => void; sale: SalesUkraineSale | null }) {
+export function SaleEditorDrawer({
+  loadSale = getSaleById,
+  sale,
+  onClose,
+}: {
+  loadSale?: typeof getSaleById
+  onClose: () => void
+  sale: SalesUkraineSale | null
+}) {
   const { t } = useI18n()
 
   return (
@@ -106,13 +116,16 @@ export function SaleEditorDrawer({ sale, onClose }: { onClose: () => void; sale:
       title={sale ? `${t('Продаж')} ${sale.SaleNumber?.Value || ''}`.trim() : t('Продаж')}
       onClose={onClose}
     >
-      {sale && <SaleEditorContent key={sale.NetUid || sale.Id} initialSale={sale} />}
+      {sale && <SaleEditorContent key={sale.NetUid || sale.Id} initialSale={sale} loadSale={loadSale} />}
     </AppDrawer>
   )
 }
 
-function SaleEditorContent({ initialSale }: { initialSale: SalesUkraineSale }) {
+function SaleEditorContent({ initialSale, loadSale }: { initialSale: SalesUkraineSale; loadSale: typeof getSaleById }) {
   const { t } = useI18n()
+  const { can } = usePermissions()
+  const canConvertMergedToBill = can(PermissionKeys.SalesUkraine.Sale.ConvertMergedToBill)
+  const canReassign = can(PermissionKeys.SalesUkraine.Sale.Reassign)
   const [sale, setSale] = useValueState<SalesUkraineSale>(initialSale)
   const [retailPaymentState, setRetailPaymentState] =
     useValueState<RetailPaymentState>(EMPTY_RETAIL_PAYMENT_STATE)
@@ -136,7 +149,7 @@ function SaleEditorContent({ initialSale }: { initialSale: SalesUkraineSale }) {
     reconcile: async () => {
       const netUid = sale.NetUid || initialSale.NetUid
 
-      return netUid ? getSaleById(netUid) : null
+      return netUid ? loadSale(netUid) : null
     },
   })
   const fileMutation = usePersistentSaleFileMutation(
@@ -159,7 +172,7 @@ function SaleEditorContent({ initialSale }: { initialSale: SalesUkraineSale }) {
 
     async function load(id: string) {
       try {
-        const next = await getSaleById(id)
+        const next = await loadSale(id)
 
         if (!cancelled) {
           if (!next || next.HasDetails === false || !next.Order) {
@@ -184,7 +197,7 @@ function SaleEditorContent({ initialSale }: { initialSale: SalesUkraineSale }) {
     return () => {
       cancelled = true
     }
-  }, [initialSale.NetUid, reloadKey, setError, setLoading, setSale, t])
+  }, [initialSale.NetUid, loadSale, reloadKey, setError, setLoading, setSale, t])
 
   const retailSaleId = typeof sale.Id === 'number' && sale.Id > 0 ? sale.Id : null
   const retailClientKey = getEntityKey(sale.RetailClient)
@@ -252,7 +265,7 @@ function SaleEditorContent({ initialSale }: { initialSale: SalesUkraineSale }) {
       throw new Error(t('Продаж не має збереженого ідентифікатора'))
     }
 
-    const fresh = await getSaleById(netUid)
+    const fresh = await loadSale(netUid)
 
     if (!fresh || fresh.HasDetails === false || !fresh.Order) {
       throw new Error(t('Не вдалося завантажити повні дані продажу'))
@@ -486,7 +499,7 @@ function SaleEditorContent({ initialSale }: { initialSale: SalesUkraineSale }) {
         >
           {t('Копіювати')}
         </Button>
-        {isEditable && reassignClient && (
+        {isEditable && canReassign && reassignClient && (
           <Button leftSection={<Share2 size={16} />} variant="outline" onClick={() => setReassignOpen(true)}>
             {t('Переназначити')}
           </Button>
@@ -555,7 +568,7 @@ function SaleEditorContent({ initialSale }: { initialSale: SalesUkraineSale }) {
         </div>
         ) : (
         <div className="sale-editor-tab-panel">
-          <ClientTab canEdit={isEditable} sale={sale} onSwitched={reload} />
+          <ClientTab canReassign={isEditable && canReassign} sale={sale} onSwitched={reload} />
         </div>
         )}
       </div>
@@ -583,6 +596,7 @@ function SaleEditorContent({ initialSale }: { initialSale: SalesUkraineSale }) {
       />
 
       <SaleDetailsDrawer
+        loadSale={loadSale}
         sale={isDetailsOpen ? sale : null}
         onClose={() => setDetailsOpen(false)}
         onSaved={() => {
@@ -592,6 +606,8 @@ function SaleEditorContent({ initialSale }: { initialSale: SalesUkraineSale }) {
       />
 
       <MergedSalesDrawer
+        canCreateInvoice={canConvertMergedToBill}
+        canEdit={isEditable}
         saleNetId={isMergedOpen ? sale.NetUid ?? null : null}
         onChanged={reload}
         onClose={() => setMergedOpen(false)}
@@ -600,7 +616,8 @@ function SaleEditorContent({ initialSale }: { initialSale: SalesUkraineSale }) {
       {reassignClient && (
         <WizardReassignSaleModal
           client={reassignClient}
-          opened={isReassignOpen}
+          opened={canReassign && isReassignOpen}
+          permissionFlow="edit"
           sale={sale}
           onClose={() => setReassignOpen(false)}
           onReassigned={() => {
@@ -1197,7 +1214,7 @@ function AddProductForm({
   )
 }
 
-function ClientTab({ canEdit, sale, onSwitched }: { canEdit: boolean; onSwitched: () => void; sale: SalesUkraineSale }) {
+function ClientTab({ canReassign, sale, onSwitched }: { canReassign: boolean; onSwitched: () => void; sale: SalesUkraineSale }) {
   const { t } = useI18n()
   const clientNetUid = sale.ClientAgreement?.Client?.NetUid
   const currentAgreementNetUid = sale.ClientAgreement?.NetUid || ''
@@ -1246,7 +1263,7 @@ function ClientTab({ canEdit, sale, onSwitched }: { canEdit: boolean; onSwitched
   }, [])
 
   async function switchAgreement() {
-    if (!sale.NetUid || !selectedAgreement || selectedAgreement === currentAgreementNetUid) {
+    if (!canReassign || !sale.NetUid || !selectedAgreement || selectedAgreement === currentAgreementNetUid) {
       return
     }
 
@@ -1303,7 +1320,7 @@ function ClientTab({ canEdit, sale, onSwitched }: { canEdit: boolean; onSwitched
 
       <Group align="end" gap="sm" wrap="nowrap">
         <Select
-          disabled={!canEdit}
+          disabled={!canReassign}
           searchable
           data={agreementOptions}
           label={t('Договір')}
@@ -1312,7 +1329,7 @@ function ClientTab({ canEdit, sale, onSwitched }: { canEdit: boolean; onSwitched
           onChange={(value) => setSelectedAgreement(value || '')}
         />
         <Button
-          disabled={!canEdit || !selectedAgreement || selectedAgreement === currentAgreementNetUid}
+          disabled={!canReassign || !selectedAgreement || selectedAgreement === currentAgreementNetUid}
           loading={isSwitching}
           variant="outline"
           onClick={switchAgreement}

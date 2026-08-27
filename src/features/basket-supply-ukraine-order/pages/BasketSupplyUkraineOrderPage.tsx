@@ -22,7 +22,9 @@ import { notifications } from '@mantine/notifications'
 import { ArrowLeft, ArrowRight, Check, CircleAlert, FileInput, FileSpreadsheet, RefreshCw, RotateCcw, Search } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useReducer, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
+import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { formatLocalDate } from '../../../shared/date/dateTime'
+import { usePermissions } from '../../auth/usePermissions'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AiFeatureBadge } from '../../../shared/ai/AiFeatureBadge'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
@@ -30,10 +32,10 @@ import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { TableRowAction } from '../../../shared/ui/table-row-action'
 import {
-  addOrUpdateSad,
   addOrUpdateSaleSad,
   addOrUpdateSaleTaxFreePackList,
-  addOrUpdateTaxFreePackList,
+  assembleCartSadDocument,
+  assembleCartTaxFreeDocument,
   calculateTotalsByCartItems,
   calculateTotalsBySales,
   getNotSentSads,
@@ -138,15 +140,29 @@ const SEARCH_ICON = <Search size={16} />
 
 export function BasketSupplyUkraineOrderPage() {
   const { t } = useI18n()
+  const { can, isLoading } = usePermissions()
   const navigate = useNavigate()
   const location = useLocation()
   const activeTab = getActiveTab(location.pathname)
+  const canViewCart = can(PermissionKeys.SystemPages.SupplyCart.View)
+  const canViewBudgetCart = can(PermissionKeys.SystemPages.BudgetCart.View)
+  const canViewPurchaseCockpit = can(PermissionKeys.SystemPages.PurchaseCockpit.View)
+  const canViewSupplyDashboard = can(PermissionKeys.SystemPages.SupplyDashboard.View)
+  const canViewSales = can(PermissionKeys.SystemPages.SupplySales.View)
   const tabs: Array<{ ai?: boolean; label: string; value: BasketSupplyWorkflowTab }> = [
-    { value: 'sales', label: t('Фактура') },
-    { value: 'cart', label: t('Переміщення на Україну') },
-    { value: 'cockpit', label: t('Конструктор закупівель'), ai: true },
-    { value: 'dashboard', label: t('Дашборд'), ai: true },
-    { value: 'budget-cart', label: t('Закупівля під бюджет'), ai: true },
+    ...(canViewSales ? [{ value: 'sales' as const, label: t('Фактура') }] : []),
+    ...(canViewCart ? [
+      { value: 'cart' as const, label: t('Переміщення на Україну') },
+    ] : []),
+    ...(canViewPurchaseCockpit ? [
+      { value: 'cockpit' as const, label: t('Конструктор закупівель'), ai: true },
+    ] : []),
+    ...(canViewSupplyDashboard ? [
+      { value: 'dashboard' as const, label: t('Дашборд'), ai: true },
+    ] : []),
+    ...(canViewBudgetCart ? [
+      { value: 'budget-cart' as const, label: t('Закупівля під бюджет'), ai: true },
+    ] : []),
   ]
 
   function changeTab(nextTab: string | null) {
@@ -155,6 +171,28 @@ export function BasketSupplyUkraineOrderPage() {
     }
 
     navigate(getTabPath(nextTab as BasketSupplyWorkflowTab))
+  }
+
+  if (isLoading) {
+    return <Text c="dimmed">{t('Завантаження')}</Text>
+  }
+
+  const canViewActiveTab = activeTab === 'sales'
+    ? canViewSales
+    : activeTab === 'budget-cart'
+      ? canViewBudgetCart
+      : activeTab === 'cockpit'
+        ? canViewPurchaseCockpit
+        : activeTab === 'dashboard'
+          ? canViewSupplyDashboard
+          : canViewCart
+
+  if (!canViewActiveTab) {
+    return (
+      <Alert color="red" icon={ALERT_CIRCLE_ICON} title={t('Доступ заборонено')} variant="light">
+        {t('Недостатньо прав для перегляду цього розділу закупівель')}
+      </Alert>
+    )
   }
 
   return (
@@ -189,7 +227,11 @@ export function BasketSupplyUkraineOrderPage() {
 
 function BasketCartWorkflow() {
   const { t } = useI18n()
+  const { can } = usePermissions()
   const navigate = useNavigate()
+  const canImportFile = can(PermissionKeys.SupplyCart.File.Import)
+  const canEditReservation = can(PermissionKeys.SupplyCart.Item.EditReservation)
+  const canAssembleDocument = can(PermissionKeys.SupplyCart.Document.Assemble)
   const [cartItems, setCartItems] = useState<SupplyOrderUkraineCartItem[]>([])
   const [destinationItems, setDestinationItems] = useState<SupplyOrderUkraineCartItem[]>([])
   const [notSentTaxFreePackLists, setNotSentTaxFreePackLists] = useState<TaxFreePackList[]>([])
@@ -233,6 +275,7 @@ function BasketCartWorkflow() {
   const visibleIsTotalsLoading = destinationItems.length ? isTotalsLoading : false
   const isCartEmpty = !isLoading && !error && cartItems.length === 0 && destinationItems.length === 0
   const sourceColumns = useCartSourceColumns({
+    canEditReservation,
     isSelected: (item) => selectedSourceIds.has(getCartItemKey(item)),
     openReserveModal,
     t,
@@ -246,6 +289,14 @@ function BasketCartWorkflow() {
   })
 
   const loadReferenceDocuments = useCallback(async () => {
+    if (!canAssembleDocument) {
+      setNotSentTaxFreePackLists([])
+      setNotSentSads([])
+      setReferenceLoading(false)
+      setReferenceError(null)
+      return
+    }
+
     setReferenceLoading(true)
     setReferenceError(null)
 
@@ -259,7 +310,7 @@ function BasketCartWorkflow() {
     } finally {
       setReferenceLoading(false)
     }
-  }, [t])
+  }, [canAssembleDocument, t])
 
   useEffect(() => {
     let cancelled = false
@@ -298,6 +349,14 @@ function BasketCartWorkflow() {
     let cancelled = false
 
     async function loadReferences() {
+      if (!canAssembleDocument) {
+        setNotSentTaxFreePackLists([])
+        setNotSentSads([])
+        setReferenceLoading(false)
+        setReferenceError(null)
+        return
+      }
+
       setReferenceLoading(true)
       setReferenceError(null)
 
@@ -324,7 +383,7 @@ function BasketCartWorkflow() {
     return () => {
       cancelled = true
     }
-  }, [t])
+  }, [canAssembleDocument, t])
 
   useEffect(() => {
     let cancelled = false
@@ -361,12 +420,20 @@ function BasketCartWorkflow() {
   }, [destinationItems])
 
   function openUploadModal(mode: BasketSupplyFileUploadMode) {
+    if (!canImportFile) {
+      return
+    }
+
     setUploadMode(mode)
     setUploadError(null)
     setUploadModalOpen(true)
   }
 
   async function submitUpload(file: File, parseConfiguration: CartItemsParseConfiguration) {
+    if (!canImportFile) {
+      return
+    }
+
     setUploading(true)
     setUploadError(null)
 
@@ -483,12 +550,18 @@ function BasketCartWorkflow() {
   }
 
   function openReserveModal(item: SupplyOrderUkraineCartItem) {
+    if (!canEditReservation) {
+      return
+    }
+
     setReserveItem(item)
     setReserveQty(toNumber(item.ReservedQty))
   }
 
   async function saveReserveQty() {
     if (
+      !canEditReservation
+      ||
       !reserveItem
       || reserveQty === ''
       || !Number.isFinite(reserveQty)
@@ -527,6 +600,10 @@ function BasketCartWorkflow() {
   }
 
   async function createDocument() {
+    if (!canAssembleDocument) {
+      return
+    }
+
     setCreateError(null)
     setCreatedDocument(null)
 
@@ -635,11 +712,15 @@ function BasketCartWorkflow() {
   )
   const destinationToolbarRight = useMemo(
     () => (
-      <Button color={CREATE_ACTION_COLOR} disabled={!destinationItems.length} loading={isCreatingDocument} onClick={() => setCreateModalOpen(true)}>
-        {isCreatingDocument ? t('Створення') : t('Створити')}
-      </Button>
+      canAssembleDocument
+        ? (
+            <Button color={CREATE_ACTION_COLOR} disabled={!destinationItems.length} loading={isCreatingDocument} onClick={() => setCreateModalOpen(true)}>
+              {isCreatingDocument ? t('Створення') : t('Створити')}
+            </Button>
+          )
+        : null
     ),
-    [destinationItems.length, isCreatingDocument, t],
+    [canAssembleDocument, destinationItems.length, isCreatingDocument, t],
   )
 
   return (
@@ -697,12 +778,16 @@ function BasketCartWorkflow() {
                   <RefreshCw size={16} />
                 </ActionIcon>
               </Tooltip>
-              <Button leftSection={FILE_IMPORT_ICON} styles={{ label: { fontFamily: 'var(--font-mono)', letterSpacing: 0 } }} variant="outline" onClick={() => openUploadModal('load')}>
-                {t('Завантажити в корзину')}
-              </Button>
-              <Button leftSection={FILE_SPREADSHEET_ICON} styles={{ label: { fontFamily: 'var(--font-mono)', letterSpacing: 0 } }} variant="outline" onClick={() => openUploadModal('preview')}>
-                {t('Вибрати для експорту')}
-              </Button>
+              {canImportFile && (
+                <>
+                  <Button leftSection={FILE_IMPORT_ICON} styles={{ label: { fontFamily: 'var(--font-mono)', letterSpacing: 0 } }} variant="outline" onClick={() => openUploadModal('load')}>
+                    {t('Завантажити в корзину')}
+                  </Button>
+                  <Button leftSection={FILE_SPREADSHEET_ICON} styles={{ label: { fontFamily: 'var(--font-mono)', letterSpacing: 0 } }} variant="outline" onClick={() => openUploadModal('preview')}>
+                    {t('Вибрати для експорту')}
+                  </Button>
+                </>
+              )}
             </div>
             <div ref={setSourceTableToolbarSlot} className="app-filter-table-toolbar-slot" />
           </div>
@@ -731,10 +816,10 @@ function BasketCartWorkflow() {
 
           {isCartEmpty ? (
             <ProcurementWorkspaceState
-              action={{
+              action={canImportFile ? {
                 label: t('Завантажити товари'),
                 onClick: () => openUploadModal('load'),
-              }}
+              } : undefined}
               className="basket-supply-empty-workspace"
               description={t('Завантажте файл із товарами, щоб сформувати підбірку для переміщення та створити документ.')}
               surface
@@ -807,7 +892,7 @@ function BasketCartWorkflow() {
         key={`${uploadMode}-${isUploadModalOpen ? 'open' : 'closed'}`}
         isSubmitting={isUploading}
         mode={uploadMode}
-        opened={isUploadModalOpen}
+        opened={canImportFile && isUploadModalOpen}
         submitError={uploadError}
         t={t}
         onClose={() => setUploadModalOpen(false)}
@@ -815,14 +900,18 @@ function BasketCartWorkflow() {
       />
 
       <PreviewCartItemsModal
-        opened={isPreviewModalOpen}
+        opened={canImportFile && isPreviewModalOpen}
         previewItems={previewItems}
         t={t}
         onClose={() => setPreviewModalOpen(false)}
-        onLoadValidItems={addPreviewItemsToDestination}
+        onLoadValidItems={(items) => {
+          if (canImportFile) {
+            addPreviewItemsToDestination(items)
+          }
+        }}
       />
 
-      <AppModal centered opened={isCreateModalOpen} size="lg" title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Створити документ')}</span>} onClose={closeCreateModal}>
+      <AppModal centered opened={canAssembleDocument && isCreateModalOpen} size="lg" title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Створити документ')}</span>} onClose={closeCreateModal}>
         <Stack gap="md">
           <DocumentTargetControls
             disabled={isCreatingDocument || isReferenceLoading}
@@ -848,7 +937,7 @@ function BasketCartWorkflow() {
         </Stack>
       </AppModal>
 
-      <AppModal centered opened={Boolean(reserveItem)} title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Резерв')}</span>} onClose={() => setReserveItem(null)}>
+      <AppModal centered opened={canEditReservation && Boolean(reserveItem)} title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Резерв')}</span>} onClose={() => setReserveItem(null)}>
         <Stack gap="md">
           <Text size="sm">
             {reserveItem?.Product?.VendorCode} {reserveItem?.Product?.Name}
@@ -876,7 +965,10 @@ function BasketCartWorkflow() {
 
 function SalesWorkflowTab() {
   const { t } = useI18n()
+  const { can } = usePermissions()
   const navigate = useNavigate()
+  const canOpenSale = can(PermissionKeys.SupplySales.Sale.Open)
+  const canAssembleDocument = can(PermissionKeys.SupplyCart.Document.Assemble)
   const today = useMemo(() => formatLocalDate(new Date()), [])
   const initialFilters = useMemo<BasketSupplySalesFilters>(
     () => ({
@@ -934,15 +1026,23 @@ function SalesWorkflowTab() {
     () => destinationSales.filter((sale) => selectedDestinationSaleIds.has(getBasketSaleKey(sale))).length,
     [destinationSales, selectedDestinationSaleIds],
   )
+  function openSale(sale: BasketSale) {
+    if (canOpenSale) {
+      setSelectedSale(sale)
+    }
+  }
+
   const sourceColumns = useBasketSalesColumns({
+    canOpen: canOpenSale,
     isSelected: (sale) => selectedSourceSaleIds.has(getBasketSaleKey(sale)),
-    onOpen: setSelectedSale,
+    onOpen: openSale,
     t,
     toggleSelected: toggleSourceSaleSelection,
   })
   const destinationColumns = useBasketSalesColumns({
+    canOpen: canOpenSale,
     isSelected: (sale) => selectedDestinationSaleIds.has(getBasketSaleKey(sale)),
-    onOpen: setSelectedSale,
+    onOpen: openSale,
     t,
     toggleSelected: toggleDestinationSaleSelection,
   })
@@ -950,6 +1050,14 @@ function SalesWorkflowTab() {
   const visibleIsTotalsLoading = destinationSales.length ? isTotalsLoading : false
 
   const loadSaleReferenceDocuments = useCallback(async () => {
+    if (!canAssembleDocument) {
+      setNotSentSaleTaxFreePackLists([])
+      setNotSentSaleSads([])
+      setReferenceLoading(false)
+      setReferenceError(null)
+      return
+    }
+
     setReferenceLoading(true)
     setReferenceError(null)
 
@@ -963,7 +1071,7 @@ function SalesWorkflowTab() {
     } finally {
       setReferenceLoading(false)
     }
-  }, [t])
+  }, [canAssembleDocument, t])
 
   useEffect(() => {
     let cancelled = false
@@ -1150,6 +1258,10 @@ function SalesWorkflowTab() {
   }
 
   async function createSalesDocument() {
+    if (!can(PermissionKeys.SupplyCart.Document.Assemble)) {
+      return
+    }
+
     setCreateError(null)
     setCreatedDocument(null)
 
@@ -1286,7 +1398,7 @@ function SalesWorkflowTab() {
               </Group>
             }
             toolbarPortalTarget={salesTableToolbarSlot}
-            onRowClick={setSelectedSale}
+            onRowClick={canOpenSale ? openSale : undefined}
           />
         </Stack>
       </Card>
@@ -1338,18 +1450,22 @@ function SalesWorkflowTab() {
               </Group>
             }
             toolbarRight={
-              <Button color={CREATE_ACTION_COLOR} disabled={!destinationSales.length} loading={isCreatingDocument} onClick={() => setCreateModalOpen(true)}>
-                {isCreatingDocument ? t('Створення') : t('Створити')}
-              </Button>
+              canAssembleDocument
+                ? (
+                    <Button color={CREATE_ACTION_COLOR} disabled={!destinationSales.length} loading={isCreatingDocument} onClick={() => setCreateModalOpen(true)}>
+                      {isCreatingDocument ? t('Створення') : t('Створити')}
+                    </Button>
+                  )
+                : null
             }
-            onRowClick={setSelectedSale}
+            onRowClick={canOpenSale ? openSale : undefined}
           />
 
           <TotalsBar isLoading={visibleIsTotalsLoading} totals={visibleTotals} />
         </Stack>
       </Card>
 
-      <AppModal centered opened={isCreateModalOpen} size="lg" title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Створити документ')}</span>} onClose={closeCreateModal}>
+      <AppModal centered opened={canAssembleDocument && isCreateModalOpen} size="lg" title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Створити документ')}</span>} onClose={closeCreateModal}>
         <Stack gap="md">
           <DocumentTargetControls
             disabled={isCreatingDocument || isReferenceLoading}
@@ -1376,7 +1492,7 @@ function SalesWorkflowTab() {
       </AppModal>
 
       <AppDrawer
-        opened={Boolean(selectedSale)}
+        opened={canOpenSale && Boolean(selectedSale)}
         position="right"
         size="xl"
         title={`${t('Фактура')} ${selectedSale?.SaleNumber?.Value || ''}`.trim()}
@@ -1452,11 +1568,13 @@ function SaleItemsList({ items }: { items: BasketOrderItem[] }) {
 }
 
 function useBasketSalesColumns({
+  canOpen,
   isSelected,
   onOpen,
   t,
   toggleSelected,
 }: {
+  canOpen: boolean
   isSelected: (sale: BasketSale) => boolean
   onOpen: (sale: BasketSale) => void
   t: (key: string) => string
@@ -1533,7 +1651,7 @@ function useBasketSalesColumns({
       {
         id: 'actions',
         header: '',
-        cell: (sale) => (
+        cell: (sale) => canOpen ? (
           <TableRowAction
             action="view"
             label={t('Переглянути')}
@@ -1542,21 +1660,23 @@ function useBasketSalesColumns({
               onOpen(sale)
             }}
           />
-        ),
+        ) : null,
         width: 72,
         enableSorting: false,
       },
     ],
-    [isSelected, onOpen, t, toggleSelected],
+    [canOpen, isSelected, onOpen, t, toggleSelected],
   )
 }
 
 function useCartSourceColumns({
+  canEditReservation,
   isSelected,
   openReserveModal,
   t,
   toggleSelected,
 }: {
+  canEditReservation: boolean
   isSelected: (item: SupplyOrderUkraineCartItem) => boolean
   openReserveModal: (item: SupplyOrderUkraineCartItem) => void
   t: (key: string) => string
@@ -1627,7 +1747,7 @@ function useCartSourceColumns({
       {
         id: 'actions',
         header: '',
-        cell: (item) => (
+        cell: (item) => canEditReservation ? (
           <TableRowAction
             action="edit"
             disabled={Boolean(item.IsDirty)}
@@ -1637,12 +1757,12 @@ function useCartSourceColumns({
               openReserveModal(item)
             }}
           />
-        ),
+        ) : null,
         width: 72,
         enableSorting: false,
       },
     ],
-    [isSelected, openReserveModal, t, toggleSelected],
+    [canEditReservation, isSelected, openReserveModal, t, toggleSelected],
   )
 }
 
@@ -1761,16 +1881,10 @@ async function createTaxFreeDocument(
     throw new Error('TaxFree pack list is not selected')
   }
 
-  const packList: TaxFreePackList = selectedPackList
-    ? {
-        ...selectedPackList,
-        SupplyOrderUkraineCartItems: [...(selectedPackList.SupplyOrderUkraineCartItems || []), ...documentItems],
-      }
-    : {
-        SupplyOrderUkraineCartItems: documentItems,
-      }
-
-  const result = await addOrUpdateTaxFreePackList(packList)
+  const result = await assembleCartTaxFreeDocument({
+    existingDocumentNetUid: selectedPackList?.NetUid,
+    items: toDocumentAssemblyItems(documentItems),
+  })
 
   return {
     kind: 'TaxFree',
@@ -1790,22 +1904,11 @@ async function createSadDocument(
     throw new Error('SAD is not selected')
   }
 
-  const sadItems = documentItems.map((item) => ({
-    Qty: item.UploadedQty || item.ChangedQty || item.ReservedQty,
-    SupplyOrderUkraineCartItem: item,
-  }))
-  const sad: Sad = selectedSad
-    ? {
-        ...selectedSad,
-        SadItems: [...(selectedSad.SadItems || []), ...sadItems],
-        SadType: documentState.sadType,
-      }
-    : {
-        SadItems: sadItems,
-        SadType: documentState.sadType,
-      }
-
-  const result = await addOrUpdateSad(sad)
+  const result = await assembleCartSadDocument({
+    existingDocumentNetUid: selectedSad?.NetUid,
+    items: toDocumentAssemblyItems(documentItems),
+    sadType: documentState.sadType,
+  })
 
   return {
     kind: 'SAD',
@@ -2019,6 +2122,17 @@ function toCartItemsForDocument(items: SupplyOrderUkraineCartItem[]) {
     ...item,
     IsSelected: false,
     UploadedQty: item.ChangedQty || item.ReservedQty,
+  }))
+}
+
+function toDocumentAssemblyItems(
+  items: SupplyOrderUkraineCartItem[],
+) {
+  return items.map((item) => ({
+    cartItemId: Number(item.Id),
+    quantity: toNumber(
+      item.UploadedQty || item.ChangedQty || item.ReservedQty,
+    ),
   }))
 }
 

@@ -33,14 +33,27 @@ describe('documentOutcomePaymentApi', () => {
 
     await createOutcomeOrderFromSad('sad-1', order, { operationId })
 
-    expect(apiRequestMock).toHaveBeenCalledWith('/payments/orders/outcome/new/sad', {
+    expect(apiRequestMock).toHaveBeenCalledWith('/payments/orders/outcome/sad/create', {
       dedupe: false,
       headers: { 'Idempotency-Key': operationId },
       method: 'POST',
       query: {
         sadNetId: 'sad-1',
       },
-      body: order,
+      body: {
+        amount: 100,
+        comment: '',
+        fromDate: '2026-07-24T00:00:00.000Z',
+        organizationId: 1,
+        paymentMovementId: 55,
+        clientId: null,
+        clientAgreementId: null,
+        organizationClientId: 33,
+        organizationClientAgreementId: 22,
+        paymentRegisterId: 0,
+        currencyId: 0,
+        paymentCurrencyRegisterId: 44,
+      },
     })
   })
 
@@ -58,7 +71,7 @@ describe('documentOutcomePaymentApi', () => {
       { operationId },
     )
 
-    expect(apiRequestMock).toHaveBeenCalledWith('/payments/orders/outcome/new/taxfree', {
+    expect(apiRequestMock).toHaveBeenCalledWith('/payments/orders/outcome/tax-free-documents/new', {
       dedupe: false,
       headers: { 'Idempotency-Key': operationId },
       method: 'POST',

@@ -7,9 +7,14 @@ export type WizardClientStructureDebtTotal = {
   TotalSubClientDebt?: number
 }
 
-export async function getWizardHeaderClient(clientNetId: string): Promise<Client | null> {
-  const result = await apiRequest<unknown>('/clients/get', {
-    query: { netId: clientNetId },
+export type WizardSalesPermissionFlow = 'create' | 'edit'
+
+export async function getWizardHeaderClient(
+  clientNetId: string,
+  flow: WizardSalesPermissionFlow,
+): Promise<Client | null> {
+  const result = await apiRequest<unknown>(`/clients/sales-ukraine/${flow}/details`, {
+    query: { includeDebts: true, netId: clientNetId },
   })
 
   return result && typeof result === 'object' ? (result as Client) : null

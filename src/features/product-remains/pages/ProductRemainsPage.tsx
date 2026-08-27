@@ -12,10 +12,18 @@ import {
   TextInput,
   Tooltip,
 } from '@mantine/core'
-import { AppDrawer } from "../../../shared/ui/AppDrawer"
+import { AppDrawer } from '../../../shared/ui/AppDrawer'
+import {
+  DocumentDetailLayout,
+  DocumentDetailMetric,
+  DocumentDetailRow,
+  DocumentDetailSection,
+  DocumentDetailSummary,
+} from '../../../shared/ui/document-detail/DocumentDetail'
 import { CircleAlert, Download, RefreshCw, RotateCcw, Search } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
+import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { translate } from '../../../shared/i18n/translate'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -24,6 +32,8 @@ import { DocumentExportModal } from '../../../shared/ui/document-export-modal/Do
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { Paginator } from '../../../shared/ui/paginator/Paginator'
 import { TableRowAction } from '../../../shared/ui/table-row-action'
+import { PermissionGate } from '../../auth/components/PermissionGate'
+import { useAuth } from '../../auth/useAuth'
 import {
   exportGroupedProductRemains,
   exportProductRemains,
@@ -96,6 +106,7 @@ function getProductRemainsInitialTab(routeTab: string | undefined): ProductRemai
 
 function useProductRemainsPageModel() {
   const { t } = useI18n()
+  const { hasPermission } = useAuth()
   const navigate = useNavigate()
   const { tab: routeTab } = useParams()
   const [activeTab, setActiveTab] = useValueState<ProductRemainsTab>(() => getProductRemainsInitialTab(routeTab))
@@ -154,8 +165,10 @@ function useProductRemainsPageModel() {
   const resourceError = storageResourceError || supplierResourceError
   const storageOptions = useMemo(() => buildStorageOptions(storages), [storages])
   const supplierSelectOptions = useMemo(() => buildSupplierOptions(supplierOptions), [supplierOptions])
+  const canExport = hasPermission(PermissionKeys.WarehouseAccounting.ConsignmentBalances.Document.Export)
+  const canOpenMovement = hasPermission(PermissionKeys.ProductsAssortment.Movement.Open)
   const batchColumns = useProductRemainBatchColumns()
-  const productColumns = useProductRemainProductColumns(openMovement)
+  const productColumns = useProductRemainProductColumns(canOpenMovement ? openMovement : undefined)
   const batchPage = getPageFromOffset(batchOffset, pageSize)
   const productPage = getPageFromOffset(productOffset, pageSize)
   const batchTotalPages = getTotalPages(batchTotals, pageSize)
@@ -301,7 +314,7 @@ function useProductRemainsPageModel() {
   }
 
   function openMovement(row: RemainingConsignment) {
-    if (!row.ConsignmentItemNetId) {
+    if (!hasPermission(PermissionKeys.ProductsAssortment.Movement.Open) || !row.ConsignmentItemNetId) {
       return
     }
 
@@ -309,7 +322,7 @@ function useProductRemainsPageModel() {
   }
 
   async function handleExport() {
-    if (exportingTab || filterError) {
+    if (!hasPermission(PermissionKeys.WarehouseAccounting.ConsignmentBalances.Document.Export) || exportingTab || filterError) {
       return
     }
 
@@ -367,7 +380,7 @@ function useProductRemainsPageModel() {
   }
 
   return {
-    activeError, activeTab, batchColumns, batchDetailColumns, batchHasMore, batchPage, batchRows, batchTotals, batchTotalPages,
+    activeError, activeTab, batchColumns, batchDetailColumns, batchHasMore, batchPage, batchRows, batchTotals, batchTotalPages, canExport, canOpenMovement,
     dateFrom, dateTo, downloadDocument, downloadModalOpened, exportingTab, filterError, isActiveLoading,
     isLoadingBatches, isLoadingProducts, isLoadingStorages, isLoadingSuppliers, openMovement, pageSize, productColumns,
     productHasMore, productPage, productRows, productSearchDraft, productTotals, productTotalPages, resourceError,
@@ -678,6 +691,23 @@ function getTotalPages<TItem>(totals: CollectionWithTotals<TItem> | null, pageSi
 }
 
 export function ProductRemainsPage() {
+  return (
+    <PermissionGate
+      permissionKey={PermissionKeys.SystemPages.ConsignmentBalances.View}
+      fallback={<ProductRemainsPermissionDenied />}
+    >
+      <ProductRemainsPageContent />
+    </PermissionGate>
+  )
+}
+
+function ProductRemainsPermissionDenied() {
+  const { t } = useI18n()
+
+  return <Text c="red" p="md">{t('Доступ заборонено')}</Text>
+}
+
+function ProductRemainsPageContent() {
   const model = useProductRemainsPageModel()
 
   return <ProductRemainsPageView model={model} />
@@ -686,7 +716,7 @@ export function ProductRemainsPage() {
 function ProductRemainsPageView({ model }: { model: ReturnType<typeof useProductRemainsPageModel> }) {
   const { t } = useI18n()
   const {
-    activeError, activeTab, batchColumns, batchDetailColumns, batchHasMore, batchPage, batchRows, batchTotals, batchTotalPages,
+    activeError, activeTab, batchColumns, batchDetailColumns, batchHasMore, batchPage, batchRows, batchTotals, batchTotalPages, canExport, canOpenMovement,
     dateFrom, dateTo, downloadDocument, downloadModalOpened, exportingTab, filterError, isActiveLoading,
     isLoadingBatches, isLoadingProducts, isLoadingStorages, isLoadingSuppliers, openMovement, pageSize, productColumns,
     productHasMore, productPage, productRows, productSearchDraft, productTotals, productTotalPages, resourceError,
@@ -790,19 +820,21 @@ function ProductRemainsPageView({ model }: { model: ReturnType<typeof useProduct
                   <RotateCcw size={17} />
                 </ActionIcon>
               </Tooltip>
-              <Tooltip label={t('Експорт')}>
-                <ActionIcon
-                  aria-label={t('Експорт')}
-                  color="gray"
-                  disabled={Boolean(exportingTab || filterError)}
-                  loading={exportingTab === activeTab}
-                  size={34}
-                  variant="light"
-                  onClick={handleExport}
-                >
-                  <Download size={17} />
-                </ActionIcon>
-              </Tooltip>
+              {canExport && (
+                <Tooltip label={t('Експорт')}>
+                  <ActionIcon
+                    aria-label={t('Експорт')}
+                    color="gray"
+                    disabled={Boolean(exportingTab || filterError)}
+                    loading={exportingTab === activeTab}
+                    size={34}
+                    variant="light"
+                    onClick={handleExport}
+                  >
+                    <Download size={17} />
+                  </ActionIcon>
+                </Tooltip>
+              )}
               <Paginator
                 hasNext={activeTab === 'batches' ? batchHasMore : productHasMore}
                 isLoading={isActiveLoading}
@@ -866,7 +898,7 @@ function ProductRemainsPageView({ model }: { model: ReturnType<typeof useProduct
                 showLayoutControls
                 tableId="product-remains-products"
                 toolbarPortalTarget={tableToolbarSlot}
-                onRowClick={openMovement}
+                onRowClick={canOpenMovement ? openMovement : undefined}
               />
               <RemainsTotalsFooter kind="products" totals={productTotals} />
             </Stack>
@@ -895,13 +927,13 @@ function ProductRemainsPageView({ model }: { model: ReturnType<typeof useProduct
       </AppDrawer>
 
       <AppDrawer
-        opened={Boolean(selectedMovementRow)}
+        opened={Boolean(canOpenMovement && selectedMovementRow)}
         position="right"
         size="90vw"
         title={selectedMovementRow ? `${t('Рух товару')}: ${getVendorCode(selectedMovementRow.Product)}` : t('Рух товару')}
         onClose={() => setSelectedMovementRow(null)}
       >
-        {selectedMovementRow && (
+        {canOpenMovement && selectedMovementRow && (
           <ProductRemainMovementsPanel
             key={getProductRowId(selectedMovementRow, 0)}
             row={selectedMovementRow}
@@ -1030,7 +1062,7 @@ function useProductRemainBatchColumns() {
   )
 }
 
-function useProductRemainProductColumns(onOpenMovement: (row: RemainingConsignment) => void) {
+function useProductRemainProductColumns(onOpenMovement?: (row: RemainingConsignment) => void) {
   const { t } = useI18n()
 
   return useMemo<DataTableColumn<RemainingConsignment>[]>(
@@ -1142,7 +1174,7 @@ function useProductRemainProductColumns(onOpenMovement: (row: RemainingConsignme
       accessor: (row) => row.StorageName,
       cell: (row) => displayValue(row.StorageName),
     },
-    {
+    ...(onOpenMovement ? [{
       id: 'actions',
       header: '',
       width: 72,
@@ -1157,7 +1189,7 @@ function useProductRemainProductColumns(onOpenMovement: (row: RemainingConsignme
           onClick={() => onOpenMovement(row)}
         />
       ),
-    },
+    } satisfies DataTableColumn<RemainingConsignment>] : []),
     ],
     [onOpenMovement, t],
   )
@@ -1275,7 +1307,7 @@ function RemainsTotalsFooter<TItem>({ totals, kind }: { totals: CollectionWithTo
   )
 }
 
-function BatchDetails({
+export function BatchDetails({
   batch,
   columns,
   dateFrom,
@@ -1344,56 +1376,41 @@ function BatchDetails({
   }, [batch, dateFrom, dateTo, storageNetIds, supplierNetId, t])
 
   return (
-    <Stack className="product-remains-detail" gap="md">
-      <div className="app-detail-hero">
-        <div>
-          <span className="app-detail-eyebrow">{t('Деталі партії')}</span>
-          <div className="app-detail-title">
-            <strong>{displayValue(visibleBatch.ProductIncomeNumber)}</strong>
-            <span>
-              {[formatDate(visibleBatch.FromDate), visibleBatch.SupplierName, visibleBatch.OrganizationName]
-                .filter(Boolean)
-                .join(' · ')}
-            </span>
-          </div>
-        </div>
-        <div className="app-detail-hero__side">
-          <div className="app-detail-metrics">
-            <div className="app-detail-metric">
-              <span>{t('Сума gross')}</span>
-              <strong>{formatMoney(visibleBatch.TotalGrossPrice)}</strong>
-            </div>
-            <div className="app-detail-metric">
-              <span>{t('Облік gross')}</span>
-              <strong>{formatMoney(visibleBatch.AccountingTotalGrossPrice)}</strong>
-            </div>
-            <div className="app-detail-metric">
-              <span>{t('Вага')}</span>
-              <strong>{formatAmount(visibleBatch.TotalWeight)}</strong>
-            </div>
-          </div>
-        </div>
-      </div>
+    <DocumentDetailLayout
+      summary={
+        <DocumentDetailSummary
+          eyebrow={t('Деталі партії')}
+          title={displayValue(visibleBatch.ProductIncomeNumber)}
+          meta={[formatDate(visibleBatch.FromDate), visibleBatch.SupplierName, visibleBatch.OrganizationName]
+            .filter(Boolean)
+            .join(' · ')}
+          metrics={
+            <>
+              <DocumentDetailMetric label={t('Сума gross')} value={formatMoney(visibleBatch.TotalGrossPrice)} />
+              <DocumentDetailMetric label={t('Облік gross')} value={formatMoney(visibleBatch.AccountingTotalGrossPrice)} />
+              <DocumentDetailMetric label={t('Вага')} value={formatAmount(visibleBatch.TotalWeight)} />
+            </>
+          }
+        />
+      }
+    >
+      <DocumentDetailSection subtitle={displayValue(visibleBatch.ProductIncomeNumber)} title={t('Документ')}>
+        <DocumentDetailRow label={t('Дата')} mono value={formatDate(visibleBatch.FromDate)} />
+        <DocumentDetailRow label={t('Номер приходу')} mono value={visibleBatch.ProductIncomeNumber} />
+        <DocumentDetailRow label={t('Інвойс')} mono value={visibleBatch.InvoiceNumber} />
+      </DocumentDetailSection>
 
-      <div className="app-detail-grid">
-        <DetailItem label="Дата" value={formatDate(visibleBatch.FromDate)} />
-        <DetailItem label="Постачальник" value={displayValue(visibleBatch.SupplierName)} />
-        <DetailItem label="Номер приходу" value={displayValue(visibleBatch.ProductIncomeNumber)} />
-        <DetailItem label="Інвойс" value={displayValue(visibleBatch.InvoiceNumber)} />
-        <DetailItem label="Організація" value={displayValue(visibleBatch.OrganizationName)} />
-      </div>
-      {error && (
-        <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
-          {error}
-        </Alert>
-      )}
-      <Stack className="product-remains-detail__table-section" gap="xs">
-        <div className="app-detail-section-head">
-          <Text className="app-section-title" fw={600} size="sm">
-            {t('Позиції')}
-          </Text>
-          <span className="app-role-pill is-gray">{items.length}</span>
-        </div>
+      <DocumentDetailSection title={t('Учасники')}>
+        <DocumentDetailRow label={t('Постачальник')} value={visibleBatch.SupplierName} wide />
+        <DocumentDetailRow label={t('Організація')} value={visibleBatch.OrganizationName} wide />
+      </DocumentDetailSection>
+
+      <DocumentDetailSection stacked subtitle={String(items.length)} title={t('Позиції')}>
+        {error && (
+          <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
+            {error}
+          </Alert>
+        )}
         {items.length || isLoading ? (
           <DataTable
             columns={columns}
@@ -1415,8 +1432,8 @@ function BatchDetails({
             {t('У відповіді немає позицій партії')}
           </Text>
         )}
-      </Stack>
-    </Stack>
+      </DocumentDetailSection>
+    </DocumentDetailLayout>
   )
 }
 

@@ -73,6 +73,13 @@ export type ProductPlacementUploadResult = {
 }
 
 export type ProductPlacementReturnPayload = {
-  productPlacementStorages: ProductPlacementRow[]
-  storageId?: number
+  items: ProductPlacementPageItem[]
+  storageId: number
+}
+
+export type ProductPlacementPageItem = {
+  placement: string
+  productName?: string
+  qty: number
+  vendorCode: string
 }

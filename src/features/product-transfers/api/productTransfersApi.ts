@@ -10,7 +10,7 @@ import type {
 } from '../types'
 
 export async function getProductTransfers(params: ProductTransfersSearchParams): Promise<ProductTransfersResponse> {
-  const result = await apiRequest<unknown>('/products/transfers/all/filtered', {
+  const result = await apiRequest<unknown>('/products/transfers/page/registry', {
     query: {
       from: params.from,
       limit: params.limit,
@@ -23,7 +23,7 @@ export async function getProductTransfers(params: ProductTransfersSearchParams):
 }
 
 export async function getProductTransferByNetId(netId: string): Promise<ProductTransfer | null> {
-  const result = await apiRequest<unknown>('/products/transfers/get', {
+  const result = await apiRequest<unknown>('/products/transfers/page/details', {
     query: {
       netId,
     },
@@ -33,13 +33,13 @@ export async function getProductTransferByNetId(netId: string): Promise<ProductT
 }
 
 export async function getProductTransferStorages(): Promise<ProductTransferStorage[]> {
-  const result = await apiRequest<unknown>('/storages/get/all')
+  const result = await apiRequest<unknown>('/storages/product-transfers/page/all')
 
   return normalizeStorages(result)
 }
 
 export async function exportProductTransferDocument(netId: string): Promise<ProductTransferExportDocument> {
-  const result = await apiRequest<unknown>('/products/transfers/document/export', {
+  const result = await apiRequest<unknown>('/products/transfers/page/document/export', {
     query: {
       netId,
     },
@@ -94,7 +94,7 @@ async function executeProductTransferFileImport(
   formData.append('file', snapshot.file)
 
   try {
-    const result = await apiRequest<unknown>('/products/transfers/add/file', {
+    const result = await apiRequest<unknown>('/products/transfers/page/import/file', {
       method: 'POST',
       headers: {
         'Idempotency-Key': operation.operationNetUid,

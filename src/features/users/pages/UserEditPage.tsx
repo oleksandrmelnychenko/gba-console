@@ -19,10 +19,13 @@ import { type FormEvent, useEffect, useState } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { Navigate, useLocation, useNavigate, useParams } from 'react-router-dom'
+import { PermissionKeys } from '../../../shared/auth/permissionKeys'
+import { PermissionGate } from '../../auth/components/PermissionGate'
+import { useAuth } from '../../auth/useAuth'
 import {
   deleteUser,
   getUser,
-  getUserRoles,
+  getUserRolesForEdit,
   resetUserPassword,
   updateUser,
 } from '../api/usersApi'
@@ -51,6 +54,33 @@ type UserEditStatus = {
 
 export function UserEditPage() {
   const { t } = useI18n()
+
+  return (
+    <PermissionGate
+      permissionKey={PermissionKeys.SystemPages.Users.View}
+      fallback={
+        <Alert color="red" icon={<CircleAlert size={18} />} title={t('Доступ заборонено')} variant="light">
+          {t('Недостатньо прав для перегляду користувачів')}
+        </Alert>
+      }
+    >
+      <PermissionGate
+        permissionKey={PermissionKeys.Users.User.OpenDetails}
+        fallback={
+          <Alert color="red" icon={<CircleAlert size={18} />} title={t('Доступ заборонено')} variant="light">
+            {t('Недостатньо прав для відкриття користувача')}
+          </Alert>
+        }
+      >
+        <UserEditPageContent />
+      </PermissionGate>
+    </PermissionGate>
+  )
+}
+
+function UserEditPageContent() {
+  const { t } = useI18n()
+  const { hasPermission } = useAuth()
   const { netid } = useParams<{ netid?: string }>()
   const location = useLocation()
   const navigate = useNavigate()
@@ -66,6 +96,9 @@ export function UserEditPage() {
   const [isDeleting, setDeleting] = useValueState(false)
   const [isResettingPassword, setResettingPassword] = useValueState(false)
   const [deleteModalOpened, setDeleteModalOpened] = useValueState(false)
+  const canEdit = hasPermission(PermissionKeys.Users.User.Edit)
+  const canDelete = hasPermission(PermissionKeys.Users.User.Delete)
+  const canResetPassword = hasPermission(PermissionKeys.Users.User.ResetPassword)
 
   useEffect(() => {
     let cancelled = false
@@ -79,7 +112,10 @@ export function UserEditPage() {
       setError(null)
 
       try {
-        const [nextUser, nextRoles] = await Promise.all([getUser(netid), getUserRoles()])
+        const [nextUser, nextRoles] = await Promise.all([
+          getUser(netid),
+          canEdit ? getUserRolesForEdit() : Promise.resolve([]),
+        ])
 
         if (!cancelled) {
           setUser(nextUser)
@@ -103,7 +139,7 @@ export function UserEditPage() {
     return () => {
       cancelled = true
     }
-  }, [netid, setError, setLoading, setRoles, setUser, t])
+  }, [canEdit, netid, setError, setLoading, setRoles, setUser, t])
 
   if (!netid) {
     return <Navigate to="/users" replace />
@@ -130,6 +166,11 @@ export function UserEditPage() {
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
+
+    if (!canEdit) {
+      setError(t('Недостатньо прав для редагування користувача'))
+      return
+    }
 
     if (!user) {
       return
@@ -161,6 +202,11 @@ export function UserEditPage() {
   }
 
   async function handleDelete() {
+    if (!canDelete) {
+      setError(t('Недостатньо прав для видалення користувача'))
+      return
+    }
+
     if (!user?.NetUid) {
       return
     }
@@ -185,6 +231,11 @@ export function UserEditPage() {
 
   async function handlePasswordReset(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
+
+    if (!canResetPassword) {
+      setError(t('Недостатньо прав для зміни пароля користувача'))
+      return
+    }
 
     if (!netid) {
       return
@@ -237,6 +288,8 @@ export function UserEditPage() {
       onClose={closeSheet}
       footer={
         <UserEditActions
+          canDelete={canDelete}
+          canEdit={canEdit}
           isDeleting={isDeleting}
           isSaving={isSaving}
           user={user}
@@ -252,6 +305,8 @@ export function UserEditPage() {
         )}
 
         <UserEditContent
+          canEdit={canEdit}
+          canResetPassword={canResetPassword}
           confirmPassword={confirmPassword}
           password={password}
           roles={roles}
@@ -269,24 +324,30 @@ export function UserEditPage() {
           onSubmit={handleSubmit}
         />
 
-        <DeleteUserModal
-          isDeleting={isDeleting}
-          opened={deleteModalOpened}
-          user={user}
-          onClose={() => setDeleteModalOpened(false)}
-          onDelete={handleDelete}
-        />
+        {canDelete && (
+          <DeleteUserModal
+            isDeleting={isDeleting}
+            opened={deleteModalOpened}
+            user={user}
+            onClose={() => setDeleteModalOpened(false)}
+            onDelete={handleDelete}
+          />
+        )}
       </Stack>
     </AppDrawer>
   )
 }
 
 function UserEditActions({
+  canDelete,
+  canEdit,
   isDeleting,
   isSaving,
   user,
   onDelete,
 }: {
+  canDelete: boolean
+  canEdit: boolean
   isDeleting: boolean
   isSaving: boolean
   user: UserProfile | null
@@ -296,31 +357,37 @@ function UserEditActions({
 
   return (
     <Group gap="xs">
-      <Button
-        color="red"
-        disabled={!user}
-        leftSection={<Trash2 size={16} />}
-        loading={isDeleting}
-        variant="light"
-        onClick={onDelete}
-      >
-        {t('Видалити')}
-      </Button>
-      <Button
-        color={CREATE_ACTION_COLOR}
-        disabled={!user}
-        form="user-edit-form"
-        leftSection={<Save size={16} />}
-        loading={isSaving}
-        type="submit"
-      >
-        {t('Зберегти')}
-      </Button>
+      {canDelete && (
+        <Button
+          color="red"
+          disabled={!user}
+          leftSection={<Trash2 size={16} />}
+          loading={isDeleting}
+          variant="light"
+          onClick={onDelete}
+        >
+          {t('Видалити')}
+        </Button>
+      )}
+      {canEdit && (
+        <Button
+          color={CREATE_ACTION_COLOR}
+          disabled={!user}
+          form="user-edit-form"
+          leftSection={<Save size={16} />}
+          loading={isSaving}
+          type="submit"
+        >
+          {t('Зберегти')}
+        </Button>
+      )}
     </Group>
   )
 }
 
 function UserEditContent({
+  canEdit,
+  canResetPassword,
   confirmPassword,
   password,
   roles,
@@ -332,6 +399,8 @@ function UserEditContent({
   onPasswordReset,
   onSubmit,
 }: {
+  canEdit: boolean
+  canResetPassword: boolean
   confirmPassword: string
   password: string
   roles: UserRole[]
@@ -378,14 +447,16 @@ function UserEditContent({
         >
           {t('Загальна інформація')}
         </button>
-        <button
-          type="button"
-          className={`pill-tab${activeTab === 'password' ? ' is-active' : ''}`}
-          aria-pressed={activeTab === 'password'}
-          onClick={() => setActiveTab('password')}
-        >
-          {t('Зміна пароля')}
-        </button>
+        {canResetPassword && (
+          <button
+            type="button"
+            className={`pill-tab${activeTab === 'password' ? ' is-active' : ''}`}
+            aria-pressed={activeTab === 'password'}
+            onClick={() => setActiveTab('password')}
+          >
+            {t('Зміна пароля')}
+          </button>
+        )}
       </div>
 
       {activeTab === 'profile' && (
@@ -398,7 +469,7 @@ function UserEditContent({
               </div>
               <div className="user-sheet-card-body">
                 <UserForm
-                  disabled={status.isSaving || status.isDeleting}
+                  disabled={!canEdit || status.isSaving || status.isDeleting}
                   roles={roles}
                   user={user}
                   onFieldChange={onFieldChange}
@@ -409,7 +480,7 @@ function UserEditContent({
         </Box>
       )}
 
-      {activeTab === 'password' && (
+      {canResetPassword && activeTab === 'password' && (
         <Box pt="md">
           <UserPasswordPanel
             confirmPassword={confirmPassword}

@@ -20,6 +20,10 @@ vi.mock('../../api/clientCabinetApi', () => ({
   updateClientWorkplace: vi.fn(),
 }))
 
+vi.mock('../../../auth/useAuth', () => ({
+  useAuth: () => ({ hasPermission: () => true }),
+}))
+
 vi.mock('./SubClientsPanel', () => ({
   SubClientsPanel: ({ relationKind }: { relationKind: string }) => (
     <div data-testid={`relationship-panel-${relationKind}`}>{relationKind}</div>

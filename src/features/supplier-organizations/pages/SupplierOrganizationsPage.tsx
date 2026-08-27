@@ -4,6 +4,7 @@ import {
   Alert,
   Button,
   Stack,
+  Text,
   TextInput,
   Tooltip,
 } from '@mantine/core'
@@ -12,6 +13,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { DocumentExportModal } from '../../../shared/ui/document-export-modal/DocumentExportModal'
 import { PermissionGate } from '../../auth/components/PermissionGate'
+import { usePermissions } from '../../auth/usePermissions'
+import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { useMutatedListRefresh } from '../../../shared/router/useMutatedListRefresh'
@@ -23,8 +26,8 @@ import { Paginator } from '../../../shared/ui/paginator/Paginator'
 import { DEFAULT_PAGINATOR_PAGE_SIZE } from '../../../shared/ui/paginator/paginatorPageSize'
 import {
   exportSupplyOrganizations,
-  getSupplyOrganizations,
-  searchSupplyOrganizations,
+  getSupplierOrganizationsRegistry,
+  searchSupplierOrganizationsRegistry,
 } from '../api/supplierOrganizationsApi'
 import {
   deduplicateSupplyOrganizationsByIdentity,
@@ -67,8 +70,32 @@ const SUPPLIER_ORGANIZATIONS_TABLE_DEFAULT_LAYOUT = {
 
 export function SupplierOrganizationsPage() {
   const { t } = useI18n()
+  const { can, isLoading } = usePermissions()
+
+  if (isLoading) {
+    return <Text c="dimmed">{t('Завантаження')}</Text>
+  }
+
+  if (!can(PermissionKeys.SupplierOrganizations.Page.View)) {
+    return (
+      <Alert color="red" icon={<CircleAlert size={18} />} title={t('Доступ заборонено')} variant="light">
+        {t('Недостатньо прав для перегляду постачальників послуг')}
+      </Alert>
+    )
+  }
+
+  return <SupplierOrganizationsPageContent />
+}
+
+function SupplierOrganizationsPageContent() {
+  const { t } = useI18n()
+  const { can } = usePermissions()
   const navigate = useNavigate()
   const location = useLocation()
+  const canExport = can(PermissionKeys.SupplierOrganizations.Document.Export)
+  const canOpenActions =
+    can(PermissionKeys.SupplierOrganizations.Settlements.Open)
+    || can(PermissionKeys.SupplierOrganizations.Overview.Open)
 
   function openOrganizationSheet(path: string) {
     navigate(path, {
@@ -97,6 +124,16 @@ export function SupplierOrganizationsPage() {
   const dateFilters = useMemo(() => ({ from: dateFrom || undefined, to: dateTo || undefined }), [dateFrom, dateTo])
   const columns = useSupplierOrganizationColumns()
 
+  useEffect(() => {
+    if (!canOpenActions) {
+      setSelectedOrganization(null)
+    }
+
+    if (!canExport) {
+      setDownloadDocument(null)
+    }
+  }, [canExport, canOpenActions, setDownloadDocument, setSelectedOrganization])
+
   const loadOrganizationsPage = useCallback(async () => {
     const requestId = requestRef.current + 1
     requestRef.current = requestId
@@ -120,8 +157,8 @@ export function SupplierOrganizationsPage() {
         offset: (page - 1) * pageSize,
       }
       const nextOrganizations = trimmedSearchValue
-        ? await searchSupplyOrganizations(trimmedSearchValue, '', paginationParams)
-        : await getSupplyOrganizations(paginationParams)
+        ? await searchSupplierOrganizationsRegistry(trimmedSearchValue, '', paginationParams)
+        : await getSupplierOrganizationsRegistry(paginationParams)
 
       if (requestRef.current === requestId) {
         setOrganizations(deduplicateSupplyOrganizationsByIdentity(nextOrganizations))
@@ -157,7 +194,7 @@ export function SupplierOrganizationsPage() {
   }
 
   async function exportList() {
-    if (isExporting) {
+    if (isExporting || !can(PermissionKeys.SupplierOrganizations.Document.Export)) {
       return
     }
 
@@ -257,19 +294,21 @@ export function SupplierOrganizationsPage() {
                 <RotateCcw size={17} />
               </ActionIcon>
             </Tooltip>
-            <Tooltip label={t('Друк')}>
-              <ActionIcon
-                aria-label={t('Друк')}
-                color="gray"
-                disabled={isExporting}
-                loading={isExporting}
-                size={34}
-                variant="light"
-                onClick={exportList}
-              >
-                <Download size={18} />
-              </ActionIcon>
-            </Tooltip>
+            {canExport && (
+              <Tooltip label={t('Друк')}>
+                <ActionIcon
+                  aria-label={t('Друк')}
+                  color="gray"
+                  disabled={isExporting}
+                  loading={isExporting}
+                  size={34}
+                  variant="light"
+                  onClick={exportList}
+                >
+                  <Download size={18} />
+                </ActionIcon>
+              </Tooltip>
+            )}
             <Paginator
               isLoading={isLoading}
               page={page}
@@ -282,7 +321,7 @@ export function SupplierOrganizationsPage() {
           </div>
           <div ref={setTableToolbarSlot} className="app-filter-table-toolbar-slot" />
           <div className="supplier-organizations-create-actions">
-            <PermissionGate permissionKey="SERVICE_Accounting_Supplier_Organizations_AddBtn_PKEY">
+            <PermissionGate permissionKey={PermissionKeys.SupplierOrganizations.Supplier.Create}>
               <Button
                 color={CREATE_ACTION_COLOR}
                 leftSection={<Plus size={16} />}
@@ -323,13 +362,13 @@ export function SupplierOrganizationsPage() {
             showLayoutControls
             tableId="supplier-organizations"
             toolbarPortalTarget={tableToolbarSlot}
-            onRowClick={setSelectedOrganization}
+            onRowClick={canOpenActions ? setSelectedOrganization : undefined}
           />
         </div>
       </div>
 
       <SupplierOrganizationActionModal
-        organization={selectedOrganization}
+        organization={canOpenActions ? selectedOrganization : null}
         onClose={() => setSelectedOrganization(null)}
         onOpenCashFlow={(organization) => {
           setSelectedOrganization(null)
@@ -343,7 +382,7 @@ export function SupplierOrganizationsPage() {
 
       <DocumentExportModal
         document={downloadDocument}
-        opened={Boolean(downloadDocument)}
+        opened={canExport && Boolean(downloadDocument)}
         title={t('Експорт постачальників послуг')}
         onClose={() => setDownloadDocument(null)}
       />
@@ -566,7 +605,7 @@ function SupplierOrganizationActionModal({
     >
       {organization && (
         <Stack className="app-modal-actions" gap="xs">
-          <PermissionGate permissionKey="SERVICE_Accounting_Supplier_Organizations_SettlementsBtn_PKEY">
+          <PermissionGate permissionKey={PermissionKeys.SupplierOrganizations.Settlements.Open}>
             <Button
               fullWidth
               color="dark"
@@ -583,7 +622,7 @@ function SupplierOrganizationActionModal({
               {t('Взаєморозрахунки')}
             </Button>
           </PermissionGate>
-          <PermissionGate permissionKey="SERVICE_Accounting_Supplier_Organizations_OverviewBtn_PKEY">
+          <PermissionGate permissionKey={PermissionKeys.SupplierOrganizations.Overview.Open}>
             <Button
               fullWidth
               color="dark"

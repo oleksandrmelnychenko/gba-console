@@ -14,6 +14,7 @@ import { notifications } from '@mantine/notifications'
 import { CircleAlert, Download, Plus, RefreshCw, RotateCcw, Search, Trash2 } from 'lucide-react'
 import { useEffect, useMemo, useReducer, useRef } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
+import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppModal } from '../../../shared/ui/AppModal'
@@ -22,14 +23,13 @@ import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { TableRowAction } from '../../../shared/ui/table-row-action'
 import { DocumentExportModal } from '../../../shared/ui/document-export-modal/DocumentExportModal'
-import { useAuth } from '../../auth/useAuth'
+import { usePermissions } from '../../auth/usePermissions'
 import {
   deleteTaxFreeCarrier,
   exportTaxFreeCarriersDocument,
   getTaxFreeCarriers,
   searchTaxFreeCarriers,
 } from '../api/taxFreeCarriersApi'
-import { TAX_FREE_CARRIER_MANAGE_PERMISSION, TAX_FREE_CARRIER_PRINT_PERMISSION } from '../permissions'
 import type { TaxFreeCarrier, TaxFreeCarrierExportColumn, TaxFreeCarrierExportDocument } from '../types'
 import './tax-free-carriers-page.css'
 
@@ -51,9 +51,11 @@ function useTaxFreeCarriersPageModel() {
   const { t } = useI18n()
   const navigate = useNavigate()
   const location = useLocation()
-  const { hasPermission } = useAuth()
-  const canManage = hasPermission(TAX_FREE_CARRIER_MANAGE_PERMISSION)
-  const canPrint = hasPermission(TAX_FREE_CARRIER_PRINT_PERMISSION)
+  const { can } = usePermissions()
+  const canCreate = can(PermissionKeys.TaxFreeCarriers.Carrier.Create)
+  const canDelete = can(PermissionKeys.TaxFreeCarriers.Carrier.Delete)
+  const canEdit = can(PermissionKeys.TaxFreeCarriers.Carrier.Edit)
+  const canExport = can(PermissionKeys.TaxFreeCarriers.Document.Export)
   const [carriers, setCarriers] = useValueState<TaxFreeCarrier[]>([])
   const [searchDraft, setSearchDraft] = useValueState('')
   const [activeSearch, setActiveSearch] = useValueState('')
@@ -97,16 +99,24 @@ function useTaxFreeCarriersPageModel() {
   }
 
   function openCreate() {
+    if (!canCreate) {
+      return
+    }
+
     navigate('/tax-free/carriers/new', { state: { backgroundLocation: location } })
   }
 
   function openEdit(carrier: TaxFreeCarrier) {
-    if (carrier.NetUid) {
+    if (canEdit && carrier.NetUid) {
       navigate(`/tax-free/carriers/edit/${carrier.NetUid}`, { state: { backgroundLocation: location } })
     }
   }
 
   async function confirmDelete() {
+    if (!canDelete) {
+      return
+    }
+
     const netId = carrierToDelete?.NetUid
 
     if (!netId) {
@@ -137,6 +147,10 @@ function useTaxFreeCarriersPageModel() {
   }
 
   async function exportDocument() {
+    if (!canExport) {
+      return
+    }
+
     const requestId = downloadRequestRef.current + 1
     downloadRequestRef.current = requestId
     setDownloadOpened(true)
@@ -161,10 +175,10 @@ function useTaxFreeCarriersPageModel() {
     }
   }
 
-  const columns = useCarrierColumns({ canManage, carrierIndexMap, onDelete: setCarrierToDelete, onEdit: openEdit })
+  const columns = useCarrierColumns({ canDelete, canEdit, carrierIndexMap, onDelete: setCarrierToDelete, onEdit: openEdit })
 
   return {
-    canManage, canPrint, carrierToDelete, carriers, columns, downloadDocument, downloadError, downloadOpened,
+    canCreate, canDelete, canEdit, canExport, carrierToDelete, carriers, columns, downloadDocument, downloadError, downloadOpened,
     error, isDeleting, isDownloading, isLoading, searchDraft, closeDownload, confirmDelete,
     exportDocument, openCreate, openEdit, reload, resetSearch, setCarrierToDelete, updateSearchDraft,
   }
@@ -233,7 +247,7 @@ export function TaxFreeCarriersPage() {
 function CarriersTableCard({ model }: { model: ReturnType<typeof useTaxFreeCarriersPageModel> }) {
   const { t } = useI18n()
   const {
-    canManage, canPrint, columns, carriers, error, exportDocument, isDownloading, isLoading,
+    canCreate, canEdit, canExport, columns, carriers, error, exportDocument, isDownloading, isLoading,
     openCreate, openEdit, reload, resetSearch, searchDraft, updateSearchDraft,
   } = model
 
@@ -256,7 +270,7 @@ function CarriersTableCard({ model }: { model: ReturnType<typeof useTaxFreeCarri
                 <RotateCcw size={17} />
               </ActionIcon>
             </Tooltip>
-            {canPrint && (
+            {canExport && (
               <Tooltip label={t('Завантажити')}>
                 <ActionIcon
                   aria-label={t('Завантажити')}
@@ -282,7 +296,7 @@ function CarriersTableCard({ model }: { model: ReturnType<typeof useTaxFreeCarri
               </ActionIcon>
             </Tooltip>
           </div>
-          {canManage && (
+          {canCreate && (
             <div className="tax-free-carriers-create-actions">
               <Button color={CREATE_ACTION_COLOR} size="sm" leftSection={<Plus size={16} />} onClick={openCreate}>
                 {t('Додати')}
@@ -311,7 +325,7 @@ function CarriersTableCard({ model }: { model: ReturnType<typeof useTaxFreeCarri
           loadingText={t('Завантаження перевізників')}
           minWidth={760}
           tableId="tax-free-carriers"
-          onRowClick={openEdit}
+          onRowClick={canEdit ? openEdit : undefined}
         />
       </div>
     </Card>
@@ -361,12 +375,14 @@ function CarriersDownloadModal({ model }: { model: ReturnType<typeof useTaxFreeC
 }
 
 function useCarrierColumns({
-  canManage,
+  canDelete,
+  canEdit,
   carrierIndexMap,
   onDelete,
   onEdit,
 }: {
-  canManage: boolean
+  canDelete: boolean
+  canEdit: boolean
   carrierIndexMap: Map<TaxFreeCarrier, number>
   onDelete: (carrier: TaxFreeCarrier) => void
   onEdit: (carrier: TaxFreeCarrier) => void
@@ -414,9 +430,9 @@ function useCarrierColumns({
       {
         id: 'actions',
         header: '',
-        width: canManage ? 96 : 58,
-        minWidth: canManage ? 96 : 58,
-        maxWidth: canManage ? 96 : 58,
+        width: canDelete && canEdit ? 96 : 58,
+        minWidth: canDelete && canEdit ? 96 : 58,
+        maxWidth: canDelete && canEdit ? 96 : 58,
         align: 'center',
         enableHiding: false,
         enableReorder: false,
@@ -425,12 +441,14 @@ function useCarrierColumns({
         cell: (carrier) => (
           <Box onClick={(event) => event.stopPropagation()}>
             <Group gap={4} justify="center" wrap="nowrap">
-              <TableRowAction
-                action="edit"
-                label={t('Редагування Перевізника')}
-                onClick={() => onEdit(carrier)}
-              />
-              {canManage && (
+              {canEdit && (
+                <TableRowAction
+                  action="edit"
+                  label={t('Редагування Перевізника')}
+                  onClick={() => onEdit(carrier)}
+                />
+              )}
+              {canDelete && (
                 <TableRowAction action="delete" label={t('Видалити')} onClick={() => onDelete(carrier)} />
               )}
             </Group>
@@ -438,7 +456,7 @@ function useCarrierColumns({
         ),
       },
     ],
-    [canManage, carrierIndexMap, onDelete, onEdit, t],
+    [canDelete, canEdit, carrierIndexMap, onDelete, onEdit, t],
   )
 }
 

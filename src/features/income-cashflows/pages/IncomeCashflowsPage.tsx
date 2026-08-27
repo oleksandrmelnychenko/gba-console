@@ -31,7 +31,9 @@ import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui
 import { Paginator } from '../../../shared/ui/paginator/Paginator'
 import { TableRowAction } from '../../../shared/ui/table-row-action'
 import { getAccountingCashFlowRecordPaymentStatus } from '../../accounting-cash-flow/accountingCashFlowPaymentStatus'
-import { calculateAdvanceReportOrder } from '../../outgoing-cashflows/api/advanceReportApi'
+import { calculateIncomeCashflowAdvanceReportOrder } from '../../outgoing-cashflows/api/advanceReportApi'
+import { PermissionGate } from '../../auth/components/PermissionGate'
+import { useAuth } from '../../auth/useAuth'
 import {
   cancelIncomeCashflow,
   getIncomeCashflowByNetId,
@@ -52,6 +54,12 @@ import {
 import { createLatestRequestGuard } from '../latestRequestGuard'
 import { createAutocompleteOptionSubmitGuard } from '../autocompleteOptionSubmitGuard'
 import { buildIncomeCashflowRow } from '../incomeCashflowRows'
+import {
+  INCOME_CASHFLOWS_CANCEL_PERMISSION,
+  INCOME_CASHFLOWS_OPEN_DETAILS_PERMISSION,
+  INCOME_CASHFLOWS_PAGE_PERMISSION,
+  INCOME_CASHFLOWS_REASSIGN_CLIENT_PERMISSION,
+} from '../permissions'
 import '../../../shared/ui/console-table-page.css'
 import './income-cashflows-page.css'
 import type {
@@ -110,6 +118,7 @@ const INCOME_DOCUMENT_STRUCTURE_CALCULATION_IDLE: IncomeDocumentStructureCalcula
 
 function useIncomeCashflowsPageModel(): IncomeCashflowsPageModel {
   const { t } = useI18n()
+  const { hasPermission } = useAuth()
   const [searchParams] = useSearchParams()
   const focusedOrderNetId = searchParams.get('orderNetId') || searchParams.get('netId') || ''
   const [incomeOrders, setIncomeOrders] = useValueState<IncomePaymentOrder[]>([])
@@ -164,9 +173,21 @@ function useIncomeCashflowsPageModel(): IncomeCashflowsPageModel {
   )
   const filterError = dateRangeError || getOrganizationFilterError(selectedOrganizationFilterIds.length, t)
   const [reassignRow, setReassignRow] = useValueState<IncomeCashflowRow | null>(null)
+  const canOpenDetails = hasPermission(
+    INCOME_CASHFLOWS_OPEN_DETAILS_PERMISSION,
+  )
+  const canReassignClient = hasPermission(
+    INCOME_CASHFLOWS_REASSIGN_CLIENT_PERMISSION,
+  )
+  const canCancel = hasPermission(INCOME_CASHFLOWS_CANCEL_PERMISSION)
 
   const openIncomeDetails = useCallback(
     (row: IncomeCashflowRow) => {
+      if (!hasPermission(INCOME_CASHFLOWS_OPEN_DETAILS_PERMISSION)) {
+        setError(t('Немає права переглядати деталі прибуткового ордера'))
+        return
+      }
+
       const outcomeToCalculate = getIncomeDocumentStructureOutcomeToCalculate(row.income)
       const requestId = structureCalculationRequestRef.current + 1
       structureCalculationRequestRef.current = requestId
@@ -179,7 +200,7 @@ function useIncomeCashflowsPageModel(): IncomeCashflowsPageModel {
       }
 
       dispatchSelectedStructureCalculation({ type: 'loading' })
-      void calculateAdvanceReportOrder(outcomeToCalculate)
+      void calculateIncomeCashflowAdvanceReportOrder(outcomeToCalculate)
         .then((calculatedOrder) => {
           if (structureCalculationRequestRef.current === requestId) {
             dispatchSelectedStructureCalculation({ calculatedOutcome: calculatedOrder, type: 'success' })
@@ -196,7 +217,7 @@ function useIncomeCashflowsPageModel(): IncomeCashflowsPageModel {
           }
         })
     },
-    [setSelectedRow, t],
+    [hasPermission, setError, setSelectedRow, t],
   )
 
   const rows = useMemo(() => buildIncomeCashflowRows(incomeOrders), [incomeOrders])
@@ -213,9 +234,20 @@ function useIncomeCashflowsPageModel(): IncomeCashflowsPageModel {
   }, [focusedOrderNetId, selectedRow?.income.NetUid, setSelectedRow])
 
   const columns = useIncomeCashflowColumns({
-    onCancel: setCancelRow,
+    canCancel,
+    canOpen: canOpenDetails,
+    canReassign: canReassignClient,
+    onCancel: (row) => {
+      if (hasPermission(INCOME_CASHFLOWS_CANCEL_PERMISSION)) {
+        setCancelRow(row)
+      }
+    },
     onOpen: openIncomeDetails,
-    onReassign: setReassignRow,
+    onReassign: (row) => {
+      if (hasPermission(INCOME_CASHFLOWS_REASSIGN_CLIENT_PERMISSION)) {
+        setReassignRow(row)
+      }
+    },
   })
   const isTableBusy = isLoading || isSearchSettling
 
@@ -336,6 +368,7 @@ function useIncomeCashflowsPageModel(): IncomeCashflowsPageModel {
 
   useEffect(() => {
     if (
+      !canOpenDetails ||
       !focusedOrderNetId ||
       isLoading ||
       dismissedFocusedOrderNetIdRef.current === focusedOrderNetId ||
@@ -396,6 +429,7 @@ function useIncomeCashflowsPageModel(): IncomeCashflowsPageModel {
   }, [
     focusedOrderNetId,
     focusedOrderRequestGuard,
+    canOpenDetails,
     isLoading,
     openIncomeDetails,
     rows,
@@ -426,6 +460,12 @@ function useIncomeCashflowsPageModel(): IncomeCashflowsPageModel {
       return
     }
 
+    if (!hasPermission(INCOME_CASHFLOWS_CANCEL_PERMISSION)) {
+      setError(t('Немає права скасовувати прибутковий ордер'))
+      setCancelRow(null)
+      return
+    }
+
     setCanceling(true)
     setError(null)
 
@@ -438,9 +478,24 @@ function useIncomeCashflowsPageModel(): IncomeCashflowsPageModel {
     } finally {
       setCanceling(false)
     }
-  }, [cancelRow, loadIncomeOrders, page, setCancelRow, setCanceling, setError, t])
+  }, [cancelRow, hasPermission, loadIncomeOrders, page, setCancelRow, setCanceling, setError, t])
+
+  useEffect(() => {
+    if (!canOpenDetails) {
+      closeIncomeDetails()
+    }
+    if (!canReassignClient) {
+      setReassignRow(null)
+    }
+    if (!canCancel) {
+      setCancelRow(null)
+    }
+  }, [canCancel, canOpenDetails, canReassignClient, closeIncomeDetails, setCancelRow, setReassignRow])
 
   return {
+    canCancel,
+    canOpenDetails,
+    canReassignClient,
     cancelRow,
     columns,
     currencies,
@@ -476,6 +531,10 @@ function useIncomeCashflowsPageModel(): IncomeCashflowsPageModel {
     onLoadLookups: loadLookups,
     onOpenDetails: openIncomeDetails,
     onReassignFromDetails: (row) => {
+      if (!hasPermission(INCOME_CASHFLOWS_REASSIGN_CLIENT_PERMISSION)) {
+        setError(t('Немає права переназначати клієнта'))
+        return
+      }
       closeIncomeDetails()
       setReassignRow(row)
     },
@@ -496,12 +555,28 @@ function useIncomeCashflowsPageModel(): IncomeCashflowsPageModel {
 }
 
 export function IncomeCashflowsPage() {
+  const { t } = useI18n()
+
+  return (
+    <PermissionGate
+      fallback={<Alert color="red">{t('Немає права переглядати прибуткові ордери')}</Alert>}
+      permissionKey={INCOME_CASHFLOWS_PAGE_PERMISSION}
+    >
+      <IncomeCashflowsPageContent />
+    </PermissionGate>
+  )
+}
+
+function IncomeCashflowsPageContent() {
   const model = useIncomeCashflowsPageModel()
 
   return <IncomeCashflowsContent model={model} />
 }
 
 type IncomeCashflowsPageModel = {
+  canCancel: boolean
+  canOpenDetails: boolean
+  canReassignClient: boolean
   cancelRow: IncomeCashflowRow | null
   columns: DataTableColumn<IncomeCashflowRow>[]
   currencies: Currency[]
@@ -551,6 +626,9 @@ type IncomeCashflowsPageModel = {
 
 function IncomeCashflowsContent({ model }: { model: IncomeCashflowsPageModel }) {
   const {
+    canCancel,
+    canOpenDetails,
+    canReassignClient,
     cancelRow,
     columns,
     currencies,
@@ -598,13 +676,37 @@ function IncomeCashflowsContent({ model }: { model: IncomeCashflowsPageModel }) 
     onSetToDate,
   } = model
   const { t } = useI18n()
+  const { hasPermission } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
   const [tableToolbarSlot, setTableToolbarSlot] = useState<HTMLDivElement | null>(null)
-  const cashCreateItems = buildIncomeRegisterItems(t, PaymentRegisterType.Cash)
-  const bankCreateItems = buildIncomeRegisterItems(t, PaymentRegisterType.Bank)
+  const cashCreateItems = buildIncomeRegisterItems(
+    t,
+    PaymentRegisterType.Cash,
+  ).filter((item) => hasPermission(item.permissionKey))
+  const bankCreateItems = buildIncomeRegisterItems(
+    t,
+    PaymentRegisterType.Bank,
+  ).filter((item) => hasPermission(item.permissionKey))
   const colleagueCreateItem = buildIncomeColleagueItem(t)
   const shopCreateItem = buildIncomeShopItem(t)
+  const canCreateColleagueIncome = hasPermission(
+    colleagueCreateItem.permissionKey,
+  )
+  const canCreateShopIncome = hasPermission(shopCreateItem.permissionKey)
+  const hasCreateItems =
+    cashCreateItems.length > 0 ||
+    bankCreateItems.length > 0 ||
+    canCreateColleagueIncome ||
+    canCreateShopIncome
+
+  function navigateToCreate(item: (typeof cashCreateItems)[number]) {
+    if (!hasPermission(item.permissionKey)) {
+      return
+    }
+
+    navigate(item.path, { state: { backgroundLocation: location } })
+  }
 
   return (
     <Stack className="income-cashflows-page console-table-page" gap={6}>
@@ -677,6 +779,7 @@ function IncomeCashflowsContent({ model }: { model: IncomeCashflowsPageModel }) 
             </div>
             <div ref={setTableToolbarSlot} className="app-filter-table-toolbar-slot" />
             <div className="income-cashflows-create-actions">
+              {hasCreateItems && (
               <Menu classNames={{ dropdown: 'income-cashflows-create-menu' }} position="bottom-end" shadow="md" width={300} withinPortal>
                 <Menu.Target>
                   <Button color={CREATE_ACTION_COLOR} size="sm" leftSection={<Plus size={16} />} rightSection={<ChevronDown size={14} />} styles={{ label: { fontFamily: 'var(--font-mono)', letterSpacing: 0 } }}>
@@ -684,45 +787,62 @@ function IncomeCashflowsContent({ model }: { model: IncomeCashflowsPageModel }) 
                   </Button>
                 </Menu.Target>
                 <Menu.Dropdown>
+                  {cashCreateItems.length > 0 && (
+                    <>
                   <Menu.Label>{t('Каса')}</Menu.Label>
                   {cashCreateItems.map((item) => (
                     <Menu.Item
                       key={item.path}
                       leftSection={<Banknote size={15} />}
-                      onClick={() => navigate(item.path, { state: { backgroundLocation: location } })}
+                      onClick={() => navigateToCreate(item)}
                     >
                       {item.label}
                     </Menu.Item>
                   ))}
+                    </>
+                  )}
+                  {bankCreateItems.length > 0 && (
+                    <>
                   <Menu.Divider />
                   <Menu.Label>{t('Банк')}</Menu.Label>
                   {bankCreateItems.map((item) => (
                     <Menu.Item
                       key={item.path}
                       leftSection={<Landmark size={15} />}
-                      onClick={() => navigate(item.path, { state: { backgroundLocation: location } })}
+                      onClick={() => navigateToCreate(item)}
                     >
                       {item.label}
                     </Menu.Item>
                   ))}
+                    </>
+                  )}
+                  {canCreateColleagueIncome && (
+                    <>
                   <Menu.Divider />
                   <Menu.Label>{t('Колеги')}</Menu.Label>
                   <Menu.Item
                     leftSection={<Users size={15} />}
-                    onClick={() => navigate(colleagueCreateItem.path, { state: { backgroundLocation: location } })}
+                    onClick={() => navigateToCreate(colleagueCreateItem)}
                   >
                     {colleagueCreateItem.label}
                   </Menu.Item>
+                    </>
+                  )}
+                  {canCreateShopIncome && (
+                    <>
                   <Menu.Divider />
                   <Menu.Label>{t('Магазин')}</Menu.Label>
                   <Menu.Item
                     leftSection={<Store size={15} />}
-                    onClick={() => navigate(shopCreateItem.path, { state: { backgroundLocation: location } })}
+                    onClick={() => navigateToCreate(shopCreateItem)}
                   >
                     {shopCreateItem.label}
                   </Menu.Item>
+                    </>
+                  )}
                 </Menu.Dropdown>
               </Menu>
+              )}
             </div>
           </Group>
         </div>
@@ -752,7 +872,7 @@ function IncomeCashflowsContent({ model }: { model: IncomeCashflowsPageModel }) 
             showLayoutControls
             tableId="income-cashflows"
             toolbarPortalTarget={tableToolbarSlot}
-            onRowClick={onOpenDetails}
+            onRowClick={canOpenDetails ? onOpenDetails : undefined}
           />
         </div>
 
@@ -763,23 +883,29 @@ function IncomeCashflowsContent({ model }: { model: IncomeCashflowsPageModel }) 
         />
       </div>
 
-      <IncomeCashflowDetailDrawer
-        row={selectedRow}
-        structureCalculation={selectedStructureCalculationState}
-        onClose={onCloseDetails}
-        onReassign={onReassignFromDetails}
-      />
-      <CancelIncomeCashflowModal
-        isSaving={isCanceling}
-        row={cancelRow}
-        onCancel={onCancel}
-        onClose={onCloseCancel}
-      />
-      <ReassignIncomeClientModal
-        row={reassignRow}
-        onClose={onCloseReassign}
-        onSaved={onReassignSaved}
-      />
+      {canOpenDetails && (
+        <IncomeCashflowDetailDrawer
+          row={selectedRow}
+          structureCalculation={selectedStructureCalculationState}
+          onClose={onCloseDetails}
+          onReassign={canReassignClient ? onReassignFromDetails : undefined}
+        />
+      )}
+      {canCancel && (
+        <CancelIncomeCashflowModal
+          isSaving={isCanceling}
+          row={cancelRow}
+          onCancel={onCancel}
+          onClose={onCloseCancel}
+        />
+      )}
+      {canReassignClient && (
+        <ReassignIncomeClientModal
+          row={reassignRow}
+          onClose={onCloseReassign}
+          onSaved={onReassignSaved}
+        />
+      )}
     </Stack>
   )
 }
@@ -811,10 +937,16 @@ function IncomeCashflowsSummary({
 }
 
 function useIncomeCashflowColumns({
+  canCancel,
+  canOpen,
+  canReassign,
   onCancel,
   onOpen,
   onReassign,
 }: {
+  canCancel: boolean
+  canOpen: boolean
+  canReassign: boolean
   onCancel: (row: IncomeCashflowRow) => void
   onOpen: (row: IncomeCashflowRow) => void
   onReassign: (row: IncomeCashflowRow) => void
@@ -960,7 +1092,7 @@ function useIncomeCashflowColumns({
         enablePinning: false,
         enableReorder: false,
         cell: (row) =>
-          isClientPaymentReassignable(row.income) ? (
+          canReassign && isClientPaymentReassignable(row.income) ? (
             <TableRowAction
               action="reassign"
               label={t('Переназначити клієнта')}
@@ -982,6 +1114,10 @@ function useIncomeCashflowColumns({
         enablePinning: false,
         enableReorder: false,
         cell: (row) => {
+          if (!canCancel) {
+            return null
+          }
+
           const cancelUnavailableReason = getIncomeCancelUnavailableReason(row.income, t)
 
           return (
@@ -1008,7 +1144,7 @@ function useIncomeCashflowColumns({
         enableHiding: false,
         enablePinning: false,
         enableReorder: false,
-        cell: (row) => (
+        cell: (row) => canOpen ? (
           <TableRowAction
             action="details"
             label={t('Деталі')}
@@ -1017,10 +1153,10 @@ function useIncomeCashflowColumns({
               onOpen(row)
             }}
           />
-        ),
+        ) : null,
       },
     ],
-    [onCancel, onOpen, onReassign, t],
+    [canCancel, canOpen, canReassign, onCancel, onOpen, onReassign, t],
   )
 }
 
@@ -1504,6 +1640,7 @@ export function ReassignIncomeClientModal({
   onSaved: () => void
 }) {
   const { t } = useI18n()
+  const { hasPermission } = useAuth()
   const [searchValue, setSearchValue] = useValueState('')
   const [clients, setClients] = useValueState<Client[]>([])
   const [selectedClientValue, setSelectedClientValue] = useValueState('')
@@ -1675,6 +1812,11 @@ export function ReassignIncomeClientModal({
       return
     }
 
+    if (!hasPermission(INCOME_CASHFLOWS_REASSIGN_CLIENT_PERMISSION)) {
+      setError(t('Немає права переназначати клієнта'))
+      return
+    }
+
     setSaving(true)
     setError(null)
 
@@ -1690,7 +1832,7 @@ export function ReassignIncomeClientModal({
     } finally {
       setSaving(false)
     }
-  }, [handleSaved, row, selectedAgreementValue, selectedClientValue, setError, setSaving, t])
+  }, [handleSaved, hasPermission, row, selectedAgreementValue, selectedClientValue, setError, setSaving, t])
 
   return (
     <AppModal

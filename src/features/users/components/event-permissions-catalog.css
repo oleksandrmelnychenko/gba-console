@@ -1,0 +1,53 @@
+.event-permissions-editor {
+  min-width: 0;
+}
+
+.event-permissions-filters {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: minmax(220px, 1fr) minmax(130px, 170px) minmax(130px, 170px);
+  margin-bottom: 10px;
+}
+
+.event-permissions-alert {
+  margin-bottom: 10px;
+}
+
+.event-permissions-state {
+  min-height: 220px;
+}
+
+.event-permissions-empty {
+  padding: 36px 12px;
+}
+
+.event-role-tree-group > .role-tree-node-row {
+  background: var(--mantine-color-white);
+}
+
+.event-permissions-editor .role-tree-text-action:disabled {
+  border-color: var(--mantine-color-gray-2);
+  color: var(--mantine-color-gray-5);
+  cursor: default;
+  opacity: 0.55;
+}
+
+@media (max-width: 900px) {
+  .event-permissions-filters {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .event-permissions-filters > :first-child {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 560px) {
+  .event-permissions-filters {
+    grid-template-columns: 1fr;
+  }
+
+  .event-permissions-filters > :first-child {
+    grid-column: auto;
+  }
+}

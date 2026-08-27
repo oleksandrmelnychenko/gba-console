@@ -4,7 +4,15 @@ import {
   exportProductIncomeMovementsDocument,
   exportProductMovementsDocument,
   exportProductOutcomeMovementsDocument,
+  getProductAuditEntities,
+  getProductForOrderInvoices,
+  getProductForOrderOverview,
+  getProductForOrderSpecifications,
+  getProductForPlacements,
+  getProductIncomeMovements,
+  getProductOutcomeMovements,
   getProductSourcePriceComparison,
+  getProductStorageLocationHistory,
   resetProductPlacementMutationStateForTests,
   updateProduct,
   updateProductPlacements,
@@ -37,7 +45,7 @@ describe('products API upload contracts', () => {
     const [, options] = apiRequestMock.mock.calls[0]
     const body = options?.body as FormData
 
-    expect(apiRequestMock).toHaveBeenCalledWith('/products/upload/file', expect.objectContaining({ method: 'POST' }))
+    expect(apiRequestMock).toHaveBeenCalledWith('/products/assortment/upload/file', expect.objectContaining({ method: 'POST' }))
     expect(body).toBeInstanceOf(FormData)
     expect(body.getAll('file')).toEqual([file])
     expect(JSON.parse(String(body.get('configuration')))).toEqual(configuration)
@@ -96,7 +104,7 @@ describe('products API upload contracts', () => {
 
     const body = apiRequestMock.mock.calls[0]?.[1]?.body as Product
 
-    expect(apiRequestMock).toHaveBeenCalledWith('/products/update', expect.objectContaining({ method: 'POST' }))
+    expect(apiRequestMock).toHaveBeenCalledWith('/products/assortment/update', expect.objectContaining({ method: 'POST' }))
     expect(body).toMatchObject({
       Description: 'Description',
       IsForSale: true,
@@ -122,12 +130,12 @@ describe('products API upload contracts', () => {
 
     apiRequestMock.mockResolvedValueOnce({ NetUid: 'product-1' })
 
-    await updateProductWithImages(product, [file])
+    await updateProductWithImages(product, [file], 'upload-and-delete')
 
     const body = apiRequestMock.mock.calls[0]?.[1]?.body as FormData
     const payload = JSON.parse(String(body.get('entity'))) as Product
 
-    expect(apiRequestMock).toHaveBeenCalledWith('/products/update/upload', expect.objectContaining({ method: 'POST' }))
+    expect(apiRequestMock).toHaveBeenCalledWith('/products/assortment/images/upload-and-delete', expect.objectContaining({ method: 'POST' }))
     expect(body.getAll('images')).toEqual([file])
     expect(payload.ProductImages).toEqual([
       { Id: 1, ImageUrl: 'https://example.test/old.jpg' },
@@ -193,7 +201,7 @@ describe('products API upload contracts', () => {
       PdfDocumentURL: 'https://example.test/movement.pdf',
     })
 
-    expect(apiRequestMock).toHaveBeenCalledWith('/consignments/info/movement/document/export', {
+    expect(apiRequestMock).toHaveBeenCalledWith('/consignments/info/assortment/movement/document/export', {
       errorMessages: {
         default: 'Не вдалося сформувати документ руху товару',
         network: 'Сервер експорту руху товару недоступний',
@@ -223,7 +231,7 @@ describe('products API upload contracts', () => {
       PdfDocumentURL: 'https://example.test/outcome.pdf',
     })
 
-    expect(apiRequestMock).toHaveBeenCalledWith('/consignments/info/outcome/document/export', {
+    expect(apiRequestMock).toHaveBeenCalledWith('/consignments/info/assortment/outcome/document/export', {
       errorMessages: {
         default: 'Не вдалося сформувати документ виходу',
         network: 'Сервер експорту виходу недоступний',
@@ -234,6 +242,83 @@ describe('products API upload contracts', () => {
         to: '2026-07-07',
       },
     })
+  })
+
+  it('loads a product card through the placements page scope', async () => {
+    apiRequestMock.mockResolvedValueOnce({ NetUid: 'product-1' })
+
+    await getProductForPlacements('product-1')
+
+    expect(apiRequestMock).toHaveBeenCalledWith('/products/placements/details', {
+      query: { netId: 'product-1' },
+      signal: undefined,
+    })
+  })
+
+  it('loads an order-specification product card through its scoped read facade', async () => {
+    apiRequestMock.mockResolvedValueOnce({ NetUid: 'product-1' })
+    const controller = new AbortController()
+
+    await getProductForOrderSpecifications('product-1', controller.signal)
+
+    expect(apiRequestMock).toHaveBeenCalledWith('/products/orders-ukraine/specifications/details', {
+      query: { netId: 'product-1' },
+      signal: controller.signal,
+    })
+  })
+
+  it('loads a direct-order invoice product card through its scoped read facade', async () => {
+    apiRequestMock.mockResolvedValueOnce({ NetUid: 'product-1' })
+    const controller = new AbortController()
+
+    await getProductForOrderInvoices('product-1', controller.signal)
+
+    expect(apiRequestMock).toHaveBeenCalledWith('/products/orders-ukraine/invoices/details', {
+      query: { netId: 'product-1' },
+      signal: controller.signal,
+    })
+  })
+
+  it('loads an Orders Ukraine overview product card through its scoped read facade', async () => {
+    apiRequestMock.mockResolvedValueOnce({ NetUid: 'product-1' })
+    const controller = new AbortController()
+
+    await getProductForOrderOverview('product-1', controller.signal)
+
+    expect(apiRequestMock).toHaveBeenCalledWith('/products/orders-ukraine/overview/details', {
+      query: { netId: 'product-1' },
+      signal: controller.signal,
+    })
+  })
+
+  it('uses permission-scoped aliases for product audit, placement history, and inline movement reads', async () => {
+    apiRequestMock.mockResolvedValue([])
+
+    await getProductAuditEntities('product-1', 'Description')
+    await getProductStorageLocationHistory({
+      from: '2026-08-01',
+      limit: 20,
+      offset: 0,
+      productNetId: 'product-1',
+      to: '2026-08-18',
+    })
+    await getProductIncomeMovements({
+      from: '2026-08-01',
+      productNetId: 'product-1',
+      to: '2026-08-18',
+    })
+    await getProductOutcomeMovements({
+      from: '2026-08-01',
+      productNetId: 'product-1',
+      to: '2026-08-18',
+    })
+
+    expect(apiRequestMock.mock.calls.map(([path]) => path)).toEqual([
+      '/auditing/products/assortment/history',
+      '/products/placements/history/assortment/all/filtered',
+      '/consignments/info/assortment/income/filtered',
+      '/consignments/info/assortment/outcome/filtered',
+    ])
   })
 })
 
@@ -256,6 +341,8 @@ describe('product placement durable mutation', () => {
     apiRequestMock.mockResolvedValueOnce(response)
 
     await expect(updateProductPlacements(response)).resolves.toEqual(response)
+
+    expect(apiRequestMock.mock.calls[0]?.[0]).toBe('/products/placements/storage/assortment/update')
 
     const [, options] = apiRequestMock.mock.calls[0]
     const body = options?.body as ProductPlacement[]

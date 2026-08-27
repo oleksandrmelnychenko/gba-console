@@ -1,6 +1,9 @@
-import { Badge, Box, Group, Stack } from '@mantine/core'
+import { Alert, Badge, Box, Group, Stack } from '@mantine/core'
+import { CircleAlert } from 'lucide-react'
 import { useCallback, useEffect, useMemo, type ReactNode } from 'react'
 import { useAuth } from '../../auth/useAuth'
+import { PermissionGate } from '../../auth/components/PermissionGate'
+import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { usePageBreadcrumb } from '../../../shared/ui/page-header-actions/pageHeaderActionsContext'
@@ -14,9 +17,12 @@ import { ShipmentsTab } from '../components/ShipmentsTab'
 import './warehouse-ukraine-page.css'
 import '../../../shared/ui/console-table-page.css'
 
-const PKEY_INVOICES = 'STORAGES_Ukraine_Invoices_Warehouse_Ukraine_PKEY'
-const PKEY_SHIPMENTS = 'STORAGES_Ukraine_Shipments_Warehouse_Ukraine_PKEY'
-const PKEY_UKRAINE_ORDER = 'STORAGES_Ukraine_UkraineOrder_Warehouse_Ukraine_PKEY'
+const PKEY_INVOICES = PermissionKeys.Warehouses.Ukraine.Invoices.Open
+const PKEY_SHIPMENTS = PermissionKeys.Warehouses.Ukraine.Shipments.Open
+const PKEY_UKRAINE_ORDER = PermissionKeys.Warehouses.Ukraine.Orders.Open
+const PKEY_EDITING = PermissionKeys.Warehouses.Ukraine.Editing.Open
+const PKEY_INVOICE_REGISTER = PermissionKeys.Warehouses.Ukraine.InvoiceRegister.Open
+const PKEY_VERIFICATION = PermissionKeys.Warehouses.Ukraine.Verification.Open
 
 const TAB_SALES = 'sales'
 const TAB_SHIPMENTS = 'shipments'
@@ -33,6 +39,24 @@ type WarehouseUkraineTab = {
 }
 
 export function WarehouseUkrainePage() {
+  return (
+    <PermissionGate permissionKey={PermissionKeys.Warehouses.Ukraine.Page.View} fallback={<WarehouseUkrainePermissionDenied />}>
+      <WarehouseUkrainePageContent />
+    </PermissionGate>
+  )
+}
+
+function WarehouseUkrainePermissionDenied() {
+  const { t } = useI18n()
+
+  return (
+    <Alert color="red" icon={<CircleAlert size={18} />} title={t('Доступ заборонено')} variant="light">
+      {t('У вашої ролі немає права переглядати склад Україна.')}
+    </Alert>
+  )
+}
+
+function WarehouseUkrainePageContent() {
   const { t } = useI18n()
   const { hasPermission } = useAuth()
   const [editingTotal, setEditingTotal] = useValueState(0)
@@ -46,8 +70,10 @@ export function WarehouseUkrainePage() {
   }, [setEditingTotal])
 
   useEffect(() => {
-    void reloadEditingTotal()
-  }, [reloadEditingTotal])
+    if (hasPermission(PKEY_EDITING)) {
+      void reloadEditingTotal()
+    }
+  }, [hasPermission, reloadEditingTotal])
 
   const tabs = useMemo<WarehouseUkraineTab[]>(
     () => [
@@ -69,18 +95,18 @@ export function WarehouseUkrainePage() {
       {
         value: TAB_EDITING,
         label: t('Протокол актів редагування накладних'),
-        permissionKey: PKEY_UKRAINE_ORDER,
+        permissionKey: PKEY_EDITING,
         showBadge: true,
       },
       {
         value: TAB_INVOICE_REGISTER,
         label: t('Реєстр накладних'),
-        permissionKey: PKEY_UKRAINE_ORDER,
+        permissionKey: PKEY_INVOICE_REGISTER,
       },
       {
         value: TAB_VERIFICATION,
         label: t('Звірка'),
-        permissionKey: PKEY_UKRAINE_ORDER,
+        permissionKey: PKEY_VERIFICATION,
       },
     ],
     [t],
@@ -110,16 +136,23 @@ export function WarehouseUkrainePage() {
   usePageBreadcrumb(activeTabItem?.label ?? null)
 
   const openShipmentCreation = useCallback(() => {
+    if (!hasPermission(PermissionKeys.Warehouses.Ukraine.Shipment.Create)) {
+      return
+    }
+
     setShipmentCreateRequest((current) => current + 1)
     setActiveTab(TAB_SHIPMENTS)
-  }, [setActiveTab, setShipmentCreateRequest])
+  }, [hasPermission, setActiveTab, setShipmentCreateRequest])
 
   const renderTab = (tabValue: string): ReactNode => {
     switch (tabValue) {
       case TAB_SALES:
         return (
           <SalesTab
-            canCreateShipment={hasPermission(PKEY_SHIPMENTS)}
+            canCreateShipment={hasPermission(PermissionKeys.Warehouses.Ukraine.Shipment.Create)}
+            canPrintInvoice={hasPermission(PermissionKeys.Warehouses.Ukraine.Invoice.Print)}
+            canPrintEditAct={hasPermission(PermissionKeys.Warehouses.Ukraine.Invoice.PrintEditAct)}
+            canUpdatePrintStatus={hasPermission(PermissionKeys.SalesUkraine.Sale.Edit)}
             onCreateShipment={openShipmentCreation}
           />
         )
@@ -128,16 +161,23 @@ export function WarehouseUkrainePage() {
           <ShipmentsTab
             key={shipmentCreateRequest}
             createRequest={shipmentCreateRequest}
+            permissions={{
+              canCarryOut: hasPermission(PermissionKeys.Warehouses.Ukraine.Shipment.CarryOut),
+              canCreate: hasPermission(PermissionKeys.Warehouses.Ukraine.Shipment.Create),
+              canEdit: hasPermission(PermissionKeys.Warehouses.Ukraine.Shipment.Edit),
+              canPrintInvoice: hasPermission(PermissionKeys.Warehouses.Ukraine.Invoice.Print),
+              canPrintShipment: hasPermission(PermissionKeys.Warehouses.Ukraine.Shipment.Print),
+            }}
           />
         )
       case TAB_ORDERS:
-        return <OrdersTab />
+        return <OrdersTab canOpenPlacement={hasPermission(PermissionKeys.OrdersUkraine.Order.OpenPlacement)} />
       case TAB_EDITING:
-        return <EditingTab onCountChanged={reloadEditingTotal} />
+        return <EditingTab canProcess={hasPermission(PermissionKeys.Warehouses.Ukraine.Editing.Process)} onCountChanged={reloadEditingTotal} />
       case TAB_INVOICE_REGISTER:
-        return <InvoiceRegisterTab />
+        return <InvoiceRegisterTab canExport={hasPermission(PermissionKeys.Warehouses.Ukraine.InvoiceRegister.Export)} />
       case TAB_VERIFICATION:
-        return <DocumentVerificationTab />
+        return <DocumentVerificationTab canExport={hasPermission(PermissionKeys.Warehouses.Ukraine.Verification.Export)} />
       default:
         return null
     }

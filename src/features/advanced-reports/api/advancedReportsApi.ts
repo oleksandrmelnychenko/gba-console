@@ -11,7 +11,7 @@ import type {
 } from '../types'
 
 export async function getAdvancedReports(params: AdvancedReportsSearchParams): Promise<AdvancedReportsResponse> {
-  const result = await apiRequest<unknown>('/payments/orders/outcome/all/underreport', {
+  const result = await apiRequest<unknown>('/payments/orders/outcome/advanced-reports/registry', {
     query: {
       currencyNetId: params.currencyNetId || undefined,
       from: params.from,
@@ -28,7 +28,7 @@ export async function getAdvancedReports(params: AdvancedReportsSearchParams): P
 }
 
 export async function calculateAdvancedReportOrder(order: OutcomePaymentOrder): Promise<OutcomePaymentOrder | null> {
-  const result = await apiRequest<unknown>('/payments/orders/outcome/calculate', {
+  const result = await apiRequest<unknown>('/payments/orders/outcome/advanced-reports/structure/calculate', {
     body: order,
     method: 'POST',
   })
@@ -42,8 +42,12 @@ export async function getAdvancedReportCurrencies(): Promise<Currency[]> {
   return readArrayPayload(result, ['Items', 'Currencies', 'Data']) as Currency[]
 }
 
-export async function getAdvancedReportPaymentMovements(): Promise<PaymentMovement[]> {
-  const result = await apiRequest<unknown>('/payments/movements/all')
+export async function getAdvancedReportPaymentMovements(
+  context: 'open' | 'edit',
+): Promise<PaymentMovement[]> {
+  const result = await apiRequest<unknown>(
+    `/payments/movements/advanced-reports/report/${context}/all`,
+  )
 
   return readArrayPayload(result, ['Items', 'PaymentMovements', 'Data']) as PaymentMovement[]
 }

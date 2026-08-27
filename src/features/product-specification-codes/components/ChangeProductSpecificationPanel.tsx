@@ -9,9 +9,10 @@ import { useValueState } from '../../../shared/hooks/useValueState'
 import { useAuth } from '../../auth/useAuth'
 import { changeProductSpecification } from '../api/productSpecificationCodesApi'
 import { ProductSpecificationChangeMode, type ProductSpecification } from '../types'
+import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import './change-product-specification-panel.css'
 
-const CHANGE_PERMISSION = 'Accounting_Specification_codes_ChangeBtn_PKEY'
+const CHANGE_PERMISSION = PermissionKeys.ProductSpecificationCodes.Code.Edit
 
 type ChangeForm = {
   changeMode: ProductSpecificationChangeMode
@@ -75,7 +76,7 @@ export function ChangeProductSpecificationPanel({
   }
 
   async function submit() {
-    if (!productSpecification) {
+    if (!productSpecification || !hasPermission(CHANGE_PERMISSION)) {
       return
     }
 

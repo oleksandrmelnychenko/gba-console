@@ -2,6 +2,7 @@ import { MantineProvider } from '@mantine/core'
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { theme } from '../../../shared/theme/theme'
+import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import type { SaleDocumentResult, SalesUkraineSale } from '../types'
 import { SaleDocumentsMenu } from './SaleDocumentsMenu'
 
@@ -12,10 +13,13 @@ const mocks = vi.hoisted(() => ({
   getSaleInvoiceHistoryDocument: vi.fn(),
   getSalePaymentDocument: vi.fn(),
   getSalePzDocument: vi.fn(),
+  getSaleRevisionBaseInvoiceDocument: vi.fn(),
+  getSaleRevisionBaseShipmentListDocument: vi.fn(),
   getSaleShipmentListDocument: vi.fn(),
   getSaleShipmentListHistoryDocument: vi.fn(),
   notificationsShow: vi.fn(),
   notificationsUpdate: vi.fn(),
+  permissionKeys: new Set<string>(),
 }))
 
 vi.mock('../../../shared/api/apiClient', async (importOriginal) => ({
@@ -32,6 +36,8 @@ vi.mock('@mantine/notifications', () => ({
 
 vi.mock('../../auth/useAuth', () => ({
   useAuth: () => ({
+    hasPermission: (permission: string) => mocks.permissionKeys.has(permission),
+    permissions: [...mocks.permissionKeys],
     session: { userNetUid: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa' },
     user: undefined,
   }),
@@ -47,6 +53,8 @@ vi.mock('../api/salesUkraineApi', () => ({
   getSaleInvoiceHistoryDocument: mocks.getSaleInvoiceHistoryDocument,
   getSalePaymentDocument: mocks.getSalePaymentDocument,
   getSalePzDocument: mocks.getSalePzDocument,
+  getSaleRevisionBaseInvoiceDocument: mocks.getSaleRevisionBaseInvoiceDocument,
+  getSaleRevisionBaseShipmentListDocument: mocks.getSaleRevisionBaseShipmentListDocument,
   getSaleShipmentListDocument: mocks.getSaleShipmentListDocument,
   getSaleShipmentListHistoryDocument: mocks.getSaleShipmentListHistoryDocument,
 }))
@@ -97,8 +105,16 @@ describe('SaleDocumentsMenu legacy document semantics', () => {
     mocks.getSaleInvoiceHistoryDocument.mockResolvedValue(documentResult)
     mocks.getSalePaymentDocument.mockResolvedValue(documentResult)
     mocks.getSalePzDocument.mockResolvedValue(documentResult)
+    mocks.getSaleRevisionBaseInvoiceDocument.mockResolvedValue(documentResult)
+    mocks.getSaleRevisionBaseShipmentListDocument.mockResolvedValue(documentResult)
     mocks.getSaleShipmentListDocument.mockResolvedValue(documentResult)
     mocks.getSaleShipmentListHistoryDocument.mockResolvedValue(documentResult)
+    mocks.permissionKeys.clear()
+    mocks.permissionKeys.add(PermissionKeys.SalesUkraine.Sale.ExportInvoice)
+    mocks.permissionKeys.add(PermissionKeys.SalesUkraine.Sale.ExportShipmentList)
+    mocks.permissionKeys.add(PermissionKeys.SalesUkraine.Sale.ExportPaymentInvoice)
+    mocks.permissionKeys.add(PermissionKeys.SalesUkraine.Sale.ExportPz)
+    mocks.permissionKeys.add(PermissionKeys.SalesUkraine.Sale.ExportRevisionDocuments)
   })
 
   afterEach(() => {
@@ -118,6 +134,66 @@ describe('SaleDocumentsMenu legacy document semantics', () => {
 
     await waitFor(() => expect(mocks.getSaleInvoiceDocument).toHaveBeenCalledWith('sale-net-id'))
     expect(mocks.getSalePzDocument).not.toHaveBeenCalled()
+  })
+
+  it('shows only the document action covered by its exact permission', async () => {
+    mocks.permissionKeys.clear()
+    mocks.permissionKeys.add(PermissionKeys.SalesUkraine.Sale.ExportPaymentInvoice)
+
+    renderMenu(createSale({
+      ClientAgreement: { Agreement: { WithVATAccounting: true } },
+      IsVatSale: true,
+    }))
+    fireEvent.click(screen.getByRole('button', { name: 'Документи' }))
+
+    expect(await screen.findByText('Рахунок на оплату')).toBeTruthy()
+    expect(screen.queryByText('Видаткова накладна')).toBeNull()
+    expect(screen.queryByText('Лист відвантаження')).toBeNull()
+  })
+
+  it('bundles the invoice only when export_invoice is assigned before packing', async () => {
+    mocks.permissionKeys.clear()
+    mocks.permissionKeys.add(PermissionKeys.SalesUkraine.Sale.ExportPaymentInvoice)
+    mocks.getSalePaymentDocument.mockResolvedValueOnce({
+      ...documentResult,
+      invoiceExcelUrl: 'https://example.test/invoice.xlsx',
+      invoicePdfUrl: 'https://example.test/invoice.pdf',
+      isAcceptedToPacking: false,
+    })
+
+    renderMenu(createSale({ BaseLifeCycleStatus: { SaleLifeCycleType: 'New' } }))
+    fireEvent.click(screen.getByRole('button', { name: 'Документи' }))
+    fireEvent.click(await screen.findByText('Рахунок на оплату'))
+
+    await waitFor(() => expect(mocks.getSalePaymentDocument).toHaveBeenCalledTimes(1))
+    expect(screen.queryByText('Видаткова накладна')).toBeNull()
+
+    cleanup()
+    mocks.permissionKeys.add(PermissionKeys.SalesUkraine.Sale.ExportInvoice)
+    mocks.getSalePaymentDocument.mockResolvedValueOnce({
+      ...documentResult,
+      invoiceExcelUrl: 'https://example.test/invoice.xlsx',
+      invoicePdfUrl: 'https://example.test/invoice.pdf',
+      isAcceptedToPacking: false,
+    })
+
+    renderMenu(createSale({ BaseLifeCycleStatus: { SaleLifeCycleType: 'New' } }))
+    fireEvent.click(screen.getByRole('button', { name: 'Документи' }))
+    fireEvent.click(await screen.findByText('Рахунок на оплату'))
+
+    expect(await screen.findByText('Видаткова накладна')).toBeTruthy()
+  })
+
+  it('keeps the first revision bundle on the revision permission facade', async () => {
+    mocks.permissionKeys.clear()
+    mocks.permissionKeys.add(PermissionKeys.SalesUkraine.Sale.ExportRevisionDocuments)
+
+    renderMenu(createSale({ HistoryInvoiceEdit: [{ NetUid: 'history-1' }] }))
+    fireEvent.click(screen.getByRole('button', { name: 'Документи' }))
+    fireEvent.click(await screen.findByText('Правка 1 документа'))
+
+    await waitFor(() => expect(mocks.getSaleRevisionBaseInvoiceDocument).toHaveBeenCalledWith('sale-net-id'))
+    expect(mocks.getSaleInvoiceDocument).not.toHaveBeenCalled()
   })
 
   it('shows PZ only for a Polish sale in invoice status', async () => {

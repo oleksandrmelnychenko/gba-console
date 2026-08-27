@@ -7,6 +7,8 @@ export type AuthContextValue = {
   user: AuthUser | null
   isAuthenticated: boolean
   isLoading: boolean
+  isPermissionsLoading: boolean
+  permissions: readonly string[]
   hasPermission: (permissionKey: string) => boolean
   login: (username: string, password: string) => Promise<void>
   logout: () => void

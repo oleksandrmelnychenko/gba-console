@@ -12,7 +12,25 @@ export async function getActProvidingServices(
   const responseLimit = params.limit
   const requestLimit = responseLimit + 1
 
-  const result = await apiRequest<unknown>('/act/providing/services/all', {
+  const result = await apiRequest<unknown>('/act/providing/services/registry', {
+    query: {
+      from: toDateTimeQuery(params.from, 'start'),
+      isFiltered: params.isFiltered,
+      limit: requestLimit,
+      offset: params.offset,
+      to: toDateTimeQuery(params.to, 'end'),
+    },
+  })
+
+  return normalizeActProvidingServicesResponse(result, responseLimit)
+}
+
+export async function getProvidingServiceActsRegistry(
+  params: ActProvidingServicesSearchParams,
+): Promise<ActProvidingServicesResponse> {
+  const responseLimit = params.limit
+  const requestLimit = responseLimit + 1
+  const result = await apiRequest<unknown>('/act/providing/services/registry', {
     query: {
       from: toDateTimeQuery(params.from, 'start'),
       isFiltered: params.isFiltered,
@@ -26,11 +44,28 @@ export async function getActProvidingServices(
 }
 
 export async function getActProvidingService(netId: string): Promise<ActProvidingService | null> {
-  const result = await apiRequest<unknown>('/act/providing/services/get/', {
+  const result = await apiRequest<unknown>('/act/providing/services/overview/details', {
     query: {
       netId,
     },
   })
+
+  return normalizeActProvidingService(result)
+}
+
+export async function getProvidingServiceActOverviewDetails(netId: string): Promise<ActProvidingService | null> {
+  return getScopedProvidingServiceActDetails('/act/providing/services/overview/details', netId)
+}
+
+export async function getProvidingServiceActLogisticWayDetails(netId: string): Promise<ActProvidingService | null> {
+  return getScopedProvidingServiceActDetails('/act/providing/services/logistic-way/details', netId)
+}
+
+async function getScopedProvidingServiceActDetails(
+  path: string,
+  netId: string,
+): Promise<ActProvidingService | null> {
+  const result = await apiRequest<unknown>(path, { query: { netId } })
 
   return normalizeActProvidingService(result)
 }

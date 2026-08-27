@@ -3,6 +3,7 @@ import { render, screen } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { I18nProvider } from '../../../shared/i18n/I18nProvider'
+import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import {
   getNotSentSads,
   getNotSentTaxFreePackLists,
@@ -10,11 +11,22 @@ import {
 } from '../api/basketSupplyUkraineOrderApi'
 import { BasketSupplyUkraineOrderPage } from './BasketSupplyUkraineOrderPage'
 
+const allowedPermissions = new Set<string>()
+
+vi.mock('../../auth/usePermissions', () => ({
+  usePermissions: () => ({
+    can: (permission: string) => allowedPermissions.has(permission),
+    isLoading: false,
+  }),
+}))
+
 vi.mock('../api/basketSupplyUkraineOrderApi', () => ({
   addOrUpdateSad: vi.fn(),
   addOrUpdateSaleSad: vi.fn(),
   addOrUpdateSaleTaxFreePackList: vi.fn(),
   addOrUpdateTaxFreePackList: vi.fn(),
+  assembleCartSadDocument: vi.fn(),
+  assembleCartTaxFreeDocument: vi.fn(),
   calculateTotalsByCartItems: vi.fn(),
   calculateTotalsBySales: vi.fn(),
   getNotSentSads: vi.fn(),
@@ -52,6 +64,9 @@ function renderPage(pathname: string) {
 
 describe('BasketSupplyUkraineOrderPage shell', () => {
   beforeEach(() => {
+    allowedPermissions.clear()
+    allowedPermissions.add(PermissionKeys.SystemPages.SupplyCart.View)
+    allowedPermissions.add(PermissionKeys.SupplyCart.File.Import)
     vi.mocked(getUkraineCartItems).mockResolvedValue([])
     vi.mocked(getNotSentTaxFreePackLists).mockResolvedValue([])
     vi.mocked(getNotSentSads).mockResolvedValue([])
@@ -60,6 +75,7 @@ describe('BasketSupplyUkraineOrderPage shell', () => {
   it.each(['/recommendations', '/basket-supply-ukraine-order/recommendations'])(
     'keeps the recommendations alias on the visible constructor tab at %s',
     (pathname) => {
+      allowedPermissions.add(PermissionKeys.SystemPages.PurchaseCockpit.View)
       const { container } = renderPage(pathname)
 
       const shell = container.querySelector('.basket-supply-page > .basket-supply-shell.app-data-card')

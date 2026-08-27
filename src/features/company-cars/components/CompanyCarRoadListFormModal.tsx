@@ -18,7 +18,8 @@ import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppModal } from '../../../shared/ui/AppModal'
 import { useAuth } from '../../auth/useAuth'
 import {
-  calculateCompanyCarRoadList,
+  calculateCompanyCarRoadListForCreate,
+  calculateCompanyCarRoadListForEdit,
   createCompanyCarRoadList,
   getOutcomeOrdersByCompanyCar,
   searchCompanyCarUsers,
@@ -246,7 +247,7 @@ function useRoadListFormModel({
   }, [editedRoadList, opened])
 
   useEffect(() => {
-    if (!opened || !companyCarNetUid) {
+    if (!opened || !canSave || !companyCarNetUid) {
       return
     }
 
@@ -270,10 +271,10 @@ function useRoadListFormModel({
     return () => {
       cancelled = true
     }
-  }, [companyCarNetUid, editedRoadList, opened, t])
+  }, [canSave, companyCarNetUid, editedRoadList, opened, t])
 
   useEffect(() => {
-    if (!opened) {
+    if (!opened || !canSave) {
       return
     }
 
@@ -297,10 +298,10 @@ function useRoadListFormModel({
     return () => {
       cancelled = true
     }
-  }, [debouncedUserSearchValue, opened, t])
+  }, [canSave, debouncedUserSearchValue, opened, t])
 
   useEffect(() => {
-    if (!opened || !companyCarNetUid) {
+    if (!opened || !canSave || !companyCarNetUid) {
       return
     }
 
@@ -315,7 +316,11 @@ function useRoadListFormModel({
 
     let cancelled = false
 
-    void calculateCompanyCarRoadList(
+    const calculateRoadList = isEditMode
+      ? calculateCompanyCarRoadListForEdit
+      : calculateCompanyCarRoadListForCreate
+
+    void calculateRoadList(
       buildRoadListPayload({
         baseRoadList: editedRoadList,
         companyCar: effectiveCompanyCar,
@@ -342,7 +347,7 @@ function useRoadListFormModel({
     return () => {
       cancelled = true
     }
-  }, [companyCar, companyCarNetUid, debouncedForm, drivers, editedRoadList, effectiveCompanyCar, effectiveResponsible, isEditMode, opened, selectedOutcomeOrder, t])
+  }, [canSave, companyCar, companyCarNetUid, debouncedForm, drivers, editedRoadList, effectiveCompanyCar, effectiveResponsible, isEditMode, opened, selectedOutcomeOrder, t])
 
   const outcomeOptions = useMemo(
     () => toSelectOptions(outcomeOrders, (order) => order.Number),

@@ -52,6 +52,12 @@ import {
   validateIncomeCashflowMovementName,
 } from '../incomeCashflowFormValidation'
 import { createAutocompleteOptionSubmitGuard } from '../autocompleteOptionSubmitGuard'
+import { PermissionGate } from '../../auth/components/PermissionGate'
+import { useAuth } from '../../auth/useAuth'
+import {
+  getIncomeCreatePermissionByOperationType,
+  INCOME_CASHFLOWS_MOVEMENT_CREATE_PERMISSION,
+} from '../permissions'
 import './income-cashflows-page.css'
 
 type FormState = {
@@ -83,7 +89,30 @@ const SEARCH_DEBOUNCE_MS = 300
 
 export function IncomeCashflowUserFormPage() {
   const { t } = useI18n()
+  const permissionKey = getIncomeCreatePermissionByOperationType(
+    IncomePaymentOperationType.ReturnFromColleague,
+  )
+
+  return (
+    <PermissionGate
+      fallback={<Alert color="red">{t('Немає права створювати повернення від колеги')}</Alert>}
+      permissionKey={permissionKey}
+    >
+      <IncomeCashflowUserFormPageContent />
+    </PermissionGate>
+  )
+}
+
+function IncomeCashflowUserFormPageContent() {
+  const { t } = useI18n()
+  const { hasPermission } = useAuth()
   const navigate = useNavigate()
+  const createPermission = getIncomeCreatePermissionByOperationType(
+    IncomePaymentOperationType.ReturnFromColleague,
+  )
+  const canCreateMovement = hasPermission(
+    INCOME_CASHFLOWS_MOVEMENT_CREATE_PERMISSION,
+  )
   const [organizations, setOrganizations] = useValueState<Organization[]>([])
   const [paymentRegisters, setPaymentRegisters] = useValueState<PaymentRegister[]>([])
   const [paymentMovements, setPaymentMovements] = useValueState<PaymentMovement[]>([])
@@ -308,6 +337,11 @@ export function IncomeCashflowUserFormPage() {
   }
 
   async function handleCreateMovement() {
+    if (!hasPermission(INCOME_CASHFLOWS_MOVEMENT_CREATE_PERMISSION)) {
+      setError(t('Немає права створювати статтю руху коштів'))
+      return
+    }
+
     const operationName = form.movementSearch.trim()
 
     if (!operationName) {
@@ -369,6 +403,11 @@ export function IncomeCashflowUserFormPage() {
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
+
+    if (!hasPermission(createPermission)) {
+      setError(t('Немає права створювати повернення від колеги'))
+      return
+    }
 
     const validationError = validateForm({
       activeMovement,
@@ -569,19 +608,21 @@ export function IncomeCashflowUserFormPage() {
                   onChange={handleMovementSearchChanged}
                   onOptionSubmit={handleMovementSubmit}
                 />
-                <Tooltip label={t('Створити статтю')} withArrow>
-                  <ActionIcon
-                    aria-label={t('Створити статтю')}
-                    color={CREATE_ACTION_COLOR}
-                    disabled={Boolean(activeMovement) || !form.movementSearch.trim() || isLoading || isSaving}
-                    size={36}
-                    type="button"
-                    variant="outline"
-                    onClick={() => void handleCreateMovement()}
-                  >
-                    <Plus size={17} />
-                  </ActionIcon>
-                </Tooltip>
+                {canCreateMovement && (
+                  <Tooltip label={t('Створити статтю')} withArrow>
+                    <ActionIcon
+                      aria-label={t('Створити статтю')}
+                      color={CREATE_ACTION_COLOR}
+                      disabled={Boolean(activeMovement) || !form.movementSearch.trim() || isLoading || isSaving}
+                      size={36}
+                      type="button"
+                      variant="outline"
+                      onClick={() => void handleCreateMovement()}
+                    >
+                      <Plus size={17} />
+                    </ActionIcon>
+                  </Tooltip>
+                )}
               </Group>
             </SimpleGrid>
           </Stack>

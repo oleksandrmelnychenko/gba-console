@@ -100,6 +100,32 @@ export async function addTaskNote(taskKey: string, body: CockpitNoteBody): Promi
   return normalizeTask(result)
 }
 
+export async function addHeadTaskNote(
+  taskKey: string,
+  body: CockpitNoteBody,
+): Promise<CockpitTask | null> {
+  const result = await apiRequest<unknown>('/sales/cockpit/head/tasks/notes', {
+    method: 'POST',
+    query: { taskKey },
+    body,
+  })
+
+  return normalizeTask(result)
+}
+
+export async function dismissHeadTask(
+  taskKey: string,
+  reason: string | null,
+): Promise<CockpitTask | null> {
+  const result = await apiRequest<unknown>('/sales/cockpit/head/tasks/dismiss', {
+    method: 'POST',
+    query: { taskKey },
+    body: reason ? { Reason: reason } : {},
+  })
+
+  return normalizeTask(result)
+}
+
 export async function getHeadTeam(): Promise<HeadTeam> {
   const result = await apiRequest<unknown>('/sales/cockpit/head/team')
 
@@ -197,6 +223,16 @@ export async function regenerateCockpit(asOfDate?: string): Promise<CockpitGener
     query: {
       asOfDate,
     },
+    body: {},
+  })
+
+  return normalizeGenerationResult(result, asOfDate)
+}
+
+export async function regenerateHeadCockpit(asOfDate?: string): Promise<CockpitGenerationResult> {
+  const result = await apiRequest<unknown>('/sales/cockpit/head/generate', {
+    method: 'POST',
+    query: { asOfDate },
     body: {},
   })
 

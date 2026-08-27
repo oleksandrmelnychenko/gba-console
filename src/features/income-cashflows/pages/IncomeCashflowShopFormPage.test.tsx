@@ -1,10 +1,12 @@
 import { MantineProvider } from '@mantine/core'
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import type { ReactNode } from 'react'
 import { MemoryRouter } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { I18nProvider } from '../../../shared/i18n/I18nProvider'
+import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import {
-  createIncomeCashflow,
+  createOnlineShopIncomeCashflow,
   getIncomeCashflowPaymentMovements,
   getIncomeCashflowRetailClientAgreements,
   getIncomeCashflowRetailClients,
@@ -26,9 +28,25 @@ Object.defineProperty(HTMLElement.prototype, 'scrollIntoView', {
   value: vi.fn(),
 })
 
+const allowedPermissions = new Set<string>()
+
+vi.mock('../../auth/components/PermissionGate', () => ({
+  PermissionGate: ({ children, fallback = null, permissionKey }: {
+    children: ReactNode
+    fallback?: ReactNode
+    permissionKey: string
+  }) => allowedPermissions.has(permissionKey) ? children : fallback,
+}))
+
+vi.mock('../../auth/useAuth', () => ({
+  useAuth: () => ({
+    hasPermission: (permission: string) => allowedPermissions.has(permission),
+  }),
+}))
+
 vi.mock('../api/incomeCashflowsApi', async (importOriginal) => ({
   ...await importOriginal<typeof import('../api/incomeCashflowsApi')>(),
-  createIncomeCashflow: vi.fn(),
+  createOnlineShopIncomeCashflow: vi.fn(),
   getIncomeCashflowPaymentMovements: vi.fn(),
   getIncomeCashflowRetailClientAgreements: vi.fn(),
   getIncomeCashflowRetailClients: vi.fn(),
@@ -228,6 +246,8 @@ function renderPage() {
 describe('IncomeCashflowShopFormPage retail client selection', () => {
   beforeEach(() => {
     vi.resetAllMocks()
+    allowedPermissions.clear()
+    allowedPermissions.add(PermissionKeys.OnlineShopPayment.IncomeOrder.Create)
     vi.mocked(searchIncomeCashflowPaymentRegisters).mockResolvedValue([register])
     vi.mocked(getIncomeCashflowPaymentMovements).mockResolvedValue([movement])
     vi.mocked(searchIncomeCashflowPaymentMovements).mockResolvedValue([movement])
@@ -235,7 +255,16 @@ describe('IncomeCashflowShopFormPage retail client selection', () => {
     vi.mocked(searchIncomeCashflowRetailClients).mockResolvedValue([retailClient])
     vi.mocked(getIncomeCashflowRetailClientAgreements).mockResolvedValue([agreement])
     vi.mocked(getIncomeCashflowSpecificExchangeRate).mockResolvedValue(1)
-    vi.mocked(createIncomeCashflow).mockResolvedValue({ NetUid: 'income-1' })
+    vi.mocked(createOnlineShopIncomeCashflow).mockResolvedValue({ NetUid: 'income-1' })
+  })
+
+  it('does not mount shop-order resources without income_order.create', () => {
+    allowedPermissions.clear()
+    renderPage()
+
+    expect(screen.getByText('Доступ заборонено')).toBeTruthy()
+    expect(searchIncomeCashflowPaymentRegisters).not.toHaveBeenCalled()
+    expect(getIncomeCashflowPaymentMovements).not.toHaveBeenCalled()
   })
 
   it('shows the initial retail-client list before the user types', async () => {
@@ -313,7 +342,7 @@ describe('IncomeCashflowShopFormPage retail client selection', () => {
     })
     fireEvent.click(screen.getByRole('button', { name: 'Зберегти' }))
 
-    await waitFor(() => expect(createIncomeCashflow).toHaveBeenCalledTimes(1))
+    await waitFor(() => expect(createOnlineShopIncomeCashflow).toHaveBeenCalledTimes(1))
     expect(screen.queryByText('Оберіть retail-клієнта')).toBeNull()
   })
 
@@ -429,6 +458,6 @@ describe('IncomeCashflowShopFormPage retail client selection', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Зберегти' }))
 
     expect(await screen.findByText('Оберіть retail-клієнта')).toBeTruthy()
-    expect(createIncomeCashflow).not.toHaveBeenCalled()
+    expect(createOnlineShopIncomeCashflow).not.toHaveBeenCalled()
   })
 })

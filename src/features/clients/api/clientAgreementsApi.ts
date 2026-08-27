@@ -101,7 +101,7 @@ export async function exportAgreementDocument(
   netId: string,
   type: AgreementDownloadDocumentTypeValue = AgreementDownloadDocumentType.Agreement,
 ): Promise<ClientPrintDocument | null> {
-  const result = await apiRequest<unknown>('/agreements/get/document', {
+  const result = await apiRequest<unknown>('/agreements/client/document/export', {
     query: {
       netId,
       type,

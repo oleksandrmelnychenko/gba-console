@@ -10,6 +10,14 @@ import type {
   UploadProductSpecificationResult,
 } from '../specificationTypes'
 
+export type ProtocolSpecificationApiScope = 'delivery-protocol' | 'direct-supply-order'
+
+function scopedPath(scope: ProtocolSpecificationApiScope, suffix: string): string {
+  const segment = scope === 'delivery-protocol' ? 'product-delivery-protocol' : 'direct-supply-order'
+
+  return `${segment}/${suffix}`
+}
+
 function normalizeProtocol(result: unknown): SpecificationProtocol | null {
   if (result && typeof result === 'object') {
     return result as SpecificationProtocol
@@ -28,16 +36,20 @@ function normalizePackingList(result: unknown): SpecificationPackingList | null 
 
 export async function getPackingListSpecificationProducts(
   packListNetId: string,
+  scope: ProtocolSpecificationApiScope = 'delivery-protocol',
 ): Promise<SpecificationPackingList | null> {
-  const result = await apiRequest<unknown>('/supplies/packinglists/specification/products/get', {
+  const result = await apiRequest<unknown>(`/supplies/packinglists/${scopedPath(scope, 'specification/products/get')}`, {
     query: { netId: packListNetId },
   })
 
   return normalizePackingList(result)
 }
 
-export async function getSpecificationDownloadUrls(packListNetId: string): Promise<SpecificationDownloadDocument> {
-  const result = await apiRequest<unknown>('/supplies/packinglists/specification/get', {
+export async function getSpecificationDownloadUrls(
+  packListNetId: string,
+  scope: ProtocolSpecificationApiScope = 'delivery-protocol',
+): Promise<SpecificationDownloadDocument> {
+  const result = await apiRequest<unknown>(`/supplies/packinglists/${scopedPath(scope, 'specification/get')}`, {
     query: { netId: packListNetId },
   })
 
@@ -51,13 +63,14 @@ export async function uploadProductSpecificationForInvoice(
   parseConfiguration: ProductSpecificationParseConfiguration,
   dateCustomDeclaration: string,
   file: File,
+  scope: ProtocolSpecificationApiScope = 'delivery-protocol',
 ): Promise<UploadProductSpecificationResult | null> {
   const formData = new FormData()
   formData.append('parseConfiguration', JSON.stringify(parseConfiguration))
   formData.append('dateCustomDeclaration', dateCustomDeclaration)
   formData.append('file', file)
 
-  const result = await apiRequest<unknown>('/supplies/invoices/specification/upload', {
+  const result = await apiRequest<unknown>(`/supplies/invoices/${scopedPath(scope, 'specification/upload')}`, {
     method: 'POST',
     body: formData,
     query: { invoiceNetId },
@@ -81,7 +94,7 @@ export async function addDeliveryDocumentsToInvoice(
     formData.append('documents', document)
   }
 
-  const result = await apiRequest<unknown>('/supplies/invoices/documents/add', {
+  const result = await apiRequest<unknown>('/supplies/invoices/product-delivery-protocol/documents/add', {
     method: 'POST',
     body: formData,
   })
@@ -92,8 +105,9 @@ export async function addDeliveryDocumentsToInvoice(
 export async function addOrUpdateProductSpecification(
   supplyInvoiceNetId: string,
   body: Partial<ProductSpecificationEntity>,
+  scope: ProtocolSpecificationApiScope = 'delivery-protocol',
 ): Promise<ProductSpecificationEntity | null> {
-  const result = await apiRequest<unknown>('/specifications/update', {
+  const result = await apiRequest<unknown>(`/specifications/${scopedPath(scope, 'update')}`, {
     method: 'POST',
     query: { supplyInvoiceNetId },
     body,
@@ -110,7 +124,7 @@ export async function mergeSupplyInvoices(
   protocolNetId: string,
   invoiceNetIds: string[],
 ): Promise<void> {
-  await apiRequest<unknown>('/delivery/product/protocol/merge/supply/invoices', {
+  await apiRequest<unknown>('/delivery/product/protocol/specification/merge/supply/invoices', {
     method: 'POST',
     query: { invoiceNetIds, netId: protocolNetId },
   })

@@ -8,12 +8,12 @@ import { ProductDeliveryProtocolSpecificationPage } from './ProductDeliveryProto
 
 const apiMocks = vi.hoisted(() => ({
   getPackingListSpecificationProducts: vi.fn(),
-  getProtocolByNetId: vi.fn(),
+  getProtocolForSpecification: vi.fn(),
 }))
 
 vi.mock('../api/productDeliveryProtocolsApi', async (importOriginal) => ({
   ...await importOriginal<typeof import('../api/productDeliveryProtocolsApi')>(),
-  getProtocolByNetId: apiMocks.getProtocolByNetId,
+  getProtocolForSpecification: apiMocks.getProtocolForSpecification,
 }))
 
 vi.mock('../api/protocolSpecificationApi', async (importOriginal) => ({
@@ -98,7 +98,7 @@ function renderPage() {
 describe('BUG-1193 protocol customs-code window', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    apiMocks.getProtocolByNetId.mockResolvedValue(protocol)
+    apiMocks.getProtocolForSpecification.mockResolvedValue(protocol)
     apiMocks.getPackingListSpecificationProducts.mockResolvedValue(packingList)
   })
 
@@ -121,7 +121,7 @@ describe('BUG-1193 protocol customs-code window', () => {
     expect(screen.getByRole('textbox', { name: 'Пошук' }).getAttribute('placeholder')).toBe('Код товару')
     expect(screen.getByTestId('specification-products-grid')).toBeTruthy()
     expect(screen.getByTestId('specification-totals')).toBeTruthy()
-    expect(apiMocks.getProtocolByNetId).toHaveBeenCalledWith(PROTOCOL_NET_ID)
+    expect(apiMocks.getProtocolForSpecification).toHaveBeenCalledWith(PROTOCOL_NET_ID)
     expect(apiMocks.getPackingListSpecificationProducts).toHaveBeenCalledWith(PACKING_LIST_NET_ID)
   })
 })

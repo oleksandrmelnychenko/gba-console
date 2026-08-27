@@ -42,7 +42,7 @@ function readArrayPayload(result: unknown, keys: string[]): unknown[] {
 }
 
 export async function updateProtocolStatus(netId: string): Promise<ProtocolDetail | null> {
-  const result = await apiRequest<unknown>('/delivery/product/protocol/update/status', {
+  const result = await apiRequest<unknown>('/delivery/product/protocol/logistic/update/status', {
     method: 'POST',
     query: { netId },
   })
@@ -55,7 +55,7 @@ export async function getApprovedInvoices(
   transportationType: SupplyTransportationType,
   netId: string,
 ): Promise<SupplyInvoice[]> {
-  const result = await apiRequest<unknown>('/supplies/invoices/approved', {
+  const result = await apiRequest<unknown>('/supplies/invoices/product-delivery-protocol/approved', {
     query: { netId, organizationNetId, transportationType },
   })
 
@@ -63,7 +63,7 @@ export async function getApprovedInvoices(
 }
 
 export async function getServiceApprovedInvoices(serviceNetId: string): Promise<SupplyInvoice[]> {
-  const result = await apiRequest<unknown>('/supplies/invoices/get/by/services', {
+  const result = await apiRequest<unknown>('/supplies/invoices/product-delivery-protocol/services', {
     query: { serviceNetId },
   })
 
@@ -74,7 +74,7 @@ export async function assignInvoicesToProtocol(
   protocol: ProtocolDetail,
   invoices: SupplyInvoice[],
 ): Promise<ProtocolDetail | null> {
-  const result = await apiRequest<unknown>('/delivery/product/protocol/add/supply/invoices', {
+  const result = await apiRequest<unknown>('/delivery/product/protocol/logistic/add/supply/invoices', {
     method: 'POST',
     body: { ...protocol, SupplyInvoices: invoices },
   })
@@ -86,7 +86,7 @@ export async function assignInvoicesToMergedService(
   service: MergedService,
   invoices: SupplyInvoice[],
 ): Promise<ProtocolDetail | null> {
-  const result = await apiRequest<unknown>('/supplies/services/merged/add/supply/invoices', {
+  const result = await apiRequest<unknown>('/supplies/services/merged/product-delivery-protocol/add/supply/invoices', {
     method: 'POST',
     body: {
       ...service,
@@ -98,7 +98,7 @@ export async function assignInvoicesToMergedService(
 }
 
 export async function getSupplyInvoiceWithSpendings(netId: string): Promise<SupplyInvoice | null> {
-  const result = await apiRequest<unknown>('/supplies/invoices/all/spending/get', {
+  const result = await apiRequest<unknown>('/supplies/invoices/product-delivery-protocol/spending', {
     query: { netId },
   })
 
@@ -116,7 +116,7 @@ export async function addDocumentsToSupplyInvoice(
     formData.append('documents', document)
   }
 
-  const result = await apiRequest<unknown>('/supplies/invoices/documents/add', {
+  const result = await apiRequest<unknown>('/supplies/invoices/product-delivery-protocol/documents/add', {
     method: 'POST',
     body: formData,
   })
@@ -160,7 +160,9 @@ export async function saveMergedService(
     formData.append('accountingTaskDocuments', doc)
   }
 
-  const result = await apiRequest<unknown>('/supplies/services/merged/manage', {
+  const result = await apiRequest<unknown>(service.NetUid
+    ? '/supplies/services/merged/product-delivery-protocol/edit'
+    : '/supplies/services/merged/product-delivery-protocol/create', {
     method: 'POST',
     body: formData,
     query: { netId: protocolNetId },
@@ -173,7 +175,7 @@ export async function calculateMergedServiceExtraCharge(
   params: { extraChargeType: SupplyExtraChargeType; isAuto: boolean; serviceNetId: string },
   invoices: SupplyInvoiceMergedService[],
 ): Promise<ProtocolDetail | null> {
-  const result = await apiRequest<unknown>('/supplies/services/merged/update/extra/charge', {
+  const result = await apiRequest<unknown>('/supplies/services/merged/product-delivery-protocol/calculate', {
     method: 'POST',
     body: invoices,
     query: {
@@ -187,7 +189,7 @@ export async function calculateMergedServiceExtraCharge(
 }
 
 export async function removeMergedService(serviceNetId: string): Promise<ProtocolDetail | null> {
-  const result = await apiRequest<unknown>('/supplies/services/merged/remove/before/calculated/gross/price', {
+  const result = await apiRequest<unknown>('/supplies/services/merged/product-delivery-protocol/delete', {
     method: 'POST',
     query: { netId: serviceNetId },
   })
@@ -195,11 +197,30 @@ export async function removeMergedService(serviceNetId: string): Promise<Protoco
   return normalizeProtocol(result)
 }
 
-export async function searchSupplyOrganizations(value: string): Promise<SupplyOrganization[]> {
+export async function searchUnifiedServiceCreateSupplyOrganizations(value: string): Promise<SupplyOrganization[]> {
+  return searchSupplyOrganizationsAt(
+    '/supplies/organizations/product-delivery-protocols/unified-service/create/search',
+    value,
+  )
+}
+
+export async function searchUnifiedServiceEditSupplyOrganizations(value: string): Promise<SupplyOrganization[]> {
+  return searchSupplyOrganizationsAt(
+    '/supplies/organizations/product-delivery-protocols/unified-service/edit/search',
+    value,
+  )
+}
+
+export async function searchDirectSupplyOrderSpecificationOrganizations(value: string): Promise<SupplyOrganization[]> {
+  return searchSupplyOrganizationsAt(
+    '/supplies/organizations/direct-supply-order/specification/search',
+    value,
+  )
+}
+
+async function searchSupplyOrganizationsAt(route: string, value: string): Promise<SupplyOrganization[]> {
   const searchValue = value.trim()
-  const result = await apiRequest<unknown>(searchValue
-    ? '/supplies/organizations/all/search'
-    : '/supplies/organizations/all', {
+  const result = await apiRequest<unknown>(route, {
     query: {
       limit: SUPPLY_ORGANIZATION_LOOKUP_LIMIT,
       offset: 0,
@@ -224,10 +245,16 @@ export async function getSupplyServiceConsumableProducts(value = ''): Promise<Co
   return readArrayPayload(result, ['ConsumableProducts', 'Items', 'Data']) as ConsumableProduct[]
 }
 
-export async function getResponsibleUsers(): Promise<ProtocolUser[]> {
-  const result = await apiRequest<unknown>('/usermanagement/profiles/all/by', {
-    query: { types: 7 },
-  })
+export async function getUnifiedServiceCreateResponsibleUsers(): Promise<ProtocolUser[]> {
+  return getResponsibleUsersAt('/usermanagement/profiles/product-delivery-protocols/unified-service/create/responsible-users')
+}
+
+export async function getUnifiedServiceEditResponsibleUsers(): Promise<ProtocolUser[]> {
+  return getResponsibleUsersAt('/usermanagement/profiles/product-delivery-protocols/unified-service/edit/responsible-users')
+}
+
+async function getResponsibleUsersAt(route: string): Promise<ProtocolUser[]> {
+  const result = await apiRequest<unknown>(route)
 
   return readArrayPayload(result, ['Items', 'Users', 'Profiles', 'Data']) as ProtocolUser[]
 }

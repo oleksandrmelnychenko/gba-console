@@ -13,6 +13,7 @@ import {
 import { ChevronUp, CircleAlert } from 'lucide-react'
 import { useEffect, useMemo, useReducer, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { AiHistoryLineageNote } from '../../../shared/ai/AiHistoryLineageNote'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -20,7 +21,8 @@ import type { TranslateFunction } from '../../../shared/i18n/types'
 import { AppBottomSheet } from '../../../shared/ui/AppBottomSheet'
 import type { UrgencySliceInput } from '../../../shared/ui/charts/donutData'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
-import { getSupplyOrderSuppliers } from '../../supply-ukraine-orders/api/supplyUkraineOrdersApi'
+import { usePermissions } from '../../auth/usePermissions'
+import { getBudgetCartSuppliers } from '../../supply-ukraine-orders/api/supplyUkraineOrdersApi'
 import type { Client } from '../../supply-ukraine-orders/types'
 import { getBudgetCartPlan } from '../api/procurementApi'
 import type { CartOptimizeMethod, CartPlan, ReorderSuggestion } from '../procurementTypes'
@@ -70,6 +72,25 @@ const budgetFormatter = new Intl.NumberFormat('uk-UA', {
 
 export function BudgetCartTab() {
   const { t } = useI18n()
+  const { can, isLoading } = usePermissions()
+
+  if (isLoading) {
+    return <Text c="dimmed">{t('Завантаження')}</Text>
+  }
+
+  if (!can(PermissionKeys.SystemPages.BudgetCart.View)) {
+    return (
+      <Alert color="red" title={t('Доступ заборонено')} variant="light">
+        {t('Недостатньо прав для перегляду бюджетного кошика')}
+      </Alert>
+    )
+  }
+
+  return <BudgetCartTabContent />
+}
+
+function BudgetCartTabContent() {
+  const { t } = useI18n()
   const navigate = useNavigate()
   const [state, dispatch] = useReducer(budgetCartReducer, initialState)
   const [budgetInput, setBudgetInput] = useState<number | ''>(DEFAULT_BUDGET_EUR)
@@ -86,7 +107,7 @@ export function BudgetCartTab() {
 
     async function loadProducers() {
       try {
-        const loaded = await getSupplyOrderSuppliers()
+        const loaded = await getBudgetCartSuppliers()
 
         if (!cancelled) {
           setProducers(loaded)

@@ -76,7 +76,17 @@ function renderPanel(client: Client, relationKind: 'structural-unit' | 'subclien
       <I18nProvider>
         <MemoryRouter initialEntries={['/clients']}>
           <Routes>
-            <Route path="/clients" element={<SubClientsPanel client={client} relationKind={relationKind} />} />
+            <Route
+              path="/clients"
+              element={(
+                <SubClientsPanel
+                  canCreateClient
+                  canOpenDetails
+                  client={client}
+                  relationKind={relationKind}
+                />
+              )}
+            />
             <Route path="/clients/edit/:netid" element={<FullCardProbe />} />
           </Routes>
         </MemoryRouter>
