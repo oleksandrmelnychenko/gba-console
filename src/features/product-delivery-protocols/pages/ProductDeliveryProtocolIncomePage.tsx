@@ -4,7 +4,6 @@ import {
   Box,
   Button,
   Group,
-  NumberInput,
   Select,
   Stack,
   Text,
@@ -13,7 +12,7 @@ import {
   UnstyledButton,
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import { BetweenVerticalEnd, CircleAlert, FileText, Trash2 } from 'lucide-react'
+import { BetweenVerticalEnd, CircleAlert, Trash2 } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { formatLocalDate, formatLocalInputDateTime } from '../../../shared/date/dateTime'
@@ -1477,29 +1476,32 @@ export function ProductDeliveryProtocolIncomePage() {
   return <PackingListProductIncomePage source="delivery-protocol" />
 }
 
-export function ProductDeliveryProtocolIncomeSheet({ sourceId }: { sourceId: string }) {
-  return <PackingListProductIncomePage embedded source="delivery-protocol" sourceId={sourceId} />
+export function ProductDeliveryProtocolIncomeSheet({
+  onClose,
+  sourceId,
+}: {
+  onClose?: () => void
+  sourceId: string
+}) {
+  return (
+    <PackingListProductIncomePage
+      embedded
+      source="delivery-protocol"
+      sourceId={sourceId}
+      onClose={onClose}
+    />
+  )
 }
 
 export function SupplyUkraineDirectOrderProductIncomePage() {
-  const { t } = useI18n()
   const navigate = useNavigate()
 
-  return (
-    <AppDrawer
-      closeOnClickOutside={false}
-      opened
-      size="full"
-      title={<span className="product-delivery-protocol-income-sheet-title">{t('Розміщення приходу')}</span>}
-      onClose={() => navigate(-1)}
-    >
-      <PackingListProductIncomePage embedded source="direct-supply-order" />
-    </AppDrawer>
-  )
+  return <PackingListProductIncomePage embedded source="direct-supply-order" onClose={() => navigate(-1)} />
 }
 
 type PackingListProductIncomePageProps = {
   embedded?: boolean
+  onClose?: () => void
   showHeader?: boolean
   source: ProductIncomeSource
   sourceId?: string
@@ -1523,6 +1525,7 @@ function PackingListProductIncomePage(props: PackingListProductIncomePageProps) 
 
 function PackingListProductIncomePageContent({
   embedded = false,
+  onClose,
   showHeader = !embedded,
   source,
   sourceId,
@@ -1542,7 +1545,6 @@ function PackingListProductIncomePageContent({
   // cannot create a column without the hydrated packing list.
   const canCapitalizeDynamicIncome = canUseIncome && hasPermission(permissions.capitalize)
   const canCarryOutDynamicIncome = canUseIncome && hasPermission(permissions.post)
-  const canDownloadDocument = hasPermission(permissions.downloadDocument)
   const canEditPlacements = canUseIncome
     && Boolean(model.packingList)
     && hasPermission(permissions.editPlacement)
@@ -1566,7 +1568,7 @@ function PackingListProductIncomePageContent({
     model,
   })
 
-  return (
+  const content = (
     <Stack className={`product-income-page${embedded ? ' is-sheet' : ''}`} gap={6}>
       {showHeader && <ProductIncomePageHeader model={model} source={source} />}
       <ProtocolIncomeSummaryCard model={model} source={source} />
@@ -1584,7 +1586,6 @@ function PackingListProductIncomePageContent({
         permissions={{
           canCapitalizeDynamicIncome,
           canCarryOutDynamicIncome,
-          canDownloadDocument,
           canEditPlacements,
           canUpdateReadiness,
         }}
@@ -1617,6 +1618,22 @@ function PackingListProductIncomePageContent({
       />
     </Stack>
   )
+
+  if (!embedded) {
+    return content
+  }
+
+  return (
+    <AppDrawer
+      closeOnClickOutside={false}
+      opened
+      size="full"
+      title={<ProductIncomeSheetTitle model={model} source={source} />}
+      onClose={() => onClose?.()}
+    >
+      {content}
+    </AppDrawer>
+  )
 }
 
 type ProductIncomePageSectionProps = {
@@ -1625,27 +1642,49 @@ type ProductIncomePageSectionProps = {
 }
 
 function ProductIncomePageHeader({ model, source }: ProductIncomePageSectionProps) {
-  const { t } = useI18n()
-  const sourceNumber = getIncomeSourceNumber(source, model.protocol)
-  const title = source === 'direct-supply-order'
-    ? t('Прихід товару по прямому замовленню')
-    : t('Прихід товару згідно замовлення')
-  const titleText = sourceNumber ? `${title}: ${sourceNumber}` : title
-
   return (
     <Group align="center" className="product-income-page-header">
       <Text className="product-income-page-title">
-        {titleText}
+        <ProductIncomeSheetTitle model={model} source={source} />
       </Text>
     </Group>
   )
 }
 
-function ProtocolIncomeSummaryCard({ model, source }: ProductIncomePageSectionProps) {
+function getIncomeCommercialContext(model: ProtocolIncomeModel) {
+  const sourceInvoice = model.protocol?.SupplyInvoices.find(
+    (invoice) => invoice.NetUid === model.selectedInvoiceId,
+  )
+  const sourceOrder = sourceInvoice?.SupplyOrder || model.invoice?.SupplyOrder
+  const client = model.protocol?.Client || sourceOrder?.Client
+  const clientAgreement = model.protocol?.ClientAgreement || sourceOrder?.ClientAgreement
+
+  return {
+    agreementName: clientAgreement?.Agreement?.Name || '-',
+    currencyCode: clientAgreement?.Agreement?.Currency?.Code || '-',
+    supplierName: client?.Name || client?.FullName || '-',
+  }
+}
+
+function ProductIncomeSheetTitle({ model, source }: ProductIncomePageSectionProps) {
   const { t } = useI18n()
-  const supplierName = model.protocol?.Client?.Name || model.protocol?.Client?.FullName || '-'
-  const agreementName = model.protocol?.ClientAgreement?.Agreement?.Name || '-'
-  const currencyCode = model.protocol?.ClientAgreement?.Agreement?.Currency?.Code || '-'
+  const sourceNumber = getIncomeSourceNumber(source, model.protocol)
+  const title = t('Прихід товару згідно замовлення')
+  const { supplierName } = getIncomeCommercialContext(model)
+
+  return (
+    <span className="product-delivery-protocol-income-sheet-title">
+      <span>{sourceNumber ? `${title}: ${sourceNumber}` : title}</span>
+      <span className="product-delivery-protocol-income-sheet-supplier">
+        {t('Постачальник')}: {supplierName}
+      </span>
+    </span>
+  )
+}
+
+function ProtocolIncomeSummaryCard({ model }: ProductIncomePageSectionProps) {
+  const { t } = useI18n()
+  const { agreementName, currencyCode, supplierName } = getIncomeCommercialContext(model)
 
   return (
     <Box className="product-income-summary-panel">
@@ -1656,13 +1695,9 @@ function ProtocolIncomeSummaryCard({ model, source }: ProductIncomePageSectionPr
         <ProductIncomeDetailItem label={t('Статус')} value={model.placementStatus} tone="orange" />
         <ProductIncomeDetailItem label={t('Від')} value={formatDate(model.protocol?.FromDate)} />
         <ProductIncomeDetailItem label={t('Організація')} value={model.protocol?.Organization?.Name || '-'} />
-        {source === 'direct-supply-order' && (
-          <>
-            <ProductIncomeDetailItem label={t('Постачальник')} value={supplierName} />
-            <ProductIncomeDetailItem label={t('Договір')} value={agreementName} />
-            <ProductIncomeDetailItem label={t('Валюта')} value={currencyCode} tone="green" />
-          </>
-        )}
+        <ProductIncomeDetailItem label={t('Постачальник')} value={supplierName} />
+        <ProductIncomeDetailItem label={t('Договір')} value={agreementName} />
+        <ProductIncomeDetailItem label={t('Валюта')} value={currencyCode} tone="green" />
       </div>
     </Box>
   )
@@ -1714,7 +1749,6 @@ function ProductIncomeDetailItem({
 type ProductIncomeControlsPermissions = {
   canCapitalizeDynamicIncome: boolean
   canCarryOutDynamicIncome: boolean
-  canDownloadDocument: boolean
   canEditPlacements: boolean
   canUpdateReadiness: boolean
 }
@@ -1743,7 +1777,6 @@ function ProductIncomeControlsCard({
   const {
     canCapitalizeDynamicIncome,
     canCarryOutDynamicIncome,
-    canDownloadDocument,
     canEditPlacements,
     canUpdateReadiness,
   } = permissions
@@ -1787,7 +1820,7 @@ function ProductIncomeControlsCard({
         {t('Параметри приходу')}
       </Text>
       <Group justify="space-between" align="end" wrap="wrap" gap="md">
-        {/* Left: document controls (invoice / packing list / storage / date / VAT) */}
+        {/* Shared document controls for protocol and direct-order income. */}
         <Group className="product-income-controls" gap="sm" align="end" wrap="wrap">
           <Select
             className="product-income-control"
@@ -1796,7 +1829,7 @@ function ProductIncomeControlsCard({
               label: supplyInvoice.Number || supplyInvoice.NetUid || '',
             }))}
             disabled={model.isLoading || model.isSaving}
-            label={t('Накладна')}
+            label={t('Інвойс')}
             value={model.selectedInvoiceId}
             onChange={(value) => model.setSelectedInvoiceId(value)}
           />
@@ -1831,30 +1864,10 @@ function ProductIncomeControlsCard({
               onChange={(event) => model.setFromDate(event.currentTarget.value)}
             />
           )}
-          <NumberInput
-            className="product-income-control is-vat"
-            disabled={!canUseIncome || isPlaced || model.isDirty || model.isSaving}
-            label={t('Відсоток ПДВ')}
-            min={0}
-            suffix="%"
-            value={model.vatPercent}
-            onChange={(value) => model.setVatPercent(typeof value === 'number' ? value : Number(value) || 0)}
-          />
         </Group>
 
-        {/* Right: actions — secondary tools first, then the green primary actions (legacy look) */}
+        {/* Right: shared income actions. */}
         <Group className="product-income-actions" gap="sm" align="end" justify="flex-end" wrap="wrap">
-          {canDownloadDocument && (
-            <Button
-              disabled={!model.invoice}
-              leftSection={<FileText size={16} />}
-              loading={model.pzDownload.isLoading}
-              variant="default"
-              onClick={() => void model.handleDownloadPzDocument()}
-            >
-              {t('Документ PZ')}
-            </Button>
-          )}
           {!isPlaced && hasItemsNotReadyToPlace && canUpdateReadiness && (
             <Button
               disabled={!canUseIncome || model.isDirty || model.isSaving}

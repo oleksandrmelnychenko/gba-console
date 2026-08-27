@@ -17,7 +17,6 @@ import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { translate } from '../../../shared/i18n/translate'
 import { useI18n } from '../../../shared/i18n/useI18n'
-import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { Paginator } from '../../../shared/ui/paginator/Paginator'
@@ -451,11 +450,6 @@ export function ProductDeliveryProtocolsPage() {
 
 function ProductDeliveryProtocolsPageContent() {
   const model = useProtocolsPageModel()
-  const { t } = useI18n()
-  const incomeProtocolNumber = model.incomeProtocol?.DeliveryProductProtocolNumber?.Number || ''
-  const incomeSheetTitle = incomeProtocolNumber
-    ? `${t('Прихід товару згідно замовлення')}: ${incomeProtocolNumber}`
-    : t('Прихід товару згідно замовлення')
 
   return (
     <Stack className="product-delivery-protocols-page console-table-page" gap={6}>
@@ -470,15 +464,12 @@ function ProductDeliveryProtocolsPageContent() {
         onOpenLogisticPath={model.navigateToLogisticPath}
         onOpenSpecifications={model.navigateToSpecifications}
       />
-      <AppDrawer
-        closeOnClickOutside={false}
-        opened={Boolean(model.incomeProtocol?.NetUid)}
-        size="full"
-        title={<span className="product-delivery-protocol-income-sheet-title">{incomeSheetTitle}</span>}
-        onClose={model.closeIncome}
-      >
-        {model.incomeProtocol?.NetUid && <ProductDeliveryProtocolIncomeSheet sourceId={model.incomeProtocol.NetUid} />}
-      </AppDrawer>
+      {model.incomeProtocol?.NetUid && (
+        <ProductDeliveryProtocolIncomeSheet
+          sourceId={model.incomeProtocol.NetUid}
+          onClose={model.closeIncome}
+        />
+      )}
       <NewProductDeliveryProtocolModal
         createError={model.createError}
         isCreating={model.isCreating}

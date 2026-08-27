@@ -906,9 +906,10 @@ function ProductDeliveryProtocolSpecificationPageContent() {
   const model = useSpecificationModel(id)
   const [vendorCodeFilter, setVendorCodeFilter] = useValueState('')
   const invoices = model.protocol?.SupplyInvoices || []
-  const canMutateSpecification = Boolean(model.protocol?.IsShipped && !model.protocol?.IsCompleted)
+  const canMutateSpecification = Boolean(model.protocol?.IsShipped)
+  const canMutateProtocolStructure = Boolean(model.protocol?.IsShipped && !model.protocol?.IsCompleted)
   const specificationUnavailableMessage = getSpecificationUnavailableMessage(model.protocol, t)
-  const canMerge = canMutateSpecification && invoices.length > 1 && hasPermission(PERMISSION_MERGE_INVOICES)
+  const canMerge = canMutateProtocolStructure && invoices.length > 1 && hasPermission(PERMISSION_MERGE_INVOICES)
   const canDownload =
     hasPermission(PERMISSION_DOWNLOAD_SPECIFICATION) &&
     Boolean(model.packingList && (model.packingList.Id || 0) > 0)
@@ -916,9 +917,9 @@ function ProductDeliveryProtocolSpecificationPageContent() {
     canMutateSpecification &&
     hasPermission(PERMISSION_UPLOAD_SPECIFICATIONS) &&
     Boolean(model.selectedInvoice && (model.selectedInvoice.Id || 0) > 0)
-  const canUploadDocuments = canMutateSpecification && hasPermission(PERMISSION_UPLOAD_DELIVERY_DOCUMENTS)
+  const canUploadDocuments = canMutateProtocolStructure && hasPermission(PERMISSION_UPLOAD_DELIVERY_DOCUMENTS)
   const canOpenDeliveryDocuments =
-    canMutateSpecification && Boolean(model.selectedInvoice?.NetUid)
+    canMutateProtocolStructure && Boolean(model.selectedInvoice?.NetUid)
   const canEditSpecification = canMutateSpecification && hasPermission(PERMISSION_OPEN_SPECIFICATION_CODE)
   const canSaveSpecification = canMutateSpecification && hasPermission(PERMISSION_SAVE_SPECIFICATION_CODE)
   const filteredPackingList = filterPackingListByVendorCode(model.packingList, vendorCodeFilter)
@@ -1175,10 +1176,6 @@ function getSpecificationUnavailableMessage(
 ): string | null {
   if (!protocol) {
     return null
-  }
-
-  if (protocol.IsCompleted) {
-    return t('Редагування специфікації недоступне після завершення протоколу')
   }
 
   if (!protocol.IsShipped) {

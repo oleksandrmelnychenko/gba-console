@@ -16,19 +16,19 @@
     "technicalDuplicateOverlap": 73,
     "sourceResolved": 1890,
     "sourceUnresolved": 12,
-    "currentActionResolved": 1200,
-    "currentActionUnresolved": 702,
+    "currentActionResolved": 1199,
+    "currentActionUnresolved": 703,
     "bindingEvidenceResolved": 1459,
     "bindingEvidenceUnresolved": 443,
     "bindingEvidenceCounts": {
       "page_route_binding": 155,
-      "current_action": 1201,
-      "review_override": 112
+      "current_action": 1200,
+      "review_override": 113
     },
     "coveredWithoutBindingEvidence": 0,
-    "currentProductionActions": 1815,
+    "currentProductionActions": 1814,
     "currentPermissionBoundActions": 367,
-    "currentUnboundActions": 1448
+    "currentUnboundActions": 1447
   },
   "invariants": {
     "allInputRecordsClassified": true,
@@ -36395,7 +36395,7 @@
           "file": "src/features/product-delivery-protocols/pages/ProductDeliveryProtocolsPage.tsx",
           "handler": "route:/product-delivery-protocols",
           "humanLabel": "/product-delivery-protocols",
-          "line": 433,
+          "line": 432,
           "permissionKeys": [
             "orders.product_delivery_protocols.page.view"
           ],
@@ -36405,7 +36405,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/product-delivery-protocols/pages/ProductDeliveryProtocolsPage.tsx",
-        "line": 433,
+        "line": 432,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -36536,7 +36536,7 @@
           "file": "src/features/product-delivery-protocols/pages/ProductDeliveryProtocolIncomePage.tsx",
           "handler": "route:/product-delivery-protocols/:id/product-income",
           "humanLabel": "/product-delivery-protocols/:id/product-income",
-          "line": 1468,
+          "line": 1475,
           "permissionKeys": [
             "orders.product_delivery_protocols.page.view"
           ],
@@ -36546,7 +36546,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/product-delivery-protocols/pages/ProductDeliveryProtocolIncomePage.tsx",
-        "line": 1468,
+        "line": 1475,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -36581,13 +36581,13 @@
       "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-1e4310e737c3",
+          "candidateId": "EPC-22ccca4be890",
           "distance": 6,
           "evidenceType": "current_action",
           "file": "src/features/product-delivery-protocols/pages/ProductDeliveryProtocolIncomePage.tsx",
           "handler": "{() => model.handleMoveRemnants(column)}",
           "humanLabel": "Перемістити залишки",
-          "line": 1395,
+          "line": 1402,
           "permissionKeys": [],
           "score": 29
         }
@@ -36595,7 +36595,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/product-delivery-protocols/pages/ProductDeliveryProtocolIncomePage.tsx",
-        "line": 1401,
+        "line": 1408,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -36630,7 +36630,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/product-delivery-protocols/pages/ProductDeliveryProtocolIncomePage.tsx",
-        "line": 1415,
+        "line": 1422,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -36665,13 +36665,13 @@
       "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-5fc41741b7fb",
+          "candidateId": "EPC-cad09390c0fb",
           "distance": 6,
           "evidenceType": "current_action",
           "file": "src/features/product-delivery-protocols/pages/ProductDeliveryProtocolIncomePage.tsx",
           "handler": "{() => canOpen && model.handleOpenPlacements(gridRow, key, row)}",
           "humanLabel": null,
-          "line": 1437,
+          "line": 1444,
           "permissionKeys": [],
           "score": 45
         }
@@ -36679,7 +36679,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/product-delivery-protocols/pages/ProductDeliveryProtocolIncomePage.tsx",
-        "line": 1443,
+        "line": 1450,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -36712,13 +36712,13 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-b2d1ce4b312f",
+          "candidateId": "EPC-a699e7e1dcd6",
           "distance": 0,
           "evidenceType": "current_action",
           "file": "src/features/product-delivery-protocols/pages/ProductDeliveryProtocolIncomePage.tsx",
           "handler": "{model.reloadFromServer}",
           "humanLabel": "Скасувати",
-          "line": 1751,
+          "line": 1792,
           "permissionKeys": [],
           "score": 21
         }
@@ -36726,7 +36726,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/product-delivery-protocols/pages/ProductDeliveryProtocolIncomePage.tsx",
-        "line": 1751,
+        "line": 1792,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -36761,13 +36761,13 @@
       "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-590c02e0b3e0",
+          "candidateId": "EPC-6acd3eebf3fd",
           "distance": 4,
           "evidenceType": "current_action",
           "file": "src/features/product-delivery-protocols/pages/ProductDeliveryProtocolIncomePage.tsx",
           "handler": "{model.handleSave}",
           "humanLabel": "Зберегти",
-          "line": 1756,
+          "line": 1797,
           "permissionKeys": [],
           "score": 15
         }
@@ -36775,7 +36775,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/product-delivery-protocols/pages/ProductDeliveryProtocolIncomePage.tsx",
-        "line": 1760,
+        "line": 1801,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -36810,21 +36810,24 @@
       "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-8bac99fe4a5b",
-          "distance": 5,
-          "evidenceType": "current_action",
+          "candidateId": "review:PE-00843",
+          "distance": 0,
+          "evidenceType": "review_override",
           "file": "src/features/product-delivery-protocols/pages/ProductDeliveryProtocolIncomePage.tsx",
-          "handler": "{() => void model.handleDownloadPzDocument()}",
-          "humanLabel": "Документ PZ",
-          "line": 1840,
-          "permissionKeys": [],
-          "score": 19
+          "handler": "void_model_handle_download_pz_document",
+          "humanLabel": "Без видимого тексту",
+          "line": 1475,
+          "permissionKeys": [
+            "orders.delivery_protocol.product_income.download_document"
+          ],
+          "reviewReason": "PZ generation is independently hidden, rechecked in the handler, and enforced by its document-download server policy.",
+          "score": 0
         }
       ],
       "source": {
         "status": "resolved",
         "file": "src/features/product-delivery-protocols/pages/ProductDeliveryProtocolIncomePage.tsx",
-        "line": 1845,
+        "line": 1475,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -36859,13 +36862,13 @@
       "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-4da29644e8b4",
+          "candidateId": "EPC-785d2e0aad53",
           "distance": 4,
           "evidenceType": "current_action",
           "file": "src/features/product-delivery-protocols/pages/ProductDeliveryProtocolIncomePage.tsx",
           "handler": "{() => void model.handleAllReadyToPlace()}",
           "humanLabel": "Всі готові до розміщення",
-          "line": 1851,
+          "line": 1872,
           "permissionKeys": [],
           "score": 19
         }
@@ -36873,7 +36876,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/product-delivery-protocols/pages/ProductDeliveryProtocolIncomePage.tsx",
-        "line": 1855,
+        "line": 1876,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -36908,13 +36911,13 @@
       "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-080c696acacf",
+          "candidateId": "EPC-be90b72dd253",
           "distance": 4,
           "evidenceType": "current_action",
           "file": "src/features/product-delivery-protocols/pages/ProductDeliveryProtocolIncomePage.tsx",
           "handler": "{() => model.setColumnModalOpen(true)}",
           "humanLabel": "Додати",
-          "line": 1861,
+          "line": 1882,
           "permissionKeys": [],
           "score": 27
         }
@@ -36922,7 +36925,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/product-delivery-protocols/pages/ProductDeliveryProtocolIncomePage.tsx",
-        "line": 1865,
+        "line": 1886,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -36957,13 +36960,13 @@
       "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-65aab7ec7ccc",
+          "candidateId": "EPC-e0c223f0dba3",
           "distance": 5,
           "evidenceType": "current_action",
           "file": "src/features/product-delivery-protocols/pages/ProductDeliveryProtocolIncomePage.tsx",
           "handler": "{() => void model.handleProductIncome()}",
           "humanLabel": "Оприходувати",
-          "line": 1871,
+          "line": 1892,
           "permissionKeys": [],
           "score": 24
         }
@@ -36971,7 +36974,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/product-delivery-protocols/pages/ProductDeliveryProtocolIncomePage.tsx",
-        "line": 1876,
+        "line": 1897,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -37004,13 +37007,13 @@
       "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-0880adf5bba3",
+          "candidateId": "EPC-69a88b6f1fdd",
           "distance": 4,
           "evidenceType": "current_action",
           "file": "src/features/product-delivery-protocols/pages/ProductDeliveryProtocolIncomePage.tsx",
           "handler": "{() => model.setConfirmCarryOut(true)}",
           "humanLabel": "Провести",
-          "line": 1882,
+          "line": 1903,
           "permissionKeys": [],
           "score": 27
         }
@@ -37018,7 +37021,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/product-delivery-protocols/pages/ProductDeliveryProtocolIncomePage.tsx",
-        "line": 1886,
+        "line": 1907,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -37053,7 +37056,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/product-delivery-protocols/pages/ProductDeliveryProtocolIncomePage.tsx",
-        "line": 2006,
+        "line": 2027,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -37088,13 +37091,13 @@
       "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-1d955a1c5b3d",
+          "candidateId": "EPC-8a0f9f247f6a",
           "distance": 4,
           "evidenceType": "current_action",
           "file": "src/features/product-delivery-protocols/pages/ProductDeliveryProtocolIncomePage.tsx",
           "handler": "{model.confirmRemoveColumn}",
           "humanLabel": "Видалити",
-          "line": 2014,
+          "line": 2035,
           "permissionKeys": [],
           "score": 24
         }
@@ -37102,7 +37105,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/product-delivery-protocols/pages/ProductDeliveryProtocolIncomePage.tsx",
-        "line": 2018,
+        "line": 2039,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -37135,13 +37138,13 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-ef87ee482939",
+          "candidateId": "EPC-7817267ba15c",
           "distance": 5,
           "evidenceType": "current_action",
           "file": "src/features/product-delivery-protocols/pages/ProductDeliveryProtocolIncomePage.tsx",
           "handler": "{() => model.setConfirmCarryOut(false)}",
           "humanLabel": "Скасувати",
-          "line": 2035,
+          "line": 2056,
           "permissionKeys": [],
           "score": 28
         }
@@ -37149,7 +37152,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/product-delivery-protocols/pages/ProductDeliveryProtocolIncomePage.tsx",
-        "line": 2030,
+        "line": 2051,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -37184,13 +37187,13 @@
       "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-dde07d566fa7",
+          "candidateId": "EPC-88dd0d56407b",
           "distance": 3,
           "evidenceType": "current_action",
           "file": "src/features/product-delivery-protocols/pages/ProductDeliveryProtocolIncomePage.tsx",
           "handler": "{() => void model.handleCarryOut()}",
           "humanLabel": "Провести",
-          "line": 2038,
+          "line": 2059,
           "permissionKeys": [],
           "score": 19
         }
@@ -37198,7 +37201,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/product-delivery-protocols/pages/ProductDeliveryProtocolIncomePage.tsx",
-        "line": 2041,
+        "line": 2062,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -37231,13 +37234,13 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-bf27681659a5",
+          "candidateId": "EPC-31e14b33b72b",
           "distance": 7,
           "evidenceType": "current_action",
           "file": "src/features/product-delivery-protocols/pages/ProductDeliveryProtocolIncomePage.tsx",
           "handler": "{model.cancelDiscardChanges}",
           "humanLabel": "Залишитися",
-          "line": 2060,
+          "line": 2081,
           "permissionKeys": [],
           "score": 25
         }
@@ -37245,7 +37248,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/product-delivery-protocols/pages/ProductDeliveryProtocolIncomePage.tsx",
-        "line": 2053,
+        "line": 2074,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -37278,13 +37281,13 @@
       "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-73a55bb2cea2",
+          "candidateId": "EPC-ad7550b8bcfe",
           "distance": 0,
           "evidenceType": "current_action",
           "file": "src/features/product-delivery-protocols/pages/ProductDeliveryProtocolIncomePage.tsx",
           "handler": "{model.confirmDiscardChanges}",
           "humanLabel": "Продовжити без збереження",
-          "line": 2063,
+          "line": 2084,
           "permissionKeys": [],
           "score": 26
         }
@@ -37292,7 +37295,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/product-delivery-protocols/pages/ProductDeliveryProtocolIncomePage.tsx",
-        "line": 2063,
+        "line": 2084,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -37325,13 +37328,13 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-92c55eee2d32",
-          "distance": 392,
+          "candidateId": "EPC-027232b08311",
+          "distance": 384,
           "evidenceType": "current_action",
           "file": "src/features/product-delivery-protocols/pages/ProductDeliveryProtocolsPage.tsx",
           "handler": "{resetFilters}",
           "humanLabel": "Скинути",
-          "line": 570,
+          "line": 561,
           "permissionKeys": [],
           "score": 12
         }
@@ -37339,7 +37342,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/product-delivery-protocols/pages/ProductDeliveryProtocolsPage.tsx",
-        "line": 178,
+        "line": 177,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -37374,13 +37377,13 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-a17482ade0bc",
-          "distance": 540,
+          "candidateId": "EPC-cbac5abec818",
+          "distance": 532,
           "evidenceType": "current_action",
           "file": "src/features/product-delivery-protocols/pages/ProductDeliveryProtocolsPage.tsx",
           "handler": "{exportDocument}",
           "humanLabel": "Завантажити",
-          "line": 583,
+          "line": 574,
           "permissionKeys": [
             "orders.delivery_protocol.document.download"
           ],
@@ -37390,7 +37393,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/product-delivery-protocols/pages/ProductDeliveryProtocolsPage.tsx",
-        "line": 43,
+        "line": 42,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -37425,13 +37428,13 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-47af605a8e8c",
-          "distance": 390,
+          "candidateId": "EPC-ee8f2ce7cd50",
+          "distance": 382,
           "evidenceType": "current_action",
           "file": "src/features/product-delivery-protocols/pages/ProductDeliveryProtocolsPage.tsx",
           "handler": "{openCreateModal}",
           "humanLabel": "Додати",
-          "line": 615,
+          "line": 606,
           "permissionKeys": [
             "orders.delivery_protocol.protocol.create"
           ],
@@ -37441,7 +37444,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/product-delivery-protocols/pages/ProductDeliveryProtocolsPage.tsx",
-        "line": 225,
+        "line": 224,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -37474,13 +37477,13 @@
       "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-143c1b429b4e",
+          "candidateId": "EPC-37e8a3f03041",
           "distance": 13,
           "evidenceType": "current_action",
           "file": "src/features/product-delivery-protocols/pages/ProductDeliveryProtocolsPage.tsx",
           "handler": "{canOpenOptions ? openOptions : undefined}",
           "humanLabel": null,
-          "line": 634,
+          "line": 625,
           "permissionKeys": [],
           "score": 34
         }
@@ -37488,7 +37491,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/product-delivery-protocols/pages/ProductDeliveryProtocolsPage.tsx",
-        "line": 647,
+        "line": 638,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -37591,13 +37594,13 @@
       "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-f69a3d7ea3e7",
+          "candidateId": "EPC-0a6a379ba32d",
           "distance": 5,
           "evidenceType": "current_action",
           "file": "src/features/product-delivery-protocols/pages/ProductDeliveryProtocolSpecificationPage.tsx",
           "handler": "{() => model.setUploadOpen(true)}",
           "humanLabel": "Завантаження митних кодів",
-          "line": 1070,
+          "line": 1071,
           "permissionKeys": [],
           "score": 22
         }
@@ -37605,7 +37608,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/product-delivery-protocols/pages/ProductDeliveryProtocolSpecificationPage.tsx",
-        "line": 1075,
+        "line": 1076,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -37640,13 +37643,13 @@
       "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-f38b5ea3ee05",
+          "candidateId": "EPC-f52189a207db",
           "distance": 5,
           "evidenceType": "current_action",
           "file": "src/features/product-delivery-protocols/pages/ProductDeliveryProtocolSpecificationPage.tsx",
           "handler": "{model.openDocuments}",
           "humanLabel": null,
-          "line": 1081,
+          "line": 1082,
           "permissionKeys": [],
           "score": 18
         }
@@ -37654,7 +37657,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/product-delivery-protocols/pages/ProductDeliveryProtocolSpecificationPage.tsx",
-        "line": 1086,
+        "line": 1087,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -37689,13 +37692,13 @@
       "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-7ba92edd5271",
+          "candidateId": "EPC-fe2e412803b5",
           "distance": 5,
           "evidenceType": "current_action",
           "file": "src/features/product-delivery-protocols/pages/ProductDeliveryProtocolSpecificationPage.tsx",
           "handler": "{model.openMerge}",
           "humanLabel": "Об'єднати інвойси?",
-          "line": 1092,
+          "line": 1093,
           "permissionKeys": [],
           "score": 14
         }
@@ -37703,7 +37706,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/product-delivery-protocols/pages/ProductDeliveryProtocolSpecificationPage.tsx",
-        "line": 1097,
+        "line": 1098,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -37738,13 +37741,13 @@
       "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-315986de9bd7",
+          "candidateId": "EPC-b1d1d89813f7",
           "distance": 5,
           "evidenceType": "current_action",
           "file": "src/features/product-delivery-protocols/pages/ProductDeliveryProtocolSpecificationPage.tsx",
           "handler": "{model.openDownload}",
           "humanLabel": "Друк PDF",
-          "line": 1103,
+          "line": 1104,
           "permissionKeys": [],
           "score": 17
         }
@@ -37752,7 +37755,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/product-delivery-protocols/pages/ProductDeliveryProtocolSpecificationPage.tsx",
-        "line": 1108,
+        "line": 1109,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -37787,13 +37790,13 @@
       "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-6939dcc05952",
+          "candidateId": "EPC-2f989fcbee69",
           "distance": 8,
           "evidenceType": "current_action",
           "file": "src/features/product-delivery-protocols/pages/ProductDeliveryProtocolSpecificationPage.tsx",
           "handler": "{model.submitUpload}",
           "humanLabel": null,
-          "line": 1206,
+          "line": 1203,
           "permissionKeys": [],
           "score": 17
         }
@@ -37801,7 +37804,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/product-delivery-protocols/pages/ProductDeliveryProtocolSpecificationPage.tsx",
-        "line": 1214,
+        "line": 1211,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -37836,7 +37839,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/product-delivery-protocols/pages/ProductDeliveryProtocolSpecificationPage.tsx",
-        "line": 1253,
+        "line": 1250,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -37869,13 +37872,13 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-080091ae78b6",
+          "candidateId": "EPC-6993197bf28e",
           "distance": 7,
           "evidenceType": "current_action",
           "file": "src/features/product-delivery-protocols/pages/ProductDeliveryProtocolSpecificationPage.tsx",
           "handler": "{model.cancelCloseDocuments}",
           "humanLabel": "Залишитися",
-          "line": 1290,
+          "line": 1287,
           "permissionKeys": [],
           "score": 25
         }
@@ -37883,7 +37886,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/product-delivery-protocols/pages/ProductDeliveryProtocolSpecificationPage.tsx",
-        "line": 1283,
+        "line": 1280,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -37916,13 +37919,13 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-f48b3e7637a9",
+          "candidateId": "EPC-6543a28a06c6",
           "distance": 0,
           "evidenceType": "current_action",
           "file": "src/features/product-delivery-protocols/pages/ProductDeliveryProtocolSpecificationPage.tsx",
           "handler": "{model.closeDocumentsDraft}",
           "humanLabel": "Закрити без збереження",
-          "line": 1293,
+          "line": 1290,
           "permissionKeys": [],
           "score": 24
         }
@@ -37930,7 +37933,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/product-delivery-protocols/pages/ProductDeliveryProtocolSpecificationPage.tsx",
-        "line": 1293,
+        "line": 1290,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]

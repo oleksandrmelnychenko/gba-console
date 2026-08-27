@@ -117,6 +117,8 @@ export type IncomePackingList = EntityFields & {
 }
 
 export type IncomeSupplyOrder = EntityFields & {
+  Client?: IncomeClient | null
+  ClientAgreement?: IncomeClientAgreement | null
   Number?: string
 }
 

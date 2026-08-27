@@ -164,4 +164,20 @@ describe('Product delivery protocol specification permission guards', () => {
       expect(mergeSupplyInvoices).toHaveBeenCalledWith('protocol-1', ['invoice-1', 'invoice-2']),
     )
   })
+
+  it('keeps customs-code upload available after the protocol has arrived', async () => {
+    allowedPermissions.add(PermissionKeys.ProductDeliveryProtocols.SpecificationCodes.Open)
+    allowedPermissions.add(PermissionKeys.ProductDeliveryProtocols.SpecificationCodes.Download)
+    allowedPermissions.add(PermissionKeys.ProductDeliveryProtocols.Invoice.Merge)
+    vi.mocked(getProtocolForSpecification).mockResolvedValue({
+      ...PROTOCOL,
+      IsCompleted: true,
+    })
+
+    renderPage()
+
+    expect(await screen.findByRole('button', { name: 'Завантаження митних кодів' })).toBeTruthy()
+    expect(screen.queryByText('Редагування специфікації недоступне після завершення протоколу')).toBeNull()
+    expect(screen.queryByRole('button', { name: "Об'єднати інвойси?" })).toBeNull()
+  })
 })
