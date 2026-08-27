@@ -50,6 +50,7 @@ import type { DiscountsTreeDraft } from '../components/pricing/DiscountsTree'
 import { RecommendationsPanel } from '../components/recommendations/RecommendationsPanel'
 import { SolvencyPanel } from '../components/solvency/SolvencyPanel'
 import { SalesPanel } from '../components/sales/SalesPanel'
+import { ClientCommercialStructureView } from '../components/structure/ClientCommercialStructureView'
 import { ClientStructurePanel } from '../components/structure/ClientStructurePanel'
 import { SubClientsPanel } from '../components/structure/SubClientsPanel'
 import { ClientFolderTreeNav } from '../components/ClientFolderTreeNav'
@@ -187,6 +188,7 @@ export function ClientEditPage() {
   const { hasPermission } = useAuth()
   const [client, setClient] = useValueState<Client | null>(null)
   const [commercialStructure, setCommercialStructure] = useValueState<ClientCommercialStructure | null>(null)
+  const [structureRevision, setStructureRevision] = useValueState(0)
   const [selectedFolderClientNetUid, setSelectedFolderClientNetUid] = useValueState<string | null>(null)
   const [folderClient, setFolderClient] = useValueState<Client | null>(null)
   const [identityAttention, setIdentityAttention] = useValueState<ClientIdentityAttentionSummary | null>(null)
@@ -377,6 +379,7 @@ export function ClientEditPage() {
     basePath,
     client?.NetUid,
     netid,
+    structureRevision,
     setCommercialStructure,
     setStructureError,
     setStructureLoading,
@@ -1053,6 +1056,7 @@ export function ClientEditPage() {
       <ClientEditBody
         allowSourceOverride={sourceOverrideEnabled}
         client={contentClient}
+        commercialStructure={commercialStructure}
         errors={formErrors}
         firstStep={firstStep}
         folderTree={folderTree}
@@ -1076,6 +1080,7 @@ export function ClientEditPage() {
         onCreateCountry={handleCreateCountry}
         onCreateIncoterm={handleCreateIncoterm}
         onCreateRegion={handleCreateRegion}
+        onCommercialStructureChanged={() => setStructureRevision((current) => current + 1)}
         onFolderClientSelect={handleFolderClientSelect}
         onFolderClientOpen={openFolderClient}
         onGoToStep={goToStep}
@@ -1275,6 +1280,7 @@ function ClientEditTitle({
 function ClientEditBody({
   allowSourceOverride,
   client,
+  commercialStructure,
   errors,
   firstStep,
   folderTree,
@@ -1298,6 +1304,7 @@ function ClientEditBody({
   onCreateCountry,
   onCreateIncoterm,
   onCreateRegion,
+  onCommercialStructureChanged,
   onFolderClientSelect,
   onFolderClientOpen,
   onGoToStep,
@@ -1310,6 +1317,7 @@ function ClientEditBody({
 }: {
   allowSourceOverride: boolean
   client: Client | null
+  commercialStructure: ClientCommercialStructure | null
   errors: ClientFormErrors
   firstStep?: EditStep
   folderTree: ClientFolderTree | null
@@ -1333,6 +1341,7 @@ function ClientEditBody({
   onCreateCountry: (name: string, code: string) => void
   onCreateIncoterm: (name: string) => void
   onCreateRegion: (name: string) => void
+  onCommercialStructureChanged: () => void
   onFolderClientSelect: (clientNetUid: string) => void
   onFolderClientOpen: (clientNetUid: string) => void
   onGoToStep: (nextStep: string) => void
@@ -1386,6 +1395,7 @@ function ClientEditBody({
                 selectedFolderClientNetUid={selectedFolderClientNetUid}
                 selectedStep={selectedStepValue}
                 steps={steps}
+                onFolderClientOpen={onFolderClientOpen}
                 onFolderClientSelect={onFolderClientSelect}
                 onGoToStep={onGoToStep}
               />
@@ -1406,16 +1416,16 @@ function ClientEditBody({
                   </div>
                 </div>
               ) : null}
-              {selectedStepValue === 'structural-units' && folderTree ? (
+              {selectedStepValue === 'structural-units' && commercialStructure ? (
                 <div
                   aria-label={t('Структурні підрозділи клієнта')}
                   className="client-relationship-card"
                   role="region"
                 >
-                  <ClientFolderTreeNav
-                    selectedClientNetUid={selectedFolderClientNetUid}
-                    tree={folderTree}
-                    onSelect={onFolderClientOpen}
+                  <ClientCommercialStructureView
+                    structure={commercialStructure}
+                    t={t}
+                    onChanged={onCommercialStructureChanged}
                   />
                 </div>
               ) : (
@@ -1460,6 +1470,7 @@ function ClientEditNavigation({
   selectedFolderClientNetUid,
   selectedStep,
   steps,
+  onFolderClientOpen,
   onFolderClientSelect,
   onGoToStep,
 }: {
@@ -1467,6 +1478,7 @@ function ClientEditNavigation({
   selectedFolderClientNetUid: string | null
   selectedStep: string
   steps: EditStep[]
+  onFolderClientOpen: (clientNetUid: string) => void
   onFolderClientSelect: (clientNetUid: string) => void
   onGoToStep: (nextStep: string) => void
 }) {
@@ -1497,7 +1509,7 @@ function ClientEditNavigation({
       <ClientFolderTreeNav
         selectedClientNetUid={selectedFolderClientNetUid}
         tree={folderTree}
-        onSelect={onFolderClientSelect}
+        onSelect={selectedStep === 'structural-units' ? onFolderClientOpen : onFolderClientSelect}
       />
       <Text className="client-edit-nav-group-title">{t('Дані вибраного клієнта')}</Text>
       <ClientEditStepButtons

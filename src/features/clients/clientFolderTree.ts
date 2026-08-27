@@ -47,12 +47,17 @@ export function buildClientFolderTree(
     card.ClientNetUid === client.NetUid && card.IsTarget,
   ) || cards.find((card) => card.ClientNetUid === client.NetUid)
 
-  if (!target || target.MainClientId != null) {
+  if (!target) {
     return null
   }
 
+  const cardsById = new Map(cards.map((card) => [card.ClientId, card]))
+  const rootCard = findRootCard(target, cardsById)
+
   const projectedFolderCode = normalizeCode(structure.GroupCode)
   const directFolderCode = [
+    rootCard.CurrentRegionCode,
+    rootCard.OriginalRegionCode,
     target.CurrentRegionCode,
     client.RegionCode?.Value,
     target.OriginalRegionCode,
@@ -69,13 +74,12 @@ export function buildClientFolderTree(
     return null
   }
 
-  const cardsById = new Map(cards.map((card) => [card.ClientId, card]))
   const descendants = cards.filter((card) =>
-    card.ClientId !== target.ClientId
-    && isDescendantOf(card, target.ClientId, cardsById),
+    card.ClientId !== rootCard.ClientId
+    && isDescendantOf(card, rootCard.ClientId, cardsById),
   )
   const legacyLinkedChildren = cards.filter((card) =>
-    card.ClientId !== target.ClientId
+    card.ClientId !== rootCard.ClientId
     && card.MainClientId == null
     && card.HasExplicitRelationship
     && (card.IsSubClient || card.IsTradePoint),
@@ -90,8 +94,11 @@ export function buildClientFolderTree(
     return null
   }
 
-  const targetCode = getCardCode(target, client)
-  const targetRepresentsPersistedFolder = codesEqual(targetCode, folderCode)
+  const rootCode = getCardCode(
+    rootCard,
+    rootCard.ClientNetUid === client.NetUid ? client : undefined,
+  )
+  const rootRepresentsPersistedFolder = codesEqual(rootCode, folderCode)
 
   // Once the API has proved a real folder, every non-rejected card returned
   // for that commercial family must remain reachable. Some source-only cards
@@ -106,7 +113,7 @@ export function buildClientFolderTree(
       .map((card) => toFolderTreeItem(
         card,
         folderCode,
-        targetRepresentsPersistedFolder,
+        rootRepresentsPersistedFolder,
       ))
       .filter((item): item is ClientFolderTreeItem => item !== null)
       .sort(compareFolderTreeItems),
@@ -114,8 +121,28 @@ export function buildClientFolderTree(
       || getClientDisplayName(client)
       || folderCode,
     requiresReview: structure.RequiresReview,
-    rootClientNetUid: client.NetUid,
+    rootClientNetUid: rootCard.ClientNetUid,
   }
+}
+
+function findRootCard(
+  target: ClientCommercialCard,
+  cardsById: ReadonlyMap<number, ClientCommercialCard>,
+): ClientCommercialCard {
+  const visited = new Set<number>([target.ClientId])
+  let root = target
+
+  while (root.MainClientId != null) {
+    const parent = cardsById.get(root.MainClientId)
+    if (!parent || visited.has(parent.ClientId)) {
+      break
+    }
+
+    visited.add(parent.ClientId)
+    root = parent
+  }
+
+  return root
 }
 
 function isDescendantOf(
@@ -252,11 +279,11 @@ function compareFolderTreeItems(
   }) || left.name.localeCompare(right.name, 'uk')
 }
 
-function getCardCode(card: ClientCommercialCard, client: Client): string {
+function getCardCode(card: ClientCommercialCard, client?: Client): string {
   return normalizeCode(card.CurrentRegionCode)
-    || normalizeCode(client.RegionCode?.Value)
+    || normalizeCode(client?.RegionCode?.Value)
     || normalizeCode(card.OriginalRegionCode)
-    || normalizeCode(client.OriginalRegionCode)
+    || normalizeCode(client?.OriginalRegionCode)
 }
 
 function getClientDisplayName(client: Client): string {

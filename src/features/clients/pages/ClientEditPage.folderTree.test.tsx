@@ -97,6 +97,12 @@ vi.mock('../components/structure/ClientStructurePanel', () => ({
   ),
 }))
 
+vi.mock('../components/structure/ClientCommercialStructureView', () => ({
+  ClientCommercialStructureView: ({ structure }: { structure: ClientCommercialStructure }) => (
+    <div>commercial-structure:{structure.GroupCode}:{structure.CardCount}</div>
+  ),
+}))
+
 vi.mock('../components/structure/SubClientsPanel', () => ({
   SubClientsPanel: ({
     client,
@@ -169,7 +175,11 @@ describe('ClientEditPage root folder form', () => {
       return null
     })
     apiMocks.getClientCommercialStructure.mockImplementation(async (netUid: string) => (
-      netUid === ROOT_NET_UID ? ROOT_STRUCTURE : ORDINARY_STRUCTURE
+      netUid === ROOT_NET_UID
+        ? ROOT_STRUCTURE
+        : netUid === CHILD_NET_UID
+          ? CHILD_STRUCTURE
+          : ORDINARY_STRUCTURE
     ))
     apiMocks.updateClient.mockImplementation(async (client: Client) => client)
   })
@@ -220,10 +230,10 @@ describe('ClientEditPage root folder form', () => {
     const structuralUnitsPanel = await screen.findByRole('region', {
       name: 'Структурні підрозділи клієнта',
     })
-    expect(within(structuralUnitsPanel).getByText('Дерево клієнтів')).toBeTruthy()
+    expect(within(structuralUnitsPanel).getByText('commercial-structure:XM05200:2')).toBeTruthy()
     expect(screen.getByRole('button', { name: 'Структурні підрозділи' }).getAttribute('aria-pressed')).toBe('true')
 
-    fireEvent.click(within(structuralUnitsPanel).getByRole('button', {
+    fireEvent.click(screen.getByRole('button', {
       name: 'XM05202 — МАГРОМ ТОВ',
     }))
     expect(await screen.findByText(`general:${CHILD_NET_UID}`)).toBeTruthy()
@@ -231,6 +241,23 @@ describe('ClientEditPage root folder form', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Сабклієнти' }))
     expect(await screen.findByText(`relationship:subclient:${CHILD_NET_UID}`)).toBeTruthy()
     expect(screen.getByRole('button', { name: 'Сабклієнти' }).getAttribute('aria-pressed')).toBe('true')
+  })
+
+  it('keeps the complete folder and commercial structure visible when a child card is opened directly', async () => {
+    renderPage(CHILD_NET_UID)
+
+    expect(await screen.findByText(`general:${CHILD_NET_UID}`)).toBeTruthy()
+    expect(screen.getByText('XM05200 — Хмельницький - Назаришин В. М.')).toBeTruthy()
+    expect(screen.getByRole('button', {
+      name: 'XM05201 — ФОП Назаришин Валерій Миколайович',
+    })).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'XM05202 — МАГРОМ ТОВ' })).toBeTruthy()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Структурні підрозділи' }))
+    const structuralUnitsPanel = await screen.findByRole('region', {
+      name: 'Структурні підрозділи клієнта',
+    })
+    expect(within(structuralUnitsPanel).getByText('commercial-structure:XM05200:2')).toBeTruthy()
   })
 
   it('keeps the standard flat form for a client that is not a root folder', async () => {
@@ -349,6 +376,18 @@ const ROOT_STRUCTURE = makeStructure([
   GroupCode: 'XM05200',
   GroupName: 'Хмельницький - Назаришин В. М.',
 })
+
+const CHILD_STRUCTURE: ClientCommercialStructure = {
+  ...ROOT_STRUCTURE,
+  ClientNetUid: CHILD_NET_UID,
+  LegalParties: ROOT_STRUCTURE.LegalParties.map((party) => ({
+    ...party,
+    Cards: party.Cards.map((card) => ({
+      ...card,
+      IsTarget: card.ClientNetUid === CHILD_NET_UID,
+    })),
+  })),
+}
 
 const ORDINARY_STRUCTURE = makeStructure([
   makeCard({

@@ -73,7 +73,7 @@ describe('buildClientFolderTree', () => {
     ])
   })
 
-  it('does not render the root tree when the same structure is opened through a child card', () => {
+  it('renders the complete root tree when the same structure is opened through a child card', () => {
     const rootCard = makeCard({
       ClientId: 10,
       ClientNetUid: ROOT_NET_UID,
@@ -101,7 +101,14 @@ describe('buildClientFolderTree', () => {
       }),
     )
 
-    expect(tree).toBeNull()
+    expect(tree).toEqual(expect.objectContaining({
+      code: 'XM05200',
+      rootClientNetUid: ROOT_NET_UID,
+    }))
+    expect(tree?.items.map((item) => [item.code, item.clientNetUid])).toEqual([
+      ['XM05201', ROOT_NET_UID],
+      ['XM05202', CHILD_NET_UID],
+    ])
   })
 
   it('keeps a coincidental ...00 client on the standard form without parent evidence', () => {
