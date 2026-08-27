@@ -15,7 +15,8 @@ import { AppModal } from '../../../shared/ui/AppModal'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
-import { useAuth } from '../../auth/useAuth'
+import { usePermissions } from '../../auth/usePermissions'
+import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import {
   createPaymentExpenseArticle,
   deletePaymentExpenseArticle,
@@ -40,12 +41,18 @@ type ArticleFormState = {
 
 const ARTICLES_PATH = '/accounting/payment-expense-articles'
 const ARTICLE_NAME_MAX_LENGTH = 150
-const PERMISSION_DELETE_EXPENSE_ARTICLE = 'Accounting_Payment_Expense_Articles_Edit_DeleteBtn_PKEY'
-const PERMISSION_SAVE_EXPENSE_ARTICLE = 'Accounting_Payment_Expense_Articles_Edit_SaveBtn_PKEY'
+const PERMISSION_CREATE_EXPENSE_ARTICLE =
+  PermissionKeys.FinancialAdministration.ExpenseArticles.Article.Create
+const PERMISSION_DELETE_EXPENSE_ARTICLE =
+  PermissionKeys.FinancialAdministration.ExpenseArticles.Article.Delete
+const PERMISSION_SAVE_EXPENSE_ARTICLE =
+  PermissionKeys.FinancialAdministration.ExpenseArticles.Article.Save
+const PERMISSION_VIEW_EXPENSE_ARTICLES =
+  PermissionKeys.SystemPages.ExpenseArticles.View
 
 export function PaymentExpenseArticleFormPage() {
   const { t } = useI18n()
-  const { hasPermission } = useAuth()
+  const { can, isLoading: permissionsLoading } = usePermissions()
   const { id } = useParams<{ id?: string }>()
   const routeLocation = useLocation()
   const navigate = useNavigate()
@@ -54,10 +61,21 @@ export function PaymentExpenseArticleFormPage() {
   const isEditMode = Boolean(id)
   const [formState, setFormState] = useValueState<ArticleFormState>(() => createInitialFormState(isEditMode))
   const { article, deleteModalOpened, error, isDeleting, isLoading, isSaving, operationName } = formState
-  const canDelete = hasPermission(PERMISSION_DELETE_EXPENSE_ARTICLE)
-  const canSave = hasPermission(PERMISSION_SAVE_EXPENSE_ARTICLE)
+  const canView = can(PERMISSION_VIEW_EXPENSE_ARTICLES)
+  const canCreate = can(PERMISSION_CREATE_EXPENSE_ARTICLE)
+  const canDelete = can(PERMISSION_DELETE_EXPENSE_ARTICLE)
+  const canSave = can(
+    isEditMode
+      ? PERMISSION_SAVE_EXPENSE_ARTICLE
+      : PERMISSION_CREATE_EXPENSE_ARTICLE,
+  )
+  const canOpenRoute = canView && (isEditMode || canCreate)
 
   useEffect(() => {
+    if (permissionsLoading || !canOpenRoute) {
+      return
+    }
+
     if (!id) {
       setFormState((current) => ({
         ...current,
@@ -106,7 +124,24 @@ export function PaymentExpenseArticleFormPage() {
     void loadArticle()
 
     return () => controller.abort()
-  }, [id, setFormState, t])
+  }, [canOpenRoute, id, permissionsLoading, setFormState, t])
+
+  if (permissionsLoading) {
+    return <Text c="dimmed">{t('Завантаження')}</Text>
+  }
+
+  if (!canOpenRoute) {
+    return (
+      <Alert
+        color="red"
+        icon={<CircleAlert size={18} />}
+        title={t('Доступ заборонено')}
+        variant="light"
+      >
+        {t('Недостатньо прав для відкриття статті витрат')}
+      </Alert>
+    )
+  }
 
   if (isEditMode && !id) {
     return <Navigate replace to={ARTICLES_PATH} />
@@ -262,7 +297,7 @@ export function PaymentExpenseArticleFormPage() {
           )}
 
           <TextInput
-            disabled={isLoading || isSaving || isDeleting}
+            disabled={isLoading || isSaving || isDeleting || !canSave}
             label={t('Назва')}
             maxLength={ARTICLE_NAME_MAX_LENGTH}
             placeholder={t('Вкажіть назву')}

@@ -14,6 +14,7 @@ import {
   Tooltip,
 } from '@mantine/core'
 import { useDebouncedValue } from '@mantine/hooks'
+import { notifications } from '@mantine/notifications'
 import { CircleAlert, Eye, Network, Pencil, RotateCcw, Search } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
@@ -27,6 +28,9 @@ import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui
 import { Paginator } from '../../../shared/ui/paginator/Paginator'
 import { DEFAULT_PAGINATOR_PAGE_SIZE } from '../../../shared/ui/paginator/paginatorPageSize'
 import { TableRowAction } from '../../../shared/ui/table-row-action'
+import { PermissionKeys } from '../../../shared/auth/permissionKeys'
+import { PermissionGate } from '../../auth/components/PermissionGate'
+import { useAuth } from '../../auth/useAuth'
 import {
   calculateAdvancedReportOrder,
   getAdvancedReportCurrencies,
@@ -72,7 +76,29 @@ const moneyFormatter = new Intl.NumberFormat('uk-UA', {
 })
 
 export function AdvancedReportsPage() {
+  return (
+    <PermissionGate
+      permissionKey={PermissionKeys.SystemPages.AdvancedReports.View}
+      fallback={<AdvancedReportsPermissionDenied />}
+    >
+      <AdvancedReportsPageContent />
+    </PermissionGate>
+  )
+}
+
+function AdvancedReportsPermissionDenied() {
   const { t } = useI18n()
+
+  return (
+    <Alert color="red" icon={<CircleAlert size={18} />} title={t('Доступ заборонено')} variant="light">
+      {t('У вашої ролі немає права переглядати авансові звіти.')}
+    </Alert>
+  )
+}
+
+function AdvancedReportsPageContent() {
+  const { t } = useI18n()
+  const { hasPermission } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
   const [reports, setReports] = useValueState<AdvancedReportsResponse>({
@@ -137,7 +163,7 @@ export function AdvancedReportsPage() {
       const [nextCurrencies, nextRegisters, nextMovements] = await Promise.all([
         getAdvancedReportCurrencies(),
         searchAdvancedReportPaymentRegisters(''),
-        getAdvancedReportPaymentMovements(),
+        getAdvancedReportPaymentMovements('open'),
       ])
 
       if (lookupRequestRef.current === requestId) {
@@ -240,6 +266,11 @@ export function AdvancedReportsPage() {
 
   const openAdvanceReport = useCallback(
     (row: AdvancedReportRow) => {
+      if (!hasPermission(PermissionKeys.AdvancedReports.Report.Open)) {
+        notifications.show({ color: 'red', message: t('Немає прав для перегляду авансового звіту') })
+        return
+      }
+
       if (row.order.NetUid) {
         navigate(`${OUTGOING_CASHFLOW_ROUTE}/${encodeURIComponent(row.order.NetUid)}/advanced-report/view`, {
           state: {
@@ -249,7 +280,7 @@ export function AdvancedReportsPage() {
         })
       }
     },
-    [location, navigate],
+    [hasPermission, location, navigate, t],
   )
 
   const handleRowClick = useCallback(
@@ -266,6 +297,11 @@ export function AdvancedReportsPage() {
 
   const openDocumentStructure = useCallback(
     (row: AdvancedReportRow) => {
+      if (!hasPermission(PermissionKeys.AdvancedReports.DocumentStructure.Open)) {
+        notifications.show({ color: 'red', message: t('Немає прав для перегляду структури документів') })
+        return
+      }
+
       const orderToCalculate = getDocumentStructureOutcomeToCalculate(row.order)
       const requestId = structureCalculationRequestRef.current + 1
       structureCalculationRequestRef.current = requestId
@@ -306,6 +342,7 @@ export function AdvancedReportsPage() {
       setStructureCalculatedOrder,
       setStructureCalculationError,
       setStructureRow,
+      hasPermission,
       t,
     ],
   )
@@ -320,6 +357,8 @@ export function AdvancedReportsPage() {
 
   const rows = useMemo(() => buildAdvancedReportRows(reports.Collection), [reports.Collection])
   const columns = useAdvancedReportColumns({
+    canOpenDocumentStructure: hasPermission(PermissionKeys.AdvancedReports.DocumentStructure.Open),
+    canOpenReport: hasPermission(PermissionKeys.AdvancedReports.Report.Open),
     onEdit: openAdvanceReport,
     onOpen: setSelectedRow,
     onOpenDocumentStructure: openDocumentStructure,
@@ -520,10 +559,14 @@ export function AdvancedReportsPage() {
 }
 
 function useAdvancedReportColumns({
+  canOpenDocumentStructure,
+  canOpenReport,
   onEdit,
   onOpen,
   onOpenDocumentStructure,
 }: {
+  canOpenDocumentStructure: boolean
+  canOpenReport: boolean
   onEdit: (row: AdvancedReportRow) => void
   onOpen: (row: AdvancedReportRow) => void
   onOpenDocumentStructure: (row: AdvancedReportRow) => void
@@ -674,26 +717,30 @@ function useAdvancedReportColumns({
               <Menu.Item leftSection={<Eye size={16} />} onClick={() => onOpen(row)}>
                 {t('Деталі видаткового ордера')}
               </Menu.Item>
-              <Menu.Item
-                disabled={!row.isUnderReport || !row.order.NetUid}
-                leftSection={<Pencil size={16} />}
-                onClick={() => onEdit(row)}
-              >
-                {t('Авансовий звіт')}
-              </Menu.Item>
-              <Menu.Item
-                disabled={!row.hasDocumentStructure}
-                leftSection={<Network size={16} />}
-                onClick={() => onOpenDocumentStructure(row)}
-              >
-                {row.hasDocumentStructure ? t('Структура документів') : t('Структура документів відсутня')}
-              </Menu.Item>
+              {canOpenReport && (
+                <Menu.Item
+                  disabled={!row.isUnderReport || !row.order.NetUid}
+                  leftSection={<Pencil size={16} />}
+                  onClick={() => onEdit(row)}
+                >
+                  {t('Авансовий звіт')}
+                </Menu.Item>
+              )}
+              {canOpenDocumentStructure && (
+                <Menu.Item
+                  disabled={!row.hasDocumentStructure}
+                  leftSection={<Network size={16} />}
+                  onClick={() => onOpenDocumentStructure(row)}
+                >
+                  {row.hasDocumentStructure ? t('Структура документів') : t('Структура документів відсутня')}
+                </Menu.Item>
+              )}
             </Menu.Dropdown>
           </Menu>
         ),
       },
     ],
-    [onEdit, onOpen, onOpenDocumentStructure, t],
+    [canOpenDocumentStructure, canOpenReport, onEdit, onOpen, onOpenDocumentStructure, t],
   )
 }
 

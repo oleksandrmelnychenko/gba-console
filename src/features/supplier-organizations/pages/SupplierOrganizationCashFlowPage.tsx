@@ -4,6 +4,7 @@ import {
   Select,
   SimpleGrid,
   Stack,
+  Text,
   TextInput,
   Tooltip,
 } from '@mantine/core'
@@ -11,7 +12,6 @@ import { CircleAlert, FileDown, RefreshCw } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { useCallback, useEffect, useMemo, useRef } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { exportAccountingCashFlowDocument } from '../../accounting-cash-flow/api/accountingCashFlowApi'
 import { getAccountingCashFlowClosingBalance } from '../../accounting-cash-flow/cashFlowTotals'
 import { CashFlowDetailContent } from '../../accounting-cash-flow/components/CashFlowDetailContent'
 import {
@@ -26,6 +26,8 @@ import type {
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
+import { PermissionKeys } from '../../../shared/auth/permissionKeys'
+import { usePermissions } from '../../auth/usePermissions'
 import {
   closePendingExportDocumentWindow,
   openExportDocumentInWindow,
@@ -35,8 +37,9 @@ import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn } from '../../../shared/ui/data-table/types'
 import {
-  getSupplierOrganizationCashFlow,
-  getSupplyOrganization,
+  exportSupplierOrganizationSettlementsDocument,
+  getSupplierOrganizationSettlementsCashFlow,
+  getSupplierOrganizationSettlementsDetails,
 } from '../api/supplierOrganizationsApi'
 import type { SupplyOrganization } from '../types'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
@@ -88,8 +91,32 @@ const moneyFormatter = new Intl.NumberFormat('uk-UA', {
 
 export function SupplierOrganizationCashFlowPage() {
   const { t } = useI18n()
+  const { can, isLoading } = usePermissions()
+
+  if (isLoading) {
+    return <Text c="dimmed">{t('Завантаження')}</Text>
+  }
+
+  if (
+    !can(PermissionKeys.SupplierOrganizations.Page.View)
+    || !can(PermissionKeys.SupplierOrganizations.Settlements.Open)
+  ) {
+    return (
+      <Alert color="red" icon={<CircleAlert size={18} />} title={t('Доступ заборонено')} variant="light">
+        {t('Недостатньо прав для перегляду взаєморозрахунків')}
+      </Alert>
+    )
+  }
+
+  return <SupplierOrganizationCashFlowPageContent />
+}
+
+function SupplierOrganizationCashFlowPageContent() {
+  const { t } = useI18n()
+  const { can } = usePermissions()
   const navigate = useNavigate()
   const { id } = useParams()
+  const canExport = can(PermissionKeys.SupplierOrganizations.Settlements.Export)
   const [organization, setOrganization] = useValueState<SupplyOrganization | null>(null)
   const [cashFlow, setCashFlow] = useValueState<AccountingCashFlow | null>(null)
   const [selectedAgreementNetUid, setSelectedAgreementNetUid] = useValueState('')
@@ -108,6 +135,13 @@ export function SupplierOrganizationCashFlowPage() {
   const cashFlowRequestRef = useRef(0)
   const filterError = getDateRangeError(fromDate, toDate)
 
+  useEffect(() => {
+    if (!canExport) {
+      setExportModalOpen(false)
+      setDownloadDocument(null)
+    }
+  }, [canExport, setDownloadDocument, setExportModalOpen])
+
   const loadOrganization = useCallback(async () => {
     if (!id) {
       return
@@ -119,7 +153,7 @@ export function SupplierOrganizationCashFlowPage() {
     setError(null)
 
     try {
-      const nextOrganization = await getSupplyOrganization(id)
+      const nextOrganization = await getSupplierOrganizationSettlementsDetails(id)
 
       if (organizationRequestRef.current === requestId) {
         setOrganization(nextOrganization)
@@ -160,7 +194,7 @@ export function SupplierOrganizationCashFlowPage() {
     setError(null)
 
     try {
-      const nextCashFlow = await getSupplierOrganizationCashFlow({
+      const nextCashFlow = await getSupplierOrganizationSettlementsCashFlow({
         from: fromDate,
         netId,
         to: toDate,
@@ -186,7 +220,12 @@ export function SupplierOrganizationCashFlowPage() {
   }, [loadCashFlow])
 
   async function exportDocument(format: DocumentExportFormat) {
-    if (!netId || filterError || isExporting) {
+    if (
+      !netId
+      || filterError
+      || isExporting
+      || !can(PermissionKeys.SupplierOrganizations.Settlements.Export)
+    ) {
       return
     }
 
@@ -199,10 +238,11 @@ export function SupplierOrganizationCashFlowPage() {
     )
 
     try {
-      const document = await exportAccountingCashFlowDocument({
+      const document = await exportSupplierOrganizationSettlementsDocument({
         from: fromDate,
         netId,
         to: toDate,
+        typePaymentTask: Number(typePaymentTask),
       })
 
       const documentUrl = format === 'pdf' ? document.PdfDocumentURL : document.DocumentURL
@@ -355,21 +395,23 @@ export function SupplierOrganizationCashFlowPage() {
           onChange={(value) => setSelectedAgreementNetUid(value === '__all__' ? '' : value || '')}
         />
         <div className="app-filter-actions">
-          <Tooltip label={t('Друк PDF')}>
-            <ActionIcon
-              aria-label={t('Друк PDF')}
-              color={CREATE_ACTION_COLOR}
-              disabled={Boolean(filterError)}
-              size={36}
-              variant="light"
-              onClick={() => {
-                setDownloadDocument(null)
-                setExportModalOpen(true)
-              }}
-            >
-              <FileDown size={17} />
-            </ActionIcon>
-          </Tooltip>
+          {canExport && (
+            <Tooltip label={t('Друк PDF')}>
+              <ActionIcon
+                aria-label={t('Друк PDF')}
+                color={CREATE_ACTION_COLOR}
+                disabled={Boolean(filterError)}
+                size={36}
+                variant="light"
+                onClick={() => {
+                  setDownloadDocument(null)
+                  setExportModalOpen(true)
+                }}
+              >
+                <FileDown size={17} />
+              </ActionIcon>
+            </Tooltip>
+          )}
           <Tooltip label={t('Оновити')}>
             <ActionIcon
               aria-label={t('Оновити')}
@@ -436,7 +478,7 @@ export function SupplierOrganizationCashFlowPage() {
       <DocumentExportModal
         document={downloadDocument}
         loadingFormat={exportingFormat}
-        opened={isExportModalOpen}
+        opened={canExport && isExportModalOpen}
         title={t('Експорт взаєморозрахунків')}
         onClose={() => {
           if (!isExporting) {

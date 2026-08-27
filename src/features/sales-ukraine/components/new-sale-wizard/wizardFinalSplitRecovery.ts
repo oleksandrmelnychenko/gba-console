@@ -1,6 +1,8 @@
 import {
   convertVatSaleAndGetPaymentDocument,
   createSale,
+  createSalesUkraineSaleFromData,
+  createSalesUkraineVatSaleAndGetPaymentDocument,
   updateSaleFromData,
   type SaleSubmitResult,
 } from '../../api/salesUkraineApi'
@@ -53,14 +55,39 @@ export type WizardFinalSplitRecoveryResult =
   | { result: SaleDocumentResult | SaleSubmitResult | null; status: 'committed' }
   | { error: unknown; status: 'pending' | 'requires-file' | 'requires-manual-confirmation' }
 
+type WizardFinalSplitRecoveryPermissions = {
+  canSubmitCreate: boolean
+  canSubmitEdit: boolean
+}
+
 export async function recoverLinkedWizardFinalMutation(
   recovery: WizardSplitRecovery,
   file: File | null = null,
+  permissions: WizardFinalSplitRecoveryPermissions = {
+    canSubmitCreate: true,
+    canSubmitEdit: true,
+  },
 ): Promise<WizardFinalSplitRecoveryResult> {
   const linked = recovery.finalMutation
 
   if (!linked) {
     return { status: 'not-linked' }
+  }
+
+  const requiredFlow = linked.kind === 'create-sale' ? 'create' : (linked.flow ?? 'edit')
+
+  if (
+    (requiredFlow === 'create' && !permissions.canSubmitCreate) ||
+    (requiredFlow === 'edit' && !permissions.canSubmitEdit)
+  ) {
+    return {
+      error: new Error(
+        requiredFlow === 'create'
+          ? 'Недостатньо прав для звірки створення продажу'
+          : 'Недостатньо прав для звірки редагування продажу',
+      ),
+      status: 'pending',
+    }
   }
 
   const scope = toScope(linked)
@@ -221,12 +248,16 @@ async function recoverFileSale(
   const attempt = linked.kind === 'sale-vat-document'
     ? await advanceSaleFileMutationSession({
         kind: linked.kind,
-        request: convertVatSaleAndGetPaymentDocument,
+        request: linked.flow === 'create'
+          ? createSalesUkraineVatSaleAndGetPaymentDocument
+          : convertVatSaleAndGetPaymentDocument,
         submission,
       })
     : await advanceSaleFileMutationSession({
         kind: linked.kind,
-        request: updateSaleFromData,
+        request: linked.flow === 'create'
+          ? createSalesUkraineSaleFromData
+          : updateSaleFromData,
         submission,
       })
 
@@ -253,6 +284,7 @@ function linkSplitToLease(
     context: linked.context,
     fencingToken: lease.fencingToken,
     generation: lease.generation,
+    ...(linked.flow ? { flow: linked.flow } : {}),
     kind: linked.kind,
     operationId: linked.operationId,
     userKey: linked.userKey,

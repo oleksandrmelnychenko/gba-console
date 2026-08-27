@@ -7,6 +7,8 @@ import { deleteTaxFreeDocument, uploadTaxFreeDocuments } from '../api/taxFreePac
 import type { TaxFree, TaxFreeDocument } from '../types'
 
 type TaxFreeDocumentsPanelProps = {
+  canDelete: boolean
+  canUpload: boolean
   files: File[]
   formId: string
   isSaving: boolean
@@ -17,6 +19,8 @@ type TaxFreeDocumentsPanelProps = {
 }
 
 export function TaxFreeDocumentsPanel({
+  canDelete,
+  canUpload,
   files,
   formId,
   isSaving,
@@ -30,7 +34,7 @@ export function TaxFreeDocumentsPanel({
   const documents = taxFree.TaxFreeDocuments || []
 
   async function removeDocument(document: TaxFreeDocument) {
-    if (!document.NetUid) {
+    if (!canDelete || !document.NetUid) {
       return
     }
 
@@ -52,7 +56,7 @@ export function TaxFreeDocumentsPanel({
   }
 
   async function uploadDocuments() {
-    if (!taxFree.NetUid || files.length === 0) {
+    if (!canUpload || !taxFree.NetUid || files.length === 0) {
       return
     }
 
@@ -91,6 +95,7 @@ export function TaxFreeDocumentsPanel({
 
       <FileInput
         clearable
+        disabled={!canUpload}
         multiple
         leftSection={<Upload size={16} />}
         label={t('Файли')}
@@ -110,7 +115,7 @@ export function TaxFreeDocumentsPanel({
                   {document.ContentType && <Text size="xs" c="dimmed">{document.ContentType}</Text>}
                 </div>
               </Group>
-              <ActionIcon
+              {canDelete && <ActionIcon
                 aria-label={t('Видалити')}
                 color="red"
                 disabled={isSaving || !document.NetUid}
@@ -119,7 +124,7 @@ export function TaxFreeDocumentsPanel({
                 onClick={() => removeDocument(document)}
               >
                 <Trash2 size={16} />
-              </ActionIcon>
+              </ActionIcon>}
             </Group>
           ))}
         </Stack>

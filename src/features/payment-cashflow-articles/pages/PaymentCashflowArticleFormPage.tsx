@@ -15,7 +15,8 @@ import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppModal } from '../../../shared/ui/AppModal'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
-import { useAuth } from '../../auth/useAuth'
+import { usePermissions } from '../../auth/usePermissions'
+import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import {
   createPaymentCashflowArticle,
   deletePaymentCashflowArticle,
@@ -30,8 +31,14 @@ type LocationState = {
 
 const ARTICLES_PATH = '/accounting/payment-cashflow-articles'
 const ARTICLE_NAME_MAX_LENGTH = 150
-const PERMISSION_DELETE_CASHFLOW_ARTICLE = 'Accounting_Payment_Cashflow_Articles_DelBtn_PKEY'
-const PERMISSION_SAVE_CASHFLOW_ARTICLE = 'Accounting_Payment_Cashflow_Articles_saveBtn_PKEY'
+const PERMISSION_DELETE_CASHFLOW_ARTICLE =
+  PermissionKeys.FinancialAdministration.CashflowArticles.Article.Delete
+const PERMISSION_SAVE_CASHFLOW_ARTICLE =
+  PermissionKeys.FinancialAdministration.CashflowArticles.Article.Save
+const PERMISSION_CREATE_CASHFLOW_ARTICLE =
+  PermissionKeys.FinancialAdministration.CashflowArticles.Article.Create
+const PERMISSION_VIEW_CASHFLOW_ARTICLES =
+  PermissionKeys.FinancialAdministration.CashflowArticles.Page.View
 
 type ArticleFormState = {
   article: PaymentCashflowArticle
@@ -61,7 +68,7 @@ function createInitialArticleFormState(isEditMode: boolean): ArticleFormState {
 
 export function PaymentCashflowArticleFormPage() {
   const { t } = useI18n()
-  const { hasPermission } = useAuth()
+  const { can, isLoading: permissionsLoading } = usePermissions()
   const { id } = useParams<{ id?: string }>()
   const routeLocation = useLocation()
   const navigate = useNavigate()
@@ -77,10 +84,21 @@ export function PaymentCashflowArticleFormPage() {
   const [isSaving, setSaving] = useValueState(false)
   const [isDeleting, setDeleting] = useValueState(false)
   const [deleteModalOpened, setDeleteModalOpened] = useValueState(false)
-  const canDelete = hasPermission(PERMISSION_DELETE_CASHFLOW_ARTICLE)
-  const canSave = hasPermission(PERMISSION_SAVE_CASHFLOW_ARTICLE)
+  const canView = can(PERMISSION_VIEW_CASHFLOW_ARTICLES)
+  const canCreate = can(PERMISSION_CREATE_CASHFLOW_ARTICLE)
+  const canDelete = can(PERMISSION_DELETE_CASHFLOW_ARTICLE)
+  const canSave = can(
+    isEditMode
+      ? PERMISSION_SAVE_CASHFLOW_ARTICLE
+      : PERMISSION_CREATE_CASHFLOW_ARTICLE,
+  )
+  const canOpenRoute = canView && (isEditMode || canCreate)
 
   useEffect(() => {
+    if (permissionsLoading || !canOpenRoute) {
+      return
+    }
+
     if (!id) {
       setFormState({
         article: createEmptyArticle(),
@@ -123,7 +141,24 @@ export function PaymentCashflowArticleFormPage() {
     void loadArticle()
 
     return () => controller.abort()
-  }, [id, t])
+  }, [canOpenRoute, id, permissionsLoading, t])
+
+  if (permissionsLoading) {
+    return <Text c="dimmed">{t('Завантаження')}</Text>
+  }
+
+  if (!canOpenRoute) {
+    return (
+      <Alert
+        color="red"
+        icon={<CircleAlert size={18} />}
+        title={t('Доступ заборонено')}
+        variant="light"
+      >
+        {t('Недостатньо прав для відкриття статті руху коштів')}
+      </Alert>
+    )
+  }
 
   if (isEditMode && !id) {
     return <Navigate replace to={ARTICLES_PATH} />
@@ -269,7 +304,7 @@ export function PaymentCashflowArticleFormPage() {
           )}
 
           <TextInput
-            disabled={isLoading || isSaving || isDeleting}
+            disabled={isLoading || isSaving || isDeleting || !canSave}
             label={t('Назва')}
             maxLength={ARTICLE_NAME_MAX_LENGTH}
             placeholder={t('Вкажіть назву')}

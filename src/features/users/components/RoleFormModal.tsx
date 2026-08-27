@@ -1,11 +1,10 @@
-import { Button, Group, NumberInput, Stack, TextInput } from '@mantine/core'
+import { Button, Group, Stack, TextInput } from '@mantine/core'
 import { Save, Trash2 } from 'lucide-react'
 import { type FormEvent } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppModal } from '../../../shared/ui/AppModal'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
-import { UserRoleType } from '../../../shared/auth/types'
 import type { UserRole } from '../types'
 
 const MODAL_MONO_STYLE = { fontFamily: 'var(--font-mono)', letterSpacing: 0 } as const
@@ -33,9 +32,8 @@ export function RoleFormModal({
 }: RoleFormModalProps) {
   const { t } = useI18n()
   const [name, setName] = useValueState(role?.Name || '')
-  const [dashboard] = useValueState(role?.Dashboard || DEFAULT_DASHBOARD)
+  const dashboard = role?.Dashboard || DEFAULT_DASHBOARD
   const [error, setError] = useValueState<string | null>(null)
-  const roleType = role ? role.UserRoleType : UserRoleType.Driver
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -70,8 +68,6 @@ export function RoleFormModal({
               setError(null)
             }}
           />
-          <TextInput disabled label="Dashboard" value={dashboard} />
-          <NumberInput disabled label={t('Тип')} value={roleType} />
           <Group justify={role && canDelete ? 'space-between' : 'flex-end'}>
             {role && canDelete ? (
               <Button

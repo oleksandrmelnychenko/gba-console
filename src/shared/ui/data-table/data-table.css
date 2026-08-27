@@ -415,8 +415,12 @@
 
 .data-table-row {
   --data-table-cell-bg: var(--mantine-color-white);
-  cursor: pointer;
+  cursor: default;
   height: var(--data-table-row-height);
+}
+
+.data-table-row.data-table-row-clickable {
+  cursor: pointer;
 }
 
 .data-table-row.placement-row-applied {
@@ -437,7 +441,7 @@
 
 /* Row hover — the warm brand tint (came from the old console skin, kept as the
    shared default per the pattern). */
-.data-table-row:hover .data-table-cell {
+.data-table-row.data-table-row-clickable:hover .data-table-cell {
   --data-table-cell-bg: #fffaf5;
 }
 
@@ -445,7 +449,7 @@
   --data-table-cell-bg: var(--mantine-color-orange-0);
 }
 
-.data-table-row.is-selected:hover .data-table-cell {
+.data-table-row.is-selected.data-table-row-clickable:hover .data-table-cell {
   --data-table-cell-bg: var(--mantine-color-orange-0);
 }
 

@@ -21,11 +21,14 @@ import {
 } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useReducer, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
+import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
+import { PermissionGate } from '../../auth/components/PermissionGate'
+import { useAuth } from '../../auth/useAuth'
 import { getUsers } from '../api/usersApi'
 import type { UserProfile, UserRole } from '../types'
 import {
@@ -76,6 +79,24 @@ type RoleNavigationItem = {
 
 export function UsersPage() {
   const { t } = useI18n()
+
+  return (
+    <PermissionGate
+      permissionKey={PermissionKeys.SystemPages.Users.View}
+      fallback={
+        <Alert color="red" icon={<CircleAlert size={18} />} title={t('Доступ заборонено')} variant="light">
+          {t('Недостатньо прав для перегляду користувачів')}
+        </Alert>
+      }
+    >
+      <UsersPageContent />
+    </PermissionGate>
+  )
+}
+
+function UsersPageContent() {
+  const { t } = useI18n()
+  const { hasPermission } = useAuth()
   const location = useLocation()
   const navigate = useNavigate()
   const [tableToolbarSlot, setTableToolbarSlot] = useState<HTMLDivElement | null>(null)
@@ -118,9 +139,10 @@ export function UsersPage() {
     Boolean,
   ).length
   const hasActiveFilters = searchValue.trim().length > 0 || activeFilterCount > 0
+  const canOpenUser = hasPermission(PermissionKeys.Users.User.OpenDetails)
   const openUser = useCallback(
     (user: UserProfile) => {
-      if (!user.NetUid) {
+      if (!canOpenUser || !user.NetUid) {
         return
       }
 
@@ -132,7 +154,7 @@ export function UsersPage() {
         },
       })
     },
-    [location, navigate],
+    [canOpenUser, location, navigate],
   )
   const columns = useUserColumns()
 
@@ -243,32 +265,36 @@ export function UsersPage() {
           </div>
           <div ref={setTableToolbarSlot} className="app-filter-table-toolbar-slot users-table-toolbar-slot" />
           <div className="users-create-actions">
-            <Button
-              className="users-roles-action"
-              color="gray"
-              leftSection={<Shield size={15} />}
-              size="sm"
-              variant="light"
-              onClick={() => navigate('/users/roles')}
-            >
-              {t('Ролі')}
-            </Button>
-            <Button
-              className="users-create-button"
-              color={CREATE_ACTION_COLOR}
-              leftSection={<Plus size={16} />}
-              size="sm"
-              onClick={() =>
-                navigate('/users/new', {
-                  state: {
-                    backgroundLocation: location,
-                    returnPath: `${location.pathname}${location.search}`,
-                  },
-                })
-              }
-            >
-              {t('Новий користувач')}
-            </Button>
+            <PermissionGate permissionKey={PermissionKeys.SystemPages.Roles.View}>
+              <Button
+                className="users-roles-action"
+                color="gray"
+                leftSection={<Shield size={15} />}
+                size="sm"
+                variant="light"
+                onClick={() => navigate('/users/roles')}
+              >
+                {t('Ролі')}
+              </Button>
+            </PermissionGate>
+            <PermissionGate permissionKey={PermissionKeys.Users.User.Create}>
+              <Button
+                className="users-create-button"
+                color={CREATE_ACTION_COLOR}
+                leftSection={<Plus size={16} />}
+                size="sm"
+                onClick={() =>
+                  navigate('/users/new', {
+                    state: {
+                      backgroundLocation: location,
+                      returnPath: `${location.pathname}${location.search}`,
+                    },
+                  })
+                }
+              >
+                {t('Новий користувач')}
+              </Button>
+            </PermissionGate>
           </div>
         </div>
 
@@ -345,7 +371,7 @@ export function UsersPage() {
               showLayoutControls
               tableId="users"
               toolbarPortalTarget={tableToolbarSlot}
-              onRowClick={openUser}
+              onRowClick={canOpenUser ? openUser : undefined}
             />
           </section>
         </div>

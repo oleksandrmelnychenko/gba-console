@@ -21,11 +21,16 @@ vi.mock('../../../shared/i18n/useI18n', () => ({
   useI18n: () => ({ t: mocks.t }),
 }))
 
+vi.mock('../../auth/useAuth', () => ({
+  useAuth: () => ({ hasPermission: () => true }),
+}))
+
 vi.mock('../api/supplyUkraineOrdersApi', () => ({
-  getSupplyInvoiceItems: mocks.getSupplyInvoiceItems,
-  getSupplyPaymentDeliveryProtocolKeys: mocks.getSupplyPaymentDeliveryProtocolKeys,
-  getSupplyProtocolResponsibleUsers: mocks.getSupplyProtocolResponsibleUsers,
-  updateSupplyInvoice: mocks.updateSupplyInvoice,
+  createDirectSupplyOrderLogisticPaymentTask: mocks.updateSupplyInvoice,
+  deleteDirectSupplyOrderLogisticPaymentTask: mocks.updateSupplyInvoice,
+  getDirectSupplyOrderLogisticPaymentTaskKeys: mocks.getSupplyPaymentDeliveryProtocolKeys,
+  getDirectSupplyOrderLogisticPaymentTasks: mocks.getSupplyInvoiceItems,
+  getDirectSupplyOrderLogisticPaymentTaskUsers: mocks.getSupplyProtocolResponsibleUsers,
   updateSupplyProForm: mocks.updateSupplyProForm,
 }))
 
@@ -276,7 +281,6 @@ describe('DirectOrderPaymentTasksCard', () => {
     rerender(
       <MantineProvider>
         <DirectOrderPaymentTasksCard
-          canEdit
           order={{
             NetUid: orderNetUid,
             SupplyInvoices: [{ ...invoice, DiscountAmount: 100, Updated: '2026-08-25T10:01:00' }],
@@ -348,7 +352,7 @@ describe('DirectOrderPaymentTasksCard', () => {
 function renderCard(order: DirectSupplyOrder) {
   return render(
     <MantineProvider>
-      <DirectOrderPaymentTasksCard canEdit order={order} />
+      <DirectOrderPaymentTasksCard order={order} />
     </MantineProvider>,
   )
 }

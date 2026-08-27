@@ -117,14 +117,15 @@ function isValidCapitalizationItemProduct(item: ProductCapitalizationItem): bool
 }
 
 export type NewProductCapitalizationPanelProps = {
+  canCreate: boolean
   opened: boolean
   onClose: () => void
   onCreated: () => void
 }
 
-export function NewProductCapitalizationPanel({ opened, onClose, onCreated }: NewProductCapitalizationPanelProps) {
+export function NewProductCapitalizationPanel({ canCreate, opened, onClose, onCreated }: NewProductCapitalizationPanelProps) {
   const { t } = useI18n()
-  const model = useNewProductCapitalizationModel(opened, onClose, onCreated)
+  const model = useNewProductCapitalizationModel(canCreate, opened, onClose, onCreated)
   const isFormBusy = model.isSubmitting || model.isParsing
   const itemColumns = useItemColumns(model.items, model.updateItem, model.removeItem, isFormBusy)
 
@@ -308,7 +309,12 @@ export function NewProductCapitalizationPanel({ opened, onClose, onCreated }: Ne
   )
 }
 
-function useNewProductCapitalizationModel(opened: boolean, onClose: () => void, onCreated: () => void) {
+function useNewProductCapitalizationModel(
+  canCreate: boolean,
+  opened: boolean,
+  onClose: () => void,
+  onCreated: () => void,
+) {
   const { t } = useI18n()
   const [organizations, setOrganizations] = useValueState<ClientResourceOrganization[]>([])
   const [selectedOrganizationNetId, setSelectedOrganizationNetId] = useValueState<string | null>(null)
@@ -440,7 +446,10 @@ function useNewProductCapitalizationModel(opened: boolean, onClose: () => void, 
       setError(null)
 
       try {
-        const loadedStorages = await getProductCapitalizationStoragesByOrganization(selectedOrganizationNetId as string)
+        const loadedStorages = await getProductCapitalizationStoragesByOrganization(
+          selectedOrganizationNetId as string,
+          'create',
+        )
 
         if (cancelled) {
           return
@@ -808,6 +817,11 @@ function useNewProductCapitalizationModel(opened: boolean, onClose: () => void, 
   )
 
   const submit = useCallback(async () => {
+    if (!canCreate) {
+      notifications.show({ color: 'red', message: t('Недостатньо прав для створення оприбуткування') })
+      return
+    }
+
     if (isSubmitting || isParsing) {
       return
     }
@@ -892,6 +906,7 @@ function useNewProductCapitalizationModel(opened: boolean, onClose: () => void, 
   }, [
     comment,
     fromDate,
+    canCreate,
     isParsing,
     isSubmitting,
     items,

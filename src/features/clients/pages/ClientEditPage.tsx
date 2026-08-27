@@ -23,8 +23,8 @@ import { Navigate, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { translate } from '../../../shared/i18n/translate'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { useAuth } from '../../auth/useAuth'
-import { deleteClient, getClientById, updateClient } from '../api/clientFormApi'
-import { getClientCommercialStructure, getClientIdentityAttention } from '../api/clientsApi'
+import { deleteClient, getClientForRegistryById, updateClient } from '../api/clientFormApi'
+import { getClientCommercialStructureForRegistry, getClientIdentityAttention } from '../api/clientsApi'
 import { uploadClientContract } from '../api/clientCabinetApi'
 import {
   createCountry,
@@ -58,11 +58,17 @@ import { buildClientFolderTree, type ClientFolderTree } from '../clientFolderTre
 import { type ClientFormErrors, validateClientForm } from '../components/form/validateClientForm'
 import {
   EDIT_CLIENT_ACTIVE_PERMISSION,
+  CHANGE_CLIENT_ECOMMERCE_PASSWORD_PERMISSION,
+  CREATE_CLIENT_COUNTRY_PERMISSION,
+  CREATE_CLIENT_INCOTERM_PERMISSION,
+  CREATE_CLIENT_REGION_PERMISSION,
   EDIT_CLIENT_DELETE_PERMISSION,
   EDIT_CLIENT_ECOMMERCE_PERMISSION,
+  EDIT_CLIENT_PERMISSION,
   EDIT_CLIENT_PRICING_PERMISSION,
   EDIT_CLIENT_TYPE_PERMISSION,
 } from '../permissions'
+import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import type {
   Client,
   ClientCommercialStructure,
@@ -119,6 +125,15 @@ type ClientEditRouteState = {
 
 type EditStepContentProps = {
   allowSourceOverride: boolean
+  canChangeEcommercePassword: boolean
+  canCreateClient: boolean
+  canCreateCountry: boolean
+  canCreateIncoterm: boolean
+  canCreatePerfectClientDefinition: boolean
+  canCreateRegion: boolean
+  canEditClient: boolean
+  canEditContract: boolean
+  canOpenClientDetails: boolean
   client: Client
   errors: ClientFormErrors
   role: ClientFormRole
@@ -238,6 +253,10 @@ export function ClientEditPage() {
   const lookupRole = useMemo(() => getClientRole(client), [client])
   const rootSourceManaged = isSourceManagedClient(client)
   const sourceManaged = isSourceManagedClient(contentClient)
+  const canCreateClient = hasPermission(PermissionKeys.Clients.Client.Create)
+  const canEditClient = hasPermission(EDIT_CLIENT_PERMISSION)
+  const canEditContract = hasPermission(PermissionKeys.Clients.Contract.Edit)
+  const canOpenClientDetails = hasPermission(PermissionKeys.Clients.Details.Open)
   const sourceOverrideEnabled = Boolean(
     sourceManaged
     && contentClient?.NetUid
@@ -284,7 +303,7 @@ export function ClientEditPage() {
       setFolderClientError(null)
 
       try {
-        const nextClient = await getClientById(netid)
+        const nextClient = await getClientForRegistryById(netid)
 
         if (!cancelled) {
           setClient(nextClient)
@@ -345,7 +364,7 @@ export function ClientEditPage() {
     setStructureLoading(true)
     setStructureError(null)
 
-    void getClientCommercialStructure(netid, controller.signal)
+    void getClientCommercialStructureForRegistry(netid, controller.signal)
       .then((structure) => {
         if (cancelled) {
           return
@@ -434,7 +453,7 @@ export function ClientEditPage() {
     setFolderClientError(null)
     setFolderClientLoading(true)
 
-    void getClientById(selectedFolderClientNetUid)
+    void getClientForRegistryById(selectedFolderClientNetUid)
       .then((nextClient) => {
         if (cancelled) {
           return
@@ -891,7 +910,7 @@ export function ClientEditPage() {
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
 
-    if (!contentClient) {
+    if (!contentClient || !canEditClient) {
       return
     }
 
@@ -999,6 +1018,7 @@ export function ClientEditPage() {
       onClose={closeSheet}
       footer={
         <ClientEditActions
+          canEdit={canEditClient}
           canDelete={canEditClientLifecycle(
             client,
             hasPermission(EDIT_CLIENT_DELETE_PERMISSION),
@@ -1055,6 +1075,15 @@ export function ClientEditPage() {
 
       <ClientEditBody
         allowSourceOverride={sourceOverrideEnabled}
+        canChangeEcommercePassword={hasPermission(CHANGE_CLIENT_ECOMMERCE_PASSWORD_PERMISSION)}
+        canCreateClient={canCreateClient}
+        canCreateCountry={hasPermission(CREATE_CLIENT_COUNTRY_PERMISSION)}
+        canCreateIncoterm={hasPermission(CREATE_CLIENT_INCOTERM_PERMISSION)}
+        canCreatePerfectClientDefinition={hasPermission(PermissionKeys.ClientResources.PerfectClient.Create)}
+        canCreateRegion={hasPermission(CREATE_CLIENT_REGION_PERMISSION)}
+        canEditClient={canEditClient}
+        canEditContract={canEditContract}
+        canOpenClientDetails={canOpenClientDetails}
         client={contentClient}
         commercialStructure={commercialStructure}
         errors={formErrors}
@@ -1155,7 +1184,8 @@ function ClientIdentityAttentionBanner({
   )
 }
 
-function ClientEditActions({
+export function ClientEditActions({
+  canEdit,
   canDelete,
   client,
   isDeleting,
@@ -1165,6 +1195,7 @@ function ClientEditActions({
   onDelete,
   onEnableSourceOverride,
 }: {
+  canEdit: boolean
   canDelete: boolean
   client: Client | null
   isDeleting: boolean
@@ -1178,7 +1209,7 @@ function ClientEditActions({
 
   return (
     <Group gap="xs" className="client-edit-footer-actions">
-      {sourceManaged && (
+      {sourceManaged && canEdit && (
         <Button
           color="orange"
           disabled={sourceOverrideEnabled}
@@ -1196,16 +1227,18 @@ function ClientEditActions({
           {t('Видалити')}
         </Button>
       )}
-      <Button
-        color={CREATE_ACTION_COLOR}
-        disabled={!client}
-        form="client-edit-form"
-        leftSection={<Save size={16} />}
-        loading={isSaving}
-        type="submit"
-      >
-        {t('Зберегти')}
-      </Button>
+      {canEdit && (
+        <Button
+          color={CREATE_ACTION_COLOR}
+          disabled={!client}
+          form="client-edit-form"
+          leftSection={<Save size={16} />}
+          loading={isSaving}
+          type="submit"
+        >
+          {t('Зберегти')}
+        </Button>
+      )}
     </Group>
   )
 }
@@ -1279,6 +1312,15 @@ function ClientEditTitle({
 
 function ClientEditBody({
   allowSourceOverride,
+  canChangeEcommercePassword,
+  canCreateClient,
+  canCreateCountry,
+  canCreateIncoterm,
+  canCreatePerfectClientDefinition,
+  canCreateRegion,
+  canEditClient,
+  canEditContract,
+  canOpenClientDetails,
   client,
   commercialStructure,
   errors,
@@ -1316,6 +1358,15 @@ function ClientEditBody({
   onSubmit,
 }: {
   allowSourceOverride: boolean
+  canChangeEcommercePassword: boolean
+  canCreateClient: boolean
+  canCreateCountry: boolean
+  canCreateIncoterm: boolean
+  canCreatePerfectClientDefinition: boolean
+  canCreateRegion: boolean
+  canEditClient: boolean
+  canEditContract: boolean
+  canOpenClientDetails: boolean
   client: Client | null
   commercialStructure: ClientCommercialStructure | null
   errors: ClientFormErrors
@@ -1431,6 +1482,15 @@ function ClientEditBody({
               ) : (
                 <EditStepContent
                   allowSourceOverride={allowSourceOverride}
+                  canChangeEcommercePassword={canChangeEcommercePassword}
+                  canCreateClient={canCreateClient}
+                  canCreateCountry={canCreateCountry}
+                  canCreateIncoterm={canCreateIncoterm}
+                  canCreatePerfectClientDefinition={canCreatePerfectClientDefinition}
+                  canCreateRegion={canCreateRegion}
+                  canEditClient={canEditClient}
+                  canEditContract={canEditContract}
+                  canOpenClientDetails={canOpenClientDetails}
                   client={client}
                   errors={errors}
                   isLoadingRegionCode={isLoadingRegionCode}
@@ -1659,13 +1719,22 @@ function buildEditSteps(client: Client | null, hasPermission: (permissionKey: st
   }
 
   if (getClientType(client) === CLIENT_TYPE_BUYER) {
-    steps.push(
-      { placement: 'header', value: 'structural-units', label: translate('Структурні підрозділи') },
-      { placement: 'header', value: 'subclients', label: translate('Сабклієнти') },
-      { value: 'sales', label: translate('Продажі') },
-      { value: 'perfect-client', label: translate('Ідеальний клієнт') },
-      { value: 'client-types', label: translate('Структура клієнта') },
-    )
+    if (hasPermission(PermissionKeys.Clients.Structure.Open)) {
+      steps.push(
+        { placement: 'header', value: 'structural-units', label: translate('Структурні підрозділи') },
+        { placement: 'header', value: 'subclients', label: translate('Сабклієнти') },
+      )
+    }
+
+    if (hasPermission(PermissionKeys.SalesUkraine.Sale.View)) {
+      steps.push({ value: 'sales', label: translate('Продажі') })
+    }
+
+    steps.push({ value: 'perfect-client', label: translate('Ідеальний клієнт') })
+
+    if (hasPermission(PermissionKeys.Clients.Structure.Open)) {
+      steps.push({ value: 'client-types', label: translate('Структура клієнта') })
+    }
 
     if (hasPermission(EDIT_CLIENT_ECOMMERCE_PERMISSION)) {
       steps.push({ value: 'e-commerce', label: translate('Інтернет-магазин') })
@@ -1680,6 +1749,15 @@ function buildEditSteps(client: Client | null, hasPermission: (permissionKey: st
 
 function EditStepContent({
   allowSourceOverride,
+  canChangeEcommercePassword,
+  canCreateClient,
+  canCreateCountry,
+  canCreateIncoterm,
+  canCreatePerfectClientDefinition,
+  canCreateRegion,
+  canEditClient,
+  canEditContract,
+  canOpenClientDetails,
   client,
   errors,
   isLoadingRegionCode,
@@ -1706,7 +1784,7 @@ function EditStepContent({
   step,
 }: EditStepContentProps) {
   const sourceManaged = isSourceManagedClient(client)
-  const sourceFieldsLocked = sourceManaged && !allowSourceOverride
+  const sourceFieldsLocked = !canEditClient || (sourceManaged && !allowSourceOverride)
 
   if (step === 'contact-information') {
     return <ContactInfoFields client={client} errors={errors} role={role} sourceManaged={sourceFieldsLocked} onChange={setField} />
@@ -1716,6 +1794,7 @@ function EditStepContent({
     return (
       <PricingPanel
         client={client}
+        disabled={!canEditClient}
         isProvider={role.isProvider}
         mode="edit"
         sourceManaged={sourceManaged}
@@ -1751,6 +1830,8 @@ function EditStepContent({
     return (
       <Card className="app-section-card client-relationship-card" withBorder padding="md" radius="md">
         <SubClientsPanel
+          canCreateClient={canCreateClient}
+          canOpenDetails={canOpenClientDetails}
           client={client}
           relationKind={step === 'structural-units' ? 'structural-unit' : 'subclient'}
         />
@@ -1759,12 +1840,21 @@ function EditStepContent({
   }
 
   if (step === 'perfect-client') {
-    return <PerfectClientPanel client={client} onChange={onClientChange} />
+    return (
+      <PerfectClientPanel
+        canCreateDefinition={canCreatePerfectClientDefinition}
+        client={client}
+        disabled={!canEditClient}
+        onChange={onClientChange}
+      />
+    )
   }
 
   if (step === 'e-commerce') {
     return (
       <EcommercePanel
+        canChangePassword={canChangeEcommercePassword}
+        canEditSettings={canEditClient}
         client={client}
         sourceManaged={sourceFieldsLocked}
         onChange={onClientChange}
@@ -1800,6 +1890,11 @@ function EditStepContent({
 
   return (
     <GeneralInfoFields
+      canCreateCountry={canCreateCountry}
+      canCreateIncoterm={canCreateIncoterm}
+      canCreateRegion={canCreateRegion}
+      canEditDocuments={canEditContract}
+      canSaveDocuments={canEditContract}
       client={client}
       countries={lookups.countries}
       errors={errors}
@@ -1811,7 +1906,7 @@ function EditStepContent({
       regions={lookups.regions}
       role={role}
       sourceManaged={sourceFieldsLocked}
-      sourceStructureManaged={sourceManaged}
+      sourceStructureManaged={!canEditClient || sourceManaged}
       onAddDocuments={onAddDocuments}
       onChange={setField}
       onCreateCountry={onCreateCountry}

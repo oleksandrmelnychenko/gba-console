@@ -70,7 +70,7 @@ describe('exportAgreementDocument', () => {
       PdfDocumentURL: 'https://example.test/agreement.pdf',
     })
 
-    expect(apiRequestMock).toHaveBeenCalledWith('/agreements/get/document', {
+    expect(apiRequestMock).toHaveBeenCalledWith('/agreements/client/document/export', {
       query: {
         netId: 'agreement-net',
         type: 0,

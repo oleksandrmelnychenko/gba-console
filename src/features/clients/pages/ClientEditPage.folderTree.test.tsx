@@ -13,8 +13,8 @@ const ORDINARY_NET_UID = '33333333-3333-4333-8333-333333333333'
 
 const apiMocks = vi.hoisted(() => ({
   deleteClient: vi.fn(),
-  getClientById: vi.fn(),
-  getClientCommercialStructure: vi.fn(),
+  getClientForRegistryById: vi.fn(),
+  getClientCommercialStructureForRegistry: vi.fn(),
   getClientIdentityAttention: vi.fn(),
   updateClient: vi.fn(),
   uploadClientContract: vi.fn(),
@@ -26,12 +26,12 @@ vi.mock('../../auth/useAuth', () => ({
 
 vi.mock('../api/clientFormApi', () => ({
   deleteClient: apiMocks.deleteClient,
-  getClientById: apiMocks.getClientById,
+  getClientForRegistryById: apiMocks.getClientForRegistryById,
   updateClient: apiMocks.updateClient,
 }))
 
 vi.mock('../api/clientsApi', () => ({
-  getClientCommercialStructure: apiMocks.getClientCommercialStructure,
+  getClientCommercialStructureForRegistry: apiMocks.getClientCommercialStructureForRegistry,
   getClientIdentityAttention: apiMocks.getClientIdentityAttention,
 }))
 
@@ -168,13 +168,13 @@ describe('ClientEditPage root folder form', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     apiMocks.getClientIdentityAttention.mockResolvedValue(null)
-    apiMocks.getClientById.mockImplementation(async (netUid: string) => {
+    apiMocks.getClientForRegistryById.mockImplementation(async (netUid: string) => {
       if (netUid === ROOT_NET_UID) return ROOT_CLIENT
       if (netUid === CHILD_NET_UID) return CHILD_CLIENT
       if (netUid === ORDINARY_NET_UID) return ORDINARY_CLIENT
       return null
     })
-    apiMocks.getClientCommercialStructure.mockImplementation(async (netUid: string) => (
+    apiMocks.getClientCommercialStructureForRegistry.mockImplementation(async (netUid: string) => (
       netUid === ROOT_NET_UID
         ? ROOT_STRUCTURE
         : netUid === CHILD_NET_UID
@@ -270,7 +270,7 @@ describe('ClientEditPage root folder form', () => {
 
     fireEvent.click(screen.getByRole('button', { name: /Договори$/ }))
     expect(await screen.findByText(`agreements:${ORDINARY_NET_UID}`)).toBeTruthy()
-    expect(apiMocks.getClientById).toHaveBeenCalledTimes(1)
+    expect(apiMocks.getClientForRegistryById).toHaveBeenCalledTimes(1)
   })
 
   it('does not replace a newly selected card when an earlier save completes', async () => {

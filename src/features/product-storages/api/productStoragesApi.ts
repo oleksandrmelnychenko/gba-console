@@ -150,7 +150,7 @@ type DepreciatedOrderFingerprintBody = {
 }
 
 export async function getProductStorageStorages(): Promise<ProductStorageStorage[]> {
-  const result = await apiRequest<unknown>('/storages/get/all')
+  const result = await apiRequest<unknown>('/storages/warehouse-accounting/all')
 
   return normalizeStorages(result)
 }
@@ -158,7 +158,7 @@ export async function getProductStorageStorages(): Promise<ProductStorageStorage
 export async function getAvailableProductsByStorage(
   params: ProductStoragesSearchParams,
 ): Promise<ProductStorageAvailabilitiesResponse> {
-  const result = await apiRequest<unknown>('/storages/all/available/filtered', {
+  const result = await apiRequest<unknown>('/storages/warehouse-accounting/available/filtered', {
     query: {
       from: params.from || '',
       limit: params.limit,
@@ -177,7 +177,7 @@ export async function exportProductStorageAvailability(params: {
   storageNetId: string
   to?: string
 }): Promise<ProductStoragesExportDocument> {
-  const result = await apiRequest<unknown>('/storages/document/export', {
+  const result = await apiRequest<unknown>('/storages/warehouse-accounting/document/export', {
     query: {
       from: params.from || '',
       netId: params.storageNetId,
@@ -213,7 +213,7 @@ async function createProductStorageTransferCore(
   const operation = await getOrCreateProductTransferOperation(canonicalPayload, ownerNetUid)
 
   try {
-    await apiRequest<unknown>('/products/transfers/new', {
+    await apiRequest<unknown>('/products/transfers/warehouse-accounting/new', {
       method: 'POST',
       headers: {
         'Idempotency-Key': operation.operationNetUid,
@@ -479,7 +479,7 @@ async function createProductStorageWriteOffCore(
   }
 
   try {
-    const result = await apiRequest<unknown>('/orders/depreciated/new', {
+    const result = await apiRequest<unknown>('/orders/depreciated/warehouse-accounting/new', {
       method: 'POST',
       dedupe: false,
       headers: {
@@ -839,7 +839,7 @@ export async function getProductStorageAvailableConsignments(params: {
   productNetId: string
   storageNetId: string
 }): Promise<ProductStorageAvailableConsignment[]> {
-  const result = await apiRequest<unknown>('/consignments/remaining/get/available', {
+  const result = await apiRequest<unknown>('/consignments/remaining/warehouse-accounting/get/available', {
     query: params,
   })
 
@@ -880,7 +880,7 @@ async function createProductStorageSupplyReturnCore(
   )
 
   try {
-    await apiRequest<unknown>('/supplies/returns/new', {
+    await apiRequest<unknown>('/supplies/returns/warehouse-accounting/new', {
       method: 'POST',
       dedupe: false,
       headers: {

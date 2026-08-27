@@ -16,12 +16,14 @@ import { CircleAlert, Receipt, RotateCcw, Search, ShoppingCart } from 'lucide-re
 import { useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
+import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { Paginator } from '../../../shared/ui/paginator/Paginator'
 import { DEFAULT_PAGINATOR_PAGE_SIZE } from '../../../shared/ui/paginator/paginatorPageSize'
-import { getRetailClientCart, getRetailClientsPage, searchRetailClientsPage } from '../api/onlineShopClientsApi'
+import { getOnlineShopClientsPage, getRetailClientCart, searchOnlineShopClientsPage } from '../api/onlineShopClientsApi'
+import { usePermissions } from '../../auth/usePermissions'
 import { OnlineShopOrderItemsList } from '../components/OnlineShopOrderItemsList'
 import { OnlineShopSalesPanel } from '../components/OnlineShopSalesPanel'
 import { getRetailItemLocalCurrencyCode, getRetailItemTotal, RETAIL_LOCAL_CURRENCY_CODE } from '../onlineShopDisplay'
@@ -44,6 +46,28 @@ const ONLINE_SHOP_CLIENTS_TABLE_DEFAULT_LAYOUT = {
 
 export function OnlineShopClientsPage() {
   const { t } = useI18n()
+  const { can, isLoading } = usePermissions()
+
+  if (isLoading) {
+    return <Text c="dimmed">{t('Завантаження')}</Text>
+  }
+
+  if (!can(PermissionKeys.OnlineShopClients.Page.View)) {
+    return (
+      <Alert color="red" icon={<CircleAlert size={18} />} title={t('Доступ заборонено')} variant="light">
+        {t('Недостатньо прав для перегляду клієнтів інтернет-магазину')}
+      </Alert>
+    )
+  }
+
+  return <OnlineShopClientsPageContent />
+}
+
+function OnlineShopClientsPageContent() {
+  const { t } = useI18n()
+  const { can } = usePermissions()
+  const canOpenCart = can(PermissionKeys.OnlineShopClients.Cart.Open)
+  const canOpenSales = can(PermissionKeys.OnlineShopClients.Sales.Open)
   const [tableToolbarSlot, setTableToolbarSlot] = useState<HTMLDivElement | null>(null)
   const [clients, setClients] = useValueState<RetailClient[]>([])
   const [selectedClient, setSelectedClient] = useValueState<RetailClient | null>(null)
@@ -100,8 +124,8 @@ export function OnlineShopClientsPage() {
 
       try {
         const response = normalizedSearchValue
-          ? await searchRetailClientsPage(normalizedSearchValue, { limit: pageSize, offset })
-          : await getRetailClientsPage({ limit: pageSize, offset })
+          ? await searchOnlineShopClientsPage(normalizedSearchValue, { limit: pageSize, offset })
+          : await getOnlineShopClientsPage({ limit: pageSize, offset })
 
         if (!cancelled) {
           setClients(response.Items)
@@ -128,6 +152,10 @@ export function OnlineShopClientsPage() {
   }, [normalizedSearchValue, offset, pageSize, reloadKey, setCartError, setCartItems, setCartLoading, setClients, setError, setLoading, setSelectedClient, setTotalClients, t])
 
   async function selectClient(client: RetailClient) {
+    if (!canOpenCart && !canOpenSales) {
+      return
+    }
+
     const netId = getRetailClientNetId(client)
     const requestId = cartRequestRef.current + 1
 
@@ -136,6 +164,11 @@ export function OnlineShopClientsPage() {
     setSelectedClient(client)
     setCartItems([])
     setCartError(null)
+
+    if (!canOpenCart) {
+      setCartLoading(false)
+      return
+    }
 
     if (!netId) {
       setCartLoading(false)
@@ -172,7 +205,7 @@ export function OnlineShopClientsPage() {
   }
 
   function openSalesDrawer() {
-    if (selectedClientNetId) {
+    if (canOpenSales && selectedClientNetId) {
       setSalesOpen(true)
     }
   }
@@ -248,9 +281,9 @@ export function OnlineShopClientsPage() {
               showLayoutControls
               tableId="online-shop-clients"
               toolbarPortalTarget={tableToolbarSlot}
-              onRowClick={(client) => {
+              onRowClick={canOpenCart || canOpenSales ? (client) => {
                 void selectClient(client)
-              }}
+              } : undefined}
             />
           </section>
 
@@ -283,7 +316,7 @@ export function OnlineShopClientsPage() {
                 </Alert>
               )}
 
-              {selectedClient && (
+              {canOpenSales && selectedClient && (
                 <Button
                   className="online-shop-clients-sales-button"
                   fullWidth
@@ -329,7 +362,7 @@ export function OnlineShopClientsPage() {
         </Box>
       </Box>
 
-      <AppDrawer
+      {canOpenSales && <AppDrawer
         opened={isSalesOpen}
         position="right"
         size="calc(100% - 100px)"
@@ -337,7 +370,7 @@ export function OnlineShopClientsPage() {
         onClose={() => setSalesOpen(false)}
       >
         <OnlineShopSalesPanel constrainHeight={false} netUid={selectedClientNetId} />
-      </AppDrawer>
+      </AppDrawer>}
     </Stack>
   )
 }

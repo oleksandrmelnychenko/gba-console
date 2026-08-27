@@ -33,6 +33,7 @@ const dateTimeFormatter = new Intl.DateTimeFormat('uk-UA', {
 })
 
 export type DepreciatedOrderDetailDrawerProps = {
+  canExport: boolean
   detailError: string | null
   downloadDocument: DepreciatedOrderExportDocument | null
   downloadError: string | null
@@ -46,6 +47,7 @@ export type DepreciatedOrderDetailDrawerProps = {
 }
 
 export function DepreciatedOrderDetailDrawer({
+  canExport,
   detailError,
   downloadDocument,
   downloadError,
@@ -102,15 +104,17 @@ export function DepreciatedOrderDetailDrawer({
               )}
             </div>
             <div className="app-detail-hero__side">
-              <Button
-                disabled={!order.NetUid}
-                leftSection={<Download size={16} />}
-                loading={isDownloading}
-                variant="default"
-                onClick={() => onExport(order)}
-              >
-                {t('Завантажити')}
-              </Button>
+              {canExport && (
+                <Button
+                  disabled={!order.NetUid}
+                  leftSection={<Download size={16} />}
+                  loading={isDownloading}
+                  variant="default"
+                  onClick={() => onExport(order)}
+                >
+                  {t('Завантажити')}
+                </Button>
+              )}
               <div className="app-detail-metrics">
                 <div className="app-detail-metric">
                   <span>{t('Позицій')}</span>
@@ -162,14 +166,16 @@ export function DepreciatedOrderDetailDrawer({
         </Stack>
       )}
 
-      <DocumentExportModal
-        document={downloadDocument}
-        error={downloadError}
-        isLoading={isDownloading}
-        opened={downloadOpened}
-        title={t('Завантажити')}
-        onClose={onCloseDownload}
-      />
+      {canExport && (
+        <DocumentExportModal
+          document={downloadDocument}
+          error={downloadError}
+          isLoading={isDownloading}
+          opened={downloadOpened}
+          title={t('Завантажити')}
+          onClose={onCloseDownload}
+        />
+      )}
     </AppDrawer>
   )
 }

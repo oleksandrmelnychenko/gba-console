@@ -8,11 +8,8 @@ import { toDateTimeQuery } from '../../../shared/date/dateTime'
 import { normalizeExportDocument } from '../../../shared/documents/exportDocument'
 import type {
   IncomePaymentOrder,
+  PaymentMovement,
 } from '../../income-cashflows/types'
-import {
-  ACCOUNTING_OPERATION_ID,
-  getAccountingOperation,
-} from '../../accounting/accountingOperationCatalog'
 import type {
   PrintTaxFreeResponse,
   Statham,
@@ -23,11 +20,10 @@ import type {
   TaxFreeItem,
 } from '../types'
 
-const CREATE_TAX_FREE_INCOME_ENDPOINT =
-  getAccountingOperation(ACCOUNTING_OPERATION_ID.TaxFreeIncome).endpoint
+const CREATE_TAX_FREE_INCOME_ENDPOINT = '/payments/orders/income/tax-free-documents/new'
 
 export async function getTaxFreeDocuments(params: TaxFreeDocumentsSearchParams): Promise<TaxFreeDocumentsResponse> {
-  const result = await apiRequest<unknown>('/supplies/ukraine/order/taxfree/all/filtered', {
+  const result = await apiRequest<unknown>('/supplies/ukraine/order/taxfree/registry', {
     query: {
       from: toDateTimeQuery(params.from, 'start'),
       limit: params.limit,
@@ -42,8 +38,28 @@ export async function getTaxFreeDocuments(params: TaxFreeDocumentsSearchParams):
   return normalizeTaxFreeDocumentsResponse(result)
 }
 
+export async function getTaxFreeDocument(netId: string): Promise<TaxFreeDocument | null> {
+  const result = await apiRequest<unknown>('/supplies/ukraine/order/taxfree/details', {
+    query: { netId },
+  })
+  const payload = unwrapPayload(result)
+
+  return payload && typeof payload === 'object' && !Array.isArray(payload)
+    ? normalizeTaxFreeDocument(payload as TaxFreeDocument)
+    : null
+}
+
 export async function updateTaxFreeDocument(document: TaxFreeDocument): Promise<TaxFreeDocument> {
-  const result = await apiRequest<unknown>('/supplies/ukraine/order/taxfree/update', {
+  const result = await apiRequest<unknown>('/supplies/ukraine/order/taxfree/edit', {
+    body: document,
+    method: 'POST',
+  })
+
+  return normalizeTaxFreeDocument(unwrapPayload(result) as TaxFreeDocument)
+}
+
+export async function changeTaxFreeDocumentStatus(document: TaxFreeDocument): Promise<TaxFreeDocument> {
+  const result = await apiRequest<unknown>('/supplies/ukraine/order/taxfree/status/change', {
     body: document,
     method: 'POST',
   })
@@ -71,7 +87,7 @@ export async function printTaxFreeDocument(document: TaxFreeDocument): Promise<P
 }
 
 export async function getTaxFreePrintDocument(netId: string): Promise<TaxFreePrintDocument> {
-  const result = await apiRequest<unknown>('/supplies/ukraine/order/taxfree/documents/printing/get', {
+  const result = await apiRequest<unknown>('/supplies/ukraine/order/taxfree/document/export', {
     query: {
       netId,
     },
@@ -85,7 +101,7 @@ export async function searchTaxFreeCarriers(value: string): Promise<Statham[]> {
     return []
   }
 
-  const result = await apiRequest<unknown>('/supplies/ukraine/carriers/statham/all/search', {
+  const result = await apiRequest<unknown>('/supplies/ukraine/carriers/statham/tax-free-documents/search', {
     query: {
       value: value.trim(),
     },
@@ -99,7 +115,7 @@ export async function getTaxFreeCarrier(netId: string): Promise<Statham | null> 
     return null
   }
 
-  const result = await apiRequest<unknown>('/supplies/ukraine/carriers/statham/get', {
+  const result = await apiRequest<unknown>('/supplies/ukraine/carriers/statham/tax-free-documents/details', {
     query: {
       netId,
     },
@@ -108,6 +124,18 @@ export async function getTaxFreeCarrier(netId: string): Promise<Statham | null> 
   const payload = unwrapPayload(result)
 
   return payload && typeof payload === 'object' && !Array.isArray(payload) ? (payload as Statham) : null
+}
+
+export async function createTaxFreeCashflowArticle(operationName: string): Promise<PaymentMovement | null> {
+  const result = await apiRequest<unknown>('/payments/movements/accounting/new', {
+    body: { OperationName: operationName },
+    method: 'POST',
+  })
+  const payload = unwrapPayload(result)
+
+  return payload && typeof payload === 'object' && !Array.isArray(payload)
+    ? (payload as PaymentMovement)
+    : null
 }
 
 export async function createIncomePaymentFromTaxFree(

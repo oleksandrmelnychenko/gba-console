@@ -5,15 +5,19 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { I18nProvider } from '../../../shared/i18n/I18nProvider'
 import {
   getSaleClientAgreements,
+  searchProductPricingClients,
   searchSaleProducts,
-  searchSalesUkraineClients,
 } from '../../sales-ukraine/api/salesUkraineApi'
 import { PricingPage } from './PricingPage'
 
 vi.mock('../../sales-ukraine/api/salesUkraineApi', () => ({
   getSaleClientAgreements: vi.fn(),
+  searchProductPricingClients: vi.fn(),
   searchSaleProducts: vi.fn(),
-  searchSalesUkraineClients: vi.fn(),
+}))
+
+vi.mock('../../auth/usePermissions', () => ({
+  usePermissions: () => ({ can: () => true, isLoading: false }),
 }))
 
 function renderPage() {
@@ -31,11 +35,11 @@ function renderPage() {
 beforeEach(() => {
   vi.mocked(getSaleClientAgreements).mockReset()
   vi.mocked(searchSaleProducts).mockReset()
-  vi.mocked(searchSalesUkraineClients).mockReset()
+  vi.mocked(searchProductPricingClients).mockReset()
 
   vi.mocked(getSaleClientAgreements).mockResolvedValue([])
   vi.mocked(searchSaleProducts).mockResolvedValue([])
-  vi.mocked(searchSalesUkraineClients).mockResolvedValue([])
+  vi.mocked(searchProductPricingClients).mockResolvedValue([])
 })
 
 describe('PricingPage layout', () => {
@@ -62,7 +66,7 @@ describe('PricingPage layout', () => {
     }
 
     expect(searchSaleProducts).not.toHaveBeenCalled()
-    expect(searchSalesUkraineClients).not.toHaveBeenCalled()
+    expect(searchProductPricingClients).not.toHaveBeenCalled()
     expect(getSaleClientAgreements).not.toHaveBeenCalled()
   })
 })

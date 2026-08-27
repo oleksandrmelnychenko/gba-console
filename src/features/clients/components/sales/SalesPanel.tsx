@@ -19,8 +19,16 @@ import { useEffect, useRef } from 'react'
 import { AppDrawer } from '../../../../shared/ui/AppDrawer'
 import { useValueState } from '../../../../shared/hooks/useValueState'
 import { useI18n } from '../../../../shared/i18n/useI18n'
+import { PermissionKeys } from '../../../../shared/auth/permissionKeys'
+import { useAuth } from '../../../auth/useAuth'
 import { SaleAuditDetail } from '../../../../shared/sale-audit'
-import { getSaleStatisticBySaleId, getSalesByClient } from '../../api/clientSalesApi'
+import {
+  confirmSaleActForEditing,
+  getSaleStatisticBySaleId,
+  getSalesByClient,
+  getShiftedSaleDocument,
+  getShiftedSaleHistoryDocument,
+} from '../../api/clientSalesApi'
 import { SaleLifeCycleType, SaleOrderSource, SalePaymentStatusType } from '../../salesTypes'
 import type { Sale, SaleOrderItem, SaleReturnItem, SaleStatistic } from '../../salesTypes'
 
@@ -43,8 +51,19 @@ type SalesPanelProps = {
 
 type DetailKind = 'audit' | 'edit' | 'carrier'
 
+const CLIENT_SALES_AUDIT_DOCUMENT_API = {
+  confirm: confirmSaleActForEditing,
+  getInvoice: getShiftedSaleDocument,
+  getShifted: getShiftedSaleHistoryDocument,
+}
+
 export function SalesPanel({ netId }: SalesPanelProps) {
   const { t } = useI18n()
+  const { hasPermission } = useAuth()
+  const canView = hasPermission(PermissionKeys.SalesUkraine.Sale.View)
+  const canEdit = hasPermission(PermissionKeys.SalesUkraine.Sale.Edit)
+  const canViewAudit = hasPermission(PermissionKeys.SalesUkraine.Sale.ViewAudit)
+  const canOpenDelivery = hasPermission(PermissionKeys.SalesUkraine.Sale.OpenDeliveryDetails)
   const [fromDate, setFromDate] = useValueState(() => new Date())
   const [toDate, setToDate] = useValueState(() => new Date())
   const [sales, setSales] = useValueState<SaleStatistic[]>([])
@@ -62,7 +81,7 @@ export function SalesPanel({ netId }: SalesPanelProps) {
   const toKey = toDateInputValue(toDate)
 
   useEffect(() => {
-    if (!netId) {
+    if (!canView || !netId) {
       return undefined
     }
 
@@ -100,23 +119,26 @@ export function SalesPanel({ netId }: SalesPanelProps) {
     return () => {
       cancelled = true
     }
-  }, [netId, fromKey, toKey, setSales, setOpenIndex, setLoading, setError, t])
+  }, [canView, netId, fromKey, toKey, setSales, setOpenIndex, setLoading, setError, t])
 
   function toggleExpand(index: number) {
     setOpenIndex((current) => (current === index ? null : index))
   }
 
   function openCarrier(sale: Sale) {
+    if (!canOpenDelivery) return
     setDetailSale(sale)
     setDetailKind('carrier')
   }
 
   function openEdit(sale: Sale) {
+    if (!canEdit) return
     setDetailSale(sale)
     setDetailKind('edit')
   }
 
   function openAudit(sale: Sale, fallback: SaleStatistic) {
+    if (!canViewAudit) return
     setDetailSale(sale)
     setDetailKind('audit')
     setAuditStatistic(fallback)
@@ -164,7 +186,7 @@ export function SalesPanel({ netId }: SalesPanelProps) {
     setAuditLoading(false)
   }
 
-  if (!netId) {
+  if (!canView || !netId) {
     return (
       <Text c="dimmed" py="xl" ta="center">
         {t('Клієнта не вибрано')}
@@ -219,6 +241,9 @@ export function SalesPanel({ netId }: SalesPanelProps) {
                 key={statistic.NetUid || statistic.Sale?.NetUid || statistic.SaleReturn?.NetUid || index}
                 isOpen={openIndex === index}
                 statistic={statistic}
+                canEdit={canEdit}
+                canOpenDelivery={canOpenDelivery}
+                canViewAudit={canViewAudit}
                 onAudit={openAudit}
                 onCarrier={openCarrier}
                 onEdit={openEdit}
@@ -238,8 +263,10 @@ export function SalesPanel({ netId }: SalesPanelProps) {
       >
         {detailKind === 'audit' && (
           <SaleAuditDetail
+            documentApi={CLIENT_SALES_AUDIT_DOCUMENT_API}
             error={auditError}
             isLoading={isAuditLoading}
+            showConfirm={canEdit}
             statistic={auditStatistic}
           />
         )}
@@ -282,6 +309,9 @@ function DateFilter({
 }
 
 function SaleAccordionItem({
+  canEdit,
+  canOpenDelivery,
+  canViewAudit,
   isOpen,
   statistic,
   onAudit,
@@ -289,6 +319,9 @@ function SaleAccordionItem({
   onEdit,
   onToggle,
 }: {
+  canEdit: boolean
+  canOpenDelivery: boolean
+  canViewAudit: boolean
   isOpen: boolean
   statistic: SaleStatistic
   onAudit: (sale: Sale, fallback: SaleStatistic) => void
@@ -377,7 +410,7 @@ function SaleAccordionItem({
           </ThemeIcon>
         </Tooltip>
 
-        <ActionIcon color="gray" variant="subtle" onClick={onToggle}>
+        <ActionIcon aria-label={t('Розгорнути продаж')} color="gray" variant="subtle" onClick={onToggle}>
           {isOpen ? <ChevronDown size={18} /> : <ChevronRight size={18} />}
         </ActionIcon>
 
@@ -422,23 +455,23 @@ function SaleAccordionItem({
 
         {showActions && (
           <Group gap={4} wrap="nowrap">
-            {!hasMerges && sale.TotalCount !== 0 && (
+            {canEdit && !hasMerges && sale.TotalCount !== 0 && (
               <Tooltip label={t('Редагувати')}>
-                <ActionIcon color="gray" variant="subtle" onClick={() => onEdit(sale)}>
+                <ActionIcon aria-label={t('Переглянути продаж')} color="gray" variant="subtle" onClick={() => onEdit(sale)}>
                   <SquarePen size={18} />
                 </ActionIcon>
               </Tooltip>
             )}
-            {(!isNew || sale.ShiftStatus) && (
+            {canViewAudit && (!isNew || sale.ShiftStatus) && (
               <Tooltip label={t('Рух ТМЦ')}>
-                <ActionIcon color="gray" variant="subtle" onClick={() => onAudit(sale, statistic)}>
+                <ActionIcon aria-label={t('Рух ТМЦ')} color="gray" variant="subtle" onClick={() => onAudit(sale, statistic)}>
                   <History size={18} />
                 </ActionIcon>
               </Tooltip>
             )}
-            {sale.Transporter && (
+            {canOpenDelivery && sale.Transporter && (
               <Tooltip label={sale.Transporter.Name || t('Перевізник')}>
-                <ActionIcon color="gray" variant="subtle" onClick={() => onCarrier(sale)}>
+                <ActionIcon aria-label={sale.Transporter.Name || t('Перевізник')} color="gray" variant="subtle" onClick={() => onCarrier(sale)}>
                   <Truck size={18} />
                 </ActionIcon>
               </Tooltip>

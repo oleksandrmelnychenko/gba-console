@@ -2,6 +2,8 @@ import { Alert, Button, Grid, Group, NumberInput, Select, Stack, Text, TextInput
 import { notifications } from '@mantine/notifications'
 import { CircleAlert, Plus } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
+import { usePermissions } from '../../auth/usePermissions'
+import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppModal } from '../../../shared/ui/AppModal'
@@ -14,7 +16,6 @@ import {
   pickExternalDocumentPaymentCurrencyRegister,
 } from '../../document-outcome-payment/externalDocumentPayment'
 import {
-  createIncomeCashflowPaymentMovement,
   getIncomeCashflowClientAgreements,
   getIncomeCashflowOrganizations,
   getIncomeCashflowPaymentMovements,
@@ -29,7 +30,7 @@ import type {
   PaymentMovement,
   PaymentRegister,
 } from '../../income-cashflows/types'
-import { createIncomePaymentFromTaxFree } from '../api/taxFreeDocumentsApi'
+import { createIncomePaymentFromTaxFree, createTaxFreeCashflowArticle } from '../api/taxFreeDocumentsApi'
 import type { TaxFreeDocument } from '../types'
 import { formatTaxFreeAmountPl, getTaxFreeClient } from '../utils'
 
@@ -81,6 +82,9 @@ export function TaxFreePaymentFromTaxFreeModal({
   opened,
 }: TaxFreePaymentFromTaxFreeModalProps) {
   const { t } = useI18n()
+  const { can } = usePermissions()
+  const canCreateIncome = can(PermissionKeys.TaxFreeDocuments.Accounting.CreateIncome)
+  const canCreateCashflowArticle = can(PermissionKeys.FinancialAdministration.CashflowArticles.Article.Create)
   const [organizations, setOrganizations] = useState<Organization[]>([])
   const [paymentRegisters, setPaymentRegisters] = useState<TaxFreePaymentRegister[]>([])
   const [paymentMovements, setPaymentMovements] = useState<PaymentMovement[]>([])
@@ -118,7 +122,7 @@ export function TaxFreePaymentFromTaxFreeModal({
   const currencyLabel = selectedCurrencyRegister?.Currency?.Code || selectedCurrencyRegister?.Currency?.Name || ''
 
   useEffect(() => {
-    if (!opened || !document) {
+    if (!opened || !document || !canCreateIncome) {
       return
     }
 
@@ -184,7 +188,7 @@ export function TaxFreePaymentFromTaxFreeModal({
     return () => {
       cancelled = true
     }
-  }, [client?.NetUid, document, opened, t])
+  }, [canCreateIncome, client?.NetUid, document, opened, t])
 
   useEffect(() => {
     if (!opened) {
@@ -223,7 +227,7 @@ export function TaxFreePaymentFromTaxFreeModal({
   async function handleCreateMovement() {
     const operationName = form.movementSearch.trim()
 
-    if (!operationName) {
+    if (!canCreateCashflowArticle || !operationName) {
       return
     }
 
@@ -231,7 +235,7 @@ export function TaxFreePaymentFromTaxFreeModal({
     setError(null)
 
     try {
-      const createdMovement = await createIncomeCashflowPaymentMovement(operationName)
+      const createdMovement = await createTaxFreeCashflowArticle(operationName)
 
       if (createdMovement) {
         setPaymentMovements((current) => includeEntity(current, createdMovement))
@@ -248,7 +252,7 @@ export function TaxFreePaymentFromTaxFreeModal({
   }
 
   async function handleSubmit() {
-    if (!document?.NetUid) {
+    if (!canCreateIncome || !document?.NetUid) {
       return
     }
 
@@ -399,7 +403,7 @@ export function TaxFreePaymentFromTaxFreeModal({
               onOptionSubmit={handleMovementSubmit}
             />
           </Grid.Col>
-          <Grid.Col span={{ base: 12, sm: 3 }}>
+          {canCreateCashflowArticle && <Grid.Col span={{ base: 12, sm: 3 }}>
             <Button
               disabled={Boolean(activeMovement) || !form.movementSearch.trim() || isLoading || isSaving}
               fullWidth
@@ -410,7 +414,7 @@ export function TaxFreePaymentFromTaxFreeModal({
             >
               {t('Створити статтю')}
             </Button>
-          </Grid.Col>
+          </Grid.Col>}
 
           <Grid.Col span={12}>
             <Textarea
@@ -428,7 +432,7 @@ export function TaxFreePaymentFromTaxFreeModal({
           <Button color="gray" disabled={isSaving} variant="subtle" onClick={onClose}>
             {t('Скасувати')}
           </Button>
-          <Button disabled={isLoading} loading={isSaving} onClick={() => void handleSubmit()}>
+          <Button disabled={isLoading || !canCreateIncome} loading={isSaving} onClick={() => void handleSubmit()}>
             {t('Створити')}
           </Button>
         </Group>

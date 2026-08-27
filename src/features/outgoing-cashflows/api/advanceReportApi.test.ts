@@ -1,8 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { apiRequest } from '../../../shared/api/apiClient'
 import {
+  calculateAdvanceReportCompanyCarFueling,
   calculateAdvanceReportConsumableOrder,
+  calculateAdvanceReportDocumentStructure,
   calculateAdvanceReportOrder,
+  calculateIncomeCashflowAdvanceReportOrder,
+  getAdvanceReportOrder,
   searchAdvanceReportSupplyOrganizations,
   updateAdvanceReportOrder,
 } from './advanceReportApi'
@@ -19,6 +23,27 @@ describe('advanceReportApi', () => {
     apiRequestMock.mockReset()
   })
 
+  it('uses report-scoped details and fueling calculation routes', async () => {
+    const fueling = { NetUid: 'fuel-1' }
+    apiRequestMock
+      .mockResolvedValueOnce({ NetUid: 'order-1' })
+      .mockResolvedValueOnce({ Collection: [fueling] })
+
+    await getAdvanceReportOrder('order-1')
+    await calculateAdvanceReportCompanyCarFueling(fueling)
+
+    expect(apiRequestMock.mock.calls).toEqual([
+      [
+        '/payments/orders/outcome/advanced-reports/details',
+        { query: { netId: 'order-1' } },
+      ],
+      [
+        '/consumables/company/cars/advanced-reports/edit/fuelings/calculate',
+        { body: [fueling], method: 'POST' },
+      ],
+    ])
+  })
+
   it('strips UI-only local NetUid values before calculating an advance report', async () => {
     const order = createOrderWithLocalNetUids()
 
@@ -26,7 +51,7 @@ describe('advanceReportApi', () => {
 
     await calculateAdvanceReportOrder(order)
 
-    expect(apiRequestMock).toHaveBeenCalledWith('/payments/orders/outcome/calculate', {
+    expect(apiRequestMock).toHaveBeenCalledWith('/payments/orders/outcome/advanced-reports/edit/calculate', {
       body: expect.objectContaining({
         CompanyCarFuelings: [
           expect.not.objectContaining({ NetUid: 'local-fueling' }),
@@ -49,6 +74,33 @@ describe('advanceReportApi', () => {
     expect(order.CompanyCarFuelings?.[0]?.NetUid).toBe('local-fueling')
   })
 
+  it('keeps document-structure calculation on its independent read boundary', async () => {
+    const order: AdvanceReportOrder = { NetUid: 'order-1' }
+    apiRequestMock.mockResolvedValueOnce({ NetUid: 'order-1' })
+
+    await calculateAdvanceReportDocumentStructure(order)
+
+    expect(apiRequestMock).toHaveBeenCalledWith('/payments/orders/outcome/advanced-reports/structure/calculate', {
+      body: order,
+      method: 'POST',
+    })
+  })
+
+  it('uses the income-details scoped calculation boundary from income cashflows', async () => {
+    const order: AdvanceReportOrder = { NetUid: 'order-1' }
+    apiRequestMock.mockResolvedValueOnce({ NetUid: 'order-1' })
+
+    await calculateIncomeCashflowAdvanceReportOrder(order)
+
+    expect(apiRequestMock).toHaveBeenCalledWith(
+      '/payments/orders/outcome/income-cashflows/details/advance-report/calculate',
+      {
+        body: expect.objectContaining(order),
+        method: 'POST',
+      },
+    )
+  })
+
   it('does not send deleted fuel rows to calculation but keeps them in the returned order state', async () => {
     const order: AdvanceReportOrder = {
       Amount: 100,
@@ -67,7 +119,7 @@ describe('advanceReportApi', () => {
 
     const result = await calculateAdvanceReportOrder(order)
 
-    expect(apiRequestMock).toHaveBeenCalledWith('/payments/orders/outcome/calculate', {
+    expect(apiRequestMock).toHaveBeenCalledWith('/payments/orders/outcome/advanced-reports/edit/calculate', {
       body: expect.objectContaining({
         CompanyCarFuelings: [
           expect.objectContaining({ NetUid: 'active-fuel' }),
@@ -102,7 +154,7 @@ describe('advanceReportApi', () => {
     const payload = JSON.parse(String(body.get('order'))) as AdvanceReportOrder
 
     expect(apiRequestMock).toHaveBeenCalledWith(
-      '/payments/orders/outcome/upload/update',
+      '/payments/orders/outcome/advanced-reports/edit/upload/update',
       expect.objectContaining({
         dedupe: false,
         headers: { 'Idempotency-Key': operationId },
@@ -131,7 +183,7 @@ describe('advanceReportApi', () => {
 
     await updateAdvanceReportOrder(false, order, [], { operationId })
 
-    expect(apiRequestMock).toHaveBeenCalledWith('/payments/orders/outcome/update', {
+    expect(apiRequestMock).toHaveBeenCalledWith('/payments/orders/outcome/advanced-reports/edit/update', {
       body: order,
       dedupe: false,
       headers: { 'Idempotency-Key': operationId },
@@ -165,7 +217,7 @@ describe('advanceReportApi', () => {
 
     await calculateAdvanceReportConsumableOrder(order)
 
-    expect(apiRequestMock).toHaveBeenCalledWith('/consumables/orders/calculate', {
+    expect(apiRequestMock).toHaveBeenCalledWith('/consumables/orders/advanced-reports/edit/calculate', {
       body: [
         {
           ConsumablesOrderItems: [{ Qty: 2 }],
@@ -184,7 +236,7 @@ describe('advanceReportApi', () => {
       { NetUid: 'supplier-1', SupplyOrganizationAgreements: [] },
     ])
 
-    expect(apiRequestMock).toHaveBeenCalledWith('/supplies/organizations/all/search', {
+    expect(apiRequestMock).toHaveBeenCalledWith('/supplies/organizations/advanced-reports/edit/search', {
       query: {
         limit: 20,
         offset: 0,

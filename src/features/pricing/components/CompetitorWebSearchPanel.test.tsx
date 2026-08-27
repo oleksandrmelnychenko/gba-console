@@ -5,6 +5,14 @@ import { I18nProvider } from '../../../shared/i18n/I18nProvider'
 import { searchCompetitorPrices } from '../api/pricingApi'
 import { CompetitorWebSearchPanel } from './CompetitorWebSearchPanel'
 
+const mocks = vi.hoisted(() => ({
+  can: vi.fn(),
+}))
+
+vi.mock('../../auth/usePermissions', () => ({
+  usePermissions: () => ({ can: mocks.can }),
+}))
+
 vi.mock('../api/pricingApi', () => ({
   searchCompetitorPrices: vi.fn(),
 }))
@@ -13,12 +21,31 @@ const searchCompetitorPricesMock = vi.mocked(searchCompetitorPrices)
 
 beforeEach(() => {
   searchCompetitorPricesMock.mockReset()
+  mocks.can.mockReturnValue(true)
 })
 
 describe('CompetitorWebSearchPanel', () => {
+  it('does not expose or execute market scan without its business permission', () => {
+    mocks.can.mockReturnValue(false)
+
+    render(
+      <MantineProvider env="test" theme={{ respectReducedMotion: true }}>
+        <I18nProvider>
+          <CompetitorWebSearchPanel product={{ MainOriginalNumber: 'OE-1' }} />
+        </I18nProvider>
+      </MantineProvider>,
+    )
+
+    expect(screen.queryByRole('button', { name: 'Знайти ціни' })).toBeNull()
+    fireEvent.keyDown(screen.getByLabelText('Пошуковий запит'), {
+      key: 'Enter',
+    })
+    expect(searchCompetitorPricesMock).not.toHaveBeenCalled()
+  })
+
   it('expands and collapses the Anthropic production prompt', () => {
     render(
-      <MantineProvider env="test">
+      <MantineProvider env="test" theme={{ respectReducedMotion: true }}>
         <I18nProvider>
           <CompetitorWebSearchPanel product={null} />
         </I18nProvider>
@@ -42,7 +69,7 @@ describe('CompetitorWebSearchPanel', () => {
 
   it('resets the editable query when the selected product changes', () => {
     const { rerender } = render(
-      <MantineProvider env="test">
+      <MantineProvider env="test" theme={{ respectReducedMotion: true }}>
         <I18nProvider>
           <CompetitorWebSearchPanel
             product={{ MainOriginalNumber: 'OE-1', Name: 'First product', VendorCode: 'SKU-1' }}
@@ -58,7 +85,7 @@ describe('CompetitorWebSearchPanel', () => {
     expect(input.value).toBe('custom query')
 
     rerender(
-      <MantineProvider env="test">
+      <MantineProvider env="test" theme={{ respectReducedMotion: true }}>
         <I18nProvider>
           <CompetitorWebSearchPanel
             product={{ MainOriginalNumber: 'OE-2', Name: 'Second product', VendorCode: 'SKU-2' }}
@@ -96,7 +123,7 @@ describe('CompetitorWebSearchPanel', () => {
     })
 
     render(
-      <MantineProvider env="test">
+      <MantineProvider env="test" theme={{ respectReducedMotion: true }}>
         <I18nProvider>
           <CompetitorWebSearchPanel
             product={{

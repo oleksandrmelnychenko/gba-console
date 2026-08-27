@@ -38,7 +38,7 @@ function normalizePlacementRow(row: DynamicProductPlacementRow): DynamicProductP
 }
 
 export async function getSupplyOrderUkraineById(netId: string): Promise<PlacementSupplyOrder> {
-  const result = await apiRequest<unknown>('/supplies/ukraine/order/get', {
+  const result = await apiRequest<unknown>('/supplies/ukraine/order/warehouse-ukraine/placement', {
     query: { netId },
   })
 
@@ -46,7 +46,18 @@ export async function getSupplyOrderUkraineById(netId: string): Promise<Placemen
 }
 
 export async function updateSupplyOrderUkraine(order: PlacementSupplyOrder): Promise<PlacementSupplyOrder> {
-  const result = await apiRequest<unknown>('/supplies/ukraine/order/update', {
+  const result = await apiRequest<unknown>('/supplies/ukraine/order/warehouse-ukraine/placement/save', {
+    method: 'POST',
+    body: order,
+  })
+
+  return normalizeOrder(result)
+}
+
+export async function updateSupplyOrderUkraineForReconciliation(
+  order: PlacementSupplyOrder,
+): Promise<PlacementSupplyOrder> {
+  const result = await apiRequest<unknown>('/supplies/ukraine/order/warehouse-ukraine/placement/reconciliation', {
     method: 'POST',
     body: order,
   })
@@ -58,8 +69,8 @@ export async function saveDynamicPlacementRow(
   row: DynamicProductPlacementRow,
 ): Promise<DynamicProductPlacementRow> {
   const endpoint = row.Id && row.Id > 0
-    ? '/supplies/ukraine/order/placements/dynamic/rows/update'
-    : '/supplies/ukraine/order/placements/dynamic/rows/new'
+    ? '/supplies/ukraine/order/placements/dynamic/rows/warehouse-ukraine/update'
+    : '/supplies/ukraine/order/placements/dynamic/rows/warehouse-ukraine/new'
   const result = await apiRequest<unknown>(endpoint, {
     method: 'POST',
     body: row,
@@ -73,7 +84,10 @@ export async function createProductIncomeFromDynamicPlacements(
   fromDate: string,
   storageNetId: string,
 ): Promise<PlacementSupplyOrder> {
-  const result = await apiRequest<unknown>('/products/incomes/new/supply/ukraine/dynamic', {
+  const endpoint = order.IsPlaced
+    ? '/products/incomes/warehouse-ukraine/dynamic/post'
+    : '/products/incomes/warehouse-ukraine/dynamic/capitalize'
+  const result = await apiRequest<unknown>(endpoint, {
     method: 'POST',
     query: { fromDate, storageNetId },
     body: order,

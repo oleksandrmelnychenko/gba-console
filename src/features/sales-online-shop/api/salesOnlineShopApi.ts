@@ -11,7 +11,7 @@ export async function getSalesOnlineShop(
   filters: SalesOnlineShopFilters,
   signal?: AbortSignal,
 ): Promise<SalesOnlineShopSale[]> {
-  const result = await apiRequest<unknown>('/sales/all/filtered', {
+  const result = await apiRequest<unknown>('/sales/online-shop/registry', {
     signal,
     query: {
       fastEcommerce: true,

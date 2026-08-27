@@ -18,6 +18,10 @@ const apiMocks = vi.hoisted(() => ({
   updateSupplyOrderUkraineDeliveryExpense: vi.fn(),
 }))
 
+vi.mock('../../auth/useAuth', () => ({
+  useAuth: () => ({ hasPermission: () => true }),
+}))
+
 vi.mock('@mantine/notifications', () => ({
   notifications: { show: vi.fn() },
 }))
@@ -73,7 +77,7 @@ function createRow(
 
 function renderModal(row: SupplyUkraineOrderRow, onSaved = vi.fn()) {
   render(
-    <MantineProvider>
+    <MantineProvider env="test" theme={{ respectReducedMotion: true }}>
       <I18nProvider>
         <OfficialCostsModal row={row} onClose={() => undefined} onSaved={onSaved} />
       </I18nProvider>

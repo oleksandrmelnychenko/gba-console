@@ -60,6 +60,7 @@ describe('PaymentAccount transfer and exchange inputs', () => {
     renderModal(
       <PaymentAccountTransferModal
         account={account}
+        canCreate
         opened
         onClose={vi.fn()}
         onMutationComplete={vi.fn().mockResolvedValue(undefined)}
@@ -86,6 +87,7 @@ describe('PaymentAccount transfer and exchange inputs', () => {
     renderModal(
       <PaymentAccountExchangeModal
         account={account}
+        canCreate
         opened
         onClose={vi.fn()}
         onMutationComplete={vi.fn().mockResolvedValue(undefined)}

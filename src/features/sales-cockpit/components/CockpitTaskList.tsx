@@ -6,6 +6,11 @@ import { CockpitTaskSkeleton } from './CockpitTaskSkeleton'
 import { TaskCard } from './TaskCard'
 
 type CockpitTaskListProps = {
+  canAddNote: boolean
+  canComplete: boolean
+  canDismiss: boolean
+  canSnooze: boolean
+  canTakeInProgress: boolean
   isLoading: boolean
   pendingTaskKey: string | null
   tasks: CockpitTask[]
@@ -18,6 +23,11 @@ type CockpitTaskListProps = {
 }
 
 export function CockpitTaskList({
+  canAddNote,
+  canComplete,
+  canDismiss,
+  canSnooze,
+  canTakeInProgress,
   isLoading,
   pendingTaskKey,
   tasks,
@@ -60,6 +70,11 @@ export function CockpitTaskList({
           <Stack gap="sm">
             {tasks.map((task) => (
               <TaskCard
+                canAddNote={canAddNote}
+                canComplete={canComplete}
+                canDismiss={canDismiss}
+                canSnooze={canSnooze}
+                canTakeInProgress={canTakeInProgress}
                 key={task.task_key}
                 pending={pendingTaskKey === task.task_key}
                 task={task}

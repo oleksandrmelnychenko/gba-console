@@ -16,6 +16,8 @@ import { CircleAlert, RefreshCw, RotateCcw } from 'lucide-react'
 import { type FormEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
+import { PermissionKeys } from '../../../shared/auth/permissionKeys'
+import { usePermissions } from '../../auth/usePermissions'
 import { getDocumentHref } from '../../../shared/url/getDocumentHref'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
@@ -111,6 +113,25 @@ const EMPTY_ORGANIZATION_SEARCH_STATE: OrganizationSearchState = {
 }
 
 export function OrganisationServicesPage() {
+  const { t } = useI18n()
+  const { can, isLoading } = usePermissions()
+
+  if (isLoading) {
+    return <Text c="dimmed">{t('Завантаження')}</Text>
+  }
+
+  if (!can(PermissionKeys.SystemPages.ServiceOrganisations.View)) {
+    return (
+      <Alert color="red" icon={<CircleAlert size={18} />} title={t('Доступ заборонено')} variant="light">
+        {t('Недостатньо прав для перегляду організацій послуг')}
+      </Alert>
+    )
+  }
+
+  return <OrganisationServicesPageContent />
+}
+
+function OrganisationServicesPageContent() {
   const model = useOrganisationServicesPageModel()
 
   return <OrganisationServicesPageView model={model} />

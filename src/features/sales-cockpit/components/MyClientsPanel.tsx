@@ -21,6 +21,7 @@ import { CircleAlert, Link as LinkIcon, RefreshCw, Search, ShoppingCart } from '
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { AiFeatureBadge } from '../../../shared/ai/AiFeatureBadge'
+import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
@@ -28,6 +29,7 @@ import type { DataTableColumn } from '../../../shared/ui/data-table/types'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { TableRowAction } from '../../../shared/ui/table-row-action'
 import { useAuth } from '../../auth/useAuth'
+import { usePermissions } from '../../auth/usePermissions'
 import {
   getMostPurchasedProductsByClientId,
   sendRecommendationFeedback,
@@ -44,7 +46,6 @@ import { useOfferFromRecommendations } from '../../sales-offers/useOfferFromReco
 import type { OfferClientAgreement } from '../../sales-offers/types'
 import { NewSaleWizard, type NewSaleWizardPrefill } from '../../sales-ukraine/components/new-sale-wizard/NewSaleWizard'
 import { getWizardClientAgreements } from '../../sales-ukraine/components/new-sale-wizard/wizardClientStepApi'
-import { SALES_UKRAINE_EDIT_PERMISSION } from '../../sales-ukraine/permissions'
 import type { SalesUkraineClientAgreement, SalesUkraineProduct } from '../../sales-ukraine/types'
 import { getCockpitClients } from '../api/salesCockpitApi'
 import type { CockpitClient } from '../types'
@@ -288,6 +289,7 @@ export function MyClientsPanel() {
 function ClientRecommendationsInline({ client }: { client: CockpitClient }) {
   const { t } = useI18n()
   const { hasPermission } = useAuth()
+  const { can } = usePermissions()
   const [state, setState] = useState<ClientRecommendationsState>({
     agreement: null,
     error: null,
@@ -300,7 +302,9 @@ function ClientRecommendationsInline({ client }: { client: CockpitClient }) {
   const { clearCreatedOffer, createdOffer, createOfferFromSelection, isCreatingOffer } =
     useOfferFromRecommendations()
 
-  const canCreateSale = hasPermission(SALES_UKRAINE_EDIT_PERMISSION)
+  const canCreateSale = hasPermission(PermissionKeys.SalesUkraine.Sale.Create)
+  const canCreateOffer = can(PermissionKeys.SalesUkraineOffers.Offer.Create)
+  const canExcludeProduct = can(PermissionKeys.Clients.Recommendations.ExcludeProduct)
   const clientNetId = client.client_net_uid
   const isVatSale = Boolean(state.agreement?.Agreement?.WithVATAccounting)
 
@@ -384,7 +388,7 @@ function ClientRecommendationsInline({ client }: { client: CockpitClient }) {
       : ''
 
   async function handleCreateOffer() {
-    if (!state.agreement || chosen.length === 0) {
+    if (!can(PermissionKeys.SalesUkraineOffers.Offer.Create) || !state.agreement || chosen.length === 0) {
       return
     }
 
@@ -413,7 +417,7 @@ function ClientRecommendationsInline({ client }: { client: CockpitClient }) {
   }
 
   async function handleExcludeProduct(product: RecommendationProduct, index: number) {
-    if (!(product.Id ?? 0)) {
+    if (!can(PermissionKeys.Clients.Recommendations.ExcludeProduct) || !(product.Id ?? 0)) {
       return
     }
 
@@ -478,20 +482,22 @@ function ClientRecommendationsInline({ client }: { client: CockpitClient }) {
                   </span>
                 </Tooltip>
               )}
-              <Tooltip disabled={!offerDisabledReason} label={offerDisabledReason} withArrow>
-                <span>
-                  <Button
-                    disabled={Boolean(offerDisabledReason)}
-                    leftSection={<LinkIcon size={14} />}
-                    loading={isCreatingOffer}
-                    size="xs"
-                    variant="light"
-                    onClick={handleCreateOffer}
-                  >
-                    {chosen.length > 0 ? `${t('Створити оферту')} (${chosen.length})` : t('Створити оферту')}
-                  </Button>
-                </span>
-              </Tooltip>
+              {canCreateOffer && (
+                <Tooltip disabled={!offerDisabledReason} label={offerDisabledReason} withArrow>
+                  <span>
+                    <Button
+                      disabled={Boolean(offerDisabledReason)}
+                      leftSection={<LinkIcon size={14} />}
+                      loading={isCreatingOffer}
+                      size="xs"
+                      variant="light"
+                      onClick={handleCreateOffer}
+                    >
+                      {chosen.length > 0 ? `${t('Створити оферту')} (${chosen.length})` : t('Створити оферту')}
+                    </Button>
+                  </span>
+                </Tooltip>
+              )}
               <Tooltip label={t('Термін дії оферти')} withArrow>
                 <Select
                   allowDeselect={false}
@@ -561,12 +567,14 @@ function ClientRecommendationsInline({ client }: { client: CockpitClient }) {
                       )}
                     </Table.Td>
                     <Table.Td w={36}>
-                      <TableRowAction
-                        action="cancel"
-                        label={t('Не пропонувати цей товар клієнту')}
-                        tone="neutral"
-                        onClick={() => handleExcludeProduct(product, index)}
-                      />
+                      {canExcludeProduct && (
+                        <TableRowAction
+                          action="cancel"
+                          label={t('Не пропонувати цей товар клієнту')}
+                          tone="neutral"
+                          onClick={() => handleExcludeProduct(product, index)}
+                        />
+                      )}
                     </Table.Td>
                   </Table.Tr>
                 )
@@ -580,7 +588,9 @@ function ClientRecommendationsInline({ client }: { client: CockpitClient }) {
 
       {canCreateSale && (
         <NewSaleWizard
+          canConvertMergedToBill={hasPermission(PermissionKeys.SalesUkraine.Sale.ConvertMergedToBill)}
           opened={Boolean(wizardPrefill)}
+          permissionScopedSalesUkraineApi
           prefill={wizardPrefill}
           onClose={() => setWizardPrefill(null)}
           onCreated={() => setWizardPrefill(null)}

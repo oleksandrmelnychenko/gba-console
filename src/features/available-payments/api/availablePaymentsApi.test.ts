@@ -2,8 +2,11 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { apiRequest } from '../../../shared/api/apiClient'
 import {
   createAvailablePaymentOutcome,
+  createAvailablePaymentMovement,
+  getAvailablePaymentAccountingCashFlow,
   getAvailablePaymentExchangeRate,
   getAvailablePaymentMovements,
+  getAvailablePaymentTaskByNetId,
   getAvailablePaymentsOrganizations,
   getGroupedPaymentTasks,
   mergeAvailablePaymentTasks,
@@ -41,7 +44,7 @@ describe('availablePaymentsApi', () => {
       typePaymentTask: AccountingTypeValue.All,
     })
 
-    expect(apiRequestMock).toHaveBeenCalledWith('/payments/tasks/grouped/all/filtered', {
+    expect(apiRequestMock).toHaveBeenCalledWith('/payments/tasks/grouped/available-payments/all/filtered', {
       query: {
         from: '2026-07-01',
         limit: 10,
@@ -70,7 +73,7 @@ describe('availablePaymentsApi', () => {
       typePaymentTask: AccountingTypeValue.Accounting,
     })
 
-    expect(apiRequestMock).toHaveBeenCalledWith('/payments/tasks/grouped/all/available/filtered', {
+    expect(apiRequestMock).toHaveBeenCalledWith('/payments/tasks/grouped/available-payments/all/available/filtered', {
       query: {
         from: '2026-07-01',
         limit: 20,
@@ -119,7 +122,7 @@ describe('availablePaymentsApi', () => {
     expect(apiRequestMock).toHaveBeenNthCalledWith(1, '/organizations/all')
     expect(apiRequestMock).toHaveBeenNthCalledWith(
       2,
-      '/payments/registers/search',
+      '/payments/registers/available-payments/search',
       {
         query: {
           value: ' банк ',
@@ -128,16 +131,58 @@ describe('availablePaymentsApi', () => {
     )
     expect(apiRequestMock).toHaveBeenNthCalledWith(
       3,
-      '/payments/movements/all',
+      '/payments/movements/available-payments/all',
     )
     expect(apiRequestMock).toHaveBeenNthCalledWith(
       4,
-      '/payments/movements/all/search',
+      '/payments/movements/available-payments/all/search',
       {
         query: {
           value: 'інвойс',
         },
       },
+    )
+  })
+
+  it('uses exact scoped routes for article creation, cash flow, and task refresh', async () => {
+    apiRequestMock
+      .mockResolvedValueOnce({ Id: 3, OperationName: 'Оплата' })
+      .mockResolvedValueOnce({ AccountingCashFlowHeadItems: [] })
+      .mockResolvedValueOnce(createPersistedTask())
+
+    await createAvailablePaymentMovement('Оплата')
+    await getAvailablePaymentAccountingCashFlow({
+      from: '2026-07-01',
+      netId: 'agreement-1',
+      to: '2026-07-31',
+      typePaymentTask: AccountingTypeValue.Accounting,
+    })
+    await getAvailablePaymentTaskByNetId('task-1')
+
+    expect(apiRequestMock).toHaveBeenNthCalledWith(
+      1,
+      '/payments/movements/accounting/new',
+      {
+        body: { OperationName: 'Оплата' },
+        method: 'POST',
+      },
+    )
+    expect(apiRequestMock).toHaveBeenNthCalledWith(
+      2,
+      '/accounting/cashflow/available-payments/get/filtered',
+      {
+        query: {
+          from: '2026-07-01',
+          netId: 'agreement-1',
+          to: '2026-07-31',
+          typePaymentTask: AccountingTypeValue.Accounting,
+        },
+      },
+    )
+    expect(apiRequestMock).toHaveBeenNthCalledWith(
+      3,
+      '/payments/tasks/available-payments/get',
+      { query: { netId: 'task-1' } },
     )
   })
 
@@ -201,6 +246,9 @@ describe('availablePaymentsApi', () => {
     })
     expect(payload.SupplyPaymentTaskDocuments).toHaveLength(2)
     expect(body.getAll('documents')).toEqual([upload])
+    expect(apiRequestMock.mock.calls[0]?.[0]).toBe(
+      '/payments/tasks/available-payments/available/set',
+    )
     expect(apiRequestMock.mock.calls[0]?.[1]).toMatchObject({
       dedupe: false,
       headers: {
@@ -222,7 +270,7 @@ describe('availablePaymentsApi', () => {
 
     await mergeAvailablePaymentTasks([firstTask, secondTask])
 
-    expect(apiRequestMock).toHaveBeenCalledWith('/payments/tasks/merge', {
+    expect(apiRequestMock).toHaveBeenCalledWith('/payments/tasks/available-payments/merge', {
       body: [
         {
           Id: 42,
@@ -333,7 +381,7 @@ describe('availablePaymentsApi', () => {
         }),
       ])
       expect(apiRequestMock).toHaveBeenLastCalledWith(
-        '/payments/orders/outcome/new/supplies',
+        '/payments/orders/outcome/available-payments/new/supplies',
         {
           body,
           dedupe: false,

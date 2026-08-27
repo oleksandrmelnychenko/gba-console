@@ -4,7 +4,9 @@ import { CalendarClock } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { formatLocalDate } from '../../../../shared/date/dateTime'
 import { useI18n } from '../../../../shared/i18n/useI18n'
+import { PermissionKeys } from '../../../../shared/auth/permissionKeys'
 import { AppModal } from '../../../../shared/ui/AppModal'
+import { usePermissions } from '../../../auth/usePermissions'
 import { usePersistentCreateMutation } from '../../persistentCreateMutation'
 import type { SalesUkraineProduct } from '../../types'
 import { createFutureReservation, getNearestSupplyOrder, type WizardNearestSupplyOrder } from './newSaleWizardApi'
@@ -21,10 +23,12 @@ export function FutureReservationModal({
   product: SalesUkraineProduct | null
 }) {
   const { t } = useI18n()
+  const { can } = usePermissions()
+  const canCreate = can(PermissionKeys.SalesUkraine.Sale.CreateFutureReservation)
 
   return (
-    <AppModal centered opened={Boolean(product)} size="sm" title={t('Резервування під поставку')} onClose={onClose}>
-      {product && (
+    <AppModal centered opened={Boolean(product) && canCreate} size="sm" title={t('Резервування під поставку')} onClose={onClose}>
+      {product && canCreate && (
         <FutureReservationForm
           key={product.NetUid || product.Id}
           clientNetId={clientNetId}
@@ -49,6 +53,8 @@ function FutureReservationForm({
   product: SalesUkraineProduct
 }) {
   const { t } = useI18n()
+  const { can } = usePermissions()
+  const canCreate = can(PermissionKeys.SalesUkraine.Sale.CreateFutureReservation)
   const [order, setOrder] = useState<WizardNearestSupplyOrder | null>(null)
   const [isLoading, setLoading] = useState(() => Boolean(product.NetUid))
   const [count, setCount] = useState<number | string>(1)
@@ -61,7 +67,7 @@ function FutureReservationForm({
   useEffect(() => {
     const netId = product.NetUid
 
-    if (!netId) {
+    if (!canCreate || !netId) {
       return
     }
 
@@ -92,16 +98,16 @@ function FutureReservationForm({
     return () => {
       cancelled = true
     }
-  }, [product.NetUid])
+  }, [canCreate, product.NetUid])
 
   const numericCount = typeof count === 'number' ? count : Number(String(count).replace(',', '.'))
   const maxCount = typeof order?.Qty === 'number' && Number.isFinite(order.Qty) ? order.Qty : null
   const isValid = Number.isFinite(numericCount) && numericCount > 0 && (maxCount === null || numericCount <= maxCount)
   const supplyOrderNetId = order?.NetUID || order?.NetUid
-  const canReserve = Boolean(clientNetId && product.NetUid && supplyOrderNetId && isValid)
+  const canReserve = Boolean(canCreate && clientNetId && product.NetUid && supplyOrderNetId && isValid)
 
   async function reserve() {
-    if (!clientNetId || !product.NetUid || !supplyOrderNetId || !isValid) {
+    if (!canCreate || !clientNetId || !product.NetUid || !supplyOrderNetId || !isValid) {
       return
     }
 

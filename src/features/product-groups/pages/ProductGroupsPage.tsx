@@ -24,7 +24,9 @@ import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { TableRowAction } from '../../../shared/ui/table-row-action'
 import { PermissionGate } from '../../auth/components/PermissionGate'
-import { createProductGroup, getProductGroups, getRootProductGroups } from '../api/productGroupsApi'
+import { usePermissions } from '../../auth/usePermissions'
+import { PermissionKeys } from '../../../shared/auth/permissionKeys'
+import { createProductGroup, getProductGroupCreateRootGroups, getProductGroups } from '../api/productGroupsApi'
 import { PRODUCT_GROUPS_ADD_PERMISSION } from '../permissions'
 import { ProductGroupForm } from '../components/ProductGroupForm'
 import type { ProductGroup, ProductSubGroup } from '../types'
@@ -53,7 +55,28 @@ const PRODUCT_GROUP_SEARCH_DEBOUNCE_MS = 300
 type ProductGroupFieldChange = <TKey extends keyof ProductGroup>(key: TKey, value: ProductGroup[TKey]) => void
 
 export function ProductGroupsPage() {
+  return (
+    <PermissionGate permissionKey={PermissionKeys.ProductGroups.Page.View} fallback={<ProductGroupsPermissionDenied />}>
+      <ProductGroupsPageContent />
+    </PermissionGate>
+  )
+}
+
+function ProductGroupsPermissionDenied() {
   const { t } = useI18n()
+
+  return (
+    <Alert color="red" icon={<CircleAlert size={18} />} title={t('Доступ заборонено')} variant="light">
+      {t('У вашої ролі немає права переглядати товарні групи.')}
+    </Alert>
+  )
+}
+
+function ProductGroupsPageContent() {
+  const { t } = useI18n()
+  const { can } = usePermissions()
+  const canCreate = can(PermissionKeys.ProductGroups.Group.Create)
+  const canOpenDetails = can(PermissionKeys.ProductGroups.Group.OpenDetails)
   const navigate = useNavigate()
   const location = useLocation()
   const [productGroups, setProductGroups] = useValueState<ProductGroup[]>([])
@@ -72,7 +95,7 @@ export function ProductGroupsPage() {
   const [tableToolbarSlot, setTableToolbarSlot] = useState<HTMLDivElement | null>(null)
   const openProductGroup = useCallback(
     (productGroup: ProductGroup) => {
-      if (!productGroup.NetUid) {
+      if (!canOpenDetails || !productGroup.NetUid) {
         return
       }
 
@@ -84,9 +107,9 @@ export function ProductGroupsPage() {
         },
       })
     },
-    [location, navigate],
+    [canOpenDetails, location, navigate],
   )
-  const columns = useProductGroupColumns(openProductGroup)
+  const columns = useProductGroupColumns(openProductGroup, canOpenDetails)
 
   useEffect(() => {
     let cancelled = false
@@ -132,7 +155,7 @@ export function ProductGroupsPage() {
       setCreateError(null)
 
       try {
-        const nextRootGroups = await getRootProductGroups()
+        const nextRootGroups = await getProductGroupCreateRootGroups()
 
         if (!cancelled) {
           setRootGroups(nextRootGroups)
@@ -181,6 +204,10 @@ export function ProductGroupsPage() {
   async function handleCreate(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
 
+    if (!canCreate) {
+      return
+    }
+
     const selectedRootGroup = rootGroups.find((rootGroup) => rootGroup.NetUid === selectedRootNetUid) || null
     const rootProductGroups: ProductSubGroup[] = selectedRootGroup ? [{ RootProductGroup: selectedRootGroup }] : []
     const payload = normalizeProductGroupForSave(createDraft, rootProductGroups)
@@ -203,7 +230,7 @@ export function ProductGroupsPage() {
       })
       closeCreateModal()
 
-      if (createdProductGroup?.NetUid) {
+      if (canOpenDetails && createdProductGroup?.NetUid) {
         navigate(`/product-groups/${createdProductGroup.NetUid}`, {
           state: {
             backgroundLocation: location,
@@ -302,7 +329,7 @@ export function ProductGroupsPage() {
             showLayoutControls
             tableId="product-groups"
             toolbarPortalTarget={tableToolbarSlot}
-            onRowClick={openProductGroup}
+            onRowClick={canOpenDetails ? openProductGroup : undefined}
           />
         </div>
       </Card>
@@ -324,7 +351,10 @@ export function ProductGroupsPage() {
   )
 }
 
-function useProductGroupColumns(openProductGroup: (productGroup: ProductGroup) => void) {
+function useProductGroupColumns(
+  openProductGroup: (productGroup: ProductGroup) => void,
+  canOpenDetails: boolean,
+) {
   const { t } = useI18n()
 
   return useMemo<DataTableColumn<ProductGroup>[]>(
@@ -420,7 +450,7 @@ function useProductGroupColumns(openProductGroup: (productGroup: ProductGroup) =
         enableReorder: false,
         enableResizing: false,
         enableSorting: false,
-        cell: (productGroup) => (
+        cell: (productGroup) => canOpenDetails ? (
           <Box onClick={(event) => event.stopPropagation()}>
             <TableRowAction
               action="open"
@@ -429,10 +459,10 @@ function useProductGroupColumns(openProductGroup: (productGroup: ProductGroup) =
               onClick={() => openProductGroup(productGroup)}
             />
           </Box>
-        ),
+        ) : null,
       },
     ],
-    [openProductGroup, t],
+    [canOpenDetails, openProductGroup, t],
   )
 }
 

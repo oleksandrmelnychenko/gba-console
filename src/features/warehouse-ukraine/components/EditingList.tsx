@@ -9,7 +9,7 @@ import { useI18n } from '../../../shared/i18n/useI18n'
 import { translate } from '../../../shared/i18n/translate'
 import type { TranslateFunction } from '../../../shared/i18n/types'
 import { SaleAuditDetail } from '../../../shared/sale-audit/SaleAuditDetail'
-import { getSaleStatisticBySaleId } from '../../../shared/sale-audit/saleAuditApi'
+import { getWarehouseUkraineSaleAudit } from '../../../shared/sale-audit/saleAuditApi'
 import type { SaleAuditStatistic } from '../../../shared/sale-audit/saleAuditTypes'
 import { AppModal } from '../../../shared/ui/AppModal'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
@@ -32,6 +32,7 @@ type FilterDraft = {
 }
 
 type EditingListProps = {
+  canProcess: boolean
   tableId: string
   kind: 'act' | 'carrier'
   layoutVersion: string
@@ -50,7 +51,7 @@ type EditingListProps = {
   onProcessed?: () => void
 }
 
-export function EditingList({ kind, layoutVersion, loader, onLoaded, onProcessed, processor, tableId }: EditingListProps) {
+export function EditingList({ canProcess, kind, layoutVersion, loader, onLoaded, onProcessed, processor, tableId }: EditingListProps) {
   const { t } = useI18n()
   const [tableToolbarSlot, setTableToolbarSlot] = useState<HTMLDivElement | null>(null)
   // Акти редагування — рідкісні документи: тижневе вікно зазвичай порожнє, хоча
@@ -143,6 +144,7 @@ export function EditingList({ kind, layoutVersion, loader, onLoaded, onProcessed
   }, [activeFilters, filterError, loader, onLoaded, page, pageOffset, pageSize, reloadKey, setError, setItems, setLoading, setPage, setTotalQty, t])
 
   const columns = useEditingColumns({
+    canProcess,
     indexMap: itemIndexMap,
     kind,
     onProcess: openProcessConfirm,
@@ -166,6 +168,10 @@ export function EditingList({ kind, layoutVersion, loader, onLoaded, onProcessed
   }
 
   function openProcessConfirm(item: EditingActItem) {
+    if (!canProcess) {
+      return
+    }
+
     // Legacy only enforced the printed guard on the carrier tab; the act tab could open the audit
     // for a non-printed invoice.
     if (kind === 'carrier' && !item.Sale?.IsPrinted) {
@@ -196,7 +202,7 @@ export function EditingList({ kind, layoutVersion, loader, onLoaded, onProcessed
 
     void (async () => {
       try {
-        const statistic = await getSaleStatisticBySaleId(saleNetId)
+        const statistic = await getWarehouseUkraineSaleAudit(saleNetId)
 
         if (auditRequestRef.current === requestId) {
           setAuditStatistic(statistic)
@@ -222,7 +228,7 @@ export function EditingList({ kind, layoutVersion, loader, onLoaded, onProcessed
   }
 
   async function processConfirmedItem() {
-    if (processingRef.current) {
+    if (!canProcess || processingRef.current) {
       return
     }
 
@@ -373,12 +379,13 @@ export function EditingList({ kind, layoutVersion, loader, onLoaded, onProcessed
 }
 
 type EditingColumnsModel = {
+  canProcess: boolean
   indexMap: Map<EditingActItem, number>
   kind: 'act' | 'carrier'
   onProcess: (item: EditingActItem) => void
 }
 
-function useEditingColumns({ indexMap, kind, onProcess }: EditingColumnsModel) {
+function useEditingColumns({ canProcess, indexMap, kind, onProcess }: EditingColumnsModel) {
   const { t } = useI18n()
 
   return useMemo<DataTableColumn<EditingActItem>[]>(
@@ -497,7 +504,7 @@ function useEditingColumns({ indexMap, kind, onProcess }: EditingColumnsModel) {
         enableSorting: false,
         accessor: (item) => canProcessItem(item),
         cell: (item) =>
-          canProcessItem(item) ? (
+          canProcess && canProcessItem(item) ? (
             <TableRowAction
               action="confirm"
               label={kind === 'carrier' ? t('Підтвердити зміну перевізника') : t('Підтвердити обробку')}
@@ -508,7 +515,7 @@ function useEditingColumns({ indexMap, kind, onProcess }: EditingColumnsModel) {
           ),
       },
     ],
-    [indexMap, kind, onProcess, t],
+    [canProcess, indexMap, kind, onProcess, t],
   )
 }
 

@@ -29,7 +29,15 @@ export function getPublicOfferLink(netUid: string): string {
 }
 
 export async function getOffers(filters: OffersFilters, onlyMine = false): Promise<ClientShoppingCart[]> {
-  const result = await apiRequest<unknown>('/sales/offers/all/filtered', {
+  return getOffersAt('/sales/offers/all/filtered', filters, onlyMine)
+}
+
+export async function getCockpitOffers(filters: OffersFilters): Promise<ClientShoppingCart[]> {
+  return getOffersAt('/sales/offers/cockpit/filtered', filters, false)
+}
+
+async function getOffersAt(path: string, filters: OffersFilters, onlyMine: boolean): Promise<ClientShoppingCart[]> {
+  const result = await apiRequest<unknown>(path, {
     query: {
       from: formatDateForQuery(filters.from),
       to: formatDateForQuery(filters.to),

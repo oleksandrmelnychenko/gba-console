@@ -5,10 +5,13 @@ import {
   type AccountingOperationId,
   type AccountingPaymentRegisterType,
 } from '../accounting/accountingOperationCatalog'
+import type { PermissionKey } from '../../shared/auth/permissionKeys'
+import { getIncomeCreatePermissionByOperationId } from './permissions'
 
 export type IncomeCreateMenuItem = {
   label: string
   path: string
+  permissionKey: PermissionKey
 }
 
 type Translate = (value: string) => string
@@ -53,5 +56,6 @@ function buildMenuItem(
   return {
     label: t(getAccountingOperationLabel(operationId, registerType)),
     path: buildAccountingOperationPath(operationId, registerType),
+    permissionKey: getIncomeCreatePermissionByOperationId(operationId),
   }
 }

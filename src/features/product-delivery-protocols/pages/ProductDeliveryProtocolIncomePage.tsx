@@ -17,6 +17,7 @@ import { BetweenVerticalEnd, CircleAlert, FileText, Trash2 } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { formatLocalDate, formatLocalInputDateTime } from '../../../shared/date/dateTime'
+import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import type { ExportDocument } from '../../../shared/documents/exportDocument'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -27,10 +28,10 @@ import type { DataTableColumn } from '../../../shared/ui/data-table/types'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { DocumentExportModal } from '../../../shared/ui/document-export-modal/DocumentExportModal'
 import { useAuth } from '../../auth/useAuth'
-import { getDirectSupplyOrderById } from '../../supply-ukraine-orders/api/supplyUkraineOrdersApi'
 import { hasArrivedDeliveryProtocolForInvoice } from '../../supply-ukraine-orders/directOrderActions'
+import { getDirectSupplyOrderForProductIncome } from '../../supply-ukraine-orders/api/supplyUkraineOrdersApi'
 import type { DirectSupplyOrder } from '../../supply-ukraine-orders/types'
-import { getProtocolByNetId } from '../api/productDeliveryProtocolsApi'
+import { getProtocolForProductIncome } from '../api/productDeliveryProtocolsApi'
 import {
   addDynamicPlacementRow,
   createProductIncomeFromPackingListDynamic,
@@ -72,9 +73,6 @@ import {
 import './product-income-page.css'
 
 const DEFAULT_VAT_PERCENT = 23
-const PERMISSION_ADD_DYNAMIC_INCOME_COLUMN = 'PRODUCT_INCOME_ordersUkraineAllEdit_NewInvoiceBtn_PKEY'
-const PERMISSION_CAPITALIZE_DYNAMIC_INCOME = 'PRODUCT_INCOME_ordersUkraineAllEdit_CapitalizeBtn_PKEY'
-const PERMISSION_CARRY_OUT_DYNAMIC_INCOME = 'PRODUCT_INCOME_ordersUkraineAllEdit_CarryOutBtn_PKEY'
 const PRODUCT_INCOME_QTY_COLUMN_WIDTH = 88
 
 const dateFormatter = new Intl.DateTimeFormat('uk-UA', { dateStyle: 'short' })
@@ -230,6 +228,39 @@ type PendingDirtyAction =
 
 type ProductIncomeSource = 'delivery-protocol' | 'direct-supply-order'
 
+type ProductIncomePermissions = {
+  capitalize: string
+  downloadDocument: string
+  editPlacement: string
+  open: string
+  post: string
+  updateReadiness: string
+}
+
+const DELIVERY_PROTOCOL_INCOME_PERMISSIONS: ProductIncomePermissions = {
+  capitalize: PermissionKeys.ProductDeliveryProtocols.ProductIncome.Capitalize,
+  downloadDocument: PermissionKeys.ProductDeliveryProtocols.ProductIncome.DownloadDocument,
+  editPlacement: PermissionKeys.ProductDeliveryProtocols.ProductIncome.EditPlacement,
+  open: PermissionKeys.ProductDeliveryProtocols.ProductIncome.Open,
+  post: PermissionKeys.ProductDeliveryProtocols.ProductIncome.Post,
+  updateReadiness: PermissionKeys.ProductDeliveryProtocols.ProductIncome.UpdateReadiness,
+}
+
+const DIRECT_SUPPLY_ORDER_INCOME_PERMISSIONS: ProductIncomePermissions = {
+  capitalize: PermissionKeys.OrdersUkraine.ProductIncome.Capitalize,
+  downloadDocument: PermissionKeys.OrdersUkraine.Order.DownloadDocuments,
+  editPlacement: PermissionKeys.OrdersUkraine.ProductIncome.Add,
+  open: PermissionKeys.OrdersUkraine.Order.OpenProductIncome,
+  post: PermissionKeys.OrdersUkraine.ProductIncome.Post,
+  updateReadiness: PermissionKeys.OrdersUkraine.ProductIncome.Add,
+}
+
+function getProductIncomePermissions(source: ProductIncomeSource): ProductIncomePermissions {
+  return source === 'delivery-protocol'
+    ? DELIVERY_PROTOCOL_INCOME_PERMISSIONS
+    : DIRECT_SUPPLY_ORDER_INCOME_PERMISSIONS
+}
+
 type DownloadState = {
   document: ExportDocument | null
   error: string | null
@@ -285,8 +316,10 @@ function isPlacementLocked(invoice: IncomeSupplyInvoice | null, packingList: Inc
 function useProtocolIncomeModel(source: ProductIncomeSource, sourceId?: string) {
   const { t } = useI18n()
   const navigate = useNavigate()
+  const { hasPermission } = useAuth()
   const { id: routeId } = useParams<{ id: string }>()
   const id = sourceId || routeId
+  const permissions = getProductIncomePermissions(source)
 
   const [protocol, setProtocol] = useValueState<IncomeProtocol | null>(null)
   const [storages, setStorages] = useValueState<IncomeStorage[]>([])
@@ -326,11 +359,11 @@ function useProtocolIncomeModel(source: ProductIncomeSource, sourceId?: string) 
       try {
         const [loadedSource, loadedProductIncome] = source === 'direct-supply-order'
           ? await Promise.all([
-              getDirectSupplyOrderById(id as string).then(normalizeDirectSupplyOrderIncomeSource),
+              getDirectSupplyOrderForProductIncome(id as string).then(normalizeDirectSupplyOrderIncomeSource),
               getProductIncomeBySupplyOrderNetId(id as string),
             ])
           : await Promise.all([
-              getProtocolByNetId(id as string).then(normalizeProtocolIncomeSource),
+              getProtocolForProductIncome(id as string).then(normalizeProtocolIncomeSource),
               getProductIncomeByDeliveryProtocolNetId(id as string),
             ])
 
@@ -339,7 +372,7 @@ function useProtocolIncomeModel(source: ProductIncomeSource, sourceId?: string) 
         }
 
         const organizationNetId = loadedSource.Organization?.NetUid
-        const loadedStorages = organizationNetId ? await getOrganizationStorages(organizationNetId) : []
+        const loadedStorages = organizationNetId ? await getOrganizationStorages(source, organizationNetId) : []
 
         if (!cancelled) {
           setProtocol(loadedSource)
@@ -420,7 +453,7 @@ function useProtocolIncomeModel(source: ProductIncomeSource, sourceId?: string) 
 
     async function loadInvoice(netId: string) {
       try {
-        const loadedInvoice = await getSupplyOrderInvoiceItems(netId)
+        const loadedInvoice = await getSupplyOrderInvoiceItems(source, netId)
 
         if (cancelled || packingListRequestRef.current !== invoiceRequestId) {
           return
@@ -433,7 +466,7 @@ function useProtocolIncomeModel(source: ProductIncomeSource, sourceId?: string) 
         if (selectedPackList?.NetUid) {
           const requestId = packingListRequestRef.current + 1
           packingListRequestRef.current = requestId
-          const loadedPackList = await getPackingListSpecificationProducts(selectedPackList.NetUid)
+          const loadedPackList = await getPackingListSpecificationProducts(source, selectedPackList.NetUid)
 
           if (!cancelled && packingListRequestRef.current === requestId) {
             applyLoadedPackingList({
@@ -461,6 +494,7 @@ function useProtocolIncomeModel(source: ProductIncomeSource, sourceId?: string) 
     failInvoiceLoad,
     reloadKey,
     selectedInvoiceId,
+    source,
   ])
 
   const selectPackingList = useCallback(
@@ -470,7 +504,7 @@ function useProtocolIncomeModel(source: ProductIncomeSource, sourceId?: string) 
       setPackingList(null)
 
       try {
-        const loadedPackList = await getPackingListSpecificationProducts(netId)
+        const loadedPackList = await getPackingListSpecificationProducts(source, netId)
         if (packingListRequestRef.current === requestId) {
           const columns =
             invoice?.PackingLists.find((list) => list.NetUid === netId)?.DynamicProductPlacementColumns || []
@@ -483,7 +517,7 @@ function useProtocolIncomeModel(source: ProductIncomeSource, sourceId?: string) 
         }
       }
     },
-    [applyLoadedPackingList, invoice, setDirty, setError, setPackingList, t],
+    [applyLoadedPackingList, invoice, setDirty, setError, setPackingList, source, t],
   )
 
   const gridRows = useMemo(() => (packingList ? buildGridRows(packingList) : []), [packingList])
@@ -608,7 +642,7 @@ function useProtocolIncomeModel(source: ProductIncomeSource, sourceId?: string) 
 
   const handleOpenPlacements = useCallback(
     (gridRow: IncomeGridRow, columnId: string, row: DynamicProductPlacementRow) => {
-      if (!canUseIncome || isSaving) {
+      if (!hasPermission(permissions.editPlacement) || !canUseIncome || isSaving) {
         return
       }
 
@@ -626,12 +660,12 @@ function useProtocolIncomeModel(source: ProductIncomeSource, sourceId?: string) 
 
       setDrawer({ item: gridRow.item, row, columnId, maxQty })
     },
-    [canUseIncome, invoice, isSaving, packingList, setDrawer, t],
+    [canUseIncome, hasPermission, invoice, isSaving, packingList, permissions.editPlacement, setDrawer, t],
   )
 
   const persistPackingList = useCallback(
     async (nextPackingList: IncomePackingList) => {
-      if (!canUseIncome || !selectedInvoiceId || !invoice || isSaving) {
+      if (!hasPermission(permissions.editPlacement) || !canUseIncome || !selectedInvoiceId || !invoice || isSaving) {
         return
       }
 
@@ -649,15 +683,15 @@ function useProtocolIncomeModel(source: ProductIncomeSource, sourceId?: string) 
           nextPackingList,
         )
 
-        await updatePackingListInInvoice(invoicePayload)
+        await updatePackingListInInvoice(source, invoicePayload)
 
         // The update response omits DynamicProductPlacementColumns (the backend doesn't
         // re-hydrate them), so re-fetch: the invoice endpoint returns the persisted columns
         // (incl. the freshly-added one), the specification endpoint returns the full grid
         // items. Graft the columns onto the items so the new column actually appears.
         const [refreshedInvoice, refreshedPackList] = await Promise.all([
-          getSupplyOrderInvoiceItems(selectedInvoiceId),
-          getPackingListSpecificationProducts(nextPackingList.NetUid ?? ''),
+          getSupplyOrderInvoiceItems(source, selectedInvoiceId),
+          getPackingListSpecificationProducts(source, nextPackingList.NetUid ?? ''),
         ])
 
         setInvoice(refreshedInvoice)
@@ -674,7 +708,10 @@ function useProtocolIncomeModel(source: ProductIncomeSource, sourceId?: string) 
         setSaving(false)
       }
     },
-    [applyLoadedPackingList, canUseIncome, invoice, isSaving, selectedInvoiceId, setDirty, setError, setInvoice, setSaving, t],
+    [
+      applyLoadedPackingList, canUseIncome, hasPermission, invoice, isSaving, permissions.editPlacement,
+      selectedInvoiceId, setDirty, setError, setInvoice, setSaving, source, t,
+    ],
   )
 
   const handleSave = useCallback(() => {
@@ -685,7 +722,7 @@ function useProtocolIncomeModel(source: ProductIncomeSource, sourceId?: string) 
 
   const handleApplyPlacements = useCallback(
     async (placements: DynamicProductPlacement[]) => {
-      if (!canUseIncome || isSaving || !drawer || !packingList) {
+      if (!hasPermission(permissions.editPlacement) || !canUseIncome || isSaving || !drawer || !packingList) {
         return
       }
 
@@ -724,8 +761,8 @@ function useProtocolIncomeModel(source: ProductIncomeSource, sourceId?: string) 
         }
 
         const savedRow = row.Id && row.Id > 0
-          ? await updateDynamicPlacementRow(payload)
-          : await addDynamicPlacementRow(payload)
+          ? await updateDynamicPlacementRow(source, payload)
+          : await addDynamicPlacementRow(source, payload)
 
         const nextRow = mergeSavedPlacementRow(payload, savedRow)
 
@@ -759,7 +796,10 @@ function useProtocolIncomeModel(source: ProductIncomeSource, sourceId?: string) 
         setSaving(false)
       }
     },
-    [canUseIncome, drawer, invoice, isSaving, packingList, setDrawer, setError, setPackingList, setSaving, t],
+    [
+      canUseIncome, drawer, hasPermission, invoice, isSaving, packingList, permissions.editPlacement,
+      setDrawer, setError, setPackingList, setSaving, source, t,
+    ],
   )
 
   const closePzDownload = useCallback(() => {
@@ -770,7 +810,7 @@ function useProtocolIncomeModel(source: ProductIncomeSource, sourceId?: string) 
   const handleDownloadPzDocument = useCallback(async () => {
     const invoiceNetId = invoice?.NetUid
 
-    if (!invoiceNetId) {
+    if (!hasPermission(permissions.downloadDocument) || !invoiceNetId) {
       notifications.show({ color: 'red', message: t('Виберіть накладну') })
       return
     }
@@ -785,7 +825,7 @@ function useProtocolIncomeModel(source: ProductIncomeSource, sourceId?: string) 
     })
 
     try {
-      const document = await getPzDocumentBySupplyInvoiceId(invoiceNetId)
+      const document = await getPzDocumentBySupplyInvoiceId(source, invoiceNetId)
 
       if (pzDownloadRequestRef.current === requestId) {
         setPzDownload({
@@ -805,11 +845,11 @@ function useProtocolIncomeModel(source: ProductIncomeSource, sourceId?: string) 
         })
       }
     }
-  }, [invoice?.NetUid, setPzDownload, t])
+  }, [hasPermission, invoice?.NetUid, permissions.downloadDocument, setPzDownload, source, t])
 
   const handleAddColumn = useCallback(
     (columnFromDate: string) => {
-      if (!canUseIncome || isSaving) {
+      if (!hasPermission(permissions.editPlacement) || !canUseIncome || isSaving) {
         return
       }
 
@@ -831,12 +871,16 @@ function useProtocolIncomeModel(source: ProductIncomeSource, sourceId?: string) 
         DynamicProductPlacementColumns: [...packingList.DynamicProductPlacementColumns, nextColumn],
       })
     },
-    [canUseIncome, invoice, isSaving, packingList, persistPackingList, setColumnModalOpen, t],
+    [
+      canUseIncome, hasPermission, invoice, isSaving, packingList, permissions.editPlacement,
+      persistPackingList, setColumnModalOpen, t,
+    ],
   )
 
   const confirmRemoveColumn = useCallback(() => {
     if (
-      !columnToRemove
+      !hasPermission(permissions.editPlacement)
+      || !columnToRemove
       || !canUseIncome
       || !packingList
       || isPlacementLocked(invoice, packingList)
@@ -857,13 +901,13 @@ function useProtocolIncomeModel(source: ProductIncomeSource, sourceId?: string) 
       setPackingList(nextPackingList)
     }
   }, [
-    canUseIncome, columnToRemove, invoice, isDirty, isSaving, packingList, persistPackingList,
-    setColumnToRemove, setPackingList,
+    canUseIncome, columnToRemove, hasPermission, invoice, isDirty, isSaving, packingList,
+    permissions.editPlacement, persistPackingList, setColumnToRemove, setPackingList,
   ])
 
   const handleMoveRemnants = useCallback(
     (column: DynamicProductPlacementColumn) => {
-      if (!canUseIncome || isSaving || isPlacementLocked(invoice, packingList)) {
+      if (!hasPermission(permissions.editPlacement) || !canUseIncome || isSaving || isPlacementLocked(invoice, packingList)) {
         return
       }
 
@@ -929,11 +973,21 @@ function useProtocolIncomeModel(source: ProductIncomeSource, sourceId?: string) 
 
       setDirty(true)
     },
-    [canUseIncome, invoice, isDirty, isSaving, packingList, setDirty, setPackingList, t],
+    [
+      canUseIncome, hasPermission, invoice, isDirty, isSaving, packingList, permissions.editPlacement,
+      setDirty, setPackingList, t,
+    ],
   )
 
   const handleCalculateVat = useCallback(async () => {
-    if (!canUseIncome || !packingList || !invoice || isSaving || isPlacementLocked(invoice, packingList)) {
+    if (
+      !hasPermission(permissions.editPlacement)
+      || !canUseIncome
+      || !packingList
+      || !invoice
+      || isSaving
+      || isPlacementLocked(invoice, packingList)
+    ) {
       return
     }
 
@@ -961,7 +1015,7 @@ function useProtocolIncomeModel(source: ProductIncomeSource, sourceId?: string) 
         ),
       }
 
-      const saved = await updateVatOfPackListInvoiceItems(nextInvoice)
+      const saved = await updateVatOfPackListInvoiceItems(source, nextInvoice)
       setInvoice(saved)
 
       const savedPackList = saved.PackingLists.find((list) => list.NetUid === packingList.NetUid)
@@ -974,10 +1028,19 @@ function useProtocolIncomeModel(source: ProductIncomeSource, sourceId?: string) 
     } finally {
       setSaving(false)
     }
-  }, [canUseIncome, invoice, isDirty, isSaving, packingList, selectPackingList, setError, setInvoice, setSaving, t, vatPercent])
+  }, [
+    canUseIncome, hasPermission, invoice, isDirty, isSaving, packingList, permissions.editPlacement,
+    selectPackingList, setError, setInvoice, setSaving, source, t, vatPercent,
+  ])
 
   const handleAllReadyToPlace = useCallback(async () => {
-    if (!canUseIncome || !packingList?.NetUid || isSaving || isPlacementLocked(invoice, packingList)) {
+    if (
+      !hasPermission(permissions.updateReadiness)
+      || !canUseIncome
+      || !packingList?.NetUid
+      || isSaving
+      || isPlacementLocked(invoice, packingList)
+    ) {
       return
     }
 
@@ -990,19 +1053,22 @@ function useProtocolIncomeModel(source: ProductIncomeSource, sourceId?: string) 
     setError(null)
 
     try {
-      const saved = await markAllItemsReadyToPlace(packingList.NetUid)
+      const saved = await markAllItemsReadyToPlace(source, packingList.NetUid)
       setPackingList(saved)
     } catch (actionError) {
       setError(actionError instanceof Error ? actionError.message : t('Не вдалося виконати запит'))
     } finally {
       setSaving(false)
     }
-  }, [canUseIncome, invoice, isDirty, isSaving, packingList, setError, setPackingList, setSaving, t])
+  }, [
+    canUseIncome, hasPermission, invoice, isDirty, isSaving, packingList, permissions.updateReadiness,
+    setError, setPackingList, setSaving, source, t,
+  ])
 
   const handleCarryOut = useCallback(async () => {
     setConfirmCarryOut(false)
 
-    if (!canUseIncome || isSaving || isPlacementLocked(invoice, packingList)) {
+    if (!hasPermission(permissions.post) || !canUseIncome || isSaving || isPlacementLocked(invoice, packingList)) {
       return
     }
 
@@ -1025,7 +1091,7 @@ function useProtocolIncomeModel(source: ProductIncomeSource, sourceId?: string) 
     setError(null)
 
     try {
-      await createProductIncomeFromPackingListDynamic(toIso(fromDate), selectedStorage.NetUid, {
+      await createProductIncomeFromPackingListDynamic(source, 'post', toIso(fromDate), selectedStorage.NetUid, {
         ...packingList,
         IsPlaced: true,
       })
@@ -1036,12 +1102,12 @@ function useProtocolIncomeModel(source: ProductIncomeSource, sourceId?: string) 
       setSaving(false)
     }
   }, [
-    canUseIncome, fromDate, invoice, isDirty, isSaving, packingList, reloadFromServer,
-    selectedStorage, setConfirmCarryOut, setError, setSaving, t,
+    canUseIncome, fromDate, hasPermission, invoice, isDirty, isSaving, packingList, permissions.post,
+    reloadFromServer, selectedStorage, setConfirmCarryOut, setError, setSaving, source, t,
   ])
 
   const handleProductIncome = useCallback(async () => {
-    if (!canUseIncome || isSaving || isPlacementLocked(invoice, packingList)) {
+    if (!hasPermission(permissions.capitalize) || !canUseIncome || isSaving || isPlacementLocked(invoice, packingList)) {
       return
     }
 
@@ -1064,7 +1130,13 @@ function useProtocolIncomeModel(source: ProductIncomeSource, sourceId?: string) 
     setError(null)
 
     try {
-      await createProductIncomeFromPackingListDynamic(toIso(fromDate), selectedStorage.NetUid, packingList)
+      await createProductIncomeFromPackingListDynamic(
+        source,
+        'capitalize',
+        toIso(fromDate),
+        selectedStorage.NetUid,
+        packingList,
+      )
       reloadFromServer()
     } catch (actionError) {
       setError(actionError instanceof Error ? actionError.message : t('Не вдалося виконати запит'))
@@ -1072,8 +1144,8 @@ function useProtocolIncomeModel(source: ProductIncomeSource, sourceId?: string) 
       setSaving(false)
     }
   }, [
-    canUseIncome, fromDate, invoice, isDirty, isSaving, packingList, reloadFromServer,
-    selectedStorage, setError, setSaving, t,
+    canUseIncome, fromDate, hasPermission, invoice, isDirty, isSaving, packingList, permissions.capitalize,
+    reloadFromServer, selectedStorage, setError, setSaving, source, t,
   ])
 
   const placementStatus = useMemo(() => {
@@ -1156,12 +1228,14 @@ function PzDocumentDownloadModal({
 type ProtocolIncomeModel = ReturnType<typeof useProtocolIncomeModel>
 
 type ProductIncomeColumnsParams = {
+  canEditPlacements: boolean
   canUseIncome: boolean
   isPlaced: boolean
   model: ProtocolIncomeModel
 }
 
 function useProductIncomeColumns({
+  canEditPlacements,
   canUseIncome,
   isPlaced,
   model,
@@ -1305,7 +1379,7 @@ function useProductIncomeColumns({
       model.packingList?.DynamicProductPlacementColumns || []
     ).map((column) => {
       const key = columnKey(column)
-      const canDelete = canUseIncome && !isPlaced && !columnHasAppliedPlacements(column)
+      const canDelete = canEditPlacements && canUseIncome && !isPlaced && !columnHasAppliedPlacements(column)
 
       return {
         id: `dynamic-${key}`,
@@ -1316,18 +1390,20 @@ function useProductIncomeColumns({
           <Group gap="xs" justify="space-between" wrap="nowrap">
             <Text size="sm">{formatDate(column.FromDate)}</Text>
             <Group gap={4} wrap="nowrap">
-              <Tooltip label={t('Перемістити залишки')}>
-                <ActionIcon
-                  aria-label={t('Перемістити залишки')}
-                  color="gray"
-                  disabled={!canUseIncome || isPlaced || model.isDirty || model.isSaving}
-                  size="sm"
-                  variant="subtle"
-                  onClick={() => model.handleMoveRemnants(column)}
-                >
-                  <BetweenVerticalEnd size={16} />
-                </ActionIcon>
-              </Tooltip>
+              {canEditPlacements && (
+                <Tooltip label={t('Перемістити залишки')}>
+                  <ActionIcon
+                    aria-label={t('Перемістити залишки')}
+                    color="gray"
+                    disabled={!canUseIncome || isPlaced || model.isDirty || model.isSaving}
+                    size="sm"
+                    variant="subtle"
+                    onClick={() => model.handleMoveRemnants(column)}
+                  >
+                    <BetweenVerticalEnd size={16} />
+                  </ActionIcon>
+                </Tooltip>
+              )}
               {canDelete && (
                 <Tooltip label={t('Видалити')}>
                   <ActionIcon
@@ -1355,7 +1431,7 @@ function useProductIncomeColumns({
             PackingListPackageOrderItemId: gridRow.item.Id,
             DynamicProductPlacements: [],
           }
-          const canOpen = canUseIncome && !isPlaced && !model.isSaving
+          const canOpen = canEditPlacements && canUseIncome && !isPlaced && !model.isSaving
 
           return (
             <UnstyledButton
@@ -1386,7 +1462,7 @@ function useProductIncomeColumns({
     })
 
     return [...fixedColumns, ...dynamicColumns]
-  }, [canUseIncome, isPlaced, model, t])
+  }, [canEditPlacements, canUseIncome, isPlaced, model, t])
 }
 
 export function ProductDeliveryProtocolIncomePage() {
@@ -1414,21 +1490,40 @@ export function SupplyUkraineDirectOrderProductIncomePage() {
   )
 }
 
-function PackingListProductIncomePage({
-  embedded = false,
-  showHeader = !embedded,
-  source,
-  sourceId,
-}: {
+type PackingListProductIncomePageProps = {
   embedded?: boolean
   showHeader?: boolean
   source: ProductIncomeSource
   sourceId?: string
-}) {
+}
+
+function PackingListProductIncomePage(props: PackingListProductIncomePageProps) {
+  const { t } = useI18n()
+  const { hasPermission } = useAuth()
+  const permissions = getProductIncomePermissions(props.source)
+
+  if (!hasPermission(permissions.open)) {
+    return (
+      <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
+        {t('Недостатньо прав для перегляду приходу товару')}
+      </Alert>
+    )
+  }
+
+  return <PackingListProductIncomePageContent {...props} />
+}
+
+function PackingListProductIncomePageContent({
+  embedded = false,
+  showHeader = !embedded,
+  source,
+  sourceId,
+}: PackingListProductIncomePageProps) {
   const model = useProtocolIncomeModel(source, sourceId)
   const { t } = useI18n()
   const { hasPermission } = useAuth()
   const [vendorCodeFilter, setVendorCodeFilter] = useValueState('')
+  const permissions = getProductIncomePermissions(source)
 
   const isPlaced = isPlacementLocked(model.invoice, model.packingList)
   const canUseIncome = model.canUseIncome
@@ -1437,11 +1532,13 @@ function PackingListProductIncomePage({
   // The invoice and its packing-list grid are loaded by a second request after the
   // source header. Do not expose an actionable button during that gap: the handler
   // cannot create a column without the hydrated packing list.
-  const canAddDynamicColumn = canUseIncome
+  const canCapitalizeDynamicIncome = canUseIncome && hasPermission(permissions.capitalize)
+  const canCarryOutDynamicIncome = canUseIncome && hasPermission(permissions.post)
+  const canDownloadDocument = hasPermission(permissions.downloadDocument)
+  const canEditPlacements = canUseIncome
     && Boolean(model.packingList)
-    && hasPermission(PERMISSION_ADD_DYNAMIC_INCOME_COLUMN)
-  const canCapitalizeDynamicIncome = canUseIncome && hasPermission(PERMISSION_CAPITALIZE_DYNAMIC_INCOME)
-  const canCarryOutDynamicIncome = canUseIncome && hasPermission(PERMISSION_CARRY_OUT_DYNAMIC_INCOME)
+    && hasPermission(permissions.editPlacement)
+  const canUpdateReadiness = canUseIncome && hasPermission(permissions.updateReadiness)
   const filteredGridRows = useMemo(() => {
     const value = vendorCodeFilter.trim().toLowerCase()
 
@@ -1455,6 +1552,7 @@ function PackingListProductIncomePage({
   }, [model.gridRows, vendorCodeFilter])
 
   const columns = useProductIncomeColumns({
+    canEditPlacements,
     canUseIncome,
     isPlaced,
     model,
@@ -1476,9 +1574,11 @@ function PackingListProductIncomePage({
         useDrawerFooter={embedded}
         model={model}
         permissions={{
-          canAddDynamicColumn,
           canCapitalizeDynamicIncome,
           canCarryOutDynamicIncome,
+          canDownloadDocument,
+          canEditPlacements,
+          canUpdateReadiness,
         }}
         state={{
           canUseIncome,
@@ -1502,6 +1602,8 @@ function PackingListProductIncomePage({
         vendorCodeFilter={vendorCodeFilter}
       />
       <ProductIncomeDialogs
+        canCarryOutDynamicIncome={canCarryOutDynamicIncome}
+        canEditPlacements={canEditPlacements}
         canUseIncome={canUseIncome}
         model={model}
       />
@@ -1602,9 +1704,11 @@ function ProductIncomeDetailItem({
 }
 
 type ProductIncomeControlsPermissions = {
-  canAddDynamicColumn: boolean
   canCapitalizeDynamicIncome: boolean
   canCarryOutDynamicIncome: boolean
+  canDownloadDocument: boolean
+  canEditPlacements: boolean
+  canUpdateReadiness: boolean
 }
 
 type ProductIncomeControlsState = {
@@ -1628,7 +1732,13 @@ function ProductIncomeControlsCard({
   useDrawerFooter,
 }: ProductIncomeControlsCardProps) {
   const { t } = useI18n()
-  const { canAddDynamicColumn, canCapitalizeDynamicIncome, canCarryOutDynamicIncome } = permissions
+  const {
+    canCapitalizeDynamicIncome,
+    canCarryOutDynamicIncome,
+    canDownloadDocument,
+    canEditPlacements,
+    canUpdateReadiness,
+  } = permissions
   const { canUseIncome, hasColumns, hasItemsNotReadyToPlace, isPlaced } = state
   const saveActions = (
     <>
@@ -1642,14 +1752,16 @@ function ProductIncomeControlsCard({
           {t('Скасувати')}
         </Button>
       )}
-      <Button
-        color={CREATE_ACTION_COLOR}
-        disabled={!canUseIncome || !model.isDirty || model.isSaving}
-        loading={model.isSaving}
-        onClick={model.handleSave}
-      >
-        {t('Зберегти')}
-      </Button>
+      {canEditPlacements && (
+        <Button
+          color={CREATE_ACTION_COLOR}
+          disabled={!canUseIncome || !model.isDirty || model.isSaving}
+          loading={model.isSaving}
+          onClick={model.handleSave}
+        >
+          {t('Зберегти')}
+        </Button>
+      )}
     </>
   )
 
@@ -1724,16 +1836,18 @@ function ProductIncomeControlsCard({
 
         {/* Right: actions — secondary tools first, then the green primary actions (legacy look) */}
         <Group className="product-income-actions" gap="sm" align="end" justify="flex-end" wrap="wrap">
-          <Button
-            disabled={!model.invoice}
-            leftSection={<FileText size={16} />}
-            loading={model.pzDownload.isLoading}
-            variant="default"
-            onClick={() => void model.handleDownloadPzDocument()}
-          >
-            {t('Документ PZ')}
-          </Button>
-          {!isPlaced && hasItemsNotReadyToPlace && (
+          {canDownloadDocument && (
+            <Button
+              disabled={!model.invoice}
+              leftSection={<FileText size={16} />}
+              loading={model.pzDownload.isLoading}
+              variant="default"
+              onClick={() => void model.handleDownloadPzDocument()}
+            >
+              {t('Документ PZ')}
+            </Button>
+          )}
+          {!isPlaced && hasItemsNotReadyToPlace && canUpdateReadiness && (
             <Button
               disabled={!canUseIncome || model.isDirty || model.isSaving}
               variant="default"
@@ -1743,7 +1857,7 @@ function ProductIncomeControlsCard({
               {t('Всі готові до розміщення')}
             </Button>
           )}
-          {!isPlaced && canAddDynamicColumn && (
+          {!isPlaced && canEditPlacements && (
             <Button
               color={CREATE_ACTION_COLOR}
               disabled={!canUseIncome || model.isDirty || model.isSaving}
@@ -1847,11 +1961,15 @@ function ProductIncomeSummaryMetric({ label, value }: { label: string; value: st
 }
 
 type ProductIncomeDialogsProps = {
+  canCarryOutDynamicIncome: boolean
+  canEditPlacements: boolean
   canUseIncome: boolean
   model: ProtocolIncomeModel
 }
 
 function ProductIncomeDialogs({
+  canCarryOutDynamicIncome,
+  canEditPlacements,
   canUseIncome,
   model,
 }: ProductIncomeDialogsProps) {
@@ -1860,7 +1978,7 @@ function ProductIncomeDialogs({
   return (
     <>
       <NewIncomeDynamicColumnModal
-        disabled={!canUseIncome || model.isSaving}
+        disabled={!canEditPlacements || !canUseIncome || model.isSaving}
         key={model.columnModalOpen ? 'income-column-open' : 'income-column-closed'}
         opened={model.columnModalOpen}
         onAdd={model.handleAddColumn}
@@ -1893,7 +2011,12 @@ function ProductIncomeDialogs({
           <Button color="gray" disabled={model.isSaving} variant="light" onClick={() => model.setColumnToRemove(null)}>
             {t('Скасувати')}
           </Button>
-          <Button color="red" disabled={!canUseIncome || model.isSaving} loading={model.isSaving} onClick={model.confirmRemoveColumn}>
+          <Button
+            color="red"
+            disabled={!canEditPlacements || !canUseIncome || model.isSaving}
+            loading={model.isSaving}
+            onClick={model.confirmRemoveColumn}
+          >
             {t('Видалити')}
           </Button>
         </Group>
@@ -1912,7 +2035,11 @@ function ProductIncomeDialogs({
           <Button color="gray" disabled={model.isSaving} variant="light" onClick={() => model.setConfirmCarryOut(false)}>
             {t('Скасувати')}
           </Button>
-          <Button disabled={!canUseIncome || model.isSaving} loading={model.isSaving} onClick={() => void model.handleCarryOut()}>
+          <Button
+            disabled={!canCarryOutDynamicIncome || !canUseIncome || model.isSaving}
+            loading={model.isSaving}
+            onClick={() => void model.handleCarryOut()}
+          >
             {t('Провести')}
           </Button>
         </Group>

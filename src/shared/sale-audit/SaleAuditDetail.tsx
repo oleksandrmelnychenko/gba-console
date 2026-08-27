@@ -6,8 +6,13 @@ import { useRef } from 'react'
 import { useValueState } from '../hooks/useValueState'
 import { useI18n } from '../i18n/useI18n'
 import { usePersistentSaleJsonMutationRunner } from '../../features/sales-ukraine/usePersistentSaleJsonMutation'
+import type { SalesMutationOperationOptions } from '../../features/sales-ukraine/salesMutationOperation'
 import { AppModal } from '../ui/AppModal'
-import { confirmSaleAuditHistory, getShiftedSaleDocument, getShiftedSaleHistoryDocument } from './saleAuditApi'
+import {
+  getWarehouseUkraineAuditInvoiceDocument,
+  getWarehouseUkraineAuditShiftedDocument,
+  type SaleAuditHistoryMutationPayload,
+} from './saleAuditApi'
 import {
   SaleAuditShiftStatusType,
   type SaleAuditLifeCycleLineItem,
@@ -19,7 +24,27 @@ import {
 
 type AuditPrintKind = 'act' | 'invoice'
 
+export type SaleAuditDocumentApi = {
+  confirm: (
+    payload: SaleAuditHistoryMutationPayload,
+    operation: SalesMutationOperationOptions,
+  ) => Promise<void>
+  getInvoice: typeof getWarehouseUkraineAuditInvoiceDocument
+  getShifted: typeof getWarehouseUkraineAuditShiftedDocument
+}
+
+const DEFAULT_SALE_AUDIT_DOCUMENT_API: SaleAuditDocumentApi = {
+  confirm: rejectUnscopedAuditConfirmation,
+  getInvoice: getWarehouseUkraineAuditInvoiceDocument,
+  getShifted: getWarehouseUkraineAuditShiftedDocument,
+}
+
+async function rejectUnscopedAuditConfirmation(): Promise<void> {
+  throw new Error('Scoped sale-audit confirmation API is not configured')
+}
+
 type SaleAuditDetailProps = {
+  documentApi?: SaleAuditDocumentApi
   error: string | null
   isLoading: boolean
   onConfirmed?: () => void
@@ -27,7 +52,14 @@ type SaleAuditDetailProps = {
   statistic: SaleAuditStatistic | null
 }
 
-export function SaleAuditDetail({ error, isLoading, onConfirmed, showConfirm = true, statistic }: SaleAuditDetailProps) {
+export function SaleAuditDetail({
+  documentApi = DEFAULT_SALE_AUDIT_DOCUMENT_API,
+  error,
+  isLoading,
+  onConfirmed,
+  showConfirm = true,
+  statistic,
+}: SaleAuditDetailProps) {
   const { t } = useI18n()
   const sale = statistic?.Sale
   const printRequestRef = useRef(0)
@@ -78,8 +110,8 @@ export function SaleAuditDetail({ error, isLoading, onConfirmed, showConfirm = t
 
         const document =
           kind === 'invoice'
-            ? await getShiftedSaleDocument(netId, historyNetId)
-            : await getShiftedSaleHistoryDocument(netId, historyNetId)
+            ? await documentApi.getInvoice(netId, historyNetId)
+            : await documentApi.getShifted(netId, historyNetId)
 
         if (printRequestRef.current === requestId) {
           setPrintDocument(document)
@@ -117,7 +149,7 @@ export function SaleAuditDetail({ error, isLoading, onConfirmed, showConfirm = t
       const mutation = await runInvoiceEdit(
         `protocol-invoice-edit:${confirmHistoryNetId.toLowerCase()}`,
         { NetId: confirmHistoryNetId },
-        confirmSaleAuditHistory,
+        documentApi.confirm,
       )
       if (!mutation.completed) {
         throw mutation.error ??

@@ -13,7 +13,7 @@ export type SupplyOrdersSearchParams = {
 export async function getWarehouseUkraineOrders(
   params: SupplyOrdersSearchParams,
 ): Promise<SupplyOrdersResponse> {
-  const result = await apiRequest<unknown>('/supplies/ukraine/order/all/filtered', {
+  const result = await apiRequest<unknown>('/supplies/ukraine/order/warehouse-ukraine/all/filtered', {
     query: {
       from: params.from,
       to: params.to,

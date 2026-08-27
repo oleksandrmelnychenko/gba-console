@@ -15,12 +15,14 @@ import { notifications } from '@mantine/notifications'
 import { CircleAlert, RefreshCw, Search } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
+import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn } from '../../../shared/ui/data-table/types'
 import { TableRowAction } from '../../../shared/ui/table-row-action'
+import { usePermissions } from '../../auth/usePermissions'
 import { createWizardOperationId } from '../../sales-ukraine/components/new-sale-wizard/wizardMutationOperation'
-import { getOffers, getPublicOfferLink, restartOfferValidity } from '../../sales-offers/api/salesOffersApi'
+import { getCockpitOffers, getPublicOfferLink, restartOfferValidity } from '../../sales-offers/api/salesOffersApi'
 import { formatDate, formatDateTime, formatMoney } from '../../sales-offers/components/offerHelpers'
 import type { ClientShoppingCart } from '../../sales-offers/types'
 import { getOfferLifecycle, type OfferLifecycle } from './offerLifecycle'
@@ -40,6 +42,8 @@ const LIFECYCLE_PRESENTATION: Record<OfferLifecycle, { color: string; label: str
 
 export function MyOffersPanel() {
   const { t } = useI18n()
+  const { can } = usePermissions()
+  const canExtendValidity = can(PermissionKeys.SalesUkraineOffers.Offer.ExtendValidity)
   const [offers, setOffers] = useValueState<ClientShoppingCart[]>([])
   const [error, setError] = useValueState<string | null>(null)
   const [isLoading, setLoading] = useState(true)
@@ -62,7 +66,7 @@ export function MyOffersPanel() {
         const from = new Date()
         from.setDate(from.getDate() - Number(periodDays))
 
-        const result = await getOffers({ from, to }, true)
+        const result = await getCockpitOffers({ from, to })
 
         if (!cancelled) {
           setOffers(result)
@@ -126,7 +130,7 @@ export function MyOffersPanel() {
 
   const extendValidity = useCallback(
     async (offer: ClientShoppingCart) => {
-      if (!offer.NetUid) {
+      if (!can(PermissionKeys.SalesUkraineOffers.Offer.ExtendValidity) || !offer.NetUid) {
         return
       }
 
@@ -154,7 +158,7 @@ export function MyOffersPanel() {
         setPendingNetId(null)
       }
     },
-    [t],
+    [can, t],
   )
   const offerColumns = useMemo<DataTableColumn<ClientShoppingCart>[]>(
     () => [
@@ -241,7 +245,7 @@ export function MyOffersPanel() {
 
           return (
             <Group gap={4} justify="flex-end" wrap="nowrap">
-              {lifecycle === 'expired' && (
+              {canExtendValidity && lifecycle === 'expired' && (
                 <TableRowAction
                   action="restore"
                   label={t('Продовжити на 2 дні')}
@@ -275,7 +279,7 @@ export function MyOffersPanel() {
         width: 120,
       },
     ],
-    [copyLink, extendValidity, pendingNetId, t],
+    [canExtendValidity, copyLink, extendValidity, pendingNetId, t],
   )
 
   return (

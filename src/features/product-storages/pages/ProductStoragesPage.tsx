@@ -24,7 +24,7 @@ import { notifications } from '@mantine/notifications'
 import { ArrowLeftRight, Check, CircleAlert, ClipboardList, Download, Eye, RotateCcw, Search } from 'lucide-react'
 import { useDebouncedValue } from '@mantine/hooks'
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState, type Dispatch, type SetStateAction } from 'react'
-import { UserRoleType } from '../../../shared/auth/types'
+import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { translate } from '../../../shared/i18n/translate'
@@ -36,6 +36,7 @@ import { Paginator } from '../../../shared/ui/paginator/Paginator'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { TableRowAction } from '../../../shared/ui/table-row-action'
 import { useAuth } from '../../auth/useAuth'
+import { PermissionGate } from '../../auth/components/PermissionGate'
 import './product-storages.css'
 import {
   createProductStorageSupplyReturn,
@@ -67,8 +68,9 @@ const PRODUCT_STORAGES_TABLE_DEFAULT_LAYOUT = {
 
 const pageSizeOptions = ['50', '100', '150']
 const PRODUCT_STORAGES_SEARCH_DEBOUNCE_MS = 200
-const PRODUCT_STORAGES_ACTION_PERMISSION = 'Products_Storages_Action_WithAPosition_Btn_PKEY'
-const PRODUCT_STORAGES_PREVIEW_PERMISSION = 'Products_Storages_Preview_Btn_PKEY'
+const PRODUCT_STORAGES_ACTION_PERMISSION = PermissionKeys.WarehouseAccounting.Storages.PositionAction.Management
+const PRODUCT_STORAGES_EXPORT_PERMISSION = PermissionKeys.WarehouseAccounting.Storages.Document.Export
+const PRODUCT_STORAGES_PREVIEW_PERMISSION = PermissionKeys.WarehouseAccounting.Storages.Preview.Open
 const amountFormatter = new Intl.NumberFormat('uk-UA', {
   maximumFractionDigits: 3,
 })
@@ -114,9 +116,7 @@ type AvailabilityListState = {
 
 function useProductStoragesPageModel() {
   const { t } = useI18n()
-  const { hasPermission, user } = useAuth()
-  const isAdmin =
-    user?.UserRole?.UserRoleType === UserRoleType.Administrator || user?.UserRole?.UserRoleType === UserRoleType.GBA
+  const { hasPermission } = useAuth()
   const [availabilityList, setAvailabilityList] = useValueState<AvailabilityListState>({
     items: [],
     total: 0,
@@ -158,6 +158,10 @@ function useProductStoragesPageModel() {
   const totalAvailabilities = availabilityList.total
   const totalPages = Math.max(1, Math.ceil(totalAvailabilities / pageSize))
   const canOpenAction = hasPermission(PRODUCT_STORAGES_ACTION_PERMISSION)
+  const canUseManagementActions = hasPermission(
+    PermissionKeys.WarehouseAccounting.Storages.PositionAction.Management,
+  )
+  const canExport = hasPermission(PRODUCT_STORAGES_EXPORT_PERMISSION)
   const canOpenPreview = hasPermission(PRODUCT_STORAGES_PREVIEW_PERMISSION)
   const storageOptions = useMemo(() => buildStorageOptions(storages), [storages])
   const selectedStorage = useMemo(
@@ -195,11 +199,11 @@ function useProductStoragesPageModel() {
   const toStorageOptions = useMemo(
     () =>
       buildToStorageOptions(storages, actionFromStorage, {
-        isPrivilegedUser: isAdmin,
+        canUseManagementActions,
         isManagement: actionForm.isManagement,
         scope: actionModal?.scope || 'single',
       }),
-    [actionForm.isManagement, actionFromStorage, actionModal?.scope, isAdmin, storages],
+    [actionForm.isManagement, actionFromStorage, actionModal?.scope, canUseManagementActions, storages],
   )
   const effectiveToStorageNetUid = toStorageOptions.some((option) => option.value === actionForm.toStorageNetUid)
     ? actionForm.toStorageNetUid
@@ -663,6 +667,11 @@ function useProductStoragesPageModel() {
       return
     }
 
+    if (actionForm.isManagement && !canUseManagementActions) {
+      setActionError(t('Недостатньо прав для управлінської операції'))
+      return
+    }
+
     const validationError = validateAction(actionModal, actionForm, {
       fromStorage: actionFromStorage,
       selectedConsignment: selectedReturnConsignment,
@@ -702,7 +711,7 @@ function useProductStoragesPageModel() {
             Comment: actionForm.comment.trim(),
             FromDate: actionFromDate,
             FromStorage: fromStorage,
-            IsManagement: actionForm.isManagement && isAdmin,
+            IsManagement: actionForm.isManagement && canUseManagementActions,
             Organization:
               actionModal.scope === 'single'
                 ? selectedToStorage.Organization || null
@@ -725,7 +734,7 @@ function useProductStoragesPageModel() {
           Comment: actionForm.comment.trim(),
           DepreciatedOrderItems: buildWriteOffItems(actionModal, actionForm),
           FromDate: actionFromDate,
-          IsManagement: actionForm.isManagement && isAdmin,
+          IsManagement: actionForm.isManagement && canUseManagementActions,
           Organization: fromStorage.Organization || null,
           Storage: fromStorage,
         })
@@ -736,7 +745,7 @@ function useProductStoragesPageModel() {
           ClientAgreement: selectedReturnConsignment.ClientAgreement || null,
           Comment: actionForm.comment.trim(),
           FromDate: actionFromDate,
-          IsManagement: actionForm.isManagement && isAdmin,
+          IsManagement: actionForm.isManagement && canUseManagementActions,
           Organization: selectedReturnConsignment.Organization || null,
           Storage: fromStorage,
           Supplier: selectedReturnConsignment.Supplier || null,
@@ -764,7 +773,7 @@ function useProductStoragesPageModel() {
   }
 
   async function handleExport() {
-    if (!selectedStorageNetId || filterError || isExporting) {
+    if (!canExport || !selectedStorageNetId || filterError || isExporting) {
       return
     }
 
@@ -813,7 +822,7 @@ function useProductStoragesPageModel() {
     filterError,
     fromDate,
     isActionSubmitting,
-    isAdmin,
+    canUseManagementActions,
     isExporting,
     isLoading,
     isLoadingStorages,
@@ -836,6 +845,7 @@ function useProductStoragesPageModel() {
     totalPages,
     canOpenPreview,
     canOpenAction,
+    canExport,
     changeActionMode,
     closeActionModal,
     closeStorageActions,
@@ -861,6 +871,24 @@ function useProductStoragesPageModel() {
 }
 
 export function ProductStoragesPage() {
+  return (
+    <PermissionGate permissionKey={PermissionKeys.WarehouseAccounting.Storages.Page.View} fallback={<ProductStoragesPermissionDenied />}>
+      <ProductStoragesPageContent />
+    </PermissionGate>
+  )
+}
+
+function ProductStoragesPermissionDenied() {
+  const { t } = useI18n()
+
+  return (
+    <Alert color="red" icon={<CircleAlert size={18} />} title={t('Доступ заборонено')} variant="light">
+      {t('У вашої ролі немає права переглядати складський облік.')}
+    </Alert>
+  )
+}
+
+function ProductStoragesPageContent() {
   const model = useProductStoragesPageModel()
 
   return <ProductStoragesPageView model={model} />
@@ -883,7 +911,7 @@ function ProductStoragesPageView({ model }: { model: ReturnType<typeof useProduc
     filterError,
     fromDate,
     isActionSubmitting,
-    isAdmin,
+    canUseManagementActions,
     isExporting,
     isLoading,
     isLoadingStorages,
@@ -905,6 +933,7 @@ function ProductStoragesPageView({ model }: { model: ReturnType<typeof useProduc
     toStorageOptions,
     totalPages,
     canOpenAction,
+    canExport,
     canOpenPreview,
     changeActionMode,
     closeActionModal,
@@ -970,19 +999,21 @@ function ProductStoragesPageView({ model }: { model: ReturnType<typeof useProduc
               onChange={(event) => updateSearch(event.currentTarget.value)}
             />
             <div className="app-filter-actions">
-              <Tooltip label={t('Експорт')}>
-                <ActionIcon
-                  aria-label={t('Експорт')}
-                  color="gray"
-                  disabled={!selectedStorageNetId || Boolean(filterError) || isExporting}
-                  loading={isExporting}
-                  size={34}
-                  variant="light"
-                  onClick={handleExport}
-                >
-                  <Download size={18} />
-                </ActionIcon>
-              </Tooltip>
+              {canExport ? (
+                <Tooltip label={t('Експорт')}>
+                  <ActionIcon
+                    aria-label={t('Експорт')}
+                    color="gray"
+                    disabled={!selectedStorageNetId || Boolean(filterError) || isExporting}
+                    loading={isExporting}
+                    size={34}
+                    variant="light"
+                    onClick={handleExport}
+                  >
+                    <Download size={18} />
+                  </ActionIcon>
+                </Tooltip>
+              ) : null}
               <Tooltip label={t('Скинути')}>
                 <ActionIcon aria-label={t('Скинути')} color="gray" size={34} variant="light" onClick={resetFilters}>
                   <RotateCcw size={17} />
@@ -1066,7 +1097,7 @@ function ProductStoragesPageView({ model }: { model: ReturnType<typeof useProduc
         form={actionForm}
         fromStorage={actionFromStorage}
         isLoadingReturnConsignments={isLoadingReturnConsignments}
-        isAdmin={isAdmin}
+        canUseManagementActions={canUseManagementActions}
         isSubmitting={isActionSubmitting}
         modal={actionModal}
         returnConsignments={returnConsignments}
@@ -1286,7 +1317,7 @@ function ProductStorageActionModal({
   effectiveToStorageNetUid,
   form,
   fromStorage,
-  isAdmin,
+  canUseManagementActions,
   isLoadingReturnConsignments,
   isSubmitting,
   modal,
@@ -1304,7 +1335,7 @@ function ProductStorageActionModal({
   effectiveToStorageNetUid: string
   form: ProductStorageActionForm
   fromStorage: ProductStorageStorage | null
-  isAdmin: boolean
+  canUseManagementActions: boolean
   isLoadingReturnConsignments: boolean
   isSubmitting: boolean
   modal: ProductStorageActionModalState
@@ -1325,7 +1356,7 @@ function ProductStorageActionModal({
   }
 
   const isSingle = modal.scope === 'single'
-  const showManagementSwitch = isAdmin
+  const showManagementSwitch = canUseManagementActions
   const showQuantityField = isSingle
   const showPlacementFields = modal.mode === 'transfer' && isSingle && Boolean(selectedToStorage) && !selectedToStorage?.ForDefective
   const modeOptions = getActionModeOptions(modal.scope).map((option) => ({
@@ -1975,12 +2006,12 @@ function buildToStorageOptions(
   fromStorage: ProductStorageStorage | null,
   actionOptions: {
     isManagement: boolean
-    isPrivilegedUser: boolean
+    canUseManagementActions: boolean
     scope: ProductStorageActionScope
   },
 ): { label: string; value: string }[] {
   const canUseCrossOrganizationStorages =
-    actionOptions.isPrivilegedUser && (actionOptions.scope === 'single' || actionOptions.isManagement)
+    actionOptions.canUseManagementActions && (actionOptions.scope === 'single' || actionOptions.isManagement)
 
   return storages.reduce<Array<{ label: string; value: string }>>((options, storage) => {
     if (!storage.NetUid || isSameStorage(storage, fromStorage)) {

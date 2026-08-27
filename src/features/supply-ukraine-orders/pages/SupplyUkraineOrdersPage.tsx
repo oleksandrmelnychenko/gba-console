@@ -5,7 +5,6 @@ import {
   Button,
   Card,
   FileInput,
-  Group,
   NumberInput,
   Select,
   SimpleGrid,
@@ -16,10 +15,12 @@ import {
 } from '@mantine/core'
 import { useDebouncedValue } from '@mantine/hooks'
 import { notifications } from '@mantine/notifications'
-import { CircleAlert, Download, Eye, FileText, ListChecks, PackageCheck, PackageOpen, Plus, Receipt, ReceiptText, RotateCcw, Route, Search, Trash2 } from 'lucide-react'
+import { CircleAlert, Download, Eye, FileText, ListChecks, PackageCheck, PackageOpen, Plus, Receipt, ReceiptText, RotateCcw, Route, Search } from 'lucide-react'
 import { Fragment, useCallback, useEffect, useMemo, useReducer, useRef, useState, type ReactNode } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../auth/useAuth'
+import { usePermissions } from '../../auth/usePermissions'
+import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { realtimeEvents, useRealtimeEvent } from '../../../shared/realtime/events'
@@ -34,8 +35,6 @@ import { DEFAULT_PAGINATOR_PAGE_SIZE } from '../../../shared/ui/paginator/pagina
 import { DocumentExportModal } from '../../../shared/ui/document-export-modal/DocumentExportModal'
 import {
   createSupplyOrderUkraineDeliveryExpense,
-  deleteDirectSupplyUkraineOrder,
-  deleteSupplyUkraineOrder,
   getDirectSupplyUkraineOrders,
   getSupplyOrderCurrencies,
   getSupplyOrderServiceConsumableProducts,
@@ -134,18 +133,17 @@ const TYPE_OPTIONS: Array<{ label: string, value: SupplyUkraineOrderKind }> = [
   { label: 'Замовлення Україна', value: 'direct' },
 ]
 
-const PERMISSION_CREATE_TO_UKRAINE = 'Supply_Order_To_Ukraine_PKEY'
-const PERMISSION_CREATE_DIRECT = 'Ukraine_Order_PKEY'
-const PERMISSION_PRINT = 'SupplyOrderPrintDocumentUrls_Load_PKEY'
-const PERMISSION_TO_UKRAINE_PLACEMENT = 'UkraineAllOrders_SelectAnOption_ProductPlacement_PKEY'
-const PERMISSION_TO_UKRAINE_VIEW = 'UkraineAllOrders_SelectAnOption_View_PKEY'
-const PERMISSION_TO_UKRAINE_PROTOCOLS = 'UkraineAllOrders_SelectAnOption_NewPaymentProtocol_PKEY'
-const PERMISSION_TO_UKRAINE_OFFICIAL_COSTS = 'UkraineAllOrders_SelectAnOption_AddingOfficialCostsForProductDelivery_PKEY'
-const PERMISSION_DELETE_ORDER = 'UkraineAllOrders_SelectAnOption_Delete_PKEY'
-const PERMISSION_DIRECT_INVOICES = 'UkraineAllOrders_SelectAnOption_Products_PKEY'
-const PERMISSION_DIRECT_SPECIFICATIONS = 'UkraineAllOrders_SelectAnOption_ProductSpecificationCodes_PKEY'
-const PERMISSION_DIRECT_LOGISTICS = 'UkraineAllOrders_SelectAnOption_LogisticWay_PKEY'
-const PERMISSION_DIRECT_PRODUCT_INCOME = 'UkraineAllOrders_SelectAnOption_PlacementSupplyOrder_PKEY'
+const PERMISSION_CREATE_TO_UKRAINE = PermissionKeys.OrdersUkraine.Order.OpenArrival
+const PERMISSION_CREATE_DIRECT = PermissionKeys.OrdersUkraine.Order.OpenOrder
+const PERMISSION_PRINT = PermissionKeys.OrdersUkraine.Order.DownloadDocuments
+const PERMISSION_TO_UKRAINE_PLACEMENT = PermissionKeys.OrdersUkraine.Order.OpenPlacement
+const PERMISSION_TO_UKRAINE_VIEW = PermissionKeys.OrdersUkraine.Order.OpenOverview
+const PERMISSION_TO_UKRAINE_PROTOCOLS = PermissionKeys.OrdersUkraine.Order.CreatePaymentTask
+const PERMISSION_TO_UKRAINE_OFFICIAL_COSTS = PermissionKeys.OrdersUkraine.Order.AddDeliveryCosts
+const PERMISSION_DIRECT_INVOICES = PermissionKeys.OrdersUkraine.Order.OpenProducts
+const PERMISSION_DIRECT_SPECIFICATIONS = PermissionKeys.OrdersUkraine.Order.OpenSpecificationCodes
+const PERMISSION_DIRECT_LOGISTICS = PermissionKeys.OrdersUkraine.Order.OpenLogisticWay
+const PERMISSION_DIRECT_PRODUCT_INCOME = PermissionKeys.OrdersUkraine.Order.OpenProductIncome
 
 type OrdersState = {
   directOrders: DirectSupplyOrder[]
@@ -189,12 +187,10 @@ type OrderActionsPermissions = {
 
 type OrdersUiState = {
   activeFilters: SupplyUkraineOrdersFilter
-  deleteCandidate: SupplyUkraineOrderRow | null
   downloadDocument: SupplyOrderPrintDocument | null
   downloadError: string | null
   downloadOpened: boolean
   filterDraft: SupplyUkraineOrdersFilter
-  isDeleting: boolean
   isDownloading: boolean
   officialCostsRow: SupplyUkraineOrderRow | null
   page: number
@@ -209,9 +205,7 @@ type OrdersUiAction =
   | { page: number; type: 'setPage' }
   | { pageSize: number; type: 'setPageSize' }
   | { row: SupplyUkraineOrderRow | null; type: 'setSelectedRow' }
-  | { row: SupplyUkraineOrderRow | null; type: 'setDeleteCandidate' }
   | { row: SupplyUkraineOrderRow | null; type: 'setOfficialCostsRow' }
-  | { isDeleting: boolean; type: 'setDeleting' }
   | { type: 'openDownload' }
   | { document: SupplyOrderPrintDocument | null; type: 'setDownloadDocument' }
   | { error: string | null; type: 'setDownloadError' }
@@ -271,12 +265,10 @@ function createInitialOrdersUiState(defaultFilters: SupplyUkraineOrdersFilter): 
 
   return {
     activeFilters: savedFilters,
-    deleteCandidate: null,
     downloadDocument: null,
     downloadError: null,
     downloadOpened: false,
     filterDraft: savedFilters,
-    isDeleting: false,
     isDownloading: false,
     officialCostsRow: null,
     page: 1,
@@ -308,12 +300,8 @@ function ordersUiReducer(state: OrdersUiState, action: OrdersUiAction): OrdersUi
       return { ...state, page: 1, pageSize: action.pageSize }
     case 'setSelectedRow':
       return { ...state, selectedRow: action.row }
-    case 'setDeleteCandidate':
-      return { ...state, deleteCandidate: action.row }
     case 'setOfficialCostsRow':
       return { ...state, officialCostsRow: action.row }
-    case 'setDeleting':
-      return { ...state, isDeleting: action.isDeleting }
     case 'openDownload':
       return {
         ...state,
@@ -351,12 +339,10 @@ function useSupplyUkraineOrdersPageController() {
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
   const {
     activeFilters,
-    deleteCandidate,
     downloadDocument,
     downloadError,
     downloadOpened,
     filterDraft,
-    isDeleting,
     isDownloading,
     officialCostsRow,
     page,
@@ -400,7 +386,6 @@ function useSupplyUkraineOrdersPageController() {
   const canOpenToUkraineView = hasPermission(PERMISSION_TO_UKRAINE_VIEW)
   const canOpenToUkraineProtocols = hasPermission(PERMISSION_TO_UKRAINE_PROTOCOLS)
   const canOpenToUkraineOfficialCosts = hasPermission(PERMISSION_TO_UKRAINE_OFFICIAL_COSTS)
-  const canDeleteOrder = hasPermission(PERMISSION_DELETE_ORDER)
   const canOpenDirectInvoices = hasPermission(PERMISSION_DIRECT_INVOICES)
   const canOpenDirectSpecifications = hasPermission(PERMISSION_DIRECT_SPECIFICATIONS)
   const canOpenDirectLogistics = hasPermission(PERMISSION_DIRECT_LOGISTICS)
@@ -581,37 +566,6 @@ function useSupplyUkraineOrdersPageController() {
     dispatchUi({ row, type: 'setOfficialCostsRow' })
   }
 
-  async function confirmDelete() {
-    if (!deleteCandidate?.netUid) {
-      dispatchUi({ row: null, type: 'setDeleteCandidate' })
-      return
-    }
-
-    dispatchUi({ isDeleting: true, type: 'setDeleting' })
-
-    try {
-      if (deleteCandidate.kind === 'toUkraine') {
-        await deleteSupplyUkraineOrder(deleteCandidate.netUid)
-      } else {
-        await deleteDirectSupplyUkraineOrder(deleteCandidate.netUid)
-      }
-
-      notifications.show({
-        color: 'green',
-        message: t('Замовлення видалено'),
-      })
-      dispatchUi({ row: null, type: 'setDeleteCandidate' })
-      reload()
-    } catch (error) {
-      notifications.show({
-        color: 'red',
-        message: error instanceof Error ? error.message : t('Не вдалося видалити замовлення'),
-      })
-    } finally {
-      dispatchUi({ isDeleting: false, type: 'setDeleting' })
-    }
-  }
-
   const closeDownload = useCallback(() => {
     downloadRequestRef.current += 1
     dispatchUi({ type: 'closeDownload' })
@@ -645,24 +599,20 @@ function useSupplyUkraineOrdersPageController() {
   return {
     changePage: (nextPage: number) => dispatchUi({ page: nextPage, type: 'setPage' }),
     changePageSize,
-    closeDelete: () => dispatchUi({ row: null, type: 'setDeleteCandidate' }),
     closeDownload,
     closeOfficialCosts: () => dispatchUi({ row: null, type: 'setOfficialCostsRow' }),
     closeRow: () => dispatchUi({ row: null, type: 'setSelectedRow' }),
-    confirmDelete,
     createDirect: () => navigate('/orders/ukraine/all/new', { state: { backgroundLocation: location } }),
     createPermissions: { canCreateDirect, canCreateToUkraine, canPrint },
     createToUkraine: () => navigate('/orders/ukraine/to-ukraine/new', { state: { backgroundLocation: location } }),
     currenciesState,
     currencyOptions,
-    deleteCandidate,
     downloadDocument,
     downloadError,
     downloadOpened,
     downloadPrintDocument,
     filterDraft,
     filterError,
-    isDeleting,
     isDownloading,
     navigateFromModal,
     officialCostsRow,
@@ -684,33 +634,46 @@ function useSupplyUkraineOrdersPageController() {
     totalPages,
     applyFilterPatch,
     updateFilterDraft,
-    canDeleteOrder,
-    requestDelete: (row: SupplyUkraineOrderRow) => dispatchUi({ row, type: 'setDeleteCandidate' }),
   }
 }
 
 export function SupplyUkraineOrdersPage() {
+  const { t } = useI18n()
+  const { can, isLoading } = usePermissions()
+
+  if (isLoading) {
+    return <Text c="dimmed">{t('Завантаження')}</Text>
+  }
+
+  if (!can(PermissionKeys.OrdersUkraine.Page.View)) {
+    return (
+      <Alert color="red" icon={<CircleAlert size={18} />} title={t('Доступ заборонено')} variant="light">
+        {t('Недостатньо прав для перегляду замовлень України')}
+      </Alert>
+    )
+  }
+
+  return <SupplyUkraineOrdersPageContent />
+}
+
+function SupplyUkraineOrdersPageContent() {
   const {
     changePage,
     changePageSize,
-    closeDelete,
     closeDownload,
     closeOfficialCosts,
     closeRow,
-    confirmDelete,
     createDirect,
     createPermissions,
     createToUkraine,
     currenciesState,
     currencyOptions,
-    deleteCandidate,
     downloadDocument,
     downloadError,
     downloadOpened,
     downloadPrintDocument,
     filterDraft,
     filterError,
-    isDeleting,
     isDownloading,
     navigateFromModal,
     officialCostsRow,
@@ -761,20 +724,16 @@ export function SupplyUkraineOrdersPage() {
       />
 
       <OrdersPageModals
-        deleteCandidate={deleteCandidate}
         downloadDocument={downloadDocument}
         downloadError={downloadError}
         downloadOpened={downloadOpened}
-        isDeleting={isDeleting}
         isDownloading={isDownloading}
         officialCostsRow={officialCostsRow}
         permissions={orderActionsPermissions}
         selectedRow={selectedRow}
-        onCloseDelete={closeDelete}
         onCloseDownload={closeDownload}
         onCloseOfficialCosts={closeOfficialCosts}
         onCloseRow={closeRow}
-        onConfirmDelete={confirmDelete}
         onNavigate={navigateFromModal}
         onOpenOfficialCosts={openOfficialCosts}
         onOfficialCostsSaved={officialCostsSaved}
@@ -1471,44 +1430,34 @@ export function OrdersFilterToolbar({
 }
 
 function OrdersPageModals({
-  deleteCandidate,
   downloadDocument,
   downloadError,
   downloadOpened,
-  isDeleting,
   isDownloading,
   officialCostsRow,
   permissions,
   selectedRow,
-  onCloseDelete,
   onCloseDownload,
   onCloseOfficialCosts,
   onCloseRow,
-  onConfirmDelete,
   onNavigate,
   onOpenOfficialCosts,
   onOfficialCostsSaved,
 }: {
-  deleteCandidate: SupplyUkraineOrderRow | null
   downloadDocument: SupplyOrderPrintDocument | null
   downloadError: string | null
   downloadOpened: boolean
-  isDeleting: boolean
   isDownloading: boolean
   officialCostsRow: SupplyUkraineOrderRow | null
   permissions: OrderActionsPermissions
   selectedRow: SupplyUkraineOrderRow | null
-  onCloseDelete: () => void
   onCloseDownload: () => void
   onCloseOfficialCosts: () => void
   onCloseRow: () => void
-  onConfirmDelete: () => void
   onNavigate: (path: string) => void
   onOpenOfficialCosts: (row: SupplyUkraineOrderRow) => void
   onOfficialCostsSaved: () => void
 }) {
-  const { t } = useI18n()
-
   return (
     <>
       <OrderActionsModal
@@ -1527,22 +1476,6 @@ function OrdersPageModals({
           onSaved={onOfficialCostsSaved}
         />
       )}
-
-      <AppModal centered opened={Boolean(deleteCandidate)} title={t('Видалити замовлення')} onClose={onCloseDelete}>
-        <Stack gap="md">
-          <Text>
-            {t('Видалити')} <Text span fw={700}>{getRowTitle(deleteCandidate)}</Text>?
-          </Text>
-          <Group justify="flex-end">
-            <Button color="gray" disabled={isDeleting} variant="light" onClick={onCloseDelete}>
-              {t('Скасувати')}
-            </Button>
-            <Button color="red" leftSection={<Trash2 size={16} />} loading={isDeleting} onClick={onConfirmDelete}>
-              {t('Видалити')}
-            </Button>
-          </Group>
-        </Stack>
-      </AppModal>
 
       <DownloadDocumentModal
         document={downloadDocument}
@@ -1820,6 +1753,7 @@ export function OfficialCostsModal({
   onSaved: () => void
 }) {
   const { t } = useI18n()
+  const { hasPermission } = useAuth()
   const expense = row.order?.DeliveryExpenses?.[0] || null
   const [state, dispatch] = useReducer(officialCostsReducer, expense, createInitialOfficialCostsState)
   const { error, form, isLoading, isSaving, organizations, products } = state
@@ -1948,6 +1882,11 @@ export function OfficialCostsModal({
   }
 
   async function saveOfficialCosts() {
+    if (!hasPermission(PERMISSION_TO_UKRAINE_OFFICIAL_COSTS)) {
+      dispatch({ error: t('Недостатньо прав для збереження офіційних витрат доставки'), type: 'setError' })
+      return
+    }
+
     if (!row.order?.Id) {
       dispatch({ error: t('Поставка не завантажена'), type: 'setError' })
       return

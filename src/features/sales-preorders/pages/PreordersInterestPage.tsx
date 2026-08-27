@@ -9,6 +9,9 @@ import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui
 import { ProductCardModal } from '../../products/components/ProductCardModal'
 import { getPreorders } from '../api/salesPreordersApi'
 import type { PreOrder } from '../types'
+import { PermissionKeys } from '../../../shared/auth/permissionKeys'
+import { PagePermissionBoundary } from '../../auth/components/PagePermissionBoundary'
+import { usePermissions } from '../../auth/usePermissions'
 import './preorders-interest-page.css'
 
 const PREORDERS_PAGE_SIZE = 30
@@ -63,7 +66,17 @@ function formatCreated(value: string | null | undefined): { date: string; time: 
 }
 
 export function PreordersInterestPage() {
+  return (
+    <PagePermissionBoundary permissionKey={PermissionKeys.SystemPages.SalesUkraineInterest.View}>
+      <PreordersInterestPageContent />
+    </PagePermissionBoundary>
+  )
+}
+
+function PreordersInterestPageContent() {
   const { t } = useI18n()
+  const { can } = usePermissions()
+  const canOpenProductDetails = can(PermissionKeys.ProductsAssortment.Page.View)
   const [preOrders, setPreOrders] = useValueState<PreOrder[]>([])
   const [offset, setOffset] = useValueState(0)
   const [isLoading, setLoading] = useValueState(true)
@@ -159,7 +172,7 @@ export function PreordersInterestPage() {
           const netId = preOrder.Product?.NetUid
           const code = preOrder.Product?.VendorCode || ''
 
-          return netId && code ? (
+          return netId && code && canOpenProductDetails ? (
             <Anchor
               className="preorders-interest-product-code-link"
               component="button"
@@ -189,7 +202,7 @@ export function PreordersInterestPage() {
           const netId = preOrder.Product?.NetUid
           const name = preOrder.Product?.NameUA || preOrder.Product?.Name || ''
 
-          return netId && name ? (
+          return netId && name && canOpenProductDetails ? (
             <Anchor
               className="preorders-interest-product-name-link"
               component="button"
@@ -235,7 +248,7 @@ export function PreordersInterestPage() {
         width: 90,
       },
     ],
-    [t],
+    [canOpenProductDetails, t],
   )
 
   return (
@@ -292,7 +305,10 @@ export function PreordersInterestPage() {
         )}
       </div>
 
-      <ProductCardModal productNetId={productCardNetId} onClose={() => setProductCardNetId(null)} />
+      <ProductCardModal
+        productNetId={canOpenProductDetails ? productCardNetId : null}
+        onClose={() => setProductCardNetId(null)}
+      />
     </Stack>
   )
 }

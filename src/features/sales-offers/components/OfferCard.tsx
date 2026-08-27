@@ -22,6 +22,9 @@ const STATUS_CLASS: Record<number, string> = {
 }
 
 export function OfferCard({
+  canDelete,
+  canEdit,
+  canExtendValidity,
   expanded,
   offer,
   onCopyLink,
@@ -31,6 +34,9 @@ export function OfferCard({
   onRestart,
   onToggle,
 }: {
+  canDelete: boolean
+  canEdit: boolean
+  canExtendValidity: boolean
   expanded: boolean
   offer: ClientShoppingCart
   onCopyLink: (offer: ClientShoppingCart) => void
@@ -94,9 +100,9 @@ export function OfferCard({
 
           {showNotProcessed && <ReasonBadge status={reasonStatus} />}
 
-          {canOpenReason && (
+          {canEdit && canOpenReason && (
             <Tooltip label={t('Причини')}>
-              <ActionIcon color="blue" variant="subtle" onClick={() => onOpenReason(offer)}>
+              <ActionIcon aria-label={t('Причини')} color="blue" variant="subtle" onClick={() => onOpenReason(offer)}>
                 <MessageSquare size={18} />
               </ActionIcon>
             </Tooltip>
@@ -104,23 +110,23 @@ export function OfferCard({
 
           {status === OFFER_PROCESSING_STATUS.PartiallyProcessed && (
             <Tooltip label={t('Копіювати посилання')}>
-              <ActionIcon color="orange" variant="subtle" onClick={() => onCopyLink(offer)}>
+              <ActionIcon aria-label={t('Копіювати посилання')} color="orange" variant="subtle" onClick={() => onCopyLink(offer)}>
                 <Link size={18} />
               </ActionIcon>
             </Tooltip>
           )}
 
-          {status === OFFER_PROCESSING_STATUS.NotProcessed && (
+          {canExtendValidity && status === OFFER_PROCESSING_STATUS.NotProcessed && (
             <Tooltip label={t('Перезапустити')}>
-              <ActionIcon color="teal" variant="subtle" onClick={() => onRestart(offer)}>
+              <ActionIcon aria-label={t('Перезапустити')} color="teal" variant="subtle" onClick={() => onRestart(offer)}>
                 <RotateCcw size={18} />
               </ActionIcon>
             </Tooltip>
           )}
 
-          {status === OFFER_PROCESSING_STATUS.PartiallyProcessed && (
+          {canDelete && status === OFFER_PROCESSING_STATUS.PartiallyProcessed && (
             <Tooltip label={t('Видалити')}>
-              <ActionIcon color="red" variant="subtle" onClick={() => onDelete(offer)}>
+              <ActionIcon aria-label={t('Видалити')} color="red" variant="subtle" onClick={() => onDelete(offer)}>
                 <Trash2 size={18} />
               </ActionIcon>
             </Tooltip>
@@ -136,6 +142,7 @@ export function OfferCard({
               currencyCode={currencyCode}
               isOfferProcessed={offer.IsOfferProcessed === true}
               item={item}
+              canEdit={canEdit}
               onOpenProductCard={setProductCardNetId}
               onOpenReason={() => onOpenItemReason(offer, item)}
             />
@@ -148,12 +155,14 @@ export function OfferCard({
 }
 
 function OfferLine({
+  canEdit,
   currencyCode,
   isOfferProcessed,
   item,
   onOpenProductCard,
   onOpenReason,
 }: {
+  canEdit: boolean
   currencyCode: string
   isOfferProcessed: boolean
   item: OfferOrderItem
@@ -162,7 +171,7 @@ function OfferLine({
 }) {
   const { t } = useI18n()
   const notProcessed = getItemNotProcessed(item)
-  const canOpenReason = isOfferProcessed && notProcessed > 0
+  const canOpenReason = canEdit && isOfferProcessed && notProcessed > 0
 
   return (
     <Box className="offer-line">

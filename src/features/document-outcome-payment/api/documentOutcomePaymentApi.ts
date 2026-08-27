@@ -3,16 +3,10 @@ import {
   executeAccountingMutation,
   type AccountingMutationOperationOptions,
 } from '../../../shared/api/accountingMutationOperation'
-import {
-  ACCOUNTING_OPERATION_ID,
-  getAccountingOperation,
-} from '../../accounting/accountingOperationCatalog'
 import type { OutcomePaymentOrder } from '../types'
 
-const CREATE_SAD_OUTCOME_ENDPOINT =
-  getAccountingOperation(ACCOUNTING_OPERATION_ID.SadOutcome).endpoint
-const CREATE_TAX_FREE_OUTCOME_ENDPOINT =
-  getAccountingOperation(ACCOUNTING_OPERATION_ID.TaxFreeOutcome).endpoint
+const CREATE_SAD_OUTCOME_ENDPOINT = '/payments/orders/outcome/sad/create'
+const CREATE_TAX_FREE_OUTCOME_ENDPOINT = '/payments/orders/outcome/tax-free-documents/new'
 
 export async function createOutcomeOrderFromTaxFree(
   taxFreeNetId: string,
@@ -42,6 +36,26 @@ export async function createOutcomeOrderFromTaxFree(
   return result && typeof result === 'object' ? (result as OutcomePaymentOrder) : null
 }
 
+function toSadPaymentRequest(order: OutcomePaymentOrder) {
+  const movement = order.PaymentMovementOperation?.PaymentMovement
+  return {
+    amount: order.Amount || 0,
+    comment: order.Comment || '',
+    fromDate: order.FromDate,
+    organizationId: order.Organization?.Id || 0,
+    paymentMovementId: movement?.Id || 0,
+    clientId: order.ClientAgreement?.ClientId || null,
+    clientAgreementId: order.ClientAgreement?.Id || null,
+    organizationClientId: order.OrganizationClientAgreement?.OrganizationClientId || null,
+    organizationClientAgreementId:
+      order.OrganizationClientAgreement?.Id || null,
+    paymentRegisterId: 0,
+    currencyId: 0,
+    paymentCurrencyRegisterId:
+      order.PaymentCurrencyRegister?.Id || 0,
+  }
+}
+
 export async function createOutcomeOrderFromSad(
   sadNetId: string,
   order: OutcomePaymentOrder,
@@ -56,7 +70,7 @@ export async function createOutcomeOrderFromSad(
       sadNetId,
     },
     request: (payload, context) => apiRequest<unknown>(CREATE_SAD_OUTCOME_ENDPOINT, {
-      body: payload.order,
+      body: toSadPaymentRequest(payload.order),
       dedupe: false,
       headers: context.headers,
       method: 'POST',

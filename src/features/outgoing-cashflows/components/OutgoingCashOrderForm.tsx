@@ -16,12 +16,14 @@ import {
 import { ArrowLeft, CircleAlert, Plus, Save } from 'lucide-react'
 import { type FormEvent, useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
+import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppDrawerFooter } from '../../../shared/ui/AppDrawer'
 import { SearchableSelect } from '../../../shared/ui/SearchableSelect'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
+import { useAuth } from '../../auth/useAuth'
 import { createAutocompleteOptionSubmitGuard } from '../../income-cashflows/autocompleteOptionSubmitGuard'
 import {
   INCOME_CASHFLOW_TEXT_LIMITS,
@@ -70,6 +72,7 @@ type SelectOption = {
 
 export function OutgoingCashOrderForm({ onCancel, onCreated }: OutgoingCashOrderFormProps) {
   const { t } = useI18n()
+  const { hasPermission } = useAuth()
   const [organizations, setOrganizations] = useValueState<Organization[]>([])
   const [paymentRegisters, setPaymentRegisters] = useValueState<CreatePaymentRegister[]>([])
   const [paymentMovements, setPaymentMovements] = useValueState<PaymentMovement[]>([])
@@ -300,6 +303,11 @@ export function OutgoingCashOrderForm({ onCancel, onCreated }: OutgoingCashOrder
   }
 
   async function handleCreateMovement() {
+    if (!hasPermission(PermissionKeys.FinancialAdministration.CashflowArticles.Article.Create)) {
+      setError(t('Немає прав для створення статті руху коштів'))
+      return
+    }
+
     const operationName = form.movementSearch.trim()
 
     if (!operationName) {
@@ -336,6 +344,11 @@ export function OutgoingCashOrderForm({ onCancel, onCreated }: OutgoingCashOrder
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
+
+    if (!hasPermission(PermissionKeys.OutgoingCashflows.Order.Create)) {
+      setError(t('Немає прав для створення видаткового ордера'))
+      return
+    }
 
     const typedColleague = form.userSearch.trim()
     const resolvedColleague =
@@ -501,19 +514,21 @@ export function OutgoingCashOrderForm({ onCancel, onCreated }: OutgoingCashOrder
                   onChange={handleMovementSearchChanged}
                   onOptionSubmit={handleMovementSubmit}
                 />
-                <Tooltip label={t('Створити статтю')} withArrow>
-                  <ActionIcon
-                    aria-label={t('Створити статтю')}
-                    color={CREATE_ACTION_COLOR}
-                    disabled={Boolean(selectedMovement) || !form.movementSearch.trim() || isLoading || isSaving}
-                    size={36}
-                    type="button"
-                    variant="outline"
-                    onClick={() => void handleCreateMovement()}
-                  >
-                    <Plus size={17} />
-                  </ActionIcon>
-                </Tooltip>
+                {hasPermission(PermissionKeys.FinancialAdministration.CashflowArticles.Article.Create) && (
+                  <Tooltip label={t('Створити статтю')} withArrow>
+                    <ActionIcon
+                      aria-label={t('Створити статтю')}
+                      color={CREATE_ACTION_COLOR}
+                      disabled={Boolean(selectedMovement) || !form.movementSearch.trim() || isLoading || isSaving}
+                      size={36}
+                      type="button"
+                      variant="outline"
+                      onClick={() => void handleCreateMovement()}
+                    >
+                      <Plus size={17} />
+                    </ActionIcon>
+                  </Tooltip>
+                )}
               </Group>
             </SimpleGrid>
           </Stack>
@@ -569,16 +584,18 @@ export function OutgoingCashOrderForm({ onCancel, onCreated }: OutgoingCashOrder
           >
             {t('Скасувати')}
           </Button>
-          <Button
-            color={CREATE_ACTION_COLOR}
-            disabled={isLoading || isSaving}
-            form={FORM_ID}
-            leftSection={<Save size={16} />}
-            loading={isSaving}
-            type="submit"
-          >
-            {t('Створити')}
-          </Button>
+          {hasPermission(PermissionKeys.OutgoingCashflows.Order.Create) && (
+            <Button
+              color={CREATE_ACTION_COLOR}
+              disabled={isLoading || isSaving}
+              form={FORM_ID}
+              leftSection={<Save size={16} />}
+              loading={isSaving}
+              type="submit"
+            >
+              {t('Створити')}
+            </Button>
+          )}
         </Group>
       </AppDrawerFooter>
     </>

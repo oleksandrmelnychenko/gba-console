@@ -3,6 +3,7 @@ import {
   Alert,
   Button,
   Stack,
+  Text,
   TextInput,
   Tooltip,
 } from '@mantine/core'
@@ -16,13 +17,17 @@ import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { TableRowAction } from '../../../shared/ui/table-row-action'
-import { useAuth } from '../../auth/useAuth'
+import { usePermissions } from '../../auth/usePermissions'
+import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { getPaymentExpenseArticles, searchPaymentExpenseArticles } from '../api/paymentExpenseArticlesApi'
 import type { PaymentExpenseArticle } from '../types'
 import '../../../shared/ui/console-table-page.css'
 import './payment-expense-articles-page.css'
 
-const PERMISSION_CREATE_EXPENSE_ARTICLE = 'Accounting_Payment_Expense_Articles_ADDBtn_PKEY'
+const PERMISSION_CREATE_EXPENSE_ARTICLE =
+  PermissionKeys.FinancialAdministration.ExpenseArticles.Article.Create
+const PERMISSION_VIEW_EXPENSE_ARTICLES =
+  PermissionKeys.SystemPages.ExpenseArticles.View
 
 const TABLE_DEFAULT_LAYOUT = {
   columnPinning: {
@@ -40,7 +45,26 @@ type PaymentExpenseArticlesPageProps = {
 
 export function PaymentExpenseArticlesPage({ inSharedShell = false }: PaymentExpenseArticlesPageProps) {
   const { t } = useI18n()
-  const { hasPermission } = useAuth()
+  const { can, isLoading } = usePermissions()
+
+  if (isLoading) {
+    return <Text c="dimmed">{t('Завантаження')}</Text>
+  }
+
+  if (!can(PERMISSION_VIEW_EXPENSE_ARTICLES)) {
+    return (
+      <Alert color="red" icon={<CircleAlert size={18} />} title={t('Доступ заборонено')} variant="light">
+        {t('Недостатньо прав для перегляду статей витрат')}
+      </Alert>
+    )
+  }
+
+  return <PaymentExpenseArticlesPageContent inSharedShell={inSharedShell} />
+}
+
+function PaymentExpenseArticlesPageContent({ inSharedShell = false }: PaymentExpenseArticlesPageProps) {
+  const { t } = useI18n()
+  const { can } = usePermissions()
   const location = useLocation()
   const navigate = useNavigate()
   const [articles, setArticles] = useValueState<PaymentExpenseArticle[]>([])
@@ -53,7 +77,7 @@ export function PaymentExpenseArticlesPage({ inSharedShell = false }: PaymentExp
   const normalizedSearchValue = debouncedSearchValue.trim()
   const isSearchSettling = searchValue.trim() !== normalizedSearchValue
   const isTableBusy = isLoading || isSearchSettling
-  const canCreate = hasPermission(PERMISSION_CREATE_EXPENSE_ARTICLE)
+  const canCreate = can(PERMISSION_CREATE_EXPENSE_ARTICLE)
 
   const openArticle = useCallback(
     (article: PaymentExpenseArticle) => {

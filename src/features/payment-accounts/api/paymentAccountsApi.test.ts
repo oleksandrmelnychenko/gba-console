@@ -7,7 +7,12 @@ import {
   createPaymentAccount,
   createPaymentAccountExchange,
   createPaymentAccountTransfer,
+  getPaymentAccountCurrencyActivity,
   getPaymentAccountCurrencyTraders,
+  getPaymentAccountExchanges,
+  getPaymentAccountPaymentMovements,
+  getPaymentAccountTransfers,
+  getPaymentAccountsByBank,
   updatePaymentAccount,
 } from './paymentAccountsApi'
 import type {
@@ -71,7 +76,7 @@ describe('paymentAccountsApi', () => {
       exchangeRate: 42.5,
     })).resolves.toBe(4250)
 
-    expect(apiRequestMock).toHaveBeenCalledWith('/payments/registers/exchanges/calculate', {
+    expect(apiRequestMock).toHaveBeenCalledWith('/payments/registers/exchanges/accounting/calculate', {
       query: {
         amount: 100,
         currencyCode: 'EUR',
@@ -80,9 +85,55 @@ describe('paymentAccountsApi', () => {
     })
   })
 
+  it('uses page-scoped routes for payment-account activity reads', async () => {
+    apiRequestMock
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce({ NetUid: 'currency-register-1' })
+
+    await getPaymentAccountsByBank('account-1')
+    await getPaymentAccountTransfers({
+      currencyNetId: 'currency-1',
+      from: '2026-08-01',
+      netId: 'account-1',
+      to: '2026-08-18',
+      type: 0,
+    })
+    await getPaymentAccountExchanges({
+      from: '2026-08-01',
+      fromCurrencyNetId: 'currency-1',
+      netId: 'account-1',
+      to: '2026-08-18',
+      toCurrencyNetId: 'currency-2',
+    })
+    await getPaymentAccountCurrencyActivity({
+      currencyRegisterNetId: 'currency-register-1',
+      from: '2026-08-01',
+      to: '2026-08-18',
+    })
+
+    expect(apiRequestMock.mock.calls.map(([path]) => path)).toEqual([
+      '/payments/registers/accounting/by/bank',
+      '/payments/registers/transfers/accounting/all',
+      '/payments/registers/exchanges/accounting/all',
+      '/payments/registers/accounting/currencies/get/filtered',
+    ])
+  })
+
+  it('loads payment movements through the payment-accounts page scope', async () => {
+    apiRequestMock.mockResolvedValueOnce({ Items: [] })
+
+    await getPaymentAccountPaymentMovements()
+
+    expect(apiRequestMock).toHaveBeenCalledWith(
+      '/payments/movements/payment-accounts/page/all',
+    )
+  })
+
   it.each([
-    ['create', createPaymentAccount, '/payments/registers/new', '33333333-3333-4333-8333-333333333333'],
-    ['update', updatePaymentAccount, '/payments/registers/update', '44444444-4444-4444-8444-444444444444'],
+    ['create', createPaymentAccount, '/payments/registers/accounting/new', '33333333-3333-4333-8333-333333333333'],
+    ['update', updatePaymentAccount, '/payments/registers/accounting/update', '44444444-4444-4444-8444-444444444444'],
   ] as const)('sends one durable operation key for account %s', async (
     _name,
     mutate,
@@ -145,7 +196,7 @@ describe('paymentAccountsApi', () => {
     expect(apiRequestMock).toHaveBeenCalledTimes(2)
     for (const call of apiRequestMock.mock.calls) {
       expect(call).toEqual([
-        '/payments/registers/transfers/new',
+        '/payments/registers/transfers/accounting/new',
         {
           body: transfer,
           dedupe: false,
@@ -179,7 +230,7 @@ describe('paymentAccountsApi', () => {
     ).resolves.toEqual(persisted)
 
     expect(apiRequestMock).toHaveBeenCalledWith(
-      '/payments/registers/exchanges/new',
+      '/payments/registers/exchanges/accounting/new',
       {
         body: exchange,
         dedupe: false,
@@ -196,13 +247,13 @@ describe('paymentAccountsApi', () => {
     [
       'transfer',
       cancelPaymentAccountTransfer,
-      '/payments/registers/transfers/cancel',
+      '/payments/registers/transfers/accounting/cancel',
       '55555555-5555-4555-8555-555555555555',
     ],
     [
       'currency exchange',
       cancelPaymentAccountExchange,
-      '/payments/registers/exchanges/cancel',
+      '/payments/registers/exchanges/accounting/cancel',
       '66666666-6666-4666-8666-666666666666',
     ],
   ] as const)(

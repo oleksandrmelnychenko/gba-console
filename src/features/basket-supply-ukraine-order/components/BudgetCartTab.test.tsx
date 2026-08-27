@@ -3,13 +3,20 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { I18nProvider } from '../../../shared/i18n/I18nProvider'
+import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { theme } from '../../../shared/theme/theme'
-import { getSupplyOrderSuppliers } from '../../supply-ukraine-orders/api/supplyUkraineOrdersApi'
+import { getBudgetCartSuppliers } from '../../supply-ukraine-orders/api/supplyUkraineOrdersApi'
 import { getBudgetCartPlan } from '../api/procurementApi'
 import { BudgetCartTab } from './BudgetCartTab'
 
+const canMock = vi.fn<(permissionKey: string) => boolean>()
+
+vi.mock('../../auth/usePermissions', () => ({
+  usePermissions: () => ({ can: canMock, isLoading: false }),
+}))
+
 vi.mock('../../supply-ukraine-orders/api/supplyUkraineOrdersApi', () => ({
-  getSupplyOrderSuppliers: vi.fn(),
+  getBudgetCartSuppliers: vi.fn(),
 }))
 
 vi.mock('../api/procurementApi', () => ({
@@ -18,8 +25,29 @@ vi.mock('../api/procurementApi', () => ({
 
 describe('BudgetCartTab', () => {
   beforeEach(() => {
-    vi.mocked(getSupplyOrderSuppliers).mockResolvedValue([])
+    canMock.mockImplementation(
+      (permissionKey) => permissionKey === PermissionKeys.SystemPages.BudgetCart.View,
+    )
+    vi.mocked(getBudgetCartSuppliers).mockResolvedValue([])
     vi.mocked(getBudgetCartPlan).mockReset()
+  })
+
+  it('does not mount supplier or optimization requests without budget-cart page access', () => {
+    canMock.mockReturnValue(false)
+
+    render(
+      <MantineProvider theme={theme}>
+        <MemoryRouter>
+          <I18nProvider>
+            <BudgetCartTab />
+          </I18nProvider>
+        </MemoryRouter>
+      </MantineProvider>,
+    )
+
+    expect(screen.getByText('Недостатньо прав для перегляду бюджетного кошика')).not.toBeNull()
+    expect(getBudgetCartSuppliers).not.toHaveBeenCalled()
+    expect(getBudgetCartPlan).not.toHaveBeenCalled()
   })
 
   it('explains the next action and the selected optimization method', () => {

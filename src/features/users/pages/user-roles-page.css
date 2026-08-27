@@ -144,15 +144,16 @@
     transform 140ms var(--tx-ease-smooth);
 }
 
-/* Small selection dot in the top-right corner. */
+/* Keep the selection dot in its own slot before the edit action. */
 .user-role-list-item::before {
   background: transparent;
   border-radius: 999px;
   content: '';
   height: 6px;
   position: absolute;
-  right: 8px;
-  top: 8px;
+  right: 36px;
+  top: 50%;
+  transform: translateY(-50%);
   transition: background-color 120ms var(--tx-ease-smooth);
   width: 6px;
 }
@@ -228,4 +229,24 @@
   display: flex;
   min-height: 48px;
   padding: 8px 10px;
+}
+
+.user-roles-workspace-tabs {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.user-roles-workspace-tabs-list {
+  flex: 0 0 auto;
+  padding: 0 8px;
+}
+
+.user-roles-workspace-tab-panel {
+  min-height: 0;
+}
+
+.user-roles-workspace-tabs > .user-roles-layout {
+  flex: 1 1 auto;
 }

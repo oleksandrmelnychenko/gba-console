@@ -54,11 +54,11 @@ export async function createSeoContact(contact: SeoContact): Promise<SeoLocaleEn
   return normalizeSeoSettings(result)
 }
 
-export async function uploadSeoContactImage(file: File): Promise<string> {
+export async function uploadSeoContactImage(file: File, mode: 'create' | 'edit'): Promise<string> {
   const formData = new FormData()
   formData.append('img', file)
 
-  const result = await apiRequest<unknown>('/seo/info/contacts/img/add', {
+  const result = await apiRequest<unknown>(`/seo/info/contacts/${mode}/img/add`, {
     method: 'POST',
     body: formData,
   })
@@ -85,13 +85,13 @@ export async function removeSeoContact(netId: string): Promise<SeoLocaleEntry[]>
 }
 
 export async function getOnlineShopClients(): Promise<OnlineShopClient[]> {
-  const result = await apiRequest<unknown>('/clients/all/shop')
+  const result = await apiRequest<unknown>('/clients/online-shop-seo/all/shop')
 
   return normalizeCollection<OnlineShopClient>(result)
 }
 
 export async function toggleOnlineShopClient(netId: string): Promise<OnlineShopClient[]> {
-  const result = await apiRequest<unknown>('/clients/retail/set', {
+  const result = await apiRequest<unknown>('/clients/online-shop-seo/retail/set', {
     method: 'POST',
     query: { netId },
   })
@@ -100,13 +100,13 @@ export async function toggleOnlineShopClient(netId: string): Promise<OnlineShopC
 }
 
 export async function getOnlineShopPaymentRegisters(): Promise<OnlineShopPaymentRegister[]> {
-  const result = await apiRequest<unknown>('/payments/registers/all/retail')
+  const result = await apiRequest<unknown>('/payments/registers/online-shop-seo/all/retail')
 
   return normalizeCollection<OnlineShopPaymentRegister>(result)
 }
 
 export async function selectOnlineShopPaymentRegister(netId: string): Promise<OnlineShopPaymentRegister[]> {
-  const result = await apiRequest<unknown>('/payments/registers/select', {
+  const result = await apiRequest<unknown>('/payments/registers/online-shop-seo/select', {
     method: 'POST',
     query: { netId },
   })
@@ -115,19 +115,19 @@ export async function selectOnlineShopPaymentRegister(netId: string): Promise<On
 }
 
 export async function getEcommerceStorages(): Promise<OnlineShopStorage[]> {
-  const result = await apiRequest<unknown>('/storages/all/ecommerce')
+  const result = await apiRequest<unknown>('/storages/online-shop-seo/all/ecommerce')
 
   return normalizeCollection<OnlineShopStorage>(result)
 }
 
 export async function getAllOnlineShopStorages(): Promise<OnlineShopStorage[]> {
-  const result = await apiRequest<unknown>('/storages/get/all')
+  const result = await apiRequest<unknown>('/storages/online-shop-seo/all')
 
   return normalizeCollection<OnlineShopStorage>(result)
 }
 
 export async function addEcommerceStorage(netId: string): Promise<OnlineShopStorage[]> {
-  const result = await apiRequest<unknown>('/storages/ecommerce/set', {
+  const result = await apiRequest<unknown>('/storages/online-shop-seo/ecommerce/set', {
     method: 'POST',
     query: { netId },
   })
@@ -136,7 +136,7 @@ export async function addEcommerceStorage(netId: string): Promise<OnlineShopStor
 }
 
 export async function removeEcommerceStorage(netId: string): Promise<OnlineShopStorage[]> {
-  const result = await apiRequest<unknown>('/storages/ecommerce/unselect', {
+  const result = await apiRequest<unknown>('/storages/online-shop-seo/ecommerce/unselect', {
     method: 'POST',
     query: { netId },
   })
@@ -145,7 +145,7 @@ export async function removeEcommerceStorage(netId: string): Promise<OnlineShopS
 }
 
 export async function updateEcommerceStoragePriority(storageId: number, priority: number): Promise<OnlineShopStorage[]> {
-  const result = await apiRequest<unknown>('/storages/priority', {
+  const result = await apiRequest<unknown>('/storages/online-shop-seo/priority', {
     method: 'POST',
     query: { priority, storageId },
   })

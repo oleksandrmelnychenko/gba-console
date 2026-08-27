@@ -14,11 +14,12 @@ import type {
   PreviewCartItem,
   Sad,
   SupplyOrderUkraineCartItem,
+  SupplyCartDocumentAssemblyRequest,
   TaxFreePackList,
 } from '../types'
 
 export async function getUkraineCartItems(): Promise<SupplyOrderUkraineCartItem[]> {
-  const result = await apiRequest<unknown>('/supplies/ukraine/order/cart/items/all')
+  const result = await apiRequest<unknown>('/supplies/ukraine/order/cart/items/page/all')
 
   return normalizeArray<SupplyOrderUkraineCartItem>(result).map(ensureCartItem)
 }
@@ -30,7 +31,7 @@ export async function updateUkraineCartItem(
   const operation = acquireCartReservationUpdateOperation(target)
 
   try {
-    const result = await apiRequest<unknown>('/supplies/ukraine/order/cart/items/update', {
+    const result = await apiRequest<unknown>('/supplies/ukraine/order/cart/items/page/item/reservation', {
       method: 'POST',
       body: target,
       dedupe: false,
@@ -60,7 +61,7 @@ export async function uploadUkraineCartItemsFromFile(
   const operation = acquireCartReservationUploadOperation(file, parseConfiguration)
 
   try {
-    const result = await apiRequest<unknown>('/supplies/ukraine/order/cart/items/file/upload', {
+    const result = await apiRequest<unknown>('/supplies/ukraine/order/cart/items/page/file/upload', {
       method: 'POST',
       body: createCartItemsFormData(file, parseConfiguration),
       dedupe: false,
@@ -87,7 +88,7 @@ export async function uploadPreviewUkraineCartItemsFromFile(
   file: File,
   parseConfiguration: CartItemsParseConfiguration,
 ): Promise<PreviewCartItem[]> {
-  const result = await apiRequest<unknown>('/supplies/ukraine/order/cart/items/file/select/preview', {
+  const result = await apiRequest<unknown>('/supplies/ukraine/order/cart/items/page/file/select/preview', {
     method: 'POST',
     body: createCartItemsFormData(file, parseConfiguration),
   })
@@ -116,9 +117,23 @@ export async function calculateTotalsBySales(sales: BasketSale[]): Promise<CartI
 }
 
 export async function getNotSentTaxFreePackLists(): Promise<TaxFreePackList[]> {
-  const result = await apiRequest<unknown>('/supplies/ukraine/order/packlists/taxfree/all/notsent')
+  const result = await apiRequest<unknown>('/supplies/ukraine/order/packlists/taxfree/page/documents/taxfree/not-sent')
 
   return normalizeArray<TaxFreePackList>(result)
+}
+
+export async function assembleCartTaxFreeDocument(
+  request: SupplyCartDocumentAssemblyRequest,
+): Promise<TaxFreePackList | null> {
+  const result = await apiRequest<unknown>(
+    '/supplies/ukraine/order/packlists/taxfree/page/documents/taxfree/assemble',
+    {
+      method: 'POST',
+      body: request,
+    },
+  )
+
+  return normalizeItem<TaxFreePackList>(result)
 }
 
 export async function getNotSentSaleTaxFreePackLists(): Promise<TaxFreePackList[]> {
@@ -146,9 +161,44 @@ export async function addOrUpdateSaleTaxFreePackList(packList: TaxFreePackList):
 }
 
 export async function getNotSentSads(): Promise<Sad[]> {
-  const result = await apiRequest<unknown>('/supplies/ukraine/order/packlists/sad/all/notsent')
+  const result = await apiRequest<unknown>('/supplies/ukraine/order/packlists/sad/page/documents/sad/not-sent')
 
   return normalizeArray<Sad>(result)
+}
+
+export async function assembleCartSadDocument(
+  request: SupplyCartDocumentAssemblyRequest,
+): Promise<Sad | null> {
+  type MutationEnvelope = SupplyCartDocumentAssemblyRequest & {
+    Id?: number
+  }
+  const mutation: MutationEnvelope = {
+    ...request,
+    Id: request.existingDocumentNetUid ? 1 : 0,
+  }
+  const result = await executeSadMutation({
+    sad: mutation,
+    request: (payload, context) => {
+      const body = { ...payload }
+      delete body.Id
+
+      return apiRequest<unknown>(
+        '/supplies/ukraine/order/packlists/sad/page/documents/sad/assemble',
+        {
+          method: 'POST',
+          body,
+          ...(context.isCreate
+            ? {
+                dedupe: false,
+                headers: context.headers,
+              }
+            : {}),
+        },
+      )
+    },
+  })
+
+  return normalizeItem<Sad>(result)
 }
 
 export async function getNotSentSaleSads(): Promise<Sad[]> {
@@ -157,29 +207,8 @@ export async function getNotSentSaleSads(): Promise<Sad[]> {
   return normalizeArray<Sad>(result)
 }
 
-export async function addOrUpdateSad(sad: Sad): Promise<Sad | null> {
-  const result = await executeSadMutation({
-    sad,
-    request: (payload, context) => apiRequest<unknown>(
-      '/supplies/ukraine/order/packlists/sad/update',
-      {
-        method: 'POST',
-        body: payload,
-        ...(context.isCreate
-          ? {
-              dedupe: false,
-              headers: context.headers,
-            }
-          : {}),
-      },
-    ),
-  })
-
-  return normalizeItem<Sad>(result)
-}
-
 export async function addOrUpdateSaleSad(sad: Sad): Promise<Sad | null> {
-  const result = await apiRequest<unknown>('/supplies/ukraine/order/packlists/sad/update/sale', {
+  const result = await apiRequest<unknown>('/supplies/ukraine/order/packlists/sad/page/documents/sad/assemble/sales', {
     method: 'POST',
     body: sad,
   })
@@ -188,7 +217,7 @@ export async function addOrUpdateSaleSad(sad: Sad): Promise<Sad | null> {
 }
 
 export async function getSalesForMovingToUkraine(filters: BasketSupplySalesFilters): Promise<BasketSale[]> {
-  const result = await apiRequest<unknown>('/sales/all/filtered/pl-uk', {
+  const result = await apiRequest<unknown>('/sales/supply-ukraine/registry', {
     query: {
       from: filters.from,
       to: filters.to,

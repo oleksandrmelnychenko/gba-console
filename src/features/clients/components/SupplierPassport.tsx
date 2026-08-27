@@ -9,9 +9,10 @@ import type { Client, ClientAgreement } from '../types'
 type SupplierPassportProps = {
   netUid?: string | null
   client?: Client | null
+  loadClientRequest?: typeof getClientById
 }
 
-export function SupplierPassport({ netUid, client }: SupplierPassportProps) {
+export function SupplierPassport({ netUid, client, loadClientRequest = getClientById }: SupplierPassportProps) {
   const { t } = useI18n()
   const [loadedClient, setLoadedClient] = useValueState<Client | null>(netUid ? null : client ?? null)
   const [isLoading, setLoading] = useValueState(Boolean(netUid))
@@ -28,7 +29,7 @@ export function SupplierPassport({ netUid, client }: SupplierPassportProps) {
 
     async function loadClient(targetNetUid: string) {
       try {
-        const result = await getClientById(targetNetUid)
+        const result = await loadClientRequest(targetNetUid)
 
         if (!cancelled) {
           setLoadedClient(result)
@@ -49,7 +50,7 @@ export function SupplierPassport({ netUid, client }: SupplierPassportProps) {
     return () => {
       cancelled = true
     }
-  }, [netUid, setError, setLoadedClient, setLoading, t])
+  }, [loadClientRequest, netUid, setError, setLoadedClient, setLoading, t])
 
   if (isLoading) {
     return (

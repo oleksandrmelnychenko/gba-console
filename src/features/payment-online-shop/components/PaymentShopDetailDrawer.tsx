@@ -37,6 +37,8 @@ import {
 const dateTimeFormatter = new Intl.DateTimeFormat('uk-UA', { dateStyle: 'short', timeStyle: 'short' })
 
 export type PaymentShopDetailDrawerProps = {
+  canCreatePayment: boolean
+  canEditPayment: boolean
   createError: string | null
   createNotice: string | null
   isCreating: boolean
@@ -63,6 +65,8 @@ const INITIAL_DRAFT: CreateFormDraft = {
 }
 
 export function PaymentShopDetailDrawer({
+  canCreatePayment,
+  canEditPayment,
   createError,
   createNotice,
   isCreating,
@@ -135,11 +139,16 @@ export function PaymentShopDetailDrawer({
           />
         </Stack>
 
-        <Stack gap="md">
+        <Stack gap="md" style={{ flex: 1 }}>
           <PaymentStatusSummary item={item} />
-          <PaymentImageList isEditing={isEditing} items={items} onSelect={onEditItem} />
+          <PaymentImageList
+            canEdit={canEditPayment}
+            isEditing={isEditing}
+            items={items}
+            onSelect={onEditItem}
+          />
 
-          {isEditing && (
+          {isEditing && canCreatePayment && (
             <Stack gap="sm">
               <Title order={4}>{t('Підтвердження оплати менеджером')}</Title>
 

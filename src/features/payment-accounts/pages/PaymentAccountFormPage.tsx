@@ -37,6 +37,7 @@ import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { useAuth } from '../../auth/useAuth'
+import { usePermissions } from '../../auth/usePermissions'
 import {
   cancelPaymentAccountExchange,
   cancelPaymentAccountTransfer,
@@ -57,7 +58,15 @@ import {
   getPaymentAccountsByBank,
   updatePaymentAccount,
 } from '../api/paymentAccountsApi'
-import { PAYMENT_ACCOUNT_CREATE_PERMISSION, PAYMENT_ACCOUNT_EDIT_PERMISSION } from '../permissions'
+import {
+  PAYMENT_ACCOUNTS_PAGE_PERMISSION,
+  PAYMENT_ACCOUNT_CREATE_PERMISSION,
+  PAYMENT_ACCOUNT_EDIT_PERMISSION,
+  PAYMENT_ACCOUNT_EXCHANGE_CANCEL_PERMISSION,
+  PAYMENT_ACCOUNT_EXCHANGE_CREATE_PERMISSION,
+  PAYMENT_ACCOUNT_TRANSFER_CANCEL_PERMISSION,
+  PAYMENT_ACCOUNT_TRANSFER_CREATE_PERMISSION,
+} from '../permissions'
 import type {
   BankItem,
   Currency,
@@ -270,6 +279,25 @@ const moneyFormatter = new Intl.NumberFormat('uk-UA', {
 
 export function PaymentAccountFormPage() {
   const { t } = useI18n()
+  const { can, isLoading } = usePermissions()
+
+  if (isLoading) {
+    return <Text c="dimmed">{t('Завантаження')}</Text>
+  }
+
+  if (!can(PAYMENT_ACCOUNTS_PAGE_PERMISSION)) {
+    return (
+      <Alert color="red" icon={<CircleAlert size={18} />} title={t('Доступ заборонено')} variant="light">
+        {t('Недостатньо прав для перегляду платіжних рахунків')}
+      </Alert>
+    )
+  }
+
+  return <PaymentAccountFormPageContent />
+}
+
+function PaymentAccountFormPageContent() {
+  const { t } = useI18n()
   const { hasPermission } = useAuth()
   const { id } = useParams<{ id?: string }>()
   const routeLocation = useLocation()
@@ -286,6 +314,10 @@ export function PaymentAccountFormPage() {
   const { account, banks, currencyDrafts, error, form, hiddenCurrencyRegisters, isLoading, organizations } = pageState
   const activity = usePaymentAccountActivity({ account, id, isEditMode, t })
   const canSave = hasPermission(isEditMode ? PAYMENT_ACCOUNT_EDIT_PERMISSION : PAYMENT_ACCOUNT_CREATE_PERMISSION)
+  const canCreateTransfer = hasPermission(PAYMENT_ACCOUNT_TRANSFER_CREATE_PERMISSION)
+  const canCancelTransfer = hasPermission(PAYMENT_ACCOUNT_TRANSFER_CANCEL_PERMISSION)
+  const canCreateExchange = hasPermission(PAYMENT_ACCOUNT_EXCHANGE_CREATE_PERMISSION)
+  const canCancelExchange = hasPermission(PAYMENT_ACCOUNT_EXCHANGE_CANCEL_PERMISSION)
   const isFormDisabled = isLoading || isSaving || (isEditMode && !isEditing)
 
   useEffect(() => {
@@ -532,6 +564,10 @@ export function PaymentAccountFormPage() {
         <PaymentAccountActivityPanel
           account={account}
           activeTab={activity.activeActivityTab}
+          canCancelExchange={canCancelExchange}
+          canCancelTransfer={canCancelTransfer}
+          canCreateExchange={canCreateExchange}
+          canCreateTransfer={canCreateTransfer}
           from={activity.activityFrom}
           isLoadingAccount={isLoading}
           selectedCurrencyRegister={activity.selectedCurrencyRegister}
@@ -1069,9 +1105,13 @@ function CurrencySelector({
   )
 }
 
-function PaymentAccountActivityPanel({
+export function PaymentAccountActivityPanel({
   account,
   activeTab,
+  canCancelExchange,
+  canCancelTransfer,
+  canCreateExchange,
+  canCreateTransfer,
   from,
   isLoadingAccount,
   selectedCurrencyRegister,
@@ -1088,6 +1128,10 @@ function PaymentAccountActivityPanel({
 }: {
   account: PaymentAccount
   activeTab: PaymentAccountActivityTab
+  canCancelExchange: boolean
+  canCancelTransfer: boolean
+  canCreateExchange: boolean
+  canCreateTransfer: boolean
   from: string
   isLoadingAccount: boolean
   selectedCurrencyRegister: PaymentCurrencyRegister | null
@@ -1111,6 +1155,10 @@ function PaymentAccountActivityPanel({
   const [isMutating, setMutating] = useValueState(false)
 
   async function handleCancelTransfer() {
+    if (!canCancelTransfer) {
+      return
+    }
+
     const netId = getEntityValue(cancelTransfer)
 
     if (!netId) {
@@ -1135,6 +1183,10 @@ function PaymentAccountActivityPanel({
   }
 
   async function handleCancelExchange() {
+    if (!canCancelExchange) {
+      return
+    }
+
     const netId = getEntityValue(cancelExchange)
 
     if (!netId) {
@@ -1181,32 +1233,36 @@ function PaymentAccountActivityPanel({
               <Button disabled={!account.NetUid} leftSection={<ArrowUpRight size={16} />} size="xs" variant="default" onClick={onOpenOutgoing}>
                 {t('Розхід')}
               </Button>
-              <Button
-                disabled={!account.NetUid || isLoadingAccount}
-                leftSection={<ArrowLeftRight size={16} />}
-                size="xs"
-                type="button"
-                variant="default"
-                onClick={() => {
-                  setTransferModalOpened(true)
-                  onActiveTabChange('transfers')
-                }}
-              >
-                {t('Переказ')}
-              </Button>
-              <Button
-                disabled={!account.NetUid || isLoadingAccount}
-                leftSection={<Repeat2 size={16} />}
-                size="xs"
-                type="button"
-                variant="default"
-                onClick={() => {
-                  setExchangeModalOpened(true)
-                  onActiveTabChange('exchanges')
-                }}
-              >
-                {t('Обмін')}
-              </Button>
+              {canCreateTransfer && (
+                <Button
+                  disabled={!account.NetUid || isLoadingAccount}
+                  leftSection={<ArrowLeftRight size={16} />}
+                  size="xs"
+                  type="button"
+                  variant="default"
+                  onClick={() => {
+                    setTransferModalOpened(true)
+                    onActiveTabChange('transfers')
+                  }}
+                >
+                  {t('Переказ')}
+                </Button>
+              )}
+              {canCreateExchange && (
+                <Button
+                  disabled={!account.NetUid || isLoadingAccount}
+                  leftSection={<Repeat2 size={16} />}
+                  size="xs"
+                  type="button"
+                  variant="default"
+                  onClick={() => {
+                    setExchangeModalOpened(true)
+                    onActiveTabChange('exchanges')
+                  }}
+                >
+                  {t('Обмін')}
+                </Button>
+              )}
               <Button
                 disabled={isLoadingAccount}
                 leftSection={<RefreshCw size={16} />}
@@ -1245,7 +1301,7 @@ function PaymentAccountActivityPanel({
 
             <Tabs.Panel value="transfers" pt="md">
               <ActivityTable
-                columns={getTransferColumns(account, t, setCancelTransfer)}
+                columns={getTransferColumns(account, t, canCancelTransfer ? setCancelTransfer : undefined)}
                 emptyText={t('Перекази відсутні')}
                 getRowKey={(item, index) => getEntityValue(item) || `transfer-${index}`}
                 isLoading={state.isLoading}
@@ -1256,7 +1312,7 @@ function PaymentAccountActivityPanel({
 
             <Tabs.Panel value="exchanges" pt="md">
               <ActivityTable
-                columns={getExchangeColumns(account, t, setCancelExchange)}
+                columns={getExchangeColumns(account, t, canCancelExchange ? setCancelExchange : undefined)}
                 emptyText={t('Обмін валют відсутній')}
                 getRowKey={(item, index) => getEntityValue(item) || `exchange-${index}`}
                 isLoading={state.isLoading}
@@ -1277,8 +1333,8 @@ function PaymentAccountActivityPanel({
                 <PaymentCurrencyActivityView
                   activity={state.currencyActivity}
                   isLoading={state.isLoading}
-                  onCancelExchange={setCancelExchange}
-                  onCancelTransfer={setCancelTransfer}
+                  onCancelExchange={canCancelExchange ? setCancelExchange : undefined}
+                  onCancelTransfer={canCancelTransfer ? setCancelTransfer : undefined}
                 />
               </Stack>
             </Tabs.Panel>
@@ -1288,26 +1344,28 @@ function PaymentAccountActivityPanel({
 
       <PaymentAccountTransferModal
         account={account}
-        opened={transferModalOpened}
+        canCreate={canCreateTransfer}
+        opened={canCreateTransfer && transferModalOpened}
         onClose={() => setTransferModalOpened(false)}
         onMutationComplete={onMutationComplete}
       />
       <PaymentAccountExchangeModal
         account={account}
-        opened={exchangeModalOpened}
+        canCreate={canCreateExchange}
+        opened={canCreateExchange && exchangeModalOpened}
         onClose={() => setExchangeModalOpened(false)}
         onMutationComplete={onMutationComplete}
       />
       <CancelActivityModal
         isLoading={isMutating}
-        opened={Boolean(cancelTransfer)}
+        opened={canCancelTransfer && Boolean(cancelTransfer)}
         title={t('Скасувати переказ')}
         onClose={() => setCancelTransfer(null)}
         onConfirm={handleCancelTransfer}
       />
       <CancelActivityModal
         isLoading={isMutating}
-        opened={Boolean(cancelExchange)}
+        opened={canCancelExchange && Boolean(cancelExchange)}
         title={t('Скасувати обмін валют')}
         onClose={() => setCancelExchange(null)}
         onConfirm={handleCancelExchange}
@@ -1318,11 +1376,13 @@ function PaymentAccountActivityPanel({
 
 export function PaymentAccountTransferModal({
   account,
+  canCreate,
   opened,
   onClose,
   onMutationComplete,
 }: {
   account: PaymentAccount
+  canCreate: boolean
   opened: boolean
   onClose: () => void
   onMutationComplete: () => Promise<void>
@@ -1341,7 +1401,7 @@ export function PaymentAccountTransferModal({
   const selectedMovement = findEntity(movements, draft.movementNetId)
 
   useEffect(() => {
-    if (!opened) {
+    if (!opened || !canCreate) {
       return
     }
 
@@ -1374,10 +1434,15 @@ export function PaymentAccountTransferModal({
     return () => {
       isActive = false
     }
-  }, [account, opened, setDraft, setError, setLoading, setMovements, setPaymentAccounts, t])
+  }, [account, canCreate, opened, setDraft, setError, setLoading, setMovements, setPaymentAccounts, t])
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
+
+    if (!canCreate) {
+      setError(t('Немає прав для створення переказу'))
+      return
+    }
 
     const amount = parseAmount(draft.amount)
     const validationError = validateTransferDraft(draft, selectedFromRegister, selectedToRegister, selectedMovement, amount, t)
@@ -1517,7 +1582,7 @@ export function PaymentAccountTransferModal({
             <Button color="gray" disabled={isSubmitting} type="button" variant="light" onClick={onClose}>
               {t('Скасувати')}
             </Button>
-            <Button color={CREATE_ACTION_COLOR} leftSection={<ArrowLeftRight size={16} />} loading={isSubmitting} type="submit">
+            <Button color={CREATE_ACTION_COLOR} disabled={!canCreate} leftSection={<ArrowLeftRight size={16} />} loading={isSubmitting} type="submit">
               {t('Створити')}
             </Button>
           </Group>
@@ -1529,11 +1594,13 @@ export function PaymentAccountTransferModal({
 
 export function PaymentAccountExchangeModal({
   account,
+  canCreate,
   opened,
   onClose,
   onMutationComplete,
 }: {
   account: PaymentAccount
+  canCreate: boolean
   opened: boolean
   onClose: () => void
   onMutationComplete: () => Promise<void>
@@ -1570,7 +1637,7 @@ export function PaymentAccountExchangeModal({
       : '—'
 
   useEffect(() => {
-    if (!opened) {
+    if (!opened || !canCreate) {
       return
     }
 
@@ -1607,10 +1674,10 @@ export function PaymentAccountExchangeModal({
     return () => {
       isActive = false
     }
-  }, [account, opened, setBankAccounts, setCurrencyTraders, setDraft, setError, setLoading, setMovements, t])
+  }, [account, canCreate, opened, setBankAccounts, setCurrencyTraders, setDraft, setError, setLoading, setMovements, t])
 
   useEffect(() => {
-    if (!opened) {
+    if (!opened || !canCreate) {
       return
     }
 
@@ -1654,6 +1721,7 @@ export function PaymentAccountExchangeModal({
       isActive = false
     }
   }, [
+    canCreate,
     opened,
     setCurrencyTraders,
     setDraft,
@@ -1664,7 +1732,7 @@ export function PaymentAccountExchangeModal({
   ])
 
   useEffect(() => {
-    if (!opened || !amount || amount <= 0 || !exchangeRate || exchangeRate <= 0 || !exchangeCurrencyCode) {
+    if (!opened || !canCreate || !amount || amount <= 0 || !exchangeRate || exchangeRate <= 0 || !exchangeCurrencyCode) {
       setConvertedAmount(null)
       setCalculatingExchange(false)
       return
@@ -1701,6 +1769,7 @@ export function PaymentAccountExchangeModal({
     }
   }, [
     amount,
+    canCreate,
     exchangeCurrencyCode,
     exchangeRate,
     opened,
@@ -1712,6 +1781,11 @@ export function PaymentAccountExchangeModal({
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
+
+    if (!canCreate) {
+      setError(t('Немає прав для створення обміну валют'))
+      return
+    }
 
     const validationError = validateExchangeDraft(draft, selectedFromRegister, selectedToRegister, selectedMovement, amount, exchangeRate, t)
 
@@ -1886,7 +1960,7 @@ export function PaymentAccountExchangeModal({
             <Button color="gray" disabled={isSubmitting} type="button" variant="light" onClick={onClose}>
               {t('Скасувати')}
             </Button>
-            <Button color={CREATE_ACTION_COLOR} leftSection={<ArrowLeftRight size={16} />} loading={isSubmitting} type="submit">
+            <Button color={CREATE_ACTION_COLOR} disabled={!canCreate} leftSection={<ArrowLeftRight size={16} />} loading={isSubmitting} type="submit">
               {t('Створити')}
             </Button>
           </Group>
@@ -1969,8 +2043,8 @@ function PaymentCurrencyActivityView({
 }: {
   activity: PaymentCurrencyRegister | null
   isLoading: boolean
-  onCancelExchange: (exchange: PaymentRegisterCurrencyExchange) => void
-  onCancelTransfer: (transfer: PaymentRegisterTransfer) => void
+  onCancelExchange?: (exchange: PaymentRegisterCurrencyExchange) => void
+  onCancelTransfer?: (transfer: PaymentRegisterTransfer) => void
 }) {
   const { t } = useI18n()
   const incomeOrders = activity?.PaymentRegister?.IncomePaymentOrders || activity?.IncomePaymentOrders || []

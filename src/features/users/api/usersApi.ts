@@ -1,9 +1,11 @@
 import { apiRequest } from '../../../shared/api/apiClient'
-import type { DashboardNodeModule, IdentityResponse, UserPermission, UserProfile, UserRole } from '../types'
+import type { IdentityResponse, UserProfile, UserRole } from '../types'
 
 export async function getUsers(value?: string, signal?: AbortSignal): Promise<UserProfile[]> {
   const normalizedValue = value?.trim()
-  const path = normalizedValue ? '/usermanagement/profiles/search' : '/usermanagement/profiles/all'
+  const path = normalizedValue
+    ? '/usermanagement/profiles/users/search'
+    : '/usermanagement/profiles/users/registry'
   const options = normalizedValue
     ? {
         query: {
@@ -23,7 +25,7 @@ export async function getUsers(value?: string, signal?: AbortSignal): Promise<Us
 }
 
 export async function getUser(netId: string): Promise<UserProfile | null> {
-  const result = await apiRequest<unknown>('/usermanagement/profiles/get', {
+  const result = await apiRequest<unknown>('/usermanagement/profiles/users/details', {
     query: {
       netId,
     },
@@ -33,7 +35,7 @@ export async function getUser(netId: string): Promise<UserProfile | null> {
 }
 
 export async function createUser(user: UserProfile, password: string): Promise<IdentityResponse | null> {
-  const result = await apiRequest<unknown>('/usermanagement/signup', {
+  const result = await apiRequest<unknown>('/usermanagement/users/create', {
     method: 'POST',
     query: {
       password,
@@ -45,7 +47,7 @@ export async function createUser(user: UserProfile, password: string): Promise<I
 }
 
 export async function updateUser(user: UserProfile): Promise<UserProfile | null> {
-  const result = await apiRequest<unknown>('/usermanagement/profiles/update', {
+  const result = await apiRequest<unknown>('/usermanagement/profiles/users/edit', {
     method: 'POST',
     body: user,
   })
@@ -54,7 +56,7 @@ export async function updateUser(user: UserProfile): Promise<UserProfile | null>
 }
 
 export async function deleteUser(netId: string): Promise<void> {
-  await apiRequest<unknown>('/usermanagement/profiles/delete', {
+  await apiRequest<unknown>('/usermanagement/profiles/users/delete', {
     method: 'DELETE',
     query: {
       netId,
@@ -63,7 +65,7 @@ export async function deleteUser(netId: string): Promise<void> {
 }
 
 export async function resetUserPassword(netId: string, password: string): Promise<IdentityResponse | null> {
-  const result = await apiRequest<unknown>('/usermanagement/profiles/password/reset', {
+  const result = await apiRequest<unknown>('/usermanagement/profiles/users/password/reset', {
     method: 'PATCH',
     query: {
       netId,
@@ -74,14 +76,26 @@ export async function resetUserPassword(netId: string, password: string): Promis
   return normalizeIdentityResponse(result)
 }
 
-export async function getUserRoles(): Promise<UserRole[]> {
-  const result = await apiRequest<unknown>('/usermanagement/profiles/roles/all')
+export async function getUserRolesForCreate(): Promise<UserRole[]> {
+  const result = await apiRequest<unknown>('/usermanagement/profiles/users/create/roles')
+
+  return normalizeUserRoles(result)
+}
+
+export async function getUserRolesForEdit(): Promise<UserRole[]> {
+  const result = await apiRequest<unknown>('/usermanagement/profiles/users/edit/roles')
+
+  return normalizeUserRoles(result)
+}
+
+export async function getRoleManagementRoles(): Promise<UserRole[]> {
+  const result = await apiRequest<unknown>('/usermanagement/profiles/roles/registry')
 
   return normalizeUserRoles(result)
 }
 
 export async function createUserRole(role: UserRole): Promise<UserRole | null> {
-  const result = await apiRequest<unknown>('/usermanagement/profiles/roles/new', {
+  const result = await apiRequest<unknown>('/usermanagement/profiles/roles/create', {
     method: 'POST',
     body: role,
   })
@@ -90,7 +104,7 @@ export async function createUserRole(role: UserRole): Promise<UserRole | null> {
 }
 
 export async function updateUserRole(role: UserRole): Promise<UserRole | null> {
-  const result = await apiRequest<unknown>('/usermanagement/profiles/roles/update', {
+  const result = await apiRequest<unknown>('/usermanagement/profiles/roles/edit', {
     method: 'POST',
     body: role,
   })
@@ -99,49 +113,12 @@ export async function updateUserRole(role: UserRole): Promise<UserRole | null> {
 }
 
 export async function deleteUserRole(netId: string): Promise<void> {
-  await apiRequest<unknown>('/usermanagement/profiles/roles/delete', {
+  await apiRequest<unknown>('/usermanagement/profiles/roles/remove', {
     method: 'DELETE',
     query: {
       netId,
     },
   })
-}
-
-export async function getDashboardModules(): Promise<DashboardNodeModule[]> {
-  const result = await apiRequest<unknown>('/dashboards/modules/all')
-
-  return normalizeModules(result)
-}
-
-export async function changePermissionsToRole(role: UserRole): Promise<UserRole | null> {
-  const result = await apiRequest<unknown>('/usermanagement/profiles/roles/add/nodes', {
-    method: 'POST',
-    body: role,
-  })
-
-  return normalizeRole(result)
-}
-
-export async function addPermissionToNode(permission: UserPermission, image?: File | null): Promise<void> {
-  await apiRequest<unknown>('/permissions/new', {
-    method: 'POST',
-    body: buildPermissionFormData(permission, image),
-  })
-}
-
-export async function updatePermissionToNode(permission: UserPermission, image?: File | null): Promise<void> {
-  await apiRequest<unknown>('/permissions/update', {
-    method: 'POST',
-    body: buildPermissionFormData(permission, image),
-  })
-}
-
-function buildPermissionFormData(permission: UserPermission, image?: File | null): FormData {
-  const formData = new FormData()
-  formData.append('image', image || '')
-  formData.append('permission', JSON.stringify(permission))
-
-  return formData
 }
 
 function normalizeUsers(result: unknown): UserProfile[] {
@@ -163,7 +140,6 @@ function normalizeUser(result: unknown): UserProfile | null {
 
   return null
 }
-
 function normalizeUserRoles(result: unknown): UserRole[] {
   if (Array.isArray(result)) {
     return result as UserRole[]
@@ -190,16 +166,4 @@ function normalizeRole(result: unknown): UserRole | null {
   }
 
   return null
-}
-
-function normalizeModules(result: unknown): DashboardNodeModule[] {
-  if (Array.isArray(result)) {
-    return result as DashboardNodeModule[]
-  }
-
-  if (result && typeof result === 'object' && 'Items' in result && Array.isArray(result.Items)) {
-    return result.Items as DashboardNodeModule[]
-  }
-
-  return []
 }

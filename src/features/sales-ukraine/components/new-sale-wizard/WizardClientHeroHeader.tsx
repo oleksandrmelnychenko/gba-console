@@ -20,7 +20,7 @@ import {
 } from './wizardClientStepApi'
 import { getWizardClientDebtTotal } from './wizardClientStepModel'
 import { WizardLegalPartyRiskPopover } from './WizardLegalPartyRiskPopover'
-import { getWizardHeaderClient } from './wizardSaleHeaderApi'
+import { getWizardHeaderClient, type WizardSalesPermissionFlow } from './wizardSaleHeaderApi'
 
 const metricCountFormatter = new Intl.NumberFormat('uk-UA', { maximumFractionDigits: 0 })
 
@@ -32,6 +32,7 @@ export const WizardClientHeroHeader = memo(function WizardClientHeroHeader({
   debts,
   headerClose,
   headerTools,
+  permissionFlow = 'create',
   registryCount,
 }: {
   activeAgreementNetId?: string | null
@@ -41,6 +42,7 @@ export const WizardClientHeroHeader = memo(function WizardClientHeroHeader({
   debts?: ClientInDebt[]
   headerClose?: ReactNode
   headerTools?: ReactNode
+  permissionFlow?: WizardSalesPermissionFlow
   registryCount?: number
 }) {
   const { t } = useI18n()
@@ -89,7 +91,7 @@ export const WizardClientHeroHeader = memo(function WizardClientHeroHeader({
 
     async function load() {
       try {
-        const next = await getWizardHeaderClient(id)
+        const next = await getWizardHeaderClient(id, permissionFlow)
 
         if (!cancelled) {
           setLoadedClient({ key: id, value: next })
@@ -106,7 +108,7 @@ export const WizardClientHeroHeader = memo(function WizardClientHeroHeader({
     return () => {
       cancelled = true
     }
-  }, [client, clientNetId])
+  }, [client, clientNetId, permissionFlow])
 
   useEffect(() => {
     if (agreements || !resolvedNetId) {

@@ -3,7 +3,13 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { I18nProvider } from '../../../../shared/i18n/I18nProvider'
 import { theme } from '../../../../shared/theme/theme'
-import { addOrderItem, getCurrentSaleCart, getSaleById } from '../../api/salesUkraineApi'
+import {
+  addOrderItem,
+  getCurrentSaleCart,
+  getSaleById,
+  getSalesUkraineCreateCurrentCart,
+  getSalesUkraineCreateDetails,
+} from '../../api/salesUkraineApi'
 import type { SalesUkraineProduct, SalesUkraineSale } from '../../types'
 import { NewSaleWizard } from './NewSaleWizard'
 
@@ -26,6 +32,8 @@ vi.mock('../../api/salesUkraineApi', async (importOriginal) => {
     addOrderItem: vi.fn(),
     getCurrentSaleCart: vi.fn(),
     getSaleById: vi.fn(),
+    getSalesUkraineCreateCurrentCart: vi.fn(),
+    getSalesUkraineCreateDetails: vi.fn(),
   }
 })
 
@@ -147,6 +155,51 @@ describe('new sale wizard recommendation prefill', () => {
       'product-2',
       'product-3',
     ])
+  })
+
+  it('keeps permission-scoped create cart hydration off shared read routes', async () => {
+    const agreement = {
+      Client: { Id: 7, NetUid: 'client-1' },
+      NetUid: 'agreement-1',
+    }
+    const sale: SalesUkraineSale = {
+      ClientAgreement: agreement,
+      NetUid: 'sale-1',
+      Order: { OrderItems: [] },
+    }
+    vi.mocked(getSalesUkraineCreateCurrentCart)
+      .mockResolvedValueOnce(sale)
+      .mockResolvedValueOnce(sale)
+    vi.mocked(getSalesUkraineCreateDetails).mockResolvedValue(sale)
+    vi.mocked(addOrderItem).mockResolvedValue(null)
+
+    render(
+      <MantineProvider theme={theme}>
+        <I18nProvider>
+          <NewSaleWizard
+            opened
+            permissionScopedSalesUkraineApi
+            prefill={{
+              agreement,
+              agreementNetId: 'agreement-1',
+              client: { Id: 7, NetUid: 'client-1' },
+              clientNetId: 'client-1',
+              products: [products[0]],
+            }}
+            onClose={() => {}}
+            onCreated={() => {}}
+          />
+        </I18nProvider>
+      </MantineProvider>,
+    )
+
+    await screen.findByTestId('products-step')
+    await wizardMocks.reloadCart?.()
+
+    expect(getSalesUkraineCreateCurrentCart).toHaveBeenCalledTimes(2)
+    expect(getSalesUkraineCreateDetails).toHaveBeenCalledWith('sale-1', expect.any(AbortSignal))
+    expect(getCurrentSaleCart).not.toHaveBeenCalled()
+    expect(getSaleById).not.toHaveBeenCalled()
   })
 
   it('keeps navigation blocked but allows closing when a cart operation needs reconciliation', async () => {

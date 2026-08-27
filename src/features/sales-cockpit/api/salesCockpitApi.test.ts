@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { apiRequest } from '../../../shared/api/apiClient'
-import { addTaskNote, createHeadTask, getCockpitClients, getCockpitCount, getCockpitInbox, getCockpitTarget, getDashboard, getEscalated, getHeadClients, getHeadDashboard, getHeadDismissals, getHeadTasks, getHeadTeam, regenerateCockpit, SalesCockpitContractError, setTaskStatus } from './salesCockpitApi'
+import { addHeadTaskNote, addTaskNote, createHeadTask, dismissHeadTask, getCockpitClients, getCockpitCount, getCockpitInbox, getCockpitTarget, getDashboard, getEscalated, getHeadClients, getHeadDashboard, getHeadDismissals, getHeadTasks, getHeadTeam, regenerateCockpit, regenerateHeadCockpit, SalesCockpitContractError, setTaskStatus } from './salesCockpitApi'
 import type { CockpitTask } from '../types'
 
 vi.mock('../../../shared/api/apiClient', () => ({
@@ -222,6 +222,38 @@ describe('salesCockpitApi', () => {
       body: {
         Text: 'Передзвонити завтра',
       },
+    })
+  })
+
+  it('uses separate head mutation routes for note, dismiss and generation', async () => {
+    apiRequestMock
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce({
+        as_of: '2026-08-19',
+        source_history_start: '2025-01-01',
+        effective_start: '2025-01-01',
+        history_complete: true,
+      })
+
+    await addHeadTaskNote('head-task-1', { Text: 'Перевірити оплату' })
+    await dismissHeadTask('head-task-1', 'Вже не актуально')
+    await regenerateHeadCockpit('2026-08-19')
+
+    expect(apiRequestMock).toHaveBeenNthCalledWith(1, '/sales/cockpit/head/tasks/notes', {
+      method: 'POST',
+      query: { taskKey: 'head-task-1' },
+      body: { Text: 'Перевірити оплату' },
+    })
+    expect(apiRequestMock).toHaveBeenNthCalledWith(2, '/sales/cockpit/head/tasks/dismiss', {
+      method: 'POST',
+      query: { taskKey: 'head-task-1' },
+      body: { Reason: 'Вже не актуально' },
+    })
+    expect(apiRequestMock).toHaveBeenNthCalledWith(3, '/sales/cockpit/head/generate', {
+      method: 'POST',
+      query: { asOfDate: '2026-08-19' },
+      body: {},
     })
   })
 

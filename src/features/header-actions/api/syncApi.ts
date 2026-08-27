@@ -46,7 +46,7 @@ export function createSyncOperationId(): string {
 }
 
 export function getSyncStatus(): Promise<DataSyncStatus> {
-  return apiRequest<DataSyncStatus>('/data/sync/status', {
+  return apiRequest<DataSyncStatus>('/data/sync/online-shop-seo/status', {
     errorMessages: {
       default: 'Не вдалося отримати статус синхронізації',
       network: 'Сервер синхронізації недоступний',
@@ -57,7 +57,7 @@ export function getSyncStatus(): Promise<DataSyncStatus> {
 export function startFullSync(request: SyncFullRequest): Promise<SyncRunResponse> {
   const { operationId, ...query } = request
 
-  return apiRequest<SyncRunResponse>('/data/sync/start', {
+  return apiRequest<SyncRunResponse>('/data/sync/online-shop-seo/start', {
     headers: {
       [SYNC_OPERATION_ID_HEADER]: operationId,
     },
@@ -71,7 +71,7 @@ export function startFullSync(request: SyncFullRequest): Promise<SyncRunResponse
 }
 
 export function startGbaToOneCSync(request: SyncDocumentsRequest): Promise<SyncRunResponse> {
-  return apiRequest<SyncRunResponse>('/xml/documents/new', {
+  return apiRequest<SyncRunResponse>('/xml/documents/online-shop-seo/new', {
     query: request,
     errorMessages: {
       default: 'Не вдалося запустити вигрузку в 1С',
@@ -83,7 +83,7 @@ export function startGbaToOneCSync(request: SyncDocumentsRequest): Promise<SyncR
 export function startDailySync(request: SyncDailyRequest): Promise<SyncRunResponse> {
   const { operationId, ...query } = request
 
-  return apiRequest<SyncRunResponse>('/data/sync/start/daily', {
+  return apiRequest<SyncRunResponse>('/data/sync/online-shop-seo/start/daily', {
     headers: {
       [SYNC_OPERATION_ID_HEADER]: operationId,
     },
@@ -106,7 +106,7 @@ export function startSyncSession(request: SyncSessionRequest): Promise<SyncRunRe
         }
       : requestQuery
 
-  return apiRequest<SyncRunResponse>('/data/sync/start/session', {
+  return apiRequest<SyncRunResponse>('/data/sync/online-shop-seo/start/session', {
     headers: {
       [SYNC_OPERATION_ID_HEADER]: operationId,
     },

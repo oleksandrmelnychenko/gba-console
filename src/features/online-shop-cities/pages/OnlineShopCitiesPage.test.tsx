@@ -1,10 +1,24 @@
 import { MantineProvider } from '@mantine/core'
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { I18nProvider } from '../../../shared/i18n/I18nProvider'
 import { getOnlineShopCities } from '../api/onlineShopCitiesApi'
 import type { OnlineShopCity } from '../types'
 import { OnlineShopCitiesPage } from './OnlineShopCitiesPage'
+
+const { canMock } = vi.hoisted(() => ({
+  canMock: vi.fn<(permissionKey: string) => boolean>(),
+}))
+
+vi.mock('../../auth/usePermissions', () => ({
+  usePermissions: () => ({
+    can: canMock,
+    cannot: (permissionKey: string) => !canMock(permissionKey),
+    isLoading: false,
+    permissions: [],
+  }),
+}))
 
 vi.mock('../api/onlineShopCitiesApi', () => ({
   getOnlineShopCities: vi.fn(),
@@ -12,10 +26,22 @@ vi.mock('../api/onlineShopCitiesApi', () => ({
 }))
 
 vi.mock('../../../shared/ui/data-table/DataTable', () => ({
-  DataTable: ({ data }: { data: OnlineShopCity[] }) => (
+  DataTable: ({
+    columns,
+    data,
+    onRowClick,
+  }: {
+    columns: Array<{ cell?: (city: OnlineShopCity) => React.ReactNode }>
+    data: OnlineShopCity[]
+    onRowClick?: (city: OnlineShopCity) => void
+  }) => (
     <div data-count={data.length} data-testid="cities-table">
       {data.map((city) => (
-        <span key={city.Id}>{city.NameUa}</span>
+        <div key={city.Id} role="row" onClick={() => onRowClick?.(city)}>
+          {columns.map((column, index) => (
+            <span key={index}>{column.cell?.(city)}</span>
+          ))}
+        </div>
       ))}
     </div>
   ),
@@ -27,7 +53,10 @@ const CITIES: OnlineShopCity[] = [
   { Deleted: true, Id: 3, IsLocalPayment: false, NameRu: 'Львов', NameUa: 'Львів' },
 ]
 
-function renderPage() {
+function renderPage(allowed?: string[]) {
+  const permissions = allowed ? new Set(allowed) : null
+  canMock.mockImplementation((permissionKey) => permissions?.has(permissionKey) ?? true)
+
   return render(
     <MantineProvider>
       <I18nProvider>
@@ -38,6 +67,7 @@ function renderPage() {
 }
 
 beforeEach(() => {
+  canMock.mockReset()
   vi.mocked(getOnlineShopCities).mockReset()
   vi.mocked(getOnlineShopCities).mockResolvedValue(CITIES)
 })
@@ -90,5 +120,30 @@ describe('OnlineShopCitiesPage rail', () => {
     expect(allCities.getAttribute('aria-pressed')).toBe('false')
     expect(screen.getByText('Львів')).not.toBeNull()
     expect(screen.queryByText('Київ')).toBeNull()
+  })
+})
+
+describe('OnlineShopCitiesPage business permissions', () => {
+  it('does not expose create, edit or archive through technical UI without their rights', async () => {
+    renderPage([])
+
+    const city = await screen.findByText('Київ')
+    expect(screen.queryByRole('button', { name: 'Нове місто' })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Архівувати' })).toBeNull()
+    fireEvent.click(city)
+    expect(screen.queryByText('Редагування міста')).toBeNull()
+  })
+
+  it('keeps create, edit and archive independent', async () => {
+    const { unmount } = renderPage([PermissionKeys.OnlineShopCities.City.Create])
+    expect(await screen.findByRole('button', { name: 'Нове місто' })).toBeTruthy()
+    expect(screen.queryByRole('button', { name: 'Архівувати' })).toBeNull()
+    unmount()
+
+    renderPage([PermissionKeys.OnlineShopCities.City.Edit])
+    const city = await screen.findByText('Київ')
+    fireEvent.click(city)
+    expect(await screen.findByText('Редагування міста')).toBeTruthy()
+    expect(screen.queryByRole('button', { name: 'Архівувати' })).toBeNull()
   })
 })

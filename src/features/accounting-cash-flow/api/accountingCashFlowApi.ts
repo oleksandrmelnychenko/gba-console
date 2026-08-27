@@ -11,8 +11,11 @@ import type {
 
 const ACCOUNTING_TYPE_ALL = 2
 
-export async function getAccountingCashFlowCounterparty(netId: string): Promise<AccountingCashFlowCounterparty | null> {
-  const result = await apiRequest<unknown>('/clients/get', {
+export async function getAccountingCashFlowCounterparty(
+  netId: string,
+  mode: 'client' | 'supplier' = 'client',
+): Promise<AccountingCashFlowCounterparty | null> {
+  const result = await apiRequest<unknown>(mode === 'supplier' ? '/clients/suppliers/cash-flow/details' : '/clients/cash-flow/details', {
     query: {
       netId,
     },
@@ -22,7 +25,29 @@ export async function getAccountingCashFlowCounterparty(netId: string): Promise<
 }
 
 export async function getAccountingCashFlow(params: AccountingCashFlowSearchParams): Promise<AccountingCashFlow> {
-  const result = await apiRequest<unknown>('/accounting/cashflow/get/filtered', {
+  const result = await apiRequest<unknown>(
+    params.mode === 'supplier' ? '/accounting/cashflow/suppliers/get/filtered' : '/accounting/cashflow/clients/get/filtered',
+    {
+    query: {
+      netId: params.netId,
+      from: params.from,
+      to: params.to,
+      typePaymentTask: params.mode === 'supplier' ? ACCOUNTING_TYPE_ALL : undefined,
+    },
+    },
+  )
+
+  return normalizeAccountingCashFlow(result)
+}
+
+export async function exportAccountingCashFlowDocument(
+  params: AccountingCashFlowExportParams,
+): Promise<AccountingCashFlowDocument> {
+  const result = await apiRequest<unknown>(
+    params.mode === 'supplier'
+      ? '/accounting/cashflow/suppliers/document/export'
+      : '/accounting/cashflow/counterparties/document/export',
+    {
     query: {
       netId: params.netId,
       from: params.from,
@@ -31,17 +56,18 @@ export async function getAccountingCashFlow(params: AccountingCashFlowSearchPara
     },
   })
 
-  return normalizeAccountingCashFlow(result)
+  return requireExportDocument(result, 'Не вдалося сформувати документ взаєморозрахунків')
 }
 
-export async function exportAccountingCashFlowDocument(
+export async function exportCounterpartyAccountingCashFlowDocument(
   params: AccountingCashFlowExportParams,
 ): Promise<AccountingCashFlowDocument> {
-  const result = await apiRequest<unknown>('/accounting/cashflow/document/export', {
+  const result = await apiRequest<unknown>('/accounting/cashflow/counterparties/document/export', {
     query: {
       netId: params.netId,
       from: params.from,
       to: params.to,
+      typePaymentTask: params.mode === 'supplier' ? ACCOUNTING_TYPE_ALL : undefined,
     },
   })
 

@@ -4,8 +4,19 @@ import {
   apiRequest,
 } from '../../../shared/api/apiClient'
 import {
+  breakTaxFreePackList,
+  createSupplyOrderFromPackList,
+  deleteTaxFreeDocument,
+  deleteTaxFreePackList,
+  exportTaxFreePackLists,
+  getCarrierById,
+  getTaxFreePrintDocument,
+  getTaxFreePrintDocuments,
   getTaxFreePackListById,
   getTaxFreePackLists,
+  saveTaxFreePackList,
+  searchCarriers,
+  sendTaxFreePackList,
   uploadTaxFreeDocuments,
 } from './taxFreePackListsApi'
 import {
@@ -62,7 +73,7 @@ describe('taxFreePackListsApi', () => {
       to: '2026-06-08',
     })
 
-    expect(apiRequestMock).toHaveBeenCalledWith('/supplies/ukraine/order/packlists/taxfree/all/filtered', {
+    expect(apiRequestMock).toHaveBeenCalledWith('/supplies/ukraine/order/packlists/taxfree/registry', {
       query: {
         from: '2025-01-01T00:00:00.000',
         limit: 20,
@@ -90,7 +101,7 @@ describe('taxFreePackListsApi', () => {
 
     const result = await getTaxFreePackListById('pack-list-2')
 
-    expect(apiRequestMock).toHaveBeenCalledWith('/supplies/ukraine/order/packlists/taxfree/get', {
+    expect(apiRequestMock).toHaveBeenCalledWith('/supplies/ukraine/order/packlists/taxfree/details', {
       query: {
         netId: 'pack-list-2',
       },
@@ -143,7 +154,7 @@ describe('taxFreePackListsApi', () => {
     expect(apiRequestMock)
       .toHaveBeenNthCalledWith(
         2,
-        '/supplies/ukraine/order/taxfree/documents/upload',
+        '/supplies/ukraine/order/taxfree/pack-lists/documents/upload',
         expect.objectContaining({
           dedupe: false,
           headers: {
@@ -240,6 +251,46 @@ describe('taxFreePackListsApi', () => {
 
     expect(readOperationId(1))
       .not.toBe(firstOperationId)
+  })
+
+  it('uses independently protected mutation and document facades', async () => {
+    apiRequestMock.mockResolvedValue({})
+    const packList = { Id: 7, NetUid: 'pack-list-7' }
+
+    await saveTaxFreePackList(packList)
+    await sendTaxFreePackList('pack-list-7')
+    await breakTaxFreePackList(packList)
+    await deleteTaxFreePackList('pack-list-7')
+    await getTaxFreePrintDocument('tax-free-1')
+    await getTaxFreePrintDocuments(['tax-free-1'])
+    await deleteTaxFreeDocument('document-1')
+    await createSupplyOrderFromPackList('pack-list-7', {})
+
+    expect(apiRequestMock.mock.calls.map(([path]) => path)).toEqual([
+      '/supplies/ukraine/order/packlists/taxfree/edit',
+      '/supplies/ukraine/order/packlists/taxfree/send',
+      '/supplies/ukraine/order/packlists/taxfree/split',
+      '/supplies/ukraine/order/packlists/taxfree/remove',
+      '/supplies/ukraine/order/taxfree/pack-lists/document/export',
+      '/supplies/ukraine/order/taxfree/pack-lists/documents/export',
+      '/supplies/ukraine/order/taxfree/pack-lists/documents/remove',
+      '/supplies/ukraine/order/tax-free-pack-list/create',
+    ])
+    expect(apiRequestMock.mock.calls[1]?.[1]).toEqual({ method: 'POST', query: { netId: 'pack-list-7' } })
+  })
+
+  it('uses scoped registry export and carrier lookups', async () => {
+    apiRequestMock.mockResolvedValue([])
+
+    await exportTaxFreePackLists({ columns: [], from: '2026-08-01', to: '2026-08-18' })
+    await searchCarriers('carrier')
+    await getCarrierById('carrier-1')
+
+    expect(apiRequestMock.mock.calls.map(([path]) => path)).toEqual([
+      '/supplies/ukraine/order/packlists/taxfree/document/export',
+      '/supplies/ukraine/carriers/statham/tax-free-pack-lists/search',
+      '/supplies/ukraine/carriers/statham/tax-free-pack-lists/details',
+    ])
   })
 })
 

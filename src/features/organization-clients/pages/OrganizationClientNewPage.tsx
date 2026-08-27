@@ -24,12 +24,33 @@ import {
   normalizeClientForSave,
   validateOrganizationClient,
 } from '../utils'
+import { PermissionKeys } from '../../../shared/auth/permissionKeys'
+import { usePermissions } from '../../auth/usePermissions'
 
 type OrganizationClientNewRouteState = {
   returnPath?: string
 }
 
 export function OrganizationClientNewPage() {
+  const { t } = useI18n()
+  const { can, isLoading } = usePermissions()
+
+  if (isLoading) {
+    return <Text c="dimmed">{t('Завантаження')}</Text>
+  }
+
+  if (!can(PermissionKeys.OrganizationClients.Client.Create)) {
+    return (
+      <Alert color="red" icon={<CircleAlert size={18} />} title={t('Доступ заборонено')} variant="light">
+        {t('Недостатньо прав для створення організації покупця')}
+      </Alert>
+    )
+  }
+
+  return <OrganizationClientNewPageContent canCreate />
+}
+
+function OrganizationClientNewPageContent({ canCreate }: { canCreate: boolean }) {
   const { t } = useI18n()
   const navigate = useNavigate()
   const location = useLocation()
@@ -107,6 +128,10 @@ export function OrganizationClientNewPage() {
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
+
+    if (!canCreate) {
+      return
+    }
 
     const payload = normalizeClientForSave(client)
     const validationError = validateOrganizationClient(payload)

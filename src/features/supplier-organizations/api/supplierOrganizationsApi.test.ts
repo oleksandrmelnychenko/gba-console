@@ -2,15 +2,26 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { apiRequest } from '../../../shared/api/apiClient'
 import {
   createSupplyOrganization,
+  createSupplierOrganization,
+  createSupplierOrganizationAgreement,
   createSupplyOrganizationAgreement,
   deleteSupplyOrganization,
+  exportSupplierOrganizationSettlementsDocument,
   exportSupplyOrganizations,
   getSupplierOrganizationCashFlow,
+  getSupplierOrganizationOverviewDetails,
+  getSupplierOrganizationSettlementsCashFlow,
+  getSupplierOrganizationSettlementsDetails,
+  getSupplierOrganizationsRegistry,
   getSupplierOrganizationCurrencies,
   getSupplierOrganizationsOwners,
   getSupplyOrganization,
   getSupplyOrganizations,
+  editSupplierOrganization,
+  editSupplierOrganizationAgreement,
   searchSupplyOrganizations,
+  searchSupplierOrganizationsRegistry,
+  removeSupplierOrganization,
   updateSupplyOrganization,
   updateSupplyOrganizationAgreement,
 } from './supplierOrganizationsApi'
@@ -31,7 +42,7 @@ describe('supplierOrganizationsApi', () => {
 
     await expect(getSupplyOrganizations()).resolves.toEqual([{ NetUid: 'supplier-1', SupplyOrganizationAgreements: [] }])
 
-    expect(apiRequestMock).toHaveBeenCalledWith('/supplies/organizations/all/search', {
+    expect(apiRequestMock).toHaveBeenCalledWith('/supplies/organizations/registry', {
       query: {
         from: undefined,
         limit: undefined,
@@ -51,7 +62,7 @@ describe('supplierOrganizationsApi', () => {
       offset: 80,
     })).resolves.toEqual([{ NetUid: 'supplier-1', SupplyOrganizationAgreements: [] }])
 
-    expect(apiRequestMock).toHaveBeenCalledWith('/supplies/organizations/all/search', {
+    expect(apiRequestMock).toHaveBeenCalledWith('/supplies/organizations/registry', {
       query: {
         from: '2025-01-17',
         limit: 40,
@@ -70,7 +81,7 @@ describe('supplierOrganizationsApi', () => {
       offset: 0,
     })).resolves.toEqual([{ NetUid: 'supplier-1', SupplyOrganizationAgreements: [] }])
 
-    expect(apiRequestMock).toHaveBeenCalledWith('/supplies/organizations/all/search', {
+    expect(apiRequestMock).toHaveBeenCalledWith('/supplies/organizations/registry', {
       query: {
         from: undefined,
         limit: 40,
@@ -100,8 +111,62 @@ describe('supplierOrganizationsApi', () => {
       }],
     })
 
-    expect(apiRequestMock).toHaveBeenCalledWith('/supplies/organizations/get', {
+    expect(apiRequestMock).toHaveBeenCalledWith('/supplies/organizations/overview/details', {
       query: { netId: 'supplier-1' },
+    })
+  })
+
+  it('uses permission-scoped registry and separate overview/settlements read routes', async () => {
+    apiRequestMock.mockResolvedValueOnce([{ NetUid: 'supplier-1' }])
+    apiRequestMock.mockResolvedValueOnce([{ NetUid: 'supplier-2' }])
+    apiRequestMock.mockResolvedValueOnce({ NetUid: 'supplier-1' })
+    apiRequestMock.mockResolvedValueOnce({ NetUid: 'supplier-1' })
+    apiRequestMock.mockResolvedValueOnce({ AccountingCashFlowHeadItems: [] })
+
+    await getSupplierOrganizationsRegistry({ limit: 40, offset: 0 })
+    await searchSupplierOrganizationsRegistry(' service ', '', { limit: 40, offset: 40 })
+    await getSupplierOrganizationOverviewDetails(' supplier-1 ')
+    await getSupplierOrganizationSettlementsDetails(' supplier-1 ')
+    await getSupplierOrganizationSettlementsCashFlow({
+      from: '2026-07-01',
+      netId: ' agreement-1 ',
+      to: '2026-07-24',
+      typePaymentTask: 2,
+    })
+
+    expect(apiRequestMock).toHaveBeenNthCalledWith(1, '/supplies/organizations/registry', {
+      query: {
+        from: undefined,
+        limit: 40,
+        offset: 0,
+        organizationNetId: '',
+        to: undefined,
+        value: '',
+      },
+    })
+    expect(apiRequestMock).toHaveBeenNthCalledWith(2, '/supplies/organizations/registry', {
+      query: {
+        from: undefined,
+        limit: 40,
+        offset: 40,
+        organizationNetId: '',
+        to: undefined,
+        value: 'service',
+      },
+    })
+    expect(apiRequestMock).toHaveBeenNthCalledWith(3, '/supplies/organizations/overview/details', {
+      query: { netId: 'supplier-1' },
+    })
+    expect(apiRequestMock).toHaveBeenNthCalledWith(4, '/supplies/organizations/settlements/details', {
+      query: { netId: 'supplier-1' },
+    })
+    expect(apiRequestMock).toHaveBeenNthCalledWith(5, '/supplies/organizations/settlements/cash-flow', {
+      query: {
+        from: '2026-07-01',
+        netId: 'agreement-1',
+        to: '2026-07-24',
+        typePaymentTask: 2,
+      },
     })
   })
 
@@ -144,11 +209,11 @@ describe('supplierOrganizationsApi', () => {
       SupplyOrganizationAgreements: [],
     })
 
-    expect(apiRequestMock).toHaveBeenNthCalledWith(1, '/supplies/organizations/new', {
+    expect(apiRequestMock).toHaveBeenNthCalledWith(1, '/supplies/organizations/create', {
       body: { Name: 'Новий постачальник' },
       method: 'POST',
     })
-    expect(apiRequestMock).toHaveBeenNthCalledWith(2, '/supplies/organizations/update', {
+    expect(apiRequestMock).toHaveBeenNthCalledWith(2, '/supplies/organizations/edit', {
       body: {
         ...created,
         Name: 'Оновлений постачальник',
@@ -162,9 +227,38 @@ describe('supplierOrganizationsApi', () => {
 
     await deleteSupplyOrganization(' supplier-1 ')
 
-    expect(apiRequestMock).toHaveBeenCalledWith('/supplies/organizations/delete', {
+    expect(apiRequestMock).toHaveBeenCalledWith('/supplies/organizations/remove', {
       method: 'DELETE',
       query: { netId: 'supplier-1' },
+    })
+  })
+
+  it('uses separate permission-scoped create and remove routes', async () => {
+    apiRequestMock.mockResolvedValueOnce({ Name: 'Scoped supplier', NetUid: 'supplier-1' })
+    apiRequestMock.mockResolvedValueOnce(undefined)
+
+    await createSupplierOrganization({ Name: 'Scoped supplier' })
+    await removeSupplierOrganization(' supplier-1 ')
+
+    expect(apiRequestMock).toHaveBeenNthCalledWith(1, '/supplies/organizations/create', {
+      body: { Name: 'Scoped supplier' },
+      method: 'POST',
+    })
+    expect(apiRequestMock).toHaveBeenNthCalledWith(2, '/supplies/organizations/remove', {
+      method: 'DELETE',
+      query: { netId: 'supplier-1' },
+    })
+  })
+
+  it('uses a separate permission-scoped supplier edit route', async () => {
+    const supplier = { Id: 1, Name: 'Edited supplier', NetUid: 'supplier-1' }
+    apiRequestMock.mockResolvedValueOnce(supplier)
+
+    await editSupplierOrganization(supplier)
+
+    expect(apiRequestMock).toHaveBeenCalledWith('/supplies/organizations/edit', {
+      body: supplier,
+      method: 'POST',
     })
   })
 
@@ -193,7 +287,7 @@ describe('supplierOrganizationsApi', () => {
 
     const createOptions = apiRequestMock.mock.calls[0][1]
     const createBody = createOptions?.body
-    expect(apiRequestMock.mock.calls[0][0]).toBe('/supplies/organizations/agreement/new')
+    expect(apiRequestMock.mock.calls[0][0]).toBe('/supplies/organizations/agreement/create')
     expect(createOptions?.method).toBe('POST')
     expect(createBody).toBeInstanceOf(FormData)
     expect((createBody as FormData).get('agreementInString')).toBe(JSON.stringify(agreement))
@@ -201,10 +295,32 @@ describe('supplierOrganizationsApi', () => {
 
     const updateOptions = apiRequestMock.mock.calls[1][1]
     const updateBody = updateOptions?.body
-    expect(apiRequestMock.mock.calls[1][0]).toBe('/supplies/organizations/agreement/update')
+    expect(apiRequestMock.mock.calls[1][0]).toBe('/supplies/organizations/agreement/edit')
     expect(updateOptions?.method).toBe('POST')
     expect(updateBody).toBeInstanceOf(FormData)
     expect((updateBody as FormData).getAll('files')).toEqual([])
+  })
+
+  it('uses separate permission-scoped agreement create and edit routes', async () => {
+    const agreement = {
+      Currency: { Id: 2, Code: 'EUR' },
+      Name: 'Основний договір',
+      Organization: { Id: 3, Name: 'GBA' },
+      SupplyOrganizationId: 1,
+    }
+    const file = new File(['contract'], 'contract.pdf', { type: 'application/pdf' })
+    apiRequestMock.mockResolvedValueOnce({ ...agreement, Id: 10 })
+    apiRequestMock.mockResolvedValueOnce({ ...agreement, Id: 10 })
+
+    await createSupplierOrganizationAgreement(agreement, [file])
+    await editSupplierOrganizationAgreement({ ...agreement, Id: 10 }, [])
+
+    expect(apiRequestMock.mock.calls[0][0]).toBe('/supplies/organizations/agreement/create')
+    expect(apiRequestMock.mock.calls[0][1]?.method).toBe('POST')
+    expect(apiRequestMock.mock.calls[0][1]?.body).toBeInstanceOf(FormData)
+    expect(apiRequestMock.mock.calls[1][0]).toBe('/supplies/organizations/agreement/edit')
+    expect(apiRequestMock.mock.calls[1][1]?.method).toBe('POST')
+    expect(apiRequestMock.mock.calls[1][1]?.body).toBeInstanceOf(FormData)
   })
 
   it('loads lookup collections and exports the trimmed current filter', async () => {
@@ -227,11 +343,39 @@ describe('supplierOrganizationsApi', () => {
       PdfDocumentURL: '/files/suppliers.pdf',
     })
 
-    expect(apiRequestMock).toHaveBeenNthCalledWith(3, '/supplies/organizations/document', {
+    expect(apiRequestMock).toHaveBeenNthCalledWith(3, '/supplies/organizations/document/export', {
       query: {
         from: '2026-07-01',
         to: '2026-07-24',
         value: 'supplier',
+      },
+    })
+  })
+
+  it('exports settlements through its exact permission-scoped route and accounting type', async () => {
+    apiRequestMock.mockResolvedValueOnce({
+      Data: {
+        DocumentURL: '/files/settlements.xlsx',
+        PdfDocumentURL: '/files/settlements.pdf',
+      },
+    })
+
+    await expect(exportSupplierOrganizationSettlementsDocument({
+      from: '2026-07-01',
+      netId: ' agreement-1 ',
+      to: '2026-07-24',
+      typePaymentTask: 1,
+    })).resolves.toEqual({
+      DocumentURL: '/files/settlements.xlsx',
+      PdfDocumentURL: '/files/settlements.pdf',
+    })
+
+    expect(apiRequestMock).toHaveBeenCalledWith('/accounting/cashflow/supplier-organizations/document/export', {
+      query: {
+        from: '2026-07-01',
+        netId: 'agreement-1',
+        to: '2026-07-24',
+        typePaymentTask: 1,
       },
     })
   })
@@ -254,7 +398,7 @@ describe('supplierOrganizationsApi', () => {
       CurrentAmount: 12,
     })
 
-    expect(apiRequestMock).toHaveBeenCalledWith('/accounting/cashflow/get/filtered', {
+    expect(apiRequestMock).toHaveBeenCalledWith('/supplies/organizations/settlements/cash-flow', {
       query: {
         from: '2026-07-01',
         netId: 'agreement-1',

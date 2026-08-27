@@ -84,16 +84,27 @@ describe('ActReconciliationDispositionModal', () => {
     ).toBe(true)
     expect(mocks.changeDisposition).not.toHaveBeenCalled()
   })
+
+  it('fails closed when disposition permission is revoked', () => {
+    renderModal({ mode: 'reopen', permitted: false })
+
+    const submit = screen.getByRole('button', { name: 'Повернути в роботу' })
+    expect((submit as HTMLButtonElement).disabled).toBe(true)
+    fireEvent.click(submit)
+    expect(mocks.changeDisposition).not.toHaveBeenCalled()
+  })
 })
 
 function renderModal({
   mode,
   onApplied = vi.fn(),
   onClose = vi.fn(),
+  permitted = true,
 }: {
   mode: 'dismiss' | 'reopen'
   onApplied?: () => void
   onClose?: () => void
+  permitted?: boolean
 }) {
   return render(
     <MantineProvider>
@@ -108,6 +119,7 @@ function renderModal({
           }]}
           mode={mode}
           opened
+          permitted={permitted}
           onApplied={onApplied}
           onClose={onClose}
         />

@@ -2,9 +2,9 @@ import { Button, Group, Menu, Stack } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import { ClipboardList, FileText, Printer, Receipt } from 'lucide-react'
 import { useMemo, useRef, useState } from 'react'
-import { useAuth } from '../../auth/useAuth'
+import { usePermissions } from '../../auth/usePermissions'
 import { getApiLanguage } from '../../../shared/api/apiClient'
-import { UserRoleType } from '../../../shared/auth/types'
+import { PermissionKeys, type SalesUkraineSalePermissionKey } from '../../../shared/auth/permissionKeys'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppModal } from '../../../shared/ui/AppModal'
@@ -16,6 +16,8 @@ import {
   getSaleInvoiceHistoryDocument,
   getSalePaymentDocument,
   getSalePzDocument,
+  getSaleRevisionBaseInvoiceDocument,
+  getSaleRevisionBaseShipmentListDocument,
   getSaleShipmentListDocument,
   getSaleShipmentListHistoryDocument,
 } from '../api/salesUkraineApi'
@@ -37,6 +39,7 @@ type DocumentAction = {
   key: string
   label: string
   parts?: DocumentPart[]
+  permissionKey: SalesUkraineSalePermissionKey
   requiresOperationId?: boolean
 }
 
@@ -56,13 +59,6 @@ export type SaleDocumentsMenuAnchor = {
   top: number
 }
 
-const INVOICE_BUNDLE_ROLES: ReadonlyArray<UserRoleType> = [
-  UserRoleType.Administrator,
-  UserRoleType.GBA,
-  UserRoleType.FinanceDirector,
-  UserRoleType.Accountant,
-]
-
 export function SaleDocumentsMenu({
   anchor,
   opened,
@@ -75,25 +71,25 @@ export function SaleDocumentsMenu({
   onMenuClose?: () => void
 }) {
   const { t } = useI18n()
-  const { user } = useAuth()
+  const { can } = usePermissions()
   const [resultState, setResultState] = useValueState<DocumentResultState | null>(null)
   const [runningActionKey, setRunningActionKey] = useState<string | null>(null)
   const runningActionRef = useRef(false)
   const runPaymentDocumentMutation = usePersistentSaleJsonMutationRunner('sale-payment-document')
 
-  const isAbleToInvoiceDocument = useMemo(() => {
-    const roleType = user?.UserRole?.UserRoleType
-    return roleType !== undefined && INVOICE_BUNDLE_ROLES.includes(roleType)
-  }, [user])
+  const canExportInvoice = can(PermissionKeys.SalesUkraine.Sale.ExportInvoice)
 
   const apiLanguage = getApiLanguage()
-  const actions = useMemo(() => (sale ? buildDocumentActions(sale, apiLanguage, t) : []), [apiLanguage, sale, t])
+  const actions = useMemo(
+    () => (sale ? buildDocumentActions(sale, apiLanguage, t).filter((action) => can(action.permissionKey)) : []),
+    [apiLanguage, can, sale, t],
+  )
   const isControlled = typeof opened === 'boolean'
 
   async function runAction(action: DocumentAction) {
     const currentSale = sale
 
-    if (!currentSale || runningActionRef.current) {
+    if (!currentSale || !can(action.permissionKey) || runningActionRef.current) {
       return
     }
 
@@ -114,7 +110,7 @@ export function SaleDocumentsMenu({
 
         documents = settled.flatMap((entry) =>
           entry.status === 'fulfilled'
-            ? buildDocumentFiles({ key: action.key, label: entry.value.label }, entry.value.result, isAbleToInvoiceDocument, t)
+            ? buildDocumentFiles({ key: action.key, label: entry.value.label }, entry.value.result, canExportInvoice, t)
             : [],
         )
 
@@ -129,7 +125,7 @@ export function SaleDocumentsMenu({
         const result = action.requiresOperationId
           ? await runPaymentDocumentAction(currentSale, action, runPaymentDocumentMutation)
           : await action.fetch()
-        documents = buildDocumentFiles(action, result, isAbleToInvoiceDocument, t)
+        documents = buildDocumentFiles(action, result, canExportInvoice, t)
       } else {
         documents = []
       }
@@ -149,6 +145,10 @@ export function SaleDocumentsMenu({
       runningActionRef.current = false
       setRunningActionKey(null)
     }
+  }
+
+  if (!actions.length) {
+    return null
   }
 
   return (
@@ -302,19 +302,34 @@ function buildDocumentActions(sale: SalesUkraineSale, apiLanguage: string, t: (k
   if (hasTransporter && isPackaging) {
     if (hasHistory) {
       // Revision 1 = the base documents — bundled into one "Перша правка документів" entry.
-      const parts: DocumentPart[] = [{ fetch: () => getSaleInvoiceDocument(netId), label: t('Видаткова накладна') }]
+      const parts: DocumentPart[] = [{ fetch: () => getSaleRevisionBaseInvoiceDocument(netId), label: t('Видаткова накладна') }]
 
       if (isVat) {
-        parts.push({ fetch: () => getSaleShipmentListDocument(netId), label: t('Лист на пакування') })
+        parts.push({ fetch: () => getSaleRevisionBaseShipmentListDocument(netId), label: t('Лист на пакування') })
       }
 
-      actions.push({ key: 'revision-1', label: revisionDocumentsLabel(1, false, t), parts })
+      actions.push({
+        key: 'revision-1',
+        label: revisionDocumentsLabel(1, false, t),
+        parts,
+        permissionKey: PermissionKeys.SalesUkraine.Sale.ExportRevisionDocuments,
+      })
     } else {
       // No edits yet — just the current invoice (+ shipment for VAT).
-      actions.push({ fetch: () => getSaleInvoiceDocument(netId), key: 'invoice', label: t('Видаткова накладна') })
+      actions.push({
+        fetch: () => getSaleInvoiceDocument(netId),
+        key: 'invoice',
+        label: t('Видаткова накладна'),
+        permissionKey: PermissionKeys.SalesUkraine.Sale.ExportInvoice,
+      })
 
       if (isVat) {
-        actions.push({ fetch: () => getSaleShipmentListDocument(netId), key: 'shipment', label: t('Лист на пакування') })
+        actions.push({
+          fetch: () => getSaleShipmentListDocument(netId),
+          key: 'shipment',
+          label: t('Лист на пакування'),
+          permissionKey: PermissionKeys.SalesUkraine.Sale.ExportShipmentList,
+        })
       }
     }
   }
@@ -339,7 +354,12 @@ function buildDocumentActions(sale: SalesUkraineSale, apiLanguage: string, t: (k
       parts.push({ fetch: () => getSaleShipmentListHistoryDocument(netId, historyNetId), label: t('Лист на пакування') })
     }
 
-    actions.push({ key: `revision-${revision}`, label: revisionDocumentsLabel(revision, isLast, t), parts })
+    actions.push({
+      key: `revision-${revision}`,
+      label: revisionDocumentsLabel(revision, isLast, t),
+      parts,
+      permissionKey: PermissionKeys.SalesUkraine.Sale.ExportRevisionDocuments,
+    })
   })
 
   if (isPaymentBillStatus || hasPrintedPaymentInvoice || (isVat && withVatAccounting)) {
@@ -348,21 +368,27 @@ function buildDocumentActions(sale: SalesUkraineSale, apiLanguage: string, t: (k
       fetch: (operation) => getSalePaymentDocument(netId, operation),
       key: 'payment',
       label: t('Рахунок на оплату'),
+      permissionKey: PermissionKeys.SalesUkraine.Sale.ExportPaymentInvoice,
       requiresOperationId: true,
     })
   }
 
   if (isPolishRegion && isInvoiceStatus) {
-    actions.push({ fetch: () => getSalePzDocument(netId), key: 'pz', label: t('PZ') })
+    actions.push({
+      fetch: () => getSalePzDocument(netId),
+      key: 'pz',
+      label: t('PZ'),
+      permissionKey: PermissionKeys.SalesUkraine.Sale.ExportPz,
+    })
   }
 
   return actions
 }
 
 function buildDocumentFiles(
-  action: DocumentAction,
+  action: Pick<DocumentAction, 'bundlesInvoice' | 'key' | 'label'>,
   result: SaleDocumentResult,
-  isAbleToInvoiceDocument: boolean,
+  canExportInvoice: boolean,
   t: (key: string) => string,
 ): DocumentFile[] {
   const documents: DocumentFile[] = []
@@ -371,7 +397,7 @@ function buildDocumentFiles(
     documents.push({ excelUrl: result.excelUrl, label: action.label, pdfUrl: result.pdfUrl })
   }
 
-  if (action.bundlesInvoice && (result.isAcceptedToPacking || isAbleToInvoiceDocument)) {
+  if (action.bundlesInvoice && (result.isAcceptedToPacking || canExportInvoice)) {
     if (result.invoiceExcelUrl || result.invoicePdfUrl) {
       documents.push({
         excelUrl: result.invoiceExcelUrl,

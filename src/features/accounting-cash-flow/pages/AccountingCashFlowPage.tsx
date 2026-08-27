@@ -24,7 +24,7 @@ import { useI18n } from '../../../shared/i18n/useI18n'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import {
-  exportAccountingCashFlowDocument,
+  exportCounterpartyAccountingCashFlowDocument,
   getAccountingCashFlow,
   getAccountingCashFlowCounterparty,
 } from '../api/accountingCashFlowApi'
@@ -34,11 +34,11 @@ import { DocumentExportModal } from '../../../shared/ui/document-export-modal/Do
 import { getAccountingCashFlowPaymentStatus } from '../accountingCashFlowPaymentStatus'
 import { getAccountingCashFlowClosingBalance } from '../cashFlowTotals'
 import { getAccountingCashFlowDrilldownRoute } from '../cashFlowDrilldown'
-import { getIncomeCashflowByNetId } from '../../income-cashflows/api/incomeCashflowsApi'
+import { getIncomeCashflowForAccountingCashFlow } from '../../income-cashflows/api/incomeCashflowsApi'
 import { buildIncomeCashflowRow } from '../../income-cashflows/incomeCashflowRows'
 import { IncomeCashflowDetailDrawer } from '../../income-cashflows/pages/IncomeCashflowsPage'
 import type { IncomePaymentOrder } from '../../income-cashflows/types'
-import { getSaleById } from '../../sales-ukraine/api/salesUkraineApi'
+import { getSalesUkraineSaleDetails } from '../../sales-ukraine/api/salesUkraineApi'
 import { SaleSummaryDrawer } from '../../sales-ukraine/pages/SalesUkrainePage'
 import type { SalesUkraineSale } from '../../sales-ukraine/types'
 import './accounting-cash-flow-page.css'
@@ -55,6 +55,9 @@ import type {
   AccountingCashFlowSaleReturn,
   AccountingCashFlowSaleReturnItem,
 } from '../types'
+import { PermissionKeys } from '../../../shared/auth/permissionKeys'
+import { PermissionGate } from '../../auth/components/PermissionGate'
+import { useAuth } from '../../auth/useAuth'
 
 type FilterDraft = {
   from: string
@@ -186,6 +189,27 @@ function AccountingCashFlowRoute({ mode }: { mode: AccountingCashFlowMode }) {
 }
 
 function AccountingCashFlowPage({ mode, routeNetId }: { mode: AccountingCashFlowMode; routeNetId: string }) {
+  return (
+    <PermissionGate
+      permissionKey={PermissionKeys.Clients.AccountingCashFlow.Open}
+      fallback={<AccountingCashFlowPermissionDenied />}
+    >
+      <AccountingCashFlowPageContent mode={mode} routeNetId={routeNetId} />
+    </PermissionGate>
+  )
+}
+
+function AccountingCashFlowPermissionDenied() {
+  const { t } = useI18n()
+
+  return (
+    <Alert color="red" icon={<CircleAlert size={18} />} title={t('Доступ заборонено')} variant="light">
+      {t('У вашої ролі немає права переглядати взаєморозрахунки.')}
+    </Alert>
+  )
+}
+
+function AccountingCashFlowPageContent({ mode, routeNetId }: { mode: AccountingCashFlowMode; routeNetId: string }) {
   const model = useAccountingCashFlowPageModel(mode, routeNetId)
 
   return <AccountingCashFlowPageView model={model} />
@@ -193,6 +217,7 @@ function AccountingCashFlowPage({ mode, routeNetId }: { mode: AccountingCashFlow
 
 function useAccountingCashFlowPageModel(mode: AccountingCashFlowMode, routeNetId: string) {
   const { t } = useI18n()
+  const { hasPermission } = useAuth()
   const location = useLocation()
   const initialFilters = useMemo<FilterDraft>(
     () => ({
@@ -283,7 +308,7 @@ function useAccountingCashFlowPageModel(mode: AccountingCashFlowMode, routeNetId
       setCounterpartyError(null)
 
       try {
-        const loadedCounterparty = await getAccountingCashFlowCounterparty(routeNetId)
+        const loadedCounterparty = await getAccountingCashFlowCounterparty(routeNetId, mode)
 
         if (!cancelled) {
           const loadedAgreements = loadedCounterparty?.ClientAgreements || []
@@ -309,7 +334,7 @@ function useAccountingCashFlowPageModel(mode: AccountingCashFlowMode, routeNetId
     return () => {
       cancelled = true
     }
-  }, [reloadKey, routeNetId, t])
+  }, [mode, reloadKey, routeNetId, t])
 
   useEffect(() => {
     let cancelled = false
@@ -368,6 +393,11 @@ function useAccountingCashFlowPageModel(mode: AccountingCashFlowMode, routeNetId
   }
 
   const handleExport = useCallback(async () => {
+    if (!hasPermission(PermissionKeys.Clients.AccountingCashFlow.Export)) {
+      notifications.show({ color: 'red', message: t('Немає прав для експорту взаєморозрахунків') })
+      return
+    }
+
     if (!selectedAgreement?.NetUid) {
       notifications.show({ color: 'red', message: t('Оберіть договір для експорту') })
       return
@@ -377,8 +407,9 @@ function useAccountingCashFlowPageModel(mode: AccountingCashFlowMode, routeNetId
     setCashFlowError(null)
 
     try {
-      const exportedDocument = await exportAccountingCashFlowDocument({
+      const exportedDocument = await exportCounterpartyAccountingCashFlowDocument({
         from: activeFilters.from,
+        mode,
         netId: selectedAgreement.NetUid,
         to: activeFilters.to,
       })
@@ -390,7 +421,7 @@ function useAccountingCashFlowPageModel(mode: AccountingCashFlowMode, routeNetId
     } finally {
       setExporting(false)
     }
-  }, [activeFilters.from, activeFilters.to, selectedAgreement, t])
+  }, [activeFilters.from, activeFilters.to, hasPermission, mode, selectedAgreement, t])
 
   return {
     activeFilters,
@@ -433,6 +464,7 @@ function useAccountingCashFlowPageModel(mode: AccountingCashFlowMode, routeNetId
 
 function AccountingCashFlowPageView({ model }: { model: ReturnType<typeof useAccountingCashFlowPageModel> }) {
   const { t } = useI18n()
+  const { hasPermission } = useAuth()
   const navigate = useNavigate()
   const [saleDetail, setSaleDetail] = useState<SalesUkraineSale | null>(null)
   const [saleDetailError, setSaleDetailError] = useState<string | null>(null)
@@ -483,7 +515,7 @@ function AccountingCashFlowPageView({ model }: { model: ReturnType<typeof useAcc
     setSelectedItem,
     updateFilterDraft,
   } = model
-  const canExport = Boolean(selectedAgreement?.NetUid)
+  const canExport = Boolean(selectedAgreement?.NetUid) && hasPermission(PermissionKeys.Clients.AccountingCashFlow.Export)
   const closeSaleDetail = useCallback(() => {
     saleDetailRequestRef.current += 1
     setSaleDetailOpened(false)
@@ -493,6 +525,11 @@ function AccountingCashFlowPageView({ model }: { model: ReturnType<typeof useAcc
   }, [])
   const openSaleDetail = useCallback(
     (item: AccountingCashFlowHeadItem) => {
+      if (!hasPermission(PermissionKeys.SalesUkraine.Sale.OpenDetails)) {
+        notifications.show({ color: 'red', message: t('Немає прав для перегляду продажу') })
+        return
+      }
+
       const requestId = saleDetailRequestRef.current + 1
       const saleNetUid = getCashFlowSaleNetUid(item)
 
@@ -510,7 +547,7 @@ function AccountingCashFlowPageView({ model }: { model: ReturnType<typeof useAcc
 
       setSaleDetailLoading(true)
 
-      void getSaleById(saleNetUid)
+      void getSalesUkraineSaleDetails(saleNetUid)
         .then((sale) => {
           if (saleDetailRequestRef.current !== requestId) {
             return
@@ -536,7 +573,7 @@ function AccountingCashFlowPageView({ model }: { model: ReturnType<typeof useAcc
           }
         })
     },
-    [setSelectedItem, t],
+    [hasPermission, setSelectedItem, t],
   )
   const closeIncomeDetail = useCallback(() => {
     incomeDetailRequestRef.current += 1
@@ -547,6 +584,11 @@ function AccountingCashFlowPageView({ model }: { model: ReturnType<typeof useAcc
   }, [])
   const openIncomeDetail = useCallback(
     (item: AccountingCashFlowHeadItem) => {
+      if (!hasPermission(PermissionKeys.SystemPages.IncomeCashflows.View)) {
+        notifications.show({ color: 'red', message: t('Немає прав для перегляду прибуткового ордера') })
+        return
+      }
+
       const requestId = incomeDetailRequestRef.current + 1
       const incomeNetUid = getCashFlowIncomeNetUid(item)
 
@@ -564,7 +606,7 @@ function AccountingCashFlowPageView({ model }: { model: ReturnType<typeof useAcc
 
       setIncomeDetailLoading(true)
 
-      void getIncomeCashflowByNetId(incomeNetUid)
+      void getIncomeCashflowForAccountingCashFlow(incomeNetUid)
         .then((income) => {
           if (incomeDetailRequestRef.current !== requestId) {
             return
@@ -590,7 +632,7 @@ function AccountingCashFlowPageView({ model }: { model: ReturnType<typeof useAcc
           }
         })
     },
-    [setSelectedItem, t],
+    [hasPermission, setSelectedItem, t],
   )
   const handleCashFlowRowClick = useCallback(
     (item: AccountingCashFlowHeadItem) => {
@@ -823,22 +865,24 @@ function AccountingCashFlowPageView({ model }: { model: ReturnType<typeof useAcc
                   <RefreshCw size={17} />
                 </ActionIcon>
               </Tooltip>
-              <Tooltip disabled={canExport} label={t('Експорт доступний після вибору договору')}>
-                <Box>
-                  <Button
-                    className="accounting-cash-flow-export"
-                    color={CREATE_ACTION_COLOR}
-                    disabled={!canExport}
-                    leftSection={<Download size={15} />}
-                    loading={isExporting}
-                    size="sm"
-                    styles={{ label: { fontFamily: 'var(--font-mono)', letterSpacing: 0 } }}
-                    onClick={handleExport}
-                  >
-                    {t('Експорт / друк')}
-                  </Button>
-                </Box>
-              </Tooltip>
+              <PermissionGate permissionKey={PermissionKeys.Clients.AccountingCashFlow.Export}>
+                <Tooltip disabled={canExport} label={t('Експорт доступний після вибору договору')}>
+                  <Box>
+                    <Button
+                      className="accounting-cash-flow-export"
+                      color={CREATE_ACTION_COLOR}
+                      disabled={!canExport}
+                      leftSection={<Download size={15} />}
+                      loading={isExporting}
+                      size="sm"
+                      styles={{ label: { fontFamily: 'var(--font-mono)', letterSpacing: 0 } }}
+                      onClick={handleExport}
+                    >
+                      {t('Експорт / друк')}
+                    </Button>
+                  </Box>
+                </Tooltip>
+              </PermissionGate>
             </div>
           </form>
         </div>

@@ -4,7 +4,7 @@ import { searchClientProductMovementClients } from './client-product-movement/ap
 import { searchSupplyOrganizations as searchConsumableOrderSupplyOrganizations } from './consumable-orders/api/consumableOrdersApi'
 import {
   searchIncomeCashflowClientPayers,
-  searchIncomeCashflowCounterparties,
+  searchOtherIncomeCashflowCounterparties,
 } from './income-cashflows/api/incomeCashflowsApi'
 import { IncomeCounterpartySearchType } from './income-cashflows/types'
 import { getProductRemainSuppliers } from './product-remains/api/productRemainsApi'
@@ -27,14 +27,14 @@ describe('lookup search empty value guards', () => {
     ['client product movement clients', () => searchClientProductMovementClients('  ')],
     [
       'income cashflow counterparties',
-      () => searchIncomeCashflowCounterparties('  ', IncomeCounterpartySearchType.Client),
+      () => searchOtherIncomeCashflowCounterparties('  ', IncomeCounterpartySearchType.Client),
     ],
     ['income cashflow client payers', () => searchIncomeCashflowClientPayers('  ')],
     ['product remain suppliers', () => getProductRemainSuppliers({ limit: 20, offset: 0, value: '  ' })],
     ['report clients', () => searchReportClients({ limit: 20, offset: 0, value: '  ' })],
     ['report users', () => searchReportUsers({ limit: 20, offset: 0, value: '  ' })],
     ['sales return clients', () => searchSalesReturnClients('  ')],
-    ['consumable order supply organizations', () => searchConsumableOrderSupplyOrganizations('  ')],
+    ['consumable order supply organizations', () => searchConsumableOrderSupplyOrganizations('  ', 'create')],
     ['payment protocol supply organizations', () => searchPaymentProtocolSupplyOrganizations('  ')],
   ])('does not call lookup endpoints for blank %s lookup values', async (_label, request) => {
     await expect(request()).resolves.toEqual([])

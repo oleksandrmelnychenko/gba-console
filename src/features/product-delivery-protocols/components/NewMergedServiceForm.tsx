@@ -20,9 +20,9 @@ import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppModal } from '../../../shared/ui/AppModal'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import {
-  getResponsibleUsers,
+  getUnifiedServiceCreateResponsibleUsers,
   getSupplyServiceConsumableProducts,
-  searchSupplyOrganizations,
+  searchUnifiedServiceCreateSupplyOrganizations,
 } from '../api/protocolDetailApi'
 import type {
   ConsumableProduct,
@@ -156,7 +156,7 @@ export function NewMergedServiceForm({
       try {
         const [nextProducts, nextUsers] = await Promise.all([
           getSupplyServiceConsumableProducts(''),
-          getResponsibleUsers(),
+          getUnifiedServiceCreateResponsibleUsers(),
         ])
 
         if (!cancelled) {
@@ -188,7 +188,7 @@ export function NewMergedServiceForm({
 
     async function loadOrganizations() {
       try {
-        const nextOrganizations = await searchSupplyOrganizations(value)
+        const nextOrganizations = await searchUnifiedServiceCreateSupplyOrganizations(value)
 
         if (!cancelled) {
           setOrganizations(nextOrganizations)

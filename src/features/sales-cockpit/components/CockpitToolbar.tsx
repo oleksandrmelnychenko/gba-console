@@ -9,6 +9,7 @@ import { TaskFilters } from './TaskFilters'
 export type CockpitDayFilter = 'all' | 'today'
 
 type CockpitToolbarProps = {
+  canRegenerate: boolean
   taskType: CockpitTaskType | null
   urgency: CockpitUrgency | null
   dayFilter: CockpitDayFilter
@@ -28,6 +29,7 @@ type CockpitToolbarProps = {
 }
 
 export function CockpitToolbar({
+  canRegenerate,
   taskType,
   urgency,
   dayFilter,
@@ -98,14 +100,16 @@ export function CockpitToolbar({
               <RefreshCw size={18} />
             </ActionIcon>
           </Tooltip>
-          <Button
-            color={CREATE_ACTION_COLOR}
-            leftSection={<Sparkles size={16} />}
-            loading={isRegenerating}
-            onClick={onRegenerate}
-          >
-            {t('Згенерувати завдання')}
-          </Button>
+          {canRegenerate && (
+            <Button
+              color={CREATE_ACTION_COLOR}
+              leftSection={<Sparkles size={16} />}
+              loading={isRegenerating}
+              onClick={onRegenerate}
+            >
+              {t('Згенерувати завдання')}
+            </Button>
+          )}
         </div>
       </div>
     </Card>

@@ -1,4 +1,4 @@
-import { Stack } from '@mantine/core'
+import { Stack, Text } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import { useState } from 'react'
 import {
@@ -7,7 +7,9 @@ import {
   useSearchParams,
 } from 'react-router-dom'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
+import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { useI18n } from '../../../shared/i18n/useI18n'
+import { PermissionGate } from '../../auth/components/PermissionGate'
 import { OutgoingCashOrderForm } from '../components/OutgoingCashOrderForm'
 import { OutgoingCreateModeSelector } from '../components/OutgoingCreateModeSelector'
 import { OutgoingPaymentGroupForm } from '../components/OutgoingPaymentGroupForm'
@@ -27,6 +29,28 @@ const OUTGOING_CASHFLOWS_PATH = '/accounting/outgoing-cashflow'
 const OUTGOING_CASHFLOW_NEW_PATH = `${OUTGOING_CASHFLOWS_PATH}/new`
 
 export function OutgoingCashflowCreatePage() {
+  return (
+    <PermissionGate
+      permissionKey={PermissionKeys.SystemPages.OutgoingCashflows.View}
+      fallback={<OutgoingCashflowCreatePermissionDenied />}
+    >
+      <PermissionGate
+        permissionKey={PermissionKeys.OutgoingCashflows.Order.Create}
+        fallback={<OutgoingCashflowCreatePermissionDenied />}
+      >
+        <OutgoingCashflowCreatePageContent />
+      </PermissionGate>
+    </PermissionGate>
+  )
+}
+
+function OutgoingCashflowCreatePermissionDenied() {
+  const { t } = useI18n()
+
+  return <Text c="red" p="md">{t('Доступ заборонено')}</Text>
+}
+
+function OutgoingCashflowCreatePageContent() {
   const { t } = useI18n()
   const navigate = useNavigate()
   const location = useLocation()

@@ -8,9 +8,13 @@ import { SupplyUkraineDirectOrderCreatePage } from './SupplyUkraineDirectOrderCr
 
 const apiMocks = vi.hoisted(() => ({
   getSupplyOrderOrganizations: vi.fn(),
-  getSupplyOrderSuppliers: vi.fn(),
+  getSupplyOrderCreateSuppliers: vi.fn(),
   uploadDirectSupplyOrderFromFile: vi.fn(),
   uploadSupplyOrderUkraineFromSupplierFile: vi.fn(),
+}))
+
+vi.mock('../../auth/useAuth', () => ({
+  useAuth: () => ({ hasPermission: () => true }),
 }))
 
 vi.mock('../api/supplyUkraineOrdersApi', () => apiMocks)
@@ -31,7 +35,7 @@ describe('direct supply order comment validation', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     apiMocks.getSupplyOrderOrganizations.mockResolvedValue([])
-    apiMocks.getSupplyOrderSuppliers.mockResolvedValue([])
+    apiMocks.getSupplyOrderCreateSuppliers.mockResolvedValue([])
   })
 
   it('stops an oversized comment before the multipart request', async () => {

@@ -9,7 +9,7 @@ import type {
 } from '../types'
 
 export async function getAccountableExpenses(params: AccountableExpensesSearchParams): Promise<AccountableExpensesResponse> {
-  const result = await apiRequest<unknown>('/consumables/orders/all/services', {
+  const result = await apiRequest<unknown>('/consumables/orders/accounting/services/all', {
     query: {
       from: toDateTimeQuery(params.from, 'start'),
       limit: params.limit,
@@ -26,7 +26,7 @@ export async function searchAccountableExpenses(
   value: string,
   params: AccountableExpensesSearchParams,
 ): Promise<AccountableExpensesResponse> {
-  const result = await apiRequest<unknown>('/consumables/orders/all/services', {
+  const result = await apiRequest<unknown>('/consumables/orders/accounting/services/all', {
     query: {
       from: toDateTimeQuery(params.from, 'start'),
       limit: params.limit,

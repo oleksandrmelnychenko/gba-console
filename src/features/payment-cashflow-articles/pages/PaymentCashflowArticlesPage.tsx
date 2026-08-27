@@ -4,6 +4,7 @@ import {
   Button,
   Group,
   Stack,
+  Text,
   TextInput,
   Tooltip,
 } from '@mantine/core'
@@ -19,11 +20,14 @@ import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/Page
 import { TableRowAction } from '../../../shared/ui/table-row-action'
 import '../../../shared/ui/console-table-page.css'
 import { useAuth } from '../../auth/useAuth'
+import { usePermissions } from '../../auth/usePermissions'
+import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { getPaymentCashflowArticles, searchPaymentCashflowArticles } from '../api/paymentCashflowArticlesApi'
 import type { PaymentCashflowArticle } from '../types'
 import './payment-cashflow-articles-page.css'
 
-const PERMISSION_CREATE_CASHFLOW_ARTICLE = 'Accounting_Payment_Cashflow_Articles_AddBtn_PKEY'
+const PERMISSION_CREATE_CASHFLOW_ARTICLE =
+  PermissionKeys.FinancialAdministration.CashflowArticles.Article.Create
 
 const PAYMENT_CASHFLOW_ARTICLES_TABLE_DEFAULT_LAYOUT = {
   columnPinning: {
@@ -40,6 +44,25 @@ type PaymentCashflowArticlesPageProps = {
 }
 
 export function PaymentCashflowArticlesPage({ inSharedShell = false }: PaymentCashflowArticlesPageProps) {
+  const { t } = useI18n()
+  const { can, isLoading } = usePermissions()
+
+  if (isLoading) {
+    return <Text c="dimmed">{t('Завантаження')}</Text>
+  }
+
+  if (!can(PermissionKeys.FinancialAdministration.CashflowArticles.Page.View)) {
+    return (
+      <Alert color="red" icon={<CircleAlert size={18} />} title={t('Доступ заборонено')} variant="light">
+        {t('Недостатньо прав для перегляду статей руху коштів')}
+      </Alert>
+    )
+  }
+
+  return <PaymentCashflowArticlesPageContent inSharedShell={inSharedShell} />
+}
+
+function PaymentCashflowArticlesPageContent({ inSharedShell = false }: PaymentCashflowArticlesPageProps) {
   const { t } = useI18n()
   const { hasPermission } = useAuth()
   const location = useLocation()

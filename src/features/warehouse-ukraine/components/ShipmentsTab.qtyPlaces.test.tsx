@@ -3,16 +3,17 @@ import { fireEvent, render, screen, waitFor, within } from '@testing-library/rea
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { I18nProvider } from '../../../shared/i18n/I18nProvider'
 import {
+  carryOutShipmentList,
   getAllShipmentLists,
   getAutoShipmentList,
   getShipmentTransporterTypes,
   getShipmentTransportersByType,
-  updateShipmentList,
 } from '../api/shipmentsApi'
 import type { ShipmentList } from '../shipmentTypes'
 import { ShipmentsTab } from './ShipmentsTab'
 
 vi.mock('../api/shipmentsApi', () => ({
+  carryOutShipmentList: vi.fn(),
   getAllShipmentLists: vi.fn(),
   getAutoShipmentList: vi.fn(),
   getManualShipmentSales: vi.fn(),
@@ -55,7 +56,7 @@ const getAllShipmentListsMock = vi.mocked(getAllShipmentLists)
 const getAutoShipmentListMock = vi.mocked(getAutoShipmentList)
 const getShipmentTransporterTypesMock = vi.mocked(getShipmentTransporterTypes)
 const getShipmentTransportersByTypeMock = vi.mocked(getShipmentTransportersByType)
-const updateShipmentListMock = vi.mocked(updateShipmentList)
+const carryOutShipmentListMock = vi.mocked(carryOutShipmentList)
 
 describe('ShipmentsTab quantity carry-out workflow', () => {
   beforeEach(() => {
@@ -79,7 +80,7 @@ describe('ShipmentsTab quantity carry-out workflow', () => {
     const draft = buildShipmentList()
     let persisted: ShipmentList | null = null
     getAutoShipmentListMock.mockResolvedValue(draft)
-    updateShipmentListMock.mockImplementation(async (shipmentList) => {
+    carryOutShipmentListMock.mockImplementation(async (shipmentList) => {
       persisted = {
         ...shipmentList,
         Updated: '2026-08-27T13:10:00.1234567Z',
@@ -93,7 +94,16 @@ describe('ShipmentsTab quantity carry-out workflow', () => {
     render(
       <MantineProvider>
         <I18nProvider>
-          <ShipmentsTab createRequest={1} />
+          <ShipmentsTab
+            createRequest={1}
+            permissions={{
+              canCarryOut: true,
+              canCreate: true,
+              canEdit: true,
+              canPrintInvoice: true,
+              canPrintShipment: true,
+            }}
+          />
         </I18nProvider>
       </MantineProvider>,
     )
@@ -114,12 +124,12 @@ describe('ShipmentsTab quantity carry-out workflow', () => {
     fireEvent.focus(qtyPlacesInput as HTMLInputElement)
     fireEvent.change(qtyPlacesInput as HTMLInputElement, { target: { value: '5' } })
     fireEvent.blur(qtyPlacesInput as HTMLInputElement, { relatedTarget: carryOutButton })
-    expect(updateShipmentListMock).not.toHaveBeenCalled()
+    expect(carryOutShipmentListMock).not.toHaveBeenCalled()
     fireEvent.click(carryOutButton)
     fireEvent.click(await screen.findByRole('button', { name: 'Так' }))
 
-    await waitFor(() => expect(updateShipmentListMock).toHaveBeenCalledTimes(1))
-    expect(updateShipmentListMock.mock.calls[0][0]).toMatchObject({
+    await waitFor(() => expect(carryOutShipmentListMock).toHaveBeenCalledTimes(1))
+    expect(carryOutShipmentListMock.mock.calls[0][0]).toMatchObject({
       IsSent: true,
       ShipmentListItems: [{ IsDirty: true, QtyPlaces: 5 }],
     })

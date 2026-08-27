@@ -10,13 +10,13 @@ import type {
 } from '../types'
 
 export async function getProductPlacementStorages(): Promise<ProductPlacementStorageLocation[]> {
-  const result = await apiRequest<unknown>('/storages/all/nondefective')
+  const result = await apiRequest<unknown>('/storages/product-placements/page/nondefective')
 
   return normalizeStorages(result)
 }
 
 export async function getProductPlacements(params: ProductPlacementsSearchParams): Promise<ProductPlacementsResponse> {
-  const result = await apiRequest<unknown>('/products/placements/storage/all/filtered', {
+  const result = await apiRequest<unknown>('/products/placements/storage/page/registry', {
     query: {
       limit: params.limit,
       offset: params.offset,
@@ -30,7 +30,7 @@ export async function getProductPlacements(params: ProductPlacementsSearchParams
 }
 
 export async function exportProductPlacements(): Promise<ProductPlacementsExportDocument> {
-  const result = await apiRequest<unknown>('/products/placements/storage/document/create/export')
+  const result = await apiRequest<unknown>('/products/placements/storage/page/document/export')
 
   return normalizeExportDocument(result)
 }
@@ -38,8 +38,8 @@ export async function exportProductPlacements(): Promise<ProductPlacementsExport
 export async function exportReturnedProductPlacements(
   rows: ProductPlacementRow[],
 ): Promise<ProductPlacementsExportDocument> {
-  const result = await apiRequest<unknown>('/products/placements/storage/document/create/import', {
-    body: rows,
+  const result = await apiRequest<unknown>('/products/placements/storage/page/document/returned/export', {
+    body: rows.map(toPageItem),
     method: 'POST',
   })
 
@@ -47,7 +47,7 @@ export async function exportReturnedProductPlacements(
 }
 
 export async function uploadProductPlacementFile(formData: FormData): Promise<ProductPlacementUploadResult> {
-  const result = await apiRequest<unknown>('/products/placements/storage/upload/placement/file', {
+  const result = await apiRequest<unknown>('/products/placements/storage/page/import/file', {
     body: formData,
     method: 'POST',
   })
@@ -60,13 +60,22 @@ export async function uploadProductPlacementFile(formData: FormData): Promise<Pr
 export async function submitReturnedProductPlacements(
   payload: ProductPlacementReturnPayload,
 ): Promise<ProductPlacementUploadResult> {
-  const result = await apiRequest<unknown>('/products/placements/storage/upload/placement/return', {
+  const result = await apiRequest<unknown>('/products/placements/storage/page/import/return', {
     body: payload,
     method: 'POST',
   })
 
   return {
     ReturnedProducts: normalizePlacements(result),
+  }
+}
+
+function toPageItem(row: ProductPlacementRow) {
+  return {
+    placement: row.Placement?.trim() || '',
+    productName: row.Product?.NameUA?.trim() || row.Product?.Name?.trim() || '',
+    qty: Number(row.Qty) || 0,
+    vendorCode: row.VendorCode?.trim() || row.Product?.VendorCode?.trim() || '',
   }
 }
 

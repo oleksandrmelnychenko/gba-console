@@ -16,7 +16,7 @@ export type DocumentVerificationSearchParams = {
 }
 
 export async function getDocumentVerificationStorages(): Promise<WarehouseUkraineStorage[]> {
-  const result = await apiRequest<unknown>('/storages/all')
+  const result = await apiRequest<unknown>('/storages/warehouse-ukraine/verification/all')
 
   return readArrayPayload(result, ['Items', 'Storages', 'Data']) as WarehouseUkraineStorage[]
 }
@@ -24,7 +24,7 @@ export async function getDocumentVerificationStorages(): Promise<WarehouseUkrain
 export async function getDocumentVerification(
   params: DocumentVerificationSearchParams,
 ): Promise<DocumentVerificationResponse> {
-  const result = await apiRequest<unknown>('/history/order/item/get/verification', {
+  const result = await apiRequest<unknown>('/history/order/item/warehouse-ukraine/verification/registry', {
     query: {
       from: params.from,
       to: params.to,
@@ -40,7 +40,7 @@ export async function getDocumentVerification(
 export async function exportDocumentVerification(
   params: DocumentVerificationSearchParams,
 ): Promise<WarehouseUkraineExportDocument> {
-  const result = await apiRequest<unknown>('/history/order/item/document/verification/create/export', {
+  const result = await apiRequest<unknown>('/history/order/item/warehouse-ukraine/verification/export', {
     query: {
       from: params.from,
       to: params.to,

@@ -4,7 +4,7 @@ import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { describe, expect, it, vi } from 'vitest'
 import { I18nProvider } from '../../../shared/i18n/I18nProvider'
 import { theme } from '../../../shared/theme/theme'
-import { getClientCommercialStructure, getClients } from '../api/clientsApi'
+import { getClientCommercialStructureForRegistry, getClientsForRegistry } from '../api/clientsApi'
 import type { Client, ClientCommercialStructure } from '../types'
 import { ClientActionsModal, ClientsPage } from './ClientsPage'
 
@@ -16,15 +16,15 @@ vi.mock('../api/clientsApi', async (importOriginal) => {
   const original = await importOriginal<typeof import('../api/clientsApi')>()
   return {
     ...original,
-    getClientCommercialStructure: vi.fn(),
-    getClients: vi.fn().mockResolvedValue([]),
+    getClientsForRegistry: vi.fn().mockResolvedValue([]),
     getClientCount: vi.fn().mockResolvedValue(0),
     getClientTypes: vi.fn().mockResolvedValue([]),
     getClientFilterItems: vi.fn().mockResolvedValue([]),
+    getClientCommercialStructureForRegistry: vi.fn(),
   }
 })
 
-const getClientCommercialStructureMock = vi.mocked(getClientCommercialStructure)
+const getClientCommercialStructureMock = vi.mocked(getClientCommercialStructureForRegistry)
 
 describe('ClientsPage toolbar', () => {
   it('removes the client tree entry while keeping the registry and new-client action', async () => {
@@ -42,7 +42,10 @@ describe('ClientsPage toolbar', () => {
     )
 
     expect(await screen.findByText('Клієнтів не знайдено')).toBeTruthy()
-    expect(getClients).toHaveBeenCalledWith(expect.objectContaining({ typeRoleFilter: '1' }), expect.any(AbortSignal))
+    expect(getClientsForRegistry).toHaveBeenCalledWith(
+      expect.objectContaining({ typeRoleFilter: '1' }),
+      expect.any(AbortSignal),
+    )
     expect(screen.queryByRole('button', { name: 'Дерево клієнтів' })).toBeNull()
 
     fireEvent.click(screen.getByRole('button', { name: 'Новий клієнт' }))
@@ -66,7 +69,10 @@ describe('ClientActionsModal', () => {
       <MantineProvider env="test" theme={theme}>
         <I18nProvider>
           <ClientActionsModal
+            canEditReservationDays={false}
             canOpenCashFlow={false}
+            canOpenStructure={true}
+            canToggleActive={true}
             canViewClient={true}
             client={client}
             isActiveLoading={false}
@@ -104,7 +110,10 @@ describe('ClientActionsModal', () => {
       <MantineProvider env="test" theme={theme}>
         <I18nProvider>
           <ClientActionsModal
+            canEditReservationDays={false}
             canOpenCashFlow={false}
+            canOpenStructure={false}
+            canToggleActive={true}
             canViewClient={true}
             client={client}
             isActiveLoading={false}
@@ -121,5 +130,42 @@ describe('ClientActionsModal', () => {
 
     expect(screen.queryByRole('button', { name: 'Позначити неактивним' })).toBeNull()
     expect(screen.getByText('Статус керується синхронізацією з 1С')).toBeTruthy()
+  })
+
+  it('does not load or expose independent actions when their permissions are absent', () => {
+    const client = {
+      NetUid: '3a0ccabd-a781-45c3-a01c-6b50355c77ff',
+      FullName: 'ТОВ МАГРОМ',
+      IsActive: true,
+    } as Client
+    getClientCommercialStructureMock.mockClear()
+
+    render(
+      <MantineProvider env="test" theme={theme}>
+        <I18nProvider>
+          <ClientActionsModal
+            canEditReservationDays={false}
+            canOpenCashFlow={false}
+            canOpenStructure={false}
+            canToggleActive={false}
+            canViewClient={true}
+            client={client}
+            isActiveLoading={false}
+            onCashFlow={vi.fn()}
+            onClose={vi.fn()}
+            onEdit={vi.fn()}
+            onReserveDays={vi.fn()}
+            onStructure={vi.fn()}
+            onSwitchActive={vi.fn()}
+          />
+        </I18nProvider>
+      </MantineProvider>,
+    )
+
+    expect(screen.getByRole('button', { name: 'Відкрити картку' })).toBeTruthy()
+    expect(screen.queryByRole('button', { name: /Структура клієнта/ })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Дні резерву' })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Позначити неактивним' })).toBeNull()
+    expect(getClientCommercialStructureMock).not.toHaveBeenCalled()
   })
 })

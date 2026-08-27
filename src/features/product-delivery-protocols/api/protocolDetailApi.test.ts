@@ -1,6 +1,14 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { apiRequest } from '../../../shared/api/apiClient'
-import { removeMergedService, searchSupplyOrganizations, updateProtocolStatus } from './protocolDetailApi'
+import {
+  getUnifiedServiceCreateResponsibleUsers,
+  getUnifiedServiceEditResponsibleUsers,
+  removeMergedService,
+  searchDirectSupplyOrderSpecificationOrganizations,
+  searchUnifiedServiceCreateSupplyOrganizations,
+  searchUnifiedServiceEditSupplyOrganizations,
+  updateProtocolStatus,
+} from './protocolDetailApi'
 
 vi.mock('../../../shared/api/apiClient', () => ({
   apiRequest: vi.fn(),
@@ -18,7 +26,7 @@ describe('product delivery protocol detail API contracts', () => {
     apiRequestMock.mockResolvedValueOnce(protocol)
 
     await expect(updateProtocolStatus('protocol-net-id')).resolves.toEqual(protocol)
-    expect(apiRequestMock).toHaveBeenCalledWith('/delivery/product/protocol/update/status', {
+    expect(apiRequestMock).toHaveBeenCalledWith('/delivery/product/protocol/logistic/update/status', {
       method: 'POST',
       query: {
         netId: 'protocol-net-id',
@@ -31,7 +39,7 @@ describe('product delivery protocol detail API contracts', () => {
     apiRequestMock.mockResolvedValueOnce(protocol)
 
     await expect(removeMergedService('service-net-id')).resolves.toEqual(protocol)
-    expect(apiRequestMock).toHaveBeenCalledWith('/supplies/services/merged/remove/before/calculated/gross/price', {
+    expect(apiRequestMock).toHaveBeenCalledWith('/supplies/services/merged/product-delivery-protocol/delete', {
       method: 'POST',
       query: {
         netId: 'service-net-id',
@@ -42,9 +50,9 @@ describe('product delivery protocol detail API contracts', () => {
   it('searches supply organizations with a bounded trimmed lookup query', async () => {
     apiRequestMock.mockResolvedValueOnce([{ NetUid: 'organization-1' }])
 
-    await expect(searchSupplyOrganizations('  ports  ')).resolves.toEqual([{ NetUid: 'organization-1' }])
+    await expect(searchUnifiedServiceCreateSupplyOrganizations('  ports  ')).resolves.toEqual([{ NetUid: 'organization-1' }])
 
-    expect(apiRequestMock).toHaveBeenCalledWith('/supplies/organizations/all/search', {
+    expect(apiRequestMock).toHaveBeenCalledWith('/supplies/organizations/product-delivery-protocols/unified-service/create/search', {
       query: {
         limit: 20,
         offset: 0,
@@ -56,13 +64,39 @@ describe('product delivery protocol detail API contracts', () => {
   it('loads a bounded initial supply organization list for blank lookup values', async () => {
     apiRequestMock.mockResolvedValueOnce([{ NetUid: 'organization-1' }])
 
-    await expect(searchSupplyOrganizations('   ')).resolves.toEqual([{ NetUid: 'organization-1' }])
+    await expect(searchUnifiedServiceEditSupplyOrganizations('   ')).resolves.toEqual([{ NetUid: 'organization-1' }])
 
-    expect(apiRequestMock).toHaveBeenCalledWith('/supplies/organizations/all', {
+    expect(apiRequestMock).toHaveBeenCalledWith('/supplies/organizations/product-delivery-protocols/unified-service/edit/search', {
       query: {
         limit: 20,
         offset: 0,
       },
     })
+  })
+
+  it('uses the direct-supply-order specification organization facade', async () => {
+    apiRequestMock.mockResolvedValueOnce([])
+
+    await expect(searchDirectSupplyOrderSpecificationOrganizations('  spec  ')).resolves.toEqual([])
+
+    expect(apiRequestMock).toHaveBeenCalledWith('/supplies/organizations/direct-supply-order/specification/search', {
+      query: {
+        limit: 20,
+        offset: 0,
+        value: 'spec',
+      },
+    })
+  })
+
+  it('uses context-specific responsible-user facades', async () => {
+    apiRequestMock.mockResolvedValue([])
+
+    await getUnifiedServiceCreateResponsibleUsers()
+    await getUnifiedServiceEditResponsibleUsers()
+
+    expect(apiRequestMock.mock.calls).toEqual([
+      ['/usermanagement/profiles/product-delivery-protocols/unified-service/create/responsible-users'],
+      ['/usermanagement/profiles/product-delivery-protocols/unified-service/edit/responsible-users'],
+    ])
   })
 })

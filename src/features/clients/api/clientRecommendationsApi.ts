@@ -62,7 +62,7 @@ export async function sendRecommendationFeedback(
   clientNetId: string,
   productIds: number[],
 ): Promise<void> {
-  await apiRequest<unknown>('/recommendations/feedback', {
+  await apiRequest<unknown>('/recommendations/clients/card/feedback', {
     method: 'POST',
     body: {
       ClientNetId: clientNetId,
@@ -75,7 +75,7 @@ export async function getProductById(
   netId: string,
   signal?: AbortSignal,
 ): Promise<RecommendationProduct | null> {
-  const result = await apiRequest<unknown>('/products/get', {
+  const result = await apiRequest<unknown>('/products/clients/details', {
     query: {
       netId,
     },

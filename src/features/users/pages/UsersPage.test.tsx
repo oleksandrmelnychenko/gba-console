@@ -2,6 +2,7 @@ import { MantineProvider } from '@mantine/core'
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import type { ReactNode } from 'react'
 import { I18nProvider } from '../../../shared/i18n/I18nProvider'
 import { getUsers } from '../api/usersApi'
 import type { UserProfile } from '../types'
@@ -9,6 +10,14 @@ import { UsersPage } from './UsersPage'
 
 vi.mock('../api/usersApi', () => ({
   getUsers: vi.fn(),
+}))
+
+vi.mock('../../auth/components/PermissionGate', () => ({
+  PermissionGate: ({ children }: { children: ReactNode }) => children,
+}))
+
+vi.mock('../../auth/useAuth', () => ({
+  useAuth: () => ({ hasPermission: () => true }),
 }))
 
 vi.mock('../../../shared/ui/data-table/DataTable', () => ({

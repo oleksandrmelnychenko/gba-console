@@ -10,6 +10,14 @@ import type {
   IncomeSupplyInvoice,
 } from '../productIncomeTypes'
 
+export type ProductIncomeApiScope = 'delivery-protocol' | 'direct-supply-order'
+
+type ProductIncomeMutation = 'capitalize' | 'post'
+
+function scopedPath(scope: ProductIncomeApiScope, suffix: string): string {
+  return `product-income/${scope}/${suffix}`
+}
+
 function normalizeInvoice(result: unknown): IncomeSupplyInvoice {
   const payload = result && typeof result === 'object' ? (result as Record<string, unknown>) : {}
 
@@ -53,8 +61,11 @@ function normalizeDynamicRow(row: DynamicProductPlacementRow): DynamicProductPla
   }
 }
 
-export async function getSupplyOrderInvoiceItems(invoiceNetId: string): Promise<IncomeSupplyInvoice> {
-  const result = await apiRequest<unknown>('/supplies/invoices/items/get', {
+export async function getSupplyOrderInvoiceItems(
+  scope: ProductIncomeApiScope,
+  invoiceNetId: string,
+): Promise<IncomeSupplyInvoice> {
+  const result = await apiRequest<unknown>(`/supplies/invoices/${scopedPath(scope, 'items')}`, {
     query: { netId: invoiceNetId },
   })
 
@@ -65,8 +76,11 @@ export async function getSupplyOrderInvoiceItems(invoiceNetId: string): Promise<
   return normalizeInvoiceWithPackingLists(result)
 }
 
-export async function getPzDocumentBySupplyInvoiceId(invoiceNetId: string): Promise<ExportDocument> {
-  const result = await apiRequest<unknown>('/supplies/invoices/get/documents/pz', {
+export async function getPzDocumentBySupplyInvoiceId(
+  scope: ProductIncomeApiScope,
+  invoiceNetId: string,
+): Promise<ExportDocument> {
+  const result = await apiRequest<unknown>(`/supplies/invoices/${scopedPath(scope, 'document/pz')}`, {
     query: { netId: invoiceNetId },
   })
 
@@ -74,7 +88,7 @@ export async function getPzDocumentBySupplyInvoiceId(invoiceNetId: string): Prom
 }
 
 export async function getProductIncomeByDeliveryProtocolNetId(protocolNetId: string): Promise<IncomeProductIncome | null> {
-  const result = await apiRequest<unknown>('/products/incomes/get/delivery/product/protocol', {
+  const result = await apiRequest<unknown>('/products/incomes/product-income/delivery-protocol/header', {
     query: { netId: protocolNetId },
   })
 
@@ -82,15 +96,18 @@ export async function getProductIncomeByDeliveryProtocolNetId(protocolNetId: str
 }
 
 export async function getProductIncomeBySupplyOrderNetId(supplyOrderNetId: string): Promise<IncomeProductIncome | null> {
-  const result = await apiRequest<unknown>('/products/incomes/get/supply/order', {
+  const result = await apiRequest<unknown>('/products/incomes/product-income/direct-supply-order/header', {
     query: { netId: supplyOrderNetId },
   })
 
   return result && typeof result === 'object' ? (result as IncomeProductIncome) : null
 }
 
-export async function getPackingListSpecificationProducts(packListNetId: string): Promise<IncomePackingList> {
-  const result = await apiRequest<unknown>('/supplies/packinglists/specification/products/get', {
+export async function getPackingListSpecificationProducts(
+  scope: ProductIncomeApiScope,
+  packListNetId: string,
+): Promise<IncomePackingList> {
+  const result = await apiRequest<unknown>(`/supplies/packinglists/${scopedPath(scope, 'specification/products')}`, {
     query: { netId: packListNetId },
   })
 
@@ -104,8 +121,11 @@ export async function markOrderItemReadyToPlace(orderItemNetId: string, value: b
   })
 }
 
-export async function markAllItemsReadyToPlace(packListNetId: string): Promise<IncomePackingList> {
-  const result = await apiRequest<unknown>('/supplies/packinglists/item/readytoplaced/update/all', {
+export async function markAllItemsReadyToPlace(
+  scope: ProductIncomeApiScope,
+  packListNetId: string,
+): Promise<IncomePackingList> {
+  const result = await apiRequest<unknown>(`/supplies/packinglists/${scopedPath(scope, 'readiness')}`, {
     method: 'PATCH',
     query: { netId: packListNetId },
   })
@@ -132,8 +152,11 @@ export async function updatePackingListPlacement(
  * the placement-info endpoint, this returns the FULL invoice — its packing lists keep
  * their PackingListPackageOrderItems — so the grid is not wiped after «Додати»/«Зберегти».
  */
-export async function updatePackingListInInvoice(invoice: IncomeSupplyInvoice): Promise<IncomeSupplyInvoice> {
-  const result = await apiRequest<unknown>('/supplies/packinglists/update', {
+export async function updatePackingListInInvoice(
+  scope: ProductIncomeApiScope,
+  invoice: IncomeSupplyInvoice,
+): Promise<IncomeSupplyInvoice> {
+  const result = await apiRequest<unknown>(`/supplies/packinglists/${scopedPath(scope, 'placement')}`, {
     method: 'POST',
     body: invoice,
   })
@@ -150,8 +173,11 @@ function normalizeInvoiceWithPackingLists(result: unknown): IncomeSupplyInvoice 
   }
 }
 
-export async function updateVatOfPackListInvoiceItems(invoice: IncomeSupplyInvoice): Promise<IncomeSupplyInvoice> {
-  const result = await apiRequest<unknown>('/supplies/invoices/items/update/vat', {
+export async function updateVatOfPackListInvoiceItems(
+  scope: ProductIncomeApiScope,
+  invoice: IncomeSupplyInvoice,
+): Promise<IncomeSupplyInvoice> {
+  const result = await apiRequest<unknown>(`/supplies/invoices/${scopedPath(scope, 'vat')}`, {
     method: 'POST',
     body: invoice,
   })
@@ -164,30 +190,44 @@ export async function updateVatOfPackListInvoiceItems(invoice: IncomeSupplyInvoi
  * panel saves through these dedicated endpoints (packinglists/update only stores
  * the row qty; edited placements would be lost without them).
  */
-export async function addDynamicPlacementRow(row: DynamicProductPlacementRow): Promise<DynamicProductPlacementRow> {
-  const result = await apiRequest<unknown>('/supplies/ukraine/order/placements/dynamic/rows/new', {
+export async function addDynamicPlacementRow(
+  scope: ProductIncomeApiScope,
+  row: DynamicProductPlacementRow,
+): Promise<DynamicProductPlacementRow> {
+  const result = await apiRequest<unknown>(
+    `/supplies/ukraine/order/placements/dynamic/rows/${scopedPath(scope, 'new')}`,
+    {
     method: 'POST',
     body: row,
-  })
+    },
+  )
 
   return normalizeDynamicRow(result as DynamicProductPlacementRow)
 }
 
-export async function updateDynamicPlacementRow(row: DynamicProductPlacementRow): Promise<DynamicProductPlacementRow> {
-  const result = await apiRequest<unknown>('/supplies/ukraine/order/placements/dynamic/rows/update', {
+export async function updateDynamicPlacementRow(
+  scope: ProductIncomeApiScope,
+  row: DynamicProductPlacementRow,
+): Promise<DynamicProductPlacementRow> {
+  const result = await apiRequest<unknown>(
+    `/supplies/ukraine/order/placements/dynamic/rows/${scopedPath(scope, 'update')}`,
+    {
     method: 'POST',
     body: row,
-  })
+    },
+  )
 
   return normalizeDynamicRow(result as DynamicProductPlacementRow)
 }
 
 export async function createProductIncomeFromPackingListDynamic(
+  scope: ProductIncomeApiScope,
+  mutation: ProductIncomeMutation,
   fromDate: string,
   storageNetId: string,
   packingList: IncomePackingList,
 ): Promise<IncomePackingList> {
-  const result = await apiRequest<unknown>('/products/incomes/new/packinglist/dynamic', {
+  const result = await apiRequest<unknown>(`/products/incomes/${scopedPath(scope, mutation)}`, {
     method: 'POST',
     query: { fromDate, storageNetId },
     body: packingList,
@@ -202,8 +242,11 @@ export async function getNonDefectiveStorages(): Promise<IncomeStorage[]> {
   return normalizeStorages(result)
 }
 
-export async function getOrganizationStorages(organizationNetId: string): Promise<IncomeStorage[]> {
-  const result = await apiRequest<unknown>('/storages/get/all/filtered', {
+export async function getOrganizationStorages(
+  scope: ProductIncomeApiScope,
+  organizationNetId: string,
+): Promise<IncomeStorage[]> {
+  const result = await apiRequest<unknown>(`/storages/${scopedPath(scope, 'storages')}`, {
     query: {
       organizationNetId,
       skipDefective: false,

@@ -38,6 +38,7 @@ export function CashFlowGrid<TItem extends CashFlowGridItem>({
   const labels = useMemo(() => resolveLabels(t, labelsOverride), [labelsOverride, t])
   const money = formatMoney ?? defaultMoney
   const valueColumnStyle: CSSProperties = { flex: `0 0 ${columnWidth}px`, width: columnWidth }
+  const hasRowAction = Boolean(onRowClick || onSelectDebit || onSelectCredit)
 
   return (
     <div className="cfg-grid">
@@ -103,7 +104,8 @@ export function CashFlowGrid<TItem extends CashFlowGridItem>({
               <button
                 type="button"
                 key={getRowKey ? getRowKey(item, index) : index}
-                className={dataRowClassName(isCredit, isRowActive?.(item, index) === true)}
+                className={`${dataRowClassName(isCredit, isRowActive?.(item, index) === true)}${hasRowAction ? ' cfg-data-row-clickable' : ''}`}
+                disabled={!hasRowAction}
                 onClick={() => {
                   onRowClick?.(item, index)
 

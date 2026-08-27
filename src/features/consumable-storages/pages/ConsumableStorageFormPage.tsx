@@ -16,6 +16,7 @@ import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/Page
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { useAuth } from '../../auth/useAuth'
+import { PermissionGate } from '../../auth/components/PermissionGate'
 import {
   createConsumableStorage,
   getConsumableStorage,
@@ -26,6 +27,7 @@ import {
 import {
   CONSUMABLE_STORAGE_CREATE_PERMISSION,
   CONSUMABLE_STORAGE_EDIT_PERMISSION,
+  CONSUMABLE_STORAGE_PAGE_VIEW_PERMISSION,
 } from '../permissions'
 import type { ConsumablesStorage, ConsumablesStoragePayload, NamedEntity, Organization, UserProfile } from '../types'
 
@@ -63,6 +65,29 @@ const STORAGES_PATH = '/accounting/storages'
 const USER_SEARCH_DEBOUNCE_MS = 300
 
 export function ConsumableStorageFormPage() {
+  const { id } = useParams<{ id?: string }>()
+  const permissionKey = id ? CONSUMABLE_STORAGE_EDIT_PERMISSION : CONSUMABLE_STORAGE_CREATE_PERMISSION
+
+  return (
+    <PermissionGate permissionKey={CONSUMABLE_STORAGE_PAGE_VIEW_PERMISSION} fallback={<ConsumableStorageFormPermissionDenied />}>
+      <PermissionGate permissionKey={permissionKey} fallback={<ConsumableStorageFormPermissionDenied />}>
+        <ConsumableStorageFormPageContent />
+      </PermissionGate>
+    </PermissionGate>
+  )
+}
+
+function ConsumableStorageFormPermissionDenied() {
+  const { t } = useI18n()
+
+  return (
+    <Alert color="red" icon={<CircleAlert size={18} />} title={t('Доступ заборонено')} variant="light">
+      {t('У вашої ролі немає права відкривати цю форму складу.')}
+    </Alert>
+  )
+}
+
+function ConsumableStorageFormPageContent() {
   const { t } = useI18n()
   const { hasPermission } = useAuth()
   const { id } = useParams<{ id?: string }>()

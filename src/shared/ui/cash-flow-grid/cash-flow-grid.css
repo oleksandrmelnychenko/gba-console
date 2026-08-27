@@ -55,22 +55,26 @@
   padding: 0;
   background: var(--mantine-color-white);
   color: inherit;
-  cursor: pointer;
+  cursor: default;
   font: inherit;
   text-align: left;
   transition: background-color 80ms ease;
+}
+
+.cfg-data-row.cfg-data-row-clickable {
+  cursor: pointer;
 }
 
 .cfg-data-row:nth-child(even) {
   background: var(--mantine-color-gray-0);
 }
 
-.cfg-data-row:hover {
+.cfg-data-row.cfg-data-row-clickable:hover {
   background: var(--mantine-color-gray-1);
 }
 
 .cfg-data-row.cfg-active,
-.cfg-data-row.cfg-active:hover {
+.cfg-data-row.cfg-active.cfg-data-row-clickable:hover {
   background: var(--mantine-color-violet-0);
 }
 

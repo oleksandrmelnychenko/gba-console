@@ -3,31 +3,41 @@ import { fireEvent, render, screen, waitFor, within } from '@testing-library/rea
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { I18nProvider } from '../../../shared/i18n/I18nProvider'
 import { theme } from '../../../shared/theme/theme'
-import { getSupplyOrderSuppliers } from '../../supply-ukraine-orders/api/supplyUkraineOrdersApi'
+import { getPurchaseCockpitSuppliers } from '../../supply-ukraine-orders/api/supplyUkraineOrdersApi'
 import {
   createCockpitDraftOrder,
-  getBudgetCartPlan,
-  getProcurementCharts,
+  getPurchaseCockpitCharts,
+  getPurchaseCockpitWarehousePlan,
   getProducerPlan,
 } from '../api/procurementApi'
 import type { ReorderSuggestion } from '../procurementTypes'
 import { ProcurementConstructor } from './ProcurementConstructor'
 
+const { canMock } = vi.hoisted(() => ({
+  canMock: vi.fn<(permissionKey: string) => boolean>(),
+}))
+
 vi.mock('../../supply-ukraine-orders/api/supplyUkraineOrdersApi', () => ({
-  getSupplyOrderSuppliers: vi.fn(),
+  getPurchaseCockpitSuppliers: vi.fn(),
+}))
+
+vi.mock('../../auth/usePermissions', () => ({
+  usePermissions: () => ({ can: canMock, isLoading: false }),
 }))
 
 vi.mock('../api/procurementApi', () => ({
   createCockpitDraftOrder: vi.fn(),
-  getBudgetCartPlan: vi.fn(),
-  getProcurementCharts: vi.fn(),
+  getPurchaseCockpitCharts: vi.fn(),
+  getPurchaseCockpitWarehousePlan: vi.fn(),
   getProducerPlan: vi.fn(),
 }))
 
 describe('ProcurementConstructor', () => {
   beforeEach(() => {
-    vi.mocked(getSupplyOrderSuppliers).mockResolvedValue([])
-    vi.mocked(getBudgetCartPlan).mockResolvedValue({
+    vi.clearAllMocks()
+    canMock.mockReturnValue(true)
+    vi.mocked(getPurchaseCockpitSuppliers).mockResolvedValue([])
+    vi.mocked(getPurchaseCockpitWarehousePlan).mockResolvedValue({
       as_of_date: '2026-07-24',
       source_history_start: '2025-01-01',
       effective_start: '2025-07-24',
@@ -55,7 +65,7 @@ describe('ProcurementConstructor', () => {
       value_captured_eur: 0,
     })
     vi.mocked(getProducerPlan).mockRejectedValue(new Error('not used'))
-    vi.mocked(getProcurementCharts).mockRejectedValue(new Error('not used'))
+    vi.mocked(getPurchaseCockpitCharts).mockRejectedValue(new Error('not used'))
     vi.mocked(createCockpitDraftOrder).mockResolvedValue({
       ClientAgreementId: 20,
       CurrencyCode: 'EUR',
@@ -68,6 +78,45 @@ describe('ProcurementConstructor', () => {
       TotalNetAmount: 0,
       TotalQty: 0,
     })
+  })
+
+  it('does not mount procurement requests without purchase-cockpit page access', () => {
+    canMock.mockReturnValue(false)
+
+    render(
+      <MantineProvider theme={theme}>
+        <I18nProvider>
+          <ProcurementConstructor />
+        </I18nProvider>
+      </MantineProvider>,
+    )
+
+    expect(screen.getByText('Недостатньо прав для перегляду панелі закупівель')).not.toBeNull()
+    expect(getPurchaseCockpitSuppliers).not.toHaveBeenCalled()
+    expect(getPurchaseCockpitWarehousePlan).not.toHaveBeenCalled()
+  })
+
+  it('does not expose export or draft creation with page-only access', async () => {
+    canMock.mockImplementation(
+      (permissionKey) => permissionKey === 'orders.purchase_cockpit.page.view',
+    )
+
+    render(
+      <MantineProvider theme={theme}>
+        <I18nProvider>
+          <ProcurementConstructor />
+        </I18nProvider>
+      </MantineProvider>,
+    )
+
+    const addAll = await screen.findByRole('button', { name: 'Термінові в кошик · 2' })
+    expect(screen.queryByRole('button', { name: 'Експорт в Excel' })).toBeNull()
+
+    fireEvent.click(addAll)
+
+    await waitFor(() => expect(screen.getByText('Кошик замовлень')).not.toBeNull())
+    expect(screen.queryByRole('button', { name: 'Створити чернетку' })).toBeNull()
+    expect(createCockpitDraftOrder).not.toHaveBeenCalled()
   })
 
   it('edits and bulk-adds the same product from different producers independently', async () => {
@@ -122,7 +171,7 @@ describe('ProcurementConstructor', () => {
   })
 
   it('explains when the current stock does not require replenishment', async () => {
-    vi.mocked(getBudgetCartPlan).mockResolvedValue({
+    vi.mocked(getPurchaseCockpitWarehousePlan).mockResolvedValue({
       as_of_date: '2026-07-24',
       source_history_start: '2025-01-01',
       effective_start: '2025-07-24',
@@ -160,9 +209,9 @@ describe('ProcurementConstructor', () => {
   })
 
   it('marks unpriced lines instead of presenting them as zero-cost purchases', async () => {
-    const basePlan = await vi.mocked(getBudgetCartPlan)({ budgetEur: 0, method: 'greedy' })
+    const basePlan = await vi.mocked(getPurchaseCockpitWarehousePlan)({ budgetEur: 0, method: 'greedy' })
 
-    vi.mocked(getBudgetCartPlan).mockResolvedValue({
+    vi.mocked(getPurchaseCockpitWarehousePlan).mockResolvedValue({
       ...basePlan,
       item_count: 1,
       items: [suggestion({ line_cost_eur: null, unit_cost_eur: null })],

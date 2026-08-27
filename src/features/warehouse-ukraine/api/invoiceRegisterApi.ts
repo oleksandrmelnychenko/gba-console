@@ -26,7 +26,7 @@ export async function getInvoiceRegister(
 ): Promise<RegisterInvoicesResponse> {
   const { from, to } = buildDayBounds(params.date)
 
-  const result = await apiRequest<unknown>('/sales/get/register/invoice', {
+  const result = await apiRequest<unknown>('/sales/warehouse-ukraine/invoice-register/registry', {
     query: {
       value: params.value.trim(),
       limit: params.limit,
@@ -44,7 +44,7 @@ export async function getInvoiceRegisterPrintDocument(
 ): Promise<WarehouseUkraineExportDocument> {
   const { from, to } = buildDayBounds(params.date)
 
-  const result = await apiRequest<unknown>('/sales/get/register/invoice/document', {
+  const result = await apiRequest<unknown>('/sales/warehouse-ukraine/invoice-register/export', {
     query: {
       value: params.value.trim(),
       limit: params.limit,

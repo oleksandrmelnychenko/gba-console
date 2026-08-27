@@ -15,9 +15,9 @@ import {
 } from '@mantine/core'
 import { Plus, Trash2 } from 'lucide-react'
 import { useMemo, useState } from 'react'
+import { PermissionKeys } from '../../../../shared/auth/permissionKeys'
 import { useI18n } from '../../../../shared/i18n/useI18n'
 import { useAuth } from '../../../auth/useAuth'
-import { UserRoleType } from '../../../../shared/auth/types'
 import {
   CURRENCY_NAME_EURO,
   PRICING_NAME_BULK_TWO,
@@ -58,20 +58,23 @@ export function AgreementForm({
   onChange,
 }: AgreementFormProps) {
   const { t } = useI18n()
-  const { user } = useAuth()
-  const roleType = user?.UserRole?.UserRoleType
-  const isAdmin = roleType === UserRoleType.Administrator || roleType === UserRoleType.GBA
-  const isPriceTypeBypassRole = roleType === UserRoleType.Administrator
+  const { hasPermission } = useAuth()
+  const canEditAccountingSettings = hasPermission(
+    PermissionKeys.Clients.Contract.AccountingSettingsEdit,
+  )
+  const canOverridePricingScope = hasPermission(
+    PermissionKeys.Clients.Contract.PricingScopeOverride,
+  )
 
   const [providerPricingEditorOpened, setProviderPricingEditorOpened] = useState(false)
   const [providerPricingName, setProviderPricingName] = useState('')
 
   const visiblePricings = useMemo(
     () =>
-      isProvider || (isPriceTypeBypassRole && isRetailClient)
+      isProvider || (canOverridePricingScope && isRetailClient)
         ? pricings
         : pricings.filter((pricing) => Boolean(pricing.ForVat) === Boolean(agreement.WithVATAccounting)),
-    [isProvider, isPriceTypeBypassRole, isRetailClient, pricings, agreement.WithVATAccounting],
+    [agreement.WithVATAccounting, canOverridePricingScope, isProvider, isRetailClient, pricings],
   )
   const organizationOptions = useMemo(() => toOptions(organizations), [organizations])
   const currencyOptions = useMemo(() => toOptions(currencies), [currencies])
@@ -311,7 +314,7 @@ export function AgreementForm({
             </Stack>
           ) : (
             <Stack gap="xs">
-              {isAdmin && (
+              {canEditAccountingSettings && (
                 <Checkbox
                   checked={Boolean(agreement.ForReSale)}
                   label={t('Для перепродажу')}
@@ -334,7 +337,7 @@ export function AgreementForm({
               {!isVatAccountingHidden && (
                 <Checkbox
                   checked={Boolean(agreement.WithVATAccounting)}
-                  disabled={!isAdmin}
+                  disabled={!canEditAccountingSettings}
                   label={t('Облік з ПДВ')}
                   onChange={(event) => onChange({ WithVATAccounting: event.currentTarget.checked, Pricing: undefined })}
                 />

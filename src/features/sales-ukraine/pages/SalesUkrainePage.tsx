@@ -44,18 +44,31 @@ import { useI18n } from '../../../shared/i18n/useI18n'
 import { realtimeEvents, useRealtimeEvent } from '../../../shared/realtime/events'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { AppModal } from '../../../shared/ui/AppModal'
-import { getSaleStatisticBySaleId } from '../../../shared/sale-audit/saleAuditApi'
+import {
+  confirmSalesUkraineSaleAuditHistory,
+  getSalesUkraineSaleAudit,
+  getSalesUkraineSaleAuditInvoiceDocument,
+  getSalesUkraineSaleAuditShiftedDocument,
+} from '../../../shared/sale-audit/saleAuditApi'
 import type { SaleAuditStatistic } from '../../../shared/sale-audit/saleAuditTypes'
 import './sales-grid.css'
 import './sale-detail-sheet.css'
-import { useAuth } from '../../auth/useAuth'
-import { UserRoleType } from '../../../shared/auth/types'
+import { Can } from '../../auth/components/Can'
+import { usePermissions } from '../../auth/usePermissions'
+import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import {
   acceptSaleForPacking,
-  getSaleById,
+  addSalesUkraineConsignmentNoteSetting,
   getSalesUkraine,
+  getSalesUkraineConsignmentNoteSettings,
+  getSalesUkraineDeliveryDetails,
+  getSalesUkraineEditDetails,
+  getSalesUkraineSaleDetails,
   getSalesUkraineOrganizations,
+  printSalesUkraineConsignmentNoteDocument,
+  removeSalesUkraineConsignmentNoteSetting,
   unlockSale,
+  updateSalesUkraineConsignmentNoteSetting,
 } from '../api/salesUkraineApi'
 import { getSaleDiscountSummary } from '../saleDiscounts'
 import {
@@ -71,11 +84,6 @@ import type { CSSProperties } from 'react'
 import { findSaleOrderItemByIdentity } from '../components/saleDiscountPayload'
 import { SalesClientSearch } from '../components/SalesClientSearch'
 import { usePersistentSaleJsonMutationRunner } from '../usePersistentSaleJsonMutation'
-import {
-  SALES_UKRAINE_EDIT_PERMISSION,
-  SALES_UKRAINE_UNLOCK_PERMISSION,
-  SALES_UKRAINE_WILL_NOT_SHIP_PERMISSION,
-} from '../permissions'
 import type {
   SalesUkraineFilters,
   SalesUkraineOrderItem,
@@ -109,6 +117,20 @@ const LazySaleEditDrawer = lazy(() =>
 const LazySaleExpandContent = lazy(() =>
   import('../components/SaleExpandContent').then((module) => ({ default: module.SaleExpandContent })),
 )
+
+const SALES_UKRAINE_AUDIT_DOCUMENT_API = {
+  confirm: confirmSalesUkraineSaleAuditHistory,
+  getInvoice: getSalesUkraineSaleAuditInvoiceDocument,
+  getShifted: getSalesUkraineSaleAuditShiftedDocument,
+}
+
+const SALES_UKRAINE_CONSIGNMENT_NOTE_API = {
+  add: addSalesUkraineConsignmentNoteSetting,
+  getAll: getSalesUkraineConsignmentNoteSettings,
+  print: printSalesUkraineConsignmentNoteDocument,
+  remove: removeSalesUkraineConsignmentNoteSetting,
+  update: updateSalesUkraineConsignmentNoteSetting,
+}
 
 // Column order matches the `.sales-grid-head` / `.sales-grid-row` cells 1:1.
 // Fluid by default (minmax + fr) so the grid fills the width; each column can be
@@ -281,17 +303,53 @@ export function SaleSummaryDrawer({
 
 export function SalesUkrainePage() {
   const { t } = useI18n()
+  const { can, isLoading } = usePermissions()
+
+  if (isLoading) {
+    return <Text c="dimmed">{t('Завантаження')}</Text>
+  }
+
+  if (!can(PermissionKeys.SalesUkraine.Sale.View)) {
+    return (
+      <Alert color="red" icon={<CircleAlert size={18} />} title={t('Доступ заборонено')} variant="light">
+        {t('Недостатньо прав для перегляду продажів України')}
+      </Alert>
+    )
+  }
+
+  return <SalesUkrainePageContent />
+}
+
+function SalesUkrainePageContent() {
+  const { t } = useI18n()
   const [searchParams] = useSearchParams()
   const focusedSaleNetId = searchParams.get('saleNetId') || ''
-  const { hasPermission, user } = useAuth()
+  const { can } = usePermissions()
   const runSaleUnlock = usePersistentSaleJsonMutationRunner('sale-unlock')
   const runSaleAcceptForPacking = usePersistentSaleJsonMutationRunner('sale-accept-for-packing')
-  const isAdmin =
-    user?.UserRole?.UserRoleType === UserRoleType.Administrator || user?.UserRole?.UserRoleType === UserRoleType.GBA
-  const canEditSale = hasPermission(SALES_UKRAINE_EDIT_PERMISSION)
-  const canCreateSale = canEditSale
-  const canUnlock = hasPermission(SALES_UKRAINE_UNLOCK_PERMISSION)
-  const canWillNotShip = hasPermission(SALES_UKRAINE_WILL_NOT_SHIP_PERMISSION)
+  const canExportBeforePacking = can(
+    PermissionKeys.SalesUkraine.Sale.ExportBeforePacking,
+  )
+  const canCreateSale = can(PermissionKeys.SalesUkraine.Sale.Create)
+  const canConvertMergedToBill = can(PermissionKeys.SalesUkraine.Sale.ConvertMergedToBill)
+  const canOpenSale = can(PermissionKeys.SalesUkraine.Sale.OpenDetails)
+  const canEditSale = can(PermissionKeys.SalesUkraine.Sale.Edit)
+  const canOpenDeliveryDetails = can(PermissionKeys.SalesUkraine.Sale.OpenDeliveryDetails)
+  const canUnlock = can(PermissionKeys.SalesUkraine.Sale.Unlock)
+  const canWillNotShip = can(PermissionKeys.SalesUkraine.Sale.UnlockForShipping)
+  const canPrintConsignmentNote = can(PermissionKeys.SalesUkraine.Sale.PrintConsignmentNote)
+  const canViewAudit = can(PermissionKeys.SalesUkraine.Sale.ViewAudit)
+  const canOpenContextMenu = canEditSale
+    || canOpenDeliveryDetails
+    || canUnlock
+    || canWillNotShip
+    || canPrintConsignmentNote
+    || canViewAudit
+  const canExportSaleDocuments = can(PermissionKeys.SalesUkraine.Sale.ExportInvoice)
+    || can(PermissionKeys.SalesUkraine.Sale.ExportShipmentList)
+    || can(PermissionKeys.SalesUkraine.Sale.ExportPaymentInvoice)
+    || can(PermissionKeys.SalesUkraine.Sale.ExportPz)
+    || can(PermissionKeys.SalesUkraine.Sale.ExportRevisionDocuments)
   const today = useMemo(() => formatLocalDate(new Date()), [])
   // Default the period to the last week (from = today − 7 days) instead of just today.
   const weekAgo = useMemo(() => {
@@ -390,6 +448,10 @@ export function SalesUkrainePage() {
 
   const openAudit = useCallback(
     (sale: SalesUkraineSale) => {
+      if (!canViewAudit) {
+        return
+      }
+
       setAuditSale(sale)
       setAuditStatistic(null)
       setAuditError(null)
@@ -404,7 +466,7 @@ export function SalesUkrainePage() {
 
       void (async () => {
         try {
-          const statistic = await getSaleStatisticBySaleId(sale.NetUid as string)
+          const statistic = await getSalesUkraineSaleAudit(sale.NetUid as string)
 
           if (auditRequestRef.current === requestId) {
             setAuditStatistic(statistic)
@@ -422,7 +484,7 @@ export function SalesUkrainePage() {
         }
       })()
     },
-    [setAuditSale, setAuditStatistic, setAuditError, setAuditLoading, t],
+    [canViewAudit, setAuditSale, setAuditStatistic, setAuditError, setAuditLoading, t],
   )
 
   function closeAudit() {
@@ -464,7 +526,13 @@ export function SalesUkrainePage() {
   }, [expandedKeys])
 
   const ensureSaleDetails = useCallback(
-    async (sale: SalesUkraineSale, options?: { force?: boolean }): Promise<SalesUkraineSale | null> => {
+    async (
+      sale: SalesUkraineSale,
+      options?: {
+        force?: boolean
+        load?: typeof getSalesUkraineSaleDetails
+      },
+    ): Promise<SalesUkraineSale | null> => {
       // force: hydrate even when HasDetails isn't strictly false. Writes that post
       // the whole sale back (e.g. IsAcceptedToPacking) must run on a fresh, fully
       // hydrated record — a stale in-memory row without Order.OrderPackages wipes
@@ -478,7 +546,7 @@ export function SalesUkrainePage() {
       }
 
       try {
-        const loaded = await getSaleById(sale.NetUid)
+        const loaded = await (options?.load ?? getSalesUkraineSaleDetails)(sale.NetUid)
 
         if (!loaded) {
           // Return null (not the un-hydrated sale) so callers' guards fire —
@@ -502,28 +570,43 @@ export function SalesUkrainePage() {
 
   const openSaleSheet = useCallback(
     async (sale: SalesUkraineSale) => {
+      if (!canOpenSale) {
+        return
+      }
+
       const next = await ensureSaleDetails(sale)
 
       if (next) {
         setSelectedSale(next)
       }
     },
-    [ensureSaleDetails, setSelectedSale],
+    [canOpenSale, ensureSaleDetails, setSelectedSale],
   )
 
   const openSaleDetails = useCallback(
     async (sale: SalesUkraineSale) => {
-      const next = await ensureSaleDetails(sale)
+      if (!canOpenDeliveryDetails) {
+        return
+      }
+
+      const next = await ensureSaleDetails(sale, {
+        force: true,
+        load: getSalesUkraineDeliveryDetails,
+      })
 
       if (next) {
         setDetailsSale(next)
       }
     },
-    [ensureSaleDetails, setDetailsSale],
+    [canOpenDeliveryDetails, ensureSaleDetails, setDetailsSale],
   )
 
   const openSaleDiscount = useCallback(
     async (sale: SalesUkraineSale, orderItem?: SalesUkraineOrderItem) => {
+      if (!canEditSale) {
+        return
+      }
+
       const next = await ensureSaleDetails(sale, { force: true })
 
       if (next) {
@@ -538,7 +621,7 @@ export function SalesUkrainePage() {
         setDiscountTarget({ orderItem: freshOrderItem ?? undefined, sale: next })
       }
     },
-    [ensureSaleDetails, setDiscountTarget, t],
+    [canEditSale, ensureSaleDetails, setDiscountTarget, t],
   )
 
   const toggleSaleExpand = useCallback(
@@ -572,6 +655,10 @@ export function SalesUkrainePage() {
 
   const requestUnlock = useCallback(
     (sale: SalesUkraineSale) => {
+      if (!canUnlock) {
+        return
+      }
+
       const netId = sale.NetUid
 
       if (!netId) {
@@ -616,11 +703,15 @@ export function SalesUkrainePage() {
         },
       })
     },
-    [runSaleUnlock, setConfirmState, setSales, t],
+    [canUnlock, runSaleUnlock, setConfirmState, setSales, t],
   )
 
   const requestWillNotShip = useCallback(
     (sale: SalesUkraineSale) => {
+      if (!canWillNotShip) {
+        return
+      }
+
       const netId = sale.NetUid
 
       if (!netId) {
@@ -663,24 +754,50 @@ export function SalesUkrainePage() {
         },
       })
     },
-    [runSaleAcceptForPacking, setConfirmState, setSales, t],
+    [canWillNotShip, runSaleAcceptForPacking, setConfirmState, setSales, t],
   )
 
   const handleRowOpenDocuments = useCallback((sale: SalesUkraineSale, target: HTMLElement) => {
+    if (!canExportSaleDocuments) {
+      return
+    }
+
     setDocumentsMenuState({
       anchor: getFloatingMenuAnchor(target),
       opened: true,
       sale,
     })
-  }, [])
+  }, [canExportSaleDocuments])
 
   const handleDocumentsMenuClose = useCallback(() => {
     setDocumentsMenuState((current) => (current ? { ...current, opened: false } : null))
   }, [])
 
   const handleRowOpenActions = useCallback((sale: SalesUkraineSale, target: HTMLElement) => {
+    if (!canOpenContextMenu) {
+      return
+    }
+
     setRowActionsMenuState({ anchor: getFloatingMenuAnchor(target), sale })
-  }, [])
+  }, [canOpenContextMenu])
+
+  const handleRowOpenEditor = useCallback((sale: SalesUkraineSale) => {
+    if (canEditSale) {
+      setWizardEditSale(sale)
+    }
+  }, [canEditSale, setWizardEditSale])
+
+  const handleRowOpenEditShift = useCallback((sale: SalesUkraineSale) => {
+    if (canEditSale) {
+      setEditShiftSale(sale)
+    }
+  }, [canEditSale, setEditShiftSale])
+
+  const handleRowOpenConsignment = useCallback((sale: SalesUkraineSale) => {
+    if (canPrintConsignmentNote) {
+      setConsignmentSale(sale)
+    }
+  }, [canPrintConsignmentNote, setConsignmentSale])
 
   const handleRowActionsMenuClose = useCallback(() => {
     setRowActionsMenuState(null)
@@ -738,6 +855,7 @@ export function SalesUkrainePage() {
 
   useEffect(() => {
     if (
+      !canOpenSale ||
       !focusedSaleNetId ||
       dismissedFocusedSaleNetIdRef.current === focusedSaleNetId ||
       selectedSale?.NetUid === focusedSaleNetId
@@ -755,7 +873,7 @@ export function SalesUkrainePage() {
     const requestId = focusedSaleRequestRef.current + 1
     focusedSaleRequestRef.current = requestId
 
-    void getSaleById(focusedSaleNetId)
+    void getSalesUkraineSaleDetails(focusedSaleNetId)
       .then((sale) => {
         if (focusedSaleRequestRef.current === requestId && sale) {
           setSelectedSale(sale)
@@ -766,7 +884,7 @@ export function SalesUkrainePage() {
           setError(focusedSaleError instanceof Error ? focusedSaleError.message : t('Не вдалося завантажити продаж'))
         }
       })
-  }, [focusedSaleNetId, openSaleSheet, sales, selectedSale?.NetUid, setError, setSelectedSale, t])
+  }, [canOpenSale, focusedSaleNetId, openSaleSheet, sales, selectedSale?.NetUid, setError, setSelectedSale, t])
 
   const scheduleRealtimeReload = useCallback(() => {
     if (realtimeReloadRef.current !== null) {
@@ -864,7 +982,7 @@ export function SalesUkrainePage() {
           setSales(mergedSales)
 
           for (const netUid of rehydrate) {
-            void getSaleById(netUid).then((fresh) => {
+            void getSalesUkraineSaleDetails(netUid).then((fresh) => {
               if (fresh && !cancelled) {
                 setSales((current) => replaceSaleInList(current, fresh))
               }
@@ -1155,16 +1273,25 @@ export function SalesUkrainePage() {
                 </Tooltip>
                 {toolbarRight}
               </div>
-              <Button
-                className="sales-filter-create"
-                color={CREATE_ACTION_COLOR}
-                disabled={!canCreateSale}
-                leftSection={<Plus size={16} />}
-                size="sm"
-                onClick={() => setNewSaleOpen(true)}
+              <Can
+                deniedReason={t('Недостатньо прав для відкриття форми створення продажу')}
+                mode="disable"
+                permission={PermissionKeys.SalesUkraine.Sale.Create}
               >
-                {t('Новий продаж')}
-              </Button>
+                <Button
+                  className="sales-filter-create"
+                  color={CREATE_ACTION_COLOR}
+                  leftSection={<Plus size={16} />}
+                  size="sm"
+                  onClick={() => {
+                    if (canCreateSale) {
+                      setNewSaleOpen(true)
+                    }
+                  }}
+                >
+                  {t('Новий продаж')}
+                </Button>
+              </Can>
             </div>
           </div>
 
@@ -1219,7 +1346,7 @@ export function SalesUkrainePage() {
                 </div>
                 {sales.map((sale, index) => {
                   const key = String(sale.NetUid || sale.Id || index)
-                  const canExpand = getOrderItemCount(sale) > 0
+                  const canExpand = canOpenSale && getOrderItemCount(sale) > 0
                   const isExpanded = expandedKeys.has(key)
 
                   return (
@@ -1228,13 +1355,25 @@ export function SalesUkrainePage() {
                         sale={sale}
                         saleKey={key}
                         canEditSale={canEditSale}
+                        canOpenActions={canOpenContextMenu && hasAvailableSaleActions(sale, {
+                          canEditSale,
+                          canOpenDeliveryDetails,
+                          canPrintConsignmentNote,
+                          canUnlock,
+                          canViewAudit,
+                          canWillNotShip,
+                          canExportBeforePacking,
+                        })}
+                        canOpenDeliveryDetails={canOpenDeliveryDetails}
+                        canExportSaleDocuments={canExportSaleDocuments}
+                        canOpenSale={canOpenSale}
                         canWillNotShip={canWillNotShip}
-                        isAdmin={isAdmin}
+                        canExportBeforePacking={canExportBeforePacking}
                         canExpand={canExpand}
                         isExpanded={isExpanded}
                         onToggleExpand={handleRowToggleExpand}
                         onOpenSale={handleRowOpenSale}
-                        onOpenEditor={setWizardEditSale}
+                        onOpenEditor={handleRowOpenEditor}
                         onOpenDetails={handleRowOpenDetails}
                         onOpenDocuments={handleRowOpenDocuments}
                         onOpenActions={handleRowOpenActions}
@@ -1277,16 +1416,19 @@ export function SalesUkrainePage() {
       {rowActionsMenuState ? (
         <SaleRowActionsMenu
           canEditSale={canEditSale}
+          canOpenDeliveryDetails={canOpenDeliveryDetails}
+          canPrintConsignmentNote={canPrintConsignmentNote}
+          canViewAudit={canViewAudit}
           canUnlock={canUnlock}
           canWillNotShip={canWillNotShip}
-          isAdmin={isAdmin}
+          canExportBeforePacking={canExportBeforePacking}
           state={rowActionsMenuState}
           onClose={handleRowActionsMenuClose}
           onOpenAudit={handleRowOpenAudit}
-          onOpenConsignment={setConsignmentSale}
+          onOpenConsignment={handleRowOpenConsignment}
           onOpenDetails={handleRowOpenDetails}
-          onOpenEditor={setWizardEditSale}
-          onOpenEditShift={setEditShiftSale}
+          onOpenEditor={handleRowOpenEditor}
+          onOpenEditShift={handleRowOpenEditShift}
           onUnlock={handleRowUnlock}
           onWillNotShip={handleRowWillNotShip}
         />
@@ -1301,6 +1443,7 @@ export function SalesUkrainePage() {
       {discountTarget ? (
         <Suspense fallback={null}>
           <LazySaleDiscountModal
+            loadSale={getSalesUkraineEditDetails}
             orderItem={discountTarget.orderItem}
             sale={discountTarget.sale}
             onClose={() => setDiscountTarget(null)}
@@ -1327,6 +1470,8 @@ export function SalesUkrainePage() {
       {detailsSale ? (
         <Suspense fallback={null}>
           <LazySaleDetailsDrawer
+            canEdit={canEditSale}
+            loadSale={getSalesUkraineDeliveryDetails}
             sale={detailsSale}
             onClose={() => setDetailsSale(null)}
             onSaved={() => {
@@ -1340,6 +1485,7 @@ export function SalesUkrainePage() {
       {consignmentSale ? (
         <Suspense fallback={null}>
           <LazyConsignmentNoteSettingsDrawer
+            api={SALES_UKRAINE_CONSIGNMENT_NOTE_API}
             opened
             sale={consignmentSale}
             onClose={() => setConsignmentSale(null)}
@@ -1370,8 +1516,10 @@ export function SalesUkrainePage() {
         >
           <Suspense fallback={null}>
             <LazySaleAuditDetail
+              documentApi={SALES_UKRAINE_AUDIT_DOCUMENT_API}
               error={auditError}
               isLoading={auditLoading}
+              showConfirm={canEditSale}
               statistic={auditStatistic}
               onConfirmed={() => {
                 closeAudit()
@@ -1385,8 +1533,15 @@ export function SalesUkrainePage() {
       {(canCreateSale && isNewSaleOpen) || wizardEditSale ? (
         <Suspense fallback={null}>
           <LazyNewSaleWizard
+            canOpenDeliveryDetails={canOpenDeliveryDetails}
+            canOpenDetails={canOpenSale}
+            canSubmitCreate={canCreateSale}
+            canSubmitEdit={canEditSale}
+            canConvertMergedToBill={canConvertMergedToBill}
+            canViewAudit={canViewAudit}
             editSale={wizardEditSale}
             opened
+            permissionScopedSalesUkraineApi
             onClose={() => {
               setNewSaleOpen(false)
               setWizardEditSale(null)
@@ -1430,8 +1585,12 @@ type SaleGridRowProps = {
   sale: SalesUkraineSale
   saleKey: string
   canEditSale: boolean
+  canOpenActions: boolean
+  canOpenDeliveryDetails: boolean
+  canExportSaleDocuments: boolean
+  canOpenSale: boolean
   canWillNotShip: boolean
-  isAdmin: boolean
+  canExportBeforePacking: boolean
   canExpand: boolean
   isExpanded: boolean
   onToggleExpand: (key: string, sale: SalesUkraineSale) => void
@@ -1451,8 +1610,12 @@ const SaleGridRow = memo(function SaleGridRow({
   sale,
   saleKey,
   canEditSale,
+  canOpenActions,
+  canOpenDeliveryDetails,
+  canExportSaleDocuments,
+  canOpenSale,
   canWillNotShip,
-  isAdmin,
+  canExportBeforePacking,
   canExpand,
   isExpanded,
   onToggleExpand,
@@ -1485,9 +1648,15 @@ const SaleGridRow = memo(function SaleGridRow({
     showBang,
     showEdit,
     unpaid,
-  } = getSaleActionAvailability(sale, { canEditSale, canUnlock: false, canWillNotShip, isAdmin })
-  const discountEditable = isNewOrPackagingStatus(sale) && positions > 0
+  } = getSaleActionAvailability(sale, {
+    canEditSale,
+    canExportBeforePacking,
+    canUnlock: false,
+    canWillNotShip,
+  })
+  const discountEditable = canEditSale && isNewOrPackagingStatus(sale) && positions > 0
   const discountPercentageEditable =
+    canEditSale &&
     isDiscountPercentageEditableSaleLifecycle(
       sale.BaseLifeCycleStatus?.SaleLifeCycleType ?? sale.BaseLifeCycleStatus?.Name,
     ) && positions > 0
@@ -1553,9 +1722,9 @@ const SaleGridRow = memo(function SaleGridRow({
   return (
     <div
       className={`sales-grid-row${isExpanded ? ' is-expanded' : ''}${isEdited ? ' is-edited' : ''}`}
-      role="button"
-      tabIndex={0}
-      aria-label={t('Відкрити продаж')}
+      role={canOpenSale ? 'button' : undefined}
+      tabIndex={canOpenSale ? 0 : undefined}
+      aria-label={canOpenSale ? t('Відкрити продаж') : undefined}
       onClick={(event) => {
         const target = event.target as HTMLElement
 
@@ -1565,12 +1734,12 @@ const SaleGridRow = memo(function SaleGridRow({
           return
         }
 
-        if (!target.closest('[data-row-stop]')) {
+        if (canOpenSale && !target.closest('[data-row-stop]')) {
           openSale()
         }
       }}
       onKeyDown={(event) => {
-        if ((event.key === 'Enter' || event.key === ' ') && event.target === event.currentTarget) {
+        if (canOpenSale && (event.key === 'Enter' || event.key === ' ') && event.target === event.currentTarget) {
           event.preventDefault()
           openSale()
         }
@@ -1748,7 +1917,7 @@ const SaleGridRow = memo(function SaleGridRow({
       </div>
 
       <div className="sg-transporter-cell" data-row-stop="true">
-        {!hideEditActActions && (
+        {!hideEditActActions && canOpenDeliveryDetails && (
           <TableRowAction
             action="delivery"
             label={transporter || t('Перевізник')}
@@ -1758,7 +1927,7 @@ const SaleGridRow = memo(function SaleGridRow({
       </div>
 
       <div className="sg-doc-actions" data-row-stop="true">
-        {!hidePrintBlock && !hideEditActActions && (
+        {canExportSaleDocuments && !hidePrintBlock && !hideEditActActions && (
           <TableRowAction
             action="document"
             aria-haspopup="menu"
@@ -1766,12 +1935,14 @@ const SaleGridRow = memo(function SaleGridRow({
             onClick={(event) => onOpenDocuments(sale, event.currentTarget)}
           />
         )}
-        <TableRowAction
-          action="more"
-          aria-haspopup="menu"
-          label={t('Дії')}
-          onClick={(event) => onOpenActions(sale, event.currentTarget)}
-        />
+        {canOpenActions ? (
+          <TableRowAction
+            action="more"
+            aria-haspopup="menu"
+            label={t('Дії')}
+            onClick={(event) => onOpenActions(sale, event.currentTarget)}
+          />
+        ) : null}
       </div>
 
       <div className="sg-status">
@@ -1791,9 +1962,12 @@ const SaleGridRow = memo(function SaleGridRow({
 
 function SaleRowActionsMenu({
   canEditSale,
+  canOpenDeliveryDetails,
+  canPrintConsignmentNote,
   canUnlock,
+  canViewAudit,
   canWillNotShip,
-  isAdmin,
+  canExportBeforePacking,
   state,
   onClose,
   onOpenAudit,
@@ -1805,9 +1979,12 @@ function SaleRowActionsMenu({
   onWillNotShip,
 }: {
   canEditSale: boolean
+  canOpenDeliveryDetails: boolean
+  canPrintConsignmentNote: boolean
   canUnlock: boolean
+  canViewAudit: boolean
   canWillNotShip: boolean
-  isAdmin: boolean
+  canExportBeforePacking: boolean
   state: SaleRowActionsMenuState
   onClose: () => void
   onOpenAudit: (sale: SalesUkraineSale) => void
@@ -1821,20 +1998,30 @@ function SaleRowActionsMenu({
   const { t } = useI18n()
   const sale = state.sale
   const {
-    hideEditActActions,
     lifecycleStatusKey,
     showEdit,
     showEditShift,
+    showOpenDeliveryDetails,
     showTtn,
     showUnlock,
+    showViewAudit,
     showWillNotShip,
-  } = getSaleActionAvailability(sale, { canEditSale, canUnlock, canWillNotShip, isAdmin })
+  } = getSaleActionAvailability(sale, {
+    canEditSale,
+    canOpenDeliveryDetails,
+    canPrintConsignmentNote,
+    canUnlock,
+    canViewAudit,
+    canWillNotShip,
+    canExportBeforePacking,
+  })
   const hasActions = showEdit
     || showEditShift
-    || !hideEditActActions
+    || showOpenDeliveryDetails
     || showTtn
     || showWillNotShip
     || showUnlock
+    || showViewAudit
 
   function runAction(action: (selectedSale: SalesUkraineSale) => void) {
     onClose()
@@ -1877,7 +2064,7 @@ function SaleRowActionsMenu({
             {lifecycleStatusKey === 'New' ? t('Акт редагування рахунку') : t('Акт редагування накладної')}
           </Menu.Item>
         ) : null}
-        {!hideEditActActions ? (
+        {showOpenDeliveryDetails ? (
           <Menu.Item leftSection={<Truck size={16} />} onClick={() => runAction(onOpenDetails)}>
             {t('Дані доставки')}
           </Menu.Item>
@@ -1902,7 +2089,7 @@ function SaleRowActionsMenu({
             {t('Розблокувати')}
           </Menu.Item>
         ) : null}
-        {!hideEditActActions ? (
+        {showViewAudit ? (
           <Menu.Item leftSection={<History size={16} />} onClick={() => runAction(onOpenAudit)}>
             {t('Історія редагувань')}
           </Menu.Item>
@@ -1917,14 +2104,20 @@ function getSaleActionAvailability(
   sale: SalesUkraineSale,
   {
     canEditSale,
+    canOpenDeliveryDetails = true,
+    canPrintConsignmentNote = true,
     canUnlock,
+    canViewAudit = true,
     canWillNotShip,
-    isAdmin,
+    canExportBeforePacking,
   }: {
     canEditSale: boolean
+    canOpenDeliveryDetails?: boolean
+    canPrintConsignmentNote?: boolean
     canUnlock: boolean
+    canViewAudit?: boolean
     canWillNotShip: boolean
-    isAdmin: boolean
+    canExportBeforePacking: boolean
   },
 ) {
   const positions = getOrderItemCount(sale)
@@ -1937,7 +2130,10 @@ function getSaleActionAvailability(
   // A strictly NotPaid sale that has already been received hides edit-act,
   // print, audit, and delivery actions. PartialPaid stays available.
   const hideEditActActions = lifecycleStatusKey === 'Received' && unpaid
-  const hidePrintBlock = Boolean(sale.IsVatSale) && !sale.IsAcceptedToPacking && !isAdmin
+  const hidePrintBlock =
+    Boolean(sale.IsVatSale)
+    && !sale.IsAcceptedToPacking
+    && !canExportBeforePacking
   const showEdit = canEditSale && (sale.InputSaleMerges?.length ?? 0) === 0
 
   return {
@@ -1949,8 +2145,10 @@ function getSaleActionAvailability(
     showBang: packingAcceptanceLifecycleEligible && Boolean(sale.IsVatSale) && !sale.IsAcceptedToPacking,
     showEdit,
     showEditShift: showEdit && positions > 0 && !hideEditActActions,
-    showTtn: Boolean(sale.TransporterId) && isPackaging && !hidePrintBlock,
+    showOpenDeliveryDetails: canOpenDeliveryDetails && !hideEditActActions,
+    showTtn: canPrintConsignmentNote && Boolean(sale.TransporterId) && isPackaging && !hidePrintBlock,
     showUnlock: canUnlock && Boolean(sale.IsLocked),
+    showViewAudit: canViewAudit && !hideEditActActions,
     showWillNotShip:
       packingAcceptanceLifecycleEligible
       && canWillNotShip
@@ -1958,6 +2156,21 @@ function getSaleActionAvailability(
       && !sale.IsAcceptedToPacking,
     unpaid,
   }
+}
+
+function hasAvailableSaleActions(
+  sale: SalesUkraineSale,
+  permissions: Parameters<typeof getSaleActionAvailability>[1],
+) {
+  const availability = getSaleActionAvailability(sale, permissions)
+
+  return availability.showEdit
+    || availability.showEditShift
+    || availability.showOpenDeliveryDetails
+    || availability.showTtn
+    || availability.showUnlock
+    || availability.showViewAudit
+    || availability.showWillNotShip
 }
 
 function getFloatingMenuAnchor(target: HTMLElement): FloatingMenuAnchor {

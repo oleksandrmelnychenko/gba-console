@@ -25,6 +25,11 @@ import type {
 } from '../../../shared/ui/data-table/types'
 import { Paginator } from '../../../shared/ui/paginator/Paginator'
 import { DEFAULT_PAGINATOR_PAGE_SIZE } from '../../../shared/ui/paginator/paginatorPageSize'
+import { useAuth } from '../../auth/useAuth'
+import {
+  CONSUMABLE_ORDERS_PAGE_PERMISSION,
+  CONSUMABLE_ORDER_PAY_PERMISSION,
+} from '../../consumable-orders/permissions'
 import {
   getAccountableExpenses,
   searchAccountableExpenses,
@@ -83,6 +88,9 @@ export function AccountableExpensesPage() {
   const { t } = useI18n()
   const navigate = useNavigate()
   const location = useLocation()
+  const { hasPermission } = useAuth()
+  const canOpenOrder = hasPermission(CONSUMABLE_ORDERS_PAGE_PERMISSION)
+  const canPayOrder = hasPermission(CONSUMABLE_ORDER_PAY_PERMISSION)
   const defaultToDate = useMemo(() => formatLocalDate(new Date()), [])
   const defaultFromDate = useMemo(() => shiftDate(-DEFAULT_LOOKBACK_DAYS), [])
   const [orders, setOrders] = useValueState<ConsumablesOrder[]>([])
@@ -176,6 +184,10 @@ export function AccountableExpensesPage() {
 
   const openPayment = useCallback(
     (row: AccountableExpenseRow) => {
+      if (!canPayOrder) {
+        return
+      }
+
       const netId = row.order.NetUid || row.order.Id
 
       if (!netId) {
@@ -190,10 +202,14 @@ export function AccountableExpensesPage() {
         },
       })
     },
-    [location, navigate, setActionsRow],
+    [canPayOrder, location, navigate, setActionsRow],
   )
   const openOrderEdit = useCallback(
     (row: AccountableExpenseRow) => {
+      if (!canOpenOrder) {
+        return
+      }
+
       const netId = row.order.NetUid || row.order.Id
 
       if (!netId) {
@@ -208,7 +224,7 @@ export function AccountableExpensesPage() {
         },
       })
     },
-    [location, navigate, setActionsRow],
+    [canOpenOrder, location, navigate, setActionsRow],
   )
   const openDetails = useCallback(
     (row: AccountableExpenseRow) => {
@@ -341,8 +357,8 @@ export function AccountableExpensesPage() {
         row={actionsRow}
         onClose={() => setActionsRow(null)}
         onDetails={openDetails}
-        onEdit={openOrderEdit}
-        onPay={openPayment}
+        onEdit={canOpenOrder ? openOrderEdit : undefined}
+        onPay={canPayOrder ? openPayment : undefined}
       />
       <ExpenseDetailDrawer row={selectedRow} onClose={() => setSelectedRow(null)} />
     </Stack>
@@ -502,7 +518,7 @@ function AccountableExpenseStatusCell({ row }: { row: AccountableExpenseRow }) {
   )
 }
 
-function AccountableExpenseActionsModal({
+export function AccountableExpenseActionsModal({
   row,
   onClose,
   onDetails,
@@ -512,8 +528,8 @@ function AccountableExpenseActionsModal({
   row: AccountableExpenseRow | null
   onClose: () => void
   onDetails: (row: AccountableExpenseRow) => void
-  onEdit: (row: AccountableExpenseRow) => void
-  onPay: (row: AccountableExpenseRow) => void
+  onEdit?: (row: AccountableExpenseRow) => void
+  onPay?: (row: AccountableExpenseRow) => void
 }) {
   const { t } = useI18n()
   const isPaid = row?.paymentStatus === 'paid'
@@ -549,22 +565,24 @@ function AccountableExpenseActionsModal({
           >
             {t('Деталі')}
           </Button>
-          <Button
-            fullWidth
-            color="dark"
-            justify="flex-start"
-            leftSection={
-              <span className="app-action-icon">
-                <ExternalLinkIcon size={20} color="var(--mantine-color-gray-7)" />
-              </span>
-            }
-            size="md"
-            variant="subtle"
-            onClick={() => onEdit(row)}
-          >
-            {t('Відкрити накладну')}
-          </Button>
-          {row.paymentStatus !== 'paid' && (
+          {onEdit && (
+            <Button
+              fullWidth
+              color="dark"
+              justify="flex-start"
+              leftSection={
+                <span className="app-action-icon">
+                  <ExternalLinkIcon size={20} color="var(--mantine-color-gray-7)" />
+                </span>
+              }
+              size="md"
+              variant="subtle"
+              onClick={() => onEdit(row)}
+            >
+              {t('Відкрити накладну')}
+            </Button>
+          )}
+          {onPay && row.paymentStatus !== 'paid' && (
             <Button
               fullWidth
               color="dark"

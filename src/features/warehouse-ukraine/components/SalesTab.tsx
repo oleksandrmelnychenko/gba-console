@@ -2,7 +2,6 @@ import { ActionIcon, Alert, Anchor, Badge, Button, Group, Stack, Text, TextInput
 import { useDebouncedValue } from '@mantine/hooks'
 import { CircleAlert, Pencil, Plus, RotateCcw } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
-import { getSaleById } from '../../sales-ukraine/api/salesUkraineApi'
 import { SaleDetailsDrawer } from '../../sales-ukraine/components/SaleDetailsDrawer'
 import { usePersistentSaleJsonMutationRunner } from '../../sales-ukraine/usePersistentSaleJsonMutation'
 import type { SalesUkraineSale } from '../../sales-ukraine/types'
@@ -20,6 +19,7 @@ import { TransporterIcon } from '../../../shared/transporter-icons/TransporterIc
 import {
   getSaleActProtocolEditDocument,
   getSalePrintDocument,
+  getWarehouseUkraineSaleDetails,
   getWarehouseUkraineSales,
   updateWarehouseUkraineSale,
 } from '../api/salesApi'
@@ -83,7 +83,7 @@ const INITIAL_SALES_STATE: SalesListState = {
   totalQty: 0,
 }
 
-function useSalesTabModel() {
+function useSalesTabModel(canPrintInvoice: boolean, canPrintEditAct: boolean, canUpdatePrintStatus: boolean) {
   const { t } = useI18n()
   const runSaleUpdate = usePersistentSaleJsonMutationRunner('sale-update')
   const initialFilters = useMemo<FilterDraft>(
@@ -245,7 +245,11 @@ function useSalesTabModel() {
         const attempt = await runSaleUpdate(
           `sale-update:warehouse-${printIntent}-print:${String(sale.NetUid || sale.Id || '')}`,
           optimisticSale as unknown as SalesUkraineSale,
-          (payload, operation) => updateWarehouseUkraineSale(payload as unknown as Sale, operation),
+          (payload, operation) => updateWarehouseUkraineSale(
+            payload as unknown as Sale,
+            printIntent,
+            operation,
+          ),
         )
 
         if (!attempt.completed) {
@@ -272,30 +276,38 @@ function useSalesTabModel() {
 
   const printSale = useCallback(
     (sale: Sale) => {
+      if (!canPrintInvoice) {
+        return
+      }
+
       if (sale.NetUid) {
         void printAfterPersistingStatus({
           loadDocument: () => runPrintDocument(() => getSalePrintDocument(sale.NetUid as string)),
           persistStatus: () => markSaleBeforePrint(sale, { IsPrinted: true }),
-          requiresStatusUpdate: !sale.IsPrinted || hasApprovedInvoiceEdits(sale),
+          requiresStatusUpdate: canUpdatePrintStatus && (!sale.IsPrinted || hasApprovedInvoiceEdits(sale)),
         })
       }
     },
-    [markSaleBeforePrint, runPrintDocument],
+    [canPrintInvoice, canUpdatePrintStatus, markSaleBeforePrint, runPrintDocument],
   )
 
   const printActProtocolEdit = useCallback(
     (sale: Sale) => {
+      if (!canPrintEditAct) {
+        return
+      }
+
       if (sale.NetUid) {
         void printAfterPersistingStatus({
           loadDocument: () => runPrintDocument(
             () => getSaleActProtocolEditDocument(sale.NetUid as string, true),
           ),
           persistStatus: () => markSaleBeforePrint(sale, { IsPrintedActProtocolEdit: true }),
-          requiresStatusUpdate: !sale.IsPrintedActProtocolEdit,
+          requiresStatusUpdate: canUpdatePrintStatus && !sale.IsPrintedActProtocolEdit,
         })
       }
     },
-    [markSaleBeforePrint, runPrintDocument],
+    [canPrintEditAct, canUpdatePrintStatus, markSaleBeforePrint, runPrintDocument],
   )
 
   const openCarrierSale = useCallback(
@@ -312,7 +324,7 @@ function useSalesTabModel() {
       carrierRequestRef.current = requestId
 
       try {
-        const hydratedSale = await getSaleById(netUid)
+        const hydratedSale = await getWarehouseUkraineSaleDetails(netUid)
 
         if (carrierRequestRef.current !== requestId) {
           return
@@ -364,6 +376,8 @@ function useSalesTabModel() {
     : salesState.sales.length === pageSize
 
   const columns = useSalesColumns({
+    canPrintEditAct,
+    canPrintInvoice,
     indexMap: salesIndexMap,
     onOpenCarrier: requestOpenCarrierSale,
     onPrint: printSale,
@@ -402,11 +416,14 @@ function salesListReducer(state: SalesListState, action: SalesListAction): Sales
 
 type SalesTabProps = {
   canCreateShipment: boolean
+  canPrintEditAct: boolean
+  canPrintInvoice: boolean
+  canUpdatePrintStatus: boolean
   onCreateShipment: () => void
 }
 
-export function SalesTab({ canCreateShipment, onCreateShipment }: SalesTabProps) {
-  const model = useSalesTabModel()
+export function SalesTab({ canCreateShipment, canPrintEditAct, canPrintInvoice, canUpdatePrintStatus, onCreateShipment }: SalesTabProps) {
+  const model = useSalesTabModel(canPrintInvoice, canPrintEditAct, canUpdatePrintStatus)
   const { t } = useI18n()
   const [tableToolbarSlot, setTableToolbarSlot] = useState<HTMLDivElement | null>(null)
 
@@ -495,6 +512,7 @@ export function SalesTab({ canCreateShipment, onCreateShipment }: SalesTabProps)
       </div>
 
       <SaleDetailsDrawer
+        loadSale={getWarehouseUkraineSaleDetails}
         sale={model.carrierSale as unknown as SalesUkraineSale | null}
         onClose={() => model.setCarrierSale(null)}
         onSaved={() => {
@@ -514,11 +532,15 @@ export function SalesTab({ canCreateShipment, onCreateShipment }: SalesTabProps)
 }
 
 function useSalesColumns({
+  canPrintEditAct,
+  canPrintInvoice,
   indexMap,
   onOpenCarrier,
   onPrint,
   onPrintActProtocolEdit,
 }: {
+  canPrintEditAct: boolean
+  canPrintInvoice: boolean
   indexMap: Map<Sale, number>
   onOpenCarrier: (sale: Sale) => void
   onPrint: (sale: Sale) => void
@@ -560,12 +582,14 @@ function useSalesColumns({
           <Group gap={4} wrap="nowrap">
             <TableRowAction
               action="print"
+              disabled={!canPrintInvoice}
               hint={t('Підтвердження на друк і PDF пакет документів')}
               label={t('PDF пакет документів')}
               onClick={() => onPrint(sale)}
             />
             <TableRowAction
               action="download"
+              disabled={!canPrintEditAct}
               label={t('PDF акт редагування')}
               tone={sale.IsPrintedActProtocolEdit ? 'success' : 'neutral'}
               onClick={() => onPrintActProtocolEdit(sale)}
@@ -723,7 +747,7 @@ function useSalesColumns({
         },
       },
     ],
-    [indexMap, onOpenCarrier, onPrint, onPrintActProtocolEdit, t],
+    [canPrintEditAct, canPrintInvoice, indexMap, onOpenCarrier, onPrint, onPrintActProtocolEdit, t],
   )
 }
 

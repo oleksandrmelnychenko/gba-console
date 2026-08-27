@@ -22,9 +22,11 @@ import './sale-discount-modal.css'
 export function SaleDiscountModal({
   sale,
   orderItem,
+  loadSale = getSaleById,
   onClose,
   onSaved,
 }: {
+  loadSale?: typeof getSaleById
   onClose: () => void
   onSaved: (sale: SalesUkraineSale | null) => void
   orderItem?: SalesUkraineOrderItem | null
@@ -46,6 +48,7 @@ export function SaleDiscountModal({
           key={`${sale.NetUid || sale.Id}-${orderItem?.NetUid || orderItem?.Id || 'sale'}`}
           orderItem={orderItem ?? null}
           sale={sale}
+          loadSale={loadSale}
           onCancel={onClose}
           onSaved={onSaved}
         />
@@ -57,9 +60,11 @@ export function SaleDiscountModal({
 function SaleDiscountForm({
   sale,
   orderItem,
+  loadSale,
   onCancel,
   onSaved,
 }: {
+  loadSale: typeof getSaleById
   onCancel: () => void
   onSaved: (sale: SalesUkraineSale | null) => void
   orderItem: SalesUkraineOrderItem | null
@@ -129,7 +134,7 @@ function SaleDiscountForm({
         throw new Error('Продаж не має збереженого ідентифікатора')
       }
 
-      const freshSale = await getSaleById(sale.NetUid)
+      const freshSale = await loadSale(sale.NetUid)
 
       if (!freshSale) {
         throw new Error('Не вдалося повторно завантажити продаж')

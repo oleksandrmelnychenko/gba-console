@@ -15,6 +15,7 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { useMutatedListRefresh } from '../../../shared/router/useMutatedListRefresh'
+import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
@@ -25,7 +26,7 @@ import { getCompanyCars, searchCompanyCars } from '../api/companyCarsApi'
 import {
   COMPANY_CAR_CREATE_PERMISSION,
   COMPANY_CAR_EDIT_PERMISSION,
-  COMPANY_CAR_ROAD_LIST_MANAGE_PERMISSION,
+  COMPANY_CAR_ROAD_LIST_OPEN_PERMISSION,
 } from '../permissions'
 import type { CompanyCar } from '../types'
 import '../../../shared/ui/console-table-page.css'
@@ -60,6 +61,24 @@ const initialCompanyCarsPageState: CompanyCarsPageState = {
 }
 
 export function CompanyCarsPage() {
+  return (
+    <PermissionGate permissionKey={PermissionKeys.Warehouses.CompanyCars.Page.View} fallback={<CompanyCarsPermissionDenied />}>
+      <CompanyCarsPageContent />
+    </PermissionGate>
+  )
+}
+
+function CompanyCarsPermissionDenied() {
+  const { t } = useI18n()
+
+  return (
+    <Alert color="red" icon={<CircleAlert size={18} />} title={t('Доступ заборонено')} variant="light">
+      {t('У вашої ролі немає права переглядати автомобілі компанії.')}
+    </Alert>
+  )
+}
+
+function CompanyCarsPageContent() {
   const { t } = useI18n()
   const { hasPermission } = useAuth()
   const navigate = useNavigate()
@@ -76,11 +95,24 @@ export function CompanyCarsPage() {
   const isSearchSettling = searchValue.trim() !== normalizedSearchValue
   const isTableBusy = isLoading || isSearchSettling
   const canEditCompanyCars = hasPermission(COMPANY_CAR_EDIT_PERMISSION)
-  const canOpenRoadLists = hasPermission(COMPANY_CAR_ROAD_LIST_MANAGE_PERMISSION)
+  const canOpenRoadLists = hasPermission(COMPANY_CAR_ROAD_LIST_OPEN_PERMISSION)
+
+  const openCreateForm = useCallback(() => {
+    if (!hasPermission(COMPANY_CAR_CREATE_PERMISSION)) {
+      return
+    }
+
+    navigate(`${COMPANY_CARS_PATH}/new`, {
+      state: {
+        backgroundLocation: location,
+        returnPath: `${location.pathname}${location.search}`,
+      },
+    })
+  }, [hasPermission, location, navigate])
 
   const openEditor = useCallback(
     (companyCar: CompanyCar) => {
-      if (!companyCar.NetUid) {
+      if (!hasPermission(COMPANY_CAR_EDIT_PERMISSION) || !companyCar.NetUid) {
         return
       }
 
@@ -91,12 +123,12 @@ export function CompanyCarsPage() {
         },
       })
     },
-    [location, navigate],
+    [hasPermission, location, navigate],
   )
 
   const openRoadLists = useCallback(
     (companyCar: CompanyCar) => {
-      if (!companyCar.NetUid) {
+      if (!hasPermission(COMPANY_CAR_ROAD_LIST_OPEN_PERMISSION) || !companyCar.NetUid) {
         return
       }
 
@@ -106,7 +138,7 @@ export function CompanyCarsPage() {
         },
       })
     },
-    [location, navigate],
+    [hasPermission, location, navigate],
   )
 
   const columns = useCompanyCarColumns({
@@ -190,14 +222,7 @@ export function CompanyCarsPage() {
                 color={CREATE_ACTION_COLOR}
                 size="sm"
                 leftSection={<Plus size={16} />}
-                onClick={() =>
-                  navigate(`${COMPANY_CARS_PATH}/new`, {
-                    state: {
-                      backgroundLocation: location,
-                      returnPath: `${location.pathname}${location.search}`,
-                    },
-                  })
-                }
+                onClick={openCreateForm}
               >
                 {t('Завести нову машину компанії')}
               </Button>
@@ -362,24 +387,28 @@ function useCompanyCarColumns({
         enableReorder: false,
         cell: (companyCar) => (
           <Group gap={4} justify="flex-end" wrap="nowrap">
-            <TableRowAction
-              action="route"
-              disabled={!canOpenRoadLists || !companyCar.NetUid}
-              label={t('Шляхові листи автомобіля')}
-              onClick={(event) => {
-                event.stopPropagation()
-                onRoadLists(companyCar)
-              }}
-            />
-            <TableRowAction
-              action="edit"
-              disabled={!canEdit || !companyCar.NetUid}
-              label={t('Редагувати')}
-              onClick={(event) => {
-                event.stopPropagation()
-                onEdit(companyCar)
-              }}
-            />
+            {canOpenRoadLists && (
+              <TableRowAction
+                action="route"
+                disabled={!companyCar.NetUid}
+                label={t('Шляхові листи автомобіля')}
+                onClick={(event) => {
+                  event.stopPropagation()
+                  onRoadLists(companyCar)
+                }}
+              />
+            )}
+            {canEdit && (
+              <TableRowAction
+                action="edit"
+                disabled={!companyCar.NetUid}
+                label={t('Редагувати')}
+                onClick={(event) => {
+                  event.stopPropagation()
+                  onEdit(companyCar)
+                }}
+              />
+            )}
           </Group>
         ),
       },

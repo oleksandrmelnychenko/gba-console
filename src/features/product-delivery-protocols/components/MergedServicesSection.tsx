@@ -1,6 +1,7 @@
 import { Button, Group, Stack, Text } from '@mantine/core'
 import { Plus } from 'lucide-react'
 import { formatLocalDateTime } from '../../../shared/date/dateTime'
+import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppModal } from '../../../shared/ui/AppModal'
@@ -23,7 +24,11 @@ import { MergedServiceViewCard } from './MergedServiceViewCard'
 import { NewMergedServiceForm } from './NewMergedServiceForm'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 
-const ADD_MERGED_SERVICE_PERMISSION = 'ProductDeliveryProtocols_unified_services_AddBtn_PKEY'
+const ADD_MERGED_SERVICE_PERMISSION = PermissionKeys.ProductDeliveryProtocols.UnifiedService.Create
+const EDIT_MERGED_SERVICE_PERMISSION = PermissionKeys.ProductDeliveryProtocols.UnifiedService.Edit
+const CALCULATE_MERGED_SERVICE_PERMISSION = PermissionKeys.ProductDeliveryProtocols.UnifiedService.Calculate
+const ASSIGN_INVOICES_PERMISSION = PermissionKeys.ProductDeliveryProtocols.UnifiedService.AddInvoice
+const DELETE_MERGED_SERVICE_PERMISSION = PermissionKeys.ProductDeliveryProtocols.UnifiedService.Delete
 
 export type SaveMergedServicePayload = {
   files: {
@@ -135,8 +140,16 @@ export function MergedServicesSection({
 
   const services = protocol.MergedServices || []
   const canAddService = canEdit && hasPermission(ADD_MERGED_SERVICE_PERMISSION)
+  const canEditService = canEdit && hasPermission(EDIT_MERGED_SERVICE_PERMISSION)
+  const canCalculateService = canEdit && hasPermission(CALCULATE_MERGED_SERVICE_PERMISSION)
+  const canAssignInvoices = canEdit && hasPermission(ASSIGN_INVOICES_PERMISSION)
+  const canDeleteService = canEdit && hasPermission(DELETE_MERGED_SERVICE_PERMISSION)
 
   async function handleNewSubmit(values: NewMergedServiceFormValues) {
+    if (!canAddService) {
+      return
+    }
+
     try {
       await onSaveService({
         files: {
@@ -155,6 +168,10 @@ export function MergedServicesSection({
   }
 
   async function handleEditSave(service: MergedService, files: MergedServiceEditFiles) {
+    if (!canEditService) {
+      return
+    }
+
     try {
       await onSaveService({
         files: {
@@ -177,7 +194,7 @@ export function MergedServicesSection({
     isAuto: boolean
     items: CalculateMergedServiceInvoiceItem[]
   }) {
-    if (!calculateService?.NetUid) {
+    if (!canCalculateService || !calculateService?.NetUid) {
       return
     }
 
@@ -199,7 +216,7 @@ export function MergedServicesSection({
   }
 
   async function handleAssign(invoices: SupplyInvoice[]) {
-    if (!assignService) {
+    if (!canAssignInvoices || !assignService) {
       return
     }
 
@@ -212,7 +229,7 @@ export function MergedServicesSection({
   }
 
   async function handleRemoveConfirm() {
-    if (!removeTarget) {
+    if (!canDeleteService || !removeTarget) {
       return
     }
 
@@ -235,7 +252,7 @@ export function MergedServicesSection({
             color={CREATE_ACTION_COLOR}
             disabled={isSaving}
             leftSection={<Plus size={16} />}
-          onClick={() => setNewOpen(true)}
+            onClick={() => setNewOpen(true)}
           >
             {t('Додати')}
           </Button>
@@ -265,7 +282,7 @@ export function MergedServicesSection({
 
       <NewMergedServiceForm
         isSaving={isSaving}
-        opened={isNewOpen}
+        opened={isNewOpen && canAddService}
         onClose={() => {
           if (!isSaving) {
             setNewOpen(false)
@@ -274,7 +291,7 @@ export function MergedServicesSection({
         onSubmit={handleNewSubmit}
       />
 
-      {editService && (
+      {editService && canEditService && (
         <MergedServiceEditCard
           isSaving={isSaving}
           opened={Boolean(editService)}
@@ -288,7 +305,7 @@ export function MergedServicesSection({
         />
       )}
 
-      {calculateService && (
+      {calculateService && canCalculateService && (
         <CalculateMergedServicesPanel
           isSaving={isSaving}
           opened={Boolean(calculateService)}
@@ -302,7 +319,7 @@ export function MergedServicesSection({
         />
       )}
 
-      {assignService && (
+      {assignService && canAssignInvoices && (
         <AssignInvoicesToMergedServicePanel
           isSaving={isSaving}
           opened={Boolean(assignService)}
@@ -318,7 +335,7 @@ export function MergedServicesSection({
 
       <AppModal
         centered
-        opened={Boolean(removeTarget)}
+        opened={Boolean(removeTarget) && canDeleteService}
         title={t('Видалити')}
         onClose={() => {
           if (!isSaving) {

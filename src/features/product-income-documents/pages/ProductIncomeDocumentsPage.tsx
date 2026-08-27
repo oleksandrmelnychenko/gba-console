@@ -16,6 +16,7 @@ import { CircleAlert, Download, ExternalLink, Eye, Layers, RotateCcw, Search } f
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { formatLocalDate, toDateTimeQuery } from '../../../shared/date/dateTime'
+import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { translate } from '../../../shared/i18n/translate'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -31,15 +32,17 @@ import {
   ProductStorageLocationHistoryDrawer,
   type MovementHistoryProduct,
 } from '../../../shared/ui/product-movement-history/ProductMovementHistoryDrawers'
+import { assortmentMovementRequestPaths } from '../../../shared/ui/product-movement-history/productMovementHistoryRequestPaths'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { TableRowAction } from '../../../shared/ui/table-row-action'
-import { useAuth } from '../../auth/useAuth'
-import { getProductCapitalization } from '../../product-capitalizations/api/productCapitalizationsApi'
+import { usePermissions } from '../../auth/usePermissions'
+import { getProductCapitalizationForIncomeDocuments } from '../../product-capitalizations/api/productCapitalizationsApi'
 import type { ProductCapitalization } from '../../product-capitalizations/types'
 import {
   exportProductIncomeDocument,
   getProductIncomeDocuments,
   getProductIncomeInfo,
+  getProductIncomeInfoForRemainings,
   getProductIncomeRemainings,
 } from '../api/productIncomeDocumentsApi'
 import { getProductIncomeDocumentSourceLink } from '../productIncomeDocumentSourceLink'
@@ -63,7 +66,6 @@ import type {
 import './product-income-documents-page.css'
 
 const FILTER_STORAGE_KEY = 'documentsFilters'
-const PRODUCT_MOVEMENT_PERMISSION = 'Product_Entire_Assortment_Product_Movement_Btn_PKEY'
 const PAGE_SIZE = DEFAULT_PAGINATOR_PAGE_SIZE
 
 const DOCUMENTS_TABLE_DEFAULT_LAYOUT = {
@@ -110,9 +112,22 @@ type DocumentsListState = {
   total?: number
 }
 
-function useProductIncomeDocumentsPageModel() {
+function useProductIncomeDocumentsPageModel({
+  canExportDocument,
+  canExportMovement,
+  canOpenDetails,
+  canOpenMovement,
+  canOpenRemainings,
+  canOpenStorageHistory,
+}: {
+  canExportDocument: boolean
+  canExportMovement: boolean
+  canOpenDetails: boolean
+  canOpenMovement: boolean
+  canOpenRemainings: boolean
+  canOpenStorageHistory: boolean
+}) {
   const { t } = useI18n()
-  const { hasPermission } = useAuth()
   const restoredFilters = useMemo(() => readStoredFilters(), [])
   const [documentsState, setDocumentsState] = useValueState<DocumentsListState>({
     documents: [],
@@ -155,8 +170,6 @@ function useProductIncomeDocumentsPageModel() {
     typeof total === 'number' && total > 0
       ? Math.max(1, Math.ceil(total / pageSize))
       : page + (canMoveForward ? 1 : 0)
-  const canOpenProductMovement = hasPermission(PRODUCT_MOVEMENT_PERMISSION)
-
   const openOptions = useCallback(
     (document: ProductIncomeDocument) => {
       setOptionsDocument(document)
@@ -173,7 +186,7 @@ function useProductIncomeDocumentsPageModel() {
 
       async function run() {
         try {
-          const detail = await getProductCapitalization(capitalizationNetUid)
+          const detail = await getProductCapitalizationForIncomeDocuments(capitalizationNetUid)
 
           if (capitalizationRequestRef.current === requestId) {
             setCapitalization(detail)
@@ -196,7 +209,7 @@ function useProductIncomeDocumentsPageModel() {
     [setCapitalization, setCapitalizationError, setLoadingCapitalization, t],
   )
   const loadDocumentInfo = useCallback(
-    (document: ProductIncomeDocument, options: { loadCapitalizationDetail: boolean }) => {
+    (document: ProductIncomeDocument, options: { loadCapitalizationDetail: boolean; scope: 'details' | 'remainings' }) => {
       const requestId = infoRequestRef.current + 1
       infoRequestRef.current = requestId
       const isCurrentInfoRequest = () => infoRequestRef.current === requestId
@@ -211,7 +224,9 @@ function useProductIncomeDocumentsPageModel() {
 
       async function run(netUid: string) {
         try {
-          const info = await getProductIncomeInfo(netUid)
+          const info = options.scope === 'remainings'
+            ? await getProductIncomeInfoForRemainings(netUid)
+            : await getProductIncomeInfo(netUid)
 
           if (isCurrentInfoRequest()) {
             const detailedDocument = mergeProductIncomeInfo(document, info)
@@ -247,6 +262,9 @@ function useProductIncomeDocumentsPageModel() {
   )
   const openOverview = useCallback(
     (document: ProductIncomeDocument) => {
+      if (!canOpenDetails) {
+        return
+      }
       remainingsRequestRef.current += 1
       capitalizationRequestRef.current += 1
       setOptionsDocument(null)
@@ -264,9 +282,10 @@ function useProductIncomeDocumentsPageModel() {
         loadCapitalization(capitalizationNetUid)
       }
 
-      loadDocumentInfo(document, { loadCapitalizationDetail: !capitalizationNetUid })
+      loadDocumentInfo(document, { loadCapitalizationDetail: !capitalizationNetUid, scope: 'details' })
     },
     [
+      canOpenDetails,
       loadCapitalization,
       loadDocumentInfo,
       setCapitalization,
@@ -319,6 +338,9 @@ function useProductIncomeDocumentsPageModel() {
   )
   const openRemainings = useCallback(
     (document: ProductIncomeDocument) => {
+      if (!canOpenRemainings) {
+        return
+      }
       capitalizationRequestRef.current += 1
       setOptionsDocument(null)
       setDetailMode('remainings')
@@ -328,10 +350,11 @@ function useProductIncomeDocumentsPageModel() {
       setDocumentInfoError(null)
       setCapitalization(null)
       setCapitalizationError(null)
-      loadDocumentInfo(document, { loadCapitalizationDetail: false })
+      loadDocumentInfo(document, { loadCapitalizationDetail: false, scope: 'remainings' })
       fetchRemainings(document)
     },
     [
+      canOpenRemainings,
       fetchRemainings,
       loadDocumentInfo,
       setCapitalization,
@@ -346,17 +369,20 @@ function useProductIncomeDocumentsPageModel() {
   )
   const rows = useMemo(() => documents.map(mapDocumentRow), [documents])
   const columns = useProductIncomeDocumentColumns({
+    canExport: canExportDocument,
     exportingNetId,
     onExport: handleExport,
     onOpen: openOptions,
   })
   const itemColumns = useProductIncomeItemColumns({
-    canOpenProductMovement,
+    canOpenMovement,
+    canOpenStorageHistory,
     onOpenMovementHistory: setMovementHistoryProduct,
     onOpenStorageLocationHistory: setStorageLocationHistoryProduct,
   })
   const remainingColumns = useRemainingConsignmentColumns({
-    canOpenProductMovement,
+    canOpenMovement,
+    canOpenStorageHistory,
     onOpenMovementHistory: setMovementHistoryProduct,
     onOpenStorageLocationHistory: setStorageLocationHistoryProduct,
   })
@@ -425,7 +451,7 @@ function useProductIncomeDocumentsPageModel() {
   }, [dateFrom, dateTo, filterError, offset, pageSize, reloadKey, searchValue, setDocumentsState, setError, t])
 
   async function handleExport(document: ProductIncomeDocument) {
-    if (!document.NetUid) {
+    if (!canExportDocument || !document.NetUid) {
       return
     }
 
@@ -512,6 +538,10 @@ function useProductIncomeDocumentsPageModel() {
     capitalization,
     capitalizationError,
     capitalizationItemColumns,
+    canExportDocument,
+    canExportMovement,
+    canOpenDetails,
+    canOpenRemainings,
     columns,
     dateFrom,
     dateTo,
@@ -560,7 +590,34 @@ function useProductIncomeDocumentsPageModel() {
 }
 
 export function ProductIncomeDocumentsPage() {
-  const model = useProductIncomeDocumentsPageModel()
+  const { t } = useI18n()
+  const { can, isLoading } = usePermissions()
+
+  if (isLoading) {
+    return <Text c="dimmed">{t('Завантаження')}</Text>
+  }
+
+  if (!can(PermissionKeys.ProductIncomeDocuments.Page.View)) {
+    return (
+      <Alert color="red" icon={<CircleAlert size={18} />} title={t('Доступ заборонено')} variant="light">
+        {t('Недостатньо прав для перегляду прихідних накладних')}
+      </Alert>
+    )
+  }
+
+  return <ProductIncomeDocumentsPageContent />
+}
+
+function ProductIncomeDocumentsPageContent() {
+  const { can } = usePermissions()
+  const model = useProductIncomeDocumentsPageModel({
+    canExportDocument: can(PermissionKeys.ProductIncomeDocuments.Document.Export),
+    canExportMovement: can(PermissionKeys.ProductsAssortment.Movement.Export),
+    canOpenDetails: can(PermissionKeys.ProductIncomeDocuments.Document.OpenDetails),
+    canOpenMovement: can(PermissionKeys.ProductsAssortment.Movement.Open),
+    canOpenRemainings: can(PermissionKeys.ProductIncomeDocuments.Document.OpenRemainings),
+    canOpenStorageHistory: can(PermissionKeys.ProductsAssortment.StorageHistory.Open),
+  })
 
   return <ProductIncomeDocumentsPageView model={model} />
 }
@@ -572,6 +629,10 @@ function ProductIncomeDocumentsPageView({ model }: { model: ReturnType<typeof us
     capitalization,
     capitalizationError,
     capitalizationItemColumns,
+    canExportDocument,
+    canExportMovement,
+    canOpenDetails,
+    canOpenRemainings,
     columns,
     dateFrom,
     dateTo,
@@ -718,6 +779,8 @@ function ProductIncomeDocumentsPageView({ model }: { model: ReturnType<typeof us
       </Card>
 
       <ProductIncomeOptionsModal
+        canOpenDetails={canOpenDetails}
+        canOpenRemainings={canOpenRemainings}
         document={optionsDocument}
         onClose={() => setOptionsDocument(null)}
         onOverview={openOverview}
@@ -725,6 +788,8 @@ function ProductIncomeDocumentsPageView({ model }: { model: ReturnType<typeof us
       />
 
       <ProductIncomeDocumentDrawer
+        canExport={canExportDocument}
+        canOpenRemainings={canOpenRemainings}
         capitalization={capitalization}
         capitalizationError={capitalizationError}
         capitalizationItemColumns={capitalizationItemColumns}
@@ -745,14 +810,17 @@ function ProductIncomeDocumentsPageView({ model }: { model: ReturnType<typeof us
       />
 
       <ProductMovementHistoryDrawer
+        canExport={canExportMovement}
         opened={Boolean(movementHistoryProduct)}
         product={movementHistoryProduct}
+        requestPaths={assortmentMovementRequestPaths}
         onClose={() => setMovementHistoryProduct(null)}
       />
 
       <ProductStorageLocationHistoryDrawer
         opened={Boolean(storageLocationHistoryProduct)}
         product={storageLocationHistoryProduct}
+        requestPath="/products/placements/history/assortment/all/filtered"
         onClose={() => setStorageLocationHistoryProduct(null)}
       />
 
@@ -767,11 +835,15 @@ function ProductIncomeDocumentsPageView({ model }: { model: ReturnType<typeof us
 }
 
 function ProductIncomeOptionsModal({
+  canOpenDetails,
+  canOpenRemainings,
   document,
   onClose,
   onOverview,
   onRemainings,
 }: {
+  canOpenDetails: boolean
+  canOpenRemainings: boolean
   document: ProductIncomeDocument | null
   onClose: () => void
   onOverview: (document: ProductIncomeDocument) => void
@@ -810,37 +882,41 @@ function ProductIncomeOptionsModal({
               {t('Відкрити джерело')}
             </Button>
           )}
-          <Button
-            fullWidth
-            justify="flex-start"
-            color="dark"
-            size="md"
-            leftSection={
-              <span className="app-action-icon">
-                <Eye size={20} color="var(--mantine-color-gray-7)" />
-              </span>
-            }
-            variant="subtle"
-            onClick={() => onOverview(document)}
-          >
-            {t('Деталі документа')}
-          </Button>
-          <Button
-            disabled={!document.NetUid}
-            fullWidth
-            justify="flex-start"
-            color="dark"
-            size="md"
-            leftSection={
-              <span className="app-action-icon">
-                <Layers size={20} color="var(--mantine-color-gray-7)" />
-              </span>
-            }
-            variant="subtle"
-            onClick={() => onRemainings(document)}
-          >
-            {t('Залишки по партіям')}
-          </Button>
+          {canOpenDetails ? (
+            <Button
+              fullWidth
+              justify="flex-start"
+              color="dark"
+              size="md"
+              leftSection={
+                <span className="app-action-icon">
+                  <Eye size={20} color="var(--mantine-color-gray-7)" />
+                </span>
+              }
+              variant="subtle"
+              onClick={() => onOverview(document)}
+            >
+              {t('Деталі документа')}
+            </Button>
+          ) : null}
+          {canOpenRemainings ? (
+            <Button
+              disabled={!document.NetUid}
+              fullWidth
+              justify="flex-start"
+              color="dark"
+              size="md"
+              leftSection={
+                <span className="app-action-icon">
+                  <Layers size={20} color="var(--mantine-color-gray-7)" />
+                </span>
+              }
+              variant="subtle"
+              onClick={() => onRemainings(document)}
+            >
+              {t('Залишки по партіям')}
+            </Button>
+          ) : null}
         </Stack>
       )}
     </AppModal>
@@ -854,6 +930,8 @@ function getPrimaryProductIncomeSourceLink(document: ProductIncomeDocument): str
 }
 
 function ProductIncomeDocumentDrawer({
+  canExport,
+  canOpenRemainings,
   capitalization,
   capitalizationError,
   capitalizationItemColumns,
@@ -872,6 +950,8 @@ function ProductIncomeDocumentDrawer({
   onExport,
   onLoadRemainings,
 }: {
+  canExport: boolean
+  canOpenRemainings: boolean
   capitalization: ProductCapitalization | null
   capitalizationError: string | null
   capitalizationItemColumns: DataTableColumn<CapitalizationOverviewItem>[]
@@ -921,23 +1001,27 @@ function ProductIncomeDocumentDrawer({
                   {t('Джерело')}
                 </Button>
               )}
-              <Button
-                disabled={!document.NetUid}
-                leftSection={<Download size={16} />}
-                loading={exportingNetId === document.NetUid}
-                variant="outline"
-                onClick={() => onExport(document)}
-              >
-                {t('Експорт')}
-              </Button>
-              <Button
-                disabled={!document.NetUid || isLoadingRemainings}
-                loading={isLoadingRemainings}
-                variant="filled"
-                onClick={() => onLoadRemainings(document)}
-              >
-                {t('Залишки по партіям')}
-              </Button>
+              {canExport ? (
+                <Button
+                  disabled={!document.NetUid}
+                  leftSection={<Download size={16} />}
+                  loading={exportingNetId === document.NetUid}
+                  variant="outline"
+                  onClick={() => onExport(document)}
+                >
+                  {t('Експорт')}
+                </Button>
+              ) : null}
+              {canOpenRemainings ? (
+                <Button
+                  disabled={!document.NetUid || isLoadingRemainings}
+                  loading={isLoadingRemainings}
+                  variant="filled"
+                  onClick={() => onLoadRemainings(document)}
+                >
+                  {t('Залишки по партіям')}
+                </Button>
+              ) : null}
             </Group>
           </Group>
 
@@ -1467,10 +1551,12 @@ function getDeferredOverviewNote(
 }
 
 function useProductIncomeDocumentColumns({
+  canExport,
   exportingNetId,
   onExport,
   onOpen,
 }: {
+  canExport: boolean
   exportingNetId: string | null
   onExport: (document: ProductIncomeDocument) => void
   onOpen: (document: ProductIncomeDocument) => void
@@ -1612,27 +1698,31 @@ function useProductIncomeDocumentColumns({
         cell: (row) => (
           <Group gap={4} justify="flex-end" wrap="nowrap">
             <TableRowAction action="open" label={t('Відкрити')} onClick={() => onOpen(row.document)} />
-            <TableRowAction
-              action="download"
-              disabled={!row.document.NetUid}
-              label={t('Експорт')}
-              loading={exportingNetId === row.document.NetUid}
-              onClick={() => onExport(row.document)}
-            />
+            {canExport ? (
+              <TableRowAction
+                action="download"
+                disabled={!row.document.NetUid}
+                label={t('Експорт')}
+                loading={exportingNetId === row.document.NetUid}
+                onClick={() => onExport(row.document)}
+              />
+            ) : null}
           </Group>
         ),
       },
     ],
-    [exportingNetId, onExport, onOpen, t],
+    [canExport, exportingNetId, onExport, onOpen, t],
   )
 }
 
 function useProductIncomeItemColumns({
-  canOpenProductMovement,
+  canOpenMovement,
+  canOpenStorageHistory,
   onOpenMovementHistory,
   onOpenStorageLocationHistory,
 }: {
-  canOpenProductMovement: boolean
+  canOpenMovement: boolean
+  canOpenStorageHistory: boolean
   onOpenMovementHistory: (product: MovementHistoryProduct) => void
   onOpenStorageLocationHistory: (product: MovementHistoryProduct) => void
 }): DataTableColumn<ProductIncomeItem>[] {
@@ -1689,7 +1779,8 @@ function useProductIncomeItemColumns({
         enableReorder: false,
         cell: (item) => (
           <ProductHistoryActionButtons
-            canOpenProductMovement={canOpenProductMovement}
+            canOpenMovement={canOpenMovement}
+            canOpenStorageHistory={canOpenStorageHistory}
             product={getMovementHistoryProductFromNamedEntity(getIncomeItemProduct(item))}
             onOpenMovementHistory={onOpenMovementHistory}
             onOpenStorageLocationHistory={onOpenStorageLocationHistory}
@@ -1697,16 +1788,18 @@ function useProductIncomeItemColumns({
         ),
       },
     ],
-    [canOpenProductMovement, onOpenMovementHistory, onOpenStorageLocationHistory, t],
+    [canOpenMovement, canOpenStorageHistory, onOpenMovementHistory, onOpenStorageLocationHistory, t],
   )
 }
 
 function useRemainingConsignmentColumns({
-  canOpenProductMovement,
+  canOpenMovement,
+  canOpenStorageHistory,
   onOpenMovementHistory,
   onOpenStorageLocationHistory,
 }: {
-  canOpenProductMovement: boolean
+  canOpenMovement: boolean
+  canOpenStorageHistory: boolean
   onOpenMovementHistory: (product: MovementHistoryProduct) => void
   onOpenStorageLocationHistory: (product: MovementHistoryProduct) => void
 }): DataTableColumn<RemainingConsignment>[] {
@@ -1856,7 +1949,8 @@ function useRemainingConsignmentColumns({
         enableReorder: false,
         cell: (item) => (
           <ProductHistoryActionButtons
-            canOpenProductMovement={canOpenProductMovement}
+            canOpenMovement={canOpenMovement}
+            canOpenStorageHistory={canOpenStorageHistory}
             product={getMovementHistoryProductFromNamedEntity(item.Product)}
             onOpenMovementHistory={onOpenMovementHistory}
             onOpenStorageLocationHistory={onOpenStorageLocationHistory}
@@ -1864,17 +1958,19 @@ function useRemainingConsignmentColumns({
         ),
       },
     ],
-    [canOpenProductMovement, onOpenMovementHistory, onOpenStorageLocationHistory, t],
+    [canOpenMovement, canOpenStorageHistory, onOpenMovementHistory, onOpenStorageLocationHistory, t],
   )
 }
 
 function ProductHistoryActionButtons({
-  canOpenProductMovement,
+  canOpenMovement,
+  canOpenStorageHistory,
   product,
   onOpenMovementHistory,
   onOpenStorageLocationHistory,
 }: {
-  canOpenProductMovement: boolean
+  canOpenMovement: boolean
+  canOpenStorageHistory: boolean
   product: MovementHistoryProduct
   onOpenMovementHistory: (product: MovementHistoryProduct) => void
   onOpenStorageLocationHistory: (product: MovementHistoryProduct) => void
@@ -1885,14 +1981,16 @@ function ProductHistoryActionButtons({
 
   return (
     <Group gap={4} justify="flex-end" wrap="nowrap">
-      <TableRowAction
-        action="history"
-        disabled={!hasProductNetUid}
-        hint={hasProductNetUid ? undefined : missingProductLabel}
-        label={t('Історія місця зберігання')}
-        onClick={() => onOpenStorageLocationHistory(product)}
-      />
-      {canOpenProductMovement ? (
+      {canOpenStorageHistory ? (
+        <TableRowAction
+          action="history"
+          disabled={!hasProductNetUid}
+          hint={hasProductNetUid ? undefined : missingProductLabel}
+          label={t('Історія місця зберігання')}
+          onClick={() => onOpenStorageLocationHistory(product)}
+        />
+      ) : null}
+      {canOpenMovement ? (
         <TableRowAction
           action="transfer"
           disabled={!hasProductNetUid}

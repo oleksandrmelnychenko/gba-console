@@ -23,10 +23,13 @@ import { ChevronRight, CircleAlert, CreditCard, Hash, Image, Link, Pencil, Phone
 import { type CSSProperties, type FormEvent, type ReactNode, useCallback, useEffect, useMemo, useReducer, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useValueState } from '../../../shared/hooks/useValueState'
+import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { translate } from '../../../shared/i18n/translate'
 import type { TranslationKey } from '../../../shared/i18n/types'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
+import { PermissionGate } from '../../auth/components/PermissionGate'
+import { usePermissions } from '../../auth/usePermissions'
 import { usePageBreadcrumb } from '../../../shared/ui/page-header-actions/pageHeaderActionsContext'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
@@ -211,6 +214,18 @@ const SEO_GENERAL_MATRIX_SECTIONS: SeoGeneralMatrixSection[] = [
 
 function useOnlineShopSeoPageModel(activeTab: SeoTab, setActiveTab: (tab: SeoTab) => void) {
   const { t } = useI18n()
+  const { can } = usePermissions()
+  const canEditSeoPage = can(PermissionKeys.OnlineShopSeo.SeoPage.Edit)
+  const canEditGeneralInfo = can(PermissionKeys.OnlineShopSeo.GeneralInfo.Edit)
+  const canEditPaymentInfo = can(PermissionKeys.OnlineShopSeo.PaymentInfo.Edit)
+  const canCreateContact = can(PermissionKeys.OnlineShopSeo.Contact.Create)
+  const canEditContact = can(PermissionKeys.OnlineShopSeo.Contact.Edit)
+  const canDeleteContact = can(PermissionKeys.OnlineShopSeo.Contact.Delete)
+  const canToggleClient = can(PermissionKeys.OnlineShopSeo.Client.Toggle)
+  const canSelectPaymentRegister = can(PermissionKeys.OnlineShopSeo.PaymentRegister.Select)
+  const canAddStorage = can(PermissionKeys.OnlineShopSeo.Storage.Add)
+  const canRemoveStorage = can(PermissionKeys.OnlineShopSeo.Storage.Remove)
+  const canSetStoragePriority = can(PermissionKeys.OnlineShopSeo.Storage.SetPriority)
   const [settings, setSettings] = useValueState<SeoLocaleEntry[]>([])
   const [pageSearchDraft, setPageSearchDraft] = useValueState('')
   const [pageSearchValue, setPageSearchValue] = useValueState('')
@@ -297,35 +312,55 @@ function useOnlineShopSeoPageModel(activeTab: SeoTab, setActiveTab: (tab: SeoTab
     [ecommerceStorages, onlineShopClients],
   )
   const openPageEditor = useCallback((row: SeoPageRow) => {
+    if (!canEditSeoPage) {
+      return
+    }
+
     setSelectedPageRow(row)
     setPageFormValues(pageToFormValues(row.page))
     setFormError(null)
     setPageEditorOpen(true)
-  }, [setFormError, setPageEditorOpen, setPageFormValues])
+  }, [canEditSeoPage, setFormError, setPageEditorOpen, setPageFormValues])
 
   const openContactEditor = useCallback((contact?: SeoContact) => {
+    if (contact ? !canEditContact : !canCreateContact) {
+      return
+    }
+
     setEditingContact(contact || null)
     setContactFormValues(contactToFormValues(contact))
     setFormError(null)
     setContactEditorOpen(true)
-  }, [setContactEditorOpen, setContactFormValues, setEditingContact, setFormError])
+  }, [canCreateContact, canEditContact, setContactEditorOpen, setContactFormValues, setEditingContact, setFormError])
 
   const requestRemoveContact = useCallback((contact: SeoContact) => {
+    if (!canDeleteContact) {
+      return
+    }
+
     setRemoveContactTarget(contact)
     setContactEditorOpen(false)
     setFormError(null)
-  }, [setContactEditorOpen, setFormError, setRemoveContactTarget])
+  }, [canDeleteContact, setContactEditorOpen, setFormError, setRemoveContactTarget])
 
   const openPriorityEditor = useCallback((storage: OnlineShopStorage) => {
+    if (!canSetStoragePriority) {
+      return
+    }
+
     setPriorityStorageTarget(storage)
     setPriorityValue(String(storage.RetailPriority ?? ''))
     setFormError(null)
-  }, [setFormError, setPriorityStorageTarget, setPriorityValue])
+  }, [canSetStoragePriority, setFormError, setPriorityStorageTarget, setPriorityValue])
 
   const requestRemoveStorage = useCallback((storage: OnlineShopStorage) => {
+    if (!canRemoveStorage) {
+      return
+    }
+
     setRemoveStorageTarget(storage)
     setFormError(null)
-  }, [setFormError, setRemoveStorageTarget])
+  }, [canRemoveStorage, setFormError, setRemoveStorageTarget])
 
   const pageColumns = useMemo<SeoRosterColumn<SeoPageRow>[]>(
     () => [
@@ -393,12 +428,12 @@ function useOnlineShopSeoPageModel(activeTab: SeoTab, setActiveTab: (tab: SeoTab
         enableSorting: false,
         cell: (row) => (
           <SeoTableActionCell>
-            <TableRowAction action="edit" label={t('Редагувати')} onClick={() => openPageEditor(row)} />
+            {canEditSeoPage && <TableRowAction action="edit" label={t('Редагувати')} onClick={() => openPageEditor(row)} />}
           </SeoTableActionCell>
         ),
       },
     ],
-    [openPageEditor, t],
+    [canEditSeoPage, openPageEditor, t],
   )
 
   const contactColumns = useMemo<SeoRosterColumn<SeoContact>[]>(
@@ -452,22 +487,26 @@ function useOnlineShopSeoPageModel(activeTab: SeoTab, setActiveTab: (tab: SeoTab
         enableSorting: false,
         cell: (contact) => (
           <SeoTableActionCell>
-            <TableRowAction
-              action="edit"
-              label={t('Редагувати')}
-              onClick={() => openContactEditor(contact)}
-            />
-            <TableRowAction
-              action="delete"
-              disabled={!contact.NetUid}
-              label={t('Видалити')}
-              onClick={() => requestRemoveContact(contact)}
-            />
+            {canEditContact && (
+              <TableRowAction
+                action="edit"
+                label={t('Редагувати')}
+                onClick={() => openContactEditor(contact)}
+              />
+            )}
+            {canDeleteContact && (
+              <TableRowAction
+                action="delete"
+                disabled={!contact.NetUid}
+                label={t('Видалити')}
+                onClick={() => requestRemoveContact(contact)}
+              />
+            )}
           </SeoTableActionCell>
         ),
       },
     ],
-    [openContactEditor, requestRemoveContact, t],
+    [canDeleteContact, canEditContact, openContactEditor, requestRemoveContact, t],
   )
 
   const clientColumns: SeoRosterColumn<OnlineShopClient>[] = [
@@ -550,12 +589,14 @@ function useOnlineShopSeoPageModel(activeTab: SeoTab, setActiveTab: (tab: SeoTab
         enableSorting: false,
         cell: (client) => (
           <SeoTableActionCell>
-            <TableRowAction
-              action={client.IsForRetail ? 'cancel' : 'confirm'}
-              disabled={!client.NetUid || isSaving}
-              label={client.IsForRetail ? t('Вимкнути') : t('Увімкнути')}
-              onClick={() => void handleToggleOnlineShopClient(client)}
-            />
+            {canToggleClient && (
+              <TableRowAction
+                action={client.IsForRetail ? 'cancel' : 'confirm'}
+                disabled={!client.NetUid || isSaving}
+                label={client.IsForRetail ? t('Вимкнути') : t('Увімкнути')}
+                onClick={() => void handleToggleOnlineShopClient(client)}
+              />
+            )}
           </SeoTableActionCell>
         ),
       },
@@ -650,12 +691,14 @@ function useOnlineShopSeoPageModel(activeTab: SeoTab, setActiveTab: (tab: SeoTab
       rowActions: true,
       cell: (client) => (
         <SeoTableActionCell>
-          <TableRowAction
-            action={client.IsForRetail ? 'cancel' : 'confirm'}
-            disabled={!client.NetUid || isSaving}
-            label={client.IsForRetail ? t('Вимкнути') : t('Увімкнути')}
-            onClick={() => void handleToggleOnlineShopClient(client)}
-          />
+          {canToggleClient && (
+            <TableRowAction
+              action={client.IsForRetail ? 'cancel' : 'confirm'}
+              disabled={!client.NetUid || isSaving}
+              label={client.IsForRetail ? t('Вимкнути') : t('Увімкнути')}
+              onClick={() => void handleToggleOnlineShopClient(client)}
+            />
+          )}
         </SeoTableActionCell>
       ),
     },
@@ -735,13 +778,15 @@ function useOnlineShopSeoPageModel(activeTab: SeoTab, setActiveTab: (tab: SeoTab
         enableSorting: false,
         cell: (register) => (
           <SeoTableActionCell>
-            <TableRowAction
-              action="select"
-              disabled={!register.NetUid || isSaving}
-              label={t('Обрати')}
-              tone={register.IsSelected ? 'success' : 'neutral'}
-              onClick={() => void handleSelectPaymentRegister(register)}
-            />
+            {canSelectPaymentRegister && (
+              <TableRowAction
+                action="select"
+                disabled={!register.NetUid || isSaving}
+                label={t('Обрати')}
+                tone={register.IsSelected ? 'success' : 'neutral'}
+                onClick={() => void handleSelectPaymentRegister(register)}
+              />
+            )}
           </SeoTableActionCell>
         ),
       },
@@ -791,23 +836,27 @@ function useOnlineShopSeoPageModel(activeTab: SeoTab, setActiveTab: (tab: SeoTab
         rowActions: true,
         cell: (storage) => (
           <SeoTableActionCell>
-            <TableRowAction
-              action="edit"
-              disabled={!storage.Id || isSaving}
-              label={t('Змінити пріоритет')}
-              onClick={() => openPriorityEditor(storage)}
-            />
-            <TableRowAction
-              action="delete"
-              disabled={!storage.NetUid || isSaving}
-              label={t('Видалити зі списку')}
-              onClick={() => requestRemoveStorage(storage)}
-            />
+            {canSetStoragePriority && (
+              <TableRowAction
+                action="edit"
+                disabled={!storage.Id || isSaving}
+                label={t('Змінити пріоритет')}
+                onClick={() => openPriorityEditor(storage)}
+              />
+            )}
+            {canRemoveStorage && (
+              <TableRowAction
+                action="delete"
+                disabled={!storage.NetUid || isSaving}
+                label={t('Видалити зі списку')}
+                onClick={() => requestRemoveStorage(storage)}
+              />
+            )}
           </SeoTableActionCell>
         ),
       },
     ],
-    [isSaving, openPriorityEditor, requestRemoveStorage, t],
+    [canRemoveStorage, canSetStoragePriority, isSaving, openPriorityEditor, requestRemoveStorage, t],
   )
 
   const allStorageColumns: SeoRosterColumn<OnlineShopStorage>[] = [
@@ -861,14 +910,16 @@ function useOnlineShopSeoPageModel(activeTab: SeoTab, setActiveTab: (tab: SeoTab
 
           return (
             <SeoTableActionCell>
-              <TableRowAction
-                action="add"
-                disabled={active || !storage.NetUid || isSaving}
-                hint={active ? t('Вже додано') : undefined}
-                label={t('Додати')}
-                tone={active ? 'success' : 'brand'}
-                onClick={() => void handleAddStorage(storage)}
-              />
+              {canAddStorage && (
+                <TableRowAction
+                  action="add"
+                  disabled={active || !storage.NetUid || isSaving}
+                  hint={active ? t('Вже додано') : undefined}
+                  label={t('Додати')}
+                  tone={active ? 'success' : 'brand'}
+                  onClick={() => void handleAddStorage(storage)}
+                />
+              )}
             </SeoTableActionCell>
           )
         },
@@ -1121,7 +1172,7 @@ function useOnlineShopSeoPageModel(activeTab: SeoTab, setActiveTab: (tab: SeoTab
   async function handleSavePage(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
 
-    if (!selectedPageRow) {
+    if (!canEditSeoPage || !selectedPageRow) {
       return
     }
 
@@ -1154,9 +1205,13 @@ function useOnlineShopSeoPageModel(activeTab: SeoTab, setActiveTab: (tab: SeoTab
   }
 
   const openGeneralLocaleEditor = useCallback((entry: SeoLocaleEntry) => {
+    if (!canEditGeneralInfo && !canEditPaymentInfo) {
+      return
+    }
+
     setEditingGeneralLocale(entry.locale)
     setFormError(null)
-  }, [setEditingGeneralLocale, setFormError])
+  }, [canEditGeneralInfo, canEditPaymentInfo, setEditingGeneralLocale, setFormError])
 
   function closeGeneralLocaleEditor() {
     setEditingGeneralLocale(null)
@@ -1164,6 +1219,10 @@ function useOnlineShopSeoPageModel(activeTab: SeoTab, setActiveTab: (tab: SeoTab
   }
 
   async function handleSaveContactInfo(locale: string, contactInfo: SeoContactInfo | null, values: SeoContactInfoFormValues) {
+    if (!canEditGeneralInfo) {
+      return
+    }
+
     setSaving(true)
     setError(null)
     setFormError(null)
@@ -1185,7 +1244,7 @@ function useOnlineShopSeoPageModel(activeTab: SeoTab, setActiveTab: (tab: SeoTab
   }
 
   async function handleSavePayment(locale: string, payment: SeoRetailPaymentInfo | null, values: SeoPaymentFormValues) {
-    if (!hasPaymentRecord(payment)) {
+    if (!canEditPaymentInfo || !hasPaymentRecord(payment)) {
       return
     }
 
@@ -1211,6 +1270,10 @@ function useOnlineShopSeoPageModel(activeTab: SeoTab, setActiveTab: (tab: SeoTab
 
   async function handleSaveContact(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
+
+    if (editingContact ? !canEditContact : !canCreateContact) {
+      return
+    }
 
     const validationError = validateContact(contactFormValues)
 
@@ -1241,7 +1304,9 @@ function useOnlineShopSeoPageModel(activeTab: SeoTab, setActiveTab: (tab: SeoTab
   }
 
   async function handleContactImageChange(file: File | null) {
-    if (!file) {
+    const mode = editingContact ? 'edit' : 'create'
+
+    if (!file || (mode === 'edit' ? !canEditContact : !canCreateContact)) {
       return
     }
 
@@ -1249,7 +1314,7 @@ function useOnlineShopSeoPageModel(activeTab: SeoTab, setActiveTab: (tab: SeoTab
     setFormError(null)
 
     try {
-      const imageUrl = await uploadSeoContactImage(file)
+      const imageUrl = await uploadSeoContactImage(file, mode)
 
       if (!imageUrl) {
         throw new Error(t('Сервер не повернув посилання на фото'))
@@ -1265,7 +1330,7 @@ function useOnlineShopSeoPageModel(activeTab: SeoTab, setActiveTab: (tab: SeoTab
   }
 
   async function handleRemoveContact() {
-    if (!removeContactTarget?.NetUid) {
+    if (!canDeleteContact || !removeContactTarget?.NetUid) {
       return
     }
 
@@ -1286,7 +1351,7 @@ function useOnlineShopSeoPageModel(activeTab: SeoTab, setActiveTab: (tab: SeoTab
   }
 
   async function handleToggleOnlineShopClient(client: OnlineShopClient) {
-    if (!client.NetUid || isSaving) {
+    if (!canToggleClient || !client.NetUid || isSaving) {
       return
     }
 
@@ -1311,7 +1376,7 @@ function useOnlineShopSeoPageModel(activeTab: SeoTab, setActiveTab: (tab: SeoTab
   }
 
   async function handleSelectPaymentRegister(register: OnlineShopPaymentRegister) {
-    if (!register.NetUid || isSaving) {
+    if (!canSelectPaymentRegister || !register.NetUid || isSaving) {
       return
     }
 
@@ -1331,7 +1396,7 @@ function useOnlineShopSeoPageModel(activeTab: SeoTab, setActiveTab: (tab: SeoTab
   }
 
   async function handleAddStorage(storage: OnlineShopStorage) {
-    if (!storage.NetUid || isSaving || isStorageActive(storage, ecommerceStorages)) {
+    if (!canAddStorage || !storage.NetUid || isSaving || isStorageActive(storage, ecommerceStorages)) {
       return
     }
 
@@ -1352,7 +1417,7 @@ function useOnlineShopSeoPageModel(activeTab: SeoTab, setActiveTab: (tab: SeoTab
   }
 
   async function handleRemoveStorage() {
-    if (!removeStorageTarget?.NetUid || isSaving) {
+    if (!canRemoveStorage || !removeStorageTarget?.NetUid || isSaving) {
       return
     }
 
@@ -1376,7 +1441,7 @@ function useOnlineShopSeoPageModel(activeTab: SeoTab, setActiveTab: (tab: SeoTab
   async function handleSaveStoragePriority(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
 
-    if (!priorityStorageTarget?.Id || isSaving) {
+    if (!canSetStoragePriority || !priorityStorageTarget?.Id || isSaving) {
       return
     }
 
@@ -1410,6 +1475,9 @@ function useOnlineShopSeoPageModel(activeTab: SeoTab, setActiveTab: (tab: SeoTab
 
   return {
     t, activeStorages, activeTab, allStorageColumns, allStorageSearchDraft,
+    canAddStorage, canCreateContact, canDeleteContact, canEditContact, canEditGeneralInfo,
+    canEditPaymentInfo, canEditSeoPage, canRemoveStorage, canSelectPaymentRegister,
+    canSetStoragePriority, canToggleClient,
     availableStorages, cardSearchDraft, cards, clientColumns, clientSearchDraft, clients,
     contactColumns, contactFormValues, contactSearchDraft, contacts,
     ecommerceStorageColumns, ecommerceStorages, editingContact, editingGeneralLocale, error, formError, isCardsLoading,
@@ -1434,6 +1502,24 @@ function useOnlineShopSeoPageModel(activeTab: SeoTab, setActiveTab: (tab: SeoTab
 }
 
 export function OnlineShopSeoPage() {
+  return (
+    <PermissionGate permissionKey={PermissionKeys.OnlineShopSeo.Page.View} fallback={<OnlineShopSeoPermissionDenied />}>
+      <OnlineShopSeoPageContent />
+    </PermissionGate>
+  )
+}
+
+function OnlineShopSeoPermissionDenied() {
+  const { t } = useI18n()
+
+  return (
+    <Alert color="red" icon={<CircleAlert size={18} />} title={t('Доступ заборонено')} variant="light">
+      {t('У вашої ролі немає права переглядати адміністрування інтернет-магазину.')}
+    </Alert>
+  )
+}
+
+function OnlineShopSeoPageContent() {
   const { t } = useI18n()
   const navigate = useNavigate()
   const { tab } = useParams<{ tab?: string }>()
@@ -1463,6 +1549,9 @@ function renderOnlineShopSeoPage(model: ReturnType<typeof useOnlineShopSeoPageMo
   const {
     t, activeStorages, activeTab, allStorageColumns, allStorageSearchDraft,
     availableStorages, cardSearchDraft, cards, clientColumns, clientSearchDraft, clients,
+    canAddStorage, canCreateContact, canDeleteContact, canEditContact, canEditGeneralInfo,
+    canEditPaymentInfo, canEditSeoPage, canRemoveStorage, canSelectPaymentRegister,
+    canSetStoragePriority, canToggleClient,
     contactColumns, contactFormValues, contactSearchDraft, contacts,
     ecommerceStorageColumns, ecommerceStorages, editingContact, editingGeneralLocale, error, formError, isCardsLoading,
     isClientsLoading, isContactEditorOpen, isImageUploading, isLoading, isPageEditorOpen, isSaving,
@@ -1520,7 +1609,7 @@ function renderOnlineShopSeoPage(model: ReturnType<typeof useOnlineShopSeoPageMo
     }
   const showCommandBar = !SEO_VISIBLE_TABS.some(({ value }) => value === activeTab)
   const isPatternFilterTab = activeTab === 'pages' || activeTab === 'contacts' || activeTab === 'shop-data'
-  const createContactAction = (
+  const createContactAction = canCreateContact ? (
     <Button
       color={CREATE_ACTION_COLOR}
       leftSection={<Plus size={14} />}
@@ -1530,18 +1619,18 @@ function renderOnlineShopSeoPage(model: ReturnType<typeof useOnlineShopSeoPageMo
     >
       {t('Новий контакт')}
     </Button>
-  )
-  const addStorageAction = (
+  ) : null
+  const addStorageAction = canAddStorage ? (
     <Button
       color={CREATE_ACTION_COLOR}
       leftSection={<Plus size={14} />}
       size="sm"
       type="button"
-      onClick={() => setStorageDrawerOpen(true)}
+      onClick={() => canAddStorage && setStorageDrawerOpen(true)}
     >
       {t('Додати склад')}
     </Button>
-  )
+  ) : null
   const headerAction = activeTab === 'warehouses' ? addStorageAction : null
   const generalEntries = getOrderedSeoGeneralEntries(settings)
   const generalEditorEntry = editingGeneralLocale
@@ -1679,7 +1768,7 @@ function renderOnlineShopSeoPage(model: ReturnType<typeof useOnlineShopSeoPageMo
                   loadingText={t('Завантаження сторінок')}
                   fillHeight
                   minWidth={900}
-                  onRowClick={openPageEditor}
+                  onRowClick={canEditSeoPage ? openPageEditor : undefined}
                 />
               </Stack>
               </Box>
@@ -1699,7 +1788,7 @@ function renderOnlineShopSeoPage(model: ReturnType<typeof useOnlineShopSeoPageMo
                             <div className="seo-settings-tree-module-title">
                               <Text className="app-section-title seo-settings-tree-module-name" fw={600} size="sm">{entry.locale}</Text>
                             </div>
-                            <Tooltip label={t('Редагувати')}>
+                            {(canEditGeneralInfo || canEditPaymentInfo) && <Tooltip label={t('Редагувати')}>
                               <ActionIcon
                                 aria-label={`${t('Редагувати')} ${entry.locale}`}
                                 className="seo-settings-tree-action"
@@ -1712,7 +1801,7 @@ function renderOnlineShopSeoPage(model: ReturnType<typeof useOnlineShopSeoPageMo
                               >
                                 <Pencil size={14} />
                               </ActionIcon>
-                            </Tooltip>
+                            </Tooltip>}
                           </div>
 
                           <div className="seo-settings-tree-node-list">
@@ -1783,7 +1872,7 @@ function renderOnlineShopSeoPage(model: ReturnType<typeof useOnlineShopSeoPageMo
                   loadingText={t('Завантаження контактів')}
                   fillHeight
                   minWidth={862}
-                  onRowClick={openContactEditor}
+                  onRowClick={canEditContact ? openContactEditor : undefined}
                 />
               </Stack>
               </Box>
@@ -1817,11 +1906,11 @@ function renderOnlineShopSeoPage(model: ReturnType<typeof useOnlineShopSeoPageMo
                           layoutVersion="online-shop-seo-shop-data-clients-2"
                           maxHeight={320}
                           minWidth={780}
-                          rowClassName={() => 'is-hoverable'}
+                          rowClassName={() => (canToggleClient ? 'is-hoverable' : '')}
                           showLayoutControls
                           tableId="online-shop-seo-shop-data-clients"
                           toolbarPortalTarget={toolbarPortalTarget}
-                          onRowClick={(client) => void handleToggleOnlineShopClient(client)}
+                          onRowClick={canToggleClient ? (client) => void handleToggleOnlineShopClient(client) : undefined}
                         />
                       )}
                     </SeoShopDataSection>
@@ -1866,7 +1955,7 @@ function renderOnlineShopSeoPage(model: ReturnType<typeof useOnlineShopSeoPageMo
                       isLoading={isCardsLoading}
                       isSaving={isSaving}
                       loadingText={t('Завантаження карток')}
-                      onSelectCard={handleSelectPaymentRegister}
+                      onSelectCard={canSelectPaymentRegister ? handleSelectPaymentRegister : undefined}
                     />
                   </SeoShopDataSection>
                 </div>
@@ -1886,7 +1975,7 @@ function renderOnlineShopSeoPage(model: ReturnType<typeof useOnlineShopSeoPageMo
                   loadingText={t('Завантаження клієнтів')}
                   maxHeight="calc(100vh - 340px)"
                   minWidth={1048}
-                  onRowClick={(client) => void handleToggleOnlineShopClient(client)}
+                  onRowClick={canToggleClient ? (client) => void handleToggleOnlineShopClient(client) : undefined}
                 />
               </Stack>
               </Box>
@@ -1905,7 +1994,7 @@ function renderOnlineShopSeoPage(model: ReturnType<typeof useOnlineShopSeoPageMo
                   loadingText={t('Завантаження карток')}
                   maxHeight="calc(100vh - 340px)"
                   minWidth={1236}
-                  onRowClick={(register) => void handleSelectPaymentRegister(register)}
+                  onRowClick={canSelectPaymentRegister ? (register) => void handleSelectPaymentRegister(register) : undefined}
                 />
               </Stack>
               </Box>
@@ -1935,7 +2024,7 @@ function renderOnlineShopSeoPage(model: ReturnType<typeof useOnlineShopSeoPageMo
       </Box>
 
       <AppDrawer
-        opened={Boolean(generalEditorEntry)}
+        opened={Boolean(generalEditorEntry && (canEditGeneralInfo || canEditPaymentInfo))}
         size="standard"
         title={
           <span style={{ fontFamily: 'var(--font-mono)' }}>
@@ -1963,7 +2052,7 @@ function renderOnlineShopSeoPage(model: ReturnType<typeof useOnlineShopSeoPageMo
               </div>
             </div>
 
-            <section className="seo-general-sheet-section">
+            {canEditGeneralInfo && <section className="seo-general-sheet-section">
               <div className="seo-general-sheet-section-header">
                 <span>
                   <Text className="app-section-title" fw={600} size="sm">{t('Загальна інформація')}</Text>
@@ -1979,9 +2068,9 @@ function renderOnlineShopSeoPage(model: ReturnType<typeof useOnlineShopSeoPageMo
                 locale={generalEditorEntry.locale}
                 onSave={handleSaveContactInfo}
               />
-            </section>
+            </section>}
 
-            <section className="seo-general-sheet-section">
+            {canEditPaymentInfo && <section className="seo-general-sheet-section">
               <div className="seo-general-sheet-section-header">
                 <span>
                   <Text className="app-section-title" fw={600} size="sm">{t('Оплата')}</Text>
@@ -1997,12 +2086,12 @@ function renderOnlineShopSeoPage(model: ReturnType<typeof useOnlineShopSeoPageMo
                 payment={generalEditorEntry.settings.RetailPaymentTypeTranslate || null}
                 onSave={handleSavePayment}
               />
-            </section>
+            </section>}
           </Stack>
         )}
       </AppDrawer>
 
-      <AppModal centered opened={isPageEditorOpen} size="xl" title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Редагування SEO сторінки')}</span>} onClose={closePageEditor}>
+      <AppModal centered opened={isPageEditorOpen && canEditSeoPage} size="xl" title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Редагування SEO сторінки')}</span>} onClose={closePageEditor}>
         <form onSubmit={handleSavePage}>
           <Stack gap="md">
             {formError && (
@@ -2062,7 +2151,7 @@ function renderOnlineShopSeoPage(model: ReturnType<typeof useOnlineShopSeoPageMo
 
       <AppModal
         centered
-        opened={isContactEditorOpen}
+        opened={isContactEditorOpen && (editingContact ? canEditContact : canCreateContact)}
         title={editingContact ? t('Редагування контакту') : t('Новий контакт')}
         onClose={closeContactEditor}
       >
@@ -2142,7 +2231,7 @@ function renderOnlineShopSeoPage(model: ReturnType<typeof useOnlineShopSeoPageMo
 
       <AppModal
         centered
-        opened={Boolean(removeContactTarget)}
+        opened={Boolean(removeContactTarget && canDeleteContact)}
         title={t('Видалити контакт')}
         onClose={() => setRemoveContactTarget(null)}
       >
@@ -2161,7 +2250,7 @@ function renderOnlineShopSeoPage(model: ReturnType<typeof useOnlineShopSeoPageMo
         </Stack>
       </AppModal>
 
-      <AppModal centered opened={Boolean(priorityStorageTarget)} title={t('Пріоритет складу')} onClose={closePriorityEditor}>
+      <AppModal centered opened={Boolean(priorityStorageTarget && canSetStoragePriority)} title={t('Пріоритет складу')} onClose={closePriorityEditor}>
         <form onSubmit={handleSaveStoragePriority}>
           <Stack gap="md">
             {formError && (
@@ -2195,7 +2284,7 @@ function renderOnlineShopSeoPage(model: ReturnType<typeof useOnlineShopSeoPageMo
 
       <AppModal
         centered
-        opened={Boolean(removeStorageTarget)}
+        opened={Boolean(removeStorageTarget && canRemoveStorage)}
         title={t('Видалити склад зі списку')}
         onClose={() => setRemoveStorageTarget(null)}
       >
@@ -2215,7 +2304,7 @@ function renderOnlineShopSeoPage(model: ReturnType<typeof useOnlineShopSeoPageMo
       </AppModal>
 
       <AppDrawer
-        opened={isStorageDrawerOpen}
+        opened={isStorageDrawerOpen && canAddStorage}
         padding="md"
         position="right"
         size="xl"
@@ -2239,7 +2328,7 @@ function renderOnlineShopSeoPage(model: ReturnType<typeof useOnlineShopSeoPageMo
             isLoading={isStoragesLoading}
             loadingText={t('Завантаження складів')}
             minWidth={642}
-            onRowClick={(storage) => void handleAddStorage(storage)}
+            onRowClick={canAddStorage ? (storage) => void handleAddStorage(storage) : undefined}
           />
         </Stack>
       </AppDrawer>
@@ -2303,7 +2392,7 @@ function SeoShopCardList({
   isSaving: boolean
   loadingText: ReactNode
   maxHeight?: string
-  onSelectCard: (register: OnlineShopPaymentRegister) => Promise<void>
+  onSelectCard?: (register: OnlineShopPaymentRegister) => Promise<void>
 }) {
   return (
     <div className="seo-shop-data-list">
@@ -2322,16 +2411,16 @@ function SeoShopCardList({
                 <div
                   className={`seo-shop-data-list-item is-bank-card is-${cardBrand}${isSelected ? ' is-active' : ''}`}
                   key={registerKey}
-                  role="button"
-                  tabIndex={0}
-                  onClick={(event) => {
+                  role={onSelectCard ? 'button' : undefined}
+                  tabIndex={onSelectCard ? 0 : undefined}
+                  onClick={onSelectCard ? (event) => {
                     if (isSeoActionCellEventTarget(event.target)) {
                       return
                     }
 
                     void onSelectCard(register)
-                  }}
-                  onKeyDown={(event) => {
+                  } : undefined}
+                  onKeyDown={onSelectCard ? (event) => {
                     if (isSeoActionCellEventTarget(event.target)) {
                       return
                     }
@@ -2340,7 +2429,7 @@ function SeoShopCardList({
                       event.preventDefault()
                       void onSelectCard(register)
                     }
-                  }}
+                  } : undefined}
                 >
                   <div className="seo-shop-bank-card-surface">
                     <div className="seo-shop-bank-card-top">

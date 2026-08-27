@@ -25,9 +25,11 @@ type DiscountEditMode = 'comment' | 'percentage' | 'readonly'
 // not re-render every other expanded instance. onOpenItemDiscount is ref-routed
 // in the pages, so props stay identity-stable.
 export const SaleExpandContent = memo(function SaleExpandContent({
+  canEditDiscount = true,
   sale,
   onOpenItemDiscount,
 }: {
+  canEditDiscount?: boolean
   sale: SalesUkraineSale
   onOpenItemDiscount: (sale: SalesUkraineSale, orderItem: SalesUkraineOrderItem) => void
 }) {
@@ -85,6 +87,7 @@ export const SaleExpandContent = memo(function SaleExpandContent({
             localCurrencyCode={localCurrencyCode}
             showSecondAmount={showSecondAmount}
             orderItem={orderItem}
+            allowDiscountEdit={canEditDiscount}
             onOpenItemDiscount={() => onOpenItemDiscount(sale, orderItem)}
             onOpenProductCard={setProductCardNetId}
           />
@@ -96,6 +99,7 @@ export const SaleExpandContent = memo(function SaleExpandContent({
 })
 
 function SaleExpandContentItem({
+  allowDiscountEdit,
   discountEditMode,
   hasUniformDiscount,
   isVatSale,
@@ -105,6 +109,7 @@ function SaleExpandContentItem({
   orderItem,
   onOpenItemDiscount,
 }: {
+  allowDiscountEdit: boolean
   discountEditMode: DiscountEditMode
   hasUniformDiscount: boolean
   isVatSale: boolean
@@ -115,8 +120,8 @@ function SaleExpandContentItem({
   onOpenItemDiscount: () => void
 }) {
   const { t } = useI18n()
-  const canEditDiscountPercentage = discountEditMode === 'percentage'
-  const canEditDiscountCommentOnly = discountEditMode === 'comment'
+  const canEditDiscountPercentage = allowDiscountEdit && discountEditMode === 'percentage'
+  const canEditDiscountCommentOnly = allowDiscountEdit && discountEditMode === 'comment'
   const oneTimeDiscount = getNumber(orderItem.OneTimeDiscount)
   const hasOneTimeDiscount = typeof oneTimeDiscount === 'number' && oneTimeDiscount !== 0
   const baseDiscount = getVisibleOrderItemBaseDiscount(orderItem)

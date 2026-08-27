@@ -15,7 +15,10 @@ import { type FormEvent, useEffect } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { createUser, getUserRoles } from '../api/usersApi'
+import { PermissionKeys } from '../../../shared/auth/permissionKeys'
+import { PermissionGate } from '../../auth/components/PermissionGate'
+import { useAuth } from '../../auth/useAuth'
+import { createUser, getUserRolesForCreate } from '../api/usersApi'
 import { UserForm } from '../components/UserForm'
 import type { UserProfile, UserRole } from '../types'
 import {
@@ -33,6 +36,33 @@ const USER_NEW_MONO_STYLE = { fontFamily: 'var(--font-mono)', letterSpacing: 0 }
 
 export function UserNewPage() {
   const { t } = useI18n()
+
+  return (
+    <PermissionGate
+      permissionKey={PermissionKeys.SystemPages.Users.View}
+      fallback={
+        <Alert color="red" icon={<CircleAlert size={18} />} title={t('Доступ заборонено')} variant="light">
+          {t('Недостатньо прав для перегляду користувачів')}
+        </Alert>
+      }
+    >
+      <PermissionGate
+        permissionKey={PermissionKeys.Users.User.Create}
+        fallback={
+          <Alert color="red" icon={<CircleAlert size={18} />} title={t('Доступ заборонено')} variant="light">
+            {t('Недостатньо прав для створення користувача')}
+          </Alert>
+        }
+      >
+        <UserNewPageContent />
+      </PermissionGate>
+    </PermissionGate>
+  )
+}
+
+function UserNewPageContent() {
+  const { t } = useI18n()
+  const { hasPermission } = useAuth()
   const location = useLocation()
   const navigate = useNavigate()
   const routeState = location.state as UserNewRouteState | null
@@ -53,7 +83,7 @@ export function UserNewPage() {
       setError(null)
 
       try {
-        const nextRoles = await getUserRoles()
+        const nextRoles = await getUserRolesForCreate()
 
         if (!cancelled) {
           setRoles(nextRoles)
@@ -103,6 +133,11 @@ export function UserNewPage() {
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
+
+    if (!hasPermission(PermissionKeys.Users.User.Create)) {
+      setError(t('Недостатньо прав для створення користувача'))
+      return
+    }
 
     const payload = normalizeUserForSave(user)
     const validationError = validateUserProfile(payload, {

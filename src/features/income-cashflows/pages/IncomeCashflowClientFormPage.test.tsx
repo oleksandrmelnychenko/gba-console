@@ -11,7 +11,7 @@ import {
   getIncomeCashflowPaymentMovements,
   getIncomeCashflowSpecificExchangeRate,
   searchIncomeCashflowClientPayers,
-  searchIncomeCashflowCounterparties,
+  searchIncomeCashflowCounterpartiesForOperation,
   searchIncomeCashflowPaymentMovements,
   searchIncomeCashflowPaymentRegisters,
 } from '../api/incomeCashflowsApi'
@@ -40,9 +40,13 @@ vi.mock('../api/incomeCashflowsApi', async (importOriginal) => ({
   getIncomeCashflowPaymentMovements: vi.fn(),
   getIncomeCashflowSpecificExchangeRate: vi.fn(),
   searchIncomeCashflowClientPayers: vi.fn(),
-  searchIncomeCashflowCounterparties: vi.fn(),
+  searchIncomeCashflowCounterpartiesForOperation: vi.fn(),
   searchIncomeCashflowPaymentMovements: vi.fn(),
   searchIncomeCashflowPaymentRegisters: vi.fn(),
+}))
+
+vi.mock('../../auth/useAuth', () => ({
+  useAuth: () => ({ hasPermission: () => true }),
 }))
 
 vi.mock('../../../shared/ui/SearchableSelect', () => ({
@@ -220,7 +224,7 @@ describe('IncomeCashflowClientFormPage payment dependencies', () => {
     vi.mocked(searchIncomeCashflowPaymentRegisters).mockResolvedValue(registers)
     vi.mocked(getIncomeCashflowPaymentMovements).mockResolvedValue([movement])
     vi.mocked(searchIncomeCashflowPaymentMovements).mockResolvedValue([movement])
-    vi.mocked(searchIncomeCashflowCounterparties).mockResolvedValue([client])
+    vi.mocked(searchIncomeCashflowCounterpartiesForOperation).mockResolvedValue([client])
     vi.mocked(searchIncomeCashflowClientPayers).mockResolvedValue([])
     vi.mocked(getIncomeCashflowClientAgreements).mockResolvedValue(agreements)
     vi.mocked(getIncomeCashflowClientDebtTotal).mockResolvedValue(null)
@@ -280,8 +284,9 @@ describe('IncomeCashflowClientFormPage payment dependencies', () => {
     fireEvent.change(counterpartyInput, { target: { value: 'двома' } })
 
     await waitFor(() =>
-      expect(searchIncomeCashflowCounterparties).toHaveBeenCalledWith(
+      expect(searchIncomeCashflowCounterpartiesForOperation).toHaveBeenCalledWith(
         'двома',
+        0,
         0,
         expect.any(AbortSignal),
       ),

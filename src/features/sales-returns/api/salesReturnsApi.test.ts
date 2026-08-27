@@ -5,7 +5,9 @@ import {
   createDirectSaleReturn,
   createSaleReturn,
   getSalesForReturn,
+  getStoragesByOrganization,
   getReturnStorages,
+  getReturnProductByNetId,
   searchReturnProducts,
   searchSalesReturnClients,
 } from './salesReturnsApi'
@@ -84,7 +86,7 @@ describe('sales returns API', () => {
     apiRequestMock.mockResolvedValueOnce([root])
 
     await expect(searchSalesReturnClients(' CE02501 ')).resolves.toEqual([root, child])
-    expect(apiRequestMock).toHaveBeenCalledWith('/clients/all/filtered', {
+    expect(apiRequestMock).toHaveBeenCalledWith('/clients/sales-returns/search', {
       query: {
         filterSql: 'RegionCode.Value/Client.FullName/Client.USREOU',
         limit: 20,
@@ -92,6 +94,29 @@ describe('sales returns API', () => {
         value: 'CE02501',
       },
     })
+  })
+
+  it('uses sale-return-create scoped product and storage lookups', async () => {
+    apiRequestMock.mockResolvedValue({ Items: [] })
+
+    await getStoragesByOrganization('organization-1', true)
+    await getReturnProductByNetId('product-1')
+
+    expect(apiRequestMock.mock.calls).toEqual([
+      [
+        '/storages/sales-returns/create/filtered',
+        {
+          query: {
+            organizationNetId: 'organization-1',
+            skipDefective: true,
+          },
+        },
+      ],
+      [
+        '/products/sales-returns/create/details',
+        { query: { netId: 'product-1' } },
+      ],
+    ])
   })
 
   it('bounds the detailed sales search used by the return drawer', async () => {

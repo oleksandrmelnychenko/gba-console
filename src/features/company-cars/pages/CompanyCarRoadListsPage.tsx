@@ -25,13 +25,19 @@ import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/Page
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { TableRowAction } from '../../../shared/ui/table-row-action'
 import { useAuth } from '../../auth/useAuth'
+import { PermissionGate } from '../../auth/components/PermissionGate'
 import {
   deleteCompanyCarRoadList,
-  getCompanyCar,
+  getCompanyCarForRoadLists,
   getCompanyCarRoadLists,
 } from '../api/companyCarsApi'
 import { CompanyCarRoadListFormModal } from '../components/CompanyCarRoadListFormModal'
-import { COMPANY_CAR_ROAD_LIST_MANAGE_PERMISSION } from '../permissions'
+import {
+  COMPANY_CAR_ROAD_LIST_CREATE_PERMISSION,
+  COMPANY_CAR_ROAD_LIST_DELETE_PERMISSION,
+  COMPANY_CAR_ROAD_LIST_EDIT_PERMISSION,
+  COMPANY_CAR_ROAD_LIST_OPEN_PERMISSION,
+} from '../permissions'
 import type { CompanyCar, CompanyCarRoadList } from '../types'
 import './company-car-road-lists-page.css'
 
@@ -77,6 +83,24 @@ const initialRoadListsState: CompanyCarRoadListsState = {
 }
 
 export function CompanyCarRoadListsPage() {
+  return (
+    <PermissionGate permissionKey={COMPANY_CAR_ROAD_LIST_OPEN_PERMISSION} fallback={<CompanyCarRoadListsPermissionDenied />}>
+      <CompanyCarRoadListsPageContent />
+    </PermissionGate>
+  )
+}
+
+function CompanyCarRoadListsPermissionDenied() {
+  const { t } = useI18n()
+
+  return (
+    <Alert color="red" icon={<CircleAlert size={18} />} title={t('Доступ заборонено')} variant="light">
+      {t('У вашої ролі немає права переглядати шляхові листи автомобіля компанії.')}
+    </Alert>
+  )
+}
+
+function CompanyCarRoadListsPageContent() {
   const { t } = useI18n()
   const { hasPermission } = useAuth()
   const navigate = useNavigate()
@@ -95,9 +119,33 @@ export function CompanyCarRoadListsPage() {
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
   const { density, toggleDensity } = useDataTableDensity('company-car-road-lists', TABLE_DEFAULT_LAYOUT.density)
   const filterError = getDateRangeError(fromDate, toDate)
-  const canManageRoadLists = hasPermission(COMPANY_CAR_ROAD_LIST_MANAGE_PERMISSION)
+  const canCreateRoadList = hasPermission(COMPANY_CAR_ROAD_LIST_CREATE_PERMISSION)
+  const canEditRoadList = hasPermission(COMPANY_CAR_ROAD_LIST_EDIT_PERMISSION)
+  const canDeleteRoadList = hasPermission(COMPANY_CAR_ROAD_LIST_DELETE_PERMISSION)
 
-  const columns = useRoadListColumns({ canManage: canManageRoadLists, onDelete: setDeleteTarget, onEdit: setEditTarget })
+  const openEditForm = useCallback(
+    (roadList: CompanyCarRoadList) => {
+      if (hasPermission(COMPANY_CAR_ROAD_LIST_EDIT_PERMISSION)) {
+        setEditTarget(roadList)
+      }
+    },
+    [hasPermission, setEditTarget],
+  )
+  const openDeleteForm = useCallback(
+    (roadList: CompanyCarRoadList) => {
+      if (hasPermission(COMPANY_CAR_ROAD_LIST_DELETE_PERMISSION)) {
+        setDeleteTarget(roadList)
+      }
+    },
+    [hasPermission, setDeleteTarget],
+  )
+
+  const columns = useRoadListColumns({
+    canDelete: canDeleteRoadList,
+    canEdit: canEditRoadList,
+    onDelete: openDeleteForm,
+    onEdit: openEditForm,
+  })
 
   useEffect(() => {
     if (!id) {
@@ -114,7 +162,7 @@ export function CompanyCarRoadListsPage() {
     dispatchLoadState({ type: 'start-loading' })
 
     void Promise.all([
-      getCompanyCar(id),
+      getCompanyCarForRoadLists(id),
       getCompanyCarRoadLists({
         companyCarNetId: id,
         from: formatDateInputForQuery(fromDate),
@@ -151,7 +199,7 @@ export function CompanyCarRoadListsPage() {
   )
 
   function openCreateForm() {
-    if (!canManageRoadLists) {
+    if (!hasPermission(COMPANY_CAR_ROAD_LIST_CREATE_PERMISSION)) {
       dispatchLoadState({ error: t('Немає прав для зміни шляхових листів'), type: 'set-error' })
       return
     }
@@ -166,7 +214,7 @@ export function CompanyCarRoadListsPage() {
   }
 
   async function handleDelete() {
-    if (!canManageRoadLists) {
+    if (!hasPermission(COMPANY_CAR_ROAD_LIST_DELETE_PERMISSION)) {
       dispatchLoadState({ error: t('Немає прав для видалення шляхового листа'), type: 'set-error' })
       return
     }
@@ -244,16 +292,18 @@ export function CompanyCarRoadListsPage() {
                 </ActionIcon>
               </Tooltip>
             </div>
-            <Button
-              color={CREATE_ACTION_COLOR}
-              disabled={!canManageRoadLists || !companyCar?.NetUid}
-              leftSection={<Plus size={16} />}
-              size="sm"
-              styles={{ label: { fontFamily: 'var(--font-mono)', letterSpacing: 0 } }}
-              onClick={openCreateForm}
-            >
-              {t('Створення шляхового листа')}
-            </Button>
+            {canCreateRoadList && (
+              <Button
+                color={CREATE_ACTION_COLOR}
+                disabled={!companyCar?.NetUid}
+                leftSection={<Plus size={16} />}
+                size="sm"
+                styles={{ label: { fontFamily: 'var(--font-mono)', letterSpacing: 0 } }}
+                onClick={openCreateForm}
+              >
+                {t('Створення шляхового листа')}
+              </Button>
+            )}
           </Group>
         </div>
 
@@ -291,7 +341,7 @@ export function CompanyCarRoadListsPage() {
           companyCar={companyCar}
           opened={isFormOpen || Boolean(editTarget)}
           roadList={editTarget}
-          canSave={canManageRoadLists}
+          canSave={editTarget ? canEditRoadList : canCreateRoadList}
           onClose={closeForm}
           onSaved={handleSaved}
         />
@@ -385,11 +435,13 @@ function roadListsReducer(
 }
 
 function useRoadListColumns({
-  canManage,
+  canDelete,
+  canEdit,
   onDelete,
   onEdit,
 }: {
-  canManage: boolean
+  canDelete: boolean
+  canEdit: boolean
   onDelete: (roadList: CompanyCarRoadList) => void
   onEdit: (roadList: CompanyCarRoadList) => void
 }): DataTableColumn<CompanyCarRoadList>[] {
@@ -486,29 +538,33 @@ function useRoadListColumns({
         enableReorder: false,
         cell: (roadList) => (
           <Group gap={4} justify="flex-end" wrap="nowrap">
-            <TableRowAction
-              action="edit"
-              disabled={!canManage || (!roadList.NetUid && !roadList.Id)}
-              label={t('Редагувати')}
-              onClick={(event) => {
-                event.stopPropagation()
-                onEdit(roadList)
-              }}
-            />
-            <TableRowAction
-              action="delete"
-              disabled={!canManage || !roadList.NetUid}
-              label={t('Видалити')}
-              onClick={(event) => {
-                event.stopPropagation()
-                onDelete(roadList)
-              }}
-            />
+            {canEdit && (
+              <TableRowAction
+                action="edit"
+                disabled={!roadList.NetUid && !roadList.Id}
+                label={t('Редагувати')}
+                onClick={(event) => {
+                  event.stopPropagation()
+                  onEdit(roadList)
+                }}
+              />
+            )}
+            {canDelete && (
+              <TableRowAction
+                action="delete"
+                disabled={!roadList.NetUid}
+                label={t('Видалити')}
+                onClick={(event) => {
+                  event.stopPropagation()
+                  onDelete(roadList)
+                }}
+              />
+            )}
           </Group>
         ),
       },
     ],
-    [canManage, onDelete, onEdit, t],
+    [canDelete, canEdit, onDelete, onEdit, t],
   )
 }
 

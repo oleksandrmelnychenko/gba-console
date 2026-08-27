@@ -1,9 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { apiRequest } from '../../../shared/api/apiClient'
+import { INCOME_PAYMENT_OPERATION_CODE } from '../../accounting/accountingOperationCatalog'
 import { IncomeCounterpartySearchType } from '../types'
 import {
   cancelIncomeCashflow,
   createIncomeCashflow,
+  createIncomeCashflowPaymentMovementForAccounting,
+  createOnlineShopIncomeCashflow,
   getIncomeCashflowClientAgreements,
   getIncomeCashflowOrganizations,
   getIncomeCashflowPaymentMovements,
@@ -11,7 +14,10 @@ import {
   getIncomeCashflowSpecificExchangeRate,
   getIncomeCashflowSupplyOrganizationAgreements,
   getIncomeCashflowByNetId,
-  searchIncomeCashflowCounterparties,
+  getIncomeCashflowForAccountingCashFlow,
+  searchIncomeCashflowCounterpartiesForOperation,
+  searchOtherIncomeCashflowCounterparties,
+  searchOutgoingCashflowCounterparties,
   searchIncomeCashflowPaymentMovements,
   searchIncomeCashflowPaymentRegisters,
   searchIncomeCashflowPaymentPurposes,
@@ -36,12 +42,12 @@ describe('income cashflow API lookup contracts', () => {
       RegionCode: { Value: 'CE02501' },
     }])
 
-    await expect(searchIncomeCashflowCounterparties(' CE02501 ', IncomeCounterpartySearchType.Client)).resolves.toEqual([{
+    await expect(searchOtherIncomeCashflowCounterparties(' CE02501 ', IncomeCounterpartySearchType.Client)).resolves.toEqual([{
       NetUid: 'client-1',
       RegionCode: { Value: 'CE02501' },
     }])
 
-    expect(apiRequestMock).toHaveBeenCalledWith('/clients/all/filtered', {
+    expect(apiRequestMock).toHaveBeenCalledWith('/clients/income-cashflows/other-income/search', {
       query: {
         filterSql: 'RegionCode.Value/Client.FullName',
         limit: 20,
@@ -58,7 +64,7 @@ describe('income cashflow API lookup contracts', () => {
       NetUid: 'client-1',
     }])
 
-    await expect(searchIncomeCashflowCounterparties(
+    await expect(searchOtherIncomeCashflowCounterparties(
       ' аф-транс ',
       IncomeCounterpartySearchType.Client,
     )).resolves.toEqual([{
@@ -66,7 +72,7 @@ describe('income cashflow API lookup contracts', () => {
       NetUid: 'client-1',
     }])
 
-    expect(apiRequestMock).toHaveBeenCalledWith('/clients/all/filtered', {
+    expect(apiRequestMock).toHaveBeenCalledWith('/clients/income-cashflows/other-income/search', {
       query: {
         filterSql: 'RegionCode.Value/Client.FullName',
         limit: 20,
@@ -96,7 +102,7 @@ describe('income cashflow API lookup contracts', () => {
     apiRequestMock.mockResolvedValueOnce([root])
 
     await expect(
-      searchIncomeCashflowCounterparties(
+      searchOtherIncomeCashflowCounterparties(
         ' МАМИЧ ДІАНА ',
         IncomeCounterpartySearchType.Client,
       ),
@@ -106,9 +112,9 @@ describe('income cashflow API lookup contracts', () => {
   it('searches manufacturer counterparties through the targeted suppliers endpoint', async () => {
     apiRequestMock.mockResolvedValueOnce([{ NetUid: 'manufacturer-1' }])
 
-    await expect(searchIncomeCashflowCounterparties(' sem ', IncomeCounterpartySearchType.Manufacturer)).resolves.toEqual([{ NetUid: 'manufacturer-1' }])
+    await expect(searchOtherIncomeCashflowCounterparties(' sem ', IncomeCounterpartySearchType.Manufacturer)).resolves.toEqual([{ NetUid: 'manufacturer-1' }])
 
-    expect(apiRequestMock).toHaveBeenCalledWith('/clients/suppliers/all/filtered', {
+    expect(apiRequestMock).toHaveBeenCalledWith('/clients/income-cashflows/other-income/suppliers/search', {
       query: {
         filterSql: 'RegionCode.Value/Client.FullName',
         limit: 20,
@@ -122,9 +128,9 @@ describe('income cashflow API lookup contracts', () => {
   it('searches supply organization counterparties through the supply organizations endpoint', async () => {
     apiRequestMock.mockResolvedValueOnce({ Items: [{ NetUid: 'supplier-1' }] })
 
-    await expect(searchIncomeCashflowCounterparties(' dhl ', IncomeCounterpartySearchType.Supplier)).resolves.toEqual([{ NetUid: 'supplier-1' }])
+    await expect(searchOtherIncomeCashflowCounterparties(' dhl ', IncomeCounterpartySearchType.Supplier)).resolves.toEqual([{ NetUid: 'supplier-1' }])
 
-    expect(apiRequestMock).toHaveBeenCalledWith('/supplies/organizations/all/search', {
+    expect(apiRequestMock).toHaveBeenCalledWith('/supplies/organizations/income-cashflows/other-income/search', {
       query: {
         limit: 20,
         offset: 0,
@@ -179,11 +185,11 @@ describe('income cashflow API lookup contracts', () => {
     )
     expect(apiRequestMock).toHaveBeenNthCalledWith(
       3,
-      '/payments/movements/all',
+      '/payments/movements/accounting/all',
     )
     expect(apiRequestMock).toHaveBeenNthCalledWith(
       4,
-      '/payments/movements/all/search',
+      '/payments/movements/accounting/all/search',
       {
         query: {
           value: 'постачальнику',
@@ -295,7 +301,13 @@ describe('income cashflow API lookup contracts', () => {
       Number: 'ПКО-1',
     })
 
-    expect(apiRequestMock).toHaveBeenCalledWith('/payments/orders/income/get', {
+    apiRequestMock.mockResolvedValueOnce({ NetUid: 'income-order-1' })
+    await getIncomeCashflowForAccountingCashFlow('income-order-1')
+    expect(apiRequestMock).toHaveBeenLastCalledWith('/payments/orders/income/accounting-cash-flow/get', {
+      query: { netId: 'income-order-1' },
+    })
+
+    expect(apiRequestMock).toHaveBeenCalledWith('/payments/orders/income/accounting/details', {
       query: {
         netId: 'income-order-1',
       },
@@ -327,12 +339,19 @@ describe('income cashflow API lookup contracts', () => {
     })
   })
 
-  it('sends one explicit idempotency key for a general income create', async () => {
+  it.each([
+    [INCOME_PAYMENT_OPERATION_CODE.ClientPayment, 'client-payment'],
+    [INCOME_PAYMENT_OPERATION_CODE.SupplierReturn, 'supplier-return'],
+    [INCOME_PAYMENT_OPERATION_CODE.OtherAccountingWithCounterparts, 'counterparty-income'],
+    [INCOME_PAYMENT_OPERATION_CODE.OtherIncome, 'other-income'],
+    [INCOME_PAYMENT_OPERATION_CODE.ReturnFromColleague, 'colleague-return'],
+  ])('uses the exact scoped create route for operation %s', async (operationType, route) => {
     const operationId = '11111111-1111-4111-8111-111111111111'
     const order = {
       Amount: 250,
       AssignedPaymentOrders: [],
       Comment: 'Оплата',
+      OperationType: operationType,
     }
     apiRequestMock.mockResolvedValueOnce({
       ...order,
@@ -341,7 +360,7 @@ describe('income cashflow API lookup contracts', () => {
 
     await createIncomeCashflow(order, true, { operationId })
 
-    expect(apiRequestMock).toHaveBeenCalledWith('/payments/orders/income/new', {
+    expect(apiRequestMock).toHaveBeenCalledWith(`/payments/orders/income/accounting/create/${route}`, {
       body: order,
       dedupe: false,
       headers: { 'Idempotency-Key': operationId },
@@ -350,6 +369,86 @@ describe('income cashflow API lookup contracts', () => {
         auto: true,
       },
     })
+  })
+
+  it('uses outgoing-create permission facades for every counterparty kind', async () => {
+    apiRequestMock.mockResolvedValue([])
+
+    await searchOutgoingCashflowCounterparties(' client ', IncomeCounterpartySearchType.Client)
+    await searchOutgoingCashflowCounterparties(' manufacturer ', IncomeCounterpartySearchType.Manufacturer)
+    await searchOutgoingCashflowCounterparties(' supplier ', IncomeCounterpartySearchType.Supplier)
+
+    expect(apiRequestMock.mock.calls.map(([path]) => path)).toEqual([
+      '/clients/outgoing-cashflows/create/search',
+      '/clients/outgoing-cashflows/create/suppliers/search',
+      '/supplies/organizations/outgoing-cashflows/create/search',
+    ])
+  })
+
+  it.each([
+    [
+      IncomeCounterpartySearchType.Client,
+      INCOME_PAYMENT_OPERATION_CODE.ClientPayment,
+      '/clients/income-cashflows/client-payment/search',
+    ],
+    [
+      IncomeCounterpartySearchType.Manufacturer,
+      INCOME_PAYMENT_OPERATION_CODE.SupplierReturn,
+      '/clients/income-cashflows/supplier-return/suppliers/search',
+    ],
+    [
+      IncomeCounterpartySearchType.Supplier,
+      INCOME_PAYMENT_OPERATION_CODE.OtherAccountingWithCounterparts,
+      '/supplies/organizations/income-cashflows/counterparty-income/search',
+    ],
+  ])('uses the operation-scoped counterparty facade for type %s and operation %s', async (type, operationType, route) => {
+    apiRequestMock.mockResolvedValueOnce([])
+
+    await expect(
+      searchIncomeCashflowCounterpartiesForOperation('  query  ', type, operationType),
+    ).resolves.toEqual([])
+
+    expect(apiRequestMock).toHaveBeenCalledWith(route, {
+      query: type === IncomeCounterpartySearchType.Supplier
+        ? { limit: 20, offset: 0, value: 'query' }
+        : {
+            filterSql: 'RegionCode.Value/Client.FullName',
+            limit: 20,
+            offset: 0,
+            typeRoleFilter: type === IncomeCounterpartySearchType.Manufacturer ? '4' : '',
+            value: 'query',
+          },
+    })
+  })
+
+  it('uses permission-scoped routes for the online-shop order and article create', async () => {
+    const operationId = '55555555-5555-4555-8555-555555555555'
+    const order = { Amount: 125, AssignedPaymentOrders: [] }
+    apiRequestMock.mockResolvedValue({ NetUid: 'income-shop-1' })
+
+    await createOnlineShopIncomeCashflow(order, false, { operationId })
+    await createIncomeCashflowPaymentMovementForAccounting('Оплата магазину')
+
+    expect(apiRequestMock).toHaveBeenNthCalledWith(1, '/payments/orders/income/online-shop/create', {
+      body: order,
+      dedupe: false,
+      headers: { 'Idempotency-Key': operationId },
+      method: 'POST',
+      query: { auto: false },
+    })
+    expect(apiRequestMock).toHaveBeenNthCalledWith(2, '/payments/movements/accounting/new', {
+      body: { OperationName: 'Оплата магазину' },
+      method: 'POST',
+    })
+  })
+
+  it('fails closed before transport for an unsupported create operation', async () => {
+    await expect(createIncomeCashflow({
+      AssignedPaymentOrders: [],
+      OperationType: 404,
+    })).rejects.toThrow('Unsupported income payment operation type.')
+
+    expect(apiRequestMock).not.toHaveBeenCalled()
   })
 
   it('covers cancel, update-client, and update with backward-compatible operation options', async () => {
@@ -378,7 +477,7 @@ describe('income cashflow API lookup contracts', () => {
 
     expect(apiRequestMock).toHaveBeenNthCalledWith(
       1,
-      '/payments/orders/income/cancel',
+      '/payments/orders/income/accounting/cancel',
       {
         dedupe: false,
         headers: { 'Idempotency-Key': cancelOperationId },
@@ -390,7 +489,7 @@ describe('income cashflow API lookup contracts', () => {
     )
     expect(apiRequestMock).toHaveBeenNthCalledWith(
       2,
-      '/payments/orders/income/update/client',
+      '/payments/orders/income/accounting/reassign-client',
       {
         dedupe: false,
         headers: { 'Idempotency-Key': clientOperationId },

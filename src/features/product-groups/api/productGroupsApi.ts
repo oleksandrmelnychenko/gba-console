@@ -17,7 +17,7 @@ import {
 type ListKey = 'ProductGroups' | 'ProductProductGroups' | 'ProductSubGroups'
 
 export async function getProductGroups(value?: string): Promise<ProductGroupsWithTotal> {
-  const result = await apiRequest<unknown>('/products/groups/filtered/get', {
+  const result = await apiRequest<unknown>('/products/groups/page/filtered/get', {
     query: {
       value: value?.trim() || '',
     },
@@ -32,7 +32,7 @@ export async function getProductGroups(value?: string): Promise<ProductGroupsWit
 }
 
 export async function getProductGroupWithRoot(netId: string): Promise<ProductGroup | null> {
-  const result = await apiRequest<unknown>('/products/groups/with/root/get', {
+  const result = await apiRequest<unknown>('/products/groups/page/details/get', {
     query: {
       netId,
     },
@@ -41,8 +41,24 @@ export async function getProductGroupWithRoot(netId: string): Promise<ProductGro
   return normalizeProductGroup(result)
 }
 
+export async function getProductGroupCreateRootGroups(): Promise<ProductGroup[]> {
+  const result = await apiRequest<unknown>('/products/groups/page/create/root/groups/get')
+
+  return normalizeArray<ProductGroup>(result).map(ensureProductGroup)
+}
+
+export async function getProductGroupDetailsRootGroups(netId: string): Promise<ProductGroup[]> {
+  const result = await apiRequest<unknown>('/products/groups/page/details/root/groups/get', {
+    query: {
+      netId,
+    },
+  })
+
+  return normalizeArray<ProductGroup>(result).map(ensureProductGroup)
+}
+
 export async function getRootProductGroups(netId?: string): Promise<ProductGroup[]> {
-  const result = await apiRequest<unknown>('/products/groups/root/groups/get', {
+  const result = await apiRequest<unknown>('/products/groups/page/root/groups/get', {
     query: {
       netId: netId || undefined,
     },
@@ -52,7 +68,7 @@ export async function getRootProductGroups(netId?: string): Promise<ProductGroup
 }
 
 export async function getAllProductGroups(): Promise<ProductGroup[]> {
-  const result = await apiRequest<unknown>('/products/groups/all')
+  const result = await apiRequest<unknown>('/products/groups/page/all')
 
   return normalizeList<ProductGroup>(result, 'ProductGroups').items.map(ensureProductGroup)
 }
@@ -66,7 +82,7 @@ export async function createProductGroup(productGroup: ProductGroup): Promise<Pr
 
   let result: unknown
   try {
-    result = await apiRequest<unknown>('/products/groups/new', {
+    result = await apiRequest<unknown>('/products/groups/page/new', {
       method: 'POST',
       headers: {
         'Idempotency-Key': operation.operationNetUid,
@@ -90,7 +106,7 @@ export async function createProductGroup(productGroup: ProductGroup): Promise<Pr
 }
 
 export async function updateProductGroup(productGroup: ProductGroup): Promise<ProductGroup | null> {
-  const result = await apiRequest<unknown>('/products/groups/with/content/update', {
+  const result = await apiRequest<unknown>('/products/groups/page/details/edit', {
     method: 'POST',
     body: productGroup,
   })
@@ -113,7 +129,7 @@ export async function getProductSubGroups(params: {
   offset: number
   value?: string
 }): Promise<ProductSubGroupsWithTotal> {
-  const result = await apiRequest<unknown>('/products/groups/filtered/sub/groups/get', {
+  const result = await apiRequest<unknown>('/products/groups/page/details/sub/groups/get', {
     query: {
       limit: params.limit,
       netId: params.netId,
@@ -131,7 +147,7 @@ export async function getProductSubGroups(params: {
 }
 
 export async function getRedirectedProductByNetId(netId: string): Promise<Product | null> {
-  const result = await apiRequest<unknown>('/products/get', {
+  const result = await apiRequest<unknown>('/products/assortment/details', {
     query: {
       netId,
     },
@@ -150,7 +166,7 @@ export async function getProductGroupProducts(params: {
   offset: number
   value?: string
 }): Promise<ProductProductGroupsWithTotal> {
-  const result = await apiRequest<unknown>('/products/groups/filtered/products/get', {
+  const result = await apiRequest<unknown>('/products/groups/page/details/products/get', {
     query: {
       limit: params.limit,
       netId: params.netId,

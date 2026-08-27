@@ -20,7 +20,7 @@ import type {
 export async function getActReconciliations(
   params: ActReconciliationsSearchParams,
 ): Promise<ActReconciliation[]> {
-  const result = await apiRequest<unknown>('/supplies/ukraine/reconciliation/all/filtered', {
+  const result = await apiRequest<unknown>('/supplies/ukraine/reconciliation/page/registry', {
     query: {
       from: toDateTimeQuery(params.from, 'start'),
       to: toDateTimeQuery(params.to, 'end'),
@@ -31,7 +31,7 @@ export async function getActReconciliations(
 }
 
 export async function getActReconciliationByNetId(netId: string): Promise<ActReconciliation | null> {
-  const result = await apiRequest<unknown>('/supplies/ukraine/reconciliation/get', {
+  const result = await apiRequest<unknown>('/supplies/ukraine/reconciliation/page/details', {
     query: { netId },
   })
 
@@ -39,7 +39,7 @@ export async function getActReconciliationByNetId(netId: string): Promise<ActRec
 }
 
 export async function getAppliedActions(netId: string): Promise<ActReconciliationAppliedAction[]> {
-  const result = await apiRequest<unknown>('/supplies/ukraine/reconciliation/all/actions/applied', {
+  const result = await apiRequest<unknown>('/supplies/ukraine/reconciliation/page/history/actions', {
     query: { netId },
   })
 
@@ -49,7 +49,7 @@ export async function getAppliedActions(netId: string): Promise<ActReconciliatio
 export async function getDispositionHistory(
   netId: string,
 ): Promise<ActReconciliationDispositionEvent[]> {
-  const result = await apiRequest<unknown>('/supplies/ukraine/reconciliation/disposition/history', {
+  const result = await apiRequest<unknown>('/supplies/ukraine/reconciliation/page/history/dispositions', {
     query: { netId },
   })
 
@@ -71,7 +71,7 @@ export async function changeReconciliationDisposition({
   operationNetUid: string
   reasonCode?: ActReconciliationDispositionReasonCode
 }): Promise<ActReconciliationDispositionMutationResult> {
-  const result = await apiRequest<unknown>('/supplies/ukraine/reconciliation/disposition', {
+  const result = await apiRequest<unknown>('/supplies/ukraine/reconciliation/page/disposition', {
     method: 'POST',
     query: { netId: actNetId },
     headers: { 'Idempotency-Key': operationNetUid },
@@ -90,7 +90,7 @@ export async function changeReconciliationDisposition({
 export async function getReconciliationStorages(
   organizationNetId: string,
 ): Promise<ReconciliationStorageOption[]> {
-  const result = await apiRequest<unknown>('/storages/get/all/filtered', {
+  const result = await apiRequest<unknown>('/storages/reconciliation-acts/details', {
     query: {
       organizationNetId,
       skipDefective: false,
@@ -103,7 +103,7 @@ export async function getReconciliationStorages(
 export async function createProductIncomeFromItem(
   queryParams: ProductIncomeFromItemQueryParams,
 ): Promise<void> {
-  await apiRequest<unknown>('/products/incomes/new/reconciliation', {
+  await apiRequest<unknown>('/products/incomes/reconciliation-acts/create', {
     method: 'POST',
     query: { ...queryParams },
   })
@@ -113,7 +113,7 @@ export async function createProductIncomeFromItems(
   queryParams: ProductIncomeFromItemsQueryParams,
   items: ActReconciliationItem[],
 ): Promise<void> {
-  await apiRequest<unknown>('/products/incomes/new/reconciliation/many', {
+  await apiRequest<unknown>('/products/incomes/reconciliation-acts/create/many', {
     method: 'POST',
     query: { ...queryParams },
     body: items,
@@ -123,7 +123,7 @@ export async function createProductIncomeFromItems(
 export async function createProductTransferFromItem(
   queryParams: ProductTransferFromItemQueryParams,
 ): Promise<void> {
-  await apiRequest<unknown>('/products/transfers/new/reconciliation', {
+  await apiRequest<unknown>('/products/transfers/reconciliation-acts/create', {
     method: 'POST',
     query: { ...queryParams },
   })
@@ -133,7 +133,7 @@ export async function createProductTransferFromItems(
   queryParams: ProductTransferFromItemsQueryParams,
   items: ActReconciliationItem[],
 ): Promise<void> {
-  await apiRequest<unknown>('/products/transfers/new/reconciliation/many', {
+  await apiRequest<unknown>('/products/transfers/reconciliation-acts/create/many', {
     method: 'POST',
     query: { ...queryParams },
     body: items,
@@ -143,7 +143,7 @@ export async function createProductTransferFromItems(
 export async function createDepreciatedOrderFromItem(
   queryParams: DepreciatedOrderFromItemQueryParams,
 ): Promise<void> {
-  await apiRequest<unknown>('/orders/depreciated/new/reconciliation', {
+  await apiRequest<unknown>('/orders/depreciated/reconciliation-acts/create', {
     method: 'POST',
     query: { ...queryParams },
   })
@@ -153,7 +153,7 @@ export async function createDepreciatedOrderFromItems(
   queryParams: DepreciatedOrderFromItemsQueryParams,
   items: ActReconciliationItem[],
 ): Promise<void> {
-  await apiRequest<unknown>('/orders/depreciated/new/reconciliation/many', {
+  await apiRequest<unknown>('/orders/depreciated/reconciliation-acts/create/many', {
     method: 'POST',
     query: { ...queryParams },
     body: items,

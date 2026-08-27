@@ -4,7 +4,7 @@ import {
   SALES_MUTATION_LEDGER_NOT_ENTERED,
   SALES_MUTATION_LEDGER_STATE_HEADER,
 } from '../salesMutationOperation'
-import { createSale, updateSaleFromData } from './salesUkraineApi'
+import { createSale, createSalesUkraineSaleFromData, updateSaleFromData } from './salesUkraineApi'
 
 describe('createSale operation contract', () => {
   afterEach(() => {
@@ -27,11 +27,14 @@ describe('createSale operation contract', () => {
     ).resolves.toEqual({ message: null, sale: { NetUid: 'created-sale' } })
 
     const init = fetchMock.mock.calls[0]?.[1] as RequestInit
+    const requestUrl = new URL(String(fetchMock.mock.calls[0]?.[0]))
     const body = JSON.parse(init.body as string) as { OperationNetUid?: string }
     const headers = new Headers(init.headers)
 
     expect(body.OperationNetUid).toBe('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa')
     expect(body.OperationNetUid).toBe(headers.get('Idempotency-Key'))
+    expect(requestUrl.pathname).toBe('/api/v1/uk/sales/ukraine/create')
+    expect(requestUrl.searchParams.get('operationNetUid')).toBe(body.OperationNetUid)
   })
 
   it('sends the update-file operation marker inside sale JSON and the same header', async () => {
@@ -49,6 +52,26 @@ describe('createSale operation contract', () => {
     const form = init.body as FormData
     const body = JSON.parse(String(form.get('sale'))) as { OperationNetUid?: string }
 
+    expect(body.OperationNetUid).toBe(operationId)
+    expect(new Headers(init.headers).get('Idempotency-Key')).toBe(operationId)
+  })
+
+  it('submits an ordinary create flow through the permission-scoped multipart facade', async () => {
+    const operationId = 'dddddddd-dddd-4ddd-8ddd-dddddddddddd'
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      text: vi.fn().mockResolvedValue('{"Body":{"NetUid":"sale-1"}}'),
+    })
+    vi.stubGlobal('fetch', fetchMock)
+
+    await createSalesUkraineSaleFromData({ NetUid: 'sale-1' }, null, { operationId })
+
+    const requestUrl = new URL(String(fetchMock.mock.calls[0]?.[0]))
+    const init = fetchMock.mock.calls[0]?.[1] as RequestInit
+    const body = JSON.parse(String((init.body as FormData).get('sale'))) as { OperationNetUid?: string }
+
+    expect(requestUrl.pathname).toBe('/api/v1/uk/sales/ukraine/create/file')
     expect(body.OperationNetUid).toBe(operationId)
     expect(new Headers(init.headers).get('Idempotency-Key')).toBe(operationId)
   })

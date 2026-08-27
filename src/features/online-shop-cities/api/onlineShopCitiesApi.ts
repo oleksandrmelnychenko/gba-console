@@ -7,8 +7,11 @@ export async function getOnlineShopCities(): Promise<OnlineShopCity[]> {
   return normalizeOnlineShopCities(result)
 }
 
-export async function saveOnlineShopCity(city: OnlineShopCity): Promise<OnlineShopCity[]> {
-  const result = await apiRequest<unknown>('/seo/info/ecommerce/update', {
+export async function saveOnlineShopCity(
+  city: OnlineShopCity,
+  action: 'archive' | 'create' | 'edit',
+): Promise<OnlineShopCity[]> {
+  const result = await apiRequest<unknown>(`/seo/info/ecommerce/${action}`, {
     method: 'POST',
     body: city,
   })

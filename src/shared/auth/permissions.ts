@@ -1,19 +1,21 @@
-import { UserRoleType, type AuthUser } from './types'
+import { isEventPermissionKey } from './permissionKeys'
 
-export function hasPermission(user: AuthUser | undefined | null, permissionKey: string): boolean {
-  if (!permissionKey) {
-    return false
+export type RuntimePermissionKeys = readonly string[] | null
+
+export function getEffectivePermissionKeys(
+  runtimePermissionKeys: RuntimePermissionKeys = null,
+): string[] {
+  if (runtimePermissionKeys === null) {
+    return []
   }
 
-  if (isPrivilegedRole(user)) {
-    return true
-  }
-
-  return Boolean(user?.UserRole?.Permissions?.some((permission) => permission.ControlId === permissionKey))
+  return [...new Set(runtimePermissionKeys.filter(isEventPermissionKey))]
 }
 
-function isPrivilegedRole(user: AuthUser | undefined | null): boolean {
-  const roleType = user?.UserRole?.UserRoleType
-
-  return roleType === UserRoleType.Administrator || roleType === UserRoleType.GBA
+export function hasPermission(
+  permissionKey: string,
+  runtimePermissionKeys: RuntimePermissionKeys = null,
+): boolean {
+  return isEventPermissionKey(permissionKey)
+    && getEffectivePermissionKeys(runtimePermissionKeys).includes(permissionKey)
 }

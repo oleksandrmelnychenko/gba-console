@@ -9,13 +9,14 @@ import type { Statham, TaxFree } from '../types'
 import { getPassportLabel, getStathamLabel } from '../utils'
 
 type TaxFreeCarrierModalProps = {
+  canEdit: boolean
   opened: boolean
   taxFree: TaxFree | null
   onClose: () => void
   onUpdated: (taxFree: TaxFree) => void
 }
 
-export function TaxFreeCarrierModal({ opened, taxFree, onClose, onUpdated }: TaxFreeCarrierModalProps) {
+export function TaxFreeCarrierModal({ canEdit, opened, taxFree, onClose, onUpdated }: TaxFreeCarrierModalProps) {
   const { t } = useI18n()
   const [search, setSearch] = useState('')
   const [carriers, setCarriers] = useState<Statham[]>([])
@@ -88,7 +89,7 @@ export function TaxFreeCarrierModal({ opened, taxFree, onClose, onUpdated }: Tax
   }, [opened, search, t])
 
   async function saveCarrier() {
-    if (!taxFree || !selectedCarrier) {
+    if (!canEdit || !taxFree || !selectedCarrier) {
       setError(t('Оберіть перевізника'))
       return
     }
@@ -172,7 +173,7 @@ export function TaxFreeCarrierModal({ opened, taxFree, onClose, onUpdated }: Tax
 
         <Group justify="flex-end">
           <Button disabled={isSaving} variant="subtle" onClick={onClose}>{t('Скасувати')}</Button>
-          <Button loading={isSaving} onClick={saveCarrier}>{t('Зберегти')}</Button>
+          <Button disabled={!canEdit} loading={isSaving} onClick={saveCarrier}>{t('Зберегти')}</Button>
         </Group>
       </Stack>
     </AppModal>

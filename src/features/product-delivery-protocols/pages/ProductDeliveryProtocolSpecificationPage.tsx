@@ -15,14 +15,15 @@ import { CircleAlert, FileDown, FileInput, FileX, Layers } from 'lucide-react'
 import { useEffect, useRef } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { formatLocalDate, formatLocalInputDateTime } from '../../../shared/date/dateTime'
+import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppModal } from '../../../shared/ui/AppModal'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { useAuth } from '../../auth/useAuth'
-import { getProtocolByNetId } from '../api/productDeliveryProtocolsApi'
-import { searchSupplyOrganizations } from '../api/protocolDetailApi'
+import { getProtocolForSpecification } from '../api/productDeliveryProtocolsApi'
+import { searchDirectSupplyOrderSpecificationOrganizations } from '../api/protocolDetailApi'
 import {
   addDeliveryDocumentsToInvoice,
   addOrUpdateProductSpecification,
@@ -62,12 +63,13 @@ const CURRENCY_EUR = 'eur'
 const CURRENCY_UAH = 'uah'
 const SERVICES_MANAGEMENT = 'management'
 const SERVICES_ACCOUNTING = 'accounting'
-const PERMISSION_UPLOAD_SPECIFICATIONS = 'ProductDeliveryProtocols_specifications_download_exel_upload_PKEY'
-const PERMISSION_UPLOAD_DELIVERY_DOCUMENTS =
-  'ProductDeliveryProtocols_specifications_download_exel_upload_documents_PKEY'
-const PERMISSION_DOWNLOAD_SPECIFICATION = 'ProductDeliveryProtocols_specifications_download_exel_PKEY'
-const PERMISSION_OPEN_SPECIFICATION_CODE = 'ProductDeliveryProtocols_specifications_customs_codes_infoBtn_PKEY'
-const PERMISSION_SAVE_SPECIFICATION_CODE = 'SPECIFICATION_CODES_ordersUkraineAllEdit_SaveModalBtn_PKEY'
+const PERMISSION_UPLOAD_SPECIFICATIONS = PermissionKeys.ProductDeliveryProtocols.SpecificationCodes.Download
+const PERMISSION_UPLOAD_DELIVERY_DOCUMENTS = PermissionKeys.ProductDeliveryProtocols.DeliveryDocuments.Download
+const PERMISSION_DOWNLOAD_SPECIFICATION = PermissionKeys.ProductDeliveryProtocols.Documents.Download
+const PERMISSION_MERGE_INVOICES = PermissionKeys.ProductDeliveryProtocols.Invoice.Merge
+const PERMISSION_OPEN_SPECIFICATIONS = PermissionKeys.ProductDeliveryProtocols.SpecificationCodes.Open
+const PERMISSION_OPEN_SPECIFICATION_CODE = PermissionKeys.ProductDeliveryProtocols.SpecificationHistory.Open
+const PERMISSION_SAVE_SPECIFICATION_CODE = PermissionKeys.OrdersUkraine.SpecificationCodes.Edit
 const SUPPLY_ORGANIZATION_SEARCH_DEBOUNCE_MS = 300
 const SPECIFICATION_CURRENCY_OPTIONS = [
   { label: 'EUR', value: CURRENCY_EUR },
@@ -143,6 +145,7 @@ function getLoadedProtocolSelectionState(protocol: SpecificationProtocol): Proto
 
 function useSpecificationModel(netId: string | undefined) {
   const { t } = useI18n()
+  const { hasPermission } = useAuth()
   const [protocolState, setProtocolState] = useValueState<ProtocolSelectionState>(INITIAL_PROTOCOL_SELECTION_STATE)
   const [packingListState, setPackingListState] = useValueState<PackingListState>(EMPTY_PACKING_LIST_STATE)
   const [currencyIsEur, setCurrencyIsEur] = useValueState(true)
@@ -226,7 +229,7 @@ function useSpecificationModel(netId: string | undefined) {
       }))
 
       try {
-        const result = await getProtocolByNetId(currentNetId)
+        const result = await getProtocolForSpecification(currentNetId)
 
         if (cancelled) {
           return
@@ -347,7 +350,7 @@ function useSpecificationModel(netId: string | undefined) {
 
     async function loadDocumentOrganizations() {
       try {
-        const organizations = await searchSupplyOrganizations(value)
+        const organizations = await searchDirectSupplyOrderSpecificationOrganizations(value)
 
         if (!cancelled) {
           setDocumentOrganizations(includeSupplyOrganization(organizations, currentOrganization))
@@ -433,7 +436,7 @@ function useSpecificationModel(netId: string | undefined) {
       return null
     }
 
-    const result = await getProtocolByNetId(netId)
+    const result = await getProtocolForSpecification(netId)
     const protocolResult = result ? (result as unknown as SpecificationProtocol) : null
 
     if (isCurrent()) {
@@ -454,7 +457,7 @@ function useSpecificationModel(netId: string | undefined) {
     const invoiceNetUid = selectedInvoice?.NetUid || null
     const packListNetUid = selectedPackListNetId
 
-    if (!invoiceNetUid || isActionBusy) {
+    if (!hasPermission(PERMISSION_UPLOAD_SPECIFICATIONS) || !invoiceNetUid || isActionBusy) {
       return
     }
 
@@ -507,6 +510,10 @@ function useSpecificationModel(netId: string | undefined) {
   }
 
   function openDocuments() {
+    if (!hasPermission(PERMISSION_UPLOAD_DELIVERY_DOCUMENTS)) {
+      return
+    }
+
     if (!selectedInvoice) {
       notifications.show({ color: 'red', message: t('Інвойс відсутній') })
 
@@ -638,7 +645,7 @@ function useSpecificationModel(netId: string | undefined) {
   async function saveDocuments() {
     const invoice = selectedInvoice
 
-    if (isSavingDocuments) {
+    if (!hasPermission(PERMISSION_UPLOAD_DELIVERY_DOCUMENTS) || isSavingDocuments) {
       return
     }
 
@@ -709,7 +716,7 @@ function useSpecificationModel(netId: string | undefined) {
   }
 
   function openMerge() {
-    if (isActionBusy) {
+    if (!hasPermission(PERMISSION_MERGE_INVOICES) || isActionBusy) {
       return
     }
 
@@ -734,7 +741,7 @@ function useSpecificationModel(netId: string | undefined) {
   }
 
   async function confirmMerge() {
-    if (!netId || isMerging) {
+    if (!hasPermission(PERMISSION_MERGE_INVOICES) || !netId || isMerging) {
       return
     }
 
@@ -762,7 +769,7 @@ function useSpecificationModel(netId: string | undefined) {
   async function openDownload() {
     const packListNetUid = selectedPackListNetId
 
-    if (!packListNetUid || isActionBusy) {
+    if (!hasPermission(PERMISSION_DOWNLOAD_SPECIFICATION) || !packListNetUid || isActionBusy) {
       return
     }
 
@@ -796,7 +803,7 @@ function useSpecificationModel(netId: string | undefined) {
   }
 
   function openSpecificationEditor(item: PackingListPackageOrderItem) {
-    if (isActionBusy) {
+    if (!hasPermission(PERMISSION_OPEN_SPECIFICATION_CODE) || isActionBusy) {
       return
     }
 
@@ -807,7 +814,7 @@ function useSpecificationModel(netId: string | undefined) {
     const invoiceNetUid = selectedInvoiceNetId
     const packListNetUid = selectedPackListNetId
 
-    if (!invoiceNetUid) {
+    if (!hasPermission(PERMISSION_SAVE_SPECIFICATION_CODE) || !invoiceNetUid) {
       notifications.show({ color: 'red', message: t('Інвойс відсутній') })
 
       return
@@ -879,6 +886,21 @@ function useSpecificationModel(netId: string | undefined) {
 export function ProductDeliveryProtocolSpecificationPage() {
   const { t } = useI18n()
   const { hasPermission } = useAuth()
+
+  if (!hasPermission(PERMISSION_OPEN_SPECIFICATIONS)) {
+    return (
+      <Alert color="red" icon={<CircleAlert size={18} />} title={t('Доступ заборонено')} variant="light">
+        {t('У вашої ролі немає права переглядати специфікації протоколу доставки.')}
+      </Alert>
+    )
+  }
+
+  return <ProductDeliveryProtocolSpecificationPageContent />
+}
+
+function ProductDeliveryProtocolSpecificationPageContent() {
+  const { t } = useI18n()
+  const { hasPermission } = useAuth()
   const { id } = useParams()
   const navigate = useNavigate()
   const model = useSpecificationModel(id)
@@ -886,7 +908,7 @@ export function ProductDeliveryProtocolSpecificationPage() {
   const invoices = model.protocol?.SupplyInvoices || []
   const canMutateSpecification = Boolean(model.protocol?.IsShipped && !model.protocol?.IsCompleted)
   const specificationUnavailableMessage = getSpecificationUnavailableMessage(model.protocol, t)
-  const canMerge = canMutateSpecification && invoices.length > 1
+  const canMerge = canMutateSpecification && invoices.length > 1 && hasPermission(PERMISSION_MERGE_INVOICES)
   const canDownload =
     hasPermission(PERMISSION_DOWNLOAD_SPECIFICATION) &&
     Boolean(model.packingList && (model.packingList.Id || 0) > 0)

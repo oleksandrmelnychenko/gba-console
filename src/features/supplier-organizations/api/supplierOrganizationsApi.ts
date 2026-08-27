@@ -23,7 +23,7 @@ export type SupplyOrganizationsListParams = SupplyOrganizationsListFilters & {
 export async function getSupplyOrganizations(params: SupplyOrganizationsListParams = {}): Promise<SupplyOrganization[]> {
   assertListParams(params)
 
-  const result = await apiRequest<unknown>('/supplies/organizations/all/search', {
+  const result = await apiRequest<unknown>('/supplies/organizations/registry', {
     query: {
       from: params.from,
       limit: params.limit,
@@ -44,7 +44,7 @@ export async function searchSupplyOrganizations(
   assertListParams(params)
   const searchValue = value.trim()
 
-  const result = await apiRequest<unknown>('/supplies/organizations/all/search', {
+  const result = await apiRequest<unknown>('/supplies/organizations/registry', {
     query: {
       from: params.from,
       limit: params.limit,
@@ -58,9 +58,43 @@ export async function searchSupplyOrganizations(
   return normalizeSupplyOrganizations(result)
 }
 
+export async function getSupplierOrganizationsRegistry(
+  params: SupplyOrganizationsListParams = {},
+): Promise<SupplyOrganization[]> {
+  return requestSupplierOrganizationsRegistry('', '', params)
+}
+
+export async function searchSupplierOrganizationsRegistry(
+  value: string,
+  organizationNetId = '',
+  params: SupplyOrganizationsListParams = {},
+): Promise<SupplyOrganization[]> {
+  return requestSupplierOrganizationsRegistry(value, organizationNetId, params)
+}
+
+async function requestSupplierOrganizationsRegistry(
+  value: string,
+  organizationNetId: string,
+  params: SupplyOrganizationsListParams,
+): Promise<SupplyOrganization[]> {
+  assertListParams(params)
+  const result = await apiRequest<unknown>('/supplies/organizations/registry', {
+    query: {
+      from: params.from,
+      limit: params.limit,
+      offset: params.offset,
+      organizationNetId: organizationNetId.trim(),
+      to: params.to,
+      value: value.trim(),
+    },
+  })
+
+  return normalizeSupplyOrganizations(result)
+}
+
 export async function getSupplyOrganization(netId: string): Promise<SupplyOrganization | null> {
   const normalizedNetId = requireIdentifier(netId, 'постачальника')
-  const result = await apiRequest<unknown>('/supplies/organizations/get', {
+  const result = await apiRequest<unknown>('/supplies/organizations/overview/details', {
     query: {
       netId: normalizedNetId,
     },
@@ -69,9 +103,39 @@ export async function getSupplyOrganization(netId: string): Promise<SupplyOrgani
   return normalizeSupplyOrganization(result)
 }
 
+export async function getSupplierOrganizationOverviewDetails(netId: string): Promise<SupplyOrganization | null> {
+  return getScopedSupplierOrganizationDetails('/supplies/organizations/overview/details', netId)
+}
+
+export async function getSupplierOrganizationSettlementsDetails(netId: string): Promise<SupplyOrganization | null> {
+  return getScopedSupplierOrganizationDetails('/supplies/organizations/settlements/details', netId)
+}
+
+async function getScopedSupplierOrganizationDetails(
+  path: string,
+  netId: string,
+): Promise<SupplyOrganization | null> {
+  const normalizedNetId = requireIdentifier(netId, 'постачальника')
+  const result = await apiRequest<unknown>(path, {
+    query: { netId: normalizedNetId },
+  })
+
+  return normalizeSupplyOrganization(result)
+}
+
 export async function createSupplyOrganization(organization: SupplyOrganization): Promise<SupplyOrganization | null> {
   assertSupplyOrganizationPayload(organization, false)
-  const result = await apiRequest<unknown>('/supplies/organizations/new', {
+  const result = await apiRequest<unknown>('/supplies/organizations/create', {
+    method: 'POST',
+    body: organization,
+  })
+
+  return normalizeSupplyOrganization(result)
+}
+
+export async function createSupplierOrganization(organization: SupplyOrganization): Promise<SupplyOrganization | null> {
+  assertSupplyOrganizationPayload(organization, false)
+  const result = await apiRequest<unknown>('/supplies/organizations/create', {
     method: 'POST',
     body: organization,
   })
@@ -81,7 +145,17 @@ export async function createSupplyOrganization(organization: SupplyOrganization)
 
 export async function updateSupplyOrganization(organization: SupplyOrganization): Promise<SupplyOrganization | null> {
   assertSupplyOrganizationPayload(organization, true)
-  const result = await apiRequest<unknown>('/supplies/organizations/update', {
+  const result = await apiRequest<unknown>('/supplies/organizations/edit', {
+    method: 'POST',
+    body: organization,
+  })
+
+  return normalizeSupplyOrganization(result)
+}
+
+export async function editSupplierOrganization(organization: SupplyOrganization): Promise<SupplyOrganization | null> {
+  assertSupplyOrganizationPayload(organization, true)
+  const result = await apiRequest<unknown>('/supplies/organizations/edit', {
     method: 'POST',
     body: organization,
   })
@@ -91,11 +165,19 @@ export async function updateSupplyOrganization(organization: SupplyOrganization)
 
 export async function deleteSupplyOrganization(netId: string): Promise<void> {
   const normalizedNetId = requireIdentifier(netId, 'постачальника')
-  await apiRequest<unknown>('/supplies/organizations/delete', {
+  await apiRequest<unknown>('/supplies/organizations/remove', {
     method: 'DELETE',
     query: {
       netId: normalizedNetId,
     },
+  })
+}
+
+export async function removeSupplierOrganization(netId: string): Promise<void> {
+  const normalizedNetId = requireIdentifier(netId, 'постачальника')
+  await apiRequest<unknown>('/supplies/organizations/remove', {
+    method: 'DELETE',
+    query: { netId: normalizedNetId },
   })
 }
 
@@ -104,11 +186,33 @@ export async function exportSupplyOrganizations(
   filters: SupplyOrganizationsListFilters = {},
 ): Promise<SupplyOrganizationDocumentExport> {
   assertListParams(filters)
-  const result = await apiRequest<unknown>('/supplies/organizations/document', {
+  const result = await apiRequest<unknown>('/supplies/organizations/document/export', {
     query: {
       from: filters.from,
       to: filters.to,
       value: value.trim(),
+    },
+  })
+
+  return normalizeDocumentExport(result)
+}
+
+export async function exportSupplierOrganizationSettlementsDocument(
+  params: SupplierOrganizationCashFlowSearchParams,
+): Promise<SupplyOrganizationDocumentExport> {
+  const normalizedNetId = requireIdentifier(params.netId, 'постачальника або договору')
+  assertDateRange(params.from, params.to)
+
+  if (!Number.isInteger(params.typePaymentTask) || params.typePaymentTask < 0) {
+    throw new RangeError('Тип платіжного завдання має бути невід’ємним цілим числом')
+  }
+
+  const result = await apiRequest<unknown>('/accounting/cashflow/supplier-organizations/document/export', {
+    query: {
+      from: params.from,
+      netId: normalizedNetId,
+      to: params.to,
+      typePaymentTask: params.typePaymentTask,
     },
   })
 
@@ -120,7 +224,7 @@ export async function createSupplyOrganizationAgreement(
   files: File[],
 ): Promise<SupplyOrganizationAgreement | null> {
   assertSupplyOrganizationAgreementPayload(agreement, false)
-  const result = await apiRequest<unknown>('/supplies/organizations/agreement/new', {
+  const result = await apiRequest<unknown>('/supplies/organizations/agreement/create', {
     method: 'POST',
     body: buildAgreementFormData(agreement, files),
   })
@@ -133,7 +237,33 @@ export async function updateSupplyOrganizationAgreement(
   files: File[] = [],
 ): Promise<SupplyOrganizationAgreement | null> {
   assertSupplyOrganizationAgreementPayload(agreement, true)
-  const result = await apiRequest<unknown>('/supplies/organizations/agreement/update', {
+  const result = await apiRequest<unknown>('/supplies/organizations/agreement/edit', {
+    method: 'POST',
+    body: buildAgreementFormData(agreement, files),
+  })
+
+  return normalizeSupplyOrganizationAgreement(result)
+}
+
+export async function createSupplierOrganizationAgreement(
+  agreement: SupplyOrganizationAgreement,
+  files: File[],
+): Promise<SupplyOrganizationAgreement | null> {
+  assertSupplyOrganizationAgreementPayload(agreement, false)
+  const result = await apiRequest<unknown>('/supplies/organizations/agreement/create', {
+    method: 'POST',
+    body: buildAgreementFormData(agreement, files),
+  })
+
+  return normalizeSupplyOrganizationAgreement(result)
+}
+
+export async function editSupplierOrganizationAgreement(
+  agreement: SupplyOrganizationAgreement,
+  files: File[] = [],
+): Promise<SupplyOrganizationAgreement | null> {
+  assertSupplyOrganizationAgreementPayload(agreement, true)
+  const result = await apiRequest<unknown>('/supplies/organizations/agreement/edit', {
     method: 'POST',
     body: buildAgreementFormData(agreement, files),
   })
@@ -163,7 +293,29 @@ export async function getSupplierOrganizationCashFlow(
     throw new RangeError('Тип платіжного завдання має бути невід’ємним цілим числом')
   }
 
-  const result = await apiRequest<unknown>('/accounting/cashflow/get/filtered', {
+  const result = await apiRequest<unknown>('/supplies/organizations/settlements/cash-flow', {
+    query: {
+      from: params.from,
+      netId: normalizedNetId,
+      to: params.to,
+      typePaymentTask: params.typePaymentTask,
+    },
+  })
+
+  return normalizeAccountingCashFlow(result)
+}
+
+export async function getSupplierOrganizationSettlementsCashFlow(
+  params: SupplierOrganizationCashFlowSearchParams,
+): Promise<AccountingCashFlow> {
+  const normalizedNetId = requireIdentifier(params.netId, 'постачальника або договору')
+  assertDateRange(params.from, params.to)
+
+  if (!Number.isInteger(params.typePaymentTask) || params.typePaymentTask < 0) {
+    throw new RangeError('Тип платіжного завдання має бути невід’ємним цілим числом')
+  }
+
+  const result = await apiRequest<unknown>('/supplies/organizations/settlements/cash-flow', {
     query: {
       from: params.from,
       netId: normalizedNetId,

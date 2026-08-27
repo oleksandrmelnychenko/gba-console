@@ -131,7 +131,7 @@ function invoiceRegisterReducer(state: InvoiceRegisterState, action: InvoiceRegi
   }
 }
 
-function useInvoiceRegisterModel() {
+function useInvoiceRegisterModel(canExport: boolean) {
   const { t } = useI18n()
   const initialFilters = useMemo<FilterDraft>(() => ({ date: getDateShiftedByDays(0), value: '' }), [])
   const initialState = useMemo(() => createInitialInvoiceRegisterState(initialFilters), [initialFilters])
@@ -207,7 +207,7 @@ function useInvoiceRegisterModel() {
   }, [])
 
   async function exportDocument() {
-    if (filterError || state.isLoading || state.isDownloading) {
+    if (!canExport || filterError || state.isLoading || state.isDownloading) {
       return
     }
 
@@ -276,8 +276,8 @@ function useInvoiceRegisterModel() {
   }
 }
 
-export function InvoiceRegisterTab() {
-  const model = useInvoiceRegisterModel()
+export function InvoiceRegisterTab({ canExport }: { canExport: boolean }) {
+  const model = useInvoiceRegisterModel(canExport)
   const { t } = useI18n()
   const [tableToolbarSlot, setTableToolbarSlot] = useState<HTMLDivElement | null>(null)
 
@@ -308,7 +308,7 @@ export function InvoiceRegisterTab() {
                 color="gray"
                 leftSection={<Download size={16} />}
                 loading={model.isDownloading}
-                disabled={Boolean(model.filterError) || model.isLoading || model.isDownloading}
+                disabled={!canExport || Boolean(model.filterError) || model.isLoading || model.isDownloading}
                 variant="light"
                 onClick={model.exportDocument}
               >

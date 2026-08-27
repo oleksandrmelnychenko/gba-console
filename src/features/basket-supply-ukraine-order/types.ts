@@ -194,6 +194,15 @@ export type BasketSupplyDocumentState = {
   sadType: SadTypeValue
 }
 
+export type SupplyCartDocumentAssemblyRequest = {
+  existingDocumentNetUid?: string
+  items: Array<{
+    cartItemId: number
+    quantity: number
+  }>
+  sadType?: SadTypeValue
+}
+
 export type BasketSupplySalesFilters = {
   from: string
   to: string

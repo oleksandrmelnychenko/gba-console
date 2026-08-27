@@ -41,7 +41,7 @@ describe('productAvailabilitiesApi', () => {
       Total: 1,
     })
 
-    expect(apiRequestMock).toHaveBeenCalledWith('/consignments/info/availability/filtered', {
+    expect(apiRequestMock).toHaveBeenCalledWith('/consignments/info/product-availabilities/registry', {
       query: {
         from: undefined,
         limit: 500,
@@ -69,7 +69,7 @@ describe('productAvailabilitiesApi', () => {
       PdfDocumentURL: 'https://example.test/availabilities.pdf',
     })
 
-    expect(apiRequestMock).toHaveBeenCalledWith('/consignments/info/availability/filtered/export', {
+    expect(apiRequestMock).toHaveBeenCalledWith('/consignments/info/product-availabilities/export', {
       query: {
         from: '2026-06-30',
         storageNetId: 'storage-1',

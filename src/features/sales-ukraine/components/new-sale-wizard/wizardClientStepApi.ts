@@ -39,6 +39,7 @@ export async function searchWizardClients(
   limit = 20,
   offset = 0,
   signal?: AbortSignal,
+  flow: 'create' | 'edit' = 'create',
 ): Promise<Client[]> {
   const searchValue = value.trim()
 
@@ -46,7 +47,7 @@ export async function searchWizardClients(
     return []
   }
 
-  const result = await apiRequest<unknown>('/clients/all/filtered', {
+  const result = await apiRequest<unknown>(`/clients/sales-ukraine/${flow}/search`, {
     query: {
       filterSql: 'RegionCode.Value/Client.FullName/Client.USREOU/Client.TIN',
       limit,

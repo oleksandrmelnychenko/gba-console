@@ -3,6 +3,8 @@ import { notifications } from '@mantine/notifications'
 import { ArrowLeftRight, Copy, FileText, Network, TriangleAlert, X } from 'lucide-react'
 import { memo, useEffect, useState } from 'react'
 import { useI18n } from '../../../../shared/i18n/useI18n'
+import { PermissionKeys } from '../../../../shared/auth/permissionKeys'
+import { usePermissions } from '../../../auth/usePermissions'
 import { getSaleClientDebtTotal } from '../../api/salesUkraineApi'
 import type { SaleClientDebtTotal, SalesUkraineOrderItem, SalesUkraineSale } from '../../types'
 import type { Client, ClientInDebt } from '../../../clients/types'
@@ -40,6 +42,7 @@ export const WizardSaleHeader = memo(function WizardSaleHeader({
   clientNetId,
   hideAgreementsAction = false,
   mode = 'strip',
+  permissionFlow = 'create',
   reassignDisabled,
   sale,
   withVatAccounting,
@@ -49,6 +52,7 @@ export const WizardSaleHeader = memo(function WizardSaleHeader({
   clientNetId: string | null
   hideAgreementsAction?: boolean
   mode?: 'inline' | 'strip'
+  permissionFlow?: 'create' | 'edit'
   reassignDisabled?: boolean
   sale: SalesUkraineSale | null
   withVatAccounting: boolean
@@ -65,6 +69,7 @@ export const WizardSaleHeader = memo(function WizardSaleHeader({
       clientNetId={clientNetId}
       hideAgreementsAction={hideAgreementsAction}
       mode={mode}
+      permissionFlow={permissionFlow}
       reassignDisabled={reassignDisabled}
       sale={sale}
       withVatAccounting={withVatAccounting}
@@ -78,6 +83,7 @@ function WizardSaleHeaderContent({
   clientNetId,
   hideAgreementsAction,
   mode,
+  permissionFlow,
   reassignDisabled,
   sale,
   withVatAccounting,
@@ -87,6 +93,7 @@ function WizardSaleHeaderContent({
   clientNetId: string
   hideAgreementsAction: boolean
   mode: 'inline' | 'strip'
+  permissionFlow: 'create' | 'edit'
   reassignDisabled?: boolean
   sale: SalesUkraineSale | null
   withVatAccounting: boolean
@@ -94,6 +101,8 @@ function WizardSaleHeaderContent({
   onSaleReassigned?: (movedSale: SalesUkraineSale | null) => void
 }) {
   const { t } = useI18n()
+  const { can } = usePermissions()
+  const canReassign = can(PermissionKeys.SalesUkraine.Sale.Reassign)
   const debtRefreshVersion = useWizardDebtRefreshVersion()
   const [client, setClient] = useState<Client | null>(null)
   const [debtTotal, setDebtTotal] = useState<SaleClientDebtTotal | null>(null)
@@ -108,7 +117,7 @@ function WizardSaleHeaderContent({
 
     async function load(id: string) {
       try {
-        const nextClient = await getWizardHeaderClient(id)
+        const nextClient = await getWizardHeaderClient(id, permissionFlow)
 
         if (!cancelled) {
           setClient(nextClient)
@@ -125,7 +134,7 @@ function WizardSaleHeaderContent({
     return () => {
       cancelled = true
     }
-  }, [clientNetId])
+  }, [clientNetId, permissionFlow])
 
   useEffect(() => {
     let cancelled = false
@@ -343,7 +352,7 @@ function WizardSaleHeaderContent({
         </Popover>
       )}
 
-      {onSaleReassigned && canReassignWizardSale(client, sale) && (
+      {canReassign && onSaleReassigned && canReassignWizardSale(client, sale) && (
         <Tooltip label={t('Переміщення продажі')} position="bottom">
           <ActionIcon
             aria-label={t('Переміщення продажі')}
@@ -408,10 +417,11 @@ function WizardSaleHeaderContent({
         </Group>
       )}
 
-      {onSaleReassigned && sale && (
+      {canReassign && onSaleReassigned && sale && (
         <WizardReassignSaleModal
           client={client}
           opened={isReassignOpen}
+          permissionFlow={permissionFlow}
           sale={sale}
           onClose={() => setReassignOpened(false)}
           onReassigned={(movedSale) => {

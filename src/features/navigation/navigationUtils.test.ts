@@ -10,7 +10,7 @@ import {
 import type { NavigationModule, NavigationNode } from './types'
 
 describe('normalizeNavigation', () => {
-  it('adds the vehicle registry only to the administration module', () => {
+  it('adds the vehicle registry only to the administration module when permitted', () => {
     const modules: NavigationModule[] = [
       {
         Id: 1,
@@ -36,12 +36,35 @@ describe('normalizeNavigation', () => {
       },
     ]
 
-    const normalized = normalizeNavigation(modules)
+    const normalized = normalizeNavigation(modules, { includeVehicleRegistry: true })
     const administration = normalized.find((module) => module.Module === 'Адміністрування')
     const sales = normalized.find((module) => module.Module === 'Продажі')
 
     expect(administration?.Children.map((node) => node.Route)).toContain('/administration/vehicle-registry')
     expect(sales?.Children.map((node) => node.Route)).not.toContain('/administration/vehicle-registry')
+  })
+
+  it('removes vehicle registry navigation when the canonical page permission is absent', () => {
+    const [administration] = normalizeNavigation([
+      {
+        Id: 1,
+        Module: 'Адміністрування',
+        Children: [
+          {
+            Id: 11,
+            Module: 'Користувачі',
+            Route: '/users',
+          },
+          {
+            Id: 12,
+            Module: 'Реєстр автомобілів',
+            Route: '/administration/vehicle-registry',
+          },
+        ],
+      },
+    ])
+
+    expect(administration.Children.map((node) => node.Route)).toEqual(['/users'])
   })
 
   it('removes disabled API navigation entries', () => {

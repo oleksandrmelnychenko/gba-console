@@ -3,7 +3,10 @@ import { apiRequest } from '../../../shared/api/apiClient'
 import {
   createProductCapitalization,
   exportProductCapitalization,
+  getProductCapitalization,
+  getProductCapitalizationForIncomeDocuments,
   getProductCapitalizations,
+  getProductCapitalizationStoragesByOrganization,
   parseProductCapitalizationItemsFromFile,
 } from './productCapitalizationsApi'
 
@@ -38,6 +41,60 @@ describe('productCapitalizationsApi', () => {
 
     expect(result.Items).toHaveLength(2)
     expect(result.Total).toBeNull()
+    expect(apiRequestMock).toHaveBeenCalledWith('/products/capitalizations/page/all/filtered', {
+      query: {
+        from: '2026-01-01T00:00:00',
+        limit: 2,
+        offset: 0,
+        to: '2026-01-31T23:59:59',
+      },
+    })
+  })
+
+  it('loads details through the open-details scoped route', async () => {
+    apiRequestMock.mockResolvedValueOnce({ NetUid: 'capitalization-1', Number: 'CAP-1' })
+
+    await expect(getProductCapitalization('capitalization-1')).resolves.toMatchObject({
+      NetUid: 'capitalization-1',
+      Number: 'CAP-1',
+    })
+    expect(apiRequestMock).toHaveBeenCalledWith('/products/capitalizations/page/details', {
+      query: { netId: 'capitalization-1' },
+    })
+  })
+
+  it('loads capitalization projections through the income-document details scope', async () => {
+    apiRequestMock.mockResolvedValueOnce({ NetUid: 'capitalization-1' })
+
+    await getProductCapitalizationForIncomeDocuments('capitalization-1')
+
+    expect(apiRequestMock).toHaveBeenCalledWith('/products/capitalizations/income-documents/details', {
+      query: { netId: 'capitalization-1' },
+    })
+  })
+
+  it('selects exact create or open-details storage lookup scope', async () => {
+    apiRequestMock.mockResolvedValue({ Items: [] })
+
+    await getProductCapitalizationStoragesByOrganization(
+      'organization-1',
+      'create',
+    )
+    await getProductCapitalizationStoragesByOrganization(
+      'organization-1',
+      'open-details',
+    )
+
+    expect(apiRequestMock.mock.calls.map(([path]) => path)).toEqual([
+      '/storages/capitalization/create/search',
+      '/storages/capitalization/open-details/search',
+    ])
+    expect(apiRequestMock.mock.calls[0][1]).toEqual({
+      query: {
+        organizationNetId: 'organization-1',
+        skipDefective: false,
+      },
+    })
   })
 
   it('keeps explicit totals from paged responses', async () => {
@@ -68,7 +125,7 @@ describe('productCapitalizationsApi', () => {
       PdfDocumentURL: 'https://example.test/capitalization.pdf',
     })
 
-    expect(apiRequestMock).toHaveBeenCalledWith('/products/capitalizations/document/export', {
+    expect(apiRequestMock).toHaveBeenCalledWith('/products/capitalizations/page/document/export', {
       query: {
         netId: 'capitalization-1',
       },
@@ -114,7 +171,7 @@ describe('productCapitalizationsApi', () => {
     })
 
     expect(apiRequestMock).toHaveBeenCalledWith(
-      '/products/capitalizations/new',
+      '/products/capitalizations/page/new',
       expect.objectContaining({
         body: {
           Comment: 'count correction',
@@ -177,7 +234,7 @@ describe('productCapitalizationsApi', () => {
     )
 
     expect(apiRequestMock.mock.calls[0][0])
-      .toBe('/products/capitalizations/get/items/file')
+      .toBe('/products/capitalizations/page/get/items/file')
     expect(apiRequestMock.mock.calls.flatMap((call) => call[0]))
       .not.toContain('/products/capitalizations/new/file')
   })
