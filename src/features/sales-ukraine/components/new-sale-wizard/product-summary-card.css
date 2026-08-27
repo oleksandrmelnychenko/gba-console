@@ -58,10 +58,10 @@
 }
 
 .new-sale-product-summary__eyebrow {
-  color: var(--mantine-color-gray-8);
+  color: var(--mantine-color-black);
   display: block;
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 12px;
   line-height: 1.2;
 }
 
@@ -105,15 +105,15 @@
 }
 
 .new-sale-product-summary__facts dt {
-  color: var(--mantine-color-gray-8);
-  font-size: 10px;
+  color: var(--mantine-color-black);
+  font-size: 12px;
   line-height: 1.3;
 }
 
 .new-sale-product-summary__facts dd {
-  color: var(--mantine-color-gray-9);
+  color: var(--mantine-color-black);
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 500;
   line-height: 1.3;
   margin: 0;
@@ -131,7 +131,7 @@
   display: grid;
   flex: 1;
   gap: 6px;
-  grid-auto-columns: minmax(86px, 1fr);
+  grid-auto-columns: minmax(96px, 1fr);
   grid-auto-flow: column;
   min-width: 0;
 }
@@ -148,11 +148,16 @@
 
 .new-sale-product-summary__metric > span,
 .new-sale-product-summary__metric > small {
-  color: var(--mantine-color-gray-8);
+  color: var(--mantine-color-black);
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 500;
   line-height: 1.3;
+}
+
+/* Override the shared muted currency color only in this summary. */
+.new-sale-product-summary__metric > small.app-money-meta {
+  color: var(--mantine-color-black) !important;
 }
 
 .new-sale-product-summary__metric > span {
@@ -182,7 +187,7 @@
   }
 }
 
-@container product-summary (max-width: 800px) {
+@container product-summary (max-width: 880px) {
   .new-sale-product-summary__metrics {
     grid-auto-flow: row;
     grid-template-columns: repeat(4, minmax(0, 1fr));
