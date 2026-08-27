@@ -40,6 +40,7 @@ import { SpecificationDownloadModal } from '../components/SpecificationDownloadM
 import { SpecificationProductsGrid } from '../components/SpecificationProductsGrid'
 import { SpecificationTotals } from '../components/SpecificationTotals'
 import { UploadDeliveryDocumentsModal } from '../components/UploadDeliveryDocumentsModal'
+import { CUSTOMS_DECLARATION_UPLOAD_LABEL } from '../customsDeclarationLabels'
 import { UploadProductSpecificationModal } from '../components/UploadProductSpecificationModal'
 import { UploadProductSpecificationResultModal } from '../components/UploadProductSpecificationResultModal'
 import type { SupplyOrganization } from '../detailTypes'
@@ -1062,7 +1063,7 @@ export function ProductDeliveryProtocolSpecificationPage() {
                         variant="default"
                         onClick={model.openDocuments}
                       >
-                        {t('Завантаження документів доставки')}
+                        {t(CUSTOMS_DECLARATION_UPLOAD_LABEL)}
                       </Button>
                     )}
                     {canMerge && (

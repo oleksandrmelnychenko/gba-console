@@ -32,6 +32,7 @@ import { SpecificationDownloadModal } from '../../product-delivery-protocols/com
 import { SpecificationProductsGrid } from '../../product-delivery-protocols/components/SpecificationProductsGrid'
 import { SpecificationTotals } from '../../product-delivery-protocols/components/SpecificationTotals'
 import { UploadDeliveryDocumentsModal } from '../../product-delivery-protocols/components/UploadDeliveryDocumentsModal'
+import { CUSTOMS_DECLARATION_UPLOAD_LABEL } from '../../product-delivery-protocols/customsDeclarationLabels'
 import { UploadProductSpecificationModal } from '../../product-delivery-protocols/components/UploadProductSpecificationModal'
 import { UploadProductSpecificationResultModal } from '../../product-delivery-protocols/components/UploadProductSpecificationResultModal'
 import type {
@@ -835,7 +836,7 @@ function SpecificationActionButtons({ model }: { model: DirectOrderSpecification
             variant="outline"
             onClick={model.openDocuments}
           >
-            {t('Завантаження документів доставки')}
+            {t(CUSTOMS_DECLARATION_UPLOAD_LABEL)}
           </Button>
         )}
         {model.canDownload && (
