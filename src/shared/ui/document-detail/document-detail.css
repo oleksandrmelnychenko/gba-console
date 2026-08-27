@@ -66,7 +66,8 @@
   align-items: stretch;
   display: grid;
   gap: 8px;
-  grid-template-columns: repeat(3, minmax(112px, auto));
+  grid-auto-columns: minmax(112px, auto);
+  grid-auto-flow: column;
 }
 
 .document-detail-metric {
@@ -361,6 +362,10 @@
 @media (max-width: 760px) {
   .document-detail-summary {
     grid-template-columns: 1fr;
+  }
+
+  .document-detail-summary__metrics {
+    grid-auto-flow: row;
   }
 
   .document-detail-summary__metrics,

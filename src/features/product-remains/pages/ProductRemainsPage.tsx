@@ -12,7 +12,14 @@ import {
   TextInput,
   Tooltip,
 } from '@mantine/core'
-import { AppDrawer } from "../../../shared/ui/AppDrawer"
+import { AppDrawer } from '../../../shared/ui/AppDrawer'
+import {
+  DocumentDetailLayout,
+  DocumentDetailMetric,
+  DocumentDetailRow,
+  DocumentDetailSection,
+  DocumentDetailSummary,
+} from '../../../shared/ui/document-detail/DocumentDetail'
 import { CircleAlert, Download, RefreshCw, RotateCcw, Search } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
@@ -1275,7 +1282,7 @@ function RemainsTotalsFooter<TItem>({ totals, kind }: { totals: CollectionWithTo
   )
 }
 
-function BatchDetails({
+export function BatchDetails({
   batch,
   columns,
   dateFrom,
@@ -1344,56 +1351,41 @@ function BatchDetails({
   }, [batch, dateFrom, dateTo, storageNetIds, supplierNetId, t])
 
   return (
-    <Stack className="product-remains-detail" gap="md">
-      <div className="app-detail-hero">
-        <div>
-          <span className="app-detail-eyebrow">{t('Деталі партії')}</span>
-          <div className="app-detail-title">
-            <strong>{displayValue(visibleBatch.ProductIncomeNumber)}</strong>
-            <span>
-              {[formatDate(visibleBatch.FromDate), visibleBatch.SupplierName, visibleBatch.OrganizationName]
-                .filter(Boolean)
-                .join(' · ')}
-            </span>
-          </div>
-        </div>
-        <div className="app-detail-hero__side">
-          <div className="app-detail-metrics">
-            <div className="app-detail-metric">
-              <span>{t('Сума gross')}</span>
-              <strong>{formatMoney(visibleBatch.TotalGrossPrice)}</strong>
-            </div>
-            <div className="app-detail-metric">
-              <span>{t('Облік gross')}</span>
-              <strong>{formatMoney(visibleBatch.AccountingTotalGrossPrice)}</strong>
-            </div>
-            <div className="app-detail-metric">
-              <span>{t('Вага')}</span>
-              <strong>{formatAmount(visibleBatch.TotalWeight)}</strong>
-            </div>
-          </div>
-        </div>
-      </div>
+    <DocumentDetailLayout
+      summary={
+        <DocumentDetailSummary
+          eyebrow={t('Деталі партії')}
+          title={displayValue(visibleBatch.ProductIncomeNumber)}
+          meta={[formatDate(visibleBatch.FromDate), visibleBatch.SupplierName, visibleBatch.OrganizationName]
+            .filter(Boolean)
+            .join(' · ')}
+          metrics={
+            <>
+              <DocumentDetailMetric label={t('Сума gross')} value={formatMoney(visibleBatch.TotalGrossPrice)} />
+              <DocumentDetailMetric label={t('Облік gross')} value={formatMoney(visibleBatch.AccountingTotalGrossPrice)} />
+              <DocumentDetailMetric label={t('Вага')} value={formatAmount(visibleBatch.TotalWeight)} />
+            </>
+          }
+        />
+      }
+    >
+      <DocumentDetailSection subtitle={displayValue(visibleBatch.ProductIncomeNumber)} title={t('Документ')}>
+        <DocumentDetailRow label={t('Дата')} mono value={formatDate(visibleBatch.FromDate)} />
+        <DocumentDetailRow label={t('Номер приходу')} mono value={visibleBatch.ProductIncomeNumber} />
+        <DocumentDetailRow label={t('Інвойс')} mono value={visibleBatch.InvoiceNumber} />
+      </DocumentDetailSection>
 
-      <div className="app-detail-grid">
-        <DetailItem label="Дата" value={formatDate(visibleBatch.FromDate)} />
-        <DetailItem label="Постачальник" value={displayValue(visibleBatch.SupplierName)} />
-        <DetailItem label="Номер приходу" value={displayValue(visibleBatch.ProductIncomeNumber)} />
-        <DetailItem label="Інвойс" value={displayValue(visibleBatch.InvoiceNumber)} />
-        <DetailItem label="Організація" value={displayValue(visibleBatch.OrganizationName)} />
-      </div>
-      {error && (
-        <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
-          {error}
-        </Alert>
-      )}
-      <Stack className="product-remains-detail__table-section" gap="xs">
-        <div className="app-detail-section-head">
-          <Text className="app-section-title" fw={600} size="sm">
-            {t('Позиції')}
-          </Text>
-          <span className="app-role-pill is-gray">{items.length}</span>
-        </div>
+      <DocumentDetailSection title={t('Учасники')}>
+        <DocumentDetailRow label={t('Постачальник')} value={visibleBatch.SupplierName} wide />
+        <DocumentDetailRow label={t('Організація')} value={visibleBatch.OrganizationName} wide />
+      </DocumentDetailSection>
+
+      <DocumentDetailSection stacked subtitle={String(items.length)} title={t('Позиції')}>
+        {error && (
+          <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
+            {error}
+          </Alert>
+        )}
         {items.length || isLoading ? (
           <DataTable
             columns={columns}
@@ -1415,8 +1407,8 @@ function BatchDetails({
             {t('У відповіді немає позицій партії')}
           </Text>
         )}
-      </Stack>
-    </Stack>
+      </DocumentDetailSection>
+    </DocumentDetailLayout>
   )
 }
 

@@ -2,12 +2,20 @@ import {
   Alert,
   Badge,
   Button,
-  Stack,
+  Group,
   Text,
 } from '@mantine/core'
 import { CircleAlert, Download } from 'lucide-react'
 import { useMemo } from 'react'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
+import {
+  DocumentDetailFlag,
+  DocumentDetailLayout,
+  DocumentDetailMetric,
+  DocumentDetailRow,
+  DocumentDetailSection,
+  DocumentDetailSummary,
+} from '../../../shared/ui/document-detail/DocumentDetail'
 import { translate } from '../../../shared/i18n/translate'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
@@ -67,41 +75,33 @@ export function DepreciatedOrderDetailDrawer({
       opened={Boolean(order)}
       padding="lg"
       position="right"
-      size="78rem"
-      title={<span style={{ fontFamily: 'var(--font-mono)' }}>{translate('Акт списання')}</span>}
+      size="wide"
+      title={t('Акт списання')}
       onClose={onClose}
     >
       {order && (
-        <Stack gap="md">
-          {detailError && (
-            <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
-              {detailError}
-            </Alert>
-          )}
-
-          <div className="app-detail-hero">
-            <div>
-              <span className="app-detail-eyebrow">{t('Акт списання')}</span>
-              <div className="app-detail-title">
-                <strong>{getOrderTitle(order)}</strong>
-                {order.Storage?.Name && <span>{order.Storage.Name}</span>}
-              </div>
-              {(order.IsManagement || isDetailLoading) && (
-                <div className="app-detail-badges">
-                  {order.IsManagement && (
-                    <Badge className="app-role-pill" variant="light">
-                      {t('Управ.')}
-                    </Badge>
-                  )}
-                  {isDetailLoading && (
-                    <Badge className="app-role-pill is-gray" variant="light">
-                      {t('Завантаження деталей')}
-                    </Badge>
-                  )}
-                </div>
-              )}
-            </div>
-            <div className="app-detail-hero__side">
+        <DocumentDetailLayout
+          summary={
+            <DocumentDetailSummary
+              eyebrow={t('Акт списання')}
+              title={displayValue(order.Number)}
+              meta={[formatDate(order.FromDate), order.Storage?.Name].filter(Boolean).join(' · ')}
+              metrics={
+                <>
+                  <DocumentDetailMetric label={t('Позицій')} value={String(items.length)} />
+                  <DocumentDetailMetric label={t('К-сть')} value={String(totalQty)} />
+                </>
+              }
+            />
+          }
+          actions={
+            <Group justify="space-between">
+              <Group gap="xs">
+                {order.IsManagement && <DocumentDetailFlag active label={t('Управ.')} />}
+                {isDetailLoading && (
+                  <Badge className="app-role-pill is-gray" variant="light">{t('Завантаження деталей')}</Badge>
+                )}
+              </Group>
               <Button
                 disabled={!order.NetUid}
                 leftSection={<Download size={16} />}
@@ -111,55 +111,44 @@ export function DepreciatedOrderDetailDrawer({
               >
                 {t('Завантажити')}
               </Button>
-              <div className="app-detail-metrics">
-                <div className="app-detail-metric">
-                  <span>{t('Позицій')}</span>
-                  <strong>{items.length}</strong>
-                </div>
-                <div className="app-detail-metric">
-                  <span>{t('К-сть')}</span>
-                  <strong>{totalQty}</strong>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="app-detail-grid">
-            <DetailField label={t('Організація')} value={order.Organization?.Name} />
-            <DetailField label={t('Відповідальний')} value={getResponsibleName(order)} />
-            <DetailField label={t('Склад')} value={order.Storage?.Name} />
-            <DetailField label={t('Від якої дати')} value={formatDateTime(order.FromDate)} />
+            </Group>
+          }
+        >
+          <DocumentDetailSection subtitle={displayValue(order.Number)} title={t('Документ')}>
+            <DocumentDetailRow label={t('Від якої дати')} mono value={formatDateTime(order.FromDate)} />
+            <DocumentDetailRow label={t('Номер')} mono value={order.Number} />
             {order.Comment && (
-              <div className="app-detail-field" style={{ gridColumn: '1 / -1' }}>
-                <span>{t('Коментар')}</span>
-                <strong>{order.Comment}</strong>
-              </div>
+              <DocumentDetailRow label={t('Коментар')} value={order.Comment} wide />
             )}
-          </div>
+          </DocumentDetailSection>
 
-          <div className="app-detail-section-head">
-            <Text className="app-section-title" fw={600} size="sm">
-              {t('Позиції')}
-            </Text>
-            <Badge className="app-role-pill is-gray" variant="light">
-              {items.length}
-            </Badge>
-          </div>
+          <DocumentDetailSection title={t('Учасники та склад')}>
+            <DocumentDetailRow label={t('Організація')} value={order.Organization?.Name} wide />
+            <DocumentDetailRow label={t('Склад')} value={order.Storage?.Name} />
+            <DocumentDetailRow label={t('Відповідальний')} value={getResponsibleName(order)} />
+          </DocumentDetailSection>
 
-          <DataTable
-            columns={itemColumns}
-            data={items}
-            defaultLayout={DEPRECIATED_ORDER_ITEMS_TABLE_DEFAULT_LAYOUT}
-            emptyText={t('Позицій не знайдено')}
-            getRowId={(item, index) => String(item.NetUid || item.Id || index)}
-            isLoading={isDetailLoading}
-            layoutVersion="depreciated-order-items-table-1"
-            loadingText={t('Завантаження позицій')}
-            maxHeight="calc(100vh - 420px)"
-            minWidth={920}
-            tableId="depreciated-order-items"
-          />
-        </Stack>
+          <DocumentDetailSection stacked subtitle={String(items.length)} title={t('Позиції')}>
+            {detailError && (
+              <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
+                {detailError}
+              </Alert>
+            )}
+            <DataTable
+              columns={itemColumns}
+              data={items}
+              defaultLayout={DEPRECIATED_ORDER_ITEMS_TABLE_DEFAULT_LAYOUT}
+              emptyText={t('Позицій не знайдено')}
+              getRowId={(item, index) => String(item.NetUid || item.Id || index)}
+              isLoading={isDetailLoading}
+              layoutVersion="depreciated-order-items-table-1"
+              loadingText={t('Завантаження позицій')}
+              maxHeight="calc(100vh - 420px)"
+              minWidth={920}
+              tableId="depreciated-order-items"
+            />
+          </DocumentDetailSection>
+        </DocumentDetailLayout>
       )}
 
       <DocumentExportModal
@@ -171,15 +160,6 @@ export function DepreciatedOrderDetailDrawer({
         onClose={onCloseDownload}
       />
     </AppDrawer>
-  )
-}
-
-function DetailField({ label, value }: { label: string; value: unknown }) {
-  return (
-    <div className="app-detail-field">
-      <span>{label}</span>
-      <strong>{displayValue(value)}</strong>
-    </div>
   )
 }
 
@@ -253,12 +233,6 @@ function useDepreciatedOrderItemColumns(items: DepreciatedOrderItem[]): DataTabl
   )
 }
 
-function getOrderTitle(order: DepreciatedOrder): string {
-  return [order.Number ? `№ ${order.Number}` : '', order.FromDate ? `${translate('Від')} ${formatDate(order.FromDate)}` : '']
-    .filter(Boolean)
-    .join(' · ')
-    || translate('Акт списання')
-}
 
 function getResponsibleName(order: DepreciatedOrder): string {
   const responsible = order.Responsible
