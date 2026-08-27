@@ -16,6 +16,7 @@ import { ExcelIcon } from '../../../shared/ui/ExcelIcon'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppModal } from '../../../shared/ui/AppModal'
 import { upgradeHttpToHttps } from '../../../shared/url/upgradeHttpToHttps'
+import { CUSTOMS_DECLARATION_UPLOAD_LABEL } from '../customsDeclarationLabels'
 import type { SupplyOrganization } from '../detailTypes'
 import type { DeliveryDocumentDraft } from '../specificationTypes'
 
@@ -100,7 +101,7 @@ export function UploadDeliveryDocumentsModal({
       opened={opened}
       size="lg"
       className="app-form-sheet"
-      title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Завантаження документів доставки')}</span>}
+      title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t(CUSTOMS_DECLARATION_UPLOAD_LABEL)}</span>}
       onClose={() => {
         if (!isSaving) {
           onClose()
