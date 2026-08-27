@@ -2010,8 +2010,8 @@ function AllShipmentsPanel({ onCreate, permissions }: AllShipmentsPanelProps) {
         }
         onClose={requestCloseShipment}
       >
-        <Stack className="warehouse-shipment-edit-shell" gap={8}>
-          <div className="app-filter-bar warehouse-shipment-edit-toolbar">
+        <Stack className="warehouse-shipment-edit-shell" gap={12}>
+          <div className="warehouse-shipment-edit-toolbar">
             {shipmentDraft && (
               <Badge
                 className={`app-role-pill warehouse-shipment-status-pill ${shipmentDraft.IsSent ? 'is-green' : 'is-gray'}`}
@@ -2038,8 +2038,8 @@ function AllShipmentsPanel({ onCreate, permissions }: AllShipmentsPanelProps) {
             <div className="warehouse-shipment-edit-actions">
               <Button
                 color={CREATE_ACTION_COLOR}
-                leftSection={<Plus size={18} />}
-          onClick={openManualPicker}
+                leftSection={<Plus size={16} />}
+                onClick={openManualPicker}
                 disabled={!canEditShipment || isSaving}
               >
                 {t('Додати накладні')}
@@ -2048,7 +2048,7 @@ function AllShipmentsPanel({ onCreate, permissions }: AllShipmentsPanelProps) {
                 <Box component="span">
                   <Button
                     color={CREATE_ACTION_COLOR}
-                    leftSection={<FileDown size={18} />}
+                    leftSection={<FileDown size={16} />}
                     variant="outline"
                     onClick={printSelectedShipment}
                     disabled={Boolean(printSelectedShipmentDisabledReason)}

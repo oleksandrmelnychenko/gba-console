@@ -260,14 +260,31 @@
 }
 
 .warehouse-shipment-edit-toolbar {
-  border: 1px solid var(--mantine-color-gray-2);
-  border-radius: 10px;
-  grid-template-columns: max-content minmax(220px, 1fr) minmax(210px, 230px) max-content;
+  align-items: end;
+  background: transparent;
+  display: grid;
+  flex: 0 0 auto;
+  gap: 12px;
+  grid-template-columns: max-content minmax(200px, 1fr) 224px max-content;
+  min-width: 0;
+  padding: 4px 0;
+}
+
+.warehouse-shipment-edit-toolbar .mantine-InputWrapper-label {
+  display: block;
+  line-height: 1.3;
+  margin-bottom: 4px;
+}
+
+.warehouse-shipment-edit-toolbar .mantine-Input-input {
+  font-size: 13px;
+  height: 36px;
 }
 
 .warehouse-shipment-status-pill {
   align-self: end;
-  height: 30px;
+  height: 28px;
+  margin-bottom: 4px;
   padding-inline: 10px;
 }
 
@@ -283,6 +300,10 @@
 
 .warehouse-shipment-edit-actions .mantine-Button-root {
   flex: 0 0 auto;
+}
+
+.warehouse-shipment-edit-actions > span {
+  display: flex;
 }
 
 .warehouse-shipment-edit-actions .mantine-Button-label {
@@ -367,18 +388,17 @@
   text-transform: uppercase;
 }
 
-@media (max-width: 1180px) {
+@media (max-width: 980px) {
   .warehouse-shipment-edit-toolbar {
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-columns: max-content minmax(0, 1fr) 224px;
   }
 
   .warehouse-shipment-edit-actions {
     grid-column: 1 / -1;
-    justify-content: flex-start;
   }
 }
 
-@media (max-width: 720px) {
+@media (max-width: 600px) {
   .warehouse-shipment-edit-toolbar {
     grid-template-columns: minmax(0, 1fr);
   }
@@ -386,6 +406,7 @@
   .warehouse-shipment-edit-actions {
     flex-wrap: wrap;
     grid-column: auto;
+    justify-content: flex-start;
   }
 }
 
