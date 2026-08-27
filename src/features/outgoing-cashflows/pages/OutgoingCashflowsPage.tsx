@@ -15,7 +15,7 @@
 } from '@mantine/core'
 import { useDebouncedValue } from '@mantine/hooks'
 import { Banknote, ChevronDown, CircleAlert, Landmark, Plus, RotateCcw, Search } from 'lucide-react'
-import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
@@ -27,6 +27,14 @@ import { useI18n } from '../../../shared/i18n/useI18n'
 import { useMutatedListRefresh } from '../../../shared/router/useMutatedListRefresh'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
+import {
+  DocumentDetailFlag,
+  DocumentDetailLayout,
+  DocumentDetailMetric,
+  DocumentDetailRow,
+  DocumentDetailSection,
+  DocumentDetailSummary,
+} from '../../../shared/ui/document-detail/DocumentDetail'
 import { AppModal } from '../../../shared/ui/AppModal'
 import { CheckboxMultiSelect } from '../../../shared/ui/CheckboxMultiSelect'
 import { Paginator } from '../../../shared/ui/paginator/Paginator'
@@ -1042,159 +1050,92 @@ function OutgoingCashflowDetailDrawer({ row, onClose }: { row: OutgoingCashflowR
   return (
     <AppDrawer opened={Boolean(row)} padding="md" size="xl" title={t('Видатковий ордер')} onClose={onClose}>
       {row && (
-        <div className="outgoing-detail-drawer">
-          <section className="outgoing-detail-summary">
-            <div className="outgoing-detail-summary__main">
-              <span className="outgoing-detail-eyebrow">{t('Документ')}</span>
-              <Text className="outgoing-detail-summary__title">{displayValue(row.number)}</Text>
-              <Text className="outgoing-detail-summary__meta">
-                {formatDateTime(row.fromDate)} · {displayValue(row.operationType)}
-              </Text>
+        <DocumentDetailLayout
+          summary={
+            <DocumentDetailSummary
+              eyebrow={t('Документ')}
+              title={displayValue(row.number)}
+              meta={<>{formatDateTime(row.fromDate)} · {displayValue(row.operationType)}</>}
+              metrics={
+                <>
+                  <DocumentDetailMetric label={t('Сума')} value={formatMoney(row.amount)} suffix={row.currency} />
+                  <DocumentDetailMetric label={t('Різниця')} tone={row.differenceAmount ? 'danger' : undefined} value={formatMoney(row.differenceAmount)} />
+                  <DocumentDetailMetric label={t('ПДВ')} value={formatMoneyOptional(row.order.VAT)} />
+                </>
+              }
+            />
+          }
+        >
+          <DocumentDetailSection subtitle={displayValue(row.number)} title={t('Документ')}>
+            <DocumentDetailRow label={t('Дата')} value={formatDateTime(row.fromDate)} />
+            <DocumentDetailRow label={t('Номер')} value={displayValue(row.number)} />
+            <DocumentDetailRow label={t('Вхідний номер')} value={displayValue(row.order.ArrivalNumber)} />
+            <DocumentDetailRow label={t('Тип операції')} value={displayValue(row.operationType)} />
+            <DocumentDetailRow label={t('Призначення платежу')} value={displayValue(row.order.PaymentPurpose)} wide />
+            <DocumentDetailRow label={t('Коментар')} value={displayValue(row.comment)} wide />
+          </DocumentDetailSection>
+
+          <DocumentDetailSection subtitle={displayValue(row.currency)} title={t('Суми та валюта')}>
+            <DocumentDetailRow mono label={t('Сума')} value={formatMoneyWithCurrency(row.amount, row.currency)} />
+            <DocumentDetailRow label={t('Валюта')} value={displayValue(row.currency)} />
+            <DocumentDetailRow label={t('Курс')} value={displayValue(row.order.ExchangeRate)} />
+            <DocumentDetailRow mono label={t('Сума в EUR')} value={formatMoneyOptional(row.order.EuroAmount ?? row.order.AfterExchangeAmount)} />
+            <DocumentDetailRow label={t('ПДВ %')} value={hasNumber(row.order.VatPercent) ? displayValue(row.order.VatPercent) : displayValue(undefined)} />
+            <DocumentDetailRow mono label={t('ПДВ')} value={formatMoneyOptional(row.order.VAT)} />
+            <DocumentDetailRow mono label={t('Різниця')} tone={row.differenceAmount ? 'danger' : undefined} value={formatMoney(row.differenceAmount)} />
+          </DocumentDetailSection>
+
+          <DocumentDetailSection subtitle={displayValue(row.organization)} title={t('Учасники та рахунки')}>
+            <DocumentDetailRow label={t('Кому видано')} value={displayValue(row.payedTo)} wide />
+            <DocumentDetailRow label={t('Організація')} value={displayValue(row.organization)} wide />
+            <DocumentDetailRow label={t('Рахунок')} value={displayValue(row.paymentRegister)} wide />
+            <DocumentDetailRow label={t('Стаття руху')} value={displayValue(row.paymentMovement)} wide />
+            <DocumentDetailRow label={t('Відповідальний')} value={displayValue(row.responsible)} wide />
+            <DocumentDetailRow label={t('Клієнт')} value={displayValue(getEntityName(row.order.ClientAgreement?.Client) || getEntityName(row.order.Client))} wide />
+          </DocumentDetailSection>
+
+          <DocumentDetailSection title={t('Стани')}>
+            <div className="document-detail-flags">
+              <DocumentDetailFlag active={Boolean(row.isUnderReport)} label={t('Підзвіт')} />
+              <DocumentDetailFlag active={Boolean(row.order.IsUnderReportDone)} label={t('Закрито')} />
+              <DocumentDetailFlag active={Boolean(row.isCanceled)} label={t('Скасовано')} />
+              <DocumentDetailFlag active={Boolean(row.isAccounting)} label={t('Бухгалтерський')} />
+              <DocumentDetailFlag active={Boolean(row.isManagementAccounting)} label={t('Управлінський')} />
             </div>
-            <div className="outgoing-detail-summary__metrics">
-              <OutgoingDetailMetric label={t('Сума')} value={formatMoney(row.amount)} suffix={row.currency} />
-              <OutgoingDetailMetric label={t('Різниця')} tone={row.differenceAmount ? 'danger' : undefined} value={formatMoney(row.differenceAmount)} />
-              <OutgoingDetailMetric label={t('ПДВ')} value={formatMoneyOptional(row.order.VAT)} />
-            </div>
-          </section>
+          </DocumentDetailSection>
 
-          <div className="outgoing-detail-tree">
-            <OutgoingDetailSection subtitle={displayValue(row.number)} title={t('Документ')}>
-              <OutgoingDetailRow label={t('Дата')} value={formatDateTime(row.fromDate)} />
-              <OutgoingDetailRow label={t('Номер')} value={displayValue(row.number)} />
-              <OutgoingDetailRow label={t('Вхідний номер')} value={displayValue(row.order.ArrivalNumber)} />
-              <OutgoingDetailRow label={t('Тип операції')} value={displayValue(row.operationType)} />
-              <OutgoingDetailRow label={t('Призначення платежу')} value={displayValue(row.order.PaymentPurpose)} wide />
-              <OutgoingDetailRow label={t('Коментар')} value={displayValue(row.comment)} wide />
-            </OutgoingDetailSection>
+          <DocumentDetailSection subtitle={`${relatedOrders.length}`} title={t('Пов’язані документи')}>
+            {relatedOrders.length > 0 ? (
+              <div className="document-detail-related-list">
+                {relatedOrders.map((item, index) => {
+                  const order = item.ConsumablesOrder
+                  const itemsCount = getActiveConsumablesItemsCount(order)
 
-            <OutgoingDetailSection subtitle={displayValue(row.currency)} title={t('Суми та валюта')}>
-              <OutgoingDetailRow mono label={t('Сума')} value={formatMoneyWithCurrency(row.amount, row.currency)} />
-              <OutgoingDetailRow label={t('Валюта')} value={displayValue(row.currency)} />
-              <OutgoingDetailRow label={t('Курс')} value={displayValue(row.order.ExchangeRate)} />
-              <OutgoingDetailRow mono label={t('Сума в EUR')} value={formatMoneyOptional(row.order.EuroAmount ?? row.order.AfterExchangeAmount)} />
-              <OutgoingDetailRow label={t('ПДВ %')} value={hasNumber(row.order.VatPercent) ? displayValue(row.order.VatPercent) : displayValue(undefined)} />
-              <OutgoingDetailRow mono label={t('ПДВ')} value={formatMoneyOptional(row.order.VAT)} />
-              <OutgoingDetailRow mono label={t('Різниця')} tone={row.differenceAmount ? 'danger' : undefined} value={formatMoney(row.differenceAmount)} />
-            </OutgoingDetailSection>
-
-            <OutgoingDetailSection subtitle={displayValue(row.organization)} title={t('Учасники та рахунки')}>
-              <OutgoingDetailRow label={t('Кому видано')} value={displayValue(row.payedTo)} wide />
-              <OutgoingDetailRow label={t('Організація')} value={displayValue(row.organization)} wide />
-              <OutgoingDetailRow label={t('Рахунок')} value={displayValue(row.paymentRegister)} wide />
-              <OutgoingDetailRow label={t('Стаття руху')} value={displayValue(row.paymentMovement)} wide />
-              <OutgoingDetailRow label={t('Відповідальний')} value={displayValue(row.responsible)} wide />
-              <OutgoingDetailRow label={t('Клієнт')} value={displayValue(getEntityName(row.order.ClientAgreement?.Client) || getEntityName(row.order.Client))} wide />
-            </OutgoingDetailSection>
-
-            <OutgoingDetailSection title={t('Стани')}>
-              <div className="outgoing-detail-flags">
-                <OutgoingDetailFlag active={Boolean(row.isUnderReport)} label={t('Підзвіт')} />
-                <OutgoingDetailFlag active={Boolean(row.order.IsUnderReportDone)} label={t('Закрито')} />
-                <OutgoingDetailFlag active={Boolean(row.isCanceled)} label={t('Скасовано')} />
-                <OutgoingDetailFlag active={Boolean(row.isAccounting)} label={t('Бухгалтерський')} />
-                <OutgoingDetailFlag active={Boolean(row.isManagementAccounting)} label={t('Управлінський')} />
+                  return (
+                    <article key={getRelatedOrderKey(row, item, index)} className="document-detail-related-card">
+                      <div className="document-detail-related-card__head">
+                        <span>{displayValue(order?.Number)}</span>
+                        <span>{formatDateTime(order?.OrganizationFromDate)}</span>
+                      </div>
+                      <div className="document-detail-related-card__grid">
+                        <DocumentDetailRow label={t('Номер організації')} value={displayValue(order?.OrganizationNumber)} />
+                        <DocumentDetailRow label={t('Постачальник/отримувач')} value={displayValue(getEntityName(order?.ConsumableProductOrganization))} />
+                        <DocumentDetailRow label={t('Склад')} value={displayValue(getEntityName(order?.ConsumablesStorage))} />
+                        <DocumentDetailRow label={t('Позицій')} value={String(itemsCount)} />
+                        <DocumentDetailRow mono label={t('Сума без ПДВ')} value={formatMoneyOptional(order?.TotalAmountWithoutVAT)} />
+                        <DocumentDetailRow mono label={t('Сума з ПДВ')} value={formatMoneyOptional(order?.TotalAmount)} />
+                      </div>
+                    </article>
+                  )
+                })}
               </div>
-            </OutgoingDetailSection>
-
-            <OutgoingDetailSection subtitle={`${relatedOrders.length}`} title={t('Пов’язані документи')}>
-              {relatedOrders.length > 0 ? (
-                <div className="outgoing-detail-related-list">
-                  {relatedOrders.map((item, index) => {
-                    const order = item.ConsumablesOrder
-                    const itemsCount = getActiveConsumablesItemsCount(order)
-
-                    return (
-                      <article key={getRelatedOrderKey(row, item, index)} className="outgoing-detail-related-card">
-                        <div className="outgoing-detail-related-card__head">
-                          <span>{displayValue(order?.Number)}</span>
-                          <span>{formatDateTime(order?.OrganizationFromDate)}</span>
-                        </div>
-                        <div className="outgoing-detail-related-card__grid">
-                          <OutgoingDetailRow label={t('Номер організації')} value={displayValue(order?.OrganizationNumber)} />
-                          <OutgoingDetailRow label={t('Постачальник/отримувач')} value={displayValue(getEntityName(order?.ConsumableProductOrganization))} />
-                          <OutgoingDetailRow label={t('Склад')} value={displayValue(getEntityName(order?.ConsumablesStorage))} />
-                          <OutgoingDetailRow label={t('Позицій')} value={String(itemsCount)} />
-                          <OutgoingDetailRow mono label={t('Сума без ПДВ')} value={formatMoneyOptional(order?.TotalAmountWithoutVAT)} />
-                          <OutgoingDetailRow mono label={t('Сума з ПДВ')} value={formatMoneyOptional(order?.TotalAmount)} />
-                        </div>
-                      </article>
-                    )
-                  })}
-                </div>
-              ) : (
-                <div className="outgoing-detail-empty">{t('Пов’язаних документів немає')}</div>
-              )}
-            </OutgoingDetailSection>
-          </div>
-        </div>
+            ) : (
+              <div className="document-detail-empty">{t('Пов’язаних документів немає')}</div>
+            )}
+          </DocumentDetailSection>
+        </DocumentDetailLayout>
       )}
     </AppDrawer>
-  )
-}
-
-function OutgoingDetailMetric({
-  label,
-  suffix,
-  tone,
-  value,
-}: {
-  label: string
-  suffix?: string
-  tone?: 'danger'
-  value: string
-}) {
-  return (
-    <div className={`outgoing-detail-metric${tone ? ` is-${tone}` : ''}`}>
-      <span>{label}</span>
-      <strong>
-        {displayValue(value)}
-        {suffix ? <em>{suffix}</em> : null}
-      </strong>
-    </div>
-  )
-}
-
-function OutgoingDetailSection({ children, subtitle, title }: { children: ReactNode; subtitle?: string; title: string }) {
-  return (
-    <section className="outgoing-detail-section">
-      <div className="outgoing-detail-section__head">
-        <span className="outgoing-detail-section__title">{title}</span>
-        {subtitle ? <span className="outgoing-detail-section__subtitle">{subtitle}</span> : null}
-      </div>
-      <div className="outgoing-detail-section__body">{children}</div>
-    </section>
-  )
-}
-
-function OutgoingDetailRow({
-  label,
-  mono,
-  tone,
-  value,
-  wide,
-}: {
-  label: string
-  mono?: boolean
-  tone?: 'danger'
-  value: string
-  wide?: boolean
-}) {
-  return (
-    <div className={`outgoing-detail-row${wide ? ' is-wide' : ''}`}>
-      <span className="outgoing-detail-row__label">{label}</span>
-      <span className="outgoing-detail-row__line" aria-hidden />
-      <span className={`outgoing-detail-row__value${mono ? ' app-money' : ''}${tone ? ` is-${tone}` : ''}`}>{displayValue(value) || '-'}</span>
-    </div>
-  )
-}
-
-function OutgoingDetailFlag({ active, label }: { active: boolean; label: string }) {
-  return (
-    <span className={`outgoing-detail-flag${active ? ' is-active' : ''}`}>
-      <span aria-hidden />
-      {label}
-    </span>
   )
 }
 

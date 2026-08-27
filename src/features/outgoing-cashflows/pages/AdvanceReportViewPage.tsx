@@ -40,6 +40,7 @@ import { AdvanceReportConsumableOrderModal } from '../components/AdvanceReportCo
 import { AdvanceReportFuelGrid } from '../components/AdvanceReportFuelGrid'
 import { AdvanceReportFuelModal } from '../components/AdvanceReportFuelModal'
 import { AdvanceReportProductsGrid } from '../components/AdvanceReportProductsGrid'
+import '../../../shared/ui/document-detail/document-detail.css'
 import './outgoing-cashflows-page.css'
 import './advance-report-view-page.css'
 
@@ -491,7 +492,7 @@ export function AdvanceReportViewPage() {
       title={t('Авансовий звіт')}
       onClose={model.goBack}
     >
-    <div className="outgoing-detail-drawer advance-report-detail-drawer">
+    <div className="document-detail-drawer advance-report-detail-drawer">
       <Group className="advance-report-detail-actions" gap="xs" justify="flex-end">
         {!model.isDone && (
           <>
@@ -589,15 +590,15 @@ function AdvanceReportContent({ model }: { model: ReturnType<typeof useAdvanceRe
 
   return (
     <>
-      <section className="outgoing-detail-summary">
-        <div className="outgoing-detail-summary__main">
-          <span className="outgoing-detail-eyebrow">{t('Авансовий звіт')}</span>
-          <Text className="outgoing-detail-summary__title">{displayValue(reportNumber)}</Text>
-          <Text className="outgoing-detail-summary__meta">
+      <section className="document-detail-summary">
+        <div className="document-detail-summary__main">
+          <span className="document-detail-eyebrow">{t('Авансовий звіт')}</span>
+          <Text className="document-detail-summary__title">{displayValue(reportNumber)}</Text>
+          <Text className="document-detail-summary__meta">
             {formatDateTime(reportDate)} · {model.headerTitle}
           </Text>
         </div>
-        <div className="outgoing-detail-summary__metrics">
+        <div className="document-detail-summary__metrics">
           <AdvanceReportDetailMetric
             label={t('Сума ордера')}
             suffix={model.currencyCode}
@@ -617,7 +618,7 @@ function AdvanceReportContent({ model }: { model: ReturnType<typeof useAdvanceRe
         </div>
       </section>
 
-      <div className="outgoing-detail-tree advance-report-detail-tree">
+      <div className="document-detail-tree advance-report-detail-tree">
         <AdvanceReportDetailSection subtitle={displayValue(order.Number)} title={model.headerTitle}>
           <AdvanceReportDetailRow label={t('Дата')} value={formatDateTime(order.FromDate)} />
           <AdvanceReportDetailRow label={t('Номер')} value={displayValue(order.Number)} />
@@ -655,7 +656,7 @@ function AdvanceReportContent({ model }: { model: ReturnType<typeof useAdvanceRe
 
         {positionsCount === 0 ? (
           <AdvanceReportDetailSection subtitle="0" title={t('Позиції')}>
-            <div className="outgoing-detail-empty">{t('Позицій немає')}</div>
+            <div className="document-detail-empty">{t('Позицій немає')}</div>
           </AdvanceReportDetailSection>
         ) : null}
 
@@ -696,7 +697,7 @@ function AdvanceReportDetailMetric({
   value: string
 }) {
   return (
-    <div className={`outgoing-detail-metric${tone ? ` is-${tone}` : ''}`}>
+    <div className={`document-detail-metric${tone ? ` is-${tone}` : ''}`}>
       <span>{label}</span>
       <strong>
         {displayValue(value)}
@@ -716,12 +717,12 @@ function AdvanceReportDetailSection({
   title: string
 }) {
   return (
-    <section className="outgoing-detail-section">
-      <div className="outgoing-detail-section__head">
-        <span className="outgoing-detail-section__title">{title}</span>
-        {subtitle ? <span className="outgoing-detail-section__subtitle">{subtitle}</span> : null}
+    <section className="document-detail-section">
+      <div className="document-detail-section__head">
+        <span className="document-detail-section__title">{title}</span>
+        {subtitle ? <span className="document-detail-section__subtitle">{subtitle}</span> : null}
       </div>
-      <div className="outgoing-detail-section__body">{children}</div>
+      <div className="document-detail-section__body">{children}</div>
     </section>
   )
 }
@@ -738,10 +739,10 @@ function AdvanceReportDetailRow({
   wide?: boolean
 }) {
   return (
-    <div className={`outgoing-detail-row${wide ? ' is-wide' : ''}`}>
-      <span className="outgoing-detail-row__label">{label}</span>
-      <span className="outgoing-detail-row__line" aria-hidden />
-      <span className={`outgoing-detail-row__value${mono ? ' app-money' : ''}`}>{displayValue(value)}</span>
+    <div className={`document-detail-row${wide ? ' is-wide' : ''}`}>
+      <span className="document-detail-row__label">{label}</span>
+      <span className="document-detail-row__line" aria-hidden />
+      <span className={`document-detail-row__value${mono ? ' app-money' : ''}`}>{displayValue(value)}</span>
     </div>
   )
 }
