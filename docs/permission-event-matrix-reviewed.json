@@ -2276,7 +2276,7 @@
           "file": "src/features/act-reconciliations/pages/ActReconciliationViewPage.tsx",
           "handler": "route:/ukraine/act/reconcoliation/:netid",
           "humanLabel": "/ukraine/act/reconcoliation/:netid",
-          "line": 323,
+          "line": 322,
           "permissionKeys": [
             "orders.reconciliation_acts.page.view"
           ],
@@ -2286,7 +2286,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/act-reconciliations/pages/ActReconciliationViewPage.tsx",
-        "line": 323,
+        "line": 322,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -2443,13 +2443,13 @@
       "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-63e83ff57029",
+          "candidateId": "EPC-254665f62f29",
           "distance": 6,
           "evidenceType": "current_action",
           "file": "src/features/act-reconciliations/pages/ActReconciliationViewPage.tsx",
           "handler": "{() => void model.openHistory()}",
           "humanLabel": "Історія змін",
-          "line": 380,
+          "line": 379,
           "permissionKeys": [
             "orders.reconciliation_acts.history.view"
           ],
@@ -2459,7 +2459,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/act-reconciliations/pages/ActReconciliationViewPage.tsx",
-        "line": 386,
+        "line": 385,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -2489,13 +2489,13 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-650e0f7b3652",
+          "candidateId": "EPC-7ccdd41bdccb",
           "distance": 6,
           "evidenceType": "current_action",
           "file": "src/features/act-reconciliations/pages/ActReconciliationViewPage.tsx",
           "handler": "{() => model.reload()}",
           "humanLabel": "Оновити",
-          "line": 392,
+          "line": 391,
           "permissionKeys": [],
           "score": 11
         }
@@ -2503,7 +2503,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/act-reconciliations/pages/ActReconciliationViewPage.tsx",
-        "line": 398,
+        "line": 397,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -2535,7 +2535,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/act-reconciliations/pages/ActReconciliationViewPage.tsx",
-        "line": 323,
+        "line": 322,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -2567,7 +2567,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/act-reconciliations/pages/ActReconciliationViewPage.tsx",
-        "line": 352,
+        "line": 322,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -2597,13 +2597,13 @@
       "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-c1a958763906",
-          "distance": 102,
+          "candidateId": "EPC-2a5d81fecd60",
+          "distance": 101,
           "evidenceType": "current_action",
           "file": "src/features/act-reconciliations/pages/ActReconciliationViewPage.tsx",
           "handler": "{model.canSelectItems ? model.toggleItem : undefined}",
           "humanLabel": null,
-          "line": 464,
+          "line": 462,
           "permissionKeys": [],
           "score": 15
         }
@@ -2611,7 +2611,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/act-reconciliations/pages/ActReconciliationViewPage.tsx",
-        "line": 362,
+        "line": 361,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -2643,7 +2643,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/act-reconciliations/pages/ActReconciliationViewPage.tsx",
-        "line": 585,
+        "line": 584,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -2675,7 +2675,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/act-reconciliations/pages/ActReconciliationViewPage.tsx",
-        "line": 585,
+        "line": 584,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -2707,7 +2707,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/act-reconciliations/pages/ActReconciliationViewPage.tsx",
-        "line": 585,
+        "line": 584,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -2737,13 +2737,13 @@
       "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-09938ffa7e1e",
+          "candidateId": "EPC-4ee96005aa11",
           "distance": 128,
           "evidenceType": "current_action",
           "file": "src/features/act-reconciliations/pages/ActReconciliationViewPage.tsx",
           "handler": "{() => onOpenAction(item)}",
           "humanLabel": "Створити складську дію",
-          "line": 699,
+          "line": 698,
           "permissionKeys": [],
           "score": 14
         }
@@ -2751,7 +2751,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/act-reconciliations/pages/ActReconciliationViewPage.tsx",
-        "line": 571,
+        "line": 570,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -27163,13 +27163,13 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-1d8155b927c9",
-          "distance": 63,
+          "candidateId": "EPC-8a666044bc98",
+          "distance": 64,
           "evidenceType": "current_action",
           "file": "src/features/organization-clients/components/OrganizationClientAgreementsPanel.tsx",
           "handler": "{() => setModalOpened(false)}",
           "humanLabel": "Скасувати",
-          "line": 211,
+          "line": 212,
           "permissionKeys": [],
           "score": 19
         }
@@ -27205,13 +27205,13 @@
       "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-768ad9168ee3",
-          "distance": 80,
+          "candidateId": "EPC-e6f00e1c9df3",
+          "distance": 81,
           "evidenceType": "current_action",
           "file": "src/features/organization-clients/components/OrganizationClientAgreementsPanel.tsx",
           "handler": "{handleAddAgreement}",
           "humanLabel": "Додати",
-          "line": 214,
+          "line": 215,
           "permissionKeys": [],
           "score": 18
         }
@@ -33161,13 +33161,13 @@
       "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-6076782635f4",
+          "candidateId": "EPC-ded9fcf16531",
           "distance": 5,
           "evidenceType": "current_action",
           "file": "src/features/product-capitalizations/components/NewProductCapitalizationPanel.tsx",
           "handler": "{model.parseFromFiles}",
           "humanLabel": null,
-          "line": 274,
+          "line": 275,
           "permissionKeys": [],
           "score": 19
         }
@@ -33175,7 +33175,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/product-capitalizations/components/NewProductCapitalizationPanel.tsx",
-        "line": 279,
+        "line": 280,
         "alternatives": []
       }
     },
@@ -33202,13 +33202,13 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-56c4bf16ef63",
+          "candidateId": "EPC-e8f190988c82",
           "distance": 5,
           "evidenceType": "current_action",
           "file": "src/features/product-capitalizations/components/NewProductCapitalizationPanel.tsx",
           "handler": "{model.cancelClose}",
           "humanLabel": "Залишитися",
-          "line": 299,
+          "line": 300,
           "permissionKeys": [],
           "score": 16
         }
@@ -33216,7 +33216,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/product-capitalizations/components/NewProductCapitalizationPanel.tsx",
-        "line": 294,
+        "line": 295,
         "alternatives": []
       }
     },
@@ -33243,13 +33243,13 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-643d705e52a2",
+          "candidateId": "EPC-ff11db419363",
           "distance": 10,
           "evidenceType": "current_action",
           "file": "src/features/product-capitalizations/components/NewProductCapitalizationPanel.tsx",
           "handler": "{model.confirmClose}",
           "humanLabel": "Закрити без збереження",
-          "line": 302,
+          "line": 303,
           "permissionKeys": [],
           "score": 17
         }
@@ -33257,7 +33257,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/product-capitalizations/components/NewProductCapitalizationPanel.tsx",
-        "line": 292,
+        "line": 293,
         "alternatives": []
       }
     },
@@ -33284,13 +33284,13 @@
       "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-3326dc700c4d",
+          "candidateId": "EPC-14bc709a7d25",
           "distance": 4,
           "evidenceType": "current_action",
           "file": "src/features/product-capitalizations/components/NewProductCapitalizationPanel.tsx",
           "handler": "{() => onRemove(item.__rowKey)}",
           "humanLabel": "Видалити",
-          "line": 1118,
+          "line": 1119,
           "permissionKeys": [],
           "score": 16
         }
@@ -33298,7 +33298,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/product-capitalizations/components/NewProductCapitalizationPanel.tsx",
-        "line": 1122,
+        "line": 1123,
         "alternatives": []
       }
     },
@@ -33670,13 +33670,13 @@
       "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-a74c64a7520c",
-          "distance": 566,
+          "candidateId": "EPC-98792f1defb5",
+          "distance": 567,
           "evidenceType": "current_action",
           "file": "src/features/product-capitalizations/pages/ProductCapitalizationsPage.tsx",
           "handler": "{() => onOpenDetail(capitalization)}",
           "humanLabel": "Деталі",
-          "line": 752,
+          "line": 753,
           "permissionKeys": [
             "warehouse_accounting.capitalization.capitalization.open_details"
           ],
@@ -39673,13 +39673,13 @@
       "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-ff1572512b62",
+          "candidateId": "EPC-68335f4007fb",
           "distance": 0,
           "evidenceType": "current_action",
           "file": "src/features/product-income-documents/pages/ProductIncomeDocumentsPage.tsx",
           "handler": "{() => onOpen(row.document)}",
           "humanLabel": "Відкрити",
-          "line": 1692,
+          "line": 1695,
           "permissionKeys": [],
           "score": 15
         }
@@ -39687,7 +39687,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/product-income-documents/pages/ProductIncomeDocumentsPage.tsx",
-        "line": 1692,
+        "line": 1695,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -39719,13 +39719,13 @@
       "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-869e6f0734db",
+          "candidateId": "EPC-d3eb32c8703f",
           "distance": 5,
           "evidenceType": "current_action",
           "file": "src/features/product-income-documents/pages/ProductIncomeDocumentsPage.tsx",
           "handler": "{() => onExport(row.document)}",
           "humanLabel": "Експорт",
-          "line": 1694,
+          "line": 1697,
           "permissionKeys": [],
           "score": 17
         }
@@ -39733,7 +39733,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/product-income-documents/pages/ProductIncomeDocumentsPage.tsx",
-        "line": 1699,
+        "line": 1702,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -39765,13 +39765,13 @@
       "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-d0e42c520c1c",
+          "candidateId": "EPC-8ef7a90cc83e",
           "distance": 258,
           "evidenceType": "current_action",
           "file": "src/features/product-income-documents/pages/ProductIncomeDocumentsPage.tsx",
           "handler": "{() => onOpenStorageLocationHistory(product)}",
           "humanLabel": "Історія місця зберігання",
-          "line": 1977,
+          "line": 1980,
           "permissionKeys": [],
           "score": 33
         }
@@ -39779,7 +39779,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/product-income-documents/pages/ProductIncomeDocumentsPage.tsx",
-        "line": 1719,
+        "line": 1722,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -39811,13 +39811,13 @@
       "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-ddaed6359d16",
+          "candidateId": "EPC-e698fd55ce3d",
           "distance": 268,
           "evidenceType": "current_action",
           "file": "src/features/product-income-documents/pages/ProductIncomeDocumentsPage.tsx",
           "handler": "{() => onOpenMovementHistory(product)}",
           "humanLabel": "Рух товару",
-          "line": 1986,
+          "line": 1989,
           "permissionKeys": [],
           "score": 26
         }
@@ -39825,7 +39825,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/product-income-documents/pages/ProductIncomeDocumentsPage.tsx",
-        "line": 1718,
+        "line": 1721,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -39993,13 +39993,13 @@
       "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-383cb8c7b857",
+          "candidateId": "EPC-5b906a909c0b",
           "distance": 183,
           "evidenceType": "current_action",
           "file": "src/features/product-income-documents/pages/SupplyOrderProductPlacementPage.tsx",
           "handler": "{() => onOpenPlacementDetails(row)}",
           "humanLabel": "Місця зберігання",
-          "line": 505,
+          "line": 506,
           "permissionKeys": [],
           "score": 23
         }
@@ -40007,7 +40007,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/product-income-documents/pages/SupplyOrderProductPlacementPage.tsx",
-        "line": 322,
+        "line": 323,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -41016,13 +41016,13 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-3537920fe87a",
+          "candidateId": "EPC-bb35901a59bc",
           "distance": 6,
           "evidenceType": "current_action",
           "file": "src/features/product-remains/pages/ProductRemainsPage.tsx",
           "handler": "{() => dispatch({ type: 'reloadRequested' })}",
           "humanLabel": "Оновити",
-          "line": 1577,
+          "line": 1578,
           "permissionKeys": [],
           "score": 27
         }
@@ -41030,7 +41030,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/product-remains/pages/ProductRemainsPage.tsx",
-        "line": 1583,
+        "line": 1584,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -41908,7 +41908,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/product-storages/pages/ProductStoragesPage.tsx",
-        "line": 1490,
+        "line": 1491,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -41937,13 +41937,13 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-0c9729e7b045",
+          "candidateId": "EPC-801b95d389c1",
           "distance": 103,
           "evidenceType": "current_action",
           "file": "src/features/product-storages/pages/ProductStoragesPage.tsx",
           "handler": "{() => onSelect(consignmentId)}",
           "humanLabel": null,
-          "line": 1593,
+          "line": 1594,
           "permissionKeys": [],
           "score": 17
         }
@@ -41951,7 +41951,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/product-storages/pages/ProductStoragesPage.tsx",
-        "line": 1490,
+        "line": 1491,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -42013,13 +42013,13 @@
       "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-558650a644b2",
+          "candidateId": "EPC-8e9e8d8128e9",
           "distance": 97,
           "evidenceType": "current_action",
           "file": "src/features/product-storages/pages/ProductStoragesPage.tsx",
           "handler": "{() => onOpenAction(availability)}",
           "humanLabel": "Операція зі складської позиції",
-          "line": 1756,
+          "line": 1757,
           "permissionKeys": [
             "warehouse_accounting.storages.position_action.management"
           ],
@@ -42029,7 +42029,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/product-storages/pages/ProductStoragesPage.tsx",
-        "line": 1659,
+        "line": 1660,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -43877,7 +43877,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/products/pages/ProductDetailPage.tsx",
-        "line": 1858,
+        "line": 1859,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -43906,13 +43906,13 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-3f7b7f0b4d2c",
+          "candidateId": "EPC-bcba596eb574",
           "distance": 0,
           "evidenceType": "current_action",
           "file": "src/features/products/pages/ProductDetailPage.tsx",
           "handler": "{() => setPage((currentPage) => currentPage + 1)}",
           "humanLabel": "Наступна сторінка",
-          "line": 1861,
+          "line": 1862,
           "permissionKeys": [],
           "score": 29
         }
@@ -43920,7 +43920,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/products/pages/ProductDetailPage.tsx",
-        "line": 1861,
+        "line": 1862,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -43951,7 +43951,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/products/pages/ProductDetailPage.tsx",
-        "line": 1789,
+        "line": 1790,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -44013,13 +44013,13 @@
       "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-4df0ed889c69",
+          "candidateId": "EPC-5f558f21568c",
           "distance": 0,
           "evidenceType": "current_action",
           "file": "src/features/products/pages/ProductDetailPage.tsx",
           "handler": "{() => void exportMovements()}",
           "humanLabel": "Друк PDF",
-          "line": 2070,
+          "line": 2071,
           "permissionKeys": [
             "products.assortment.movement.export"
           ],
@@ -44029,7 +44029,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/products/pages/ProductDetailPage.tsx",
-        "line": 2070,
+        "line": 2071,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -44058,13 +44058,13 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-27e1a68c637b",
+          "candidateId": "EPC-e880143044d6",
           "distance": 0,
           "evidenceType": "current_action",
           "file": "src/features/products/pages/ProductDetailPage.tsx",
           "handler": "{() => setSelectedTypes(movementItemTypes)}",
           "humanLabel": "Скинути",
-          "line": 2087,
+          "line": 2088,
           "permissionKeys": [],
           "score": 33
         }
@@ -44072,7 +44072,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/products/pages/ProductDetailPage.tsx",
-        "line": 2087,
+        "line": 2088,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -44103,13 +44103,13 @@
       "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-7161797c4578",
+          "candidateId": "EPC-4c266ebf7880",
           "distance": 5,
           "evidenceType": "current_action",
           "file": "src/features/products/pages/ProductDetailPage.tsx",
           "handler": "{() => removeRule(row)}",
           "humanLabel": "Видалити",
-          "line": 2388,
+          "line": 2389,
           "permissionKeys": [
             "products.assortment.write_off_rules.delete"
           ],
@@ -44119,7 +44119,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/products/pages/ProductDetailPage.tsx",
-        "line": 2393,
+        "line": 2394,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -44156,7 +44156,7 @@
           "file": "src/features/products/pages/ProductDetailPage.tsx",
           "handler": "add_rule",
           "humanLabel": "Без видимого тексту",
-          "line": 2299,
+          "line": 2300,
           "permissionKeys": [
             "products.assortment.write_off_rules.create"
           ],
@@ -44167,7 +44167,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/products/pages/ProductDetailPage.tsx",
-        "line": 2299,
+        "line": 2300,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -44198,7 +44198,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/products/pages/ProductDetailPage.tsx",
-        "line": 1789,
+        "line": 1790,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -45323,13 +45323,13 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-35490ab44f33",
+          "candidateId": "EPC-406f7ffc84d3",
           "distance": 5,
           "evidenceType": "current_action",
           "file": "src/features/products/pages/ProductsPage.tsx",
           "handler": "{() => { void removeRelatedProduct(row) }}",
           "humanLabel": "Видалити",
-          "line": 2053,
+          "line": 2054,
           "permissionKeys": [
             "products.assortment.product.edit"
           ],
@@ -45339,7 +45339,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/products/pages/ProductsPage.tsx",
-        "line": 2058,
+        "line": 2059,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -45418,13 +45418,13 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-e91bb5c7e19d",
+          "candidateId": "EPC-34ffcc461b82",
           "distance": 0,
           "evidenceType": "current_action",
           "file": "src/features/products/pages/ProductsPage.tsx",
           "handler": "{() => setProductUploadOpened(true)}",
           "humanLabel": "Товари",
-          "line": 2157,
+          "line": 2159,
           "permissionKeys": [
             "products.assortment.document.upload"
           ],
@@ -45434,7 +45434,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/products/pages/ProductsPage.tsx",
-        "line": 2157,
+        "line": 2159,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -45465,13 +45465,13 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-1db87255d714",
+          "candidateId": "EPC-05e51b259687",
           "distance": 0,
           "evidenceType": "current_action",
           "file": "src/features/products/pages/ProductsPage.tsx",
           "handler": "{() => setUploadType('analogues')}",
           "humanLabel": "Аналоги",
-          "line": 2162,
+          "line": 2164,
           "permissionKeys": [
             "products.assortment.document.upload"
           ],
@@ -45481,7 +45481,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/products/pages/ProductsPage.tsx",
-        "line": 2162,
+        "line": 2164,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -45512,13 +45512,13 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-2e337e84bfaa",
+          "candidateId": "EPC-1dc9bbb9ec63",
           "distance": 0,
           "evidenceType": "current_action",
           "file": "src/features/products/pages/ProductsPage.tsx",
           "handler": "{() => setUploadType('components')}",
           "humanLabel": "Комплектуючі",
-          "line": 2165,
+          "line": 2167,
           "permissionKeys": [
             "products.assortment.document.upload"
           ],
@@ -45528,7 +45528,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/products/pages/ProductsPage.tsx",
-        "line": 2165,
+        "line": 2167,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -45559,13 +45559,13 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-530ce64f0cf4",
+          "candidateId": "EPC-17f2973ef365",
           "distance": 0,
           "evidenceType": "current_action",
           "file": "src/features/products/pages/ProductsPage.tsx",
           "handler": "{() => setUploadType('originalNumbers')}",
           "humanLabel": "Оригінальні номери",
-          "line": 2168,
+          "line": 2170,
           "permissionKeys": [
             "products.assortment.document.upload"
           ],
@@ -45575,7 +45575,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/products/pages/ProductsPage.tsx",
-        "line": 2168,
+        "line": 2170,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -45606,13 +45606,13 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-6b241f807c7a",
+          "candidateId": "EPC-e659e5cdb771",
           "distance": 0,
           "evidenceType": "current_action",
           "file": "src/features/products/pages/ProductsPage.tsx",
           "handler": "{() => setStorageUploadOpened(true)}",
           "humanLabel": null,
-          "line": 2173,
+          "line": 2175,
           "permissionKeys": [
             "products.assortment.document.upload"
           ],
@@ -45622,7 +45622,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/products/pages/ProductsPage.tsx",
-        "line": 2173,
+        "line": 2175,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -45653,13 +45653,13 @@
       "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-77a9dd760393",
+          "candidateId": "EPC-0169a09928f9",
           "distance": 0,
           "evidenceType": "current_action",
           "file": "src/features/products/pages/ProductsPage.tsx",
           "handler": "{() => void uploadFile()}",
           "humanLabel": "Завантажити",
-          "line": 2424,
+          "line": 2426,
           "permissionKeys": [],
           "score": 10
         }
@@ -45667,7 +45667,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/products/pages/ProductsPage.tsx",
-        "line": 2424,
+        "line": 2426,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -45696,13 +45696,13 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-7ad9c2b2f01f",
+          "candidateId": "EPC-0eb4ce3a5906",
           "distance": 171,
           "evidenceType": "current_action",
           "file": "src/features/products/pages/ProductsPage.tsx",
           "handler": "{closeModal}",
           "humanLabel": "Закрити",
-          "line": 2465,
+          "line": 2467,
           "permissionKeys": [],
           "score": 10
         }
@@ -45710,7 +45710,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/products/pages/ProductsPage.tsx",
-        "line": 2294,
+        "line": 2296,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -45739,13 +45739,13 @@
       "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-fe0006bccdaf",
+          "candidateId": "EPC-8cd2f2a771c9",
           "distance": 0,
           "evidenceType": "current_action",
           "file": "src/features/products/pages/ProductsPage.tsx",
           "handler": "{() => void saveNotPassedRows()}",
           "humanLabel": "Зберегти",
-          "line": 2468,
+          "line": 2470,
           "permissionKeys": [],
           "score": 17
         }
@@ -45753,7 +45753,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/products/pages/ProductsPage.tsx",
-        "line": 2468,
+        "line": 2470,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -45782,13 +45782,13 @@
       "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-a8e2f457991b",
+          "candidateId": "EPC-46211bd6a493",
           "distance": 137,
           "evidenceType": "current_action",
           "file": "src/features/products/pages/ProductsPage.tsx",
           "handler": "{addPriceRow}",
           "humanLabel": "Додати ціну",
-          "line": 2711,
+          "line": 2713,
           "permissionKeys": [],
           "score": 11
         }
@@ -45796,7 +45796,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/products/pages/ProductsPage.tsx",
-        "line": 2574,
+        "line": 2576,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -45825,13 +45825,13 @@
       "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-44569d36e6ab",
+          "candidateId": "EPC-867b96eade6b",
           "distance": 0,
           "evidenceType": "current_action",
           "file": "src/features/products/pages/ProductsPage.tsx",
           "handler": "{() => removePriceRow(priceRow.key)}",
           "humanLabel": "Видалити",
-          "line": 2750,
+          "line": 2752,
           "permissionKeys": [],
           "score": 25
         }
@@ -45839,7 +45839,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/products/pages/ProductsPage.tsx",
-        "line": 2750,
+        "line": 2752,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -45868,13 +45868,13 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-7ad9c2b2f01f",
+          "candidateId": "EPC-0eb4ce3a5906",
           "distance": 171,
           "evidenceType": "current_action",
           "file": "src/features/products/pages/ProductsPage.tsx",
           "handler": "{closeModal}",
           "humanLabel": "Закрити",
-          "line": 2465,
+          "line": 2467,
           "permissionKeys": [],
           "score": 10
         }
@@ -45882,7 +45882,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/products/pages/ProductsPage.tsx",
-        "line": 2294,
+        "line": 2296,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -45913,13 +45913,13 @@
       "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-ffe2f398df95",
+          "candidateId": "EPC-ecf2056d5b3f",
           "distance": 0,
           "evidenceType": "current_action",
           "file": "src/features/products/pages/ProductsPage.tsx",
           "handler": "{() => void submitUpload()}",
           "humanLabel": "Завантажити",
-          "line": 2788,
+          "line": 2790,
           "permissionKeys": [],
           "score": 12
         }
@@ -45927,7 +45927,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/products/pages/ProductsPage.tsx",
-        "line": 2788,
+        "line": 2790,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -45958,13 +45958,13 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-88221a22cdf2",
+          "candidateId": "EPC-0af2ba545f93",
           "distance": 11,
           "evidenceType": "current_action",
           "file": "src/features/products/pages/ProductsPage.tsx",
           "handler": "{openModal}",
           "humanLabel": null,
-          "line": 2821,
+          "line": 2823,
           "permissionKeys": [
             "products.assortment.document.upload"
           ],
@@ -45974,7 +45974,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/products/pages/ProductsPage.tsx",
-        "line": 2810,
+        "line": 2812,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -46003,13 +46003,13 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-7ad9c2b2f01f",
+          "candidateId": "EPC-0eb4ce3a5906",
           "distance": 171,
           "evidenceType": "current_action",
           "file": "src/features/products/pages/ProductsPage.tsx",
           "handler": "{closeModal}",
           "humanLabel": "Закрити",
-          "line": 2465,
+          "line": 2467,
           "permissionKeys": [],
           "score": 10
         }
@@ -46017,7 +46017,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/products/pages/ProductsPage.tsx",
-        "line": 2294,
+        "line": 2296,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -46046,13 +46046,13 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-ffe2f398df95",
+          "candidateId": "EPC-ecf2056d5b3f",
           "distance": 0,
           "evidenceType": "current_action",
           "file": "src/features/products/pages/ProductsPage.tsx",
           "handler": "{() => void submitUpload()}",
           "humanLabel": "Завантажити",
-          "line": 2788,
+          "line": 2790,
           "permissionKeys": [],
           "score": 12
         }
@@ -46060,7 +46060,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/products/pages/ProductsPage.tsx",
-        "line": 2788,
+        "line": 2790,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -46122,13 +46122,13 @@
       "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-c200f0bd6216",
+          "candidateId": "EPC-45a6231bf630",
           "distance": 7,
           "evidenceType": "current_action",
           "file": "src/features/products/pages/ProductsPage.tsx",
           "handler": "{() => void exportRows()}",
           "humanLabel": "Друк PDF",
-          "line": 3167,
+          "line": 3169,
           "permissionKeys": [
             "products.assortment.movement.export"
           ],
@@ -46138,7 +46138,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/products/pages/ProductsPage.tsx",
-        "line": 3174,
+        "line": 3176,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -60132,13 +60132,13 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-02ac3ab9a99a",
-          "distance": 582,
+          "candidateId": "EPC-481fb398ffbf",
+          "distance": 583,
           "evidenceType": "current_action",
           "file": "src/features/sales-ukraine/components/SaleEditorDrawer.tsx",
           "handler": "{() => { setConvertOpen(false) setInvoiceTtnFile(null) }}",
           "humanLabel": "Скасувати",
-          "line": 682,
+          "line": 683,
           "permissionKeys": [],
           "score": 40
         }
@@ -60219,13 +60219,13 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-3c326375102d",
-          "distance": 417,
+          "candidateId": "EPC-17b09cb6b6fa",
+          "distance": 418,
           "evidenceType": "current_action",
           "file": "src/features/sales-ukraine/components/SaleEditorDrawer.tsx",
           "handler": "{() => setDeletingItem(null)}",
           "humanLabel": "Скасувати",
-          "line": 725,
+          "line": 726,
           "permissionKeys": [],
           "score": 19
         }
@@ -60262,13 +60262,13 @@
       "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-194c1f28dd44",
-          "distance": 448,
+          "candidateId": "EPC-de2b71ce5423",
+          "distance": 449,
           "evidenceType": "current_action",
           "file": "src/features/sales-ukraine/components/SaleEditorDrawer.tsx",
           "handler": "{confirmDelete}",
           "humanLabel": "Видалити",
-          "line": 728,
+          "line": 729,
           "permissionKeys": [],
           "score": 13
         }
@@ -60305,13 +60305,13 @@
       "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-083d1f54bacc",
+          "candidateId": "EPC-67243782d5ed",
           "distance": 74,
           "evidenceType": "current_action",
           "file": "src/features/sales-ukraine/components/SaleEditorDrawer.tsx",
           "handler": "{() => onEditQty(item)}",
           "humanLabel": "Змінити кількість",
-          "line": 857,
+          "line": 858,
           "permissionKeys": [],
           "score": 11
         }
@@ -60319,7 +60319,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/sales-ukraine/components/SaleEditorDrawer.tsx",
-        "line": 783,
+        "line": 784,
         "alternatives": []
       }
     },
@@ -60348,13 +60348,13 @@
       "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-dd222599e929",
+          "candidateId": "EPC-a0bf50f2d718",
           "distance": 76,
           "evidenceType": "current_action",
           "file": "src/features/sales-ukraine/components/SaleEditorDrawer.tsx",
           "handler": "{() => onDelete(item)}",
           "humanLabel": "Видалити",
-          "line": 858,
+          "line": 859,
           "permissionKeys": [],
           "score": 10
         }
@@ -60362,7 +60362,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/sales-ukraine/components/SaleEditorDrawer.tsx",
-        "line": 782,
+        "line": 783,
         "alternatives": []
       }
     },
@@ -60391,7 +60391,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/sales-ukraine/components/SaleEditorDrawer.tsx",
-        "line": 926,
+        "line": 927,
         "alternatives": []
       }
     },
@@ -60426,7 +60426,7 @@
           "file": "src/features/sales-ukraine/components/SaleEditorDrawer.tsx",
           "handler": "save",
           "humanLabel": "Без видимого тексту",
-          "line": 592,
+          "line": 593,
           "permissionKeys": [
             "sales.ukraine.sale.edit"
           ],
@@ -60437,7 +60437,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/sales-ukraine/components/SaleEditorDrawer.tsx",
-        "line": 592,
+        "line": 593,
         "alternatives": []
       }
     },
@@ -60464,13 +60464,13 @@
       "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-140cfb40559a",
+          "candidateId": "EPC-1679ae2a6b14",
           "distance": 7,
           "evidenceType": "current_action",
           "file": "src/features/sales-ukraine/components/SaleEditorDrawer.tsx",
           "handler": "{() => setSelected(product)}",
           "humanLabel": null,
-          "line": 1173,
+          "line": 1174,
           "permissionKeys": [],
           "score": 18
         }
@@ -60478,7 +60478,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/sales-ukraine/components/SaleEditorDrawer.tsx",
-        "line": 1180,
+        "line": 1181,
         "alternatives": []
       }
     },
@@ -60507,7 +60507,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/sales-ukraine/components/SaleEditorDrawer.tsx",
-        "line": 926,
+        "line": 927,
         "alternatives": []
       }
     },
@@ -60582,7 +60582,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/sales-ukraine/components/SaleEditorDrawer.tsx",
-        "line": 926,
+        "line": 927,
         "alternatives": []
       }
     },
@@ -60656,13 +60656,13 @@
       "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-4f1d748ace2e",
+          "candidateId": "EPC-3baef535a9cd",
           "distance": 66,
           "evidenceType": "current_action",
           "file": "src/features/sales-ukraine/components/SaleEditorDrawer.tsx",
           "handler": "{switchAgreement}",
           "humanLabel": "Змінити договір",
-          "line": 1331,
+          "line": 1332,
           "permissionKeys": [
             "sales.ukraine.sale.reassign"
           ],
@@ -60672,7 +60672,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/sales-ukraine/components/SaleEditorDrawer.tsx",
-        "line": 1265,
+        "line": 1266,
         "alternatives": []
       }
     },
@@ -62832,13 +62832,13 @@
       "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-52577b7b803f",
-          "distance": 131,
+          "candidateId": "EPC-e9e6a74d34b5",
+          "distance": 132,
           "evidenceType": "current_action",
           "file": "src/features/supplier-organizations/pages/SupplierOrganizationEditPage.tsx",
           "handler": "{saveAgreement}",
           "humanLabel": null,
-          "line": 777,
+          "line": 778,
           "permissionKeys": [
             "services.supplier_organizations.agreement.create",
             "services.supplier_organizations.agreement.edit"
@@ -62884,7 +62884,7 @@
       "bindingEvidence": [
         {
           "candidateId": "EPC-2f97b9363c45",
-          "distance": 29,
+          "distance": 30,
           "evidenceType": "current_action",
           "file": "src/features/supplier-organizations/pages/SupplierOrganizationEditPage.tsx",
           "handler": "{canEditAgreement ? setEditor : undefined}",
@@ -62899,7 +62899,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/supplier-organizations/pages/SupplierOrganizationEditPage.tsx",
-        "line": 792,
+        "line": 793,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -63001,13 +63001,13 @@
       "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-c848cd938743",
+          "candidateId": "EPC-92cb96f8903a",
           "distance": 0,
           "evidenceType": "current_action",
           "file": "src/features/supplier-organizations/pages/SupplierOrganizationEditPage.tsx",
           "handler": "{() => onDeleteDocument(editor, document)}",
           "humanLabel": "Видалити документ",
-          "line": 1013,
+          "line": 1014,
           "permissionKeys": [],
           "score": 28
         }
@@ -63015,7 +63015,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/supplier-organizations/pages/SupplierOrganizationEditPage.tsx",
-        "line": 1013,
+        "line": 1014,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -65050,13 +65050,13 @@
       "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-d9207c920697",
-          "distance": 691,
+          "candidateId": "EPC-56c8341281eb",
+          "distance": 692,
           "evidenceType": "current_action",
           "file": "src/features/supply-ukraine-orders/pages/SupplyUkraineDirectOrderDetailPage.tsx",
           "handler": "{openCreditNoteModal}",
           "humanLabel": "Створити",
-          "line": 961,
+          "line": 962,
           "permissionKeys": [],
           "score": 19
         }
@@ -65103,7 +65103,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/supply-ukraine-orders/pages/SupplyUkraineDirectOrderDetailPage.tsx",
-        "line": 993,
+        "line": 994,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -65140,13 +65140,13 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-3abfc0ac9f93",
+          "candidateId": "EPC-1a0a6d5fe541",
           "distance": 6,
           "evidenceType": "current_action",
           "file": "src/features/supply-ukraine-orders/pages/SupplyUkraineDirectOrderDetailPage.tsx",
           "handler": "{() => dispatchCreditNote({ type: 'setFile', value: null })}",
           "humanLabel": "Видалити",
-          "line": 1047,
+          "line": 1048,
           "permissionKeys": [],
           "score": 38
         }
@@ -65154,7 +65154,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/supply-ukraine-orders/pages/SupplyUkraineDirectOrderDetailPage.tsx",
-        "line": 1053,
+        "line": 1054,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -65191,13 +65191,13 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-735082178281",
-          "distance": 553,
+          "candidateId": "EPC-fc10f726fa94",
+          "distance": 554,
           "evidenceType": "current_action",
           "file": "src/features/supply-ukraine-orders/pages/SupplyUkraineDirectOrderDetailPage.tsx",
           "handler": "{closeCreditNoteModal}",
           "humanLabel": "Скасувати",
-          "line": 1061,
+          "line": 1062,
           "permissionKeys": [],
           "score": 20
         }
@@ -65244,13 +65244,13 @@
       "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-6ec23901f16f",
+          "candidateId": "EPC-d924c8b38d8e",
           "distance": 0,
           "evidenceType": "current_action",
           "file": "src/features/supply-ukraine-orders/pages/SupplyUkraineDirectOrderDetailPage.tsx",
           "handler": "{() => void saveCreditNote()}",
           "humanLabel": "Зберегти",
-          "line": 1064,
+          "line": 1065,
           "permissionKeys": [],
           "score": 14
         }
@@ -65258,7 +65258,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/supply-ukraine-orders/pages/SupplyUkraineDirectOrderDetailPage.tsx",
-        "line": 1064,
+        "line": 1065,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -65295,13 +65295,13 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-40776fd8726a",
-          "distance": 598,
+          "candidateId": "EPC-def821deed22",
+          "distance": 599,
           "evidenceType": "current_action",
           "file": "src/features/supply-ukraine-orders/pages/SupplyUkraineDirectOrderDetailPage.tsx",
           "handler": "{closeStatusModal}",
           "humanLabel": "Скасувати",
-          "line": 1094,
+          "line": 1095,
           "permissionKeys": [],
           "score": 16
         }
@@ -65348,13 +65348,13 @@
       "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-11a8ab3a8cdc",
-          "distance": 585,
+          "candidateId": "EPC-cecce4372d05",
+          "distance": 586,
           "evidenceType": "current_action",
           "file": "src/features/supply-ukraine-orders/pages/SupplyUkraineDirectOrderDetailPage.tsx",
           "handler": "{saveDocumentStatus}",
           "humanLabel": "Зберегти",
-          "line": 1097,
+          "line": 1098,
           "permissionKeys": [],
           "score": 18
         }
@@ -65638,13 +65638,13 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-abe08fd2adad",
+          "candidateId": "EPC-a1017fff76d7",
           "distance": 4,
           "evidenceType": "current_action",
           "file": "src/features/supply-ukraine-orders/pages/SupplyUkraineDirectOrderInvoicesPage.tsx",
           "handler": "{() => model.setPageState({ deleteInvoiceCandidate: invoice })}",
           "humanLabel": "Видалити",
-          "line": 1343,
+          "line": 1345,
           "permissionKeys": [
             "orders.ukraine.invoice.delete"
           ],
@@ -65654,7 +65654,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/supply-ukraine-orders/pages/SupplyUkraineDirectOrderInvoicesPage.tsx",
-        "line": 1347,
+        "line": 1349,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -65732,13 +65732,13 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-35d32d625c1c",
+          "candidateId": "EPC-4fbb3408e9f3",
           "distance": 4,
           "evidenceType": "current_action",
           "file": "src/features/supply-ukraine-orders/pages/SupplyUkraineDirectOrderInvoicesPage.tsx",
           "handler": "{() => model.setPageState({ packListEditor: { packList } })}",
           "humanLabel": "Редагувати",
-          "line": 1420,
+          "line": 1423,
           "permissionKeys": [
             "orders.ukraine.pack_list.upload"
           ],
@@ -65748,7 +65748,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/supply-ukraine-orders/pages/SupplyUkraineDirectOrderInvoicesPage.tsx",
-        "line": 1424,
+        "line": 1427,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -65787,13 +65787,13 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-bb993787b5cb",
+          "candidateId": "EPC-6db123d75fa2",
           "distance": 4,
           "evidenceType": "current_action",
           "file": "src/features/supply-ukraine-orders/pages/SupplyUkraineDirectOrderInvoicesPage.tsx",
           "handler": "{() => model.setPageState({ deletePackListCandidate: packList })}",
           "humanLabel": "Видалити",
-          "line": 1430,
+          "line": 1433,
           "permissionKeys": [
             "orders.ukraine.pack_list.delete"
           ],
@@ -65803,7 +65803,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/supply-ukraine-orders/pages/SupplyUkraineDirectOrderInvoicesPage.tsx",
-        "line": 1434,
+        "line": 1437,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -65842,13 +65842,13 @@
       "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-98d7348a8cdf",
+          "candidateId": "EPC-c47195ab1fef",
           "distance": 4,
           "evidenceType": "current_action",
           "file": "src/features/supply-ukraine-orders/pages/SupplyUkraineDirectOrderInvoicesPage.tsx",
           "handler": "{model.submitInvoice}",
           "humanLabel": null,
-          "line": 1449,
+          "line": 1452,
           "permissionKeys": [],
           "score": 18
         }
@@ -65856,7 +65856,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/supply-ukraine-orders/pages/SupplyUkraineDirectOrderInvoicesPage.tsx",
-        "line": 1453,
+        "line": 1456,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -65895,13 +65895,13 @@
       "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-9b9105439611",
+          "candidateId": "EPC-19a0b7556a74",
           "distance": 4,
           "evidenceType": "current_action",
           "file": "src/features/supply-ukraine-orders/pages/SupplyUkraineDirectOrderInvoicesPage.tsx",
           "handler": "{model.submitPackList}",
           "humanLabel": null,
-          "line": 1455,
+          "line": 1458,
           "permissionKeys": [],
           "score": 19
         }
@@ -65909,7 +65909,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/supply-ukraine-orders/pages/SupplyUkraineDirectOrderInvoicesPage.tsx",
-        "line": 1459,
+        "line": 1462,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -65948,13 +65948,13 @@
       "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-6a15ee4a28ac",
+          "candidateId": "EPC-f374bdfe4d8d",
           "distance": 4,
           "evidenceType": "current_action",
           "file": "src/features/supply-ukraine-orders/pages/SupplyUkraineDirectOrderInvoicesPage.tsx",
           "handler": "{model.saveInvoiceMetadata}",
           "humanLabel": null,
-          "line": 1461,
+          "line": 1464,
           "permissionKeys": [],
           "score": 24
         }
@@ -65962,7 +65962,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/supply-ukraine-orders/pages/SupplyUkraineDirectOrderInvoicesPage.tsx",
-        "line": 1465,
+        "line": 1468,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -66001,13 +66001,13 @@
       "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-014b0b587f53",
+          "candidateId": "EPC-f90556b1c132",
           "distance": 4,
           "evidenceType": "current_action",
           "file": "src/features/supply-ukraine-orders/pages/SupplyUkraineDirectOrderInvoicesPage.tsx",
           "handler": "{model.savePackListMetadata}",
           "humanLabel": null,
-          "line": 1467,
+          "line": 1470,
           "permissionKeys": [],
           "score": 25
         }
@@ -66015,7 +66015,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/supply-ukraine-orders/pages/SupplyUkraineDirectOrderInvoicesPage.tsx",
-        "line": 1471,
+        "line": 1474,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -66091,13 +66091,13 @@
       "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-cfe3731814bc",
+          "candidateId": "EPC-f65961b14b21",
           "distance": 60,
           "evidenceType": "current_action",
           "file": "src/features/supply-ukraine-orders/pages/SupplyUkraineDirectOrderInvoicesPage.tsx",
           "handler": "{() => onSubmit(form)}",
           "humanLabel": "Створити",
-          "line": 1567,
+          "line": 1570,
           "permissionKeys": [],
           "score": 10
         }
@@ -66105,7 +66105,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/supply-ukraine-orders/pages/SupplyUkraineDirectOrderInvoicesPage.tsx",
-        "line": 1507,
+        "line": 1510,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -66181,13 +66181,13 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-cfe3731814bc",
+          "candidateId": "EPC-f65961b14b21",
           "distance": 60,
           "evidenceType": "current_action",
           "file": "src/features/supply-ukraine-orders/pages/SupplyUkraineDirectOrderInvoicesPage.tsx",
           "handler": "{() => onSubmit(form)}",
           "humanLabel": "Створити",
-          "line": 1567,
+          "line": 1570,
           "permissionKeys": [],
           "score": 10
         }
@@ -66195,7 +66195,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/supply-ukraine-orders/pages/SupplyUkraineDirectOrderInvoicesPage.tsx",
-        "line": 1507,
+        "line": 1510,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -66312,13 +66312,13 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-cfe3731814bc",
+          "candidateId": "EPC-f65961b14b21",
           "distance": 60,
           "evidenceType": "current_action",
           "file": "src/features/supply-ukraine-orders/pages/SupplyUkraineDirectOrderInvoicesPage.tsx",
           "handler": "{() => onSubmit(form)}",
           "humanLabel": "Створити",
-          "line": 1567,
+          "line": 1570,
           "permissionKeys": [],
           "score": 10
         }
@@ -66326,7 +66326,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/supply-ukraine-orders/pages/SupplyUkraineDirectOrderInvoicesPage.tsx",
-        "line": 1507,
+        "line": 1510,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -66441,13 +66441,13 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-cfe3731814bc",
+          "candidateId": "EPC-f65961b14b21",
           "distance": 60,
           "evidenceType": "current_action",
           "file": "src/features/supply-ukraine-orders/pages/SupplyUkraineDirectOrderInvoicesPage.tsx",
           "handler": "{() => onSubmit(form)}",
           "humanLabel": "Створити",
-          "line": 1567,
+          "line": 1570,
           "permissionKeys": [],
           "score": 10
         }
@@ -66455,7 +66455,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/supply-ukraine-orders/pages/SupplyUkraineDirectOrderInvoicesPage.tsx",
-        "line": 1507,
+        "line": 1510,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -66492,13 +66492,13 @@
       "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-ba913dde2e2c",
+          "candidateId": "EPC-9b1088842061",
           "distance": 3,
           "evidenceType": "current_action",
           "file": "src/features/supply-ukraine-orders/pages/SupplyUkraineDirectOrderInvoicesPage.tsx",
           "handler": "{() => onRestore(document, index)}",
           "humanLabel": "Відновити",
-          "line": 1966,
+          "line": 1969,
           "permissionKeys": [],
           "score": 20
         }
@@ -66506,7 +66506,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/supply-ukraine-orders/pages/SupplyUkraineDirectOrderInvoicesPage.tsx",
-        "line": 1969,
+        "line": 1972,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -66543,13 +66543,13 @@
       "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-93f7fe3c4d65",
+          "candidateId": "EPC-3ffe64545f60",
           "distance": 3,
           "evidenceType": "current_action",
           "file": "src/features/supply-ukraine-orders/pages/SupplyUkraineDirectOrderInvoicesPage.tsx",
           "handler": "{() => onRemove(document, index)}",
           "humanLabel": "Видалити",
-          "line": 1972,
+          "line": 1975,
           "permissionKeys": [],
           "score": 19
         }
@@ -66557,7 +66557,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/supply-ukraine-orders/pages/SupplyUkraineDirectOrderInvoicesPage.tsx",
-        "line": 1975,
+        "line": 1978,
         "alternatives": [
           "src/app/routes/lazyConsolePages.tsx"
         ]
@@ -66674,13 +66674,13 @@
       "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-e5be7afb9f49",
-          "distance": 1899,
+          "candidateId": "EPC-bca29afb1814",
+          "distance": 1902,
           "evidenceType": "current_action",
           "file": "src/features/supply-ukraine-orders/pages/SupplyUkraineDirectOrderInvoicesPage.tsx",
           "handler": "{(event) => { event.stopPropagation() onOpenProductCard(netId) }}",
           "humanLabel": null,
-          "line": 2151,
+          "line": 2154,
           "permissionKeys": [],
           "score": 18
         }
@@ -66725,13 +66725,13 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-e5be7afb9f49",
-          "distance": 1899,
+          "candidateId": "EPC-bca29afb1814",
+          "distance": 1902,
           "evidenceType": "current_action",
           "file": "src/features/supply-ukraine-orders/pages/SupplyUkraineDirectOrderInvoicesPage.tsx",
           "handler": "{(event) => { event.stopPropagation() onOpenProductCard(netId) }}",
           "humanLabel": null,
-          "line": 2151,
+          "line": 2154,
           "permissionKeys": [],
           "score": 18
         }
@@ -79014,13 +79014,13 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-ac9d4dec2492",
-          "distance": 606,
+          "candidateId": "EPC-0a4ff149708f",
+          "distance": 607,
           "evidenceType": "current_action",
           "file": "src/features/warehouse-ukraine/components/ShipmentsTab.tsx",
           "handler": "{closeManualPicker}",
           "humanLabel": "Скасувати",
-          "line": 2088,
+          "line": 2089,
           "permissionKeys": [],
           "score": 17
         }
@@ -79057,13 +79057,13 @@
       "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-64614aa15f06",
-          "distance": 600,
+          "candidateId": "EPC-3c29d08156b7",
+          "distance": 601,
           "evidenceType": "current_action",
           "file": "src/features/warehouse-ukraine/components/ShipmentsTab.tsx",
           "handler": "{appendManualSelectedSalesToDraft}",
           "humanLabel": "Додати",
-          "line": 2091,
+          "line": 2092,
           "permissionKeys": [],
           "score": 25
         }
@@ -79100,13 +79100,13 @@
       "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-ecaf4f0d1cbc",
-          "distance": 645,
+          "candidateId": "EPC-4bd097858e16",
+          "distance": 646,
           "evidenceType": "current_action",
           "file": "src/features/warehouse-ukraine/components/ShipmentsTab.tsx",
           "handler": "{() => void loadManualSales(manualFilterDraft)}",
           "humanLabel": "Оновити",
-          "line": 2124,
+          "line": 2125,
           "permissionKeys": [],
           "score": 32
         }
@@ -79145,13 +79145,13 @@
       "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-f3e23a63da2f",
-          "distance": 1213,
+          "candidateId": "EPC-ff97bef45c17",
+          "distance": 1214,
           "evidenceType": "current_action",
           "file": "src/features/warehouse-ukraine/components/ShipmentsTab.tsx",
           "handler": "{(sale) => { const saleKey = getShipmentSaleKey(sale) if (!saleKey || draftSaleKeys.has(saleKey)) { return } setManualSelectedSaleKeys((current) => ({ ...current, [saleKey]: !current[saleKey] })) }}",
           "humanLabel": null,
-          "line": 2145,
+          "line": 2146,
           "permissionKeys": [],
           "score": 38
         }
@@ -79188,13 +79188,13 @@
       "classificationSource": "automatic",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-77c251763525",
-          "distance": 665,
+          "candidateId": "EPC-014d3dfd4ec6",
+          "distance": 666,
           "evidenceType": "current_action",
           "file": "src/features/warehouse-ukraine/components/ShipmentsTab.tsx",
           "handler": "{() => setConfirmCloseShipment(false)}",
           "humanLabel": "Ні",
-          "line": 2211,
+          "line": 2212,
           "permissionKeys": [],
           "score": 28
         }
@@ -79276,7 +79276,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/warehouse-ukraine/components/ShipmentsTab.tsx",
-        "line": 2399,
+        "line": 2400,
         "alternatives": []
       }
     },
@@ -79307,7 +79307,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/warehouse-ukraine/components/ShipmentsTab.tsx",
-        "line": 2399,
+        "line": 2400,
         "alternatives": []
       }
     },
@@ -79336,13 +79336,13 @@
       "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-76a54df89cda",
+          "candidateId": "EPC-28d492ab0e7d",
           "distance": 4,
           "evidenceType": "current_action",
           "file": "src/features/warehouse-ukraine/components/ShipmentsTab.tsx",
           "handler": "{() => model.onEditRecipient(item)}",
           "humanLabel": "Редагувати одержувача",
-          "line": 2731,
+          "line": 2732,
           "permissionKeys": [],
           "score": 17
         }
@@ -79350,7 +79350,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/warehouse-ukraine/components/ShipmentsTab.tsx",
-        "line": 2735,
+        "line": 2736,
         "alternatives": []
       }
     },
@@ -79379,13 +79379,13 @@
       "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-ee494c9dc3d0",
+          "candidateId": "EPC-bfd79517bbd3",
           "distance": 4,
           "evidenceType": "current_action",
           "file": "src/features/warehouse-ukraine/components/ShipmentsTab.tsx",
           "handler": "{() => model.onEditAddress(item)}",
           "humanLabel": "Редагувати адресу доставки",
-          "line": 2737,
+          "line": 2738,
           "permissionKeys": [],
           "score": 15
         }
@@ -79393,7 +79393,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/warehouse-ukraine/components/ShipmentsTab.tsx",
-        "line": 2741,
+        "line": 2742,
         "alternatives": []
       }
     },
@@ -79422,13 +79422,13 @@
       "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-97d107262a02",
+          "candidateId": "EPC-a1ab262519c1",
           "distance": 4,
           "evidenceType": "current_action",
           "file": "src/features/warehouse-ukraine/components/ShipmentsTab.tsx",
           "handler": "{() => model.onEditComment(item)}",
           "humanLabel": "Редагувати коментар",
-          "line": 2743,
+          "line": 2744,
           "permissionKeys": [],
           "score": 15
         }
@@ -79436,7 +79436,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/warehouse-ukraine/components/ShipmentsTab.tsx",
-        "line": 2747,
+        "line": 2748,
         "alternatives": []
       }
     },
@@ -79465,13 +79465,13 @@
       "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-ea949061266d",
+          "candidateId": "EPC-4c76e49c6d05",
           "distance": 4,
           "evidenceType": "current_action",
           "file": "src/features/warehouse-ukraine/components/ShipmentsTab.tsx",
           "handler": "{() => model.onPrintSale(item)}",
           "humanLabel": "Друк PDF",
-          "line": 2750,
+          "line": 2751,
           "permissionKeys": [],
           "score": 13
         }
@@ -79479,7 +79479,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/warehouse-ukraine/components/ShipmentsTab.tsx",
-        "line": 2754,
+        "line": 2755,
         "alternatives": []
       }
     },
@@ -79508,13 +79508,13 @@
       "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-e72f08ce0118",
+          "candidateId": "EPC-08edbe30cb70",
           "distance": 4,
           "evidenceType": "current_action",
           "file": "src/features/warehouse-ukraine/components/ShipmentsTab.tsx",
           "handler": "{() => model.onRemoveItem(item)}",
           "humanLabel": "Видалити",
-          "line": 2757,
+          "line": 2758,
           "permissionKeys": [],
           "score": 14
         }
@@ -79522,7 +79522,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/warehouse-ukraine/components/ShipmentsTab.tsx",
-        "line": 2761,
+        "line": 2762,
         "alternatives": []
       }
     },
@@ -79551,13 +79551,13 @@
       "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-2b5c036c6f5a",
+          "candidateId": "EPC-88244c3f468e",
           "distance": 4,
           "evidenceType": "current_action",
           "file": "src/features/warehouse-ukraine/components/ShipmentsTab.tsx",
           "handler": "{() => model.setActiveModal({ kind: 'recipient', item })}",
           "humanLabel": "Редагувати одержувача",
-          "line": 2967,
+          "line": 2968,
           "permissionKeys": [],
           "score": 36
         }
@@ -79565,7 +79565,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/warehouse-ukraine/components/ShipmentsTab.tsx",
-        "line": 2971,
+        "line": 2972,
         "alternatives": []
       }
     },
@@ -79594,13 +79594,13 @@
       "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-9a33f04e9238",
-          "distance": 2041,
+          "candidateId": "EPC-743202176327",
+          "distance": 2042,
           "evidenceType": "current_action",
           "file": "src/features/warehouse-ukraine/components/ShipmentsTab.tsx",
           "handler": "{() => { if (!item.Sale.DeliveryRecipient) { notifications.show({ color: 'yellow', message: t('Додайте одержувача для цієї накладної') }) return } model.setActiveModal({ kind: 'address', item }) }}",
           "humanLabel": "Редагувати адресу доставки",
-          "line": 2973,
+          "line": 2974,
           "permissionKeys": [],
           "score": 53
         }
@@ -79637,13 +79637,13 @@
       "classificationSource": "manual_override",
       "bindingEvidence": [
         {
-          "candidateId": "EPC-5c1b844d966f",
+          "candidateId": "EPC-b559f3554c3e",
           "distance": 4,
           "evidenceType": "current_action",
           "file": "src/features/warehouse-ukraine/components/ShipmentsTab.tsx",
           "handler": "{() => model.setActiveModal({ kind: 'comment', item })}",
           "humanLabel": "Редагувати коментар",
-          "line": 2987,
+          "line": 2988,
           "permissionKeys": [],
           "score": 34
         }
@@ -79651,7 +79651,7 @@
       "source": {
         "status": "resolved",
         "file": "src/features/warehouse-ukraine/components/ShipmentsTab.tsx",
-        "line": 2991,
+        "line": 2992,
         "alternatives": []
       }
     },

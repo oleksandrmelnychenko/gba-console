@@ -1,4 +1,5 @@
 import { cleanup } from '@testing-library/react'
+import { DEFAULT_THEME } from '@mantine/core'
 import { afterEach, vi } from 'vitest'
 
 const CHART_WIDTH = 640
@@ -86,10 +87,12 @@ HTMLElement.prototype.getBoundingClientRect = function getBoundingClientRect() {
   } as DOMRect
 }
 
-// Test runs do not need animation frames. Always replace jsdom's matchMedia:
-// newer jsdom releases expose it, but do not advertise reduced motion. Mantine
-// then leaves transition timers alive after cleanup and React dispatches into a
-// torn-down window during the full test suite.
+// Test runs do not need animation frames. Mantine only honors the browser's
+// reduced-motion preference when it is also enabled in the theme. Set both
+// halves of that contract globally so every test provider disables transitions;
+// otherwise a late transition timer can dispatch after jsdom has been torn down.
+DEFAULT_THEME.respectReducedMotion = true
+
 Object.defineProperty(window, 'matchMedia', {
   configurable: true,
   writable: true,
