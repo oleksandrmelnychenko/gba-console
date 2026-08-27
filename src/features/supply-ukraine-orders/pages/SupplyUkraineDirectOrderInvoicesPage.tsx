@@ -66,6 +66,7 @@ import {
   uploadSupplyInvoiceDocuments,
   uploadSupplyInvoiceFile,
 } from '../api/supplyUkraineOrdersApi'
+import { hasSupplyProForm } from '../proFormHelpers'
 import type {
   DirectSupplyOrder,
   PackingList,
@@ -304,11 +305,12 @@ function useSupplyUkraineDirectOrderInvoicesPageModel() {
     () => (selectedInvoice?.PackingLists || []).find((packList) => packList.NetUid === selectedPackListNetId) || null,
     [selectedInvoice, selectedPackListNetId],
   )
-  const canAddInvoice = hasPermission(PERMISSION_ADD_INVOICE)
-  const canEditInvoice = hasPermission(PERMISSION_EDIT_INVOICE)
-  const canAddPackList = hasPermission(PERMISSION_ADD_PACK_LIST)
-  const canRemoveInvoice = hasPermission(PERMISSION_REMOVE_INVOICE)
-  const canRemovePackList = hasPermission(PERMISSION_REMOVE_PACK_LIST)
+  const canManageInvoices = hasSupplyProForm(order)
+  const canAddInvoice = canManageInvoices && hasPermission(PERMISSION_ADD_INVOICE)
+  const canEditInvoice = canManageInvoices && hasPermission(PERMISSION_EDIT_INVOICE)
+  const canAddPackList = canManageInvoices && hasPermission(PERMISSION_ADD_PACK_LIST)
+  const canRemoveInvoice = canManageInvoices && hasPermission(PERMISSION_REMOVE_INVOICE)
+  const canRemovePackList = canManageInvoices && hasPermission(PERMISSION_REMOVE_PACK_LIST)
   const canShowPackListUpload = Boolean(selectedInvoice && canAddPackList)
   const isBusy = isSaving || isLoading || isInvoiceLoading
 
