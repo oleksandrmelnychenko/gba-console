@@ -81,6 +81,7 @@ export function BudgetCartTable({ items, maxHeight = 'calc(100vh - 300px)', prod
       maxHeight={maxHeight}
       minWidth={1520}
       showLayoutControls
+      showToolbar={false}
       tableId="budget-cart-plan"
     />
   )

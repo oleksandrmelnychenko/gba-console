@@ -266,6 +266,7 @@ export function NewProductCapitalizationPanel({ canCreate, opened, onClose, onCr
           layoutVersion="new-product-capitalization-items-1"
           maxHeight="calc(100vh - 400px)"
           minWidth={920}
+          showToolbar={false}
           tableId="new-product-capitalization-items"
         />
       </Stack>

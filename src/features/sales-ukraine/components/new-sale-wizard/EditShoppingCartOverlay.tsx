@@ -287,6 +287,7 @@ function CartTable({
           rowClassName={(row) => (rows.indexOf(row) === selectedIndex ? 'is-selected' : undefined)}
           showDensityToggle={false}
           showLayoutControls
+          showToolbar={false}
           tableId={`new-sale-cart-edit-${list}`}
         />
       </Box>

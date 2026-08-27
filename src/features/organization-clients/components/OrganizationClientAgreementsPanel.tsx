@@ -177,6 +177,7 @@ export function OrganizationClientAgreementsPanel({
         getRowId={(row) => String(row.agreement.NetUid || row.agreement.Id || row.index)}
         layoutVersion="organization-client-agreements-table-1"
         minWidth={560}
+        showToolbar={false}
         tableId="organization-client-agreements"
       />
 

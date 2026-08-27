@@ -106,6 +106,7 @@ export function PaymentImageList({ canEdit, isEditing, items, onSelect }: Paymen
       columns={columns}
       data={items}
       getRowId={(row, index) => String(row.NetUid || row.Id || index)}
+      showToolbar={false}
       tableId="payment-online-shop-images"
       layoutVersion="payment-online-shop-images-1"
     />

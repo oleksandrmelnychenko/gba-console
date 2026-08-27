@@ -770,6 +770,7 @@ function AgreementsPanel({
         layoutVersion="supplier-organization-agreements-1"
         maxHeight={420}
         minWidth={900}
+        showToolbar={false}
         tableId={`supplier-organization-agreements-${organization.NetUid || organization.Id || 'new'}`}
         onRowClick={canEditAgreement ? setEditor : undefined}
       />

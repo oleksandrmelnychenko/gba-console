@@ -1771,6 +1771,7 @@ function ProductConsignmentRemainingsPanel({ product }: { product: Product }) {
       loadingText={t('Завантаження залишків')}
       maxHeight="calc(100vh - 320px)"
       minWidth={1480}
+      showToolbar={false}
       tableId="product-consignment-remainings"
     />
   )

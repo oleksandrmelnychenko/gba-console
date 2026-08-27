@@ -1691,6 +1691,7 @@ function ReturnDetails({
               emptyText={t('Позиції не знайдено')}
               getRowId={(item, index) => item.NetUid || String(item.Id || index)}
               minWidth={900}
+              showToolbar={false}
               tableId="sales-return-detail-items"
             />
           </div>

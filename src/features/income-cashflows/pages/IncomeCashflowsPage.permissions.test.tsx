@@ -1,5 +1,5 @@
 import { MantineProvider } from '@mantine/core'
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import type { ReactNode } from 'react'
 import { MemoryRouter } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
@@ -160,7 +160,7 @@ describe('Income cashflows canonical permission guards', () => {
 
     const cancelButton = await screen.findByLabelText('Скасувати')
     fireEvent.click(cancelButton)
-    const confirmButton = await screen.findByRole('button', {
+    const confirmButton = within(await screen.findByRole('dialog')).getByRole('button', {
       name: 'Скасувати',
     })
     allowedPermissions.delete(incomePermissions.Order.Cancel)

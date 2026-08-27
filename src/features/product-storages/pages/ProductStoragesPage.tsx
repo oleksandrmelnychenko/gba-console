@@ -1302,6 +1302,7 @@ function ProductStoragePreviewDrawer({
           layoutVersion="product-storages-preview-2"
           maxHeight="calc(100vh - 240px)"
           minWidth={1160}
+          showToolbar={false}
           tableId="product-storages-preview"
         />
         <Text size="sm" c="dimmed">

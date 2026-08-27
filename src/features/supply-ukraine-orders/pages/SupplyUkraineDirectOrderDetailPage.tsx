@@ -939,6 +939,7 @@ function SupplyUkraineDirectOrderDetailPageContent() {
                 getRowId={(document, index) => document.NetUid || String(document.Id || index)}
                 layoutVersion="supply-direct-delivery-documents-1"
                 minWidth={960}
+                showToolbar={false}
                 tableId="supply-direct-delivery-documents"
               />
             </Stack>

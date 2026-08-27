@@ -570,6 +570,7 @@ function WizardSaleRegistryRowContent({ sale }: { sale: SalesUkraineSale }) {
               minWidth={WIZARD_REGISTER_ITEMS_TABLE_MIN_WIDTH}
               showDensityToggle={false}
               showLayoutControls
+              showToolbar={false}
               tableId="new-sale-register-items"
             />
           </Box>

@@ -40,6 +40,7 @@ export function PaymentShopOrderItemsTable({
         getRowId={(row, index) => String(row.NetUid || row.Id || index)}
         maxHeight="calc(100vh - 320px)"
         minWidth={660}
+        showToolbar={false}
         tableId="payment-shop-order-items"
       />
       {orders.length > 1 && (

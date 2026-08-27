@@ -288,6 +288,7 @@ function SupplyOrderProductPlacementContent({
             loadingText={t('Завантаження розміщення')}
             maxHeight="calc(100vh - 430px)"
             minWidth={1780}
+            showToolbar={false}
             tableId="supply-order-product-placement"
           />
         </Stack>
