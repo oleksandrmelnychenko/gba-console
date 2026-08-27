@@ -7,6 +7,7 @@ import {
   inspectWizardCartMutation,
   isUnknownWizardMutationOutcome,
   retryWizardMutation,
+  toWizardCartReconciliationSnapshot,
   type WizardMutationOperation,
 } from './wizardMutationOperation'
 
@@ -192,6 +193,22 @@ describe('wizard mutation idempotency and reconciliation', () => {
     await expect(retryWizardMutation(
       operation,
       async () => ({ NetUid: 'sale-1', Order: { OrderItems: [] } }),
+    )).resolves.toEqual({ status: 'acknowledged' })
+    expect(mutate).toHaveBeenCalledExactlyOnceWith(operationId)
+  })
+
+  it('replays the same operation when the first-cart reconciliation returns no cart yet', async () => {
+    const mutate = vi.fn<(id: string) => Promise<void>>().mockResolvedValue(undefined)
+    const operation: WizardMutationOperation<SalesUkraineSale> = {
+      context: 'agreement-1:',
+      inspect: (snapshot) => inspectWizardCartMutation(snapshot, operationId, { kind: 'operation-marker' }),
+      mutate,
+      operationId,
+    }
+
+    await expect(retryWizardMutation(
+      operation,
+      async () => toWizardCartReconciliationSnapshot(null),
     )).resolves.toEqual({ status: 'acknowledged' })
     expect(mutate).toHaveBeenCalledExactlyOnceWith(operationId)
   })

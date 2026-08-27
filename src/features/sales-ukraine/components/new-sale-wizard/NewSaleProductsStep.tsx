@@ -128,6 +128,7 @@ import {
   createWizardOperationId,
   inspectWizardCartMutation,
   retryWizardMutation,
+  toWizardCartReconciliationSnapshot,
   type WizardCartMutationExpectation,
   type WizardMutationAttemptResult,
   type WizardMutationOperation,
@@ -1105,11 +1106,7 @@ export function NewSaleProductsStep({
   async function getFreshCartForOperation(): Promise<SalesUkraineSale> {
     const freshSale = await onCartChanged()
 
-    if (!freshSale) {
-      throw new Error(t('Сервер не повернув оновлений кошик'))
-    }
-
-    return freshSale
+    return toWizardCartReconciliationSnapshot(freshSale)
   }
 
   function finishCartMutation(operation: PendingCartMutation) {

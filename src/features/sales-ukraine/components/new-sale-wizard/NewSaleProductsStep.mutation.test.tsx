@@ -182,9 +182,9 @@ function renderStep({
   sale = createSale(),
 }: {
   onBusyChange?: (busy: boolean) => void
-  onCartChanged?: () => SalesUkraineSale | Promise<SalesUkraineSale>
+  onCartChanged?: () => SalesUkraineSale | null | void | Promise<SalesUkraineSale | null | void>
   onPendingMutationChange?: (pending: boolean) => void
-  sale?: SalesUkraineSale
+  sale?: SalesUkraineSale | null
 } = {}) {
   return render(
     <MantineProvider theme={theme}>
@@ -442,6 +442,37 @@ describe('NewSaleProductsStep persistent cart mutations', () => {
       Product: { NetUid: 'product-1' },
       Qty: 3,
     })
+  })
+
+  it('replays a failed cart add when verification temporarily returns no cart', async () => {
+    apiMocks.addOrderItem
+      .mockRejectedValueOnce(new ApiError('response lost', 503, null))
+      .mockResolvedValueOnce(null)
+    const onCartChanged = vi.fn()
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce(createSale(5))
+    const onPendingMutationChange = vi.fn()
+
+    renderStep({ onCartChanged, onPendingMutationChange })
+
+    fireEvent.click(screen.getByRole('button', { name: 'cross sell' }))
+    fireEvent.click(await screen.findByRole('button', { name: 'pick same product' }))
+    fireEvent.click(await screen.findByRole('button', { name: 'accept quantity' }))
+
+    const retry = await screen.findByRole('button', { name: 'Перевірити та повторити' })
+    const firstOperationId = apiMocks.addOrderItem.mock.calls[0]?.[3]?.operationId
+
+    expect(loadSalesPendingMutation(scope)?.phase).toBe('unknown')
+
+    fireEvent.click(retry)
+
+    await waitFor(() => expect(apiMocks.addOrderItem).toHaveBeenCalledTimes(2))
+    expect(apiMocks.addOrderItem.mock.calls[1]?.[3]?.operationId).toBe(firstOperationId)
+    await waitFor(() => {
+      expect(loadSalesPendingMutation(scope)).toBe(null)
+    })
+    expect(onPendingMutationChange).toHaveBeenLastCalledWith(false)
   })
 
   it('refreshes a retained search result from 254 to 0 after the full quantity enters the cart', async () => {

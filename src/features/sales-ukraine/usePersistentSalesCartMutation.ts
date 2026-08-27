@@ -26,6 +26,7 @@ import {
   createWizardOperationId,
   inspectWizardCartMutation,
   retryWizardMutation,
+  toWizardCartReconciliationSnapshot,
   type WizardCartMutationExpectation,
   type WizardMutationAttemptResult,
   type WizardMutationOperation,
@@ -285,11 +286,7 @@ export function usePersistentSalesCartMutation({
         const reconcileSale = async () => {
           const fresh = await reconcileRef.current()
 
-          if (!fresh) {
-            throw new Error('Сервер не повернув продаж для звірки')
-          }
-
-          return fresh
+          return toWizardCartReconciliationSnapshot(fresh)
         }
         const result = retry
           ? await retryWizardMutation(operation, reconcileSale)
