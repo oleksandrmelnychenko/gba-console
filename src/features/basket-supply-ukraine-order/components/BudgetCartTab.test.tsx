@@ -36,7 +36,7 @@ describe('BudgetCartTab', () => {
     canMock.mockReturnValue(false)
 
     render(
-      <MantineProvider theme={theme}>
+      <MantineProvider env="test" theme={{ ...theme, respectReducedMotion: true }}>
         <MemoryRouter>
           <I18nProvider>
             <BudgetCartTab />
@@ -52,7 +52,7 @@ describe('BudgetCartTab', () => {
 
   it('explains the next action and the selected optimization method', () => {
     render(
-      <MantineProvider theme={theme}>
+      <MantineProvider env="test" theme={{ ...theme, respectReducedMotion: true }}>
         <MemoryRouter>
           <I18nProvider>
             <BudgetCartTab />
@@ -104,7 +104,7 @@ describe('BudgetCartTab', () => {
     })
 
     render(
-      <MantineProvider theme={theme}>
+      <MantineProvider env="test" theme={{ ...theme, respectReducedMotion: true }}>
         <MemoryRouter>
           <I18nProvider>
             <BudgetCartTab />

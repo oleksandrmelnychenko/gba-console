@@ -1,10 +1,8 @@
 import {
   ActionIcon,
   Alert,
-  Badge,
   Button,
   Card,
-  Divider,
   Group,
   SimpleGrid,
   Stack,
@@ -22,6 +20,13 @@ import { translate } from '../../../shared/i18n/translate'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { AppModal } from '../../../shared/ui/AppModal'
+import {
+  DocumentDetailLayout,
+  DocumentDetailMetric,
+  DocumentDetailRow,
+  DocumentDetailSection,
+  DocumentDetailSummary,
+} from '../../../shared/ui/document-detail/DocumentDetail'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import { DocumentExportModal } from '../../../shared/ui/document-export-modal/DocumentExportModal'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
@@ -929,7 +934,7 @@ function getPrimaryProductIncomeSourceLink(document: ProductIncomeDocument): str
   return sourceLink && sourceLink !== '/sales/return/client' ? sourceLink : null
 }
 
-function ProductIncomeDocumentDrawer({
+export function ProductIncomeDocumentDrawer({
   canExport,
   canOpenRemainings,
   capitalization,
@@ -980,17 +985,28 @@ function ProductIncomeDocumentDrawer({
     <AppDrawer
       opened={Boolean(document)}
       position="right"
-      size="min(1120px, 96vw)"
-      title={document?.Number ? `${t('Документ')} ${document.Number}` : t('Документ приходу')}
+      size="wide"
+      title={t('Документ приходу')}
       onClose={onClose}
     >
       {document && row && (
-        <Stack gap="lg">
-          <Group justify="space-between" align="start" gap="sm">
-            <Badge className="app-role-pill is-orange" variant="light">
-              {displayValue(row.type)}
-            </Badge>
-            <Group gap="xs">
+        <DocumentDetailLayout
+          summary={
+            <DocumentDetailSummary
+              eyebrow={t('Документ')}
+              title={displayValue(document.Number)}
+              meta={<>{formatDateTime(document.FromDate)} · {displayValue(row.type)}</>}
+              metrics={
+                <>
+                  <DocumentDetailMetric label={t('Сума')} suffix={row.currency} value={formatMoney(row.amount)} />
+                  <DocumentDetailMetric label={t('Кількість')} value={formatAmount(row.qty)} />
+                  <DocumentDetailMetric label={t('Стан')} value={displayValue(row.docState)} />
+                </>
+              }
+            />
+          }
+          actions={
+            <Group justify="flex-end" gap="xs">
               {sourceLink && (
                 <Button
                   component={Link}
@@ -1023,22 +1039,24 @@ function ProductIncomeDocumentDrawer({
                 </Button>
               ) : null}
             </Group>
-          </Group>
+          }
+        >
+          <DocumentDetailSection subtitle={displayValue(document.Number)} title={t('Документ')}>
+            <DocumentDetailRow label={t('Дата')} mono value={formatDateTime(document.FromDate)} />
+            <DocumentDetailRow label={t('Номер')} mono value={document.Number} />
+            <DocumentDetailRow label={t('Номер інвойсу')} mono value={row.invNumber} />
+            <DocumentDetailRow label={t('Дата інвойсу')} mono value={formatDateTime(row.invDate)} />
+            <DocumentDetailRow label={t('Дата МД')} mono value={formatDateTime(row.specificationDate)} />
+            <DocumentDetailRow label={t('Валюта')} mono value={row.currency} />
+            <DocumentDetailRow label={t('Коментар')} value={row.comment || document.Comment} wide />
+          </DocumentDetailSection>
 
-          <SimpleGrid cols={{ base: 1, sm: 2 }} spacing={28} verticalSpacing={12}>
-            <DetailValue label={t('Постачальник / клієнт')} value={row.client} />
-            <DetailValue label={t('Організація')} value={row.organization} />
-            <DetailValue label={t('Склад')} value={document.Storage?.Name} />
-            <DetailValue label={t('Відповідальний')} value={getEntityName(document.User)} />
-            <DetailValue label={t('Кількість')} mono value={formatAmount(row.qty)} />
-            <DetailValue label={t('Сума')} mono value={formatMoney(row.amount)} />
-            <DetailValue label={t('Валюта')} mono value={row.currency} />
-            <DetailValue label={t('Стан')} value={row.docState} />
-            <DetailValue label={t('Номер інвойсу')} mono value={row.invNumber} />
-            <DetailValue label={t('Дата інвойсу')} mono value={formatDateTime(row.invDate)} />
-            <DetailValue label={t('Дата МД')} mono value={formatDateTime(row.specificationDate)} />
-            <DetailValue label={t('Коментар')} value={row.comment || document.Comment} />
-          </SimpleGrid>
+          <DocumentDetailSection title={t('Учасники та склад')}>
+            <DocumentDetailRow label={t('Постачальник / клієнт')} value={row.client} wide />
+            <DocumentDetailRow label={t('Організація')} value={row.organization} wide />
+            <DocumentDetailRow label={t('Склад')} value={document.Storage?.Name} />
+            <DocumentDetailRow label={t('Відповідальний')} value={getEntityName(document.User)} />
+          </DocumentDetailSection>
 
           {detailMode === 'view' && deferredOverviewNote && (
             <Alert color={CREATE_ACTION_COLOR} icon={<CircleAlert size={18} />} variant="light">
@@ -1061,11 +1079,8 @@ function ProductIncomeDocumentDrawer({
 
           {detailMode === 'view' && overviewKind === 'saleReturn' && <SaleReturnOverview document={document} />}
 
-          <Divider />
-
           {detailMode === 'view' && (
-            <Stack gap="sm">
-              <Text className="app-section-title" fw={600} size="sm">{t('Позиції документа')}</Text>
+            <DocumentDetailSection stacked subtitle={String(getActiveProductIncomeItems(document).length)} title={t('Позиції документа')}>
               {documentInfoError && (
                 <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
                   {documentInfoError}
@@ -1084,12 +1099,11 @@ function ProductIncomeDocumentDrawer({
                 minWidth={720}
                 tableId="product-income-document-items"
               />
-            </Stack>
+            </DocumentDetailSection>
           )}
 
           {detailMode === 'remainings' && (
-            <Stack gap="sm">
-              <Text className="app-section-title" fw={600} size="sm">{t('Залишки по партіям')}</Text>
+            <DocumentDetailSection stacked subtitle={String(remainings.length)} title={t('Залишки по партіям')}>
               {documentInfoError && (
                 <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
                   {documentInfoError}
@@ -1115,21 +1129,11 @@ function ProductIncomeDocumentDrawer({
                 minWidth={1180}
                 tableId="product-income-document-remainings"
               />
-            </Stack>
+            </DocumentDetailSection>
           )}
-        </Stack>
+        </DocumentDetailLayout>
       )}
     </AppDrawer>
-  )
-}
-
-/* §7.2 leader row: «label ——— value»; mono for numbers/money/dates. */
-function DetailValue({ label, mono, value }: { label: string; mono?: boolean; value?: string | number }) {
-  return (
-    <span className="app-leader-row">
-      <span className="app-leader-row-label">{label}</span>
-      <span className={`app-leader-row-value${mono ? ' is-mono' : ''}`}>{displayValue(value)}</span>
-    </span>
   )
 }
 
@@ -1150,39 +1154,35 @@ function CapitalizationOverview({
   const items = capitalization?.ProductCapitalizationItems || []
 
   return (
-    <Card withBorder radius="md" padding="md">
-      <Stack gap="sm">
-        <Group justify="space-between" align="start">
-          <Text className="app-section-title" fw={600} size="sm">{t('Прихідна накладна (Оприходування)')}</Text>
-          <Text c="dimmed" size="sm">
-            {displayValue(capitalization?.Number)} · <span className="app-money app-money-meta">{formatMoney(capitalization?.TotalAmount)}</span>
-          </Text>
-        </Group>
-        {error && (
-          <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
-            {error}
-          </Alert>
-        )}
-        <DataTable
-          columns={itemColumns}
-          data={items}
-          emptyText={t('Позицій не знайдено')}
-          getRowId={(item, index) => String(item.NetUid || item.Id || index)}
-          isLoading={isLoading}
-          layoutVersion="product-income-capitalization-overview-1"
-          loadingText={t('Завантаження позицій оприбуткування')}
-          maxHeight={320}
-          minWidth={760}
-          tableId="product-income-capitalization-overview"
-        />
+    <DocumentDetailSection
+      stacked
+      subtitle={<>{displayValue(capitalization?.Number)} · <span className="app-money app-money-meta">{formatMoney(capitalization?.TotalAmount)}</span></>}
+      title={t('Прихідна накладна (Оприходування)')}
+    >
+      {error && (
+        <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
+          {error}
+        </Alert>
+      )}
+      <DataTable
+        columns={itemColumns}
+        data={items}
+        emptyText={t('Позицій не знайдено')}
+        getRowId={(item, index) => String(item.NetUid || item.Id || index)}
+        isLoading={isLoading}
+        layoutVersion="product-income-capitalization-overview-1"
+        loadingText={t('Завантаження позицій оприбуткування')}
+        maxHeight={320}
+        minWidth={760}
+        tableId="product-income-capitalization-overview"
+      />
 
-        <SimpleGrid cols={{ base: 1, sm: 3 }} spacing="sm">
-          <DetailValue label={t('Вся кількість')} mono value={formatAmount(sumRows(items, (item) => item.Qty))} />
-          <DetailValue label={t('Загальна сума')} mono value={formatMoney(sumRows(items, (item) => item.TotalAmount))} />
-          <DetailValue label={t('Загальна вага')} mono value={formatAmount(sumRows(items, (item) => (item.Weight || 0) * (item.Qty || 0)))} />
-        </SimpleGrid>
-      </Stack>
-    </Card>
+      <SimpleGrid cols={{ base: 1, sm: 3 }} spacing="sm">
+        <DocumentDetailRow label={t('Вся кількість')} mono value={formatAmount(sumRows(items, (item) => item.Qty))} />
+        <DocumentDetailRow label={t('Загальна сума')} mono value={formatMoney(sumRows(items, (item) => item.TotalAmount))} />
+        <DocumentDetailRow label={t('Загальна вага')} mono value={formatAmount(sumRows(items, (item) => (item.Weight || 0) * (item.Qty || 0)))} />
+      </SimpleGrid>
+    </DocumentDetailSection>
   )
 }
 
@@ -1273,48 +1273,44 @@ function SaleReturnOverview({ document }: { document: ProductIncomeDocument }) {
   const columns = getSaleReturnOverviewColumns(t, currencyCode, isVat, items)
 
   return (
-    <Card withBorder radius="md" padding="md">
-      <Stack gap="sm">
-        <Group justify="space-between" align="start">
-          <Text className="app-section-title" fw={600} size="sm">{t('Прихідна накладна (повернення)')}</Text>
-          <Text c="dimmed" size="sm">
-            {displayValue(firstItem?.SaleReturn?.Number)} · {displayValue(getEntityName(firstItem?.SaleReturn?.Client))}
-          </Text>
-        </Group>
+    <DocumentDetailSection
+      stacked
+      subtitle={<>{displayValue(firstItem?.SaleReturn?.Number)} · {displayValue(getEntityName(firstItem?.SaleReturn?.Client))}</>}
+      title={t('Прихідна накладна (повернення)')}
+    >
 
-        <SimpleGrid cols={{ base: 1, sm: 2 }} spacing={28} verticalSpacing={12}>
-          <DetailValue label={t('Угода')} value={agreement?.Name} />
-          <DetailValue label={t('Валюта')} mono value={currencyCode} />
-          <DetailValue label={t('Дата інвойсу')} mono value={formatDateTime(firstItem?.SaleReturn?.FromDate)} />
-          <DetailValue label={t('Коментар')} value={firstItem?.Comment || document.Comment} />
-        </SimpleGrid>
+      <SimpleGrid cols={{ base: 1, sm: 2 }} spacing={28} verticalSpacing={12}>
+        <DocumentDetailRow label={t('Угода')} value={agreement?.Name} />
+        <DocumentDetailRow label={t('Валюта')} mono value={currencyCode} />
+        <DocumentDetailRow label={t('Дата інвойсу')} mono value={formatDateTime(firstItem?.SaleReturn?.FromDate)} />
+        <DocumentDetailRow label={t('Коментар')} value={firstItem?.Comment || document.Comment} />
+      </SimpleGrid>
 
-        {items.length === 0 ? (
-          <Text c="dimmed" size="sm">
-            {t('Позицій не знайдено')}
-          </Text>
-        ) : (
-          <DataTable
-            columns={columns}
-            data={items}
-            defaultLayout={{ density: 'normal' }}
-            emptyText={t('Позицій не знайдено')}
-            getRowId={(item) => getSaleReturnIncomeItemKey(item)}
-            layoutVersion="product-income-sale-return-items-1"
-            maxHeight={420}
-            minWidth={isVat ? 1010 : 886}
-            tableId="product-income-sale-return-items"
-          />
-        )}
+      {items.length === 0 ? (
+        <Text c="dimmed" size="sm">
+          {t('Позицій не знайдено')}
+        </Text>
+      ) : (
+        <DataTable
+          columns={columns}
+          data={items}
+          defaultLayout={{ density: 'normal' }}
+          emptyText={t('Позицій не знайдено')}
+          getRowId={(item) => getSaleReturnIncomeItemKey(item)}
+          layoutVersion="product-income-sale-return-items-1"
+          maxHeight={420}
+          minWidth={isVat ? 1010 : 886}
+          tableId="product-income-sale-return-items"
+        />
+      )}
 
-        <SimpleGrid cols={{ base: 1, sm: 2 }} spacing={28} verticalSpacing={12}>
-          <DetailValue label={t('Всього позицій')} mono value={String(items.length)} />
-          <DetailValue label={t('Вся кількість')} mono value={formatAmount(document.TotalQty || sumRows(items, (item) => item.SaleReturnItem?.Qty ?? item.Qty))} />
-          <DetailValue label={t('Загальна сума')} mono value={formatMoney(totalAmount)} />
-          {isVat && <DetailValue label={t('ПДВ')} mono value={formatMoney(totalVat)} />}
-        </SimpleGrid>
-      </Stack>
-    </Card>
+      <SimpleGrid cols={{ base: 1, sm: 2 }} spacing={28} verticalSpacing={12}>
+        <DocumentDetailRow label={t('Всього позицій')} mono value={String(items.length)} />
+        <DocumentDetailRow label={t('Вся кількість')} mono value={formatAmount(document.TotalQty || sumRows(items, (item) => item.SaleReturnItem?.Qty ?? item.Qty))} />
+        <DocumentDetailRow label={t('Загальна сума')} mono value={formatMoney(totalAmount)} />
+        {isVat && <DocumentDetailRow label={t('ПДВ')} mono value={formatMoney(totalVat)} />}
+      </SimpleGrid>
+    </DocumentDetailSection>
   )
 }
 
@@ -1480,36 +1476,32 @@ function ActReconciliationOverview({
   )
 
   return (
-    <Card withBorder radius="md" padding="md">
-      <Stack gap="sm">
-        <Group justify="space-between" align="start">
-          <Text className="app-section-title" fw={600} size="sm">{t('Прихідна накладна (акт звірки)')}</Text>
-          <Text c="dimmed" size="sm">
-            {displayValue(document.Number)} · <span className="app-money app-money-meta">{formatMoney(document.TotalNetPrice)}</span>
-          </Text>
-        </Group>
+    <DocumentDetailSection
+      stacked
+      subtitle={<>{displayValue(document.Number)} · <span className="app-money app-money-meta">{formatMoney(document.TotalNetPrice)}</span></>}
+      title={t('Прихідна накладна (акт звірки)')}
+    >
 
-        <DataTable
-          columns={columns}
-          data={rows}
-          emptyText={t('Позицій не знайдено')}
-          getRowId={(row) => row.key}
-          isLoading={isLoading}
-          layoutVersion="product-income-act-reconciliation-overview-1"
-          loadingText={t('Завантаження позицій акта звірки')}
-          maxHeight={320}
-          minWidth={820}
-          tableId="product-income-act-reconciliation-overview"
-        />
+      <DataTable
+        columns={columns}
+        data={rows}
+        emptyText={t('Позицій не знайдено')}
+        getRowId={(row) => row.key}
+        isLoading={isLoading}
+        layoutVersion="product-income-act-reconciliation-overview-1"
+        loadingText={t('Завантаження позицій акта звірки')}
+        maxHeight={320}
+        minWidth={820}
+        tableId="product-income-act-reconciliation-overview"
+      />
 
-        <SimpleGrid cols={{ base: 2, sm: 4 }} spacing="sm">
-          <DetailValue label={t('Всього товарів')} value={rows.length} />
-          <DetailValue label={t('Вся кількість')} mono value={formatAmount(document.TotalQty)} />
-          <DetailValue label={t('Вага нетто')} value={formatAmount(document.TotalNetWeight || sumRows(rows, (row) => row.netWeight))} />
-          <DetailValue label={t('Сума')} mono value={formatMoney(document.TotalNetPrice)} />
-        </SimpleGrid>
-      </Stack>
-    </Card>
+      <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
+        <DocumentDetailRow label={t('Всього товарів')} value={rows.length} />
+        <DocumentDetailRow label={t('Вся кількість')} mono value={formatAmount(document.TotalQty)} />
+        <DocumentDetailRow label={t('Вага нетто')} value={formatAmount(document.TotalNetWeight || sumRows(rows, (row) => row.netWeight))} />
+        <DocumentDetailRow label={t('Сума')} mono value={formatMoney(document.TotalNetPrice)} />
+      </SimpleGrid>
+    </DocumentDetailSection>
   )
 }
 

@@ -10,7 +10,14 @@ import {
   TextInput,
   Tooltip,
 } from '@mantine/core'
-import { AppDrawer } from "../../../shared/ui/AppDrawer"
+import { AppDrawer } from '../../../shared/ui/AppDrawer'
+import {
+  DocumentDetailLayout,
+  DocumentDetailMetric,
+  DocumentDetailRow,
+  DocumentDetailSection,
+  DocumentDetailSummary,
+} from '../../../shared/ui/document-detail/DocumentDetail'
 import { CircleAlert, FileDown, Plus, RotateCcw } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
@@ -538,7 +545,7 @@ function ProductCapitalizationsPageView({ model }: { model: ReturnType<typeof us
   )
 }
 
-function ProductCapitalizationDetailDrawer({
+export function ProductCapitalizationDetailDrawer({
   capitalization,
   detailError,
   exportingNetId,
@@ -564,66 +571,65 @@ function ProductCapitalizationDetailDrawer({
 
   return (
     <AppDrawer
-      className="product-capitalization-detail-drawer"
       opened={Boolean(capitalization)}
       position="right"
-      size="78rem"
-      title={
-        capitalization?.Number
-          ? `${t('Оприбуткування')} ${displayValue(capitalization.Number)}`
-          : t('Оприбуткування')
-      }
+      size="wide"
+      title={t('Оприбуткування')}
       onClose={onClose}
     >
       {capitalization && (
-        <Stack className="product-capitalization-detail-body" gap={12}>
-          <div className="product-capitalization-detail-header">
-            <Text className="product-capitalization-detail-date">
-              {formatDateTime(capitalization.FromDate)}
-            </Text>
-            {onExport && (
-              <Button
-                className="product-capitalization-detail-export"
-                color={CREATE_ACTION_COLOR}
-                disabled={!capitalization.NetUid || Boolean(exportingNetId)}
-                leftSection={<FileDown size={16} />}
-                loading={exportingNetId === capitalization.NetUid}
-                onClick={() => onExport(capitalization)}
-              >
-                {t('Друк PDF')}
-              </Button>
+        <DocumentDetailLayout
+          summary={
+            <DocumentDetailSummary
+              eyebrow={t('Оприбуткування')}
+              title={displayValue(capitalization.Number)}
+              meta={formatDateTime(capitalization.FromDate)}
+              metrics={
+                <>
+                  <DocumentDetailMetric label={t('Кількість')} value={formatAmount(totals.qty)} />
+                  <DocumentDetailMetric label={t('Сума')} value={formatMoney(totals.amount)} />
+                  <DocumentDetailMetric label={t('Вага')} value={formatAmount(totals.weight)} />
+                </>
+              }
+            />
+          }
+          actions={
+            <Group justify="flex-end">
+              {onExport && (
+                <Button
+                  color={CREATE_ACTION_COLOR}
+                  disabled={!capitalization.NetUid || Boolean(exportingNetId)}
+                  leftSection={<FileDown size={16} />}
+                  loading={exportingNetId === capitalization.NetUid}
+                  onClick={() => onExport(capitalization)}
+                >
+                  {t('Друк PDF')}
+                </Button>
+              )}
+            </Group>
+          }
+        >
+          <DocumentDetailSection subtitle={displayValue(capitalization.Number)} title={t('Документ')}>
+            <DocumentDetailRow label={t('Дата')} mono value={formatDateTime(capitalization.FromDate)} />
+            <DocumentDetailRow label={t('Номер')} mono value={capitalization.Number} />
+            <DocumentDetailRow label={t('Сума')} mono value={formatMoney(capitalization.TotalAmount)} />
+            {capitalization.Comment && (
+              <DocumentDetailRow label={t('Коментар')} value={capitalization.Comment} wide />
             )}
-          </div>
+          </DocumentDetailSection>
 
-          {detailError && (
-            <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
-              {detailError}
-            </Alert>
-          )}
+          <DocumentDetailSection title={t('Учасники та склад')}>
+            <DocumentDetailRow label={t('Організація')} value={capitalization.Organization?.Name} wide />
+            <DocumentDetailRow label={t('Склад')} value={capitalization.Storage?.Name} />
+            <DocumentDetailRow label={t('Відповідальний')} value={getResponsibleName(capitalization)} />
+          </DocumentDetailSection>
 
-          <div className="app-detail-grid product-capitalization-detail-grid">
-            <DetailValue label={t('Склад')} value={capitalization.Storage?.Name} />
-            <DetailValue label={t('Організація')} value={capitalization.Organization?.Name} />
-            <DetailValue label={t('Відповідальний')} value={getResponsibleName(capitalization)} />
-            <DetailValue label={t('Сума')} tone="money" value={formatMoney(capitalization.TotalAmount)} />
-          </div>
-
-          {capitalization.Comment && (
-            <Box className="product-capitalization-detail-comment">
-              <Text className="product-capitalization-detail-comment-label">
-                {t('Коментар')}
-              </Text>
-              <Text className="product-capitalization-detail-comment-value">{capitalization.Comment}</Text>
-            </Box>
-          )}
-
-          <Group className="product-capitalization-detail-totals" gap={8}>
-            <TotalValue label={t('Кількість')} value={formatAmount(totals.qty)} />
-            <TotalValue label={t('Сума')} value={formatMoney(totals.amount)} />
-            <TotalValue label={t('Вага')} value={formatAmount(totals.weight)} />
-          </Group>
-
-          <div className="product-capitalization-detail-table">
+          <DocumentDetailSection stacked subtitle={String(items.length)} title={t('Позиції')}>
+            {detailError && (
+              <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
+                {detailError}
+              </Alert>
+            )}
             <DataTable
               columns={itemColumns}
               data={items}
@@ -637,32 +643,10 @@ function ProductCapitalizationDetailDrawer({
               minWidth={920}
               tableId="product-capitalization-items"
             />
-          </div>
-        </Stack>
+          </DocumentDetailSection>
+        </DocumentDetailLayout>
       )}
     </AppDrawer>
-  )
-}
-
-function DetailValue({ label, tone, value }: { label: string; tone?: 'money'; value: unknown }) {
-  return (
-    <div className={`app-detail-field${tone === 'money' ? ' is-mono' : ''}`}>
-      <span>{label}</span>
-      <strong>{displayValue(value)}</strong>
-    </div>
-  )
-}
-
-function TotalValue({ label, value }: { label: string; value: string }) {
-  return (
-    <Box className="product-capitalization-detail-total">
-      <Text className="product-capitalization-detail-total-label">
-        {label}
-      </Text>
-      <Text className="product-capitalization-detail-total-value">
-        {value}
-      </Text>
-    </Box>
   )
 }
 

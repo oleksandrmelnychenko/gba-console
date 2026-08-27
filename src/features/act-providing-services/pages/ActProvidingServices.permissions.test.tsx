@@ -75,7 +75,7 @@ const ACT: ActProvidingService = {
 function renderRoute(path: string) {
   return render(
     <MemoryRouter initialEntries={[path]}>
-      <MantineProvider>
+      <MantineProvider env="test" theme={{ respectReducedMotion: true }}>
         <I18nProvider>
           <Routes>
             <Route path="/act-providing-services" element={<ActProvidingServicesPage />} />

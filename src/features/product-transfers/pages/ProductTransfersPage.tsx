@@ -18,7 +18,15 @@ import {
   TextInput,
   Tooltip,
 } from '@mantine/core'
-import { AppDrawer } from "../../../shared/ui/AppDrawer"
+import { AppDrawer } from '../../../shared/ui/AppDrawer'
+import {
+  DocumentDetailFlag,
+  DocumentDetailLayout,
+  DocumentDetailMetric,
+  DocumentDetailRow,
+  DocumentDetailSection,
+  DocumentDetailSummary,
+} from '../../../shared/ui/document-detail/DocumentDetail'
 import { AppModal } from "../../../shared/ui/AppModal"
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { notifications } from '@mantine/notifications'
@@ -1073,7 +1081,7 @@ function buildTransferIndexMap(transfers: ProductTransfer[], offset = 0): Map<Pr
   }, new Map<ProductTransfer, number>())
 }
 
-function TransferDetail({
+export function TransferDetail({
   canDownload,
   error,
   isDownloading,
@@ -1161,39 +1169,28 @@ function TransferDetail({
   const routeLine = [transfer.FromStorage?.Name, transfer.ToStorage?.Name].filter(Boolean).join(' → ')
 
   return (
-    <Stack gap="md">
-      {error && (
-        <Alert color="yellow" icon={<CircleAlert size={18} />} variant="light">
-          {error}
-        </Alert>
-      )}
-
-      <div className="app-detail-hero">
-        <div>
-          <span className="app-detail-eyebrow">{t('Переміщення')}</span>
-          <div className="app-detail-title">
-            <strong>
-              {transfer.Number ? `№ ${transfer.Number}` : t('Переміщення')}
-              {transferDate ? ` · ${t('Від')} ${transferDate}` : ''}
-            </strong>
-            {routeLine && <span>{routeLine}</span>}
-          </div>
-          {(transfer.IsManagement || isLoading) && (
-            <div className="app-detail-badges">
-              {transfer.IsManagement && (
-                <Badge className="app-role-pill" variant="light">
-                  {t('Управлінське')}
-                </Badge>
-              )}
-              {isLoading && (
-                <Badge className="app-role-pill is-gray" variant="light">
-                  {t('Завантаження деталей')}
-                </Badge>
-              )}
-            </div>
-          )}
-        </div>
-        <div className="app-detail-hero__side">
+    <DocumentDetailLayout
+      summary={
+        <DocumentDetailSummary
+          eyebrow={t('Переміщення')}
+          title={displayValue(transfer.Number)}
+          meta={[transferDate, routeLine].filter(Boolean).join(' · ')}
+          metrics={
+            <>
+              <DocumentDetailMetric label={t('Позицій')} value={String(items.length)} />
+              <DocumentDetailMetric label={t('Кількість')} value={formatAmount(getTransferQty(transfer))} />
+            </>
+          }
+        />
+      }
+      actions={
+        <Group justify="space-between">
+          <Group gap="xs">
+            {transfer.IsManagement && <DocumentDetailFlag active label={t('Управлінське')} />}
+            {isLoading && (
+              <Badge className="app-role-pill is-gray" variant="light">{t('Завантаження деталей')}</Badge>
+            )}
+          </Group>
           {canDownload ? (
             <Button
               disabled={!transfer.NetUid}
@@ -1205,41 +1202,30 @@ function TransferDetail({
               {t('Завантажити')}
             </Button>
           ) : null}
-          <div className="app-detail-metrics">
-            <div className="app-detail-metric">
-              <span>{t('Позицій')}</span>
-              <strong>{items.length}</strong>
-            </div>
-            <div className="app-detail-metric">
-              <span>{t('Кількість')}</span>
-              <strong>{formatAmount(getTransferQty(transfer))}</strong>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="app-detail-grid">
-        <DetailField label={t('Організація')} value={transfer.Organization?.Name} />
-        <DetailField label={t('Відповідальний')} value={getResponsibleName(transfer)} />
-        <DetailField label={t('Зі складу')} value={transfer.FromStorage?.Name} />
-        <DetailField label={t('На склад')} value={transfer.ToStorage?.Name} />
+        </Group>
+      }
+    >
+      <DocumentDetailSection subtitle={displayValue(transfer.Number)} title={t('Документ')}>
+        <DocumentDetailRow label={t('Дата')} mono value={transferDate} />
+        <DocumentDetailRow label={t('Номер')} mono value={transfer.Number} />
         {transfer.Comment && (
-          <div className="app-detail-field" style={{ gridColumn: '1 / -1' }}>
-            <span>{t('Коментар')}</span>
-            <strong>{transfer.Comment}</strong>
-          </div>
+          <DocumentDetailRow label={t('Коментар')} value={transfer.Comment} wide />
         )}
-      </div>
+      </DocumentDetailSection>
 
-      <Stack gap="xs">
-        <div className="app-detail-section-head">
-          <Text className="app-section-title" fw={600} size="sm">
-            {t('Позиції')}
-          </Text>
-          <Badge className="app-role-pill is-gray" variant="light">
-            {items.length}
-          </Badge>
-        </div>
+      <DocumentDetailSection title={t('Учасники та склади')}>
+        <DocumentDetailRow label={t('Організація')} value={transfer.Organization?.Name} wide />
+        <DocumentDetailRow label={t('Відповідальний')} value={getResponsibleName(transfer)} wide />
+        <DocumentDetailRow label={t('Зі складу')} value={transfer.FromStorage?.Name} />
+        <DocumentDetailRow label={t('На склад')} value={transfer.ToStorage?.Name} />
+      </DocumentDetailSection>
+
+      <DocumentDetailSection stacked subtitle={String(items.length)} title={t('Позиції')}>
+        {error && (
+          <Alert color="yellow" icon={<CircleAlert size={18} />} variant="light">
+            {error}
+          </Alert>
+        )}
         <DataTable
           columns={itemColumns}
           data={items}
@@ -1253,17 +1239,8 @@ function TransferDetail({
           minWidth={900}
           tableId="product-transfer-items"
         />
-      </Stack>
-    </Stack>
-  )
-}
-
-function DetailField({ label, value }: { label: string; value: unknown }) {
-  return (
-    <div className="app-detail-field">
-      <span>{label}</span>
-      <strong>{displayValue(value)}</strong>
-    </div>
+      </DocumentDetailSection>
+    </DocumentDetailLayout>
   )
 }
 

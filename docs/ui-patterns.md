@@ -275,6 +275,20 @@ Right-drawer з даними одного запису (`/accounting/consumable-
 - Реалізація leader-рядка: контейнер flex + `::before` як лінія з `order: 2`
   (label `order: 1`, value `order: 3`).
 
+### 7.3 Деталка документа (еталон — Видатковий ордер)
+
+Для вікон, що наслідують «Видатковий ордер», використовуємо компоненти з
+`src/shared/ui/document-detail/DocumentDetail.tsx`: `DocumentDetailLayout`,
+`DocumentDetailSummary`, `DocumentDetailMetric`, `DocumentDetailSection`,
+`DocumentDetailRow` і `DocumentDetailFlag`. Єдиний CSS патерну лежить поруч у
+`document-detail.css`; не копіюємо його у стилі сторінок.
+
+- Шапка — номер, дата/тип документа, підсумкові метрики; дії передаємо через `actions`.
+- Секції — спільна вертикальна рейка, заголовки й рамки; поля — leader-рядки.
+- Для таблиць та їхніх підсумків — `DocumentDetailSection stacked`, щоб контент
+  займав усю ширину. Таблиці зберігають власні `tableId`, налаштування і скрол.
+- Довгі реквізити (організація, постачальник, коментар) — `DocumentDetailRow wide`.
+
 ## 8. Кнопки
 
 - Первинна дія («Добавити», «Зберегти») — filled `CREATE_ACTION_COLOR` (оранж).
