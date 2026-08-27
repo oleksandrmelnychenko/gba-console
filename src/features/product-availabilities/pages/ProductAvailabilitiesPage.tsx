@@ -16,11 +16,6 @@ import { useValueState } from '../../../shared/hooks/useValueState'
 import { translate } from '../../../shared/i18n/translate'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { formatKyivBusinessDate } from '../../../shared/date/dateTime'
-import {
-  closePendingExportDocumentWindow,
-  openExportDocumentInWindow,
-  openPendingExportDocumentWindow,
-} from '../../../shared/documents/openExportDocument'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import { DocumentExportModal } from '../../../shared/ui/document-export-modal/DocumentExportModal'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
@@ -72,6 +67,7 @@ function useProductAvailabilitiesPageModel() {
   const [pageSize, setPageSize] = useValueState(readProductAvailabilityTablePageSize)
   const [error, setError] = useValueState<string | null>(null)
   const [downloadDocument, setDownloadDocument] = useValueState<ProductAvailabilityExportDocument | null>(null)
+  const [downloadError, setDownloadError] = useValueState<string | null>(null)
   const [downloadModalOpened, setDownloadModalOpened] = useValueState(false)
   const [isLoading, setLoading] = useValueState(false)
   const [isLoadingStorages, setLoadingStorages] = useValueState(true)
@@ -228,14 +224,16 @@ function useProductAvailabilitiesPageModel() {
   }
 
   async function handleExport() {
-    if (!selectedStorageNetId || filterError) {
+    if (!selectedStorageNetId || filterError || isExporting) {
       return
     }
 
     setExporting(true)
     setError(null)
 
-    const pendingWindow = openPendingExportDocumentWindow(t('Друк PDF'))
+    setDownloadDocument(null)
+    setDownloadError(null)
+    setDownloadModalOpened(true)
 
     try {
       const document = await exportProductAvailabilities({
@@ -245,18 +243,9 @@ function useProductAvailabilitiesPageModel() {
         vendorCode: searchValue,
       })
 
-      if (document.PdfDocumentURL && openExportDocumentInWindow(pendingWindow, document.PdfDocumentURL)) {
-        setDownloadDocument(null)
-        setDownloadModalOpened(false)
-        return
-      }
-
-      closePendingExportDocumentWindow(pendingWindow)
       setDownloadDocument(document)
-      setDownloadModalOpened(true)
     } catch (exportError) {
-      closePendingExportDocumentWindow(pendingWindow)
-      setError(exportError instanceof Error ? exportError.message : t('Не вдалося сформувати експорт доступності партій'))
+      setDownloadError(exportError instanceof Error ? exportError.message : t('Не вдалося сформувати експорт доступності партій'))
     } finally {
       setExporting(false)
     }
@@ -269,6 +258,7 @@ function useProductAvailabilitiesPageModel() {
     dateFrom,
     dateTo,
     downloadDocument,
+    downloadError,
     downloadModalOpened,
     error,
     filterError,
@@ -311,6 +301,7 @@ function ProductAvailabilitiesPageView({ model }: { model: ReturnType<typeof use
     dateFrom,
     dateTo,
     downloadDocument,
+    downloadError,
     downloadModalOpened,
     error,
     filterError,
@@ -456,6 +447,8 @@ function ProductAvailabilitiesPageView({ model }: { model: ReturnType<typeof use
 
       <DocumentExportModal
         document={downloadDocument}
+        error={downloadError}
+        isLoading={isExporting}
         opened={downloadModalOpened}
         title={t('Друк PDF')}
         onClose={() => setDownloadModalOpened(false)}

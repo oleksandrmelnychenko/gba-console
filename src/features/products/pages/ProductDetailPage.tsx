@@ -41,11 +41,6 @@ import { DocumentExportModal } from '../../../shared/ui/document-export-modal/Do
 import { type FormEvent, useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import './products.css'
-import {
-  closePendingExportDocumentWindow,
-  openExportDocumentInWindow,
-  openPendingExportDocumentWindow,
-} from '../../../shared/documents/openExportDocument'
 import { toProxiedAssetUrl } from '../../../shared/url/proxiedAssetUrl'
 import { Navigate, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { realtimeEvents, useRealtimeEvent } from '../../../shared/realtime/events'
@@ -1891,6 +1886,7 @@ function CurrentProductMovementPanel({ product }: { product: Product }) {
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setLoading] = useState(false)
   const [exportDocument, setExportDocument] = useState<ProductMovementExportDocument | null>(null)
+  const [exportError, setExportError] = useState<string | null>(null)
   const [isExporting, setExporting] = useState(false)
   const { density } = useDataTableDensity('product-movement', 'normal')
   const filterError = getDateRangeError(dateFrom, dateTo, t)
@@ -1958,7 +1954,8 @@ function CurrentProductMovementPanel({ product }: { product: Product }) {
     setExporting(true)
     setError(null)
 
-    const pendingWindow = openPendingExportDocumentWindow(t('Друк PDF'))
+    setExportDocument(null)
+    setExportError(null)
 
     try {
       const nextDocument = await exportProductMovementsDocument({
@@ -1969,16 +1966,9 @@ function CurrentProductMovementPanel({ product }: { product: Product }) {
         types: selectedTypes,
       })
 
-      if (nextDocument.PdfDocumentURL && openExportDocumentInWindow(pendingWindow, nextDocument.PdfDocumentURL)) {
-        setExportDocument(null)
-        return
-      }
-
-      closePendingExportDocumentWindow(pendingWindow)
       setExportDocument(nextDocument)
     } catch (exportError) {
-      closePendingExportDocumentWindow(pendingWindow)
-      setError(exportError instanceof Error ? exportError.message : t('Не вдалося сформувати документ руху товару'))
+      setExportError(exportError instanceof Error ? exportError.message : t('Не вдалося сформувати документ руху товару'))
     } finally {
       setExporting(false)
     }
@@ -2055,31 +2045,18 @@ function CurrentProductMovementPanel({ product }: { product: Product }) {
           tableId="product-movement"
         />
       )}
-      <ProductDocumentDownloadModal
+      <DocumentExportModal
         document={exportDocument}
+        error={exportError}
+        isLoading={isExporting}
+        opened={isExporting || Boolean(exportDocument) || Boolean(exportError)}
         title={t('Друк PDF')}
-        onClose={() => setExportDocument(null)}
+        onClose={() => {
+          setExportDocument(null)
+          setExportError(null)
+        }}
       />
     </Stack>
-  )
-}
-
-function ProductDocumentDownloadModal({
-  document,
-  onClose,
-  title,
-}: {
-  document: ProductMovementExportDocument | null
-  onClose: () => void
-  title: string
-}) {
-  return (
-    <DocumentExportModal
-      document={document}
-      opened={Boolean(document)}
-      title={title}
-      onClose={onClose}
-    />
   )
 }
 
