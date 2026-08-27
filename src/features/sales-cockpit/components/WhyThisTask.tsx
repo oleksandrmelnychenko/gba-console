@@ -2,6 +2,7 @@ import { ActionIcon, Badge, Collapse, Group, List, Stack, Text } from '@mantine/
 import { ChevronDown, ChevronRight } from 'lucide-react'
 import { useState } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
+import { isMoneyField, isMoneyValue } from '../../../shared/ui/moneyTypography'
 import type { CockpitTask } from '../types'
 
 export function WhyThisTask({ task }: { task: CockpitTask }) {
@@ -48,7 +49,7 @@ export function WhyThisTask({ task }: { task: CockpitTask }) {
             <Stack gap={2}>
               {signalEntries.map(([key, value]) => (
                 <Text c="dimmed" key={key} size="xs">
-                  {key}: {formatSignalValue(value)}
+                  {key}: <span className={isMoneyField(key) && isMoneyValue(value) ? 'app-money app-money-meta' : undefined}>{formatSignalValue(value)}</span>
                 </Text>
               ))}
             </Stack>

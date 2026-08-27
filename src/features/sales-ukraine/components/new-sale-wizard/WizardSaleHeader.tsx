@@ -321,17 +321,17 @@ function WizardSaleHeaderContent({
             {structureDebtTotal && ((structureDebtTotal.TotalEuro ?? 0) > 0 || (structureDebtTotal.TotalLocal ?? 0) > 0 || showStructureWarning) && (
               <Group gap="md" mt="sm" pt="xs" style={{ borderTop: '1px solid var(--mantine-color-gray-3)' }}>
                 {(structureDebtTotal.TotalEuro ?? 0) > 0 && (
-                  <Text c="red" fw={600} size="sm">
+                  <Text className="app-money" fw={600} size="sm">
                     {amountFormatter.format(structureDebtTotal.TotalEuro ?? 0)}{' '}
-                    <Text span c="dimmed" size="xs">
+                    <Text className="app-money-meta" span c="dimmed" size="xs">
                       EUR
                     </Text>
                   </Text>
                 )}
                 {(structureDebtTotal.TotalLocal ?? 0) > 0 && (
-                  <Text c="red" fw={600} size="sm">
+                  <Text className="app-money" fw={600} size="sm">
                     {amountFormatter.format(structureDebtTotal.TotalLocal ?? 0)}{' '}
-                    <Text span c="dimmed" size="xs">
+                    <Text className="app-money-meta" span c="dimmed" size="xs">
                       UAH
                     </Text>
                   </Text>

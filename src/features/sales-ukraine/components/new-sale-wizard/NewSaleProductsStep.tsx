@@ -3535,12 +3535,12 @@ export function NewSaleProductsStep({
                 </span>
               )}
               {meta?.price != null && (
-                <span className="new-sale-products-step__selected-product-metric">
+                <span className="new-sale-products-step__selected-product-metric app-money">
                   {amountFormatter.format(meta.price)} EUR
                 </span>
               )}
               {localPrice != null && (
-                <span className="new-sale-products-step__selected-product-metric is-muted">
+                <span className="new-sale-products-step__selected-product-metric is-muted app-money app-money-meta">
                   {amountFormatter.format(localPrice)} {localCurrencyCode}
                 </span>
               )}
@@ -3881,7 +3881,7 @@ export function NewSaleProductsStep({
                 <Group justify="flex-end">
                   <Text size="sm">
                     {t('ПДВ')}:{' '}
-                    <Text fw={600} span>
+                    <Text className="app-money" fw={600} span>
                       {amountFormatter.format(roundMoney(totalVat))}
                     </Text>
                   </Text>

@@ -1,4 +1,5 @@
 import { BarChart, DonutChart, Sparkline } from '@mantine/charts'
+import { MONEY_AXIS_TICK } from '../../../../shared/ui/charts/chartTheme'
 import {
   Alert,
   Badge,
@@ -284,7 +285,7 @@ function Risk90dSummary({ risk }: { risk: Risk90d }) {
       </Badge>
       <Text size="sm">
         {t(reason)}
-        {risk.exposure_eur > 0 ? ` · ${formatEur(risk.exposure_eur)}` : ''}
+        {risk.exposure_eur > 0 && <> · <span className="app-money">{formatEur(risk.exposure_eur)}</span></>}
       </Text>
     </Group>
   )
@@ -587,10 +588,12 @@ function SolvencyChartsView({ charts }: { charts: SolvencyCharts }) {
             </Text>
             {turnoverData.length > 0 ? (
               <BarChart
+                classNames={{ tooltipItemData: 'app-money' }}
                 data={turnoverData}
                 dataKey="період"
                 h={120}
                 series={[{ color: 'teal.6', name: 'дохід' }]}
+                yAxisProps={{ tick: MONEY_AXIS_TICK }}
               />
             ) : (
               <Text c="dimmed" size="sm">

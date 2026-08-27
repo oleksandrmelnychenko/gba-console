@@ -217,7 +217,7 @@ function SourcePriceRow({ price }: { price: ProductSourcePrice }) {
       {showDetails ? (
         <Group gap={6} mt={1} wrap="wrap">
           <Text c="dimmed" lh={1.1} style={{ fontSize: 12 }}>
-            {t('База EUR')}: {formatPrice(price.BasePriceEur)}
+            {t('База EUR')}: <span className="app-money app-money-meta">{formatPrice(price.BasePriceEur)}</span>
           </Text>
           {typeof price.ExtraChargePercent === 'number' ? (
             <Badge color="gray" size="xs" variant="light">

@@ -461,11 +461,11 @@ function SaleEditorContent({ initialSale }: { initialSale: SalesUkraineSale }) {
               )}
               {isLoading && <Loader size="xs" />}
             </Group>
-            <Text fw={700} size="lg">
+            <Text className="app-money" fw={700} size="lg">
               {amountFormatter.format(headerTotal)} {editorCurrencyCode}
             </Text>
             <Text size="xs" c="dimmed">
-              {t('ПДВ')}: {amountFormatter.format(getNumber(sale.Order?.TotalVat) ?? 0)}
+              {t('ПДВ')}: <span className="app-money app-money-meta">{amountFormatter.format(getNumber(sale.Order?.TotalVat) ?? 0)}</span>
             </Text>
           </Stack>
         </Group>
@@ -1478,8 +1478,8 @@ function ClientTab({ canEdit, sale, onSwitched }: { canEdit: boolean; onSwitched
         <DetailRow label={t('Коментар')} value={sale.Comment} />
         {debt && (
           <>
-            <DetailRow label={t('Борг (локальна)')} value={formatAmount(getNumber(debt.TotalLocal))} />
-            <DetailRow label={t('Борг (EUR)')} value={formatAmount(getNumber(debt.TotalEuro))} />
+            <DetailRow mono label={t('Борг (локальна)')} value={formatAmount(getNumber(debt.TotalLocal))} />
+            <DetailRow mono label={t('Борг (EUR)')} value={formatAmount(getNumber(debt.TotalEuro))} />
           </>
         )}
       </Stack>
@@ -1507,9 +1507,9 @@ function ClientTab({ canEdit, sale, onSwitched }: { canEdit: boolean; onSwitched
   )
 }
 
-function DetailRow({ label, value }: { label: string; value: unknown }) {
+function DetailRow({ label, mono, value }: { label: string; mono?: boolean; value: unknown }) {
   return (
-    <div className="app-detail-field">
+    <div className={`app-detail-field${mono ? ' is-mono' : ''}`}>
       <span>{label}</span>
       <strong>{displayValue(value)}</strong>
     </div>

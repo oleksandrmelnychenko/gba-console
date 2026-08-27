@@ -92,7 +92,7 @@ function ShiftOrderItemForm({
   return (
     <Stack gap="md" onKeyDown={handleKeyDown}>
       <Stack align="center" gap={0}>
-        <Text fw={700} size="xl">
+        <Text className="app-money" fw={700} size="xl">
           {amountFormatter.format(amount)}
         </Text>
         <Text c="dimmed" size="sm">

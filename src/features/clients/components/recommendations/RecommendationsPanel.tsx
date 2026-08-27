@@ -718,7 +718,7 @@ function ProductFields({ isVatSale, product }: { isVatSale: boolean; product: Re
       {(price !== '-' || availability !== '-') && (
         <Group gap="xs" mt={4}>
           {price !== '-' && (
-            <Text fw={600} size="sm">
+            <Text className="app-money" fw={600} size="sm">
               {price}
             </Text>
           )}

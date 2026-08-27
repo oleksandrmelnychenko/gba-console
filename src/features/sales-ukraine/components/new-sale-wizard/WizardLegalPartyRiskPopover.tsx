@@ -48,7 +48,7 @@ export function WizardLegalPartyRiskPopover({
               <Text size="sm">
                 {t('Прострочено')} · {currency.MaxOverdueDays} {t('дн.')}
               </Text>
-              <Text fw={700} size="sm">
+              <Text className="app-money" fw={700} size="sm">
                 {moneyFormatter.format(currency.OverdueAmount)}{' '}
                 {currency.CurrencyCode || t('валюта не вказана')}
               </Text>

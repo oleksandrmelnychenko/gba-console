@@ -476,7 +476,7 @@ function BuyerAgreementItem({
           )}
 
           <Group gap={4} align="center">
-            <Text size="sm">{agreement.AmountDebt ?? 0}</Text>
+            <Text className="app-money" size="sm">{agreement.AmountDebt ?? 0}</Text>
             <Text c="dimmed" size="xs">
               /
             </Text>

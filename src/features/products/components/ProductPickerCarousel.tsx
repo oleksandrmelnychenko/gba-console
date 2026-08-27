@@ -222,7 +222,7 @@ export function ProductPickerCarousel<T extends ProductPickerItem>({
                       </Text>
                     )}
                     {meta.price != null && (
-                      <Text size="xs">{metaNumberFormatter.format(meta.price)}</Text>
+                      <Text className="app-money" size="xs">{metaNumberFormatter.format(meta.price)}</Text>
                     )}
                   </Group>
                 )}
@@ -234,7 +234,7 @@ export function ProductPickerCarousel<T extends ProductPickerItem>({
                       </Text>
                     )}
                     {meta.reSalePrice != null && (
-                      <Text size="xs">
+                      <Text className="app-money" size="xs">
                         {metaNumberFormatter.format(meta.reSalePrice)}
                         {meta.reSaleCurrency ? ` ${meta.reSaleCurrency}` : ''}
                       </Text>

@@ -321,7 +321,7 @@ function SaleAccordionItem({
                 </Badge>
               </Box>
               <Stack align="flex-end" gap={2}>
-                <Text fw={700}>
+                <Text className="app-money" fw={700}>
                   {formatAmount(saleReturn.TotalAmountLocal)}{' '}
                   {displayValue(saleReturn.ClientAgreement?.Agreement?.Currency?.Code)}
                 </Text>
@@ -405,7 +405,7 @@ function SaleAccordionItem({
             </Box>
 
             <Stack align="flex-end" gap={2}>
-              <Text fw={700}>
+              <Text className="app-money" fw={700}>
                 {formatAmount(sale.TotalAmountLocal)} {displayValue(currencyCode)}
               </Text>
               <Text c="dimmed" size="xs">
@@ -493,7 +493,7 @@ function SaleOrderItemRow({
         <CreatedInfo date={item.Created} lastName={item.User?.LastName} />
       </Box>
       <Stack align="flex-end" gap={2}>
-        <Text fw={700} size="sm">
+        <Text className="app-money" fw={700} size="sm">
           {roundTotal(item.TotalAmountLocal)} {displayValue(currencyCode)}
         </Text>
         <Text c="dimmed" size="xs">
@@ -534,7 +534,7 @@ function SaleReturnItemRow({
         <CreatedInfo date={item.Created} lastName={item.CreatedBy?.LastName} />
       </Box>
       <Stack align="flex-end" gap={2}>
-        <Text fw={700} size="sm">
+        <Text className="app-money" fw={700} size="sm">
           {roundTotal(item.AmountLocal)} {displayValue(currencyCode)}
         </Text>
         <Text c="dimmed" size="xs">
@@ -560,6 +560,7 @@ function SaleEditDetail({ sale }: { sale: Sale }) {
           <DetailRow label={t('Номер')} value={displayValue(sale.SaleNumber?.Value)} />
           <DetailRow label={t('Статус')} value={getLifeCycleLabel(sale.BaseLifeCycleStatus?.SaleLifeCycleType, t)} />
           <DetailRow
+            mono
             label={t('Сума')}
             value={`${formatAmount(sale.TotalAmountLocal)} ${displayValue(currencyCode)}`}
           />
@@ -609,9 +610,9 @@ function SaleCarrierDetail({ sale }: { sale: Sale }) {
   )
 }
 
-function DetailRow({ label, value }: { label: string; value: string }) {
+function DetailRow({ label, mono, value }: { label: string; mono?: boolean; value: string }) {
   return (
-    <div className="app-detail-field">
+    <div className={`app-detail-field${mono ? ' is-mono' : ''}`}>
       <span>{label}</span>
       <strong>{value}</strong>
     </div>

@@ -122,7 +122,7 @@ export function OnlineShopSalesPanel({ constrainHeight = true, netUid }: OnlineS
                       <Badge className="app-role-pill" variant="light">
                         {t('Інтернет-магазин')}
                       </Badge>
-                      <Text fw={700}>{formatAmount(getSaleTotal(sale))}</Text>
+                      <Text className="app-money" fw={700}>{formatAmount(getSaleTotal(sale))}</Text>
                     </Stack>
                   </Group>
 

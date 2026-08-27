@@ -147,12 +147,12 @@ function PriceHintCard({ recommendation }: { recommendation: PriceRecommendation
   return (
     <Stack gap="sm">
       <Group align="baseline" gap="xs" wrap="wrap">
-        <Text fw={700} size="28px">
+        <Text className="app-money" fw={700} size="28px">
           {formatMoney(recommendation.recommended_price, currency)}
         </Text>
         <AiFeatureBadge tooltip={t('AI-рекомендація ціни')} />
         {showBaseline && (
-          <Text c="dimmed" size="sm" td="line-through">
+          <Text className="app-money app-money-meta" c="dimmed" size="sm" td="line-through">
             {formatMoney(recommendation.baseline_price, currency)}
           </Text>
         )}

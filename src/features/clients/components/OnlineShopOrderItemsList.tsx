@@ -93,17 +93,17 @@ function CartItemRow({ currencyCode, item }: { currencyCode?: string; item: Reta
             {formatQuantity(quantity)} {t('шт.')}
           </Badge>
           <Text className="online-shop-order-item-unit-price" c="dimmed" size="xs">
-            {formatAmount(unitPrice)} <span>{localCurrencyCode}</span> / {t('шт.')}
+            <strong className="app-money app-money-meta">{formatAmount(unitPrice)}</strong> <span>{localCurrencyCode}</span> / {t('шт.')}
           </Text>
           {sourceUnitPrice !== null && sourceCurrencyCode && sourceCurrencyCode !== localCurrencyCode ? (
             <Text className="online-shop-order-item-source-price" c="dimmed" size="xs">
-              {formatAmount(sourceUnitPrice)} <span>{sourceCurrencyCode}</span>
+              <strong className="app-money app-money-meta">{formatAmount(sourceUnitPrice)}</strong> <span>{sourceCurrencyCode}</span>
             </Text>
           ) : null}
         </Group>
       </Box>
       <div className="online-shop-order-item-total">
-        <strong>{formatAmount(total)}</strong>
+        <strong className="app-money">{formatAmount(total)}</strong>
         <span>{localCurrencyCode}</span>
       </div>
     </Group>

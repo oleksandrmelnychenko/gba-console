@@ -74,10 +74,10 @@ function IncompleteSaleItemRow({ item }: { item: SaleOrderItem }) {
         </Group>
       </Box>
       <Stack align="flex-end" gap={2}>
-        <Text fw={700} size="sm">
+        <Text className="app-money" fw={700} size="sm">
           {formatAmount(item.TotalAmount)} EUR
         </Text>
-        <Text c="dimmed" size="xs">
+        <Text className="app-money app-money-meta" c="dimmed" size="xs">
           {formatAmount(item.TotalAmountLocal)} UAH
         </Text>
         <Text c="dimmed" size="xs">

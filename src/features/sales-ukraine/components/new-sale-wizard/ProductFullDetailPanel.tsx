@@ -165,8 +165,8 @@ export function ProductFullDetailPanel({
               tone={headerQty > 0 ? 'good' : 'bad'}
               value={`${qtyFormatter.format(headerQty)} ${measureUnit}`}
             />
-            <MetricBlock label="EUR" tone="strong" value={formatPrice(salePrice)} />
-            {localSalePrice != null && <MetricBlock label={localCurrencyCode} value={formatPrice(localSalePrice)} />}
+            <MetricBlock mono label="EUR" tone="strong" value={formatPrice(salePrice)} />
+            {localSalePrice != null && <MetricBlock mono label={localCurrencyCode} value={formatPrice(localSalePrice)} />}
           </Group>
         </Group>
 
@@ -179,8 +179,8 @@ export function ProductFullDetailPanel({
           {retailPrice != null && (
             <Box className="new-sale-product-card__retail">
               <span>{t('Роздріб')}</span>
-              <strong>{formatPrice(retailPrice)} EUR</strong>
-              {localRetailPrice != null && <small>{formatPrice(localRetailPrice)} {localCurrencyCode}</small>}
+              <strong className="app-money">{formatPrice(retailPrice)} <span className="app-money-meta">EUR</span></strong>
+              {localRetailPrice != null && <small className="app-money app-money-meta">{formatPrice(localRetailPrice)} {localCurrencyCode}</small>}
             </Box>
           )}
 
@@ -423,10 +423,10 @@ function buildLegacyPriceLines(
   return [storageLine, resaleLine]
 }
 
-function MetricBlock({ label, tone, value }: { label: string; tone?: 'bad' | 'good' | 'strong'; value: string }) {
+function MetricBlock({ label, mono, tone, value }: { label: string; mono?: boolean; tone?: 'bad' | 'good' | 'strong'; value: string }) {
   return (
     <Box className={cx('new-sale-product-card__metric', tone && `is-${tone}`)}>
-      <strong>{value}</strong>
+      <strong className={mono ? 'app-money' : undefined}>{value}</strong>
       <span>{label}</span>
     </Box>
   )

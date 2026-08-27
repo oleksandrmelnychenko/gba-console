@@ -1733,7 +1733,7 @@ function ClientIdentityAttentionDrawer({
                   <Text size="sm">
                     {currency.MaxOverdueDays} {t('дн.')} · {currency.DebtCount} {t('позицій')}
                   </Text>
-                  <Text fw={700} size="sm">
+                  <Text className="app-money" fw={700} size="sm">
                     {formatAttentionMoney(currency.OverdueAmount)} {currency.CurrencyCode || '—'}
                   </Text>
                 </Group>

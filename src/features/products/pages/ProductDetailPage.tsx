@@ -502,10 +502,10 @@ export function ProductDetailPage() {
             <Card className="app-section-card" withBorder radius="md" padding="md">
               <Stack gap="xs">
                 <Title order={4}>{t('Ціни')}</Title>
-                <InfoRow label="EUR" value={formatPrice(product.CurrentPrice)} />
-                <InfoRow label="Локальна" value={formatPrice(product.CurrentLocalPrice)} />
-                <InfoRow label="EUR перепродаж" value={formatPrice(product.CurrentPriceReSale)} />
-                <InfoRow label="Локальна перепродаж" value={formatPrice(product.CurrentLocalPriceReSale)} />
+                <InfoRow mono label="EUR" value={formatPrice(product.CurrentPrice)} />
+                <InfoRow mono label="Локальна" value={formatPrice(product.CurrentLocalPrice)} />
+                <InfoRow mono label="EUR перепродаж" value={formatPrice(product.CurrentPriceReSale)} />
+                <InfoRow mono label="Локальна перепродаж" value={formatPrice(product.CurrentLocalPriceReSale)} />
                 {prices.length > 0 && (
                   <Stack gap={4} mt="xs">
                     {prices.map((price, index) => (
@@ -2406,7 +2406,7 @@ function LoadingState({ label }: { label: string }) {
   )
 }
 
-function InfoRow({ dimmed, label, multiline, value }: { dimmed?: boolean; label: string; multiline?: boolean; value?: number | string | null }) {
+function InfoRow({ dimmed, label, mono, multiline, value }: { dimmed?: boolean; label: string; mono?: boolean; multiline?: boolean; value?: number | string | null }) {
   const { t } = useI18n()
 
   return (
@@ -2416,6 +2416,7 @@ function InfoRow({ dimmed, label, multiline, value }: { dimmed?: boolean; label:
       </Text>
       <Text
         c={dimmed ? 'dimmed' : undefined}
+        className={mono ? 'app-money' : undefined}
         size="sm"
         style={{
           flex: '1 1 220px',
@@ -2521,17 +2522,17 @@ function PriceRow({ price }: { price: CalculatedProductPrice }) {
     <Box py={4}>
       <Group justify="space-between" gap="md" wrap="nowrap">
         <Text size="sm">{displayValue(breakdown.pricingName)}</Text>
-        <Text size="sm" fw={600}>
+        <Text className="app-money" size="sm" fw={600}>
           {formatPrice(breakdown.retailPriceEUR)} / {formatPrice(breakdown.retailPriceLocal)}
         </Text>
       </Group>
       {(breakdown.hasBasePrice || breakdown.hasDiscount) ? (
         <Group gap={6} mt={4} wrap="wrap">
           {breakdown.hasBasePrice ? (
-            <Text c="dimmed" size="xs">{t('База EUR')}: {formatPrice(breakdown.basePriceEUR)}</Text>
+            <Text c="dimmed" size="xs">{t('База EUR')}: <span className="app-money app-money-meta">{formatPrice(breakdown.basePriceEUR)}</span></Text>
           ) : null}
           {breakdown.discountPriceEUR !== undefined ? (
-            <Text c="teal.8" size="xs" fw={650}>{t('Після знижки EUR')}: {formatPrice(breakdown.discountPriceEUR)}</Text>
+            <Text c="teal.8" size="xs" fw={650}>{t('Після знижки EUR')}: <span className="app-money">{formatPrice(breakdown.discountPriceEUR)}</span></Text>
           ) : null}
           {breakdown.discountRate !== undefined ? (
             <Badge size="xs" variant="light" color="teal">{t('Знижка')} {formatAmount(breakdown.discountRate)}%</Badge>

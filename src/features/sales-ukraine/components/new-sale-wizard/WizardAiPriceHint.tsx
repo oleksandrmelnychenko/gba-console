@@ -120,7 +120,7 @@ export function WizardAiPriceHint({ productNetId, clientAgreementNetId, withVat 
   return (
     <Group gap={8} wrap="wrap">
       <AiFeatureBadge compact size="xs" tooltip={t('AI-рекомендація ціни')} />
-      <Text fw={600} size="sm">
+      <Text className="app-money" fw={600} size="sm">
         {formatMoney(recommendation.recommended_price, recommendation.currency)}
       </Text>
       {recommendation.margin_pct_at_recommended !== null && (
@@ -133,7 +133,7 @@ export function WizardAiPriceHint({ productNetId, clientAgreementNetId, withVat 
           <Group gap={2} wrap="nowrap">
             {MarketIcon && <MarketIcon color={belowMarket ? 'var(--mantine-color-teal-6)' : 'var(--mantine-color-red-6)'} size={13} />}
             <Text c="dimmed" size="xs">
-              {t('ринок')} {formatMoney(median, recommendation.currency)}
+              {t('ринок')} <span className="app-money app-money-meta">{formatMoney(median, recommendation.currency)}</span>
             </Text>
           </Group>
         </Tooltip>

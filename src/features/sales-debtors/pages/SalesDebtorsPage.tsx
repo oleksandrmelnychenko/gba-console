@@ -598,9 +598,10 @@ function DebtorDetailDrawer({
 
           <div className="sales-debtor-detail-tree">
             <DebtorDetailSection subtitle={currencyCode} title={t('Загальна заборгованість')}>
-              <DebtorDetailRow label="EUR" value={`${moneyFormatter.format(total?.TotalEuro ?? 0)} EUR`} />
-              <DebtorDetailRow label="UAH" value={`${moneyFormatter.format(total?.TotalLocal ?? 0)} UAH`} />
+              <DebtorDetailRow mono label="EUR" value={`${moneyFormatter.format(total?.TotalEuro ?? 0)} EUR`} />
+              <DebtorDetailRow mono label="UAH" value={`${moneyFormatter.format(total?.TotalLocal ?? 0)} UAH`} />
               <DebtorDetailRow
+                mono
                 label={t('По структурі')}
                 value={`${moneyFormatter.format(total?.TotalSubClientDebt ?? 0)} UAH`}
               />
@@ -650,12 +651,12 @@ function DebtorDetailSection({
   )
 }
 
-function DebtorDetailRow({ label, value }: { label: string; value: string }) {
+function DebtorDetailRow({ label, mono, value }: { label: string; mono?: boolean; value: string }) {
   return (
     <div className="sales-debtor-detail-row">
       <span className="sales-debtor-detail-row__label">{label}</span>
       <span className="sales-debtor-detail-row__line" aria-hidden />
-      <span className="sales-debtor-detail-row__value">{value}</span>
+      <span className={`sales-debtor-detail-row__value${mono ? ' app-money' : ''}`}>{value}</span>
     </div>
   )
 }
@@ -707,6 +708,7 @@ function DebtorDebtCard({ currencyCode: fallbackCurrencyCode, item }: { currency
         <DebtorDetailRow label={t('Договір')} value={agreement || '-'} />
         <DebtorDetailRow label={t('Статус')} value={status || '-'} />
         <DebtorDetailRow
+          mono
           label={t('Сума боргу')}
           value={`${moneyFormatter.format(amount)}${currencyCode ? ` ${currencyCode}` : ''}`}
         />

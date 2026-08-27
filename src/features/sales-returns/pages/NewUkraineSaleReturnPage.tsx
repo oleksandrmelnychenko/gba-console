@@ -1672,7 +1672,7 @@ function ReturnDetails({
           <ReturnDetailRow label={t('Номер')} value={saleReturn.Number} />
           <ReturnDetailRow label={t('Дата')} value={formatDateTime(saleReturn.FromDate)} />
           <ReturnDetailRow label={t('Статус')} tone={saleReturn.IsCanceled ? 'danger' : undefined} value={status} />
-          <ReturnDetailRow label={t('Сума')} value={formatMoney(saleReturn.TotalAmountLocal)} />
+          <ReturnDetailRow mono label={t('Сума')} value={formatMoney(saleReturn.TotalAmountLocal)} />
         </ReturnDetailSection>
 
         <ReturnDetailSection subtitle={clientName} title={t('Учасники')}>
@@ -1731,11 +1731,13 @@ function ReturnDetailSection({ children, subtitle, title }: { children: ReactNod
 
 function ReturnDetailRow({
   label,
+  mono,
   tone,
   value,
   wide,
 }: {
   label: string
+  mono?: boolean
   tone?: 'danger'
   value: unknown
   wide?: boolean
@@ -1744,7 +1746,7 @@ function ReturnDetailRow({
     <div className={`new-sale-return-detail-row${wide ? ' is-wide' : ''}`}>
       <span className="new-sale-return-detail-row__label">{label}</span>
       <span className="new-sale-return-detail-row__line" aria-hidden />
-      <span className={`new-sale-return-detail-row__value${tone ? ` is-${tone}` : ''}`}>{displayValue(value)}</span>
+      <span className={`new-sale-return-detail-row__value${mono ? ' app-money' : ''}${tone ? ` is-${tone}` : ''}`}>{displayValue(value)}</span>
     </div>
   )
 }
