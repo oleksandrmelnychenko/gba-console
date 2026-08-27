@@ -1555,7 +1555,7 @@ function OrdersPageModals({
   )
 }
 
-function OrderActionsModal({
+export function OrderActionsModal({
   permissions,
   row,
   onClose,
@@ -1652,10 +1652,10 @@ function OrderActionsModal({
             />
           )}
 
-          {row.kind === 'direct' && canOpenDirectInvoices && directHasProForma && row.netUid && (
+          {row.kind === 'direct' && canOpenDirectInvoices && row.netUid && (
             <OrderActionButton
               icon={<FileText size={20} color="var(--mantine-color-gray-7)" />}
-              label={t('Інвойси і пак листи')}
+              label={t('Товари')}
               onClick={() => onNavigate(`/orders/ukraine/all/edit/${row.netUid}/supply-invoices`)}
             />
           )}

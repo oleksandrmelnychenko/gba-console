@@ -67,6 +67,7 @@ export function DirectSupplyOrderProFormCard({
   const { draft, files, isEditing, isSaving } = state
   const documents = (draft.ProFormDocuments || []).filter((document) => !document.Deleted)
   const hasProForm = hasSupplyProForm(order)
+  const canOpenEditor = canEdit && (hasProForm || Boolean(order.IsApproved))
 
   useEffect(() => {
     dispatch({ type: 'sync', order })
@@ -162,7 +163,7 @@ export function DirectSupplyOrderProFormCard({
                 {t('Зберегти')}
               </Button>
             </Group>
-          ) : canEdit ? (
+          ) : canOpenEditor ? (
             <Button
               color={CREATE_ACTION_COLOR}
               leftSection={<Pencil size={16} />}
