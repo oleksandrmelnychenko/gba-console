@@ -351,6 +351,7 @@ export function NewMergedServiceForm({
         <Group grow>
           <TextInput
             aria-invalid={Boolean(fieldErrors.grossPrice)}
+            classNames={{ input: 'app-money' }}
             description={t('Заповніть хоча б одну вартість: управлінську або бухгалтерську')}
             error={fieldErrors.grossPrice}
             label={t('Вартість Брутто')}
@@ -371,6 +372,7 @@ export function NewMergedServiceForm({
         <Group grow>
           <TextInput
             aria-invalid={Boolean(fieldErrors.grossPriceAccounting)}
+            classNames={{ input: 'app-money' }}
             error={fieldErrors.grossPriceAccounting}
             label={`${t('Вартість Брутто')} (${t('Бух.')})`}
             type="number"

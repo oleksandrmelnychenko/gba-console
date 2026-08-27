@@ -58,7 +58,7 @@ function PaymentTaskBlock({
             </Badge>
           )}
         </Group>
-        <LabelValueRow label={t('Сума')}>{formatMoney(task.GrossPrice, currencyCode)}</LabelValueRow>
+        <LabelValueRow mono label={t('Сума')}>{formatMoney(task.GrossPrice, currencyCode)}</LabelValueRow>
         <LabelValueRow label={t('Відповідальний')}>{responsibleName(task.User) || '-'}</LabelValueRow>
         <LabelValueRow label={t('Сплатити до')}>{formatDate(task.PayToDate)}</LabelValueRow>
         <LabelValueRow label={t('Коментар')}>{task.Comment || '-'}</LabelValueRow>
@@ -152,19 +152,19 @@ export function MergedServiceViewCard({
         <LabelValueRow label={t('Номер інвойса')}>{service.Number || '-'}</LabelValueRow>
         <LabelValueRow label={t('Назва')}>{service.Name || '-'}</LabelValueRow>
 
-        <LabelValueRow label={t('Вартість Брутто')}>{formatMoney(service.GrossPrice, currencyCode)}</LabelValueRow>
-        <LabelValueRow label={t('Вартість Нетто')}>{formatMoney(service.NetPrice, currencyCode)}</LabelValueRow>
+        <LabelValueRow mono label={t('Вартість Брутто')}>{formatMoney(service.GrossPrice, currencyCode)}</LabelValueRow>
+        <LabelValueRow mono label={t('Вартість Нетто')}>{formatMoney(service.NetPrice, currencyCode)}</LabelValueRow>
         <LabelValueRow label={t('ПДВ %')}>{service.VatPercent ?? 0}</LabelValueRow>
-        <LabelValueRow label={t('ПДВ')}>{formatMoney(service.Vat, currencyCode)}</LabelValueRow>
+        <LabelValueRow mono label={t('ПДВ')}>{formatMoney(service.Vat, currencyCode)}</LabelValueRow>
 
-        <LabelValueRow label={t('Вартість Брутто (Бух.)')}>
+        <LabelValueRow mono label={t('Вартість Брутто (Бух.)')}>
           {formatMoney(service.AccountingGrossPrice, currencyCode)}
         </LabelValueRow>
-        <LabelValueRow label={`${t('Вартість Нетто')} (${t('Бух.')})`}>
+        <LabelValueRow mono label={`${t('Вартість Нетто')} (${t('Бух.')})`}>
           {formatMoney(service.AccountingNetPrice, currencyCode)}
         </LabelValueRow>
         <LabelValueRow label={`${t('ПДВ %')} (${t('Бух.')})`}>{service.AccountingVatPercent ?? 0}</LabelValueRow>
-        <LabelValueRow label={`${t('ПДВ')} (${t('Бух.')})`}>{formatMoney(service.AccountingVat, currencyCode)}</LabelValueRow>
+        <LabelValueRow mono label={`${t('ПДВ')} (${t('Бух.')})`}>{formatMoney(service.AccountingVat, currencyCode)}</LabelValueRow>
 
         {service.IsIncludeAccountingValue && (
           <Badge className="app-role-pill" variant="light">
@@ -177,7 +177,7 @@ export function MergedServiceViewCard({
 
         {service.SupplyInformationTask && (
           <>
-            <LabelValueRow label={t('Доставка в межах країни')}>
+            <LabelValueRow mono label={t('Доставка в межах країни')}>
               {formatMoney(service.SupplyInformationTask.GrossPrice, currencyCode)}
             </LabelValueRow>
             <LabelValueRow label={t('Відповідальний за оплату')}>

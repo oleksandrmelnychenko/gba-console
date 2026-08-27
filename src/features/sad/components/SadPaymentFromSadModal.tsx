@@ -353,7 +353,7 @@ export function SadPaymentFromSadModal({
 
         {typeof referenceAmount === 'number' && (
           <Text size="sm">
-            {t('Сума')}: {formatPln(referenceAmount)} PLN
+            {t('Сума')}: <span className="app-money">{formatPln(referenceAmount)} <span className="app-money-meta">PLN</span></span>
           </Text>
         )}
 

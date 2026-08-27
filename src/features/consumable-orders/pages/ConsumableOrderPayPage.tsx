@@ -684,10 +684,10 @@ function PaymentItemRow({ item }: { item: ConsumablesOrderItem }) {
         {unitName ? <small>{unitName}</small> : null}
       </div>
       <div className="consumable-order-pay-item-money">
-        <strong>{formatMoney(item.PricePerItem)}</strong>
+        <strong className="app-money">{formatMoney(item.PricePerItem)}</strong>
       </div>
       <div className="consumable-order-pay-item-money is-total">
-        <strong>{formatMoney(item.TotalPriceWithVAT)}</strong>
+        <strong className="app-money">{formatMoney(item.TotalPriceWithVAT)}</strong>
       </div>
     </div>
   )

@@ -971,6 +971,7 @@ function MergedServicePrimaryFields({
       <Group grow>
         <TextInput
           aria-invalid={Boolean(fieldErrors.grossPrice)}
+          classNames={{ input: 'app-money' }}
           description={t('Заповніть хоча б одну вартість: управлінську або бухгалтерську')}
           disabled={isSaving}
           error={fieldErrors.grossPrice}
@@ -991,6 +992,7 @@ function MergedServicePrimaryFields({
       <Group grow>
         <TextInput
           aria-invalid={Boolean(fieldErrors.accountingGrossPrice)}
+          classNames={{ input: 'app-money' }}
           disabled={isSaving}
           error={fieldErrors.accountingGrossPrice}
           label={t('Вартість Брутто (Бух.)')}

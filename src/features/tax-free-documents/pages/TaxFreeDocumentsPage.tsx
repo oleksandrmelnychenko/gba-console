@@ -1318,6 +1318,7 @@ function TaxFreeDocumentDetailsTab({
         <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
           <TextInput label={t('Код')} value={customCode} onChange={(event) => setCustomCode(event.currentTarget.value)} />
           <TextInput
+            classNames={{ input: 'app-money' }}
             label={t('Сума відправлення')}
             type="number"
             value={amountPayedStatham}

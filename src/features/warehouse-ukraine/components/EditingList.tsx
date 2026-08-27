@@ -746,7 +746,7 @@ function CarrierChangeSummary({ item }: { item: EditingActItem }) {
         <SummaryLine label={t('Мобільний телефон')} value={previous?.MobilePhone} />
         <SummaryLine label={t('Коментар')} value={previous?.Comment} />
         <SummaryLine label={t('Накладений платіж')} value={formatBoolean(t, previous?.IsCashOnDelivery)} />
-        <SummaryLine label={t('Сума накладеного платежу')} value={formatAmount(previous?.CashOnDeliveryAmount)} />
+        <SummaryLine mono label={t('Сума накладеного платежу')} value={formatAmount(previous?.CashOnDeliveryAmount)} />
         <SummaryLine label={t('Наявність документів')} value={formatBoolean(t, previous?.HasDocument)} />
         <SummaryLine label={t('ТТН')} value={previous?.Number} />
         <SummaryLine label={t('Відповідальний')} value={buildUserName(previous?.User)} />
@@ -798,6 +798,7 @@ function CarrierChangeSummary({ item }: { item: EditingActItem }) {
           changed={isCarrierFieldChanged(formatBoolean(t, readBooleanField(item, 'IsCashOnDelivery')), formatBoolean(t, previous?.IsCashOnDelivery))}
         />
         <SummaryLine
+          mono
           label={t('Сума накладеного платежу')}
           value={formatAmount(readNumberField(item, 'CashOnDeliveryAmount'))}
           changed={isCarrierFieldChanged(formatAmount(readNumberField(item, 'CashOnDeliveryAmount')), formatAmount(previous?.CashOnDeliveryAmount))}
@@ -822,7 +823,7 @@ function CarrierChangeSummary({ item }: { item: EditingActItem }) {
   )
 }
 
-function SummaryLine({ changed, icon, label, link, value }: { changed?: boolean; icon?: ReactNode; label: string; link?: boolean; value?: string }) {
+function SummaryLine({ changed, icon, label, link, mono, value }: { changed?: boolean; icon?: ReactNode; label: string; link?: boolean; mono?: boolean; value?: string }) {
   return (
     <Group
       gap={6}
@@ -840,10 +841,10 @@ function SummaryLine({ changed, icon, label, link, value }: { changed?: boolean;
       ) : icon ? (
         <Group gap={4} wrap="nowrap" align="center" style={{ minWidth: 0 }}>
           {icon}
-          <Text size="xs">{displayValue(value)}</Text>
+          <Text className={mono ? 'app-money' : undefined} size="xs">{displayValue(value)}</Text>
         </Group>
       ) : (
-        <Text size="xs">{displayValue(value)}</Text>
+        <Text className={mono ? 'app-money' : undefined} size="xs">{displayValue(value)}</Text>
       )}
     </Group>
   )

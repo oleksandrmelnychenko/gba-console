@@ -492,7 +492,7 @@ export function EditTaxFreePackListPage() {
               <ReadonlyField label={t('Організація')} value={getEntityName(packList.Organization)} />
               <ReadonlyField label={t('Клієнт')} value={getEntityName(packList.Client)} />
               <ReadonlyField label={t('Договір')} value={getClientAgreementLabel(packList.ClientAgreement || {})} />
-              <ReadonlyField label={t('Маржа')} value={formatMoney(packList.MarginAmount)} />
+              <ReadonlyField mono label={t('Маржа')} value={formatMoney(packList.MarginAmount)} />
             </SimpleGrid>
           ) : (
             <SimpleGrid cols={{ base: 1, md: 5 }}>
@@ -542,6 +542,7 @@ export function EditTaxFreePackListPage() {
               />
               {!packList?.IsFromSale && (
                 <NumberInput
+                  classNames={{ input: 'app-money' }}
                   disabled={(packList?.TaxFrees || []).length > 0}
                   label={t('Маржа')}
                   min={0}
@@ -1071,11 +1072,11 @@ function TaxFreeCard({
   )
 }
 
-function ReadonlyField({ label, value }: { label: string, value: string }) {
+function ReadonlyField({ label, mono, value }: { label: string; mono?: boolean; value: string }) {
   return (
     <div>
       <Text size="xs" c="dimmed">{label}</Text>
-      <Text size="sm" fw={600}>{displayValue(value)}</Text>
+      <Text className={mono ? 'app-money' : undefined} size="sm" fw={600}>{displayValue(value)}</Text>
     </div>
   )
 }

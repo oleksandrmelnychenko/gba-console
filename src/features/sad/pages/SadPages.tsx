@@ -984,6 +984,7 @@ function SadEditorPage({ mode, netId }: { mode: EditorMode; netId?: string }) {
               onChange={(value) => setSelectedOrganizationNetId(value || '')}
             />
             <NumberInput
+              classNames={{ input: 'app-money' }}
               decimalScale={2}
               disabled={isReadonly || (mode === 'tir' && Boolean(sad.IsFromSale))}
               label={t('Маржа')}
@@ -2487,18 +2488,18 @@ function SadTotals({ sad }: { sad: Sad }) {
         <Metric label={t('Кількість')} value={formatQty(sad.TotalQty)} />
         <Metric label={t('Нетто')} value={formatQty(sad.TotalNetWeight)} />
         <Metric label={t('Брутто')} value={formatQty(sad.TotalGrossWeight)} />
-        <Metric label={t('EUR')} value={formatNumber(sad.TotalAmount)} />
-        <Metric label={t('Місцева валюта')} value={formatNumber(sad.TotalAmountLocal)} />
+        <Metric mono label={t('EUR')} value={formatNumber(sad.TotalAmount)} />
+        <Metric mono label={t('Місцева валюта')} value={formatNumber(sad.TotalAmountLocal)} />
       </SimpleGrid>
     </Card>
   )
 }
 
-function Metric({ label, value }: { label: string; value: ReactNode }) {
+function Metric({ label, mono, value }: { label: string; mono?: boolean; value: ReactNode }) {
   return (
     <Box>
       <Text c="dimmed" size="xs">{label}</Text>
-      <Text fw={600}>{value}</Text>
+      <Text className={mono ? 'app-money' : undefined} fw={600}>{value}</Text>
     </Box>
   )
 }

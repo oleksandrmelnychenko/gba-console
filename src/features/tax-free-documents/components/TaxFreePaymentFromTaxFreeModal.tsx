@@ -317,7 +317,7 @@ export function TaxFreePaymentFromTaxFreeModal({
               {t('Tax Free')}: {document.Number || document.NetUid}
             </Text>
             <Text size="sm">
-              {t('Сума')}: {formatTaxFreeAmountPl(document.VatAmountPl)}
+              {t('Сума')}: <span className="app-money">{formatTaxFreeAmountPl(document.VatAmountPl)}</span>
             </Text>
           </Stack>
         ) : null}

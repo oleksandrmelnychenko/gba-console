@@ -258,9 +258,9 @@ function SupplyOrderProductPlacementContent({
         <Group gap="xl" justify="flex-end" wrap="wrap">
           <TotalValue label={t('Всього товарів')} value={rows.length} />
           <TotalValue label={t('Всього кількість')} value={formatAmount(packingList?.TotalQuantity || income?.TotalQty)} />
-          <TotalValue label={t('Всього нетто')} value={formatMoney(packingList?.TotalNetPrice || income?.TotalNetPrice)} />
-          <TotalValue label={t('Всього з ПДВ')} value={formatMoney(firstUkraineItem ? (income?.TotalGrossPrice || packingList?.TotalNetPriceWithVat || income?.TotalNetWithVat) : (packingList?.TotalNetPriceWithVat || income?.TotalNetWithVat))} />
-          <TotalValue label={t('ПДВ')} value={formatMoney(packingList?.TotalVatAmount || income?.TotalVatAmount)} />
+          <TotalValue mono label={t('Всього нетто')} value={formatMoney(packingList?.TotalNetPrice || income?.TotalNetPrice)} />
+          <TotalValue mono label={t('Всього з ПДВ')} value={formatMoney(firstUkraineItem ? (income?.TotalGrossPrice || packingList?.TotalNetPriceWithVat || income?.TotalNetWithVat) : (packingList?.TotalNetPriceWithVat || income?.TotalNetWithVat))} />
+          <TotalValue mono label={t('ПДВ')} value={formatMoney(packingList?.TotalVatAmount || income?.TotalVatAmount)} />
           <TotalValue label={t('Вага нетто')} value={formatAmount(packingList?.TotalNetWeight || income?.TotalNetWeight)} />
           <TotalValue label={t('Вага брутто')} value={formatAmount(packingList?.TotalGrossWeight || income?.TotalGrossWeight)} />
         </Group>
@@ -484,13 +484,13 @@ function DetailValue({ label, value }: { label: string; value?: string | number 
   )
 }
 
-function TotalValue({ label, value }: { label: string; value?: string | number }) {
+function TotalValue({ label, mono, value }: { label: string; mono?: boolean; value?: string | number }) {
   return (
     <Stack gap={2} miw={120}>
       <Text c="dimmed" size="xs">
         {label}
       </Text>
-      <Text fw={700} size="sm">
+      <Text className={mono ? 'app-money' : undefined} fw={700} size="sm">
         {displayValue(value)}
       </Text>
     </Stack>

@@ -1071,7 +1071,7 @@ function CapitalizationOverview({
         <Group justify="space-between" align="start">
           <Text className="app-section-title" fw={600} size="sm">{t('Прихідна накладна (Оприходування)')}</Text>
           <Text c="dimmed" size="sm">
-            {displayValue(capitalization?.Number)} · {formatMoney(capitalization?.TotalAmount)}
+            {displayValue(capitalization?.Number)} · <span className="app-money app-money-meta">{formatMoney(capitalization?.TotalAmount)}</span>
           </Text>
         </Group>
         {error && (
@@ -1401,7 +1401,7 @@ function ActReconciliationOverview({
         <Group justify="space-between" align="start">
           <Text className="app-section-title" fw={600} size="sm">{t('Прихідна накладна (акт звірки)')}</Text>
           <Text c="dimmed" size="sm">
-            {displayValue(document.Number)} · {formatMoney(document.TotalNetPrice)}
+            {displayValue(document.Number)} · <span className="app-money app-money-meta">{formatMoney(document.TotalNetPrice)}</span>
           </Text>
         </Group>
 

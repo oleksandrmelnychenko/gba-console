@@ -732,7 +732,7 @@ export function BuyerCockpitTab() {
         cell: (item) =>
           item.cheaper_alt ? (
             <Tooltip
-              label={`${t('дешевший постачальник')}: €${eurFormatter.format(item.cheaper_alt.cost_eur)}`}
+              label={<>{t('дешевший постачальник')}: <span className="app-money">€{eurFormatter.format(item.cheaper_alt.cost_eur)}</span></>}
             >
               <ActionIcon aria-label={t('дешевший постачальник')} color="orange" size="sm" variant="subtle">
                 <TriangleAlert size={16} />
@@ -965,8 +965,8 @@ export function BuyerCockpitTab() {
 
             {hasItems && (
               <Text c="dimmed" size="xs" ta="right">
-                {t('Чернетка')}: {countFormatter.format(sortedItems.length)} {t('позицій')} · €
-                {eurFormatter.format(totalDraftCost)}
+                {t('Чернетка')}: {countFormatter.format(sortedItems.length)} {t('позицій')} ·{' '}
+                <span className="app-money app-money-meta">€{eurFormatter.format(totalDraftCost)}</span>
               </Text>
             )}
           </Stack>
