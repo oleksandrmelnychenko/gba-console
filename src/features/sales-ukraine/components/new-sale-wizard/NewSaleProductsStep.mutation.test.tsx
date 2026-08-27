@@ -1,6 +1,6 @@
 import { MantineProvider } from '@mantine/core'
 import { Notifications } from '@mantine/notifications'
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { ApiError } from '../../../../shared/api/apiClient'
 import { I18nProvider } from '../../../../shared/i18n/I18nProvider'
@@ -20,6 +20,7 @@ const apiMocks = vi.hoisted(() => ({
   getProductAvailabilityBuckets: vi.fn(),
   searchSaleProductsWithAvailability: vi.fn(),
   updateOrderItem: vi.fn(),
+  updateProduct: vi.fn(),
 }))
 
 vi.mock('../../api/salesUkraineApi', async (importOriginal) => {
@@ -49,6 +50,11 @@ vi.mock('./newSaleWizardApi', async (importOriginal) => {
     shiftOrderItemFromSale: vi.fn(async () => null),
   }
 })
+
+vi.mock('../../../products/api/productsApi', async (importOriginal) => ({
+  ...await importOriginal<typeof import('../../../products/api/productsApi')>(),
+  updateProduct: apiMocks.updateProduct,
+}))
 
 vi.mock('../../../auth/useAuth', () => ({
   useAuth: () => ({
@@ -127,7 +133,7 @@ vi.mock('./WizardConfirmModal', () => ({
 }))
 
 import { NewSaleProductsStep } from './NewSaleProductsStep'
-import { initializeWizardKeyboard, setWizardKeyboardState } from './wizardKeyboard'
+import { getWizardKeyboardState, initializeWizardKeyboard, setWizardKeyboardState } from './wizardKeyboard'
 import {
   clearAllWizardSplitRecoveries,
   getWizardSplitOrderItems,
@@ -176,9 +182,9 @@ function renderStep({
   sale = createSale(),
 }: {
   onBusyChange?: (busy: boolean) => void
-  onCartChanged?: () => SalesUkraineSale | Promise<SalesUkraineSale>
+  onCartChanged?: () => SalesUkraineSale | null | void | Promise<SalesUkraineSale | null | void>
   onPendingMutationChange?: (pending: boolean) => void
-  sale?: SalesUkraineSale
+  sale?: SalesUkraineSale | null
 } = {}) {
   return render(
     <MantineProvider theme={theme}>
@@ -208,6 +214,7 @@ beforeEach(() => {
   apiMocks.deleteOrderItem.mockReset().mockResolvedValue(null)
   apiMocks.searchSaleProductsWithAvailability.mockReset().mockResolvedValue([])
   apiMocks.updateOrderItem.mockReset().mockResolvedValue(null)
+  apiMocks.updateProduct.mockReset().mockResolvedValue(null)
   apiMocks.getProductAvailabilityBuckets.mockReset().mockResolvedValue({
     AvailableQtyUk: 10,
     AvailableQtyUkReSale: 0,
@@ -217,6 +224,130 @@ beforeEach(() => {
 afterEach(() => {
   clearAllSalesPendingMutations()
   clearAllWizardSplitRecoveries()
+})
+
+describe('NewSaleProductsStep selected product summary', () => {
+  it('opens the selected photo and closes it without losing the selection or changing the cart', async () => {
+    apiMocks.searchSaleProductsWithAvailability.mockResolvedValueOnce([createSearchProduct(10)])
+    renderStep()
+    fireEvent.change(screen.getByPlaceholderText(/пошук/i), { target: { value: 'SEM12081' } })
+    const photo = await screen.findByRole('button', { name: /Збільшити фото/ })
+    const thumbnailUrl = within(photo).getByRole('img').getAttribute('src')
+    expect(thumbnailUrl).toContain('sem12081_water.jpg')
+
+    for (const closeWithEscape of [false, true]) {
+      if (closeWithEscape) fireEvent.keyDown(photo, { key: 'Enter' })
+      else fireEvent.click(photo)
+      const preview = await screen.findByRole('dialog', { name: 'Перегляд зображення' })
+      expect(within(preview).getByRole('img').getAttribute('src')).toBe(thumbnailUrl)
+      expect(getWizardKeyboardState()).toBe('ViewImage')
+      expect(screen.getAllByRole('region', { name: 'Коротка інформація про товар' })).toHaveLength(1)
+      const closeButton = within(preview).getByRole('button', { name: 'Закрити фото' })
+      if (closeWithEscape) fireEvent.keyDown(closeButton, { key: 'Escape' })
+      else fireEvent.click(closeButton)
+      await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Перегляд зображення' })).toBeNull())
+      expect(getWizardKeyboardState()).toBe('ProductSelection')
+      expect(screen.getByRole('button', { name: /Збільшити фото/ })).toBe(photo)
+    }
+    expect(apiMocks.addOrderItem).not.toHaveBeenCalled()
+    expect(apiMocks.updateProduct).not.toHaveBeenCalled()
+  })
+
+  it('returns to the detail drawer when a keyboard-opened photo is closed', async () => {
+    apiMocks.searchSaleProductsWithAvailability.mockResolvedValueOnce([createSearchProduct(10)])
+    renderStep()
+    fireEvent.change(screen.getByPlaceholderText(/пошук/i), { target: { value: 'SEM12081' } })
+    fireEvent.click(await screen.findByRole('button', { name: 'Деталі' }))
+    const drawer = await screen.findByRole('dialog', { name: /Деталі товару · SEM12081/ })
+    fireEvent.keyDown(within(drawer).getByRole('button', { name: 'Закрити деталі товару' }), { key: 'i', ctrlKey: true })
+    const preview = await screen.findByRole('dialog', { name: 'Перегляд зображення' })
+    fireEvent.keyDown(within(preview).getByRole('button', { name: 'Закрити фото' }), { key: 'Escape' })
+    await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Перегляд зображення' })).toBeNull())
+    expect(getWizardKeyboardState()).toBe('FullDetail')
+    expect(screen.getByRole('dialog', { name: /Деталі товару · SEM12081/ })).toBeTruthy()
+    expect(apiMocks.addOrderItem).not.toHaveBeenCalled()
+  })
+
+  it('keeps one summary visible when opening and closing details with mouse and keyboard', async () => {
+    apiMocks.searchSaleProductsWithAvailability.mockResolvedValueOnce([
+      createSearchProduct(10, { CurrentPrice: 24.48, CurrentLocalPrice: 1275.41 }),
+    ])
+    const view = renderStep()
+    fireEvent.change(screen.getByPlaceholderText(/пошук/i), { target: { value: 'SEM12081' } })
+    const summaryName = 'Коротка інформація про товар'
+    const detailName = 'Детальна інформація про товар'
+    await screen.findByRole('region', { name: summaryName })
+    expect(screen.queryByRole('region', { name: detailName })).toBeNull()
+    const detailsButton = screen.getByRole('button', { name: 'Деталі' })
+    expect(detailsButton.getAttribute('data-variant')).toBe('filled')
+    expect(detailsButton.style.getPropertyValue('--button-bg')).toBe('#E8782E')
+    expect(detailsButton.querySelector('.lucide-eye')).toBeTruthy()
+    expect(detailsButton.getAttribute('aria-haspopup')).toBe('dialog')
+    expect(detailsButton.getAttribute('aria-expanded')).toBe('false')
+
+    fireEvent.click(detailsButton)
+    const drawer = await screen.findByRole('dialog', { name: /Деталі товару · SEM12081/ })
+    expect(within(drawer).getByRole('region', { name: detailName })).toBeTruthy()
+    expect(view.container.querySelector('.new-sale-product-detail')).toBeNull()
+    expect(drawer.closest('.app-drawer')).toBeTruthy()
+    expect(screen.getAllByRole('region', { name: summaryName })).toHaveLength(1)
+    expect(detailsButton.getAttribute('aria-expanded')).toBe('true')
+
+    fireEvent.click(within(drawer).getByRole('button', { name: 'Закрити деталі товару' }))
+    expect(screen.queryByRole('region', { name: detailName })).toBeNull()
+    expect(screen.getAllByRole('region', { name: summaryName })).toHaveLength(1)
+    expect(detailsButton.getAttribute('aria-expanded')).toBe('false')
+
+    fireEvent.keyDown(document.body, { key: 'Enter', ctrlKey: true })
+    const reopened = await screen.findByRole('dialog', { name: /Деталі товару · SEM12081/ })
+    fireEvent.keyDown(within(reopened).getByRole('button', { name: 'Закрити деталі товару' }), { key: 'Escape' })
+    expect(screen.queryByRole('region', { name: detailName })).toBeNull()
+    expect(screen.getAllByRole('region', { name: summaryName })).toHaveLength(1)
+    expect(apiMocks.addOrderItem).not.toHaveBeenCalled()
+  })
+
+  it('keeps description editing inside the drawer and saves only through the save action', async () => {
+    apiMocks.searchSaleProductsWithAvailability.mockResolvedValueOnce([
+      createSearchProduct(10, { Description: 'Початковий опис' }),
+    ])
+    renderStep()
+    fireEvent.change(screen.getByPlaceholderText(/пошук/i), { target: { value: 'SEM12081' } })
+    fireEvent.click(await screen.findByRole('button', { name: 'Деталі' }))
+    const drawer = await screen.findByRole('dialog', { name: /Деталі товару · SEM12081/ })
+    fireEvent.click(within(drawer).getByRole('button', { name: 'Редагувати' }))
+    const input = within(drawer).getByRole('textbox', { name: 'Опис' })
+    fireEvent.change(input, { target: { value: 'Оновлений опис' } })
+    fireEvent.keyDown(input, { key: 'Enter' })
+    expect(apiMocks.addOrderItem).not.toHaveBeenCalled()
+    expect(apiMocks.updateProduct).not.toHaveBeenCalled()
+    fireEvent.click(within(drawer).getByRole('button', { name: 'Зберегти' }))
+    await waitFor(() => expect(apiMocks.updateProduct).toHaveBeenCalledWith(
+      expect.objectContaining({ NetUid: 'product-1', Description: 'Оновлений опис' }), true,
+    ))
+    expect(within(drawer).getByText('Оновлений опис')).toBeTruthy()
+    expect(within(drawer).queryByRole('textbox', { name: 'Опис' })).toBeNull()
+  })
+
+  it('closes only the detail drawer on Escape from the description without saving a draft', async () => {
+    apiMocks.searchSaleProductsWithAvailability.mockResolvedValueOnce([
+      createSearchProduct(10, { Description: 'Початковий опис' }),
+    ])
+    renderStep()
+    fireEvent.change(screen.getByPlaceholderText(/пошук/i), { target: { value: 'SEM12081' } })
+    fireEvent.click(await screen.findByRole('button', { name: 'Деталі' }))
+    const drawer = await screen.findByRole('dialog', { name: /Деталі товару · SEM12081/ })
+    fireEvent.click(within(drawer).getByRole('button', { name: 'Редагувати' }))
+    const input = within(drawer).getByRole('textbox', { name: 'Опис' })
+    fireEvent.change(input, { target: { value: 'Незбережена зміна' } })
+    fireEvent.keyDown(input, { key: 'Escape' })
+    expect(screen.queryByRole('region', { name: 'Детальна інформація про товар' })).toBeNull()
+    expect(screen.getByRole('region', { name: 'Коротка інформація про товар' })).toBeTruthy()
+    expect(apiMocks.updateProduct).not.toHaveBeenCalled()
+    fireEvent.click(screen.getByRole('button', { name: 'Деталі' }))
+    const reopened = await screen.findByRole('dialog', { name: /Деталі товару · SEM12081/ })
+    expect(within(reopened).getByText('Початковий опис')).toBeTruthy()
+    expect(within(reopened).queryByText('Незбережена зміна')).toBeNull()
+  })
 })
 
 describe('NewSaleProductsStep persistent cart mutations', () => {
@@ -313,6 +444,37 @@ describe('NewSaleProductsStep persistent cart mutations', () => {
     })
   })
 
+  it('replays a failed cart add when verification temporarily returns no cart', async () => {
+    apiMocks.addOrderItem
+      .mockRejectedValueOnce(new ApiError('response lost', 503, null))
+      .mockResolvedValueOnce(null)
+    const onCartChanged = vi.fn()
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce(createSale(5))
+    const onPendingMutationChange = vi.fn()
+
+    renderStep({ onCartChanged, onPendingMutationChange })
+
+    fireEvent.click(screen.getByRole('button', { name: 'cross sell' }))
+    fireEvent.click(await screen.findByRole('button', { name: 'pick same product' }))
+    fireEvent.click(await screen.findByRole('button', { name: 'accept quantity' }))
+
+    const retry = await screen.findByRole('button', { name: 'Перевірити та повторити' })
+    const firstOperationId = apiMocks.addOrderItem.mock.calls[0]?.[3]?.operationId
+
+    expect(loadSalesPendingMutation(scope)?.phase).toBe('unknown')
+
+    fireEvent.click(retry)
+
+    await waitFor(() => expect(apiMocks.addOrderItem).toHaveBeenCalledTimes(2))
+    expect(apiMocks.addOrderItem.mock.calls[1]?.[3]?.operationId).toBe(firstOperationId)
+    await waitFor(() => {
+      expect(loadSalesPendingMutation(scope)).toBe(null)
+    })
+    expect(onPendingMutationChange).toHaveBeenLastCalledWith(false)
+  })
+
   it('refreshes a retained search result from 254 to 0 after the full quantity enters the cart', async () => {
     apiMocks.acceptedQty = 254
     apiMocks.getProductAvailabilityBuckets
@@ -407,7 +569,7 @@ describe('NewSaleProductsStep persistent cart mutations', () => {
     const view = renderStep({ onCartChanged: vi.fn(async () => createSale(1)), sale: emptySale })
 
     fireEvent.change(screen.getByPlaceholderText(/пошук/i), { target: { value: '381' } })
-    fireEvent.click(await screen.findByText('38118103 NR'))
+    fireEvent.click(await screen.findByText('38118103 NR', { selector: '.new-sale-product-picker-row__code' }))
     await screen.findByRole('button', { name: 'Скопіювати код: 38118103 NR' })
     expect(view.container.querySelector('.new-sale-product-picker-card__qty')?.textContent).toBe('59')
     await waitFor(() => expect(apiMocks.searchSaleProductsWithAvailability).toHaveBeenCalledTimes(2))

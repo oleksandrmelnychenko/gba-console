@@ -25,11 +25,6 @@ import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/Page
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { TableRowAction } from '../../../shared/ui/table-row-action'
 import {
-  closePendingExportDocumentWindow,
-  openExportDocumentInWindow,
-  openPendingExportDocumentWindow,
-} from '../../../shared/documents/openExportDocument'
-import {
   exportProductCapitalization,
   getProductCapitalization,
   getProductCapitalizations,
@@ -136,6 +131,7 @@ function useProductCapitalizationsPageModel() {
   const [pageSize, setPageSize] = useValueState(DEFAULT_PAGINATOR_PAGE_SIZE)
   const [error, setError] = useValueState<string | null>(null)
   const [downloadDocument, setDownloadDocument] = useValueState<ProductCapitalizationsExportDocument | null>(null)
+  const [downloadError, setDownloadError] = useValueState<string | null>(null)
   const [downloadModalOpened, setDownloadModalOpened] = useValueState(false)
   const [exportingNetId, setExportingNetId] = useValueState<string | null>(null)
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
@@ -204,37 +200,19 @@ function useProductCapitalizationsPageModel() {
     setError(null)
     setDetailError(null)
 
-    const pendingWindow = openPendingExportDocumentWindow(t('Друк PDF'))
+    setDownloadDocument(null)
+    setDownloadError(null)
+    setDownloadModalOpened(true)
 
     try {
       const document = await exportProductCapitalization(capitalization.NetUid)
 
-      if (!isCurrentExport()) {
-        closePendingExportDocumentWindow(pendingWindow)
-        return
-      }
-
-      if (document.PdfDocumentURL && openExportDocumentInWindow(pendingWindow, document.PdfDocumentURL)) {
-        setDownloadDocument(null)
-        setDownloadModalOpened(false)
-        return
-      }
-
-      closePendingExportDocumentWindow(pendingWindow)
       if (isCurrentExport()) {
         setDownloadDocument(document)
-        setDownloadModalOpened(true)
       }
     } catch (exportError) {
-      closePendingExportDocumentWindow(pendingWindow)
       if (isCurrentExport()) {
-        const message = exportError instanceof Error ? exportError.message : t('Не вдалося сформувати експорт оприбуткування')
-
-        if (selectedCapitalization?.NetUid === capitalization.NetUid) {
-          setDetailError(message)
-        } else {
-          setError(message)
-        }
+        setDownloadError(exportError instanceof Error ? exportError.message : t('Не вдалося сформувати експорт оприбуткування'))
       }
     } finally {
       if (isCurrentExport()) {
@@ -243,9 +221,9 @@ function useProductCapitalizationsPageModel() {
     }
   }, [
     exportingNetId,
-    selectedCapitalization?.NetUid,
     setDetailError,
     setDownloadDocument,
+    setDownloadError,
     setDownloadModalOpened,
     setError,
     setExportingNetId,
@@ -334,6 +312,7 @@ function useProductCapitalizationsPageModel() {
     createPanelOpened,
     detailError,
     downloadDocument,
+    downloadError,
     downloadModalOpened,
     error,
     exportingNetId,
@@ -374,6 +353,7 @@ function ProductCapitalizationsPageView({ model }: { model: ReturnType<typeof us
     createPanelOpened,
     detailError,
     downloadDocument,
+    downloadError,
     downloadModalOpened,
     error,
     exportingNetId,
@@ -502,6 +482,8 @@ function ProductCapitalizationsPageView({ model }: { model: ReturnType<typeof us
 
       <DocumentExportModal
         document={downloadDocument}
+        error={downloadError}
+        isLoading={Boolean(exportingNetId)}
         opened={downloadModalOpened}
         title={t('Друк PDF')}
         onClose={() => setDownloadModalOpened(false)}

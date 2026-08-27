@@ -1,11 +1,14 @@
 import { MantineProvider } from '@mantine/core'
-import { fireEvent, render, screen } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { I18nProvider } from '../../../shared/i18n/I18nProvider'
 import {
+  exportProductIncomeMovementsDocument,
+  exportProductOutcomeMovementsDocument,
   getProductByNetId,
   getProductIncomeMovements,
+  getProductOutcomeMovements,
   getProductReservationByNetId,
   getProducts,
 } from '../api/productsApi'
@@ -16,8 +19,11 @@ vi.mock('../api/productsApi', async (importOriginal) => {
 
   return {
     ...actual,
+    exportProductIncomeMovementsDocument: vi.fn(),
+    exportProductOutcomeMovementsDocument: vi.fn(),
     getProductByNetId: vi.fn(),
     getProductIncomeMovements: vi.fn(),
+    getProductOutcomeMovements: vi.fn(),
     getProductReservationByNetId: vi.fn(),
     getProducts: vi.fn(),
   }
@@ -60,6 +66,10 @@ const getProductReservationByNetIdMock = vi.mocked(getProductReservationByNetId)
 const getProductsMock = vi.mocked(getProducts)
 
 beforeEach(() => {
+  vi.spyOn(window, 'open').mockReturnValue(null)
+  vi.mocked(exportProductIncomeMovementsDocument).mockReset()
+  vi.mocked(exportProductOutcomeMovementsDocument).mockReset()
+  vi.mocked(getProductOutcomeMovements).mockReset().mockResolvedValue([])
   getProductByNetIdMock.mockReset()
   getProductIncomeMovementsMock.mockReset()
   getProductReservationByNetIdMock.mockReset()
@@ -69,6 +79,10 @@ beforeEach(() => {
   getProductIncomeMovementsMock.mockResolvedValue([incomeMovement])
   getProductReservationByNetIdMock.mockResolvedValue({})
   getProductsMock.mockResolvedValue([])
+})
+
+afterEach(() => {
+  vi.restoreAllMocks()
 })
 
 describe('ProductsPage income price columns', () => {
@@ -112,6 +126,55 @@ describe('ProductsPage income price columns', () => {
       expect(columnIndex).toBeGreaterThanOrEqual(0)
       expect(cells[columnIndex]?.textContent).toContain(value)
     }
+  })
+})
+
+describe('ProductsPage movement exports', () => {
+  it.each([
+    ['Прихід', exportProductIncomeMovementsDocument],
+    ['Розхід', exportProductOutcomeMovementsDocument],
+  ] as const)('offers Excel and PDF in a modal for %s', async (tabLabel, exportDocument) => {
+    vi.mocked(exportDocument).mockResolvedValue({
+      DocumentURL: 'https://example.com/movement.xlsx',
+      PdfDocumentURL: 'https://example.com/movement.pdf',
+    })
+
+    await openIncomeTab()
+    if (tabLabel !== 'Прихід') {
+      fireEvent.click(screen.getByRole('button', { name: tabLabel }))
+    }
+    fireEvent.click(screen.getByRole('button', { name: 'Друк PDF' }))
+
+    const dialog = await screen.findByRole('dialog', { name: /Друк PDF/ })
+    expect(await within(dialog).findByRole('link', { name: /Excel/ })).toBeTruthy()
+    expect(within(dialog).getByRole('link', { name: /PDF/ })).toBeTruthy()
+    expect(exportDocument).toHaveBeenCalledWith(expect.objectContaining({ productNetId: 'product-42' }))
+    expect(window.open).not.toHaveBeenCalled()
+  })
+
+  it('keeps the export modal loading when a movement refresh finishes', async () => {
+    let resolveExport!: (document: { PdfDocumentURL: string }) => void
+    let resolveRows!: (rows: ProductIncomeMovement[]) => void
+    vi.mocked(exportProductIncomeMovementsDocument).mockReturnValue(new Promise((resolve) => {
+      resolveExport = resolve
+    }))
+
+    await openIncomeTab()
+    getProductIncomeMovementsMock.mockReturnValueOnce(new Promise((resolve) => {
+      resolveRows = resolve
+    }))
+    const toolbar = screen.getByRole('button', { name: 'Друк PDF' }).closest('.product-movement-toolbar') as HTMLElement
+    fireEvent.click(within(toolbar).getByRole('button', { name: 'Оновити' }))
+    await waitFor(() => expect(getProductIncomeMovementsMock).toHaveBeenCalledTimes(2))
+    fireEvent.click(screen.getByRole('button', { name: 'Друк PDF' }))
+
+    await act(async () => resolveRows([incomeMovement]))
+    const dialog = await screen.findByRole('dialog', { name: /Друк PDF/ })
+    expect(within(dialog).getByText('Зачекайте, файл формується')).toBeTruthy()
+
+    await act(async () => resolveExport({ PdfDocumentURL: 'https://example.com/movement.pdf' }))
+    expect(await within(dialog).findByRole('link', { name: /PDF/ })).toBeTruthy()
+    expect(window.open).not.toHaveBeenCalled()
   })
 })
 

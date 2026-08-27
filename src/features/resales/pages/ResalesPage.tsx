@@ -27,11 +27,6 @@ import { formatLocalDate, formatLocalDateTime } from '../../../shared/date/dateT
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { translate } from '../../../shared/i18n/translate'
 import { useI18n } from '../../../shared/i18n/useI18n'
-import {
-  closePendingExportDocumentWindow,
-  openExportDocumentInWindow,
-  openPendingExportDocumentWindow,
-} from '../../../shared/documents/openExportDocument'
 import { realtimeEvents, useRealtimeEvent } from '../../../shared/realtime/events'
 import { ProductCardModal } from '../../products/components/ProductCardModal'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
@@ -553,6 +548,7 @@ export function NewResalePage() {
   const [error, setError] = useValueState<string | null>(null)
   const [warning, setWarning] = useValueState<ResaleBackendWarning | null>(null)
   const [downloadDocument, setDownloadDocument] = useValueState<ResaleExportDocument | null>(null)
+  const [downloadError, setDownloadError] = useValueState<string | null>(null)
   const [downloadModalOpened, setDownloadModalOpened] = useValueState(false)
   const [processConfirmOpened, setProcessConfirmOpened] = useValueState(false)
   const [processState, setProcessState] = useValueState<ProcessState>({
@@ -702,6 +698,10 @@ export function NewResalePage() {
   useRealtimeEvent(realtimeEvents.resaleAvailabilitiesUpdated, handleRealtimeAvailabilityUpdate)
 
   async function exportAvailabilities() {
+    if (isExporting) {
+      return
+    }
+
     if (!payload) {
       setWarning({ Message: dateRangeError || t('Перевірте фільтри') })
       return
@@ -710,23 +710,16 @@ export function NewResalePage() {
     setExporting(true)
     setError(null)
 
-    const pendingWindow = openPendingExportDocumentWindow(t('Друк PDF'))
+    setDownloadDocument(null)
+    setDownloadError(null)
+    setDownloadModalOpened(true)
 
     try {
       const document = await exportResaleAvailabilities(payload)
 
-      if (document.PdfDocumentURL && openExportDocumentInWindow(pendingWindow, document.PdfDocumentURL)) {
-        setDownloadDocument(null)
-        setDownloadModalOpened(false)
-        return
-      }
-
-      closePendingExportDocumentWindow(pendingWindow)
       setDownloadDocument(document)
-      setDownloadModalOpened(true)
     } catch (exportError) {
-      closePendingExportDocumentWindow(pendingWindow)
-      setError(exportError instanceof Error ? exportError.message : t('Не вдалося сформувати документ'))
+      setDownloadError(exportError instanceof Error ? exportError.message : t('Не вдалося сформувати документ'))
     } finally {
       setExporting(false)
     }
@@ -1127,6 +1120,8 @@ export function NewResalePage() {
 
         <DownloadDocumentModal
           document={downloadDocument}
+          error={downloadError}
+          isLoading={isExporting}
           opened={downloadModalOpened}
           title={t('Документ підбору')}
           onClose={() => setDownloadModalOpened(false)}
@@ -3171,11 +3166,15 @@ export function ResaleClientSelect({
 
 function DownloadDocumentModal({
   document,
+  error,
+  isLoading,
   opened,
   title,
   onClose,
 }: {
   document: ResaleExportDocument | null
+  error?: string | null
+  isLoading?: boolean
   opened: boolean
   title: string
   onClose: () => void
@@ -3183,6 +3182,8 @@ function DownloadDocumentModal({
   return (
     <DocumentExportModal
       document={document}
+      error={error}
+      isLoading={isLoading}
       opened={opened}
       title={title}
       onClose={onClose}

@@ -36,11 +36,6 @@ import { useI18n } from '../../../shared/i18n/useI18n'
 import { TableRowAction } from '../../../shared/ui/table-row-action'
 import { DocumentExportModal } from '../../../shared/ui/document-export-modal/DocumentExportModal'
 import { translate } from '../../../shared/i18n/translate'
-import {
-  closePendingExportDocumentWindow,
-  openExportDocumentInWindow,
-  openPendingExportDocumentWindow,
-} from '../../../shared/documents/openExportDocument'
 import { realtimeEvents, useRealtimeEvent } from '../../../shared/realtime/events'
 import {
   createProductOriginalNumber,
@@ -248,7 +243,6 @@ type InlineMovementAction =
   | { type: 'export-clear' }
   | { type: 'export-error'; error: string }
   | { type: 'export-loading' }
-  | { type: 'export-opened' }
   | { type: 'export-success'; document: ProductMovementExportDocument }
   | { type: 'error'; error: string }
   | { type: 'loading' }
@@ -3096,8 +3090,6 @@ function ProductInlineMovementsTab({
       return
     }
 
-    const pendingWindow = openPendingExportDocumentWindow(t('Друк PDF'))
-
     dispatch({ type: 'export-loading' })
 
     try {
@@ -3110,15 +3102,8 @@ function ProductInlineMovementsTab({
         ? await exportProductIncomeMovementsDocument(params)
         : await exportProductOutcomeMovementsDocument(params)
 
-      if (document.PdfDocumentURL && openExportDocumentInWindow(pendingWindow, document.PdfDocumentURL)) {
-        dispatch({ type: 'export-opened' })
-        return
-      }
-
-      closePendingExportDocumentWindow(pendingWindow)
       dispatch({ document, type: 'export-success' })
     } catch (exportError) {
-      closePendingExportDocumentWindow(pendingWindow)
       dispatch({
         error: exportError instanceof Error ? exportError.message : t('Не вдалося сформувати документ'),
         type: 'export-error',
@@ -3174,8 +3159,11 @@ function ProductInlineMovementsTab({
         <ProductOutcomeMovementsGrid emptyText={t(labels.empty)} isLoading={false} rows={state.rows as ProductOutcomeMovement[]} />
       )}
 
-      <ProductMovementDownloadModal
+      <DocumentExportModal
         document={state.document}
+        error={state.exportError}
+        isLoading={state.isExporting}
+        opened={state.isExporting || Boolean(state.document) || Boolean(state.exportError)}
         title={t('Друк PDF')}
         onClose={() => dispatch({ type: 'export-clear' })}
       />
@@ -3497,31 +3485,13 @@ function ProductOutcomeMovementsGrid({
   )
 }
 
-function ProductMovementDownloadModal({
-  document,
-  onClose,
-  title,
-}: {
-  document: ProductMovementExportDocument | null
-  onClose: () => void
-  title: string
-}) {
-  return (
-    <DocumentExportModal
-      document={document}
-      opened={Boolean(document)}
-      title={title}
-      onClose={onClose}
-    />
-  )
-}
-
 function inlineMovementReducer(state: InlineMovementState, action: InlineMovementAction): InlineMovementState {
   switch (action.type) {
     case 'export-clear':
       return {
         ...state,
         document: null,
+        exportError: null,
       }
     case 'export-error':
       return {
@@ -3532,15 +3502,9 @@ function inlineMovementReducer(state: InlineMovementState, action: InlineMovemen
     case 'export-loading':
       return {
         ...state,
-        exportError: null,
-        isExporting: true,
-      }
-    case 'export-opened':
-      return {
-        ...state,
         document: null,
         exportError: null,
-        isExporting: false,
+        isExporting: true,
       }
     case 'export-success':
       return {
@@ -3551,10 +3515,8 @@ function inlineMovementReducer(state: InlineMovementState, action: InlineMovemen
       }
     case 'error':
       return {
-        document: state.document,
+        ...state,
         error: action.error,
-        exportError: state.exportError,
-        isExporting: state.isExporting,
         isLoading: false,
         rows: [],
       }
@@ -3562,15 +3524,12 @@ function inlineMovementReducer(state: InlineMovementState, action: InlineMovemen
       return {
         ...state,
         error: null,
-        exportError: null,
         isLoading: true,
       }
     case 'success':
       return {
-        document: state.document,
+        ...state,
         error: null,
-        exportError: null,
-        isExporting: false,
         isLoading: false,
         rows: action.rows,
       }

@@ -72,13 +72,7 @@ import { displayValue, formatDateTime, getDateShiftedByDays, toDateTimeQuery } f
 import { DownloadDocumentModal } from './DownloadDocumentModal'
 import { EditDeliveryAddressModal } from './EditDeliveryAddressModal'
 import { EditDeliveryRecipientModal } from './EditDeliveryRecipientModal'
-import {
-  closePendingWarehouseDocumentWindow,
-  getPreferredWarehousePrintUrl,
-  hasWarehouseDocumentUrl,
-  openPendingWarehouseDocumentWindow,
-  openWarehouseDocumentInWindow,
-} from './openWarehouseDocument'
+import { hasWarehouseDocumentUrl } from './openWarehouseDocument'
 
 const TABLE_DEFAULT_LAYOUT = {
   columnPinning: { left: ['index', 'clientName'] },
@@ -847,7 +841,6 @@ function useShipmentsTabModel({ onCarriedOut }: ShipmentsTabModelOptions = {}) {
     setDocLoading(true)
     setDocError(null)
     setPrintDoc(null)
-    const pendingWindow = openPendingWarehouseDocumentWindow()
 
     try {
       const request: AutoShipmentListParams = {
@@ -869,17 +862,9 @@ function useShipmentsTabModel({ onCarriedOut }: ShipmentsTabModelOptions = {}) {
       }
 
       const result = attempt.result
-      const documentUrl = getPreferredWarehousePrintUrl(result)
-
-      if (documentUrl && openWarehouseDocumentInWindow(pendingWindow, documentUrl)) {
-        setDocOpened(false)
-      } else {
-        closePendingWarehouseDocumentWindow(pendingWindow)
-        setPrintDoc(hasWarehouseDocumentUrl(result) ? result : null)
-        setDocError(hasWarehouseDocumentUrl(result) ? null : t('Немає документів для завантаження'))
-      }
+      setPrintDoc(hasWarehouseDocumentUrl(result) ? result : null)
+      setDocError(hasWarehouseDocumentUrl(result) ? null : t('Немає документів для завантаження'))
     } catch (printError) {
-      closePendingWarehouseDocumentWindow(pendingWindow)
       setDocError(printError instanceof Error ? printError.message : t('Не вдалося виконати запит'))
     } finally {
       setDocLoading(false)
@@ -1830,21 +1815,12 @@ function AllShipmentsPanel({ onCreate }: AllShipmentsPanelProps) {
     setDocLoading(true)
     setDocError(null)
     setPrintDoc(null)
-    const pendingWindow = openPendingWarehouseDocumentWindow()
 
     try {
       const result = await loader()
-      const documentUrl = getPreferredWarehousePrintUrl(result)
-
-      if (documentUrl && openWarehouseDocumentInWindow(pendingWindow, documentUrl)) {
-        setDocOpened(false)
-      } else {
-        closePendingWarehouseDocumentWindow(pendingWindow)
-        setPrintDoc(hasWarehouseDocumentUrl(result) ? result : null)
-        setDocError(hasWarehouseDocumentUrl(result) ? null : t('Немає документів для завантаження'))
-      }
+      setPrintDoc(hasWarehouseDocumentUrl(result) ? result : null)
+      setDocError(hasWarehouseDocumentUrl(result) ? null : t('Немає документів для завантаження'))
     } catch (printError) {
-      closePendingWarehouseDocumentWindow(pendingWindow)
       setDocError(printError instanceof Error ? printError.message : t('Не вдалося виконати запит'))
     } finally {
       setDocLoading(false)

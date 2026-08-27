@@ -1,17 +1,18 @@
 import { Alert, Box, Button, Group, Select, Stack, Text } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import { Box as BoxIcon, FileSignature, Hash, Search, Settings, Sparkles, Trash2 } from 'lucide-react'
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type ReactNode } from 'react'
 import { useAuth } from '../../../auth/useAuth'
 import { useI18n } from '../../../../shared/i18n/useI18n'
 import { AppModal } from '../../../../shared/ui/AppModal'
+import { AppDrawer } from '../../../../shared/ui/AppDrawer'
 import { toProxiedAssetUrl } from '../../../../shared/url/proxiedAssetUrl'
 import { realtimeEvents, useRealtimeEvent } from '../../../../shared/realtime/events'
 import { getMostPurchasedProductsByClientId } from '../../../clients/api/clientRecommendationsApi'
 import type { Client } from '../../../clients/types'
 import { updateProduct } from '../../../products/api/productsApi'
 import type { Product } from '../../../products/types'
-import { getProductMainImage, getRelatedProductRowColor } from '../../../products/utils'
+import { getProductMainImage, getProductShopImageUrl, getRelatedProductRowColor } from '../../../products/utils'
 import { ProductCardModal } from '../../../products/components/ProductCardModal'
 import { ProductInterestModal } from '../../../sales-preorders'
 import {
@@ -69,11 +70,11 @@ import {
 } from './newSaleWizardState'
 import { ProductFullDetailPanel, type WizardDetailChip, type WizardDetailRow } from './ProductFullDetailPanel'
 import { ProductImageViewModal } from './ProductImageViewModal'
+import { ProductSummaryCard } from './ProductSummaryCard'
 import { ShiftOrderItemModal } from './ShiftOrderItemModal'
 import { WizardConfirmModal } from './WizardConfirmModal'
 import { WizardCrossSellModal } from './WizardCrossSellModal'
 import { WizardProductCarousel } from './WizardProductCarousel'
-import { WizardProductPriceStrip } from './WizardProductPriceStrip'
 import { WizardRelatedProductRows } from './WizardRelatedProductRows'
 import { WizardClientHeroHeader } from './WizardClientHeroHeader'
 import {
@@ -127,6 +128,7 @@ import {
   createWizardOperationId,
   inspectWizardCartMutation,
   retryWizardMutation,
+  toWizardCartReconciliationSnapshot,
   type WizardCartMutationExpectation,
   type WizardMutationAttemptResult,
   type WizardMutationOperation,
@@ -298,7 +300,7 @@ export function NewSaleProductsStep({
   const [shiftRow, setShiftRow] = useState<WizardAvailabilityRow | null>(null)
   const [interestProduct, setInterestProduct] = useState<WizardSaleProduct | null>(null)
   const [futureProduct, setFutureProduct] = useState<WizardSaleProduct | null>(null)
-  const [imageUrl, setImageUrl] = useState<string | null>(null)
+  const [imagePreview, setImagePreview] = useState<{ url: string; fallbackUrl: string; name: string } | null>(null)
   const [removeConfirmOpen, setRemoveConfirmOpen] = useState(false)
   const [removeRowItem, setRemoveRowItem] = useState<SalesUkraineOrderItem | null>(null)
   const [editingDescription, setEditingDescription] = useState(false)
@@ -463,6 +465,7 @@ export function NewSaleProductsStep({
   const focusedAnalogue = analogueIndex !== null ? analogueState.items[analogueIndex] ?? null : null
   const focusedComponent = componentIndex !== null ? componentEntries.entries[componentIndex]?.product ?? null : null
   const kbState = isProductKeyboardState(keyboard.state) ? keyboard.state : 'ProductSearch'
+  const detailKeyboardState = kbState === 'EditProductDescription' ? getPreviousProductKeyboardState() : kbState
 
   useLayoutEffect(() => {
     mountedRef.current = true
@@ -843,9 +846,9 @@ export function NewSaleProductsStep({
   }, [activeProduct, active?.source, agreementNetId, isVatSale, refreshTick, sale?.NetUid])
 
   const isActiveProductFullDetail =
-    (active?.source === 'main' && kbState === 'FullDetail') ||
-    (active?.source === 'analogue' && kbState === 'AnalogueFullDetail') ||
-    (active?.source === 'component' && kbState === 'ComponentFullDetail')
+    (active?.source === 'main' && detailKeyboardState === 'FullDetail') ||
+    (active?.source === 'analogue' && detailKeyboardState === 'AnalogueFullDetail') ||
+    (active?.source === 'component' && detailKeyboardState === 'ComponentFullDetail')
 
   useEffect(() => {
     const netUid = activeProduct?.NetUid
@@ -1103,11 +1106,7 @@ export function NewSaleProductsStep({
   async function getFreshCartForOperation(): Promise<SalesUkraineSale> {
     const freshSale = await onCartChanged()
 
-    if (!freshSale) {
-      throw new Error(t('Сервер не повернув оновлений кошик'))
-    }
-
-    return freshSale
+    return toWizardCartReconciliationSnapshot(freshSale)
   }
 
   function finishCartMutation(operation: PendingCartMutation) {
@@ -2600,12 +2599,16 @@ export function NewSaleProductsStep({
       return
     }
 
-    setImageUrl(toProxiedAssetUrl(imageUrl) || imageUrl)
+    setImagePreview({
+      url: toProxiedAssetUrl(imageUrl) || imageUrl,
+      fallbackUrl: getProductShopImageUrl(product),
+      name: product?.NameUA || product?.Name || t('Без назви'),
+    })
     keyboard.setState('ViewImage')
   }
 
   function closeImage() {
-    setImageUrl(null)
+    setImagePreview(null)
     keyboard.restorePreviousProductState()
   }
 
@@ -2728,6 +2731,40 @@ export function NewSaleProductsStep({
     keyboard.setState('FullDetail')
 
     return true
+  }
+
+  function closeProductDetails() {
+    resetDetail()
+    keyboard.setState(active?.source === 'analogue' ? 'AnalogueSelection' : active?.source === 'component' ? 'ComponentSelection' : 'ProductSelection')
+  }
+
+  function handleProductDetailsKeyDown(event: ReactKeyboardEvent<HTMLDivElement>) {
+    // Portaled child dialogs own their keyboard events; do not close this sheet
+    // when Escape is used in a nested window.
+    if (!event.currentTarget.contains(event.target as Node)) {
+      return
+    }
+    event.stopPropagation()
+    if (event.defaultPrevented || event.nativeEvent.isComposing) {
+      return
+    }
+    if (event.key === 'Escape') {
+      event.preventDefault()
+      closeProductDetails()
+      return
+    }
+    // Native buttons and description inputs must not trigger the wizard's
+    // Enter-to-add shortcut. Explicit Ctrl shortcuts still work in the sheet.
+    if (isEditableTarget(event.target) && !event.ctrlKey && event.key !== 'F2') {
+      return
+    }
+    if (isInteractiveTarget(event.target) && !event.ctrlKey && (event.key === 'Enter' || event.key === ' ')) {
+      return
+    }
+    const hotkey = toWizardHotkey(event)
+    if (hotkey && handleProductKey({ hotkey, inEditable: isEditableTarget(event.target), nativeEvent: event })) {
+      event.preventDefault()
+    }
   }
 
   function escapeFromAnalogues() {
@@ -3387,7 +3424,11 @@ export function NewSaleProductsStep({
     const listener = (event: KeyboardEvent) => {
       const target = event.target
 
-      if (containerRef.current?.contains(target as Node) || isInteractiveTarget(target)) {
+      if (
+        containerRef.current?.contains(target as Node) ||
+        isInteractiveTarget(target) ||
+        (target instanceof Element && target.closest('.new-sale-product-details-drawer, .new-sale-product-image-modal'))
+      ) {
         return
       }
 
@@ -3411,7 +3452,7 @@ export function NewSaleProductsStep({
   // Overlay states must not change the layout underneath them. In particular,
   // Ctrl+B used to remove `is-search-centered` while the interest modal was
   // opening, which made the left product carousel jump below its filter block.
-  const visualProductState = kbState === 'ViewImage' || kbState === 'Interest'
+  const visualProductState = kbState === 'ViewImage' || kbState === 'Interest' || kbState === 'EditProductDescription'
     ? getPreviousProductKeyboardState()
     : kbState
   const mainStatesActive = visualProductState === 'ProductSearch' || visualProductState === 'ProductSelection' || visualProductState === 'FullDetail'
@@ -3456,10 +3497,17 @@ export function NewSaleProductsStep({
     )
   }
 
-  // Keep the product summary visible, but reveal the old full-detail data only in Ctrl+Enter mode.
+  // Keep the complete summary pinned; detailed sections live in a separate work window.
   const selectedMainProduct = mainProduct ? (active?.source === 'main' && activeProduct ? activeProduct : mainProduct) : null
   const selectedMainSnapshot = getProductDetailSnapshot(selectedMainProduct)
-  const isMainFullDetail = kbState === 'FullDetail' && active?.source === 'main'
+  const isMainFullDetail = detailKeyboardState === 'FullDetail' && active?.source === 'main'
+  const detailProduct = isMainFullDetail
+    ? selectedMainProduct
+    : detailKeyboardState === 'AnalogueFullDetail'
+      ? focusedAnalogue
+      : detailKeyboardState === 'ComponentFullDetail'
+        ? focusedComponent
+        : null
   const selectedMainChipIndex =
     selectedMainProduct && isMainFullDetail && detail?.chipIndex != null
       ? detail.chipIndex
@@ -3470,9 +3518,7 @@ export function NewSaleProductsStep({
   const focusedComponentSnapshot = getProductDetailSnapshot(focusedComponent)
   const focusedAnalogueChipIndex = focusedAnalogue ? (detail?.chipIndex ?? getDefaultMainDetailChipIndex()) : null
   const focusedComponentChipIndex = focusedComponent ? (detail?.chipIndex ?? getDefaultMainDetailChipIndex()) : null
-  // Built only in Ctrl+Enter full-detail mode — the render site (cart column)
-  // shows it only then anyway, and building chips/rows for a hidden panel costs
-  // real work on every keystroke.
+  // Build chips/rows only while the detail window is open, not on search keystrokes.
   const selectedMainProductPanel =
     selectedMainProduct && isMainFullDetail ? (
       <ProductFullDetailPanel
@@ -3493,6 +3539,7 @@ export function NewSaleProductsStep({
         rows={getMainDetailRows(selectedMainSnapshot?.availabilities, selectedMainChipIndex)}
         selectedChipIndex={selectedMainChipIndex}
         selectedRowIndex={active?.source === 'main' ? (detail?.rowIndex ?? null) : null}
+        showSummary={false}
         showRowDetails={selectedMainChipIndex === 0}
         onDescriptionDraftChange={handleDescriptionDraftChange}
         onSelectChip={(chipIndex) => {
@@ -3506,64 +3553,18 @@ export function NewSaleProductsStep({
         onToggleDescription={() => void toggleDescriptionEdit()}
       />
     ) : null
-  const selectedMainProductSummary = selectedMainProduct
-    ? (() => {
-        const meta = getProductMeta(selectedMainProduct)
-        const pricing = detailPricingFor(selectedMainProduct)
-        const localPrice = getWizardProductNumber(selectedMainProduct.CurrentPriceEurToUah) ?? getWizardProductNumber(selectedMainProduct.CurrentLocalPrice)
-        const facts = [
-          selectedMainProduct.MainOriginalNumber,
-          selectedMainProduct.Top,
-          selectedMainProduct.Size,
-          selectedMainProduct.MeasureUnit?.Name,
-        ].filter((value): value is string => typeof value === 'string' && value.trim().length > 0)
-
-        return (
-          <Box className="new-sale-products-step__selected-product-band">
-            {facts.length > 0 && (
-              <Box className="new-sale-products-step__selected-product-facts">
-                {facts.map((fact) => (
-                  <span key={fact}>{fact}</span>
-                ))}
-              </Box>
-            )}
-
-            <Group className="new-sale-products-step__selected-product-metrics" gap={7} wrap="nowrap">
-              {meta?.available != null && (
-                <span className={`new-sale-products-step__selected-product-metric ${meta.available > 0 ? 'is-good' : 'is-bad'}`}>
-                  Дост.: {qtyFormatter.format(meta.available)} {selectedMainProduct.MeasureUnit?.Name ?? ''}
-                </span>
-              )}
-              {meta?.price != null && (
-                <span className="new-sale-products-step__selected-product-metric app-money">
-                  {amountFormatter.format(meta.price)} EUR
-                </span>
-              )}
-              {localPrice != null && (
-                <span className="new-sale-products-step__selected-product-metric is-muted app-money app-money-meta">
-                  {amountFormatter.format(localPrice)} {localCurrencyCode}
-                </span>
-              )}
-            </Group>
-
-            <Box className="new-sale-products-step__selected-product-prices">
-              <WizardProductPriceStrip dense localCurrency={localCurrencyCode} pricing={pricing} product={selectedMainProduct} />
-              <Button
-                className="new-sale-products-step__selected-product-details"
-                size="compact-xs"
-                variant="subtle"
-                onClick={() => {
-                  openMainFullDetail()
-                  focusSearchInput()
-                }}
-              >
-                {t('Деталі')}
-              </Button>
-            </Box>
-          </Box>
-        )
-      })()
-    : null
+  const selectedMainProductSummary = selectedMainProduct ? (
+    <ProductSummaryCard
+      currentPriceEur={getWizardProductNumber(getProductMeta(selectedMainProduct)?.price)}
+      detailsExpanded={isMainFullDetail}
+      displayQty={getDisplayedAvailableQty(selectedMainProduct) ?? 0}
+      localCurrencyCode={localCurrencyCode}
+      pricing={detailPricingFor(selectedMainProduct)}
+      product={selectedMainProduct}
+      onOpenDetails={() => { openMainFullDetail() }}
+      onOpenImage={() => openImage(selectedMainProduct)}
+    />
+  ) : null
   const isSearchPristine = query.trim().length < PRODUCT_SEARCH_MIN_QUERY_LENGTH
   const showProductSearchEmpty = !searchError && !selectedMainProduct && orderItems.length === 0 && !isSearching && results.length === 0
   const productSearchEmptyTitle = isSearchPristine ? t('Пошук товару ще не виконаний') : t('Товарів не знайдено')
@@ -3756,7 +3757,7 @@ export function NewSaleProductsStep({
 
         </Box>
 
-        {/* RIGHT: detail + analogues + components scroll above a pinned cart grid */}
+        {/* RIGHT: related products and the summary stay above the pinned cart */}
         <Box className="new-sale-products-step__workspace">
           <Box className="new-sale-products-step__main-column">
             {searchError && !isSearching && (
@@ -3800,68 +3801,6 @@ export function NewSaleProductsStep({
                   <Box className="new-sale-products-step__selected-slot">{selectedMainProductSummary}</Box>
                 )}
 
-                {(isMainFullDetail || kbState === 'AnalogueFullDetail' || kbState === 'ComponentFullDetail') && (
-                  <Box className="new-sale-products-step__main-scroll">
-                    <Stack gap="md">
-              {isMainFullDetail && selectedMainProductPanel && <Box className="new-sale-products-step__product-slot">{selectedMainProductPanel}</Box>}
-
-              {kbState === 'AnalogueFullDetail' && focusedAnalogue && (
-                <ProductFullDetailPanel
-                  canEditDescription
-                  chips={getMainChips(focusedAnalogueSnapshot?.availabilities)}
-                  descriptionDraft={descriptionDraftSnapshot}
-                  displayQty={getDisplayedAvailableQty(focusedAnalogue) ?? 0}
-                  detailsError={focusedAnalogueSnapshot?.detailsError}
-                  isFullDetail
-                  isEditingDescription={editingDescription && active?.source === 'analogue'}
-                  isLoadingDetails={!focusedAnalogueSnapshot?.detailsLoaded}
-                  isVatSale={isVatSale}
-                  localCurrencyCode={localCurrencyCode}
-                  clientAgreementNetId={agreementNetId}
-                  nearestSupplyOrder={focusedAnalogueSnapshot?.nearestOrder}
-                  pricing={detailPricingFor(focusedAnalogue)}
-                  product={focusedAnalogue}
-                  rows={getMainDetailRows(focusedAnalogueSnapshot?.availabilities, focusedAnalogueChipIndex)}
-                  selectedChipIndex={focusedAnalogueChipIndex}
-                  selectedRowIndex={detail?.rowIndex ?? null}
-                  showRowDetails={focusedAnalogueChipIndex === 0}
-                  onDescriptionDraftChange={handleDescriptionDraftChange}
-                  onRetryDetails={() => setProductDetailsRevision((revision) => revision + 1)}
-                  onSelectChip={(chipIndex) => setDetail({ chipIndex, rowIndex: null })}
-                  onToggleDescription={() => void toggleDescriptionEdit()}
-                />
-              )}
-
-              {kbState === 'ComponentFullDetail' && focusedComponent && (
-                <ProductFullDetailPanel
-                  canEditDescription
-                  chips={getMainChips(focusedComponentSnapshot?.availabilities)}
-                  descriptionDraft={descriptionDraftSnapshot}
-                  displayQty={getDisplayedAvailableQty(focusedComponent) ?? 0}
-                  detailsError={focusedComponentSnapshot?.detailsError}
-                  isFullDetail
-                  isEditingDescription={editingDescription && active?.source === 'component'}
-                  isLoadingDetails={!focusedComponentSnapshot?.detailsLoaded}
-                  isVatSale={isVatSale}
-                  localCurrencyCode={localCurrencyCode}
-                  clientAgreementNetId={agreementNetId}
-                  nearestSupplyOrder={focusedComponentSnapshot?.nearestOrder}
-                  pricing={detailPricingFor(focusedComponent)}
-                  product={focusedComponent}
-                  rows={getMainDetailRows(focusedComponentSnapshot?.availabilities, focusedComponentChipIndex)}
-                  selectedChipIndex={focusedComponentChipIndex}
-                  selectedRowIndex={detail?.rowIndex ?? null}
-                  showRowDetails={focusedComponentChipIndex === 0}
-                  onDescriptionDraftChange={handleDescriptionDraftChange}
-                  onRetryDetails={() => setProductDetailsRevision((revision) => revision + 1)}
-                  onSelectChip={(chipIndex) => setDetail({ chipIndex, rowIndex: null })}
-                  onToggleDescription={() => void toggleDescriptionEdit()}
-                />
-              )}
-                    </Stack>
-                  </Box>
-                )}
-
           {/* Pinned cart — stays put regardless of how many analogues/components are shown */}
           <Box className="new-sale-products-step__cart-slot">
 <Stack gap={4} h="100%">
@@ -3894,6 +3833,77 @@ export function NewSaleProductsStep({
           </Box>
         </Box>
       </Box>
+
+      <AppDrawer
+        className="new-sale-product-details-drawer"
+        closeButtonProps={{ 'aria-label': t('Закрити деталі товару') }}
+        closeOnEscape={false}
+        opened={Boolean(detailProduct)}
+        size="standard"
+        title={[t('Деталі товару'), detailProduct?.VendorCode || detailProduct?.Articul, detailProduct?.NameUA || detailProduct?.Name].filter(Boolean).join(' · ')}
+        onClose={closeProductDetails}
+        onKeyDown={handleProductDetailsKeyDown}
+      >
+        <Stack gap="md">
+          {selectedMainProductPanel}
+
+          {detailKeyboardState === 'AnalogueFullDetail' && focusedAnalogue && (
+            <ProductFullDetailPanel
+              canEditDescription
+              chips={getMainChips(focusedAnalogueSnapshot?.availabilities)}
+              descriptionDraft={descriptionDraftSnapshot}
+              displayQty={getDisplayedAvailableQty(focusedAnalogue) ?? 0}
+              detailsError={focusedAnalogueSnapshot?.detailsError}
+              isFullDetail
+              isEditingDescription={editingDescription && active?.source === 'analogue'}
+              isLoadingDetails={!focusedAnalogueSnapshot?.detailsLoaded}
+              isVatSale={isVatSale}
+              localCurrencyCode={localCurrencyCode}
+              clientAgreementNetId={agreementNetId}
+              nearestSupplyOrder={focusedAnalogueSnapshot?.nearestOrder}
+              pricing={detailPricingFor(focusedAnalogue)}
+              product={focusedAnalogue}
+              rows={getMainDetailRows(focusedAnalogueSnapshot?.availabilities, focusedAnalogueChipIndex)}
+              selectedChipIndex={focusedAnalogueChipIndex}
+              selectedRowIndex={detail?.rowIndex ?? null}
+              showRowDetails={focusedAnalogueChipIndex === 0}
+              onDescriptionDraftChange={handleDescriptionDraftChange}
+              onOpenImage={() => openImage(focusedAnalogue)}
+              onRetryDetails={() => setProductDetailsRevision((revision) => revision + 1)}
+              onSelectChip={(chipIndex) => setDetail({ chipIndex, rowIndex: null })}
+              onToggleDescription={() => void toggleDescriptionEdit()}
+            />
+          )}
+
+          {detailKeyboardState === 'ComponentFullDetail' && focusedComponent && (
+            <ProductFullDetailPanel
+              canEditDescription
+              chips={getMainChips(focusedComponentSnapshot?.availabilities)}
+              descriptionDraft={descriptionDraftSnapshot}
+              displayQty={getDisplayedAvailableQty(focusedComponent) ?? 0}
+              detailsError={focusedComponentSnapshot?.detailsError}
+              isFullDetail
+              isEditingDescription={editingDescription && active?.source === 'component'}
+              isLoadingDetails={!focusedComponentSnapshot?.detailsLoaded}
+              isVatSale={isVatSale}
+              localCurrencyCode={localCurrencyCode}
+              clientAgreementNetId={agreementNetId}
+              nearestSupplyOrder={focusedComponentSnapshot?.nearestOrder}
+              pricing={detailPricingFor(focusedComponent)}
+              product={focusedComponent}
+              rows={getMainDetailRows(focusedComponentSnapshot?.availabilities, focusedComponentChipIndex)}
+              selectedChipIndex={focusedComponentChipIndex}
+              selectedRowIndex={detail?.rowIndex ?? null}
+              showRowDetails={focusedComponentChipIndex === 0}
+              onDescriptionDraftChange={handleDescriptionDraftChange}
+              onOpenImage={() => openImage(focusedComponent)}
+              onRetryDetails={() => setProductDetailsRevision((revision) => revision + 1)}
+              onSelectChip={(chipIndex) => setDetail({ chipIndex, rowIndex: null })}
+              onToggleDescription={() => void toggleDescriptionEdit()}
+            />
+          )}
+        </Stack>
+      </AppDrawer>
 
       <WizardCrossSellModal
         agreementNetId={agreementNetId}
@@ -3973,7 +3983,16 @@ export function NewSaleProductsStep({
         }}
       />
 
-      <ProductImageViewModal imageUrl={imageUrl} onClose={closeImage} />
+      <ProductImageViewModal
+        fallbackSrc={imagePreview?.fallbackUrl || undefined}
+        imageName={imagePreview?.name}
+        imageUrl={imagePreview?.url ?? null}
+        onClose={closeImage}
+        onEditCart={() => {
+          closeImage()
+          openEditCart()
+        }}
+      />
 
       <WizardConfirmModal
         busy={busy}

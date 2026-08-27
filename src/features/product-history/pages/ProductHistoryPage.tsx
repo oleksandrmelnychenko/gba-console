@@ -18,11 +18,6 @@ import { useCallback, useEffect, useMemo, useReducer, useState } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { translate } from '../../../shared/i18n/translate'
 import { useI18n } from '../../../shared/i18n/useI18n'
-import {
-  closePendingExportDocumentWindow,
-  openExportDocumentInWindow,
-  openPendingExportDocumentWindow,
-} from '../../../shared/documents/openExportDocument'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import { DocumentExportModal } from '../../../shared/ui/document-export-modal/DocumentExportModal'
 import { Paginator } from '../../../shared/ui/paginator/Paginator'
@@ -73,6 +68,7 @@ function useProductHistoryPageModel() {
   const [pageSize, setPageSize] = useValueState(DEFAULT_PAGINATOR_PAGE_SIZE)
   const [error, setError] = useValueState<string | null>(null)
   const [downloadDocument, setDownloadDocument] = useValueState<ProductHistoryExportDocument | null>(null)
+  const [downloadError, setDownloadError] = useValueState<string | null>(null)
   const [downloadModalOpened, setDownloadModalOpened] = useValueState(false)
   const [isExporting, setExporting] = useValueState(false)
   const [isLoading, setLoading] = useValueState(false)
@@ -223,14 +219,16 @@ function useProductHistoryPageModel() {
   }
 
   async function handleExport() {
-    if (filterError) {
+    if (filterError || isExporting) {
       return
     }
 
     setExporting(true)
     setError(null)
 
-    const pendingWindow = openPendingExportDocumentWindow(t('Друк PDF'))
+    setDownloadDocument(null)
+    setDownloadError(null)
+    setDownloadModalOpened(true)
 
     try {
       const document = await exportProductHistory({
@@ -242,18 +240,9 @@ function useProductHistoryPageModel() {
         value: searchValue,
       })
 
-      if (document.PdfDocumentURL && openExportDocumentInWindow(pendingWindow, document.PdfDocumentURL)) {
-        setDownloadDocument(null)
-        setDownloadModalOpened(false)
-        return
-      }
-
-      closePendingExportDocumentWindow(pendingWindow)
       setDownloadDocument(document)
-      setDownloadModalOpened(true)
     } catch (exportError) {
-      closePendingExportDocumentWindow(pendingWindow)
-      setError(exportError instanceof Error ? exportError.message : t('Не вдалося сформувати експорт історії товарів'))
+      setDownloadError(exportError instanceof Error ? exportError.message : t('Не вдалося сформувати експорт історії товарів'))
     } finally {
       setExporting(false)
     }
@@ -264,6 +253,7 @@ function useProductHistoryPageModel() {
     columns,
     dateTo,
     downloadDocument,
+    downloadError,
     downloadModalOpened,
     error,
     filterError,
@@ -303,6 +293,7 @@ function ProductHistoryPageView({ model }: { model: ReturnType<typeof useProduct
     columns,
     dateTo,
     downloadDocument,
+    downloadError,
     downloadModalOpened,
     error,
     filterError,
@@ -435,6 +426,8 @@ function ProductHistoryPageView({ model }: { model: ReturnType<typeof useProduct
 
       <DocumentExportModal
         document={downloadDocument}
+        error={downloadError}
+        isLoading={isExporting}
         opened={downloadModalOpened}
         title={t('Друк PDF')}
         onClose={() => setDownloadModalOpened(false)}

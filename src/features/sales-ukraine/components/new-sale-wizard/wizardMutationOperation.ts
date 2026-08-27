@@ -50,6 +50,16 @@ export function createWizardOperationId(randomUuid?: () => string): string {
   return createUuid().trim().toLowerCase()
 }
 
+export function toWizardCartReconciliationSnapshot(
+  sale: SalesUkraineSale | null | void,
+): SalesUkraineSale {
+  // `GET /sales/get/current` legitimately returns null before the first cart
+  // row exists. That is an authoritative "no cart projection yet" result,
+  // not a failed reconciliation. Keep it inspectable so an explicit retry can
+  // safely replay the frozen request through the server idempotency ledger.
+  return sale ?? { Order: { OrderItems: [] } }
+}
+
 export async function attemptWizardMutation<TSnapshot>(
   operation: WizardMutationOperation<TSnapshot>,
   reconcile: () => Promise<TSnapshot>,
@@ -92,7 +102,7 @@ export async function retryWizardMutation<TSnapshot>(
 
     if (commitState === 'unknown') {
       return {
-        mutationError: new Error('Operation outcome is still unknown'),
+        mutationError: new Error('Результат операції ще не вдалося підтвердити'),
         reconciliationError: null,
         snapshot,
         status: 'pending-retry',
@@ -100,7 +110,7 @@ export async function retryWizardMutation<TSnapshot>(
     }
   } catch (reconciliationError) {
     return {
-      mutationError: new Error('Operation outcome is still unknown'),
+      mutationError: new Error('Результат операції ще не вдалося підтвердити'),
       reconciliationError,
       snapshot: null,
       status: 'pending-retry',
@@ -119,6 +129,10 @@ export function inspectWizardCartMutation(
   operationId: string,
   expectation: WizardCartMutationExpectation,
 ): WizardMutationCommitState {
+  if (!normalizeIdentity(sale.NetUid)) {
+    return 'operation-marker-unavailable'
+  }
+
   const items = sale.Order?.OrderItems ?? []
   const normalizedOperationId = normalizeIdentity(operationId)
 
