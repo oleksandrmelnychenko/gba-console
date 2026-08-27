@@ -107,14 +107,14 @@ export async function updateShipmentList(
   shipmentList: ShipmentList,
   operation: SalesMutationOperationOptions,
   window?: { from: string; to: string },
-): Promise<void> {
+): Promise<ShipmentList> {
   const requiredOperation = requireShipmentMutationOperation(operation)
   validatePersistedShipmentList(shipmentList)
   const normalizedWindow = window
     ? validateShipmentDateWindow(window.from, window.to)
     : undefined
 
-  await apiRequest<unknown>('/sales/shipments/update', {
+  const result = await apiRequest<unknown>('/sales/shipments/update', {
     method: 'POST',
     body: shipmentList,
     headers: getSalesMutationOperationHeaders(requiredOperation.operationId),
@@ -123,6 +123,8 @@ export async function updateShipmentList(
     query: normalizedWindow,
     ...(requiredOperation.signal ? { signal: requiredOperation.signal } : {}),
   })
+
+  return normalizeShipmentList(result)
 }
 
 export async function getShipmentCreatePageDocument(

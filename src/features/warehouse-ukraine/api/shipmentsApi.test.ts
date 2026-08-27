@@ -79,8 +79,14 @@ describe('shipment sale mutation contracts', () => {
   it('validates and sends a shipment update with its visible date window', async () => {
     const operationId = '66666666-6666-4666-8666-666666666666'
     const shipmentList = buildShipmentList()
+    const persistedShipmentList = {
+      ...shipmentList,
+      Updated: '2026-07-08T12:00:00.1234567Z',
+      ShipmentListItems: shipmentList.ShipmentListItems.map((item) => ({ ...item, QtyPlaces: 5 })),
+    }
+    apiRequestMock.mockResolvedValueOnce(persistedShipmentList)
 
-    await updateShipmentList(
+    const result = await updateShipmentList(
       shipmentList,
       { operationId },
       { from: '2026-07-01T00:00:00', to: '2026-07-08T23:59:59' },
@@ -92,6 +98,7 @@ describe('shipment sale mutation contracts', () => {
       method: 'POST',
       query: { from: '2026-07-01T00:00:00', to: '2026-07-08T23:59:59' },
     })
+    expect(result).toEqual(persistedShipmentList)
   })
 
   it('uses one operation id when create-page document generation mutates the shipment list', async () => {
