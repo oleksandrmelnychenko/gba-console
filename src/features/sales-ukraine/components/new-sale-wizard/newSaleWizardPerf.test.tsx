@@ -206,7 +206,7 @@ describe('new-sale wizard performance', () => {
     first.resolve([{ NameUA: 'Застарілий товар', NetUid: 'old-product', VendorCode: 'OLD' }])
     second.resolve([{ NameUA: 'Актуальний товар', NetUid: 'new-product', VendorCode: 'NEW' }])
 
-    expect(await screen.findByText('Актуальний товар')).toBeTruthy()
+    expect(await screen.findByText('Актуальний товар', { selector: '.new-sale-products-step__picker-rail *' })).toBeTruthy()
     expect(screen.queryByText('Застарілий товар')).toBeNull()
   })
 
@@ -222,7 +222,7 @@ describe('new-sale wizard performance', () => {
     expect(screen.queryByText('Товарів не знайдено')).toBeNull()
     fireEvent.click(screen.getByRole('button', { name: 'Повторити' }))
 
-    expect(await screen.findByText('Товар після повтору')).toBeTruthy()
+    expect(await screen.findByText('Товар після повтору', { selector: '.new-sale-products-step__picker-rail *' })).toBeTruthy()
     expect(apiMocks.searchSaleProductsWithAvailability).toHaveBeenCalledTimes(2)
   })
 
@@ -236,9 +236,9 @@ describe('new-sale wizard performance', () => {
     const input = screen.getByPlaceholderText(/пошук/i)
 
     fireEvent.change(input, { target: { value: 'first' } })
-    expect(await screen.findByText('Перший результат')).toBeTruthy()
+    expect(await screen.findByText('Перший результат', { selector: '.new-sale-products-step__picker-rail *' })).toBeTruthy()
 
-    fireEvent.click(screen.getByText('Перший результат'))
+    fireEvent.click(screen.getByText('Перший результат', { selector: '.new-sale-products-step__picker-rail *' }))
     await waitFor(() => expect(apiMocks.searchSaleProductsWithAvailability).toHaveBeenCalledTimes(2))
     const pageSignal = apiMocks.searchSaleProductsWithAvailability.mock.calls[1]?.[2]?.signal
 
@@ -249,7 +249,7 @@ describe('new-sale wizard performance', () => {
     fireEvent.change(input, { target: { value: 'second' } })
 
     await waitFor(() => expect(apiMocks.searchSaleProductsWithAvailability).toHaveBeenCalledTimes(3))
-    expect(await screen.findByText('Новий результат')).toBeTruthy()
+    expect(await screen.findByText('Новий результат', { selector: '.new-sale-products-step__picker-rail *' })).toBeTruthy()
     expect(pageSignal?.aborted).toBe(true)
 
     latePage.resolve([{ NameUA: 'Сторінка старого запиту', NetUid: 'stale-page', VendorCode: 'STALE' }])
@@ -267,7 +267,7 @@ describe('new-sale wizard performance', () => {
     renderProductsStep()
 
     fireEvent.change(screen.getByPlaceholderText(/пошук/i), { target: { value: 'detail' } })
-    fireEvent.click(await screen.findByText('Товар з деталями'))
+    fireEvent.click(await screen.findByText('Товар з деталями', { selector: '.new-sale-products-step__picker-rail *' }))
 
     await act(async () => {
       await new Promise((resolve) => setTimeout(resolve, 320))
