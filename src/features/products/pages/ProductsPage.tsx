@@ -1085,12 +1085,20 @@ function ProductAssortmentCarousel({
         {isSelectionMode && selectedProduct ? (
           <button
             type="button"
-            aria-label={`${t('Скопіювати код')}: ${getProductCode(selectedProduct)}`}
+            aria-label={selectedProduct.VendorCode?.trim()
+              ? `${t('Скопіювати код')}: ${getProductCode(selectedProduct)}`
+              : `${getProductCode(selectedProduct)}: ${getProductTitle(selectedProduct)}`}
             className={`product-assortment-selected ${getProductRowToneClass(selectedProduct)}`}
-            title={t('Скопіювати код')}
-            onClick={() => copyToClipboard(getProductCode(selectedProduct))}
+            disabled={!selectedProduct.VendorCode?.trim()}
+            title={selectedProduct.VendorCode?.trim() ? t('Скопіювати код') : undefined}
+            onClick={() => {
+              const vendorCode = selectedProduct.VendorCode?.trim()
+              if (vendorCode) copyToClipboard(vendorCode)
+            }}
           >
-            <span className="product-assortment-selected-code">{getProductCode(selectedProduct)}</span>
+            <span className="product-assortment-selected-code" data-code-missing={!selectedProduct.VendorCode?.trim() || undefined}>
+              {getProductCode(selectedProduct)}
+            </span>
             <span className="product-assortment-selected-name">{getProductTitle(selectedProduct)}</span>
           </button>
         ) : (
@@ -1143,7 +1151,9 @@ function ProductCarouselRow({
         <span className="product-carousel-row-dot" />
       </span>
       <span className="product-carousel-row-body">
-        <span className="product-carousel-row-code">{getProductCode(product)}</span>
+        <span className="product-carousel-row-code" data-code-missing={!product.VendorCode?.trim() || undefined}>
+          {getProductCode(product)}
+        </span>
         <span className="product-carousel-row-name">{getProductTitle(product)}</span>
       </span>
     </button>
@@ -1195,7 +1205,9 @@ function ProductInlineView({
       <Box className="product-inline-content">
       <Group align="flex-start" justify="space-between" gap="sm" wrap="nowrap" className="product-inline-title">
         <Box className="product-inline-title-text">
-          <Text component="span" fw={800} className="product-inline-code">{getProductCode(product)}</Text>
+          <Text component="span" fw={800} className="product-inline-code" data-code-missing={!product.VendorCode?.trim() || undefined}>
+            {getProductCode(product)}
+          </Text>
           <Tooltip label={getProductTitle(product)} multiline maw={420} withinPortal>
             <Text component="span" fw={650} truncate className="product-inline-name">{getProductTitle(product)}</Text>
           </Tooltip>
@@ -1917,7 +1929,7 @@ function ProductRelatedProductsTab({
       id: 'code',
       header: t('Код'),
       minWidth: 150,
-      accessor: (row) => row.product.VendorCode || row.product.NetUid,
+      accessor: (row) => getProductCode(row.product),
       cell: (row) => (
         <Group gap={6} wrap="nowrap" align="center">
           {type === 'components' ? (
@@ -1927,8 +1939,8 @@ function ProductRelatedProductsTab({
               <Settings size={15} />
             )
           ) : null}
-          <Text fw={650} size="sm" lineClamp={1} c={getRelatedProductRowColor(row.product)}>
-            {displayValue(row.product.VendorCode || row.product.NetUid)}
+          <Text fw={650} size="sm" lineClamp={1} c={row.product.VendorCode?.trim() ? getRelatedProductRowColor(row.product) : 'dimmed'}>
+            {getProductCode(row.product)}
           </Text>
         </Group>
       ),

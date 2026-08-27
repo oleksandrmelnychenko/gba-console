@@ -28,7 +28,7 @@ export function getProductTitle(product?: Product | null): string {
 }
 
 export function getProductCode(product?: Product | null): string {
-  return product?.VendorCode?.trim() || product?.NetUid?.trim() || translate('Без коду')
+  return product?.VendorCode?.trim() || translate('Код відсутній')
 }
 
 export function getProductMainOriginalNumber(product?: Product | null): string {
