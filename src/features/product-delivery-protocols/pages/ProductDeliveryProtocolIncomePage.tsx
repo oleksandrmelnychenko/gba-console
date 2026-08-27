@@ -636,8 +636,16 @@ function useProtocolIncomeModel(source: ProductIncomeSource, sourceId?: string) 
     () => storages.find((storage) => storage.NetUid === selectedStorageId) || null,
     [selectedStorageId, storages],
   )
+  const selectedSourceInvoice = useMemo(
+    () => protocol?.SupplyInvoices.find((sourceInvoice) => sourceInvoice.NetUid === selectedInvoiceId) || null,
+    [protocol, selectedInvoiceId],
+  )
+  // The invoice-items DTO intentionally omits DeliveryProductProtocol. Keep an
+  // explicit navigation authoritative, otherwise use the same selected invoice
+  // from the order-details contract that supplies HasArrivedDeliveryProtocol.
+  const eligibilityInvoice = invoice?.DeliveryProductProtocol ? invoice : selectedSourceInvoice
   const canUseIncome = source === 'direct-supply-order'
-    ? protocol?.HasArrivedDeliveryProtocol === true && hasArrivedDeliveryProtocolForInvoice(invoice)
+    ? protocol?.HasArrivedDeliveryProtocol === true && hasArrivedDeliveryProtocolForInvoice(eligibilityInvoice)
     : Boolean(protocol?.IsCompleted)
 
   const handleOpenPlacements = useCallback(
