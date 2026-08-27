@@ -146,6 +146,7 @@ export function HeadDashboardChartsPanel({
           <Stack gap="xs">
             <Text className="cockpit-subtitle">{t('Сума під ризиком за менеджером')}</Text>
             <AgingBars
+              money
               bucketKey="manager"
               data={valueData}
               emptyLabel={t('Дані відсутні')}

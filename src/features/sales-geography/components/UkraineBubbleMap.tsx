@@ -140,7 +140,7 @@ export function UkraineBubbleMap({ regions, metric, formatMoney, formatCount }: 
           }}
         >
           <div style={{ fontWeight: 700 }}>{hover.region.name}</div>
-          <div>{formatMoney(hover.region.valueEur)}</div>
+          <div className="app-money">{formatMoney(hover.region.valueEur)}</div>
           <div style={{ opacity: 0.8 }}>{formatCount(hover.region.clientCount)}</div>
         </Box>
       )}

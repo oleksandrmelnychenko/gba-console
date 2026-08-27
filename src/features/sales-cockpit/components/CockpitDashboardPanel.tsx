@@ -204,6 +204,7 @@ export function CockpitDashboardPanel({ reloadKey }: { reloadKey: number }) {
                   </Text>
                 </Group>
                 <AgingBars
+                  money
                   bucketKey="bucket"
                   data={agingData}
                   emptyLabel={t('Заборгованості немає')}

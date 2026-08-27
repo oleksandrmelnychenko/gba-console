@@ -52,7 +52,7 @@ export function BubbleLegend({ maxValue, metric, formatMoney, scaleLabel }: Bubb
           {LEGEND_RADII.map((radius) => {
             const value = maxValue > 0 ? Math.round((radius / MAX_RADIUS) ** 2 * maxValue) : 0
             return (
-              <Text key={radius} c="dimmed" size="xs">
+              <Text key={radius} className="app-money app-money-meta" c="dimmed" size="xs">
                 {formatMoney(value)}
               </Text>
             )

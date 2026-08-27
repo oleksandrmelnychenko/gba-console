@@ -1,4 +1,5 @@
 import { BarChart, DonutChart, LineChart } from '@mantine/charts'
+import { MONEY_AXIS_TICK } from '../../../shared/ui/charts/chartTheme'
 import {
   ActionIcon,
   Alert,
@@ -1652,6 +1653,7 @@ function OverviewCharts({ overview, t }: { overview: Overview; t: (key: string) 
           {t('Потреба €, топ виробників')}
         </Text>
         <BarChart
+          classNames={{ tooltipItemData: 'app-money' }}
           data={overview.producerValue}
           dataKey="producer"
           h={150}
@@ -1659,6 +1661,7 @@ function OverviewCharts({ overview, t }: { overview: Overview; t: (key: string) 
           tickLine="none"
           valueFormatter={(value) => amount.format(value)}
           withXAxis={false}
+          yAxisProps={{ tick: MONEY_AXIS_TICK }}
         />
       </Card>
 

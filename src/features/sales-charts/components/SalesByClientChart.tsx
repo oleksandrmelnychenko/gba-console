@@ -1,4 +1,5 @@
 import { LineChart } from '@mantine/charts'
+import { MONEY_AXIS_TICK } from '../../../shared/ui/charts/chartTheme'
 import { ActionIcon, Alert, Select, Stack, Text, TextInput, Tooltip } from '@mantine/core'
 import { CircleAlert, RotateCcw } from 'lucide-react'
 import { useEffect, useMemo } from 'react'
@@ -199,12 +200,14 @@ export function SalesByClientChart() {
               {t('Динаміка продажів клієнта')}
             </Text>
           <LineChart
+            classNames={{ tooltipItemData: 'app-money' }}
             curveType="linear"
             data={points}
             dataKey="name"
             h={300}
             series={[{ color: 'orange.6', label: t('Сума продажу в євро'), name: 'amount' }]}
             xAxisProps={{ tickFormatter: periodFormatter }}
+            yAxisProps={{ tick: MONEY_AXIS_TICK }}
           />
           </div>
         )}

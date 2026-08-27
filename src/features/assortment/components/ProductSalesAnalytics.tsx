@@ -1,4 +1,5 @@
 import { AreaChart, BarChart } from '@mantine/charts'
+import { MONEY_AXIS_TICK } from '../../../shared/ui/charts/chartTheme'
 import { Alert, Badge, Card, Group, SimpleGrid, Stack, Text } from '@mantine/core'
 import { AlertTriangle, ArrowDownRight, ArrowUpRight, Minus } from 'lucide-react'
 import { useMemo } from 'react'
@@ -152,6 +153,7 @@ export function ProductSalesAnalytics({ analytics, error }: ProductSalesAnalytic
               >
                 <AreaChart
                   areaProps={{ isAnimationActive: false }}
+                  classNames={{ tooltipItemData: 'app-money' }}
                   connectNulls={false}
                   curveType="linear"
                   data={points}
@@ -166,7 +168,7 @@ export function ProductSalesAnalytics({ analytics, error }: ProductSalesAnalytic
                   withDots={false}
                   withGradient={false}
                   xAxisProps={{ minTickGap: 18 }}
-                  yAxisProps={{ tickFormatter: (value: number) => compactEuroFormatter.format(value), width: 54 }}
+                  yAxisProps={{ tick: MONEY_AXIS_TICK, tickFormatter: (value: number) => compactEuroFormatter.format(value), width: 54 }}
                 />
               </div>
             </figure>

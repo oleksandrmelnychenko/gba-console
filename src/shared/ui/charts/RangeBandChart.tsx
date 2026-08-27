@@ -1,4 +1,4 @@
-import { ComposedChart, ReferenceArea, ReferenceLine, ResponsiveContainer, XAxis, YAxis } from 'recharts'
+import { ComposedChart, ReferenceArea, ReferenceLine, ResponsiveContainer, XAxis, YAxis, type LabelProps } from 'recharts'
 import { CHART_AXIS_COLOR, CHART_LABEL_COLOR } from './chartTheme'
 import { ChartEmpty, ChartFrame, ChartLoading } from './ChartState'
 import { computeRangeBand, type RangeBandMarker } from './rangeBandData'
@@ -62,7 +62,7 @@ export function RangeBandChart({
         <ComposedChart data={SINGLE_ROW} layout="vertical" margin={{ top: 28, right: 16, bottom: 8, left: 16 }}>
           <XAxis
             domain={computed.domain}
-            tick={{ fill: CHART_LABEL_COLOR, fontSize: 11 }}
+            tick={{ className: 'app-money', fill: CHART_LABEL_COLOR, fontSize: 11 }}
             tickCount={ticks}
             tickFormatter={(value: number) => format(value)}
             type="number"
@@ -88,17 +88,17 @@ export function RangeBandChart({
           {computed.median !== null && (
             <ReferenceLine
               ifOverflow="extendDomain"
-              label={
-                medianLabel
-                  ? {
-                      position: 'top',
-                      value: `${medianLabel} ${format(computed.median)}`,
-                      fill: resolvedMedian,
-                      fontSize: 11,
-                      fontWeight: 600,
-                    }
-                  : { position: 'top', value: format(computed.median), fill: resolvedMedian, fontSize: 11 }
-              }
+              label={{
+                content: ({ viewBox }) => (
+                  <PriceReferenceLabel
+                    color={resolvedMedian}
+                    label={medianLabel}
+                    position="top"
+                    value={format(computed.median!)}
+                    viewBox={viewBox}
+                  />
+                ),
+              }}
               stroke={resolvedMedian}
               strokeWidth={2}
               x={computed.median}
@@ -113,10 +113,15 @@ export function RangeBandChart({
                 ifOverflow="extendDomain"
                 key={`${marker.label}-${marker.value}`}
                 label={{
-                  position: 'bottom',
-                  value: `${marker.label} ${format(marker.value)}`,
-                  fill: color,
-                  fontSize: 11,
+                  content: ({ viewBox }) => (
+                    <PriceReferenceLabel
+                      color={color}
+                      label={marker.label}
+                      position="bottom"
+                      value={format(marker.value)}
+                      viewBox={viewBox}
+                    />
+                  ),
                 }}
                 stroke={color}
                 strokeDasharray={marker.dashed === false ? undefined : '4 3'}
@@ -128,6 +133,34 @@ export function RangeBandChart({
         </ComposedChart>
       </ResponsiveContainer>
     </ChartFrame>
+  )
+}
+
+function PriceReferenceLabel({ color, label, position, value, viewBox }: {
+  color: string
+  label?: string
+  position: 'top' | 'bottom'
+  value: string
+  viewBox: LabelProps['viewBox']
+}) {
+  if (!viewBox || !('x' in viewBox) || typeof viewBox.x !== 'number' || typeof viewBox.y !== 'number') {
+    return null
+  }
+
+  return (
+    <text
+      className="recharts-label"
+      dominantBaseline={position === 'bottom' ? 'hanging' : 'auto'}
+      fill={color}
+      fontSize={11}
+      fontWeight={position === 'top' && label ? 600 : undefined}
+      textAnchor="middle"
+      x={viewBox.x + (viewBox.width ?? 0) / 2}
+      y={position === 'bottom' ? viewBox.y + (viewBox.height ?? 0) + 22 : viewBox.y - 5}
+    >
+      {label && <tspan>{label} </tspan>}
+      <tspan className="app-money">{value}</tspan>
+    </text>
   )
 }
 

@@ -23,9 +23,13 @@ describe('chart-kit render', () => {
         low={10}
         markers={[{ value: 8, label: 'мін.' }]}
         median={15}
+        medianLabel="медіана"
       />,
     )
     expect(container.querySelector('svg')).toBeTruthy()
+    expect(container.querySelectorAll('text.app-money').length).toBeGreaterThan(0)
+    expect(Array.from(container.querySelectorAll('tspan.app-money')).map((node) => node.textContent)).toEqual(['15.00', '8.00'])
+    expect(container.querySelector('tspan.app-money')?.previousElementSibling?.classList.contains('app-money')).toBe(false)
   })
 
   it('RangeBandChart shows the loading label', () => {
@@ -49,6 +53,8 @@ describe('chart-kit render', () => {
       />,
     )
     expect(filled.container.querySelector('svg')).toBeTruthy()
+    expect(filled.container.querySelectorAll('text.app-money').length).toBe(2)
+    expect(filled.container.querySelector('.recharts-xAxis-tick-labels text')?.classList.contains('app-money')).toBe(false)
   })
 
   it('UrgencyDonut renders empty state and a populated donut', () => {
@@ -95,6 +101,27 @@ describe('chart-kit render', () => {
       />,
     )
     expect(filled.container.querySelector('svg')).toBeTruthy()
+  })
+
+  it('AgingBars marks only monetary ticks, leaving categories and count charts unchanged', () => {
+    const props = {
+      bucketKey: 'bucket',
+      data: [{ bucket: '0-30 днів', amount: 1500 }],
+      emptyLabel: 'порожньо',
+      series: [{ name: 'amount', label: 'Борг' }],
+    }
+    const view = renderWithMantine(<AgingBars {...props} money />)
+    const ticks = view.container.querySelectorAll('.recharts-yAxis-tick-labels text')
+    expect(ticks.length).toBeGreaterThan(0)
+    for (const tick of ticks) {
+      expect(tick.classList.contains('app-money')).toBe(true)
+      expect(tick.getAttribute('font-size')).toBe('12')
+      expect(tick.getAttribute('transform')).toBe('translate(-10, 0)')
+    }
+    expect(view.container.querySelector('.recharts-xAxis-tick-labels text')?.classList.contains('app-money')).toBe(false)
+
+    view.rerender(<AgingBars {...props} />)
+    expect(view.container.querySelector('text.app-money')).toBeNull()
   })
 
   it('ForecastLine renders empty state and a populated chart', () => {

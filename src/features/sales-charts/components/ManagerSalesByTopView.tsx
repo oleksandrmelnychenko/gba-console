@@ -1,4 +1,5 @@
 import { BarChart } from '@mantine/charts'
+import { MONEY_AXIS_TICK } from '../../../shared/ui/charts/chartTheme'
 import { ActionIcon, Alert, Select, Stack, Text, TextInput, Tooltip } from '@mantine/core'
 import { CircleAlert, RotateCcw } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
@@ -235,6 +236,7 @@ export function ManagerSalesByTopView() {
               {t('Продано по менеджерах')}
             </Text>
           <BarChart
+            classNames={{ tooltipItemData: 'app-money' }}
             data={chartData}
             dataKey="manager"
             h={260}
@@ -242,6 +244,7 @@ export function ManagerSalesByTopView() {
             tickLine="y"
             valueFormatter={(value) => formatMoney(value)}
             withLegend={false}
+            yAxisProps={{ tick: MONEY_AXIS_TICK }}
           />
           </div>
         )}

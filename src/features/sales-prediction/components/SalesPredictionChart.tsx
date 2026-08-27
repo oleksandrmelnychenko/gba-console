@@ -1,4 +1,5 @@
 import { LineChart } from '@mantine/charts'
+import { MONEY_AXIS_TICK } from '../../../shared/ui/charts/chartTheme'
 import { Card, Group, Loader, SimpleGrid, Stack, Text } from '@mantine/core'
 import { AiFeatureBadge } from '../../../shared/ai/AiFeatureBadge'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -53,6 +54,7 @@ export function SalesPredictionChart({
         ) : (
           <>
             <LineChart
+              classNames={{ tooltipItemData: 'app-money' }}
               curveType="monotone"
               data={data}
               dataKey="month"
@@ -61,6 +63,7 @@ export function SalesPredictionChart({
               valueFormatter={formatMoney}
               withDots
               withLegend={false}
+              yAxisProps={{ tick: MONEY_AXIS_TICK }}
             />
             <PredictionSummary
               average={summary.average}
@@ -106,6 +109,7 @@ export function SalesPredictionComparisonChart({
           <ChartState label={t('Дані відсутні')} />
         ) : (
           <LineChart
+            classNames={{ tooltipItemData: 'app-money' }}
             connectNulls={false}
             curveType="monotone"
             data={rows}
@@ -119,6 +123,7 @@ export function SalesPredictionComparisonChart({
             valueFormatter={formatMoney}
             withDots
             withLegend
+            yAxisProps={{ tick: MONEY_AXIS_TICK }}
           />
         )}
       </Stack>

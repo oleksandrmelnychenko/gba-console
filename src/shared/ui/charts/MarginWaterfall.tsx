@@ -55,6 +55,7 @@ export function MarginWaterfall({
           <Bar dataKey="base" fill="transparent" isAnimationActive={false} stackId="waterfall" />
           <Bar dataKey="delta" isAnimationActive={false} radius={[3, 3, 0, 0]} stackId="waterfall">
             <LabelList
+              className="app-money"
               dataKey="value"
               fill={CHART_LABEL_COLOR}
               fontSize={11}
