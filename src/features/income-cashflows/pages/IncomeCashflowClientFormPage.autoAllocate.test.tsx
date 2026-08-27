@@ -214,6 +214,43 @@ describe('IncomeCashflowClientFormPage automatic debt allocation', () => {
     expect((autoAllocate as HTMLInputElement).checked).toBe(false)
   })
 
+  it('keeps automatic debt allocation visible when the selected agreement has no current debts', async () => {
+    vi.mocked(getIncomeCashflowClientAgreements).mockResolvedValue([{
+      ...agreement,
+      Agreement: {
+        ...agreement.Agreement,
+        ClientInDebts: [],
+      },
+    }])
+    vi.mocked(getIncomeCashflowClientDebtTotal).mockResolvedValue({
+      TotalLocal: 0,
+    })
+
+    renderPage()
+
+    const counterpartyInput = await screen.findByRole('combobox', {
+      name: 'Контрагент',
+    })
+    await waitFor(() =>
+      expect((counterpartyInput as HTMLInputElement).disabled).toBe(false),
+    )
+
+    fireEvent.change(counterpartyInput, {
+      target: { value: client.FullName },
+    })
+    fireEvent.click(
+      await screen.findByRole('option', { name: client.FullName }),
+    )
+
+    const autoAllocate = await screen.findByRole('checkbox', {
+      name: 'Автоматично рознести оплату по боргах',
+    })
+    expect((autoAllocate as HTMLInputElement).checked).toBe(true)
+    expect(
+      screen.getByText('По вибраному договору боргів немає'),
+    ).toBeTruthy()
+  })
+
   it('requires an explicit confirmation before creating the payment', async () => {
     renderPage()
 

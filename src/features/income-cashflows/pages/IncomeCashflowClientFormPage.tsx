@@ -1340,15 +1340,17 @@ export function IncomeCashflowClientFormPage() {
                 </div>
               </Group>
 
+              {operationType === IncomePaymentOperationType.ClientPayment ? (
+                <Checkbox
+                  className="income-cashflow-client-form__auto-allocate"
+                  checked={form.autoAllocate}
+                  disabled={isSaving}
+                  label={t('Автоматично рознести оплату по боргах')}
+                  onChange={(event) => updateForm({ autoAllocate: event.currentTarget.checked })}
+                />
+              ) : null}
+
               {visibleDebts.length > 0 ? (
-                <>
-                  <Checkbox
-                    className="income-cashflow-client-form__auto-allocate"
-                    checked={form.autoAllocate}
-                    disabled={isSaving}
-                    label={t('Автоматично рознести оплату по боргах')}
-                    onChange={(event) => updateForm({ autoAllocate: event.currentTarget.checked })}
-                  />
                   <div className="income-cashflow-client-form__debts-table-shell">
                     <IncomeCashflowDebtTable
                       currencyCode={agreementCurrency?.Code || ''}
@@ -1358,7 +1360,6 @@ export function IncomeCashflowClientFormPage() {
                       onChecked={handleDebtChecked}
                     />
                   </div>
-                </>
               ) : (
                 <Text className="income-cashflow-client-form__debts-empty" size="sm">
                   {t('По вибраному договору боргів немає')}
