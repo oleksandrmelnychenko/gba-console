@@ -19,7 +19,7 @@ import { AiFeatureBadge } from '../../../shared/ai/AiFeatureBadge'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { AppModal } from "../../../shared/ui/AppModal"
 import { notifications } from '@mantine/notifications'
-import { CircleAlert, Clock, ExternalLink, GitBranch, Network, Plus, RotateCcw, Search, ToggleLeft, ToggleRight, Wallet } from 'lucide-react'
+import { CircleAlert, Clock, ExternalLink, Network, Plus, RotateCcw, Search, ToggleLeft, ToggleRight, Wallet } from 'lucide-react'
 import { useDebouncedValue } from '@mantine/hooks'
 import { type FormEvent, type RefObject, useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { ClientTypeRoleFilter } from '../components/ClientTypeRoleFilter'
@@ -246,9 +246,6 @@ function useClientsPageModel() {
     setStructureClient(client)
     setSelectedClient(null)
   }, [setSelectedClient, setStructureClient])
-  const openClientsStructureTree = useCallback(() => {
-    navigate('/clients/structure')
-  }, [navigate])
   const clientColumns = useClientColumns(
     openClientActions,
     solvencyScores,
@@ -704,7 +701,6 @@ function useClientsPageModel() {
     openCashFlow,
     openClient,
     openClientStructure,
-    openClientsStructureTree,
     openCreateClient,
     openReserveDays,
     resetSearch,
@@ -771,7 +767,6 @@ function ClientsPageView({ model }: { model: ReturnType<typeof useClientsPageMod
     openCashFlow,
     openClient,
     openClientStructure,
-    openClientsStructureTree,
     openCreateClient,
     openReserveDays,
     resetSearch,
@@ -824,17 +819,6 @@ function ClientsPageView({ model }: { model: ReturnType<typeof useClientsPageMod
             onSetSearchValue={setSearchValue}
           />
           <div ref={setTableToolbarSlot} className="app-filter-table-toolbar-slot clients-table-toolbar-slot" />
-          <Button
-            className="clients-structure-button"
-            color="indigo"
-            leftSection={<GitBranch size={16} />}
-            size="sm"
-            type="button"
-            variant="light"
-            onClick={openClientsStructureTree}
-          >
-            {t('Дерево клієнтів')}
-          </Button>
           {canCreateClient && (
             <Button
               className="clients-create-button"

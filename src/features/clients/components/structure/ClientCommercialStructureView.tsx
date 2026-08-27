@@ -14,7 +14,7 @@ import type {
   ClientSourceCardSnapshot,
   ClientSourceContactSnapshot,
 } from '../../types'
-import '../../pages/clients-structure-tree-page.css'
+import './client-commercial-structure-view.css'
 
 type ClientCommercialStructureViewProps = {
   structure: ClientCommercialStructure

@@ -43,8 +43,7 @@
   min-height: 36px;
 }
 
-.clients-create-button,
-.clients-structure-button {
+.clients-create-button {
   align-self: end;
   flex: 0 0 auto;
   font-family: var(--font-mono);

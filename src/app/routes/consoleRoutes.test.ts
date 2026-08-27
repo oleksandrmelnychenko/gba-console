@@ -76,3 +76,16 @@ describe('retired VAT register', () => {
     expect(paths.has('/accounting/vat-reports')).toBe(false)
   })
 })
+
+describe('retired clients tree', () => {
+  it('redirects old tree links to the client registry', () => {
+    const route = consoleRoutes.find((candidate) => candidate.path === '/clients/structure')
+
+    if (!isValidElement(route?.element)) {
+      throw new Error('Expected the retired client tree route to render a redirect')
+    }
+
+    expect(route.element.type).toBe(Navigate)
+    expect(route.element.props).toMatchObject({ replace: true, to: '/clients' })
+  })
+})
