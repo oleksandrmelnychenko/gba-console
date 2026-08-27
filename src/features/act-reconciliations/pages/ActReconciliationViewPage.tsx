@@ -21,7 +21,6 @@ import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { translate } from '../../../shared/i18n/translate'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
-import { DataTableDensityToggle } from '../../../shared/ui/data-table/DataTableDensityToggle'
 import { useDataTableDensity } from '../../../shared/ui/data-table/useDataTableDensity'
 import type { DataTableColumn } from '../../../shared/ui/data-table/types'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
@@ -349,7 +348,7 @@ function ActReconciliationPermissionDenied() {
 function ActReconciliationViewPageView({ model }: { model: ReturnType<typeof useActReconciliationViewModel> }) {
   const { t } = useI18n()
   const navigate = useNavigate()
-  const { density, toggleDensity } = useDataTableDensity('act-reconciliation-items', 'normal')
+  const { density } = useDataTableDensity('act-reconciliation-items', 'normal')
   const columns = useItemColumns({
     canChangeDisposition: model.canChangeDisposition,
     canCreateAction: model.canCreateAction,
@@ -441,7 +440,6 @@ function ActReconciliationViewPageView({ model }: { model: ReturnType<typeof use
               {t('Повернути всі закриті')} ({model.dismissedItems.length})
             </Button>
           )}
-          <DataTableDensityToggle density={density} onToggle={toggleDensity} size={38} />
         </Group>
       </Group>
 
@@ -472,6 +470,7 @@ function ActReconciliationViewPageView({ model }: { model: ReturnType<typeof use
           loadingText={t('Завантаження позицій')}
           maxHeight="calc(100vh - 360px)"
           minWidth={1120}
+          showToolbar={false}
           tableId="act-reconciliation-items"
           onRowClick={model.canSelectItems ? model.toggleItem : undefined}
         />

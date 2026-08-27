@@ -641,6 +641,7 @@ export function ProductCapitalizationDetailDrawer({
               loadingText={t('Завантаження позицій оприбуткування')}
               maxHeight="calc(100vh - 420px)"
               minWidth={920}
+              showToolbar={false}
               tableId="product-capitalization-items"
             />
           </DocumentDetailSection>

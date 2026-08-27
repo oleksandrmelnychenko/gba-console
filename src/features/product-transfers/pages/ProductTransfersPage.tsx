@@ -1237,6 +1237,7 @@ export function TransferDetail({
           loadingText={t('Завантаження деталей')}
           maxHeight="48vh"
           minWidth={900}
+          showToolbar={false}
           tableId="product-transfer-items"
         />
       </DocumentDetailSection>

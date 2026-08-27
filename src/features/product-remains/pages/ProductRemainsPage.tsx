@@ -1425,6 +1425,7 @@ export function BatchDetails({
             maxHeight="calc(100vh - 390px)"
             minWidth={1080}
             showLayoutControls
+            showToolbar={false}
             tableId="product-remains-batch-details"
           />
         ) : (

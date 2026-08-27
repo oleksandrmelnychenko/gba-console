@@ -563,6 +563,7 @@ function SaleEditorContent({ initialSale, loadSale }: { initialSale: SalesUkrain
             loadingText={t('Завантаження товарів')}
             maxHeight="calc(100vh - 320px)"
             minWidth={820}
+            showToolbar={false}
             tableId="sales-ukraine-editor-items"
           />
         </div>

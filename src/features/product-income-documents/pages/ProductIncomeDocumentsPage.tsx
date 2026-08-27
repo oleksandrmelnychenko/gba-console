@@ -1097,6 +1097,7 @@ export function ProductIncomeDocumentDrawer({
                 loadingText={t('Завантаження позицій документа')}
                 maxHeight={320}
                 minWidth={720}
+                showToolbar={false}
                 tableId="product-income-document-items"
               />
             </DocumentDetailSection>
@@ -1127,6 +1128,7 @@ export function ProductIncomeDocumentDrawer({
                 loadingText={t('Завантаження залишків')}
                 maxHeight={360}
                 minWidth={1180}
+                showToolbar={false}
                 tableId="product-income-document-remainings"
               />
             </DocumentDetailSection>
@@ -1174,6 +1176,7 @@ function CapitalizationOverview({
         loadingText={t('Завантаження позицій оприбуткування')}
         maxHeight={320}
         minWidth={760}
+        showToolbar={false}
         tableId="product-income-capitalization-overview"
       />
 

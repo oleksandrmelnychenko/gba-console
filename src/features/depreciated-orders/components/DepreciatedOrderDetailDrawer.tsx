@@ -149,6 +149,7 @@ export function DepreciatedOrderDetailDrawer({
               loadingText={t('Завантаження позицій')}
               maxHeight="calc(100vh - 420px)"
               minWidth={920}
+              showToolbar={false}
               tableId="depreciated-order-items"
             />
           </DocumentDetailSection>

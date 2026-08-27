@@ -65,6 +65,7 @@ export function AppliedActionsHistoryDrawer({
           loadingText={t('Завантаження історії')}
           maxHeight="40vh"
           minWidth={760}
+          showToolbar={false}
           tableId="act-reconciliation-history"
           onRowClick={onSelectAction}
         />
@@ -83,6 +84,7 @@ export function AppliedActionsHistoryDrawer({
           loadingText={t('Завантаження історії')}
           maxHeight="40vh"
           minWidth={980}
+          showToolbar={false}
           tableId="act-reconciliation-disposition-history"
         />
       </Stack>

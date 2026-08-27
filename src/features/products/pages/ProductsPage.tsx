@@ -1890,6 +1890,7 @@ function ProductOriginalNumbersTab({
         }
         showDensityToggle={false}
         showLayoutControls
+        showToolbar={false}
         tableId="product-original-numbers"
         onRowClick={selectOriginalNumber}
       />
@@ -2105,6 +2106,7 @@ function ProductRelatedProductsTab({
         minWidth={type === 'components' ? 880 : 720}
         showDensityToggle={false}
         showLayoutControls
+        showToolbar={false}
         tableId={`product-related-${type}`}
         onRowClick={(row) => {
           if (row.product.NetUid) {

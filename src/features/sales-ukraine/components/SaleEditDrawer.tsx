@@ -505,6 +505,7 @@ function SaleEditContent({
           layoutVersion={isNew ? 'sale-edit-new-1' : 'sale-edit-invoice-1'}
           minWidth={SALE_EDIT_TABLE_MIN_WIDTH}
           showDensityToggle={false}
+          showToolbar={false}
           tableId={isNew ? 'sale-edit-new' : 'sale-edit-invoice'}
         />
       </Box>

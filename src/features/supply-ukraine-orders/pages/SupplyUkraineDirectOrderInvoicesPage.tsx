@@ -1236,6 +1236,7 @@ function ProductsPanel({ model }: { model: DirectOrderInvoicesPageModel }) {
               loadingText={t('Завантаження товарів')}
               minWidth={980}
               rowClassName={(item) => item.IsError ? 'data-table-row-warning' : undefined}
+              showToolbar={false}
               tableId="supply-direct-order-items"
             />
           </Box>
@@ -1283,6 +1284,7 @@ function InvoicesPanel({ model }: { model: DirectOrderInvoicesPageModel }) {
                   model.invoiceBalanceByOrderItemKey.get(getInvoiceOrderItemOrderKey(item))?.isError
                     ? 'data-table-row-warning'
                     : undefined}
+                showToolbar={false}
                 tableId="supply-direct-invoice-items"
               />
             </Box>
@@ -1389,6 +1391,7 @@ function PackListsPanel({ model }: { model: DirectOrderInvoicesPageModel }) {
                   model.packListBalanceByInvoiceItemKey.get(getPackingListInvoiceItemKey(item))?.isError
                     ? 'data-table-row-warning'
                     : undefined}
+                showToolbar={false}
                 tableId="supply-direct-pack-list-items"
               />
             </Box>

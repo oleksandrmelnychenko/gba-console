@@ -2076,6 +2076,7 @@ function AllShipmentsPanel({ onCreate, permissions }: AllShipmentsPanelProps) {
               height="100%"
               layoutVersion="warehouse-ukraine-edit-shipment-2"
               minWidth={1650}
+              showToolbar={false}
               tableId="warehouse-ukraine-edit-shipment"
             />
           </div>

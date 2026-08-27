@@ -694,6 +694,7 @@ function MovementInfoItemsTable({ document }: { document: ClientProductMovementD
         layoutVersion="client-product-movement-items-table-1"
         maxHeight="40vh"
         minWidth={960}
+        showToolbar={false}
         tableId={`client-product-movement-items-${document.DocumentId ?? document.DocumentNumber ?? 'doc'}`}
       />
       <ProductCardModal productNetId={productCardNetId} onClose={() => setProductCardNetId(null)} />
