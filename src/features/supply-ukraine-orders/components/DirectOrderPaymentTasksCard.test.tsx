@@ -47,9 +47,20 @@ vi.mock('../../supply-ukraine-payment-protocols/components/PaymentDeliveryProtoc
         Створити платіжну задачу
       </button>
       {protocols[0] && (
-        <button type="button" onClick={() => void onRemoveProtocol(protocols[0])}>
-          Видалити платіжну задачу
-        </button>
+        <>
+          <output aria-label="Видима платіжна задача">
+            {[
+              protocols[0].SupplyOrderUkrainePaymentDeliveryProtocolKey?.Key,
+              protocols[0].Value,
+              protocols[0].Discount,
+              protocols[0].SupplyPaymentTask?.User?.LastName,
+              protocols[0].SupplyPaymentTask?.PayToDate,
+            ].join('|')}
+          </output>
+          <button type="button" onClick={() => void onRemoveProtocol(protocols[0])}>
+            Видалити платіжну задачу
+          </button>
+        </>
       )}
     </div>
   ),
@@ -162,7 +173,53 @@ describe('DirectOrderPaymentTasksCard', () => {
     )
   })
 
-  it('keeps the existing invoice as the default when both invoice and proforma are available', async () => {
+  it('keeps a saved proforma payment task visible after an invoice and pack list are created', async () => {
+    const invoice: SupplyInvoice = {
+      Id: 27,
+      NetUid: invoiceNetUid,
+      Number: 'INV-27',
+      PackingLists: [{ Id: 37, InvNo: 'INV-27', No: 'PL-27' }],
+      PaymentDeliveryProtocols: [],
+    }
+    const proForm: SupplyProForm = {
+      Id: 17,
+      NetPrice: 29_254.43,
+      NetUid: proFormNetUid,
+      Number: '2',
+      PaymentDeliveryProtocols: [
+        {
+          Discount: 100,
+          Id: 41,
+          NetUid: '7e8dd988-e7b4-440d-b381-a079e94146cc',
+          SupplyOrderPaymentDeliveryProtocolKey: { Id: 4, Key: 'Передоплата' },
+          SupplyPaymentTask: {
+            Id: 51,
+            PayToDate: '2026-08-28T00:00:00',
+            User: { FirstName: 'Алла', LastName: 'Самолюк' },
+          },
+          SupplyPaymentTaskId: 51,
+          SupplyProFormId: 17,
+          Value: 29_254.43,
+        },
+      ],
+    }
+
+    renderCard({
+      NetUid: orderNetUid,
+      SupplyInvoices: [invoice],
+      SupplyProForm: proForm,
+      SupplyProFormId: proForm.Id,
+      TotalNetPrice: proForm.NetPrice,
+    })
+
+    expect((await screen.findByRole('status', { name: 'Видима платіжна задача' })).textContent).toBe(
+      'Передоплата|29254.43|100|Самолюк|2026-08-28T00:00:00',
+    )
+    expect(screen.getByRole('status', { name: 'Сума платіжної задачі' }).textContent).toBe('29254.43')
+    expect(mocks.getSupplyInvoiceItems).not.toHaveBeenCalled()
+  })
+
+  it('keeps the existing invoice as the default when the proforma has no payment task', async () => {
     const invoice: SupplyInvoice = {
       Id: 27,
       NetUid: invoiceNetUid,

@@ -555,6 +555,20 @@ function createPaymentSourceOptions(
   t: (value: string) => string,
 ): PaymentSourceOption[] {
   const options: PaymentSourceOption[] = []
+  const proFormOption = proForm
+    ? {
+        label: formatPaymentSourceLabel(t('Проформа'), proForm.Number, proForm.NetUid),
+        value: PRO_FORM_PAYMENT_SOURCE,
+      }
+    : null
+  const proFormHasVisibleTask = Boolean(
+    proForm?.PaymentDeliveryProtocols?.some((protocol) => !protocol.Deleted),
+  )
+
+  // A newly created invoice must not hide a task that still belongs to the proforma.
+  if (proFormOption && proFormHasVisibleTask) {
+    options.push(proFormOption)
+  }
 
   for (const entry of invoices) {
     if (!entry.NetUid) {
@@ -567,12 +581,9 @@ function createPaymentSourceOptions(
     })
   }
 
-  // Preserve the existing invoice default when both document types exist.
-  if (proForm) {
-    options.push({
-      label: formatPaymentSourceLabel(t('Проформа'), proForm.Number, proForm.NetUid),
-      value: PRO_FORM_PAYMENT_SOURCE,
-    })
+  // Preserve the existing invoice default when the proforma has no active tasks.
+  if (proFormOption && !proFormHasVisibleTask) {
+    options.push(proFormOption)
   }
 
   return options
