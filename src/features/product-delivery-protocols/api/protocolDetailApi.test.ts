@@ -1,6 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { apiRequest } from '../../../shared/api/apiClient'
-import { removeMergedService, searchSupplyOrganizations, updateProtocolStatus } from './protocolDetailApi'
+import type { SupplyInvoiceMergedService } from '../detailTypes'
+import {
+  calculateMergedServiceExtraCharge,
+  removeMergedService,
+  searchSupplyOrganizations,
+  updateProtocolStatus,
+} from './protocolDetailApi'
 
 vi.mock('../../../shared/api/apiClient', () => ({
   apiRequest: vi.fn(),
@@ -35,6 +41,38 @@ describe('product delivery protocol detail API contracts', () => {
       method: 'POST',
       query: {
         netId: 'service-net-id',
+      },
+    })
+  })
+
+  it('returns the server-calculated merged-service invoice values', async () => {
+    const invoices: SupplyInvoiceMergedService[] = []
+    const protocol = {
+      NetUid: 'protocol-net-id',
+      MergedServices: [{
+        NetUid: 'service-net-id',
+        SupplyInvoiceMergedServices: [{
+          NetUid: 'invoice-service-1',
+          Value: 125.5,
+          AccountingValue: 120.25,
+        }],
+      }],
+    }
+    apiRequestMock.mockResolvedValueOnce(protocol)
+
+    await expect(calculateMergedServiceExtraCharge({
+      extraChargeType: 0,
+      isAuto: true,
+      serviceNetId: 'service-net-id',
+    }, invoices)).resolves.toEqual(protocol)
+
+    expect(apiRequestMock).toHaveBeenCalledWith('/supplies/services/merged/update/extra/charge', {
+      method: 'POST',
+      body: invoices,
+      query: {
+        extraChargeType: 0,
+        isAuto: true,
+        serviceNetId: 'service-net-id',
       },
     })
   })

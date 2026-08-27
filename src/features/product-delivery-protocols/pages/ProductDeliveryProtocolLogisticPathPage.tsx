@@ -229,9 +229,17 @@ function useLogisticPathModel(netId: string | undefined) {
         payload.invoices,
       )
 
-      if (updated) {
-        setLoadState((current) => ({ ...current, protocol: updated }))
+      const updatedService = updated?.MergedServices?.find(
+        (service) => service.NetUid === payload.serviceNetId,
+      )
+
+      if (!updated || !updatedService) {
+        throw new Error(t('Не вдалося отримати розраховані суми'))
       }
+
+      setLoadState((current) => ({ ...current, protocol: updated }))
+
+      return updatedService
     } catch (calculateError) {
       notifications.show({
         color: 'red',

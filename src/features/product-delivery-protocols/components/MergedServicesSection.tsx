@@ -120,7 +120,7 @@ export function MergedServicesSection({
   canEdit: boolean
   isSaving: boolean
   onAssignServiceInvoices: (service: MergedService, invoices: SupplyInvoice[]) => Promise<void>
-  onCalculate: (payload: CalculateMergedServicePayload) => Promise<void>
+  onCalculate: (payload: CalculateMergedServicePayload) => Promise<MergedService | null>
   onRemoveService: (service: MergedService) => Promise<void>
   onSaveService: (payload: SaveMergedServicePayload) => Promise<void>
   protocol: ProtocolDetail
@@ -178,11 +178,11 @@ export function MergedServicesSection({
     items: CalculateMergedServiceInvoiceItem[]
   }) {
     if (!calculateService?.NetUid) {
-      return
+      return null
     }
 
     try {
-      await onCalculate({
+      const updatedService = await onCalculate({
         extraChargeType: payload.extraChargeType,
         invoices: payload.items.map((item) => ({
           ...item.entity,
@@ -192,9 +192,15 @@ export function MergedServicesSection({
         isAuto: payload.isAuto,
         serviceNetId: calculateService.NetUid,
       })
-      setCalculateService(null)
+
+      if (updatedService) {
+        setCalculateService(updatedService)
+      }
+
+      return updatedService
     } catch {
-      // Parent reports API errors; keep the drawer open.
+      // Parent reports API errors; keep the modal open with the last confirmed values.
+      return null
     }
   }
 

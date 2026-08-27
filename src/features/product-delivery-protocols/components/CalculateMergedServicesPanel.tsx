@@ -21,7 +21,7 @@ type CalculateSubmit = {
 type CalculateMergedServicesPanelProps = {
   isSaving: boolean
   onClose: () => void
-  onSubmit: (payload: CalculateSubmit) => Promise<void>
+  onSubmit: (payload: CalculateSubmit) => Promise<MergedService | null>
   opened: boolean
   service: MergedService
 }
@@ -46,14 +46,7 @@ function CalculateMergedServicesPanelContent({
   const currencyCode = service.SupplyOrganizationAgreement?.Currency?.Code || ''
 
   const initialItems = useMemo<CalculateMergedServiceInvoiceItem[]>(
-    () =>
-      (service.SupplyInvoiceMergedServices || []).map((entity) => ({
-        accountingValue: entity.AccountingValue ? String(entity.AccountingValue) : '',
-        entity,
-        isSelected: Boolean(entity.IsCalculatedValue),
-        number: entity.SupplyInvoice?.Number || '',
-        value: entity.Value ? String(entity.Value) : '',
-      })),
+    () => toCalculationItems(service),
     [service],
   )
 
@@ -94,7 +87,15 @@ function CalculateMergedServicesPanelContent({
     }
 
     setError(null)
-    await onSubmit({ extraChargeType, isAuto, items: selectedItems })
+    const updatedService = await onSubmit({ extraChargeType, isAuto, items: selectedItems })
+
+    if (!updatedService) {
+      return
+    }
+
+    setItems(toCalculationItems(updatedService))
+    setIsAuto(Boolean(updatedService.IsAutoCalculatedValue))
+    setExtraChargeType(updatedService.SupplyExtraChargeType ?? extraChargeType)
   }
 
   return (
@@ -103,7 +104,31 @@ function CalculateMergedServicesPanelContent({
       closeOnClickOutside={!isSaving}
       opened={opened}
       size="min(980px, calc(100vw - 32px))"
-      title={<span className="calculate-merged-services-title">{t('Розрахувати')}</span>}
+      title={(
+        <div className="calculate-merged-services-title">
+          <span className="calculate-merged-services-title-label">{t('Розрахувати')}</span>
+          <dl aria-label={t('Інформація про витрати')} className="calculate-merged-services-summary">
+            <div className="calculate-merged-services-summary-item is-supplier">
+              <dt>{t('Постачальник послуг')}</dt>
+              <dd title={service.SupplyOrganization?.Name || undefined}>
+                {service.SupplyOrganization?.Name || '-'}
+              </dd>
+            </div>
+            <div className="calculate-merged-services-summary-item">
+              <dt>{t('Сума витрат')}</dt>
+              <dd>{formatExpenseAmount(service.GrossPrice)}</dd>
+            </div>
+            <div className="calculate-merged-services-summary-item">
+              <dt>{`${t('Сума витрат')} (${t('Бух.')})`}</dt>
+              <dd>{formatExpenseAmount(service.AccountingGrossPrice)}</dd>
+            </div>
+            <div className="calculate-merged-services-summary-item is-currency">
+              <dt>{t('Валюта витрат')}</dt>
+              <dd>{currencyCode || '-'}</dd>
+            </div>
+          </dl>
+        </div>
+      )}
       onClose={() => {
         if (!isSaving) {
           onClose()
@@ -219,6 +244,28 @@ function CalculateMergedServicesPanelContent({
 
 function getMergedServicePanelKey(service: MergedService): string {
   return String(service.NetUid || service.Id || 'open')
+}
+
+function toCalculationItems(service: MergedService): CalculateMergedServiceInvoiceItem[] {
+  return (service.SupplyInvoiceMergedServices || []).map((entity) => ({
+    accountingValue: toInputValue(entity.AccountingValue),
+    entity,
+    isSelected: Boolean(entity.IsCalculatedValue),
+    number: entity.SupplyInvoice?.Number || '',
+    value: toInputValue(entity.Value),
+  }))
+}
+
+function toInputValue(value: number | null | undefined): string {
+  return typeof value === 'number' && Number.isFinite(value) ? String(value) : ''
+}
+
+function formatExpenseAmount(value: number | null | undefined): string {
+  if (typeof value !== 'number' || !Number.isFinite(value)) {
+    return '-'
+  }
+
+  return value.toLocaleString('uk-UA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 }
 
 function formatInvoiceRate(invoice: SupplyInvoice | null | undefined, currencyCode: string): string {
