@@ -91,6 +91,18 @@ export async function searchSalesUkraineClients(
   return normalizeArray(result) as SalesUkraineClientOption[]
 }
 
+export async function searchOnlineShopReassignmentClients(
+  value: string,
+  signal?: AbortSignal,
+): Promise<SalesUkraineClientOption[]> {
+  const result = await apiRequest<unknown>('/clients/online-shop/reassign/search', {
+    query: { value: value.trim() || undefined },
+    signal,
+  })
+
+  return normalizeArray(result) as SalesUkraineClientOption[]
+}
+
 export async function searchProductPricingClients(
   value: string,
   signal?: AbortSignal,
@@ -450,6 +462,16 @@ export async function addOrderItem(
 export async function getSaleClientAgreements(clientNetId: string): Promise<SalesUkraineClientAgreement[]> {
   const result = await apiRequest<unknown>('/agreements/client/all', {
     query: { netId: clientNetId },
+  })
+
+  return normalizeArray(result) as SalesUkraineClientAgreement[]
+}
+
+export async function getOnlineShopReassignmentAgreements(
+  clientNetId: string,
+): Promise<SalesUkraineClientAgreement[]> {
+  const result = await apiRequest<unknown>('/agreements/client/all', {
+    query: { includeDebts: false, netId: clientNetId },
   })
 
   return normalizeArray(result) as SalesUkraineClientAgreement[]

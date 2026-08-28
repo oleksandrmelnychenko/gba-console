@@ -348,6 +348,7 @@ export type SalesUkraineClientOption = SalesUkraineEntity & {
   FirstName?: string
   MiddleName?: string
   Name?: string
+  RegionCode?: { Value?: string }
 }
 
 export type SaleDocumentResult = {

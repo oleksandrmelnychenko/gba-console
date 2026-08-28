@@ -2,15 +2,13 @@ import { MantineProvider } from '@mantine/core'
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { theme } from '../../../shared/theme/theme'
-import type { Client } from '../../clients/types'
-import type { SalesUkraineSale } from '../types'
-import { WizardReassignSaleModal } from './new-sale-wizard/WizardReassignSaleModal'
+import type { SalesUkraineClientOption, SalesUkraineSale } from '../types'
+import { OnlineShopSaleReassignModal } from './SaleEditorDrawer'
 
 const mocks = vi.hoisted(() => ({
-  getRootClientBySubClientNetId: vi.fn(),
-  getWizardClientStructure: vi.fn(),
-  getWizardHeaderClient: vi.fn(),
+  getOnlineShopReassignmentAgreements: vi.fn(),
   onReassigned: vi.fn(),
+  searchOnlineShopReassignmentClients: vi.fn(),
   switchSale: vi.fn(),
 }))
 
@@ -22,27 +20,17 @@ vi.mock('@mantine/notifications', () => ({
   notifications: { show: vi.fn() },
 }))
 
-vi.mock('../../auth/useAuth', () => ({
-  useAuth: () => ({ hasPermission: () => true }),
-}))
-
 vi.mock('../../../shared/ui/AppModal', () => ({
   AppModal: ({ children, opened, title }: { children: React.ReactNode; opened: boolean; title: React.ReactNode }) => (
     opened ? <div aria-label={String(title)} role="dialog">{children}</div> : null
   ),
 }))
 
-vi.mock('../../clients/api/clientCabinetApi', () => ({
-  getRootClientBySubClientNetId: mocks.getRootClientBySubClientNetId,
-}))
-
-vi.mock('../api/salesUkraineApi', () => ({
+vi.mock('../api/salesUkraineApi', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../api/salesUkraineApi')>()),
+  getOnlineShopReassignmentAgreements: mocks.getOnlineShopReassignmentAgreements,
+  searchOnlineShopReassignmentClients: mocks.searchOnlineShopReassignmentClients,
   switchSale: mocks.switchSale,
-}))
-
-vi.mock('./new-sale-wizard/wizardSaleHeaderApi', () => ({
-  getWizardClientStructure: mocks.getWizardClientStructure,
-  getWizardHeaderClient: mocks.getWizardHeaderClient,
 }))
 
 vi.mock('../usePersistentSaleJsonMutation', () => ({
@@ -56,41 +44,34 @@ vi.mock('../usePersistentSaleJsonMutation', () => ({
   }),
 }))
 
+const currentShopClient = {
+  FullName: 'ShopClient',
+  NetUid: 'client-shop',
+  RegionCode: { Value: 'SHOP' },
+} as SalesUkraineClientOption
+
+const targetClient = {
+  FullName: 'Клієнт 4',
+  NetUid: 'client-4',
+  RegionCode: { Value: '4' },
+} as SalesUkraineClientOption
+
 const sale = {
+  ClientAgreement: {
+    Client: currentShopClient,
+    NetUid: 'agreement-shop',
+  },
   NetUid: 'sale-1',
-  SaleNumber: { Value: 'ONLINE-1' },
+  Order: { OrderSource: 0 },
+  RetailClient: { NetUid: 'retail-client-1' },
+  SaleNumber: { Value: 'KAВ00002721' },
 } as SalesUkraineSale
 
-const rootClient = {
-  ClientAgreements: [{ Agreement: { Name: 'ShopClient VAT' }, NetUid: 'agreement-root' }],
-  FullName: 'ShopClient',
-  Id: 1,
-  NetUid: 'client-root',
-} as Client
-
-const subClient = {
-  ClientAgreements: [{ Agreement: { Name: 'Цільовий договір' }, NetUid: 'agreement-sub' }],
-  FullName: 'Клієнт 4',
-  Id: 2,
-  IsSubClient: true,
-  NetUid: 'client-sub',
-} as Client
-
-const tradePoint = {
-  ClientAgreements: [{ Agreement: { Name: 'Договір торгової точки' }, NetUid: 'agreement-point' }],
-  FullName: 'Торгова точка 4',
-  Id: 3,
-  IsTradePoint: true,
-  NetUid: 'client-point',
-} as Client
-
-function renderModal(client: Client) {
+function renderModal() {
   return render(
     <MantineProvider theme={theme}>
-      <WizardReassignSaleModal
-        client={client}
+      <OnlineShopSaleReassignModal
         opened
-        permissionFlow="edit"
         sale={sale}
         onClose={vi.fn()}
         onReassigned={mocks.onReassigned}
@@ -101,45 +82,54 @@ function renderModal(client: Client) {
 
 beforeEach(() => {
   vi.clearAllMocks()
-  mocks.getRootClientBySubClientNetId.mockResolvedValue(null)
-  mocks.getWizardClientStructure.mockResolvedValue([subClient, tradePoint])
-  mocks.getWizardHeaderClient.mockResolvedValue(rootClient)
+  mocks.searchOnlineShopReassignmentClients.mockResolvedValue([currentShopClient, targetClient])
+  mocks.getOnlineShopReassignmentAgreements.mockResolvedValue([
+    { Agreement: { Name: 'Цільовий договір' }, NetUid: 'agreement-4' },
+  ])
   mocks.switchSale.mockResolvedValue(sale)
 })
 
-describe('online-shop sale editor reassignment structure', () => {
-  it('automatically loads the root, sub-client, and trade-point list instead of requiring the empty search from Screenshot_274.png', async () => {
-    renderModal({ NetUid: 'client-root' } as Client)
+describe('online-shop post-create sale reassignment', () => {
+  it('loads a compact target-client list on open instead of the ShopClient details from Screenshot_286.png', async () => {
+    renderModal()
 
-    await waitFor(() => expect(mocks.getWizardHeaderClient).toHaveBeenCalledWith('client-root', 'edit'))
-    expect(mocks.getWizardClientStructure).toHaveBeenCalledWith('client-root')
-    expect(await screen.findByText('ShopClient')).toBeTruthy()
-    expect(screen.getByText('Клієнт 4')).toBeTruthy()
-    expect(screen.getByText('Торгова точка 4')).toBeTruthy()
-    expect(screen.queryByRole('combobox', { name: 'Клієнт' })).toBeNull()
+    await waitFor(() => expect(mocks.searchOnlineShopReassignmentClients).toHaveBeenCalledWith(
+      '',
+      expect.any(AbortSignal),
+    ))
+
+    const clientSelect = screen.getByRole('combobox', { name: 'Клієнт' })
+    fireEvent.click(clientSelect)
+
+    expect(await screen.findByText('4 · Клієнт 4')).toBeTruthy()
+    expect(screen.queryByText('SHOP · ShopClient')).toBeNull()
+    expect(screen.queryByText('Доступний аванс')).toBeNull()
+    expect(screen.queryByText('Кредитний ліміт')).toBeNull()
   })
 
-  it('resolves a sub-client root and switches the sale to a selected agreement inside that structure', async () => {
-    mocks.getRootClientBySubClientNetId.mockResolvedValueOnce({
-      RootClient: { NetUid: 'client-root' },
-    })
-    renderModal({ IsSubClient: true, NetUid: 'current-sub-client' } as Client)
+  it('searches by the one-character client code from Screenshot_274.png and reassigns to its agreement', async () => {
+    renderModal()
 
-    await waitFor(() => expect(mocks.getRootClientBySubClientNetId).toHaveBeenCalledWith('current-sub-client'))
-    expect(mocks.getWizardHeaderClient).toHaveBeenCalledWith('client-root', 'edit')
+    const clientSelect = screen.getByRole('combobox', { name: 'Клієнт' })
+    fireEvent.change(clientSelect, { target: { value: '4' } })
 
-    const agreementLabel = await screen.findByText('Цільовий договір')
-    const agreementButton = agreementLabel.closest('button')
+    await waitFor(() => expect(mocks.searchOnlineShopReassignmentClients).toHaveBeenCalledWith(
+      '4',
+      expect.any(AbortSignal),
+    ))
+    fireEvent.click(await screen.findByText('4 · Клієнт 4'))
 
-    expect(agreementButton).not.toBeNull()
-    fireEvent.click(agreementButton as HTMLButtonElement)
-    fireEvent.click(screen.getByRole('button', { name: 'Перемістити' }))
+    await waitFor(() => expect(mocks.getOnlineShopReassignmentAgreements).toHaveBeenCalledWith('client-4'))
+    const agreementSelect = screen.getByRole('combobox', { name: 'Договір' })
+    fireEvent.click(agreementSelect)
+    fireEvent.click(await screen.findByText('Цільовий договір'))
+    fireEvent.click(screen.getByRole('button', { name: 'Переназначити' }))
 
     await waitFor(() => expect(mocks.switchSale).toHaveBeenCalledWith(
       'sale-1',
-      'agreement-sub',
+      'agreement-4',
       { operationId: '11111111-1111-4111-8111-111111111111' },
     ))
-    expect(mocks.onReassigned).toHaveBeenCalledWith(sale)
+    expect(mocks.onReassigned).toHaveBeenCalledOnce()
   })
 })

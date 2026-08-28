@@ -27,14 +27,15 @@ import { TransporterNameWithIcon } from '../../../shared/transporter-icons/Trans
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn } from '../../../shared/ui/data-table/types'
 import { TableRowAction } from '../../../shared/ui/table-row-action'
-import type { Client } from '../../clients/types'
 import {
   convertVatSaleAndGetPaymentDocument,
+  getOnlineShopReassignmentAgreements,
   getSaleById,
   getSaleClientAgreements,
   getSaleClientDebtTotal,
   getRetailPaymentStatusBySaleId,
   searchSaleProducts,
+  searchOnlineShopReassignmentClients,
   switchSale,
   type SwitchSalePayload,
   updateSaleFromData,
@@ -62,7 +63,6 @@ import { usePersistentSaleFileMutation } from '../usePersistentSaleFileMutation'
 import { usePersistentSaleJsonMutationRunner } from '../usePersistentSaleJsonMutation'
 import type { WizardCartMutationRequest } from './new-sale-wizard/wizardCartMutation'
 import type { WizardCartMutationExpectation } from './new-sale-wizard/wizardMutationOperation'
-import { WizardReassignSaleModal } from './new-sale-wizard/WizardReassignSaleModal'
 import { MergedSalesDrawer } from './MergedSalesDrawer'
 import { SaleDetailsDrawer } from './SaleDetailsDrawer'
 import { usePermissions } from '../../auth/usePermissions'
@@ -70,6 +70,7 @@ import './sale-editor-drawer.css'
 import type {
   SaleClientDebtTotal,
   SalesUkraineClientAgreement,
+  SalesUkraineClientOption,
   SalesUkraineOrderItem,
   SalesUkraineProduct,
   SalesUkraineRetailPaymentStatus,
@@ -248,7 +249,6 @@ function SaleEditorContent({ initialSale, loadSale }: { initialSale: SalesUkrain
 
   const orderItems = Array.isArray(sale.Order?.OrderItems) ? sale.Order.OrderItems : []
   const isEditable = !sale.IsLocked
-  const reassignClient = sale.ClientAgreement?.Client as Client | undefined
   const useEurToUah = isNonVatEurSale(sale)
   const editorCurrencyCode = getSaleLocalCurrencyCode(sale)
   const headerTotal = useEurToUah
@@ -499,7 +499,7 @@ function SaleEditorContent({ initialSale, loadSale }: { initialSale: SalesUkrain
         >
           {t('Копіювати')}
         </Button>
-        {isEditable && canReassign && reassignClient && (
+        {isEditable && canReassign && (
           <Button leftSection={<Share2 size={16} />} variant="outline" onClick={() => setReassignOpen(true)}>
             {t('Переназначити')}
           </Button>
@@ -614,19 +614,15 @@ function SaleEditorContent({ initialSale, loadSale }: { initialSale: SalesUkrain
         onClose={() => setMergedOpen(false)}
       />
 
-      {reassignClient && (
-        <WizardReassignSaleModal
-          client={reassignClient}
-          opened={canReassign && isReassignOpen}
-          permissionFlow="edit"
-          sale={sale}
-          onClose={() => setReassignOpen(false)}
-          onReassigned={() => {
-            setReassignOpen(false)
-            reload()
-          }}
-        />
-      )}
+      <OnlineShopSaleReassignModal
+        opened={canReassign && isReassignOpen}
+        sale={sale}
+        onClose={() => setReassignOpen(false)}
+        onReassigned={() => {
+          setReassignOpen(false)
+          reload()
+        }}
+      />
 
       <AppModal
         centered
@@ -1213,6 +1209,230 @@ function AddProductForm({
       </Group>
     </Stack>
   )
+}
+
+export function OnlineShopSaleReassignModal({
+  opened,
+  sale,
+  onClose,
+  onReassigned,
+}: {
+  onClose: () => void
+  onReassigned: () => void
+  opened: boolean
+  sale: SalesUkraineSale
+}) {
+  const { t } = useI18n()
+
+  return (
+    <AppModal centered opened={opened} size="md" title={t('Переназначити')} onClose={onClose}>
+      {opened && (
+        <OnlineShopSaleReassignForm
+          sale={sale}
+          onCancel={onClose}
+          onReassigned={onReassigned}
+        />
+      )}
+    </AppModal>
+  )
+}
+
+function OnlineShopSaleReassignForm({
+  sale,
+  onCancel,
+  onReassigned,
+}: {
+  onCancel: () => void
+  onReassigned: () => void
+  sale: SalesUkraineSale
+}) {
+  const { t } = useI18n()
+  const [query, setQuery] = useState('')
+  const [clients, setClients] = useState<SalesUkraineClientOption[]>([])
+  const [selectedClient, setSelectedClient] = useState<string | null>(null)
+  const [agreements, setAgreements] = useState<SalesUkraineClientAgreement[]>([])
+  const [selectedAgreement, setSelectedAgreement] = useState<string | null>(null)
+  const [isSearching, setSearching] = useState(true)
+  const [isLoadingAgreements, setLoadingAgreements] = useState(false)
+  const [isReassigning, setReassigning] = useState(false)
+  const runSaleSwitch = usePersistentSaleJsonMutationRunner('sale-switch')
+
+  useEffect(() => {
+    let cancelled = false
+    const controller = new AbortController()
+    const value = query.trim()
+    const handle = setTimeout(async () => {
+      setSearching(true)
+
+      try {
+        const next = await searchOnlineShopReassignmentClients(value, controller.signal)
+
+        if (!cancelled) {
+          const currentClientNetUid = sale.ClientAgreement?.Client?.NetUid
+          setClients(next.filter((client) => client.NetUid && client.NetUid !== currentClientNetUid))
+        }
+      } catch {
+        if (!cancelled) {
+          setClients([])
+        }
+      } finally {
+        if (!cancelled) {
+          setSearching(false)
+        }
+      }
+    }, value ? 300 : 0)
+
+    return () => {
+      cancelled = true
+      controller.abort()
+      clearTimeout(handle)
+    }
+  }, [query, sale.ClientAgreement?.Client?.NetUid])
+
+  useEffect(() => {
+    let cancelled = false
+
+    async function load(clientNetUid: string | null) {
+      setSelectedAgreement(null)
+
+      if (!clientNetUid) {
+        setAgreements([])
+        return
+      }
+
+      setLoadingAgreements(true)
+
+      try {
+        const next = await getOnlineShopReassignmentAgreements(clientNetUid)
+
+        if (!cancelled) {
+          setAgreements(next)
+        }
+      } catch {
+        if (!cancelled) {
+          setAgreements([])
+        }
+      } finally {
+        if (!cancelled) {
+          setLoadingAgreements(false)
+        }
+      }
+    }
+
+    void load(selectedClient)
+
+    return () => {
+      cancelled = true
+    }
+  }, [selectedClient])
+
+  const clientOptions = clients.reduce<{ label: string; value: string }[]>((options, client) => {
+    if (client.NetUid) {
+      options.push({ label: getClientOptionName(client), value: client.NetUid })
+    }
+
+    return options
+  }, [])
+  const selectedClientLabel = clientOptions.find((option) => option.value === selectedClient)?.label || ''
+  const agreementOptions = agreements.reduce<{ label: string; value: string }[]>((options, agreement) => {
+    if (agreement.NetUid) {
+      options.push({
+        label: agreement.Agreement?.Name || agreement.NetUid,
+        value: agreement.NetUid,
+      })
+    }
+
+    return options
+  }, [])
+
+  async function reassign() {
+    if (!sale.NetUid || !selectedAgreement) {
+      return
+    }
+
+    setReassigning(true)
+
+    try {
+      const attempt = await runSaleSwitch<SwitchSalePayload, SalesUkraineSale | null>(
+        `sale-switch:${sale.NetUid}`,
+        { ClientAgreementNetId: selectedAgreement, SaleNetId: sale.NetUid },
+        (payload, operation) => switchSale(payload.SaleNetId, payload.ClientAgreementNetId, operation),
+      )
+
+      if (!attempt.completed) {
+        throw attempt.error
+      }
+
+      notifications.show({ color: 'green', message: t('Продаж переназначено') })
+      onReassigned()
+    } catch (error) {
+      notifications.show({
+        color: 'red',
+        message: error instanceof Error ? error.message : t('Не вдалося переназначити продаж'),
+      })
+    } finally {
+      setReassigning(false)
+    }
+  }
+
+  return (
+    <Stack gap="md">
+      <Select
+        searchable
+        clearable
+        data={clientOptions}
+        filter={({ options }) => options}
+        label={t('Клієнт')}
+        nothingFoundMessage={isSearching ? t('Завантаження') : t('Нічого не знайдено')}
+        placeholder={t('Оберіть або знайдіть клієнта')}
+        searchValue={query}
+        value={selectedClient}
+        onChange={(value) => {
+          setSelectedClient(value)
+          setSelectedAgreement(null)
+        }}
+        onSearchChange={(value) => {
+          setQuery(value)
+
+          if (selectedClient && value !== selectedClientLabel) {
+            setSelectedClient(null)
+            setSelectedAgreement(null)
+          }
+        }}
+      />
+      <Select
+        searchable
+        data={agreementOptions}
+        disabled={!selectedClient || isLoadingAgreements}
+        label={t('Договір')}
+        nothingFoundMessage={isLoadingAgreements ? t('Завантаження') : t('Договорів не знайдено')}
+        placeholder={isLoadingAgreements ? t('Завантаження') : t('Оберіть договір')}
+        value={selectedAgreement}
+        onChange={setSelectedAgreement}
+      />
+      <Group justify="flex-end">
+        <Button color="gray" disabled={isReassigning} variant="subtle" onClick={onCancel}>
+          {t('Скасувати')}
+        </Button>
+        <Button disabled={!selectedAgreement} loading={isReassigning} onClick={reassign}>
+          {t('Переназначити')}
+        </Button>
+      </Group>
+    </Stack>
+  )
+}
+
+function getClientOptionName(client: SalesUkraineClientOption): string {
+  const name = (
+    client.FullName?.trim()
+    || [client.LastName, client.FirstName, client.MiddleName].filter(Boolean).join(' ').trim()
+    || client.Name?.trim()
+    || client.NetUid
+    || ''
+  )
+  const code = client.RegionCode?.Value?.trim()
+
+  return code && code !== name ? `${code} · ${name}` : name
 }
 
 function ClientTab({ canReassign, sale, onSwitched }: { canReassign: boolean; onSwitched: () => void; sale: SalesUkraineSale }) {

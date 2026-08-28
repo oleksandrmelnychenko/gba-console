@@ -23,6 +23,7 @@ import {
   getSalesUkraineSaleDetails,
   getSaleInvoiceDocument,
   getSaleInvoiceHistoryDocument,
+  getOnlineShopReassignmentAgreements,
   getSalePaymentDocument,
   getSalePzDocument,
   getSaleRevisionBaseInvoiceDocument,
@@ -31,6 +32,7 @@ import {
   getSaleShipmentListHistoryDocument,
   getShiftedSaleById,
   searchProductPricingClients,
+  searchOnlineShopReassignmentClients,
   searchSalesUkraineClients,
   searchSalesUkraineEditClients,
   printSalesUkraineConsignmentNoteDocument,
@@ -390,6 +392,29 @@ describe('sales Ukraine document request contracts', () => {
         value: 'конкорд',
       },
       signal: undefined,
+    })
+  })
+
+  it('loads the online-shop reassignment list without requiring a search value', async () => {
+    apiRequestMock.mockResolvedValueOnce([{ NetUid: 'client-1' }])
+
+    await expect(searchOnlineShopReassignmentClients('')).resolves.toEqual([{ NetUid: 'client-1' }])
+
+    expect(apiRequestMock).toHaveBeenCalledWith('/clients/online-shop/reassign/search', {
+      query: { value: undefined },
+      signal: undefined,
+    })
+  })
+
+  it('loads compact agreements for an online-shop reassignment target', async () => {
+    apiRequestMock.mockResolvedValueOnce([{ NetUid: 'agreement-1' }])
+
+    await expect(getOnlineShopReassignmentAgreements('client-1')).resolves.toEqual([
+      { NetUid: 'agreement-1' },
+    ])
+
+    expect(apiRequestMock).toHaveBeenCalledWith('/agreements/client/all', {
+      query: { includeDebts: false, netId: 'client-1' },
     })
   })
 
