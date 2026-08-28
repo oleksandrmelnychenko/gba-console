@@ -91,7 +91,10 @@ describe('sales route permission refresh', () => {
 
     renderSalesRoute()
 
-    expect(await screen.findByText('Немає доступу')).not.toBeNull()
+    await waitFor(() => expect(getNavigation).toHaveBeenCalledTimes(1))
+    expect(screen.queryByTestId('sales-registry')).toBeNull()
+    expect(screen.queryByText('Немає доступу')).toBeNull()
+    expect(screen.queryByText('Доступ заборонено')).toBeNull()
 
     act(() => notifyAuthPermissionsChanged())
 
@@ -110,12 +113,17 @@ describe('sales route permission refresh', () => {
 
     renderSalesRoute()
 
-    expect(await screen.findByText('Немає доступу')).not.toBeNull()
+    await waitFor(() => expect(getNavigation).toHaveBeenCalledTimes(1))
+    expect(screen.queryByTestId('sales-registry')).toBeNull()
+    expect(screen.queryByText('Немає доступу')).toBeNull()
+    expect(screen.queryByText('Доступ заборонено')).toBeNull()
 
     act(() => window.dispatchEvent(new Event('focus')))
 
     await waitFor(() => expect(getMyPermissions).toHaveBeenCalledTimes(2))
-    expect(await screen.findByText('Немає доступу')).not.toBeNull()
+    expect(screen.queryByTestId('sales-registry')).toBeNull()
+    expect(screen.queryByText('Немає доступу')).toBeNull()
+    expect(screen.queryByText('Доступ заборонено')).toBeNull()
     expect(screen.queryByRole('button', { name: 'Продажі' })).toBeNull()
   })
 })
