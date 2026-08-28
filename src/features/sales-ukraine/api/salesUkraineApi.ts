@@ -35,6 +35,7 @@ import type {
 
 const CONSIGNMENT_QUERY = { forReSale: false }
 const PACKING_ACCEPTANCE_REQUEST_ATTEMPTS = 3
+const PACKING_ACCEPTANCE_RETRY_BASE_DELAY_MS = 300
 const PAYMENT_DOCUMENT_POLL_INTERVAL_MS = 1_000
 const PAYMENT_DOCUMENT_POLL_TIMEOUT_MS = 6 * 60 * 1_000
 
@@ -188,6 +189,8 @@ export async function acceptSaleForPacking(
       ) {
         throw error
       }
+
+      await waitForPackingAcceptanceRetry(attempt, operation.signal)
     }
   }
 
@@ -200,6 +203,29 @@ function isTransientPackingAcceptanceFailure(error: unknown): boolean {
     error.status === 408 ||
     error.status >= 500
   )
+}
+
+function waitForPackingAcceptanceRetry(attempt: number, signal?: AbortSignal): Promise<void> {
+  const delay = PACKING_ACCEPTANCE_RETRY_BASE_DELAY_MS * (2 ** (attempt - 1))
+
+  return new Promise((resolve, reject) => {
+    const timeout = setTimeout(() => {
+      signal?.removeEventListener('abort', abort)
+      resolve()
+    }, delay)
+    const abort = () => {
+      clearTimeout(timeout)
+      signal?.removeEventListener('abort', abort)
+      reject(signal?.reason ?? new DOMException('The operation was aborted.', 'AbortError'))
+    }
+
+    if (signal?.aborted) {
+      abort()
+      return
+    }
+
+    signal?.addEventListener('abort', abort, { once: true })
+  })
 }
 
 export async function getSaleById(netId: string, signal?: AbortSignal): Promise<SalesUkraineSale | null> {

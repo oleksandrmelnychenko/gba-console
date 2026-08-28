@@ -153,4 +153,84 @@ describe('SalesUkrainePage unlock state', () => {
     })).toBeNull())
     expect(mocks.getSalesUkraine).toHaveBeenCalledTimes(1)
   })
+
+  it('keeps one packing request in flight when confirmation is clicked repeatedly', async () => {
+    const blockedSale = {
+      ...createSale(false),
+      BaseLifeCycleStatus: { Name: 'New', SaleLifeCycleType: 0 },
+      ChangedToInvoice: '2026-08-06T11:00:00Z',
+      IsAcceptedToPacking: false,
+      IsVatSale: true,
+    }
+    let acknowledgePacking!: (sale: SalesUkraineSale | null) => void
+
+    mocks.getSalesUkraine.mockResolvedValueOnce([blockedSale])
+    mocks.acceptSaleForPacking.mockImplementationOnce(() => new Promise((resolve) => {
+      acknowledgePacking = resolve
+    }))
+
+    render(
+      <MantineProvider env="test" theme={theme}>
+        <Notifications />
+        <I18nProvider>
+          <MemoryRouter initialEntries={['/sales/ukraine/all']}>
+            <SalesUkrainePage />
+          </MemoryRouter>
+        </I18nProvider>
+      </MantineProvider>,
+    )
+
+    await screen.findByText('Тестовий клієнт')
+    fireEvent.click(screen.getByRole('button', { name: 'Розблокувати для відвантаження' }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Підтвердити' }))
+
+    const pendingConfirmation = screen.getByRole('button', { name: 'Підтвердити' })
+    expect(pendingConfirmation).toHaveProperty('disabled', true)
+    fireEvent.click(pendingConfirmation)
+    expect(mocks.acceptSaleForPacking).toHaveBeenCalledTimes(1)
+
+    acknowledgePacking(null)
+
+    await waitFor(() => expect(screen.queryByText('Розблокувати продаж для відвантаження?')).toBeNull())
+    expect(mocks.acceptSaleForPacking).toHaveBeenCalledTimes(1)
+  })
+
+  it('closes or cancels packing confirmation without sending a request', async () => {
+    const blockedSale = {
+      ...createSale(false),
+      BaseLifeCycleStatus: { Name: 'New', SaleLifeCycleType: 0 },
+      ChangedToInvoice: '2026-08-06T11:00:00Z',
+      IsAcceptedToPacking: false,
+      IsVatSale: true,
+    }
+
+    mocks.getSalesUkraine.mockResolvedValueOnce([blockedSale])
+
+    render(
+      <MantineProvider env="test" theme={theme}>
+        <Notifications />
+        <I18nProvider>
+          <MemoryRouter initialEntries={['/sales/ukraine/all']}>
+            <SalesUkrainePage />
+          </MemoryRouter>
+        </I18nProvider>
+      </MantineProvider>,
+    )
+
+    await screen.findByText('Тестовий клієнт')
+    fireEvent.click(screen.getByRole('button', { name: 'Розблокувати для відвантаження' }))
+    await screen.findByText('Розблокувати продаж для відвантаження?')
+
+    const closeConfirmation = document.querySelector<HTMLButtonElement>('.mantine-Modal-close')
+    expect(closeConfirmation).not.toBeNull()
+    fireEvent.click(closeConfirmation as HTMLButtonElement)
+
+    await waitFor(() => expect(screen.queryByText('Розблокувати продаж для відвантаження?')).toBeNull())
+    fireEvent.click(screen.getByRole('button', { name: 'Розблокувати для відвантаження' }))
+    await screen.findByText('Розблокувати продаж для відвантаження?')
+    fireEvent.click(screen.getByRole('button', { name: 'Скасувати' }))
+
+    await waitFor(() => expect(screen.queryByText('Розблокувати продаж для відвантаження?')).toBeNull())
+    expect(mocks.acceptSaleForPacking).not.toHaveBeenCalled()
+  })
 })

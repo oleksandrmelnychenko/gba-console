@@ -104,6 +104,47 @@ describe('sales Ukraine document request contracts', () => {
     ]))
   })
 
+  it('keeps one packing confirmation alive until a short transient outage clears', async () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(0)
+
+    try {
+      const saleNetId = 'dc8d6ccc-e2f3-4011-a73f-9be8a570b2ae'
+      const acceptedSale = { IsAcceptedToPacking: true, NetUid: saleNetId }
+      const requestTimes: number[] = []
+
+      apiRequestMock.mockImplementation(async () => {
+        requestTimes.push(Date.now())
+
+        if (Date.now() < 750) {
+          throw new ApiError('temporary failure', 503, null)
+        }
+
+        return acceptedSale
+      })
+
+      const confirmation = expect(
+        acceptSaleForPacking(saleNetId, paymentDocumentOperation),
+      ).resolves.toEqual(acceptedSale)
+
+      await vi.advanceTimersByTimeAsync(1_000)
+      await confirmation
+
+      expect(requestTimes).toEqual([0, 300, 900])
+      expect(apiRequestMock.mock.calls).toEqual(Array.from({ length: 3 }, () => [
+        '/sales/accept-for-packing',
+        {
+          headers: { 'Idempotency-Key': paymentDocumentOperation.operationId },
+          method: 'PATCH',
+          query: { netId: saleNetId },
+          signal: undefined,
+        },
+      ]))
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
   it('returns the unlocked sale supplied by the mutation response', async () => {
     const saleNetId = 'dc8d6ccc-e2f3-4011-a73f-9be8a570b2ae'
     const unlockedSale = { IsAcceptedToPacking: true, IsLocked: false, NetUid: saleNetId }
