@@ -831,6 +831,7 @@ const plannedConsoleRoutes: ConsoleRoute[] = [
   },
   {
     path: '/sales/ukraine/debtors',
+    permissionKey: PermissionKeys.SystemPages.SalesUkraineDebtors.View,
     element: (
       <SalesDashboardShell>
         {lazyRoute(<SalesDebtorsPage />)}
@@ -848,6 +849,7 @@ const plannedConsoleRoutes: ConsoleRoute[] = [
   },
   {
     path: '/sales/ukraine/cart-reserve',
+    permissionKey: PermissionKeys.SystemPages.SalesUkraineCartReserve.View,
     element: (
       <SalesDashboardShell>
         {lazyRoute(<ShoppingCartReservePage />)}
@@ -856,6 +858,7 @@ const plannedConsoleRoutes: ConsoleRoute[] = [
   },
   {
     path: '/sales/ukraine/client-product-movement',
+    permissionKey: PermissionKeys.SystemPages.SalesUkraineClientProductMovement.View,
     element: (
       <SalesDashboardShell>
         {lazyRoute(<ClientProductMovementPage />)}
@@ -871,6 +874,7 @@ const plannedConsoleRoutes: ConsoleRoute[] = [
   },
   {
     path: '/sales/ukraine/prediction',
+    permissionKey: PermissionKeys.SystemPages.SalesUkrainePrediction.View,
     element: (
       <SalesDashboardShell>
         {lazyRoute(<SalesPredictionPage />)}
@@ -879,6 +883,7 @@ const plannedConsoleRoutes: ConsoleRoute[] = [
   },
   {
     path: '/sales/charts',
+    permissionKey: PermissionKeys.SystemPages.SalesCharts.View,
     element: (
       <SalesDashboardShell>
         {lazyRoute(<SalesChartsPage />)}
@@ -887,6 +892,7 @@ const plannedConsoleRoutes: ConsoleRoute[] = [
   },
   {
     path: '/sales/ukraine/all/returns/new',
+    permissionKey: PermissionKeys.SystemPages.SalesUkraineReturns.View,
     element: (
       <SalesDashboardShell>
         {lazyRoute(<NewUkraineSaleReturnPage />)}
