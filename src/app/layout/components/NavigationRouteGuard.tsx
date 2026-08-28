@@ -1,5 +1,5 @@
 import { Alert, Card, Stack, Text, Title, type MantineColor } from '@mantine/core'
-import { Lock, TriangleAlert } from 'lucide-react'
+import { TriangleAlert } from 'lucide-react'
 import { type ReactNode } from 'react'
 import { useLocation } from 'react-router-dom'
 import { useNavigation } from '../../../features/navigation/hooks/useNavigation'
@@ -44,14 +44,7 @@ export function NavigationRouteGuard({ children }: { children: ReactNode }) {
   }
 
   if (!isNavigationPathAllowed(modules, targetPath)) {
-    return (
-      <NavigationRouteState
-        color="orange"
-        description={t('Цей маршрут недоступний для поточної ролі.')}
-        icon={<Lock size={20} strokeWidth={1.8} />}
-        title={t('Немає доступу')}
-      />
-    )
+    return null
   }
 
   return children

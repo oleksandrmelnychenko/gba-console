@@ -48,7 +48,10 @@ describe('PagePermissionBoundary', () => {
   it('does not mount the page when access is denied', () => {
     renderBoundary()
 
-    expect(screen.getByText('Доступ заборонено')).toBeTruthy()
+    expect(screen.queryByText('Доступ заборонено')).toBeNull()
+    expect(
+      screen.queryByText('У вашої ролі немає права переглядати цю сторінку.'),
+    ).toBeNull()
     expect(DataPage).not.toHaveBeenCalled()
   })
 

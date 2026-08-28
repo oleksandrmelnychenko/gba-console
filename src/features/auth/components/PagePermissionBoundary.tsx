@@ -1,5 +1,4 @@
-import { Alert, Center, Loader } from '@mantine/core'
-import { CircleAlert } from 'lucide-react'
+import { Center, Loader } from '@mantine/core'
 import type { ReactNode } from 'react'
 import type { PermissionKey } from '../../../shared/auth/permissionKeys'
 import { usePermissions } from '../usePermissions'
@@ -24,16 +23,7 @@ export function PagePermissionBoundary({
   }
 
   if (!can(permissionKey)) {
-    return (
-      <Alert
-        color="red"
-        icon={<CircleAlert size={18} />}
-        title="Доступ заборонено"
-        variant="light"
-      >
-        У вашої ролі немає права переглядати цю сторінку.
-      </Alert>
-    )
+    return null
   }
 
   return children

@@ -87,10 +87,11 @@ describe('sales preorder permissions', () => {
     api.createPreorder.mockResolvedValue('Створено')
   })
 
-  it('does not mount the interest registry without page.view', async () => {
+  it('does not mount the interest registry without page.view', () => {
     renderUi(<PreordersInterestPage />)
 
-    expect(await screen.findByText('Доступ заборонено')).toBeTruthy()
+    expect(screen.queryByText('Доступ заборонено')).toBeNull()
+    expect(screen.queryByTestId('preorders-table')).toBeNull()
     expect(api.getPreorders).not.toHaveBeenCalled()
   })
 
