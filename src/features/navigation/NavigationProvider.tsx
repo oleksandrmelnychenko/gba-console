@@ -22,20 +22,24 @@ type NavigationLocationState = {
 
 type NavigationState = {
   error: Error | null
+  errorPermissionSetKey: string | null
   errorSessionKey: string | null
+  loadedPermissionSetKey: string | null
   loadedSessionKey: string | null
   modules: NavigationModule[]
   selectedModuleKey: string | null
 }
 
 type NavigationAction =
-  | { type: 'menuLoaded'; modules: NavigationModule[]; sessionKey: string }
-  | { type: 'menuFailed'; error: Error; sessionKey: string }
+  | { type: 'menuLoaded'; modules: NavigationModule[]; permissionSetKey: string; sessionKey: string }
+  | { type: 'menuFailed'; error: Error; permissionSetKey: string; sessionKey: string }
   | { type: 'moduleSelected'; moduleKey: string }
 
 const initialNavigationState: NavigationState = {
   error: null,
+  errorPermissionSetKey: null,
   errorSessionKey: null,
+  loadedPermissionSetKey: null,
   loadedSessionKey: null,
   modules: [],
   selectedModuleKey: null,
@@ -47,7 +51,9 @@ function navigationReducer(state: NavigationState, action: NavigationAction): Na
       return {
         ...state,
         error: null,
+        errorPermissionSetKey: null,
         errorSessionKey: null,
+        loadedPermissionSetKey: action.permissionSetKey,
         loadedSessionKey: action.sessionKey,
         modules: action.modules,
       }
@@ -55,7 +61,9 @@ function navigationReducer(state: NavigationState, action: NavigationAction): Na
       return {
         ...state,
         error: action.error,
+        errorPermissionSetKey: action.permissionSetKey,
         errorSessionKey: action.sessionKey,
+        loadedPermissionSetKey: action.permissionSetKey,
         loadedSessionKey: action.sessionKey,
         modules: [],
       }
@@ -70,10 +78,17 @@ function navigationReducer(state: NavigationState, action: NavigationAction): Na
 }
 
 export function NavigationProvider({ children }: PropsWithChildren) {
-  const { hasPermission, isAuthenticated, session } = useAuth()
+  const {
+    hasPermission,
+    isAuthenticated,
+    isPermissionsLoading,
+    permissions,
+    session,
+  } = useAuth()
   const routerLocation = useLocation()
   const [state, dispatch] = useReducer(navigationReducer, initialNavigationState)
   const sessionKey = session?.csrfToken || null
+  const permissionSetKey = permissions.join('\u001f')
   const canLoadMenu = isAuthenticated && Boolean(sessionKey)
   const canViewVehicleRegistry = hasPermission(
     PermissionKeys.SystemPages.VehicleRegistry.View,
@@ -92,6 +107,7 @@ export function NavigationProvider({ children }: PropsWithChildren) {
           dispatch({
             type: 'menuLoaded',
             modules: normalizeNavigation(items, { includeVehicleRegistry: canViewVehicleRegistry }),
+            permissionSetKey,
             sessionKey,
           })
         }
@@ -101,6 +117,7 @@ export function NavigationProvider({ children }: PropsWithChildren) {
           dispatch({
             type: 'menuFailed',
             error: menuError,
+            permissionSetKey,
             sessionKey,
           })
         }
@@ -109,10 +126,15 @@ export function NavigationProvider({ children }: PropsWithChildren) {
     return () => {
       cancelled = true
     }
-  }, [canLoadMenu, canViewVehicleRegistry, sessionKey])
+  }, [canLoadMenu, canViewVehicleRegistry, permissionSetKey, sessionKey])
 
-  const isMenuReady = canLoadMenu && state.loadedSessionKey === sessionKey
-  const currentError = state.errorSessionKey === sessionKey ? state.error : null
+  const isMenuReady = canLoadMenu
+    && state.loadedSessionKey === sessionKey
+    && state.loadedPermissionSetKey === permissionSetKey
+  const currentError = state.errorSessionKey === sessionKey
+    && state.errorPermissionSetKey === permissionSetKey
+    ? state.error
+    : null
   const availableModules = useMemo(() => (isMenuReady ? state.modules : []), [isMenuReady, state.modules])
   const routerLocationState = routerLocation.state as NavigationLocationState | null
   const navigationLocation = routerLocationState?.backgroundLocation || routerLocation
@@ -141,7 +163,8 @@ export function NavigationProvider({ children }: PropsWithChildren) {
   const value = useMemo<NavigationContextValue>(
     () => ({
       error: currentError,
-      isLoading: canLoadMenu && !isMenuReady && !currentError,
+      isLoading: isPermissionsLoading
+        || (canLoadMenu && !isMenuReady && !currentError),
       modules: availableModules,
       selectedModule,
       selectedNode: activeMatch?.node || null,
@@ -149,7 +172,7 @@ export function NavigationProvider({ children }: PropsWithChildren) {
       isNodeActive: (node) => isNavigationNodeActive(node, routerTarget),
       selectModule: (module) => dispatch({ type: 'moduleSelected', moduleKey: getModuleKey(module) }),
     }),
-    [activeMatch, availableModules, canLoadMenu, currentError, isMenuReady, routerTarget, selectedModule],
+    [activeMatch, availableModules, canLoadMenu, currentError, isMenuReady, isPermissionsLoading, routerTarget, selectedModule],
   )
 
   return <NavigationContext.Provider value={value}>{children}</NavigationContext.Provider>

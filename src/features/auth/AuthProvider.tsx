@@ -5,6 +5,7 @@ import {
   hasPermission as checkPermission,
   type RuntimePermissionKeys,
 } from '../../shared/auth/permissions'
+import { AUTH_PERMISSIONS_CHANGED_EVENT } from '../../shared/auth/permissionEvents'
 import {
   AUTH_SESSION_CHANGED_EVENT,
   AUTH_UNAUTHORIZED_EVENT,
@@ -29,9 +30,32 @@ export function AuthProvider({ children }: PropsWithChildren) {
   const [isLoading, setLoading] = useState(true)
   const [runtimePermissionKeys, setRuntimePermissionKeys] = useState<RuntimePermissionKeys>(null)
   const [isPermissionsLoading, setPermissionsLoading] = useState(false)
+  const permissionRequestRef = useRef(0)
 
   const syncSession = useCallback(() => {
     setSession(readSession())
+  }, [])
+
+  const refreshPermissions = useCallback(async (clearOnError = false) => {
+    const requestId = permissionRequestRef.current + 1
+    permissionRequestRef.current = requestId
+    setPermissionsLoading(true)
+
+    try {
+      const myPermissions = await getMyPermissions()
+
+      if (permissionRequestRef.current === requestId) {
+        setRuntimePermissionKeys(myPermissions.permissionKeys)
+      }
+    } catch {
+      if (clearOnError && permissionRequestRef.current === requestId) {
+        setRuntimePermissionKeys(null)
+      }
+    } finally {
+      if (permissionRequestRef.current === requestId) {
+        setPermissionsLoading(false)
+      }
+    }
   }, [])
 
   const logout = useCallback(() => {
@@ -41,8 +65,10 @@ export function AuthProvider({ children }: PropsWithChildren) {
 
     clearAuthReturnPath()
     clearSession()
+    permissionRequestRef.current += 1
     setSession(null)
     setRuntimePermissionKeys(null)
+    setPermissionsLoading(false)
     navigate('/login', { replace: true })
   }, [navigate])
   const logoutAfterUnauthorized = useCallback(() => {
@@ -53,8 +79,10 @@ export function AuthProvider({ children }: PropsWithChildren) {
     }
 
     clearSession()
+    permissionRequestRef.current += 1
     setSession(null)
     setRuntimePermissionKeys(null)
+    setPermissionsLoading(false)
     navigate('/login', { replace: true })
   }, [location, navigate])
   const syncSessionRef = useRef(syncSession)
@@ -71,12 +99,10 @@ export function AuthProvider({ children }: PropsWithChildren) {
     saveSession(baseSession)
     setSession(baseSession)
 
-    setPermissionsLoading(true)
-    const [user, myPermissions] = await Promise.all([
+    const [user] = await Promise.all([
       getCurrentUserProfile(baseSession),
-      getMyPermissions().catch(() => null),
-    ]).finally(() => setPermissionsLoading(false))
-    setRuntimePermissionKeys(myPermissions?.permissionKeys ?? null)
+      refreshPermissions(true),
+    ])
     const nextSession = user
       ? {
           ...baseSession,
@@ -89,7 +115,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
     setSession(nextSession)
 
     return nextSession
-  }, [])
+  }, [refreshPermissions])
 
   useEffect(() => {
     const handleSessionChanged = () => syncSessionRef.current()
@@ -103,6 +129,28 @@ export function AuthProvider({ children }: PropsWithChildren) {
       window.removeEventListener(AUTH_UNAUTHORIZED_EVENT, handleUnauthorized)
     }
   }, [])
+
+  useEffect(() => {
+    const refreshCurrentPermissions = () => {
+      if (readSession()?.csrfToken) {
+        void refreshPermissions()
+      }
+    }
+
+    window.addEventListener(
+      AUTH_PERMISSIONS_CHANGED_EVENT,
+      refreshCurrentPermissions,
+    )
+    window.addEventListener('focus', refreshCurrentPermissions)
+
+    return () => {
+      window.removeEventListener(
+        AUTH_PERMISSIONS_CHANGED_EVENT,
+        refreshCurrentPermissions,
+      )
+      window.removeEventListener('focus', refreshCurrentPermissions)
+    }
+  }, [refreshPermissions])
 
   useEffect(() => {
     let cancelled = false
@@ -121,14 +169,18 @@ export function AuthProvider({ children }: PropsWithChildren) {
           await enrichSession(serverSession)
         } else {
           clearSession()
+          permissionRequestRef.current += 1
           setSession(null)
           setRuntimePermissionKeys(null)
+          setPermissionsLoading(false)
         }
       } catch {
         if (!cancelled) {
           clearSession()
+          permissionRequestRef.current += 1
           setSession(null)
           setRuntimePermissionKeys(null)
+          setPermissionsLoading(false)
         }
       } finally {
         if (!cancelled) {

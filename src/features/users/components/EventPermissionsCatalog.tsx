@@ -35,6 +35,7 @@ import {
   type CSSProperties,
 } from 'react'
 import { ApiError } from '../../../shared/api/apiClient'
+import { notifyAuthPermissionsChanged } from '../../../shared/auth/permissionEvents'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import {
   getEventPermissionCatalog,
@@ -348,6 +349,7 @@ export const EventPermissionsCatalog = forwardRef<
       }
 
       applyRolePermissions(saved)
+      notifyAuthPermissionsChanged()
       notifications.show({ color: 'green', message: t('Збережено') })
     } catch (saveError) {
       if (!mountedRef.current || saveOperationRef.current !== operationId) {

@@ -4,6 +4,7 @@ import { act, fireEvent, render, screen, waitFor, within } from '@testing-librar
 import { createRef } from 'react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { I18nProvider } from '../../../shared/i18n/I18nProvider'
+import { AUTH_PERMISSIONS_CHANGED_EVENT } from '../../../shared/auth/permissionEvents'
 import {
   getEventPermissionCatalog,
   getRoleEventPermissions,
@@ -79,6 +80,8 @@ describe('EventPermissionsCatalog', () => {
   it('selects and clears the full catalog independently, then saves the server readback', async () => {
     const editorRef = createRef<EventPermissionsCatalogHandle>()
     const onDirtyChange = vi.fn()
+    const onPermissionsChanged = vi.fn()
+    window.addEventListener(AUTH_PERMISSIONS_CHANGED_EVENT, onPermissionsChanged)
 
     render(
       <MantineProvider env="test">
@@ -118,7 +121,9 @@ describe('EventPermissionsCatalog', () => {
       3,
       ['sales.ukraine.sale.edit'],
     )
+    expect(onPermissionsChanged).toHaveBeenCalledTimes(1)
     await waitFor(() => expect(onDirtyChange).toHaveBeenLastCalledWith(false))
+    window.removeEventListener(AUTH_PERMISSIONS_CHANGED_EVENT, onPermissionsChanged)
   })
 
   it('keeps event assignments read-only without the edit permission', async () => {
