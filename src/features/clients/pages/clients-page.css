@@ -26,13 +26,16 @@
   display: flex;
   flex: 0 0 auto;
   gap: 10px;
-  overflow-x: auto;
+  /* Keep the page-level actions visible. Only the filter-control row should
+     scroll horizontally on narrower workspaces; scrolling the whole bar put
+     the create action beyond the right viewport edge. */
+  overflow-x: hidden;
 }
 
 .clients-filter-bar .clients-filter-row {
-  flex: 1 1 auto;
-  min-width: max-content;
-  width: 100%;
+  flex: 1 1 0;
+  min-width: 0;
+  width: auto;
 }
 
 .clients-table-toolbar-slot {

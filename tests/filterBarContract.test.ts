@@ -6,6 +6,7 @@ import { describe, expect, it } from 'vitest'
 
 const filterBarCss = readFileSync(join(cwd(), 'src/shared/ui/filter-bar.css'), 'utf8')
 const consoleTablePageCss = readFileSync(join(cwd(), 'src/shared/ui/console-table-page.css'), 'utf8')
+const clientsPageCss = readFileSync(join(cwd(), 'src/features/clients/pages/clients-page.css'), 'utf8')
 const featureStyles = readCssFiles(join(cwd(), 'src/features'))
 
 const BAR_CLASS_PATTERN = /^(?:app-filter-bar|sales-filter-bar|console-table-command-bar|[\w-]+-filter-bar|[\w-]+-command-bar|assort-filter)$/
@@ -203,6 +204,21 @@ describe('filter-bar CSS contract', () => {
     })
 
     expect(conflicts).toEqual([])
+  })
+
+  it('keeps the clients create action visible while only its filter row scrolls', () => {
+    const clientsRoot = postcss.parse(clientsPageCss)
+    const barRule = findRule(clientsRoot, 'overflow-x', '.clients-filter-bar')
+    const rowRule = findRule(clientsRoot, 'min-width', '.clients-filter-bar .clients-filter-row')
+
+    expect(declarations(barRule)).toMatchObject({
+      'overflow-x': 'hidden',
+    })
+    expect(declarations(rowRule)).toMatchObject({
+      flex: '1 1 0',
+      'min-width': '0',
+      width: 'auto',
+    })
   })
 })
 
