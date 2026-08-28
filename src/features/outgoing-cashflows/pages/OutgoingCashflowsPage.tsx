@@ -53,7 +53,7 @@ import {
   getOutgoingCashflowOrganizations,
   getOutgoingCashflowPaymentMovements,
   getOutgoingCashflows,
-  searchOutgoingCashflowPaymentRegisters,
+  searchOutgoingCashflowRegistryPaymentRegisters,
 } from '../api/outgoingCashflowsApi'
 import type {
   AssignedIncomePaymentOrder,
@@ -152,7 +152,7 @@ function useOutgoingCashflowsPageModel(): OutgoingCashflowsPageModel {
     try {
       const [nextCurrencies, nextRegisters, nextMovements, nextOrganizations] = await Promise.all([
         getOutgoingCashflowCurrencies(),
-        searchOutgoingCashflowPaymentRegisters(''),
+        searchOutgoingCashflowRegistryPaymentRegisters(''),
         getOutgoingCashflowPaymentMovements(),
         getOutgoingCashflowOrganizations(),
       ])

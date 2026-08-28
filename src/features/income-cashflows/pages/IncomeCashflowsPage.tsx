@@ -42,7 +42,7 @@ import {
   getIncomeCashflowOrganizations,
   getIncomeCashflows,
   searchIncomeCashflowClientPayers,
-  searchIncomeCashflowPaymentRegisters,
+  searchIncomeCashflowRegistryPaymentRegisters,
   updateIncomeCashflowClient,
 } from '../api/incomeCashflowsApi'
 import { IncomePaymentOperationType, IncomePaymentOrderType, PaymentRegisterType } from '../types'
@@ -257,7 +257,7 @@ function useIncomeCashflowsPageModel(): IncomeCashflowsPageModel {
     try {
       const [nextCurrencies, nextRegisters, nextOrganizations] = await Promise.all([
         getIncomeCashflowCurrencies(),
-        searchIncomeCashflowPaymentRegisters(''),
+        searchIncomeCashflowRegistryPaymentRegisters(''),
         getIncomeCashflowOrganizations(),
       ])
 

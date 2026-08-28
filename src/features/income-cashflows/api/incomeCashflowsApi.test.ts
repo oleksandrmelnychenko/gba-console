@@ -20,6 +20,7 @@ import {
   searchOutgoingCashflowCounterparties,
   searchIncomeCashflowPaymentMovements,
   searchIncomeCashflowPaymentRegisters,
+  searchIncomeCashflowRegistryPaymentRegisters,
   searchIncomeCashflowPaymentPurposes,
   updateIncomeCashflow,
   updateIncomeCashflowClient,
@@ -193,6 +194,23 @@ describe('income cashflow API lookup contracts', () => {
       {
         query: {
           value: 'постачальнику',
+        },
+      },
+    )
+  })
+
+  it('uses the income registry permission facade for payment-register filters', async () => {
+    apiRequestMock.mockResolvedValueOnce({ Items: [{ NetUid: 'register-1' }] })
+
+    await expect(searchIncomeCashflowRegistryPaymentRegisters('банк')).resolves.toEqual([
+      { NetUid: 'register-1', PaymentCurrencyRegisters: [] },
+    ])
+
+    expect(apiRequestMock).toHaveBeenCalledWith(
+      '/payments/registers/income-cashflows/registry/search',
+      {
+        query: {
+          value: 'банк',
         },
       },
     )

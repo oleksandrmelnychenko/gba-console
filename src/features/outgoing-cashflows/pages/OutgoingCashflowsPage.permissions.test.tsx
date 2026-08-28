@@ -15,7 +15,7 @@ import {
   getOutgoingCashflowOrganizations,
   getOutgoingCashflowPaymentMovements,
   getOutgoingCashflows,
-  searchOutgoingCashflowPaymentRegisters,
+  searchOutgoingCashflowRegistryPaymentRegisters,
 } from '../api/outgoingCashflowsApi'
 import type { OutgoingCashflowRow } from '../types'
 import { OutgoingCashflowsPage } from './OutgoingCashflowsPage'
@@ -82,7 +82,7 @@ vi.mock('../api/outgoingCashflowsApi', async (importOriginal) => ({
   getOutgoingCashflowOrganizations: vi.fn(),
   getOutgoingCashflowPaymentMovements: vi.fn(),
   getOutgoingCashflows: vi.fn(),
-  searchOutgoingCashflowPaymentRegisters: vi.fn(),
+  searchOutgoingCashflowRegistryPaymentRegisters: vi.fn(),
 }))
 
 vi.mock('../api/advanceReportApi', async (importOriginal) => ({
@@ -113,7 +113,7 @@ describe('outgoing cashflows permissions', () => {
     vi.mocked(getOutgoingCashflowCurrencies).mockResolvedValue([])
     vi.mocked(getOutgoingCashflowOrganizations).mockResolvedValue([])
     vi.mocked(getOutgoingCashflowPaymentMovements).mockResolvedValue([])
-    vi.mocked(searchOutgoingCashflowPaymentRegisters).mockResolvedValue([])
+    vi.mocked(searchOutgoingCashflowRegistryPaymentRegisters).mockResolvedValue([])
     vi.mocked(getOutgoingCashflows).mockResolvedValue({
       Collection: [{
         IsUnderReport: true,
@@ -158,6 +158,27 @@ describe('outgoing cashflows permissions', () => {
     const structure = screen.getByRole('button', { name: 'Структура документів' })
     fireEvent.click(structure)
     await waitFor(() => expect(calculateAdvanceReportDocumentStructure).toHaveBeenCalled())
+  })
+
+  it('loads the exact registry with page permission without a foreign payments denial', async () => {
+    allowedPermissions.add(PermissionKeys.SystemPages.OutgoingCashflows.View)
+    renderPage()
+
+    expect(await screen.findByRole('button', { name: 'outgoing-row-order-1' })).toBeTruthy()
+    await waitFor(() => {
+      expect(searchOutgoingCashflowRegistryPaymentRegisters).toHaveBeenCalledWith('')
+    })
+    expect(screen.queryByText('Недостатньо прав для цієї дії.')).toBeNull()
+  })
+
+  it('still surfaces a genuine forbidden response from the outgoing registry', async () => {
+    allowedPermissions.add(PermissionKeys.SystemPages.OutgoingCashflows.View)
+    vi.mocked(getOutgoingCashflows).mockRejectedValue(
+      new Error('Недостатньо прав для цієї дії.'),
+    )
+    renderPage()
+
+    expect(await screen.findByText('Недостатньо прав для цієї дії.')).toBeTruthy()
   })
 
   it('rechecks order.cancel after confirmation was opened', async () => {

@@ -4,6 +4,7 @@ import {
   cancelOutgoingCashflow,
   getOutgoingCashflowByNetId,
   getOutgoingCashflows,
+  searchOutgoingCashflowRegistryPaymentRegisters,
 } from './outgoingCashflowsApi'
 
 vi.mock('../../../shared/api/apiClient', () => ({
@@ -36,6 +37,23 @@ describe('outgoingCashflowsApi', () => {
       Collection: [{ NetUid: 'order-1', TotalRowsQty: 45 }],
       TotalRowsQty: 45,
     })
+  })
+
+  it('uses the outgoing registry permission facade for payment-register filters', async () => {
+    apiRequestMock.mockResolvedValueOnce({ Items: [{ NetUid: 'register-1' }] })
+
+    await expect(searchOutgoingCashflowRegistryPaymentRegisters('каса')).resolves.toEqual([
+      { NetUid: 'register-1' },
+    ])
+
+    expect(apiRequestMock).toHaveBeenCalledWith(
+      '/payments/registers/outgoing-cashflows/registry/search',
+      {
+        query: {
+          value: 'каса',
+        },
+      },
+    )
   })
 
   it('loads a focused outcome payment order by NetUid for cash-flow drilldown', async () => {

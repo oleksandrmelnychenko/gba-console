@@ -159,6 +159,16 @@ export async function searchIncomeCashflowPaymentRegisters(value = ''): Promise<
   return normalizePaymentRegisters(result)
 }
 
+export async function searchIncomeCashflowRegistryPaymentRegisters(value = ''): Promise<PaymentRegister[]> {
+  const result = await apiRequest<unknown>('/payments/registers/income-cashflows/registry/search', {
+    query: {
+      value,
+    },
+  })
+
+  return normalizePaymentRegisters(result)
+}
+
 export async function getIncomeCashflowPaymentMovements(): Promise<PaymentMovement[]> {
   const result = await apiRequest<unknown>('/payments/movements/accounting/all')
 

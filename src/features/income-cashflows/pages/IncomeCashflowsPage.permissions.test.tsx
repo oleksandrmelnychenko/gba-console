@@ -10,7 +10,7 @@ import {
   getIncomeCashflowCurrencies,
   getIncomeCashflowOrganizations,
   getIncomeCashflows,
-  searchIncomeCashflowPaymentRegisters,
+  searchIncomeCashflowRegistryPaymentRegisters,
 } from '../api/incomeCashflowsApi'
 import { IncomeCashflowsPage } from './IncomeCashflowsPage'
 
@@ -61,7 +61,7 @@ vi.mock('../api/incomeCashflowsApi', async (importOriginal) => ({
   getIncomeCashflowOrganizations: vi.fn(),
   getIncomeCashflows: vi.fn(),
   searchIncomeCashflowClientPayers: vi.fn(),
-  searchIncomeCashflowPaymentRegisters: vi.fn(),
+  searchIncomeCashflowRegistryPaymentRegisters: vi.fn(),
   updateIncomeCashflowClient: vi.fn(),
 }))
 
@@ -98,7 +98,7 @@ describe('Income cashflows canonical permission guards', () => {
     vi.clearAllMocks()
     vi.mocked(getIncomeCashflowCurrencies).mockResolvedValue([])
     vi.mocked(getIncomeCashflowOrganizations).mockResolvedValue([])
-    vi.mocked(searchIncomeCashflowPaymentRegisters).mockResolvedValue([])
+    vi.mocked(searchIncomeCashflowRegistryPaymentRegisters).mockResolvedValue([])
     vi.mocked(getIncomeCashflows).mockResolvedValue([incomeOrder])
     vi.mocked(cancelIncomeCashflow).mockResolvedValue(incomeOrder)
   })
@@ -151,6 +151,27 @@ describe('Income cashflows canonical permission guards', () => {
     expect(await screen.findByLabelText('Скасувати')).toBeTruthy()
     expect(screen.queryByLabelText('Деталі')).toBeNull()
     expect(screen.queryByLabelText('Переназначити клієнта')).toBeNull()
+  })
+
+  it('loads the exact registry with page permission without a foreign payments denial', async () => {
+    allowedPermissions.add(pagePermission)
+    renderPage()
+
+    await waitFor(() => expect(getIncomeCashflows).toHaveBeenCalled())
+    await waitFor(() => {
+      expect(searchIncomeCashflowRegistryPaymentRegisters).toHaveBeenCalledWith('')
+    })
+    expect(screen.queryByText('Недостатньо прав для цієї дії.')).toBeNull()
+  })
+
+  it('still surfaces a genuine forbidden response from the income registry', async () => {
+    allowedPermissions.add(pagePermission)
+    vi.mocked(getIncomeCashflows).mockRejectedValue(
+      new Error('Недостатньо прав для цієї дії.'),
+    )
+    renderPage()
+
+    expect(await screen.findByText('Недостатньо прав для цієї дії.')).toBeTruthy()
   })
 
   it('rechecks cancel permission in the final handler', async () => {

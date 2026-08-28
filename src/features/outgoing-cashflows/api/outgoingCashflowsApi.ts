@@ -78,8 +78,8 @@ export async function getOutgoingCashflowPaymentMovements(): Promise<PaymentMove
   return readArrayPayload(result, ['Items', 'PaymentMovements', 'Data']) as PaymentMovement[]
 }
 
-export async function searchOutgoingCashflowPaymentRegisters(value = ''): Promise<PaymentRegister[]> {
-  const result = await apiRequest<unknown>('/payments/registers/search', {
+export async function searchOutgoingCashflowRegistryPaymentRegisters(value = ''): Promise<PaymentRegister[]> {
+  const result = await apiRequest<unknown>('/payments/registers/outgoing-cashflows/registry/search', {
     query: {
       value,
     },
