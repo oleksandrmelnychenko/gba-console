@@ -1218,6 +1218,12 @@ export type SystemPagePermissionKey =
   | Values<typeof PermissionKeys.SystemPages.SalesHeadDashboard>
   | Values<typeof PermissionKeys.SystemPages.SalesUkraineOffers>
   | Values<typeof PermissionKeys.SystemPages.SalesUkraineInterest>
+  | Values<typeof PermissionKeys.SystemPages.SalesUkraineCartReserve>
+  | Values<typeof PermissionKeys.SystemPages.SalesUkraineClientProductMovement>
+  | Values<typeof PermissionKeys.SystemPages.SalesUkraineDebtors>
+  | Values<typeof PermissionKeys.SystemPages.SalesUkrainePrediction>
+  | Values<typeof PermissionKeys.SystemPages.SalesUkraineReturns>
+  | Values<typeof PermissionKeys.SystemPages.SalesCharts>
   | Values<typeof PermissionKeys.SystemPages.Dashboard>
   | Values<typeof PermissionKeys.SystemPages.Users>
   | Values<typeof PermissionKeys.SystemPages.Roles>

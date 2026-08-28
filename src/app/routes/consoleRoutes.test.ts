@@ -17,6 +17,16 @@ const EXPECTED_NEW_PAGE_PERMISSIONS = {
   '/sales/cockpit/head': PermissionKeys.SystemPages.SalesHeadDashboard.View,
   '/sales/ukraine/offers': PermissionKeys.SystemPages.SalesUkraineOffers.View,
   '/sales/ukraine/interest': PermissionKeys.SystemPages.SalesUkraineInterest.View,
+  '/sales/ukraine/cart-reserve':
+    PermissionKeys.SystemPages.SalesUkraineCartReserve.View,
+  '/sales/ukraine/debtors': PermissionKeys.SystemPages.SalesUkraineDebtors.View,
+  '/sales/ukraine/client-product-movement':
+    PermissionKeys.SystemPages.SalesUkraineClientProductMovement.View,
+  '/sales/ukraine/prediction':
+    PermissionKeys.SystemPages.SalesUkrainePrediction.View,
+  '/sales/charts': PermissionKeys.SystemPages.SalesCharts.View,
+  '/sales/ukraine/all/returns/new':
+    PermissionKeys.SystemPages.SalesUkraineReturns.View,
   '/service/organisations':
     PermissionKeys.SystemPages.ServiceOrganisations.View,
   '/sad/all': PermissionKeys.SystemPages.Sad.View,
