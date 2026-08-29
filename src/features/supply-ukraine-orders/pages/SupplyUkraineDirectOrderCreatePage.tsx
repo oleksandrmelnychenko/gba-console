@@ -450,7 +450,11 @@ function SupplyUkraineOrderFileCreatePage({ mode }: { mode: CreateMode }) {
             selectedSupplier,
           })
 
-      const successNavigation = prepareSupplyUkraineOrderCreateNavigation(response, mode)
+      const successNavigation = prepareSupplyUkraineOrderCreateNavigation(response, mode, {
+        canOpenDirectOrderLogisticWay: hasPermission(
+          PermissionKeys.OrdersUkraine.Order.OpenLogisticWay,
+        ),
+      })
 
       if (!successNavigation) {
         dispatchPage({ type: 'setUploadResponse', uploadResponse: response })

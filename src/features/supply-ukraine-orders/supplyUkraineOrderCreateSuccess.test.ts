@@ -31,7 +31,7 @@ describe('Ukraine order create success navigation', () => {
     const navigation = prepareSupplyUkraineOrderCreateNavigation(
       { SupplyOrder: { NetUid: 'direct-order-1' } },
       'direct',
-      NOW,
+      { now: NOW },
     )
 
     expect(navigation?.path).toBe('/orders/ukraine/all/edit/direct-order-1')
@@ -51,7 +51,7 @@ describe('Ukraine order create success navigation', () => {
     const navigation = prepareSupplyUkraineOrderCreateNavigation(
       { SupplyOrderUkraine: { NetUid: 'receipt-1' } },
       'toUkraine',
-      NOW,
+      { now: NOW },
     )
 
     expect(navigation?.path).toBe('/orders/ukraine/view/receipt-1')
@@ -65,7 +65,24 @@ describe('Ukraine order create success navigation', () => {
   })
 
   it('carries reset filters when a successful response falls back directly to the list', () => {
-    const navigation = prepareSupplyUkraineOrderCreateNavigation({}, 'direct', NOW)
+    const navigation = prepareSupplyUkraineOrderCreateNavigation({}, 'direct', { now: NOW })
+
+    expect(navigation?.path).toBe('/orders/ukraine/all')
+    expect(readAllOrdersUkraineFilterAfterCreateState(navigation?.state)).toEqual({
+      currencyId: '',
+      from: '2026-07-03',
+      supplier: '',
+      to: '2026-07-10',
+      type: 'all',
+    })
+  })
+
+  it('returns to the list when the creator cannot open the direct order logistic way', () => {
+    const navigation = prepareSupplyUkraineOrderCreateNavigation(
+      { SupplyOrder: { NetUid: 'direct-order-1' } },
+      'direct',
+      { canOpenDirectOrderLogisticWay: false, now: NOW },
+    )
 
     expect(navigation?.path).toBe('/orders/ukraine/all')
     expect(readAllOrdersUkraineFilterAfterCreateState(navigation?.state)).toEqual({
@@ -78,7 +95,7 @@ describe('Ukraine order create success navigation', () => {
   })
 
   it('preserves persisted filters when the upload response has errors', () => {
-    expect(prepareSupplyUkraineOrderCreateNavigation({ HasError: true }, 'direct', NOW)).toBeNull()
+    expect(prepareSupplyUkraineOrderCreateNavigation({ HasError: true }, 'direct', { now: NOW })).toBeNull()
     expect(readAllOrdersUkraineFilter(createDefaultAllOrdersUkraineFilter(NOW))).toEqual(STALE_FILTERS)
   })
 })
