@@ -97,4 +97,28 @@ describe('SupplyUkraineOrdersPage permissions', () => {
     expect(screen.getByRole('button', { name: 'Поставка' })).not.toBeNull()
     expect(screen.queryByRole('button', { name: 'Нове замовлення' })).toBeNull()
   })
+
+  it('shows direct creation with page and open-order access without requiring logistic-way access', async () => {
+    canMock.mockImplementation(
+      (permissionKey) => permissionKey === PermissionKeys.OrdersUkraine.Page.View,
+    )
+    hasPermissionMock.mockImplementation(
+      (permissionKey) => permissionKey === PermissionKeys.OrdersUkraine.Order.OpenOrder,
+    )
+    getSupplyUkraineOrdersMock.mockResolvedValue({ items: [], totalQty: 0 })
+    getDirectSupplyUkraineOrdersMock.mockResolvedValue({ items: [], totalQty: 0 })
+    getSupplyOrderCurrenciesMock.mockResolvedValue([])
+
+    render(
+      <MantineProvider>
+        <MemoryRouter>
+          <SupplyUkraineOrdersPage />
+        </MemoryRouter>
+      </MantineProvider>,
+    )
+
+    await waitFor(() => expect(getDirectSupplyUkraineOrdersMock).toHaveBeenCalled())
+    expect(screen.getByRole('button', { name: 'Нове замовлення' })).not.toBeNull()
+    expect(screen.queryByRole('button', { name: 'Поставка' })).toBeNull()
+  })
 })

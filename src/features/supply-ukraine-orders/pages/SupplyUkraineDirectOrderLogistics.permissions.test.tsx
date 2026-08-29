@@ -1,5 +1,5 @@
 import { MantineProvider } from '@mantine/core'
-import { render, screen, waitFor } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import type { ReactNode } from 'react'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
@@ -9,6 +9,7 @@ import {
   getDirectSupplyOrderForLogisticWay,
   getSupplyOrderCreateSuppliers,
   getSupplyOrderOrganizations,
+  uploadDirectSupplyOrderFromFile,
 } from '../api/supplyUkraineOrdersApi'
 import {
   SupplyUkraineDirectOrderCreatePage,
@@ -51,8 +52,8 @@ vi.mock('../components/DirectOrderProductIncomeStatus', () => ({
 }))
 
 vi.mock('../../../shared/ui/AppDrawer', () => ({
-  AppDrawer: ({ children, opened }: { children: ReactNode; opened: boolean }) =>
-    opened ? <section>{children}</section> : null,
+  AppDrawer: ({ children, footer, opened }: { children: ReactNode; footer?: ReactNode; opened: boolean }) =>
+    opened ? <section>{children}{footer}</section> : null,
 }))
 
 vi.mock('../../../shared/ui/AppModal', () => ({
@@ -114,5 +115,75 @@ describe('Supply Ukraine direct-order logistics permissions', () => {
     expect(screen.getByText('Доступ заборонено')).toBeTruthy()
     expect(getSupplyOrderOrganizations).not.toHaveBeenCalled()
     expect(getSupplyOrderCreateSuppliers).not.toHaveBeenCalled()
+  })
+
+  it('returns a successful creator to the registry when logistic-way access is absent', async () => {
+    const organization = {
+      Culture: 'uk',
+      Id: 10,
+      Name: 'GBA Україна',
+      NetUid: 'organization-1',
+    }
+    const clientAgreement = {
+      Agreement: {
+        Id: 30,
+        Name: 'USD',
+        NetUid: 'agreement-1',
+        Organization: organization,
+      },
+      Id: 20,
+      NetUid: 'client-agreement-1',
+    }
+
+    allowedPermissions.add(PermissionKeys.OrdersUkraine.Page.View)
+    allowedPermissions.add(PermissionKeys.OrdersUkraine.Order.OpenOrder)
+    vi.mocked(getSupplyOrderOrganizations).mockResolvedValue([organization])
+    vi.mocked(getSupplyOrderCreateSuppliers).mockResolvedValue([{
+      ClientAgreements: [clientAgreement],
+      Id: 40,
+      Name: 'Test supplier',
+      NetUid: 'supplier-1',
+    }])
+    vi.mocked(uploadDirectSupplyOrderFromFile).mockResolvedValue({
+      SupplyOrder: { NetUid: 'order-1208' },
+    })
+
+    const { container } = render(
+      <MantineProvider env="test">
+        <I18nProvider>
+          <MemoryRouter initialEntries={['/orders/ukraine/all/new']}>
+            <Routes>
+              <Route path="/orders/ukraine/all/new" element={<SupplyUkraineDirectOrderCreatePage />} />
+              <Route path="/orders/ukraine/all" element={<div>orders-registry</div>} />
+              <Route path="/orders/ukraine/all/edit/:id" element={<div>logistic-way</div>} />
+            </Routes>
+          </MemoryRouter>
+        </I18nProvider>
+      </MantineProvider>,
+    )
+
+    await waitFor(() => expect(getSupplyOrderCreateSuppliers).toHaveBeenCalledWith('direct'))
+
+    const fileInput = container.querySelector('input[type="file"]')
+    expect(fileInput).not.toBeNull()
+    fireEvent.change(fileInput!, {
+      target: {
+        files: [new File(
+          ['test'],
+          'order.xlsx',
+          { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' },
+        )],
+      },
+    })
+    fireEvent.change(screen.getByLabelText('Код товару'), { target: { value: '1' } })
+    fireEvent.change(screen.getByLabelText('Кількість'), { target: { value: '2' } })
+    fireEvent.change(screen.getByLabelText('З рядка'), { target: { value: '2' } })
+    fireEvent.change(screen.getByLabelText('До рядка'), { target: { value: '2' } })
+    fireEvent.change(screen.getByLabelText('Колонка ціни'), { target: { value: '3' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Створити' }))
+
+    await waitFor(() => expect(uploadDirectSupplyOrderFromFile).toHaveBeenCalledTimes(1))
+    expect(await screen.findByText('orders-registry')).toBeTruthy()
+    expect(screen.queryByText('logistic-way')).toBeNull()
   })
 })

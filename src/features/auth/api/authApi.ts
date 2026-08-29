@@ -55,15 +55,9 @@ export async function signOut(): Promise<void> {
 }
 
 export async function getCurrentUserProfile(session: AuthSession): Promise<AuthUser | null> {
-  const netId = session.userNetUid
-
-  if (!netId) {
+  if (!session.userNetUid) {
     return null
   }
 
-  return apiRequest<AuthUser>('/usermanagement/profiles/get', {
-    query: {
-      netId,
-    },
-  })
+  return apiRequest<AuthUser>('/usermanagement/profiles/me')
 }
