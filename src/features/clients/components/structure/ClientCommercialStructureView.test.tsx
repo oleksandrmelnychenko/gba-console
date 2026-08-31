@@ -24,7 +24,8 @@ describe('ClientCommercialStructureView', () => {
 
     expect(screen.getByText('Комерційна група · ХМ052')).toBeTruthy()
     expect(screen.getByText('Є дані, які треба перевірити')).toBeTruthy()
-    expect(screen.getByText(/Робочі картки, договори, продажі й баланси залишаються без змін/)).toBeTruthy()
+    expect(screen.getByText(/Однозначні картки об’єднуються автоматично зі збереженням договорів/)).toBeTruthy()
+    expect(screen.getByText(/Сумнівні зв’язки не об’єднуються й залишаються на перевірку/)).toBeTruthy()
     expect(screen.getByText('Структура клієнта')).toBeTruthy()
     expect(screen.getAllByText('ТОВ МАГРОМ').length).toBeGreaterThanOrEqual(3)
     expect(screen.getByText('Покупець')).toBeTruthy()
