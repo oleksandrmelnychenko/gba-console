@@ -18,6 +18,8 @@ test('BUG-1141: три SAMPIYON JSON-сценарії проходять одн�
   const workbook = createBug1141SampiyonWorkbook();
   const supplier = BUG_1141_SAMPIYON;
   const invoiceNumber = `222222-${entities.runId}`;
+  const firstPackingListNumber = `2222-${entities.runId}`;
+  const secondPackingListNumber = `3333-${entities.runId}`;
 
   try {
     const order = await createDirectOrderFromCcd(page, supplier, entities.runId, {
@@ -89,12 +91,12 @@ test('BUG-1141: три SAMPIYON JSON-сценарії проходять одн�
 
     await addPackingListFromCcd(page, supplier, order.orderNetId, invoiceNumber, {
       filePath: workbook.filePath,
-      number: `2222-${entities.runId}`,
+      number: firstPackingListNumber,
       parse: { startRow: 4, endRow: 10 },
     });
     await addPackingListFromCcd(page, supplier, order.orderNetId, invoiceNumber, {
       filePath: workbook.filePath,
-      number: `3333-${entities.runId}`,
+      number: secondPackingListNumber,
       parse: { startRow: 11, endRow: 21 },
     });
 
@@ -142,7 +144,9 @@ test('BUG-1141: три SAMPIYON JSON-сценарії проходять одн�
     expect(arrived[0].linked, 'invoice linked to delivery protocol').toBe(1);
     expect(Boolean(arrived[0].arrived), 'delivery protocol arrived').toBe(true);
 
-    await postIncome(page, order.orderNetId);
+    await postIncome(page, order.orderNetId, {
+      packingListNumbers: [firstPackingListNumber, secondPackingListNumber],
+    });
 
     const incomeScope = `
       FROM dbo.ProductIncomeItem incomeItem
@@ -158,7 +162,7 @@ test('BUG-1141: три SAMPIYON JSON-сценарії проходять одн�
               COALESCE(SUM(incomeItem.Qty), 0) AS qty ${incomeScope}`,
       { invoiceNetId: invoice.invoiceNetId },
     );
-    expect(income[0].incomes, 'one product income').toBe(1);
+    expect(income[0].incomes, 'one product income per packing list').toBe(2);
     expect(income[0].rows, 'income items').toBe(18);
     expect(income[0].qty, 'income Qty').toBe(502);
 
@@ -184,7 +188,7 @@ test('BUG-1141: три SAMPIYON JSON-сценарії проходять одн�
       { timeoutMs: 120_000, label: 'BUG-1141 consignments' },
       { invoiceNetId: invoice.invoiceNetId },
     );
-    expect(consignments[0].consignments, 'no consignment twin').toBe(1);
+    expect(consignments[0].consignments, 'one consignment per product income, without twins').toBe(2);
     expect(consignments[0].items, 'one consignment item per invoice row').toBe(18);
     expect(consignments[0].qty, 'consignment Qty').toBe(502);
   } finally {

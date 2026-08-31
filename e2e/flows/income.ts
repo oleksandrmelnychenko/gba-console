@@ -493,47 +493,70 @@ export async function placeAllItems(page: Page): Promise<void> {
   }
 }
 
-export async function postIncome(page: Page, orderNetId: string): Promise<void> {
+export async function postIncome(
+  page: Page,
+  orderNetId: string,
+  options?: { packingListNumbers?: string[] },
+): Promise<void> {
   await page.goto(`/orders/ukraine/all/edit/${orderNetId}/product-income`);
   const incomeButton = page.getByTestId('income-capitalize');
   await expect(incomeButton).toBeVisible({ timeout: 45_000 });
 
-  const storageSelect = page.getByRole('combobox', { name: 'Склад' });
-  await expect(storageSelect).toBeEnabled({ timeout: 20_000 });
-  await expect(async () => {
-    const current = await storageSelect.inputValue().catch(() => '');
-    if (!current.trim()) {
-      await storageSelect.click();
-      await page.getByRole('option').first().click({ timeout: 5_000 });
+  const packingListNumbers = options?.packingListNumbers?.length
+    ? options.packingListNumbers
+    : [null];
+
+  for (const packingListNumber of packingListNumbers) {
+    if (packingListNumber) {
+      const packingListSelect = page.getByRole('combobox', { name: 'Пакувальний лист' });
+      await expect(packingListSelect).toBeEnabled({ timeout: 30_000 });
+
+      if ((await packingListSelect.inputValue()) !== packingListNumber) {
+        await packingListSelect.click();
+        await page.getByRole('option', { name: packingListNumber, exact: true }).click();
+      }
+
+      await expect(packingListSelect).toHaveValue(packingListNumber);
     }
-    expect((await storageSelect.inputValue()).trim().length).toBeGreaterThan(0);
-  }).toPass({ timeout: 45_000 });
 
-  // Mark all packing items ready to place before posting the income (розміщення step).
-  const readyButton = page.getByTestId('income-ready-all');
-  if (await readyButton.isVisible().catch(() => false)) {
-    await Promise.all([
+    const storageSelect = page.getByRole('combobox', { name: 'Склад' });
+    await expect(storageSelect).toBeEnabled({ timeout: 20_000 });
+    await expect(async () => {
+      const current = await storageSelect.inputValue().catch(() => '');
+      if (!current.trim()) {
+        await storageSelect.click();
+        await page.getByRole('option').first().click({ timeout: 5_000 });
+      }
+      expect((await storageSelect.inputValue()).trim().length).toBeGreaterThan(0);
+    }).toPass({ timeout: 45_000 });
+
+    // Product income is document-scoped: each physical packing list is placed
+    // and capitalized independently, even when several lists belong to one invoice.
+    const readyButton = page.getByTestId('income-ready-all');
+    if (await readyButton.isVisible().catch(() => false)) {
+      await Promise.all([
+        page.waitForResponse(
+          (res) => new URL(res.url()).pathname.endsWith('/supplies/packinglists/product-income/direct-supply-order/readiness') &&
+            res.request().method() === 'PATCH',
+          { timeout: 60_000 },
+        ),
+        readyButton.click(),
+      ]);
+      await expect(readyButton).toBeHidden({ timeout: 20_000 });
+    }
+
+    await placeAllItems(page);
+
+    await expect(incomeButton).toBeEnabled({ timeout: 20_000 });
+
+    const [response] = await Promise.all([
       page.waitForResponse(
-        (res) => new URL(res.url()).pathname.endsWith('/supplies/packinglists/product-income/direct-supply-order/readiness') &&
-          res.request().method() === 'PATCH',
-        { timeout: 60_000 },
+        (res) => new URL(res.url()).pathname.endsWith('/products/incomes/product-income/direct-supply-order/capitalize') &&
+          res.request().method() === 'POST',
+        { timeout: 180_000 },
       ),
-      readyButton.click(),
+      incomeButton.click(),
     ]);
-    await expect(readyButton).toBeHidden({ timeout: 20_000 });
+    expect(response.ok(), `income HTTP ${response.status()}`).toBe(true);
   }
-
-  await placeAllItems(page);
-
-  await expect(incomeButton).toBeEnabled({ timeout: 20_000 });
-
-  const [response] = await Promise.all([
-    page.waitForResponse(
-      (res) => new URL(res.url()).pathname.endsWith('/products/incomes/product-income/direct-supply-order/capitalize') &&
-        res.request().method() === 'POST',
-      { timeout: 180_000 },
-    ),
-    incomeButton.click(),
-  ]);
-  expect(response.ok(), `income HTTP ${response.status()}`).toBe(true);
 }

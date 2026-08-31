@@ -18,6 +18,6 @@ The recorder's `C:\fakepath\CCD_23UA400040033270U0 SAMPIYON.xlsx` is not a Desk 
 | Invoice | Import rows 4–21 | 18 invoice lines, Qty 502, amount 8292.61 |
 | Packing | Import rows 4–10 and 11–21 as separate lists | exactly two lists; 7+11 rows and 75+427 Qty |
 | Delivery/customs | Attach invoice, move in transit, import customs, arrive | one arrived protocol and one real specification per invoice line |
-| Income | Place all rows and capitalize | one income, 18 items/502 Qty, completed outbox, no consignment twin |
+| Income | Place and capitalize both physical packing lists | two document-scoped incomes, 18 items/502 Qty in total, completed outboxes, no consignment twins |
 
 The test must run only on the fenced `_E2E` database and must start from the clean golden snapshot.
