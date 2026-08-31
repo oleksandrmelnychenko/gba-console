@@ -220,10 +220,13 @@ export async function createClientPayment(
 
   const createResponsePromise = page.waitForResponse(
     (response) => response.request().method() === 'POST' &&
-      new URL(response.url()).pathname.endsWith('/payments/orders/income/new'),
+      new URL(response.url()).pathname.endsWith('/payments/orders/income/accounting/create/client-payment'),
     { timeout: 60_000 },
   );
   await drawer.getByRole('button', { name: 'Зберегти', exact: true }).click();
+  const confirmation = page.getByRole('dialog', { name: 'Підтвердити створення прибуткового ордера' });
+  await expect(confirmation).toBeVisible({ timeout: 20_000 });
+  await confirmation.getByRole('button', { name: 'Підтвердити', exact: true }).click();
   const createResponse = await createResponsePromise;
   expect(createResponse.ok(), `income-payment mutation HTTP ${createResponse.status()}`).toBe(true);
 

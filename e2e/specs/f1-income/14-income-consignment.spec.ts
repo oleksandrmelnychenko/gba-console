@@ -11,6 +11,10 @@ test('прихід: додавання колонки чекає заванта�
     'income.AYMEKS.order',
     'спочатку має пройти 10-order-invoice',
   );
+  entities.require<CreatedInvoiceRef>(
+    'income.AYMEKS.invoice',
+    'спочатку має пройти 10-order-invoice',
+  );
   const packingListPattern = '**/supplies/packinglists/specification/products/get?**';
 
   let signalRequestStarted: () => void = () => undefined;

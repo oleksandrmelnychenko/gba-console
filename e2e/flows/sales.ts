@@ -131,7 +131,7 @@ export async function createSaleViaWizard(page: Page, input: WizardSaleInput): P
     (response) => {
       const url = new URL(response.url());
       return response.request().method() === 'GET' &&
-        url.pathname.endsWith('/sales/get/current') &&
+        url.pathname.endsWith('/sales/ukraine/create/current') &&
         url.searchParams.get('netId')?.toLowerCase() === input.agreementNetUid.toLowerCase();
     },
     { timeout: 30_000 },

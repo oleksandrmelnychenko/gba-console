@@ -114,6 +114,19 @@ export async function createProForma(
   await expect(card).toBeVisible({ timeout: 30_000 });
 
   const createButton = card.getByRole('button', { name: /Створити|Редагувати/ });
+  if (!(await createButton.isVisible())) {
+    const approveButton = page.getByRole('button', { name: 'Затвердити замовлення', exact: true });
+    await expect(approveButton).toBeVisible({ timeout: 20_000 });
+    const approveResponsePromise = page.waitForResponse(
+      (response) => response.request().method() === 'POST' &&
+        apiPath(response.url()).endsWith('/supplies/orders/direct-supply-order/logistic-way/approve'),
+      { timeout: 60_000 },
+    );
+    await approveButton.click();
+    const approveResponse = await approveResponsePromise;
+    expect(approveResponse.ok(), `order approval HTTP ${approveResponse.status()}`).toBe(true);
+    await expect(page.getByText('Замовлення погоджено')).toBeVisible({ timeout: 20_000 });
+  }
   await expect(createButton).toBeVisible({ timeout: 20_000 });
   await createButton.click();
 
