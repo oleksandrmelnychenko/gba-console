@@ -194,7 +194,7 @@ export async function createProFormaPaymentTask(
 
   const responsePromise = page.waitForResponse(
     (response) => response.request().method() === 'POST' &&
-      new URL(response.url()).pathname.endsWith('/supplies/invoices/direct-supply-order/logistic-way/payment-tasks/create'),
+      new URL(response.url()).pathname.endsWith('/supplies/proforms/update'),
     { timeout: 60_000 },
   );
   const saveButton = drawer.getByRole('button', { name: 'Зберегти', exact: true });
