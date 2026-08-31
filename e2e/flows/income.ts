@@ -1,6 +1,6 @@
 import type { Page } from '@playwright/test';
 import { expect } from '@playwright/test';
-import type { TestIncomeSupplier } from '../data/testIncome';
+import type { TestIncomeParseConfig, TestIncomeSupplier } from '../data/testIncome';
 import { CUSTOMS_DATE } from '../data/testIncome';
 import { bodyOf } from '../helpers/envelope';
 import { customsSpecificationFile, assertNotRawCcd } from '../helpers/uploads';
@@ -51,6 +51,23 @@ export interface CreatedOrderRef {
   orderNumber: string;
 }
 
+export interface SpreadsheetUploadOptions {
+  filePath?: string;
+  number?: string;
+  parse?: Partial<TestIncomeParseConfig>;
+}
+
+function uploadFile(supplier: TestIncomeSupplier, options?: SpreadsheetUploadOptions): string {
+  return options?.filePath ?? customsSpecificationFile(supplier.dirPrefix);
+}
+
+function uploadParse(
+  supplier: TestIncomeSupplier,
+  options?: SpreadsheetUploadOptions,
+): TestIncomeParseConfig {
+  return { ...supplier.parse, ...options?.parse };
+}
+
 export function scopedNumber(supplier: TestIncomeSupplier, runId: string): string {
   return `${supplier.invoiceNumber}-${runId}`;
 }
@@ -59,8 +76,10 @@ export async function createDirectOrderFromCcd(
   page: Page,
   supplier: TestIncomeSupplier,
   runId: string,
+  options?: SpreadsheetUploadOptions,
 ): Promise<CreatedOrderRef> {
-  const file = customsSpecificationFile(supplier.dirPrefix);
+  const file = uploadFile(supplier, options);
+  const parse = uploadParse(supplier, options);
   const number = scopedNumber(supplier, runId);
 
   await page.goto('/orders/ukraine/all/new');
@@ -79,11 +98,11 @@ export async function createDirectOrderFromCcd(
 
   await attachFile(page, () => page.getByLabel('Файл', { exact: true }).click(), file);
 
-  await page.getByLabel('Код товару', { exact: true }).fill(String(supplier.parse.productCode));
-  await page.getByLabel('Кількість', { exact: true }).fill(String(supplier.parse.qty));
-  await page.getByLabel('З рядка', { exact: true }).fill(String(supplier.parse.startRow));
-  await page.getByLabel('До рядка', { exact: true }).fill(String(supplier.parse.endRow));
-  await page.getByLabel('Колонка ціни', { exact: true }).fill(String(supplier.parse.price));
+  await page.getByLabel('Код товару', { exact: true }).fill(String(parse.productCode));
+  await page.getByLabel('Кількість', { exact: true }).fill(String(parse.qty));
+  await page.getByLabel('З рядка', { exact: true }).fill(String(parse.startRow));
+  await page.getByLabel('До рядка', { exact: true }).fill(String(parse.endRow));
+  await page.getByLabel('Колонка ціни', { exact: true }).fill(String(parse.price));
 
   const [response] = await Promise.all([
     page.waitForResponse(
@@ -110,8 +129,9 @@ export async function createProForma(
   supplier: TestIncomeSupplier,
   runId: string,
   orderNetId: string,
+  options?: SpreadsheetUploadOptions,
 ): Promise<void> {
-  const file = customsSpecificationFile(supplier.dirPrefix);
+  const file = uploadFile(supplier, options);
   await page.goto(`/orders/ukraine/all/edit/${orderNetId}`);
   const card = page.locator('.supply-detail-card').filter({ hasText: 'Проформа' });
   await expect(card).toBeVisible({ timeout: 30_000 });
@@ -152,6 +172,40 @@ export async function createProForma(
   await expect(page.getByText('Проформу збережено')).toBeVisible({ timeout: 20_000 });
 }
 
+export async function createProFormaPaymentTask(
+  page: Page,
+  orderNetId: string,
+  percent: number,
+  responsibleName: string,
+): Promise<void> {
+  await page.goto(`/orders/ukraine/all/edit/${orderNetId}`);
+  const createButton = page.getByRole('button', { name: 'Створити платіжну задачу', exact: true });
+  await expect(createButton).toBeEnabled({ timeout: 30_000 });
+  await createButton.click();
+
+  const drawer = page.getByRole('dialog', { name: 'Створити платіжну задачу' });
+  await expect(drawer).toBeVisible({ timeout: 20_000 });
+  await drawer.getByLabel('Відсоток', { exact: true }).fill(String(percent));
+  await drawer.getByLabel('Бух. витрата', { exact: true }).check();
+
+  const responsible = drawer.getByRole('combobox', { name: 'Відповідальний за оплату' });
+  await responsible.click();
+  await responsible.fill(responsibleName);
+  const responsibleOption = page.getByRole('option', { name: responsibleName, exact: true });
+  await expect(responsibleOption).toHaveCount(1, { timeout: 30_000 });
+  await responsibleOption.click();
+
+  const responsePromise = page.waitForResponse(
+    (response) => response.request().method() === 'POST' &&
+      new URL(response.url()).pathname.endsWith('/supplies/invoices/direct-supply-order/logistic-way/payment-tasks/create'),
+    { timeout: 60_000 },
+  );
+  await drawer.getByRole('button', { name: 'Зберегти', exact: true }).click();
+  const response = await responsePromise;
+  expect(response.ok(), `proforma payment task HTTP ${response.status()}`).toBe(true);
+  await expect(drawer).toBeHidden({ timeout: 20_000 });
+}
+
 export interface CreatedInvoiceRef {
   invoiceNetId: string;
   invoiceNumber: string;
@@ -165,6 +219,7 @@ export async function createArrivedDeliveryProtocol(
   page: Page,
   order: CreatedOrderRef,
   invoice: CreatedInvoiceRef,
+  statuses: Array<'В дорозі' | 'Прибув'> = ['В дорозі', 'Прибув'],
 ): Promise<CreatedDeliveryProtocolRef> {
   await page.goto('/product-delivery-protocols');
   const addButton = page.locator('main').getByRole('button', { name: 'Додати', exact: true });
@@ -213,7 +268,7 @@ export async function createArrivedDeliveryProtocol(
   expect(assignResponse.ok(), `delivery protocol invoice assignment HTTP ${assignResponse.status()}`).toBe(true);
   await expect(invoicesDrawer).toBeHidden({ timeout: 30_000 });
 
-  for (const action of ['В дорозі', 'Прибув']) {
+  for (const action of statuses) {
     const statusButton = protocolDrawer.getByRole('button', { name: action, exact: true });
     await expect(statusButton).toBeEnabled({ timeout: 30_000 });
     await statusButton.click();
@@ -229,11 +284,31 @@ export async function createArrivedDeliveryProtocol(
     expect(statusResponse.ok(), `delivery protocol ${action} HTTP ${statusResponse.status()}`).toBe(true);
   }
 
-  await expect(protocolDrawer.getByRole('button', { name: 'Завершено', exact: true })).toBeDisabled({
-    timeout: 30_000,
-  });
+  if (statuses.includes('Прибув')) {
+    await expect(protocolDrawer.getByRole('button', { name: 'Завершено', exact: true })).toBeDisabled({
+      timeout: 30_000,
+    });
+  }
 
   return { protocolNetId: String(protocolNetId) };
+}
+
+export async function markDeliveryProtocolArrived(page: Page, protocolNetId: string): Promise<void> {
+  await page.goto(`/product-delivery-protocols/${protocolNetId}`);
+  const protocolDrawer = page.getByRole('dialog').filter({ hasText: 'Протокол доставки товару' });
+  await expect(protocolDrawer).toBeVisible({ timeout: 30_000 });
+  const statusButton = protocolDrawer.getByRole('button', { name: 'Прибув', exact: true });
+  await expect(statusButton).toBeEnabled({ timeout: 30_000 });
+  await statusButton.click();
+  const confirmation = page.getByRole('dialog', { name: 'Підтвердити зміну статусу' });
+  const responsePromise = page.waitForResponse(
+    (response) => response.request().method() === 'POST' &&
+      new URL(response.url()).pathname.endsWith('/delivery/product/protocol/logistic/update/status'),
+    { timeout: 60_000 },
+  );
+  await confirmation.getByRole('button', { name: 'Підтвердити', exact: true }).click();
+  const response = await responsePromise;
+  expect(response.ok(), `delivery protocol Прибув HTTP ${response.status()}`).toBe(true);
 }
 
 export async function addInvoiceFromCcd(
@@ -241,9 +316,11 @@ export async function addInvoiceFromCcd(
   supplier: TestIncomeSupplier,
   runId: string,
   orderNetId: string,
+  options?: SpreadsheetUploadOptions,
 ): Promise<CreatedInvoiceRef> {
-  const file = customsSpecificationFile(supplier.dirPrefix);
-  const number = scopedNumber(supplier, runId);
+  const file = uploadFile(supplier, options);
+  const parse = uploadParse(supplier, options);
+  const number = options?.number ?? scopedNumber(supplier, runId);
 
   await page.goto(`/orders/ukraine/all/edit/${orderNetId}/supply-invoices`);
   const addInvoice = page.getByRole('button', { name: 'Додати інвойс' });
@@ -256,11 +333,11 @@ export async function addInvoiceFromCcd(
 
   await attachFile(page, () => modal.getByLabel('Файл', { exact: true }).click(), file);
 
-  await modal.getByLabel('Код товару', { exact: true }).fill(String(supplier.parse.productCode));
-  await modal.getByLabel('Кількість', { exact: true }).fill(String(supplier.parse.qty));
-  await modal.getByLabel('З рядка', { exact: true }).fill(String(supplier.parse.startRow));
-  await modal.getByLabel('До рядка', { exact: true }).fill(String(supplier.parse.endRow));
-  await modal.getByRole('textbox', { name: 'Ціна', exact: true }).fill(String(supplier.parse.price));
+  await modal.getByLabel('Код товару', { exact: true }).fill(String(parse.productCode));
+  await modal.getByLabel('Кількість', { exact: true }).fill(String(parse.qty));
+  await modal.getByLabel('З рядка', { exact: true }).fill(String(parse.startRow));
+  await modal.getByLabel('До рядка', { exact: true }).fill(String(parse.endRow));
+  await modal.getByRole('textbox', { name: 'Ціна', exact: true }).fill(String(parse.price));
 
   const [response] = await Promise.all([
     page.waitForResponse(
@@ -285,8 +362,10 @@ export async function addPackingListFromCcd(
   supplier: TestIncomeSupplier,
   orderNetId: string,
   invoiceNumber: string,
+  options?: SpreadsheetUploadOptions,
 ): Promise<void> {
-  const file = customsSpecificationFile(supplier.dirPrefix);
+  const file = uploadFile(supplier, options);
+  const parse = uploadParse(supplier, options);
 
   await page.goto(`/orders/ukraine/all/edit/${orderNetId}/supply-invoices`);
 
@@ -295,18 +374,18 @@ export async function addPackingListFromCcd(
   await addPackList.click();
 
   const modal = page.getByRole('dialog').filter({ hasText: 'Додати пак лист' });
-  await modal.getByLabel('Номер', { exact: true }).fill(invoiceNumber);
+  await modal.getByLabel('Номер', { exact: true }).fill(options?.number ?? invoiceNumber);
   await modal.getByLabel('Дата', { exact: true }).fill(`${supplier.invoiceDate}T10:00`);
 
   await attachFile(page, () => modal.getByLabel('Файл', { exact: true }).click(), file);
 
-  await modal.getByLabel('Код товару', { exact: true }).fill(String(supplier.parse.productCode));
-  await modal.getByLabel('Кількість', { exact: true }).fill(String(supplier.parse.qty));
-  await modal.getByLabel('З рядка', { exact: true }).fill(String(supplier.parse.startRow));
-  await modal.getByLabel('До рядка', { exact: true }).fill(String(supplier.parse.endRow));
-  await modal.getByRole('textbox', { name: 'Ціна', exact: true }).fill(String(supplier.parse.price));
-  await modal.getByLabel('Нетто', { exact: true }).fill(String(supplier.parse.netWeight));
-  await modal.getByLabel('Брутто', { exact: true }).fill(String(supplier.parse.grossWeight));
+  await modal.getByLabel('Код товару', { exact: true }).fill(String(parse.productCode));
+  await modal.getByLabel('Кількість', { exact: true }).fill(String(parse.qty));
+  await modal.getByLabel('З рядка', { exact: true }).fill(String(parse.startRow));
+  await modal.getByLabel('До рядка', { exact: true }).fill(String(parse.endRow));
+  await modal.getByRole('textbox', { name: 'Ціна', exact: true }).fill(String(parse.price));
+  await modal.getByLabel('Нетто', { exact: true }).fill(String(parse.netWeight));
+  await modal.getByLabel('Брутто', { exact: true }).fill(String(parse.grossWeight));
 
   const [response] = await Promise.all([
     page.waitForResponse(
@@ -324,8 +403,10 @@ export async function uploadCustomsCodes(
   page: Page,
   supplier: TestIncomeSupplier,
   orderNetId: string,
+  options?: SpreadsheetUploadOptions & { customsDate?: string },
 ): Promise<void> {
-  const file = customsSpecificationFile(supplier.dirPrefix);
+  const file = uploadFile(supplier, options);
+  const parse = uploadParse(supplier, options);
 
   await page.goto(`/orders/ukraine/all/edit/${orderNetId}/specifications`);
   const trigger = page.getByRole('button', { name: 'Завантаження митних кодів' });
@@ -335,16 +416,16 @@ export async function uploadCustomsCodes(
   const modal = page.getByRole('dialog').filter({ hasText: 'Завантаження митних кодів' });
   const fill = (labelStart: string, value: string | number) =>
     modal.getByLabel(new RegExp(`^${labelStart}(\\s*\\*)?$`)).first().fill(String(value));
-  await fill('Дата митної декларації', CUSTOMS_DATE);
-  await fill('Код', supplier.parse.productCode);
-  await fill('Митна вартість', supplier.parse.customsValue);
-  await fill('Митний код', supplier.parse.uktzed);
-  await fill('Мито', supplier.parse.duty);
-  await fill('Ціна', supplier.parse.price);
-  await fill('К-сть', supplier.parse.qty);
-  await fill('Сума ПДВ', supplier.parse.vat);
-  await fill('Від', supplier.parse.startRow);
-  await fill('До', supplier.parse.endRow);
+  await fill('Дата митної декларації', options?.customsDate ?? CUSTOMS_DATE);
+  await fill('Код', parse.productCode);
+  await fill('Митна вартість', parse.customsValue);
+  await fill('Митний код', parse.uktzed);
+  await fill('Мито', parse.duty);
+  await fill('Ціна', parse.price);
+  await fill('К-сть', parse.qty);
+  await fill('Сума ПДВ', parse.vat);
+  await fill('Від', parse.startRow);
+  await fill('До', parse.endRow);
 
   await attachFile(page, () => modal.getByLabel('Завантажити', { exact: true }).click(), file);
 

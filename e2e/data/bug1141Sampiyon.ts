@@ -1,0 +1,32 @@
+import type { TestIncomeSupplier } from './testIncome'
+
+export const BUG_1141_SAMPIYON: TestIncomeSupplier = {
+  key: 'BUG-1141-SAMPIYON',
+  dirPrefix: 'BUG-1141-SAMPIYON',
+  supplierName: 'SAMPIYON FILTRE PAZARLAMA SAN.VE TIC. A.S',
+  supplierSearch: 'Sam',
+  invoiceNumber: 'BUG1141',
+  invoiceDate: '2026-07-20',
+  md: '23UA400040033270U0',
+  parse: {
+    productCode: 4,
+    customsValue: 10,
+    uktzed: 5,
+    duty: 11,
+    price: 8,
+    qty: 9,
+    vat: 12,
+    startRow: 4,
+    endRow: 21,
+    netWeight: 7,
+    grossWeight: 6,
+  },
+  rows: 18,
+  qty: 502,
+  invoiceCurrency: 'EUR',
+  invoiceAmount: 8292.61,
+  invoiceAmountEur: 8292.61,
+  customsValue: 320227.93,
+  duty: 0,
+  vat: 64045.57,
+}
