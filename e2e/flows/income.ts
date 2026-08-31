@@ -119,7 +119,7 @@ export async function createProForma(
     await expect(approveButton).toBeVisible({ timeout: 20_000 });
     const approveResponsePromise = page.waitForResponse(
       (response) => response.request().method() === 'POST' &&
-        apiPath(response.url()).endsWith('/supplies/orders/direct-supply-order/logistic-way/approve'),
+        new URL(response.url()).pathname.endsWith('/supplies/orders/direct-supply-order/logistic-way/approve'),
       { timeout: 60_000 },
     );
     await approveButton.click();
