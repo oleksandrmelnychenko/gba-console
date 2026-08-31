@@ -917,9 +917,9 @@ function ProductDeliveryProtocolSpecificationPageContent() {
     canMutateSpecification &&
     hasPermission(PERMISSION_UPLOAD_SPECIFICATIONS) &&
     Boolean(model.selectedInvoice && (model.selectedInvoice.Id || 0) > 0)
-  const canUploadDocuments = canMutateProtocolStructure && hasPermission(PERMISSION_UPLOAD_DELIVERY_DOCUMENTS)
+  const canUploadDocuments = canMutateSpecification && hasPermission(PERMISSION_UPLOAD_DELIVERY_DOCUMENTS)
   const canOpenDeliveryDocuments =
-    canMutateProtocolStructure && Boolean(model.selectedInvoice?.NetUid)
+    canMutateSpecification && Boolean(model.selectedInvoice?.NetUid)
   const canEditSpecification = canMutateSpecification && hasPermission(PERMISSION_OPEN_SPECIFICATION_CODE)
   const canSaveSpecification = canMutateSpecification && hasPermission(PERMISSION_SAVE_SPECIFICATION_CODE)
   const filteredPackingList = filterPackingListByVendorCode(model.packingList, vendorCodeFilter)

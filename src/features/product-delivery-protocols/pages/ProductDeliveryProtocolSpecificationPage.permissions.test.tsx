@@ -69,7 +69,8 @@ vi.mock('../components/SpecificationTotals', () => ({
 }))
 
 vi.mock('../components/UploadDeliveryDocumentsModal', () => ({
-  UploadDeliveryDocumentsModal: () => null,
+  UploadDeliveryDocumentsModal: ({ opened }: { opened: boolean }) =>
+    opened ? <div role="dialog" aria-label="Завантаження митної декларації" /> : null,
 }))
 
 vi.mock('../components/UploadProductSpecificationModal', () => ({
@@ -165,9 +166,10 @@ describe('Product delivery protocol specification permission guards', () => {
     )
   })
 
-  it('keeps customs-code upload available after the protocol has arrived', async () => {
+  it('keeps customs-code and declaration workflows available after the protocol has arrived', async () => {
     allowedPermissions.add(PermissionKeys.ProductDeliveryProtocols.SpecificationCodes.Open)
     allowedPermissions.add(PermissionKeys.ProductDeliveryProtocols.SpecificationCodes.Download)
+    allowedPermissions.add(PermissionKeys.ProductDeliveryProtocols.DeliveryDocuments.Download)
     allowedPermissions.add(PermissionKeys.ProductDeliveryProtocols.Invoice.Merge)
     vi.mocked(getProtocolForSpecification).mockResolvedValue({
       ...PROTOCOL,
@@ -177,7 +179,23 @@ describe('Product delivery protocol specification permission guards', () => {
     renderPage()
 
     expect(await screen.findByRole('button', { name: 'Завантаження митних кодів' })).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: 'Завантаження митної декларації' }))
+    expect(screen.getByRole('dialog', { name: 'Завантаження митної декларації' })).toBeTruthy()
     expect(screen.queryByText('Редагування специфікації недоступне після завершення протоколу')).toBeNull()
     expect(screen.queryByRole('button', { name: "Об'єднати інвойси?" })).toBeNull()
+  })
+
+  it('does not expose the declaration workflow before the protocol is shipped', async () => {
+    allowedPermissions.add(PermissionKeys.ProductDeliveryProtocols.SpecificationCodes.Open)
+    allowedPermissions.add(PermissionKeys.ProductDeliveryProtocols.DeliveryDocuments.Download)
+    vi.mocked(getProtocolForSpecification).mockResolvedValue({
+      ...PROTOCOL,
+      IsShipped: false,
+    })
+
+    renderPage()
+
+    await waitFor(() => expect(getProtocolForSpecification).toHaveBeenCalledWith('protocol-1'))
+    expect(screen.queryByRole('button', { name: 'Завантаження митної декларації' })).toBeNull()
   })
 })
