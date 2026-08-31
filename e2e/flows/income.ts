@@ -194,13 +194,17 @@ export async function createProFormaPaymentTask(
   const responsibleOption = page.getByRole('option', { name: responsibleName, exact: true });
   await expect(responsibleOption).toHaveCount(1, { timeout: 30_000 });
   await responsibleOption.click();
+  await expect(responsible).toHaveValue(responsibleName);
+  await expect(drawer.getByLabel('Відсоток', { exact: true })).toHaveValue(String(percent));
 
   const responsePromise = page.waitForResponse(
     (response) => response.request().method() === 'POST' &&
       new URL(response.url()).pathname.endsWith('/supplies/invoices/direct-supply-order/logistic-way/payment-tasks/create'),
     { timeout: 60_000 },
   );
-  await drawer.getByRole('button', { name: 'Зберегти', exact: true }).click();
+  const saveButton = drawer.getByRole('button', { name: 'Зберегти', exact: true });
+  await expect(saveButton).toBeEnabled();
+  await saveButton.click();
   const response = await responsePromise;
   expect(response.ok(), `proforma payment task HTTP ${response.status()}`).toBe(true);
   await expect(drawer).toBeHidden({ timeout: 20_000 });

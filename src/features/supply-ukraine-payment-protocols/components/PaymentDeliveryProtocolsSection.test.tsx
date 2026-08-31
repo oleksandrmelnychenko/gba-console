@@ -33,6 +33,7 @@ const managementProtocol: SupplyOrderUkrainePaymentDeliveryProtocol = {
 function renderSection(
   protocols: SupplyOrderUkrainePaymentDeliveryProtocol[],
   onCreateProtocol = vi.fn().mockResolvedValue(undefined),
+  users: Array<{ FirstName?: string; LastName?: string; NetUid?: string }> = [],
 ) {
   render(
     <MantineProvider>
@@ -43,7 +44,7 @@ function renderSection(
         protocolKeys={[{ Key: 'Платіж', NetUid: 'payment-key' }]}
         protocols={protocols}
         totalGrossPriceLocal={1_000}
-        users={[]}
+        users={users}
         onCreateProtocol={onCreateProtocol}
         onRemoveProtocol={vi.fn().mockResolvedValue(undefined)}
       />
@@ -82,5 +83,34 @@ describe('PaymentDeliveryProtocolsSection amount validation', () => {
 
     expect(screen.getByText('Сума платежів не може бути більшою за суму замовлення')).toBeTruthy()
     expect(onCreateProtocol).not.toHaveBeenCalled()
+  })
+
+  it('keeps the entered percentage when accounting mode is toggled', () => {
+    renderSection([])
+
+    fireEvent.change(screen.getByRole('spinbutton', { name: 'Відсоток' }), {
+      target: { value: '50' },
+    })
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Бух. витрата' }))
+
+    expect((screen.getByRole('spinbutton', { name: 'Відсоток' }) as HTMLInputElement).value).toBe('50')
+    expect((screen.getByRole('spinbutton', { name: 'Вартість Брутто' }) as HTMLInputElement).value).toBe('500')
+  })
+
+  it('keeps a responsible user selected when the control normalizes GUID casing', () => {
+    const onCreateProtocol = renderSection([], undefined, [{
+      FirstName: 'Алла',
+      LastName: 'Самолюк',
+      NetUid: 'A9B6242E-4E72-43CC-91FA-41A691C538F1',
+    }])
+
+    fireEvent.change(screen.getByRole('combobox', { name: 'Відповідальний за оплату' }), {
+      target: { value: 'a9b6242e-4e72-43cc-91fa-41a691c538f1' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: 'Зберегти' }))
+
+    expect(onCreateProtocol).toHaveBeenCalledWith(expect.objectContaining({
+      responsible: expect.objectContaining({ LastName: 'Самолюк' }),
+    }))
   })
 })

@@ -181,11 +181,7 @@ export function PaymentDeliveryProtocolsSection({
   const hasKnownTotal = totalGrossPriceLocal > 0
 
   function updateAccounting(nextIsAccounting: boolean) {
-    const initialValues = getInitialProtocolValues(protocols, totalGrossPriceLocal, nextIsAccounting)
-
     setAccounting(nextIsAccounting)
-    setValue(initialValues.value)
-    setDiscount(initialValues.discount)
     setValidationError(null)
   }
 
@@ -326,7 +322,7 @@ export function PaymentDeliveryProtocolsSection({
             label={t('Форма платежу')}
             searchable
             value={protocolKey?.NetUid || null}
-            onChange={(netUid) => setProtocolKey(protocolKeys.find((item) => item.NetUid === netUid) || null)}
+            onChange={(netUid) => setProtocolKey(findByNetUid(protocolKeys, netUid))}
           />
           <TextInput
             label={t('Вартість Брутто')}
@@ -360,7 +356,7 @@ export function PaymentDeliveryProtocolsSection({
             label={t('Відповідальний за оплату')}
             searchable
             value={responsible?.NetUid || null}
-            onChange={(netUid) => setResponsible(users.find((item) => item.NetUid === netUid) || null)}
+            onChange={(netUid) => setResponsible(findByNetUid(users, netUid))}
           />
           <Textarea
             label={t('Коментар')}
@@ -392,6 +388,16 @@ export function PaymentDeliveryProtocolsSection({
       </AppModal>
     </Stack>
   )
+}
+
+function findByNetUid<T extends { NetUid?: string }>(items: T[], netUid: string | null): T | null {
+  if (!netUid) {
+    return null
+  }
+
+  const normalized = netUid.toLowerCase()
+
+  return items.find((item) => item.NetUid?.toLowerCase() === normalized) || null
 }
 
 function toProtocolKeyOptions(protocolKeys: SupplyOrderUkrainePaymentDeliveryProtocolKey[]): SelectOption[] {
