@@ -113,4 +113,35 @@ describe('PaymentDeliveryProtocolsSection amount validation', () => {
       responsible: expect.objectContaining({ LastName: 'Самолюк' }),
     }))
   })
+
+  it('selects defaults when payment dictionaries arrive after the drawer opens', async () => {
+    const props = {
+      canCreateProtocol: true,
+      canRemoveProtocol: false,
+      isSaving: false,
+      onCreateProtocol: vi.fn().mockResolvedValue(undefined),
+      onRemoveProtocol: vi.fn().mockResolvedValue(undefined),
+      protocols: [] as SupplyOrderUkrainePaymentDeliveryProtocol[],
+      totalGrossPriceLocal: 1_000,
+    }
+    const view = render(
+      <MantineProvider>
+        <PaymentDeliveryProtocolsSection {...props} protocolKeys={[]} users={[]} />
+      </MantineProvider>,
+    )
+    fireEvent.click(screen.getByRole('button', { name: 'Створити платіжну задачу' }))
+
+    view.rerender(
+      <MantineProvider>
+        <PaymentDeliveryProtocolsSection
+          {...props}
+          protocolKeys={[{ Key: 'Платіж', NetUid: 'PAYMENT-KEY' }]}
+          users={[{ FirstName: 'Алла', LastName: 'Самолюк', NetUid: 'USER-NET-UID' }]}
+        />
+      </MantineProvider>,
+    )
+
+    expect((await screen.findByRole('combobox', { name: 'Форма платежу' }) as HTMLInputElement).value).toBe('Платіж')
+    expect((await screen.findByRole('combobox', { name: 'Відповідальний за оплату' }) as HTMLInputElement).value).toBe('Самолюк Алла')
+  })
 })

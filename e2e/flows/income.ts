@@ -189,12 +189,7 @@ export async function createProFormaPaymentTask(
   await drawer.getByLabel('Бух. витрата', { exact: true }).check();
 
   const responsible = drawer.getByRole('combobox', { name: 'Відповідальний за оплату' });
-  await responsible.click();
-  await responsible.fill(responsibleName);
-  const responsibleOption = page.getByRole('option', { name: responsibleName, exact: true });
-  await expect(responsibleOption).toHaveCount(1, { timeout: 30_000 });
-  await responsibleOption.click();
-  await expect(responsible).toHaveValue(responsibleName);
+  await expect(responsible).toHaveValue(responsibleName, { timeout: 30_000 });
   await expect(drawer.getByLabel('Відсоток', { exact: true })).toHaveValue(String(percent));
 
   const responsePromise = page.waitForResponse(

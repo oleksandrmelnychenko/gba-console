@@ -151,6 +151,22 @@ export function PaymentDeliveryProtocolsSection({
     }
   }, [canRemoveProtocol, setRemoveTarget])
 
+  // The drawer can be opened before its independently loaded dictionaries arrive.
+  // Populate defaults when they arrive instead of leaving a visually selectable but
+  // invalid empty field and a permanently disabled save action.
+  useEffect(() => {
+    if (!isFormOpen) {
+      return
+    }
+
+    if (!protocolKey && protocolKeys[0]) {
+      setProtocolKey(protocolKeys[0])
+    }
+    if (!responsible && users[0]) {
+      setResponsible(users[0])
+    }
+  }, [isFormOpen, protocolKey, protocolKeys, responsible, setProtocolKey, setResponsible, users])
+
   if (isFormOpen !== prevOpened) {
       setPrevOpened(isFormOpen)
 
