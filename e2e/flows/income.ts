@@ -46,6 +46,7 @@ async function attachFile(page: Page, trigger: () => Promise<void>, filePath: st
 }
 
 export interface CreatedOrderRef {
+  organizationName: string;
   orderNetId: string;
   orderNumber: string;
 }
@@ -73,6 +74,8 @@ export async function createDirectOrderFromCcd(
   );
   await ensureComboboxSelected(page, 'Організація');
   await ensureComboboxSelected(page, 'Договір');
+  const organizationName = await page.getByRole('combobox', { name: 'Організація' }).inputValue();
+  expect(organizationName.trim().length, 'selected order organization').toBeGreaterThan(0);
 
   await attachFile(page, () => page.getByLabel('Файл', { exact: true }).click(), file);
 
@@ -99,7 +102,7 @@ export async function createDirectOrderFromCcd(
 
   await expect(page.getByText('Замовлення створено')).toBeVisible({ timeout: 20_000 });
 
-  return { orderNetId: String(orderNetId), orderNumber: number };
+  return { organizationName, orderNetId: String(orderNetId), orderNumber: number };
 }
 
 export async function createProForma(
@@ -152,6 +155,85 @@ export async function createProForma(
 export interface CreatedInvoiceRef {
   invoiceNetId: string;
   invoiceNumber: string;
+}
+
+export interface CreatedDeliveryProtocolRef {
+  protocolNetId: string;
+}
+
+export async function createArrivedDeliveryProtocol(
+  page: Page,
+  order: CreatedOrderRef,
+  invoice: CreatedInvoiceRef,
+): Promise<CreatedDeliveryProtocolRef> {
+  await page.goto('/product-delivery-protocols');
+  const addButton = page.locator('main').getByRole('button', { name: 'Додати', exact: true });
+  await expect(addButton).toBeVisible({ timeout: 30_000 });
+  await addButton.click();
+
+  const createModal = page.getByRole('dialog').filter({ hasText: 'Додати протокол доставки товару' });
+  await expect(createModal).toBeVisible({ timeout: 20_000 });
+  const organization = createModal.getByRole('combobox', { name: 'Організація' });
+  await organization.click();
+  await organization.fill(order.organizationName);
+  const organizationOption = page.getByRole('option', { name: order.organizationName, exact: true });
+  await expect(organizationOption).toHaveCount(1, { timeout: 30_000 });
+  await organizationOption.click();
+
+  const createResponsePromise = page.waitForResponse(
+    (response) => response.request().method() === 'POST' &&
+      new URL(response.url()).pathname.endsWith('/delivery/product/protocol/registry/new'),
+    { timeout: 60_000 },
+  );
+  await createModal.getByRole('button', { name: 'Створити', exact: true }).click();
+  const createResponse = await createResponsePromise;
+  expect(createResponse.ok(), `delivery protocol create HTTP ${createResponse.status()}`).toBe(true);
+  const created = bodyOf<Record<string, unknown>>(await createResponse.json());
+  const protocolNetId = created.NetUid ?? created.NetUID;
+  expect(protocolNetId, `delivery protocol NetUid missing: ${JSON.stringify(created).slice(0, 500)}`).toBeTruthy();
+
+  await page.waitForURL(new RegExp(`/product-delivery-protocols/${String(protocolNetId)}$`), { timeout: 30_000 });
+  const protocolDrawer = page.getByRole('dialog').filter({ hasText: 'Протокол доставки товару' });
+  await expect(protocolDrawer).toBeVisible({ timeout: 30_000 });
+  await protocolDrawer.getByRole('button', { name: 'Управління інвойсами', exact: true }).click();
+
+  const invoicesDrawer = page.getByRole('dialog', { name: 'Додати інвойси' });
+  await expect(invoicesDrawer).toBeVisible({ timeout: 20_000 });
+  const invoiceCard = invoicesDrawer.locator('.invoice-select-card').filter({ hasText: invoice.invoiceNumber });
+  await expect(invoiceCard).toHaveCount(1, { timeout: 30_000 });
+  await invoiceCard.getByRole('checkbox').check();
+
+  const assignResponsePromise = page.waitForResponse(
+    (response) => response.request().method() === 'POST' &&
+      new URL(response.url()).pathname.endsWith('/delivery/product/protocol/logistic/add/supply/invoices'),
+    { timeout: 60_000 },
+  );
+  await invoicesDrawer.getByRole('button', { name: 'Зберегти', exact: true }).click();
+  const assignResponse = await assignResponsePromise;
+  expect(assignResponse.ok(), `delivery protocol invoice assignment HTTP ${assignResponse.status()}`).toBe(true);
+  await expect(invoicesDrawer).toBeHidden({ timeout: 30_000 });
+
+  for (const action of ['В дорозі', 'Прибув']) {
+    const statusButton = protocolDrawer.getByRole('button', { name: action, exact: true });
+    await expect(statusButton).toBeEnabled({ timeout: 30_000 });
+    await statusButton.click();
+    const confirmation = page.getByRole('dialog', { name: 'Підтвердити зміну статусу' });
+    await expect(confirmation).toBeVisible({ timeout: 20_000 });
+    const statusResponsePromise = page.waitForResponse(
+      (response) => response.request().method() === 'POST' &&
+        new URL(response.url()).pathname.endsWith('/delivery/product/protocol/logistic/update/status'),
+      { timeout: 60_000 },
+    );
+    await confirmation.getByRole('button', { name: 'Підтвердити', exact: true }).click();
+    const statusResponse = await statusResponsePromise;
+    expect(statusResponse.ok(), `delivery protocol ${action} HTTP ${statusResponse.status()}`).toBe(true);
+  }
+
+  await expect(protocolDrawer.getByRole('button', { name: 'Завершено', exact: true })).toBeDisabled({
+    timeout: 30_000,
+  });
+
+  return { protocolNetId: String(protocolNetId) };
 }
 
 export async function addInvoiceFromCcd(
