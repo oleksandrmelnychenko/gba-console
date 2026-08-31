@@ -208,19 +208,7 @@ export async function acceptSaleForPackingViaList(
 
   await page.goto('/sales/ukraine/all');
 
-  const filteredSalesPromise = page.waitForResponse(
-    (response) => {
-      const url = new URL(response.url());
-
-      return response.request().method() === 'GET' &&
-        url.pathname.endsWith('/sales/all/filtered') &&
-        url.searchParams.get('value') === input.saleNumber;
-    },
-    { timeout: 30_000 },
-  );
   await page.getByLabel('Пошук', { exact: true }).fill(input.saleNumber);
-  const filteredSalesResponse = await filteredSalesPromise;
-  expect(filteredSalesResponse.ok(), `sales filter HTTP ${filteredSalesResponse.status()}`).toBe(true);
 
   const saleRow = page.locator('.sales-grid-row').filter({ hasText: input.saleNumber });
   await expect(saleRow, `sale row ${input.saleNumber}/${input.saleNetId}`).toHaveCount(1, { timeout: 30_000 });

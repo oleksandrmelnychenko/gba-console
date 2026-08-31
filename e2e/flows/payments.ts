@@ -194,6 +194,9 @@ export async function createClientPayment(
   const debtRow = drawer.locator('tbody tr.data-table-row').filter({ hasText: input.saleNumber });
   await expect(debtRow).toHaveCount(1, { timeout: 30_000 });
   await debtRow.getByLabel('Вибрати борг').check();
+  await expect(
+    drawer.getByRole('checkbox', { name: 'Автоматично рознести оплату по боргам' }),
+  ).toBeChecked();
 
   const calculationResponsePromise = page.waitForResponse(
     (response) => {
@@ -232,7 +235,7 @@ export async function createClientPayment(
 
   const operationNetUid = createResponse.request().headers()['idempotency-key']?.toLowerCase() || '';
   expect(operationNetUid).toMatch(NET_UID);
-  expect(new URL(createResponse.url()).searchParams.get('auto')).toBe('false');
+  expect(new URL(createResponse.url()).searchParams.get('auto')).toBe('true');
   assertCreateRequest(createResponse.request().postDataJSON(), input, arrivalNumber);
 
   const incomePaymentOrderNetUid = readPersistedOrderNetUid(await createResponse.json());
