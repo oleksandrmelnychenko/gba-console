@@ -195,7 +195,7 @@ export async function createClientPayment(
   await expect(debtRow).toHaveCount(1, { timeout: 30_000 });
   await debtRow.getByLabel('Вибрати борг').check();
   await expect(
-    drawer.getByRole('checkbox', { name: 'Автоматично рознести оплату по боргам' }),
+    drawer.getByRole('checkbox', { name: 'Автоматично рознести оплату по боргах' }),
   ).toBeChecked();
 
   const calculationResponsePromise = page.waitForResponse(

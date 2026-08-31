@@ -45,7 +45,15 @@ test('продаж: візард створює точну накладну дл
   test.setTimeout(300_000);
 
   const candidates = await db.query<SaleCandidate>(
-    `SELECT TOP 10
+    `SELECT TOP (5000) s.ID, s.OrderID
+     INTO #RecentSales
+     FROM dbo.Sale s
+     WHERE s.Deleted = 0
+     ORDER BY s.ID DESC;
+
+     CREATE UNIQUE CLUSTERED INDEX IX_RecentSales_ID ON #RecentSales(ID);
+
+     SELECT TOP 10
        ca.ID AS AgreementID,
        LOWER(CONVERT(varchar(36), ca.NetUID)) AS AgreementNetUid,
        c.ID AS ClientID,
@@ -55,8 +63,9 @@ test('продаж: візард створює точну накладну дл
        LOWER(CONVERT(varchar(36), p.NetUID)) AS ProductNetUid,
        organization.PriceSourceIsAmg,
        p.VendorCode
-     FROM dbo.Sale s
-     JOIN dbo.[Order] o ON o.ID = s.OrderID AND o.Deleted = 0
+     FROM #RecentSales recent
+     JOIN dbo.Sale s ON s.ID = recent.ID
+     JOIN dbo.[Order] o ON o.ID = recent.OrderID AND o.Deleted = 0
      JOIN dbo.ClientAgreement ca ON ca.ID = o.ClientAgreementID AND ca.Deleted = 0
      JOIN dbo.Agreement agreement ON agreement.ID = ca.AgreementID AND agreement.Deleted = 0
      JOIN dbo.Organization organization
@@ -70,8 +79,12 @@ test('продаж: візард створює точну накладну дл
        AND agreement.WithVATAccounting = 1
        AND c.FullName IS NOT NULL AND LEN(c.FullName) BETWEEN 4 AND 80
        AND p.VendorCode IS NOT NULL AND LEN(p.VendorCode) BETWEEN 5 AND 18
-       AND (SELECT COUNT(*) FROM dbo.ClientAgreement candidateAgreement
-            WHERE candidateAgreement.ClientID = c.ID AND candidateAgreement.Deleted = 0) = 1
+       AND NOT EXISTS (
+         SELECT 1
+         FROM dbo.ClientAgreement candidateAgreement
+         WHERE candidateAgreement.ClientID = c.ID
+           AND candidateAgreement.Deleted = 0
+           AND candidateAgreement.ID <> ca.ID)
        AND NOT EXISTS (
          SELECT 1
          FROM dbo.Sale openSale
@@ -81,14 +94,15 @@ test('продаж: візард створює точну накладну дл
            AND openSale.IsMerged = 0
            AND openStatus.SaleLifeCycleType = 0
            AND openSale.Updated >= CONVERT(date, GETDATE()))
-       AND (SELECT COALESCE(SUM(ci.RemainingQty), 0)
-            FROM dbo.ConsignmentItem ci
-            JOIN dbo.Consignment cn
-              ON cn.ID = ci.ConsignmentID
-             AND cn.Deleted = 0
-             AND cn.StorageID = organization.StorageID
-            WHERE ci.Deleted = 0 AND ci.ProductID = p.ID) > @qty
-     ORDER BY s.ID DESC`,
+       AND EXISTS (
+         SELECT 1
+         FROM dbo.ProductAvailability availability
+         WHERE availability.ProductID = p.ID
+           AND availability.StorageID = organization.StorageID
+           AND availability.Deleted = 0
+           AND availability.Amount > @qty)
+     ORDER BY recent.ID DESC
+     OPTION (RECOMPILE, MAXDOP 1)`,
     { qty: SALE_QTY },
   );
   expect(candidates.length, 'кандидати клієнт+договір+товар зі стоком знайдені').toBeGreaterThan(0);
