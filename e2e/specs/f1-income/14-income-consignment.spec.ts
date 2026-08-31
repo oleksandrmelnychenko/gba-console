@@ -15,7 +15,7 @@ test('прихід: додавання колонки чекає заванта�
     'income.AYMEKS.invoice',
     'спочатку має пройти 10-order-invoice',
   );
-  const packingListPattern = '**/supplies/packinglists/specification/products/get?**';
+  const packingListPattern = '**/supplies/packinglists/product-income/direct-supply-order/specification/products?**';
 
   let signalRequestStarted: () => void = () => undefined;
   const requestStarted = new Promise<void>((resolve) => {

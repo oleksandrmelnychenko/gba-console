@@ -139,7 +139,8 @@ export async function createProForma(
 
   const [response] = await Promise.all([
     page.waitForResponse(
-      (res) => res.url().includes('/supplies/orders/update') && res.request().method() === 'POST',
+      (res) => new URL(res.url()).pathname.endsWith('/supplies/orders/direct-supply-order/logistic-way/proform') &&
+        res.request().method() === 'POST',
       { timeout: 60_000 },
     ),
     card.getByRole('button', { name: 'Зберегти' }).click(),
@@ -181,7 +182,8 @@ export async function addInvoiceFromCcd(
 
   const [response] = await Promise.all([
     page.waitForResponse(
-      (res) => res.url().includes('/supplies/invoices/update/file') && res.request().method() === 'POST',
+      (res) => new URL(res.url()).pathname.endsWith('/supplies/invoices/ukraine/update/file') &&
+        res.request().method() === 'POST',
       { timeout: 120_000 },
     ),
     modal.getByRole('button', { name: 'Створити' }).click(),
@@ -226,7 +228,8 @@ export async function addPackingListFromCcd(
 
   const [response] = await Promise.all([
     page.waitForResponse(
-      (res) => res.url().includes('/supplies/packinglists/new/file') && res.request().method() === 'POST',
+      (res) => new URL(res.url()).pathname.endsWith('/supplies/packinglists/ukraine/new/file') &&
+        res.request().method() === 'POST',
       { timeout: 120_000 },
     ),
     modal.getByRole('button', { name: 'Створити' }).click(),
@@ -266,7 +269,8 @@ export async function uploadCustomsCodes(
   const submitButton = modal.getByRole('button', { name: 'Завантажити' }).filter({ hasText: 'Завантажити' });
   const [response] = await Promise.all([
     page.waitForResponse(
-      (res) => res.url().includes('/supplies/invoices/specification/upload') && res.request().method() === 'POST',
+      (res) => new URL(res.url()).pathname.endsWith('/supplies/invoices/direct-supply-order/specification/upload') &&
+        res.request().method() === 'POST',
       { timeout: 180_000 },
     ),
     submitButton.click(),
@@ -294,7 +298,8 @@ export async function placeAllItems(page: Page): Promise<void> {
 
   const [columnResponse] = await Promise.all([
     page.waitForResponse(
-      (res) => res.url().includes('/supplies/packinglists/update') && res.request().method() === 'POST',
+      (res) => new URL(res.url()).pathname.endsWith('/supplies/packinglists/product-income/direct-supply-order/placement') &&
+        res.request().method() === 'POST',
       { timeout: 60_000 },
     ),
     submitColumn.click(),
@@ -316,7 +321,8 @@ export async function placeAllItems(page: Page): Promise<void> {
     await drawer.getByTestId('placement-accept-draft').click();
     await Promise.all([
       page.waitForResponse(
-        (res) => res.url().includes('/supplies/ukraine/order/placements/dynamic/rows/new') && res.request().method() === 'POST',
+        (res) => new URL(res.url()).pathname.endsWith('/supplies/ukraine/order/placements/dynamic/rows/product-income/direct-supply-order/new') &&
+          res.request().method() === 'POST',
         { timeout: 30_000 },
       ),
       drawer.getByTestId('placement-apply').click(),
@@ -346,7 +352,8 @@ export async function postIncome(page: Page, orderNetId: string): Promise<void> 
   if (await readyButton.isVisible().catch(() => false)) {
     await Promise.all([
       page.waitForResponse(
-        (res) => res.url().includes('/supplies/packinglists/item/readytoplaced/update/all') && res.request().method() === 'PATCH',
+        (res) => new URL(res.url()).pathname.endsWith('/supplies/packinglists/product-income/direct-supply-order/readiness') &&
+          res.request().method() === 'PATCH',
         { timeout: 60_000 },
       ),
       readyButton.click(),
@@ -360,7 +367,8 @@ export async function postIncome(page: Page, orderNetId: string): Promise<void> 
 
   const [response] = await Promise.all([
     page.waitForResponse(
-      (res) => res.url().includes('/products/incomes/new/packinglist/dynamic') && res.request().method() === 'POST',
+      (res) => new URL(res.url()).pathname.endsWith('/products/incomes/product-income/direct-supply-order/capitalize') &&
+        res.request().method() === 'POST',
       { timeout: 180_000 },
     ),
     incomeButton.click(),

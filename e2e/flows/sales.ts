@@ -181,7 +181,10 @@ export async function createSaleViaWizard(page: Page, input: WizardSaleInput): P
     (response) => {
       const path = apiPath(response.url());
       return response.request().method() === 'POST' &&
-        (path.endsWith('/sales/new') ||
+        (path.endsWith('/sales/ukraine/create') ||
+          path.endsWith('/sales/ukraine/create/file') ||
+          path.endsWith('/sales/ukraine/create/vat-document') ||
+          path.endsWith('/sales/new') ||
           path.endsWith('/sales/update/file') ||
           path.endsWith('/sales/update/get/payment/document'));
     },
