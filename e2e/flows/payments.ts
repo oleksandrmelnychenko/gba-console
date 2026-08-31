@@ -141,7 +141,7 @@ export async function createClientPayment(
       const url = new URL(response.url());
 
       return response.request().method() === 'GET' &&
-        url.pathname.endsWith('/clients/all/filtered') &&
+        url.pathname.endsWith('/clients/income-cashflows/client-payment/search') &&
         url.searchParams.get('value') === input.clientSearchValue;
     },
     { timeout: 30_000 },

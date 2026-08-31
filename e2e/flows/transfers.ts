@@ -80,7 +80,7 @@ export async function createProductTransfer(
 
     const responsePromise = page.waitForResponse(
       (response) =>
-        response.url().includes('/products/transfers/add/file') &&
+        response.url().includes('/products/transfers/page/import/file') &&
         response.request().method() === 'POST',
       { timeout: 120_000 },
     );

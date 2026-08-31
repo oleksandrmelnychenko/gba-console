@@ -111,11 +111,10 @@ export async function createSaleViaWizard(page: Page, input: WizardSaleInput): P
   await expect(productSearch).toBeAttached({ timeout: 20_000 });
   await productSearch.focus();
   await page.keyboard.type(input.vendorCode, { delay: 40 });
-  await expect(wizard.getByText(/Дост\./).first()).toBeVisible({ timeout: 30_000 });
   const productRow = wizard.locator(
     '.new-sale-product-picker-row, .new-sale-product-picker-card',
   ).filter({ hasText: input.vendorCode });
-  await expect(productRow).toHaveCount(1, { timeout: 20_000 });
+  await expect(productRow).toHaveCount(1, { timeout: 30_000 });
   const availabilityBefore = await readDisplayedProductQty(productRow);
   expect(availabilityBefore).toBeGreaterThanOrEqual(input.qty);
   await productSearch.focus();

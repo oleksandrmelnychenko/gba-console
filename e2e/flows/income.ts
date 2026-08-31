@@ -84,7 +84,7 @@ export async function createDirectOrderFromCcd(
 
   const [response] = await Promise.all([
     page.waitForResponse(
-      (res) => res.url().includes('/supplies/orders/new/file') && res.request().method() === 'POST',
+      (res) => res.url().includes('/supplies/orders/ukraine/new/file') && res.request().method() === 'POST',
       { timeout: 120_000 },
     ),
     page.getByRole('button', { name: 'Створити' }).click(),
