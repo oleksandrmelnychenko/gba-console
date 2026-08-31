@@ -34,6 +34,14 @@ describe('wizard client folder selection', () => {
     expect(isWizardSaleClientSelectable(client)).toBe(true)
     expect(buildWizardClientStacks(client)).toEqual({ bottom: [child], top: [] })
   })
+
+  it('keeps a real client ending in 00 selectable when it has no structural children', () => {
+    const client = createClient(574259, 'IF01200')
+    client.FullName = 'Івано Франківськ - ТОВ "Електроавтотранс"'
+
+    expect(isWizardSaleClientSelectable(client)).toBe(true)
+    expect(buildWizardClientStacks(client)).toEqual({ bottom: [], top: [] })
+  })
 })
 
 describe('wizard agreement debt presentation', () => {

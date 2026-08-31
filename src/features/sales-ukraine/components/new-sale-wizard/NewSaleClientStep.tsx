@@ -500,9 +500,10 @@ export function NewSaleClientStep({
       void runVirtualLoad()
     }
 
-    // Mark the scrolled-to client immediately, but debounce heavy detail requests while
-    // the user is holding Up/Down so the server is not hit for every intermediate row.
-    confirmClient(item, { debounceDetails: true })
+    // Arrow navigation only previews the row in the centre of the drum. Committing here
+    // used to make structural `...00` results immediately replace the whole search result
+    // set with their children, so a user could not keep moving to the intended city. The
+    // highlighted client is committed explicitly with Enter (or by clicking a row).
   }
 
   function selectFromBottom() {
@@ -519,9 +520,7 @@ export function NewSaleClientStep({
 
     setCarousel({ dataBottom: carousel.dataBottom.slice(1), dataTop, selected: item, showDetails: true })
 
-    // Mark the scrolled-to client immediately, but debounce heavy detail requests while
-    // the user is holding Up/Down so the server is not hit for every intermediate row.
-    confirmClient(item, { debounceDetails: true })
+    // Keep navigation side-effect free; Enter or a click confirms the highlighted row.
   }
 
   async function runVirtualLoad() {

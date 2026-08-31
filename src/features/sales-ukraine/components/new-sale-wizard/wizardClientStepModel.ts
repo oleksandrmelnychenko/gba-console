@@ -39,10 +39,11 @@ export function buildWizardClientStacks(
 export function isWizardSaleClientSelectable(client: Client): boolean {
   // A persisted hierarchy does not automatically make its root a 1C-only
   // folder. Consolidated roots such as VI03501 keep their own agreements and
-  // must remain selectable while exposing their linked children. Only the
-  // source structural cards identified by the trailing `00` are navigation
-  // nodes rather than sale clients.
-  return !/^.+00$/u.test(getClientRegionCode(client))
+  // must remain selectable while exposing their linked children. A trailing
+  // `00` alone is also not enough: real sale clients such as IF01200 exist in
+  // 1C and have no structural children. The search API hydrates virtual source
+  // folders with their actual children, so require both pieces of evidence.
+  return !(/^.+00$/u.test(getClientRegionCode(client)) && getClientFolderChildren(client).length > 0)
 }
 
 export function getWizardAgreementKey(agreement: ClientAgreement | null | undefined): string {
