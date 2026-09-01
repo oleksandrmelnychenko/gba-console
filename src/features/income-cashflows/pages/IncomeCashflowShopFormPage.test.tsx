@@ -219,6 +219,13 @@ const secondOrganizationDebtAgreement: ClientAgreement = {
       Debt: { Id: 101, Total: 500 },
       Id: 102,
       NetUid: 'client-debt-102',
+      Sale: {
+        Id: 201,
+        NetUid: 'sale-201',
+        SaleNumber: { Value: '14455' },
+        TotalAmount: 500,
+      },
+      SaleId: 201,
     }],
     Currency: currency,
     Id: 72,
@@ -241,6 +248,30 @@ function renderPage() {
       </I18nProvider>
     </MantineProvider>,
   )
+}
+
+async function selectRetailClientAndOrganization(organizationName: string) {
+  const retailClientInput = await screen.findByRole('combobox', {
+    name: 'Retail-клієнт',
+  })
+  await waitFor(() => expect((retailClientInput as HTMLInputElement).disabled).toBe(false))
+
+  fireEvent.change(retailClientInput, { target: { value: '380257' } })
+  await waitFor(() =>
+    expect(searchIncomeCashflowRetailClients).toHaveBeenCalledWith('380257'),
+  )
+  fireEvent.click(await screen.findByRole('option', { name: retailClientLabel }))
+
+  const organizationInput = screen.getByRole<HTMLInputElement>('combobox', {
+    name: 'Організація',
+  })
+  await waitFor(() => expect(organizationInput.disabled).toBe(false))
+  fireEvent.click(organizationInput)
+  fireEvent.change(organizationInput, { target: { value: organizationName } })
+  fireEvent.click(await screen.findByRole('option', {
+    hidden: true,
+    name: organizationName,
+  }))
 }
 
 describe('IncomeCashflowShopFormPage retail client selection', () => {
@@ -441,6 +472,85 @@ describe('IncomeCashflowShopFormPage retail client selection', () => {
       name: 'AMG договір з боргом UAH',
     }))
     expect(agreementInput.value).toBe('AMG договір з боргом UAH')
+  })
+
+  it('accepts a manually entered client invoice and pulls its exact outstanding amount into the shop payment', async () => {
+    vi.mocked(searchIncomeCashflowPaymentRegisters).mockResolvedValueOnce([
+      secondOrganizationBankRegister,
+    ])
+    vi.mocked(getIncomeCashflowRetailClientAgreements).mockResolvedValueOnce([
+      secondOrganizationDebtAgreement,
+    ])
+
+    renderPage()
+    await selectRetailClientAndOrganization(secondOrganization.Name)
+
+    const registerInput = screen.getByRole<HTMLInputElement>('combobox', {
+      name: 'Каса / рахунок',
+    })
+    fireEvent.click(registerInput)
+    fireEvent.click(await screen.findByRole('option', {
+      hidden: true,
+      name: secondOrganizationBankRegister.Name,
+    }))
+
+    const invoiceInput = screen.getByRole<HTMLInputElement>('combobox', {
+      name: 'Рахунок клієнта',
+    })
+    fireEvent.change(invoiceInput, { target: { value: '14455' } })
+    fireEvent.click(await screen.findByRole('option', { name: '14455' }))
+
+    expect(invoiceInput.value).toBe('14455')
+    expect((screen.getByRole('textbox', { name: 'Сума' }) as HTMLInputElement).value)
+      .toBe('500')
+
+    fireEvent.click(screen.getByRole('button', { name: 'Зберегти' }))
+
+    await waitFor(() => expect(createOnlineShopIncomeCashflow).toHaveBeenCalledOnce())
+    expect(createOnlineShopIncomeCashflow).toHaveBeenCalledWith(
+      expect.objectContaining({
+        Amount: 500,
+        ArrivalNumber: '14455',
+        IncomePaymentOrderSales: [
+          expect.objectContaining({
+            Sale: expect.objectContaining({ Id: 201 }),
+          }),
+        ],
+      }),
+      false,
+    )
+  })
+
+  it('does not silently create an advance when a typed client invoice was not selected', async () => {
+    vi.mocked(searchIncomeCashflowPaymentRegisters).mockResolvedValueOnce([
+      secondOrganizationBankRegister,
+    ])
+    vi.mocked(getIncomeCashflowRetailClientAgreements).mockResolvedValueOnce([
+      secondOrganizationDebtAgreement,
+    ])
+
+    renderPage()
+    await selectRetailClientAndOrganization(secondOrganization.Name)
+
+    fireEvent.change(screen.getByRole('combobox', { name: 'Рахунок клієнта' }), {
+      target: { value: 'невідомий рахунок' },
+    })
+    fireEvent.change(screen.getByRole('textbox', { name: 'Сума' }), {
+      target: { value: '500' },
+    })
+
+    const registerInput = screen.getByRole<HTMLInputElement>('combobox', {
+      name: 'Каса / рахунок',
+    })
+    fireEvent.click(registerInput)
+    fireEvent.click(await screen.findByRole('option', {
+      hidden: true,
+      name: secondOrganizationBankRegister.Name,
+    }))
+    fireEvent.click(screen.getByRole('button', { name: 'Зберегти' }))
+
+    expect(await screen.findByText('Оберіть рахунок клієнта зі списку')).toBeTruthy()
+    expect(createOnlineShopIncomeCashflow).not.toHaveBeenCalled()
   })
 
   it('does not save free text that was not selected as a retail client', async () => {
