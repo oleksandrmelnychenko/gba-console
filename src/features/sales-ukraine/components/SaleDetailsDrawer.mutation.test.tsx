@@ -58,7 +58,14 @@ beforeEach(() => {
     NetUid: 'sale-1',
     Order: { OrderItems: [], OrderPackages: [{ Id: 91 }] },
   })
-  mocks.updateSaleFromData.mockReset().mockResolvedValue({ message: 'saved' })
+  mocks.updateSaleFromData.mockReset().mockResolvedValue({
+    message: 'saved',
+    sale: {
+      HasDetails: true,
+      NetUid: 'sale-1',
+      Order: { OrderItems: [], OrderPackages: [{ Id: 91 }] },
+    },
+  })
   mocks.reconcile.mockReset().mockImplementation(async (_kind, file, request) => request(
     {
       HasDetails: false,
@@ -86,6 +93,69 @@ afterEach(() => {
 })
 
 describe('SaleDetailsDrawer file mutation reconciliation', () => {
+  it('persists a newly enabled own TTN number and file through the carrier form', async () => {
+    mocks.reconciliationRequired = false
+    const file = new File(['ttn'], 'carrier-ttn.pdf', { type: 'application/pdf' })
+    const persistedSale = {
+      BaseLifeCycleStatus: { SaleLifeCycleType: 1 },
+      CustomersOwnTtn: {
+        Id: 81,
+        Number: 'TTN-7857',
+        TtnPDFPath: '/Data/Temp/CustomersTTN-saved.pdf',
+      },
+      HasDetails: true,
+      NetUid: 'sale-1',
+      Order: { OrderItems: [], OrderPackages: [{ Id: 91 }] },
+    } as SalesUkraineSale
+    mocks.getSaleById.mockResolvedValueOnce({
+      BaseLifeCycleStatus: { SaleLifeCycleType: 1 },
+      HasDetails: true,
+      NetUid: 'sale-1',
+      Order: { OrderItems: [], OrderPackages: [{ Id: 91 }] },
+    })
+    mocks.updateSaleFromData.mockResolvedValueOnce({ message: 'saved', sale: persistedSale })
+    const onSaved = vi.fn()
+
+    render(
+      <MantineProvider theme={theme}>
+        <SaleDetailsDrawer
+          sale={{ BaseLifeCycleStatus: { SaleLifeCycleType: 1 }, HasDetails: false, NetUid: 'sale-1' }}
+          onClose={vi.fn()}
+          onSaved={onSaved}
+        />
+      </MantineProvider>,
+    )
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Редагувати' }))
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Власне ТТН' }))
+    fireEvent.change(screen.getByRole('textbox', { name: 'Номер ТТН' }), {
+      target: { value: 'TTN-7857' },
+    })
+    const fileInput = document.querySelector<HTMLInputElement>('input[type="file"]')
+    expect(fileInput).toBeTruthy()
+    fireEvent.change(fileInput as HTMLInputElement, {
+      target: { files: [file] },
+    })
+
+    expect(onSaved).not.toHaveBeenCalled()
+    expect(screen.getByRole('button', { name: 'Зберегти' })).toBeTruthy()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Зберегти' }))
+
+    await waitFor(() => expect(mocks.run).toHaveBeenCalledOnce())
+    expect(mocks.run).toHaveBeenCalledWith(
+      'sale-update-file',
+      expect.objectContaining({
+        CustomersOwnTtn: expect.objectContaining({ Number: 'TTN-7857' }),
+        HasDetails: true,
+        Order: expect.objectContaining({ OrderPackages: [{ Id: 91 }] }),
+      }),
+      file,
+      mocks.updateSaleFromData,
+    )
+    expect(onSaved).toHaveBeenCalledWith(persistedSale)
+  })
+
   it('fails closed for a legacy frozen operation that did not persist full sale details', async () => {
     const sale: SalesUkraineSale = {
       BaseLifeCycleStatus: { SaleLifeCycleType: 1 },

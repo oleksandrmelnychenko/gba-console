@@ -1474,8 +1474,11 @@ function SalesUkrainePageContent() {
             loadSale={getSalesUkraineDeliveryDetails}
             sale={detailsSale}
             onClose={() => setDetailsSale(null)}
-            onSaved={() => {
-              setDetailsSale(null)
+            onSaved={(updatedSale) => {
+              if (updatedSale) {
+                setDetailsSale(updatedSale)
+                setSales((current) => replaceSaleInList(current, updatedSale))
+              }
               reload()
             }}
           />

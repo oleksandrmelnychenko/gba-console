@@ -31,9 +31,33 @@ vi.mock('../api/salesUkraineApi', async (importOriginal) => ({
 }))
 
 vi.mock('../components/SaleDetailsDrawer', () => ({
-  SaleDetailsDrawer: ({ canEdit, loadSale }: { canEdit?: boolean; loadSale?: unknown }) => (
+  SaleDetailsDrawer: ({
+    canEdit,
+    loadSale,
+    onSaved,
+    sale,
+  }: {
+    canEdit?: boolean
+    loadSale?: unknown
+    onSaved: (sale: SalesUkraineSale) => void
+    sale: SalesUkraineSale
+  }) => (
     <div data-testid="delivery-drawer">
       {`edit:${String(canEdit)};protected:${String(loadSale === mocks.getSalesUkraineDeliveryDetails)}`}
+      <span data-testid="delivery-own-ttn">{sale.CustomersOwnTtn?.Number || ''}</span>
+      <button
+        type="button"
+        onClick={() => onSaved({
+          ...sale,
+          CustomersOwnTtn: {
+            Id: 81,
+            Number: 'TTN-7857',
+            TtnPDFPath: '/Data/Temp/CustomersTTN-saved.pdf',
+          },
+        })}
+      >
+        Зберегти власну ТТН
+      </button>
     </div>
   ),
 }))
@@ -234,7 +258,25 @@ describe('SalesUkrainePage event permissions', () => {
 
     await waitFor(() => expect(mocks.getSalesUkraineDeliveryDetails).toHaveBeenCalledWith('sale-1'))
     expect(mocks.getSalesUkraineSaleDetails).not.toHaveBeenCalled()
-    expect((await screen.findByTestId('delivery-drawer')).textContent).toBe('edit:false;protected:true')
+    expect((await screen.findByTestId('delivery-drawer')).textContent).toContain('edit:false;protected:true')
+  })
+
+  it('keeps the carrier drawer open and projects the persisted own TTN after save', async () => {
+    grant(
+      PermissionKeys.SalesUkraine.Sale.View,
+      PermissionKeys.SalesUkraine.Sale.OpenDeliveryDetails,
+      PermissionKeys.SalesUkraine.Sale.Edit,
+    )
+    mocks.getSalesUkraine.mockResolvedValue([actionableSale()])
+    renderPage()
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Дії' }))
+    fireEvent.click(await screen.findByRole('menuitem', { name: 'Дані доставки' }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Зберегти власну ТТН' }))
+
+    expect(await screen.findByTestId('delivery-drawer')).toBeTruthy()
+    expect(screen.getByTestId('delivery-own-ttn').textContent).toBe('TTN-7857')
+    await waitFor(() => expect(mocks.getSalesUkraine).toHaveBeenCalledTimes(2))
   })
 
   it('does not show shipping unlock for an eligible sale without its own key', async () => {

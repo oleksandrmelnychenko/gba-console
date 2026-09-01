@@ -75,7 +75,7 @@ export function SaleDetailsDrawer({
   canEdit?: boolean
   loadSale?: typeof getSaleById
   onClose: () => void
-  onSaved: () => void
+  onSaved: (sale: SalesUkraineSale | null) => void
   sale: SalesUkraineSale | null
   saveSale?: typeof updateSaleFromData
 }) {
@@ -148,7 +148,7 @@ function SaleDetailsContent({
   canEdit: boolean
   loadSale: typeof getSaleById
   onFooterStateChange: (state: SaleDetailsFooterState) => void
-  onSaved: () => void
+  onSaved: (sale: SalesUkraineSale | null) => void
   sale: SalesUkraineSale
   saleKey: string
   saveSale: typeof updateSaleFromData
@@ -317,8 +317,16 @@ function SaleDetailsContent({
         return
       }
 
+      const refreshedSale = result.sale ?? (
+        sale.NetUid ? await loadSale(sale.NetUid) : null
+      )
+
       notifications.show({ color: 'green', message: t('Дані доставки збережено') })
-      onSaved()
+      if (refreshedSale) {
+        setEditMode(false)
+        setUploadedFile(null)
+      }
+      onSaved(refreshedSale)
     } catch (saveError) {
       notifications.show({
         color: 'red',
