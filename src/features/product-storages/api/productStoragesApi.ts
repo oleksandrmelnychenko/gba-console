@@ -27,8 +27,10 @@ const pendingSupplyReturnOperationKeys = new Map<
   string,
   Promise<SupplyReturnOperation>
 >()
-const DEPRECIATED_ORDER_OPERATION_STORAGE_PREFIX =
+const LEGACY_DEPRECIATED_ORDER_OPERATION_STORAGE_PREFIX =
   'gba_console:depreciated-order-operation:v1'
+const DEPRECIATED_ORDER_OPERATION_STORAGE_PREFIX =
+  'gba_console:depreciated-order-operation:v2'
 const DEPRECIATED_ORDER_OPERATION_KIND = 'depreciated-order:add-manual'
 const DEPRECIATED_ORDER_OWNER_HEADER = 'X-Depreciated-Order-Owner'
 const DEPRECIATED_ORDER_LEDGER_STATE_HEADER =
@@ -510,17 +512,19 @@ async function getOrCreateDepreciatedOrderOperation(
 ): Promise<DepreciatedOrderOperation> {
   const requestFingerprint = await sha256(canonicalPayload)
   const storageKey =
-    `${DEPRECIATED_ORDER_OPERATION_STORAGE_PREFIX}:${ownerNetUid}`
-  const persisted = readPersistedDepreciatedOrderOperation(storageKey)
+    `${DEPRECIATED_ORDER_OPERATION_STORAGE_PREFIX}:${ownerNetUid}:${requestFingerprint}`
+  let persisted = readPersistedDepreciatedOrderOperation(storageKey)
+
+  if (!persisted) {
+    persisted = migrateLegacyDepreciatedOrderOperation(
+      ownerNetUid,
+      requestFingerprint,
+      storageKey,
+    )
+  }
 
   if (persisted) {
-    if (
-      persisted.version !== DEPRECIATED_ORDER_OPERATION_VERSION ||
-      persisted.operationKind !== DEPRECIATED_ORDER_OPERATION_KIND ||
-      persisted.ownerNetUid !== ownerNetUid ||
-      !isOperationNetUid(persisted.operationNetUid) ||
-      !/^[0-9a-f]{64}$/i.test(persisted.requestFingerprint)
-    ) {
+    if (!isValidDepreciatedOrderOperationIdentity(persisted, ownerNetUid)) {
       throw new Error(
         'The persisted depreciated order retry identity is invalid',
       )
@@ -548,7 +552,7 @@ async function getOrCreateDepreciatedOrderOperation(
       persisted.requestFingerprint.toLowerCase()
     ) {
       throw new Error(
-        'The pending depreciated order operation belongs to a different payload',
+        'The persisted depreciated order retry identity is invalid',
       )
     }
 
@@ -583,6 +587,47 @@ async function getOrCreateDepreciatedOrderOperation(
     snapshot,
     storageKey,
   }
+}
+
+function migrateLegacyDepreciatedOrderOperation(
+  ownerNetUid: string,
+  requestFingerprint: string,
+  storageKey: string,
+): (PersistedDepreciatedOrderOperation & { serializedRecord: string }) | null {
+  const legacyStorageKey =
+    `${LEGACY_DEPRECIATED_ORDER_OPERATION_STORAGE_PREFIX}:${ownerNetUid}`
+  const legacyOperation = readPersistedDepreciatedOrderOperation(legacyStorageKey)
+
+  if (
+    !legacyOperation ||
+    !isValidDepreciatedOrderOperationIdentity(legacyOperation, ownerNetUid) ||
+    legacyOperation.requestFingerprint.toLowerCase() !==
+      requestFingerprint.toLowerCase()
+  ) {
+    return null
+  }
+
+  writePersistedDepreciatedOrderOperation(
+    storageKey,
+    legacyOperation.serializedRecord,
+  )
+  removePersistedDepreciatedOrderOperation(
+    legacyStorageKey,
+    legacyOperation.serializedRecord,
+  )
+  return legacyOperation
+}
+
+function isValidDepreciatedOrderOperationIdentity(
+  operation: PersistedDepreciatedOrderOperation,
+  ownerNetUid: string,
+): boolean {
+  return operation.version === DEPRECIATED_ORDER_OPERATION_VERSION &&
+    operation.operationKind === DEPRECIATED_ORDER_OPERATION_KIND &&
+    operation.ownerNetUid === ownerNetUid &&
+    isOperationNetUid(operation.operationNetUid) &&
+    typeof operation.requestFingerprint === 'string' &&
+    /^[0-9a-f]{64}$/i.test(operation.requestFingerprint)
 }
 
 function readPersistedDepreciatedOrderOperation(
@@ -641,13 +686,22 @@ function writePersistedDepreciatedOrderOperation(
 function removeDepreciatedOrderOperation(
   operation: DepreciatedOrderOperation,
 ) {
+  removePersistedDepreciatedOrderOperation(
+    operation.storageKey,
+    operation.serializedRecord,
+  )
+}
+
+function removePersistedDepreciatedOrderOperation(
+  storageKey: string,
+  serializedRecord: string,
+) {
   try {
     const storage = globalThis.localStorage
     if (
-      storage?.getItem(operation.storageKey) ===
-      operation.serializedRecord
+      storage?.getItem(storageKey) === serializedRecord
     ) {
-      storage.removeItem(operation.storageKey)
+      storage.removeItem(storageKey)
     }
   } catch {
     // A completed server response is authoritative even if local cleanup fails.

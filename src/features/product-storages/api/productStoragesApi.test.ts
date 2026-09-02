@@ -409,10 +409,11 @@ describe('productStoragesApi', () => {
     expect(localStorage.length).toBe(0)
   })
 
-  it('retains an unmarked write-off 4xx and rejects a different retry payload', async () => {
+  it('keeps an uncertain write-off scoped to its payload and allows a different write-off', async () => {
     apiRequestMock
       .mockRejectedValueOnce(createDepreciatedOrderHttpError(409))
       .mockResolvedValueOnce({ Id: 93 })
+      .mockResolvedValueOnce({ Id: 94 })
     const payload = createWriteOffPayload()
 
     await expect(createProductStorageWriteOff(payload)).rejects.toMatchObject({
@@ -423,17 +424,57 @@ describe('productStoragesApi', () => {
     differentPayload.Comment = 'different request'
     await expect(
       createProductStorageWriteOff(differentPayload),
-    ).rejects.toThrow(
-      'pending depreciated order operation belongs to a different payload',
-    )
-    expect(apiRequestMock).toHaveBeenCalledTimes(1)
+    ).resolves.toEqual({ Id: 93 })
+    expect(apiRequestMock).toHaveBeenCalledTimes(2)
     expect(localStorage.length).toBe(1)
 
     await expect(
       createProductStorageWriteOff(structuredClone(payload)),
-    ).resolves.toEqual({ Id: 93 })
-    expect(readIdempotencyKey(1)).toBe(firstOperationNetUid)
-    expect(randomUUIDMock).toHaveBeenCalledTimes(1)
+    ).resolves.toEqual({ Id: 94 })
+    expect(readIdempotencyKey(0)).toBe(firstOperationNetUid)
+    expect(readIdempotencyKey(1)).toBe(secondOperationNetUid)
+    expect(readIdempotencyKey(2)).toBe(firstOperationNetUid)
+    expect(randomUUIDMock).toHaveBeenCalledTimes(2)
+    expect(localStorage.length).toBe(0)
+  })
+
+  it('migrates a matching legacy write-off retry without blocking a different payload', async () => {
+    apiRequestMock
+      .mockRejectedValueOnce(createDepreciatedOrderHttpError(504))
+      .mockResolvedValueOnce({ Id: 95 })
+      .mockResolvedValueOnce({ Id: 96 })
+    const payload = createWriteOffPayload()
+
+    await expect(createProductStorageWriteOff(payload)).rejects.toMatchObject({
+      status: 504,
+    })
+
+    const currentStorageKey = localStorage.key(0)
+    expect(currentStorageKey).toContain(
+      'gba_console:depreciated-order-operation:v2:',
+    )
+    const serializedRecord = localStorage.getItem(currentStorageKey || '')
+    expect(serializedRecord).not.toBeNull()
+    localStorage.removeItem(currentStorageKey || '')
+    localStorage.setItem(
+      'gba_console:depreciated-order-operation:v1:aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+      serializedRecord || '',
+    )
+
+    const differentPayload = structuredClone(payload)
+    differentPayload.Comment = 'new write-off'
+    await expect(
+      createProductStorageWriteOff(differentPayload),
+    ).resolves.toEqual({ Id: 95 })
+    expect(localStorage.length).toBe(1)
+
+    await expect(
+      createProductStorageWriteOff(structuredClone(payload)),
+    ).resolves.toEqual({ Id: 96 })
+    expect(readIdempotencyKey(0)).toBe(firstOperationNetUid)
+    expect(readIdempotencyKey(1)).toBe(secondOperationNetUid)
+    expect(readIdempotencyKey(2)).toBe(firstOperationNetUid)
+    expect(randomUUIDMock).toHaveBeenCalledTimes(2)
     expect(localStorage.length).toBe(0)
   })
 
