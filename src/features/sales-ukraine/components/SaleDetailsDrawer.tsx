@@ -86,6 +86,8 @@ export function SaleDetailsDrawer({
 
   return (
     <AppDrawer
+      closeOnClickOutside={!activeFooterState.visible}
+      closeOnEscape={!activeFooterState.visible}
       footer={
         canEdit && sale && activeFooterState.visible ? (
           <Group gap="sm" justify="flex-end">

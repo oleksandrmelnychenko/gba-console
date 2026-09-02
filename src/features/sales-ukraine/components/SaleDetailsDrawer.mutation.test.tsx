@@ -1,5 +1,5 @@
 import { MantineProvider } from '@mantine/core'
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { theme } from '../../../shared/theme/theme'
 import type { SalesUkraineSale } from '../types'
@@ -93,6 +93,65 @@ afterEach(() => {
 })
 
 describe('SaleDetailsDrawer file mutation reconciliation', () => {
+  it('keeps the edit form open when the file picker returns through an outside interaction', async () => {
+    mocks.reconciliationRequired = false
+    const onClose = vi.fn()
+
+    render(
+      <MantineProvider theme={theme}>
+        <SaleDetailsDrawer
+          sale={{ BaseLifeCycleStatus: { SaleLifeCycleType: 1 }, HasDetails: false, NetUid: 'sale-1' }}
+          onClose={onClose}
+          onSaved={vi.fn()}
+        />
+      </MantineProvider>,
+    )
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Редагувати' }))
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Власне ТТН' }))
+    const fileInput = document.querySelector<HTMLInputElement>('input[type="file"]')
+    expect(fileInput).toBeTruthy()
+    fireEvent.change(fileInput as HTMLInputElement, {
+      target: { files: [new File(['ttn'], 'carrier-ttn.pdf', { type: 'application/pdf' })] },
+    })
+
+    await act(async () => {
+      await new Promise((resolve) => window.setTimeout(resolve, 400))
+    })
+    const overlay = document.querySelector<HTMLElement>('[data-fixed]')
+    expect(overlay).toBeTruthy()
+    fireEvent.click(overlay as HTMLElement)
+
+    expect(onClose).not.toHaveBeenCalled()
+    expect(screen.getByRole('button', { name: 'Зберегти' })).toBeTruthy()
+    expect(screen.getByText('carrier-ttn.pdf')).toBeTruthy()
+  })
+
+  it('preserves outside dismissal while the carrier drawer is in read-only mode', async () => {
+    mocks.reconciliationRequired = false
+    const onClose = vi.fn()
+
+    render(
+      <MantineProvider theme={theme}>
+        <SaleDetailsDrawer
+          sale={{ BaseLifeCycleStatus: { SaleLifeCycleType: 1 }, HasDetails: true, NetUid: 'sale-1' }}
+          onClose={onClose}
+          onSaved={vi.fn()}
+        />
+      </MantineProvider>,
+    )
+
+    await screen.findByRole('button', { name: 'Редагувати' })
+    await act(async () => {
+      await new Promise((resolve) => window.setTimeout(resolve, 400))
+    })
+    const overlay = document.querySelector<HTMLElement>('[data-fixed]')
+    expect(overlay).toBeTruthy()
+    fireEvent.click(overlay as HTMLElement)
+
+    expect(onClose).toHaveBeenCalledOnce()
+  })
+
   it('persists a newly enabled own TTN number and file through the carrier form', async () => {
     mocks.reconciliationRequired = false
     const file = new File(['ttn'], 'carrier-ttn.pdf', { type: 'application/pdf' })
