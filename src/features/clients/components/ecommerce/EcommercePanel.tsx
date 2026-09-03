@@ -14,6 +14,7 @@ import { type KeyboardEvent } from 'react'
 import { useValueState } from '../../../../shared/hooks/useValueState'
 import { useI18n } from '../../../../shared/i18n/useI18n'
 import { CREATE_ACTION_COLOR } from '../../../../shared/ui/page-header-actions/PageHeaderActions'
+import { validatePasswordPair } from '../../../users/utils'
 import { changeClientPassword } from '../../api/clientCabinetApi'
 import type { Client } from '../../types'
 
@@ -53,10 +54,11 @@ export function EcommercePanel({
       return
     }
 
-    if (password !== confirmPassword) {
+    const passwordError = validatePasswordPair(password, confirmPassword)
+    if (passwordError) {
       notifications.show({
         color: 'red',
-        message: t('Паролі не збігаються'),
+        message: passwordError,
       })
       return
     }
