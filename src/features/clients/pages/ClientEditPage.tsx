@@ -23,7 +23,12 @@ import { Navigate, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { translate } from '../../../shared/i18n/translate'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { useAuth } from '../../auth/useAuth'
-import { deleteClient, getClientForRegistryById, updateClient } from '../api/clientFormApi'
+import {
+  deleteClient,
+  getClientForRegistryById,
+  updateClient,
+  updateClientEcommerceSettings,
+} from '../api/clientFormApi'
 import { getClientCommercialStructureForRegistry, getClientIdentityAttention } from '../api/clientsApi'
 import { uploadClientContract } from '../api/clientCabinetApi'
 import {
@@ -914,14 +919,17 @@ export function ClientEditPage() {
       return
     }
 
+    const isEcommerceSettingsUpdate = selectedStepValue === 'e-commerce'
     const pendingDiscountState = pendingDiscountDraftRef.current
-    const pendingDiscountDraft = pendingDiscountState
+    const pendingDiscountDraft = !isEcommerceSettingsUpdate && pendingDiscountState
       && pendingDiscountState.clientNetUid === contentClient.NetUid
       ? pendingDiscountState.draft
       : null
     const clientToSave = applyPendingDiscountDraft(contentClient, pendingDiscountDraft)
     const clientRole = getClientRole(contentClient)
-    const errors = validateClientForm(clientToSave, clientRole, t('Забагато символів'))
+    const errors = isEcommerceSettingsUpdate
+      ? {}
+      : validateClientForm(clientToSave, clientRole, t('Забагато символів'))
     setFormErrors(errors)
 
     if (Object.keys(errors).length > 0) {
@@ -933,10 +941,13 @@ export function ClientEditPage() {
     setError(null)
 
     try {
-      const updatedClient = await updateClient(clientToSave, {
-        allowSourceOverride: sourceOverrideEnabled,
-      })
-      if (pendingDiscountDraftRef.current?.clientNetUid === contentClient.NetUid) {
+      const updatedClient = isEcommerceSettingsUpdate
+        ? await updateClientEcommerceSettings(clientToSave)
+        : await updateClient(clientToSave, {
+            allowSourceOverride: sourceOverrideEnabled,
+          })
+      if (!isEcommerceSettingsUpdate
+        && pendingDiscountDraftRef.current?.clientNetUid === contentClient.NetUid) {
         pendingDiscountDraftRef.current = null
       }
       const savedClient = updatedClient || clientToSave
@@ -947,7 +958,7 @@ export function ClientEditPage() {
       }
       notifications.show({
         color: 'green',
-        message: sourceOverrideEnabled
+        message: !isEcommerceSettingsUpdate && sourceOverrideEnabled
           ? t('Ручні зміни збережено. Наступна синхронізація 1С може їх перезаписати.')
           : t('Картку збережено'),
       })

@@ -9,6 +9,7 @@ import {
   getClientForRegistryById,
   getSupplierPassportById,
   updateClient,
+  updateClientEcommerceSettings,
 } from './clientFormApi'
 
 vi.mock('../../../shared/api/apiClient', () => ({
@@ -113,6 +114,26 @@ describe('client form API contracts', () => {
       body: client,
       dedupe: false,
       headers: clientUpdateHeaders,
+    })
+  })
+
+  it('updates e-commerce settings without resubmitting the client aggregate', async () => {
+    const client: Client = {
+      NetUid: 'client-net-id',
+      Updated: '2026-09-03T12:04:20.44',
+      ClearCartAfterDays: 7,
+      ClientAgreements: [{ Id: 10, Agreement: { Id: 11 } }],
+    }
+    apiRequestMock.mockResolvedValueOnce(client)
+
+    await expect(updateClientEcommerceSettings(client)).resolves.toEqual(client)
+    expect(apiRequestMock).toHaveBeenCalledWith('/clients/ecommerce/settings', {
+      method: 'PATCH',
+      body: {
+        NetUid: 'client-net-id',
+        ExpectedUpdated: '2026-09-03T12:04:20.44',
+        ClearCartAfterDays: 7,
+      },
     })
   })
 

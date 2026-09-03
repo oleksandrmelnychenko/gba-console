@@ -105,6 +105,25 @@ export async function updateClient(
   return normalizeClient(result)
 }
 
+export async function updateClientEcommerceSettings(
+  client: Client,
+): Promise<ClientUpsertResult> {
+  if (!client.NetUid || !client.Updated) {
+    throw new Error('Client update version is required. Reload the client before saving.')
+  }
+
+  const result = await apiRequest<unknown>('/clients/ecommerce/settings', {
+    method: 'PATCH',
+    body: {
+      NetUid: client.NetUid,
+      ExpectedUpdated: client.Updated,
+      ClearCartAfterDays: client.ClearCartAfterDays ?? 0,
+    },
+  })
+
+  return normalizeClient(result)
+}
+
 export async function deleteClient(netId: string): Promise<void> {
   await apiRequest<unknown>('/clients/registry/delete', {
     method: 'DELETE',
