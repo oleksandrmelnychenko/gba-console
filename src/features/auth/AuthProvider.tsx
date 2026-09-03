@@ -23,6 +23,11 @@ import {
 import { AuthContext } from './AuthContext'
 import type { AuthContextValue, AuthSession } from './types'
 
+type RefreshPermissionsOptions = {
+  blocking?: boolean
+  clearOnError?: boolean
+}
+
 export function AuthProvider({ children }: PropsWithChildren) {
   const navigate = useNavigate()
   const location = useLocation()
@@ -36,10 +41,16 @@ export function AuthProvider({ children }: PropsWithChildren) {
     setSession(readSession())
   }, [])
 
-  const refreshPermissions = useCallback(async (clearOnError = false) => {
+  const refreshPermissions = useCallback(async ({
+    blocking = false,
+    clearOnError = false,
+  }: RefreshPermissionsOptions = {}) => {
     const requestId = permissionRequestRef.current + 1
     permissionRequestRef.current = requestId
-    setPermissionsLoading(true)
+
+    if (blocking) {
+      setPermissionsLoading(true)
+    }
 
     try {
       const myPermissions = await getMyPermissions()
@@ -101,7 +112,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
 
     const [user] = await Promise.all([
       getCurrentUserProfile(baseSession),
-      refreshPermissions(true),
+      refreshPermissions({ blocking: true, clearOnError: true }),
     ])
     const nextSession = user
       ? {
