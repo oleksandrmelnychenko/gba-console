@@ -166,12 +166,14 @@ describe('SaleDetailsDrawer file mutation reconciliation', () => {
       NetUid: 'sale-1',
       Order: { OrderItems: [], OrderPackages: [{ Id: 91 }] },
     } as SalesUkraineSale
-    mocks.getSaleById.mockResolvedValueOnce({
-      BaseLifeCycleStatus: { SaleLifeCycleType: 1 },
-      HasDetails: true,
-      NetUid: 'sale-1',
-      Order: { OrderItems: [], OrderPackages: [{ Id: 91 }] },
-    })
+    mocks.getSaleById
+      .mockResolvedValueOnce({
+        BaseLifeCycleStatus: { SaleLifeCycleType: 1 },
+        HasDetails: true,
+        NetUid: 'sale-1',
+        Order: { OrderItems: [], OrderPackages: [{ Id: 91 }] },
+      })
+      .mockResolvedValueOnce(persistedSale)
     mocks.updateSaleFromData.mockResolvedValueOnce({ message: 'saved', sale: persistedSale })
     const onSaved = vi.fn()
 
@@ -206,13 +208,49 @@ describe('SaleDetailsDrawer file mutation reconciliation', () => {
       'sale-update-file',
       expect.objectContaining({
         CustomersOwnTtn: expect.objectContaining({ Number: 'TTN-7857' }),
+        CustomersOwnTtnId: 0,
         HasDetails: true,
+        IsEdited: true,
         Order: expect.objectContaining({ OrderPackages: [{ Id: 91 }] }),
       }),
       file,
       mocks.updateSaleFromData,
     )
     expect(onSaved).toHaveBeenCalledWith(persistedSale)
+  })
+
+  it('keeps the edit form open when the server acknowledgement does not contain the uploaded TTN', async () => {
+    mocks.reconciliationRequired = false
+    const file = new File(['ttn'], 'carrier-ttn.pdf', { type: 'application/pdf' })
+    const hydratedSale = {
+      BaseLifeCycleStatus: { SaleLifeCycleType: 1 },
+      HasDetails: true,
+      NetUid: 'sale-1',
+      Order: { OrderItems: [], OrderPackages: [{ Id: 91 }] },
+    } as SalesUkraineSale
+    mocks.getSaleById.mockResolvedValue(hydratedSale)
+    mocks.updateSaleFromData.mockResolvedValueOnce({ message: 'saved', sale: hydratedSale })
+    const onSaved = vi.fn()
+
+    render(
+      <MantineProvider theme={theme}>
+        <SaleDetailsDrawer sale={hydratedSale} onClose={vi.fn()} onSaved={onSaved} />
+      </MantineProvider>,
+    )
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Редагувати' }))
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Власне ТТН' }))
+    fireEvent.change(screen.getByRole('textbox', { name: 'Номер ТТН' }), {
+      target: { value: 'TTN-7857' },
+    })
+    const fileInput = document.querySelector<HTMLInputElement>('input[type="file"]')
+    fireEvent.change(fileInput as HTMLInputElement, { target: { files: [file] } })
+    fireEvent.click(screen.getByRole('button', { name: 'Зберегти' }))
+
+    await waitFor(() => expect(mocks.getSaleById).toHaveBeenCalledTimes(2))
+    expect(onSaved).not.toHaveBeenCalled()
+    expect(screen.getByRole('button', { name: 'Зберегти' })).toBeTruthy()
+    expect(screen.getByText('carrier-ttn.pdf')).toBeTruthy()
   })
 
   it('fails closed for a legacy frozen operation that did not persist full sale details', async () => {
@@ -278,7 +316,8 @@ describe('SaleDetailsDrawer file mutation reconciliation', () => {
       null,
       { operationId: '11111111-1111-4111-8111-111111111111' },
     )
-    expect(mocks.getSaleById).not.toHaveBeenCalled()
+    expect(mocks.getSaleById).toHaveBeenCalledOnce()
+    expect(mocks.getSaleById).toHaveBeenCalledWith('sale-1')
     expect(onSaved).toHaveBeenCalledOnce()
   })
 

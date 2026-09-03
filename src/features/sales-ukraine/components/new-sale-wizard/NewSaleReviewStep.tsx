@@ -166,6 +166,7 @@ export function NewSaleReviewStep({
   onChange,
   onClose,
   onCreated,
+  onSaved,
   onMergedSubmitted,
   onRegisterSubmit,
   onRequestClose,
@@ -181,6 +182,7 @@ export function NewSaleReviewStep({
   onChange: (patch: Partial<NewSaleReviewValue>) => void
   onClose?: () => void
   onCreated?: () => void
+  onSaved?: (sale: SalesUkraineSale | null) => void | Promise<void>
   onMergedSubmitted?: () => void
   onRegisterSubmit?: (submit: (() => Promise<void>) | null) => void
   onRequestClose?: () => void
@@ -1434,8 +1436,8 @@ export function NewSaleReviewStep({
           }
 
           if (pendingFinalFileMode === 'save') {
+            await onSaved?.((result as SaleSubmitResult).sale)
             notifications.show({ color: 'green', message: t('Збережено') })
-            onCreated?.()
 
             return
           }
@@ -1581,8 +1583,8 @@ export function NewSaleReviewStep({
         return false
       }
 
+      await onSaved?.(result.sale)
       notifications.show({ color: 'green', message: result.message || t('Збережено') })
-      onCreated?.()
 
       return true
     } catch (saveError) {
@@ -1596,9 +1598,7 @@ export function NewSaleReviewStep({
   }
 
   async function handleSave() {
-    if (await saveSale()) {
-      onClose?.()
-    }
+    await saveSale()
   }
 
   async function handleConfirmClose() {

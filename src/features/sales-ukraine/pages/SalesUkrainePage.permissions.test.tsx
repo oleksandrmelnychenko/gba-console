@@ -13,11 +13,13 @@ const mocks = vi.hoisted(() => ({
   getSalesUkraineSaleDetails: vi.fn(),
   getSalesUkraine: vi.fn(),
   granted: new Set<string>(),
+  permissionsLoading: false,
 }))
 
 vi.mock('../../auth/useAuth', () => ({
   useAuth: () => ({
     hasPermission: (permission: string) => mocks.granted.has(permission),
+    isPermissionsLoading: mocks.permissionsLoading,
     user: { FirstName: 'Тест', LastName: 'Користувач', NetUid: 'user-1' },
   }),
 }))
@@ -97,7 +99,11 @@ const sale: SalesUkraineSale = {
 }
 
 function renderPage(initialEntry = '/sales/ukraine/all') {
-  return render(
+  return render(pageTree(initialEntry))
+}
+
+function pageTree(initialEntry = '/sales/ukraine/all') {
+  return (
     <MantineProvider theme={theme}>
       <Notifications />
       <I18nProvider>
@@ -105,13 +111,14 @@ function renderPage(initialEntry = '/sales/ukraine/all') {
           <SalesUkrainePage />
         </MemoryRouter>
       </I18nProvider>
-    </MantineProvider>,
+    </MantineProvider>
   )
 }
 
 describe('SalesUkrainePage event permissions', () => {
   beforeEach(() => {
     mocks.granted.clear()
+    mocks.permissionsLoading = false
     mocks.getSalesUkraineDeliveryDetails.mockReset().mockImplementation(async (netUid: string) => ({
       ...sale,
       HasDetails: true,
@@ -277,6 +284,26 @@ describe('SalesUkrainePage event permissions', () => {
     expect(await screen.findByTestId('delivery-drawer')).toBeTruthy()
     expect(screen.getByTestId('delivery-own-ttn').textContent).toBe('TTN-7857')
     await waitFor(() => expect(mocks.getSalesUkraine).toHaveBeenCalledTimes(2))
+  })
+
+  it('keeps the carrier drawer mounted while permissions refresh after the file picker regains focus', async () => {
+    grant(
+      PermissionKeys.SalesUkraine.Sale.View,
+      PermissionKeys.SalesUkraine.Sale.OpenDeliveryDetails,
+      PermissionKeys.SalesUkraine.Sale.Edit,
+    )
+    mocks.getSalesUkraine.mockResolvedValue([actionableSale()])
+    const view = renderPage()
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Дії' }))
+    fireEvent.click(await screen.findByRole('menuitem', { name: 'Дані доставки' }))
+    expect(await screen.findByTestId('delivery-drawer')).toBeTruthy()
+
+    mocks.permissionsLoading = true
+    view.rerender(pageTree())
+
+    expect(screen.getByTestId('delivery-drawer')).toBeTruthy()
+    expect(screen.queryByText('Завантаження')).toBeNull()
   })
 
   it('does not show shipping unlock for an eligible sale without its own key', async () => {

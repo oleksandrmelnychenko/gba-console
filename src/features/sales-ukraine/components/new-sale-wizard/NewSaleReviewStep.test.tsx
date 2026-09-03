@@ -207,6 +207,7 @@ function renderStep({
   onChange = vi.fn(),
   onClose = vi.fn(),
   onCreated = vi.fn(),
+  onSaved = vi.fn(),
   onRequestClose = vi.fn(),
   onVatDocuments = vi.fn(),
   saleValue = sale,
@@ -219,6 +220,7 @@ function renderStep({
   onChange?: (patch: Partial<NewSaleReviewValue>) => void
   onClose?: () => void
   onCreated?: () => void
+  onSaved?: (sale: SalesUkraineSale | null) => void
   onRequestClose?: () => void
   onVatDocuments?: (result: unknown) => void
   saleValue?: SalesUkraineSale
@@ -238,6 +240,7 @@ function renderStep({
           onChange={onChange}
           onClose={onClose}
           onCreated={onCreated}
+          onSaved={onSaved}
           onRequestClose={onRequestClose}
           onVatDocuments={onVatDocuments}
           submitFlow={submitFlow}
@@ -248,6 +251,7 @@ function renderStep({
     onChange,
     onClose,
     onCreated,
+    onSaved,
     onRequestClose,
   }
 }
@@ -395,7 +399,7 @@ describe('NewSaleReviewStep persistent file reconciliation', () => {
       intent: 'save',
     })
     mocks.updateSaleFromData.mockResolvedValue({ message: 'saved' })
-    const { onClose, onCreated } = renderStep({ value: reviewValue(reselectedFile) })
+    const { onClose, onCreated, onSaved } = renderStep({ value: reviewValue(reselectedFile) })
 
     const alert = await screen.findByRole('alert')
 
@@ -406,10 +410,44 @@ describe('NewSaleReviewStep persistent file reconciliation', () => {
     expect(mocks.updateSaleFromData.mock.calls[0]?.[0]).toEqual(submission.payload)
     expect(mocks.updateSaleFromData.mock.calls[0]?.[1]).toBe(reselectedFile)
     expect(mocks.updateSaleFromData.mock.calls[0]?.[2]).toEqual({ operationId })
-    await waitFor(() => expect(onCreated).toHaveBeenCalledTimes(1))
+    await waitFor(() => expect(onSaved).toHaveBeenCalledTimes(1))
+    expect(onCreated).not.toHaveBeenCalled()
     expect(onClose).not.toHaveBeenCalled()
     expect(loadSalesPendingMutation(legacyFileScope)).toBe(null)
     expect(loadSalesPendingMutation(wizardFileScope)).toBe(null)
+  })
+
+  it('saves a newly added own TTN without closing the edit wizard', async () => {
+    const file = new File(['ttn'], 'carrier-ttn.pdf', { type: 'application/pdf' })
+    const persistedSale = {
+      ...sale,
+      CustomersOwnTtn: {
+        Id: 81,
+        Number: 'TTN-7857',
+        TtnPDFPath: '/Data/Temp/CustomersTTN-saved.pdf',
+      },
+      CustomersOwnTtnId: 81,
+    }
+    mocks.updateSaleFromData.mockResolvedValue({ message: 'saved', sale: persistedSale })
+    const { onClose, onCreated, onSaved } = renderStep({
+      value: {
+        ...reviewValue(file),
+        hasOwnTtn: true,
+        ttnNumber: 'TTN-7857',
+      },
+    })
+
+    fireEvent.click(screen.getByRole('button', { name: 'Зберегти' }))
+
+    await waitFor(() => expect(mocks.updateSaleFromData).toHaveBeenCalledTimes(1))
+    expect(mocks.updateSaleFromData.mock.calls[0]?.[0]).toMatchObject({
+      CustomersOwnTtn: { Number: 'TTN-7857' },
+      IsEdited: true,
+    })
+    expect(mocks.updateSaleFromData.mock.calls[0]?.[1]).toBe(file)
+    await waitFor(() => expect(onSaved).toHaveBeenCalledWith(persistedSale))
+    expect(onCreated).not.toHaveBeenCalled()
+    expect(onClose).not.toHaveBeenCalled()
   })
 
   it('fails closed on an intent-less legacy record instead of treating it as submit', async () => {

@@ -1100,6 +1100,42 @@ function NewSaleWizardContent({
     }
   }
 
+  function handleReviewSaved(savedSale: SalesUkraineSale | null) {
+    const current = stateRef.current
+
+    if (savedSale) {
+      const updated = { ...current, sale: savedSale }
+      stateRef.current = updated
+      setState(updated)
+      setReview((currentReview) => ({
+        ...currentReview,
+        hasOwnTtn: Boolean(savedSale.CustomersOwnTtn),
+        ttnFile: null,
+        ttnNumber: savedSale.CustomersOwnTtn?.Number || currentReview.ttnNumber,
+      }))
+    }
+
+    void reloadCart()
+      .then((refreshedSale) => {
+        if (refreshedSale) {
+          setReview((currentReview) => ({
+            ...currentReview,
+            hasOwnTtn: Boolean(refreshedSale.CustomersOwnTtn),
+            ttnFile: null,
+            ttnNumber: refreshedSale.CustomersOwnTtn?.Number || currentReview.ttnNumber,
+          }))
+        }
+      })
+      .catch((loadError: unknown) => {
+        notifications.show({
+          color: 'orange',
+          message: loadError instanceof Error
+            ? t(loadError.message)
+            : t('Зміни збережено, але не вдалося оновити дані продажу'),
+        })
+      })
+  }
+
   async function handleNext() {
     if (isShellBusyNow()) {
       return
@@ -1379,6 +1415,7 @@ function NewSaleWizardContent({
               invalidateCartReloads()
               onCreated()
             }}
+            onSaved={handleReviewSaved}
             onMergedSubmitted={() => void goToClients()}
             onRegisterSubmit={registerReviewSubmit}
             onRequestClose={requestExit}

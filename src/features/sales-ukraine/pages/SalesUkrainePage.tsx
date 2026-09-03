@@ -304,12 +304,17 @@ export function SaleSummaryDrawer({
 export function SalesUkrainePage() {
   const { t } = useI18n()
   const { can, isLoading } = usePermissions()
+  const canViewSales = can(PermissionKeys.SalesUkraine.Sale.View)
 
-  if (isLoading) {
+  // Permission refresh also runs whenever the browser regains focus (including
+  // after closing the native file picker). Keep the already-authorized page
+  // mounted during that background refresh; unmounting it discards open
+  // drawers and their selected File objects, which looks like a full reload.
+  if (isLoading && !canViewSales) {
     return <Text c="dimmed">{t('Завантаження')}</Text>
   }
 
-  if (!can(PermissionKeys.SalesUkraine.Sale.View)) {
+  if (!canViewSales) {
     return (
       <Alert color="red" icon={<CircleAlert size={18} />} title={t('Доступ заборонено')} variant="light">
         {t('Недостатньо прав для перегляду продажів України')}

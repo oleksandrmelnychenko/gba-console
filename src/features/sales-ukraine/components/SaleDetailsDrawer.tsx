@@ -263,6 +263,7 @@ function SaleDetailsContent({
     }
 
     if (!hasOwnTtn) {
+      payload.CustomersOwnTtn = null
       payload.CustomersOwnTtnId = 0
     }
 
@@ -292,8 +293,11 @@ function SaleDetailsContent({
     }
 
     if (hasOwnTtn) {
-      payload.CustomersOwnTtn = { ...(baseSale.CustomersOwnTtn || {}), Number: ownTtnNumber }
+      payload.CustomersOwnTtn = { ...(baseSale.CustomersOwnTtn || {}), Number: ownTtnNumber.trim() }
+      payload.CustomersOwnTtnId = baseSale.CustomersOwnTtnId ?? baseSale.CustomersOwnTtn?.Id ?? 0
     }
+
+    payload.IsEdited = true
 
     return payload
   }
@@ -319,15 +323,34 @@ function SaleDetailsContent({
         return
       }
 
-      const refreshedSale = result.sale ?? (
-        sale.NetUid ? await loadSale(sale.NetUid) : null
-      )
+      // The edit endpoint can return only an acknowledgement or a stale sale
+      // projection. Re-read delivery details so the drawer is not switched out
+      // of edit mode until the server representation actually contains the TTN.
+      const refreshedSale = sale.NetUid
+        ? await loadSale(sale.NetUid) ?? result.sale
+        : result.sale
+
+      const requestedOwnTtn = hasOwnTtn
+      const persistedOwnTtn = Boolean(refreshedSale?.CustomersOwnTtn)
+      const requestedNumber = ownTtnNumber.trim()
+      const persistedNumber = refreshedSale?.CustomersOwnTtn?.Number?.trim() || ''
+      const persistedFile = refreshedSale?.CustomersOwnTtn?.TtnPDFPath?.trim() || ''
+      const ownTtnConfirmed = requestedOwnTtn
+        ? persistedOwnTtn && (!requestedNumber || persistedNumber === requestedNumber) && (!uploadedFile || Boolean(persistedFile))
+        : !persistedOwnTtn
+
+      if (!refreshedSale || !ownTtnConfirmed) {
+        notifications.show({
+          color: 'red',
+          message: t('Сервер не підтвердив збереження ТТН. Форму залишено відкритою'),
+        })
+
+        return
+      }
 
       notifications.show({ color: 'green', message: t('Дані доставки збережено') })
-      if (refreshedSale) {
-        setEditMode(false)
-        setUploadedFile(null)
-      }
+      setEditMode(false)
+      setUploadedFile(null)
       onSaved(refreshedSale)
     } catch (saveError) {
       notifications.show({
@@ -723,7 +746,7 @@ export function CarrierHistory({ current, entries }: { current: SalesUkraineUpda
   return (
     <section className="sale-carrier-section sale-carrier-history-section">
       <Text className="app-section-title sale-carrier-section-title">{t('Історія змін перевізника')}</Text>
-      <ScrollArea type="auto">
+      <ScrollArea offsetScrollbars="x" type="auto">
         <Table className="sales-drawer-table sale-carrier-history-table" withColumnBorders withRowBorders striped>
           <Table.Thead>
             <Table.Tr>
