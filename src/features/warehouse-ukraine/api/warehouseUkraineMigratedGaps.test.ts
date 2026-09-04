@@ -186,13 +186,26 @@ describe('warehouse Ukraine migrated gap request contracts', () => {
   })
 
   it('loads warehouse invoice details through its exact scoped facade', async () => {
-    apiRequestMock.mockResolvedValueOnce({ NetUid: 'sale-net-id' })
+    const sale = { NetUid: 'sale-net-id', Order: { OrderItems: [] } }
+    apiRequestMock.mockResolvedValueOnce({
+      LifeCycleLine: [],
+      Sale: sale,
+      SaleExchangeRates: [],
+    })
 
-    await getWarehouseUkraineSaleDetails('sale-net-id')
+    const result = await getWarehouseUkraineSaleDetails('sale-net-id')
 
     expect(apiRequestMock).toHaveBeenCalledWith('/sales/warehouse-ukraine/invoices/details', {
       query: { netId: 'sale-net-id' },
     })
+    expect(result).toEqual(sale)
+  })
+
+  it('keeps accepting a direct sale details payload', async () => {
+    const sale = { NetUid: 'sale-net-id', Order: { OrderItems: [] } }
+    apiRequestMock.mockResolvedValueOnce(sale)
+
+    await expect(getWarehouseUkraineSaleDetails('sale-net-id')).resolves.toEqual(sale)
   })
 
   it.each([

@@ -51,7 +51,21 @@ export async function getWarehouseUkraineSaleDetails(
     ...(signal ? { signal } : {}),
   })
 
-  return result && typeof result === 'object' && !Array.isArray(result) ? (result as SalesUkraineSale) : null
+  return normalizeWarehouseUkraineSaleDetails(result)
+}
+
+function normalizeWarehouseUkraineSaleDetails(result: unknown): SalesUkraineSale | null {
+  if (!result || typeof result !== 'object' || Array.isArray(result)) {
+    return null
+  }
+
+  const sale = (result as { Sale?: unknown }).Sale
+
+  if (sale && typeof sale === 'object' && !Array.isArray(sale)) {
+    return sale as SalesUkraineSale
+  }
+
+  return result as SalesUkraineSale
 }
 
 export async function getSalePrintDocument(saleNetId: string): Promise<WarehouseUkraineExportDocument> {
