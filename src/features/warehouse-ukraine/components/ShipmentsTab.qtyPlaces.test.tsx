@@ -1,11 +1,14 @@
 import { MantineProvider } from '@mantine/core'
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { ApiError } from '../../../shared/api/apiClient'
 import { I18nProvider } from '../../../shared/i18n/I18nProvider'
+import { runPersistentSaleJsonMutation } from '../../sales-ukraine/usePersistentSaleJsonMutation'
 import {
   carryOutShipmentList,
   getAllShipmentLists,
   getAutoShipmentList,
+  getShipmentListById,
   getShipmentTransporterTypes,
   getShipmentTransportersByType,
 } from '../api/shipmentsApi'
@@ -29,31 +32,13 @@ vi.mock('../api/shipmentsApi', () => ({
   updateShipmentList: vi.fn(),
 }))
 
-vi.mock('../../sales-ukraine/usePersistentSaleJsonMutation', () => {
-  const runMutation = async (
-    _context: string,
-    payload: object,
-    request: (payload: object, operation: { operationId: string }) => Promise<unknown>,
-  ) => {
-    try {
-      return {
-        completed: true,
-        result: await request(payload, {
-          operationId: '99999999-9999-4999-8999-999999999999',
-        }),
-      }
-    } catch (error) {
-      return { completed: false, error }
-    }
-  }
-
-  return {
-    usePersistentSaleJsonMutationRunner: () => runMutation,
-  }
-})
+vi.mock('../../auth/useAuth', () => ({
+  useAuth: () => ({ session: { userNetUid: 'USER-A' } }),
+}))
 
 const getAllShipmentListsMock = vi.mocked(getAllShipmentLists)
 const getAutoShipmentListMock = vi.mocked(getAutoShipmentList)
+const getShipmentListByIdMock = vi.mocked(getShipmentListById)
 const getShipmentTransporterTypesMock = vi.mocked(getShipmentTransporterTypes)
 const getShipmentTransportersByTypeMock = vi.mocked(getShipmentTransportersByType)
 const carryOutShipmentListMock = vi.mocked(carryOutShipmentList)
@@ -139,6 +124,97 @@ describe('ShipmentsTab quantity carry-out workflow', () => {
 
     expect(shipmentRow).not.toBeNull()
     expect(within(shipmentRow as HTMLTableRowElement).getByText('5')).toBeTruthy()
+  })
+
+  it('continues carry-out with a fresh key after reconciling a lost blur-save response', async () => {
+    const draft = buildShipmentList()
+    const saved = {
+      ...draft,
+      Updated: '2026-08-27T13:05:00.1234567Z',
+      ShipmentListItems: draft.ShipmentListItems.map((item) => ({
+        ...item,
+        IsDirty: true,
+        QtyPlaces: 5,
+      })),
+    }
+    const carried = {
+      ...saved,
+      IsSent: true,
+      Updated: '2026-08-27T13:10:00.1234567Z',
+    }
+    const operationIds: string[] = []
+    const frozenRequest = {
+      shipmentList: saved,
+      window: {
+        from: '2026-08-28T00:00:00.000Z',
+        to: '2026-09-04T23:59:59.999Z',
+      },
+    }
+
+    getAutoShipmentListMock.mockResolvedValue(draft)
+    await expect(runPersistentSaleJsonMutation({
+      context: `shipment-list-update:${draft.NetUid}`,
+      kind: 'shipment-list-update',
+      payload: frozenRequest,
+      request: async (_payload, operation) => {
+        operationIds.push(operation.operationId)
+        throw new ApiError('response lost', 503, null)
+      },
+      userKey: 'net:USER-A',
+    })).resolves.toMatchObject({ completed: false, error: expect.any(ApiError) })
+    carryOutShipmentListMock
+      .mockImplementationOnce(async (shipmentList, operation) => {
+        expect(shipmentList).toMatchObject({ IsSent: false, ShipmentListItems: [{ QtyPlaces: 5 }] })
+        operationIds.push(operation.operationId)
+        return saved
+      })
+      .mockImplementationOnce(async (shipmentList, operation) => {
+        expect(shipmentList).toMatchObject({
+          IsSent: true,
+          Updated: saved.Updated,
+          ShipmentListItems: [{ QtyPlaces: 5 }],
+        })
+        operationIds.push(operation.operationId)
+        return carried
+      })
+    getShipmentListByIdMock.mockResolvedValue(saved)
+    getAllShipmentListsMock.mockResolvedValue([carried])
+
+    render(
+      <MantineProvider>
+        <I18nProvider>
+          <ShipmentsTab
+            createRequest={1}
+            permissions={{
+              canCarryOut: true,
+              canCreate: true,
+              canEdit: true,
+              canPrintInvoice: true,
+              canPrintShipment: true,
+            }}
+          />
+        </I18nProvider>
+      </MantineProvider>,
+    )
+
+    const draftSaleNumber = await screen.findByText('000000123')
+    const draftRow = draftSaleNumber.closest('tr') as HTMLTableRowElement
+    const qtyPlacesInput = draftRow.querySelector<HTMLInputElement>('input[type="number"]')
+
+    expect(qtyPlacesInput).not.toBeNull()
+    fireEvent.focus(qtyPlacesInput as HTMLInputElement)
+    fireEvent.change(qtyPlacesInput as HTMLInputElement, { target: { value: '5' } })
+    await waitFor(() => expect((qtyPlacesInput as HTMLInputElement).value).toBe('5'))
+
+    fireEvent.click(screen.getByRole('button', { name: 'Провести і закрити' }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Так' }))
+
+    await waitFor(() => expect(carryOutShipmentListMock).toHaveBeenCalledTimes(2))
+    expect(getShipmentListByIdMock).toHaveBeenCalledWith(draft.NetUid)
+    expect(operationIds[1]).toBe(operationIds[0])
+    expect(operationIds[2]).not.toBe(operationIds[0])
+    expect(screen.queryByText(/Поточні змінені дані не відправлено/)).toBeNull()
+    expect(await screen.findByText('000000001')).toBeTruthy()
   })
 })
 

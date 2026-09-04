@@ -46,7 +46,10 @@ import {
   type AutoShipmentListParams,
   type ShipmentSaleCommentMutation,
 } from '../api/shipmentsApi'
-import { usePersistentSaleJsonMutationRunner } from '../../sales-ukraine/usePersistentSaleJsonMutation'
+import {
+  ReconciledSaleJsonMutationPayloadChangedError,
+  usePersistentSaleJsonMutationRunner,
+} from '../../sales-ukraine/usePersistentSaleJsonMutation'
 import type {
   ShipmentDeliveryRecipient,
   ShipmentDeliveryRecipientAddress,
@@ -679,7 +682,9 @@ function useShipmentsTabModel({ canCarryOut, canEdit, canPrintShipment, onCarrie
   }
 
   async function carryOut() {
-    if (!canCarryOut || !shipmentList.NetUid || shipmentList.IsSent || items.length === 0) {
+    const shipmentListNetUid = shipmentList.NetUid
+
+    if (!canCarryOut || !shipmentListNetUid || shipmentList.IsSent || items.length === 0) {
       setConfirmCarryOut(false)
       return
     }
@@ -697,15 +702,29 @@ function useShipmentsTabModel({ canCarryOut, canEdit, canPrintShipment, onCarrie
           to: toDateTimeQuery(filterDraft.to, 'end'),
         },
       }
-      const attempt = await runShipmentListMutation<ShipmentListUpdateRequest, ShipmentList>(
-        `shipment-list-update:${nextShipmentList.NetUid ?? nextShipmentList.Id ?? 'unknown'}`,
-        request,
-        (payload, operation) => carryOutShipmentList(
-          payload.shipmentList,
-          operation,
-          payload.window,
-        ),
-      )
+      const context = `shipment-list-update:${shipmentListNetUid}`
+      const submitCarryOut = (currentRequest: ShipmentListUpdateRequest) =>
+        runShipmentListMutation<ShipmentListUpdateRequest, ShipmentList>(
+          context,
+          currentRequest,
+          (payload, operation) => carryOutShipmentList(
+            payload.shipmentList,
+            operation,
+            payload.window,
+          ),
+        )
+      let attempt = await submitCarryOut(request)
+
+      if (
+        !attempt.completed &&
+        attempt.error instanceof ReconciledSaleJsonMutationPayloadChangedError
+      ) {
+        const persistedShipmentList = await getShipmentListById(shipmentListNetUid)
+        attempt = await submitCarryOut({
+          ...request,
+          shipmentList: buildShipmentCarryOutPayload(persistedShipmentList, qtyEdits),
+        })
+      }
 
       if (!attempt.completed) {
         throw attempt.error

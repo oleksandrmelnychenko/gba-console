@@ -34,6 +34,16 @@ export type PersistentSaleJsonMutationRunnerResult<TResult> =
   | { completed: true; result: TResult }
   | { completed: false; error: unknown }
 
+export class ReconciledSaleJsonMutationPayloadChangedError extends SalesPendingMutationConflictError {
+  constructor() {
+    super(
+      'Попередню операцію підтверджено за її збереженими даними. ' +
+      'Поточні змінені дані не відправлено; повторіть дію.',
+    )
+    this.name = 'ReconciledSaleJsonMutationPayloadChangedError'
+  }
+}
+
 export function usePersistentSaleJsonMutationRunner(kind: SaleJsonMutationKind) {
   const { session } = useAuth()
   const userKey = getSalesPendingMutationUserKey(session)
@@ -310,9 +320,6 @@ function toMessage(error: unknown, fallback: string): string {
   return error instanceof Error && error.message.trim() ? error.message : fallback
 }
 
-function createReconciledPayloadChangedError(): SalesPendingMutationConflictError {
-  return new SalesPendingMutationConflictError(
-    'Попередню операцію підтверджено за її збереженими даними. ' +
-    'Поточні змінені дані не відправлено; повторіть дію.',
-  )
+function createReconciledPayloadChangedError(): ReconciledSaleJsonMutationPayloadChangedError {
+  return new ReconciledSaleJsonMutationPayloadChangedError()
 }

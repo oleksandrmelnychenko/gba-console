@@ -7,6 +7,7 @@ import {
   type SalesPendingMutationScope,
 } from './pendingSalesMutationRegistry'
 import {
+  ReconciledSaleJsonMutationPayloadChangedError,
   usePersistentSaleJsonMutation,
   usePersistentSaleJsonMutationRunner,
 } from './usePersistentSaleJsonMutation'
@@ -91,7 +92,7 @@ describe('usePersistentSaleJsonMutation', () => {
         request,
       )).resolves.toMatchObject({
         completed: false,
-        error: expect.objectContaining({ message: expect.stringContaining('не відправлено') }),
+        error: expect.any(ReconciledSaleJsonMutationPayloadChangedError),
       })
     })
 
