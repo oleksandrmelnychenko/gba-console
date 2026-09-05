@@ -105,11 +105,17 @@ test('BUG-1244: latest 1C evidence is complete V7 data from both worlds', async 
 
 test('BUG-1244: AYMEKS Excel matches Fenix prices, quantities, expenses and storage split', async () => {
   const rows = await query<EvidenceMatrixRow>(`
-    WITH latest AS (
-      SELECT TOP (1) ReceiptId
-      FROM dbo.DataSyncOneCInboundReceipt
-      WHERE ForAmg = 0
-      ORDER BY DestinationCommittedAtUtc DESC
+    WITH evidence AS (
+      SELECT TOP (1) receipt.ReceiptId
+      FROM dbo.DataSyncOneCInboundReceipt AS receipt
+      INNER JOIN dbo.DataSyncOneCInboundReceiptLine AS candidate
+        ON candidate.ReceiptId = receipt.ReceiptId
+      WHERE receipt.ForAmg = 0
+        AND candidate.ExpectedCustomsNumber = N'${BUG_1244.aymeks.customsNumber}'
+        AND candidate.ExcludedReason IS NULL
+      GROUP BY receipt.ReceiptId, receipt.DestinationCommittedAtUtc
+      ORDER BY COUNT(DISTINCT candidate.VendorCode) DESC,
+               receipt.DestinationCommittedAtUtc DESC
     )
     SELECT line.VendorCode,
            MAX(line.OriginalQty) AS Qty,
@@ -119,7 +125,7 @@ test('BUG-1244: AYMEKS Excel matches Fenix prices, quantities, expenses and stor
            COUNT_BIG(*) AS ProjectionRows,
            COUNT(DISTINCT line.ResolvedStorageID) AS StorageCount
     FROM dbo.DataSyncOneCInboundReceiptLine AS line
-    WHERE line.ReceiptId = (SELECT ReceiptId FROM latest)
+    WHERE line.ReceiptId = (SELECT ReceiptId FROM evidence)
       AND line.ExpectedCustomsNumber = N'${BUG_1244.aymeks.customsNumber}'
       AND line.ExcludedReason IS NULL
     GROUP BY line.VendorCode
@@ -289,16 +295,22 @@ test('BUG-1244: SAMPIYON preserves all lines, currencies and sold-out history', 
   expect(soldOut.every((row) => Number(row.Qty) === 12 && Number(row.RemainingQty) === 0)).toBe(true);
 
   const currentEvidence = await query<{ Products: number; HasSoldOutLine: number; Expense: number }>(`
-    WITH latest AS (
-      SELECT TOP (1) ReceiptId
-      FROM dbo.DataSyncOneCInboundReceipt
-      WHERE ForAmg = 0
-      ORDER BY DestinationCommittedAtUtc DESC
+    WITH evidence AS (
+      SELECT TOP (1) receipt.ReceiptId
+      FROM dbo.DataSyncOneCInboundReceipt AS receipt
+      INNER JOIN dbo.DataSyncOneCInboundReceiptLine AS candidate
+        ON candidate.ReceiptId = receipt.ReceiptId
+      WHERE receipt.ForAmg = 0
+        AND candidate.ExpectedCustomsNumber = N'${BUG_1244.sampiyon.customsNumber}'
+        AND candidate.ExcludedReason IS NULL
+      GROUP BY receipt.ReceiptId, receipt.DestinationCommittedAtUtc
+      ORDER BY COUNT(DISTINCT candidate.VendorCode) DESC,
+               receipt.DestinationCommittedAtUtc DESC
     ), grouped AS (
       SELECT line.VendorCode, MAX(line.OriginalQty) AS Qty,
              MAX(line.SourceDeliveryExpenseUnitAmountEur) AS ExpenseUnit
       FROM dbo.DataSyncOneCInboundReceiptLine AS line
-      WHERE line.ReceiptId = (SELECT ReceiptId FROM latest)
+      WHERE line.ReceiptId = (SELECT ReceiptId FROM evidence)
         AND line.ExpectedCustomsNumber = N'${BUG_1244.sampiyon.customsNumber}'
         AND line.ExcludedReason IS NULL
       GROUP BY line.VendorCode
@@ -495,16 +507,22 @@ async function exactExpenseForSourceDocument(
   quantityColumn: 'OriginalQty' | 'CurrentQty',
 ): Promise<{ Products: number; Qty: number; Expense: number }> {
   const rows = await query<{ Products: number; Qty: number; Expense: number }>(`
-    WITH latest AS (
-      SELECT TOP (1) ReceiptId
-      FROM dbo.DataSyncOneCInboundReceipt
-      WHERE ForAmg = ${forAmg ? 1 : 0}
-      ORDER BY DestinationCommittedAtUtc DESC
+    WITH evidence AS (
+      SELECT TOP (1) receipt.ReceiptId
+      FROM dbo.DataSyncOneCInboundReceipt AS receipt
+      INNER JOIN dbo.DataSyncOneCInboundReceiptLine AS candidate
+        ON candidate.ReceiptId = receipt.ReceiptId
+      WHERE receipt.ForAmg = ${forAmg ? 1 : 0}
+        AND candidate.DocumentNumber = N'${documentNumber}'
+        AND candidate.InvoiceNumber = N'${invoiceNumber}'
+      GROUP BY receipt.ReceiptId, receipt.DestinationCommittedAtUtc
+      ORDER BY COUNT(DISTINCT candidate.VendorCode) DESC,
+               receipt.DestinationCommittedAtUtc DESC
     ), grouped AS (
       SELECT line.VendorCode, MAX(line.${quantityColumn}) AS Qty,
              MAX(line.SourceDeliveryExpenseUnitAmountEur) AS ExpenseUnit
       FROM dbo.DataSyncOneCInboundReceiptLine AS line
-      WHERE line.ReceiptId = (SELECT ReceiptId FROM latest)
+      WHERE line.ReceiptId = (SELECT ReceiptId FROM evidence)
         AND line.DocumentNumber = N'${documentNumber}'
         AND line.InvoiceNumber = N'${invoiceNumber}'
       GROUP BY line.VendorCode

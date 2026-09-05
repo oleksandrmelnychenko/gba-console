@@ -23,3 +23,8 @@ BUG-1244 covers the complete AYMEKS and SAMPIYON matrices attached in Desk:
 - a sold-out line retained in document history but absent from current state;
 - a legitimate two-storage split distinguished from a duplicate;
 - repeated-sync duplicate protection, zero prices, and negative/zero quantities.
+
+The latest receipt is used for current sync health and edge guards. Historical
+Excel matrices use the append-only receipt with the greatest document coverage,
+so a later current-state snapshot cannot make sold inventory look like missing
+invoice lines.
