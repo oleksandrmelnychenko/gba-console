@@ -26,6 +26,7 @@
     "preview": "vite preview",
     "e2e:smoke": "playwright test --project=smoke",
     "e2e:full": "playwright test --project=full",
+    "e2e:live-sync-audit": "playwright test --config=playwright.live-sync.config.ts",
     "e2e:report": "playwright show-report"
   },
   "dependencies": {
