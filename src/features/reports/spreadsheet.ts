@@ -6,7 +6,8 @@ import type {
   SpreadsheetSheet,
 } from './types'
 import { parseNumericValue } from './utils'
-import { CURRENT_STOCK_REPORT_TITLES } from './data/currentStockReports'
+import { VALUATION_REQUIRED_METADATA_PREFIXES, VALUATION_MONEY_CAPTION } from './data/reportValuation'
+import { CURRENT_STOCK_REPORT_TITLES, getCurrentStockReport } from './data/currentStockReports'
 
 // The file «Перегляд звіту з файла» exists for is the one our own report engine writes
 // (ProductPlacementStorageManager.ExportVerificationReportsToXlsx): the header is as many rows deep as the
@@ -23,10 +24,24 @@ const STOCK_READ_TIME_LINE = /^Час читання \(UTC\): \d{2}\.\d{2}\.\d{4
 const REPORT_TITLES = new Set(['Звіт продажів', 'Звіт продажів і повернень', 'Звіт надходжень', ...CURRENT_STOCK_REPORT_TITLES])
 export const stockQuantityFormatter = new Intl.NumberFormat('uk-UA', { maximumFractionDigits: 8 })
 const stockCsvQuantityFormatter = new Intl.NumberFormat('en-US', { useGrouping: false, maximumFractionDigits: 8 })
+export const valuationMoneyFormatter = new Intl.NumberFormat('uk-UA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+const valuationCsvMoneyFormatter = new Intl.NumberFormat('en-US', { useGrouping: false, minimumFractionDigits: 2, maximumFractionDigits: 2 })
+const VALUATION_REPORT_TITLE = getCurrentStockReport(8)!.title
 
 export function isCurrentStockSheet(sheet: SpreadsheetSheet | null): boolean {
   return CURRENT_STOCK_REPORT_TITLES.has(sheet?.header?.lines[0] ?? '')
 }
+/** Only declared measure columns receive quantity/money formatting; numeric group identities remain axes. */
+export function getSpreadsheetNumberFormatter(sheet: SpreadsheetSheet | null, columnIndex: number, csv = false): Intl.NumberFormat | undefined {
+  if (!isCurrentStockSheet(sheet) || !sheet?.header || columnIndex < sheet.header.rowGroupings.length) return undefined
+  if (sheet.header.lines[0] === VALUATION_REPORT_TITLE) {
+    const caption = sheet.columns[columnIndex]?.split(HEADER_LEVEL_SEPARATOR).at(-1)
+    if (caption === VALUATION_MONEY_CAPTION) return csv ? valuationCsvMoneyFormatter : valuationMoneyFormatter
+    if (caption !== 'Фізичний залишок') return undefined
+  }
+  return csv ? stockCsvQuantityFormatter : stockQuantityFormatter
+}
+
 const ROW_GROUPINGS_PREFIX = 'Рядки:'
 const COLUMN_GROUPINGS_PREFIX = 'Колонки:'
 // What the block prints where an axis has no groupings at all.
@@ -104,8 +119,10 @@ export function buildSheetExportRows(
   // String(0.00000001) uses exponent notation, which the deliberately strict CSV
   // parser treats as text. Emit stock's eight-decimal contract explicitly, keeping
   // arbitrary text IDs and non-stock CSV parsing unchanged.
-  return isCurrentStockSheet(sheet) ? exportRows.map(row => row.map(cell =>
-    typeof cell === 'number' && Number.isFinite(cell) ? stockCsvQuantityFormatter.format(cell) : cell)) : exportRows
+  return isCurrentStockSheet(sheet) ? exportRows.map(row => row.map((cell, columnIndex) => {
+    const formatter = getSpreadsheetNumberFormatter(sheet, columnIndex, true)
+    return typeof cell === 'number' && Number.isFinite(cell) && formatter ? formatter.format(cell) : cell
+  })) : exportRows
 }
 
 export function filterSheetRows(
@@ -257,6 +274,8 @@ function readReportHeader(
   if (CURRENT_STOCK_REPORT_TITLES.has(lines[0]) && (!lines.includes(STOCK_STATE_LINE)
     || !lines.some(line => STOCK_READ_TIME_LINE.test(line)) || lines.some(line => line.startsWith('Період:')))) return null
 
+  if (lines[0] === VALUATION_REPORT_TITLE && !VALUATION_REQUIRED_METADATA_PREFIXES.every(prefix => lines.some(line => valuationMetadataText(line).startsWith(prefix)))) return null
+
   return {
     header: {
       columnGroupings: readGroupingList(lines, COLUMN_GROUPINGS_PREFIX),
@@ -284,8 +303,13 @@ function readGroupingList(lines: string[], prefix: string): string[] {
   return value.split(',').map((part) => part.trim()).filter(Boolean)
 }
 
+function valuationMetadataText(line: string): string {
+  return line.startsWith('! ') ? line.slice(2) : line
+}
+
 function isWarningLine(line: string): boolean {
   return line.startsWith(IGNORED_FILTERS_PREFIX) || line.includes(NO_DATA_MARKER) || line === NO_ROWS_LINE
+    || valuationMetadataText(line).startsWith('Покриття оцінки:') || valuationMetadataText(line).startsWith('Причини невизначеної оцінки:')
 }
 
 // How deep the table's own header is, from two independent readings of the block that have to agree.

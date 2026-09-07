@@ -31,6 +31,19 @@ export async function searchDatasetReportValues(dataSource: number, field: numbe
   return result
 }
 
+export type ValuationAgreement = { Id: number; Name: string }
+
+export async function searchValuationAgreements(params: ReportSearchParams, signal?: AbortSignal): Promise<ValuationAgreement[]> {
+  const result = await apiRequest<unknown>('/report/datasets/8/valuation-agreements', {
+    query: { value: params.value.trim(), offset: params.offset, limit: params.limit }, signal,
+  })
+  if (!Array.isArray(result) || !result.every((item): item is ValuationAgreement => item && typeof item === 'object'
+    && Number.isSafeInteger(item.Id) && item.Id > 0 && typeof item.Name === 'string' && item.Name.trim().length > 0)) {
+    throw new Error('Сервер повернув некоректний список договорів для оцінки.')
+  }
+  return result
+}
+
 /** Local catalogue only: this request never starts sync or connects to 1C. */
 export async function getOneCTurnoverScopes(signal?: AbortSignal): Promise<OneCTurnoverScopeSummary[]> {
   const result = await apiRequest<unknown>('/report/stocks/one-c/scopes', { signal })

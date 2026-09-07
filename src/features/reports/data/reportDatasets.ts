@@ -1,6 +1,7 @@
 import type { ReportDataset, ReportFilterField, ReportGroupingItem, ReportMeasurementGroup, ReportMeasurementSelection, ReportRequestBody } from '../types'
 import { createDefaultMeasurementGroups, flattenCheckedMeasurements, flattenGroupingOptions, REPORT_FILTER_CONDITIONS, REPORT_FILTER_FIELD_GROUPS } from './reportOptions'
 import { createSalesReportPreset, SALES_REPORT_PRESETS, type SalesReportPresetId } from './reportPresets'
+import { valuationConfigurationError, VALUATION_DATA_SOURCE } from './reportValuation'
 import { getCurrentStockReport, isCurrentStockPresetId, type CurrentStockPresetId } from './currentStockReports'
 
 export type DatasetReportPresetId = SalesReportPresetId | 'quantities-by-unit' | CurrentStockPresetId
@@ -96,6 +97,8 @@ export function datasetConfigurationError(data: ReportRequestBody, dataset: Repo
   if (dataset.PeriodSupported === false && (data.from || data.to)) {
     return 'Поточні залишки не підтримують період або історичну дату. Шаблон із датами не застосовано; виберіть набір поточного стану заново.'
   }
+  const valuationError = valuationConfigurationError(data)
+  if (valuationError) return valuationError
   if (!data.sorted || !Array.isArray(data.sorted.Row) || !Array.isArray(data.sorted.Col) || !Array.isArray(data.sorted.Measurements) || !Array.isArray(data.selections)) {
     return 'Шаблон містить некоректні налаштування. Налаштування не застосовано.'
   }
@@ -141,7 +144,10 @@ export function datasetPresetRequest(dataset: ReportDataset, id: DatasetReportPr
   const preset = datasetPresets(dataset).find(item => item.id === id)
   if (!preset) return null
   if (isCurrentStockPresetId(id)) {
-    return { Name: preset.name, Data: { ...defaultDatasetRequest(dataset, '', ''), selections: structuredClone(current.selections) } }
+    return { Name: preset.name, Data: { ...defaultDatasetRequest(dataset, '', ''), selections: structuredClone(current.selections),
+      ...(dataset.DataSource === VALUATION_DATA_SOURCE && current.valuationClientAgreementId != null
+        ? { valuationClientAgreementId: current.valuationClientAgreementId } : {}),
+    } }
   }
   if (id === 'quantities-by-unit') {
     const data = defaultDatasetRequest(dataset, current.from, current.to)

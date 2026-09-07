@@ -4,7 +4,7 @@ import { Bar, BarChart, CartesianGrid, Line, LineChart, ReferenceLine, Responsiv
 import { CHART_GRID_COLOR, CHART_LABEL_COLOR } from '../../../shared/ui/charts/chartTheme'
 import { buildSpreadsheetChartData, getChartMeasureOptions, type SpreadsheetChartPoint } from '../data/spreadsheetChartData'
 import type { SpreadsheetRow, SpreadsheetSheet } from '../types'
-import { isCurrentStockSheet, stockQuantityFormatter } from '../spreadsheet'
+import { getSpreadsheetNumberFormatter } from '../spreadsheet'
 
 type Props = { sheet: SpreadsheetSheet; rows: SpreadsheetRow[] }
 type ChartKind = 'column' | 'bar' | 'line'
@@ -30,7 +30,7 @@ export default function SpreadsheetChartPanel({ sheet, rows }: Props) {
       {chart.hiddenCount ? ' Діаграма обмежена першими 50 рядками; звузьте відбори для перегляду інших.' : ''}</Text>
     {chart.unknownCount ? <Alert color="yellow">Для {chart.unknownCount} показаних рядків немає числового значення. Вони залишені порожніми; лінія має розриви.</Alert> : null}
     {!chart.points.length ? <Alert color="gray">За поточними відборами немає рядків даних.</Alert> : <SpreadsheetChartPlot points={chart.points} kind={kind} measure={measure.label} unknownCount={chart.unknownCount}
-      formatter={isCurrentStockSheet(sheet) ? stockQuantityFormatter : formatNumber} />}
+      formatter={getSpreadsheetNumberFormatter(sheet, Number(measure.value)) ?? formatNumber} />}
   </Stack>
 }
 

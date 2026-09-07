@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { apiRequest } from '../../../shared/api/apiClient'
-import { createStockReport, getOneCTurnoverScopes, searchDatasetReportValues, searchReportUsers } from './reportsApi'
+import { createStockReport, getOneCTurnoverScopes, searchDatasetReportValues, searchReportUsers, searchValuationAgreements } from './reportsApi'
 import type { ReportRequestBody } from '../types'
 
 vi.mock('../../../shared/api/apiClient', () => ({
@@ -34,6 +34,15 @@ describe('reportsApi', () => {
     expect(apiRequestMock).toHaveBeenLastCalledWith('/report/datasets/lookup', {
       query: { dataSource, field: 20, limit: 30, offset: 0, value: 'м' }, signal,
     })
+  })
+
+  it('uses the dedicated valuation agreement catalogue with exact Id, independent of stock ownership', async () => {
+    const signal = new AbortController().signal
+    apiRequestMock.mockResolvedValue([{ Id: 459018, Name: 'Клієнт · Договір [459018]' }])
+    await expect(searchValuationAgreements({ limit: 30, offset: 0, value: ' 459018 ' }, signal)).resolves.toEqual([{ Id: 459018, Name: 'Клієнт · Договір [459018]' }])
+    expect(apiRequestMock).toHaveBeenLastCalledWith('/report/datasets/8/valuation-agreements', { query: { limit: 30, offset: 0, value: '459018' }, signal })
+    apiRequestMock.mockResolvedValue([{ AgreementId: 459018, Name: 'Неправильний ID' }])
+    await expect(searchValuationAgreements({ limit: 30, offset: 0, value: '' })).rejects.toThrow('некоректний список договорів')
   })
 
   it('uses bounded targeted lookup for report users', async () => {

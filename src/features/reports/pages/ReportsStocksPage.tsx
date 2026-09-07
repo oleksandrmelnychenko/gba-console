@@ -80,6 +80,9 @@ import './reports-pages.css'
 import { datasetConfigurationError, datasetFilters, datasetGroupings, datasetMeasurements, datasetPresetRequest, datasetPresets, defaultDatasetRequest, type DatasetReportPresetId } from '../data/reportDatasets'
 import { useReportDatasets } from '../hooks/useReportDatasets'
 import { isCurrentStockSource } from '../data/currentStockReports'
+import { VALUATION_DATA_SOURCE } from '../data/reportValuation'
+import { useValuationAgreement } from '../hooks/useValuationAgreement'
+import { ValuationAgreementPicker } from './ValuationAgreementPicker'
 import { ReportDatasetPicker } from './ReportDatasetPicker'
 import { ReportQuickPresets } from './ReportQuickPresets'
 
@@ -166,6 +169,8 @@ function ReportsStocksWorkspace() {
   const previousPeriod = useRef({ from: today, to: today })
   const datasetStorage = useReportDatasets(canGenerateReport)
   const [dataSource, setDataSource] = useValueState(0)
+  const [valuationClientAgreementId, setValuationAgreementId] = useValueState<number | undefined>(undefined)
+  const valuation = useValuationAgreement(valuationClientAgreementId, canGenerateReport && dataSource === VALUATION_DATA_SOURCE)
   const dataset = datasetStorage.datasets.find(item => item.DataSource === dataSource)
   const periodSupported = dataset?.PeriodSupported !== false
   const [selectedMeasurements, setMeasurements] = useValueState<ReportMeasurementGroup[]>(createDefaultMeasurementGroups)
@@ -207,6 +212,7 @@ function ReportsStocksWorkspace() {
   const reportBody = useMemo<ReportRequestBody>(
     () => ({
       dataSource,
+      ...(valuationClientAgreementId !== undefined ? { valuationClientAgreementId } : {}),
       from,
       to,
       sorted: {
@@ -216,10 +222,11 @@ function ReportsStocksWorkspace() {
       },
       selections: selections.filter((selection) => selection.IsChecked && selection.SelectedField.Name),
     }),
-    [colGroups, dataSource, from, measurements, rowGroups, selections, to],
+    [colGroups, dataSource, from, measurements, rowGroups, selections, to, valuationClientAgreementId],
   )
   const templateBody = { ...reportBody, selections }
   const configurationError = datasetStorage.error ?? (!datasetStorage.loaded ? t('Завантаження наборів даних…') : datasetConfigurationError(templateBody, dataset))
+    ?? (dataSource === VALUATION_DATA_SOURCE && valuation.agreement?.Id !== valuationClientAgreementId ? 'Підтвердіть доступний договір оцінки.' : null)
   const checkedMeasurements = reportBody.sorted.Measurements.length
   // The report engine lays the sheet out from the row groupings; without one it fails deep
   // inside the spreadsheet writer («Column out of range»), so the form has to require it.
@@ -305,6 +312,7 @@ function ReportsStocksWorkspace() {
     setRowGroups(snapshotDefaults?.sorted.Row ?? [])
     setColGroups([])
     setSelections([])
+    setValuationAgreementId(undefined)
     setResult(null)
     setLastRun(null)
     setError(null)
@@ -338,7 +346,14 @@ function ReportsStocksWorkspace() {
       setTemplateNotice(incompatible)
       return false
     }
+    applyConfiguration(template, nextDataset)
+    return true
+  }
+
+  function applyConfiguration(template: ReportTemplate, nextDataset: ReportDataset) {
     const data = template.Data
+    const nextAgreementId = data.valuationClientAgreementId ?? undefined
+    setValuationAgreementId(nextAgreementId)
     const groupingByType = new Map(datasetGroupings(nextDataset).map(item => [item.type, item]))
     if (periodSupported && !getPeriodError(from, to, maxDate, t)) previousPeriod.current = { from, to }
     setDataSource(nextDataset.DataSource)
@@ -353,18 +368,17 @@ function ReportsStocksWorkspace() {
     setResult(null)
     setLastRun(null)
     setError(null)
-    return true
   }
 
   function changeDataset(nextDataset: ReportDataset) {
     const period = periodSupported ? { from, to } : previousPeriod.current
-    applyTemplate({ Name: '', Data: defaultDatasetRequest(nextDataset, period.from, period.to) })
+    applyConfiguration({ Name: '', Data: defaultDatasetRequest(nextDataset, period.from, period.to) }, nextDataset)
   }
 
   function applyPreset(id: DatasetReportPresetId) {
     if (!dataset) return
     const preset = datasetPresetRequest(dataset, id, templateBody)
-    if (preset) applyTemplate(preset)
+    if (preset) applyConfiguration(preset, dataset)
   }
 
 
@@ -373,6 +387,9 @@ function ReportsStocksWorkspace() {
       <ReportCatalogueControl enabled={canGenerateReport} />
       <ReportDatasetPicker datasets={datasetStorage.datasets} selected={dataSource} disabled={!canGenerateReport || isLoading}
         loaded={datasetStorage.loaded} error={datasetStorage.error} onChange={changeDataset} onRetry={datasetStorage.retry} />
+      {dataSource === VALUATION_DATA_SOURCE ? <ValuationAgreementPicker value={valuationClientAgreementId} enabled={canGenerateReport} disabled={isLoading}
+        agreement={valuation.agreement} validating={valuation.loading} validationError={valuation.error}
+        onChange={setValuationAgreementId} onRetry={valuation.retry} /> : null}
       <ReportBuilderForm
         dataSource={dataSource}
         periodSupported={periodSupported}

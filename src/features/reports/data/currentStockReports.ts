@@ -13,6 +13,9 @@ const CURRENT_STOCK_REPORTS = [
   { dataSource: 7, title: 'Звіт поточних залишків партій', rowGroupings: [34, 29, 28], measurements: [20],
     preset: { id: 'lots-by-organization', name: 'Залишки партій за організаціями',
       description: 'Організація партії → склад → одиниця виміру. Записаний залишок партії на час читання даних; різні одиниці не додаються.' } },
+  { dataSource: 8, title: 'Оцінка поточних залишків за договором', rowGroupings: [29, 28], measurements: [17, 21],
+    preset: { id: 'stock-value-by-agreement', name: 'Оцінка за договором по складах',
+      description: 'Склад → одиниця виміру. Фізичний залишок та оцінка в EUR за регулярною ціною й режимом ПДВ обраного договору.' } },
 ] as const
 
 export type CurrentStockPresetId = typeof CURRENT_STOCK_REPORTS[number]['preset']['id']

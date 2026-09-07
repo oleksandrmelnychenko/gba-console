@@ -77,6 +77,7 @@ export type ReportFilterFieldGroup = {
 
 export type ReportRequestBody = {
   dataSource?: number
+  valuationClientAgreementId?: number | null
   oneC?: OneCTurnoverFilters
   from: string
   selections: ReportSelection[]

@@ -7,6 +7,7 @@ import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { I18nProvider } from '../../../shared/i18n/I18nProvider'
 import { downloadTextFile } from '../utils'
 import { ReportsSalePage } from './ReportsSalePage'
+import { valuationWorkbookRows, valuationHeaderLines } from '../data/valuationSpreadsheet.test-fixtures'
 import { stockWorkbookRows, placementWorkbookRows, reservationWorkbookRows, lotWorkbookRows } from '../data/stockSpreadsheet.test-fixtures'
 import { buildSpreadsheetSheet, detectDelimiter, parseDelimitedText } from '../spreadsheet'
 
@@ -171,4 +172,34 @@ describe.each([
     expect(imported.rows.find(row => row.kind === 'total')?.cells.slice(dimensions)).toEqual([''])
     expect(imported.rows.filter(row => row.kind === 'data').map(row => row.cells[dimensions])).toEqual(values)
   })
+})
+
+
+it('imports actual valuation XLSX and preserves quantity8/money2/blank context in table and CSV', async () => {
+  vi.clearAllMocks()
+  allowedPermissions.clear()
+  allowedPermissions.add(PermissionKeys.ReportsSaleFile.Page.View)
+  allowedPermissions.add(PermissionKeys.ReportsSaleFile.Document.Export)
+  const XLSX = await import('xlsx')
+  const workbook = XLSX.utils.book_new()
+  const sheet = XLSX.utils.aoa_to_sheet(valuationWorkbookRows)
+  sheet['!merges'] = Array.from({ length: valuationHeaderLines.length }, (_, row) => ({ s: { r: row, c: 0 }, e: { r: row, c: 3 } }))
+  XLSX.utils.book_append_sheet(workbook, sheet, 'Report')
+  const bytes = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' }) as ArrayBuffer
+  const { container } = renderPage()
+  fireEvent.change(screen.getByLabelText('Завантажити файл'), { target: { files: [new File([bytes], 'valuation.xlsx', { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })] } })
+  await screen.findByText('Оцінка поточних залишків за договором')
+  expect(screen.queryByLabelText('Від')).toBeNull()
+  expect(screen.getByText('! ПДВ оцінки: з ПДВ за обраним договором')).toBeTruthy()
+  const rows = container.querySelectorAll('.reports-sale-table tr.data-table-row')
+  expect(rows[0].querySelectorAll('td.data-table-cell')[2].textContent).toBe('0')
+  expect(rows[0].querySelectorAll('td.data-table-cell')[3].textContent).toBe('0,00')
+  expect(rows[1].querySelectorAll('td.data-table-cell')[2].textContent).toBe('0,00000001')
+  expect(rows[1].querySelectorAll('td.data-table-cell')[3].textContent).toBe('')
+  fireEvent.click(screen.getByLabelText('Експорт CSV'))
+  const csv = vi.mocked(downloadTextFile).mock.calls[0][1]
+  const imported = buildSpreadsheetSheet('valuation.csv', parseDelimitedText(csv, detectDelimiter(csv)), 'flat')
+  expect(imported.header?.lines).toEqual(valuationHeaderLines)
+  expect(imported.rows.find(row => row.kind === 'total')?.cells.slice(2)).toEqual(['', ''])
+  expect(imported.rows.filter(row => row.kind === 'data').map(row => row.cells.slice(2))).toEqual([[0, 0], [0.00000001, ''], [2.12345678, 12.35]])
 })

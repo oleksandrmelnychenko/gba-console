@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest'
 import { apiRequest } from '../../../shared/api/apiClient'
 import { getReportDatasets, getServerReportTemplates, saveServerReportTemplate } from './reportWorkspaceApi'
 import { createSalesReportPreset } from '../data/reportPresets'
-import { reportDatasets, stockDataset, currentStockDatasets } from '../data/reportDatasets.test-fixtures'
+import { reportDatasets, stockDataset, currentStockDatasets, valuationDataset } from '../data/reportDatasets.test-fixtures'
 import { defaultDatasetRequest } from '../data/reportDatasets'
 
 vi.mock('../../../shared/api/apiClient', () => ({ apiRequest: vi.fn() }))
@@ -44,6 +44,19 @@ describe('report workspace wire contract', () => {
       vi.mocked(apiRequest).mockResolvedValue([{ ...dataset, PeriodSupported }])
       await expect(getReportDatasets()).rejects.toThrow('некоректний список наборів даних')
     }
+  })
+
+  it('preserves the separate exact valuation agreement through wire template load and save', async () => {
+    vi.mocked(apiRequest).mockResolvedValue([valuationDataset])
+    await expect(getReportDatasets()).resolves.toEqual([valuationDataset])
+    const data = { ...defaultDatasetRequest(valuationDataset, '', ''), valuationClientAgreementId: 459018 }
+    const wire = { Id: crypto.randomUUID(), Revision: 2, Name: 'Оцінка', Data: { DataSource: 8, From: null, To: null, Sorted: data.sorted, Selections: [], ValuationClientAgreementId: 459018 } }
+    vi.mocked(apiRequest).mockResolvedValue([wire])
+    const [template] = await getServerReportTemplates()
+    expect(template.Data).toEqual(data)
+    vi.mocked(apiRequest).mockResolvedValue(wire)
+    await saveServerReportTemplate(template)
+    expect(apiRequest).toHaveBeenLastCalledWith('/report/templates/save', { method: 'POST', body: { Id: wire.Id, Revision: 2, Name: 'Оцінка', Data: data } })
   })
 
   it('normalizes .NET names while retaining agreement identities and disabled selections', async () => {

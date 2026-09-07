@@ -66,3 +66,9 @@ export const lotDataset: ReportDataset = {
 }
 
 export const currentStockDatasets = [stockDataset, placementDataset, reservationDataset, lotDataset]
+
+export const valuationDataset: ReportDataset = {
+  ...stockDataset, DataSource: 8, Name: 'Склад: оцінка за договором',
+  Measurements: [{ Type: 17, Name: 'Фізичний залишок' }, { Type: 21, Name: 'Оцінка за договором, EUR' }],
+  Limitations: ['Оцінка за регулярною ціною EUR та режимом ПДВ обраного договору. Невизначені ціни залишають суму порожньою.'],
+}

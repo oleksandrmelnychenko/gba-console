@@ -43,6 +43,7 @@ type WireTemplate = Required<Omit<ReportTemplate, 'Data'>> & {
     Sorted: ReportRequestBody['sorted']
     Selections: ReportRequestBody['selections']
     DataSource: ReportRequestBody['dataSource']
+    ValuationClientAgreementId?: ReportRequestBody['valuationClientAgreementId']
     OneC?: ReportRequestBody['oneC']
   }
 }
@@ -57,6 +58,7 @@ export function normalizeSavedTemplate(value: WireTemplate): ReportTemplate {
     sorted: value.Data.Sorted,
     selections: value.Data.Selections ?? [],
     dataSource: value.Data.DataSource,
+    ...(value.Data.ValuationClientAgreementId != null ? { valuationClientAgreementId: value.Data.ValuationClientAgreementId } : {}),
     ...(value.Data.OneC ? { oneC: value.Data.OneC } : {}),
   } }
 }

@@ -1,10 +1,12 @@
 import { MantineProvider } from '@mantine/core'
 import { fireEvent, render, screen } from '@testing-library/react'
 import type { ReactNode } from 'react'
-import { describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { SpreadsheetChartPoint } from '../data/spreadsheetChartData'
 import type { SpreadsheetSheet } from '../types'
 import SpreadsheetChartPanel from './SpreadsheetChartPanel'
+import { valuationWorkbookRows } from '../data/valuationSpreadsheet.test-fixtures'
+import { buildSpreadsheetSheet } from '../spreadsheet'
 
 vi.mock('recharts', () => {
   const Chart = ({ children, data }: { children: ReactNode; data: SpreadsheetChartPoint[] }) => <div>
@@ -13,7 +15,8 @@ vi.mock('recharts', () => {
   return {
     ResponsiveContainer: ({ children }: { children: ReactNode }) => children,
     BarChart: Chart, LineChart: Chart,
-    CartesianGrid: () => null, ReferenceLine: () => null, Tooltip: () => null, XAxis: () => null, YAxis: () => null,
+    CartesianGrid: () => null, ReferenceLine: () => null, Tooltip: () => null, XAxis: () => null,
+    YAxis: ({ tickFormatter }: { tickFormatter: (value: number) => string }) => <output data-testid="axis-format">{tickFormatter(0.00000001)}</output>,
     Bar: () => null,
     Line: ({ connectNulls }: { connectNulls: boolean }) => <output data-testid="line-connects-gaps">{String(connectNulls)}</output>,
   }
@@ -27,6 +30,7 @@ const sheet: SpreadsheetSheet = { name: 'Звіт', columns: ['Клієнт', '�
   ] }
 
 describe('spreadsheet chart presentation', () => {
+  beforeEach(() => Object.defineProperty(HTMLElement.prototype, 'scrollIntoView', { configurable: true, value: vi.fn() }))
   it('passes leaf rows with unknown gaps to a line and exposes the limitation', () => {
     render(<MantineProvider env="test"><SpreadsheetChartPanel sheet={sheet} rows={sheet.rows} /></MantineProvider>)
     fireEvent.click(screen.getByLabelText('Лінія'))
@@ -35,6 +39,18 @@ describe('spreadsheet chart presentation', () => {
     ])
     expect(screen.getByTestId('line-connects-gaps').textContent).toBe('false')
     expect(screen.getByText(/Для 1 показаних рядків немає числового значення/)).toBeTruthy()
+  })
+
+  it('uses quantity8 and money2 chart formatting without replacing monetary gaps', async () => {
+    const valuation = buildSpreadsheetSheet('Report', valuationWorkbookRows)
+    render(<MantineProvider env="test"><SpreadsheetChartPanel sheet={valuation} rows={valuation.rows} /></MantineProvider>)
+    expect(screen.getByTestId('axis-format').textContent).toBe('0,00000001')
+    fireEvent.click(screen.getByRole('combobox', { name: 'Показник діаграми' }))
+    fireEvent.click(await screen.findByRole('option', { name: /Оцінка за договором, EUR/ }))
+    expect(screen.getByTestId('axis-format').textContent).toBe('0,00')
+    fireEvent.click(screen.getByLabelText('Лінія'))
+    expect(JSON.parse(screen.getByTestId('chart-points').textContent!).map((point: SpreadsheetChartPoint) => point.value)).toEqual([0, null, 12.35])
+    expect(screen.getByTestId('line-connects-gaps').textContent).toBe('false')
   })
 
   it('reports the 50-row limit explicitly while the table retains all rows', () => {

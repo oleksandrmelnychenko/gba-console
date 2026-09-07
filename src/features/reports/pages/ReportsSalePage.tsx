@@ -35,7 +35,7 @@ import {
   getAdditiveColumns,
   isFilledCell,
   isCurrentStockSheet,
-  stockQuantityFormatter,
+  getSpreadsheetNumberFormatter,
   normalizeImportedCellValue,
   parseDelimitedText,
 } from '../spreadsheet'
@@ -259,11 +259,9 @@ function ReportsSalePageContent() {
 
               <Stack className="reports-sale-result-content" gap="md" pt="md">
                 {activeSheet.header ? <ReportHeaderBlock header={activeSheet.header} /> : null}
-                {showComputedTotals ? <TotalsBar columns={activeSheet.columns} totals={visibleTotals} currentStock={currentStock} /> : null}
+                {showComputedTotals ? <TotalsBar sheet={activeSheet} totals={visibleTotals} /> : null}
                 <ReportPresentationControl key={`${fileName}:${activeSheet.name}`} sheet={activeSheet} rows={visibleRows} table={<SpreadsheetTable
-                  columns={activeSheet.columns}
-                  isReport={Boolean(activeSheet.header)}
-                  currentStock={currentStock}
+                  sheet={activeSheet}
                   rows={visibleRows}
                   showComputedTotals={showComputedTotals}
                   totals={visibleTotals}
@@ -321,10 +319,10 @@ function addOccurrenceKeys(lines: string[]): Array<{ key: string; line: string }
   })
 }
 
-function TotalsBar({ columns, totals, currentStock }: { columns: string[]; totals: Array<number | null>; currentStock: boolean }) {
-  const totalEntries = columns
-    .map((column, columnIndex) => ({ column, total: totals[columnIndex] }))
-    .filter((entry): entry is { column: string; total: number } => entry.total !== null && entry.total !== undefined)
+function TotalsBar({ sheet, totals }: { sheet: SpreadsheetSheet; totals: Array<number | null> }) {
+  const totalEntries = sheet.columns
+    .map((column, columnIndex) => ({ column, columnIndex, total: totals[columnIndex] }))
+    .filter((entry): entry is { column: string; columnIndex: number; total: number } => entry.total !== null && entry.total !== undefined)
     .slice(0, 8)
 
   if (!totalEntries.length) {
@@ -335,7 +333,7 @@ function TotalsBar({ columns, totals, currentStock }: { columns: string[]; total
     <Group gap="xs">
       {totalEntries.map((entry) => (
         <Badge key={entry.column} color="gray" variant="light">
-          {entry.column}: <span className={isMoneyField(entry.column) ? 'app-money' : undefined}>{formatSpreadsheetCell(entry.total, currentStock)}</span>
+          {entry.column}: <span className={isMoneyField(entry.column) ? 'app-money' : undefined}>{formatSpreadsheetCell(entry.total, sheet, entry.columnIndex)}</span>
         </Badge>
       ))}
     </Group>
@@ -351,17 +349,13 @@ type SpreadsheetPreviewRow = {
 }
 
 function SpreadsheetTable({
-  columns,
-  isReport,
-  currentStock,
+  sheet,
   rows,
   showComputedTotals,
   totals,
   density,
 }: {
-  columns: string[]
-  isReport: boolean
-  currentStock: boolean
+  sheet: SpreadsheetSheet
   rows: SpreadsheetRow[]
   showComputedTotals: boolean
   totals: Array<number | null>
@@ -369,6 +363,8 @@ function SpreadsheetTable({
 }) {
   const { t } = useI18n()
 
+  const columns = sheet.columns
+  const isReport = Boolean(sheet.header)
   const previewColumns = useMemo<DataTableColumn<SpreadsheetPreviewRow>[]>(
     () =>
       columns.map((column, columnIndex) => {
@@ -383,7 +379,7 @@ function SpreadsheetTable({
             if (row.kind === 'computed') {
               return (
                 <Text component="span" fw={600}>
-                  {columnIndex === 0 ? t('Разом') : formatSpreadsheetCell(totals[columnIndex] ?? null, currentStock)}
+                  {columnIndex === 0 ? t('Разом') : formatSpreadsheetCell(totals[columnIndex] ?? null, sheet, columnIndex)}
                 </Text>
               )
             }
@@ -393,18 +389,18 @@ function SpreadsheetTable({
               // measure and says so at the top of the file — and it is already printed empty on the subtotal and
               // total rows below. A «-» in the data rows only would read as two different kinds of nothing in one
               // column. Anywhere else «-» stays: an empty cell in an arbitrary spreadsheet says nothing at all.
-              return isReport ? formatSpreadsheetCell(row.cells[columnIndex], currentStock) : displayValue(row.cells[columnIndex])
+              return isReport ? formatSpreadsheetCell(row.cells[columnIndex], sheet, columnIndex) : displayValue(row.cells[columnIndex])
             }
 
             return (
               <Text component="span" fw={600}>
-                {formatSpreadsheetCell(row.cells[columnIndex], currentStock)}
+                {formatSpreadsheetCell(row.cells[columnIndex], sheet, columnIndex)}
               </Text>
             )
           },
         }
       }),
-    [columns, currentStock, isReport, t, totals],
+    [columns, isReport, sheet, t, totals],
   )
 
   const previewData = useMemo<SpreadsheetPreviewRow[]>(() => {
@@ -498,8 +494,9 @@ function SpreadsheetPeriodFilter({ currentStock, from, to, onFromChange, onToCha
   </div>
 }
 
-function formatSpreadsheetCell(value: SpreadsheetCellValue, currentStock = false): string {
-  if (currentStock && typeof value === 'number') return stockQuantityFormatter.format(value)
+function formatSpreadsheetCell(value: SpreadsheetCellValue, sheet: SpreadsheetSheet, columnIndex: number): string {
+  const formatter = getSpreadsheetNumberFormatter(sheet, columnIndex)
+  if (formatter && typeof value === 'number') return formatter.format(value)
   return isFilledCell(value) ? displayValue(value) : ''
 }
 

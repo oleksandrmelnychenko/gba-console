@@ -277,6 +277,7 @@ const REPORT_FIELD_LABELS: Record<string, string> = {
   StockConsignmentItem: 'Рядок партії',
   StockOrganization: 'Організація партії',
   StockLotRemainingQuantity: 'Записаний залишок партії',
+  StockAgreementValueEur: 'Оцінка за договором, EUR',
   ProductTop: 'Топ товару',
   Profitability: 'Рентабельність',
   ProfitabilityPercentWithVAT: 'Рентабельність з ПДВ, %',
