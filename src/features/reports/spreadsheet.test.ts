@@ -41,6 +41,23 @@ const engineSheet: SpreadsheetCellValue[][] = [
 describe('buildSpreadsheetSheet — report engine sheet', () => {
   const sheet = buildSpreadsheetSheet('Report', engineSheet)
 
+  it.each(['Звіт продажів і повернень', 'Звіт надходжень'])('reads the native attribution block for %s', title => {
+    const rows = structuredClone(engineSheet)
+    rows[0][0] = title
+    rows[9][3] = null
+    const parsed = buildSpreadsheetSheet('Report', rows)
+    expect(parsed.header?.lines[0]).toBe(title)
+    expect(parsed.header?.rowGroupings).toEqual(['Товар', 'По місяцях'])
+    expect(parsed.columns).toEqual(sheet.columns)
+    expect(parsed.rows[0].cells[3]).toBeNull()
+  })
+
+  it('does not treat an arbitrary similar title as a native attribution block', () => {
+    const rows = structuredClone(engineSheet)
+    rows[0][0] = 'Звіт надходжень стороннього постачальника'
+    expect(buildSpreadsheetSheet('Report', rows).header).toBeNull()
+  })
+
   it('starts the table under the attribution block instead of folding it into the header', () => {
     expect(sheet.columns).toEqual([
       'Товар',

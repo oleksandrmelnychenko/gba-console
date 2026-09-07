@@ -17,7 +17,7 @@ const SUBTOTAL_PREFIX = 'Підсумок:'
 const GRAND_TOTAL_LABEL = 'Загальний підсумок'
 const HEADER_LEVEL_SEPARATOR = ' · '
 // The first line of the engine's attribution block, and the only thing that identifies the block as one.
-const REPORT_TITLE = 'Звіт продажів'
+const REPORT_TITLES = new Set(['Звіт продажів', 'Звіт продажів і повернень', 'Звіт надходжень'])
 const ROW_GROUPINGS_PREFIX = 'Рядки:'
 const COLUMN_GROUPINGS_PREFIX = 'Колонки:'
 // What the block prints where an axis has no groupings at all.
@@ -209,7 +209,7 @@ function countHeaderRows(rows: SpreadsheetCellValue[][]): number {
 function readReportHeader(
   rows: SpreadsheetCellValue[][],
 ): { header: SpreadsheetReportHeader; tableTopIndex: number } | null {
-  if (String(rows[0]?.[0] ?? '').trim() !== REPORT_TITLE) {
+  if (!REPORT_TITLES.has(String(rows[0]?.[0] ?? '').trim())) {
     return null
   }
 

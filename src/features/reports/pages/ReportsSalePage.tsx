@@ -46,6 +46,7 @@ import type {
 } from '../types'
 import { buildDateFileSuffix, buildReportFileName, buildSpreadsheetCsv, displayValue, downloadTextFile } from '../utils'
 import './reports-pages.css'
+import { ReportPresentationControl } from './ReportPresentationControl'
 
 const SEARCH_DEBOUNCE_MS = 400
 
@@ -259,14 +260,14 @@ function ReportsSalePageContent() {
               <Stack className="reports-sale-result-content" gap="md" pt="md">
                 {activeSheet.header ? <ReportHeaderBlock header={activeSheet.header} /> : null}
                 {showComputedTotals ? <TotalsBar columns={activeSheet.columns} totals={visibleTotals} /> : null}
-                <SpreadsheetTable
+                <ReportPresentationControl key={`${fileName}:${activeSheet.name}`} sheet={activeSheet} rows={visibleRows} table={<SpreadsheetTable
                   columns={activeSheet.columns}
                   isReport={Boolean(activeSheet.header)}
                   rows={visibleRows}
                   showComputedTotals={showComputedTotals}
                   totals={visibleTotals}
                   density={density}
-                />
+                />} />
               </Stack>
             </div>
           ) : (
