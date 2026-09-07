@@ -22,7 +22,7 @@ import { CheckboxMultiSelect } from '../../../shared/ui/CheckboxMultiSelect'
 import { CircleAlert, LayoutTemplate, Plus, RefreshCw, RotateCcw, Save, Trash2 } from 'lucide-react'
 import { IconFileSpreadsheet } from '@tabler/icons-react'
 import { TableRowAction } from '../../../shared/ui/table-row-action/TableRowAction'
-import { type FormEvent, useEffect, useMemo, useRef, useState } from 'react'
+import { type FormEvent, type ReactNode, useEffect, useMemo, useRef, useState } from 'react'
 import { ApiError } from '../../../shared/api/apiClient'
 import { formatKyivBusinessDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
@@ -91,6 +91,10 @@ import { reorderReportGrouping, transferReportGrouping, type ReportGroupingAxis 
 import { useServerReportTemplates } from '../hooks/useServerReportTemplates'
 
 import { ReportCatalogueControl } from './ReportCatalogueControl'
+import { ReportOrderingPanel } from './ReportOrderingPanel'
+import { requestOrdering } from '../data/reportOrdering'
+import { useReportGroupingOrdering } from '../hooks/useReportGroupingOrdering'
+import type { ReportGroupingLayout } from '../data/reportGroupingLayout'
 const LOOKUP_SEARCH_DEBOUNCE_MS = 300
 const LOOKUP_SEARCH_LIMIT = 30
 const DATE_INPUT_DEBOUNCE_MS = 400
@@ -178,8 +182,8 @@ function ReportsStocksWorkspace() {
   const [selectedMeasurements, setMeasurements] = useValueState<ReportMeasurementGroup[]>(createDefaultMeasurementGroups)
   const measurements = useMemo(() => datasetMeasurements(dataset, flattenCheckedMeasurements(selectedMeasurements)), [dataset, selectedMeasurements])
   const presets = useMemo(() => datasetPresets(dataset), [dataset])
-  const [rowGroups, setRowGroups] = useValueState<ReportGroupingItem[]>([])
-  const [colGroups, setColGroups] = useValueState<ReportGroupingItem[]>([])
+  const groupingOrdering = useReportGroupingOrdering()
+  const { rowGroups, setRowGroups, colGroups, setColGroups, ordering } = groupingOrdering
   const [selections, setSelections] = useValueState<ReportSelection[]>([])
   const [result, setResult] = useValueState<ReportResult | null>(null)
   const [lastRun, setLastRun] = useValueState<ReportRunOutcome | null>(null)
@@ -187,7 +191,7 @@ function ReportsStocksWorkspace() {
   const [isLoading, setLoading] = useValueState(false)
   const [downloadModalOpened, setDownloadModalOpened] = useValueState(false)
   const [templateName, setTemplateName] = useValueState('')
-  const templateStorage = useServerReportTemplates(canGenerateReport)
+  const templateStorage = useServerReportTemplates(canGenerateReport, datasetStorage.datasets)
   const templates = templateStorage.templates
   const [templateNotice, setTemplateNotice] = useValueState<string | null>(null)
   const groupingOptions = useMemo(() => datasetGroupings(dataset), [dataset])
@@ -214,6 +218,7 @@ function ReportsStocksWorkspace() {
   const reportBody = useMemo<ReportRequestBody>(
     () => ({
       dataSource,
+      ...(ordering !== undefined ? { ordering } : {}),
       ...(valuationClientAgreementId !== undefined ? { valuationClientAgreementId } : {}),
       from,
       to,
@@ -224,7 +229,7 @@ function ReportsStocksWorkspace() {
       },
       selections: selections.filter((selection) => selection.IsChecked && selection.SelectedField.Name),
     }),
-    [colGroups, dataSource, from, measurements, rowGroups, selections, to, valuationClientAgreementId],
+    [colGroups, dataSource, from, measurements, ordering, rowGroups, selections, to, valuationClientAgreementId],
   )
   const templateBody = { ...reportBody, selections }
   const configurationError = datasetStorage.error ?? (!datasetStorage.loaded ? t('Завантаження наборів даних…') : datasetConfigurationError(templateBody, dataset))
@@ -266,7 +271,6 @@ function ReportsStocksWorkspace() {
         })
       : null
   const resultPlaceholder = describeResultPlaceholder(lastRun, Boolean(error), t)
-
 
   async function submitReport(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -315,6 +319,7 @@ function ReportsStocksWorkspace() {
     setColGroups([])
     setSelections([])
     setValuationAgreementId(undefined)
+    groupingOrdering.loadOrdering(undefined)
     setResult(null)
     setLastRun(null)
     setError(null)
@@ -354,6 +359,7 @@ function ReportsStocksWorkspace() {
 
   function applyConfiguration(template: ReportTemplate, nextDataset: ReportDataset) {
     const data = template.Data
+    groupingOrdering.loadOrdering(requestOrdering(data))
     const nextAgreementId = data.valuationClientAgreementId ?? undefined
     setValuationAgreementId(nextAgreementId)
     const groupingByType = new Map(datasetGroupings(nextDataset).map(item => [item.type, item]))
@@ -380,9 +386,8 @@ function ReportsStocksWorkspace() {
   function applyPreset(id: DatasetReportPresetId) {
     if (!dataset) return
     const preset = datasetPresetRequest(dataset, id, templateBody)
-    if (preset) applyConfiguration(preset, dataset)
+    if (preset) groupingOrdering.applyPreset(preset, next => applyConfiguration(next, dataset))
   }
-
 
   return (
     <Stack className="reports-stocks-page" gap={6}>
@@ -429,8 +434,11 @@ function ReportsStocksWorkspace() {
         onOpenFiles={() => setDownloadModalOpened(true)}
         onRefreshTemplates={loadTemplates}
         onReset={resetReport}
-        onRowGroupsChange={setRowGroups}
-        onColGroupsChange={setColGroups}
+        onRowGroupsChange={value => groupingOrdering.changeAxis('Row', value)}
+        onColGroupsChange={value => groupingOrdering.changeAxis('Col', value)}
+        onGroupingLayoutChange={groupingOrdering.changeLayout}
+        orderingPanel={<ReportOrderingPanel data={templateBody} dataset={dataset} disabled={isLoading || !canGenerateReport}
+          notice={groupingOrdering.notice} onChange={groupingOrdering.changeOrdering} />}
         onSaveTemplate={saveTemplate}
         onSelectionsChange={setSelections}
         onSubmit={submitReport}
@@ -457,6 +465,8 @@ function ReportsStocksWorkspace() {
 }
 
 type ReportBuilderFormProps = {
+  orderingPanel: ReactNode
+  onGroupingLayoutChange: (layout: ReportGroupingLayout) => void
   dataSource: number
   periodSupported: boolean
   presets: ReturnType<typeof datasetPresets>
@@ -504,6 +514,8 @@ type ReportBuilderFormProps = {
 }
 
 function ReportBuilderForm({
+  orderingPanel,
+  onGroupingLayoutChange,
   dataSource,
   periodSupported,
   presets,
@@ -626,6 +638,7 @@ function ReportBuilderForm({
             </Alert>
           ) : null}
           <LegacyReportBuilder
+            onGroupingLayoutChange={onGroupingLayoutChange}
             dataSource={dataSource}
             colGroups={colGroups}
             filterFieldOptions={filterFieldOptions}
@@ -641,6 +654,7 @@ function ReportBuilderForm({
             onRowGroupsChange={onRowGroupsChange}
             onSelectionsChange={onSelectionsChange}
           />
+          {orderingPanel}
           <ReportResultSection
             hasFiles={resultHasFiles}
             lastRun={lastRun}
@@ -679,6 +693,7 @@ function ReportBuilderForm({
 }
 
 type LegacyReportBuilderProps = {
+  onGroupingLayoutChange: (layout: ReportGroupingLayout) => void
   dataSource: number
   colGroups: ReportGroupingItem[]
   filterFieldOptions: FilterFieldOption[]
@@ -696,6 +711,7 @@ type LegacyReportBuilderProps = {
 }
 
 function LegacyReportBuilder({
+  onGroupingLayoutChange,
   dataSource,
   colGroups,
   filterFieldOptions,
@@ -721,8 +737,7 @@ function LegacyReportBuilder({
   const transferGrouping = (axis: ReportGroupingAxis, type: number) => {
     const next = transferReportGrouping(groupingLayout, axis, type, allowedGroupingTypes)
     if (next === groupingLayout) return
-    onRowGroupsChange(next.Row)
-    onColGroupsChange(next.Col)
+    onGroupingLayoutChange(next)
   }
 
   const closeGroupingPicker = () => setGroupingPickerTarget(null)

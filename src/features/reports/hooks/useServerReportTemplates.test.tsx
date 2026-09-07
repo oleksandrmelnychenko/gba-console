@@ -5,6 +5,7 @@ import { deleteServerReportTemplate, getServerReportTemplates, saveServerReportT
 import { valuationDataset } from '../data/reportDatasets.test-fixtures'
 import { defaultDatasetRequest } from '../data/reportDatasets'
 import { createSalesReportPreset } from '../data/reportPresets'
+import { orderedAccountDataset, orderedAccountRequest } from '../data/reportOrdering.test-fixtures'
 
 vi.mock('../api/reportWorkspaceApi', () => ({
   getServerReportTemplates: vi.fn(), saveServerReportTemplate: vi.fn(), deleteServerReportTemplate: vi.fn(),
@@ -94,5 +95,30 @@ describe('server report templates', () => {
     const template = createSalesReportPreset('daily', '2026-09-01', '2026-09-07', [])
     expect(await browserTemplateImportId(template)).toBe(await browserTemplateImportId(structuredClone(template)))
     expect(await browserTemplateImportId(template)).not.toBe(await browserTemplateImportId({ ...template, Name: 'Інший' }))
+  })
+
+  it('retains a malformed local ordering without posting a sanitized template', async () => {
+    const template = { Name: 'Невідоме сортування', Data: { ...orderedAccountRequest(), ordering: { Version: 2, Rows: [], Columns: [], Future: true } } }
+    const raw = JSON.stringify([template])
+    localStorage.setItem('app_configs_reports_template:v1', raw)
+    const { result } = renderHook(() => useServerReportTemplates(true, [orderedAccountDataset]))
+    await waitFor(() => expect(result.current.ready).toBe(true))
+    await act(() => result.current.importBrowserTemplate(template))
+    expect(saveServerReportTemplate).not.toHaveBeenCalled()
+    expect(result.current.notice).toContain('правила сортування')
+    expect(localStorage.getItem('app_configs_reports_template:v1')).toBe(raw)
+  })
+
+  it('imports exact ordering and refuses a later save with its measure disabled', async () => {
+    const template = { Name: 'Залишки за сумою', Data: orderedAccountRequest() }
+    vi.mocked(saveServerReportTemplate).mockImplementation(async request => ({ ...request, Revision: 1 }))
+    const { result } = renderHook(() => useServerReportTemplates(true, [orderedAccountDataset]))
+    await waitFor(() => expect(result.current.ready).toBe(true))
+    await act(() => result.current.importBrowserTemplate(template))
+    expect(saveServerReportTemplate).toHaveBeenCalledWith({ ...template, Id: await browserTemplateImportId(template), Revision: 0 })
+    const disabled = { ...template.Data, sorted: { ...template.Data.sorted, Measurements: template.Data.sorted.Measurements.map(measure => ({ ...measure, IsChecked: false })) } }
+    await act(() => result.current.save(template.Name, disabled))
+    expect(saveServerReportTemplate).toHaveBeenCalledTimes(1)
+    expect(result.current.notice).toContain('Правило збережено')
   })
 })

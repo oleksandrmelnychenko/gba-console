@@ -75,9 +75,26 @@ export type ReportFilterFieldGroup = {
   type: number
 }
 
+export type ReportOrderRule = {
+  Grouping: number
+  By: 1 | 2 | 3
+  Direction: 1 | 2
+  Nulls: 1 | 2
+  Measure?: number | null
+}
+export type ReportOrdering = { Version: 1; Rows: ReportOrderRule[]; Columns: ReportOrderRule[] }
+export type ReportOrderingCapabilities = {
+  Version: 1
+  MaximumRules: number
+  Groupings: Array<{ Type: number; By: Array<1 | 2 | 3> }>
+}
+
 export type ReportRequestBody = {
   dataSource?: number
   valuationClientAgreementId?: number | null
+  // Preserve unknown imported versions/properties for explicit validation; never sanitize them away.
+  ordering?: unknown
+  Ordering?: unknown
   oneC?: OneCTurnoverFilters
   from: string
   selections: ReportSelection[]
@@ -97,6 +114,7 @@ export type ReportDataset = {
   Description: string
   PeriodRequired?: boolean
   PeriodSupported?: boolean
+  Ordering?: unknown
   Groupings: ReportDatasetField[]
   Measurements: ReportDatasetField[]
   Filters: ReportDatasetField[]

@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { deleteServerReportTemplate, getServerReportTemplates, saveServerReportTemplate } from '../api/reportWorkspaceApi'
 import { valuationConfigurationError } from '../data/reportValuation'
-import type { ReportRequestBody, ReportTemplate } from '../types'
+import { reportOrderingError } from '../data/reportOrdering'
+import type { ReportDataset, ReportRequestBody, ReportTemplate } from '../types'
 
 /** Browser variants remain untouched; importing one never sanitizes away its filters. */
 export function readBrowserReportTemplates(): ReportTemplate[] {
@@ -24,7 +25,7 @@ export async function browserTemplateImportId(template: ReportTemplate): Promise
   return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`
 }
 
-export function useServerReportTemplates(enabled: boolean) {
+export function useServerReportTemplates(enabled: boolean, datasets: ReportDataset[] = []) {
   const [templates, setTemplates] = useState<ReportTemplate[]>([])
   const [notice, setNotice] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
@@ -90,6 +91,8 @@ export function useServerReportTemplates(enabled: boolean) {
         }
         const valuationError = valuationConfigurationError(request.Data)
         if (valuationError) throw new Error(valuationError)
+        const orderingError = reportOrderingError(request.Data, datasets.find(item => item.DataSource === (request.Data.dataSource ?? 0)))
+        if (orderingError) throw new Error(orderingError)
         const saved = await saveServerReportTemplate(request)
         if (alive.current) {
           setTemplates(current => [...current.filter(item => item.Id !== saved.Id), saved])
