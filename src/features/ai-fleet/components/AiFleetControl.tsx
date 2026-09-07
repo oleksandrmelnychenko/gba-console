@@ -311,7 +311,7 @@ export function AiFleetControl({ canRunWarmup = false }: { canRunWarmup?: boolea
 function AiFleetOperationSummary({ operation }: { operation?: AiFleetOperationState }) {
   const { t } = useI18n()
   const state = operation?.state ?? 'unknown'
-  const color = state === 'healthy' ? 'green' : state === 'down' ? 'red' : 'gray'
+  const color = operation?.running ? 'blue' : state === 'healthy' ? 'green' : state === 'down' ? 'red' : 'gray'
 
   const finishedLabel = formatDateTime(operation?.lastFinishedAtUtc)
   const tooltip = [
@@ -323,7 +323,7 @@ function AiFleetOperationSummary({ operation }: { operation?: AiFleetOperationSt
 
   const badge = (
     <Badge color={color} leftSection={<Clock3 size={13} />} variant="light">
-      {t('Останній 05:00 job')}: {operationStateLabel(state, t)}
+      {t('Останній 05:00 job')}: {operation?.running ? t('Оновлюється') : operationStateLabel(state, t)}
       {finishedLabel ? ` · ${finishedLabel}` : ''}
     </Badge>
   )
@@ -384,6 +384,7 @@ function AiFleetServiceRow({
               />
               <StatusBadge
                 label="05:00"
+                running={warmup?.running}
                 message={warmupMessage}
                 state={warmup?.state ?? 'unknown'}
               />
@@ -412,18 +413,19 @@ function AiFleetServiceRow({
   )
 }
 
-function StatusBadge({ label, message, state }: { label: string; message?: string; state: AiFleetState }) {
+function StatusBadge({ label, message, state, running }: { label: string; message?: string; state: AiFleetState; running?: boolean }) {
   const { t } = useI18n()
-  const color = state === 'healthy' ? 'green' : state === 'down' ? 'red' : 'gray'
+  const color = running ? 'blue' : state === 'healthy' ? 'green' : state === 'down' ? 'red' : 'gray'
+  const text = running ? t('Оновлюється') : stateLabel(state, t)
   const badge = (
     <Badge
-      aria-label={message ? `${label}: ${stateLabel(state, t)}. ${message}` : undefined}
+      aria-label={message ? `${label}: ${text}. ${message}` : undefined}
       color={color}
       size="sm"
       tabIndex={message ? 0 : undefined}
       variant="light"
     >
-      {label}: {stateLabel(state, t)}
+      {label}: {text}
     </Badge>
   )
 

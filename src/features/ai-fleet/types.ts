@@ -15,6 +15,7 @@ export type AiFleetHealthState = {
 }
 
 export type AiFleetWarmupState = {
+  running?: boolean
   lastFinishedAtUtc?: string
   lastStartedAtUtc?: string
   message?: string
@@ -23,6 +24,7 @@ export type AiFleetWarmupState = {
 }
 
 export type AiFleetOperationState = {
+  running?: boolean
   generatedAtUtc?: string
   lastFinishedAtUtc?: string
   lastStartedAtUtc?: string

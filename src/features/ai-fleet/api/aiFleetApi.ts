@@ -162,6 +162,7 @@ async function getAiFleetWarmupSnapshot(signal?: AbortSignal): Promise<{
       }
 
       statuses.set(serviceId, {
+        running: (record.Running ?? record.running) === true,
         lastFinishedAtUtc: readDateString(record.LastFinishedAtUtc ?? record.lastFinishedAtUtc),
         lastStartedAtUtc: readDateString(record.LastStartedAtUtc ?? record.lastStartedAtUtc),
         message: readString(record.Message ?? record.message) || undefined,
@@ -250,10 +251,12 @@ async function getAiServiceStatus(
       warmup,
     }
   } catch (error) {
+    const accessDenied = error instanceof ApiError && (error.status === 401 || error.status === 403)
     return {
       health: {
-        message: error instanceof ApiError || error instanceof Error ? error.message : 'Health check не пройшов.',
-        state: 'down',
+        message: accessDenied ? 'Немає доступу до перевірки цього сервісу.'
+          : error instanceof ApiError || error instanceof Error ? error.message : 'Health check не пройшов.',
+        state: accessDenied ? 'unknown' : 'down',
       },
       serviceId: service.id,
       warmup,
@@ -300,6 +303,7 @@ function normalizeOperation(payload: unknown): AiFleetOperationState | undefined
   const state = normalizeState(readString(record.OperationState ?? record.operationState))
 
   return {
+    running: (record.Running ?? record.running) === true,
     generatedAtUtc: readDateString(record.GeneratedAtUtc ?? record.generatedAtUtc),
     lastFinishedAtUtc: readDateString(record.LastFinishedAtUtc ?? record.lastFinishedAtUtc),
     lastStartedAtUtc: readDateString(record.LastStartedAtUtc ?? record.lastStartedAtUtc),

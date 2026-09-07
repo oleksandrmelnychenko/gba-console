@@ -72,6 +72,19 @@ describe('AiFleetControl', () => {
     expect(screen.queryByRole('button', { name: 'Запустити' })).toBeNull()
   })
 
+  it('shows an active full cycle as updating without a completed badge', async () => {
+    const snapshot = buildSnapshot()
+    snapshot.statuses = snapshot.statuses.map(status => ({ ...status,
+      operation: { state: 'unknown', running: true },
+      warmup: { state: 'unknown', running: true, message: 'Оновлення триває.' },
+    }))
+    getAiFleetServicesSnapshot.mockResolvedValue(snapshot)
+    renderControl(false)
+    fireEvent.click(screen.getByRole('button', { name: 'AI флот' }))
+    expect(await screen.findAllByText('05:00: Оновлюється')).toHaveLength(7)
+    expect(screen.queryByText('Останній 05:00 job: Завершено')).toBeNull()
+  })
+
   it('shows the warmup action to privileged users', async () => {
     renderControl(true)
 

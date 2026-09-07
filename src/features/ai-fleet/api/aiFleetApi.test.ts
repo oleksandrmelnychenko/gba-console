@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { apiRequest } from '../../../shared/api/apiClient'
+import { ApiError, apiRequest } from '../../../shared/api/apiClient'
 import { AI_FLEET_SERVICES, getAiFleetServicesSnapshot, getAiFleetServiceStatus, triggerAiFleetWarmup } from './aiFleetApi'
 
 vi.mock('../../../shared/api/apiClient', () => ({
@@ -46,6 +46,7 @@ describe('aiFleetApi', () => {
     await expect(getAiFleetServiceStatus('nba')).resolves.toEqual({
       health: { state: 'healthy' },
       operation: {
+        running: false,
         generatedAtUtc: '2026-07-08T05:05:00Z',
         lastFinishedAtUtc: '2026-07-08T05:04:00Z',
         lastStartedAtUtc: '2026-07-08T05:00:00Z',
@@ -54,6 +55,7 @@ describe('aiFleetApi', () => {
       },
       serviceId: 'nba',
       warmup: {
+        running: false,
         lastFinishedAtUtc: '2026-07-08T05:04:00Z',
         lastStartedAtUtc: '2026-07-08T05:00:00Z',
         message: 'Задачі продажів сформовано',
@@ -69,6 +71,26 @@ describe('aiFleetApi', () => {
       }),
     )
     expect(apiRequestMock).toHaveBeenNthCalledWith(2, '/ai/fleet/status', { signal: undefined })
+  })
+
+  it('preserves an in-progress cycle without claiming completion', async () => {
+    apiRequestMock.mockResolvedValueOnce({ healthy: true }).mockResolvedValueOnce({
+      Running: true, OperationState: 'unknown', LastStartedAtUtc: '2026-09-07T02:00:00Z',
+      Services: [{ ServiceId: 'nba', Source: 'GbaNbaApi', State: 'unknown', Running: true,
+        Message: 'Оновлення триває.' }],
+    })
+    await expect(getAiFleetServiceStatus('nba')).resolves.toMatchObject({
+      operation: { running: true, state: 'unknown' },
+      warmup: { running: true, state: 'unknown', message: 'Оновлення триває.' },
+    })
+  })
+
+  it('does not classify missing access as a broken service', async () => {
+    apiRequestMock.mockRejectedValueOnce(Object.assign(new ApiError('Forbidden', 403, null), { status: 403 }))
+      .mockResolvedValueOnce({ OperationState: 'unknown', Services: [] })
+    await expect(getAiFleetServiceStatus('products')).resolves.toMatchObject({
+      health: { state: 'unknown', message: 'Немає доступу до перевірки цього сервісу.' },
+    })
   })
 
   it('returns null for an unknown service without network calls', async () => {
