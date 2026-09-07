@@ -1,6 +1,7 @@
 import { apiRequest } from '../../../shared/api/apiClient'
 import type { ReportCatalogue, ReportDataset, ReportDatasetField, ReportRequestBody, ReportTemplate } from '../types'
 import { isCurrentReportSource } from '../data/nativeReportProfiles'
+import { isReportCatalogue } from '../data/reportMigration'
 
 function isDatasetField(value: unknown): value is ReportDatasetField {
   if (!value || typeof value !== 'object') return false
@@ -32,8 +33,10 @@ export async function getReportDatasets(signal?: AbortSignal): Promise<ReportDat
   return result
 }
 
-export function getReportCatalogue(signal?: AbortSignal): Promise<ReportCatalogue> {
-  return apiRequest('/report/catalogue', { signal })
+export async function getReportCatalogue(signal?: AbortSignal): Promise<ReportCatalogue> {
+  const result = await apiRequest<unknown>('/report/catalogue', { signal })
+  if (!isReportCatalogue(result)) throw new Error('Сервер повернув некоректний каталог джерельних звітів.')
+  return result
 }
 
 type WireTemplate = Required<Omit<ReportTemplate, 'Data'>> & {

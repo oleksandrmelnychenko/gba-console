@@ -166,16 +166,55 @@ export type ReportTemplate = {
   Name: string
 }
 
+export type ReportMigrationStatus = 'captured' | 'native_partial' | 'parity_verified'
+export type ReportDependencyStatus = 'unknown' | 'unmapped' | 'partial' | 'available'
+export type ReportSourceMigration = {
+  CaptureStatus: 'metadata_only' | 'assets_captured' | 'incomplete' | 'unknown'
+  SourceRevisionSha256: string | null
+  Status: ReportMigrationStatus
+  NativeDataSources: number[]
+  CoveredScope: string[]
+  MissingScope: string[]
+  Dependencies: Array<{ Key: string; Title: string; Status: ReportDependencyStatus; Note: string | null }>
+  Validation: {
+    Kind: 'native_scope' | 'source_parity'
+    EvidenceId: string
+    VerifiedAtUtc: string
+    SourceRevisionSha256: string
+    NativeRevision: string
+  } | null
+}
+export type ReportMigrationSummary = {
+  CatalogueEntries: number
+  SourceImplementations: number
+  BuiltinImplementations: number
+  ByStatus: { Unassessed: number; Captured: number; NativePartial: number; ParityVerified: number }
+  FullyVerifiedEntries: number
+}
+export type ReportCatalogueMigration = {
+  Version: string
+  GeneratedAtUtc: string
+  Summary: ReportMigrationSummary
+}
+export type ReportCatalogueSource = {
+  World: string
+  SourceId: string
+  DefinitionSha256: string | null
+  Attributes: string[]
+  Migration?: ReportSourceMigration
+}
+export type ReportCatalogueEntry = {
+  Id: string
+  Name: string
+  Title: string
+  Kind: string
+  Sources: ReportCatalogueSource[]
+}
 export type ReportCatalogue = {
   CapturedOn: string
-  Reports: Array<{
-    Id: string
-    Name: string
-    Title: string
-    Kind: string
-    Sources: Array<{ World: string; SourceId: string; DefinitionSha256: string | null; Attributes: string[] }>
-  }>
+  Reports: ReportCatalogueEntry[]
   Presentations: Array<{ Id: string; Title: string }>
+  Migration?: ReportCatalogueMigration
 }
 
 export type SpreadsheetCellValue = boolean | number | string | null

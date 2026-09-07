@@ -1,13 +1,34 @@
 import { describe, expect, it, vi } from 'vitest'
 import { apiRequest } from '../../../shared/api/apiClient'
-import { getReportDatasets, getServerReportTemplates, saveServerReportTemplate } from './reportWorkspaceApi'
+import { getReportCatalogue, getReportDatasets, getServerReportTemplates, saveServerReportTemplate } from './reportWorkspaceApi'
 import { createSalesReportPreset } from '../data/reportPresets'
 import { reportDatasets, stockDataset, currentStockDatasets, valuationDataset, nativeDocumentDatasets, currentDebtDataset } from '../data/reportDatasets.test-fixtures'
 import { defaultDatasetRequest } from '../data/reportDatasets'
+import { catalogueFixture } from '../data/reportMigration.test-fixtures'
 
 vi.mock('../../../shared/api/apiClient', () => ({ apiRequest: vi.fn() }))
 
 describe('report workspace wire contract', () => {
+  it('loads exact per-world migration metadata without changing the source inventory or cancellation', async () => {
+    const controller = new AbortController(), catalogue = catalogueFixture()
+    vi.mocked(apiRequest).mockResolvedValue(catalogue)
+    await expect(getReportCatalogue(controller.signal)).resolves.toEqual(catalogue)
+    expect(apiRequest).toHaveBeenLastCalledWith('/report/catalogue', { signal: controller.signal })
+  })
+
+  it('preserves an old catalogue without fabricating migration metadata', async () => {
+    const catalogue = { ...catalogueFixture(), Migration: undefined }
+    vi.mocked(apiRequest).mockResolvedValue(catalogue)
+    await expect(getReportCatalogue()).resolves.toEqual(catalogue)
+  })
+
+  it('rejects duplicate exact implementation identities instead of dropping source rows', async () => {
+    const catalogue = catalogueFixture()
+    catalogue.Reports[0].Sources.push(catalogue.Reports[0].Sources[0])
+    vi.mocked(apiRequest).mockResolvedValue(catalogue)
+    await expect(getReportCatalogue()).rejects.toThrow('некоректний каталог джерельних звітів')
+  })
+
   it('loads native capabilities and passes cancellation to the authenticated request', async () => {
     const controller = new AbortController()
     vi.mocked(apiRequest).mockResolvedValue(reportDatasets)
