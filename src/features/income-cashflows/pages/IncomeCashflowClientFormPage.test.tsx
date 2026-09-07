@@ -1,5 +1,6 @@
 import { MantineProvider } from '@mantine/core'
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { I18nProvider } from '../../../shared/i18n/I18nProvider'
@@ -257,6 +258,7 @@ describe('IncomeCashflowClientFormPage payment dependencies', () => {
   })
 
   it('keeps the selected organization and exposes its agreement after selecting a counterparty', async () => {
+    const user = userEvent.setup()
     renderPage()
 
     const organizationInput = await screen.findByRole<HTMLInputElement>(
@@ -265,9 +267,8 @@ describe('IncomeCashflowClientFormPage payment dependencies', () => {
     )
     await waitFor(() => expect(organizationInput.disabled).toBe(false))
 
-    fireEvent.click(organizationInput)
-    fireEvent.change(organizationInput, { target: { value: amg.Name } })
-    fireEvent.click(
+    await user.click(organizationInput)
+    await user.click(
       await screen.findByRole('option', { hidden: true, name: amg.Name }),
     )
 
@@ -310,6 +311,7 @@ describe('IncomeCashflowClientFormPage payment dependencies', () => {
   })
 
   it('shows only bank accounts for the selected organization in bank mode', async () => {
+    const user = userEvent.setup()
     renderPage(PaymentRegisterType.Bank)
 
     const organizationInput = await screen.findByRole<HTMLInputElement>(
@@ -318,9 +320,8 @@ describe('IncomeCashflowClientFormPage payment dependencies', () => {
     )
     await waitFor(() => expect(organizationInput.disabled).toBe(false))
 
-    fireEvent.click(organizationInput)
-    fireEvent.change(organizationInput, { target: { value: amg.Name } })
-    fireEvent.click(
+    await user.click(organizationInput)
+    await user.click(
       await screen.findByRole('option', { hidden: true, name: amg.Name }),
     )
 
@@ -342,6 +343,7 @@ describe('IncomeCashflowClientFormPage payment dependencies', () => {
   })
 
   it('checks accounting automatically when the selected organization belongs to AMG', async () => {
+    const user = userEvent.setup()
     renderPage()
 
     const organizationInput = await screen.findByRole<HTMLInputElement>(
@@ -355,9 +357,8 @@ describe('IncomeCashflowClientFormPage payment dependencies', () => {
     await waitFor(() => expect(organizationInput.disabled).toBe(false))
     expect(accountingCheckbox.checked).toBe(false)
 
-    fireEvent.click(organizationInput)
-    fireEvent.change(organizationInput, { target: { value: amg.Name } })
-    fireEvent.click(
+    await user.click(organizationInput)
+    await user.click(
       await screen.findByRole('option', { hidden: true, name: amg.Name }),
     )
 

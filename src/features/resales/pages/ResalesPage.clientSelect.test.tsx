@@ -1,5 +1,6 @@
 import { MantineProvider } from '@mantine/core'
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { render, screen, waitFor } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { I18nProvider } from '../../../shared/i18n/I18nProvider'
 import { searchResaleClients } from '../api/resalesApi'
@@ -35,11 +36,10 @@ describe('ResaleClientSelect', () => {
   })
 
   it('shows server results found by a client field that is not part of the option label', async () => {
+    const user = userEvent.setup()
     renderClientSelect()
 
-    fireEvent.change(screen.getByRole('combobox', { name: 'Клієнт' }), {
-      target: { value: '7' },
-    })
+    await user.type(screen.getByRole('combobox', { name: 'Клієнт' }), '7')
 
     await waitFor(() => {
       expect(searchResaleClientsMock).toHaveBeenCalledWith('7', expect.any(AbortSignal))
@@ -49,13 +49,15 @@ describe('ResaleClientSelect', () => {
   })
 
   it('does not retain clients from an older search when the server returns no matches', async () => {
+    const user = userEvent.setup()
     renderClientSelect()
 
     const clientSelect = screen.getByRole('combobox', { name: 'Клієнт' })
-    fireEvent.change(clientSelect, { target: { value: '7' } })
+    await user.type(clientSelect, '7')
     expect(await screen.findByText('Клієнт Альфа')).not.toBeNull()
 
-    fireEvent.change(clientSelect, { target: { value: 'missing' } })
+    await user.clear(clientSelect)
+    await user.type(clientSelect, 'missing')
 
     await waitFor(() => {
       expect(searchResaleClientsMock).toHaveBeenCalledWith('missing', expect.any(AbortSignal))

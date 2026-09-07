@@ -1,5 +1,6 @@
 import { MantineProvider } from '@mantine/core'
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import type { ReactNode } from 'react'
 import { MemoryRouter } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
@@ -251,6 +252,7 @@ function renderPage() {
 }
 
 async function selectRetailClientAndOrganization(organizationName: string) {
+  const user = userEvent.setup()
   const retailClientInput = await screen.findByRole('combobox', {
     name: 'Retail-клієнт',
   })
@@ -266,9 +268,9 @@ async function selectRetailClientAndOrganization(organizationName: string) {
     name: 'Організація',
   })
   await waitFor(() => expect(organizationInput.disabled).toBe(false))
-  fireEvent.click(organizationInput)
-  fireEvent.change(organizationInput, { target: { value: organizationName } })
-  fireEvent.click(await screen.findByRole('option', {
+  await user.click(organizationInput)
+  await user.type(organizationInput, organizationName)
+  await user.click(await screen.findByRole('option', {
     hidden: true,
     name: organizationName,
   }))
@@ -324,6 +326,7 @@ describe('IncomeCashflowShopFormPage retail client selection', () => {
   })
 
   it('keeps a selected retail client and allows saving when its agreement has no debts', async () => {
+    const user = userEvent.setup()
     renderPage()
 
     const retailClientInput = await screen.findByRole('combobox', {
@@ -347,9 +350,9 @@ describe('IncomeCashflowShopFormPage retail client selection', () => {
     const organizationInput = screen.getByRole<HTMLInputElement>('combobox', {
       name: 'Організація',
     })
-    fireEvent.click(organizationInput)
-    fireEvent.change(organizationInput, { target: { value: organization.Name } })
-    fireEvent.click(await screen.findByRole('option', {
+    await user.click(organizationInput)
+    await user.type(organizationInput, organization.Name)
+    await user.click(await screen.findByRole('option', {
       hidden: true,
       name: organization.Name,
     }))
@@ -378,6 +381,7 @@ describe('IncomeCashflowShopFormPage retail client selection', () => {
   })
 
   it('waits for the organization, selects its first agreement, and lets the user choose a matching register', async () => {
+    const user = userEvent.setup()
     vi.mocked(searchIncomeCashflowPaymentRegisters).mockResolvedValueOnce([
       register,
       secondOrganizationCashRegister,
@@ -416,11 +420,9 @@ describe('IncomeCashflowShopFormPage retail client selection', () => {
     expect(registerInput.value).toBe('')
     expect(registerInput.disabled).toBe(true)
 
-    fireEvent.click(organizationInput)
-    fireEvent.change(organizationInput, {
-      target: { value: secondOrganization.Name },
-    })
-    fireEvent.click(await screen.findByRole('option', {
+    await user.click(organizationInput)
+    await user.type(organizationInput, secondOrganization.Name)
+    await user.click(await screen.findByRole('option', {
       hidden: true,
       name: secondOrganization.Name,
     }))

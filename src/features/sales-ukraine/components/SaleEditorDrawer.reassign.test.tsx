@@ -1,5 +1,6 @@
 import { MantineProvider } from '@mantine/core'
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { theme } from '../../../shared/theme/theme'
 import type { SalesUkraineClientOption, SalesUkraineSale } from '../types'
@@ -108,22 +109,23 @@ describe('online-shop post-create sale reassignment', () => {
   })
 
   it('searches by the one-character client code from Screenshot_274.png and reassigns to its agreement', async () => {
+    const user = userEvent.setup()
     renderModal()
 
     const clientSelect = screen.getByRole('combobox', { name: 'Клієнт' })
-    fireEvent.change(clientSelect, { target: { value: '4' } })
+    await user.type(clientSelect, '4')
 
     await waitFor(() => expect(mocks.searchOnlineShopReassignmentClients).toHaveBeenCalledWith(
       '4',
       expect.any(AbortSignal),
     ))
-    fireEvent.click(await screen.findByText('4 · Клієнт 4'))
+    await user.click(await screen.findByText('4 · Клієнт 4'))
 
     await waitFor(() => expect(mocks.getOnlineShopReassignmentAgreements).toHaveBeenCalledWith('client-4'))
     const agreementSelect = screen.getByRole('combobox', { name: 'Договір' })
-    fireEvent.click(agreementSelect)
-    fireEvent.click(await screen.findByText('Цільовий договір'))
-    fireEvent.click(screen.getByRole('button', { name: 'Переназначити' }))
+    await user.click(agreementSelect)
+    await user.click(await screen.findByText('Цільовий договір'))
+    await user.click(screen.getByRole('button', { name: 'Переназначити' }))
 
     await waitFor(() => expect(mocks.switchSale).toHaveBeenCalledWith(
       'sale-1',
