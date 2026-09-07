@@ -12,6 +12,9 @@ const QUANTITY_BY_UNIT_PRESET: DatasetReportPreset = {
 const GROUPING_KEYS = new Map(flattenGroupingOptions().map(item => [item.type, item.key]))
 GROUPING_KEYS.set(24, 'PurchaseDocument')
 GROUPING_KEYS.set(25, 'SupplierContract')
+// Preserve the already published price identities. Quantity units use 28.
+GROUPING_KEYS.set(26, 'SalesUnitGrossPrice')
+GROUPING_KEYS.set(27, 'CostUnitGrossPrice')
 
 const FILTER_KEYS = new Map(REPORT_FILTER_FIELD_GROUPS.flatMap(group => group.children.map(item => [item.type, item.label] as const)))
 FILTER_KEYS.set(1, 'Product')
@@ -61,7 +64,7 @@ export function datasetMeasurements(dataset: ReportDataset | undefined, selected
 export function defaultDatasetRequest(dataset: ReportDataset, from: string, to: string): ReportRequestBody {
   const groupings = datasetGroupings(dataset)
   const row = groupings.find(item => item.type === 3) ?? groupings[0]
-  const unit = groupings.find(item => item.type === 26)
+  const unit = groupings.find(item => item.type === 28)
   const available = dataset.Measurements.filter(field => field.Selectable !== false)
   const preferred = available.filter(field => field.Type === 0 || field.Type === (dataset.DataSource === 3 ? 2 : 4))
   const fields = preferred.length ? preferred : available.slice(0, 1)
@@ -95,7 +98,7 @@ export function datasetConfigurationError(data: ReportRequestBody, dataset: Repo
 export function datasetPresets(dataset: ReportDataset | undefined): DatasetReportPreset[] {
   if (!dataset || ![0, 2, 3].includes(dataset.DataSource)) return []
   const presets: DatasetReportPreset[] = []
-  if ([26, 3].every(type => dataset.Groupings.some(field => field.Type === type))
+  if ([28, 3].every(type => dataset.Groupings.some(field => field.Type === type))
     && dataset.Measurements.some(field => field.Type === 0 && field.Selectable !== false)) {
     presets.push(QUANTITY_BY_UNIT_PRESET)
   }

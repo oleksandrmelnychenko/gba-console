@@ -7,7 +7,7 @@ import { createSalesReportPreset } from './reportPresets'
 describe('report dataset capabilities', () => {
   it('uses only receipt quantity and net EUR amount for purchase defaults', () => {
     const data = defaultDatasetRequest(purchaseDataset, '2026-09-01', '2026-09-03')
-    expect(data).toMatchObject({ dataSource: 3, from: '2026-09-01', to: '2026-09-03', sorted: { Row: [{ type: 26 }, { type: 3 }] } })
+    expect(data).toMatchObject({ dataSource: 3, from: '2026-09-01', to: '2026-09-03', sorted: { Row: [{ type: 28 }, { type: 3 }] } })
     expect(data.sorted.Measurements.map(item => item.Type)).toEqual([0, 2])
     expect(data.sorted.Measurements.map(item => item.Label)).toEqual(['Кількість надходжень', 'Вартість надходження без ПДВ, EUR'])
   })
@@ -23,23 +23,43 @@ describe('report dataset capabilities', () => {
       FilterCondition: { Name: 'Дорівнює', Type: 0 }, Values: [{ Data: { Id: 77, Name: 'м' }, Name: 'м', Value: 77 }] }]
     const preset = datasetPresetRequest(dataset, 'quantities-by-unit', current)!
     expect(preset.Data).toMatchObject({ dataSource: dataset.DataSource, from: current.from, to: current.to,
-      sorted: { Row: [{ type: 26, key: 'ProductMeasureUnit' }, { type: 3 }], Col: [], Measurements: [{ Type: 0 }] },
+      sorted: { Row: [{ type: 28, key: 'ProductMeasureUnit' }, { type: 3 }], Col: [], Measurements: [{ Type: 0 }] },
       selections: current.selections })
     expect(preset.Data.selections).not.toBe(current.selections)
     expect(datasetConfigurationError(preset.Data, dataset)).toBeNull()
-    expect(datasetGroupings(dataset)).toContainEqual({ type: 26, key: 'ProductMeasureUnit', label: 'Одиниця виміру' })
+    expect(datasetGroupings(dataset)).toContainEqual({ type: 28, key: 'ProductMeasureUnit', label: 'Одиниця виміру' })
     expect(datasetFilters(dataset).find(field => field.field.Type === 20)?.field.Name).toBe('ProductMeasureUnit')
   })
 
   it('withholds the unit preset until both grouping and quantity capabilities are available', () => {
     for (const dataset of [
-      { ...purchaseDataset, Groupings: purchaseDataset.Groupings.filter(field => field.Type !== 26) },
+      { ...purchaseDataset, Groupings: purchaseDataset.Groupings.filter(field => field.Type !== 28) },
       { ...purchaseDataset, Groupings: purchaseDataset.Groupings.filter(field => field.Type !== 3) },
       { ...purchaseDataset, Measurements: purchaseDataset.Measurements.filter(field => field.Type !== 0) },
     ]) {
       expect(datasetPresets(dataset)).toEqual([])
       expect(datasetPresetRequest(dataset, 'quantities-by-unit', defaultDatasetRequest(dataset, '', ''))).toBeNull()
     }
+  })
+
+  it('preserves published price groupings 26/27 while quantity units use only 28', () => {
+    const priceFields = [{ Type: 26, Name: 'Ціна продажу з ПДВ, EUR' }, { Type: 27, Name: 'Собівартість одиниці з ПДВ, EUR' }]
+    const dataset = { ...grossDataset, Groupings: [...grossDataset.Groupings, ...priceFields] }
+    const groupings = datasetGroupings(dataset)
+    expect(groupings.filter(item => item.type === 26 || item.type === 27)).toEqual([
+      { type: 26, key: 'SalesUnitGrossPrice', label: priceFields[0].Name },
+      { type: 27, key: 'CostUnitGrossPrice', label: priceFields[1].Name },
+    ])
+    const priceTemplate = { ...defaultDatasetRequest(dataset, '', ''), sorted: {
+      Row: [groupings.find(item => item.type === 26)!], Col: [groupings.find(item => item.type === 27)!], Measurements: [],
+    } }
+    const before = structuredClone(priceTemplate)
+    expect(datasetConfigurationError(priceTemplate, dataset)).toBeNull()
+    expect(priceTemplate).toEqual(before)
+    expect(defaultDatasetRequest(dataset, '', '').sorted.Row.map(item => item.type)).toEqual([28, 3])
+    const withoutUnit = { ...dataset, Groupings: dataset.Groupings.filter(field => field.Type !== 28) }
+    expect(defaultDatasetRequest(withoutUnit, '', '').sorted.Row.map(item => item.type)).toEqual([3])
+    expect(datasetPresets(withoutUnit).some(item => item.id === 'quantities-by-unit')).toBe(false)
   })
 
   it('refuses archived sources, unsupported conditions and disabled filters without changing data', () => {

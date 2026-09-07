@@ -67,7 +67,7 @@ describe('native report datasets in the constructor', () => {
     fireEvent.submit(container.querySelector('form')!)
     await waitFor(() => expect(createStockReport).toHaveBeenCalledOnce())
     expect(vi.mocked(createStockReport).mock.calls[0][0]).toMatchObject({ dataSource: 3, from: '2026-09-01', to: '2026-09-03',
-      selections: [], sorted: { Row: [{ type: 26 }, { type: 3 }], Col: [], Measurements: [{ Type: 0 }, { Type: 2 }] } })
+      selections: [], sorted: { Row: [{ type: 28 }, { type: 3 }], Col: [], Measurements: [{ Type: 0 }, { Type: 2 }] } })
   })
 
   it.each(reportDatasets)('selects the unit preset and exact unit filter in source $DataSource', async dataset => {
@@ -87,7 +87,7 @@ describe('native report datasets in the constructor', () => {
     fireEvent.submit(container.querySelector('form')!)
     await waitFor(() => expect(createStockReport).toHaveBeenCalledOnce())
     expect(vi.mocked(createStockReport).mock.calls[0][0]).toMatchObject({ dataSource: dataset.DataSource,
-      sorted: { Row: [{ type: 26, key: 'ProductMeasureUnit' }, { type: 3 }], Measurements: [{ Type: 0 }] },
+      sorted: { Row: [{ type: 28, key: 'ProductMeasureUnit' }, { type: 3 }], Measurements: [{ Type: 0 }] },
       selections: [{ SelectedField: { Type: 20, Name: 'ProductMeasureUnit' },
         Values: [{ Data: { Id: 77, Name: 'м' }, Name: 'м', Value: 77 }] }] })
   })
@@ -116,7 +116,28 @@ describe('native report datasets in the constructor', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Зберегти' }))
     await waitFor(() => expect(saveServerReportTemplate).toHaveBeenCalledOnce())
     expect(vi.mocked(saveServerReportTemplate).mock.calls[0][0].Data).toMatchObject({ dataSource: 3, selections: template.Data.selections,
-      sorted: { Row: [{ type: 26, key: 'ProductMeasureUnit' }, { type: 3 }] } })
+      sorted: { Row: [{ type: 28, key: 'ProductMeasureUnit' }, { type: 3 }] } })
+  })
+
+  it('restores and saves existing price groupings 26/27 without treating either as a quantity unit', async () => {
+    const priceFields = [{ Type: 26, Name: 'Ціна продажу з ПДВ, EUR' }, { Type: 27, Name: 'Собівартість одиниці з ПДВ, EUR' }]
+    vi.mocked(getReportDatasets).mockResolvedValue([{ ...reportDatasets[0], Groupings: [...reportDatasets[0].Groupings, ...priceFields] }, ...reportDatasets.slice(1)])
+    const template = createSalesReportPreset('daily', '2026-09-01', '2026-09-03', [])
+    template.Name = 'Ціновий шаблон'
+    template.Data.dataSource = 0
+    template.Data.sorted.Row = [{ type: 26, key: 'SalesUnitGrossPrice', label: priceFields[0].Name }]
+    template.Data.sorted.Col = [{ type: 27, key: 'CostUnitGrossPrice', label: priceFields[1].Name }]
+    vi.mocked(getServerReportTemplates).mockResolvedValue([template])
+    await renderReady()
+    fireEvent.click(screen.getByRole('button', { name: 'Шаблони' }))
+    fireEvent.click(await screen.findByRole('button', { name: /Ціновий шаблон/ }))
+    fireEvent.click(screen.getByRole('button', { name: 'Шаблони' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Зберегти' }))
+    await waitFor(() => expect(saveServerReportTemplate).toHaveBeenCalledOnce())
+    expect(vi.mocked(saveServerReportTemplate).mock.calls[0][0].Data.sorted).toMatchObject({
+      Row: [{ type: 26, key: 'SalesUnitGrossPrice', label: priceFields[0].Name }],
+      Col: [{ type: 27, key: 'CostUnitGrossPrice', label: priceFields[1].Name }],
+    })
   })
 
   it.each([1, 99])('refuses saved source %s without changing the current form', async source => {

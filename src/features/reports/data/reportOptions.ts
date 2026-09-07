@@ -74,7 +74,7 @@ const REPORT_GROUPING_TYPES = {
   supplier: 21,
   sourceSaleResponsible: 22,
   sourceOrderResponsible: 23,
-  productMeasureUnit: 26,
+  productMeasureUnit: 28,
 } as const
 
 // Cost VAT is supplied by published 1C batch allocations. Missing breakdowns
