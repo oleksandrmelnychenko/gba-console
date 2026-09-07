@@ -144,6 +144,7 @@ describe('AssortmentDashboardPage', () => {
     allowedPermissions.clear()
     allowedPermissions.add(PermissionKeys.ProductsAssortment.Analytics.Open)
     vi.clearAllMocks()
+    HTMLElement.prototype.scrollIntoView = vi.fn()
     mockAssortmentData()
   })
 
@@ -190,6 +191,17 @@ describe('AssortmentDashboardPage', () => {
         expect.any(AbortSignal),
       )
     })
+  })
+
+  it('translates recommendation codes and applies the selected supported row limit', async () => {
+    mockAssortmentData([{ ...product, action_reasons: ['negative_margin'] }])
+    renderPage()
+    expect(await screen.findByText('Продажі приносять збиток')).not.toBeNull()
+    expect(screen.queryByText('negative_margin')).toBeNull()
+
+    fireEvent.click(screen.getByRole('combobox', { name: 'Ліміт позицій' }))
+    fireEvent.click(screen.getByText('500', { exact: true }))
+    await waitFor(() => expect(getAssortmentHealth).toHaveBeenLastCalledWith(expect.objectContaining({ limit: 500 }), expect.any(AbortSignal)))
   })
 
   it('shows a meaningful filtered empty state instead of a blank table', async () => {

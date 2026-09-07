@@ -13,7 +13,6 @@ import {
   Tooltip,
 } from '@mantine/core'
 import {
-  CircleAlert,
   FilterX,
   RefreshCw,
 } from 'lucide-react'
@@ -32,7 +31,6 @@ import { UrgencyDonut } from '../../../shared/ui/charts/UrgencyDonut'
 import type { UrgencyLevel } from '../../../shared/ui/charts/chartTheme'
 import type { UrgencySliceInput } from '../../../shared/ui/charts/donutData'
 import type { ForecastPoint } from '../../../shared/ui/charts/forecastData'
-import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { TableRowAction } from '../../../shared/ui/table-row-action'
 import { usePermissions } from '../../auth/usePermissions'
 import { getSupplyDashboardSuppliers } from '../../supply-ukraine-orders/api/supplyUkraineOrdersApi'
@@ -181,14 +179,14 @@ function ProcureDashboardTabContent() {
         if (!cancelled) {
           dispatch({ charts: loaded, type: 'loaded' })
         }
-      } catch (loadError) {
+      } catch {
         if (controller.signal.aborted) {
           return
         }
 
         if (!cancelled) {
           dispatch({
-            error: loadError instanceof Error ? loadError.message : t('Не вдалося завантажити дашборд'),
+            error: t('Не вдалося завантажити дашборд постачання'),
             type: 'failed',
           })
         }
@@ -484,7 +482,8 @@ function ProcureDashboardTabContent() {
               ref={setTableToolbarTarget}
             />
             <Button
-              color={CREATE_ACTION_COLOR}
+              color="gray"
+              variant="default"
               leftSection={<RefreshCw size={16} />}
               loading={isLoading}
               type="submit"
@@ -527,13 +526,19 @@ function ProcureDashboardTabContent() {
           </section>
 
           {error && (
-            <Alert color="red" icon={<CircleAlert size={16} />} variant="light">
-              {error}
-            </Alert>
+            <ProcurementWorkspaceState
+              action={{ label: t('Повторити'), onClick: reload }}
+              description={charts
+                ? t('Показано попередній зріз. Не вдалося отримати актуальні дані.')
+                : t('Сервіс закупівель тимчасово недоступний. Повторіть завантаження.')}
+              surface
+              title={error}
+              tone="error"
+            />
           )}
 
           {hasUsefulData ? (
-            <Card className="app-section-card procure-dashboard__summary" padding="md" radius="md" withBorder>
+            <Card className="app-section-card procure-dashboard__summary" padding={0} radius="md" withBorder>
               <div className="procure-dashboard__metrics">
                 <DashboardMetric
                   hint={t('у вибраному зрізі')}
@@ -608,6 +613,7 @@ function ProcureDashboardTabContent() {
             />
           ) : null}
 
+          <div className={'procure-dashboard__analysis' + (hasForecastData && (hasUrgencyData || hasDaysOfCoverData) ? ' has-forecast' : '')}>
           {hasUsefulData && (hasUrgencyData || hasDaysOfCoverData) ? (
             <SimpleGrid
               className="procure-dashboard__chart-grid"
@@ -637,7 +643,7 @@ function ProcureDashboardTabContent() {
                         emptyLabel={t('Даних не знайдено')}
                         isLoading={isLoading}
                         loadingLabel={t('Завантаження…')}
-                        size={176}
+                        size={150}
                         thickness={26}
                         valueFormatter={(value) => countFormatter.format(value)}
                       />
@@ -677,6 +683,7 @@ function ProcureDashboardTabContent() {
                       title={t('Запас днів покриття')}
                     />
                     <AgingBars
+                      height={190}
                       bucketKey="bucket"
                       data={daysOfCoverData}
                       emptyLabel={t('Даних не знайдено')}
@@ -720,15 +727,16 @@ function ProcureDashboardTabContent() {
                     enablePinning={false}
                     fillAvailableWidth
                     getRowId={(series) => String(series.product_id)}
-                  isLoading={isLoading}
-                  layoutVersion={1}
-                  maxHeight={420}
-                  minWidth={280}
+                    isLoading={isLoading}
+                    layoutVersion={1}
+                    maxHeight={250}
+                    minWidth={280}
                     rowClassName={(series) =>
                       series.product_id === selectedForecastProductId
                         ? 'is-selected'
                         : undefined
                     }
+                    showToolbar={false}
                     showDensityToggle={false}
                     tableId="basket-supply-ukraine-order-demand-series"
                     onRowClick={(series) =>
@@ -739,6 +747,8 @@ function ProcureDashboardTabContent() {
               </Stack>
             </Card>
           ) : null}
+
+          </div>
 
           {hasTopItems ? (
             <Card

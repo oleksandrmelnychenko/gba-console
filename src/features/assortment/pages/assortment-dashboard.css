@@ -181,12 +181,12 @@
   flex-direction: column;
   gap: 3px;
   justify-content: center;
-  min-height: 76px;
-  padding: 10px 14px;
+  min-height: 64px;
+  padding: 6px 12px;
 }
 
 .console-frame .assort-dash .mantine-Card-root.kpi-tile {
-  padding: 10px 14px;
+  padding: 6px 12px;
 }
 
 .kpi-tile + .kpi-tile {
@@ -743,4 +743,10 @@
   .assort-dash__insights {
     grid-template-columns: 1fr;
   }
+}
+
+.assort-table-limit {
+  color: var(--mantine-color-gray-6);
+  font-family: var(--font-mono);
+  font-size: 10.5px;
 }

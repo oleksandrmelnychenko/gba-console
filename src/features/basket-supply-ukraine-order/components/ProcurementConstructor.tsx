@@ -25,7 +25,6 @@ import {
   Bookmark,
   ChevronDown,
   ChevronUp,
-  CircleAlert,
   PackageCheck,
   RefreshCw,
   RotateCcw,
@@ -225,7 +224,8 @@ function ProcurementConstructorContent() {
   const [selectedProducerId, setSelectedProducerId] = useState<string | null>(null)
 
   const [rows, setRows] = useState<ReorderSuggestion[]>([])
-  const [isLoading, setLoading] = useState(false)
+  const [isLoading, setLoading] = useState(true)
+  const [hasLoadedPlan, setHasLoadedPlan] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [charts, setCharts] = useState<ProcurementCharts | null>(null)
   const [isAnalyticsOpen, setAnalyticsOpen] = useState(false)
@@ -317,6 +317,9 @@ function ProcurementConstructorContent() {
   const loadRows = useCallback(
     (signal: AbortSignal) => {
       setLoading(true)
+      setHasLoadedPlan(false)
+      setRows([])
+      setCharts(null)
       setError(null)
       const producerId = selectedProducerId ? Number(selectedProducerId) : null
 
@@ -331,6 +334,7 @@ function ProcurementConstructorContent() {
         .then((items) => {
           if (!signal.aborted) {
             setRows(items.filter((item) => item.suggested_qty > 0))
+            setHasLoadedPlan(true)
           }
         })
         .catch(() => {
@@ -347,7 +351,7 @@ function ProcurementConstructorContent() {
       // Charts feed only the optional demand sparkline; the KPI/donut/bars overview is
       // computed client-side from the plan rows. Fetch charts only in the producer lens
       // (scoped, cheap) — the all-producer charts build is ~60s cold and would block.
-      if (producerId) {
+      if (lens === 'producer' && producerId) {
         getPurchaseCockpitCharts({ producerId }, signal)
           .then((data) => {
             if (!signal.aborted) {
@@ -558,7 +562,9 @@ function ProcurementConstructorContent() {
   }
 
   const basketCount = basket.size
+  const hasPlanData = hasLoadedPlan && !isLoading && !error && (lens === 'warehouse' || Boolean(selectedProducerId))
   const emptyState = getCockpitEmptyState({
+    error,
     hasSearch: deferredSearchQuery.trim().length > 0,
     isLoading,
     lens,
@@ -721,29 +727,23 @@ function ProcurementConstructorContent() {
           </Button>
         </div>
 
-        {error && (
-          <Alert className="procure-cockpit__alert" color="red" icon={<CircleAlert size={16} />} variant="light">
-            {error}
-          </Alert>
-        )}
-
         <div className="procure-cockpit__overview">
           <div className="procure-cockpit__metrics">
             <div className="procure-metric">
               <span>{t('Позицій до замовлення')}</span>
-              <strong>{qty.format(overview.count)}</strong>
+              <strong>{hasPlanData ? qty.format(overview.count) : '—'}</strong>
             </div>
             <div className={`procure-metric${overview.criticalCount > 0 ? ' is-critical' : ''}`}>
               <span>{t('Критичних')}</span>
-              <strong>{qty.format(overview.criticalCount)}</strong>
+              <strong>{hasPlanData ? qty.format(overview.criticalCount) : '—'}</strong>
             </div>
             <div className="procure-metric">
               <span>{t('Сума потреби, EUR')}</span>
-              <strong>{amount.format(overview.totalValue)}</strong>
+              <strong>{hasPlanData ? amount.format(overview.totalValue) : '—'}</strong>
             </div>
             <div className="procure-metric">
               <span>{t('Під ризиком, EUR')}</span>
-              <strong>{amount.format(overview.valueAtRisk)}</strong>
+              <strong>{hasPlanData ? amount.format(overview.valueAtRisk) : '—'}</strong>
             </div>
           </div>
           {visibleRows.length > 0 ? (
@@ -763,7 +763,7 @@ function ProcurementConstructorContent() {
           )}
         </div>
 
-        <Collapse expanded={isAnalyticsOpen}>
+        <Collapse expanded={isAnalyticsOpen && Boolean(hasPlanData)}>
           <div className="procure-cockpit__charts">
             <OverviewCharts overview={overview} t={t} />
           </div>
@@ -777,7 +777,9 @@ function ProcurementConstructorContent() {
               defaultLayout={PLAN_TABLE_DEFAULT_LAYOUT}
               emptyText={
                 <ProcurementWorkspaceState
+                  action={error ? { label: t('Повторити'), onClick: reload } : undefined}
                   description={emptyState.description}
+                  tone={error ? 'error' : undefined}
                   isLoading={isLoading}
                   title={emptyState.title}
                 />
@@ -934,12 +936,14 @@ function ProcurementConstructorContent() {
 }
 
 function getCockpitEmptyState({
+  error,
   hasSearch,
   isLoading,
   lens,
   selectedProducerId,
   t,
 }: {
+  error: string | null
   hasSearch: boolean
   isLoading: boolean
   lens: Lens
@@ -952,6 +956,15 @@ function getCockpitEmptyState({
       pillClass: 'is-gray',
       status: t('Розрахунок'),
       title: t('Розраховуємо потребу'),
+    }
+  }
+
+  if (error) {
+    return {
+      description: t('Дані про потребу недоступні. Повторіть завантаження, щоб перевірити залишки.'),
+      pillClass: 'is-red',
+      status: t('Немає даних'),
+      title: error,
     }
   }
 

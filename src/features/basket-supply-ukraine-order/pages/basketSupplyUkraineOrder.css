@@ -506,7 +506,7 @@
 
 .procure-dashboard__summary {
   box-shadow: none !important;
-  padding: 14px 16px;
+  padding: 0;
 }
 
 .procure-dashboard__metric {
@@ -514,9 +514,9 @@
   display: flex;
   flex-direction: column;
   justify-content: center;
-  min-height: 72px;
+  min-height: 64px;
   min-width: 0;
-  padding: 2px 16px;
+  padding: 8px 12px;
   position: relative;
 }
 
@@ -525,7 +525,7 @@
 }
 
 .procure-dashboard__metric:first-child {
-  padding-left: 0;
+  padding-left: 12px;
 }
 
 .procure-dashboard__metric-label::before {
@@ -605,8 +605,8 @@
   align-items: center;
   display: grid;
   gap: 12px;
-  grid-template-columns: minmax(176px, 0.72fr) minmax(180px, 1fr);
-  min-height: 210px;
+  grid-template-columns: 150px minmax(150px, 1fr);
+  min-height: 190px;
 }
 
 .procure-dashboard__urgency-legend {
@@ -660,7 +660,6 @@
 }
 
 .procure-dashboard__forecast-list {
-  max-width: 860px;
   min-width: 0;
 }
 
@@ -2012,4 +2011,38 @@
     flex: 0 0 auto;
     max-height: 44vh;
   }
+}
+
+.procure-workspace-state.is-error {
+  border-color: var(--mantine-color-red-2);
+  background: var(--mantine-color-red-0);
+}
+
+.procure-workspace-state.is-error .app-section-title::before {
+  background: var(--mantine-color-red-6);
+}
+
+.procure-dashboard__analysis {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+
+.procure-dashboard__analysis.has-forecast {
+  grid-template-columns: minmax(0, 2fr) minmax(360px, 1fr);
+  align-items: stretch;
+}
+
+.console-frame .procure-dashboard .procure-dashboard__panel {
+  border: 1px solid var(--mantine-color-gray-2);
+  padding: 10px 12px;
+}
+
+.console-frame .procure-dashboard .procure-dashboard__summary {
+  border: 1px solid var(--mantine-color-gray-2);
+  padding: 0;
+}
+
+@media (max-width: 100em) {
+  .procure-dashboard__analysis.has-forecast { grid-template-columns: minmax(0, 1fr); }
 }

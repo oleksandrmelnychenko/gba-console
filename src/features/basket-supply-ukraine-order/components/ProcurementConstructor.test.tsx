@@ -35,6 +35,7 @@ vi.mock('../api/procurementApi', () => ({
 describe('ProcurementConstructor', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    vi.spyOn(HTMLElement.prototype, 'clientWidth', 'get').mockReturnValue(640)
     canMock.mockReturnValue(true)
     vi.mocked(getPurchaseCockpitSuppliers).mockResolvedValue([])
     vi.mocked(getPurchaseCockpitWarehousePlan).mockResolvedValue({
@@ -168,6 +169,35 @@ describe('ProcurementConstructor', () => {
     await waitFor(() => {
       expect(screen.queryByText('Кошик замовлень')).toBeNull()
     })
+  })
+
+  it('keeps failed demand unknown and recovers through retry', async () => {
+    const success = await vi.mocked(getPurchaseCockpitWarehousePlan)({ budgetEur: 0, method: 'greedy' })
+    vi.mocked(getPurchaseCockpitWarehousePlan).mockRejectedValueOnce(new Error('upstream failed')).mockResolvedValue(success)
+    render(<MantineProvider theme={theme}><I18nProvider><ProcurementConstructor /></I18nProvider></MantineProvider>)
+
+    expect(screen.queryByText('Запас покрито')).toBeNull()
+    expect(await screen.findByText('Не вдалося завантажити план закупівлі')).not.toBeNull()
+    expect(screen.queryByText('Запас покрито')).toBeNull()
+    expect(screen.getByText('Позицій до замовлення').parentElement?.textContent).toContain('—')
+    expect(screen.queryAllByLabelText('Замовити')).toHaveLength(0)
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Повторити' }))
+    expect(await screen.findByRole('button', { name: 'Термінові в кошик · 2' })).not.toBeNull()
+    expect(screen.queryByText('Не вдалося завантажити план закупівлі')).toBeNull()
+    expect(screen.getByText('Позицій до замовлення').parentElement?.textContent).toContain('2')
+  })
+
+  it('does not keep an old plan actionable after a failed refresh', async () => {
+    render(<MantineProvider theme={theme}><I18nProvider><ProcurementConstructor /></I18nProvider></MantineProvider>)
+    await screen.findByRole('button', { name: 'Термінові в кошик · 2' })
+    vi.mocked(getPurchaseCockpitWarehousePlan).mockRejectedValue(new Error('upstream failed'))
+    fireEvent.click(screen.getByRole('button', { name: 'Оновити' }))
+
+    await screen.findByText('Не вдалося завантажити план закупівлі')
+    expect(screen.queryAllByLabelText('Замовити')).toHaveLength(0)
+    expect((screen.getByRole('button', { name: 'Термінові в кошик · 0' }) as HTMLButtonElement).disabled).toBe(true)
+    expect(screen.queryByText('Запас покрито')).toBeNull()
   })
 
   it('explains when the current stock does not require replenishment', async () => {

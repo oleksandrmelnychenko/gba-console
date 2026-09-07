@@ -5,7 +5,6 @@ import {
   Card,
   Group,
   Select,
-  Stack,
   Text,
   TextInput,
   Tooltip,
@@ -51,6 +50,7 @@ export function MyOffersPanel() {
   const [search, setSearch] = useValueState('')
   const [debouncedSearch] = useDebouncedValue(search, 400)
   const [reloadKey, setReloadKey] = useState(0)
+  const [tableToolbarSlot, setTableToolbarSlot] = useState<HTMLDivElement | null>(null)
   const [pendingNetId, setPendingNetId] = useState<string | null>(null)
   const operationIdsRef = useRef(new Map<string, string>())
 
@@ -168,7 +168,7 @@ export function MyOffersPanel() {
         accessor: (offer) => offer.Number ?? '',
         cell: (offer) => (
           <Text ff="var(--font-mono)" size="sm">
-            {offer.Number ?? '—'}
+            {offer.Number ?? ''}
           </Text>
         ),
         width: 130,
@@ -177,7 +177,7 @@ export function MyOffersPanel() {
         id: 'client',
         header: t('Клієнт'),
         accessor: (offer) => offer.ClientAgreement?.Client?.FullName ?? '',
-        cell: (offer) => offer.ClientAgreement?.Client?.FullName ?? '—',
+        cell: (offer) => offer.ClientAgreement?.Client?.FullName ?? '',
         minWidth: 220,
         fill: true,
       },
@@ -186,34 +186,34 @@ export function MyOffersPanel() {
         header: t('Створено'),
         accessor: (offer) => offer.Created,
         cell: (offer) => formatDateTime(offer.Created),
-        width: 145,
+        width: 180,
       },
       {
         id: 'valid-until',
         header: t('Дійсна до'),
         accessor: (offer) => offer.ValidUntil,
         cell: (offer) => formatDate(offer.ValidUntil),
-        width: 120,
+        width: 155,
       },
       {
         id: 'positions',
         header: t('Позицій'),
         accessor: (offer) => offer.OrderItems?.length ?? 0,
         align: 'right',
-        width: 90,
+        width: 125,
       },
       {
         id: 'total',
         header: t('Сума'),
         accessor: (offer) => offer.TotalAmount,
         cell: (offer) => (
-          <>
+          <span className="app-money">
             {formatMoney(offer.TotalAmount)}{' '}
-            {offer.ClientAgreement?.Agreement?.Currency?.Code ?? 'EUR'}
-          </>
+            <span className="app-money-meta">{offer.ClientAgreement?.Agreement?.Currency?.Code ?? 'EUR'}</span>
+          </span>
         ),
         align: 'right',
-        width: 140,
+        width: 165,
       },
       {
         id: 'status',
@@ -225,14 +225,13 @@ export function MyOffersPanel() {
           const viewedAt = offer.ViewedAt ? formatDateTime(offer.ViewedAt) : null
 
           return (
-            <Tooltip
-              disabled={!viewedAt}
-              label={viewedAt ? `${t('Переглянута')} ${viewedAt}` : undefined}
+            <Badge
+              className={'app-role-pill' + (presentation.color === 'blue' ? '' : ' is-' + presentation.color)}
+              title={viewedAt ? t('Переглянута') + ' ' + viewedAt : undefined}
+              variant="light"
             >
-              <Badge color={presentation.color} variant="light">
-                {t(presentation.label)}
-              </Badge>
-            </Tooltip>
+              {t(presentation.label)}
+            </Badge>
           )
         },
         width: 130,
@@ -283,64 +282,55 @@ export function MyOffersPanel() {
   )
 
   return (
-    <Card className="app-section-card" withBorder padding="md" radius="md">
-      <Stack gap="md">
-        <Group justify="space-between" wrap="wrap">
-          <Group gap="xs">
-            <Text fw={600}>{t('Мої оферти')}</Text>
-            {!isLoading && (
-              <Text c="dimmed" size="sm">
-                {visibleOffers.length} · {t('замовлено')} {summary.ordered} · {t('переглянуто')} {summary.viewed} ·{' '}
-                {t('протерміновано')} {summary.expired}
-              </Text>
-            )}
-          </Group>
-          <Group gap="xs">
-            <Select
-              aria-label={t('Період')}
-              data={PERIOD_OPTIONS}
-              size="xs"
-              value={periodDays}
-              w={110}
-              onChange={(value) => value && setPeriodDays(value)}
-            />
-            <TextInput
-              aria-label={t('Пошук')}
-              leftSection={<Search size={14} />}
-              placeholder={t('Номер або клієнт')}
-              size="xs"
-              value={search}
-              w={220}
-              onChange={(event) => setSearch(event.currentTarget.value)}
-            />
-            <Tooltip label={t('Оновити')}>
-              <ActionIcon
-                aria-label={t('Оновити')}
-                variant="light"
-                onClick={() => setReloadKey((key) => key + 1)}
-              >
-                <RefreshCw size={16} />
-              </ActionIcon>
-            </Tooltip>
-          </Group>
-        </Group>
-
-        {error && (
-          <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
-            {error}
-          </Alert>
-        )}
-
+    <Card className="app-section-card cockpit-panel-card" withBorder padding={0} radius="md">
+      <div className="app-filter-bar cockpit-panel-bar">
+        <div className="cockpit-panel-heading">
+          <Text className="app-section-title" fw={600} size="sm">{t('Мої оферти')}</Text>
+          <Text className="cockpit-panel-meta" size="xs">
+            {isLoading ? t('Завантаження') : visibleOffers.length + ' · ' + t('замовлено') + ' ' + summary.ordered + ' · ' + t('переглянуто') + ' ' + summary.viewed + ' · ' + t('протерміновано') + ' ' + summary.expired}
+          </Text>
+        </div>
+        <Select
+          allowDeselect={false}
+          data={PERIOD_OPTIONS.map((option) => ({ ...option, label: t(option.label) }))}
+          label={t('Період')}
+          value={periodDays}
+          w={140}
+          onChange={(value) => value && setPeriodDays(value)}
+        />
+        <TextInput
+          label={t('Пошук')}
+          leftSection={<Search size={15} />}
+          placeholder={t('Номер або клієнт')}
+          value={search}
+          w={260}
+          onChange={(event) => setSearch(event.currentTarget.value)}
+        />
+        <div className="app-filter-actions">
+          <Tooltip label={t('Оновити')}>
+            <ActionIcon aria-label={t('Оновити')} loading={isLoading} size={34} variant="default" onClick={() => setReloadKey((key) => key + 1)}>
+              <RefreshCw size={17} />
+            </ActionIcon>
+          </Tooltip>
+          <div ref={setTableToolbarSlot} className="app-filter-table-toolbar-slot" />
+        </div>
+      </div>
+      {error && <Alert color="red" icon={<CircleAlert size={18} />} variant="light">{error}</Alert>}
+      <div className="cockpit-panel-table">
         <DataTable
           columns={offerColumns}
           data={visibleOffers}
-          emptyText={t('За обраний період оферт немає')}
+          emptyText={error ? t('Дані оферт недоступні') : t('За обраний період оферт немає')}
           getRowId={(offer) => String(offer.NetUid ?? offer.Id)}
+          height="100%"
           isLoading={isLoading}
-          minWidth={980}
+          layoutVersion="offers-compact-2"
+          minWidth={1180}
+          showLayoutControls
           tableId="sales-cockpit-my-offers"
+          toolbarPortalTarget={tableToolbarSlot}
         />
-      </Stack>
+      </div>
     </Card>
   )
 }
