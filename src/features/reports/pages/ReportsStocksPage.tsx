@@ -78,7 +78,6 @@ import {
 import './reports-pages.css'
 import { createSalesReportPreset, type SalesReportPresetId } from '../data/reportPresets'
 import { ReportQuickPresets } from './ReportQuickPresets'
-import { OneCTurnoverReportPanel } from './OneCTurnoverReportPanel'
 
 const STORAGE_KEY = 'app_configs_reports_template:v1'
 const LEGACY_STORAGE_KEY = 'app_configs_reports_template'
@@ -147,7 +146,6 @@ function createEmptySelection(): ReportSelection {
 export function ReportsStocksPage() {
   const { t } = useI18n()
   const { hasPermission } = useAuth()
-  const [reportSource, setReportSource] = useState('operational')
   const canGenerateReport = hasPermission(
     PermissionKeys.ReportsStocks.Report.Generate,
   )
@@ -371,10 +369,6 @@ export function ReportsStocksPage() {
 
   return (
     <Stack className="reports-stocks-page" gap={6}>
-      <Select label={t('Джерело звіту')} value={reportSource} disabled={isLoading}
-        allowDeselect={false} onChange={value => { if (value) setReportSource(value) }}
-        data={[{ value: 'operational', label: t('Операційні продажі') }, { value: 'oneC', label: t('Консолідовані дані 1С') }]} />
-      {reportSource === 'oneC' ? <OneCTurnoverReportPanel canGenerate={canGenerateReport} from={from} to={to} onFromChange={setFrom} onToChange={setTo} onLoadingChange={setLoading} /> : <>
       <ReportQuickPresets disabled={isLoading} onApply={applyPreset} />
       <ReportBuilderForm
         canSubmit={canSubmit}
@@ -430,7 +424,6 @@ export function ReportsStocksPage() {
         title={lastRun?.name || t('Звіт продажів')}
         onClose={() => setDownloadModalOpened(false)}
       />
-      </>}
     </Stack>
   )
 }

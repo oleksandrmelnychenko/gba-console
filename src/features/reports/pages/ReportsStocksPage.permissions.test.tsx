@@ -37,6 +37,14 @@ describe('stock report permissions', () => {
     localStorage.clear()
   })
 
+  it('offers native reports only, without mounting the archived source-register panel', () => {
+    render(<Providers><ReportsStocksPage /></Providers>)
+    expect(screen.queryByRole('combobox', { name: 'Джерело звіту' })).toBeNull()
+    expect(screen.queryByText('Консолідовані дані 1С')).toBeNull()
+    expect(screen.getByRole('button', { name: 'Продажі за товарами' })).toBeTruthy()
+    expect(createStockReport).not.toHaveBeenCalled()
+  })
+
   it('fails closed at submit when generate permission is absent', () => {
     const { container } = render(
       <Providers>
