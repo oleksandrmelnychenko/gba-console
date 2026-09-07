@@ -22,7 +22,7 @@ import { CheckboxMultiSelect } from '../../../shared/ui/CheckboxMultiSelect'
 import { CircleAlert, LayoutTemplate, Plus, RefreshCw, RotateCcw, Save, Trash2 } from 'lucide-react'
 import { IconFileSpreadsheet } from '@tabler/icons-react'
 import { TableRowAction } from '../../../shared/ui/table-row-action/TableRowAction'
-import { type FormEvent, lazy, Suspense, useEffect, useMemo, useState } from 'react'
+import { type FormEvent, useEffect, useMemo, useState } from 'react'
 import { ApiError } from '../../../shared/api/apiClient'
 import { formatKyivBusinessDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
@@ -83,7 +83,7 @@ import { ReportQuickPresets } from './ReportQuickPresets'
 
 import { useServerReportTemplates } from '../hooks/useServerReportTemplates'
 
-const ReportCataloguePanel = lazy(() => import('./ReportCataloguePanel').then(module => ({ default: module.ReportCataloguePanel })))
+import { ReportCatalogueControl } from './ReportCatalogueControl'
 const LOOKUP_SEARCH_DEBOUNCE_MS = 300
 const LOOKUP_SEARCH_LIMIT = 30
 const DATE_INPUT_DEBOUNCE_MS = 400
@@ -172,7 +172,6 @@ function ReportsStocksWorkspace() {
   const [templateName, setTemplateName] = useValueState('')
   const templateStorage = useServerReportTemplates(canGenerateReport)
   const templates = templateStorage.templates
-  const [catalogueOpened, setCatalogueOpened] = useState(false)
   const [templateNotice, setTemplateNotice] = useValueState<string | null>(null)
   const groupingOptions = useMemo(() => flattenGroupingOptions(), [])
   const groupingSelectData = useMemo(
@@ -359,12 +358,7 @@ function ReportsStocksWorkspace() {
 
   return (
     <Stack className="reports-stocks-page" gap={6}>
-      <Group>
-        <Button variant="subtle" disabled={!canGenerateReport} onClick={() => setCatalogueOpened(opened => !opened)}>
-          {catalogueOpened ? t('Сховати каталог звітів 1С') : t('Каталог усіх звітів 1С')}
-        </Button>
-      </Group>
-      {catalogueOpened && <Suspense fallback={<Loader size="sm" />}><ReportCataloguePanel /></Suspense>}
+      <ReportCatalogueControl enabled={canGenerateReport} />
       <ReportBuilderForm
         onApplyPreset={applyPreset}
         canSubmit={canSubmit}
