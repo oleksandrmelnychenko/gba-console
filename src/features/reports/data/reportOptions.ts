@@ -50,6 +50,11 @@ export const REPORT_FILTER_FIELD_TYPES = {
   warehouse: 21,
   stockConsignmentItem: 22,
   stockOrganization: 23,
+  supplierReturnDocument: 24,
+  debtCurrency: 25,
+  debtDocument: 26,
+  supplierReturnMode: 27,
+  documentOrganization: 28,
 } as const
 
 const REPORT_GROUPING_TYPES = {
@@ -278,6 +283,8 @@ const REPORT_FIELD_LABELS: Record<string, string> = {
   StockOrganization: 'Організація партії',
   StockLotRemainingQuantity: 'Записаний залишок партії',
   StockAgreementValueEur: 'Оцінка за договором, EUR',
+  SupplierReturnedQuantity: 'Записана кількість повернення',
+  CurrentDebtAmount: 'Записана заборгованість',
   ProductTop: 'Топ товару',
   Profitability: 'Рентабельність',
   ProfitabilityPercentWithVAT: 'Рентабельність з ПДВ, %',

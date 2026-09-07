@@ -1,6 +1,6 @@
 import { apiRequest } from '../../../shared/api/apiClient'
 import type { ReportCatalogue, ReportDataset, ReportDatasetField, ReportRequestBody, ReportTemplate } from '../types'
-import { isCurrentStockSource } from '../data/currentStockReports'
+import { isCurrentReportSource } from '../data/nativeReportProfiles'
 
 function isDatasetField(value: unknown): value is ReportDatasetField {
   if (!value || typeof value !== 'object') return false
@@ -19,7 +19,7 @@ function isDataset(value: unknown): value is ReportDataset {
     && (item.PeriodRequired === undefined || typeof item.PeriodRequired === 'boolean')
     && (item.PeriodSupported === undefined || typeof item.PeriodSupported === 'boolean')
     && !(item.PeriodSupported === false && item.PeriodRequired === true)
-    && (!isCurrentStockSource(item.DataSource) || item.PeriodSupported === false)
+    && (!isCurrentReportSource(item.DataSource) || item.PeriodSupported === false)
     && Array.isArray(item.Limitations) && item.Limitations.every(text => typeof text === 'string')
 }
 

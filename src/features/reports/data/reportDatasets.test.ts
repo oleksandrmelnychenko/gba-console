@@ -114,6 +114,7 @@ describe('report dataset capabilities', () => {
 
   it('offers agreement presets only when every grouping and measure is supported', () => {
     expect(datasetPresets(netDataset).map(item => item.id)).toEqual(['quantities-by-unit', 'agreements', 'agreement-products', 'daily'])
+    expect(datasetPresets({ ...netDataset, PeriodRequired: true }).map(item => item.id)).toEqual(['quantities-by-unit', 'agreements', 'agreement-products', 'daily'])
     expect(datasetPresets(purchaseDataset).map(item => item.id)).toEqual(['quantities-by-unit'])
   })
 

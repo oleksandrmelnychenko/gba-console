@@ -79,7 +79,7 @@ import {
 import './reports-pages.css'
 import { datasetConfigurationError, datasetFilters, datasetGroupings, datasetMeasurements, datasetPresetRequest, datasetPresets, defaultDatasetRequest, type DatasetReportPresetId } from '../data/reportDatasets'
 import { useReportDatasets } from '../hooks/useReportDatasets'
-import { isCurrentStockSource } from '../data/currentStockReports'
+import { isCurrentReportSource, usesNativeReportLookup } from '../data/nativeReportProfiles'
 import { VALUATION_DATA_SOURCE } from '../data/reportValuation'
 import { useValuationAgreement } from '../hooks/useValuationAgreement'
 import { ValuationAgreementPicker } from './ValuationAgreementPicker'
@@ -259,7 +259,7 @@ function ReportsStocksWorkspace() {
           : incompleteSelectionMessage
   const emptyRunNotice =
     lastRun && !lastRun.hasDocument
-      ? !lastRun.periodSupported ? t('Сервер не повернув файл поточних залишків. Спробуйте послабити умови відбору.')
+      ? !lastRun.periodSupported ? t(dataSource === 10 ? 'Сервер не повернув файл поточної заборгованості. Спробуйте послабити умови відбору.' : 'Сервер не повернув файл поточних залишків. Спробуйте послабити умови відбору.')
       : t('За період {from} – {to} сервер не повернув файл звіту. Спробуйте інший період або послабте умови відбору.', {
           from: formatDate(lastRun.from),
           to: formatDate(lastRun.to),
@@ -1284,7 +1284,7 @@ function ReportTemplatesCard({
                 <span className="reports-stocks-template-open__content">
                   <span className="reports-stocks-template-open__name">{template.Name}</span>
                   <span className="reports-stocks-template-open__period">
-                    {isCurrentStockSource(template.Data.dataSource) && !template.Data.from && !template.Data.to
+                    {isCurrentReportSource(template.Data.dataSource) && !template.Data.from && !template.Data.to
                       ? t('Поточний стан') : `${formatDate(template.Data.from)}–${formatDate(template.Data.to)}`}
                   </span>
                 </span>
@@ -1493,11 +1493,11 @@ function SelectionValuePicker({ dataSource, error, from, label, selection, selec
   const [docSelfSales, setDocSelfSales] = useValueState(false)
   const [organizationOptions, setOrganizationOptions] = useValueState<ReportEntity[]>([])
   const [debouncedSearch] = useDebouncedValue(search, LOOKUP_SEARCH_DEBOUNCE_MS)
-  const currentStock = isCurrentStockSource(dataSource)
+  const nativeLookup = usesNativeReportLookup(dataSource)
   // Current reservations resolve exact ClientAgreement identities from their own
   // facts; the sales-only dependent customer-agreement picker must not run here.
-  const lookupMode = currentStock ? 'search' : getSelectionLookupMode(selection.SelectedField.Type)
-  const isSaleDocumentFilter = !currentStock && PERIOD_SCOPED_FILTER_FIELD_TYPES.has(selection.SelectedField.Type)
+  const lookupMode = nativeLookup ? 'search' : getSelectionLookupMode(selection.SelectedField.Type)
+  const isSaleDocumentFilter = !nativeLookup && PERIOD_SCOPED_FILTER_FIELD_TYPES.has(selection.SelectedField.Type)
   const saleDocumentFilters = useMemo(
     () => ({
       organisationIds: docOrganisationIds.map((id) => Number(id)),
@@ -1516,7 +1516,7 @@ function SelectionValuePicker({ dataSource, error, from, label, selection, selec
     [organizationOptions],
   )
   const normalizedSearch = lookupMode === 'search' ? debouncedSearch.trim() : ''
-  const minSearchLength = currentStock ? 0 : getSelectionLookupMinLength(selection.SelectedField.Type)
+  const minSearchLength = nativeLookup ? 0 : getSelectionLookupMinLength(selection.SelectedField.Type)
   const needsPeriod = isSaleDocumentFilter
   const dependentClientNetId = lookupMode === 'dependent' ? getDependentClientNetId(selections) : ''
   const selectOptions = useMemo(
@@ -2068,7 +2068,7 @@ async function loadSelectionLookupOptions(
   signal?: AbortSignal,
   saleDocumentFilters?: SaleDocumentLookupFilters,
 ): Promise<ReportEntity[]> {
-  if (isCurrentStockSource(dataSource)) {
+  if (usesNativeReportLookup(dataSource)) {
     return searchDatasetReportValues(dataSource, fieldType, { limit: LOOKUP_SEARCH_LIMIT, offset: 0, value }, signal)
   }
   switch (fieldType) {

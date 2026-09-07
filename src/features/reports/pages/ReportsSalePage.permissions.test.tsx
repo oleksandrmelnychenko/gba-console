@@ -7,6 +7,7 @@ import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { I18nProvider } from '../../../shared/i18n/I18nProvider'
 import { downloadTextFile } from '../utils'
 import { ReportsSalePage } from './ReportsSalePage'
+import { debtHeaderLines, debtWorkbookRows, supplierReturnHeaderLines, supplierReturnWorkbookRows } from '../data/documentSpreadsheet.test-fixtures'
 import { valuationWorkbookRows, valuationHeaderLines } from '../data/valuationSpreadsheet.test-fixtures'
 import { stockWorkbookRows, placementWorkbookRows, reservationWorkbookRows, lotWorkbookRows } from '../data/stockSpreadsheet.test-fixtures'
 import { buildSpreadsheetSheet, detectDelimiter, parseDelimitedText } from '../spreadsheet'
@@ -202,4 +203,24 @@ it('imports actual valuation XLSX and preserves quantity8/money2/blank context i
   expect(imported.header?.lines).toEqual(valuationHeaderLines)
   expect(imported.rows.find(row => row.kind === 'total')?.cells.slice(2)).toEqual(['', ''])
   expect(imported.rows.filter(row => row.kind === 'data').map(row => row.cells.slice(2))).toEqual([[0, 0], [0.00000001, ''], [2.12345678, 12.35]])
+})
+
+
+it.each([
+  {source:9,rows:supplierReturnWorkbookRows,lines:supplierReturnHeaderLines,period:true,knownText:'0,00000001',values:[0,1e-8,'']},
+  {source:10,rows:debtWorkbookRows,lines:debtHeaderLines,period:false,knownText:'0,00000000000001',values:[0,0.12345678901234,1e-14,'']},
+])('imports source$source actual XLSX and exports exact document identities, monetary/quantity precision and unknown totals',async({source,rows,lines,period,knownText,values})=>{
+  vi.clearAllMocks();allowedPermissions.clear();allowedPermissions.add(PermissionKeys.ReportsSaleFile.Page.View);allowedPermissions.add(PermissionKeys.ReportsSaleFile.Document.Export)
+  const XLSX=await import('xlsx');const workbook=XLSX.utils.book_new();const sheet=XLSX.utils.aoa_to_sheet(rows)
+  sheet['!merges']=Array.from({length:lines.length},(_,r)=>({s:{r,c:0},e:{r,c:3}}));XLSX.utils.book_append_sheet(workbook,sheet,'Report')
+  const bytes=XLSX.write(workbook,{bookType:'xlsx',type:'array'}) as ArrayBuffer;const {container}=renderPage()
+  fireEvent.change(screen.getByLabelText('Завантажити файл'),{target:{files:[new File([bytes],`native-${source}.xlsx`,{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'})]}})
+  await screen.findByText(lines[0]);expect(screen.queryByLabelText('Від')!==null).toBe(period)
+  expect(container.querySelector('.reports-sale-table')?.textContent).toContain(knownText)
+  const first=container.querySelector('.reports-sale-table tr.data-table-row')?.querySelectorAll('td.data-table-cell')[3]
+  expect(first?.textContent).toBe(source===10?'0,00':'0')
+  fireEvent.click(screen.getByLabelText('Експорт CSV'));const csv=vi.mocked(downloadTextFile).mock.calls[0][1]
+  const imported=buildSpreadsheetSheet('native.csv',parseDelimitedText(csv,detectDelimiter(csv)),'flat')
+  expect(imported.header?.lines).toEqual(lines);expect(imported.rows.find(row=>row.kind==='total')?.cells[3]).toBe('')
+  expect(imported.rows.filter(row=>row.kind==='data').map(row=>row.cells[3])).toEqual(values)
 })

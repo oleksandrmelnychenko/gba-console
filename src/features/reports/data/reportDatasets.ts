@@ -2,9 +2,9 @@ import type { ReportDataset, ReportFilterField, ReportGroupingItem, ReportMeasur
 import { createDefaultMeasurementGroups, flattenCheckedMeasurements, flattenGroupingOptions, REPORT_FILTER_CONDITIONS, REPORT_FILTER_FIELD_GROUPS } from './reportOptions'
 import { createSalesReportPreset, SALES_REPORT_PRESETS, type SalesReportPresetId } from './reportPresets'
 import { valuationConfigurationError, VALUATION_DATA_SOURCE } from './reportValuation'
-import { getCurrentStockReport, isCurrentStockPresetId, type CurrentStockPresetId } from './currentStockReports'
+import { getNativeReportProfile, isNativeReportPresetId, type NativeReportPresetId } from './nativeReportProfiles'
 
-export type DatasetReportPresetId = SalesReportPresetId | 'quantities-by-unit' | CurrentStockPresetId
+export type DatasetReportPresetId = SalesReportPresetId | 'quantities-by-unit' | NativeReportPresetId
 type DatasetReportPreset = { id: DatasetReportPresetId; name: string; description: string }
 const QUANTITY_BY_UNIT_PRESET: DatasetReportPreset = {
   id: 'quantities-by-unit', name: 'Кількість за одиницями',
@@ -23,6 +23,11 @@ GROUPING_KEYS.set(31, 'StockRowNumber')
 GROUPING_KEYS.set(32, 'StockCellNumber')
 GROUPING_KEYS.set(33, 'StockConsignmentItem')
 GROUPING_KEYS.set(34, 'StockOrganization')
+GROUPING_KEYS.set(35, 'SupplierReturnDocument')
+GROUPING_KEYS.set(36, 'DebtCurrency')
+GROUPING_KEYS.set(37, 'DebtDocument')
+GROUPING_KEYS.set(38, 'SupplierReturnMode')
+GROUPING_KEYS.set(39, 'DocumentOrganization')
 
 const FILTER_KEYS = new Map(REPORT_FILTER_FIELD_GROUPS.flatMap(group => group.children.map(item => [item.type, item.label] as const)))
 FILTER_KEYS.set(1, 'Product')
@@ -34,6 +39,11 @@ FILTER_KEYS.set(19, 'PurchaseDocument')
 FILTER_KEYS.set(21, 'Warehouse')
 FILTER_KEYS.set(22, 'StockConsignmentItem')
 FILTER_KEYS.set(23, 'StockOrganization')
+FILTER_KEYS.set(24, 'SupplierReturnDocument')
+FILTER_KEYS.set(25, 'DebtCurrency')
+FILTER_KEYS.set(26, 'DebtDocument')
+FILTER_KEYS.set(27, 'SupplierReturnMode')
+FILTER_KEYS.set(28, 'DocumentOrganization')
 
 export function datasetGroupings(dataset: ReportDataset | undefined): ReportGroupingItem[] {
   return dataset?.Groupings.map(field => ({ key: GROUPING_KEYS.get(field.Type) ?? field.Name, label: field.Name, type: field.Type })) ?? []
@@ -76,15 +86,15 @@ export function defaultDatasetRequest(dataset: ReportDataset, from: string, to: 
   const groupings = datasetGroupings(dataset)
   const row = groupings.find(item => item.type === 3) ?? groupings[0]
   const unit = groupings.find(item => item.type === 28)
-  const stock = getCurrentStockReport(dataset.DataSource)
+  const profile = getNativeReportProfile(dataset.DataSource)
   const available = dataset.Measurements.filter(field => field.Selectable !== false)
-  const preferred = available.filter(field => stock ? stock.measurements.some(type => type === field.Type)
+  const preferred = available.filter(field => profile ? profile.measurements.some(type => type === field.Type)
     : field.Type === 0 || field.Type === (dataset.DataSource === 3 ? 2 : 4))
   const fields = preferred.length ? preferred : available.slice(0, 1)
   const selected = fields.map(field => ({ ...field, IsChecked: true, parentName: '' }))
   return { dataSource: dataset.DataSource, from: dataset.PeriodSupported === false ? '' : from,
     to: dataset.PeriodSupported === false ? '' : to, selections: [], sorted: {
-    Row: (stock ? stock.rowGroupings.map(type => groupings.find(item => item.type === type)) : [unit, row])
+    Row: (profile ? profile.rowGroupings.map(type => groupings.find(item => item.type === type)) : [unit, row])
       .filter((item, index, items): item is ReportGroupingItem => Boolean(item) && items.indexOf(item) === index),
     Col: [], Measurements: flattenCheckedMeasurements(datasetMeasurements(dataset, selected)),
   } }
@@ -95,8 +105,10 @@ export function datasetConfigurationError(data: ReportRequestBody, dataset: Repo
   if (data.dataSource === 1 || data.oneC) return 'Шаблон використовує архівне джерело 1С, яке більше не доступне. Налаштування не застосовано.'
   if (!dataset || (data.dataSource ?? 0) !== dataset.DataSource) return 'Набір даних цього звіту недоступний. Налаштування не застосовано.'
   if (dataset.PeriodSupported === false && (data.from || data.to)) {
+    if (dataset.DataSource === 10) return 'Поточна заборгованість не підтримує період або історичну дату. Шаблон із датами не застосовано; виберіть набір поточного стану заново.'
     return 'Поточні залишки не підтримують період або історичну дату. Шаблон із датами не застосовано; виберіть набір поточного стану заново.'
   }
+  if (dataset.PeriodRequired && (!data.from || !data.to)) return 'Для цього набору даних потрібні обидві дати періоду. Налаштування не застосовано.'
   const valuationError = valuationConfigurationError(data)
   if (valuationError) return valuationError
   if (!data.sorted || !Array.isArray(data.sorted.Row) || !Array.isArray(data.sorted.Col) || !Array.isArray(data.sorted.Measurements) || !Array.isArray(data.selections)) {
@@ -117,11 +129,11 @@ export function datasetConfigurationError(data: ReportRequestBody, dataset: Repo
 
 export function datasetPresets(dataset: ReportDataset | undefined): DatasetReportPreset[] {
   if (!dataset) return []
-  const stock = getCurrentStockReport(dataset.DataSource)
-  if (stock) {
-    return stock.rowGroupings.every(type => dataset.Groupings.some(field => field.Type === type))
-      && stock.measurements.every(type => dataset.Measurements.some(field => field.Type === type && field.Selectable !== false))
-      ? [stock.preset] : []
+  const profile = getNativeReportProfile(dataset.DataSource)
+  if (profile) {
+    return profile.rowGroupings.every(type => dataset.Groupings.some(field => field.Type === type))
+      && profile.measurements.every(type => dataset.Measurements.some(field => field.Type === type && field.Selectable !== false))
+      ? [profile.preset] : []
   }
   if (![0, 2, 3].includes(dataset.DataSource)) return []
   const presets: DatasetReportPreset[] = []
@@ -132,7 +144,8 @@ export function datasetPresets(dataset: ReportDataset | undefined): DatasetRepor
   if (dataset.DataSource === 3) return presets
   return [...presets, ...SALES_REPORT_PRESETS.flatMap(preset => {
     const data = createSalesReportPreset(preset.id, '', '', []).Data
-    if (datasetConfigurationError({ ...data, dataSource: dataset.DataSource }, dataset)) return []
+    // Preset availability checks fields; the selected period is validated when applied.
+    if (datasetConfigurationError({ ...data, dataSource: dataset.DataSource }, { ...dataset, PeriodRequired: false })) return []
     return [{ ...preset,
       name: dataset.DataSource === 2 ? preset.name.replace('Продажі', 'Чисті продажі') : preset.name,
       description: dataset.DataSource === 2 ? `${preset.description} Повернення віднімаються за правилами цього набору даних.` : preset.description,
@@ -143,8 +156,8 @@ export function datasetPresets(dataset: ReportDataset | undefined): DatasetRepor
 export function datasetPresetRequest(dataset: ReportDataset, id: DatasetReportPresetId, current: ReportRequestBody) {
   const preset = datasetPresets(dataset).find(item => item.id === id)
   if (!preset) return null
-  if (isCurrentStockPresetId(id)) {
-    return { Name: preset.name, Data: { ...defaultDatasetRequest(dataset, '', ''), selections: structuredClone(current.selections),
+  if (isNativeReportPresetId(id)) {
+    return { Name: preset.name, Data: { ...defaultDatasetRequest(dataset, current.from, current.to), selections: structuredClone(current.selections),
       ...(dataset.DataSource === VALUATION_DATA_SOURCE && current.valuationClientAgreementId != null
         ? { valuationClientAgreementId: current.valuationClientAgreementId } : {}),
     } }

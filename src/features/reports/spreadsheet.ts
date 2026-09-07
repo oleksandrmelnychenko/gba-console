@@ -8,6 +8,7 @@ import type {
 import { parseNumericValue } from './utils'
 import { VALUATION_REQUIRED_METADATA_PREFIXES, VALUATION_MONEY_CAPTION } from './data/reportValuation'
 import { CURRENT_STOCK_REPORT_TITLES, getCurrentStockReport } from './data/currentStockReports'
+import { CURRENT_REPORT_TITLES, SUPPLIER_RETURN_REPORT_TITLE, SUPPLIER_RETURN_QUANTITY_CAPTION, DEBT_REPORT_TITLE, DEBT_AMOUNT_CAPTION } from './data/nativeReportProfiles'
 
 // The file «Перегляд звіту з файла» exists for is the one our own report engine writes
 // (ProductPlacementStorageManager.ExportVerificationReportsToXlsx): the header is as many rows deep as the
@@ -21,21 +22,31 @@ const HEADER_LEVEL_SEPARATOR = ' · '
 // The first line of the engine's attribution block, and the only thing that identifies the block as one.
 const STOCK_STATE_LINE = 'Поточний стан: знімок операційних записів GBA'
 const STOCK_READ_TIME_LINE = /^Час читання \(UTC\): \d{2}\.\d{2}\.\d{4} \d{2}:\d{2}:\d{2}\.\d{3} – \d{2}\.\d{2}\.\d{4} \d{2}:\d{2}:\d{2}\.\d{3}$/
-const REPORT_TITLES = new Set(['Звіт продажів', 'Звіт продажів і повернень', 'Звіт надходжень', ...CURRENT_STOCK_REPORT_TITLES])
+const SUPPLIER_RETURN_PERIOD_LINE = /^Період: \d{2}\.\d{2}\.\d{4} – \d{2}\.\d{2}\.\d{4}$/
+const REPORT_TITLES = new Set(['Звіт продажів', 'Звіт продажів і повернень', 'Звіт надходжень', SUPPLIER_RETURN_REPORT_TITLE, ...CURRENT_REPORT_TITLES])
 export const stockQuantityFormatter = new Intl.NumberFormat('uk-UA', { maximumFractionDigits: 8 })
 const stockCsvQuantityFormatter = new Intl.NumberFormat('en-US', { useGrouping: false, maximumFractionDigits: 8 })
 export const valuationMoneyFormatter = new Intl.NumberFormat('uk-UA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 const valuationCsvMoneyFormatter = new Intl.NumberFormat('en-US', { useGrouping: false, minimumFractionDigits: 2, maximumFractionDigits: 2 })
+export const debtAmountFormatter = new Intl.NumberFormat('uk-UA', { minimumFractionDigits: 2, maximumFractionDigits: 14 })
+const debtCsvAmountFormatter = new Intl.NumberFormat('en-US', { useGrouping: false, minimumFractionDigits: 2, maximumFractionDigits: 14 })
 const VALUATION_REPORT_TITLE = getCurrentStockReport(8)!.title
 
 export function isCurrentStockSheet(sheet: SpreadsheetSheet | null): boolean {
   return CURRENT_STOCK_REPORT_TITLES.has(sheet?.header?.lines[0] ?? '')
 }
+export function isCurrentReportSheet(sheet: SpreadsheetSheet | null): boolean {
+  return CURRENT_REPORT_TITLES.has(sheet?.header?.lines[0] ?? '')
+}
+
 /** Only declared measure columns receive quantity/money formatting; numeric group identities remain axes. */
 export function getSpreadsheetNumberFormatter(sheet: SpreadsheetSheet | null, columnIndex: number, csv = false): Intl.NumberFormat | undefined {
-  if (!isCurrentStockSheet(sheet) || !sheet?.header || columnIndex < sheet.header.rowGroupings.length) return undefined
-  if (sheet.header.lines[0] === VALUATION_REPORT_TITLE) {
-    const caption = sheet.columns[columnIndex]?.split(HEADER_LEVEL_SEPARATOR).at(-1)
+  if (!sheet?.header || columnIndex < sheet.header.rowGroupings.length) return undefined
+  const title = sheet.header.lines[0], caption = sheet.columns[columnIndex]?.split(HEADER_LEVEL_SEPARATOR).at(-1)
+  if (title === DEBT_REPORT_TITLE) return caption === DEBT_AMOUNT_CAPTION ? (csv ? debtCsvAmountFormatter : debtAmountFormatter) : undefined
+  if (title === SUPPLIER_RETURN_REPORT_TITLE) return caption === SUPPLIER_RETURN_QUANTITY_CAPTION ? (csv ? stockCsvQuantityFormatter : stockQuantityFormatter) : undefined
+  if (!isCurrentStockSheet(sheet)) return undefined
+  if (title === VALUATION_REPORT_TITLE) {
     if (caption === VALUATION_MONEY_CAPTION) return csv ? valuationCsvMoneyFormatter : valuationMoneyFormatter
     if (caption !== 'Фізичний залишок') return undefined
   }
@@ -119,10 +130,10 @@ export function buildSheetExportRows(
   // String(0.00000001) uses exponent notation, which the deliberately strict CSV
   // parser treats as text. Emit stock's eight-decimal contract explicitly, keeping
   // arbitrary text IDs and non-stock CSV parsing unchanged.
-  return isCurrentStockSheet(sheet) ? exportRows.map(row => row.map((cell, columnIndex) => {
+  return exportRows.map(row => row.map((cell, columnIndex) => {
     const formatter = getSpreadsheetNumberFormatter(sheet, columnIndex, true)
     return typeof cell === 'number' && Number.isFinite(cell) && formatter ? formatter.format(cell) : cell
-  })) : exportRows
+  }))
 }
 
 export function filterSheetRows(
@@ -137,8 +148,8 @@ export function filterSheetRows(
 
   const normalizedSearch = searchValue.trim().toLowerCase()
   // A snapshot has no historical date axis, including after switching viewer tabs.
-  const from = isCurrentStockSheet(sheet) ? '' : dateFrom
-  const to = isCurrentStockSheet(sheet) ? '' : dateTo
+  const from = isCurrentReportSheet(sheet) ? '' : dateFrom
+  const to = isCurrentReportSheet(sheet) ? '' : dateTo
 
   if (!normalizedSearch && !from && !to) {
     return sheet.rows
@@ -271,8 +282,10 @@ function readReportHeader(
     || !lines.some(line => line.startsWith(COLUMN_GROUPINGS_PREFIX))) {
     return null
   }
-  if (CURRENT_STOCK_REPORT_TITLES.has(lines[0]) && (!lines.includes(STOCK_STATE_LINE)
+  if (CURRENT_REPORT_TITLES.has(lines[0]) && (!lines.includes(STOCK_STATE_LINE)
     || !lines.some(line => STOCK_READ_TIME_LINE.test(line)) || lines.some(line => line.startsWith('Період:')))) return null
+
+  if (lines[0] === SUPPLIER_RETURN_REPORT_TITLE && !lines.some(line => SUPPLIER_RETURN_PERIOD_LINE.test(line))) return null
 
   if (lines[0] === VALUATION_REPORT_TITLE && !VALUATION_REQUIRED_METADATA_PREFIXES.every(prefix => lines.some(line => valuationMetadataText(line).startsWith(prefix)))) return null
 
@@ -309,7 +322,8 @@ function valuationMetadataText(line: string): string {
 
 function isWarningLine(line: string): boolean {
   return line.startsWith(IGNORED_FILTERS_PREFIX) || line.includes(NO_DATA_MARKER) || line === NO_ROWS_LINE
-    || valuationMetadataText(line).startsWith('Покриття оцінки:') || valuationMetadataText(line).startsWith('Причини невизначеної оцінки:')
+    || ['Покриття оцінки:', 'Причини невизначеної оцінки:', 'Покриття заборгованості:', 'Причини невизначеної заборгованості:', 'Складські рухи повернень:', 'Точність кількості:']
+      .some(prefix => valuationMetadataText(line).startsWith(prefix))
 }
 
 // How deep the table's own header is, from two independent readings of the block that have to agree.

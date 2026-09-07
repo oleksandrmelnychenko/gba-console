@@ -34,7 +34,7 @@ import {
   filterSheetRows,
   getAdditiveColumns,
   isFilledCell,
-  isCurrentStockSheet,
+  isCurrentReportSheet,
   getSpreadsheetNumberFormatter,
   normalizeImportedCellValue,
   parseDelimitedText,
@@ -79,7 +79,7 @@ function ReportsSalePageContent() {
   const { density, toggleDensity } = useDataTableDensity('reports-sale-spreadsheet', 'normal')
   const [debouncedSearch] = useDebouncedValue(search, SEARCH_DEBOUNCE_MS)
   const activeSheet = sheets.find((sheet) => sheet.name === activeSheetName) || sheets[0] || null
-  const currentStock = isCurrentStockSheet(activeSheet)
+  const currentStock = isCurrentReportSheet(activeSheet)
   const visibleRows = useMemo(
     () => filterSheetRows(activeSheet, debouncedSearch, dateFrom, dateTo),
     [activeSheet, dateFrom, dateTo, debouncedSearch],

@@ -72,3 +72,27 @@ export const valuationDataset: ReportDataset = {
   Measurements: [{ Type: 17, Name: 'Фізичний залишок' }, { Type: 21, Name: 'Оцінка за договором, EUR' }],
   Limitations: ['Оцінка за регулярною ціною EUR та режимом ПДВ обраного договору. Невизначені ціни залишають суму порожньою.'],
 }
+
+export const supplierReturnDataset: ReportDataset = {
+  DataSource: 9, Name: 'Документи повернень постачальникам', Description: 'Записані документи повернень постачальникам.',
+  PeriodSupported: true, PeriodRequired: true,
+  Groupings: [...subset(grossDataset.Groupings, [0,1,2,3,5,6,7,8,21,28]),
+    {Type:25,Name:'Договір постачальника'}, {Type:29,Name:'Склад'}, {Type:35,Name:'Документ повернення постачальнику'},
+    {Type:38,Name:'Тип повернення'}, {Type:39,Name:'Організація документа'}],
+  Measurements: [{Type:22,Name:'Записана кількість повернення'}],
+  Filters: [{Type:1,Name:'Товар'}, {Type:2,Name:'Артикул'}, {Type:17,Name:'Постачальник'}, {Type:18,Name:'Договір постачальника'},
+    {Type:20,Name:'Одиниця виміру'}, {Type:21,Name:'Склад'}, {Type:24,Name:'Документ повернення постачальнику'},
+    {Type:27,Name:'Тип повернення'}, {Type:28,Name:'Організація документа'}],
+  Limitations: ['Записана кількість не доводить повноти складського руху.'],
+}
+export const currentDebtDataset: ReportDataset = {
+  DataSource: 10, Name: 'Поточна заборгованість', Description: 'Поточні записи боргу в підтверджених валютах.',
+  PeriodSupported: false, PeriodRequired: false,
+  Groupings: [{Type:12,Name:'Клієнт'}, {Type:15,Name:'Договір клієнта'}, {Type:36,Name:'Валюта боргу'},
+    {Type:37,Name:'Запис боргу'}, {Type:39,Name:'Організація документа'}],
+  Measurements: [{Type:23,Name:'Записана заборгованість'}],
+  Filters: [{Type:6,Name:'Клієнт'}, {Type:9,Name:'Договір клієнта'}, {Type:25,Name:'Валюта боргу'},
+    {Type:26,Name:'Запис боргу'}, {Type:28,Name:'Організація документа'}],
+  Limitations: ['Різні або непідтверджені валюти залишають грошовий підсумок порожнім.'],
+}
+export const nativeDocumentDatasets = [supplierReturnDataset, currentDebtDataset]

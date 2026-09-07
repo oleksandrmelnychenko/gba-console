@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest'
 import { apiRequest } from '../../../shared/api/apiClient'
 import { getReportDatasets, getServerReportTemplates, saveServerReportTemplate } from './reportWorkspaceApi'
 import { createSalesReportPreset } from '../data/reportPresets'
-import { reportDatasets, stockDataset, currentStockDatasets, valuationDataset } from '../data/reportDatasets.test-fixtures'
+import { reportDatasets, stockDataset, currentStockDatasets, valuationDataset, nativeDocumentDatasets, currentDebtDataset } from '../data/reportDatasets.test-fixtures'
 import { defaultDatasetRequest } from '../data/reportDatasets'
 
 vi.mock('../../../shared/api/apiClient', () => ({ apiRequest: vi.fn() }))
@@ -23,6 +23,8 @@ describe('report workspace wire contract', () => {
     [{ ...reportDatasets[0], Measurements: [{ Type: 0, Name: 'Кількість', Selectable: 'false' }] }],
     [{ ...stockDataset, PeriodSupported: 'false' }],
     [{ ...stockDataset, PeriodRequired: true }],
+    [{ ...currentDebtDataset, PeriodSupported: true }],
+    [{ ...currentDebtDataset, PeriodSupported: undefined }],
   ].map(value => ({ value })))('rejects malformed or retired dataset catalogues %#', async ({ value }) => {
     vi.mocked(apiRequest).mockResolvedValue(value)
     await expect(getReportDatasets()).rejects.toThrow('некоректний список наборів даних')
@@ -76,4 +78,14 @@ describe('report workspace wire contract', () => {
       Id: wire.Id, Revision: 2, Name: wire.Name, Data: template.Data,
     } })
   })
+  it.each(nativeDocumentDatasets)('preserves source $DataSource capability, exact filters and dates through template wire save/load',async dataset=>{
+    vi.mocked(apiRequest).mockResolvedValue([dataset]);await expect(getReportDatasets()).resolves.toEqual([dataset])
+    const data=defaultDatasetRequest(dataset,'2026-06-01','2026-06-30')
+    data.selections=[{IsChecked:true,SelectedField:{Name:dataset.DataSource===9?'SupplierReturnDocument':'CustomerContract',Type:dataset.DataSource===9?24:9},FilterCondition:{Name:'Дорівнює',Type:0},Values:[{Data:{Id:42},Name:'42',Value:42}]}]
+    const wire={Id:crypto.randomUUID(),Revision:1,Name:'Мій документний звіт',Data:{DataSource:dataset.DataSource,From:data.from||null,To:data.to||null,Sorted:data.sorted,Selections:data.selections}}
+    vi.mocked(apiRequest).mockResolvedValue([wire]);const [template]=await getServerReportTemplates();expect(template.Data).toEqual(data)
+    vi.mocked(apiRequest).mockResolvedValue({...wire,Revision:2});await saveServerReportTemplate(template)
+    expect(apiRequest).toHaveBeenLastCalledWith('/report/templates/save',{method:'POST',body:{Id:wire.Id,Revision:1,Name:wire.Name,Data:data}})
+  })
+
 })
