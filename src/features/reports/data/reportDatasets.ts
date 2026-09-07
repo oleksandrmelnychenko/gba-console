@@ -28,6 +28,12 @@ GROUPING_KEYS.set(36, 'DebtCurrency')
 GROUPING_KEYS.set(37, 'DebtDocument')
 GROUPING_KEYS.set(38, 'SupplierReturnMode')
 GROUPING_KEYS.set(39, 'DocumentOrganization')
+GROUPING_KEYS.set(40, 'PaymentRegister')
+GROUPING_KEYS.set(41, 'PaymentCurrency')
+GROUPING_KEYS.set(42, 'PaymentBalanceRecord')
+GROUPING_KEYS.set(43, 'PaymentOrganization')
+GROUPING_KEYS.set(44, 'PaymentRegisterKind')
+GROUPING_KEYS.set(45, 'PaymentRegisterPurpose')
 
 const FILTER_KEYS = new Map(REPORT_FILTER_FIELD_GROUPS.flatMap(group => group.children.map(item => [item.type, item.label] as const)))
 FILTER_KEYS.set(1, 'Product')
@@ -44,6 +50,12 @@ FILTER_KEYS.set(25, 'DebtCurrency')
 FILTER_KEYS.set(26, 'DebtDocument')
 FILTER_KEYS.set(27, 'SupplierReturnMode')
 FILTER_KEYS.set(28, 'DocumentOrganization')
+FILTER_KEYS.set(29, 'PaymentRegister')
+FILTER_KEYS.set(30, 'PaymentCurrency')
+FILTER_KEYS.set(31, 'PaymentBalanceRecord')
+FILTER_KEYS.set(32, 'PaymentOrganization')
+FILTER_KEYS.set(33, 'PaymentRegisterKind')
+FILTER_KEYS.set(34, 'PaymentRegisterPurpose')
 
 export function datasetGroupings(dataset: ReportDataset | undefined): ReportGroupingItem[] {
   return dataset?.Groupings.map(field => ({ key: GROUPING_KEYS.get(field.Type) ?? field.Name, label: field.Name, type: field.Type })) ?? []
@@ -105,6 +117,7 @@ export function datasetConfigurationError(data: ReportRequestBody, dataset: Repo
   if (data.dataSource === 1 || data.oneC) return 'Шаблон використовує архівне джерело 1С, яке більше не доступне. Налаштування не застосовано.'
   if (!dataset || (data.dataSource ?? 0) !== dataset.DataSource) return 'Набір даних цього звіту недоступний. Налаштування не застосовано.'
   if (dataset.PeriodSupported === false && (data.from || data.to)) {
+    if (dataset.DataSource === 11) return 'Записані залишки рахунків не підтримують період або історичну дату. Шаблон із датами не застосовано; виберіть набір поточного стану заново.'
     if (dataset.DataSource === 10) return 'Поточна заборгованість не підтримує період або історичну дату. Шаблон із датами не застосовано; виберіть набір поточного стану заново.'
     return 'Поточні залишки не підтримують період або історичну дату. Шаблон із датами не застосовано; виберіть набір поточного стану заново.'
   }

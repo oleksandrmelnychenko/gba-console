@@ -22,7 +22,7 @@ describe('native return documents and current debt profiles', () => {
     expect(usesNativeReportLookup(9)).toBe(true);expect(usesNativeReportLookup(10)).toBe(true)
     expect(isCurrentReportSource(9)).toBe(false);expect(isCurrentReportSource(10)).toBe(true)
     expect(isCurrentStockSource(10)).toBe(false)
-    expect(getNativeReportProfile(1)).toBeUndefined();expect(getNativeReportProfile(11)).toBeUndefined()
+    expect(getNativeReportProfile(1)).toBeUndefined();expect(getNativeReportProfile(12)).toBeUndefined()
     expect(datasetGroupings(currentDebtDataset).find(item=>item.type===37)?.key).toBe('DebtDocument')
     expect(datasetFilters(currentDebtDataset).find(item=>item.field.Type===26)?.field.Name).toBe('DebtDocument')
     expect(datasetFilters(supplierReturnDataset).find(item=>item.field.Type===27)?.field.Name).toBe('SupplierReturnMode')

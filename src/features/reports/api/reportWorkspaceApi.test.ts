@@ -4,6 +4,7 @@ import { getReportCatalogue, getReportDatasets, getServerReportTemplates, saveSe
 import { createSalesReportPreset } from '../data/reportPresets'
 import { reportDatasets, stockDataset, currentStockDatasets, valuationDataset, nativeDocumentDatasets, currentDebtDataset } from '../data/reportDatasets.test-fixtures'
 import { defaultDatasetRequest } from '../data/reportDatasets'
+import { accountBalanceDataset, accountBalanceSelections } from '../data/accountBalances.test-fixtures'
 import { catalogueFixture } from '../data/reportMigration.test-fixtures'
 
 vi.mock('../../../shared/api/apiClient', () => ({ apiRequest: vi.fn() }))
@@ -46,6 +47,8 @@ describe('report workspace wire contract', () => {
     [{ ...stockDataset, PeriodRequired: true }],
     [{ ...currentDebtDataset, PeriodSupported: true }],
     [{ ...currentDebtDataset, PeriodSupported: undefined }],
+    [{ ...accountBalanceDataset, PeriodSupported: true }],
+    [{ ...accountBalanceDataset, PeriodSupported: undefined }],
   ].map(value => ({ value })))('rejects malformed or retired dataset catalogues %#', async ({ value }) => {
     vi.mocked(apiRequest).mockResolvedValue(value)
     await expect(getReportDatasets()).rejects.toThrow('некоректний список наборів даних')
@@ -107,6 +110,17 @@ describe('report workspace wire contract', () => {
     vi.mocked(apiRequest).mockResolvedValue([wire]);const [template]=await getServerReportTemplates();expect(template.Data).toEqual(data)
     vi.mocked(apiRequest).mockResolvedValue({...wire,Revision:2});await saveServerReportTemplate(template)
     expect(apiRequest).toHaveBeenLastCalledWith('/report/templates/save',{method:'POST',body:{Id:wire.Id,Revision:1,Name:wire.Name,Data:data}})
+  })
+
+  it('preserves source11 exact payment fields and disabled contract through private template wire load/save', async () => {
+    vi.mocked(apiRequest).mockResolvedValue([accountBalanceDataset])
+    await expect(getReportDatasets()).resolves.toEqual([accountBalanceDataset])
+    const data = { ...defaultDatasetRequest(accountBalanceDataset, '', ''), selections: structuredClone(accountBalanceSelections) }
+    const wire = { Id: crypto.randomUUID(), Revision: 2, Name: 'Мої рахунки', Data: { DataSource: 11, From: null, To: null, Sorted: data.sorted, Selections: data.selections } }
+    vi.mocked(apiRequest).mockResolvedValue([wire]); const [template] = await getServerReportTemplates()
+    expect(template.Data).toEqual(data)
+    vi.mocked(apiRequest).mockResolvedValue({ ...wire, Revision: 3 }); await saveServerReportTemplate(template)
+    expect(apiRequest).toHaveBeenLastCalledWith('/report/templates/save', { method: 'POST', body: { Id: wire.Id, Revision: 2, Name: wire.Name, Data: data } })
   })
 
 })

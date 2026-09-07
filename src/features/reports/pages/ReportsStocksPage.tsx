@@ -259,7 +259,7 @@ function ReportsStocksWorkspace() {
           : incompleteSelectionMessage
   const emptyRunNotice =
     lastRun && !lastRun.hasDocument
-      ? !lastRun.periodSupported ? t(dataSource === 10 ? 'Сервер не повернув файл поточної заборгованості. Спробуйте послабити умови відбору.' : 'Сервер не повернув файл поточних залишків. Спробуйте послабити умови відбору.')
+      ? !lastRun.periodSupported ? t(dataSource === 11 ? 'Сервер не повернув файл записаних залишків рахунків. Спробуйте послабити умови відбору.' : dataSource === 10 ? 'Сервер не повернув файл поточної заборгованості. Спробуйте послабити умови відбору.' : 'Сервер не повернув файл поточних залишків. Спробуйте послабити умови відбору.')
       : t('За період {from} – {to} сервер не повернув файл звіту. Спробуйте інший період або послабте умови відбору.', {
           from: formatDate(lastRun.from),
           to: formatDate(lastRun.to),

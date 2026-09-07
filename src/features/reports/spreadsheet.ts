@@ -8,7 +8,7 @@ import type {
 import { parseNumericValue } from './utils'
 import { VALUATION_REQUIRED_METADATA_PREFIXES, VALUATION_MONEY_CAPTION } from './data/reportValuation'
 import { CURRENT_STOCK_REPORT_TITLES, getCurrentStockReport } from './data/currentStockReports'
-import { CURRENT_REPORT_TITLES, SUPPLIER_RETURN_REPORT_TITLE, SUPPLIER_RETURN_QUANTITY_CAPTION, DEBT_REPORT_TITLE, DEBT_AMOUNT_CAPTION } from './data/nativeReportProfiles'
+import { CURRENT_REPORT_TITLES, SUPPLIER_RETURN_REPORT_TITLE, SUPPLIER_RETURN_QUANTITY_CAPTION, DEBT_REPORT_TITLE, DEBT_AMOUNT_CAPTION, ACCOUNT_BALANCE_REPORT_TITLE, ACCOUNT_BALANCE_AMOUNT_CAPTION } from './data/nativeReportProfiles'
 
 // The file «Перегляд звіту з файла» exists for is the one our own report engine writes
 // (ProductPlacementStorageManager.ExportVerificationReportsToXlsx): the header is as many rows deep as the
@@ -43,6 +43,7 @@ export function isCurrentReportSheet(sheet: SpreadsheetSheet | null): boolean {
 export function getSpreadsheetNumberFormatter(sheet: SpreadsheetSheet | null, columnIndex: number, csv = false): Intl.NumberFormat | undefined {
   if (!sheet?.header || columnIndex < sheet.header.rowGroupings.length) return undefined
   const title = sheet.header.lines[0], caption = sheet.columns[columnIndex]?.split(HEADER_LEVEL_SEPARATOR).at(-1)
+  if (title === ACCOUNT_BALANCE_REPORT_TITLE) return caption === ACCOUNT_BALANCE_AMOUNT_CAPTION ? (csv ? valuationCsvMoneyFormatter : valuationMoneyFormatter) : undefined
   if (title === DEBT_REPORT_TITLE) return caption === DEBT_AMOUNT_CAPTION ? (csv ? debtCsvAmountFormatter : debtAmountFormatter) : undefined
   if (title === SUPPLIER_RETURN_REPORT_TITLE) return caption === SUPPLIER_RETURN_QUANTITY_CAPTION ? (csv ? stockCsvQuantityFormatter : stockQuantityFormatter) : undefined
   if (!isCurrentStockSheet(sheet)) return undefined
@@ -322,7 +323,7 @@ function valuationMetadataText(line: string): string {
 
 function isWarningLine(line: string): boolean {
   return line.startsWith(IGNORED_FILTERS_PREFIX) || line.includes(NO_DATA_MARKER) || line === NO_ROWS_LINE
-    || ['Покриття оцінки:', 'Причини невизначеної оцінки:', 'Покриття заборгованості:', 'Причини невизначеної заборгованості:', 'Складські рухи повернень:', 'Точність кількості:']
+    || ['Покриття оцінки:', 'Причини невизначеної оцінки:', 'Покриття заборгованості:', 'Причини невизначеної заборгованості:', 'Складські рухи повернень:', 'Точність кількості:', 'Покриття залишків рахунків:', 'Узгодження залишків рахунків:']
       .some(prefix => valuationMetadataText(line).startsWith(prefix))
 }
 
