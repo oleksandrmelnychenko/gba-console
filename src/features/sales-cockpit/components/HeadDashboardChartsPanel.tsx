@@ -126,10 +126,12 @@ export function HeadDashboardChartsPanel({
 
   return (
     <section className="app-section-card cockpit-analytics-panel">
-      <Stack gap="md">
-        <div>
-          <Text className="app-section-title" fw={600} size="sm">{t('Аналітика навантаження')}</Text>
-          <Text c="dimmed" size="xs">{t('Ризик і активні задачі за менеджерами')}</Text>
+      <Stack gap={10}>
+        <div className="cockpit-head-section-heading">
+          <div>
+            <Text className="app-section-title" component="h2" fw={600} size="sm">{t('Аналітика навантаження')}</Text>
+            <Text c="dimmed" size="xs">{t('Ризик і активні задачі за менеджерами')}</Text>
+          </div>
           {dashboard && hasAiHistoryLineage(dashboard) && (
             <AiHistoryLineageNote lineage={dashboard} />
           )}

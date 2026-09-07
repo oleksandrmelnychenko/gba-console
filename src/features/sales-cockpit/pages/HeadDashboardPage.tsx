@@ -29,6 +29,7 @@ import { HeadTaskBoard } from '../components/HeadTaskBoard'
 import { useCockpitRealtimeReload } from '../hooks/useCockpitRealtimeReload'
 import type { CockpitUrgency, EscalatedResponse, EscalatedTask, HeadTeam, HeadTeamRow } from '../types'
 import './sales-cockpit-page.css'
+import './head-dashboard-page.css'
 
 const POLL_INTERVAL_MS = 60_000
 
@@ -159,13 +160,13 @@ function HeadDashboardPageContent() {
     <Stack className="cockpit-page cockpit-head-page" gap={6}>
       <Card className="app-filter-card cockpit-toolbar-card" withBorder radius="md" padding={0}>
         <div className="app-filter-bar cockpit-command-bar cockpit-head-command-bar">
-          <Group className="cockpit-head-title" gap="xs" wrap="nowrap">
-            <AiFeatureBadge size="sm" tooltip={t('AI-сервіс керівника продажів')} />
-            <Stack gap={0}>
+          <Stack className="cockpit-head-title" gap={3}>
+            <Group gap={6} wrap="nowrap">
               <Text className="app-section-title" component="h1" fw={600} size="sm">{t('Дашборд відділу продажів')}</Text>
-              <Text c="dimmed" size="xs">{t('Поточний стан команди та задач')}</Text>
-            </Stack>
-          </Group>
+              <AiFeatureBadge compact size="sm" tooltip={t('AI-сервіс керівника продажів')} />
+            </Group>
+            <Text c="dimmed" size="xs">{t('Поточний стан команди та задач')}</Text>
+          </Stack>
 
           <Group className="app-filter-actions cockpit-command-actions" gap={10} justify="flex-end">
             <Badge className="app-role-pill is-green" leftSection={<Radio size={12} />} variant="light">
@@ -173,16 +174,15 @@ function HeadDashboardPageContent() {
             </Badge>
             <Button
               className="cockpit-toolbar-button"
-              color="orange"
               leftSection={<Map size={16} />}
               size="sm"
-              variant="outline"
+              variant="default"
               onClick={() => navigate('/sales/geography')}
             >
               {t('Карта продажів і боргу')}
             </Button>
             <Tooltip label={t('Оновити')}>
-              <ActionIcon aria-label={t('Оновити')} loading={isLoading} size={34} variant="light" onClick={triggerReload}>
+              <ActionIcon aria-label={t('Оновити')} color="gray" loading={isLoading} size={34} variant="light" onClick={triggerReload}>
                 <RefreshCw size={18} />
               </ActionIcon>
             </Tooltip>
@@ -201,11 +201,13 @@ function HeadDashboardPageContent() {
               <Alert color="red" icon={<CircleAlert size={18} />} variant="light">{error}</Alert>
             ) : null}
 
-            <Card className="app-section-card cockpit-head-summary" withBorder radius="md" padding="md">
-              <Stack gap="sm">
-                <div>
-                  <Text className="app-section-title" component="h2" fw={600} size="sm">{t('Результат відділу')}</Text>
-                  <Text c="dimmed" size="xs">{t('План, виконання та результат AI-задач за місяць')}</Text>
+            <Card className="app-section-card cockpit-head-summary" withBorder radius="md" padding={0}>
+              <Stack gap={0}>
+                <div className="cockpit-head-section-heading">
+                  <div>
+                    <Text className="app-section-title" component="h2" fw={600} size="sm">{t('Результат відділу')}</Text>
+                    <Text c="dimmed" size="xs">{t('План, виконання та результат AI-задач за місяць')}</Text>
+                  </div>
                   {hasAiHistoryLineage(team) && <AiHistoryLineageNote lineage={team} />}
                 </div>
 
@@ -238,12 +240,15 @@ function HeadDashboardPageContent() {
             </Card>
 
             <div className="cockpit-head-workspace">
-              <HeadTaskBoard
-                managerId={selectedManagerId}
-                onManagerChange={setSelectedManagerId}
-              />
+              <Stack className="cockpit-head-main" gap={8}>
+                <HeadTaskBoard
+                  managerId={selectedManagerId}
+                  onManagerChange={setSelectedManagerId}
+                />
+                <HeadDashboardChartsPanel reloadKey={reloadKey} rows={rows} />
+              </Stack>
 
-              <Stack className="cockpit-head-sidebar" gap={6}>
+              <Stack className="cockpit-head-sidebar" gap={8}>
                 <TeamMonitor
                   isLoading={isLoading}
                   rows={rows}
@@ -255,7 +260,6 @@ function HeadDashboardPageContent() {
               </Stack>
             </div>
 
-            <HeadDashboardChartsPanel reloadKey={reloadKey} rows={rows} />
           </>
         )}
       </div>
@@ -293,7 +297,7 @@ function DepartmentMetric({
         </span>
         <strong className="cockpit-head-kpi__percent">{target > 0 ? `${percent}%` : '—'}</strong>
       </Group>
-      <Progress color={progressColor} radius="xl" size={6} value={Math.min(percent, 100)} />
+      <Progress color={progressColor} radius="xl" size={4} value={Math.min(percent, 100)} />
     </div>
   )
 }

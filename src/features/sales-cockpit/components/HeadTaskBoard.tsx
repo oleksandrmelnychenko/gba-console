@@ -372,7 +372,6 @@ export function HeadTaskBoard({
           placeholder={t('Усі менеджери')}
           size="sm"
           value={managerId === null ? null : String(managerId)}
-          w={220}
           onChange={handleManagerChange}
         />
         <Select
@@ -382,7 +381,6 @@ export function HeadTaskBoard({
           placeholder={t('Будь-яка')}
           size="sm"
           value={urgency}
-          w={200}
           onChange={handleUrgencyChange}
         />
         <Select
@@ -392,7 +390,6 @@ export function HeadTaskBoard({
           placeholder={t('Усі типи')}
           size="sm"
           value={taskType}
-          w={220}
           onChange={handleTaskTypeChange}
         />
         <div className="app-filter-actions cockpit-command-actions">
@@ -411,7 +408,7 @@ export function HeadTaskBoard({
               leftSection={<Sparkles size={16} />}
               loading={isGenerating}
               size="sm"
-              variant="light"
+              variant="default"
               onClick={handleGenerate}
             >
               {t('Перерахувати AI задачі')}
@@ -420,6 +417,7 @@ export function HeadTaskBoard({
           <Tooltip label={t('Оновити')}>
             <ActionIcon
               aria-label={t('Оновити')}
+              color="gray"
               size={34}
               variant="light"
               onClick={() => {
