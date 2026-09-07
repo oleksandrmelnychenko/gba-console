@@ -17,8 +17,8 @@ import type { SpreadsheetCellValue } from './types'
 // the row-field columns it is merged over.
 //
 // The block above the table is the engine's attribution header: the period, the groupings of both axes, the
-// measures and the filters, closed by one blank row. It is written in column A only, it carries no numbers, and
-// it is what the viewer now finds the table by.
+// measures and the filters, closed by one blank row. Readers can expose each line in column A only or repeat
+// it across merged cells (covered separately below); it is what the viewer now finds the table by.
 const engineSheet: SpreadsheetCellValue[][] = [
   ['Звіт продажів', null, null, null],
   ['Період: 01.08.2025 – 31.10.2025', null, null, null],
@@ -40,6 +40,40 @@ const engineSheet: SpreadsheetCellValue[][] = [
 
 describe('buildSpreadsheetSheet — report engine sheet', () => {
   const sheet = buildSpreadsheetSheet('Report', engineSheet)
+
+  it.each(['Звіт продажів', 'Звіт продажів і повернень', 'Звіт надходжень'])(
+    'reads repeated merged metadata captions from the actual XLSX writer for %s', title => {
+      const rows = structuredClone(engineSheet)
+      rows[0][0] = title
+      // The live writer stores the same text in every cell of A1:D1, A2:D2,
+      // etc. The XLSX reader returns all copies, including padded whitespace.
+      for (let index = 0; index < 6; index += 1) {
+        const caption = rows[index][0]
+        rows[index] = [caption, caption, ` ${caption} `, caption, null]
+      }
+      rows[9][3] = null
+      const parsed = buildSpreadsheetSheet('Report', rows)
+      expect(parsed.header?.lines).toEqual(rows.slice(0, 6).map(row => row[0]))
+      expect(parsed.header?.rowGroupings).toEqual(['Товар', 'По місяцях'])
+      expect(parsed.header?.columnGroupings).toEqual([])
+      expect(parsed.columns).toEqual(sheet.columns)
+      expect(parsed.rows).toHaveLength(sheet.rows.length)
+      expect(parsed.rows[0]).toEqual({ kind: 'data', cells: ['Аварийное соединение', 'Серпень 2025', 1, null] })
+      expect(parsed.rows.filter(row => row.kind === 'data')).toHaveLength(4)
+    },
+  )
+
+  it.each([0, 2, 5])('rejects an unrelated adjacent value in metadata row %s', index => {
+    const rows = structuredClone(engineSheet)
+    rows[index][1] = 'Інше значення'
+    expect(buildSpreadsheetSheet('Report', rows).header).toBeNull()
+  })
+
+  it('does not infer merged metadata cells in a flat CSV', () => {
+    const rows = structuredClone(engineSheet)
+    rows[0][1] = rows[0][0]
+    expect(buildSpreadsheetSheet('Report', rows, 'flat').header).toBeNull()
+  })
 
   it.each(['Звіт продажів і повернень', 'Звіт надходжень'])('reads the native attribution block for %s', title => {
     const rows = structuredClone(engineSheet)

@@ -46,7 +46,7 @@ export function buildSpreadsheetSheet(name: string, rows: SpreadsheetCellValue[]
   const sheetRows = rows.slice(firstFilledRowIndex)
   // A filtered CSV can retain the complete attribution block with no total rows.
   // Read that explicit structure independently of the workbook's subtotal markers.
-  const reportHeader = readReportHeader(sheetRows)
+  const reportHeader = readReportHeader(sheetRows, format)
   const isReport = reportHeader !== null || sheetRows.some((row) => getStructuralRowKind(row) !== null)
   // The attribution block the engine now writes above the table. It is what tells the viewer where the table
   // starts — reading that off the data instead is what broke here: countHeaderRows() took the first row holding a
@@ -206,10 +206,11 @@ function countHeaderRows(rows: SpreadsheetCellValue[][]): number {
   return firstBodyRowIndex > 0 ? firstBodyRowIndex : 1
 }
 
-// Reads the block the engine writes above the table, and says where the table begins. The block is column-A-only
-// and is closed by one blank row; that blank row is the writer's own separator, not a guess.
+// Reads the block the engine writes above the table, and says where the table begins. Each line is one caption:
+// XLSX repeats it across merged cells, while CSV writes it in column A only. One blank row closes the block.
 function readReportHeader(
   rows: SpreadsheetCellValue[][],
+  format: 'workbook' | 'flat',
 ): { header: SpreadsheetReportHeader; tableTopIndex: number } | null {
   if (!REPORT_TITLES.has(String(rows[0]?.[0] ?? '').trim())) {
     return null
@@ -219,10 +220,12 @@ function readReportHeader(
   let index = 0
 
   while (index < rows.length && rows[index].some(isFilledCell)) {
-    // Native attribution is strictly column-A-only, not a row of table values
-    // that merely begins with a familiar title or prefix.
-    if (rows[index].slice(1).some(isFilledCell)) return null
-    lines.push(String(rows[index][0] ?? '').trim())
+    const line = String(rows[index][0] ?? '').trim()
+    // The writer stores a merged caption in every covered XLSX cell. Accept
+    // only that same caption; never discard a different adjacent table value.
+    if (!line || rows[index].slice(1).some(cell => isFilledCell(cell)
+      && (format === 'flat' || String(cell).trim() !== line))) return null
+    lines.push(line)
     index += 1
   }
 
