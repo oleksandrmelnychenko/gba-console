@@ -1,4 +1,4 @@
-import { Group, Stack, Text } from '@mantine/core'
+import { Text } from '@mantine/core'
 import type { GeographyMetric } from '../types'
 
 const MAX_RADIUS = 56
@@ -21,44 +21,32 @@ type BubbleLegendProps = {
   scaleLabel: string
 }
 
-// Nested-circle size scale: radius r corresponds to value (r/maxR)^2 * maxValue,
-// since bubble area is proportional to value.
+// The legend preserves the map's area-to-value ratio at a compact display size.
 export function BubbleLegend({ maxValue, metric, formatMoney, scaleLabel }: BubbleLegendProps) {
-  const fill = METRIC_FILL[metric]
-  const stroke = METRIC_STROKE[metric]
-  const diameter = MAX_RADIUS * 2
-
   return (
-    <Stack gap={4}>
-      <Text c="dimmed" fw={600} size="xs" tt="uppercase">
-        {scaleLabel}
-      </Text>
-      <Group align="flex-end" gap="lg">
-        <svg width={diameter} height={diameter} viewBox={`0 0 ${diameter} ${diameter}`} aria-hidden>
-          {LEGEND_RADII.map((radius) => (
-            <circle
-              key={radius}
-              cx={MAX_RADIUS}
-              cy={diameter - radius}
-              r={radius}
-              fill={fill}
-              fillOpacity={0.18}
-              stroke={stroke}
-              strokeWidth={1}
-            />
-          ))}
-        </svg>
-        <Stack gap={2} justify="flex-end">
-          {LEGEND_RADII.map((radius) => {
-            const value = maxValue > 0 ? Math.round((radius / MAX_RADIUS) ** 2 * maxValue) : 0
-            return (
-              <Text key={radius} className="app-money app-money-meta" c="dimmed" size="xs">
-                {formatMoney(value)}
-              </Text>
-            )
-          })}
-        </Stack>
-      </Group>
-    </Stack>
+    <div className="sales-geography-legend" role="group" aria-label={scaleLabel}>
+      <Text c="gray.6" size="xs">{scaleLabel}</Text>
+      <ul className="sales-geography-legend-values">
+        {LEGEND_RADII.map((radius) => {
+          const value = maxValue > 0 ? Math.round((radius / MAX_RADIUS) ** 2 * maxValue) : 0
+          return (
+            <li key={radius}>
+              <svg width={44} height={44} viewBox="0 0 44 44" aria-hidden="true">
+                <circle
+                  cx={22}
+                  cy={22}
+                  r={(radius / MAX_RADIUS) * 20}
+                  fill={METRIC_FILL[metric]}
+                  fillOpacity={0.18}
+                  stroke={METRIC_STROKE[metric]}
+                  strokeWidth={1}
+                />
+              </svg>
+              <Text className="app-money" size="xs">{formatMoney(value)}</Text>
+            </li>
+          )
+        })}
+      </ul>
+    </div>
   )
 }

@@ -7,28 +7,20 @@
   padding: 6px 4px 0;
 }
 
-.sales-geography-content {
-  display: flex;
-  flex: 1 1 auto;
-  flex-direction: column;
-  gap: 6px;
-  min-height: 0;
-  overflow-y: auto;
-}
-
-.sales-geography-filter-card {
+.console-frame .sales-geography-page .mantine-Card-root {
   background: var(--mantine-color-white);
-  border: 1px solid var(--mantine-color-gray-2) !important;
-  box-shadow: none !important;
-  flex: 0 0 auto;
+  border: 1px solid var(--mantine-color-gray-2);
+  box-shadow: none;
   min-width: 0;
 }
 
+.sales-geography-filter-card {
+  flex: 0 0 auto;
+}
+
 .sales-geography-toolbar {
-  align-items: end;
   display: grid;
-  gap: 10px;
-  grid-template-columns: max-content max-content minmax(44px, 1fr);
+  grid-template-columns: max-content max-content minmax(44px, 1fr) auto;
   min-width: 0;
   overflow-x: auto;
   overflow-y: hidden;
@@ -59,151 +51,225 @@
   text-transform: none;
 }
 
-.sales-geography-map-card {
-  grid-column: span 2;
+.sales-geography-content {
+  background: var(--mantine-color-gray-0);
+  border-radius: var(--mantine-radius-md);
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 0;
+  overflow: auto;
+  padding: 8px;
 }
 
+.sales-geography-summary {
+  display: grid;
+  flex: 0 0 auto;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin: 0;
+}
+
+.sales-geography-metric {
+  display: grid;
+  align-content: center;
+  gap: 5px;
+  min-height: 64px;
+  padding: 8px 12px;
+}
+
+.sales-geography-metric + .sales-geography-metric {
+  border-left: 1px solid var(--mantine-color-gray-2);
+}
+
+.sales-geography-metric dt {
+  align-items: center;
+  color: var(--mantine-color-gray-6);
+  display: flex;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  gap: 6px;
+}
+
+.sales-geography-metric dt::before {
+  background: var(--mantine-color-gray-4);
+  border-radius: 50%;
+  content: '';
+  flex: 0 0 5px;
+  height: 5px;
+}
+
+.sales-geography-metric:first-child dt::before {
+  background: var(--brand-orange);
+}
+
+.sales-geography-metric dd {
+  color: var(--mantine-color-gray-8);
+  font-family: var(--font-mono);
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 1.2;
+  margin: 0;
+  min-height: 24px;
+}
+
+.sales-geography-workspace {
+  display: grid;
+  flex: 1 1 auto;
+  gap: 8px;
+  grid-template-columns: minmax(0, 1fr) clamp(420px, 30vw, 640px);
+  min-height: 420px;
+}
+
+.sales-geography-map-card,
 .sales-geography-rating-card {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.sales-geography-section-heading {
+  align-items: center;
+  border-bottom: 1px solid var(--mantine-color-gray-2);
+  display: flex;
+  flex: 0 0 auto;
+  flex-wrap: wrap;
+  gap: 8px;
+  min-height: 44px;
+  padding: 10px 12px;
+}
+
+.sales-geography-section-heading h2 {
+  margin: 0;
+}
+
+.sales-geography-map-stage {
+  display: flex;
+  flex: 1 1 auto;
+  min-height: 0;
+  padding: 12px;
+}
+
+.sales-geography-map {
+  flex: 1 1 auto;
+  min-height: 0;
   min-width: 0;
 }
 
-.sales-geography-rating-table thead th {
-  background: var(--mantine-color-gray-0);
-  color: var(--mantine-color-gray-7);
-  font-family: var(--font-mono);
-  font-size: 12px;
-  font-weight: 600;
-  letter-spacing: 0;
-  text-transform: none;
-}
-
-.sales-geography-rating-table tbody td {
-  color: var(--mantine-color-gray-8);
-  font-size: 13px;
-  font-weight: 500;
-}
-
-.sales-geography-rating-table tbody tr:hover td {
-  background: #fffaf5;
-}
-
-.sales-geography-money {
-  color: var(--mantine-color-green-8);
-  font-family: var(--font-mono);
-  font-weight: 600;
-  letter-spacing: 0;
-}
-
-.sales-geography-count {
-  font-family: var(--font-mono);
-  font-weight: 600;
-  letter-spacing: 0;
-}
-
-.sales-geography-total-value {
-  color: var(--mantine-color-green-8);
-  font-family: var(--font-mono);
-  letter-spacing: 0;
-}
-
-.sales-geography-other {
-  color: var(--mantine-color-gray-6);
-  font-family: var(--font-mono);
-  font-size: 11px;
-  font-weight: 500;
-  letter-spacing: 0;
-}
-
-.sales-geography-map-skeleton {
-  border: 1px solid var(--mantine-color-gray-2);
-  border-radius: 8px;
-  display: grid;
-  gap: 12px;
-  min-height: 320px;
-  padding: 28px;
-  place-items: center;
-  position: relative;
-}
-
-.sales-geography-map-skeleton-circle,
-.sales-geography-skeleton-line {
-  animation: data-table-shimmer 1.2s linear infinite;
-  background: linear-gradient(
-    90deg,
-    var(--mantine-color-gray-1) 0%,
-    var(--mantine-color-gray-2) 42%,
-    var(--mantine-color-gray-1) 84%
-  );
-  background-size: 220% 100%;
-}
-
-.sales-geography-map-skeleton-circle {
-  border-radius: 999px;
+.sales-geography-map svg {
   display: block;
-  position: absolute;
-}
-
-.sales-geography-map-skeleton-circle.is-lg {
-  height: 120px;
-  left: 34%;
-  top: 24%;
-  width: 120px;
-}
-
-.sales-geography-map-skeleton-circle.is-md {
-  height: 76px;
-  right: 24%;
-  top: 43%;
-  width: 76px;
-}
-
-.sales-geography-map-skeleton-circle.is-sm {
-  bottom: 28%;
-  height: 46px;
-  left: 25%;
-  width: 46px;
-}
-
-.sales-geography-skeleton-line {
-  border-radius: 999px;
-  display: block;
-  height: 10px;
-  width: 62%;
-}
-
-.sales-geography-skeleton-line.is-short {
-  width: 34%;
-}
-
-.sales-geography-rating-skeleton {
-  display: grid;
-  gap: 10px;
-}
-
-.sales-geography-rating-skeleton-row {
-  display: grid;
-  gap: 10px;
-  grid-template-columns: 42px minmax(0, 1fr) 90px;
-}
-
-.sales-geography-skeleton-line.is-code {
+  height: 100%;
   width: 100%;
 }
 
-.sales-geography-skeleton-line.is-number {
-  justify-self: end;
-  width: 72px;
+.sales-geography-map-bubble {
+  outline: none;
+  transition: fill-opacity 120ms ease;
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .sales-geography-map-skeleton-circle,
-  .sales-geography-skeleton-line {
-    animation: none;
+.sales-geography-map-label {
+  font-family: var(--font-mono);
+  user-select: none;
+}
+
+.sales-geography-map-state {
+  align-items: center;
+  color: var(--mantine-color-gray-6);
+  display: flex;
+  flex: 1;
+  justify-content: center;
+  text-align: center;
+}
+
+.sales-geography-legend {
+  align-items: center;
+  border-top: 1px solid var(--mantine-color-gray-2);
+  display: flex;
+  flex: 0 0 auto;
+  flex-wrap: wrap;
+  gap: 4px 20px;
+  min-height: 64px;
+  padding: 8px 12px;
+}
+
+.sales-geography-legend-values {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.sales-geography-legend-values li {
+  align-items: center;
+  display: flex;
+  gap: 6px;
+}
+
+.sales-geography-rating-body {
+  display: flex;
+  flex: 1 1 auto;
+  min-height: 0;
+  min-width: 0;
+}
+
+.sales-geography-region-code {
+  color: var(--mantine-color-gray-6);
+  flex: 0 0 26px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 500;
+}
+
+.sales-geography-count {
+  color: var(--mantine-color-gray-8);
+  font-family: var(--font-mono);
+  font-weight: 600;
+}
+
+.sales-geography-other {
+  border-top: 1px solid var(--mantine-color-gray-2);
+  color: var(--mantine-color-gray-6);
+  flex: 0 0 auto;
+  padding: 10px 12px;
+}
+
+@media (max-width: 1100px) {
+  .sales-geography-workspace {
+    flex: 0 0 auto;
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .sales-geography-map-stage {
+    flex: 0 0 auto;
+    height: clamp(300px, 55vw, 500px);
+  }
+
+  .sales-geography-rating-card {
+    height: 560px;
   }
 }
 
-@media (max-width: 960px) {
-  .sales-geography-map-card {
-    grid-column: auto;
+@media (max-width: 640px) {
+  .sales-geography-summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .sales-geography-metric:nth-child(3) {
+    border-left: 0;
+  }
+
+  .sales-geography-metric:nth-child(n + 3) {
+    border-top: 1px solid var(--mantine-color-gray-2);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sales-geography-map-bubble {
+    transition: none;
   }
 }
