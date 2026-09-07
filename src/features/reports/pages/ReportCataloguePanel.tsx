@@ -47,8 +47,9 @@ export function ReportCataloguePanel() {
         <Text fw={600}>{t('Каталог звітів 1С')}</Text>
         <Badge>{catalogue.Reports.length}</Badge>
       </Group>
-      <Text size="sm" c="dimmed">{t('Перелік для перенесення з Fenix та AMG. Наявність у каталозі ще не означає, що розрахунок доступний у GBA. Готові налаштування продажів розташовані в конструкторі.')}</Text>
-      <Group>
+      <Text size="sm" c="dimmed">{t('Перелік для перенесення з Fenix та AMG. Наявність у каталозі ще не означає, що розрахунок доступний у GBA. Готові налаштування доступних звітів розташовані в конструкторі.')}</Text>
+      <Text size="xs" c="dimmed">{t('Типи подання у вихідних конфігураціях 1С; це не перелік готових подань GBA.')}</Text>
+      <Group aria-label={t('Типи подання 1С')}>
         {catalogue.Presentations.map(item => <Badge key={item.Id} color="gray" variant="light">{t(item.Title)}</Badge>)}
       </Group>
       <Group align="end">

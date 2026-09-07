@@ -1,5 +1,5 @@
 import { MantineProvider } from '@mantine/core'
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import type { ReactNode } from 'react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { I18nProvider } from '../../../shared/i18n/I18nProvider'
@@ -141,4 +141,44 @@ describe('current stock valuation by exact client agreement', () => {
     expect(createStockReport).not.toHaveBeenCalled()
     expect((screen.getByRole('combobox', { name: 'Договір для оцінки' }) as HTMLInputElement).disabled).toBe(true)
   })
+  it('serializes axis reordering and transfers while preserving exact valuation, disabled filters and unchecked measures', async () => {
+    const template = valuationTemplate()
+    vi.mocked(getServerReportTemplates).mockResolvedValue([template])
+    const { container } = await ready()
+    fireEvent.click(screen.getByRole('button', { name: 'Шаблони' }))
+    fireEvent.click(await screen.findByRole('button', { name: /Моя оцінка за договором/ }))
+    await waitFor(() => expect((screen.getByRole('button', { name: 'Сформувати' }) as HTMLButtonElement).disabled).toBe(false))
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Оцінка за договором, EUR' }))
+    const rows = () => screen.getByRole('region', { name: 'Групування рядків' })
+    const columns = () => screen.getByRole('region', { name: 'Групування стовпців' })
+    fireEvent.click(within(rows()).getByRole('button', { name: 'Перемістити Одиниця виміру вище' }))
+    expect(within(rows()).getAllByLabelText(/Рівень/).map(item => item.parentElement?.textContent)).toEqual(['1Одиниця виміру','2Склад'])
+    fireEvent.click(within(rows()).getByRole('button', { name: 'Перемістити Одиниця виміру нижче' }))
+    fireEvent.click(within(rows()).getByRole('button', { name: 'Перенести Склад до стовпців' }))
+    expect((within(rows()).getByRole('button', { name: 'Перенести Одиниця виміру до стовпців' }) as HTMLButtonElement).disabled).toBe(true)
+    fireEvent.click(screen.getByRole('button', { name: 'Додати поле: Групування рядків' }))
+    const picker = screen.getByRole('dialog', { name: 'Додати поле · Групування рядків' })
+    expect(within(picker).queryByRole('button', { name: /^Склад$/ })).toBeNull()
+    expect(within(picker).queryByRole('button', { name: /^Одиниця виміру$/ })).toBeNull()
+    fireEvent.click(within(picker).getByRole('button', { name: /Артикул/ }))
+    fireEvent.click(within(rows()).getByRole('button', { name: 'Перенести Артикул до стовпців' }))
+    fireEvent.click(within(columns()).getByRole('button', { name: 'Перемістити Артикул вище' }))
+    fireEvent.click(within(columns()).getByRole('button', { name: 'Перенести Склад до рядків' }))
+    expect((screen.getByRole('checkbox', { name: 'Оцінка за договором, EUR' }) as HTMLInputElement).checked).toBe(false)
+    fireEvent.submit(container.querySelector('form')!)
+    await waitFor(() => expect(createStockReport).toHaveBeenCalledOnce())
+    const generated = vi.mocked(createStockReport).mock.calls[0][0]
+    expect(generated.sorted.Row.map(item => item.type)).toEqual([28,29])
+    expect(generated.sorted.Col.map(item => item.type)).toEqual([6])
+    expect(generated.sorted.Measurements.map(item => item.Type)).toEqual([17])
+    expect(generated).toMatchObject({dataSource:8,valuationClientAgreementId:459018,from:'',to:'',selections:[]})
+    fireEvent.click(screen.getByRole('button', { name: 'Шаблони' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Зберегти' }))
+    await waitFor(() => expect(saveServerReportTemplate).toHaveBeenCalledOnce())
+    const saved = vi.mocked(saveServerReportTemplate).mock.calls[0][0].Data
+    expect(saved).toEqual({...generated,selections:template.Data.selections})
+    expect(template.Data.sorted.Row.map(item => item.type)).toEqual([29,28])
+    expect(template.Data.sorted.Measurements.map(item => item.Type)).toEqual([17,21])
+  })
+
 })

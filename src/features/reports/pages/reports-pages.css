@@ -637,7 +637,7 @@
   border-radius: var(--mantine-radius-sm);
   display: grid;
   gap: 6px;
-  grid-template-columns: 22px minmax(0, 1fr) 30px;
+  grid-template-columns: 22px minmax(0, 1fr) auto;
   min-height: 38px;
 }
 

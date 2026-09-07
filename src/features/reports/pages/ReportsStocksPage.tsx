@@ -85,6 +85,8 @@ import { useValuationAgreement } from '../hooks/useValuationAgreement'
 import { ValuationAgreementPicker } from './ValuationAgreementPicker'
 import { ReportDatasetPicker } from './ReportDatasetPicker'
 import { ReportQuickPresets } from './ReportQuickPresets'
+import { ReportGroupingPanel } from './ReportGroupingPanel'
+import { reorderReportGrouping, transferReportGrouping, type ReportGroupingAxis } from '../data/reportGroupingLayout'
 
 import { useServerReportTemplates } from '../hooks/useServerReportTemplates'
 
@@ -712,12 +714,22 @@ function LegacyReportBuilder({
   const { t } = useI18n()
   const [groupingPickerTarget, setGroupingPickerTarget] = useState<'rows' | 'columns' | null>(null)
   const checkedMeasurements = flattenCheckedMeasurements(measurements).length
+  const groupingLayout = { Row: rowGroups, Col: colGroups }
+  const allowedGroupingTypes = new Set(groupingOptions.map(item => item.type))
+  const selectedGroupingTypes = new Set([...rowGroups, ...colGroups].map(item => item.type))
+
+  const transferGrouping = (axis: ReportGroupingAxis, type: number) => {
+    const next = transferReportGrouping(groupingLayout, axis, type, allowedGroupingTypes)
+    if (next === groupingLayout) return
+    onRowGroupsChange(next.Row)
+    onColGroupsChange(next.Col)
+  }
 
   const closeGroupingPicker = () => setGroupingPickerTarget(null)
 
   const addGroupingFromPicker = (value: string) => {
     const item = groupingOptions.find((option) => String(option.type) === value)
-    if (!item || !groupingPickerTarget) return
+    if (!item || !groupingPickerTarget || selectedGroupingTypes.has(item.type)) return
 
     if (groupingPickerTarget === 'rows') {
       onRowGroupsChange((current) => addGrouping(current, item))
@@ -801,20 +813,16 @@ function LegacyReportBuilder({
 
         <section className="app-section-card reports-stocks-structure">
           <Text className="app-section-title" component="h2" fw={600} size="sm">{t('Групування')}</Text>
-          <LegacyGroupingPanel
-          groups={rowGroups}
-          kind="rows"
-          title="Групування рядків"
-          onOpenPicker={() => setGroupingPickerTarget('rows')}
-          onRemove={(index) => onRowGroupsChange((current) => current.filter((_, itemIndex) => itemIndex !== index))}
-        />
-        <LegacyGroupingPanel
-          groups={colGroups}
-          kind="columns"
-          title="Групування стовпців"
-          onOpenPicker={() => setGroupingPickerTarget('columns')}
-          onRemove={(index) => onColGroupsChange((current) => current.filter((_, itemIndex) => itemIndex !== index))}
-        />
+          <ReportGroupingPanel layout={groupingLayout} axis="Row" allowed={allowedGroupingTypes}
+            onOpenPicker={() => setGroupingPickerTarget('rows')}
+            onRemove={(index) => onRowGroupsChange((current) => current.filter((_, itemIndex) => itemIndex !== index))}
+            onReorder={(type, direction) => onRowGroupsChange(current => reorderReportGrouping(current, type, direction, allowedGroupingTypes))}
+            onTransfer={type => transferGrouping('Row', type)} />
+          <ReportGroupingPanel layout={groupingLayout} axis="Col" allowed={allowedGroupingTypes}
+            onOpenPicker={() => setGroupingPickerTarget('columns')}
+            onRemove={(index) => onColGroupsChange((current) => current.filter((_, itemIndex) => itemIndex !== index))}
+            onReorder={(type, direction) => onColGroupsChange(current => reorderReportGrouping(current, type, direction, allowedGroupingTypes))}
+            onTransfer={type => transferGrouping('Col', type)} />
         </section>
         <section className="reports-stocks-legacy__selections">
           <ReportSelectionsCard
@@ -832,69 +840,13 @@ function LegacyReportBuilder({
 
       <LegacyGroupingPickerModal
         opened={groupingPickerTarget !== null}
-        options={groupingSelectData}
+        options={groupingSelectData.filter(item => !selectedGroupingTypes.has(Number(item.value)))}
         target={groupingPickerTarget}
         title={groupingPickerTarget === 'rows' ? 'Групування рядків' : 'Групування стовпців'}
         onAdd={addGroupingFromPicker}
         onClose={closeGroupingPicker}
       />
 
-    </section>
-  )
-}
-
-type LegacyGroupingPanelProps = {
-  groups: ReportGroupingItem[]
-  kind: 'rows' | 'columns'
-  title: string
-  onOpenPicker: () => void
-  onRemove: (index: number) => void
-}
-
-function LegacyGroupingPanel({
-  groups,
-  kind,
-  title,
-  onOpenPicker,
-  onRemove,
-}: LegacyGroupingPanelProps) {
-  const { t } = useI18n()
-  const isRows = kind === 'rows'
-
-  return (
-    <section className="reports-stocks-grouping-field">
-      <div className="reports-stocks-legacy-panel__header">
-        <Group className="reports-stocks-legacy-panel__title" gap={6} wrap="nowrap">
-          <Text className="reports-stocks-grouping-label" component="h3" fw={600} size="sm">{t(isRows ? 'Рядки' : 'Стовпці')}</Text>
-          <Text className="reports-stocks-grouping-requirement" size="xs">{isRows ? t('Обов’язково') : t('Необов’язково')}</Text>
-        </Group>
-        <Button
-          aria-label={`Додати поле: ${title}`}
-          className="reports-stocks-legacy-panel__add"
-          color={CREATE_ACTION_COLOR}
-          leftSection={<Plus size={14} />}
-          size="xs"
-          type="button"
-          onClick={onOpenPicker}
-        >
-          Додати
-        </Button>
-      </div>
-      <div className="reports-stocks-legacy-group-list">
-        {groups.length ? (
-          groups.map((group, index) => (
-            <div className="reports-stocks-legacy-group-row" key={`${group.type}-${index}`}>
-              <span className="reports-stocks-group-position" aria-label={t('Рівень {level}', { level: index + 1 })}>{index + 1}</span>
-              <Text size="sm">{(group.label || getReportFieldLabel(group.key))}</Text>
-              <TableRowAction action="delete" label={t('Видалити {field}', { field: (group.label || getReportFieldLabel(group.key)) })} onClick={() => onRemove(index)} />
-            </div>
-          ))
-        ) : (
-          <div className="reports-stocks-legacy-group-list__empty">
-            <Text size="sm" c="gray.9">{isRows ? t('Додайте день, товар або інше поле') : t('Без поділу на стовпці')}</Text>
-          </div>
-        )}
-      </div>
     </section>
   )
 }
