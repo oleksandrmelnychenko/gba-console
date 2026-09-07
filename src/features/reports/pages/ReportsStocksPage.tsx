@@ -19,7 +19,9 @@ import {
 } from '@mantine/core'
 import { useDebouncedValue } from '@mantine/hooks'
 import { CheckboxMultiSelect } from '../../../shared/ui/CheckboxMultiSelect'
-import { CircleAlert, Download, LayoutTemplate, Pencil, Plus, RefreshCw, RotateCcw, Save, Trash2 } from 'lucide-react'
+import { CircleAlert, LayoutTemplate, Plus, RefreshCw, RotateCcw, Save, Trash2 } from 'lucide-react'
+import { IconFileSpreadsheet } from '@tabler/icons-react'
+import { TableRowAction } from '../../../shared/ui/table-row-action/TableRowAction'
 import { type FormEvent, useEffect, useMemo, useState } from 'react'
 import { ApiError } from '../../../shared/api/apiClient'
 import { formatKyivBusinessDate } from '../../../shared/date/dateTime'
@@ -367,10 +369,11 @@ export function ReportsStocksPage() {
     setError(null)
   }
 
+
   return (
     <Stack className="reports-stocks-page" gap={6}>
-      <ReportQuickPresets disabled={isLoading} onApply={applyPreset} />
       <ReportBuilderForm
+        onApplyPreset={applyPreset}
         canSubmit={canSubmit}
         colGroups={colGroups}
         filterFieldOptions={filterFieldOptions}
@@ -415,7 +418,7 @@ export function ReportsStocksPage() {
         document={result?.document}
         notice={
           lastRun ? (
-            <Text c="dimmed" size="xs">
+            <Text c="gray.9" size="xs">
               {describeReportRun(lastRun, t)}
             </Text>
           ) : null
@@ -429,6 +432,7 @@ export function ReportsStocksPage() {
 }
 
 type ReportBuilderFormProps = {
+  onApplyPreset: (id: SalesReportPresetId) => void
   canSubmit: boolean
   colGroups: ReportGroupingItem[]
   filterFieldOptions: FilterFieldOption[]
@@ -470,6 +474,7 @@ type ReportBuilderFormProps = {
 }
 
 function ReportBuilderForm({
+  onApplyPreset,
   canSubmit,
   colGroups,
   filterFieldOptions,
@@ -515,6 +520,7 @@ function ReportBuilderForm({
   return (
     <Card className="reports-stocks-shell" radius="md" padding={0}>
       <form className="reports-stocks-form" onSubmit={onSubmit}>
+        <div className="reports-stocks-filter-scroll">
         <div className="app-filter-bar reports-stocks-filter-bar">
           <div className="app-filter-date-range">
             <TextInput
@@ -534,32 +540,28 @@ function ReportBuilderForm({
               onChange={(event) => onToChange(event.currentTarget.value)}
             />
           </div>
-          <div className={`reports-stocks-readiness ${canSubmit ? 'is-ready' : ''}`}>
-            <Text c="dimmed" size="xs">
-              {canSubmit ? t('Налаштування звіту завершено') : t('Наступний крок')}
-            </Text>
-            <Text className="reports-stocks-readiness__value" size="sm">
-              {canSubmit ? t('Можна формувати звіт') : submitBlockedReason}
-            </Text>
-          </div>
           <div className="app-filter-actions reports-stocks-actions">
             <Button
-              color={CREATE_ACTION_COLOR}
+              color="gray"
+              disabled={isLoading}
               leftSection={<LayoutTemplate size={16} />}
               type="button"
+              variant="default"
               onClick={() => setTemplatesOpened(true)}
             >
               {t('Шаблони')}
             </Button>
             <Tooltip label={t('Скинути')}>
-              <ActionIcon aria-label={t('Скинути')} variant="default" size={34} type="button" onClick={onReset}>
+              <ActionIcon aria-label={t('Скинути')} disabled={isLoading} variant="default" size={34} type="button" onClick={onReset}>
                 <RotateCcw size={17} />
               </ActionIcon>
             </Tooltip>
           </div>
           <Tooltip label={t('Сформувати')}>
             <Button
+              className="reports-stocks-generate"
               color={CREATE_ACTION_COLOR}
+              leftSection={<IconFileSpreadsheet size={16} />}
               loading={isLoading}
               disabled={!canSubmit}
               title={submitBlockedReason}
@@ -569,6 +571,9 @@ function ReportBuilderForm({
             </Button>
           </Tooltip>
         </div>
+        </div>
+
+        <ReportQuickPresets disabled={isLoading} onApply={onApplyPreset} />
 
         <div className="reports-stocks-body">
           {notices.period || incompleteSelectionMessage ? (
@@ -667,6 +672,7 @@ function LegacyReportBuilder({
   onRowGroupsChange,
   onSelectionsChange,
 }: LegacyReportBuilderProps) {
+  const { t } = useI18n()
   const [groupingPickerTarget, setGroupingPickerTarget] = useState<'rows' | 'columns' | null>(null)
   const checkedMeasurements = flattenCheckedMeasurements(measurements).length
 
@@ -688,13 +694,11 @@ function LegacyReportBuilder({
   return (
     <section className="reports-stocks-legacy" aria-label="Налаштування звіту">
       <div className="reports-stocks-legacy__columns">
-        <section className="reports-stocks-legacy-panel reports-stocks-legacy-measurements">
+        <section className="app-section-card reports-stocks-legacy-panel reports-stocks-legacy-measurements">
           <div className="reports-stocks-legacy-panel__header">
             <Group className="reports-stocks-legacy-panel__title" gap={6} wrap="nowrap">
-              <Text component="h3">Показники</Text>
-              <Badge className="app-role-pill is-orange" variant="light">
-                {checkedMeasurements}
-              </Badge>
+              <Text className="app-section-title" component="h2" fw={600} size="sm">{t('Показники')}</Text>
+              <Text className="reports-stocks-count" size="xs">{checkedMeasurements || ''}</Text>
             </Group>
             <Group gap={4} wrap="nowrap">
               <Button
@@ -717,7 +721,14 @@ function LegacyReportBuilder({
               </Button>
             </Group>
           </div>
+
           <div className="reports-stocks-legacy-measurements__list">
+            <div className="reports-stocks-measurement-columns" aria-hidden="true">
+              <span>{t('Показник')}</span>
+              <span>{t('Без ПДВ')}</span>
+              <span>{t('ПДВ')}</span>
+              <span>{t('З ПДВ')}</span>
+            </div>
             {measurements.map((group, groupIndex) => {
               const groupLabel = getReportFieldLabel(group.Name)
               const hasDistinctChildren =
@@ -728,41 +739,57 @@ function LegacyReportBuilder({
                 <div className="reports-stocks-legacy-measurement" key={group.Name}>
                   <Checkbox
                     checked={group.IsChecked}
-                    label={groupLabel}
+                    indeterminate={!group.IsChecked && group.SubList.some((item) => item.IsChecked)}
+                    aria-label={groupLabel}
+                    label={group.Name === 'Profitability' ? `${groupLabel}, %` : groupLabel}
                     onChange={() => toggleMeasurementGroup(measurements, groupIndex, onMeasurementsChange)}
                   />
-                  {hasDistinctChildren ? (
-                    <div className="reports-stocks-legacy-measurement__children">
-                      {group.SubList.map((item, itemIndex) => (
-                        <Checkbox
-                          checked={item.IsChecked}
-                          key={item.Name}
-                          label={getReportFieldLabel(item.Name)}
-                          size="sm"
-                          onChange={() =>
-                            toggleMeasurementItem(measurements, groupIndex, itemIndex, onMeasurementsChange)}
-                        />
-                      ))}
-                    </div>
-                  ) : null}
+                  {hasDistinctChildren ? group.SubList.map((item, itemIndex) => (
+                    <Checkbox
+                      className="reports-stocks-measurement-value"
+                      style={{ gridColumn: item.Name.endsWith('WithoutVAT') ? 2 : item.Name.endsWith('WithVAT') ? 4 : 3 }}
+                      aria-label={getReportFieldLabel(item.Name)}
+                      title={getReportFieldLabel(item.Name)}
+                      checked={item.IsChecked}
+                      key={item.Name}
+                      size="sm"
+                      onChange={() => toggleMeasurementItem(measurements, groupIndex, itemIndex, onMeasurementsChange)}
+                    />
+                  )) : <Text className="reports-stocks-measurement-unit" size="xs">{t('Без поділу за ПДВ')}</Text>}
                 </div>
               )
             })}
           </div>
         </section>
 
-        <LegacyGroupingPanel
+        <section className="app-section-card reports-stocks-structure">
+          <Text className="app-section-title" component="h2" fw={600} size="sm">{t('Групування')}</Text>
+          <LegacyGroupingPanel
           groups={rowGroups}
+          kind="rows"
           title="Групування рядків"
           onOpenPicker={() => setGroupingPickerTarget('rows')}
           onRemove={(index) => onRowGroupsChange((current) => current.filter((_, itemIndex) => itemIndex !== index))}
         />
         <LegacyGroupingPanel
           groups={colGroups}
+          kind="columns"
           title="Групування стовпців"
           onOpenPicker={() => setGroupingPickerTarget('columns')}
           onRemove={(index) => onColGroupsChange((current) => current.filter((_, itemIndex) => itemIndex !== index))}
         />
+        </section>
+        <section className="reports-stocks-legacy__selections">
+          <ReportSelectionsCard
+            description={null}
+            filterFieldOptions={filterFieldOptions}
+            from={lookupFrom}
+            selections={selections}
+            title={t('Умови відбору')}
+            to={lookupTo}
+            onChange={onSelectionsChange}
+          />
+        </section>
       </div>
 
       <LegacyGroupingPickerModal
@@ -774,23 +801,13 @@ function LegacyReportBuilder({
         onClose={closeGroupingPicker}
       />
 
-      <section className="reports-stocks-legacy__selections reports-stocks-panel">
-        <ReportSelectionsCard
-          description={null}
-          filterFieldOptions={filterFieldOptions}
-          from={lookupFrom}
-          selections={selections}
-          title="Умови відбору"
-          to={lookupTo}
-          onChange={onSelectionsChange}
-        />
-      </section>
     </section>
   )
 }
 
 type LegacyGroupingPanelProps = {
   groups: ReportGroupingItem[]
+  kind: 'rows' | 'columns'
   title: string
   onOpenPicker: () => void
   onRemove: (index: number) => void
@@ -798,18 +815,20 @@ type LegacyGroupingPanelProps = {
 
 function LegacyGroupingPanel({
   groups,
+  kind,
   title,
   onOpenPicker,
   onRemove,
 }: LegacyGroupingPanelProps) {
+  const { t } = useI18n()
+  const isRows = kind === 'rows'
+
   return (
-    <section className="reports-stocks-legacy-panel">
+    <section className="reports-stocks-grouping-field">
       <div className="reports-stocks-legacy-panel__header">
         <Group className="reports-stocks-legacy-panel__title" gap={6} wrap="nowrap">
-          <Text component="h3">{title}</Text>
-          <Badge className="app-role-pill is-gray" variant="light">
-            {groups.length}
-          </Badge>
+          <Text className="reports-stocks-grouping-label" component="h3" fw={600} size="sm">{t(isRows ? 'Рядки' : 'Стовпці')}</Text>
+          <Text className="reports-stocks-grouping-requirement" size="xs">{isRows ? t('Обов’язково') : t('Необов’язково')}</Text>
         </Group>
         <Button
           aria-label={`Додати поле: ${title}`}
@@ -827,24 +846,14 @@ function LegacyGroupingPanel({
         {groups.length ? (
           groups.map((group, index) => (
             <div className="reports-stocks-legacy-group-row" key={`${group.type}-${index}`}>
+              <span className="reports-stocks-group-position" aria-label={t('Рівень {level}', { level: index + 1 })}>{index + 1}</span>
               <Text size="sm">{getReportFieldLabel(group.key)}</Text>
-              <Tooltip label="Видалити">
-                <ActionIcon
-                  aria-label={`Видалити ${getReportFieldLabel(group.key)}`}
-                  color="red"
-                  size={28}
-                  type="button"
-                  variant="subtle"
-                  onClick={() => onRemove(index)}
-                >
-                  <Trash2 size={15} />
-                </ActionIcon>
-              </Tooltip>
+              <TableRowAction action="delete" label={t('Видалити {field}', { field: getReportFieldLabel(group.key) })} onClick={() => onRemove(index)} />
             </div>
           ))
         ) : (
           <div className="reports-stocks-legacy-group-list__empty">
-            <Text c="dimmed" size="sm">Додайте поле групування</Text>
+            <Text size="sm" c="gray.9">{isRows ? t('Додайте день, товар або інше поле') : t('Без поділу на стовпці')}</Text>
           </div>
         )}
       </div>
@@ -941,7 +950,7 @@ function LegacyGroupingPickerModal({
           </div>
         ) : (
           <div className="reports-stocks-group-picker__empty">
-            <Text c="dimmed" size="sm">Нічого не знайдено</Text>
+            <Text c="gray.9" size="sm">Нічого не знайдено</Text>
           </div>
         )}
       </Stack>
@@ -1021,13 +1030,12 @@ function ReportSelectionsCard({
       <Card className="app-section-card reports-stocks-selection-card" withBorder radius="md" padding="md">
         <div className="reports-stocks-legacy-panel__header">
           <div className="reports-stocks-legacy-panel__title">
-            <Group gap="xs" wrap="nowrap">
-              <Text className="reports-stocks-selection-title" component="h2">
-                {title ?? t('3. Умови відбору')}
+            <Group gap={6} wrap="nowrap">
+              <Text className="app-section-title" component="h2" fw={600} size="sm">
+                {title ?? t('Умови відбору')}
               </Text>
-              <Badge className="app-role-pill is-gray" variant="light">{selections.length}</Badge>
+              {selections.length ? <Badge className="app-role-pill is-gray" variant="light">{selections.length}</Badge> : null}
             </Group>
-            {resolvedDescription ? <Text c="dimmed" size="xs">{resolvedDescription}</Text> : null}
           </div>
           <Button
             className="reports-stocks-legacy-panel__add"
@@ -1041,6 +1049,7 @@ function ReportSelectionsCard({
           </Button>
         </div>
 
+        {resolvedDescription ? <Text className="reports-stocks-panel-description">{resolvedDescription}</Text> : null}
         {selections.length ? (
           <div className="reports-stocks-selection-list">
             {selections.map((selection, index) => {
@@ -1062,41 +1071,23 @@ function ReportSelectionsCard({
                       {getSelectionValuesSummary(selection, t)}
                     </span>
                   </Text>
-                  <Group className="reports-stocks-selection-summary__actions" gap={2} wrap="nowrap">
-                    <Tooltip label={t('Редагувати')}>
-                      <ActionIcon
-                        aria-label={t('Редагувати')}
-                        color="gray"
-                        size={30}
-                        type="button"
-                        variant="subtle"
-                        onClick={() => openEditor(index, selection)}
-                      >
-                        <Pencil size={15} />
-                      </ActionIcon>
-                    </Tooltip>
-                    <Tooltip label={t('Видалити')}>
-                      <ActionIcon
-                        aria-label={t('Видалити')}
-                        color="red"
-                        size={30}
-                        type="button"
-                        variant="subtle"
-                        onClick={() => onChange((current) => current.filter((_, itemIndex) => itemIndex !== index))}
-                      >
-                        <Trash2 size={15} />
-                      </ActionIcon>
-                    </Tooltip>
+                  <Group className="reports-stocks-selection-summary__actions" gap={4} wrap="nowrap">
+                    <TableRowAction
+                      action="edit"
+                      label={t('Редагувати')}
+                      onClick={() => openEditor(index, selection)}
+                    />
+                    <TableRowAction
+                      action="delete"
+                      label={t('Видалити')}
+                      onClick={() => onChange((current) => current.filter((_, itemIndex) => itemIndex !== index))}
+                    />
                   </Group>
                 </div>
               )
             })}
           </div>
-        ) : (
-          <div className="reports-stocks-selection-empty">
-            <Text c="dimmed" size="sm">{t('Звіт охопить усі дані за вибраний період.')}</Text>
-          </div>
-        )}
+        ) : null}
       </Card>
 
       <AppModal
@@ -1331,7 +1322,7 @@ function ReportTemplatesCard({
         ) : (
           <div className="reports-stocks-template-empty">
             <LayoutTemplate size={20} />
-            <Text c="dimmed" size="sm">{t('Збережених шаблонів ще немає')}</Text>
+            <Text c="gray.9" size="sm">{t('Збережених шаблонів ще немає')}</Text>
           </div>
         )}
       </section>
@@ -1373,7 +1364,7 @@ function ReportResultSection({
         minWidth: 260,
         fill: true,
         accessor: (row) => row.measures.join(', '),
-        cell: (row) => row.measures.join(', ') || '—',
+        cell: (row) => row.measures.join(', '),
       },
       {
         id: 'rowGroupings',
@@ -1382,7 +1373,7 @@ function ReportResultSection({
         accessor: (row) => row.rowGroupings.join(', '),
         cell: (row) => (
           <span className="reports-stocks-result__grouping">
-            {row.rowGroupings.join(', ') || '—'}
+            {row.rowGroupings.join(', ')}
           </span>
         ),
       },
@@ -1393,7 +1384,7 @@ function ReportResultSection({
         accessor: (row) => row.colGroupings.join(', '),
         cell: (row) => (
           <span className="reports-stocks-result__grouping">
-            {row.colGroupings.join(', ') || '—'}
+            {row.colGroupings.join(', ')}
           </span>
         ),
       },
@@ -1404,7 +1395,7 @@ function ReportResultSection({
         align: 'center',
         accessor: (row) => row.hasDocument,
         cell: (row) => (
-          <Badge color={row.hasDocument ? 'green' : 'orange'} variant="light">
+          <Badge className={`app-role-pill ${row.hasDocument ? 'is-green' : 'is-orange'}`} variant="light">
             {row.hasDocument ? t('Готово') : t('Файл не сформовано')}
           </Badge>
         ),
@@ -1418,30 +1409,28 @@ function ReportResultSection({
         enableReorder: false,
         enableResizing: false,
         cell: (row) => (
-          <Button
-            color={CREATE_ACTION_COLOR}
+          <TableRowAction
+            action="download"
             disabled={!row.hasDocument || !hasFiles}
-            leftSection={<Download size={16} />}
-            size="sm"
-            type="button"
+            label={t('Завантажити')}
             onClick={onOpenFiles}
-          >
-            {t('Завантажити')}
-          </Button>
+          />
         ),
       },
     ],
     [hasFiles, onOpenFiles, t],
   )
 
+  if (!lastRun) return null
+
   return (
-    <section className="reports-stocks-result reports-stocks-panel" aria-labelledby="reports-stocks-result-title">
+    <section className="app-section-card reports-stocks-result reports-stocks-panel" aria-labelledby="reports-stocks-result-title">
       <Group className="reports-stocks-result__header" justify="space-between" wrap="nowrap">
         <Box className="reports-stocks-result__heading">
-          <Text className="reports-stocks-result__title" component="h2" fw={600} id="reports-stocks-result-title">
+          <Text className="app-section-title" component="h2" fw={600} size="sm" id="reports-stocks-result-title">
             {t('Результат')}
           </Text>
-          <Text className="reports-stocks-result__meta" size="xs" c="dimmed">
+          <Text className="reports-stocks-result__meta" size="xs" c="gray.9">
             {lastRun
               ? `${formatDate(lastRun.from)} – ${formatDate(lastRun.to)} · ${t('Показників')}: ${lastRun.measures.length}`
               : t('Після формування тут з’являться файли Excel і PDF.')}
@@ -1456,7 +1445,7 @@ function ReportResultSection({
         emptyText={(
           <Box className="reports-stocks-result__empty" role="status">
             <Text fw={600}>{placeholder.title}</Text>
-            <Text c="dimmed" size="sm">{placeholder.description}</Text>
+            <Text c="gray.9" size="sm">{placeholder.description}</Text>
           </Box>
         )}
         getRowId={(row) => `${row.from}-${row.to}`}

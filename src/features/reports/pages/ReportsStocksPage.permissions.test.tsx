@@ -113,7 +113,6 @@ describe('stock report permissions', () => {
 
     expect(createStockReport).not.toHaveBeenCalled()
     expect(localStorage.getItem('app_configs_reports_template:v1')).toBe(saved)
-    expect(screen.getByText(/без віднімання повернень/)).toBeTruthy()
     expect((screen.getByRole('button', { name: 'Сформувати' }) as HTMLButtonElement).disabled).toBe(false)
     fireEvent.submit(container.querySelector('form')!)
     await waitFor(() => expect(createStockReport).toHaveBeenCalledOnce())
