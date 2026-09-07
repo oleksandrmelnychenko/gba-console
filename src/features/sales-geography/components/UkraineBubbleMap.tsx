@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
-import { OBLAST_CENTROIDS, UA_OUTLINE, projectLat, projectLng } from '../data/oblastCentroids'
+import { UA_OUTLINE, projectLat, projectLng } from '../data/oblastCentroids'
 import type { GeographyMetric, PlottedRegion } from '../types'
 
 const VIEW_WIDTH = 760
@@ -71,21 +71,6 @@ export function UkraineBubbleMap({ regions, metric, formatMoney, formatCount }: 
           strokeWidth={1.5}
           strokeLinejoin="round"
         />
-
-        {!regions.some((region) => region.code === 'KR' || region.code === '200') && (
-          <text
-            x={projectLng(OBLAST_CENTROIDS.KR.lng, VIEW_WIDTH)}
-            y={projectLat(OBLAST_CENTROIDS.KR.lat, VIEW_HEIGHT)}
-            textAnchor="middle"
-            dominantBaseline="central"
-            fontSize={11}
-            fontWeight={500}
-            fill="var(--mantine-color-gray-6)"
-            pointerEvents="none"
-          >
-            {t('Крим')}
-          </text>
-        )}
 
         {bubbles.map(({ region, radius, cx, cy }) => {
           const isActive = hover?.region.code === region.code
