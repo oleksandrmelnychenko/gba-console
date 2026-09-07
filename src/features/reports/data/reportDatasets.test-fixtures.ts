@@ -58,4 +58,11 @@ export const reservationDataset: ReportDataset = {
   Filters: [...stockDataset.Filters, { Type: 6, Name: 'Клієнт' }, { Type: 9, Name: 'Договір клієнта' }],
 }
 
-export const currentStockDatasets = [stockDataset, placementDataset, reservationDataset]
+export const lotDataset: ReportDataset = {
+  ...stockDataset, DataSource: 7, Name: 'Склад: залишки партій',
+  Groupings: [...stockDataset.Groupings, { Type: 33, Name: 'Рядок партії' }, { Type: 34, Name: 'Організація партії' }],
+  Measurements: [{ Type: 20, Name: 'Записаний залишок партії' }],
+  Filters: [...stockDataset.Filters, { Type: 22, Name: 'Рядок партії' }, { Type: 23, Name: 'Організація партії' }],
+}
+
+export const currentStockDatasets = [stockDataset, placementDataset, reservationDataset, lotDataset]

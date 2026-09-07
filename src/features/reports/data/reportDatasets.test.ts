@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { datasetConfigurationError, datasetFilters, datasetGroupings, datasetMeasurements, datasetPresetRequest, datasetPresets, defaultDatasetRequest } from './reportDatasets'
-import { grossDataset, netDataset, purchaseDataset, reportDatasets, stockDataset, currentStockDatasets, placementDataset, reservationDataset } from './reportDatasets.test-fixtures'
+import { grossDataset, netDataset, purchaseDataset, reportDatasets, stockDataset, currentStockDatasets, placementDataset, reservationDataset, lotDataset } from './reportDatasets.test-fixtures'
 import { flattenCheckedMeasurements } from './reportOptions'
 import { createSalesReportPreset } from './reportPresets'
 
@@ -8,6 +8,7 @@ describe('report dataset capabilities', () => {
   it.each([
     { dataset: placementDataset, rows: [29, 30, 31, 32, 28], measures: [17], preset: 'placements-by-location' as const },
     { dataset: reservationDataset, rows: [12, 15, 29, 28], measures: [19], preset: 'reservations-by-agreement' as const },
+    { dataset: lotDataset, rows: [34, 29, 28], measures: [20], preset: 'lots-by-organization' as const },
   ])('builds the bounded default and explicit preset for source $dataset.DataSource', ({ dataset, rows, measures, preset }) => {
     const data = defaultDatasetRequest(dataset, '2026-06-01', '2026-06-30')
     expect(data.from).toBe('')
@@ -49,6 +50,26 @@ describe('report dataset capabilities', () => {
     const before = structuredClone(data)
     expect(datasetConfigurationError(data, dataset)).toContain('не підтримують період або історичну дату')
     expect(data).toEqual(before)
+  })
+
+  it('keeps lot organization/quantity identities separate from locations, sales and active contracts', () => {
+    expect(datasetGroupings(lotDataset).find(field => field.type === 34)).toEqual({ type: 34, key: 'StockOrganization', label: 'Організація партії' })
+    expect(datasetFilters(lotDataset).find(field => field.field.Type === 23)?.field.Name).toBe('StockOrganization')
+    const data = defaultDatasetRequest(lotDataset, '', '')
+    expect(data.sorted.Measurements).toEqual([expect.objectContaining({ Type: 20, Label: 'Записаний залишок партії' })])
+    expect(data.sorted.Row.some(field => field.type === 33)).toBe(false)
+    for (const type of [30, 31, 32]) {
+      expect(datasetConfigurationError({ ...data, sorted: { ...data.sorted, Row: [{ type, key: 'Location', label: 'Адреса розміщення' }] } }, lotDataset)).toContain('не підтримує')
+    }
+    for (const Type of [0, 4, 16, 17, 18, 19]) {
+      expect(datasetConfigurationError({ ...data, sorted: { ...data.sorted, Measurements: [{ Type, Name: 'Foreign', IsChecked: true, parentName: '' }] } }, lotDataset)).toContain('не підтримує')
+    }
+    data.selections = [{ IsChecked: false, SelectedField: { Type: 9, Name: 'CustomerContract' },
+      FilterCondition: { Type: 0, Name: 'Дорівнює' }, Values: [{ Data: { Id: 459018 }, Name: 'Договір [459018]', Value: 459018 }] }]
+    expect(datasetPresetRequest(lotDataset, 'lots-by-organization', data)?.Data.selections).toEqual(data.selections)
+    expect(datasetConfigurationError(data, lotDataset)).toBeNull()
+    data.selections[0].IsChecked = true
+    expect(datasetConfigurationError(data, lotDataset)).toContain('CustomerContract')
   })
 
   it('builds a current warehouse/unit snapshot with no date or monetary measurements', () => {
@@ -119,6 +140,15 @@ describe('report dataset capabilities', () => {
       expect(datasetPresets(dataset)).toEqual([])
       expect(datasetPresetRequest(dataset, 'quantities-by-unit', defaultDatasetRequest(dataset, '', ''))).toBeNull()
     }
+  })
+
+  it('retains published sales count16 as a source0 measurement independently of lot quantity20', () => {
+    const dataset = { ...grossDataset, Measurements: [...grossDataset.Measurements, { Type: 16, Name: 'Кількість продажів' }] }
+    const selected = [{ Type: 16, Name: 'SalesCount', IsChecked: true, parentName: '' }]
+    expect(flattenCheckedMeasurements(datasetMeasurements(dataset, selected))).toEqual([expect.objectContaining({ Type: 16, Label: 'Кількість продажів' })])
+    const data = { ...defaultDatasetRequest(dataset, '', ''), sorted: { Row: [{ type: 3, key: 'Day', label: 'По днях' }], Col: [], Measurements: selected } }
+    expect(datasetConfigurationError(data, dataset)).toBeNull()
+    expect(defaultDatasetRequest(lotDataset, '', '').sorted.Measurements.map(field => field.Type)).toEqual([20])
   })
 
   it('preserves published price groupings 26/27 while quantity units use only 28', () => {

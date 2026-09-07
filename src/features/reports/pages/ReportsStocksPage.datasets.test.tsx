@@ -6,7 +6,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { I18nProvider } from '../../../shared/i18n/I18nProvider'
 import { createStockReport, getReportClientAgreements, searchDatasetReportValues } from '../api/reportsApi'
 import { getReportDatasets, getServerReportTemplates, saveServerReportTemplate } from '../api/reportWorkspaceApi'
-import { reportDatasets, purchaseDataset, stockDataset, currentStockDatasets, placementDataset, reservationDataset } from '../data/reportDatasets.test-fixtures'
+import { reportDatasets, purchaseDataset, stockDataset, currentStockDatasets, placementDataset, reservationDataset, lotDataset } from '../data/reportDatasets.test-fixtures'
+import { getCurrentStockReport } from '../data/currentStockReports'
 import { defaultDatasetRequest } from '../data/reportDatasets'
 import { createSalesReportPreset } from '../data/reportPresets'
 import type { ReportTemplate } from '../types'
@@ -81,7 +82,7 @@ describe('native report datasets in the constructor', () => {
     expect(screen.queryByLabelText('До')).toBeNull()
     expect(screen.getByText('Поточний стан на час читання даних. Історичний період не застосовується.')).toBeTruthy()
     expect(screen.queryByRole('button', { name: 'Кількість за одиницями' })).toBeNull()
-    fireEvent.click(screen.getByRole('button', { name: dataset.DataSource === 4 ? 'Залишки за складами й одиницями' : dataset.DataSource === 5 ? 'Розміщення за комірками' : 'Резерви за договорами' }))
+    fireEvent.click(screen.getByRole('button', { name: getCurrentStockReport(dataset.DataSource)!.preset.name }))
     fireEvent.submit(container.querySelector('form')!)
     await waitFor(() => expect(createStockReport).toHaveBeenCalledOnce())
     expect(vi.mocked(createStockReport).mock.calls[0][0]).toMatchObject(defaultDatasetRequest(dataset, '', ''))
@@ -171,6 +172,35 @@ describe('native report datasets in the constructor', () => {
     fireEvent.submit(container.querySelector('form')!)
     await waitFor(() => expect(createStockReport).toHaveBeenCalledOnce())
     expect(vi.mocked(createStockReport).mock.calls[0][0]).toMatchObject({ dataSource: dataset.DataSource, from: '', to: '', selections: [template.Data.selections[0]] })
+    fireEvent.click(screen.getByRole('button', { name: 'Шаблони' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Зберегти' }))
+    await waitFor(() => expect(saveServerReportTemplate).toHaveBeenCalledOnce())
+    expect(vi.mocked(saveServerReportTemplate).mock.calls[0][0].Data).toEqual(template.Data)
+  })
+
+  it('restores exact lot and organization filters, retaining a disabled contract in the source7 private template', async () => {
+    vi.mocked(getReportDatasets).mockResolvedValue([...reportDatasets, ...currentStockDatasets])
+    const template = { ...storedTemplate(), Name: 'Мої залишки партій', Data: defaultDatasetRequest(lotDataset, '', '') }
+    template.Data.selections = [
+      { IsChecked: true, SelectedField: { Type: 22, Name: 'StockConsignmentItem' }, FilterCondition: { Type: 0, Name: 'Дорівнює' },
+        Values: [{ Data: { Id: 4801759 }, Name: 'Рядок партії [4801759]', Value: 4801759 }] },
+      { IsChecked: true, SelectedField: { Type: 23, Name: 'StockOrganization' }, FilterCondition: { Type: 0, Name: 'Дорівнює' },
+        Values: [{ Data: { Id: 9876 }, Name: 'Організація партії [9876]', Value: 9876 }] },
+      { IsChecked: false, SelectedField: { Type: 9, Name: 'CustomerContract' }, FilterCondition: { Type: 0, Name: 'Дорівнює' },
+        Values: [{ Data: { Id: 459018 }, Name: 'Договір [459018]', Value: 459018 }] },
+    ]
+    vi.mocked(getServerReportTemplates).mockResolvedValue([template])
+    const { container } = await renderReady()
+    fireEvent.click(screen.getByRole('button', { name: 'Шаблони' }))
+    fireEvent.click(await screen.findByRole('button', { name: /Мої залишки партій/ }))
+    expect(screen.queryByLabelText('Від')).toBeNull()
+    expect((screen.getByRole('checkbox', { name: 'Умова відбору 3' }) as HTMLInputElement).checked).toBe(false)
+    fireEvent.click(screen.getByRole('button', { name: 'Залишки партій за організаціями' }))
+    fireEvent.submit(container.querySelector('form')!)
+    await waitFor(() => expect(createStockReport).toHaveBeenCalledOnce())
+    expect(vi.mocked(createStockReport).mock.calls[0][0]).toMatchObject({ dataSource: 7, from: '', to: '',
+      sorted: { Row: [{ type: 34 }, { type: 29 }, { type: 28 }], Col: [], Measurements: [{ Type: 20 }] },
+      selections: template.Data.selections.slice(0, 2) })
     fireEvent.click(screen.getByRole('button', { name: 'Шаблони' }))
     fireEvent.click(screen.getByRole('button', { name: 'Зберегти' }))
     await waitFor(() => expect(saveServerReportTemplate).toHaveBeenCalledOnce())

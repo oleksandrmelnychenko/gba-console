@@ -21,6 +21,7 @@ GROUPING_KEYS.set(30, 'StockStorageNumber')
 GROUPING_KEYS.set(31, 'StockRowNumber')
 GROUPING_KEYS.set(32, 'StockCellNumber')
 GROUPING_KEYS.set(33, 'StockConsignmentItem')
+GROUPING_KEYS.set(34, 'StockOrganization')
 
 const FILTER_KEYS = new Map(REPORT_FILTER_FIELD_GROUPS.flatMap(group => group.children.map(item => [item.type, item.label] as const)))
 FILTER_KEYS.set(1, 'Product')
@@ -31,6 +32,7 @@ FILTER_KEYS.set(18, 'SupplierContract')
 FILTER_KEYS.set(19, 'PurchaseDocument')
 FILTER_KEYS.set(21, 'Warehouse')
 FILTER_KEYS.set(22, 'StockConsignmentItem')
+FILTER_KEYS.set(23, 'StockOrganization')
 
 export function datasetGroupings(dataset: ReportDataset | undefined): ReportGroupingItem[] {
   return dataset?.Groupings.map(field => ({ key: GROUPING_KEYS.get(field.Type) ?? field.Name, label: field.Name, type: field.Type })) ?? []

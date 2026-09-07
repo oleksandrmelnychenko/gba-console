@@ -7,7 +7,7 @@ import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { I18nProvider } from '../../../shared/i18n/I18nProvider'
 import { downloadTextFile } from '../utils'
 import { ReportsSalePage } from './ReportsSalePage'
-import { stockWorkbookRows, placementWorkbookRows, reservationWorkbookRows } from '../data/stockSpreadsheet.test-fixtures'
+import { stockWorkbookRows, placementWorkbookRows, reservationWorkbookRows, lotWorkbookRows } from '../data/stockSpreadsheet.test-fixtures'
 import { buildSpreadsheetSheet, detectDelimiter, parseDelimitedText } from '../spreadsheet'
 
 const allowedPermissions = new Set<string>()
@@ -141,6 +141,7 @@ describe('Sale-file report canonical permission guards', () => {
 describe.each([
   { source: 5, rows: placementWorkbookRows, title: 'Звіт поточних розміщень товарів', dimensions: 5, values: [0, '', 0.00000001] },
   { source: 6, rows: reservationWorkbookRows, title: 'Звіт поточних резервів за договорами', dimensions: 4, values: [1, 0.00000001, 0] },
+  { source: 7, rows: lotWorkbookRows, title: 'Звіт поточних залишків партій', dimensions: 4, values: [0, '', 0.00000001] },
 ])('native current slice $source actual XLSX viewer', ({ rows, title, dimensions, values }) => {
   it('imports the merged XLSX binary and exports only the original snapshot identities and quantity precision', async () => {
     vi.clearAllMocks()

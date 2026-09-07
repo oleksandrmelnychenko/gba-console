@@ -25,12 +25,12 @@ export const stockWorkbookRows: SpreadsheetCellValue[][] = [
   ['Загальний підсумок', 'Загальний підсумок', null, null, null],
 ]
 
-function currentSliceRows(title: string, rowGroupings: string[], measure: string, body: SpreadsheetCellValue[][]) {
+function currentSliceRows(title: string, rowGroupings: string[], measure: string, body: SpreadsheetCellValue[][], columnCaption?: string) {
   const width = rowGroupings.length + 1
   const lines = [title, stockHeaderLines[1], stockHeaderLines[2], `Рядки: ${rowGroupings.join(', ')}`,
     'Колонки: —', `Показники: ${measure}`, 'Фільтри: не застосовано', stockHeaderLines[7]]
   return [...lines.map(line => Array.from({ length: width }, () => line)), [],
-    [...rowGroupings.map(() => null), title.includes('розміщень') ? 'Поточні розміщення' : 'Поточні резерви'], [...rowGroupings, measure], ...body]
+    [...rowGroupings.map(() => null), columnCaption ?? (title.includes('розміщень') ? 'Поточні розміщення' : 'Поточні резерви')], [...rowGroupings, measure], ...body]
 }
 
 export const placementWorkbookRows = currentSliceRows('Звіт поточних розміщень товарів',
@@ -50,3 +50,13 @@ export const reservationWorkbookRows = currentSliceRows('Звіт поточни
     ['Підсумок: Невідомий клієнт [N]', 'Підсумок: Невідомий клієнт [N]', 'Підсумок: Невідомий клієнт [N]', 'Підсумок: Невідомий клієнт [N]', null],
     ['Загальний підсумок', 'Загальний підсумок', 'Загальний підсумок', 'Загальний підсумок', null],
   ])
+
+
+// Optional lot detail preserves exact lot and organization identities alongside the current quantity.
+export const lotWorkbookRows = currentSliceRows('Звіт поточних залишків партій',
+  ['Організація партії', 'Склад', 'Рядок партії', 'Одиниця виміру'], 'Записаний залишок партії', [
+    ['Контрольна організація [9876]', 'Основний [10]', 'Рядок партії [4801759]', 'шт [10761]', 0],
+    [null, null, 'Рядок партії [4801760]', 'м [10780]', null],
+    ['Невідома організація [N]', 'Резервний [20]', 'Рядок партії [4801761]', 'шт [10761]', 0.00000001],
+    ['Загальний підсумок', 'Загальний підсумок', 'Загальний підсумок', 'Загальний підсумок', null],
+  ], 'Поточні залишки партій')

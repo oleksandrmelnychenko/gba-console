@@ -10,6 +10,9 @@ const CURRENT_STOCK_REPORTS = [
   { dataSource: 6, title: 'Звіт поточних резервів за договорами', rowGroupings: [12, 15, 29, 28], measurements: [19],
     preset: { id: 'reservations-by-agreement', name: 'Резерви за договорами',
       description: 'Клієнт → договір → склад → одиниця виміру. Записаний резерв на час читання даних, без оцінки вартості.' } },
+  { dataSource: 7, title: 'Звіт поточних залишків партій', rowGroupings: [34, 29, 28], measurements: [20],
+    preset: { id: 'lots-by-organization', name: 'Залишки партій за організаціями',
+      description: 'Організація партії → склад → одиниця виміру. Записаний залишок партії на час читання даних; різні одиниці не додаються.' } },
 ] as const
 
 export type CurrentStockPresetId = typeof CURRENT_STOCK_REPORTS[number]['preset']['id']

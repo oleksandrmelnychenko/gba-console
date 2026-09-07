@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { buildSheetExportRows, buildSpreadsheetSheet, calculateTotals, detectDelimiter, filterSheetRows, getAdditiveColumns,
   isCurrentStockSheet, parseDelimitedText, stockQuantityFormatter } from './spreadsheet'
-import { stockHeaderLines, stockWorkbookRows, placementWorkbookRows, reservationWorkbookRows } from './data/stockSpreadsheet.test-fixtures'
+import { stockHeaderLines, stockWorkbookRows, placementWorkbookRows, reservationWorkbookRows, lotWorkbookRows } from './data/stockSpreadsheet.test-fixtures'
 import { buildSpreadsheetCsv } from './utils'
 import { buildSpreadsheetChartData, getChartMeasureOptions } from './data/spreadsheetChartData'
 
@@ -70,6 +70,7 @@ describe('current stock native XLSX and CSV presentation', () => {
 describe.each([
   { source: 5, rows: placementWorkbookRows, dimensionCount: 5, values: [0, null, 0.00000001] },
   { source: 6, rows: reservationWorkbookRows, dimensionCount: 4, values: [1, 0.00000001, 0] },
+  { source: 7, rows: lotWorkbookRows, dimensionCount: 4, values: [0, null, 0.00000001] },
 ])('current stock slice $source XLSX and CSV', ({ rows, dimensionCount, values }) => {
   const sheet = buildSpreadsheetSheet('Report', rows)
 
