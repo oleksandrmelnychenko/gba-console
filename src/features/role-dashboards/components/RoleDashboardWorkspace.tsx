@@ -1,7 +1,8 @@
 import { Stack } from '@mantine/core'
 import { SalesCockpitPage, HeadDashboardPage } from '../../sales-cockpit'
-import { BuyerCockpitTab, ProcureDashboardTab } from '../../basket-supply-ukraine-order'
+import { ProcureDashboardTab } from '../../basket-supply-ukraine-order'
 import type { DashboardWorkspaceKey, DashboardWorkspacePeriod } from '../types'
+import { BuyerWorkspace } from '../../basket-supply-ukraine-order/components/BuyerWorkspace'
 import { OperationsWorkspace } from './OperationsWorkspace'
 import { SystemWorkspace } from './SystemWorkspace'
 import { WorkspaceSummary } from './WorkspaceSummary'
@@ -20,7 +21,7 @@ export function RoleDashboardWorkspace({
     case 'sales-head':
       return <HeadDashboardPage />
     case 'buyer':
-      return <BuyerCockpitTab />
+      return <BuyerWorkspace />
     case 'buyer-head':
       return <ProcureDashboardTab />
     case 'gba':

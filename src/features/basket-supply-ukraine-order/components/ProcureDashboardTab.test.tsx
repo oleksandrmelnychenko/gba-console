@@ -140,6 +140,18 @@ describe('ProcureDashboardTab', () => {
     })
   })
 
+  it('shows a readable error with retry instead of raw upstream details', async () => {
+    vi.mocked(getSupplyDashboardCharts).mockRejectedValueOnce(new Error('ProcurementApi: upstream request failed.')).mockResolvedValue(charts)
+    render(<MemoryRouter><I18nProvider><MantineProvider theme={theme}><ProcureDashboardTab /></MantineProvider></I18nProvider></MemoryRouter>)
+
+    expect(await screen.findByText('Не вдалося завантажити дашборд постачання')).not.toBeNull()
+    expect(screen.queryByText('ProcurementApi: upstream request failed.')).toBeNull()
+    expect(screen.queryByText('Даних для аналізу поки немає')).toBeNull()
+    fireEvent.click(screen.getByRole('button', { name: 'Повторити' }))
+    expect(await screen.findByText('Всього позицій')).not.toBeNull()
+    expect(screen.queryByText('Не вдалося завантажити дашборд постачання')).toBeNull()
+  })
+
   it('replaces empty charts with one meaningful operational state', async () => {
     vi.mocked(getSupplyDashboardCharts).mockResolvedValue({
       as_of_date: '2026-07-25',

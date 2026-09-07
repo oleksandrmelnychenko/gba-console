@@ -15,6 +15,7 @@ type ProcurementWorkspaceStateProps = {
   facts?: ProcurementWorkspaceFact[]
   isLoading?: boolean
   surface?: boolean
+  tone?: 'error'
   title: string
 }
 
@@ -25,6 +26,7 @@ export function ProcurementWorkspaceState({
   facts = [],
   isLoading = false,
   surface = false,
+  tone,
   title,
 }: ProcurementWorkspaceStateProps) {
   return (
@@ -33,9 +35,10 @@ export function ProcurementWorkspaceState({
       className={[
         'procure-workspace-state',
         surface ? 'is-surface' : '',
+        tone === 'error' ? 'is-error' : '',
         className ?? '',
       ].filter(Boolean).join(' ')}
-      role="status"
+      role={tone === 'error' ? 'alert' : 'status'}
     >
       {isLoading ? <Loader color="orange" size="sm" /> : null}
       <div className="procure-workspace-state__copy">
@@ -59,7 +62,7 @@ export function ProcurementWorkspaceState({
       ) : null}
 
       {action ? (
-        <Button color="orange" size="sm" variant="outline" onClick={action.onClick}>
+        <Button color="gray" size="sm" variant="default" onClick={action.onClick}>
           {action.label}
         </Button>
       ) : null}
