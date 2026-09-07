@@ -20,7 +20,7 @@ export function SalesChartsPage() {
 
   return (
     <Stack className="sales-charts-page" gap={0}>
-      <div className="sales-charts-tabs pill-tabs">
+      <div aria-label={t('Види звітів продажів')} className="sales-charts-tabs pill-tabs">
         {SALES_CHART_TABS.map((tab) => {
           const isActive = activeTab === tab.value
 

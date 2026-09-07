@@ -1,5 +1,3 @@
-import { BarChart } from '@mantine/charts'
-import { MONEY_AXIS_TICK } from '../../../shared/ui/charts/chartTheme'
 import { ActionIcon, Alert, Select, Stack, Text, TextInput, Tooltip } from '@mantine/core'
 import { CircleAlert, RotateCcw } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
@@ -10,6 +8,7 @@ import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { getSalesByProductTop } from '../api/salesChartsApi'
 import { formatMoney } from '../money'
+import { ManagerSalesChart } from './ManagerSalesChart'
 import type { SalesByProductTopReport, SalesChartsTopNXRow } from '../types'
 import { SalesChartsTopType } from '../types'
 
@@ -19,7 +18,7 @@ const TYPE_OPTIONS = [
 ]
 
 const TOP_NX_TABLE_DEFAULT_LAYOUT = {
-  density: 'normal',
+  density: 'compact',
 } satisfies DataTableDefaultLayout
 
 export function ManagerSalesByTopNXView() {
@@ -68,7 +67,7 @@ export function ManagerSalesByTopNXView() {
   const columns = useMemo<DataTableColumn<SalesChartsTopNXRow>[]>(() => {
     const managerColumns = report.Managers.map<DataTableColumn<SalesChartsTopNXRow>>((manager) => ({
       align: 'right',
-      cell: (row) => <span className="sales-chart-money">{formatMoney(row.values[manager.NetId])}</span>,
+      cell: (row) => <span className="app-money">{formatMoney(row.values[manager.NetId])}</span>,
       enableSorting: false,
       header: manager.ManagerName,
       id: manager.NetId,
@@ -90,7 +89,7 @@ export function ManagerSalesByTopNXView() {
       ...managerColumns,
       {
         align: 'right',
-        cell: (row) => <span className="sales-chart-money">{formatMoney(row.total)}</span>,
+        cell: (row) => <span className="app-money">{formatMoney(row.total)}</span>,
         enableSorting: false,
         header: t('Підсумок'),
         id: 'total',
@@ -156,51 +155,45 @@ export function ManagerSalesByTopNXView() {
         </div>
       </div>
 
-      <Stack className="sales-chart-content" gap="md" p="md">
-
+      <Stack className="sales-chart-content" gap={8}>
         {error && (
           <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
             {error}
           </Alert>
         )}
 
-        {chartData.length > 0 && (
-          <div>
-            <Text className="app-section-title" fw={600} mb={8} size="sm">
-              {t('Продано по менеджерах')}
-            </Text>
-          <BarChart
-            classNames={{ tooltipItemData: 'app-money' }}
+        {!error && (
+          <ManagerSalesChart
             data={chartData}
-            dataKey="manager"
-            h={260}
-            series={[{ color: 'orange.6', label: t('Продано'), name: 'total' }]}
-            tickLine="y"
-            valueFormatter={(value) => formatMoney(value)}
-            withLegend={false}
-            yAxisProps={{ tick: MONEY_AXIS_TICK }}
+            detailCount={report.Products.length}
+            detailLabel={t('Товарів у звіті')}
+            isLoading={isLoading}
           />
-          </div>
         )}
 
-        <div className="sales-chart-table-wrap">
-        <DataTable
-          columns={columns}
-          data={rows}
-          defaultLayout={TOP_NX_TABLE_DEFAULT_LAYOUT}
-          distributeAvailableWidth
-          emptyText={t('Дані відсутні')}
-          getRowId={(row) => row.rowId}
-          isLoading={isLoading}
-          layoutVersion="sales-charts-topnx-2"
-          loadingText={t('Завантаження даних')}
-          height="100%"
-          minWidth={720}
-          showLayoutControls
-          tableId="sales-charts-topnx"
-          toolbarPortalTarget={tableToolbarSlot}
-        />
-        </div>
+        <section className="sales-chart-table-section">
+          <Text className="app-section-title sales-chart-table-heading" component="h2" fw={600} size="sm">
+            {t('Деталізація за товарами та менеджерами')}
+          </Text>
+          <div className="sales-chart-table-wrap">
+            <DataTable
+              columns={columns}
+              data={rows}
+              defaultLayout={TOP_NX_TABLE_DEFAULT_LAYOUT}
+              distributeAvailableWidth
+              emptyText={t('Дані відсутні')}
+              getRowId={(row) => row.rowId}
+              height="100%"
+              isLoading={isLoading}
+              layoutVersion="sales-charts-topnx-2"
+              loadingText={t('Завантаження даних')}
+              minWidth={720}
+              showLayoutControls
+              tableId="sales-charts-topnx"
+              toolbarPortalTarget={tableToolbarSlot}
+            />
+          </div>
+        </section>
       </Stack>
     </div>
   )

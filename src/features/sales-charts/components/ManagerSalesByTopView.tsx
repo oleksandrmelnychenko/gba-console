@@ -1,5 +1,3 @@
-import { BarChart } from '@mantine/charts'
-import { MONEY_AXIS_TICK } from '../../../shared/ui/charts/chartTheme'
 import { ActionIcon, Alert, Select, Stack, Text, TextInput, Tooltip } from '@mantine/core'
 import { CircleAlert, RotateCcw } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
@@ -10,6 +8,7 @@ import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { getSalesByManagersAndTop, getSalesManagers, getSalesOrganizations } from '../api/salesChartsApi'
 import { formatMoney } from '../money'
+import { ManagerSalesChart } from './ManagerSalesChart'
 import type {
   SalesByManagersAndTopReport,
   SalesChartsManagerOption,
@@ -20,7 +19,7 @@ import type {
 const EMPTY_REPORT: SalesByManagersAndTopReport = { SalesByManagerAndProductTop: [], TotalByColumn: {} }
 
 const MANAGER_TOP_TABLE_DEFAULT_LAYOUT = {
-  density: 'normal',
+  density: 'compact',
 } satisfies DataTableDefaultLayout
 
 export function ManagerSalesByTopView() {
@@ -125,7 +124,7 @@ export function ManagerSalesByTopView() {
   const columns = useMemo<DataTableColumn<SalesChartsManagerTopRow>[]>(() => {
     const dynamicColumns = columnKeys.map<DataTableColumn<SalesChartsManagerTopRow>>((key) => ({
       align: 'right',
-      cell: (row) => <span className="sales-chart-money">{formatMoney(row.values[key])}</span>,
+      cell: (row) => <span className="app-money">{formatMoney(row.values[key])}</span>,
       enableSorting: false,
       header: key,
       id: `col-${key}`,
@@ -143,7 +142,7 @@ export function ManagerSalesByTopView() {
       ...dynamicColumns,
       {
         align: 'right',
-        cell: (row) => <span className="sales-chart-money">{formatMoney(row.total)}</span>,
+        cell: (row) => <span className="app-money">{formatMoney(row.total)}</span>,
         enableSorting: false,
         header: t('Всього'),
         id: 'total',
@@ -222,38 +221,30 @@ export function ManagerSalesByTopView() {
         </div>
       </div>
 
-      <Stack className="sales-chart-content" gap="md" p="md">
-
+      <Stack className="sales-chart-content" gap={8}>
         {error && (
           <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
             {error}
           </Alert>
         )}
 
-        {chartData.length > 0 && (
-          <div>
-            <Text className="app-section-title" fw={600} mb={8} size="sm">
-              {t('Продано по менеджерах')}
-            </Text>
-          <BarChart
-            classNames={{ tooltipItemData: 'app-money' }}
+        {!error && (
+          <ManagerSalesChart
             data={chartData}
-            dataKey="manager"
-            h={260}
-            series={[{ color: 'orange.6', label: t('Продажі'), name: 'total' }]}
-            tickLine="y"
-            valueFormatter={(value) => formatMoney(value)}
-            withLegend={false}
-            yAxisProps={{ tick: MONEY_AXIS_TICK }}
+            detailCount={columnKeys.length}
+            detailLabel={t('Категорій у звіті')}
+            isLoading={isLoading}
           />
-          </div>
         )}
 
-        {columnKeys.length > 0 ? (
+        <section className="sales-chart-table-section">
+          <Text className="app-section-title sales-chart-table-heading" component="h2" fw={600} size="sm">
+            {t('Деталізація за категоріями та менеджерами')}
+          </Text>
           <div className="sales-chart-table-wrap">
             <DataTable
               columns={columns}
-              data={rows}
+              data={columnKeys.length > 0 ? rows : []}
               defaultLayout={MANAGER_TOP_TABLE_DEFAULT_LAYOUT}
               distributeAvailableWidth
               emptyText={t('Дані відсутні')}
@@ -268,11 +259,7 @@ export function ManagerSalesByTopView() {
               toolbarPortalTarget={tableToolbarSlot}
             />
           </div>
-        ) : (
-          <Text c="dimmed" size="sm">
-            {isLoading ? t('Завантаження даних') : t('Дані відсутні')}
-          </Text>
-        )}
+        </section>
       </Stack>
     </div>
   )

@@ -1,6 +1,7 @@
 import { LineChart } from '@mantine/charts'
 import { MONEY_AXIS_TICK } from '../../../shared/ui/charts/chartTheme'
-import { ActionIcon, Alert, Select, Stack, Text, TextInput, Tooltip } from '@mantine/core'
+import { ChartLoading } from '../../../shared/ui/charts/ChartState'
+import { ActionIcon, Alert, Select, Stack, TextInput, Tooltip } from '@mantine/core'
 import { CircleAlert, RotateCcw } from 'lucide-react'
 import { useEffect, useMemo } from 'react'
 import { formatLocalDate } from '../../../shared/date/dateTime'
@@ -10,6 +11,8 @@ import { SearchableSelect } from '../../../shared/ui/SearchableSelect'
 import { getSalesByClient, searchSalesClients } from '../api/salesChartsApi'
 import type { SalesChartsClientOption, SalesChartsClientPoint } from '../types'
 import { SalesChartsPeriodType } from '../types'
+import { formatMoney } from '../money'
+import { SalesChartEmpty, SalesChartPanel } from './SalesChartPanel'
 
 const PERIOD_OPTIONS = [
   { label: 'День', value: String(SalesChartsPeriodType.Day) },
@@ -153,7 +156,7 @@ export function SalesByClientChart() {
             className="sales-chart-filter-control"
             data={autocompleteData}
             label={t('Клієнт')}
-            placeholder={t('Пошук клієнта')}
+            selectionPlaceholder={t('Пошук клієнта')}
             value={clientQuery}
             onChange={(value) => {
               setClientQuery(value)
@@ -182,34 +185,48 @@ export function SalesByClientChart() {
         </div>
       </div>
 
-      <Stack className="sales-chart-content" gap="md" p="md">
-
-        {error && (
+      <Stack className="sales-chart-content" gap={8}>
+        {netId && error ? (
           <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
             {error}
           </Alert>
-        )}
-
-        {points.length === 0 ? (
-          <Text c="dimmed" size="sm">
-            {isLoading ? t('Завантаження даних') : t('Дані відсутні')}
-          </Text>
         ) : (
-          <div>
-            <Text className="app-section-title" fw={600} mb={8} size="sm">
-              {t('Динаміка продажів клієнта')}
-            </Text>
-          <LineChart
-            classNames={{ tooltipItemData: 'app-money' }}
-            curveType="linear"
-            data={points}
-            dataKey="name"
-            h={300}
-            series={[{ color: 'orange.6', label: t('Сума продажу в євро'), name: 'amount' }]}
-            xAxisProps={{ tickFormatter: periodFormatter }}
-            yAxisProps={{ tick: MONEY_AXIS_TICK }}
-          />
-          </div>
+          <SalesChartPanel
+            title={t('Динаміка продажів клієнта')}
+            metrics={netId && !isLoading && points.length > 0 ? [
+              { label: t('Продажі, EUR'), value: formatMoney(points.reduce((sum, point) => sum + point.amount, 0)), money: true },
+              { label: t('Періодів у звіті'), value: points.length },
+            ] : []}
+          >
+            {!netId ? (
+              <SalesChartEmpty
+                title={t('Оберіть клієнта')}
+                description={t('Введіть щонайменше 2 символи у пошуку та виберіть клієнта зі списку.')}
+              />
+            ) : isLoading ? (
+              <ChartLoading height={128} label={t('Завантаження даних')} />
+            ) : points.length === 0 ? (
+              <SalesChartEmpty
+                title={t('За цей період даних немає')}
+                description={t('Оберіть інший діапазон дат або змініть фільтри.')}
+              />
+            ) : (
+              <div className="sales-chart-plot">
+                <LineChart
+                  classNames={{ tooltipItemData: 'app-money' }}
+                  curveType="linear"
+                  data={points}
+                  dataKey="name"
+                  h={280}
+                  series={[{ color: 'orange.6', label: t('Сума продажу в євро'), name: 'amount' }]}
+                  tickLine="none"
+                  valueFormatter={formatMoney}
+                  xAxisProps={{ tickFormatter: periodFormatter }}
+                  yAxisProps={{ tick: MONEY_AXIS_TICK }}
+                />
+              </div>
+            )}
+          </SalesChartPanel>
         )}
       </Stack>
     </div>
