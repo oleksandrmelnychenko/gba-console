@@ -1181,3 +1181,25 @@
     grid-column: 1 / -1;
   }
 }
+
+.console-frame .cockpit-panel-card {
+  border: 1px solid var(--mantine-color-gray-2);
+  box-shadow: none;
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 240px;
+  padding: 0;
+}
+
+.cockpit-panel-bar {
+  display: flex;
+  flex: 0 0 auto;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+}
+
+.cockpit-panel-bar > * { flex-shrink: 0; }
+.cockpit-panel-heading { align-self: center; display: grid; gap: 6px; min-width: 180px; margin-right: 12px; }
+.cockpit-panel-meta { color: var(--mantine-color-gray-6); font-family: var(--font-mono); white-space: nowrap; }
+.cockpit-panel-table { display: flex; flex: 1 1 auto; flex-direction: column; min-height: 0; overflow: hidden; }

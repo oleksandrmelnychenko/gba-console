@@ -69,6 +69,7 @@ export function MyClientsPanel() {
   const [search, setSearch] = useValueState('')
   const [debouncedSearch] = useDebouncedValue(search, 400)
   const [reloadKey, setReloadKey] = useState(0)
+  const [tableToolbarSlot, setTableToolbarSlot] = useState<HTMLDivElement | null>(null)
 
   useEffect(() => {
     let cancelled = false
@@ -143,16 +144,16 @@ export function MyClientsPanel() {
         id: 'last-order',
         header: t('Останнє замовлення'),
         accessor: (client) => client.last_order ?? '',
-        cell: (client) => <Text size="sm">{formatLastOrder(client.last_order) ?? '—'}</Text>,
-        width: 150,
+        cell: (client) => <span className="app-money">{formatLastOrder(client.last_order) ?? ''}</span>,
+        width: 210,
       },
       {
         id: 'orders',
         header: t('Замовлень (12м)'),
         accessor: (client) => client.orders_cnt,
-        cell: (client) => <Text size="sm">{client.orders_cnt || '—'}</Text>,
+        cell: (client) => <span className="app-money">{client.orders_cnt}</span>,
         align: 'right',
-        width: 125,
+        width: 185,
       },
       {
         id: 'turnover',
@@ -160,32 +161,23 @@ export function MyClientsPanel() {
         accessor: (client) => client.turnover_eur,
         cell: (client) => (
           <Text className="app-money" size="sm">
-            {client.turnover_eur > 0 ? formatMoney(client.turnover_eur) : '—'}
+            {formatMoney(client.turnover_eur)}
           </Text>
         ),
         align: 'right',
-        width: 130,
+        width: 180,
       },
       {
         id: 'overdue',
         header: t('Прострочений борг'),
         accessor: (client) => client.overdue_eur,
-        cell: (client) =>
-          client.overdue_eur > 0 ? (
-            <Tooltip
-              label={`${t('Прострочено понад терміни')}: ${client.max_days_past_terms} ${t('дн')}`}
-            >
-              <Text c="red" className="app-money" fw={600} size="sm">
-                {formatMoney(client.overdue_eur)}
-              </Text>
-            </Tooltip>
-          ) : (
-            <Text c="dimmed" size="sm">
-              —
-            </Text>
-          ),
+        cell: (client) => (
+          <span className="app-money" title={client.overdue_eur > 0 ? t('Прострочено понад терміни') + ': ' + client.max_days_past_terms + ' ' + t('дн') : undefined}>
+            {formatMoney(client.overdue_eur)}
+          </span>
+        ),
         align: 'right',
-        width: 150,
+        width: 215,
       },
       {
         id: 'contacts',
@@ -226,62 +218,50 @@ export function MyClientsPanel() {
   )
 
   return (
-    <Card className="app-section-card" withBorder padding="md" radius="md">
-      <Stack gap="md">
-        <Group justify="space-between" wrap="wrap">
-          <Group gap="xs">
-            <Text className="app-section-title" fw={600} size="sm">
-              {t('Мої клієнти')}
-            </Text>
-            <Badge className="app-role-pill is-gray" variant="light">
-              {visibleClients.length}
-            </Badge>
+    <Card className="app-section-card cockpit-panel-card" withBorder padding={0} radius="md">
+      <div className="app-filter-bar cockpit-panel-bar">
+        <div className="cockpit-panel-heading">
+          <Text className="app-section-title" fw={600} size="sm">{t('Мої клієнти')}</Text>
+          <Group gap={6} wrap="nowrap">
+            <Badge className="app-role-pill is-gray" variant="light">{isLoading ? '…' : visibleClients.length}</Badge>
             <AiFeatureBadge size="sm" tooltip={t('AI-рекомендації товарів для кожного клієнта')} />
           </Group>
-
-          <Group gap="xs">
-            <TextInput
-              leftSection={<Search size={16} />}
-              placeholder={t('Пошук клієнта')}
-              size="sm"
-              value={search}
-              w={260}
-              onChange={(event) => setSearch(event.currentTarget.value)}
-            />
-            <Tooltip label={t('Оновити')}>
-              <ActionIcon
-                aria-label={t('Оновити')}
-                size={34}
-                variant="light"
-                onClick={() => setReloadKey((key) => key + 1)}
-              >
-                <RefreshCw size={18} />
-              </ActionIcon>
-            </Tooltip>
-          </Group>
-        </Group>
-
-        {error && (
-          <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
-            {error}
-          </Alert>
-        )}
-
+        </div>
+        <TextInput
+          label={t('Пошук клієнта')}
+          leftSection={<Search size={15} />}
+          placeholder={t('Назва, телефон або email')}
+          value={search}
+          w={280}
+          onChange={(event) => setSearch(event.currentTarget.value)}
+        />
+        <div className="app-filter-actions">
+          <Tooltip label={t('Оновити')}>
+            <ActionIcon aria-label={t('Оновити')} loading={isLoading} size={34} variant="default" onClick={() => setReloadKey((key) => key + 1)}>
+              <RefreshCw size={17} />
+            </ActionIcon>
+          </Tooltip>
+          <div ref={setTableToolbarSlot} className="app-filter-table-toolbar-slot" />
+        </div>
+      </div>
+      {error && <Alert color="red" icon={<CircleAlert size={18} />} variant="light">{error}</Alert>}
+      <div className="cockpit-panel-table">
         <DataTable
           columns={clientColumns}
           data={visibleClients}
-          emptyText={t('Клієнтів не знайдено')}
-          expandColumnLabels={{
-            collapseRow: t('Згорнути'),
-            expandRow: t('Розгорнути'),
-          }}
+          emptyText={error ? t('Дані клієнтів недоступні') : t('Клієнтів не знайдено')}
+          expandColumnLabels={{ collapseRow: t('Згорнути'), expandRow: t('Розгорнути') }}
           getRowId={(client) => String(client.client_id)}
+          height="100%"
           isLoading={isLoading}
-          minWidth={940}
+          layoutVersion="clients-compact-2"
+          minWidth={1180}
           renderExpandedRow={(client) => <ClientRecommendationsInline client={client} />}
+          showLayoutControls
           tableId="sales-cockpit-my-clients"
+          toolbarPortalTarget={tableToolbarSlot}
         />
-      </Stack>
+      </div>
     </Card>
   )
 }
