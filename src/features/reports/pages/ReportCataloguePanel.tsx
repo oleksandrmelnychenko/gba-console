@@ -54,7 +54,7 @@ export function ReportCataloguePanel() {
   </Alert>
   if (!catalogue || !inspection) return <Group><Loader size="sm" /><Text>{t('Завантаження каталогу звітів')}</Text></Group>
   const { summary } = inspection
-  return <Card withBorder padding="sm">
+  return <Card withBorder padding="sm" style={{ flexShrink: 0 }}>
     <Stack gap="sm">
       <Group justify="space-between"><Text fw={600}>{t('Каталог звітів 1С')}</Text><Badge>{summary.CatalogueEntries}</Badge></Group>
       <Text size="sm" c="dimmed">{t('Перелік для перенесення з Fenix та AMG. Наявність у каталозі ще не означає, що розрахунок доступний у GBA. Готові налаштування доступних звітів розташовані в конструкторі.')}</Text>
