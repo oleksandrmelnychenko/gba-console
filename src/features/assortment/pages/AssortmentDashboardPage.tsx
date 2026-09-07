@@ -1,3 +1,4 @@
+import { ACTION_LABELS, REASON_LABELS } from '../assortmentLabels'
 import {
   Alert,
   Badge,
@@ -142,7 +143,8 @@ function productCode(row: Pick<AssortmentRow, 'product_id' | 'vendor_code'>): st
 }
 
 function recommendationFor(row: AssortmentRow): { label: string; reason: string } {
-  const reason = row.action_reasons?.find(Boolean) ?? ''
+  const reasonCode = row.action_reasons?.find(Boolean)
+  const reason = reasonCode ? REASON_LABELS[reasonCode] ?? 'Сигнал потребує перевірки' : ''
 
   switch (row.band) {
     case 'understock':
@@ -156,7 +158,7 @@ function recommendationFor(row: AssortmentRow): { label: string; reason: string 
     case 'order_to_demand':
       return { label: 'Під замовлення', reason: reason || 'Закуповувати під підтверджений попит' }
     default:
-      return { label: row.action_label || 'Контролювати', reason }
+      return { label: ACTION_LABELS[row.action_label ?? ''] ?? 'Контролювати', reason }
   }
 }
 
@@ -286,8 +288,8 @@ function useAssortmentColumns(t: (key: string) => string, hasRegion: boolean) {
 
             return (
               <span className="assort-cell-action">
-                <b>{recommendation.label}</b>
-                {recommendation.reason && <span>{recommendation.reason}</span>}
+                <b>{t(recommendation.label)}</b>
+                {recommendation.reason && <span>{t(recommendation.reason)}</span>}
               </span>
             )
           },
@@ -887,7 +889,11 @@ function AssortmentDetailTable({
     <Card className="app-section-card assort-table-card" withBorder radius="md" padding={0}>
       <div className="assort-card__head">
         <span className="assort-card__title app-section-title">{t('Деталізація асортименту')}</span>
-        <Badge className="app-role-pill is-gray" variant="light">{formatInt(rows.length)}</Badge>
+        <span className="assort-table-limit" aria-live="polite">
+          {isLoading ? t('Завантаження') : rows.length >= (filters.limit ?? 100)
+            ? t('Перші') + ' ' + formatInt(rows.length) + ' ' + t('за обраним сортуванням')
+            : t('Показано позицій') + ': ' + formatInt(rows.length)}
+        </span>
       </div>
       <div className="app-filter-bar assort-filter">
         <Group align="end" gap={10} wrap="nowrap" className="assort-filter-row">
@@ -937,6 +943,15 @@ function AssortmentDetailTable({
             value={filters.sort ?? 'health_asc'}
             w={210}
             onChange={(value) => onFiltersChange({ ...filters, sort: value ?? 'health_asc' })}
+          />
+          <Select
+            allowDeselect={false}
+            comboboxProps={ASSORT_COMBOBOX_PROPS}
+            data={['100', '250', '500', '1000']}
+            label={t('Ліміт позицій')}
+            value={String(filters.limit ?? 100)}
+            w={145}
+            onChange={(value) => value && onFiltersChange({ ...filters, limit: Number(value) })}
           />
           <div ref={setTableToolbarSlot} className="app-filter-table-toolbar-slot" />
         </Group>
