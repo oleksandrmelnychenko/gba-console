@@ -174,6 +174,21 @@ function normalizeRecommendation(
   const peerBand = normalizePeerBand(value.peer_band)
   const discountBand = value.discount_band === null ? null : normalizeDiscountBand(value.discount_band)
 
+  const suggestedDiscount = requireNullablePercent(
+    value.suggested_discount_pct, 'recommendation.suggested_discount_pct',
+  )
+  const discountBase = value.discount_base_price == null ? null : requireNullablePositiveNumber(
+    value.discount_base_price, 'recommendation.discount_base_price',
+  )
+  if (suggestedDiscount !== null && (
+    recommendedPrice === null || discountBand === null || discountBand.target_pct !== suggestedDiscount ||
+    (discountBase !== null && Math.abs(
+      Math.round(discountBase * (1 - suggestedDiscount / 100) * 100) / 100 - recommendedPrice,
+    ) > 0.010000001)
+  )) {
+    throw new PricingContractError('recommendation.suggested_discount_pct', 'must reproduce the price and band target')
+  }
+
   if (recommendedPrice !== null) {
     if (baselinePrice === null) {
       throw new PricingContractError(
@@ -208,6 +223,7 @@ function normalizeRecommendation(
       value.suggested_discount_pct,
       'recommendation.suggested_discount_pct',
     ),
+    discount_base_price: discountBase,
     discount_band: discountBand,
     peer_band: peerBand,
     confidence: confidence as PriceConfidence,

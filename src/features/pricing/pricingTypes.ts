@@ -57,6 +57,7 @@ export type PriceRecommendation = AiHistoryLineage & {
   recommended_price: number | null
   price_floor: number | null
   unit_cost_eur: number | null
+  discount_base_price?: number | null
   suggested_discount_pct: number | null
   discount_band: DiscountBand | null
   peer_band: PeerBand

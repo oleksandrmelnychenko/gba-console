@@ -90,6 +90,23 @@ describe('pricingApi canonical AI contract', () => {
       .rejects.toBeInstanceOf(PricingContractError)
   })
 
+  it('rejects a discount that disagrees with its target or calculated price', async () => {
+    apiRequestMock.mockResolvedValueOnce({ ...recommendation(), suggested_discount_pct: 6 })
+    await expect(getPriceRecommendation(PRODUCT_NET_ID, AGREEMENT_NET_ID)).rejects.toBeInstanceOf(PricingContractError)
+    apiRequestMock.mockResolvedValueOnce({ ...recommendation(), discount_base_price: 110 })
+    await expect(getPriceRecommendation(PRODUCT_NET_ID, AGREEMENT_NET_ID)).rejects.toBeInstanceOf(PricingContractError)
+    apiRequestMock.mockResolvedValueOnce({ ...recommendation(), discount_base_price: 100.01 })
+    await expect(getPriceRecommendation(PRODUCT_NET_ID, AGREEMENT_NET_ID)).resolves.toMatchObject({ discount_base_price: 100.01 })
+  })
+
+  it('keeps a constraint conflict explicit without an actionable discount', async () => {
+    apiRequestMock.mockResolvedValueOnce({ ...recommendation(), recommended_price: null,
+      suggested_discount_pct: null, discount_band: null, confidence: 'low', rationale: 'constraints-conflict' })
+    await expect(getPriceRecommendation(PRODUCT_NET_ID, AGREEMENT_NET_ID)).resolves.toMatchObject({
+      recommended_price: null, suggested_discount_pct: null, rationale: 'constraints-conflict',
+    })
+  })
+
   it('normalizes the Ukrainian competitor scan contract', async () => {
     apiRequestMock.mockResolvedValueOnce({
       ai_summary: 'Ринкова медіана стабільна.',

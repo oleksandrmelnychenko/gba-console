@@ -161,7 +161,12 @@ function PriceHintCard({ recommendation }: { recommendation: PriceRecommendation
         </Badge>
       </Group>
 
-      {recommendation.rationale && (
+      {recommendation.rationale === 'constraints-conflict' && (
+        <Alert color="orange" icon={<CircleAlert size={18} />} variant="light">
+          {t('Ціна договору, мінімальна прибутковість і ліміт знижки несумісні. Потрібне рішення менеджера щодо умов договору.')}
+        </Alert>
+      )}
+      {recommendation.rationale && recommendation.rationale !== 'constraints-conflict' && (
         <Text c="dimmed" size="sm">
           {recommendation.rationale}
         </Text>
