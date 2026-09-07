@@ -2,6 +2,13 @@ import type { ReportDataset, ReportFilterField, ReportGroupingItem, ReportMeasur
 import { createDefaultMeasurementGroups, flattenCheckedMeasurements, flattenGroupingOptions, REPORT_FILTER_CONDITIONS, REPORT_FILTER_FIELD_GROUPS } from './reportOptions'
 import { createSalesReportPreset, SALES_REPORT_PRESETS, type SalesReportPresetId } from './reportPresets'
 
+export type DatasetReportPresetId = SalesReportPresetId | 'quantities-by-unit'
+type DatasetReportPreset = { id: DatasetReportPresetId; name: string; description: string }
+const QUANTITY_BY_UNIT_PRESET: DatasetReportPreset = {
+  id: 'quantities-by-unit', name: 'Кількість за одиницями',
+  description: 'Одиниця виміру → день. Окрема кількість для кожної одиниці виміру, без додавання різних одиниць.',
+}
+
 const GROUPING_KEYS = new Map(flattenGroupingOptions().map(item => [item.type, item.key]))
 GROUPING_KEYS.set(24, 'PurchaseDocument')
 GROUPING_KEYS.set(25, 'SupplierContract')
@@ -54,12 +61,14 @@ export function datasetMeasurements(dataset: ReportDataset | undefined, selected
 export function defaultDatasetRequest(dataset: ReportDataset, from: string, to: string): ReportRequestBody {
   const groupings = datasetGroupings(dataset)
   const row = groupings.find(item => item.type === 3) ?? groupings[0]
+  const unit = groupings.find(item => item.type === 26)
   const available = dataset.Measurements.filter(field => field.Selectable !== false)
   const preferred = available.filter(field => field.Type === 0 || field.Type === (dataset.DataSource === 3 ? 2 : 4))
   const fields = preferred.length ? preferred : available.slice(0, 1)
   const selected = fields.map(field => ({ ...field, IsChecked: true, parentName: '' }))
   return { dataSource: dataset.DataSource, from, to, selections: [], sorted: {
-    Row: row ? [row] : [], Col: [], Measurements: flattenCheckedMeasurements(datasetMeasurements(dataset, selected)),
+    Row: [unit, row].filter((item, index, items): item is ReportGroupingItem => Boolean(item) && items.indexOf(item) === index),
+    Col: [], Measurements: flattenCheckedMeasurements(datasetMeasurements(dataset, selected)),
   } }
 }
 
@@ -83,21 +92,33 @@ export function datasetConfigurationError(data: ReportRequestBody, dataset: Repo
   return unsupported.length ? `Набір «${dataset.Name}» не підтримує налаштування: ${unsupported.join(', ')}. Налаштування не застосовано.` : null
 }
 
-export function datasetPresets(dataset: ReportDataset | undefined) {
-  if (!dataset || ![0, 2].includes(dataset.DataSource)) return []
-  return SALES_REPORT_PRESETS.flatMap(preset => {
+export function datasetPresets(dataset: ReportDataset | undefined): DatasetReportPreset[] {
+  if (!dataset || ![0, 2, 3].includes(dataset.DataSource)) return []
+  const presets: DatasetReportPreset[] = []
+  if ([26, 3].every(type => dataset.Groupings.some(field => field.Type === type))
+    && dataset.Measurements.some(field => field.Type === 0 && field.Selectable !== false)) {
+    presets.push(QUANTITY_BY_UNIT_PRESET)
+  }
+  if (dataset.DataSource === 3) return presets
+  return [...presets, ...SALES_REPORT_PRESETS.flatMap(preset => {
     const data = createSalesReportPreset(preset.id, '', '', []).Data
     if (datasetConfigurationError({ ...data, dataSource: dataset.DataSource }, dataset)) return []
     return [{ ...preset,
       name: dataset.DataSource === 2 ? preset.name.replace('Продажі', 'Чисті продажі') : preset.name,
       description: dataset.DataSource === 2 ? `${preset.description} Повернення віднімаються за правилами цього набору даних.` : preset.description,
     }]
-  })
+  })]
 }
 
-export function datasetPresetRequest(dataset: ReportDataset, id: SalesReportPresetId, current: ReportRequestBody) {
+export function datasetPresetRequest(dataset: ReportDataset, id: DatasetReportPresetId, current: ReportRequestBody) {
   const preset = datasetPresets(dataset).find(item => item.id === id)
   if (!preset) return null
+  if (id === 'quantities-by-unit') {
+    const data = defaultDatasetRequest(dataset, current.from, current.to)
+    return { Name: preset.name, Data: { ...data, selections: structuredClone(current.selections), sorted: {
+      ...data.sorted, Measurements: data.sorted.Measurements.filter(field => field.Type === 0),
+    } } }
+  }
   const template = createSalesReportPreset(id, current.from, current.to, current.selections)
   return { ...template, Name: preset.name, Data: { ...template.Data, dataSource: dataset.DataSource } }
 }

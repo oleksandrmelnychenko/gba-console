@@ -22,9 +22,9 @@ export async function createStockReport(body: ReportRequestBody): Promise<Report
   return normalizeReportResult(result)
 }
 
-export async function searchDatasetReportValues(field: number, params: ReportSearchParams, signal?: AbortSignal): Promise<ReportEntity[]> {
+export async function searchDatasetReportValues(dataSource: number, field: number, params: ReportSearchParams, signal?: AbortSignal): Promise<ReportEntity[]> {
   const result = await apiRequest<unknown>('/report/datasets/lookup', {
-    query: { dataSource: 3, field, value: params.value.trim(), offset: params.offset, limit: params.limit }, signal,
+    query: { dataSource, field, value: params.value.trim(), offset: params.offset, limit: params.limit }, signal,
   })
   if (!Array.isArray(result) || !result.every(item => item && typeof item === 'object' && Number.isSafeInteger(item.Id)
     && item.Id > 0 && typeof item.Name === 'string')) throw new Error('Сервер повернув некоректні значення відбору звіту.')

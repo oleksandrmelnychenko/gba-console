@@ -77,8 +77,7 @@ import {
   formatDate,
 } from '../utils'
 import './reports-pages.css'
-import type { SalesReportPresetId } from '../data/reportPresets'
-import { datasetConfigurationError, datasetFilters, datasetGroupings, datasetMeasurements, datasetPresetRequest, datasetPresets, defaultDatasetRequest } from '../data/reportDatasets'
+import { datasetConfigurationError, datasetFilters, datasetGroupings, datasetMeasurements, datasetPresetRequest, datasetPresets, defaultDatasetRequest, type DatasetReportPresetId } from '../data/reportDatasets'
 import { useReportDatasets } from '../hooks/useReportDatasets'
 import { ReportDatasetPicker } from './ReportDatasetPicker'
 import { ReportQuickPresets } from './ReportQuickPresets'
@@ -353,7 +352,7 @@ function ReportsStocksWorkspace() {
     applyTemplate({ Name: '', Data: defaultDatasetRequest(nextDataset, from, to) })
   }
 
-  function applyPreset(id: SalesReportPresetId) {
+  function applyPreset(id: DatasetReportPresetId) {
     if (!dataset) return
     const preset = datasetPresetRequest(dataset, id, templateBody)
     if (preset) applyTemplate(preset)
@@ -366,6 +365,7 @@ function ReportsStocksWorkspace() {
       <ReportDatasetPicker datasets={datasetStorage.datasets} selected={dataSource} disabled={!canGenerateReport || isLoading}
         loaded={datasetStorage.loaded} error={datasetStorage.error} onChange={changeDataset} onRetry={datasetStorage.retry} />
       <ReportBuilderForm
+        dataSource={dataSource}
         presets={presets}
         configurationReady={!configurationError}
         onApplyPreset={applyPreset}
@@ -428,10 +428,11 @@ function ReportsStocksWorkspace() {
 }
 
 type ReportBuilderFormProps = {
+  dataSource: number
   presets: ReturnType<typeof datasetPresets>
   configurationReady: boolean
   templateStorage: ReturnType<typeof useServerReportTemplates>
-  onApplyPreset: (id: SalesReportPresetId) => void
+  onApplyPreset: (id: DatasetReportPresetId) => void
   canSubmit: boolean
   colGroups: ReportGroupingItem[]
   filterFieldOptions: FilterFieldOption[]
@@ -473,6 +474,7 @@ type ReportBuilderFormProps = {
 }
 
 function ReportBuilderForm({
+  dataSource,
   presets,
   configurationReady,
   onApplyPreset,
@@ -593,6 +595,7 @@ function ReportBuilderForm({
             </Alert>
           ) : null}
           <LegacyReportBuilder
+            dataSource={dataSource}
             colGroups={colGroups}
             filterFieldOptions={filterFieldOptions}
             groupingOptions={groupingOptions}
@@ -645,6 +648,7 @@ function ReportBuilderForm({
 }
 
 type LegacyReportBuilderProps = {
+  dataSource: number
   colGroups: ReportGroupingItem[]
   filterFieldOptions: FilterFieldOption[]
   groupingOptions: ReportGroupingItem[]
@@ -661,6 +665,7 @@ type LegacyReportBuilderProps = {
 }
 
 function LegacyReportBuilder({
+  dataSource,
   colGroups,
   filterFieldOptions,
   groupingOptions,
@@ -784,6 +789,7 @@ function LegacyReportBuilder({
         </section>
         <section className="reports-stocks-legacy__selections">
           <ReportSelectionsCard
+            dataSource={dataSource}
             description={null}
             filterFieldOptions={filterFieldOptions}
             from={lookupFrom}
@@ -974,6 +980,7 @@ type FilterFieldOption = {
 }
 
 type ReportSelectionsCardProps = {
+  dataSource: number
   description?: string | null
   filterFieldOptions: FilterFieldOption[]
   from: string
@@ -984,6 +991,7 @@ type ReportSelectionsCardProps = {
 }
 
 function ReportSelectionsCard({
+  dataSource,
   description,
   filterFieldOptions,
   from,
@@ -1139,6 +1147,7 @@ function ReportSelectionsCard({
                 }}
               />
               <SelectionValuePicker
+                dataSource={dataSource}
                 from={from}
                 label={t('Значення')}
                 selection={draftSelection}
@@ -1480,6 +1489,7 @@ function ReportResultSection({
 }
 
 type SelectionValuePickerProps = {
+  dataSource: number
   error?: string
   from: string
   label?: string
@@ -1490,7 +1500,7 @@ type SelectionValuePickerProps = {
   onChange: (values: ReportSelectedValue[]) => void
 }
 
-function SelectionValuePicker({ error, from, label, selection, selections, to, width = 320, onChange }: SelectionValuePickerProps) {
+function SelectionValuePicker({ dataSource, error, from, label, selection, selections, to, width = 320, onChange }: SelectionValuePickerProps) {
   const { t } = useI18n()
   const [search, setSearch] = useValueState('')
   const [manualValue, setManualValue] = useValueState('')
@@ -1601,12 +1611,8 @@ function SelectionValuePicker({ error, from, label, selection, selections, to, w
           lookupMode === 'dependent'
             ? await getReportClientAgreements(dependentClientNetId)
             : await loadSelectionLookupOptions(
-                selection.SelectedField.Type,
-                normalizedSearch,
-                from,
-                to,
-                controller.signal,
-                saleDocumentFilters,
+                dataSource, selection.SelectedField.Type, normalizedSearch, from, to,
+                controller.signal, saleDocumentFilters,
               )
 
         if (!cancelled) {
@@ -1630,6 +1636,7 @@ function SelectionValuePicker({ error, from, label, selection, selections, to, w
       controller.abort()
     }
   }, [
+    dataSource,
     dependentClientNetId,
     from,
     lookupMode,
@@ -2027,6 +2034,7 @@ function getSelectionLookupMode(fieldType: number): 'manual' | 'search' | 'stati
     case REPORT_FILTER_FIELD_TYPES.supplier:
     case REPORT_FILTER_FIELD_TYPES.supplierContract:
     case REPORT_FILTER_FIELD_TYPES.purchaseDocument:
+    case REPORT_FILTER_FIELD_TYPES.productMeasureUnit:
     case REPORT_FILTER_FIELD_TYPES.customerManager:
     case REPORT_FILTER_FIELD_TYPES.saleDocumentManagerInput:
     case REPORT_FILTER_FIELD_TYPES.saleDocumentManagerPosted:
@@ -2037,7 +2045,7 @@ function getSelectionLookupMode(fieldType: number): 'manual' | 'search' | 'stati
 }
 
 function getSelectionLookupMinLength(fieldType: number): number {
-  return fieldType === REPORT_FILTER_FIELD_TYPES.productGroup ? 0 : 2
+  return fieldType === REPORT_FILTER_FIELD_TYPES.productGroup || fieldType === REPORT_FILTER_FIELD_TYPES.productMeasureUnit ? 0 : 2
 }
 
 function getDependentClientNetId(selections: ReportSelection[]): string {
@@ -2057,6 +2065,7 @@ type SaleDocumentLookupFilters = {
 }
 
 async function loadSelectionLookupOptions(
+  dataSource: number,
   fieldType: number,
   value: string,
   from: string,
@@ -2096,7 +2105,8 @@ async function loadSelectionLookupOptions(
     case REPORT_FILTER_FIELD_TYPES.supplier:
     case REPORT_FILTER_FIELD_TYPES.supplierContract:
     case REPORT_FILTER_FIELD_TYPES.purchaseDocument:
-      return searchDatasetReportValues(fieldType, { limit: LOOKUP_SEARCH_LIMIT, offset: 0, value }, signal)
+    case REPORT_FILTER_FIELD_TYPES.productMeasureUnit:
+      return searchDatasetReportValues(dataSource, fieldType, { limit: LOOKUP_SEARCH_LIMIT, offset: 0, value }, signal)
     case REPORT_FILTER_FIELD_TYPES.saleDocument:
     case REPORT_FILTER_FIELD_TYPES.saleDocumentNumberDate:
       return searchSalesReportDocuments({

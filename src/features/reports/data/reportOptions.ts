@@ -46,6 +46,7 @@ export const REPORT_FILTER_FIELD_TYPES = {
   supplier: 17,
   supplierContract: 18,
   purchaseDocument: 19,
+  productMeasureUnit: 20,
 } as const
 
 const REPORT_GROUPING_TYPES = {
@@ -73,6 +74,7 @@ const REPORT_GROUPING_TYPES = {
   supplier: 21,
   sourceSaleResponsible: 22,
   sourceOrderResponsible: 23,
+  productMeasureUnit: 26,
 } as const
 
 // Cost VAT is supplied by published 1C batch allocations. Missing breakdowns
@@ -135,6 +137,7 @@ const REPORT_GROUPING_GROUPS: ReportGroupingGroup[] = [
       { key: 'ProductDescription', label: 'Опис товару', type: REPORT_GROUPING_TYPES.productDescription },
       { key: 'ProductTop', label: 'Топ товару', type: REPORT_GROUPING_TYPES.productTop },
       { key: 'ProductGroup', label: 'Група товару', type: REPORT_GROUPING_TYPES.productGroup },
+      { key: 'ProductMeasureUnit', label: 'Одиниця виміру', type: REPORT_GROUPING_TYPES.productMeasureUnit },
     ],
   },
   {
@@ -210,6 +213,7 @@ export const REPORT_FILTER_FIELD_GROUPS: ReportFilterFieldGroup[] = [
       { type: REPORT_FILTER_FIELD_TYPES.productArticle, label: 'ProductArticle' },
       { type: REPORT_FILTER_FIELD_TYPES.productTop, label: 'ProductTop' },
       { type: REPORT_FILTER_FIELD_TYPES.productGroup, label: 'ProductGroup' },
+      { type: REPORT_FILTER_FIELD_TYPES.productMeasureUnit, label: 'ProductMeasureUnit' },
     ],
   },
   {
@@ -262,6 +266,7 @@ const REPORT_FIELD_LABELS: Record<string, string> = {
   ProductDescription: 'Опис товару',
   ProductGroup: 'Група товару',
   ProductName: 'Назва товару',
+  ProductMeasureUnit: 'Одиниця виміру',
   ProductTop: 'Топ товару',
   Profitability: 'Рентабельність',
   ProfitabilityPercentWithVAT: 'Рентабельність з ПДВ, %',

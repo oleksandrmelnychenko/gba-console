@@ -1,12 +1,12 @@
 import { Button, Text, Tooltip } from '@mantine/core'
 import { useI18n } from '../../../shared/i18n/useI18n'
-import type { SalesReportPresetId } from '../data/reportPresets'
+import type { DatasetReportPresetId } from '../data/reportDatasets'
 import './report-quick-presets.css'
 
 type Props = {
   disabled: boolean
-  presets: Array<{ id: SalesReportPresetId; name: string; description: string }>
-  onApply: (id: SalesReportPresetId) => void
+  presets: Array<{ id: DatasetReportPresetId; name: string; description: string }>
+  onApply: (id: DatasetReportPresetId) => void
 }
 
 export function ReportQuickPresets({ disabled, presets, onApply }: Props) {

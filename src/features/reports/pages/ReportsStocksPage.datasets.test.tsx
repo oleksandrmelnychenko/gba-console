@@ -1,9 +1,9 @@
 import { MantineProvider } from '@mantine/core'
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import type { ReactNode } from 'react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { I18nProvider } from '../../../shared/i18n/I18nProvider'
-import { createStockReport } from '../api/reportsApi'
+import { createStockReport, searchDatasetReportValues } from '../api/reportsApi'
 import { getReportDatasets, getServerReportTemplates, saveServerReportTemplate } from '../api/reportWorkspaceApi'
 import { reportDatasets, purchaseDataset } from '../data/reportDatasets.test-fixtures'
 import { defaultDatasetRequest } from '../data/reportDatasets'
@@ -12,7 +12,7 @@ import type { ReportTemplate } from '../types'
 import { ReportsStocksPage } from './ReportsStocksPage'
 
 vi.mock('../../auth/useAuth', () => ({ useAuth: () => ({ hasPermission: () => true }) }))
-vi.mock('../api/reportsApi', async (original) => ({ ...await original<typeof import('../api/reportsApi')>(), createStockReport: vi.fn() }))
+vi.mock('../api/reportsApi', async (original) => ({ ...await original<typeof import('../api/reportsApi')>(), createStockReport: vi.fn(), searchDatasetReportValues: vi.fn() }))
 vi.mock('../api/reportWorkspaceApi', async (original) => ({
   ...await original<typeof import('../api/reportWorkspaceApi')>(),
   getReportDatasets: vi.fn(), getServerReportTemplates: vi.fn(), saveServerReportTemplate: vi.fn(),
@@ -49,6 +49,7 @@ describe('native report datasets in the constructor', () => {
     vi.mocked(getReportDatasets).mockResolvedValue(reportDatasets)
     vi.mocked(getServerReportTemplates).mockResolvedValue([])
     vi.mocked(createStockReport).mockResolvedValue({ document: {}, raw: {} })
+    vi.mocked(searchDatasetReportValues).mockResolvedValue([{ Id: 77, Name: 'м' }])
     vi.mocked(saveServerReportTemplate).mockImplementation(async template => ({ ...template, Revision: 1 }))
   })
 
@@ -66,7 +67,29 @@ describe('native report datasets in the constructor', () => {
     fireEvent.submit(container.querySelector('form')!)
     await waitFor(() => expect(createStockReport).toHaveBeenCalledOnce())
     expect(vi.mocked(createStockReport).mock.calls[0][0]).toMatchObject({ dataSource: 3, from: '2026-09-01', to: '2026-09-03',
-      selections: [], sorted: { Row: [{ type: 3 }], Col: [], Measurements: [{ Type: 0 }, { Type: 2 }] } })
+      selections: [], sorted: { Row: [{ type: 26 }, { type: 3 }], Col: [], Measurements: [{ Type: 0 }, { Type: 2 }] } })
+  })
+
+  it.each(reportDatasets)('selects the unit preset and exact unit filter in source $DataSource', async dataset => {
+    const { container } = await renderReady()
+    if (dataset.DataSource !== 0) await chooseDataset(dataset.Name)
+    fireEvent.click(screen.getByRole('button', { name: 'Кількість за одиницями' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Додати умову' }))
+    const editor = await screen.findByRole('dialog', { name: 'Додати умову відбору' })
+    fireEvent.click(within(editor).getByRole('combobox', { name: 'Поле' }))
+    fireEvent.click(await screen.findByRole('option', { name: 'Одиниця виміру' }))
+    // Units such as «м» and «л» must work without a two-character minimum.
+    await waitFor(() => expect(searchDatasetReportValues).toHaveBeenCalledWith(dataset.DataSource, 20,
+      { limit: 30, offset: 0, value: '' }, expect.any(AbortSignal)))
+    fireEvent.click(within(editor).getByRole('combobox', { name: 'Значення' }))
+    fireEvent.click(await screen.findByRole('option', { name: 'м' }))
+    fireEvent.click(within(editor).getByRole('button', { name: 'Зберегти' }))
+    fireEvent.submit(container.querySelector('form')!)
+    await waitFor(() => expect(createStockReport).toHaveBeenCalledOnce())
+    expect(vi.mocked(createStockReport).mock.calls[0][0]).toMatchObject({ dataSource: dataset.DataSource,
+      sorted: { Row: [{ type: 26, key: 'ProductMeasureUnit' }, { type: 3 }], Measurements: [{ Type: 0 }] },
+      selections: [{ SelectedField: { Type: 20, Name: 'ProductMeasureUnit' },
+        Values: [{ Data: { Id: 77, Name: 'м' }, Name: 'м', Value: 77 }] }] })
   })
 
   it('uses net sales presets only when every grouping is supported', async () => {
@@ -79,8 +102,10 @@ describe('native report datasets in the constructor', () => {
     expect(vi.mocked(createStockReport).mock.calls[0][0]).toMatchObject({ dataSource: 2, sorted: { Row: [{ type: 4 }, { type: 12 }, { type: 15 }] } })
   })
 
-  it('restores a purchase template and saves its source and disabled exact contract filter', async () => {
+  it('restores a purchase template and saves its source and disabled exact contract and unit filters', async () => {
     const template = storedTemplate()
+    template.Data.selections.push({ IsChecked: false, SelectedField: { Type: 20, Name: 'ProductMeasureUnit' },
+      FilterCondition: { Type: 0, Name: 'Дорівнює' }, Values: [{ Data: { Id: 77, Name: 'м' }, Name: 'м', Value: 77 }] })
     vi.mocked(getServerReportTemplates).mockResolvedValue([template])
     await renderReady()
     fireEvent.click(screen.getByRole('button', { name: 'Шаблони' }))
@@ -90,7 +115,8 @@ describe('native report datasets in the constructor', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Шаблони' }))
     fireEvent.click(screen.getByRole('button', { name: 'Зберегти' }))
     await waitFor(() => expect(saveServerReportTemplate).toHaveBeenCalledOnce())
-    expect(vi.mocked(saveServerReportTemplate).mock.calls[0][0].Data).toMatchObject({ dataSource: 3, selections: template.Data.selections })
+    expect(vi.mocked(saveServerReportTemplate).mock.calls[0][0].Data).toMatchObject({ dataSource: 3, selections: template.Data.selections,
+      sorted: { Row: [{ type: 26, key: 'ProductMeasureUnit' }, { type: 3 }] } })
   })
 
   it.each([1, 99])('refuses saved source %s without changing the current form', async source => {

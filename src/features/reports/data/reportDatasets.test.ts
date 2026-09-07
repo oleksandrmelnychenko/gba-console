@@ -1,20 +1,45 @@
 import { describe, expect, it } from 'vitest'
-import { datasetConfigurationError, datasetMeasurements, datasetPresets, defaultDatasetRequest } from './reportDatasets'
-import { grossDataset, netDataset, purchaseDataset } from './reportDatasets.test-fixtures'
+import { datasetConfigurationError, datasetFilters, datasetGroupings, datasetMeasurements, datasetPresetRequest, datasetPresets, defaultDatasetRequest } from './reportDatasets'
+import { grossDataset, netDataset, purchaseDataset, reportDatasets } from './reportDatasets.test-fixtures'
 import { flattenCheckedMeasurements } from './reportOptions'
 import { createSalesReportPreset } from './reportPresets'
 
 describe('report dataset capabilities', () => {
   it('uses only receipt quantity and net EUR amount for purchase defaults', () => {
     const data = defaultDatasetRequest(purchaseDataset, '2026-09-01', '2026-09-03')
-    expect(data).toMatchObject({ dataSource: 3, from: '2026-09-01', to: '2026-09-03', sorted: { Row: [{ type: 3 }] } })
+    expect(data).toMatchObject({ dataSource: 3, from: '2026-09-01', to: '2026-09-03', sorted: { Row: [{ type: 26 }, { type: 3 }] } })
     expect(data.sorted.Measurements.map(item => item.Type)).toEqual([0, 2])
     expect(data.sorted.Measurements.map(item => item.Label)).toEqual(['Кількість надходжень', 'Вартість надходження без ПДВ, EUR'])
   })
 
   it('offers agreement presets only when every grouping and measure is supported', () => {
-    expect(datasetPresets(netDataset).map(item => item.id)).toEqual(['agreements', 'agreement-products', 'daily'])
-    expect(datasetPresets(purchaseDataset)).toEqual([])
+    expect(datasetPresets(netDataset).map(item => item.id)).toEqual(['quantities-by-unit', 'agreements', 'agreement-products', 'daily'])
+    expect(datasetPresets(purchaseDataset).map(item => item.id)).toEqual(['quantities-by-unit'])
+  })
+
+  it.each(reportDatasets)('keeps quantities separated by unit in source $DataSource presets', dataset => {
+    const current = defaultDatasetRequest(dataset, '2026-09-01', '2026-09-03')
+    current.selections = [{ IsChecked: false, SelectedField: { Name: 'ProductMeasureUnit', Type: 20 },
+      FilterCondition: { Name: 'Дорівнює', Type: 0 }, Values: [{ Data: { Id: 77, Name: 'м' }, Name: 'м', Value: 77 }] }]
+    const preset = datasetPresetRequest(dataset, 'quantities-by-unit', current)!
+    expect(preset.Data).toMatchObject({ dataSource: dataset.DataSource, from: current.from, to: current.to,
+      sorted: { Row: [{ type: 26, key: 'ProductMeasureUnit' }, { type: 3 }], Col: [], Measurements: [{ Type: 0 }] },
+      selections: current.selections })
+    expect(preset.Data.selections).not.toBe(current.selections)
+    expect(datasetConfigurationError(preset.Data, dataset)).toBeNull()
+    expect(datasetGroupings(dataset)).toContainEqual({ type: 26, key: 'ProductMeasureUnit', label: 'Одиниця виміру' })
+    expect(datasetFilters(dataset).find(field => field.field.Type === 20)?.field.Name).toBe('ProductMeasureUnit')
+  })
+
+  it('withholds the unit preset until both grouping and quantity capabilities are available', () => {
+    for (const dataset of [
+      { ...purchaseDataset, Groupings: purchaseDataset.Groupings.filter(field => field.Type !== 26) },
+      { ...purchaseDataset, Groupings: purchaseDataset.Groupings.filter(field => field.Type !== 3) },
+      { ...purchaseDataset, Measurements: purchaseDataset.Measurements.filter(field => field.Type !== 0) },
+    ]) {
+      expect(datasetPresets(dataset)).toEqual([])
+      expect(datasetPresetRequest(dataset, 'quantities-by-unit', defaultDatasetRequest(dataset, '', ''))).toBeNull()
+    }
   })
 
   it('refuses archived sources, unsupported conditions and disabled filters without changing data', () => {

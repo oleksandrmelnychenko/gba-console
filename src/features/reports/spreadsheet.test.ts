@@ -444,6 +444,37 @@ describe('native CSV round trips', () => {
   })
 })
 
+describe('native quantity totals with different measurement units', () => {
+  const units = buildSpreadsheetSheet('Report', [
+    ['Звіт надходжень'],
+    ['Рядки: Одиниця виміру, Дата'],
+    ['Колонки: —'],
+    [],
+    [null, null, 'Кількість', 'Вартість надходження, EUR'],
+    ['Одиниця виміру', 'Дата', 'Кількість', 'Вартість надходження без ПДВ, EUR'],
+    ['шт', '2026-09-01', 2, 10],
+    ['м', '2026-09-01', 3, 20],
+    ['Невідома одиниця', '2026-09-01', null, 5],
+    ['Загальний підсумок', null, null, 35],
+  ])
+
+  it('keeps a mixed-unit quantity total blank while monetary totals remain independent', () => {
+    const additive = getAdditiveColumns(units)
+    expect(additive).toEqual([false, false, false, true])
+    expect(calculateTotals(units.rows.filter(row => row.kind === 'data'), additive)).toEqual([null, null, null, 35])
+  })
+
+  it('does not invent quantity totals when a filtered native CSV has no server total', () => {
+    const filtered = filterSheetRows(units, '2026-09-01', '', '')
+    const csv = buildSpreadsheetCsv(buildSheetExportRows(units, filtered))
+    const imported = buildSpreadsheetSheet('filtered.csv', parseDelimitedText(csv, detectDelimiter(csv)), 'flat')
+    expect(imported.header?.rowGroupings).toEqual(['Одиниця виміру', 'Дата'])
+    expect(imported.rows.map(row => row.cells[2])).toEqual([2, 3, ''])
+    expect(getAdditiveColumns(imported)).toEqual([false, false, false, false])
+    expect(calculateTotals(imported.rows, getAdditiveColumns(imported))).toEqual([null, null, null, null])
+  })
+})
+
 describe('buildSpreadsheetSheet — plain delimited file', () => {
   const csv = ['Клієнт,Дата,Сума', 'ТОВ Ромашка,2026-01-15,1000', ',2026-02-15,250'].join('\n')
   const sheet = buildSpreadsheetSheet('plain.csv', parseDelimitedText(csv, detectDelimiter(csv)))

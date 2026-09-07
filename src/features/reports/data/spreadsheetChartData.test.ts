@@ -32,6 +32,23 @@ describe('spreadsheet chart facts', () => {
     expect(new Set(points.map(point => point.rowKey)).size).toBe(2)
   })
 
+  it('keeps quantity points separate by measurement unit and retains unknown quantities as gaps', () => {
+    const units: SpreadsheetSheet = { name: 'Кількість', columns: ['Одиниця виміру', 'Дата', 'Кількість'],
+      header: { rowGroupings: ['Одиниця виміру', 'Дата'], columnGroupings: [], lines: [], warnings: [] },
+      rows: [
+        { kind: 'data', cells: ['шт', '2026-09-01', 2] },
+        { kind: 'data', cells: ['м', '2026-09-01', 3] },
+        { kind: 'data', cells: ['Невідома одиниця', '2026-09-01', null] },
+        { kind: 'total', cells: ['Загальний підсумок', null, null] },
+      ] }
+    expect(buildSpreadsheetChartData(units, units.rows, 2)).toMatchObject({ unknownCount: 1, dataRowCount: 3,
+      points: [
+        { label: 'шт · 2026-09-01', value: 2 },
+        { label: 'м · 2026-09-01', value: 3 },
+        { label: 'Невідома одиниця · 2026-09-01', value: null },
+      ] })
+  })
+
   it('excludes numeric grouping columns and retains an entirely unknown native measure', () => {
     const unknown = { ...sheet, rows: [{ kind: 'data' as const, cells: ['Клієнт А', 42, null, null] }] }
     expect(getChartMeasureOptions(unknown)).toEqual([

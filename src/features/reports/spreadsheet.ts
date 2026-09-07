@@ -137,7 +137,10 @@ export function getAdditiveColumns(sheet: SpreadsheetSheet | null): boolean[] {
   const grandTotal = sheet?.rows.find((row) => row.kind === 'total')
 
   if (!sheet || !grandTotal) {
-    return Array.from({ length: columnCount }, () => true)
+    // A filtered native CSV can omit every total. Its numeric rows alone do
+    // not prove additivity: quantities can have different units and ratios
+    // cannot be summed. Preserve that lack of evidence on re-import.
+    return Array.from({ length: columnCount }, () => !sheet?.header)
   }
 
   const dataRows = sheet.rows.filter((row) => row.kind === 'data')
