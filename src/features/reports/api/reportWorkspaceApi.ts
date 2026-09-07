@@ -1,5 +1,32 @@
 import { apiRequest } from '../../../shared/api/apiClient'
-import type { ReportCatalogue, ReportRequestBody, ReportTemplate } from '../types'
+import type { ReportCatalogue, ReportDataset, ReportDatasetField, ReportRequestBody, ReportTemplate } from '../types'
+
+function isDatasetField(value: unknown): value is ReportDatasetField {
+  if (!value || typeof value !== 'object') return false
+  const field = value as Partial<ReportDatasetField>
+  return Number.isSafeInteger(field.Type) && field.Type! >= 0 && typeof field.Name === 'string' && field.Name.trim().length > 0
+    && (field.Selectable === undefined || typeof field.Selectable === 'boolean')
+}
+
+function isDataset(value: unknown): value is ReportDataset {
+  if (!value || typeof value !== 'object') return false
+  const item = value as Partial<ReportDataset>
+  const fieldsValid = [item.Groupings, item.Measurements, item.Filters].every(fields =>
+    Array.isArray(fields) && fields.every(isDatasetField) && new Set(fields.map(field => field.Type)).size === fields.length)
+  return Number.isSafeInteger(item.DataSource) && item.DataSource! >= 0 && item.DataSource !== 1 && typeof item.Name === 'string' && !!item.Name.trim()
+    && typeof item.Description === 'string' && fieldsValid && !!item.Groupings?.length && !!item.Measurements?.length
+    && (item.PeriodRequired === undefined || typeof item.PeriodRequired === 'boolean')
+    && Array.isArray(item.Limitations) && item.Limitations.every(text => typeof text === 'string')
+}
+
+export async function getReportDatasets(signal?: AbortSignal): Promise<ReportDataset[]> {
+  const result = await apiRequest<unknown>('/report/datasets', { signal })
+  if (!Array.isArray(result) || !result.length || !result.every(isDataset)
+    || new Set(result.map(item => item.DataSource)).size !== result.length) {
+    throw new Error('Сервер повернув некоректний список наборів даних звітів.')
+  }
+  return result
+}
 
 export function getReportCatalogue(signal?: AbortSignal): Promise<ReportCatalogue> {
   return apiRequest('/report/catalogue', { signal })

@@ -22,6 +22,15 @@ export async function createStockReport(body: ReportRequestBody): Promise<Report
   return normalizeReportResult(result)
 }
 
+export async function searchDatasetReportValues(field: number, params: ReportSearchParams, signal?: AbortSignal): Promise<ReportEntity[]> {
+  const result = await apiRequest<unknown>('/report/datasets/lookup', {
+    query: { dataSource: 3, field, value: params.value.trim(), offset: params.offset, limit: params.limit }, signal,
+  })
+  if (!Array.isArray(result) || !result.every(item => item && typeof item === 'object' && Number.isSafeInteger(item.Id)
+    && item.Id > 0 && typeof item.Name === 'string')) throw new Error('Сервер повернув некоректні значення відбору звіту.')
+  return result
+}
+
 /** Local catalogue only: this request never starts sync or connects to 1C. */
 export async function getOneCTurnoverScopes(signal?: AbortSignal): Promise<OneCTurnoverScopeSummary[]> {
   const result = await apiRequest<unknown>('/report/stocks/one-c/scopes', { signal })

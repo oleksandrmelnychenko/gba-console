@@ -7,6 +7,8 @@ import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { createStockReport } from '../api/reportsApi'
 import { ReportsStocksPage } from './ReportsStocksPage'
 import { ApiError } from '../../../shared/api/apiClient'
+import { getReportDatasets, getServerReportTemplates } from '../api/reportWorkspaceApi'
+import { reportDatasets } from '../data/reportDatasets.test-fixtures'
 
 const allowedPermissions = new Set<string>()
 
@@ -22,6 +24,12 @@ vi.mock('../api/reportsApi', async (importOriginal) => ({
   createStockReport: vi.fn(),
 }))
 
+vi.mock('../api/reportWorkspaceApi', async (importOriginal) => ({
+  ...await importOriginal<typeof import('../api/reportWorkspaceApi')>(),
+  getReportDatasets: vi.fn(),
+  getServerReportTemplates: vi.fn(),
+}))
+
 function Providers({ children }: { children: ReactNode }) {
   return (
     <MantineProvider>
@@ -35,13 +43,16 @@ describe('stock report permissions', () => {
     allowedPermissions.clear()
     vi.clearAllMocks()
     localStorage.clear()
+    vi.mocked(getReportDatasets).mockResolvedValue(reportDatasets)
+    vi.mocked(getServerReportTemplates).mockResolvedValue([])
   })
 
   it('offers native reports only, without mounting the archived source-register panel', () => {
     render(<Providers><ReportsStocksPage /></Providers>)
     expect(screen.queryByRole('combobox', { name: 'Джерело звіту' })).toBeNull()
     expect(screen.queryByText('Консолідовані дані 1С')).toBeNull()
-    expect(screen.getByRole('button', { name: 'Продажі за товарами' })).toBeTruthy()
+    expect((screen.getByRole('combobox', { name: 'Набір даних звіту' }) as HTMLInputElement).disabled).toBe(true)
+    expect(getReportDatasets).not.toHaveBeenCalled()
     expect(createStockReport).not.toHaveBeenCalled()
   })
 
@@ -62,7 +73,7 @@ describe('stock report permissions', () => {
     expect(createStockReport).not.toHaveBeenCalled()
   })
 
-  it('keeps report validation independent after generate is granted', () => {
+  it('keeps report validation independent after generate is granted', async () => {
     allowedPermissions.add(PermissionKeys.ReportsStocks.Report.Generate)
 
     render(
@@ -71,6 +82,7 @@ describe('stock report permissions', () => {
       </Providers>,
     )
 
+    await screen.findByRole('button', { name: 'Продажі за днями' })
     const submit = screen.getByRole('button', { name: 'Сформувати' })
     expect((submit as HTMLButtonElement).disabled).toBe(true)
     expect(submit.getAttribute('title')).toBe(
@@ -94,7 +106,7 @@ describe('stock report permissions', () => {
 
   it('does not grant generation rights when a ready preset is applied', () => {
     const { container } = render(<Providers><ReportsStocksPage /></Providers>)
-    fireEvent.click(screen.getByRole('button', { name: 'Продажі за днями' }))
+    expect(screen.queryByRole('button', { name: 'Продажі за днями' })).toBeNull()
     expect((screen.getByRole('button', { name: 'Сформувати' }) as HTMLButtonElement).disabled).toBe(true)
     fireEvent.submit(container.querySelector('form')!)
     expect(createStockReport).not.toHaveBeenCalled()
@@ -109,7 +121,7 @@ describe('stock report permissions', () => {
     fireEvent.change(screen.getByLabelText('Від'), { target: { value: '2026-09-01' } })
     fireEvent.change(screen.getByLabelText('До'), { target: { value: '2026-09-03' } })
 
-    fireEvent.click(screen.getByRole('button', { name: 'Продажі за днями' }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Продажі за днями' }))
 
     expect(createStockReport).not.toHaveBeenCalled()
     expect(localStorage.getItem('app_configs_reports_template:v1')).toBe(saved)
@@ -118,7 +130,7 @@ describe('stock report permissions', () => {
     await waitFor(() => expect(createStockReport).toHaveBeenCalledOnce())
     expect(vi.mocked(createStockReport).mock.calls[0][0]).toMatchObject({
       from: '2026-09-01', to: '2026-09-03',
-      sorted: { Row: [{ type: 3 }, { type: 4 }], Measurements: expect.arrayContaining([{ IsChecked: true, Name: 'CostVAT', Type: 7, parentName: 'Cost' }]) },
+      sorted: { Row: [{ type: 3 }, { type: 4 }], Measurements: expect.arrayContaining([expect.objectContaining({ IsChecked: true, Name: 'CostVAT', Type: 7, parentName: 'Cost' })]) },
     })
     await screen.findByText('Не вдалося сформувати звіт')
   })
@@ -127,7 +139,7 @@ describe('stock report permissions', () => {
     allowedPermissions.add(PermissionKeys.ReportsStocks.Report.Generate)
     vi.mocked(createStockReport).mockRejectedValue(new ApiError('Forbidden', 403, null))
     const { container } = render(<Providers><ReportsStocksPage /></Providers>)
-    fireEvent.click(screen.getByRole('button', { name: 'Продажі за товарами' }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Продажі за товарами' }))
     fireEvent.submit(container.querySelector('form')!)
     await screen.findByText('Недостатньо прав для формування звіту. Зверніться до адміністратора щодо доступу до конструктора звітів.')
     expect(screen.queryByText('Сесію завершено. Увійдіть повторно.')).toBeNull()

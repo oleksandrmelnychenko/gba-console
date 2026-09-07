@@ -24,12 +24,14 @@ export type ReportGroupingGroup = {
 
 export type ReportMeasurementItem = {
   IsChecked: boolean
+  Label?: string
   Name: string
   Type: number
 }
 
 export type ReportMeasurementGroup = {
   IsChecked: boolean
+  Label?: string
   Name: string
   SubList: ReportMeasurementItem[]
 }
@@ -74,7 +76,7 @@ export type ReportFilterFieldGroup = {
 }
 
 export type ReportRequestBody = {
-  dataSource?: 0 | 1
+  dataSource?: number
   oneC?: OneCTurnoverFilters
   from: string
   selections: ReportSelection[]
@@ -84,6 +86,19 @@ export type ReportRequestBody = {
     Row: ReportGroupingItem[]
   }
   to: string
+}
+
+export type ReportDatasetField = { Type: number; Name: string; Selectable?: boolean }
+
+export type ReportDataset = {
+  DataSource: number
+  Name: string
+  Description: string
+  PeriodRequired?: boolean
+  Groupings: ReportDatasetField[]
+  Measurements: ReportDatasetField[]
+  Filters: ReportDatasetField[]
+  Limitations: string[]
 }
 
 export type OneCTurnoverFilters = {

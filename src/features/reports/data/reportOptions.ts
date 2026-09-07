@@ -43,6 +43,9 @@ export const REPORT_FILTER_FIELD_TYPES = {
   saleReturnDocument: 14,
   saleDocumentManagerInput: 15,
   saleDocumentManagerPosted: 16,
+  supplier: 17,
+  supplierContract: 18,
+  purchaseDocument: 19,
 } as const
 
 const REPORT_GROUPING_TYPES = {
@@ -275,6 +278,8 @@ const REPORT_FIELD_LABELS: Record<string, string> = {
   SalesValueWithVAT: 'Продажі з ПДВ',
   SalesValueWithoutVAT: 'Продажі без ПДВ',
   Supplier: 'Постачальник',
+  SupplierContract: 'Договір постачальника',
+  PurchaseDocument: 'Документ надходження',
   SourceSaleResponsible: 'Відповідальний реалізації (1С)',
   SourceOrderResponsible: 'Відповідальний замовлення (1С)',
   Year: 'По роках',

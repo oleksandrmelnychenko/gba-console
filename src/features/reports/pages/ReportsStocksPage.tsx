@@ -46,6 +46,7 @@ import {
   getReportRegions,
   getReportRegionCodes,
   searchReportClients,
+  searchDatasetReportValues,
   searchReportProducts,
   searchReportUsers,
   searchSaleReturnReportDocuments,
@@ -54,15 +55,13 @@ import {
 import {
   REPORT_FILTER_CONDITIONS,
   isMultiValueReportCondition,
-  REPORT_FILTER_FIELD_GROUPS,
   REPORT_FILTER_FIELD_TYPES,
   createDefaultMeasurementGroups,
   flattenCheckedMeasurements,
-  flattenGroupingOptions,
   getReportFieldLabel,
-  sanitizeReportTemplate,
 } from '../data/reportOptions'
 import type {
+  ReportDataset,
   ReportEntity,
   ReportFilterField,
   ReportGroupingItem,
@@ -78,7 +77,10 @@ import {
   formatDate,
 } from '../utils'
 import './reports-pages.css'
-import { createSalesReportPreset, type SalesReportPresetId } from '../data/reportPresets'
+import type { SalesReportPresetId } from '../data/reportPresets'
+import { datasetConfigurationError, datasetFilters, datasetGroupings, datasetMeasurements, datasetPresetRequest, datasetPresets, defaultDatasetRequest } from '../data/reportDatasets'
+import { useReportDatasets } from '../hooks/useReportDatasets'
+import { ReportDatasetPicker } from './ReportDatasetPicker'
 import { ReportQuickPresets } from './ReportQuickPresets'
 
 import { useServerReportTemplates } from '../hooks/useServerReportTemplates'
@@ -100,7 +102,7 @@ const REPORT_MIN_DATE = '2000-01-01'
 // four return documents the 5–6 June sale lines are attributed to are dated 2025-05-08, 2025-07-01, 2026-03-26
 // and 2026-04-06 — every one of them outside the report's own window. A picker scoped to the period would offer
 // none of the documents the report can actually show.
-const PERIOD_SCOPED_FILTER_FIELD_TYPES = new Set<number>([REPORT_FILTER_FIELD_TYPES.saleDocumentNumberDate])
+const PERIOD_SCOPED_FILTER_FIELD_TYPES = new Set<number>([REPORT_FILTER_FIELD_TYPES.saleDocument, REPORT_FILTER_FIELD_TYPES.saleDocumentNumberDate])
 
 // The whole return-document catalogue, which is what «Повернення від клієнта» is picked from. The list endpoint
 // takes a period and nothing else, so it is asked for the widest period the report form itself allows.
@@ -160,7 +162,12 @@ function ReportsStocksWorkspace() {
   const today = useMemo(() => formatKyivBusinessDate(), [])
   const [from, setFrom] = useValueState(today)
   const [to, setTo] = useValueState(today)
-  const [measurements, setMeasurements] = useValueState<ReportMeasurementGroup[]>(createDefaultMeasurementGroups)
+  const datasetStorage = useReportDatasets(canGenerateReport)
+  const [dataSource, setDataSource] = useValueState(0)
+  const dataset = datasetStorage.datasets.find(item => item.DataSource === dataSource)
+  const [selectedMeasurements, setMeasurements] = useValueState<ReportMeasurementGroup[]>(createDefaultMeasurementGroups)
+  const measurements = useMemo(() => datasetMeasurements(dataset, flattenCheckedMeasurements(selectedMeasurements)), [dataset, selectedMeasurements])
+  const presets = useMemo(() => datasetPresets(dataset), [dataset])
   const [rowGroups, setRowGroups] = useValueState<ReportGroupingItem[]>([])
   const [colGroups, setColGroups] = useValueState<ReportGroupingItem[]>([])
   const [selections, setSelections] = useValueState<ReportSelection[]>([])
@@ -173,7 +180,7 @@ function ReportsStocksWorkspace() {
   const templateStorage = useServerReportTemplates(canGenerateReport)
   const templates = templateStorage.templates
   const [templateNotice, setTemplateNotice] = useValueState<string | null>(null)
-  const groupingOptions = useMemo(() => flattenGroupingOptions(), [])
+  const groupingOptions = useMemo(() => datasetGroupings(dataset), [dataset])
   const groupingSelectData = useMemo(
     () =>
       groupingOptions.map((item) => ({
@@ -181,26 +188,12 @@ function ReportsStocksWorkspace() {
           ...(rowGroups.some((group) => group.type === item.type) ? ['rows' as const] : []),
           ...(colGroups.some((group) => group.type === item.type) ? ['columns' as const] : []),
         ],
-        label: `${item.group}: ${getReportFieldLabel(item.key)}`,
+        label: item.label,
         value: String(item.type),
       }) satisfies GroupingOption),
     [colGroups, groupingOptions, rowGroups],
   )
-  const filterFieldOptions = useMemo(
-    () =>
-      REPORT_FILTER_FIELD_GROUPS.flatMap((group) =>
-        group.children.map((child) => ({
-          label: `${getReportFieldLabel(group.label)}: ${getReportFieldLabel(child.label)}`,
-          value: `${child.type}`,
-          field: {
-            Name: child.label,
-            Type: child.type,
-            ParentType: group.label,
-          } satisfies ReportFilterField,
-        })),
-      ),
-    [],
-  )
+  const filterFieldOptions = useMemo(() => datasetFilters(dataset), [dataset])
   const maxDate = useMemo(() => `${today.slice(0, 4)}-12-31`, [today])
   const [debouncedFrom] = useDebouncedValue(from, DATE_INPUT_DEBOUNCE_MS)
   const [debouncedTo] = useDebouncedValue(to, DATE_INPUT_DEBOUNCE_MS)
@@ -210,6 +203,7 @@ function ReportsStocksWorkspace() {
   const hasLookupPeriod = !getPeriodError(debouncedFrom, debouncedTo, maxDate, t)
   const reportBody = useMemo<ReportRequestBody>(
     () => ({
+      dataSource,
       from,
       to,
       sorted: {
@@ -219,8 +213,10 @@ function ReportsStocksWorkspace() {
       },
       selections: selections.filter((selection) => selection.IsChecked && selection.SelectedField.Name),
     }),
-    [colGroups, from, measurements, rowGroups, selections, to],
+    [colGroups, dataSource, from, measurements, rowGroups, selections, to],
   )
+  const templateBody = { ...reportBody, selections }
+  const configurationError = datasetStorage.error ?? (!datasetStorage.loaded ? t('Завантаження наборів даних…') : datasetConfigurationError(templateBody, dataset))
   const checkedMeasurements = reportBody.sorted.Measurements.length
   // The report engine lays the sheet out from the row groupings; without one it fails deep
   // inside the spreadsheet writer («Column out of range»), so the form has to require it.
@@ -236,11 +232,13 @@ function ReportsStocksWorkspace() {
           field: getReportFieldLabel(selections[incompleteSelectionIndex].SelectedField.Name),
           position: incompleteSelectionIndex + 1,
         })
-  const reportIsReady = !periodError && !incompleteSelectionMessage && checkedMeasurements > 0 && !missingRowGrouping
+  const reportIsReady = !configurationError && !periodError && !incompleteSelectionMessage && checkedMeasurements > 0 && !missingRowGrouping
   const canSubmit = canGenerateReport && reportIsReady
   const submitBlockedReason = !canGenerateReport
     ? t('Немає права формувати звіт залишків')
-    : periodError
+    : configurationError
+      ? configurationError
+      : periodError
       ? periodError
       : checkedMeasurements === 0
         ? t('Виберіть хоча б один показник')
@@ -271,12 +269,12 @@ function ReportsStocksWorkspace() {
     try {
       const nextResult = await createStockReport(reportBody)
       const outcome: ReportRunOutcome = {
-        colGroupings: colGroups.map((group) => getReportFieldLabel(group.key)),
+        colGroupings: colGroups.map((group) => group.label || getReportFieldLabel(group.key)),
         from,
         hasDocument: Boolean(nextResult.document.DocumentURL || nextResult.document.PdfDocumentURL),
-        measures: reportBody.sorted.Measurements.map((measurement) => getReportFieldLabel(measurement.Name)),
+        measures: reportBody.sorted.Measurements.map((measurement) => measurement.Label || getReportFieldLabel(measurement.Name)),
         name: templateName.trim(),
-        rowGroupings: rowGroups.map((group) => getReportFieldLabel(group.key)),
+        rowGroupings: rowGroups.map((group) => group.label || getReportFieldLabel(group.key)),
         to,
       }
 
@@ -309,7 +307,7 @@ function ReportsStocksWorkspace() {
 
   function saveTemplate() {
     setTemplateNotice(null)
-    void templateStorage.save(templateName, reportBody)
+    if (!configurationError) void templateStorage.save(templateName, templateBody)
   }
 
   function loadTemplates() {
@@ -319,7 +317,7 @@ function ReportsStocksWorkspace() {
 
   function updateTemplate(id: string) {
     setTemplateNotice(null)
-    void templateStorage.save(templateName, reportBody, id)
+    if (!configurationError) void templateStorage.save(templateName, templateBody, id)
   }
 
   function deleteTemplate(id: string) {
@@ -327,39 +325,49 @@ function ReportsStocksWorkspace() {
     void templateStorage.remove(id)
   }
 
-  function applyTemplate(template: ReportTemplate) {
-    // A template stored before an option was withdrawn would otherwise put a grouping the server projects as NULL
-    // (or a condition it drops) straight back into the request.
-    const { data, removedCount } = sanitizeReportTemplate(template.Data)
-    const templateRowGroups = dedupeGroupings(data.sorted.Row)
-    const templateColGroups = dedupeGroupings(data.sorted.Col)
-
+  function applyTemplate(template: ReportTemplate): boolean {
+    const nextDataset = datasetStorage.datasets.find(item => item.DataSource === (template.Data.dataSource ?? 0))
+    const incompatible = datasetConfigurationError(template.Data, nextDataset)
+    if (incompatible || !nextDataset) {
+      setTemplateNotice(incompatible)
+      return false
+    }
+    const data = template.Data
+    const groupingByType = new Map(datasetGroupings(nextDataset).map(item => [item.type, item]))
+    setDataSource(nextDataset.DataSource)
     setTemplateName(template.Name)
     setFrom(data.from || today)
     setTo(data.to || today)
-    setRowGroups(templateRowGroups)
-    setColGroups(templateColGroups)
-    setSelections(data.selections)
-    setMeasurements(applyTemplateMeasurements(createDefaultMeasurementGroups(), data.sorted.Measurements))
-    setTemplateNotice(
-      removedCount
-        ? t('З шаблону прибрано налаштування, які звіт більше не підтримує: {count}', { count: removedCount })
-        : null,
-    )
-  }
-
-  function applyPreset(id: SalesReportPresetId) {
-    applyTemplate(createSalesReportPreset(id, from, to, selections))
+    setRowGroups(data.sorted.Row.map(item => groupingByType.get(item.type)!))
+    setColGroups(data.sorted.Col.map(item => groupingByType.get(item.type)!))
+    setSelections(structuredClone(data.selections))
+    setMeasurements(datasetMeasurements(nextDataset, data.sorted.Measurements))
+    setTemplateNotice(null)
     setResult(null)
     setLastRun(null)
     setError(null)
+    return true
+  }
+
+  function changeDataset(nextDataset: ReportDataset) {
+    applyTemplate({ Name: '', Data: defaultDatasetRequest(nextDataset, from, to) })
+  }
+
+  function applyPreset(id: SalesReportPresetId) {
+    if (!dataset) return
+    const preset = datasetPresetRequest(dataset, id, templateBody)
+    if (preset) applyTemplate(preset)
   }
 
 
   return (
     <Stack className="reports-stocks-page" gap={6}>
       <ReportCatalogueControl enabled={canGenerateReport} />
+      <ReportDatasetPicker datasets={datasetStorage.datasets} selected={dataSource} disabled={!canGenerateReport || isLoading}
+        loaded={datasetStorage.loaded} error={datasetStorage.error} onChange={changeDataset} onRetry={datasetStorage.retry} />
       <ReportBuilderForm
+        presets={presets}
+        configurationReady={!configurationError}
         onApplyPreset={applyPreset}
         canSubmit={canSubmit}
         colGroups={colGroups}
@@ -412,7 +420,7 @@ function ReportsStocksWorkspace() {
           ) : null
         }
         opened={downloadModalOpened}
-        title={lastRun?.name || t('Звіт продажів')}
+        title={lastRun?.name || dataset?.Name || t('Звіт')}
         onClose={() => setDownloadModalOpened(false)}
       />
     </Stack>
@@ -420,6 +428,8 @@ function ReportsStocksWorkspace() {
 }
 
 type ReportBuilderFormProps = {
+  presets: ReturnType<typeof datasetPresets>
+  configurationReady: boolean
   templateStorage: ReturnType<typeof useServerReportTemplates>
   onApplyPreset: (id: SalesReportPresetId) => void
   canSubmit: boolean
@@ -445,7 +455,7 @@ type ReportBuilderFormProps = {
   templateNotice: string | null
   templates: ReportTemplate[]
   to: string
-  onApplyTemplate: (template: ReportTemplate) => void
+  onApplyTemplate: (template: ReportTemplate) => boolean
   onColGroupsChange: StateSetter<ReportGroupingItem[]>
   onDeleteTemplate: (name: string) => void
   onFromChange: StateSetter<string>
@@ -463,6 +473,8 @@ type ReportBuilderFormProps = {
 }
 
 function ReportBuilderForm({
+  presets,
+  configurationReady,
   onApplyPreset,
   canSubmit,
   colGroups,
@@ -563,7 +575,7 @@ function ReportBuilderForm({
         </div>
         </div>
 
-        <ReportQuickPresets disabled={isLoading} onApply={onApplyPreset} />
+        {presets.length ? <ReportQuickPresets disabled={isLoading || !configurationReady} presets={presets} onApply={onApplyPreset} /> : null}
 
         <div className="reports-stocks-body">
           {notices.period || incompleteSelectionMessage ? (
@@ -613,12 +625,12 @@ function ReportBuilderForm({
         >
           <ReportTemplatesCard
             storage={templateStorage}
+            configurationReady={configurationReady}
             notice={templateNotice}
             templateName={templateName}
             templates={templates}
             onApply={(template) => {
-              onApplyTemplate(template)
-              setTemplatesOpened(false)
+              if (onApplyTemplate(template)) setTemplatesOpened(false)
             }}
             onDelete={onDeleteTemplate}
             onNameChange={onTemplateNameChange}
@@ -721,10 +733,10 @@ function LegacyReportBuilder({
               <span>{t('З ПДВ')}</span>
             </div>
             {measurements.map((group, groupIndex) => {
-              const groupLabel = getReportFieldLabel(group.Name)
+              const groupLabel = group.Label || getReportFieldLabel(group.Name)
               const hasDistinctChildren =
                 group.SubList.length > 1
-                || getReportFieldLabel(group.SubList[0]?.Name ?? '') !== groupLabel
+                || (group.SubList[0]?.Label || getReportFieldLabel(group.SubList[0]?.Name ?? '')) !== groupLabel
 
               return (
                 <div className="reports-stocks-legacy-measurement" key={group.Name}>
@@ -739,8 +751,8 @@ function LegacyReportBuilder({
                     <Checkbox
                       className="reports-stocks-measurement-value"
                       style={{ gridColumn: item.Name.endsWith('WithoutVAT') ? 2 : item.Name.endsWith('WithVAT') ? 4 : 3 }}
-                      aria-label={getReportFieldLabel(item.Name)}
-                      title={getReportFieldLabel(item.Name)}
+                      aria-label={(item.Label || getReportFieldLabel(item.Name))}
+                      title={(item.Label || getReportFieldLabel(item.Name))}
                       checked={item.IsChecked}
                       key={item.Name}
                       size="sm"
@@ -838,8 +850,8 @@ function LegacyGroupingPanel({
           groups.map((group, index) => (
             <div className="reports-stocks-legacy-group-row" key={`${group.type}-${index}`}>
               <span className="reports-stocks-group-position" aria-label={t('Рівень {level}', { level: index + 1 })}>{index + 1}</span>
-              <Text size="sm">{getReportFieldLabel(group.key)}</Text>
-              <TableRowAction action="delete" label={t('Видалити {field}', { field: getReportFieldLabel(group.key) })} onClick={() => onRemove(index)} />
+              <Text size="sm">{(group.label || getReportFieldLabel(group.key))}</Text>
+              <TableRowAction action="delete" label={t('Видалити {field}', { field: (group.label || getReportFieldLabel(group.key)) })} onClick={() => onRemove(index)} />
             </div>
           ))
         ) : (
@@ -1199,6 +1211,7 @@ function getSelectionFieldSummary(
 }
 
 type ReportTemplatesCardProps = {
+  configurationReady: boolean
   storage: ReturnType<typeof useServerReportTemplates>
   notice: string | null
   templateName: string
@@ -1212,6 +1225,7 @@ type ReportTemplatesCardProps = {
 }
 
 function ReportTemplatesCard({
+  configurationReady,
   storage,
   notice,
   templateName,
@@ -1238,7 +1252,7 @@ function ReportTemplatesCard({
           />
           <Button
             color={CREATE_ACTION_COLOR}
-            disabled={!templateName.trim() || !storage.ready || storage.busy}
+            disabled={!configurationReady || !templateName.trim() || !storage.ready || storage.busy}
             leftSection={<Save size={16} />}
             type="button"
             onClick={onSave}
@@ -1292,7 +1306,7 @@ function ReportTemplatesCard({
                       size={30}
                       type="button"
                       variant="subtle"
-                      disabled={storage.busy || !storage.ready}
+                      disabled={!configurationReady || storage.busy || !storage.ready}
                       onClick={() => onUpdate(template.Id!)}
                     >
                       <Save size={15} />
@@ -1488,7 +1502,7 @@ function SelectionValuePicker({ error, from, label, selection, selections, to, w
   const [organizationOptions, setOrganizationOptions] = useValueState<ReportEntity[]>([])
   const [debouncedSearch] = useDebouncedValue(search, LOOKUP_SEARCH_DEBOUNCE_MS)
   const lookupMode = getSelectionLookupMode(selection.SelectedField.Type)
-  const isSaleDocumentFilter = selection.SelectedField.Type === REPORT_FILTER_FIELD_TYPES.saleDocumentNumberDate
+  const isSaleDocumentFilter = PERIOD_SCOPED_FILTER_FIELD_TYPES.has(selection.SelectedField.Type)
   const saleDocumentFilters = useMemo(
     () => ({
       organisationIds: docOrganisationIds.map((id) => Number(id)),
@@ -1807,20 +1821,6 @@ function addGrouping(current: ReportGroupingItem[], item: ReportGroupingItem): R
   return isTaken ? current : [...current, item]
 }
 
-function dedupeGroupings(items: ReportGroupingItem[]): ReportGroupingItem[] {
-  const seenTypes = new Set<number>()
-  const result: ReportGroupingItem[] = []
-
-  for (const item of items) {
-    if (!seenTypes.has(item.type)) {
-      seenTypes.add(item.type)
-      result.push(item)
-    }
-  }
-
-  return result
-}
-
 // The controller used to answer EVERY failure — its own crashes included — with HTTP 400 and the raw .NET
 // exception text, so the status said nothing and the text was «Value cannot be null. (Parameter 'key')»: not
 // ours to show, and not something anyone could act on. Nothing but the status was read here, and the screen
@@ -2018,10 +2018,16 @@ function getSelectionLookupMode(fieldType: number): 'manual' | 'search' | 'stati
       return 'static'
     case REPORT_FILTER_FIELD_TYPES.customerContract:
       return 'dependent'
+    case REPORT_FILTER_FIELD_TYPES.product:
     case REPORT_FILTER_FIELD_TYPES.productArticle:
     case REPORT_FILTER_FIELD_TYPES.productGroup:
     case REPORT_FILTER_FIELD_TYPES.customerName:
+    case REPORT_FILTER_FIELD_TYPES.saleDocument:
     case REPORT_FILTER_FIELD_TYPES.saleDocumentNumberDate:
+    case REPORT_FILTER_FIELD_TYPES.supplier:
+    case REPORT_FILTER_FIELD_TYPES.supplierContract:
+    case REPORT_FILTER_FIELD_TYPES.purchaseDocument:
+    case REPORT_FILTER_FIELD_TYPES.customerManager:
     case REPORT_FILTER_FIELD_TYPES.saleDocumentManagerInput:
     case REPORT_FILTER_FIELD_TYPES.saleDocumentManagerPosted:
       return 'search'
@@ -2073,10 +2079,12 @@ async function loadSelectionLookupOptions(
       return getReportProductTop()
     case REPORT_FILTER_FIELD_TYPES.productGroup:
       return getReportProductGroups(value)
+    case REPORT_FILTER_FIELD_TYPES.product:
     case REPORT_FILTER_FIELD_TYPES.productArticle:
       return searchReportProducts({ limit: LOOKUP_SEARCH_LIMIT, offset: 0, value })
     case REPORT_FILTER_FIELD_TYPES.customerName:
       return searchReportClients({ limit: LOOKUP_SEARCH_LIMIT, offset: 0, value }, signal)
+    case REPORT_FILTER_FIELD_TYPES.customerManager:
     case REPORT_FILTER_FIELD_TYPES.saleDocumentManagerInput:
     case REPORT_FILTER_FIELD_TYPES.saleDocumentManagerPosted:
       return searchReportUsers({ limit: LOOKUP_SEARCH_LIMIT, offset: 0, value })
@@ -2085,6 +2093,11 @@ async function loadSelectionLookupOptions(
     // document can be of any date, which is why the catalogue is asked for whole rather than for the period.
     case REPORT_FILTER_FIELD_TYPES.saleReturnDocument:
       return loadSaleReturnDocumentCatalogue()
+    case REPORT_FILTER_FIELD_TYPES.supplier:
+    case REPORT_FILTER_FIELD_TYPES.supplierContract:
+    case REPORT_FILTER_FIELD_TYPES.purchaseDocument:
+      return searchDatasetReportValues(fieldType, { limit: LOOKUP_SEARCH_LIMIT, offset: 0, value }, signal)
+    case REPORT_FILTER_FIELD_TYPES.saleDocument:
     case REPORT_FILTER_FIELD_TYPES.saleDocumentNumberDate:
       return searchSalesReportDocuments({
         from,
@@ -2191,21 +2204,4 @@ function getSelectionRenderKey(selection: ReportSelection, index: number): strin
     values,
     index,
   ].filter((value) => value !== undefined && value !== null && value !== '').join(':')
-}
-
-function applyTemplateMeasurements(
-  groups: ReportMeasurementGroup[],
-  selectedMeasurements: ReportRequestBody['sorted']['Measurements'],
-): ReportMeasurementGroup[] {
-  const selectedTypes = new Set(selectedMeasurements.map((item) => item.Type))
-
-  return groups.map((group) => {
-    const subList = group.SubList.map((item) => ({ ...item, IsChecked: selectedTypes.has(item.Type) }))
-
-    return {
-      ...group,
-      IsChecked: subList.every((item) => item.IsChecked),
-      SubList: subList,
-    }
-  })
 }

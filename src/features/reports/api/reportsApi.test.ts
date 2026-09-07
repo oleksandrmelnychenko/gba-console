@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { apiRequest } from '../../../shared/api/apiClient'
-import { createStockReport, getOneCTurnoverScopes, searchReportUsers } from './reportsApi'
+import { createStockReport, getOneCTurnoverScopes, searchDatasetReportValues, searchReportUsers } from './reportsApi'
 import type { ReportRequestBody } from '../types'
 
 vi.mock('../../../shared/api/apiClient', () => ({
@@ -12,6 +12,18 @@ const apiRequestMock = vi.mocked(apiRequest)
 describe('reportsApi', () => {
   beforeEach(() => {
     apiRequestMock.mockReset()
+  })
+
+  it('uses exact native purchase contract identities without substituting AgreementId', async () => {
+    const signal = new AbortController().signal
+    apiRequestMock.mockResolvedValue([{ Id: 42, Name: 'Постачальник · договір 42' }])
+    await expect(searchDatasetReportValues(18, { limit: 30, offset: 0, value: '  42 ' }, signal))
+      .resolves.toEqual([{ Id: 42, Name: 'Постачальник · договір 42' }])
+    expect(apiRequestMock).toHaveBeenLastCalledWith('/report/datasets/lookup', {
+      query: { dataSource: 3, field: 18, limit: 30, offset: 0, value: '42' }, signal,
+    })
+    apiRequestMock.mockResolvedValue([{ AgreementId: 42, Name: 'Неправильна ідентичність' }])
+    await expect(searchDatasetReportValues(18, { limit: 30, offset: 0, value: '42' })).rejects.toThrow('некоректні значення')
   })
 
   it('uses bounded targeted lookup for report users', async () => {
