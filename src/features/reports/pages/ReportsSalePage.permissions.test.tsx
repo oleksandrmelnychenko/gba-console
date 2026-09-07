@@ -7,7 +7,7 @@ import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { I18nProvider } from '../../../shared/i18n/I18nProvider'
 import { downloadTextFile } from '../utils'
 import { ReportsSalePage } from './ReportsSalePage'
-import { stockWorkbookRows } from '../data/stockSpreadsheet.test-fixtures'
+import { stockWorkbookRows, placementWorkbookRows, reservationWorkbookRows } from '../data/stockSpreadsheet.test-fixtures'
 import { buildSpreadsheetSheet, detectDelimiter, parseDelimitedText } from '../spreadsheet'
 
 const allowedPermissions = new Set<string>()
@@ -134,5 +134,40 @@ describe('Sale-file report canonical permission guards', () => {
     expect(imported.header?.lines[2]).toBe('Час читання (UTC): 07.09.2026 18:00:00.000 – 07.09.2026 18:00:00.120')
     expect(imported.rows.find(row => row.kind === 'total')?.cells.slice(2)).toEqual(['', '', ''])
     expect(imported.rows.filter(row => row.kind === 'data')[0].cells.slice(2)).toEqual(['', 0, 0.00000001])
+  })
+})
+
+
+describe.each([
+  { source: 5, rows: placementWorkbookRows, title: 'Звіт поточних розміщень товарів', dimensions: 5, values: [0, '', 0.00000001] },
+  { source: 6, rows: reservationWorkbookRows, title: 'Звіт поточних резервів за договорами', dimensions: 4, values: [1, 0.00000001, 0] },
+])('native current slice $source actual XLSX viewer', ({ rows, title, dimensions, values }) => {
+  it('imports the merged XLSX binary and exports only the original snapshot identities and quantity precision', async () => {
+    vi.clearAllMocks()
+    allowedPermissions.clear()
+    allowedPermissions.add(PermissionKeys.ReportsSaleFile.Page.View)
+    allowedPermissions.add(PermissionKeys.ReportsSaleFile.Document.Export)
+    const XLSX = await import('xlsx')
+    const workbook = XLSX.utils.book_new()
+    const sheet = XLSX.utils.aoa_to_sheet(rows)
+    sheet['!merges'] = Array.from({ length: 8 }, (_, row) => ({ s: { r: row, c: 0 }, e: { r: row, c: dimensions } }))
+    XLSX.utils.book_append_sheet(workbook, sheet, 'Report')
+    const bytes = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' }) as ArrayBuffer
+    const { container } = renderPage()
+    fireEvent.change(screen.getByLabelText('Завантажити файл'), {
+      target: { files: [new File([bytes], 'current-slice.xlsx', { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })] },
+    })
+    await screen.findByText(title)
+    expect(screen.queryByLabelText('Від')).toBeNull()
+    expect(screen.queryByLabelText('До')).toBeNull()
+    expect(container.querySelector('.reports-sale-table')?.textContent).toContain('0,00000001')
+    fireEvent.click(screen.getByLabelText('Експорт CSV'))
+    expect(downloadTextFile).toHaveBeenCalledOnce()
+    const csv = vi.mocked(downloadTextFile).mock.calls[0][1]
+    const imported = buildSpreadsheetSheet('current-slice.csv', parseDelimitedText(csv, detectDelimiter(csv)), 'flat')
+    expect(imported.header?.lines[0]).toBe(title)
+    expect(imported.header?.lines[2]).toBe('Час читання (UTC): 07.09.2026 18:00:00.000 – 07.09.2026 18:00:00.120')
+    expect(imported.rows.find(row => row.kind === 'total')?.cells.slice(dimensions)).toEqual([''])
+    expect(imported.rows.filter(row => row.kind === 'data').map(row => row.cells[dimensions])).toEqual(values)
   })
 })

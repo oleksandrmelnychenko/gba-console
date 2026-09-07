@@ -1,10 +1,56 @@
 import { describe, expect, it } from 'vitest'
 import { datasetConfigurationError, datasetFilters, datasetGroupings, datasetMeasurements, datasetPresetRequest, datasetPresets, defaultDatasetRequest } from './reportDatasets'
-import { grossDataset, netDataset, purchaseDataset, reportDatasets, stockDataset } from './reportDatasets.test-fixtures'
+import { grossDataset, netDataset, purchaseDataset, reportDatasets, stockDataset, currentStockDatasets, placementDataset, reservationDataset } from './reportDatasets.test-fixtures'
 import { flattenCheckedMeasurements } from './reportOptions'
 import { createSalesReportPreset } from './reportPresets'
 
 describe('report dataset capabilities', () => {
+  it.each([
+    { dataset: placementDataset, rows: [29, 30, 31, 32, 28], measures: [17], preset: 'placements-by-location' as const },
+    { dataset: reservationDataset, rows: [12, 15, 29, 28], measures: [19], preset: 'reservations-by-agreement' as const },
+  ])('builds the bounded default and explicit preset for source $dataset.DataSource', ({ dataset, rows, measures, preset }) => {
+    const data = defaultDatasetRequest(dataset, '2026-06-01', '2026-06-30')
+    expect(data.from).toBe('')
+    expect(data.to).toBe('')
+    expect(data.sorted.Row.map(field => field.type)).toEqual(rows)
+    expect(data.sorted.Col).toEqual([])
+    expect(data.sorted.Measurements.map(field => field.Type)).toEqual(measures)
+    expect(datasetConfigurationError(data, dataset)).toBeNull()
+    expect(datasetPresets(dataset).map(field => field.id)).toEqual([preset])
+    expect(datasetPresetRequest(dataset, preset, data)?.Data).toEqual(data)
+    expect(datasetPresets({ ...dataset, Groupings: dataset.Groupings.filter(field => field.Type !== rows[0]) })).toEqual([])
+    expect(datasetPresets({ ...dataset, Measurements: [] })).toEqual([])
+  })
+
+  it('keeps physical lot-row and customer-agreement identities distinct from receipts and customer type', () => {
+    expect(datasetGroupings(placementDataset).filter(field => field.type >= 30)).toEqual([
+      { type: 30, key: 'StockStorageNumber', label: 'Стелаж' },
+      { type: 31, key: 'StockRowNumber', label: 'Ряд' },
+      { type: 32, key: 'StockCellNumber', label: 'Комірка' },
+      { type: 33, key: 'StockConsignmentItem', label: 'Рядок партії' },
+    ])
+    expect(datasetFilters(placementDataset).find(field => field.field.Type === 22)?.field.Name).toBe('StockConsignmentItem')
+    expect(datasetGroupings(reservationDataset).some(field => field.type === 11)).toBe(false)
+    const data = defaultDatasetRequest(reservationDataset, '', '')
+    data.selections = [{ IsChecked: true, SelectedField: { Name: 'CustomerContract', Type: 9 },
+      FilterCondition: { Name: 'Дорівнює', Type: 0 }, Values: [{ Data: { Id: 42, AgreementId: 999 }, Name: 'Договір 42', Value: 42 }] },
+    { IsChecked: false, SelectedField: { Name: 'SupplierContract', Type: 18 },
+      FilterCondition: { Name: 'Дорівнює', Type: 0 }, Values: [{ Data: { Id: 55 }, Name: 'Збережений відбір', Value: 55 }] }]
+    const preset = datasetPresetRequest(reservationDataset, 'reservations-by-agreement', data)!
+    expect(preset.Data.selections).toEqual(data.selections)
+    expect(preset.Data.selections).not.toBe(data.selections)
+    expect(datasetConfigurationError(preset.Data, reservationDataset)).toBeNull()
+    preset.Data.selections[1].IsChecked = true
+    expect(datasetConfigurationError(preset.Data, reservationDataset)).toContain('SupplierContract')
+  })
+
+  it.each(currentStockDatasets)('refuses saved historical dates in current source $DataSource without mutating the template', dataset => {
+    const data = { ...defaultDatasetRequest(dataset, '', ''), from: '2026-06-01', to: '2026-06-30' }
+    const before = structuredClone(data)
+    expect(datasetConfigurationError(data, dataset)).toContain('не підтримують період або історичну дату')
+    expect(data).toEqual(before)
+  })
+
   it('builds a current warehouse/unit snapshot with no date or monetary measurements', () => {
     const data = defaultDatasetRequest(stockDataset, '2026-06-01', '2026-06-30')
     expect(data).toMatchObject({ dataSource: 4, from: '', to: '', sorted: {

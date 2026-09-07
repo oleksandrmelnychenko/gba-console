@@ -42,3 +42,20 @@ export const stockDataset: ReportDataset = {
   Filters: [{ Type: 1, Name: 'Товар' }, { Type: 2, Name: 'Артикул' }, { Type: 20, Name: 'Одиниця виміру' }, { Type: 21, Name: 'Склад' }],
   Limitations: ['Поточний стан, без історичного періоду та оцінки вартості. Різні одиниці не додаються.'],
 }
+
+export const placementDataset: ReportDataset = {
+  ...stockDataset, DataSource: 5, Name: 'Склад: розміщення товарів',
+  Groupings: [...stockDataset.Groupings, { Type: 30, Name: 'Стелаж' }, { Type: 31, Name: 'Ряд' },
+    { Type: 32, Name: 'Комірка' }, { Type: 33, Name: 'Рядок партії' }],
+  Measurements: stockDataset.Measurements.filter(field => field.Type === 17),
+  Filters: [...stockDataset.Filters, { Type: 22, Name: 'Рядок партії' }],
+}
+
+export const reservationDataset: ReportDataset = {
+  ...stockDataset, DataSource: 6, Name: 'Склад: резерви за договорами',
+  Groupings: [...stockDataset.Groupings, { Type: 12, Name: 'Клієнт' }, { Type: 15, Name: 'Договір клієнта' }],
+  Measurements: stockDataset.Measurements.filter(field => field.Type === 19),
+  Filters: [...stockDataset.Filters, { Type: 6, Name: 'Клієнт' }, { Type: 9, Name: 'Договір клієнта' }],
+}
+
+export const currentStockDatasets = [stockDataset, placementDataset, reservationDataset]

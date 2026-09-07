@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { buildSheetExportRows, buildSpreadsheetSheet, calculateTotals, detectDelimiter, filterSheetRows, getAdditiveColumns,
   isCurrentStockSheet, parseDelimitedText, stockQuantityFormatter } from './spreadsheet'
-import { stockHeaderLines, stockWorkbookRows } from './data/stockSpreadsheet.test-fixtures'
+import { stockHeaderLines, stockWorkbookRows, placementWorkbookRows, reservationWorkbookRows } from './data/stockSpreadsheet.test-fixtures'
 import { buildSpreadsheetCsv } from './utils'
 import { buildSpreadsheetChartData, getChartMeasureOptions } from './data/spreadsheetChartData'
 
@@ -63,5 +63,57 @@ describe('current stock native XLSX and CSV presentation', () => {
         { label: 'Резервний [20] · шт [10761]', value: 2.12345678 },
       ] })
     expect(buildSpreadsheetChartData(sheet, sheet.rows, 4).points.map(point => point.value)).toEqual([0.00000001, 0, null])
+  })
+})
+
+
+describe.each([
+  { source: 5, rows: placementWorkbookRows, dimensionCount: 5, values: [0, null, 0.00000001] },
+  { source: 6, rows: reservationWorkbookRows, dimensionCount: 4, values: [1, 0.00000001, 0] },
+])('current stock slice $source XLSX and CSV', ({ rows, dimensionCount, values }) => {
+  const sheet = buildSpreadsheetSheet('Report', rows)
+
+  it('retains explicit read times, structural identity, actual zero and unknowns across XLSX/CSV/chart transformations', () => {
+    expect(isCurrentStockSheet(sheet)).toBe(true)
+    expect(sheet.header?.lines[2]).toBe(stockHeaderLines[2])
+    const leaf = sheet.rows.filter(row => row.kind === 'data')
+    expect(leaf).toHaveLength(3)
+    expect(leaf.map(row => row.cells[dimensionCount])).toEqual(values)
+    const chart = buildSpreadsheetChartData(sheet, sheet.rows, dimensionCount)
+    expect(chart.dataRowCount).toBe(3)
+    expect(chart.points.map(point => point.value)).toEqual(values)
+    expect(chart.unknownCount).toBe(values.filter(value => value === null).length)
+    expect(new Set(chart.points.map(point => point.label)).size).toBe(3)
+    expect(getChartMeasureOptions(sheet).map(field => field.value)).toEqual([String(dimensionCount)])
+    expect(getAdditiveColumns(sheet).every(value => !value)).toBe(true)
+    expect(filterSheetRows(sheet, '', '1900-01-01', '1900-01-02')).toEqual(sheet.rows)
+    const csv = buildSpreadsheetCsv(buildSheetExportRows(sheet, leaf))
+    const imported = buildSpreadsheetSheet('slice.csv', parseDelimitedText(csv, detectDelimiter(csv)), 'flat')
+    expect(imported.header).toEqual(sheet.header)
+    expect(imported.rows.map(row => row.cells.map((cell, index) => index < dimensionCount ? String(cell) : cell)))
+      .toEqual(leaf.map(row => row.cells.map((cell, index) => index < dimensionCount ? String(cell) : cell ?? '')))
+    expect(buildSpreadsheetChartData(imported, imported.rows, dimensionCount).points.map(point => point.label))
+      .toEqual(chart.points.map(point => point.label))
+    expect(getAdditiveColumns(imported).every(value => !value)).toBe(true)
+    expect(buildSpreadsheetChartData(imported, imported.rows, dimensionCount).points.map(point => point.value)).toEqual(values)
+    expect(csv).toContain('0.00000001')
+  })
+
+  it.each([
+    { index: 0, value: 'Звіт поточних резервів за договорами сторонній' },
+    { index: 1, value: 'Коментар: поточний стан' },
+    { index: 2, value: 'Час читання (UTC): 07.09.2026' },
+    { index: 1, value: 'Період: 01.06.2026 – 30.06.2026' },
+  ])('rejects invalid native metadata row $index', ({ index, value }) => {
+    const invalid = structuredClone(rows)
+    invalid[index] = Array.from({ length: dimensionCount + 1 }, () => value)
+    expect(buildSpreadsheetSheet('unrelated.xlsx', invalid).header).toBeNull()
+  })
+
+  it('does not discard unrelated adjacent cells or attribute an ordinary merged CSV', () => {
+    const invalid = structuredClone(rows)
+    invalid[2][1] = 'Інші операційні дані'
+    expect(buildSpreadsheetSheet('unrelated.xlsx', invalid).header).toBeNull()
+    expect(buildSpreadsheetSheet('unrelated.csv', rows, 'flat').header).toBeNull()
   })
 })

@@ -4,16 +4,16 @@ import userEvent from '@testing-library/user-event'
 import type { ReactNode } from 'react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { I18nProvider } from '../../../shared/i18n/I18nProvider'
-import { createStockReport, searchDatasetReportValues } from '../api/reportsApi'
+import { createStockReport, getReportClientAgreements, searchDatasetReportValues } from '../api/reportsApi'
 import { getReportDatasets, getServerReportTemplates, saveServerReportTemplate } from '../api/reportWorkspaceApi'
-import { reportDatasets, purchaseDataset, stockDataset } from '../data/reportDatasets.test-fixtures'
+import { reportDatasets, purchaseDataset, stockDataset, currentStockDatasets, placementDataset, reservationDataset } from '../data/reportDatasets.test-fixtures'
 import { defaultDatasetRequest } from '../data/reportDatasets'
 import { createSalesReportPreset } from '../data/reportPresets'
 import type { ReportTemplate } from '../types'
 import { ReportsStocksPage } from './ReportsStocksPage'
 
 vi.mock('../../auth/useAuth', () => ({ useAuth: () => ({ hasPermission: () => true }) }))
-vi.mock('../api/reportsApi', async (original) => ({ ...await original<typeof import('../api/reportsApi')>(), createStockReport: vi.fn(), searchDatasetReportValues: vi.fn() }))
+vi.mock('../api/reportsApi', async (original) => ({ ...await original<typeof import('../api/reportsApi')>(), createStockReport: vi.fn(), getReportClientAgreements: vi.fn(), searchDatasetReportValues: vi.fn() }))
 vi.mock('../api/reportWorkspaceApi', async (original) => ({
   ...await original<typeof import('../api/reportWorkspaceApi')>(),
   getReportDatasets: vi.fn(), getServerReportTemplates: vi.fn(), saveServerReportTemplate: vi.fn(),
@@ -71,33 +71,32 @@ describe('native report datasets in the constructor', () => {
       selections: [], sorted: { Row: [{ type: 28 }, { type: 3 }], Col: [], Measurements: [{ Type: 0 }, { Type: 2 }] } })
   })
 
-  it('clears and hides dates for current stock, sends only stock measures, and restores the prior period on return', async () => {
-    vi.mocked(getReportDatasets).mockResolvedValue([...reportDatasets, stockDataset])
+  it.each(currentStockDatasets)('clears dates, uses the snapshot preset and restores the prior period for source $DataSource', async dataset => {
+    vi.mocked(getReportDatasets).mockResolvedValue([...reportDatasets, ...currentStockDatasets])
     const { container } = await renderReady()
     fireEvent.change(screen.getByLabelText('Від'), { target: { value: '2026-06-01' } })
     fireEvent.change(screen.getByLabelText('До'), { target: { value: '2026-06-30' } })
-    await chooseDataset(stockDataset.Name)
+    await chooseDataset(dataset.Name)
     expect(screen.queryByLabelText('Від')).toBeNull()
     expect(screen.queryByLabelText('До')).toBeNull()
     expect(screen.getByText('Поточний стан на час читання даних. Історичний період не застосовується.')).toBeTruthy()
     expect(screen.queryByRole('button', { name: 'Кількість за одиницями' })).toBeNull()
-    fireEvent.click(screen.getByRole('button', { name: 'Залишки за складами й одиницями' }))
+    fireEvent.click(screen.getByRole('button', { name: dataset.DataSource === 4 ? 'Залишки за складами й одиницями' : dataset.DataSource === 5 ? 'Розміщення за комірками' : 'Резерви за договорами' }))
     fireEvent.submit(container.querySelector('form')!)
     await waitFor(() => expect(createStockReport).toHaveBeenCalledOnce())
-    expect(vi.mocked(createStockReport).mock.calls[0][0]).toMatchObject({ dataSource: 4, from: '', to: '', selections: [],
-      sorted: { Row: [{ type: 29 }, { type: 28 }], Col: [], Measurements: [{ Type: 17 }, { Type: 18 }, { Type: 19 }] } })
+    expect(vi.mocked(createStockReport).mock.calls[0][0]).toMatchObject(defaultDatasetRequest(dataset, '', ''))
     expect(screen.getByText(/Сервер не повернув файл поточних залишків/)).toBeTruthy()
     await chooseDataset(purchaseDataset.Name)
     expect((screen.getByLabelText('Від') as HTMLInputElement).value).toBe('2026-06-01')
     expect((screen.getByLabelText('До') as HTMLInputElement).value).toBe('2026-06-30')
   })
 
-  it.each(stockDataset.Filters)('uses source4 native lookup and exact Id for one-character $Name searches', async field => {
+  it.each(currentStockDatasets.flatMap(dataset => dataset.Filters.map(field => ({ dataset, field }))))('uses source $dataset.DataSource native lookup and exact Id for one-character $field.Name searches', async ({ dataset, field }) => {
     const user = userEvent.setup()
-    vi.mocked(getReportDatasets).mockResolvedValue([...reportDatasets, stockDataset])
+    vi.mocked(getReportDatasets).mockResolvedValue([...reportDatasets, ...currentStockDatasets])
     vi.mocked(searchDatasetReportValues).mockResolvedValue([{ Id: 10780, Name: 'м [10780]' }])
     const { container } = await renderReady()
-    await chooseDataset(stockDataset.Name)
+    await chooseDataset(dataset.Name)
     fireEvent.click(screen.getByRole('button', { name: 'Додати умову' }))
     const editor = await screen.findByRole('dialog', { name: 'Додати умову відбору' })
     fireEvent.click(within(editor).getByRole('combobox', { name: 'Поле' }))
@@ -105,13 +104,15 @@ describe('native report datasets in the constructor', () => {
     const picker = within(editor).getByRole('combobox', { name: 'Значення' })
     await user.click(picker)
     await user.type(picker, 'м')
-    await waitFor(() => expect(searchDatasetReportValues).toHaveBeenCalledWith(4, field.Type,
+    await waitFor(() => expect(searchDatasetReportValues).toHaveBeenCalledWith(dataset.DataSource, field.Type,
       { limit: 30, offset: 0, value: 'м' }, expect.any(AbortSignal)))
+    expect(getReportClientAgreements).not.toHaveBeenCalled()
+    expect(screen.queryByText(/Спочатку виберіть клієнта/)).toBeNull()
     fireEvent.click(await screen.findByRole('option', { name: 'м [10780]' }))
     fireEvent.click(within(editor).getByRole('button', { name: 'Зберегти' }))
     fireEvent.submit(container.querySelector('form')!)
     await waitFor(() => expect(createStockReport).toHaveBeenCalledOnce())
-    expect(vi.mocked(createStockReport).mock.calls[0][0]).toMatchObject({ dataSource: 4, from: '', to: '',
+    expect(vi.mocked(createStockReport).mock.calls[0][0]).toMatchObject({ dataSource: dataset.DataSource, from: '', to: '',
       selections: [{ SelectedField: { Type: field.Type }, Values: [{ Data: { Id: 10780, Name: 'м [10780]' }, Value: 10780 }] }] })
   })
 
@@ -135,10 +136,10 @@ describe('native report datasets in the constructor', () => {
     expect(vi.mocked(saveServerReportTemplate).mock.calls[0][0].Data).toEqual(template.Data)
   })
 
-  it('refuses a stock template carrying historical dates before changing the current form', async () => {
-    vi.mocked(getReportDatasets).mockResolvedValue([...reportDatasets, stockDataset])
+  it.each(currentStockDatasets)('refuses current source $DataSource historical templates before changing the form', async dataset => {
+    vi.mocked(getReportDatasets).mockResolvedValue([...reportDatasets, ...currentStockDatasets])
     const template = { ...storedTemplate(), Name: 'Історична дата у залишках', Data: {
-      ...defaultDatasetRequest(stockDataset, '', ''), from: '2026-06-01', to: '2026-06-30',
+      ...defaultDatasetRequest(dataset, '', ''), from: '2026-06-01', to: '2026-06-30',
     } }
     vi.mocked(getServerReportTemplates).mockResolvedValue([template])
     await renderReady()
@@ -150,6 +151,30 @@ describe('native report datasets in the constructor', () => {
     expect((screen.getByRole('combobox', { name: 'Набір даних звіту' }) as HTMLInputElement).value).toBe('Продажі')
     expect(createStockReport).not.toHaveBeenCalled()
     expect(saveServerReportTemplate).not.toHaveBeenCalled()
+  })
+
+  it.each([placementDataset, reservationDataset])('reloads and saves source $DataSource exact active identities plus disabled unsupported filters', async dataset => {
+    vi.mocked(getReportDatasets).mockResolvedValue([...reportDatasets, ...currentStockDatasets])
+    const template = { ...storedTemplate(), Name: 'Мій поточний зріз', Data: defaultDatasetRequest(dataset, '', '') }
+    template.Data.selections = [{ IsChecked: true,
+      SelectedField: dataset.DataSource === 5 ? { Type: 22, Name: 'StockConsignmentItem' } : { Type: 9, Name: 'CustomerContract' },
+      FilterCondition: { Type: 0, Name: 'Дорівнює' }, Values: [{ Data: { Id: 458945, AgreementId: 99 }, Name: 'Точний запис [458945]', Value: 458945 }] },
+    { IsChecked: false, SelectedField: { Type: 18, Name: 'SupplierContract' },
+      FilterCondition: { Type: 0, Name: 'Дорівнює' }, Values: [{ Data: { Id: 55 }, Name: 'Збережений відбір', Value: 55 }] }]
+    vi.mocked(getServerReportTemplates).mockResolvedValue([template])
+    const { container } = await renderReady()
+    fireEvent.click(screen.getByRole('button', { name: 'Шаблони' }))
+    fireEvent.click(await screen.findByRole('button', { name: /Мій поточний зріз/ }))
+    expect(screen.queryByLabelText('Від')).toBeNull()
+    expect((screen.getByRole('checkbox', { name: 'Умова відбору 1' }) as HTMLInputElement).checked).toBe(true)
+    expect((screen.getByRole('checkbox', { name: 'Умова відбору 2' }) as HTMLInputElement).checked).toBe(false)
+    fireEvent.submit(container.querySelector('form')!)
+    await waitFor(() => expect(createStockReport).toHaveBeenCalledOnce())
+    expect(vi.mocked(createStockReport).mock.calls[0][0]).toMatchObject({ dataSource: dataset.DataSource, from: '', to: '', selections: [template.Data.selections[0]] })
+    fireEvent.click(screen.getByRole('button', { name: 'Шаблони' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Зберегти' }))
+    await waitFor(() => expect(saveServerReportTemplate).toHaveBeenCalledOnce())
+    expect(vi.mocked(saveServerReportTemplate).mock.calls[0][0].Data).toEqual(template.Data)
   })
 
   it.each(reportDatasets)('selects the unit preset and exact unit filter in source $DataSource', async dataset => {

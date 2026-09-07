@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest'
 import { apiRequest } from '../../../shared/api/apiClient'
 import { getReportDatasets, getServerReportTemplates, saveServerReportTemplate } from './reportWorkspaceApi'
 import { createSalesReportPreset } from '../data/reportPresets'
-import { reportDatasets, stockDataset } from '../data/reportDatasets.test-fixtures'
+import { reportDatasets, stockDataset, currentStockDatasets } from '../data/reportDatasets.test-fixtures'
 import { defaultDatasetRequest } from '../data/reportDatasets'
 
 vi.mock('../../../shared/api/apiClient', () => ({ apiRequest: vi.fn() }))
@@ -28,15 +28,22 @@ describe('report workspace wire contract', () => {
     await expect(getReportDatasets()).rejects.toThrow('некоректний список наборів даних')
   })
 
-  it('retains no-period capability and null wire dates in a current stock template', async () => {
-    vi.mocked(apiRequest).mockResolvedValue([...reportDatasets, stockDataset])
-    expect((await getReportDatasets()).find(item => item.DataSource === 4)?.PeriodSupported).toBe(false)
-    const data = defaultDatasetRequest(stockDataset, '', '')
+  it.each(currentStockDatasets)('retains no-period capability and null wire dates in current source $DataSource templates', async dataset => {
+    vi.mocked(apiRequest).mockResolvedValue([...reportDatasets, ...currentStockDatasets])
+    expect((await getReportDatasets()).find(item => item.DataSource === dataset.DataSource)?.PeriodSupported).toBe(false)
+    const data = defaultDatasetRequest(dataset, '', '')
     data.selections = [{ IsChecked: false, SelectedField: { Name: 'CustomerContract', Type: 9 },
       FilterCondition: { Name: 'Дорівнює', Type: 0 }, Values: [{ Data: { Id: 42 }, Name: 'Договір', Value: 42 }] }]
     vi.mocked(apiRequest).mockResolvedValue([{ Id: crypto.randomUUID(), Revision: 1, Name: 'Залишки',
-      Data: { DataSource: 4, From: null, To: null, Sorted: data.sorted, Selections: data.selections } }])
+      Data: { DataSource: dataset.DataSource, From: null, To: null, Sorted: data.sorted, Selections: data.selections } }])
     expect((await getServerReportTemplates())[0].Data).toEqual(data)
+  })
+
+  it.each(currentStockDatasets)('refuses missing or historical period semantics for current source $DataSource', async dataset => {
+    for (const PeriodSupported of [undefined, true]) {
+      vi.mocked(apiRequest).mockResolvedValue([{ ...dataset, PeriodSupported }])
+      await expect(getReportDatasets()).rejects.toThrow('некоректний список наборів даних')
+    }
   })
 
   it('normalizes .NET names while retaining agreement identities and disabled selections', async () => {

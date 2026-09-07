@@ -6,6 +6,7 @@ import type {
   SpreadsheetSheet,
 } from './types'
 import { parseNumericValue } from './utils'
+import { CURRENT_STOCK_REPORT_TITLES } from './data/currentStockReports'
 
 // The file «Перегляд звіту з файла» exists for is the one our own report engine writes
 // (ProductPlacementStorageManager.ExportVerificationReportsToXlsx): the header is as many rows deep as the
@@ -17,15 +18,14 @@ const SUBTOTAL_PREFIX = 'Підсумок:'
 const GRAND_TOTAL_LABEL = 'Загальний підсумок'
 const HEADER_LEVEL_SEPARATOR = ' · '
 // The first line of the engine's attribution block, and the only thing that identifies the block as one.
-const STOCK_REPORT_TITLE = 'Звіт поточних складських залишків'
 const STOCK_STATE_LINE = 'Поточний стан: знімок операційних записів GBA'
 const STOCK_READ_TIME_LINE = /^Час читання \(UTC\): \d{2}\.\d{2}\.\d{4} \d{2}:\d{2}:\d{2}\.\d{3} – \d{2}\.\d{2}\.\d{4} \d{2}:\d{2}:\d{2}\.\d{3}$/
-const REPORT_TITLES = new Set(['Звіт продажів', 'Звіт продажів і повернень', 'Звіт надходжень', STOCK_REPORT_TITLE])
+const REPORT_TITLES = new Set(['Звіт продажів', 'Звіт продажів і повернень', 'Звіт надходжень', ...CURRENT_STOCK_REPORT_TITLES])
 export const stockQuantityFormatter = new Intl.NumberFormat('uk-UA', { maximumFractionDigits: 8 })
 const stockCsvQuantityFormatter = new Intl.NumberFormat('en-US', { useGrouping: false, maximumFractionDigits: 8 })
 
 export function isCurrentStockSheet(sheet: SpreadsheetSheet | null): boolean {
-  return sheet?.header?.lines[0] === STOCK_REPORT_TITLE
+  return CURRENT_STOCK_REPORT_TITLES.has(sheet?.header?.lines[0] ?? '')
 }
 const ROW_GROUPINGS_PREFIX = 'Рядки:'
 const COLUMN_GROUPINGS_PREFIX = 'Колонки:'
@@ -254,7 +254,7 @@ function readReportHeader(
     || !lines.some(line => line.startsWith(COLUMN_GROUPINGS_PREFIX))) {
     return null
   }
-  if (lines[0] === STOCK_REPORT_TITLE && (!lines.includes(STOCK_STATE_LINE)
+  if (CURRENT_STOCK_REPORT_TITLES.has(lines[0]) && (!lines.includes(STOCK_STATE_LINE)
     || !lines.some(line => STOCK_READ_TIME_LINE.test(line)) || lines.some(line => line.startsWith('Період:')))) return null
 
   return {
