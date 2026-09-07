@@ -341,18 +341,72 @@ describe('buildSheetExportRows', () => {
     expect(csv).toContain('Товар,По місяцях,"Кількість продажу, шт · Кількість"')
   })
 
-  it('appends the viewer’s own «Разом» when the sheet’s totals were filtered away', () => {
+  it('marks the viewer’s computed total explicitly when the sheet’s totals were filtered away', () => {
     const filtered = filterSheetRows(sheet, 'Автолампа CHAMPION', '', '')
     const totals = calculateTotals(filtered, getAdditiveColumns(sheet))
     const rows = buildSheetExportRows(sheet, filtered, ['Разом', '', totals[2] ?? '', totals[3] ?? ''])
 
-    expect(rows[rows.length - 1]).toEqual(['Разом', '', 116, 15.5])
+    expect(rows[rows.length - 1]).toEqual(['Загальний підсумок', '', 116, 15.5])
   })
 
   it('writes no attribution block for a file that never had one', () => {
     const plain = buildSpreadsheetSheet('plain.csv', [['Клієнт', 'Сума'], ['ТОВ Ромашка', 1000]])
 
     expect(buildSheetExportRows(plain, plain.rows)).toEqual([['Клієнт', 'Сума'], ['ТОВ Ромашка', 1000]])
+  })
+})
+
+describe('native CSV round trips', () => {
+  function nativeSheet(title: string) {
+    return buildSpreadsheetSheet('Report', [
+      [title], ['Рядки: Організація'], ['Колонки: —'],
+      ['Показники: Кількість, Сума'], ['УВАГА: для частини рядків немає даних'], [],
+      [null, 'Кількість', 'Сума, EUR'], ['Організація', 'Кількість', 'Сума'],
+      ['Організація', null, 30], ['Разом', 0, null], ['Загальний підсумок', 0, 30],
+    ])
+  }
+
+  function roundTrip(sheet: ReturnType<typeof nativeSheet>, totals?: SpreadsheetCellValue[]) {
+    const rows = sheet.rows.filter(row => row.kind === 'data')
+    const csv = buildSpreadsheetCsv(buildSheetExportRows(sheet, rows, totals))
+    return buildSpreadsheetSheet('filtered.csv', parseDelimitedText(csv, detectDelimiter(csv)), 'flat')
+  }
+
+  it.each(['Звіт продажів', 'Звіт продажів і повернень', 'Звіт надходжень'])('keeps attribution without any total row for %s', title => {
+    const original = nativeSheet(title)
+    const parsed = roundTrip(original)
+    expect(parsed.header).toEqual(original.header)
+    expect(parsed.columns).toEqual(original.columns)
+    // The first data row equals the grouping caption; a flat CSV still has only
+    // one header row. The final group is actually named «Разом», not a total.
+    expect(parsed.rows).toEqual([
+      { kind: 'data', cells: ['Організація', '', 30] },
+      { kind: 'data', cells: ['Разом', 0, ''] },
+    ])
+  })
+
+  it.each(['Звіт продажів і повернень', 'Звіт надходжень'])('preserves a computed filtered total as a total for %s', title => {
+    const original = nativeSheet(title)
+    const parsed = roundTrip(original, ['Разом', 0, 30])
+    expect(parsed.header).toEqual(original.header)
+    expect(parsed.rows.map(row => row.kind)).toEqual(['data', 'data', 'total'])
+    expect(parsed.rows[2].cells).toEqual(['Загальний підсумок', 0, 30])
+    expect(parsed.rows[0].cells[1]).toBe('')
+    expect(parsed.rows[1].cells[1]).toBe(0)
+  })
+
+  it('keeps explicit blank separators while ignoring empty body records', () => {
+    const parsed = parseDelimitedText('Назва,Сума\n\nА,10\n\n', ',')
+    expect(parsed[1]).toEqual([''])
+    expect(buildSpreadsheetSheet('plain.csv', parsed, 'flat').rows).toEqual([{ kind: 'data', cells: ['А', 10] }])
+  })
+
+  it.each([
+    [['Звіт надходжень'], [], ['Коментар', 'Сума'], ['А', 10]],
+    [['Звіт надходжень'], ['Рядки: Організація', 'Чуже значення'], ['Колонки: —'], [], ['Організація', 'Сума'], ['А', 10]],
+    [['Звіт надходжень'], ['Рядки: Організація'], [], ['Організація', 'Сума'], ['А', 10]],
+  ].map(rows => ({ rows })))('does not infer native attribution from unrelated table content %#', ({ rows }) => {
+    expect(buildSpreadsheetSheet('other.csv', rows, 'flat').header).toBeNull()
   })
 })
 

@@ -466,7 +466,7 @@ async function parseSpreadsheetFile(file: File): Promise<SpreadsheetSheet[]> {
     return workbook.SheetNames.reduce<SpreadsheetSheet[]>((acc, sheetName) => {
       const worksheet = workbook.Sheets[sheetName]
       const rows = utils
-        .sheet_to_json<unknown[]>(worksheet, { blankrows: false, header: 1 })
+        .sheet_to_json<unknown[]>(worksheet, { blankrows: true, header: 1 })
         .map((row) => (Array.isArray(row) ? row.map(normalizeImportedCellValue) : []))
 
       const built = buildSpreadsheetSheet(sheetName, rows)
@@ -481,7 +481,7 @@ async function parseSpreadsheetFile(file: File): Promise<SpreadsheetSheet[]> {
   const delimiter = detectDelimiter(text)
   const rows = parseDelimitedText(text, delimiter)
 
-  return [buildSpreadsheetSheet(file.name, rows)]
+  return [buildSpreadsheetSheet(file.name, rows, 'flat')]
 }
 
 function formatSpreadsheetCell(value: SpreadsheetCellValue): string {

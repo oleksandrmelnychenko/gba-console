@@ -36,7 +36,7 @@ const MEASURE_HEADER_LEVELS = 2
 // own total by a few ulps over ~10^4 addends. Relative, so it holds for a 10-row sheet and a 500 000-row one.
 const TOTAL_MATCH_TOLERANCE = 1e-6
 
-export function buildSpreadsheetSheet(name: string, rows: SpreadsheetCellValue[][]): SpreadsheetSheet {
+export function buildSpreadsheetSheet(name: string, rows: SpreadsheetCellValue[][], format: 'workbook' | 'flat' = 'workbook'): SpreadsheetSheet {
   const firstFilledRowIndex = rows.findIndex((row) => row.some(isFilledCell))
 
   if (firstFilledRowIndex === -1) {
@@ -44,18 +44,17 @@ export function buildSpreadsheetSheet(name: string, rows: SpreadsheetCellValue[]
   }
 
   const sheetRows = rows.slice(firstFilledRowIndex)
-  // «Загальний підсумок» is written on every sheet the report engine produces and on nothing else, so it is what
-  // tells an engine report from an arbitrary spreadsheet. Only a report is read as a pivot; anything else keeps
-  // the plain one-header-row reading it has always had.
-  const isReport = sheetRows.some((row) => getStructuralRowKind(row) !== null)
+  // A filtered CSV can retain the complete attribution block with no total rows.
+  // Read that explicit structure independently of the workbook's subtotal markers.
+  const reportHeader = readReportHeader(sheetRows)
+  const isReport = reportHeader !== null || sheetRows.some((row) => getStructuralRowKind(row) !== null)
   // The attribution block the engine now writes above the table. It is what tells the viewer where the table
   // starts — reading that off the data instead is what broke here: countHeaderRows() took the first row holding a
   // number as the first row of the body, and the block has no numbers in it, so on a report whose FIRST product
   // has no cost the first row with a number was two group-subtotals further down and a whole data row was eaten
   // as if it were part of the header.
-  const reportHeader = isReport ? readReportHeader(sheetRows) : null
   const tableRows = reportHeader ? sheetRows.slice(reportHeader.tableTopIndex) : sheetRows
-  const headerRowCount = reportHeader
+  const headerRowCount = format === 'flat' ? 1 : reportHeader
     ? countReportHeaderRows(tableRows, reportHeader.header)
     : isReport
       ? countHeaderRows(sheetRows)
@@ -68,7 +67,7 @@ export function buildSpreadsheetSheet(name: string, rows: SpreadsheetCellValue[]
     // A grouping value is merged down the rows of its group and has to be carried; a MEASURE that is empty is a
     // measure with no answer and must stay empty. Only the row-field columns may be carried, and there are
     // exactly as many of them as the block names in «Рядки».
-    rows: buildBodyRows(tableRows.slice(headerRowCount), isReport, reportHeader?.header.rowGroupings.length),
+    rows: buildBodyRows(tableRows.slice(headerRowCount), isReport, format === 'flat' ? 0 : reportHeader?.header.rowGroupings.length),
   }
 }
 
@@ -89,7 +88,9 @@ export function buildSheetExportRows(
     ...attribution,
     sheet.columns,
     ...rows.map((row) => row.cells),
-    ...(totalsRow ? [totalsRow] : []),
+    // A native CSV uses the same explicit total marker as its workbook. A plain
+    // group named «Разом» must never be guessed to be an aggregate on import.
+    ...(totalsRow ? [sheet.header ? [GRAND_TOTAL_LABEL, ...totalsRow.slice(1)] : totalsRow] : []),
   ]
 }
 
@@ -178,7 +179,8 @@ export function parseDelimitedText(text: string, delimiter: string): Spreadsheet
   return text
     .replace(/^\uFEFF/, '')
     .split(/\r?\n/)
-    .filter((line) => line.length > 0)
+    // Empty records delimit the attribution block from the table. Body parsing
+    // already ignores them; deleting them here loses native CSV metadata.
     .map((line) => parseDelimitedLine(line, delimiter).map(normalizeCellValue))
 }
 
@@ -217,12 +219,16 @@ function readReportHeader(
   let index = 0
 
   while (index < rows.length && rows[index].some(isFilledCell)) {
+    // Native attribution is strictly column-A-only, not a row of table values
+    // that merely begins with a familiar title or prefix.
+    if (rows[index].slice(1).some(isFilledCell)) return null
     lines.push(String(rows[index][0] ?? '').trim())
     index += 1
   }
 
   // No separator and therefore no table under it: the file is not one of ours after all.
-  if (index >= rows.length) {
+  if (index >= rows.length - 1 || !lines.some(line => line.startsWith(ROW_GROUPINGS_PREFIX))
+    || !lines.some(line => line.startsWith(COLUMN_GROUPINGS_PREFIX))) {
     return null
   }
 
