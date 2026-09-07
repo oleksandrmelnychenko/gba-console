@@ -1,10 +1,43 @@
 import { describe, expect, it } from 'vitest'
 import { datasetConfigurationError, datasetFilters, datasetGroupings, datasetMeasurements, datasetPresetRequest, datasetPresets, defaultDatasetRequest } from './reportDatasets'
-import { grossDataset, netDataset, purchaseDataset, reportDatasets } from './reportDatasets.test-fixtures'
+import { grossDataset, netDataset, purchaseDataset, reportDatasets, stockDataset } from './reportDatasets.test-fixtures'
 import { flattenCheckedMeasurements } from './reportOptions'
 import { createSalesReportPreset } from './reportPresets'
 
 describe('report dataset capabilities', () => {
+  it('builds a current warehouse/unit snapshot with no date or monetary measurements', () => {
+    const data = defaultDatasetRequest(stockDataset, '2026-06-01', '2026-06-30')
+    expect(data).toMatchObject({ dataSource: 4, from: '', to: '', sorted: {
+      Row: [{ type: 29, key: 'Warehouse' }, { type: 28, key: 'ProductMeasureUnit' }],
+      Col: [], Measurements: [{ Type: 17 }, { Type: 18 }, { Type: 19 }],
+    } })
+    expect(datasetConfigurationError(data, stockDataset)).toBeNull()
+    expect(datasetFilters(stockDataset).find(item => item.field.Type === 21)?.field.Name).toBe('Warehouse')
+    expect(datasetPresets(stockDataset).map(item => item.id)).toEqual(['stock-by-warehouse-unit'])
+    expect(datasetPresets({ ...stockDataset, Groupings: stockDataset.Groupings.filter(field => field.Type !== 28) })).toEqual([])
+    expect(datasetPresets({ ...stockDataset, Measurements: stockDataset.Measurements.filter(field => field.Type !== 19) })).toEqual([])
+  })
+
+  it.each([{ from: '2026-06-01', to: '' }, { from: '', to: '2026-06-30' }])('refuses historical stock templates without mutating them: %j', period => {
+    const data = { ...defaultDatasetRequest(stockDataset, '', ''), ...period }
+    const before = structuredClone(data)
+    expect(datasetConfigurationError(data, stockDataset)).toContain('не підтримують період або історичну дату')
+    expect(data).toEqual(before)
+  })
+
+  it('keeps an unsupported disabled contract intact in a stock preset and blocks it when enabled', () => {
+    const data = defaultDatasetRequest(stockDataset, '', '')
+    data.selections = [{ IsChecked: false, SelectedField: { Name: 'CustomerContract', Type: 9 },
+      FilterCondition: { Name: 'Дорівнює', Type: 0 }, Values: [{ Data: { Id: 42, AgreementId: 9 }, Name: 'Договір', Value: 42 }] }]
+    const preset = datasetPresetRequest(stockDataset, 'stock-by-warehouse-unit', data)!
+    expect(preset.Data).toEqual(data)
+    expect(preset.Data.selections).not.toBe(data.selections)
+    expect(datasetConfigurationError(preset.Data, stockDataset)).toBeNull()
+    preset.Data.selections[0].IsChecked = true
+    expect(datasetConfigurationError(preset.Data, stockDataset)).toContain('CustomerContract')
+    expect(data.selections[0].IsChecked).toBe(false)
+  })
+
   it('uses only receipt quantity and net EUR amount for purchase defaults', () => {
     const data = defaultDatasetRequest(purchaseDataset, '2026-09-01', '2026-09-03')
     expect(data).toMatchObject({ dataSource: 3, from: '2026-09-01', to: '2026-09-03', sorted: { Row: [{ type: 28 }, { type: 3 }] } })

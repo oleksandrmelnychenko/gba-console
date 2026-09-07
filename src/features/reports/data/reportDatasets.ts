@@ -2,11 +2,15 @@ import type { ReportDataset, ReportFilterField, ReportGroupingItem, ReportMeasur
 import { createDefaultMeasurementGroups, flattenCheckedMeasurements, flattenGroupingOptions, REPORT_FILTER_CONDITIONS, REPORT_FILTER_FIELD_GROUPS } from './reportOptions'
 import { createSalesReportPreset, SALES_REPORT_PRESETS, type SalesReportPresetId } from './reportPresets'
 
-export type DatasetReportPresetId = SalesReportPresetId | 'quantities-by-unit'
+export type DatasetReportPresetId = SalesReportPresetId | 'quantities-by-unit' | 'stock-by-warehouse-unit'
 type DatasetReportPreset = { id: DatasetReportPresetId; name: string; description: string }
 const QUANTITY_BY_UNIT_PRESET: DatasetReportPreset = {
   id: 'quantities-by-unit', name: 'Кількість за одиницями',
   description: 'Одиниця виміру → день. Окрема кількість для кожної одиниці виміру, без додавання різних одиниць.',
+}
+const STOCK_BY_WAREHOUSE_UNIT_PRESET: DatasetReportPreset = {
+  id: 'stock-by-warehouse-unit', name: 'Залишки за складами й одиницями',
+  description: 'Поточний стан: склад → одиниця виміру. Фізичний залишок, вільна кількість і записаний резерв без додавання різних одиниць.',
 }
 
 const GROUPING_KEYS = new Map(flattenGroupingOptions().map(item => [item.type, item.key]))
@@ -15,6 +19,7 @@ GROUPING_KEYS.set(25, 'SupplierContract')
 // Preserve the already published price identities. Quantity units use 28.
 GROUPING_KEYS.set(26, 'SalesUnitGrossPrice')
 GROUPING_KEYS.set(27, 'CostUnitGrossPrice')
+GROUPING_KEYS.set(29, 'Warehouse')
 
 const FILTER_KEYS = new Map(REPORT_FILTER_FIELD_GROUPS.flatMap(group => group.children.map(item => [item.type, item.label] as const)))
 FILTER_KEYS.set(1, 'Product')
@@ -23,6 +28,7 @@ FILTER_KEYS.set(12, 'SaleDocument')
 FILTER_KEYS.set(17, 'Supplier')
 FILTER_KEYS.set(18, 'SupplierContract')
 FILTER_KEYS.set(19, 'PurchaseDocument')
+FILTER_KEYS.set(21, 'Warehouse')
 
 export function datasetGroupings(dataset: ReportDataset | undefined): ReportGroupingItem[] {
   return dataset?.Groupings.map(field => ({ key: GROUPING_KEYS.get(field.Type) ?? field.Name, label: field.Name, type: field.Type })) ?? []
@@ -65,12 +71,16 @@ export function defaultDatasetRequest(dataset: ReportDataset, from: string, to: 
   const groupings = datasetGroupings(dataset)
   const row = groupings.find(item => item.type === 3) ?? groupings[0]
   const unit = groupings.find(item => item.type === 28)
+  const stock = dataset.DataSource === 4
+  const warehouse = groupings.find(item => item.type === 29)
   const available = dataset.Measurements.filter(field => field.Selectable !== false)
-  const preferred = available.filter(field => field.Type === 0 || field.Type === (dataset.DataSource === 3 ? 2 : 4))
+  const preferred = available.filter(field => stock ? [17, 18, 19].includes(field.Type)
+    : field.Type === 0 || field.Type === (dataset.DataSource === 3 ? 2 : 4))
   const fields = preferred.length ? preferred : available.slice(0, 1)
   const selected = fields.map(field => ({ ...field, IsChecked: true, parentName: '' }))
-  return { dataSource: dataset.DataSource, from, to, selections: [], sorted: {
-    Row: [unit, row].filter((item, index, items): item is ReportGroupingItem => Boolean(item) && items.indexOf(item) === index),
+  return { dataSource: dataset.DataSource, from: dataset.PeriodSupported === false ? '' : from,
+    to: dataset.PeriodSupported === false ? '' : to, selections: [], sorted: {
+    Row: (stock ? [warehouse, unit] : [unit, row]).filter((item, index, items): item is ReportGroupingItem => Boolean(item) && items.indexOf(item) === index),
     Col: [], Measurements: flattenCheckedMeasurements(datasetMeasurements(dataset, selected)),
   } }
 }
@@ -79,6 +89,9 @@ export function defaultDatasetRequest(dataset: ReportDataset, from: string, to: 
 export function datasetConfigurationError(data: ReportRequestBody, dataset: ReportDataset | undefined): string | null {
   if (data.dataSource === 1 || data.oneC) return 'Шаблон використовує архівне джерело 1С, яке більше не доступне. Налаштування не застосовано.'
   if (!dataset || (data.dataSource ?? 0) !== dataset.DataSource) return 'Набір даних цього звіту недоступний. Налаштування не застосовано.'
+  if (dataset.PeriodSupported === false && (data.from || data.to)) {
+    return 'Поточні залишки не підтримують період або історичну дату. Шаблон із датами не застосовано; виберіть набір поточного стану заново.'
+  }
   if (!data.sorted || !Array.isArray(data.sorted.Row) || !Array.isArray(data.sorted.Col) || !Array.isArray(data.sorted.Measurements) || !Array.isArray(data.selections)) {
     return 'Шаблон містить некоректні налаштування. Налаштування не застосовано.'
   }
@@ -89,14 +102,19 @@ export function datasetConfigurationError(data: ReportRequestBody, dataset: Repo
   const unsupported = [
     ...[...data.sorted.Row, ...data.sorted.Col].flatMap(item => groupingTypes.has(item.type) ? [] : [item.label || item.key || `#${item.type}`]),
     ...data.sorted.Measurements.flatMap(item => measurementTypes.has(item.Type) ? [] : [item.Name || `#${item.Type}`]),
-    ...data.selections.flatMap(item => filterTypes.has(item.SelectedField?.Type) && conditionTypes.has(item.FilterCondition?.Type)
+    ...data.selections.flatMap(item => (!item.IsChecked || filterTypes.has(item.SelectedField?.Type)) && conditionTypes.has(item.FilterCondition?.Type)
       ? [] : [item.SelectedField?.Name || 'Умова відбору']),
   ]
   return unsupported.length ? `Набір «${dataset.Name}» не підтримує налаштування: ${unsupported.join(', ')}. Налаштування не застосовано.` : null
 }
 
 export function datasetPresets(dataset: ReportDataset | undefined): DatasetReportPreset[] {
-  if (!dataset || ![0, 2, 3].includes(dataset.DataSource)) return []
+  if (!dataset || ![0, 2, 3, 4].includes(dataset.DataSource)) return []
+  if (dataset.DataSource === 4) {
+    return [29, 28].every(type => dataset.Groupings.some(field => field.Type === type))
+      && [17, 18, 19].every(type => dataset.Measurements.some(field => field.Type === type && field.Selectable !== false))
+      ? [STOCK_BY_WAREHOUSE_UNIT_PRESET] : []
+  }
   const presets: DatasetReportPreset[] = []
   if ([28, 3].every(type => dataset.Groupings.some(field => field.Type === type))
     && dataset.Measurements.some(field => field.Type === 0 && field.Selectable !== false)) {
@@ -116,6 +134,9 @@ export function datasetPresets(dataset: ReportDataset | undefined): DatasetRepor
 export function datasetPresetRequest(dataset: ReportDataset, id: DatasetReportPresetId, current: ReportRequestBody) {
   const preset = datasetPresets(dataset).find(item => item.id === id)
   if (!preset) return null
+  if (id === 'stock-by-warehouse-unit') {
+    return { Name: preset.name, Data: { ...defaultDatasetRequest(dataset, '', ''), selections: structuredClone(current.selections) } }
+  }
   if (id === 'quantities-by-unit') {
     const data = defaultDatasetRequest(dataset, current.from, current.to)
     return { Name: preset.name, Data: { ...data, selections: structuredClone(current.selections), sorted: {

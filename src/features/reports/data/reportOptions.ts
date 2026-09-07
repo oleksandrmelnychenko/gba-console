@@ -47,6 +47,7 @@ export const REPORT_FILTER_FIELD_TYPES = {
   supplierContract: 18,
   purchaseDocument: 19,
   productMeasureUnit: 20,
+  warehouse: 21,
 } as const
 
 const REPORT_GROUPING_TYPES = {
@@ -267,6 +268,7 @@ const REPORT_FIELD_LABELS: Record<string, string> = {
   ProductGroup: 'Група товару',
   ProductName: 'Назва товару',
   ProductMeasureUnit: 'Одиниця виміру',
+  Warehouse: 'Склад',
   ProductTop: 'Топ товару',
   Profitability: 'Рентабельність',
   ProfitabilityPercentWithVAT: 'Рентабельність з ПДВ, %',

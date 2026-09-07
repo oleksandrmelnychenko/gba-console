@@ -7,6 +7,8 @@ import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { I18nProvider } from '../../../shared/i18n/I18nProvider'
 import { downloadTextFile } from '../utils'
 import { ReportsSalePage } from './ReportsSalePage'
+import { stockWorkbookRows } from '../data/stockSpreadsheet.test-fixtures'
+import { buildSpreadsheetSheet, detectDelimiter, parseDelimitedText } from '../spreadsheet'
 
 const allowedPermissions = new Set<string>()
 const printMock = vi.fn()
@@ -101,5 +103,36 @@ describe('Sale-file report canonical permission guards', () => {
 
     expect(downloadTextFile).not.toHaveBeenCalled()
     expect(printMock).not.toHaveBeenCalled()
+  })
+
+  it('imports a stock XLSX, hides historical dates, displays eight decimals and exports the current snapshot intact', async () => {
+    allowedPermissions.add(PermissionKeys.ReportsSaleFile.Page.View)
+    allowedPermissions.add(PermissionKeys.ReportsSaleFile.Document.Export)
+    const XLSX = await import('xlsx')
+    const workbook = XLSX.utils.book_new()
+    const sheet = XLSX.utils.aoa_to_sheet(stockWorkbookRows)
+    sheet['!merges'] = Array.from({ length: 8 }, (_, row) => ({ s: { r: row, c: 0 }, e: { r: row, c: 4 } }))
+    XLSX.utils.book_append_sheet(workbook, sheet, 'Report')
+    const bytes = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' }) as ArrayBuffer
+    const { container } = renderPage()
+    fireEvent.change(screen.getByLabelText('Завантажити файл'), {
+      target: { files: [new File([bytes], 'stock.xlsx', { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })] },
+    })
+    await screen.findByText('Звіт поточних складських залишків')
+    expect(screen.queryByLabelText('Від')).toBeNull()
+    expect(screen.queryByLabelText('До')).toBeNull()
+    expect(container.querySelector('.reports-sale-table')?.textContent).toContain('0,00000001')
+    expect(container.querySelector('.reports-sale-table')?.textContent).toContain('2,12345678')
+    const rows = container.querySelectorAll('.reports-sale-table tr.data-table-row')
+    expect(rows[0].querySelectorAll('td.data-table-cell')[2].textContent).toBe('')
+    expect(rows[0].querySelectorAll('td.data-table-cell')[3].textContent).toBe('0')
+    fireEvent.click(screen.getByLabelText('Експорт CSV'))
+    expect(downloadTextFile).toHaveBeenCalledOnce()
+    const csv = vi.mocked(downloadTextFile).mock.calls[0][1]
+    expect(csv).toContain('0.00000001')
+    const imported = buildSpreadsheetSheet('stock.csv', parseDelimitedText(csv, detectDelimiter(csv)), 'flat')
+    expect(imported.header?.lines[2]).toBe('Час читання (UTC): 07.09.2026 18:00:00.000 – 07.09.2026 18:00:00.120')
+    expect(imported.rows.find(row => row.kind === 'total')?.cells.slice(2)).toEqual(['', '', ''])
+    expect(imported.rows.filter(row => row.kind === 'data')[0].cells.slice(2)).toEqual(['', 0, 0.00000001])
   })
 })

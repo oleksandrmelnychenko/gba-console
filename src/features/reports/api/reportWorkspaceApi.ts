@@ -16,6 +16,8 @@ function isDataset(value: unknown): value is ReportDataset {
   return Number.isSafeInteger(item.DataSource) && item.DataSource! >= 0 && item.DataSource !== 1 && typeof item.Name === 'string' && !!item.Name.trim()
     && typeof item.Description === 'string' && fieldsValid && !!item.Groupings?.length && !!item.Measurements?.length
     && (item.PeriodRequired === undefined || typeof item.PeriodRequired === 'boolean')
+    && (item.PeriodSupported === undefined || typeof item.PeriodSupported === 'boolean')
+    && !(item.PeriodSupported === false && item.PeriodRequired === true)
     && Array.isArray(item.Limitations) && item.Limitations.every(text => typeof text === 'string')
 }
 
@@ -34,8 +36,8 @@ export function getReportCatalogue(signal?: AbortSignal): Promise<ReportCatalogu
 
 type WireTemplate = Required<Omit<ReportTemplate, 'Data'>> & {
   Data: {
-    From: string
-    To: string
+    From: string | null
+    To: string | null
     Sorted: ReportRequestBody['sorted']
     Selections: ReportRequestBody['selections']
     DataSource: ReportRequestBody['dataSource']

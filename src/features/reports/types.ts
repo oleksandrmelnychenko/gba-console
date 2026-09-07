@@ -95,6 +95,7 @@ export type ReportDataset = {
   Name: string
   Description: string
   PeriodRequired?: boolean
+  PeriodSupported?: boolean
   Groupings: ReportDatasetField[]
   Measurements: ReportDatasetField[]
   Filters: ReportDatasetField[]

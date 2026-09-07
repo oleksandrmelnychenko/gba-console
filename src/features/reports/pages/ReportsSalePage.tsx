@@ -34,6 +34,8 @@ import {
   filterSheetRows,
   getAdditiveColumns,
   isFilledCell,
+  isCurrentStockSheet,
+  stockQuantityFormatter,
   normalizeImportedCellValue,
   parseDelimitedText,
 } from '../spreadsheet'
@@ -77,6 +79,7 @@ function ReportsSalePageContent() {
   const { density, toggleDensity } = useDataTableDensity('reports-sale-spreadsheet', 'normal')
   const [debouncedSearch] = useDebouncedValue(search, SEARCH_DEBOUNCE_MS)
   const activeSheet = sheets.find((sheet) => sheet.name === activeSheetName) || sheets[0] || null
+  const currentStock = isCurrentStockSheet(activeSheet)
   const visibleRows = useMemo(
     () => filterSheetRows(activeSheet, debouncedSearch, dateFrom, dateTo),
     [activeSheet, dateFrom, dateTo, debouncedSearch],
@@ -164,10 +167,7 @@ function ReportsSalePageContent() {
     <Stack className="reports-sale-page" gap={6}>
       <Card withBorder radius="md" padding={0} className="app-data-card reports-sale-shell">
         <div className="app-filter-bar reports-sale-filter-bar">
-          <div className="app-filter-date-range">
-            <TextInput label={t('Від')} type="date" value={dateFrom} onChange={(event) => setDateFrom(event.currentTarget.value)} />
-            <TextInput label={t('До')} type="date" value={dateTo} onChange={(event) => setDateTo(event.currentTarget.value)} />
-          </div>
+          <SpreadsheetPeriodFilter currentStock={currentStock} from={dateFrom} to={dateTo} onFromChange={setDateFrom} onToChange={setDateTo} />
           <TextInput
             className="reports-sale-search"
             leftSection={<Search size={16} />}
@@ -259,10 +259,11 @@ function ReportsSalePageContent() {
 
               <Stack className="reports-sale-result-content" gap="md" pt="md">
                 {activeSheet.header ? <ReportHeaderBlock header={activeSheet.header} /> : null}
-                {showComputedTotals ? <TotalsBar columns={activeSheet.columns} totals={visibleTotals} /> : null}
+                {showComputedTotals ? <TotalsBar columns={activeSheet.columns} totals={visibleTotals} currentStock={currentStock} /> : null}
                 <ReportPresentationControl key={`${fileName}:${activeSheet.name}`} sheet={activeSheet} rows={visibleRows} table={<SpreadsheetTable
                   columns={activeSheet.columns}
                   isReport={Boolean(activeSheet.header)}
+                  currentStock={currentStock}
                   rows={visibleRows}
                   showComputedTotals={showComputedTotals}
                   totals={visibleTotals}
@@ -320,7 +321,7 @@ function addOccurrenceKeys(lines: string[]): Array<{ key: string; line: string }
   })
 }
 
-function TotalsBar({ columns, totals }: { columns: string[]; totals: Array<number | null> }) {
+function TotalsBar({ columns, totals, currentStock }: { columns: string[]; totals: Array<number | null>; currentStock: boolean }) {
   const totalEntries = columns
     .map((column, columnIndex) => ({ column, total: totals[columnIndex] }))
     .filter((entry): entry is { column: string; total: number } => entry.total !== null && entry.total !== undefined)
@@ -334,7 +335,7 @@ function TotalsBar({ columns, totals }: { columns: string[]; totals: Array<numbe
     <Group gap="xs">
       {totalEntries.map((entry) => (
         <Badge key={entry.column} color="gray" variant="light">
-          {entry.column}: <span className={isMoneyField(entry.column) ? 'app-money' : undefined}>{displayValue(entry.total)}</span>
+          {entry.column}: <span className={isMoneyField(entry.column) ? 'app-money' : undefined}>{formatSpreadsheetCell(entry.total, currentStock)}</span>
         </Badge>
       ))}
     </Group>
@@ -352,6 +353,7 @@ type SpreadsheetPreviewRow = {
 function SpreadsheetTable({
   columns,
   isReport,
+  currentStock,
   rows,
   showComputedTotals,
   totals,
@@ -359,6 +361,7 @@ function SpreadsheetTable({
 }: {
   columns: string[]
   isReport: boolean
+  currentStock: boolean
   rows: SpreadsheetRow[]
   showComputedTotals: boolean
   totals: Array<number | null>
@@ -380,7 +383,7 @@ function SpreadsheetTable({
             if (row.kind === 'computed') {
               return (
                 <Text component="span" fw={600}>
-                  {columnIndex === 0 ? t('Разом') : formatSpreadsheetCell(totals[columnIndex] ?? null)}
+                  {columnIndex === 0 ? t('Разом') : formatSpreadsheetCell(totals[columnIndex] ?? null, currentStock)}
                 </Text>
               )
             }
@@ -390,18 +393,18 @@ function SpreadsheetTable({
               // measure and says so at the top of the file — and it is already printed empty on the subtotal and
               // total rows below. A «-» in the data rows only would read as two different kinds of nothing in one
               // column. Anywhere else «-» stays: an empty cell in an arbitrary spreadsheet says nothing at all.
-              return isReport ? formatSpreadsheetCell(row.cells[columnIndex]) : displayValue(row.cells[columnIndex])
+              return isReport ? formatSpreadsheetCell(row.cells[columnIndex], currentStock) : displayValue(row.cells[columnIndex])
             }
 
             return (
               <Text component="span" fw={600}>
-                {formatSpreadsheetCell(row.cells[columnIndex])}
+                {formatSpreadsheetCell(row.cells[columnIndex], currentStock)}
               </Text>
             )
           },
         }
       }),
-    [columns, isReport, t, totals],
+    [columns, currentStock, isReport, t, totals],
   )
 
   const previewData = useMemo<SpreadsheetPreviewRow[]>(() => {
@@ -484,7 +487,19 @@ async function parseSpreadsheetFile(file: File): Promise<SpreadsheetSheet[]> {
   return [buildSpreadsheetSheet(file.name, rows, 'flat')]
 }
 
-function formatSpreadsheetCell(value: SpreadsheetCellValue): string {
+function SpreadsheetPeriodFilter({ currentStock, from, to, onFromChange, onToChange }: {
+  currentStock: boolean; from: string; to: string; onFromChange: (value: string) => void; onToChange: (value: string) => void
+}) {
+  const { t } = useI18n()
+  if (currentStock) return null
+  return <div className="app-filter-date-range">
+    <TextInput label={t('Від')} type="date" value={from} onChange={event => onFromChange(event.currentTarget.value)} />
+    <TextInput label={t('До')} type="date" value={to} onChange={event => onToChange(event.currentTarget.value)} />
+  </div>
+}
+
+function formatSpreadsheetCell(value: SpreadsheetCellValue, currentStock = false): string {
+  if (currentStock && typeof value === 'number') return stockQuantityFormatter.format(value)
   return isFilledCell(value) ? displayValue(value) : ''
 }
 

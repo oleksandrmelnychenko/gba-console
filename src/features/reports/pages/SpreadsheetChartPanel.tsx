@@ -4,6 +4,7 @@ import { Bar, BarChart, CartesianGrid, Line, LineChart, ReferenceLine, Responsiv
 import { CHART_GRID_COLOR, CHART_LABEL_COLOR } from '../../../shared/ui/charts/chartTheme'
 import { buildSpreadsheetChartData, getChartMeasureOptions, type SpreadsheetChartPoint } from '../data/spreadsheetChartData'
 import type { SpreadsheetRow, SpreadsheetSheet } from '../types'
+import { isCurrentStockSheet, stockQuantityFormatter } from '../spreadsheet'
 
 type Props = { sheet: SpreadsheetSheet; rows: SpreadsheetRow[] }
 type ChartKind = 'column' | 'bar' | 'line'
@@ -28,12 +29,13 @@ export default function SpreadsheetChartPanel({ sheet, rows }: Props) {
     <Text size="xs" c="dimmed">Показано {chart.points.length} із {chart.dataRowCount} рядків у порядку таблиці.
       {chart.hiddenCount ? ' Діаграма обмежена першими 50 рядками; звузьте відбори для перегляду інших.' : ''}</Text>
     {chart.unknownCount ? <Alert color="yellow">Для {chart.unknownCount} показаних рядків немає числового значення. Вони залишені порожніми; лінія має розриви.</Alert> : null}
-    {!chart.points.length ? <Alert color="gray">За поточними відборами немає рядків даних.</Alert> : <SpreadsheetChartPlot points={chart.points} kind={kind} measure={measure.label} unknownCount={chart.unknownCount} />}
+    {!chart.points.length ? <Alert color="gray">За поточними відборами немає рядків даних.</Alert> : <SpreadsheetChartPlot points={chart.points} kind={kind} measure={measure.label} unknownCount={chart.unknownCount}
+      formatter={isCurrentStockSheet(sheet) ? stockQuantityFormatter : formatNumber} />}
   </Stack>
 }
 
-function SpreadsheetChartPlot({ points, kind, measure, unknownCount }: {
-  points: SpreadsheetChartPoint[]; kind: ChartKind; measure: string; unknownCount: number
+function SpreadsheetChartPlot({ points, kind, measure, unknownCount, formatter }: {
+  points: SpreadsheetChartPoint[]; kind: ChartKind; measure: string; unknownCount: number; formatter: Intl.NumberFormat
 }) {
   const labels = useMemo(() => new Map(points.map(point => [point.rowKey, point.label])), [points])
   const horizontal = kind === 'bar'
@@ -50,8 +52,8 @@ function SpreadsheetChartPlot({ points, kind, measure, unknownCount }: {
         {kind === 'line' ? <LineChart data={points} margin={{ top: 12, right: 24, bottom: 36, left: 24 }}>
           <CartesianGrid stroke={CHART_GRID_COLOR} />
           <XAxis dataKey="rowKey" tickFormatter={categoryTick} tick={{ fill: CHART_LABEL_COLOR, fontSize: 11 }} />
-          <YAxis tickFormatter={value => formatNumber.format(value)} tick={{ fill: CHART_LABEL_COLOR, fontSize: 11 }} />
-          <Tooltip content={<ChartPointTooltip measure={measure} />} filterNull={false} />
+          <YAxis tickFormatter={value => formatter.format(value)} tick={{ fill: CHART_LABEL_COLOR, fontSize: 11 }} />
+          <Tooltip content={<ChartPointTooltip measure={measure} formatter={formatter} />} filterNull={false} />
           <ReferenceLine y={0} stroke={CHART_LABEL_COLOR} />
           <Line type="linear" dataKey="value" name={measure} connectNulls={false} stroke="var(--mantine-color-blue-6)"
             isAnimationActive={false} dot={{ r: 3 }} />
@@ -59,12 +61,12 @@ function SpreadsheetChartPlot({ points, kind, measure, unknownCount }: {
           margin={{ top: 12, right: 24, bottom: 36, left: 24 }}>
           <CartesianGrid stroke={CHART_GRID_COLOR} />
           <XAxis type={horizontal ? 'number' : 'category'} dataKey={horizontal ? undefined : 'rowKey'}
-            tickFormatter={horizontal ? value => formatNumber.format(Number(value)) : categoryTick}
+            tickFormatter={horizontal ? value => formatter.format(Number(value)) : categoryTick}
             tick={{ fill: CHART_LABEL_COLOR, fontSize: 11 }} />
           <YAxis type={horizontal ? 'category' : 'number'} dataKey={horizontal ? 'rowKey' : undefined}
-            width={horizontal ? 200 : 60} tickFormatter={horizontal ? categoryTick : value => formatNumber.format(Number(value))}
+            width={horizontal ? 200 : 60} tickFormatter={horizontal ? categoryTick : value => formatter.format(Number(value))}
             tick={{ fill: CHART_LABEL_COLOR, fontSize: 11 }} />
-          <Tooltip content={<ChartPointTooltip measure={measure} />} filterNull={false} />
+          <Tooltip content={<ChartPointTooltip measure={measure} formatter={formatter} />} filterNull={false} />
           <ReferenceLine {...(horizontal ? { x: 0 } : { y: 0 })} stroke={CHART_LABEL_COLOR} />
           <Bar dataKey="value" name={measure} fill="var(--mantine-color-blue-6)" isAnimationActive={false} />
         </BarChart>}
@@ -72,13 +74,13 @@ function SpreadsheetChartPlot({ points, kind, measure, unknownCount }: {
     </Box>
 }
 
-function ChartPointTooltip({ active, payload, measure }: {
-  active?: boolean; payload?: ReadonlyArray<{ payload?: SpreadsheetChartPoint }>; measure: string
+function ChartPointTooltip({ active, payload, measure, formatter }: {
+  active?: boolean; payload?: ReadonlyArray<{ payload?: SpreadsheetChartPoint }>; measure: string; formatter: Intl.NumberFormat
 }) {
   const point = payload?.[0]?.payload
   if (!active || !point) return null
   return <Box p="sm" bg="var(--mantine-color-body)" style={{ border: '1px solid var(--mantine-color-default-border)', borderRadius: 6 }}>
     <Text size="sm" fw={600}>{point.label}</Text>
-    <Text size="sm">{measure}: {point.value === null ? 'немає даних' : formatNumber.format(point.value)}</Text>
+    <Text size="sm">{measure}: {point.value === null ? 'немає даних' : formatter.format(point.value)}</Text>
   </Box>
 }

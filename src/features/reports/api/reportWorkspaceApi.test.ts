@@ -2,7 +2,8 @@ import { describe, expect, it, vi } from 'vitest'
 import { apiRequest } from '../../../shared/api/apiClient'
 import { getReportDatasets, getServerReportTemplates, saveServerReportTemplate } from './reportWorkspaceApi'
 import { createSalesReportPreset } from '../data/reportPresets'
-import { reportDatasets } from '../data/reportDatasets.test-fixtures'
+import { reportDatasets, stockDataset } from '../data/reportDatasets.test-fixtures'
+import { defaultDatasetRequest } from '../data/reportDatasets'
 
 vi.mock('../../../shared/api/apiClient', () => ({ apiRequest: vi.fn() }))
 
@@ -20,9 +21,22 @@ describe('report workspace wire contract', () => {
     [{ ...reportDatasets[0], DataSource: 1 }],
     [{ ...reportDatasets[0], Measurements: [{ Type: '0', Name: 'Кількість' }] }],
     [{ ...reportDatasets[0], Measurements: [{ Type: 0, Name: 'Кількість', Selectable: 'false' }] }],
+    [{ ...stockDataset, PeriodSupported: 'false' }],
+    [{ ...stockDataset, PeriodRequired: true }],
   ].map(value => ({ value })))('rejects malformed or retired dataset catalogues %#', async ({ value }) => {
     vi.mocked(apiRequest).mockResolvedValue(value)
     await expect(getReportDatasets()).rejects.toThrow('некоректний список наборів даних')
+  })
+
+  it('retains no-period capability and null wire dates in a current stock template', async () => {
+    vi.mocked(apiRequest).mockResolvedValue([...reportDatasets, stockDataset])
+    expect((await getReportDatasets()).find(item => item.DataSource === 4)?.PeriodSupported).toBe(false)
+    const data = defaultDatasetRequest(stockDataset, '', '')
+    data.selections = [{ IsChecked: false, SelectedField: { Name: 'CustomerContract', Type: 9 },
+      FilterCondition: { Name: 'Дорівнює', Type: 0 }, Values: [{ Data: { Id: 42 }, Name: 'Договір', Value: 42 }] }]
+    vi.mocked(apiRequest).mockResolvedValue([{ Id: crypto.randomUUID(), Revision: 1, Name: 'Залишки',
+      Data: { DataSource: 4, From: null, To: null, Sorted: data.sorted, Selections: data.selections } }])
+    expect((await getServerReportTemplates())[0].Data).toEqual(data)
   })
 
   it('normalizes .NET names while retaining agreement identities and disabled selections', async () => {

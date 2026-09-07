@@ -22,7 +22,7 @@ import { CheckboxMultiSelect } from '../../../shared/ui/CheckboxMultiSelect'
 import { CircleAlert, LayoutTemplate, Plus, RefreshCw, RotateCcw, Save, Trash2 } from 'lucide-react'
 import { IconFileSpreadsheet } from '@tabler/icons-react'
 import { TableRowAction } from '../../../shared/ui/table-row-action/TableRowAction'
-import { type FormEvent, useEffect, useMemo, useState } from 'react'
+import { type FormEvent, useEffect, useMemo, useRef, useState } from 'react'
 import { ApiError } from '../../../shared/api/apiClient'
 import { formatKyivBusinessDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
@@ -121,6 +121,7 @@ const defaultCondition = REPORT_FILTER_CONDITIONS[0]
 
 // What the finished run was asked for, kept because the response carries none of it back.
 type ReportRunOutcome = {
+  periodSupported: boolean
   colGroupings: string[]
   from: string
   hasDocument: boolean
@@ -161,9 +162,11 @@ function ReportsStocksWorkspace() {
   const today = useMemo(() => formatKyivBusinessDate(), [])
   const [from, setFrom] = useValueState(today)
   const [to, setTo] = useValueState(today)
+  const previousPeriod = useRef({ from: today, to: today })
   const datasetStorage = useReportDatasets(canGenerateReport)
   const [dataSource, setDataSource] = useValueState(0)
   const dataset = datasetStorage.datasets.find(item => item.DataSource === dataSource)
+  const periodSupported = dataset?.PeriodSupported !== false
   const [selectedMeasurements, setMeasurements] = useValueState<ReportMeasurementGroup[]>(createDefaultMeasurementGroups)
   const measurements = useMemo(() => datasetMeasurements(dataset, flattenCheckedMeasurements(selectedMeasurements)), [dataset, selectedMeasurements])
   const presets = useMemo(() => datasetPresets(dataset), [dataset])
@@ -196,7 +199,7 @@ function ReportsStocksWorkspace() {
   const maxDate = useMemo(() => `${today.slice(0, 4)}-12-31`, [today])
   const [debouncedFrom] = useDebouncedValue(from, DATE_INPUT_DEBOUNCE_MS)
   const [debouncedTo] = useDebouncedValue(to, DATE_INPUT_DEBOUNCE_MS)
-  const periodError = getPeriodError(from, to, maxDate, t)
+  const periodError = periodSupported ? getPeriodError(from, to, maxDate, t) : null
   // The value lookups re-query on every keystroke in the date fields, half-typed years included. They follow the
   // period on a pause, and only once it is a period the server can answer for.
   const hasLookupPeriod = !getPeriodError(debouncedFrom, debouncedTo, maxDate, t)
@@ -246,7 +249,8 @@ function ReportsStocksWorkspace() {
           : incompleteSelectionMessage
   const emptyRunNotice =
     lastRun && !lastRun.hasDocument
-      ? t('За період {from} – {to} сервер не повернув файл звіту. Спробуйте інший період або послабте умови відбору.', {
+      ? !lastRun.periodSupported ? t('Сервер не повернув файл поточних залишків. Спробуйте послабити умови відбору.')
+      : t('За період {from} – {to} сервер не повернув файл звіту. Спробуйте інший період або послабте умови відбору.', {
           from: formatDate(lastRun.from),
           to: formatDate(lastRun.to),
         })
@@ -268,6 +272,7 @@ function ReportsStocksWorkspace() {
     try {
       const nextResult = await createStockReport(reportBody)
       const outcome: ReportRunOutcome = {
+        periodSupported,
         colGroupings: colGroups.map((group) => group.label || getReportFieldLabel(group.key)),
         from,
         hasDocument: Boolean(nextResult.document.DocumentURL || nextResult.document.PdfDocumentURL),
@@ -292,10 +297,11 @@ function ReportsStocksWorkspace() {
   }
 
   function resetReport() {
-    setFrom(today)
-    setTo(today)
-    setMeasurements(createDefaultMeasurementGroups())
-    setRowGroups([])
+    const snapshotDefaults = dataset && !periodSupported ? defaultDatasetRequest(dataset, '', '') : null
+    setFrom(periodSupported ? today : '')
+    setTo(periodSupported ? today : '')
+    setMeasurements(snapshotDefaults ? datasetMeasurements(dataset, snapshotDefaults.sorted.Measurements) : createDefaultMeasurementGroups())
+    setRowGroups(snapshotDefaults?.sorted.Row ?? [])
     setColGroups([])
     setSelections([])
     setResult(null)
@@ -333,10 +339,11 @@ function ReportsStocksWorkspace() {
     }
     const data = template.Data
     const groupingByType = new Map(datasetGroupings(nextDataset).map(item => [item.type, item]))
+    if (periodSupported && !getPeriodError(from, to, maxDate, t)) previousPeriod.current = { from, to }
     setDataSource(nextDataset.DataSource)
     setTemplateName(template.Name)
-    setFrom(data.from || today)
-    setTo(data.to || today)
+    setFrom(nextDataset.PeriodSupported === false ? '' : data.from || today)
+    setTo(nextDataset.PeriodSupported === false ? '' : data.to || today)
     setRowGroups(data.sorted.Row.map(item => groupingByType.get(item.type)!))
     setColGroups(data.sorted.Col.map(item => groupingByType.get(item.type)!))
     setSelections(structuredClone(data.selections))
@@ -349,7 +356,8 @@ function ReportsStocksWorkspace() {
   }
 
   function changeDataset(nextDataset: ReportDataset) {
-    applyTemplate({ Name: '', Data: defaultDatasetRequest(nextDataset, from, to) })
+    const period = periodSupported ? { from, to } : previousPeriod.current
+    applyTemplate({ Name: '', Data: defaultDatasetRequest(nextDataset, period.from, period.to) })
   }
 
   function applyPreset(id: DatasetReportPresetId) {
@@ -366,6 +374,7 @@ function ReportsStocksWorkspace() {
         loaded={datasetStorage.loaded} error={datasetStorage.error} onChange={changeDataset} onRetry={datasetStorage.retry} />
       <ReportBuilderForm
         dataSource={dataSource}
+        periodSupported={periodSupported}
         presets={presets}
         configurationReady={!configurationError}
         onApplyPreset={applyPreset}
@@ -429,6 +438,7 @@ function ReportsStocksWorkspace() {
 
 type ReportBuilderFormProps = {
   dataSource: number
+  periodSupported: boolean
   presets: ReturnType<typeof datasetPresets>
   configurationReady: boolean
   templateStorage: ReturnType<typeof useServerReportTemplates>
@@ -475,6 +485,7 @@ type ReportBuilderFormProps = {
 
 function ReportBuilderForm({
   dataSource,
+  periodSupported,
   presets,
   configurationReady,
   onApplyPreset,
@@ -526,7 +537,7 @@ function ReportBuilderForm({
       <form className="reports-stocks-form" onSubmit={onSubmit}>
         <div className="reports-stocks-filter-scroll">
         <div className="app-filter-bar reports-stocks-filter-bar">
-          <div className="app-filter-date-range">
+          {periodSupported ? <div className="app-filter-date-range">
             <TextInput
               label={t('Від')}
               max={to || maxDate}
@@ -543,7 +554,7 @@ function ReportBuilderForm({
               value={to}
               onChange={(event) => onToChange(event.currentTarget.value)}
             />
-          </div>
+          </div> : <Text size="sm">{t('Поточний стан на час читання даних. Історичний період не застосовується.')}</Text>}
           <div className="app-filter-actions reports-stocks-actions">
             <Button
               color="gray"
@@ -1303,7 +1314,8 @@ function ReportTemplatesCard({
                 <span className="reports-stocks-template-open__content">
                   <span className="reports-stocks-template-open__name">{template.Name}</span>
                   <span className="reports-stocks-template-open__period">
-                    {formatDate(template.Data.from)}–{formatDate(template.Data.to)}
+                    {template.Data.dataSource === 4 && !template.Data.from && !template.Data.to
+                      ? t('Поточний стан') : `${formatDate(template.Data.from)}–${formatDate(template.Data.to)}`}
                   </span>
                 </span>
               </Button>
@@ -1377,12 +1389,12 @@ function ReportResultSection({
     () => [
       {
         id: 'period',
-        header: t('Період'),
+        header: lastRun?.periodSupported === false ? t('Стан') : t('Період'),
         minWidth: 180,
-        accessor: (row) => `${formatDate(row.from)} – ${formatDate(row.to)}`,
+        accessor: (row) => row.periodSupported ? `${formatDate(row.from)} – ${formatDate(row.to)}` : t('Поточний стан'),
         cell: (row) => (
           <span className="reports-stocks-result__period">
-            {formatDate(row.from)} – {formatDate(row.to)}
+            {row.periodSupported ? `${formatDate(row.from)} – ${formatDate(row.to)}` : t('Поточний стан')}
           </span>
         ),
       },
@@ -1446,7 +1458,7 @@ function ReportResultSection({
         ),
       },
     ],
-    [hasFiles, onOpenFiles, t],
+    [hasFiles, lastRun?.periodSupported, onOpenFiles, t],
   )
 
   if (!lastRun) return null
@@ -1531,7 +1543,7 @@ function SelectionValuePicker({ dataSource, error, from, label, selection, selec
     [organizationOptions],
   )
   const normalizedSearch = lookupMode === 'search' ? debouncedSearch.trim() : ''
-  const minSearchLength = getSelectionLookupMinLength(selection.SelectedField.Type)
+  const minSearchLength = dataSource === 4 ? 0 : getSelectionLookupMinLength(selection.SelectedField.Type)
   const needsPeriod = PERIOD_SCOPED_FILTER_FIELD_TYPES.has(selection.SelectedField.Type)
   const dependentClientNetId = lookupMode === 'dependent' ? getDependentClientNetId(selections) : ''
   const selectOptions = useMemo(
@@ -1875,7 +1887,7 @@ function isAuthoredServerMessage(message: string): boolean {
 // Names the run for the export modal, where the only other identity on offer is the engine's «Reports_MM.yyyy_
 // <guid>.xlsx» file name.
 function describeReportRun(run: ReportRunOutcome, t: TranslateFunction): string {
-  const parts = [`${formatDate(run.from)} – ${formatDate(run.to)}`]
+  const parts = [run.periodSupported ? `${formatDate(run.from)} – ${formatDate(run.to)}` : t('Поточний стан на час читання даних')]
 
   if (run.rowGroupings.length) {
     parts.push(`${t('Рядки')}: ${run.rowGroupings.join(', ')}`)
@@ -1913,6 +1925,15 @@ function describeResultPlaceholder(
 
   const period = `${formatDate(lastRun.from)} – ${formatDate(lastRun.to)}`
   const measures = lastRun.measures.join(', ')
+
+  if (!lastRun.periodSupported) {
+    return {
+      description: lastRun.hasDocument
+        ? t('Поточний стан. Показники: {measures}. Час читання даних і залишки — у файлі звіту.', { measures })
+        : t('Поточний стан. Показники: {measures}. Спробуйте послабити умови відбору.', { measures }),
+      title: lastRun.hasDocument ? t('Звіт сформовано у файл') : t('Файл звіту не сформовано'),
+    }
+  }
 
   if (!lastRun.hasDocument) {
     return {
@@ -2035,6 +2056,7 @@ function getSelectionLookupMode(fieldType: number): 'manual' | 'search' | 'stati
     case REPORT_FILTER_FIELD_TYPES.supplierContract:
     case REPORT_FILTER_FIELD_TYPES.purchaseDocument:
     case REPORT_FILTER_FIELD_TYPES.productMeasureUnit:
+    case REPORT_FILTER_FIELD_TYPES.warehouse:
     case REPORT_FILTER_FIELD_TYPES.customerManager:
     case REPORT_FILTER_FIELD_TYPES.saleDocumentManagerInput:
     case REPORT_FILTER_FIELD_TYPES.saleDocumentManagerPosted:
@@ -2073,6 +2095,9 @@ async function loadSelectionLookupOptions(
   signal?: AbortSignal,
   saleDocumentFilters?: SaleDocumentLookupFilters,
 ): Promise<ReportEntity[]> {
+  if (dataSource === 4) {
+    return searchDatasetReportValues(dataSource, fieldType, { limit: LOOKUP_SEARCH_LIMIT, offset: 0, value }, signal)
+  }
   switch (fieldType) {
     case REPORT_FILTER_FIELD_TYPES.organization:
       return getReportOrganizations()

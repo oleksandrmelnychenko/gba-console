@@ -33,3 +33,12 @@ export const purchaseDataset: ReportDataset = {
 }
 
 export const reportDatasets = [grossDataset, netDataset, purchaseDataset]
+
+export const stockDataset: ReportDataset = {
+  DataSource: 4, Name: 'Склад: поточні залишки', Description: 'Поточний стан на час читання операційних записів.',
+  PeriodSupported: false, PeriodRequired: false,
+  Groupings: [...subset(grossDataset.Groupings, [5, 6, 7, 8, 28]), { Type: 29, Name: 'Склад' }],
+  Measurements: [{ Type: 17, Name: 'Фізичний залишок' }, { Type: 18, Name: 'Вільна кількість' }, { Type: 19, Name: 'Записаний резерв' }],
+  Filters: [{ Type: 1, Name: 'Товар' }, { Type: 2, Name: 'Артикул' }, { Type: 20, Name: 'Одиниця виміру' }, { Type: 21, Name: 'Склад' }],
+  Limitations: ['Поточний стан, без історичного періоду та оцінки вартості. Різні одиниці не додаються.'],
+}

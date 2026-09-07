@@ -17,7 +17,16 @@ const SUBTOTAL_PREFIX = 'Підсумок:'
 const GRAND_TOTAL_LABEL = 'Загальний підсумок'
 const HEADER_LEVEL_SEPARATOR = ' · '
 // The first line of the engine's attribution block, and the only thing that identifies the block as one.
-const REPORT_TITLES = new Set(['Звіт продажів', 'Звіт продажів і повернень', 'Звіт надходжень'])
+const STOCK_REPORT_TITLE = 'Звіт поточних складських залишків'
+const STOCK_STATE_LINE = 'Поточний стан: знімок операційних записів GBA'
+const STOCK_READ_TIME_LINE = /^Час читання \(UTC\): \d{2}\.\d{2}\.\d{4} \d{2}:\d{2}:\d{2}\.\d{3} – \d{2}\.\d{2}\.\d{4} \d{2}:\d{2}:\d{2}\.\d{3}$/
+const REPORT_TITLES = new Set(['Звіт продажів', 'Звіт продажів і повернень', 'Звіт надходжень', STOCK_REPORT_TITLE])
+export const stockQuantityFormatter = new Intl.NumberFormat('uk-UA', { maximumFractionDigits: 8 })
+const stockCsvQuantityFormatter = new Intl.NumberFormat('en-US', { useGrouping: false, maximumFractionDigits: 8 })
+
+export function isCurrentStockSheet(sheet: SpreadsheetSheet | null): boolean {
+  return sheet?.header?.lines[0] === STOCK_REPORT_TITLE
+}
 const ROW_GROUPINGS_PREFIX = 'Рядки:'
 const COLUMN_GROUPINGS_PREFIX = 'Колонки:'
 // What the block prints where an axis has no groupings at all.
@@ -84,7 +93,7 @@ export function buildSheetExportRows(
     ? [...sheet.header.lines.map((line) => [line]), []]
     : []
 
-  return [
+  const exportRows = [
     ...attribution,
     sheet.columns,
     ...rows.map((row) => row.cells),
@@ -92,6 +101,11 @@ export function buildSheetExportRows(
     // group named «Разом» must never be guessed to be an aggregate on import.
     ...(totalsRow ? [sheet.header ? [GRAND_TOTAL_LABEL, ...totalsRow.slice(1)] : totalsRow] : []),
   ]
+  // String(0.00000001) uses exponent notation, which the deliberately strict CSV
+  // parser treats as text. Emit stock's eight-decimal contract explicitly, keeping
+  // arbitrary text IDs and non-stock CSV parsing unchanged.
+  return isCurrentStockSheet(sheet) ? exportRows.map(row => row.map(cell =>
+    typeof cell === 'number' && Number.isFinite(cell) ? stockCsvQuantityFormatter.format(cell) : cell)) : exportRows
 }
 
 export function filterSheetRows(
@@ -105,8 +119,11 @@ export function filterSheetRows(
   }
 
   const normalizedSearch = searchValue.trim().toLowerCase()
+  // A snapshot has no historical date axis, including after switching viewer tabs.
+  const from = isCurrentStockSheet(sheet) ? '' : dateFrom
+  const to = isCurrentStockSheet(sheet) ? '' : dateTo
 
-  if (!normalizedSearch && !dateFrom && !dateTo) {
+  if (!normalizedSearch && !from && !to) {
     return sheet.rows
   }
 
@@ -121,8 +138,8 @@ export function filterSheetRows(
       ? row.cells.some((cell) => String(cell || '').toLowerCase().includes(normalizedSearch))
       : true
     const rowDate = extractRowDate(row.cells)
-    const matchesDateFrom = dateFrom && rowDate ? rowDate >= dateFrom : true
-    const matchesDateTo = dateTo && rowDate ? rowDate <= dateTo : true
+    const matchesDateFrom = from && rowDate ? rowDate >= from : true
+    const matchesDateTo = to && rowDate ? rowDate <= to : true
 
     return matchesSearch && matchesDateFrom && matchesDateTo
   })
@@ -237,6 +254,8 @@ function readReportHeader(
     || !lines.some(line => line.startsWith(COLUMN_GROUPINGS_PREFIX))) {
     return null
   }
+  if (lines[0] === STOCK_REPORT_TITLE && (!lines.includes(STOCK_STATE_LINE)
+    || !lines.some(line => STOCK_READ_TIME_LINE.test(line)) || lines.some(line => line.startsWith('Період:')))) return null
 
   return {
     header: {
