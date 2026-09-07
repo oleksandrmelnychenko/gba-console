@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { apiRequest } from '../../../shared/api/apiClient'
 import {
   getProductById,
+  getProductCoPurchaseRecommendations,
   getMostPurchasedProductsByClientId,
   RecommendationContractError,
   sendRecommendationFeedback,
@@ -12,6 +13,7 @@ vi.mock('../../../shared/api/apiClient', () => ({
 }))
 
 const apiRequestMock = vi.mocked(apiRequest)
+const agreementId = '8a375ce0-47fe-4804-b1e6-a7c8787dd880'
 
 describe('clientRecommendationsApi recommendation evidence', () => {
   beforeEach(() => {
@@ -29,6 +31,7 @@ describe('clientRecommendationsApi recommendation evidence', () => {
   ) => {
     apiRequestMock.mockResolvedValueOnce([
       {
+        ClientAgreementNetId: agreementId,
         Product: {
           Id: 18487,
           Name: 'Амортизатор',
@@ -47,7 +50,7 @@ describe('clientRecommendationsApi recommendation evidence', () => {
     const result = await getMostPurchasedProductsByClientId(
       '397abefd-aa19-4b89-96a2-2015c40eeb26',
       false,
-    )
+      { clientAgreementNetId: agreementId },    )
 
     expect(result).toEqual([
       expect.objectContaining({
@@ -65,6 +68,7 @@ describe('clientRecommendationsApi recommendation evidence', () => {
 
   it('fails closed when wrapper rows disagree on their history proof', async () => {
     const row = (effectiveStart: string) => ({
+      ClientAgreementNetId: agreementId,
       Product: { Id: 18487 },
       Rank: 1,
       Score: 0.75,
@@ -80,8 +84,28 @@ describe('clientRecommendationsApi recommendation evidence', () => {
       getMostPurchasedProductsByClientId(
         '397abefd-aa19-4b89-96a2-2015c40eeb26',
         false,
-      ),
+      { clientAgreementNetId: agreementId },      ),
     ).rejects.toBeInstanceOf(RecommendationContractError)
+  })
+
+  it('refuses to request sales recommendations without an agreement', async () => {
+    await expect(getMostPurchasedProductsByClientId('client', false)).rejects.toThrow('select an active agreement')
+    expect(apiRequestMock).not.toHaveBeenCalled()
+  })
+
+  it.each([getMostPurchasedProductsByClientId, null])('rejects a response from another agreement', async (getRecommendations) => {
+    apiRequestMock.mockResolvedValueOnce([{
+      Product: { Id: 1, CurrentPrice: 2 },
+      ClientAgreementNetId: 'f2d9fa15-0e65-40df-83ff-70bbc5349272',
+    }])
+    const options = { clientAgreementNetId: agreementId }
+    await expect(getRecommendations
+      ? getRecommendations('client', false, options)
+      : getProductCoPurchaseRecommendations('product', 'client', false, options),
+    ).rejects.toThrow('response does not belong to the selected agreement')
+    expect(apiRequestMock).toHaveBeenCalledWith(expect.any(String), expect.objectContaining({
+      query: expect.objectContaining({ clientAgreementNetId: agreementId }),
+    }))
   })
 
   it('sends negative feedback through the client-card permission facade', async () => {

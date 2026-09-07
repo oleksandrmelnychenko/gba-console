@@ -18,6 +18,9 @@ export async function getMostPurchasedProductsByClientId(
   byRegion: boolean,
   options?: { clientAgreementNetId?: string; signal?: AbortSignal },
 ): Promise<RecommendationProduct[]> {
+  if (!options?.clientAgreementNetId) {
+    throw new RecommendationContractError('clientAgreementNetId', 'select an active agreement')
+  }
   const result = await apiRequest<unknown>('/recommendations/get', {
     query: {
       clientNetId,
@@ -32,7 +35,7 @@ export async function getMostPurchasedProductsByClientId(
     ...(options?.signal ? { signal: options.signal } : {}),
   })
 
-  return normalizeRecommendationProducts(result)
+  return normalizeRecommendationProducts(result, options?.clientAgreementNetId)
 }
 
 export async function getProductCoPurchaseRecommendations(
@@ -41,6 +44,9 @@ export async function getProductCoPurchaseRecommendations(
   byRegion: boolean,
   options?: { clientAgreementNetId?: string; signal?: AbortSignal },
 ): Promise<RecommendationProduct[]> {
+  if (!options?.clientAgreementNetId) {
+    throw new RecommendationContractError('clientAgreementNetId', 'select an active agreement')
+  }
   const result = await apiRequest<unknown>('/recommendations/get/product', {
     query: {
       clientNetId,
@@ -53,7 +59,7 @@ export async function getProductCoPurchaseRecommendations(
     ...(options?.signal ? { signal: options.signal } : {}),
   })
 
-  return normalizeRecommendationProducts(result)
+  return normalizeRecommendationProducts(result, options?.clientAgreementNetId)
 }
 
 // «Не пропонувати» на рекомендації: negative feedback у gba-reco (Redis negatives, TTL) —
@@ -85,7 +91,7 @@ export async function getProductById(
   return normalizeRecommendationProduct(result)
 }
 
-function normalizeRecommendationProducts(result: unknown): RecommendationProduct[] {
+function normalizeRecommendationProducts(result: unknown, expectedAgreementNetId?: string): RecommendationProduct[] {
   const list = Array.isArray(result)
     ? result
     : (result && typeof result === 'object' && Array.isArray((result as { Items?: unknown }).Items)
@@ -109,6 +115,12 @@ function normalizeRecommendationProducts(result: unknown): RecommendationProduct
     const wrapper = entry as Record<string, unknown>
     if (!wrapper.Product || typeof wrapper.Product !== 'object' || Array.isArray(wrapper.Product)) {
       throw new RecommendationContractError(`${path}.Product`, 'expected a hydrated product')
+    }
+
+    if (expectedAgreementNetId &&
+      (typeof wrapper.ClientAgreementNetId !== 'string' ||
+        wrapper.ClientAgreementNetId.toLowerCase() !== expectedAgreementNetId.toLowerCase())) {
+      throw new RecommendationContractError(`${path}.ClientAgreementNetId`, 'response does not belong to the selected agreement')
     }
 
     const source = requireAiIsoDate(
@@ -141,6 +153,7 @@ function normalizeRecommendationProducts(result: unknown): RecommendationProduct
 
     return {
       ...(wrapper.Product as RecommendationProduct),
+      RecommendationClientAgreementNetId: typeof wrapper.ClientAgreementNetId === 'string' ? wrapper.ClientAgreementNetId : undefined,
       RecommendationRank: requireFiniteNumber(wrapper.Rank, `${path}.Rank`),
       RecommendationScore: requireFiniteNumber(wrapper.Score, `${path}.Score`),
       RecommendationSource: requireRecommendationSource(wrapper.Source, `${path}.Source`),

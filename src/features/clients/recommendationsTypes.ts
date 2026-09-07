@@ -24,6 +24,7 @@ export type RecommendationProduct = {
   AvailableQtyUkReSale?: number
   CurrentPrice?: number
   CurrentPriceEurToUah?: number
+  RecommendationClientAgreementNetId?: string
   RecommendationRank?: number
   RecommendationScore?: number
   RecommendationSource?: RecommendationSource

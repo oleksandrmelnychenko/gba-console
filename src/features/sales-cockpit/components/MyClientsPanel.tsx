@@ -45,7 +45,7 @@ import { OfferLinkModal } from '../../sales-offers/components/OfferLinkModal'
 import { useOfferFromRecommendations } from '../../sales-offers/useOfferFromRecommendations'
 import type { OfferClientAgreement } from '../../sales-offers/types'
 import { NewSaleWizard, type NewSaleWizardPrefill } from '../../sales-ukraine/components/new-sale-wizard/NewSaleWizard'
-import { getWizardClientAgreements } from '../../sales-ukraine/components/new-sale-wizard/wizardClientStepApi'
+import { RecommendationAgreementScope } from '../../clients/components/recommendations/RecommendationAgreementScope'
 import type { SalesUkraineClientAgreement, SalesUkraineProduct } from '../../sales-ukraine/types'
 import { getCockpitClients } from '../api/salesCockpitApi'
 import type { CockpitClient } from '../types'
@@ -287,6 +287,16 @@ export function MyClientsPanel() {
 }
 
 function ClientRecommendationsInline({ client }: { client: CockpitClient }) {
+  return (
+    <RecommendationAgreementScope clientNetId={client.client_net_uid}>
+      {(agreement) => <ClientRecommendationsForAgreement client={client} agreement={agreement as SalesUkraineClientAgreement} />}
+    </RecommendationAgreementScope>
+  )
+}
+
+function ClientRecommendationsForAgreement({
+  client, agreement,
+}: { client: CockpitClient; agreement: SalesUkraineClientAgreement }) {
   const { t } = useI18n()
   const { hasPermission } = useAuth()
   const { can } = usePermissions()
@@ -316,11 +326,10 @@ function ClientRecommendationsInline({ client }: { client: CockpitClient }) {
       setSelectedKeys(new Set())
 
       try {
-        const agreements = await getWizardClientAgreements(clientNetId)
-        const active = agreements.find((item) => item.Agreement?.IsActive) ?? agreements[0] ?? null
+        const active = agreement
         const options = {
           signal: controller.signal,
-          ...(active?.NetUid ? { clientAgreementNetId: active.NetUid } : {}),
+          clientAgreementNetId: active.NetUid || '',
         }
         const products = await getMostPurchasedProductsByClientId(clientNetId, false, options)
 
@@ -345,7 +354,7 @@ function ClientRecommendationsInline({ client }: { client: CockpitClient }) {
       cancelled = true
       controller.abort()
     }
-  }, [clientNetId, t])
+  }, [agreement, clientNetId, t])
 
   const toggleSelected = useCallback(
     (product: RecommendationProduct, index: number) => {

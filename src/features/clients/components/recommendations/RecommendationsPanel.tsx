@@ -29,7 +29,7 @@ import { CREATE_ACTION_COLOR } from '../../../../shared/ui/page-header-actions/P
 import { useAuth } from '../../../auth/useAuth'
 import { PermissionKeys } from '../../../../shared/auth/permissionKeys'
 import { NewSaleWizard, type NewSaleWizardPrefill } from '../../../sales-ukraine/components/new-sale-wizard/NewSaleWizard'
-import { getWizardClientAgreements } from '../../../sales-ukraine/components/new-sale-wizard/wizardClientStepApi'
+import { RecommendationAgreementScope } from './RecommendationAgreementScope'
 import type { SalesUkraineClientAgreement, SalesUkraineProduct } from '../../../sales-ukraine/types'
 import { OfferLinkModal } from '../../../sales-offers/components/OfferLinkModal'
 import { useOfferFromRecommendations } from '../../../sales-offers/useOfferFromRecommendations'
@@ -116,7 +116,7 @@ function recommendationsReducer(state: RecommendationsState, action: Recommendat
         selectedProduct: action.selectedProduct,
       }
     case 'loading':
-      return { ...state, error: null, isLoading: true, selectedKeys: new Set() }
+      return { ...state, error: null, isLoading: true, products: [], selectedProduct: null, selectedKeys: new Set() }
     case 'previewProduct':
       return { ...state, previewProduct: action.product }
     case 'removeProduct': {
@@ -145,14 +145,22 @@ function recommendationsReducer(state: RecommendationsState, action: Recommendat
   }
 }
 
-export function RecommendationsPanel({ client, productNetId }: RecommendationsPanelProps) {
+export function RecommendationsPanel(props: RecommendationsPanelProps) {
+  return (
+    <RecommendationAgreementScope clientNetId={props.client.NetUid || ''}>
+      {(agreement) => <RecommendationsForAgreement {...props} agreement={agreement} />}
+    </RecommendationAgreementScope>
+  )
+}
+
+function RecommendationsForAgreement({
+  client, productNetId, agreement,
+}: RecommendationsPanelProps & { agreement: ClientAgreement }) {
   const { t } = useI18n()
   const { hasPermission } = useAuth()
   const [state, dispatch] = useReducer(recommendationsReducer, initialRecommendationsState)
   const { error, isGrid, isLoading, previewProduct, products, selectedKeys, selectedProduct } = state
-  const [agreement, setAgreement] = useState<ClientAgreement | null>(null)
-  const [agreementNetId, setAgreementNetId] = useState<string | null>(null)
-  const [agreementResolved, setAgreementResolved] = useState(false)
+  const agreementNetId = agreement.NetUid || ''
   const [wizardPrefill, setWizardPrefill] = useState<NewSaleWizardPrefill | null>(null)
   const [offerValidDays, setOfferValidDays] = useState('2')
   const { clearCreatedOffer, createdOffer, createOfferFromSelection, isCreatingOffer } =
@@ -164,56 +172,18 @@ export function RecommendationsPanel({ client, productNetId }: RecommendationsPa
   const isVatSale = Boolean(agreement?.Agreement?.WithVATAccounting)
   const selectedCount = selectedKeys.size
   const createSaleDisabled = isLoading || !clientNetId || !agreementNetId || selectedCount === 0
-  const createSaleDisabledReason = !agreementResolved
-    ? t('Завантаження договору')
-    : !agreementNetId
-      ? t('Щоб створити продаж, додайте клієнту активний договір із цінами продажу')
+  const createSaleDisabledReason = !agreementNetId
+    ? t('Щоб створити продаж, додайте клієнту активний договір із цінами продажу')
       : selectedCount === 0
         ? t('Виберіть хоча б один товар')
         : ''
 
   useEffect(() => {
     let cancelled = false
-
-    async function resolveAgreement() {
-      setAgreementResolved(false)
-      setAgreement(null)
-      setAgreementNetId(null)
-
-      try {
-        const agreements = clientNetId ? await getWizardClientAgreements(clientNetId) : []
-        const active = agreements.find((item) => item.Agreement?.IsActive) ?? agreements[0]
-
-        if (!cancelled) {
-          setAgreement(active ?? null)
-          setAgreementNetId(active?.NetUid || null)
-        }
-      } catch {
-        /* Recommendations still load without agreement pricing/availability. */
-      } finally {
-        if (!cancelled) {
-          setAgreementResolved(true)
-        }
-      }
-    }
-
-    void resolveAgreement()
-
-    return () => {
-      cancelled = true
-    }
-  }, [clientNetId])
-
-  useEffect(() => {
-    if (!agreementResolved) {
-      return
-    }
-
-    let cancelled = false
     const controller = new AbortController()
     const options = {
       signal: controller.signal,
-      ...(agreementNetId ? { clientAgreementNetId: agreementNetId } : {}),
+      clientAgreementNetId: agreementNetId,
     }
 
     async function loadProducts() {
@@ -256,7 +226,7 @@ export function RecommendationsPanel({ client, productNetId }: RecommendationsPa
       cancelled = true
       controller.abort()
     }
-  }, [agreementNetId, agreementResolved, clientNetId, productNetId, t])
+  }, [agreementNetId, clientNetId, productNetId, t])
 
   function toggleSelected(product: RecommendationProduct, index: number) {
     if (!canSelectRecommendationProduct(product, isVatSale)) {
@@ -418,23 +388,25 @@ export function RecommendationsPanel({ client, productNetId }: RecommendationsPa
 
           {isLoading ? (
             <OrbSplash label={t('Завантаження рекомендацій')} size={40} variant="thinking" />
-          ) : selectedProduct ? (
-            <SelectedProductCard
-              isVatSale={isVatSale}
-              product={selectedProduct}
-              onPreview={() => dispatch({ product: selectedProduct, type: 'previewProduct' })}
-            />
           ) : (
-            <RecommendationsList
-              isGrid={isGrid}
-              isVatSale={isVatSale}
-              products={products}
-              selectable={canCreateSale}
-              selectedKeys={selectedKeys}
-              onExclude={canExcludeProduct ? handleExcludeProduct : undefined}
-              onPreview={(product) => dispatch({ product, type: 'previewProduct' })}
-              onToggleSelect={toggleSelected}
-            />
+            <Stack gap="md">
+              {selectedProduct && (
+                <SelectedProductCard
+                  product={selectedProduct}
+                  onPreview={() => dispatch({ product: selectedProduct, type: 'previewProduct' })}
+                />
+              )}
+              <RecommendationsList
+                isGrid={isGrid}
+                isVatSale={isVatSale}
+                products={products}
+                selectable={canCreateSale}
+                selectedKeys={selectedKeys}
+                onExclude={canExcludeProduct ? handleExcludeProduct : undefined}
+                onPreview={(product) => dispatch({ product, type: 'previewProduct' })}
+                onToggleSelect={toggleSelected}
+              />
+            </Stack>
           )}
         </Stack>
       </Card>
@@ -458,11 +430,9 @@ export function RecommendationsPanel({ client, productNetId }: RecommendationsPa
 }
 
 function SelectedProductCard({
-  isVatSale,
   product,
   onPreview,
 }: {
-  isVatSale: boolean
   product: RecommendationProduct
   onPreview: () => void
 }) {
@@ -470,7 +440,8 @@ function SelectedProductCard({
     <Card className="app-section-card" withBorder radius="md" padding="md">
       <Stack gap="sm">
         <ProductImage product={product} height={380} onPreview={onPreview} />
-        <ProductFields isVatSale={isVatSale} product={product} />
+        <Text fw={700}>{displayValue(product.VendorCode)}</Text>
+        <Text size="sm">{displayValue(product.Name)}</Text>
       </Stack>
     </Card>
   )
