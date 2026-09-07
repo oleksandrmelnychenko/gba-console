@@ -73,8 +73,9 @@ export function getSyncScopeSummary(scope?: DataSyncAcceptedScope | null): strin
     const range = formatScopeRange(scope.From, scope.To)
     const documentTypes = formatCount(scope.Types.length, 'тип документа', 'типи документів', 'типів документів')
     const mode = scope.StockMode === 'DocumentsOnly' ? 'без зміни залишків' : ''
+    const reporting = scope.OneCTurnoverDefinition ? 'звітні рухи Fenix' : ''
 
-    return [range, documentTypes, mode].filter(Boolean).join(' · ')
+    return [range, documentTypes, mode, reporting].filter(Boolean).join(' · ')
   }
 
   if (scope.OperationType === 'FullSession' || scope.OperationType === 'DailySession') {

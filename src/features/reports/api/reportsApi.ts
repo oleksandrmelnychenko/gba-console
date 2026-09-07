@@ -1,6 +1,7 @@
 import { apiRequest } from '../../../shared/api/apiClient'
 import type {
   ReportEntity,
+  OneCTurnoverScopeSummary,
   ReportRequestBody,
   ReportResult,
   ReportSearchParams,
@@ -19,6 +20,27 @@ export async function createStockReport(body: ReportRequestBody): Promise<Report
   })
 
   return normalizeReportResult(result)
+}
+
+/** Local catalogue only: this request never starts sync or connects to 1C. */
+export async function getOneCTurnoverScopes(signal?: AbortSignal): Promise<OneCTurnoverScopeSummary[]> {
+  const result = await apiRequest<unknown>('/report/stocks/one-c/scopes', { signal })
+  if (!Array.isArray(result) || !result.every(isOneCTurnoverScope)) throw new Error('Invalid 1C report scope catalogue')
+  return result
+}
+
+function isOneCTurnoverScope(value: unknown): value is OneCTurnoverScopeSummary {
+  if (!value || typeof value !== 'object') return false
+  const item = value as Record<string, unknown>
+  const filters = item.Filters as Record<string, unknown> | undefined
+  const isReference = (id: unknown) => typeof id === 'string' && /^[a-f\d]{32}$/i.test(id) && !/^0+$/.test(id)
+  return typeof item.Key === 'string' && /^[a-f\d]{64}$/i.test(item.Key)
+    && !!filters && Array.isArray(filters.OrganizationIds) && filters.OrganizationIds.length > 0 && filters.OrganizationIds.every(isReference)
+    && isReference(filters.ProductKindId) && typeof filters.ExcludeServices === 'boolean'
+    && Array.isArray(item.OrganizationNames) && item.OrganizationNames.every(name => typeof name === 'string')
+    && typeof item.FirstDay === 'string' && typeof item.LastDay === 'string'
+    && typeof item.LoadedDayCount === 'number' && Number.isInteger(item.LoadedDayCount) && item.LoadedDayCount > 0
+    && typeof item.OldestReadCompletedUtc === 'string' && typeof item.NewestReadCompletedUtc === 'string'
 }
 
 export async function getReportOrganizations(): Promise<ReportEntity[]> {

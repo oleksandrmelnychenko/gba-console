@@ -3,3 +3,7 @@ dist
 .git
 .env*
 npm-debug.log*
+e2e/.auth
+.playwright-cli
+playwright-report
+test-results

@@ -108,7 +108,7 @@ describe('sanitizeReportTemplate', () => {
     expect(data.selections).toEqual([])
   })
 
-  it('still drops a measure the engine hardcodes to zero', () => {
+  it('preserves cost VAT now supplied separately by the server', () => {
     const { data, removedCount } = sanitizeReportTemplate(template({
       sorted: {
         Col: [],
@@ -117,8 +117,8 @@ describe('sanitizeReportTemplate', () => {
       },
     }))
 
-    expect(removedCount).toBe(1)
-    expect(data.sorted.Measurements).toEqual([])
+    expect(removedCount).toBe(0)
+    expect(data.sorted.Measurements).toEqual([{ IsChecked: true, Name: 'CostVAT', Type: 7, parentName: 'Cost' }])
   })
 
   it('passes a grouping it has never heard of through untouched rather than emptying the template', () => {

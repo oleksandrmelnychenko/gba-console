@@ -9,6 +9,7 @@ import {
 import {
   createSyncOperationId,
   getSyncStatus,
+  getOneCTurnoverSyncCatalog,
   startDailySync,
   startFullSync,
   startSyncSession,
@@ -21,6 +22,17 @@ vi.mock('../../../shared/api/apiClient', () => ({
 const apiRequestMock = vi.mocked(apiRequest)
 
 describe('sync API contracts', () => {
+  it('reads source choices with cancellation and keeps report scope in daily query', async () => {
+    const controller = new AbortController()
+    await getOneCTurnoverSyncCatalog(controller.signal)
+    expect(apiRequestMock).toHaveBeenCalledWith('/data/sync/online-shop-seo/report-turnover/catalog', expect.objectContaining({ signal: controller.signal }))
+    const filters = { oneCOrganizationIds: ['11'.repeat(16)], oneCProductKindId: '22'.repeat(16), oneCExcludeServices: false }
+    await startDailySync({ forAmg: false, from: '2026-08-01', to: '2026-08-31', types: ['6'],
+      stockMode: DailyDataSyncStockMode.DocumentsOnly, operationId: '33'.repeat(16), ...filters })
+    expect(apiRequestMock).toHaveBeenLastCalledWith('/data/sync/online-shop-seo/start/daily', expect.objectContaining({
+      method: 'POST', query: expect.objectContaining(filters),
+    }))
+  })
   beforeEach(() => {
     apiRequestMock.mockReset()
   })

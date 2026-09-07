@@ -1,8 +1,9 @@
 import { ApiError } from '../../shared/api/apiClient'
 import { readSession } from '../../shared/auth/session'
-import type { DataSyncStatus } from './types'
+import type { DataSyncStatus, OneCTurnoverSyncFilters } from './types'
 
 export type SyncStartDescriptor = {
+  oneCTurnover?: OneCTurnoverSyncFilters
   forAmg: boolean
   from?: Date | string
   mode: 'daily' | 'full'
@@ -96,6 +97,13 @@ function createDescriptorSignature(descriptor: SyncStartDescriptor): string {
     stockMode: descriptor.stockMode ?? null,
     to: serializeDescriptorDate(descriptor.to),
     types: [...new Set(descriptor.types)].sort(compareSyncTypes),
+    ...(descriptor.oneCTurnover ? {
+      oneCTurnover: {
+        oneCOrganizationIds: [...new Set(descriptor.oneCTurnover.oneCOrganizationIds.map((id) => id.toUpperCase()))].sort(),
+        oneCProductKindId: descriptor.oneCTurnover.oneCProductKindId.toUpperCase(),
+        oneCExcludeServices: descriptor.oneCTurnover.oneCExcludeServices,
+      },
+    } : {}),
   })
 }
 

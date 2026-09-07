@@ -24,6 +24,7 @@ import {
   createSyncOperationId,
   getSyncStatus,
   startSyncSession,
+  startDailySync,
 } from '../api/syncApi'
 import {
   createSyncStartOperation,
@@ -41,9 +42,10 @@ import {
   type SyncSource,
   validateSyncDateRange,
 } from '../syncSessionForm'
-import { DataSyncSessionMode, type SyncRunResponse } from '../types'
+import { DataSyncSessionMode, DailyDataSyncStockMode, type SyncRunResponse, type OneCTurnoverSyncFilters } from '../types'
 import { SyncSessionPanel } from './SyncSessionPanel'
 import { SyncSessionConfigurator } from './SyncSessionConfigurator'
+import { OneCTurnoverSyncPanel } from './OneCTurnoverSyncPanel'
 
 const STATUS_POLL_INTERVAL_MS = 3_000
 
@@ -198,6 +200,16 @@ export function SyncControl() {
     }
   }
 
+  async function runReportSync(filters: OneCTurnoverSyncFilters) {
+    if (state.mode !== 'daily' || sourceForAmg) return
+    const range = state.dateRanges.daily
+    const types = getSessionDocumentTypes('daily', state.selectedDailyDocumentTypes)
+    await runSyncRequest({ forAmg: false, ...range, types, mode: 'daily',
+      stockMode: DailyDataSyncStockMode.DocumentsOnly, oneCTurnover: filters },
+    (operationId) => startDailySync({ forAmg: false, ...range, types, operationId,
+      stockMode: DailyDataSyncStockMode.DocumentsOnly, ...filters }))
+  }
+
   return (
     <>
       <Tooltip label={t('1С синхронізація')} openDelay={300}>
@@ -263,6 +275,10 @@ export function SyncControl() {
             }
             onSourceChange={(source) => dispatch({ type: 'sourceChanged', source })}
           />
+
+          <OneCTurnoverSyncPanel visible={state.opened} mode={state.mode} source={state.source}
+            range={activeRange} types={state.selectedDailyDocumentTypes} today={today}
+            blocked={isStartBlocked || Boolean(state.pendingRun)} loading={state.isStarting} onRun={runReportSync} />
 
           {state.pendingRun ? (
             <SyncConfirmation

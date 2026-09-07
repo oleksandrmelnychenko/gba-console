@@ -74,6 +74,8 @@ export type ReportFilterFieldGroup = {
 }
 
 export type ReportRequestBody = {
+  dataSource?: 0 | 1
+  oneC?: OneCTurnoverFilters
   from: string
   selections: ReportSelection[]
   sorted: {
@@ -82,6 +84,23 @@ export type ReportRequestBody = {
     Row: ReportGroupingItem[]
   }
   to: string
+}
+
+export type OneCTurnoverFilters = {
+  OrganizationIds: string[]
+  ProductKindId: string
+  ExcludeServices: boolean
+}
+
+export type OneCTurnoverScopeSummary = {
+  Key: string
+  Filters: OneCTurnoverFilters
+  OrganizationNames: string[]
+  FirstDay: string
+  LastDay: string
+  LoadedDayCount: number
+  OldestReadCompletedUtc: string
+  NewestReadCompletedUtc: string
 }
 
 export type ReportDocument = {

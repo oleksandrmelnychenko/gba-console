@@ -22,7 +22,7 @@ import { CheckboxMultiSelect } from '../../../shared/ui/CheckboxMultiSelect'
 import { CircleAlert, Download, LayoutTemplate, Pencil, Plus, RefreshCw, RotateCcw, Save, Trash2 } from 'lucide-react'
 import { type FormEvent, useEffect, useMemo, useState } from 'react'
 import { ApiError } from '../../../shared/api/apiClient'
-import { formatLocalDate } from '../../../shared/date/dateTime'
+import { formatKyivBusinessDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import type { TranslateFunction } from '../../../shared/i18n/types'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -76,6 +76,9 @@ import {
   formatDate,
 } from '../utils'
 import './reports-pages.css'
+import { createSalesReportPreset, type SalesReportPresetId } from '../data/reportPresets'
+import { ReportQuickPresets } from './ReportQuickPresets'
+import { OneCTurnoverReportPanel } from './OneCTurnoverReportPanel'
 
 const STORAGE_KEY = 'app_configs_reports_template:v1'
 const LEGACY_STORAGE_KEY = 'app_configs_reports_template'
@@ -144,10 +147,11 @@ function createEmptySelection(): ReportSelection {
 export function ReportsStocksPage() {
   const { t } = useI18n()
   const { hasPermission } = useAuth()
+  const [reportSource, setReportSource] = useState('operational')
   const canGenerateReport = hasPermission(
     PermissionKeys.ReportsStocks.Report.Generate,
   )
-  const today = useMemo(() => formatLocalDate(new Date()), [])
+  const today = useMemo(() => formatKyivBusinessDate(), [])
   const [from, setFrom] = useValueState(today)
   const [to, setTo] = useValueState(today)
   const [measurements, setMeasurements] = useValueState<ReportMeasurementGroup[]>(createDefaultMeasurementGroups)
@@ -358,8 +362,20 @@ export function ReportsStocksPage() {
     )
   }
 
+  function applyPreset(id: SalesReportPresetId) {
+    applyTemplate(createSalesReportPreset(id, from, to, selections))
+    setResult(null)
+    setLastRun(null)
+    setError(null)
+  }
+
   return (
     <Stack className="reports-stocks-page" gap={6}>
+      <Select label={t('Джерело звіту')} value={reportSource} disabled={isLoading}
+        allowDeselect={false} onChange={value => { if (value) setReportSource(value) }}
+        data={[{ value: 'operational', label: t('Операційні продажі') }, { value: 'oneC', label: t('Консолідовані дані 1С') }]} />
+      {reportSource === 'oneC' ? <OneCTurnoverReportPanel canGenerate={canGenerateReport} from={from} to={to} onFromChange={setFrom} onToChange={setTo} onLoadingChange={setLoading} /> : <>
+      <ReportQuickPresets disabled={isLoading} onApply={applyPreset} />
       <ReportBuilderForm
         canSubmit={canSubmit}
         colGroups={colGroups}
@@ -414,6 +430,7 @@ export function ReportsStocksPage() {
         title={lastRun?.name || t('Звіт продажів')}
         onClose={() => setDownloadModalOpened(false)}
       />
+      </>}
     </Stack>
   )
 }
@@ -1835,8 +1852,12 @@ function describeReportError(error: unknown, t: TranslateFunction): string {
       return error.message
     }
 
-    if (error.status === 401 || error.status === 403) {
+    if (error.status === 401) {
       return t('Сесію завершено. Увійдіть повторно.')
+    }
+
+    if (error.status === 403) {
+      return t('Недостатньо прав для формування звіту. Зверніться до адміністратора щодо доступу до конструктора звітів.')
     }
 
     if (error.status >= 500) {

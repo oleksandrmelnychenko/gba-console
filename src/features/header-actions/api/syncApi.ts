@@ -6,6 +6,8 @@ import {
   type DataSyncStatus,
   type SyncRunResponse,
   type TypeOfXmlDocument,
+  type OneCTurnoverSyncCatalog,
+  type OneCTurnoverSyncFilters,
 } from '../types'
 
 const SYNC_OPERATION_ID_HEADER = 'X-GBA-Sync-Operation-Id'
@@ -17,13 +19,24 @@ export type SyncFullRequest = {
   types: string[]
 }
 
-export type SyncDailyRequest = {
+export type SyncDailyRequest = Partial<OneCTurnoverSyncFilters> & {
   forAmg: boolean
-  from: Date
+  from: Date | string
   operationId: string
   stockMode: DailyDataSyncStockMode
-  to: Date
+  to: Date | string
   types: string[]
+}
+
+export function getOneCTurnoverSyncCatalog(signal?: AbortSignal): Promise<OneCTurnoverSyncCatalog> {
+  return apiRequest<OneCTurnoverSyncCatalog>('/data/sync/online-shop-seo/report-turnover/catalog', {
+    signal,
+    errorMessages: {
+      403: 'Немає дозволу на налаштування синхронізації 1С',
+      default: 'Не вдалося завантажити довідники Fenix для звітів',
+      network: 'Сервер синхронізації недоступний',
+    },
+  })
 }
 
 export type SyncDocumentsRequest = {

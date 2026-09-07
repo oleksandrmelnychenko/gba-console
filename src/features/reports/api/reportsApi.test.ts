@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { apiRequest } from '../../../shared/api/apiClient'
-import { createStockReport, searchReportUsers } from './reportsApi'
+import { createStockReport, getOneCTurnoverScopes, searchReportUsers } from './reportsApi'
 import type { ReportRequestBody } from '../types'
 
 vi.mock('../../../shared/api/apiClient', () => ({
@@ -74,5 +74,17 @@ describe('reportsApi', () => {
       method: 'POST',
       body,
     })
+  })
+
+  it('reads only the local scope catalogue and forwards cancellation', async () => {
+    const signal = new AbortController().signal
+    apiRequestMock.mockResolvedValueOnce([])
+    await expect(getOneCTurnoverScopes(signal)).resolves.toEqual([])
+    expect(apiRequestMock).toHaveBeenCalledWith('/report/stocks/one-c/scopes', { signal })
+  })
+
+  it('rejects malformed scope metadata instead of inventing source filters', async () => {
+    apiRequestMock.mockResolvedValueOnce([{ Key: 'local-id', Filters: { OrganizationIds: [123] } }])
+    await expect(getOneCTurnoverScopes()).rejects.toThrow('Invalid 1C report scope catalogue')
   })
 })

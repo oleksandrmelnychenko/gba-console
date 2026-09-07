@@ -71,6 +71,7 @@ export type DataSyncSessionProgress = {
 }
 
 export type DataSyncAcceptedScope = {
+  OneCTurnoverDefinition?: string | null
   ForAmg: boolean
   From?: string | null
   OperationType: string
@@ -78,6 +79,17 @@ export type DataSyncAcceptedScope = {
   SyncEntityTypes: SyncEntityType[]
   To?: string | null
   Types: SyncProductConsignmentType[]
+}
+
+export type OneCTurnoverSyncFilters = {
+  oneCOrganizationIds: string[]
+  oneCProductKindId: string
+  oneCExcludeServices: boolean
+}
+
+export type OneCTurnoverSyncCatalog = {
+  Organizations: { Id: string; Name: string }[]
+  ProductKinds: { Id: string; Name: string }[]
 }
 
 export type DataSyncPipelineRun = {

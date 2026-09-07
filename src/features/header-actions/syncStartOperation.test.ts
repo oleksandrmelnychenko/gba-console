@@ -21,6 +21,15 @@ beforeEach(() => {
 })
 
 describe('sync start operation', () => {
+  it('binds report filters into retry identity without conflating ordinary daily runs', () => {
+    const operation = createSyncStartOperation(() => firstOperationId)
+    const oneCTurnover = { oneCOrganizationIds: ['ab'.repeat(16), 'cd'.repeat(16)], oneCProductKindId: 'ef'.repeat(16), oneCExcludeServices: true }
+    const descriptor: SyncStartDescriptor = { ...fullDescriptor, forAmg: false, mode: 'daily', stockMode: 0, oneCTurnover }
+    expect(operation.getOrCreate(descriptor)).toBe(firstOperationId)
+    expect(operation.getOrCreate({ ...descriptor, oneCTurnover: { ...oneCTurnover, oneCOrganizationIds: [...oneCTurnover.oneCOrganizationIds].reverse().map((id) => id.toUpperCase()) } })).toBe(firstOperationId)
+    expect(() => operation.getOrCreate({ ...descriptor, oneCTurnover: undefined })).toThrow('Повторіть його без зміни параметрів')
+    expect(() => operation.getOrCreate({ ...descriptor, oneCTurnover: { ...oneCTurnover, oneCExcludeServices: false } })).toThrow('Повторіть його без зміни параметрів')
+  })
   it('reuses the operation id for a semantically identical retry', () => {
     const operation = createSyncStartOperation(() => firstOperationId)
 

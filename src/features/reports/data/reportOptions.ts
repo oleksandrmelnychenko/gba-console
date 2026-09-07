@@ -68,16 +68,19 @@ const REPORT_GROUPING_TYPES = {
   saleDocumentManagerInput: 19,
   saleDocumentManagerPosted: 20,
   supplier: 21,
+  sourceSaleResponsible: 22,
+  sourceOrderResponsible: 23,
 } as const
 
-// costVat (7) is not offered: PivotCell.Compute returns a hardcoded 0m for it, so «ПДВ собівартості» only ever
-// widens the sheet with a zero column.
+// Cost VAT is supplied by published 1C batch allocations. Missing breakdowns
+// remain blank on the server; they are not a zero-VAT claim.
 const REPORT_FIELD_TYPES = {
   salesQuantity: 0,
   salesValueWithoutVat: 2,
   salesValueVat: 3,
   salesValueWithVat: 4,
   costWithoutVat: 6,
+  costVat: 7,
   costWithVat: 8,
   markupWithoutVat: 10,
   markupVat: 11,
@@ -152,6 +155,8 @@ const REPORT_GROUPING_GROUPS: ReportGroupingGroup[] = [
       { key: 'SaleReturnDocument', label: 'Повернення від клієнта', type: REPORT_GROUPING_TYPES.saleReturnDocument },
       { key: 'SaleDocumentManagerInput', label: 'Ввів документ', type: REPORT_GROUPING_TYPES.saleDocumentManagerInput },
       { key: 'SaleDocumentManagerPosted', label: 'Провів документ', type: REPORT_GROUPING_TYPES.saleDocumentManagerPosted },
+      { key: 'SourceSaleResponsible', label: 'Відповідальний реалізації (1С)', type: REPORT_GROUPING_TYPES.sourceSaleResponsible },
+      { key: 'SourceOrderResponsible', label: 'Відповідальний замовлення (1С)', type: REPORT_GROUPING_TYPES.sourceOrderResponsible },
     ],
   },
   {
@@ -270,6 +275,8 @@ const REPORT_FIELD_LABELS: Record<string, string> = {
   SalesValueWithVAT: 'Продажі з ПДВ',
   SalesValueWithoutVAT: 'Продажі без ПДВ',
   Supplier: 'Постачальник',
+  SourceSaleResponsible: 'Відповідальний реалізації (1С)',
+  SourceOrderResponsible: 'Відповідальний замовлення (1С)',
   Year: 'По роках',
 }
 
@@ -294,6 +301,7 @@ export function createDefaultMeasurementGroups(): ReportMeasurementGroup[] {
       IsChecked: false,
       SubList: [
         { Name: 'CostWithoutVAT', IsChecked: false, Type: REPORT_FIELD_TYPES.costWithoutVat },
+        { Name: 'CostVAT', IsChecked: false, Type: REPORT_FIELD_TYPES.costVat },
         { Name: 'CostWithVAT', IsChecked: false, Type: REPORT_FIELD_TYPES.costWithVat },
       ],
     },
