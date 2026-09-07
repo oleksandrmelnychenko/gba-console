@@ -3,6 +3,22 @@ import { createDefaultMeasurementGroups, flattenCheckedMeasurements, flattenGrou
 
 export const SALES_REPORT_PRESETS = [
   {
+    id: 'agreements',
+    name: 'Продажі за договорами',
+    description: 'Організація → клієнт → договір. Кількість, фактична вартість продажів, собівартість і рентабельність.',
+    rowKeys: ['Organization', 'CustomerName', 'CustomerContract'],
+    colKeys: [],
+    measureTypes: [0, 2, 3, 4, 6, 7, 8, 10, 11, 12, 14, 15],
+  },
+  {
+    id: 'agreement-products',
+    name: 'Товари за договорами',
+    description: 'Клієнт → договір → артикул. Фактичні продажі товарів за кожним договором окремо.',
+    rowKeys: ['CustomerName', 'CustomerContract', 'ProductArticle'],
+    colKeys: [],
+    measureTypes: [0, 2, 3, 4, 6, 7, 8, 10, 11, 12, 14, 15],
+  },
+  {
     id: 'daily',
     name: 'Продажі за днями',
     description: 'День → організація. Продажі, собівартість і рентабельність, окремо без ПДВ та з ПДВ.',

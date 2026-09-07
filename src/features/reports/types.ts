@@ -142,8 +142,23 @@ export type SaleReturnsReportSearchParams = ReportSearchParams & {
 }
 
 export type ReportTemplate = {
+  Id?: string
+  Revision?: number
+  UpdatedAtUtc?: string
   Data: ReportRequestBody
   Name: string
+}
+
+export type ReportCatalogue = {
+  CapturedOn: string
+  Reports: Array<{
+    Id: string
+    Name: string
+    Title: string
+    Kind: string
+    Sources: Array<{ World: string; SourceId: string; DefinitionSha256: string | null; Attributes: string[] }>
+  }>
+  Presentations: Array<{ Id: string; Title: string }>
 }
 
 export type SpreadsheetCellValue = boolean | number | string | null

@@ -20,7 +20,7 @@ import {
 import { useDebouncedValue } from '@mantine/hooks'
 import { CheckboxMultiSelect } from '../../../shared/ui/CheckboxMultiSelect'
 import { CircleAlert, Download, LayoutTemplate, Pencil, Plus, RefreshCw, RotateCcw, Save, Trash2 } from 'lucide-react'
-import { type FormEvent, useEffect, useMemo, useState } from 'react'
+import { type FormEvent, lazy, Suspense, useEffect, useMemo, useState } from 'react'
 import { ApiError } from '../../../shared/api/apiClient'
 import { formatKyivBusinessDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
@@ -79,8 +79,9 @@ import './reports-pages.css'
 import { createSalesReportPreset, type SalesReportPresetId } from '../data/reportPresets'
 import { ReportQuickPresets } from './ReportQuickPresets'
 
-const STORAGE_KEY = 'app_configs_reports_template:v1'
-const LEGACY_STORAGE_KEY = 'app_configs_reports_template'
+import { useServerReportTemplates } from '../hooks/useServerReportTemplates'
+
+const ReportCataloguePanel = lazy(() => import('./ReportCataloguePanel').then(module => ({ default: module.ReportCataloguePanel })))
 const LOOKUP_SEARCH_DEBOUNCE_MS = 300
 const LOOKUP_SEARCH_LIMIT = 30
 const DATE_INPUT_DEBOUNCE_MS = 400
@@ -144,6 +145,11 @@ function createEmptySelection(): ReportSelection {
 }
 
 export function ReportsStocksPage() {
+  const { user, session } = useAuth()
+  return <ReportsStocksWorkspace key={user?.NetUid ?? session?.userNetUid ?? 'anonymous'} />
+}
+
+function ReportsStocksWorkspace() {
   const { t } = useI18n()
   const { hasPermission } = useAuth()
   const canGenerateReport = hasPermission(
@@ -162,7 +168,9 @@ export function ReportsStocksPage() {
   const [isLoading, setLoading] = useValueState(false)
   const [downloadModalOpened, setDownloadModalOpened] = useValueState(false)
   const [templateName, setTemplateName] = useValueState('')
-  const [templates, setTemplates] = useValueState<ReportTemplate[]>([])
+  const templateStorage = useServerReportTemplates(canGenerateReport)
+  const templates = templateStorage.templates
+  const [catalogueOpened, setCatalogueOpened] = useState(false)
   const [templateNotice, setTemplateNotice] = useValueState<string | null>(null)
   const groupingOptions = useMemo(() => flattenGroupingOptions(), [])
   const groupingSelectData = useMemo(
@@ -247,9 +255,6 @@ export function ReportsStocksPage() {
       : null
   const resultPlaceholder = describeResultPlaceholder(lastRun, Boolean(error), t)
 
-  useEffect(() => {
-    setTemplates(parseTemplates(readStoredTemplates()))
-  }, [setTemplates])
 
   async function submitReport(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -302,41 +307,23 @@ export function ReportsStocksPage() {
   }
 
   function saveTemplate() {
-    const normalizedName = templateName.trim()
-
-    if (!normalizedName) {
-      return
-    }
-
-    const rawTemplates = readStoredTemplates()
-    const parsedTemplates = parseTemplates(rawTemplates)
-    const nextTemplates = [
-      ...parsedTemplates.filter((template) => template.Name !== normalizedName),
-      { Name: normalizedName, Data: reportBody },
-    ]
-
-    persistTemplates(nextTemplates)
+    setTemplateNotice(null)
+    void templateStorage.save(templateName, reportBody)
   }
 
   function loadTemplates() {
-    setTemplates(parseTemplates(readStoredTemplates()))
+    setTemplateNotice(null)
+    templateStorage.reload()
   }
 
-  function persistTemplates(nextTemplates: ReportTemplate[]) {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(nextTemplates))
-    setTemplates(nextTemplates)
+  function updateTemplate(id: string) {
+    setTemplateNotice(null)
+    void templateStorage.save(templateName, reportBody, id)
   }
 
-  function updateTemplate(name: string) {
-    const nextTemplates = parseTemplates(readStoredTemplates()).map((template) =>
-      template.Name === name ? { ...template, Data: reportBody } : template,
-    )
-
-    persistTemplates(nextTemplates)
-  }
-
-  function deleteTemplate(name: string) {
-    persistTemplates(parseTemplates(readStoredTemplates()).filter((template) => template.Name !== name))
+  function deleteTemplate(id: string) {
+    setTemplateNotice(null)
+    void templateStorage.remove(id)
   }
 
   function applyTemplate(template: ReportTemplate) {
@@ -369,6 +356,12 @@ export function ReportsStocksPage() {
 
   return (
     <Stack className="reports-stocks-page" gap={6}>
+      <Group>
+        <Button variant="subtle" disabled={!canGenerateReport} onClick={() => setCatalogueOpened(opened => !opened)}>
+          {catalogueOpened ? t('Сховати каталог звітів 1С') : t('Каталог усіх звітів 1С')}
+        </Button>
+      </Group>
+      {catalogueOpened && <Suspense fallback={<Loader size="sm" />}><ReportCataloguePanel /></Suspense>}
       <ReportQuickPresets disabled={isLoading} onApply={applyPreset} />
       <ReportBuilderForm
         canSubmit={canSubmit}
@@ -391,7 +384,8 @@ export function ReportsStocksPage() {
         selections={selections}
         submitBlockedReason={submitBlockedReason}
         templateName={templateName}
-        templateNotice={templateNotice}
+        templateNotice={templateNotice ?? templateStorage.notice}
+        templateStorage={templateStorage}
         templates={templates}
         to={to}
         onApplyTemplate={applyTemplate}
@@ -429,6 +423,7 @@ export function ReportsStocksPage() {
 }
 
 type ReportBuilderFormProps = {
+  templateStorage: ReturnType<typeof useServerReportTemplates>
   canSubmit: boolean
   colGroups: ReportGroupingItem[]
   filterFieldOptions: FilterFieldOption[]
@@ -492,6 +487,7 @@ function ReportBuilderForm({
   templateName,
   templateNotice,
   templates,
+  templateStorage,
   to,
   onApplyTemplate,
   onColGroupsChange,
@@ -617,6 +613,7 @@ function ReportBuilderForm({
           onClose={() => setTemplatesOpened(false)}
         >
           <ReportTemplatesCard
+            storage={templateStorage}
             notice={templateNotice}
             templateName={templateName}
             templates={templates}
@@ -1217,6 +1214,7 @@ function getSelectionFieldSummary(
 }
 
 type ReportTemplatesCardProps = {
+  storage: ReturnType<typeof useServerReportTemplates>
   notice: string | null
   templateName: string
   templates: ReportTemplate[]
@@ -1229,6 +1227,7 @@ type ReportTemplatesCardProps = {
 }
 
 function ReportTemplatesCard({
+  storage,
   notice,
   templateName,
   templates,
@@ -1254,7 +1253,7 @@ function ReportTemplatesCard({
           />
           <Button
             color={CREATE_ACTION_COLOR}
-            disabled={!templateName.trim()}
+            disabled={!templateName.trim() || !storage.ready || storage.busy}
             leftSection={<Save size={16} />}
             type="button"
             onClick={onSave}
@@ -1264,6 +1263,7 @@ function ReportTemplatesCard({
         </Group>
       </section>
       {notice ? <Alert color="yellow" icon={<CircleAlert size={18} />}>{notice}</Alert> : null}
+      <Text size="xs" c="dimmed">{t('Особисті шаблони зберігаються на сервері та доступні з інших браузерів.')}</Text>
       <section className="reports-stocks-template-saved">
         <Group justify="space-between" wrap="nowrap">
           <Group gap="xs" wrap="nowrap">
@@ -1283,7 +1283,7 @@ function ReportTemplatesCard({
         {templates.length ? (
           <div className="reports-stocks-template-list">
             {templates.map((template) => (
-              <div className="reports-stocks-template-item" key={template.Name}>
+              <div className="reports-stocks-template-item" key={template.Id ?? template.Name}>
               <Button
                 className="reports-stocks-template-open"
                 leftSection={<RotateCcw size={15} />}
@@ -1307,7 +1307,8 @@ function ReportTemplatesCard({
                       size={30}
                       type="button"
                       variant="subtle"
-                      onClick={() => onUpdate(template.Name)}
+                      disabled={storage.busy || !storage.ready}
+                      onClick={() => onUpdate(template.Id!)}
                     >
                       <Save size={15} />
                     </ActionIcon>
@@ -1319,7 +1320,8 @@ function ReportTemplatesCard({
                       size={30}
                       type="button"
                       variant="subtle"
-                      onClick={() => onDelete(template.Name)}
+                      disabled={storage.busy || !storage.ready}
+                      onClick={() => onDelete(template.Id!)}
                     >
                       <Trash2 size={15} />
                     </ActionIcon>
@@ -1335,6 +1337,15 @@ function ReportTemplatesCard({
           </div>
         )}
       </section>
+      {storage.browserTemplates.length > 0 && <Stack gap="xs">
+        <Text fw={600} size="sm">{t('Шаблони цього браузера')}</Text>
+        <Text size="xs" c="dimmed">{t('Імпортуйте потрібні шаблони у свій обліковий запис. Оригінали залишаться в браузері.')}</Text>
+        {storage.browserTemplates.map(template => <Group key={JSON.stringify({ Name: template.Name, Data: template.Data })} justify="space-between">
+          <Text size="sm">{template.Name}</Text>
+          <Button size="xs" variant="light" disabled={storage.busy || !storage.ready}
+            onClick={() => void storage.importBrowserTemplate(template)}>{t('Імпортувати на сервер')}</Button>
+        </Group>)}
+      </Stack>}
     </div>
   )
 }
@@ -2001,26 +2012,6 @@ function updateSelection(
   setter(selections.map((selection, itemIndex) => (itemIndex === index ? { ...selection, ...patch } : selection)))
 }
 
-function parseTemplates(raw: string | null): Array<{ Data: ReportRequestBody; Name: string }> {
-  if (!raw) {
-    return []
-  }
-
-  try {
-    const parsed = JSON.parse(raw) as unknown
-
-    if (Array.isArray(parsed)) {
-      return parsed.filter((item): item is { Data: ReportRequestBody; Name: string } =>
-        Boolean(item && typeof item === 'object' && 'Data' in item && 'Name' in item),
-      )
-    }
-  } catch {
-    return []
-  }
-
-  return []
-}
-
 // The searched lookups match on fields the option label never shows — a user's по батькові, e-mail or phone
 // number, a client's ЄДРПОУ or code of region — and Mantine's default filter then drops those very rows because
 // the typed text is not in the label, so a hit the server just found reads as «Нічого не знайдено». Everything
@@ -2156,22 +2147,6 @@ async function loadSaleReturnDocumentCatalogue(): Promise<ReportEntity[]> {
   }
 
   return documents
-}
-
-function readStoredTemplates(): string | null {
-  const current = localStorage.getItem(STORAGE_KEY)
-
-  if (current !== null) {
-    return current
-  }
-
-  const legacy = localStorage.getItem(LEGACY_STORAGE_KEY)
-
-  if (legacy !== null) {
-    localStorage.setItem(STORAGE_KEY, legacy)
-  }
-
-  return legacy
 }
 
 function mergeReportEntities(entities: ReportEntity[]): ReportEntity[] {
