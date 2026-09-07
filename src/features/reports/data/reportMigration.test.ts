@@ -85,4 +85,39 @@ describe('per-implementation migration evidence', () => {
     catalogue.Migration!.Summary.SourceImplementations = 624
     expect(inspectCatalogueMigration(catalogue).summary.ByStatus).toEqual({ Captured: 0, NativePartial: 0, ParityVerified: 0, Unassessed: 690 })
   })
+  it.each(['main', 'b'.repeat(39), 'g'.repeat(40), 'b'.repeat(41), 'a'.repeat(63)])('refuses a mutable or malformed native revision %s', NativeRevision => {
+    const value = migrationFixture('parity_verified'); value.Validation!.NativeRevision = NativeRevision
+    expect(readSourceMigration(value)).toBeNull()
+  })
+  it.each(['b'.repeat(40), 'A'.repeat(64)])('accepts an immutable native revision of supported length %#', NativeRevision => {
+    const value = migrationFixture('native_partial'); value.Validation!.NativeRevision = NativeRevision
+    expect(readSourceMigration(value)?.Status).toBe('native_partial')
+  })
+  it.each(['/root/evidence/proof.json', 'https://example.test/proof', 'x'.repeat(161), 'proof\nnext', 'proof\u0085next'])('refuses a private, unbounded or control-containing evidence identifier %#', EvidenceId => {
+    const value = migrationFixture('parity_verified'); value.Validation!.EvidenceId = EvidenceId
+    expect(readSourceMigration(value)).toBeNull()
+  })
+  it('accepts a bounded public evidence identifier without exposing a filesystem or network link', () => {
+    const value = migrationFixture('native_partial'); value.Validation!.EvidenceId = 'x'.repeat(160)
+    expect(readSourceMigration(value)?.Validation?.EvidenceId).toHaveLength(160)
+  })
+  it.each(['2026-09-08T01:00:00.0000002Z', '2026-09-08T01:00:00.0000002+00:00', '2026-09-09T00:00:00Z'])('refuses proof later than manifest publication, retaining100ns ordering %#', VerifiedAtUtc => {
+    const catalogue = catalogueFixture()
+    catalogue.Migration!.GeneratedAtUtc = '2026-09-08T01:00:00.0000001Z'
+    catalogue.Reports[0].Sources[0].Migration!.Validation!.VerifiedAtUtc = VerifiedAtUtc
+    expect(inspectCatalogueMigration(catalogue).valid).toBe(false)
+    expect(inspectCatalogueMigration(catalogue).summary.ByStatus).toEqual({ Unassessed: 4, Captured: 0, NativePartial: 0, ParityVerified: 0 })
+    expect(isReportCatalogue(catalogue)).toBe(true)
+  })
+  it('accepts equal UTC instants with different zero-offset spellings', () => {
+    const catalogue = catalogueFixture()
+    catalogue.Migration!.GeneratedAtUtc = '2026-09-08T01:00:00.0000001Z'
+    catalogue.Reports[0].Sources[0].Migration!.Validation!.VerifiedAtUtc = '2026-09-08T01:00:00.0000001+00:00'
+    expect(inspectCatalogueMigration(catalogue).valid).toBe(true)
+  })
+  it.each(['2026-02-30T00:00:00Z', '2026-09-08T01:00:00+03:00', '0001-01-01T00:00:00Z'])('refuses impossible or non-UTC proof timestamps %#', VerifiedAtUtc => {
+    const value = migrationFixture('parity_verified'); value.Validation!.VerifiedAtUtc = VerifiedAtUtc
+    expect(readSourceMigration(value)).toBeNull()
+  })
+
 })

@@ -17,7 +17,20 @@ const text = (value: unknown): value is string => typeof value === 'string' && v
 const strings = (value: unknown): value is string[] => Array.isArray(value) && value.every(text)
 const count = (value: unknown): value is number => Number.isSafeInteger(value) && Number(value) >= 0
 const sha256 = (value: unknown): value is string => typeof value === 'string' && /^[a-f0-9]{64}$/i.test(value)
-const utc = (value: unknown): value is string => typeof value === 'string' && /T.*(?:Z|\+00:00)$/.test(value) && Number.isFinite(Date.parse(value))
+const immutableRevision = (value: unknown): value is string => typeof value === 'string' && /^(?:[a-f0-9]{40}|[a-f0-9]{64})$/i.test(value)
+const publicEvidenceId = (value: unknown): value is string => text(value) && value.length <= 160
+  && !value.startsWith('/') && !value.includes('://') && !/\p{Cc}/u.test(value)
+/** .NET UTC timestamps retain100ns precision; Date.parse alone loses sub-millisecond ordering. */
+function utcInstant(value: unknown): bigint | null {
+  if (typeof value !== 'string') return null
+  const match = /^(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2})(?:\.(\d{1,7}))?(?:Z|\+00:00)$/.exec(value)
+  if (!match) return null
+  const milliseconds = Date.parse(value)
+  if (!Number.isFinite(milliseconds) || new Date(milliseconds).toISOString().slice(0, 19) !== match[1]) return null
+  const ticks = BigInt(milliseconds) * 10000n + BigInt((match[2] ?? '').padEnd(7, '0').slice(3))
+  return ticks > BigInt(Date.parse('0001-01-01T00:00:00Z')) * 10000n ? ticks : null
+}
+const utc = (value: unknown): value is string => utcInstant(value) !== null
 
 export function sourceIdentity(source: Pick<ReportCatalogueSource, 'World' | 'SourceId'>): string {
   return JSON.stringify([source.World, source.SourceId])
@@ -46,7 +59,7 @@ export function isReportCatalogue(value: unknown): value is ReportCatalogue {
 }
 
 /** A numeric dataset mapping or native-only comparison is never source parity. */
-export function readSourceMigration(value: unknown): ReportSourceMigration | null {
+export function readSourceMigration(value: unknown, publishedAtUtc?: string): ReportSourceMigration | null {
   if (!record(value) || !Object.hasOwn(CAPTURE_STATUS_LABELS, String(value.CaptureStatus))
     || !['captured', 'native_partial', 'parity_verified'].includes(String(value.Status))
     || (value.SourceRevisionSha256 !== null && !sha256(value.SourceRevisionSha256))
@@ -61,8 +74,12 @@ export function readSourceMigration(value: unknown): ReportSourceMigration | nul
   })) return null
   const validation = value.Validation
   if (validation !== null && (!record(validation) || !['native_scope', 'source_parity'].includes(String(validation.Kind))
-    || !text(validation.EvidenceId) || !utc(validation.VerifiedAtUtc) || !sha256(validation.SourceRevisionSha256)
-    || validation.SourceRevisionSha256 !== value.SourceRevisionSha256 || !text(validation.NativeRevision))) return null
+    || !publicEvidenceId(validation.EvidenceId) || !utc(validation.VerifiedAtUtc) || !sha256(validation.SourceRevisionSha256)
+    || validation.SourceRevisionSha256 !== value.SourceRevisionSha256 || !immutableRevision(validation.NativeRevision))) return null
+  if (validation && publishedAtUtc !== undefined) {
+    const published = utcInstant(publishedAtUtc), verified = utcInstant(validation.VerifiedAtUtc)
+    if (published === null || verified === null || verified > published) return null
+  }
   if (value.Status === 'captured') {
     if (value.NativeDataSources.length || value.CoveredScope.length || !value.MissingScope.length || validation !== null) return null
   } else {
@@ -99,12 +116,14 @@ function summaryMatches(value: unknown, actual: ReportMigrationSummary): boolean
 
 export function inspectCatalogueMigration(catalogue: ReportCatalogue) {
   const statuses = new Map<string, MigrationDisplayStatus>(), migrations = new Map<string, ReportSourceMigration>()
+  const manifest: unknown = catalogue.Migration
+  const publishedAtUtc = record(manifest) && utc(manifest.GeneratedAtUtc) ? manifest.GeneratedAtUtc : undefined
   for (const report of catalogue.Reports) for (const source of report.Sources) {
-    const migration = readSourceMigration(source.Migration), key = sourceIdentity(source)
+    const migration = readSourceMigration(source.Migration, publishedAtUtc), key = sourceIdentity(source)
     statuses.set(key, migration?.Status ?? 'unassessed')
     if (migration) migrations.set(key, migration)
   }
-  const expected = summarize(catalogue.Reports, statuses), manifest: unknown = catalogue.Migration
+  const expected = summarize(catalogue.Reports, statuses)
   const valid = record(manifest) && text(manifest.Version) && utc(manifest.GeneratedAtUtc) && summaryMatches(manifest.Summary, expected)
   if (!valid) {
     for (const key of statuses.keys()) statuses.set(key, 'unassessed')

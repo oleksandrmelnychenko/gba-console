@@ -8,7 +8,7 @@ export function migrationFixture(status: ReportMigrationStatus): ReportSourceMig
     MissingScope: status === 'parity_verified' ? [] : ['Історія взаєморозрахунків ще не перенесена.'],
     Dependencies: [{ Key: 'register:debt', Title: 'Регістр взаєморозрахунків', Status: status === 'parity_verified' ? 'available' : 'partial', Note: null }],
     Validation: status === 'captured' ? null : { Kind: status === 'parity_verified' ? 'source_parity' : 'native_scope', EvidenceId: 'independent-proof-v1',
-      VerifiedAtUtc: '2026-09-08T00:00:00Z', SourceRevisionSha256: sourceHash, NativeRevision: 'native-revision-v1' } }
+      VerifiedAtUtc: '2026-09-08T00:00:00Z', SourceRevisionSha256: sourceHash, NativeRevision: 'b'.repeat(40) } }
 }
 
 export function catalogueFixture(): ReportCatalogue {
