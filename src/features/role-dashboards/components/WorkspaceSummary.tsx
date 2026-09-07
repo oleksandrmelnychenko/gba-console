@@ -1,4 +1,4 @@
-import { ActionIcon, Alert, Badge, Group, Loader, SimpleGrid, Stack, Text, Tooltip, UnstyledButton } from '@mantine/core'
+import { ActionIcon, Alert, Badge, Card, Group, Loader, SimpleGrid, Text, Tooltip, UnstyledButton } from '@mantine/core'
 import { CircleAlert, RefreshCw } from 'lucide-react'
 import { useEffect, useReducer, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
@@ -84,12 +84,15 @@ export function WorkspaceSummary({
   }
 
   return (
-    <Stack gap={6}>
+    <Card className="app-section-card role-dashboard-summary-card" withBorder padding={0} radius="md">
       {error && (
-        <Alert color="orange" icon={<CircleAlert size={16} />} variant="light">{error}</Alert>
+        <Alert className="role-dashboard-inline-alert" color="orange" icon={<CircleAlert size={16} />} variant="light">{error}</Alert>
       )}
-      <Group justify="space-between">
-        <Text component="h2" className="app-section-title" fw={600}>{t('Ключові показники')}</Text>
+      <Group className="role-dashboard-section-head" justify="space-between" wrap="nowrap">
+        <div className="role-dashboard-section-copy">
+          <Text component="h2" className="app-section-title" fw={600}>{t('Ключові показники')}</Text>
+          <Text className="role-dashboard-section-subtitle">{t('Зведення за обраний період')}</Text>
+        </div>
         <Group gap={4} wrap="nowrap">
           {summary.generatedAtUtc && (
             <Text className="role-dashboard-updated" aria-live="polite">
@@ -115,7 +118,7 @@ export function WorkspaceSummary({
           return <MetricCard key={metric.key} metric={metric} onOpen={route ? () => navigate(route) : undefined} />
         })}
       </SimpleGrid>
-    </Stack>
+    </Card>
   )
 }
 

@@ -1,4 +1,4 @@
-import { Alert, Box, Group, Loader, SegmentedControl, Select, Stack, Text, TextInput } from '@mantine/core'
+import { Alert, Box, Card, Group, Loader, SegmentedControl, Select, Stack, Text, TextInput } from '@mantine/core'
 import { CircleAlert, LayoutDashboard } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
@@ -115,33 +115,34 @@ export function DashboardPage() {
 
   return (
     <Stack className="role-dashboard-page" gap={6}>
-      <Group className="app-filter-bar role-dashboard-toolbar" justify="space-between" wrap="nowrap">
-        <Box className="role-dashboard-title">
-          <Group gap={6} wrap="nowrap">
-            <Text component="h1" className="app-section-title role-dashboard-heading">
-              {t(selectedDescriptor.name)}
-            </Text>
-            {selectedDescriptor.isAi && <AiFeatureBadge compact tooltip={t('AI-функція')} />}
-          </Group>
-          <Text className="role-dashboard-group">{t(selectedDescriptor.group)}</Text>
-        </Box>
-
-        {catalog.canSwitchWorkspace && (
-          <Box className="app-filter-field role-dashboard-selector-field">
-            <Text className="app-filter-label">{t('Дашборд')}</Text>
-            <Select
-              aria-label={t('Вибрати дашборд')}
-              className="role-dashboard-selector"
-              data={selectOptions}
-              searchable
-              value={selectedWorkspace}
-              onChange={selectWorkspace}
-            />
+      <Card className="app-filter-card role-dashboard-toolbar-card" withBorder radius="md" padding={0}>
+        <Group className="app-filter-bar role-dashboard-toolbar" justify="space-between" wrap="nowrap">
+          <Box className="role-dashboard-title">
+            <Group gap={6} wrap="nowrap">
+              <Text component="h1" className="app-section-title role-dashboard-heading">
+                {t(selectedDescriptor.name)}
+              </Text>
+              {selectedDescriptor.isAi && <AiFeatureBadge compact tooltip={t('AI-функція')} />}
+            </Group>
+            <Text className="role-dashboard-group">{t(selectedDescriptor.group)}</Text>
           </Box>
-        )}
 
-        {showsSharedPeriod && (
-          <Group className="role-dashboard-period" gap={10} wrap="nowrap">
+          {catalog.canSwitchWorkspace && (
+            <Box className="app-filter-field role-dashboard-selector-field">
+              <Text className="app-filter-label">{t('Дашборд')}</Text>
+              <Select
+                aria-label={t('Вибрати дашборд')}
+                className="role-dashboard-selector"
+                data={selectOptions}
+                searchable
+                value={selectedWorkspace}
+                onChange={selectWorkspace}
+              />
+            </Box>
+          )}
+
+          {showsSharedPeriod && (
+            <Group className="role-dashboard-period" gap={10} wrap="nowrap">
             <Box className="app-filter-field role-dashboard-period-presets">
               <Text className="app-filter-label">{t('Період')}</Text>
               <SegmentedControl
@@ -190,9 +191,10 @@ export function DashboardPage() {
                 }}
               />
             </Box>
-          </Group>
-        )}
-      </Group>
+            </Group>
+          )}
+        </Group>
+      </Card>
 
       <Box className="role-dashboard-content">
         <RoleDashboardWorkspace period={period} workspaceKey={selectedWorkspace} />

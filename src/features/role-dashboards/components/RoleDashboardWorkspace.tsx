@@ -24,7 +24,7 @@ export function RoleDashboardWorkspace({
     case 'buyer-head':
       return <ProcureDashboardTab />
     case 'gba':
-      return <Stack gap={6}><WorkspaceSummary period={period} workspaceKey={workspaceKey} /><SystemWorkspace showDirectory /></Stack>
+      return <Stack className="role-dashboard-gba-workspace" gap={6}><WorkspaceSummary period={period} workspaceKey={workspaceKey} /><SystemWorkspace showDirectory /></Stack>
     case 'system':
       return <Stack gap={6}><WorkspaceSummary period={period} workspaceKey={workspaceKey} /><SystemWorkspace /></Stack>
     default:

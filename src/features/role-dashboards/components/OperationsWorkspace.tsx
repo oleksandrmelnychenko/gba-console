@@ -1,4 +1,4 @@
-import { Group, SimpleGrid, Text, UnstyledButton } from '@mantine/core'
+import { Card, Group, SimpleGrid, Text, UnstyledButton } from '@mantine/core'
 import {
   ArrowRight,
   Banknote,
@@ -78,27 +78,34 @@ export function OperationsWorkspace({ workspaceKey }: { workspaceKey: DashboardW
   )
 
   return (
-    <div className="role-dashboard-operations">
-      <Text component="h2" className="app-section-title" fw={600} mb="sm">{t('Робочі черги')}</Text>
-      <SimpleGrid cols={{ base: 1, sm: 2, lg: 3 }} spacing="sm">
-        {actions.map((action) => (
-          <UnstyledButton key={action.route} className="role-dashboard-action" onClick={() => navigate(action.route)}>
-            <Group justify="space-between" wrap="nowrap">
-              <Group gap="sm" wrap="nowrap">
-                <span className="role-dashboard-action-icon"><action.icon size={17} /></span>
-                <Text fw={650} size="sm">{t(action.label)}</Text>
+    <Card className="app-section-card role-dashboard-operations" withBorder padding={0} radius="md">
+      <div className="role-dashboard-section-head">
+        <div className="role-dashboard-section-copy">
+          <Text component="h2" className="app-section-title" fw={600}>{t('Робочі черги')}</Text>
+          <Text className="role-dashboard-section-subtitle">{t('Швидкий доступ до щоденних операцій')}</Text>
+        </div>
+      </div>
+      <div className="role-dashboard-operations-body">
+        <SimpleGrid cols={{ base: 1, sm: 2, lg: 3 }} spacing="sm">
+          {actions.map((action) => (
+            <UnstyledButton key={action.route} className="role-dashboard-action" onClick={() => navigate(action.route)}>
+              <Group justify="space-between" wrap="nowrap">
+                <Group gap="sm" wrap="nowrap">
+                  <span className="role-dashboard-action-icon"><action.icon size={17} /></span>
+                  <Text fw={650} size="sm">{t(action.label)}</Text>
+                </Group>
+                <ArrowRight size={17} />
               </Group>
-              <ArrowRight size={17} />
-            </Group>
-          </UnstyledButton>
-        ))}
-      </SimpleGrid>
-      {actions.length === 0 && (
-        <Group className="role-dashboard-empty" gap="xs" mt="sm">
-          <ShieldCheck size={18} />
-          <Text size="sm">{t('Немає доступних робочих черг')}</Text>
-        </Group>
-      )}
-    </div>
+            </UnstyledButton>
+          ))}
+        </SimpleGrid>
+        {actions.length === 0 && (
+          <Group className="role-dashboard-empty" gap="xs">
+            <ShieldCheck size={18} />
+            <Text size="sm">{t('Немає доступних робочих черг')}</Text>
+          </Group>
+        )}
+      </div>
+    </Card>
   )
 }
