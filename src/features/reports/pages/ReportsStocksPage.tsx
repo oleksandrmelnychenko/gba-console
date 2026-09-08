@@ -1,3 +1,5 @@
+import BuyerSalesSharePanel from './BuyerSalesSharePanel'
+import { requestBuyerSalesShare, buyerSalesShareOptions } from '../data/buyerSalesShare'
 import RevenueComparisonPanel from './RevenueComparisonPanel'
 import { requestRevenueComparison, revenueComparisonOptions } from '../data/revenueComparison'
 import SalesXyzPanel from './SalesXyzPanel'
@@ -83,7 +85,7 @@ import {
 import './reports-pages.css'
 import { datasetConfigurationError, datasetFilters, datasetGroupings, datasetMeasurements, datasetPresetRequest, datasetPresets, defaultDatasetRequest, type DatasetReportPresetId } from '../data/reportDatasets'
 import { useReportDatasets } from '../hooks/useReportDatasets'
-import { isCurrentReportSource, usesNativeReportLookup } from '../data/nativeReportProfiles'
+import { isCurrentReportSource, usesNativeReportLookup, supportsFullReportDateRange, hasFixedReportAxes } from '../data/nativeReportProfiles'
 import { VALUATION_DATA_SOURCE } from '../data/reportValuation'
 import { useValuationAgreement } from '../hooks/useValuationAgreement'
 import { ValuationAgreementPicker } from './ValuationAgreementPicker'
@@ -196,6 +198,7 @@ function ReportsStocksWorkspace() {
   const datasetStorage = useReportDatasets(canGenerateReport)
   const [dataSource, setDataSource] = useValueState(0)
   const [comparison, setComparison] = useValueState<unknown>(undefined)
+  const [buyerSalesShare, setBuyerSalesShare] = useValueState<unknown>(undefined)
   const [revenueComparison, setRevenueComparison] = useValueState<unknown>(undefined)
   const [xyz, setXyz] = useValueState<unknown>(undefined)
   const [valuationClientAgreementId, setValuationAgreementId] = useValueState<number | undefined>(undefined)
@@ -237,17 +240,17 @@ function ReportsStocksWorkspace() {
     [colGroups, groupingOptions, rowGroups],
   )
   const filterFieldOptions = useMemo(() => datasetFilters(dataset), [dataset])
-  const maxDate = useMemo(() => (dataSource === 13 || dataSource === 14 || dataSource === 15 || dataSource === 16) ? CLIENT_COMPARISON_MAX_DATE : `${today.slice(0, 4)}-12-31`, [dataSource, today])
+  const maxDate = useMemo(() => supportsFullReportDateRange(dataSource) ? CLIENT_COMPARISON_MAX_DATE : `${today.slice(0, 4)}-12-31`, [dataSource, today])
   const [debouncedFrom] = useDebouncedValue(from, DATE_INPUT_DEBOUNCE_MS)
   const [debouncedTo] = useDebouncedValue(to, DATE_INPUT_DEBOUNCE_MS)
-  const periodError = (dataSource === 13 || dataSource === 14 || dataSource === 15 || dataSource === 16) ? (!isComparisonDate(from) || !isComparisonDate(to) || from > to ? 'Оберіть коректний період у межах 1900–9998 років.' : null)
+  const periodError = supportsFullReportDateRange(dataSource) ? (!isComparisonDate(from) || !isComparisonDate(to) || from > to ? 'Оберіть коректний період у межах 1900–9998 років.' : null)
     : periodSupported ? getPeriodError(from, to, maxDate, t) : null
   // The value lookups re-query on every keystroke in the date fields, half-typed years included. They follow the
   // period on a pause, and only once it is a period the server can answer for.
   const hasLookupPeriod = !getPeriodError(debouncedFrom, debouncedTo, maxDate, t)
   const reportBody = useMemo<ReportRequestBody>(
-    () => buildReportBuilderRequest({ dataSource, comparison, xyz, revenueComparison, from, to, ordering, filterExpression, topGroups, threshold, hideZero, abcClassification, valuationClientAgreementId, rowGroups, colGroups, measurements, selections }),
-    [abcClassification, colGroups, comparison, xyz, revenueComparison, dataSource, filterExpression, from, hideZero, measurements, ordering, rowGroups, selections, to, topGroups, threshold, valuationClientAgreementId],
+    () => buildReportBuilderRequest({ dataSource, comparison, xyz, revenueComparison, buyerSalesShare, from, to, ordering, filterExpression, topGroups, threshold, hideZero, abcClassification, valuationClientAgreementId, rowGroups, colGroups, measurements, selections }),
+    [abcClassification, colGroups, comparison, xyz, revenueComparison, buyerSalesShare, dataSource, filterExpression, from, hideZero, measurements, ordering, rowGroups, selections, to, topGroups, threshold, valuationClientAgreementId],
   )
   const templateBody = { ...reportBody, selections }
   const configurationError = datasetStorage.error ?? (!datasetStorage.loaded ? t('Завантаження наборів даних…') : datasetConfigurationError(templateBody, dataset))
@@ -304,6 +307,7 @@ function ReportsStocksWorkspace() {
     try {
       const nextResult = await createStockReport(reportBody)
       const outcome: ReportRunOutcome = {
+        ...(buyerSalesShareOptions(buyerSalesShare) ? { comparison: structuredClone(buyerSalesShareOptions(buyerSalesShare)!) } : {}),
         ...(revenueComparisonOptions(revenueComparison) ? { comparison: structuredClone(revenueComparisonOptions(revenueComparison)!) } : {}),
         ...(comparisonWindow(comparison) ? { comparison: structuredClone(comparisonWindow(comparison)!) } : {}),
         periodSupported,
@@ -331,9 +335,10 @@ function ReportsStocksWorkspace() {
   }
 
   function resetReport() {
-    const snapshotDefaults = dataset && (!periodSupported || dataSource === 13 || dataSource === 14 || dataSource === 15 || dataSource === 16) ? defaultDatasetRequest(dataset, today, today) : null
+    const snapshotDefaults = dataset && (!periodSupported || supportsFullReportDateRange(dataSource)) ? defaultDatasetRequest(dataset, today, today) : null
     setComparison(snapshotDefaults?.comparison)
     setXyz(snapshotDefaults?.xyz)
+    setBuyerSalesShare(snapshotDefaults?.buyerSalesShare)
     setRevenueComparison(snapshotDefaults?.revenueComparison)
     setFrom(periodSupported ? today : '')
     setTo(periodSupported ? today : '')
@@ -388,6 +393,7 @@ function ReportsStocksWorkspace() {
     const data = template.Data
     setComparison(structuredClone(requestComparison(data)))
     setXyz(structuredClone(xyzOptions(requestXyz(data)) ?? requestXyz(data)))
+    setBuyerSalesShare(structuredClone(buyerSalesShareOptions(requestBuyerSalesShare(data)) ?? requestBuyerSalesShare(data)))
     setRevenueComparison(structuredClone(revenueComparisonOptions(requestRevenueComparison(data)) ?? requestRevenueComparison(data)))
     groupingOrdering.loadOrdering(requestOrdering(data))
     const nextAgreementId = data.valuationClientAgreementId ?? undefined
@@ -434,6 +440,7 @@ function ReportsStocksWorkspace() {
         onChange={setValuationAgreementId} onRetry={valuation.retry} /> : null}
       <ReportBuilderForm
         dataSource={dataSource}
+        buyerSalesSharePanel={dataSource === 17 ? <BuyerSalesSharePanel value={buyerSalesShare} disabled={isLoading || !canGenerateReport} onChange={setBuyerSalesShare} /> : null}
         revenueComparisonPanel={dataSource === 16 ? <RevenueComparisonPanel value={revenueComparison} disabled={isLoading || !canGenerateReport} onChange={setRevenueComparison} /> : null}
         xyzPanel={dataSource === 15 ? <SalesXyzPanel value={xyz} disabled={isLoading || !canGenerateReport} onChange={setXyz} /> : null}
         comparisonPanel={dataSource === 13 ? <ClientComparisonPeriodPanel value={comparison} disabled={isLoading || !canGenerateReport} onChange={setComparison} /> : null}
@@ -509,6 +516,7 @@ function ReportsStocksWorkspace() {
 }
 
 type ReportBuilderFormProps = {
+  buyerSalesSharePanel: ReactNode
   revenueComparisonPanel: ReactNode
   xyzPanel: ReactNode
   comparisonPanel: ReactNode
@@ -568,6 +576,7 @@ type ReportBuilderFormProps = {
 function ReportBuilderForm({
   comparisonPanel,
   xyzPanel,
+  buyerSalesSharePanel,
   revenueComparisonPanel,
   abcPanel,
   topGroupsPanel,
@@ -633,7 +642,7 @@ function ReportBuilderForm({
             <TextInput
               label={dataSource === 13 ? 'Поточний період: від' : t('Від')}
               max={to || maxDate}
-              min={(dataSource === 13 || dataSource === 14 || dataSource === 15 || dataSource === 16) ? CLIENT_COMPARISON_MIN_DATE : REPORT_MIN_DATE}
+              min={supportsFullReportDateRange(dataSource) ? CLIENT_COMPARISON_MIN_DATE : REPORT_MIN_DATE}
               type="date"
               value={from}
               onChange={(event) => onFromChange(event.currentTarget.value)}
@@ -641,7 +650,7 @@ function ReportBuilderForm({
             <TextInput
               label={dataSource === 13 ? 'Поточний період: до' : t('До')}
               max={maxDate}
-              min={from || ((dataSource === 13 || dataSource === 14 || dataSource === 15 || dataSource === 16) ? CLIENT_COMPARISON_MIN_DATE : REPORT_MIN_DATE)}
+              min={from || (supportsFullReportDateRange(dataSource) ? CLIENT_COMPARISON_MIN_DATE : REPORT_MIN_DATE)}
               type="date"
               value={to}
               onChange={(event) => onToChange(event.currentTarget.value)}
@@ -684,6 +693,7 @@ function ReportBuilderForm({
         {presets.length ? <ReportQuickPresets disabled={isLoading || !configurationReady} presets={presets} onApply={onApplyPreset} /> : null}
 
         <div className="reports-stocks-body">
+          {buyerSalesSharePanel ? <Card className="app-section-card reports-buyer-sales-share-settings" withBorder radius="md" padding="md" style={{ minWidth: 0 }}>{buyerSalesSharePanel}</Card> : null}
           {revenueComparisonPanel ? <Card className="app-section-card reports-revenue-comparison-settings" withBorder radius="md" padding="md" style={{ minWidth: 0 }}>{revenueComparisonPanel}</Card> : null}
           {xyzPanel ? <Card className="app-section-card reports-sales-xyz-settings" withBorder radius="md" padding="md" style={{ minWidth: 0 }}>{xyzPanel}</Card> : null}
           {notices.period || incompleteSelectionMessage ? (
@@ -718,7 +728,7 @@ function ReportBuilderForm({
             onSelectionsChange={onSelectionsChange}
           />
           {filterExpressionPanel}
-          {dataSource !== 15 && dataSource !== 16 ? <>
+          {!hasFixedReportAxes(dataSource) ? <>
             {topGroupsPanel}
             {thresholdPanel}
             {hideZeroPanel}
@@ -805,7 +815,7 @@ function LegacyReportBuilder({
   const selectedGroupingTypes = new Set([...rowGroups, ...colGroups].map(item => item.type))
 
   const transferGrouping = (axis: ReportGroupingAxis, type: number) => {
-    if (dataSource === 13 || dataSource === 15 || dataSource === 16) return
+    if (dataSource === 13 || hasFixedReportAxes(dataSource)) return
     const next = transferReportGrouping(groupingLayout, axis, type, allowedGroupingTypes)
     if (next === groupingLayout) return
     onGroupingLayoutChange(next)
@@ -815,7 +825,7 @@ function LegacyReportBuilder({
 
   const addGroupingFromPicker = (value: string) => {
     const item = groupingOptions.find((option) => String(option.type) === value)
-    if (dataSource === 15 || dataSource === 16 || !item || !groupingPickerTarget || (dataSource === 13 && groupingPickerTarget === 'columns') || selectedGroupingTypes.has(item.type) || (groupingPickerTarget === 'columns' && item.type === ABC_CLASS_GROUPING)) return
+    if (hasFixedReportAxes(dataSource) || !item || !groupingPickerTarget || (dataSource === 13 && groupingPickerTarget === 'columns') || selectedGroupingTypes.has(item.type) || (groupingPickerTarget === 'columns' && item.type === ABC_CLASS_GROUPING)) return
 
     if (groupingPickerTarget === 'rows') {
       onRowGroupsChange((current) => addGrouping(current, item))
@@ -858,7 +868,7 @@ function LegacyReportBuilder({
           </div>
 
           <div className="reports-stocks-legacy-measurements__list">
-            {dataSource !== 15 && dataSource !== 16 ? <div className="reports-stocks-measurement-columns" aria-hidden="true">
+            {!hasFixedReportAxes(dataSource) ? <div className="reports-stocks-measurement-columns" aria-hidden="true">
               <span>{t('Показник')}</span>
               <span>{t('Без ПДВ')}</span>
               <span>{t('ПДВ')}</span>
@@ -890,7 +900,7 @@ function LegacyReportBuilder({
                       size="sm"
                       onChange={() => toggleMeasurementItem(measurements, groupIndex, itemIndex, onMeasurementsChange)}
                     />
-                  )) : <Text className="reports-stocks-measurement-unit" size="xs">{t('Без поділу за ПДВ')}</Text>}
+                  )) : <Text className="reports-stocks-measurement-unit" size="xs">{dataSource === 17 ? groupLabel.endsWith('в.п.') ? 'Відсоткові пункти' : 'Відсотки' : t('Без поділу за ПДВ')}</Text>}
                 </div>
               )
             })}
@@ -899,12 +909,12 @@ function LegacyReportBuilder({
 
         <section className="app-section-card reports-stocks-structure">
           <Text className="app-section-title" component="h2" fw={600} size="sm">{t('Групування')}</Text>
-          {dataSource === 16 ? <Text size="sm">Клієнт → Договір. Показники у стовпцях; структура цього звіту фіксована.</Text> : dataSource === 15 ? <Text size="sm">Клас XYZ → Товар. Показники у стовпцях; структура цього звіту фіксована.</Text> : <ReportGroupingPanel layout={groupingLayout} axis="Row" allowed={allowedGroupingTypes} transferSupported={dataSource !== 13}
+          {(dataSource === 16 || dataSource === 17) ? <Text size="sm">Клієнт → Договір. Показники у стовпцях; структура цього звіту фіксована.</Text> : dataSource === 15 ? <Text size="sm">Клас XYZ → Товар. Показники у стовпцях; структура цього звіту фіксована.</Text> : <ReportGroupingPanel layout={groupingLayout} axis="Row" allowed={allowedGroupingTypes} transferSupported={dataSource !== 13}
             onOpenPicker={() => setGroupingPickerTarget('rows')}
             onRemove={(index) => onRowGroupsChange((current) => current.filter((_, itemIndex) => itemIndex !== index))}
             onReorder={(type, direction) => onRowGroupsChange(current => reorderReportGrouping(current, type, direction, allowedGroupingTypes))}
             onTransfer={type => transferGrouping('Row', type)} />}
-          {dataSource === 15 || dataSource === 16 ? null : dataSource !== 13 ? <ReportGroupingPanel layout={groupingLayout} axis="Col" allowed={allowedGroupingTypes}
+          {hasFixedReportAxes(dataSource) ? null : dataSource !== 13 ? <ReportGroupingPanel layout={groupingLayout} axis="Col" allowed={allowedGroupingTypes}
             onOpenPicker={() => setGroupingPickerTarget('columns')}
             onRemove={(index) => onColGroupsChange((current) => current.filter((_, itemIndex) => itemIndex !== index))}
             onReorder={(type, direction) => onColGroupsChange(current => reorderReportGrouping(current, type, direction, allowedGroupingTypes))}
@@ -1133,8 +1143,8 @@ function ReportSelectionsCard({
                 <div className="reports-stocks-selection-summary" key={getSelectionRenderKey(selection, index)}>
                   <Checkbox
                     aria-label={`${t('Умова відбору')} ${index + 1}`}
-                    checked={dataSource === 15 || dataSource === 16 ? selection.IsChecked !== false : selection.IsChecked}
-                    onChange={() => onChange({ kind: 'replace', index, selection: { ...selection, IsChecked: dataSource === 15 || dataSource === 16 ? selection.IsChecked === false : !selection.IsChecked } })}
+                    checked={hasFixedReportAxes(dataSource) ? selection.IsChecked !== false : selection.IsChecked}
+                    onChange={() => onChange({ kind: 'replace', index, selection: { ...selection, IsChecked: hasFixedReportAxes(dataSource) ? selection.IsChecked === false : !selection.IsChecked } })}
                   />
                   <Text className="reports-stocks-selection-summary__copy">
                     <span className="reports-stocks-selection-summary__field">№{index + 1}: {fieldLabel}</span>
@@ -2247,7 +2257,7 @@ function createSelectedValue(entity: ReportEntity, dataSource?: number): ReportS
   return {
     Data: entity,
     Name: getEntityDisplayName(entity),
-    Value: dataSource === 16 ? 0 : getReportEntityNumericValue(entity),
+    Value: (dataSource === 16 || dataSource === 17) ? 0 : getReportEntityNumericValue(entity),
   }
 }
 

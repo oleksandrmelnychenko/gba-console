@@ -1,3 +1,4 @@
+import { cloneBuyerSalesShareAliases, isBuyerSalesShareCapability, buyerSalesShareConfigurationError } from '../data/buyerSalesShare'
 import { cloneRevenueComparisonAliases, isRevenueComparisonCapability, revenueComparisonConfigurationError } from '../data/revenueComparison'
 import { cloneXyzAliases, isXyzCapability, salesXyzConfigurationError } from '../data/salesXyz'
 import { apiRequest } from '../../../shared/api/apiClient'
@@ -23,6 +24,7 @@ function isDataset(value: unknown): value is ReportDataset {
     && (item.PeriodRequired === undefined || typeof item.PeriodRequired === 'boolean')
     && (item.PeriodSupported === undefined || typeof item.PeriodSupported === 'boolean')
     && (item.DataSource !== 12 || (item.PeriodRequired === true && item.PeriodSupported === true))
+    && (item.DataSource === 17 ? item.PeriodRequired === true && item.PeriodSupported === true && isBuyerSalesShareCapability(item.BuyerSalesShare) : item.BuyerSalesShare == null)
     && (item.DataSource === 16 ? item.PeriodRequired === true && item.PeriodSupported === true && isRevenueComparisonCapability(item.RevenueComparison) : item.RevenueComparison == null)
     && (item.DataSource === 15 ? item.PeriodRequired === true && item.PeriodSupported === true && isXyzCapability(item.Xyz) : item.Xyz == null)
     && (item.DataSource !== 14 || (item.PeriodRequired === true && item.PeriodSupported === true))
@@ -55,6 +57,8 @@ type WireTemplate = Required<Omit<ReportTemplate, 'Data'>> & {
     Selections: ReportRequestBody['selections']
     DataSource: ReportRequestBody['dataSource']
     ValuationClientAgreementId?: ReportRequestBody['valuationClientAgreementId']
+    BuyerSalesShare?: unknown
+    buyerSalesShare?: unknown
     RevenueComparison?: unknown
     revenueComparison?: unknown
     Xyz?: unknown
@@ -82,9 +86,10 @@ export function normalizeSavedTemplate(value: WireTemplate): ReportTemplate {
   }
   return { ...value, Data: {
     from: value.Data.From ?? '', to: value.Data.To ?? '',
-    sorted: value.Data.DataSource === 16 ? structuredClone(value.Data.Sorted) : value.Data.Sorted,
-    selections: value.Data.DataSource === 16 ? structuredClone(value.Data.Selections ?? []) : value.Data.Selections ?? [],
+    sorted: (value.Data.DataSource === 16 || value.Data.DataSource === 17) ? structuredClone(value.Data.Sorted) : value.Data.Sorted,
+    selections: (value.Data.DataSource === 16 || value.Data.DataSource === 17) ? structuredClone(value.Data.Selections ?? []) : value.Data.Selections ?? [],
     dataSource: value.Data.DataSource,
+    ...cloneBuyerSalesShareAliases(value.Data),
     ...cloneRevenueComparisonAliases(value.Data),
     ...cloneXyzAliases(value.Data),
     ...(Object.hasOwn(value.Data, 'comparison') ? { comparison: value.Data.comparison,
@@ -116,12 +121,15 @@ export async function getServerReportTemplates(signal?: AbortSignal): Promise<Re
 }
 
 export async function saveServerReportTemplate(template: ReportTemplate): Promise<ReportTemplate> {
-  const revenueError = revenueComparisonConfigurationError(template.Data)
+  const request = template.Data.dataSource === 17 ? structuredClone(template) : template
+  const buyerShareError = buyerSalesShareConfigurationError(request.Data)
+  if (buyerShareError) throw new Error(buyerShareError)
+  const revenueError = revenueComparisonConfigurationError(request.Data)
   if (revenueError) throw new Error(revenueError)
-  const xyzError = salesXyzConfigurationError(template.Data)
+  const xyzError = salesXyzConfigurationError(request.Data)
   if (xyzError) throw new Error(xyzError)
   const result = await apiRequest<WireTemplate>('/report/templates/save', {
-    method: 'POST', body: { Id: template.Id, Revision: template.Revision ?? 0, Name: template.Name, Data: template.Data },
+    method: 'POST', body: { Id: request.Id, Revision: request.Revision ?? 0, Name: request.Name, Data: request.Data },
   })
   return normalizeSavedTemplate(result)
 }

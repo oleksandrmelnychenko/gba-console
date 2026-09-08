@@ -98,7 +98,7 @@ export function useServerReportTemplates(enabled: boolean, datasets: ReportDatas
         }
         const comparisonError = clientComparisonConfigurationError(request.Data, datasets.find(item => item.DataSource === request.Data.dataSource))
         if (comparisonError) throw new Error(comparisonError)
-        if (request.Data.dataSource === 12 || request.Data.dataSource === 13 || request.Data.dataSource === 14 || request.Data.dataSource === 15 || request.Data.dataSource === 16) {
+        if (request.Data.dataSource === 12 || request.Data.dataSource === 13 || request.Data.dataSource === 14 || request.Data.dataSource === 15 || request.Data.dataSource === 16 || request.Data.dataSource === 17) {
           const activityError = datasetConfigurationError(request.Data, datasets.find(item => item.DataSource === request.Data.dataSource))
           if (activityError) throw new Error(activityError)
         }

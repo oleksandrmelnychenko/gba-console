@@ -1,3 +1,4 @@
+import { buyerSalesShareConfigurationError } from '../data/buyerSalesShare'
 import { revenueComparisonConfigurationError, revenueExactId } from '../data/revenueComparison'
 import { salesXyzConfigurationError } from '../data/salesXyz'
 import { apiRequest } from '../../../shared/api/apiClient'
@@ -18,17 +19,20 @@ const EMPTY_GUID = '00000000-0000-0000-0000-000000000000'
 const CLIENT_FILTER_SQL = 'RegionCode.Value/Client.FullName/Client.USREOU'
 
 export async function createStockReport(body: ReportRequestBody): Promise<ReportResult> {
-  const revenueError = revenueComparisonConfigurationError(body)
+  const request = body.dataSource === 17 ? structuredClone(body) : body
+  const buyerShareError = buyerSalesShareConfigurationError(request)
+  if (buyerShareError) throw new Error(buyerShareError)
+  const revenueError = revenueComparisonConfigurationError(request)
   if (revenueError) throw new Error(revenueError)
-  const xyzError = salesXyzConfigurationError(body)
+  const xyzError = salesXyzConfigurationError(request)
   if (xyzError) throw new Error(xyzError)
-  const paymentsError = importedPaymentsConfigurationError(body)
+  const paymentsError = importedPaymentsConfigurationError(request)
   if (paymentsError) throw new Error(paymentsError)
-  const comparisonError = clientComparisonConfigurationError(body)
+  const comparisonError = clientComparisonConfigurationError(request)
   if (comparisonError) throw new Error(comparisonError)
   const result = await apiRequest<unknown>('/report/stocks/generate', {
     method: 'POST',
-    body,
+    body: request,
   })
 
   return normalizeReportResult(result)
@@ -38,7 +42,7 @@ export async function searchDatasetReportValues(dataSource: number, field: numbe
   const result = await apiRequest<unknown>('/report/datasets/lookup', {
     query: { dataSource, field, value: params.value.trim(), offset: params.offset, limit: params.limit }, signal,
   })
-  if (!Array.isArray(result) || !result.every(item => item && typeof item === 'object' && (dataSource === 16 ? revenueExactId(item) !== null : Number.isSafeInteger(item.Id) && item.Id > 0) && typeof item.Name === 'string')) throw new Error('Сервер повернув некоректні значення відбору звіту.')
+  if (!Array.isArray(result) || !result.every(item => item && typeof item === 'object' && ((dataSource === 16 || dataSource === 17) ? revenueExactId(item) !== null : Number.isSafeInteger(item.Id) && item.Id > 0) && typeof item.Name === 'string')) throw new Error('Сервер повернув некоректні значення відбору звіту.')
   return result
 }
 
