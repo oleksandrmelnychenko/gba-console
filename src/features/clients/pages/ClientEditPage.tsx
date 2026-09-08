@@ -117,7 +117,6 @@ const ROOT_SHARED_EDIT_STEPS = new Set([
 type EditStep = {
   isAi?: boolean
   label: string
-  placement?: 'header'
   value: string
 }
 
@@ -1443,11 +1442,6 @@ function ClientEditBody({
 
   return (
     <form id="client-edit-form" onSubmit={onSubmit}>
-      <ClientRelationshipActions
-        selectedStep={selectedStepValue}
-        steps={steps}
-        onGoToStep={onGoToStep}
-      />
       <Grid gap="md">
         <Grid.Col span={{ base: 12, lg: 3 }}>
           <Card className="app-section-card client-edit-shell-card" withBorder radius="md" padding="md">
@@ -1554,7 +1548,7 @@ function ClientEditNavigation({
   onGoToStep: (nextStep: string) => void
 }) {
   const { t } = useI18n()
-  const navigationSteps = steps.filter((item) => item.placement !== 'header')
+  const navigationSteps = steps
 
   if (!folderTree) {
     return (
@@ -1566,8 +1560,10 @@ function ClientEditNavigation({
     )
   }
 
-  const sharedSteps = navigationSteps.filter((item) => isRootSharedEditStep(item.value))
-  const individualSteps = navigationSteps.filter((item) => !isRootSharedEditStep(item.value))
+  const isSharedNavigationStep = (value: string) =>
+    isRootSharedEditStep(value) || value === 'structural-units' || value === 'subclients'
+  const sharedSteps = navigationSteps.filter((item) => isSharedNavigationStep(item.value))
+  const individualSteps = navigationSteps.filter((item) => !isSharedNavigationStep(item.value))
 
   return (
     <>
@@ -1593,50 +1589,6 @@ function ClientEditNavigation({
   )
 }
 
-function ClientRelationshipActions({
-  selectedStep,
-  steps,
-  onGoToStep,
-}: {
-  selectedStep: string
-  steps: EditStep[]
-  onGoToStep: (nextStep: string) => void
-}) {
-  const { t } = useI18n()
-  const relationshipSteps = steps.filter((item) => item.placement === 'header')
-
-  if (relationshipSteps.length === 0) {
-    return null
-  }
-
-  return (
-    <Group
-      aria-label={t('Зв’язки клієнта')}
-      className="client-edit-relationship-actions"
-      component="nav"
-      gap="xs"
-    >
-      {relationshipSteps.map((item) => {
-        const isActive = item.value === selectedStep
-
-        return (
-          <Button
-            key={item.value}
-            aria-pressed={isActive}
-            color={isActive ? CREATE_ACTION_COLOR : 'gray'}
-            size="xs"
-            type="button"
-            variant={isActive ? 'filled' : 'light'}
-            onClick={() => onGoToStep(item.value)}
-          >
-            {item.label}
-          </Button>
-        )
-      })}
-    </Group>
-  )
-}
-
 function ClientEditStepButtons({
   disabled = false,
   selectedStep,
@@ -1655,6 +1607,7 @@ function ClientEditStepButtons({
     return (
       <Button
         key={item.value}
+        aria-current={isActive ? 'page' : undefined}
         className={`client-edit-nav-item${isActive ? ' is-active' : ''}`}
         color="gray"
         disabled={disabled}
@@ -1732,8 +1685,8 @@ function buildEditSteps(client: Client | null, hasPermission: (permissionKey: st
   if (getClientType(client) === CLIENT_TYPE_BUYER) {
     if (hasPermission(PermissionKeys.Clients.Structure.Open)) {
       steps.push(
-        { placement: 'header', value: 'structural-units', label: translate('Структурні підрозділи') },
-        { placement: 'header', value: 'subclients', label: translate('Сабклієнти') },
+        { value: 'structural-units', label: translate('Структурні підрозділи') },
+        { value: 'subclients', label: translate('Сабклієнти') },
       )
     }
 
