@@ -52,7 +52,7 @@ function SpreadsheetChartPlot({ points, kind, measure, unknownCount, formatter }
         {kind === 'line' ? <LineChart data={points} margin={{ top: 12, right: 24, bottom: 36, left: 24 }}>
           <CartesianGrid stroke={CHART_GRID_COLOR} />
           <XAxis dataKey="rowKey" tickFormatter={categoryTick} tick={{ fill: CHART_LABEL_COLOR, fontSize: 11 }} />
-          <YAxis tickFormatter={value => formatter.format(value)} tick={{ fill: CHART_LABEL_COLOR, fontSize: 11 }} />
+          <YAxis width="auto" tickFormatter={value => formatter.format(value)} tick={{ fill: CHART_LABEL_COLOR, fontSize: 11 }} />
           <Tooltip content={<ChartPointTooltip measure={measure} formatter={formatter} />} filterNull={false} />
           <ReferenceLine y={0} stroke={CHART_LABEL_COLOR} />
           <Line type="linear" dataKey="value" name={measure} connectNulls={false} stroke="var(--mantine-color-blue-6)"
@@ -64,7 +64,7 @@ function SpreadsheetChartPlot({ points, kind, measure, unknownCount, formatter }
             tickFormatter={horizontal ? value => formatter.format(Number(value)) : categoryTick}
             tick={{ fill: CHART_LABEL_COLOR, fontSize: 11 }} />
           <YAxis type={horizontal ? 'category' : 'number'} dataKey={horizontal ? 'rowKey' : undefined}
-            width={horizontal ? 200 : 60} tickFormatter={horizontal ? categoryTick : value => formatter.format(Number(value))}
+            width={horizontal ? 200 : 'auto'} tickFormatter={horizontal ? categoryTick : value => formatter.format(Number(value))}
             tick={{ fill: CHART_LABEL_COLOR, fontSize: 11 }} />
           <Tooltip content={<ChartPointTooltip measure={measure} formatter={formatter} />} filterNull={false} />
           <ReferenceLine {...(horizontal ? { x: 0 } : { y: 0 })} stroke={CHART_LABEL_COLOR} />
