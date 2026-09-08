@@ -1473,17 +1473,20 @@ function ClientEditBody({
                 </div>
               ) : null}
               {selectedStepValue === 'structural-units' && commercialStructure ? (
-                <div
+                <Card
                   aria-label={t('Структурні підрозділи клієнта')}
-                  className="client-relationship-card"
+                  className="app-section-card client-relationship-card"
                   role="region"
+                  withBorder
+                  padding="md"
+                  radius="md"
                 >
                   <ClientCommercialStructureView
                     structure={commercialStructure}
                     t={t}
                     onChanged={onCommercialStructureChanged}
                   />
-                </div>
+                </Card>
               ) : (
                 <EditStepContent
                   allowSourceOverride={allowSourceOverride}
