@@ -638,7 +638,6 @@ function ReportBuilderForm({
             />
           </div> : <Text size="sm">{t('Поточний стан на час читання даних. Історичний період не застосовується.')}</Text>}
           {comparisonPanel}
-          {xyzPanel}
           <div className="app-filter-actions reports-stocks-actions">
             <Button
               color="gray"
@@ -675,6 +674,7 @@ function ReportBuilderForm({
         {presets.length ? <ReportQuickPresets disabled={isLoading || !configurationReady} presets={presets} onApply={onApplyPreset} /> : null}
 
         <div className="reports-stocks-body">
+          {xyzPanel ? <Card className="app-section-card reports-sales-xyz-settings" withBorder radius="md" padding="md" style={{ minWidth: 0 }}>{xyzPanel}</Card> : null}
           {notices.period || incompleteSelectionMessage ? (
             <Alert className="reports-page-alert" color={notices.period ? 'red' : 'yellow'} icon={<CircleAlert size={18} />}>
               {notices.period || incompleteSelectionMessage}
@@ -707,11 +707,13 @@ function ReportBuilderForm({
             onSelectionsChange={onSelectionsChange}
           />
           {filterExpressionPanel}
-          {topGroupsPanel}
-          {thresholdPanel}
-          {hideZeroPanel}
-          {abcPanel}
-          {orderingPanel}
+          {dataSource !== 15 ? <>
+            {topGroupsPanel}
+            {thresholdPanel}
+            {hideZeroPanel}
+            {abcPanel}
+            {orderingPanel}
+          </> : null}
           <ReportResultSection
             hasFiles={resultHasFiles}
             lastRun={lastRun}
