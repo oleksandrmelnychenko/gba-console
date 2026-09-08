@@ -128,6 +128,59 @@ export function registerAtomIdentity(atom: RegisterAtom): string {
   }
 }
 
+/** Shared with the raw transport; this checks reference structure, never authenticates its source. */
+export function validateRegisterPublication(value: unknown, query: SourceRegisterQueryWire, descriptor: SourceRegisterDescriptorWire): string | null {
+  if (!hasExactMembers(value, ['metadata', 'contentHash']) || !hash(value.contentHash)) return 'Результат не містить коректного посилання на опублікований знімок.'
+  const metadata = value.metadata
+  if (!hasExactMembers(metadata, ['schema', 'scopeHash', 'principalPolicyHash', 'captureId', 'revision', 'coverageStart', 'coverageEndExclusive', 'sourceReceiptHash', 'complete'])
+    || !schemaKey(metadata.schema) || !sameRegisterSchema(metadata.schema, descriptor.schema) || !hash(metadata.scopeHash) || !hash(metadata.principalPolicyHash)
+    || !uuid(metadata.captureId) || typeof metadata.revision !== 'string' || !/^[1-9][0-9]{0,18}$/.test(metadata.revision)
+    || (metadata.revision.length === INT64_MAX.length && metadata.revision > INT64_MAX) || !hash(metadata.sourceReceiptHash) || metadata.complete !== true
+    || !isRegisterLocalTimestamp(metadata.coverageStart) || !isRegisterLocalTimestamp(metadata.coverageEndExclusive)
+    || metadata.coverageStart > query.from || metadata.coverageEndExclusive < query.toExclusive) return 'Контекст знімка неповний або не покриває вибраний період.'
+  return null
+}
+
+/** Ephemeral groups and exact identity sets allow preflight before building a full result graph. Query/descriptor must already be validated. */
+export function createRegisterGroupValidator(descriptor: SourceRegisterDescriptorWire, query: SourceRegisterQueryWire) {
+  const width = query.selections.length
+  const valuesFitSelections = (values: unknown): boolean => Array.isArray(values) && values.length === width && values.every(item => isExactRegisterNumber(item))
+  const fields = new Map(descriptor.dimensions.map(item => [item.uuid, item]))
+  const rowFields = query.rowFields.map(id => fields.get(id)!), columnFields = query.columnFields.map(id => fields.get(id)!)
+  const keys = new Set<string>(), referenceTags = new Map<string, string>(), rows = new Set<string>(), columns = new Set<string>()
+  let count = 0
+  return {
+    visit(group: unknown): string | null {
+      // Include the authoritative grand in both sparse and projected budgets.
+      if ((++count + 1) * width > REGISTER_LIMITS.outputCells) return 'Перевищено допустимий обсяг результату.'
+      if (!hasExactMembers(group, ['rowKey', 'columnKey', 'values']) || !Array.isArray(group.rowKey) || !Array.isArray(group.columnKey)
+        || group.rowKey.length !== rowFields.length || group.columnKey.length !== columnFields.length
+        || !group.rowKey.every((atom, index) => atomFits(atom, rowFields[index])) || !group.columnKey.every((atom, index) => atomFits(atom, columnFields[index]))
+        || !valuesFitSelections(group.values)) return 'Результат містить некоректний ключ групи або числове значення.'
+      const atoms = [...group.rowKey, ...group.columnKey] as RegisterAtom[]
+      for (const atom of atoms) {
+        if (atom.kind !== 'Reference' || atom.rawPhysicalTypeTagHex === undefined) continue
+        const tag = `${atom.rawPhysicalTypeTagHex}:${atom.rawPhysicalTableTagHex}`
+        const prior = referenceTags.get(atom.sourceTypeUuid)
+        if (prior !== undefined && prior !== tag) return 'Тип посилання має суперечливе фізичне позначення.'
+        referenceTags.set(atom.sourceTypeUuid, tag)
+      }
+      const row = JSON.stringify(group.rowKey.map(registerAtomIdentity)), column = JSON.stringify(group.columnKey.map(registerAtomIdentity))
+      const key = JSON.stringify([row, column])
+      if (keys.has(key)) return 'Результат містить повторний точний ключ групи.'
+      keys.add(key); rows.add(row); columns.add(column)
+      // Division avoids unsafe integer products for adversarial projected shapes.
+      if (rows.size > (REGISTER_LIMITS.outputCells / width - 1) / columns.size) return 'Перевищено допустимий обсяг матриці результату.'
+      return null
+    },
+    finish(grandValues: unknown): string | null {
+      if (!valuesFitSelections(grandValues)) return 'Порушено форму або точність значень результату.'
+      if (count === 0 && (grandValues as { coefficient: string }[]).some(item => item.coefficient !== '0')) return 'Порожній підтверджений результат повинен містити нульові підсумки.'
+      return null
+    },
+  }
+}
+
 export function validateRegisterResult(value: unknown, descriptor: SourceRegisterDescriptorWire): string | null {
   const descriptorError = validateRegisterDescriptor(descriptor)
   if (descriptorError) return descriptorError
@@ -137,41 +190,12 @@ export function validateRegisterResult(value: unknown, descriptor: SourceRegiste
   const queryError = validateRegisterQuery(value.query, descriptor)
   if (queryError) return queryError
   const query = value.query as SourceRegisterQueryWire
-  if (!hasExactMembers(value.publication, ['metadata', 'contentHash']) || !hash(value.publication.contentHash)) return 'Результат не містить коректного посилання на опублікований знімок.'
-  const metadata = value.publication.metadata
-  if (!hasExactMembers(metadata, ['schema', 'scopeHash', 'principalPolicyHash', 'captureId', 'revision', 'coverageStart', 'coverageEndExclusive', 'sourceReceiptHash', 'complete'])
-    || !schemaKey(metadata.schema) || !sameRegisterSchema(metadata.schema, descriptor.schema) || !hash(metadata.scopeHash) || !hash(metadata.principalPolicyHash)
-    || !uuid(metadata.captureId) || typeof metadata.revision !== 'string' || !/^[1-9][0-9]{0,18}$/.test(metadata.revision)
-    || (metadata.revision.length === INT64_MAX.length && metadata.revision > INT64_MAX) || !hash(metadata.sourceReceiptHash) || metadata.complete !== true
-    || !isRegisterLocalTimestamp(metadata.coverageStart) || !isRegisterLocalTimestamp(metadata.coverageEndExclusive)
-    || metadata.coverageStart > query.from || metadata.coverageEndExclusive < query.toExclusive) return 'Контекст знімка неповний або не покриває вибраний період.'
-  const width = query.selections.length
-  const resourceScales = new Map(descriptor.resources.map(item => [item.uuid, item.alternatives[0].kind === 'Number' ? registerScaleIndex(item.alternatives[0].scale) : -1]))
-  const valuesFitSelections = (values: unknown): boolean => Array.isArray(values) && values.length === width
-    && values.every((item, index) => isExactRegisterNumber(item) && registerScaleIndex(item.scale) <= resourceScales.get(query.selections[index].resourceUuid)!)
-  if (!Array.isArray(value.groups) || value.groups.length > 200_000 || (value.groups.length + 1) * width > REGISTER_LIMITS.outputCells
-    || !valuesFitSelections(value.grandValues)) return 'Порушено форму або точність значень результату.'
-  const fields = new Map(descriptor.dimensions.map(item => [item.uuid, item]))
-  const rowFields = query.rowFields.map(id => fields.get(id)!), columnFields = query.columnFields.map(id => fields.get(id)!)
-  const keys = new Set<string>(), referenceTags = new Map<string, string>()
-  for (const group of value.groups) {
-    if (!hasExactMembers(group, ['rowKey', 'columnKey', 'values']) || !Array.isArray(group.rowKey) || !Array.isArray(group.columnKey)
-      || group.rowKey.length !== rowFields.length || group.columnKey.length !== columnFields.length
-      || !group.rowKey.every((atom, index) => atomFits(atom, rowFields[index])) || !group.columnKey.every((atom, index) => atomFits(atom, columnFields[index]))
-      || !valuesFitSelections(group.values)) return 'Результат містить некоректний ключ групи або числове значення.'
-    const atoms = [...group.rowKey, ...group.columnKey] as RegisterAtom[]
-    for (const atom of atoms) {
-      if (atom.kind !== 'Reference' || atom.rawPhysicalTypeTagHex === undefined) continue
-      const tag = `${atom.rawPhysicalTypeTagHex}:${atom.rawPhysicalTableTagHex}`
-      const prior = referenceTags.get(atom.sourceTypeUuid)
-      if (prior !== undefined && prior !== tag) return 'Тип посилання має суперечливе фізичне позначення.'
-      referenceTags.set(atom.sourceTypeUuid, tag)
-    }
-    const key = JSON.stringify([group.rowKey.map(registerAtomIdentity), group.columnKey.map(registerAtomIdentity)])
-    if (keys.has(key)) return 'Результат містить повторний точний ключ групи.'
-    keys.add(key)
-  }
-  return null
+  const publicationError = validateRegisterPublication(value.publication, query, descriptor)
+  if (publicationError) return publicationError
+  if (!Array.isArray(value.groups) || (value.groups.length + 1) * query.selections.length > REGISTER_LIMITS.outputCells) return 'Порушено форму або точність значень результату.'
+  const validator = createRegisterGroupValidator(descriptor, query)
+  for (const group of value.groups) { const error = validator.visit(group); if (error) return error }
+  return validator.finish(value.grandValues)
 }
 
 export function assertRegisterResult(value: unknown, descriptor: SourceRegisterDescriptorWire): asserts value is SourceRegisterResultWire {
