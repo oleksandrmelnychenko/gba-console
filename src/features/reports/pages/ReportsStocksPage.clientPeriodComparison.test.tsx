@@ -85,7 +85,8 @@ describe('source13 constructor and private templates', () => {
   })
   it('keeps an omitted IsChecked selected when restoring a source13 template', async () => {
     const data = clientComparisonRequest()
-    data.sorted.Measurements = [{ ...data.sorted.Measurements[1], IsChecked: undefined }]
+    data.sorted.Measurements = [{ ...data.sorted.Measurements[1] }]
+    Reflect.deleteProperty(data.sorted.Measurements[0], 'IsChecked')
     const template = { Id: crypto.randomUUID(), Revision: 1, Name: 'Попередні клієнти', Data: data }
     vi.mocked(getServerReportTemplates).mockResolvedValue([template])
     const { container } = await ready()
