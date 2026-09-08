@@ -4,7 +4,7 @@ import type { ReactElement } from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { I18nProvider } from '../../../../shared/i18n/I18nProvider'
 import { theme } from '../../../../shared/theme/theme'
-import type { SolvencyScore } from '../../solvencyTypes'
+import type { SolvencyCharts, SolvencyScore } from '../../solvencyTypes'
 
 const getClientSolvencyScore = vi.fn()
 const getClientSolvencyCharts = vi.fn()
@@ -44,7 +44,10 @@ const notApplicableScore: SolvencyScore = {
   effective_start: '2025-01-01',
   history_complete: false,
   as_of_date: '2025-01-01',
-  window_months: 0,
+  state_basis: 'current_observation',
+  business_timezone: 'Europe/Kyiv',
+  fx_date: '2025-01-01',
+  window_months: 12,
   model_version: 'v1',
 }
 
@@ -80,6 +83,9 @@ const v3Score: SolvencyScore = {
   effective_start: '2025-06-25',
   history_complete: true,
   as_of_date: '2026-06-25',
+  state_basis: 'current_observation',
+  business_timezone: 'Europe/Kyiv',
+  fx_date: '2026-06-25',
   window_months: 12,
   model_version: 'creditscore-v3',
 }
@@ -173,5 +179,70 @@ describe('SolvencyPanel', () => {
     expect(await findByText('+3.8')).toBeTruthy()
     // zero-point contribution is filtered out of the drivers list
     expect(queryByText(/Прострочено 180\+ днів/i)).toBeNull()
+  })
+})
+
+
+describe('current-state display', () => {
+  const explanation = 'Історію оцінки не збережено. Поточні борги та умови договорів не відновлюють стан минулих місяців.'
+  const currentCharts: SolvencyCharts = {
+    client_id: v3Score.client_id,
+    applicable: true,
+    state_basis: 'current_observation',
+    business_timezone: 'Europe/Kyiv',
+    as_of_date: v3Score.as_of_date,
+    fx_date: v3Score.fx_date,
+    window_months: 12,
+    source_history_start: v3Score.source_history_start,
+    effective_start: v3Score.effective_start,
+    history_complete: true,
+    model_version: v3Score.model_version,
+    limit_utilization_gauge: { value: 0, threshold_soft: 0.9, threshold_hard: 1, label: 'limit_utilization' },
+    payment_discipline_donut: [],
+    open_invoice_aging_bars: [],
+    turnover_vs_exposure: [],
+    turnover_trend: [],
+    score_sparkline: [],
+    score_sparkline_status: 'unavailable',
+    score_sparkline_reason_code: 'historical_state_not_recorded',
+    score_sparkline_reason: explanation,
+    aging_over_time_heatmap: 'pending',
+  }
+
+  it.each([0, 46])('shows true score %i, captured date and the explicit history reason without a sparkline', async (value) => {
+    getClientSolvencyScore.mockResolvedValue({ ...v3Score, score: value })
+    getClientSolvencyCharts.mockResolvedValue(currentCharts)
+    const { findByText, container } = renderPanel(<SolvencyPanel clientNetId="abc" />)
+    expect(await findByText(String(value))).toBeTruthy()
+    expect(await findByText(explanation)).toBeTruthy()
+    expect(await findByText(/Оцінка за поточними записами станом на 25.06.2026/)).toBeTruthy()
+    expect(await findByText(/Europe\/Kyiv.*Курс валют на 25.06.2026/)).toBeTruthy()
+    expect(await findByText(/Вікно операцій.*12/)).toBeTruthy()
+    expect(await findByText('0%')).toBeTruthy()
+    expect(container.querySelector('.mantine-Sparkline-root')).toBeNull()
+  })
+
+  it('keeps a valid current score when chart contract fails and does not repair history for display', async () => {
+    getClientSolvencyScore.mockResolvedValue(v3Score)
+    getClientSolvencyCharts.mockRejectedValue(new Error('Некоректна відповідь AI Solvency (charts.score_sparkline): historical scores are not recorded'))
+    const { findByText, queryByText, container } = renderPanel(<SolvencyPanel clientNetId="abc" />)
+    expect(await findByText('46')).toBeTruthy()
+    expect(await findByText(/charts.score_sparkline/)).toBeTruthy()
+    expect(queryByText(explanation)).toBeNull()
+    expect(container.querySelector('.mantine-Sparkline-root')).toBeNull()
+  })
+
+  it('clears the previous score when a subsequent client response lacks current-state proof', async () => {
+    getClientSolvencyScore.mockResolvedValueOnce(v3Score)
+    getClientSolvencyCharts.mockResolvedValueOnce(currentCharts)
+    const { findByText, queryByText, rerender } = renderPanel(<SolvencyPanel clientNetId="abc" />)
+    expect(await findByText('46')).toBeTruthy()
+    getClientSolvencyScore.mockRejectedValueOnce(new Error('Некоректна відповідь AI Solvency (score.state_basis): must equal current_observation'))
+    rerender(<SolvencyPanel clientNetId="other" />)
+    expect(await findByText('Оцінка платоспроможності недоступна')).toBeTruthy()
+    expect(await findByText(/score.state_basis/)).toBeTruthy()
+    expect(queryByText('46')).toBeNull()
+    expect(queryByText(explanation)).toBeNull()
+    expect(getClientSolvencyCharts).toHaveBeenCalledTimes(1)
   })
 })

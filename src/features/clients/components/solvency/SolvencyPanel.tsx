@@ -1,4 +1,4 @@
-import { BarChart, DonutChart, Sparkline } from '@mantine/charts'
+import { BarChart, DonutChart } from '@mantine/charts'
 import { MONEY_AXIS_TICK } from '../../../../shared/ui/charts/chartTheme'
 import {
   Alert,
@@ -217,6 +217,11 @@ export function SolvencyPanel({ clientNetId }: SolvencyPanelProps) {
       <Card className="app-section-card" padding="lg" radius="md" withBorder>
         <Stack gap="lg">
           <ScoreHeader score={score} />
+          <Text c="dimmed" size="sm">
+            {t('Оцінка за поточними записами станом на')} {formatIsoDate(score.as_of_date)}
+            {' · '}{score.business_timezone}{' · '}
+            {t('Курс валют на')} {formatIsoDate(score.fx_date)}
+          </Text>
           <Group align="flex-start" gap="xs" wrap="wrap">
             <Text c="dimmed" fw={600} size="sm">
               {t('Контроль боргу на 90 днів')}:
@@ -445,7 +450,7 @@ function ScoreNotes({ score }: { score: SolvencyScore }) {
       )}
       {score.window_months > 0 && (
         <Badge color="gray" size="sm" variant="light">
-          {t('Вікно')}: {score.window_months} {t('міс.')}
+          {t('Вікно операцій')}: {score.window_months} {t('міс.')}
         </Badge>
       )}
       <Badge color="gray" size="sm" variant="light">
@@ -453,7 +458,7 @@ function ScoreNotes({ score }: { score: SolvencyScore }) {
       </Badge>
       {!score.history_complete && (
         <Badge color="yellow" size="sm" variant="light">
-          {t('Неповне історичне вікно')}
+          {t('Неповне вікно операцій')}
         </Badge>
       )}
       {score.caps_applied.map((cap) => (
@@ -496,8 +501,6 @@ function SolvencyChartsView({ charts }: { charts: SolvencyCharts }) {
     бакет: bar.bucket,
     кількість: bar.count,
   }))
-
-  const sparklineData = charts.score_sparkline.map((point) => point.score)
 
   const turnoverData = charts.turnover_trend.map((point) => ({
     дохід: round2(point.turnover_eur),
@@ -571,13 +574,9 @@ function SolvencyChartsView({ charts }: { charts: SolvencyCharts }) {
             <Text fw={600} size="sm">
               {t('Динаміка оцінки')}
             </Text>
-            {sparklineData.length > 0 ? (
-              <Sparkline color="orange.6" curveType="linear" data={sparklineData} fillOpacity={0.2} h={80} w="100%" />
-            ) : (
-              <Text c="dimmed" size="sm">
-                {t('Дані відсутні')}
-              </Text>
-            )}
+            <Text c="dimmed" size="sm">
+              {charts.score_sparkline_reason}
+            </Text>
           </Stack>
         </Card>
 

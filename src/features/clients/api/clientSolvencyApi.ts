@@ -7,6 +7,7 @@ import type {
   SolvencyBatch,
   SolvencyBatchError,
   SolvencyCharts,
+  SolvencyCurrentObservation,
   SolvencyScore,
   TurnoverExposurePoint,
   TrendPoint,
@@ -170,14 +171,17 @@ function normalizeScore(value: unknown, expectedNetId: string | null, path: stri
   requireNullableNumberInRange(score.score, `${path}.score`, 0, 100, true)
   requireNullableNumberInRange(score.pd, `${path}.pd`, 0, 1)
   requireNullableFiniteNumber(score.raw_score, `${path}.raw_score`)
-  requirePositiveInteger(score.window_months, `${path}.window_months`)
+  if (score.window_months !== 12) {
+    throw new SolvencyContractError(`${path}.window_months`, 'must equal 12')
+  }
   requireNonEmptyString(score.model_version, `${path}.model_version`)
   const sourceHistoryStart = requireIsoDate(
     score.source_history_start,
     `${path}.source_history_start`,
   )
   const effectiveStart = requireIsoDate(score.effective_start, `${path}.effective_start`)
-  const asOfDate = requireIsoDate(score.as_of_date, `${path}.as_of_date`)
+  const observation = normalizeCurrentObservation(score, path)
+  const asOfDate = observation.as_of_date
   if (sourceHistoryStart > effectiveStart || effectiveStart > asOfDate) {
     throw new SolvencyContractError(`${path}.effective_start`, 'history dates are inverted')
   }
@@ -212,7 +216,7 @@ function normalizeScore(value: unknown, expectedNetId: string | null, path: stri
     source_history_start: sourceHistoryStart,
     effective_start: effectiveStart,
     history_complete: score.history_complete,
-    as_of_date: asOfDate,
+    ...observation,
   }
 }
 
@@ -321,7 +325,13 @@ function normalizeCharts(result: unknown, expectedClientId: number): SolvencyCha
     'charts.source_history_start',
   )
   const effectiveStart = requireIsoDate(charts.effective_start, 'charts.effective_start')
-  const asOfDate = requireIsoDate(charts.as_of_date, 'charts.as_of_date')
+  const observation = normalizeCurrentObservation(charts, 'charts')
+  const asOfDate = observation.as_of_date
+  const windowMonths = requirePositiveInteger(charts.window_months, 'charts.window_months')
+  if (windowMonths > 60) {
+    throw new SolvencyContractError('charts.window_months', 'must be between 1 and 60')
+  }
+  const historyAvailability = normalizeScoreHistoryAvailability(charts)
   if (sourceHistoryStart > effectiveStart || effectiveStart > asOfDate) {
     throw new SolvencyContractError('charts.effective_start', 'history dates are inverted')
   }
@@ -364,10 +374,65 @@ function normalizeCharts(result: unknown, expectedClientId: number): SolvencyCha
     source_history_start: sourceHistoryStart,
     effective_start: effectiveStart,
     history_complete: charts.history_complete,
-    as_of_date: asOfDate,
+    ...observation,
+    ...historyAvailability,
+    window_months: windowMonths,
     open_invoice_aging_bars: agingBars,
     turnover_vs_exposure: turnoverVsExposure,
     turnover_trend: turnoverTrend,
+  }
+}
+
+function normalizeCurrentObservation(
+  value: Partial<SolvencyCurrentObservation>,
+  path: string,
+): SolvencyCurrentObservation {
+  if (value.state_basis !== 'current_observation') {
+    throw new SolvencyContractError(`${path}.state_basis`, 'must equal current_observation')
+  }
+  if (value.business_timezone !== 'Europe/Kyiv') {
+    throw new SolvencyContractError(`${path}.business_timezone`, 'must equal Europe/Kyiv')
+  }
+  // Validate the captured response day, never the browser clock (including midnight).
+  const asOfDate = requireIsoDate(value.as_of_date, `${path}.as_of_date`)
+  const fxDate = requireIsoDate(value.fx_date, `${path}.fx_date`)
+  if (fxDate !== asOfDate) {
+    throw new SolvencyContractError(`${path}.fx_date`, 'must equal as_of_date')
+  }
+  return {
+    state_basis: value.state_basis,
+    business_timezone: value.business_timezone,
+    as_of_date: asOfDate,
+    fx_date: fxDate,
+  }
+}
+
+function normalizeScoreHistoryAvailability(charts: Partial<SolvencyCharts>): Pick<
+  SolvencyCharts,
+  'applicable' | 'score_sparkline' | 'score_sparkline_status'
+  | 'score_sparkline_reason_code' | 'score_sparkline_reason'
+> {
+  if (typeof charts.applicable !== 'boolean') {
+    throw new SolvencyContractError('charts.applicable', 'expected a boolean')
+  }
+  const points = requireArray(charts.score_sparkline, 'charts.score_sparkline')
+  if (points.length !== 0) {
+    throw new SolvencyContractError('charts.score_sparkline', 'historical scores are not recorded')
+  }
+  const expectedStatus = charts.applicable ? 'unavailable' : 'not_applicable'
+  const expectedReason = charts.applicable ? 'historical_state_not_recorded' : 'client_not_buyer'
+  if (
+    charts.score_sparkline_status !== expectedStatus
+    || charts.score_sparkline_reason_code !== expectedReason
+  ) {
+    throw new SolvencyContractError('charts.score_sparkline_status', 'history proof and applicability disagree')
+  }
+  return {
+    applicable: charts.applicable,
+    score_sparkline: points as [],
+    score_sparkline_status: charts.score_sparkline_status,
+    score_sparkline_reason_code: charts.score_sparkline_reason_code,
+    score_sparkline_reason: requireNonEmptyString(charts.score_sparkline_reason, 'charts.score_sparkline_reason'),
   }
 }
 

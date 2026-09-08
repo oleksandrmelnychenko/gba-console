@@ -51,7 +51,14 @@ export type Risk90d = {
   reason_code: Risk90dReason
 }
 
-export type SolvencyScore = {
+export type SolvencyCurrentObservation = {
+  state_basis: 'current_observation'
+  business_timezone: 'Europe/Kyiv'
+  as_of_date: string
+  fx_date: string
+}
+
+export type SolvencyScore = SolvencyCurrentObservation & {
   client_id: number
   client_net_uid: string | null
   applicable: boolean
@@ -73,8 +80,7 @@ export type SolvencyScore = {
   source_history_start: string
   effective_start: string
   history_complete: boolean
-  as_of_date: string | null
-  window_months: number
+  window_months: 12
   model_version: string
 }
 
@@ -114,30 +120,27 @@ export type TurnoverExposurePoint = {
   exposure_eur: number
 }
 
-export type ScorePoint = {
-  period: string
-  score: number
-}
-
 export type TrendPoint = {
   period: string
   turnover_eur: number
 }
 
-export type SolvencyCharts = {
+export type SolvencyCharts = SolvencyCurrentObservation & {
   client_id: number
   applicable: boolean
   limit_utilization_gauge: GaugeChart
   payment_discipline_donut: DonutSlice[]
   open_invoice_aging_bars: AgingBar[]
   turnover_vs_exposure: TurnoverExposurePoint[]
-  score_sparkline: ScorePoint[]
+  score_sparkline: []
+  score_sparkline_status: 'unavailable' | 'not_applicable'
+  score_sparkline_reason_code: 'historical_state_not_recorded' | 'client_not_buyer'
+  score_sparkline_reason: string
   turnover_trend: TrendPoint[]
   aging_over_time_heatmap: string
   source_history_start: string
   effective_start: string
   history_complete: boolean
-  as_of_date: string | null
   window_months: number
   model_version: string
 }
