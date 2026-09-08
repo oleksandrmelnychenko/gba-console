@@ -1,3 +1,5 @@
+import { CLIENT_COMPARISON_TITLE } from '../data/clientPeriodComparison'
+import { clientComparisonHeaderPresentation } from './clientComparisonHeaderPresentation'
 import { CLIENT_ACTIVITY_NOTE_PREFIXES, CLIENT_ACTIVITY_REPORT_TITLE } from '../data/clientActivityReport'
 import type { SpreadsheetReportHeader } from '../types'
 
@@ -10,6 +12,7 @@ const isBoundary = (line: string) => !line.trim() || line.trimStart().startsWith
 
 /** Join only the five native client notes for display. Raw attribution and CSV retain physical writer rows. */
 export function getReportHeaderPresentation(header: SpreadsheetReportHeader): Pick<SpreadsheetReportHeader, 'lines' | 'warnings'> {
+  if (header.lines[0] === CLIENT_COMPARISON_TITLE) return clientComparisonHeaderPresentation(header)
   if (header.lines[0] !== CLIENT_ACTIVITY_REPORT_TITLE) return header
   const originalWarnings = new Set(header.warnings)
   const rawLines = new Set(header.lines)

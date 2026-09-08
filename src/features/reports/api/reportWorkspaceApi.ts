@@ -1,6 +1,7 @@
 import { apiRequest } from '../../../shared/api/apiClient'
 import type { ReportCatalogue, ReportDataset, ReportDatasetField, ReportRequestBody, ReportTemplate } from '../types'
 import { isCurrentReportSource } from '../data/nativeReportProfiles'
+import { isClientComparisonCapability } from '../data/clientPeriodComparison'
 import { isReportCatalogue } from '../data/reportMigration'
 
 function isDatasetField(value: unknown): value is ReportDatasetField {
@@ -20,6 +21,7 @@ function isDataset(value: unknown): value is ReportDataset {
     && (item.PeriodRequired === undefined || typeof item.PeriodRequired === 'boolean')
     && (item.PeriodSupported === undefined || typeof item.PeriodSupported === 'boolean')
     && (item.DataSource !== 12 || (item.PeriodRequired === true && item.PeriodSupported === true))
+    && (item.DataSource !== 13 || (item.PeriodRequired === true && item.PeriodSupported === true && isClientComparisonCapability(item.Comparison)))
     && !(item.PeriodSupported === false && item.PeriodRequired === true)
     && (!isCurrentReportSource(item.DataSource) || item.PeriodSupported === false)
     && Array.isArray(item.Limitations) && item.Limitations.every(text => typeof text === 'string')
@@ -48,6 +50,8 @@ type WireTemplate = Required<Omit<ReportTemplate, 'Data'>> & {
     Selections: ReportRequestBody['selections']
     DataSource: ReportRequestBody['dataSource']
     ValuationClientAgreementId?: ReportRequestBody['valuationClientAgreementId']
+    Comparison?: unknown
+    comparison?: unknown
     Ordering?: unknown
     FilterExpression?: unknown
     HideZero?: unknown
@@ -72,6 +76,9 @@ export function normalizeSavedTemplate(value: WireTemplate): ReportTemplate {
     sorted: value.Data.Sorted,
     selections: value.Data.Selections ?? [],
     dataSource: value.Data.DataSource,
+    ...(Object.hasOwn(value.Data, 'comparison') ? { comparison: value.Data.comparison,
+      ...(Object.hasOwn(value.Data, 'Comparison') ? { Comparison: value.Data.Comparison } : {}),
+    } : Object.hasOwn(value.Data, 'Comparison') ? { comparison: value.Data.Comparison } : {}),
     ...(Object.hasOwn(value.Data, 'Ordering') ? { ordering: value.Data.Ordering } : {}),
     ...(Object.hasOwn(value.Data, 'FilterExpression') ? { filterExpression: value.Data.FilterExpression } : {}),
     ...(Object.hasOwn(value.Data, 'hideZero') ? { hideZero: value.Data.hideZero,

@@ -211,6 +211,8 @@ export type ReportHideZeroCapabilities = {
 
 export type ReportRequestBody = {
   dataSource?: number
+  comparison?: unknown
+  Comparison?: unknown
   valuationClientAgreementId?: number | null
   // Preserve unknown imported versions/properties for explicit validation; never sanitize them away.
   ordering?: unknown
@@ -244,6 +246,7 @@ export type ReportDataset = {
   Description: string
   PeriodRequired?: boolean
   PeriodSupported?: boolean
+  Comparison?: unknown
   Ordering?: unknown
   FilterExpression?: unknown
   TopGroups?: unknown

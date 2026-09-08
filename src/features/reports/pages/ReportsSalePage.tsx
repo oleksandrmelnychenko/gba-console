@@ -26,6 +26,7 @@ import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/Page
 import { PermissionGate } from '../../auth/components/PermissionGate'
 import { useAuth } from '../../auth/useAuth'
 import { PermissionKeys } from '../../../shared/auth/permissionKeys'
+import { CLIENT_COMPARISON_TITLE } from '../data/clientPeriodComparison'
 import { CLIENT_ACTIVITY_REPORT_TITLE } from '../data/clientActivityReport'
 import {
   buildSheetExportRows,
@@ -292,7 +293,7 @@ function ReportHeaderBlock({ header }: { header: SpreadsheetReportHeader }) {
   const details = addOccurrenceKeys(presentation.lines.filter((line) => !warnings.has(line)))
 
   return (
-    <Stack className={header.lines[0] === CLIENT_ACTIVITY_REPORT_TITLE ? 'reports-client-activity-header' : undefined} gap={6}>
+    <Stack className={[CLIENT_ACTIVITY_REPORT_TITLE, CLIENT_COMPARISON_TITLE].includes(header.lines[0]) ? 'reports-client-activity-header' : undefined} gap={6}>
       {warningLines.length ? (
         <Alert className="reports-page-alert" color="yellow" icon={<CircleAlert size={18} />}>
           <Stack gap={2}>

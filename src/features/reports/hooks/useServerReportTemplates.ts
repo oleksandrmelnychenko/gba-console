@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { deleteServerReportTemplate, getServerReportTemplates, saveServerReportTemplate } from '../api/reportWorkspaceApi'
+import { clientComparisonConfigurationError } from '../data/clientPeriodComparison'
 import { datasetConfigurationError } from '../data/reportDatasets'
 import { valuationConfigurationError } from '../data/reportValuation'
 import { reportThresholdError } from '../data/reportThreshold'
@@ -95,8 +96,10 @@ export function useServerReportTemplates(enabled: boolean, datasets: ReportDatas
           request = { Id: existing?.Id ?? crypto.randomUUID(), Revision: existing?.Revision ?? 0,
             Name: existing?.Name ?? operation.name.trim(), Data: operation.data }
         }
-        if (request.Data.dataSource === 12) {
-          const activityError = datasetConfigurationError(request.Data, datasets.find(item => item.DataSource === 12))
+        const comparisonError = clientComparisonConfigurationError(request.Data, datasets.find(item => item.DataSource === request.Data.dataSource))
+        if (comparisonError) throw new Error(comparisonError)
+        if (request.Data.dataSource === 12 || request.Data.dataSource === 13) {
+          const activityError = datasetConfigurationError(request.Data, datasets.find(item => item.DataSource === request.Data.dataSource))
           if (activityError) throw new Error(activityError)
         }
         const valuationError = valuationConfigurationError(request.Data)

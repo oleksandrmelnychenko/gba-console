@@ -94,6 +94,8 @@ import { ReportCatalogueControl } from './ReportCatalogueControl'
 import { ReportOrderingPanel } from './ReportOrderingPanel'
 import { requestOrdering } from '../data/reportOrdering'
 import { requestFilterExpression } from '../data/reportFilterExpression'
+import { CLIENT_COMPARISON_MAX_DATE, CLIENT_COMPARISON_MIN_DATE, comparisonWindow, isComparisonDate, requestComparison } from '../data/clientPeriodComparison'
+import { ClientComparisonPeriodPanel } from './ClientComparisonPeriodPanel'
 import { buildReportBuilderRequest } from '../data/reportBuilderRequest'
 import { useReportFilterExpression, type ReportSelectionEdit } from '../hooks/useReportFilterExpression'
 import { ReportFilterExpressionPanel } from './ReportFilterExpressionPanel'
@@ -144,6 +146,7 @@ const defaultCondition = REPORT_FILTER_CONDITIONS[0]
 
 // What the finished run was asked for, kept because the response carries none of it back.
 type ReportRunOutcome = {
+  comparison?: { From: string; To: string }
   periodSupported: boolean
   colGroupings: string[]
   from: string
@@ -188,6 +191,7 @@ function ReportsStocksWorkspace() {
   const previousPeriod = useRef({ from: today, to: today })
   const datasetStorage = useReportDatasets(canGenerateReport)
   const [dataSource, setDataSource] = useValueState(0)
+  const [comparison, setComparison] = useValueState<unknown>(undefined)
   const [valuationClientAgreementId, setValuationAgreementId] = useValueState<number | undefined>(undefined)
   const valuation = useValuationAgreement(valuationClientAgreementId, canGenerateReport && dataSource === VALUATION_DATA_SOURCE)
   const dataset = datasetStorage.datasets.find(item => item.DataSource === dataSource)
@@ -227,16 +231,17 @@ function ReportsStocksWorkspace() {
     [colGroups, groupingOptions, rowGroups],
   )
   const filterFieldOptions = useMemo(() => datasetFilters(dataset), [dataset])
-  const maxDate = useMemo(() => `${today.slice(0, 4)}-12-31`, [today])
+  const maxDate = useMemo(() => dataSource === 13 ? CLIENT_COMPARISON_MAX_DATE : `${today.slice(0, 4)}-12-31`, [dataSource, today])
   const [debouncedFrom] = useDebouncedValue(from, DATE_INPUT_DEBOUNCE_MS)
   const [debouncedTo] = useDebouncedValue(to, DATE_INPUT_DEBOUNCE_MS)
-  const periodError = periodSupported ? getPeriodError(from, to, maxDate, t) : null
+  const periodError = dataSource === 13 ? (!isComparisonDate(from) || !isComparisonDate(to) || from > to ? 'Оберіть коректний поточний період у межах 1900–9998 років.' : null)
+    : periodSupported ? getPeriodError(from, to, maxDate, t) : null
   // The value lookups re-query on every keystroke in the date fields, half-typed years included. They follow the
   // period on a pause, and only once it is a period the server can answer for.
   const hasLookupPeriod = !getPeriodError(debouncedFrom, debouncedTo, maxDate, t)
   const reportBody = useMemo<ReportRequestBody>(
-    () => buildReportBuilderRequest({ dataSource, from, to, ordering, filterExpression, topGroups, threshold, hideZero, abcClassification, valuationClientAgreementId, rowGroups, colGroups, measurements, selections }),
-    [abcClassification, colGroups, dataSource, filterExpression, from, hideZero, measurements, ordering, rowGroups, selections, to, topGroups, threshold, valuationClientAgreementId],
+    () => buildReportBuilderRequest({ dataSource, comparison, from, to, ordering, filterExpression, topGroups, threshold, hideZero, abcClassification, valuationClientAgreementId, rowGroups, colGroups, measurements, selections }),
+    [abcClassification, colGroups, comparison, dataSource, filterExpression, from, hideZero, measurements, ordering, rowGroups, selections, to, topGroups, threshold, valuationClientAgreementId],
   )
   const templateBody = { ...reportBody, selections }
   const configurationError = datasetStorage.error ?? (!datasetStorage.loaded ? t('Завантаження наборів даних…') : datasetConfigurationError(templateBody, dataset))
@@ -293,6 +298,7 @@ function ReportsStocksWorkspace() {
     try {
       const nextResult = await createStockReport(reportBody)
       const outcome: ReportRunOutcome = {
+        ...(comparisonWindow(comparison) ? { comparison: structuredClone(comparisonWindow(comparison)!) } : {}),
         periodSupported,
         colGroupings: colGroups.map((group) => group.label || getReportFieldLabel(group.key)),
         from,
@@ -318,7 +324,8 @@ function ReportsStocksWorkspace() {
   }
 
   function resetReport() {
-    const snapshotDefaults = dataset && !periodSupported ? defaultDatasetRequest(dataset, '', '') : null
+    const snapshotDefaults = dataset && (!periodSupported || dataSource === 13) ? defaultDatasetRequest(dataset, today, today) : null
+    setComparison(snapshotDefaults?.comparison)
     setFrom(periodSupported ? today : '')
     setTo(periodSupported ? today : '')
     setMeasurements(snapshotDefaults ? datasetMeasurements(dataset, snapshotDefaults.sorted.Measurements) : createDefaultMeasurementGroups())
@@ -370,6 +377,7 @@ function ReportsStocksWorkspace() {
 
   function applyConfiguration(template: ReportTemplate, nextDataset: ReportDataset) {
     const data = template.Data
+    setComparison(structuredClone(requestComparison(data)))
     groupingOrdering.loadOrdering(requestOrdering(data))
     const nextAgreementId = data.valuationClientAgreementId ?? undefined
     setValuationAgreementId(nextAgreementId)
@@ -414,6 +422,7 @@ function ReportsStocksWorkspace() {
         onChange={setValuationAgreementId} onRetry={valuation.retry} /> : null}
       <ReportBuilderForm
         dataSource={dataSource}
+        comparisonPanel={dataSource === 13 ? <ClientComparisonPeriodPanel value={comparison} disabled={isLoading || !canGenerateReport} onChange={setComparison} /> : null}
         periodSupported={periodSupported}
         presets={presets}
         configurationReady={!configurationError}
@@ -486,6 +495,7 @@ function ReportsStocksWorkspace() {
 }
 
 type ReportBuilderFormProps = {
+  comparisonPanel: ReactNode
   abcPanel: ReactNode
   hideZeroPanel: ReactNode
   thresholdPanel: ReactNode
@@ -540,6 +550,7 @@ type ReportBuilderFormProps = {
 }
 
 function ReportBuilderForm({
+  comparisonPanel,
   abcPanel,
   topGroupsPanel,
   hideZeroPanel,
@@ -602,22 +613,23 @@ function ReportBuilderForm({
         <div className="app-filter-bar reports-stocks-filter-bar">
           {periodSupported ? <div className="app-filter-date-range">
             <TextInput
-              label={t('Від')}
+              label={dataSource === 13 ? 'Поточний період: від' : t('Від')}
               max={to || maxDate}
-              min={REPORT_MIN_DATE}
+              min={dataSource === 13 ? CLIENT_COMPARISON_MIN_DATE : REPORT_MIN_DATE}
               type="date"
               value={from}
               onChange={(event) => onFromChange(event.currentTarget.value)}
             />
             <TextInput
-              label={t('До')}
+              label={dataSource === 13 ? 'Поточний період: до' : t('До')}
               max={maxDate}
-              min={from || REPORT_MIN_DATE}
+              min={from || (dataSource === 13 ? CLIENT_COMPARISON_MIN_DATE : REPORT_MIN_DATE)}
               type="date"
               value={to}
               onChange={(event) => onToChange(event.currentTarget.value)}
             />
           </div> : <Text size="sm">{t('Поточний стан на час читання даних. Історичний період не застосовується.')}</Text>}
+          {comparisonPanel}
           <div className="app-filter-actions reports-stocks-actions">
             <Button
               color="gray"
@@ -771,6 +783,7 @@ function LegacyReportBuilder({
   const selectedGroupingTypes = new Set([...rowGroups, ...colGroups].map(item => item.type))
 
   const transferGrouping = (axis: ReportGroupingAxis, type: number) => {
+    if (dataSource === 13) return
     const next = transferReportGrouping(groupingLayout, axis, type, allowedGroupingTypes)
     if (next === groupingLayout) return
     onGroupingLayoutChange(next)
@@ -780,7 +793,7 @@ function LegacyReportBuilder({
 
   const addGroupingFromPicker = (value: string) => {
     const item = groupingOptions.find((option) => String(option.type) === value)
-    if (!item || !groupingPickerTarget || selectedGroupingTypes.has(item.type) || (groupingPickerTarget === 'columns' && item.type === ABC_CLASS_GROUPING)) return
+    if (!item || !groupingPickerTarget || (dataSource === 13 && groupingPickerTarget === 'columns') || selectedGroupingTypes.has(item.type) || (groupingPickerTarget === 'columns' && item.type === ABC_CLASS_GROUPING)) return
 
     if (groupingPickerTarget === 'rows') {
       onRowGroupsChange((current) => addGrouping(current, item))
@@ -864,16 +877,16 @@ function LegacyReportBuilder({
 
         <section className="app-section-card reports-stocks-structure">
           <Text className="app-section-title" component="h2" fw={600} size="sm">{t('Групування')}</Text>
-          <ReportGroupingPanel layout={groupingLayout} axis="Row" allowed={allowedGroupingTypes}
+          <ReportGroupingPanel layout={groupingLayout} axis="Row" allowed={allowedGroupingTypes} transferSupported={dataSource !== 13}
             onOpenPicker={() => setGroupingPickerTarget('rows')}
             onRemove={(index) => onRowGroupsChange((current) => current.filter((_, itemIndex) => itemIndex !== index))}
             onReorder={(type, direction) => onRowGroupsChange(current => reorderReportGrouping(current, type, direction, allowedGroupingTypes))}
             onTransfer={type => transferGrouping('Row', type)} />
-          <ReportGroupingPanel layout={groupingLayout} axis="Col" allowed={allowedGroupingTypes}
+          {dataSource !== 13 ? <ReportGroupingPanel layout={groupingLayout} axis="Col" allowed={allowedGroupingTypes}
             onOpenPicker={() => setGroupingPickerTarget('columns')}
             onRemove={(index) => onColGroupsChange((current) => current.filter((_, itemIndex) => itemIndex !== index))}
             onReorder={(type, direction) => onColGroupsChange(current => reorderReportGrouping(current, type, direction, allowedGroupingTypes))}
-            onTransfer={type => transferGrouping('Col', type)} />
+            onTransfer={type => transferGrouping('Col', type)} /> : <Text size="sm" c="dimmed">Порівняння періодів показує вибрані показники у стовпцях.</Text>}
         </section>
         <section className="reports-stocks-legacy__selections">
           <ReportSelectionsCard
@@ -1908,6 +1921,7 @@ function isAuthoredServerMessage(message: string): boolean {
 // <guid>.xlsx» file name.
 function describeReportRun(run: ReportRunOutcome, t: TranslateFunction): string {
   const parts = [run.periodSupported ? `${formatDate(run.from)} – ${formatDate(run.to)}` : t('Поточний стан на час читання даних')]
+  if (run.comparison) parts.push(`Порівняння: ${formatDate(run.comparison.From)} – ${formatDate(run.comparison.To)}`)
 
   if (run.rowGroupings.length) {
     parts.push(`${t('Рядки')}: ${run.rowGroupings.join(', ')}`)

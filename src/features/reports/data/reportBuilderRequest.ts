@@ -5,6 +5,7 @@ import { reportSelectionsForRequest } from './reportFilterExpression'
 type BuilderValues = {
   dataSource: number; from: string; to: string; ordering: unknown; filterExpression: unknown; topGroups: unknown
   abcClassification?: unknown
+  comparison?: unknown
   hideZero?: unknown
   threshold?: unknown
   valuationClientAgreementId: number | undefined
@@ -14,8 +15,9 @@ type BuilderValues = {
 
 /** Tree indices address this exact selection array; only the legacy request omits unchecked rows. */
 export function buildReportBuilderRequest(values: BuilderValues): ReportRequestBody {
-  const { dataSource, from, to, ordering, filterExpression, topGroups, abcClassification, threshold, hideZero, valuationClientAgreementId, rowGroups, colGroups, measurements, selections } = values
+  const { dataSource, from, to, ordering, filterExpression, topGroups, abcClassification, threshold, hideZero, comparison, valuationClientAgreementId, rowGroups, colGroups, measurements, selections } = values
   return { dataSource, from, to,
+    ...(comparison !== undefined ? { comparison } : {}),
     ...(ordering !== undefined ? { ordering } : {}),
     ...(filterExpression !== undefined ? { filterExpression } : {}),
     ...(abcClassification !== undefined ? { abcClassification } : {}),

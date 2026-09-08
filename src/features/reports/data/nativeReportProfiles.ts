@@ -1,3 +1,4 @@
+import { CLIENT_COMPARISON_TITLE } from './clientPeriodComparison'
 import { CLIENT_ACTIVITY_REPORT_TITLE } from './clientActivityReport'
 import { CURRENT_STOCK_REPORT_TITLES, getCurrentStockReport, isCurrentStockPresetId, isCurrentStockSource, type CurrentStockPresetId } from './currentStockReports'
 
@@ -8,6 +9,9 @@ export const DEBT_AMOUNT_CAPTION = 'Записана заборгованіст�
 export const ACCOUNT_BALANCE_REPORT_TITLE = 'Записані залишки рахунків'
 export const ACCOUNT_BALANCE_AMOUNT_CAPTION = 'Записаний залишок рахунку'
 const DOCUMENT_REPORT_PROFILES = [
+  { dataSource: 13, title: CLIENT_COMPARISON_TITLE, rowGroupings: [12], measurements: [25, 26, 27, 28],
+    preset: { id: 'sale-clients-period-comparison', name: 'Клієнти: порівняння періодів',
+      description: 'Клієнти у двох вибраних періодах, зміна кількості та відсоток. Підсумки обчислює сервер за унікальними клієнтами кожного періоду.' } },
   { dataSource: 12, title: CLIENT_ACTIVITY_REPORT_TITLE, rowGroupings: [2, 12, 15], measurements: [25],
     preset: { id: 'sale-clients-by-month-agreement', name: 'Клієнти за місяцями й договорами',
       description: 'Місяць → клієнт → договір. Унікальні клієнти за поточними прив’язками GBA; підсумки визначає сервер за об’єднанням клієнтів.' } },
@@ -34,5 +38,5 @@ export function isCurrentReportSource(dataSource: number | undefined): boolean {
   return isCurrentStockSource(dataSource) || dataSource === 10 || dataSource === 11
 }
 export function usesNativeReportLookup(dataSource: number | undefined): boolean {
-  return isCurrentReportSource(dataSource) || dataSource === 9 || dataSource === 12
+  return isCurrentReportSource(dataSource) || dataSource === 9 || dataSource === 12 || dataSource === 13
 }

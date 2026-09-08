@@ -14,9 +14,10 @@ type Props = {
   onRemove: (index: number) => void
   onReorder: (type: number, direction: -1 | 1) => void
   onTransfer: (type: number) => void
+  transferSupported?: boolean
 }
 
-export function ReportGroupingPanel({ layout, axis, allowed, onOpenPicker, onRemove, onReorder, onTransfer }: Props) {
+export function ReportGroupingPanel({ layout, axis, allowed, onOpenPicker, onRemove, onReorder, onTransfer, transferSupported = true }: Props) {
   const { t } = useI18n()
   const isRows = axis === 'Row', groups = layout[axis]
   const title = isRows ? 'Групування рядків' : 'Групування стовпців'
@@ -43,7 +44,7 @@ export function ReportGroupingPanel({ layout, axis, allowed, onOpenPicker, onRem
             <Tooltip label={t('Перемістити {field} нижче', { field: label })}><ActionIcon type="button" variant="subtle" color="gray" size={28}
               aria-label={t('Перемістити {field} нижче', { field: label })} disabled={!uniqueSupported || index === groups.length - 1} onClick={() => onReorder(group.type, 1)}><ArrowDown size={15} /></ActionIcon></Tooltip>
             <Tooltip label={isRows && groups.length === 1 ? t('Залиште принаймні одне групування рядків') : transferLabel}><ActionIcon type="button" variant="subtle" color="gray" size={28}
-              aria-label={transferLabel} disabled={!canTransferReportGrouping(layout, axis, group.type, allowed)} onClick={() => onTransfer(group.type)}><ArrowLeftRight size={15} /></ActionIcon></Tooltip>
+              aria-label={transferLabel} disabled={!transferSupported || !canTransferReportGrouping(layout, axis, group.type, allowed)} onClick={() => onTransfer(group.type)}><ArrowLeftRight size={15} /></ActionIcon></Tooltip>
             <TableRowAction action="delete" label={t('Видалити {field}', { field: label })} onClick={() => onRemove(index)} />
           </Group>
         </div>
