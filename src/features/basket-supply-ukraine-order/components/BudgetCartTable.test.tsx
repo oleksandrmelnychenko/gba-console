@@ -7,6 +7,25 @@ import type { ReorderSuggestion } from '../procurementTypes'
 import { BudgetCartTable } from './BudgetCartTable'
 
 describe('BudgetCartTable', () => {
+  it.each([
+    [0.021, 0.003, '0,021'],
+    [2.5, 0.5, '2,5'],
+    [3.87, null, '3,87'],
+    [0.000021, 0.000003, '0,000021'],
+    [0.1 + 0.2, null, '0,3'],
+  ])('shows the priced quantity %s without applying a second order policy', (quantity, multiple, printed) => {
+    const item = { ...suggestion(), suggested_qty: quantity, order_multiple: multiple,
+      unit_cost_eur: 100, line_cost_eur: Math.round(quantity * 10000) / 100 }
+    render(<MantineProvider theme={theme}><I18nProvider>
+      <BudgetCartTable items={[item]} producerNameById={new Map([[501, 'Meyle']])} />
+    </I18nProvider></MantineProvider>)
+
+    expect(screen.getByText(printed)).not.toBeNull()
+    expect(screen.queryByText('1,002')).toBeNull()
+    expect(screen.queryByText('суми плану рахуються за розрахунковою кількістю')).toBeNull()
+    expect(item.suggested_qty).toBe(quantity)
+  })
+
   it('shows a useful product identity with its image and supplier name', () => {
     const { container } = render(
       <MantineProvider theme={theme}>

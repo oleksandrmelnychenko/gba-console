@@ -72,6 +72,7 @@ import {
   procurementLineKey,
   type ProcurementDraftQuantities,
 } from '../procurementConstructorModel'
+import { procurementQuantityFormat as quantity } from '../procurementQuantityFormat'
 import { calculateProcurementDecision, type ProcurementDecision } from '../procurementDecision'
 import type { ProcurementCharts, ProcurementUrgency, ReorderSuggestion } from '../procurementTypes'
 import { ProcurementProductCell } from './ProcurementProductCell'
@@ -1073,14 +1074,14 @@ function usePlanColumns({
         cell: (row) => (
           <ProcurementNumberCell
             metaLabel={t('доступно')}
-            metaValue={qty.format(row.inventory.available)}
+            metaValue={quantity.format(row.inventory.available)}
             title={[
-              `${t('На складі')}: ${qty.format(row.inventory.on_hand)}`,
-              `${t('Доступно')}: ${qty.format(row.inventory.available)}`,
-              `${t('У резерві')}: ${qty.format(row.inventory.reserved)}`,
-              `${t('У дорозі')}: ${qty.format(row.inventory.on_order)}`,
+              `${t('На складі')}: ${quantity.format(row.inventory.on_hand)}`,
+              `${t('Доступно')}: ${quantity.format(row.inventory.available)}`,
+              `${t('У резерві')}: ${quantity.format(row.inventory.reserved)}`,
+              `${t('У дорозі')}: ${quantity.format(row.inventory.on_order)}`,
             ].join(' · ')}
-            value={qty.format(row.inventory.on_hand)}
+            value={quantity.format(row.inventory.on_hand)}
           />
         ),
         align: 'right',
@@ -1090,7 +1091,7 @@ function usePlanColumns({
         id: 'position',
         header: t('Позиція'),
         accessor: (row) => row.inventory.position,
-        cell: (row) => <ProcurementNumberCell value={qty.format(row.inventory.position)} />,
+        cell: (row) => <ProcurementNumberCell value={quantity.format(row.inventory.position)} />,
         align: 'right',
         width: 112,
       },
@@ -1098,7 +1099,7 @@ function usePlanColumns({
         id: 'reserved',
         header: t('Резерв'),
         accessor: (row) => row.inventory.reserved,
-        cell: (row) => <ProcurementNumberCell value={qty.format(row.inventory.reserved)} />,
+        cell: (row) => <ProcurementNumberCell value={quantity.format(row.inventory.reserved)} />,
         align: 'right',
         width: 104,
       },
@@ -1106,7 +1107,7 @@ function usePlanColumns({
         id: 'onOrder',
         header: t('У дорозі'),
         accessor: (row) => row.inventory.on_order,
-        cell: (row) => <ProcurementNumberCell value={qty.format(row.inventory.on_order)} />,
+        cell: (row) => <ProcurementNumberCell value={quantity.format(row.inventory.on_order)} />,
         align: 'right',
         width: 112,
       },
@@ -1127,7 +1128,7 @@ function usePlanColumns({
         id: 'reorderPoint',
         header: t('Точка замовлення'),
         accessor: (row) => row.reorder_point,
-        cell: (row) => <ProcurementNumberCell value={qty.format(row.reorder_point)} />,
+        cell: (row) => <ProcurementNumberCell value={quantity.format(row.reorder_point)} />,
         align: 'right',
         width: 168,
       },
@@ -1135,7 +1136,7 @@ function usePlanColumns({
         id: 'moq',
         header: 'MOQ',
         accessor: (row) => row.moq,
-        cell: (row) => row.moq === null ? null : <ProcurementNumberCell value={qty.format(row.moq)} />,
+        cell: (row) => row.moq === null ? null : <ProcurementNumberCell value={quantity.format(row.moq)} />,
         align: 'right',
         width: 96,
       },
@@ -1158,7 +1159,7 @@ function usePlanColumns({
             />
             {isQtyAdjusted(row) && (
               <Text c="dimmed" size="xs">
-                {t('AI')}: {qty.format(row.suggested_qty)}
+                {t('AI')}: {quantity.format(row.suggested_qty)}
               </Text>
             )}
           </Box>
@@ -1360,11 +1361,11 @@ export function ProcurementProofPanel({
           <div className="procure-proof__order-qty">
             <span>{t('До замовлення')}</span>
             <strong>
-              {qty.format(selectedQty)} <small>{t('шт.')}</small>
+              {quantity.format(selectedQty)}
             </strong>
             {isAdjusted && (
               <small>
-                {t('Рекомендація AI')}: {qty.format(row.suggested_qty)}
+                {t('Рекомендація AI')}: {quantity.format(row.suggested_qty)}
               </small>
             )}
           </div>
@@ -1374,18 +1375,18 @@ export function ProcurementProofPanel({
       <div className="procure-proof__metrics">
         <DecisionMetric
           label={t('Позиція зараз')}
-          note={`${qty.format(row.inventory.on_hand)} − ${qty.format(row.inventory.reserved)} + ${qty.format(row.inventory.on_order)}`}
-          value={qty.format(row.inventory.position)}
+          note={`${quantity.format(row.inventory.on_hand)} − ${quantity.format(row.inventory.reserved)} + ${quantity.format(row.inventory.on_order)}`}
+          value={quantity.format(row.inventory.position)}
         />
         <DecisionMetric
           label={t('Точка замовлення')}
           note={`${t('Попит у поставці')} + ${t('страховий запас')}`}
-          value={qty.format(row.reorder_point)}
+          value={quantity.format(row.reorder_point)}
         />
         <DecisionMetric
           label={t('Цільовий рівень')}
           note={t('Запас після планового поповнення')}
-          value={qty.format(decision.orderUpTo)}
+          value={quantity.format(decision.orderUpTo)}
         />
         <DecisionMetric
           label={t('Сума партії')}
@@ -1400,41 +1401,41 @@ export function ProcurementProofPanel({
             {t('Як отримано кількість')}
           </Text>
           <div
-            aria-label={`${t('Цільовий рівень')} ${qty.format(decision.orderUpTo)}, ${t('мінус позиція зараз')} ${qty.format(row.inventory.position)}, ${t('дорівнює рекомендація')} ${qty.format(row.suggested_qty)}`}
+            aria-label={`${t('Цільовий рівень')} ${quantity.format(decision.orderUpTo)}, ${t('мінус позиція зараз')} ${quantity.format(row.inventory.position)}, ${t('дорівнює рекомендація')} ${quantity.format(row.suggested_qty)}`}
             className="procure-proof__equation"
             role="img"
           >
             <EquationTerm
               label={t('Цільовий рівень')}
-              value={qty.format(decision.orderUpTo)}
+              value={quantity.format(decision.orderUpTo)}
             />
             <span className="procure-proof__operator">−</span>
             <EquationTerm
               label={t('Позиція зараз')}
-              value={qty.format(row.inventory.position)}
+              value={quantity.format(row.inventory.position)}
             />
             <span className="procure-proof__operator">=</span>
             <EquationTerm
               accent
               label={t('Рекомендація')}
-              value={qty.format(row.suggested_qty)}
+              value={quantity.format(row.suggested_qty)}
             />
           </div>
           <div className="procure-proof__facts">
-            <ProofFact label={t('На складі')} value={qty.format(row.inventory.on_hand)} />
-            <ProofFact label={t('У резерві')} value={qty.format(row.inventory.reserved)} />
-            <ProofFact label={t('У дорозі')} value={qty.format(row.inventory.on_order)} />
-            <ProofFact label={t('Попит на час поставки')} value={qty.format(decision.leadDemand)} />
-            <ProofFact label={t('Страховий запас')} value={qty.format(row.safety_stock)} />
+            <ProofFact label={t('На складі')} value={quantity.format(row.inventory.on_hand)} />
+            <ProofFact label={t('У резерві')} value={quantity.format(row.inventory.reserved)} />
+            <ProofFact label={t('У дорозі')} value={quantity.format(row.inventory.on_order)} />
+            <ProofFact label={t('Попит на час поставки')} value={quantity.format(decision.leadDemand)} />
+            <ProofFact label={t('Страховий запас')} value={quantity.format(row.safety_stock)} />
             <ProofFact
               label={t('Позиція з обраною партією')}
-              value={qty.format(decision.arrivalPosition)}
+              value={quantity.format(decision.arrivalPosition)}
             />
           </div>
           {isAdjusted && (
             <p className="procure-proof__manual-note">
-              {t('У полі «Замовити» встановлено')} {qty.format(selectedQty)} {t('шт.')} ·{' '}
-              {t('базова рекомендація')} {qty.format(row.suggested_qty)} {t('шт.')}
+              {t('У полі «Замовити» встановлено')} {quantity.format(selectedQty)} ·{' '}
+              {t('базова рекомендація')} {quantity.format(row.suggested_qty)}
             </p>
           )}
         </section>
@@ -1465,7 +1466,7 @@ export function ProcurementProofPanel({
                 <thead>
                   <tr>
                     <th>{t('Місяць')}</th>
-                    <th>{t('Продано, шт.')}</th>
+                    <th>{t('Продана кількість')}</th>
                     <th>{t('Виручка, EUR')}</th>
                   </tr>
                 </thead>
@@ -1480,7 +1481,7 @@ export function ProcurementProofPanel({
                           </span>
                         )}
                       </td>
-                      <td>{qty.format(point.units)}</td>
+                      <td>{quantity.format(point.units)}</td>
                       <td>{amount.format(point.revenue_eur)}</td>
                     </tr>
                   ))}
@@ -1496,8 +1497,8 @@ export function ProcurementProofPanel({
           </Text>
           <div className="procure-proof__forecast-facts">
             <ProofFact
-              label={t('Середній попит')}
-              value={`${amount.format(row.forecast.mean_daily)} ${t('шт./день')}`}
+              label={t('Середній попит за день')}
+              value={quantity.format(row.forecast.mean_daily)}
             />
             <ProofFact
               label={t('Коливання попиту')}
@@ -1774,7 +1775,7 @@ function DepletionChart({
           { color: 'blue.6', name: 'stock', label: t('Запас') },
           { color: 'orange.5', name: 'reorder', label: t('Точка замовлення') },
         ]}
-        valueFormatter={(value) => qty.format(value)}
+        valueFormatter={(value) => quantity.format(value)}
         withDots={false}
         xAxisLabel={t('дні')}
       />

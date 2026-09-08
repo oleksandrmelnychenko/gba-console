@@ -3,12 +3,8 @@ import { useMemo } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn } from '../../../shared/ui/data-table/types'
-import {
-  buildOrderableQtyHint,
-  buildReorderExplanation,
-  isOrderableQtyAdjusted,
-  toOrderableQty,
-} from '../procurementOrderQty'
+import { buildReorderExplanation } from '../procurementOrderQty'
+import { procurementQuantityFormat as qtyFormatter } from '../procurementQuantityFormat'
 import type { ProcurementUrgency, ReorderSuggestion } from '../procurementTypes'
 import { ProcurementProductCell } from './ProcurementProductCell'
 
@@ -38,10 +34,6 @@ const URGENCY_PILL_CLASS: Record<ProcurementUrgency, string> = {
 }
 
 const MONO_STYLE = { fontFamily: 'var(--font-mono)', letterSpacing: 0 } as const
-
-const qtyFormatter = new Intl.NumberFormat('uk-UA', {
-  maximumFractionDigits: 2,
-})
 
 const eurFormatter = new Intl.NumberFormat('uk-UA', {
   maximumFractionDigits: 2,
@@ -187,15 +179,13 @@ function buildColumns(
       width: 128,
       minWidth: 112,
       align: 'right',
-      accessor: (item) => toOrderableQty(item),
+      accessor: (item) => item.suggested_qty,
       cell: (item) => (
         <Text
           className="app-money"
           size="sm"
-          style={isOrderableQtyAdjusted(item) ? { textDecoration: 'underline dotted' } : undefined}
-          title={buildOrderableQtyHint(item, t, (value) => qtyFormatter.format(value))}
         >
-          {qtyFormatter.format(toOrderableQty(item))}
+          {qtyFormatter.format(item.suggested_qty)}
         </Text>
       ),
     },

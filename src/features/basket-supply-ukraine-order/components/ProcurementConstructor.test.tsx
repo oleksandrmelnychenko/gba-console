@@ -11,7 +11,7 @@ import {
   getProducerPlan,
 } from '../api/procurementApi'
 import type { ReorderSuggestion } from '../procurementTypes'
-import { ProcurementConstructor } from './ProcurementConstructor'
+import { ProcurementConstructor, ProcurementProofPanel } from './ProcurementConstructor'
 
 const { canMock } = vi.hoisted(() => ({
   canMock: vi.fn<(permissionKey: string) => boolean>(),
@@ -30,6 +30,10 @@ vi.mock('../api/procurementApi', () => ({
   getPurchaseCockpitCharts: vi.fn(),
   getPurchaseCockpitWarehousePlan: vi.fn(),
   getProducerPlan: vi.fn(),
+}))
+
+vi.mock('../../assortment/api/assortmentApi', () => ({
+  getProductAnalytics: vi.fn().mockResolvedValue({ sales_series: [] }),
 }))
 
 describe('ProcurementConstructor', () => {
@@ -186,6 +190,34 @@ describe('ProcurementConstructor', () => {
     expect(await screen.findByRole('button', { name: 'Термінові в кошик · 2' })).not.toBeNull()
     expect(screen.queryByText('Не вдалося завантажити план закупівлі')).toBeNull()
     expect(screen.getByText('Позицій до замовлення').parentElement?.textContent).toContain('2')
+  })
+
+  it('preserves a fractional pack through the basket and draft request', async () => {
+    const basePlan = await vi.mocked(getPurchaseCockpitWarehousePlan)({ budgetEur: 0, method: 'greedy' })
+    vi.mocked(getPurchaseCockpitWarehousePlan).mockResolvedValue({ ...basePlan,
+      items: [suggestion({ suggested_qty: 0.021, raw_qty: 0.02, order_multiple: 0.003,
+        unit_cost_eur: 100, line_cost_eur: 2.1 })], item_count: 1, total_item_count: 1,
+      total_suggested_qty: 0.021, total_cost_eur: 2.1, priced_cost_eur: 2.1, selected_count: 1,
+    })
+    render(<MantineProvider theme={theme}><I18nProvider><ProcurementConstructor /></I18nProvider></MantineProvider>)
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Термінові в кошик · 1' }))
+    const rail = screen.getByText('Кошик замовлень').closest('aside')!
+    expect((within(rail).getByLabelText('Кількість Гальмівний диск') as HTMLInputElement).value).toBe('0.021')
+    expect(within(rail).getAllByText('2,10').length).toBeGreaterThan(0)
+    fireEvent.click(within(rail).getByRole('button', { name: 'Створити чернетку' }))
+    await waitFor(() => expect(createCockpitDraftOrder).toHaveBeenCalledWith(501, [{ productId: 42, qty: 0.021 }]))
+  })
+
+  it('shows the fractional quantity and its actual cost in the decision explanation', async () => {
+    const row = suggestion({ suggested_qty: 0.021, raw_qty: 0.02, order_multiple: 0.003,
+      unit_cost_eur: 100, line_cost_eur: 2.1, order_up_to: 2.021 })
+    const { container } = render(<MantineProvider theme={theme}>
+      <ProcurementProofPanel row={row} selectedQty={0.021} demand={[]} t={value => value} />
+    </MantineProvider>)
+    await waitFor(() => expect(container.querySelector('.procure-proof__order-qty')?.textContent).toContain('0,021'))
+    expect(container.querySelector('.procure-proof')?.textContent).not.toContain('шт.')
+    expect(screen.getByText('2,10')).not.toBeNull()
   })
 
   it('does not keep an old plan actionable after a failed refresh', async () => {
