@@ -123,6 +123,10 @@ describe('newly classified page permissions', () => {
 })
 
 describe('console report routes', () => {
+  it('guards the lazy register constructor with the generate permission', () => {
+    expect(consoleRoutes.find(route => route.path === '/reports/registers')?.permissionKey).toBe(PermissionKeys.ReportsStocks.Report.Generate)
+  })
+
   it('registers both sales-report URLs as direct routes', () => {
     const paths = new Set(consoleRoutes.map((route) => route.path))
 

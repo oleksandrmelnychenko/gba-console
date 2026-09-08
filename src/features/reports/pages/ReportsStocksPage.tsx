@@ -425,6 +425,7 @@ function ReportsStocksWorkspace() {
 
   return (
     <Stack className="reports-stocks-page" gap={6}>
+      {canGenerateReport ? <Group justify="flex-end"><Button component="a" href="/reports/registers" variant="subtle">Звіти регістрів</Button></Group> : null}
       <ReportCatalogueControl enabled={canGenerateReport} />
       <ReportDatasetPicker datasets={datasetStorage.datasets} selected={dataSource} disabled={!canGenerateReport || isLoading}
         loaded={datasetStorage.loaded} error={datasetStorage.error} onChange={changeDataset} onRetry={datasetStorage.retry} />

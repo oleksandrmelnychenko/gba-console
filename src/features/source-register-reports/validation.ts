@@ -30,6 +30,7 @@ function schemaKey(value: unknown): value is RegisterSchemaKey {
   return hasExactMembers(value, ['world', 'schemaHash', 'registerUuid']) && typeof value.world === 'string'
     && /^[a-z0-9-]{1,64}$/.test(value.world) && hash(value.schemaHash) && uuid(value.registerUuid)
 }
+export const isRegisterSchemaKey = schemaKey
 export function sameRegisterSchema(left: RegisterSchemaKey, right: RegisterSchemaKey): boolean {
   return left.world === right.world && left.schemaHash === right.schemaHash && left.registerUuid === right.registerUuid
 }
@@ -129,7 +130,7 @@ export function registerAtomIdentity(atom: RegisterAtom): string {
 }
 
 /** Shared with the raw transport; this checks reference structure, never authenticates its source. */
-export function validateRegisterPublication(value: unknown, query: SourceRegisterQueryWire, descriptor: SourceRegisterDescriptorWire): string | null {
+export function validateRegisterPublication(value: unknown, query: Pick<SourceRegisterQueryWire, 'from' | 'toExclusive'>, descriptor: Pick<SourceRegisterDescriptorWire, 'schema'>): string | null {
   if (!hasExactMembers(value, ['metadata', 'contentHash']) || !hash(value.contentHash)) return 'Результат не містить коректного посилання на опублікований знімок.'
   const metadata = value.metadata
   if (!hasExactMembers(metadata, ['schema', 'scopeHash', 'principalPolicyHash', 'captureId', 'revision', 'coverageStart', 'coverageEndExclusive', 'sourceReceiptHash', 'complete'])
