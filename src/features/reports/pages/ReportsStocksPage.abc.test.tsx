@@ -40,6 +40,7 @@ describe('server-computed ABC constructor', () => {
     const data = vi.mocked(createStockReport).mock.calls[0][0]
     expect(data.abcClassification).toEqual(accountAbc)
     expect(data.sorted.Row[1]).toEqual(abcClass)
+    expect(screen.getByText(/Окремі рядки підсумків A\/B\/C у файлі з’являються, лише коли «ABC-клас» стоїть першим у групуванні рядків/)).toBeTruthy()
     expect(data.sorted.Row.filter(field => field.type === 46)).toHaveLength(1)
     expect(data.sorted.Col).toEqual([])
     expect(data).not.toHaveProperty('classes')
