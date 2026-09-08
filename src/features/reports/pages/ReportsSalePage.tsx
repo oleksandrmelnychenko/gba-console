@@ -1,3 +1,4 @@
+import { IMPORTED_PAYMENTS_TITLE } from '../data/importedPayments'
 import {
   ActionIcon,
   Alert,
@@ -293,7 +294,7 @@ function ReportHeaderBlock({ header }: { header: SpreadsheetReportHeader }) {
   const details = addOccurrenceKeys(presentation.lines.filter((line) => !warnings.has(line)))
 
   return (
-    <Stack className={[CLIENT_ACTIVITY_REPORT_TITLE, CLIENT_COMPARISON_TITLE].includes(header.lines[0]) ? 'reports-client-activity-header' : undefined} gap={6}>
+    <Stack className={[CLIENT_ACTIVITY_REPORT_TITLE, CLIENT_COMPARISON_TITLE, IMPORTED_PAYMENTS_TITLE].includes(header.lines[0]) ? 'reports-client-activity-header' : undefined} gap={6}>
       {warningLines.length ? (
         <Alert className="reports-page-alert" color="yellow" icon={<CircleAlert size={18} />}>
           <Stack gap={2}>

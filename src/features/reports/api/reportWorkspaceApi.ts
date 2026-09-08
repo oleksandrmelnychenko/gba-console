@@ -21,6 +21,7 @@ function isDataset(value: unknown): value is ReportDataset {
     && (item.PeriodRequired === undefined || typeof item.PeriodRequired === 'boolean')
     && (item.PeriodSupported === undefined || typeof item.PeriodSupported === 'boolean')
     && (item.DataSource !== 12 || (item.PeriodRequired === true && item.PeriodSupported === true))
+    && (item.DataSource !== 14 || (item.PeriodRequired === true && item.PeriodSupported === true))
     && (item.DataSource !== 13 || (item.PeriodRequired === true && item.PeriodSupported === true && isClientComparisonCapability(item.Comparison)))
     && !(item.PeriodSupported === false && item.PeriodRequired === true)
     && (!isCurrentReportSource(item.DataSource) || item.PeriodSupported === false)

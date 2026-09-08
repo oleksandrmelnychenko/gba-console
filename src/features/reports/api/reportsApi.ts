@@ -8,6 +8,7 @@ import type {
   SaleReturnsReportSearchParams,
   SalesReportSearchParams,
 } from '../types'
+import { importedPaymentsConfigurationError } from '../data/importedPayments'
 import { clientComparisonConfigurationError } from '../data/clientPeriodComparison'
 import { normalizeReportResult } from '../utils'
 
@@ -15,6 +16,8 @@ const EMPTY_GUID = '00000000-0000-0000-0000-000000000000'
 const CLIENT_FILTER_SQL = 'RegionCode.Value/Client.FullName/Client.USREOU'
 
 export async function createStockReport(body: ReportRequestBody): Promise<ReportResult> {
+  const paymentsError = importedPaymentsConfigurationError(body)
+  if (paymentsError) throw new Error(paymentsError)
   const comparisonError = clientComparisonConfigurationError(body)
   if (comparisonError) throw new Error(comparisonError)
   const result = await apiRequest<unknown>('/report/stocks/generate', {

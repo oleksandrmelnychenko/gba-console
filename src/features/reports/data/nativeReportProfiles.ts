@@ -1,3 +1,4 @@
+import { IMPORTED_PAYMENTS_TITLE } from './importedPayments'
 import { CLIENT_COMPARISON_TITLE } from './clientPeriodComparison'
 import { CLIENT_ACTIVITY_REPORT_TITLE } from './clientActivityReport'
 import { CURRENT_STOCK_REPORT_TITLES, getCurrentStockReport, isCurrentStockPresetId, isCurrentStockSource, type CurrentStockPresetId } from './currentStockReports'
@@ -9,6 +10,9 @@ export const DEBT_AMOUNT_CAPTION = 'Записана заборгованіст�
 export const ACCOUNT_BALANCE_REPORT_TITLE = 'Записані залишки рахунків'
 export const ACCOUNT_BALANCE_AMOUNT_CAPTION = 'Записаний залишок рахунку'
 const DOCUMENT_REPORT_PROFILES = [
+  { dataSource: 14, title: IMPORTED_PAYMENTS_TITLE, rowGroupings: [41, 48, 40], measurements: [29, 30, 31],
+    preset: { id: 'imported-payments-by-currency-direction-account', name: 'Імпортовані платежі за валютами й рахунками',
+      description: 'Валюта → напрям → рахунок. Записані суми документів із чотирма десятковими знаками; різні або непідтверджені валюти не додаються.' } },
   { dataSource: 13, title: CLIENT_COMPARISON_TITLE, rowGroupings: [12], measurements: [25, 26, 27, 28],
     preset: { id: 'sale-clients-period-comparison', name: 'Клієнти: порівняння періодів',
       description: 'Клієнти у двох вибраних періодах, зміна кількості та відсоток. Підсумки обчислює сервер за унікальними клієнтами кожного періоду.' } },
@@ -38,5 +42,5 @@ export function isCurrentReportSource(dataSource: number | undefined): boolean {
   return isCurrentStockSource(dataSource) || dataSource === 10 || dataSource === 11
 }
 export function usesNativeReportLookup(dataSource: number | undefined): boolean {
-  return isCurrentReportSource(dataSource) || dataSource === 9 || dataSource === 12 || dataSource === 13
+  return isCurrentReportSource(dataSource) || dataSource === 9 || dataSource === 12 || dataSource === 13 || dataSource === 14
 }

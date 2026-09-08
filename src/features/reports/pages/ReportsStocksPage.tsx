@@ -231,10 +231,10 @@ function ReportsStocksWorkspace() {
     [colGroups, groupingOptions, rowGroups],
   )
   const filterFieldOptions = useMemo(() => datasetFilters(dataset), [dataset])
-  const maxDate = useMemo(() => dataSource === 13 ? CLIENT_COMPARISON_MAX_DATE : `${today.slice(0, 4)}-12-31`, [dataSource, today])
+  const maxDate = useMemo(() => (dataSource === 13 || dataSource === 14) ? CLIENT_COMPARISON_MAX_DATE : `${today.slice(0, 4)}-12-31`, [dataSource, today])
   const [debouncedFrom] = useDebouncedValue(from, DATE_INPUT_DEBOUNCE_MS)
   const [debouncedTo] = useDebouncedValue(to, DATE_INPUT_DEBOUNCE_MS)
-  const periodError = dataSource === 13 ? (!isComparisonDate(from) || !isComparisonDate(to) || from > to ? 'Оберіть коректний поточний період у межах 1900–9998 років.' : null)
+  const periodError = (dataSource === 13 || dataSource === 14) ? (!isComparisonDate(from) || !isComparisonDate(to) || from > to ? 'Оберіть коректний період у межах 1900–9998 років.' : null)
     : periodSupported ? getPeriodError(from, to, maxDate, t) : null
   // The value lookups re-query on every keystroke in the date fields, half-typed years included. They follow the
   // period on a pause, and only once it is a period the server can answer for.
@@ -324,7 +324,7 @@ function ReportsStocksWorkspace() {
   }
 
   function resetReport() {
-    const snapshotDefaults = dataset && (!periodSupported || dataSource === 13) ? defaultDatasetRequest(dataset, today, today) : null
+    const snapshotDefaults = dataset && (!periodSupported || dataSource === 13 || dataSource === 14) ? defaultDatasetRequest(dataset, today, today) : null
     setComparison(snapshotDefaults?.comparison)
     setFrom(periodSupported ? today : '')
     setTo(periodSupported ? today : '')
@@ -615,7 +615,7 @@ function ReportBuilderForm({
             <TextInput
               label={dataSource === 13 ? 'Поточний період: від' : t('Від')}
               max={to || maxDate}
-              min={dataSource === 13 ? CLIENT_COMPARISON_MIN_DATE : REPORT_MIN_DATE}
+              min={(dataSource === 13 || dataSource === 14) ? CLIENT_COMPARISON_MIN_DATE : REPORT_MIN_DATE}
               type="date"
               value={from}
               onChange={(event) => onFromChange(event.currentTarget.value)}
@@ -623,7 +623,7 @@ function ReportBuilderForm({
             <TextInput
               label={dataSource === 13 ? 'Поточний період: до' : t('До')}
               max={maxDate}
-              min={from || (dataSource === 13 ? CLIENT_COMPARISON_MIN_DATE : REPORT_MIN_DATE)}
+              min={from || ((dataSource === 13 || dataSource === 14) ? CLIENT_COMPARISON_MIN_DATE : REPORT_MIN_DATE)}
               type="date"
               value={to}
               onChange={(event) => onToChange(event.currentTarget.value)}
