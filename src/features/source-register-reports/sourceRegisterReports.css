@@ -1,0 +1,20 @@
+.source-register-reports { min-width: 0; max-width: 100%; }
+.source-register-reports h2 { margin: 0; }
+.source-register-reports details { font-size: .8125rem; overflow-wrap: anywhere; }
+.source-register-reports summary { cursor: pointer; padding-block: .25rem; }
+.source-register-period { min-width: 0; border: 1px solid var(--mantine-color-default-border); border-radius: .5rem; padding: .75rem; }
+.source-register-period legend { padding-inline: .3rem; font-size: .875rem; font-weight: 600; }
+.source-register-ordered-list { display: grid; gap: .75rem; padding-inline-start: 1.5rem; margin: 0; }
+.source-register-measure-list { list-style: none; padding-inline-start: 0; }
+.source-register-ordered-list li { min-width: 0; padding-bottom: .5rem; border-bottom: 1px solid var(--mantine-color-default-border); overflow-wrap: anywhere; }
+.source-register-audit { display: grid; grid-template-columns: minmax(7rem, 1fr) minmax(0, 3fr); gap: .35rem 1rem; }
+.source-register-audit dd { margin: 0; overflow-wrap: anywhere; font-family: monospace; }
+.source-register-table-scroll { max-width: 100%; overflow: auto; border: 1px solid var(--mantine-color-default-border); border-radius: .5rem; }
+.source-register-result-table { border-collapse: collapse; width: 100%; }
+.source-register-result-table th, .source-register-result-table td { padding: .5rem .75rem; border-bottom: 1px solid var(--mantine-color-default-border); vertical-align: top; }
+.source-register-result-table th { text-align: left; min-width: 10rem; max-width: 20rem; }
+.source-register-result-table td { min-width: 10rem; max-width: 30rem; }
+.source-register-result-table .source-register-exact { text-align: right; font-family: monospace; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.source-register-result-table .source-register-text { white-space: pre-wrap; overflow-wrap: anywhere; }
+.source-register-result-table tfoot { font-weight: 600; background: var(--mantine-color-default-hover); }
+@media (max-width: 48em) { .source-register-audit { grid-template-columns: 1fr; gap: .25rem; } .source-register-audit dd { margin-bottom: .5rem; } }
