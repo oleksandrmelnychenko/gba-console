@@ -1,3 +1,5 @@
+import { XYZ_TITLE } from '../data/salesXyz'
+import { salesXyzHeaderPresentation } from './salesXyzHeaderPresentation'
 import { IMPORTED_PAYMENTS_TITLE } from '../data/importedPayments'
 import { importedPaymentsHeaderPresentation } from './importedPaymentsHeaderPresentation'
 import { CLIENT_COMPARISON_TITLE } from '../data/clientPeriodComparison'
@@ -14,6 +16,7 @@ const isBoundary = (line: string) => !line.trim() || line.trimStart().startsWith
 
 /** Join only the five native client notes for display. Raw attribution and CSV retain physical writer rows. */
 export function getReportHeaderPresentation(header: SpreadsheetReportHeader): Pick<SpreadsheetReportHeader, 'lines' | 'warnings'> {
+  if (header.lines[0] === XYZ_TITLE) return salesXyzHeaderPresentation(header)
   if (header.lines[0] === IMPORTED_PAYMENTS_TITLE) return importedPaymentsHeaderPresentation(header)
   if (header.lines[0] === CLIENT_COMPARISON_TITLE) return clientComparisonHeaderPresentation(header)
   if (header.lines[0] !== CLIENT_ACTIVITY_REPORT_TITLE) return header

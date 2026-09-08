@@ -1,3 +1,4 @@
+import { salesXyzConfigurationError } from '../data/salesXyz'
 import { apiRequest } from '../../../shared/api/apiClient'
 import type {
   ReportEntity,
@@ -16,6 +17,8 @@ const EMPTY_GUID = '00000000-0000-0000-0000-000000000000'
 const CLIENT_FILTER_SQL = 'RegionCode.Value/Client.FullName/Client.USREOU'
 
 export async function createStockReport(body: ReportRequestBody): Promise<ReportResult> {
+  const xyzError = salesXyzConfigurationError(body)
+  if (xyzError) throw new Error(xyzError)
   const paymentsError = importedPaymentsConfigurationError(body)
   if (paymentsError) throw new Error(paymentsError)
   const comparisonError = clientComparisonConfigurationError(body)
