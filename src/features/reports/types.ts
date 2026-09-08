@@ -188,6 +188,27 @@ export type ReportThresholdCapabilities = {
   SupportsOrdering: true
 }
 
+export type ReportHideZero = { Version: 1 }
+export type ReportHideZeroCapabilities = {
+  Version: 1
+  GroupingTypes: [42]
+  Measures: [24]
+  MinimumNativeRowGroups: 1
+  MaximumNativeRowGroups: 1
+  MaximumColumnGroups: 0
+  MinimumActiveMeasures: 1
+  MaximumActiveMeasures: 1
+  MaximumContributions: 200000
+  OptionalGeneratedGrouping: 46
+  ProofGrain: 'CurrentPaymentCurrencyRegisterId'
+  UnknownAmountsRetained: true
+  PresentationOnly: true
+  FactsRetainedForTotals: true
+  FactsRetainedForAbc: true
+  GlobalZeroResourceHidden: true
+  CompleteSourceParity: false
+}
+
 export type ReportRequestBody = {
   dataSource?: number
   valuationClientAgreementId?: number | null
@@ -198,6 +219,8 @@ export type ReportRequestBody = {
   FilterExpression?: unknown
   abcClassification?: unknown
   AbcClassification?: unknown
+  hideZero?: unknown
+  HideZero?: unknown
   threshold?: unknown
   Threshold?: unknown
   topGroups?: unknown
@@ -224,6 +247,7 @@ export type ReportDataset = {
   Ordering?: unknown
   FilterExpression?: unknown
   TopGroups?: unknown
+  HideZero?: unknown
   Threshold?: unknown
   AbcClassification?: unknown
   Groupings: ReportDatasetField[]
@@ -373,6 +397,7 @@ export type SpreadsheetReportHeader = {
 }
 
 export type SpreadsheetSheet = {
+  presentationState?: 'all_confirmed_zero_hidden'
   columns: string[]
   // null for anything that is not one of our report engine's files — a plain CSV, or a workbook produced before
   // the engine started recording its request.

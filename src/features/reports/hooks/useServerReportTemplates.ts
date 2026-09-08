@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { deleteServerReportTemplate, getServerReportTemplates, saveServerReportTemplate } from '../api/reportWorkspaceApi'
 import { valuationConfigurationError } from '../data/reportValuation'
 import { reportThresholdError } from '../data/reportThreshold'
+import { reportHideZeroError } from '../data/reportHideZero'
 import { reportOrderingError } from '../data/reportOrdering'
 import { reportFilterExpressionError } from '../data/reportFilterExpression'
 import { reportAbcClassificationError } from '../data/reportAbcClassification'
@@ -105,6 +106,8 @@ export function useServerReportTemplates(enabled: boolean, datasets: ReportDatas
         if (topError) throw new Error(topError)
         const thresholdError = reportThresholdError(request.Data, datasets.find(item => item.DataSource === (request.Data.dataSource ?? 0)))
         if (thresholdError) throw new Error(thresholdError)
+        const hideZeroError = reportHideZeroError(request.Data, datasets.find(item => item.DataSource === (request.Data.dataSource ?? 0)))
+        if (hideZeroError) throw new Error(hideZeroError)
         const saved = await saveServerReportTemplate(request)
         if (alive.current) {
           setTemplates(current => [...current.filter(item => item.Id !== saved.Id), saved])

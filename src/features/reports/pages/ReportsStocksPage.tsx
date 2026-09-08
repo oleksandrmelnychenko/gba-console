@@ -98,6 +98,8 @@ import { buildReportBuilderRequest } from '../data/reportBuilderRequest'
 import { useReportFilterExpression, type ReportSelectionEdit } from '../hooks/useReportFilterExpression'
 import { ReportFilterExpressionPanel } from './ReportFilterExpressionPanel'
 import { requestThreshold } from '../data/reportThreshold'
+import { requestHideZero } from '../data/reportHideZero'
+import { ReportHideZeroPanel } from './ReportHideZeroPanel'
 import { ReportThresholdPanel } from './ReportThresholdPanel'
 import { ReportTopGroupsPanel } from './ReportTopGroupsPanel'
 import { ABC_CLASS_GROUPING, requestAbcClassification } from '../data/reportAbcClassification'
@@ -197,6 +199,7 @@ function ReportsStocksWorkspace() {
   const { rowGroups, setRowGroups, colGroups, setColGroups, ordering } = groupingOrdering
   const abc = useReportAbcClassification({ Row: rowGroups, Col: colGroups }, groupingOrdering.changeLayout, dataset)
   const abcClassification = abc.value
+  const [hideZero, setHideZero] = useValueState<unknown>(undefined)
   const [threshold, setThreshold] = useValueState<unknown>(undefined)
   const [topGroups, setTopGroups] = useValueState<unknown>(undefined)
   const filterLogic = useReportFilterExpression()
@@ -232,8 +235,8 @@ function ReportsStocksWorkspace() {
   // period on a pause, and only once it is a period the server can answer for.
   const hasLookupPeriod = !getPeriodError(debouncedFrom, debouncedTo, maxDate, t)
   const reportBody = useMemo<ReportRequestBody>(
-    () => buildReportBuilderRequest({ dataSource, from, to, ordering, filterExpression, topGroups, threshold, abcClassification, valuationClientAgreementId, rowGroups, colGroups, measurements, selections }),
-    [abcClassification, colGroups, dataSource, filterExpression, from, measurements, ordering, rowGroups, selections, to, topGroups, threshold, valuationClientAgreementId],
+    () => buildReportBuilderRequest({ dataSource, from, to, ordering, filterExpression, topGroups, threshold, hideZero, abcClassification, valuationClientAgreementId, rowGroups, colGroups, measurements, selections }),
+    [abcClassification, colGroups, dataSource, filterExpression, from, hideZero, measurements, ordering, rowGroups, selections, to, topGroups, threshold, valuationClientAgreementId],
   )
   const templateBody = { ...reportBody, selections }
   const configurationError = datasetStorage.error ?? (!datasetStorage.loaded ? t('Завантаження наборів даних…') : datasetConfigurationError(templateBody, dataset))
@@ -324,6 +327,7 @@ function ReportsStocksWorkspace() {
     filterLogic.load([])
     setTopGroups(undefined)
     setThreshold(undefined)
+    setHideZero(undefined)
     abc.load(undefined)
     setValuationAgreementId(undefined)
     groupingOrdering.loadOrdering(undefined)
@@ -380,6 +384,7 @@ function ReportsStocksWorkspace() {
     filterLogic.load(data.selections, requestFilterExpression(data))
     setTopGroups(structuredClone(requestTopGroups(data)))
     setThreshold(structuredClone(requestThreshold(data)))
+    setHideZero(structuredClone(requestHideZero(data)))
     abc.load(requestAbcClassification(data))
     setMeasurements(datasetMeasurements(nextDataset, data.sorted.Measurements))
     setTemplateNotice(null)
@@ -448,6 +453,7 @@ function ReportsStocksWorkspace() {
         onColGroupsChange={value => groupingOrdering.changeAxis('Col', value)}
         onGroupingLayoutChange={groupingOrdering.changeLayout}
         abcPanel={<ReportAbcClassificationPanel data={templateBody} dataset={dataset} disabled={isLoading || !canGenerateReport} notice={abc.notice} onChange={abc.change} />}
+        hideZeroPanel={<ReportHideZeroPanel data={templateBody} dataset={dataset} disabled={isLoading || !canGenerateReport} onChange={setHideZero} />}
         thresholdPanel={<ReportThresholdPanel data={templateBody} dataset={dataset} disabled={isLoading || !canGenerateReport} onChange={setThreshold} />}
         topGroupsPanel={<ReportTopGroupsPanel data={templateBody} dataset={dataset} disabled={isLoading || !canGenerateReport} onChange={setTopGroups} />}
         filterExpressionPanel={<ReportFilterExpressionPanel data={templateBody} dataset={dataset} disabled={isLoading || !canGenerateReport}
@@ -481,6 +487,7 @@ function ReportsStocksWorkspace() {
 
 type ReportBuilderFormProps = {
   abcPanel: ReactNode
+  hideZeroPanel: ReactNode
   thresholdPanel: ReactNode
   topGroupsPanel: ReactNode
   filterExpressionPanel: ReactNode
@@ -535,6 +542,7 @@ type ReportBuilderFormProps = {
 function ReportBuilderForm({
   abcPanel,
   topGroupsPanel,
+  hideZeroPanel,
   thresholdPanel,
   filterExpressionPanel,
   orderingPanel,
@@ -680,6 +688,7 @@ function ReportBuilderForm({
           {filterExpressionPanel}
           {topGroupsPanel}
           {thresholdPanel}
+          {hideZeroPanel}
           {abcPanel}
           {orderingPanel}
           <ReportResultSection

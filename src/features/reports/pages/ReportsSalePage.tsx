@@ -451,7 +451,7 @@ async function parseSpreadsheetFile(file: File): Promise<SpreadsheetSheet[]> {
         sheet.sheet,
         sheet.data.map((row) => row.map(normalizeImportedCellValue)),
       )
-      if (built.rows.length > 0 || built.columns.length > 0) {
+      if (built.presentationState || built.rows.length > 0 || built.columns.length > 0) {
         acc.push(built)
       }
       return acc
@@ -469,7 +469,7 @@ async function parseSpreadsheetFile(file: File): Promise<SpreadsheetSheet[]> {
         .map((row) => (Array.isArray(row) ? row.map(normalizeImportedCellValue) : []))
 
       const built = buildSpreadsheetSheet(sheetName, rows)
-      if (built.rows.length > 0 || built.columns.length > 0) {
+      if (built.presentationState || built.rows.length > 0 || built.columns.length > 0) {
         acc.push(built)
       }
       return acc

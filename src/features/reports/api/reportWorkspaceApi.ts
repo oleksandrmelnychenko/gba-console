@@ -49,6 +49,8 @@ type WireTemplate = Required<Omit<ReportTemplate, 'Data'>> & {
     ValuationClientAgreementId?: ReportRequestBody['valuationClientAgreementId']
     Ordering?: unknown
     FilterExpression?: unknown
+    HideZero?: unknown
+    hideZero?: unknown
     Threshold?: unknown
     threshold?: unknown
     AbcClassification?: unknown
@@ -71,6 +73,9 @@ export function normalizeSavedTemplate(value: WireTemplate): ReportTemplate {
     dataSource: value.Data.DataSource,
     ...(Object.hasOwn(value.Data, 'Ordering') ? { ordering: value.Data.Ordering } : {}),
     ...(Object.hasOwn(value.Data, 'FilterExpression') ? { filterExpression: value.Data.FilterExpression } : {}),
+    ...(Object.hasOwn(value.Data, 'hideZero') ? { hideZero: value.Data.hideZero,
+      ...(Object.hasOwn(value.Data, 'HideZero') ? { HideZero: value.Data.HideZero } : {}),
+    } : Object.hasOwn(value.Data, 'HideZero') ? { hideZero: value.Data.HideZero } : {}),
     ...(Object.hasOwn(value.Data, 'threshold') ? { threshold: value.Data.threshold,
       ...(Object.hasOwn(value.Data, 'Threshold') ? { Threshold: value.Data.Threshold } : {}),
     } : Object.hasOwn(value.Data, 'Threshold') ? { threshold: value.Data.Threshold } : {}),

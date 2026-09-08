@@ -6,6 +6,7 @@ import type {
   SpreadsheetSheet,
 } from './types'
 import { parseNumericValue } from './utils'
+import { hiddenZeroExportRows, readHideZeroSheet } from './data/hideZeroSpreadsheet'
 import { VALUATION_REQUIRED_METADATA_PREFIXES, VALUATION_MONEY_CAPTION } from './data/reportValuation'
 import { CURRENT_STOCK_REPORT_TITLES, getCurrentStockReport } from './data/currentStockReports'
 import { CURRENT_REPORT_TITLES, SUPPLIER_RETURN_REPORT_TITLE, SUPPLIER_RETURN_QUANTITY_CAPTION, DEBT_REPORT_TITLE, DEBT_AMOUNT_CAPTION, ACCOUNT_BALANCE_REPORT_TITLE, ACCOUNT_BALANCE_AMOUNT_CAPTION } from './data/nativeReportProfiles'
@@ -83,6 +84,8 @@ export function buildSpreadsheetSheet(name: string, rows: SpreadsheetCellValue[]
   // A filtered CSV can retain the complete attribution block with no total rows.
   // Read that explicit structure independently of the workbook's subtotal markers.
   const reportHeader = readReportHeader(sheetRows, format)
+  const hiddenZeroSheet = readHideZeroSheet(name, sheetRows, reportHeader, REPORT_TITLES.has(String(sheetRows[0]?.[0] ?? '').trim()))
+  if (hiddenZeroSheet) return hiddenZeroSheet
   const isReport = reportHeader !== null || sheetRows.some((row) => getStructuralRowKind(row) !== null)
   // The attribution block the engine now writes above the table. It is what tells the viewer where the table
   // starts — reading that off the data instead is what broke here: countHeaderRows() took the first row holding a
@@ -116,6 +119,7 @@ export function buildSheetExportRows(
   rows: SpreadsheetRow[],
   totalsRow?: SpreadsheetCellValue[] | null,
 ): SpreadsheetCellValue[][] {
+  if (sheet.presentationState === 'all_confirmed_zero_hidden') return hiddenZeroExportRows(sheet, rows.map(row => row.cells), totalsRow)
   const attribution: SpreadsheetCellValue[][] = sheet.header
     ? [...sheet.header.lines.map((line) => [line]), []]
     : []

@@ -1,5 +1,6 @@
 import type { ReportDataset, ReportFilterField, ReportGroupingItem, ReportMeasurementGroup, ReportMeasurementSelection, ReportRequestBody } from '../types'
 import { reportThresholdError } from './reportThreshold'
+import { reportHideZeroError } from './reportHideZero'
 import { createDefaultMeasurementGroups, flattenCheckedMeasurements, flattenGroupingOptions, REPORT_FILTER_CONDITIONS, REPORT_FILTER_FIELD_GROUPS } from './reportOptions'
 import { createSalesReportPreset, SALES_REPORT_PRESETS, type SalesReportPresetId } from './reportPresets'
 import { reportOrderingError } from './reportOrdering'
@@ -143,7 +144,7 @@ export function datasetConfigurationError(data: ReportRequestBody, dataset: Repo
     ...data.selections.flatMap(item => (!item.IsChecked || filterTypes.has(item.SelectedField?.Type)) && conditionTypes.has(item.FilterCondition?.Type)
       ? [] : [item.SelectedField?.Name || 'Умова відбору']),
   ]
-  return unsupported.length ? `Набір «${dataset.Name}» не підтримує налаштування: ${unsupported.join(', ')}. Налаштування не застосовано.` : reportAbcClassificationError(data, dataset) ?? reportOrderingError(data, dataset) ?? reportFilterExpressionError(data, dataset) ?? reportTopGroupsError(data, dataset) ?? reportThresholdError(data, dataset)
+  return unsupported.length ? `Набір «${dataset.Name}» не підтримує налаштування: ${unsupported.join(', ')}. Налаштування не застосовано.` : reportAbcClassificationError(data, dataset) ?? reportOrderingError(data, dataset) ?? reportFilterExpressionError(data, dataset) ?? reportTopGroupsError(data, dataset) ?? reportThresholdError(data, dataset) ?? reportHideZeroError(data, dataset)
 }
 
 export function datasetPresets(dataset: ReportDataset | undefined): DatasetReportPreset[] {
@@ -176,7 +177,9 @@ export function datasetPresetRequest(dataset: ReportDataset, id: DatasetReportPr
   const preset = datasetPresets(dataset).find(item => item.id === id)
   if (!preset) return null
   // Preserve both raw aliases, including invalid imported material, without reconstructing the tree.
-  const preservedOptions = { ...(Object.hasOwn(current, 'threshold') ? { threshold: structuredClone(current.threshold) } : {}),
+  const preservedOptions = { ...(Object.hasOwn(current, 'hideZero') ? { hideZero: structuredClone(current.hideZero) } : {}),
+    ...(Object.hasOwn(current, 'HideZero') ? { HideZero: structuredClone(current.HideZero) } : {}),
+    ...(Object.hasOwn(current, 'threshold') ? { threshold: structuredClone(current.threshold) } : {}),
     ...(Object.hasOwn(current, 'Threshold') ? { Threshold: structuredClone(current.Threshold) } : {}),
     ...(Object.hasOwn(current, 'abcClassification') ? { abcClassification: structuredClone(current.abcClassification) } : {}),
     ...(Object.hasOwn(current, 'AbcClassification') ? { AbcClassification: structuredClone(current.AbcClassification) } : {}),
