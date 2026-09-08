@@ -155,6 +155,39 @@ export type ReportAbcClassificationCapabilities = {
   TieBreak: 'TypedKeyAscending'
 }
 
+export type ReportThreshold = {
+  Version: 1
+  Axis: 1
+  Grouping: number
+  Measure: number
+  Percent: number
+}
+export type ReportThresholdCapabilities = {
+  Version: 1
+  MaximumRules: 1
+  Axes: [1]
+  PercentMinimum: 1
+  PercentMaximum: 100
+  PercentScale: 0
+  MaximumNativeRowGroupings: 1
+  MaximumNativeColumnGroupings: 0
+  MaximumActiveMeasures: 1
+  GroupingTypes: number[]
+  RankingMeasures: number[]
+  Scope: 'GlobalKeyAfterTop'
+  TotalsScope: 'AllInputFactsIncludingOther'
+  UnknownScores: 'Reject'
+  NegativeScores: 'Reject'
+  NonPositiveTotal: 'RejectExceptEmpty'
+  ZeroOnlyRemainder: 'Reject'
+  OtherIdentityKind: 'ThresholdOther'
+  SyntheticOtherSelectable: false
+  MaximumContributions: 200000
+  SupportsAbc: true
+  SupportsTop: true
+  SupportsOrdering: true
+}
+
 export type ReportRequestBody = {
   dataSource?: number
   valuationClientAgreementId?: number | null
@@ -165,6 +198,8 @@ export type ReportRequestBody = {
   FilterExpression?: unknown
   abcClassification?: unknown
   AbcClassification?: unknown
+  threshold?: unknown
+  Threshold?: unknown
   topGroups?: unknown
   TopGroups?: unknown
   oneC?: OneCTurnoverFilters
@@ -189,6 +224,7 @@ export type ReportDataset = {
   Ordering?: unknown
   FilterExpression?: unknown
   TopGroups?: unknown
+  Threshold?: unknown
   AbcClassification?: unknown
   Groupings: ReportDatasetField[]
   Measurements: ReportDatasetField[]
