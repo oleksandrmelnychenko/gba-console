@@ -7,6 +7,8 @@ import type { SpreadsheetRow, SpreadsheetSheet } from '../types'
 import { clientComparisonColumn, isClientComparisonSheet } from '../data/clientPeriodComparisonSpreadsheet'
 import { isClientActivitySheet } from '../data/clientActivityReport'
 import { getSpreadsheetNumberFormatter } from '../spreadsheet'
+import { isImportedPaymentsSheet } from '../data/importedPaymentsSpreadsheet'
+import ImportedPaymentsChartCurrency from './ImportedPaymentsChartCurrency'
 
 type Props = { sheet: SpreadsheetSheet; rows: SpreadsheetRow[] }
 type ChartKind = 'column' | 'bar' | 'line'
@@ -18,7 +20,6 @@ export default function SpreadsheetChartPanel({ sheet, rows }: Props) {
   const [selectedMeasure, setSelectedMeasure] = useState<string | null>(null)
   const [kind, setKind] = useState<ChartKind>('column')
   const measure = options.find(option => option.value === selectedMeasure) ?? options[0]
-  const chart = useMemo(() => buildSpreadsheetChartData(sheet, rows, Number(measure?.value)), [sheet, rows, measure?.value])
 
   if (!options.length) return <Alert color="gray">У файлі немає числових показників для діаграми.</Alert>
   return <Stack gap="sm">
@@ -27,13 +28,22 @@ export default function SpreadsheetChartPanel({ sheet, rows }: Props) {
         onChange={setSelectedMeasure} style={{ flex: 1, minWidth: 220 }} />
       <SegmentedControl aria-label="Тип діаграми" data={chartKinds} value={kind} onChange={value => setKind(value as ChartKind)} />
     </Group>
+    {isImportedPaymentsSheet(sheet) ? <ImportedPaymentsChartCurrency sheet={sheet} rows={rows} measurementIndex={Number(measure.value)}>
+      {(currencyRows, currencyLabel) => <SpreadsheetChartContent sheet={sheet} rows={currencyRows} measure={{ ...measure, label: `${measure.label} · ${currencyLabel}` }} kind={kind} />}
+    </ImportedPaymentsChartCurrency> : <SpreadsheetChartContent sheet={sheet} rows={rows} measure={measure} kind={kind} />}
+  </Stack>
+}
+
+function SpreadsheetChartContent({ sheet, rows, measure, kind }: Props & { measure: { value: string; label: string }; kind: ChartKind }) {
+  const chart = useMemo(() => buildSpreadsheetChartData(sheet, rows, Number(measure.value)), [sheet, rows, measure.value])
+  return <>
     <Text size="sm">Кожна точка — окремий рядок таблиці. {sheet.header ? 'Службові підсумки звіту виключено. ' : ''}Значення й відсотки не додаються.</Text>
     <Text size="xs" c="dimmed">Показано {chart.points.length} із {chart.dataRowCount} рядків у порядку таблиці.
       {chart.hiddenCount ? ' Діаграма обмежена першими 50 рядками; звузьте відбори для перегляду інших.' : ''}</Text>
     {chart.unknownCount ? <Alert color="yellow">Для {chart.unknownCount} показаних рядків немає числового значення. Вони залишені порожніми; лінія має розриви.</Alert> : null}
     {!chart.points.length ? <Alert color="gray">За поточними відборами немає рядків даних.</Alert> : <SpreadsheetChartPlot points={chart.points} kind={kind} measure={measure.label} unknownCount={chart.unknownCount}
       formatter={getSpreadsheetNumberFormatter(sheet, Number(measure.value)) ?? formatNumber} integerCounts={isClientActivitySheet(sheet) || (isClientComparisonSheet(sheet) && clientComparisonColumn(sheet.columns[Number(measure.value)]) < 3)} />}
-  </Stack>
+  </>
 }
 
 function SpreadsheetChartPlot({ points, kind, measure, unknownCount, formatter, integerCounts }: {
