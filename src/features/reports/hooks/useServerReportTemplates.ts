@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { deleteServerReportTemplate, getServerReportTemplates, saveServerReportTemplate } from '../api/reportWorkspaceApi'
 import { valuationConfigurationError } from '../data/reportValuation'
 import { reportOrderingError } from '../data/reportOrdering'
+import { reportFilterExpressionError } from '../data/reportFilterExpression'
 import type { ReportDataset, ReportRequestBody, ReportTemplate } from '../types'
 
 /** Browser variants remain untouched; importing one never sanitizes away its filters. */
@@ -93,6 +94,8 @@ export function useServerReportTemplates(enabled: boolean, datasets: ReportDatas
         if (valuationError) throw new Error(valuationError)
         const orderingError = reportOrderingError(request.Data, datasets.find(item => item.DataSource === (request.Data.dataSource ?? 0)))
         if (orderingError) throw new Error(orderingError)
+        const filterError = reportFilterExpressionError(request.Data, datasets.find(item => item.DataSource === (request.Data.dataSource ?? 0)))
+        if (filterError) throw new Error(filterError)
         const saved = await saveServerReportTemplate(request)
         if (alive.current) {
           setTemplates(current => [...current.filter(item => item.Id !== saved.Id), saved])

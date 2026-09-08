@@ -2,6 +2,7 @@ import type { ReportDataset, ReportFilterField, ReportGroupingItem, ReportMeasur
 import { createDefaultMeasurementGroups, flattenCheckedMeasurements, flattenGroupingOptions, REPORT_FILTER_CONDITIONS, REPORT_FILTER_FIELD_GROUPS } from './reportOptions'
 import { createSalesReportPreset, SALES_REPORT_PRESETS, type SalesReportPresetId } from './reportPresets'
 import { reportOrderingError } from './reportOrdering'
+import { reportFilterExpressionError } from './reportFilterExpression'
 import { valuationConfigurationError, VALUATION_DATA_SOURCE } from './reportValuation'
 import { getNativeReportProfile, isNativeReportPresetId, type NativeReportPresetId } from './nativeReportProfiles'
 
@@ -138,7 +139,7 @@ export function datasetConfigurationError(data: ReportRequestBody, dataset: Repo
     ...data.selections.flatMap(item => (!item.IsChecked || filterTypes.has(item.SelectedField?.Type)) && conditionTypes.has(item.FilterCondition?.Type)
       ? [] : [item.SelectedField?.Name || 'Умова відбору']),
   ]
-  return unsupported.length ? `Набір «${dataset.Name}» не підтримує налаштування: ${unsupported.join(', ')}. Налаштування не застосовано.` : reportOrderingError(data, dataset)
+  return unsupported.length ? `Набір «${dataset.Name}» не підтримує налаштування: ${unsupported.join(', ')}. Налаштування не застосовано.` : reportOrderingError(data, dataset) ?? reportFilterExpressionError(data, dataset)
 }
 
 export function datasetPresets(dataset: ReportDataset | undefined): DatasetReportPreset[] {
@@ -170,18 +171,21 @@ export function datasetPresets(dataset: ReportDataset | undefined): DatasetRepor
 export function datasetPresetRequest(dataset: ReportDataset, id: DatasetReportPresetId, current: ReportRequestBody) {
   const preset = datasetPresets(dataset).find(item => item.id === id)
   if (!preset) return null
+  // Preserve both raw aliases, including invalid imported material, without reconstructing the tree.
+  const expression = { ...(Object.hasOwn(current, 'filterExpression') ? { filterExpression: structuredClone(current.filterExpression) } : {}),
+    ...(Object.hasOwn(current, 'FilterExpression') ? { FilterExpression: structuredClone(current.FilterExpression) } : {}) }
   if (isNativeReportPresetId(id)) {
-    return { Name: preset.name, Data: { ...defaultDatasetRequest(dataset, current.from, current.to), selections: structuredClone(current.selections),
+    return { Name: preset.name, Data: { ...defaultDatasetRequest(dataset, current.from, current.to), ...expression, selections: structuredClone(current.selections),
       ...(dataset.DataSource === VALUATION_DATA_SOURCE && current.valuationClientAgreementId != null
         ? { valuationClientAgreementId: current.valuationClientAgreementId } : {}),
     } }
   }
   if (id === 'quantities-by-unit') {
     const data = defaultDatasetRequest(dataset, current.from, current.to)
-    return { Name: preset.name, Data: { ...data, selections: structuredClone(current.selections), sorted: {
+    return { Name: preset.name, Data: { ...data, ...expression, selections: structuredClone(current.selections), sorted: {
       ...data.sorted, Measurements: data.sorted.Measurements.filter(field => field.Type === 0),
     } } }
   }
   const template = createSalesReportPreset(id, current.from, current.to, current.selections)
-  return { ...template, Name: preset.name, Data: { ...template.Data, dataSource: dataset.DataSource } }
+  return { ...template, Name: preset.name, Data: { ...template.Data, ...expression, dataSource: dataset.DataSource } }
 }

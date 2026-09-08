@@ -89,12 +89,26 @@ export type ReportOrderingCapabilities = {
   Groupings: Array<{ Type: number; By: Array<1 | 2 | 3> }>
 }
 
+export type ReportFilterNode =
+  | { Kind: 1 | 2; Children: ReportFilterNode[]; SelectionIndex?: null }
+  | { Kind: 3; SelectionIndex: number; Children?: null }
+export type ReportFilterExpression = { Version: 1; Root: ReportFilterNode }
+export type ReportFilterExpressionCapabilities = {
+  Version: 1
+  MaximumDepth: number
+  MaximumLeaves: number
+  MaximumNodes: number
+  Operators: Array<1 | 2>
+}
+
 export type ReportRequestBody = {
   dataSource?: number
   valuationClientAgreementId?: number | null
   // Preserve unknown imported versions/properties for explicit validation; never sanitize them away.
   ordering?: unknown
   Ordering?: unknown
+  filterExpression?: unknown
+  FilterExpression?: unknown
   oneC?: OneCTurnoverFilters
   from: string
   selections: ReportSelection[]
@@ -115,6 +129,7 @@ export type ReportDataset = {
   PeriodRequired?: boolean
   PeriodSupported?: boolean
   Ordering?: unknown
+  FilterExpression?: unknown
   Groupings: ReportDatasetField[]
   Measurements: ReportDatasetField[]
   Filters: ReportDatasetField[]

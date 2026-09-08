@@ -93,6 +93,10 @@ import { useServerReportTemplates } from '../hooks/useServerReportTemplates'
 import { ReportCatalogueControl } from './ReportCatalogueControl'
 import { ReportOrderingPanel } from './ReportOrderingPanel'
 import { requestOrdering } from '../data/reportOrdering'
+import { requestFilterExpression } from '../data/reportFilterExpression'
+import { buildReportBuilderRequest } from '../data/reportBuilderRequest'
+import { useReportFilterExpression, type ReportSelectionEdit } from '../hooks/useReportFilterExpression'
+import { ReportFilterExpressionPanel } from './ReportFilterExpressionPanel'
 import { useReportGroupingOrdering } from '../hooks/useReportGroupingOrdering'
 import type { ReportGroupingLayout } from '../data/reportGroupingLayout'
 const LOOKUP_SEARCH_DEBOUNCE_MS = 300
@@ -184,7 +188,8 @@ function ReportsStocksWorkspace() {
   const presets = useMemo(() => datasetPresets(dataset), [dataset])
   const groupingOrdering = useReportGroupingOrdering()
   const { rowGroups, setRowGroups, colGroups, setColGroups, ordering } = groupingOrdering
-  const [selections, setSelections] = useValueState<ReportSelection[]>([])
+  const filterLogic = useReportFilterExpression()
+  const { selections, expression: filterExpression } = filterLogic
   const [result, setResult] = useValueState<ReportResult | null>(null)
   const [lastRun, setLastRun] = useValueState<ReportRunOutcome | null>(null)
   const [error, setError] = useValueState<string | null>(null)
@@ -216,20 +221,8 @@ function ReportsStocksWorkspace() {
   // period on a pause, and only once it is a period the server can answer for.
   const hasLookupPeriod = !getPeriodError(debouncedFrom, debouncedTo, maxDate, t)
   const reportBody = useMemo<ReportRequestBody>(
-    () => ({
-      dataSource,
-      ...(ordering !== undefined ? { ordering } : {}),
-      ...(valuationClientAgreementId !== undefined ? { valuationClientAgreementId } : {}),
-      from,
-      to,
-      sorted: {
-        Col: colGroups,
-        Row: rowGroups,
-        Measurements: flattenCheckedMeasurements(measurements),
-      },
-      selections: selections.filter((selection) => selection.IsChecked && selection.SelectedField.Name),
-    }),
-    [colGroups, dataSource, from, measurements, ordering, rowGroups, selections, to, valuationClientAgreementId],
+    () => buildReportBuilderRequest({ dataSource, from, to, ordering, filterExpression, valuationClientAgreementId, rowGroups, colGroups, measurements, selections }),
+    [colGroups, dataSource, filterExpression, from, measurements, ordering, rowGroups, selections, to, valuationClientAgreementId],
   )
   const templateBody = { ...reportBody, selections }
   const configurationError = datasetStorage.error ?? (!datasetStorage.loaded ? t('Завантаження наборів даних…') : datasetConfigurationError(templateBody, dataset))
@@ -317,7 +310,7 @@ function ReportsStocksWorkspace() {
     setMeasurements(snapshotDefaults ? datasetMeasurements(dataset, snapshotDefaults.sorted.Measurements) : createDefaultMeasurementGroups())
     setRowGroups(snapshotDefaults?.sorted.Row ?? [])
     setColGroups([])
-    setSelections([])
+    filterLogic.load([])
     setValuationAgreementId(undefined)
     groupingOrdering.loadOrdering(undefined)
     setResult(null)
@@ -370,7 +363,7 @@ function ReportsStocksWorkspace() {
     setTo(nextDataset.PeriodSupported === false ? '' : data.to || today)
     setRowGroups(data.sorted.Row.map(item => groupingByType.get(item.type)!))
     setColGroups(data.sorted.Col.map(item => groupingByType.get(item.type)!))
-    setSelections(structuredClone(data.selections))
+    filterLogic.load(data.selections, requestFilterExpression(data))
     setMeasurements(datasetMeasurements(nextDataset, data.sorted.Measurements))
     setTemplateNotice(null)
     setResult(null)
@@ -437,10 +430,12 @@ function ReportsStocksWorkspace() {
         onRowGroupsChange={value => groupingOrdering.changeAxis('Row', value)}
         onColGroupsChange={value => groupingOrdering.changeAxis('Col', value)}
         onGroupingLayoutChange={groupingOrdering.changeLayout}
+        filterExpressionPanel={<ReportFilterExpressionPanel data={templateBody} dataset={dataset} disabled={isLoading || !canGenerateReport}
+          notice={filterLogic.notice} onChange={filterLogic.change} />}
         orderingPanel={<ReportOrderingPanel data={templateBody} dataset={dataset} disabled={isLoading || !canGenerateReport}
           notice={groupingOrdering.notice} onChange={groupingOrdering.changeOrdering} />}
         onSaveTemplate={saveTemplate}
-        onSelectionsChange={setSelections}
+        onSelectionsChange={filterLogic.editSelection}
         onSubmit={submitReport}
         onTemplateNameChange={setTemplateName}
         onToChange={setTo}
@@ -465,6 +460,7 @@ function ReportsStocksWorkspace() {
 }
 
 type ReportBuilderFormProps = {
+  filterExpressionPanel: ReactNode
   orderingPanel: ReactNode
   onGroupingLayoutChange: (layout: ReportGroupingLayout) => void
   dataSource: number
@@ -506,7 +502,7 @@ type ReportBuilderFormProps = {
   onReset: () => void
   onRowGroupsChange: StateSetter<ReportGroupingItem[]>
   onSaveTemplate: () => void
-  onSelectionsChange: StateSetter<ReportSelection[]>
+  onSelectionsChange: (edit: ReportSelectionEdit) => void
   onSubmit: (event: FormEvent<HTMLFormElement>) => void
   onTemplateNameChange: StateSetter<string>
   onToChange: StateSetter<string>
@@ -514,6 +510,7 @@ type ReportBuilderFormProps = {
 }
 
 function ReportBuilderForm({
+  filterExpressionPanel,
   orderingPanel,
   onGroupingLayoutChange,
   dataSource,
@@ -654,6 +651,7 @@ function ReportBuilderForm({
             onRowGroupsChange={onRowGroupsChange}
             onSelectionsChange={onSelectionsChange}
           />
+          {filterExpressionPanel}
           {orderingPanel}
           <ReportResultSection
             hasFiles={resultHasFiles}
@@ -707,7 +705,7 @@ type LegacyReportBuilderProps = {
   onColGroupsChange: StateSetter<ReportGroupingItem[]>
   onMeasurementsChange: StateSetter<ReportMeasurementGroup[]>
   onRowGroupsChange: StateSetter<ReportGroupingItem[]>
-  onSelectionsChange: StateSetter<ReportSelection[]>
+  onSelectionsChange: (edit: ReportSelectionEdit) => void
 }
 
 function LegacyReportBuilder({
@@ -983,7 +981,7 @@ type ReportSelectionsCardProps = {
   selections: ReportSelection[]
   title?: string
   to: string
-  onChange: StateSetter<ReportSelection[]>
+  onChange: (edit: ReportSelectionEdit) => void
 }
 
 function ReportSelectionsCard({
@@ -1024,11 +1022,7 @@ function ReportSelectionsCard({
     }
 
     const savedSelection = cloneReportSelection(draftSelection)
-    onChange((current) =>
-      editorIndex === -1
-        ? [...current, savedSelection]
-        : current.map((selection, index) => (index === editorIndex ? savedSelection : selection)),
-    )
+    onChange(editorIndex === -1 ? { kind: 'append', selection: savedSelection } : { kind: 'replace', index: editorIndex, selection: savedSelection })
     closeEditor()
   }
 
@@ -1067,10 +1061,10 @@ function ReportSelectionsCard({
                   <Checkbox
                     aria-label={`${t('Умова відбору')} ${index + 1}`}
                     checked={selection.IsChecked}
-                    onChange={() => updateSelection(selections, index, onChange, { IsChecked: !selection.IsChecked })}
+                    onChange={() => onChange({ kind: 'replace', index, selection: { ...selection, IsChecked: !selection.IsChecked } })}
                   />
                   <Text className="reports-stocks-selection-summary__copy">
-                    <span className="reports-stocks-selection-summary__field">{fieldLabel}</span>
+                    <span className="reports-stocks-selection-summary__field">№{index + 1}: {fieldLabel}</span>
                     <span className="reports-stocks-selection-summary__condition">
                       {selection.FilterCondition.Name}
                     </span>
@@ -1087,7 +1081,7 @@ function ReportSelectionsCard({
                     <TableRowAction
                       action="delete"
                       label={t('Видалити')}
-                      onClick={() => onChange((current) => current.filter((_, itemIndex) => itemIndex !== index))}
+                      onClick={() => onChange({ kind: 'delete', index })}
                     />
                   </Group>
                 </div>
@@ -2000,15 +1994,6 @@ function toggleMeasurementItem(
       SubList: subList,
     }
   }))
-}
-
-function updateSelection(
-  selections: ReportSelection[],
-  index: number,
-  setter: (value: ReportSelection[]) => void,
-  patch: Partial<ReportSelection>,
-) {
-  setter(selections.map((selection, itemIndex) => (itemIndex === index ? { ...selection, ...patch } : selection)))
 }
 
 // The searched lookups match on fields the option label never shows — a user's по батькові, e-mail or phone
