@@ -261,9 +261,10 @@
 
 .supply-order-spec-actions.app-filter-bar {
   align-items: center;
-  background: #f8f9fa;
+  background: var(--mantine-color-white);
   border: 1px solid var(--mantine-color-gray-2);
-  border-radius: 8px;
+  border-radius: 10px;
+  padding: 10px 12px;
 }
 
 .supply-order-spec-tabs {
@@ -273,17 +274,18 @@
 
 .supply-order-spec-tab-group {
   align-items: center;
-  border-bottom: 1px solid var(--mantine-color-gray-2);
+  background: var(--mantine-color-gray-1);
+  border: 1px solid var(--mantine-color-gray-2);
+  border-radius: 9px;
   display: inline-flex;
   flex: 0 0 auto;
-  gap: 16px;
+  gap: 3px;
   height: 36px;
-  min-width: 0;
-  padding: 0 2px;
+  padding: 3px;
 }
 
 .supply-order-spec-tab-group + .supply-order-spec-tab-group {
-  margin-left: 10px;
+  margin-left: 0;
 }
 
 .supply-order-spec-tabs-spacer {
@@ -313,21 +315,18 @@
   align-self: stretch;
   background: transparent;
   border: 0;
-  border-bottom: 2px solid transparent;
+  border-radius: 6px;
   color: var(--mantine-color-gray-7);
   cursor: pointer;
   display: inline-flex;
   font-family: var(--font-mono);
-  font-size: 13px;
-  font-weight: 500;
+  font-size: 12px;
+  font-weight: 600;
   justify-content: center;
-  letter-spacing: 0;
-  margin-bottom: -1px;
-  min-width: 34px;
-  padding: 0 0 9px;
-  transition:
-    border-color 140ms ease,
-    color 140ms ease;
+  line-height: 1;
+  min-width: 48px;
+  padding: 0 12px;
+  transition: background 140ms ease, color 140ms ease;
 }
 
 .supply-order-spec-tab:hover:not(:disabled) {
@@ -335,9 +334,11 @@
 }
 
 .supply-order-spec-tab.is-active {
-  border-bottom-color: var(--brand-orange);
-  color: var(--mantine-color-gray-9);
-  font-weight: 600;
+  background: var(--brand-orange);
+  color: var(--mantine-color-white);
+}
+.supply-order-spec-tab.is-active:hover:not(:disabled) {
+  color: var(--mantine-color-white);
 }
 
 .supply-order-spec-tab:disabled {
@@ -345,20 +346,35 @@
   opacity: 0.55;
 }
 
+.supply-order-spec-documents {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 12px 28px;
+}
 .supply-order-spec-selector {
-  background: #f8f9fa;
-  border: 1px solid var(--mantine-color-gray-2);
-  border-radius: 8px;
-  padding: 10px 12px;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  min-width: 0;
+  max-width: 100%;
 }
 
 .supply-order-spec-selector-title {
-  margin-bottom: 8px;
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--mantine-color-gray-7);
 }
 
 .supply-order-spec-chip.mantine-Button-root {
   border-radius: 8px;
+  height: auto;
   min-height: 36px;
+  max-width: 100%;
+  padding: 8px 14px;
+  text-align: left;
 }
 
 .supply-order-spec-chip .mantine-Button-label {
@@ -809,3 +825,37 @@
 }
 
 /* Selector chips use the shared .app-selector-chip (§6) from index.css. */
+
+.supply-order-spec-chip.mantine-Button-root {
+  background: var(--mantine-color-gray-1);
+  border-color: transparent;
+}
+.supply-order-spec-chip.mantine-Button-root.is-selected:not(:disabled) {
+  background: var(--brand-orange);
+  border-color: var(--brand-orange);
+  color: var(--mantine-color-white);
+}
+.supply-order-spec-chip.mantine-Button-root.is-selected:not(:disabled):hover {
+  background: var(--mantine-color-orange-7);
+}
+
+.supply-order-spec-document-label {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 12px;
+  font-family: var(--font-mono);
+  line-height: 1.25;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.supply-order-spec-document-label strong { font-size: 12px; font-weight: 600; }
+.supply-order-spec-document-label > span { font-size: 11px; font-weight: 400; opacity: .85; }
+.supply-order-spec-action-button .mantine-Button-inner { align-items: center; }
+.supply-order-spec-tab:focus-visible { outline: 2px solid var(--brand-orange); outline-offset: 2px; }
+@media (max-width: 48em) {
+  .supply-order-spec-documents { grid-template-columns: minmax(0, 1fr); }
+  .supply-order-spec-actions .supply-order-spec-action-buttons { flex-basis: 100%; justify-content: flex-start; }
+  .supply-order-spec-action-button.mantine-Button-root { height: auto; min-height: 36px; padding-top: 8px; padding-bottom: 8px; }
+  .supply-order-spec-action-button .mantine-Button-label { white-space: normal; }
+}

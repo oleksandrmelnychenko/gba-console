@@ -16,6 +16,7 @@ import './supply-order-detail.css'
 import { formatLocalDate, formatLocalInputDateTime } from '../../../shared/date/dateTime'
 import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { useI18n } from '../../../shared/i18n/useI18n'
+import { DocumentDetailLayout, DocumentDetailSummary, DocumentDetailMetric, DocumentDetailSection } from '../../../shared/ui/document-detail/DocumentDetail'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { AppModal } from '../../../shared/ui/AppModal'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
@@ -846,10 +847,30 @@ function DirectOrderSpecificationsBody({ model }: { model: DirectOrderSpecificat
 
   return (
     <div className="supply-order-specifications-body">
-      <SpecificationActionButtons model={model} />
-      <InvoiceButtons model={model} />
-      <PackListButtons model={model} />
-      <SpecificationGridArea model={model} />
+      <DocumentDetailLayout
+        summary={
+          <DocumentDetailSummary
+            eyebrow={t('Замовлення')}
+            title={getOrderNumber(model.order) || '-'}
+            meta={t('Специфікації')}
+            metrics={<>
+              <DocumentDetailMetric label={t('Інвойси')} value={String(model.invoices.length)} />
+              <DocumentDetailMetric label={t('Пак листи')} value={String(model.selectedInvoice?.PackingLists?.length || 0)} />
+            </>}
+          />
+        }
+        actions={<SpecificationActionButtons model={model} />}
+      >
+        <DocumentDetailSection title={t('Документи')} stacked>
+          <div className="supply-order-spec-documents">
+            <InvoiceButtons model={model} />
+            <PackListButtons model={model} />
+          </div>
+        </DocumentDetailSection>
+        <DocumentDetailSection title={t('Товари')} stacked>
+          <SpecificationGridArea model={model} />
+        </DocumentDetailSection>
+      </DocumentDetailLayout>
     </div>
   )
 }
@@ -859,7 +880,7 @@ function SpecificationActionButtons({ model }: { model: DirectOrderSpecification
   const hasTotals = Boolean(model.packingList && (model.packingList.Id || 0) > 0)
 
   return (
-    <Group className="supply-order-spec-actions app-filter-bar" justify="space-between" gap="xs" wrap="nowrap">
+    <Group className="supply-order-spec-actions app-filter-bar" justify="space-between" gap="sm" wrap="wrap">
       {hasTotals ? (
         <SpecificationViewTabs model={model} />
       ) : (
@@ -873,7 +894,7 @@ function SpecificationActionButtons({ model }: { model: DirectOrderSpecification
             disabled={model.isActionBusy}
             leftSection={<FileInput size={16} />}
             loading={model.isUploading}
-            variant="outline"
+            variant="filled"
             onClick={model.openUpload}
           >
             {t('Завантаження митних кодів')}
@@ -886,7 +907,7 @@ function SpecificationActionButtons({ model }: { model: DirectOrderSpecification
             disabled={!model.selectedInvoice || model.isActionBusy}
             leftSection={<FileInput size={16} />}
             loading={model.isSavingDocuments}
-            variant="outline"
+            variant="filled"
             onClick={model.openDocuments}
           >
             {t(CUSTOMS_DECLARATION_UPLOAD_LABEL)}
@@ -899,7 +920,7 @@ function SpecificationActionButtons({ model }: { model: DirectOrderSpecification
             disabled={model.isActionBusy}
             leftSection={<FileDown size={16} />}
             loading={model.isDownloading}
-            variant="outline"
+            variant="filled"
             onClick={model.openDownload}
           >
             {t('Друк PDF')}
@@ -972,7 +993,7 @@ function InvoiceButtons({ model }: { model: DirectOrderSpecificationsPageModel }
 
   return (
     <div className="supply-order-spec-selector">
-      <Text className="app-section-title supply-order-spec-selector-title" fw={600}>{t('Інвойси')}</Text>
+      <Text className="supply-order-spec-selector-title" fw={600}>{t('Інвойси')}</Text>
       <Group gap="xs" wrap="wrap">
         {model.invoices.map((invoice) => {
           const isActive = invoice.NetUid === model.selectedInvoiceNetId
@@ -980,13 +1001,14 @@ function InvoiceButtons({ model }: { model: DirectOrderSpecificationsPageModel }
           return (
             <Button
               key={invoice.NetUid || invoice.Id}
-              className={`app-selector-chip supply-order-spec-chip${isActive ? ' is-selected' : ''}`}
+              aria-pressed={isActive}
+              className={`supply-order-spec-chip${isActive ? ' is-selected' : ''}`}
               disabled={model.isActionBusy}
               loading={model.isInvoiceLoading && isActive}
               variant="default"
               onClick={() => model.selectInvoice(invoice)}
             >
-              {t('Інвойс')} {invoice.Number || '-'} {t('Від')} {formatDate(invoice.DateFrom)}
+              <span className="supply-order-spec-document-label"><strong>{t('Інвойс')} № {invoice.Number || '-'}</strong><span>{t('Від')} {formatDate(invoice.DateFrom)}</span></span>
             </Button>
           )
         })}
@@ -1004,7 +1026,7 @@ function PackListButtons({ model }: { model: DirectOrderSpecificationsPageModel 
 
   return (
     <div className="supply-order-spec-selector">
-      <Text className="app-section-title supply-order-spec-selector-title" fw={600}>{t('Пак листи')}</Text>
+      <Text className="supply-order-spec-selector-title" fw={600}>{t('Пак листи')}</Text>
       <Group gap="xs" wrap="wrap">
         {(model.selectedInvoice.PackingLists || []).map((packList) => {
           const isActive = packList.NetUid === model.selectedPackListNetId
@@ -1012,13 +1034,14 @@ function PackListButtons({ model }: { model: DirectOrderSpecificationsPageModel 
           return (
             <Button
               key={packList.NetUid || packList.Id}
-              className={`app-selector-chip supply-order-spec-chip${isActive ? ' is-selected' : ''}`}
+              aria-pressed={isActive}
+              className={`supply-order-spec-chip${isActive ? ' is-selected' : ''}`}
               disabled={model.isActionBusy}
               size="xs"
               variant="default"
               onClick={() => model.selectPackList(packList)}
             >
-              {t('Пак лист')} №: {packList.InvNo || packList.No || '-'} ({t('Від')} {formatDate(packList.FromDate)})
+              <span className="supply-order-spec-document-label"><strong>{t('Пак лист')} № {packList.InvNo || packList.No || '-'}</strong><span>{t('Від')} {formatDate(packList.FromDate)}</span></span>
             </Button>
           )
         })}
