@@ -4,7 +4,6 @@ import {
   Button,
   Card,
   Checkbox,
-  Divider,
   Group,
   NumberInput,
   Select,
@@ -24,6 +23,7 @@ import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'r
 import { useLocation, useNavigate } from 'react-router-dom'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
+import { DocumentDetailLayout, DocumentDetailMetric, DocumentDetailRow, DocumentDetailSection, DocumentDetailSummary } from '../../../shared/ui/document-detail/DocumentDetail'
 import { AppModal, AppModalFooter } from '../../../shared/ui/AppModal'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { useValueState } from '../../../shared/hooks/useValueState'
@@ -514,46 +514,63 @@ function ConsumableStorageDetailDrawer({
   }, [onChanged, onStorageLoaded, storage])
 
   return (
-    <AppDrawer opened={Boolean(storage)} padding="md" size="xl" title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Склад')}</span>} onClose={onClose}>
+    <AppDrawer opened={Boolean(storage)} padding="md" size="xl" title={t('Склад')} onClose={onClose}>
       {storage && (
-        <Stack gap="md">
-          <SimpleGrid cols={{ base: 1, sm: 2 }}>
-            <DetailItem label={t('Назва')} value={displayValue(storage.Name)} />
-            <DetailItem label={t('Опис')} value={displayValue(storage.Description)} />
-            <DetailItem label={t('Відповідальний')} value={displayValue(getEntityName(storage.ResponsibleUser))} />
-            <DetailItem label={t('Організація')} value={displayValue(getEntityName(storage.Organization))} />
-          </SimpleGrid>
+        <DocumentDetailLayout
+          summary={
+            <DocumentDetailSummary
+              eyebrow={t('Склад')}
+              title={displayValue(storage.Name)}
+              meta={displayValue(getEntityName(storage.ResponsibleUser))}
+              metrics={<DocumentDetailMetric label={t('Позицій у залишках')} value={formatAmount(products.length)} />}
+            />
+          }
+        >
+          <DocumentDetailSection title={t('Склад')}>
+            <DocumentDetailRow label={t('Назва')} value={storage.Name} wide />
+            <DocumentDetailRow label={t('Опис')} value={storage.Description} wide />
+          </DocumentDetailSection>
 
-          <Divider />
+          <DocumentDetailSection title={t('Організація та відповідальний')}>
+            <DocumentDetailRow label={t('Організація')} value={getEntityName(storage.Organization)} wide />
+            <DocumentDetailRow label={t('Відповідальний')} value={getEntityName(storage.ResponsibleUser)} wide />
+          </DocumentDetailSection>
 
-          <Card
-            className="app-data-card consumable-storage-detail-registry"
-            withBorder
-            radius="md"
-            padding={0}
-          >
-          <Tabs className="consumable-storage-detail-tabs-root" defaultValue="remnants" keepMounted={false}>
-            <Tabs.List className="pill-tabs consumable-storage-detail-tabs">
-              <Tabs.Tab value="remnants">{t('Залишки')}</Tabs.Tab>
-              <Tabs.Tab value="writtenGoods">{t('Списані товари')}</Tabs.Tab>
-            </Tabs.List>
+          <DocumentDetailSection title={t('Товари')} stacked>
+            <div className="consumable-storage-detail-registry">
+              <Tabs className="consumable-storage-detail-tabs-root" defaultValue="remnants" keepMounted={false}>
+                <Tabs.List className="pill-tabs consumable-storage-detail-tabs">
+                  <Tabs.Tab value="remnants">{t('Залишки')}</Tabs.Tab>
+                  <Tabs.Tab value="writtenGoods">{t('Списані товари')}</Tabs.Tab>
+                </Tabs.List>
+                <Tabs.Panel pt={0} value="remnants">
+                  <StorageRemnantsPanel products={products} />
+                </Tabs.Panel>
+                <Tabs.Panel pt={0} value="writtenGoods">
+                  <DeprecatedConsumableOrdersPanel storage={storage} onChanged={handleChanged} />
+                </Tabs.Panel>
+              </Tabs>
+            </div>
+          </DocumentDetailSection>
 
-            <Tabs.Panel pt={0} value="remnants">
-              <StorageRemnantsPanel products={products} totals={totals} />
-            </Tabs.Panel>
-
-            <Tabs.Panel pt={0} value="writtenGoods">
-              <DeprecatedConsumableOrdersPanel storage={storage} onChanged={handleChanged} />
-            </Tabs.Panel>
-          </Tabs>
-          </Card>
-        </Stack>
+          {totals.length > 0 && (
+            <DocumentDetailSection title={t('Підсумки за валютами')} stacked>
+              {totals.map((total) => (
+                <div className="consumable-storage-detail-total" key={getPriceTotalKey(total)}>
+                  <DocumentDetailRow label={t('Валюта')} value={total.Currency?.Code || total.Currency?.Name} />
+                  <DocumentDetailRow label={t('Кількість')} mono value={formatAmount(total.Qty)} />
+                  <DocumentDetailRow label={t('Сума')} mono value={formatMoney(total.TotalPrice ?? total.Amount)} />
+                </div>
+              ))}
+            </DocumentDetailSection>
+          )}
+        </DocumentDetailLayout>
       )}
     </AppDrawer>
   )
 }
 
-function StorageRemnantsPanel({ products, totals }: { products: ConsumableProduct[]; totals: ConsumablesStorage['PriceTotals'] }) {
+function StorageRemnantsPanel({ products }: { products: ConsumableProduct[] }) {
   const { t } = useI18n()
   const [searchValue, setSearchValue] = useValueState('')
   const columns = useStorageRemnantColumns()
@@ -590,18 +607,6 @@ function StorageRemnantsPanel({ products, totals }: { products: ConsumableProduc
         tableId="consumable-storage-remnants"
       />
 
-      {totals && totals.length > 0 && (
-        <Stack gap="xs">
-          <Text fw={700}>{t('Підсумки')}</Text>
-          {totals.map((total) => (
-            <SimpleGrid key={getPriceTotalKey(total)} cols={{ base: 1, sm: 3 }}>
-              <DetailItem label={t('Валюта')} mono value={displayValue(total.Currency?.Code || total.Currency?.Name)} />
-              <DetailItem label={t('Кількість')} value={formatAmount(total.Qty)} />
-              <DetailItem label={t('Сума')} mono value={formatMoney(total.TotalPrice ?? total.Amount)} />
-            </SimpleGrid>
-          ))}
-        </Stack>
-      )}
       </Stack>
     </Stack>
   )
@@ -1625,15 +1630,6 @@ function DeleteStorageModal({
         </AppModalFooter>
       </Stack>
     </AppModal>
-  )
-}
-
-function DetailItem({ label, mono = false, value }: { label: string; mono?: boolean; value: string }) {
-  return (
-    <div className={`app-detail-field${mono ? ' is-mono' : ''}`}>
-      <span>{label}</span>
-      <strong>{value}</strong>
-    </div>
   )
 }
 
