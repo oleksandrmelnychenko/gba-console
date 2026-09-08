@@ -26,6 +26,7 @@ import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/Page
 import { PermissionGate } from '../../auth/components/PermissionGate'
 import { useAuth } from '../../auth/useAuth'
 import { PermissionKeys } from '../../../shared/auth/permissionKeys'
+import { CLIENT_ACTIVITY_REPORT_TITLE } from '../data/clientActivityReport'
 import {
   buildSheetExportRows,
   buildSpreadsheetSheet,
@@ -49,6 +50,7 @@ import type {
 import { buildDateFileSuffix, buildReportFileName, buildSpreadsheetCsv, displayValue, downloadTextFile } from '../utils'
 import './reports-pages.css'
 import { ReportPresentationControl } from './ReportPresentationControl'
+import { getReportHeaderPresentation } from './reportHeaderPresentation'
 
 const SEARCH_DEBOUNCE_MS = 400
 
@@ -284,12 +286,13 @@ function ReportsSalePageContent() {
 // даних» lines are lifted out of it: they are the reason a money column on this sheet is blank, and a reader who
 // does not see them reads a blank cost as nothing sold rather than as nothing known.
 function ReportHeaderBlock({ header }: { header: SpreadsheetReportHeader }) {
-  const warnings = new Set(header.warnings)
-  const warningLines = addOccurrenceKeys(header.warnings)
-  const details = addOccurrenceKeys(header.lines.filter((line) => !warnings.has(line)))
+  const presentation = getReportHeaderPresentation(header)
+  const warnings = new Set(presentation.warnings)
+  const warningLines = addOccurrenceKeys(presentation.warnings)
+  const details = addOccurrenceKeys(presentation.lines.filter((line) => !warnings.has(line)))
 
   return (
-    <Stack gap={6}>
+    <Stack className={header.lines[0] === CLIENT_ACTIVITY_REPORT_TITLE ? 'reports-client-activity-header' : undefined} gap={6}>
       {warningLines.length ? (
         <Alert className="reports-page-alert" color="yellow" icon={<CircleAlert size={18} />}>
           <Stack gap={2}>

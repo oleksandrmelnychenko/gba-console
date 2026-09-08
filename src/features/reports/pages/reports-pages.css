@@ -59,6 +59,16 @@
   margin: 6px 8px 0;
 }
 
+.reports-client-activity-header,
+.reports-client-activity-header .mantine-Alert-wrapper,
+.reports-client-activity-header .mantine-Alert-body,
+.reports-client-activity-header .mantine-Alert-message,
+.reports-client-activity-header .mantine-Text-root {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+
 .reports-stocks-filter-scroll {
   border-radius: var(--mantine-radius-md);
   min-width: 0;

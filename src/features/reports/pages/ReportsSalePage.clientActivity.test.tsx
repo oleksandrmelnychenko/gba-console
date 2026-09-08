@@ -11,6 +11,7 @@ import { buildSpreadsheetSheet, detectDelimiter, getAdditiveColumns, parseDelimi
 import type { SpreadsheetCellValue } from '../types'
 import { downloadTextFile } from '../utils'
 import { ReportsSalePage } from './ReportsSalePage'
+import { wrappedClientActivityHeaderLines } from './reportHeaderPresentation.test-fixtures'
 
 vi.mock('../../auth/components/PermissionGate', () => ({ PermissionGate: ({ children }: { children: ReactNode }) => children }))
 vi.mock('../../auth/useAuth', () => ({ useAuth: () => ({ hasPermission: () => true }) }))
@@ -62,4 +63,23 @@ it('keeps complete-empty zero grand distinct from unknown and refuses a later ma
   await upload(malformed, 'invalid.xlsx'); await screen.findByText(/Некоректний файл активності клієнтів/)
   expect(screen.queryByText(CLIENT_ACTIVITY_REPORT_TITLE)).toBeNull()
   await waitFor(() => expect((screen.getByLabelText('Експорт CSV') as HTMLButtonElement).disabled).toBe(true))
+})
+
+it('renders complete wrapped source12 notes in their existing blocks while exporting the original physical rows', async () => {
+  const rows = clientActivityWorkbookRows('known')
+  const separator = rows.findIndex(row => row.length === 0)
+  const { container } = viewer()
+  await upload([...wrappedClientActivityHeaderLines.map(line => [line]), ...rows.slice(separator)])
+  await screen.findByText(CLIENT_ACTIVITY_REPORT_TITLE)
+  const header = container.querySelector('.reports-client-activity-header')!
+  const alert = header.querySelector('.reports-page-alert')!
+  expect(alert.querySelectorAll('.mantine-Text-root')).toHaveLength(4)
+  expect(screen.getByText(/товар без метаданих — 0; нульова кількість — 454/).closest('.reports-page-alert')).toBe(alert)
+  expect(screen.getByText(/не впливають на присутність клієнта\./).closest('.reports-page-alert')).toBe(alert)
+  expect(screen.getByText(/періодів не виконується\./).closest('.reports-page-alert')).toBe(alert)
+  expect(screen.getByText(/^! Джерело активності клієнтів:/).closest('.reports-page-alert')).toBeNull()
+  expect(screen.queryByText('присутність клієнта.')).toBeNull()
+  fireEvent.click(screen.getByLabelText('Експорт CSV'))
+  expect(lastCsvSheet().header!.lines).toEqual(wrappedClientActivityHeaderLines)
+  expect(lastCsvSheet().rows.find(row => row.kind === 'total')?.cells[1]).toBe(3)
 })
