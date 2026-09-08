@@ -747,6 +747,57 @@ describe('getBudgetCartPlan', () => {
     })
   })
 
+  it.each<[number[], number]>([
+    [[0.021], 0.021],
+    [[0.021, 0.021], 0.042],
+    [[0.000021, 0.000021], 0.000042],
+    [[0.1, 0.2], 0.3],
+  ])('preserves exact fractional warehouse quantities %j and canonical total %s', async (quantities, total) => {
+    const items = quantities.map((suggested_qty, index) => buildSuggestion({
+      product_id: 100 + index, suggested_qty, order_multiple: 0.003,
+      unit_cost_eur: 100, line_cost_eur: Math.round(suggested_qty * 10000) / 100,
+    }))
+    const body = { ...buildCartEnvelope({ budgetEur: 0, items, selectedCount: 0, deferredCount: items.length }), total_suggested_qty: total }
+    apiRequestMock.mockResolvedValueOnce({ Body: body })
+
+    const result = await getPurchaseCockpitWarehousePlan({ budgetEur: 0, method: 'greedy' })
+
+    expect(result.total_suggested_qty).toBe(total)
+    expect(result.items.map(item => item.suggested_qty)).toEqual(quantities)
+    expect(body.total_suggested_qty).toBe(total)
+  })
+
+  it('preserves a priced fractional budget plan through the same normalizer', async () => {
+    const body = { ...buildCartEnvelope({ budgetEur: 1000,
+      items: [buildSuggestion({ suggested_qty: 0.021, order_multiple: 0.003, unit_cost_eur: 100, line_cost_eur: 2.10, within_budget: true })],
+      selectedCount: 1, deferredCount: 0,
+    }), total_suggested_qty: 0.021 }
+    apiRequestMock.mockResolvedValueOnce({ Body: body })
+
+    const result = await getBudgetCartPlan({ budgetEur: 1000, method: 'greedy' })
+
+    expect(result.total_suggested_qty).toBe(0.021)
+    expect(result.priced_cost_eur).toBe(2.10)
+    expect(result.budget_used_eur).toBe(2.10)
+  })
+
+  it.each<[number[], number]>([
+    [[0.021], 0.02],
+    [[0.021, 0.021], 0.04],
+    [[0.000021], 0],
+    [[0.1, 0.2], 0.30000000000000004],
+  ])('rejects a contradictory quantity aggregate for %j without an epsilon allowance', async (quantities, total) => {
+    const body = { ...buildCartEnvelope({ budgetEur: 0,
+      items: quantities.map((suggested_qty, index) => buildSuggestion({ product_id: 100 + index,
+        suggested_qty, unit_cost_eur: 100, line_cost_eur: Math.round(suggested_qty * 10000) / 100 })),
+      selectedCount: 0, deferredCount: quantities.length,
+    }), total_suggested_qty: total }
+    apiRequestMock.mockResolvedValueOnce({ Body: body })
+
+    await expect(getPurchaseCockpitWarehousePlan({ budgetEur: 0, method: 'greedy' })).rejects.toThrow('cart.total_suggested_qty')
+    expect(body.total_suggested_qty).toBe(total)
+  })
+
   it('accepts decimal HALF_UP line totals across live and boundary cases', async () => {
     const items = [
       buildSuggestion({
@@ -786,14 +837,14 @@ describe('getBudgetCartPlan', () => {
       }),
     ]
     apiRequestMock.mockResolvedValueOnce({
-      Body: buildCartEnvelope({
+      Body: { ...buildCartEnvelope({
         budgetEur: 0,
         items,
         selectedCount: 0,
         deferredCount: items.length,
         totalCostEur: 411.59,
         pricedCostEur: 411.59,
-      }),
+      }), total_suggested_qty: 50046.079 },
     })
 
     const plan = await getBudgetCartPlan({ budgetEur: 0, method: 'greedy' })

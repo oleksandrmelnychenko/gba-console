@@ -628,10 +628,6 @@ function normalizeCartPlan(
       (sum, item) => sum + (item.line_cost_eur === null ? 0n : toCents(item.line_cost_eur)),
       0n,
     )
-    const actualSuggestedQty = roundToScale(
-      items.reduce((sum, item) => sum + item.suggested_qty, 0),
-      2,
-    )
 
     if (actualUnpriced !== unpricedItemCount) {
       throw new ProcurementContractError(
@@ -645,7 +641,7 @@ function normalizeCartPlan(
         'does not equal the sum of priced line_cost_eur values',
       )
     }
-    if (!nearlyEqual(totalSuggestedQty, actualSuggestedQty, QUANTITY_TOLERANCE)) {
+    if (!hasExactQuantityTotal(totalSuggestedQty, items)) {
       throw new ProcurementContractError(
         'cart.total_suggested_qty',
         'does not equal the sum of item quantities',
@@ -1355,6 +1351,24 @@ function multiplyToCents(left: number, right: number): bigint {
     },
     2,
   )
+}
+
+/** Match the service's exact sum of canonical decimal JSON quantities, without money rounding. */
+function hasExactQuantityTotal(total: number, items: ReorderSuggestion[]): boolean {
+  const expected = decimalParts(total)
+  let scale = expected.scale
+  let coefficient = 0n
+
+  for (const item of items) {
+    const parts = decimalParts(item.suggested_qty)
+    if (parts.scale > scale) {
+      coefficient *= 10n ** BigInt(parts.scale - scale)
+      scale = parts.scale
+    }
+    coefficient += parts.coefficient * 10n ** BigInt(scale - parts.scale)
+  }
+
+  return coefficient === expected.coefficient * 10n ** BigInt(scale - expected.scale)
 }
 
 function decimalParts(value: number): { coefficient: bigint; scale: number } {
