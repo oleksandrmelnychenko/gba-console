@@ -1,3 +1,4 @@
+import { procurementLoadError } from '../procurementLoadError'
 import {
   ActionIcon,
   Alert,
@@ -42,6 +43,7 @@ import type {
   ProcurementDemandSeries,
   ProcurementTopItem,
 } from '../procurementTypes'
+import { ProcurementCostSnapshot } from './ProcurementCostProof'
 import { ProcurementProductCell } from './ProcurementProductCell'
 import { ProcurementWorkspaceState } from './ProcurementWorkspaceState'
 
@@ -179,14 +181,14 @@ function ProcureDashboardTabContent() {
         if (!cancelled) {
           dispatch({ charts: loaded, type: 'loaded' })
         }
-      } catch {
+      } catch (loadError) {
         if (controller.signal.aborted) {
           return
         }
 
         if (!cancelled) {
           dispatch({
-            error: t('Не вдалося завантажити дашборд постачання'),
+            error: procurementLoadError(loadError, t('Не вдалося завантажити дашборд постачання'), t),
             type: 'failed',
           })
         }
@@ -516,7 +518,7 @@ function ProcureDashboardTabContent() {
                   'Оперативний зріз потреби: від критичних залишків до кількості, яку варто замовити.',
                 )}
               </Text>
-              {charts && <AiHistoryLineageNote lineage={charts} />}
+              {charts && <><AiHistoryLineageNote lineage={charts} /><ProcurementCostSnapshot context={charts} /></>}
             </div>
             <div className="procure-dashboard__snapshot">
               <span>{t('Зріз даних')}</span>

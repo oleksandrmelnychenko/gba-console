@@ -1,0 +1,158 @@
+{
+  "as_of_date": "2026-09-08",
+  "source_history_start": "2025-01-01",
+  "effective_start": "2026-05-11",
+  "effective_history_days": 120,
+  "history_complete": true,
+  "history_not_applicable": [
+    "inventory",
+    "reservations",
+    "purchase_costs"
+  ],
+  "history_scope": "demand",
+  "cost_observation_manifest": {
+    "version": 1,
+    "scope": "CurrentPostedReceipts",
+    "resolver_version": "current-posted-receipt-cost-v1",
+    "basis": "net_goods_excluding_vat_delivery_customs",
+    "statistic": "observation_median_half_up_4",
+    "snapshot_relationship": "single_snapshot",
+    "components": [
+      {
+        "component_id": "2936644b8da3c1e8a25b751600f5f6642873bd78ea97757db038bccba3cfb625",
+        "version": 1,
+        "product_ids": [
+          1,
+          2,
+          3,
+          4,
+          5
+        ],
+        "supplier_id": null,
+        "as_of_exclusive": "2026-09-08",
+        "history_days": 540,
+        "effective_start_date": "2025-03-17",
+        "observation_started_at_utc": "2026-09-08T02:10:00.0000001Z",
+        "observation_completed_at_utc": "2026-09-08T02:10:01.0000002Z",
+        "fingerprint": "0000000000000000000000000000000000000000000000000000000000000001",
+        "publications": [
+          {
+            "for_amg": false,
+            "receipt_id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+            "committed_at_utc": "2026-09-05T11:00:00Z",
+            "contract_version": "GBA-ONEC-INBOUND-V7",
+            "canonical_chain_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "validated_at_utc": "2026-09-08T02:10:01.0000002Z"
+          }
+        ]
+      }
+    ]
+  },
+  "cost_total_basis": "includes_buyer_values_with_unverified_tax_basis",
+  "cost_totals_certified": false,
+  "model_version": "procure-hist120-floor20250101-v4-verified-net-cost",
+  "producer_id": null,
+  "top_n": 2,
+  "urgency_mix": [
+    {
+      "urgency": "critical",
+      "count": 5
+    },
+    {
+      "urgency": "high",
+      "count": 0
+    },
+    {
+      "urgency": "normal",
+      "count": 0
+    },
+    {
+      "urgency": "none",
+      "count": 0
+    }
+  ],
+  "days_of_cover_hist": [
+    {
+      "bucket": "<0",
+      "count": 0
+    },
+    {
+      "bucket": "0-7",
+      "count": 5
+    },
+    {
+      "bucket": "8-30",
+      "count": 0
+    },
+    {
+      "bucket": "31-90",
+      "count": 0
+    },
+    {
+      "bucket": "90+",
+      "count": 0
+    }
+  ],
+  "top_items": [
+    {
+      "product_id": 1,
+      "product_name": null,
+      "vendor_code": null,
+      "oe_number": null,
+      "image_url": null,
+      "producer_id": 7,
+      "producer_name": "Fixture",
+      "suggested_qty": 40.0,
+      "on_hand": 0.0,
+      "reorder_point": 10.0,
+      "urgency": "critical"
+    },
+    {
+      "product_id": 2,
+      "product_name": null,
+      "vendor_code": null,
+      "oe_number": null,
+      "image_url": null,
+      "producer_id": 7,
+      "producer_name": "Fixture",
+      "suggested_qty": 40.0,
+      "on_hand": 0.0,
+      "reorder_point": 10.0,
+      "urgency": "critical"
+    }
+  ],
+  "demand_series": [
+    {
+      "product_id": 1,
+      "product_name": null,
+      "vendor_code": null,
+      "oe_number": null,
+      "image_url": null,
+      "producer_id": 7,
+      "producer_name": "Fixture",
+      "points": [
+        {
+          "period": "2026-10",
+          "units": 30.0,
+          "is_forecast": true
+        }
+      ]
+    },
+    {
+      "product_id": 2,
+      "product_name": null,
+      "vendor_code": null,
+      "oe_number": null,
+      "image_url": null,
+      "producer_id": 7,
+      "producer_name": "Fixture",
+      "points": [
+        {
+          "period": "2026-10",
+          "units": 30.0,
+          "is_forecast": true
+        }
+      ]
+    }
+  ]
+}

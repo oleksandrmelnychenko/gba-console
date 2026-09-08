@@ -1,3 +1,4 @@
+import { fixtureCostContext, fixtureNoBudget } from '../procurementCostTestFixtures'
 import { MantineProvider } from '@mantine/core'
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
@@ -64,7 +65,7 @@ describe('BudgetCartTab', () => {
     expect(screen.getByText('План ще не сформовано')).not.toBeNull()
     expect(screen.getByText('50 000 EUR')).not.toBeNull()
     expect(
-      screen.getByText('Швидкий метод спочатку бере позиції з найбільшою цінністю на 1 EUR'),
+      screen.getByText('Швидкий метод враховує вагу терміновості та підтверджену вартість рядка. Оцінка прибутку недоступна'),
     ).not.toBeNull()
     expect(getBudgetCartPlan).not.toHaveBeenCalled()
 
@@ -72,7 +73,7 @@ describe('BudgetCartTab', () => {
 
     expect(
       screen.getByText(
-        'Оптимальний метод порівнює комбінації всього набору, щоб краще використати бюджет',
+        'Оптимальний метод максимізує суму ваг терміновості рядків із повністю підтвердженою вартістю',
       ),
     ).not.toBeNull()
   })
@@ -84,7 +85,8 @@ describe('BudgetCartTab', () => {
       effective_start: '2025-07-25',
       effective_history_days: 365,
       history_complete: true,
-      history_not_applicable: ['inventory', 'reservations'],
+      history_not_applicable: ['inventory', 'reservations', 'purchase_costs'],
+      ...fixtureCostContext(),
       budget_eur: 50_000,
       budget_used_eur: 0,
       deferred_count: 0,
@@ -100,7 +102,7 @@ describe('BudgetCartTab', () => {
       total_item_count: 0,
       total_suggested_qty: 0,
       unpriced_item_count: 0,
-      value_captured_eur: 0,
+      ...fixtureNoBudget,
     })
 
     render(

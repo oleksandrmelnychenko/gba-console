@@ -1,3 +1,4 @@
+import { exactDisplayedLineAmount } from './procurementDecimals'
 import type { ReorderSuggestion } from './procurementTypes'
 
 export type ProcurementDecision = {
@@ -34,7 +35,7 @@ export function calculateProcurementDecision(
     selectedCostEur:
       row.unit_cost_eur === null
         ? null
-        : Math.max(0, selectedQty) * row.unit_cost_eur,
+        : exactDisplayedLineAmount(row.unit_cost_eur, Math.max(0, selectedQty)),
     stockoutDays,
   }
 }

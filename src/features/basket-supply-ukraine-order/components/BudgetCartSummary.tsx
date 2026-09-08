@@ -6,10 +6,7 @@ import type { UrgencySliceInput } from '../../../shared/ui/charts/donutData'
 import type { CartPlan } from '../procurementTypes'
 
 export type BudgetCartFinancials = {
-  expectedMarginEur: number | null
-  expectedRevenueEur: number | null
   selectedProducerCount: number
-  selectedUnits: number
 }
 
 type BudgetCartSummaryProps = {
@@ -18,10 +15,6 @@ type BudgetCartSummaryProps = {
   splitSlices: UrgencySliceInput[]
   utilization: number
 }
-
-const qtyFormatter = new Intl.NumberFormat('uk-UA', {
-  maximumFractionDigits: 2,
-})
 
 const countFormatter = new Intl.NumberFormat('uk-UA', {
   maximumFractionDigits: 0,
@@ -52,7 +45,7 @@ export function BudgetCartSummary({
             {t('Результат оптимізації')}
           </Text>
           <Text c="dimmed" size="xs">
-            {t('Як бюджет розподілено між товарами та виробниками')}
+            {t('Ліміт вартості товару без ПДВ, доставки та митних витрат')}
           </Text>
         </div>
         <Badge className="app-role-pill is-orange" variant="light">
@@ -66,10 +59,9 @@ export function BudgetCartSummary({
             <SummaryItem label={`${t('Бюджет')} (EUR)`} money value={`€${eurFormatter.format(plan.budget_eur)}`} />
             <SummaryItem label={`${t('Використано')} (EUR)`} money value={`€${eurFormatter.format(plan.budget_used_eur)}`} />
             <SummaryItem
-              hint={t('Оцінка маржі/попиту, яку AI вважає втраченою без закупівлі')}
-              label={`${t('Цінність під ризиком')} (EUR)`}
-              money
-              value={`€${eurFormatter.format(plan.value_captured_eur)}`}
+              hint={t('Сума ваг терміновості обраних рядків; без грошової одиниці')}
+              label={t('Бал терміновості')}
+              value={plan.budget_score === null ? '—' : percentFormatter.format(plan.budget_score)}
             />
             <SummaryItem label={t('В бюджеті')} money value={countFormatter.format(plan.selected_count)} />
             <SummaryItem label={t('Відкладено')} money value={countFormatter.format(plan.deferred_count)} />
@@ -88,19 +80,7 @@ export function BudgetCartSummary({
           </Stack>
 
           <div className="budget-cart-summary__secondary">
-            <SummaryItem
-              hint={t('Потенційна виручка по рядках, які потрапили в бюджет')}
-              label={`${t('Потенційна виручка')} (EUR)`}
-              money
-              value={formatNullableEuro(financials.expectedRevenueEur)}
-            />
-            <SummaryItem
-              hint={t('Потенційна маржа по рядках, які потрапили в бюджет')}
-              label={`${t('Потенційна маржа')} (EUR)`}
-              money
-              value={formatNullableEuro(financials.expectedMarginEur)}
-            />
-            <SummaryItem label={t('Одиниць товару')} money value={qtyFormatter.format(financials.selectedUnits)} />
+            <SummaryItem label={t('Маржа та очікуваний прибуток')} value={t('Недоступні: податковий склад ціни продажу не підтверджено')} />
             <SummaryItem label={t('Виробників')} money value={countFormatter.format(financials.selectedProducerCount)} />
           </div>
         </Stack>
@@ -144,10 +124,6 @@ function SummaryItem({
       </Text>
     </Stack>
   )
-}
-
-function formatNullableEuro(value: number | null): string {
-  return value === null ? '—' : `€${eurFormatter.format(value)}`
 }
 
 function getMethodLabel(plan: CartPlan, t: (value: string) => string): string {

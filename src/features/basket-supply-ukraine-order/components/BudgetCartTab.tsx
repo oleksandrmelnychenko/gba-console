@@ -1,3 +1,4 @@
+import { procurementLoadError } from '../procurementLoadError'
 import {
   Alert,
   Button,
@@ -26,6 +27,7 @@ import { getBudgetCartSuppliers } from '../../supply-ukraine-orders/api/supplyUk
 import type { Client } from '../../supply-ukraine-orders/types'
 import { getBudgetCartPlan } from '../api/procurementApi'
 import type { CartOptimizeMethod, CartPlan, ReorderSuggestion } from '../procurementTypes'
+import { ProcurementCostSnapshot } from './ProcurementCostProof'
 import { BudgetCartSummary, type BudgetCartFinancials } from './BudgetCartSummary'
 import { BudgetCartTable } from './BudgetCartTable'
 import { ProcurementWorkspaceState } from './ProcurementWorkspaceState'
@@ -174,7 +176,7 @@ function BudgetCartTabContent() {
 
         if (!cancelled) {
           dispatch({
-            error: loadError instanceof Error ? loadError.message : t('Не вдалося сформувати план закупівлі'),
+            error: procurementLoadError(loadError, t('Не вдалося сформувати план закупівлі'), t),
             type: 'failed',
           })
         }
@@ -226,7 +228,7 @@ function BudgetCartTabContent() {
       <Card className="app-data-card basket-supply-primary-card" padding={0} radius="md" withBorder>
         <div className="app-filter-bar budget-cart-filter-bar">
           <Group align="flex-end" gap={10} wrap="nowrap" className="budget-cart-filter-row">
-            <Tooltip label={t('На яку дату рахувати прогноз і залишки')}>
+            <Tooltip label={t('Дата історії попиту; поточні запаси та спостереження закупівель мають окремий стан')}>
               <TextInput
                 label={t('Дата зрізу')}
                 size="sm"
@@ -266,7 +268,7 @@ function BudgetCartTabContent() {
             </Stack>
             <Stack className="budget-cart-filter-note" gap={2}>
               <Text c="gray.8" fw={600} size="sm">
-                {t('AI підбирає товари до закупівлі в межах заданого ліміту в EUR')}
+                {t('Бюджет товару без ПДВ, доставки та митних витрат, EUR')}
               </Text>
               <Text c="gray.9" size="xs">
                 {getBudgetMethodDescription(method, t)}
@@ -322,6 +324,7 @@ function BudgetCartTabContent() {
       {hasPlan && plan && !isEmpty && (
         <>
           <AiHistoryLineageNote lineage={plan} />
+          <ProcurementCostSnapshot context={plan} />
           <BudgetCartSummary
             financials={financials}
             plan={plan}
@@ -409,8 +412,8 @@ function getBudgetMethodDescription(
   t: TranslateFunction,
 ): string {
   return method === 'milp'
-    ? t('Оптимальний метод порівнює комбінації всього набору, щоб краще використати бюджет')
-    : t('Швидкий метод спочатку бере позиції з найбільшою цінністю на 1 EUR')
+    ? t('Оптимальний метод максимізує суму ваг терміновості рядків із повністю підтвердженою вартістю')
+    : t('Швидкий метод враховує вагу терміновості та підтверджену вартість рядка. Оцінка прибутку недоступна')
 }
 
 function getMethodLabel(
@@ -457,7 +460,7 @@ function sortWithinBudgetFirst(items: ReorderSuggestion[]): ReorderSuggestion[] 
       return leftDeferred - rightDeferred
     }
 
-    return (right.value_density ?? 0) - (left.value_density ?? 0)
+    return right.budget_priority_weight - left.budget_priority_weight
   })
 }
 
@@ -482,33 +485,8 @@ function buildSplitSlices(plan: CartPlan | null, t: TranslateFunction): UrgencyS
 function calculateBudgetCartFinancials(plan: CartPlan | null): BudgetCartFinancials {
   const selected = plan?.items.filter((item) => item.within_budget === true) ?? []
   const producerIds = new Set<number>()
-  let selectedUnits = 0
-  let expectedRevenueEur = 0
-  let expectedMarginEur = 0
-  let hasRevenue = false
-  let hasMargin = false
-
-  selected.forEach((item) => {
-    selectedUnits += item.suggested_qty
-    producerIds.add(item.producer_id)
-
-    if (item.unit_sale_eur !== null) {
-      expectedRevenueEur += item.suggested_qty * item.unit_sale_eur
-      hasRevenue = true
-    }
-
-    if (item.unit_margin_eur !== null) {
-      expectedMarginEur += item.suggested_qty * item.unit_margin_eur
-      hasMargin = true
-    }
-  })
-
-  return {
-    expectedMarginEur: hasMargin ? expectedMarginEur : null,
-    expectedRevenueEur: hasRevenue ? expectedRevenueEur : null,
-    selectedProducerCount: producerIds.size,
-    selectedUnits,
-  }
+  selected.forEach((item) => producerIds.add(item.producer_id))
+  return { selectedProducerCount: producerIds.size }
 }
 
 function normalizeDateFilter(value: string): string | undefined {

@@ -1,3 +1,4 @@
+import { fixtureCostContext, fixtureCostProof, fixtureLineCostFields } from '../procurementCostTestFixtures'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { apiRequest } from '../../../shared/api/apiClient'
 import {
@@ -67,7 +68,7 @@ describe('getProducerPlan', () => {
       unit_cost_eur: 4.5,
       line_cost_eur: 135,
       unit_sale_eur: 9,
-      unit_margin_eur: 4.5,
+      unit_margin_eur: null,
       applied_service_level: 0.95,
       abc: 'A',
       xyz: 'X',
@@ -89,7 +90,7 @@ describe('getProducerPlan', () => {
       available: 8,
       position: 8,
     })
-    expect(item.cheaper_alt).toEqual({ producer_id: 7, cost_eur: 4.1 })
+    expect(item.cheaper_alt).toMatchObject({ producer_id: 7, cost_eur: 4.1, comparison_basis: 'historical_net_goods' })
     expect(item.learned_factor).toBe(1.2)
   })
 
@@ -117,6 +118,7 @@ describe('getProducerPlan', () => {
       item_count: 1,
       as_of_date: '2026-06-15',
       ...buildHistory('2025-06-15'),
+      cost_totals_certified: false,
       model_version: 'v3',
       items: [
         buildSuggestion({
@@ -706,7 +708,7 @@ describe('getBudgetCartPlan', () => {
 
     expect(plan.budget_eur).toBe(50000)
     expect(plan.budget_used_eur).toBe(225)
-    expect(plan.value_captured_eur).toBe(8120.25)
+    expect(plan.value_captured_eur).toBeNull()
     expect(plan.selected_count).toBe(2)
     expect(plan.deferred_count).toBe(1)
     expect(plan.item_count).toBe(3)
@@ -724,10 +726,10 @@ describe('getBudgetCartPlan', () => {
       suggested_qty: 30,
       line_cost_eur: 135,
       unit_cost_eur: 4.5,
-      unit_margin_eur: 4.5,
+      unit_margin_eur: null,
       urgency: 'critical',
       quadrant: 'AX',
-      value_density: 1.25,
+      value_density: null,
       within_budget: true,
     })
   })
@@ -907,7 +909,7 @@ describe('getBudgetCartPlan', () => {
 
     expect(plan.budget_eur).toBe(1000)
     expect(plan.budget_used_eur).toBe(0)
-    expect(plan.value_captured_eur).toBe(0)
+    expect(plan.value_captured_eur).toBeNull()
     expect(plan.selected_count).toBe(0)
     expect(plan.deferred_count).toBe(1)
     expect(plan.item_count).toBe(1)
@@ -1056,9 +1058,9 @@ function buildFullCartPlan(
         urgency: 'critical',
         unit_cost_eur: 4.5,
         line_cost_eur: 135,
-        unit_margin_eur: 4.5,
+        unit_margin_eur: null,
         quadrant: 'AX',
-        value_density: 1.25,
+        value_density: null,
         within_budget: true,
       }),
       buildSuggestion({
@@ -1068,9 +1070,9 @@ function buildFullCartPlan(
         urgency: 'high',
         unit_cost_eur: 7.5,
         line_cost_eur: 90,
-        unit_margin_eur: 2.1,
+        unit_margin_eur: null,
         quadrant: 'BX',
-        value_density: 0.8,
+        value_density: null,
         within_budget: true,
       }),
       buildSuggestion({
@@ -1080,9 +1082,9 @@ function buildFullCartPlan(
         urgency: 'normal',
         unit_cost_eur: 15,
         line_cost_eur: 60,
-        unit_margin_eur: 1,
+        unit_margin_eur: null,
         quadrant: 'CZ',
-        value_density: 0.2,
+        value_density: null,
         within_budget: false,
       }),
     ],
@@ -1134,7 +1136,7 @@ function buildFullPlan() {
         unit_cost_eur: 4.5,
         line_cost_eur: 135,
         unit_sale_eur: 9,
-        unit_margin_eur: 4.5,
+        unit_margin_eur: null,
         applied_service_level: 0.95,
         abc: 'A',
         xyz: 'X',
@@ -1179,7 +1181,7 @@ function buildSuggestion(overrides: Record<string, unknown> = {}) {
       ? { ...baseInventory, ...(overrides.inventory as Record<string, unknown>) }
       : baseInventory
 
-  return {
+  const row = {
     product_id: productId,
     product_name: 'Амортизатор',
     vendor_code: `SEM${productId}`,
@@ -1206,7 +1208,7 @@ function buildSuggestion(overrides: Record<string, unknown> = {}) {
           ? Math.round(unitCost * suggestedQty * 100) / 100
           : null,
     unit_sale_eur: 9,
-    unit_margin_eur: typeof unitCost === 'number' ? 9 - unitCost : null,
+    unit_margin_eur: null,
     applied_service_level: 0.95,
     abc: 'A',
     xyz: 'X',
@@ -1220,6 +1222,9 @@ function buildSuggestion(overrides: Record<string, unknown> = {}) {
     forecast,
     inventory,
   }
+  const alt = row.cheaper_alt as { cost_eur: number; producer_id: number } | null
+  return { ...row, ...fixtureLineCostFields(row),
+    cheaper_alt: alt ? { ...alt, cost_provenance: fixtureCostProof(alt.cost_eur, suggestedQty), comparison_basis: 'historical_net_goods' } : null }
 }
 
 function buildCartEnvelope({
@@ -1280,7 +1285,12 @@ function buildCartEnvelope({
     ...buildHistory('2025-06-15'),
     budget_eur: budgetEur,
     budget_used_eur: Math.round(used * 100) / 100,
-    value_captured_eur: selectedCount > 0 ? 8120.25 : 0,
+    value_captured_eur: null,
+    cost_total_basis: items.some(item => (item.cost_provenance as { source: string }).source === 'buyer_supplied') ? 'includes_buyer_values_with_unverified_tax_basis' : 'net_goods_excluding_vat_delivery_customs',
+    cost_totals_certified: items.every(item => (item.cost_provenance as { budget_eligible: boolean }).budget_eligible),
+    budget_basis: 'net_goods_excluding_vat_delivery_customs',
+    budget_objective: budgetEur > 0 ? 'urgency_weighted_lines' : null,
+    budget_score: budgetEur > 0 ? items.filter(item => item.within_budget === true).reduce((sum, item) => sum + Math.round(Number(item.budget_priority_weight) * 10), 0) / 10 : null,
     selected_count: selectedCount,
     deferred_count: deferredCount,
     method_used: method,
@@ -1291,11 +1301,12 @@ function buildCartEnvelope({
 
 function buildHistory(effectiveStart: string) {
   return {
+    ...fixtureCostContext(`${Number(effectiveStart.slice(0, 4)) + 1}${effectiveStart.slice(4)}`),
     source_history_start: '2025-01-01',
     effective_start: effectiveStart,
     effective_history_days: 365,
     history_complete: true,
-    history_not_applicable: ['inventory', 'reservations'],
+    history_not_applicable: ['inventory', 'reservations', 'purchase_costs'],
   }
 }
 

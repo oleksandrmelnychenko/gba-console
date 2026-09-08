@@ -1,3 +1,4 @@
+import { fixtureLineCostFields } from '../procurementCostTestFixtures'
 import { MantineProvider } from '@mantine/core'
 import { render, screen } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
@@ -50,6 +51,7 @@ describe('BudgetCartTable', () => {
 
 function suggestion(): ReorderSuggestion {
   return {
+    ...fixtureLineCostFields(),
     abc: 'A',
     applied_service_level: 0.95,
     cheaper_alt: null,
@@ -90,10 +92,10 @@ function suggestion(): ReorderSuggestion {
     seasonal_factor: null,
     suggested_qty: 6,
     unit_cost_eur: 5,
-    unit_margin_eur: 3,
+    unit_margin_eur: null,
     unit_sale_eur: 8,
     urgency: 'critical',
-    value_density: 0.75,
+    value_density: null,
     vendor_code: 'BR-2048',
     within_budget: true,
     xyz: 'X',

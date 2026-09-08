@@ -1,3 +1,4 @@
+import { fixtureLineCostFields, fixtureCostProof } from '../procurementCostTestFixtures'
 import { MantineProvider } from '@mantine/core'
 import { render, screen } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
@@ -51,9 +52,10 @@ describe('ProcurementProofPanel', () => {
 
 function suggestion(): ReorderSuggestion {
   return {
+    ...fixtureLineCostFields(),
     abc: 'A',
     applied_service_level: 0.95,
-    cheaper_alt: { cost_eur: 4.1, producer_id: 7 },
+    cheaper_alt: { cost_eur: 4.1, producer_id: 7, cost_provenance: fixtureCostProof(4.1), comparison_basis: 'historical_net_goods' },
     days_of_cover: 4,
     forecast: {
       product_id: 100,
@@ -91,7 +93,7 @@ function suggestion(): ReorderSuggestion {
     seasonal_factor: null,
     suggested_qty: 30,
     unit_cost_eur: 4.5,
-    unit_margin_eur: 3,
+    unit_margin_eur: null,
     unit_sale_eur: 7.5,
     urgency: 'critical',
     value_density: null,

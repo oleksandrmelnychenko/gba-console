@@ -1,3 +1,10 @@
+import { procurementBasketCost, procurementCostSnapshotKey } from '../procurementBasketCost'
+import type { ProcurementSessionBasketLine } from '../procurementSessions'
+import { formatUnitCost } from '../procurementMoneyFormat'
+import { procurementLoadError } from '../procurementLoadError'
+import type { ProcurementCostContext } from '../procurementCostTypes'
+import { exactDisplayedLineAmount } from '../procurementDecimals'
+import { ProcurementCostBadge, ProcurementCostProof, ProcurementCostSnapshot } from './ProcurementCostProof'
 import { BarChart, DonutChart, LineChart } from '@mantine/charts'
 import { MONEY_AXIS_TICK } from '../../../shared/ui/charts/chartTheme'
 import {
@@ -95,7 +102,7 @@ const URGENCY_META: Record<ProcurementUrgency, { color: string; label: string; o
   none: { color: 'gray', label: 'Достатньо', order: 3 },
 }
 
-type BasketLine = { suggestion: ReorderSuggestion; qty: number }
+type BasketLine = ProcurementSessionBasketLine
 
 const PLAN_TABLE_DEFAULT_LAYOUT = {
   columnPinning: {
@@ -178,8 +185,13 @@ async function exportRowsToXlsx(
         [t('Позиція')]: row.inventory.position,
         [t('Днів покриття')]: row.days_of_cover >= 9999 ? '' : row.days_of_cover,
         [t('Замовити')]: q,
-        [t('Ціна од., EUR')]: row.unit_cost_eur ?? '',
-        [t('Сума, EUR')]: Math.round((row.unit_cost_eur ?? 0) * q * 100) / 100,
+        [t('Оцінка одиниці, EUR')]: row.unit_cost_eur ?? '',
+        [t('Покриття вартості')]: row.cost_provenance.coverage,
+        [t('Джерело вартості')]: row.cost_provenance.source,
+        [t('Основа вартості')]: row.cost_provenance.basis,
+        [t('Придатна для бюджету')]: row.cost_provenance.budget_eligible,
+        [t('Причини виключення з бюджету')]: row.cost_provenance.budget_exclusion_reasons.join('; '),
+        [t('Оцінка рядка, EUR')]: row.unit_cost_eur === null ? '' : exactDisplayedLineAmount(row.unit_cost_eur, q) ?? '',
         [t('Маржа од., EUR')]: row.unit_margin_eur ?? '',
       }
     })
@@ -225,6 +237,9 @@ function ProcurementConstructorContent() {
   const [selectedProducerId, setSelectedProducerId] = useState<string | null>(null)
 
   const [rows, setRows] = useState<ReorderSuggestion[]>([])
+  const [costContext, setCostContext] = useState<ProcurementCostContext | null>(null)
+  const costSnapshotKey = useMemo(() => procurementCostSnapshotKey(costContext), [costContext])
+  const currentRowsByKey = useMemo(() => new Map(rows.map(row => [procurementLineKey(row), row])), [rows])
   const [isLoading, setLoading] = useState(true)
   const [hasLoadedPlan, setHasLoadedPlan] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -320,27 +335,29 @@ function ProcurementConstructorContent() {
       setLoading(true)
       setHasLoadedPlan(false)
       setRows([])
+      setCostContext(null)
       setCharts(null)
       setError(null)
       const producerId = selectedProducerId ? Number(selectedProducerId) : null
 
       const plan =
         lens === 'warehouse'
-          ? getPurchaseCockpitWarehousePlan({ budgetEur: 0, method: 'greedy' }, signal).then((p) => p.items)
+          ? getPurchaseCockpitWarehousePlan({ budgetEur: 0, method: 'greedy' }, signal)
           : producerId
-            ? getProducerPlan(producerId, undefined, signal).then((p) => p.items)
-            : Promise.resolve<ReorderSuggestion[]>([])
+            ? getProducerPlan(producerId, undefined, signal)
+            : Promise.resolve(null)
 
       plan
-        .then((items) => {
+        .then((loaded) => {
           if (!signal.aborted) {
-            setRows(items.filter((item) => item.suggested_qty > 0))
+            setCostContext(loaded)
+            setRows((loaded?.items ?? []).filter((item) => item.suggested_qty > 0))
             setHasLoadedPlan(true)
           }
         })
-        .catch(() => {
+        .catch((loadError) => {
           if (!signal.aborted) {
-            setError(t('Не вдалося завантажити план закупівлі'))
+            setError(procurementLoadError(loadError, t('Не вдалося завантажити план закупівлі'), t))
           }
         })
         .finally(() => {
@@ -421,12 +438,13 @@ function ProcurementConstructorContent() {
       const lineKey = procurementLineKey(suggestion)
       next.set(lineKey, {
         suggestion,
+        costSnapshotKey: costSnapshotKey ?? undefined,
         qty: quantity ?? previous.get(lineKey)?.qty ?? suggestion.suggested_qty,
       })
 
       return next
     })
-  }, [])
+  }, [costSnapshotKey])
 
   function addAllCritical() {
     setBasket((previous) => {
@@ -434,6 +452,7 @@ function ProcurementConstructorContent() {
       urgentRowsToAdd.forEach((row) =>
         next.set(procurementLineKey(row), {
           suggestion: row,
+          costSnapshotKey: costSnapshotKey ?? undefined,
           qty: getProcurementOrderQuantity(draftQty, row),
         }),
       )
@@ -503,11 +522,9 @@ function ProcurementConstructorContent() {
         unpricedCount: 0,
       }
       group.lines.push(line)
-      if (line.suggestion.unit_cost_eur === null) {
-        group.unpricedCount += 1
-      } else {
-        group.total += line.suggestion.unit_cost_eur * line.qty
-      }
+      const lineAmount = procurementBasketCost(line, currentRowsByKey.get(procurementLineKey(line.suggestion)), costSnapshotKey).amount
+      if (lineAmount === null) group.unpricedCount += 1
+      else group.total += lineAmount
       groups.set(pid, group)
     })
 
@@ -526,7 +543,7 @@ function ProcurementConstructorContent() {
         ),
       }))
       .toSorted((a, b) => a.name.localeCompare(b.name, 'uk-UA'))
-  }, [basket])
+  }, [basket, costSnapshotKey, currentRowsByKey])
 
   const basketTotal = useMemo(
     () => basketByProducer.reduce((total, group) => total + group.total, 0),
@@ -728,6 +745,7 @@ function ProcurementConstructorContent() {
           </Button>
         </div>
 
+        {costContext && <ProcurementCostSnapshot context={costContext} />}
         <div className="procure-cockpit__overview">
           <div className="procure-cockpit__metrics">
             <div className="procure-metric">
@@ -739,12 +757,12 @@ function ProcurementConstructorContent() {
               <strong>{hasPlanData ? qty.format(overview.criticalCount) : '—'}</strong>
             </div>
             <div className="procure-metric">
-              <span>{t('Сума потреби, EUR')}</span>
-              <strong>{hasPlanData ? amount.format(overview.totalValue) : '—'}</strong>
+              <span>{t('Відомі оцінки потреби, EUR')}</span>
+              <strong>{hasPlanData && overview.totalValue !== null ? amount.format(overview.totalValue) : '—'}</strong>
             </div>
             <div className="procure-metric">
-              <span>{t('Під ризиком, EUR')}</span>
-              <strong>{hasPlanData ? amount.format(overview.valueAtRisk) : '—'}</strong>
+              <span>{t('Оцінки термінових позицій, EUR')}</span>
+              <strong>{hasPlanData && overview.valueAtRisk !== null ? amount.format(overview.valueAtRisk) : '—'}</strong>
             </div>
           </div>
           {visibleRows.length > 0 ? (
@@ -833,8 +851,8 @@ function ProcurementConstructorContent() {
                   <strong>{qty.format(basketByProducer.length)}</strong>
                 </div>
                 <div>
-                  <span>{basketUnpricedCount > 0 ? t('Сума з ціною') : t('Загальна сума')}</span>
-                  <strong>{amount.format(basketTotal)} <small>EUR</small></strong>
+                  <span>{basketUnpricedCount > 0 ? t('Відомі оцінки') : t('Сума оцінок')}</span>
+                  <strong>{basketUnpricedCount === basket.size ? '—' : amount.format(basketTotal)} <small>EUR</small></strong>
                   {basketUnpricedCount > 0 && (
                     <small className="procure-cockpit__basket-unpriced">
                       {qty.format(basketUnpricedCount)} {t('без ціни')}
@@ -862,13 +880,13 @@ function ProcurementConstructorContent() {
                             line.suggestion.product_name ||
                             line.suggestion.vendor_code ||
                             `#${line.suggestion.product_id}`
-                          const lineTotal = line.suggestion.unit_cost_eur === null
-                            ? null
-                            : line.suggestion.unit_cost_eur * line.qty
+                          const cost = procurementBasketCost(line, currentRowsByKey.get(lineKey), costSnapshotKey)
+                          const lineTotal = cost.amount
 
                           return (
                             <article key={lineKey} className="procure-cockpit__basket-line">
                               <ProcurementProductCell row={line.suggestion} t={t} />
+                              {!cost.proofCurrent && <Text size="xs" c="orange.9">{t('Джерело оцінки не підтверджено для поточного плану. Кількість збережено без переоцінки.')}</Text>}
                               <div className="procure-cockpit__basket-line-controls">
                                 <div className="procure-cockpit__basket-line-total">
                                   <span>{t('Сума')}</span>
@@ -910,8 +928,8 @@ function ProcurementConstructorContent() {
                       </Stack>
                       <div className="procure-cockpit__basket-group-footer">
                         <div className="procure-cockpit__basket-group-total">
-                          <span>{group.unpricedCount > 0 ? t('Сума з ціною') : t('Разом')}</span>
-                          <strong>{amount.format(group.total)} <small>EUR</small></strong>
+                          <span>{group.unpricedCount > 0 ? t('Відомі оцінки') : t('Разом')}</span>
+                          <strong>{group.unpricedCount === group.lines.length ? '—' : amount.format(group.total)} <small>EUR</small></strong>
                         </div>
                         {canCreateDraft && (
                           <Button
@@ -1170,19 +1188,19 @@ function usePlanColumns({
       },
       {
         id: 'unitCost',
-        header: t('Ціна, EUR'),
+        header: t('Оцінка одиниці, EUR'),
         accessor: (row) => row.unit_cost_eur,
-        cell: (row) => <ProcurementMoneyCell value={row.unit_cost_eur} />,
+        cell: (row) => <Stack gap={3}><ProcurementMoneyCell value={row.unit_cost_eur} unit /><ProcurementCostBadge proof={row.cost_provenance} /></Stack>,
         align: 'right',
         width: 128,
       },
       {
         id: 'lineCost',
-        header: t('Сума, EUR'),
-        accessor: (row) => row.unit_cost_eur === null ? null : row.unit_cost_eur * orderQtyFor(row),
+        header: t('Оцінка рядка, EUR'),
+        accessor: (row) => row.unit_cost_eur === null ? null : exactDisplayedLineAmount(row.unit_cost_eur, orderQtyFor(row)),
         cell: (row) => (
           <ProcurementMoneyCell
-            value={row.unit_cost_eur === null ? null : row.unit_cost_eur * orderQtyFor(row)}
+            value={row.unit_cost_eur === null ? null : exactDisplayedLineAmount(row.unit_cost_eur, orderQtyFor(row))}
           />
         ),
         align: 'right',
@@ -1274,14 +1292,14 @@ function ProcurementNumberCell({
   )
 }
 
-function ProcurementMoneyCell({ value }: { value: number | null }) {
+function ProcurementMoneyCell({ value, unit = false }: { value: number | null; unit?: boolean }) {
   if (value === null) {
     return null
   }
 
   return (
     <span className="procure-table-money">
-      <span className="app-money">{amount.format(value)}</span>
+      <span className="app-money">{unit ? formatUnitCost(value) : amount.format(value)}</span>
       <span className="app-money-meta">EUR</span>
     </span>
   )
@@ -1389,7 +1407,7 @@ export function ProcurementProofPanel({
           value={quantity.format(decision.orderUpTo)}
         />
         <DecisionMetric
-          label={t('Сума партії')}
+          label={t('Оцінка партії')}
           note={decision.selectedCostEur !== null ? 'EUR' : ''}
           value={decision.selectedCostEur !== null ? amount.format(decision.selectedCostEur) : ''}
         />
@@ -1510,12 +1528,12 @@ export function ProcurementProofPanel({
             />
             <ProofFact
               label={t('Рівень сервісу')}
-              value={row.applied_service_level ? `${(row.applied_service_level * 100).toFixed(1)}%` : ''}
+              value={row.applied_service_level !== null ? `${(row.applied_service_level * 100).toFixed(1)}%` : ''}
             />
             <ProofFact label={t('Метод прогнозу')} value={row.forecast.method} />
             <ProofFact
               label={t('Маржа на одиницю')}
-              value={row.unit_margin_eur !== null ? `${amount.format(row.unit_margin_eur)} EUR` : ''}
+              value={t('Недоступна: податковий склад продажу не підтверджено')}
             />
           </div>
           {demand && demand.length > 0 && (
@@ -1524,12 +1542,7 @@ export function ProcurementProofPanel({
               <Sparkline values={demand} />
             </div>
           )}
-          {row.cheaper_alt && (
-            <p className="procure-proof__alternative">
-              {t('Є дешевша альтернатива у виробника')} №{row.cheaper_alt.producer_id}:{' '}
-              <strong>{amount.format(row.cheaper_alt.cost_eur)} EUR</strong>
-            </p>
-          )}
+          <ProcurementCostProof item={row} />
         </section>
       </div>
     </article>
@@ -1613,8 +1626,8 @@ function Sparkline({ values }: { values: number[] }) {
 type Overview = {
   count: number
   criticalCount: number
-  totalValue: number
-  valueAtRisk: number
+  totalValue: number | null
+  valueAtRisk: number | null
   urgencyDonut: Array<{ name: string; value: number; color: string }>
   coverHist: Array<{ bucket: string; count: number }>
   producerValue: Array<{ producer: string; value: number }>
@@ -1627,13 +1640,17 @@ function computeOverview(rows: ReorderSuggestion[]): Overview {
   let totalValue = 0
   let valueAtRisk = 0
   let criticalCount = 0
+  let knownCount = 0
+  let urgentCount = 0
+  let knownUrgentCount = 0
 
   rows.forEach((row) => {
     urgencyCounts[row.urgency] = (urgencyCounts[row.urgency] ?? 0) + 1
-    const value = row.line_cost_eur ?? 0
-    totalValue += value
+    const value = row.line_cost_eur
+    if (value !== null) { totalValue += value; knownCount += 1 }
     if (row.urgency === 'critical' || row.urgency === 'high') {
-      valueAtRisk += value
+      urgentCount += 1
+      if (value !== null) { valueAtRisk += value; knownUrgentCount += 1 }
     }
     if (row.urgency === 'critical') {
       criticalCount += 1
@@ -1651,7 +1668,7 @@ function computeOverview(rows: ReorderSuggestion[]): Overview {
       coverBuckets['90+'] += 1
     }
     const producer = row.producer_name || `#${row.producer_id}`
-    producerTotals.set(producer, (producerTotals.get(producer) ?? 0) + value)
+    if (value !== null) producerTotals.set(producer, (producerTotals.get(producer) ?? 0) + value)
   })
 
   const urgencyDonut = (['critical', 'high', 'normal', 'none'] as ProcurementUrgency[])
@@ -1663,15 +1680,15 @@ function computeOverview(rows: ReorderSuggestion[]): Overview {
     }))
 
   const producerValue = [...producerTotals.entries()]
-    .map(([producer, value]) => ({ producer, value: Math.round(value) }))
+    .map(([producer, value]) => ({ producer, value }))
     .sort((a, b) => b.value - a.value)
     .slice(0, 8)
 
   return {
     count: rows.length,
     criticalCount,
-    totalValue,
-    valueAtRisk,
+    totalValue: rows.length && !knownCount ? null : totalValue,
+    valueAtRisk: urgentCount && !knownUrgentCount ? null : valueAtRisk,
     urgencyDonut,
     coverHist: Object.entries(coverBuckets).map(([bucket, count]) => ({ bucket, count })),
     producerValue,
@@ -1700,7 +1717,7 @@ function OverviewCharts({ overview, t }: { overview: Overview; t: (key: string) 
 
       <Card padding="sm" radius="md" withBorder>
         <Text c="dimmed" mb={6} size="xs">
-          {t('Потреба €, топ виробників')}
+          {t('Відомі оцінки, EUR · топ виробників')}
         </Text>
         <BarChart
           classNames={{ tooltipItemData: 'app-money' }}

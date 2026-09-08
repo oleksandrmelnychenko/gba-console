@@ -1,3 +1,4 @@
+import { fixtureCostContext, fixtureNoBudget, fixtureLineCostFields } from '../procurementCostTestFixtures'
 import { MantineProvider } from '@mantine/core'
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
@@ -39,6 +40,7 @@ vi.mock('../../assortment/api/assortmentApi', () => ({
 describe('ProcurementConstructor', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    localStorage.removeItem('gba.procurement.sessions.v1')
     vi.spyOn(HTMLElement.prototype, 'clientWidth', 'get').mockReturnValue(640)
     canMock.mockReturnValue(true)
     vi.mocked(getPurchaseCockpitSuppliers).mockResolvedValue([])
@@ -48,7 +50,8 @@ describe('ProcurementConstructor', () => {
       effective_start: '2025-07-24',
       effective_history_days: 365,
       history_complete: true,
-      history_not_applicable: ['inventory', 'reservations'],
+      history_not_applicable: ['inventory', 'reservations', 'purchase_costs'],
+      ...fixtureCostContext(),
       budget_eur: 0,
       budget_used_eur: 0,
       deferred_count: 0,
@@ -67,7 +70,7 @@ describe('ProcurementConstructor', () => {
       total_item_count: 2,
       total_suggested_qty: 10,
       unpriced_item_count: 0,
-      value_captured_eur: 0,
+      ...fixtureNoBudget,
     })
     vi.mocked(getProducerPlan).mockRejectedValue(new Error('not used'))
     vi.mocked(getPurchaseCockpitCharts).mockRejectedValue(new Error('not used'))
@@ -83,6 +86,22 @@ describe('ProcurementConstructor', () => {
       TotalNetAmount: 0,
       TotalQty: 0,
     })
+  })
+
+  it('restores legacy basket quantities with unknown cost and sends only exact IDs/quantity to the mocked draft endpoint', async () => {
+    const legacy = { ...suggestion({ producer_id: 501, producer_name: 'Meyle' }) } as Record<string, unknown>
+    delete legacy.cost_provenance
+    localStorage.setItem('gba.procurement.sessions.v1', JSON.stringify([{ id: 'legacy-cost-fixture', name: 'Legacy cost fixture',
+      savedAt: '2026-09-08T00:00:00Z', lens: 'warehouse', producerId: null, draftQty: {}, basket: [{ suggestion: legacy, qty: .021 }] }]))
+    render(<MantineProvider theme={theme}><I18nProvider><ProcurementConstructor /></I18nProvider></MantineProvider>)
+    await screen.findByRole('button', { name: 'Термінові в кошик · 2' })
+    fireEvent.click(screen.getByRole('button', { name: 'Сесії' }))
+    fireEvent.click(await screen.findByRole('menuitem', { name: /Legacy cost fixture/ }))
+    expect(await screen.findByText('Джерело оцінки не підтверджено для поточного плану. Кількість збережено без переоцінки.')).not.toBeNull()
+    expect(screen.getAllByText('1 без ціни').length).toBeGreaterThan(0)
+    fireEvent.click(screen.getByRole('button', { name: 'Створити чернетку' }))
+    await waitFor(() => expect(createCockpitDraftOrder).toHaveBeenCalledWith(501, [{ productId: 42, qty: .021 }]))
+    localStorage.removeItem('gba.procurement.sessions.v1')
   })
 
   it('does not mount procurement requests without purchase-cockpit page access', () => {
@@ -161,7 +180,7 @@ describe('ProcurementConstructor', () => {
     expect(screen.getByText('Кошик замовлень')).not.toBeNull()
     expect(screen.getByText('Розподілено за виробниками')).not.toBeNull()
     expect(screen.getByText('Виробників')).not.toBeNull()
-    expect(screen.getByText('Загальна сума')).not.toBeNull()
+    expect(screen.getByText('Сума оцінок')).not.toBeNull()
     expect(screen.getByText('65,00')).not.toBeNull()
 
     const basketRail = screen.getByText('Кошик замовлень').closest('aside')
@@ -239,7 +258,8 @@ describe('ProcurementConstructor', () => {
       effective_start: '2025-07-24',
       effective_history_days: 365,
       history_complete: true,
-      history_not_applicable: ['inventory', 'reservations'],
+      history_not_applicable: ['inventory', 'reservations', 'purchase_costs'],
+      ...fixtureCostContext(),
       budget_eur: 0,
       budget_used_eur: 0,
       deferred_count: 0,
@@ -255,7 +275,7 @@ describe('ProcurementConstructor', () => {
       total_item_count: 0,
       total_suggested_qty: 0,
       unpriced_item_count: 0,
-      value_captured_eur: 0,
+      ...fixtureNoBudget,
     })
 
     render(
@@ -296,13 +316,14 @@ describe('ProcurementConstructor', () => {
     fireEvent.click(await screen.findByRole('button', { name: 'Термінові в кошик · 1' }))
 
     expect(await screen.findByText('Без ціни')).not.toBeNull()
-    expect(screen.getAllByText('Сума з ціною')).toHaveLength(2)
+    expect(screen.getAllByText('Відомі оцінки')).toHaveLength(2)
     expect(screen.getByText('1 без ціни')).not.toBeNull()
   })
 })
 
 function suggestion(overrides: Partial<ReorderSuggestion> = {}): ReorderSuggestion {
   return {
+    ...fixtureLineCostFields(overrides),
     abc: 'A',
     applied_service_level: 0.95,
     cheaper_alt: null,
@@ -342,7 +363,7 @@ function suggestion(overrides: Partial<ReorderSuggestion> = {}): ReorderSuggesti
     safety_stock: 6,
     suggested_qty: 6,
     unit_cost_eur: 5,
-    unit_margin_eur: 3,
+    unit_margin_eur: null,
     unit_sale_eur: 8,
     urgency: 'critical',
     value_density: null,

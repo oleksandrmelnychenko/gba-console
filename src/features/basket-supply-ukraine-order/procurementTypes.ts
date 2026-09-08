@@ -1,3 +1,4 @@
+import type { ProcurementCostContext, ProcurementCostProvenance } from './procurementCostTypes'
 export type ProcurementUrgency = 'critical' | 'high' | 'normal' | 'none'
 
 export type ProcurementUrgencyBucket = {
@@ -74,6 +75,8 @@ export type ReorderInventory = {
 export type ReorderCheaperAlt = {
   producer_id: number
   cost_eur: number
+  cost_provenance: ProcurementCostProvenance
+  comparison_basis: 'historical_net_goods'
 }
 
 export type ReorderSuggestion = {
@@ -100,7 +103,12 @@ export type ReorderSuggestion = {
   unit_cost_eur: number | null
   line_cost_eur: number | null
   unit_sale_eur: number | null
-  unit_margin_eur: number | null
+  unit_margin_eur: null
+  cost_provenance: ProcurementCostProvenance
+  sale_price_basis: 'historical_recorded_tax_basis_unverified' | 'unavailable'
+  margin_unavailable_reason: 'sale_tax_basis_unverified'
+  service_level_basis: 'abc_fallback_with_optional_producer_floor'
+  budget_priority_weight: number
   applied_service_level: number | null
   abc: string | null
   xyz: string | null
@@ -108,7 +116,7 @@ export type ReorderSuggestion = {
   seasonal_factor: number | null
   cheaper_alt: ReorderCheaperAlt | null
   learned_factor: number | null
-  value_density: number | null
+  value_density: null
   within_budget: boolean | null
 }
 
@@ -136,7 +144,10 @@ export type CartPlan = ProcurementHistoryContract & {
   unpriced_item_count: number
   budget_eur: number
   budget_used_eur: number
-  value_captured_eur: number
+  value_captured_eur: null
+  budget_objective: 'urgency_weighted_lines' | null
+  budget_score: number | null
+  budget_basis: 'net_goods_excluding_vat_delivery_customs'
   selected_count: number
   deferred_count: number
   method_used: CartOptimizeMethod | null
@@ -226,7 +237,8 @@ export type FeedbackInput = {
 }
 import type { AiHistoryLineage } from '../../shared/ai/aiHistoryLineage'
 
-export type ProcurementHistoryContract = AiHistoryLineage & {
+export type ProcurementHistoryContract = AiHistoryLineage & ProcurementCostContext & {
+  history_scope: 'demand'
   as_of_date: string
   effective_history_days: number
   history_not_applicable: string[]

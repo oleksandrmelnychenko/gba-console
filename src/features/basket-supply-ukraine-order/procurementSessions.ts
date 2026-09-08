@@ -4,7 +4,7 @@ import type { ReorderSuggestion } from './procurementTypes'
 // module is the single seam — swap the four functions for a server API (per-user table)
 // later without touching the UI.
 
-export type ProcurementSessionBasketLine = { suggestion: ReorderSuggestion; qty: number }
+export type ProcurementSessionBasketLine = { suggestion: ReorderSuggestion; qty: number; costSnapshotKey?: string }
 
 export type ProcurementSession = {
   id: string

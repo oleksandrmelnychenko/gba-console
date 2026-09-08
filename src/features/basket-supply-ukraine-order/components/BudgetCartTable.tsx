@@ -1,3 +1,4 @@
+import { formatUnitCost } from '../procurementMoneyFormat'
 import { Badge, Group, Stack, Text } from '@mantine/core'
 import { useMemo } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -6,6 +7,7 @@ import type { DataTableColumn } from '../../../shared/ui/data-table/types'
 import { buildReorderExplanation } from '../procurementOrderQty'
 import { procurementQuantityFormat as qtyFormatter } from '../procurementQuantityFormat'
 import type { ProcurementUrgency, ReorderSuggestion } from '../procurementTypes'
+import { ProcurementCostBadge, ProcurementCostProof } from './ProcurementCostProof'
 import { ProcurementProductCell } from './ProcurementProductCell'
 
 type DecisionSignal = {
@@ -61,15 +63,14 @@ export function BudgetCartTable({ items, maxHeight = 'calc(100vh - 300px)', prod
         columnVisibility: {
           forecast: false,
           quadrant: false,
-          unitMargin: false,
-          valueDensity: false,
+          budgetPriority: false,
         },
         density: 'normal',
       }}
       distributeAvailableWidth
       emptyText={t('Немає позицій')}
       getRowId={(item) => `${item.producer_id}-${item.product_id}`}
-      layoutVersion="budget-cart-plan-2"
+      layoutVersion="budget-cart-plan-cost-proof-3"
       maxHeight={maxHeight}
       minWidth={1520}
       showLayoutControls
@@ -191,37 +192,24 @@ function buildColumns(
     },
     {
       id: 'unitCost',
-      header: `${t('Ціна')} (EUR)`,
+      header: `${t('Оцінка одиниці')} (EUR)`,
       width: 110,
       minWidth: 96,
       align: 'right',
-      accessor: (item) => item.unit_cost_eur ?? 0,
+      accessor: (item) => item.unit_cost_eur,
       cell: (item) => (
         <Text className="app-money" size="sm">
-          {item.unit_cost_eur === null ? '' : eurFormatter.format(item.unit_cost_eur)}
-        </Text>
-      ),
-    },
-    {
-      id: 'unitMargin',
-      header: `${t('Маржа')} (EUR)`,
-      width: 110,
-      minWidth: 96,
-      align: 'right',
-      accessor: (item) => item.unit_margin_eur ?? 0,
-      cell: (item) => (
-        <Text className="app-money" size="sm">
-          {item.unit_margin_eur === null ? '' : eurFormatter.format(item.unit_margin_eur)}
+          {item.unit_cost_eur === null ? '' : formatUnitCost(item.unit_cost_eur)}
         </Text>
       ),
     },
     {
       id: 'lineCost',
-      header: `${t('Сума')} (EUR)`,
+      header: `${t('Оцінка рядка')} (EUR)`,
       width: 118,
       minWidth: 104,
       align: 'right',
-      accessor: (item) => item.line_cost_eur ?? 0,
+      accessor: (item) => item.line_cost_eur,
       cell: (item) => (
         <Text className="app-money" size="sm">
           {item.line_cost_eur === null ? '' : eurFormatter.format(item.line_cost_eur)}
@@ -229,15 +217,15 @@ function buildColumns(
       ),
     },
     {
-      id: 'valueDensity',
-      header: t('Цінність/€'),
+      id: 'budgetPriority',
+      header: t('Вага терміновості'),
       width: 104,
       minWidth: 92,
       align: 'right',
-      accessor: (item) => item.value_density ?? 0,
+      accessor: (item) => item.budget_priority_weight,
       cell: (item) => (
         <Text className="app-money" size="sm">
-          {item.value_density === null ? '' : densityFormatter.format(item.value_density)}
+          {densityFormatter.format(item.budget_priority_weight)}
         </Text>
       ),
     },
@@ -255,14 +243,14 @@ function buildColumns(
       width: 118,
       minWidth: 104,
       align: 'center',
-      accessor: (item) => (item.within_budget === false ? 0 : 1),
+      accessor: (item) => item.within_budget === null ? null : Number(item.within_budget),
       cell: (item) => (
         <Badge
-          className={item.within_budget === false ? 'app-role-pill is-gray' : 'app-role-pill is-green'}
+          className={item.within_budget === true ? 'app-role-pill is-green' : 'app-role-pill is-gray'}
           size="sm"
           variant="light"
         >
-          {item.within_budget === false ? t('Відкладено') : t('В бюджеті')}
+          {item.within_budget === null ? t('Не застосовано') : item.within_budget ? t('В бюджеті') : item.cost_provenance.budget_eligible ? t('Відкладено') : t('Виключено')}
         </Badge>
       ),
     },
@@ -275,6 +263,8 @@ function SignalsCell({ item }: { item: ReorderSuggestion }) {
   const explanation = buildReorderExplanation(item, t)
 
   return (
+    <Stack gap={4}>
+    <ProcurementCostBadge proof={item.cost_provenance} />
     <Group
       className="budget-cart-signals"
       gap={4}
@@ -287,6 +277,8 @@ function SignalsCell({ item }: { item: ReorderSuggestion }) {
         </Badge>
       ))}
     </Group>
+    <details><summary>{t('Джерело вартості')}</summary><ProcurementCostProof item={item} /></details>
+    </Stack>
   )
 }
 
@@ -320,7 +312,7 @@ function buildDecisionSignals(item: ReorderSuggestion, t: (value: string) => str
   }
 
   if (item.cheaper_alt) {
-    signals.push({ label: t('є дешевший аналог'), pillClass: 'app-role-pill is-yellow' })
+    signals.push({ label: t('нижча історична оцінка'), pillClass: 'app-role-pill is-yellow' })
   }
 
   return signals.slice(0, 4)

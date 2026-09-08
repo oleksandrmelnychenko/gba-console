@@ -1,3 +1,4 @@
+import { fixtureCostContext } from '../procurementCostTestFixtures'
 import { MantineProvider } from '@mantine/core'
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
@@ -31,7 +32,8 @@ const charts: ProcurementCharts = {
   effective_start: '2025-07-24',
   effective_history_days: 365,
   history_complete: true,
-  history_not_applicable: ['inventory', 'reservations'],
+  history_not_applicable: ['inventory', 'reservations', 'purchase_costs'],
+      ...fixtureCostContext(),
   model_version: 'test',
   days_of_cover_hist: [
     { bucket: '0–7', count: 7 },
@@ -159,7 +161,8 @@ describe('ProcureDashboardTab', () => {
       effective_start: '2025-07-25',
       effective_history_days: 365,
       history_complete: true,
-      history_not_applicable: ['inventory', 'reservations'],
+      history_not_applicable: ['inventory', 'reservations', 'purchase_costs'],
+      ...fixtureCostContext(),
       days_of_cover_hist: [],
       demand_series: [],
       model_version: 'test',

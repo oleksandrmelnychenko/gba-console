@@ -1,3 +1,4 @@
+import { fixtureLineCostFields } from './procurementCostTestFixtures'
 import { describe, expect, it } from 'vitest'
 import type { ReorderSuggestion } from './procurementTypes'
 import { calculateProcurementDecision } from './procurementDecision'
@@ -55,6 +56,7 @@ describe('calculateProcurementDecision', () => {
 
 function suggestion(overrides: Partial<ReorderSuggestion> = {}): ReorderSuggestion {
   return {
+    ...fixtureLineCostFields(overrides),
     abc: 'A',
     applied_service_level: 0.95,
     cheaper_alt: null,
@@ -94,7 +96,7 @@ function suggestion(overrides: Partial<ReorderSuggestion> = {}): ReorderSuggesti
     safety_stock: 6,
     suggested_qty: 30,
     unit_cost_eur: 4.5,
-    unit_margin_eur: 3,
+    unit_margin_eur: null,
     unit_sale_eur: 7.5,
     urgency: 'critical',
     value_density: null,

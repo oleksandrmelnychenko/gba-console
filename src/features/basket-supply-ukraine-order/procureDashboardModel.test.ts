@@ -1,3 +1,4 @@
+import { fixtureCostContext } from './procurementCostTestFixtures'
 import { describe, expect, it } from 'vitest'
 import type { ProcurementCharts } from './procurementTypes'
 import { summarizeProcurementCharts } from './procureDashboardModel'
@@ -8,7 +9,8 @@ const charts: ProcurementCharts = {
   effective_start: '2025-07-24',
   effective_history_days: 365,
   history_complete: true,
-  history_not_applicable: ['inventory', 'reservations'],
+  history_not_applicable: ['inventory', 'reservations', 'purchase_costs'],
+      ...fixtureCostContext(),
   model_version: 'test',
   days_of_cover_hist: [
     { bucket: '0–7', count: 5 },

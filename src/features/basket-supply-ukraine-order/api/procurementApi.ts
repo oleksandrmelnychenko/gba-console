@@ -1,3 +1,7 @@
+import { normalizeProcurementCosts, costRequire, NET_GOODS } from './procurementCostContract'
+import { normalizeCostProvenance } from './procurementCostProvenance'
+import type { ProcurementCostContext, ProcurementCostManifest, ProcurementCostProvenance } from '../procurementCostTypes'
+import { exactDisplayedLineAmount, compareDecimals, decimalParts, multiplyToCents, toCents } from '../procurementDecimals'
 import { apiRequest } from '../../../shared/api/apiClient'
 import {
   normalizeAiHistoryLineage,
@@ -364,9 +368,10 @@ function buildChartsQuery(query: ProcurementChartsQuery) {
   return params
 }
 
-function normalizeCharts(result: unknown): ProcurementCharts {
+async function normalizeCharts(result: unknown): Promise<ProcurementCharts> {
   const data = requireRecord(unwrap(result), 'charts')
   const history = normalizeProcurementHistory(data, 'charts')
+  const costs = await normalizeProcurementCosts(data, 'charts', history.as_of_date, createProcurementContractError)
   const producerId = requireNullableSafePositiveInteger(data.producer_id, 'charts.producer_id')
   const topN = requireIntegerInRange(data.top_n, 'charts.top_n', 1, 100)
   const urgencyMix = normalizeUrgencyMix(data.urgency_mix)
@@ -386,6 +391,7 @@ function normalizeCharts(result: unknown): ProcurementCharts {
 
   return {
     ...history,
+    ...costs,
     producer_id: producerId,
     top_n: topN,
     urgency_mix: urgencyMix,
@@ -524,11 +530,12 @@ function normalizeDemandSeries(value: unknown) {
   })
 }
 
-function normalizeProducerPlan(result: unknown, expectedAsOf?: string): ProducerPlan {
+async function normalizeProducerPlan(result: unknown, expectedAsOf?: string): Promise<ProducerPlan> {
   const data = requireRecord(unwrap(result), 'producer_plan')
   const history = normalizeProcurementHistory(data, 'producer_plan', expectedAsOf)
+  const costs = await normalizeProcurementCosts(data, 'producer_plan', history.as_of_date, createProcurementContractError)
   const producerId = requireSafePositiveInteger(data.producer_id, 'producer_plan.producer_id')
-  const items = normalizeReorderSuggestions(data.items, 'producer_plan.items')
+  const items = normalizeReorderSuggestions(data.items, 'producer_plan.items', costs.cost_observation_manifest)
   assertUniqueSuggestionProducts(items, 'producer_plan.items')
 
   for (const item of items) {
@@ -553,8 +560,10 @@ function normalizeProducerPlan(result: unknown, expectedAsOf?: string): Producer
     )
   }
 
+  validateCostTotals(costs, items, false, 'producer_plan')
   return {
     ...history,
+    ...costs,
     producer_id: producerId,
     producer_name: requireNullableString(data.producer_name, 'producer_plan.producer_name') ?? '',
     lead_time_days: requireNumberInRange(
@@ -578,14 +587,15 @@ function normalizeProducerPlan(result: unknown, expectedAsOf?: string): Producer
   }
 }
 
-function normalizeCartPlan(
+async function normalizeCartPlan(
   result: unknown,
   expectedBudgetEur: number,
   expectedAsOf?: string,
-): CartPlan {
+): Promise<CartPlan> {
   const data = requireRecord(unwrap(result), 'cart')
   const history = normalizeProcurementHistory(data, 'cart', expectedAsOf)
-  const items = normalizeReorderSuggestions(data.items, 'cart.items')
+  const costs = await normalizeProcurementCosts(data, 'cart', history.as_of_date, createProcurementContractError)
+  const items = normalizeReorderSuggestions(data.items, 'cart.items', costs.cost_observation_manifest)
   assertUniqueSuggestionProducts(items, 'cart.items')
 
   const itemCount = requireIntegerInRange(data.item_count, 'cart.item_count', 0, Number.MAX_SAFE_INTEGER)
@@ -607,6 +617,7 @@ function normalizeCartPlan(
     )
   }
 
+  validateCostTotals(costs, items, isTruncated, 'cart')
   const unpricedItemCount = requireIntegerInRange(
     data.unpriced_item_count,
     'cart.unpriced_item_count',
@@ -615,6 +626,8 @@ function normalizeCartPlan(
   )
   const pricedCostEur = requireMoney(data.priced_cost_eur, 'cart.priced_cost_eur', true)
   const totalCostEur = requireNullableMoney(data.total_cost_eur, 'cart.total_cost_eur')
+  costRequire(decimalParts(pricedCostEur).scale <= 2 && (totalCostEur === null || decimalParts(totalCostEur).scale <= 2),
+    'cart.priced_cost_eur', 'money totals must retain exact cents', createProcurementContractError)
   const totalSuggestedQty = requireNumberInRange(
     data.total_suggested_qty,
     'cart.total_suggested_qty',
@@ -666,8 +679,9 @@ function normalizeCartPlan(
 
   const budgetEur = requireNullableMoney(data.budget_eur, 'cart.budget_eur') ?? 0
   const budgetUsedEur = requireNullableMoney(data.budget_used_eur, 'cart.budget_used_eur') ?? 0
-  const valueCapturedEur =
-    requireNullableMoney(data.value_captured_eur, 'cart.value_captured_eur') ?? 0
+  costRequire(decimalParts(budgetUsedEur).scale <= 2, 'cart.budget_used_eur', 'budget spend must retain exact cents', createProcurementContractError)
+  costRequire(data.value_captured_eur === null, 'cart.value_captured_eur', 'unproved future profit must remain null', createProcurementContractError)
+  const budget = normalizeBudgetObjective(data, items, expectedBudgetEur)
   const selectedCount =
     requireNullableInteger(data.selected_count, 'cart.selected_count', 0, itemCount) ?? 0
   const deferredCount =
@@ -675,7 +689,7 @@ function normalizeCartPlan(
   const methodUsed = normalizeCartMethod(data.method_used)
 
   if (expectedBudgetEur > 0) {
-    if (toCents(budgetEur) !== toCents(expectedBudgetEur)) {
+    if (compareDecimals(budgetEur, expectedBudgetEur) !== 0) {
       throw new ProcurementContractError('cart.budget_eur', 'does not match the requested budget')
     }
     if (methodUsed === null) {
@@ -706,13 +720,14 @@ function normalizeCartPlan(
         'does not equal selected line costs',
       )
     }
-    if (toCents(budgetUsedEur) > toCents(budgetEur)) {
+    if (compareDecimals(budgetUsedEur, budgetEur) > 0) {
       throw new ProcurementContractError('cart.budget_used_eur', 'exceeds budget_eur')
     }
   }
 
   return {
     ...history,
+    ...costs,
     items,
     item_count: itemCount,
     total_item_count: totalItemCount,
@@ -729,11 +744,37 @@ function normalizeCartPlan(
     unpriced_item_count: unpricedItemCount,
     budget_eur: budgetEur,
     budget_used_eur: budgetUsedEur,
-    value_captured_eur: valueCapturedEur,
+    value_captured_eur: null,
+    ...budget,
     selected_count: selectedCount,
     deferred_count: deferredCount,
     method_used: methodUsed,
   }
+}
+
+function validateCostTotals(costs: ProcurementCostContext, items: ReorderSuggestion[], truncated: boolean, path: string) {
+  const buyer = items.some(item => item.cost_provenance.source === 'buyer_supplied')
+  const complete = items.every(item => item.cost_provenance.budget_eligible)
+  if (!truncated) {
+    costRequire(costs.cost_totals_certified === complete, `${path}.cost_totals_certified`, 'does not match every displayed line cost proof', createProcurementContractError)
+    costRequire(costs.cost_total_basis === (buyer ? 'includes_buyer_values_with_unverified_tax_basis' : NET_GOODS), `${path}.cost_total_basis`, 'does not describe the included receipt and manual costs', createProcurementContractError)
+  } else {
+    costRequire(!costs.cost_totals_certified || complete, `${path}.cost_totals_certified`, 'certified total contains an ineligible visible line', createProcurementContractError)
+    costRequire(!buyer || costs.cost_total_basis === 'includes_buyer_values_with_unverified_tax_basis', `${path}.cost_total_basis`, 'visible buyer values cannot inherit a certified net-goods basis', createProcurementContractError)
+  }
+}
+
+function normalizeBudgetObjective(data: Record<string, unknown>, items: ReorderSuggestion[], budget: number): Pick<CartPlan, 'budget_basis' | 'budget_objective' | 'budget_score'> {
+  costRequire(data.budget_basis === NET_GOODS, 'cart.budget_basis', 'budget excludes VAT, delivery and customs', createProcurementContractError)
+  if (budget <= 0) {
+    costRequire(data.budget_objective === null && data.budget_score === null, 'cart.budget_objective', 'no budget was requested', createProcurementContractError)
+    return { budget_basis: NET_GOODS, budget_objective: null, budget_score: null }
+  }
+  costRequire(data.budget_objective === 'urgency_weighted_lines', 'cart.budget_objective', 'unsupported budget objective', createProcurementContractError)
+  const score = requireNumberInRange(data.budget_score, 'cart.budget_score', 0, items.length)
+  const tenths = items.filter(item => item.within_budget === true).reduce((sum, item) => sum + Math.round(item.budget_priority_weight * 10), 0)
+  costRequire(score === tenths / 10, 'cart.budget_score', 'does not equal the dimensionless sum of selected line urgency weights', createProcurementContractError)
+  return { budget_basis: NET_GOODS, budget_objective: 'urgency_weighted_lines' as const, budget_score: score }
 }
 
 function normalizeProcurementHistory(
@@ -746,6 +787,7 @@ function normalizeProcurementHistory(
     `${path}.as_of_date`,
     createProcurementContractError,
   )
+  costRequire(data.history_scope === 'demand', `${path}.history_scope`, 'must scope historical coverage to demand', createProcurementContractError)
   const lineage = normalizeAiHistoryLineage(
     data,
     path,
@@ -754,12 +796,13 @@ function normalizeProcurementHistory(
       asOf: asOfDate,
       ...(expectedAsOf ? { expectedAsOf } : {}),
       requireEffectiveHistoryDays: true,
-      requiredHistoryNotApplicable: ['inventory', 'reservations'],
+      requiredHistoryNotApplicable: ['inventory', 'reservations', 'purchase_costs'],
     },
   )
 
   return {
     ...lineage,
+    history_scope: 'demand' as const,
     effective_history_days: lineage.effective_history_days!,
     history_not_applicable: lineage.history_not_applicable!,
     as_of_date: asOfDate,
@@ -782,13 +825,13 @@ function normalizeCartMethod(value: unknown): CartOptimizeMethod | null {
   throw new ProcurementContractError('cart.method_used', 'unknown optimization method')
 }
 
-function normalizeReorderSuggestions(value: unknown, path: string): ReorderSuggestion[] {
+function normalizeReorderSuggestions(value: unknown, path: string, manifest: ProcurementCostManifest): ReorderSuggestion[] {
   return requireArray(value, path).map((item, index) =>
-    normalizeReorderSuggestion(item, `${path}[${index}]`),
+    normalizeReorderSuggestion(item, `${path}[${index}]`, manifest),
   )
 }
 
-function normalizeReorderSuggestion(value: unknown, path: string): ReorderSuggestion {
+function normalizeReorderSuggestion(value: unknown, path: string, manifest: ProcurementCostManifest): ReorderSuggestion {
   const entry = requireRecord(value, path)
   const productId = requireSafePositiveInteger(entry.product_id, `${path}.product_id`)
   const producerId = requireSafePositiveInteger(entry.producer_id, `${path}.producer_id`)
@@ -804,14 +847,20 @@ function normalizeReorderSuggestion(value: unknown, path: string): ReorderSugges
     0,
     MAX_DRAFT_QTY,
   )
-  const unitCostEur = requireNullableMoney(entry.unit_cost_eur, `${path}.unit_cost_eur`, false)
+  const unitCostEur = requireNullableMoney(entry.unit_cost_eur, `${path}.unit_cost_eur`, true)
   const lineCostEur = requireNullableMoney(entry.line_cost_eur, `${path}.line_cost_eur`)
 
-  if ((unitCostEur === null) !== (lineCostEur === null)) {
+  if (unitCostEur === null && lineCostEur !== null) {
     throw new ProcurementContractError(
       `${path}.line_cost_eur`,
-      'unit_cost_eur and line_cost_eur must be both present or both null',
+      'a line cost cannot exist without its unit cost',
     )
+  }
+  if (unitCostEur !== null) {
+    costRequire((exactDisplayedLineAmount(unitCostEur, suggestedQty) === null) === (lineCostEur === null),
+      `${path}.line_cost_eur`, 'blank amount must match exact line precision coverage', createProcurementContractError)
+    costRequire(lineCostEur === null || decimalParts(lineCostEur).scale <= 2,
+      `${path}.line_cost_eur`, 'line amount must retain exact cents', createProcurementContractError)
   }
   if (
     unitCostEur !== null &&
@@ -823,6 +872,15 @@ function normalizeReorderSuggestion(value: unknown, path: string): ReorderSugges
       'does not equal unit_cost_eur × suggested_qty to cents',
     )
   }
+
+  const provenance = normalizeCostProvenance(entry.cost_provenance, { productId, supplierId: producerId, unit: unitCostEur, line: lineCostEur, quantity: suggestedQty }, manifest, `${path}.cost_provenance`, createProcurementContractError)
+  const sale = requireNullableMoney(entry.unit_sale_eur, `${path}.unit_sale_eur`)
+  costRequire(entry.sale_price_basis === (sale === null ? 'unavailable' : 'historical_recorded_tax_basis_unverified'), `${path}.sale_price_basis`, 'must distinguish recorded historical price from an unavailable value', createProcurementContractError)
+  costRequire(entry.unit_margin_eur === null && entry.value_density === null && entry.margin_unavailable_reason === 'sale_tax_basis_unverified', path, 'unproved sale tax basis cannot produce profit or ROI', createProcurementContractError)
+  costRequire(entry.service_level_basis === 'abc_fallback_with_optional_producer_floor', `${path}.service_level_basis`, 'unsupported service-level basis', createProcurementContractError)
+  const weight = suggestedQty <= 0 ? 0 : { critical: 1, high: 0.7, normal: 0.4, none: 0.1 }[urgency]
+  costRequire(entry.budget_priority_weight === weight, `${path}.budget_priority_weight`, 'must equal the dimensionless urgency weight', createProcurementContractError)
+  costRequire(entry.within_budget !== true || provenance.budget_eligible, `${path}.within_budget`, 'an ineligible or unpriced cost cannot enter the automatic budget', createProcurementContractError)
 
   return {
     product_id: productId,
@@ -857,11 +915,13 @@ function normalizeReorderSuggestion(value: unknown, path: string): ReorderSugges
     inventory: normalizeInventory(entry.inventory, productId, `${path}.inventory`),
     unit_cost_eur: unitCostEur,
     line_cost_eur: lineCostEur,
-    unit_sale_eur: requireNullableMoney(entry.unit_sale_eur, `${path}.unit_sale_eur`),
-    unit_margin_eur: requireNullableFiniteNumber(
-      entry.unit_margin_eur,
-      `${path}.unit_margin_eur`,
-    ),
+    unit_sale_eur: sale,
+    unit_margin_eur: null,
+    cost_provenance: provenance,
+    sale_price_basis: sale === null ? 'unavailable' : 'historical_recorded_tax_basis_unverified',
+    margin_unavailable_reason: entry.margin_unavailable_reason,
+    service_level_basis: entry.service_level_basis,
+    budget_priority_weight: weight,
     applied_service_level: requireNullableNumber(
       entry.applied_service_level,
       `${path}.applied_service_level`,
@@ -876,9 +936,9 @@ function normalizeReorderSuggestion(value: unknown, path: string): ReorderSugges
       `${path}.seasonal_factor`,
       0,
     ),
-    cheaper_alt: normalizeCheaperAlt(entry.cheaper_alt, `${path}.cheaper_alt`),
+    cheaper_alt: normalizeCheaperAlt(entry.cheaper_alt, `${path}.cheaper_alt`, manifest, productId, suggestedQty, producerId, unitCostEur, provenance),
     learned_factor: requireNullableNumber(entry.learned_factor, `${path}.learned_factor`, 0),
-    value_density: requireNullableNumber(entry.value_density, `${path}.value_density`, 0),
+    value_density: null,
     within_budget: requireNullableBoolean(entry.within_budget, `${path}.within_budget`),
   }
 }
@@ -942,17 +1002,25 @@ function normalizeInventory(value: unknown, productId: number, path: string): Re
   }
 }
 
-function normalizeCheaperAlt(value: unknown, path: string): ReorderCheaperAlt | null {
+function normalizeCheaperAlt(value: unknown, path: string, manifest: ProcurementCostManifest, productId: number, quantity: number,
+  baseSupplier: number, baseCost: number | null, baseProof: ProcurementCostProvenance): ReorderCheaperAlt | null {
   if (value === undefined || value === null) {
     return null
   }
 
   const entry = requireRecord(value, path)
+  const supplierId = requireSafePositiveInteger(entry.producer_id, `${path}.producer_id`)
+  const cost = requireMoney(entry.cost_eur, `${path}.cost_eur`, true)
+  costRequire(entry.comparison_basis === 'historical_net_goods', `${path}.comparison_basis`, 'supplier comparisons must remain historical observations', createProcurementContractError)
+  const proof = normalizeCostProvenance(entry.cost_provenance, { productId, supplierId, unit: cost, line: exactDisplayedLineAmount(cost, quantity), quantity }, manifest, `${path}.cost_provenance`, createProcurementContractError)
+  costRequire(baseCost !== null && baseProof.source === 'receipt_history' && proof.source === 'receipt_history'
+    && baseSupplier !== supplierId, path, 'historical comparison needs usable receipt costs from two exact suppliers', createProcurementContractError)
+  const base = decimalParts(baseCost), alt = decimalParts(cost), scale = Math.max(base.scale, alt.scale)
+  const baseValue = base.coefficient * 10n ** BigInt(scale - base.scale), altValue = alt.coefficient * 10n ** BigInt(scale - alt.scale)
+  costRequire(altValue < baseValue && altValue * 100n <= baseValue * 98n, path,
+    'historical alternative must be strictly lower and at least two percent below the base median', createProcurementContractError)
+  return { producer_id: supplierId, cost_eur: cost, comparison_basis: 'historical_net_goods', cost_provenance: proof }
 
-  return {
-    producer_id: requireSafePositiveInteger(entry.producer_id, `${path}.producer_id`),
-    cost_eur: requireMoney(entry.cost_eur, `${path}.cost_eur`, false),
-  }
 }
 
 function validateCockpitDraftRequest(supplierId: number, items: CockpitDraftItem[]) {
@@ -1243,14 +1311,6 @@ function requireNullableNumber(
   return requireNumberInRange(value, path, minimum, maximum)
 }
 
-function requireNullableFiniteNumber(value: unknown, path: string): number | null {
-  if (value === undefined || value === null) {
-    return null
-  }
-
-  return requireFiniteNumber(value, path)
-}
-
 function requireIntegerInRange(
   value: unknown,
   path: string,
@@ -1333,26 +1393,6 @@ function requireNullableMoney(
   return requireMoney(value, path, allowZero)
 }
 
-function toCents(value: number): bigint {
-  return roundDecimalToScale(decimalParts(value), 2)
-}
-
-function multiplyToCents(left: number, right: number): bigint {
-  // The service calculates money with Decimal ROUND_HALF_UP. Multiplying the
-  // parsed JSON numbers as IEEE-754 values makes valid half-cent ties (4.975)
-  // drift below the boundary, so multiply their decimal coefficients instead.
-  const leftParts = decimalParts(left)
-  const rightParts = decimalParts(right)
-
-  return roundDecimalToScale(
-    {
-      coefficient: leftParts.coefficient * rightParts.coefficient,
-      scale: leftParts.scale + rightParts.scale,
-    },
-    2,
-  )
-}
-
 /** Match the service's exact sum of canonical decimal JSON quantities, without money rounding. */
 function hasExactQuantityTotal(total: number, items: ReorderSuggestion[]): boolean {
   const expected = decimalParts(total)
@@ -1369,51 +1409,6 @@ function hasExactQuantityTotal(total: number, items: ReorderSuggestion[]): boole
   }
 
   return coefficient === expected.coefficient * 10n ** BigInt(scale - expected.scale)
-}
-
-function decimalParts(value: number): { coefficient: bigint; scale: number } {
-  if (!Number.isFinite(value)) {
-    throw new TypeError('Cannot convert a non-finite number to decimal parts')
-  }
-
-  const [mantissa, exponentPart] = value.toString().toLowerCase().split('e')
-  const exponent = exponentPart === undefined ? 0 : Number(exponentPart)
-  const negative = mantissa.startsWith('-')
-  const unsignedMantissa = negative ? mantissa.slice(1) : mantissa
-  const [integerPart, fractionPart = ''] = unsignedMantissa.split('.')
-  const digits = `${integerPart}${fractionPart}`.replace(/^0+(?=\d)/, '') || '0'
-  let coefficient = BigInt(digits)
-  let scale = fractionPart.length - exponent
-
-  if (negative) {
-    coefficient = -coefficient
-  }
-  if (scale < 0) {
-    coefficient *= 10n ** BigInt(-scale)
-    scale = 0
-  }
-
-  return { coefficient, scale }
-}
-
-function roundDecimalToScale(
-  value: { coefficient: bigint; scale: number },
-  targetScale: number,
-): bigint {
-  if (value.scale <= targetScale) {
-    return value.coefficient * 10n ** BigInt(targetScale - value.scale)
-  }
-
-  const divisor = 10n ** BigInt(value.scale - targetScale)
-  const quotient = value.coefficient / divisor
-  const remainder = value.coefficient % divisor
-  const absoluteRemainder = remainder < 0n ? -remainder : remainder
-
-  if (absoluteRemainder * 2n < divisor) {
-    return quotient
-  }
-
-  return quotient + (value.coefficient < 0n ? -1n : 1n)
 }
 
 function roundToScale(value: number, scale: number): number {
