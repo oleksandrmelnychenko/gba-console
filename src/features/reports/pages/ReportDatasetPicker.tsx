@@ -17,7 +17,7 @@ export function ReportDatasetPicker({ datasets, selected, disabled, loaded, erro
     <Select label="Набір даних звіту" data={datasets.map(item => ({ value: String(item.DataSource), label: item.Name }))}
       value={dataset ? String(selected) : null} disabled={disabled || !loaded || !!error}
       placeholder={!loaded ? 'Завантаження наборів даних…' : 'Виберіть набір даних'} allowDeselect={false}
-      description="Зміна набору застосує початкові групування й показники та очистить відбори, групи І/АБО й правила сортування. Набори поточного стану очищують період; після повернення до набору з періодом попередні дати відновляться."
+      description="Зміна набору застосує початкові групування й показники та очистить відбори, групи І/АБО, TOP і правила сортування. Набори поточного стану очищують період; після повернення до набору з періодом попередні дати відновляться."
       onChange={value => { const next = datasets.find(item => String(item.DataSource) === value); if (next && next.DataSource !== selected) onChange(next) }} />
     {error ? <Alert color="red" title="Набори даних недоступні">
       <Text size="sm">{error}</Text><Button size="xs" variant="light" mt="xs" onClick={onRetry}>Спробувати ще раз</Button>

@@ -97,6 +97,8 @@ import { requestFilterExpression } from '../data/reportFilterExpression'
 import { buildReportBuilderRequest } from '../data/reportBuilderRequest'
 import { useReportFilterExpression, type ReportSelectionEdit } from '../hooks/useReportFilterExpression'
 import { ReportFilterExpressionPanel } from './ReportFilterExpressionPanel'
+import { ReportTopGroupsPanel } from './ReportTopGroupsPanel'
+import { requestTopGroups } from '../data/reportTopGroups'
 import { useReportGroupingOrdering } from '../hooks/useReportGroupingOrdering'
 import type { ReportGroupingLayout } from '../data/reportGroupingLayout'
 const LOOKUP_SEARCH_DEBOUNCE_MS = 300
@@ -188,6 +190,7 @@ function ReportsStocksWorkspace() {
   const presets = useMemo(() => datasetPresets(dataset), [dataset])
   const groupingOrdering = useReportGroupingOrdering()
   const { rowGroups, setRowGroups, colGroups, setColGroups, ordering } = groupingOrdering
+  const [topGroups, setTopGroups] = useValueState<unknown>(undefined)
   const filterLogic = useReportFilterExpression()
   const { selections, expression: filterExpression } = filterLogic
   const [result, setResult] = useValueState<ReportResult | null>(null)
@@ -221,8 +224,8 @@ function ReportsStocksWorkspace() {
   // period on a pause, and only once it is a period the server can answer for.
   const hasLookupPeriod = !getPeriodError(debouncedFrom, debouncedTo, maxDate, t)
   const reportBody = useMemo<ReportRequestBody>(
-    () => buildReportBuilderRequest({ dataSource, from, to, ordering, filterExpression, valuationClientAgreementId, rowGroups, colGroups, measurements, selections }),
-    [colGroups, dataSource, filterExpression, from, measurements, ordering, rowGroups, selections, to, valuationClientAgreementId],
+    () => buildReportBuilderRequest({ dataSource, from, to, ordering, filterExpression, topGroups, valuationClientAgreementId, rowGroups, colGroups, measurements, selections }),
+    [colGroups, dataSource, filterExpression, from, measurements, ordering, rowGroups, selections, to, topGroups, valuationClientAgreementId],
   )
   const templateBody = { ...reportBody, selections }
   const configurationError = datasetStorage.error ?? (!datasetStorage.loaded ? t('Завантаження наборів даних…') : datasetConfigurationError(templateBody, dataset))
@@ -311,6 +314,7 @@ function ReportsStocksWorkspace() {
     setRowGroups(snapshotDefaults?.sorted.Row ?? [])
     setColGroups([])
     filterLogic.load([])
+    setTopGroups(undefined)
     setValuationAgreementId(undefined)
     groupingOrdering.loadOrdering(undefined)
     setResult(null)
@@ -364,6 +368,7 @@ function ReportsStocksWorkspace() {
     setRowGroups(data.sorted.Row.map(item => groupingByType.get(item.type)!))
     setColGroups(data.sorted.Col.map(item => groupingByType.get(item.type)!))
     filterLogic.load(data.selections, requestFilterExpression(data))
+    setTopGroups(structuredClone(requestTopGroups(data)))
     setMeasurements(datasetMeasurements(nextDataset, data.sorted.Measurements))
     setTemplateNotice(null)
     setResult(null)
@@ -430,6 +435,7 @@ function ReportsStocksWorkspace() {
         onRowGroupsChange={value => groupingOrdering.changeAxis('Row', value)}
         onColGroupsChange={value => groupingOrdering.changeAxis('Col', value)}
         onGroupingLayoutChange={groupingOrdering.changeLayout}
+        topGroupsPanel={<ReportTopGroupsPanel data={templateBody} dataset={dataset} disabled={isLoading || !canGenerateReport} onChange={setTopGroups} />}
         filterExpressionPanel={<ReportFilterExpressionPanel data={templateBody} dataset={dataset} disabled={isLoading || !canGenerateReport}
           notice={filterLogic.notice} onChange={filterLogic.change} />}
         orderingPanel={<ReportOrderingPanel data={templateBody} dataset={dataset} disabled={isLoading || !canGenerateReport}
@@ -460,6 +466,7 @@ function ReportsStocksWorkspace() {
 }
 
 type ReportBuilderFormProps = {
+  topGroupsPanel: ReactNode
   filterExpressionPanel: ReactNode
   orderingPanel: ReactNode
   onGroupingLayoutChange: (layout: ReportGroupingLayout) => void
@@ -510,6 +517,7 @@ type ReportBuilderFormProps = {
 }
 
 function ReportBuilderForm({
+  topGroupsPanel,
   filterExpressionPanel,
   orderingPanel,
   onGroupingLayoutChange,
@@ -652,6 +660,7 @@ function ReportBuilderForm({
             onSelectionsChange={onSelectionsChange}
           />
           {filterExpressionPanel}
+          {topGroupsPanel}
           {orderingPanel}
           <ReportResultSection
             hasFiles={resultHasFiles}

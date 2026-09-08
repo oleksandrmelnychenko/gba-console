@@ -101,6 +101,32 @@ export type ReportFilterExpressionCapabilities = {
   Operators: Array<1 | 2>
 }
 
+export type ReportTopGroups = {
+  Version: 1
+  Axis: 1
+  Grouping: number
+  Mode: 1 | 2
+  Value: number
+  Measure: number
+  Direction: 1 | 2
+}
+export type ReportTopGroupsCapabilities = {
+  Version: 1
+  MaximumRules: 1
+  Axes: [1]
+  Modes: Array<1 | 2>
+  MaximumCount: number
+  PercentMinimum: number
+  PercentMaximum: number
+  PercentScale: 0
+  Directions: Array<1 | 2>
+  Scope: 'GlobalKey'
+  TotalsScope: 'RetainedFactsOnly'
+  UnknownScores: 'Reject'
+  GroupingTypes: number[]
+  RankingMeasures: number[]
+}
+
 export type ReportRequestBody = {
   dataSource?: number
   valuationClientAgreementId?: number | null
@@ -109,6 +135,8 @@ export type ReportRequestBody = {
   Ordering?: unknown
   filterExpression?: unknown
   FilterExpression?: unknown
+  topGroups?: unknown
+  TopGroups?: unknown
   oneC?: OneCTurnoverFilters
   from: string
   selections: ReportSelection[]
@@ -130,6 +158,7 @@ export type ReportDataset = {
   PeriodSupported?: boolean
   Ordering?: unknown
   FilterExpression?: unknown
+  TopGroups?: unknown
   Groupings: ReportDatasetField[]
   Measurements: ReportDatasetField[]
   Filters: ReportDatasetField[]
