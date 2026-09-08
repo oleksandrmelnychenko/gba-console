@@ -1,3 +1,4 @@
+import { revenueComparisonConfigurationError, revenueExactId } from '../data/revenueComparison'
 import { salesXyzConfigurationError } from '../data/salesXyz'
 import { apiRequest } from '../../../shared/api/apiClient'
 import type {
@@ -17,6 +18,8 @@ const EMPTY_GUID = '00000000-0000-0000-0000-000000000000'
 const CLIENT_FILTER_SQL = 'RegionCode.Value/Client.FullName/Client.USREOU'
 
 export async function createStockReport(body: ReportRequestBody): Promise<ReportResult> {
+  const revenueError = revenueComparisonConfigurationError(body)
+  if (revenueError) throw new Error(revenueError)
   const xyzError = salesXyzConfigurationError(body)
   if (xyzError) throw new Error(xyzError)
   const paymentsError = importedPaymentsConfigurationError(body)
@@ -35,8 +38,7 @@ export async function searchDatasetReportValues(dataSource: number, field: numbe
   const result = await apiRequest<unknown>('/report/datasets/lookup', {
     query: { dataSource, field, value: params.value.trim(), offset: params.offset, limit: params.limit }, signal,
   })
-  if (!Array.isArray(result) || !result.every(item => item && typeof item === 'object' && Number.isSafeInteger(item.Id)
-    && item.Id > 0 && typeof item.Name === 'string')) throw new Error('Сервер повернув некоректні значення відбору звіту.')
+  if (!Array.isArray(result) || !result.every(item => item && typeof item === 'object' && (dataSource === 16 ? revenueExactId(item) !== null : Number.isSafeInteger(item.Id) && item.Id > 0) && typeof item.Name === 'string')) throw new Error('Сервер повернув некоректні значення відбору звіту.')
   return result
 }
 

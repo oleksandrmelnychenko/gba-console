@@ -5,6 +5,7 @@ import { reportSelectionsForRequest } from './reportFilterExpression'
 type BuilderValues = {
   dataSource: number; from: string; to: string; ordering: unknown; filterExpression: unknown; topGroups: unknown
   abcClassification?: unknown
+  revenueComparison?: unknown
   xyz?: unknown
   comparison?: unknown
   hideZero?: unknown
@@ -16,8 +17,9 @@ type BuilderValues = {
 
 /** Tree indices address this exact selection array; only the legacy request omits unchecked rows. */
 export function buildReportBuilderRequest(values: BuilderValues): ReportRequestBody {
-  const { dataSource, from, to, ordering, filterExpression, topGroups, abcClassification, threshold, hideZero, comparison, xyz, valuationClientAgreementId, rowGroups, colGroups, measurements, selections } = values
+  const { dataSource, from, to, ordering, filterExpression, topGroups, abcClassification, threshold, hideZero, comparison, xyz, revenueComparison, valuationClientAgreementId, rowGroups, colGroups, measurements, selections } = values
   return { dataSource, from, to,
+    ...(revenueComparison !== undefined ? { revenueComparison } : {}),
     ...(xyz !== undefined ? { xyz } : {}),
     ...(comparison !== undefined ? { comparison } : {}),
     ...(ordering !== undefined ? { ordering } : {}),
@@ -28,6 +30,6 @@ export function buildReportBuilderRequest(values: BuilderValues): ReportRequestB
     ...(topGroups !== undefined ? { topGroups } : {}),
     ...(valuationClientAgreementId !== undefined ? { valuationClientAgreementId } : {}),
     sorted: { Col: colGroups, Row: rowGroups, Measurements: flattenCheckedMeasurements(measurements) },
-    selections: dataSource === 15 ? selections : reportSelectionsForRequest(selections, filterExpression),
+    selections: (dataSource === 15 || dataSource === 16) ? selections : reportSelectionsForRequest(selections, filterExpression),
   }
 }

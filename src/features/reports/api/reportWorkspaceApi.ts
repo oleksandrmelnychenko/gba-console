@@ -1,3 +1,4 @@
+import { cloneRevenueComparisonAliases, isRevenueComparisonCapability, revenueComparisonConfigurationError } from '../data/revenueComparison'
 import { cloneXyzAliases, isXyzCapability, salesXyzConfigurationError } from '../data/salesXyz'
 import { apiRequest } from '../../../shared/api/apiClient'
 import type { ReportCatalogue, ReportDataset, ReportDatasetField, ReportRequestBody, ReportTemplate } from '../types'
@@ -22,6 +23,7 @@ function isDataset(value: unknown): value is ReportDataset {
     && (item.PeriodRequired === undefined || typeof item.PeriodRequired === 'boolean')
     && (item.PeriodSupported === undefined || typeof item.PeriodSupported === 'boolean')
     && (item.DataSource !== 12 || (item.PeriodRequired === true && item.PeriodSupported === true))
+    && (item.DataSource === 16 ? item.PeriodRequired === true && item.PeriodSupported === true && isRevenueComparisonCapability(item.RevenueComparison) : item.RevenueComparison == null)
     && (item.DataSource === 15 ? item.PeriodRequired === true && item.PeriodSupported === true && isXyzCapability(item.Xyz) : item.Xyz == null)
     && (item.DataSource !== 14 || (item.PeriodRequired === true && item.PeriodSupported === true))
     && (item.DataSource !== 13 || (item.PeriodRequired === true && item.PeriodSupported === true && isClientComparisonCapability(item.Comparison)))
@@ -53,6 +55,8 @@ type WireTemplate = Required<Omit<ReportTemplate, 'Data'>> & {
     Selections: ReportRequestBody['selections']
     DataSource: ReportRequestBody['dataSource']
     ValuationClientAgreementId?: ReportRequestBody['valuationClientAgreementId']
+    RevenueComparison?: unknown
+    revenueComparison?: unknown
     Xyz?: unknown
     xyz?: unknown
     Comparison?: unknown
@@ -78,9 +82,10 @@ export function normalizeSavedTemplate(value: WireTemplate): ReportTemplate {
   }
   return { ...value, Data: {
     from: value.Data.From ?? '', to: value.Data.To ?? '',
-    sorted: value.Data.Sorted,
-    selections: value.Data.Selections ?? [],
+    sorted: value.Data.DataSource === 16 ? structuredClone(value.Data.Sorted) : value.Data.Sorted,
+    selections: value.Data.DataSource === 16 ? structuredClone(value.Data.Selections ?? []) : value.Data.Selections ?? [],
     dataSource: value.Data.DataSource,
+    ...cloneRevenueComparisonAliases(value.Data),
     ...cloneXyzAliases(value.Data),
     ...(Object.hasOwn(value.Data, 'comparison') ? { comparison: value.Data.comparison,
       ...(Object.hasOwn(value.Data, 'Comparison') ? { Comparison: value.Data.Comparison } : {}),
@@ -111,6 +116,8 @@ export async function getServerReportTemplates(signal?: AbortSignal): Promise<Re
 }
 
 export async function saveServerReportTemplate(template: ReportTemplate): Promise<ReportTemplate> {
+  const revenueError = revenueComparisonConfigurationError(template.Data)
+  if (revenueError) throw new Error(revenueError)
   const xyzError = salesXyzConfigurationError(template.Data)
   if (xyzError) throw new Error(xyzError)
   const result = await apiRequest<WireTemplate>('/report/templates/save', {

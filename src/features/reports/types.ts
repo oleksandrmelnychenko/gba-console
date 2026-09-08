@@ -211,6 +211,8 @@ export type ReportHideZeroCapabilities = {
 
 export type ReportRequestBody = {
   dataSource?: number
+  revenueComparison?: unknown
+  RevenueComparison?: unknown
   xyz?: unknown
   Xyz?: unknown
   comparison?: unknown
@@ -250,6 +252,7 @@ export type ReportDataset = {
   PeriodSupported?: boolean
   Comparison?: unknown
   Xyz?: unknown
+  RevenueComparison?: unknown
   Ordering?: unknown
   FilterExpression?: unknown
   TopGroups?: unknown

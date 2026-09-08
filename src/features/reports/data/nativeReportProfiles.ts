@@ -1,3 +1,4 @@
+import { REVENUE_COMPARISON_TITLE } from './revenueComparison'
 import { XYZ_TITLE } from './salesXyz'
 import { IMPORTED_PAYMENTS_TITLE } from './importedPayments'
 import { CLIENT_COMPARISON_TITLE } from './clientPeriodComparison'
@@ -11,6 +12,9 @@ export const DEBT_AMOUNT_CAPTION = 'Записана заборгованіст�
 export const ACCOUNT_BALANCE_REPORT_TITLE = 'Записані залишки рахунків'
 export const ACCOUNT_BALANCE_AMOUNT_CAPTION = 'Записаний залишок рахунку'
 const DOCUMENT_REPORT_PROFILES = [
+  { dataSource: 16, title: REVENUE_COMPARISON_TITLE, rowGroupings: [12, 15], measurements: [35, 36, 37, 38],
+    preset: { id: 'sale-revenue-period-comparison', name: 'Виручка за договорами: порівняння періодів',
+      description: 'Клієнт → точний договір. Записана виручка EUR за двома явними періодами, зміна суми та відсоток із незалежною відомістю кожного періоду.' } },
   { dataSource: 15, title: XYZ_TITLE, rowGroupings: [51, 5], measurements: [32, 33, 34],
     preset: { id: 'sales-xyz-by-product', name: 'XYZ-стабільність продажів за товарами',
       description: 'Клас XYZ → товар. Явний календар, кількість періодів і незалежні межі класів; записані суми EUR та коефіцієнт варіації.' } },
@@ -46,5 +50,5 @@ export function isCurrentReportSource(dataSource: number | undefined): boolean {
   return isCurrentStockSource(dataSource) || dataSource === 10 || dataSource === 11
 }
 export function usesNativeReportLookup(dataSource: number | undefined): boolean {
-  return isCurrentReportSource(dataSource) || dataSource === 9 || dataSource === 12 || dataSource === 13 || dataSource === 14 || dataSource === 15
+  return isCurrentReportSource(dataSource) || dataSource === 9 || dataSource === 12 || dataSource === 13 || dataSource === 14 || dataSource === 15 || dataSource === 16
 }
