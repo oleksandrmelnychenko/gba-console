@@ -3,6 +3,7 @@ import { deleteServerReportTemplate, getServerReportTemplates, saveServerReportT
 import { valuationConfigurationError } from '../data/reportValuation'
 import { reportOrderingError } from '../data/reportOrdering'
 import { reportFilterExpressionError } from '../data/reportFilterExpression'
+import { reportAbcClassificationError } from '../data/reportAbcClassification'
 import { reportTopGroupsError } from '../data/reportTopGroups'
 import type { ReportDataset, ReportRequestBody, ReportTemplate } from '../types'
 
@@ -93,6 +94,8 @@ export function useServerReportTemplates(enabled: boolean, datasets: ReportDatas
         }
         const valuationError = valuationConfigurationError(request.Data)
         if (valuationError) throw new Error(valuationError)
+        const abcError = reportAbcClassificationError(request.Data, datasets.find(item => item.DataSource === (request.Data.dataSource ?? 0)))
+        if (abcError) throw new Error(abcError)
         const orderingError = reportOrderingError(request.Data, datasets.find(item => item.DataSource === (request.Data.dataSource ?? 0)))
         if (orderingError) throw new Error(orderingError)
         const filterError = reportFilterExpressionError(request.Data, datasets.find(item => item.DataSource === (request.Data.dataSource ?? 0)))

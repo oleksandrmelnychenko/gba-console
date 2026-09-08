@@ -3,6 +3,7 @@ import { createDefaultMeasurementGroups, flattenCheckedMeasurements, flattenGrou
 import { createSalesReportPreset, SALES_REPORT_PRESETS, type SalesReportPresetId } from './reportPresets'
 import { reportOrderingError } from './reportOrdering'
 import { reportFilterExpressionError } from './reportFilterExpression'
+import { ABC_CLASS_GROUPING, preserveAbcGrouping, reportAbcClassificationError } from './reportAbcClassification'
 import { reportTopGroupsError } from './reportTopGroups'
 import { valuationConfigurationError, VALUATION_DATA_SOURCE } from './reportValuation'
 import { getNativeReportProfile, isNativeReportPresetId, type NativeReportPresetId } from './nativeReportProfiles'
@@ -37,6 +38,7 @@ GROUPING_KEYS.set(42, 'PaymentBalanceRecord')
 GROUPING_KEYS.set(43, 'PaymentOrganization')
 GROUPING_KEYS.set(44, 'PaymentRegisterKind')
 GROUPING_KEYS.set(45, 'PaymentRegisterPurpose')
+GROUPING_KEYS.set(46, 'AbcClass')
 
 const FILTER_KEYS = new Map(REPORT_FILTER_FIELD_GROUPS.flatMap(group => group.children.map(item => [item.type, item.label] as const)))
 FILTER_KEYS.set(1, 'Product')
@@ -98,7 +100,7 @@ export function datasetMeasurements(dataset: ReportDataset | undefined, selected
 }
 
 export function defaultDatasetRequest(dataset: ReportDataset, from: string, to: string): ReportRequestBody {
-  const groupings = datasetGroupings(dataset)
+  const groupings = datasetGroupings(dataset).filter(field => field.type !== ABC_CLASS_GROUPING)
   const row = groupings.find(item => item.type === 3) ?? groupings[0]
   const unit = groupings.find(item => item.type === 28)
   const profile = getNativeReportProfile(dataset.DataSource)
@@ -140,7 +142,7 @@ export function datasetConfigurationError(data: ReportRequestBody, dataset: Repo
     ...data.selections.flatMap(item => (!item.IsChecked || filterTypes.has(item.SelectedField?.Type)) && conditionTypes.has(item.FilterCondition?.Type)
       ? [] : [item.SelectedField?.Name || 'Умова відбору']),
   ]
-  return unsupported.length ? `Набір «${dataset.Name}» не підтримує налаштування: ${unsupported.join(', ')}. Налаштування не застосовано.` : reportOrderingError(data, dataset) ?? reportFilterExpressionError(data, dataset) ?? reportTopGroupsError(data, dataset)
+  return unsupported.length ? `Набір «${dataset.Name}» не підтримує налаштування: ${unsupported.join(', ')}. Налаштування не застосовано.` : reportAbcClassificationError(data, dataset) ?? reportOrderingError(data, dataset) ?? reportFilterExpressionError(data, dataset) ?? reportTopGroupsError(data, dataset)
 }
 
 export function datasetPresets(dataset: ReportDataset | undefined): DatasetReportPreset[] {
@@ -173,22 +175,24 @@ export function datasetPresetRequest(dataset: ReportDataset, id: DatasetReportPr
   const preset = datasetPresets(dataset).find(item => item.id === id)
   if (!preset) return null
   // Preserve both raw aliases, including invalid imported material, without reconstructing the tree.
-  const preservedOptions = { ...(Object.hasOwn(current, 'topGroups') ? { topGroups: structuredClone(current.topGroups) } : {}),
+  const preservedOptions = { ...(Object.hasOwn(current, 'abcClassification') ? { abcClassification: structuredClone(current.abcClassification) } : {}),
+    ...(Object.hasOwn(current, 'AbcClassification') ? { AbcClassification: structuredClone(current.AbcClassification) } : {}),
+    ...(Object.hasOwn(current, 'topGroups') ? { topGroups: structuredClone(current.topGroups) } : {}),
     ...(Object.hasOwn(current, 'TopGroups') ? { TopGroups: structuredClone(current.TopGroups) } : {}),
     ...(Object.hasOwn(current, 'filterExpression') ? { filterExpression: structuredClone(current.filterExpression) } : {}),
     ...(Object.hasOwn(current, 'FilterExpression') ? { FilterExpression: structuredClone(current.FilterExpression) } : {}) }
   if (isNativeReportPresetId(id)) {
-    return { Name: preset.name, Data: { ...defaultDatasetRequest(dataset, current.from, current.to), ...preservedOptions, selections: structuredClone(current.selections),
+    return { Name: preset.name, Data: preserveAbcGrouping(current, { ...defaultDatasetRequest(dataset, current.from, current.to), ...preservedOptions, selections: structuredClone(current.selections),
       ...(dataset.DataSource === VALUATION_DATA_SOURCE && current.valuationClientAgreementId != null
         ? { valuationClientAgreementId: current.valuationClientAgreementId } : {}),
-    } }
+    }) }
   }
   if (id === 'quantities-by-unit') {
     const data = defaultDatasetRequest(dataset, current.from, current.to)
-    return { Name: preset.name, Data: { ...data, ...preservedOptions, selections: structuredClone(current.selections), sorted: {
+    return { Name: preset.name, Data: preserveAbcGrouping(current, { ...data, ...preservedOptions, selections: structuredClone(current.selections), sorted: {
       ...data.sorted, Measurements: data.sorted.Measurements.filter(field => field.Type === 0),
-    } } }
+    } }) }
   }
   const template = createSalesReportPreset(id, current.from, current.to, current.selections)
-  return { ...template, Name: preset.name, Data: { ...template.Data, ...preservedOptions, dataSource: dataset.DataSource } }
+  return { ...template, Name: preset.name, Data: preserveAbcGrouping(current, { ...template.Data, ...preservedOptions, dataSource: dataset.DataSource }) }
 }

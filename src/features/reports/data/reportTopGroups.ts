@@ -1,3 +1,4 @@
+import { ABC_CLASS_GROUPING } from './reportAbcClassification'
 import type { ReportDataset, ReportRequestBody, ReportTopGroups, ReportTopGroupsCapabilities } from '../types'
 
 const record = (value: unknown): value is Record<string, unknown> => value !== null && typeof value === 'object' && !Array.isArray(value)
@@ -30,7 +31,7 @@ export function readTopGroupsCapabilities(dataset?: ReportDataset): ReportTopGro
     || !choices(cap.Modes) || !choices(cap.Directions) || cap.Scope !== 'GlobalKey' || cap.TotalsScope !== 'RetainedFactsOnly' || cap.UnknownScores !== 'Reject'
     || cap.PercentScale !== 0 || !integer(cap.MaximumCount) || cap.MaximumCount < 1 || cap.MaximumCount > 10000
     || !integer(cap.PercentMinimum) || !integer(cap.PercentMaximum) || cap.PercentMinimum < 1 || cap.PercentMaximum > 100 || cap.PercentMinimum > cap.PercentMaximum) return null
-  const groups = new Set(dataset!.Groupings.map(field => field.Type))
+  const groups = new Set(dataset!.Groupings.flatMap(field => field.Type === ABC_CLASS_GROUPING ? [] : [field.Type]))
   const measures = new Set(dataset!.Measurements.flatMap(field => additive.has(field.Type) ? [field.Type] : []))
   return ids(cap.GroupingTypes, groups) && ids(cap.RankingMeasures, measures) ? cap as ReportTopGroupsCapabilities : null
 }

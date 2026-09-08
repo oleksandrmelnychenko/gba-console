@@ -127,6 +127,34 @@ export type ReportTopGroupsCapabilities = {
   RankingMeasures: number[]
 }
 
+export type ReportAbcClassification = {
+  Version: 1
+  Axis: 1
+  Grouping: number
+  Measure: number
+  PercentA: number
+  PercentB: number
+  PercentC: number
+}
+export type ReportAbcClassificationCapabilities = {
+  Version: 1
+  MaximumRules: 1
+  Axes: [1]
+  GeneratedGrouping: 46
+  GroupingTypes: number[]
+  RankingMeasures: number[]
+  PercentMinimum: 0
+  PercentMaximum: 100
+  PercentScale: 0
+  PercentTotal: 100
+  Scope: 'GlobalKeyAfterTop'
+  ClassBasis: 'CumulativeBeforeCurrentGroup'
+  UnknownScores: 'Reject'
+  NegativeScores: 'Reject'
+  TotalsScope: 'AllRetainedFacts'
+  TieBreak: 'TypedKeyAscending'
+}
+
 export type ReportRequestBody = {
   dataSource?: number
   valuationClientAgreementId?: number | null
@@ -135,6 +163,8 @@ export type ReportRequestBody = {
   Ordering?: unknown
   filterExpression?: unknown
   FilterExpression?: unknown
+  abcClassification?: unknown
+  AbcClassification?: unknown
   topGroups?: unknown
   TopGroups?: unknown
   oneC?: OneCTurnoverFilters
@@ -159,6 +189,7 @@ export type ReportDataset = {
   Ordering?: unknown
   FilterExpression?: unknown
   TopGroups?: unknown
+  AbcClassification?: unknown
   Groupings: ReportDatasetField[]
   Measurements: ReportDatasetField[]
   Filters: ReportDatasetField[]
