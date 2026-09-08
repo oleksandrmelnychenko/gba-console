@@ -79,7 +79,7 @@ export function datasetFilters(dataset: ReportDataset | undefined): Array<{ labe
 export function datasetMeasurements(dataset: ReportDataset | undefined, selected: ReportMeasurementSelection[] = []): ReportMeasurementGroup[] {
   if (!dataset) return []
   const fields = new Map(dataset.Measurements.map(field => [field.Type, field]))
-  const checked = new Set(selected.flatMap(item => item.IsChecked ? [item.Type] : []))
+  const checked = new Set(selected.flatMap(item => (dataset.DataSource === 13 ? item.IsChecked !== false : item.IsChecked) ? [item.Type] : []))
   const known = new Set<number>()
   const groups = createDefaultMeasurementGroups().flatMap(group => {
     const SubList = group.SubList.flatMap(item => {

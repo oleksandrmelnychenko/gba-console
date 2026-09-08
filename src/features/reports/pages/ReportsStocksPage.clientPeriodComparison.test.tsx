@@ -83,4 +83,18 @@ describe('source13 constructor and private templates', () => {
     expect(screen.getByText(/Оберіть початок і завершення періоду порівняння/)).toBeTruthy()
     expect((screen.getByLabelText('Період порівняння: від') as HTMLInputElement).value).toBe('2026-06-01')
   })
+  it('keeps an omitted IsChecked selected when restoring a source13 template', async () => {
+    const data = clientComparisonRequest()
+    data.sorted.Measurements = [{ ...data.sorted.Measurements[1], IsChecked: undefined }]
+    const template = { Id: crypto.randomUUID(), Revision: 1, Name: 'Попередні клієнти', Data: data }
+    vi.mocked(getServerReportTemplates).mockResolvedValue([template])
+    const { container } = await ready()
+    fireEvent.click(screen.getByRole('button', { name: 'Шаблони' }))
+    fireEvent.click(await screen.findByRole('button', { name: /Попередні клієнти/ }))
+    expect((screen.getByRole('checkbox', { name: CLIENT_COMPARISON_CAPTIONS[1] }) as HTMLInputElement).checked).toBe(true)
+    fireEvent.submit(container.querySelector('form')!)
+    await waitFor(() => expect(createStockReport).toHaveBeenCalledOnce())
+    expect(vi.mocked(createStockReport).mock.calls[0][0].sorted.Measurements.map(item => item.Type)).toEqual([26])
+  })
+
 })
