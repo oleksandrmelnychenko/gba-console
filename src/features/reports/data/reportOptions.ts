@@ -286,6 +286,7 @@ const REPORT_FIELD_LABELS: Record<string, string> = {
   SupplierReturnedQuantity: 'Записана кількість повернення',
   CurrentDebtAmount: 'Записана заборгованість',
   CurrentAccountBalanceAmount: 'Записаний залишок рахунку',
+  DistinctSaleClientCount: 'Унікальні клієнти (поточні прив’язки GBA)',
   PaymentRegister: 'Рахунок',
   PaymentCurrency: 'Валюта рахунку',
   PaymentBalanceRecord: 'Запис залишку рахунку',

@@ -1,3 +1,4 @@
+import { CLIENT_ACTIVITY_REPORT_TITLE } from './clientActivityReport'
 import { CURRENT_STOCK_REPORT_TITLES, getCurrentStockReport, isCurrentStockPresetId, isCurrentStockSource, type CurrentStockPresetId } from './currentStockReports'
 
 export const SUPPLIER_RETURN_REPORT_TITLE = 'Звіт документів повернень постачальникам'
@@ -7,6 +8,9 @@ export const DEBT_AMOUNT_CAPTION = 'Записана заборгованіст�
 export const ACCOUNT_BALANCE_REPORT_TITLE = 'Записані залишки рахунків'
 export const ACCOUNT_BALANCE_AMOUNT_CAPTION = 'Записаний залишок рахунку'
 const DOCUMENT_REPORT_PROFILES = [
+  { dataSource: 12, title: CLIENT_ACTIVITY_REPORT_TITLE, rowGroupings: [2, 12, 15], measurements: [25],
+    preset: { id: 'sale-clients-by-month-agreement', name: 'Клієнти за місяцями й договорами',
+      description: 'Місяць → клієнт → договір. Унікальні клієнти за поточними прив’язками GBA; підсумки визначає сервер за об’єднанням клієнтів.' } },
   { dataSource: 9, title: SUPPLIER_RETURN_REPORT_TITLE, rowGroupings: [38, 3, 28], measurements: [22],
     preset: { id: 'supplier-returns-by-mode-day-unit', name: 'Повернення за типами й одиницями',
       description: 'Тип повернення → день → одиниця виміру. Записана кількість повернення; покриття складських рухів зазначене окремо.' } },
@@ -30,5 +34,5 @@ export function isCurrentReportSource(dataSource: number | undefined): boolean {
   return isCurrentStockSource(dataSource) || dataSource === 10 || dataSource === 11
 }
 export function usesNativeReportLookup(dataSource: number | undefined): boolean {
-  return isCurrentReportSource(dataSource) || dataSource === 9
+  return isCurrentReportSource(dataSource) || dataSource === 9 || dataSource === 12
 }

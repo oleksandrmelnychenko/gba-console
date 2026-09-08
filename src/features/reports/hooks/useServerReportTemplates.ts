@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { deleteServerReportTemplate, getServerReportTemplates, saveServerReportTemplate } from '../api/reportWorkspaceApi'
+import { datasetConfigurationError } from '../data/reportDatasets'
 import { valuationConfigurationError } from '../data/reportValuation'
 import { reportThresholdError } from '../data/reportThreshold'
 import { reportHideZeroError } from '../data/reportHideZero'
@@ -93,6 +94,10 @@ export function useServerReportTemplates(enabled: boolean, datasets: ReportDatas
           if (operation.id && !existing) throw new Error('Шаблон недоступний. Оновіть список.')
           request = { Id: existing?.Id ?? crypto.randomUUID(), Revision: existing?.Revision ?? 0,
             Name: existing?.Name ?? operation.name.trim(), Data: operation.data }
+        }
+        if (request.Data.dataSource === 12) {
+          const activityError = datasetConfigurationError(request.Data, datasets.find(item => item.DataSource === 12))
+          if (activityError) throw new Error(activityError)
         }
         const valuationError = valuationConfigurationError(request.Data)
         if (valuationError) throw new Error(valuationError)

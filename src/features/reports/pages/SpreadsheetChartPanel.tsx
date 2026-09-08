@@ -4,6 +4,7 @@ import { Bar, BarChart, CartesianGrid, Line, LineChart, ReferenceLine, Responsiv
 import { CHART_GRID_COLOR, CHART_LABEL_COLOR } from '../../../shared/ui/charts/chartTheme'
 import { buildSpreadsheetChartData, getChartMeasureOptions, type SpreadsheetChartPoint } from '../data/spreadsheetChartData'
 import type { SpreadsheetRow, SpreadsheetSheet } from '../types'
+import { isClientActivitySheet } from '../data/clientActivityReport'
 import { getSpreadsheetNumberFormatter } from '../spreadsheet'
 
 type Props = { sheet: SpreadsheetSheet; rows: SpreadsheetRow[] }
@@ -30,12 +31,12 @@ export default function SpreadsheetChartPanel({ sheet, rows }: Props) {
       {chart.hiddenCount ? ' Діаграма обмежена першими 50 рядками; звузьте відбори для перегляду інших.' : ''}</Text>
     {chart.unknownCount ? <Alert color="yellow">Для {chart.unknownCount} показаних рядків немає числового значення. Вони залишені порожніми; лінія має розриви.</Alert> : null}
     {!chart.points.length ? <Alert color="gray">За поточними відборами немає рядків даних.</Alert> : <SpreadsheetChartPlot points={chart.points} kind={kind} measure={measure.label} unknownCount={chart.unknownCount}
-      formatter={getSpreadsheetNumberFormatter(sheet, Number(measure.value)) ?? formatNumber} />}
+      formatter={getSpreadsheetNumberFormatter(sheet, Number(measure.value)) ?? formatNumber} integerCounts={isClientActivitySheet(sheet)} />}
   </Stack>
 }
 
-function SpreadsheetChartPlot({ points, kind, measure, unknownCount, formatter }: {
-  points: SpreadsheetChartPoint[]; kind: ChartKind; measure: string; unknownCount: number; formatter: Intl.NumberFormat
+function SpreadsheetChartPlot({ points, kind, measure, unknownCount, formatter, integerCounts }: {
+  points: SpreadsheetChartPoint[]; kind: ChartKind; measure: string; unknownCount: number; formatter: Intl.NumberFormat; integerCounts: boolean
 }) {
   const labels = useMemo(() => new Map(points.map(point => [point.rowKey, point.label])), [points])
   const horizontal = kind === 'bar'
@@ -52,7 +53,7 @@ function SpreadsheetChartPlot({ points, kind, measure, unknownCount, formatter }
         {kind === 'line' ? <LineChart data={points} margin={{ top: 12, right: 24, bottom: 36, left: 24 }}>
           <CartesianGrid stroke={CHART_GRID_COLOR} />
           <XAxis dataKey="rowKey" tickFormatter={categoryTick} tick={{ fill: CHART_LABEL_COLOR, fontSize: 11 }} />
-          <YAxis width="auto" tickFormatter={value => formatter.format(value)} tick={{ fill: CHART_LABEL_COLOR, fontSize: 11 }} />
+          <YAxis width="auto" allowDecimals={!integerCounts} tickFormatter={value => formatter.format(value)} tick={{ fill: CHART_LABEL_COLOR, fontSize: 11 }} />
           <Tooltip content={<ChartPointTooltip measure={measure} formatter={formatter} />} filterNull={false} />
           <ReferenceLine y={0} stroke={CHART_LABEL_COLOR} />
           <Line type="linear" dataKey="value" name={measure} connectNulls={false} stroke="var(--mantine-color-blue-6)"
@@ -60,10 +61,10 @@ function SpreadsheetChartPlot({ points, kind, measure, unknownCount, formatter }
         </LineChart> : <BarChart data={points} layout={horizontal ? 'vertical' : 'horizontal'}
           margin={{ top: 12, right: 24, bottom: 36, left: 24 }}>
           <CartesianGrid stroke={CHART_GRID_COLOR} />
-          <XAxis type={horizontal ? 'number' : 'category'} dataKey={horizontal ? undefined : 'rowKey'}
+          <XAxis allowDecimals={!integerCounts} type={horizontal ? 'number' : 'category'} dataKey={horizontal ? undefined : 'rowKey'}
             tickFormatter={horizontal ? value => formatter.format(Number(value)) : categoryTick}
             tick={{ fill: CHART_LABEL_COLOR, fontSize: 11 }} />
-          <YAxis type={horizontal ? 'category' : 'number'} dataKey={horizontal ? 'rowKey' : undefined}
+          <YAxis allowDecimals={!integerCounts} type={horizontal ? 'category' : 'number'} dataKey={horizontal ? 'rowKey' : undefined}
             width={horizontal ? 200 : 'auto'} tickFormatter={horizontal ? categoryTick : value => formatter.format(Number(value))}
             tick={{ fill: CHART_LABEL_COLOR, fontSize: 11 }} />
           <Tooltip content={<ChartPointTooltip measure={measure} formatter={formatter} />} filterNull={false} />

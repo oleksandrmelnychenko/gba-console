@@ -5,6 +5,7 @@ import type {
   SpreadsheetRowKind,
   SpreadsheetSheet,
 } from './types'
+import { CLIENT_ACTIVITY_REPORT_TITLE, CLIENT_ACTIVITY_COUNT_CAPTION, CLIENT_ACTIVITY_EMPTY_STATE, isClientActivitySheet, validateClientActivityHeader, validateClientActivitySheet } from './data/clientActivityReport'
 import { parseNumericValue } from './utils'
 import { hiddenZeroExportRows, readHideZeroSheet } from './data/hideZeroSpreadsheet'
 import { VALUATION_REQUIRED_METADATA_PREFIXES, VALUATION_MONEY_CAPTION } from './data/reportValuation'
@@ -24,7 +25,9 @@ const HEADER_LEVEL_SEPARATOR = ' · '
 const STOCK_STATE_LINE = 'Поточний стан: знімок операційних записів GBA'
 const STOCK_READ_TIME_LINE = /^Час читання \(UTC\): \d{2}\.\d{2}\.\d{4} \d{2}:\d{2}:\d{2}\.\d{3} – \d{2}\.\d{2}\.\d{4} \d{2}:\d{2}:\d{2}\.\d{3}$/
 const SUPPLIER_RETURN_PERIOD_LINE = /^Період: \d{2}\.\d{2}\.\d{4} – \d{2}\.\d{2}\.\d{4}$/
-const REPORT_TITLES = new Set(['Звіт продажів', 'Звіт продажів і повернень', 'Звіт надходжень', SUPPLIER_RETURN_REPORT_TITLE, ...CURRENT_REPORT_TITLES])
+const REPORT_TITLES = new Set(['Звіт продажів', 'Звіт продажів і повернень', 'Звіт надходжень', SUPPLIER_RETURN_REPORT_TITLE, CLIENT_ACTIVITY_REPORT_TITLE, ...CURRENT_REPORT_TITLES])
+const clientCountFormatter = new Intl.NumberFormat('uk-UA', { maximumFractionDigits: 0 })
+const clientCountCsvFormatter = new Intl.NumberFormat('en-US', { useGrouping: false, maximumFractionDigits: 0 })
 export const stockQuantityFormatter = new Intl.NumberFormat('uk-UA', { maximumFractionDigits: 8 })
 const stockCsvQuantityFormatter = new Intl.NumberFormat('en-US', { useGrouping: false, maximumFractionDigits: 8 })
 export const valuationMoneyFormatter = new Intl.NumberFormat('uk-UA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
@@ -44,6 +47,7 @@ export function isCurrentReportSheet(sheet: SpreadsheetSheet | null): boolean {
 export function getSpreadsheetNumberFormatter(sheet: SpreadsheetSheet | null, columnIndex: number, csv = false): Intl.NumberFormat | undefined {
   if (!sheet?.header || columnIndex < sheet.header.rowGroupings.length) return undefined
   const title = sheet.header.lines[0], caption = sheet.columns[columnIndex]?.split(HEADER_LEVEL_SEPARATOR).at(-1)
+  if (title === CLIENT_ACTIVITY_REPORT_TITLE) return caption === CLIENT_ACTIVITY_COUNT_CAPTION ? (csv ? clientCountCsvFormatter : clientCountFormatter) : undefined
   if (title === ACCOUNT_BALANCE_REPORT_TITLE) return caption === ACCOUNT_BALANCE_AMOUNT_CAPTION ? (csv ? valuationCsvMoneyFormatter : valuationMoneyFormatter) : undefined
   if (title === DEBT_REPORT_TITLE) return caption === DEBT_AMOUNT_CAPTION ? (csv ? debtCsvAmountFormatter : debtAmountFormatter) : undefined
   if (title === SUPPLIER_RETURN_REPORT_TITLE) return caption === SUPPLIER_RETURN_QUANTITY_CAPTION ? (csv ? stockCsvQuantityFormatter : stockQuantityFormatter) : undefined
@@ -84,6 +88,7 @@ export function buildSpreadsheetSheet(name: string, rows: SpreadsheetCellValue[]
   // A filtered CSV can retain the complete attribution block with no total rows.
   // Read that explicit structure independently of the workbook's subtotal markers.
   const reportHeader = readReportHeader(sheetRows, format)
+  validateClientActivityHeader(String(sheetRows[0]?.[0] ?? '').trim(), reportHeader?.header ?? null)
   const hiddenZeroSheet = readHideZeroSheet(name, sheetRows, reportHeader, REPORT_TITLES.has(String(sheetRows[0]?.[0] ?? '').trim()))
   if (hiddenZeroSheet) return hiddenZeroSheet
   const isReport = reportHeader !== null || sheetRows.some((row) => getStructuralRowKind(row) !== null)
@@ -99,7 +104,7 @@ export function buildSpreadsheetSheet(name: string, rows: SpreadsheetCellValue[]
       ? countHeaderRows(sheetRows)
       : 1
 
-  return {
+  return validateClientActivitySheet({
     name,
     columns: buildColumns(tableRows.slice(0, headerRowCount), reportHeader?.header.rowGroupings.length ?? 0),
     header: reportHeader?.header ?? null,
@@ -107,7 +112,7 @@ export function buildSpreadsheetSheet(name: string, rows: SpreadsheetCellValue[]
     // measure with no answer and must stay empty. Only the row-field columns may be carried, and there are
     // exactly as many of them as the block names in «Рядки».
     rows: buildBodyRows(tableRows.slice(headerRowCount), isReport, format === 'flat' ? 0 : reportHeader?.header.rowGroupings.length),
-  }
+  })
 }
 
 // The rows the console's own CSV export writes: the engine's attribution block first, then the table. The export
@@ -151,6 +156,9 @@ export function filterSheetRows(
     return []
   }
 
+  // The validated complete-empty report has no leaf rows to narrow. Preserve its server-proved zero,
+  // including the state/grand pair required for a coherent CSV round-trip.
+  if (isClientActivitySheet(sheet) && sheet.header?.lines.includes(CLIENT_ACTIVITY_EMPTY_STATE)) return sheet.rows
   const normalizedSearch = searchValue.trim().toLowerCase()
   // A snapshot has no historical date axis, including after switching viewer tabs.
   const from = isCurrentReportSheet(sheet) ? '' : dateFrom
@@ -184,6 +192,8 @@ export function filterSheetRows(
 // does not add either — an article code or a percentage run down a column is not a total.
 export function getAdditiveColumns(sheet: SpreadsheetSheet | null): boolean[] {
   const columnCount = sheet?.columns.length || 0
+  // Distinct counts can accidentally equal a sum on one selection. That never proves additivity.
+  if (isClientActivitySheet(sheet)) return Array.from({ length: columnCount }, () => false)
   const grandTotal = sheet?.rows.find((row) => row.kind === 'total')
 
   if (!sheet || !grandTotal) {
@@ -327,7 +337,7 @@ function valuationMetadataText(line: string): string {
 
 function isWarningLine(line: string): boolean {
   return line.startsWith(IGNORED_FILTERS_PREFIX) || line.includes(NO_DATA_MARKER) || line === NO_ROWS_LINE
-    || ['Покриття оцінки:', 'Причини невизначеної оцінки:', 'Покриття заборгованості:', 'Причини невизначеної заборгованості:', 'Складські рухи повернень:', 'Точність кількості:', 'Покриття залишків рахунків:', 'Узгодження залишків рахунків:']
+    || ['Покриття оцінки:', 'Причини невизначеної оцінки:', 'Покриття заборгованості:', 'Причини невизначеної заборгованості:', 'Складські рухи повернень:', 'Точність кількості:', 'Покриття залишків рахунків:', 'Узгодження залишків рахунків:', 'Покриття активності клієнтів:', 'Ідентичність клієнтів:', 'Підсумки клієнтів:', 'Межі порівняння з 1С:']
       .some(prefix => valuationMetadataText(line).startsWith(prefix))
 }
 

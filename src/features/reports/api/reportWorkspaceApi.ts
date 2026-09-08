@@ -19,6 +19,7 @@ function isDataset(value: unknown): value is ReportDataset {
     && typeof item.Description === 'string' && fieldsValid && !!item.Groupings?.length && !!item.Measurements?.length
     && (item.PeriodRequired === undefined || typeof item.PeriodRequired === 'boolean')
     && (item.PeriodSupported === undefined || typeof item.PeriodSupported === 'boolean')
+    && (item.DataSource !== 12 || (item.PeriodRequired === true && item.PeriodSupported === true))
     && !(item.PeriodSupported === false && item.PeriodRequired === true)
     && (!isCurrentReportSource(item.DataSource) || item.PeriodSupported === false)
     && Array.isArray(item.Limitations) && item.Limitations.every(text => typeof text === 'string')
