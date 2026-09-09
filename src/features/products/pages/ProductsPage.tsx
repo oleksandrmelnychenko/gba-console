@@ -3162,17 +3162,15 @@ function ProductInlineMovementsTab({
         <TextInput className="product-movement-toolbar__control" label={t('З')} type="date" value={dateFrom} onChange={(event) => setDateFrom(event.currentTarget.value)} />
         <TextInput className="product-movement-toolbar__control" label={t('По')} type="date" value={dateTo} onChange={(event) => setDateTo(event.currentTarget.value)} />
         <div className="app-filter-actions">
-          <Button className="product-movement-toolbar__button" color={CREATE_ACTION_COLOR} leftSection={<RefreshCw size={16} />} loading={state.isLoading} variant="outline" onClick={() => reload()}>
+          <Button color="brand" variant="filled" size="sm" className="product-movement-toolbar__button app-filter-primary-action" leftSection={<RefreshCw size={16} />} loading={state.isLoading} onClick={() => reload()}>
             {t('Оновити')}
           </Button>
           <PermissionGate permissionKey={PRODUCT_MOVEMENT_EXPORT_PERMISSION}>
-            <Button
-              className="product-movement-toolbar__button"
-              color={CREATE_ACTION_COLOR}
+            <Button color="brand" variant="filled" size="sm"
+              className="product-movement-toolbar__button app-filter-primary-action"
               disabled={!productNetUid}
               leftSection={<FileDown size={16} />}
               loading={state.isExporting}
-              variant="outline"
               onClick={() => void exportRows()}
             >
               {t('Друк PDF')}

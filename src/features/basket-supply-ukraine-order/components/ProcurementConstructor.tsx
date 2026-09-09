@@ -660,7 +660,7 @@ function ProcurementConstructorContent() {
             </Tooltip>
             <Menu position="bottom-end" shadow="md" width={280}>
               <Menu.Target>
-                <Button leftSection={<Bookmark size={15} />} variant="default">
+                <Button color="brand" variant="filled" size="sm" className="app-filter-primary-action" leftSection={<Bookmark size={15} />}>
                   {t('Сесії')}
                 </Button>
               </Menu.Target>

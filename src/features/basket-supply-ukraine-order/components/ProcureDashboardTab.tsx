@@ -481,9 +481,7 @@ function ProcureDashboardTabContent() {
               className="app-filter-table-toolbar-slot"
               ref={setTableToolbarTarget}
             />
-            <Button
-              color="gray"
-              variant="default"
+            <Button color="brand" variant="filled" size="sm" className="app-filter-primary-action"
               leftSection={<RefreshCw size={16} />}
               loading={isLoading}
               type="submit"

@@ -361,12 +361,9 @@ function UserRolesPageContent() {
             </Tooltip>
             {canEditEventPermissions && selectedRole ? (
               <>
-                <Button
-                  color="gray"
-                  className="user-roles-cancel-action"
+                <Button color="brand" variant="filled" size="sm"
+                  className="user-roles-cancel-action app-filter-primary-action"
                   disabled={isLoading || eventPermissionsSaving || !eventPermissionsDirty}
-                  size="sm"
-                  variant="subtle"
                   onClick={() => eventPermissionsRef.current?.cancel()}
                 >
                   {t('Скасувати')}

@@ -648,11 +648,9 @@ function ProductPlacementsPageView({ model }: { model: ReturnType<typeof useProd
             </div>
             <div ref={setTableToolbarSlot} className="app-filter-table-toolbar-slot" />
             {canImport && returnedRows.length > 0 && (
-              <Button
-                color="red"
+              <Button color="brand" variant="filled" size="sm" className="app-filter-primary-action"
                 leftSection={<TriangleAlert size={16} />}
                 styles={{ label: { fontFamily: 'var(--font-mono)', letterSpacing: 0 } }}
-                variant="light"
                 onClick={() => setReturnModalOpened(true)}
               >
                 {t('Не пройдені товари')}

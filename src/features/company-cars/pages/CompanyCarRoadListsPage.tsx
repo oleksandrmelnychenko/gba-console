@@ -253,7 +253,7 @@ function CompanyCarRoadListsPageContent() {
         <div className="app-filter-bar company-car-road-lists-filter-bar">
           <Group align="end" gap={10} wrap="nowrap" className="company-car-road-lists-filter-row">
             <Group gap="xs" wrap="nowrap" className="company-car-road-lists-identity">
-              <Button color="gray" leftSection={<ArrowLeft size={16} />} size="sm" variant="light" onClick={() => navigate(returnPath)}>
+              <Button color="brand" variant="filled" size="sm" className="app-filter-primary-action" leftSection={<ArrowLeft size={16} />} onClick={() => navigate(returnPath)}>
                 {t('Назад')}
               </Button>
               <Badge className="app-role-pill" variant="light">

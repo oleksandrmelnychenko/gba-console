@@ -1420,7 +1420,7 @@ export function OrdersFilterToolbar({
           </Button>
         )}
         {createPermissions.canCreateToUkraine && (
-          <Button color={CREATE_ACTION_COLOR} size="sm" leftSection={<Plus size={16} />} variant="outline" onClick={onCreateToUkraine}>
+          <Button color="brand" variant="filled" size="sm" className="app-filter-primary-action" leftSection={<Plus size={16} />} onClick={onCreateToUkraine}>
             {t('Поставка')}
           </Button>
         )}

@@ -261,3 +261,28 @@
   border-color: var(--app-focus-border);
   box-shadow: var(--app-focus-ring);
 }
+
+/* Text actions in table filters share the New storage button pattern. */
+.mantine-Button-root.app-filter-primary-action {
+  border-radius: 8px;
+  height: var(--app-filter-control-height, 36px);
+  min-height: var(--app-filter-control-height, 36px);
+  padding-inline: 18px;
+  font-family: var(--font-mono);
+  font-size: 14px;
+  font-weight: 600;
+}
+.mantine-Button-root.app-filter-primary-action .mantine-Button-label {
+  font-family: var(--font-mono);
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0;
+}
+.mantine-Button-root.app-filter-primary-action:not(:disabled):not([data-disabled]) {
+  background: var(--button-bg);
+  color: var(--button-color);
+}
+.mantine-Button-root.app-filter-primary-action:not(:disabled):not([data-disabled]):hover {
+  background: var(--button-hover);
+  color: var(--button-hover-color, var(--button-color));
+}

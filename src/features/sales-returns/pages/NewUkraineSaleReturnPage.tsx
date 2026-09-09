@@ -747,10 +747,8 @@ export function NewUkraineSaleReturnPage() {
           </div>
           <div ref={setTableToolbarSlot} className="app-filter-table-toolbar-slot new-sale-return-table-toolbar-slot" />
           <div className="new-sale-return-create-actions">
-            <Button
+            <Button color="brand" variant="filled" size="sm" className="app-filter-primary-action"
               leftSection={<FileChartColumn size={16} />}
-              size="sm"
-              variant="default"
               onClick={() => setReportOpened(true)}
             >
               {t('Сформувати звіт')}

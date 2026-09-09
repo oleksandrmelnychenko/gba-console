@@ -1076,8 +1076,7 @@ function AutoShipmentsPanel({ onCarriedOut, permissions }: AutoShipmentsPanelPro
                   {model.shipmentList.IsSent ? t('Проведено') : t('Не проведено')}
                 </Badge>
               )}
-              <Button
-                color="green"
+              <Button color="brand" variant="filled" size="sm" className="app-filter-primary-action"
                 data-shipment-carry-out="true"
                 disabled={!model.canCarryOut || !model.shipmentList.NetUid || !model.canEditShipment || model.items.length === 0}
                 loading={model.isSaving}
@@ -1086,12 +1085,10 @@ function AutoShipmentsPanel({ onCarriedOut, permissions }: AutoShipmentsPanelPro
               >
                 {t('Провести і закрити')}
               </Button>
-              <Button
-                color={CREATE_ACTION_COLOR}
+              <Button color="brand" variant="filled" size="sm" className="app-filter-primary-action"
                 disabled={!model.canPrintShipment || !model.selectedTransporterNetId || Boolean(model.filterError)}
                 leftSection={<FileDown size={18} />}
                 styles={{ label: { fontFamily: 'var(--font-mono)', letterSpacing: 0 } }}
-                variant="outline"
                 onClick={() => model.printShipments()}
               >
                 {t('Друк PDF')}
