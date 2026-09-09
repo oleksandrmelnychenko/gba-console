@@ -1,3 +1,4 @@
+import { cloneReturnComparisonAliases, isReturnComparisonCapability, returnComparisonConfigurationError } from '../data/returnComparison'
 import { cloneBuyerSalesShareAliases, isBuyerSalesShareCapability, buyerSalesShareConfigurationError } from '../data/buyerSalesShare'
 import { cloneRevenueComparisonAliases, isRevenueComparisonCapability, revenueComparisonConfigurationError } from '../data/revenueComparison'
 import { cloneXyzAliases, isXyzCapability, salesXyzConfigurationError } from '../data/salesXyz'
@@ -24,6 +25,7 @@ function isDataset(value: unknown): value is ReportDataset {
     && (item.PeriodRequired === undefined || typeof item.PeriodRequired === 'boolean')
     && (item.PeriodSupported === undefined || typeof item.PeriodSupported === 'boolean')
     && (item.DataSource !== 12 || (item.PeriodRequired === true && item.PeriodSupported === true))
+    && (item.DataSource === 18 ? item.PeriodRequired === true && item.PeriodSupported === true && isReturnComparisonCapability(item.ReturnComparison) : item.ReturnComparison == null)
     && (item.DataSource === 17 ? item.PeriodRequired === true && item.PeriodSupported === true && isBuyerSalesShareCapability(item.BuyerSalesShare) : item.BuyerSalesShare == null)
     && (item.DataSource === 16 ? item.PeriodRequired === true && item.PeriodSupported === true && isRevenueComparisonCapability(item.RevenueComparison) : item.RevenueComparison == null)
     && (item.DataSource === 15 ? item.PeriodRequired === true && item.PeriodSupported === true && isXyzCapability(item.Xyz) : item.Xyz == null)
@@ -57,6 +59,8 @@ type WireTemplate = Required<Omit<ReportTemplate, 'Data'>> & {
     Selections: ReportRequestBody['selections']
     DataSource: ReportRequestBody['dataSource']
     ValuationClientAgreementId?: ReportRequestBody['valuationClientAgreementId']
+    ReturnComparison?: unknown
+    returnComparison?: unknown
     BuyerSalesShare?: unknown
     buyerSalesShare?: unknown
     RevenueComparison?: unknown
@@ -86,9 +90,10 @@ export function normalizeSavedTemplate(value: WireTemplate): ReportTemplate {
   }
   return { ...value, Data: {
     from: value.Data.From ?? '', to: value.Data.To ?? '',
-    sorted: (value.Data.DataSource === 16 || value.Data.DataSource === 17) ? structuredClone(value.Data.Sorted) : value.Data.Sorted,
-    selections: (value.Data.DataSource === 16 || value.Data.DataSource === 17) ? structuredClone(value.Data.Selections ?? []) : value.Data.Selections ?? [],
+    sorted: (value.Data.DataSource === 16 || value.Data.DataSource === 17 || value.Data.DataSource === 18) ? structuredClone(value.Data.Sorted) : value.Data.Sorted,
+    selections: (value.Data.DataSource === 16 || value.Data.DataSource === 17 || value.Data.DataSource === 18) ? structuredClone(value.Data.Selections ?? []) : value.Data.Selections ?? [],
     dataSource: value.Data.DataSource,
+    ...cloneReturnComparisonAliases(value.Data),
     ...cloneBuyerSalesShareAliases(value.Data),
     ...cloneRevenueComparisonAliases(value.Data),
     ...cloneXyzAliases(value.Data),
@@ -121,7 +126,9 @@ export async function getServerReportTemplates(signal?: AbortSignal): Promise<Re
 }
 
 export async function saveServerReportTemplate(template: ReportTemplate): Promise<ReportTemplate> {
-  const request = template.Data.dataSource === 17 ? structuredClone(template) : template
+  const request = (template.Data.dataSource === 17 || template.Data.dataSource === 18) ? structuredClone(template) : template
+  const returnError = returnComparisonConfigurationError(request.Data)
+  if (returnError) throw new Error(returnError)
   const buyerShareError = buyerSalesShareConfigurationError(request.Data)
   if (buyerShareError) throw new Error(buyerShareError)
   const revenueError = revenueComparisonConfigurationError(request.Data)

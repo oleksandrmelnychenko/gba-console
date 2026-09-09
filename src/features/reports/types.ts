@@ -211,6 +211,8 @@ export type ReportHideZeroCapabilities = {
 
 export type ReportRequestBody = {
   dataSource?: number
+  returnComparison?: unknown
+  ReturnComparison?: unknown
   buyerSalesShare?: unknown
   BuyerSalesShare?: unknown
   revenueComparison?: unknown
@@ -255,6 +257,7 @@ export type ReportDataset = {
   Comparison?: unknown
   Xyz?: unknown
   RevenueComparison?: unknown
+  ReturnComparison?: unknown
   BuyerSalesShare?: unknown
   Ordering?: unknown
   FilterExpression?: unknown

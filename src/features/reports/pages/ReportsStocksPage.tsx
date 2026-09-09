@@ -1,3 +1,5 @@
+import ReturnComparisonPanel from './ReturnComparisonPanel'
+import { requestReturnComparison, returnComparisonOptions, returnComparisonSummary } from '../data/returnComparison'
 import BuyerSalesSharePanel from './BuyerSalesSharePanel'
 import { requestBuyerSalesShare, buyerSalesShareOptions } from '../data/buyerSalesShare'
 import RevenueComparisonPanel from './RevenueComparisonPanel'
@@ -85,7 +87,7 @@ import {
 import './reports-pages.css'
 import { datasetConfigurationError, datasetFilters, datasetGroupings, datasetMeasurements, datasetPresetRequest, datasetPresets, defaultDatasetRequest, type DatasetReportPresetId } from '../data/reportDatasets'
 import { useReportDatasets } from '../hooks/useReportDatasets'
-import { isCurrentReportSource, usesNativeReportLookup, supportsFullReportDateRange, hasFixedReportAxes } from '../data/nativeReportProfiles'
+import { isCurrentReportSource, usesNativeReportLookup, supportsFullReportDateRange, hasFixedReportAxes, nativeReportMeasurementUnit } from '../data/nativeReportProfiles'
 import { VALUATION_DATA_SOURCE } from '../data/reportValuation'
 import { useValuationAgreement } from '../hooks/useValuationAgreement'
 import { ValuationAgreementPicker } from './ValuationAgreementPicker'
@@ -198,6 +200,7 @@ function ReportsStocksWorkspace() {
   const datasetStorage = useReportDatasets(canGenerateReport)
   const [dataSource, setDataSource] = useValueState(0)
   const [comparison, setComparison] = useValueState<unknown>(undefined)
+  const [returnComparison, setReturnComparison] = useValueState<unknown>(undefined)
   const [buyerSalesShare, setBuyerSalesShare] = useValueState<unknown>(undefined)
   const [revenueComparison, setRevenueComparison] = useValueState<unknown>(undefined)
   const [xyz, setXyz] = useValueState<unknown>(undefined)
@@ -249,8 +252,8 @@ function ReportsStocksWorkspace() {
   // period on a pause, and only once it is a period the server can answer for.
   const hasLookupPeriod = !getPeriodError(debouncedFrom, debouncedTo, maxDate, t)
   const reportBody = useMemo<ReportRequestBody>(
-    () => buildReportBuilderRequest({ dataSource, comparison, xyz, revenueComparison, buyerSalesShare, from, to, ordering, filterExpression, topGroups, threshold, hideZero, abcClassification, valuationClientAgreementId, rowGroups, colGroups, measurements, selections }),
-    [abcClassification, colGroups, comparison, xyz, revenueComparison, buyerSalesShare, dataSource, filterExpression, from, hideZero, measurements, ordering, rowGroups, selections, to, topGroups, threshold, valuationClientAgreementId],
+    () => buildReportBuilderRequest({ dataSource, comparison, xyz, revenueComparison, buyerSalesShare, returnComparison, from, to, ordering, filterExpression, topGroups, threshold, hideZero, abcClassification, valuationClientAgreementId, rowGroups, colGroups, measurements, selections }),
+    [abcClassification, colGroups, comparison, xyz, revenueComparison, buyerSalesShare, returnComparison, dataSource, filterExpression, from, hideZero, measurements, ordering, rowGroups, selections, to, topGroups, threshold, valuationClientAgreementId],
   )
   const templateBody = { ...reportBody, selections }
   const configurationError = datasetStorage.error ?? (!datasetStorage.loaded ? t('Завантаження наборів даних…') : datasetConfigurationError(templateBody, dataset))
@@ -307,6 +310,7 @@ function ReportsStocksWorkspace() {
     try {
       const nextResult = await createStockReport(reportBody)
       const outcome: ReportRunOutcome = {
+        ...returnComparisonSummary(returnComparison),
         ...(buyerSalesShareOptions(buyerSalesShare) ? { comparison: structuredClone(buyerSalesShareOptions(buyerSalesShare)!) } : {}),
         ...(revenueComparisonOptions(revenueComparison) ? { comparison: structuredClone(revenueComparisonOptions(revenueComparison)!) } : {}),
         ...(comparisonWindow(comparison) ? { comparison: structuredClone(comparisonWindow(comparison)!) } : {}),
@@ -338,6 +342,7 @@ function ReportsStocksWorkspace() {
     const snapshotDefaults = dataset && (!periodSupported || supportsFullReportDateRange(dataSource)) ? defaultDatasetRequest(dataset, today, today) : null
     setComparison(snapshotDefaults?.comparison)
     setXyz(snapshotDefaults?.xyz)
+    setReturnComparison(snapshotDefaults?.returnComparison)
     setBuyerSalesShare(snapshotDefaults?.buyerSalesShare)
     setRevenueComparison(snapshotDefaults?.revenueComparison)
     setFrom(periodSupported ? today : '')
@@ -393,6 +398,7 @@ function ReportsStocksWorkspace() {
     const data = template.Data
     setComparison(structuredClone(requestComparison(data)))
     setXyz(structuredClone(xyzOptions(requestXyz(data)) ?? requestXyz(data)))
+    setReturnComparison(structuredClone(returnComparisonOptions(requestReturnComparison(data)) ?? requestReturnComparison(data)))
     setBuyerSalesShare(structuredClone(buyerSalesShareOptions(requestBuyerSalesShare(data)) ?? requestBuyerSalesShare(data)))
     setRevenueComparison(structuredClone(revenueComparisonOptions(requestRevenueComparison(data)) ?? requestRevenueComparison(data)))
     groupingOrdering.loadOrdering(requestOrdering(data))
@@ -440,6 +446,7 @@ function ReportsStocksWorkspace() {
         onChange={setValuationAgreementId} onRetry={valuation.retry} /> : null}
       <ReportBuilderForm
         dataSource={dataSource}
+        returnComparisonPanel={<ReturnComparisonPanel dataSource={dataSource} value={returnComparison} disabled={isLoading || !canGenerateReport} onChange={setReturnComparison} />}
         buyerSalesSharePanel={dataSource === 17 ? <BuyerSalesSharePanel value={buyerSalesShare} disabled={isLoading || !canGenerateReport} onChange={setBuyerSalesShare} /> : null}
         revenueComparisonPanel={dataSource === 16 ? <RevenueComparisonPanel value={revenueComparison} disabled={isLoading || !canGenerateReport} onChange={setRevenueComparison} /> : null}
         xyzPanel={dataSource === 15 ? <SalesXyzPanel value={xyz} disabled={isLoading || !canGenerateReport} onChange={setXyz} /> : null}
@@ -516,6 +523,7 @@ function ReportsStocksWorkspace() {
 }
 
 type ReportBuilderFormProps = {
+  returnComparisonPanel: ReactNode
   buyerSalesSharePanel: ReactNode
   revenueComparisonPanel: ReactNode
   xyzPanel: ReactNode
@@ -576,6 +584,7 @@ type ReportBuilderFormProps = {
 function ReportBuilderForm({
   comparisonPanel,
   xyzPanel,
+  returnComparisonPanel,
   buyerSalesSharePanel,
   revenueComparisonPanel,
   abcPanel,
@@ -693,6 +702,7 @@ function ReportBuilderForm({
         {presets.length ? <ReportQuickPresets disabled={isLoading || !configurationReady} presets={presets} onApply={onApplyPreset} /> : null}
 
         <div className="reports-stocks-body">
+          {returnComparisonPanel}
           {buyerSalesSharePanel ? <Card className="app-section-card reports-buyer-sales-share-settings" withBorder radius="md" padding="md" style={{ minWidth: 0 }}>{buyerSalesSharePanel}</Card> : null}
           {revenueComparisonPanel ? <Card className="app-section-card reports-revenue-comparison-settings" withBorder radius="md" padding="md" style={{ minWidth: 0 }}>{revenueComparisonPanel}</Card> : null}
           {xyzPanel ? <Card className="app-section-card reports-sales-xyz-settings" withBorder radius="md" padding="md" style={{ minWidth: 0 }}>{xyzPanel}</Card> : null}
@@ -900,7 +910,7 @@ function LegacyReportBuilder({
                       size="sm"
                       onChange={() => toggleMeasurementItem(measurements, groupIndex, itemIndex, onMeasurementsChange)}
                     />
-                  )) : <Text className="reports-stocks-measurement-unit" size="xs">{dataSource === 17 ? groupLabel.endsWith('в.п.') ? 'Відсоткові пункти' : 'Відсотки' : t('Без поділу за ПДВ')}</Text>}
+                  )) : <Text className="reports-stocks-measurement-unit" size="xs">{nativeReportMeasurementUnit(dataSource, groupLabel) ?? t('Без поділу за ПДВ')}</Text>}
                 </div>
               )
             })}
@@ -909,7 +919,7 @@ function LegacyReportBuilder({
 
         <section className="app-section-card reports-stocks-structure">
           <Text className="app-section-title" component="h2" fw={600} size="sm">{t('Групування')}</Text>
-          {(dataSource === 16 || dataSource === 17) ? <Text size="sm">Клієнт → Договір. Показники у стовпцях; структура цього звіту фіксована.</Text> : dataSource === 15 ? <Text size="sm">Клас XYZ → Товар. Показники у стовпцях; структура цього звіту фіксована.</Text> : <ReportGroupingPanel layout={groupingLayout} axis="Row" allowed={allowedGroupingTypes} transferSupported={dataSource !== 13}
+          {(dataSource === 16 || dataSource === 17 || dataSource === 18) ? <Text size="sm">Клієнт → Договір. Показники у стовпцях; структура цього звіту фіксована.</Text> : dataSource === 15 ? <Text size="sm">Клас XYZ → Товар. Показники у стовпцях; структура цього звіту фіксована.</Text> : <ReportGroupingPanel layout={groupingLayout} axis="Row" allowed={allowedGroupingTypes} transferSupported={dataSource !== 13}
             onOpenPicker={() => setGroupingPickerTarget('rows')}
             onRemove={(index) => onRowGroupsChange((current) => current.filter((_, itemIndex) => itemIndex !== index))}
             onReorder={(type, direction) => onRowGroupsChange(current => reorderReportGrouping(current, type, direction, allowedGroupingTypes))}
@@ -2257,7 +2267,7 @@ function createSelectedValue(entity: ReportEntity, dataSource?: number): ReportS
   return {
     Data: entity,
     Name: getEntityDisplayName(entity),
-    Value: (dataSource === 16 || dataSource === 17) ? 0 : getReportEntityNumericValue(entity),
+    Value: (dataSource === 16 || dataSource === 17 || dataSource === 18) ? 0 : getReportEntityNumericValue(entity),
   }
 }
 

@@ -1,3 +1,4 @@
+import { returnComparisonConfigurationError } from '../data/returnComparison'
 import { buyerSalesShareConfigurationError } from '../data/buyerSalesShare'
 import { revenueComparisonConfigurationError, revenueExactId } from '../data/revenueComparison'
 import { salesXyzConfigurationError } from '../data/salesXyz'
@@ -19,7 +20,9 @@ const EMPTY_GUID = '00000000-0000-0000-0000-000000000000'
 const CLIENT_FILTER_SQL = 'RegionCode.Value/Client.FullName/Client.USREOU'
 
 export async function createStockReport(body: ReportRequestBody): Promise<ReportResult> {
-  const request = body.dataSource === 17 ? structuredClone(body) : body
+  const request = (body.dataSource === 17 || body.dataSource === 18) ? structuredClone(body) : body
+  const returnError = returnComparisonConfigurationError(request)
+  if (returnError) throw new Error(returnError)
   const buyerShareError = buyerSalesShareConfigurationError(request)
   if (buyerShareError) throw new Error(buyerShareError)
   const revenueError = revenueComparisonConfigurationError(request)
@@ -42,7 +45,7 @@ export async function searchDatasetReportValues(dataSource: number, field: numbe
   const result = await apiRequest<unknown>('/report/datasets/lookup', {
     query: { dataSource, field, value: params.value.trim(), offset: params.offset, limit: params.limit }, signal,
   })
-  if (!Array.isArray(result) || !result.every(item => item && typeof item === 'object' && ((dataSource === 16 || dataSource === 17) ? revenueExactId(item) !== null : Number.isSafeInteger(item.Id) && item.Id > 0) && typeof item.Name === 'string')) throw new Error('Сервер повернув некоректні значення відбору звіту.')
+  if (!Array.isArray(result) || !result.every(item => item && typeof item === 'object' && (dataSource === 18 ? typeof item.Id === 'string' && revenueExactId(item) !== null : (dataSource === 16 || dataSource === 17) ? revenueExactId(item) !== null : Number.isSafeInteger(item.Id) && item.Id > 0) && typeof item.Name === 'string')) throw new Error('Сервер повернув некоректні значення відбору звіту.')
   return result
 }
 
