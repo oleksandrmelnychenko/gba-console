@@ -1,3 +1,4 @@
+import { cloneMarginComparisonAliases, defaultMarginComparison, marginComparisonConfigurationError } from './marginComparison'
 import { cloneRateComparisonAliases, defaultRateComparison, rateComparisonConfigurationError } from './rateComparison'
 import { cloneReturnComparisonAliases, defaultReturnComparison, returnComparisonConfigurationError } from './returnComparison'
 import { cloneBuyerSalesShareAliases, defaultBuyerSalesShare, buyerSalesShareConfigurationError } from './buyerSalesShare'
@@ -94,7 +95,7 @@ export function datasetFilters(dataset: ReportDataset | undefined): Array<{ labe
 export function datasetMeasurements(dataset: ReportDataset | undefined, selected: ReportMeasurementSelection[] = []): ReportMeasurementGroup[] {
   if (!dataset) return []
   const fields = new Map(dataset.Measurements.map(field => [field.Type, field]))
-  const checked = new Set(selected.flatMap(item => ((dataset.DataSource === 13 || dataset.DataSource === 14 || dataset.DataSource === 15 || dataset.DataSource === 16 || dataset.DataSource === 17 || dataset.DataSource === 18 || dataset.DataSource === 19) ? item.IsChecked !== false : item.IsChecked) ? [item.Type] : []))
+  const checked = new Set(selected.flatMap(item => ((dataset.DataSource === 13 || dataset.DataSource === 14 || dataset.DataSource === 15 || dataset.DataSource === 16 || dataset.DataSource === 17 || dataset.DataSource === 18 || dataset.DataSource === 19 || dataset.DataSource === 20) ? item.IsChecked !== false : item.IsChecked) ? [item.Type] : []))
   const known = new Set<number>()
   const groups = createDefaultMeasurementGroups().flatMap(group => {
     const SubList = group.SubList.flatMap(item => {
@@ -114,7 +115,7 @@ export function datasetMeasurements(dataset: ReportDataset | undefined, selected
     groups.push({ Name: field.Name, Label: field.Name, IsChecked: checked.has(field.Type),
       SubList: [{ Name: field.Name, Label: field.Name, Type: field.Type, IsChecked: checked.has(field.Type) }] })
   }
-  if (dataset.DataSource === 16 || dataset.DataSource === 17 || dataset.DataSource === 18 || dataset.DataSource === 19) {
+  if (dataset.DataSource === 16 || dataset.DataSource === 17 || dataset.DataSource === 18 || dataset.DataSource === 19 || dataset.DataSource === 20) {
     const order = new Map<number, number>()
     for (const item of selected) if (item.IsChecked !== false && !order.has(item.Type)) order.set(item.Type, order.size)
     return groups.toSorted((a, b) => (order.get(a.SubList[0].Type) ?? selected.length) - (order.get(b.SubList[0].Type) ?? selected.length))
@@ -132,7 +133,7 @@ export function defaultDatasetRequest(dataset: ReportDataset, from: string, to: 
     : field.Type === 0 || field.Type === (dataset.DataSource === 3 ? 2 : 4))
   const fields = preferred.length ? preferred : available.slice(0, 1)
   const selected = fields.map(field => ({ ...field, IsChecked: true, parentName: '' }))
-  return { dataSource: dataset.DataSource, ...(dataset.DataSource === 19 ? { rateComparison: defaultRateComparison() } : {}), ...(dataset.DataSource === 18 ? { returnComparison: defaultReturnComparison() } : {}), ...(dataset.DataSource === 17 ? { buyerSalesShare: defaultBuyerSalesShare() } : {}), ...(dataset.DataSource === 16 ? { revenueComparison: defaultRevenueComparison() } : {}), ...(dataset.DataSource === 15 ? { xyz: defaultXyzOptions() } : {}), ...(dataset.DataSource === 13 ? { comparison: { Version: 1, From: '', To: '' } } : {}), from: dataset.PeriodSupported === false ? '' : from,
+  return { dataSource: dataset.DataSource, ...(dataset.DataSource === 20 ? { marginComparison: defaultMarginComparison() } : {}), ...(dataset.DataSource === 19 ? { rateComparison: defaultRateComparison() } : {}), ...(dataset.DataSource === 18 ? { returnComparison: defaultReturnComparison() } : {}), ...(dataset.DataSource === 17 ? { buyerSalesShare: defaultBuyerSalesShare() } : {}), ...(dataset.DataSource === 16 ? { revenueComparison: defaultRevenueComparison() } : {}), ...(dataset.DataSource === 15 ? { xyz: defaultXyzOptions() } : {}), ...(dataset.DataSource === 13 ? { comparison: { Version: 1, From: '', To: '' } } : {}), from: dataset.PeriodSupported === false ? '' : from,
     to: dataset.PeriodSupported === false ? '' : to, selections: [], sorted: {
     Row: (profile ? profile.rowGroupings.map(type => groupings.find(item => item.type === type)) : [unit, row])
       .filter((item, index, items): item is ReportGroupingItem => Boolean(item) && items.indexOf(item) === index),
@@ -150,6 +151,8 @@ export function datasetConfigurationError(data: ReportRequestBody, dataset: Repo
     return 'Поточні залишки не підтримують період або історичну дату. Шаблон із датами не застосовано; виберіть набір поточного стану заново.'
   }
   if (dataset.PeriodRequired && (!data.from || !data.to)) return 'Для цього набору даних потрібні обидві дати періоду. Налаштування не застосовано.'
+  const marginError = marginComparisonConfigurationError(data, dataset)
+  if (marginError) return marginError
   const rateError = rateComparisonConfigurationError(data, dataset)
   if (rateError) return rateError
   const returnError = returnComparisonConfigurationError(data, dataset)
@@ -176,7 +179,7 @@ export function datasetConfigurationError(data: ReportRequestBody, dataset: Repo
   const unsupported = [
     ...[...data.sorted.Row, ...data.sorted.Col].flatMap(item => groupingTypes.has(item.type) ? [] : [item.label || item.key || `#${item.type}`]),
     ...data.sorted.Measurements.flatMap(item => measurementTypes.has(item.Type) ? [] : [item.Name || `#${item.Type}`]),
-    ...data.selections.flatMap(item => (dataset.DataSource === 15 || dataset.DataSource === 16 || dataset.DataSource === 17 || dataset.DataSource === 18 || dataset.DataSource === 19) && item.IsChecked === false ? [] : (!item.IsChecked || filterTypes.has(item.SelectedField?.Type)) && conditionTypes.has(item.FilterCondition?.Type)
+    ...data.selections.flatMap(item => (dataset.DataSource === 15 || dataset.DataSource === 16 || dataset.DataSource === 17 || dataset.DataSource === 18 || dataset.DataSource === 19 || dataset.DataSource === 20) && item.IsChecked === false ? [] : (!item.IsChecked || filterTypes.has(item.SelectedField?.Type)) && conditionTypes.has(item.FilterCondition?.Type)
       ? [] : [item.SelectedField?.Name || 'Умова відбору']),
   ]
   return unsupported.length ? `Набір «${dataset.Name}» не підтримує налаштування: ${unsupported.join(', ')}. Налаштування не застосовано.` : reportAbcClassificationError(data, dataset) ?? reportOrderingError(data, dataset) ?? reportFilterExpressionError(data, dataset) ?? reportTopGroupsError(data, dataset) ?? reportThresholdError(data, dataset) ?? reportHideZeroError(data, dataset)
@@ -212,7 +215,7 @@ export function datasetPresetRequest(dataset: ReportDataset, id: DatasetReportPr
   const preset = datasetPresets(dataset).find(item => item.id === id)
   if (!preset) return null
   // Preserve both raw aliases, including invalid imported material, without reconstructing the tree.
-  const preservedOptions = { ...cloneRateComparisonAliases(current), ...cloneReturnComparisonAliases(current), ...cloneBuyerSalesShareAliases(current), ...cloneRevenueComparisonAliases(current), ...cloneXyzAliases(current), ...(Object.hasOwn(current, 'comparison') ? { comparison: structuredClone(current.comparison) } : {}),
+  const preservedOptions = { ...cloneMarginComparisonAliases(current), ...cloneRateComparisonAliases(current), ...cloneReturnComparisonAliases(current), ...cloneBuyerSalesShareAliases(current), ...cloneRevenueComparisonAliases(current), ...cloneXyzAliases(current), ...(Object.hasOwn(current, 'comparison') ? { comparison: structuredClone(current.comparison) } : {}),
     ...(Object.hasOwn(current, 'Comparison') ? { Comparison: structuredClone(current.Comparison) } : {}),
     ...(Object.hasOwn(current, 'hideZero') ? { hideZero: structuredClone(current.hideZero) } : {}),
     ...(Object.hasOwn(current, 'HideZero') ? { HideZero: structuredClone(current.HideZero) } : {}),
@@ -226,6 +229,7 @@ export function datasetPresetRequest(dataset: ReportDataset, id: DatasetReportPr
     ...(Object.hasOwn(current, 'FilterExpression') ? { FilterExpression: structuredClone(current.FilterExpression) } : {}) }
   if (isNativeReportPresetId(id)) {
     const defaults = defaultDatasetRequest(dataset, current.from, current.to)
+    if (dataset.DataSource === 20 && Object.keys(current).some(key => key.toLowerCase() === 'margincomparison')) delete defaults.marginComparison
     if (dataset.DataSource === 18 && Object.keys(current).some(key => key.toLowerCase() === 'returncomparison')) delete defaults.returnComparison
     if (dataset.DataSource === 17 && Object.keys(current).some(key => key.toLowerCase() === 'buyersalesshare')) delete defaults.buyerSalesShare
     if (dataset.DataSource === 16 && Object.keys(current).some(key => key.toLowerCase() === 'revenuecomparison')) delete defaults.revenueComparison

@@ -1,0 +1,2159 @@
+[
+  {
+    "id": "weighted-contract-client-grand-shared-agreement",
+    "request": {
+      "currentFrom": "2026-07-01",
+      "currentTo": "2026-07-31",
+      "previousFrom": "2026-06-01",
+      "previousTo": "2026-06-30",
+      "selectedFields": [
+        55,
+        56,
+        57,
+        58
+      ]
+    },
+    "selectedFields": [
+      55,
+      56,
+      57,
+      58
+    ],
+    "groups": [
+      {
+        "kind": "contract",
+        "clientId": "101",
+        "clientAgreementId": "201",
+        "values": [
+          "10.00",
+          "50.00",
+          "-40.00",
+          "-80.00"
+        ]
+      },
+      {
+        "kind": "contract",
+        "clientId": "101",
+        "clientAgreementId": "202",
+        "values": [
+          "50.00",
+          "10.00",
+          "40.00",
+          "400.00"
+        ]
+      },
+      {
+        "kind": "contract",
+        "clientId": "102",
+        "clientAgreementId": "203",
+        "values": [
+          "100.00",
+          "50.00",
+          "50.00",
+          "100.00"
+        ]
+      },
+      {
+        "kind": "client",
+        "clientId": "101",
+        "clientAgreementId": null,
+        "values": [
+          "46.00",
+          "14.00",
+          "32.00",
+          "228.57"
+        ]
+      },
+      {
+        "kind": "client",
+        "clientId": "102",
+        "clientAgreementId": null,
+        "values": [
+          "100.00",
+          "50.00",
+          "50.00",
+          "100.00"
+        ]
+      },
+      {
+        "kind": "grand",
+        "clientId": null,
+        "clientAgreementId": null,
+        "values": [
+          "50.91",
+          "17.27",
+          "33.64",
+          "194.74"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "repeating-vat-denominators",
+    "request": {
+      "currentFrom": "2026-07-01",
+      "currentTo": "2026-07-31",
+      "previousFrom": "2026-06-01",
+      "previousTo": "2026-06-30",
+      "selectedFields": [
+        55,
+        56,
+        57,
+        58
+      ]
+    },
+    "selectedFields": [
+      55,
+      56,
+      57,
+      58
+    ],
+    "groups": [
+      {
+        "kind": "contract",
+        "clientId": "101",
+        "clientAgreementId": "201",
+        "values": [
+          "79.31",
+          "61.11",
+          "18.20",
+          "29.78"
+        ]
+      },
+      {
+        "kind": "client",
+        "clientId": "101",
+        "clientAgreementId": null,
+        "values": [
+          "79.31",
+          "61.11",
+          "18.20",
+          "29.78"
+        ]
+      },
+      {
+        "kind": "grand",
+        "clientId": null,
+        "clientAgreementId": null,
+        "values": [
+          "79.31",
+          "61.11",
+          "18.20",
+          "29.78"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "split-order-lines-cost-included-once",
+    "request": {
+      "currentFrom": "2026-07-01",
+      "currentTo": "2026-07-31",
+      "previousFrom": "2026-06-01",
+      "previousTo": "2026-06-30",
+      "selectedFields": [
+        55,
+        56,
+        57,
+        58
+      ]
+    },
+    "selectedFields": [
+      55,
+      56,
+      57,
+      58
+    ],
+    "groups": [
+      {
+        "kind": "contract",
+        "clientId": "101",
+        "clientAgreementId": "201",
+        "values": [
+          "50.00",
+          "75.00",
+          "-25.00",
+          "-33.33"
+        ]
+      },
+      {
+        "kind": "client",
+        "clientId": "101",
+        "clientAgreementId": null,
+        "values": [
+          "50.00",
+          "75.00",
+          "-25.00",
+          "-33.33"
+        ]
+      },
+      {
+        "kind": "grand",
+        "clientId": null,
+        "clientAgreementId": null,
+        "values": [
+          "50.00",
+          "75.00",
+          "-25.00",
+          "-33.33"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "current-cost-unknown-sticky",
+    "request": {
+      "currentFrom": "2026-07-01",
+      "currentTo": "2026-07-31",
+      "previousFrom": "2026-06-01",
+      "previousTo": "2026-06-30",
+      "selectedFields": [
+        55,
+        56,
+        57,
+        58
+      ]
+    },
+    "selectedFields": [
+      55,
+      56,
+      57,
+      58
+    ],
+    "groups": [
+      {
+        "kind": "contract",
+        "clientId": "101",
+        "clientAgreementId": "201",
+        "values": [
+          null,
+          "75.00",
+          null,
+          null
+        ]
+      },
+      {
+        "kind": "client",
+        "clientId": "101",
+        "clientAgreementId": null,
+        "values": [
+          null,
+          "75.00",
+          null,
+          null
+        ]
+      },
+      {
+        "kind": "grand",
+        "clientId": null,
+        "clientAgreementId": null,
+        "values": [
+          null,
+          "75.00",
+          null,
+          null
+        ]
+      }
+    ]
+  },
+  {
+    "id": "previous-vat-null-unknown",
+    "request": {
+      "currentFrom": "2026-07-01",
+      "currentTo": "2026-07-31",
+      "previousFrom": "2026-06-01",
+      "previousTo": "2026-06-30",
+      "selectedFields": [
+        55,
+        56,
+        57,
+        58
+      ]
+    },
+    "selectedFields": [
+      55,
+      56,
+      57,
+      58
+    ],
+    "groups": [
+      {
+        "kind": "contract",
+        "clientId": "101",
+        "clientAgreementId": "201",
+        "values": [
+          "40.00",
+          null,
+          null,
+          null
+        ]
+      },
+      {
+        "kind": "client",
+        "clientId": "101",
+        "clientAgreementId": null,
+        "values": [
+          "40.00",
+          null,
+          null,
+          null
+        ]
+      },
+      {
+        "kind": "grand",
+        "clientId": null,
+        "clientAgreementId": null,
+        "values": [
+          "40.00",
+          null,
+          null,
+          null
+        ]
+      }
+    ]
+  },
+  {
+    "id": "current-nonzero-vat-missing-rate",
+    "request": {
+      "currentFrom": "2026-07-01",
+      "currentTo": "2026-07-31",
+      "previousFrom": "2026-06-01",
+      "previousTo": "2026-06-30",
+      "selectedFields": [
+        55,
+        56,
+        57,
+        58
+      ]
+    },
+    "selectedFields": [
+      55,
+      56,
+      57,
+      58
+    ],
+    "groups": [
+      {
+        "kind": "contract",
+        "clientId": "101",
+        "clientAgreementId": "201",
+        "values": [
+          null,
+          "40.00",
+          null,
+          null
+        ]
+      },
+      {
+        "kind": "client",
+        "clientId": "101",
+        "clientAgreementId": null,
+        "values": [
+          null,
+          "40.00",
+          null,
+          null
+        ]
+      },
+      {
+        "kind": "grand",
+        "clientId": null,
+        "clientAgreementId": null,
+        "values": [
+          null,
+          "40.00",
+          null,
+          null
+        ]
+      }
+    ]
+  },
+  {
+    "id": "zero-vat-ignores-missing-or-negative-rate",
+    "request": {
+      "currentFrom": "2026-07-01",
+      "currentTo": "2026-07-31",
+      "previousFrom": "2026-06-01",
+      "previousTo": "2026-06-30",
+      "selectedFields": [
+        55,
+        56,
+        57,
+        58
+      ]
+    },
+    "selectedFields": [
+      55,
+      56,
+      57,
+      58
+    ],
+    "groups": [
+      {
+        "kind": "contract",
+        "clientId": "101",
+        "clientAgreementId": "201",
+        "values": [
+          "40.00",
+          "20.00",
+          "20.00",
+          "100.00"
+        ]
+      },
+      {
+        "kind": "client",
+        "clientId": "101",
+        "clientAgreementId": null,
+        "values": [
+          "40.00",
+          "20.00",
+          "20.00",
+          "100.00"
+        ]
+      },
+      {
+        "kind": "grand",
+        "clientId": null,
+        "clientAgreementId": null,
+        "values": [
+          "40.00",
+          "20.00",
+          "20.00",
+          "100.00"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "nonzero-vat-zero-and-negative-rates-unknown",
+    "request": {
+      "currentFrom": "2026-07-01",
+      "currentTo": "2026-07-31",
+      "previousFrom": "2026-06-01",
+      "previousTo": "2026-06-30",
+      "selectedFields": [
+        55,
+        56,
+        57,
+        58
+      ]
+    },
+    "selectedFields": [
+      55,
+      56,
+      57,
+      58
+    ],
+    "groups": [
+      {
+        "kind": "contract",
+        "clientId": "101",
+        "clientAgreementId": "201",
+        "values": [
+          null,
+          null,
+          null,
+          null
+        ]
+      },
+      {
+        "kind": "client",
+        "clientId": "101",
+        "clientAgreementId": null,
+        "values": [
+          null,
+          null,
+          null,
+          null
+        ]
+      },
+      {
+        "kind": "grand",
+        "clientId": null,
+        "clientAgreementId": null,
+        "values": [
+          null,
+          null,
+          null,
+          null
+        ]
+      }
+    ]
+  },
+  {
+    "id": "both-known-zero-net-and-cost",
+    "request": {
+      "currentFrom": "2026-07-01",
+      "currentTo": "2026-07-31",
+      "previousFrom": "2026-06-01",
+      "previousTo": "2026-06-30",
+      "selectedFields": [
+        55,
+        56,
+        57,
+        58
+      ]
+    },
+    "selectedFields": [
+      55,
+      56,
+      57,
+      58
+    ],
+    "groups": [
+      {
+        "kind": "contract",
+        "clientId": "101",
+        "clientAgreementId": "201",
+        "values": [
+          "0.00",
+          "0.00",
+          "0.00",
+          "100.00"
+        ]
+      },
+      {
+        "kind": "client",
+        "clientId": "101",
+        "clientAgreementId": null,
+        "values": [
+          "0.00",
+          "0.00",
+          "0.00",
+          "100.00"
+        ]
+      },
+      {
+        "kind": "grand",
+        "clientId": null,
+        "clientAgreementId": null,
+        "values": [
+          "0.00",
+          "0.00",
+          "0.00",
+          "100.00"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "zero-net-known-nonzero-cost",
+    "request": {
+      "currentFrom": "2026-07-01",
+      "currentTo": "2026-07-31",
+      "previousFrom": "2026-06-01",
+      "previousTo": "2026-06-30",
+      "selectedFields": [
+        55,
+        56,
+        57,
+        58
+      ]
+    },
+    "selectedFields": [
+      55,
+      56,
+      57,
+      58
+    ],
+    "groups": [
+      {
+        "kind": "contract",
+        "clientId": "101",
+        "clientAgreementId": "201",
+        "values": [
+          "0.00",
+          "0.00",
+          "0.00",
+          "100.00"
+        ]
+      },
+      {
+        "kind": "client",
+        "clientId": "101",
+        "clientAgreementId": null,
+        "values": [
+          "0.00",
+          "0.00",
+          "0.00",
+          "100.00"
+        ]
+      },
+      {
+        "kind": "grand",
+        "clientId": null,
+        "clientAgreementId": null,
+        "values": [
+          "0.00",
+          "0.00",
+          "0.00",
+          "100.00"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "zero-net-unknown-cost-stays-unknown",
+    "request": {
+      "currentFrom": "2026-07-01",
+      "currentTo": "2026-07-31",
+      "previousFrom": "2026-06-01",
+      "previousTo": "2026-06-30",
+      "selectedFields": [
+        55,
+        56,
+        57,
+        58
+      ]
+    },
+    "selectedFields": [
+      55,
+      56,
+      57,
+      58
+    ],
+    "groups": [
+      {
+        "kind": "contract",
+        "clientId": "101",
+        "clientAgreementId": "201",
+        "values": [
+          null,
+          "0.00",
+          null,
+          null
+        ]
+      },
+      {
+        "kind": "client",
+        "clientId": "101",
+        "clientAgreementId": null,
+        "values": [
+          null,
+          "0.00",
+          null,
+          null
+        ]
+      },
+      {
+        "kind": "grand",
+        "clientId": null,
+        "clientAgreementId": null,
+        "values": [
+          null,
+          "0.00",
+          null,
+          null
+        ]
+      }
+    ]
+  },
+  {
+    "id": "signed-net-cancellation-known-cost",
+    "request": {
+      "currentFrom": "2026-07-01",
+      "currentTo": "2026-07-31",
+      "previousFrom": "2026-06-01",
+      "previousTo": "2026-06-30",
+      "selectedFields": [
+        55,
+        56,
+        57,
+        58
+      ]
+    },
+    "selectedFields": [
+      55,
+      56,
+      57,
+      58
+    ],
+    "groups": [
+      {
+        "kind": "contract",
+        "clientId": "101",
+        "clientAgreementId": "201",
+        "values": [
+          "0.00",
+          "50.00",
+          "-50.00",
+          "-100.00"
+        ]
+      },
+      {
+        "kind": "client",
+        "clientId": "101",
+        "clientAgreementId": null,
+        "values": [
+          "0.00",
+          "50.00",
+          "-50.00",
+          "-100.00"
+        ]
+      },
+      {
+        "kind": "grand",
+        "clientId": null,
+        "clientAgreementId": null,
+        "values": [
+          "0.00",
+          "50.00",
+          "-50.00",
+          "-100.00"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "negative-previous-net-no-clamp",
+    "request": {
+      "currentFrom": "2026-07-01",
+      "currentTo": "2026-07-31",
+      "previousFrom": "2026-06-01",
+      "previousTo": "2026-06-30",
+      "selectedFields": [
+        55,
+        56,
+        57,
+        58
+      ]
+    },
+    "selectedFields": [
+      55,
+      56,
+      57,
+      58
+    ],
+    "groups": [
+      {
+        "kind": "contract",
+        "clientId": "101",
+        "clientAgreementId": "201",
+        "values": [
+          "50.00",
+          "120.00",
+          "-70.00",
+          "-58.33"
+        ]
+      },
+      {
+        "kind": "client",
+        "clientId": "101",
+        "clientAgreementId": null,
+        "values": [
+          "50.00",
+          "120.00",
+          "-70.00",
+          "-58.33"
+        ]
+      },
+      {
+        "kind": "grand",
+        "clientId": null,
+        "clientAgreementId": null,
+        "values": [
+          "50.00",
+          "120.00",
+          "-70.00",
+          "-58.33"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "negative-cost-and-vat-signed-bases",
+    "request": {
+      "currentFrom": "2026-07-01",
+      "currentTo": "2026-07-31",
+      "previousFrom": "2026-06-01",
+      "previousTo": "2026-06-30",
+      "selectedFields": [
+        55,
+        56,
+        57,
+        58
+      ]
+    },
+    "selectedFields": [
+      55,
+      56,
+      57,
+      58
+    ],
+    "groups": [
+      {
+        "kind": "contract",
+        "clientId": "101",
+        "clientAgreementId": "201",
+        "values": [
+          "119.61",
+          "57.89",
+          "61.71",
+          "106.60"
+        ]
+      },
+      {
+        "kind": "client",
+        "clientId": "101",
+        "clientAgreementId": null,
+        "values": [
+          "119.61",
+          "57.89",
+          "61.71",
+          "106.60"
+        ]
+      },
+      {
+        "kind": "grand",
+        "clientId": null,
+        "clientAgreementId": null,
+        "values": [
+          "119.61",
+          "57.89",
+          "61.71",
+          "106.60"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "previous-known-zero-margin-convention",
+    "request": {
+      "currentFrom": "2026-07-01",
+      "currentTo": "2026-07-31",
+      "previousFrom": "2026-06-01",
+      "previousTo": "2026-06-30",
+      "selectedFields": [
+        55,
+        56,
+        57,
+        58
+      ]
+    },
+    "selectedFields": [
+      55,
+      56,
+      57,
+      58
+    ],
+    "groups": [
+      {
+        "kind": "contract",
+        "clientId": "101",
+        "clientAgreementId": "201",
+        "values": [
+          "40.00",
+          "0.00",
+          "40.00",
+          "100.00"
+        ]
+      },
+      {
+        "kind": "client",
+        "clientId": "101",
+        "clientAgreementId": null,
+        "values": [
+          "40.00",
+          "0.00",
+          "40.00",
+          "100.00"
+        ]
+      },
+      {
+        "kind": "grand",
+        "clientId": null,
+        "clientAgreementId": null,
+        "values": [
+          "40.00",
+          "0.00",
+          "40.00",
+          "100.00"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "both-zero-margins-convention",
+    "request": {
+      "currentFrom": "2026-07-01",
+      "currentTo": "2026-07-31",
+      "previousFrom": "2026-06-01",
+      "previousTo": "2026-06-30",
+      "selectedFields": [
+        55,
+        56,
+        57,
+        58
+      ]
+    },
+    "selectedFields": [
+      55,
+      56,
+      57,
+      58
+    ],
+    "groups": [
+      {
+        "kind": "contract",
+        "clientId": "101",
+        "clientAgreementId": "201",
+        "values": [
+          "0.00",
+          "0.00",
+          "0.00",
+          "100.00"
+        ]
+      },
+      {
+        "kind": "client",
+        "clientId": "101",
+        "clientAgreementId": null,
+        "values": [
+          "0.00",
+          "0.00",
+          "0.00",
+          "100.00"
+        ]
+      },
+      {
+        "kind": "grand",
+        "clientId": null,
+        "clientAgreementId": null,
+        "values": [
+          "0.00",
+          "0.00",
+          "0.00",
+          "100.00"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "empty-periods-grand-only",
+    "request": {
+      "currentFrom": "2026-07-01",
+      "currentTo": "2026-07-31",
+      "previousFrom": "2026-06-01",
+      "previousTo": "2026-06-30",
+      "selectedFields": [
+        55,
+        56,
+        57,
+        58
+      ]
+    },
+    "selectedFields": [
+      55,
+      56,
+      57,
+      58
+    ],
+    "groups": [
+      {
+        "kind": "grand",
+        "clientId": null,
+        "clientAgreementId": null,
+        "values": [
+          "0.00",
+          "0.00",
+          "0.00",
+          "100.00"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "current-only-previous-empty-known-zero",
+    "request": {
+      "currentFrom": "2026-07-01",
+      "currentTo": "2026-07-31",
+      "previousFrom": "2026-06-01",
+      "previousTo": "2026-06-30",
+      "selectedFields": [
+        55,
+        56,
+        57,
+        58
+      ]
+    },
+    "selectedFields": [
+      55,
+      56,
+      57,
+      58
+    ],
+    "groups": [
+      {
+        "kind": "contract",
+        "clientId": "101",
+        "clientAgreementId": "201",
+        "values": [
+          "40.00",
+          "0.00",
+          "40.00",
+          "100.00"
+        ]
+      },
+      {
+        "kind": "client",
+        "clientId": "101",
+        "clientAgreementId": null,
+        "values": [
+          "40.00",
+          "0.00",
+          "40.00",
+          "100.00"
+        ]
+      },
+      {
+        "kind": "grand",
+        "clientId": null,
+        "clientAgreementId": null,
+        "values": [
+          "40.00",
+          "0.00",
+          "40.00",
+          "100.00"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "previous-only-current-empty-known-zero",
+    "request": {
+      "currentFrom": "2026-07-01",
+      "currentTo": "2026-07-31",
+      "previousFrom": "2026-06-01",
+      "previousTo": "2026-06-30",
+      "selectedFields": [
+        55,
+        56,
+        57,
+        58
+      ]
+    },
+    "selectedFields": [
+      55,
+      56,
+      57,
+      58
+    ],
+    "groups": [
+      {
+        "kind": "contract",
+        "clientId": "101",
+        "clientAgreementId": "201",
+        "values": [
+          "0.00",
+          "50.00",
+          "-50.00",
+          "-100.00"
+        ]
+      },
+      {
+        "kind": "client",
+        "clientId": "101",
+        "clientAgreementId": null,
+        "values": [
+          "0.00",
+          "50.00",
+          "-50.00",
+          "-100.00"
+        ]
+      },
+      {
+        "kind": "grand",
+        "clientId": null,
+        "clientAgreementId": null,
+        "values": [
+          "0.00",
+          "50.00",
+          "-50.00",
+          "-100.00"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "equal-overlapping-independent-windows",
+    "request": {
+      "currentFrom": "2026-07-01",
+      "currentTo": "2026-07-31",
+      "previousFrom": "2026-07-01",
+      "previousTo": "2026-07-31",
+      "selectedFields": [
+        55,
+        56,
+        57,
+        58
+      ]
+    },
+    "selectedFields": [
+      55,
+      56,
+      57,
+      58
+    ],
+    "groups": [
+      {
+        "kind": "contract",
+        "clientId": "101",
+        "clientAgreementId": "201",
+        "values": [
+          "40.00",
+          "40.00",
+          "0.00",
+          "0.00"
+        ]
+      },
+      {
+        "kind": "client",
+        "clientId": "101",
+        "clientAgreementId": null,
+        "values": [
+          "40.00",
+          "40.00",
+          "0.00",
+          "0.00"
+        ]
+      },
+      {
+        "kind": "grand",
+        "clientId": null,
+        "clientAgreementId": null,
+        "values": [
+          "40.00",
+          "40.00",
+          "0.00",
+          "0.00"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "partly-overlapping-windows",
+    "request": {
+      "currentFrom": "2026-07-01",
+      "currentTo": "2026-07-31",
+      "previousFrom": "2026-07-15",
+      "previousTo": "2026-08-15",
+      "selectedFields": [
+        55,
+        56,
+        57,
+        58
+      ]
+    },
+    "selectedFields": [
+      55,
+      56,
+      57,
+      58
+    ],
+    "groups": [
+      {
+        "kind": "contract",
+        "clientId": "101",
+        "clientAgreementId": "201",
+        "values": [
+          "63.33",
+          "60.00",
+          "3.33",
+          "5.56"
+        ]
+      },
+      {
+        "kind": "client",
+        "clientId": "101",
+        "clientAgreementId": null,
+        "values": [
+          "63.33",
+          "60.00",
+          "3.33",
+          "5.56"
+        ]
+      },
+      {
+        "kind": "grand",
+        "clientId": null,
+        "clientAgreementId": null,
+        "values": [
+          "63.33",
+          "60.00",
+          "3.33",
+          "5.56"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "reversed-independent-periods",
+    "request": {
+      "currentFrom": "2026-06-01",
+      "currentTo": "2026-06-30",
+      "previousFrom": "2026-07-01",
+      "previousTo": "2026-07-31",
+      "selectedFields": [
+        55,
+        56,
+        57,
+        58
+      ]
+    },
+    "selectedFields": [
+      55,
+      56,
+      57,
+      58
+    ],
+    "groups": [
+      {
+        "kind": "contract",
+        "clientId": "101",
+        "clientAgreementId": "201",
+        "values": [
+          "20.00",
+          "40.00",
+          "-20.00",
+          "-50.00"
+        ]
+      },
+      {
+        "kind": "client",
+        "clientId": "101",
+        "clientAgreementId": null,
+        "values": [
+          "20.00",
+          "40.00",
+          "-20.00",
+          "-50.00"
+        ]
+      },
+      {
+        "kind": "grand",
+        "clientId": null,
+        "clientAgreementId": null,
+        "values": [
+          "20.00",
+          "40.00",
+          "-20.00",
+          "-50.00"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "gap-facts-excluded",
+    "request": {
+      "currentFrom": "2026-07-01",
+      "currentTo": "2026-07-31",
+      "previousFrom": "2026-06-01",
+      "previousTo": "2026-06-30",
+      "selectedFields": [
+        55,
+        56,
+        57,
+        58
+      ]
+    },
+    "selectedFields": [
+      55,
+      56,
+      57,
+      58
+    ],
+    "groups": [
+      {
+        "kind": "contract",
+        "clientId": "101",
+        "clientAgreementId": "201",
+        "values": [
+          "40.00",
+          "40.00",
+          "0.00",
+          "0.00"
+        ]
+      },
+      {
+        "kind": "client",
+        "clientId": "101",
+        "clientAgreementId": null,
+        "values": [
+          "40.00",
+          "40.00",
+          "0.00",
+          "0.00"
+        ]
+      },
+      {
+        "kind": "grand",
+        "clientId": null,
+        "clientAgreementId": null,
+        "values": [
+          "40.00",
+          "40.00",
+          "0.00",
+          "0.00"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "kyiv-100ns-start-and-end-membership",
+    "request": {
+      "currentFrom": "2026-07-01",
+      "currentTo": "2026-07-31",
+      "previousFrom": "2026-06-01",
+      "previousTo": "2026-06-30",
+      "selectedFields": [
+        55,
+        56,
+        57,
+        58
+      ]
+    },
+    "selectedFields": [
+      55,
+      56,
+      57,
+      58
+    ],
+    "groups": [
+      {
+        "kind": "contract",
+        "clientId": "101",
+        "clientAgreementId": "201",
+        "values": [
+          "75.00",
+          "90.00",
+          "-15.00",
+          "-16.67"
+        ]
+      },
+      {
+        "kind": "client",
+        "clientId": "101",
+        "clientAgreementId": null,
+        "values": [
+          "75.00",
+          "90.00",
+          "-15.00",
+          "-16.67"
+        ]
+      },
+      {
+        "kind": "grand",
+        "clientId": null,
+        "clientAgreementId": null,
+        "values": [
+          "75.00",
+          "90.00",
+          "-15.00",
+          "-16.67"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "kyiv-dst-23-and-25-hour-days",
+    "request": {
+      "currentFrom": "2026-03-29",
+      "currentTo": "2026-03-29",
+      "previousFrom": "2026-10-25",
+      "previousTo": "2026-10-25",
+      "selectedFields": [
+        55,
+        56,
+        57,
+        58
+      ]
+    },
+    "selectedFields": [
+      55,
+      56,
+      57,
+      58
+    ],
+    "groups": [
+      {
+        "kind": "contract",
+        "clientId": "101",
+        "clientAgreementId": "201",
+        "values": [
+          "85.00",
+          "65.00",
+          "20.00",
+          "30.77"
+        ]
+      },
+      {
+        "kind": "client",
+        "clientId": "101",
+        "clientAgreementId": null,
+        "values": [
+          "85.00",
+          "65.00",
+          "20.00",
+          "30.77"
+        ]
+      },
+      {
+        "kind": "grand",
+        "clientId": null,
+        "clientAgreementId": null,
+        "values": [
+          "85.00",
+          "65.00",
+          "20.00",
+          "30.77"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "hidden-sibling-invalidates-whole-sale-cost",
+    "request": {
+      "currentFrom": "2026-07-01",
+      "currentTo": "2026-07-31",
+      "previousFrom": "2026-06-01",
+      "previousTo": "2026-06-30",
+      "selectedFields": [
+        55,
+        56,
+        57,
+        58
+      ],
+      "productIds": [
+        "301"
+      ]
+    },
+    "selectedFields": [
+      55,
+      56,
+      57,
+      58
+    ],
+    "groups": [
+      {
+        "kind": "contract",
+        "clientId": "101",
+        "clientAgreementId": "201",
+        "values": [
+          null,
+          "40.00",
+          null,
+          null
+        ]
+      },
+      {
+        "kind": "client",
+        "clientId": "101",
+        "clientAgreementId": null,
+        "values": [
+          null,
+          "40.00",
+          null,
+          null
+        ]
+      },
+      {
+        "kind": "grand",
+        "clientId": null,
+        "clientAgreementId": null,
+        "values": [
+          null,
+          "40.00",
+          null,
+          null
+        ]
+      }
+    ]
+  },
+  {
+    "id": "unknown-other-sale-outside-product-filter",
+    "request": {
+      "currentFrom": "2026-07-01",
+      "currentTo": "2026-07-31",
+      "previousFrom": "2026-06-01",
+      "previousTo": "2026-06-30",
+      "selectedFields": [
+        55,
+        56,
+        57,
+        58
+      ],
+      "productIds": [
+        "301"
+      ]
+    },
+    "selectedFields": [
+      55,
+      56,
+      57,
+      58
+    ],
+    "groups": [
+      {
+        "kind": "contract",
+        "clientId": "101",
+        "clientAgreementId": "201",
+        "values": [
+          "40.00",
+          "40.00",
+          "0.00",
+          "0.00"
+        ]
+      },
+      {
+        "kind": "client",
+        "clientId": "101",
+        "clientAgreementId": null,
+        "values": [
+          "40.00",
+          "40.00",
+          "0.00",
+          "0.00"
+        ]
+      },
+      {
+        "kind": "grand",
+        "clientId": null,
+        "clientAgreementId": null,
+        "values": [
+          "40.00",
+          "40.00",
+          "0.00",
+          "0.00"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "large-exact-identities-and-mask-order",
+    "request": {
+      "currentFrom": "2026-07-01",
+      "currentTo": "2026-07-31",
+      "previousFrom": "2026-06-01",
+      "previousTo": "2026-06-30",
+      "selectedFields": [
+        58,
+        57,
+        55
+      ]
+    },
+    "selectedFields": [
+      58,
+      57,
+      55
+    ],
+    "groups": [
+      {
+        "kind": "contract",
+        "clientId": "9007199254740993",
+        "clientAgreementId": "9223372036854775807",
+        "values": [
+          "100.00",
+          "20.00",
+          "40.00"
+        ]
+      },
+      {
+        "kind": "client",
+        "clientId": "9007199254740993",
+        "clientAgreementId": null,
+        "values": [
+          "100.00",
+          "20.00",
+          "40.00"
+        ]
+      },
+      {
+        "kind": "grand",
+        "clientId": null,
+        "clientAgreementId": null,
+        "values": [
+          "100.00",
+          "20.00",
+          "40.00"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "tiny-previous-margin-relative-overflow-unselected",
+    "request": {
+      "currentFrom": "2026-07-01",
+      "currentTo": "2026-07-31",
+      "previousFrom": "2026-06-01",
+      "previousTo": "2026-06-30",
+      "selectedFields": [
+        55,
+        56,
+        57
+      ]
+    },
+    "selectedFields": [
+      55,
+      56,
+      57
+    ],
+    "groups": [
+      {
+        "kind": "contract",
+        "clientId": "101",
+        "clientAgreementId": "201",
+        "values": [
+          "100.00",
+          "0.00",
+          "100.00"
+        ]
+      },
+      {
+        "kind": "client",
+        "clientId": "101",
+        "clientAgreementId": null,
+        "values": [
+          "100.00",
+          "0.00",
+          "100.00"
+        ]
+      },
+      {
+        "kind": "grand",
+        "clientId": null,
+        "clientAgreementId": null,
+        "values": [
+          "100.00",
+          "0.00",
+          "100.00"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "unselected-margin-overflow-does-not-block-previous",
+    "request": {
+      "currentFrom": "2026-07-01",
+      "currentTo": "2026-07-31",
+      "previousFrom": "2026-06-01",
+      "previousTo": "2026-06-30",
+      "selectedFields": [
+        56
+      ]
+    },
+    "selectedFields": [
+      56
+    ],
+    "groups": [
+      {
+        "kind": "contract",
+        "clientId": "101",
+        "clientAgreementId": "201",
+        "values": [
+          "100.00"
+        ]
+      },
+      {
+        "kind": "client",
+        "clientId": "101",
+        "clientAgreementId": null,
+        "values": [
+          "100.00"
+        ]
+      },
+      {
+        "kind": "grand",
+        "clientId": null,
+        "clientAgreementId": null,
+        "values": [
+          "100.00"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "positive-half-cent-away-from-zero",
+    "request": {
+      "currentFrom": "2026-07-01",
+      "currentTo": "2026-07-31",
+      "previousFrom": "2026-06-01",
+      "previousTo": "2026-06-30",
+      "selectedFields": [
+        55,
+        56,
+        57,
+        58
+      ]
+    },
+    "selectedFields": [
+      55,
+      56,
+      57,
+      58
+    ],
+    "groups": [
+      {
+        "kind": "contract",
+        "clientId": "101",
+        "clientAgreementId": "201",
+        "values": [
+          "12.35",
+          "12.34",
+          "0.01",
+          "0.08"
+        ]
+      },
+      {
+        "kind": "client",
+        "clientId": "101",
+        "clientAgreementId": null,
+        "values": [
+          "12.35",
+          "12.34",
+          "0.01",
+          "0.08"
+        ]
+      },
+      {
+        "kind": "grand",
+        "clientId": null,
+        "clientAgreementId": null,
+        "values": [
+          "12.35",
+          "12.34",
+          "0.01",
+          "0.08"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "negative-half-cent-away-from-zero",
+    "request": {
+      "currentFrom": "2026-07-01",
+      "currentTo": "2026-07-31",
+      "previousFrom": "2026-06-01",
+      "previousTo": "2026-06-30",
+      "selectedFields": [
+        55,
+        56,
+        57,
+        58
+      ]
+    },
+    "selectedFields": [
+      55,
+      56,
+      57,
+      58
+    ],
+    "groups": [
+      {
+        "kind": "contract",
+        "clientId": "101",
+        "clientAgreementId": "201",
+        "values": [
+          "-87.66",
+          "-87.67",
+          "0.01",
+          "-0.01"
+        ]
+      },
+      {
+        "kind": "client",
+        "clientId": "101",
+        "clientAgreementId": null,
+        "values": [
+          "-87.66",
+          "-87.67",
+          "0.01",
+          "-0.01"
+        ]
+      },
+      {
+        "kind": "grand",
+        "clientId": null,
+        "clientAgreementId": null,
+        "values": [
+          "-87.66",
+          "-87.67",
+          "0.01",
+          "-0.01"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "difference-from-raw-not-rounded-margins",
+    "request": {
+      "currentFrom": "2026-07-01",
+      "currentTo": "2026-07-31",
+      "previousFrom": "2026-06-01",
+      "previousTo": "2026-06-30",
+      "selectedFields": [
+        55,
+        56,
+        57,
+        58
+      ]
+    },
+    "selectedFields": [
+      55,
+      56,
+      57,
+      58
+    ],
+    "groups": [
+      {
+        "kind": "contract",
+        "clientId": "101",
+        "clientAgreementId": "201",
+        "values": [
+          "10.00",
+          "10.00",
+          "0.01",
+          "0.10"
+        ]
+      },
+      {
+        "kind": "client",
+        "clientId": "101",
+        "clientAgreementId": null,
+        "values": [
+          "10.00",
+          "10.00",
+          "0.01",
+          "0.10"
+        ]
+      },
+      {
+        "kind": "grand",
+        "clientId": null,
+        "clientAgreementId": null,
+        "values": [
+          "10.00",
+          "10.00",
+          "0.01",
+          "0.10"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "safe-large-products-and-cost-cancellation",
+    "request": {
+      "currentFrom": "2026-07-01",
+      "currentTo": "2026-07-31",
+      "previousFrom": "2026-06-01",
+      "previousTo": "2026-06-30",
+      "selectedFields": [
+        55,
+        56,
+        57,
+        58
+      ]
+    },
+    "selectedFields": [
+      55,
+      56,
+      57,
+      58
+    ],
+    "groups": [
+      {
+        "kind": "contract",
+        "clientId": "101",
+        "clientAgreementId": "201",
+        "values": [
+          "0.00",
+          "0.00",
+          "0.00",
+          "0.00"
+        ]
+      },
+      {
+        "kind": "client",
+        "clientId": "101",
+        "clientAgreementId": null,
+        "values": [
+          "0.00",
+          "0.00",
+          "0.00",
+          "0.00"
+        ]
+      },
+      {
+        "kind": "grand",
+        "clientId": null,
+        "clientAgreementId": null,
+        "values": [
+          "0.00",
+          "0.00",
+          "0.00",
+          "0.00"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "selected-order-55",
+    "request": {
+      "currentFrom": "2026-07-01",
+      "currentTo": "2026-07-31",
+      "previousFrom": "2026-06-01",
+      "previousTo": "2026-06-30",
+      "selectedFields": [
+        55
+      ]
+    },
+    "selectedFields": [
+      55
+    ],
+    "groups": [
+      {
+        "kind": "contract",
+        "clientId": "101",
+        "clientAgreementId": "201",
+        "values": [
+          "40.00"
+        ]
+      },
+      {
+        "kind": "client",
+        "clientId": "101",
+        "clientAgreementId": null,
+        "values": [
+          "40.00"
+        ]
+      },
+      {
+        "kind": "grand",
+        "clientId": null,
+        "clientAgreementId": null,
+        "values": [
+          "40.00"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "selected-order-56",
+    "request": {
+      "currentFrom": "2026-07-01",
+      "currentTo": "2026-07-31",
+      "previousFrom": "2026-06-01",
+      "previousTo": "2026-06-30",
+      "selectedFields": [
+        56
+      ]
+    },
+    "selectedFields": [
+      56
+    ],
+    "groups": [
+      {
+        "kind": "contract",
+        "clientId": "101",
+        "clientAgreementId": "201",
+        "values": [
+          "25.00"
+        ]
+      },
+      {
+        "kind": "client",
+        "clientId": "101",
+        "clientAgreementId": null,
+        "values": [
+          "25.00"
+        ]
+      },
+      {
+        "kind": "grand",
+        "clientId": null,
+        "clientAgreementId": null,
+        "values": [
+          "25.00"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "selected-order-57",
+    "request": {
+      "currentFrom": "2026-07-01",
+      "currentTo": "2026-07-31",
+      "previousFrom": "2026-06-01",
+      "previousTo": "2026-06-30",
+      "selectedFields": [
+        57
+      ]
+    },
+    "selectedFields": [
+      57
+    ],
+    "groups": [
+      {
+        "kind": "contract",
+        "clientId": "101",
+        "clientAgreementId": "201",
+        "values": [
+          "15.00"
+        ]
+      },
+      {
+        "kind": "client",
+        "clientId": "101",
+        "clientAgreementId": null,
+        "values": [
+          "15.00"
+        ]
+      },
+      {
+        "kind": "grand",
+        "clientId": null,
+        "clientAgreementId": null,
+        "values": [
+          "15.00"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "selected-order-58",
+    "request": {
+      "currentFrom": "2026-07-01",
+      "currentTo": "2026-07-31",
+      "previousFrom": "2026-06-01",
+      "previousTo": "2026-06-30",
+      "selectedFields": [
+        58
+      ]
+    },
+    "selectedFields": [
+      58
+    ],
+    "groups": [
+      {
+        "kind": "contract",
+        "clientId": "101",
+        "clientAgreementId": "201",
+        "values": [
+          "60.00"
+        ]
+      },
+      {
+        "kind": "client",
+        "clientId": "101",
+        "clientAgreementId": null,
+        "values": [
+          "60.00"
+        ]
+      },
+      {
+        "kind": "grand",
+        "clientId": null,
+        "clientAgreementId": null,
+        "values": [
+          "60.00"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "selected-order-58-56-55",
+    "request": {
+      "currentFrom": "2026-07-01",
+      "currentTo": "2026-07-31",
+      "previousFrom": "2026-06-01",
+      "previousTo": "2026-06-30",
+      "selectedFields": [
+        58,
+        56,
+        55
+      ]
+    },
+    "selectedFields": [
+      58,
+      56,
+      55
+    ],
+    "groups": [
+      {
+        "kind": "contract",
+        "clientId": "101",
+        "clientAgreementId": "201",
+        "values": [
+          "60.00",
+          "25.00",
+          "40.00"
+        ]
+      },
+      {
+        "kind": "client",
+        "clientId": "101",
+        "clientAgreementId": null,
+        "values": [
+          "60.00",
+          "25.00",
+          "40.00"
+        ]
+      },
+      {
+        "kind": "grand",
+        "clientId": null,
+        "clientAgreementId": null,
+        "values": [
+          "60.00",
+          "25.00",
+          "40.00"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "selected-order-57-55",
+    "request": {
+      "currentFrom": "2026-07-01",
+      "currentTo": "2026-07-31",
+      "previousFrom": "2026-06-01",
+      "previousTo": "2026-06-30",
+      "selectedFields": [
+        57,
+        55
+      ]
+    },
+    "selectedFields": [
+      57,
+      55
+    ],
+    "groups": [
+      {
+        "kind": "contract",
+        "clientId": "101",
+        "clientAgreementId": "201",
+        "values": [
+          "15.00",
+          "40.00"
+        ]
+      },
+      {
+        "kind": "client",
+        "clientId": "101",
+        "clientAgreementId": null,
+        "values": [
+          "15.00",
+          "40.00"
+        ]
+      },
+      {
+        "kind": "grand",
+        "clientId": null,
+        "clientAgreementId": null,
+        "values": [
+          "15.00",
+          "40.00"
+        ]
+      }
+    ]
+  }
+]

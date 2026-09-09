@@ -1,3 +1,5 @@
+import { MARGIN_COMPARISON_TITLE } from '../data/marginComparison'
+import { marginComparisonHeaderPresentation } from './marginComparisonHeaderPresentation'
 import { RETURN_COMPARISON_TITLE } from '../data/returnComparison'
 import { returnComparisonHeaderPresentation } from './returnComparisonHeaderPresentation'
 import { BUYER_SALES_SHARE_TITLE } from '../data/buyerSalesShare'
@@ -22,6 +24,7 @@ const isBoundary = (line: string) => !line.trim() || line.trimStart().startsWith
 
 /** Join only the five native client notes for display. Raw attribution and CSV retain physical writer rows. */
 export function getReportHeaderPresentation(header: SpreadsheetReportHeader): Pick<SpreadsheetReportHeader, 'lines' | 'warnings'> {
+  if (header.lines[0] === MARGIN_COMPARISON_TITLE) return marginComparisonHeaderPresentation(header)
   if (header.lines[0] === RETURN_COMPARISON_TITLE) return returnComparisonHeaderPresentation(header)
   if (header.lines[0] === BUYER_SALES_SHARE_TITLE) return buyerSalesShareHeaderPresentation(header)
   if (header.lines[0] === REVENUE_COMPARISON_TITLE) return revenueComparisonHeaderPresentation(header)

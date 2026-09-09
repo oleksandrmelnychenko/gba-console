@@ -1,3 +1,5 @@
+import { MARGIN_COMPARISON_TITLE } from './data/marginComparison'
+import { MARGIN_COMPARISON_EMPTY_STATE, MARGIN_COMPARISON_NOTE_PREFIXES, isMarginComparisonSheet, marginComparisonColumn, validateMarginComparisonHeader, validateMarginComparisonSheet, validateMarginComparisonAttribution } from './data/marginComparisonSpreadsheet'
 import { RATE_COMPARISON_TITLE } from './data/rateComparison'
 import { RATE_COMPARISON_NOTE_PREFIXES, isRateComparisonSheet, rateComparisonColumn, validateRateComparisonAttribution, validateRateComparisonHeader, validateRateComparisonSheet } from './data/rateComparisonSpreadsheet'
 import { RETURN_COMPARISON_TITLE } from './data/returnComparison'
@@ -39,7 +41,7 @@ const HEADER_LEVEL_SEPARATOR = ' · '
 const STOCK_STATE_LINE = 'Поточний стан: знімок операційних записів GBA'
 const STOCK_READ_TIME_LINE = /^Час читання \(UTC\): \d{2}\.\d{2}\.\d{4} \d{2}:\d{2}:\d{2}\.\d{3} – \d{2}\.\d{2}\.\d{4} \d{2}:\d{2}:\d{2}\.\d{3}$/
 const SUPPLIER_RETURN_PERIOD_LINE = /^Період: \d{2}\.\d{2}\.\d{4} – \d{2}\.\d{2}\.\d{4}$/
-const REPORT_TITLES = new Set([RATE_COMPARISON_TITLE, RETURN_COMPARISON_TITLE, BUYER_SALES_SHARE_TITLE, REVENUE_COMPARISON_TITLE, XYZ_TITLE, 'Звіт продажів', 'Звіт продажів і повернень', 'Звіт надходжень', SUPPLIER_RETURN_REPORT_TITLE, CLIENT_ACTIVITY_REPORT_TITLE, CLIENT_COMPARISON_TITLE, IMPORTED_PAYMENTS_TITLE, ...CURRENT_REPORT_TITLES])
+const REPORT_TITLES = new Set([MARGIN_COMPARISON_TITLE, RATE_COMPARISON_TITLE, RETURN_COMPARISON_TITLE, BUYER_SALES_SHARE_TITLE, REVENUE_COMPARISON_TITLE, XYZ_TITLE, 'Звіт продажів', 'Звіт продажів і повернень', 'Звіт надходжень', SUPPLIER_RETURN_REPORT_TITLE, CLIENT_ACTIVITY_REPORT_TITLE, CLIENT_COMPARISON_TITLE, IMPORTED_PAYMENTS_TITLE, ...CURRENT_REPORT_TITLES])
 const clientCountFormatter = new Intl.NumberFormat('uk-UA', { maximumFractionDigits: 0 })
 const clientCountCsvFormatter = new Intl.NumberFormat('en-US', { useGrouping: false, maximumFractionDigits: 0 })
 export const stockQuantityFormatter = new Intl.NumberFormat('uk-UA', { maximumFractionDigits: 8 })
@@ -63,13 +65,14 @@ export function isCurrentReportSheet(sheet: SpreadsheetSheet | null): boolean {
 
 /** As-of snapshots have no leaf event-date axis to filter in the file viewer. */
 export function supportsSpreadsheetDateFilters(sheet: SpreadsheetSheet | null): boolean {
-  return !isCurrentReportSheet(sheet) && !isRateComparisonSheet(sheet)
+  return !isCurrentReportSheet(sheet) && !isRateComparisonSheet(sheet) && !isMarginComparisonSheet(sheet)
 }
 
 /** Only declared measure columns receive quantity/money formatting; numeric group identities remain axes. */
 export function getSpreadsheetNumberFormatter(sheet: SpreadsheetSheet | null, columnIndex: number, csv = false): Intl.NumberFormat | undefined {
   if (!sheet?.header || columnIndex < sheet.header.rowGroupings.length) return undefined
   const title = sheet.header.lines[0], caption = sheet.columns[columnIndex]?.split(HEADER_LEVEL_SEPARATOR).at(-1)
+  if (title === MARGIN_COMPARISON_TITLE) return marginComparisonColumn(caption) >= 0 ? (csv ? valuationCsvMoneyFormatter : valuationMoneyFormatter) : undefined
   if (title === RATE_COMPARISON_TITLE) return rateComparisonColumn(caption) < 0 ? undefined : rateComparisonColumn(caption) === 3 ? (csv ? valuationCsvMoneyFormatter : valuationMoneyFormatter) : (csv ? paymentCsvMoneyFormatter : paymentMoneyFormatter)
   if (title === RETURN_COMPARISON_TITLE) return returnComparisonColumn(caption) >= 0 ? (csv ? valuationCsvMoneyFormatter : valuationMoneyFormatter) : undefined
   if (title === BUYER_SALES_SHARE_TITLE) return buyerSalesShareColumn(caption) >= 0 ? (csv ? valuationCsvMoneyFormatter : valuationMoneyFormatter) : undefined
@@ -121,12 +124,14 @@ export function buildSpreadsheetSheet(name: string, rows: SpreadsheetCellValue[]
   }
 
   const sheetRows = rows.slice(firstFilledRowIndex)
+  validateMarginComparisonAttribution(sheetRows, format)
   validateRateComparisonAttribution(sheetRows, format)
   validateReturnComparisonAttribution(sheetRows, format)
   validateBuyerSalesShareAttribution(sheetRows, format)
   // A filtered CSV can retain the complete attribution block with no total rows.
   // Read that explicit structure independently of the workbook's subtotal markers.
   const reportHeader = readReportHeader(sheetRows, format)
+  validateMarginComparisonHeader(String(sheetRows[0]?.[0] ?? '').trim(), reportHeader?.header ?? null)
   validateRateComparisonHeader(String(sheetRows[0]?.[0] ?? '').trim(), reportHeader?.header ?? null)
   validateReturnComparisonHeader(String(sheetRows[0]?.[0] ?? '').trim(), reportHeader?.header ?? null)
   validateBuyerSalesShareHeader(String(sheetRows[0]?.[0] ?? '').trim(), reportHeader?.header ?? null)
@@ -150,7 +155,7 @@ export function buildSpreadsheetSheet(name: string, rows: SpreadsheetCellValue[]
       ? countHeaderRows(sheetRows)
       : 1
 
-  return validateRateComparisonSheet(validateReturnComparisonSheet(validateBuyerSalesShareSheet(validateRevenueComparisonSheet(validateSalesXyzSheet(validateImportedPaymentsSheet(validateClientComparisonSheet(validateClientActivitySheet({
+  return validateRateComparisonSheet(validateMarginComparisonSheet(validateReturnComparisonSheet(validateBuyerSalesShareSheet(validateRevenueComparisonSheet(validateSalesXyzSheet(validateImportedPaymentsSheet(validateClientComparisonSheet(validateClientActivitySheet({
     name,
     columns: buildColumns(tableRows.slice(0, headerRowCount), reportHeader?.header.rowGroupings.length ?? 0),
     header: reportHeader?.header ?? null,
@@ -158,7 +163,7 @@ export function buildSpreadsheetSheet(name: string, rows: SpreadsheetCellValue[]
     // measure with no answer and must stay empty. Only the row-field columns may be carried, and there are
     // exactly as many of them as the block names in «Рядки».
     rows: buildBodyRows(tableRows.slice(headerRowCount), isReport, format === 'flat' ? 0 : reportHeader?.header.rowGroupings.length),
-  }))))))), format)
+  })))))))), format)
 }
 
 // The rows the console's own CSV export writes: the engine's attribution block first, then the table. The export
@@ -211,6 +216,7 @@ export function filterSheetRows(
   if ((isClientActivitySheet(sheet) && sheet.header?.lines.includes(CLIENT_ACTIVITY_EMPTY_STATE))
     || (isClientComparisonSheet(sheet) && sheet.header?.lines.includes(CLIENT_COMPARISON_EMPTY_STATE))
     || (isImportedPaymentsSheet(sheet) && sheet.header?.lines.includes(IMPORTED_PAYMENTS_EMPTY_STATE))
+    || (isMarginComparisonSheet(sheet) && sheet.header?.lines.includes(MARGIN_COMPARISON_EMPTY_STATE))
     || (isReturnComparisonSheet(sheet) && sheet.header?.lines.includes(RETURN_COMPARISON_EMPTY_STATE))
     || (isBuyerSalesShareSheet(sheet) && sheet.header?.lines.includes(BUYER_SALES_SHARE_EMPTY_STATE))
     || (isRevenueComparisonSheet(sheet) && sheet.header?.lines.includes(REVENUE_COMPARISON_EMPTY_STATE))
@@ -249,7 +255,7 @@ export function filterSheetRows(
 export function getAdditiveColumns(sheet: SpreadsheetSheet | null): boolean[] {
   const columnCount = sheet?.columns.length || 0
   // Distinct counts can accidentally equal a sum on one selection. That never proves additivity.
-  if (isRateComparisonSheet(sheet) || isClientActivitySheet(sheet) || isClientComparisonSheet(sheet) || isImportedPaymentsSheet(sheet) || isSalesXyzSheet(sheet) || isRevenueComparisonSheet(sheet) || isBuyerSalesShareSheet(sheet) || isReturnComparisonSheet(sheet)) return Array.from({ length: columnCount }, () => false)
+  if (isMarginComparisonSheet(sheet) || isRateComparisonSheet(sheet) || isClientActivitySheet(sheet) || isClientComparisonSheet(sheet) || isImportedPaymentsSheet(sheet) || isSalesXyzSheet(sheet) || isRevenueComparisonSheet(sheet) || isBuyerSalesShareSheet(sheet) || isReturnComparisonSheet(sheet)) return Array.from({ length: columnCount }, () => false)
   const grandTotal = sheet?.rows.find((row) => row.kind === 'total')
 
   if (!sheet || !grandTotal) {
@@ -393,7 +399,7 @@ function valuationMetadataText(line: string): string {
 
 function isWarningLine(line: string): boolean {
   return line.startsWith(IGNORED_FILTERS_PREFIX) || line.includes(NO_DATA_MARKER) || line === NO_ROWS_LINE
-    || [...RATE_COMPARISON_NOTE_PREFIXES, ...RETURN_COMPARISON_NOTE_PREFIXES, ...BUYER_SALES_SHARE_NOTE_PREFIXES, ...REVENUE_COMPARISON_NOTE_PREFIXES, ...XYZ_NOTE_PREFIXES, ...IMPORTED_PAYMENTS_NOTE_PREFIXES, ...CLIENT_COMPARISON_NOTE_PREFIXES, 'Покриття оцінки:', 'Причини невизначеної оцінки:', 'Покриття заборгованості:', 'Причини невизначеної заборгованості:', 'Складські рухи повернень:', 'Точність кількості:', 'Покриття залишків рахунків:', 'Узгодження залишків рахунків:', 'Покриття активності клієнтів:', 'Ідентичність клієнтів:', 'Підсумки клієнтів:', 'Межі порівняння з 1С:']
+    || [...RATE_COMPARISON_NOTE_PREFIXES, ...MARGIN_COMPARISON_NOTE_PREFIXES, ...RETURN_COMPARISON_NOTE_PREFIXES, ...BUYER_SALES_SHARE_NOTE_PREFIXES, ...REVENUE_COMPARISON_NOTE_PREFIXES, ...XYZ_NOTE_PREFIXES, ...IMPORTED_PAYMENTS_NOTE_PREFIXES, ...CLIENT_COMPARISON_NOTE_PREFIXES, 'Покриття оцінки:', 'Причини невизначеної оцінки:', 'Покриття заборгованості:', 'Причини невизначеної заборгованості:', 'Складські рухи повернень:', 'Точність кількості:', 'Покриття залишків рахунків:', 'Узгодження залишків рахунків:', 'Покриття активності клієнтів:', 'Ідентичність клієнтів:', 'Підсумки клієнтів:', 'Межі порівняння з 1С:']
       .some(prefix => valuationMetadataText(line).startsWith(prefix))
 }
 
