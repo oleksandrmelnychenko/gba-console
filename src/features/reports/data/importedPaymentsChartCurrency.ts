@@ -1,3 +1,4 @@
+import { PAYMENT_COMPARISON_TITLE, paymentComparisonExactId } from './paymentComparison'
 import type { SpreadsheetRow, SpreadsheetSheet } from '../types'
 import { isImportedPaymentCaption } from './importedPaymentsSpreadsheet'
 
@@ -12,10 +13,10 @@ export type PaymentChartCurrencyScope = {
 }
 
 /** Only a native ID in the declared currency axis proves the domain. Names and amounts do not. */
-function readCurrency(value: unknown): PaymentChartCurrency | null {
+function readCurrency(value: unknown, strictInt64 = false): PaymentChartCurrency | null {
   if (typeof value !== 'string') return null
   const label = value.trim(), match = label.match(/^.+ \[([1-9]\d*)\]$/u)
-  return match ? { value: match[1], label } : null
+  return match && (!strictInt64 || paymentComparisonExactId({ Id: match[1] }) !== null) ? { value: match[1], label } : null
 }
 
 export function getPaymentChartCurrencyScope(sheet: SpreadsheetSheet, rows: SpreadsheetRow[], measurementIndex: number): PaymentChartCurrencyScope {
@@ -34,9 +35,10 @@ export function getPaymentChartCurrencyScope(sheet: SpreadsheetSheet, rows: Spre
     scope.fixedCurrency = readCurrency(parts[columnAxis])
     if (!scope.fixedCurrency) return { ...scope, status: 'unknown-column' }
   }
+  const strictInt64 = header.lines[0] === PAYMENT_COMPARISON_TITLE
   const currencies = new Map<string, PaymentChartCurrency>()
   for (const row of leaves) {
-    const currency = rowAxis >= 0 ? readCurrency(row.cells[rowAxis]) : scope.fixedCurrency
+    const currency = rowAxis >= 0 ? readCurrency(row.cells[rowAxis], strictInt64) : scope.fixedCurrency
     if (!currency) { scope.unknownRows += 1; continue }
     currencies.set(currency.value, currencies.get(currency.value) ?? currency)
     const currencyRows = scope.rowsByCurrency.get(currency.value) ?? []

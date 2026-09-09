@@ -1,0 +1,141 @@
+{
+  "DataSource": 21,
+  "Name": "Порівняння імпортованих платежів за договорами",
+  "Description": "Записані імпортовані надходження або виплати у валюті документа за двома незалежними періодами.",
+  "Groupings": [
+    {
+      "Type": 41,
+      "Name": "Валюта рахунку",
+      "Selectable": true
+    },
+    {
+      "Type": 12,
+      "Name": "Клієнт",
+      "Selectable": true
+    },
+    {
+      "Type": 15,
+      "Name": "Договір",
+      "Selectable": true
+    }
+  ],
+  "Measurements": [
+    {
+      "Type": 59,
+      "Name": "Сума за поточний період",
+      "Selectable": true
+    },
+    {
+      "Type": 60,
+      "Name": "Сума за період порівняння",
+      "Selectable": true
+    },
+    {
+      "Type": 61,
+      "Name": "Зміна суми",
+      "Selectable": true
+    },
+    {
+      "Type": 62,
+      "Name": "Відносна зміна платежів, %",
+      "Selectable": true
+    }
+  ],
+  "Filters": [
+    {
+      "Type": 6,
+      "Name": "Клієнт",
+      "Selectable": true
+    },
+    {
+      "Type": 9,
+      "Name": "Договір",
+      "Selectable": true
+    },
+    {
+      "Type": 28,
+      "Name": "Організація документа",
+      "Selectable": true
+    },
+    {
+      "Type": 29,
+      "Name": "Рахунок",
+      "Selectable": true
+    },
+    {
+      "Type": 30,
+      "Name": "Валюта рахунку",
+      "Selectable": true
+    },
+    {
+      "Type": 33,
+      "Name": "Тип рахунку",
+      "Selectable": true
+    },
+    {
+      "Type": 35,
+      "Name": "Запис імпортованого платежу",
+      "Selectable": true
+    },
+    {
+      "Type": 37,
+      "Name": "Стаття записаного платежу",
+      "Selectable": true
+    },
+    {
+      "Type": 38,
+      "Name": "Система імпорту платежу",
+      "Selectable": true
+    }
+  ],
+  "Limitations": [
+    "Поточний збережений стан імпортованих документів; дата документа не є часом банківського виконання.",
+    "Суми у власній підтвердженій валюті, без конвертації та переоцінки договорів; різні валюти не підсумовуються.",
+    "Непідтверджені суми залишаються невідомими. Повернення коштів, ручні документи, перекази та обміни поза цим набором.",
+    "Оригінальні показники 1С використовують управлінську валюту й інші правила невідомих сум; повну відповідність не підтверджено."
+  ],
+  "PeriodRequired": true,
+  "PeriodSupported": true,
+  "paymentComparison": {
+    "Version": 1,
+    "Required": true,
+    "DateFormat": "yyyy-MM-dd",
+    "CalendarTimezone": "Europe/Kyiv",
+    "Directions": [
+      1,
+      2
+    ],
+    "RoundingPolicy": "NativeRecordedPaymentFinal4RelativeAwayFromZero2",
+    "RequiredRows": [
+      41,
+      12,
+      15
+    ],
+    "ColumnsSupported": false,
+    "MaximumFacts": 200000,
+    "MaximumPeriodMemberships": 400000,
+    "MaximumDenseCells": 1000000,
+    "MaximumSelections": 64,
+    "MaximumFilterValues": 2000,
+    "MoneyDecimalPlaces": 4,
+    "RelativeDecimalPlaces": 2,
+    "ZeroPreviousPolicy": "Both amounts known and previous=0 gives relative change100, including0/0",
+    "UnknownPolicy": "Unconfirmed money poisons only its period; changes require both periods known",
+    "CurrencyPolicy": "One confirmed exact currency across both periods per group; mixed or unknown currency makes every output unknown",
+    "OrderingPolicy": "Nullable currency ID, client ID and exact ClientAgreement ID ascending; unknown first",
+    "AmountPolicy": "Recorded native document amount at four decimal places; no FX conversion or repricing",
+    "EmptyPolicy": "Complete empty scope has no leaves and no grand row",
+    "SourceParityVerified": false
+  },
+  "FilterExpression": {
+    "Version": 1,
+    "MaximumDepth": 8,
+    "MaximumLeaves": 64,
+    "MaximumNodes": 128,
+    "Operators": [
+      1,
+      2
+    ]
+  },
+  "HideZero": null
+}

@@ -1,3 +1,4 @@
+import { clonePaymentComparisonAliases, isPaymentComparisonCapability, paymentComparisonConfigurationError, PAYMENT_COMPARISON_CAPTIONS, PAYMENT_COMPARISON_GROUPINGS, PAYMENT_COMPARISON_FILTERS } from '../data/paymentComparison'
 import { cloneMarginComparisonAliases, isMarginComparisonCapability, marginComparisonConfigurationError, MARGIN_COMPARISON_CAPTIONS } from '../data/marginComparison'
 import { cloneRateComparisonAliases, isRateComparisonCapability, rateComparisonConfigurationError, RATE_COMPARISON_CAPTIONS, RATE_COMPARISON_GROUP } from '../data/rateComparison'
 import { cloneReturnComparisonAliases, isReturnComparisonCapability, returnComparisonConfigurationError } from '../data/returnComparison'
@@ -10,6 +11,7 @@ import { isCurrentReportSource } from '../data/nativeReportProfiles'
 import { isClientComparisonCapability } from '../data/clientPeriodComparison'
 import { isReportCatalogue } from '../data/reportMigration'
 
+const paymentUnsupportedCapabilities = ['Ordering', 'TopGroups', 'Threshold', 'HideZero', 'AbcClassification', 'FilterExpression'] as const
 const marginGroupings = [{ Type: 12, Name: 'Клієнт' }, { Type: 15, Name: 'Договір' }] as const
 
 function isDatasetField(value: unknown): value is ReportDatasetField {
@@ -31,6 +33,10 @@ function isDataset(value: unknown): value is ReportDataset {
     && (item.DataSource !== 12 || (item.PeriodRequired === true && item.PeriodSupported === true))
     && (item.DataSource === 19 ? item.PeriodRequired === false && item.PeriodSupported === false && item.Filters?.length === 0 && item.Groupings?.length === 1 && item.Groupings[0].Type === 52 && item.Groupings[0].Name === RATE_COMPARISON_GROUP
       && item.Measurements?.length === RATE_COMPARISON_CAPTIONS.length && item.Measurements.every((field, index) => field.Type === 51 + index && field.Name === RATE_COMPARISON_CAPTIONS[index] && field.Selectable !== false) && isRateComparisonCapability(item.rateComparison) : item.rateComparison == null)
+    && !Object.hasOwn(item, 'PaymentComparison')
+    && (item.DataSource === 21 ? item.PeriodRequired === true && item.PeriodSupported === true && item.Groupings?.length === PAYMENT_COMPARISON_GROUPINGS.length && item.Groupings.every((field,index) => field.Type === PAYMENT_COMPARISON_GROUPINGS[index].Type && field.Name === PAYMENT_COMPARISON_GROUPINGS[index].Name && field.Selectable !== false)
+      && item.Measurements?.length === PAYMENT_COMPARISON_CAPTIONS.length && item.Measurements.every((field,index) => field.Type === 59 + index && field.Name === PAYMENT_COMPARISON_CAPTIONS[index] && field.Selectable !== false)
+      && item.Filters?.length === PAYMENT_COMPARISON_FILTERS.length && item.Filters.every(field => PAYMENT_COMPARISON_FILTERS.some(type => type === field.Type) && field.Selectable !== false) && paymentUnsupportedCapabilities.every(key => item[key] == null) && isPaymentComparisonCapability(item.paymentComparison) : item.paymentComparison == null)
     && (item.DataSource === 20 ? item.PeriodRequired === true && item.PeriodSupported === true && item.Groupings?.length === marginGroupings.length && item.Groupings.every((field,index) => field.Type === marginGroupings[index].Type && field.Name === marginGroupings[index].Name && field.Selectable !== false)
       && item.Measurements?.length === MARGIN_COMPARISON_CAPTIONS.length && item.Measurements.every((field,index) => field.Type === 55 + index && field.Name === MARGIN_COMPARISON_CAPTIONS[index] && field.Selectable !== false)
       && item.Filters?.length === 4 && item.Filters.every(field => [1,2,6,9].includes(field.Type) && field.Selectable !== false) && isMarginComparisonCapability(item.MarginComparison) : item.MarginComparison == null)
@@ -70,6 +76,8 @@ type WireTemplate = Required<Omit<ReportTemplate, 'Data'>> & {
     ValuationClientAgreementId?: ReportRequestBody['valuationClientAgreementId']
     RateComparison?: unknown
     rateComparison?: unknown
+    PaymentComparison?: unknown
+    paymentComparison?: unknown
     MarginComparison?: unknown
     marginComparison?: unknown
     ReturnComparison?: unknown
@@ -103,9 +111,10 @@ export function normalizeSavedTemplate(value: WireTemplate): ReportTemplate {
   }
   return { ...value, Data: {
     from: value.Data.From ?? '', to: value.Data.To ?? '',
-    sorted: (value.Data.DataSource === 16 || value.Data.DataSource === 17 || value.Data.DataSource === 18 || value.Data.DataSource === 19 || value.Data.DataSource === 20) ? structuredClone(value.Data.Sorted) : value.Data.Sorted,
-    selections: (value.Data.DataSource === 16 || value.Data.DataSource === 17 || value.Data.DataSource === 18 || value.Data.DataSource === 19 || value.Data.DataSource === 20) ? structuredClone(value.Data.Selections ?? []) : value.Data.Selections ?? [],
+    sorted: (value.Data.DataSource === 16 || value.Data.DataSource === 17 || value.Data.DataSource === 18 || value.Data.DataSource === 19 || value.Data.DataSource === 20 || value.Data.DataSource === 21) ? structuredClone(value.Data.Sorted) : value.Data.Sorted,
+    selections: (value.Data.DataSource === 16 || value.Data.DataSource === 17 || value.Data.DataSource === 18 || value.Data.DataSource === 19 || value.Data.DataSource === 20 || value.Data.DataSource === 21) ? structuredClone(value.Data.Selections ?? []) : value.Data.Selections ?? [],
     dataSource: value.Data.DataSource,
+    ...clonePaymentComparisonAliases(value.Data),
     ...cloneMarginComparisonAliases(value.Data),
     ...cloneRateComparisonAliases(value.Data),
     ...cloneReturnComparisonAliases(value.Data),
@@ -141,7 +150,9 @@ export async function getServerReportTemplates(signal?: AbortSignal): Promise<Re
 }
 
 export async function saveServerReportTemplate(template: ReportTemplate): Promise<ReportTemplate> {
-  const request = (template.Data.dataSource === 17 || template.Data.dataSource === 18 || template.Data.dataSource === 19 || template.Data.dataSource === 20) ? structuredClone(template) : template
+  const request = (template.Data.dataSource === 17 || template.Data.dataSource === 18 || template.Data.dataSource === 19 || template.Data.dataSource === 20 || template.Data.dataSource === 21) ? structuredClone(template) : template
+  const paymentError = paymentComparisonConfigurationError(request.Data)
+  if (paymentError) throw new Error(paymentError)
   const marginError = marginComparisonConfigurationError(request.Data)
   if (marginError) throw new Error(marginError)
   const rateError = rateComparisonConfigurationError(request.Data)

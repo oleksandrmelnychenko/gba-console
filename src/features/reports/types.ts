@@ -211,6 +211,8 @@ export type ReportHideZeroCapabilities = {
 
 export type ReportRequestBody = {
   dataSource?: number
+  paymentComparison?: unknown
+  PaymentComparison?: unknown
   marginComparison?: unknown
   MarginComparison?: unknown
   rateComparison?: unknown
@@ -263,6 +265,7 @@ export type ReportDataset = {
   Xyz?: unknown
   RevenueComparison?: unknown
   ReturnComparison?: unknown
+  paymentComparison?: unknown
   MarginComparison?: unknown
   BuyerSalesShare?: unknown
   Ordering?: unknown

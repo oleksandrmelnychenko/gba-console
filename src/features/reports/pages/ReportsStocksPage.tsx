@@ -1,3 +1,5 @@
+import PaymentComparisonPanel from './PaymentComparisonPanel'
+import { clonePaymentComparisonValue, paymentComparisonSummary } from '../data/paymentComparison'
 import MarginComparisonPanel from './MarginComparisonPanel'
 import { cloneMarginComparisonValue, marginComparisonSummary } from '../data/marginComparison'
 import ReportPeriodInputs from './ReportPeriodInputs'
@@ -207,6 +209,7 @@ function ReportsStocksWorkspace() {
   const [dataSource, setDataSource] = useValueState(0)
   const [comparison, setComparison] = useValueState<unknown>(undefined)
   const [rateComparison, setRateComparison] = useValueState<unknown>(undefined)
+  const [paymentComparison, setPaymentComparison] = useValueState<unknown>(undefined)
   const [marginComparison, setMarginComparison] = useValueState<unknown>(undefined)
   const [returnComparison, setReturnComparison] = useValueState<unknown>(undefined)
   const [buyerSalesShare, setBuyerSalesShare] = useValueState<unknown>(undefined)
@@ -261,8 +264,8 @@ function ReportsStocksWorkspace() {
   // period on a pause, and only once it is a period the server can answer for.
   const hasLookupPeriod = !getPeriodError(debouncedFrom, debouncedTo, maxDate, t)
   const reportBody = useMemo<ReportRequestBody>(
-    () => buildReportBuilderRequest({ dataSource, comparison, xyz, revenueComparison, buyerSalesShare, returnComparison, marginComparison, rateComparison, from, to, ordering, filterExpression, topGroups, threshold, hideZero, abcClassification, valuationClientAgreementId, rowGroups, colGroups, measurements, selections }),
-    [abcClassification, colGroups, comparison, xyz, revenueComparison, buyerSalesShare, returnComparison, marginComparison, rateComparison, dataSource, filterExpression, from, hideZero, measurements, ordering, rowGroups, selections, to, topGroups, threshold, valuationClientAgreementId],
+    () => buildReportBuilderRequest({ dataSource, comparison, xyz, revenueComparison, buyerSalesShare, returnComparison, paymentComparison, marginComparison, rateComparison, from, to, ordering, filterExpression, topGroups, threshold, hideZero, abcClassification, valuationClientAgreementId, rowGroups, colGroups, measurements, selections }),
+    [abcClassification, colGroups, comparison, xyz, revenueComparison, buyerSalesShare, returnComparison, paymentComparison, marginComparison, rateComparison, dataSource, filterExpression, from, hideZero, measurements, ordering, rowGroups, selections, to, topGroups, threshold, valuationClientAgreementId],
   )
   const templateBody = { ...reportBody, selections }
   const configurationError = datasetStorage.error ?? (!datasetStorage.loaded ? t('Завантаження наборів даних…') : datasetConfigurationError(templateBody, dataset))
@@ -321,6 +324,7 @@ function ReportsStocksWorkspace() {
       const outcome: ReportRunOutcome = {
         ...(rateComparisonOptions(rateComparison) ? { rateComparison: structuredClone(rateComparisonOptions(rateComparison)!) } : {}),
         ...returnComparisonSummary(returnComparison),
+        ...paymentComparisonSummary(paymentComparison),
         ...marginComparisonSummary(marginComparison),
         ...(buyerSalesShareOptions(buyerSalesShare) ? { comparison: structuredClone(buyerSalesShareOptions(buyerSalesShare)!) } : {}),
         ...(revenueComparisonOptions(revenueComparison) ? { comparison: structuredClone(revenueComparisonOptions(revenueComparison)!) } : {}),
@@ -354,6 +358,7 @@ function ReportsStocksWorkspace() {
     setComparison(snapshotDefaults?.comparison)
     setXyz(snapshotDefaults?.xyz)
     setRateComparison(snapshotDefaults?.rateComparison)
+    setPaymentComparison(snapshotDefaults?.paymentComparison)
     setMarginComparison(snapshotDefaults?.marginComparison)
     setReturnComparison(snapshotDefaults?.returnComparison)
     setBuyerSalesShare(snapshotDefaults?.buyerSalesShare)
@@ -412,6 +417,7 @@ function ReportsStocksWorkspace() {
     setComparison(structuredClone(requestComparison(data)))
     setXyz(structuredClone(xyzOptions(requestXyz(data)) ?? requestXyz(data)))
     setRateComparison(structuredClone(rateComparisonOptions(requestRateComparison(data)) ?? requestRateComparison(data)))
+    setPaymentComparison(clonePaymentComparisonValue(data))
     setMarginComparison(cloneMarginComparisonValue(data))
     setReturnComparison(structuredClone(returnComparisonOptions(requestReturnComparison(data)) ?? requestReturnComparison(data)))
     setBuyerSalesShare(structuredClone(buyerSalesShareOptions(requestBuyerSalesShare(data)) ?? requestBuyerSalesShare(data)))
@@ -462,6 +468,7 @@ function ReportsStocksWorkspace() {
       <ReportBuilderForm
         dataSource={dataSource}
         rateComparisonPanel={<RateComparisonPanel dataSource={dataSource} value={rateComparison} disabled={comparisonSettingsDisabled} onChange={setRateComparison} />}
+        paymentComparisonPanel={<PaymentComparisonPanel dataSource={dataSource} value={paymentComparison} disabled={comparisonSettingsDisabled} onChange={setPaymentComparison} />}
         marginComparisonPanel={<MarginComparisonPanel dataSource={dataSource} value={marginComparison} disabled={comparisonSettingsDisabled} onChange={setMarginComparison} />}
         returnComparisonPanel={<ReturnComparisonPanel dataSource={dataSource} value={returnComparison} disabled={comparisonSettingsDisabled} onChange={setReturnComparison} />}
         buyerSalesSharePanel={dataSource === 17 ? <BuyerSalesSharePanel value={buyerSalesShare} disabled={comparisonSettingsDisabled} onChange={setBuyerSalesShare} /> : null}
@@ -541,6 +548,7 @@ function ReportsStocksWorkspace() {
 
 type ReportBuilderFormProps = {
   rateComparisonPanel: ReactNode
+  paymentComparisonPanel: ReactNode
   marginComparisonPanel: ReactNode
   returnComparisonPanel: ReactNode
   buyerSalesSharePanel: ReactNode
@@ -604,6 +612,7 @@ function ReportBuilderForm({
   comparisonPanel,
   xyzPanel,
   rateComparisonPanel,
+  paymentComparisonPanel,
   marginComparisonPanel,
   returnComparisonPanel,
   buyerSalesSharePanel,
@@ -707,6 +716,7 @@ function ReportBuilderForm({
 
         <div className="reports-stocks-body">
           {rateComparisonPanel}
+          {paymentComparisonPanel}
           {marginComparisonPanel}
           {returnComparisonPanel}
           {buyerSalesSharePanel ? <Card className="app-section-card reports-buyer-sales-share-settings" withBorder radius="md" padding="md" style={{ minWidth: 0 }}>{buyerSalesSharePanel}</Card> : null}
@@ -804,6 +814,16 @@ type LegacyReportBuilderProps = {
   onMeasurementsChange: StateSetter<ReportMeasurementGroup[]>
   onRowGroupsChange: StateSetter<ReportGroupingItem[]>
   onSelectionsChange: (edit: ReportSelectionEdit) => void
+}
+
+const fixedAxesDescription: Partial<Record<number, string>> = {
+  15: 'Клас XYZ → Товар. Показники у стовпцях; структура цього звіту фіксована.',
+  16: 'Клієнт → Договір. Показники у стовпцях; структура цього звіту фіксована.',
+  17: 'Клієнт → Договір. Показники у стовпцях; структура цього звіту фіксована.',
+  18: 'Клієнт → Договір. Показники у стовпцях; структура цього звіту фіксована.',
+  19: 'Одна точна валютна пара і серія. Показники у стовпцях; підсумки не обчислюються.',
+  20: 'Клієнт → Договір. Показники у стовпцях; структура цього звіту фіксована.',
+  21: 'Валюта → Клієнт → Договір. Показники у стовпцях; структура цього звіту фіксована.',
 }
 
 function LegacyReportBuilder({
@@ -925,7 +945,7 @@ function LegacyReportBuilder({
 
         <section className="app-section-card reports-stocks-structure">
           <Text className="app-section-title" component="h2" fw={600} size="sm">{t('Групування')}</Text>
-          {dataSource === 19 ? <Text size="sm">Одна точна валютна пара і серія. Показники у стовпцях; підсумки не обчислюються.</Text> : (dataSource === 16 || dataSource === 17 || dataSource === 18 || dataSource === 20) ? <Text size="sm">Клієнт → Договір. Показники у стовпцях; структура цього звіту фіксована.</Text> : dataSource === 15 ? <Text size="sm">Клас XYZ → Товар. Показники у стовпцях; структура цього звіту фіксована.</Text> : <ReportGroupingPanel layout={groupingLayout} axis="Row" allowed={allowedGroupingTypes} transferSupported={dataSource !== 13}
+          {fixedAxesDescription[dataSource] ? <Text size="sm">{fixedAxesDescription[dataSource]}</Text> : <ReportGroupingPanel layout={groupingLayout} axis="Row" allowed={allowedGroupingTypes} transferSupported={dataSource !== 13}
             onOpenPicker={() => setGroupingPickerTarget('rows')}
             onRemove={(index) => onRowGroupsChange((current) => current.filter((_, itemIndex) => itemIndex !== index))}
             onReorder={(type, direction) => onRowGroupsChange(current => reorderReportGrouping(current, type, direction, allowedGroupingTypes))}
@@ -2274,7 +2294,7 @@ function createSelectedValue(entity: ReportEntity, dataSource?: number): ReportS
   return {
     Data: entity,
     Name: getEntityDisplayName(entity),
-    Value: (dataSource === 16 || dataSource === 17 || dataSource === 18 || dataSource === 20) ? 0 : getReportEntityNumericValue(entity),
+    Value: (dataSource === 16 || dataSource === 17 || dataSource === 18 || dataSource === 20 || dataSource === 21) ? 0 : getReportEntityNumericValue(entity),
   }
 }
 

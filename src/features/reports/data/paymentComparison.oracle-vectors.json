@@ -1,0 +1,3222 @@
+[
+  {
+    "id": "incoming-basic",
+    "direction": 1,
+    "current": {
+      "from": "2026-07-01",
+      "to": "2026-07-31"
+    },
+    "comparison": {
+      "from": "2026-06-01",
+      "to": "2026-06-30"
+    },
+    "selectedFields": [
+      59,
+      60,
+      61,
+      62
+    ],
+    "groups": [
+      {
+        "kind": "contract",
+        "currencyId": "2",
+        "clientId": "101",
+        "clientAgreementId": "201",
+        "values": [
+          "120.0000",
+          "80.0000",
+          "40.0000",
+          "50.00"
+        ]
+      },
+      {
+        "kind": "client",
+        "currencyId": "2",
+        "clientId": "101",
+        "clientAgreementId": null,
+        "values": [
+          "120.0000",
+          "80.0000",
+          "40.0000",
+          "50.00"
+        ]
+      },
+      {
+        "kind": "currency",
+        "currencyId": "2",
+        "clientId": null,
+        "clientAgreementId": null,
+        "values": [
+          "120.0000",
+          "80.0000",
+          "40.0000",
+          "50.00"
+        ]
+      },
+      {
+        "kind": "grand",
+        "currencyId": null,
+        "clientId": null,
+        "clientAgreementId": null,
+        "values": [
+          "120.0000",
+          "80.0000",
+          "40.0000",
+          "50.00"
+        ]
+      }
+    ],
+    "rowCount": 1
+  },
+  {
+    "id": "outgoing-positive-is-not-negated",
+    "direction": 2,
+    "current": {
+      "from": "2026-07-01",
+      "to": "2026-07-31"
+    },
+    "comparison": {
+      "from": "2026-06-01",
+      "to": "2026-06-30"
+    },
+    "selectedFields": [
+      59,
+      60,
+      61,
+      62
+    ],
+    "groups": [
+      {
+        "kind": "contract",
+        "currencyId": "2",
+        "clientId": "101",
+        "clientAgreementId": "201",
+        "values": [
+          "120.0000",
+          "80.0000",
+          "40.0000",
+          "50.00"
+        ]
+      },
+      {
+        "kind": "client",
+        "currencyId": "2",
+        "clientId": "101",
+        "clientAgreementId": null,
+        "values": [
+          "120.0000",
+          "80.0000",
+          "40.0000",
+          "50.00"
+        ]
+      },
+      {
+        "kind": "currency",
+        "currencyId": "2",
+        "clientId": null,
+        "clientAgreementId": null,
+        "values": [
+          "120.0000",
+          "80.0000",
+          "40.0000",
+          "50.00"
+        ]
+      },
+      {
+        "kind": "grand",
+        "currencyId": null,
+        "clientId": null,
+        "clientAgreementId": null,
+        "values": [
+          "120.0000",
+          "80.0000",
+          "40.0000",
+          "50.00"
+        ]
+      }
+    ],
+    "rowCount": 1
+  },
+  {
+    "id": "outgoing-negative-signed-denominator",
+    "direction": 2,
+    "current": {
+      "from": "2026-07-01",
+      "to": "2026-07-31"
+    },
+    "comparison": {
+      "from": "2026-06-01",
+      "to": "2026-06-30"
+    },
+    "selectedFields": [
+      59,
+      60,
+      61,
+      62
+    ],
+    "groups": [
+      {
+        "kind": "contract",
+        "currencyId": "2",
+        "clientId": "101",
+        "clientAgreementId": "201",
+        "values": [
+          "-40.0000",
+          "-100.0000",
+          "60.0000",
+          "-60.00"
+        ]
+      },
+      {
+        "kind": "client",
+        "currencyId": "2",
+        "clientId": "101",
+        "clientAgreementId": null,
+        "values": [
+          "-40.0000",
+          "-100.0000",
+          "60.0000",
+          "-60.00"
+        ]
+      },
+      {
+        "kind": "currency",
+        "currencyId": "2",
+        "clientId": null,
+        "clientAgreementId": null,
+        "values": [
+          "-40.0000",
+          "-100.0000",
+          "60.0000",
+          "-60.00"
+        ]
+      },
+      {
+        "kind": "grand",
+        "currencyId": null,
+        "clientId": null,
+        "clientAgreementId": null,
+        "values": [
+          "-40.0000",
+          "-100.0000",
+          "60.0000",
+          "-60.00"
+        ]
+      }
+    ],
+    "rowCount": 1
+  },
+  {
+    "id": "positive-current-negative-previous",
+    "direction": 1,
+    "current": {
+      "from": "2026-07-01",
+      "to": "2026-07-31"
+    },
+    "comparison": {
+      "from": "2026-06-01",
+      "to": "2026-06-30"
+    },
+    "selectedFields": [
+      59,
+      60,
+      61,
+      62
+    ],
+    "groups": [
+      {
+        "kind": "contract",
+        "currencyId": "2",
+        "clientId": "101",
+        "clientAgreementId": "201",
+        "values": [
+          "50.0000",
+          "-100.0000",
+          "150.0000",
+          "-150.00"
+        ]
+      },
+      {
+        "kind": "client",
+        "currencyId": "2",
+        "clientId": "101",
+        "clientAgreementId": null,
+        "values": [
+          "50.0000",
+          "-100.0000",
+          "150.0000",
+          "-150.00"
+        ]
+      },
+      {
+        "kind": "currency",
+        "currencyId": "2",
+        "clientId": null,
+        "clientAgreementId": null,
+        "values": [
+          "50.0000",
+          "-100.0000",
+          "150.0000",
+          "-150.00"
+        ]
+      },
+      {
+        "kind": "grand",
+        "currencyId": null,
+        "clientId": null,
+        "clientAgreementId": null,
+        "values": [
+          "50.0000",
+          "-100.0000",
+          "150.0000",
+          "-150.00"
+        ]
+      }
+    ],
+    "rowCount": 1
+  },
+  {
+    "id": "negative-current-positive-previous",
+    "direction": 1,
+    "current": {
+      "from": "2026-07-01",
+      "to": "2026-07-31"
+    },
+    "comparison": {
+      "from": "2026-06-01",
+      "to": "2026-06-30"
+    },
+    "selectedFields": [
+      59,
+      60,
+      61,
+      62
+    ],
+    "groups": [
+      {
+        "kind": "contract",
+        "currencyId": "2",
+        "clientId": "101",
+        "clientAgreementId": "201",
+        "values": [
+          "-50.0000",
+          "100.0000",
+          "-150.0000",
+          "-150.00"
+        ]
+      },
+      {
+        "kind": "client",
+        "currencyId": "2",
+        "clientId": "101",
+        "clientAgreementId": null,
+        "values": [
+          "-50.0000",
+          "100.0000",
+          "-150.0000",
+          "-150.00"
+        ]
+      },
+      {
+        "kind": "currency",
+        "currencyId": "2",
+        "clientId": null,
+        "clientAgreementId": null,
+        "values": [
+          "-50.0000",
+          "100.0000",
+          "-150.0000",
+          "-150.00"
+        ]
+      },
+      {
+        "kind": "grand",
+        "currencyId": null,
+        "clientId": null,
+        "clientAgreementId": null,
+        "values": [
+          "-50.0000",
+          "100.0000",
+          "-150.0000",
+          "-150.00"
+        ]
+      }
+    ],
+    "rowCount": 1
+  },
+  {
+    "id": "known-zero-both",
+    "direction": 1,
+    "current": {
+      "from": "2026-07-01",
+      "to": "2026-07-31"
+    },
+    "comparison": {
+      "from": "2026-06-01",
+      "to": "2026-06-30"
+    },
+    "selectedFields": [
+      59,
+      60,
+      61,
+      62
+    ],
+    "groups": [
+      {
+        "kind": "contract",
+        "currencyId": "2",
+        "clientId": "101",
+        "clientAgreementId": "201",
+        "values": [
+          "0.0000",
+          "0.0000",
+          "0.0000",
+          "100.00"
+        ]
+      },
+      {
+        "kind": "client",
+        "currencyId": "2",
+        "clientId": "101",
+        "clientAgreementId": null,
+        "values": [
+          "0.0000",
+          "0.0000",
+          "0.0000",
+          "100.00"
+        ]
+      },
+      {
+        "kind": "currency",
+        "currencyId": "2",
+        "clientId": null,
+        "clientAgreementId": null,
+        "values": [
+          "0.0000",
+          "0.0000",
+          "0.0000",
+          "100.00"
+        ]
+      },
+      {
+        "kind": "grand",
+        "currencyId": null,
+        "clientId": null,
+        "clientAgreementId": null,
+        "values": [
+          "0.0000",
+          "0.0000",
+          "0.0000",
+          "100.00"
+        ]
+      }
+    ],
+    "rowCount": 1
+  },
+  {
+    "id": "only-current-known-empty-previous",
+    "direction": 1,
+    "current": {
+      "from": "2026-07-01",
+      "to": "2026-07-31"
+    },
+    "comparison": {
+      "from": "2026-06-01",
+      "to": "2026-06-30"
+    },
+    "selectedFields": [
+      59,
+      60,
+      61,
+      62
+    ],
+    "groups": [
+      {
+        "kind": "contract",
+        "currencyId": "2",
+        "clientId": "101",
+        "clientAgreementId": "201",
+        "values": [
+          "12.3400",
+          "0.0000",
+          "12.3400",
+          "100.00"
+        ]
+      },
+      {
+        "kind": "client",
+        "currencyId": "2",
+        "clientId": "101",
+        "clientAgreementId": null,
+        "values": [
+          "12.3400",
+          "0.0000",
+          "12.3400",
+          "100.00"
+        ]
+      },
+      {
+        "kind": "currency",
+        "currencyId": "2",
+        "clientId": null,
+        "clientAgreementId": null,
+        "values": [
+          "12.3400",
+          "0.0000",
+          "12.3400",
+          "100.00"
+        ]
+      },
+      {
+        "kind": "grand",
+        "currencyId": null,
+        "clientId": null,
+        "clientAgreementId": null,
+        "values": [
+          "12.3400",
+          "0.0000",
+          "12.3400",
+          "100.00"
+        ]
+      }
+    ],
+    "rowCount": 1
+  },
+  {
+    "id": "only-previous-known-empty-current",
+    "direction": 1,
+    "current": {
+      "from": "2026-07-01",
+      "to": "2026-07-31"
+    },
+    "comparison": {
+      "from": "2026-06-01",
+      "to": "2026-06-30"
+    },
+    "selectedFields": [
+      59,
+      60,
+      61,
+      62
+    ],
+    "groups": [
+      {
+        "kind": "contract",
+        "currencyId": "2",
+        "clientId": "101",
+        "clientAgreementId": "201",
+        "values": [
+          "0.0000",
+          "12.3400",
+          "-12.3400",
+          "-100.00"
+        ]
+      },
+      {
+        "kind": "client",
+        "currencyId": "2",
+        "clientId": "101",
+        "clientAgreementId": null,
+        "values": [
+          "0.0000",
+          "12.3400",
+          "-12.3400",
+          "-100.00"
+        ]
+      },
+      {
+        "kind": "currency",
+        "currencyId": "2",
+        "clientId": null,
+        "clientAgreementId": null,
+        "values": [
+          "0.0000",
+          "12.3400",
+          "-12.3400",
+          "-100.00"
+        ]
+      },
+      {
+        "kind": "grand",
+        "currencyId": null,
+        "clientId": null,
+        "clientAgreementId": null,
+        "values": [
+          "0.0000",
+          "12.3400",
+          "-12.3400",
+          "-100.00"
+        ]
+      }
+    ],
+    "rowCount": 1
+  },
+  {
+    "id": "unknown-current-known-previous",
+    "direction": 1,
+    "current": {
+      "from": "2026-07-01",
+      "to": "2026-07-31"
+    },
+    "comparison": {
+      "from": "2026-06-01",
+      "to": "2026-06-30"
+    },
+    "selectedFields": [
+      59,
+      60,
+      61,
+      62
+    ],
+    "groups": [
+      {
+        "kind": "contract",
+        "currencyId": "2",
+        "clientId": "101",
+        "clientAgreementId": "201",
+        "values": [
+          null,
+          "80.0000",
+          null,
+          null
+        ]
+      },
+      {
+        "kind": "client",
+        "currencyId": "2",
+        "clientId": "101",
+        "clientAgreementId": null,
+        "values": [
+          null,
+          "80.0000",
+          null,
+          null
+        ]
+      },
+      {
+        "kind": "currency",
+        "currencyId": "2",
+        "clientId": null,
+        "clientAgreementId": null,
+        "values": [
+          null,
+          "80.0000",
+          null,
+          null
+        ]
+      },
+      {
+        "kind": "grand",
+        "currencyId": null,
+        "clientId": null,
+        "clientAgreementId": null,
+        "values": [
+          null,
+          "80.0000",
+          null,
+          null
+        ]
+      }
+    ],
+    "rowCount": 1
+  },
+  {
+    "id": "known-current-unknown-previous",
+    "direction": 1,
+    "current": {
+      "from": "2026-07-01",
+      "to": "2026-07-31"
+    },
+    "comparison": {
+      "from": "2026-06-01",
+      "to": "2026-06-30"
+    },
+    "selectedFields": [
+      59,
+      60,
+      61,
+      62
+    ],
+    "groups": [
+      {
+        "kind": "contract",
+        "currencyId": "2",
+        "clientId": "101",
+        "clientAgreementId": "201",
+        "values": [
+          "120.0000",
+          null,
+          null,
+          null
+        ]
+      },
+      {
+        "kind": "client",
+        "currencyId": "2",
+        "clientId": "101",
+        "clientAgreementId": null,
+        "values": [
+          "120.0000",
+          null,
+          null,
+          null
+        ]
+      },
+      {
+        "kind": "currency",
+        "currencyId": "2",
+        "clientId": null,
+        "clientAgreementId": null,
+        "values": [
+          "120.0000",
+          null,
+          null,
+          null
+        ]
+      },
+      {
+        "kind": "grand",
+        "currencyId": null,
+        "clientId": null,
+        "clientAgreementId": null,
+        "values": [
+          "120.0000",
+          null,
+          null,
+          null
+        ]
+      }
+    ],
+    "rowCount": 1
+  },
+  {
+    "id": "both-periods-money-unknown",
+    "direction": 1,
+    "current": {
+      "from": "2026-07-01",
+      "to": "2026-07-31"
+    },
+    "comparison": {
+      "from": "2026-06-01",
+      "to": "2026-06-30"
+    },
+    "selectedFields": [
+      59,
+      60,
+      61,
+      62
+    ],
+    "groups": [
+      {
+        "kind": "contract",
+        "currencyId": "2",
+        "clientId": "101",
+        "clientAgreementId": "201",
+        "values": [
+          null,
+          null,
+          null,
+          null
+        ]
+      },
+      {
+        "kind": "client",
+        "currencyId": "2",
+        "clientId": "101",
+        "clientAgreementId": null,
+        "values": [
+          null,
+          null,
+          null,
+          null
+        ]
+      },
+      {
+        "kind": "currency",
+        "currencyId": "2",
+        "clientId": null,
+        "clientAgreementId": null,
+        "values": [
+          null,
+          null,
+          null,
+          null
+        ]
+      },
+      {
+        "kind": "grand",
+        "currencyId": null,
+        "clientId": null,
+        "clientAgreementId": null,
+        "values": [
+          null,
+          null,
+          null,
+          null
+        ]
+      }
+    ],
+    "rowCount": 1
+  },
+  {
+    "id": "unknown-current-previous-zero",
+    "direction": 1,
+    "current": {
+      "from": "2026-07-01",
+      "to": "2026-07-31"
+    },
+    "comparison": {
+      "from": "2026-06-01",
+      "to": "2026-06-30"
+    },
+    "selectedFields": [
+      59,
+      60,
+      61,
+      62
+    ],
+    "groups": [
+      {
+        "kind": "contract",
+        "currencyId": "2",
+        "clientId": "101",
+        "clientAgreementId": "201",
+        "values": [
+          null,
+          "0.0000",
+          null,
+          null
+        ]
+      },
+      {
+        "kind": "client",
+        "currencyId": "2",
+        "clientId": "101",
+        "clientAgreementId": null,
+        "values": [
+          null,
+          "0.0000",
+          null,
+          null
+        ]
+      },
+      {
+        "kind": "currency",
+        "currencyId": "2",
+        "clientId": null,
+        "clientAgreementId": null,
+        "values": [
+          null,
+          "0.0000",
+          null,
+          null
+        ]
+      },
+      {
+        "kind": "grand",
+        "currencyId": null,
+        "clientId": null,
+        "clientAgreementId": null,
+        "values": [
+          null,
+          "0.0000",
+          null,
+          null
+        ]
+      }
+    ],
+    "rowCount": 1
+  },
+  {
+    "id": "unknown-one-contract-sticky-total",
+    "direction": 1,
+    "current": {
+      "from": "2026-07-01",
+      "to": "2026-07-31"
+    },
+    "comparison": {
+      "from": "2026-06-01",
+      "to": "2026-06-30"
+    },
+    "selectedFields": [
+      59,
+      60,
+      61,
+      62
+    ],
+    "groups": [
+      {
+        "kind": "contract",
+        "currencyId": "2",
+        "clientId": "101",
+        "clientAgreementId": "201",
+        "values": [
+          "120.0000",
+          "80.0000",
+          "40.0000",
+          "50.00"
+        ]
+      },
+      {
+        "kind": "contract",
+        "currencyId": "2",
+        "clientId": "101",
+        "clientAgreementId": "202",
+        "values": [
+          null,
+          "20.0000",
+          null,
+          null
+        ]
+      },
+      {
+        "kind": "client",
+        "currencyId": "2",
+        "clientId": "101",
+        "clientAgreementId": null,
+        "values": [
+          null,
+          "100.0000",
+          null,
+          null
+        ]
+      },
+      {
+        "kind": "currency",
+        "currencyId": "2",
+        "clientId": null,
+        "clientAgreementId": null,
+        "values": [
+          null,
+          "100.0000",
+          null,
+          null
+        ]
+      },
+      {
+        "kind": "grand",
+        "currencyId": null,
+        "clientId": null,
+        "clientAgreementId": null,
+        "values": [
+          null,
+          "100.0000",
+          null,
+          null
+        ]
+      }
+    ],
+    "rowCount": 2
+  },
+  {
+    "id": "shared-terms-distinct-agreements-weighted",
+    "direction": 1,
+    "current": {
+      "from": "2026-07-01",
+      "to": "2026-07-31"
+    },
+    "comparison": {
+      "from": "2026-06-01",
+      "to": "2026-06-30"
+    },
+    "selectedFields": [
+      59,
+      60,
+      61,
+      62
+    ],
+    "groups": [
+      {
+        "kind": "contract",
+        "currencyId": "2",
+        "clientId": "101",
+        "clientAgreementId": "201",
+        "values": [
+          "200.0000",
+          "100.0000",
+          "100.0000",
+          "100.00"
+        ]
+      },
+      {
+        "kind": "contract",
+        "currencyId": "2",
+        "clientId": "101",
+        "clientAgreementId": "202",
+        "values": [
+          "1000.0000",
+          "2000.0000",
+          "-1000.0000",
+          "-50.00"
+        ]
+      },
+      {
+        "kind": "client",
+        "currencyId": "2",
+        "clientId": "101",
+        "clientAgreementId": null,
+        "values": [
+          "1200.0000",
+          "2100.0000",
+          "-900.0000",
+          "-42.86"
+        ]
+      },
+      {
+        "kind": "currency",
+        "currencyId": "2",
+        "clientId": null,
+        "clientAgreementId": null,
+        "values": [
+          "1200.0000",
+          "2100.0000",
+          "-900.0000",
+          "-42.86"
+        ]
+      },
+      {
+        "kind": "grand",
+        "currencyId": null,
+        "clientId": null,
+        "clientAgreementId": null,
+        "values": [
+          "1200.0000",
+          "2100.0000",
+          "-900.0000",
+          "-42.86"
+        ]
+      }
+    ],
+    "rowCount": 2
+  },
+  {
+    "id": "two-clients-weighted-grand",
+    "direction": 1,
+    "current": {
+      "from": "2026-07-01",
+      "to": "2026-07-31"
+    },
+    "comparison": {
+      "from": "2026-06-01",
+      "to": "2026-06-30"
+    },
+    "selectedFields": [
+      59,
+      60,
+      61,
+      62
+    ],
+    "groups": [
+      {
+        "kind": "contract",
+        "currencyId": "2",
+        "clientId": "101",
+        "clientAgreementId": "201",
+        "values": [
+          "200.0000",
+          "100.0000",
+          "100.0000",
+          "100.00"
+        ]
+      },
+      {
+        "kind": "contract",
+        "currencyId": "2",
+        "clientId": "102",
+        "clientAgreementId": "202",
+        "values": [
+          "1000.0000",
+          "2000.0000",
+          "-1000.0000",
+          "-50.00"
+        ]
+      },
+      {
+        "kind": "client",
+        "currencyId": "2",
+        "clientId": "101",
+        "clientAgreementId": null,
+        "values": [
+          "200.0000",
+          "100.0000",
+          "100.0000",
+          "100.00"
+        ]
+      },
+      {
+        "kind": "client",
+        "currencyId": "2",
+        "clientId": "102",
+        "clientAgreementId": null,
+        "values": [
+          "1000.0000",
+          "2000.0000",
+          "-1000.0000",
+          "-50.00"
+        ]
+      },
+      {
+        "kind": "currency",
+        "currencyId": "2",
+        "clientId": null,
+        "clientAgreementId": null,
+        "values": [
+          "1200.0000",
+          "2100.0000",
+          "-900.0000",
+          "-42.86"
+        ]
+      },
+      {
+        "kind": "grand",
+        "currencyId": null,
+        "clientId": null,
+        "clientAgreementId": null,
+        "values": [
+          "1200.0000",
+          "2100.0000",
+          "-900.0000",
+          "-42.86"
+        ]
+      }
+    ],
+    "rowCount": 2
+  },
+  {
+    "id": "mixed-currencies-grand-blank",
+    "direction": 1,
+    "current": {
+      "from": "2026-07-01",
+      "to": "2026-07-31"
+    },
+    "comparison": {
+      "from": "2026-06-01",
+      "to": "2026-06-30"
+    },
+    "selectedFields": [
+      59,
+      60,
+      61,
+      62
+    ],
+    "groups": [
+      {
+        "kind": "contract",
+        "currencyId": "2",
+        "clientId": "101",
+        "clientAgreementId": "201",
+        "values": [
+          "120.0000",
+          "80.0000",
+          "40.0000",
+          "50.00"
+        ]
+      },
+      {
+        "kind": "contract",
+        "currencyId": "3",
+        "clientId": "102",
+        "clientAgreementId": "202",
+        "values": [
+          "40.0000",
+          "100.0000",
+          "-60.0000",
+          "-60.00"
+        ]
+      },
+      {
+        "kind": "client",
+        "currencyId": "2",
+        "clientId": "101",
+        "clientAgreementId": null,
+        "values": [
+          "120.0000",
+          "80.0000",
+          "40.0000",
+          "50.00"
+        ]
+      },
+      {
+        "kind": "client",
+        "currencyId": "3",
+        "clientId": "102",
+        "clientAgreementId": null,
+        "values": [
+          "40.0000",
+          "100.0000",
+          "-60.0000",
+          "-60.00"
+        ]
+      },
+      {
+        "kind": "currency",
+        "currencyId": "2",
+        "clientId": null,
+        "clientAgreementId": null,
+        "values": [
+          "120.0000",
+          "80.0000",
+          "40.0000",
+          "50.00"
+        ]
+      },
+      {
+        "kind": "currency",
+        "currencyId": "3",
+        "clientId": null,
+        "clientAgreementId": null,
+        "values": [
+          "40.0000",
+          "100.0000",
+          "-60.0000",
+          "-60.00"
+        ]
+      },
+      {
+        "kind": "grand",
+        "currencyId": null,
+        "clientId": null,
+        "clientAgreementId": null,
+        "values": [
+          null,
+          null,
+          null,
+          null
+        ]
+      }
+    ],
+    "rowCount": 2
+  },
+  {
+    "id": "currency-change-between-periods",
+    "direction": 1,
+    "current": {
+      "from": "2026-07-01",
+      "to": "2026-07-31"
+    },
+    "comparison": {
+      "from": "2026-06-01",
+      "to": "2026-06-30"
+    },
+    "selectedFields": [
+      59,
+      60,
+      61,
+      62
+    ],
+    "groups": [
+      {
+        "kind": "contract",
+        "currencyId": "2",
+        "clientId": "101",
+        "clientAgreementId": "201",
+        "values": [
+          "120.0000",
+          "0.0000",
+          "120.0000",
+          "100.00"
+        ]
+      },
+      {
+        "kind": "contract",
+        "currencyId": "3",
+        "clientId": "101",
+        "clientAgreementId": "201",
+        "values": [
+          "0.0000",
+          "80.0000",
+          "-80.0000",
+          "-100.00"
+        ]
+      },
+      {
+        "kind": "client",
+        "currencyId": "2",
+        "clientId": "101",
+        "clientAgreementId": null,
+        "values": [
+          "120.0000",
+          "0.0000",
+          "120.0000",
+          "100.00"
+        ]
+      },
+      {
+        "kind": "client",
+        "currencyId": "3",
+        "clientId": "101",
+        "clientAgreementId": null,
+        "values": [
+          "0.0000",
+          "80.0000",
+          "-80.0000",
+          "-100.00"
+        ]
+      },
+      {
+        "kind": "currency",
+        "currencyId": "2",
+        "clientId": null,
+        "clientAgreementId": null,
+        "values": [
+          "120.0000",
+          "0.0000",
+          "120.0000",
+          "100.00"
+        ]
+      },
+      {
+        "kind": "currency",
+        "currencyId": "3",
+        "clientId": null,
+        "clientAgreementId": null,
+        "values": [
+          "0.0000",
+          "80.0000",
+          "-80.0000",
+          "-100.00"
+        ]
+      },
+      {
+        "kind": "grand",
+        "currencyId": null,
+        "clientId": null,
+        "clientAgreementId": null,
+        "values": [
+          null,
+          null,
+          null,
+          null
+        ]
+      }
+    ],
+    "rowCount": 2
+  },
+  {
+    "id": "mixed-currency-zero-grand-blank",
+    "direction": 1,
+    "current": {
+      "from": "2026-07-01",
+      "to": "2026-07-31"
+    },
+    "comparison": {
+      "from": "2026-06-01",
+      "to": "2026-06-30"
+    },
+    "selectedFields": [
+      59,
+      60,
+      61,
+      62
+    ],
+    "groups": [
+      {
+        "kind": "contract",
+        "currencyId": "2",
+        "clientId": "101",
+        "clientAgreementId": "201",
+        "values": [
+          "0.0000",
+          "0.0000",
+          "0.0000",
+          "100.00"
+        ]
+      },
+      {
+        "kind": "contract",
+        "currencyId": "3",
+        "clientId": "101",
+        "clientAgreementId": "201",
+        "values": [
+          "0.0000",
+          "0.0000",
+          "0.0000",
+          "100.00"
+        ]
+      },
+      {
+        "kind": "client",
+        "currencyId": "2",
+        "clientId": "101",
+        "clientAgreementId": null,
+        "values": [
+          "0.0000",
+          "0.0000",
+          "0.0000",
+          "100.00"
+        ]
+      },
+      {
+        "kind": "client",
+        "currencyId": "3",
+        "clientId": "101",
+        "clientAgreementId": null,
+        "values": [
+          "0.0000",
+          "0.0000",
+          "0.0000",
+          "100.00"
+        ]
+      },
+      {
+        "kind": "currency",
+        "currencyId": "2",
+        "clientId": null,
+        "clientAgreementId": null,
+        "values": [
+          "0.0000",
+          "0.0000",
+          "0.0000",
+          "100.00"
+        ]
+      },
+      {
+        "kind": "currency",
+        "currencyId": "3",
+        "clientId": null,
+        "clientAgreementId": null,
+        "values": [
+          "0.0000",
+          "0.0000",
+          "0.0000",
+          "100.00"
+        ]
+      },
+      {
+        "kind": "grand",
+        "currencyId": null,
+        "clientId": null,
+        "clientAgreementId": null,
+        "values": [
+          null,
+          null,
+          null,
+          null
+        ]
+      }
+    ],
+    "rowCount": 2
+  },
+  {
+    "id": "unknown-currency-all-four-blank",
+    "direction": 1,
+    "current": {
+      "from": "2026-07-01",
+      "to": "2026-07-31"
+    },
+    "comparison": {
+      "from": "2026-06-01",
+      "to": "2026-06-30"
+    },
+    "selectedFields": [
+      59,
+      60,
+      61,
+      62
+    ],
+    "groups": [
+      {
+        "kind": "contract",
+        "currencyId": null,
+        "clientId": "101",
+        "clientAgreementId": "201",
+        "values": [
+          null,
+          null,
+          null,
+          null
+        ]
+      },
+      {
+        "kind": "contract",
+        "currencyId": "2",
+        "clientId": "101",
+        "clientAgreementId": "201",
+        "values": [
+          "0.0000",
+          "80.0000",
+          "-80.0000",
+          "-100.00"
+        ]
+      },
+      {
+        "kind": "client",
+        "currencyId": null,
+        "clientId": "101",
+        "clientAgreementId": null,
+        "values": [
+          null,
+          null,
+          null,
+          null
+        ]
+      },
+      {
+        "kind": "client",
+        "currencyId": "2",
+        "clientId": "101",
+        "clientAgreementId": null,
+        "values": [
+          "0.0000",
+          "80.0000",
+          "-80.0000",
+          "-100.00"
+        ]
+      },
+      {
+        "kind": "currency",
+        "currencyId": null,
+        "clientId": null,
+        "clientAgreementId": null,
+        "values": [
+          null,
+          null,
+          null,
+          null
+        ]
+      },
+      {
+        "kind": "currency",
+        "currencyId": "2",
+        "clientId": null,
+        "clientAgreementId": null,
+        "values": [
+          "0.0000",
+          "80.0000",
+          "-80.0000",
+          "-100.00"
+        ]
+      },
+      {
+        "kind": "grand",
+        "currencyId": null,
+        "clientId": null,
+        "clientAgreementId": null,
+        "values": [
+          null,
+          null,
+          null,
+          null
+        ]
+      }
+    ],
+    "rowCount": 2
+  },
+  {
+    "id": "unknown-currency-zero-cannot-certify",
+    "direction": 1,
+    "current": {
+      "from": "2026-07-01",
+      "to": "2026-07-31"
+    },
+    "comparison": {
+      "from": "2026-06-01",
+      "to": "2026-06-30"
+    },
+    "selectedFields": [
+      59,
+      60,
+      61,
+      62
+    ],
+    "groups": [
+      {
+        "kind": "contract",
+        "currencyId": null,
+        "clientId": "101",
+        "clientAgreementId": "201",
+        "values": [
+          null,
+          null,
+          null,
+          null
+        ]
+      },
+      {
+        "kind": "client",
+        "currencyId": null,
+        "clientId": "101",
+        "clientAgreementId": null,
+        "values": [
+          null,
+          null,
+          null,
+          null
+        ]
+      },
+      {
+        "kind": "currency",
+        "currencyId": null,
+        "clientId": null,
+        "clientAgreementId": null,
+        "values": [
+          null,
+          null,
+          null,
+          null
+        ]
+      },
+      {
+        "kind": "grand",
+        "currencyId": null,
+        "clientId": null,
+        "clientAgreementId": null,
+        "values": [
+          null,
+          null,
+          null,
+          null
+        ]
+      }
+    ],
+    "rowCount": 1
+  },
+  {
+    "id": "same-caption-distinct-currency-ids",
+    "direction": 1,
+    "current": {
+      "from": "2026-07-01",
+      "to": "2026-07-31"
+    },
+    "comparison": {
+      "from": "2026-06-01",
+      "to": "2026-06-30"
+    },
+    "selectedFields": [
+      59,
+      60,
+      61,
+      62
+    ],
+    "groups": [
+      {
+        "kind": "contract",
+        "currencyId": "2",
+        "clientId": "101",
+        "clientAgreementId": "201",
+        "values": [
+          "120.0000",
+          "80.0000",
+          "40.0000",
+          "50.00"
+        ]
+      },
+      {
+        "kind": "contract",
+        "currencyId": "3",
+        "clientId": "101",
+        "clientAgreementId": "201",
+        "values": [
+          "40.0000",
+          "100.0000",
+          "-60.0000",
+          "-60.00"
+        ]
+      },
+      {
+        "kind": "client",
+        "currencyId": "2",
+        "clientId": "101",
+        "clientAgreementId": null,
+        "values": [
+          "120.0000",
+          "80.0000",
+          "40.0000",
+          "50.00"
+        ]
+      },
+      {
+        "kind": "client",
+        "currencyId": "3",
+        "clientId": "101",
+        "clientAgreementId": null,
+        "values": [
+          "40.0000",
+          "100.0000",
+          "-60.0000",
+          "-60.00"
+        ]
+      },
+      {
+        "kind": "currency",
+        "currencyId": "2",
+        "clientId": null,
+        "clientAgreementId": null,
+        "values": [
+          "120.0000",
+          "80.0000",
+          "40.0000",
+          "50.00"
+        ]
+      },
+      {
+        "kind": "currency",
+        "currencyId": "3",
+        "clientId": null,
+        "clientAgreementId": null,
+        "values": [
+          "40.0000",
+          "100.0000",
+          "-60.0000",
+          "-60.00"
+        ]
+      },
+      {
+        "kind": "grand",
+        "currencyId": null,
+        "clientId": null,
+        "clientAgreementId": null,
+        "values": [
+          null,
+          null,
+          null,
+          null
+        ]
+      }
+    ],
+    "rowCount": 2
+  },
+  {
+    "id": "missing-client-known-agreement",
+    "direction": 1,
+    "current": {
+      "from": "2026-07-01",
+      "to": "2026-07-31"
+    },
+    "comparison": {
+      "from": "2026-06-01",
+      "to": "2026-06-30"
+    },
+    "selectedFields": [
+      59,
+      60,
+      61,
+      62
+    ],
+    "groups": [
+      {
+        "kind": "contract",
+        "currencyId": "2",
+        "clientId": null,
+        "clientAgreementId": "201",
+        "values": [
+          "120.0000",
+          "80.0000",
+          "40.0000",
+          "50.00"
+        ]
+      },
+      {
+        "kind": "client",
+        "currencyId": "2",
+        "clientId": null,
+        "clientAgreementId": null,
+        "values": [
+          "120.0000",
+          "80.0000",
+          "40.0000",
+          "50.00"
+        ]
+      },
+      {
+        "kind": "currency",
+        "currencyId": "2",
+        "clientId": null,
+        "clientAgreementId": null,
+        "values": [
+          "120.0000",
+          "80.0000",
+          "40.0000",
+          "50.00"
+        ]
+      },
+      {
+        "kind": "grand",
+        "currencyId": null,
+        "clientId": null,
+        "clientAgreementId": null,
+        "values": [
+          "120.0000",
+          "80.0000",
+          "40.0000",
+          "50.00"
+        ]
+      }
+    ],
+    "rowCount": 1
+  },
+  {
+    "id": "missing-client-and-agreement-bucket",
+    "direction": 1,
+    "current": {
+      "from": "2026-07-01",
+      "to": "2026-07-31"
+    },
+    "comparison": {
+      "from": "2026-06-01",
+      "to": "2026-06-30"
+    },
+    "selectedFields": [
+      59,
+      60,
+      61,
+      62
+    ],
+    "groups": [
+      {
+        "kind": "contract",
+        "currencyId": "2",
+        "clientId": null,
+        "clientAgreementId": null,
+        "values": [
+          "120.0000",
+          "80.0000",
+          "40.0000",
+          "50.00"
+        ]
+      },
+      {
+        "kind": "client",
+        "currencyId": "2",
+        "clientId": null,
+        "clientAgreementId": null,
+        "values": [
+          "120.0000",
+          "80.0000",
+          "40.0000",
+          "50.00"
+        ]
+      },
+      {
+        "kind": "currency",
+        "currencyId": "2",
+        "clientId": null,
+        "clientAgreementId": null,
+        "values": [
+          "120.0000",
+          "80.0000",
+          "40.0000",
+          "50.00"
+        ]
+      },
+      {
+        "kind": "grand",
+        "currencyId": null,
+        "clientId": null,
+        "clientAgreementId": null,
+        "values": [
+          "120.0000",
+          "80.0000",
+          "40.0000",
+          "50.00"
+        ]
+      }
+    ],
+    "rowCount": 1
+  },
+  {
+    "id": "exact-large-ids-above-js-safe",
+    "direction": 1,
+    "current": {
+      "from": "2026-07-01",
+      "to": "2026-07-31"
+    },
+    "comparison": {
+      "from": "2026-06-01",
+      "to": "2026-06-30"
+    },
+    "selectedFields": [
+      59,
+      60,
+      61,
+      62
+    ],
+    "groups": [
+      {
+        "kind": "contract",
+        "currencyId": "9007199254740993",
+        "clientId": "9007199254740995",
+        "clientAgreementId": "9007199254740997",
+        "values": [
+          "120.0000",
+          "80.0000",
+          "40.0000",
+          "50.00"
+        ]
+      },
+      {
+        "kind": "client",
+        "currencyId": "9007199254740993",
+        "clientId": "9007199254740995",
+        "clientAgreementId": null,
+        "values": [
+          "120.0000",
+          "80.0000",
+          "40.0000",
+          "50.00"
+        ]
+      },
+      {
+        "kind": "currency",
+        "currencyId": "9007199254740993",
+        "clientId": null,
+        "clientAgreementId": null,
+        "values": [
+          "120.0000",
+          "80.0000",
+          "40.0000",
+          "50.00"
+        ]
+      },
+      {
+        "kind": "grand",
+        "currencyId": null,
+        "clientId": null,
+        "clientAgreementId": null,
+        "values": [
+          "120.0000",
+          "80.0000",
+          "40.0000",
+          "50.00"
+        ]
+      }
+    ],
+    "rowCount": 1
+  },
+  {
+    "id": "same-header-id-opposite-direction-excluded",
+    "direction": 1,
+    "current": {
+      "from": "2026-07-01",
+      "to": "2026-07-31"
+    },
+    "comparison": {
+      "from": "2026-06-01",
+      "to": "2026-06-30"
+    },
+    "selectedFields": [
+      59,
+      60,
+      61,
+      62
+    ],
+    "groups": [
+      {
+        "kind": "contract",
+        "currencyId": "2",
+        "clientId": "101",
+        "clientAgreementId": "201",
+        "values": [
+          "120.0000",
+          "80.0000",
+          "40.0000",
+          "50.00"
+        ]
+      },
+      {
+        "kind": "client",
+        "currencyId": "2",
+        "clientId": "101",
+        "clientAgreementId": null,
+        "values": [
+          "120.0000",
+          "80.0000",
+          "40.0000",
+          "50.00"
+        ]
+      },
+      {
+        "kind": "currency",
+        "currencyId": "2",
+        "clientId": null,
+        "clientAgreementId": null,
+        "values": [
+          "120.0000",
+          "80.0000",
+          "40.0000",
+          "50.00"
+        ]
+      },
+      {
+        "kind": "grand",
+        "currencyId": null,
+        "clientId": null,
+        "clientAgreementId": null,
+        "values": [
+          "120.0000",
+          "80.0000",
+          "40.0000",
+          "50.00"
+        ]
+      }
+    ],
+    "rowCount": 1
+  },
+  {
+    "id": "selected-order-reversed",
+    "direction": 1,
+    "current": {
+      "from": "2026-07-01",
+      "to": "2026-07-31"
+    },
+    "comparison": {
+      "from": "2026-06-01",
+      "to": "2026-06-30"
+    },
+    "selectedFields": [
+      62,
+      61,
+      60,
+      59
+    ],
+    "groups": [
+      {
+        "kind": "contract",
+        "currencyId": "2",
+        "clientId": "101",
+        "clientAgreementId": "201",
+        "values": [
+          "50.00",
+          "40.0000",
+          "80.0000",
+          "120.0000"
+        ]
+      },
+      {
+        "kind": "client",
+        "currencyId": "2",
+        "clientId": "101",
+        "clientAgreementId": null,
+        "values": [
+          "50.00",
+          "40.0000",
+          "80.0000",
+          "120.0000"
+        ]
+      },
+      {
+        "kind": "currency",
+        "currencyId": "2",
+        "clientId": null,
+        "clientAgreementId": null,
+        "values": [
+          "50.00",
+          "40.0000",
+          "80.0000",
+          "120.0000"
+        ]
+      },
+      {
+        "kind": "grand",
+        "currencyId": null,
+        "clientId": null,
+        "clientAgreementId": null,
+        "values": [
+          "50.00",
+          "40.0000",
+          "80.0000",
+          "120.0000"
+        ]
+      }
+    ],
+    "rowCount": 1
+  },
+  {
+    "id": "unselected-nonrepresentable-money-cancels",
+    "direction": 1,
+    "current": {
+      "from": "2026-07-01",
+      "to": "2026-07-31"
+    },
+    "comparison": {
+      "from": "2026-06-01",
+      "to": "2026-06-30"
+    },
+    "selectedFields": [
+      61,
+      62
+    ],
+    "groups": [
+      {
+        "kind": "contract",
+        "currencyId": "2",
+        "clientId": "101",
+        "clientAgreementId": "201",
+        "values": [
+          "0.0000",
+          "0.00"
+        ]
+      },
+      {
+        "kind": "client",
+        "currencyId": "2",
+        "clientId": "101",
+        "clientAgreementId": null,
+        "values": [
+          "0.0000",
+          "0.00"
+        ]
+      },
+      {
+        "kind": "currency",
+        "currencyId": "2",
+        "clientId": null,
+        "clientAgreementId": null,
+        "values": [
+          "0.0000",
+          "0.00"
+        ]
+      },
+      {
+        "kind": "grand",
+        "currencyId": null,
+        "clientId": null,
+        "clientAgreementId": null,
+        "values": [
+          "0.0000",
+          "0.00"
+        ]
+      }
+    ],
+    "rowCount": 1
+  },
+  {
+    "id": "unselected-relative-overflow",
+    "direction": 1,
+    "current": {
+      "from": "2026-07-01",
+      "to": "2026-07-31"
+    },
+    "comparison": {
+      "from": "2026-06-01",
+      "to": "2026-06-30"
+    },
+    "selectedFields": [
+      59,
+      60,
+      61
+    ],
+    "groups": [
+      {
+        "kind": "contract",
+        "currencyId": "2",
+        "clientId": "101",
+        "clientAgreementId": "201",
+        "values": [
+          "100000000.0000",
+          "0.0001",
+          "99999999.9999"
+        ]
+      },
+      {
+        "kind": "client",
+        "currencyId": "2",
+        "clientId": "101",
+        "clientAgreementId": null,
+        "values": [
+          "100000000.0000",
+          "0.0001",
+          "99999999.9999"
+        ]
+      },
+      {
+        "kind": "currency",
+        "currencyId": "2",
+        "clientId": null,
+        "clientAgreementId": null,
+        "values": [
+          "100000000.0000",
+          "0.0001",
+          "99999999.9999"
+        ]
+      },
+      {
+        "kind": "grand",
+        "currencyId": null,
+        "clientId": null,
+        "clientAgreementId": null,
+        "values": [
+          "100000000.0000",
+          "0.0001",
+          "99999999.9999"
+        ]
+      }
+    ],
+    "rowCount": 1
+  },
+  {
+    "id": "four-place-signed-money",
+    "direction": 1,
+    "current": {
+      "from": "2026-07-01",
+      "to": "2026-07-31"
+    },
+    "comparison": {
+      "from": "2026-06-01",
+      "to": "2026-06-30"
+    },
+    "selectedFields": [
+      59,
+      60,
+      61,
+      62
+    ],
+    "groups": [
+      {
+        "kind": "contract",
+        "currencyId": "2",
+        "clientId": "101",
+        "clientAgreementId": "201",
+        "values": [
+          "1.2345",
+          "-6.7890",
+          "8.0235",
+          "-118.18"
+        ]
+      },
+      {
+        "kind": "client",
+        "currencyId": "2",
+        "clientId": "101",
+        "clientAgreementId": null,
+        "values": [
+          "1.2345",
+          "-6.7890",
+          "8.0235",
+          "-118.18"
+        ]
+      },
+      {
+        "kind": "currency",
+        "currencyId": "2",
+        "clientId": null,
+        "clientAgreementId": null,
+        "values": [
+          "1.2345",
+          "-6.7890",
+          "8.0235",
+          "-118.18"
+        ]
+      },
+      {
+        "kind": "grand",
+        "currencyId": null,
+        "clientId": null,
+        "clientAgreementId": null,
+        "values": [
+          "1.2345",
+          "-6.7890",
+          "8.0235",
+          "-118.18"
+        ]
+      }
+    ],
+    "rowCount": 1
+  },
+  {
+    "id": "relative-positive-midpoint-away",
+    "direction": 1,
+    "current": {
+      "from": "2026-07-01",
+      "to": "2026-07-31"
+    },
+    "comparison": {
+      "from": "2026-06-01",
+      "to": "2026-06-30"
+    },
+    "selectedFields": [
+      59,
+      60,
+      61,
+      62
+    ],
+    "groups": [
+      {
+        "kind": "contract",
+        "currencyId": "2",
+        "clientId": "101",
+        "clientAgreementId": "201",
+        "values": [
+          "200.0100",
+          "200.0000",
+          "0.0100",
+          "0.01"
+        ]
+      },
+      {
+        "kind": "client",
+        "currencyId": "2",
+        "clientId": "101",
+        "clientAgreementId": null,
+        "values": [
+          "200.0100",
+          "200.0000",
+          "0.0100",
+          "0.01"
+        ]
+      },
+      {
+        "kind": "currency",
+        "currencyId": "2",
+        "clientId": null,
+        "clientAgreementId": null,
+        "values": [
+          "200.0100",
+          "200.0000",
+          "0.0100",
+          "0.01"
+        ]
+      },
+      {
+        "kind": "grand",
+        "currencyId": null,
+        "clientId": null,
+        "clientAgreementId": null,
+        "values": [
+          "200.0100",
+          "200.0000",
+          "0.0100",
+          "0.01"
+        ]
+      }
+    ],
+    "rowCount": 1
+  },
+  {
+    "id": "relative-negative-midpoint-away",
+    "direction": 1,
+    "current": {
+      "from": "2026-07-01",
+      "to": "2026-07-31"
+    },
+    "comparison": {
+      "from": "2026-06-01",
+      "to": "2026-06-30"
+    },
+    "selectedFields": [
+      59,
+      60,
+      61,
+      62
+    ],
+    "groups": [
+      {
+        "kind": "contract",
+        "currencyId": "2",
+        "clientId": "101",
+        "clientAgreementId": "201",
+        "values": [
+          "199.9900",
+          "200.0000",
+          "-0.0100",
+          "-0.01"
+        ]
+      },
+      {
+        "kind": "client",
+        "currencyId": "2",
+        "clientId": "101",
+        "clientAgreementId": null,
+        "values": [
+          "199.9900",
+          "200.0000",
+          "-0.0100",
+          "-0.01"
+        ]
+      },
+      {
+        "kind": "currency",
+        "currencyId": "2",
+        "clientId": null,
+        "clientAgreementId": null,
+        "values": [
+          "199.9900",
+          "200.0000",
+          "-0.0100",
+          "-0.01"
+        ]
+      },
+      {
+        "kind": "grand",
+        "currencyId": null,
+        "clientId": null,
+        "clientAgreementId": null,
+        "values": [
+          "199.9900",
+          "200.0000",
+          "-0.0100",
+          "-0.01"
+        ]
+      }
+    ],
+    "rowCount": 1
+  },
+  {
+    "id": "raw-cancellation-before-group-output",
+    "direction": 1,
+    "current": {
+      "from": "2026-07-01",
+      "to": "2026-07-31"
+    },
+    "comparison": {
+      "from": "2026-06-01",
+      "to": "2026-06-30"
+    },
+    "selectedFields": [
+      59,
+      60,
+      61,
+      62
+    ],
+    "groups": [
+      {
+        "kind": "contract",
+        "currencyId": "2",
+        "clientId": "101",
+        "clientAgreementId": "201",
+        "values": [
+          "0.0000",
+          "0.0000",
+          "0.0000",
+          "100.00"
+        ]
+      },
+      {
+        "kind": "client",
+        "currencyId": "2",
+        "clientId": "101",
+        "clientAgreementId": null,
+        "values": [
+          "0.0000",
+          "0.0000",
+          "0.0000",
+          "100.00"
+        ]
+      },
+      {
+        "kind": "currency",
+        "currencyId": "2",
+        "clientId": null,
+        "clientAgreementId": null,
+        "values": [
+          "0.0000",
+          "0.0000",
+          "0.0000",
+          "100.00"
+        ]
+      },
+      {
+        "kind": "grand",
+        "currencyId": null,
+        "clientId": null,
+        "clientAgreementId": null,
+        "values": [
+          "0.0000",
+          "0.0000",
+          "0.0000",
+          "100.00"
+        ]
+      }
+    ],
+    "rowCount": 1
+  },
+  {
+    "id": "overlapping-independent-periods",
+    "direction": 1,
+    "current": {
+      "from": "2026-07-01",
+      "to": "2026-07-07"
+    },
+    "comparison": {
+      "from": "2026-07-04",
+      "to": "2026-07-10"
+    },
+    "selectedFields": [
+      59,
+      60,
+      61,
+      62
+    ],
+    "groups": [
+      {
+        "kind": "contract",
+        "currencyId": "2",
+        "clientId": "101",
+        "clientAgreementId": "201",
+        "values": [
+          "30.0000",
+          "50.0000",
+          "-20.0000",
+          "-40.00"
+        ]
+      },
+      {
+        "kind": "client",
+        "currencyId": "2",
+        "clientId": "101",
+        "clientAgreementId": null,
+        "values": [
+          "30.0000",
+          "50.0000",
+          "-20.0000",
+          "-40.00"
+        ]
+      },
+      {
+        "kind": "currency",
+        "currencyId": "2",
+        "clientId": null,
+        "clientAgreementId": null,
+        "values": [
+          "30.0000",
+          "50.0000",
+          "-20.0000",
+          "-40.00"
+        ]
+      },
+      {
+        "kind": "grand",
+        "currencyId": null,
+        "clientId": null,
+        "clientAgreementId": null,
+        "values": [
+          "30.0000",
+          "50.0000",
+          "-20.0000",
+          "-40.00"
+        ]
+      }
+    ],
+    "rowCount": 1
+  },
+  {
+    "id": "identical-independent-periods",
+    "direction": 1,
+    "current": {
+      "from": "2026-07-01",
+      "to": "2026-07-31"
+    },
+    "comparison": {
+      "from": "2026-07-01",
+      "to": "2026-07-31"
+    },
+    "selectedFields": [
+      59,
+      60,
+      61,
+      62
+    ],
+    "groups": [
+      {
+        "kind": "contract",
+        "currencyId": "2",
+        "clientId": "101",
+        "clientAgreementId": "201",
+        "values": [
+          "10.0000",
+          "10.0000",
+          "0.0000",
+          "0.00"
+        ]
+      },
+      {
+        "kind": "client",
+        "currencyId": "2",
+        "clientId": "101",
+        "clientAgreementId": null,
+        "values": [
+          "10.0000",
+          "10.0000",
+          "0.0000",
+          "0.00"
+        ]
+      },
+      {
+        "kind": "currency",
+        "currencyId": "2",
+        "clientId": null,
+        "clientAgreementId": null,
+        "values": [
+          "10.0000",
+          "10.0000",
+          "0.0000",
+          "0.00"
+        ]
+      },
+      {
+        "kind": "grand",
+        "currencyId": null,
+        "clientId": null,
+        "clientAgreementId": null,
+        "values": [
+          "10.0000",
+          "10.0000",
+          "0.0000",
+          "0.00"
+        ]
+      }
+    ],
+    "rowCount": 1
+  },
+  {
+    "id": "chronologically-reversed-periods",
+    "direction": 1,
+    "current": {
+      "from": "2026-05-01",
+      "to": "2026-05-31"
+    },
+    "comparison": {
+      "from": "2026-08-01",
+      "to": "2026-08-31"
+    },
+    "selectedFields": [
+      59,
+      60,
+      61,
+      62
+    ],
+    "groups": [
+      {
+        "kind": "contract",
+        "currencyId": "2",
+        "clientId": "101",
+        "clientAgreementId": "201",
+        "values": [
+          "10.0000",
+          "20.0000",
+          "-10.0000",
+          "-50.00"
+        ]
+      },
+      {
+        "kind": "client",
+        "currencyId": "2",
+        "clientId": "101",
+        "clientAgreementId": null,
+        "values": [
+          "10.0000",
+          "20.0000",
+          "-10.0000",
+          "-50.00"
+        ]
+      },
+      {
+        "kind": "currency",
+        "currencyId": "2",
+        "clientId": null,
+        "clientAgreementId": null,
+        "values": [
+          "10.0000",
+          "20.0000",
+          "-10.0000",
+          "-50.00"
+        ]
+      },
+      {
+        "kind": "grand",
+        "currencyId": null,
+        "clientId": null,
+        "clientAgreementId": null,
+        "values": [
+          "10.0000",
+          "20.0000",
+          "-10.0000",
+          "-50.00"
+        ]
+      }
+    ],
+    "rowCount": 1
+  },
+  {
+    "id": "gap-neither-period",
+    "direction": 1,
+    "current": {
+      "from": "2026-07-01",
+      "to": "2026-07-31"
+    },
+    "comparison": {
+      "from": "2026-05-01",
+      "to": "2026-05-31"
+    },
+    "selectedFields": [
+      59,
+      60,
+      61,
+      62
+    ],
+    "groups": [
+      {
+        "kind": "contract",
+        "currencyId": "2",
+        "clientId": "101",
+        "clientAgreementId": "201",
+        "values": [
+          "10.0000",
+          "20.0000",
+          "-10.0000",
+          "-50.00"
+        ]
+      },
+      {
+        "kind": "client",
+        "currencyId": "2",
+        "clientId": "101",
+        "clientAgreementId": null,
+        "values": [
+          "10.0000",
+          "20.0000",
+          "-10.0000",
+          "-50.00"
+        ]
+      },
+      {
+        "kind": "currency",
+        "currencyId": "2",
+        "clientId": null,
+        "clientAgreementId": null,
+        "values": [
+          "10.0000",
+          "20.0000",
+          "-10.0000",
+          "-50.00"
+        ]
+      },
+      {
+        "kind": "grand",
+        "currencyId": null,
+        "clientId": null,
+        "clientAgreementId": null,
+        "values": [
+          "10.0000",
+          "20.0000",
+          "-10.0000",
+          "-50.00"
+        ]
+      }
+    ],
+    "rowCount": 1
+  },
+  {
+    "id": "kyiv-exact-month-boundaries",
+    "direction": 1,
+    "current": {
+      "from": "2026-07-01",
+      "to": "2026-07-31"
+    },
+    "comparison": {
+      "from": "2026-06-01",
+      "to": "2026-06-30"
+    },
+    "selectedFields": [
+      59,
+      60,
+      61,
+      62
+    ],
+    "groups": [
+      {
+        "kind": "contract",
+        "currencyId": "2",
+        "clientId": "101",
+        "clientAgreementId": "201",
+        "values": [
+          "30.0000",
+          "40.0000",
+          "-10.0000",
+          "-25.00"
+        ]
+      },
+      {
+        "kind": "client",
+        "currencyId": "2",
+        "clientId": "101",
+        "clientAgreementId": null,
+        "values": [
+          "30.0000",
+          "40.0000",
+          "-10.0000",
+          "-25.00"
+        ]
+      },
+      {
+        "kind": "currency",
+        "currencyId": "2",
+        "clientId": null,
+        "clientAgreementId": null,
+        "values": [
+          "30.0000",
+          "40.0000",
+          "-10.0000",
+          "-25.00"
+        ]
+      },
+      {
+        "kind": "grand",
+        "currencyId": null,
+        "clientId": null,
+        "clientAgreementId": null,
+        "values": [
+          "30.0000",
+          "40.0000",
+          "-10.0000",
+          "-25.00"
+        ]
+      }
+    ],
+    "rowCount": 1
+  },
+  {
+    "id": "kyiv-spring-23-hour-day",
+    "direction": 1,
+    "current": {
+      "from": "2026-03-29",
+      "to": "2026-03-29"
+    },
+    "comparison": {
+      "from": "2026-03-28",
+      "to": "2026-03-28"
+    },
+    "selectedFields": [
+      59,
+      60,
+      61,
+      62
+    ],
+    "groups": [
+      {
+        "kind": "contract",
+        "currencyId": "2",
+        "clientId": "101",
+        "clientAgreementId": "201",
+        "values": [
+          "30.0000",
+          "40.0000",
+          "-10.0000",
+          "-25.00"
+        ]
+      },
+      {
+        "kind": "client",
+        "currencyId": "2",
+        "clientId": "101",
+        "clientAgreementId": null,
+        "values": [
+          "30.0000",
+          "40.0000",
+          "-10.0000",
+          "-25.00"
+        ]
+      },
+      {
+        "kind": "currency",
+        "currencyId": "2",
+        "clientId": null,
+        "clientAgreementId": null,
+        "values": [
+          "30.0000",
+          "40.0000",
+          "-10.0000",
+          "-25.00"
+        ]
+      },
+      {
+        "kind": "grand",
+        "currencyId": null,
+        "clientId": null,
+        "clientAgreementId": null,
+        "values": [
+          "30.0000",
+          "40.0000",
+          "-10.0000",
+          "-25.00"
+        ]
+      }
+    ],
+    "rowCount": 1
+  },
+  {
+    "id": "kyiv-autumn-25-hour-day",
+    "direction": 1,
+    "current": {
+      "from": "2026-10-25",
+      "to": "2026-10-25"
+    },
+    "comparison": {
+      "from": "2026-10-24",
+      "to": "2026-10-24"
+    },
+    "selectedFields": [
+      59,
+      60,
+      61,
+      62
+    ],
+    "groups": [
+      {
+        "kind": "contract",
+        "currencyId": "2",
+        "clientId": "101",
+        "clientAgreementId": "201",
+        "values": [
+          "30.0000",
+          "40.0000",
+          "-10.0000",
+          "-25.00"
+        ]
+      },
+      {
+        "kind": "client",
+        "currencyId": "2",
+        "clientId": "101",
+        "clientAgreementId": null,
+        "values": [
+          "30.0000",
+          "40.0000",
+          "-10.0000",
+          "-25.00"
+        ]
+      },
+      {
+        "kind": "currency",
+        "currencyId": "2",
+        "clientId": null,
+        "clientAgreementId": null,
+        "values": [
+          "30.0000",
+          "40.0000",
+          "-10.0000",
+          "-25.00"
+        ]
+      },
+      {
+        "kind": "grand",
+        "currencyId": null,
+        "clientId": null,
+        "clientAgreementId": null,
+        "values": [
+          "30.0000",
+          "40.0000",
+          "-10.0000",
+          "-25.00"
+        ]
+      }
+    ],
+    "rowCount": 1
+  },
+  {
+    "id": "invalid-opposite-direction-ignored",
+    "direction": 1,
+    "current": {
+      "from": "2026-07-01",
+      "to": "2026-07-31"
+    },
+    "comparison": {
+      "from": "2026-06-01",
+      "to": "2026-06-30"
+    },
+    "selectedFields": [
+      59,
+      60,
+      61,
+      62
+    ],
+    "groups": [
+      {
+        "kind": "contract",
+        "currencyId": "2",
+        "clientId": "101",
+        "clientAgreementId": "201",
+        "values": [
+          "120.0000",
+          "80.0000",
+          "40.0000",
+          "50.00"
+        ]
+      },
+      {
+        "kind": "client",
+        "currencyId": "2",
+        "clientId": "101",
+        "clientAgreementId": null,
+        "values": [
+          "120.0000",
+          "80.0000",
+          "40.0000",
+          "50.00"
+        ]
+      },
+      {
+        "kind": "currency",
+        "currencyId": "2",
+        "clientId": null,
+        "clientAgreementId": null,
+        "values": [
+          "120.0000",
+          "80.0000",
+          "40.0000",
+          "50.00"
+        ]
+      },
+      {
+        "kind": "grand",
+        "currencyId": null,
+        "clientId": null,
+        "clientAgreementId": null,
+        "values": [
+          "120.0000",
+          "80.0000",
+          "40.0000",
+          "50.00"
+        ]
+      }
+    ],
+    "rowCount": 1
+  },
+  {
+    "id": "exact-agreement-filter",
+    "direction": 1,
+    "current": {
+      "from": "2026-07-01",
+      "to": "2026-07-31"
+    },
+    "comparison": {
+      "from": "2026-06-01",
+      "to": "2026-06-30"
+    },
+    "selectedFields": [
+      59,
+      60,
+      61,
+      62
+    ],
+    "groups": [
+      {
+        "kind": "contract",
+        "currencyId": "2",
+        "clientId": "101",
+        "clientAgreementId": "201",
+        "values": [
+          "120.0000",
+          "80.0000",
+          "40.0000",
+          "50.00"
+        ]
+      },
+      {
+        "kind": "client",
+        "currencyId": "2",
+        "clientId": "101",
+        "clientAgreementId": null,
+        "values": [
+          "120.0000",
+          "80.0000",
+          "40.0000",
+          "50.00"
+        ]
+      },
+      {
+        "kind": "currency",
+        "currencyId": "2",
+        "clientId": null,
+        "clientAgreementId": null,
+        "values": [
+          "120.0000",
+          "80.0000",
+          "40.0000",
+          "50.00"
+        ]
+      },
+      {
+        "kind": "grand",
+        "currencyId": null,
+        "clientId": null,
+        "clientAgreementId": null,
+        "values": [
+          "120.0000",
+          "80.0000",
+          "40.0000",
+          "50.00"
+        ]
+      }
+    ],
+    "rowCount": 1
+  },
+  {
+    "id": "not-in-filter-retains-unknown",
+    "direction": 1,
+    "current": {
+      "from": "2026-07-01",
+      "to": "2026-07-31"
+    },
+    "comparison": {
+      "from": "2026-06-01",
+      "to": "2026-06-30"
+    },
+    "selectedFields": [
+      59,
+      60,
+      61,
+      62
+    ],
+    "groups": [
+      {
+        "kind": "contract",
+        "currencyId": "2",
+        "clientId": null,
+        "clientAgreementId": null,
+        "values": [
+          "25.0000",
+          "50.0000",
+          "-25.0000",
+          "-50.00"
+        ]
+      },
+      {
+        "kind": "client",
+        "currencyId": "2",
+        "clientId": null,
+        "clientAgreementId": null,
+        "values": [
+          "25.0000",
+          "50.0000",
+          "-25.0000",
+          "-50.00"
+        ]
+      },
+      {
+        "kind": "currency",
+        "currencyId": "2",
+        "clientId": null,
+        "clientAgreementId": null,
+        "values": [
+          "25.0000",
+          "50.0000",
+          "-25.0000",
+          "-50.00"
+        ]
+      },
+      {
+        "kind": "grand",
+        "currencyId": null,
+        "clientId": null,
+        "clientAgreementId": null,
+        "values": [
+          "25.0000",
+          "50.0000",
+          "-25.0000",
+          "-50.00"
+        ]
+      }
+    ],
+    "rowCount": 1
+  },
+  {
+    "id": "canceled-native-header-excluded",
+    "direction": 1,
+    "current": {
+      "from": "2026-07-01",
+      "to": "2026-07-31"
+    },
+    "comparison": {
+      "from": "2026-06-01",
+      "to": "2026-06-30"
+    },
+    "selectedFields": [
+      59,
+      60,
+      61,
+      62
+    ],
+    "groups": [
+      {
+        "kind": "contract",
+        "currencyId": "2",
+        "clientId": "101",
+        "clientAgreementId": "201",
+        "values": [
+          "120.0000",
+          "80.0000",
+          "40.0000",
+          "50.00"
+        ]
+      },
+      {
+        "kind": "client",
+        "currencyId": "2",
+        "clientId": "101",
+        "clientAgreementId": null,
+        "values": [
+          "120.0000",
+          "80.0000",
+          "40.0000",
+          "50.00"
+        ]
+      },
+      {
+        "kind": "currency",
+        "currencyId": "2",
+        "clientId": null,
+        "clientAgreementId": null,
+        "values": [
+          "120.0000",
+          "80.0000",
+          "40.0000",
+          "50.00"
+        ]
+      },
+      {
+        "kind": "grand",
+        "currencyId": null,
+        "clientId": null,
+        "clientAgreementId": null,
+        "values": [
+          "120.0000",
+          "80.0000",
+          "40.0000",
+          "50.00"
+        ]
+      }
+    ],
+    "rowCount": 1
+  },
+  {
+    "id": "complete-empty-scope",
+    "direction": 1,
+    "current": {
+      "from": "2026-07-01",
+      "to": "2026-07-31"
+    },
+    "comparison": {
+      "from": "2026-06-01",
+      "to": "2026-06-30"
+    },
+    "selectedFields": [
+      59,
+      60,
+      61,
+      62
+    ],
+    "groups": [],
+    "rowCount": 0
+  },
+  {
+    "id": "only-opposite-direction-empty",
+    "direction": 1,
+    "current": {
+      "from": "2026-07-01",
+      "to": "2026-07-31"
+    },
+    "comparison": {
+      "from": "2026-06-01",
+      "to": "2026-06-30"
+    },
+    "selectedFields": [
+      59,
+      60,
+      61,
+      62
+    ],
+    "groups": [],
+    "rowCount": 0
+  }
+]

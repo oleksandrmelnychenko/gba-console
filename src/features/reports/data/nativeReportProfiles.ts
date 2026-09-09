@@ -1,3 +1,4 @@
+import { PAYMENT_COMPARISON_TITLE } from './paymentComparison'
 import { MARGIN_COMPARISON_TITLE } from './marginComparison'
 import { RATE_COMPARISON_TITLE } from './rateComparison'
 import { RETURN_COMPARISON_TITLE } from './returnComparison'
@@ -16,6 +17,8 @@ export const DEBT_AMOUNT_CAPTION = 'Записана заборгованіст�
 export const ACCOUNT_BALANCE_REPORT_TITLE = 'Записані залишки рахунків'
 export const ACCOUNT_BALANCE_AMOUNT_CAPTION = 'Записаний залишок рахунку'
 const DOCUMENT_REPORT_PROFILES = [
+  { dataSource: 21, title: PAYMENT_COMPARISON_TITLE, rowGroupings: [41, 12, 15], measurements: [59, 60, 61, 62],
+    preset: { id: 'imported-payment-period-comparison', name: 'Платежі: порівняння за договорами', description: 'Валюта → клієнт → точний договір. Надходження або виплати за двома незалежними періодами у власній валюті; непідтверджені суми залишаються невідомими.' } },
   { dataSource: 20, title: MARGIN_COMPARISON_TITLE, rowGroupings: [12, 15], measurements: [55, 56, 57, 58],
     preset: { id: 'sale-margin-period-comparison', name: 'Маржа без ПДВ: порівняння за договорами', description: 'Клієнт → точний договір. Маржа за двома незалежними періодами, різниця у відсоткових пунктах і відносна зміна; непідтверджена собівартість залишається невідомою.' } },
   { dataSource: 19, title: RATE_COMPARISON_TITLE, rowGroupings: [52], measurements: [51, 52, 53, 54],
@@ -64,17 +67,18 @@ export function isCurrentReportSource(dataSource: number | undefined): boolean {
   return isCurrentStockSource(dataSource) || dataSource === 10 || dataSource === 11
 }
 export function usesNativeReportLookup(dataSource: number | undefined): boolean {
-  return isCurrentReportSource(dataSource) || dataSource === 9 || dataSource === 12 || dataSource === 13 || dataSource === 14 || dataSource === 15 || dataSource === 16 || dataSource === 17 || dataSource === 18 || dataSource === 20
+  return isCurrentReportSource(dataSource) || dataSource === 9 || dataSource === 12 || dataSource === 13 || dataSource === 14 || dataSource === 15 || dataSource === 16 || dataSource === 17 || dataSource === 18 || dataSource === 20 || dataSource === 21
 }
 
-const FULL_DATE_RANGE_SOURCES = new Set([13, 14, 15, 16, 17, 18, 20])
-const FIXED_AXES_SOURCES = new Set([15, 16, 17, 18, 19, 20])
+const FULL_DATE_RANGE_SOURCES = new Set([13, 14, 15, 16, 17, 18, 20, 21])
+const FIXED_AXES_SOURCES = new Set([15, 16, 17, 18, 19, 20, 21])
 export const supportsFullReportDateRange = (dataSource: number): boolean => FULL_DATE_RANGE_SOURCES.has(dataSource)
 export const hasFixedReportAxes = (dataSource: number): boolean => FIXED_AXES_SOURCES.has(dataSource)
 
 
 // Units belong to the selected report and caption, independently of VAT controls.
 export function nativeReportMeasurementUnit(dataSource: number, caption: string): string | undefined {
+  if (dataSource === 21) return caption.endsWith('%') ? 'Відсотки' : 'Валюта рядка'
   if (dataSource === 20) return caption.endsWith('в.п.') ? 'Відсоткові пункти' : 'Відсотки'
   if (dataSource === 19) return caption.endsWith('%') ? 'Відсотки' : 'Курс за одиницю базової валюти'
   if (dataSource === 17) return caption.endsWith('в.п.') ? 'Відсоткові пункти' : 'Відсотки'

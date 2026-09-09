@@ -1,3 +1,4 @@
+import { isPaymentComparisonSheet } from '../data/paymentComparisonSpreadsheet'
 import { Alert, Box, Group, SegmentedControl, Select, Stack, Text } from '@mantine/core'
 import { useMemo, useState } from 'react'
 import { Bar, BarChart, CartesianGrid, Line, LineChart, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
@@ -30,7 +31,7 @@ export default function SpreadsheetChartPanel({ sheet, rows }: Props) {
         onChange={setSelectedMeasure} style={{ flex: 1, minWidth: 220 }} />
       <SegmentedControl aria-label="Тип діаграми" data={chartKinds} value={kind} onChange={value => setKind(value as ChartKind)} />
     </Group>
-    {isImportedPaymentsSheet(sheet) ? <ImportedPaymentsChartCurrency sheet={sheet} rows={rows} measurementIndex={Number(measure.value)}>
+    {(isImportedPaymentsSheet(sheet) || isPaymentComparisonSheet(sheet)) ? <ImportedPaymentsChartCurrency sheet={sheet} rows={rows} measurementIndex={Number(measure.value)}>
       {(currencyRows, currencyLabel) => <SpreadsheetChartContent sheet={sheet} rows={currencyRows} measure={{ ...measure, label: `${measure.label} · ${currencyLabel}` }} kind={kind} />}
     </ImportedPaymentsChartCurrency> : <SpreadsheetChartContent sheet={sheet} rows={rows} measure={measure} kind={kind} />}
   </Stack>

@@ -1,3 +1,5 @@
+import { paymentComparisonTableCaption } from './paymentComparisonHeaderPresentation'
+import { PAYMENT_COMPARISON_TITLE } from '../data/paymentComparison'
 import { MARGIN_COMPARISON_TITLE } from '../data/marginComparison'
 import { RATE_COMPARISON_TITLE } from '../data/rateComparison'
 import { RETURN_COMPARISON_TITLE } from '../data/returnComparison'
@@ -300,7 +302,7 @@ function ReportHeaderBlock({ header }: { header: SpreadsheetReportHeader }) {
   const details = addOccurrenceKeys(presentation.lines.filter((line) => !warnings.has(line)))
 
   return (
-    <Stack className={[MARGIN_COMPARISON_TITLE, RATE_COMPARISON_TITLE, CLIENT_ACTIVITY_REPORT_TITLE, CLIENT_COMPARISON_TITLE, IMPORTED_PAYMENTS_TITLE, XYZ_TITLE, RETURN_COMPARISON_TITLE, REVENUE_COMPARISON_TITLE, BUYER_SALES_SHARE_TITLE].includes(header.lines[0]) ? 'reports-client-activity-header' : undefined} gap={6}>
+    <Stack className={[PAYMENT_COMPARISON_TITLE, MARGIN_COMPARISON_TITLE, RATE_COMPARISON_TITLE, CLIENT_ACTIVITY_REPORT_TITLE, CLIENT_COMPARISON_TITLE, IMPORTED_PAYMENTS_TITLE, XYZ_TITLE, RETURN_COMPARISON_TITLE, REVENUE_COMPARISON_TITLE, BUYER_SALES_SHARE_TITLE].includes(header.lines[0]) ? 'reports-client-activity-header' : undefined} gap={6}>
       {warningLines.length ? (
         <Alert className="reports-page-alert" color="yellow" icon={<CircleAlert size={18} />}>
           <Stack gap={2}>
@@ -379,7 +381,9 @@ function SpreadsheetTable({
   const previewColumns = useMemo<DataTableColumn<SpreadsheetPreviewRow>[]>(
     () =>
       columns.map((column, columnIndex) => {
-        const header = column || `C${columnIndex + 1}`
+        const fullHeader = column || `C${columnIndex + 1}`
+        const paymentCaption = paymentComparisonTableCaption(sheet, column)
+        const header = paymentCaption ? <span title={fullHeader} style={{ whiteSpace: 'normal' }}>{paymentCaption}</span> : fullHeader
 
         return {
           id: `c${columnIndex}`,

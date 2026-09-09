@@ -1,3 +1,4 @@
+import { paymentComparisonConfigurationError } from '../data/paymentComparison'
 import { marginComparisonConfigurationError } from '../data/marginComparison'
 import { rateComparisonConfigurationError } from '../data/rateComparison'
 import { returnComparisonConfigurationError } from '../data/returnComparison'
@@ -22,7 +23,9 @@ const EMPTY_GUID = '00000000-0000-0000-0000-000000000000'
 const CLIENT_FILTER_SQL = 'RegionCode.Value/Client.FullName/Client.USREOU'
 
 export async function createStockReport(body: ReportRequestBody): Promise<ReportResult> {
-  const request = (body.dataSource === 17 || body.dataSource === 18 || body.dataSource === 19 || body.dataSource === 20) ? structuredClone(body) : body
+  const request = (body.dataSource === 17 || body.dataSource === 18 || body.dataSource === 19 || body.dataSource === 20 || body.dataSource === 21) ? structuredClone(body) : body
+  const paymentError = paymentComparisonConfigurationError(request)
+  if (paymentError) throw new Error(paymentError)
   const marginError = marginComparisonConfigurationError(request)
   if (marginError) throw new Error(marginError)
   const rateError = rateComparisonConfigurationError(request)
@@ -51,7 +54,7 @@ export async function searchDatasetReportValues(dataSource: number, field: numbe
   const result = await apiRequest<unknown>('/report/datasets/lookup', {
     query: { dataSource, field, value: params.value.trim(), offset: params.offset, limit: params.limit }, signal,
   })
-  if (!Array.isArray(result) || !result.every(item => item && typeof item === 'object' && ((dataSource === 18 || dataSource === 19 || dataSource === 20) ? typeof item.Id === 'string' && revenueExactId(item) !== null : (dataSource === 16 || dataSource === 17) ? revenueExactId(item) !== null : Number.isSafeInteger(item.Id) && item.Id > 0) && typeof item.Name === 'string')) throw new Error('Сервер повернув некоректні значення відбору звіту.')
+  if (!Array.isArray(result) || !result.every(item => item && typeof item === 'object' && ((dataSource === 18 || dataSource === 19 || dataSource === 20 || dataSource === 21) ? typeof item.Id === 'string' && revenueExactId(item) !== null : (dataSource === 16 || dataSource === 17) ? revenueExactId(item) !== null : Number.isSafeInteger(item.Id) && item.Id > 0) && typeof item.Name === 'string')) throw new Error('Сервер повернув некоректні значення відбору звіту.')
   if (dataSource === 19 && (new Set(result.map(item => item.Id)).size !== result.length || result.some(item => !item.Name.trim()))) throw new Error('Сервер повернув неоднозначні серії курсів.')
   return result
 }
