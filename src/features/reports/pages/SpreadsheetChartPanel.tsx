@@ -14,6 +14,8 @@ type Props = { sheet: SpreadsheetSheet; rows: SpreadsheetRow[] }
 type ChartKind = 'column' | 'bar' | 'line'
 const formatNumber = new Intl.NumberFormat('uk-UA', { maximumFractionDigits: 4 })
 const chartKinds = [{ value: 'column', label: 'Стовпчики' }, { value: 'bar', label: 'Смуги' }, { value: 'line', label: 'Лінія' }]
+// Signed values need their zero baseline inside the plot, including all-negative data.
+const includeZeroDomain = ([minimum, maximum]: readonly [number, number]): [number, number] => [Math.min(0, minimum), Math.max(0, maximum)]
 
 export default function SpreadsheetChartPanel({ sheet, rows }: Props) {
   const options = useMemo(() => getChartMeasureOptions(sheet), [sheet])
@@ -64,7 +66,7 @@ function SpreadsheetChartPlot({ points, kind, measure, unknownCount, formatter, 
         {kind === 'line' ? <LineChart data={points} margin={{ top: 12, right: 24, bottom: 36, left: 24 }}>
           <CartesianGrid stroke={CHART_GRID_COLOR} />
           <XAxis dataKey="rowKey" tickFormatter={categoryTick} tick={{ fill: CHART_LABEL_COLOR, fontSize: 11 }} />
-          <YAxis width="auto" allowDecimals={!integerCounts} tickFormatter={value => formatter.format(value)} tick={{ fill: CHART_LABEL_COLOR, fontSize: 11 }} />
+          <YAxis width="auto" domain={includeZeroDomain} allowDecimals={!integerCounts} tickFormatter={value => formatter.format(value)} tick={{ fill: CHART_LABEL_COLOR, fontSize: 11 }} />
           <Tooltip content={<ChartPointTooltip measure={measure} formatter={formatter} />} filterNull={false} />
           <ReferenceLine y={0} stroke={CHART_LABEL_COLOR} />
           <Line type="linear" dataKey="value" name={measure} connectNulls={false} stroke="var(--mantine-color-blue-6)"
@@ -73,9 +75,11 @@ function SpreadsheetChartPlot({ points, kind, measure, unknownCount, formatter, 
           margin={{ top: 12, right: 24, bottom: 36, left: 24 }}>
           <CartesianGrid stroke={CHART_GRID_COLOR} />
           <XAxis allowDecimals={!integerCounts} type={horizontal ? 'number' : 'category'} dataKey={horizontal ? undefined : 'rowKey'}
+            domain={horizontal ? includeZeroDomain : undefined}
             tickFormatter={horizontal ? value => formatter.format(Number(value)) : categoryTick}
             tick={{ fill: CHART_LABEL_COLOR, fontSize: 11 }} />
           <YAxis allowDecimals={!integerCounts} type={horizontal ? 'category' : 'number'} dataKey={horizontal ? 'rowKey' : undefined}
+            domain={horizontal ? undefined : includeZeroDomain}
             width={horizontal ? 200 : 'auto'} tickFormatter={horizontal ? categoryTick : value => formatter.format(Number(value))}
             tick={{ fill: CHART_LABEL_COLOR, fontSize: 11 }} />
           <Tooltip content={<ChartPointTooltip measure={measure} formatter={formatter} />} filterNull={false} />
