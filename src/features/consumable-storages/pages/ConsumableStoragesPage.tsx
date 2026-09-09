@@ -754,6 +754,7 @@ function DeprecatedConsumableOrdersPanel({
   onChanged: () => void
 }) {
   const { t } = useI18n()
+  const [tableToolbarSlot, setTableToolbarSlot] = useState<HTMLDivElement | null>(null)
   const { hasPermission } = useAuth()
   const [fromDate, setFromDate] = useValueState(() => shiftDate(-7))
   const [toDate, setToDate] = useValueState(() => formatLocalDate(new Date()))
@@ -883,7 +884,10 @@ function DeprecatedConsumableOrdersPanel({
               <RotateCcw size={18} />
             </ActionIcon>
           </Tooltip>
-          <DataTableDensityToggle density={density} onToggle={toggleDensity} size={36} />
+          <div className="consumable-storage-deprecated-controls">
+            <div ref={setTableToolbarSlot} className="app-filter-table-toolbar-slot consumable-storage-deprecated-toolbar" />
+            <DataTableDensityToggle density={density} onToggle={toggleDensity} size={36} />
+          </div>
         </Group>
 
         <PermissionGate permissionKey={CONSUMABLE_STORAGE_WRITE_OFF_CREATE_PERMISSION}>
@@ -919,6 +923,7 @@ function DeprecatedConsumableOrdersPanel({
         maxHeight={420}
         minWidth={1180}
         tableId="consumable-storage-deprecated-orders"
+        toolbarPortalTarget={tableToolbarSlot}
       />
 
       {editorOrder && (

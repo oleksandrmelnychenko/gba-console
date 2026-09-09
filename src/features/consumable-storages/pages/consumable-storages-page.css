@@ -210,3 +210,8 @@
 .consumable-storage-remnants-toolbar .mantine-ActionIcon-root { width: 28px; min-width: 28px; height: 36px; padding: 0; }
 .consumable-storage-remnants-toolbar .data-table-toolbar-right:empty { display: none; }
 
+.consumable-storage-deprecated-controls { display: flex; align-items: center; gap: 4px; }
+.consumable-storage-deprecated-toolbar .data-table-toolbar { width: max-content; justify-content: flex-start; gap: 0; }
+.consumable-storage-deprecated-toolbar .data-table-toolbar-left { flex: 0 0 auto; }
+.consumable-storage-deprecated-toolbar .data-table-toolbar-right:empty { display: none; }
+.consumable-storage-deprecated-controls .mantine-ActionIcon-root { width: 28px; min-width: 28px; height: 36px; padding: 0; }
