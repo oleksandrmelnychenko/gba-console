@@ -1,3 +1,4 @@
+import { cloneRateComparisonAliases, isRateComparisonCapability, rateComparisonConfigurationError, RATE_COMPARISON_CAPTIONS, RATE_COMPARISON_GROUP } from '../data/rateComparison'
 import { cloneReturnComparisonAliases, isReturnComparisonCapability, returnComparisonConfigurationError } from '../data/returnComparison'
 import { cloneBuyerSalesShareAliases, isBuyerSalesShareCapability, buyerSalesShareConfigurationError } from '../data/buyerSalesShare'
 import { cloneRevenueComparisonAliases, isRevenueComparisonCapability, revenueComparisonConfigurationError } from '../data/revenueComparison'
@@ -25,6 +26,8 @@ function isDataset(value: unknown): value is ReportDataset {
     && (item.PeriodRequired === undefined || typeof item.PeriodRequired === 'boolean')
     && (item.PeriodSupported === undefined || typeof item.PeriodSupported === 'boolean')
     && (item.DataSource !== 12 || (item.PeriodRequired === true && item.PeriodSupported === true))
+    && (item.DataSource === 19 ? item.PeriodRequired === false && item.PeriodSupported === false && item.Filters?.length === 0 && item.Groupings?.length === 1 && item.Groupings[0].Type === 52 && item.Groupings[0].Name === RATE_COMPARISON_GROUP
+      && item.Measurements?.length === RATE_COMPARISON_CAPTIONS.length && item.Measurements.every((field, index) => field.Type === 51 + index && field.Name === RATE_COMPARISON_CAPTIONS[index] && field.Selectable !== false) && isRateComparisonCapability(item.rateComparison) : item.rateComparison == null)
     && (item.DataSource === 18 ? item.PeriodRequired === true && item.PeriodSupported === true && isReturnComparisonCapability(item.ReturnComparison) : item.ReturnComparison == null)
     && (item.DataSource === 17 ? item.PeriodRequired === true && item.PeriodSupported === true && isBuyerSalesShareCapability(item.BuyerSalesShare) : item.BuyerSalesShare == null)
     && (item.DataSource === 16 ? item.PeriodRequired === true && item.PeriodSupported === true && isRevenueComparisonCapability(item.RevenueComparison) : item.RevenueComparison == null)
@@ -59,6 +62,8 @@ type WireTemplate = Required<Omit<ReportTemplate, 'Data'>> & {
     Selections: ReportRequestBody['selections']
     DataSource: ReportRequestBody['dataSource']
     ValuationClientAgreementId?: ReportRequestBody['valuationClientAgreementId']
+    RateComparison?: unknown
+    rateComparison?: unknown
     ReturnComparison?: unknown
     returnComparison?: unknown
     BuyerSalesShare?: unknown
@@ -90,9 +95,10 @@ export function normalizeSavedTemplate(value: WireTemplate): ReportTemplate {
   }
   return { ...value, Data: {
     from: value.Data.From ?? '', to: value.Data.To ?? '',
-    sorted: (value.Data.DataSource === 16 || value.Data.DataSource === 17 || value.Data.DataSource === 18) ? structuredClone(value.Data.Sorted) : value.Data.Sorted,
-    selections: (value.Data.DataSource === 16 || value.Data.DataSource === 17 || value.Data.DataSource === 18) ? structuredClone(value.Data.Selections ?? []) : value.Data.Selections ?? [],
+    sorted: (value.Data.DataSource === 16 || value.Data.DataSource === 17 || value.Data.DataSource === 18 || value.Data.DataSource === 19) ? structuredClone(value.Data.Sorted) : value.Data.Sorted,
+    selections: (value.Data.DataSource === 16 || value.Data.DataSource === 17 || value.Data.DataSource === 18 || value.Data.DataSource === 19) ? structuredClone(value.Data.Selections ?? []) : value.Data.Selections ?? [],
     dataSource: value.Data.DataSource,
+    ...cloneRateComparisonAliases(value.Data),
     ...cloneReturnComparisonAliases(value.Data),
     ...cloneBuyerSalesShareAliases(value.Data),
     ...cloneRevenueComparisonAliases(value.Data),
@@ -126,7 +132,9 @@ export async function getServerReportTemplates(signal?: AbortSignal): Promise<Re
 }
 
 export async function saveServerReportTemplate(template: ReportTemplate): Promise<ReportTemplate> {
-  const request = (template.Data.dataSource === 17 || template.Data.dataSource === 18) ? structuredClone(template) : template
+  const request = (template.Data.dataSource === 17 || template.Data.dataSource === 18 || template.Data.dataSource === 19) ? structuredClone(template) : template
+  const rateError = rateComparisonConfigurationError(request.Data)
+  if (rateError) throw new Error(rateError)
   const returnError = returnComparisonConfigurationError(request.Data)
   if (returnError) throw new Error(returnError)
   const buyerShareError = buyerSalesShareConfigurationError(request.Data)

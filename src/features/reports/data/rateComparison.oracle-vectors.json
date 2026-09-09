@@ -1,0 +1,664 @@
+[
+  {
+    "id": "latest-active-before-end",
+    "currentAsOf": "2026-09-02",
+    "previousAsOf": "2026-09-01",
+    "selectedFields": [
+      51,
+      52,
+      53,
+      54
+    ],
+    "values": [
+      "40.1235",
+      "39.0000",
+      "1.1234",
+      "2.88"
+    ],
+    "caption": "Комерційний: EUR [CurrencyID=101] → UAH [CurrencyID=102] [RateDefinitionID=1001]",
+    "points": {
+      "current": {
+        "id": "2002",
+        "created": "2026-09-02T23:59:59.9999999",
+        "amount": "40.12345"
+      },
+      "previous": {
+        "id": "2001",
+        "created": "2026-09-01T12:00:00.0000000",
+        "amount": "39.00001"
+      }
+    }
+  },
+  {
+    "id": "government-kind-isolation",
+    "currentAsOf": "2026-09-02",
+    "previousAsOf": "2026-09-01",
+    "selectedFields": [
+      51,
+      52,
+      53,
+      54
+    ],
+    "values": [
+      "3.0000",
+      "2.0000",
+      "1.0000",
+      "50.00"
+    ],
+    "caption": "Державний: EUR [CurrencyID=101] → UAH [CurrencyID=102] [RateDefinitionID=1001]",
+    "points": {
+      "current": {
+        "id": "2002",
+        "created": "2026-09-02T12:00:00.0000000",
+        "amount": "3"
+      },
+      "previous": {
+        "id": "2001",
+        "created": "2026-09-01T12:00:00.0000000",
+        "amount": "2"
+      }
+    }
+  },
+  {
+    "id": "both-missing-no-current-fallback",
+    "currentAsOf": "2026-09-02",
+    "previousAsOf": "2026-09-01",
+    "selectedFields": [
+      51,
+      52,
+      53,
+      54
+    ],
+    "values": [
+      null,
+      null,
+      null,
+      null
+    ],
+    "caption": "Комерційний: EUR [CurrencyID=101] → UAH [CurrencyID=102] [RateDefinitionID=1001]",
+    "points": {
+      "current": null,
+      "previous": null
+    }
+  },
+  {
+    "id": "previous-missing",
+    "currentAsOf": "2026-09-02",
+    "previousAsOf": "2026-09-01",
+    "selectedFields": [
+      51,
+      52,
+      53,
+      54
+    ],
+    "values": [
+      "12.3457",
+      null,
+      null,
+      null
+    ],
+    "caption": "Комерційний: EUR [CurrencyID=101] → UAH [CurrencyID=102] [RateDefinitionID=1001]",
+    "points": {
+      "current": {
+        "id": "2001",
+        "created": "2026-09-02T12:00:00.0000000",
+        "amount": "12.34567"
+      },
+      "previous": null
+    }
+  },
+  {
+    "id": "current-missing-reversed-dates",
+    "currentAsOf": "2026-08-31",
+    "previousAsOf": "2026-09-02",
+    "selectedFields": [
+      51,
+      52,
+      53,
+      54
+    ],
+    "values": [
+      null,
+      "12.3457",
+      null,
+      null
+    ],
+    "caption": "Комерційний: EUR [CurrencyID=101] → UAH [CurrencyID=102] [RateDefinitionID=1001]",
+    "points": {
+      "current": null,
+      "previous": {
+        "id": "2001",
+        "created": "2026-09-01T12:00:00.0000000",
+        "amount": "12.34567"
+      }
+    }
+  },
+  {
+    "id": "same-date-carry-forward",
+    "currentAsOf": "2026-09-04",
+    "previousAsOf": "2026-09-04",
+    "selectedFields": [
+      51,
+      52,
+      53,
+      54
+    ],
+    "values": [
+      "7.1250",
+      "7.1250",
+      "0.0000",
+      "0.00"
+    ],
+    "caption": "Комерційний: EUR [CurrencyID=101] → UAH [CurrencyID=102] [RateDefinitionID=1001]",
+    "points": {
+      "current": {
+        "id": "2001",
+        "created": "2026-09-01T12:00:00.0000000",
+        "amount": "7.125"
+      },
+      "previous": {
+        "id": "2001",
+        "created": "2026-09-01T12:00:00.0000000",
+        "amount": "7.125"
+      }
+    }
+  },
+  {
+    "id": "independent-reversed-known",
+    "currentAsOf": "2026-09-01",
+    "previousAsOf": "2026-09-02",
+    "selectedFields": [
+      51,
+      52,
+      53,
+      54
+    ],
+    "values": [
+      "2.0000",
+      "3.0000",
+      "-1.0000",
+      "-33.33"
+    ],
+    "caption": "Комерційний: EUR [CurrencyID=101] → UAH [CurrencyID=102] [RateDefinitionID=1001]",
+    "points": {
+      "current": {
+        "id": "2001",
+        "created": "2026-09-01T12:00:00.0000000",
+        "amount": "2"
+      },
+      "previous": {
+        "id": "2002",
+        "created": "2026-09-02T12:00:00.0000000",
+        "amount": "3"
+      }
+    }
+  },
+  {
+    "id": "stored-calendar-dst-and-100ns",
+    "currentAsOf": "2026-03-29",
+    "previousAsOf": "2026-03-28",
+    "selectedFields": [
+      51,
+      52,
+      53,
+      54
+    ],
+    "values": [
+      "3.0000",
+      "1.0000",
+      "2.0000",
+      "200.00"
+    ],
+    "caption": "Комерційний: EUR [CurrencyID=101] → UAH [CurrencyID=102] [RateDefinitionID=1001]",
+    "points": {
+      "current": {
+        "id": "2003",
+        "created": "2026-03-29T23:59:59.9999999",
+        "amount": "3"
+      },
+      "previous": {
+        "id": "2001",
+        "created": "2026-03-28T23:59:59.9999999",
+        "amount": "1"
+      }
+    }
+  },
+  {
+    "id": "zero-previous-positive-current",
+    "currentAsOf": "2026-09-02",
+    "previousAsOf": "2026-09-01",
+    "selectedFields": [
+      51,
+      52,
+      53,
+      54
+    ],
+    "values": [
+      "12.0000",
+      "0.0000",
+      "12.0000",
+      "100.00"
+    ],
+    "caption": "Комерційний: EUR [CurrencyID=101] → UAH [CurrencyID=102] [RateDefinitionID=1001]",
+    "points": {
+      "current": {
+        "id": "2002",
+        "created": "2026-09-02T12:00:00.0000000",
+        "amount": "12"
+      },
+      "previous": {
+        "id": "2001",
+        "created": "2026-09-01T12:00:00.0000000",
+        "amount": "0"
+      }
+    }
+  },
+  {
+    "id": "zero-current-positive-previous",
+    "currentAsOf": "2026-09-02",
+    "previousAsOf": "2026-09-01",
+    "selectedFields": [
+      51,
+      52,
+      53,
+      54
+    ],
+    "values": [
+      "0.0000",
+      "12.0000",
+      "-12.0000",
+      "-100.00"
+    ],
+    "caption": "Комерційний: EUR [CurrencyID=101] → UAH [CurrencyID=102] [RateDefinitionID=1001]",
+    "points": {
+      "current": {
+        "id": "2002",
+        "created": "2026-09-02T12:00:00.0000000",
+        "amount": "0"
+      },
+      "previous": {
+        "id": "2001",
+        "created": "2026-09-01T12:00:00.0000000",
+        "amount": "12"
+      }
+    }
+  },
+  {
+    "id": "both-zero-latest-no-older-fallback",
+    "currentAsOf": "2026-09-02",
+    "previousAsOf": "2026-09-01",
+    "selectedFields": [
+      51,
+      52,
+      53,
+      54
+    ],
+    "values": [
+      "0.0000",
+      "0.0000",
+      "0.0000",
+      "100.00"
+    ],
+    "caption": "Комерційний: EUR [CurrencyID=101] → UAH [CurrencyID=102] [RateDefinitionID=1001]",
+    "points": {
+      "current": {
+        "id": "2002",
+        "created": "2026-09-02T12:00:00.0000000",
+        "amount": "0"
+      },
+      "previous": {
+        "id": "2001",
+        "created": "2026-09-01T12:00:00.0000000",
+        "amount": "0"
+      }
+    }
+  },
+  {
+    "id": "older-and-future-ties-ignored",
+    "currentAsOf": "2026-09-02",
+    "previousAsOf": "2026-09-01",
+    "selectedFields": [
+      51,
+      52,
+      53,
+      54
+    ],
+    "values": [
+      "2.0000",
+      "1.0000",
+      "1.0000",
+      "100.00"
+    ],
+    "caption": "Комерційний: EUR [CurrencyID=101] → UAH [CurrencyID=102] [RateDefinitionID=1001]",
+    "points": {
+      "current": {
+        "id": "2002",
+        "created": "2026-09-02T12:00:00.0000000",
+        "amount": "2"
+      },
+      "previous": {
+        "id": "2001",
+        "created": "2026-09-01T12:00:00.0000000",
+        "amount": "1"
+      }
+    }
+  },
+  {
+    "id": "binary-base-code-and-inactive-duplicate",
+    "currentAsOf": "2026-09-02",
+    "previousAsOf": "2026-09-01",
+    "selectedFields": [
+      51,
+      52,
+      53,
+      54
+    ],
+    "values": [
+      "2.0000",
+      "1.0000",
+      "1.0000",
+      "100.00"
+    ],
+    "caption": "Комерційний: EUR [CurrencyID=101] → UAH [CurrencyID=102] [RateDefinitionID=1001]",
+    "points": {
+      "current": {
+        "id": "2002",
+        "created": "2026-09-02T12:00:00.0000000",
+        "amount": "2"
+      },
+      "previous": {
+        "id": "2001",
+        "created": "2026-09-01T12:00:00.0000000",
+        "amount": "1"
+      }
+    }
+  },
+  {
+    "id": "large-exact-identities",
+    "currentAsOf": "2026-09-02",
+    "previousAsOf": "2026-09-01",
+    "selectedFields": [
+      51,
+      52,
+      53,
+      54
+    ],
+    "values": [
+      "2.5000",
+      "2.0000",
+      "0.5000",
+      "25.00"
+    ],
+    "caption": "Комерційний: EUR [CurrencyID=9007199254740995] → UAH [CurrencyID=9223372036854775807] [RateDefinitionID=9007199254740993]",
+    "points": {
+      "current": {
+        "id": "9007199254741002",
+        "created": "2026-09-02T12:00:00.0000000",
+        "amount": "2.5"
+      },
+      "previous": {
+        "id": "9007199254741001",
+        "created": "2026-09-01T12:00:00.0000000",
+        "amount": "2"
+      }
+    }
+  },
+  {
+    "id": "raw-values-before-final-rounding",
+    "currentAsOf": "2026-09-02",
+    "previousAsOf": "2026-09-01",
+    "selectedFields": [
+      51,
+      52,
+      53,
+      54
+    ],
+    "values": [
+      "1.0000",
+      "1.0001",
+      "0.0000",
+      "0.00"
+    ],
+    "caption": "Комерційний: EUR [CurrencyID=101] → UAH [CurrencyID=102] [RateDefinitionID=1001]",
+    "points": {
+      "current": {
+        "id": "2002",
+        "created": "2026-09-02T12:00:00.0000000",
+        "amount": "1.000049"
+      },
+      "previous": {
+        "id": "2001",
+        "created": "2026-09-01T12:00:00.0000000",
+        "amount": "1.000051"
+      }
+    }
+  },
+  {
+    "id": "positive-midpoint-percent-and-rate",
+    "currentAsOf": "2026-09-02",
+    "previousAsOf": "2026-09-01",
+    "selectedFields": [
+      51,
+      52,
+      53,
+      54
+    ],
+    "values": [
+      "1.0001",
+      "1.0000",
+      "0.0001",
+      "0.01"
+    ],
+    "caption": "Комерційний: EUR [CurrencyID=101] → UAH [CurrencyID=102] [RateDefinitionID=1001]",
+    "points": {
+      "current": {
+        "id": "2002",
+        "created": "2026-09-02T12:00:00.0000000",
+        "amount": "1.00005"
+      },
+      "previous": {
+        "id": "2001",
+        "created": "2026-09-01T12:00:00.0000000",
+        "amount": "1"
+      }
+    }
+  },
+  {
+    "id": "negative-midpoint-percent-and-delta",
+    "currentAsOf": "2026-09-02",
+    "previousAsOf": "2026-09-01",
+    "selectedFields": [
+      51,
+      52,
+      53,
+      54
+    ],
+    "values": [
+      "1.0000",
+      "1.0000",
+      "-0.0001",
+      "-0.01"
+    ],
+    "caption": "Комерційний: EUR [CurrencyID=101] → UAH [CurrencyID=102] [RateDefinitionID=1001]",
+    "points": {
+      "current": {
+        "id": "2002",
+        "created": "2026-09-02T12:00:00.0000000",
+        "amount": "0.99995"
+      },
+      "previous": {
+        "id": "2001",
+        "created": "2026-09-01T12:00:00.0000000",
+        "amount": "1"
+      }
+    }
+  },
+  {
+    "id": "repeating-exact-percent",
+    "currentAsOf": "2026-09-02",
+    "previousAsOf": "2026-09-01",
+    "selectedFields": [
+      51,
+      52,
+      53,
+      54
+    ],
+    "values": [
+      "2.0000",
+      "3.0000",
+      "-1.0000",
+      "-33.33"
+    ],
+    "caption": "Комерційний: EUR [CurrencyID=101] → UAH [CurrencyID=102] [RateDefinitionID=1001]",
+    "points": {
+      "current": {
+        "id": "2002",
+        "created": "2026-09-02T12:00:00.0000000",
+        "amount": "2"
+      },
+      "previous": {
+        "id": "2001",
+        "created": "2026-09-01T12:00:00.0000000",
+        "amount": "3"
+      }
+    }
+  },
+  {
+    "id": "selected-order-subset",
+    "currentAsOf": "2026-09-02",
+    "previousAsOf": "2026-09-01",
+    "selectedFields": [
+      54,
+      53,
+      51
+    ],
+    "values": [
+      "50.00",
+      "1.0000",
+      "3.0000"
+    ],
+    "caption": "Комерційний: EUR [CurrencyID=101] → UAH [CurrencyID=102] [RateDefinitionID=1001]",
+    "points": {
+      "current": {
+        "id": "2002",
+        "created": "2026-09-02T12:00:00.0000000",
+        "amount": "3"
+      },
+      "previous": {
+        "id": "2001",
+        "created": "2026-09-01T12:00:00.0000000",
+        "amount": "2"
+      }
+    }
+  },
+  {
+    "id": "unselected-relative-overflow-accepted",
+    "currentAsOf": "2026-09-02",
+    "previousAsOf": "2026-09-01",
+    "selectedFields": [
+      53,
+      51,
+      52
+    ],
+    "values": [
+      "1.0000",
+      "1.0000",
+      "0.0000"
+    ],
+    "caption": "Комерційний: EUR [CurrencyID=101] → UAH [CurrencyID=102] [RateDefinitionID=1001]",
+    "points": {
+      "current": {
+        "id": "2002",
+        "created": "2026-09-02T12:00:00.0000000",
+        "amount": "1"
+      },
+      "previous": {
+        "id": "2001",
+        "created": "2026-09-01T12:00:00.0000000",
+        "amount": "0.00000000000001"
+      }
+    }
+  },
+  {
+    "id": "unselected-rate-overflow-accepted",
+    "currentAsOf": "2026-09-02",
+    "previousAsOf": "2026-09-01",
+    "selectedFields": [
+      53,
+      54
+    ],
+    "values": [
+      "0.0001",
+      "0.00"
+    ],
+    "caption": "Комерційний: EUR [CurrencyID=101] → UAH [CurrencyID=102] [RateDefinitionID=1001]",
+    "points": {
+      "current": {
+        "id": "2002",
+        "created": "2026-09-02T12:00:00.0000000",
+        "amount": "100000000000"
+      },
+      "previous": {
+        "id": "2001",
+        "created": "2026-09-01T12:00:00.0000000",
+        "amount": "99999999999.9999"
+      }
+    }
+  },
+  {
+    "id": "maximum-subhalf-unit-accepted",
+    "currentAsOf": "2026-09-02",
+    "previousAsOf": "2026-09-01",
+    "selectedFields": [
+      51,
+      52,
+      53,
+      54
+    ],
+    "values": [
+      "99999999999.9999",
+      "99999999999.9999",
+      "0.0000",
+      "0.00"
+    ],
+    "caption": "Комерційний: EUR [CurrencyID=101] → UAH [CurrencyID=102] [RateDefinitionID=1001]",
+    "points": {
+      "current": {
+        "id": "2002",
+        "created": "2026-09-02T12:00:00.0000000",
+        "amount": "99999999999.99994"
+      },
+      "previous": {
+        "id": "2001",
+        "created": "2026-09-01T12:00:00.0000000",
+        "amount": "99999999999.9999"
+      }
+    }
+  },
+  {
+    "id": "large-raw-cancellation-selected-derivatives",
+    "currentAsOf": "2026-09-02",
+    "previousAsOf": "2026-09-01",
+    "selectedFields": [
+      53,
+      54
+    ],
+    "values": [
+      "0.0000",
+      "0.00"
+    ],
+    "caption": "Комерційний: EUR [CurrencyID=101] → UAH [CurrencyID=102] [RateDefinitionID=1001]",
+    "points": {
+      "current": {
+        "id": "2002",
+        "created": "2026-09-02T12:00:00.0000000",
+        "amount": "9999999999999999.99999999999999"
+      },
+      "previous": {
+        "id": "2001",
+        "created": "2026-09-01T12:00:00.0000000",
+        "amount": "9999999999999999.99999999999999"
+      }
+    }
+  }
+]

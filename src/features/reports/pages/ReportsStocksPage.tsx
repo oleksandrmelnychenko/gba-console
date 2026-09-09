@@ -1,3 +1,6 @@
+import ReportPeriodInputs from './ReportPeriodInputs'
+import RateComparisonPanel from './RateComparisonPanel'
+import { rateComparisonOptions, requestRateComparison, type RateComparisonOptions } from '../data/rateComparison'
 import ReturnComparisonPanel from './ReturnComparisonPanel'
 import { requestReturnComparison, returnComparisonOptions, returnComparisonSummary } from '../data/returnComparison'
 import BuyerSalesSharePanel from './BuyerSalesSharePanel'
@@ -102,7 +105,7 @@ import { ReportCatalogueControl } from './ReportCatalogueControl'
 import { ReportOrderingPanel } from './ReportOrderingPanel'
 import { requestOrdering } from '../data/reportOrdering'
 import { requestFilterExpression } from '../data/reportFilterExpression'
-import { CLIENT_COMPARISON_MAX_DATE, CLIENT_COMPARISON_MIN_DATE, comparisonWindow, isComparisonDate, requestComparison } from '../data/clientPeriodComparison'
+import { CLIENT_COMPARISON_MAX_DATE, comparisonWindow, isComparisonDate, requestComparison } from '../data/clientPeriodComparison'
 import { ClientComparisonPeriodPanel } from './ClientComparisonPeriodPanel'
 import { buildReportBuilderRequest } from '../data/reportBuilderRequest'
 import { useReportFilterExpression, type ReportSelectionEdit } from '../hooks/useReportFilterExpression'
@@ -154,6 +157,7 @@ const defaultCondition = REPORT_FILTER_CONDITIONS[0]
 
 // What the finished run was asked for, kept because the response carries none of it back.
 type ReportRunOutcome = {
+  rateComparison?: RateComparisonOptions
   comparison?: { From: string; To: string }
   periodSupported: boolean
   colGroupings: string[]
@@ -200,6 +204,7 @@ function ReportsStocksWorkspace() {
   const datasetStorage = useReportDatasets(canGenerateReport)
   const [dataSource, setDataSource] = useValueState(0)
   const [comparison, setComparison] = useValueState<unknown>(undefined)
+  const [rateComparison, setRateComparison] = useValueState<unknown>(undefined)
   const [returnComparison, setReturnComparison] = useValueState<unknown>(undefined)
   const [buyerSalesShare, setBuyerSalesShare] = useValueState<unknown>(undefined)
   const [revenueComparison, setRevenueComparison] = useValueState<unknown>(undefined)
@@ -252,8 +257,8 @@ function ReportsStocksWorkspace() {
   // period on a pause, and only once it is a period the server can answer for.
   const hasLookupPeriod = !getPeriodError(debouncedFrom, debouncedTo, maxDate, t)
   const reportBody = useMemo<ReportRequestBody>(
-    () => buildReportBuilderRequest({ dataSource, comparison, xyz, revenueComparison, buyerSalesShare, returnComparison, from, to, ordering, filterExpression, topGroups, threshold, hideZero, abcClassification, valuationClientAgreementId, rowGroups, colGroups, measurements, selections }),
-    [abcClassification, colGroups, comparison, xyz, revenueComparison, buyerSalesShare, returnComparison, dataSource, filterExpression, from, hideZero, measurements, ordering, rowGroups, selections, to, topGroups, threshold, valuationClientAgreementId],
+    () => buildReportBuilderRequest({ dataSource, comparison, xyz, revenueComparison, buyerSalesShare, returnComparison, rateComparison, from, to, ordering, filterExpression, topGroups, threshold, hideZero, abcClassification, valuationClientAgreementId, rowGroups, colGroups, measurements, selections }),
+    [abcClassification, colGroups, comparison, xyz, revenueComparison, buyerSalesShare, returnComparison, rateComparison, dataSource, filterExpression, from, hideZero, measurements, ordering, rowGroups, selections, to, topGroups, threshold, valuationClientAgreementId],
   )
   const templateBody = { ...reportBody, selections }
   const configurationError = datasetStorage.error ?? (!datasetStorage.loaded ? t('Завантаження наборів даних…') : datasetConfigurationError(templateBody, dataset))
@@ -288,7 +293,7 @@ function ReportsStocksWorkspace() {
           : incompleteSelectionMessage
   const emptyRunNotice =
     lastRun && !lastRun.hasDocument
-      ? !lastRun.periodSupported ? t(dataSource === 11 ? 'Сервер не повернув файл записаних залишків рахунків. Спробуйте послабити умови відбору.' : dataSource === 10 ? 'Сервер не повернув файл поточної заборгованості. Спробуйте послабити умови відбору.' : 'Сервер не повернув файл поточних залишків. Спробуйте послабити умови відбору.')
+      ? lastRun.rateComparison ? 'Сервер не повернув файл історичних курсів. Перевірте обрану серію.' : !lastRun.periodSupported ? t(dataSource === 11 ? 'Сервер не повернув файл записаних залишків рахунків. Спробуйте послабити умови відбору.' : dataSource === 10 ? 'Сервер не повернув файл поточної заборгованості. Спробуйте послабити умови відбору.' : 'Сервер не повернув файл поточних залишків. Спробуйте послабити умови відбору.')
       : t('За період {from} – {to} сервер не повернув файл звіту. Спробуйте інший період або послабте умови відбору.', {
           from: formatDate(lastRun.from),
           to: formatDate(lastRun.to),
@@ -310,6 +315,7 @@ function ReportsStocksWorkspace() {
     try {
       const nextResult = await createStockReport(reportBody)
       const outcome: ReportRunOutcome = {
+        ...(rateComparisonOptions(rateComparison) ? { rateComparison: structuredClone(rateComparisonOptions(rateComparison)!) } : {}),
         ...returnComparisonSummary(returnComparison),
         ...(buyerSalesShareOptions(buyerSalesShare) ? { comparison: structuredClone(buyerSalesShareOptions(buyerSalesShare)!) } : {}),
         ...(revenueComparisonOptions(revenueComparison) ? { comparison: structuredClone(revenueComparisonOptions(revenueComparison)!) } : {}),
@@ -342,6 +348,7 @@ function ReportsStocksWorkspace() {
     const snapshotDefaults = dataset && (!periodSupported || supportsFullReportDateRange(dataSource)) ? defaultDatasetRequest(dataset, today, today) : null
     setComparison(snapshotDefaults?.comparison)
     setXyz(snapshotDefaults?.xyz)
+    setRateComparison(snapshotDefaults?.rateComparison)
     setReturnComparison(snapshotDefaults?.returnComparison)
     setBuyerSalesShare(snapshotDefaults?.buyerSalesShare)
     setRevenueComparison(snapshotDefaults?.revenueComparison)
@@ -398,6 +405,7 @@ function ReportsStocksWorkspace() {
     const data = template.Data
     setComparison(structuredClone(requestComparison(data)))
     setXyz(structuredClone(xyzOptions(requestXyz(data)) ?? requestXyz(data)))
+    setRateComparison(structuredClone(rateComparisonOptions(requestRateComparison(data)) ?? requestRateComparison(data)))
     setReturnComparison(structuredClone(returnComparisonOptions(requestReturnComparison(data)) ?? requestReturnComparison(data)))
     setBuyerSalesShare(structuredClone(buyerSalesShareOptions(requestBuyerSalesShare(data)) ?? requestBuyerSalesShare(data)))
     setRevenueComparison(structuredClone(revenueComparisonOptions(requestRevenueComparison(data)) ?? requestRevenueComparison(data)))
@@ -446,6 +454,7 @@ function ReportsStocksWorkspace() {
         onChange={setValuationAgreementId} onRetry={valuation.retry} /> : null}
       <ReportBuilderForm
         dataSource={dataSource}
+        rateComparisonPanel={<RateComparisonPanel dataSource={dataSource} value={rateComparison} disabled={isLoading || !canGenerateReport} onChange={setRateComparison} />}
         returnComparisonPanel={<ReturnComparisonPanel dataSource={dataSource} value={returnComparison} disabled={isLoading || !canGenerateReport} onChange={setReturnComparison} />}
         buyerSalesSharePanel={dataSource === 17 ? <BuyerSalesSharePanel value={buyerSalesShare} disabled={isLoading || !canGenerateReport} onChange={setBuyerSalesShare} /> : null}
         revenueComparisonPanel={dataSource === 16 ? <RevenueComparisonPanel value={revenueComparison} disabled={isLoading || !canGenerateReport} onChange={setRevenueComparison} /> : null}
@@ -523,6 +532,7 @@ function ReportsStocksWorkspace() {
 }
 
 type ReportBuilderFormProps = {
+  rateComparisonPanel: ReactNode
   returnComparisonPanel: ReactNode
   buyerSalesSharePanel: ReactNode
   revenueComparisonPanel: ReactNode
@@ -584,6 +594,7 @@ type ReportBuilderFormProps = {
 function ReportBuilderForm({
   comparisonPanel,
   xyzPanel,
+  rateComparisonPanel,
   returnComparisonPanel,
   buyerSalesSharePanel,
   revenueComparisonPanel,
@@ -647,24 +658,7 @@ function ReportBuilderForm({
       <form className="reports-stocks-form" onSubmit={onSubmit}>
         <div className="reports-stocks-filter-scroll">
         <div className="app-filter-bar reports-stocks-filter-bar">
-          {periodSupported ? <div className="app-filter-date-range">
-            <TextInput
-              label={dataSource === 13 ? 'Поточний період: від' : t('Від')}
-              max={to || maxDate}
-              min={supportsFullReportDateRange(dataSource) ? CLIENT_COMPARISON_MIN_DATE : REPORT_MIN_DATE}
-              type="date"
-              value={from}
-              onChange={(event) => onFromChange(event.currentTarget.value)}
-            />
-            <TextInput
-              label={dataSource === 13 ? 'Поточний період: до' : t('До')}
-              max={maxDate}
-              min={from || (supportsFullReportDateRange(dataSource) ? CLIENT_COMPARISON_MIN_DATE : REPORT_MIN_DATE)}
-              type="date"
-              value={to}
-              onChange={(event) => onToChange(event.currentTarget.value)}
-            />
-          </div> : <Text size="sm">{t('Поточний стан на час читання даних. Історичний період не застосовується.')}</Text>}
+          <ReportPeriodInputs dataSource={dataSource} supported={periodSupported} from={from} to={to} maxDate={maxDate} onFromChange={onFromChange} onToChange={onToChange} />
           {comparisonPanel}
           <div className="app-filter-actions reports-stocks-actions">
             <Button
@@ -702,6 +696,7 @@ function ReportBuilderForm({
         {presets.length ? <ReportQuickPresets disabled={isLoading || !configurationReady} presets={presets} onApply={onApplyPreset} /> : null}
 
         <div className="reports-stocks-body">
+          {rateComparisonPanel}
           {returnComparisonPanel}
           {buyerSalesSharePanel ? <Card className="app-section-card reports-buyer-sales-share-settings" withBorder radius="md" padding="md" style={{ minWidth: 0 }}>{buyerSalesSharePanel}</Card> : null}
           {revenueComparisonPanel ? <Card className="app-section-card reports-revenue-comparison-settings" withBorder radius="md" padding="md" style={{ minWidth: 0 }}>{revenueComparisonPanel}</Card> : null}
@@ -737,7 +732,7 @@ function ReportBuilderForm({
             onRowGroupsChange={onRowGroupsChange}
             onSelectionsChange={onSelectionsChange}
           />
-          {filterExpressionPanel}
+          {dataSource === 19 ? null : filterExpressionPanel}
           {!hasFixedReportAxes(dataSource) ? <>
             {topGroupsPanel}
             {thresholdPanel}
@@ -919,7 +914,7 @@ function LegacyReportBuilder({
 
         <section className="app-section-card reports-stocks-structure">
           <Text className="app-section-title" component="h2" fw={600} size="sm">{t('Групування')}</Text>
-          {(dataSource === 16 || dataSource === 17 || dataSource === 18) ? <Text size="sm">Клієнт → Договір. Показники у стовпцях; структура цього звіту фіксована.</Text> : dataSource === 15 ? <Text size="sm">Клас XYZ → Товар. Показники у стовпцях; структура цього звіту фіксована.</Text> : <ReportGroupingPanel layout={groupingLayout} axis="Row" allowed={allowedGroupingTypes} transferSupported={dataSource !== 13}
+          {dataSource === 19 ? <Text size="sm">Одна точна валютна пара і серія. Показники у стовпцях; підсумки не обчислюються.</Text> : (dataSource === 16 || dataSource === 17 || dataSource === 18) ? <Text size="sm">Клієнт → Договір. Показники у стовпцях; структура цього звіту фіксована.</Text> : dataSource === 15 ? <Text size="sm">Клас XYZ → Товар. Показники у стовпцях; структура цього звіту фіксована.</Text> : <ReportGroupingPanel layout={groupingLayout} axis="Row" allowed={allowedGroupingTypes} transferSupported={dataSource !== 13}
             onOpenPicker={() => setGroupingPickerTarget('rows')}
             onRemove={(index) => onRowGroupsChange((current) => current.filter((_, itemIndex) => itemIndex !== index))}
             onReorder={(type, direction) => onRowGroupsChange(current => reorderReportGrouping(current, type, direction, allowedGroupingTypes))}
@@ -930,7 +925,7 @@ function LegacyReportBuilder({
             onReorder={(type, direction) => onColGroupsChange(current => reorderReportGrouping(current, type, direction, allowedGroupingTypes))}
             onTransfer={type => transferGrouping('Col', type)} /> : <Text size="sm" c="dimmed">Порівняння періодів показує вибрані показники у стовпцях.</Text>}
         </section>
-        <section className="reports-stocks-legacy__selections">
+        {dataSource === 19 ? null : <section className="reports-stocks-legacy__selections">
           <ReportSelectionsCard
             dataSource={dataSource}
             description={null}
@@ -941,7 +936,7 @@ function LegacyReportBuilder({
             to={lookupTo}
             onChange={onSelectionsChange}
           />
-        </section>
+        </section>}
       </div>
 
       <LegacyGroupingPickerModal
@@ -1461,12 +1456,12 @@ function ReportResultSection({
     () => [
       {
         id: 'period',
-        header: lastRun?.periodSupported === false ? t('Стан') : t('Період'),
+        header: lastRun?.rateComparison ? 'Дати курсів' : lastRun?.periodSupported === false ? t('Стан') : t('Період'),
         minWidth: 180,
-        accessor: (row) => row.periodSupported ? `${formatDate(row.from)} – ${formatDate(row.to)}` : t('Поточний стан'),
+        accessor: (row) => row.rateComparison ? `${formatDate(row.rateComparison.CurrentAsOf)} / ${formatDate(row.rateComparison.PreviousAsOf)}` : row.periodSupported ? `${formatDate(row.from)} – ${formatDate(row.to)}` : t('Поточний стан'),
         cell: (row) => (
           <span className="reports-stocks-result__period">
-            {row.periodSupported ? `${formatDate(row.from)} – ${formatDate(row.to)}` : t('Поточний стан')}
+            {row.rateComparison ? `${formatDate(row.rateComparison.CurrentAsOf)} / ${formatDate(row.rateComparison.PreviousAsOf)}` : row.periodSupported ? `${formatDate(row.from)} – ${formatDate(row.to)}` : t('Поточний стан')}
           </span>
         ),
       },
@@ -1530,7 +1525,7 @@ function ReportResultSection({
         ),
       },
     ],
-    [hasFiles, lastRun?.periodSupported, onOpenFiles, t],
+    [hasFiles, lastRun?.periodSupported, lastRun?.rateComparison, onOpenFiles, t],
   )
 
   if (!lastRun) return null
@@ -1962,7 +1957,7 @@ function isAuthoredServerMessage(message: string): boolean {
 // Names the run for the export modal, where the only other identity on offer is the engine's «Reports_MM.yyyy_
 // <guid>.xlsx» file name.
 function describeReportRun(run: ReportRunOutcome, t: TranslateFunction): string {
-  const parts = [run.periodSupported ? `${formatDate(run.from)} – ${formatDate(run.to)}` : t('Поточний стан на час читання даних')]
+  const parts = [run.rateComparison ? `Курс на ${formatDate(run.rateComparison.CurrentAsOf)} / порівняння на ${formatDate(run.rateComparison.PreviousAsOf)} · ${run.rateComparison.RateKind === 'commercial' ? 'Комерційний' : 'Державний'} [${run.rateComparison.RateDefinitionId}]` : run.periodSupported ? `${formatDate(run.from)} – ${formatDate(run.to)}` : t('Поточний стан на час читання даних')]
   if (run.comparison) parts.push(`Порівняння: ${formatDate(run.comparison.From)} – ${formatDate(run.comparison.To)}`)
 
   if (run.rowGroupings.length) {
@@ -2002,6 +1997,7 @@ function describeResultPlaceholder(
   const period = `${formatDate(lastRun.from)} – ${formatDate(lastRun.to)}`
   const measures = lastRun.measures.join(', ')
 
+  if (lastRun.rateComparison) return { title: lastRun.hasDocument ? 'Звіт сформовано у файл' : 'Файл звіту не сформовано', description: describeReportRun(lastRun, t) }
   if (!lastRun.periodSupported) {
     return {
       description: lastRun.hasDocument

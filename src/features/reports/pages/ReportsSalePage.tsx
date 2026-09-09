@@ -1,3 +1,4 @@
+import { RATE_COMPARISON_TITLE } from '../data/rateComparison'
 import { RETURN_COMPARISON_TITLE } from '../data/returnComparison'
 import { BUYER_SALES_SHARE_TITLE } from '../data/buyerSalesShare'
 import { REVENUE_COMPARISON_TITLE } from '../data/revenueComparison'
@@ -41,7 +42,7 @@ import {
   filterSheetRows,
   getAdditiveColumns,
   isFilledCell,
-  isCurrentReportSheet,
+  supportsSpreadsheetDateFilters,
   getSpreadsheetNumberFormatter,
   normalizeImportedCellValue,
   parseDelimitedText,
@@ -87,7 +88,7 @@ function ReportsSalePageContent() {
   const { density, toggleDensity } = useDataTableDensity('reports-sale-spreadsheet', 'normal')
   const [debouncedSearch] = useDebouncedValue(search, SEARCH_DEBOUNCE_MS)
   const activeSheet = sheets.find((sheet) => sheet.name === activeSheetName) || sheets[0] || null
-  const currentStock = isCurrentReportSheet(activeSheet)
+  const currentStock = !supportsSpreadsheetDateFilters(activeSheet)
   const visibleRows = useMemo(
     () => filterSheetRows(activeSheet, debouncedSearch, dateFrom, dateTo),
     [activeSheet, dateFrom, dateTo, debouncedSearch],
@@ -298,7 +299,7 @@ function ReportHeaderBlock({ header }: { header: SpreadsheetReportHeader }) {
   const details = addOccurrenceKeys(presentation.lines.filter((line) => !warnings.has(line)))
 
   return (
-    <Stack className={[CLIENT_ACTIVITY_REPORT_TITLE, CLIENT_COMPARISON_TITLE, IMPORTED_PAYMENTS_TITLE, XYZ_TITLE, RETURN_COMPARISON_TITLE, REVENUE_COMPARISON_TITLE, BUYER_SALES_SHARE_TITLE].includes(header.lines[0]) ? 'reports-client-activity-header' : undefined} gap={6}>
+    <Stack className={[RATE_COMPARISON_TITLE, CLIENT_ACTIVITY_REPORT_TITLE, CLIENT_COMPARISON_TITLE, IMPORTED_PAYMENTS_TITLE, XYZ_TITLE, RETURN_COMPARISON_TITLE, REVENUE_COMPARISON_TITLE, BUYER_SALES_SHARE_TITLE].includes(header.lines[0]) ? 'reports-client-activity-header' : undefined} gap={6}>
       {warningLines.length ? (
         <Alert className="reports-page-alert" color="yellow" icon={<CircleAlert size={18} />}>
           <Stack gap={2}>
