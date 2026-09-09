@@ -587,7 +587,7 @@ function useProductStoragesPageModel() {
 
   function openGroupAction() {
     if (!canOpenPreview) {
-      setActionError(t('Недостатньо прав для Preview'))
+      setActionError(t('Недостатньо прав для попереднього перегляду'))
       return
     }
 
@@ -1250,7 +1250,7 @@ function ProductStoragePreviewDrawer({
         cell: (row) => (
           <TableRowAction
             action="delete"
-            label={t('Вилучити з Preview')}
+            label={t('Вилучити з попереднього перегляду')}
             onClick={() => onRemoveRow(row.availability)}
           />
         ),
@@ -1272,8 +1272,8 @@ function ProductStoragePreviewDrawer({
         </>
       }
       opened={opened}
-      size="xl"
-      title={`${t('Preview')} (${rows.length})`}
+      size="wide"
+      title={`${t('Попередній перегляд')} (${rows.length})`}
       onClose={onClose}
     >
       <Stack gap="md">
