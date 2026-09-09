@@ -1,0 +1,17 @@
+.company-car-road-list-form .document-detail-section__body.is-stacked {
+  padding: 14px 12px;
+}
+.company-car-road-list-form .mantine-InputWrapper-label {
+  color: var(--mantine-color-gray-7);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  margin-bottom: 6px;
+}
+.company-car-road-list-form .mantine-Input-input {
+  border-color: var(--mantine-color-gray-2);
+  border-radius: 8px;
+  min-height: 36px;
+}
+.company-car-road-list-form .mantine-Input-input:focus {
+  border-color: var(--brand-orange);
+}
