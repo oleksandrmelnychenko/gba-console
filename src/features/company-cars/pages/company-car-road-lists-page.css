@@ -58,3 +58,16 @@
   flex: 1 1 auto;
   min-height: 0;
 }
+
+.company-car-road-lists-filter-row .app-filter-actions {
+  gap: 8px;
+}
+
+.company-car-road-lists-filter-row .app-filter-table-toolbar-slot .data-table-toolbar-right:empty {
+  display: none;
+}
+
+.company-car-road-lists-filter-row .app-filter-table-toolbar-slot .mantine-ActionIcon-root {
+  width: 34px;
+  height: 34px;
+}

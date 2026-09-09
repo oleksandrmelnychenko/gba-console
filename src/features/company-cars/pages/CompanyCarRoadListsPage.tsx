@@ -12,7 +12,7 @@ import {
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import { ArrowLeft, CircleAlert, Plus, RefreshCw, RotateCcw, Trash2 } from 'lucide-react'
-import { useCallback, useEffect, useMemo, useReducer } from 'react'
+import { useCallback, useEffect, useMemo, useReducer, useState } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import { formatDateInputForQuery, formatLocalDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
@@ -117,6 +117,7 @@ function CompanyCarRoadListsPageContent() {
   const [deleteTarget, setDeleteTarget] = useValueState<CompanyCarRoadList | null>(null)
   const [isDeleting, setDeleting] = useValueState(false)
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
+  const [tableToolbarSlot, setTableToolbarSlot] = useState<HTMLDivElement | null>(null)
   const { density, toggleDensity } = useDataTableDensity('company-car-road-lists', TABLE_DEFAULT_LAYOUT.density)
   const filterError = getDateRangeError(fromDate, toDate)
   const canCreateRoadList = hasPermission(COMPANY_CAR_ROAD_LIST_CREATE_PERMISSION)
@@ -285,6 +286,7 @@ function CompanyCarRoadListsPageContent() {
                   <RotateCcw size={17} />
                 </ActionIcon>
               </Tooltip>
+              <div ref={setTableToolbarSlot} className="app-filter-table-toolbar-slot" />
               <DataTableDensityToggle density={density} onToggle={toggleDensity} size={34} />
               <Tooltip label={t('Оновити')}>
                 <ActionIcon aria-label={t('Оновити')} loading={isLoading} size={34} variant="light" onClick={reload}>
@@ -332,6 +334,7 @@ function CompanyCarRoadListsPageContent() {
             layoutVersion="company-car-road-lists-1"
             minWidth={1280}
             tableId="company-car-road-lists"
+            toolbarPortalTarget={tableToolbarSlot}
           />
         </div>
       </Card>
