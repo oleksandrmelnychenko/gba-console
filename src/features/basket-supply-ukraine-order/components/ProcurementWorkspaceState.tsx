@@ -62,7 +62,7 @@ export function ProcurementWorkspaceState({
       ) : null}
 
       {action ? (
-        <Button color="gray" size="sm" variant="default" onClick={action.onClick}>
+        <Button className="app-filter-primary-action" color="brand" size="sm" variant="filled" onClick={action.onClick}>
           {action.label}
         </Button>
       ) : null}
