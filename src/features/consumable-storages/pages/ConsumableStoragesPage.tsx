@@ -572,6 +572,7 @@ function ConsumableStorageDetailDrawer({
 
 function StorageRemnantsPanel({ products }: { products: ConsumableProduct[] }) {
   const { t } = useI18n()
+  const [tableToolbarSlot, setTableToolbarSlot] = useState<HTMLDivElement | null>(null)
   const [searchValue, setSearchValue] = useValueState('')
   const columns = useStorageRemnantColumns()
   const filteredProducts = useMemo(
@@ -591,6 +592,7 @@ function StorageRemnantsPanel({ products }: { products: ConsumableProduct[] }) {
         w={{ base: '100%', sm: 320 }}
         onChange={(event) => setSearchValue(event.currentTarget.value)}
       />
+          <div ref={setTableToolbarSlot} className="app-filter-table-toolbar-slot consumable-storage-remnants-toolbar" />
         </Group>
       </div>
 
@@ -605,6 +607,7 @@ function StorageRemnantsPanel({ products }: { products: ConsumableProduct[] }) {
         maxHeight={360}
         minWidth={820}
         tableId="consumable-storage-remnants"
+        toolbarPortalTarget={tableToolbarSlot}
       />
 
       </Stack>

@@ -194,3 +194,19 @@
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   min-width: 0;
 }
+
+.consumable-storage-remnants-toolbar { margin-left: auto; }
+.consumable-storage-remnants-toolbar .data-table-toolbar {
+  flex: 0 0 auto;
+  justify-content: flex-start;
+  width: max-content;
+  gap: 4px;
+}
+.consumable-storage-remnants-toolbar .data-table-toolbar-left,
+.consumable-storage-remnants-toolbar .data-table-toolbar-right {
+  flex: 0 0 auto;
+  gap: 4px;
+}
+.consumable-storage-remnants-toolbar .mantine-ActionIcon-root { width: 28px; min-width: 28px; height: 36px; padding: 0; }
+.consumable-storage-remnants-toolbar .data-table-toolbar-right:empty { display: none; }
+
