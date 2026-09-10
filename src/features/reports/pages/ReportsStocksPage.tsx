@@ -34,7 +34,7 @@ import {
 } from '@mantine/core'
 import { useDebouncedValue } from '@mantine/hooks'
 import { CheckboxMultiSelect } from '../../../shared/ui/CheckboxMultiSelect'
-import { CircleAlert, LayoutTemplate, Plus, RefreshCw, RotateCcw, Save, Trash2 } from 'lucide-react'
+import { CircleAlert, LayoutTemplate, Plus, RotateCcw, Save, Trash2 } from 'lucide-react'
 import { IconFileSpreadsheet } from '@tabler/icons-react'
 import { TableRowAction } from '../../../shared/ui/table-row-action/TableRowAction'
 import { type FormEvent, type ReactNode, useEffect, useMemo, useRef, useState } from 'react'
@@ -82,7 +82,6 @@ import type {
   ReportGroupingItem,
   ReportMeasurementGroup,
   ReportRequestBody,
-  ReportResult,
   ReportSelection,
   ReportSelectedValue,
   ReportTemplate,
@@ -94,16 +93,19 @@ import {
 import './reports-pages.css'
 import { datasetConfigurationError, datasetFilters, datasetGroupings, datasetMeasurements, datasetPresetRequest, datasetPresets, defaultDatasetRequest, type DatasetReportPresetId } from '../data/reportDatasets'
 import { useReportDatasets } from '../hooks/useReportDatasets'
-import { isCurrentReportSource, usesNativeReportLookup, supportsFullReportDateRange, hasFixedReportAxes, nativeReportMeasurementUnit } from '../data/nativeReportProfiles'
+import { usesNativeReportLookup, supportsFullReportDateRange, hasFixedReportAxes, nativeReportMeasurementUnit } from '../data/nativeReportProfiles'
 import { VALUATION_DATA_SOURCE } from '../data/reportValuation'
 import { useValuationAgreement } from '../hooks/useValuationAgreement'
+import { useReportRunState } from '../hooks/useReportRunState'
 import { ValuationAgreementPicker } from './ValuationAgreementPicker'
 import { ReportDatasetPicker } from './ReportDatasetPicker'
 import { ReportQuickPresets } from './ReportQuickPresets'
 import { ReportGroupingPanel } from './ReportGroupingPanel'
 import { reorderReportGrouping, transferReportGrouping, type ReportGroupingAxis } from '../data/reportGroupingLayout'
 
-import { useServerReportTemplates } from '../hooks/useServerReportTemplates'
+import { useServerReportTemplates, type TemplateMutationResult } from '../hooks/useServerReportTemplates'
+import { ReportTemplatesPanel } from './ReportTemplatesPanel'
+import { retainStoredTemplateFields } from '../data/reportTemplateDraft'
 
 import { ReportCatalogueControl } from './ReportCatalogueControl'
 import { ReportOrderingPanel } from './ReportOrderingPanel'
@@ -231,15 +233,9 @@ function ReportsStocksWorkspace() {
   const [topGroups, setTopGroups] = useValueState<unknown>(undefined)
   const filterLogic = useReportFilterExpression()
   const { selections, expression: filterExpression } = filterLogic
-  const [result, setResult] = useValueState<ReportResult | null>(null)
-  const [lastRun, setLastRun] = useValueState<ReportRunOutcome | null>(null)
-  const [error, setError] = useValueState<string | null>(null)
-  const [isLoading, setLoading] = useValueState(false)
-  const comparisonSettingsDisabled = isLoading || !canGenerateReport
-  const [downloadModalOpened, setDownloadModalOpened] = useValueState(false)
   const [templateName, setTemplateName] = useValueState('')
   const templateStorage = useServerReportTemplates(canGenerateReport, datasetStorage.datasets)
-  const templates = templateStorage.templates
+  const [activeTemplate, setActiveTemplate] = useState<ReportTemplate | null>(null)
   const [templateNotice, setTemplateNotice] = useValueState<string | null>(null)
   const groupingOptions = useMemo(() => datasetGroupings(dataset).filter(field => field.type !== ABC_CLASS_GROUPING || abcClassification != null), [abcClassification, dataset])
   const groupingSelectData = useMemo(
@@ -267,7 +263,15 @@ function ReportsStocksWorkspace() {
     () => buildReportBuilderRequest({ dataSource, comparison, xyz, revenueComparison, buyerSalesShare, returnComparison, paymentComparison, marginComparison, rateComparison, from, to, ordering, filterExpression, topGroups, threshold, hideZero, abcClassification, valuationClientAgreementId, rowGroups, colGroups, measurements, selections }),
     [abcClassification, colGroups, comparison, xyz, revenueComparison, buyerSalesShare, returnComparison, paymentComparison, marginComparison, rateComparison, dataSource, filterExpression, from, hideZero, measurements, ordering, rowGroups, selections, to, topGroups, threshold, valuationClientAgreementId],
   )
-  const templateBody = { ...reportBody, selections }
+  const { result, lastRun, error, isLoading, downloadModalOpened, update: updateRun, begin: beginRun, clear: clearRun } = useReportRunState<ReportRunOutcome>(JSON.stringify({
+    request: reportBody,
+    allowed: canGenerateReport,
+    agreementVerified: dataSource !== VALUATION_DATA_SOURCE || valuation.agreement?.Id === valuationClientAgreementId,
+  }))
+  const comparisonSettingsDisabled = isLoading || !canGenerateReport
+  const templateBody = useMemo(() => activeTemplate
+    ? retainStoredTemplateFields(activeTemplate.Data, { ...reportBody, selections })
+    : { ...reportBody, selections }, [activeTemplate, reportBody, selections])
   const configurationError = datasetStorage.error ?? (!datasetStorage.loaded ? t('Завантаження наборів даних…') : datasetConfigurationError(templateBody, dataset))
     ?? (dataSource === VALUATION_DATA_SOURCE && valuation.agreement?.Id !== valuationClientAgreementId ? 'Підтвердіть доступний договір оцінки.' : null)
   const checkedMeasurements = reportBody.sorted.Measurements.length
@@ -315,9 +319,7 @@ function ReportsStocksWorkspace() {
       return
     }
 
-    setLoading(true)
-    setError(null)
-    setLastRun(null)
+    const updateAttempt = beginRun()
 
     try {
       const nextResult = await createStockReport(reportBody)
@@ -339,21 +341,16 @@ function ReportsStocksWorkspace() {
         to,
       }
 
-      setResult(nextResult)
-      setLastRun(outcome)
-
-      if (outcome.hasDocument) {
-        setDownloadModalOpened(true)
-      }
+      updateAttempt({ result: nextResult, lastRun: outcome, downloadModalOpened: outcome.hasDocument })
     } catch (submitError) {
-      setResult(null)
-      setError(describeReportError(submitError, t))
+      updateAttempt({ result: null, error: describeReportError(submitError, t) })
     } finally {
-      setLoading(false)
+      updateAttempt({ isLoading: false })
     }
   }
 
   function resetReport() {
+    setActiveTemplate(null)
     const snapshotDefaults = dataset && (!periodSupported || supportsFullReportDateRange(dataSource)) ? defaultDatasetRequest(dataset, today, today) : null
     setComparison(snapshotDefaults?.comparison)
     setXyz(snapshotDefaults?.xyz)
@@ -375,15 +372,16 @@ function ReportsStocksWorkspace() {
     abc.load(undefined)
     setValuationAgreementId(undefined)
     groupingOrdering.loadOrdering(undefined)
-    setResult(null)
-    setLastRun(null)
-    setError(null)
+    clearRun()
     setTemplateNotice(null)
   }
 
-  function saveTemplate() {
+  async function saveTemplate(): Promise<TemplateMutationResult> {
     setTemplateNotice(null)
-    if (!configurationError) void templateStorage.save(templateName, templateBody)
+    if (configurationError) return { ok: false }
+    const saved = await templateStorage.save(templateName, templateBody)
+    if (saved.ok && saved.template) setActiveTemplate(structuredClone(saved.template))
+    return saved
   }
 
   function loadTemplates() {
@@ -391,14 +389,22 @@ function ReportsStocksWorkspace() {
     templateStorage.reload()
   }
 
-  function updateTemplate(id: string) {
+  async function updateTemplate(): Promise<TemplateMutationResult> {
     setTemplateNotice(null)
-    if (!configurationError) void templateStorage.save(templateName, templateBody, id)
+    if (configurationError || !activeTemplate) return { ok: false }
+    const saved = await templateStorage.update(activeTemplate, templateBody)
+    if (saved.ok && saved.template) setActiveTemplate(structuredClone(saved.template))
+    return saved
   }
 
-  function deleteTemplate(id: string) {
-    setTemplateNotice(null)
-    void templateStorage.remove(id)
+  function renamedTemplate(saved: ReportTemplate, source: ReportTemplate) {
+    if (!activeTemplate || activeTemplate.Id !== saved.Id || activeTemplate.Revision !== source.Revision) return
+    if (templateName === activeTemplate.Name) setTemplateName(saved.Name)
+    setActiveTemplate(structuredClone(saved))
+  }
+
+  function deletedTemplate(id: string) {
+    if (activeTemplate?.Id === id) setActiveTemplate(null)
   }
 
   function applyTemplate(template: ReportTemplate): boolean {
@@ -409,10 +415,12 @@ function ReportsStocksWorkspace() {
       return false
     }
     applyConfiguration(template, nextDataset)
+    setActiveTemplate(structuredClone(template))
     return true
   }
 
   function applyConfiguration(template: ReportTemplate, nextDataset: ReportDataset) {
+    setActiveTemplate(null)
     const data = template.Data
     setComparison(structuredClone(requestComparison(data)))
     setXyz(structuredClone(xyzOptions(requestXyz(data)) ?? requestXyz(data)))
@@ -440,9 +448,7 @@ function ReportsStocksWorkspace() {
     abc.load(requestAbcClassification(data))
     setMeasurements(datasetMeasurements(nextDataset, data.sorted.Measurements))
     setTemplateNotice(null)
-    setResult(null)
-    setLastRun(null)
-    setError(null)
+    clearRun()
   }
 
   function changeDataset(nextDataset: ReportDataset) {
@@ -501,13 +507,16 @@ function ReportsStocksWorkspace() {
         templateName={templateName}
         templateNotice={templateNotice ?? templateStorage.notice}
         templateStorage={templateStorage}
-        templates={templates}
+        activeTemplate={activeTemplate}
+        templatesDisabled={!canGenerateReport || isLoading}
+        onRenamedTemplate={renamedTemplate}
+        onClearTemplateNotice={() => setTemplateNotice(null)}
         to={to}
         onApplyTemplate={applyTemplate}
-        onDeleteTemplate={deleteTemplate}
+        onDeleteTemplate={deletedTemplate}
         onFromChange={setFrom}
         onMeasurementsChange={setMeasurements}
-        onOpenFiles={() => setDownloadModalOpened(true)}
+        onOpenFiles={() => updateRun({ downloadModalOpened: true })}
         onRefreshTemplates={loadTemplates}
         onReset={resetReport}
         onRowGroupsChange={value => groupingOrdering.changeAxis('Row', value)}
@@ -540,7 +549,7 @@ function ReportsStocksWorkspace() {
         }
         opened={downloadModalOpened}
         title={lastRun?.name || dataset?.Name || t('Звіт')}
-        onClose={() => setDownloadModalOpened(false)}
+        onClose={() => updateRun({ downloadModalOpened: false })}
       />
     </Stack>
   )
@@ -589,7 +598,10 @@ type ReportBuilderFormProps = {
   submitBlockedReason: string
   templateName: string
   templateNotice: string | null
-  templates: ReportTemplate[]
+  activeTemplate: ReportTemplate | null
+  templatesDisabled: boolean
+  onRenamedTemplate: (template: ReportTemplate, source: ReportTemplate) => void
+  onClearTemplateNotice: () => void
   to: string
   onApplyTemplate: (template: ReportTemplate) => boolean
   onColGroupsChange: StateSetter<ReportGroupingItem[]>
@@ -600,12 +612,12 @@ type ReportBuilderFormProps = {
   onRefreshTemplates: () => void
   onReset: () => void
   onRowGroupsChange: StateSetter<ReportGroupingItem[]>
-  onSaveTemplate: () => void
+  onSaveTemplate: () => Promise<TemplateMutationResult>
   onSelectionsChange: (edit: ReportSelectionEdit) => void
   onSubmit: (event: FormEvent<HTMLFormElement>) => void
   onTemplateNameChange: StateSetter<string>
   onToChange: StateSetter<string>
-  onUpdateTemplate: (name: string) => void
+  onUpdateTemplate: () => Promise<TemplateMutationResult>
 }
 
 function ReportBuilderForm({
@@ -650,7 +662,10 @@ function ReportBuilderForm({
   submitBlockedReason,
   templateName,
   templateNotice,
-  templates,
+  activeTemplate,
+  templatesDisabled,
+  onRenamedTemplate,
+  onClearTemplateNotice,
   templateStorage,
   to,
   onApplyTemplate,
@@ -773,20 +788,26 @@ function ReportBuilderForm({
           centered
           classNames={{ body: 'reports-stocks-template-modal__body', title: 'reports-stocks-modal-title' }}
           opened={templatesOpened}
+          closeOnClickOutside={!templateStorage.busy}
+          closeOnEscape={!templateStorage.busy}
+          closeButtonProps={{ disabled: templateStorage.busy }}
           size="lg"
           title={t('Шаблони звіту')}
           onClose={() => setTemplatesOpened(false)}
         >
-          <ReportTemplatesCard
+          <ReportTemplatesPanel
             storage={templateStorage}
             configurationReady={configurationReady}
             notice={templateNotice}
             templateName={templateName}
-            templates={templates}
+            activeTemplate={activeTemplate}
+            disabled={templatesDisabled}
+            onRenamed={onRenamedTemplate}
+            onClearNotice={onClearTemplateNotice}
             onApply={(template) => {
               if (onApplyTemplate(template)) setTemplatesOpened(false)
             }}
-            onDelete={onDeleteTemplate}
+            onDeleted={onDeleteTemplate}
             onNameChange={onTemplateNameChange}
             onRefresh={onRefreshTemplates}
             onSave={onSaveTemplate}
@@ -1326,146 +1347,6 @@ function getSelectionFieldSummary(
   const fieldLabel = label.slice(separatorIndex + 1).trim()
 
   return groupLabel === fieldLabel ? fieldLabel : label
-}
-
-type ReportTemplatesCardProps = {
-  configurationReady: boolean
-  storage: ReturnType<typeof useServerReportTemplates>
-  notice: string | null
-  templateName: string
-  templates: ReportTemplate[]
-  onApply: (template: ReportTemplate) => void
-  onDelete: (name: string) => void
-  onNameChange: (name: string) => void
-  onRefresh: () => void
-  onSave: () => void
-  onUpdate: (name: string) => void
-}
-
-function ReportTemplatesCard({
-  configurationReady,
-  storage,
-  notice,
-  templateName,
-  templates,
-  onApply,
-  onDelete,
-  onNameChange,
-  onRefresh,
-  onSave,
-  onUpdate,
-}: ReportTemplatesCardProps) {
-  const { t } = useI18n()
-
-  return (
-    <div className="reports-stocks-template-card">
-      <section className="reports-stocks-template-create">
-        <Group align="end" className="reports-stocks-template-form" gap={10} wrap="nowrap">
-          <TextInput
-            className="reports-stocks-template-name"
-            label={t('Назва шаблону')}
-            placeholder={t('Наприклад, продажі за регіонами')}
-            value={templateName}
-            onChange={(event) => onNameChange(event.currentTarget.value)}
-          />
-          <Button
-            color={CREATE_ACTION_COLOR}
-            disabled={!configurationReady || !templateName.trim() || !storage.ready || storage.busy}
-            leftSection={<Save size={16} />}
-            type="button"
-            onClick={onSave}
-          >
-            {t('Зберегти')}
-          </Button>
-        </Group>
-      </section>
-      {notice ? <Alert color="yellow" icon={<CircleAlert size={18} />}>{notice}</Alert> : null}
-      <Text size="xs" c="dimmed">{t('Особисті шаблони зберігаються на сервері та доступні з інших браузерів.')}</Text>
-      <section className="reports-stocks-template-saved">
-        <Group justify="space-between" wrap="nowrap">
-          <Group gap="xs" wrap="nowrap">
-            <Text className="reports-stocks-template-section-title" fw={600}>
-              {t('Збережені шаблони')}
-            </Text>
-            <Badge className="app-role-pill is-gray" variant="light">
-              {templates.length}
-            </Badge>
-          </Group>
-          <Tooltip label={t('Оновити список')}>
-            <ActionIcon aria-label={t('Оновити список')} size={32} type="button" variant="default" onClick={onRefresh}>
-              <RefreshCw size={16} />
-            </ActionIcon>
-          </Tooltip>
-        </Group>
-        {templates.length ? (
-          <div className="reports-stocks-template-list">
-            {templates.map((template) => (
-              <div className="reports-stocks-template-item" key={template.Id ?? template.Name}>
-              <Button
-                className="reports-stocks-template-open"
-                leftSection={<RotateCcw size={15} />}
-                justify="flex-start"
-                type="button"
-                variant="subtle"
-                onClick={() => onApply(template)}
-              >
-                <span className="reports-stocks-template-open__content">
-                  <span className="reports-stocks-template-open__name">{template.Name}</span>
-                  <span className="reports-stocks-template-open__period">
-                    {isCurrentReportSource(template.Data.dataSource) && !template.Data.from && !template.Data.to
-                      ? t('Поточний стан') : `${formatDate(template.Data.from)}–${formatDate(template.Data.to)}`}
-                  </span>
-                </span>
-              </Button>
-                <Group className="reports-stocks-template-item__actions" gap={2} wrap="nowrap">
-                  <Tooltip label={t('Оновити шаблон')}>
-                    <ActionIcon
-                      aria-label={t('Оновити шаблон')}
-                      color={CREATE_ACTION_COLOR}
-                      size={30}
-                      type="button"
-                      variant="subtle"
-                      disabled={!configurationReady || storage.busy || !storage.ready}
-                      onClick={() => onUpdate(template.Id!)}
-                    >
-                      <Save size={15} />
-                    </ActionIcon>
-                  </Tooltip>
-                  <Tooltip label={t('Видалити')}>
-                    <ActionIcon
-                      aria-label={t('Видалити')}
-                      color="red"
-                      size={30}
-                      type="button"
-                      variant="subtle"
-                      disabled={storage.busy || !storage.ready}
-                      onClick={() => onDelete(template.Id!)}
-                    >
-                      <Trash2 size={15} />
-                    </ActionIcon>
-                  </Tooltip>
-                </Group>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div className="reports-stocks-template-empty">
-            <LayoutTemplate size={20} />
-            <Text c="gray.9" size="sm">{t('Збережених шаблонів ще немає')}</Text>
-          </div>
-        )}
-      </section>
-      {storage.browserTemplates.length > 0 && <Stack gap="xs">
-        <Text fw={600} size="sm">{t('Шаблони цього браузера')}</Text>
-        <Text size="xs" c="dimmed">{t('Імпортуйте потрібні шаблони у свій обліковий запис. Оригінали залишаться в браузері.')}</Text>
-        {storage.browserTemplates.map(template => <Group key={JSON.stringify({ Name: template.Name, Data: template.Data })} justify="space-between">
-          <Text size="sm">{template.Name}</Text>
-          <Button size="xs" variant="light" disabled={storage.busy || !storage.ready}
-            onClick={() => void storage.importBrowserTemplate(template)}>{t('Імпортувати на сервер')}</Button>
-        </Group>)}
-      </Stack>}
-    </div>
-  )
 }
 
 type ReportResultSectionProps = {

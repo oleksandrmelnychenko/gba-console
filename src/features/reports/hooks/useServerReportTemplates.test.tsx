@@ -121,4 +121,88 @@ describe('server report templates', () => {
     expect(saveServerReportTemplate).toHaveBeenCalledTimes(1)
     expect(result.current.notice).toContain('Правило збережено')
   })
+  it('renames using the stored settings, preserving contract identity and complete unsupported inactive filters', async () => {
+    const template = { Name: 'Договір 42', Id: crypto.randomUUID(), Revision: 7,
+      Data: { ...defaultDatasetRequest(valuationDataset, '', ''), valuationClientAgreementId: 456246,
+        selections: [{ SelectedField: { Name: 'Future', Type: 999 }, FilterCondition: { Name: 'InGroup', Type: 6 },
+          IsChecked: false, Values: [{ Name: 'exact', Value: 42, Data: { Id: 42, Future: ['retain'] } }] }] } }
+    vi.mocked(getServerReportTemplates).mockResolvedValue([template])
+    vi.mocked(saveServerReportTemplate).mockImplementation(async request => ({ ...request, Revision: 8 }))
+    const { result } = renderHook(() => useServerReportTemplates(true, [valuationDataset]))
+    await waitFor(() => expect(result.current.ready).toBe(true))
+    await act(async () => { expect(await result.current.rename(template, '  Новий заголовок  ')).toMatchObject({ ok: true }) })
+    expect(saveServerReportTemplate).toHaveBeenCalledWith({ ...template, Name: 'Новий заголовок' })
+    expect(template.Name).toBe('Договір 42')
+    expect(result.current.templates[0].Data).toEqual(template.Data)
+  })
+
+  it('copies stored data to an independent id and revision, including unknown nested settings', async () => {
+    const template = { ...createSalesReportPreset('agreements', '2026-09-01', '2026-09-07', []), Id: crypto.randomUUID(), Revision: 5 }
+    const data = { ...template.Data, futureOptions: { value: false, full: [0, null, '42'] } }
+    template.Data = data
+    vi.mocked(getServerReportTemplates).mockResolvedValue([template])
+    vi.mocked(saveServerReportTemplate).mockImplementation(async request => ({ ...request, Revision: 1 }))
+    const { result } = renderHook(() => useServerReportTemplates(true))
+    await waitFor(() => expect(result.current.ready).toBe(true))
+    await act(async () => { expect(await result.current.copy(template, 'Копія')).toMatchObject({ ok: true }) })
+    const request = vi.mocked(saveServerReportTemplate).mock.calls[0][0]
+    expect(request).toMatchObject({ Name: 'Копія', Revision: 0, Data: data })
+    expect(request.Id).not.toBe(template.Id)
+    expect(request.Data).not.toBe(template.Data)
+    expect(result.current.templates.find(item => item.Id === template.Id)).toEqual(template)
+  })
+
+  it('rejects a stale opened revision after a reload rather than silently rebasing its draft', async () => {
+    const template = { ...createSalesReportPreset('daily', '', '', []), Id: crypto.randomUUID(), Revision: 1 }
+    vi.mocked(getServerReportTemplates).mockResolvedValueOnce([template]).mockResolvedValueOnce([{ ...template, Revision: 2 }])
+    const { result } = renderHook(() => useServerReportTemplates(true))
+    await waitFor(() => expect(result.current.ready).toBe(true))
+    act(() => result.current.reload())
+    await waitFor(() => expect(result.current.templates[0].Revision).toBe(2))
+    await act(async () => { expect(await result.current.update(template, template.Data)).toEqual({ ok: false }) })
+    expect(saveServerReportTemplate).not.toHaveBeenCalled()
+    expect(result.current.notice).toContain('Відкрийте його знову')
+    await act(async () => { expect(await result.current.remove(template.Id, template.Revision)).toEqual({ ok: false }) })
+    expect(deleteServerReportTemplate).not.toHaveBeenCalled()
+  })
+
+  it('keeps the saved value and returns failure on an update conflict', async () => {
+    const template = { ...createSalesReportPreset('daily', '', '', []), Id: crypto.randomUUID(), Revision: 3 }
+    vi.mocked(getServerReportTemplates).mockResolvedValue([template])
+    vi.mocked(saveServerReportTemplate).mockRejectedValue(new Error('Шаблон змінився. Оновіть список.'))
+    const { result } = renderHook(() => useServerReportTemplates(true))
+    await waitFor(() => expect(result.current.ready).toBe(true))
+    await act(async () => { expect(await result.current.update(template, { ...template.Data, from: '2026-09-01' })).toEqual({ ok: false }) })
+    expect(saveServerReportTemplate).toHaveBeenCalledWith({ ...template, Data: { ...template.Data, from: '2026-09-01' } })
+    expect(result.current.templates).toEqual([template])
+  })
+
+  it('keeps unsupported ordering intact when copy validation refuses it', async () => {
+    const template = { Name: 'Future ordering', Id: crypto.randomUUID(), Revision: 3,
+      Data: { ...orderedAccountRequest(), ordering: { Version: 2, Rows: [], Future: false } } }
+    vi.mocked(getServerReportTemplates).mockResolvedValue([template])
+    const { result } = renderHook(() => useServerReportTemplates(true, [orderedAccountDataset]))
+    await waitFor(() => expect(result.current.ready).toBe(true))
+    await act(async () => { expect(await result.current.copy(template, 'Копія')).toEqual({ ok: false }) })
+    expect(saveServerReportTemplate).not.toHaveBeenCalled()
+    expect(result.current.templates[0].Data.ordering).toEqual(template.Data.ordering)
+  })
+
+  it('serializes mutations and does not report success after permission is revoked', async () => {
+    const template = { ...createSalesReportPreset('daily', '', '', []), Id: crypto.randomUUID(), Revision: 3 }
+    let resolve!: (value: typeof template) => void
+    vi.mocked(getServerReportTemplates).mockResolvedValue([template])
+    vi.mocked(saveServerReportTemplate).mockReturnValue(new Promise(done => { resolve = done }))
+    const { result, rerender } = renderHook(({ enabled }) => useServerReportTemplates(enabled), { initialProps: { enabled: true } })
+    await waitFor(() => expect(result.current.ready).toBe(true))
+    let pending!: ReturnType<typeof result.current.rename>
+    act(() => { pending = result.current.rename(template, 'Перейменовано') })
+    await act(async () => { expect(await result.current.copy(template, 'Копія')).toEqual({ ok: false }) })
+    expect(saveServerReportTemplate).toHaveBeenCalledTimes(1)
+    rerender({ enabled: false })
+    await act(async () => { resolve({ ...template, Revision: 4 }); expect(await pending).toEqual({ ok: false }) })
+    expect(result.current.ready).toBe(false)
+    expect(result.current.templates).toEqual([])
+  })
+
 })

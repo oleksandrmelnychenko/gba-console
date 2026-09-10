@@ -11,6 +11,8 @@ import { reportAbcClassificationError } from '../data/reportAbcClassification'
 import { reportTopGroupsError } from '../data/reportTopGroups'
 import type { ReportDataset, ReportRequestBody, ReportTemplate } from '../types'
 
+export type TemplateMutationResult = { ok: true; template?: ReportTemplate } | { ok: false }
+
 /** Browser variants remain untouched; importing one never sanitizes away its filters. */
 export function readBrowserReportTemplates(): ReportTemplate[] {
   try {
@@ -58,31 +60,39 @@ export function useServerReportTemplates(enabled: boolean, datasets: ReportDatas
     })
   }, [])
 
+  const invalidatePending = useCallback(() => { ++generation.current }, [])
+
   useEffect(() => {
     alive.current = true
     const controller = new AbortController()
     if (enabled) void reload(controller.signal)
-    return () => { alive.current = false; controller.abort() }
-  }, [enabled, reload])
+    return () => { alive.current = false; invalidatePending(); controller.abort() }
+  }, [enabled, reload, invalidatePending])
 
   type Operation =
     | { kind: 'save'; name: string; data: ReportRequestBody; id?: string }
-    | { kind: 'remove'; id: string }
+    | { kind: 'remove'; id: string; revision?: number }
+    | { kind: 'update'; template: ReportTemplate; data: ReportRequestBody }
+    | { kind: 'rename'; template: ReportTemplate; name: string }
+    | { kind: 'copy'; template: ReportTemplate; name: string }
     | { kind: 'import'; template: ReportTemplate }
 
-  async function runTemplateOperation(operation: Operation) {
-    if (!enabled || locked.current || !ready) return
+  async function runTemplateOperation(operation: Operation): Promise<TemplateMutationResult> {
+    if (!enabled || locked.current || !ready) return { ok: false }
     locked.current = true
-    ++generation.current // Ignore a list response started before this mutation.
+    const currentGeneration = ++generation.current // Ignore an earlier list response or a later permission change.
+    const isCurrent = () => alive.current && generation.current === currentGeneration
     setBusy(true)
     try {
       if (operation.kind === 'remove') {
         const existing = templates.find(item => item.Id === operation.id)
         if (!existing) throw new Error('Шаблон недоступний. Оновіть список.')
+        if (operation.revision !== undefined && existing.Revision !== operation.revision) throw new Error('Шаблон змінився. Відкрийте його знову перед збереженням змін.')
         await deleteServerReportTemplate(existing)
-        if (alive.current) {
+        if (isCurrent()) {
           setTemplates(current => current.filter(item => item.Id !== operation.id))
           setNotice('Шаблон видалено.')
+          return { ok: true }
         }
       } else {
         let request: ReportTemplate
@@ -90,12 +100,21 @@ export function useServerReportTemplates(enabled: boolean, datasets: ReportDatas
           const id = await browserTemplateImportId(operation.template)
           if (templates.some(item => item.Id === id)) throw new Error('Цей шаблон уже імпортовано.')
           request = { ...operation.template, Id: id, Revision: 0 }
+        } else if (operation.kind === 'update' || operation.kind === 'rename' || operation.kind === 'copy') {
+          const existing = templates.find(item => item.Id === operation.template.Id)
+          if (!existing?.Id) throw new Error('Шаблон недоступний. Оновіть список.')
+          if (existing.Revision !== operation.template.Revision) throw new Error('Шаблон змінився. Відкрийте його знову перед збереженням змін.')
+          request = { Id: operation.kind === 'copy' ? crypto.randomUUID() : existing.Id,
+            Revision: operation.kind === 'copy' ? 0 : operation.template.Revision,
+            Name: operation.kind === 'update' ? existing.Name : operation.name.trim(),
+            Data: structuredClone(operation.kind === 'update' ? operation.data : existing.Data) }
         } else {
           const existing = operation.id ? templates.find(item => item.Id === operation.id) : undefined
           if (operation.id && !existing) throw new Error('Шаблон недоступний. Оновіть список.')
           request = { Id: existing?.Id ?? crypto.randomUUID(), Revision: existing?.Revision ?? 0,
-            Name: existing?.Name ?? operation.name.trim(), Data: operation.data }
+            Name: existing?.Name ?? operation.name.trim(), Data: structuredClone(operation.data) }
         }
+        if (!request.Name.trim()) throw new Error('Введіть назву шаблону.')
         const comparisonError = clientComparisonConfigurationError(request.Data, datasets.find(item => item.DataSource === request.Data.dataSource))
         if (comparisonError) throw new Error(comparisonError)
         if (request.Data.dataSource === 12 || request.Data.dataSource === 13 || request.Data.dataSource === 14 || request.Data.dataSource === 15 || request.Data.dataSource === 16 || request.Data.dataSource === 17 || request.Data.dataSource === 18 || request.Data.dataSource === 19 || request.Data.dataSource === 20 || request.Data.dataSource === 21) {
@@ -117,23 +136,30 @@ export function useServerReportTemplates(enabled: boolean, datasets: ReportDatas
         const hideZeroError = reportHideZeroError(request.Data, datasets.find(item => item.DataSource === (request.Data.dataSource ?? 0)))
         if (hideZeroError) throw new Error(hideZeroError)
         const saved = await saveServerReportTemplate(request)
-        if (alive.current) {
+        if (isCurrent()) {
           setTemplates(current => [...current.filter(item => item.Id !== saved.Id), saved])
           setNotice(operation.kind === 'import' ? 'Шаблон імпортовано. Копія в браузері збережена.'
-            : 'Шаблон збережено на сервері у вашому обліковому записі.')
+            : operation.kind === 'rename' ? 'Назву шаблону змінено.'
+              : operation.kind === 'copy' ? 'Створено незалежну копію збереженого шаблону.'
+                : 'Шаблон збережено на сервері у вашому обліковому записі.')
+          return { ok: true, template: saved }
         }
       }
     } catch (error) {
-      if (alive.current) setNotice(error instanceof Error ? error.message : 'Не вдалося зберегти зміни шаблону.')
+      if (isCurrent()) setNotice(error instanceof Error ? error.message : 'Не вдалося зберегти зміни шаблону.')
     } finally {
       locked.current = false
       setBusy(false)
     }
+    return { ok: false }
   }
 
   const save = (name: string, data: ReportRequestBody, id?: string) => runTemplateOperation({ kind: 'save', name, data, id })
-  const remove = (id: string) => runTemplateOperation({ kind: 'remove', id })
+  const remove = (id: string, revision?: number) => runTemplateOperation({ kind: 'remove', id, revision })
+  const update = (template: ReportTemplate, data: ReportRequestBody) => runTemplateOperation({ kind: 'update', template, data })
+  const rename = (template: ReportTemplate, name: string) => runTemplateOperation({ kind: 'rename', template, name })
+  const copy = (template: ReportTemplate, name: string) => runTemplateOperation({ kind: 'copy', template, name })
   const importBrowserTemplate = (template: ReportTemplate) => runTemplateOperation({ kind: 'import', template })
 
-  return { templates, notice, busy, ready, browserTemplates, reload: () => { if (!locked.current && enabled) void reload() }, save, remove, importBrowserTemplate }
+  return { templates: enabled ? templates : [], notice: enabled ? notice : null, busy, ready: enabled && ready, browserTemplates: enabled ? browserTemplates : [], update, rename, copy, reload: () => { if (!locked.current && enabled) void reload() }, save, remove, importBrowserTemplate }
 }
