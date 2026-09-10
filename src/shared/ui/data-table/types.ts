@@ -98,6 +98,8 @@ export type DataTableProps<TData> = {
   toolbarLeft?: ReactNode
   toolbarRight?: ReactNode
   footer?: ReactNode
+  /** Summary cells keyed by column ID, aligned with visible/reordered columns. */
+  summaryCells?: Record<string, ReactNode>
   /** Render the toolbar into this element (via portal) instead of inline above the
    *  table — used to lift the columns/density controls into a page's own toolbar. */
   toolbarPortalTarget?: Element | null

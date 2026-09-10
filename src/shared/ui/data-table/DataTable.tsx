@@ -1,3 +1,4 @@
+import { getPinnedStyle } from './dataTablePinning'
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
 import { Table } from '@mantine/core'
 import {
@@ -95,6 +96,7 @@ export function DataTable<TData>({
   toolbarLeft,
   toolbarRight,
   footer,
+  summaryCells,
   toolbarPortalTarget,
   onRowClick,
   rowClassName,
@@ -642,6 +644,30 @@ export function DataTable<TData>({
               onRowClick={onRowClick}
               rowClassName={rowClassName}
             />
+            {summaryCells && !isLoading && (
+              <Table.Tfoot>
+                <Table.Tr>
+                  {isExpandable && <Table.Td />}
+                  {[
+                    ...firstHeaderGroupColumns.leading,
+                    ...(fillerColumnWidth > 0 ? [null] : []),
+                    ...firstHeaderGroupColumns.rightPinned,
+                  ].map((header) => header ? (
+                    <Table.Td
+                      key={header.column.id}
+                      className={(header.column.columnDef.meta as DataTableColumnMeta | undefined)?.numeric ? 'data-table-numeric-cell' : undefined}
+                      style={{
+                        ...getPinnedStyle(header.column, 1, expandColumnWidth),
+                        textAlign: (header.column.columnDef.meta as DataTableColumnMeta | undefined)?.align ?? 'left',
+                        fontWeight: 700,
+                      }}
+                    >
+                      {summaryCells[header.column.id]}
+                    </Table.Td>
+                  ) : <Table.Td key="summary-filler" aria-hidden />)}
+                </Table.Tr>
+              </Table.Tfoot>
+            )}
           </Table>
         </DndContext>
         {isEmpty ? (
