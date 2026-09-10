@@ -1,0 +1,21 @@
+.company-car-form-organization {
+  grid-column: 1 / -1;
+}
+.company-car-form-sheet .document-detail-section__body {
+  padding: 14px 12px;
+}
+.company-car-form-sheet .mantine-InputWrapper-label {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--mantine-color-gray-7);
+  margin-bottom: 6px;
+}
+.company-car-form-sheet .mantine-Input-input {
+  border-color: var(--mantine-color-gray-2);
+  border-radius: 8px;
+  font-size: 13px;
+  min-height: 36px;
+}
+.company-car-form-sheet .mantine-Input-input:focus {
+  border-color: var(--brand-orange);
+}

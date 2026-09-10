@@ -15,6 +15,8 @@ import { useDebouncedValue } from '@mantine/hooks'
 import { CircleAlert, Save, X } from 'lucide-react'
 import { useEffect, useMemo, useReducer } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
+import { DocumentDetailLayout, DocumentDetailSummary, DocumentDetailMetric, DocumentDetailSection, DocumentDetailRow } from '../../../shared/ui/document-detail/DocumentDetail'
+import './company-car-road-list-form.css'
 import { AppModal } from '../../../shared/ui/AppModal'
 import { useAuth } from '../../auth/useAuth'
 import {
@@ -120,7 +122,8 @@ export function CompanyCarRoadListFormModal({
     <AppModal
       centered
       opened={opened}
-      size="lg"
+      size={900}
+      className="company-car-road-list-form"
       title={`${isEditMode ? t('Редагування шляхового листа') : t('Створення шляхового листа')} ${t('для автомобіля')} ${effectiveCompanyCar.LicensePlate || ''}`.trim()}
       onClose={onClose}
     >
@@ -143,7 +146,21 @@ export function CompanyCarRoadListFormModal({
           </Alert>
         )}
 
-        <RoadListSummary companyCar={effectiveCompanyCar} calculated={calculated} responsible={effectiveResponsible} />
+        <DocumentDetailLayout
+          summary={<DocumentDetailSummary
+            eyebrow={t('Автомобіль')}
+            title={effectiveCompanyCar.LicensePlate || '—'}
+            meta={effectiveCompanyCar.CarBrand}
+            metrics={<>
+              <DocumentDetailMetric label={t('Загальний кілометраж')} value={calculated ? formatNumber(calculated.TotalKilometers) : '—'} suffix="км" />
+              <DocumentDetailMetric label={t('Кількість пального')} value={calculated ? formatNumber(calculated.FuelAmount) : '—'} suffix="л" />
+            </>}
+          />}
+        >
+        <DocumentDetailSection title={t('Дані автомобіля')}>
+          <RoadListSummary companyCar={effectiveCompanyCar} responsible={effectiveResponsible} />
+        </DocumentDetailSection>
+        <DocumentDetailSection title={t('Видаткова стаття')} stacked>
 
         <Select
           data={outcomeOptions}
@@ -155,6 +172,8 @@ export function CompanyCarRoadListFormModal({
           onChange={selectOutcome}
         />
 
+        </DocumentDetailSection>
+        <DocumentDetailSection title={t('Маршрут і пробіг')} stacked>
         <RoadListKilometerFields
           form={form}
           isMileageOnly={isMileageOnly}
@@ -162,6 +181,8 @@ export function CompanyCarRoadListFormModal({
           onPatch={patchForm}
         />
 
+        </DocumentDetailSection>
+        <DocumentDetailSection title={t('Учасники та коментар')} stacked>
         <TextInput
           label={t('Коментар')}
           value={form.comment}
@@ -176,6 +197,9 @@ export function CompanyCarRoadListFormModal({
           onRemoveDriver={removeDriver}
           onSearchChange={setUserSearchValue}
         />
+
+        </DocumentDetailSection>
+        </DocumentDetailLayout>
 
         <RoadListFormFooter
           calculated={calculated}
@@ -464,25 +488,14 @@ function useRoadListFormModel({
   }
 }
 
-function RoadListSummary({
-  calculated,
-  companyCar,
-  responsible,
-}: {
-  calculated: CompanyCarRoadList | null
-  companyCar: CompanyCar
-  responsible: UserProfile | null
-}) {
+function RoadListSummary({ companyCar, responsible }: { companyCar: CompanyCar; responsible: UserProfile | null }) {
   const { t } = useI18n()
-
   return (
-    <SimpleGrid cols={{ base: 1, sm: 2 }}>
-      <ReadonlyItem label={t('Показники одометра')} value={formatNumber(companyCar.Mileage)} />
-      <ReadonlyItem label={t('Кількість пального')} value={formatNumber(companyCar.FuelAmount)} />
-      <ReadonlyItem label={t('Відповідальний')} value={displayValue(responsible?.LastName)} />
-      <ReadonlyItem label={t('Кількість пального')} value={formatNumber(calculated?.FuelAmount ?? 0)} />
-      <ReadonlyItem label={t('Загальний кілометраж')} value={formatNumber(calculated?.TotalKilometers ?? 0)} />
-    </SimpleGrid>
+    <>
+      <DocumentDetailRow label={t('Показники одометра')} mono value={formatNumber(companyCar.Mileage)} />
+      <DocumentDetailRow label={t('Кількість пального')} mono value={formatNumber(companyCar.FuelAmount)} />
+      <DocumentDetailRow label={t('Відповідальний')} wide value={displayValue(responsible?.LastName)} />
+    </>
   )
 }
 
@@ -612,17 +625,6 @@ function RoadListFormFooter({
         </Button>
       </Group>
     </Group>
-  )
-}
-
-function ReadonlyItem({ label, value }: { label: string; value: string }) {
-  return (
-    <Stack gap={2}>
-      <Text c="dimmed" size="xs" tt="uppercase">
-        {label}
-      </Text>
-      <Text size="sm">{value}</Text>
-    </Stack>
   )
 }
 

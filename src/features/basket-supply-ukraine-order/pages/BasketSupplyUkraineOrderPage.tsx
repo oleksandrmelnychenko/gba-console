@@ -780,10 +780,10 @@ function BasketCartWorkflow() {
               </Tooltip>
               {canImportFile && (
                 <>
-                  <Button leftSection={FILE_IMPORT_ICON} styles={{ label: { fontFamily: 'var(--font-mono)', letterSpacing: 0 } }} variant="outline" onClick={() => openUploadModal('load')}>
+                  <Button color="brand" variant="filled" size="sm" className="app-filter-primary-action" leftSection={FILE_IMPORT_ICON} styles={{ label: { fontFamily: 'var(--font-mono)', letterSpacing: 0 } }} onClick={() => openUploadModal('load')}>
                     {t('Завантажити в корзину')}
                   </Button>
-                  <Button leftSection={FILE_SPREADSHEET_ICON} styles={{ label: { fontFamily: 'var(--font-mono)', letterSpacing: 0 } }} variant="outline" onClick={() => openUploadModal('preview')}>
+                  <Button color="brand" variant="filled" size="sm" className="app-filter-primary-action" leftSection={FILE_SPREADSHEET_ICON} styles={{ label: { fontFamily: 'var(--font-mono)', letterSpacing: 0 } }} onClick={() => openUploadModal('preview')}>
                     {t('Вибрати для експорту')}
                   </Button>
                 </>

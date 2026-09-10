@@ -101,12 +101,11 @@
 
 /* Storage form sheet follows the sheet-form pattern (§9): mono labels and
    36px pattern controls. */
-/* Storage detail drawer: tabs, the active registry filter and the table share
-   one continuous card, matching the product-remains reference. */
+/* The shared document-detail section owns the storage registry chrome. */
 .consumable-storage-detail-registry {
   background: var(--mantine-color-white);
-  border: 1px solid var(--mantine-color-gray-2) !important;
-  box-shadow: var(--app-card-shadow) !important;
+  border: 0;
+  box-shadow: none;
   flex: 0 0 auto;
   min-width: 0;
   overflow: hidden;
@@ -188,3 +187,31 @@
   font-size: 13px;
   letter-spacing: 0;
 }
+
+.consumable-storage-detail-total {
+  display: grid;
+  gap: 8px 14px;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  min-width: 0;
+}
+
+.consumable-storage-remnants-toolbar { margin-left: auto; }
+.consumable-storage-remnants-toolbar .data-table-toolbar {
+  flex: 0 0 auto;
+  justify-content: flex-start;
+  width: max-content;
+  gap: 4px;
+}
+.consumable-storage-remnants-toolbar .data-table-toolbar-left,
+.consumable-storage-remnants-toolbar .data-table-toolbar-right {
+  flex: 0 0 auto;
+  gap: 4px;
+}
+.consumable-storage-remnants-toolbar .mantine-ActionIcon-root { width: 28px; min-width: 28px; height: 36px; padding: 0; }
+.consumable-storage-remnants-toolbar .data-table-toolbar-right:empty { display: none; }
+
+.consumable-storage-deprecated-controls { display: flex; align-items: center; gap: 4px; }
+.consumable-storage-deprecated-toolbar .data-table-toolbar { width: max-content; justify-content: flex-start; gap: 0; }
+.consumable-storage-deprecated-toolbar .data-table-toolbar-left { flex: 0 0 auto; }
+.consumable-storage-deprecated-toolbar .data-table-toolbar-right:empty { display: none; }
+.consumable-storage-deprecated-controls .mantine-ActionIcon-root { width: 28px; min-width: 28px; height: 36px; padding: 0; }

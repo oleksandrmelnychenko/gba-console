@@ -768,11 +768,10 @@ function ProductStorageLocationHistoryDrawerContent({
             }}
           />
           <Group gap="xs">
-            <Button
+            <Button color="brand" variant="filled" size="sm" className="app-filter-primary-action"
               disabled={Boolean(filterError || missingNetUidError)}
               leftSection={<RefreshCw size={18} />}
               loading={isLoading}
-              variant="outline"
               onClick={() => reload()}
             >
               {t('Оновити')}
@@ -972,21 +971,19 @@ function ProductMovementPanel({
           onChange={(value) => dispatchFilterState({ type: 'set-movement-type', value: value || '0' })}
         />
         <div className="app-filter-actions">
-        <Button
+        <Button color="brand" variant="filled" size="sm" className="app-filter-primary-action"
           disabled={Boolean(filterError) || Boolean(typesError)}
           leftSection={<RefreshCw size={18} />}
           loading={isLoading}
-          variant="outline"
           onClick={() => reload()}
         >
           {t('Оновити')}
         </Button>
         {canExport ? (
-          <Button
+          <Button color="brand" variant="filled" size="sm" className="app-filter-primary-action"
             disabled={!productNetUid || Boolean(filterError) || Boolean(typesError)}
             leftSection={<Download size={18} />}
             loading={isExporting}
-            variant="outline"
             onClick={() => void exportMovements()}
           >
             {t('Друк')}
@@ -1004,7 +1001,7 @@ function ProductMovementPanel({
             onChange={() => toggleMovementItemType(option.value)}
           />
         ))}
-        <Button size="xs" color="gray" variant="subtle" onClick={() => dispatchFilterState({ type: 'reset-selected-types' })}>
+        <Button color="brand" variant="filled" size="sm" className="app-filter-primary-action" onClick={() => dispatchFilterState({ type: 'reset-selected-types' })}>
           {t('Скинути')}
         </Button>
       </Group>
@@ -1115,11 +1112,10 @@ export function HistoricalSourceMovementPanel({
           <TextInput label={t('З')} type="date" value={dateFrom} w={150} onChange={(event) => setDateFrom(event.currentTarget.value)} />
           <TextInput label={t('По')} type="date" value={dateTo} w={150} onChange={(event) => setDateTo(event.currentTarget.value)} />
           <div className="app-filter-actions">
-            <Button
+            <Button color="brand" variant="filled" size="sm" className="app-filter-primary-action"
               disabled={Boolean(filterError || missingNetUidError)}
               leftSection={<RefreshCw size={18} />}
               loading={isLoading}
-              variant="outline"
               onClick={() => reload()}
             >
               {t('Оновити')}
@@ -1280,11 +1276,10 @@ export function InformationalMovementPanel({
             }}
           />
           <div className="app-filter-actions">
-            <Button
+            <Button color="brand" variant="filled" size="sm" className="app-filter-primary-action"
               disabled={Boolean(filterError || missingNetUidError)}
               leftSection={<RefreshCw size={18} />}
               loading={isLoading}
-              variant="outline"
               onClick={() => reload()}
             >
               {t('Оновити')}
@@ -2130,11 +2125,11 @@ function MovementDateToolbar({
       <TextInput label={t('З')} type="date" value={dateFrom} w={150} onChange={(event) => onDateFromChange(event.currentTarget.value)} />
       <TextInput label={t('По')} type="date" value={dateTo} w={150} onChange={(event) => onDateToChange(event.currentTarget.value)} />
       <div className="app-filter-actions">
-      <Button leftSection={<RefreshCw size={18} />} loading={isLoading} variant="outline" onClick={onRefresh}>
+      <Button color="brand" variant="filled" size="sm" className="app-filter-primary-action" leftSection={<RefreshCw size={18} />} loading={isLoading} onClick={onRefresh}>
         {t('Оновити')}
       </Button>
       {canExport ? (
-        <Button disabled={exportDisabled} leftSection={<Download size={18} />} loading={exportLoading} variant="outline" onClick={onExport}>
+        <Button color="brand" variant="filled" size="sm" className="app-filter-primary-action" disabled={exportDisabled} leftSection={<Download size={18} />} loading={exportLoading} onClick={onExport}>
           {t('Друк')}
         </Button>
       ) : null}

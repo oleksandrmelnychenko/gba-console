@@ -543,11 +543,8 @@ export function SalesReturnClientPage() {
       <div className="sales-return-client-command-card">
         <div className="app-filter-bar sales-return-client-command-bar">
           <div className="app-filter-actions sales-return-client-command-actions">
-            <Button
-              color="gray"
+            <Button color="brand" variant="filled" size="sm" className="app-filter-primary-action"
               leftSection={<FileChartColumn size={16} />}
-              size="sm"
-              variant="light"
               onClick={() => setReportOpened(true)}
             >
               {t('Сформувати звіт')}

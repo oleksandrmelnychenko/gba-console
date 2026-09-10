@@ -2064,11 +2064,11 @@ function CurrentProductMovementPanel({ product }: { product: Product }) {
         <TextInput label={t('З')} type="date" value={dateFrom} onChange={(event) => setDateFrom(event.currentTarget.value)} />
         <TextInput label={t('По')} type="date" value={dateTo} onChange={(event) => setDateTo(event.currentTarget.value)} />
         <Select label={t('Тип руху')} data={movementTypeOptions.map((option) => ({ ...option, label: t(option.label) }))} value={movementType} w={220} onChange={(value) => setMovementType(value || '0')} />
-        <Button disabled={Boolean(filterError) || Boolean(typesError)} leftSection={<RefreshCw size={18} />} loading={isLoading} variant="outline" onClick={() => reload()}>
+        <Button color="brand" variant="filled" size="sm" className="app-filter-primary-action" disabled={Boolean(filterError) || Boolean(typesError)} leftSection={<RefreshCw size={18} />} loading={isLoading} onClick={() => reload()}>
           {t('Оновити')}
         </Button>
         <PermissionGate permissionKey={PRODUCT_MOVEMENT_EXPORT_PERMISSION}>
-          <Button disabled={!productNetUid || Boolean(filterError) || Boolean(typesError)} leftSection={<FileDown size={18} />} loading={isExporting} variant="default" onClick={() => void exportMovements()}>
+          <Button color="brand" variant="filled" size="sm" className="app-filter-primary-action" disabled={!productNetUid || Boolean(filterError) || Boolean(typesError)} leftSection={<FileDown size={18} />} loading={isExporting} onClick={() => void exportMovements()}>
             {t('Друк PDF')}
           </Button>
         </PermissionGate>
@@ -2085,7 +2085,7 @@ function CurrentProductMovementPanel({ product }: { product: Product }) {
             />
           ))}
         </div>
-        <Button size="xs" color="gray" variant="subtle" onClick={() => setSelectedTypes(movementItemTypes)}>
+        <Button color="brand" variant="filled" size="sm" className="app-filter-primary-action" onClick={() => setSelectedTypes(movementItemTypes)}>
           {t('Скинути')}
         </Button>
       </div>

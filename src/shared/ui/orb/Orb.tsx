@@ -30,6 +30,13 @@ type OrbSplashProps = {
 
 /** Centered full-area loading state: the orb sits in the middle of whatever
     shell region hosts it (route outlet, panel, sheet body). */
+// Disabled by request; keep the implementation below for restoration.
+export function OrbSplash(props: OrbSplashProps) {
+  void props
+  return null
+}
+
+/*
 export function OrbSplash({ variant = 'whirling', size = 32, label, className }: OrbSplashProps) {
   return (
     <div className={`app-orb-splash${className ? ` ${className}` : ''}`} role="status">
@@ -38,3 +45,5 @@ export function OrbSplash({ variant = 'whirling', size = 32, label, className }:
     </div>
   )
 }
+
+*/

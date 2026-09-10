@@ -2,6 +2,7 @@ import { Alert, Anchor, Badge, Group, Image, Loader, Stack, Text } from '@mantin
 import { CircleAlert, ExternalLink } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
+import { DocumentDetailRow, DocumentDetailSection } from '../../../shared/ui/document-detail/DocumentDetail'
 import { AppModal } from '../../../shared/ui/AppModal'
 import { getProductByNetId } from '../api/productsApi'
 import type { Product } from '../types'
@@ -24,7 +25,7 @@ export function ProductCardModal({
   const { t } = useI18n()
 
   return (
-    <AppModal centered opened={Boolean(productNetId)} size="lg" title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Картка товару')}</span>} onClose={onClose}>
+    <AppModal className="product-card-modal" centered opened={Boolean(productNetId)} size={760} title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Картка товару')}</span>} onClose={onClose}>
       {productNetId && <ProductCardContent key={productNetId} loadProduct={loadProduct} productNetId={productNetId} />}
     </AppModal>
   )
@@ -115,8 +116,8 @@ function ProductCardContent({
     }, mainImage?.ImageUrl ? [mainImage.ImageUrl] : []) || []
 
   return (
-    <Stack gap="md">
-      <Group justify="space-between" align="flex-start" wrap="nowrap">
+    <Stack gap="md" className="product-card-content">
+      <Group className="product-card-summary" justify="space-between" align="flex-start" wrap="nowrap">
         <Stack gap={2}>
           <Group gap={8} wrap="wrap">
             <Text className="product-card-vendor-code" fw={600} size="lg">
@@ -175,37 +176,35 @@ function ProductCardContent({
         onImageClick={(url) => window.open(url, '_blank', 'noopener,noreferrer')}
       />
 
-      <Stack gap={10}>
+      <div className="document-detail-tree">
+      <DocumentDetailSection title={t('Наявність')}>
         <DetailRow label={t('Доступно (UA)')} mono value={formatNumber(product.AvailableQtyUk)} />
         <DetailRow label={t('В дорозі')} mono value={formatNumber(product.AvailableQtyRoad)} />
         <DetailRow label={t('Доступно (ПДВ)')} mono value={formatNumber(product.AvailableQtyUkVAT)} />
         <DetailRow label={t('Доступно (перепродаж)')} mono value={formatNumber(product.AvailableQtyUkReSale)} />
         <DetailRow label={t('Браковані')} mono value={formatNumber(product.AvailableDefectiveQtyUk)} />
+      </DocumentDetailSection>
+      <DocumentDetailSection title={t('Ціни та характеристики')}>
         <DetailRow label={t('Ціна (локальна)')} money={(product.CurrentLocalPrice ?? 0) > 0} mono value={formatMoney(product.CurrentLocalPrice)} />
         <DetailRow label={t('Ціна (EUR)')} money={(product.CurrentPrice ?? 0) > 0} mono value={formatMoney(product.CurrentPrice)} />
         <DetailRow label={t('Од. виміру')} mono value={product.MeasureUnit?.Name} />
         <DetailRow label={t('Вага')} mono value={formatNumber(product.Weight)} />
         <DetailRow label={t('Розмір')} mono value={product.Size} />
         <DetailRow label={t("Об'єм")} mono value={product.Volume} />
-      </Stack>
+      </DocumentDetailSection>
 
       {description && (
-        <Stack gap={2}>
-          <Text className="app-section-title" fw={600} size="sm">
-            {t('Опис')}
-          </Text>
+        <DocumentDetailSection title={t('Опис')} stacked>
           <Text size="sm">{description}</Text>
-        </Stack>
+        </DocumentDetailSection>
       )}
 
       {notes && (
-        <Stack gap={2}>
-          <Text className="app-section-title" fw={600} size="sm">
-            {t('Примітки')}
-          </Text>
+        <DocumentDetailSection title={t('Примітки')} stacked>
           <Text size="sm">{notes}</Text>
-        </Stack>
+        </DocumentDetailSection>
       )}
+      </div>
     </Stack>
   )
 }
@@ -218,9 +217,8 @@ function DetailRow({ label, money = false, mono = false, value }: { label: strin
   }
 
   return (
-    <div className={`product-card-field${money ? ' is-money' : mono ? ' is-mono' : ''}`}>
-      <span>{label}</span>
-      <strong>{text}</strong>
+    <div className={money ? 'product-card-money-row' : undefined}>
+      <DocumentDetailRow label={label} mono={mono} value={text} />
     </div>
   )
 }

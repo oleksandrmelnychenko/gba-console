@@ -216,22 +216,24 @@ describe('ClientEditPage root folder form', () => {
     })
   })
 
-  it('keeps structural-unit and subclient actions visible across the client card', async () => {
+  it('keeps structural-unit and subclient navigation in the left menu across the client card', async () => {
     renderPage(ROOT_NET_UID)
 
     expect(await screen.findByText(`general:${ROOT_NET_UID}`)).toBeTruthy()
     const structuralUnits = screen.getByRole('button', { name: 'Структурні підрозділи' })
     const subclients = screen.getByRole('button', { name: 'Сабклієнти' })
 
-    expect(structuralUnits.getAttribute('aria-pressed')).toBe('false')
-    expect(subclients.getAttribute('aria-pressed')).toBe('false')
+    expect(structuralUnits.getAttribute('aria-current')).toBeNull()
+    expect(subclients.getAttribute('aria-current')).toBeNull()
+    expect(structuralUnits.closest('.client-edit-nav')).toBeTruthy()
+    expect(subclients.closest('.client-edit-nav')).toBeTruthy()
 
     fireEvent.click(structuralUnits)
     const structuralUnitsPanel = await screen.findByRole('region', {
       name: 'Структурні підрозділи клієнта',
     })
     expect(within(structuralUnitsPanel).getByText('commercial-structure:XM05200:2')).toBeTruthy()
-    expect(screen.getByRole('button', { name: 'Структурні підрозділи' }).getAttribute('aria-pressed')).toBe('true')
+    expect(screen.getByRole('button', { name: 'Структурні підрозділи' }).getAttribute('aria-current')).toBe('page')
 
     fireEvent.click(screen.getByRole('button', {
       name: 'XM05202 — МАГРОМ ТОВ',
@@ -240,7 +242,7 @@ describe('ClientEditPage root folder form', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Сабклієнти' }))
     expect(await screen.findByText(`relationship:subclient:${CHILD_NET_UID}`)).toBeTruthy()
-    expect(screen.getByRole('button', { name: 'Сабклієнти' }).getAttribute('aria-pressed')).toBe('true')
+    expect(screen.getByRole('button', { name: 'Сабклієнти' }).getAttribute('aria-current')).toBe('page')
   })
 
   it('keeps the complete folder and commercial structure visible when a child card is opened directly', async () => {

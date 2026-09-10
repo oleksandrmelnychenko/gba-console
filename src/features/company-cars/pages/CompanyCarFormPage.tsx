@@ -12,6 +12,8 @@ import { notifications } from '@mantine/notifications'
 import { CircleAlert, Save, Trash2 } from 'lucide-react'
 import { type FormEvent, useEffect, useMemo, useReducer } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
+import { DocumentDetailLayout, DocumentDetailSummary, DocumentDetailMetric, DocumentDetailSection } from '../../../shared/ui/document-detail/DocumentDetail'
+import './company-car-form-page.css'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { AppModal } from '../../../shared/ui/AppModal'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
@@ -254,7 +256,8 @@ function CompanyCarFormPageContent() {
     <AppDrawer
       opened
       position="right"
-      size="compact"
+      size="standard"
+      className="company-car-form-sheet"
       title={isEditMode ? t('Автомобіль компанії') : t('Завести нову машину компанії')}
       onClose={handleCancel}
       footer={
@@ -299,7 +302,22 @@ function CompanyCarFormPageContent() {
             </Alert>
           )}
 
-          <Select
+          <DocumentDetailLayout
+            summary={
+              <DocumentDetailSummary
+                eyebrow={t('Автомобіль компанії')}
+                title={form.licensePlate || t('Нове авто')}
+                meta={form.carBrand || t('Марка автомобіля')}
+                metrics={<>
+                  <DocumentDetailMetric label={t('Показники одометра')} value={form.mileage || '—'} suffix="км" />
+                  <DocumentDetailMetric label={t('Кількість пального')} value={form.fuelAmount || '—'} suffix="л" />
+                </>}
+              />
+            }
+          >
+            <DocumentDetailSection title={t('Автомобіль та організація')} stacked>
+              <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="md">
+                <div className="company-car-form-organization"><Select
             clearable
             searchable
             data={organizationOptions}
@@ -308,58 +326,66 @@ function CompanyCarFormPageContent() {
             placeholder={t('Оберіть організацію')}
             value={form.organizationNetUid || null}
             onChange={(value) => updateForm({ organizationNetUid: value || '' })}
-          />
-
-          <SimpleGrid cols={{ base: 1, sm: 2 }}>
-            <TextInput
+          /></div>
+                <TextInput
               disabled={isLoading || isSaving}
               label={t('Марка автомобіля')}
               value={form.carBrand}
               onChange={(event) => updateForm({ carBrand: event.currentTarget.value })}
             />
-            <TextInput
+                <TextInput
               disabled={isLoading || isSaving}
               label={t('№ Авто')}
               value={form.licensePlate}
               onChange={(event) => updateForm({ licensePlate: event.currentTarget.value })}
             />
-            <TextInput
+              </SimpleGrid>
+            </DocumentDetailSection>
+            <DocumentDetailSection title={t('Пальне та пробіг')} stacked>
+              <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="md">
+                <TextInput
               disabled={isLoading || isSaving}
               label={t('Вмістимість баку')}
               value={form.tankCapacity}
               onChange={(event) => updateForm({ tankCapacity: event.currentTarget.value })}
             />
-            <TextInput
+                <TextInput
               disabled={isLoading || isSaving}
               label={t('Кількість пального')}
               value={form.fuelAmount}
               onChange={(event) => updateForm({ fuelAmount: event.currentTarget.value })}
             />
-            <TextInput
+                <TextInput
               disabled={isLoading || isSaving}
               label={t('Показники одометра')}
               value={form.mileage}
               onChange={(event) => updateForm({ mileage: event.currentTarget.value })}
             />
-            <TextInput
+              </SimpleGrid>
+            </DocumentDetailSection>
+            <DocumentDetailSection title={t('Витрати пального')} stacked>
+              <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="md">
+                <TextInput
               disabled={isLoading || isSaving}
               label={t('Розхід по місту на 100 км')}
               value={form.inCityConsumption}
               onChange={(event) => updateForm({ inCityConsumption: event.currentTarget.value })}
             />
-            <TextInput
+                <TextInput
               disabled={isLoading || isSaving}
               label={t('Розхід по трасі на 100 км')}
               value={form.outsideCityConsumption}
               onChange={(event) => updateForm({ outsideCityConsumption: event.currentTarget.value })}
             />
-            <TextInput
+                <TextInput
               disabled={isLoading || isSaving}
               label={t('Змішаний розхід')}
               value={form.mixedModeConsumption}
               onChange={(event) => updateForm({ mixedModeConsumption: event.currentTarget.value })}
             />
-          </SimpleGrid>
+              </SimpleGrid>
+            </DocumentDetailSection>
+          </DocumentDetailLayout>
         </Stack>
       </form>
 

@@ -172,11 +172,9 @@ function HeadDashboardPageContent() {
             <Badge className="app-role-pill is-green" leftSection={<Radio size={12} />} variant="light">
               {t('Наживо')}
             </Badge>
-            <Button
-              className="cockpit-toolbar-button"
+            <Button color="brand" variant="filled" size="sm"
+              className="cockpit-toolbar-button app-filter-primary-action"
               leftSection={<Map size={16} />}
-              size="sm"
-              variant="default"
               onClick={() => navigate('/sales/geography')}
             >
               {t('Карта продажів і боргу')}

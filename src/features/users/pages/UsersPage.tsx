@@ -266,12 +266,9 @@ function UsersPageContent() {
           <div ref={setTableToolbarSlot} className="app-filter-table-toolbar-slot users-table-toolbar-slot" />
           <div className="users-create-actions">
             <PermissionGate permissionKey={PermissionKeys.SystemPages.Roles.View}>
-              <Button
-                className="users-roles-action"
-                color="gray"
+              <Button color="brand" variant="filled" size="sm"
+                className="users-roles-action app-filter-primary-action"
                 leftSection={<Shield size={15} />}
-                size="sm"
-                variant="light"
                 onClick={() => navigate('/users/roles')}
               >
                 {t('Ролі')}

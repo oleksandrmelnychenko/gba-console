@@ -695,12 +695,10 @@ function ReportBuilderForm({
           <ReportPeriodInputs dataSource={dataSource} supported={periodSupported} from={from} to={to} maxDate={maxDate} onFromChange={onFromChange} onToChange={onToChange} />
           {comparisonPanel}
           <div className="app-filter-actions reports-stocks-actions">
-            <Button
-              color="gray"
+            <Button color="brand" variant="filled" size="sm" className="app-filter-primary-action"
               disabled={isLoading}
               leftSection={<LayoutTemplate size={16} />}
               type="button"
-              variant="default"
               onClick={() => setTemplatesOpened(true)}
             >
               {t('Шаблони')}

@@ -304,12 +304,10 @@ export function InvoiceRegisterTab({ canExport }: { canExport: boolean }) {
                   <RotateCcw size={17} />
                 </ActionIcon>
               </Tooltip>
-              <Button
-                color="gray"
+              <Button color="brand" variant="filled" size="sm" className="app-filter-primary-action"
                 leftSection={<Download size={16} />}
                 loading={model.isDownloading}
                 disabled={!canExport || Boolean(model.filterError) || model.isLoading || model.isDownloading}
-                variant="light"
                 onClick={model.exportDocument}
               >
                 {t('Роздрукувати')}

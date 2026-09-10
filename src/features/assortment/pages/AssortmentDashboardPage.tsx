@@ -642,11 +642,9 @@ function AssortmentHeader({
               })
             }}
           />
-          <Button
-            className="assort-reset"
-            color="gray"
+          <Button color="brand" variant="filled" size="sm"
+            className="assort-reset app-filter-primary-action"
             leftSection={<RotateCcw size={15} />}
-            variant="subtle"
             onClick={onReset}
           >
             {t('Скинути')}

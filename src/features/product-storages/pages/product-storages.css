@@ -127,20 +127,27 @@
 }
 
 .product-storages-action-mode .mantine-SegmentedControl-label {
+  align-items: center;
   color: var(--mantine-color-gray-7);
+  display: flex;
   font-family: var(--font-mono);
   font-size: 12px;
   font-weight: 700;
+  justify-content: center;
   letter-spacing: 0;
+  line-height: 1.2;
   min-height: 28px;
+  padding: 0 10px;
 }
 
+.product-storages-action-mode .mantine-SegmentedControl-control[data-active] .mantine-SegmentedControl-label,
 .product-storages-action-mode .mantine-SegmentedControl-label[data-active='true'] {
-  color: var(--mantine-color-gray-9);
+  color: var(--mantine-color-white);
 }
 
 .product-storages-action-mode .mantine-SegmentedControl-indicator {
-  border: 1px solid var(--mantine-color-gray-2);
+  background: var(--brand-orange);
+  border: 1px solid var(--brand-orange);
   border-radius: 7px;
   box-shadow: none;
 }

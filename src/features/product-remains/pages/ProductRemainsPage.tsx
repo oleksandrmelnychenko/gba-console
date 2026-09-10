@@ -1575,12 +1575,10 @@ function ProductRemainMovementsPanel({ row }: { row: RemainingConsignment }) {
                 w={150}
                 onChange={(event) => dispatch({ type: 'dateToChanged', value: event.currentTarget.value })}
               />
-              <Button
-                color="gray"
+              <Button color="brand" variant="filled" size="sm" className="app-filter-primary-action"
                 disabled={Boolean(missingNetIdError || filterError)}
                 leftSection={<RefreshCw size={18} />}
                 loading={isLoading}
-                variant="light"
                 onClick={() => dispatch({ type: 'reloadRequested' })}
               >
                 {t('Оновити')}

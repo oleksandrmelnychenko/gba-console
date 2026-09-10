@@ -404,11 +404,9 @@ export function HeadTaskBoard({
             </Button>
           )}
           {canGenerateTasks && (
-            <Button
+            <Button color="brand" variant="filled" size="sm" className="app-filter-primary-action"
               leftSection={<Sparkles size={16} />}
               loading={isGenerating}
-              size="sm"
-              variant="default"
               onClick={handleGenerate}
             >
               {t('Перерахувати AI задачі')}

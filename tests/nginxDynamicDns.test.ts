@@ -15,7 +15,7 @@ describe('nginx Docker service discovery', () => {
   })
 
   it('routes API, realtime, images, and documents through dynamic upstreams', () => {
-    expect(nginxConfig.match(/proxy_pass \$api_proxy_upstream;/g)).toHaveLength(4)
+    expect(nginxConfig.match(/proxy_pass \$api_proxy_upstream;/g)).toHaveLength(5)
     expect(nginxConfig.match(/proxy_pass \$api_history_proxy_upstream;/g)).toHaveLength(3)
   })
 })

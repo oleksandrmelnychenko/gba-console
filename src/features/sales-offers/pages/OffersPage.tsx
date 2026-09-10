@@ -259,7 +259,7 @@ function OffersPageContent() {
                 <RotateCcw size={17} />
               </ActionIcon>
             </Tooltip>
-            <Button color="gray" size="sm" variant="light" onClick={reload}>
+            <Button color="brand" variant="filled" size="sm" className="app-filter-primary-action" onClick={reload}>
               {t('Застосувати')}
             </Button>
             <Tooltip label={t('Оновити')}>
