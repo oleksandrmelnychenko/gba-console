@@ -99,6 +99,14 @@ export default defineConfig({
       ignored: ['**/.vs/**'],
     },
     proxy: {
+      // Permission-scoped warehouse verification endpoints belong to the main API.
+      '^/api/v1/[^/]+/history/order/item/warehouse-ukraine/verification/': {
+        target: apiProxyTarget,
+        changeOrigin: true,
+        xfwd: true,
+        secure: false,
+        configure: configureForwardedHeaders,
+      },
       '^/api/v1/[^/]+/(history|report)': {
         target: process.env.VITE_DEV_HISTORY_PROXY_TARGET || 'https://gba-analytics-dev.85.17.167.167.nip.io',
         changeOrigin: true,
