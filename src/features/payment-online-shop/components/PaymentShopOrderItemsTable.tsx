@@ -1,4 +1,3 @@
-import { Table, Text } from '@mantine/core'
 import { useMemo } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
@@ -42,30 +41,14 @@ export function PaymentShopOrderItemsTable({
         minWidth={660}
         showToolbar={false}
         tableId="payment-shop-order-items"
+        summaryCells={orders.length > 1 ? {
+          productName: t('Разом'),
+          amount: formatPrice(totals.totalAmount),
+          amountLocal: formatPrice(totals.totalAmountLocal),
+          vat: totals.totalVat > 0 ? formatPrice(totals.totalVat) : '',
+          qty: totals.totalQty,
+        } : undefined}
       />
-      {orders.length > 1 && (
-        <Table.ScrollContainer minWidth={680}>
-        <Table withTableBorder withColumnBorders>
-          <Table.Tbody>
-            <Table.Tr>
-              <Table.Td style={{ minWidth: 240 }} />
-              <Table.Td className="app-table-number" style={{ minWidth: 120 }}>
-                <Text fw={700}>{formatPrice(totals.totalAmount)}</Text>
-              </Table.Td>
-              <Table.Td className="app-table-number" style={{ minWidth: 120 }}>
-                <Text fw={700}>{formatPrice(totals.totalAmountLocal)}</Text>
-              </Table.Td>
-              <Table.Td className="app-table-number" style={{ minWidth: 110 }}>
-                <Text fw={700}>{totals.totalVat > 0 ? formatPrice(totals.totalVat) : ''}</Text>
-              </Table.Td>
-              <Table.Td className="app-table-number" style={{ minWidth: 90 }}>
-                <Text fw={700}>{totals.totalQty}</Text>
-              </Table.Td>
-            </Table.Tr>
-          </Table.Tbody>
-        </Table>
-        </Table.ScrollContainer>
-      )}
     </>
   )
 }
