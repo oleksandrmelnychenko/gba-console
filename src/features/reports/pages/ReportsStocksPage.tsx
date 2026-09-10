@@ -37,7 +37,7 @@ import { CheckboxMultiSelect } from '../../../shared/ui/CheckboxMultiSelect'
 import { CircleAlert, LayoutTemplate, Plus, RotateCcw, Save, Trash2 } from 'lucide-react'
 import { IconFileSpreadsheet } from '@tabler/icons-react'
 import { TableRowAction } from '../../../shared/ui/table-row-action/TableRowAction'
-import { type FormEvent, type ReactNode, useEffect, useMemo, useRef, useState } from 'react'
+import { type FormEvent, type ReactNode, useEffect, useMemo, useState } from 'react'
 import { ApiError } from '../../../shared/api/apiClient'
 import { formatKyivBusinessDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
@@ -97,6 +97,10 @@ import { usesNativeReportLookup, supportsFullReportDateRange, hasFixedReportAxes
 import { VALUATION_DATA_SOURCE } from '../data/reportValuation'
 import { useValuationAgreement } from '../hooks/useValuationAgreement'
 import { useReportRunState } from '../hooks/useReportRunState'
+import { useReportWorkspaceDraft } from '../hooks/useReportWorkspaceDraft'
+import type { ReportWorkspaceSnapshot } from '../data/reportWorkspaceDraft'
+import { reportWorkspaceDraftCompatibility } from '../data/reportWorkspaceDraftCompatibility'
+import { ReportDraftRecoveryPanel, ReportDraftStatus } from './ReportDraftRecoveryPanel'
 import { ValuationAgreementPicker } from './ValuationAgreementPicker'
 import { ReportDatasetPicker } from './ReportDatasetPicker'
 import { ReportQuickPresets } from './ReportQuickPresets'
@@ -194,10 +198,11 @@ function createEmptySelection(): ReportSelection {
 
 export function ReportsStocksPage() {
   const { user, session } = useAuth()
-  return <ReportsStocksWorkspace key={user?.NetUid ?? session?.userNetUid ?? 'anonymous'} />
+  const ownerId = user?.NetUid ?? session?.userNetUid ?? null
+  return <ReportsStocksWorkspace key={ownerId ?? 'anonymous'} ownerId={ownerId} />
 }
 
-function ReportsStocksWorkspace() {
+function ReportsStocksWorkspace({ ownerId }: { ownerId: string | null }) {
   const { t } = useI18n()
   const { hasPermission } = useAuth()
   const canGenerateReport = hasPermission(
@@ -206,7 +211,7 @@ function ReportsStocksWorkspace() {
   const today = useMemo(() => formatKyivBusinessDate(), [])
   const [from, setFrom] = useValueState(today)
   const [to, setTo] = useValueState(today)
-  const previousPeriod = useRef({ from: today, to: today })
+  const [previousPeriod, setPreviousPeriod] = useValueState({ from: today, to: today })
   const datasetStorage = useReportDatasets(canGenerateReport)
   const [dataSource, setDataSource] = useValueState(0)
   const [comparison, setComparison] = useValueState<unknown>(undefined)
@@ -236,6 +241,8 @@ function ReportsStocksWorkspace() {
   const [templateName, setTemplateName] = useValueState('')
   const templateStorage = useServerReportTemplates(canGenerateReport, datasetStorage.datasets)
   const [activeTemplate, setActiveTemplate] = useState<ReportTemplate | null>(null)
+  const [restoredData, setRestoredData] = useState<ReportRequestBody | null>(null)
+  const [draftRestoreError, setDraftRestoreError] = useState<string | null>(null)
   const [templateNotice, setTemplateNotice] = useValueState<string | null>(null)
   const groupingOptions = useMemo(() => datasetGroupings(dataset).filter(field => field.type !== ABC_CLASS_GROUPING || abcClassification != null), [abcClassification, dataset])
   const groupingSelectData = useMemo(
@@ -269,9 +276,15 @@ function ReportsStocksWorkspace() {
     agreementVerified: dataSource !== VALUATION_DATA_SOURCE || valuation.agreement?.Id === valuationClientAgreementId,
   }))
   const comparisonSettingsDisabled = isLoading || !canGenerateReport
-  const templateBody = useMemo(() => activeTemplate
-    ? retainStoredTemplateFields(activeTemplate.Data, { ...reportBody, selections })
-    : { ...reportBody, selections }, [activeTemplate, reportBody, selections])
+  const retainedData = restoredData ?? activeTemplate?.Data
+  const templateBody = useMemo(() => retainedData
+    ? retainStoredTemplateFields(retainedData, { ...reportBody, selections })
+    : { ...reportBody, selections }, [retainedData, reportBody, selections])
+  const draftSnapshot = useMemo<ReportWorkspaceSnapshot>(() => ({
+    name: templateName, data: templateBody, measurements: selectedMeasurements, activeTemplate, previousPeriod,
+  }), [activeTemplate, previousPeriod, selectedMeasurements, templateBody, templateName])
+  const workspaceDraft = useReportWorkspaceDraft({ ownerId, enabled: canGenerateReport,
+    ready: datasetStorage.loaded && !datasetStorage.error, snapshot: draftSnapshot })
   const configurationError = datasetStorage.error ?? (!datasetStorage.loaded ? t('Завантаження наборів даних…') : datasetConfigurationError(templateBody, dataset))
     ?? (dataSource === VALUATION_DATA_SOURCE && valuation.agreement?.Id !== valuationClientAgreementId ? 'Підтвердіть доступний договір оцінки.' : null)
   const checkedMeasurements = reportBody.sorted.Measurements.length
@@ -350,6 +363,9 @@ function ReportsStocksWorkspace() {
   }
 
   function resetReport() {
+    workspaceDraft.rememberBeforeReplace()
+    setRestoredData(null)
+    setDraftRestoreError(null)
     setActiveTemplate(null)
     const snapshotDefaults = dataset && (!periodSupported || supportsFullReportDateRange(dataSource)) ? defaultDatasetRequest(dataset, today, today) : null
     setComparison(snapshotDefaults?.comparison)
@@ -420,6 +436,9 @@ function ReportsStocksWorkspace() {
   }
 
   function applyConfiguration(template: ReportTemplate, nextDataset: ReportDataset) {
+    workspaceDraft.rememberBeforeReplace()
+    setRestoredData(null)
+    setDraftRestoreError(null)
     setActiveTemplate(null)
     const data = template.Data
     setComparison(structuredClone(requestComparison(data)))
@@ -434,7 +453,7 @@ function ReportsStocksWorkspace() {
     const nextAgreementId = data.valuationClientAgreementId ?? undefined
     setValuationAgreementId(nextAgreementId)
     const groupingByType = new Map(datasetGroupings(nextDataset).map(item => [item.type, item]))
-    if (periodSupported && !getPeriodError(from, to, maxDate, t)) previousPeriod.current = { from, to }
+    if (periodSupported && !getPeriodError(from, to, maxDate, t)) setPreviousPeriod({ from, to })
     setDataSource(nextDataset.DataSource)
     setTemplateName(template.Name)
     setFrom(nextDataset.PeriodSupported === false ? '' : data.from || today)
@@ -451,8 +470,48 @@ function ReportsStocksWorkspace() {
     clearRun()
   }
 
+  function restoreWorkspace(snapshot: ReportWorkspaceSnapshot): boolean {
+    if (!canGenerateReport || !datasetStorage.loaded) return false
+    const nextDataset = datasetStorage.datasets.find(item => item.DataSource === (snapshot.data.dataSource ?? 0))
+    const incompatible = reportWorkspaceDraftCompatibility(snapshot, nextDataset)
+    if (incompatible || !nextDataset) {
+      setDraftRestoreError(incompatible)
+      return false
+    }
+    const data = structuredClone(snapshot.data)
+    setRestoredData(data)
+    setActiveTemplate(structuredClone(snapshot.activeTemplate))
+    setTemplateName(snapshot.name)
+    setPreviousPeriod(structuredClone(snapshot.previousPeriod))
+    setDataSource(nextDataset.DataSource)
+    setFrom(data.from)
+    setTo(data.to)
+    setRowGroups(data.sorted.Row)
+    setColGroups(data.sorted.Col)
+    setMeasurements(structuredClone(snapshot.measurements))
+    filterLogic.load(data.selections, requestFilterExpression(data))
+    groupingOrdering.loadOrdering(requestOrdering(data))
+    setComparison(structuredClone(requestComparison(data)))
+    setXyz(structuredClone(requestXyz(data)))
+    setRateComparison(structuredClone(requestRateComparison(data)))
+    setPaymentComparison(clonePaymentComparisonValue(data))
+    setMarginComparison(cloneMarginComparisonValue(data))
+    setReturnComparison(structuredClone(requestReturnComparison(data)))
+    setBuyerSalesShare(structuredClone(requestBuyerSalesShare(data)))
+    setRevenueComparison(structuredClone(requestRevenueComparison(data)))
+    setTopGroups(structuredClone(requestTopGroups(data)))
+    setThreshold(structuredClone(requestThreshold(data)))
+    setHideZero(structuredClone(requestHideZero(data)))
+    abc.load(requestAbcClassification(data))
+    setValuationAgreementId(data.valuationClientAgreementId ?? undefined)
+    setTemplateNotice(null)
+    setDraftRestoreError(null)
+    clearRun()
+    return true
+  }
+
   function changeDataset(nextDataset: ReportDataset) {
-    const period = periodSupported ? { from, to } : previousPeriod.current
+    const period = periodSupported ? { from, to } : previousPeriod
     applyConfiguration({ Name: '', Data: defaultDatasetRequest(nextDataset, period.from, period.to) }, nextDataset)
   }
 
@@ -462,8 +521,22 @@ function ReportsStocksWorkspace() {
     if (preset) groupingOrdering.applyPreset(preset, next => applyConfiguration(next, dataset))
   }
 
+  if (canGenerateReport && ownerId && workspaceDraft.recovery !== 'none') {
+    return <ReportDraftRecoveryPanel savedAt={workspaceDraft.savedAt}
+      loading={!datasetStorage.loaded && !datasetStorage.error}
+      error={draftRestoreError ?? datasetStorage.error ?? workspaceDraft.message}
+      canRestore={workspaceDraft.recovery === 'pending' && datasetStorage.loaded && !datasetStorage.error}
+      onRestore={() => workspaceDraft.restore(restoreWorkspace)}
+      onDiscard={() => { if (workspaceDraft.discardRecovery()) setDraftRestoreError(null) }}
+      onRetry={datasetStorage.retry} />
+  }
+
   return (
     <Stack className="reports-stocks-page" gap={6}>
+      {canGenerateReport && ownerId ? <ReportDraftStatus savedAt={workspaceDraft.status === 'saved' ? workspaceDraft.savedAt : null}
+        notice={draftRestoreError ?? workspaceDraft.message} canUndo={Boolean(workspaceDraft.previousSnapshot)}
+        disabled={isLoading || !datasetStorage.loaded || Boolean(datasetStorage.error)}
+        onUndo={() => workspaceDraft.undo(restoreWorkspace)} /> : null}
       {canGenerateReport ? <Group justify="flex-end"><Button component="a" href="/reports/registers" variant="subtle">Звіти регістрів</Button></Group> : null}
       <ReportCatalogueControl enabled={canGenerateReport} />
       <ReportDatasetPicker datasets={datasetStorage.datasets} selected={dataSource} disabled={!canGenerateReport || isLoading}

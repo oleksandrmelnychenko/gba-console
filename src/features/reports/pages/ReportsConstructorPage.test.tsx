@@ -83,6 +83,7 @@ describe('report constructor entry', () => {
     allowedPermissions.clear()
     vi.clearAllMocks()
     localStorage.clear()
+    sessionStorage.clear()
     vi.mocked(getReportDatasets).mockResolvedValue(reportDatasets)
     vi.mocked(getServerReportTemplates).mockResolvedValue([])
   })
