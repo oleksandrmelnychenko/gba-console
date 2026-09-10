@@ -120,6 +120,8 @@ const currency = {
   NetUid: 'currency-20',
 }
 const register: PaymentRegister = {
+  IsForRetail: true,
+  IsSelected: true,
   Id: 30,
   Name: 'Основний рахунок',
   NetUid: 'register-30',
@@ -146,6 +148,8 @@ const secondOrganizationCashRegister: PaymentRegister = {
   Type: 0,
 }
 const secondOrganizationBankRegister: PaymentRegister = {
+  IsForRetail: true,
+  IsSelected: true,
   Id: 32,
   Name: 'AMG рахунок',
   NetUid: 'register-32',
@@ -300,6 +304,20 @@ describe('IncomeCashflowShopFormPage retail client selection', () => {
     expect(getIncomeCashflowPaymentMovements).not.toHaveBeenCalled()
   })
 
+  it('does not fall back to an ordinary main account when no shop account is selected', async () => {
+    vi.mocked(searchIncomeCashflowPaymentRegisters).mockResolvedValueOnce([
+      { ...register, IsSelected: false, IsMain: true },
+    ])
+    renderPage()
+    await selectRetailClientAndOrganization(organization.Name)
+
+    const input = screen.getByRole<HTMLInputElement>('combobox', { name: 'Каса / рахунок' })
+    expect(input.value).toBe('')
+    fireEvent.click(input)
+    expect(screen.queryByRole('option', { name: register.Name, hidden: true })).toBeNull()
+    expect(createOnlineShopIncomeCashflow).not.toHaveBeenCalled()
+  })
+
   it('shows the initial retail-client list before the user types', async () => {
     renderPage()
 
@@ -449,10 +467,10 @@ describe('IncomeCashflowShopFormPage retail client selection', () => {
     })).toBeNull()
 
     fireEvent.click(registerInput)
-    expect(screen.getByRole('option', {
+    expect(screen.queryByRole('option', {
       hidden: true,
       name: secondOrganizationCashRegister.Name,
-    })).toBeTruthy()
+    })).toBeNull()
     expect(screen.getByRole('option', {
       hidden: true,
       name: secondOrganizationBankRegister.Name,

@@ -1,7 +1,9 @@
-import { describe, expect, it } from 'vitest'
+import { webcrypto } from 'node:crypto'
+import { describe, expect, it, vi } from 'vitest'
 import { ApiError } from '../../shared/api/apiClient'
 import {
   classifyRetailPaymentImageMutationFailure,
+  createAddPaymentImageMutationPayload,
   ensurePaymentImageReplayFileMatches,
   getRetailPaymentImageConcurrencyCode,
   isDefinitiveRetailPaymentImageConcurrencyConflict,
@@ -12,6 +14,23 @@ import {
 } from './paymentImageMutation'
 
 describe('paymentImageMutation', () => {
+  it('does not persist the authentication graph in a pending image operation', async () => {
+    vi.stubGlobal('crypto', webcrypto)
+    try {
+      const image = Object.assign(new File(['receipt'], 'receipt.png', { type: 'image/png' }), {
+        arrayBuffer: async () => new TextEncoder().encode('receipt').buffer,
+      })
+      const user = { Id: 3, Permissions: 'large authentication graph' }
+      const payload = await createAddPaymentImageMutationPayload({ amount: 75, comment: '', image, paymentImageId: 7, paymentType: 0, user })
+      expect(payload.user).toBeNull()
+      expect(payload.file.sha256).toMatch(/^[a-f0-9]{64}$/)
+      expect(payload.file.size).toBe(image.size)
+      expect(payload.file.name).toBe(image.name)
+    } finally {
+      vi.unstubAllGlobals()
+    }
+  })
+
   it('classifies a concurrency conflict as definitive and reloadable', () => {
     const conflict = new ApiError(
       'conflict',

@@ -63,7 +63,6 @@ export async function addPaymentImage(
     JSON.stringify({
       RetailClientPaymentImageId: payload.paymentImageId,
       Amount: payload.amount,
-      User: payload.user,
       PaymentType: payload.paymentType,
       Comment: payload.comment,
     }),

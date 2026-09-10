@@ -148,7 +148,6 @@ describe('paymentOnlineShopApi', () => {
       Comment: 'paid',
       PaymentType: 0,
       RetailClientPaymentImageId: 7,
-      User: { Id: 3 },
     })
   })
 
@@ -186,5 +185,21 @@ describe('paymentOnlineShopApi', () => {
         method: 'POST',
       },
     )
+  })
+
+  it('keeps upload metadata small even when the signed-in user has a large permission graph', async () => {
+    const image = new File(['image bytes'], 'receipt.png', { type: 'image/png' })
+    const user = { Id: 3, Permissions: Array.from({ length: 3000 }, (_, i) => ({ Key: `permission-${i}`, Allowed: true })) }
+    expect(JSON.stringify(user).length).toBeGreaterThan(64 * 1024)
+    apiRequestMock.mockResolvedValueOnce({ Id: 10 })
+
+    await addPaymentImage({ amount: 75, comment: 'receipt', image, paymentImageId: 7, paymentType: 0, user }, { operationId })
+
+    const body = apiRequestMock.mock.calls[0][1]?.body as FormData
+    const metadata = String(body.get('paymentImageItem'))
+    expect(metadata.length).toBeLessThan(500)
+    expect(JSON.parse(metadata)).not.toHaveProperty('User')
+    expect(body.get('image')).toBe(image)
+    expect(apiRequestMock.mock.calls[0][1]?.headers).toEqual({ 'Idempotency-Key': operationId })
   })
 })

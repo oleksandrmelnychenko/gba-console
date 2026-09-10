@@ -70,6 +70,7 @@ import {
 } from '../incomeCashflowFormValidation'
 import { createLatestRequestGuard } from '../latestRequestGuard'
 import { createAutocompleteOptionSubmitGuard } from '../autocompleteOptionSubmitGuard'
+import { isSelectedShopPaymentRegister } from '../shopPaymentRegisters'
 import './income-cashflows-page.css'
 
 type FormState = {
@@ -317,7 +318,7 @@ function IncomeCashflowShopFormPageContent({ searchParams, onClose, onSaved }: I
       setError(null)
 
       try {
-        const [nextRegisters, nextMovements, nextRetailClients] = await Promise.all([
+        const [allRegisters, nextMovements, nextRetailClients] = await Promise.all([
           searchIncomeCashflowPaymentRegisters(''),
           getIncomeCashflowPaymentMovements(),
           getIncomeCashflowRetailClients().catch(() => []),
@@ -326,6 +327,8 @@ function IncomeCashflowShopFormPageContent({ searchParams, onClose, onSaved }: I
         if (cancelled) {
           return
         }
+
+        const nextRegisters = allRegisters.filter(isSelectedShopPaymentRegister)
 
         const defaultMovement = selectDefaultIncomePaymentMovement(
           nextMovements,

@@ -66,6 +66,8 @@ export type PaymentCurrencyRegister = EntityFields & {
 }
 
 export type PaymentRegister = NamedEntity & {
+  IsForRetail?: boolean
+  IsSelected?: boolean
   IsMain?: boolean
   Organization?: Organization | null
   OrganizationId?: number

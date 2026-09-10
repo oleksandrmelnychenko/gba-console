@@ -53,7 +53,9 @@ export async function createAddPaymentImageMutationPayload(
     file: await getPaymentImageFileMetadata(payload.image),
     paymentImageId: payload.paymentImageId,
     paymentType: payload.paymentType,
-    user: payload.user,
+    // Attribution comes from the authenticated server session. Keep the field
+    // for compatibility with pending operations, never persist the auth graph.
+    user: null,
   }
 }
 
