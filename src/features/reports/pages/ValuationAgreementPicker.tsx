@@ -5,6 +5,7 @@ import type { ValuationAgreement } from '../api/reportsApi'
 import { useValuationAgreementLookup } from '../hooks/useValuationAgreement'
 
 type Props = {
+  purpose?: 'stock' | 'prices'
   value: number | undefined
   agreement: ValuationAgreement | undefined
   validationError: string | null
@@ -21,7 +22,7 @@ function pickerOptions(options: ValuationAgreement[], selected: ValuationAgreeme
   return [...items.values()]
 }
 
-export function ValuationAgreementPicker({ value, agreement, validationError, validating, enabled, disabled, onChange, onRetry }: Props) {
+export function ValuationAgreementPicker({ purpose = 'stock', value, agreement, validationError, validating, enabled, disabled, onChange, onRetry }: Props) {
   const [search, setSearch] = useState('')
   const [query] = useDebouncedValue(search, 300)
   const [retry, setRetry] = useState(0)
@@ -31,14 +32,14 @@ export function ValuationAgreementPicker({ value, agreement, validationError, va
   const loading = searchLookup.loading || validating
 
   return <Stack gap={6} p="sm">
-    <Select label="Договір для оцінки" placeholder="Виберіть договір клієнта" searchable clearable
-      description="Ціновий сценарій: регулярна ціна EUR і режим ПДВ обраного договору для всіх відібраних залишків."
+    <Select label={purpose === 'prices' ? 'Договір для звіту цін' : 'Договір для оцінки'} placeholder="Виберіть договір клієнта" searchable clearable
+      description={purpose === 'prices' ? 'Поточна ціна EUR і режим ПДВ конкретного договору для відібраних товарів.' : 'Ціновий сценарій: регулярна ціна EUR і режим ПДВ обраного договору для всіх відібраних залишків.'}
       data={data} value={value?.toString() ?? null} searchValue={search} onSearchChange={setSearch}
       filter={({ options: values }) => values} maxLength={120} disabled={!enabled || disabled}
       rightSection={loading ? <Loader size="xs" /> : undefined}
       nothingFoundMessage={loading ? 'Завантаження…' : 'Договір не знайдено'}
       onChange={next => { setSearch(''); onChange(next === null ? undefined : Number(next)) }} />
-    <Text size="xs" c="dimmed">Обраний договір визначає оцінку, а не власника залишків. Для відсутніх чи неоднозначних цін сума залишиться порожньою.</Text>
+    <Text size="xs" c="dimmed">{purpose === 'prices' ? 'Товари включаються незалежно від наявності на складі. Чинний механізм може застосовувати акційні ціни. Непідтверджені ціни залишаються порожніми; ціни різних товарів не додаються.' : 'Обраний договір визначає оцінку, а не власника залишків. Для відсутніх чи неоднозначних цін сума залишиться порожньою.'}</Text>
     {error ? <Alert color="red" title="Договір оцінки">
       <Text size="sm">{error}</Text><Button mt="xs" size="xs" variant="light" disabled={!enabled || disabled}
         onClick={() => { setRetry(current => current + 1); onRetry() }}>Перевірити ще раз</Button>

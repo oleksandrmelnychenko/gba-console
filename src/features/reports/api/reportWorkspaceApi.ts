@@ -1,3 +1,4 @@
+import { agreementPricesConfigurationError, isAgreementPricesDataset } from '../data/agreementPrices'
 import { clonePaymentComparisonAliases, isPaymentComparisonCapability, paymentComparisonConfigurationError, PAYMENT_COMPARISON_CAPTIONS, PAYMENT_COMPARISON_GROUPINGS, PAYMENT_COMPARISON_FILTERS } from '../data/paymentComparison'
 import { cloneMarginComparisonAliases, isMarginComparisonCapability, marginComparisonConfigurationError, MARGIN_COMPARISON_CAPTIONS } from '../data/marginComparison'
 import { cloneRateComparisonAliases, isRateComparisonCapability, rateComparisonConfigurationError, RATE_COMPARISON_CAPTIONS, RATE_COMPARISON_GROUP } from '../data/rateComparison'
@@ -30,6 +31,8 @@ function isDataset(value: unknown): value is ReportDataset {
     && typeof item.Description === 'string' && fieldsValid && !!item.Groupings?.length && !!item.Measurements?.length
     && (item.PeriodRequired === undefined || typeof item.PeriodRequired === 'boolean')
     && (item.PeriodSupported === undefined || typeof item.PeriodSupported === 'boolean')
+    && !Object.hasOwn(item, 'AgreementPrices')
+    && (item.DataSource === 22 ? isAgreementPricesDataset(item as ReportDataset) : item.agreementPrices == null)
     && (item.DataSource !== 12 || (item.PeriodRequired === true && item.PeriodSupported === true))
     && (item.DataSource === 19 ? item.PeriodRequired === false && item.PeriodSupported === false && item.Filters?.length === 0 && item.Groupings?.length === 1 && item.Groupings[0].Type === 52 && item.Groupings[0].Name === RATE_COMPARISON_GROUP
       && item.Measurements?.length === RATE_COMPARISON_CAPTIONS.length && item.Measurements.every((field, index) => field.Type === 51 + index && field.Name === RATE_COMPARISON_CAPTIONS[index] && field.Selectable !== false) && isRateComparisonCapability(item.rateComparison) : item.rateComparison == null)
@@ -150,7 +153,9 @@ export async function getServerReportTemplates(signal?: AbortSignal): Promise<Re
 }
 
 export async function saveServerReportTemplate(template: ReportTemplate): Promise<ReportTemplate> {
-  const request = (template.Data.dataSource === 17 || template.Data.dataSource === 18 || template.Data.dataSource === 19 || template.Data.dataSource === 20 || template.Data.dataSource === 21) ? structuredClone(template) : template
+  const request = (template.Data.dataSource === 17 || template.Data.dataSource === 18 || template.Data.dataSource === 19 || template.Data.dataSource === 20 || template.Data.dataSource === 21 || template.Data.dataSource === 22) ? structuredClone(template) : template
+  const pricesError = agreementPricesConfigurationError(request.Data)
+  if (pricesError) throw new Error(pricesError)
   const paymentError = paymentComparisonConfigurationError(request.Data)
   if (paymentError) throw new Error(paymentError)
   const marginError = marginComparisonConfigurationError(request.Data)

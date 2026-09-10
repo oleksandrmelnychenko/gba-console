@@ -1,5 +1,5 @@
 import { MantineProvider } from '@mantine/core'
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import type { ReactNode } from 'react'
 import { MemoryRouter } from 'react-router-dom'
 import { beforeEach, expect, it, vi } from 'vitest'
@@ -56,7 +56,10 @@ it('keeps complete-empty zero grand distinct from unknown and refuses a later ma
   expect(container.querySelectorAll('.reports-sale-table tr.data-table-row td.data-table-cell')[1].textContent).toBe('0')
   fireEvent.change(screen.getByLabelText('Пошук'), { target: { value: 'відсутній клієнт' } })
   await waitFor(() => expect(container.querySelectorAll('.reports-sale-table tr.data-table-row')).toHaveLength(1))
-  fireEvent.click(screen.getByRole('button', { name: 'Діаграма' })); await screen.findByText('За поточними відборами немає рядків даних.')
+  fireEvent.click(screen.getByRole('button', { name: 'Діаграма' }))
+  // The first chart view imports its renderer lazily; wait for that work before the UI assertion.
+  await act(async () => { await import('./SpreadsheetChartPanel') })
+  await screen.findByText('За поточними відборами немає рядків даних.')
   fireEvent.click(screen.getByLabelText('Експорт CSV'))
   expect(lastCsvSheet().rows).toEqual([{ kind: 'total', cells: ['Загальний підсумок', 0] }])
   const malformed = clientActivityWorkbookRows('empty'); malformed.at(-1)![1] = 1.5

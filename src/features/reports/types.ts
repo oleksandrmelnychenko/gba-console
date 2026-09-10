@@ -255,6 +255,7 @@ export type ReportRequestBody = {
 export type ReportDatasetField = { Type: number; Name: string; Selectable?: boolean }
 
 export type ReportDataset = {
+  agreementPrices?: unknown
   DataSource: number
   Name: string
   Description: string

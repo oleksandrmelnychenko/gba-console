@@ -1,3 +1,5 @@
+import { AGREEMENT_PRICES_TITLE, AGREEMENT_PRICES_CAPTION, AGREEMENT_PRICES_NOTE_PREFIXES } from './data/agreementPrices'
+import { isAgreementPricesSheet, prepareAgreementPricesRows, validateAgreementPricesAttribution, validateAgreementPricesHeader, validateAgreementPricesSheet } from './data/agreementPricesSpreadsheet'
 import { PAYMENT_COMPARISON_TITLE } from './data/paymentComparison'
 import { PAYMENT_COMPARISON_EMPTY_STATE, PAYMENT_COMPARISON_NOTE_PREFIXES, isPaymentComparisonSheet, paymentComparisonColumn, validatePaymentComparisonHeader, validatePaymentComparisonSheet, validatePaymentComparisonAttribution, buildPaymentComparisonBodyRows } from './data/paymentComparisonSpreadsheet'
 import { MARGIN_COMPARISON_TITLE } from './data/marginComparison'
@@ -74,6 +76,7 @@ export function supportsSpreadsheetDateFilters(sheet: SpreadsheetSheet | null): 
 export function getSpreadsheetNumberFormatter(sheet: SpreadsheetSheet | null, columnIndex: number, csv = false): Intl.NumberFormat | undefined {
   if (!sheet?.header || columnIndex < sheet.header.rowGroupings.length) return undefined
   const title = sheet.header.lines[0], caption = sheet.columns[columnIndex]?.split(HEADER_LEVEL_SEPARATOR).at(-1)
+  if (title === AGREEMENT_PRICES_TITLE) return caption === AGREEMENT_PRICES_CAPTION ? (csv ? debtCsvAmountFormatter : debtAmountFormatter) : undefined
   if (title === PAYMENT_COMPARISON_TITLE) return paymentComparisonColumn(caption) < 0 ? undefined : paymentComparisonColumn(caption) === 3 ? (csv ? valuationCsvMoneyFormatter : valuationMoneyFormatter) : (csv ? paymentCsvMoneyFormatter : paymentMoneyFormatter)
   if (title === MARGIN_COMPARISON_TITLE) return marginComparisonColumn(caption) >= 0 ? (csv ? valuationCsvMoneyFormatter : valuationMoneyFormatter) : undefined
   if (title === RATE_COMPARISON_TITLE) return rateComparisonColumn(caption) < 0 ? undefined : rateComparisonColumn(caption) === 3 ? (csv ? valuationCsvMoneyFormatter : valuationMoneyFormatter) : (csv ? paymentCsvMoneyFormatter : paymentMoneyFormatter)
@@ -126,7 +129,8 @@ export function buildSpreadsheetSheet(name: string, rows: SpreadsheetCellValue[]
     return { name, columns: [], header: null, rows: [] }
   }
 
-  const sheetRows = rows.slice(firstFilledRowIndex)
+  const sheetRows = prepareAgreementPricesRows(rows.slice(firstFilledRowIndex))
+  validateAgreementPricesAttribution(sheetRows, format)
   validatePaymentComparisonAttribution(sheetRows, format)
   validateMarginComparisonAttribution(sheetRows, format)
   validateRateComparisonAttribution(sheetRows, format)
@@ -135,6 +139,7 @@ export function buildSpreadsheetSheet(name: string, rows: SpreadsheetCellValue[]
   // A filtered CSV can retain the complete attribution block with no total rows.
   // Read that explicit structure independently of the workbook's subtotal markers.
   const reportHeader = readReportHeader(sheetRows, format)
+  validateAgreementPricesHeader(String(sheetRows[0]?.[0] ?? '').trim(), reportHeader?.header ?? null)
   validatePaymentComparisonHeader(String(sheetRows[0]?.[0] ?? '').trim(), reportHeader?.header ?? null)
   validateMarginComparisonHeader(String(sheetRows[0]?.[0] ?? '').trim(), reportHeader?.header ?? null)
   validateRateComparisonHeader(String(sheetRows[0]?.[0] ?? '').trim(), reportHeader?.header ?? null)
@@ -170,7 +175,7 @@ export function buildSpreadsheetSheet(name: string, rows: SpreadsheetCellValue[]
     rows: reportHeader?.header.lines[0] === PAYMENT_COMPARISON_TITLE ? buildPaymentComparisonBodyRows(tableRows.slice(headerRowCount))
       : buildBodyRows(tableRows.slice(headerRowCount), isReport, format === 'flat' ? 0 : reportHeader?.header.rowGroupings.length),
   })))))))), format)
-  return validatePaymentComparisonSheet(sheet)
+  return validateAgreementPricesSheet(validatePaymentComparisonSheet(sheet))
 }
 
 // The rows the console's own CSV export writes: the engine's attribution block first, then the table. The export
@@ -182,6 +187,10 @@ export function buildSheetExportRows(
   rows: SpreadsheetRow[],
   totalsRow?: SpreadsheetCellValue[] | null,
 ): SpreadsheetCellValue[][] {
+  if (isAgreementPricesSheet(sheet)) {
+    if (totalsRow) throw new Error('Ціни товарів за договором не підтримують підсумки.')
+    validateAgreementPricesSheet({ ...sheet, rows })
+  }
   if (isRateComparisonSheet(sheet)) {
     if (totalsRow) throw new Error('Історичні курси не підтримують підсумки.')
     validateRateComparisonSheet({ ...sheet, rows }, 'flat')
@@ -262,6 +271,7 @@ export function filterSheetRows(
 // does not add either — an article code or a percentage run down a column is not a total.
 export function getAdditiveColumns(sheet: SpreadsheetSheet | null): boolean[] {
   const columnCount = sheet?.columns.length || 0
+  if (isAgreementPricesSheet(sheet)) return Array.from({ length: columnCount }, () => false)
   // Distinct counts can accidentally equal a sum on one selection. That never proves additivity.
   if (isPaymentComparisonSheet(sheet) || isMarginComparisonSheet(sheet) || isRateComparisonSheet(sheet) || isClientActivitySheet(sheet) || isClientComparisonSheet(sheet) || isImportedPaymentsSheet(sheet) || isSalesXyzSheet(sheet) || isRevenueComparisonSheet(sheet) || isBuyerSalesShareSheet(sheet) || isReturnComparisonSheet(sheet)) return Array.from({ length: columnCount }, () => false)
   const grandTotal = sheet?.rows.find((row) => row.kind === 'total')
@@ -407,6 +417,7 @@ function valuationMetadataText(line: string): string {
 
 function isWarningLine(line: string): boolean {
   return line.startsWith(IGNORED_FILTERS_PREFIX) || line.includes(NO_DATA_MARKER) || line === NO_ROWS_LINE
+    || AGREEMENT_PRICES_NOTE_PREFIXES.slice(3).some(prefix => valuationMetadataText(line).startsWith(prefix))
     || [...PAYMENT_COMPARISON_NOTE_PREFIXES, ...RATE_COMPARISON_NOTE_PREFIXES, ...MARGIN_COMPARISON_NOTE_PREFIXES, ...RETURN_COMPARISON_NOTE_PREFIXES, ...BUYER_SALES_SHARE_NOTE_PREFIXES, ...REVENUE_COMPARISON_NOTE_PREFIXES, ...XYZ_NOTE_PREFIXES, ...IMPORTED_PAYMENTS_NOTE_PREFIXES, ...CLIENT_COMPARISON_NOTE_PREFIXES, 'Покриття оцінки:', 'Причини невизначеної оцінки:', 'Покриття заборгованості:', 'Причини невизначеної заборгованості:', 'Складські рухи повернень:', 'Точність кількості:', 'Покриття залишків рахунків:', 'Узгодження залишків рахунків:', 'Покриття активності клієнтів:', 'Ідентичність клієнтів:', 'Підсумки клієнтів:', 'Межі порівняння з 1С:']
       .some(prefix => valuationMetadataText(line).startsWith(prefix))
 }

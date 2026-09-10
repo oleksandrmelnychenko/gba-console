@@ -874,6 +874,17 @@
 }
 
 @media (max-width: 760px) {
+  .app-filter-bar.reports-stocks-filter-bar {
+    flex-wrap: wrap;
+    min-width: 0;
+  }
+
+  .reports-stocks-filter-bar > .mantine-Text-root {
+    flex: 1 0 100%;
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
   .reports-sale-page {
     height: auto;
     min-height: calc(100vh - var(--app-shell-header-offset, 108px) - var(--app-shell-footer-offset, 36px));

@@ -95,7 +95,7 @@ import './reports-pages.css'
 import { datasetConfigurationError, datasetFilters, datasetGroupings, datasetMeasurements, datasetPresetRequest, datasetPresets, defaultDatasetRequest, type DatasetReportPresetId } from '../data/reportDatasets'
 import { useReportDatasets } from '../hooks/useReportDatasets'
 import { usesNativeReportLookup, supportsFullReportDateRange, hasFixedReportAxes, nativeReportMeasurementUnit } from '../data/nativeReportProfiles'
-import { VALUATION_DATA_SOURCE } from '../data/reportValuation'
+import { requiresValuationAgreement } from '../data/reportValuation'
 import { useValuationAgreement } from '../hooks/useValuationAgreement'
 import { useReportRunState } from '../hooks/useReportRunState'
 import { useReportWorkspaceDraft } from '../hooks/useReportWorkspaceDraft'
@@ -225,7 +225,7 @@ function ReportsStocksWorkspace({ ownerId }: { ownerId: string | null }) {
   const [revenueComparison, setRevenueComparison] = useValueState<unknown>(undefined)
   const [xyz, setXyz] = useValueState<unknown>(undefined)
   const [valuationClientAgreementId, setValuationAgreementId] = useValueState<number | undefined>(undefined)
-  const valuation = useValuationAgreement(valuationClientAgreementId, canGenerateReport && dataSource === VALUATION_DATA_SOURCE)
+  const valuation = useValuationAgreement(valuationClientAgreementId, canGenerateReport && requiresValuationAgreement(dataSource))
   const dataset = datasetStorage.datasets.find(item => item.DataSource === dataSource)
   const periodSupported = dataset?.PeriodSupported !== false
   const [selectedMeasurements, setMeasurements] = useValueState<ReportMeasurementGroup[]>(createDefaultMeasurementGroups)
@@ -276,7 +276,7 @@ function ReportsStocksWorkspace({ ownerId }: { ownerId: string | null }) {
   const { result, lastRun, error, isLoading, downloadModalOpened, update: updateRun, begin: beginRun, clear: clearRun } = useReportRunState<ReportRunOutcome>(JSON.stringify({
     request: reportBody,
     allowed: canGenerateReport,
-    agreementVerified: dataSource !== VALUATION_DATA_SOURCE || valuation.agreement?.Id === valuationClientAgreementId,
+    agreementVerified: !requiresValuationAgreement(dataSource) || valuation.agreement?.Id === valuationClientAgreementId,
   }))
   const comparisonSettingsDisabled = isLoading || !canGenerateReport
   const retainedData = restoredData ?? activeTemplate?.Data
@@ -289,7 +289,7 @@ function ReportsStocksWorkspace({ ownerId }: { ownerId: string | null }) {
   const workspaceDraft = useReportWorkspaceDraft({ ownerId, enabled: canGenerateReport,
     ready: datasetStorage.loaded && !datasetStorage.error, snapshot: draftSnapshot })
   const configurationError = datasetStorage.error ?? (!datasetStorage.loaded ? t('Завантаження наборів даних…') : datasetConfigurationError(templateBody, dataset))
-    ?? (dataSource === VALUATION_DATA_SOURCE && valuation.agreement?.Id !== valuationClientAgreementId ? 'Підтвердіть доступний договір оцінки.' : null)
+    ?? (requiresValuationAgreement(dataSource) && valuation.agreement?.Id !== valuationClientAgreementId ? 'Підтвердіть доступний договір оцінки.' : null)
   const checkedMeasurements = reportBody.sorted.Measurements.length
   // The report engine lays the sheet out from the row groupings; without one it fails deep
   // inside the spreadsheet writer («Column out of range»), so the form has to require it.
@@ -565,7 +565,7 @@ function ReportsStocksWorkspace({ ownerId }: { ownerId: string | null }) {
         disabled={isLoading || !datasetStorage.loaded || Boolean(datasetStorage.error)} onOpen={openCatalogueReport} />
       <ReportDatasetPicker datasets={datasetStorage.datasets} selected={dataSource} disabled={!canGenerateReport || isLoading}
         loaded={datasetStorage.loaded} error={datasetStorage.error} onChange={changeDataset} onRetry={datasetStorage.retry} />
-      {dataSource === VALUATION_DATA_SOURCE ? <ValuationAgreementPicker value={valuationClientAgreementId} enabled={canGenerateReport} disabled={isLoading}
+      {requiresValuationAgreement(dataSource) ? <ValuationAgreementPicker purpose={dataSource === 22 ? 'prices' : 'stock'} value={valuationClientAgreementId} enabled={canGenerateReport} disabled={isLoading}
         agreement={valuation.agreement} validating={valuation.loading} validationError={valuation.error}
         onChange={setValuationAgreementId} onRetry={valuation.retry} /> : null}
       <ReportBuilderForm

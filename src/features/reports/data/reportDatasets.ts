@@ -1,3 +1,4 @@
+import { agreementPricesConfigurationError } from './agreementPrices'
 import { clonePaymentComparisonAliases, defaultPaymentComparison, paymentComparisonConfigurationError } from './paymentComparison'
 import { cloneMarginComparisonAliases, defaultMarginComparison, marginComparisonConfigurationError } from './marginComparison'
 import { cloneRateComparisonAliases, defaultRateComparison, rateComparisonConfigurationError } from './rateComparison'
@@ -16,7 +17,7 @@ import { reportOrderingError } from './reportOrdering'
 import { reportFilterExpressionError } from './reportFilterExpression'
 import { ABC_CLASS_GROUPING, preserveAbcGrouping, reportAbcClassificationError } from './reportAbcClassification'
 import { reportTopGroupsError } from './reportTopGroups'
-import { valuationConfigurationError, VALUATION_DATA_SOURCE } from './reportValuation'
+import { valuationConfigurationError, requiresValuationAgreement } from './reportValuation'
 import { getNativeReportProfile, isNativeReportPresetId, type NativeReportPresetId } from './nativeReportProfiles'
 
 export type DatasetReportPresetId = SalesReportPresetId | 'quantities-by-unit' | NativeReportPresetId
@@ -172,6 +173,8 @@ export function datasetConfigurationError(data: ReportRequestBody, dataset: Repo
   if (comparisonError) return comparisonError
   const valuationError = valuationConfigurationError(data)
   if (valuationError) return valuationError
+  const pricesError = agreementPricesConfigurationError(data, dataset)
+  if (pricesError) return pricesError
   if (!data.sorted || !Array.isArray(data.sorted.Row) || !Array.isArray(data.sorted.Col) || !Array.isArray(data.sorted.Measurements) || !Array.isArray(data.selections)) {
     return 'Шаблон містить некоректні налаштування. Налаштування не застосовано.'
   }
@@ -239,7 +242,7 @@ export function datasetPresetRequest(dataset: ReportDataset, id: DatasetReportPr
     if (dataset.DataSource === 16 && Object.keys(current).some(key => key.toLowerCase() === 'revenuecomparison')) delete defaults.revenueComparison
     if (dataset.DataSource === 15 && Object.keys(current).some(key => key.toLowerCase() === 'xyz')) delete defaults.xyz
     return { Name: preset.name, Data: preserveAbcGrouping(current, { ...defaults, ...preservedOptions, selections: structuredClone(current.selections),
-      ...(dataset.DataSource === VALUATION_DATA_SOURCE && current.valuationClientAgreementId != null
+      ...(requiresValuationAgreement(dataset.DataSource) && current.valuationClientAgreementId != null
         ? { valuationClientAgreementId: current.valuationClientAgreementId } : {}),
     }) }
   }
