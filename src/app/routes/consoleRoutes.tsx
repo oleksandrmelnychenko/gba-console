@@ -82,6 +82,7 @@ import {
   NewUkraineSaleReturnPage,
   ReportsSalePage,
   ReportsStocksPage,
+  ReportsConstructorPage,
   SourceRegisterReportsPage,
   ResalePage,
   ResalesPage,
@@ -807,6 +808,11 @@ const plannedConsoleRoutes: ConsoleRoute[] = [
     path: '/reports/registers',
     element: lazyRoute(<SourceRegisterReportsPage />),
     permissionKey: PermissionKeys.ReportsStocks.Report.Generate,
+  },
+  {
+    path: '/reports/constructor',
+    element: lazyRoute(<ReportsConstructorPage />),
+    permissionKey: PermissionKeys.ReportsStocks.Page.View,
   },
   {
     path: '/reports/stocks',

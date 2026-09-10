@@ -84,6 +84,16 @@ const navigationRouteAliasRules: Array<{ source: string; targets: RegExp[] }> = 
     ],
   },
   {
+    // The constructor reuses the stock-report workspace and its existing menu grant.
+    source: '/reports/stocks',
+    targets: [/^\/reports\/constructor$/i],
+  },
+  {
+    // Keep old bookmarks reachable if the backend later adopts the new entry URL.
+    source: '/reports/constructor',
+    targets: [/^\/reports\/stocks$/i],
+  },
+  {
     // The report screens have their own menu nodes now; only the plural spelling of the
     // sale-report URL still needs to resolve to them.
     source: '/reports/sale',
@@ -162,7 +172,9 @@ function normalizeNavigationNodes(
 
     normalizedNodes.push({
       ...node,
-      Module: overrideNavigationLabel(node.Module),
+      Module: ['/reports/stocks', '/reports/constructor'].includes(normalizePath(node.Route || ''))
+        ? 'Конструктор звітів'
+        : overrideNavigationLabel(node.Module),
       Children: normalizeNavigationNodes(node.Children, includeVehicleRegistry),
     })
   }
@@ -369,8 +381,11 @@ function hasRemovedNavigationRoute(route: string | undefined): boolean {
 
 function normalizeNavigationTarget(path: string): string {
   const { pathname, suffix } = splitRouteTarget(path)
+  const normalizedPath = normalizePath(pathname)
+  // Change the visible destination without replacing the server-owned node or grant.
+  const targetPath = normalizedPath === '/reports/stocks' ? '/reports/constructor' : normalizedPath
 
-  return `${normalizePath(pathname)}${suffix}`
+  return `${targetPath}${suffix}`
 }
 
 function normalizePath(path: string): string {

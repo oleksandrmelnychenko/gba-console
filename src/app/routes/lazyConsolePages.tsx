@@ -65,6 +65,7 @@ export const ResalesPage = lazy(() => import('../../features/resales/pages/Resal
 export const NewUkraineSaleReturnPage = lazy(() => import('../../features/sales-returns').then((module) => ({ default: module.NewUkraineSaleReturnPage })))
 export const ReportsSalePage = lazy(() => import('../../features/reports').then((module) => ({ default: module.ReportsSalePage })))
 export const ReportsStocksPage = lazy(() => import('../../features/reports').then((module) => ({ default: module.ReportsStocksPage })))
+export const ReportsConstructorPage = lazy(() => import('../../features/reports/pages/ReportsConstructorPage').then((module) => ({ default: module.ReportsConstructorPage })))
 export const AllSadsPage = lazy(() => import('../../features/sad').then((module) => ({ default: module.AllSadsPage })))
 export const EditSadPage = lazy(() => import('../../features/sad').then((module) => ({ default: module.EditSadPage })))
 export const EditSaleSadPage = lazy(() => import('../../features/sad').then((module) => ({ default: module.EditSaleSadPage })))

@@ -123,6 +123,14 @@ describe('newly classified page permissions', () => {
 })
 
 describe('console report routes', () => {
+  it('keeps the new constructor and old stock URL under the same page capability', () => {
+    for (const path of ['/reports/constructor', '/reports/stocks']) {
+      const route = consoleRoutes.find(candidate => candidate.path === path)
+      expect(route?.permissionKey).toBe(PermissionKeys.ReportsStocks.Page.View)
+      expect(isValidElement(route?.element) && route.element.type !== Navigate).toBe(true)
+    }
+  })
+
   it('guards the lazy register constructor with the generate permission', () => {
     expect(consoleRoutes.find(route => route.path === '/reports/registers')?.permissionKey).toBe(PermissionKeys.ReportsStocks.Report.Generate)
   })
