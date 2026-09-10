@@ -1,4 +1,3 @@
-import { webcrypto } from 'node:crypto'
 import { describe, expect, it, vi } from 'vitest'
 import { ApiError } from '../../shared/api/apiClient'
 import {
@@ -15,7 +14,8 @@ import {
 
 describe('paymentImageMutation', () => {
   it('does not persist the authentication graph in a pending image operation', async () => {
-    vi.stubGlobal('crypto', webcrypto)
+    const digest = vi.fn().mockResolvedValue(new Uint8Array(32).buffer)
+    vi.stubGlobal('crypto', { subtle: { digest } })
     try {
       const image = Object.assign(new File(['receipt'], 'receipt.png', { type: 'image/png' }), {
         arrayBuffer: async () => new TextEncoder().encode('receipt').buffer,
@@ -23,6 +23,7 @@ describe('paymentImageMutation', () => {
       const user = { Id: 3, Permissions: 'large authentication graph' }
       const payload = await createAddPaymentImageMutationPayload({ amount: 75, comment: '', image, paymentImageId: 7, paymentType: 0, user })
       expect(payload.user).toBeNull()
+      expect(digest).toHaveBeenCalledWith('SHA-256', await image.arrayBuffer())
       expect(payload.file.sha256).toMatch(/^[a-f0-9]{64}$/)
       expect(payload.file.size).toBe(image.size)
       expect(payload.file.name).toBe(image.name)
