@@ -76,6 +76,7 @@ import {
   getReportFieldLabel,
 } from '../data/reportOptions'
 import type {
+  ReportCatalogue,
   ReportDataset,
   ReportEntity,
   ReportFilterField,
@@ -112,6 +113,7 @@ import { ReportTemplatesPanel } from './ReportTemplatesPanel'
 import { retainStoredTemplateFields } from '../data/reportTemplateDraft'
 
 import { ReportCatalogueControl } from './ReportCatalogueControl'
+import { resolveCatalogueLaunch, type CatalogueLaunchChoice } from '../data/reportCatalogueLaunch'
 import { ReportOrderingPanel } from './ReportOrderingPanel'
 import { requestOrdering } from '../data/reportOrdering'
 import { requestFilterExpression } from '../data/reportFilterExpression'
@@ -244,6 +246,7 @@ function ReportsStocksWorkspace({ ownerId }: { ownerId: string | null }) {
   const [restoredData, setRestoredData] = useState<ReportRequestBody | null>(null)
   const [draftRestoreError, setDraftRestoreError] = useState<string | null>(null)
   const [templateNotice, setTemplateNotice] = useValueState<string | null>(null)
+  const [catalogueNotice, setCatalogueNotice] = useState<{ text: string; failed: boolean } | null>(null)
   const groupingOptions = useMemo(() => datasetGroupings(dataset).filter(field => field.type !== ABC_CLASS_GROUPING || abcClassification != null), [abcClassification, dataset])
   const groupingSelectData = useMemo(
     () =>
@@ -363,6 +366,7 @@ function ReportsStocksWorkspace({ ownerId }: { ownerId: string | null }) {
   }
 
   function resetReport() {
+    setCatalogueNotice(null)
     workspaceDraft.rememberBeforeReplace()
     setRestoredData(null)
     setDraftRestoreError(null)
@@ -436,6 +440,7 @@ function ReportsStocksWorkspace({ ownerId }: { ownerId: string | null }) {
   }
 
   function applyConfiguration(template: ReportTemplate, nextDataset: ReportDataset) {
+    setCatalogueNotice(null)
     workspaceDraft.rememberBeforeReplace()
     setRestoredData(null)
     setDraftRestoreError(null)
@@ -479,6 +484,7 @@ function ReportsStocksWorkspace({ ownerId }: { ownerId: string | null }) {
       return false
     }
     const data = structuredClone(snapshot.data)
+    setCatalogueNotice(null)
     setRestoredData(data)
     setActiveTemplate(structuredClone(snapshot.activeTemplate))
     setTemplateName(snapshot.name)
@@ -510,6 +516,19 @@ function ReportsStocksWorkspace({ ownerId }: { ownerId: string | null }) {
     return true
   }
 
+  function openCatalogueReport(choice: CatalogueLaunchChoice, catalogue: ReportCatalogue): boolean {
+    if (!canGenerateReport || isLoading || !datasetStorage.loaded || datasetStorage.error) return false
+    const period = periodSupported ? { from, to } : previousPeriod
+    const launch = resolveCatalogueLaunch(catalogue, choice, datasetStorage.datasets, period)
+    if (!launch.ok) {
+      setCatalogueNotice({ text: launch.message, failed: true })
+      return false
+    }
+    applyConfiguration(launch.template, launch.dataset)
+    setCatalogueNotice({ text: launch.notice, failed: false })
+    return true
+  }
+
   function changeDataset(nextDataset: ReportDataset) {
     const period = periodSupported ? { from, to } : previousPeriod
     applyConfiguration({ Name: '', Data: defaultDatasetRequest(nextDataset, period.from, period.to) }, nextDataset)
@@ -538,7 +557,12 @@ function ReportsStocksWorkspace({ ownerId }: { ownerId: string | null }) {
         disabled={isLoading || !datasetStorage.loaded || Boolean(datasetStorage.error)}
         onUndo={() => workspaceDraft.undo(restoreWorkspace)} /> : null}
       {canGenerateReport ? <Group justify="flex-end"><Button component="a" href="/reports/registers" variant="subtle">Звіти регістрів</Button></Group> : null}
-      <ReportCatalogueControl enabled={canGenerateReport} />
+      {canGenerateReport && templateName.trim() ? <Text fw={600} aria-label={t('Назва поточного звіту')}>{templateName}</Text> : null}
+      {canGenerateReport && catalogueNotice ? <Alert color={catalogueNotice.failed ? 'red' : 'blue'} style={{ flexShrink: 0 }}
+        title={t(catalogueNotice.failed ? 'Не вдалося відкрити звіт' : 'Звіт відкрито в конструкторі')}
+        withCloseButton onClose={() => setCatalogueNotice(null)}>{catalogueNotice.text}</Alert> : null}
+      <ReportCatalogueControl enabled={canGenerateReport}
+        disabled={isLoading || !datasetStorage.loaded || Boolean(datasetStorage.error)} onOpen={openCatalogueReport} />
       <ReportDatasetPicker datasets={datasetStorage.datasets} selected={dataSource} disabled={!canGenerateReport || isLoading}
         loaded={datasetStorage.loaded} error={datasetStorage.error} onChange={changeDataset} onRetry={datasetStorage.retry} />
       {dataSource === VALUATION_DATA_SOURCE ? <ValuationAgreementPicker value={valuationClientAgreementId} enabled={canGenerateReport} disabled={isLoading}

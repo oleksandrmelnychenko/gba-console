@@ -4,6 +4,7 @@ import { useI18n } from '../../../shared/i18n/useI18n'
 import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { useAuth } from '../../auth/useAuth'
 import { getReportCatalogue, getReportDatasets } from '../api/reportWorkspaceApi'
+import { catalogueLaunchOptions, type CatalogueLaunchChoice } from '../data/reportCatalogueLaunch'
 import { CAPTURE_STATUS_LABELS, DEPENDENCY_STATUS_LABELS, filterMigrationCatalogue, inspectCatalogueMigration, MIGRATION_STATUS_LABELS, sourceIdentity, type MigrationDisplayStatus } from '../data/reportMigration'
 import type { ReportCatalogue, ReportCatalogueEntry, ReportDataset, ReportSourceMigration } from '../types'
 
@@ -14,15 +15,35 @@ const kindLabels: Record<string, string> = {
 const statusColors: Record<MigrationDisplayStatus, string> = { unassessed: 'gray', captured: 'gray', native_partial: 'yellow', parity_verified: 'green' }
 const pageSize = 20
 const worldLabel = (world: string) => world === 'fenix' ? 'Fenix' : world === 'amg' ? 'AMG' : world
+type LaunchOption = ReturnType<typeof catalogueLaunchOptions>[number]
+type OpenReport = (choice: CatalogueLaunchChoice, catalogue: ReportCatalogue) => boolean
+type LoadScope = { attempt: number; canGenerate: boolean }
+type CatalogueLoad = { scope: LoadScope; catalogue: ReportCatalogue | null; datasets: ReportDataset[] | null; error: boolean }
 
-export function ReportCataloguePanel() {
+function useCatalogueLoad(canGenerate: boolean) {
+  const [load, setLoad] = useState<CatalogueLoad | null>(null)
+  const [attempt, setAttempt] = useState(0)
+  const loadScope = useMemo(() => ({ attempt, canGenerate }), [attempt, canGenerate])
+  useEffect(() => {
+    const controller = new AbortController()
+    Promise.allSettled([getReportCatalogue(controller.signal), loadScope.canGenerate ? getReportDatasets(controller.signal) : Promise.resolve(null)])
+      .then(([inventory, capabilities]) => {
+        if (controller.signal.aborted) return
+        setLoad({ scope: loadScope, catalogue: inventory.status === 'fulfilled' ? inventory.value : null,
+          datasets: capabilities.status === 'fulfilled' ? capabilities.value : null, error: inventory.status === 'rejected' })
+      })
+    return () => controller.abort()
+  }, [loadScope])
+  const currentLoad = load?.scope === loadScope ? load : null
+  return { catalogue: currentLoad?.catalogue ?? null, datasets: currentLoad?.datasets ?? null,
+    error: currentLoad?.error ?? false, retry: () => setAttempt(value => value + 1) }
+}
+
+export function ReportCataloguePanel({ onOpen, disabled = false }: { onOpen?: OpenReport; disabled?: boolean }) {
   const { t } = useI18n()
   const { hasPermission } = useAuth()
   const canGenerate = hasPermission(PermissionKeys.ReportsStocks.Report.Generate)
-  const [catalogue, setCatalogue] = useState<ReportCatalogue | null>(null)
-  const [datasets, setDatasets] = useState<ReportDataset[] | null>(null)
-  const [error, setError] = useState(false)
-  const [attempt, setAttempt] = useState(0)
+  const { catalogue, datasets, error, retry } = useCatalogueLoad(canGenerate)
   const [search, setSearch] = useState('')
   const [kind, setKind] = useState<string | null>(null)
   const [world, setWorld] = useState<string | null>(null)
@@ -30,34 +51,30 @@ export function ReportCataloguePanel() {
   const [dependency, setDependency] = useState<string | null>(null)
   const [page, setPage] = useState(1)
   const [expanded, setExpanded] = useState<ReadonlySet<string>>(new Set())
-
-  useEffect(() => {
-    const controller = new AbortController()
-    Promise.allSettled([getReportCatalogue(controller.signal), canGenerate ? getReportDatasets(controller.signal) : Promise.resolve(null)])
-      .then(([inventory, capabilities]) => {
-        if (controller.signal.aborted) return
-        if (inventory.status === 'fulfilled') setCatalogue(inventory.value)
-        else setError(true)
-        setDatasets(capabilities.status === 'fulfilled' ? capabilities.value : null)
-      })
-    return () => controller.abort()
-  }, [attempt, canGenerate])
-
   const inspection = useMemo(() => catalogue ? inspectCatalogueMigration(catalogue) : null, [catalogue])
   const filtered = useMemo(() => catalogue && inspection ? filterMigrationCatalogue(catalogue, inspection, { kind, world, status, dependency, search }) : [],
     [catalogue, inspection, kind, world, status, dependency, search])
   const availableDatasets = canGenerate ? datasets : null
+  const supportsLaunch = Boolean(onOpen)
   const visibleSourceCount = filtered.reduce((sum, item) => sum + item.matchingSources.length, 0)
+  const visibleRows = useMemo(() => filtered.slice((page - 1) * pageSize, page * pageSize).map(item => ({ ...item,
+    options: supportsLaunch && catalogue && inspection?.valid && availableDatasets
+      ? catalogueLaunchOptions(catalogue, item.report.Id, availableDatasets).filter(option => item.matchingSources.some(source =>
+        source.World === option.choice.world && source.SourceId === option.choice.sourceId)) : [],
+  })), [filtered, page, supportsLaunch, catalogue, inspection, availableDatasets])
 
   if (error) return <Alert color="red" title={t('Не вдалося завантажити каталог')}>
-    <Button onClick={() => { setError(false); setCatalogue(null); setDatasets(null); setAttempt(value => value + 1) }}>{t('Повторити')}</Button>
+    <Button type="button" onClick={retry}>{t('Повторити')}</Button>
   </Alert>
   if (!catalogue || !inspection) return <Group><Loader size="sm" /><Text>{t('Завантаження каталогу звітів')}</Text></Group>
   const { summary } = inspection
   return <Card withBorder padding="sm" style={{ flexShrink: 0 }}>
     <Stack gap="sm">
       <Group justify="space-between"><Text fw={600}>{t('Каталог звітів 1С')}</Text><Badge>{summary.CatalogueEntries}</Badge></Group>
-      <Text size="sm" c="dimmed">{t('Перелік для перенесення з Fenix та AMG. Наявність у каталозі ще не означає, що розрахунок доступний у GBA. Готові налаштування доступних звітів розташовані в конструкторі.')}</Text>
+      <Text size="sm" c="dimmed">{t(onOpen
+        ? 'Оберіть звіт і доступний варіант розрахунку GBA. Відкриття перенесе готові налаштування в конструктор; звіт сформується лише після натискання «Сформувати». Повну відповідність звіту 1С перевіряйте в покритті.'
+        : 'Перелік для перенесення з Fenix та AMG. Наявність у каталозі ще не означає, що розрахунок доступний у GBA. Готові налаштування доступних звітів розташовані в конструкторі.')}</Text>
+      {onOpen ? <Text size="sm" c="dimmed">{t('Варіанти Fenix/AMG позначають походження звіту; розрахунок використовує доступні дані GBA.')}</Text> : null}
       <Stack gap={2} aria-label={t('Загальний стан каталогу')}>
         <Text size="sm">{t('{entries} позицій · {implementations} джерельних реалізацій · {builtin} вбудованих і регламентованих реалізацій', {
           entries: summary.CatalogueEntries, implementations: summary.SourceImplementations, builtin: summary.BuiltinImplementations })}</Text>
@@ -81,31 +98,83 @@ export function ReportCataloguePanel() {
         <Select label={t('Стан залежностей')} clearable value={dependency} data={Object.entries(DEPENDENCY_STATUS_LABELS).map(([value, label]) => ({ value, label: t(label) }))} onChange={value => { setDependency(value); setPage(1) }} />
       </Group>
       <Text size="sm">{t('У вибірці: {entries} позицій · {implementations} реалізацій. Загальні показники вище охоплюють усі бази.', { entries: filtered.length, implementations: visibleSourceCount })}</Text>
-      <Table.ScrollContainer minWidth={650}>
-        <Table striped>
-          <Table.Thead><Table.Tr><Table.Th>{t('Звіт')}</Table.Th><Table.Th>{t('Тип')}</Table.Th><Table.Th>{t('Стан за базами')}</Table.Th></Table.Tr></Table.Thead>
-          <Table.Tbody>{filtered.slice((page - 1) * pageSize, page * pageSize).map(({ report }) => <Fragment key={report.Id}>
-            <Table.Tr>
-              <Table.Td><Button variant="subtle" size="compact-sm" aria-expanded={expanded.has(report.Id)} aria-label={t('Покриття звіту: {name}', { name: report.Title })}
-                onClick={() => setExpanded(current => { const next = new Set(current); if (next.has(report.Id)) next.delete(report.Id); else next.add(report.Id); return next })}>{report.Title}</Button></Table.Td>
-              <Table.Td>{t(kindLabels[report.Kind] ?? report.Kind)}</Table.Td>
-              <Table.Td><Group gap={4}>{report.Sources.map(source => {
-                const state = inspection.statuses.get(sourceIdentity(source)) ?? 'unassessed'
-                return <Badge key={sourceIdentity(source)} color={statusColors[state]} variant="light">{worldLabel(source.World)}: {t(MIGRATION_STATUS_LABELS[state])}</Badge>
-              })}</Group></Table.Td>
-            </Table.Tr>
-            {expanded.has(report.Id) && <Table.Tr><Table.Td colSpan={3}><ReportMigrationDetails report={report} migrations={inspection.migrations} datasets={availableDatasets} canGenerate={canGenerate} /></Table.Td></Table.Tr>}
-          </Fragment>)}</Table.Tbody>
-        </Table>
-      </Table.ScrollContainer>
+      <CatalogueTable visibleRows={visibleRows} catalogue={catalogue} inspection={inspection} availableDatasets={availableDatasets}
+        canGenerate={canGenerate} disabled={disabled} onOpen={onOpen} expanded={expanded}
+        onToggle={id => setExpanded(current => toggleExpanded(current, id))} />
       {!filtered.length && <Text c="dimmed">{t('Звітів за цими умовами не знайдено')}</Text>}
       <Pagination total={Math.max(1, Math.ceil(filtered.length / pageSize))} value={page} onChange={setPage} />
     </Stack>
   </Card>
 }
 
-function ReportMigrationDetails({ report, migrations, datasets, canGenerate }: {
-  report: ReportCatalogueEntry; migrations: ReadonlyMap<string, ReportSourceMigration>; datasets: ReportDataset[] | null; canGenerate: boolean
+
+function toggleExpanded(current: ReadonlySet<string>, id: string) {
+  const next = new Set(current)
+  if (next.has(id)) next.delete(id)
+  else next.add(id)
+  return next
+}
+
+function CatalogueTable({ visibleRows, catalogue, inspection, availableDatasets, canGenerate, disabled, onOpen, expanded, onToggle }: {
+  visibleRows: Array<{ report: ReportCatalogueEntry; options: LaunchOption[] }>; catalogue: ReportCatalogue
+  inspection: ReturnType<typeof inspectCatalogueMigration>; availableDatasets: ReportDataset[] | null
+  canGenerate: boolean; disabled: boolean; onOpen?: OpenReport; expanded: ReadonlySet<string>; onToggle: (id: string) => void
+}) {
+  const { t } = useI18n()
+  return (
+      <Table.ScrollContainer minWidth={650}>
+        <Table striped>
+          <Table.Thead><Table.Tr><Table.Th>{t('Звіт')}</Table.Th><Table.Th>{t('Тип')}</Table.Th><Table.Th>{t('Стан за базами')}</Table.Th></Table.Tr></Table.Thead>
+          <Table.Tbody>{visibleRows.map(({ report, options }) => <Fragment key={report.Id}>
+            <Table.Tr>
+              <Table.Td><Stack gap={6} align="flex-start"><Button type="button" variant="subtle" size="compact-sm" aria-expanded={expanded.has(report.Id)} aria-label={t('Покриття звіту: {name}', { name: report.Title })}
+                styles={{ root: { height: 'auto', maxWidth: 400 }, label: { whiteSpace: 'normal', textAlign: 'left' } }}
+                onClick={() => onToggle(report.Id)}>{report.Title}</Button>
+                {onOpen ? <ReportLaunchActions report={report} catalogue={catalogue} options={options}
+                  disabled={disabled || !canGenerate} onOpen={onOpen}
+                  unavailable={!canGenerate ? 'Для роботи з наборами GBA потрібне право формування звітів.'
+                    : !availableDatasets ? 'Доступність конструктора не підтверджена. Спробуйте відкрити каталог ще раз.'
+                      : !inspection.valid ? 'Готові налаштування не підтверджені: стан перенесення не узгоджений з каталогом.'
+                        : 'Для цього звіту ще немає готових налаштувань конструктора.'} /> : null}
+              </Stack></Table.Td>
+              <Table.Td>{t(kindLabels[report.Kind] ?? report.Kind)}</Table.Td>
+              <Table.Td><Group gap={4}>{report.Sources.map(source => {
+                const state = inspection.statuses.get(sourceIdentity(source)) ?? 'unassessed'
+                return <Badge key={sourceIdentity(source)} color={statusColors[state]} variant="light">{worldLabel(source.World)}: {t(MIGRATION_STATUS_LABELS[state])}</Badge>
+              })}</Group></Table.Td>
+            </Table.Tr>
+            {expanded.has(report.Id) && <Table.Tr><Table.Td colSpan={3}><ReportMigrationDetails report={report} migrations={inspection.migrations} datasets={availableDatasets} canGenerate={canGenerate} launchEnabled={Boolean(onOpen)} /></Table.Td></Table.Tr>}
+          </Fragment>)}</Table.Tbody>
+        </Table>
+      </Table.ScrollContainer>
+  )
+}
+
+const launchIdentity = (choice: CatalogueLaunchChoice) => JSON.stringify([choice.reportId, choice.world, choice.sourceId, choice.dataSource])
+
+function ReportLaunchActions({ report, catalogue, options, disabled, unavailable, onOpen }: {
+  report: ReportCatalogueEntry; catalogue: ReportCatalogue; options: LaunchOption[]; disabled: boolean; unavailable: string; onOpen: OpenReport
+}) {
+  const { t } = useI18n()
+  const [selectedKey, setSelectedKey] = useState<string | null>(null)
+  const [rejectedKey, setRejectedKey] = useState<string | null>(null)
+  const selected = options.length === 1 ? options[0] : options.find(option => launchIdentity(option.choice) === selectedKey)
+  const label = (option: LaunchOption) => `${worldLabel(option.choice.world)} · ${t(option.label)}`
+  if (!options.length) return <Text size="sm" c="dimmed">{t(unavailable)}</Text>
+  return <Stack gap={6} role="group" aria-label={t('Відкрити звіт: {name}', { name: report.Title })} style={{ minWidth: 230, maxWidth: 400 }}>
+    {options.length > 1 ? <Select label={t('Варіант для конструктора')} aria-label={t('Варіант звіту: {name}', { name: report.Title })}
+      placeholder={t('Оберіть базу та варіант')} disabled={disabled} value={selected ? launchIdentity(selected.choice) : null}
+      data={options.map(option => ({ value: launchIdentity(option.choice), label: label(option) }))}
+      onChange={value => { setSelectedKey(value); setRejectedKey(null) }} /> : <Text size="sm">{label(options[0])}</Text>}
+    {selected ? <Text size="xs" c="dimmed">{t(selected.notice)}</Text> : <Text size="xs" c="dimmed">{t('Виберіть один із доступних варіантів розрахунку GBA.')}</Text>}
+    <Button type="button" variant="light" disabled={disabled || !selected} styles={{ root: { height: 'auto', minHeight: 36, paddingBlock: 8 }, label: { whiteSpace: 'normal' } }}
+      onClick={() => { if (!disabled && selected) setRejectedKey(onOpen(selected.choice, catalogue) ? null : launchIdentity(selected.choice)) }}>{t('Відкрити в конструкторі')}</Button>
+    {selected && rejectedKey === launchIdentity(selected.choice) ? <Text size="sm" c="orange" role="alert">{t('Не вдалося відкрити цей варіант. Поточні налаштування збережено; перевірте доступність звіту й повторіть вибір.')}</Text> : null}
+  </Stack>
+}
+
+function ReportMigrationDetails({ report, migrations, datasets, canGenerate, launchEnabled }: {
+  report: ReportCatalogueEntry; migrations: ReadonlyMap<string, ReportSourceMigration>; datasets: ReportDataset[] | null; canGenerate: boolean; launchEnabled: boolean
 }) {
   const { t } = useI18n()
   return <Stack gap="md" aria-label={t('Покриття звіту: {name}', { name: report.Title })}>{report.Sources.map(source => {
@@ -124,7 +193,7 @@ function ReportMigrationDetails({ report, migrations, datasets, canGenerate }: {
           <Text size="xs">{migration.Validation.EvidenceId} · {migration.Validation.VerifiedAtUtc}</Text>
           <Text size="xs">{t('Версія розрахунку: {revision}', { revision: migration.Validation.NativeRevision })}</Text>
         </Stack>}
-        <MappedDatasets migration={migration} datasets={datasets} canGenerate={canGenerate} />
+        <MappedDatasets migration={migration} datasets={datasets} canGenerate={canGenerate} launchEnabled={launchEnabled} />
       </> : <Text size="sm" c="dimmed">{t('Стан перенесення не оцінено. Дані покриття та перевірки не підтверджені.')}</Text>}
     </Stack>
   })}</Stack>
@@ -135,12 +204,13 @@ function ScopeLines({ title, lines, fallback }: { title: string; lines: string[]
   return <Stack gap={2}><Text size="sm" fw={600}>{t(title)}</Text>{lines.length ? <ul>{lines.map(line => <li key={line}><Text size="sm">{line}</Text></li>)}</ul> : <Text size="sm" c="dimmed">{t(fallback)}</Text>}</Stack>
 }
 
-function MappedDatasets({ migration, datasets, canGenerate }: { migration: ReportSourceMigration; datasets: ReportDataset[] | null; canGenerate: boolean }) {
+function MappedDatasets({ migration, datasets, canGenerate, launchEnabled }: { migration: ReportSourceMigration; datasets: ReportDataset[] | null; canGenerate: boolean; launchEnabled: boolean }) {
   const { t } = useI18n()
   if (!migration.NativeDataSources.length) return null
   if (!canGenerate) return <Text size="sm" c="dimmed">{t('Для роботи з наборами GBA потрібне право формування звітів.')}</Text>
   return <Stack gap={2}><Text size="sm" fw={600}>{t('Пов’язані набори GBA')}</Text>{migration.NativeDataSources.map(id => {
     const dataset = datasets?.find(item => item.DataSource === id)
     return <Text size="sm" key={id}>{dataset ? `${dataset.Name} [${id}]` : t('Набір [{id}] зараз недоступний або його доступність не підтверджена.', { id })}</Text>
-  })}<Text size="xs" c="dimmed">{t('Доступний набір можна вибрати у конструкторі вручну. Каталог не застосовує налаштування й не змінює поточний звіт.')}</Text></Stack>
+  })}<Text size="xs" c="dimmed">{t(launchEnabled ? 'Готові варіанти відкриваються кнопкою в рядку звіту. Пов’язані набори самі по собі не підтверджують перенесення всього звіту.'
+    : 'Доступний набір можна вибрати у конструкторі вручну. Каталог не застосовує налаштування й не змінює поточний звіт.')}</Text></Stack>
 }
