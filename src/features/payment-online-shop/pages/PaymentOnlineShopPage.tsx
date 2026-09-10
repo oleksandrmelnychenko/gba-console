@@ -20,7 +20,7 @@ import {
   useRef,
   useState,
 } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { IncomeCashflowShopDrawer } from '../../income-cashflows/pages/IncomeCashflowShopFormPage'
 import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -83,7 +83,7 @@ const priceFormatter = new Intl.NumberFormat('uk-UA', { minimumFractionDigits: 2
 function usePaymentOnlineShopModel() {
   const { t } = useI18n()
   const { hasPermission, user } = useAuth()
-  const navigate = useNavigate()
+  const [incomeOrderParams, setIncomeOrderParams] = useState<URLSearchParams | null>(null)
   const [filterDraft, setFilterDraft] = useValueState<PaymentShopFilters>(EMPTY_FILTERS)
   const [activeFilters, setActiveFilters] = useValueState<PaymentShopFilters>(EMPTY_FILTERS)
   const [items, setItems] = useValueState<PaymentShopItem[]>([])
@@ -103,6 +103,7 @@ function usePaymentOnlineShopModel() {
   const [isRefreshingEdit, setRefreshingEdit] = useValueState(false)
   const isEditOpenRef = useRef(false)
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
+
   const runAddPaymentMutation = usePersistentSalesMutation(
     'retail-payment-image-add',
     'payment-online-shop:add',
@@ -166,13 +167,9 @@ function usePaymentOnlineShopModel() {
         return
       }
 
-      const path = buildIncomeOrderPath(item)
-
-      if (path) {
-        navigate(path)
-      }
+      setIncomeOrderParams(buildIncomeOrderParams(item))
     },
-    [hasPermission, navigate],
+    [hasPermission],
   )
 
   const openEditItem = useCallback(
@@ -508,7 +505,7 @@ function usePaymentOnlineShopModel() {
     error, filterDraft, handleAddPayment, handleEditPayment, hasNext, isCreating, isLoading, isRefreshingEdit,
     isSaving, items, openDetail, openEditItem, page, pageSize, refreshEditingPayment, reload, resetFilters,
     selectedItem, setFilterDraft, setPage, setPageSize,
-    totalPages,
+    totalPages, incomeOrderParams, setIncomeOrderParams,
   }
 }
 
@@ -595,6 +592,13 @@ function PaymentOnlineShopPageContent() {
   return (
     <Stack className="payment-online-shop-page" gap={6}>
       <PaymentShopTableCard model={model} />
+      {model.incomeOrderParams && (
+        <IncomeCashflowShopDrawer
+          searchParams={model.incomeOrderParams}
+          onClose={() => model.setIncomeOrderParams(null)}
+          onSaved={() => { model.setIncomeOrderParams(null); model.reload() }}
+        />
+      )}
       <PaymentShopDetailDrawer
         canCreatePayment={model.canCreatePayment}
         canEditPayment={model.canEditPayment}
@@ -910,7 +914,7 @@ function canCreateIncomeOrder(item: PaymentShopItem): boolean {
   return hasRouteParams && (statusType === RetailPaymentStatusType.ChangedToInvoice || statusType === RetailPaymentStatusType.PartialPaid)
 }
 
-function buildIncomeOrderPath(item: PaymentShopItem): string {
+function buildIncomeOrderParams(item: PaymentShopItem): URLSearchParams {
   const retailClientId = item.RetailClient?.NetUid || item.RetailClientId || ''
   const saleId = item.SaleId || item.Sale?.Id || ''
   const amountToPay = item.RetailPaymentStatus?.AmountToPay || 0
@@ -922,7 +926,7 @@ function buildIncomeOrderPath(item: PaymentShopItem): string {
     sum: String(amountToPay > 0 ? amountToPay : 0),
   })
 
-  return `/accounting/income-cashflows/new/shop?${params.toString()}`
+  return params
 }
 
 function formatAgreement(item: PaymentShopItem): string {

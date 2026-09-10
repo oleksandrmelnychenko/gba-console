@@ -16,7 +16,7 @@ import {
 import { notifications } from '@mantine/notifications'
 import { CircleAlert, Plus, Save } from 'lucide-react'
 import { type FormEvent, useCallback, useEffect, useMemo, useState } from 'react'
-import { useNavigate, useSearchParams } from 'react-router-dom'
+import { type Location, useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { SearchableSelect } from '../../../shared/ui/SearchableSelect'
@@ -128,13 +128,32 @@ type SelectOption = {
   value: string
 }
 
+type IncomeCashflowShopDrawerProps = {
+  searchParams: URLSearchParams
+  onClose: () => void
+  onSaved: () => void
+}
+
 export function IncomeCashflowShopFormPage() {
+  const navigate = useNavigate()
+  const location = useLocation()
+  const backgroundLocation = (location.state as { backgroundLocation?: Location } | null)?.backgroundLocation
+  const [searchParams] = useSearchParams()
+
+  return <IncomeCashflowShopDrawer
+    searchParams={searchParams}
+    onClose={() => backgroundLocation ? navigate(-1) : navigate(INCOME_CASHFLOWS_PATH)}
+    onSaved={() => navigate(backgroundLocation ?? INCOME_CASHFLOWS_PATH, { replace: true, state: { mutated: true } })}
+  />
+}
+
+export function IncomeCashflowShopDrawer(props: IncomeCashflowShopDrawerProps) {
   return (
     <PermissionGate
       permissionKey={PermissionKeys.OnlineShopPayment.IncomeOrder.Create}
       fallback={<IncomeCashflowShopPermissionDenied />}
     >
-      <IncomeCashflowShopFormPageContent />
+      <IncomeCashflowShopFormPageContent {...props} />
     </PermissionGate>
   )
 }
@@ -145,11 +164,9 @@ function IncomeCashflowShopPermissionDenied() {
   return <Text c="red" p="md">{t('Доступ заборонено')}</Text>
 }
 
-function IncomeCashflowShopFormPageContent() {
+function IncomeCashflowShopFormPageContent({ searchParams, onClose, onSaved }: IncomeCashflowShopDrawerProps) {
   const { t } = useI18n()
   const { hasPermission } = useAuth()
-  const navigate = useNavigate()
-  const [searchParams] = useSearchParams()
   const retailClientId = searchParams.get('retailClientId') || ''
   const saleId = searchParams.get('saleId') || ''
   const agreementId = searchParams.get('caId') || ''
@@ -789,7 +806,7 @@ function IncomeCashflowShopFormPageContent() {
         color: 'green',
         message: t('Оплату магазину створено'),
       })
-      navigate(INCOME_CASHFLOWS_PATH, { replace: true, state: { mutated: true } })
+      onSaved()
     } catch (saveError) {
       setError(saveError instanceof Error ? saveError.message : t('Не вдалося створити оплату магазину'))
     } finally {
@@ -804,7 +821,7 @@ function IncomeCashflowShopFormPageContent() {
       position="right"
       size="wide"
       title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Оплата retail-клієнта')}</span>}
-      onClose={() => navigate(INCOME_CASHFLOWS_PATH)}
+      onClose={onClose}
       footer={
         <Button
           color={CREATE_ACTION_COLOR}

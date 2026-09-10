@@ -29,6 +29,16 @@ const payment = {
   SaleId: 2,
 } as PaymentShopItem
 
+vi.mock('../../income-cashflows/pages/IncomeCashflowShopFormPage', () => ({
+  IncomeCashflowShopDrawer: ({ searchParams, onClose, onSaved }: {
+    searchParams: URLSearchParams; onClose: () => void; onSaved: () => void
+  }) => <section aria-label="retail-payment">
+    <span>{searchParams.toString()}</span>
+    <button onClick={onClose}>close-retail</button>
+    <button onClick={onSaved}>save-retail</button>
+  </section>,
+}))
+
 vi.mock('../../auth/components/PermissionGate', () => ({
   PermissionGate: ({ children, fallback = null, permissionKey }: {
     children: ReactNode
@@ -125,7 +135,7 @@ vi.mock('../../../shared/ui/paginator/Paginator', () => ({ Paginator: () => null
 function LocationProbe() {
   const location = useLocation()
 
-  return <span data-testid="location">{location.pathname}</span>
+  return <><span data-testid="location">{location.pathname}</span><span data-testid="background">{location.state?.backgroundLocation?.pathname}</span></>
 }
 
 function renderPage() {
@@ -146,6 +156,25 @@ describe('Payment online shop canonical permission guards', () => {
     allowedPermissions.clear()
     vi.clearAllMocks()
     vi.mocked(getPaymentShopItemsPage).mockResolvedValue({ items: [payment], totalRowsQty: 1 })
+  })
+
+  it('opens the retail payment drawer over the current shop page', async () => {
+    allowedPermissions.add(PermissionKeys.SystemPages.OnlineShopPayment.View)
+    allowedPermissions.add(PermissionKeys.OnlineShopPayment.IncomeOrder.Create)
+    renderPage()
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Новий прибутковий ордер' }))
+    expect(screen.getByTestId('location').textContent).toBe('/accounting/payment-online-shop')
+    expect(screen.getByText('caId=3&retailClientId=retail-1&saleId=2&sum=100')).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: 'close-retail' }))
+    expect(screen.queryByRole('region', { name: 'retail-payment' })).toBeNull()
+    expect(screen.getByTestId('location').textContent).toBe('/accounting/payment-online-shop')
+    fireEvent.click(screen.getByRole('button', { name: 'Новий прибутковий ордер' }))
+    const calls = vi.mocked(getPaymentShopItemsPage).mock.calls.length
+    fireEvent.click(screen.getByRole('button', { name: 'save-retail' }))
+    await waitFor(() => expect(getPaymentShopItemsPage).toHaveBeenCalledTimes(calls + 1))
+    expect(screen.queryByRole('region', { name: 'retail-payment' })).toBeNull()
+    expect(screen.getByTestId('location').textContent).toBe('/accounting/payment-online-shop')
   })
 
   it('does not mount the registry without page.view', () => {
