@@ -44,6 +44,7 @@ export function PaymentShopOrderItemsTable({
         tableId="payment-shop-order-items"
       />
       {orders.length > 1 && (
+        <Table.ScrollContainer minWidth={680}>
         <Table withTableBorder withColumnBorders>
           <Table.Tbody>
             <Table.Tr>
@@ -63,6 +64,7 @@ export function PaymentShopOrderItemsTable({
             </Table.Tr>
           </Table.Tbody>
         </Table>
+        </Table.ScrollContainer>
       )}
     </>
   )

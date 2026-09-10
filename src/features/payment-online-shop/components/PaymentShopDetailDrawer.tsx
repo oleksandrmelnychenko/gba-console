@@ -5,18 +5,17 @@ import {
   FileInput,
   Group,
   NumberInput,
-  Paper,
   Select,
   SimpleGrid,
   Stack,
   Text,
   Textarea,
-  Title,
 } from '@mantine/core'
 import { CircleAlert } from 'lucide-react'
 import { useMemo } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
+import { DocumentDetailLayout, DocumentDetailSummary, DocumentDetailMetric, DocumentDetailSection, DocumentDetailRow } from '../../../shared/ui/document-detail/DocumentDetail'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { PaymentImageList } from './PaymentImageList'
 import { PaymentShopOrderItemsTable } from './PaymentShopOrderItemsTable'
@@ -127,31 +126,42 @@ export function PaymentShopDetailDrawer({
     }
   }
 
+  const status = getRetailPaymentStatusPresentation(statusType)
+  const sale = item?.Sale
+  const date = sale?.ChangedToInvoice || sale?.Created
+
   return (
-    <AppDrawer opened={Boolean(item)} padding="lg" position="right" size="86rem" title={getDrawerTitle(item, t)} onClose={handleClose}>
-      <SimpleGrid cols={{ base: 1, xl: 2 }} spacing="lg" verticalSpacing="lg">
-        <Stack gap="md">
-          <PaymentShopOrderItemsTable
-            currencyCode="EUR"
-            localCurrencyCode="UAH"
-            orders={orderItems}
-            sale={item?.Sale || null}
-          />
-        </Stack>
-
-        <Stack gap="md" style={{ flex: 1 }}>
-          <PaymentStatusSummary item={item} />
-          <PaymentImageList
-            canEdit={canEditPayment}
-            isEditing={isEditing}
-            items={items}
-            onSelect={onEditItem}
-          />
-
-          {isEditing && canCreatePayment && (
+    <AppDrawer opened={Boolean(item)} padding="md" position="right" size="xl" title={t('Оплата магазину')} onClose={handleClose}>
+      <DocumentDetailLayout summary={
+        <DocumentDetailSummary
+          eyebrow={t('Документ')}
+          title={sale?.SaleNumber?.Value || '—'}
+          meta={<>{date ? formatDateTime(date) : '—'} · {item?.RetailClient?.Name || '—'}</>}
+          metrics={<>
+            <DocumentDetailMetric label={t('Підтверджено менеджером')} value={formatAmount(item?.RetailPaymentStatus?.Amount)} suffix="UAH" />
+            <DocumentDetailMetric label={t('Проведено бухгалтерією')} value={formatAmount(item?.RetailPaymentStatus?.PaidAmount)} suffix="UAH" />
+            <DocumentDetailMetric label={t('Залишок до оплати')} value={formatAmount(item?.RetailPaymentStatus?.AmountToPay)} suffix="UAH" />
+          </>}
+        />
+      }>
+        <DocumentDetailSection title={t('Документ')} subtitle={sale?.SaleNumber?.Value}>
+          <DocumentDetailRow label={t('Дата')} value={date ? formatDateTime(date) : null} />
+          <DocumentDetailRow label={t('Номер')} value={sale?.SaleNumber?.Value} mono />
+          <DocumentDetailRow label={t('Клієнт')} value={item?.RetailClient?.Name} />
+          <DocumentDetailRow label={t('Телефон')} value={item?.RetailClient?.PhoneNumber} mono />
+        </DocumentDetailSection>
+        <DocumentDetailSection title={t('Статус оплати')} stacked>
+          <Group><Badge color={status.color} variant="light">{t(status.label)}</Badge></Group>
+        </DocumentDetailSection>
+        <DocumentDetailSection title={t('Товари')} subtitle={String(orderItems.length)} stacked>
+          <PaymentShopOrderItemsTable currencyCode="EUR" localCurrencyCode="UAH" orders={orderItems} sale={sale || null} />
+        </DocumentDetailSection>
+        <DocumentDetailSection title={t('Підтвердження оплат')} subtitle={String(items.length)} stacked>
+          <PaymentImageList canEdit={canEditPayment} isEditing={isEditing} items={items} onSelect={onEditItem} />
+        </DocumentDetailSection>
+        {isEditing && canCreatePayment && (
+          <DocumentDetailSection title={t('Підтвердження оплати менеджером')} stacked>
             <Stack gap="sm">
-              <Title order={4}>{t('Підтвердження оплати менеджером')}</Title>
-
               {createNotice && (
                 <Alert color="yellow" icon={<CircleAlert size={18} />} variant="light">
                   {createNotice}
@@ -170,6 +180,7 @@ export function PaymentShopDetailDrawer({
                 </Text>
               )}
 
+              <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="md">
               <NumberInput
                 decimalScale={2}
                 label={t('Сума')}
@@ -188,6 +199,7 @@ export function PaymentShopDetailDrawer({
                   }))
                 }
               />
+              </SimpleGrid>
               <Textarea
                 label={t('Коментар')}
                 value={draft.comment}
@@ -205,55 +217,10 @@ export function PaymentShopDetailDrawer({
                 </Button>
               </Group>
             </Stack>
-          )}
-        </Stack>
-      </SimpleGrid>
+          </DocumentDetailSection>
+        )}
+      </DocumentDetailLayout>
     </AppDrawer>
-  )
-}
-
-function PaymentStatusSummary({ item }: { item: PaymentShopItem | null }) {
-  const { t } = useI18n()
-  const status = getRetailPaymentStatusPresentation(
-    item?.RetailPaymentStatus?.RetailPaymentStatusType,
-  )
-
-  return (
-    <Paper p="md" radius="md" withBorder>
-      <Stack gap="sm">
-        <Group justify="space-between">
-          <Text fw={600}>{t('Статус оплати')}</Text>
-          <Badge color={status.color} variant="light">
-            {t(status.label)}
-          </Badge>
-        </Group>
-        <SimpleGrid cols={3} spacing="sm">
-          <PaymentAmountMetric
-            label={t('Підтверджено менеджером')}
-            value={item?.RetailPaymentStatus?.Amount}
-          />
-          <PaymentAmountMetric
-            label={t('Проведено бухгалтерією')}
-            value={item?.RetailPaymentStatus?.PaidAmount}
-          />
-          <PaymentAmountMetric
-            label={t('Залишок до оплати')}
-            value={item?.RetailPaymentStatus?.AmountToPay}
-          />
-        </SimpleGrid>
-      </Stack>
-    </Paper>
-  )
-}
-
-function PaymentAmountMetric({ label, value }: { label: string; value: number | undefined }) {
-  return (
-    <Stack gap={2}>
-      <Text c="dimmed" size="xs">
-        {label}
-      </Text>
-      <Text className="app-money" fw={600}>{formatAmount(value)} UAH</Text>
-    </Stack>
   )
 }
 
@@ -264,21 +231,6 @@ const paymentAmountFormatter = new Intl.NumberFormat('uk-UA', {
 
 function formatAmount(value: number | undefined): string {
   return paymentAmountFormatter.format(value ?? 0)
-}
-
-function getDrawerTitle(item: PaymentShopItem | null, t: (value: string) => string): string {
-  if (!item?.Sale) {
-    return ''
-  }
-
-  const sale = item.Sale
-  const dateValue = sale.ChangedToInvoice || sale.Created
-  const datePart = dateValue ? formatDateTime(dateValue) : ''
-  const numberPart = sale.SaleNumber?.Value || ' --- '
-  const clientName = item.RetailClient?.Name || ''
-  const clientPhone = item.RetailClient?.PhoneNumber || ''
-
-  return `${datePart} ${t('Номер')}: ${numberPart} ${t('Оплата')} від: ${clientName} (${clientPhone})`.trim()
 }
 
 function formatDateTime(value: Date | string): string {
