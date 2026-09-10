@@ -249,6 +249,7 @@ function usePaymentOnlineShopModel() {
       setSelectedItem(null)
       reload()
       notifications.show({ color: 'green', message: t('Платіж створено') })
+      await openConfirmedIncomeOrder(selectedItem)
       return true
     } catch (addError) {
       if (addError instanceof SalesPendingMutationRecoveredError) {
@@ -280,6 +281,26 @@ function usePaymentOnlineShopModel() {
       return false
     } finally {
       setCreating(false)
+    }
+  }
+
+  async function openConfirmedIncomeOrder(payment: PaymentShopItem): Promise<void> {
+    if (!hasPermission(PermissionKeys.OnlineShopPayment.IncomeOrder.Create)) return
+
+    // Confirmation has already committed. A refresh failure must not invite
+    // resubmitting it or open an order with the stale pre-confirmation balance.
+    try {
+      if (!payment.Id) throw new Error('Payment identity missing')
+      const fresh = await getPaymentShopItemForRefresh(payment.Id, payment.Sale?.SaleNumber?.Value || '')
+      if (!fresh) throw new Error('Payment no longer available')
+      if (isIncomeOrderAvailable(fresh) && Number(fresh.RetailPaymentStatus?.AmountToPay) > 0) {
+        createIncomeOrder(fresh)
+      }
+    } catch {
+      notifications.show({
+        color: 'yellow',
+        message: t('Підтвердження збережено, але дані для прибуткового ордера не вдалося оновити. Оновіть список і відкрийте ордер вручну; повторно підтверджувати оплату не потрібно.'),
+      })
     }
   }
 
@@ -878,7 +899,7 @@ function usePaymentShopColumns(
         enableResizing: false,
         enableSorting: false,
         cell: (item) =>
-          onCreateIncomeOrder && canCreateIncomeOrder(item) ? (
+          onCreateIncomeOrder && isIncomeOrderAvailable(item) ? (
             <TableRowAction
               action="receipt"
               label={t('Новий прибутковий ордер')}
@@ -907,7 +928,7 @@ function usePaymentShopColumns(
   )
 }
 
-function canCreateIncomeOrder(item: PaymentShopItem): boolean {
+function isIncomeOrderAvailable(item: PaymentShopItem): boolean {
   const statusType = item.RetailPaymentStatus?.RetailPaymentStatusType
   const hasRouteParams = Boolean((item.RetailClient?.NetUid || item.RetailClientId) && (item.SaleId || item.Sale?.Id) && item.Sale?.ClientAgreementId)
 

@@ -9,6 +9,7 @@ import {
   addPaymentImage,
   editPaymentImage,
   getPaymentShopItemsPage,
+  getPaymentShopItemForRefresh,
 } from '../api/paymentOnlineShopApi'
 import type { PaymentShopItem, RetailClientPaymentImageItem } from '../types'
 import { PaymentOnlineShopPage } from './PaymentOnlineShopPage'
@@ -58,6 +59,7 @@ vi.mock('../api/paymentOnlineShopApi', () => ({
   addPaymentImage: vi.fn(),
   editPaymentImage: vi.fn(),
   getPaymentShopItemsPage: vi.fn(),
+  getPaymentShopItemForRefresh: vi.fn(),
 }))
 
 vi.mock('../../sales-ukraine/persistentSalesMutation', () => ({
@@ -156,7 +158,64 @@ describe('Payment online shop canonical permission guards', () => {
     allowedPermissions.clear()
     vi.clearAllMocks()
     vi.mocked(getPaymentShopItemsPage).mockResolvedValue({ items: [payment], totalRowsQty: 1 })
+    vi.mocked(addPaymentImage).mockReset().mockResolvedValue(payment)
+    vi.mocked(getPaymentShopItemForRefresh).mockReset().mockResolvedValue({
+      ...payment, RetailPaymentStatus: { ...payment.RetailPaymentStatus, AmountToPay: 175 },
+    })
   })
+
+  async function confirmPayment() {
+    renderPage()
+    fireEvent.click(await screen.findByRole('button', { name: 'open-details' }))
+    fireEvent.click(screen.getByRole('button', { name: 'create-payment' }))
+    await waitFor(() => expect(addPaymentImage).toHaveBeenCalledTimes(1))
+  }
+
+  function allowConfirmation(withIncome = true) {
+    allowedPermissions.add(PermissionKeys.SystemPages.OnlineShopPayment.View)
+    allowedPermissions.add(PermissionKeys.OnlineShopPayment.Payment.Create)
+    if (withIncome) allowedPermissions.add(PermissionKeys.OnlineShopPayment.IncomeOrder.Create)
+  }
+
+  it('automatically opens an unsaved order after confirmation using refreshed payment data', async () => {
+    allowConfirmation()
+    await confirmPayment()
+    expect(await screen.findByText('caId=3&retailClientId=retail-1&saleId=2&sum=175')).toBeTruthy()
+    expect(getPaymentShopItemForRefresh).toHaveBeenCalledWith(1, 'SHOP-1')
+    expect(screen.queryByText('payment-details')).toBeNull()
+    expect(screen.getByTestId('location').textContent).toBe('/accounting/payment-online-shop')
+  })
+
+  it('does not open an order when manager confirmation fails', async () => {
+    allowConfirmation()
+    vi.mocked(addPaymentImage).mockRejectedValue(new Error('Confirmation rejected'))
+    await confirmPayment()
+    await waitFor(() => expect(screen.getByText('payment-details')).toBeTruthy())
+    expect(getPaymentShopItemForRefresh).not.toHaveBeenCalled()
+    expect(screen.queryByRole('region', { name: 'retail-payment' })).toBeNull()
+  })
+
+  it('does not open or fetch an order without income-order permission', async () => {
+    allowConfirmation(false)
+    await confirmPayment()
+    await waitFor(() => expect(screen.queryByText('payment-details')).toBeNull())
+    expect(getPaymentShopItemForRefresh).not.toHaveBeenCalled()
+    expect(screen.queryByRole('region', { name: 'retail-payment' })).toBeNull()
+  })
+
+  it.each(['refresh failure', 'no outstanding amount', 'missing payment'])(
+    'does not offer a stale order or repeat the confirmation on %s', async (scenario) => {
+      allowConfirmation()
+      if (scenario === 'refresh failure') vi.mocked(getPaymentShopItemForRefresh).mockRejectedValue(new Error('Offline'))
+      else if (scenario === 'missing payment') vi.mocked(getPaymentShopItemForRefresh).mockResolvedValue(null)
+      else vi.mocked(getPaymentShopItemForRefresh).mockResolvedValue({ ...payment, RetailPaymentStatus: { ...payment.RetailPaymentStatus, AmountToPay: 0 } })
+      await confirmPayment()
+      await waitFor(() => expect(getPaymentShopItemForRefresh).toHaveBeenCalledTimes(1))
+      await waitFor(() => expect(screen.queryByText('payment-details')).toBeNull())
+      expect(screen.queryByRole('region', { name: 'retail-payment' })).toBeNull()
+      expect(addPaymentImage).toHaveBeenCalledTimes(1)
+    },
+  )
 
   it('opens the retail payment drawer over the current shop page', async () => {
     allowedPermissions.add(PermissionKeys.SystemPages.OnlineShopPayment.View)
