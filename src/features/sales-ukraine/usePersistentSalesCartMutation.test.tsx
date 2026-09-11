@@ -1,4 +1,4 @@
-import { act, renderHook } from '@testing-library/react'
+import { act, renderHook, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { ApiError } from '../../shared/api/apiClient'
 import {
@@ -17,8 +17,9 @@ import {
   usePersistentSalesCartMutation,
 } from './usePersistentSalesCartMutation'
 
-const { updateOrderItemMock } = vi.hoisted(() => ({
+const { updateOrderItemMock, addOrderItemMock } = vi.hoisted(() => ({
   updateOrderItemMock: vi.fn(),
+  addOrderItemMock: vi.fn(),
 }))
 
 vi.mock('../auth/useAuth', () => ({
@@ -31,6 +32,7 @@ vi.mock('./api/salesUkraineApi', async (importOriginal) => {
   return {
     ...original,
     updateOrderItem: updateOrderItemMock,
+    addOrderItem: addOrderItemMock,
   }
 })
 
@@ -57,6 +59,7 @@ beforeEach(() => {
   storageHarness = installSalesMutationStorageHarness()
   clearAllSalesPendingMutations()
   updateOrderItemMock.mockReset()
+  addOrderItemMock.mockReset()
 })
 
 afterEach(() => {
@@ -189,6 +192,30 @@ describe('persistent sales cart mutation helpers', () => {
 })
 
 describe('usePersistentSalesCartMutation', () => {
+  it('does not replay a restored add until explicitly requested', async () => {
+    addOrderItemMock.mockRejectedValueOnce(new Error('network timeout')).mockResolvedValueOnce({})
+    const reconcile = vi.fn(async () => staleSale)
+    const { result, unmount } = renderHook(() => usePersistentSalesCartMutation({ context, reconcile }))
+    await act(async () => {
+      await result.current.run(
+        { kind: 'add', clientAgreementNetId: 'agreement-1', saleNetId: 'sale-1', orderItem: { Product: { NetUid: 'new-product' }, Qty: 1 } },
+        { kind: 'operation-marker' },
+        'add failed',
+      )
+    })
+    expect(addOrderItemMock).toHaveBeenCalledTimes(1)
+    unmount()
+    reconcile.mockClear()
+    const reopened = renderHook(() => usePersistentSalesCartMutation({ context, reconcile }))
+    await waitFor(() => expect(reopened.result.current.pendingError).toBeTruthy())
+    expect(addOrderItemMock).toHaveBeenCalledTimes(1)
+    expect(reconcile).not.toHaveBeenCalled()
+    await act(async () => { await reopened.result.current.retryPending() })
+    expect(addOrderItemMock).toHaveBeenCalledTimes(2)
+    expect(addOrderItemMock.mock.calls[1][3].operationId).toBe(addOrderItemMock.mock.calls[0][3].operationId)
+    await waitFor(() => expect(loadSalesPendingMutation(scope)).toBe(null))
+  })
+
   it('keeps a submitted 4xx unknown and permits only exact same-operation retry', async () => {
     const validationError = new ApiError('quantity conflict', 400, null)
     updateOrderItemMock
@@ -344,4 +371,26 @@ describe('usePersistentSalesCartMutation', () => {
       }
     }
   })
+})
+
+it('clears a final stock rejection and allows a different product without retrying', async () => {
+  addOrderItemMock.mockRejectedValueOnce(new ApiError('out of stock', 400, null, {
+    'X-Mutation-Ledger-State': 'rejected',
+  })).mockResolvedValueOnce(undefined)
+  const onRejected = vi.fn()
+  const { result } = renderHook(() => usePersistentSalesCartMutation({
+    context, reconcile: async () => staleSale, onRejected,
+  }))
+  const request = (id: string) => ({ kind: 'add' as const, clientAgreementNetId: 'agreement-1', saleNetId: 'sale-1', orderItem: { Product: { NetUid: id }, Qty: 1 } })
+  await act(async () => {
+    expect(await result.current.run(request('unavailable'), { kind: 'operation-marker' }, 'failed')).toBe(false)
+  })
+  expect(result.current.pendingError).toBe(null)
+  expect(loadSalesPendingMutation(scope)).toBe(null)
+  expect(onRejected).toHaveBeenCalledExactlyOnceWith('out of stock')
+  expect(addOrderItemMock).toHaveBeenCalledTimes(1)
+  await act(async () => {
+    expect(await result.current.run(request('available'), { kind: 'operation-marker' }, 'failed')).toBe(true)
+  })
+  expect(addOrderItemMock).toHaveBeenCalledTimes(2)
 })

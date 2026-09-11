@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { classifySalesMutationFailure } from './salesMutationOperation'
 import { useAuth } from '../auth/useAuth'
 import {
   getSalesPendingMutationUserKey,
@@ -134,8 +135,10 @@ export async function finalizeSuccessfulPersistentCartMutation(
 export function usePersistentSalesCartMutation({
   context,
   onCommitted,
+  onRejected,
   reconcile,
 }: {
+  onRejected?: (message: string) => void
   context: string
   onCommitted?: (sale: SalesUkraineSale) => void
   reconcile: () => Promise<SalesUkraineSale | null>
@@ -146,6 +149,7 @@ export function usePersistentSalesCartMutation({
   const mountedRef = useRef(false)
   const contextRef = useRef(context)
   const reconcileRef = useRef(reconcile)
+  const onRejectedRef = useRef(onRejected)
   const onCommittedRef = useRef(onCommitted)
   const [pendingError, setPendingError] = useState<string | null>(null)
   const [storageRevision, setStorageRevision] = useState(0)
@@ -161,6 +165,7 @@ export function usePersistentSalesCartMutation({
 
   useLayoutEffect(() => {
     reconcileRef.current = reconcile
+    onRejectedRef.current = onRejected
     onCommittedRef.current = onCommitted
   })
 
@@ -239,6 +244,14 @@ export function usePersistentSalesCartMutation({
     result: WizardMutationAttemptResult<SalesUkraineSale>,
   ): Promise<boolean> => {
     if (result.status === 'pending-retry' || result.status === 'definitive-failure') {
+      if (classifySalesMutationFailure(result.mutationError) === 'definitive-failure') {
+        resolveSalesPendingMutation(lease, 'rejected')
+        release(operation)
+        if (mountedRef.current && contextRef.current === operation.context) {
+          onRejectedRef.current?.(toMessage(result.mutationError, operation.fallbackMessage))
+        }
+        return false
+      }
       markSalesPendingMutationUnknown(lease)
 
       if (mountedRef.current && contextRef.current === operation.context) {

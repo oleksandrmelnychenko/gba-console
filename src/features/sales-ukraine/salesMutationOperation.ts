@@ -87,7 +87,7 @@ export function classifySalesMutationFailure(error: unknown): SalesMutationFailu
 
 function isDefinitiveLedgerState(value: string): boolean {
   return value === SALES_MUTATION_LEDGER_NOT_ENTERED ||
-    value === SALES_MUTATION_LEDGER_ROLLED_BACK
+    value === SALES_MUTATION_LEDGER_ROLLED_BACK || value === 'rejected'
 }
 
 function getMutationLedgerState(payload: unknown): string {

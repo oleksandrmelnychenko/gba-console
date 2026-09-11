@@ -392,3 +392,23 @@ function listStoredKeys(prefix: string): string[] {
   return Array.from({ length: window.localStorage.length }, (_, index) => window.localStorage.key(index))
     .filter((key): key is string => Boolean(key?.startsWith(prefix)))
 }
+
+it.each([true, false])('reads rejected resolutions and repairs their old schema sentinel (unscoped: %s)', async (unscoped) => {
+  const operationId = '11111111-1111-4111-8111-111111111111'
+  await withSalesPendingMutationLock(scope, operationId, { test: true }, async (lease) => {
+    markSalesPendingMutationSubmitted(lease)
+    resolveSalesPendingMutation(lease, 'rejected')
+  })
+  const sourceKey = Array.from({ length: localStorage.length }, (_, index) => localStorage.key(index)!).find((key) => key.startsWith('gba_console:sales-mutation-tombstone:v1:'))!
+  expect(sourceKey).toBeTruthy()
+  const sentinelKey = 'gba_console:sales-mutation-corruption:v1:test-rejected'
+  const tombstone = JSON.parse(localStorage.getItem(sourceKey)!)
+  localStorage.setItem(sentinelKey, JSON.stringify({
+    version: tombstone.version, detectedAt: Date.now(), operationId: unscoped ? null : operationId, scope: unscoped ? null : scope, sourceKey,
+    reason: 'Invalid mutation tombstone schema',
+  }))
+  expect(() => synchronizeSalesPendingMutationUser(scope.userKey)).not.toThrow()
+  expect(loadSalesPendingMutation(scope)).toBe(null)
+  expect(localStorage.getItem(sentinelKey)).toBe(null)
+  expect(JSON.parse(localStorage.getItem(sourceKey)!).resolution).toBe('rejected')
+})

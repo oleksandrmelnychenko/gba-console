@@ -96,7 +96,7 @@ type SalesMutationControl = SalesPendingMutationFence & {
   version: typeof CONTROL_VERSION
 }
 
-type SalesMutationResolution = 'committed' | 'manual-committed' | 'not-submitted'
+type SalesMutationResolution = 'rejected' | 'committed' | 'manual-committed' | 'not-submitted'
 
 type SalesMutationControlObservation = Pick<
   SalesMutationControl,
@@ -1102,6 +1102,20 @@ function readCorruptions(): SalesMutationCorruption[] {
       throw new SalesPendingMutationCorruptionError('Corruption sentinel schema is invalid.')
     }
 
+    // Earlier builds wrote valid rejected tombstones but omitted that state
+    // from the reader. Repair only this exact false-positive sentinel.
+    if (parsed.reason === 'Invalid mutation tombstone schema' && parsed.sourceKey.startsWith(TOMBSTONE_STORAGE_PREFIX)) {
+      const source = getStorageItemStrict(storage, parsed.sourceKey)
+      let tombstone: unknown
+      try { tombstone = source === null ? null : JSON.parse(source) } catch { tombstone = null }
+      if (isSalesMutationTombstone(tombstone) && tombstone.resolution === 'rejected' &&
+          parsed.sourceKey === getTombstoneStorageKey(tombstone, tombstone.operationId) &&
+          ((parsed.operationId === null && parsed.scope === null) ||
+            (parsed.operationId === tombstone.operationId && parsed.scope && matchesScope(tombstone, parsed.scope)))) {
+        removeStorageItemRequired(storage, key)
+        continue
+      }
+    }
     values.push(parsed)
   }
 
@@ -1534,7 +1548,7 @@ function isSalesMutationTombstone(value: unknown): value is SalesMutationTombsto
     typeof value.generation === 'number' && Number.isInteger(value.generation) && value.generation >= 0 &&
     typeof value.fencingToken === 'string' && typeof value.operationId === 'string' &&
     typeof value.ownerId === 'string' && typeof value.resolvedAt === 'number' &&
-    (value.resolution === 'committed' || value.resolution === 'manual-committed' || value.resolution === 'not-submitted') &&
+    (value.resolution === 'rejected' || value.resolution === 'committed' || value.resolution === 'manual-committed' || value.resolution === 'not-submitted') &&
     Boolean(tryNormalizeScope(value))
 }
 

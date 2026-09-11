@@ -22,7 +22,9 @@ import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
-import { AppModal } from '../../../shared/ui/AppModal'
+import { AppModal, AppModalFooter } from '../../../shared/ui/AppModal'
+import { DocumentDetailLayout, DocumentDetailSection } from '../../../shared/ui/document-detail/DocumentDetail'
+import './sale-add-product.css'
 import { TransporterNameWithIcon } from '../../../shared/transporter-icons/TransporterIcon'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn } from '../../../shared/ui/data-table/types'
@@ -147,6 +149,7 @@ function SaleEditorContent({ initialSale, loadSale }: { initialSale: SalesUkrain
   const cartMutation = usePersistentSalesCartMutation({
     context: `sale-editor:${String(initialSale.NetUid || initialSale.Id || '')}`,
     onCommitted: setSale,
+    onRejected: (message) => notifications.show({ color: 'orange', message, autoClose: 5000 }),
     reconcile: async () => {
       const netUid = sale.NetUid || initialSale.NetUid
 
@@ -432,7 +435,14 @@ function SaleEditorContent({ initialSale, loadSale }: { initialSale: SalesUkrain
       )}
       {cartMutation.pendingError && (
         <Alert color="orange" icon={<TriangleAlert size={18} />} variant="light">
-          {cartMutation.pendingError}
+          <Stack gap="xs">
+            <Text size="sm">{cartMutation.pendingError}</Text>
+            <Button size="xs" variant="light" onClick={() => {
+              void cartMutation.retryPending().catch((error) => notifications.show({
+                color: 'red', message: error instanceof Error ? error.message : t('Не вдалося виконати запит'),
+              }))
+            }}>{t('Повторити запит')}</Button>
+          </Stack>
         </Alert>
       )}
       {fileMutation.pendingError && (
@@ -1145,7 +1155,9 @@ function AddProductForm({
   }
 
   return (
-    <Stack gap="md">
+    <Stack gap="md" className="sale-add-product">
+      <DocumentDetailLayout summary={null}>
+      <DocumentDetailSection title={t('Товар')} stacked>
       <TextInput
         autoFocus
         label={t('Пошук по товару')}
@@ -1156,39 +1168,49 @@ function AddProductForm({
         onChange={(event) => setQuery(event.currentTarget.value)}
       />
 
-      <ScrollArea.Autosize mah={320}>
-        <Stack gap={4}>
+      <div className="sale-add-product__results">
+      <Group justify="space-between" className="sale-add-product__columns">
+        <Text size="xs">{t('Назва товару')}</Text>
+        <Text size="xs">{t('Доступно')}</Text>
+      </Group>
+      <ScrollArea.Autosize mah={280} offsetScrollbars>
+        <Stack gap={0}>
           {results.length === 0 ? (
-            <Text c="dimmed" size="sm">
+            <Text className="sale-add-product__empty" c="dimmed" size="sm">
               {query.trim().length < 2 ? t('Введіть мінімум 2 символи') : t('Нічого не знайдено')}
             </Text>
           ) : (
             results.map((product, index) => {
               const isActive = selected?.NetUid === product.NetUid
+              const availableQty = getOrderItemQuantityLimit({ Product: product, Qty: 0 }, Boolean(sale.IsVatSale))
 
               return (
                 <UnstyledButton
                   key={product.NetUid || product.Id || index}
-                  p="xs"
-                  style={{
-                    backgroundColor: isActive ? 'rgba(var(--brand-orange-rgb), 0.12)' : undefined,
-                    borderRadius: 6,
-                  }}
+                  className={`sale-add-product__option${isActive ? ' is-active' : ''}`}
+                  aria-pressed={isActive}
                   onClick={() => setSelected(product)}
                 >
-                  <Text fw={600} size="sm">
-                    {displayValue(product.VendorCode || product.Articul)}
-                  </Text>
-                  <Text c="dimmed" size="xs">
-                    {displayValue(product.NameUA || product.Name)}
-                  </Text>
+                  <Group justify="space-between" wrap="nowrap" gap="md">
+                    <div className="sale-add-product__description">
+                      <Text className="sale-add-product__code" fw={600} size="sm">{displayValue(product.VendorCode || product.Articul)}</Text>
+                      <Text c="dimmed" size="xs">{displayValue(product.NameUA || product.Name)}</Text>
+                    </div>
+                    <Stack gap={2} align="flex-end" style={{ flexShrink: 0 }}>
+
+                      <Text size="sm" style={{ fontFamily: 'var(--font-mono)' }}>{availableQty ?? '—'}</Text>
+                    </Stack>
+                  </Group>
                 </UnstyledButton>
               )
             })
           )}
         </Stack>
       </ScrollArea.Autosize>
-
+      </div>
+      </DocumentDetailSection>
+      <DocumentDetailSection title={t('Кількість')} stacked>
+      {selected && <Text size="sm" className="sale-add-product__code">{displayValue(selected.VendorCode || selected.Articul)}</Text>}
       <NumberInput
         allowNegative={false}
         decimalScale={2}
@@ -1199,14 +1221,16 @@ function AddProductForm({
         onChange={setQty}
       />
 
-      <Group justify="flex-end">
+      </DocumentDetailSection>
+      </DocumentDetailLayout>
+      <AppModalFooter>
         <Button color="gray" disabled={isSaving} variant="subtle" onClick={onCancel}>
           {t('Скасувати')}
         </Button>
-        <Button disabled={!isValid} loading={isSaving} onClick={add}>
+        <Button leftSection={<Plus size={16} />} disabled={!isValid} loading={isSaving} onClick={add}>
           {t('Додати')}
         </Button>
-      </Group>
+      </AppModalFooter>
     </Stack>
   )
 }
