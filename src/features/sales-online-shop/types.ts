@@ -151,6 +151,7 @@ export type SalesOnlineShopSale = SalesOnlineShopEntity & {
   OneTimeDiscountComment?: string
   Order?: SalesOnlineShopOrder
   RetailClient?: SalesOnlineShopRetailClient
+  RetailPaidAmountUah?: number | null
   SaleNumber?: SalesOnlineShopSaleNumber
   ShipmentDate?: Date | string
   TotalAmount?: number

@@ -23,9 +23,15 @@ describe('Sales Online Shop permission-scoped reads', () => {
   })
 
   it('loads the registry through the page-scoped facade', async () => {
-    apiRequestMock.mockResolvedValueOnce({ Items: [] })
+    const sale = {
+      SaleNumber: { Value: 'КСН00002860' },
+      RetailPaidAmountUah: 5000,
+      TotalAmountLocal: 7712.363,
+      BaseSalePaymentStatus: { SalePaymentStatusType: 0 },
+    }
+    apiRequestMock.mockResolvedValueOnce({ Items: [sale] })
 
-    await getSalesOnlineShop({
+    const result = await getSalesOnlineShop({
       from: '2026-08-19',
       limit: 20,
       offset: 0,
@@ -34,6 +40,8 @@ describe('Sales Online Shop permission-scoped reads', () => {
       type: 'All',
       value: '  client  ',
     })
+
+    expect(result).toEqual([sale])
 
     expect(apiRequestMock).toHaveBeenCalledWith('/sales/online-shop/registry', expect.objectContaining({
       query: expect.objectContaining({

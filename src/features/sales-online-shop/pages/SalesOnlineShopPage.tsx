@@ -145,6 +145,7 @@ const PAYMENT_STATUS_LABELS: Record<string, string> = {
   1: 'Оплачено',
   2: 'Оплачено',
   3: 'Оплачено частково',
+  'unknown-retail-payment': 'Статус оплати невідомий',
 }
 
 const STATUS_LABELS: Record<string, string> = {
@@ -1826,17 +1827,38 @@ function getSaleStatusLabel(sale: SalesOnlineShopSale): string {
 }
 
 function getPaymentStatusLabel(sale: SalesOnlineShopSale): string {
-  const key = getStatusTypeKey(sale.BaseSalePaymentStatus?.SalePaymentStatusType)
+  const key = getPaymentStatusKey(sale)
 
   return translate(PAYMENT_STATUS_LABELS[key] || sale.BaseSalePaymentStatus?.Name || '')
 }
 
 function isUnpaidSale(sale: SalesOnlineShopSale): boolean {
-  return isStatusType(sale.BaseSalePaymentStatus?.SalePaymentStatusType, 0)
+  return getPaymentStatusKey(sale) === '0'
+}
+
+function getPaymentStatusKey(sale: SalesOnlineShopSale): string {
+  const accountingStatus = getStatusTypeKey(sale.BaseSalePaymentStatus?.SalePaymentStatusType)
+  const paid = getNumber(sale.RetailPaidAmountUah)
+
+  // Receipts and accounting settlement describe the same payment at different
+  // workflow stages. Do not add them or downgrade an accounting settlement/refund.
+  if (!sale.RetailClient || paid == null || paid <= 0 || ['1', '2', '4'].includes(accountingStatus)) {
+    return accountingStatus
+  }
+
+  const totalUah = getSaleCurrencyCode(sale) === 'UAH'
+    ? getNumber(sale.TotalAmountLocal)
+    : getNumber(sale.TotalAmountEurToUah)
+
+  if (totalUah == null || totalUah <= 0) {
+    return 'unknown-retail-payment'
+  }
+
+  return Math.round(paid * 100) >= Math.round(totalUah * 100) ? '1' : '3'
 }
 
 function getPaymentStatusColor(sale: SalesOnlineShopSale): string | undefined {
-  switch (getStatusTypeKey(sale.BaseSalePaymentStatus?.SalePaymentStatusType)) {
+  switch (getPaymentStatusKey(sale)) {
     case '0':
       return 'red'
     case '1':
@@ -1849,7 +1871,7 @@ function getPaymentStatusColor(sale: SalesOnlineShopSale): string | undefined {
 }
 
 function getPaymentStatusTone(sale: SalesOnlineShopSale): string {
-  switch (getStatusTypeKey(sale.BaseSalePaymentStatus?.SalePaymentStatusType)) {
+  switch (getPaymentStatusKey(sale)) {
     case '0':
       return 'danger'
     case '1':

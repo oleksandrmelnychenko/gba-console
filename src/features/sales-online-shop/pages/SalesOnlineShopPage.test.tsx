@@ -361,3 +361,75 @@ describe('SalesOnlineShopPage page boundary', () => {
     expect(screen.queryByText('Режим інтернет-магазину')).toBeNull()
   })
 })
+
+describe('BUG-1253 online shop registry payment status', () => {
+  it.each([
+    { paid: 5000, accounting: 0, expected: 'Оплачено частково (ПО)', color: 'orange' },
+    { paid: 7712.36, accounting: 0, expected: 'Оплачено (ПО)', color: 'green' },
+    { paid: 8000, accounting: 0, expected: 'Оплачено (ПО)', color: 'green' },
+    { paid: 7712.35, accounting: 0, expected: 'Оплачено частково (ПО)', color: 'orange' },
+    { paid: 0, accounting: 0, expected: 'Неоплаченно (ПО)', color: 'red' },
+    { paid: null, accounting: 0, expected: 'Неоплаченно (ПО)', color: 'red' },
+    { paid: 5000, accounting: 1, expected: 'Оплачено (ПО)', color: 'green' },
+    { paid: null, accounting: 3, expected: 'Оплачено частково (ПО)', color: 'orange' },
+  ])('shows $expected for receipts=$paid, accounting=$accounting', ({ paid, accounting, expected, color }) => {
+    const sale: SalesOnlineShopSale = {
+      BaseLifeCycleStatus: { SaleLifeCycleType: 0 },
+      BaseSalePaymentStatus: { SalePaymentStatusType: accounting },
+      ClientAgreement: { Agreement: { Currency: { Code: 'UAH' } } },
+      IsFullPayment: true,
+      RetailClient: { Name: 'МагазинА' },
+      RetailPaidAmountUah: paid,
+      SaleNumber: { Value: 'КСН00002860' },
+      TotalAmountLocal: 7712.363,
+      TotalAmount: 148.03,
+    }
+    renderPaymentRow(sale)
+    expect(screen.getByText(expected).style.color).toBe(`var(--mantine-color-${color}-6)`)
+    expect(screen.getByText('Рахунок')).toBeTruthy()
+    // Receipt presentation must not mutate the accounting status sent by the API.
+    expect(sale.BaseSalePaymentStatus?.SalePaymentStatusType).toBe(accounting)
+  })
+
+  it('compares UAH receipts with the UAH total of a foreign-currency sale and preserves ЧО', () => {
+    renderPaymentRow({
+      BaseSalePaymentStatus: { SalePaymentStatusType: 0 },
+      ClientAgreement: { Agreement: { Currency: { Code: 'EUR' } } },
+      RetailClient: { Name: 'МагазинА' },
+      IsFullPayment: false,
+      RetailPaidAmountUah: 5000,
+      TotalAmountLocal: 148.03,
+      TotalAmountEurToUah: 7712.363,
+    })
+    expect(screen.getByText('Оплачено частково (ЧО)')).toBeTruthy()
+  })
+
+  it('does not invent a paid status when the sale total is unavailable', () => {
+    renderPaymentRow({
+      BaseSalePaymentStatus: { SalePaymentStatusType: 0, Name: 'Неоплачено' },
+      RetailClient: { Name: 'МагазинА' },
+      RetailPaidAmountUah: 5000,
+      IsFullPayment: true,
+    })
+    expect(screen.getByText('Статус оплати невідомий (ПО)')).toBeTruthy()
+  })
+
+  function renderPaymentRow(sale: SalesOnlineShopSale) {
+    const noop = vi.fn()
+    return render(
+      <MantineProvider theme={theme}>
+        <I18nProvider>
+          <SalesOnlineShopGridRow
+            sale={sale} saleKey="bug-1253" isExpanded={false}
+            canEditSale={false} canExpand={false} canExportSaleDocuments={false}
+            canOpenDeliveryDetails={false} canOpenSale={false} canPrintConsignmentNote={false}
+            canUnlock={false} canViewAudit={false} canWillNotShip={false} canExportBeforePacking={false}
+            onOpenAudit={noop} onOpenConsignment={noop} onOpenDetails={noop}
+            onOpenDiscount={noop} onOpenEditor={noop} onOpenSale={noop}
+            onToggleExpand={noop} onUnlock={noop} onWillNotShip={noop}
+          />
+        </I18nProvider>
+      </MantineProvider>,
+    )
+  }
+})
