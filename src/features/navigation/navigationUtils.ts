@@ -84,14 +84,14 @@ const navigationRouteAliasRules: Array<{ source: string; targets: RegExp[] }> = 
     ],
   },
   {
-    // The constructor reuses the stock-report workspace and its existing menu grant.
+    // These report entry points share the existing menu node; route event permissions still apply.
     source: '/reports/stocks',
-    targets: [/^\/reports\/constructor$/i],
+    targets: [/^\/reports\/constructor$/i, /^\/reports\/registers$/i],
   },
   {
     // Keep old bookmarks reachable if the backend later adopts the new entry URL.
     source: '/reports/constructor',
-    targets: [/^\/reports\/stocks$/i],
+    targets: [/^\/reports\/stocks$/i, /^\/reports\/registers$/i],
   },
   {
     // The report screens have their own menu nodes now; only the plural spelling of the
