@@ -23,7 +23,6 @@ import {
   Checkbox,
   Group,
   Loader,
-  Modal,
   type OptionsFilter,
   Select,
   Stack,
@@ -92,6 +91,7 @@ import {
   formatDate,
 } from '../utils'
 import './reports-pages.css'
+import './report-constructor.css'
 import { datasetConfigurationError, datasetFilters, datasetGroupings, datasetMeasurements, datasetPresetRequest, datasetPresets, defaultDatasetRequest, type DatasetReportPresetId } from '../data/reportDatasets'
 import { useReportDatasets } from '../hooks/useReportDatasets'
 import { usesNativeReportLookup, supportsFullReportDateRange, hasFixedReportAxes, nativeReportMeasurementUnit } from '../data/nativeReportProfiles'
@@ -103,7 +103,8 @@ import type { ReportWorkspaceSnapshot } from '../data/reportWorkspaceDraft'
 import { reportWorkspaceDraftCompatibility } from '../data/reportWorkspaceDraftCompatibility'
 import { ReportDraftRecoveryPanel, ReportDraftStatus } from './ReportDraftRecoveryPanel'
 import { ValuationAgreementPicker } from './ValuationAgreementPicker'
-import { ReportDatasetPicker } from './ReportDatasetPicker'
+import { ReportDatasetPicker, ReportDatasetSummary } from './ReportDatasetPicker'
+import { ReportConstructorHeader, ReportConstructorNavigation, ReportConstructorResultEmpty, ReportSectionPanel, type ReportConstructorSection } from './ReportConstructorNavigation'
 import { ReportQuickPresets } from './ReportQuickPresets'
 import { ReportGroupingPanel } from './ReportGroupingPanel'
 import { reorderReportGrouping, transferReportGrouping, type ReportGroupingAxis } from '../data/reportGroupingLayout'
@@ -198,13 +199,13 @@ function createEmptySelection(): ReportSelection {
   }
 }
 
-export function ReportsStocksPage() {
+export function ReportsStocksPage({ constructorMode = false }: { constructorMode?: boolean }) {
   const { user, session } = useAuth()
   const ownerId = user?.NetUid ?? session?.userNetUid ?? null
-  return <ReportsStocksWorkspace key={ownerId ?? 'anonymous'} ownerId={ownerId} />
+  return <ReportsStocksWorkspace key={ownerId ?? 'anonymous'} ownerId={ownerId} constructorMode={constructorMode} />
 }
 
-function ReportsStocksWorkspace({ ownerId }: { ownerId: string | null }) {
+function ReportsStocksWorkspace({ ownerId, constructorMode }: { ownerId: string | null; constructorMode: boolean }) {
   const { t } = useI18n()
   const { hasPermission } = useAuth()
   const canGenerateReport = hasPermission(
@@ -216,6 +217,11 @@ function ReportsStocksWorkspace({ ownerId }: { ownerId: string | null }) {
   const [previousPeriod, setPreviousPeriod] = useValueState({ from: today, to: today })
   const datasetStorage = useReportDatasets(canGenerateReport)
   const [dataSource, setDataSource] = useValueState(0)
+  const [constructorSection, setConstructorSection] = useState<ReportConstructorSection>('structure')
+  const navigateConstructorSection = (section: ReportConstructorSection) => {
+    setConstructorSection(section)
+    document.getElementById(`report-constructor-tab-${section}`)?.focus()
+  }
   const [comparison, setComparison] = useValueState<unknown>(undefined)
   const [rateComparison, setRateComparison] = useValueState<unknown>(undefined)
   const [paymentComparison, setPaymentComparison] = useValueState<unknown>(undefined)
@@ -331,11 +337,12 @@ function ReportsStocksWorkspace({ ownerId }: { ownerId: string | null }) {
   async function submitReport(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
 
-    if (!canGenerateReport || !reportIsReady) {
+    if (!canGenerateReport || !reportIsReady || isLoading) {
       return
     }
 
     const updateAttempt = beginRun()
+    if (constructorMode) setConstructorSection('result')
 
     try {
       const nextResult = await createStockReport(reportBody)
@@ -366,6 +373,7 @@ function ReportsStocksWorkspace({ ownerId }: { ownerId: string | null }) {
   }
 
   function resetReport() {
+    setConstructorSection('structure')
     setCatalogueNotice(null)
     workspaceDraft.rememberBeforeReplace()
     setRestoredData(null)
@@ -440,6 +448,7 @@ function ReportsStocksWorkspace({ ownerId }: { ownerId: string | null }) {
   }
 
   function applyConfiguration(template: ReportTemplate, nextDataset: ReportDataset) {
+    setConstructorSection('structure')
     setCatalogueNotice(null)
     workspaceDraft.rememberBeforeReplace()
     setRestoredData(null)
@@ -551,24 +560,40 @@ function ReportsStocksWorkspace({ ownerId }: { ownerId: string | null }) {
   }
 
   return (
-    <Stack className="reports-stocks-page" gap={6}>
+    <Stack className={`reports-stocks-page${constructorMode ? ' report-constructor-page' : ''}`} gap={6}>
+      {constructorMode ? <ReportConstructorHeader name={templateName} /> : null}
       {canGenerateReport && ownerId ? <ReportDraftStatus savedAt={workspaceDraft.status === 'saved' ? workspaceDraft.savedAt : null}
         notice={draftRestoreError ?? workspaceDraft.message} canUndo={Boolean(workspaceDraft.previousSnapshot)}
         disabled={isLoading || !datasetStorage.loaded || Boolean(datasetStorage.error)}
         onUndo={() => workspaceDraft.undo(restoreWorkspace)} /> : null}
-      {canGenerateReport ? <Group justify="flex-end"><Button component="a" href="/reports/registers" variant="subtle">Звіти регістрів</Button></Group> : null}
-      {canGenerateReport && templateName.trim() ? <Text fw={600} aria-label={t('Назва поточного звіту')}>{templateName}</Text> : null}
+      {!constructorMode && canGenerateReport ? <Group justify="flex-end"><Button component="a" href="/reports/registers" variant="subtle">Звіти регістрів</Button></Group> : null}
+      {!constructorMode && canGenerateReport && templateName.trim() ? <Text fw={600} aria-label={t('Назва поточного звіту')}>{templateName}</Text> : null}
       {canGenerateReport && catalogueNotice ? <Alert color={catalogueNotice.failed ? 'red' : 'blue'} style={{ flexShrink: 0 }}
         title={t(catalogueNotice.failed ? 'Не вдалося відкрити звіт' : 'Звіт відкрито в конструкторі')}
         withCloseButton onClose={() => setCatalogueNotice(null)}>{catalogueNotice.text}</Alert> : null}
-      <ReportCatalogueControl enabled={canGenerateReport}
+      {!constructorMode ? <><ReportCatalogueControl enabled={canGenerateReport}
         disabled={isLoading || !datasetStorage.loaded || Boolean(datasetStorage.error)} onOpen={openCatalogueReport} />
       <ReportDatasetPicker datasets={datasetStorage.datasets} selected={dataSource} disabled={!canGenerateReport || isLoading}
         loaded={datasetStorage.loaded} error={datasetStorage.error} onChange={changeDataset} onRetry={datasetStorage.retry} />
       {requiresValuationAgreement(dataSource) ? <ValuationAgreementPicker purpose={dataSource === 22 ? 'prices' : 'stock'} value={valuationClientAgreementId} enabled={canGenerateReport} disabled={isLoading}
         agreement={valuation.agreement} validating={valuation.loading} validationError={valuation.error}
-        onChange={setValuationAgreementId} onRetry={valuation.retry} /> : null}
+        onChange={setValuationAgreementId} onRetry={valuation.retry} /> : null}</> : null}
       <ReportBuilderForm
+        constructorMode={constructorMode}
+        constructorSection={constructorSection}
+        onConstructorSectionChange={navigateConstructorSection}
+        analysisCount={[topGroups, threshold, hideZero, abcClassification, ordering].filter(value => value != null).length}
+        datasetPanel={constructorMode ? <ReportDatasetPicker compact datasets={datasetStorage.datasets} selected={dataSource}
+          disabled={!canGenerateReport || isLoading} loaded={datasetStorage.loaded} error={datasetStorage.error}
+          onChange={changeDataset} onRetry={datasetStorage.retry} /> : null}
+        catalogueControl={constructorMode ? <ReportCatalogueControl presentation="dialog" enabled={canGenerateReport}
+          disabled={isLoading || !datasetStorage.loaded || Boolean(datasetStorage.error)} onOpen={openCatalogueReport} /> : null}
+        datasetSummary={constructorMode ? <ReportDatasetSummary dataset={dataset} /> : null}
+        agreementPanel={constructorMode && requiresValuationAgreement(dataSource) ? <div className="app-section-card report-constructor-agreement">
+          <ValuationAgreementPicker purpose={dataSource === 22 ? 'prices' : 'stock'} value={valuationClientAgreementId}
+            enabled={canGenerateReport} disabled={isLoading} agreement={valuation.agreement} validating={valuation.loading}
+            validationError={valuation.error} onChange={setValuationAgreementId} onRetry={valuation.retry} />
+        </div> : null}
         dataSource={dataSource}
         rateComparisonPanel={<RateComparisonPanel dataSource={dataSource} value={rateComparison} disabled={comparisonSettingsDisabled} onChange={setRateComparison} />}
         paymentComparisonPanel={<PaymentComparisonPanel dataSource={dataSource} value={paymentComparison} disabled={comparisonSettingsDisabled} onChange={setPaymentComparison} />}
@@ -619,10 +644,14 @@ function ReportsStocksWorkspace({ ownerId }: { ownerId: string | null }) {
         onRowGroupsChange={value => groupingOrdering.changeAxis('Row', value)}
         onColGroupsChange={value => groupingOrdering.changeAxis('Col', value)}
         onGroupingLayoutChange={groupingOrdering.changeLayout}
-        abcPanel={<ReportAbcClassificationPanel data={templateBody} dataset={dataset} disabled={comparisonSettingsDisabled} notice={abc.notice} onChange={abc.change} />}
+        abcPanel={<ReportAbcClassificationPanel data={templateBody} dataset={dataset} disabled={comparisonSettingsDisabled} notice={abc.notice} onChange={abc.change}
+          onConfigureGrouping={constructorMode ? () => navigateConstructorSection('structure') : undefined}
+          onConfigureMeasures={constructorMode ? () => navigateConstructorSection('structure') : undefined} />}
         hideZeroPanel={<ReportHideZeroPanel data={templateBody} dataset={dataset} disabled={comparisonSettingsDisabled} onChange={setHideZero} />}
         thresholdPanel={<ReportThresholdPanel data={templateBody} dataset={dataset} disabled={comparisonSettingsDisabled} onChange={setThreshold} />}
-        topGroupsPanel={<ReportTopGroupsPanel data={templateBody} dataset={dataset} disabled={comparisonSettingsDisabled} onChange={setTopGroups} />}
+        topGroupsPanel={<ReportTopGroupsPanel data={templateBody} dataset={dataset} disabled={comparisonSettingsDisabled} onChange={setTopGroups}
+          onConfigureGrouping={constructorMode ? () => navigateConstructorSection('structure') : undefined}
+          onConfigureMeasures={constructorMode ? () => navigateConstructorSection('structure') : undefined} />}
         filterExpressionPanel={<ReportFilterExpressionPanel data={templateBody} dataset={dataset} disabled={comparisonSettingsDisabled}
           notice={filterLogic.notice} onChange={filterLogic.change} />}
         orderingPanel={<ReportOrderingPanel data={templateBody} dataset={dataset} disabled={comparisonSettingsDisabled}
@@ -653,6 +682,14 @@ function ReportsStocksWorkspace({ ownerId }: { ownerId: string | null }) {
 }
 
 type ReportBuilderFormProps = {
+  constructorMode: boolean
+  constructorSection: ReportConstructorSection
+  onConstructorSectionChange: (section: ReportConstructorSection) => void
+  analysisCount: number
+  datasetPanel: ReactNode
+  datasetSummary: ReactNode
+  catalogueControl: ReactNode
+  agreementPanel: ReactNode
   rateComparisonPanel: ReactNode
   paymentComparisonPanel: ReactNode
   marginComparisonPanel: ReactNode
@@ -717,70 +754,41 @@ type ReportBuilderFormProps = {
   onUpdateTemplate: () => Promise<TemplateMutationResult>
 }
 
-function ReportBuilderForm({
-  comparisonPanel,
-  xyzPanel,
-  rateComparisonPanel,
-  paymentComparisonPanel,
-  marginComparisonPanel,
-  returnComparisonPanel,
-  buyerSalesSharePanel,
-  revenueComparisonPanel,
-  abcPanel,
-  topGroupsPanel,
-  hideZeroPanel,
-  thresholdPanel,
-  filterExpressionPanel,
-  orderingPanel,
-  onGroupingLayoutChange,
-  dataSource,
-  periodSupported,
-  presets,
-  configurationReady,
-  onApplyPreset,
-  canSubmit,
-  colGroups,
-  filterFieldOptions,
-  from,
-  groupingOptions,
-  groupingSelectData,
-  incompleteSelectionMessage,
-  isLoading,
-  lastRun,
-  lookupFrom,
-  lookupTo,
-  maxDate,
-  measurements,
-  notices,
-  resultHasFiles,
-  resultPlaceholder,
-  rowGroups,
-  selections,
-  submitBlockedReason,
-  templateName,
-  templateNotice,
-  activeTemplate,
-  templatesDisabled,
-  onRenamedTemplate,
-  onClearTemplateNotice,
-  templateStorage,
-  to,
-  onApplyTemplate,
-  onColGroupsChange,
-  onDeleteTemplate,
-  onFromChange,
-  onMeasurementsChange,
-  onOpenFiles,
-  onRefreshTemplates,
-  onReset,
-  onRowGroupsChange,
-  onSaveTemplate,
-  onSelectionsChange,
-  onSubmit,
-  onTemplateNameChange,
-  onToChange,
-  onUpdateTemplate,
-}: ReportBuilderFormProps) {
+function ReportBuilderForm(props: ReportBuilderFormProps) {
+  const {
+    constructorMode,
+    datasetPanel,
+    catalogueControl,
+    comparisonPanel,
+    dataSource,
+    periodSupported,
+    presets,
+    configurationReady,
+    onApplyPreset,
+    canSubmit,
+    from,
+    isLoading,
+    maxDate,
+    submitBlockedReason,
+    templateName,
+    templateNotice,
+    activeTemplate,
+    templatesDisabled,
+    onRenamedTemplate,
+    onClearTemplateNotice,
+    templateStorage,
+    to,
+    onApplyTemplate,
+    onDeleteTemplate,
+    onFromChange,
+    onRefreshTemplates,
+    onReset,
+    onSaveTemplate,
+    onSubmit,
+    onTemplateNameChange,
+    onToChange,
+    onUpdateTemplate,
+  } = props
   const { t } = useI18n()
   const [templatesOpened, setTemplatesOpened] = useValueState(false)
 
@@ -789,11 +797,14 @@ function ReportBuilderForm({
       <form className="reports-stocks-form" onSubmit={onSubmit}>
         <div className="reports-stocks-filter-scroll">
         <div className="app-filter-bar reports-stocks-filter-bar">
-          <ReportPeriodInputs dataSource={dataSource} supported={periodSupported} from={from} to={to} maxDate={maxDate} onFromChange={onFromChange} onToChange={onToChange} />
-          {comparisonPanel}
+          <div className="reports-stocks-toolbar-fields">
+          {datasetPanel}
+          <ReportPeriodInputs dataSource={dataSource} supported={periodSupported} from={from} to={to} maxDate={maxDate} disabled={constructorMode && isLoading} onFromChange={onFromChange} onToChange={onToChange} />
+          {!constructorMode ? comparisonPanel : null}
           <div className="app-filter-actions reports-stocks-actions">
-            <Button color="brand" variant="filled" size="sm" className="app-filter-primary-action"
-              disabled={isLoading}
+            {catalogueControl}
+            <Button color={constructorMode ? 'gray' : 'brand'} variant={constructorMode ? 'default' : 'filled'} size="sm" className="app-filter-primary-action"
+              disabled={templatesDisabled}
               leftSection={<LayoutTemplate size={16} />}
               type="button"
               onClick={() => setTemplatesOpened(true)}
@@ -801,10 +812,11 @@ function ReportBuilderForm({
               {t('Шаблони')}
             </Button>
             <Tooltip label={t('Скинути')}>
-              <ActionIcon aria-label={t('Скинути')} disabled={isLoading} variant="default" size={34} type="button" onClick={onReset}>
+              <ActionIcon aria-label={t('Скинути')} disabled={templatesDisabled} variant="default" size={34} type="button" onClick={onReset}>
                 <RotateCcw size={17} />
               </ActionIcon>
             </Tooltip>
+          </div>
           </div>
           <Tooltip label={t('Сформувати')}>
             <Button
@@ -814,6 +826,7 @@ function ReportBuilderForm({
               loading={isLoading}
               disabled={!canSubmit}
               title={submitBlockedReason}
+              aria-describedby={constructorMode && !canSubmit ? 'report-constructor-blocked-reason' : undefined}
               type="submit"
             >
               {t('Сформувати')}
@@ -821,65 +834,12 @@ function ReportBuilderForm({
           </Tooltip>
         </div>
         </div>
+        {constructorMode && !canSubmit ? <Text id="report-constructor-blocked-reason" className="report-constructor-blocked-reason" size="xs" c="gray.7">{submitBlockedReason}</Text> : null}
+        {!constructorMode && presets.length ? <ReportQuickPresets disabled={isLoading || !configurationReady} presets={presets} onApply={onApplyPreset} /> : null}
 
-        {presets.length ? <ReportQuickPresets disabled={isLoading || !configurationReady} presets={presets} onApply={onApplyPreset} /> : null}
+        <ReportBuilderContent {...props} />
 
-        <div className="reports-stocks-body">
-          {rateComparisonPanel}
-          {paymentComparisonPanel}
-          {marginComparisonPanel}
-          {returnComparisonPanel}
-          {buyerSalesSharePanel ? <Card className="app-section-card reports-buyer-sales-share-settings" withBorder radius="md" padding="md" style={{ minWidth: 0 }}>{buyerSalesSharePanel}</Card> : null}
-          {revenueComparisonPanel ? <Card className="app-section-card reports-revenue-comparison-settings" withBorder radius="md" padding="md" style={{ minWidth: 0 }}>{revenueComparisonPanel}</Card> : null}
-          {xyzPanel ? <Card className="app-section-card reports-sales-xyz-settings" withBorder radius="md" padding="md" style={{ minWidth: 0 }}>{xyzPanel}</Card> : null}
-          {notices.period || incompleteSelectionMessage ? (
-            <Alert className="reports-page-alert" color={notices.period ? 'red' : 'yellow'} icon={<CircleAlert size={18} />}>
-              {notices.period || incompleteSelectionMessage}
-            </Alert>
-          ) : null}
-
-          {notices.error ? (
-            <Alert className="reports-page-alert" color="red" icon={<CircleAlert size={18} />}>{notices.error}</Alert>
-          ) : null}
-          {notices.emptyRun ? (
-            <Alert className="reports-page-alert" color="yellow" icon={<CircleAlert size={18} />}>
-              {notices.emptyRun}
-            </Alert>
-          ) : null}
-          <LegacyReportBuilder
-            onGroupingLayoutChange={onGroupingLayoutChange}
-            dataSource={dataSource}
-            colGroups={colGroups}
-            filterFieldOptions={filterFieldOptions}
-            groupingOptions={groupingOptions}
-            groupingSelectData={groupingSelectData}
-            lookupFrom={lookupFrom}
-            lookupTo={lookupTo}
-            measurements={measurements}
-            rowGroups={rowGroups}
-            selections={selections}
-            onColGroupsChange={onColGroupsChange}
-            onMeasurementsChange={onMeasurementsChange}
-            onRowGroupsChange={onRowGroupsChange}
-            onSelectionsChange={onSelectionsChange}
-          />
-          {dataSource === 19 ? null : filterExpressionPanel}
-          {!hasFixedReportAxes(dataSource) ? <>
-            {topGroupsPanel}
-            {thresholdPanel}
-            {hideZeroPanel}
-            {abcPanel}
-            {orderingPanel}
-          </> : null}
-          <ReportResultSection
-            hasFiles={resultHasFiles}
-            lastRun={lastRun}
-            placeholder={resultPlaceholder}
-            onOpenFiles={onOpenFiles}
-          />
-        </div>
-
-        <Modal
+        <AppModal
           centered
           classNames={{ body: 'reports-stocks-template-modal__body', title: 'reports-stocks-modal-title' }}
           opened={templatesOpened}
@@ -908,13 +868,164 @@ function ReportBuilderForm({
             onSave={onSaveTemplate}
             onUpdate={onUpdateTemplate}
           />
-        </Modal>
+        </AppModal>
       </form>
     </Card>
   )
 }
 
+function ReportBuilderContent(props: ReportBuilderFormProps) {
+  const {
+    constructorMode,
+    constructorSection,
+    onConstructorSectionChange,
+    analysisCount,
+    datasetSummary,
+    abcPanel,
+    topGroupsPanel,
+    hideZeroPanel,
+    thresholdPanel,
+    filterExpressionPanel,
+    orderingPanel,
+    onGroupingLayoutChange,
+    dataSource,
+    canSubmit,
+    colGroups,
+    filterFieldOptions,
+    groupingOptions,
+    groupingSelectData,
+    isLoading,
+    lastRun,
+    lookupFrom,
+    lookupTo,
+    measurements,
+    resultHasFiles,
+    resultPlaceholder,
+    rowGroups,
+    selections,
+    submitBlockedReason,
+    templatesDisabled,
+    onColGroupsChange,
+    onMeasurementsChange,
+    onOpenFiles,
+    onRowGroupsChange,
+    onSelectionsChange,
+  } = props
+  return (
+        <div className={constructorMode ? 'report-constructor-workspace' : undefined}>
+          {constructorMode ? <ReportConstructorNavigation active={constructorSection} onChange={onConstructorSectionChange}
+            measures={flattenCheckedMeasurements(measurements).length} rows={rowGroups.length}
+            filters={selections.filter(selection => selection.IsChecked).length} analysis={analysisCount}
+            ready={canSubmit} reason={submitBlockedReason} loading={isLoading} hasResult={Boolean(lastRun)} /> : null}
+        <div className="reports-stocks-body">
+          {datasetSummary}
+          <ReportSourceSettings {...props} />
+          <ReportBuilderNotices {...props} />
+          <fieldset className="report-constructor-fields" disabled={constructorMode && templatesDisabled}>
+          <LegacyReportBuilder
+            constructorSection={constructorMode ? constructorSection : undefined}
+            filterExpressionPanel={filterExpressionPanel}
+            onGroupingLayoutChange={onGroupingLayoutChange}
+            dataSource={dataSource}
+            colGroups={colGroups}
+            filterFieldOptions={filterFieldOptions}
+            groupingOptions={groupingOptions}
+            groupingSelectData={groupingSelectData}
+            lookupFrom={lookupFrom}
+            lookupTo={lookupTo}
+            measurements={measurements}
+            rowGroups={rowGroups}
+            selections={selections}
+            onColGroupsChange={onColGroupsChange}
+            onMeasurementsChange={onMeasurementsChange}
+            onRowGroupsChange={onRowGroupsChange}
+            onSelectionsChange={onSelectionsChange}
+          />
+          {!constructorMode && dataSource !== 19 ? filterExpressionPanel : null}
+          <ReportSectionPanel className={constructorMode ? 'report-constructor-analysis' : undefined} active={constructorMode ? constructorSection : undefined} section="analysis">
+          {!hasFixedReportAxes(dataSource) ? <>
+            {topGroupsPanel}
+            {thresholdPanel}
+            {hideZeroPanel}
+            {abcPanel}
+            {orderingPanel}
+          </> : constructorMode ? <Text size="sm" c="gray.7">Цей набір має фіксовану структуру аналізу. Налаштуйте його параметри в розділі «Структура звіту».</Text> : null}
+          </ReportSectionPanel>
+          </fieldset>
+          <ReportSectionPanel active={constructorMode ? constructorSection : undefined} section="result">
+          {constructorMode && !lastRun ? <ReportConstructorResultEmpty loading={isLoading} ready={canSubmit} reason={submitBlockedReason}
+            onConfigure={() => onConstructorSectionChange('structure')} /> : null}
+          <ReportResultSection
+            hasFiles={resultHasFiles}
+            lastRun={lastRun}
+            placeholder={resultPlaceholder}
+            onOpenFiles={onOpenFiles}
+          />
+          </ReportSectionPanel>
+        </div>
+        </div>
+  )
+}
+
+function ReportSourceSettings(props: ReportBuilderFormProps) {
+  const {
+    constructorMode,
+    constructorSection,
+    agreementPanel,
+    comparisonPanel,
+    xyzPanel,
+    rateComparisonPanel,
+    paymentComparisonPanel,
+    marginComparisonPanel,
+    returnComparisonPanel,
+    buyerSalesSharePanel,
+    revenueComparisonPanel,
+    presets,
+    configurationReady,
+    onApplyPreset,
+    isLoading,
+  } = props
+  return (
+          <div hidden={constructorMode && constructorSection !== 'structure'} className={constructorMode ? 'report-constructor-source-settings' : undefined}>
+          {agreementPanel}
+          {constructorMode ? comparisonPanel : null}
+          {rateComparisonPanel}
+          {paymentComparisonPanel}
+          {marginComparisonPanel}
+          {returnComparisonPanel}
+          {buyerSalesSharePanel ? <Card className="app-section-card reports-buyer-sales-share-settings" withBorder radius="md" padding="md" style={{ minWidth: 0 }}>{buyerSalesSharePanel}</Card> : null}
+          {revenueComparisonPanel ? <Card className="app-section-card reports-revenue-comparison-settings" withBorder radius="md" padding="md" style={{ minWidth: 0 }}>{revenueComparisonPanel}</Card> : null}
+          {xyzPanel ? <Card className="app-section-card reports-sales-xyz-settings" withBorder radius="md" padding="md" style={{ minWidth: 0 }}>{xyzPanel}</Card> : null}
+          {constructorMode && presets.length ? <ReportQuickPresets disabled={isLoading || !configurationReady} presets={presets} onApply={onApplyPreset} /> : null}
+          </div>
+  )
+}
+
+function ReportBuilderNotices(props: ReportBuilderFormProps) {
+  const { incompleteSelectionMessage, notices } = props
+  return (
+    <>
+          {notices.period || incompleteSelectionMessage ? (
+            <Alert className="reports-page-alert" color={notices.period ? 'red' : 'yellow'} icon={<CircleAlert size={18} />}>
+              {notices.period || incompleteSelectionMessage}
+            </Alert>
+          ) : null}
+
+          {notices.error ? (
+            <Alert className="reports-page-alert" color="red" icon={<CircleAlert size={18} />}>{notices.error}</Alert>
+          ) : null}
+          {notices.emptyRun ? (
+            <Alert className="reports-page-alert" color="yellow" icon={<CircleAlert size={18} />}>
+              {notices.emptyRun}
+            </Alert>
+          ) : null}
+    </>
+  )
+}
+
 type LegacyReportBuilderProps = {
+  constructorSection?: ReportConstructorSection
+  filterExpressionPanel?: ReactNode
   onGroupingLayoutChange: (layout: ReportGroupingLayout) => void
   dataSource: number
   colGroups: ReportGroupingItem[]
@@ -943,6 +1054,8 @@ const fixedAxesDescription: Partial<Record<number, string>> = {
 }
 
 function LegacyReportBuilder({
+  constructorSection,
+  filterExpressionPanel,
   onGroupingLayoutChange,
   dataSource,
   colGroups,
@@ -988,9 +1101,14 @@ function LegacyReportBuilder({
     closeGroupingPicker()
   }
 
+  const selectionPanel = dataSource === 19 ? null : <section className="reports-stocks-legacy__selections">
+    <ReportSelectionsCard dataSource={dataSource} description={null} filterFieldOptions={filterFieldOptions}
+      from={lookupFrom} selections={selections} title={t('Умови відбору')} to={lookupTo} onChange={onSelectionsChange} />
+  </section>
+
   return (
     <section className="reports-stocks-legacy" aria-label="Налаштування звіту">
-      <div className="reports-stocks-legacy__columns">
+      <ReportSectionPanel className="reports-stocks-legacy__columns" active={constructorSection} section="structure">
         <section className="app-section-card reports-stocks-legacy-panel reports-stocks-legacy-measurements">
           <div className="reports-stocks-legacy-panel__header">
             <Group className="reports-stocks-legacy-panel__title" gap={6} wrap="nowrap">
@@ -1072,19 +1190,13 @@ function LegacyReportBuilder({
             onReorder={(type, direction) => onColGroupsChange(current => reorderReportGrouping(current, type, direction, allowedGroupingTypes))}
             onTransfer={type => transferGrouping('Col', type)} /> : <Text size="sm" c="dimmed">Порівняння періодів показує вибрані показники у стовпцях.</Text>}
         </section>
-        {dataSource === 19 ? null : <section className="reports-stocks-legacy__selections">
-          <ReportSelectionsCard
-            dataSource={dataSource}
-            description={null}
-            filterFieldOptions={filterFieldOptions}
-            from={lookupFrom}
-            selections={selections}
-            title={t('Умови відбору')}
-            to={lookupTo}
-            onChange={onSelectionsChange}
-          />
-        </section>}
-      </div>
+        {!constructorSection ? selectionPanel : null}
+      </ReportSectionPanel>
+
+      {constructorSection ? <ReportSectionPanel active={constructorSection} section="filters">
+        {selectionPanel}
+        {dataSource === 19 ? <Text size="sm" c="gray.7">Для історичних курсів валютна пара та дати задаються в параметрах звіту. Додаткові умови відбору не застосовуються.</Text> : filterExpressionPanel}
+      </ReportSectionPanel> : null}
 
       <LegacyGroupingPickerModal
         opened={groupingPickerTarget !== null}
@@ -1137,7 +1249,7 @@ function LegacyGroupingPickerModal({
   }
 
   return (
-    <Modal
+    <AppModal
       centered
       classNames={{ title: 'reports-stocks-modal-title' }}
       opened={opened}
@@ -1192,7 +1304,7 @@ function LegacyGroupingPickerModal({
           </div>
         )}
       </Stack>
-    </Modal>
+    </AppModal>
   )
 }
 

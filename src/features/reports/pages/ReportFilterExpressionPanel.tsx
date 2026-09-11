@@ -18,16 +18,18 @@ export function ReportFilterExpressionPanel({ data, dataset, disabled, notice, o
   const raw = requestFilterExpression(data), tree = readReportFilterExpression(raw), cap = readFilterExpressionCapabilities(dataset)
   const error = reportFilterExpressionError(data, dataset)
   return <Stack component="section" aria-label="Логіка умов відбору" gap="xs" p="sm">
-    <Text fw={600}>Логіка умов відбору</Text>
+    <Text component="h3" className="app-section-title" fw={600}>Логіка умов відбору</Text>
     <Text size="xs" c="dimmed">Без груп усі увімкнені умови поєднано через І. У групі І мають виконуватися всі умови; у групі АБО — хоча б одна. Значення й прапорці змінюйте в «Умовах відбору» вище.</Text>
     <Text size="xs" c="dimmed">Вимкнені умови та порожні групи не впливають на відбір. Якщо увімкнених умов немає, логіка не обмежує звіт.</Text>
     {error ? <Alert color="red">{error}</Alert> : null}
     {notice ? <Alert color="blue">{notice}</Alert> : null}
     {!cap ? <Text size="sm" c="dimmed">Сервер не надав підтримку груп І/АБО. Звіти без дерева використовують усі увімкнені умови через І.</Text> : null}
-    {raw != null ? <Button type="button" size="compact-sm" variant="subtle" color="gray" disabled={disabled}
-      onClick={() => onChange(undefined)}>Очистити групи: усі умови через І</Button> : cap ? <Button type="button" size="compact-sm" variant="light"
+    <Group>
+    {raw != null ? <Button type="button" size="compact-sm" variant="default" disabled={disabled}
+      onClick={() => onChange(undefined)}>Очистити групи: усі умови через І</Button> : cap ? <Button type="button" size="compact-sm" variant="default"
       disabled={disabled || data.selections.length > cap.MaximumLeaves || !cap.Operators.includes(1)}
       onClick={() => onChange(createFilterExpression(data.selections))}>Налаштувати групи І/АБО</Button> : null}
+    </Group>
     {tree && cap ? <FilterTreeEditor tree={tree} cap={cap} data={data} dataset={dataset} disabled={disabled} onChange={onChange} /> : null}
   </Stack>
 }

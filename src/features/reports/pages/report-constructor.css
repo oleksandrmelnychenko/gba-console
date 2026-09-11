@@ -1,0 +1,397 @@
+.report-constructor-page {
+  flex: 1 1 auto;
+  height: 100%;
+  overflow: hidden;
+}
+
+.report-constructor-page [hidden] {
+  display: none !important;
+}
+
+.report-constructor-header {
+  align-items: center;
+  display: flex;
+  flex: 0 0 auto;
+  gap: 16px;
+  justify-content: space-between;
+  min-height: 62px;
+  padding: 10px 8px 6px;
+}
+
+.report-constructor-header h2 {
+  color: var(--mantine-color-gray-8);
+  font-family: var(--font-mono);
+  font-size: 18px;
+  font-weight: 500;
+  line-height: 1.5;
+}
+
+.report-constructor-header > div {
+  min-width: 0;
+}
+
+.report-constructor-header > a {
+  flex-shrink: 0;
+}
+
+.report-constructor-page .reports-stocks-shell,
+.report-constructor-page .reports-stocks-form {
+  display: flex;
+  flex: 1 1 auto;
+  height: auto;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.report-constructor-page .reports-stocks-filter-scroll {
+  flex: 0 0 auto;
+  position: relative;
+}
+
+.report-constructor-page .reports-stocks-filter-bar {
+  flex-wrap: nowrap;
+  min-width: 0;
+}
+
+.reports-stocks-toolbar-fields {
+  display: contents;
+}
+
+.report-constructor-page .reports-stocks-toolbar-fields {
+  align-items: end;
+  display: flex;
+  flex: 1 1 auto;
+  gap: 10px;
+  min-width: 0;
+  overflow-x: auto;
+}
+
+.report-constructor-page .report-dataset-picker--compact {
+  flex: 1 0 240px;
+  min-width: 240px;
+}
+
+.report-constructor-page .app-filter-date-range {
+  flex: 0 0 278px;
+}
+
+.report-constructor-page .app-filter-date-range > * {
+  min-width: 132px;
+}
+
+.report-constructor-page .reports-stocks-actions {
+  flex: 0 0 auto;
+  margin-left: auto;
+}
+
+.report-constructor-page .reports-stocks-generate {
+  flex-shrink: 0;
+}
+
+.report-constructor-blocked-reason {
+  flex: 0 0 auto;
+  margin: 0 8px;
+}
+
+.report-constructor-workspace {
+  display: grid;
+  flex: 1 1 auto;
+  gap: 12px;
+  grid-template-columns: 224px minmax(0, 1fr);
+  min-height: 0;
+  padding: 6px 8px 8px;
+}
+
+.report-constructor-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 0;
+  overflow: auto;
+  padding: 10px 0 0;
+}
+
+.report-constructor-sidebar > .app-section-title {
+  padding-left: 8px;
+}
+
+.report-constructor-navigation {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.report-constructor-tab {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  border-radius: 8px;
+  color: var(--mantine-color-gray-7);
+  cursor: pointer;
+  display: flex;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 500;
+  gap: 4px;
+  justify-content: space-between;
+  line-height: 1.5;
+  min-height: 42px;
+  padding: 8px 6px 8px 18px;
+  position: relative;
+  text-align: left;
+}
+
+.report-constructor-tab > span {
+  align-items: center;
+  display: flex;
+  gap: 3px;
+}
+
+.report-constructor-tab svg {
+  flex: 0 0 auto;
+  visibility: hidden;
+}
+
+.report-constructor-tab small {
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.report-constructor-tab.is-active {
+  color: var(--brand-orange);
+  font-weight: 600;
+}
+
+.report-constructor-tab.is-active::before {
+  background: var(--brand-orange);
+  border-radius: 50%;
+  content: '';
+  height: 6px;
+  left: 6px;
+  position: absolute;
+  top: calc(50% - 3px);
+  width: 6px;
+}
+
+.report-constructor-tab:hover {
+  color: var(--mantine-color-gray-9);
+  transform: translateX(3px);
+}
+
+.report-constructor-tab.is-active svg,
+.report-constructor-tab:hover svg {
+  visibility: visible;
+}
+
+.report-constructor-tab:focus-visible {
+  outline: 2px solid var(--brand-orange);
+  outline-offset: -2px;
+}
+
+.report-constructor-readiness {
+  display: grid;
+  gap: 10px;
+  margin-top: auto;
+  padding: 16px 8px 8px;
+}
+
+.report-constructor-readiness .mantine-Badge-root {
+  height: auto;
+  max-width: 100%;
+  min-height: 24px;
+  white-space: normal;
+}
+
+.report-constructor-summary {
+  display: grid;
+  gap: 8px;
+  margin: 4px 0 0;
+}
+
+.report-constructor-summary > div {
+  align-items: baseline;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+}
+
+.report-constructor-summary dt {
+  color: var(--mantine-color-gray-7);
+  font-size: 12px;
+}
+
+.report-constructor-summary dd {
+  color: var(--mantine-color-gray-8);
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.report-constructor-page .reports-stocks-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  min-width: 0;
+  overflow: auto;
+  padding: 2px 4px 12px 0;
+  scroll-padding-top: 8px;
+}
+
+.report-constructor-fields {
+  border: 0;
+  display: contents;
+  margin: 0;
+  min-width: 0;
+  padding: 0;
+}
+
+.report-constructor-source-settings,
+.report-constructor-analysis,
+.report-constructor-page #report-constructor-panel-filters {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+}
+
+.report-constructor-source-settings:empty {
+  display: none;
+}
+
+.report-constructor-page .reports-stocks-legacy__columns {
+  grid-template-columns: minmax(0, 1.15fr) minmax(300px, 1fr);
+}
+
+.report-constructor-page .reports-stocks-legacy__selections .reports-stocks-selection-card {
+  border: 1px solid var(--mantine-color-gray-2) !important;
+  border-radius: var(--mantine-radius-md);
+  padding: 14px 16px;
+}
+
+.report-constructor-page .reports-stocks-group-picker__option:hover:not(:disabled) {
+  background: white;
+  border-color: var(--brand-orange);
+}
+
+.report-constructor-page .app-section-title {
+  color: var(--mantine-color-gray-7);
+}
+
+.report-dataset-summary {
+  display: grid;
+  flex: 0 0 auto;
+  gap: 6px;
+  min-width: 0;
+}
+
+.report-dataset-limitations,
+.reports-constructor-rule-help {
+  color: var(--mantine-color-gray-7);
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.report-dataset-limitations > summary,
+.reports-constructor-rule-help > summary {
+  cursor: pointer;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 500;
+  width: fit-content;
+}
+
+.report-dataset-limitations > summary {
+  color: var(--mantine-color-orange-8);
+}
+
+.report-dataset-limitations > summary:focus-visible,
+.reports-constructor-rule-help > summary:focus-visible {
+  border-radius: 3px;
+  outline: 2px solid var(--brand-orange);
+  outline-offset: 3px;
+}
+
+.report-dataset-limitations[open] > summary,
+.reports-constructor-rule-help[open] > summary {
+  margin-bottom: 8px;
+}
+
+.report-constructor-page .reports-constructor-rule-panel,
+.report-constructor-page .report-constructor-analysis > section,
+.report-constructor-page #report-constructor-panel-filters > section:not(.reports-stocks-legacy__selections) {
+  border: 1px solid var(--mantine-color-gray-2);
+  border-radius: var(--mantine-radius-md);
+  padding: 14px 16px;
+}
+
+.reports-constructor-rule-header {
+  align-items: center;
+}
+
+.report-constructor-result-empty {
+  display: grid;
+  gap: 12px;
+  justify-items: start;
+  min-height: 200px;
+  padding: 20px;
+}
+
+.report-constructor-result-empty > .app-section-title {
+  margin-bottom: 16px;
+}
+
+.report-constructor-agreement > .mantine-Stack-root {
+  padding: 0;
+}
+
+.report-constructor-agreement .mantine-Select-root {
+  max-width: 650px;
+}
+
+@media (max-width: 1200px) {
+  .report-constructor-workspace {
+    grid-template-columns: 202px minmax(0, 1fr);
+  }
+
+  .report-constructor-page .reports-stocks-legacy__columns {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 760px) {
+  .report-constructor-header {
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .report-constructor-header h2 {
+    font-size: 15px;
+  }
+
+  .report-constructor-workspace {
+    gap: 8px;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr);
+  }
+
+  .report-constructor-sidebar {
+    overflow: visible;
+    padding-top: 0;
+  }
+
+  .report-constructor-sidebar > .app-section-title,
+  .report-constructor-readiness {
+    display: none;
+  }
+
+  .report-constructor-navigation {
+    display: grid;
+    gap: 2px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .report-constructor-tab {
+    font-size: 11px;
+    min-height: 36px;
+  }
+}

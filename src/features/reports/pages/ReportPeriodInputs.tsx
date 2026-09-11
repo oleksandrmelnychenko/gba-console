@@ -3,8 +3,8 @@ import { useI18n } from '../../../shared/i18n/useI18n'
 import { CLIENT_COMPARISON_MIN_DATE } from '../data/clientPeriodComparison'
 import { supportsFullReportDateRange } from '../data/nativeReportProfiles'
 
-type Props = { dataSource: number; supported: boolean; from: string; to: string; maxDate: string; onFromChange: (value: string) => void; onToChange: (value: string) => void }
-export default function ReportPeriodInputs({ dataSource, supported, from, to, maxDate, onFromChange, onToChange }: Props) {
+type Props = { dataSource: number; supported: boolean; from: string; to: string; maxDate: string; disabled?: boolean; onFromChange: (value: string) => void; onToChange: (value: string) => void }
+export default function ReportPeriodInputs({ dataSource, supported, from, to, maxDate, disabled = false, onFromChange, onToChange }: Props) {
   const { t } = useI18n()
   return supported ? <div className="app-filter-date-range">
             <TextInput
@@ -12,6 +12,7 @@ export default function ReportPeriodInputs({ dataSource, supported, from, to, ma
               max={to || maxDate}
               min={supportsFullReportDateRange(dataSource) ? CLIENT_COMPARISON_MIN_DATE : '2000-01-01'}
               type="date"
+              disabled={disabled}
               value={from}
               onChange={(event) => onFromChange(event.currentTarget.value)}
             />
@@ -20,6 +21,7 @@ export default function ReportPeriodInputs({ dataSource, supported, from, to, ma
               max={maxDate}
               min={from || (supportsFullReportDateRange(dataSource) ? CLIENT_COMPARISON_MIN_DATE : '2000-01-01')}
               type="date"
+              disabled={disabled}
               value={to}
               onChange={(event) => onToChange(event.currentTarget.value)}
             />
