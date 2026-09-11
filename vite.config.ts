@@ -1,7 +1,6 @@
-import { defineConfig, type Plugin, type ProxyOptions } from 'vite'
+import { defineConfig, loadEnv, type Plugin, type ProxyOptions } from 'vite'
 import react from '@vitejs/plugin-react'
 
-const apiProxyTarget = process.env.VITE_DEV_API_PROXY_TARGET || 'https://gba-api-dev.85.17.167.167.nip.io'
 type ProxyConfigure = NonNullable<ProxyOptions['configure']>
 
 const configureForwardedHeaders: ProxyConfigure = (proxy) => {
@@ -47,7 +46,13 @@ function resolveBuildNumber() {
 // https://vite.dev/config/
 const buildNumber = resolveBuildNumber()
 
-export default defineConfig({
+export default defineConfig(({ mode }) => {
+  // Vite loads dotenv files after evaluating its config. Load the proxy settings
+  // here too, so .env.local can direct both API and Analytics to local services.
+  const env = loadEnv(mode, process.cwd(), 'VITE_')
+  const apiProxyTarget = env.VITE_DEV_API_PROXY_TARGET || 'https://gba-api-dev.85.17.167.167.nip.io'
+
+  return {
   define: {
     __BUILD_NUMBER__: JSON.stringify(buildNumber),
   },
@@ -108,7 +113,7 @@ export default defineConfig({
         configure: configureForwardedHeaders,
       },
       '^/api/v1/[^/]+/(history|report)': {
-        target: process.env.VITE_DEV_HISTORY_PROXY_TARGET || 'https://gba-analytics-dev.85.17.167.167.nip.io',
+        target: env.VITE_DEV_HISTORY_PROXY_TARGET || 'https://gba-analytics-dev.85.17.167.167.nip.io',
         changeOrigin: true,
         xfwd: true,
         secure: false,
@@ -140,4 +145,5 @@ export default defineConfig({
       },
     },
   },
+  }
 })
