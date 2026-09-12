@@ -209,6 +209,36 @@ export type ReportHideZeroCapabilities = {
   CompleteSourceParity: false
 }
 
+export type ReportProductClassification = {
+  Version: 1
+  SourceWorld: 0
+  ProductKindId: string
+  IsService: boolean
+}
+
+export type ReportProductClassificationCapabilities = {
+  Version: 1
+  SourceWorld: 0
+  RequiresIsService: true
+  RequiresProductKindId: true
+  ProductKindIdFormat: '32 hexadecimal characters (16 bytes)'
+}
+
+export type ReportSourceOrganizations = {
+  Version: 1
+  SourceWorld: 'fenix'
+  OrganizationIds: string[]
+}
+
+export type ReportSourceOrganizationsCapabilities = {
+  Version: 1
+  SourceWorlds: ['fenix']
+  MaximumOrganizationIds: 64
+  OrganizationIdFormat: '32 hexadecimal characters (16 bytes)'
+  RequiresDurableNativeBinding: true
+  RequiresCompleteFactLineage: true
+}
+
 export type ReportRequestBody = {
   dataSource?: number
   paymentComparison?: unknown
@@ -241,6 +271,10 @@ export type ReportRequestBody = {
   Threshold?: unknown
   topGroups?: unknown
   TopGroups?: unknown
+  productClassification?: unknown
+  ProductClassification?: unknown
+  sourceOrganizations?: unknown
+  SourceOrganizations?: unknown
   oneC?: OneCTurnoverFilters
   from: string
   selections: ReportSelection[]
@@ -275,6 +309,8 @@ export type ReportDataset = {
   HideZero?: unknown
   Threshold?: unknown
   AbcClassification?: unknown
+  productClassification?: unknown
+  sourceOrganizations?: unknown
   Groupings: ReportDatasetField[]
   Measurements: ReportDatasetField[]
   Filters: ReportDatasetField[]

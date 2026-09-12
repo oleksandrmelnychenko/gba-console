@@ -11,6 +11,7 @@ import type { ReportCatalogue, ReportDataset, ReportDatasetField, ReportRequestB
 import { isCurrentReportSource } from '../data/nativeReportProfiles'
 import { isClientComparisonCapability } from '../data/clientPeriodComparison'
 import { isReportCatalogue } from '../data/reportMigration'
+import { cloneNativeExactFilterAliases, nativeExactFiltersConfigurationError, normalizeNativeExactFilterDataset } from '../data/nativeExactFilters'
 
 const paymentUnsupportedCapabilities = ['Ordering', 'TopGroups', 'Threshold', 'HideZero', 'AbcClassification', 'FilterExpression'] as const
 const marginGroupings = [{ Type: 12, Name: 'Клієнт' }, { Type: 15, Name: 'Договір' }] as const
@@ -56,11 +57,13 @@ function isDataset(value: unknown): value is ReportDataset {
 
 export async function getReportDatasets(signal?: AbortSignal): Promise<ReportDataset[]> {
   const result = await apiRequest<unknown>('/report/datasets', { signal })
-  if (!Array.isArray(result) || !result.length || !result.every(isDataset)
-    || new Set(result.map(item => item.DataSource)).size !== result.length) {
+  const normalized = Array.isArray(result) ? result.map(item => item && typeof item === 'object' && !Array.isArray(item)
+    ? normalizeNativeExactFilterDataset(item as Record<string, unknown>) : null) : []
+  if (!normalized.length || !normalized.every((item): item is ReportDataset => item !== null && isDataset(item))
+    || new Set(normalized.map(item => item.DataSource)).size !== normalized.length) {
     throw new Error('Сервер повернув некоректний список наборів даних звітів.')
   }
-  return result
+  return normalized
 }
 
 export async function getReportCatalogue(signal?: AbortSignal): Promise<ReportCatalogue> {
@@ -103,6 +106,10 @@ type WireTemplate = Required<Omit<ReportTemplate, 'Data'>> & {
     abcClassification?: unknown
     TopGroups?: unknown
     topGroups?: unknown
+    ProductClassification?: unknown
+    productClassification?: unknown
+    SourceOrganizations?: unknown
+    sourceOrganizations?: unknown
     OneC?: ReportRequestBody['oneC']
   }
 }
@@ -124,6 +131,7 @@ export function normalizeSavedTemplate(value: WireTemplate): ReportTemplate {
     ...cloneBuyerSalesShareAliases(value.Data),
     ...cloneRevenueComparisonAliases(value.Data),
     ...cloneXyzAliases(value.Data),
+    ...cloneNativeExactFilterAliases(value.Data),
     ...(Object.hasOwn(value.Data, 'comparison') ? { comparison: value.Data.comparison,
       ...(Object.hasOwn(value.Data, 'Comparison') ? { Comparison: value.Data.Comparison } : {}),
     } : Object.hasOwn(value.Data, 'Comparison') ? { comparison: value.Data.Comparison } : {}),
@@ -153,7 +161,9 @@ export async function getServerReportTemplates(signal?: AbortSignal): Promise<Re
 }
 
 export async function saveServerReportTemplate(template: ReportTemplate): Promise<ReportTemplate> {
-  const request = (template.Data.dataSource === 17 || template.Data.dataSource === 18 || template.Data.dataSource === 19 || template.Data.dataSource === 20 || template.Data.dataSource === 21 || template.Data.dataSource === 22) ? structuredClone(template) : template
+  const request = (template.Data.dataSource === 2 || template.Data.dataSource === 17 || template.Data.dataSource === 18 || template.Data.dataSource === 19 || template.Data.dataSource === 20 || template.Data.dataSource === 21 || template.Data.dataSource === 22) ? structuredClone(template) : template
+  const exactFilterError = nativeExactFiltersConfigurationError(request.Data)
+  if (exactFilterError) throw new Error(exactFilterError)
   const pricesError = agreementPricesConfigurationError(request.Data)
   if (pricesError) throw new Error(pricesError)
   const paymentError = paymentComparisonConfigurationError(request.Data)

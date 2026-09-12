@@ -19,6 +19,7 @@ import { ABC_CLASS_GROUPING, preserveAbcGrouping, reportAbcClassificationError }
 import { reportTopGroupsError } from './reportTopGroups'
 import { valuationConfigurationError, requiresValuationAgreement } from './reportValuation'
 import { getNativeReportProfile, isNativeReportPresetId, type NativeReportPresetId } from './nativeReportProfiles'
+import { cloneNativeExactFilterAliases, nativeExactFiltersConfigurationError } from './nativeExactFilters'
 
 export type DatasetReportPresetId = SalesReportPresetId | 'quantities-by-unit' | NativeReportPresetId
 type DatasetReportPreset = { id: DatasetReportPresetId; name: string; description: string }
@@ -175,6 +176,8 @@ export function datasetConfigurationError(data: ReportRequestBody, dataset: Repo
   if (valuationError) return valuationError
   const pricesError = agreementPricesConfigurationError(data, dataset)
   if (pricesError) return pricesError
+  const exactFilterError = nativeExactFiltersConfigurationError(data, dataset)
+  if (exactFilterError) return exactFilterError
   if (!data.sorted || !Array.isArray(data.sorted.Row) || !Array.isArray(data.sorted.Col) || !Array.isArray(data.sorted.Measurements) || !Array.isArray(data.selections)) {
     return 'Шаблон містить некоректні налаштування. Налаштування не застосовано.'
   }
@@ -232,7 +235,8 @@ export function datasetPresetRequest(dataset: ReportDataset, id: DatasetReportPr
     ...(Object.hasOwn(current, 'topGroups') ? { topGroups: structuredClone(current.topGroups) } : {}),
     ...(Object.hasOwn(current, 'TopGroups') ? { TopGroups: structuredClone(current.TopGroups) } : {}),
     ...(Object.hasOwn(current, 'filterExpression') ? { filterExpression: structuredClone(current.filterExpression) } : {}),
-    ...(Object.hasOwn(current, 'FilterExpression') ? { FilterExpression: structuredClone(current.FilterExpression) } : {}) }
+    ...(Object.hasOwn(current, 'FilterExpression') ? { FilterExpression: structuredClone(current.FilterExpression) } : {}),
+    ...cloneNativeExactFilterAliases(current) }
   if (isNativeReportPresetId(id)) {
     const defaults = defaultDatasetRequest(dataset, current.from, current.to)
     if (dataset.DataSource === 21 && Object.keys(current).some(key => key.toLowerCase() === 'paymentcomparison')) delete defaults.paymentComparison

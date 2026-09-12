@@ -16,6 +16,11 @@ export const grossDataset: ReportDataset = {
 
 export const netDataset: ReportDataset = {
   ...grossDataset, DataSource: 2, Name: 'Продажі з поверненнями', Description: 'Продажі мінус повернення.',
+  productClassification: { Version: 1, SourceWorld: 0, RequiresIsService: true, RequiresProductKindId: true,
+    ProductKindIdFormat: '32 hexadecimal characters (16 bytes)' },
+  sourceOrganizations: { Version: 1, SourceWorlds: ['fenix'], MaximumOrganizationIds: 64,
+    OrganizationIdFormat: '32 hexadecimal characters (16 bytes)', RequiresDurableNativeBinding: true,
+    RequiresCompleteFactLineage: true },
   Groupings: subset(grossDataset.Groupings, [0, 1, 2, 3, 4, 5, 6, 7, 12, 15, 17, 18, 28]),
   Filters: subset(grossDataset.Filters, [0, 2, 6, 9, 14, 20]),
   Limitations: ['Повернення враховуються за датою проведення.'],

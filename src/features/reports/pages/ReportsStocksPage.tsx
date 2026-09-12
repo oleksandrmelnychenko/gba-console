@@ -134,6 +134,7 @@ import { useReportAbcClassification } from '../hooks/useReportAbcClassification'
 import { requestTopGroups } from '../data/reportTopGroups'
 import { useReportGroupingOrdering } from '../hooks/useReportGroupingOrdering'
 import type { ReportGroupingLayout } from '../data/reportGroupingLayout'
+import { requestProductClassification, requestSourceOrganizations } from '../data/nativeExactFilters'
 const LOOKUP_SEARCH_DEBOUNCE_MS = 300
 const LOOKUP_SEARCH_LIMIT = 30
 const DATE_INPUT_DEBOUNCE_MS = 400
@@ -230,6 +231,8 @@ function ReportsStocksWorkspace({ ownerId, constructorMode }: { ownerId: string 
   const [buyerSalesShare, setBuyerSalesShare] = useValueState<unknown>(undefined)
   const [revenueComparison, setRevenueComparison] = useValueState<unknown>(undefined)
   const [xyz, setXyz] = useValueState<unknown>(undefined)
+  const [productClassification, setProductClassification] = useValueState<unknown>(undefined)
+  const [sourceOrganizations, setSourceOrganizations] = useValueState<unknown>(undefined)
   const [valuationClientAgreementId, setValuationAgreementId] = useValueState<number | undefined>(undefined)
   const valuation = useValuationAgreement(valuationClientAgreementId, canGenerateReport && requiresValuationAgreement(dataSource))
   const dataset = datasetStorage.datasets.find(item => item.DataSource === dataSource)
@@ -276,8 +279,8 @@ function ReportsStocksWorkspace({ ownerId, constructorMode }: { ownerId: string 
   // period on a pause, and only once it is a period the server can answer for.
   const hasLookupPeriod = !getPeriodError(debouncedFrom, debouncedTo, maxDate, t)
   const reportBody = useMemo<ReportRequestBody>(
-    () => buildReportBuilderRequest({ dataSource, comparison, xyz, revenueComparison, buyerSalesShare, returnComparison, paymentComparison, marginComparison, rateComparison, from, to, ordering, filterExpression, topGroups, threshold, hideZero, abcClassification, valuationClientAgreementId, rowGroups, colGroups, measurements, selections }),
-    [abcClassification, colGroups, comparison, xyz, revenueComparison, buyerSalesShare, returnComparison, paymentComparison, marginComparison, rateComparison, dataSource, filterExpression, from, hideZero, measurements, ordering, rowGroups, selections, to, topGroups, threshold, valuationClientAgreementId],
+    () => buildReportBuilderRequest({ dataSource, comparison, xyz, revenueComparison, buyerSalesShare, returnComparison, paymentComparison, marginComparison, rateComparison, productClassification, sourceOrganizations, from, to, ordering, filterExpression, topGroups, threshold, hideZero, abcClassification, valuationClientAgreementId, rowGroups, colGroups, measurements, selections }),
+    [abcClassification, colGroups, comparison, xyz, revenueComparison, buyerSalesShare, returnComparison, paymentComparison, marginComparison, rateComparison, productClassification, sourceOrganizations, dataSource, filterExpression, from, hideZero, measurements, ordering, rowGroups, selections, to, topGroups, threshold, valuationClientAgreementId],
   )
   const { result, lastRun, error, isLoading, downloadModalOpened, update: updateRun, begin: beginRun, clear: clearRun } = useReportRunState<ReportRunOutcome>(JSON.stringify({
     request: reportBody,
@@ -388,6 +391,8 @@ function ReportsStocksWorkspace({ ownerId, constructorMode }: { ownerId: string 
     setReturnComparison(snapshotDefaults?.returnComparison)
     setBuyerSalesShare(snapshotDefaults?.buyerSalesShare)
     setRevenueComparison(snapshotDefaults?.revenueComparison)
+    setProductClassification(undefined)
+    setSourceOrganizations(undefined)
     setFrom(periodSupported ? today : '')
     setTo(periodSupported ? today : '')
     setMeasurements(snapshotDefaults ? datasetMeasurements(dataset, snapshotDefaults.sorted.Measurements) : createDefaultMeasurementGroups())
@@ -463,6 +468,8 @@ function ReportsStocksWorkspace({ ownerId, constructorMode }: { ownerId: string 
     setReturnComparison(structuredClone(returnComparisonOptions(requestReturnComparison(data)) ?? requestReturnComparison(data)))
     setBuyerSalesShare(structuredClone(buyerSalesShareOptions(requestBuyerSalesShare(data)) ?? requestBuyerSalesShare(data)))
     setRevenueComparison(structuredClone(revenueComparisonOptions(requestRevenueComparison(data)) ?? requestRevenueComparison(data)))
+    setProductClassification(structuredClone(requestProductClassification(data)))
+    setSourceOrganizations(structuredClone(requestSourceOrganizations(data)))
     groupingOrdering.loadOrdering(requestOrdering(data))
     const nextAgreementId = data.valuationClientAgreementId ?? undefined
     setValuationAgreementId(nextAgreementId)
@@ -514,6 +521,8 @@ function ReportsStocksWorkspace({ ownerId, constructorMode }: { ownerId: string 
     setReturnComparison(structuredClone(requestReturnComparison(data)))
     setBuyerSalesShare(structuredClone(requestBuyerSalesShare(data)))
     setRevenueComparison(structuredClone(requestRevenueComparison(data)))
+    setProductClassification(structuredClone(requestProductClassification(data)))
+    setSourceOrganizations(structuredClone(requestSourceOrganizations(data)))
     setTopGroups(structuredClone(requestTopGroups(data)))
     setThreshold(structuredClone(requestThreshold(data)))
     setHideZero(structuredClone(requestHideZero(data)))

@@ -19,12 +19,15 @@ import type {
 import { importedPaymentsConfigurationError } from '../data/importedPayments'
 import { clientComparisonConfigurationError } from '../data/clientPeriodComparison'
 import { normalizeReportResult } from '../utils'
+import { nativeExactFiltersConfigurationError } from '../data/nativeExactFilters'
 
 const EMPTY_GUID = '00000000-0000-0000-0000-000000000000'
 const CLIENT_FILTER_SQL = 'RegionCode.Value/Client.FullName/Client.USREOU'
 
 export async function createStockReport(body: ReportRequestBody): Promise<ReportResult> {
-  const request = (body.dataSource === 17 || body.dataSource === 18 || body.dataSource === 19 || body.dataSource === 20 || body.dataSource === 21 || body.dataSource === 22) ? structuredClone(body) : body
+  const request = (body.dataSource === 2 || body.dataSource === 17 || body.dataSource === 18 || body.dataSource === 19 || body.dataSource === 20 || body.dataSource === 21 || body.dataSource === 22) ? structuredClone(body) : body
+  const exactFilterError = nativeExactFiltersConfigurationError(request)
+  if (exactFilterError) throw new Error(exactFilterError)
   const pricesError = agreementPricesConfigurationError(request)
   if (pricesError) throw new Error(pricesError)
   const paymentError = paymentComparisonConfigurationError(request)
