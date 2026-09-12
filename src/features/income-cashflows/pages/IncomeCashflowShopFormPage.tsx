@@ -265,6 +265,12 @@ function IncomeCashflowShopFormPageContent({ searchParams, onClose, onSaved }: I
     fromCurrencyId: selectedCurrency?.Id,
     toCurrencyId: selectedAgreementCurrency?.Id,
   })
+  const linkedSaleId = matchesClientAgreementRouteId(
+    selectedAgreement,
+    agreementId,
+  )
+    ? saleId
+    : ''
 
   const applyRetailAgreements = useCallback(
     ({
@@ -778,6 +784,7 @@ function IncomeCashflowShopFormPageContent({ searchParams, onClose, onSaved }: I
       t,
     }) || validateDebtSelection({
       autoAllocate: form.autoAllocate,
+      linkedSaleId,
       selectedDebtValues: form.selectedDebtValues,
       t,
       visibleDebts,
@@ -792,6 +799,7 @@ function IncomeCashflowShopFormPageContent({ searchParams, onClose, onSaved }: I
       activeMovement: activeMovement as PaymentMovement,
       debts: visibleDebts,
       form,
+      linkedSaleId,
       selectedAgreement: selectedAgreement as ClientAgreement,
       selectedCurrency: selectedCurrency as Currency,
       selectedCurrencyRegister: selectedCurrencyRegister as PaymentCurrencyRegister,
@@ -1262,6 +1270,7 @@ function buildIncomePaymentOrder({
   activeMovement,
   debts,
   form,
+  linkedSaleId,
   selectedAgreement,
   selectedCurrency,
   selectedCurrencyRegister,
@@ -1272,6 +1281,7 @@ function buildIncomePaymentOrder({
   activeMovement: PaymentMovement
   debts: ClientInDebt[]
   form: FormState
+  linkedSaleId: string
   selectedAgreement: ClientAgreement
   selectedCurrency: Currency
   selectedCurrencyRegister: PaymentCurrencyRegister
@@ -1283,6 +1293,12 @@ function buildIncomePaymentOrder({
     debts,
     form.selectedDebtValues,
   )
+
+  const selectedSaleTargets = buildIncomeCashflowSaleTargets(
+    debts,
+    form.selectedDebtValues,
+  )
+  const explicitSaleId = parsePositiveEntityId(linkedSaleId)
 
   return {
     Amount: form.amount,
@@ -1300,10 +1316,11 @@ function buildIncomePaymentOrder({
     IncomePaymentOrderType: resolveIncomePaymentOrderType(
       selectedRegister.Type,
     ),
-    IncomePaymentOrderSales: buildIncomeCashflowSaleTargets(
-      debts,
-      form.selectedDebtValues,
-    ),
+    IncomePaymentOrderSales: selectedSaleTargets.length > 0
+      ? selectedSaleTargets
+      : explicitSaleId == null
+        ? []
+        : [{ SaleId: explicitSaleId }],
     IsAccounting: form.isAccounting,
     IsManagementAccounting: form.isManagementAccounting,
     OperationType: IncomePaymentOperationType.ClientPayment,
@@ -1370,11 +1387,13 @@ function validateForm({
 
 function validateDebtSelection({
   autoAllocate,
+  linkedSaleId,
   selectedDebtValues,
   t,
   visibleDebts,
 }: {
   autoAllocate: boolean
+  linkedSaleId: string
   selectedDebtValues: string[]
   t: (value: string) => string
   visibleDebts: ClientInDebt[]
@@ -1384,6 +1403,10 @@ function validateDebtSelection({
   }
 
   if (!selectedDebtValues.length) {
+    if (parsePositiveEntityId(linkedSaleId) != null) {
+      return null
+    }
+
     return autoAllocate ? t('Оберіть рахунок для автоматичного рознесення') : t('Оберіть рахунок для оплати')
   }
 
@@ -1394,6 +1417,25 @@ function validateDebtSelection({
   return selectedDebtValues.some((value) => visibleDebtValues.has(value))
     ? null
     : t('Оберіть рахунок для оплати')
+}
+
+function matchesClientAgreementRouteId(
+  agreement: ClientAgreement | null,
+  routeAgreementId: string,
+): boolean {
+  if (!agreement || !routeAgreementId) {
+    return false
+  }
+
+  return String(agreement.Id || '') === routeAgreementId ||
+    String(agreement.AgreementId || '') === routeAgreementId ||
+    getEntityValue(agreement.Agreement) === routeAgreementId
+}
+
+function parsePositiveEntityId(value: string): number | null {
+  const id = Number(value)
+
+  return Number.isSafeInteger(id) && id > 0 ? id : null
 }
 
 function validateClientInvoiceSelection({

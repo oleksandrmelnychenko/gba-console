@@ -243,11 +243,11 @@ const secondOrganizationDebtAgreement: ClientAgreement = {
 const retailClientLabel = `${retailClient.Name} ${retailClient.PhoneNumber}`
 const shopClientVatLabel = `${shopClientVat.Name} ${shopClientVat.PhoneNumber}`
 
-function renderPage() {
+function renderPage(initialEntry = '/accounting/income-cashflows/new/shop') {
   return render(
     <MantineProvider>
       <I18nProvider>
-        <MemoryRouter initialEntries={['/accounting/income-cashflows/new/shop']}>
+        <MemoryRouter initialEntries={[initialEntry]}>
           <IncomeCashflowShopFormPage />
         </MemoryRouter>
       </I18nProvider>
@@ -396,6 +396,38 @@ describe('IncomeCashflowShopFormPage retail client selection', () => {
 
     await waitFor(() => expect(createOnlineShopIncomeCashflow).toHaveBeenCalledTimes(1))
     expect(screen.queryByText('Оберіть retail-клієнта')).toBeNull()
+  })
+
+  it('keeps the explicit shop sale target when the sale has no debt yet (BUG-1254)', async () => {
+    renderPage(
+      `/accounting/income-cashflows/new/shop?retailClientId=${shopClientVat.NetUid}` +
+      `&saleId=1535638&caId=${agreement.Id}&sum=3000`,
+    )
+
+    await waitFor(() =>
+      expect(getIncomeCashflowRetailClientAgreements).toHaveBeenCalledWith(
+        shopClientVat.NetUid,
+      ),
+    )
+    await waitFor(() =>
+      expect(
+        (screen.getByRole('textbox', { name: 'Сума' }) as HTMLInputElement)
+          .value,
+      ).toBe('3000'),
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: 'Зберегти' }))
+
+    await waitFor(() =>
+      expect(createOnlineShopIncomeCashflow).toHaveBeenCalledOnce(),
+    )
+    expect(createOnlineShopIncomeCashflow).toHaveBeenCalledWith(
+      expect.objectContaining({
+        Amount: 3000,
+        IncomePaymentOrderSales: [{ SaleId: 1535638 }],
+      }),
+      true,
+    )
   })
 
   it('waits for the organization, selects its first agreement, and lets the user choose a matching register', async () => {
