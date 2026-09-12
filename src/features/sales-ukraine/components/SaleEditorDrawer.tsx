@@ -80,6 +80,7 @@ import type {
 } from '../types'
 
 const amountFormatter = new Intl.NumberFormat('uk-UA', { maximumFractionDigits: 2, minimumFractionDigits: 2 })
+const quantityFormatter = new Intl.NumberFormat('uk-UA', { maximumFractionDigits: 8 })
 const EMPTY_GUID = '00000000-0000-0000-0000-000000000000'
 const EMPTY_RETAIL_PAYMENT_STATE: RetailPaymentState = {
   error: null,
@@ -147,6 +148,7 @@ function SaleEditorContent({ initialSale, loadSale }: { initialSale: SalesUkrain
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
   const [activeTab, setActiveTab] = useState<SaleEditorTab>('products')
   const cartMutation = usePersistentSalesCartMutation({
+    recoverOnOpen: true,
     context: `sale-editor:${String(initialSale.NetUid || initialSale.Id || '')}`,
     onCommitted: setSale,
     onRejected: (message) => notifications.show({ color: 'orange', message, autoClose: 5000 }),
@@ -251,7 +253,7 @@ function SaleEditorContent({ initialSale, loadSale }: { initialSale: SalesUkrain
   ])
 
   const orderItems = Array.isArray(sale.Order?.OrderItems) ? sale.Order.OrderItems : []
-  const isEditable = !sale.IsLocked
+  const isEditable = !sale.IsLocked && !cartMutation.isRecovering
   const useEurToUah = isNonVatEurSale(sale)
   const editorCurrencyCode = getSaleLocalCurrencyCode(sale)
   const headerTotal = useEurToUah
@@ -433,7 +435,8 @@ function SaleEditorContent({ initialSale, loadSale }: { initialSale: SalesUkrain
           {error}
         </Alert>
       )}
-      {cartMutation.pendingError && (
+      {cartMutation.isRecovering && <Text size="sm">{t('Перевіряємо попередню зміну кошика…')}</Text>}
+      {cartMutation.pendingError && !cartMutation.isRecovering && (
         <Alert color="orange" icon={<TriangleAlert size={18} />} variant="light">
           <Stack gap="xs">
             <Text size="sm">{cartMutation.pendingError}</Text>
@@ -1086,11 +1089,12 @@ function AddProductForm({
     }
 
     let cancelled = false
+    const controller = new AbortController()
     const handle = setTimeout(async () => {
       setSearching(true)
 
       try {
-        const next = await searchSaleProducts(value)
+        const next = await searchSaleProducts(value, sale.ClientAgreement?.NetUid ?? '', controller.signal)
 
         if (!cancelled) {
           setResults(next)
@@ -1108,9 +1112,10 @@ function AddProductForm({
 
     return () => {
       cancelled = true
+      controller.abort()
       clearTimeout(handle)
     }
-  }, [query])
+  }, [query, sale.ClientAgreement?.NetUid])
 
   async function add() {
     const agreementNetUid = sale.ClientAgreement?.NetUid
@@ -1165,13 +1170,19 @@ function AddProductForm({
         placeholder={t('Код Виробника')}
         rightSection={isSearching ? <Loader size="xs" /> : null}
         value={query}
-        onChange={(event) => setQuery(event.currentTarget.value)}
+        onChange={(event) => {
+          setQuery(event.currentTarget.value)
+          setResults([])
+          setSelected(null)
+          setQty(1)
+          setSearching(false)
+        }}
       />
 
       <div className="sale-add-product__results">
       <Group justify="space-between" className="sale-add-product__columns">
         <Text size="xs">{t('Назва товару')}</Text>
-        <Text size="xs">{t('Доступно')}</Text>
+        <Text size="xs">{t('Кількість на складах')}</Text>
       </Group>
       <ScrollArea.Autosize mah={280} offsetScrollbars>
         <Stack gap={0}>
@@ -1182,7 +1193,7 @@ function AddProductForm({
           ) : (
             results.map((product, index) => {
               const isActive = selected?.NetUid === product.NetUid
-              const availableQty = getOrderItemQuantityLimit({ Product: product, Qty: 0 }, Boolean(sale.IsVatSale))
+              const warehouseQty = getWarehouseQuantity(product)
 
               return (
                 <UnstyledButton
@@ -1197,8 +1208,9 @@ function AddProductForm({
                       <Text c="dimmed" size="xs">{displayValue(product.NameUA || product.Name)}</Text>
                     </div>
                     <Stack gap={2} align="flex-end" style={{ flexShrink: 0 }}>
-
-                      <Text size="sm" style={{ fontFamily: 'var(--font-mono)' }}>{availableQty ?? '—'}</Text>
+                      <Text size="sm" style={{ fontFamily: 'var(--font-mono)' }}>
+                        {warehouseQty == null ? t('Залишок невідомий') : quantityFormatter.format(warehouseQty)}
+                      </Text>
                     </Stack>
                   </Group>
                 </UnstyledButton>
@@ -1233,6 +1245,26 @@ function AddProductForm({
       </AppModalFooter>
     </Stack>
   )
+}
+
+function getWarehouseQuantity(product: SalesUkraineProduct): number | null {
+  if (!Array.isArray(product.ProductAvailabilities)) {
+    return null
+  }
+
+  let total = 0
+
+  for (const availability of product.ProductAvailabilities) {
+    const amount = Number(availability?.Amount)
+
+    if (!Number.isFinite(amount)) {
+      return null
+    }
+
+    total += amount
+  }
+
+  return total
 }
 
 export function OnlineShopSaleReassignModal({

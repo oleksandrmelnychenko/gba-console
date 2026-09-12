@@ -133,12 +133,14 @@ export async function finalizeSuccessfulPersistentCartMutation(
 }
 
 export function usePersistentSalesCartMutation({
+  recoverOnOpen = false,
   context,
   onCommitted,
   onRejected,
   reconcile,
 }: {
   onRejected?: (message: string) => void
+  recoverOnOpen?: boolean
   context: string
   onCommitted?: (sale: SalesUkraineSale) => void
   reconcile: () => Promise<SalesUkraineSale | null>
@@ -146,12 +148,14 @@ export function usePersistentSalesCartMutation({
   const { session } = useAuth()
   const userKey = getSalesPendingMutationUserKey(session)
   const pendingRef = useRef<RuntimeCartMutation | null>(null)
+  const recoveryRef = useRef<{ scope: SalesPendingMutationScope | null; promise: Promise<boolean> } | null>(null)
   const mountedRef = useRef(false)
   const contextRef = useRef(context)
   const reconcileRef = useRef(reconcile)
   const onRejectedRef = useRef(onRejected)
   const onCommittedRef = useRef(onCommitted)
   const [pendingError, setPendingError] = useState<string | null>(null)
+  const [isRecovering, setRecovering] = useState(recoverOnOpen)
   const [storageRevision, setStorageRevision] = useState(0)
   const scope = useMemo<SalesPendingMutationScope | null>(() => (
     userKey && context ? { context, kind: 'cart', userKey } : null
@@ -229,7 +233,7 @@ export function usePersistentSalesCartMutation({
   }, [context, scope, storageRevision, userKey])
 
   const release = useCallback((operation: RuntimeCartMutation) => {
-    if (pendingRef.current === operation) {
+    if (pendingRef.current?.operationId === operation.operationId && pendingRef.current.context === operation.context) {
       pendingRef.current = null
 
       if (mountedRef.current) {
@@ -261,14 +265,20 @@ export function usePersistentSalesCartMutation({
       return false
     }
 
+    resolveSalesPendingMutation(lease, 'committed')
+    release(operation)
+
     let snapshot = result.status === 'committed-after-reconcile' ? result.snapshot : null
 
     if (!snapshot) {
-      snapshot = await reconcileRef.current()
+      try {
+        snapshot = await reconcileRef.current()
+      } catch {
+        if (mountedRef.current && contextRef.current === operation.context) {
+          setPendingError('Зміни збережено, але не вдалося оновити дані продажу. Оновіть продаж')
+        }
+      }
     }
-
-    resolveSalesPendingMutation(lease, 'committed')
-    release(operation)
 
     if (snapshot && mountedRef.current && contextRef.current === operation.context) {
       onCommittedRef.current?.(snapshot)
@@ -320,6 +330,35 @@ export function usePersistentSalesCartMutation({
     return execute(toPersisted(pending), true)
   }, [execute])
 
+  useEffect(() => {
+    if (!recoverOnOpen) {
+      return
+    }
+
+    let cancelled = false
+    setRecovering(true)
+    const recovery = recoveryRef.current?.scope === scope
+      ? recoveryRef.current
+      : { scope, promise: retryPending() }
+    recoveryRef.current = recovery
+    void recovery.promise.catch((error: unknown) => {
+      if (!cancelled) {
+        setPendingError(toMessage(error, 'Не вдалося звірити попередню зміну кошика'))
+      }
+    }).finally(() => {
+      if (recoveryRef.current === recovery) {
+        recoveryRef.current = null
+      }
+      if (!cancelled) {
+        setRecovering(false)
+      }
+    })
+
+    return () => {
+      cancelled = true
+    }
+  }, [recoverOnOpen, retryPending, scope, storageRevision])
+
   const run = useCallback(async (
     request: WizardCartMutationRequest,
     expectation: WizardCartMutationExpectation,
@@ -353,7 +392,7 @@ export function usePersistentSalesCartMutation({
     return execute(persisted, false)
   }, [context, execute, retryPending, scope])
 
-  return { pendingError, retryPending, run }
+  return { isRecovering, pendingError, retryPending, run }
 }
 
 function hydrate(

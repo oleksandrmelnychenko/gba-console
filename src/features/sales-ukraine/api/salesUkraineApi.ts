@@ -13,6 +13,7 @@ import {
 import {
   EMPTY_GUID,
   getSalesTtnFileValidationError,
+  normalizePersistedGuid,
   requirePersistedGuid,
   requirePositiveFiniteQuantity,
 } from '../salesPayloadGuards'
@@ -401,12 +402,43 @@ export async function deleteOrderItem(
   })
 }
 
-export async function searchSaleProducts(value: string): Promise<SalesUkraineProduct[]> {
+export async function searchSaleProducts(
+  value: string,
+  clientAgreementNetId?: string,
+  signal?: AbortSignal,
+): Promise<SalesUkraineProduct[]> {
   const result = await apiRequest<unknown>('/products/search/vendorcode', {
     query: { limit: 20, offset: 0, value: value.trim() },
+    signal,
   })
 
-  return normalizeArray(result) as SalesUkraineProduct[]
+  if (clientAgreementNetId === undefined) {
+    return normalizeArray(result) as SalesUkraineProduct[]
+  }
+
+  return Promise.all((normalizeArray(result) as SalesUkraineProduct[]).map(async (product) => {
+    let availability: SalesUkraineProduct | null = null
+
+    if (normalizePersistedGuid(product.NetUid) && normalizePersistedGuid(clientAgreementNetId)) {
+      try {
+        availability = await apiRequest<SalesUkraineProduct | null>('/products/all/availabilities/product', {
+          cache: 'no-store',
+          query: { clientAgreementNetId, netId: product.NetUid },
+          signal,
+        })
+      } catch {
+        availability = null
+      }
+    }
+
+    return {
+      ...product,
+      AvailableQtyUk: availability?.AvailableQtyUk,
+      AvailableQtyUkReSale: availability?.AvailableQtyUkReSale,
+      AvailableQtyUkVAT: availability?.AvailableQtyUkVAT,
+      ProductAvailabilities: availability?.ProductAvailabilities,
+    }
+  }))
 }
 
 export async function addOrderItem(

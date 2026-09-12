@@ -208,6 +208,7 @@ export type SalesUkraineProduct = SalesUkraineEntity & {
   MainOriginalNumber?: string
   Name?: string
   NameUA?: string
+  ProductAvailabilities?: { Amount?: number }[]
   Top?: string
   VendorCode?: string
 }
