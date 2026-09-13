@@ -20,6 +20,7 @@ import { importedPaymentsConfigurationError } from '../data/importedPayments'
 import { clientComparisonConfigurationError } from '../data/clientPeriodComparison'
 import { normalizeReportResult } from '../utils'
 import { nativeExactFiltersConfigurationError } from '../data/nativeExactFilters'
+import { EXACT_ONE_C_BUYER_ROOT_ID } from '../data/oneCTurnoverReport'
 
 const EMPTY_GUID = '00000000-0000-0000-0000-000000000000'
 const CLIENT_FILTER_SQL = 'RegionCode.Value/Client.FullName/Client.USREOU'
@@ -93,6 +94,8 @@ function isOneCTurnoverScope(value: unknown): value is OneCTurnoverScopeSummary 
   return typeof item.Key === 'string' && /^[a-f\d]{64}$/i.test(item.Key)
     && !!filters && Array.isArray(filters.OrganizationIds) && filters.OrganizationIds.length > 0 && filters.OrganizationIds.every(isReference)
     && isReference(filters.ProductKindId) && typeof filters.ExcludeServices === 'boolean'
+    && (filters.BuyerRootId === undefined || filters.BuyerRootId === null
+      || typeof filters.BuyerRootId === 'string' && filters.BuyerRootId.toUpperCase() === EXACT_ONE_C_BUYER_ROOT_ID)
     && Array.isArray(item.OrganizationNames) && item.OrganizationNames.every(name => typeof name === 'string')
     && typeof item.FirstDay === 'string' && typeof item.LastDay === 'string'
     && typeof item.LoadedDayCount === 'number' && Number.isInteger(item.LoadedDayCount) && item.LoadedDayCount > 0

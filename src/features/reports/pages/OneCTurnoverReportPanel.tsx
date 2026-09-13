@@ -4,7 +4,7 @@ import { ApiError } from '../../../shared/api/apiClient'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { DocumentExportModal } from '../../../shared/ui/document-export-modal/DocumentExportModal'
 import { createStockReport, getOneCTurnoverScopes } from '../api/reportsApi'
-import { createOneCTurnoverReport, ONE_C_REPORT_LAYOUTS, oneCReportPeriodError, type OneCReportLayoutId } from '../data/oneCTurnoverReport'
+import { createOneCTurnoverReport, ONE_C_REPORT_LAYOUTS, oneCReportPeriodError, oneCReportScopeError, type OneCReportLayoutId } from '../data/oneCTurnoverReport'
 import type { OneCTurnoverScopeSummary, ReportResult } from '../types'
 
 type Props = {
@@ -20,13 +20,14 @@ export function OneCTurnoverReportPanel({ canGenerate, from, to, onFromChange, o
   const { t } = useI18n()
   const { catalog, refresh } = useOneCTurnoverCatalog(canGenerate)
   const [selectedKey, setSelectedKey] = useState<string | null>(null)
-  const [layout, setLayout] = useState<OneCReportLayoutId>('responsibles')
+  const [layout, setLayout] = useState<OneCReportLayoutId>('daily')
   const [run, setRun] = useState<{ loading: boolean; error: string | null; result: ReportResult | null; title: string }>({ loading: false, error: null, result: null, title: '' })
   const [opened, setOpened] = useState(false)
   const scope = catalog.scopes.find(item => item.Key === selectedKey)
   const selectedLayout = ONE_C_REPORT_LAYOUTS.find(item => item.id === layout)
   const periodError = oneCReportPeriodError(from, to)
-  const canSubmit = canGenerate && !!scope && !catalog.loading && !periodError && !run.loading
+  const scopeError = scope && selectedLayout ? oneCReportScopeError(scope, selectedLayout.id) : null
+  const canSubmit = canGenerate && !!scope && !catalog.loading && !periodError && !scopeError && !run.loading
 
   async function generate() {
     if (!canSubmit || !scope || !selectedLayout) return
@@ -50,9 +51,9 @@ export function OneCTurnoverReportPanel({ canGenerate, from, to, onFromChange, o
       <Stack gap="sm">
         <Group justify="space-between">
           <Text fw={600}>{t('Консолідований оборот 1С')}</Text>
-          <Group gap="xs"><Badge>Fenix · EUR</Badge><Badge color="gray">{t('Продажі + повернення')}</Badge></Group>
+          <Group gap="xs"><Badge>Fenix · EUR</Badge><Badge color="gray">{t('Продажі + собівартість')}</Badge></Group>
         </Group>
-        <Text size="sm" c="dimmed">{t('Цей режим читає окремо синхронізовані рухи 1С. Операційні налаштування збережено в іншому режимі й сюди не переносяться. Собівартість та історичні залишки поки не включено.')}</Text>
+        <Text size="sm" c="dimmed">{t('Звіт формується лише з локально синхронізованих рухів GBA. 1С використовується як джерело правди під час окремого синку; формування звіту не звертається до 1С.')}</Text>
         {!canGenerate ? <Alert color="yellow">{t('Недостатньо прав для формування звітів 1С. Зверніться до адміністратора щодо доступу до конструктора.')}</Alert> : null}
         <ScopeCatalog catalog={catalog} canGenerate={canGenerate} isGenerating={run.loading}
           selectedKey={selectedKey} onSelect={setSelectedKey} onRefresh={refresh} />
@@ -66,6 +67,7 @@ export function OneCTurnoverReportPanel({ canGenerate, from, to, onFromChange, o
           <Button type="button" disabled={!canSubmit} loading={run.loading} onClick={() => { void generate() }}>{t('Сформувати звіт 1С')}</Button>
         </Group>
         {periodError ? <Alert color="yellow">{t(periodError)}</Alert> : null}
+        {scopeError ? <Alert color="yellow">{t(scopeError)}</Alert> : null}
         {run.error ? <Alert color="red">{t(run.error)}</Alert> : null}
         <Text size="xs" c="dimmed">{t('Сервер перевіряє кожен день періоду. Якщо даних бракує, файл не формується. Дати й ревізії читання буде зазначено у звіті; сьогоднішні дані потребують повторного оновлення.')}</Text>
         {run.result?.document.DocumentURL || run.result?.document.PdfDocumentURL ? <Button variant="light" type="button" onClick={() => setOpened(true)}>{t('Відкрити сформований звіт 1С')}</Button> : null}
@@ -128,6 +130,7 @@ function ScopeDetails({ scope }: { scope: OneCTurnoverScopeSummary }) {
     <Text size="xs" c="dimmed">{t('Між цими датами можуть бути пропуски. Діапазон не є підтвердженням повноти.')}</Text>
     <Text size="xs" c="dimmed">{t('Завершення читання днів, UTC')}: {scope.OldestReadCompletedUtc} — {scope.NewestReadCompletedUtc}</Text>
     <Text size="xs" c="dimmed">{t('Ідентифікатор виду товару 1С')}: {scope.Filters.ProductKindId}</Text>
+    <Text size="xs" c="dimmed">{t('Корінь групи покупців 1С')}: {scope.Filters.BuyerRootId ?? t('не завантажено')}</Text>
   </Stack>
 }
 

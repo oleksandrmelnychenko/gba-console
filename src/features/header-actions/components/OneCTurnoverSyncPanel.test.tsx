@@ -8,7 +8,8 @@ vi.mock('../api/syncApi', () => ({ getOneCTurnoverSyncCatalog: vi.fn() }))
 const load = vi.mocked(getOneCTurnoverSyncCatalog)
 const organization = '11'.repeat(16)
 const kind = '22'.repeat(16)
-const catalog = { Organizations: [{ Id: organization, Name: 'Фенікс' }], ProductKinds: [{ Id: kind, Name: 'Товар' }] }
+const buyer = '33'.repeat(16)
+const catalog = { Organizations: [{ Id: organization, Name: 'Фенікс' }], ProductKinds: [{ Id: kind, Name: 'Товар' }], BuyerRoot: { Id: buyer, Name: 'Покупці' } }
 const props = { range: { from: '2026-08-01', to: '2026-08-31' }, types: ['6'], today: '2026-09-06', blocked: false, loading: false, onRun: vi.fn(async () => {}) }
 function mount(overrides = {}) {
   return render(<MantineProvider env="test"><OneCTurnoverSyncPanel {...props} {...overrides} /></MantineProvider>)
@@ -51,7 +52,7 @@ describe('consolidated report sync action', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Завантажити звітні рухи 1С' }))
     expect(props.onRun).not.toHaveBeenCalled()
     fireEvent.click(screen.getByRole('button', { name: 'Підтвердити завантаження звітних рухів' }))
-    await waitFor(() => expect(props.onRun).toHaveBeenCalledWith({ oneCOrganizationIds: [organization], oneCProductKindId: kind, oneCExcludeServices: false }))
+    await waitFor(() => expect(props.onRun).toHaveBeenCalledWith({ oneCOrganizationIds: [organization], oneCProductKindId: kind, oneCExcludeServices: false, oneCBuyerRootId: buyer }))
   })
   it('shows failures and allows read-only retry without starting synchronization', async () => {
     load.mockRejectedValueOnce(new Error('Немає дозволу'))

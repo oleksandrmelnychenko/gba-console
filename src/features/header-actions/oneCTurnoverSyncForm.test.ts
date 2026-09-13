@@ -5,9 +5,11 @@ import type { OneCTurnoverSyncCatalog, OneCTurnoverSyncFilters } from './types'
 const catalog: OneCTurnoverSyncCatalog = {
   Organizations: [{ Id: '11'.repeat(16), Name: 'Фенікс' }],
   ProductKinds: [{ Id: '22'.repeat(16), Name: 'Товар' }],
+  BuyerRoot: { Id: '33'.repeat(16), Name: 'Покупці' },
 }
 const filters: OneCTurnoverSyncFilters = {
-  oneCOrganizationIds: [catalog.Organizations[0].Id], oneCProductKindId: catalog.ProductKinds[0].Id, oneCExcludeServices: false,
+  oneCOrganizationIds: [catalog.Organizations[0].Id], oneCProductKindId: catalog.ProductKinds[0].Id,
+  oneCExcludeServices: false, oneCBuyerRootId: catalog.BuyerRoot.Id,
 }
 const range = { from: '2026-08-01', to: '2026-08-31' }
 const validate = (next = filters, nextCatalog: OneCTurnoverSyncCatalog | null = catalog, dates = range, types = ['6']) =>
@@ -27,5 +29,6 @@ describe('explicit turnover sync filters', () => {
     expect(validate({ ...filters, oneCOrganizationIds: [] })).toContain('організації')
     expect(validate({ ...filters, oneCOrganizationIds: ['LOCAL-1'] })).toContain('організації')
     expect(validate({ ...filters, oneCProductKindId: '' })).toContain('вид номенклатури')
+    expect(validate({ ...filters, oneCBuyerRootId: '44'.repeat(16) })).toContain('групу покупців')
   })
 })

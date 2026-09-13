@@ -15,5 +15,7 @@ export function validateOneCTurnoverSync(range: SyncDateRange, types: string[], 
   if (!catalog.ProductKinds.some((item) => item.Id === filters.oneCProductKindId))
     return 'Виберіть вид номенклатури Fenix'
   if (typeof filters.oneCExcludeServices !== 'boolean') return 'Задайте відбір послуг'
+  if (!catalog.BuyerRoot || filters.oneCBuyerRootId !== catalog.BuyerRoot.Id)
+    return 'Точну групу покупців Fenix не підтверджено'
   return null
 }

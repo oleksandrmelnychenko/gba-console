@@ -3,11 +3,18 @@ import { createDefaultMeasurementGroups, flattenCheckedMeasurements, flattenGrou
 
 export const ONE_C_REPORT_LAYOUTS = [
   { id: 'responsibles', name: 'За відповідальними 1С', row: ['Organization', 'SourceSaleResponsible'], col: ['SourceOrderResponsible'], measures: [2, 4] },
-  { id: 'daily', name: 'Оборот за днями', row: ['Day', 'Organization'], col: [], measures: [0, 2, 3, 4] },
+  { id: 'daily', name: 'Валовий прибуток за днями — як у 1С', row: ['Day', 'Organization'], col: [], measures: [2, 3, 4, 6, 7, 8, 10, 12, 14, 15] },
   { id: 'articles', name: 'Оборот за артикулами', row: ['ProductArticle'], col: [], measures: [0, 2, 3, 4] },
 ] as const
 
 export type OneCReportLayoutId = typeof ONE_C_REPORT_LAYOUTS[number]['id']
+export const EXACT_ONE_C_BUYER_ROOT_ID = '8AB2005056C0000811DEFC4535BB4D40'
+
+export function oneCReportScopeError(scope: OneCTurnoverScopeSummary, layoutId: OneCReportLayoutId): string | null {
+  if (layoutId === 'daily' && scope.Filters.BuyerRootId?.toUpperCase() !== EXACT_ONE_C_BUYER_ROOT_ID)
+    return 'Цей набір завантажено без точної групи покупців і собівартості. Виконайте новий звітний синк.'
+  return null
+}
 
 /** Refuse unsupported dates without letting JavaScript roll an invalid calendar day forward. */
 export function oneCReportPeriodError(from: string, to: string): string | null {
@@ -32,6 +39,8 @@ export function createOneCTurnoverReport(
   if (error) throw new Error(error)
   const layout = ONE_C_REPORT_LAYOUTS.find(item => item.id === layoutId)
   if (!layout) throw new Error('Невідома структура звіту 1С.')
+  const scopeError = oneCReportScopeError(scope, layoutId)
+  if (scopeError) throw new Error(scopeError)
   const groupings = new Map(flattenGroupingOptions().map(group => [group.key, group]))
   const measures = new Set<number>(layout.measures)
   const grouping = (key: string) => {

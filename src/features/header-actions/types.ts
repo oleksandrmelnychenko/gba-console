@@ -85,11 +85,13 @@ export type OneCTurnoverSyncFilters = {
   oneCOrganizationIds: string[]
   oneCProductKindId: string
   oneCExcludeServices: boolean
+  oneCBuyerRootId: string
 }
 
 export type OneCTurnoverSyncCatalog = {
   Organizations: { Id: string; Name: string }[]
   ProductKinds: { Id: string; Name: string }[]
+  BuyerRoot: { Id: string; Name: string }
 }
 
 export type DataSyncPipelineRun = {

@@ -106,6 +106,7 @@ import { ValuationAgreementPicker } from './ValuationAgreementPicker'
 import { ReportDatasetPicker, ReportDatasetSummary } from './ReportDatasetPicker'
 import { ReportConstructorHeader, ReportConstructorNavigation, ReportConstructorResultEmpty, ReportSectionPanel, type ReportConstructorSection } from './ReportConstructorNavigation'
 import { ReportQuickPresets } from './ReportQuickPresets'
+import { OneCTurnoverReportPanel } from './OneCTurnoverReportPanel'
 import { ReportGroupingPanel } from './ReportGroupingPanel'
 import { reorderReportGrouping, transferReportGrouping, type ReportGroupingAxis } from '../data/reportGroupingLayout'
 
@@ -233,6 +234,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode }: { ownerId: string 
   const [xyz, setXyz] = useValueState<unknown>(undefined)
   const [productClassification, setProductClassification] = useValueState<unknown>(undefined)
   const [sourceOrganizations, setSourceOrganizations] = useValueState<unknown>(undefined)
+  const [oneCReportOpen, setOneCReportOpen] = useState(false)
   const [valuationClientAgreementId, setValuationAgreementId] = useValueState<number | undefined>(undefined)
   const valuation = useValuationAgreement(valuationClientAgreementId, canGenerateReport && requiresValuationAgreement(dataSource))
   const dataset = datasetStorage.datasets.find(item => item.DataSource === dataSource)
@@ -575,6 +577,14 @@ function ReportsStocksWorkspace({ ownerId, constructorMode }: { ownerId: string 
         notice={draftRestoreError ?? workspaceDraft.message} canUndo={Boolean(workspaceDraft.previousSnapshot)}
         disabled={isLoading || !datasetStorage.loaded || Boolean(datasetStorage.error)}
         onUndo={() => workspaceDraft.undo(restoreWorkspace)} /> : null}
+      <Group justify="flex-end">
+        <Button type="button" variant={oneCReportOpen ? 'filled' : 'light'} disabled={!canGenerateReport}
+          onClick={() => setOneCReportOpen(open => !open)}>
+          {oneCReportOpen ? t('Закрити точний звіт 1С') : t('Валовий прибуток — як у 1С')}
+        </Button>
+      </Group>
+      {oneCReportOpen ? <OneCTurnoverReportPanel canGenerate={canGenerateReport} from={from} to={to}
+        onFromChange={setFrom} onToChange={setTo} /> : null}
       {!constructorMode && canGenerateReport ? <Group justify="flex-end"><Button component="a" href="/reports/registers" variant="subtle">Звіти регістрів</Button></Group> : null}
       {!constructorMode && canGenerateReport && templateName.trim() ? <Text fw={600} aria-label={t('Назва поточного звіту')}>{templateName}</Text> : null}
       {canGenerateReport && catalogueNotice ? <Alert color={catalogueNotice.failed ? 'red' : 'blue'} style={{ flexShrink: 0 }}

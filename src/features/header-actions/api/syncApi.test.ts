@@ -26,7 +26,8 @@ describe('sync API contracts', () => {
     const controller = new AbortController()
     await getOneCTurnoverSyncCatalog(controller.signal)
     expect(apiRequestMock).toHaveBeenCalledWith('/data/sync/online-shop-seo/report-turnover/catalog', expect.objectContaining({ signal: controller.signal }))
-    const filters = { oneCOrganizationIds: ['11'.repeat(16)], oneCProductKindId: '22'.repeat(16), oneCExcludeServices: false }
+    const filters = { oneCOrganizationIds: ['11'.repeat(16)], oneCProductKindId: '22'.repeat(16),
+      oneCExcludeServices: false, oneCBuyerRootId: '44'.repeat(16) }
     await startDailySync({ forAmg: false, from: '2026-08-01', to: '2026-08-31', types: ['6'],
       stockMode: DailyDataSyncStockMode.DocumentsOnly, operationId: '33'.repeat(16), ...filters })
     expect(apiRequestMock).toHaveBeenLastCalledWith('/data/sync/online-shop-seo/start/daily', expect.objectContaining({

@@ -321,6 +321,7 @@ export type OneCTurnoverFilters = {
   OrganizationIds: string[]
   ProductKindId: string
   ExcludeServices: boolean
+  BuyerRootId?: string | null
 }
 
 export type OneCTurnoverScopeSummary = {

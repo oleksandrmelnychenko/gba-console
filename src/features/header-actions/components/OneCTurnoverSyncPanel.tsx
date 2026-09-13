@@ -33,12 +33,15 @@ function TurnoverConfiguration({ range, types, today, blocked, loading, onRun }:
   const [attempt, setAttempt] = useState(0)
   const [confirming, setConfirming] = useState(false)
   const [filters, setFilters] = useState<OneCTurnoverSyncFilters>({
-    oneCOrganizationIds: [], oneCProductKindId: '', oneCExcludeServices: true,
+    oneCOrganizationIds: [], oneCProductKindId: '', oneCExcludeServices: true, oneCBuyerRootId: '',
   })
   useEffect(() => {
     const controller = new AbortController()
     void getOneCTurnoverSyncCatalog(controller.signal).then((result) => {
-      if (!controller.signal.aborted) setCatalog(result)
+      if (!controller.signal.aborted) {
+        setCatalog(result)
+        setFilters(current => ({ ...current, oneCBuyerRootId: result.BuyerRoot.Id }))
+      }
     }).catch((reason: unknown) => {
       if (!controller.signal.aborted) setError(reason instanceof Error ? reason.message : 'Не вдалося завантажити довідники Fenix')
     })
@@ -71,10 +74,11 @@ function TurnoverConfiguration({ range, types, today, blocked, loading, onRun }:
       onChange={(id) => updateFilters({ ...filters, oneCProductKindId: id ?? '' })} />
     <Checkbox label="Виключити позиції з ознакою послуги" checked={filters.oneCExcludeServices} disabled={loading}
       onChange={(event) => updateFilters({ ...filters, oneCExcludeServices: event.currentTarget.checked })} />
+    {catalog ? <Text size="xs">Група покупців: {catalog.BuyerRoot.Name} · {catalog.BuyerRoot.Id}</Text> : null}
     <Text size="xs">Максимум 31 день. Відбори мають збігатися з відборами звіту; організації не вибираються автоматично.</Text>
     {validation ? <Text size="xs" c="dimmed">{validation}</Text> : null}
     {confirming ? <Alert title="Підтвердити окремий запуск">
-      <Text size="sm">Fenix · {range.from} — {range.to} · організацій: {filters.oneCOrganizationIds.length} · типів документів: {types.length}. Документи + звітні рухи, без поточного стану.</Text>
+      <Text size="sm">Fenix · {range.from} — {range.to} · організацій: {filters.oneCOrganizationIds.length} · типів документів: {types.length}. Документи + продажі й собівартість для точного звіту, без поточного стану.</Text>
       <Group mt="xs">
         <Button variant="subtle" disabled={loading} onClick={() => setConfirming(false)}>Скасувати</Button>
         <Button disabled={blocked || Boolean(validation)} loading={loading} onClick={() => void confirm()}>Підтвердити завантаження звітних рухів</Button>

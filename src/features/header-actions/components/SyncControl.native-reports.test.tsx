@@ -15,6 +15,9 @@ vi.mock('../api/syncApi', async (importOriginal) => ({
 
 beforeEach(() => {
   vi.clearAllMocks()
+  vi.mocked(getOneCTurnoverSyncCatalog).mockResolvedValue({
+    Organizations: [], ProductKinds: [], BuyerRoot: { Id: '33'.repeat(16), Name: 'Покупці' },
+  })
   vi.mocked(getSyncStatus).mockResolvedValue({
     InMemorySynchronizationInProgress: false,
     IsGlobalLockHeld: false,
@@ -25,7 +28,7 @@ beforeEach(() => {
 afterEach(cleanup)
 
 describe('native report synchronization boundary', () => {
-  it('keeps daily Fenix document controls without exposing or loading the source-register experiment', async () => {
+  it('offers the exact report ledger only in daily Fenix mode and does not read source until enabled', async () => {
     render(<MantineProvider env="test"><I18nProvider><SyncControl /></I18nProvider></MantineProvider>)
     fireEvent.click(screen.getByRole('button', { name: '1С синхронізація' }))
     await waitFor(() => expect(getSyncStatus).toHaveBeenCalledOnce())
@@ -34,9 +37,11 @@ describe('native report synchronization boundary', () => {
 
     expect(screen.getByLabelText('Дата від')).toBeTruthy()
     expect(screen.getByLabelText('Дата до')).toBeTruthy()
-    expect(screen.queryByLabelText('Звітні рухи 1С — окремий запуск Fenix')).toBeNull()
+    expect(screen.getByLabelText('Звітні рухи 1С — окремий запуск Fenix')).toBeTruthy()
     expect(screen.queryByRole('button', { name: 'Завантажити звітні рухи 1С' })).toBeNull()
     expect(getOneCTurnoverSyncCatalog).not.toHaveBeenCalled()
+    fireEvent.click(screen.getByLabelText('Звітні рухи 1С — окремий запуск Fenix'))
+    await waitFor(() => expect(getOneCTurnoverSyncCatalog).toHaveBeenCalledOnce())
     expect(startDailySync).not.toHaveBeenCalled()
     expect(startSyncSession).not.toHaveBeenCalled()
   })

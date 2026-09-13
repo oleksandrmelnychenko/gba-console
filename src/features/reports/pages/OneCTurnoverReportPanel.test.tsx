@@ -9,7 +9,7 @@ import type { OneCTurnoverScopeSummary } from '../types'
 
 vi.mock('../api/reportsApi', () => ({ createStockReport: vi.fn(), getOneCTurnoverScopes: vi.fn() }))
 const scope: OneCTurnoverScopeSummary = {
-  Key: 'A'.repeat(64), Filters: { OrganizationIds: ['1'.repeat(32)], ProductKindId: '2'.repeat(32), ExcludeServices: true },
+  Key: 'A'.repeat(64), Filters: { OrganizationIds: ['1'.repeat(32)], ProductKindId: '2'.repeat(32), ExcludeServices: true, BuyerRootId: '8AB2005056C0000811DEFC4535BB4D40' },
   OrganizationNames: ['Тестова організація 1С'], FirstDay: '2026-09-01', LastDay: '2026-09-03', LoadedDayCount: 2,
   OldestReadCompletedUtc: '2026-09-06T10:00:00Z', NewestReadCompletedUtc: '2026-09-06T10:00:01Z',
 }

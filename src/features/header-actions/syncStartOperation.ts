@@ -102,6 +102,7 @@ function createDescriptorSignature(descriptor: SyncStartDescriptor): string {
         oneCOrganizationIds: [...new Set(descriptor.oneCTurnover.oneCOrganizationIds.map((id) => id.toUpperCase()))].sort(),
         oneCProductKindId: descriptor.oneCTurnover.oneCProductKindId.toUpperCase(),
         oneCExcludeServices: descriptor.oneCTurnover.oneCExcludeServices,
+        oneCBuyerRootId: descriptor.oneCTurnover.oneCBuyerRootId.toUpperCase(),
       },
     } : {}),
   })
