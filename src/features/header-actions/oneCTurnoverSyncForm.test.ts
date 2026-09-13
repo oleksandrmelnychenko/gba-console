@@ -6,6 +6,8 @@ const catalog: OneCTurnoverSyncCatalog = {
   Organizations: [{ Id: '11'.repeat(16), Name: 'Фенікс' }],
   ProductKinds: [{ Id: '22'.repeat(16), Name: 'Товар' }],
   BuyerRoot: { Id: '33'.repeat(16), Name: 'Покупці' },
+  ReferenceDaily: { OrganizationIds: ['11'.repeat(16)], ProductKindId: '22'.repeat(16),
+    ExcludeServices: true, BuyerRootId: '33'.repeat(16) },
 }
 const filters: OneCTurnoverSyncFilters = {
   oneCOrganizationIds: [catalog.Organizations[0].Id], oneCProductKindId: catalog.ProductKinds[0].Id,

@@ -92,6 +92,12 @@ export type OneCTurnoverSyncCatalog = {
   Organizations: { Id: string; Name: string }[]
   ProductKinds: { Id: string; Name: string }[]
   BuyerRoot: { Id: string; Name: string }
+  ReferenceDaily?: {
+    OrganizationIds: string[]
+    ProductKindId: string
+    ExcludeServices: boolean
+    BuyerRootId: string
+  }
 }
 
 export type DataSyncPipelineRun = {

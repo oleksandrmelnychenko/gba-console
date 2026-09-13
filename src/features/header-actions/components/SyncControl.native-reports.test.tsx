@@ -17,6 +17,8 @@ beforeEach(() => {
   vi.clearAllMocks()
   vi.mocked(getOneCTurnoverSyncCatalog).mockResolvedValue({
     Organizations: [], ProductKinds: [], BuyerRoot: { Id: '33'.repeat(16), Name: 'Покупці' },
+    ReferenceDaily: { OrganizationIds: [], ProductKindId: '22'.repeat(16), ExcludeServices: true,
+      BuyerRootId: '33'.repeat(16) },
   })
   vi.mocked(getSyncStatus).mockResolvedValue({
     InMemorySynchronizationInProgress: false,

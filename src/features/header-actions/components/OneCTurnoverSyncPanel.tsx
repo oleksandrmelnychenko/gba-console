@@ -40,7 +40,14 @@ function TurnoverConfiguration({ range, types, today, blocked, loading, onRun }:
     void getOneCTurnoverSyncCatalog(controller.signal).then((result) => {
       if (!controller.signal.aborted) {
         setCatalog(result)
-        setFilters(current => ({ ...current, oneCBuyerRootId: result.BuyerRoot.Id }))
+        if (result.ReferenceDaily) {
+          setFilters({
+            oneCOrganizationIds: [...result.ReferenceDaily.OrganizationIds],
+            oneCProductKindId: result.ReferenceDaily.ProductKindId,
+            oneCExcludeServices: result.ReferenceDaily.ExcludeServices,
+            oneCBuyerRootId: result.ReferenceDaily.BuyerRootId,
+          })
+        } else setFilters(current => ({ ...current, oneCBuyerRootId: result.BuyerRoot.Id }))
       }
     }).catch((reason: unknown) => {
       if (!controller.signal.aborted) setError(reason instanceof Error ? reason.message : 'Не вдалося завантажити довідники Fenix')
@@ -75,7 +82,8 @@ function TurnoverConfiguration({ range, types, today, blocked, loading, onRun }:
     <Checkbox label="Виключити позиції з ознакою послуги" checked={filters.oneCExcludeServices} disabled={loading}
       onChange={(event) => updateFilters({ ...filters, oneCExcludeServices: event.currentTarget.checked })} />
     {catalog ? <Text size="xs">Група покупців: {catalog.BuyerRoot.Name} · {catalog.BuyerRoot.Id}</Text> : null}
-    <Text size="xs">Максимум 31 день. Відбори мають збігатися з відборами звіту; організації не вибираються автоматично.</Text>
+    <Text size="xs">Максимум 31 день. Відбори мають збігатися з відборами звіту.
+      {catalog?.ReferenceDaily ? ' Точні відбори еталонного Daily-звіту підставлено сервером; їх можна змінити для іншого scope.' : ' Організації вибираються вручну.'}</Text>
     {validation ? <Text size="xs" c="dimmed">{validation}</Text> : null}
     {confirming ? <Alert title="Підтвердити окремий запуск">
       <Text size="sm">Fenix · {range.from} — {range.to} · організацій: {filters.oneCOrganizationIds.length} · типів документів: {types.length}. Документи + продажі й собівартість для точного звіту, без поточного стану.</Text>

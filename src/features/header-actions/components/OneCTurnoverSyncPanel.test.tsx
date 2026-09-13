@@ -9,7 +9,11 @@ const load = vi.mocked(getOneCTurnoverSyncCatalog)
 const organization = '11'.repeat(16)
 const kind = '22'.repeat(16)
 const buyer = '33'.repeat(16)
-const catalog = { Organizations: [{ Id: organization, Name: 'Фенікс' }], ProductKinds: [{ Id: kind, Name: 'Товар' }], BuyerRoot: { Id: buyer, Name: 'Покупці' } }
+const catalog = {
+  Organizations: [{ Id: organization, Name: 'Фенікс' }], ProductKinds: [{ Id: kind, Name: 'Товар' }],
+  BuyerRoot: { Id: buyer, Name: 'Покупці' },
+  ReferenceDaily: { OrganizationIds: [organization], ProductKindId: kind, ExcludeServices: true, BuyerRootId: buyer },
+}
 const props = { range: { from: '2026-08-01', to: '2026-08-31' }, types: ['6'], today: '2026-09-06', blocked: false, loading: false, onRun: vi.fn(async () => {}) }
 function mount(overrides = {}) {
   return render(<MantineProvider env="test"><OneCTurnoverSyncPanel {...props} {...overrides} /></MantineProvider>)
@@ -33,12 +37,23 @@ describe('consolidated report sync action', () => {
     fireEvent.click(screen.getByLabelText('Звітні рухи 1С — окремий запуск Fenix'))
     await waitFor(() => expect(load).toHaveBeenCalledTimes(1))
     expect(props.onRun).not.toHaveBeenCalled()
-    expect((screen.getByRole('button', { name: 'Завантажити звітні рухи 1С' }) as HTMLButtonElement).disabled).toBe(true)
+    expect((screen.getByRole('button', { name: 'Завантажити звітні рухи 1С' }) as HTMLButtonElement).disabled).toBe(false)
     const signal = load.mock.calls[0][0]!
     view.unmount()
     expect(signal.aborted).toBe(true)
   })
-  it('uses named source choices, asks confirmation and sends explicit filters only after confirmation', async () => {
+  it('loads the exact server preset, asks confirmation and sends it only after confirmation', async () => {
+    mount()
+    fireEvent.click(screen.getByLabelText('Звітні рухи 1С — окремий запуск Fenix'))
+    await waitFor(() => expect(screen.queryByText('Завантаження довідників Fenix…')).toBeNull())
+    expect(screen.getByText(/Точні відбори еталонного Daily-звіту підставлено сервером/)).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: 'Завантажити звітні рухи 1С' }))
+    expect(props.onRun).not.toHaveBeenCalled()
+    fireEvent.click(screen.getByRole('button', { name: 'Підтвердити завантаження звітних рухів' }))
+    await waitFor(() => expect(props.onRun).toHaveBeenCalledWith({ oneCOrganizationIds: [organization], oneCProductKindId: kind, oneCExcludeServices: true, oneCBuyerRootId: buyer }))
+  })
+  it('keeps manual selection compatible with a server that has no reference preset', async () => {
+    load.mockResolvedValueOnce({ Organizations: catalog.Organizations, ProductKinds: catalog.ProductKinds, BuyerRoot: catalog.BuyerRoot })
     mount()
     fireEvent.click(screen.getByLabelText('Звітні рухи 1С — окремий запуск Fenix'))
     await waitFor(() => expect(screen.queryByText('Завантаження довідників Fenix…')).toBeNull())
@@ -48,11 +63,21 @@ describe('consolidated report sync action', () => {
     act(() => screen.getByRole('combobox', { name: 'Вид номенклатури Fenix' }).focus())
     fireEvent.keyDown(screen.getByRole('combobox', { name: 'Вид номенклатури Fenix' }), { key: 'ArrowDown', code: 'ArrowDown' })
     fireEvent.click(await screen.findByRole('option', { name: `Товар · ${kind}` }))
-    fireEvent.click(screen.getByLabelText('Виключити позиції з ознакою послуги'))
     fireEvent.click(screen.getByRole('button', { name: 'Завантажити звітні рухи 1С' }))
-    expect(props.onRun).not.toHaveBeenCalled()
     fireEvent.click(screen.getByRole('button', { name: 'Підтвердити завантаження звітних рухів' }))
-    await waitFor(() => expect(props.onRun).toHaveBeenCalledWith({ oneCOrganizationIds: [organization], oneCProductKindId: kind, oneCExcludeServices: false, oneCBuyerRootId: buyer }))
+    await waitFor(() => expect(props.onRun).toHaveBeenCalledWith({ oneCOrganizationIds: [organization], oneCProductKindId: kind, oneCExcludeServices: true, oneCBuyerRootId: buyer }))
+  })
+  it('fails closed when a server preset references a choice absent from the verified catalog', async () => {
+    load.mockResolvedValueOnce({
+      ...catalog,
+      ReferenceDaily: { ...catalog.ReferenceDaily, OrganizationIds: ['44'.repeat(16)] },
+    })
+    mount()
+    fireEvent.click(screen.getByLabelText('Звітні рухи 1С — окремий запуск Fenix'))
+    await waitFor(() => expect(screen.queryByText('Завантаження довідників Fenix…')).toBeNull())
+    expect(screen.getByText('Виберіть організації Fenix для звіту')).toBeTruthy()
+    expect((screen.getByRole('button', { name: 'Завантажити звітні рухи 1С' }) as HTMLButtonElement).disabled).toBe(true)
+    expect(props.onRun).not.toHaveBeenCalled()
   })
   it('shows failures and allows read-only retry without starting synchronization', async () => {
     load.mockRejectedValueOnce(new Error('Немає дозволу'))
