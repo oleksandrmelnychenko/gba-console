@@ -293,7 +293,7 @@ function usePaymentOnlineShopModel() {
       if (!payment.Id) throw new Error('Payment identity missing')
       const fresh = await getPaymentShopItemForRefresh(payment.Id, payment.Sale?.SaleNumber?.Value || '')
       if (!fresh) throw new Error('Payment no longer available')
-      if (isIncomeOrderAvailable(fresh) && Number(fresh.RetailPaymentStatus?.AmountToPay) > 0) {
+      if (isIncomeOrderAvailable(fresh)) {
         createIncomeOrder(fresh)
       }
     } catch {
@@ -932,13 +932,19 @@ function isIncomeOrderAvailable(item: PaymentShopItem): boolean {
   const statusType = item.RetailPaymentStatus?.RetailPaymentStatusType
   const hasRouteParams = Boolean((item.RetailClient?.NetUid || item.RetailClientId) && (item.SaleId || item.Sale?.Id) && item.Sale?.ClientAgreementId)
 
-  return hasRouteParams && (statusType === RetailPaymentStatusType.ChangedToInvoice || statusType === RetailPaymentStatusType.PartialPaid)
+  return hasRouteParams &&
+    (
+      statusType === RetailPaymentStatusType.Confirmed ||
+      statusType === RetailPaymentStatusType.ChangedToInvoice ||
+      statusType === RetailPaymentStatusType.PartialPaid
+    ) &&
+    getOutstandingSaleAmount(item) > 0
 }
 
 function buildIncomeOrderParams(item: PaymentShopItem): URLSearchParams {
   const retailClientId = item.RetailClient?.NetUid || item.RetailClientId || ''
   const saleId = item.SaleId || item.Sale?.Id || ''
-  const amountToPay = item.RetailPaymentStatus?.AmountToPay || 0
+  const amountToPay = getOutstandingSaleAmount(item)
   const clientAgreementId = item.Sale?.ClientAgreementId || ''
   const params = new URLSearchParams({
     caId: String(clientAgreementId),
@@ -948,6 +954,29 @@ function buildIncomeOrderParams(item: PaymentShopItem): URLSearchParams {
   })
 
   return params
+}
+
+function getOutstandingSaleAmount(item: PaymentShopItem): number {
+  const saleTotal = Number(item.Sale?.Order?.TotalAmountLocal)
+  const confirmedAmount = Number(item.RetailPaymentStatus?.Amount)
+  const accountingAmount = Number(item.RetailPaymentStatus?.PaidAmount)
+
+  if (
+    !Number.isFinite(saleTotal) ||
+    saleTotal <= 0 ||
+    !Number.isFinite(confirmedAmount) ||
+    confirmedAmount < 0 ||
+    !Number.isFinite(accountingAmount) ||
+    accountingAmount < 0
+  ) {
+    return 0
+  }
+
+  const outstandingCents = Math.round(saleTotal * 100) -
+    Math.round(confirmedAmount * 100) -
+    Math.round(accountingAmount * 100)
+
+  return Math.max(0, outstandingCents) / 100
 }
 
 function formatAgreement(item: PaymentShopItem): string {

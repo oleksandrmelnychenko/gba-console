@@ -15,16 +15,16 @@ import type { PaymentShopItem, RetailClientPaymentImageItem } from '../types'
 import { PaymentOnlineShopPage } from './PaymentOnlineShopPage'
 
 const allowedPermissions = new Set<string>()
-const paymentImage = { Id: 11, RowVersion: 'AQIDBAUGBwg=' } as RetailClientPaymentImageItem
+const paymentImage = { Amount: 5_000, Id: 11, RowVersion: 'AQIDBAUGBwg=' } as RetailClientPaymentImageItem
 const payment = {
   Id: 1,
   RetailClient: { NetUid: 'retail-1' },
   RetailClientPaymentImageItems: [paymentImage],
-  RetailPaymentStatus: { AmountToPay: 100, RetailPaymentStatusType: 2 },
+  RetailPaymentStatus: { Amount: 5_000, PaidAmount: 0, RetailPaymentStatusType: 2 },
   Sale: {
     ClientAgreementId: 3,
     Id: 2,
-    Order: { OrderItems: [] },
+    Order: { OrderItems: [], TotalAmountLocal: 7_712.36 },
     SaleNumber: { Value: 'SHOP-1' },
   },
   SaleId: 2,
@@ -160,7 +160,17 @@ describe('Payment online shop canonical permission guards', () => {
     vi.mocked(getPaymentShopItemsPage).mockResolvedValue({ items: [payment], totalRowsQty: 1 })
     vi.mocked(addPaymentImage).mockReset().mockResolvedValue(payment)
     vi.mocked(getPaymentShopItemForRefresh).mockReset().mockResolvedValue({
-      ...payment, RetailPaymentStatus: { ...payment.RetailPaymentStatus, AmountToPay: 175 },
+      ...payment,
+      RetailClientPaymentImageItems: [{ ...paymentImage, Amount: 5_061.10 }],
+      RetailPaymentStatus: {
+        ...payment.RetailPaymentStatus,
+        Amount: 5_061.10,
+        RetailPaymentStatusType: 1,
+      },
+      Sale: {
+        ...payment.Sale,
+        Order: { OrderItems: [], TotalAmountLocal: 10_061.10 },
+      },
     })
   })
 
@@ -180,7 +190,7 @@ describe('Payment online shop canonical permission guards', () => {
   it('automatically opens an unsaved order after confirmation using refreshed payment data', async () => {
     allowConfirmation()
     await confirmPayment()
-    expect(await screen.findByText('caId=3&retailClientId=retail-1&saleId=2&sum=175')).toBeTruthy()
+    expect(await screen.findByText('caId=3&retailClientId=retail-1&saleId=2&sum=5000')).toBeTruthy()
     expect(getPaymentShopItemForRefresh).toHaveBeenCalledWith(1, 'SHOP-1')
     expect(screen.queryByText('payment-details')).toBeNull()
     expect(screen.getByTestId('location').textContent).toBe('/accounting/payment-online-shop')
@@ -208,7 +218,14 @@ describe('Payment online shop canonical permission guards', () => {
       allowConfirmation()
       if (scenario === 'refresh failure') vi.mocked(getPaymentShopItemForRefresh).mockRejectedValue(new Error('Offline'))
       else if (scenario === 'missing payment') vi.mocked(getPaymentShopItemForRefresh).mockResolvedValue(null)
-      else vi.mocked(getPaymentShopItemForRefresh).mockResolvedValue({ ...payment, RetailPaymentStatus: { ...payment.RetailPaymentStatus, AmountToPay: 0 } })
+      else vi.mocked(getPaymentShopItemForRefresh).mockResolvedValue({
+        ...payment,
+        RetailPaymentStatus: {
+          ...payment.RetailPaymentStatus,
+          PaidAmount: 2_712.36,
+          RetailPaymentStatusType: 1,
+        },
+      })
       await confirmPayment()
       await waitFor(() => expect(getPaymentShopItemForRefresh).toHaveBeenCalledTimes(1))
       await waitFor(() => expect(screen.queryByText('payment-details')).toBeNull())
@@ -224,7 +241,7 @@ describe('Payment online shop canonical permission guards', () => {
 
     fireEvent.click(await screen.findByRole('button', { name: 'Новий прибутковий ордер' }))
     expect(screen.getByTestId('location').textContent).toBe('/accounting/payment-online-shop')
-    expect(screen.getByText('caId=3&retailClientId=retail-1&saleId=2&sum=100')).toBeTruthy()
+    expect(screen.getByText('caId=3&retailClientId=retail-1&saleId=2&sum=2712.36')).toBeTruthy()
     fireEvent.click(screen.getByRole('button', { name: 'close-retail' }))
     expect(screen.queryByRole('region', { name: 'retail-payment' })).toBeNull()
     expect(screen.getByTestId('location').textContent).toBe('/accounting/payment-online-shop')
