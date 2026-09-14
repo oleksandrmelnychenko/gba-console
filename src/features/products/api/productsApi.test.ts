@@ -9,6 +9,7 @@ import {
   getProductForOrderOverview,
   getProductForOrderSpecifications,
   getProductForPlacements,
+  getProductForSalesUkraine,
   getProductIncomeMovements,
   getProductOutcomeMovements,
   getProductSourcePriceComparison,
@@ -252,6 +253,33 @@ describe('products API upload contracts', () => {
     expect(apiRequestMock).toHaveBeenCalledWith('/products/placements/details', {
       query: { netId: 'product-1' },
       signal: undefined,
+    })
+  })
+
+  it('loads a Ukraine sale product card with its agreement pricing scope', async () => {
+    apiRequestMock.mockResolvedValueOnce({
+      CurrentLocalPrice: 517.24,
+      CurrentPrice: 12.5,
+      NetUid: 'product-1',
+    })
+    const controller = new AbortController()
+
+    const product = await getProductForSalesUkraine(
+      'product-1',
+      'agreement-1',
+      controller.signal,
+    )
+
+    expect(apiRequestMock).toHaveBeenCalledWith('/products/sales-ukraine/details', {
+      query: {
+        clientAgreementNetId: 'agreement-1',
+        netId: 'product-1',
+      },
+      signal: controller.signal,
+    })
+    expect(product).toMatchObject({
+      CurrentLocalPrice: 517.24,
+      CurrentPrice: 12.5,
     })
   })
 

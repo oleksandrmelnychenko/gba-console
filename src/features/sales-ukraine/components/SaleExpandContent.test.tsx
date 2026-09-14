@@ -1,16 +1,32 @@
 import { MantineProvider } from '@mantine/core'
-import { render, screen } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 import { theme } from '../../../shared/theme/theme'
 import type { SalesUkraineSale } from '../types'
 import { SaleExpandContent } from './SaleExpandContent'
+
+const apiMocks = vi.hoisted(() => ({
+  getProductForSalesUkraine: vi.fn(),
+}))
+
+vi.mock('../../products/api/productsApi', () => apiMocks)
 
 vi.mock('../../../shared/i18n/useI18n', () => ({
   useI18n: () => ({ t: (key: string) => key }),
 }))
 
 vi.mock('../../products/components/ProductCardModal', () => ({
-  ProductCardModal: () => null,
+  ProductCardModal: ({
+    loadProduct,
+    productNetId,
+  }: {
+    loadProduct: (productNetId: string, signal?: AbortSignal) => unknown
+    productNetId: string | null
+  }) => productNetId ? (
+    <button type="button" onClick={() => loadProduct(productNetId)}>
+      load product card
+    </button>
+  ) : null,
 }))
 
 describe('SaleExpandContent currencies', () => {
@@ -41,6 +57,26 @@ describe('SaleExpandContent currencies', () => {
     expect(screen.getByText('Ввід боргів')).toBeTruthy()
     expect(container.querySelector('.sale-expand-discount-action')).toBeNull()
   })
+
+  it('loads the product card with the expanded sale agreement', async () => {
+    apiMocks.getProductForSalesUkraine.mockResolvedValueOnce({
+      CurrentLocalPrice: 517.24,
+      CurrentPrice: 12.5,
+      NetUid: 'product-1',
+    })
+    renderSale(createSale({ currencyCode: 'UAH', isVatSale: false }))
+
+    fireEvent.click(screen.getByRole('button', { name: 'Ввід боргів' }))
+    fireEvent.click(screen.getByRole('button', { name: 'load product card' }))
+
+    await waitFor(() => {
+      expect(apiMocks.getProductForSalesUkraine).toHaveBeenCalledWith(
+        'product-1',
+        'agreement-1',
+        undefined,
+      )
+    })
+  })
 })
 
 function renderSale(sale: SalesUkraineSale, canEditDiscount = true) {
@@ -69,6 +105,7 @@ function createSale({
   return {
     BaseLifeCycleStatus: { Name: 'New', SaleLifeCycleType: 0 },
     ClientAgreement: {
+      NetUid: 'agreement-1',
       Agreement: {
         Currency: { Code: currencyCode },
       },
@@ -80,6 +117,7 @@ function createSale({
           Id: 1,
           Product: {
             NameUA: 'Ввід боргів',
+            NetUid: 'product-1',
             VendorCode: 'Борг',
           },
           Qty: 1,

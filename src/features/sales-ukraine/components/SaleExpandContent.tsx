@@ -1,9 +1,10 @@
 import { Anchor, Box, Text, Tooltip } from '@mantine/core'
 import { Box as BoxIcon } from 'lucide-react'
-import { memo, useState } from 'react'
+import { memo, useCallback, useState } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { TableRowAction } from '../../../shared/ui/table-row-action'
 import { ProductCardModal } from '../../products/components/ProductCardModal'
+import { getProductForSalesUkraine } from '../../products/api/productsApi'
 import {
   getOrderItemBaseDiscountSuppressionReason,
   getUniformOneTimeDiscount,
@@ -35,6 +36,14 @@ export const SaleExpandContent = memo(function SaleExpandContent({
 }) {
   const { t } = useI18n()
   const [productCardNetId, setProductCardNetId] = useState<string | null>(null)
+  const clientAgreementNetId = sale.ClientAgreement?.NetUid
+  const loadProductCard = useCallback((productNetId: string, signal?: AbortSignal) => {
+    if (!clientAgreementNetId) {
+      throw new Error(t('Не вдалося визначити договір продажу'))
+    }
+
+    return getProductForSalesUkraine(productNetId, clientAgreementNetId, signal)
+  }, [clientAgreementNetId, t])
   const orderItems = Array.isArray(sale.Order?.OrderItems) ? sale.Order.OrderItems : []
   const localCurrencyCode = sale.ClientAgreement?.Agreement?.Currency?.Code || ''
   const lifecycle = sale.BaseLifeCycleStatus?.SaleLifeCycleType ?? sale.BaseLifeCycleStatus?.Name
@@ -93,7 +102,11 @@ export const SaleExpandContent = memo(function SaleExpandContent({
           />
         ))}
       </div>
-      <ProductCardModal productNetId={productCardNetId} onClose={() => setProductCardNetId(null)} />
+      <ProductCardModal
+        loadProduct={loadProductCard}
+        productNetId={productCardNetId}
+        onClose={() => setProductCardNetId(null)}
+      />
     </>
   )
 })
