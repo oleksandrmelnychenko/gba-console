@@ -152,6 +152,7 @@ export type SalesOnlineShopSale = SalesOnlineShopEntity & {
   Order?: SalesOnlineShopOrder
   RetailClient?: SalesOnlineShopRetailClient
   RetailPaidAmountUah?: number | null
+  RetailAccountingPaidAmountUah?: number | null
   SaleNumber?: SalesOnlineShopSaleNumber
   ShipmentDate?: Date | string
   TotalAmount?: number

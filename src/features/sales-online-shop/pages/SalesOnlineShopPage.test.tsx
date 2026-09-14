@@ -364,32 +364,37 @@ describe('SalesOnlineShopPage page boundary', () => {
 
 describe('BUG-1253 online shop registry payment status', () => {
   it.each([
-    { paid: 5000, accounting: 0, expected: 'Оплачено частково (ПО)', color: 'orange' },
-    { paid: 7712.36, accounting: 0, expected: 'Оплачено (ПО)', color: 'green' },
-    { paid: 8000, accounting: 0, expected: 'Оплачено (ПО)', color: 'green' },
-    { paid: 7712.35, accounting: 0, expected: 'Оплачено частково (ПО)', color: 'orange' },
-    { paid: 0, accounting: 0, expected: 'Неоплаченно (ПО)', color: 'red' },
-    { paid: null, accounting: 0, expected: 'Неоплаченно (ПО)', color: 'red' },
-    { paid: 5000, accounting: 1, expected: 'Оплачено (ПО)', color: 'green' },
-    { paid: null, accounting: 3, expected: 'Оплачено частково (ПО)', color: 'orange' },
-  ])('shows $expected for receipts=$paid, accounting=$accounting', ({ paid, accounting, expected, color }) => {
-    const sale: SalesOnlineShopSale = {
-      BaseLifeCycleStatus: { SaleLifeCycleType: 0 },
-      BaseSalePaymentStatus: { SalePaymentStatusType: accounting },
-      ClientAgreement: { Agreement: { Currency: { Code: 'UAH' } } },
-      IsFullPayment: true,
-      RetailClient: { Name: 'МагазинА' },
-      RetailPaidAmountUah: paid,
-      SaleNumber: { Value: 'КСН00002860' },
-      TotalAmountLocal: 7712.363,
-      TotalAmount: 148.03,
-    }
-    renderPaymentRow(sale)
-    expect(screen.getByText(expected).style.color).toBe(`var(--mantine-color-${color}-6)`)
-    expect(screen.getByText('Рахунок')).toBeTruthy()
-    // Receipt presentation must not mutate the accounting status sent by the API.
-    expect(sale.BaseSalePaymentStatus?.SalePaymentStatusType).toBe(accounting)
-  })
+    { receipts: 5000, accountingPaid: null, accountingStatus: 0, expected: 'Оплачено частково (ПО)', color: 'orange' },
+    { receipts: 5000, accountingPaid: 2712.36, accountingStatus: 3, expected: 'Оплачено (ПО)', color: 'green' },
+    { receipts: 5000, accountingPaid: 2712.35, accountingStatus: 3, expected: 'Оплачено частково (ПО)', color: 'orange' },
+    { receipts: null, accountingPaid: 7712.36, accountingStatus: 3, expected: 'Оплачено (ПО)', color: 'green' },
+    { receipts: 8000, accountingPaid: null, accountingStatus: 0, expected: 'Оплачено (ПО)', color: 'green' },
+    { receipts: 0, accountingPaid: 0, accountingStatus: 0, expected: 'Неоплаченно (ПО)', color: 'red' },
+    { receipts: null, accountingPaid: null, accountingStatus: 3, expected: 'Оплачено частково (ПО)', color: 'orange' },
+    { receipts: 5000, accountingPaid: null, accountingStatus: 1, expected: 'Оплачено (ПО)', color: 'green' },
+    { receipts: 5000, accountingPaid: -1, accountingStatus: 1, expected: 'Статус оплати невідомий (ПО)', color: null },
+  ])(
+    'shows $expected for receipts=$receipts, accountingPaid=$accountingPaid, status=$accountingStatus',
+    ({ receipts, accountingPaid, accountingStatus, expected, color }) => {
+      const sale: SalesOnlineShopSale = {
+        BaseLifeCycleStatus: { SaleLifeCycleType: 0 },
+        BaseSalePaymentStatus: { SalePaymentStatusType: accountingStatus },
+        ClientAgreement: { Agreement: { Currency: { Code: 'UAH' } } },
+        IsFullPayment: true,
+        RetailClient: { Name: 'МагазинА' },
+        RetailPaidAmountUah: receipts,
+        RetailAccountingPaidAmountUah: accountingPaid,
+        SaleNumber: { Value: 'КСН00002860' },
+        TotalAmountLocal: 7712.363,
+        TotalAmount: 148.03,
+      }
+      renderPaymentRow(sale)
+      expect(screen.getByText(expected).style.color).toBe(color ? `var(--mantine-color-${color}-6)` : '')
+      expect(screen.getByText('Рахунок')).toBeTruthy()
+      // Presentation must not mutate the persisted accounting status sent by the API.
+      expect(sale.BaseSalePaymentStatus?.SalePaymentStatusType).toBe(accountingStatus)
+    },
+  )
 
   it('compares UAH receipts with the UAH total of a foreign-currency sale and preserves ЧО', () => {
     renderPaymentRow({
@@ -398,6 +403,7 @@ describe('BUG-1253 online shop registry payment status', () => {
       RetailClient: { Name: 'МагазинА' },
       IsFullPayment: false,
       RetailPaidAmountUah: 5000,
+      RetailAccountingPaidAmountUah: 1000,
       TotalAmountLocal: 148.03,
       TotalAmountEurToUah: 7712.363,
     })

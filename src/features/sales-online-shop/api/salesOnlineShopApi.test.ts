@@ -26,6 +26,7 @@ describe('Sales Online Shop permission-scoped reads', () => {
     const sale = {
       SaleNumber: { Value: 'КСН00002860' },
       RetailPaidAmountUah: 5000,
+      RetailAccountingPaidAmountUah: 2712.36,
       TotalAmountLocal: 7712.363,
       BaseSalePaymentStatus: { SalePaymentStatusType: 0 },
     }

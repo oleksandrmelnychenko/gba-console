@@ -1838,11 +1838,24 @@ function isUnpaidSale(sale: SalesOnlineShopSale): boolean {
 
 function getPaymentStatusKey(sale: SalesOnlineShopSale): string {
   const accountingStatus = getStatusTypeKey(sale.BaseSalePaymentStatus?.SalePaymentStatusType)
-  const paid = getNumber(sale.RetailPaidAmountUah)
+  const receiptPaid = getNumber(sale.RetailPaidAmountUah)
+  const accountingPaid = getNumber(sale.RetailAccountingPaidAmountUah)
 
-  // Receipts and accounting settlement describe the same payment at different
-  // workflow stages. Do not add them or downgrade an accounting settlement/refund.
-  if (!sale.RetailClient || paid == null || paid <= 0 || ['1', '2', '4'].includes(accountingStatus)) {
+  if (!sale.RetailClient) {
+    return accountingStatus
+  }
+
+  if ((receiptPaid != null && receiptPaid < 0) || (accountingPaid != null && accountingPaid < 0)) {
+    return 'unknown-retail-payment'
+  }
+
+  if (['1', '2', '4'].includes(accountingStatus)) {
+    return accountingStatus
+  }
+
+  const paid = (receiptPaid ?? 0) + (accountingPaid ?? 0)
+
+  if (paid <= 0) {
     return accountingStatus
   }
 
