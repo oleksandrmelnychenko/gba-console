@@ -41,4 +41,14 @@ describe('consolidated 1C report payloads', () => {
     expect(oneCReportScopeError(salesOnly, 'agreements')).toContain('собівартості')
     expect(() => createOneCTurnoverReport(salesOnly, 'agreements', '2026-09-01', '2026-09-03')).toThrow()
   })
+
+  it('builds the exact source-grain layout and refuses it for a sales-only scope', () => {
+    const payload = createOneCTurnoverReport(scopeFixture, 'source-grain', '2026-09-01', '2026-09-03')
+    expect(payload.sorted.Row.map(row => row.key)).toEqual([
+      'SourceProject', 'SourceDivision', 'CustomerName', 'CustomerContract', 'Product',
+      'SourceProductCharacteristic', 'SourceOrder', 'SourceSaleDocument',
+    ])
+    const salesOnly = { ...scopeFixture, Filters: { ...scopeFixture.Filters, BuyerRootId: undefined } }
+    expect(oneCReportScopeError(salesOnly, 'source-grain')).toContain('собівартості')
+  })
 })

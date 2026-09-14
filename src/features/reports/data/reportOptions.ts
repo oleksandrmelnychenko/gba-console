@@ -83,6 +83,11 @@ const REPORT_GROUPING_TYPES = {
   sourceSaleResponsible: 22,
   sourceOrderResponsible: 23,
   productMeasureUnit: 28,
+  sourceProject: 63,
+  sourceDivision: 64,
+  sourceProductCharacteristic: 65,
+  sourceOrder: 66,
+  sourceSaleDocument: 67,
 } as const
 
 // Cost VAT is supplied by published 1C batch allocations. Missing breakdowns
@@ -171,6 +176,17 @@ const REPORT_GROUPING_GROUPS: ReportGroupingGroup[] = [
       { key: 'SaleDocumentManagerPosted', label: 'Провів документ', type: REPORT_GROUPING_TYPES.saleDocumentManagerPosted },
       { key: 'SourceSaleResponsible', label: 'Відповідальний реалізації (1С)', type: REPORT_GROUPING_TYPES.sourceSaleResponsible },
       { key: 'SourceOrderResponsible', label: 'Відповідальний замовлення (1С)', type: REPORT_GROUPING_TYPES.sourceOrderResponsible },
+    ],
+  },
+  {
+    categoryKey: 'OneCSource',
+    categoryLabel: 'Зерно джерела 1С',
+    items: [
+      { key: 'SourceProject', label: 'Проєкт (1С)', type: REPORT_GROUPING_TYPES.sourceProject },
+      { key: 'SourceDivision', label: 'Підрозділ (1С)', type: REPORT_GROUPING_TYPES.sourceDivision },
+      { key: 'SourceProductCharacteristic', label: 'Характеристика товару (1С)', type: REPORT_GROUPING_TYPES.sourceProductCharacteristic },
+      { key: 'SourceOrder', label: 'Замовлення покупця (1С)', type: REPORT_GROUPING_TYPES.sourceOrder },
+      { key: 'SourceSaleDocument', label: 'Документ реалізації (1С)', type: REPORT_GROUPING_TYPES.sourceSaleDocument },
     ],
   },
   {
@@ -313,6 +329,11 @@ const REPORT_FIELD_LABELS: Record<string, string> = {
   PurchaseDocument: 'Документ надходження',
   SourceSaleResponsible: 'Відповідальний реалізації (1С)',
   SourceOrderResponsible: 'Відповідальний замовлення (1С)',
+  SourceProject: 'Проєкт (1С)',
+  SourceDivision: 'Підрозділ (1С)',
+  SourceProductCharacteristic: 'Характеристика товару (1С)',
+  SourceOrder: 'Замовлення покупця (1С)',
+  SourceSaleDocument: 'Документ реалізації (1С)',
   Year: 'По роках',
 }
 
