@@ -1,5 +1,6 @@
 import { Alert, Button, Card, Group, SimpleGrid, Stack, Text, TextInput } from '@mantine/core'
 import { useMemo } from 'react'
+import { FileSpreadsheet } from 'lucide-react'
 import { buildRegisterQuery } from './query'
 import { RegisterFieldEditor } from './components/RegisterFieldEditor'
 import { RegisterSelectionEditor } from './components/RegisterSelectionEditor'
@@ -57,7 +58,7 @@ function RegisterBuilderForm({ descriptor, registerLabel, value, onChange, onSub
     </SimpleGrid>
     <RegisterSelectionEditor resources={descriptor.resources} value={value.selections} disabled={blocked} onChange={selections => onChange({ ...value, selections })} />
     {validation.error ? <Alert color="blue" role="status">{validation.error}</Alert> : null}
-    <Group><Button type="submit" disabled={blocked || !validation.query} loading={busy}>Сформувати звіт</Button></Group>
+    <Group className="register-reports-submit" justify="flex-end"><Button variant="filled" color="brand" leftSection={<FileSpreadsheet size={16} />} type="submit" disabled={blocked || !validation.query} loading={busy}>Сформувати звіт</Button></Group>
     <details><summary>Ідентифікатори опису регістру</summary><dl className="source-register-audit">
       <dt>Регістр</dt><dd>{descriptor.schema.registerUuid}</dd><dt>Схема джерела</dt><dd>{descriptor.schema.schemaHash}</dd>
     </dl></details>

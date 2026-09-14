@@ -1,6 +1,8 @@
 import { Alert, Button, Card, Group, Loader, Select, Stack, Text, Title } from '@mantine/core'
 import { useEffect, useEffectEvent, useMemo, useRef, useState, useSyncExternalStore } from 'react'
 import { Link } from 'react-router-dom'
+import { ArrowLeft, CircleAlert, Database, RefreshCw } from 'lucide-react'
+import './sourceRegisterReports.css'
 import { useAuth } from '../auth/useAuth'
 import { PermissionKeys } from '../../shared/auth/permissionKeys'
 import { AUTH_SESSION_CHANGED_EVENT, readSession } from '../../shared/auth/session'
@@ -33,7 +35,7 @@ function failure(error: unknown): string {
   return 'Дані звіту не пройшли перевірку формату, обсягу або відповідності публікації.'
 }
 function LoadFailure({ message, retry }: { message: string; retry: () => void }) {
-  return <Alert color="red" title="Не вдалося завантажити звіт"><Stack gap="sm"><Text>{message}</Text><Button variant="light" onClick={retry}>Спробувати ще раз</Button></Stack></Alert>
+  return <Alert color="red" icon={<CircleAlert size={18} />} title="Не вдалося завантажити звіт"><Stack gap="sm"><Text>{message}</Text><Button variant="light" onClick={retry}>Спробувати ще раз</Button></Stack></Alert>
 }
 
 export function SourceRegisterReportsPage() {
@@ -45,15 +47,19 @@ export function SourceRegisterReportsPage() {
   if (auth.isLoading || auth.isPermissionsLoading) return <Loader aria-label="Перевірка доступу" />
   if (!auth.isAuthenticated || !owner || currentOwner !== owner) return <Alert color="yellow">Дочекайтеся завантаження користувача або увійдіть повторно.</Alert>
   if (!auth.hasPermission(PermissionKeys.ReportsStocks.Report.Generate)) return <Alert color="red">Недостатньо прав для формування звітів регістрів.</Alert>
-  return <Stack p="md">
-    <Group justify="space-between" wrap="wrap">
-      <Title order={2}>Звіти регістрів</Title>
-      <Group wrap="wrap">
-        {auth.hasPermission(PermissionKeys.ReportsStocks.Page.View) ? <Button component={Link} to="/reports/stocks" variant="subtle">До звітів</Button> : null}
-        <Button variant="light" onClick={() => setReload(value => value + 1)}>Оновити публікації</Button>
+  return <Stack className="register-reports-page" gap={14}>
+    <header className="register-reports-header">
+      <div className="register-reports-heading">
+        <span className="register-reports-icon" aria-hidden="true"><Database size={22} /></span>
+        <div><Title order={2}>Звіти регістрів</Title>
+          <Text size="xs" c="dimmed">Оберіть доступну публікацію даних, її період і показники звіту.</Text>
+        </div>
+      </div>
+      <Group gap={8} className="register-reports-actions">
+        {auth.hasPermission(PermissionKeys.ReportsStocks.Page.View) ? <Button component={Link} to="/reports/stocks" variant="default" leftSection={<ArrowLeft size={16} />}>До звітів</Button> : null}
+        <Button variant="filled" color="brand" leftSection={<RefreshCw size={16} />} onClick={() => setReload(value => value + 1)}>Оновити публікації</Button>
       </Group>
-    </Group>
-    <Text c="dimmed">Оберіть доступну публікацію даних, її період і показники звіту.</Text>
+    </header>
     <PublicationCatalogue key={JSON.stringify([owner, reload])} session={session} retry={() => setReload(value => value + 1)} />
   </Stack>
 }
@@ -71,9 +77,14 @@ function PublicationCatalogue({ session, retry }: { session: ApiStreamSession; r
     )
     return () => controller.abort()
   }, [])
-  if (state.status === 'loading') return <Loader aria-label="Завантаження публікацій" />
+  if (state.status === 'loading') return <div className="register-reports-empty" role="status"><Loader size="sm" aria-label="Завантаження публікацій" /><Text size="sm" c="dimmed">Завантаження публікацій…</Text></div>
   if (state.status === 'error') return <LoadFailure message={state.message} retry={retry} />
-  if (state.value.length === 0) return <Alert color="blue" title="Публікацій поки немає">Дані для звітів регістрів ще не підготовлено.</Alert>
+  if (state.value.length === 0) return <section className="register-reports-empty" aria-labelledby="register-reports-empty-title">
+    <span className="register-reports-icon register-reports-icon--empty" aria-hidden="true"><Database size={26} /></span>
+    <Title order={3} id="register-reports-empty-title">Публікацій поки немає</Title>
+    <Text size="sm" c="dimmed">Дані для звітів регістрів ще не підготовлено.</Text>
+    <Text size="xs" c="dimmed">Натисніть «Оновити публікації», щоб перевірити наявність даних.</Text>
+  </section>
   const publication = state.value.find(item => item.publicationId === selectedId)
   return <Stack>
     <PublicationPicker items={state.value} value={selectedId} onChange={setSelectedId} />
@@ -88,7 +99,7 @@ function PublicationPicker({ items, value, onChange }: { items: readonly Registe
     for (const item of items) { const key = label(item); captions.set(key, (captions.get(key) ?? 0) + 1) }
     return items.map(item => ({ value: item.publicationId, label: `${label(item)}${captions.get(label(item))! > 1 ? ` · ${item.publicationId}` : ''}` }))
   }, [items])
-  return <Select label="Публікація даних" placeholder="Оберіть публікацію" searchable clearable limit={50} data={data} value={value} onChange={onChange} nothingFoundMessage="Публікацій не знайдено" />
+  return <Select className="register-reports-picker" label="Публікація даних" placeholder="Оберіть публікацію" searchable clearable limit={50} data={data} value={value} onChange={onChange} nothingFoundMessage="Публікацій не знайдено" />
 }
 
 function SelectedPublication({ publication, session, retry }: { publication: RegisterPublicationSummary; session: ApiStreamSession; retry: () => void }) {
@@ -103,7 +114,7 @@ function SelectedPublication({ publication, session, retry }: { publication: Reg
     return () => controller.abort()
   }, [])
   return <Stack>
-    <Card withBorder><Text fw={600}>{publication.caption}</Text><Text size="sm">{publication.schema.world} · редакція {publication.revision}</Text>
+    <Card withBorder className="register-reports-publication"><Text fw={600} className="register-reports-publication-title">{publication.caption}</Text><Text size="sm">{publication.schema.world} · редакція {publication.revision}</Text>
       <Text size="sm">Доступний період: {displayRegisterPeriod(publication.coverageStart)} — {displayRegisterPeriod(publication.coverageEndExclusive)} (кінцева межа не включається).</Text></Card>
     {state.status === 'loading' ? <Loader aria-label="Завантаження опису регістру" /> : state.status === 'error' ? <LoadFailure message={state.message} retry={retry} />
       : <RegisterConstruction descriptor={state.value} publication={publication} session={session} />}
