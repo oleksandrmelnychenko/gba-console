@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { OneCTurnoverScopeSummary } from '../types'
-import { createOneCTurnoverReport, ONE_C_REPORT_LAYOUTS, oneCReportPeriodError } from './oneCTurnoverReport'
+import { createOneCTurnoverReport, ONE_C_REPORT_LAYOUTS, oneCReportPeriodError, oneCReportScopeError } from './oneCTurnoverReport'
 
 export const scopeFixture: OneCTurnoverScopeSummary = {
   Key: 'A'.repeat(64), Filters: { OrganizationIds: ['1'.repeat(32)], ProductKindId: '2'.repeat(32), ExcludeServices: true, BuyerRootId: '8AB2005056C0000811DEFC4535BB4D40' },
@@ -31,5 +31,14 @@ describe('consolidated 1C report payloads', () => {
   it('accepts a leap day and a 366-day inclusive window', () => {
     expect(oneCReportPeriodError('2024-02-29', '2024-02-29')).toBeNull()
     expect(oneCReportPeriodError('2024-01-01', '2024-12-31')).toBeNull()
+  })
+
+  it('builds an exact agreement layout and refuses it for a sales-only scope', () => {
+    const payload = createOneCTurnoverReport(scopeFixture, 'agreements', '2026-09-01', '2026-09-03')
+    expect(payload.sorted.Row.map(row => row.key)).toEqual(['CustomerName', 'CustomerContract', 'Product'])
+    expect(payload.sorted.Measurements.map(measure => measure.Type)).toEqual([2, 3, 4, 6, 7, 8, 10, 12, 14, 15])
+    const salesOnly = { ...scopeFixture, Filters: { ...scopeFixture.Filters, BuyerRootId: undefined } }
+    expect(oneCReportScopeError(salesOnly, 'agreements')).toContain('собівартості')
+    expect(() => createOneCTurnoverReport(salesOnly, 'agreements', '2026-09-01', '2026-09-03')).toThrow()
   })
 })

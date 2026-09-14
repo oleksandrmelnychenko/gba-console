@@ -4,6 +4,7 @@ import { createDefaultMeasurementGroups, flattenCheckedMeasurements, flattenGrou
 export const ONE_C_REPORT_LAYOUTS = [
   { id: 'responsibles', name: 'За відповідальними 1С', row: ['Organization', 'SourceSaleResponsible'], col: ['SourceOrderResponsible'], measures: [2, 4] },
   { id: 'daily', name: 'Валовий прибуток за днями — як у 1С', row: ['Day', 'Organization'], col: [], measures: [2, 3, 4, 6, 7, 8, 10, 12, 14, 15] },
+  { id: 'agreements', name: 'Валовий прибуток за договорами 1С', row: ['CustomerName', 'CustomerContract', 'Product'], col: [], measures: [2, 3, 4, 6, 7, 8, 10, 12, 14, 15] },
   { id: 'articles', name: 'Оборот за артикулами', row: ['ProductArticle'], col: [], measures: [0, 2, 3, 4] },
 ] as const
 
@@ -11,7 +12,8 @@ export type OneCReportLayoutId = typeof ONE_C_REPORT_LAYOUTS[number]['id']
 export const EXACT_ONE_C_BUYER_ROOT_ID = '8AB2005056C0000811DEFC4535BB4D40'
 
 export function oneCReportScopeError(scope: OneCTurnoverScopeSummary, layoutId: OneCReportLayoutId): string | null {
-  if (layoutId === 'daily' && scope.Filters.BuyerRootId?.toUpperCase() !== EXACT_ONE_C_BUYER_ROOT_ID)
+  if ((layoutId === 'daily' || layoutId === 'agreements')
+    && scope.Filters.BuyerRootId?.toUpperCase() !== EXACT_ONE_C_BUYER_ROOT_ID)
     return 'Цей набір завантажено без точної групи покупців і собівартості. Виконайте новий звітний синк.'
   return null
 }
