@@ -1,10 +1,9 @@
 import { Anchor, Box, Text, Tooltip } from '@mantine/core'
 import { Box as BoxIcon } from 'lucide-react'
-import { memo, useCallback, useState } from 'react'
+import { memo, useState } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { TableRowAction } from '../../../shared/ui/table-row-action'
-import { ProductCardModal } from '../../products/components/ProductCardModal'
-import { getProductForSalesUkraine } from '../../products/api/productsApi'
+import { ProductCardModal, type ProductCardSalePrice } from '../../products/components/ProductCardModal'
 import {
   getOrderItemBaseDiscountSuppressionReason,
   getUniformOneTimeDiscount,
@@ -35,15 +34,7 @@ export const SaleExpandContent = memo(function SaleExpandContent({
   onOpenItemDiscount: (sale: SalesUkraineSale, orderItem: SalesUkraineOrderItem) => void
 }) {
   const { t } = useI18n()
-  const [productCardNetId, setProductCardNetId] = useState<string | null>(null)
-  const clientAgreementNetId = sale.ClientAgreement?.NetUid
-  const loadProductCard = useCallback((productNetId: string, signal?: AbortSignal) => {
-    if (!clientAgreementNetId) {
-      throw new Error(t('Не вдалося визначити договір продажу'))
-    }
-
-    return getProductForSalesUkraine(productNetId, clientAgreementNetId, signal)
-  }, [clientAgreementNetId, t])
+  const [productCardItem, setProductCardItem] = useState<SalesUkraineOrderItem | null>(null)
   const orderItems = Array.isArray(sale.Order?.OrderItems) ? sale.Order.OrderItems : []
   const localCurrencyCode = sale.ClientAgreement?.Agreement?.Currency?.Code || ''
   const lifecycle = sale.BaseLifeCycleStatus?.SaleLifeCycleType ?? sale.BaseLifeCycleStatus?.Name
@@ -98,18 +89,32 @@ export const SaleExpandContent = memo(function SaleExpandContent({
             orderItem={orderItem}
             allowDiscountEdit={canEditDiscount}
             onOpenItemDiscount={() => onOpenItemDiscount(sale, orderItem)}
-            onOpenProductCard={setProductCardNetId}
+            onOpenProductCard={() => setProductCardItem(orderItem)}
           />
         ))}
       </div>
-      <ProductCardModal
-        loadProduct={loadProductCard}
-        productNetId={productCardNetId}
-        onClose={() => setProductCardNetId(null)}
-      />
+      <ProductCardModal productNetId={productCardItem?.Product?.NetUid ?? null}
+        salePrices={productCardItem ? getSaleCardPrices(productCardItem, localCurrencyCode, useEurToUah, showSecondAmount, secondCode) : undefined}
+        onClose={() => setProductCardItem(null)} />
     </>
   )
 })
+
+function getSaleCardPrices(item: SalesUkraineOrderItem, localCurrencyCode: string, useEurToUah: boolean, showSecondAmount: boolean, secondCode: string): ProductCardSalePrice[] {
+  const qty = getNumber(item.Qty)
+  // Use the selected sale line's final amounts, including its historical discounts.
+  // Product catalogue prices and PricePerItem may represent a different price basis.
+  const unitPrice = (value: unknown): number | null => {
+    const total = getNumber(value)
+    if (total == null || qty == null || qty <= 0) return null
+    const price = total / qty
+    return Number.isFinite(price) ? price : null
+  }
+  return [
+    { currencyCode: localCurrencyCode, unitPrice: unitPrice(item.TotalAmountLocal) },
+    ...(showSecondAmount ? [{ currencyCode: secondCode, unitPrice: unitPrice(useEurToUah ? item.TotalAmountEurToUah : item.TotalAmount) }] : []),
+  ]
+}
 
 function SaleExpandContentItem({
   allowDiscountEdit,
