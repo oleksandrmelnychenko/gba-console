@@ -13,20 +13,24 @@ import './product-card-modal.css'
 const numberFormatter = new Intl.NumberFormat('uk-UA', { maximumFractionDigits: 3, minimumFractionDigits: 0 })
 const moneyFormatter = new Intl.NumberFormat('uk-UA', { maximumFractionDigits: 2, minimumFractionDigits: 2 })
 
+export type ProductCardSalePrice = { currencyCode: string; unitPrice: number | null }
+
 export function ProductCardModal({
   loadProduct = getProductByNetId,
   productNetId,
+  salePrices,
   onClose,
 }: {
   loadProduct?: typeof getProductByNetId
   onClose: () => void
   productNetId: string | null
+  salePrices?: readonly ProductCardSalePrice[]
 }) {
   const { t } = useI18n()
 
   return (
     <AppModal className="product-card-modal" centered opened={Boolean(productNetId)} size={760} title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Картка товару')}</span>} onClose={onClose}>
-      {productNetId && <ProductCardContent key={productNetId} loadProduct={loadProduct} productNetId={productNetId} />}
+      {productNetId && <ProductCardContent key={productNetId} loadProduct={loadProduct} productNetId={productNetId} salePrices={salePrices} />}
     </AppModal>
   )
 }
@@ -34,9 +38,11 @@ export function ProductCardModal({
 function ProductCardContent({
   loadProduct,
   productNetId,
+  salePrices,
 }: {
   loadProduct: typeof getProductByNetId
   productNetId: string
+  salePrices?: readonly ProductCardSalePrice[]
 }) {
   const { t } = useI18n()
   const [product, setProduct] = useState<Product | null>(null)
@@ -184,9 +190,15 @@ function ProductCardContent({
         <DetailRow label={t('Доступно (перепродаж)')} mono value={formatNumber(product.AvailableQtyUkReSale)} />
         <DetailRow label={t('Браковані')} mono value={formatNumber(product.AvailableDefectiveQtyUk)} />
       </DocumentDetailSection>
+      {salePrices ? <Text size="xs" c="dimmed">{t('Ціна за одиницю з урахуванням знижок у вибраному продажі.')}</Text> : null}
       <DocumentDetailSection title={t('Ціни та характеристики')}>
-        <DetailRow label={t('Ціна (локальна)')} money={(product.CurrentLocalPrice ?? 0) > 0} mono value={formatMoney(product.CurrentLocalPrice)} />
-        <DetailRow label={t('Ціна (EUR)')} money={(product.CurrentPrice ?? 0) > 0} mono value={formatMoney(product.CurrentPrice)} />
+        {salePrices ? salePrices.map((price, index) => (
+          <DetailRow key={`${price.currencyCode}-${index}`} label={`${t('Ціна продажу')} (${price.currencyCode || t('валюта договору')})`}
+            money={(price.unitPrice ?? 0) > 0} mono value={formatMoney(price.unitPrice) || t('Немає даних')} />
+        )) : <>
+          <DetailRow label={t('Ціна (локальна)')} money={(product.CurrentLocalPrice ?? 0) > 0} mono value={formatMoney(product.CurrentLocalPrice)} />
+          <DetailRow label={t('Ціна (EUR)')} money={(product.CurrentPrice ?? 0) > 0} mono value={formatMoney(product.CurrentPrice)} />
+        </>}
         <DetailRow label={t('Од. виміру')} mono value={product.MeasureUnit?.Name} />
         <DetailRow label={t('Вага')} mono value={formatNumber(product.Weight)} />
         <DetailRow label={t('Розмір')} mono value={product.Size} />
