@@ -26,14 +26,14 @@ export function ReportCatalogueControl({ enabled, disabled = false, presentation
   </Suspense> : null
   return <>
     <Group>
-      <Button ref={trigger} type="button" variant={dialog ? 'default' : 'subtle'} disabled={!enabled || disabled}
+      <Button ref={trigger} type="button" variant={dialog ? 'filled' : 'subtle'} disabled={!enabled || disabled}
         aria-haspopup={dialog ? 'dialog' : undefined} aria-expanded={enabled && opened}
         onClick={() => setOpened(value => !value)}>
         {!dialog && opened ? t('Сховати каталог звітів 1С') : t('Каталог усіх звітів 1С')}
       </Button>
     </Group>
     {dialog ? <AppModal opened={enabled && opened} onClose={() => setOpened(false)}
-      title={t('Каталог усіх звітів 1С')} size={1120} className="report-catalogue-dialog"
+      title={t('Каталог усіх звітів 1С')} size={1280} className="report-catalogue-dialog"
       closeButtonProps={{ 'aria-label': t('Закрити каталог звітів') }} returnFocus={false}
       onExitTransitionEnd={() => trigger.current?.focus()}>
       {panel}

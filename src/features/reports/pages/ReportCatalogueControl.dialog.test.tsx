@@ -34,7 +34,7 @@ beforeEach(() => {
 it('loads only after opening the shared wide dialog, then restores trigger focus on close', async () => {
   render(control())
   const trigger = screen.getByRole('button', { name: 'Каталог усіх звітів 1С' })
-  expect(trigger.getAttribute('data-variant')).toBe('default')
+  expect(trigger.getAttribute('data-variant')).toBe('filled')
   expect(trigger.getAttribute('aria-haspopup')).toBe('dialog')
   expect(screen.queryByRole('dialog')).toBeNull()
   expect(getReportCatalogue).not.toHaveBeenCalled()

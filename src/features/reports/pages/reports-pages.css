@@ -345,7 +345,14 @@
 
 .reports-stocks-template-card {
   display: grid;
-  gap: 12px;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 14px;
+  min-width: 0;
+  width: 100%;
+}
+
+.reports-stocks-template-card > * {
+  min-width: 0;
 }
 
 .reports-stocks-template-modal__body {
@@ -373,6 +380,17 @@
 
 .reports-stocks-template-form {
   min-width: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.reports-stocks-template-form .reports-stocks-template-name {
+  min-width: 0;
+  width: 100%;
+}
+
+.reports-stocks-template-count {
+  font-family: var(--font-mono);
 }
 
 .reports-stocks-template-form .mantine-TextInput-root {
@@ -455,12 +473,32 @@
 
 .reports-stocks-template-empty {
   align-items: center;
-  color: var(--mantine-color-gray-9);
+  color: var(--mantine-color-gray-7);
   display: flex;
-  gap: 8px;
+  flex-direction: column;
+  gap: 6px;
   justify-content: center;
-  min-height: 82px;
-  padding: 12px;
+  min-height: 150px;
+  padding: 18px 12px;
+  text-align: center;
+  border-top: 1px solid var(--mantine-color-gray-2);
+}
+
+.reports-stocks-template-empty__icon {
+  align-items: center;
+  background: var(--mantine-color-orange-0);
+  border: 1px solid var(--mantine-color-orange-1);
+  border-radius: 10px;
+  color: var(--mantine-color-orange-6);
+  display: flex;
+  height: 42px;
+  justify-content: center;
+  margin-bottom: 4px;
+  width: 42px;
+}
+
+@media (max-width: 480px) {
+  .reports-stocks-template-form { grid-template-columns: minmax(0, 1fr); }
 }
 
 .reports-stocks-selected-value {

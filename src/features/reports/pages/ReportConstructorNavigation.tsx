@@ -1,5 +1,5 @@
 import { Badge, Button, Text, Title } from '@mantine/core'
-import { ChevronRight } from 'lucide-react'
+import { ChevronRight, FileSpreadsheet, ListFilter, SlidersHorizontal, BarChart3, Table2 } from 'lucide-react'
 import { type KeyboardEvent, type ReactNode, useRef } from 'react'
 
 export type ReportConstructorSection = 'structure' | 'filters' | 'analysis' | 'result'
@@ -13,17 +13,20 @@ export function ReportSectionPanel({ active, section, className, children }: {
 }
 
 const sections = [
-  { id: 'structure', label: 'Структура звіту' },
-  { id: 'filters', label: 'Умови відбору' },
-  { id: 'analysis', label: 'Аналіз і сортування' },
-  { id: 'result', label: 'Результат' },
+  { id: 'structure', label: 'Структура звіту', icon: Table2 },
+  { id: 'filters', label: 'Умови відбору', icon: ListFilter },
+  { id: 'analysis', label: 'Аналіз і сортування', icon: SlidersHorizontal },
+  { id: 'result', label: 'Результат', icon: BarChart3 },
 ] as const
 
 export function ReportConstructorHeader({ name }: { name: string }) {
   return <header className="report-constructor-header">
-    <div>
+    <div className="report-constructor-heading">
+      <span className="report-constructor-heading__icon"><FileSpreadsheet size={23} aria-hidden="true" /></span>
+      <div>
       <Title order={2}>Конструктор звітів</Title>
       <Text size="xs" c="gray.7">{name.trim() || 'Оберіть готові налаштування або налаштуйте власний звіт.'}</Text>
+      </div>
     </div>
     <Button component="a" href="/reports/registers" variant="default" size="xs">Звіти регістрів</Button>
   </header>
@@ -65,7 +68,7 @@ export function ReportConstructorNavigation({ active, onChange, measures, rows, 
         aria-selected={active === section.id} tabIndex={active === section.id ? 0 : -1}
         ref={node => { buttons.current[index] = node }} onKeyDown={event => navigate(event, index)}
         onClick={() => onChange(section.id)}>
-        <span>{section.label}<ChevronRight size={14} aria-hidden="true" /></span>
+        <span><section.icon className="report-constructor-tab__icon" size={16} aria-hidden="true" />{section.label}<ChevronRight className="report-constructor-tab__chevron" size={14} aria-hidden="true" /></span>
         <small aria-hidden="true">{counts[section.id]}</small>
       </button>)}
     </div>

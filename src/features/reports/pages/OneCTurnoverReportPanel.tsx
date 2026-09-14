@@ -1,5 +1,9 @@
-import { Alert, Badge, Button, Card, Group, Select, Stack, Text, TextInput } from '@mantine/core'
+import { ActionIcon, Alert, Button, Select, Stack, Text, TextInput } from '@mantine/core'
 import { useEffect, useState } from 'react'
+import { CircleAlert, FileSpreadsheet, RefreshCw } from 'lucide-react'
+import { AppModalFooter } from '../../../shared/ui/AppModal'
+import { DocumentDetailSummary, DocumentDetailMetric } from '../../../shared/ui/document-detail/DocumentDetail'
+import './onec-report-modal.css'
 import { ApiError } from '../../../shared/api/apiClient'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { DocumentExportModal } from '../../../shared/ui/document-export-modal/DocumentExportModal'
@@ -14,9 +18,10 @@ type Props = {
   onFromChange: (value: string) => void
   onToChange: (value: string) => void
   onLoadingChange?: (loading: boolean) => void
+  onClose?: () => void
 }
 
-export function OneCTurnoverReportPanel({ canGenerate, from, to, onFromChange, onToChange, onLoadingChange }: Props) {
+export function OneCTurnoverReportPanel({ canGenerate, from, to, onFromChange, onToChange, onLoadingChange, onClose }: Props) {
   const { t } = useI18n()
   const { catalog, refresh } = useOneCTurnoverCatalog(canGenerate)
   const [selectedKey, setSelectedKey] = useState<string | null>(null)
@@ -47,33 +52,45 @@ export function OneCTurnoverReportPanel({ canGenerate, from, to, onFromChange, o
   }
 
   return (
-    <Card withBorder radius="md">
-      <Stack gap="sm">
-        <Group justify="space-between">
-          <Text fw={600}>{t('Консолідований оборот 1С')}</Text>
-          <Group gap="xs"><Badge>Fenix · EUR</Badge><Badge color="gray">{t('Продажі + собівартість')}</Badge></Group>
-        </Group>
-        <Text size="sm" c="dimmed">{t('Звіт формується лише з локально синхронізованих рухів GBA. 1С використовується як джерело правди під час окремого синку; формування звіту не звертається до 1С.')}</Text>
-        {!canGenerate ? <Alert color="yellow">{t('Недостатньо прав для формування звітів 1С. Зверніться до адміністратора щодо доступу до конструктора.')}</Alert> : null}
+    <div className="onec-report-modal">
+      <DocumentDetailSummary eyebrow={t('Звіт 1С')} title={t('Консолідований оборот 1С')}
+        meta={t('Продажі + собівартість')}
+        metrics={<>
+          <DocumentDetailMetric label={t('Джерело')} value="Fenix" />
+          <DocumentDetailMetric label={t('Валюта')} value="EUR" />
+        </>} />
+      {!canGenerate ? <Alert color="yellow" icon={<CircleAlert size={18} />}>{t('Недостатньо прав для формування звітів 1С. Зверніться до адміністратора щодо доступу до конструктора.')}</Alert> : null}
+      <div className="onec-report-modal__section">
         <ScopeCatalog catalog={catalog} canGenerate={canGenerate} isGenerating={run.loading}
           selectedKey={selectedKey} onSelect={setSelectedKey} onRefresh={refresh} />
-        {scope ? <ScopeDetails scope={scope} /> : null}
-        <Group align="end">
-          <TextInput type="date" label={t('Від (1С)')} min="2000-01-01" max={to || '7998-12-31'} value={from} disabled={run.loading} onChange={event => onFromChange(event.currentTarget.value)} />
-          <TextInput type="date" label={t('До (1С)')} min={from || '2000-01-01'} max="7998-12-31" value={to} disabled={run.loading} onChange={event => onToChange(event.currentTarget.value)} />
-          <Select label={t('Структура звіту 1С')} value={layout} disabled={run.loading}
-            data={ONE_C_REPORT_LAYOUTS.map(item => ({ value: item.id, label: t(item.name) }))}
-            onChange={value => { if (value) setLayout(value as OneCReportLayoutId) }} />
-          <Button type="button" disabled={!canSubmit} loading={run.loading} onClick={() => { void generate() }}>{t('Сформувати звіт 1С')}</Button>
-        </Group>
-        {periodError ? <Alert color="yellow">{t(periodError)}</Alert> : null}
-        {scopeError ? <Alert color="yellow">{t(scopeError)}</Alert> : null}
-        {run.error ? <Alert color="red">{t(run.error)}</Alert> : null}
-        <Text size="xs" c="dimmed">{t('Сервер перевіряє кожен день періоду. Якщо даних бракує, файл не формується. Дати й ревізії читання буде зазначено у звіті; сьогоднішні дані потребують повторного оновлення.')}</Text>
+        {scope ? <details className="onec-report-modal__details">
+          <summary>{t('Дані вибраного відбору')}</summary><ScopeDetails scope={scope} />
+        </details> : null}
+      </div>
+      <div className="onec-report-modal__section onec-report-modal__fields">
+        <TextInput type="date" label={t('Від (1С)')} min="2000-01-01" max={to || '7998-12-31'} value={from} disabled={run.loading} onChange={event => onFromChange(event.currentTarget.value)} />
+        <TextInput type="date" label={t('До (1С)')} min={from || '2000-01-01'} max="7998-12-31" value={to} disabled={run.loading} onChange={event => onToChange(event.currentTarget.value)} />
+        <Select className="onec-report-modal__layout" label={t('Структура звіту 1С')} value={layout} disabled={run.loading}
+          data={ONE_C_REPORT_LAYOUTS.map(item => ({ value: item.id, label: t(item.name) }))}
+          onChange={value => { if (value) setLayout(value as OneCReportLayoutId) }} />
+      </div>
+      {periodError ? <Alert color="yellow" icon={<CircleAlert size={18} />}>{t(periodError)}</Alert> : null}
+      {scopeError ? <Alert color="yellow" icon={<CircleAlert size={18} />}>{t(scopeError)}</Alert> : null}
+      {run.error ? <Alert color="red" icon={<CircleAlert size={18} />}>{t(run.error)}</Alert> : null}
+      <details className="onec-report-modal__details onec-report-modal__about">
+        <summary>{t('Про дані та формування звіту')}</summary>
+        <Stack gap="xs">
+          <Text size="xs" c="dimmed">{t('Звіт формується лише з локально синхронізованих рухів GBA. 1С використовується як джерело правди під час окремого синку; формування звіту не звертається до 1С.')}</Text>
+          <Text size="xs" c="dimmed">{t('Сервер перевіряє кожен день періоду. Якщо даних бракує, файл не формується. Дати й ревізії читання буде зазначено у звіті; сьогоднішні дані потребують повторного оновлення.')}</Text>
+        </Stack>
+      </details>
+      <AppModalFooter>
         {run.result?.document.DocumentURL || run.result?.document.PdfDocumentURL ? <Button variant="light" type="button" onClick={() => setOpened(true)}>{t('Відкрити сформований звіт 1С')}</Button> : null}
-      </Stack>
+        {onClose ? <Button type="button" variant="light" color="gray" disabled={run.loading} onClick={onClose}>{t('Скасувати')}</Button> : null}
+        <Button type="button" variant="filled" color="brand" leftSection={<FileSpreadsheet size={16} />} disabled={!canSubmit} loading={run.loading} onClick={() => { void generate() }}>{t('Сформувати звіт 1С')}</Button>
+      </AppModalFooter>
       <DocumentExportModal document={run.result?.document} opened={opened} title={run.title} onClose={() => setOpened(false)} />
-    </Card>
+    </div>
   )
 }
 
@@ -111,14 +128,14 @@ type ScopeCatalogProps = {
 function ScopeCatalog({ catalog, canGenerate, isGenerating, selectedKey, onSelect, onRefresh }: ScopeCatalogProps) {
   const { t } = useI18n()
   return <Stack gap="xs">
-    <Group align="end">
+    <div className="onec-report-modal__scope">
       <Select style={{ flex: 1 }} label={t('Завантажені відбори 1С')} placeholder={t('Виберіть набір відборів')}
         disabled={!canGenerate || catalog.loading || isGenerating} value={selectedKey} onChange={onSelect}
         data={catalog.scopes.map((item, index) => ({ value: item.Key, label: `${index + 1}. ${item.OrganizationNames.join(' / ')} · ${item.Filters.ExcludeServices ? t('без послуг') : t('послуги не виключено')}` }))} />
-      <Button type="button" variant="default" disabled={!canGenerate || isGenerating} loading={canGenerate && catalog.loading}
-        onClick={onRefresh}>{t('Оновити відбори')}</Button>
-    </Group>
-    {catalog.error ? <Alert color="red">{t(catalog.error)}</Alert> : null}
+      <ActionIcon type="button" variant="light" color="gray" size={36} aria-label={t('Оновити відбори')} title={t('Оновити відбори')}
+        disabled={!canGenerate || isGenerating} loading={canGenerate && catalog.loading} onClick={onRefresh}><RefreshCw size={17} /></ActionIcon>
+    </div>
+    {catalog.error ? <Alert color="red" icon={<CircleAlert size={18} />}>{t(catalog.error)}</Alert> : null}
     {canGenerate && !catalog.loading && !catalog.error && catalog.scopes.length === 0 ? <Alert color="yellow">{t('Ще немає завантажених відборів 1С. Спочатку виконайте штатний синк із явно вибраними відборами звітних рухів. Звичайний синк документів сам по собі не підтверджує ці дані.')}</Alert> : null}
   </Stack>
 }

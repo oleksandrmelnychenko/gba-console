@@ -73,7 +73,7 @@ export function ReportDraftStatus({ savedAt, notice, canUndo, disabled = false, 
   if (!timestamp && !notice && !canUndo) return null
 
   return (
-    <Group component="section" aria-label={t('Чернетка звіту')} gap="xs" justify="space-between" wrap="wrap">
+    <Group className="report-draft-status" component="section" aria-label={t('Чернетка звіту')} gap="xs" justify="space-between" wrap="wrap">
       {timestamp || notice ? <Stack gap={2}>
         {timestamp ? <Text role="status" size="xs" c="dimmed">
           {t('Чернетка збережена в цій вкладці')}: <time dateTime={savedAt!}>{timestamp}</time>

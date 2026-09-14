@@ -1,3 +1,4 @@
+import './stocks-workspace.css'
 import PaymentComparisonPanel from './PaymentComparisonPanel'
 import { clonePaymentComparisonValue, paymentComparisonSummary } from '../data/paymentComparison'
 import MarginComparisonPanel from './MarginComparisonPanel'
@@ -235,6 +236,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode }: { ownerId: string 
   const [productClassification, setProductClassification] = useValueState<unknown>(undefined)
   const [sourceOrganizations, setSourceOrganizations] = useValueState<unknown>(undefined)
   const [oneCReportOpen, setOneCReportOpen] = useState(false)
+  const [oneCReportGenerating, setOneCReportGenerating] = useState(false)
   const [valuationClientAgreementId, setValuationAgreementId] = useValueState<number | undefined>(undefined)
   const valuation = useValuationAgreement(valuationClientAgreementId, canGenerateReport && requiresValuationAgreement(dataSource))
   const dataset = datasetStorage.datasets.find(item => item.DataSource === dataSource)
@@ -571,30 +573,39 @@ function ReportsStocksWorkspace({ ownerId, constructorMode }: { ownerId: string 
   }
 
   return (
-    <Stack className={`reports-stocks-page${constructorMode ? ' report-constructor-page' : ''}`} gap={6}>
+    <Stack className={`reports-stocks-page${constructorMode ? ' report-constructor-page' : ' reports-stocks-workspace'}`} gap={6}>
       {constructorMode ? <ReportConstructorHeader name={templateName} /> : null}
       {canGenerateReport && ownerId ? <ReportDraftStatus savedAt={workspaceDraft.status === 'saved' ? workspaceDraft.savedAt : null}
         notice={draftRestoreError ?? workspaceDraft.message} canUndo={Boolean(workspaceDraft.previousSnapshot)}
         disabled={isLoading || !datasetStorage.loaded || Boolean(datasetStorage.error)}
         onUndo={() => workspaceDraft.undo(restoreWorkspace)} /> : null}
-      <Group justify="flex-end">
-        <Button type="button" variant={oneCReportOpen ? 'filled' : 'light'} disabled={!canGenerateReport}
-          onClick={() => setOneCReportOpen(open => !open)}>
-          {oneCReportOpen ? t('Закрити точний звіт 1С') : t('Валовий прибуток — як у 1С')}
+      <div className={!constructorMode ? 'stocks-workspace-header' : undefined}>
+        {!constructorMode ? <div className="stocks-workspace-heading">
+          <span className="stocks-workspace-heading__icon"><IconFileSpreadsheet size={24} aria-hidden="true" /></span>
+          <div><Text component="h2">{t('Налаштування звіту')}</Text>
+            <Text size="xs" c="dimmed">{t('Оберіть набір даних, налаштуйте структуру та сформуйте звіт.')}</Text></div>
+        </div> : null}
+      <Group justify="flex-end" gap={8}>
+        {!constructorMode && canGenerateReport ? <Button component="a" href="/reports/registers" variant="default">{t('Звіти регістрів')}</Button> : null}
+        <Button type="button" variant="filled" disabled={!canGenerateReport}
+          aria-haspopup="dialog" aria-expanded={oneCReportOpen} onClick={() => setOneCReportOpen(true)}>
+          {t('Валовий прибуток — як у 1С')}
         </Button>
       </Group>
-      {oneCReportOpen ? <OneCTurnoverReportPanel canGenerate={canGenerateReport} from={from} to={to}
-        onFromChange={setFrom} onToChange={setTo} /> : null}
-      {!constructorMode && canGenerateReport ? <Group justify="flex-end"><Button component="a" href="/reports/registers" variant="subtle">Звіти регістрів</Button></Group> : null}
+      </div>
+      <AppModal opened={oneCReportOpen} title={t('Валовий прибуток — як у 1С')} size={960}
+        onClose={() => { if (!oneCReportGenerating) setOneCReportOpen(false) }}
+        closeOnClickOutside={!oneCReportGenerating} closeOnEscape={!oneCReportGenerating}
+        closeButtonProps={{ disabled: oneCReportGenerating, 'aria-label': t('Закрити звіт 1С') }}>
+        {oneCReportOpen ? <OneCTurnoverReportPanel canGenerate={canGenerateReport} from={from} to={to}
+          onFromChange={setFrom} onToChange={setTo} onLoadingChange={setOneCReportGenerating}
+          onClose={() => setOneCReportOpen(false)} /> : null}
+      </AppModal>
       {!constructorMode && canGenerateReport && templateName.trim() ? <Text fw={600} aria-label={t('Назва поточного звіту')}>{templateName}</Text> : null}
       {canGenerateReport && catalogueNotice ? <Alert color={catalogueNotice.failed ? 'red' : 'blue'} style={{ flexShrink: 0 }}
         title={t(catalogueNotice.failed ? 'Не вдалося відкрити звіт' : 'Звіт відкрито в конструкторі')}
         withCloseButton onClose={() => setCatalogueNotice(null)}>{catalogueNotice.text}</Alert> : null}
-      {!constructorMode ? <><ReportCatalogueControl enabled={canGenerateReport}
-        disabled={isLoading || !datasetStorage.loaded || Boolean(datasetStorage.error)} onOpen={openCatalogueReport} />
-      <ReportDatasetPicker datasets={datasetStorage.datasets} selected={dataSource} disabled={!canGenerateReport || isLoading}
-        loaded={datasetStorage.loaded} error={datasetStorage.error} onChange={changeDataset} onRetry={datasetStorage.retry} />
-      {requiresValuationAgreement(dataSource) ? <ValuationAgreementPicker purpose={dataSource === 22 ? 'prices' : 'stock'} value={valuationClientAgreementId} enabled={canGenerateReport} disabled={isLoading}
+      {!constructorMode ? <>{requiresValuationAgreement(dataSource) ? <ValuationAgreementPicker purpose={dataSource === 22 ? 'prices' : 'stock'} value={valuationClientAgreementId} enabled={canGenerateReport} disabled={isLoading}
         agreement={valuation.agreement} validating={valuation.loading} validationError={valuation.error}
         onChange={setValuationAgreementId} onRetry={valuation.retry} /> : null}</> : null}
       <ReportBuilderForm
@@ -602,12 +613,15 @@ function ReportsStocksWorkspace({ ownerId, constructorMode }: { ownerId: string 
         constructorSection={constructorSection}
         onConstructorSectionChange={navigateConstructorSection}
         analysisCount={[topGroups, threshold, hideZero, abcClassification, ordering].filter(value => value != null).length}
-        datasetPanel={constructorMode ? <ReportDatasetPicker compact datasets={datasetStorage.datasets} selected={dataSource}
+        datasetPanel={<ReportDatasetPicker compact datasets={datasetStorage.datasets} selected={dataSource}
           disabled={!canGenerateReport || isLoading} loaded={datasetStorage.loaded} error={datasetStorage.error}
-          onChange={changeDataset} onRetry={datasetStorage.retry} /> : null}
-        catalogueControl={constructorMode ? <ReportCatalogueControl presentation="dialog" enabled={canGenerateReport}
-          disabled={isLoading || !datasetStorage.loaded || Boolean(datasetStorage.error)} onOpen={openCatalogueReport} /> : null}
-        datasetSummary={constructorMode ? <ReportDatasetSummary dataset={dataset} /> : null}
+          onChange={changeDataset} onRetry={datasetStorage.retry} />}
+        catalogueControl={<ReportCatalogueControl presentation="dialog" enabled={canGenerateReport}
+          disabled={isLoading || !datasetStorage.loaded || Boolean(datasetStorage.error)} onOpen={openCatalogueReport} />}
+        datasetSummary={<><ReportDatasetSummary dataset={dataset} />
+          {!constructorMode ? <details className="stocks-workspace-dataset-help"><summary>{t('Що змінює вибір набору даних')}</summary>
+            <Text size="xs" c="dimmed">{t('Зміна набору застосує початкові групування й показники та очистить відбори, групи І/АБО, TOP, ABC-класифікацію і правила сортування. Набори поточного стану очищують період; після повернення до набору з періодом попередні дати відновляться.')}</Text>
+          </details> : null}</>}
         agreementPanel={constructorMode && requiresValuationAgreement(dataSource) ? <div className="app-section-card report-constructor-agreement">
           <ValuationAgreementPicker purpose={dataSource === 22 ? 'prices' : 'stock'} value={valuationClientAgreementId}
             enabled={canGenerateReport} disabled={isLoading} agreement={valuation.agreement} validating={valuation.loading}
@@ -822,7 +836,7 @@ function ReportBuilderForm(props: ReportBuilderFormProps) {
           {!constructorMode ? comparisonPanel : null}
           <div className="app-filter-actions reports-stocks-actions">
             {catalogueControl}
-            <Button color={constructorMode ? 'gray' : 'brand'} variant={constructorMode ? 'default' : 'filled'} size="sm" className="app-filter-primary-action"
+            <Button color="brand" variant="filled" size="sm" className="app-filter-primary-action"
               disabled={templatesDisabled}
               leftSection={<LayoutTemplate size={16} />}
               type="button"
@@ -961,7 +975,7 @@ function ReportBuilderContent(props: ReportBuilderFormProps) {
             onSelectionsChange={onSelectionsChange}
           />
           {!constructorMode && dataSource !== 19 ? filterExpressionPanel : null}
-          <ReportSectionPanel className={constructorMode ? 'report-constructor-analysis' : undefined} active={constructorMode ? constructorSection : undefined} section="analysis">
+          <ReportSectionPanel className={constructorMode ? 'report-constructor-analysis' : 'stocks-workspace-analysis'} active={constructorMode ? constructorSection : undefined} section="analysis">
           {!hasFixedReportAxes(dataSource) ? <>
             {topGroupsPanel}
             {thresholdPanel}
