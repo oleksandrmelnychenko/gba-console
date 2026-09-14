@@ -214,7 +214,7 @@ function UserNewPageContent() {
           </Alert>
         )}
 
-        <form id="user-new-form" onSubmit={handleSubmit}>
+        <form autoComplete="off" id="user-new-form" onSubmit={handleSubmit}>
           <Card className="app-section-card" withBorder radius="md" padding="md">
             <Stack gap="md">
               <Text className="app-section-title" fw={600}>

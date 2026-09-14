@@ -87,6 +87,7 @@ export function UserForm({
         onChange={(event) => onFieldChange('MiddleName', event.currentTarget.value)}
       />
       <TextInput
+        autoComplete={includePassword ? 'off' : 'email'}
         disabled={disabled}
         label="Email"
         maxLength={50}
@@ -116,6 +117,7 @@ export function UserForm({
       {includePassword && (
         <>
           <PasswordInput
+            autoComplete="new-password"
             disabled={disabled}
             label={t('Пароль')}
             required
@@ -123,6 +125,7 @@ export function UserForm({
             onChange={(event) => onPasswordChange?.('password', event.currentTarget.value)}
           />
           <PasswordInput
+            autoComplete="new-password"
             disabled={disabled}
             label={t('Підтвердження пароля')}
             required
