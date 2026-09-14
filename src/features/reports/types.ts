@@ -4,7 +4,7 @@ export type ReportEntity = {
   [key: string]: unknown
   Code?: string
   FullName?: string
-  Id?: number
+  Id?: number | string
   Name?: string
   NetUid?: string
   Value?: number | string
@@ -241,6 +241,8 @@ export type ReportSourceOrganizationsCapabilities = {
 
 export type ReportRequestBody = {
   dataSource?: number
+  priceTypeSalesComparison?: unknown
+  PriceTypeSalesComparison?: unknown
   paymentComparison?: unknown
   PaymentComparison?: unknown
   marginComparison?: unknown
@@ -290,6 +292,7 @@ export type ReportDatasetField = { Type: number; Name: string; Selectable?: bool
 
 export type ReportDataset = {
   agreementPrices?: unknown
+  priceTypeSalesComparison?: unknown
   DataSource: number
   Name: string
   Description: string

@@ -9,6 +9,7 @@ import { XYZ_TITLE } from './salesXyz'
 import { IMPORTED_PAYMENTS_TITLE } from './importedPayments'
 import { CLIENT_COMPARISON_TITLE } from './clientPeriodComparison'
 import { CLIENT_ACTIVITY_REPORT_TITLE } from './clientActivityReport'
+import { PRICE_TYPE_SALES_COMPARISON_DEFAULT_MEASURES, PRICE_TYPE_SALES_COMPARISON_DEFAULT_ROWS, PRICE_TYPE_SALES_COMPARISON_TITLE } from './priceTypeSalesComparison'
 import { CURRENT_STOCK_REPORT_TITLES, getCurrentStockReport, isCurrentStockPresetId, isCurrentStockSource, type CurrentStockPresetId } from './currentStockReports'
 
 export const SUPPLIER_RETURN_REPORT_TITLE = 'Звіт документів повернень постачальникам'
@@ -18,6 +19,9 @@ export const DEBT_AMOUNT_CAPTION = 'Записана заборгованіст�
 export const ACCOUNT_BALANCE_REPORT_TITLE = 'Записані залишки рахунків'
 export const ACCOUNT_BALANCE_AMOUNT_CAPTION = 'Записаний залишок рахунку'
 const DOCUMENT_REPORT_PROFILES = [
+  { dataSource: 27, title: PRICE_TYPE_SALES_COMPARISON_TITLE, rowGroupings: PRICE_TYPE_SALES_COMPARISON_DEFAULT_ROWS, measurements: PRICE_TYPE_SALES_COMPARISON_DEFAULT_MEASURES,
+    preset: { id: 'one-c-sales-by-global-price-type', name: 'Продажі за глобальним типом ціни',
+      description: 'Клієнт → товар. Сума продажу з ПДВ, сума за одним глобальним типом ціни Fenix і різниця. Порівняльна ціна не є ціною договору й не використовується для рекомендацій.' } },
   { dataSource: 22, title: AGREEMENT_PRICES_TITLE, rowGroupings: [5, 28], measurements: [63],
     preset: { id: 'product-prices-by-agreement', name: 'Ціни товарів за договором',
       description: 'Товар → одиниця виміру. Поточна ціна EUR за точним договором клієнта, незалежно від складських залишків. Непідтверджені ціни залишаються порожніми; ціни не додаються.' } },
@@ -71,7 +75,7 @@ export function isCurrentReportSource(dataSource: number | undefined): boolean {
   return isCurrentStockSource(dataSource) || dataSource === 10 || dataSource === 11 || dataSource === 22
 }
 export function usesNativeReportLookup(dataSource: number | undefined): boolean {
-  return isCurrentReportSource(dataSource) || dataSource === 9 || dataSource === 12 || dataSource === 13 || dataSource === 14 || dataSource === 15 || dataSource === 16 || dataSource === 17 || dataSource === 18 || dataSource === 20 || dataSource === 21
+  return isCurrentReportSource(dataSource) || dataSource === 9 || dataSource === 12 || dataSource === 13 || dataSource === 14 || dataSource === 15 || dataSource === 16 || dataSource === 17 || dataSource === 18 || dataSource === 20 || dataSource === 21 || dataSource === 27
 }
 
 const FULL_DATE_RANGE_SOURCES = new Set([13, 14, 15, 16, 17, 18, 20, 21])
@@ -82,6 +86,14 @@ export const hasFixedReportAxes = (dataSource: number): boolean => FIXED_AXES_SO
 
 // Units belong to the selected report and caption, independently of VAT controls.
 export function nativeReportMeasurementUnit(dataSource: number, caption: string): string | undefined {
+  if (dataSource === 27) {
+    if (caption.includes('%')) return 'Відсотки'
+    if (caption.includes('Кількість')) return 'Одиниці зберігання 1С'
+    if (caption.includes('глобальним типом цін') || caption.includes('сумою за типом цін')) {
+      return 'Значення за формулою 1С без валютного перерахунку'
+    }
+    return 'Валюта управлінського обліку 1С'
+  }
   if (dataSource === 22) return caption === AGREEMENT_PRICES_CAPTION ? 'Євро за одиницю товару' : undefined
   if (dataSource === 21) return caption.endsWith('%') ? 'Відсотки' : 'Валюта рядка'
   if (dataSource === 20) return caption.endsWith('в.п.') ? 'Відсоткові пункти' : 'Відсотки'

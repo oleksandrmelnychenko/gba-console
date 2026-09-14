@@ -4,12 +4,13 @@ import type { ReportWorkspaceSnapshot } from './reportWorkspaceDraft'
 
 const options = ['comparison', 'xyz', 'paymentComparison', 'marginComparison', 'rateComparison',
   'returnComparison', 'buyerSalesShare', 'revenueComparison', 'ordering', 'filterExpression',
-  'abcClassification', 'hideZero', 'threshold', 'topGroups']
+  'abcClassification', 'hideZero', 'threshold', 'topGroups', 'priceTypeSalesComparison']
 
 /** Recovery checks what the current editor can represent, not whether an unfinished report can run. */
 export function reportWorkspaceDraftCompatibility(snapshot: ReportWorkspaceSnapshot, dataset?: ReportDataset): string | null {
   const { data, measurements } = snapshot
-  if (!dataset || dataset.DataSource !== (data.dataSource ?? 0) || data.dataSource === 1 || data.oneC != null) {
+  if (!dataset || dataset.DataSource !== (data.dataSource ?? 0) || data.dataSource === 1
+    || (data.oneC != null && data.dataSource !== 27)) {
     return 'Набір даних чернетки зараз недоступний. Чернетка збережена без змін.'
   }
   if (dataset.PeriodSupported === false && (data.from || data.to)) {

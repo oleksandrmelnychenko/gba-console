@@ -21,12 +21,13 @@ import { clientComparisonConfigurationError } from '../data/clientPeriodComparis
 import { normalizeReportResult } from '../utils'
 import { nativeExactFiltersConfigurationError } from '../data/nativeExactFilters'
 import { EXACT_ONE_C_BUYER_ROOT_ID } from '../data/oneCTurnoverReport'
+import { priceTypeSalesComparisonConfigurationError, priceTypeSalesSourceId } from '../data/priceTypeSalesComparison'
 
 const EMPTY_GUID = '00000000-0000-0000-0000-000000000000'
 const CLIENT_FILTER_SQL = 'RegionCode.Value/Client.FullName/Client.USREOU'
 
 export async function createStockReport(body: ReportRequestBody): Promise<ReportResult> {
-  const request = (body.dataSource === 2 || body.dataSource === 17 || body.dataSource === 18 || body.dataSource === 19 || body.dataSource === 20 || body.dataSource === 21 || body.dataSource === 22) ? structuredClone(body) : body
+  const request = (body.dataSource === 2 || body.dataSource === 17 || body.dataSource === 18 || body.dataSource === 19 || body.dataSource === 20 || body.dataSource === 21 || body.dataSource === 22 || body.dataSource === 27) ? structuredClone(body) : body
   const exactFilterError = nativeExactFiltersConfigurationError(request)
   if (exactFilterError) throw new Error(exactFilterError)
   const pricesError = agreementPricesConfigurationError(request)
@@ -49,6 +50,8 @@ export async function createStockReport(body: ReportRequestBody): Promise<Report
   if (paymentsError) throw new Error(paymentsError)
   const comparisonError = clientComparisonConfigurationError(request)
   if (comparisonError) throw new Error(comparisonError)
+  const priceTypeComparisonError = priceTypeSalesComparisonConfigurationError(request)
+  if (priceTypeComparisonError) throw new Error(priceTypeComparisonError)
   const result = await apiRequest<unknown>('/report/stocks/generate', {
     method: 'POST',
     body: request,
@@ -61,7 +64,12 @@ export async function searchDatasetReportValues(dataSource: number, field: numbe
   const result = await apiRequest<unknown>('/report/datasets/lookup', {
     query: { dataSource, field, value: params.value.trim(), offset: params.offset, limit: params.limit }, signal,
   })
-  if (!Array.isArray(result) || !result.every(item => item && typeof item === 'object' && ((dataSource === 18 || dataSource === 19 || dataSource === 20 || dataSource === 21 || dataSource === 22) ? typeof item.Id === 'string' && revenueExactId(item) !== null : (dataSource === 16 || dataSource === 17) ? revenueExactId(item) !== null : Number.isSafeInteger(item.Id) && item.Id > 0) && typeof item.Name === 'string')) throw new Error('Сервер повернув некоректні значення відбору звіту.')
+  if (!Array.isArray(result) || !result.every(item => item && typeof item === 'object' && (dataSource === 27
+    ? priceTypeSalesSourceId(item.Id) !== null
+    : (dataSource === 18 || dataSource === 19 || dataSource === 20 || dataSource === 21 || dataSource === 22)
+      ? typeof item.Id === 'string' && revenueExactId(item) !== null
+      : (dataSource === 16 || dataSource === 17) ? revenueExactId(item) !== null : Number.isSafeInteger(item.Id) && item.Id > 0)
+    && typeof item.Name === 'string' && item.Name.trim().length > 0)) throw new Error('Сервер повернув некоректні значення відбору звіту.')
   if (dataSource === 19 && (new Set(result.map(item => item.Id)).size !== result.length || result.some(item => !item.Name.trim()))) throw new Error('Сервер повернув неоднозначні серії курсів.')
   return result
 }

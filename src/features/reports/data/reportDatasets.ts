@@ -20,6 +20,11 @@ import { reportTopGroupsError } from './reportTopGroups'
 import { valuationConfigurationError, requiresValuationAgreement } from './reportValuation'
 import { getNativeReportProfile, isNativeReportPresetId, type NativeReportPresetId } from './nativeReportProfiles'
 import { cloneNativeExactFilterAliases, nativeExactFiltersConfigurationError } from './nativeExactFilters'
+import {
+  clonePriceTypeSalesComparisonAliases,
+  defaultPriceTypeSalesComparison,
+  priceTypeSalesComparisonConfigurationError,
+} from './priceTypeSalesComparison'
 
 export type DatasetReportPresetId = SalesReportPresetId | 'quantities-by-unit' | NativeReportPresetId
 type DatasetReportPreset = { id: DatasetReportPresetId; name: string; description: string }
@@ -83,6 +88,11 @@ FILTER_KEYS.set(35, 'ImportedPaymentRecord')
 FILTER_KEYS.set(36, 'ImportedPaymentDirection')
 FILTER_KEYS.set(37, 'ImportedPaymentArticle')
 FILTER_KEYS.set(38, 'PaymentImportWorld')
+FILTER_KEYS.set(45, 'OneCDiscountAgreement')
+FILTER_KEYS.set(51, 'OneCPriceComparisonProduct')
+FILTER_KEYS.set(52, 'OneCPriceComparisonClient')
+FILTER_KEYS.set(53, 'OneCPriceComparisonProject')
+FILTER_KEYS.set(54, 'OneCPriceComparisonDivision')
 
 export function datasetGroupings(dataset: ReportDataset | undefined): ReportGroupingItem[] {
   return dataset?.Groupings.map(field => ({ key: GROUPING_KEYS.get(field.Type) ?? field.Name, label: field.Name, type: field.Type })) ?? []
@@ -136,7 +146,7 @@ export function defaultDatasetRequest(dataset: ReportDataset, from: string, to: 
     : field.Type === 0 || field.Type === (dataset.DataSource === 3 ? 2 : 4))
   const fields = preferred.length ? preferred : available.slice(0, 1)
   const selected = fields.map(field => ({ ...field, IsChecked: true, parentName: '' }))
-  return { dataSource: dataset.DataSource, ...(dataset.DataSource === 21 ? { paymentComparison: defaultPaymentComparison() } : {}), ...(dataset.DataSource === 20 ? { marginComparison: defaultMarginComparison() } : {}), ...(dataset.DataSource === 19 ? { rateComparison: defaultRateComparison() } : {}), ...(dataset.DataSource === 18 ? { returnComparison: defaultReturnComparison() } : {}), ...(dataset.DataSource === 17 ? { buyerSalesShare: defaultBuyerSalesShare() } : {}), ...(dataset.DataSource === 16 ? { revenueComparison: defaultRevenueComparison() } : {}), ...(dataset.DataSource === 15 ? { xyz: defaultXyzOptions() } : {}), ...(dataset.DataSource === 13 ? { comparison: { Version: 1, From: '', To: '' } } : {}), from: dataset.PeriodSupported === false ? '' : from,
+  return { dataSource: dataset.DataSource, ...(dataset.DataSource === 27 ? { priceTypeSalesComparison: defaultPriceTypeSalesComparison() } : {}), ...(dataset.DataSource === 21 ? { paymentComparison: defaultPaymentComparison() } : {}), ...(dataset.DataSource === 20 ? { marginComparison: defaultMarginComparison() } : {}), ...(dataset.DataSource === 19 ? { rateComparison: defaultRateComparison() } : {}), ...(dataset.DataSource === 18 ? { returnComparison: defaultReturnComparison() } : {}), ...(dataset.DataSource === 17 ? { buyerSalesShare: defaultBuyerSalesShare() } : {}), ...(dataset.DataSource === 16 ? { revenueComparison: defaultRevenueComparison() } : {}), ...(dataset.DataSource === 15 ? { xyz: defaultXyzOptions() } : {}), ...(dataset.DataSource === 13 ? { comparison: { Version: 1, From: '', To: '' } } : {}), from: dataset.PeriodSupported === false ? '' : from,
     to: dataset.PeriodSupported === false ? '' : to, selections: [], sorted: {
     Row: (profile ? profile.rowGroupings.map(type => groupings.find(item => item.type === type)) : [unit, row])
       .filter((item, index, items): item is ReportGroupingItem => Boolean(item) && items.indexOf(item) === index),
@@ -146,7 +156,7 @@ export function defaultDatasetRequest(dataset: ReportDataset, from: string, to: 
 
 /** Refuse incompatible saved settings before mutating the form. Never remove or remap a filter. */
 export function datasetConfigurationError(data: ReportRequestBody, dataset: ReportDataset | undefined): string | null {
-  if (data.dataSource === 1 || data.oneC) return 'Шаблон використовує архівне джерело 1С, яке більше не доступне. Налаштування не застосовано.'
+  if (data.dataSource === 1 || (data.oneC && data.dataSource !== 27)) return 'Шаблон використовує архівне джерело 1С, яке більше не доступне. Налаштування не застосовано.'
   if (!dataset || (data.dataSource ?? 0) !== dataset.DataSource) return 'Набір даних цього звіту недоступний. Налаштування не застосовано.'
   if (dataset.PeriodSupported === false && (data.from || data.to)) {
     if (dataset.DataSource === 11) return 'Записані залишки рахунків не підтримують період або історичну дату. Шаблон із датами не застосовано; виберіть набір поточного стану заново.'
@@ -172,6 +182,8 @@ export function datasetConfigurationError(data: ReportRequestBody, dataset: Repo
   if (paymentsError) return paymentsError
   const comparisonError = clientComparisonConfigurationError(data, dataset)
   if (comparisonError) return comparisonError
+  const priceTypeComparisonError = priceTypeSalesComparisonConfigurationError(data, dataset)
+  if (priceTypeComparisonError) return priceTypeComparisonError
   const valuationError = valuationConfigurationError(data)
   if (valuationError) return valuationError
   const pricesError = agreementPricesConfigurationError(data, dataset)
@@ -188,7 +200,7 @@ export function datasetConfigurationError(data: ReportRequestBody, dataset: Repo
   const unsupported = [
     ...[...data.sorted.Row, ...data.sorted.Col].flatMap(item => groupingTypes.has(item.type) ? [] : [item.label || item.key || `#${item.type}`]),
     ...data.sorted.Measurements.flatMap(item => measurementTypes.has(item.Type) ? [] : [item.Name || `#${item.Type}`]),
-    ...data.selections.flatMap(item => (dataset.DataSource === 15 || dataset.DataSource === 16 || dataset.DataSource === 17 || dataset.DataSource === 18 || dataset.DataSource === 19 || dataset.DataSource === 20 || dataset.DataSource === 21) && item.IsChecked === false ? [] : (!item.IsChecked || filterTypes.has(item.SelectedField?.Type)) && conditionTypes.has(item.FilterCondition?.Type)
+    ...data.selections.flatMap(item => (dataset.DataSource === 15 || dataset.DataSource === 16 || dataset.DataSource === 17 || dataset.DataSource === 18 || dataset.DataSource === 19 || dataset.DataSource === 20 || dataset.DataSource === 21 || dataset.DataSource === 27) && item.IsChecked === false ? [] : (!item.IsChecked || filterTypes.has(item.SelectedField?.Type)) && conditionTypes.has(item.FilterCondition?.Type)
       ? [] : [item.SelectedField?.Name || 'Умова відбору']),
   ]
   return unsupported.length ? `Набір «${dataset.Name}» не підтримує налаштування: ${unsupported.join(', ')}. Налаштування не застосовано.` : reportAbcClassificationError(data, dataset) ?? reportOrderingError(data, dataset) ?? reportFilterExpressionError(data, dataset) ?? reportTopGroupsError(data, dataset) ?? reportThresholdError(data, dataset) ?? reportHideZeroError(data, dataset)
@@ -236,9 +248,11 @@ export function datasetPresetRequest(dataset: ReportDataset, id: DatasetReportPr
     ...(Object.hasOwn(current, 'TopGroups') ? { TopGroups: structuredClone(current.TopGroups) } : {}),
     ...(Object.hasOwn(current, 'filterExpression') ? { filterExpression: structuredClone(current.filterExpression) } : {}),
     ...(Object.hasOwn(current, 'FilterExpression') ? { FilterExpression: structuredClone(current.FilterExpression) } : {}),
-    ...cloneNativeExactFilterAliases(current) }
+    ...cloneNativeExactFilterAliases(current), ...clonePriceTypeSalesComparisonAliases(current),
+    ...(dataset.DataSource === 27 && current.oneC ? { oneC: structuredClone(current.oneC) } : {}) }
   if (isNativeReportPresetId(id)) {
     const defaults = defaultDatasetRequest(dataset, current.from, current.to)
+    if (dataset.DataSource === 27 && Object.keys(current).some(key => key.toLowerCase() === 'pricetypesalescomparison')) delete defaults.priceTypeSalesComparison
     if (dataset.DataSource === 21 && Object.keys(current).some(key => key.toLowerCase() === 'paymentcomparison')) delete defaults.paymentComparison
     if (dataset.DataSource === 20 && Object.keys(current).some(key => key.toLowerCase() === 'margincomparison')) delete defaults.marginComparison
     if (dataset.DataSource === 18 && Object.keys(current).some(key => key.toLowerCase() === 'returncomparison')) delete defaults.returnComparison

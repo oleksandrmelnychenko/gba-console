@@ -11,6 +11,7 @@ const managedFields = new Set([
   'filterExpression', 'FilterExpression', 'abcClassification', 'AbcClassification',
   'hideZero', 'HideZero', 'threshold', 'Threshold', 'topGroups', 'TopGroups',
   'productClassification', 'ProductClassification', 'sourceOrganizations', 'SourceOrganizations',
+  'priceTypeSalesComparison', 'PriceTypeSalesComparison', 'oneC', 'OneC',
 ])
 
 export function retainStoredTemplateFields(stored: ReportRequestBody, draft: ReportRequestBody): ReportRequestBody {

@@ -334,6 +334,16 @@ const REPORT_FIELD_LABELS: Record<string, string> = {
   SourceProductCharacteristic: 'Характеристика товару (1С)',
   SourceOrder: 'Замовлення покупця (1С)',
   SourceSaleDocument: 'Документ реалізації (1С)',
+  OneCPriceComparisonProduct: 'Товар Fenix',
+  OneCPriceComparisonClient: 'Клієнт Fenix',
+  OneCDiscountAgreement: 'Договір 1С',
+  OneCPriceComparisonProject: 'Проєкт Fenix',
+  OneCPriceComparisonDivision: 'Підрозділ Fenix',
+  OneCSalesValueBeforeDiscount: 'Сума продажу до знижки без ПДВ (1С)',
+  OneCSalesDiscountAmount: 'Сума знижки без ПДВ (1С)',
+  OneCSalesDiscountPercent: 'Знижка без ПДВ, % (1С)',
+  OneCPriceTypeValue: 'Сума за глобальним типом цін (1С)',
+  OneCPriceTypeDifference: 'Різниця між продажем і глобальним типом цін (1С)',
   Year: 'По роках',
 }
 

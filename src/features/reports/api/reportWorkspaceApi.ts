@@ -12,6 +12,12 @@ import { isCurrentReportSource } from '../data/nativeReportProfiles'
 import { isClientComparisonCapability } from '../data/clientPeriodComparison'
 import { isReportCatalogue } from '../data/reportMigration'
 import { cloneNativeExactFilterAliases, nativeExactFiltersConfigurationError, normalizeNativeExactFilterDataset } from '../data/nativeExactFilters'
+import {
+  clonePriceTypeSalesComparisonAliases,
+  isPriceTypeSalesComparisonDataset,
+  normalizePriceTypeSalesComparisonDataset,
+  priceTypeSalesComparisonConfigurationError,
+} from '../data/priceTypeSalesComparison'
 
 const paymentUnsupportedCapabilities = ['Ordering', 'TopGroups', 'Threshold', 'HideZero', 'AbcClassification', 'FilterExpression'] as const
 const marginGroupings = [{ Type: 12, Name: 'Клієнт' }, { Type: 15, Name: 'Договір' }] as const
@@ -34,6 +40,7 @@ function isDataset(value: unknown): value is ReportDataset {
     && (item.PeriodSupported === undefined || typeof item.PeriodSupported === 'boolean')
     && !Object.hasOwn(item, 'AgreementPrices')
     && (item.DataSource === 22 ? isAgreementPricesDataset(item as ReportDataset) : item.agreementPrices == null)
+    && (item.DataSource === 27 ? isPriceTypeSalesComparisonDataset(item as ReportDataset) : item.priceTypeSalesComparison == null)
     && (item.DataSource !== 12 || (item.PeriodRequired === true && item.PeriodSupported === true))
     && (item.DataSource === 19 ? item.PeriodRequired === false && item.PeriodSupported === false && item.Filters?.length === 0 && item.Groupings?.length === 1 && item.Groupings[0].Type === 52 && item.Groupings[0].Name === RATE_COMPARISON_GROUP
       && item.Measurements?.length === RATE_COMPARISON_CAPTIONS.length && item.Measurements.every((field, index) => field.Type === 51 + index && field.Name === RATE_COMPARISON_CAPTIONS[index] && field.Selectable !== false) && isRateComparisonCapability(item.rateComparison) : item.rateComparison == null)
@@ -57,8 +64,11 @@ function isDataset(value: unknown): value is ReportDataset {
 
 export async function getReportDatasets(signal?: AbortSignal): Promise<ReportDataset[]> {
   const result = await apiRequest<unknown>('/report/datasets', { signal })
-  const normalized = Array.isArray(result) ? result.map(item => item && typeof item === 'object' && !Array.isArray(item)
-    ? normalizeNativeExactFilterDataset(item as Record<string, unknown>) : null) : []
+  const normalized = Array.isArray(result) ? result.map(item => {
+    if (!item || typeof item !== 'object' || Array.isArray(item)) return null
+    const exactFilters = normalizeNativeExactFilterDataset(item as Record<string, unknown>)
+    return exactFilters ? normalizePriceTypeSalesComparisonDataset(exactFilters as unknown as Record<string, unknown>) : null
+  }) : []
   if (!normalized.length || !normalized.every((item): item is ReportDataset => item !== null && isDataset(item))
     || new Set(normalized.map(item => item.DataSource)).size !== normalized.length) {
     throw new Error('Сервер повернув некоректний список наборів даних звітів.')
@@ -110,7 +120,10 @@ type WireTemplate = Required<Omit<ReportTemplate, 'Data'>> & {
     productClassification?: unknown
     SourceOrganizations?: unknown
     sourceOrganizations?: unknown
+    PriceTypeSalesComparison?: unknown
+    priceTypeSalesComparison?: unknown
     OneC?: ReportRequestBody['oneC']
+    oneC?: ReportRequestBody['oneC']
   }
 }
 
@@ -121,8 +134,8 @@ export function normalizeSavedTemplate(value: WireTemplate): ReportTemplate {
   }
   return { ...value, Data: {
     from: value.Data.From ?? '', to: value.Data.To ?? '',
-    sorted: (value.Data.DataSource === 16 || value.Data.DataSource === 17 || value.Data.DataSource === 18 || value.Data.DataSource === 19 || value.Data.DataSource === 20 || value.Data.DataSource === 21) ? structuredClone(value.Data.Sorted) : value.Data.Sorted,
-    selections: (value.Data.DataSource === 16 || value.Data.DataSource === 17 || value.Data.DataSource === 18 || value.Data.DataSource === 19 || value.Data.DataSource === 20 || value.Data.DataSource === 21) ? structuredClone(value.Data.Selections ?? []) : value.Data.Selections ?? [],
+    sorted: (value.Data.DataSource === 16 || value.Data.DataSource === 17 || value.Data.DataSource === 18 || value.Data.DataSource === 19 || value.Data.DataSource === 20 || value.Data.DataSource === 21 || value.Data.DataSource === 27) ? structuredClone(value.Data.Sorted) : value.Data.Sorted,
+    selections: (value.Data.DataSource === 16 || value.Data.DataSource === 17 || value.Data.DataSource === 18 || value.Data.DataSource === 19 || value.Data.DataSource === 20 || value.Data.DataSource === 21 || value.Data.DataSource === 27) ? structuredClone(value.Data.Selections ?? []) : value.Data.Selections ?? [],
     dataSource: value.Data.DataSource,
     ...clonePaymentComparisonAliases(value.Data),
     ...cloneMarginComparisonAliases(value.Data),
@@ -132,6 +145,7 @@ export function normalizeSavedTemplate(value: WireTemplate): ReportTemplate {
     ...cloneRevenueComparisonAliases(value.Data),
     ...cloneXyzAliases(value.Data),
     ...cloneNativeExactFilterAliases(value.Data),
+    ...clonePriceTypeSalesComparisonAliases(value.Data),
     ...(Object.hasOwn(value.Data, 'comparison') ? { comparison: value.Data.comparison,
       ...(Object.hasOwn(value.Data, 'Comparison') ? { Comparison: value.Data.Comparison } : {}),
     } : Object.hasOwn(value.Data, 'Comparison') ? { comparison: value.Data.Comparison } : {}),
@@ -150,7 +164,7 @@ export function normalizeSavedTemplate(value: WireTemplate): ReportTemplate {
       ...(Object.hasOwn(value.Data, 'TopGroups') ? { TopGroups: value.Data.TopGroups } : {}),
     } : Object.hasOwn(value.Data, 'TopGroups') ? { topGroups: value.Data.TopGroups } : {}),
     ...(value.Data.ValuationClientAgreementId != null ? { valuationClientAgreementId: value.Data.ValuationClientAgreementId } : {}),
-    ...(value.Data.OneC ? { oneC: value.Data.OneC } : {}),
+    ...((value.Data.OneC ?? value.Data.oneC) ? { oneC: value.Data.OneC ?? value.Data.oneC } : {}),
   } }
 }
 
@@ -161,7 +175,7 @@ export async function getServerReportTemplates(signal?: AbortSignal): Promise<Re
 }
 
 export async function saveServerReportTemplate(template: ReportTemplate): Promise<ReportTemplate> {
-  const request = (template.Data.dataSource === 2 || template.Data.dataSource === 17 || template.Data.dataSource === 18 || template.Data.dataSource === 19 || template.Data.dataSource === 20 || template.Data.dataSource === 21 || template.Data.dataSource === 22) ? structuredClone(template) : template
+  const request = (template.Data.dataSource === 2 || template.Data.dataSource === 17 || template.Data.dataSource === 18 || template.Data.dataSource === 19 || template.Data.dataSource === 20 || template.Data.dataSource === 21 || template.Data.dataSource === 22 || template.Data.dataSource === 27) ? structuredClone(template) : template
   const exactFilterError = nativeExactFiltersConfigurationError(request.Data)
   if (exactFilterError) throw new Error(exactFilterError)
   const pricesError = agreementPricesConfigurationError(request.Data)
@@ -180,6 +194,8 @@ export async function saveServerReportTemplate(template: ReportTemplate): Promis
   if (revenueError) throw new Error(revenueError)
   const xyzError = salesXyzConfigurationError(request.Data)
   if (xyzError) throw new Error(xyzError)
+  const priceTypeComparisonError = priceTypeSalesComparisonConfigurationError(request.Data)
+  if (priceTypeComparisonError) throw new Error(priceTypeComparisonError)
   const result = await apiRequest<WireTemplate>('/report/templates/save', {
     method: 'POST', body: { Id: request.Id, Revision: request.Revision ?? 0, Name: request.Name, Data: request.Data },
   })

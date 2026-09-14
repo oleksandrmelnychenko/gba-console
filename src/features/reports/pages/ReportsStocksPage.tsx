@@ -76,6 +76,7 @@ import {
   getReportFieldLabel,
 } from '../data/reportOptions'
 import type {
+  OneCTurnoverFilters,
   ReportCatalogue,
   ReportDataset,
   ReportEntity,
@@ -137,6 +138,11 @@ import { requestTopGroups } from '../data/reportTopGroups'
 import { useReportGroupingOrdering } from '../hooks/useReportGroupingOrdering'
 import type { ReportGroupingLayout } from '../data/reportGroupingLayout'
 import { requestProductClassification, requestSourceOrganizations } from '../data/nativeExactFilters'
+import PriceTypeSalesComparisonPanel from './PriceTypeSalesComparisonPanel'
+import {
+  clonePriceTypeSalesComparisonValue,
+  PRICE_TYPE_SALES_COMPARISON_SOURCE,
+} from '../data/priceTypeSalesComparison'
 const LOOKUP_SEARCH_DEBOUNCE_MS = 300
 const LOOKUP_SEARCH_LIMIT = 30
 const DATE_INPUT_DEBOUNCE_MS = 400
@@ -202,6 +208,12 @@ function createEmptySelection(): ReportSelection {
   }
 }
 
+function shouldLoadDatasetDefaults(dataSource: number, periodSupported: boolean): boolean {
+  return !periodSupported
+    || supportsFullReportDateRange(dataSource)
+    || dataSource === PRICE_TYPE_SALES_COMPARISON_SOURCE
+}
+
 export function ReportsStocksPage({ constructorMode = false }: { constructorMode?: boolean }) {
   const { user, session } = useAuth()
   const ownerId = user?.NetUid ?? session?.userNetUid ?? null
@@ -235,6 +247,8 @@ function ReportsStocksWorkspace({ ownerId, constructorMode }: { ownerId: string 
   const [xyz, setXyz] = useValueState<unknown>(undefined)
   const [productClassification, setProductClassification] = useValueState<unknown>(undefined)
   const [sourceOrganizations, setSourceOrganizations] = useValueState<unknown>(undefined)
+  const [priceTypeSalesComparison, setPriceTypeSalesComparison] = useValueState<unknown>(undefined)
+  const [oneCScope, setOneCScope] = useValueState<OneCTurnoverFilters | undefined>(undefined)
   const [oneCReportOpen, setOneCReportOpen] = useState(false)
   const [oneCReportGenerating, setOneCReportGenerating] = useState(false)
   const [valuationClientAgreementId, setValuationAgreementId] = useValueState<number | undefined>(undefined)
@@ -283,8 +297,8 @@ function ReportsStocksWorkspace({ ownerId, constructorMode }: { ownerId: string 
   // period on a pause, and only once it is a period the server can answer for.
   const hasLookupPeriod = !getPeriodError(debouncedFrom, debouncedTo, maxDate, t)
   const reportBody = useMemo<ReportRequestBody>(
-    () => buildReportBuilderRequest({ dataSource, comparison, xyz, revenueComparison, buyerSalesShare, returnComparison, paymentComparison, marginComparison, rateComparison, productClassification, sourceOrganizations, from, to, ordering, filterExpression, topGroups, threshold, hideZero, abcClassification, valuationClientAgreementId, rowGroups, colGroups, measurements, selections }),
-    [abcClassification, colGroups, comparison, xyz, revenueComparison, buyerSalesShare, returnComparison, paymentComparison, marginComparison, rateComparison, productClassification, sourceOrganizations, dataSource, filterExpression, from, hideZero, measurements, ordering, rowGroups, selections, to, topGroups, threshold, valuationClientAgreementId],
+    () => buildReportBuilderRequest({ dataSource, comparison, xyz, revenueComparison, buyerSalesShare, returnComparison, paymentComparison, marginComparison, rateComparison, productClassification, sourceOrganizations, priceTypeSalesComparison, oneC: oneCScope, from, to, ordering, filterExpression, topGroups, threshold, hideZero, abcClassification, valuationClientAgreementId, rowGroups, colGroups, measurements, selections }),
+    [abcClassification, colGroups, comparison, xyz, revenueComparison, buyerSalesShare, returnComparison, paymentComparison, marginComparison, rateComparison, productClassification, sourceOrganizations, priceTypeSalesComparison, oneCScope, dataSource, filterExpression, from, hideZero, measurements, ordering, rowGroups, selections, to, topGroups, threshold, valuationClientAgreementId],
   )
   const { result, lastRun, error, isLoading, downloadModalOpened, update: updateRun, begin: beginRun, clear: clearRun } = useReportRunState<ReportRunOutcome>(JSON.stringify({
     request: reportBody,
@@ -386,7 +400,9 @@ function ReportsStocksWorkspace({ ownerId, constructorMode }: { ownerId: string 
     setRestoredData(null)
     setDraftRestoreError(null)
     setActiveTemplate(null)
-    const snapshotDefaults = dataset && (!periodSupported || supportsFullReportDateRange(dataSource)) ? defaultDatasetRequest(dataset, today, today) : null
+    const snapshotDefaults = dataset && shouldLoadDatasetDefaults(dataSource, periodSupported)
+      ? defaultDatasetRequest(dataset, today, today)
+      : null
     setComparison(snapshotDefaults?.comparison)
     setXyz(snapshotDefaults?.xyz)
     setRateComparison(snapshotDefaults?.rateComparison)
@@ -397,6 +413,8 @@ function ReportsStocksWorkspace({ ownerId, constructorMode }: { ownerId: string 
     setRevenueComparison(snapshotDefaults?.revenueComparison)
     setProductClassification(undefined)
     setSourceOrganizations(undefined)
+    setPriceTypeSalesComparison(snapshotDefaults?.priceTypeSalesComparison)
+    setOneCScope(snapshotDefaults?.oneC)
     setFrom(periodSupported ? today : '')
     setTo(periodSupported ? today : '')
     setMeasurements(snapshotDefaults ? datasetMeasurements(dataset, snapshotDefaults.sorted.Measurements) : createDefaultMeasurementGroups())
@@ -474,6 +492,8 @@ function ReportsStocksWorkspace({ ownerId, constructorMode }: { ownerId: string 
     setRevenueComparison(structuredClone(revenueComparisonOptions(requestRevenueComparison(data)) ?? requestRevenueComparison(data)))
     setProductClassification(structuredClone(requestProductClassification(data)))
     setSourceOrganizations(structuredClone(requestSourceOrganizations(data)))
+    setPriceTypeSalesComparison(clonePriceTypeSalesComparisonValue(data))
+    setOneCScope(structuredClone(data.oneC))
     groupingOrdering.loadOrdering(requestOrdering(data))
     const nextAgreementId = data.valuationClientAgreementId ?? undefined
     setValuationAgreementId(nextAgreementId)
@@ -527,6 +547,8 @@ function ReportsStocksWorkspace({ ownerId, constructorMode }: { ownerId: string 
     setRevenueComparison(structuredClone(requestRevenueComparison(data)))
     setProductClassification(structuredClone(requestProductClassification(data)))
     setSourceOrganizations(structuredClone(requestSourceOrganizations(data)))
+    setPriceTypeSalesComparison(clonePriceTypeSalesComparisonValue(data))
+    setOneCScope(structuredClone(data.oneC))
     setTopGroups(structuredClone(requestTopGroups(data)))
     setThreshold(structuredClone(requestThreshold(data)))
     setHideZero(structuredClone(requestHideZero(data)))
@@ -627,6 +649,8 @@ function ReportsStocksWorkspace({ ownerId, constructorMode }: { ownerId: string 
             enabled={canGenerateReport} disabled={isLoading} agreement={valuation.agreement} validating={valuation.loading}
             validationError={valuation.error} onChange={setValuationAgreementId} onRetry={valuation.retry} />
         </div> : null}
+        priceTypeSalesComparisonPanel={<PriceTypeSalesComparisonPanel dataSource={dataSource} value={priceTypeSalesComparison}
+          scope={oneCScope} disabled={comparisonSettingsDisabled} onChange={setPriceTypeSalesComparison} onScopeChange={setOneCScope} />}
         dataSource={dataSource}
         rateComparisonPanel={<RateComparisonPanel dataSource={dataSource} value={rateComparison} disabled={comparisonSettingsDisabled} onChange={setRateComparison} />}
         paymentComparisonPanel={<PaymentComparisonPanel dataSource={dataSource} value={paymentComparison} disabled={comparisonSettingsDisabled} onChange={setPaymentComparison} />}
@@ -723,6 +747,7 @@ type ReportBuilderFormProps = {
   datasetSummary: ReactNode
   catalogueControl: ReactNode
   agreementPanel: ReactNode
+  priceTypeSalesComparisonPanel: ReactNode
   rateComparisonPanel: ReactNode
   paymentComparisonPanel: ReactNode
   marginComparisonPanel: ReactNode
@@ -1005,6 +1030,7 @@ function ReportSourceSettings(props: ReportBuilderFormProps) {
     constructorMode,
     constructorSection,
     agreementPanel,
+    priceTypeSalesComparisonPanel,
     comparisonPanel,
     xyzPanel,
     rateComparisonPanel,
@@ -1021,6 +1047,7 @@ function ReportSourceSettings(props: ReportBuilderFormProps) {
   return (
           <div hidden={constructorMode && constructorSection !== 'structure'} className={constructorMode ? 'report-constructor-source-settings' : undefined}>
           {agreementPanel}
+          {priceTypeSalesComparisonPanel}
           {constructorMode ? comparisonPanel : null}
           {rateComparisonPanel}
           {paymentComparisonPanel}
