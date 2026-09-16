@@ -3,8 +3,8 @@ import { describe, expect, it } from 'vitest'
 
 const nginx = readFileSync('nginx.conf', 'utf8')
 const vite = readFileSync('vite.config.ts', 'utf8')
-const nginxRoutes = [...nginx.matchAll(/location ~ (\S+) \{([\s\S]*?)\n  \}/g)]
-const viteRoutes = [...vite.matchAll(/'([^']+)': \{([\s\S]*?)\n      \}/g)]
+const nginxRoutes = [...nginx.matchAll(/location ~ (\S+) \{([\s\S]*?)\n {2}\}/g)]
+const viteRoutes = [...vite.matchAll(/'([^']+)': \{([\s\S]*?)\n {6}\}/g)]
 
 function nginxTarget(path: string) {
   return nginxRoutes.find(([, pattern]) => new RegExp(pattern).test(path))?.[2]
