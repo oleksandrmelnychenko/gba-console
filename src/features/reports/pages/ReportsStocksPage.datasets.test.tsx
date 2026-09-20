@@ -87,6 +87,7 @@ describe('native report datasets in the constructor', () => {
     await waitFor(() => expect(createStockReport).toHaveBeenCalledOnce())
     expect(vi.mocked(createStockReport).mock.calls[0][0]).toMatchObject(defaultDatasetRequest(dataset, '', ''))
     expect(screen.getByText(/Сервер не повернув файл поточних залишків/)).toBeTruthy()
+    expect(container.querySelector('.reports-stocks-result__meta')?.textContent).toMatch(/^Поточний стан · Показників: /)
     await chooseDataset(purchaseDataset.Name)
     expect((screen.getByLabelText('Від') as HTMLInputElement).value).toBe('2026-06-01')
     expect((screen.getByLabelText('До') as HTMLInputElement).value).toBe('2026-06-30')

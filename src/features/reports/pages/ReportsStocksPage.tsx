@@ -1623,6 +1623,11 @@ type ReportResultSectionProps = {
   onOpenFiles: () => void
 }
 
+function reportRunScopeLabel(run: ReportRunOutcome, t: TranslateFunction): string {
+  if (run.rateComparison) return `${formatDate(run.rateComparison.CurrentAsOf)} / ${formatDate(run.rateComparison.PreviousAsOf)}`
+  return run.periodSupported ? `${formatDate(run.from)} – ${formatDate(run.to)}` : t('Поточний стан')
+}
+
 function ReportResultSection({
   hasFiles,
   lastRun,
@@ -1637,10 +1642,10 @@ function ReportResultSection({
         id: 'period',
         header: lastRun?.rateComparison ? 'Дати курсів' : lastRun?.periodSupported === false ? t('Стан') : t('Період'),
         minWidth: 180,
-        accessor: (row) => row.rateComparison ? `${formatDate(row.rateComparison.CurrentAsOf)} / ${formatDate(row.rateComparison.PreviousAsOf)}` : row.periodSupported ? `${formatDate(row.from)} – ${formatDate(row.to)}` : t('Поточний стан'),
+        accessor: (row) => reportRunScopeLabel(row, t),
         cell: (row) => (
           <span className="reports-stocks-result__period">
-            {row.rateComparison ? `${formatDate(row.rateComparison.CurrentAsOf)} / ${formatDate(row.rateComparison.PreviousAsOf)}` : row.periodSupported ? `${formatDate(row.from)} – ${formatDate(row.to)}` : t('Поточний стан')}
+            {reportRunScopeLabel(row, t)}
           </span>
         ),
       },
@@ -1718,7 +1723,7 @@ function ReportResultSection({
           </Text>
           <Text className="reports-stocks-result__meta" size="xs" c="gray.9">
             {lastRun
-              ? `${formatDate(lastRun.from)} – ${formatDate(lastRun.to)} · ${t('Показників')}: ${lastRun.measures.length}`
+              ? `${reportRunScopeLabel(lastRun, t)} · ${t('Показників')}: ${lastRun.measures.length}`
               : t('Після формування тут з’являться файли Excel і PDF.')}
           </Text>
         </Box>

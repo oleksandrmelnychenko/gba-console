@@ -55,6 +55,7 @@ describe('source19 explicit series constructor', () => {
     const request = vi.mocked(createStockReport).mock.calls[0][0]
     expect(request).toMatchObject({ from: '', to: '', selections: [], rateComparison: { RateDefinitionId: '9007199254740993', CurrentAsOf: '2026-07-31', PreviousAsOf: '2026-06-30' } })
     expect(request.sorted.Row.map(item => item.type)).toEqual([52]); expect(request.sorted.Col).toEqual([]); expect(request.sorted.Measurements.map(item => item.Type)).toEqual([51, 53, 54])
+    expect(container.querySelector('.reports-stocks-result__meta')?.textContent).toMatch(/^31\.07\.2026 \/ 30\.06\.2026 · Показників: /)
     expect(screen.queryByText('Поточний стан', { exact: true })).toBeNull()
   })
   it('accepts reversed/equal dates and clears exact definition on rate-kind change', async () => {
