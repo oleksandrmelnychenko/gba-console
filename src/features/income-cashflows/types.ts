@@ -107,7 +107,15 @@ export type Sale = EntityFields & {
   BaseLifeCycleStatus?: SaleStatus | null
   BaseSalePaymentStatus?: SaleStatus | null
   ChangedToInvoice?: string
+  ClientAgreement?: ClientAgreement | null
+  ClientAgreementId?: number
   Created?: string
+  Order?: {
+    TotalAmount?: number
+    TotalAmountLocal?: number
+  } | null
+  RetailAccountingPaidAmountUah?: number
+  RetailPaidAmountUah?: number
   SaleNumber?: SaleNumber | null
   TotalAmount?: number
   TotalAmountLocal?: number

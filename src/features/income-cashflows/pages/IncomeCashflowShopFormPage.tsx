@@ -33,6 +33,7 @@ import {
   getIncomeCashflowPaymentMovements,
   getIncomeCashflowRetailClients,
   getIncomeCashflowRetailClientAgreements,
+  getIncomeCashflowRetailClientSales,
   getIncomeCashflowSpecificExchangeRate,
   searchIncomeCashflowPaymentMovements,
   searchIncomeCashflowPaymentRegisters,
@@ -52,6 +53,7 @@ import type {
   PaymentMovement,
   PaymentRegister,
   RetailClient,
+  Sale,
 } from '../types'
 import { IncomePaymentOperationType } from '../types'
 import {
@@ -91,6 +93,7 @@ type FormState = {
   selectedDebtValues: string[]
   selectedMovementValue: string
   selectedRetailClientValue: string
+  selectedShopSaleValue: string
   time: string
 }
 
@@ -105,6 +108,7 @@ type ApplyRetailAgreementsParams = {
   autoAllocate?: boolean
   paymentRegisters: PaymentRegister[]
   retailClient?: RetailClient | null
+  sales: Sale[]
   selectedAgreementId?: string
   selectedSaleId?: string
 }
@@ -178,6 +182,7 @@ function IncomeCashflowShopFormPageContent({ searchParams, onClose, onSaved }: I
   const [retailClients, setRetailClients] = useValueState<RetailClient[]>([])
   const [selectedRetailClient, setSelectedRetailClient] = useValueState<RetailClient | null>(null)
   const [retailAgreements, setRetailAgreements] = useValueState<ClientAgreement[]>([])
+  const [retailSales, setRetailSales] = useValueState<Sale[]>([])
   const [form, setForm] = useValueState<FormState>(() => createInitialForm(queryAmount))
   const [exchangeCalculation, setExchangeCalculation] = useValueState<ExchangeCalculationState | null>(null)
   const [error, setError] = useValueState<string | null>(null)
@@ -251,6 +256,11 @@ function IncomeCashflowShopFormPageContent({ searchParams, onClose, onSaved }: I
   const movementOptions = useMemo(() => toUniqueLabels(paymentMovements), [paymentMovements])
   const retailClientOptions = useMemo(() => toRetailClientLabels(retailClients), [retailClients])
   const clientInvoiceOptions = useMemo(() => toClientInvoiceOptions(visibleDebts), [visibleDebts])
+  const shopSales = useMemo(
+    () => filterUnallocatedShopSales(retailSales, selectedAgreement, visibleDebts),
+    [retailSales, selectedAgreement, visibleDebts],
+  )
+  const shopSaleOptions = useMemo(() => toShopSaleOptions(shopSales), [shopSales])
   const debtTotal = useMemo(() => visibleDebts.reduce((sum, debt) => sum + readDebtTotal(debt), 0), [visibleDebts])
   const exchangeCalculationKey = createExchangeCalculationKey({
     amount: form.amount,
@@ -279,6 +289,7 @@ function IncomeCashflowShopFormPageContent({ searchParams, onClose, onSaved }: I
       autoAllocate,
       paymentRegisters: nextPaymentRegisters,
       retailClient,
+      sales,
       selectedAgreementId,
       selectedSaleId,
     }: ApplyRetailAgreementsParams) => {
@@ -296,8 +307,12 @@ function IncomeCashflowShopFormPageContent({ searchParams, onClose, onSaved }: I
       const nextSelectedDebt = selectedSaleId
         ? nextDebts.find((debt) => matchesDebtSaleId(debt, selectedSaleId)) || null
         : null
+      const nextSelectedShopSaleValue = selectedSaleId && !nextSelectedDebt
+        ? String(parsePositiveEntityId(selectedSaleId) || '')
+        : ''
 
       setRetailAgreements(agreements)
+      setRetailSales(sales)
       setSelectedRetailClient(retailClient || null)
       setForm((current) => ({
         ...current,
@@ -311,9 +326,10 @@ function IncomeCashflowShopFormPageContent({ searchParams, onClose, onSaved }: I
         selectedCurrencyValue: nextCurrency ? getEntityValue(nextCurrency) : '',
         selectedDebtValues: nextSelectedDebtValues,
         selectedRetailClientValue: retailClient ? getEntityValue(retailClient) : current.selectedRetailClientValue || retailClientId,
+        selectedShopSaleValue: nextSelectedShopSaleValue,
       }))
     },
-    [retailClientId, setForm, setRetailAgreements, setSelectedRetailClient],
+    [retailClientId, setForm, setRetailAgreements, setRetailSales, setSelectedRetailClient],
   )
 
   useEffect(() => {
@@ -351,7 +367,10 @@ function IncomeCashflowShopFormPageContent({ searchParams, onClose, onSaved }: I
         }))
 
         if (retailClientId) {
-          const agreements = await getIncomeCashflowRetailClientAgreements(retailClientId)
+          const [agreements, sales] = await Promise.all([
+            getIncomeCashflowRetailClientAgreements(retailClientId),
+            getIncomeCashflowRetailClientSales(retailClientId),
+          ])
           const retailClient = nextRetailClients.find(
             (client) => getEntityValue(client) === retailClientId,
           ) || null
@@ -363,6 +382,7 @@ function IncomeCashflowShopFormPageContent({ searchParams, onClose, onSaved }: I
               autoAllocate: Boolean(saleId),
               paymentRegisters: nextRegisters,
               retailClient,
+              sales,
               selectedAgreementId: agreementId,
               selectedSaleId: saleId,
             })
@@ -525,6 +545,7 @@ function IncomeCashflowShopFormPageContent({ searchParams, onClose, onSaved }: I
     setResolvingClient(false)
     setSelectedRetailClient(null)
     setRetailAgreements([])
+    setRetailSales([])
     setForm((current) => ({
       ...current,
       clientInvoiceSearch: '',
@@ -535,6 +556,7 @@ function IncomeCashflowShopFormPageContent({ searchParams, onClose, onSaved }: I
       selectedCurrencyValue: '',
       selectedDebtValues: [],
       selectedRetailClientValue: '',
+      selectedShopSaleValue: '',
     }))
   }
 
@@ -550,6 +572,7 @@ function IncomeCashflowShopFormPageContent({ searchParams, onClose, onSaved }: I
     setError(null)
     setSelectedRetailClient(null)
     setRetailAgreements([])
+    setRetailSales([])
     setForm((current) => ({
       ...current,
       clientInvoiceSearch: '',
@@ -558,16 +581,21 @@ function IncomeCashflowShopFormPageContent({ searchParams, onClose, onSaved }: I
       selectedAgreementValue: '',
       selectedCurrencyValue: '',
       selectedDebtValues: [],
+      selectedShopSaleValue: '',
     }))
 
     try {
-      const agreements = await getIncomeCashflowRetailClientAgreements(netId)
+      const [agreements, sales] = await Promise.all([
+        getIncomeCashflowRetailClientAgreements(netId),
+        getIncomeCashflowRetailClientSales(netId),
+      ])
 
       if (retailClientSelectionRequestGuard.isCurrent(request)) {
         applyRetailAgreements({
           agreements,
           paymentRegisters,
           retailClient,
+          sales,
         })
       }
     } catch (loadError) {
@@ -609,6 +637,7 @@ function IncomeCashflowShopFormPageContent({ searchParams, onClose, onSaved }: I
       selectedAgreementValue: agreement?.Agreement ? getEntityValue(agreement.Agreement) : '',
       selectedCurrencyValue: '',
       selectedDebtValues: [],
+      selectedShopSaleValue: '',
     })
   }
 
@@ -627,6 +656,7 @@ function IncomeCashflowShopFormPageContent({ searchParams, onClose, onSaved }: I
       clientInvoiceSearch: '',
       selectedAgreementValue: value || '',
       selectedDebtValues: [],
+      selectedShopSaleValue: '',
     })
   }
 
@@ -722,6 +752,7 @@ function IncomeCashflowShopFormPageContent({ searchParams, onClose, onSaved }: I
           ? getDebtDocumentNumber(selectedDebts[0])
           : '',
         selectedDebtValues,
+        selectedShopSaleValue: '',
       }
     })
   }
@@ -730,6 +761,7 @@ function IncomeCashflowShopFormPageContent({ searchParams, onClose, onSaved }: I
     updateForm({
       clientInvoiceSearch: value,
       selectedDebtValues: [],
+      selectedShopSaleValue: '',
     })
   }
 
@@ -749,6 +781,20 @@ function IncomeCashflowShopFormPageContent({ searchParams, onClose, onSaved }: I
       autoAllocate: false,
       clientInvoiceSearch: getDebtDocumentNumber(debt),
       selectedDebtValues: [getIncomeCashflowDebtTargetValue(debt)],
+      selectedShopSaleValue: '',
+    })
+  }
+
+  function handleShopSaleChanged(value: string | null) {
+    const sale = shopSales.find((item) => String(item.Id || '') === value) || null
+    const outstandingAmount = sale ? getShopSaleOutstandingAmount(sale) : 0
+
+    updateForm({
+      amount: sale && outstandingAmount > 0 ? outstandingAmount : form.amount,
+      autoAllocate: false,
+      clientInvoiceSearch: '',
+      selectedDebtValues: [],
+      selectedShopSaleValue: sale ? String(sale.Id) : '',
     })
   }
 
@@ -786,6 +832,7 @@ function IncomeCashflowShopFormPageContent({ searchParams, onClose, onSaved }: I
       autoAllocate: form.autoAllocate,
       linkedSaleId,
       selectedDebtValues: form.selectedDebtValues,
+      selectedShopSaleValue: form.selectedShopSaleValue,
       t,
       visibleDebts,
     })
@@ -800,6 +847,7 @@ function IncomeCashflowShopFormPageContent({ searchParams, onClose, onSaved }: I
       debts: visibleDebts,
       form,
       linkedSaleId,
+      sales: shopSales,
       selectedAgreement: selectedAgreement as ClientAgreement,
       selectedCurrency: selectedCurrency as Currency,
       selectedCurrencyRegister: selectedCurrencyRegister as PaymentCurrencyRegister,
@@ -1051,6 +1099,17 @@ function IncomeCashflowShopFormPageContent({ searchParams, onClose, onSaved }: I
                 )}
               </Group>
 
+              <Select
+                clearable
+                data={shopSaleOptions}
+                disabled={!shopSaleOptions.length || isLoading || isSaving}
+                label={t('Продаж магазину')}
+                placeholder={t('Оберіть продаж, на який зараховується оплата')}
+                searchable
+                value={form.selectedShopSaleValue || null}
+                onChange={handleShopSaleChanged}
+              />
+
               <SearchableSelect
                 data={clientInvoiceOptions}
                 disabled={isLoading || isSaving}
@@ -1224,6 +1283,7 @@ function createInitialForm(queryAmount: number): FormState {
     selectedDebtValues: [],
     selectedMovementValue: '',
     selectedRetailClientValue: '',
+    selectedShopSaleValue: '',
     time: toTimeValue(now),
   }
 }
@@ -1271,6 +1331,7 @@ function buildIncomePaymentOrder({
   debts,
   form,
   linkedSaleId,
+  sales,
   selectedAgreement,
   selectedCurrency,
   selectedCurrencyRegister,
@@ -1282,6 +1343,7 @@ function buildIncomePaymentOrder({
   debts: ClientInDebt[]
   form: FormState
   linkedSaleId: string
+  sales: Sale[]
   selectedAgreement: ClientAgreement
   selectedCurrency: Currency
   selectedCurrencyRegister: PaymentCurrencyRegister
@@ -1298,11 +1360,16 @@ function buildIncomePaymentOrder({
     debts,
     form.selectedDebtValues,
   )
-  const explicitSaleId = parsePositiveEntityId(linkedSaleId)
+  const explicitSaleId = parsePositiveEntityId(
+    form.selectedShopSaleValue || linkedSaleId,
+  )
+  const explicitSale = explicitSaleId == null
+    ? null
+    : sales.find((sale) => sale.Id === explicitSaleId) || null
 
   return {
     Amount: form.amount,
-    ArrivalNumber: form.clientInvoiceSearch.trim(),
+    ArrivalNumber: form.clientInvoiceSearch.trim() || getSaleDocumentNumber(explicitSale),
     Client: {
       ...selectedPaymentClient,
       ClientAgreements: [selectedAgreement],
@@ -1389,25 +1456,30 @@ function validateDebtSelection({
   autoAllocate,
   linkedSaleId,
   selectedDebtValues,
+  selectedShopSaleValue,
   t,
   visibleDebts,
 }: {
   autoAllocate: boolean
   linkedSaleId: string
   selectedDebtValues: string[]
+  selectedShopSaleValue: string
   t: (value: string) => string
   visibleDebts: ClientInDebt[]
 }): string | null {
-  if (!visibleDebts.length) {
+  if (
+    parsePositiveEntityId(selectedShopSaleValue) != null ||
+    parsePositiveEntityId(linkedSaleId) != null
+  ) {
     return null
   }
 
   if (!selectedDebtValues.length) {
-    if (parsePositiveEntityId(linkedSaleId) != null) {
-      return null
-    }
-
-    return autoAllocate ? t('Оберіть рахунок для автоматичного рознесення') : t('Оберіть рахунок для оплати')
+    return autoAllocate
+      ? t('Оберіть рахунок для автоматичного рознесення')
+      : visibleDebts.length
+        ? t('Оберіть продаж магазину або рахунок для оплати')
+        : t('Оберіть продаж магазину для оплати')
   }
 
   const visibleDebtValues = new Set(
@@ -1653,6 +1725,63 @@ function toClientInvoiceOptions(debts: ClientInDebt[]): SelectOption[] {
   return options
 }
 
+function filterUnallocatedShopSales(
+  sales: Sale[],
+  clientAgreement: ClientAgreement | null,
+  debts: ClientInDebt[],
+): Sale[] {
+  if (!clientAgreement?.Id) {
+    return []
+  }
+
+  const debtSaleIds = new Set(
+    debts.flatMap((debt) => {
+      const saleId = debt.SaleId || debt.Sale?.Id
+      const outstandingCents = Math.round(readDebtTotal(debt) * 100)
+
+      return saleId && outstandingCents !== 0 ? [saleId] : []
+    }),
+  )
+
+  return sales.filter((sale) => {
+    const lifeCycle = String(sale.BaseLifeCycleStatus?.SaleLifeCycleType ?? '').toLowerCase()
+    const saleAgreementId = sale.ClientAgreementId || sale.ClientAgreement?.Id
+    const receiptAmount = sale.RetailPaidAmountUah || 0
+    const outstandingAmount = getShopSaleOutstandingAmount(sale)
+
+    return Boolean(
+      sale.Id &&
+      !sale.Deleted &&
+      saleAgreementId === clientAgreement.Id &&
+      (lifeCycle === '0' || lifeCycle === 'new') &&
+      receiptAmount > 0 &&
+      outstandingAmount > 0 &&
+      !debtSaleIds.has(sale.Id),
+    )
+  })
+}
+
+function toShopSaleOptions(sales: Sale[]): SelectOption[] {
+  return sales.flatMap((sale) => {
+    if (!sale.Id) {
+      return []
+    }
+
+    const number = getSaleDocumentNumber(sale) || `#${sale.Id}`
+    const date = formatDate(sale.Created)
+    const outstanding = getShopSaleOutstandingAmount(sale)
+    const details = [
+      date,
+      outstanding > 0 ? `${formatMoney(outstanding)} UAH` : '',
+    ].filter(Boolean)
+
+    return [{
+      label: details.length ? `${number} · ${details.join(' · ')}` : number,
+      value: String(sale.Id),
+    }]
+  })
+}
+
 function toUniqueLabels<T extends NamedEntity>(entities: T[]): string[] {
   const labels: string[] = []
   const seenLabels = new Set<string>()
@@ -1713,12 +1842,43 @@ function getDebtDocumentNumber(debt: ClientInDebt): string {
   return debt.Sale?.SaleNumber?.Value || debt.ReSale?.SaleNumber?.Value || debt.Sale?.NetUid || debt.ReSale?.NetUid || ''
 }
 
+function getSaleDocumentNumber(sale?: Sale | null): string {
+  return sale?.SaleNumber?.Value || sale?.NetUid || ''
+}
+
+function getShopSaleOutstandingAmount(sale: Sale): number {
+  const total = sale.Order?.TotalAmountLocal ||
+    sale.TotalAmountLocal ||
+    sale.Order?.TotalAmount ||
+    sale.TotalAmount ||
+    0
+  const receiptAmount = sale.RetailPaidAmountUah || 0
+  const accountingAmount = sale.RetailAccountingPaidAmountUah || 0
+
+  if (
+    !Number.isFinite(total) ||
+    total <= 0 ||
+    !Number.isFinite(receiptAmount) ||
+    receiptAmount < 0 ||
+    !Number.isFinite(accountingAmount) ||
+    accountingAmount < 0
+  ) {
+    return 0
+  }
+
+  const outstandingCents = Math.round(total * 100) -
+    Math.round(receiptAmount * 100) -
+    Math.round(accountingAmount * 100)
+
+  return Math.max(0, outstandingCents) / 100
+}
+
 function getDebtDate(debt: ClientInDebt): string | undefined {
   return debt.Sale?.ChangedToInvoice || debt.ReSale?.ChangedToInvoice || debt.Sale?.Created || debt.ReSale?.Created
 }
 
 function readDebtTotal(debt: ClientInDebt): number {
-  return debt.Debt?.Total || debt.Sale?.TotalAmount || debt.ReSale?.TotalAmount || 0
+  return debt.Debt?.Total ?? debt.Sale?.TotalAmount ?? debt.ReSale?.TotalAmount ?? 0
 }
 
 function currenciesMatch(first?: Currency | null, second?: Currency | null): boolean {

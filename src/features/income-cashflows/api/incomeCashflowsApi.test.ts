@@ -11,6 +11,7 @@ import {
   getIncomeCashflowOrganizations,
   getIncomeCashflowPaymentMovements,
   getIncomeCashflowRetailClients,
+  getIncomeCashflowRetailClientSales,
   getIncomeCashflowSpecificExchangeRate,
   getIncomeCashflowSupplyOrganizationAgreements,
   getIncomeCashflowByNetId,
@@ -281,6 +282,18 @@ describe('income cashflow API lookup contracts', () => {
         offset: 100,
       },
     })
+  })
+
+  it('loads sales available for an online-shop income payment', async () => {
+    const sales = [{ Id: 1535642, SaleNumber: { Value: 'КСн00002864' } }]
+    apiRequestMock.mockResolvedValueOnce({ Collection: sales })
+
+    await expect(getIncomeCashflowRetailClientSales('retail-client-60'))
+      .resolves.toEqual(sales)
+    expect(apiRequestMock).toHaveBeenCalledWith(
+      '/payments/orders/income/online-shop/sales',
+      { query: { retailClientNetId: 'retail-client-60' } },
+    )
   })
 
   it('loads a specific exchange rate for the selected register and agreement currencies', async () => {

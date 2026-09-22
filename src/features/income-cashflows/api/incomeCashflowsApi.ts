@@ -19,6 +19,7 @@ import type {
   PaymentMovement,
   PaymentRegister,
   RetailClient,
+  Sale,
   SupplyOrganizationAgreement,
 } from '../types'
 
@@ -462,6 +463,16 @@ export async function getIncomeCashflowRetailClientAgreements(netId: string): Pr
   })
 
   return readArrayPayload(result, ['Items', 'ClientAgreements', 'Agreements', 'Data', 'Collection']) as ClientAgreement[]
+}
+
+export async function getIncomeCashflowRetailClientSales(netId: string): Promise<Sale[]> {
+  const result = await apiRequest<unknown>('/payments/orders/income/online-shop/sales', {
+    query: {
+      retailClientNetId: netId,
+    },
+  })
+
+  return readArrayPayload(result, ['Items', 'Sales', 'Data', 'Collection']) as Sale[]
 }
 
 export async function getIncomeCashflowSpecificExchangeRate(params: {

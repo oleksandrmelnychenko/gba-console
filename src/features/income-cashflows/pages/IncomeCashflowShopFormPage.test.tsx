@@ -11,6 +11,7 @@ import {
   getIncomeCashflowPaymentMovements,
   getIncomeCashflowRetailClientAgreements,
   getIncomeCashflowRetailClients,
+  getIncomeCashflowRetailClientSales,
   getIncomeCashflowSpecificExchangeRate,
   searchIncomeCashflowPaymentMovements,
   searchIncomeCashflowPaymentRegisters,
@@ -51,6 +52,7 @@ vi.mock('../api/incomeCashflowsApi', async (importOriginal) => ({
   getIncomeCashflowPaymentMovements: vi.fn(),
   getIncomeCashflowRetailClientAgreements: vi.fn(),
   getIncomeCashflowRetailClients: vi.fn(),
+  getIncomeCashflowRetailClientSales: vi.fn(),
   getIncomeCashflowSpecificExchangeRate: vi.fn(),
   searchIncomeCashflowPaymentMovements: vi.fn(),
   searchIncomeCashflowPaymentRegisters: vi.fn(),
@@ -198,6 +200,17 @@ const agreement: ClientAgreement = {
     OrganizationId: organization.Id,
   },
 }
+const shopSale = {
+  BaseLifeCycleStatus: { SaleLifeCycleType: 0 },
+  ClientAgreement: { Id: agreement.Id },
+  ClientAgreementId: agreement.Id,
+  Created: '2026-09-14T07:30:00Z',
+  Id: 1535642,
+  Order: { TotalAmountLocal: 10_061.1 },
+  RetailAccountingPaidAmountUah: 0,
+  RetailPaidAmountUah: 5_061.1,
+  SaleNumber: { Value: 'КСн00002864' },
+}
 const secondOrganizationFirstAgreement: ClientAgreement = {
   AgreementId: 71,
   Client: agreement.Client,
@@ -291,6 +304,7 @@ describe('IncomeCashflowShopFormPage retail client selection', () => {
     vi.mocked(getIncomeCashflowRetailClients).mockResolvedValue([shopClientVat])
     vi.mocked(searchIncomeCashflowRetailClients).mockResolvedValue([retailClient])
     vi.mocked(getIncomeCashflowRetailClientAgreements).mockResolvedValue([agreement])
+    vi.mocked(getIncomeCashflowRetailClientSales).mockResolvedValue([shopSale])
     vi.mocked(getIncomeCashflowSpecificExchangeRate).mockResolvedValue(1)
     vi.mocked(createOnlineShopIncomeCashflow).mockResolvedValue({ NetUid: 'income-1' })
   })
@@ -343,7 +357,7 @@ describe('IncomeCashflowShopFormPage retail client selection', () => {
     expect(screen.queryByRole('alert')).toBeNull()
   })
 
-  it('keeps a selected retail client and allows saving when its agreement has no debts', async () => {
+  it('requires and saves an exact shop sale when its agreement has no debts', async () => {
     const user = userEvent.setup()
     renderPage()
 
@@ -389,13 +403,132 @@ describe('IncomeCashflowShopFormPage retail client selection', () => {
       name: register.Name,
     }))
 
-    fireEvent.change(screen.getByRole('textbox', { name: 'Сума' }), {
-      target: { value: '50000' },
+    const saleInput = screen.getByRole<HTMLInputElement>('combobox', {
+      name: 'Продаж магазину',
     })
+    fireEvent.click(saleInput)
+    fireEvent.click(await screen.findByRole('option', {
+      hidden: true,
+      name: /КСн00002864/,
+    }))
+
+    expect((screen.getByRole('textbox', { name: 'Сума' }) as HTMLInputElement).value)
+      .toBe('5000')
     fireEvent.click(screen.getByRole('button', { name: 'Зберегти' }))
 
     await waitFor(() => expect(createOnlineShopIncomeCashflow).toHaveBeenCalledTimes(1))
-    expect(screen.queryByText('Оберіть retail-клієнта')).toBeNull()
+    expect(createOnlineShopIncomeCashflow).toHaveBeenCalledWith(
+      expect.objectContaining({
+        Amount: 5000,
+        ArrivalNumber: 'КСн00002864',
+        IncomePaymentOrderSales: [{ SaleId: 1535642 }],
+      }),
+      false,
+    )
+  })
+
+  it('offers only partially paid shop sales that still have an outstanding amount', async () => {
+    vi.mocked(getIncomeCashflowRetailClientSales).mockResolvedValueOnce([
+      shopSale,
+      {
+        ...shopSale,
+        Id: 1535643,
+        RetailPaidAmountUah: 0,
+        SaleNumber: { Value: 'КСн00002865' },
+      },
+      {
+        ...shopSale,
+        Id: 1535644,
+        RetailAccountingPaidAmountUah: 5_000,
+        SaleNumber: { Value: 'КСн00002866' },
+      },
+      {
+        ...shopSale,
+        Id: 1535645,
+        Order: { TotalAmountLocal: 10.006 },
+        RetailPaidAmountUah: 5.004,
+        SaleNumber: { Value: 'КСн00002867' },
+      },
+    ])
+
+    renderPage()
+    await selectRetailClientAndOrganization(organization.Name)
+
+    fireEvent.click(screen.getByRole('combobox', {
+      name: 'Продаж магазину',
+    }))
+
+    expect(await screen.findByRole('option', {
+      hidden: true,
+      name: /КСн00002864/,
+    })).toBeTruthy()
+    expect(screen.queryByRole('option', {
+      hidden: true,
+      name: /КСн00002865/,
+    })).toBeNull()
+    expect(screen.queryByRole('option', {
+      hidden: true,
+      name: /КСн00002866/,
+    })).toBeNull()
+    expect(screen.getByRole('option', {
+      hidden: true,
+      name: /КСн00002867.*5[,.]01 UAH/,
+    })).toBeTruthy()
+  })
+
+  it('does not hide a shop sale behind a debt balance that rounds to zero', async () => {
+    vi.mocked(getIncomeCashflowRetailClientAgreements).mockResolvedValueOnce([{
+      ...agreement,
+      Agreement: {
+        ...agreement.Agreement,
+        ClientInDebts: [{
+          AgreementId: agreement.AgreementId,
+          Debt: { Id: 101, Total: 0.004 },
+          Id: 102,
+          NetUid: 'client-debt-102',
+          Sale: {
+            Id: shopSale.Id,
+            NetUid: 'sale-1535642',
+            SaleNumber: shopSale.SaleNumber,
+            TotalAmount: 10_061.1,
+          },
+          SaleId: shopSale.Id,
+        }],
+      },
+    }])
+
+    renderPage()
+    await selectRetailClientAndOrganization(organization.Name)
+
+    fireEvent.click(screen.getByRole('combobox', {
+      name: 'Продаж магазину',
+    }))
+
+    expect(await screen.findByRole('option', {
+      hidden: true,
+      name: /КСн00002864.*5.*000[,.]00 UAH/,
+    })).toBeTruthy()
+  })
+
+  it('does not create an unlinked shop payment when no sale or invoice was selected', async () => {
+    renderPage()
+    await selectRetailClientAndOrganization(organization.Name)
+
+    const registerInput = screen.getByRole<HTMLInputElement>('combobox', {
+      name: 'Каса / рахунок',
+    })
+    fireEvent.click(registerInput)
+    fireEvent.click(await screen.findByRole('option', {
+      hidden: true,
+      name: register.Name,
+    }))
+    fireEvent.change(screen.getByRole('textbox', { name: 'Сума' }), {
+      target: { value: '5000' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: 'Зберегти' }))
+
+    expect(await screen.findByText('Оберіть продаж магазину для оплати')).toBeTruthy()
+    expect(createOnlineShopIncomeCashflow).not.toHaveBeenCalled()
   })
 
   it('keeps the explicit shop sale target when the sale has no debt yet (BUG-1254)', async () => {
