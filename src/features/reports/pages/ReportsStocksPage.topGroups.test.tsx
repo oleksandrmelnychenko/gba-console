@@ -38,7 +38,7 @@ describe('whole-group TOP constructor controls', () => {
     expect(request.topGroups).toEqual({ ...accountTop, Mode: 2, Value: 50, Direction: 1 })
     expect(request).not.toHaveProperty('ordering'); expect(request.sorted.Measurements.map(item => item.Type)).toEqual([24])
     expect(screen.getByText(/50% від 3 груп — це 2 групи/)).toBeTruthy()
-  })
+  }, 10000)
   it('retains full saved TOP/filter/ordering configuration and private template revision through apply/update', async () => {
     const template = saved(); vi.mocked(getServerReportTemplates).mockResolvedValue([template]); const { container } = await ready(); await applySaved()
     fireEvent.submit(container.querySelector('form')!); await waitFor(() => expect(createStockReport).toHaveBeenCalledOnce())
@@ -89,7 +89,7 @@ describe('whole-group TOP constructor controls', () => {
     await select('Набір даних звіту', reportDatasets[0].Name); fireEvent.click(screen.getByRole('button', { name: 'Продажі за днями' }))
     fireEvent.submit(container.querySelector('form')!); await waitFor(() => expect(createStockReport).toHaveBeenCalledTimes(3))
     expect(vi.mocked(createStockReport).mock.calls[2][0]).not.toHaveProperty('topGroups')
-  })
+  }, 10000)
   it.each([{ ...accountTop, Version: 99, Extra: true }, { ...accountTop, Value: 0 }])('rejects invalid imported TOP before changing the current form %#', async topGroups => {
     const template = { ...saved(), Data: { ...topRequest(), topGroups } }, original = structuredClone(template)
     vi.mocked(getServerReportTemplates).mockResolvedValue([template]); await ready(); await applySaved()

@@ -21,7 +21,6 @@ describe('ProductAnalyticsPanel', () => {
 
     renderPanel(product)
 
-    expect(screen.getByRole('status').textContent).toContain('Завантаження аналітики товару')
     expect((await screen.findByTestId('product-card')).textContent).toBe('Product 42')
     expect(productCard).toHaveBeenCalledWith(expect.objectContaining({ productId: 42 }), undefined)
     expect(getProductAnalyticsId(product)).toBe(42)

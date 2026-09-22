@@ -405,7 +405,7 @@
 .report-constructor-page > .report-draft-status { background: var(--mantine-color-white); padding: 0 18px 10px; margin-top: -6px; }
 .report-constructor-page .reports-stocks-shell { background: transparent; border-radius: 0; }
 .report-constructor-page .reports-stocks-filter-scroll { padding: 0 12px 12px; background: var(--mantine-color-white); border-bottom: 1px solid var(--mantine-color-gray-2); }
-.report-constructor-page .reports-stocks-filter-bar { padding: 12px; border: 1px solid var(--mantine-color-gray-2); border-radius: 10px; gap: 8px; }
+.report-constructor-page .reports-stocks-filter-bar { border: 1px solid var(--mantine-color-gray-2); border-radius: 10px; gap: 8px; }
 .report-constructor-page .reports-stocks-toolbar-fields { overflow: visible; flex-wrap: wrap; gap: 10px; }
 .report-constructor-page .report-dataset-picker--compact { flex: 1 1 280px; max-width: 440px; min-width: 200px; }
 .report-constructor-workspace { padding: 14px; gap: 16px; grid-template-columns: 244px minmax(0, 1fr); }
