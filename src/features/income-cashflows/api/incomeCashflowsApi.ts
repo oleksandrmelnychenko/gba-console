@@ -409,7 +409,7 @@ export async function searchIncomeCashflowUsers(value: string): Promise<NamedEnt
 }
 
 export async function searchIncomeCashflowRetailClients(value: string): Promise<RetailClient[]> {
-  const result = await apiRequest<unknown>('/retail/clients/sales/filtered', {
+  const result = await apiRequest<unknown>('/retail/clients/income-cashflows/client-payment/search', {
     query: {
       value: value.trim(),
     },
@@ -423,7 +423,7 @@ export async function getIncomeCashflowRetailClients(): Promise<RetailClient[]> 
   let offset = 0
 
   for (let page = 0; page < RETAIL_CLIENT_INITIAL_MAX_PAGES; page += 1) {
-    const result = await apiRequest<unknown>('/retail/clients/all', {
+    const result = await apiRequest<unknown>('/retail/clients/income-cashflows/client-payment/all', {
       query: {
         limit: RETAIL_CLIENT_INITIAL_PAGE_SIZE,
         offset,

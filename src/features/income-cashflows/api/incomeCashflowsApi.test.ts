@@ -23,6 +23,7 @@ import {
   searchIncomeCashflowPaymentRegisters,
   searchIncomeCashflowRegistryPaymentRegisters,
   searchIncomeCashflowPaymentPurposes,
+  searchIncomeCashflowRetailClients,
   updateIncomeCashflow,
   updateIncomeCashflowClient,
 } from './incomeCashflowsApi'
@@ -270,18 +271,30 @@ describe('income cashflow API lookup contracts', () => {
 
     expect(clients).toHaveLength(101)
     expect(clients.at(-1)).toEqual(target)
-    expect(apiRequestMock).toHaveBeenNthCalledWith(1, '/retail/clients/all', {
+    expect(apiRequestMock).toHaveBeenNthCalledWith(1, '/retail/clients/income-cashflows/client-payment/all', {
       query: {
         limit: 100,
         offset: 0,
       },
     })
-    expect(apiRequestMock).toHaveBeenNthCalledWith(2, '/retail/clients/all', {
+    expect(apiRequestMock).toHaveBeenNthCalledWith(2, '/retail/clients/income-cashflows/client-payment/all', {
       query: {
         limit: 100,
         offset: 100,
       },
     })
+  })
+
+  it('searches retail clients through the income-payment permission facade', async () => {
+    const clients = [{ Name: 'ShopClient VAT', NetUid: 'retail-client-101' }]
+    apiRequestMock.mockResolvedValueOnce({ Collection: clients })
+
+    await expect(searchIncomeCashflowRetailClients('  ShopClient  '))
+      .resolves.toEqual(clients)
+    expect(apiRequestMock).toHaveBeenCalledWith(
+      '/retail/clients/income-cashflows/client-payment/search',
+      { query: { value: 'ShopClient' } },
+    )
   })
 
   it('loads sales available for an online-shop income payment', async () => {
