@@ -152,6 +152,8 @@ export function buildSpreadsheetSheet(name: string, rows: SpreadsheetCellValue[]
   validateClientActivityHeader(String(sheetRows[0]?.[0] ?? '').trim(), reportHeader?.header ?? null)
   const hiddenZeroSheet = readHideZeroSheet(name, sheetRows, reportHeader, REPORT_TITLES.has(String(sheetRows[0]?.[0] ?? '').trim()))
   if (hiddenZeroSheet) return hiddenZeroSheet
+  const oneCSheet = reportHeader || format === 'flat' ? null : readOneCUniversalReportSheet(name, sheetRows)
+  if (oneCSheet) return oneCSheet
   const isReport = reportHeader !== null || sheetRows.some((row) => getStructuralRowKind(row) !== null)
   // The attribution block the engine now writes above the table. It is what tells the viewer where the table
   // starts — reading that off the data instead is what broke here: countHeaderRows() took the first row holding a
@@ -337,6 +339,48 @@ export function normalizeImportedCellValue(value: unknown): SpreadsheetCellValue
   }
 
   return String(value || '').trim()
+}
+
+function readOneCUniversalReportSheet(name: string, rows: SpreadsheetCellValue[][]): SpreadsheetSheet | null {
+  const filledCount = (row: SpreadsheetCellValue[]) => row.filter(isFilledCell).length
+  let captionCount = 0
+
+  while (captionCount < rows.length && (filledCount(rows[captionCount]) === 0
+    || (filledCount(rows[captionCount]) === 1 && typeof rows[captionCount].find(isFilledCell) === 'string'))) {
+    captionCount += 1
+  }
+
+  const tableRows = rows.slice(captionCount)
+  if (captionCount === 0 || !tableRows.length || filledCount(tableRows[0]) < 2) return null
+
+  const firstBodyRowIndex = tableRows.findIndex((row) => row.some((cell) => typeof cell === 'number'))
+  if (firstBodyRowIndex < 1) return null
+
+  const width = tableRows.reduce((count, row) => Math.max(count, row.length), 0)
+  const keptColumns = Array.from({ length: width }, (_, index) => index)
+    .filter((index) => tableRows.some((row) => isFilledCell(row[index])))
+  const project = (row: SpreadsheetCellValue[]) => keptColumns.map((index) => row[index] ?? null)
+  const headerRows = tableRows.slice(0, firstBodyRowIndex).map(project)
+  const spannedHeaderRows = headerRows.map((row, rowIndex) => {
+    if (rowIndex === headerRows.length - 1) return row
+    const firstFilledIndex = row.findIndex(isFilledCell)
+    let carried: SpreadsheetCellValue = null
+
+    return row.map((cell, columnIndex) => {
+      if (isFilledCell(cell)) {
+        carried = columnIndex === firstFilledIndex ? null : cell
+        return cell
+      }
+      return carried
+    })
+  })
+
+  return {
+    name,
+    columns: buildColumns(spannedHeaderRows, 0),
+    header: null,
+    rows: tableRows.slice(firstBodyRowIndex).filter((row) => row.some(isFilledCell)).map((row) => ({ cells: project(row), kind: 'data' })),
+  }
 }
 
 // The reading of the file shape that predates the attribution block: kept for a workbook saved before the engine
