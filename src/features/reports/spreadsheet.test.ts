@@ -514,3 +514,64 @@ describe('buildSpreadsheetSheet — a report file written before the attribution
     expect(sheet.rows.map((row) => row.kind)).toEqual(['data', 'subtotal', 'total'])
   })
 })
+
+describe('1С universal report workbooks', () => {
+  const caption = (text: string, width: number): SpreadsheetCellValue[] => {
+    const row: SpreadsheetCellValue[] = new Array(width).fill(null)
+    row[1] = text
+    return row
+  }
+
+  it('reads the table under the 1С caption block with every measure column and spanned group captions', () => {
+    const sheet = buildSpreadsheetSheet('TDSheet', [
+      caption('Валовий прибуток', 7),
+      caption('Період: Вересень 2026 р.', 7),
+      caption('Відбори:\nОрганізація У списку (Фенікс);', 7),
+      [null, 'По днях', 'Вартість продажу (EUR)', null, null, 'Рентабельність', null],
+      [null, 'Організація', 'Без ПДВ', 'ПДВ', 'З ПДВ', '% (без ПДВ)', '% (з ПДВ)'],
+      [null, '01.09.2026', 18463.75, 2972.37, 21436.12, 16.02, 16.85],
+      [null, 'Фенікс', 2911.79, null, 2911.79, 18.55, 18.32],
+      [null, 'Підсумок', 18463.75, 2972.37, 21436.12, 16.02, 16.85],
+    ])
+
+    expect(sheet.header).toBeNull()
+    expect(sheet.columns).toEqual([
+      'По днях · Організація',
+      'Вартість продажу (EUR) · Без ПДВ',
+      'Вартість продажу (EUR) · ПДВ',
+      'Вартість продажу (EUR) · З ПДВ',
+      'Рентабельність · % (без ПДВ)',
+      'Рентабельність · % (з ПДВ)',
+    ])
+    expect(sheet.rows.map((row) => row.cells)).toEqual([
+      ['01.09.2026', 18463.75, 2972.37, 21436.12, 16.02, 16.85],
+      ['Фенікс', 2911.79, null, 2911.79, 18.55, 18.32],
+      ['Підсумок', 18463.75, 2972.37, 21436.12, 16.02, 16.85],
+    ])
+  })
+
+  it('reads sparse 1С rows whose caption lines are shorter than the table', () => {
+    const titleRow: SpreadsheetCellValue[] = []
+    titleRow[1] = 'Відомість по партіях товарів на складах'
+    const sheet = buildSpreadsheetSheet('TDSheet', [
+      titleRow,
+      [],
+      [null, 'Номенклатура.Артикул', 'Кінцевий залишок'],
+      [null, null, 'Кількість'],
+      [null, '000003-HMM', 1],
+    ])
+
+    expect(sheet.columns).toEqual(['Номенклатура.Артикул', 'Кінцевий залишок · Кількість'])
+    expect(sheet.rows.map((row) => row.cells)).toEqual([['000003-HMM', 1]])
+  })
+
+  it('keeps a plain table without a caption block unchanged', () => {
+    const sheet = buildSpreadsheetSheet('TDSheet', [
+      ['Артикул', 'Кількість'],
+      ['2026-C', 1],
+    ])
+
+    expect(sheet.columns).toEqual(['Артикул', 'Кількість'])
+    expect(sheet.rows.map((row) => row.cells)).toEqual([['2026-C', 1]])
+  })
+})
