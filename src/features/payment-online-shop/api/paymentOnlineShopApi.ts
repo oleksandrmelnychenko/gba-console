@@ -5,6 +5,9 @@ import {
   type SalesMutationOperationOptions,
 } from '../../sales-ukraine/salesMutationOperation'
 import type {
+  SalesMutationServerReconciliation,
+} from '../../sales-ukraine/persistentSalesMutation'
+import type {
   AddPaymentImagePayload,
   EditPaymentImagePayload,
   PaymentShopFilters,
@@ -56,7 +59,7 @@ export async function getPaymentShopItemForRefresh(
 export async function addPaymentImage(
   payload: AddPaymentImagePayload,
   operation: SalesMutationOperationOptions,
-): Promise<PaymentShopItem | null> {
+): Promise<PaymentShopItem> {
   const formData = new FormData()
   formData.append(
     'paymentImageItem',
@@ -76,7 +79,64 @@ export async function addPaymentImage(
     ...(operation.signal ? { signal: operation.signal } : {}),
   })
 
-  return normalizePaymentShopItem(result)
+  const payment = normalizePaymentShopItem(result)
+
+  if (!payment || payment.Id !== payload.paymentImageId) {
+    throw new Error(
+      'Сервер не повернув поточну оплату магазину. Результат потрібно звірити перед повтором.',
+    )
+  }
+
+  return payment
+}
+
+export async function reconcilePaymentImageAdd(
+  operation: SalesMutationOperationOptions,
+): Promise<SalesMutationServerReconciliation<PaymentShopItem>> {
+  const result = await apiRequest<unknown>(
+    '/retail/clients/payment-online-shop/payment/create/status',
+    {
+      query: { operationId: operation.operationId },
+      ...(operation.signal ? { signal: operation.signal } : {}),
+    },
+  )
+
+  if (!result || typeof result !== 'object' || Array.isArray(result)) {
+    throw new Error('Сервер повернув некоректний результат звірення платежу')
+  }
+
+  const payload = result as Record<string, unknown>
+  const rawStatus = payload.Status ?? payload.status
+  const status =
+    typeof rawStatus === 'string'
+      ? ({ Completed: 2, NotFound: 0, Pending: 1 } as const)[
+          rawStatus as 'Completed' | 'NotFound' | 'Pending'
+        ]
+      : readOptionalNumber(rawStatus)
+
+  if (status === 0) {
+    return { status: 'not-found' }
+  }
+
+  if (status === 1) {
+    return { status: 'pending' }
+  }
+
+  if (status === 2) {
+    const payment = normalizePaymentShopItem(
+      payload.PaymentImage ?? payload.paymentImage,
+    )
+
+    if (!payment) {
+      throw new Error(
+        'Завершена операція не повернула актуальний платіж магазину',
+      )
+    }
+
+    return { result: payment, status: 'committed' }
+  }
+
+  throw new Error('Сервер повернув невідомий статус звірення платежу')
 }
 
 export async function editPaymentImage(

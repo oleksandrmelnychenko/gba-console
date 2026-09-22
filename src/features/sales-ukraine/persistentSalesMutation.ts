@@ -43,6 +43,18 @@ export type SalesMutationFailureClassifier = (
   error: unknown,
 ) => SalesMutationFailureStatus
 
+export type SalesMutationServerReconciliation<TResult> =
+  | { status: 'committed'; result: TResult }
+  | { status: 'not-found' }
+  | { status: 'pending' }
+
+export type PersistentSalesMutationReconciliation<TPayload, TResult> =
+  SalesMutationServerReconciliation<TResult> & { payload: TPayload }
+
+export type PersistentSalesMutationReconciliationRequest<TResult> = (
+  operation: SalesMutationOperationOptions,
+) => Promise<SalesMutationServerReconciliation<TResult>>
+
 export class SalesPendingMutationRecoveredError extends Error {
   constructor() {
     super(
@@ -71,6 +83,126 @@ export function usePersistentSalesMutation(
     request,
     userKey,
   }), [classifyFailure, context, kind, userKey])
+}
+
+export function usePersistentSalesMutationReconciliation(
+  kind: SalesPendingMutationKind,
+  context: string,
+) {
+  const { session } = useAuth()
+  const userKey = getSalesPendingMutationUserKey(session)
+
+  return useCallback(async <TPayload extends object, TResult>(
+    request: PersistentSalesMutationReconciliationRequest<TResult>,
+  ): Promise<PersistentSalesMutationReconciliation<TPayload, TResult> | null> =>
+    reconcilePersistentSalesMutation({
+      context,
+      kind,
+      request,
+      userKey,
+    }), [context, kind, userKey])
+}
+
+export async function reconcilePersistentSalesMutation<
+  TPayload extends object,
+  TResult,
+>({
+  context,
+  kind,
+  request,
+  userKey,
+}: {
+  context: string
+  kind: SalesPendingMutationKind
+  request: PersistentSalesMutationReconciliationRequest<TResult>
+  userKey: string
+}): Promise<PersistentSalesMutationReconciliation<TPayload, TResult> | null> {
+  const scope = createPersistentSalesMutationScope(kind, context, userKey)
+
+  synchronizeSalesPendingMutationUser(scope.userKey)
+  const stored = loadSalesPendingMutation<PersistedSalesMutation<TPayload>>(scope)
+
+  if (!stored) {
+    return null
+  }
+
+  if (
+    !isPersistedSalesMutation(
+      stored.payload,
+      kind,
+      scope.context,
+      stored.operationId,
+    )
+  ) {
+    markSalesPendingMutationCorrupt(
+      scope,
+      stored.operationId,
+      'Persisted sales mutation payload does not match its durable scope',
+    )
+  }
+
+  return withSalesPendingMutationLock(
+    scope,
+    stored.operationId,
+    stored.payload,
+    async (lease) => {
+      const persisted = lease.entry.payload
+
+      if (
+        !isPersistedSalesMutation(
+          persisted,
+          kind,
+          scope.context,
+          lease.operationId,
+        )
+      ) {
+        markSalesPendingMutationCorrupt(
+          scope,
+          lease.operationId,
+          'Durable sales mutation payload failed schema validation',
+        )
+      }
+
+      if (lease.entry.phase === 'prepared') {
+        releasePreparedSalesPendingMutation(lease)
+        return {
+          payload: persisted.payload,
+          status: 'not-found' as const,
+        }
+      }
+
+      try {
+        const reconciliation = await request({
+          operationId: persisted.operationId,
+        })
+
+        if (reconciliation.status === 'committed') {
+          resolveSalesPendingMutation(lease, 'committed')
+          return {
+            ...reconciliation,
+            payload: persisted.payload,
+          }
+        }
+
+        if (reconciliation.status === 'not-found') {
+          resolveRejectedSalesPendingMutation(lease)
+          return {
+            payload: persisted.payload,
+            status: 'not-found' as const,
+          }
+        }
+
+        markSalesPendingMutationUnknown(lease)
+        return {
+          payload: persisted.payload,
+          status: 'pending' as const,
+        }
+      } catch (error) {
+        markSalesPendingMutationUnknown(lease)
+        throw error
+      }
+    },
+  )
 }
 
 export async function runPersistentSalesMutation<

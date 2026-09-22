@@ -6,6 +6,7 @@ import {
   ensurePaymentImageReplayFileMatches,
   getRetailPaymentImageConcurrencyCode,
   isDefinitiveRetailPaymentImageConcurrencyConflict,
+  isSameAddPaymentImageMutation,
   isRetailPaymentImageConcurrencyConflict,
   PaymentImageReplayFileMismatchError,
   RETAIL_PAYMENT_IMAGE_ITEM_VERSION_CONFLICT,
@@ -155,5 +156,35 @@ describe('paymentImageMutation', () => {
         sha256: 'different',
       }),
     ).toThrow(PaymentImageReplayFileMismatchError)
+  })
+
+  it('matches a reconciled payment only to the same target, amount and file bytes', () => {
+    const payload = {
+      amount: 125.5,
+      comment: 'paid',
+      file: {
+        lastModified: 1,
+        name: 'payment.JPG',
+        sha256: 'abc',
+        size: 42,
+        type: 'image/jpeg',
+      },
+      paymentImageId: 15,
+      paymentType: 0,
+      user: null,
+    }
+
+    expect(isSameAddPaymentImageMutation(payload, {
+      ...payload,
+      file: { ...payload.file, lastModified: 2, name: 'renamed.jpg' },
+    })).toBe(true)
+    expect(isSameAddPaymentImageMutation(payload, {
+      ...payload,
+      paymentImageId: 16,
+    })).toBe(false)
+    expect(isSameAddPaymentImageMutation(payload, {
+      ...payload,
+      file: { ...payload.file, sha256: 'different' },
+    })).toBe(false)
   })
 })

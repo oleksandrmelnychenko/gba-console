@@ -10,11 +10,13 @@ import {
   editPaymentImage,
   getPaymentShopItemsPage,
   getPaymentShopItemForRefresh,
+  reconcilePaymentImageAdd,
 } from '../api/paymentOnlineShopApi'
 import type { PaymentShopItem, RetailClientPaymentImageItem } from '../types'
 import { PaymentOnlineShopPage } from './PaymentOnlineShopPage'
 
 const allowedPermissions = new Set<string>()
+const pendingReconciliations: unknown[] = []
 const paymentImage = { Amount: 5_000, Id: 11, RowVersion: 'AQIDBAUGBwg=' } as RetailClientPaymentImageItem
 const payment = {
   Id: 1,
@@ -60,6 +62,7 @@ vi.mock('../api/paymentOnlineShopApi', () => ({
   editPaymentImage: vi.fn(),
   getPaymentShopItemsPage: vi.fn(),
   getPaymentShopItemForRefresh: vi.fn(),
+  reconcilePaymentImageAdd: vi.fn(),
 }))
 
 vi.mock('../../sales-ukraine/persistentSalesMutation', () => ({
@@ -68,6 +71,8 @@ vi.mock('../../sales-ukraine/persistentSalesMutation', () => ({
     payload: unknown,
     executor: (value: unknown, operation: { operationId: string }) => Promise<unknown>,
   ) => executor(payload, { operationId: '11111111-1111-4111-8111-111111111111' }),
+  usePersistentSalesMutationReconciliation: () => async () =>
+    pendingReconciliations.shift() ?? null,
 }))
 
 vi.mock('../paymentImageMutation', () => ({
@@ -75,6 +80,10 @@ vi.mock('../paymentImageMutation', () => ({
   createAddPaymentImageMutationPayload: vi.fn(async (payload) => ({ ...payload, file: {} })),
   ensurePaymentImageReplayFileMatches: vi.fn(),
   isDefinitiveRetailPaymentImageConcurrencyConflict: vi.fn(() => false),
+  isSameAddPaymentImageMutation: vi.fn((first, second) =>
+    first.paymentImageId === second.paymentImageId &&
+    first.amount === second.amount &&
+    first.comment === second.comment),
 }))
 
 vi.mock('../components/PaymentShopDetailDrawer', () => ({
@@ -156,9 +165,11 @@ function renderPage() {
 describe('Payment online shop canonical permission guards', () => {
   beforeEach(() => {
     allowedPermissions.clear()
+    pendingReconciliations.splice(0)
     vi.clearAllMocks()
     vi.mocked(getPaymentShopItemsPage).mockResolvedValue({ items: [payment], totalRowsQty: 1 })
     vi.mocked(addPaymentImage).mockReset().mockResolvedValue(payment)
+    vi.mocked(reconcilePaymentImageAdd).mockReset()
     vi.mocked(getPaymentShopItemForRefresh).mockReset().mockResolvedValue({
       ...payment,
       RetailClientPaymentImageItems: [{ ...paymentImage, Amount: 5_061.10 }],
@@ -202,6 +213,50 @@ describe('Payment online shop canonical permission guards', () => {
     await confirmPayment()
     await waitFor(() => expect(screen.getByText('payment-details')).toBeTruthy())
     expect(getPaymentShopItemForRefresh).not.toHaveBeenCalled()
+    expect(screen.queryByRole('region', { name: 'retail-payment' })).toBeNull()
+  })
+
+  it('reconciles an older sale and still submits the currently opened payment', async () => {
+    allowConfirmation(false)
+    pendingReconciliations.push({
+      payload: {
+        amount: 25,
+        comment: 'older sale',
+        file: {},
+        paymentImageId: 99,
+        paymentType: 0,
+        user: null,
+      },
+      result: { ...payment, Id: 99, SaleId: 100 },
+      status: 'committed',
+    })
+
+    await confirmPayment()
+
+    expect(addPaymentImage).toHaveBeenCalledTimes(1)
+    expect(addPaymentImage).toHaveBeenCalledWith(
+      expect.objectContaining({ paymentImageId: payment.Id }),
+      expect.any(Object),
+    )
+    await waitFor(() =>
+      expect(screen.queryByText('payment-details')).toBeNull(),
+    )
+  })
+
+  it('does not report success when the server returns another payment row', async () => {
+    allowConfirmation(false)
+    vi.mocked(addPaymentImage).mockResolvedValue({
+      ...payment,
+      Id: 99,
+      SaleId: 100,
+    })
+
+    await confirmPayment()
+
+    await waitFor(() =>
+      expect(screen.getByText('payment-details')).toBeTruthy(),
+    )
+    expect(addPaymentImage).toHaveBeenCalledTimes(1)
     expect(screen.queryByRole('region', { name: 'retail-payment' })).toBeNull()
   })
 

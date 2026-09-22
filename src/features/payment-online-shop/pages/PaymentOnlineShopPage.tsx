@@ -36,6 +36,7 @@ import {
   editPaymentImage,
   getPaymentShopItemForRefresh,
   getPaymentShopItemsPage,
+  reconcilePaymentImageAdd,
 } from '../api/paymentOnlineShopApi'
 import { PaymentImageEditModal } from '../components/PaymentImageEditModal'
 import { PaymentShopDetailDrawer } from '../components/PaymentShopDetailDrawer'
@@ -45,6 +46,7 @@ import {
   ensurePaymentImageReplayFileMatches,
   getRetailPaymentImageConcurrencyCode,
   isDefinitiveRetailPaymentImageConcurrencyConflict,
+  isSameAddPaymentImageMutation,
   RETAIL_PAYMENT_IMAGE_ITEM_VERSION_CONFLICT,
 } from '../paymentImageMutation'
 import { RetailPaymentStatusType } from '../types'
@@ -59,7 +61,10 @@ import type {
 import {
   SalesPendingMutationRecoveredError,
   usePersistentSalesMutation,
+  usePersistentSalesMutationReconciliation,
+  type PersistentSalesMutationReconciliation,
 } from '../../sales-ukraine/persistentSalesMutation'
+import type { AddPaymentImageMutationPayload } from '../paymentImageMutation'
 import './payment-online-shop-page.css'
 
 const EMPTY_FILTERS: PaymentShopFilters = {
@@ -106,12 +111,22 @@ function usePaymentOnlineShopModel() {
 
   const runAddPaymentMutation = usePersistentSalesMutation(
     'retail-payment-image-add',
-    'payment-online-shop:add',
+    `payment-online-shop:add:${selectedItem?.Id ?? 'closed'}`,
     classifyRetailPaymentImageMutationFailure,
   )
+  const reconcileLegacyAddPaymentMutation =
+    usePersistentSalesMutationReconciliation(
+      'retail-payment-image-add',
+      'payment-online-shop:add',
+    )
+  const reconcileCurrentAddPaymentMutation =
+    usePersistentSalesMutationReconciliation(
+      'retail-payment-image-add',
+      `payment-online-shop:add:${selectedItem?.Id ?? 'closed'}`,
+    )
   const runEditPaymentMutation = usePersistentSalesMutation(
     'retail-payment-image-update',
-    'payment-online-shop:update',
+    `payment-online-shop:update:${editItem?.Id ?? 'closed'}`,
     classifyRetailPaymentImageMutationFailure,
   )
   const canCreatePayment = hasPermission(PermissionKeys.OnlineShopPayment.Payment.Create)
@@ -225,7 +240,104 @@ function usePaymentOnlineShopModel() {
       const mutationPayload =
         await createAddPaymentImageMutationPayload(requestPayload)
 
-      await runAddPaymentMutation(
+      const processReconciliation = async (
+        reconciliation: PersistentSalesMutationReconciliation<
+          AddPaymentImageMutationPayload,
+          PaymentShopItem
+        > | null,
+      ): Promise<'continue' | 'review' | 'satisfied'> => {
+        if (!reconciliation || reconciliation.status === 'not-found') {
+          return 'continue'
+        }
+
+        if (reconciliation.status === 'pending') {
+          throw new Error(
+            t(
+              'Попередня оплата ще обробляється сервером. Оновіть список і повторіть звірення.',
+            ),
+          )
+        }
+
+        const recoveredPayment = reconciliation.result
+
+        if (
+          recoveredPayment.Id !==
+          reconciliation.payload.paymentImageId
+        ) {
+          throw new Error(
+            t(
+              'Сервер повернув оплату іншого продажу. Новий платіж не створено.',
+            ),
+          )
+        }
+
+        setItems((current) =>
+          replacePaymentShopItem(current, recoveredPayment),
+        )
+        reload()
+
+        if (
+          isSameAddPaymentImageMutation(
+            reconciliation.payload,
+            mutationPayload,
+          )
+        ) {
+          setSelectedItem(null)
+          notifications.show({
+            color: 'green',
+            message: t('Платіж уже створено та звірено'),
+          })
+          await openConfirmedIncomeOrder(recoveredPayment)
+          return 'satisfied'
+        }
+
+        if (
+          reconciliation.payload.paymentImageId ===
+          mutationPayload.paymentImageId
+        ) {
+          const notice = t(
+            'Попередню оплату цього продажу звірено. Поточні введені дані ще не надсилалися; перевірте оновлену суму.',
+          )
+          setSelectedItem(recoveredPayment)
+          setCreateNotice(notice)
+          notifications.show({ color: 'yellow', message: notice })
+          return 'review'
+        }
+
+        return 'continue'
+      }
+
+      const legacyOutcome = await processReconciliation(
+        await reconcileLegacyAddPaymentMutation<
+          AddPaymentImageMutationPayload,
+          PaymentShopItem
+        >(reconcilePaymentImageAdd),
+      )
+
+      if (legacyOutcome === 'satisfied') {
+        return true
+      }
+
+      if (legacyOutcome === 'review') {
+        return false
+      }
+
+      const currentOutcome = await processReconciliation(
+        await reconcileCurrentAddPaymentMutation<
+          AddPaymentImageMutationPayload,
+          PaymentShopItem
+        >(reconcilePaymentImageAdd),
+      )
+
+      if (currentOutcome === 'satisfied') {
+        return true
+      }
+
+      if (currentOutcome === 'review') {
+        return false
+      }
+
+      const createdPayment = await runAddPaymentMutation(
         mutationPayload,
         async (persistedPayload, operation) => {
           ensurePaymentImageReplayFileMatches(
@@ -246,20 +358,35 @@ function usePaymentOnlineShopModel() {
           )
         },
       )
+
+      if (
+        !createdPayment ||
+        createdPayment.Id !== requestPayload.paymentImageId
+      ) {
+        throw new Error(
+          t(
+            'Сервер не повернув поточну оплату магазину. Результат потрібно звірити перед повтором.',
+          ),
+        )
+      }
+
+      setItems((current) =>
+        replacePaymentShopItem(current, createdPayment),
+      )
       setSelectedItem(null)
       reload()
       notifications.show({ color: 'green', message: t('Платіж створено') })
-      await openConfirmedIncomeOrder(selectedItem)
+      await openConfirmedIncomeOrder(createdPayment)
       return true
     } catch (addError) {
       if (addError instanceof SalesPendingMutationRecoveredError) {
-        setSelectedItem(null)
         reload()
+        setCreateNotice(t(addError.message))
         notifications.show({
           color: 'yellow',
           message: t(addError.message),
         })
-        return true
+        return false
       }
 
       if (isDefinitiveRetailPaymentImageConcurrencyConflict(addError)) {
@@ -473,13 +600,12 @@ function usePaymentOnlineShopModel() {
       reload()
     } catch (saveError) {
       if (saveError instanceof SalesPendingMutationRecoveredError) {
-        isEditOpenRef.current = false
-        setEditItem(null)
-        setSelectedItem(null)
-        reload()
+        const notice = t(saveError.message)
+        setEditNotice(notice)
+        await refreshEditingPayment(notice)
         notifications.show({
           color: 'yellow',
-          message: t(saveError.message),
+          message: notice,
         })
         return
       }

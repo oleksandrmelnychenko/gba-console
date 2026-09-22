@@ -72,6 +72,22 @@ export function ensurePaymentImageReplayFileMatches(
   }
 }
 
+export function isSameAddPaymentImageMutation(
+  first: AddPaymentImageMutationPayload,
+  second: AddPaymentImageMutationPayload,
+): boolean {
+  return (
+    first.amount === second.amount &&
+    first.comment === second.comment &&
+    first.paymentImageId === second.paymentImageId &&
+    first.paymentType === second.paymentType &&
+    first.file.sha256 === second.file.sha256 &&
+    first.file.size === second.file.size &&
+    getFileExtension(first.file.name) ===
+      getFileExtension(second.file.name)
+  )
+}
+
 export function classifyRetailPaymentImageMutationFailure(
   error: unknown,
 ): SalesMutationFailureStatus {

@@ -6,6 +6,7 @@ import {
   getPaymentShopItemForRefresh,
   getPaymentShopItems,
   getPaymentShopItemsPage,
+  reconcilePaymentImageAdd,
 } from './paymentOnlineShopApi'
 
 vi.mock('../../../shared/api/apiClient', () => ({
@@ -120,7 +121,7 @@ describe('paymentOnlineShopApi', () => {
   it('uploads an image with a durable idempotency key', async () => {
     const image = new File(['image'], 'payment.png', { type: 'image/png' })
 
-    apiRequestMock.mockResolvedValueOnce({ Id: 10 })
+    apiRequestMock.mockResolvedValueOnce({ Id: 7 })
 
     await addPaymentImage(
       {
@@ -150,6 +151,58 @@ describe('paymentOnlineShopApi', () => {
       RetailClientPaymentImageId: 7,
     })
   })
+
+  it('keeps an ambiguous create response eligible for reconciliation', async () => {
+    const image = new File(['image'], 'payment.png', { type: 'image/png' })
+
+    apiRequestMock.mockResolvedValueOnce({ Id: 99 })
+
+    await expect(
+      addPaymentImage(
+        {
+          amount: 125.5,
+          comment: 'paid',
+          image,
+          paymentImageId: 7,
+          paymentType: 0,
+          user: { Id: 3 },
+        },
+        { operationId },
+      ),
+    ).rejects.toThrow('Результат потрібно звірити перед повтором')
+  })
+
+  it('reconciles a completed image mutation without uploading the file again', async () => {
+    apiRequestMock.mockResolvedValueOnce({
+      PaymentImage: { Id: 7, RetailPaymentStatus: { Amount: 125.5 } },
+      Status: 2,
+    })
+
+    await expect(
+      reconcilePaymentImageAdd({ operationId }),
+    ).resolves.toEqual({
+      result: { Id: 7, RetailPaymentStatus: { Amount: 125.5 } },
+      status: 'committed',
+    })
+    expect(apiRequestMock).toHaveBeenCalledWith(
+      '/retail/clients/payment-online-shop/payment/create/status',
+      { query: { operationId } },
+    )
+  })
+
+  it.each([
+    [0, 'not-found'],
+    [1, 'pending'],
+  ] as const)(
+    'normalizes reconciliation status %s as %s',
+    async (Status, status) => {
+      apiRequestMock.mockResolvedValueOnce({ Status })
+
+      await expect(
+        reconcilePaymentImageAdd({ operationId }),
+      ).resolves.toEqual({ status })
+    },
+  )
 
   it('preserves RowVersion and sends the operation key on update', async () => {
     apiRequestMock.mockResolvedValueOnce({ Id: 7 })
@@ -191,7 +244,7 @@ describe('paymentOnlineShopApi', () => {
     const image = new File(['image bytes'], 'receipt.png', { type: 'image/png' })
     const user = { Id: 3, Permissions: Array.from({ length: 3000 }, (_, i) => ({ Key: `permission-${i}`, Allowed: true })) }
     expect(JSON.stringify(user).length).toBeGreaterThan(64 * 1024)
-    apiRequestMock.mockResolvedValueOnce({ Id: 10 })
+    apiRequestMock.mockResolvedValueOnce({ Id: 7 })
 
     await addPaymentImage({ amount: 75, comment: 'receipt', image, paymentImageId: 7, paymentType: 0, user }, { operationId })
 

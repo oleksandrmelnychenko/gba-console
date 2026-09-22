@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   createPersistentSalesMutationScope,
+  reconcilePersistentSalesMutation,
   runPersistentSalesMutation,
   SalesPendingMutationRecoveredError,
 } from './persistentSalesMutation'
@@ -56,6 +57,93 @@ describe('persistentSalesMutation', () => {
       request.mock.calls[1][1].operationId,
     )
     expect(request.mock.calls[1][0]).toEqual(args.payload)
+  })
+
+  it('uses server ledger proof to settle an unknown operation without replaying its request body', async () => {
+    const originalRequest = vi.fn().mockRejectedValue(new TypeError('network'))
+    const originalPayload = { PaymentImageId: 15, Amount: 125.5 }
+
+    await expect(
+      runPersistentSalesMutation({
+        context: 'payment-online-shop:add',
+        kind: 'retail-payment-image-add',
+        payload: originalPayload,
+        request: originalRequest,
+        userKey: 'net:user-1',
+      }),
+    ).rejects.toThrow('network')
+
+    const reconcile = vi.fn().mockResolvedValue({
+      result: { Id: 15, PaidAmount: 125.5 },
+      status: 'committed' as const,
+    })
+    const result = await reconcilePersistentSalesMutation({
+      context: 'payment-online-shop:add',
+      kind: 'retail-payment-image-add',
+      request: reconcile,
+      userKey: 'net:user-1',
+    })
+
+    expect(result).toEqual({
+      payload: originalPayload,
+      result: { Id: 15, PaidAmount: 125.5 },
+      status: 'committed',
+    })
+    expect(reconcile).toHaveBeenCalledWith({
+      operationId: '11111111-1111-4111-8111-111111111111',
+    })
+    expect(originalRequest).toHaveBeenCalledTimes(1)
+
+    const currentRequest = vi.fn().mockResolvedValue('current')
+    await expect(
+      runPersistentSalesMutation({
+        context: 'payment-online-shop:add:16',
+        kind: 'retail-payment-image-add',
+        payload: { PaymentImageId: 16, Amount: 50 },
+        request: currentRequest,
+        userKey: 'net:user-1',
+      }),
+    ).resolves.toBe('current')
+    expect(currentRequest).toHaveBeenCalledWith(
+      { PaymentImageId: 16, Amount: 50 },
+      { operationId: '22222222-2222-4222-8222-222222222222' },
+    )
+  })
+
+  it('keeps an operation blocked while the server ledger still reports it pending', async () => {
+    const request = vi.fn().mockRejectedValue(new TypeError('network'))
+
+    await expect(
+      runPersistentSalesMutation({
+        context: 'payment-online-shop:add:15',
+        kind: 'retail-payment-image-add',
+        payload: { PaymentImageId: 15, Amount: 125.5 },
+        request,
+        userKey: 'net:user-1',
+      }),
+    ).rejects.toThrow('network')
+
+    const reconcile = vi.fn().mockResolvedValue({ status: 'pending' as const })
+    await expect(
+      reconcilePersistentSalesMutation({
+        context: 'payment-online-shop:add:15',
+        kind: 'retail-payment-image-add',
+        request: reconcile,
+        userKey: 'net:user-1',
+      }),
+    ).resolves.toMatchObject({ status: 'pending' })
+    await expect(
+      reconcilePersistentSalesMutation({
+        context: 'payment-online-shop:add:15',
+        kind: 'retail-payment-image-add',
+        request: reconcile,
+        userKey: 'net:user-1',
+      }),
+    ).resolves.toMatchObject({ status: 'pending' })
+    expect(reconcile).toHaveBeenCalledTimes(2)
+    expect(reconcile.mock.calls[0][0].operationId).toBe(
+      reconcile.mock.calls[1][0].operationId,
+    )
   })
 
   it('recovers the prior payload before allowing a changed mutation', async () => {
