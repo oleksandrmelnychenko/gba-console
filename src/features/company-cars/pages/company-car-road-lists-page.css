@@ -66,8 +66,3 @@
 .company-car-road-lists-filter-row .app-filter-table-toolbar-slot .data-table-toolbar-right:empty {
   display: none;
 }
-
-.company-car-road-lists-filter-row .app-filter-table-toolbar-slot .mantine-ActionIcon-root {
-  width: 34px;
-  height: 34px;
-}
