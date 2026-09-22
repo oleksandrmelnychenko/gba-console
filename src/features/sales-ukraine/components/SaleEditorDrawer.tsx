@@ -386,12 +386,12 @@ function SaleEditorContent({ initialSale, loadSale }: { initialSale: SalesUkrain
         }
       }
 
-      notifications.show({ color: 'green', message: t('Рахунок створено') })
+      notifications.show({ color: 'green', message: t('Накладну створено') })
       setConvertOpen(false)
       setInvoiceTtnFile(null)
       reload()
     } catch (error) {
-      notifications.show({ color: 'red', message: error instanceof Error ? error.message : t('Не вдалося створити рахунок') })
+      notifications.show({ color: 'red', message: error instanceof Error ? error.message : t('Не вдалося створити накладну') })
     } finally {
       setConverting(false)
     }
@@ -454,7 +454,7 @@ function SaleEditorContent({ initialSale, loadSale }: { initialSale: SalesUkrain
             <Text size="sm">{fileMutation.pendingError}</Text>
             {!isConvertOpen && fileMutation.canReconcile && (
               <Button size="xs" variant="light" onClick={() => setConvertOpen(true)}>
-                {t('Звірити створення рахунку')}
+                {t('Звірити створення накладної')}
               </Button>
             )}
           </Stack>
@@ -529,7 +529,7 @@ function SaleEditorContent({ initialSale, loadSale }: { initialSale: SalesUkrain
             leftSection={<ReceiptText size={16} />}
             onClick={() => setConvertOpen(true)}
           >
-            {t(fileMutation.reconciliationRequired ? 'Звірити рахунок' : 'Зробити рахунок')}
+            {t(fileMutation.reconciliationRequired ? 'Звірити накладну' : 'Зробити накладну')}
           </Button>
         )}
       </Group>
@@ -641,7 +641,7 @@ function SaleEditorContent({ initialSale, loadSale }: { initialSale: SalesUkrain
         centered
         opened={isConvertOpen}
         size="sm"
-        title={t('Зробити рахунок')}
+        title={t('Зробити накладну')}
         onClose={() => {
           if (isConverting) {
             return
@@ -652,7 +652,7 @@ function SaleEditorContent({ initialSale, loadSale }: { initialSale: SalesUkrain
         }}
       >
         <Stack gap="md">
-          <Text>{t('Перетворити продаж на рахунок?')}</Text>
+          <Text>{t('Перетворити рахунок на накладну?')}</Text>
           {reviewIssues.length > 0 && (
             <Alert color="orange" icon={<TriangleAlert size={18} />} variant="light">
               <Stack gap={4}>
@@ -713,7 +713,7 @@ function SaleEditorContent({ initialSale, loadSale }: { initialSale: SalesUkrain
               loading={isConverting}
               onClick={convertToInvoice}
             >
-              {t(fileMutation.reconciliationRequired ? 'Звірити створення' : 'Зробити рахунок')}
+              {t(fileMutation.reconciliationRequired ? 'Звірити накладну' : 'Зробити накладну')}
             </Button>
           </Group>
         </Stack>
