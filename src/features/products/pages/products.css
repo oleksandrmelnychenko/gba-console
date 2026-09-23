@@ -699,6 +699,7 @@
 
 .product-inline-tabs {
   margin-top: 12px;
+  min-width: 0;
 }
 
 .product-inline-tabs__tabs {
@@ -714,6 +715,7 @@
    empty states), which made the page bottom jump on every switch. Reserve a
    constant minimum so the layout below never collapses/expands. */
 .product-inline-tab-pane {
+  min-width: 0;
   min-height: 420px;
 }
 
@@ -812,7 +814,14 @@
 }
 
 .product-inline-movement-body {
+  min-width: 0;
+  max-width: 100%;
   padding: 10px 8px 8px;
+}
+
+.product-inline-movements {
+  min-width: 0;
+  max-width: 100%;
 }
 
 .product-movement-toolbar__control {

@@ -1,3 +1,5 @@
+// @ts-expect-error The app build excludes Node types; Vitest runs this test in Node.
+import { readFileSync } from 'node:fs'
 import { MantineProvider } from '@mantine/core'
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
@@ -13,6 +15,8 @@ import {
   getProducts,
 } from '../api/productsApi'
 import type { Product, ProductIncomeMovement } from '../types'
+
+const productStyles = readFileSync('src/features/products/pages/products.css', 'utf8')
 
 vi.mock('../api/productsApi', async (importOriginal) => {
   const actual = await importOriginal<typeof import('../api/productsApi')>()
@@ -126,6 +130,33 @@ describe('ProductsPage income price columns', () => {
       expect(columnIndex).toBeGreaterThanOrEqual(0)
       expect(cells[columnIndex]?.textContent).toContain(value)
     }
+  })
+})
+
+describe('ProductsPage inline movement table width', () => {
+  it.each(['Прихід', 'Розхід'] as const)('keeps the %s table inside a bounded horizontal scroll area', async (tab) => {
+    await openIncomeTab()
+    if (tab === 'Розхід') {
+      fireEvent.click(screen.getByRole('button', { name: tab }))
+      await waitFor(() => expect(vi.mocked(getProductOutcomeMovements)).toHaveBeenCalled())
+    }
+
+    const table = document.querySelector('.product-inline-tab-pane .data-table-table')
+    const scrollArea = table?.closest('.data-table-scroll') as HTMLElement | null
+    const pane = table?.closest('.product-inline-tab-pane') as HTMLElement | null
+    const movements = table?.closest('.product-inline-movements') as HTMLElement | null
+    const body = table?.closest('.product-inline-movement-body') as HTMLElement | null
+
+    expect(table).not.toBeNull()
+    expect(scrollArea).not.toBeNull()
+    expect(scrollArea?.style.maxHeight).toBe('360px')
+    expect(pane).not.toBeNull()
+    expect(movements).not.toBeNull()
+    expect(body).not.toBeNull()
+    expect(productStyles).toMatch(/\.product-inline-tab-pane\s*\{[^}]*min-width:\s*0\s*;/)
+    expect(productStyles).toMatch(/\.product-inline-movements\s*\{[^}]*max-width:\s*100%\s*;/)
+    expect(productStyles).toMatch(/\.product-inline-movement-body\s*\{[^}]*max-width:\s*100%\s*;/)
+    expect(table?.textContent).toContain(tab === 'Прихід' ? 'Ціна нетто за одиницю, EUR' : 'Кількість')
   })
 })
 
