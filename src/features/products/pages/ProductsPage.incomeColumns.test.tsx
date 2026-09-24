@@ -158,6 +158,32 @@ describe('ProductsPage inline movement table width', () => {
     expect(productStyles).toMatch(/\.product-inline-movement-body\s*\{[^}]*max-width:\s*100%\s*;/)
     expect(table?.textContent).toContain(tab === 'Прихід' ? 'Ціна нетто за одиницю, EUR' : 'Кількість')
   })
+
+  it.each([
+    { viewportWidth: 1560, shouldScroll: true },
+    { viewportWidth: 2200, shouldScroll: false },
+  ])('renders the Розхід columns with horizontal overflow=$shouldScroll at $viewportWidth px', async ({ viewportWidth, shouldScroll }) => {
+    vi.spyOn(HTMLElement.prototype, 'clientWidth', 'get').mockImplementation(function (this: HTMLElement) {
+      return this.classList.contains('data-table-scroll') ? viewportWidth : 0
+    })
+    vi.mocked(getProductOutcomeMovements).mockResolvedValue([{
+      DocumentNumber: 'CH0000001',
+      DocumentTypeName: 'Видаткова накладна',
+      Price: 90.20,
+      Qty: 1,
+    }])
+
+    await openIncomeTab()
+    fireEvent.click(screen.getByRole('button', { name: 'Розхід' }))
+    await screen.findByText('CH0000001')
+
+    const scrollArea = document.querySelector('.product-inline-tab-pane .data-table-scroll') as HTMLElement
+    const table = scrollArea.querySelector('table') as HTMLTableElement
+
+    await waitFor(() => expect(table.style.width).not.toBe(''))
+    expect(Number.parseInt(table.style.width, 10) > scrollArea.clientWidth).toBe(shouldScroll)
+    expect(table.textContent).toContain('Кількість')
+  })
 })
 
 describe('ProductsPage movement exports', () => {

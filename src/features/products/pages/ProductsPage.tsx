@@ -3522,7 +3522,7 @@ function ProductOutcomeMovementsGrid({
       isLoading={isLoading}
       layoutVersion="product-outcome-movements-1"
       maxHeight={360}
-      minWidth={1300}
+      minWidth={1900}
       showDensityToggle={false}
       showLayoutControls
       tableId="product-outcome-movements"
