@@ -30,6 +30,7 @@ import { ExcelIcon } from '../../../shared/ui/ExcelIcon'
 import { lazy, Suspense, type KeyboardEvent, type ReactNode, useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
+import { ProductOutcomeHorizontalScroll } from '../components/ProductOutcomeHorizontalScroll'
 import type { DataTableColumn } from '../../../shared/ui/data-table/types'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -3512,21 +3513,23 @@ function ProductOutcomeMovementsGrid({
   )
 
   return (
-    <DataTable
-      columns={columns}
-      data={rows}
-      density="normal"
-      emptyText={emptyText}
-      fillAvailableWidth
-      getRowId={getOutcomeMovementRowKey}
-      isLoading={isLoading}
-      layoutVersion="product-outcome-movements-1"
-      maxHeight={360}
-      minWidth={1900}
-      showDensityToggle={false}
-      showLayoutControls
-      tableId="product-outcome-movements"
-    />
+    <ProductOutcomeHorizontalScroll label={t('Горизонтальна прокрутка таблиці')}>
+      <DataTable
+        columns={columns}
+        data={rows}
+        density="normal"
+        emptyText={emptyText}
+        fillAvailableWidth
+        getRowId={getOutcomeMovementRowKey}
+        isLoading={isLoading}
+        layoutVersion="product-outcome-movements-1"
+        maxHeight={360}
+        minWidth={1900}
+        showDensityToggle={false}
+        showLayoutControls
+        tableId="product-outcome-movements"
+      />
+    </ProductOutcomeHorizontalScroll>
   )
 }
 
