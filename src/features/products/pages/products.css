@@ -819,6 +819,12 @@
   padding: 10px 8px 8px;
 }
 
+.product-inline-movement-body.is-outcome .data-table-scroll {
+  scrollbar-color: var(--mantine-color-gray-5) var(--mantine-color-gray-1);
+  scrollbar-gutter: auto;
+  scrollbar-width: auto;
+}
+
 .product-inline-movements {
   min-width: 0;
   max-width: 100%;

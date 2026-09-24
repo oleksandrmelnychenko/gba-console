@@ -3179,7 +3179,7 @@ function ProductInlineMovementsTab({
         </div>
       </Group>
 
-      <Stack className="product-inline-movement-body" gap="sm">
+      <Stack className={`product-inline-movement-body${direction === 'outcome' ? ' is-outcome' : ''}`} gap="sm">
       {!productNetUid ? (
         <Alert color="yellow" icon={<CircleAlert size={18} />} variant="light">
           {t('У товару немає NetUid для завантаження руху товару')}
