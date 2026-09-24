@@ -49,6 +49,7 @@ describe('exact named catalogue launches', () => {
   ] as const)('opens bounded BUG-1274 Fenix native slice %s with its exact groups', (reportId, sourceId, source, rows, measures, filters) => {
     const dataset: ReportDataset = { DataSource: source, Name: reportId, Description: 'Зріз GBA',
       PeriodRequired: true, PeriodSupported: true, Limitations: [],
+      ...(source === 38 ? { supplierSourceWorld: { Version: 1, SourceWorlds: [0, 1], RequiresCompletePeriodLineage: true } } : {}),
       Groupings: rows.map(Type => ({ Type, Name: String(Type) })),
       Measurements: measures.map(Type => ({ Type, Name: String(Type) })),
       Filters: filters.map(Type => ({ Type, Name: String(Type) })),
@@ -60,8 +61,26 @@ describe('exact named catalogue launches', () => {
     expect(result.ok).toBe(true)
     if (!result.ok) throw new Error(result.message)
     expect(result.template.Data.sorted.Row.map(item => item.type)).toEqual(rows)
+    if (source === 38) expect(result.template.Data.supplierSourceWorld).toBe(0)
     expect(result.notice).toContain('Часткове покриття GBA')
     expect(catalogueLaunchOptions(catalogue, reportId, [{ ...dataset, Groupings: [] }])).toEqual([])
+  })
+
+  it('maps the AMG supplier-profit catalogue source to the AMG batch world', () => {
+    const identity = ['builtin:ВаловаяПрибыльПоПоставщикам', 'f84e7b02-b6fe-40ca-bc7f-ea508d6ec41a'] as const
+    const source = 38
+    const dataset: ReportDataset = { DataSource: source, Name: 'Партійний прибуток', Description: 'GBA',
+      PeriodRequired: true, PeriodSupported: true, Limitations: [],
+      supplierSourceWorld: { Version: 1, SourceWorlds: [0, 1], RequiresCompletePeriodLineage: true },
+      Groupings: [73, 4, 21].map(Type => ({ Type, Name: String(Type) })),
+      Measurements: [0, 2, 3, 4, 6, 7, 8, 10, 12, 14].map(Type => ({ Type, Name: String(Type) })),
+      Filters: [0, 17].map(Type => ({ Type, Name: String(Type) })),
+    }
+    const catalogue = fixture(identity, [source], ['fenix', 'amg'])
+    expect(catalogueLaunchOptions(catalogue, identity[0], [dataset])).toHaveLength(2)
+    const result = open(catalogue, dataset, 'amg')
+    expect(result.ok).toBe(true)
+    if (result.ok) expect(result.template.Data.supplierSourceWorld).toBe(1)
   })
 
   it('opens only the exact Fenix gross-profit source in the dedicated panel', () => {

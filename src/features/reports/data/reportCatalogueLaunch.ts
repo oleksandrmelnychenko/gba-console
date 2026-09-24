@@ -14,6 +14,7 @@ import { defaultPaymentComparison, isPaymentComparisonCapability } from './payme
 import { isPriceTypeSalesComparisonDataset } from './priceTypeSalesComparison'
 import { isOneCSpecialDataset, oneCSpecialSettingsForWorld } from './oneCSpecialReports'
 import { readAbcCapabilities } from './reportAbcClassification'
+import { isSupplierSourceWorldCapability } from './supplierBatchGrossProfit'
 
 export type CatalogueLaunchChoice = { reportId: string; world: string; sourceId: string; dataSource: number }
 export type CatalogueLaunchOption = { choice: CatalogueLaunchChoice; label: string; title: string; notice: string }
@@ -121,6 +122,7 @@ const capabilities: Readonly<Record<number, (dataset: ReportDataset) => boolean>
   25: isOneCSpecialDataset,
   28: isOneCSpecialDataset,
   26: dataset => readAbcCapabilities(dataset) !== null,
+  38: dataset => isSupplierSourceWorldCapability(dataset.supplierSourceWorld),
 }
 function validFields(fields: ReportDatasetField[]): boolean {
   return Array.isArray(fields) && fields.every(field => field && Number.isSafeInteger(field.Type) && field.Type >= 0
@@ -220,6 +222,7 @@ export function resolveCatalogueLaunch(value: unknown, choice: CatalogueLaunchCh
   const data = defaultDatasetRequest(dataset, period.from, period.to)
   if (registration.mode === 'return-only') data.returnsOnly = true
   Object.assign(data, oneCSpecialSettingsForWorld(dataset.DataSource, choice.world))
+  if (dataset.DataSource === 38) data.supplierSourceWorld = choice.world === 'fenix' ? 0 : 1
   const { rows, measures } = requirements(registration, dataset.DataSource)
   const groupings = datasetGroupings(dataset)
   data.sorted.Row = rows.flatMap(type => groupings.filter(item => item.type === type))

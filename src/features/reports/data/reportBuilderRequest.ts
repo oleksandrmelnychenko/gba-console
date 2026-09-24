@@ -20,6 +20,7 @@ type BuilderValues = {
   productClassification?: unknown
   sourceOrganizations?: unknown
   sourceBuyerSubtree?: unknown
+  supplierSourceWorld?: unknown
   priceTypeSalesComparison?: unknown
   oneCSpecialSettings?: unknown
   oneC?: ReportRequestBody['oneC']
@@ -31,7 +32,7 @@ type BuilderValues = {
 
 /** Tree indices address this exact selection array; only the legacy request omits unchecked rows. */
 export function buildReportBuilderRequest(values: BuilderValues): ReportRequestBody {
-  const { dataSource, returnsOnly, from, to, ordering, filterExpression, topGroups, abcClassification, threshold, hideZero, comparison, xyz, revenueComparison, buyerSalesShare, returnComparison, paymentComparison, marginComparison, rateComparison, productClassification, sourceOrganizations, sourceBuyerSubtree, priceTypeSalesComparison, oneCSpecialSettings, oneC, valuationClientAgreementId, agreementPriceComparison, rowGroups, colGroups, measurements, selections } = values
+  const { dataSource, returnsOnly, from, to, ordering, filterExpression, topGroups, abcClassification, threshold, hideZero, comparison, xyz, revenueComparison, buyerSalesShare, returnComparison, paymentComparison, marginComparison, rateComparison, productClassification, sourceOrganizations, sourceBuyerSubtree, supplierSourceWorld, priceTypeSalesComparison, oneCSpecialSettings, oneC, valuationClientAgreementId, agreementPriceComparison, rowGroups, colGroups, measurements, selections } = values
   const special = oneCSpecialSpecification(dataSource)
   return { dataSource, from, to, ...(returnsOnly === true ? { returnsOnly: true } : {}),
     ...(special && oneCSpecialSettings !== undefined ? { [special.key]: oneCSpecialSettings } : {}),
@@ -52,6 +53,7 @@ export function buildReportBuilderRequest(values: BuilderValues): ReportRequestB
     ...(productClassification !== undefined ? { productClassification } : {}),
     ...(sourceOrganizations !== undefined ? { sourceOrganizations } : {}),
     ...(sourceBuyerSubtree !== undefined ? { sourceBuyerSubtree } : {}),
+    ...(supplierSourceWorld !== undefined ? { supplierSourceWorld } : {}),
     ...(priceTypeSalesComparison !== undefined ? { priceTypeSalesComparison } : {}),
     ...(oneC !== undefined ? { oneC } : {}),
     ...(valuationClientAgreementId !== undefined ? { valuationClientAgreementId } : {}),

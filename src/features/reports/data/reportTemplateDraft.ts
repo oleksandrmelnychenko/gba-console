@@ -14,6 +14,7 @@ const managedFields = new Set([
   'hideZero', 'HideZero', 'threshold', 'Threshold', 'topGroups', 'TopGroups',
   'productClassification', 'ProductClassification', 'sourceOrganizations', 'SourceOrganizations',
   'sourceBuyerSubtree', 'SourceBuyerSubtree',
+  'supplierSourceWorld', 'SupplierSourceWorld',
   'priceTypeSalesComparison', 'PriceTypeSalesComparison', 'oneC', 'OneC',
   'discountMarkup', 'DiscountMarkup', 'providedDiscounts', 'ProvidedDiscounts',
   'priceAnalysis', 'PriceAnalysis',

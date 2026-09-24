@@ -142,6 +142,7 @@ import { useReportGroupingOrdering } from '../hooks/useReportGroupingOrdering'
 import type { ReportGroupingLayout } from '../data/reportGroupingLayout'
 import { productClassification as parseProductClassification, sourceOrganizations as parseSourceOrganizations, sourceBuyerSubtree as parseSourceBuyerSubtree, requestProductClassification, requestSourceOrganizations, requestSourceBuyerSubtree, FENIX_BUYERS_ROOT_ID } from '../data/nativeExactFilters'
 import { DAY_ORGANIZATION_GOODS_KIND_ID, DAY_ORGANIZATION_SAVED_ORGANIZATION_IDS } from '../data/dayOrganizationGrossProfit'
+import { isSupplierSourceWorldCapability, requestSupplierSourceWorld } from '../data/supplierBatchGrossProfit'
 import PriceTypeSalesComparisonPanel from './PriceTypeSalesComparisonPanel'
 import AgreementPriceComparisonPanel from './AgreementPriceComparisonPanel'
 import { defaultAgreementPriceComparison, requestAgreementPriceComparison } from '../data/agreementPriceComparison'
@@ -262,6 +263,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode }: { ownerId: string 
   const [productClassification, setProductClassification] = useValueState<unknown>(undefined)
   const [sourceOrganizations, setSourceOrganizations] = useValueState<unknown>(undefined)
   const [sourceBuyerSubtree, setSourceBuyerSubtree] = useValueState<unknown>(undefined)
+  const [supplierSourceWorld, setSupplierSourceWorld] = useValueState<unknown>(undefined)
   const [returnsOnly, setReturnsOnly] = useValueState<boolean | undefined>(undefined)
   const [priceTypeSalesComparison, setPriceTypeSalesComparison] = useValueState<unknown>(undefined)
   const [agreementPriceComparison, setAgreementPriceComparison] = useValueState<unknown>(undefined)
@@ -315,8 +317,8 @@ function ReportsStocksWorkspace({ ownerId, constructorMode }: { ownerId: string 
   // period on a pause, and only once it is a period the server can answer for.
   const hasLookupPeriod = !getPeriodError(debouncedFrom, debouncedTo, maxDate, t)
   const reportBody = useMemo<ReportRequestBody>(
-    () => buildReportBuilderRequest({ dataSource, returnsOnly, comparison, xyz, revenueComparison, buyerSalesShare, returnComparison, paymentComparison, marginComparison, rateComparison, productClassification, sourceOrganizations, sourceBuyerSubtree, priceTypeSalesComparison, agreementPriceComparison, oneCSpecialSettings, oneC: oneCScope, from, to, ordering, filterExpression, topGroups, threshold, hideZero, abcClassification, valuationClientAgreementId, rowGroups, colGroups, measurements, selections }),
-    [abcClassification, agreementPriceComparison, colGroups, comparison, xyz, revenueComparison, buyerSalesShare, returnComparison, paymentComparison, marginComparison, rateComparison, productClassification, sourceOrganizations, sourceBuyerSubtree, returnsOnly, priceTypeSalesComparison, oneCSpecialSettings, oneCScope, dataSource, filterExpression, from, hideZero, measurements, ordering, rowGroups, selections, to, topGroups, threshold, valuationClientAgreementId],
+    () => buildReportBuilderRequest({ dataSource, returnsOnly, comparison, xyz, revenueComparison, buyerSalesShare, returnComparison, paymentComparison, marginComparison, rateComparison, productClassification, sourceOrganizations, sourceBuyerSubtree, supplierSourceWorld, priceTypeSalesComparison, agreementPriceComparison, oneCSpecialSettings, oneC: oneCScope, from, to, ordering, filterExpression, topGroups, threshold, hideZero, abcClassification, valuationClientAgreementId, rowGroups, colGroups, measurements, selections }),
+    [abcClassification, agreementPriceComparison, colGroups, comparison, xyz, revenueComparison, buyerSalesShare, returnComparison, paymentComparison, marginComparison, rateComparison, productClassification, sourceOrganizations, sourceBuyerSubtree, supplierSourceWorld, returnsOnly, priceTypeSalesComparison, oneCSpecialSettings, oneCScope, dataSource, filterExpression, from, hideZero, measurements, ordering, rowGroups, selections, to, topGroups, threshold, valuationClientAgreementId],
   )
   const { result, preview, lastRun, error, isLoading, downloadModalOpened, update: updateRun, begin: beginRun, clear: clearRun } = useReportRunState<ReportRunOutcome>(JSON.stringify({
     request: reportBody,
@@ -437,6 +439,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode }: { ownerId: string 
     setProductClassification(undefined)
     setSourceOrganizations(undefined)
     setSourceBuyerSubtree(undefined)
+    setSupplierSourceWorld(snapshotDefaults?.supplierSourceWorld)
     setPriceTypeSalesComparison(snapshotDefaults?.priceTypeSalesComparison)
     setAgreementPriceComparison(snapshotDefaults?.agreementPriceComparison)
     setOneCSpecialSettings(snapshotDefaults && oneCSpecialSpecification(dataSource)
@@ -520,6 +523,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode }: { ownerId: string 
     setProductClassification(structuredClone(requestProductClassification(data)))
     setSourceOrganizations(structuredClone(requestSourceOrganizations(data)))
     setSourceBuyerSubtree(structuredClone(requestSourceBuyerSubtree(data)))
+    setSupplierSourceWorld(structuredClone(requestSupplierSourceWorld(data)))
     setReturnsOnly(data.returnsOnly ?? data.ReturnsOnly)
     setPriceTypeSalesComparison(clonePriceTypeSalesComparisonValue(data))
     setAgreementPriceComparison(structuredClone(requestAgreementPriceComparison(data)))
@@ -579,6 +583,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode }: { ownerId: string 
     setProductClassification(structuredClone(requestProductClassification(data)))
     setSourceOrganizations(structuredClone(requestSourceOrganizations(data)))
     setSourceBuyerSubtree(structuredClone(requestSourceBuyerSubtree(data)))
+    setSupplierSourceWorld(structuredClone(requestSupplierSourceWorld(data)))
     setReturnsOnly(data.returnsOnly ?? data.ReturnsOnly)
     setPriceTypeSalesComparison(clonePriceTypeSalesComparisonValue(data))
     setAgreementPriceComparison(structuredClone(requestAgreementPriceComparison(data)))
@@ -732,7 +737,18 @@ function ReportsStocksWorkspace({ ownerId, constructorMode }: { ownerId: string 
           <Text size="xs" c="dimmed">{t('Поточний збережений знімок ієрархії покупців. Якщо лінія покупця або ієрархія неповні, звіт покаже помилку покриття.')}</Text>
           {sourceBuyerSubtree != null && !parseSourceBuyerSubtree(sourceBuyerSubtree)
             ? <Text size="xs" c="orange">{t('Шаблон містить інше піддерево Fenix; цей набір приймає тільки групу «Покупці».')}</Text> : null}
-        </Card> : null}
+        </Card> : dataSource === 38 && isSupplierSourceWorldCapability(dataset?.supplierSourceWorld)
+          ? <Card className="app-section-card" withBorder radius="md" padding="md" style={{ minWidth: 0 }}>
+            <Select label={t('База продажів для прибутку за постачальниками')}
+              data={[{ value: '0', label: 'Fenix' }, { value: '1', label: 'AMG' },
+                { value: 'all', label: t('Обидві бази') }]}
+              value={supplierSourceWorld === 0 ? '0' : supplierSourceWorld === 1 ? '1' : 'all'}
+              disabled={comparisonSettingsDisabled}
+              onChange={value => setSupplierSourceWorld(value === '0' ? 0 : value === '1' ? 1 : undefined)} />
+            <Text size="xs" c="dimmed">{t('Окремий зріз формується лише за однозначної лінії кожного продажу в періоді. Неповна партія вибраної бази зупинить звіт.')}</Text>
+            {supplierSourceWorld !== undefined && supplierSourceWorld !== 0 && supplierSourceWorld !== 1
+              ? <Text size="xs" c="orange">{t('Шаблон містить невідому базу джерела; виберіть Fenix або AMG.')}</Text> : null}
+          </Card> : null}
         dataSource={dataSource}
         rateComparisonPanel={<RateComparisonPanel dataSource={dataSource} value={rateComparison} disabled={comparisonSettingsDisabled} onChange={setRateComparison} />}
         paymentComparisonPanel={<PaymentComparisonPanel dataSource={dataSource} value={paymentComparison} disabled={comparisonSettingsDisabled} onChange={setPaymentComparison} />}

@@ -303,6 +303,8 @@ export type ReportRequestBody = {
   SourceOrganizations?: unknown
   sourceBuyerSubtree?: unknown
   SourceBuyerSubtree?: unknown
+  supplierSourceWorld?: unknown
+  SupplierSourceWorld?: unknown
   oneC?: OneCTurnoverFilters
   from: string
   selections: ReportSelection[]
@@ -346,6 +348,7 @@ export type ReportDataset = {
   productClassification?: unknown
   sourceOrganizations?: unknown
   sourceBuyerSubtree?: unknown
+  supplierSourceWorld?: unknown
   Groupings: ReportDatasetField[]
   Measurements: ReportDatasetField[]
   Filters: ReportDatasetField[]

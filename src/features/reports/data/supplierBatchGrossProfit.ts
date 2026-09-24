@@ -3,6 +3,18 @@ import { revenueExactId } from './revenueComparison'
 
 export const SUPPLIER_BATCH_GROSS_PROFIT_SOURCE = 38
 export const SUPPLIER_BATCH_GROSS_PROFIT_TITLE = 'Валовий прибуток GBA за постачальниками (партії)'
+export type SupplierSourceWorld = 0 | 1
+export function isSupplierSourceWorldCapability(value: unknown): boolean {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return false
+  const capability = value as Record<string, unknown>
+  return capability.Version === 1 && capability.RequiresCompletePeriodLineage === true
+    && Array.isArray(capability.SourceWorlds) && capability.SourceWorlds.length === 2
+    && capability.SourceWorlds[0] === 0 && capability.SourceWorlds[1] === 1
+}
+export function requestSupplierSourceWorld(data: ReportRequestBody): unknown {
+  return Object.prototype.hasOwnProperty.call(data, 'supplierSourceWorld')
+    ? data.supplierSourceWorld : data.SupplierSourceWorld
+}
 const measures = [0, 2, 3, 4, 6, 7, 8, 10, 12, 14]
 const filters = new Set([0, 17])
 const forbidden = new Set(['onec', 'comparison', 'xyz', 'revenuecomparison', 'buyersalesshare', 'returncomparison',
@@ -27,6 +39,13 @@ export function supplierBatchGrossProfitConfigurationError(data: ReportRequestBo
     || dataset.Measurements.map(item => item.Type).join(',') !== measures.join(',')
     || dataset.Filters.map(item => item.Type).join(',') !== '0,17'))
     return 'Сервер не підтвердив набір партійного прибутку за постачальниками.'
+  const world = requestSupplierSourceWorld(data)
+  if (data.supplierSourceWorld !== undefined && data.SupplierSourceWorld !== undefined
+    && data.supplierSourceWorld !== data.SupplierSourceWorld)
+    return 'Шаблон суперечливо задає базу партійного прибутку.'
+  if (world !== undefined && (world !== 0 && world !== 1
+    || dataset && !isSupplierSourceWorldCapability(dataset.supplierSourceWorld)))
+    return 'Оберіть підтверджену базу Fenix або AMG для партійного прибутку.'
   if (!validDate(data.from) || !validDate(data.to) || data.from > data.to)
     return 'Оберіть один коректний період партійного прибутку.'
   if ((Date.parse(`${data.to}T00:00:00Z`) - Date.parse(`${data.from}T00:00:00Z`)) / 86400000 >= 31)

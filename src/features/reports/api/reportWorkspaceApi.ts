@@ -149,6 +149,8 @@ type WireTemplate = Required<Omit<ReportTemplate, 'Data'>> & {
     sourceOrganizations?: unknown
     SourceBuyerSubtree?: unknown
     sourceBuyerSubtree?: unknown
+    SupplierSourceWorld?: unknown
+    supplierSourceWorld?: unknown
     PriceTypeSalesComparison?: unknown
     priceTypeSalesComparison?: unknown
     DiscountMarkup?: unknown
@@ -184,6 +186,9 @@ export function normalizeSavedTemplate(value: WireTemplate): ReportTemplate {
     ...cloneRevenueComparisonAliases(value.Data),
     ...cloneXyzAliases(value.Data),
     ...cloneNativeExactFilterAliases(value.Data),
+    ...(Object.hasOwn(value.Data, 'supplierSourceWorld') ? { supplierSourceWorld: value.Data.supplierSourceWorld,
+      ...(Object.hasOwn(value.Data, 'SupplierSourceWorld') ? { SupplierSourceWorld: value.Data.SupplierSourceWorld } : {}),
+    } : Object.hasOwn(value.Data, 'SupplierSourceWorld') ? { supplierSourceWorld: value.Data.SupplierSourceWorld } : {}),
     ...clonePriceTypeSalesComparisonAliases(value.Data),
     ...cloneAgreementPriceComparisonAliases(value.Data),
     ...cloneOneCSpecialAliases(value.Data),

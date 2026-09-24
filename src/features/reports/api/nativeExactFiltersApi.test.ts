@@ -51,6 +51,7 @@ describe('exact Fenix report filter wire contract', () => {
 
   it('loads the day and organization capability and sends its exact kind and service filter', async () => {
     const { sourceOrganizations: _unused, productClassification: _product, ...base } = netDataset
+    void _unused; void _product
     const dayDataset = {
       ...base, DataSource: 35, Name: 'Валовий прибуток GBA за днем та організацією',
       PeriodRequired: true, PeriodSupported: true,
