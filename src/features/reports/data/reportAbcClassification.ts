@@ -28,11 +28,17 @@ export function readAbcCapabilities(dataset?: ReportDataset): ReportAbcClassific
   const cap = dataset?.AbcClassification
   if (!record(cap) || cap.Version !== 1 || cap.MaximumRules !== 1 || !Array.isArray(cap.Axes) || cap.Axes.length !== 1 || cap.Axes[0] !== 1
     || cap.GeneratedGrouping !== ABC_CLASS_GROUPING || cap.PercentMinimum !== 0 || cap.PercentMaximum !== 100 || cap.PercentScale !== 0 || cap.PercentTotal !== 100
-    || cap.Scope !== 'GlobalKeyAfterTop' || cap.ClassBasis !== 'CumulativeBeforeCurrentGroup' || cap.UnknownScores !== 'Reject'
-    || cap.NegativeScores !== 'Reject' || cap.TotalsScope !== 'AllRetainedFacts' || cap.TieBreak !== 'TypedKeyAscending') return null
+    || cap.UnknownScores !== 'Reject' || cap.TotalsScope !== 'AllRetainedFacts' || cap.TieBreak !== 'TypedKeyAscending') return null
+  const captured = dataset?.DataSource === 26
+  if (captured ? cap.Scope !== 'CapturedOneCProductScope' || cap.ClassBasis !== 'AscendingCumulativeIncludingCurrentWithRoundedCentThresholds' || cap.NegativeScores !== 'Preserve'
+    : cap.Scope !== 'GlobalKeyAfterTop' || cap.ClassBasis !== 'CumulativeBeforeCurrentGroup' || cap.NegativeScores !== 'Reject') return null
   const groups = new Set(dataset!.Groupings.flatMap(field => field.Type !== ABC_CLASS_GROUPING ? [field.Type] : []))
   const measures = new Set(dataset!.Measurements.flatMap(field => additive.has(field.Type) ? [field.Type] : []))
   if (!dataset!.Groupings.some(field => field.Type === ABC_CLASS_GROUPING)) return null
+  if (captured && (dataset.Groupings.length !== 2 || dataset.Groupings[0].Type !== 46 || dataset.Groupings[1].Type !== 5
+    || dataset.Measurements.length !== 2 || dataset.Measurements[0].Type !== 4 || dataset.Measurements[1].Type !== 2
+    || !Array.isArray(cap.GroupingTypes) || cap.GroupingTypes.length !== 1 || cap.GroupingTypes[0] !== 5
+    || !Array.isArray(cap.RankingMeasures) || cap.RankingMeasures.length !== 2 || cap.RankingMeasures[0] !== 4 || cap.RankingMeasures[1] !== 2)) return null
   return ids(cap.GroupingTypes, groups) && ids(cap.RankingMeasures, measures) ? cap as ReportAbcClassificationCapabilities : null
 }
 export function reportAbcClassificationError(data: ReportRequestBody, dataset?: ReportDataset): string | null {

@@ -5,7 +5,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { I18nProvider } from '../../../shared/i18n/I18nProvider'
 import { createStockReport, searchValuationAgreements } from '../api/reportsApi'
 import { getReportCatalogue, getReportDatasets, getServerReportTemplates, saveServerReportTemplate } from '../api/reportWorkspaceApi'
-import { reportDatasets, currentDebtDataset, valuationDataset } from '../data/reportDatasets.test-fixtures'
+import { reportDatasets, currentDebtDataset, valuationDataset, netDataset } from '../data/reportDatasets.test-fixtures'
 import { defaultDatasetRequest } from '../data/reportDatasets'
 import { migrationFixture, sourceHash } from '../data/reportMigration.test-fixtures'
 import type { ReportCatalogue } from '../types'
@@ -24,6 +24,7 @@ vi.mock('../api/reportsApi', async original => ({ ...await original<typeof impor
 vi.mock('../../../shared/ui/document-export-modal/DocumentExportModal', () => ({
   DocumentExportModal: ({ opened }: { opened: boolean }) => opened ? <div role="dialog" aria-label="Файли звіту" /> : null,
 }))
+vi.mock('./OneCTurnoverReportPanel', () => ({ OneCTurnoverReportPanel: () => <div>Панель консолідованого обороту 1С</div> }))
 function Providers({ children }: { children: ReactNode }) {
   return <MantineProvider env="test"><I18nProvider>{children}</I18nProvider></MantineProvider>
 }
@@ -61,6 +62,50 @@ describe('named catalogue report to constructor', () => {
     vi.mocked(getServerReportTemplates).mockResolvedValue([])
     vi.mocked(searchValuationAgreements).mockResolvedValue([{ Id: 42, Name: 'Договір 42' }, { Id: 43, Name: 'Договір 43' }])
     vi.mocked(createStockReport).mockResolvedValue({ document: { DocumentURL: '/files/old-valuation.xlsx' }, raw: {} })
+  })
+
+  it('opens only the exact Fenix gross-profit source in its separate report panel', async () => {
+    const source = catalogue()
+    source.Reports[0].Id = 'builtin:ВаловаяПрибыль'
+    source.Reports[0].Name = 'ВаловаяПрибыль'
+    source.Reports[0].Title = 'Валовая прибыль'
+    source.Reports[0].Sources[0].SourceId = '65fb1537-c992-4962-9f97-5d9f96b9a034'
+    source.Reports[0].Sources[0].Migration!.NativeDataSources = [1]
+    vi.mocked(getReportCatalogue).mockResolvedValue(source)
+    await ready()
+    fireEvent.click(screen.getByRole('button', { name: 'Каталог усіх звітів 1С' }))
+    const entry = await screen.findByRole('button', { name: 'Покриття звіту: Валовая прибыль' })
+    const open = within(entry.closest('tr')!).getByRole('button', { name: 'Відкрити звіт 1С' })
+    await waitFor(() => expect((open as HTMLButtonElement).disabled).toBe(false))
+    fireEvent.click(open)
+    expect(await screen.findByText('Панель консолідованого обороту 1С')).toBeTruthy()
+    expect(createStockReport).not.toHaveBeenCalled()
+    expect(saveServerReportTemplate).not.toHaveBeenCalled()
+  })
+
+  it('launches the return-only catalogue variant and sends its bounded server request', async () => {
+    const source = catalogue()
+    source.Reports[0].Id = 'builtin:ОтчетПоВозвратам'
+    source.Reports[0].Name = 'ОтчетПоВозвратам'
+    source.Reports[0].Title = 'Отчет по возвратам'
+    source.Reports[0].Sources[0].SourceId = '0ec7344c-690f-4b13-af08-78b26a0f13f3'
+    source.Reports[0].Sources[0].Migration!.NativeDataSources = [2]
+    vi.mocked(getReportCatalogue).mockResolvedValue(source)
+    vi.mocked(getReportDatasets).mockResolvedValue([...reportDatasets.filter(item => item.DataSource !== 2),
+      { ...netDataset, returnsOnly: true }])
+    const view = await ready()
+    fireEvent.click(screen.getByRole('button', { name: 'Каталог усіх звітів 1С' }))
+    const entry = await screen.findByRole('button', { name: 'Покриття звіту: Отчет по возвратам' })
+    const open = within(entry.closest('tr')!).getByRole('button', { name: 'Відкрити в конструкторі' })
+    await waitFor(() => expect((open as HTMLButtonElement).disabled).toBe(false))
+    fireEvent.click(open)
+    await waitFor(() => expect(stored().snapshot.data).toMatchObject({ dataSource: 2, returnsOnly: true,
+      sorted: { Row: [{ type: 12 }, { type: 5 }, { type: 3 }], Measurements: [{ Type: 0 }] } }))
+    await waitFor(() => expect((screen.getByRole('button', { name: 'Сформувати' }) as HTMLButtonElement).disabled).toBe(false))
+    fireEvent.submit(view.container.querySelector('form')!)
+    await waitFor(() => expect(createStockReport).toHaveBeenCalledOnce())
+    expect(vi.mocked(createStockReport).mock.calls[0][0]).toMatchObject({ dataSource: 2, returnsOnly: true,
+      sorted: { Row: [{ type: 12 }, { type: 5 }, { type: 3 }], Measurements: [{ Type: 0 }] } })
   })
 
   it('opens the named debt configuration without generating or saving and restores its name after remount', async () => {

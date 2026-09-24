@@ -59,11 +59,11 @@ export function isReportCatalogue(value: unknown): value is ReportCatalogue {
 }
 
 /** A numeric dataset mapping or native-only comparison is never source parity. */
-export function readSourceMigration(value: unknown, publishedAtUtc?: string): ReportSourceMigration | null {
+export function readSourceMigration(value: unknown, publishedAtUtc?: string, allowDedicatedTurnover = false): ReportSourceMigration | null {
   if (!record(value) || !Object.hasOwn(CAPTURE_STATUS_LABELS, String(value.CaptureStatus))
     || !['captured', 'native_partial', 'parity_verified'].includes(String(value.Status))
     || (value.SourceRevisionSha256 !== null && !sha256(value.SourceRevisionSha256))
-    || !Array.isArray(value.NativeDataSources) || !value.NativeDataSources.every(id => count(id) && id !== 1)
+    || !Array.isArray(value.NativeDataSources) || !value.NativeDataSources.every(id => count(id) && (id !== 1 || allowDedicatedTurnover))
     || new Set(value.NativeDataSources).size !== value.NativeDataSources.length
     || !strings(value.CoveredScope) || !strings(value.MissingScope) || !Array.isArray(value.Dependencies)) return null
   const dependencyKeys = new Set<string>()
@@ -119,7 +119,9 @@ export function inspectCatalogueMigration(catalogue: ReportCatalogue) {
   const manifest: unknown = catalogue.Migration
   const publishedAtUtc = record(manifest) && utc(manifest.GeneratedAtUtc) ? manifest.GeneratedAtUtc : undefined
   for (const report of catalogue.Reports) for (const source of report.Sources) {
-    const migration = readSourceMigration(source.Migration, publishedAtUtc), key = sourceIdentity(source)
+    const migration = readSourceMigration(source.Migration, publishedAtUtc,
+      report.Id === 'builtin:ВаловаяПрибыль' && source.World === 'fenix'
+      && source.SourceId === '65fb1537-c992-4962-9f97-5d9f96b9a034'), key = sourceIdentity(source)
     statuses.set(key, migration?.Status ?? 'unassessed')
     if (migration) migrations.set(key, migration)
   }

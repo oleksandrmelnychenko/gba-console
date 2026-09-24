@@ -59,6 +59,9 @@ export function OneCTurnoverReportPanel({ canGenerate, from, to, onFromChange, o
           <DocumentDetailMetric label={t('Джерело')} value="Fenix" />
           <DocumentDetailMetric label={t('Валюта')} value="EUR" />
         </>} />
+      <Alert color="yellow" icon={<CircleAlert size={18} />} title={t('Потрібна окрема публікація оборотів 1С')}>
+        {t('Звичайний reset/sync GBA не наповнює цей звіт. Він формується лише за дні з окремо імпортованими оборотами та собівартістю.')}
+      </Alert>
       {!canGenerate ? <Alert color="yellow" icon={<CircleAlert size={18} />}>{t('Недостатньо прав для формування звітів 1С. Зверніться до адміністратора щодо доступу до конструктора.')}</Alert> : null}
       <div className="onec-report-modal__section">
         <ScopeCatalog catalog={catalog} canGenerate={canGenerate} isGenerating={run.loading}
@@ -80,7 +83,7 @@ export function OneCTurnoverReportPanel({ canGenerate, from, to, onFromChange, o
       <details className="onec-report-modal__details onec-report-modal__about">
         <summary>{t('Про дані та формування звіту')}</summary>
         <Stack gap="xs">
-          <Text size="xs" c="dimmed">{t('Звіт формується лише з локально синхронізованих рухів GBA. 1С використовується як джерело правди під час окремого синку; формування звіту не звертається до 1С.')}</Text>
+          <Text size="xs" c="dimmed">{t('Звіт формується з окремо імпортованих рухів 1С у GBA. Звичайний sync бізнес-таблиць їх не наповнює; під час формування звіту звернення до 1С немає.')}</Text>
           <Text size="xs" c="dimmed">{t('Сервер перевіряє кожен день періоду. Якщо даних бракує, файл не формується. Дати й ревізії читання буде зазначено у звіті; сьогоднішні дані потребують повторного оновлення.')}</Text>
         </Stack>
       </details>

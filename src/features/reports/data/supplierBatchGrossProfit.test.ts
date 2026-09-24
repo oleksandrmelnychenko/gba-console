@@ -1,0 +1,36 @@
+import { expect, it } from 'vitest'
+import { datasetConfigurationError, defaultDatasetRequest } from './reportDatasets'
+import { nativeReportMeasurementUnit, usesNativeReportLookup } from './nativeReportProfiles'
+import { supplierBatchGrossProfitConfigurationError } from './supplierBatchGrossProfit'
+import type { ReportDataset } from '../types'
+
+const dataset: ReportDataset = {
+  DataSource: 38, Name: 'Валовий прибуток GBA за постачальниками (партії)', Description: 'Партії продажів',
+  PeriodRequired: true, PeriodSupported: true,
+  Groupings: [73, 4, 21].map(Type => ({ Type, Name: `Вимір ${Type}` })),
+  Measurements: [0, 2, 3, 4, 6, 7, 8, 10, 12, 14].map(Type => ({ Type, Name: `Показник ${Type}` })),
+  Filters: [0, 17].map(Type => ({ Type, Name: `Фільтр ${Type}` })), Limitations: [],
+}
+
+it('starts with the six XLS measures and exact source warehouse grouping', () => {
+  const request = defaultDatasetRequest(dataset, '2026-07-01', '2026-07-31')
+  expect(request.sorted.Row.map(item => item.type)).toEqual([73, 4, 21])
+  expect(request.sorted.Measurements.map(item => item.Type)).toEqual([0, 2, 6, 10, 12, 14])
+  expect(datasetConfigurationError(request, dataset)).toBeNull()
+  expect(usesNativeReportLookup(38)).toBe(true)
+  expect(nativeReportMeasurementUnit(38, 'Кількість')).toBe('Кількість товару')
+  expect(nativeReportMeasurementUnit(38, 'Продана кількість GBA')).toBe('Кількість товару')
+  expect(nativeReportMeasurementUnit(38, 'Рентабельність без ПДВ, %')).toBe('Відсотки')
+})
+
+it('rejects unrelated filters, rounded IDs and an overly long period', () => {
+  const request = defaultDatasetRequest(dataset, '2026-07-01', '2026-07-31')
+  expect(supplierBatchGrossProfitConfigurationError({ ...request, from: '2026-06-01' })).toContain('31')
+  expect(supplierBatchGrossProfitConfigurationError({ ...request, filterExpression: {} })).not.toBeNull()
+  request.selections = [{ IsChecked: true, SelectedField: { Type: 17, Name: 'Supplier' },
+    FilterCondition: { Type: 0, Name: 'Equals' }, Values: [{ Data: { Id: '9223372036854775807' }, Name: 'supplier', Value: 0 }] }]
+  expect(supplierBatchGrossProfitConfigurationError(request, dataset)).toBeNull()
+  expect(supplierBatchGrossProfitConfigurationError({ ...request, selections: [{ ...request.selections[0],
+    Values: [{ Data: { Id: Number('9223372036854775807') }, Name: 'rounded', Value: 0 }] }] })).not.toBeNull()
+  expect(supplierBatchGrossProfitConfigurationError(request, { ...dataset, Groupings: [] })).not.toBeNull()
+})

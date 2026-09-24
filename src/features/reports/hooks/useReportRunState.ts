@@ -1,8 +1,10 @@
 import { useCallback, useRef, useState } from 'react'
 import type { ReportResult } from '../types'
+import type { NativeReportPreview } from '../data/nativeReportPreview'
 
 type ReportRunState<Outcome> = {
   result: ReportResult | null
+  preview: NativeReportPreview | null
   lastRun: Outcome | null
   error: string | null
   isLoading: boolean
@@ -13,7 +15,7 @@ function emptyRun<Outcome>(requestKey: string) {
   return {
     requestKey,
     scope: {},
-    value: { result: null, lastRun: null, error: null, isLoading: false, downloadModalOpened: false } as ReportRunState<Outcome>,
+    value: { result: null, preview: null, lastRun: null, error: null, isLoading: false, downloadModalOpened: false } as ReportRunState<Outcome>,
   }
 }
 
@@ -40,12 +42,12 @@ export function useReportRunState<Outcome>(requestKey: string) {
         ? { ...previous, value: { ...previous.value, ...patch } }
         : previous)
     }
-    updateAttempt({ result: null, lastRun: null, error: null, isLoading: true, downloadModalOpened: false })
+    updateAttempt({ result: null, preview: null, lastRun: null, error: null, isLoading: true, downloadModalOpened: false })
     return updateAttempt
   }, [scope])
   const clear = useCallback(() => {
     latestAttempt.current = null
-    update({ result: null, lastRun: null, error: null, isLoading: false, downloadModalOpened: false })
+    update({ result: null, preview: null, lastRun: null, error: null, isLoading: false, downloadModalOpened: false })
   }, [update])
   return { ...current.value, update, begin, clear }
 }

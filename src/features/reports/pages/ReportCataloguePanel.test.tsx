@@ -41,7 +41,7 @@ beforeEach(() => {
 
 it('labels source presentations and separate inventory/native counts without claiming ready complex views', async () => {
   renderPanel()
-  expect(await screen.findByText('Типи подання у вихідних конфігураціях 1С; це не перелік готових подань GBA.')).toBeTruthy()
+  expect(await screen.findByText('Типи подання у вихідних конфігураціях; це не перелік готових подань GBA.')).toBeTruthy()
   expect(screen.getByText(/Готові налаштування доступних звітів/)).toBeTruthy()
   expect(screen.getByText('Складне представлення')).toBeTruthy()
   expect(screen.getByText('3 позицій · 4 джерельних реалізацій · 2 вбудованих і регламентованих реалізацій')).toBeTruthy()
@@ -58,7 +58,7 @@ it('expands exact source scope, dependencies and different proof kinds without s
   expect(screen.getByText('Fenix · same-source-id')).toBeTruthy()
   expect(screen.getByText('AMG · same-source-id')).toBeTruthy()
   expect(screen.getByText('Доказ відповідності джерельній реалізації')).toBeTruthy()
-  expect(screen.getByText('Перевірка нативного обсягу; повну відповідність 1С не підтверджено')).toBeTruthy()
+  expect(screen.getByText('Перевірка локального обсягу; повну відповідність первинному звіту не підтверджено')).toBeTruthy()
   expect(screen.getAllByText('Історія взаєморозрахунків ще не перенесена.')).toHaveLength(1)
   expect(screen.getAllByText('Поточна заборгованість [10]')).toHaveLength(2)
   expect(screen.getAllByText('Доступний набір можна вибрати у конструкторі вручну. Каталог не застосовує налаштування й не змінює поточний звіт.')).toHaveLength(2)
@@ -172,7 +172,7 @@ it('keeps source-only reports searchable and explains their unavailable launch',
 
 it('never launches a generic numeric mapping without a registered named source', async () => {
   const onOpen = openSpy()
-  renderPanel({ onOpen }); await screen.findByText('Каталог звітів 1С', { exact: true })
+  renderPanel({ onOpen }); await screen.findByText('Каталог звітів', { exact: true })
   expect(screen.getAllByRole('button', { name: /^Покриття звіту:/ })).toHaveLength(3)
   expect(screen.queryByRole('button', { name: 'Відкрити в конструкторі' })).toBeNull()
   expect(onOpen).not.toHaveBeenCalled()
@@ -193,7 +193,7 @@ it('does not expose launch when server capabilities fail', async () => {
   vi.mocked(getReportCatalogue).mockResolvedValue(launchCatalogue())
   vi.mocked(getReportDatasets).mockRejectedValue(new Error('Unavailable'))
   renderPanel({ onOpen: openSpy() })
-  await screen.findByText('Каталог звітів 1С', { exact: true })
+  await screen.findByText('Каталог звітів', { exact: true })
   expect(screen.queryByRole('button', { name: 'Відкрити в конструкторі' })).toBeNull()
   expect(screen.getAllByText('Доступність конструктора не підтверджена. Спробуйте відкрити каталог ще раз.')).toHaveLength(3)
 })
@@ -226,7 +226,7 @@ it('removes launch immediately on permission loss and waits for fresh capabiliti
   expect(screen.getByText('Завантаження каталогу звітів')).toBeTruthy()
   expect(screen.queryByRole('button', { name: 'Відкрити в конструкторі' })).toBeNull()
   await act(async () => complete([]))
-  await screen.findByText('Каталог звітів 1С', { exact: true })
+  await screen.findByText('Каталог звітів', { exact: true })
   expect(screen.queryByRole('button', { name: 'Відкрити в конструкторі' })).toBeNull()
   expect(onOpen).not.toHaveBeenCalled()
 })

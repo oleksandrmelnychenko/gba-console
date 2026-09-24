@@ -344,6 +344,7 @@ const REPORT_FIELD_LABELS: Record<string, string> = {
   OneCSalesDiscountPercent: 'Знижка без ПДВ, % (1С)',
   OneCPriceTypeValue: 'Сума за глобальним типом цін (1С)',
   OneCPriceTypeDifference: 'Різниця між продажем і глобальним типом цін (1С)',
+  CurrentAgreementGroupDiscountPercent: 'Поточна ставка знижки, %',
   Year: 'По роках',
 }
 

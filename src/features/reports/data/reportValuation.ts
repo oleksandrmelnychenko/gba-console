@@ -14,6 +14,10 @@ export function isValuationAgreementId(value: unknown): value is number {
 }
 
 export function valuationConfigurationError(data: Pick<ReportRequestBody, 'dataSource' | 'valuationClientAgreementId'>): string | null {
+  if (data.dataSource === 29) {
+    return isValuationAgreementId(data.valuationClientAgreementId) ? null
+      : 'Вкажіть точний ID договору клієнта для поточних знижок.'
+  }
   if (requiresValuationAgreement(data.dataSource)) {
     return isValuationAgreementId(data.valuationClientAgreementId) ? null : data.dataSource === 22
       ? 'Виберіть точний договір клієнта для звіту цін.' : 'Виберіть точний договір клієнта для оцінки залишків.'

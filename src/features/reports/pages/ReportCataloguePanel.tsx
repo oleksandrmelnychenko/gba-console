@@ -73,19 +73,19 @@ export function ReportCataloguePanel({ onOpen, disabled = false }: { onOpen?: Op
   const { summary } = inspection
   return <div className="report-catalogue">
     <Stack gap="md">
-      <DocumentDetailSummary eyebrow={t('Звіти · Fenix / AMG')} title={t('Каталог звітів 1С')}
+      <DocumentDetailSummary eyebrow={t('Звіти · Fenix / AMG')} title={t('Каталог звітів')}
         meta={t('Оберіть звіт, щоб переглянути покриття та доступні налаштування.')}
         metrics={<>
           <DocumentDetailMetric label={t('Звітів у каталозі')} value={String(summary.CatalogueEntries)} />
           <DocumentDetailMetric label={t('Джерельних реалізацій')} value={String(summary.SourceImplementations)} />
           <DocumentDetailMetric label={t('Перевірених позицій')} value={String(summary.FullyVerifiedEntries)} />
         </>} />
-      {onOpen && <Text size="sm" c="dimmed" className="report-catalogue__intro">{t('Оберіть доступний варіант і відкрийте його в конструкторі. Для отримання звіту натисніть «Сформувати».')}</Text>}
+      {onOpen && <Text size="sm" c="dimmed" className="report-catalogue__intro">{t('Оберіть доступний варіант. Звіти конструктора формуються кнопкою «Сформувати»; Fenix «Валовая прибыль» відкривається в окремій панелі.')}</Text>}
       <details className="report-catalogue__overview">
         <summary><ChevronRight size={15} aria-hidden="true" />{t('Стан перенесення та джерела')}</summary>
         <Stack gap="sm" className="report-catalogue__overview-body">
       <Text size="sm" c="dimmed">{t(onOpen
-        ? 'Оберіть звіт і доступний варіант розрахунку GBA. Відкриття перенесе готові налаштування в конструктор; звіт сформується лише після натискання «Сформувати». Повну відповідність звіту 1С перевіряйте в покритті.'
+        ? 'Оберіть звіт і доступний варіант розрахунку GBA. Відкриття перенесе готові налаштування в конструктор; звіт сформується лише після натискання «Сформувати». Межі покриття наведено у картці звіту.'
         : 'Перелік для перенесення з Fenix та AMG. Наявність у каталозі ще не означає, що розрахунок доступний у GBA. Готові налаштування доступних звітів розташовані в конструкторі.')}</Text>
       {onOpen ? <Text size="sm" c="dimmed">{t('Варіанти Fenix/AMG позначають походження звіту; розрахунок використовує доступні дані GBA.')}</Text> : null}
       <Stack gap={2} aria-label={t('Загальний стан каталогу')}>
@@ -99,7 +99,7 @@ export function ReportCataloguePanel({ onOpen, disabled = false }: { onOpen?: Op
         <Text size="xs" c="dimmed">{t('Джерела зафіксовано: {date}', { date: catalogue.CapturedOn })}</Text>
         {inspection.valid && catalogue.Migration && <Text size="xs" c="dimmed">{t('Версія стану перенесення: {version} · {date}', { version: catalogue.Migration.Version, date: catalogue.Migration.GeneratedAtUtc })}</Text>}
       </Stack>
-      <Text size="xs" c="dimmed">{t('Типи подання у вихідних конфігураціях 1С; це не перелік готових подань GBA.')}</Text>
+      <Text size="xs" c="dimmed">{t('Типи подання у вихідних конфігураціях; це не перелік готових подань GBA.')}</Text>
       <Group aria-label={t('Типи подання 1С')}>{catalogue.Presentations.map(item => <Badge key={item.Id} color="gray" variant="light">{t(item.Title)}</Badge>)}</Group>
         </Stack>
       </details>
@@ -190,7 +190,7 @@ function ReportLaunchActions({ report, catalogue, options, disabled, unavailable
       onChange={value => { setSelectedKey(value); setRejectedKey(null) }} /> : <Text size="sm">{label(options[0])}</Text>}
     {selected ? <Text size="xs" c="dimmed">{t(selected.notice)}</Text> : <Text size="xs" c="dimmed">{t('Виберіть один із доступних варіантів розрахунку GBA.')}</Text>}
     <Button type="button" variant="filled" rightSection={<ArrowRight size={15} />} disabled={disabled || !selected} styles={{ root: { height: 'auto', minHeight: 36, paddingBlock: 8 }, label: { whiteSpace: 'normal' } }}
-      onClick={() => { if (!disabled && selected) setRejectedKey(onOpen(selected.choice, catalogue) ? null : launchIdentity(selected.choice)) }}>{t('Відкрити в конструкторі')}</Button>
+      onClick={() => { if (!disabled && selected) setRejectedKey(onOpen(selected.choice, catalogue) ? null : launchIdentity(selected.choice)) }}>{t(selected?.choice.dataSource === 1 ? 'Відкрити звіт 1С' : 'Відкрити в конструкторі')}</Button>
     {selected && rejectedKey === launchIdentity(selected.choice) ? <Text size="sm" c="orange" role="alert">{t('Не вдалося відкрити цей варіант. Поточні налаштування збережено; перевірте доступність звіту й повторіть вибір.')}</Text> : null}
   </Stack>
 }
@@ -211,7 +211,7 @@ function ReportMigrationDetails({ report, migrations, datasets, canGenerate, lau
         {migration.Dependencies.length ? migration.Dependencies.map(item => <Text size="sm" key={item.Key}>{item.Title}: {t(DEPENDENCY_STATUS_LABELS[item.Status])}{item.Note ? ` · ${item.Note}` : ''}</Text>)
           : <Text size="sm" c="dimmed">{t('У маніфесті не зазначені окремі залежності.')}</Text>}
         {migration.Validation && <Stack gap={2}>
-          <Text size="sm">{t(migration.Validation.Kind === 'source_parity' ? 'Доказ відповідності джерельній реалізації' : 'Перевірка нативного обсягу; повну відповідність 1С не підтверджено')}</Text>
+          <Text size="sm">{t(migration.Validation.Kind === 'source_parity' ? 'Доказ відповідності джерельній реалізації' : 'Перевірка локального обсягу; повну відповідність первинному звіту не підтверджено')}</Text>
           <Text size="xs">{migration.Validation.EvidenceId} · {migration.Validation.VerifiedAtUtc}</Text>
           <Text size="xs">{t('Версія розрахунку: {revision}', { revision: migration.Validation.NativeRevision })}</Text>
         </Stack>}
