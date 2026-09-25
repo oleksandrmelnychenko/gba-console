@@ -62,24 +62,35 @@ export function agreementPriceComparisonConfigurationError(data: ReportRequestBo
   return null
 }
 
-export function isAgreementPriceComparisonCapability(raw: unknown): boolean {
-  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return false
+function agreementPriceComparisonCapability(raw: unknown): JsonRecord | null {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null
   const expected = { version: 1, required: true, maximumRequestedIds: 2000, maximumProducts: 1000,
     requiredRows: [5, 28], measurements: [75, 76, 77, 78] }
   const value = raw as JsonRecord
-  return Object.keys(value).length === Object.keys(expected).length
-    && Object.entries(expected).every(([key, item]) => JSON.stringify(value[key]) === JSON.stringify(item))
+  if (Object.keys(value).length !== Object.keys(expected).length) return null
+  const normalized: JsonRecord = {}
+  for (const [key, item] of Object.entries(expected)) {
+    const aliases = Object.keys(value).filter(candidate => candidate.toLowerCase() === key.toLowerCase())
+    if (aliases.length !== 1 || JSON.stringify(value[aliases[0]]) !== JSON.stringify(item)) return null
+    normalized[key] = structuredClone(value[aliases[0]])
+  }
+  return normalized
+}
+
+export function isAgreementPriceComparisonCapability(raw: unknown): boolean {
+  return agreementPriceComparisonCapability(raw) !== null
 }
 
 export function normalizeAgreementPriceComparisonDataset(value: JsonRecord): ReportDataset | null {
   const keys = Object.keys(value).filter(key => key.toLowerCase() === 'agreementpricecomparison')
   if (keys.length > 1) return null
   const capability = keys.length ? value[keys[0]] : undefined
+  const normalizedCapability = agreementPriceComparisonCapability(capability)
   if (value.DataSource === AGREEMENT_PRICE_COMPARISON_SOURCE) {
-    if (!isAgreementPriceComparisonCapability(capability)) return null
+    if (!normalizedCapability) return null
   } else if (capability != null) return null
   const normalized = { ...value }
   for (const key of keys) delete normalized[key]
-  if (capability != null) normalized.agreementPriceComparison = structuredClone(capability)
+  if (normalizedCapability) normalized.agreementPriceComparison = normalizedCapability
   return normalized as ReportDataset
 }
