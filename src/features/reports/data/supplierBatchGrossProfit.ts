@@ -1,5 +1,6 @@
 import type { ReportDataset, ReportRequestBody } from '../types'
 import { revenueExactId } from './revenueComparison'
+import { requestSourceBuyerSubtree, sourceBuyerSubtree } from './nativeExactFilters'
 
 export const SUPPLIER_BATCH_GROSS_PROFIT_SOURCE = 38
 export const SUPPLIER_BATCH_GROSS_PROFIT_TITLE = 'Валовий прибуток GBA за постачальниками (партії)'
@@ -46,6 +47,10 @@ export function supplierBatchGrossProfitConfigurationError(data: ReportRequestBo
   if (world !== undefined && (world !== 0 && world !== 1
     || dataset && !isSupplierSourceWorldCapability(dataset.supplierSourceWorld)))
     return 'Оберіть підтверджену базу Fenix або AMG для партійного прибутку.'
+  const buyers = requestSourceBuyerSubtree(data)
+  if (buyers != null && (world !== 0 || !sourceBuyerSubtree(buyers)
+    || dataset && dataset.sourceBuyerSubtree == null))
+    return 'Для піддерева «Покупці» потрібні база Fenix і підтверджений граф покупців.'
   if (!validDate(data.from) || !validDate(data.to) || data.from > data.to)
     return 'Оберіть один коректний період партійного прибутку.'
   if ((Date.parse(`${data.to}T00:00:00Z`) - Date.parse(`${data.from}T00:00:00Z`)) / 86400000 >= 31)

@@ -746,6 +746,17 @@ function ReportsStocksWorkspace({ ownerId, constructorMode }: { ownerId: string 
               disabled={comparisonSettingsDisabled}
               onChange={value => setSupplierSourceWorld(value === '0' ? 0 : value === '1' ? 1 : undefined)} />
             <Text size="xs" c="dimmed">{t('Окремий зріз формується лише за однозначної лінії кожного продажу в періоді. Неповна партія вибраної бази зупинить звіт.')}</Text>
+            {dataset?.sourceBuyerSubtree != null ? <>
+              <Checkbox mt="sm" label={t('Група «Покупці» Fenix')}
+                checked={parseSourceBuyerSubtree(sourceBuyerSubtree) != null}
+                disabled={comparisonSettingsDisabled}
+                onChange={event => setSourceBuyerSubtree(event.currentTarget.checked
+                  ? { Version: 1, SourceWorld: 'fenix', BuyerRootId: FENIX_BUYERS_ROOT_ID }
+                  : undefined)} />
+              <Text size="xs" c="dimmed">{t('Вимагає базу Fenix, повну лінію покупців усіх продажів періоду і чинний захоплений граф. За неповних даних звіт покаже помилку покриття.')}</Text>
+              {sourceBuyerSubtree != null && !parseSourceBuyerSubtree(sourceBuyerSubtree)
+                ? <Text size="xs" c="orange">{t('Шаблон містить інше піддерево Fenix; цей набір приймає тільки групу «Покупці».')}</Text> : null}
+            </> : null}
             {supplierSourceWorld !== undefined && supplierSourceWorld !== 0 && supplierSourceWorld !== 1
               ? <Text size="xs" c="orange">{t('Шаблон містить невідому базу джерела; виберіть Fenix або AMG.')}</Text> : null}
           </Card> : null}

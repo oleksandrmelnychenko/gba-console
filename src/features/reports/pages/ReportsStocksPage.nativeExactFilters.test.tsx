@@ -38,6 +38,16 @@ const dayDataset: ReportDataset = {
     RequiresCompletePeriodLineage: true, UsesCurrentCapturedHierarchy: true },
   Limitations: [],
 }
+const supplierDataset: ReportDataset = {
+  DataSource: 38, Name: 'Валовий прибуток GBA за постачальниками (партії)', Description: 'Партії продажів',
+  PeriodRequired: true, PeriodSupported: true,
+  Groupings: [73, 4, 21].map(Type => ({ Type, Name: `Група ${Type}` })),
+  Measurements: [0, 2, 3, 4, 6, 7, 8, 10, 12, 14].map(Type => ({ Type, Name: `Показник ${Type}` })),
+  Filters: [0, 17].map(Type => ({ Type, Name: `Фільтр ${Type}` })),
+  supplierSourceWorld: { Version: 1, SourceWorlds: [0, 1], RequiresCompletePeriodLineage: true },
+  sourceBuyerSubtree: dayDataset.sourceBuyerSubtree,
+  Limitations: [],
+}
 
 function savedTemplate() {
   const data = defaultDatasetRequest(netDataset, '2026-07-01', '2026-07-31')
@@ -121,6 +131,20 @@ describe('exact Fenix filters in the report constructor', () => {
         ProductKindId: DAY_ORGANIZATION_GOODS_KIND_ID, IsService: false },
       sourceOrganizations: { Version: 1, SourceWorld: 'fenix',
         OrganizationIds: [...DAY_ORGANIZATION_SAVED_ORGANIZATION_IDS] },
+      sourceBuyerSubtree: { Version: 1, SourceWorld: 'fenix', BuyerRootId: FENIX_BUYERS_ROOT_ID },
+    })
+  })
+
+  it('sends the exact Buyers subtree with Fenix for supplier gross profit', async () => {
+    vi.mocked(getReportDatasets).mockResolvedValue([...reportDatasets, supplierDataset])
+    const { container } = await ready()
+    fireEvent.click(screen.getByRole('combobox', { name: 'Набір даних звіту' }))
+    fireEvent.click(await screen.findByRole('option', { name: supplierDataset.Name }))
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Група «Покупці» Fenix' }))
+    fireEvent.submit(container.querySelector('form')!)
+    await waitFor(() => expect(createStockReport).toHaveBeenCalledOnce())
+    expect(vi.mocked(createStockReport).mock.calls[0][0]).toMatchObject({
+      dataSource: 38, supplierSourceWorld: 0,
       sourceBuyerSubtree: { Version: 1, SourceWorld: 'fenix', BuyerRootId: FENIX_BUYERS_ROOT_ID },
     })
   })

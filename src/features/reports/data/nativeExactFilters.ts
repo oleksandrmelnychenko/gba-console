@@ -11,6 +11,7 @@ import type {
 
 export const NATIVE_EXACT_FILTER_SOURCE = 2
 export const DAY_ORGANIZATION_EXACT_FILTER_SOURCE = 35
+export const SUPPLIER_GROSS_PROFIT_EXACT_FILTER_SOURCE = 38
 export const FENIX_BUYERS_ROOT_ID = '8AB2005056C0000811DEFC4535BB4D40'
 const SOURCE_REFERENCE = /^[0-9a-f]{32}$/i
 const ZERO_REFERENCE = /^0{32}$/
@@ -131,6 +132,9 @@ export function normalizeNativeExactFilterDataset(value: JsonRecord): ReportData
   } else if (source === DAY_ORGANIZATION_EXACT_FILTER_SOURCE) {
     if (!isProductClassificationCapability(product) || !isSourceOrganizationsCapability(organizations)
       || !isSourceBuyerSubtreeCapability(buyers)) return null
+  } else if (source === SUPPLIER_GROSS_PROFIT_EXACT_FILTER_SOURCE) {
+    if (product != null || organizations != null
+      || buyers != null && !isSourceBuyerSubtreeCapability(buyers)) return null
   } else if (product != null || organizations != null || buyers != null) {
     return null
   }
@@ -155,7 +159,8 @@ export function nativeExactFiltersConfigurationError(data: ReportRequestBody, da
   const organizations = requestSourceOrganizations(data)
   const buyers = requestSourceBuyerSubtree(data)
   if (data.dataSource !== NATIVE_EXACT_FILTER_SOURCE
-    && data.dataSource !== DAY_ORGANIZATION_EXACT_FILTER_SOURCE) {
+    && data.dataSource !== DAY_ORGANIZATION_EXACT_FILTER_SOURCE
+    && data.dataSource !== SUPPLIER_GROSS_PROFIT_EXACT_FILTER_SOURCE) {
     return product != null || organizations != null || buyers != null
       ? 'Цей набір не підтримує точні відбори Fenix. Налаштування не застосовано.'
       : null
@@ -166,8 +171,17 @@ export function nativeExactFiltersConfigurationError(data: ReportRequestBody, da
   if (organizations != null && !sourceOrganizations(organizations)) {
     return 'Некоректний точний відбір організацій Fenix. Налаштування не застосовано.'
   }
-  if (buyers != null && (data.dataSource !== DAY_ORGANIZATION_EXACT_FILTER_SOURCE || !sourceBuyerSubtree(buyers))) {
+  if (data.dataSource === SUPPLIER_GROSS_PROFIT_EXACT_FILTER_SOURCE
+    && (product != null || organizations != null)) {
+    return 'Партійний прибуток підтримує лише точне піддерево покупців Fenix.'
+  }
+  if (buyers != null && (![DAY_ORGANIZATION_EXACT_FILTER_SOURCE, SUPPLIER_GROSS_PROFIT_EXACT_FILTER_SOURCE]
+    .includes(data.dataSource) || !sourceBuyerSubtree(buyers))) {
     return 'Некоректний точний відбір піддерева «Покупці» Fenix. Налаштування не застосовано.'
+  }
+  if (buyers != null && data.dataSource === SUPPLIER_GROSS_PROFIT_EXACT_FILTER_SOURCE
+    && data.supplierSourceWorld !== 0 && data.SupplierSourceWorld !== 0) {
+    return 'Для піддерева «Покупці» оберіть базу продажів Fenix.'
   }
   if (organizations != null && Array.isArray(data.selections) && data.selections.some(selection =>
     selection?.IsChecked !== false && selection?.SelectedField?.Type === 0)) {
@@ -183,7 +197,8 @@ export function nativeExactFiltersConfigurationError(data: ReportRequestBody, da
     && !isSourceOrganizationsCapability(dataset.sourceOrganizations)) {
     return 'Сервер не підтвердив точний відбір організацій Fenix.'
   }
-  if (dataset && data.dataSource === DAY_ORGANIZATION_EXACT_FILTER_SOURCE
+  if (dataset && (data.dataSource === DAY_ORGANIZATION_EXACT_FILTER_SOURCE
+    || data.dataSource === SUPPLIER_GROSS_PROFIT_EXACT_FILTER_SOURCE && buyers != null)
     && !isSourceBuyerSubtreeCapability(dataset.sourceBuyerSubtree)) {
     return 'Сервер не підтвердив точний відбір піддерева «Покупці» Fenix.'
   }

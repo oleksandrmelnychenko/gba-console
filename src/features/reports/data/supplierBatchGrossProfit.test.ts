@@ -2,6 +2,7 @@ import { expect, it } from 'vitest'
 import { datasetConfigurationError, defaultDatasetRequest } from './reportDatasets'
 import { nativeReportMeasurementUnit, usesNativeReportLookup } from './nativeReportProfiles'
 import { supplierBatchGrossProfitConfigurationError } from './supplierBatchGrossProfit'
+import { FENIX_BUYERS_ROOT_ID, normalizeNativeExactFilterDataset, requestSourceBuyerSubtree } from './nativeExactFilters'
 import { normalizeSavedTemplate } from '../api/reportWorkspaceApi'
 import type { ReportDataset } from '../types'
 
@@ -9,6 +10,8 @@ const dataset: ReportDataset = {
   DataSource: 38, Name: 'Валовий прибуток GBA за постачальниками (партії)', Description: 'Партії продажів',
   PeriodRequired: true, PeriodSupported: true,
   supplierSourceWorld: { Version: 1, SourceWorlds: [0, 1], RequiresCompletePeriodLineage: true },
+  sourceBuyerSubtree: { Version: 1, SourceWorld: 'fenix', BuyerRootId: FENIX_BUYERS_ROOT_ID,
+    RequiresCompletePeriodLineage: true, UsesCurrentCapturedHierarchy: true },
   Groupings: [73, 4, 21].map(Type => ({ Type, Name: `Вимір ${Type}` })),
   Measurements: [0, 2, 3, 4, 6, 7, 8, 10, 12, 14].map(Type => ({ Type, Name: `Показник ${Type}` })),
   Filters: [0, 17].map(Type => ({ Type, Name: `Фільтр ${Type}` })), Limitations: [],
@@ -48,5 +51,26 @@ it('restores the exact source world from a server saved template', () => {
     Revision: 1, Name: 'Fenix', Data: { DataSource: 38, From: request.from, To: request.to,
       Sorted: request.sorted, Selections: request.selections, SupplierSourceWorld: 0 } } as never)
   expect(template.Data.supplierSourceWorld).toBe(0)
+  expect(datasetConfigurationError(template.Data, dataset)).toBeNull()
+})
+
+it('uses the exact Fenix Buyers subtree only with Fenix and a matching server capability', () => {
+  const request = defaultDatasetRequest(dataset, '2026-07-01', '2026-07-31')
+  request.sourceBuyerSubtree = { Version: 1, SourceWorld: 'fenix', BuyerRootId: FENIX_BUYERS_ROOT_ID }
+  expect(datasetConfigurationError(request, dataset)).toBeNull()
+  expect(datasetConfigurationError({ ...request, supplierSourceWorld: 1 }, dataset)).toContain('Fenix')
+  expect(datasetConfigurationError({ ...request, supplierSourceWorld: undefined }, dataset)).toContain('Fenix')
+  expect(datasetConfigurationError(request, { ...dataset, sourceBuyerSubtree: undefined })).not.toBeNull()
+  expect(datasetConfigurationError({ ...request, sourceBuyerSubtree: undefined },
+    { ...dataset, sourceBuyerSubtree: undefined })).toBeNull()
+  expect(normalizeNativeExactFilterDataset({ ...dataset, sourceBuyerSubtree: undefined })).not.toBeNull()
+  expect(datasetConfigurationError({ ...request, sourceBuyerSubtree: {
+    Version: 1, SourceWorld: 'fenix', BuyerRootId: '00000000000000000000000000000001',
+  } }, dataset)).not.toBeNull()
+  const template = normalizeSavedTemplate({ Id: '10000000-0000-4000-8000-000000000038',
+    Revision: 1, Name: 'Fenix Buyers', Data: { DataSource: 38, From: request.from, To: request.to,
+      Sorted: request.sorted, Selections: request.selections, SupplierSourceWorld: 0,
+      SourceBuyerSubtree: request.sourceBuyerSubtree } } as never)
+  expect(requestSourceBuyerSubtree(template.Data)).toEqual(request.sourceBuyerSubtree)
   expect(datasetConfigurationError(template.Data, dataset)).toBeNull()
 })
