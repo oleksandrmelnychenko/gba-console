@@ -15,6 +15,7 @@ import { isPriceTypeSalesComparisonDataset } from './priceTypeSalesComparison'
 import { isOneCSpecialDataset, oneCSpecialSettingsForWorld } from './oneCSpecialReports'
 import { readAbcCapabilities } from './reportAbcClassification'
 import { isSupplierSourceWorldCapability } from './supplierBatchGrossProfit'
+import { isCurrentVparivanieDataset } from './currentVparivanie'
 
 export type CatalogueLaunchChoice = { reportId: string; world: string; sourceId: string; dataSource: number }
 export type CatalogueLaunchOption = { choice: CatalogueLaunchChoice; label: string; title: string; notice: string }
@@ -44,7 +45,7 @@ const REGISTRY: readonly Registration[] = [
   builtin('ВедомостьДенежныеСредства', '977cb58d-ff0b-46b7-90fd-124a560ec6ff', [11]),
   builtin('ВаловаяПрибыльПоПоставщикам', 'f84e7b02-b6fe-40ca-bc7f-ea508d6ec41a', [38]),
   builtin('ВаловаяПрибыль', '65fb1537-c992-4962-9f97-5d9f96b9a034', [35]),
-  builtin('ОтчетВпаривание', '069dfc76-74b6-491d-b039-f7fb54e0ea81', [36]),
+  builtin('ОтчетВпаривание', '069dfc76-74b6-491d-b039-f7fb54e0ea81', [39, 36]),
   builtin('ВедомостьПартииТоваровНаСкладах', 'fde97241-e736-4c21-9e61-2d6ecafa0b91', [7]),
   builtin('ВедомостьПартииТоваровНаСкладахВесовойУчет', '614bb6c2-8932-48ba-a099-162aadead2e2', [7]),
   builtin('ВедомостьПартииТоваровНаСкладахКоличественныйУчет', 'dd98a3b9-e627-4a83-9f66-2dfe7686085c', [7]),
@@ -123,6 +124,7 @@ const capabilities: Readonly<Record<number, (dataset: ReportDataset) => boolean>
   28: isOneCSpecialDataset,
   26: dataset => readAbcCapabilities(dataset) !== null,
   38: dataset => isSupplierSourceWorldCapability(dataset.supplierSourceWorld),
+  39: isCurrentVparivanieDataset,
 }
 function validFields(fields: ReportDatasetField[]): boolean {
   return Array.isArray(fields) && fields.every(field => field && Number.isSafeInteger(field.Type) && field.Type >= 0

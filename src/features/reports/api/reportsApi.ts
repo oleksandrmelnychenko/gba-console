@@ -3,6 +3,7 @@ import { agreementPriceComparisonConfigurationError } from '../data/agreementPri
 import { recordedSaleGrossProfitConfigurationError } from '../data/recordedSaleGrossProfit'
 import { dayOrganizationGrossProfitConfigurationError } from '../data/dayOrganizationGrossProfit'
 import { vparivanieConfigurationError } from '../data/vparivanie'
+import { currentVparivanieConfigurationError } from '../data/currentVparivanie'
 import { supplierBatchGrossProfitConfigurationError } from '../data/supplierBatchGrossProfit'
 import { importedSaleDiscountConfigurationError } from '../data/importedSaleDiscount'
 import { paymentComparisonConfigurationError } from '../data/paymentComparison'
@@ -52,11 +53,14 @@ export async function previewStockReport(body: ReportRequestBody): Promise<{ res
     query: { rowOffset: 0, rowLimit: 50 },
     body: request,
   })
-  return { result: normalizeReportResult(response), preview: normalizeNativeReportPreview(response) }
+  const preview = normalizeNativeReportPreview(response)
+  if (request.dataSource === 39 && (preview.Request?.DataSource !== 'NativeCurrentVparivanie' || !preview.CurrentVparivanieProducts))
+    throw new Error('Сервер повернув результат іншого набору даних замість поточної матриці «Впарювання».')
+  return { result: normalizeReportResult(response), preview }
 }
 
 function prepareStockReportRequest(body: ReportRequestBody): ReportRequestBody {
-  const request = (body.dataSource === 2 || body.dataSource === 17 || body.dataSource === 18 || body.dataSource === 19 || body.dataSource === 20 || body.dataSource === 21 || body.dataSource === 22 || body.dataSource === 23 || body.dataSource === 24 || body.dataSource === 25 || body.dataSource === 27 || body.dataSource === 28 || body.dataSource === 35) ? structuredClone(body) : body
+  const request = (body.dataSource === 2 || body.dataSource === 17 || body.dataSource === 18 || body.dataSource === 19 || body.dataSource === 20 || body.dataSource === 21 || body.dataSource === 22 || body.dataSource === 23 || body.dataSource === 24 || body.dataSource === 25 || body.dataSource === 27 || body.dataSource === 28 || body.dataSource === 35 || body.dataSource === 39) ? structuredClone(body) : body
   const exactFilterError = nativeExactFiltersConfigurationError(request)
   if (exactFilterError) throw new Error(exactFilterError)
   const pricesError = agreementPricesConfigurationError(request)
@@ -67,6 +71,8 @@ function prepareStockReportRequest(body: ReportRequestBody): ReportRequestBody {
   if (grossProfitError) throw new Error(grossProfitError)
   const dayOrganizationProfitError = dayOrganizationGrossProfitConfigurationError(request)
   if (dayOrganizationProfitError) throw new Error(dayOrganizationProfitError)
+  const currentVparivanieError = currentVparivanieConfigurationError(request)
+  if (currentVparivanieError) throw new Error(currentVparivanieError)
   const vparivanieError = vparivanieConfigurationError(request)
   if (vparivanieError) throw new Error(vparivanieError)
   const supplierBatchProfitError = supplierBatchGrossProfitConfigurationError(request)
@@ -99,6 +105,8 @@ function prepareStockReportRequest(body: ReportRequestBody): ReportRequestBody {
 }
 
 export async function searchDatasetReportValues(dataSource: number, field: number, params: ReportSearchParams, signal?: AbortSignal, sourceWorld?: number): Promise<ReportEntity[]> {
+  if (dataSource === 39 && ![1, 4, 5, 21].includes(field))
+    throw new Error('Цей відбір поточної матриці «Впарювання» недоступний.')
   if ([23, 24, 25, 28].includes(dataSource) && !(sourceWorld === 1 || (dataSource !== 28 && sourceWorld === 2)))
     throw new Error('Оберіть базу Fenix або AMG для довідника звіту 1С.')
   const result = await apiRequest<unknown>('/report/datasets/lookup', {
@@ -113,7 +121,7 @@ export async function searchDatasetReportValues(dataSource: number, field: numbe
     : dataSource === 32 ? typeof item.Id === 'string' && revenueExactId(item) !== null
     : dataSource === 31 ? (typeof item.Id === 'number' && Number.isSafeInteger(item.Id) && item.Id > 0)
       || (typeof item.Id === 'string' && /^[1-9]\d*$/.test(item.Id) && Number.isSafeInteger(Number(item.Id)))
-    : (dataSource === 18 || dataSource === 19 || dataSource === 20 || dataSource === 21 || dataSource === 22 || dataSource === 30 || dataSource === 32 || dataSource === 35)
+    : (dataSource === 18 || dataSource === 19 || dataSource === 20 || dataSource === 21 || dataSource === 22 || dataSource === 30 || dataSource === 32 || dataSource === 35 || dataSource === 39)
       ? typeof item.Id === 'string' && revenueExactId(item) !== null
       : (dataSource === 16 || dataSource === 17) ? revenueExactId(item) !== null : Number.isSafeInteger(item.Id) && item.Id > 0)
     && typeof item.Name === 'string' && item.Name.trim().length > 0)) throw new Error('Сервер повернув некоректні значення відбору звіту.')

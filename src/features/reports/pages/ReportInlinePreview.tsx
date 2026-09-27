@@ -1,10 +1,13 @@
 import { Alert, Badge, Stack, Text } from '@mantine/core'
 import { previewScalarText, type NativeReportPreview, type NativeReportPreviewFilter, type NativeReportPreviewRequest } from '../data/nativeReportPreview'
+import { CURRENT_VPARIVANIE_PRODUCT_CAPTIONS, CURRENT_VPARIVANIE_PRODUCT_FIELDS } from '../data/currentVparivanie'
 import './report-inline-preview.css'
 
 export function ReportInlinePreview({ preview }: { preview: NativeReportPreview }) {
   const cells = new Map(preview.Cells.map(cell => [`${cell.RowSourceIndex}:${cell.ColumnSourceIndex}`, cell.Value]))
-  const rowHeaders = preview.RowSchema.map((level, index) => level.Caption || `Рівень ${index + 1}`)
+  const products = preview.CurrentVparivanieProducts
+  const productRows = new Map(products?.Rows.map(row => [row.RowSourceIndex, row]))
+  const rowHeaders = products ? CURRENT_VPARIVANIE_PRODUCT_CAPTIONS : preview.RowSchema.map((level, index) => level.Caption || `Рівень ${index + 1}`)
   return <section className="app-section-card report-inline-preview" aria-label="Попередній перегляд звіту">
     <div className="report-inline-preview__heading">
       <Text component="h2" fw={600} size="sm">Дані звіту</Text>
@@ -15,13 +18,17 @@ export function ReportInlinePreview({ preview }: { preview: NativeReportPreview 
     <div className="report-inline-preview__scroll" tabIndex={0} role="region" aria-label="Таблиця попереднього перегляду">
       <table>
         <thead><tr>
-          {rowHeaders.map((header, index) => <th scope="col" key={`row-${index}`}>{header}</th>)}
+          {rowHeaders.map((header, index) => <th scope="col" rowSpan={products ? 2 : undefined} key={`row-${index}`}>{header}</th>)}
           {preview.Columns.map(column => <th scope="col" key={column.SourceIndex}>
-            {column.Values.map(value => value.Caption).filter(Boolean).join(' / ') || `Стовпець ${column.Ordinal + 1}`}
+            {(products ? column.Values.slice(0, 1) : column.Values).map(value => value.Caption).filter(Boolean).join(' / ') || `Стовпець ${column.Ordinal + 1}`}
           </th>)}
-        </tr></thead>
+        </tr>{products ? <tr>{preview.Columns.map(column => <th scope="col" key={column.SourceIndex}>
+          {column.Values.slice(1).map(value => value.Caption).filter(Boolean).join(' / ') || 'Результат'}
+        </th>)}</tr> : null}</thead>
         <tbody>{preview.Rows.map(row => <tr key={row.SourceIndex}>
-          {rowHeaders.map((_, index) => <th scope="row" key={index}>{row.Values[index]?.Caption ?? '—'}</th>)}
+          {rowHeaders.map((header, index) => <th scope="row" key={header}>{products
+            ? productRows.get(row.SourceIndex)?.[CURRENT_VPARIVANIE_PRODUCT_FIELDS[index]] ?? '—'
+            : row.Values[index]?.Caption ?? '—'}</th>)}
           {preview.Columns.map(column => {
             const value = cells.get(`${row.SourceIndex}:${column.SourceIndex}`)
             return <td key={column.SourceIndex} title={value === undefined ? 'Клітинка відсутня' : value.Kind === 'null' ? 'Явне значення NULL' : undefined}>
@@ -71,6 +78,12 @@ function ReportAttribution({ request }: { request: NativeReportPreviewRequest | 
 }
 
 function SnapshotAttribution({ request }: { request: NativeReportPreviewRequest }) {
+  if (request.DataSource === 'NativeCurrentVparivanie') return <Alert color="blue" title="Поточні залишки та період продажів">
+    Залишки показують поточну записану вільну кількість GBA. Вибраний період стосується продажів; історичний залишок на кінець періоду не розраховується.
+    {request.ObservationStartedAtUtc && request.ObservationCompletedAtUtc
+      ? <Text size="sm">Спостереження сервера: {request.ObservationStartedAtUtc} — {request.ObservationCompletedAtUtc}</Text>
+      : <Text size="sm">Час спостереження сервер не передав повністю.</Text>}
+  </Alert>
   if (!request.IsCurrentSnapshot) return null
   return <Alert color="blue" title="Поточний стан">
     Поточний знімок даних, а не історичний стан на вибрану дату.

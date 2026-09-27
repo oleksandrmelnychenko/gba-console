@@ -3,6 +3,7 @@ import { agreementPriceComparisonConfigurationError, cloneAgreementPriceComparis
 import { recordedSaleGrossProfitConfigurationError } from './recordedSaleGrossProfit'
 import { dayOrganizationGrossProfitConfigurationError } from './dayOrganizationGrossProfit'
 import { vparivanieConfigurationError } from './vparivanie'
+import { currentVparivanieConfigurationError } from './currentVparivanie'
 import { isSupplierSourceWorldCapability, supplierBatchGrossProfitConfigurationError } from './supplierBatchGrossProfit'
 import { importedSaleDiscountConfigurationError } from './importedSaleDiscount'
 import { clonePaymentComparisonAliases, defaultPaymentComparison, paymentComparisonConfigurationError } from './paymentComparison'
@@ -70,6 +71,8 @@ GROUPING_KEYS.set(49, 'ImportedPaymentArticle')
 GROUPING_KEYS.set(50, 'PaymentImportWorld')
 GROUPING_KEYS.set(51, 'XyzClass')
 GROUPING_KEYS.set(73, 'SourceReceiptStorage')
+GROUPING_KEYS.set(74, 'CurrentVparivanieGroup')
+GROUPING_KEYS.set(75, 'CurrentVparivanieCounterparty')
 
 const FILTER_KEYS = new Map(REPORT_FILTER_FIELD_GROUPS.flatMap(group => group.children.map(item => [item.type, item.label] as const)))
 FILTER_KEYS.set(1, 'Product')
@@ -101,13 +104,14 @@ FILTER_KEYS.set(51, 'OneCPriceComparisonProduct')
 FILTER_KEYS.set(52, 'OneCPriceComparisonClient')
 FILTER_KEYS.set(53, 'OneCPriceComparisonProject')
 FILTER_KEYS.set(54, 'OneCPriceComparisonDivision')
+FILTER_KEYS.set(60, 'SourceBuyerManager')
 
 export function datasetGroupings(dataset: ReportDataset | undefined): ReportGroupingItem[] {
   return dataset?.Groupings.map(field => ({ key: GROUPING_KEYS.get(field.Type) ?? field.Name, label: field.Name, type: field.Type })) ?? []
 }
 
 export function datasetFilters(dataset: ReportDataset | undefined): Array<{ label: string; value: string; field: ReportFilterField }> {
-  return dataset?.Filters.map(field => ({ label: field.Name, value: String(field.Type), field: {
+  return dataset?.Filters.filter(field => dataset.DataSource !== 39 || field.Type !== 60).map(field => ({ label: field.Name, value: String(field.Type), field: {
     Name: FILTER_KEYS.get(field.Type) ?? field.Name, Type: field.Type,
   } })) ?? []
 }
@@ -158,7 +162,7 @@ export function defaultDatasetRequest(dataset: ReportDataset, from: string, to: 
     to: dataset.PeriodSupported === false ? '' : to, selections: [], sorted: {
     Row: (profile ? profile.rowGroupings.map(type => groupings.find(item => item.type === type)) : [unit, row])
       .filter((item, index, items): item is ReportGroupingItem => Boolean(item) && items.indexOf(item) === index),
-    Col: [], Measurements: flattenCheckedMeasurements(datasetMeasurements(dataset, selected)),
+    Col: dataset.DataSource === 39 ? groupings.filter(item => item.type === 74 || item.type === 75) : [], Measurements: flattenCheckedMeasurements(datasetMeasurements(dataset, selected)),
   } }
 }
 
@@ -218,6 +222,8 @@ export function datasetConfigurationError(data: ReportRequestBody, dataset: Repo
   if (grossProfitError) return grossProfitError
   const dayOrganizationProfitError = dayOrganizationGrossProfitConfigurationError(data, dataset)
   if (dayOrganizationProfitError) return dayOrganizationProfitError
+  const currentVparivanieError = currentVparivanieConfigurationError(data, dataset)
+  if (currentVparivanieError) return currentVparivanieError
   const vparivanieError = vparivanieConfigurationError(data, dataset)
   if (vparivanieError) return vparivanieError
   const supplierBatchProfitError = supplierBatchGrossProfitConfigurationError(data, dataset)
@@ -232,7 +238,7 @@ export function datasetConfigurationError(data: ReportRequestBody, dataset: Repo
   const groupingTypes = new Set(dataset.Groupings.map(field => field.Type))
   const measurementTypes = new Set(dataset.Measurements.map(field => field.Type))
   const filterTypes = new Set(dataset.Filters.map(field => field.Type))
-  const conditionTypes = new Set(REPORT_FILTER_CONDITIONS.map(field => field.Type))
+  const conditionTypes = new Set([...REPORT_FILTER_CONDITIONS.map(field => field.Type), ...(dataset.DataSource === 39 ? [6] : [])])
   const unsupported = [
     ...[...data.sorted.Row, ...data.sorted.Col].flatMap(item => groupingTypes.has(item.type) ? [] : [item.label || item.key || `#${item.type}`]),
     ...data.sorted.Measurements.flatMap(item => measurementTypes.has(item.Type) ? [] : [item.Name || `#${item.Type}`]),

@@ -98,6 +98,7 @@ import './report-constructor.css'
 import { datasetConfigurationError, datasetFilters, datasetGroupings, datasetMeasurements, datasetPresetRequest, datasetPresets, defaultDatasetRequest, type DatasetReportPresetId } from '../data/reportDatasets'
 import { useReportDatasets } from '../hooks/useReportDatasets'
 import { usesNativeReportLookup, supportsFullReportDateRange, hasFixedReportAxes, nativeReportMeasurementUnit } from '../data/nativeReportProfiles'
+import { CURRENT_VPARIVANIE_NOTICE, currentVparivanieFilterConditions } from '../data/currentVparivanie'
 import { requiresValuationAgreement } from '../data/reportValuation'
 import { useValuationAgreement } from '../hooks/useValuationAgreement'
 import { useReportRunState } from '../hooks/useReportRunState'
@@ -1277,6 +1278,7 @@ type LegacyReportBuilderProps = {
 }
 
 const fixedAxesDescription: Partial<Record<number, string>> = {
+  39: `Товар → сім атрибутів. Колонки: Остатки, Продажи та Контрагенты; один показник «Результат». ${CURRENT_VPARIVANIE_NOTICE}`,
   15: 'Клас XYZ → Товар. Показники у стовпцях; структура цього звіту фіксована.',
   16: 'Клієнт → Договір. Показники у стовпцях; структура цього звіту фіксована.',
   17: 'Клієнт → Договір. Показники у стовпцях; структура цього звіту фіксована.',
@@ -1581,6 +1583,7 @@ function ReportSelectionsCard({
   const { t } = useI18n()
   const [editorIndex, setEditorIndex] = useState<number | null>(null)
   const [draftSelection, setDraftSelection] = useState<ReportSelection | null>(null)
+  const filterConditions = dataSource === 39 ? currentVparivanieFilterConditions(draftSelection?.SelectedField.Type ?? 0) : REPORT_FILTER_CONDITIONS
   const resolvedDescription = description === undefined
     ? t('Необов’язково: звузьте звіт до клієнта, товару, документа або іншої ознаки.')
     : description
@@ -1696,6 +1699,7 @@ function ReportSelectionsCard({
                 setDraftSelection((current) => current ? {
                   ...current,
                   SelectedField: option?.field || { Name: '', Type: 0 },
+                  ...(dataSource === 39 ? { FilterCondition: currentVparivanieFilterConditions(option?.field.Type ?? 0)[0] } : {}),
                   Values: [],
                 } : current)
               }}
@@ -1703,14 +1707,14 @@ function ReportSelectionsCard({
             <div className="reports-stocks-selection-modal__controls">
               <Select
                 allowDeselect={false}
-                data={REPORT_FILTER_CONDITIONS.map((condition) => ({
+                data={filterConditions.map((condition) => ({
                   label: condition.Name,
                   value: String(condition.Type),
                 }))}
                 label={t('Умова')}
                 value={String(draftSelection.FilterCondition.Type)}
                 onChange={(value) => {
-                  const condition = REPORT_FILTER_CONDITIONS.find((item) => String(item.Type) === value) || defaultCondition
+                  const condition = filterConditions.find((item) => String(item.Type) === value) || filterConditions[0]
                   setDraftSelection((current) => current ? {
                     ...current,
                     FilterCondition: condition,
@@ -2631,7 +2635,7 @@ function createSelectedValue(entity: ReportEntity, dataSource?: number): ReportS
   return {
     Data: entity,
     Name: getEntityDisplayName(entity),
-    Value: (dataSource === 16 || dataSource === 17 || dataSource === 18 || dataSource === 20 || dataSource === 21 || dataSource === 23 || dataSource === 24 || dataSource === 25 || dataSource === 28) ? 0 : getReportEntityNumericValue(entity),
+    Value: (dataSource === 16 || dataSource === 17 || dataSource === 18 || dataSource === 20 || dataSource === 21 || dataSource === 23 || dataSource === 24 || dataSource === 25 || dataSource === 28 || dataSource === 39) ? 0 : getReportEntityNumericValue(entity),
   }
 }
 

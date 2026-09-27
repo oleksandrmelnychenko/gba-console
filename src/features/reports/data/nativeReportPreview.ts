@@ -1,4 +1,8 @@
+import { CURRENT_VPARIVANIE_PRODUCT_FIELDS } from './currentVparivanie'
+
 export type NativeReportPreviewScalar = { Kind: string; Value: string | null; Provenance: string }
+export type CurrentVparivanieProduct = { RowSourceIndex: number } & Record<typeof CURRENT_VPARIVANIE_PRODUCT_FIELDS[number], string | null>
+export type CurrentVparivanieProducts = { Version: 1; ResultSha256: string; Rows: CurrentVparivanieProduct[] }
 export type NativeReportPreviewAxis = { Ordinal: number; SourceIndex: number; Values: { Caption: string }[] }
 export type NativeReportPreviewCell = { RowSourceIndex: number; ColumnSourceIndex: number; Value: NativeReportPreviewScalar }
 export type NativeReportPreviewFilter = { Field: string; Condition: string; Values: string[]; IgnoredReason: string | null }
@@ -30,6 +34,7 @@ export type NativeReportPreview = {
   Rows: NativeReportPreviewAxis[]
   Columns: NativeReportPreviewAxis[]
   Cells: NativeReportPreviewCell[]
+  CurrentVparivanieProducts?: CurrentVparivanieProducts
 }
 
 const record = (value: unknown): value is Record<string, unknown> => !!value && typeof value === 'object' && !Array.isArray(value)
@@ -142,7 +147,36 @@ export function normalizeNativeReportPreview(response: unknown): NativeReportPre
     if (coordinates.has(coordinate)) throw new Error('Сервер повернув повторні клітинки попереднього перегляду.')
     coordinates.add(coordinate)
   }
-  return { ...preview, Request: normalizeRequest(preview.Request) } as NativeReportPreview
+  const request = normalizeRequest(preview.Request)
+  const productDisplay = normalizeCurrentVparivanieProducts(preview, request)
+  return { ...preview, Request: request, ...(productDisplay ? { CurrentVparivanieProducts: productDisplay } : {}) } as NativeReportPreview
+}
+
+function normalizeCurrentVparivanieProducts(preview: Record<string, unknown>, request: NativeReportPreviewRequest | null): CurrentVparivanieProducts | undefined {
+  const value = preview.CurrentVparivanieProducts
+  const current = request?.DataSource === 'NativeCurrentVparivanie'
+  if (!current && value === undefined) return undefined
+  const fail = () => { throw new Error('Сервер повернув непідтверджені атрибути товарів матриці «Впарювання».') }
+  if (!current || !request.HasPeriod || request.IsCurrentSnapshot || !request.PeriodFrom || !request.PeriodTo
+    || request.RowGroupings?.length !== 1 || request.ColumnGroupings?.length !== 2
+    || request.Measures?.join(',') !== 'Результат'
+    || !record(preview.Page) || !boundedInteger(preview.Page.TotalVisibleRows, 128)
+    || !Array.isArray(preview.RowSchema) || preview.RowSchema.length !== 1 || preview.RowSchema[0]?.Identity !== 'Product'
+    || !Array.isArray(preview.ColumnSchema) || preview.ColumnSchema.slice(0, 2).map(item => item.Identity).join(',') !== 'CurrentVparivanieGroup,CurrentVparivanieCounterparty'
+    || !Array.isArray(preview.Columns) || new Set(preview.Columns.map(column => column.SourceIndex)).size !== preview.Columns.length
+    || !record(value) || value.Version !== 1 || value.ResultSha256 !== preview.ResultSha256
+    || !Array.isArray(value.Rows) || !Array.isArray(preview.Rows) || value.Rows.length !== preview.Rows.length) return fail()
+  const rowIds = new Set((preview.Rows as NativeReportPreviewAxis[]).map(row => row.SourceIndex))
+  const seen = new Set<number>()
+  if (rowIds.size !== preview.Rows.length) return fail()
+  const rows: CurrentVparivanieProduct[] = value.Rows.map(row => {
+    if (!record(row) || !boundedInteger(row.RowSourceIndex, 500000) || !rowIds.has(row.RowSourceIndex) || seen.has(row.RowSourceIndex)
+      || Object.keys(row).sort().join(',') !== ['RowSourceIndex', ...CURRENT_VPARIVANIE_PRODUCT_FIELDS].sort().join(',')) return fail()
+    seen.add(row.RowSourceIndex)
+    const display = Object.fromEntries(CURRENT_VPARIVANIE_PRODUCT_FIELDS.map(key => [key, row[key] === null ? null : attributionText(row[key])]))
+    return { RowSourceIndex: row.RowSourceIndex, ...display } as CurrentVparivanieProduct
+  })
+  return { Version: 1, ResultSha256: value.ResultSha256 as string, Rows: rows }
 }
 
 export function previewScalarText(value: NativeReportPreviewScalar | undefined): string {

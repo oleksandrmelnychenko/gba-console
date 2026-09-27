@@ -320,6 +320,7 @@ export type ReportDatasetField = { Type: number; Name: string; Selectable?: bool
 
 export type ReportDataset = {
   returnsOnly?: boolean
+  currentVparivanie?: unknown
   agreementPrices?: unknown
   agreementPriceComparison?: unknown
   priceTypeSalesComparison?: unknown

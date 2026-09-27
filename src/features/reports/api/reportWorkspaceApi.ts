@@ -3,6 +3,7 @@ import { agreementPriceComparisonConfigurationError, cloneAgreementPriceComparis
 import { recordedSaleGrossProfitConfigurationError } from '../data/recordedSaleGrossProfit'
 import { dayOrganizationGrossProfitConfigurationError } from '../data/dayOrganizationGrossProfit'
 import { vparivanieConfigurationError } from '../data/vparivanie'
+import { currentVparivanieConfigurationError, isCurrentVparivanieDataset } from '../data/currentVparivanie'
 import { supplierBatchGrossProfitConfigurationError } from '../data/supplierBatchGrossProfit'
 import { importedSaleDiscountConfigurationError } from '../data/importedSaleDiscount'
 import { clonePaymentComparisonAliases, isPaymentComparisonCapability, paymentComparisonConfigurationError, PAYMENT_COMPARISON_CAPTIONS, PAYMENT_COMPARISON_GROUPINGS, PAYMENT_COMPARISON_FILTERS } from '../data/paymentComparison'
@@ -54,6 +55,8 @@ function isDataset(value: unknown): value is ReportDataset {
       && item.Measurements?.map(field => field.Type).join(',') === '75,76,77,78'
       && item.Filters?.length === 0 : item.agreementPriceComparison == null)
     && (item.DataSource === 27 ? isPriceTypeSalesComparisonDataset(item as ReportDataset) : item.priceTypeSalesComparison == null)
+    && !Object.hasOwn(item, 'CurrentVparivanie')
+    && (item.DataSource === 39 ? isCurrentVparivanieDataset(item as ReportDataset) : item.currentVparivanie == null)
     && isOneCSpecialDataset(item as ReportDataset)
     && (item.DataSource !== 26 || (item.PeriodRequired === true && item.PeriodSupported === true
       && readAbcCapabilities(item as ReportDataset) !== null))
@@ -221,7 +224,7 @@ export async function getServerReportTemplates(signal?: AbortSignal): Promise<Re
 }
 
 export async function saveServerReportTemplate(template: ReportTemplate): Promise<ReportTemplate> {
-  const request = (template.Data.dataSource === 2 || template.Data.dataSource === 17 || template.Data.dataSource === 18 || template.Data.dataSource === 19 || template.Data.dataSource === 20 || template.Data.dataSource === 21 || template.Data.dataSource === 22 || template.Data.dataSource === 23 || template.Data.dataSource === 24 || template.Data.dataSource === 25 || template.Data.dataSource === 27 || template.Data.dataSource === 28 || template.Data.dataSource === 35) ? structuredClone(template) : template
+  const request = (template.Data.dataSource === 2 || template.Data.dataSource === 17 || template.Data.dataSource === 18 || template.Data.dataSource === 19 || template.Data.dataSource === 20 || template.Data.dataSource === 21 || template.Data.dataSource === 22 || template.Data.dataSource === 23 || template.Data.dataSource === 24 || template.Data.dataSource === 25 || template.Data.dataSource === 27 || template.Data.dataSource === 28 || template.Data.dataSource === 35 || template.Data.dataSource === 39) ? structuredClone(template) : template
   const exactFilterError = nativeExactFiltersConfigurationError(request.Data)
   if (exactFilterError) throw new Error(exactFilterError)
   const pricesError = agreementPricesConfigurationError(request.Data)
@@ -232,6 +235,8 @@ export async function saveServerReportTemplate(template: ReportTemplate): Promis
   if (grossProfitError) throw new Error(grossProfitError)
   const dayOrganizationProfitError = dayOrganizationGrossProfitConfigurationError(request.Data)
   if (dayOrganizationProfitError) throw new Error(dayOrganizationProfitError)
+  const currentVparivanieError = currentVparivanieConfigurationError(request.Data)
+  if (currentVparivanieError) throw new Error(currentVparivanieError)
   const vparivanieError = vparivanieConfigurationError(request.Data)
   if (vparivanieError) throw new Error(vparivanieError)
   const supplierBatchProfitError = supplierBatchGrossProfitConfigurationError(request.Data)
