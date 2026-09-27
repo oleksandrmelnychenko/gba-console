@@ -101,6 +101,8 @@ import { usesNativeReportLookup, supportsFullReportDateRange, hasFixedReportAxes
 import { CURRENT_VPARIVANIE_NOTICE, currentVparivanieFilterConditions, currentVparivanieNotice } from '../data/currentVparivanie'
 import { previousKyivDay } from '../data/cashPeriod'
 import { CashPeriodLegPicker } from './CashPeriodLegPicker'
+import { SettlementPeriodAgreementPicker } from './SettlementPeriodAgreementPicker'
+import { isSettlementPeriodDataset } from '../data/settlementPeriod'
 import { requiresValuationAgreement } from '../data/reportValuation'
 import { useValuationAgreement } from '../hooks/useValuationAgreement'
 import { useReportRunState } from '../hooks/useReportRunState'
@@ -270,6 +272,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode }: { ownerId: string 
   const [returnsOnly, setReturnsOnly] = useValueState<boolean | undefined>(undefined)
   const [priceTypeSalesComparison, setPriceTypeSalesComparison] = useValueState<unknown>(undefined)
   const [agreementPriceComparison, setAgreementPriceComparison] = useValueState<unknown>(undefined)
+  const [settlementPeriod, setSettlementPeriod] = useValueState<unknown>(undefined)
   const [cashPeriod, setCashPeriod] = useValueState<unknown>(undefined)
   const [oneCSpecialSettings, setOneCSpecialSettings] = useValueState<unknown>(undefined)
   const [oneCScope, setOneCScope] = useValueState<OneCTurnoverFilters | undefined>(undefined)
@@ -312,7 +315,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode }: { ownerId: string 
     [colGroups, groupingOptions, rowGroups],
   )
   const filterFieldOptions = useMemo(() => datasetFilters(dataset), [dataset])
-  const maxDate = useMemo(() => dataSource === 40 ? previousKyivDay(today)
+  const maxDate = useMemo(() => (dataSource === 40 || dataSource === 41) ? previousKyivDay(today)
     : supportsFullReportDateRange(dataSource) ? CLIENT_COMPARISON_MAX_DATE : `${today.slice(0, 4)}-12-31`, [dataSource, today])
   const [debouncedFrom] = useDebouncedValue(from, DATE_INPUT_DEBOUNCE_MS)
   const [debouncedTo] = useDebouncedValue(to, DATE_INPUT_DEBOUNCE_MS)
@@ -322,8 +325,8 @@ function ReportsStocksWorkspace({ ownerId, constructorMode }: { ownerId: string 
   // period on a pause, and only once it is a period the server can answer for.
   const hasLookupPeriod = !getPeriodError(debouncedFrom, debouncedTo, maxDate, t)
   const reportBody = useMemo<ReportRequestBody>(
-    () => buildReportBuilderRequest({ dataSource, returnsOnly, comparison, xyz, revenueComparison, buyerSalesShare, returnComparison, paymentComparison, marginComparison, rateComparison, productClassification, sourceOrganizations, sourceBuyerSubtree, supplierSourceWorld, priceTypeSalesComparison, agreementPriceComparison, cashPeriod, oneCSpecialSettings, oneC: oneCScope, from, to, ordering, filterExpression, topGroups, threshold, hideZero, abcClassification, valuationClientAgreementId, rowGroups, colGroups, measurements, selections }),
-    [abcClassification, agreementPriceComparison, cashPeriod, colGroups, comparison, xyz, revenueComparison, buyerSalesShare, returnComparison, paymentComparison, marginComparison, rateComparison, productClassification, sourceOrganizations, sourceBuyerSubtree, supplierSourceWorld, returnsOnly, priceTypeSalesComparison, oneCSpecialSettings, oneCScope, dataSource, filterExpression, from, hideZero, measurements, ordering, rowGroups, selections, to, topGroups, threshold, valuationClientAgreementId],
+    () => buildReportBuilderRequest({ dataSource, returnsOnly, comparison, xyz, revenueComparison, buyerSalesShare, returnComparison, paymentComparison, marginComparison, rateComparison, productClassification, sourceOrganizations, sourceBuyerSubtree, supplierSourceWorld, priceTypeSalesComparison, agreementPriceComparison, settlementPeriod, cashPeriod, oneCSpecialSettings, oneC: oneCScope, from, to, ordering, filterExpression, topGroups, threshold, hideZero, abcClassification, valuationClientAgreementId, rowGroups, colGroups, measurements, selections }),
+    [abcClassification, agreementPriceComparison, settlementPeriod, cashPeriod, colGroups, comparison, xyz, revenueComparison, buyerSalesShare, returnComparison, paymentComparison, marginComparison, rateComparison, productClassification, sourceOrganizations, sourceBuyerSubtree, supplierSourceWorld, returnsOnly, priceTypeSalesComparison, oneCSpecialSettings, oneCScope, dataSource, filterExpression, from, hideZero, measurements, ordering, rowGroups, selections, to, topGroups, threshold, valuationClientAgreementId],
   )
   const { result, preview, lastRun, error, isLoading, downloadModalOpened, update: updateRun, begin: beginRun, clear: clearRun } = useReportRunState<ReportRunOutcome>(JSON.stringify({
     request: reportBody,
@@ -430,7 +433,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode }: { ownerId: string 
     setRestoredData(null)
     setDraftRestoreError(null)
     setActiveTemplate(null)
-    const resetDay = dataSource === 40 ? previousKyivDay(today) : today
+    const resetDay = (dataSource === 40 || dataSource === 41) ? previousKyivDay(today) : today
     const snapshotDefaults = dataset && shouldLoadDatasetDefaults(dataSource, periodSupported)
       ? defaultDatasetRequest(dataset, resetDay, resetDay)
       : null
@@ -448,6 +451,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode }: { ownerId: string 
     setSupplierSourceWorld(snapshotDefaults?.supplierSourceWorld)
     setPriceTypeSalesComparison(snapshotDefaults?.priceTypeSalesComparison)
     setAgreementPriceComparison(snapshotDefaults?.agreementPriceComparison)
+    setSettlementPeriod(undefined)
     setCashPeriod(undefined)
     setOneCSpecialSettings(snapshotDefaults && oneCSpecialSpecification(dataSource)
       ? requestOneCSpecialSettings(snapshotDefaults, dataSource) : undefined)
@@ -456,7 +460,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode }: { ownerId: string 
     setTo(periodSupported ? resetDay : '')
     setMeasurements(snapshotDefaults ? datasetMeasurements(dataset, snapshotDefaults.sorted.Measurements) : createDefaultMeasurementGroups())
     setRowGroups(snapshotDefaults?.sorted.Row ?? [])
-    setColGroups(dataSource === 40 ? snapshotDefaults?.sorted.Col ?? [] : [])
+    setColGroups((dataSource === 40 || dataSource === 41) ? snapshotDefaults?.sorted.Col ?? [] : [])
     filterLogic.load([])
     setTopGroups(undefined)
     setThreshold(undefined)
@@ -534,6 +538,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode }: { ownerId: string 
     setReturnsOnly(data.returnsOnly ?? data.ReturnsOnly)
     setPriceTypeSalesComparison(clonePriceTypeSalesComparisonValue(data))
     setAgreementPriceComparison(structuredClone(requestAgreementPriceComparison(data)))
+    setSettlementPeriod(structuredClone(data.settlementPeriod))
     setCashPeriod(structuredClone(data.cashPeriod))
     setOneCSpecialSettings(structuredClone(requestOneCSpecialSettings(data, nextDataset.DataSource)))
     setOneCScope(structuredClone(data.oneC))
@@ -595,6 +600,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode }: { ownerId: string 
     setReturnsOnly(data.returnsOnly ?? data.ReturnsOnly)
     setPriceTypeSalesComparison(clonePriceTypeSalesComparisonValue(data))
     setAgreementPriceComparison(structuredClone(requestAgreementPriceComparison(data)))
+    setSettlementPeriod(structuredClone(data.settlementPeriod))
     setCashPeriod(structuredClone(data.cashPeriod))
     setOneCSpecialSettings(structuredClone(requestOneCSpecialSettings(data, nextDataset.DataSource)))
     setOneCScope(structuredClone(data.oneC))
@@ -630,7 +636,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode }: { ownerId: string 
 
   function changeDataset(nextDataset: ReportDataset) {
     const period = periodSupported ? { from, to } : previousPeriod
-    const day = nextDataset.DataSource === 40 ? previousKyivDay(today) : null
+    const day = (nextDataset.DataSource === 40 || nextDataset.DataSource === 41) ? previousKyivDay(today) : null
     applyConfiguration({ Name: '', Data: defaultDatasetRequest(nextDataset, day ?? period.from, day ?? period.to) }, nextDataset)
   }
 
@@ -715,7 +721,9 @@ function ReportsStocksWorkspace({ ownerId, constructorMode }: { ownerId: string 
         oneCSpecialReportPanel={<OneCSpecialReportPanel dataSource={dataSource} value={oneCSpecialSettings ??
           (oneCSpecialSpecification(dataSource) ? defaultOneCSpecialSettings(dataSource)[oneCSpecialSpecification(dataSource)!.key] : undefined)}
           disabled={comparisonSettingsDisabled} onChange={setOneCSpecialSettings} />}
-        classificationPanel={dataSource === 40 ? <CashPeriodLegPicker value={cashPeriod}
+        classificationPanel={dataSource === 41 ? (dataset && isSettlementPeriodDataset(dataset)
+          ? <SettlementPeriodAgreementPicker value={settlementPeriod} disabled={comparisonSettingsDisabled}
+            enabled={canGenerateReport} onChange={setSettlementPeriod} /> : null) : dataSource === 40 ? <CashPeriodLegPicker value={cashPeriod}
           disabled={comparisonSettingsDisabled} enabled={canGenerateReport}
           onChange={setCashPeriod} /> : dataSource === 35 ? <Card className="app-section-card" withBorder radius="md" padding="md" style={{ minWidth: 0 }}>
           <Checkbox label={t('Товар без послуг (Fenix)')}
@@ -1296,6 +1304,7 @@ type LegacyReportBuilderProps = {
 }
 
 const fixedAxesDescription: Partial<Record<number, string>> = {
+  41: 'Організація → Валюта → Контрагент → Договір. Один точний договір і чотири показники у валюті взаєморозрахунків; структура фіксована.',
   40: 'Організація → Рахунок → Валютний запис → Валюта. Початок, надходження, витрати й кінець у валюті рахунку; структура фіксована.',
   39: `Товар → сім атрибутів. Колонки: Остатки, Продажи та Контрагенты; один показник «Результат». ${CURRENT_VPARIVANIE_NOTICE}`,
   15: 'Клас XYZ → Товар. Показники у стовпцях; структура цього звіту фіксована.',

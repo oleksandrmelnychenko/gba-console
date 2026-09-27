@@ -26,6 +26,7 @@ type BuilderValues = {
   oneC?: ReportRequestBody['oneC']
   valuationClientAgreementId: number | undefined
   agreementPriceComparison?: unknown
+  settlementPeriod?: unknown
   cashPeriod?: unknown
   rowGroups: ReportGroupingItem[]; colGroups: ReportGroupingItem[]
   measurements: ReportMeasurementGroup[]; selections: ReportSelection[]
@@ -33,7 +34,7 @@ type BuilderValues = {
 
 /** Tree indices address this exact selection array; only the legacy request omits unchecked rows. */
 export function buildReportBuilderRequest(values: BuilderValues): ReportRequestBody {
-  const { dataSource, returnsOnly, from, to, ordering, filterExpression, topGroups, abcClassification, threshold, hideZero, comparison, xyz, revenueComparison, buyerSalesShare, returnComparison, paymentComparison, marginComparison, rateComparison, productClassification, sourceOrganizations, sourceBuyerSubtree, supplierSourceWorld, priceTypeSalesComparison, oneCSpecialSettings, oneC, valuationClientAgreementId, agreementPriceComparison, cashPeriod, rowGroups, colGroups, measurements, selections } = values
+  const { dataSource, returnsOnly, from, to, ordering, filterExpression, topGroups, abcClassification, threshold, hideZero, comparison, xyz, revenueComparison, buyerSalesShare, returnComparison, paymentComparison, marginComparison, rateComparison, productClassification, sourceOrganizations, sourceBuyerSubtree, supplierSourceWorld, priceTypeSalesComparison, oneCSpecialSettings, oneC, valuationClientAgreementId, agreementPriceComparison, settlementPeriod, cashPeriod, rowGroups, colGroups, measurements, selections } = values
   const special = oneCSpecialSpecification(dataSource)
   return { dataSource, from, to, ...(returnsOnly === true ? { returnsOnly: true } : {}),
     ...(special && oneCSpecialSettings !== undefined ? { [special.key]: oneCSpecialSettings } : {}),
@@ -59,6 +60,7 @@ export function buildReportBuilderRequest(values: BuilderValues): ReportRequestB
     ...(oneC !== undefined ? { oneC } : {}),
     ...(valuationClientAgreementId !== undefined ? { valuationClientAgreementId } : {}),
     ...(agreementPriceComparison !== undefined ? { agreementPriceComparison } : {}),
+    ...(settlementPeriod !== undefined ? { settlementPeriod } : {}),
     ...(cashPeriod !== undefined ? { cashPeriod } : {}),
     sorted: { Col: colGroups, Row: rowGroups, Measurements: flattenCheckedMeasurements(measurements) },
     selections: (dataSource === 15 || dataSource === 16 || dataSource === 17 || dataSource === 18 || dataSource === 19 || dataSource === 20 || dataSource === 21 || dataSource === 22 || dataSource === 27) ? selections : reportSelectionsForRequest(selections, filterExpression),

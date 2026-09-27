@@ -27,6 +27,7 @@ import { reportTopGroupsError } from './reportTopGroups'
 import { valuationConfigurationError, requiresValuationAgreement } from './reportValuation'
 import { getNativeReportProfile, isNativeReportPresetId, type NativeReportPresetId } from './nativeReportProfiles'
 import { cashPeriodConfigurationError } from './cashPeriod'
+import { settlementPeriodConfigurationError } from './settlementPeriod'
 import { cloneNativeExactFilterAliases, nativeExactFiltersConfigurationError } from './nativeExactFilters'
 import {
   clonePriceTypeSalesComparisonAliases,
@@ -74,6 +75,8 @@ GROUPING_KEYS.set(51, 'XyzClass')
 GROUPING_KEYS.set(73, 'SourceReceiptStorage')
 GROUPING_KEYS.set(74, 'CurrentVparivanieGroup')
 GROUPING_KEYS.set(75, 'CurrentVparivanieCounterparty')
+GROUPING_KEYS.set(76, 'SettlementCounterparty')
+GROUPING_KEYS.set(77, 'SettlementAgreement')
 
 const FILTER_KEYS = new Map(REPORT_FILTER_FIELD_GROUPS.flatMap(group => group.children.map(item => [item.type, item.label] as const)))
 FILTER_KEYS.set(1, 'Product')
@@ -193,6 +196,8 @@ export function datasetConfigurationError(data: ReportRequestBody, dataset: Repo
   if (dataset.PeriodRequired && (!data.from || !data.to)) return 'Для цього набору даних потрібні обидві дати періоду. Налаштування не застосовано.'
   const paymentError = paymentComparisonConfigurationError(data, dataset)
   if (paymentError) return paymentError
+  const settlementPeriodError = settlementPeriodConfigurationError(data, dataset)
+  if (settlementPeriodError) return settlementPeriodError
   const cashPeriodError = cashPeriodConfigurationError(data, dataset)
   if (cashPeriodError) return cashPeriodError
   const marginError = marginComparisonConfigurationError(data, dataset)
@@ -281,7 +286,8 @@ export function datasetPresetRequest(dataset: ReportDataset, id: DatasetReportPr
   const preset = datasetPresets(dataset).find(item => item.id === id)
   if (!preset) return null
   // Preserve both raw aliases, including invalid imported material, without reconstructing the tree.
-  const preservedOptions = { ...clonePaymentComparisonAliases(current), ...cloneMarginComparisonAliases(current), ...cloneRateComparisonAliases(current), ...cloneReturnComparisonAliases(current), ...cloneBuyerSalesShareAliases(current), ...cloneRevenueComparisonAliases(current), ...cloneXyzAliases(current), ...(Object.hasOwn(current, 'comparison') ? { comparison: structuredClone(current.comparison) } : {}),
+  const preservedOptions = { ...(Object.hasOwn(current, 'settlementPeriod') ? { settlementPeriod: structuredClone(current.settlementPeriod) } : {}),
+    ...(Object.hasOwn(current, 'SettlementPeriod') ? { SettlementPeriod: structuredClone(current.SettlementPeriod) } : {}), ...clonePaymentComparisonAliases(current), ...cloneMarginComparisonAliases(current), ...cloneRateComparisonAliases(current), ...cloneReturnComparisonAliases(current), ...cloneBuyerSalesShareAliases(current), ...cloneRevenueComparisonAliases(current), ...cloneXyzAliases(current), ...(Object.hasOwn(current, 'comparison') ? { comparison: structuredClone(current.comparison) } : {}),
     ...(Object.hasOwn(current, 'Comparison') ? { Comparison: structuredClone(current.Comparison) } : {}),
     ...(Object.hasOwn(current, 'hideZero') ? { hideZero: structuredClone(current.hideZero) } : {}),
     ...(Object.hasOwn(current, 'HideZero') ? { HideZero: structuredClone(current.HideZero) } : {}),

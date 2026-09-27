@@ -1,3 +1,4 @@
+import { settlementPeriodConfigurationError, isSettlementPeriodDataset } from '../data/settlementPeriod'
 import { agreementPricesConfigurationError, isAgreementPricesDataset } from '../data/agreementPrices'
 import { agreementPriceComparisonConfigurationError, cloneAgreementPriceComparisonAliases, isAgreementPriceComparisonCapability, normalizeAgreementPriceComparisonDataset } from '../data/agreementPriceComparison'
 import { recordedSaleGrossProfitConfigurationError } from '../data/recordedSaleGrossProfit'
@@ -58,6 +59,8 @@ function isDataset(value: unknown): value is ReportDataset {
     && (item.DataSource === 27 ? isPriceTypeSalesComparisonDataset(item as ReportDataset) : item.priceTypeSalesComparison == null)
     && !Object.hasOwn(item, 'CurrentVparivanie')
     && (item.DataSource === 39 ? isCurrentVparivanieDataset(item as ReportDataset) : item.currentVparivanie == null)
+    && !Object.hasOwn(item, 'SettlementPeriod')
+    && (item.DataSource === 41 ? isSettlementPeriodDataset(item as ReportDataset) : item.settlementPeriod == null)
     && !Object.hasOwn(item, 'CashPeriod')
     && (item.DataSource === 40 ? isCashPeriodDataset(item as ReportDataset) : item.cashPeriod == null)
     && isOneCSpecialDataset(item as ReportDataset)
@@ -122,6 +125,8 @@ type WireTemplate = Required<Omit<ReportTemplate, 'Data'>> & {
     DataSource: ReportRequestBody['dataSource']
     ReturnsOnly?: boolean
     returnsOnly?: boolean
+    SettlementPeriod?: unknown
+    settlementPeriod?: unknown
     CashPeriod?: unknown
     cashPeriod?: unknown
     ValuationClientAgreementId?: ReportRequestBody['valuationClientAgreementId']
@@ -186,6 +191,9 @@ export function normalizeSavedTemplate(value: WireTemplate): ReportTemplate {
     dataSource: value.Data.DataSource,
     ...(Object.hasOwn(value.Data, 'returnsOnly') ? { returnsOnly: value.Data.returnsOnly }
       : Object.hasOwn(value.Data, 'ReturnsOnly') ? { returnsOnly: value.Data.ReturnsOnly } : {}),
+    ...(Object.hasOwn(value.Data, 'settlementPeriod') ? { settlementPeriod: structuredClone(value.Data.settlementPeriod),
+      ...(Object.hasOwn(value.Data, 'SettlementPeriod') ? { SettlementPeriod: structuredClone(value.Data.SettlementPeriod) } : {}),
+    } : Object.hasOwn(value.Data, 'SettlementPeriod') ? { settlementPeriod: structuredClone(value.Data.SettlementPeriod) } : {}),
     ...(Object.hasOwn(value.Data, 'cashPeriod') ? { cashPeriod: value.Data.cashPeriod,
       ...(Object.hasOwn(value.Data, 'CashPeriod') ? { CashPeriod: value.Data.CashPeriod } : {}),
     } : Object.hasOwn(value.Data, 'CashPeriod') ? { cashPeriod: value.Data.CashPeriod } : {}),
@@ -232,7 +240,7 @@ export async function getServerReportTemplates(signal?: AbortSignal): Promise<Re
 }
 
 export async function saveServerReportTemplate(template: ReportTemplate): Promise<ReportTemplate> {
-  const request = (template.Data.dataSource === 2 || template.Data.dataSource === 17 || template.Data.dataSource === 18 || template.Data.dataSource === 19 || template.Data.dataSource === 20 || template.Data.dataSource === 21 || template.Data.dataSource === 22 || template.Data.dataSource === 23 || template.Data.dataSource === 24 || template.Data.dataSource === 25 || template.Data.dataSource === 27 || template.Data.dataSource === 28 || template.Data.dataSource === 35 || template.Data.dataSource === 39 || template.Data.dataSource === 40) ? structuredClone(template) : template
+  const request = (template.Data.dataSource === 2 || template.Data.dataSource === 17 || template.Data.dataSource === 18 || template.Data.dataSource === 19 || template.Data.dataSource === 20 || template.Data.dataSource === 21 || template.Data.dataSource === 22 || template.Data.dataSource === 23 || template.Data.dataSource === 24 || template.Data.dataSource === 25 || template.Data.dataSource === 27 || template.Data.dataSource === 28 || template.Data.dataSource === 35 || template.Data.dataSource === 39 || template.Data.dataSource === 40 || template.Data.dataSource === 41) ? structuredClone(template) : template
   const exactFilterError = nativeExactFiltersConfigurationError(request.Data)
   if (exactFilterError) throw new Error(exactFilterError)
   const pricesError = agreementPricesConfigurationError(request.Data)
@@ -245,6 +253,8 @@ export async function saveServerReportTemplate(template: ReportTemplate): Promis
   if (dayOrganizationProfitError) throw new Error(dayOrganizationProfitError)
   const currentVparivanieError = currentVparivanieConfigurationError(request.Data)
   if (currentVparivanieError) throw new Error(currentVparivanieError)
+  const settlementPeriodError = settlementPeriodConfigurationError(request.Data)
+  if (settlementPeriodError) throw new Error(settlementPeriodError)
   const cashPeriodError = cashPeriodConfigurationError(request.Data)
   if (cashPeriodError) throw new Error(cashPeriodError)
   const vparivanieError = vparivanieConfigurationError(request.Data)

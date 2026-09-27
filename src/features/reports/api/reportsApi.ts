@@ -1,3 +1,4 @@
+import { settlementPeriodConfigurationError } from '../data/settlementPeriod'
 import { agreementPricesConfigurationError } from '../data/agreementPrices'
 import { agreementPriceComparisonConfigurationError } from '../data/agreementPriceComparison'
 import { recordedSaleGrossProfitConfigurationError } from '../data/recordedSaleGrossProfit'
@@ -57,13 +58,15 @@ export async function previewStockReport(body: ReportRequestBody): Promise<{ res
   const preview = normalizeNativeReportPreview(response)
   if (request.dataSource === 39 && (preview.Request?.DataSource !== 'NativeCurrentVparivanie' || !preview.CurrentVparivanieProducts))
     throw new Error('Сервер повернув результат іншого набору даних замість поточної матриці «Впарювання».')
+  if (request.dataSource === 41 && preview.Request?.DataSource !== 'NativeSettlementPeriod')
+    throw new Error('Сервер повернув інший набір даних замість взаєморозрахунків за період.')
   if (request.dataSource === 40 && preview.Request?.DataSource !== 'NativeCashPeriod')
     throw new Error('Сервер повернув результат іншого набору даних замість руху коштів.')
   return { result: normalizeReportResult(response), preview }
 }
 
 function prepareStockReportRequest(body: ReportRequestBody): ReportRequestBody {
-  const request = (body.dataSource === 2 || body.dataSource === 17 || body.dataSource === 18 || body.dataSource === 19 || body.dataSource === 20 || body.dataSource === 21 || body.dataSource === 22 || body.dataSource === 23 || body.dataSource === 24 || body.dataSource === 25 || body.dataSource === 27 || body.dataSource === 28 || body.dataSource === 35 || body.dataSource === 39 || body.dataSource === 40) ? structuredClone(body) : body
+  const request = (body.dataSource === 2 || body.dataSource === 17 || body.dataSource === 18 || body.dataSource === 19 || body.dataSource === 20 || body.dataSource === 21 || body.dataSource === 22 || body.dataSource === 23 || body.dataSource === 24 || body.dataSource === 25 || body.dataSource === 27 || body.dataSource === 28 || body.dataSource === 35 || body.dataSource === 39 || body.dataSource === 40 || body.dataSource === 41) ? structuredClone(body) : body
   const exactFilterError = nativeExactFiltersConfigurationError(request)
   if (exactFilterError) throw new Error(exactFilterError)
   const pricesError = agreementPricesConfigurationError(request)
@@ -76,6 +79,8 @@ function prepareStockReportRequest(body: ReportRequestBody): ReportRequestBody {
   if (dayOrganizationProfitError) throw new Error(dayOrganizationProfitError)
   const currentVparivanieError = currentVparivanieConfigurationError(request)
   if (currentVparivanieError) throw new Error(currentVparivanieError)
+  const settlementPeriodError = settlementPeriodConfigurationError(request)
+  if (settlementPeriodError) throw new Error(settlementPeriodError)
   const cashPeriodError = cashPeriodConfigurationError(request)
   if (cashPeriodError) throw new Error(cashPeriodError)
   if (request.dataSource === 39) for (const selection of request.selections) {
@@ -114,6 +119,7 @@ function prepareStockReportRequest(body: ReportRequestBody): ReportRequestBody {
 }
 
 export async function searchDatasetReportValues(dataSource: number, field: number, params: ReportSearchParams, signal?: AbortSignal, sourceWorld?: number): Promise<ReportEntity[]> {
+  if (dataSource === 41) throw new Error('Договори вибираються через точний довідник взаєморозрахунків за період.')
   if (dataSource === 40) throw new Error('Валютні рахунки вибираються через точний довідник звіту руху коштів.')
   if (dataSource === 39 && ![1, 4, 5, 21, 60].includes(field))
     throw new Error('Цей відбір поточної матриці «Впарювання» недоступний.')

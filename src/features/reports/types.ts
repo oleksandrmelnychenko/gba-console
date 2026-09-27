@@ -255,7 +255,9 @@ export type ReportSourceBuyerSubtreeCapabilities = {
 
 export type ReportRequestBody = {
   dataSource?: number
+  settlementPeriod?: unknown
   cashPeriod?: unknown
+  SettlementPeriod?: unknown
   CashPeriod?: unknown
   returnsOnly?: boolean
   ReturnsOnly?: boolean
@@ -322,6 +324,7 @@ export type ReportDatasetField = { Type: number; Name: string; Selectable?: bool
 
 export type ReportDataset = {
   returnsOnly?: boolean
+  settlementPeriod?: unknown
   cashPeriod?: unknown
   currentVparivanie?: unknown
   agreementPrices?: unknown
