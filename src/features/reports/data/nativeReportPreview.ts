@@ -1,10 +1,29 @@
 export type NativeReportPreviewScalar = { Kind: string; Value: string | null; Provenance: string }
 export type NativeReportPreviewAxis = { Ordinal: number; SourceIndex: number; Values: { Caption: string }[] }
 export type NativeReportPreviewCell = { RowSourceIndex: number; ColumnSourceIndex: number; Value: NativeReportPreviewScalar }
+export type NativeReportPreviewFilter = { Field: string; Condition: string; Values: string[]; IgnoredReason: string | null }
+export type NativeReportPreviewRequest = {
+  DataSource: string
+  IsCurrentSnapshot: boolean
+  ObservationStartedAtUtc: string | null
+  ObservationCompletedAtUtc: string | null
+  HasPeriod: boolean
+  PeriodFrom: string | null
+  PeriodTo: string | null
+  ComparisonPeriodFrom: string | null
+  ComparisonPeriodTo: string | null
+  RowGroupings: string[] | null
+  ColumnGroupings: string[] | null
+  Measures: string[] | null
+  Filters: NativeReportPreviewFilter[] | null
+  IgnoredFilters: NativeReportPreviewFilter[] | null
+  Notes: string[] | null
+}
 export type NativeReportPreview = {
   Version: number
   ResultSha256: string
   PresentationOnly: boolean
+  Request: NativeReportPreviewRequest | null
   Page: { Offset: number; Limit: number; TotalVisibleRows: number; ReturnedRows: number; HasMore: boolean }
   RowSchema: { Caption: string }[]
   ColumnSchema: { Caption: string }[]
@@ -18,6 +37,70 @@ const boundedInteger = (value: unknown, max: number): value is number => Number.
 const scalar = (value: unknown): value is NativeReportPreviewScalar => record(value)
   && typeof value.Kind === 'string' && typeof value.Provenance === 'string'
   && (value.Value === null || typeof value.Value === 'string')
+
+// Match NativeReportInlineProjector: one combined list budget, including
+// filter entries and their values, and strict UTF-8 bytes for each string.
+const maximumRequestItems = 4096
+const maximumStringBytes = 65536
+const utf8 = new TextEncoder()
+function attributionText(value: unknown): string {
+  if (typeof value !== 'string' || value.length > maximumStringBytes)
+    throw new Error('Сервер повернув некоректний опис розрахунку звіту.')
+  for (let index = 0; index < value.length; index++) {
+    const code = value.charCodeAt(index)
+    if (code >= 0xd800 && code <= 0xdbff) {
+      const next = value.charCodeAt(++index)
+      if (!(next >= 0xdc00 && next <= 0xdfff))
+        throw new Error('Сервер повернув некоректний опис розрахунку звіту.')
+    } else if (code >= 0xdc00 && code <= 0xdfff) {
+      throw new Error('Сервер повернув некоректний опис розрахунку звіту.')
+    }
+  }
+  if (utf8.encode(value).length > maximumStringBytes)
+    throw new Error('Сервер повернув некоректний опис розрахунку звіту.')
+  return value
+}
+
+function normalizeRequest(value: unknown): NativeReportPreviewRequest | null {
+  if (value === undefined || value === null) return null
+  if (!record(value) || typeof value.IsCurrentSnapshot !== 'boolean' || typeof value.HasPeriod !== 'boolean')
+    throw new Error('Сервер повернув некоректний опис розрахунку звіту.')
+  let items = 0
+  const consume = (count: number) => {
+    if (count > maximumRequestItems - items)
+      throw new Error('Сервер перевищив межі опису розрахунку звіту.')
+    items += count
+  }
+  const nullableText = (text: unknown) => text == null ? null : attributionText(text)
+  const strings = (list: unknown): string[] | null => {
+    if (list == null) return null
+    if (!Array.isArray(list)) throw new Error('Сервер повернув некоректний опис розрахунку звіту.')
+    consume(list.length)
+    return list.map(attributionText)
+  }
+  const filters = (list: unknown): NativeReportPreviewFilter[] | null => {
+    if (list == null) return null
+    if (!Array.isArray(list)) throw new Error('Сервер повернув некоректний опис розрахунку звіту.')
+    consume(list.length)
+    return list.map(filter => {
+      if (!record(filter) || !Array.isArray(filter.Values))
+        throw new Error('Сервер повернув некоректний опис розрахунку звіту.')
+      return { Field: attributionText(filter.Field), Condition: attributionText(filter.Condition),
+        Values: strings(filter.Values)!, IgnoredReason: nullableText(filter.IgnoredReason) }
+    })
+  }
+  return {
+    DataSource: attributionText(value.DataSource), IsCurrentSnapshot: value.IsCurrentSnapshot,
+    ObservationStartedAtUtc: nullableText(value.ObservationStartedAtUtc),
+    ObservationCompletedAtUtc: nullableText(value.ObservationCompletedAtUtc), HasPeriod: value.HasPeriod,
+    // These are server display strings (for example dd.MM.yyyy), not ISO dates.
+    PeriodFrom: nullableText(value.PeriodFrom), PeriodTo: nullableText(value.PeriodTo),
+    ComparisonPeriodFrom: nullableText(value.ComparisonPeriodFrom), ComparisonPeriodTo: nullableText(value.ComparisonPeriodTo),
+    RowGroupings: strings(value.RowGroupings), ColumnGroupings: strings(value.ColumnGroupings),
+    Measures: strings(value.Measures), Filters: filters(value.Filters), IgnoredFilters: filters(value.IgnoredFilters),
+    Notes: strings(value.Notes),
+  }
+}
 
 export function normalizeNativeReportPreview(response: unknown): NativeReportPreview {
   const preview = record(response) ? response.Preview : undefined
@@ -59,7 +142,7 @@ export function normalizeNativeReportPreview(response: unknown): NativeReportPre
     if (coordinates.has(coordinate)) throw new Error('Сервер повернув повторні клітинки попереднього перегляду.')
     coordinates.add(coordinate)
   }
-  return preview as NativeReportPreview
+  return { ...preview, Request: normalizeRequest(preview.Request) } as NativeReportPreview
 }
 
 export function previewScalarText(value: NativeReportPreviewScalar | undefined): string {

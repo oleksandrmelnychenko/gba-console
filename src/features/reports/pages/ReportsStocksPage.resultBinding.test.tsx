@@ -49,6 +49,7 @@ describe('constructor result and export request identity', () => {
     vi.mocked(createStockReport).mockResolvedValue(file)
     vi.mocked(previewStockReport).mockResolvedValue({ result: file, preview: {
       Version: 1, ResultSha256: 'a'.repeat(64), PresentationOnly: true,
+      Request: null,
       Page: { Offset: 0, Limit: 50, TotalVisibleRows: 1, ReturnedRows: 1, HasMore: false },
       RowSchema: [{ Caption: 'Клієнт' }], ColumnSchema: [{ Caption: 'Сума' }],
       Rows: [{ Ordinal: 0, SourceIndex: 1, Values: [{ Caption: 'Покупець А' }] }],
