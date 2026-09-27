@@ -53,7 +53,7 @@ describe('current native Vparivanie form contract', () => {
     expect(currentVparivanieConfigurationError({ ...request(), selections })).not.toBeNull()
   })
   it('rejects manager selection explicitly instead of substituting Sale.UserID', () => {
-    expect(currentVparivanieConfigurationError({ ...request(), selections: [exactSelection(1), exactSelection(60)] })).toContain('менеджером покупця')
+    expect(currentVparivanieConfigurationError({ ...request(), selections: [exactSelection(1), exactSelection(60)] }, dataset)).toContain('менеджером покупця')
     expect(currentVparivanieConfigurationError({ ...request(), selections: [exactSelection(1), exactSelection(10)] })).not.toBeNull()
   })
   it.each(['2026-02-30', '2026-13-01', '1999-12-31', '7999-01-01', '2026-09-28'])('refuses invalid or reversed inclusive dates %s', from => {
@@ -68,7 +68,7 @@ describe('current native Vparivanie form contract', () => {
   })
   it('requires the exact advertised capability, not a generic source number', () => {
     expect(isCurrentVparivanieDataset(dataset)).toBe(true)
-    for (const change of [{ StockAnchor: 'Historical' }, { HistoricalStockSupported: true }, { ManagerFilterSupported: true },
+    for (const change of [{ StockAnchor: 'Historical' }, { HistoricalStockSupported: true }, { ManagerFilterSupported: 'true' },
       { MaximumProducts: 5000 }, { ProductDisplayColumns: ['Name'] }, { FixedMeasurements: [80, 81, 82] }]) {
       const changed = { ...dataset, currentVparivanie: { ...dataset.currentVparivanie as object, ...change } }
       expect(isCurrentVparivanieCapability(changed.currentVparivanie)).toBe(false)

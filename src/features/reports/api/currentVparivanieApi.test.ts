@@ -34,18 +34,18 @@ it('retains exact group InGroup and all dynamic column identities across saved w
   await saveServerReportTemplate(template)
   expect(api).toHaveBeenLastCalledWith('/report/templates/save', { method: 'POST', body: { Id: wire.Id, Revision: 1, Name: wire.Name, Data: data } })
 })
-it('refuses unsupported manager and unbounded requests before any HTTP call or template save', async () => {
+it('refuses malformed manager references and unbounded requests before any HTTP call or template save', async () => {
   const invalid = { ...currentVparivanieRequest(), selections: [exactSelection(1), exactSelection(60)] }
-  await expect(createStockReport(invalid)).rejects.toThrow('менеджером покупця')
+  await expect(createStockReport(invalid)).rejects.toThrow('Оберіть товари')
   await expect(previewStockReport({ ...invalid, selections: [] })).rejects.toThrow('Оберіть товари')
-  await expect(saveServerReportTemplate({ Name: 'Invalid', Data: invalid })).rejects.toThrow('менеджером покупця')
+  await expect(saveServerReportTemplate({ Name: 'Invalid', Data: invalid })).rejects.toThrow('Оберіть товари')
   expect(api).not.toHaveBeenCalled()
 })
-it('preserves native bigint lookup identities and rejects generic manager lookup without HTTP', async () => {
+it('preserves native bigint lookup identities and rejects unavailable unrelated lookup without HTTP', async () => {
   api.mockResolvedValue([{ Id: '9223372036854775807', Name: 'Synthetic' }])
   await expect(searchDatasetReportValues(39, 4, { offset: 0, limit: 30, value: ' s ' })).resolves.toEqual([{ Id: '9223372036854775807', Name: 'Synthetic' }])
   api.mockClear()
-  await expect(searchDatasetReportValues(39, 60, { offset: 0, limit: 30, value: 's' })).rejects.toThrow('недоступний')
+  await expect(searchDatasetReportValues(39, 10, { offset: 0, limit: 30, value: 's' })).rejects.toThrow('недоступний')
   expect(api).not.toHaveBeenCalled()
   api.mockResolvedValue([{ Id: Number('9223372036854775807'), Name: 'Rounded' }])
   await expect(searchDatasetReportValues(39, 1, { offset: 0, limit: 30, value: 's' })).rejects.toThrow('некоректні значення')

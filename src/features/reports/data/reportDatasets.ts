@@ -3,7 +3,7 @@ import { agreementPriceComparisonConfigurationError, cloneAgreementPriceComparis
 import { recordedSaleGrossProfitConfigurationError } from './recordedSaleGrossProfit'
 import { dayOrganizationGrossProfitConfigurationError } from './dayOrganizationGrossProfit'
 import { vparivanieConfigurationError } from './vparivanie'
-import { currentVparivanieConfigurationError } from './currentVparivanie'
+import { currentVparivanieConfigurationError, currentVparivanieManagerSupported } from './currentVparivanie'
 import { isSupplierSourceWorldCapability, supplierBatchGrossProfitConfigurationError } from './supplierBatchGrossProfit'
 import { importedSaleDiscountConfigurationError } from './importedSaleDiscount'
 import { clonePaymentComparisonAliases, defaultPaymentComparison, paymentComparisonConfigurationError } from './paymentComparison'
@@ -111,7 +111,7 @@ export function datasetGroupings(dataset: ReportDataset | undefined): ReportGrou
 }
 
 export function datasetFilters(dataset: ReportDataset | undefined): Array<{ label: string; value: string; field: ReportFilterField }> {
-  return dataset?.Filters.filter(field => dataset.DataSource !== 39 || field.Type !== 60).map(field => ({ label: field.Name, value: String(field.Type), field: {
+  return dataset?.Filters.filter(field => dataset.DataSource !== 39 || field.Type !== 60 || currentVparivanieManagerSupported(dataset)).map(field => ({ label: field.Name, value: String(field.Type), field: {
     Name: FILTER_KEYS.get(field.Type) ?? field.Name, Type: field.Type,
   } })) ?? []
 }

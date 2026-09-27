@@ -5,7 +5,10 @@ export const CURRENT_VPARIVANIE_SOURCE = 39
 export const CURRENT_VPARIVANIE_TITLE = 'Впарювання: поточні залишки та продажі GBA'
 export const CURRENT_VPARIVANIE_PRODUCT_FIELDS = ['Article', 'Name', 'Description', 'Group', 'OE', 'Size', 'Top'] as const
 export const CURRENT_VPARIVANIE_PRODUCT_CAPTIONS = ['Артикул', 'Наименование', 'Описание', 'Группа', 'OE', 'Размер', 'Топ'] as const
-export const CURRENT_VPARIVANIE_NOTICE = 'Залишки — поточна записана вільна кількість GBA. Продажі — за вибраний включний період Europe/Kyiv. Клієнт впливає лише на колонки контрагентів, склад — лише на залишки. Менеджер покупця поки недоступний. Невідомі кількості та підсумки різних одиниць залишаються NULL.'
+export function currentVparivanieNotice(managerSupported = false): string {
+  return `Залишки — поточна записана вільна кількість GBA. Продажі — за вибраний включний період Europe/Kyiv. Клієнт впливає лише на колонки контрагентів, склад — лише на залишки. ${managerSupported ? 'Менеджер покупця з 1С (Fenix) впливає лише на колонки контрагентів.' : 'Менеджер покупця поки недоступний.'} Невідомі кількості та підсумки різних одиниць залишаються NULL.`
+}
+export const CURRENT_VPARIVANIE_NOTICE = currentVparivanieNotice()
 const invalid = 'Оберіть товари або одну групу товарів, період і показник «Результат». Доступні точні відбори клієнта та складів.'
 const record = (value: unknown): value is Record<string, unknown> => !!value && typeof value === 'object' && !Array.isArray(value)
 const same = (value: unknown, expected: readonly (string | number)[]) => Array.isArray(value)
@@ -27,9 +30,22 @@ export function isCurrentVparivanieCapability(value: unknown): boolean {
     && value.PeriodCalendar === 'Europe/Kyiv' && value.MaximumProducts === 128 && value.MaximumFacts === 20000
     && value.MaximumWarehouses === 32 && same(value.ProductDisplayColumns, CURRENT_VPARIVANIE_PRODUCT_FIELDS)
     && same(value.FixedRowGroupings, [5]) && same(value.FixedColumnGroupings, [74, 75])
-    && same(value.FixedMeasurements, [83]) && value.ManagerFilterSupported === false
+    && same(value.FixedMeasurements, [83]) && typeof value.ManagerFilterSupported === 'boolean'
     && value.UnknownQuantity === 'null' && value.MixedUnits === 'null'
     && value.HistoricalStockSupported === false && value.HistoricalXlsParityVerified === false
+}
+
+/** Source references remain bytes encoded as hex; they are never native User IDs. */
+export function currentVparivanieManagerReference(raw: unknown): string | null {
+  return record(raw) && typeof raw.Id === 'string' && /^[a-f\d]{32}$/i.test(raw.Id)
+    && Object.keys(raw).filter(key => key.toLowerCase() === 'id').join(',') === 'Id'
+    && !/^0{32}$/.test(raw.Id) ? raw.Id.toUpperCase() : null
+}
+
+export function currentVparivanieManagerSupported(dataset: ReportDataset): boolean {
+  return isCurrentVparivanieCapability(dataset.currentVparivanie)
+    && record(dataset.currentVparivanie) && dataset.currentVparivanie.ManagerFilterSupported === true
+    && dataset.Filters.some(field => field.Type === 60 && field.Selectable === true)
 }
 
 export function isCurrentVparivanieDataset(dataset: ReportDataset): boolean {
@@ -41,6 +57,9 @@ export function isCurrentVparivanieDataset(dataset: ReportDataset): boolean {
     && dataset.Groupings.every(item => item.Selectable !== false)
     && dataset.Filters.map(item => item.Type).join(',') === '1,4,5,21,60'
     && dataset.Filters.filter(item => item.Type !== 60).every(item => item.Selectable !== false)
+    && (record(dataset.currentVparivanie) && dataset.currentVparivanie.ManagerFilterSupported === true
+      ? dataset.Filters.find(item => item.Type === 60)?.Selectable === true
+      : dataset.Filters.find(item => item.Type === 60)?.Selectable !== true)
 }
 
 function validDate(value: string): boolean {
@@ -66,22 +85,24 @@ export function currentVparivanieConfigurationError(data: ReportRequestBody, dat
     || !Array.isArray(sorted.Measurements) || sorted.Measurements.map(item => item.Type).join(',') !== '83'
     || sorted.Measurements.some(item => item.IsChecked === false || (item.IsChecked != null && typeof item.IsChecked !== 'boolean')))
     return invalid
-  if (!Array.isArray(data.selections) || data.selections.length < 1 || data.selections.length > 4) return invalid
+  if (!Array.isArray(data.selections) || data.selections.length < 1 || data.selections.length > 5) return invalid
   const fields = new Set<number>()
   for (const selection of data.selections) {
     const field = selection?.SelectedField?.Type
-    if (field === 60) return 'Відбір за менеджером покупця поки недоступний: точний зв’язок із синхронізованими даними не підтверджено.'
-    if (![1, 4, 5, 21].includes(field) || fields.has(field) || selection.IsChecked === false
+    if (field === 60 && dataset && !currentVparivanieManagerSupported(dataset))
+      return 'Відбір за менеджером покупця поки недоступний: точний зв’язок із синхронізованими даними не підтверджено.'
+    if (![1, 4, 5, 21, 60].includes(field) || fields.has(field) || selection.IsChecked === false
       || (selection.IsChecked != null && typeof selection.IsChecked !== 'boolean') || !Array.isArray(selection.Values)) return invalid
     const condition = selection.FilterCondition?.Type
     const max = field === 1 ? 128 : field === 21 ? 32 : 1
-    if ((field === 4 ? condition !== 6 : field === 5 ? condition !== 0 : condition !== 0 && condition !== 2)
+    if ((field === 4 ? condition !== 6 : field === 5 || field === 60 ? condition !== 0 : condition !== 0 && condition !== 2)
       || selection.Values.length < 1 || selection.Values.length > max
       || (condition === 0 && selection.Values.length !== 1)) return invalid
-    const ids = selection.Values.map(item => revenueExactId(item?.Data))
+    const ids = selection.Values.map(item => field === 60 ? currentVparivanieManagerReference(item?.Data) : revenueExactId(item?.Data))
     if (ids.some(id => id === null) || new Set(ids).size !== ids.length
       || selection.Values.some(item => item.Value !== undefined && (!Number.isInteger(item.Value)
-        || item.Value < -2147483648 || item.Value > 2147483647))) return invalid
+        || item.Value < -2147483648 || item.Value > 2147483647))
+      || field === 60 && selection.Values.some(item => item.Value !== 0)) return invalid
     fields.add(field)
   }
   return fields.has(1) || fields.has(4) ? null : invalid

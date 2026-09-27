@@ -98,7 +98,7 @@ import './report-constructor.css'
 import { datasetConfigurationError, datasetFilters, datasetGroupings, datasetMeasurements, datasetPresetRequest, datasetPresets, defaultDatasetRequest, type DatasetReportPresetId } from '../data/reportDatasets'
 import { useReportDatasets } from '../hooks/useReportDatasets'
 import { usesNativeReportLookup, supportsFullReportDateRange, hasFixedReportAxes, nativeReportMeasurementUnit } from '../data/nativeReportProfiles'
-import { CURRENT_VPARIVANIE_NOTICE, currentVparivanieFilterConditions } from '../data/currentVparivanie'
+import { CURRENT_VPARIVANIE_NOTICE, currentVparivanieFilterConditions, currentVparivanieNotice } from '../data/currentVparivanie'
 import { requiresValuationAgreement } from '../data/reportValuation'
 import { useValuationAgreement } from '../hooks/useValuationAgreement'
 import { useReportRunState } from '../hooks/useReportRunState'
@@ -1416,7 +1416,9 @@ function LegacyReportBuilder({
 
         <section className="app-section-card reports-stocks-structure">
           <Text className="app-section-title" component="h2" fw={600} size="sm">{t('Групування')}</Text>
-          {fixedAxesDescription[dataSource] ? <Text size="sm">{fixedAxesDescription[dataSource]}</Text> : <ReportGroupingPanel layout={groupingLayout} axis="Row" allowed={allowedGroupingTypes} transferSupported={dataSource !== 13}
+          {fixedAxesDescription[dataSource] ? <Text size="sm">{dataSource === 39
+            ? `Товар → сім атрибутів. Колонки: Остатки, Продажи та Контрагенты; один показник «Результат». ${currentVparivanieNotice(filterFieldOptions.some(option => option.field.Type === 60))}`
+            : fixedAxesDescription[dataSource]}</Text> : <ReportGroupingPanel layout={groupingLayout} axis="Row" allowed={allowedGroupingTypes} transferSupported={dataSource !== 13}
             onOpenPicker={() => setGroupingPickerTarget('rows')}
             onRemove={(index) => onRowGroupsChange((current) => current.filter((_, itemIndex) => itemIndex !== index))}
             onReorder={(type, direction) => onRowGroupsChange(current => reorderReportGrouping(current, type, direction, allowedGroupingTypes))}

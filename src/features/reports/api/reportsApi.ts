@@ -3,7 +3,7 @@ import { agreementPriceComparisonConfigurationError } from '../data/agreementPri
 import { recordedSaleGrossProfitConfigurationError } from '../data/recordedSaleGrossProfit'
 import { dayOrganizationGrossProfitConfigurationError } from '../data/dayOrganizationGrossProfit'
 import { vparivanieConfigurationError } from '../data/vparivanie'
-import { currentVparivanieConfigurationError } from '../data/currentVparivanie'
+import { currentVparivanieConfigurationError, currentVparivanieManagerReference } from '../data/currentVparivanie'
 import { supplierBatchGrossProfitConfigurationError } from '../data/supplierBatchGrossProfit'
 import { importedSaleDiscountConfigurationError } from '../data/importedSaleDiscount'
 import { paymentComparisonConfigurationError } from '../data/paymentComparison'
@@ -73,6 +73,10 @@ function prepareStockReportRequest(body: ReportRequestBody): ReportRequestBody {
   if (dayOrganizationProfitError) throw new Error(dayOrganizationProfitError)
   const currentVparivanieError = currentVparivanieConfigurationError(request)
   if (currentVparivanieError) throw new Error(currentVparivanieError)
+  if (request.dataSource === 39) for (const selection of request.selections) {
+    if (selection.SelectedField.Type === 60) for (const value of selection.Values)
+      value.Data.Id = currentVparivanieManagerReference(value.Data)!
+  }
   const vparivanieError = vparivanieConfigurationError(request)
   if (vparivanieError) throw new Error(vparivanieError)
   const supplierBatchProfitError = supplierBatchGrossProfitConfigurationError(request)
@@ -105,7 +109,7 @@ function prepareStockReportRequest(body: ReportRequestBody): ReportRequestBody {
 }
 
 export async function searchDatasetReportValues(dataSource: number, field: number, params: ReportSearchParams, signal?: AbortSignal, sourceWorld?: number): Promise<ReportEntity[]> {
-  if (dataSource === 39 && ![1, 4, 5, 21].includes(field))
+  if (dataSource === 39 && ![1, 4, 5, 21, 60].includes(field))
     throw new Error('Цей відбір поточної матриці «Впарювання» недоступний.')
   if ([23, 24, 25, 28].includes(dataSource) && !(sourceWorld === 1 || (dataSource !== 28 && sourceWorld === 2)))
     throw new Error('Оберіть базу Fenix або AMG для довідника звіту 1С.')
@@ -113,7 +117,9 @@ export async function searchDatasetReportValues(dataSource: number, field: numbe
     query: { dataSource, field, value: params.value.trim(), offset: params.offset, limit: params.limit,
       ...([23, 24, 25, 28].includes(dataSource) ? { sourceWorld } : {}) }, signal,
   })
-  if (!Array.isArray(result) || !result.every(item => item && typeof item === 'object' && (dataSource === 27
+  if (!Array.isArray(result) || !result.every(item => item && typeof item === 'object' && (dataSource === 39 && field === 60
+    ? typeof item.Id === 'string' && currentVparivanieManagerReference(item) === item.Id
+    : dataSource === 27
     ? priceTypeSalesSourceId(item.Id) !== null
     : [23, 24, 25, 28].includes(dataSource) ? typeof item.Id === 'string' && item.Id.length > 0 && item.Id.length <= 512 && !/\p{Cc}/u.test(item.Id)
     : dataSource === 29 ? typeof item.Id === 'string' && /^[1-9]\d*$/.test(item.Id)
@@ -125,6 +131,8 @@ export async function searchDatasetReportValues(dataSource: number, field: numbe
       ? typeof item.Id === 'string' && revenueExactId(item) !== null
       : (dataSource === 16 || dataSource === 17) ? revenueExactId(item) !== null : Number.isSafeInteger(item.Id) && item.Id > 0)
     && typeof item.Name === 'string' && item.Name.trim().length > 0)) throw new Error('Сервер повернув некоректні значення відбору звіту.')
+  if (dataSource === 39 && field === 60 && new Set(result.map(item => item.Id)).size !== result.length)
+    throw new Error('Сервер повернув неоднозначні джерельні реквізити менеджерів покупців.')
   if (dataSource === 19 && (new Set(result.map(item => item.Id)).size !== result.length || result.some(item => !item.Name.trim()))) throw new Error('Сервер повернув неоднозначні серії курсів.')
   return dataSource === 29 || dataSource === 31 ? result.map(item => ({ ...item, Id: Number(item.Id) })) : result
 }

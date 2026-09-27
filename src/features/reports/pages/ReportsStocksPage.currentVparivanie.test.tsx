@@ -51,3 +51,29 @@ it('refuses a saved selected-manager variant before replacing an existing ordina
   expect((screen.getByRole('combobox',{name:'Набір даних звіту'}) as HTMLInputElement).value).not.toBe(dataset.Name)
   expect(createStockReport).not.toHaveBeenCalled()
 })
+
+it('offers manager only after paired server capability and transports the source reference exactly',async()=>{
+  const user=userEvent.setup(),reference='ABCDEF1234567890ABCDEF1234567890'
+  const enabled={...dataset,currentVparivanie:{...dataset.currentVparivanie as object,ManagerFilterSupported:true},Filters:dataset.Filters.map(f=>f.Type===60?{...f,Selectable:true}:f)}
+  vi.mocked(getReportDatasets).mockResolvedValue([...reportDatasets,enabled])
+  vi.mocked(searchDatasetReportValues).mockImplementation(async(_source,field)=>field===60?[{Id:reference,Name:'Source manager'}]:[{Id:'9223372036854775807',Name:'Synthetic group'}])
+  const {container}=render(<Providers><ReportsStocksPage /></Providers>)
+  await screen.findByRole('button',{name:'Продажі за днями'})
+  fireEvent.click(screen.getByRole('combobox',{name:'Набір даних звіту'}));fireEvent.click(await screen.findByRole('option',{name:dataset.Name}))
+  fireEvent.change(screen.getByLabelText('Від'),{target:{value:'2026-09-12'}});fireEvent.change(screen.getByLabelText('До'),{target:{value:'2026-09-12'}})
+  expect(screen.queryByText(/Менеджер покупця поки недоступний/)).toBeNull()
+  expect(screen.getByText(/Менеджер покупця з 1С/)).toBeTruthy()
+  for(const [field,name] of [[4,'Synthetic group'],[60,'Source manager']] as const){
+    fireEvent.click(screen.getByRole('button',{name:'Додати умову'}));const dialog=screen.getByRole('dialog',{name:'Додати умову відбору'})
+    fireEvent.click(within(dialog).getByRole('combobox',{name:'Поле'}));fireEvent.click(await screen.findByRole('option',{name:`Фільтр ${field}`}))
+    if(field===60)expect((within(dialog).getByRole('combobox',{name:'Умова'}) as HTMLInputElement).value).toBe('Дорівнює')
+    await user.type(within(dialog).getByRole('combobox',{name:'Значення'}),'s')
+    await waitFor(()=>expect(searchDatasetReportValues).toHaveBeenCalledWith(39,field,{limit:30,offset:0,value:'s'},expect.any(AbortSignal)))
+    fireEvent.click(await screen.findByRole('option',{name}));fireEvent.click(within(dialog).getByRole('button',{name:'Зберегти'}))
+  }
+  await waitFor(()=>expect(searchDatasetReportValues).toHaveBeenCalledWith(39,60,{limit:30,offset:0,value:'s'},expect.any(AbortSignal)))
+  fireEvent.submit(container.querySelector('form')!);await waitFor(()=>expect(createStockReport).toHaveBeenCalledOnce())
+  const request=vi.mocked(createStockReport).mock.calls[0][0]
+  expect(request.selections[1]).toMatchObject({SelectedField:{Type:60},FilterCondition:{Type:0},Values:[{Data:{Id:reference},Value:0}]})
+  expect(request.sorted.Col.map(c=>c.type)).toEqual([74,75]);expect(request.sorted.Measurements.map(m=>m.Type)).toEqual([83])
+})
