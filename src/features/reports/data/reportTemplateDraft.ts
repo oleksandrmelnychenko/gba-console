@@ -15,6 +15,7 @@ const managedFields = new Set([
   'productClassification', 'ProductClassification', 'sourceOrganizations', 'SourceOrganizations',
   'sourceBuyerSubtree', 'SourceBuyerSubtree',
   'supplierSourceWorld', 'SupplierSourceWorld',
+  'cashPeriod', 'CashPeriod',
   'priceTypeSalesComparison', 'PriceTypeSalesComparison', 'oneC', 'OneC',
   'discountMarkup', 'DiscountMarkup', 'providedDiscounts', 'ProvidedDiscounts',
   'priceAnalysis', 'PriceAnalysis',

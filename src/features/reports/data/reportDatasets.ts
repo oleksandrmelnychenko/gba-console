@@ -26,6 +26,7 @@ import { ABC_CLASS_GROUPING, preserveAbcGrouping, reportAbcClassificationError }
 import { reportTopGroupsError } from './reportTopGroups'
 import { valuationConfigurationError, requiresValuationAgreement } from './reportValuation'
 import { getNativeReportProfile, isNativeReportPresetId, type NativeReportPresetId } from './nativeReportProfiles'
+import { cashPeriodConfigurationError } from './cashPeriod'
 import { cloneNativeExactFilterAliases, nativeExactFiltersConfigurationError } from './nativeExactFilters'
 import {
   clonePriceTypeSalesComparisonAliases,
@@ -192,6 +193,8 @@ export function datasetConfigurationError(data: ReportRequestBody, dataset: Repo
   if (dataset.PeriodRequired && (!data.from || !data.to)) return 'Для цього набору даних потрібні обидві дати періоду. Налаштування не застосовано.'
   const paymentError = paymentComparisonConfigurationError(data, dataset)
   if (paymentError) return paymentError
+  const cashPeriodError = cashPeriodConfigurationError(data, dataset)
+  if (cashPeriodError) return cashPeriodError
   const marginError = marginComparisonConfigurationError(data, dataset)
   if (marginError) return marginError
   const rateError = rateComparisonConfigurationError(data, dataset)

@@ -15,6 +15,7 @@ import { IMPORTED_SALE_DISCOUNT_TITLE } from './importedSaleDiscount'
 import { DAY_ORGANIZATION_GROSS_PROFIT_TITLE } from './dayOrganizationGrossProfit'
 import { VPARIVANIE_TITLE } from './vparivanie'
 import { CURRENT_VPARIVANIE_TITLE, CURRENT_VPARIVANIE_NOTICE } from './currentVparivanie'
+import { CASH_PERIOD_TITLE } from './cashPeriod'
 import { SUPPLIER_BATCH_GROSS_PROFIT_TITLE } from './supplierBatchGrossProfit'
 
 export const SUPPLIER_RETURN_REPORT_TITLE = 'Звіт документів повернень постачальникам'
@@ -27,6 +28,9 @@ export const CURRENT_AGREEMENT_GROUP_DISCOUNT_TITLE = 'Поточні знижк
 export const AGREEMENT_PRICE_COMPARISON_TITLE = 'Порівняння цін двох договорів'
 export const RECORDED_SALE_GROSS_PROFIT_TITLE = 'Валовий прибуток проведених продажів GBA'
 const DOCUMENT_REPORT_PROFILES = [
+  { dataSource: 40, title: CASH_PERIOD_TITLE, rowGroupings: [43, 40, 42, 41], measurements: [84, 85, 86, 87],
+    preset: { id: 'native-cash-period-account-currency', name: 'Кошти: рух за рахунком',
+      description: 'Один точний валютний запис рахунку. Початок, надходження, витрати й кінець у власній валюті рахунку за включний період до 31 завершеного дня Києва. Без FX і керівної валюти; неповне покриття відхиляється сервером.' } },
   { dataSource: 39, title: CURRENT_VPARIVANIE_TITLE, rowGroupings: [5], measurements: [83],
     preset: { id: 'vparivanie-current-native-matrix', name: 'Впарювання: поточна матриця',
       description: `Оберіть до 128 товарів або одну групу товарів і період продажів до 366 днів. ${CURRENT_VPARIVANIE_NOTICE}` } },
@@ -117,17 +121,18 @@ export function isCurrentReportSource(dataSource: number | undefined): boolean {
   return isCurrentStockSource(dataSource) || dataSource === 10 || dataSource === 11 || dataSource === 22 || dataSource === 29 || dataSource === 31
 }
 export function usesNativeReportLookup(dataSource: number | undefined): boolean {
-  return isCurrentReportSource(dataSource) || dataSource === 9 || dataSource === 12 || dataSource === 13 || dataSource === 14 || dataSource === 15 || dataSource === 16 || dataSource === 17 || dataSource === 18 || dataSource === 20 || dataSource === 21 || dataSource === 23 || dataSource === 24 || dataSource === 25 || dataSource === 26 || dataSource === 27 || dataSource === 28 || dataSource === 30 || dataSource === 32 || dataSource === 35 || dataSource === 36 || dataSource === 38 || dataSource === 39
+  return isCurrentReportSource(dataSource) || dataSource === 9 || dataSource === 12 || dataSource === 13 || dataSource === 14 || dataSource === 15 || dataSource === 16 || dataSource === 17 || dataSource === 18 || dataSource === 20 || dataSource === 21 || dataSource === 23 || dataSource === 24 || dataSource === 25 || dataSource === 26 || dataSource === 27 || dataSource === 28 || dataSource === 30 || dataSource === 32 || dataSource === 35 || dataSource === 36 || dataSource === 38 || dataSource === 39 || dataSource === 40
 }
 
-const FULL_DATE_RANGE_SOURCES = new Set([13, 14, 15, 16, 17, 18, 20, 21, 24, 30, 32, 36, 38, 39])
-const FIXED_AXES_SOURCES = new Set([15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 28, 29, 30, 31, 32, 36, 38, 39])
+const FULL_DATE_RANGE_SOURCES = new Set([13, 14, 15, 16, 17, 18, 20, 21, 24, 30, 32, 36, 38, 39, 40])
+const FIXED_AXES_SOURCES = new Set([15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 28, 29, 30, 31, 32, 36, 38, 39, 40])
 export const supportsFullReportDateRange = (dataSource: number): boolean => FULL_DATE_RANGE_SOURCES.has(dataSource)
 export const hasFixedReportAxes = (dataSource: number): boolean => FIXED_AXES_SOURCES.has(dataSource)
 
 
 // Units belong to the selected report and caption, independently of VAT controls.
 export function nativeReportMeasurementUnit(dataSource: number, caption: string): string | undefined {
+  if (dataSource === 40) return 'Валюта вибраного рахунку'
   if (dataSource === 36 || dataSource === 39) return 'Кількість товару'
   if (dataSource === 38) return caption.includes('%') ? 'Відсотки' : caption.toLowerCase().includes('кількість') ? 'Кількість товару' : 'Євро'
   if (dataSource === 32) return 'Євро'
