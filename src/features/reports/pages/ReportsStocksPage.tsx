@@ -756,15 +756,22 @@ function ReportsStocksWorkspace({ ownerId, constructorMode }: { ownerId: string 
                 { value: 'all', label: t('Обидві бази') }]}
               value={supplierSourceWorld === 0 ? '0' : supplierSourceWorld === 1 ? '1' : 'all'}
               disabled={comparisonSettingsDisabled}
-              onChange={value => setSupplierSourceWorld(value === '0' ? 0 : value === '1' ? 1 : undefined)} />
+              onChange={value => {
+                const world = value === '0' ? 0 : value === '1' ? 1 : undefined
+                setSupplierSourceWorld(world)
+                if (world !== 0) setSourceBuyerSubtree(undefined)
+              }} />
             <Text size="xs" c="dimmed">{t('Окремий зріз формується лише за однозначної лінії кожного продажу в періоді. Неповна партія вибраної бази зупинить звіт.')}</Text>
             {dataset?.sourceBuyerSubtree != null ? <>
               <Checkbox mt="sm" label={t('Група «Покупці» Fenix')}
                 checked={parseSourceBuyerSubtree(sourceBuyerSubtree) != null}
                 disabled={comparisonSettingsDisabled}
-                onChange={event => setSourceBuyerSubtree(event.currentTarget.checked
-                  ? { Version: 1, SourceWorld: 'fenix', BuyerRootId: FENIX_BUYERS_ROOT_ID }
-                  : undefined)} />
+                onChange={event => {
+                  if (event.currentTarget.checked) setSupplierSourceWorld(0)
+                  setSourceBuyerSubtree(event.currentTarget.checked
+                    ? { Version: 1, SourceWorld: 'fenix', BuyerRootId: FENIX_BUYERS_ROOT_ID }
+                    : undefined)
+                }} />
               <Text size="xs" c="dimmed">{t('Вимагає базу Fenix, повну лінію покупців усіх продажів періоду і чинний захоплений граф. За неповних даних звіт покаже помилку покриття.')}</Text>
               {sourceBuyerSubtree != null && !parseSourceBuyerSubtree(sourceBuyerSubtree)
                 ? <Text size="xs" c="orange">{t('Шаблон містить інше піддерево Fenix; цей набір приймає тільки групу «Покупці».')}</Text> : null}

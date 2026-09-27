@@ -148,4 +148,38 @@ describe('exact Fenix filters in the report constructor', () => {
       sourceBuyerSubtree: { Version: 1, SourceWorld: 'fenix', BuyerRootId: FENIX_BUYERS_ROOT_ID },
     })
   })
+
+  it.each(['AMG', 'Обидві бази'])('clears the Fenix Buyers filter when supplier world changes to %s', async world => {
+    vi.mocked(getReportDatasets).mockResolvedValue([...reportDatasets, supplierDataset])
+    const { container } = await ready()
+    fireEvent.click(screen.getByRole('combobox', { name: 'Набір даних звіту' }))
+    fireEvent.click(await screen.findByRole('option', { name: supplierDataset.Name }))
+    const buyers = screen.getByRole('checkbox', { name: 'Група «Покупці» Fenix' }) as HTMLInputElement
+    fireEvent.click(buyers)
+    expect(buyers.checked).toBe(true)
+    fireEvent.click(screen.getByRole('combobox', { name: 'База продажів для прибутку за постачальниками' }))
+    fireEvent.click(screen.getByRole('option', { name: world }))
+    expect(buyers.checked).toBe(false)
+    fireEvent.submit(container.querySelector('form')!)
+    await waitFor(() => expect(createStockReport).toHaveBeenCalledOnce())
+    const request = vi.mocked(createStockReport).mock.calls[0][0]
+    expect(request.supplierSourceWorld).toBe(world === 'AMG' ? 1 : undefined)
+    expect(request.sourceBuyerSubtree).toBeUndefined()
+  })
+
+  it('selecting Buyers after AMG selects Fenix before submitting the supplier report', async () => {
+    vi.mocked(getReportDatasets).mockResolvedValue([...reportDatasets, supplierDataset])
+    const { container } = await ready()
+    fireEvent.click(screen.getByRole('combobox', { name: 'Набір даних звіту' }))
+    fireEvent.click(await screen.findByRole('option', { name: supplierDataset.Name }))
+    fireEvent.click(screen.getByRole('combobox', { name: 'База продажів для прибутку за постачальниками' }))
+    fireEvent.click(screen.getByRole('option', { name: 'AMG' }))
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Група «Покупці» Fenix' }))
+    fireEvent.submit(container.querySelector('form')!)
+    await waitFor(() => expect(createStockReport).toHaveBeenCalledOnce())
+    expect(vi.mocked(createStockReport).mock.calls[0][0]).toMatchObject({
+      dataSource: 38, supplierSourceWorld: 0,
+      sourceBuyerSubtree: { Version: 1, SourceWorld: 'fenix', BuyerRootId: FENIX_BUYERS_ROOT_ID },
+    })
+  })
 })
