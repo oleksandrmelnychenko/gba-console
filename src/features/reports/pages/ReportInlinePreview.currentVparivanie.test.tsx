@@ -11,7 +11,8 @@ it('shows the actual seven flat attributes and separate customer identities with
   const view = render(<MantineProvider env="test"><ReportInlinePreview preview={preview} /></MantineProvider>)
   for (const name of CURRENT_VPARIVANIE_PRODUCT_CAPTIONS) expect(screen.getByRole('columnheader', { name })).toBeTruthy()
   expect(screen.getAllByRole('columnheader', { name: 'Контрагенты' })).toHaveLength(2)
-  expect(screen.getAllByRole('columnheader', { name: 'Одна назва / Кількість / Результат' })).toHaveLength(2)
+  expect(screen.getAllByRole('columnheader', { name: 'Одна назва / Результат' })).toHaveLength(2)
+  expect(screen.getAllByRole('columnheader', { name: 'Результат' })).toHaveLength(2)
   const row = screen.getByRole('rowheader', { name: '0000123' }).closest('tr')!
   expect(within(row).getAllByRole('cell').map(cell => cell.textContent)).toEqual(['0', '-2.00000000', '∅', '3.00000001'])
   expect(within(row).getAllByRole('rowheader')).toHaveLength(7)
@@ -21,4 +22,16 @@ it('shows the actual seven flat attributes and separate customer identities with
   expect(screen.getByText(/Вибраний період стосується продажів/)).toBeTruthy()
   expect(screen.getByText('Період розрахунку: 01.09.2026 — 27.09.2026')).toBeTruthy()
   expect(view.container.textContent).not.toContain('a'.repeat(64))
+})
+
+it('shows an unknown customer only in the customer arm, never in stock or sales headers', () => {
+  const source = currentVparivaniePreview()
+  source.Columns[3].Values[1].Identity.Kind = 'null'
+  source.Columns[3].Values[1].Identity.Value = null
+  source.Columns[3].Values[1].Caption = 'Не вказано'
+  const preview = normalizeNativeReportPreview({ Preview: source })
+  render(<MantineProvider env="test"><ReportInlinePreview preview={preview} /></MantineProvider>)
+  expect(screen.getAllByRole('columnheader', { name: 'Результат' })).toHaveLength(2)
+  expect(screen.getByRole('columnheader', { name: 'Не вказано / Результат' })).toBeTruthy()
+  expect(screen.getByRole('columnheader', { name: 'Одна назва / Результат' })).toBeTruthy()
 })

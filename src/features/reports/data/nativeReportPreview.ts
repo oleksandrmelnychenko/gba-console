@@ -1,9 +1,10 @@
 import { CURRENT_VPARIVANIE_PRODUCT_FIELDS } from './currentVparivanie'
+import { validateCurrentVparivanieColumns } from './currentVparivanieColumns'
 
 export type NativeReportPreviewScalar = { Kind: string; Value: string | null; Provenance: string }
 export type CurrentVparivanieProduct = { RowSourceIndex: number } & Record<typeof CURRENT_VPARIVANIE_PRODUCT_FIELDS[number], string | null>
 export type CurrentVparivanieProducts = { Version: 1; ResultSha256: string; Rows: CurrentVparivanieProduct[] }
-export type NativeReportPreviewAxis = { Ordinal: number; SourceIndex: number; Values: { Caption: string }[] }
+export type NativeReportPreviewAxis = { Ordinal: number; SourceIndex: number; Values: { Caption: string; Identity?: NativeReportPreviewScalar }[] }
 export type NativeReportPreviewCell = { RowSourceIndex: number; ColumnSourceIndex: number; Value: NativeReportPreviewScalar }
 export type NativeReportPreviewFilter = { Field: string; Condition: string; Values: string[]; IgnoredReason: string | null }
 export type NativeReportPreviewRequest = {
@@ -30,7 +31,7 @@ export type NativeReportPreview = {
   Request: NativeReportPreviewRequest | null
   Page: { Offset: number; Limit: number; TotalVisibleRows: number; ReturnedRows: number; HasMore: boolean }
   RowSchema: { Caption: string }[]
-  ColumnSchema: { Caption: string }[]
+  ColumnSchema: { Caption: string; Identity?: string; KeyKind?: string }[]
   Rows: NativeReportPreviewAxis[]
   Columns: NativeReportPreviewAxis[]
   Cells: NativeReportPreviewCell[]
@@ -166,6 +167,7 @@ function normalizeCurrentVparivanieProducts(preview: Record<string, unknown>, re
     || !Array.isArray(preview.Columns) || new Set(preview.Columns.map(column => column.SourceIndex)).size !== preview.Columns.length
     || !record(value) || value.Version !== 1 || value.ResultSha256 !== preview.ResultSha256
     || !Array.isArray(value.Rows) || !Array.isArray(preview.Rows) || value.Rows.length !== preview.Rows.length) return fail()
+  validateCurrentVparivanieColumns(preview.ColumnSchema as NativeReportPreview['ColumnSchema'], preview.Columns as NativeReportPreviewAxis[])
   const rowIds = new Set((preview.Rows as NativeReportPreviewAxis[]).map(row => row.SourceIndex))
   const seen = new Set<number>()
   if (rowIds.size !== preview.Rows.length) return fail()

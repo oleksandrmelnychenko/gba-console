@@ -5,6 +5,7 @@ export const CURRENT_VPARIVANIE_SOURCE = 39
 export const CURRENT_VPARIVANIE_TITLE = 'Впарювання: поточні залишки та продажі GBA'
 export const CURRENT_VPARIVANIE_PRODUCT_FIELDS = ['Article', 'Name', 'Description', 'Group', 'OE', 'Size', 'Top'] as const
 export const CURRENT_VPARIVANIE_PRODUCT_CAPTIONS = ['Артикул', 'Наименование', 'Описание', 'Группа', 'OE', 'Размер', 'Топ'] as const
+export const CURRENT_VPARIVANIE_COUNTERPARTY_IDENTITY = 'NativeClientOrFenixSourceGroupV1'
 export function currentVparivanieNotice(managerSupported = false): string {
   return `Залишки — поточна записана вільна кількість GBA. Продажі — за вибраний включний період Europe/Kyiv. Клієнт впливає лише на колонки контрагентів, склад — лише на залишки. ${managerSupported ? 'Менеджер покупця з 1С (Fenix) впливає лише на колонки контрагентів.' : 'Менеджер покупця поки недоступний.'} Невідомі кількості та підсумки різних одиниць залишаються NULL.`
 }
@@ -33,6 +34,7 @@ export function isCurrentVparivanieCapability(value: unknown): boolean {
     && same(value.FixedMeasurements, [83]) && typeof value.ManagerFilterSupported === 'boolean'
     && value.UnknownQuantity === 'null' && value.MixedUnits === 'null'
     && value.HistoricalStockSupported === false && value.HistoricalXlsParityVerified === false
+    && (value.CounterpartyIdentity === undefined || value.CounterpartyIdentity === CURRENT_VPARIVANIE_COUNTERPARTY_IDENTITY)
 }
 
 /** Source references remain bytes encoded as hex; they are never native User IDs. */

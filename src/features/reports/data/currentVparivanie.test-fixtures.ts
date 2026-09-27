@@ -21,6 +21,12 @@ export function currentVparivanieRequest() {
   return { ...defaultDatasetRequest(currentVparivanieDataset, '2026-09-01', '2026-09-27'), selections: [exactSelection(1)] }
 }
 export function currentVparivaniePreview() {
+  const key = (Kind: string, Value: string | null) => ({ Kind, Value, Provenance: 'columnAxisKey' })
+  const column = (Ordinal: number, group: string, party: string | null, id: string | null) => ({ Ordinal, SourceIndex: Ordinal,
+    Values: [{ Caption: group, Identity: key('signedInteger', String(Ordinal < 2 ? Ordinal + 1 : 3)) },
+      { Caption: party ?? 'Не вказано', Identity: key(id === null ? 'null' : 'signedInteger', id) },
+      { Caption: 'Результат', Identity: key('text', 'Результат') },
+      { Caption: 'Результат', Identity: key('reportField', 'CurrentVparivanieResult') }] })
   return {
     Version: 1, ResultSha256: 'a'.repeat(64), PresentationOnly: true,
     Request: { DataSource: 'NativeCurrentVparivanie', IsCurrentSnapshot: false, HasPeriod: true,
@@ -29,14 +35,14 @@ export function currentVparivaniePreview() {
       RowGroupings: ['Товар'], ColumnGroupings: ['Группа', 'Контрагент'], Measures: ['Результат'],
       Filters: [], IgnoredFilters: [], Notes: ['Менеджер покупця поки недоступний.'] },
     Page: { Offset: 0, Limit: 50, TotalVisibleRows: 1, ReturnedRows: 1, HasMore: false },
-    RowSchema: [{ Identity: 'Product', Caption: 'Товар' }], ColumnSchema: [{ Identity: 'CurrentVparivanieGroup', Caption: 'Группа' }, { Identity: 'CurrentVparivanieCounterparty', Caption: 'Контрагент' }],
+    RowSchema: [{ Identity: 'Product', Caption: 'Товар' }], ColumnSchema: [
+      { Identity: 'CurrentVparivanieGroup', Caption: 'Группа', KeyKind: 'Numeric' },
+      { Identity: 'CurrentVparivanieCounterparty', Caption: 'Контрагент', KeyKind: 'Numeric' },
+      { Identity: '$measureGroup', Caption: 'Група показників', KeyKind: 'Text' },
+      { Identity: '$measure', Caption: 'Показник', KeyKind: 'Text' }],
     Rows: [{ Ordinal: 0, SourceIndex: 12, Values: [{ Caption: 'synthetic product' }] }],
-    Columns: [
-      { Ordinal: 0, SourceIndex: 0, Values: [{ Caption: 'Остатки' }, { Caption: '' }, { Caption: 'Кількість' }, { Caption: 'Результат' }] },
-      { Ordinal: 1, SourceIndex: 1, Values: [{ Caption: 'Продажи' }, { Caption: '' }, { Caption: 'Кількість' }, { Caption: 'Результат' }] },
-      { Ordinal: 2, SourceIndex: 2, Values: [{ Caption: 'Контрагенты' }, { Caption: 'Одна назва' }, { Caption: 'Кількість' }, { Caption: 'Результат' }] },
-      { Ordinal: 3, SourceIndex: 3, Values: [{ Caption: 'Контрагенты' }, { Caption: 'Одна назва' }, { Caption: 'Кількість' }, { Caption: 'Результат' }] },
-    ],
+    Columns: [column(0, 'Остатки', null, null), column(1, 'Продажи', null, null),
+      column(2, 'Контрагенты', 'Одна назва', '111'), column(3, 'Контрагенты', 'Одна назва', '222')],
     Cells: ['0', '-2.00000000', null, '3.00000001'].map((Value, ColumnSourceIndex) => ({ RowSourceIndex: 12, ColumnSourceIndex,
       Value: { Kind: Value === null ? 'null' : 'decimal', Value, Provenance: 'producerCell' } })),
     CurrentVparivanieProducts: { Version: 1, ResultSha256: 'a'.repeat(64), Rows: [{ RowSourceIndex: 12,

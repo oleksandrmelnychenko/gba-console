@@ -1,6 +1,7 @@
 import { Alert, Badge, Stack, Text } from '@mantine/core'
 import { previewScalarText, type NativeReportPreview, type NativeReportPreviewFilter, type NativeReportPreviewRequest } from '../data/nativeReportPreview'
 import { CURRENT_VPARIVANIE_PRODUCT_CAPTIONS, CURRENT_VPARIVANIE_PRODUCT_FIELDS } from '../data/currentVparivanie'
+import { currentVparivanieSecondTier } from '../data/currentVparivanieColumns'
 import './report-inline-preview.css'
 
 export function ReportInlinePreview({ preview }: { preview: NativeReportPreview }) {
@@ -23,7 +24,7 @@ export function ReportInlinePreview({ preview }: { preview: NativeReportPreview 
             {(products ? column.Values.slice(0, 1) : column.Values).map(value => value.Caption).filter(Boolean).join(' / ') || `Стовпець ${column.Ordinal + 1}`}
           </th>)}
         </tr>{products ? <tr>{preview.Columns.map(column => <th scope="col" key={column.SourceIndex}>
-          {column.Values.slice(1).map(value => value.Caption).filter(Boolean).join(' / ') || 'Результат'}
+          {currentVparivanieSecondTier(column)}
         </th>)}</tr> : null}</thead>
         <tbody>{preview.Rows.map(row => <tr key={row.SourceIndex}>
           {rowHeaders.map((header, index) => <th scope="row" key={header}>{products
