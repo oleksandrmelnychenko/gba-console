@@ -17,7 +17,7 @@ export function requestSupplierSourceWorld(data: ReportRequestBody): unknown {
     ? data.supplierSourceWorld : data.SupplierSourceWorld
 }
 const measures = [0, 2, 3, 4, 6, 7, 8, 10, 12, 14]
-const filters = new Set([0, 17])
+const filters = new Set([0, 1, 17])
 const forbidden = new Set(['onec', 'comparison', 'xyz', 'revenuecomparison', 'buyersalesshare', 'returncomparison',
   'ratecomparison', 'margincomparison', 'paymentcomparison', 'pricetypesalescomparison', 'agreementpricecomparison',
   'valuationclientagreementid', 'ordering', 'filterexpression', 'topgroups', 'threshold', 'hidezero',
@@ -38,7 +38,7 @@ export function supplierBatchGrossProfitConfigurationError(data: ReportRequestBo
   if (dataset && (dataset.DataSource !== SUPPLIER_BATCH_GROSS_PROFIT_SOURCE || dataset.PeriodRequired !== true
     || dataset.PeriodSupported !== true || dataset.Groupings.map(item => item.Type).join(',') !== '73,4,21'
     || dataset.Measurements.map(item => item.Type).join(',') !== measures.join(',')
-    || dataset.Filters.map(item => item.Type).join(',') !== '0,17'))
+    || dataset.Filters.map(item => item.Type).join(',') !== '0,1,17'))
     return 'Сервер не підтвердив набір партійного прибутку за постачальниками.'
   const world = requestSupplierSourceWorld(data)
   if (data.supplierSourceWorld !== undefined && data.SupplierSourceWorld !== undefined

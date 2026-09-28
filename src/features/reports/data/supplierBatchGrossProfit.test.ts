@@ -14,7 +14,7 @@ const dataset: ReportDataset = {
     RequiresCompletePeriodLineage: true, UsesCurrentCapturedHierarchy: true },
   Groupings: [73, 4, 21].map(Type => ({ Type, Name: `Вимір ${Type}` })),
   Measurements: [0, 2, 3, 4, 6, 7, 8, 10, 12, 14].map(Type => ({ Type, Name: `Показник ${Type}` })),
-  Filters: [0, 17].map(Type => ({ Type, Name: `Фільтр ${Type}` })), Limitations: [],
+  Filters: [0, 1, 17].map(Type => ({ Type, Name: `Фільтр ${Type}` })), Limitations: [],
 }
 
 it('starts with the six XLS measures and exact source warehouse grouping', () => {
@@ -36,6 +36,12 @@ it('rejects unrelated filters, rounded IDs and an overly long period', () => {
   request.selections = [{ IsChecked: true, SelectedField: { Type: 17, Name: 'Supplier' },
     FilterCondition: { Type: 0, Name: 'Equals' }, Values: [{ Data: { Id: '9223372036854775807' }, Name: 'supplier', Value: 0 }] }]
   expect(supplierBatchGrossProfitConfigurationError(request, dataset)).toBeNull()
+  request.selections = [{ IsChecked: true, SelectedField: { Type: 1, Name: 'Товар' },
+    FilterCondition: { Type: 0, Name: 'Equals' },
+    Values: [{ Data: { Id: '35430089' }, Name: 'Товар [35430089]', Value: 0 }] }]
+  expect(supplierBatchGrossProfitConfigurationError(request, dataset)).toBeNull()
+  expect(supplierBatchGrossProfitConfigurationError(request,
+    { ...dataset, Filters: [0, 17].map(Type => ({ Type, Name: String(Type) })) })).not.toBeNull()
   expect(supplierBatchGrossProfitConfigurationError({ ...request, selections: [{ ...request.selections[0],
     Values: [{ Data: { Id: Number('9223372036854775807') }, Name: 'rounded', Value: 0 }] }] })).not.toBeNull()
   expect(supplierBatchGrossProfitConfigurationError(request, { ...dataset, Groupings: [] })).not.toBeNull()

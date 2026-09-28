@@ -43,7 +43,7 @@ const supplierDataset: ReportDataset = {
   PeriodRequired: true, PeriodSupported: true,
   Groupings: [73, 4, 21].map(Type => ({ Type, Name: `Група ${Type}` })),
   Measurements: [0, 2, 3, 4, 6, 7, 8, 10, 12, 14].map(Type => ({ Type, Name: `Показник ${Type}` })),
-  Filters: [0, 17].map(Type => ({ Type, Name: `Фільтр ${Type}` })),
+  Filters: [0, 1, 17].map(Type => ({ Type, Name: `Фільтр ${Type}` })),
   supplierSourceWorld: { Version: 1, SourceWorlds: [0, 1], RequiresCompletePeriodLineage: true },
   sourceBuyerSubtree: dayDataset.sourceBuyerSubtree,
   Limitations: [],
