@@ -722,7 +722,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode }: { ownerId: string 
           (oneCSpecialSpecification(dataSource) ? defaultOneCSpecialSettings(dataSource)[oneCSpecialSpecification(dataSource)!.key] : undefined)}
           disabled={comparisonSettingsDisabled} onChange={setOneCSpecialSettings} />}
         classificationPanel={dataSource === 41 ? (dataset && isSettlementPeriodDataset(dataset)
-          ? <SettlementPeriodAgreementPicker value={settlementPeriod} disabled={comparisonSettingsDisabled}
+          ? <SettlementPeriodAgreementPicker value={settlementPeriod} from={from} to={to} disabled={comparisonSettingsDisabled}
             enabled={canGenerateReport} onChange={setSettlementPeriod} /> : null) : dataSource === 40 ? <CashPeriodLegPicker value={cashPeriod}
           disabled={comparisonSettingsDisabled} enabled={canGenerateReport}
           onChange={setCashPeriod} /> : dataSource === 35 ? <Card className="app-section-card" withBorder radius="md" padding="md" style={{ minWidth: 0 }}>

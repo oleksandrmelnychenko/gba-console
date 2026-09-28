@@ -105,6 +105,11 @@ function validDay(value: string): boolean {
   return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === value
 }
 
+export function validSettlementPeriodDays(from: string, to: string, todayKyiv = formatKyivBusinessDate()): boolean {
+  if (!validDay(from) || !validDay(to) || !validDay(todayKyiv) || from > to || to >= todayKyiv) return false
+  return (Date.parse(`${to}T00:00:00Z`) - Date.parse(`${from}T00:00:00Z`)) / 86_400_000 < 31
+}
+
 /** Client guard; the server remains final authority on a complete closing-day generation. */
 export function settlementPeriodConfigurationError(data: ReportRequestBody, dataset?: ReportDataset,
   todayKyiv?: string): string | null {

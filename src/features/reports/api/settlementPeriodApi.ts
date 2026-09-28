@@ -1,6 +1,7 @@
 import { apiRequest } from '../../../shared/api/apiClient'
 import { isSettlementFamily, isSettlementWorld, readSettlementPeriodAgreement, settlementPeriodExactId,
-  type SettlementNativeFamily, type SettlementPeriodAgreement, type SettlementSourceWorld } from '../data/settlementPeriod'
+  readSettlementPeriodScope, validSettlementPeriodDays,
+  type SettlementNativeFamily, type SettlementPeriodAgreement, type SettlementPeriodScope, type SettlementSourceWorld } from '../data/settlementPeriod'
 
 /** Exact native choices only; lookup does not certify period coverage. */
 export async function getSettlementPeriodAgreements(sourceWorld: SettlementSourceWorld, nativeFamily: SettlementNativeFamily,
@@ -24,4 +25,20 @@ export async function getSettlementPeriodAgreements(sourceWorld: SettlementSourc
     last = id
   }
   return agreements
+}
+
+/** One exact current OWN publication; preview and export recheck it independently. */
+export async function getSettlementPeriodAvailability(scope: SettlementPeriodScope, from: string, to: string,
+  signal?: AbortSignal): Promise<boolean> {
+  const exact = readSettlementPeriodScope(scope)
+  if (!exact || !validSettlementPeriodDays(from, to)) throw new Error('Некоректний завершений період договору.')
+  const body = await apiRequest<unknown>('/report/datasets/41/availability', {
+    query: { sourceWorld: exact.SourceWorld, nativeFamily: exact.NativeFamily, agreementId: exact.AgreementId,
+      agreementNetUid: exact.AgreementNetUid, from, to }, signal,
+  })
+  if (body === null || typeof body !== 'object' || Array.isArray(body)
+    || Object.keys(body).sort().join(',') !== 'Available'
+    || typeof (body as { Available?: unknown }).Available !== 'boolean')
+    throw new Error('Сервер повернув некоректний стан покриття договору.')
+  return (body as { Available: boolean }).Available
 }

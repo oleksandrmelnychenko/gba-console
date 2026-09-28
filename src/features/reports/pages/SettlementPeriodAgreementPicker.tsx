@@ -1,14 +1,16 @@
 import { useEffect, useRef, useState } from 'react'
 import { Alert, Button, Card, Group, Select, Stack, Text } from '@mantine/core'
-import { getSettlementPeriodAgreements } from '../api/settlementPeriodApi'
-import { isSettlementFamily, isSettlementWorld, readSettlementPeriodScope,
-  type SettlementNativeFamily, type SettlementPeriodAgreement, type SettlementSourceWorld } from '../data/settlementPeriod'
+import { getSettlementPeriodAgreements, getSettlementPeriodAvailability } from '../api/settlementPeriodApi'
+import { isSettlementFamily, isSettlementWorld, readSettlementPeriodScope, validSettlementPeriodDays,
+  type SettlementNativeFamily, type SettlementPeriodAgreement, type SettlementPeriodScope, type SettlementSourceWorld } from '../data/settlementPeriod'
 
 const PAGE_SIZE = 30
 const keyOf = (row: { AgreementId: string; AgreementNetUid: string }) => `${row.AgreementId}:${row.AgreementNetUid}`
 
-export function SettlementPeriodAgreementPicker({ value, disabled, enabled, onChange }: {
+export function SettlementPeriodAgreementPicker({ value, from, to, disabled, enabled, onChange }: {
   value: unknown
+  from: string
+  to: string
   disabled: boolean
   enabled: boolean
   onChange: (next: unknown) => void
@@ -33,7 +35,7 @@ export function SettlementPeriodAgreementPicker({ value, disabled, enabled, onCh
           disabled={disabled || !enabled} clearable onChange={next => choose(world, isSettlementFamily(next) ? next : null)} />
       </Group>
       {world && family ? <AgreementPage key={`${world}:${family}`} world={world} family={family}
-        value={value} disabled={disabled} enabled={enabled} onChange={onChange} />
+        value={value} from={from} to={to} disabled={disabled} enabled={enabled} onChange={onChange} />
         : <Text size="sm" c="dimmed">Оберіть базу та тип договору для завантаження списку.</Text>}
       <Text size="xs" c="dimmed">Початок, надходження, витрати й кінець — у валюті взаєморозрахунків вибраного договору.
         Період включає обидві дати: до 31 завершеного дня Києва. Довідник не підтверджує покриття періоду.
@@ -42,10 +44,12 @@ export function SettlementPeriodAgreementPicker({ value, disabled, enabled, onCh
   </Card>
 }
 
-function AgreementPage({ world, family, value, disabled, enabled, onChange }: {
+function AgreementPage({ world, family, value, from, to, disabled, enabled, onChange }: {
   world: SettlementSourceWorld
   family: SettlementNativeFamily
   value: unknown
+  from: string
+  to: string
   disabled: boolean
   enabled: boolean
   onChange: (next: unknown) => void
@@ -105,5 +109,42 @@ function AgreementPage({ world, family, value, disabled, enabled, onChange }: {
     </Group>
     {error ? <Alert color="orange">{error}</Alert> : null}
     {changed ? <Alert color="orange">Ідентичність збереженого договору змінилася. Оберіть його зі списку знову; старий вибір не замінюється автоматично.</Alert> : null}
+    {selected && !changed ? <AvailabilityCheck key={`${keyOf(selected)}:${from}:${to}`} scope={selected}
+      from={from} to={to} disabled={disabled || !enabled} /> : null}
+  </Stack>
+}
+
+function AvailabilityCheck({ scope, from, to, disabled }: {
+  scope: SettlementPeriodScope; from: string; to: string; disabled: boolean
+}) {
+  const [checking, setChecking] = useState(false)
+  const [available, setAvailable] = useState<boolean | null>(null)
+  const [error, setError] = useState(false)
+  const active = useRef<AbortController | null>(null)
+  useEffect(() => () => active.current?.abort(), [])
+  if (!validSettlementPeriodDays(from, to))
+    return <Text size="xs" c="dimmed">Для перевірки покриття оберіть завершений період до 31 дня.</Text>
+  async function check() {
+    if (checking || disabled) return
+    active.current?.abort()
+    const controller = new AbortController()
+    active.current = controller
+    setChecking(true); setAvailable(null); setError(false)
+    try {
+      const value = await getSettlementPeriodAvailability(scope, from, to, controller.signal)
+      if (!controller.signal.aborted) setAvailable(value)
+    } catch {
+      if (!controller.signal.aborted) setError(true)
+    } finally {
+      if (!controller.signal.aborted) setChecking(false)
+    }
+  }
+  return <Stack gap="xs">
+    <Button size="xs" variant="light" loading={checking} disabled={disabled} onClick={() => void check()}>
+      Перевірити покриття періоду
+    </Button>
+    {available === true ? <Alert color="green">Повна публікація доступна на момент перевірки. Під час формування звіт перевірить її знову.</Alert> : null}
+    {available === false ? <Alert color="orange">Для цього договору й періоду немає повної чинної публікації. Потрібне штатне оновлення даних.</Alert> : null}
+    {error ? <Alert color="orange">Стан покриття тимчасово недоступний. Спробуйте перевірити ще раз.</Alert> : null}
   </Stack>
 }
