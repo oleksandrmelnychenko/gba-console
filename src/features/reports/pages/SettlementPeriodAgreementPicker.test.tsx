@@ -2,22 +2,52 @@ import { useState } from 'react'
 import { MantineProvider } from '@mantine/core'
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { beforeEach, expect, it, vi } from 'vitest'
-import { getSettlementPeriodAgreements } from '../api/settlementPeriodApi'
+import { getSettlementPeriodAgreements, getSettlementPeriodAvailability } from '../api/settlementPeriodApi'
 import { settlementPeriodAgreement as agreement, settlementPeriodScope as scope } from '../data/settlementPeriod.test-fixtures'
 import { SettlementPeriodAgreementPicker } from './SettlementPeriodAgreementPicker'
 
-vi.mock('../api/settlementPeriodApi', () => ({ getSettlementPeriodAgreements: vi.fn() }))
+vi.mock('../api/settlementPeriodApi', () => ({ getSettlementPeriodAgreements: vi.fn(), getSettlementPeriodAvailability: vi.fn() }))
 const lookup = vi.mocked(getSettlementPeriodAgreements)
+const availability = vi.mocked(getSettlementPeriodAvailability)
 beforeEach(() => {
   lookup.mockReset()
+  availability.mockReset()
   Object.defineProperty(HTMLElement.prototype, 'scrollIntoView', { configurable: true, value: vi.fn() })
 })
 
-function Harness({ initial, onChange, enabled = true }: { initial?: unknown; onChange: (value: unknown) => void; enabled?: boolean }) {
+function Harness({ initial, onChange, enabled = true, from = '2026-09-03', to = '2026-09-04' }: {
+  initial?: unknown; onChange: (value: unknown) => void; enabled?: boolean; from?: string; to?: string
+}) {
   const [value, setValue] = useState(initial)
-  return <MantineProvider env="test"><SettlementPeriodAgreementPicker value={value} enabled={enabled} disabled={false}
+  return <MantineProvider env="test"><SettlementPeriodAgreementPicker value={value} from={from} to={to} enabled={enabled} disabled={false}
     onChange={next => { setValue(next); onChange(next) }} /></MantineProvider>
 }
+
+it('checks one selected exact period only on action and aborts a stale check when scope changes', async () => {
+  lookup.mockResolvedValue([agreement])
+  let finish!: (value: boolean) => void
+  availability.mockImplementationOnce(() => new Promise(resolve => { finish = resolve }))
+  const changed = vi.fn()
+  render(<Harness initial={scope} onChange={changed} />)
+  await waitFor(() => expect(lookup).toHaveBeenCalledOnce())
+  expect(availability).not.toHaveBeenCalled()
+  fireEvent.click(screen.getByRole('button', { name: 'Перевірити покриття періоду' }))
+  expect(availability).toHaveBeenCalledWith(scope, '2026-09-03', '2026-09-04', expect.any(AbortSignal))
+  const signal = availability.mock.calls[0][3]!
+  await choose('База обліку договору', 'AMG')
+  expect(signal.aborted).toBe(true)
+  await act(async () => finish(true))
+  expect(screen.queryByText(/Повна публікація доступна/)).toBeNull()
+})
+
+it('shows unavailable coverage without presenting an unverified agreement as ready', async () => {
+  lookup.mockResolvedValue([agreement]); availability.mockResolvedValue(false)
+  render(<Harness initial={scope} onChange={vi.fn()} />)
+  expect(availability).not.toHaveBeenCalled()
+  fireEvent.click(screen.getByRole('button', { name: 'Перевірити покриття періоду' }))
+  expect(await screen.findByText(/немає повної чинної публікації/)).toBeTruthy()
+  expect(screen.queryByText(/Повна публікація доступна/)).toBeNull()
+})
 async function choose(label: string, option: string | RegExp) {
   fireEvent.click(screen.getByRole('combobox', { name: label }))
   const item = await screen.findByRole('option', { name: option })

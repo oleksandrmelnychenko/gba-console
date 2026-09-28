@@ -1,12 +1,26 @@
 import { beforeEach, expect, it, vi } from 'vitest'
 import { apiRequest } from '../../../shared/api/apiClient'
-import { getSettlementPeriodAgreements } from './settlementPeriodApi'
-import { settlementPeriodAgreement as agreement } from '../data/settlementPeriod.test-fixtures'
+import { getSettlementPeriodAgreements, getSettlementPeriodAvailability } from './settlementPeriodApi'
+import { settlementPeriodAgreement as agreement, settlementPeriodScope as scope } from '../data/settlementPeriod.test-fixtures'
 import type { SettlementNativeFamily, SettlementSourceWorld } from '../data/settlementPeriod'
 
 vi.mock('../../../shared/api/apiClient', () => ({ apiRequest: vi.fn() }))
 const api = vi.mocked(apiRequest)
 beforeEach(() => api.mockReset())
+
+it('checks only an exact closed period and accepts only a Boolean coverage signal', async () => {
+  const controller = new AbortController()
+  api.mockResolvedValueOnce({ Available: true })
+  await expect(getSettlementPeriodAvailability(scope, '2026-09-03', '2026-09-04', controller.signal)).resolves.toBe(true)
+  expect(api).toHaveBeenCalledWith('/report/datasets/41/availability', {
+    query: { sourceWorld: 'Fenix', nativeFamily: 'ClientAgreement', agreementId: scope.AgreementId,
+      agreementNetUid: scope.AgreementNetUid, from: '2026-09-03', to: '2026-09-04' }, signal: controller.signal,
+  })
+  api.mockResolvedValueOnce({ Available: 1 })
+  await expect(getSettlementPeriodAvailability(scope, '2026-09-03', '2026-09-04')).rejects.toThrow('стан покриття')
+  await expect(getSettlementPeriodAvailability(scope, '2026-09-31', '2026-10-01')).rejects.toThrow('період')
+  expect(api).toHaveBeenCalledTimes(2)
+})
 
 it.each(['Fenix', 'Amg'] as const)('reads bounded %s exact IDs without numeric conversion and passes cancellation', async world => {
   const controller = new AbortController()
