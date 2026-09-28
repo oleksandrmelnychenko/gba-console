@@ -52,18 +52,19 @@ it('refuses a saved selected-manager variant before replacing an existing ordina
   expect(createStockReport).not.toHaveBeenCalled()
 })
 
-it('offers manager only after paired server capability and transports the source reference exactly',async()=>{
-  const user=userEvent.setup(),reference='ABCDEF1234567890ABCDEF1234567890'
-  const enabled={...dataset,currentVparivanie:{...dataset.currentVparivanie as object,ManagerFilterSupported:true},Filters:dataset.Filters.map(f=>f.Type===60?{...f,Selectable:true}:f)}
+it.each([{reference:'ABCDEF1234567890ABCDEF1234567890',empty:false},{reference:'0'.repeat(32),empty:true}])(
+'offers manager only after paired server capability and transports its exact reference: $reference',async({reference,empty})=>{
+  const user=userEvent.setup(),caption=empty?'Без основного менеджера покупця':'Source manager'
+  const enabled={...dataset,currentVparivanie:{...dataset.currentVparivanie as object,ManagerFilterSupported:true,...(empty?{ManagerUnassignedFilterSupported:true}:{})},Filters:dataset.Filters.map(f=>f.Type===60?{...f,Selectable:true}:f)}
   vi.mocked(getReportDatasets).mockResolvedValue([...reportDatasets,enabled])
-  vi.mocked(searchDatasetReportValues).mockImplementation(async(_source,field)=>field===60?[{Id:reference,Name:'Source manager'}]:[{Id:'9223372036854775807',Name:'Synthetic group'}])
+  vi.mocked(searchDatasetReportValues).mockImplementation(async(_source,field)=>field===60?[{Id:reference,Name:caption}]:[{Id:'9223372036854775807',Name:'Synthetic group'}])
   const {container}=render(<Providers><ReportsStocksPage /></Providers>)
   await screen.findByRole('button',{name:'Продажі за днями'})
   fireEvent.click(screen.getByRole('combobox',{name:'Набір даних звіту'}));fireEvent.click(await screen.findByRole('option',{name:dataset.Name}))
   fireEvent.change(screen.getByLabelText('Від'),{target:{value:'2026-09-12'}});fireEvent.change(screen.getByLabelText('До'),{target:{value:'2026-09-12'}})
   expect(screen.queryByText(/Менеджер покупця поки недоступний/)).toBeNull()
   expect(screen.getByText(/Менеджер покупця з 1С/)).toBeTruthy()
-  for(const [field,name] of [[4,'Synthetic group'],[60,'Source manager']] as const){
+  for(const [field,name] of [[4,'Synthetic group'],[60,caption]] as const){
     fireEvent.click(screen.getByRole('button',{name:'Додати умову'}));const dialog=screen.getByRole('dialog',{name:'Додати умову відбору'})
     fireEvent.click(within(dialog).getByRole('combobox',{name:'Поле'}));fireEvent.click(await screen.findByRole('option',{name:`Фільтр ${field}`}))
     if(field===60)expect((within(dialog).getByRole('combobox',{name:'Умова'}) as HTMLInputElement).value).toBe('Дорівнює')

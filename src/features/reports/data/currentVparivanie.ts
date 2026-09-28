@@ -2,6 +2,7 @@ import type { ReportDataset, ReportFilterCondition, ReportRequestBody } from '..
 import { revenueExactId } from './revenueComparison'
 
 export const CURRENT_VPARIVANIE_SOURCE = 39
+export const CURRENT_VPARIVANIE_UNASSIGNED_MANAGER = '00000000000000000000000000000000'
 export const CURRENT_VPARIVANIE_TITLE = 'Впарювання: поточні залишки та продажі GBA'
 export const CURRENT_VPARIVANIE_PRODUCT_FIELDS = ['Article', 'Name', 'Description', 'Group', 'OE', 'Size', 'Top'] as const
 export const CURRENT_VPARIVANIE_PRODUCT_CAPTIONS = ['Артикул', 'Наименование', 'Описание', 'Группа', 'OE', 'Размер', 'Топ'] as const
@@ -32,16 +33,18 @@ export function isCurrentVparivanieCapability(value: unknown): boolean {
     && value.MaximumWarehouses === 32 && same(value.ProductDisplayColumns, CURRENT_VPARIVANIE_PRODUCT_FIELDS)
     && same(value.FixedRowGroupings, [5]) && same(value.FixedColumnGroupings, [74, 75])
     && same(value.FixedMeasurements, [83]) && typeof value.ManagerFilterSupported === 'boolean'
+    && (value.ManagerUnassignedFilterSupported === undefined || typeof value.ManagerUnassignedFilterSupported === 'boolean')
+    && (value.ManagerUnassignedFilterSupported !== true || value.ManagerFilterSupported === true)
     && value.UnknownQuantity === 'null' && value.MixedUnits === 'null'
     && value.HistoricalStockSupported === false && value.HistoricalXlsParityVerified === false
     && (value.CounterpartyIdentity === undefined || value.CounterpartyIdentity === CURRENT_VPARIVANIE_COUNTERPARTY_IDENTITY)
 }
 
-/** Source references remain bytes encoded as hex; they are never native User IDs. */
+/** Exact reference syntax, including Users.EmptyRef; server capability separately gates empty-manager use. */
 export function currentVparivanieManagerReference(raw: unknown): string | null {
   return record(raw) && typeof raw.Id === 'string' && /^[a-f\d]{32}$/i.test(raw.Id)
     && Object.keys(raw).filter(key => key.toLowerCase() === 'id').join(',') === 'Id'
-    && !/^0{32}$/.test(raw.Id) ? raw.Id.toUpperCase() : null
+    ? raw.Id.toUpperCase() : null
 }
 
 export function currentVparivanieManagerSupported(dataset: ReportDataset): boolean {
@@ -101,6 +104,9 @@ export function currentVparivanieConfigurationError(data: ReportRequestBody, dat
       || selection.Values.length < 1 || selection.Values.length > max
       || (condition === 0 && selection.Values.length !== 1)) return invalid
     const ids = selection.Values.map(item => field === 60 ? currentVparivanieManagerReference(item?.Data) : revenueExactId(item?.Data))
+    if (field === 60 && ids.includes(CURRENT_VPARIVANIE_UNASSIGNED_MANAGER) && dataset
+      && (!record(dataset.currentVparivanie) || dataset.currentVparivanie.ManagerUnassignedFilterSupported !== true))
+      return 'Сервер не підтвердив відбір покупців без основного менеджера.'
     if (ids.some(id => id === null) || new Set(ids).size !== ids.length
       || selection.Values.some(item => item.Value !== undefined && (!Number.isInteger(item.Value)
         || item.Value < -2147483648 || item.Value > 2147483647))

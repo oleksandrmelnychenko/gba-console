@@ -23,7 +23,7 @@ it('allows exact current source-manager syntax without dataset and rejects old a
  expect(currentVparivanieConfigurationError(request, legacy)).toContain('поки недоступний')
  expect(currentVparivanieManagerReference({ Id: reference.toLowerCase() })).toBe(reference)
 })
-it.each([null, undefined, 123, true, '', '0'.repeat(32), 'A'.repeat(31), 'A'.repeat(33), '0x'+reference, 'G'.repeat(32),
+it.each([null, undefined, 123, true, '', 'A'.repeat(31), 'A'.repeat(33), '0x'+reference, 'G'.repeat(32),
  'ABCDEF12-3456-7890-ABCD-EF1234567890', ' '+reference, reference+' '])('rejects nonexact manager identity %#', Id => {
  expect(currentVparivanieManagerReference({ Id })).toBeNull()
  const request = { ...currentVparivanieRequest(), selections: [exactSelection(1), manager()] }
@@ -44,4 +44,21 @@ it('describes only actual enabled source-manager customer-arm semantics', () => 
  expect(currentVparivanieNotice()).toContain('поки недоступний')
  expect(currentVparivanieNotice(true)).toContain('Менеджер покупця з 1С (Fenix) впливає лише на колонки контрагентів')
  expect(currentVparivanieNotice(true)).not.toContain('поки недоступний')
+})
+
+it('gates EmptyRef independently and preserves old named-manager capability', () => {
+ const empty = '0'.repeat(32)
+ const request = { ...currentVparivanieRequest(), selections: [exactSelection(1), manager(empty)] }
+ const supported = { ...enabled, currentVparivanie: { ...enabled.currentVparivanie, ManagerUnassignedFilterSupported: true } }
+ expect(currentVparivanieManagerReference({ Id: empty })).toBe(empty)
+ expect(currentVparivanieConfigurationError(request)).toBeNull() // Saved syntax requires no invented current capability.
+ expect(currentVparivanieConfigurationError(request, supported)).toBeNull()
+ for (const old of [enabled, { ...enabled, currentVparivanie: { ...enabled.currentVparivanie, ManagerUnassignedFilterSupported: false } }]) {
+  expect(currentVparivanieConfigurationError(request, old)).toContain('без основного менеджера')
+  expect(currentVparivanieConfigurationError({ ...request, selections: [exactSelection(1), manager()] }, old)).toBeNull()
+ }
+ for (const value of ['true', 1, null]) {
+  expect(isCurrentVparivanieDataset({ ...enabled, currentVparivanie: { ...enabled.currentVparivanie, ManagerUnassignedFilterSupported: value } })).toBe(false)
+ }
+ expect(isCurrentVparivanieDataset({ ...legacy, currentVparivanie: { ...legacy.currentVparivanie as object, ManagerUnassignedFilterSupported: true } })).toBe(false)
 })
