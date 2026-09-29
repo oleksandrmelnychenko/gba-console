@@ -237,7 +237,7 @@ function BuyerPriceTypeEvidenceSection({ structure, t }: ClientCommercialStructu
     <section className="client-buyer-price-types" aria-label={t('Типи цін покупця з договорів Fenix')}>
       <Text className="app-section-title">{t('Типи цін покупця з договорів Fenix')}</Text>
       <Text c="dimmed" size="xs">
-        {t('Локальний зріз з нашої бази за відкритою карткою. Це не виконання конструктора звіту 1С.')}
+        {t('Поточні типи цін із синхронізованих договорів відкритого клієнта.')}
       </Text>
       {evidence.state !== 'ready' ? (
         <Alert color={evidence.state === 'incomplete' ? 'orange' : 'blue'} variant="light">
