@@ -31,8 +31,10 @@ beforeEach(() => {
 it('selects the completed Kyiv day, one exact leg and submits only fixed account-currency period scope', async () => {
   const { container } = render(<MantineProvider env="test"><I18nProvider><ReportsStocksPage /></I18nProvider></MantineProvider>)
   await screen.findByRole('button', { name: 'Продажі за днями' })
-  fireEvent.click(screen.getByRole('combobox', { name: 'Набір даних звіту' }))
-  fireEvent.click(await screen.findByRole('option', { name: cashPeriodDataset.Name }))
+  fireEvent.click(screen.getByText('Часткові форми за зразками Excel'))
+  fireEvent.click(screen.getByRole('button', { name: 'Відкрити часткову форму: Рух коштів за період' }))
+  expect((screen.getByRole('combobox', { name: 'Набір даних звіту' }) as HTMLInputElement).value).toBe(cashPeriodDataset.Name)
+  expect(screen.getAllByText(/Ведомость по денежным средствам.xls: Часткова форма Excel/).length).toBeGreaterThan(0)
   expect((screen.getByLabelText('Від') as HTMLInputElement).value).toBe(previousKyivDay(formatKyivBusinessDate()))
   expect((screen.getByLabelText('До') as HTMLInputElement).value).toBe(previousKyivDay(formatKyivBusinessDate()))
   fireEvent.click(await screen.findByRole('combobox', { name: 'Рахунок і власна валюта' }))

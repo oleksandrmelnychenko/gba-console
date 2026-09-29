@@ -3,6 +3,7 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import type { ReactNode } from 'react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { I18nProvider } from '../../../shared/i18n/I18nProvider'
+import { ApiError } from '../../../shared/api/apiClient'
 import { createStockReport } from '../api/reportsApi'
 import { getReportDatasets, getServerReportTemplates, saveServerReportTemplate } from '../api/reportWorkspaceApi'
 import { defaultDatasetRequest } from '../data/reportDatasets'
@@ -43,7 +44,7 @@ const supplierDataset: ReportDataset = {
   PeriodRequired: true, PeriodSupported: true,
   Groupings: [73, 4, 21].map(Type => ({ Type, Name: `Група ${Type}` })),
   Measurements: [0, 2, 3, 4, 6, 7, 8, 10, 12, 14].map(Type => ({ Type, Name: `Показник ${Type}` })),
-  Filters: [0, 17].map(Type => ({ Type, Name: `Фільтр ${Type}` })),
+  Filters: [0, 1, 17].map(Type => ({ Type, Name: `Фільтр ${Type}` })),
   supplierSourceWorld: { Version: 1, SourceWorlds: [0, 1], RequiresCompletePeriodLineage: true },
   sourceBuyerSubtree: dayDataset.sourceBuyerSubtree,
   Limitations: [],
@@ -133,6 +134,59 @@ describe('exact Fenix filters in the report constructor', () => {
         OrganizationIds: [...DAY_ORGANIZATION_SAVED_ORGANIZATION_IDS] },
       sourceBuyerSubtree: { Version: 1, SourceWorld: 'fenix', BuyerRootId: FENIX_BUYERS_ROOT_ID },
     })
+  })
+
+  it('explains a 409 without an authored message as missing coverage for day profit', async () => {
+    vi.mocked(getReportDatasets).mockResolvedValue([...reportDatasets, dayDataset])
+    vi.mocked(createStockReport).mockResolvedValueOnce({ document: { DocumentURL: '/files/previous.xlsx' }, raw: {} })
+      .mockRejectedValueOnce(new ApiError('Не вдалося виконати запит', 409, null))
+    const { container } = await ready()
+    fireEvent.click(screen.getByRole('combobox', { name: 'Набір даних звіту' }))
+    fireEvent.click(await screen.findByRole('option', { name: dayDataset.Name }))
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Товар без послуг (Fenix)' }))
+    fireEvent.click(screen.getByRole('checkbox', { name: 'П’ять організацій зі збереженого налаштування 1С' }))
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Група «Покупці» Fenix' }))
+    expect((screen.getByRole('button', { name: 'Сформувати' }) as HTMLButtonElement).disabled).toBe(false)
+    fireEvent.submit(container.querySelector('form')!)
+    await waitFor(() => expect(createStockReport).toHaveBeenCalledOnce())
+    await screen.findByRole('dialog')
+    fireEvent.submit(container.querySelector('form')!)
+
+    await waitFor(() => expect(screen.getAllByRole('alert').some(node =>
+      node.textContent?.includes('Сервер не підтвердив повноту даних для цього звіту'))).toBe(true))
+    expect(screen.queryByText('Не вдалося виконати запит')).toBeNull()
+    expect(screen.queryByRole('dialog')).toBeNull()
+  })
+
+  it('preserves the server coverage explanation when the 409 has a Message', async () => {
+    vi.mocked(getReportDatasets).mockResolvedValue([...reportDatasets, dayDataset])
+    const reason = 'Період звіту 1С ще не завантажено повністю для цих відборів.'
+    vi.mocked(createStockReport).mockRejectedValue(new ApiError(reason, 409, { Message: reason }))
+    const { container } = await ready()
+    fireEvent.click(screen.getByRole('combobox', { name: 'Набір даних звіту' }))
+    fireEvent.click(await screen.findByRole('option', { name: dayDataset.Name }))
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Товар без послуг (Fenix)' }))
+    fireEvent.click(screen.getByRole('checkbox', { name: 'П’ять організацій зі збереженого налаштування 1С' }))
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Група «Покупці» Fenix' }))
+    expect((screen.getByRole('button', { name: 'Сформувати' }) as HTMLButtonElement).disabled).toBe(false)
+    fireEvent.submit(container.querySelector('form')!)
+
+    await waitFor(() => expect(screen.getAllByRole('alert').some(node =>
+      node.textContent?.includes(reason))).toBe(true))
+    expect(screen.queryByText(/Сервер не підтвердив повноту даних для цього звіту/)).toBeNull()
+  })
+
+  it('shows the exact authored supplier return refusal without an export file', async () => {
+    vi.mocked(getReportDatasets).mockResolvedValue([...reportDatasets, supplierDataset])
+    const refusal = 'За період є повернення продажів; прибуток за постачальниками без підтвердженої обробки повернень не сформовано.'
+    vi.mocked(createStockReport).mockRejectedValue(new ApiError(refusal, 400, { Message: refusal }))
+    const { container } = await ready()
+    fireEvent.click(screen.getByRole('combobox', { name: 'Набір даних звіту' }))
+    fireEvent.click(await screen.findByRole('option', { name: supplierDataset.Name }))
+    fireEvent.submit(container.querySelector('form')!)
+
+    expect(await screen.findByText(refusal)).toBeTruthy()
+    expect(screen.queryByRole('dialog')).toBeNull()
   })
 
   it('sends the exact Buyers subtree with Fenix for supplier gross profit', async () => {

@@ -12,6 +12,8 @@ import { revenueDataset } from './revenueComparison.test-fixtures'
 import { salesXyzDataset } from './salesXyz.test-fixtures'
 import { priceTypeSalesComparisonDataset } from './priceTypeSalesComparison.test-fixtures'
 import { accountBalanceDataset } from './accountBalances.test-fixtures'
+import { cashPeriodDataset } from './cashPeriod.test-fixtures'
+import { settlementPeriodDataset } from './settlementPeriod.test-fixtures'
 import { importedPaymentsDataset } from './importedPayments.test-fixtures'
 import { datasetConfigurationError } from './reportDatasets'
 
@@ -43,9 +45,21 @@ function data(catalogue: ReportCatalogue, dataset: ReportDataset) {
 
 describe('exact named catalogue launches', () => {
   it.each([
+    ['builtin:ВедомостьДенежныеСредства', '977cb58d-ff0b-46b7-90fd-124a560ec6ff', accountBalanceDataset, cashPeriodDataset],
+    ['builtin:ВедомостьВзаиморасчетыСКонтрагентами', '8fde42fc-6e49-4a8e-9096-74bbe14fe901', currentDebtDataset, settlementPeriodDataset],
+  ])('keeps the old %s source proof on the current-state slice, distinct from the XLS period form', (reportId, sourceId, current, periodDataset) => {
+    const catalogue = fixture([reportId, sourceId], [current.DataSource], ['fenix'])
+    const options = catalogueLaunchOptions(catalogue, reportId, [current, periodDataset])
+    expect(options.map(option => option.choice.dataSource)).toEqual([current.DataSource])
+    expect(options[0].label).toContain('Поточний стан')
+    expect(options[0].notice).toContain('без початку, рухів і кінця за період')
+    expect(options[0].notice).toContain('Часткове покриття GBA')
+  })
+
+  it.each([
     ['builtin:ВаловаяПрибыль', '65fb1537-c992-4962-9f97-5d9f96b9a034', 35, [3, 4], [2, 3, 4, 6, 7, 8, 10, 12, 14, 15], [0, 1, 2, 6, 9]],
     ['builtin:ОтчетВпаривание', '069dfc76-74b6-491d-b039-f7fb54e0ea81', 36, [5], [80, 81, 82], [1, 5]],
-    ['builtin:ВаловаяПрибыльПоПоставщикам', 'f84e7b02-b6fe-40ca-bc7f-ea508d6ec41a', 38, [73, 4, 21], [0, 2, 3, 4, 6, 7, 8, 10, 12, 14], [0, 17]],
+    ['builtin:ВаловаяПрибыльПоПоставщикам', 'f84e7b02-b6fe-40ca-bc7f-ea508d6ec41a', 38, [73, 4, 21], [0, 2, 3, 4, 6, 7, 8, 10, 12, 14], [0, 1, 17]],
   ] as const)('opens bounded BUG-1274 Fenix native slice %s with its exact groups', (reportId, sourceId, source, rows, measures, filters) => {
     const dataset: ReportDataset = { DataSource: source, Name: reportId, Description: 'Зріз GBA',
       PeriodRequired: true, PeriodSupported: true, Limitations: [],

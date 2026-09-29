@@ -45,6 +45,24 @@ describe('reportsApi', () => {
       .rejects.toThrow('некоректні значення')
   })
 
+  it('keeps supplier batch Product lookup Int64 IDs as exact strings', async () => {
+    const params = { limit: 30, offset: 0, value: ' ISS1012LSLH ' }
+    apiRequestMock.mockResolvedValueOnce([{ Id: '35430089', Name: 'ISS1012LSLH [35430089]' }])
+    await expect(searchDatasetReportValues(38, 1, params))
+      .resolves.toEqual([{ Id: '35430089', Name: 'ISS1012LSLH [35430089]' }])
+    expect(apiRequestMock).toHaveBeenLastCalledWith('/report/datasets/lookup', {
+      query: { dataSource: 38, field: 1, value: 'ISS1012LSLH', offset: 0, limit: 30 },
+      signal: undefined,
+    })
+    apiRequestMock.mockResolvedValueOnce([{ Id: '9223372036854775807', Name: 'Exact high ID' }])
+    await expect(searchDatasetReportValues(38, 1, { ...params, value: '' }))
+      .resolves.toEqual([{ Id: '9223372036854775807', Name: 'Exact high ID' }])
+    apiRequestMock.mockResolvedValueOnce([{ Id: 9007199254740992, Name: 'Rounded ID' }])
+    await expect(searchDatasetReportValues(38, 1, params)).rejects.toThrow('некоректні значення')
+    apiRequestMock.mockResolvedValueOnce([{ Id: '0', Name: 'Zero ID' }])
+    await expect(searchDatasetReportValues(38, 1, params)).rejects.toThrow('некоректні значення')
+  })
+
   it('uses the dedicated valuation agreement catalogue with exact Id, independent of stock ownership', async () => {
     const signal = new AbortController().signal
     apiRequestMock.mockResolvedValue([{ Id: 459018, Name: 'Клієнт · Договір [459018]' }])

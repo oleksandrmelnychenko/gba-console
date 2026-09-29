@@ -100,6 +100,7 @@ import { useReportDatasets } from '../hooks/useReportDatasets'
 import { usesNativeReportLookup, supportsFullReportDateRange, hasFixedReportAxes, nativeReportMeasurementUnit } from '../data/nativeReportProfiles'
 import { CURRENT_VPARIVANIE_NOTICE, currentVparivanieFilterConditions, currentVparivanieNotice } from '../data/currentVparivanie'
 import { previousKyivDay } from '../data/cashPeriod'
+import { availableBug1274WorkbookLaunches } from '../data/bug1274WorkbookLaunch'
 import { CashPeriodLegPicker } from './CashPeriodLegPicker'
 import { SettlementPeriodAgreementPicker } from './SettlementPeriodAgreementPicker'
 import { GroupedDebtorWorkbookPanel } from './GroupedDebtorWorkbookPanel'
@@ -648,6 +649,8 @@ function ReportsStocksWorkspace({ ownerId, constructorMode }: { ownerId: string 
     if (preset) groupingOrdering.applyPreset(preset, next => applyConfiguration(next, dataset))
   }
 
+  const workbookLaunches = availableBug1274WorkbookLaunches(datasetStorage.datasets)
+
   if (canGenerateReport && ownerId && workspaceDraft.recovery !== 'none') {
     return <ReportDraftRecoveryPanel savedAt={workspaceDraft.savedAt}
       loading={!datasetStorage.loaded && !datasetStorage.error}
@@ -679,6 +682,19 @@ function ReportsStocksWorkspace({ ownerId, constructorMode }: { ownerId: string 
         </Button>
       </Group>
       </div>
+      {!constructorMode && canGenerateReport && datasetStorage.loaded && !datasetStorage.error && workbookLaunches.length > 0
+        ? <details className="app-section-card">
+          <summary>{t('Часткові форми за зразками Excel')}</summary>
+          <Stack gap="xs" p="sm">{workbookLaunches.map(item =>
+            <Group key={item.fileName} justify="space-between" align="start" wrap="wrap">
+              <Text size="sm">{item.fileName} · {t(item.notice)}</Text>
+              <Button type="button" size="xs" variant="light" disabled={isLoading}
+                onClick={() => {
+                  changeDataset(item.dataset)
+                  setCatalogueNotice({ text: `${item.fileName}: ${item.notice}`, failed: false })
+                }}>{t('Відкрити часткову форму: {name}', { name: item.label })}</Button>
+            </Group>)}</Stack>
+        </details> : null}
       <AppModal opened={oneCReportOpen} title={t('Валовий прибуток — як у 1С')} size={960}
         onClose={() => { if (!oneCReportGenerating) setOneCReportOpen(false) }}
         closeOnClickOutside={!oneCReportGenerating} closeOnEscape={!oneCReportGenerating}
@@ -2340,6 +2356,16 @@ function describeReportError(error: unknown, t: TranslateFunction): string {
 
     if (error.status >= 500) {
       return t('Сервер звітів недоступний. Спробуйте ще раз пізніше.')
+    }
+
+    // Report generation uses 409 for missing accepted source coverage. The API
+    // client supplies a generic Cyrillic fallback when the response has no
+    // Message; do not mistake that fallback for an authored server explanation.
+    if (error.status === 409) {
+      const payload = error.payload
+      const authored = payload && typeof payload === 'object' && 'Message' in payload
+        && typeof payload.Message === 'string' && isAuthoredServerMessage(payload.Message)
+      return authored ? error.message : t('Сервер не підтвердив повноту даних для цього звіту. Звіт і файли не сформовано; після синхронізації потрібних даних повторіть запит.')
     }
 
     if (isAuthoredServerMessage(error.message)) {

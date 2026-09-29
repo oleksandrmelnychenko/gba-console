@@ -31,12 +31,16 @@ function validDate(value: string): boolean {
   return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === value
 }
 
+export function isDayOrganizationGrossProfitDataset(dataset: ReportDataset): boolean {
+  return dataset.DataSource === DAY_ORGANIZATION_GROSS_PROFIT_SOURCE && dataset.PeriodRequired === true
+    && dataset.PeriodSupported === true && dataset.Groupings.map(field => field.Type).join(',') === '3,4'
+    && dataset.Measurements.map(field => field.Type).join(',') === measures.join(',')
+    && dataset.Filters.map(field => field.Type).join(',') === '0,1,2,6,9'
+}
+
 export function dayOrganizationGrossProfitConfigurationError(data: ReportRequestBody, dataset?: ReportDataset): string | null {
   if (data.dataSource !== DAY_ORGANIZATION_GROSS_PROFIT_SOURCE) return null
-  if (dataset && (dataset.DataSource !== DAY_ORGANIZATION_GROSS_PROFIT_SOURCE || dataset.PeriodRequired !== true
-    || dataset.PeriodSupported !== true || dataset.Groupings.map(field => field.Type).join(',') !== '3,4'
-    || dataset.Measurements.map(field => field.Type).join(',') !== measures.join(',')
-    || dataset.Filters.map(field => field.Type).join(',') !== '0,1,2,6,9'))
+  if (dataset && !isDayOrganizationGrossProfitDataset(dataset))
     return 'Сервер не підтвердив набір валового прибутку GBA за днем.'
   if (!validDate(data.from) || !validDate(data.to) || data.from > data.to) return 'Оберіть один коректний період валового прибутку GBA.'
   if ((Date.parse(`${data.to}T00:00:00Z`) - Date.parse(`${data.from}T00:00:00Z`)) / 86400000 >= 31)

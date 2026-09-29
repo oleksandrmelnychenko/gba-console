@@ -162,12 +162,17 @@ function validatedCatalogue(value: unknown) {
 }
 function description(registration: Registration, report: ReportCatalogueEntry, dataset: ReportDataset): Omit<CatalogueLaunchOption, 'choice'> {
   const profile = getNativeReportProfile(dataset.DataSource)
+  const currentOnly = report.Id === 'builtin:ВедомостьДенежныеСредства' && dataset.DataSource === 11
+    ? 'Це лише поточний залишок рахунків, без початку, рухів і кінця за період. Часткова періодна форма Excel доступна окремо в GBA.'
+    : report.Id === 'builtin:ВедомостьВзаиморасчетыСКонтрагентами' && dataset.DataSource === 10
+      ? 'Це лише поточний борг, без початку, рухів і кінця за період. Часткова форма за одним договором доступна окремо в GBA.'
+      : ''
   const variant = registration.mode === 'return-only' ? 'Лише повернення · кількість' : registration.mode === 'incoming' ? 'Надходження' : registration.mode === 'outgoing' ? 'Виплати'
     : registration.mode === 'new' ? 'Частка продажів новим покупцям' : registration.mode === 'repeat' ? 'Частка повторних продажів'
       : registration.mode === 'reserve' && dataset.DataSource === 4 ? 'Записаний резерв за складами'
         : registration.mode === 'daily' ? 'Таблиця за днями' : registration.mode === 'monthly' ? 'Таблиця за місяцями' : ''
   const nativeTitle = profile?.title ?? dataset.Name
-  const label = variant ? `${variant} · ${nativeTitle}` : nativeTitle
+  const label = currentOnly ? `Поточний стан · ${nativeTitle}` : variant ? `${variant} · ${nativeTitle}` : nativeTitle
   const required = dataset.DataSource === 19 ? ' Виберіть точну серію курсу та дві дати.'
     : [13, 16, 17, 18, 20, 21].includes(dataset.DataSource) ? ' Задайте окремий період порівняння.'
       : dataset.DataSource === 15 ? ' Перевірте повні закриті місяці, кількість періодів і межі XYZ.'
@@ -177,7 +182,7 @@ function description(registration: Registration, report: ReportCatalogueEntry, d
   return { title: report.Title, label,
     notice: registration.mode === 'return-only'
       ? `Готові налаштування «${report.Title}»: додатна кількість записаних повернень за клієнтом, товаром і днем. Причина, коментар, сума одиничних цін і відповідність проведенню 1С не підтверджені.`
-      : `Готові налаштування «${report.Title}»: ${label}. ${profile?.preset.description ?? dataset.Description} Часткове покриття GBA; повна відповідність первинному звіту не підтверджена.${required}` }
+      : `Готові налаштування «${report.Title}»: ${label}. ${profile?.preset.description ?? dataset.Description} ${currentOnly ? `${currentOnly} ` : ''}Часткове покриття GBA; повна відповідність первинному звіту не підтверджена.${required}` }
 }
 function findLaunch(catalogue: ReportCatalogue, inspection: ReturnType<typeof inspectCatalogueMigration>, choice: CatalogueLaunchChoice,
   datasets: readonly ReportDataset[]) {
