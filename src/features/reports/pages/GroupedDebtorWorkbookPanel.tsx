@@ -3,6 +3,8 @@ import { Alert, Button, Card, Group, Stack, Table, Text } from '@mantine/core'
 import { getGroupedDebtorCapability, getGroupedDebtorStatement } from '../api/groupedDebtorApi'
 import { formatGroupedDebtorMoney, GROUPED_DEBTOR_ROOT,
   type GroupedDebtorCapability, type GroupedDebtorStatement } from '../data/groupedDebtor'
+import { downloadGroupedDebtorPdf, downloadGroupedDebtorXlsx } from '../data/downloadGroupedDebtor'
+import { GROUPED_DEBTOR_DRAFT_LABEL } from '../data/groupedDebtorExport'
 import { validSettlementPeriodDays } from '../data/settlementPeriod'
 
 export function GroupedDebtorWorkbookPanel({ from, to, enabled, disabled }: {
@@ -24,6 +26,7 @@ function GroupedDebtorWorkbookBody({ from, to, enabled, disabled }: {
   const [capability, setCapability] = useState<GroupedDebtorCapability | null>(null)
   const [statement, setStatement] = useState<GroupedDebtorStatement | null>(null)
   const [loading, setLoading] = useState(false)
+  const [exporting, setExporting] = useState<'xlsx' | 'pdf' | null>(null)
   const [error, setError] = useState<string | null>(null)
   const active = useRef<AbortController | null>(null)
   useEffect(() => {
@@ -58,6 +61,19 @@ function GroupedDebtorWorkbookBody({ from, to, enabled, disabled }: {
     }
   }
 
+  async function download(format: 'xlsx' | 'pdf') {
+    if (!statement || !ready || !enabled || disabled || loading || exporting) return
+    setExporting(format); setError(null)
+    try {
+      if (format === 'xlsx') await downloadGroupedDebtorXlsx(statement)
+      else await downloadGroupedDebtorPdf(statement)
+    } catch {
+      setError(`Не вдалося завантажити ${format.toUpperCase()}. Спробуйте ще раз.`)
+    } finally {
+      setExporting(null)
+    }
+  }
+
   return <Card className="app-section-card" withBorder radius="md" padding="md" style={{ minWidth: 0 }}>
     <Stack gap="xs">
       <Text fw={600}>Дебіторка · усі покупці</Text>
@@ -69,6 +85,18 @@ function GroupedDebtorWorkbookBody({ from, to, enabled, disabled }: {
       <Group><Button size="xs" variant="light" loading={loading}
         disabled={!ready || !enabled || disabled || !validSettlementPeriodDays(from, to)}
         onClick={() => void run()}>Сформувати повну дебіторку</Button></Group>
+      {statement ? <>
+        <Text size="xs" c="dimmed">{GROUPED_DEBTOR_DRAFT_LABEL}. Файли містять поточний зріз;
+          точна форма книги 1С ще не підтверджена.</Text>
+        <Group gap="xs">
+          <Button size="xs" variant="light" loading={exporting === 'xlsx'}
+            disabled={!ready || !enabled || disabled || loading || !!exporting}
+            onClick={() => void download('xlsx')}>Завантажити XLSX · чернетка</Button>
+          <Button size="xs" variant="light" loading={exporting === 'pdf'}
+            disabled={!ready || !enabled || disabled || loading || !!exporting}
+            onClick={() => void download('pdf')}>Завантажити PDF · чернетка</Button>
+        </Group>
+      </> : null}
       {statement ? <div style={{ overflowX: 'auto' }}><Table striped highlightOnHover>
         <Table.Thead><Table.Tr><Table.Th>Організація / контрагент</Table.Th><Table.Th>Валюта</Table.Th>
           <Table.Th>Початок</Table.Th><Table.Th>Надходження</Table.Th>

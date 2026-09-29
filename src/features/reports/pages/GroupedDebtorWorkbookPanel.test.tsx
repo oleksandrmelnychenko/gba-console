@@ -3,10 +3,14 @@ import { MantineProvider } from '@mantine/core'
 import { beforeEach, expect, it, vi } from 'vitest'
 import { getGroupedDebtorCapability, getGroupedDebtorStatement } from '../api/groupedDebtorApi'
 import { GROUPED_DEBTOR_ROOT } from '../data/groupedDebtor'
+import { downloadGroupedDebtorPdf, downloadGroupedDebtorXlsx } from '../data/downloadGroupedDebtor'
 import { GroupedDebtorWorkbookPanel } from './GroupedDebtorWorkbookPanel'
 
 vi.mock('../api/groupedDebtorApi', () => ({
   getGroupedDebtorCapability: vi.fn(), getGroupedDebtorStatement: vi.fn(),
+}))
+vi.mock('../data/downloadGroupedDebtor', () => ({
+  downloadGroupedDebtorPdf: vi.fn(), downloadGroupedDebtorXlsx: vi.fn(),
 }))
 
 const capability = vi.mocked(getGroupedDebtorCapability)
@@ -23,6 +27,8 @@ it('keeps the full workbook action closed until source and parity are certified'
     enabled disabled={false} /></MantineProvider>)
   expect(await screen.findByText('Популяція неповна')).toBeTruthy()
   expect(screen.getByRole('button', { name: 'Сформувати повну дебіторку' }).hasAttribute('disabled')).toBe(true)
+  expect(screen.queryByRole('button', { name: /Завантажити XLSX/ })).toBeNull()
+  expect(screen.queryByRole('button', { name: /Завантажити PDF/ })).toBeNull()
   expect(statement).not.toHaveBeenCalled()
 })
 
@@ -48,4 +54,13 @@ it('renders organization then counterparty with separate settlement currency amo
   expect(screen.getByText('Компанія')).toBeTruthy()
   expect(screen.getByText('Покупець')).toBeTruthy()
   expect(statement).toHaveBeenCalledWith('2025-09-01', '2025-09-02', expect.any(AbortSignal))
+  expect(screen.getByText(/Чернетка на поточних даних/)).toBeTruthy()
+  fireEvent.click(screen.getByRole('button', { name: 'Завантажити XLSX · чернетка' }))
+  await waitFor(() => expect(downloadGroupedDebtorXlsx).toHaveBeenCalledWith(expect.objectContaining({
+    Rows: expect.arrayContaining([expect.objectContaining({ Closing: '110.50', CurrencyCode: '980' })]),
+  })))
+  fireEvent.click(screen.getByRole('button', { name: 'Завантажити PDF · чернетка' }))
+  await waitFor(() => expect(downloadGroupedDebtorPdf).toHaveBeenCalledWith(expect.objectContaining({
+    From: '2025-09-01', To: '2025-09-02',
+  })))
 })
