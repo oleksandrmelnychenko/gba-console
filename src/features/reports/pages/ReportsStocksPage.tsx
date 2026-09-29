@@ -102,6 +102,7 @@ import { CURRENT_VPARIVANIE_NOTICE, currentVparivanieFilterConditions, currentVp
 import { previousKyivDay } from '../data/cashPeriod'
 import { CashPeriodLegPicker } from './CashPeriodLegPicker'
 import { SettlementPeriodAgreementPicker } from './SettlementPeriodAgreementPicker'
+import { GroupedDebtorWorkbookPanel } from './GroupedDebtorWorkbookPanel'
 import { isSettlementPeriodDataset } from '../data/settlementPeriod'
 import { requiresValuationAgreement } from '../data/reportValuation'
 import { useValuationAgreement } from '../hooks/useValuationAgreement'
@@ -723,8 +724,10 @@ function ReportsStocksWorkspace({ ownerId, constructorMode }: { ownerId: string 
           (oneCSpecialSpecification(dataSource) ? defaultOneCSpecialSettings(dataSource)[oneCSpecialSpecification(dataSource)!.key] : undefined)}
           disabled={comparisonSettingsDisabled} onChange={setOneCSpecialSettings} />}
         classificationPanel={dataSource === 39 ? <CurrentVparivanieV2Panel dataset={dataset ?? null} /> : dataSource === 41 ? (dataset && isSettlementPeriodDataset(dataset)
-          ? <SettlementPeriodAgreementPicker value={settlementPeriod} from={from} to={to} disabled={comparisonSettingsDisabled}
-            enabled={canGenerateReport} onChange={setSettlementPeriod} /> : null) : dataSource === 40 ? <CashPeriodLegPicker value={cashPeriod}
+          ? <Stack gap="sm"><SettlementPeriodAgreementPicker value={settlementPeriod} from={from} to={to} disabled={comparisonSettingsDisabled}
+            enabled={canGenerateReport} onChange={setSettlementPeriod} />
+            <GroupedDebtorWorkbookPanel from={from} to={to} disabled={comparisonSettingsDisabled}
+              enabled={canGenerateReport} /></Stack> : null) : dataSource === 40 ? <CashPeriodLegPicker value={cashPeriod}
           disabled={comparisonSettingsDisabled} enabled={canGenerateReport}
           onChange={setCashPeriod} /> : dataSource === 35 ? <Card className="app-section-card" withBorder radius="md" padding="md" style={{ minWidth: 0 }}>
           <Checkbox label={t('Товар без послуг (Fenix)')}
