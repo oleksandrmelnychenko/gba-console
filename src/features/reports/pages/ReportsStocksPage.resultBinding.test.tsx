@@ -3,7 +3,7 @@ import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import type { ReactNode } from 'react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { I18nProvider } from '../../../shared/i18n/I18nProvider'
-import { createStockReport, searchValuationAgreements } from '../api/reportsApi'
+import { createStockReport, previewStockReport, searchValuationAgreements } from '../api/reportsApi'
 import { getReportDatasets, getServerReportTemplates } from '../api/reportWorkspaceApi'
 import { reportDatasets, valuationDataset } from '../data/reportDatasets.test-fixtures'
 import type { ReportResult } from '../types'
@@ -17,7 +17,7 @@ vi.mock('../../../shared/ui/document-export-modal/DocumentExportModal', () => ({
     opened ? <div role="dialog" aria-label="Файли сформованого звіту">{document?.DocumentURL}</div> : null,
 }))
 vi.mock('../api/reportsApi', async original => ({ ...await original<typeof import('../api/reportsApi')>(),
-  createStockReport: vi.fn(), searchValuationAgreements: vi.fn(),
+  createStockReport: vi.fn(), previewStockReport: vi.fn(), searchValuationAgreements: vi.fn(),
 }))
 vi.mock('../api/reportWorkspaceApi', async original => ({ ...await original<typeof import('../api/reportWorkspaceApi')>(),
   getReportDatasets: vi.fn(), getServerReportTemplates: vi.fn(),
@@ -47,6 +47,15 @@ describe('constructor result and export request identity', () => {
     vi.mocked(getReportDatasets).mockResolvedValue([...reportDatasets, valuationDataset])
     vi.mocked(getServerReportTemplates).mockResolvedValue([])
     vi.mocked(createStockReport).mockResolvedValue(file)
+    vi.mocked(previewStockReport).mockResolvedValue({ result: file, preview: {
+      Version: 1, ResultSha256: 'a'.repeat(64), PresentationOnly: true,
+      Request: null,
+      Page: { Offset: 0, Limit: 50, TotalVisibleRows: 1, ReturnedRows: 1, HasMore: false },
+      RowSchema: [{ Caption: 'Клієнт' }], ColumnSchema: [{ Caption: 'Сума' }],
+      Rows: [{ Ordinal: 0, SourceIndex: 1, Values: [{ Caption: 'Покупець А' }] }],
+      Columns: [{ Ordinal: 0, SourceIndex: 2, Values: [{ Caption: 'Продажі' }] }],
+      Cells: [{ RowSourceIndex: 1, ColumnSourceIndex: 2, Value: { Kind: 'decimal', Value: '12.50', Provenance: 'producerCell' } }],
+    } })
     vi.mocked(searchValuationAgreements).mockResolvedValue([{ Id: 42, Name: 'Договір 42' }, { Id: 43, Name: 'Договір 43' }])
   })
 
@@ -74,6 +83,19 @@ describe('constructor result and export request identity', () => {
     fireEvent.change(screen.getByLabelText('Від'), { target: { value: '2026-06-01' } })
     expect(screen.queryByRole('dialog', { name: 'Файли сформованого звіту' })).toBeNull()
     expect(screen.queryByRole('heading', { name: 'Результат' })).toBeNull()
+  })
+
+  it('shows a bounded typed result without opening files or running a second calculation', async () => {
+    await ready()
+    fireEvent.click(screen.getByRole('button', { name: 'Продажі за днями' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Показати на екрані' }))
+    expect(await screen.findByRole('cell', { name: '12.50' })).toBeTruthy()
+    expect(screen.getByRole('region', { name: 'Таблиця попереднього перегляду' })).toBeTruthy()
+    expect(vi.mocked(previewStockReport)).toHaveBeenCalledOnce()
+    expect(vi.mocked(createStockReport)).not.toHaveBeenCalled()
+    expect(screen.queryByRole('dialog', { name: 'Файли сформованого звіту' })).toBeNull()
+    fireEvent.change(screen.getByLabelText('Від'), { target: { value: '2026-06-01' } })
+    expect(screen.queryByRole('region', { name: 'Таблиця попереднього перегляду' })).toBeNull()
   })
 
   it('ignores a response completed after constructor permission was revoked', async () => {

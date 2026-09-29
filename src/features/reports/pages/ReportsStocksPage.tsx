@@ -52,6 +52,7 @@ import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { useAuth } from '../../auth/useAuth'
 import {
   createStockReport,
+  previewStockReport,
   getReportClientAgreements,
   getReportClientTypes,
   getReportOrganizations,
@@ -97,6 +98,12 @@ import './report-constructor.css'
 import { datasetConfigurationError, datasetFilters, datasetGroupings, datasetMeasurements, datasetPresetRequest, datasetPresets, defaultDatasetRequest, type DatasetReportPresetId } from '../data/reportDatasets'
 import { useReportDatasets } from '../hooks/useReportDatasets'
 import { usesNativeReportLookup, supportsFullReportDateRange, hasFixedReportAxes, nativeReportMeasurementUnit } from '../data/nativeReportProfiles'
+import { CURRENT_VPARIVANIE_NOTICE, currentVparivanieFilterConditions, currentVparivanieNotice } from '../data/currentVparivanie'
+import { previousKyivDay } from '../data/cashPeriod'
+import { CashPeriodLegPicker } from './CashPeriodLegPicker'
+import { SettlementPeriodAgreementPicker } from './SettlementPeriodAgreementPicker'
+import { GroupedDebtorWorkbookPanel } from './GroupedDebtorWorkbookPanel'
+import { isSettlementPeriodDataset } from '../data/settlementPeriod'
 import { requiresValuationAgreement } from '../data/reportValuation'
 import { useValuationAgreement } from '../hooks/useValuationAgreement'
 import { useReportRunState } from '../hooks/useReportRunState'
@@ -117,13 +124,16 @@ import { ReportTemplatesPanel } from './ReportTemplatesPanel'
 import { retainStoredTemplateFields } from '../data/reportTemplateDraft'
 
 import { ReportCatalogueControl } from './ReportCatalogueControl'
-import { resolveCatalogueLaunch, type CatalogueLaunchChoice } from '../data/reportCatalogueLaunch'
+import { isOneCTurnoverCatalogueChoice, resolveCatalogueLaunch, type CatalogueLaunchChoice } from '../data/reportCatalogueLaunch'
 import { ReportOrderingPanel } from './ReportOrderingPanel'
 import { requestOrdering } from '../data/reportOrdering'
 import { requestFilterExpression } from '../data/reportFilterExpression'
 import { CLIENT_COMPARISON_MAX_DATE, comparisonWindow, isComparisonDate, requestComparison } from '../data/clientPeriodComparison'
 import { ClientComparisonPeriodPanel } from './ClientComparisonPeriodPanel'
 import { buildReportBuilderRequest } from '../data/reportBuilderRequest'
+import { ReportInlinePreview } from './ReportInlinePreview'
+import { CurrentVparivanieV2Panel } from './CurrentVparivanieV2Panel'
+import type { NativeReportPreview } from '../data/nativeReportPreview'
 import { useReportFilterExpression, type ReportSelectionEdit } from '../hooks/useReportFilterExpression'
 import { ReportFilterExpressionPanel } from './ReportFilterExpressionPanel'
 import { requestThreshold } from '../data/reportThreshold'
@@ -137,8 +147,14 @@ import { useReportAbcClassification } from '../hooks/useReportAbcClassification'
 import { requestTopGroups } from '../data/reportTopGroups'
 import { useReportGroupingOrdering } from '../hooks/useReportGroupingOrdering'
 import type { ReportGroupingLayout } from '../data/reportGroupingLayout'
-import { requestProductClassification, requestSourceOrganizations } from '../data/nativeExactFilters'
+import { productClassification as parseProductClassification, sourceOrganizations as parseSourceOrganizations, sourceBuyerSubtree as parseSourceBuyerSubtree, requestProductClassification, requestSourceOrganizations, requestSourceBuyerSubtree, FENIX_BUYERS_ROOT_ID } from '../data/nativeExactFilters'
+import { DAY_ORGANIZATION_GOODS_KIND_ID, DAY_ORGANIZATION_SAVED_ORGANIZATION_IDS } from '../data/dayOrganizationGrossProfit'
+import { isSupplierSourceWorldCapability, requestSupplierSourceWorld } from '../data/supplierBatchGrossProfit'
 import PriceTypeSalesComparisonPanel from './PriceTypeSalesComparisonPanel'
+import AgreementPriceComparisonPanel from './AgreementPriceComparisonPanel'
+import { defaultAgreementPriceComparison, requestAgreementPriceComparison } from '../data/agreementPriceComparison'
+import { OneCSpecialReportPanel } from './OneCSpecialReportPanel'
+import { defaultOneCSpecialSettings, oneCSpecialSpecification, requestOneCSpecialSettings } from '../data/oneCSpecialReports'
 import {
   clonePriceTypeSalesComparisonValue,
   PRICE_TYPE_SALES_COMPARISON_SOURCE,
@@ -214,6 +230,12 @@ function shouldLoadDatasetDefaults(dataSource: number, periodSupported: boolean)
     || dataSource === PRICE_TYPE_SALES_COMPARISON_SOURCE
 }
 
+function usesSavedFenixOrganizations(value: unknown): boolean {
+  const ids = parseSourceOrganizations(value)?.OrganizationIds
+  if (ids?.length !== DAY_ORGANIZATION_SAVED_ORGANIZATION_IDS.length) return false
+  return DAY_ORGANIZATION_SAVED_ORGANIZATION_IDS.every(id => ids.some(value => value.toUpperCase() === id))
+}
+
 export function ReportsStocksPage({ constructorMode = false }: { constructorMode?: boolean }) {
   const { user, session } = useAuth()
   const ownerId = user?.NetUid ?? session?.userNetUid ?? null
@@ -247,7 +269,14 @@ function ReportsStocksWorkspace({ ownerId, constructorMode }: { ownerId: string 
   const [xyz, setXyz] = useValueState<unknown>(undefined)
   const [productClassification, setProductClassification] = useValueState<unknown>(undefined)
   const [sourceOrganizations, setSourceOrganizations] = useValueState<unknown>(undefined)
+  const [sourceBuyerSubtree, setSourceBuyerSubtree] = useValueState<unknown>(undefined)
+  const [supplierSourceWorld, setSupplierSourceWorld] = useValueState<unknown>(undefined)
+  const [returnsOnly, setReturnsOnly] = useValueState<boolean | undefined>(undefined)
   const [priceTypeSalesComparison, setPriceTypeSalesComparison] = useValueState<unknown>(undefined)
+  const [agreementPriceComparison, setAgreementPriceComparison] = useValueState<unknown>(undefined)
+  const [settlementPeriod, setSettlementPeriod] = useValueState<unknown>(undefined)
+  const [cashPeriod, setCashPeriod] = useValueState<unknown>(undefined)
+  const [oneCSpecialSettings, setOneCSpecialSettings] = useValueState<unknown>(undefined)
   const [oneCScope, setOneCScope] = useValueState<OneCTurnoverFilters | undefined>(undefined)
   const [oneCReportOpen, setOneCReportOpen] = useState(false)
   const [oneCReportGenerating, setOneCReportGenerating] = useState(false)
@@ -288,7 +317,8 @@ function ReportsStocksWorkspace({ ownerId, constructorMode }: { ownerId: string 
     [colGroups, groupingOptions, rowGroups],
   )
   const filterFieldOptions = useMemo(() => datasetFilters(dataset), [dataset])
-  const maxDate = useMemo(() => supportsFullReportDateRange(dataSource) ? CLIENT_COMPARISON_MAX_DATE : `${today.slice(0, 4)}-12-31`, [dataSource, today])
+  const maxDate = useMemo(() => (dataSource === 40 || dataSource === 41) ? previousKyivDay(today)
+    : supportsFullReportDateRange(dataSource) ? CLIENT_COMPARISON_MAX_DATE : `${today.slice(0, 4)}-12-31`, [dataSource, today])
   const [debouncedFrom] = useDebouncedValue(from, DATE_INPUT_DEBOUNCE_MS)
   const [debouncedTo] = useDebouncedValue(to, DATE_INPUT_DEBOUNCE_MS)
   const periodError = supportsFullReportDateRange(dataSource) ? (!isComparisonDate(from) || !isComparisonDate(to) || from > to ? 'Оберіть коректний період у межах 1900–9998 років.' : null)
@@ -297,10 +327,10 @@ function ReportsStocksWorkspace({ ownerId, constructorMode }: { ownerId: string 
   // period on a pause, and only once it is a period the server can answer for.
   const hasLookupPeriod = !getPeriodError(debouncedFrom, debouncedTo, maxDate, t)
   const reportBody = useMemo<ReportRequestBody>(
-    () => buildReportBuilderRequest({ dataSource, comparison, xyz, revenueComparison, buyerSalesShare, returnComparison, paymentComparison, marginComparison, rateComparison, productClassification, sourceOrganizations, priceTypeSalesComparison, oneC: oneCScope, from, to, ordering, filterExpression, topGroups, threshold, hideZero, abcClassification, valuationClientAgreementId, rowGroups, colGroups, measurements, selections }),
-    [abcClassification, colGroups, comparison, xyz, revenueComparison, buyerSalesShare, returnComparison, paymentComparison, marginComparison, rateComparison, productClassification, sourceOrganizations, priceTypeSalesComparison, oneCScope, dataSource, filterExpression, from, hideZero, measurements, ordering, rowGroups, selections, to, topGroups, threshold, valuationClientAgreementId],
+    () => buildReportBuilderRequest({ dataSource, returnsOnly, comparison, xyz, revenueComparison, buyerSalesShare, returnComparison, paymentComparison, marginComparison, rateComparison, productClassification, sourceOrganizations, sourceBuyerSubtree, supplierSourceWorld, priceTypeSalesComparison, agreementPriceComparison, settlementPeriod, cashPeriod, oneCSpecialSettings, oneC: oneCScope, from, to, ordering, filterExpression, topGroups, threshold, hideZero, abcClassification, valuationClientAgreementId, rowGroups, colGroups, measurements, selections }),
+    [abcClassification, agreementPriceComparison, settlementPeriod, cashPeriod, colGroups, comparison, xyz, revenueComparison, buyerSalesShare, returnComparison, paymentComparison, marginComparison, rateComparison, productClassification, sourceOrganizations, sourceBuyerSubtree, supplierSourceWorld, returnsOnly, priceTypeSalesComparison, oneCSpecialSettings, oneCScope, dataSource, filterExpression, from, hideZero, measurements, ordering, rowGroups, selections, to, topGroups, threshold, valuationClientAgreementId],
   )
-  const { result, lastRun, error, isLoading, downloadModalOpened, update: updateRun, begin: beginRun, clear: clearRun } = useReportRunState<ReportRunOutcome>(JSON.stringify({
+  const { result, preview, lastRun, error, isLoading, downloadModalOpened, update: updateRun, begin: beginRun, clear: clearRun } = useReportRunState<ReportRunOutcome>(JSON.stringify({
     request: reportBody,
     allowed: canGenerateReport,
     agreementVerified: !requiresValuationAgreement(dataSource) || valuation.agreement?.Id === valuationClientAgreementId,
@@ -357,7 +387,10 @@ function ReportsStocksWorkspace({ ownerId, constructorMode }: { ownerId: string 
 
   async function submitReport(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
+    await runReport(false)
+  }
 
+  async function runReport(showPreview: boolean) {
     if (!canGenerateReport || !reportIsReady || isLoading) {
       return
     }
@@ -366,7 +399,8 @@ function ReportsStocksWorkspace({ ownerId, constructorMode }: { ownerId: string 
     if (constructorMode) setConstructorSection('result')
 
     try {
-      const nextResult = await createStockReport(reportBody)
+      const previewResult = showPreview ? await previewStockReport(reportBody) : null
+      const nextResult = previewResult?.result ?? await createStockReport(reportBody)
       const outcome: ReportRunOutcome = {
         ...(rateComparisonOptions(rateComparison) ? { rateComparison: structuredClone(rateComparisonOptions(rateComparison)!) } : {}),
         ...returnComparisonSummary(returnComparison),
@@ -385,7 +419,8 @@ function ReportsStocksWorkspace({ ownerId, constructorMode }: { ownerId: string 
         to,
       }
 
-      updateAttempt({ result: nextResult, lastRun: outcome, downloadModalOpened: outcome.hasDocument })
+      updateAttempt({ result: nextResult, preview: previewResult?.preview ?? null, lastRun: outcome,
+        downloadModalOpened: !showPreview && outcome.hasDocument })
     } catch (submitError) {
       updateAttempt({ result: null, error: describeReportError(submitError, t) })
     } finally {
@@ -400,8 +435,9 @@ function ReportsStocksWorkspace({ ownerId, constructorMode }: { ownerId: string 
     setRestoredData(null)
     setDraftRestoreError(null)
     setActiveTemplate(null)
+    const resetDay = (dataSource === 40 || dataSource === 41) ? previousKyivDay(today) : today
     const snapshotDefaults = dataset && shouldLoadDatasetDefaults(dataSource, periodSupported)
-      ? defaultDatasetRequest(dataset, today, today)
+      ? defaultDatasetRequest(dataset, resetDay, resetDay)
       : null
     setComparison(snapshotDefaults?.comparison)
     setXyz(snapshotDefaults?.xyz)
@@ -413,13 +449,20 @@ function ReportsStocksWorkspace({ ownerId, constructorMode }: { ownerId: string 
     setRevenueComparison(snapshotDefaults?.revenueComparison)
     setProductClassification(undefined)
     setSourceOrganizations(undefined)
+    setSourceBuyerSubtree(undefined)
+    setSupplierSourceWorld(snapshotDefaults?.supplierSourceWorld)
     setPriceTypeSalesComparison(snapshotDefaults?.priceTypeSalesComparison)
+    setAgreementPriceComparison(snapshotDefaults?.agreementPriceComparison)
+    setSettlementPeriod(undefined)
+    setCashPeriod(undefined)
+    setOneCSpecialSettings(snapshotDefaults && oneCSpecialSpecification(dataSource)
+      ? requestOneCSpecialSettings(snapshotDefaults, dataSource) : undefined)
     setOneCScope(snapshotDefaults?.oneC)
-    setFrom(periodSupported ? today : '')
-    setTo(periodSupported ? today : '')
+    setFrom(periodSupported ? resetDay : '')
+    setTo(periodSupported ? resetDay : '')
     setMeasurements(snapshotDefaults ? datasetMeasurements(dataset, snapshotDefaults.sorted.Measurements) : createDefaultMeasurementGroups())
     setRowGroups(snapshotDefaults?.sorted.Row ?? [])
-    setColGroups([])
+    setColGroups((dataSource === 40 || dataSource === 41) ? snapshotDefaults?.sorted.Col ?? [] : [])
     filterLogic.load([])
     setTopGroups(undefined)
     setThreshold(undefined)
@@ -492,7 +535,14 @@ function ReportsStocksWorkspace({ ownerId, constructorMode }: { ownerId: string 
     setRevenueComparison(structuredClone(revenueComparisonOptions(requestRevenueComparison(data)) ?? requestRevenueComparison(data)))
     setProductClassification(structuredClone(requestProductClassification(data)))
     setSourceOrganizations(structuredClone(requestSourceOrganizations(data)))
+    setSourceBuyerSubtree(structuredClone(requestSourceBuyerSubtree(data)))
+    setSupplierSourceWorld(structuredClone(requestSupplierSourceWorld(data)))
+    setReturnsOnly(data.returnsOnly ?? data.ReturnsOnly)
     setPriceTypeSalesComparison(clonePriceTypeSalesComparisonValue(data))
+    setAgreementPriceComparison(structuredClone(requestAgreementPriceComparison(data)))
+    setSettlementPeriod(structuredClone(data.settlementPeriod))
+    setCashPeriod(structuredClone(data.cashPeriod))
+    setOneCSpecialSettings(structuredClone(requestOneCSpecialSettings(data, nextDataset.DataSource)))
     setOneCScope(structuredClone(data.oneC))
     groupingOrdering.loadOrdering(requestOrdering(data))
     const nextAgreementId = data.valuationClientAgreementId ?? undefined
@@ -547,7 +597,14 @@ function ReportsStocksWorkspace({ ownerId, constructorMode }: { ownerId: string 
     setRevenueComparison(structuredClone(requestRevenueComparison(data)))
     setProductClassification(structuredClone(requestProductClassification(data)))
     setSourceOrganizations(structuredClone(requestSourceOrganizations(data)))
+    setSourceBuyerSubtree(structuredClone(requestSourceBuyerSubtree(data)))
+    setSupplierSourceWorld(structuredClone(requestSupplierSourceWorld(data)))
+    setReturnsOnly(data.returnsOnly ?? data.ReturnsOnly)
     setPriceTypeSalesComparison(clonePriceTypeSalesComparisonValue(data))
+    setAgreementPriceComparison(structuredClone(requestAgreementPriceComparison(data)))
+    setSettlementPeriod(structuredClone(data.settlementPeriod))
+    setCashPeriod(structuredClone(data.cashPeriod))
+    setOneCSpecialSettings(structuredClone(requestOneCSpecialSettings(data, nextDataset.DataSource)))
     setOneCScope(structuredClone(data.oneC))
     setTopGroups(structuredClone(requestTopGroups(data)))
     setThreshold(structuredClone(requestThreshold(data)))
@@ -562,6 +619,12 @@ function ReportsStocksWorkspace({ ownerId, constructorMode }: { ownerId: string 
 
   function openCatalogueReport(choice: CatalogueLaunchChoice, catalogue: ReportCatalogue): boolean {
     if (!canGenerateReport || isLoading || !datasetStorage.loaded || datasetStorage.error) return false
+    if (choice.dataSource === 1) {
+      if (!isOneCTurnoverCatalogueChoice(catalogue, choice)) return false
+      setCatalogueNotice(null)
+      setOneCReportOpen(true)
+      return true
+    }
     const period = periodSupported ? { from, to } : previousPeriod
     const launch = resolveCatalogueLaunch(catalogue, choice, datasetStorage.datasets, period)
     if (!launch.ok) {
@@ -575,7 +638,8 @@ function ReportsStocksWorkspace({ ownerId, constructorMode }: { ownerId: string 
 
   function changeDataset(nextDataset: ReportDataset) {
     const period = periodSupported ? { from, to } : previousPeriod
-    applyConfiguration({ Name: '', Data: defaultDatasetRequest(nextDataset, period.from, period.to) }, nextDataset)
+    const day = (nextDataset.DataSource === 40 || nextDataset.DataSource === 41) ? previousKyivDay(today) : null
+    applyConfiguration({ Name: '', Data: defaultDatasetRequest(nextDataset, day ?? period.from, day ?? period.to) }, nextDataset)
   }
 
   function applyPreset(id: DatasetReportPresetId) {
@@ -627,9 +691,12 @@ function ReportsStocksWorkspace({ ownerId, constructorMode }: { ownerId: string 
       {canGenerateReport && catalogueNotice ? <Alert color={catalogueNotice.failed ? 'red' : 'blue'} style={{ flexShrink: 0 }}
         title={t(catalogueNotice.failed ? 'Не вдалося відкрити звіт' : 'Звіт відкрито в конструкторі')}
         withCloseButton onClose={() => setCatalogueNotice(null)}>{catalogueNotice.text}</Alert> : null}
-      {!constructorMode ? <>{requiresValuationAgreement(dataSource) ? <ValuationAgreementPicker purpose={dataSource === 22 ? 'prices' : 'stock'} value={valuationClientAgreementId} enabled={canGenerateReport} disabled={isLoading}
+      {!constructorMode ? <>{dataSource === 31 ? <AgreementPriceComparisonPanel value={agreementPriceComparison ?? defaultAgreementPriceComparison()} disabled={comparisonSettingsDisabled} onChange={setAgreementPriceComparison} />
+        : requiresValuationAgreement(dataSource) ? <ValuationAgreementPicker purpose={dataSource === 22 ? 'prices' : 'stock'} value={valuationClientAgreementId} enabled={canGenerateReport} disabled={isLoading}
         agreement={valuation.agreement} validating={valuation.loading} validationError={valuation.error}
-        onChange={setValuationAgreementId} onRetry={valuation.retry} /> : null}</> : null}
+        onChange={setValuationAgreementId} onRetry={valuation.retry} /> : dataSource === 29
+          ? <CurrentDiscountAgreementInput value={valuationClientAgreementId} enabled={canGenerateReport} disabled={isLoading} onChange={setValuationAgreementId} />
+          : null}</> : null}
       <ReportBuilderForm
         constructorMode={constructorMode}
         constructorSection={constructorSection}
@@ -644,13 +711,86 @@ function ReportsStocksWorkspace({ ownerId, constructorMode }: { ownerId: string 
           {!constructorMode ? <details className="stocks-workspace-dataset-help"><summary>{t('Що змінює вибір набору даних')}</summary>
             <Text size="xs" c="dimmed">{t('Зміна набору застосує початкові групування й показники та очистить відбори, групи І/АБО, TOP, ABC-класифікацію і правила сортування. Набори поточного стану очищують період; після повернення до набору з періодом попередні дати відновляться.')}</Text>
           </details> : null}</>}
-        agreementPanel={constructorMode && requiresValuationAgreement(dataSource) ? <div className="app-section-card report-constructor-agreement">
-          <ValuationAgreementPicker purpose={dataSource === 22 ? 'prices' : 'stock'} value={valuationClientAgreementId}
+        agreementPanel={constructorMode && (requiresValuationAgreement(dataSource) || dataSource === 29 || dataSource === 31) ? <div className="app-section-card report-constructor-agreement">
+          {dataSource === 31 ? <AgreementPriceComparisonPanel value={agreementPriceComparison ?? defaultAgreementPriceComparison()} disabled={comparisonSettingsDisabled} onChange={setAgreementPriceComparison} />
+            : dataSource === 29 ? <CurrentDiscountAgreementInput value={valuationClientAgreementId} enabled={canGenerateReport} disabled={isLoading} onChange={setValuationAgreementId} />
+            : <ValuationAgreementPicker purpose={dataSource === 22 ? 'prices' : 'stock'} value={valuationClientAgreementId}
             enabled={canGenerateReport} disabled={isLoading} agreement={valuation.agreement} validating={valuation.loading}
-            validationError={valuation.error} onChange={setValuationAgreementId} onRetry={valuation.retry} />
+            validationError={valuation.error} onChange={setValuationAgreementId} onRetry={valuation.retry} />}
         </div> : null}
         priceTypeSalesComparisonPanel={<PriceTypeSalesComparisonPanel dataSource={dataSource} value={priceTypeSalesComparison}
           scope={oneCScope} disabled={comparisonSettingsDisabled} onChange={setPriceTypeSalesComparison} onScopeChange={setOneCScope} />}
+        oneCSpecialReportPanel={<OneCSpecialReportPanel dataSource={dataSource} value={oneCSpecialSettings ??
+          (oneCSpecialSpecification(dataSource) ? defaultOneCSpecialSettings(dataSource)[oneCSpecialSpecification(dataSource)!.key] : undefined)}
+          disabled={comparisonSettingsDisabled} onChange={setOneCSpecialSettings} />}
+        classificationPanel={dataSource === 39 ? <CurrentVparivanieV2Panel dataset={dataset ?? null} /> : dataSource === 41 ? (dataset && isSettlementPeriodDataset(dataset)
+          ? <Stack gap="sm"><SettlementPeriodAgreementPicker value={settlementPeriod} from={from} to={to} disabled={comparisonSettingsDisabled}
+            enabled={canGenerateReport} onChange={setSettlementPeriod} />
+            <GroupedDebtorWorkbookPanel from={from} to={to} disabled={comparisonSettingsDisabled}
+              enabled={canGenerateReport} /></Stack> : null) : dataSource === 40 ? <CashPeriodLegPicker value={cashPeriod}
+          disabled={comparisonSettingsDisabled} enabled={canGenerateReport}
+          onChange={setCashPeriod} /> : dataSource === 35 ? <Card className="app-section-card" withBorder radius="md" padding="md" style={{ minWidth: 0 }}>
+          <Checkbox label={t('Товар без послуг (Fenix)')}
+            checked={parseProductClassification(productClassification)?.ProductKindId.toUpperCase() === DAY_ORGANIZATION_GOODS_KIND_ID
+              && parseProductClassification(productClassification)?.IsService === false}
+            disabled={comparisonSettingsDisabled}
+            onChange={event => setProductClassification(event.currentTarget.checked
+              ? { Version: 1, SourceWorld: 0, ProductKindId: DAY_ORGANIZATION_GOODS_KIND_ID, IsService: false }
+              : undefined)} />
+          <Text size="xs" c="dimmed">{t('Точний відбір зі збереженого налаштування 1С, що структурно збігається з XLS. Якщо для товару немає повної локальної класифікації, звіт покаже помилку покриття.')}</Text>
+          {productClassification != null
+            && !(parseProductClassification(productClassification)?.ProductKindId.toUpperCase() === DAY_ORGANIZATION_GOODS_KIND_ID
+              && parseProductClassification(productClassification)?.IsService === false)
+            ? <Text size="xs" c="orange">{t('Шаблон містить інший вид товару Fenix. Увімкнення перемикача замінить цей відбір на «Товар».')}</Text> : null}
+          <Checkbox mt="sm" label={t('П’ять організацій зі збереженого налаштування 1С')}
+            checked={usesSavedFenixOrganizations(sourceOrganizations)}
+            disabled={comparisonSettingsDisabled}
+            onChange={event => setSourceOrganizations(event.currentTarget.checked
+              ? { Version: 1, SourceWorld: 'fenix', OrganizationIds: [...DAY_ORGANIZATION_SAVED_ORGANIZATION_IDS] }
+              : undefined)} />
+          <Text size="xs" c="dimmed">{t('Точні ID зі збереженого налаштування 1С. Якщо організації ще не прив’язані до локальних даних, звіт покаже помилку покриття.')}</Text>
+          {sourceOrganizations != null
+            && !usesSavedFenixOrganizations(sourceOrganizations)
+            ? <Text size="xs" c="orange">{t('Шаблон містить інші організації Fenix. Увімкнення перемикача замінить цей відбір на п’ять організацій.')}</Text> : null}
+          <Checkbox mt="sm" label={t('Група «Покупці» Fenix')}
+            checked={parseSourceBuyerSubtree(sourceBuyerSubtree) != null}
+            disabled={comparisonSettingsDisabled}
+            onChange={event => setSourceBuyerSubtree(event.currentTarget.checked
+              ? { Version: 1, SourceWorld: 'fenix', BuyerRootId: FENIX_BUYERS_ROOT_ID }
+              : undefined)} />
+          <Text size="xs" c="dimmed">{t('Поточний збережений знімок ієрархії покупців. Якщо лінія покупця або ієрархія неповні, звіт покаже помилку покриття.')}</Text>
+          {sourceBuyerSubtree != null && !parseSourceBuyerSubtree(sourceBuyerSubtree)
+            ? <Text size="xs" c="orange">{t('Шаблон містить інше піддерево Fenix; цей набір приймає тільки групу «Покупці».')}</Text> : null}
+        </Card> : dataSource === 38 && isSupplierSourceWorldCapability(dataset?.supplierSourceWorld)
+          ? <Card className="app-section-card" withBorder radius="md" padding="md" style={{ minWidth: 0 }}>
+            <Select label={t('База продажів для прибутку за постачальниками')}
+              data={[{ value: '0', label: 'Fenix' }, { value: '1', label: 'AMG' },
+                { value: 'all', label: t('Обидві бази') }]}
+              value={supplierSourceWorld === 0 ? '0' : supplierSourceWorld === 1 ? '1' : 'all'}
+              disabled={comparisonSettingsDisabled}
+              onChange={value => {
+                const world = value === '0' ? 0 : value === '1' ? 1 : undefined
+                setSupplierSourceWorld(world)
+                if (world !== 0) setSourceBuyerSubtree(undefined)
+              }} />
+            <Text size="xs" c="dimmed">{t('Окремий зріз формується лише за однозначної лінії кожного продажу в періоді. Неповна партія вибраної бази зупинить звіт.')}</Text>
+            {dataset?.sourceBuyerSubtree != null ? <>
+              <Checkbox mt="sm" label={t('Група «Покупці» Fenix')}
+                checked={parseSourceBuyerSubtree(sourceBuyerSubtree) != null}
+                disabled={comparisonSettingsDisabled}
+                onChange={event => {
+                  if (event.currentTarget.checked) setSupplierSourceWorld(0)
+                  setSourceBuyerSubtree(event.currentTarget.checked
+                    ? { Version: 1, SourceWorld: 'fenix', BuyerRootId: FENIX_BUYERS_ROOT_ID }
+                    : undefined)
+                }} />
+              <Text size="xs" c="dimmed">{t('Вимагає базу Fenix, повну лінію покупців усіх продажів періоду і чинний захоплений граф. За неповних даних звіт покаже помилку покриття.')}</Text>
+              {sourceBuyerSubtree != null && !parseSourceBuyerSubtree(sourceBuyerSubtree)
+                ? <Text size="xs" c="orange">{t('Шаблон містить інше піддерево Fenix; цей набір приймає тільки групу «Покупці».')}</Text> : null}
+            </> : null}
+            {supplierSourceWorld !== undefined && supplierSourceWorld !== 0 && supplierSourceWorld !== 1
+              ? <Text size="xs" c="orange">{t('Шаблон містить невідому базу джерела; виберіть Fenix або AMG.')}</Text> : null}
+          </Card> : null}
         dataSource={dataSource}
         rateComparisonPanel={<RateComparisonPanel dataSource={dataSource} value={rateComparison} disabled={comparisonSettingsDisabled} onChange={setRateComparison} />}
         paymentComparisonPanel={<PaymentComparisonPanel dataSource={dataSource} value={paymentComparison} disabled={comparisonSettingsDisabled} onChange={setPaymentComparison} />}
@@ -675,10 +815,13 @@ function ReportsStocksWorkspace({ ownerId, constructorMode }: { ownerId: string 
         lastRun={lastRun}
         lookupFrom={hasLookupPeriod ? debouncedFrom : ''}
         lookupTo={hasLookupPeriod ? debouncedTo : ''}
+        lookupSourceWorld={typeof oneCSpecialSettings === 'object' && oneCSpecialSettings !== null && 'SourceWorld' in oneCSpecialSettings
+          && (oneCSpecialSettings.SourceWorld === 1 || oneCSpecialSettings.SourceWorld === 2) ? oneCSpecialSettings.SourceWorld : undefined}
         maxDate={maxDate}
         measurements={measurements}
         notices={{ emptyRun: emptyRunNotice, error, period: periodError }}
         resultHasFiles={Boolean(result?.document.DocumentURL || result?.document.PdfDocumentURL)}
+        preview={preview}
         resultPlaceholder={resultPlaceholder}
         rowGroups={rowGroups}
         selections={selections}
@@ -696,6 +839,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode }: { ownerId: string 
         onFromChange={setFrom}
         onMeasurementsChange={setMeasurements}
         onOpenFiles={() => updateRun({ downloadModalOpened: true })}
+        onPreview={() => void runReport(true)}
         onRefreshTemplates={loadTemplates}
         onReset={resetReport}
         onRowGroupsChange={value => groupingOrdering.changeAxis('Row', value)}
@@ -748,6 +892,8 @@ type ReportBuilderFormProps = {
   catalogueControl: ReactNode
   agreementPanel: ReactNode
   priceTypeSalesComparisonPanel: ReactNode
+  oneCSpecialReportPanel: ReactNode
+  classificationPanel: ReactNode
   rateComparisonPanel: ReactNode
   paymentComparisonPanel: ReactNode
   marginComparisonPanel: ReactNode
@@ -780,10 +926,12 @@ type ReportBuilderFormProps = {
   lastRun: ReportRunOutcome | null
   lookupFrom: string
   lookupTo: string
+  lookupSourceWorld?: number
   maxDate: string
   measurements: ReportMeasurementGroup[]
   notices: { emptyRun: string | null; error: string | null; period: string | null }
   resultHasFiles: boolean
+  preview: NativeReportPreview | null
   resultPlaceholder: { description: string; title: string }
   rowGroups: ReportGroupingItem[]
   selections: ReportSelection[]
@@ -801,6 +949,7 @@ type ReportBuilderFormProps = {
   onFromChange: StateSetter<string>
   onMeasurementsChange: StateSetter<ReportMeasurementGroup[]>
   onOpenFiles: () => void
+  onPreview: () => void
   onRefreshTemplates: () => void
   onReset: () => void
   onRowGroupsChange: StateSetter<ReportGroupingItem[]>
@@ -810,6 +959,49 @@ type ReportBuilderFormProps = {
   onTemplateNameChange: StateSetter<string>
   onToChange: StateSetter<string>
   onUpdateTemplate: () => Promise<TemplateMutationResult>
+}
+
+function CurrentDiscountAgreementInput({ value, enabled, disabled, onChange }: {
+  value: number | undefined
+  enabled: boolean
+  disabled: boolean
+  onChange: (value: number | undefined) => void
+}) {
+  const { t } = useI18n()
+  const [search, setSearch] = useState('')
+  const [query] = useDebouncedValue(search, 300)
+  const [options, setOptions] = useState<ReportEntity[]>([])
+  const [selected, setSelected] = useState<ReportEntity | null>(null)
+  const [error, setError] = useState<string | null>(null)
+  useEffect(() => {
+    if (!enabled) return
+    const controller = new AbortController()
+    searchDatasetReportValues(29, REPORT_FILTER_FIELD_TYPES.customerContract,
+      { value: query, offset: 0, limit: 25 }, controller.signal)
+      .then(items => { setOptions(items); setError(null) })
+      .catch(cause => { if (!controller.signal.aborted) setError(cause instanceof Error ? cause.message : 'Не вдалося завантажити договори.') })
+    return () => controller.abort()
+  }, [enabled, query])
+  const data = useMemo(() => {
+    const choices = new Map(options.map(item => [String(item.Id), { value: String(item.Id), label: item.Name ?? String(item.Id) }]))
+    if (value !== undefined && !choices.has(String(value))) choices.set(String(value), {
+      value: String(value), label: selected?.Id === value ? selected.Name ?? `Договір [${value}]` : `Договір [${value}]`,
+    })
+    return [...choices.values()]
+  }, [options, selected, value])
+  return <Stack gap={4} p="sm">
+    <Select label={t('Договір клієнта для чинних знижок')}
+      description={t('Пошук за назвою або локальним ID договору з чинними ставками.')}
+      searchable clearable data={data} value={value?.toString() ?? null} searchValue={search}
+      onSearchChange={setSearch} filter={({ options: items }) => items} maxLength={120}
+      disabled={!enabled || disabled} nothingFoundMessage={t('Договір не знайдено')}
+      onChange={next => {
+        setSelected(options.find(item => String(item.Id) === next) ?? null)
+        setSearch('')
+        onChange(next === null ? undefined : Number(next))
+      }} />
+    {error ? <Text size="xs" c="red">{t(error)}</Text> : null}
+  </Stack>
 }
 
 function ReportBuilderForm(props: ReportBuilderFormProps) {
@@ -843,6 +1035,7 @@ function ReportBuilderForm(props: ReportBuilderFormProps) {
     onReset,
     onSaveTemplate,
     onSubmit,
+    onPreview,
     onTemplateNameChange,
     onToChange,
     onUpdateTemplate,
@@ -876,6 +1069,8 @@ function ReportBuilderForm(props: ReportBuilderFormProps) {
             </Tooltip>
           </div>
           </div>
+          <Button type="button" variant="default" disabled={!canSubmit || isLoading}
+            onClick={onPreview}>{t('Показати на екрані')}</Button>
           <Tooltip label={t('Сформувати')}>
             <Button
               className="reports-stocks-generate"
@@ -958,6 +1153,7 @@ function ReportBuilderContent(props: ReportBuilderFormProps) {
     lookupTo,
     measurements,
     resultHasFiles,
+    preview,
     resultPlaceholder,
     rowGroups,
     selections,
@@ -991,6 +1187,7 @@ function ReportBuilderContent(props: ReportBuilderFormProps) {
             groupingSelectData={groupingSelectData}
             lookupFrom={lookupFrom}
             lookupTo={lookupTo}
+            lookupSourceWorld={props.lookupSourceWorld}
             measurements={measurements}
             rowGroups={rowGroups}
             selections={selections}
@@ -1007,7 +1204,8 @@ function ReportBuilderContent(props: ReportBuilderFormProps) {
             {hideZeroPanel}
             {abcPanel}
             {orderingPanel}
-          </> : constructorMode ? <Text size="sm" c="gray.7">Цей набір має фіксовану структуру аналізу. Налаштуйте його параметри в розділі «Структура звіту».</Text> : null}
+          </> : dataSource === 26 ? abcPanel
+            : constructorMode ? <Text size="sm" c="gray.7">Цей набір має фіксовану структуру аналізу. Налаштуйте його параметри в розділі «Структура звіту».</Text> : null}
           </ReportSectionPanel>
           </fieldset>
           <ReportSectionPanel active={constructorMode ? constructorSection : undefined} section="result">
@@ -1019,6 +1217,7 @@ function ReportBuilderContent(props: ReportBuilderFormProps) {
             placeholder={resultPlaceholder}
             onOpenFiles={onOpenFiles}
           />
+          {preview ? <ReportInlinePreview preview={preview} /> : null}
           </ReportSectionPanel>
         </div>
         </div>
@@ -1031,6 +1230,8 @@ function ReportSourceSettings(props: ReportBuilderFormProps) {
     constructorSection,
     agreementPanel,
     priceTypeSalesComparisonPanel,
+    oneCSpecialReportPanel,
+    classificationPanel,
     comparisonPanel,
     xyzPanel,
     rateComparisonPanel,
@@ -1048,6 +1249,8 @@ function ReportSourceSettings(props: ReportBuilderFormProps) {
           <div hidden={constructorMode && constructorSection !== 'structure'} className={constructorMode ? 'report-constructor-source-settings' : undefined}>
           {agreementPanel}
           {priceTypeSalesComparisonPanel}
+          {oneCSpecialReportPanel}
+          {classificationPanel}
           {constructorMode ? comparisonPanel : null}
           {rateComparisonPanel}
           {paymentComparisonPanel}
@@ -1094,6 +1297,7 @@ type LegacyReportBuilderProps = {
   groupingSelectData: GroupingOption[]
   lookupFrom: string
   lookupTo: string
+  lookupSourceWorld?: number
   measurements: ReportMeasurementGroup[]
   rowGroups: ReportGroupingItem[]
   selections: ReportSelection[]
@@ -1104,6 +1308,9 @@ type LegacyReportBuilderProps = {
 }
 
 const fixedAxesDescription: Partial<Record<number, string>> = {
+  41: 'Організація → Валюта → Контрагент → Договір. Один точний договір і чотири показники у валюті взаєморозрахунків; структура фіксована.',
+  40: 'Організація → Рахунок → Валютний запис → Валюта. Початок, надходження, витрати й кінець у валюті рахунку; структура фіксована.',
+  39: `Товар → сім атрибутів. Колонки: Остатки, Продажи та Контрагенты; один показник «Результат». ${CURRENT_VPARIVANIE_NOTICE}`,
   15: 'Клас XYZ → Товар. Показники у стовпцях; структура цього звіту фіксована.',
   16: 'Клієнт → Договір. Показники у стовпцях; структура цього звіту фіксована.',
   17: 'Клієнт → Договір. Показники у стовпцях; структура цього звіту фіксована.',
@@ -1111,6 +1318,7 @@ const fixedAxesDescription: Partial<Record<number, string>> = {
   19: 'Одна точна валютна пара і серія. Показники у стовпцях; підсумки не обчислюються.',
   20: 'Клієнт → Договір. Показники у стовпцях; структура цього звіту фіксована.',
   21: 'Валюта → Клієнт → Договір. Показники у стовпцях; структура цього звіту фіксована.',
+  26: 'ABC-клас → Товар. Показники у стовпцях; структура цього звіту фіксована.',
 }
 
 function LegacyReportBuilder({
@@ -1124,6 +1332,7 @@ function LegacyReportBuilder({
   groupingSelectData,
   lookupFrom,
   lookupTo,
+  lookupSourceWorld,
   measurements,
   rowGroups,
   selections,
@@ -1163,7 +1372,7 @@ function LegacyReportBuilder({
 
   const selectionPanel = dataSource === 19 ? null : <section className="reports-stocks-legacy__selections">
     <ReportSelectionsCard dataSource={dataSource} description={null} filterFieldOptions={filterFieldOptions}
-      from={lookupFrom} selections={selections} title={t('Умови відбору')} to={lookupTo} onChange={onSelectionsChange} />
+      from={lookupFrom} lookupSourceWorld={lookupSourceWorld} selections={selections} title={t('Умови відбору')} to={lookupTo} onChange={onSelectionsChange} />
   </section>
 
   return (
@@ -1239,7 +1448,9 @@ function LegacyReportBuilder({
 
         <section className="app-section-card reports-stocks-structure">
           <Text className="app-section-title" component="h2" fw={600} size="sm">{t('Групування')}</Text>
-          {fixedAxesDescription[dataSource] ? <Text size="sm">{fixedAxesDescription[dataSource]}</Text> : <ReportGroupingPanel layout={groupingLayout} axis="Row" allowed={allowedGroupingTypes} transferSupported={dataSource !== 13}
+          {fixedAxesDescription[dataSource] ? <Text size="sm">{dataSource === 39
+            ? `Товар → сім атрибутів. Колонки: Остатки, Продажи та Контрагенты; один показник «Результат». ${currentVparivanieNotice(filterFieldOptions.some(option => option.field.Type === 60))}`
+            : fixedAxesDescription[dataSource]}</Text> : <ReportGroupingPanel layout={groupingLayout} axis="Row" allowed={allowedGroupingTypes} transferSupported={dataSource !== 13}
             onOpenPicker={() => setGroupingPickerTarget('rows')}
             onRemove={(index) => onRowGroupsChange((current) => current.filter((_, itemIndex) => itemIndex !== index))}
             onReorder={(type, direction) => onRowGroupsChange(current => reorderReportGrouping(current, type, direction, allowedGroupingTypes))}
@@ -1382,6 +1593,7 @@ type FilterFieldOption = {
 
 type ReportSelectionsCardProps = {
   dataSource: number
+  lookupSourceWorld?: number
   description?: string | null
   filterFieldOptions: FilterFieldOption[]
   from: string
@@ -1393,6 +1605,7 @@ type ReportSelectionsCardProps = {
 
 function ReportSelectionsCard({
   dataSource,
+  lookupSourceWorld,
   description,
   filterFieldOptions,
   from,
@@ -1404,6 +1617,7 @@ function ReportSelectionsCard({
   const { t } = useI18n()
   const [editorIndex, setEditorIndex] = useState<number | null>(null)
   const [draftSelection, setDraftSelection] = useState<ReportSelection | null>(null)
+  const filterConditions = dataSource === 39 ? currentVparivanieFilterConditions(draftSelection?.SelectedField.Type ?? 0) : REPORT_FILTER_CONDITIONS
   const resolvedDescription = description === undefined
     ? t('Необов’язково: звузьте звіт до клієнта, товару, документа або іншої ознаки.')
     : description
@@ -1519,6 +1733,7 @@ function ReportSelectionsCard({
                 setDraftSelection((current) => current ? {
                   ...current,
                   SelectedField: option?.field || { Name: '', Type: 0 },
+                  ...(dataSource === 39 ? { FilterCondition: currentVparivanieFilterConditions(option?.field.Type ?? 0)[0] } : {}),
                   Values: [],
                 } : current)
               }}
@@ -1526,14 +1741,14 @@ function ReportSelectionsCard({
             <div className="reports-stocks-selection-modal__controls">
               <Select
                 allowDeselect={false}
-                data={REPORT_FILTER_CONDITIONS.map((condition) => ({
+                data={filterConditions.map((condition) => ({
                   label: condition.Name,
                   value: String(condition.Type),
                 }))}
                 label={t('Умова')}
                 value={String(draftSelection.FilterCondition.Type)}
                 onChange={(value) => {
-                  const condition = REPORT_FILTER_CONDITIONS.find((item) => String(item.Type) === value) || defaultCondition
+                  const condition = filterConditions.find((item) => String(item.Type) === value) || filterConditions[0]
                   setDraftSelection((current) => current ? {
                     ...current,
                     FilterCondition: condition,
@@ -1545,6 +1760,7 @@ function ReportSelectionsCard({
               />
               <SelectionValuePicker
                 dataSource={dataSource}
+                lookupSourceWorld={lookupSourceWorld}
                 from={from}
                 label={t('Значення')}
                 selection={draftSelection}
@@ -1753,6 +1969,7 @@ function ReportResultSection({
 
 type SelectionValuePickerProps = {
   dataSource: number
+  lookupSourceWorld?: number
   error?: string
   from: string
   label?: string
@@ -1763,7 +1980,7 @@ type SelectionValuePickerProps = {
   onChange: (values: ReportSelectedValue[]) => void
 }
 
-function SelectionValuePicker({ dataSource, error, from, label, selection, selections, to, width = 320, onChange }: SelectionValuePickerProps) {
+function SelectionValuePicker({ dataSource, lookupSourceWorld, error, from, label, selection, selections, to, width = 320, onChange }: SelectionValuePickerProps) {
   const { t } = useI18n()
   const [search, setSearch] = useValueState('')
   const [manualValue, setManualValue] = useValueState('')
@@ -1878,7 +2095,7 @@ function SelectionValuePicker({ dataSource, error, from, label, selection, selec
             ? await getReportClientAgreements(dependentClientNetId)
             : await loadSelectionLookupOptions(
                 dataSource, selection.SelectedField.Type, normalizedSearch, from, to,
-                controller.signal, saleDocumentFilters,
+                controller.signal, saleDocumentFilters, lookupSourceWorld,
               )
 
         if (!cancelled) {
@@ -1903,6 +2120,7 @@ function SelectionValuePicker({ dataSource, error, from, label, selection, selec
     }
   }, [
     dataSource,
+    lookupSourceWorld,
     dependentClientNetId,
     from,
     lookupMode,
@@ -2341,9 +2559,13 @@ async function loadSelectionLookupOptions(
   to: string,
   signal?: AbortSignal,
   saleDocumentFilters?: SaleDocumentLookupFilters,
+  lookupSourceWorld?: number,
 ): Promise<ReportEntity[]> {
   if (usesNativeReportLookup(dataSource)) {
-    return searchDatasetReportValues(dataSource, fieldType, { limit: LOOKUP_SEARCH_LIMIT, offset: 0, value }, signal)
+    const params = { limit: LOOKUP_SEARCH_LIMIT, offset: 0, value }
+    return [23, 24, 25, 28].includes(dataSource)
+      ? searchDatasetReportValues(dataSource, fieldType, params, signal, lookupSourceWorld)
+      : searchDatasetReportValues(dataSource, fieldType, params, signal)
   }
   switch (fieldType) {
     case REPORT_FILTER_FIELD_TYPES.organization:
@@ -2447,7 +2669,7 @@ function createSelectedValue(entity: ReportEntity, dataSource?: number): ReportS
   return {
     Data: entity,
     Name: getEntityDisplayName(entity),
-    Value: (dataSource === 16 || dataSource === 17 || dataSource === 18 || dataSource === 20 || dataSource === 21) ? 0 : getReportEntityNumericValue(entity),
+    Value: (dataSource === 16 || dataSource === 17 || dataSource === 18 || dataSource === 20 || dataSource === 21 || dataSource === 23 || dataSource === 24 || dataSource === 25 || dataSource === 28 || dataSource === 39) ? 0 : getReportEntityNumericValue(entity),
   }
 }
 

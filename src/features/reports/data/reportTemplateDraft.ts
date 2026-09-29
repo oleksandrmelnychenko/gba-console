@@ -4,6 +4,8 @@ import type { ReportRequestBody } from '../types'
 // remain attached to the saved draft instead of disappearing during round-trip.
 const managedFields = new Set([
   'dataSource', 'from', 'to', 'sorted', 'selections', 'valuationClientAgreementId',
+  'agreementPriceComparison', 'AgreementPriceComparison',
+  'returnsOnly', 'ReturnsOnly',
   'paymentComparison', 'PaymentComparison', 'marginComparison', 'MarginComparison',
   'rateComparison', 'RateComparison', 'returnComparison', 'ReturnComparison',
   'buyerSalesShare', 'BuyerSalesShare', 'revenueComparison', 'RevenueComparison',
@@ -11,7 +13,13 @@ const managedFields = new Set([
   'filterExpression', 'FilterExpression', 'abcClassification', 'AbcClassification',
   'hideZero', 'HideZero', 'threshold', 'Threshold', 'topGroups', 'TopGroups',
   'productClassification', 'ProductClassification', 'sourceOrganizations', 'SourceOrganizations',
+  'sourceBuyerSubtree', 'SourceBuyerSubtree',
+  'supplierSourceWorld', 'SupplierSourceWorld',
+  'settlementPeriod', 'SettlementPeriod',
+  'cashPeriod', 'CashPeriod',
   'priceTypeSalesComparison', 'PriceTypeSalesComparison', 'oneC', 'OneC',
+  'discountMarkup', 'DiscountMarkup', 'providedDiscounts', 'ProvidedDiscounts',
+  'priceAnalysis', 'PriceAnalysis',
 ])
 
 export function retainStoredTemplateFields(stored: ReportRequestBody, draft: ReportRequestBody): ReportRequestBody {

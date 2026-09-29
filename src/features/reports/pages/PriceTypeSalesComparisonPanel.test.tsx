@@ -43,4 +43,13 @@ describe('PriceTypeSalesComparisonPanel', () => {
     fireEvent.click(await screen.findByRole('option', { name: 'Оптова глобальна' }))
     expect(onChange).toHaveBeenCalledWith({ Version: 1, SourceWorld: 1, PriceTypeId: PRICE_TYPE_ID })
   })
+
+  it('explains the missing sales import when no local Fenix scope exists', async () => {
+    vi.mocked(getOneCTurnoverScopes).mockResolvedValue([])
+    render(<MantineProvider env="test"><PriceTypeSalesComparisonPanel dataSource={27} disabled={false}
+      value={{ Version: 1, SourceWorld: 1, PriceTypeId: '' }} scope={undefined}
+      onChange={vi.fn()} onScopeChange={vi.fn()} /></MantineProvider>)
+
+    expect(await screen.findByText(/немає завантажених продажів Fenix/)).toBeTruthy()
+  })
 })

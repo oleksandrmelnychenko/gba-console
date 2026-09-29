@@ -239,8 +239,28 @@ export type ReportSourceOrganizationsCapabilities = {
   RequiresCompleteFactLineage: true
 }
 
+export type ReportSourceBuyerSubtree = {
+  Version: 1
+  SourceWorld: 'fenix'
+  BuyerRootId: string
+}
+
+export type ReportSourceBuyerSubtreeCapabilities = {
+  Version: 1
+  SourceWorld: 'fenix'
+  BuyerRootId: string
+  RequiresCompletePeriodLineage: true
+  UsesCurrentCapturedHierarchy: true
+}
+
 export type ReportRequestBody = {
   dataSource?: number
+  settlementPeriod?: unknown
+  cashPeriod?: unknown
+  SettlementPeriod?: unknown
+  CashPeriod?: unknown
+  returnsOnly?: boolean
+  ReturnsOnly?: boolean
   priceTypeSalesComparison?: unknown
   PriceTypeSalesComparison?: unknown
   paymentComparison?: unknown
@@ -249,6 +269,12 @@ export type ReportRequestBody = {
   MarginComparison?: unknown
   rateComparison?: unknown
   RateComparison?: unknown
+  discountMarkup?: unknown
+  DiscountMarkup?: unknown
+  providedDiscounts?: unknown
+  ProvidedDiscounts?: unknown
+  priceAnalysis?: unknown
+  PriceAnalysis?: unknown
   returnComparison?: unknown
   ReturnComparison?: unknown
   buyerSalesShare?: unknown
@@ -260,6 +286,8 @@ export type ReportRequestBody = {
   comparison?: unknown
   Comparison?: unknown
   valuationClientAgreementId?: number | null
+  agreementPriceComparison?: unknown
+  AgreementPriceComparison?: unknown
   // Preserve unknown imported versions/properties for explicit validation; never sanitize them away.
   ordering?: unknown
   Ordering?: unknown
@@ -277,6 +305,10 @@ export type ReportRequestBody = {
   ProductClassification?: unknown
   sourceOrganizations?: unknown
   SourceOrganizations?: unknown
+  sourceBuyerSubtree?: unknown
+  SourceBuyerSubtree?: unknown
+  supplierSourceWorld?: unknown
+  SupplierSourceWorld?: unknown
   oneC?: OneCTurnoverFilters
   from: string
   selections: ReportSelection[]
@@ -291,8 +323,16 @@ export type ReportRequestBody = {
 export type ReportDatasetField = { Type: number; Name: string; Selectable?: boolean }
 
 export type ReportDataset = {
+  returnsOnly?: boolean
+  settlementPeriod?: unknown
+  cashPeriod?: unknown
+  currentVparivanie?: unknown
   agreementPrices?: unknown
+  agreementPriceComparison?: unknown
   priceTypeSalesComparison?: unknown
+  discountMarkup?: unknown
+  providedDiscounts?: unknown
+  priceAnalysis?: unknown
   DataSource: number
   Name: string
   Description: string
@@ -314,6 +354,8 @@ export type ReportDataset = {
   AbcClassification?: unknown
   productClassification?: unknown
   sourceOrganizations?: unknown
+  sourceBuyerSubtree?: unknown
+  supplierSourceWorld?: unknown
   Groupings: ReportDatasetField[]
   Measurements: ReportDatasetField[]
   Filters: ReportDatasetField[]

@@ -24,7 +24,7 @@ export function reportWorkspaceDraftCompatibility(snapshot: ReportWorkspaceSnaps
     return 'Склад полів набору даних змінився. Чернетка збережена; невідомі поля не видалено.'
   }
   if ((data.dataSource === 13 && data.sorted.Col.length > 0)
-    || (hasFixedReportAxes(dataset.DataSource) && (data.sorted.Col.length > 0
+    || (hasFixedReportAxes(dataset.DataSource) && ((dataset.DataSource === 39 ? data.sorted.Col.map(field => field.type).join(',') !== '74,75' : data.sorted.Col.length > 0)
       || JSON.stringify(data.sorted.Row.map(field => field.type)) !== JSON.stringify(getNativeReportProfile(dataset.DataSource)?.rowGroupings)))
     || (data.dataSource === 19 && data.selections.length > 0)) {
     return 'Структура чернетки несумісна з цим набором даних. Чернетка збережена без змін.'

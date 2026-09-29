@@ -11,6 +11,11 @@ import { isReturnComparisonCapability } from './returnComparison'
 import { isRateComparisonCapability } from './rateComparison'
 import { isMarginComparisonCapability } from './marginComparison'
 import { defaultPaymentComparison, isPaymentComparisonCapability } from './paymentComparison'
+import { isPriceTypeSalesComparisonDataset } from './priceTypeSalesComparison'
+import { isOneCSpecialDataset, oneCSpecialSettingsForWorld } from './oneCSpecialReports'
+import { readAbcCapabilities } from './reportAbcClassification'
+import { isSupplierSourceWorldCapability } from './supplierBatchGrossProfit'
+import { isCurrentVparivanieDataset } from './currentVparivanie'
 
 export type CatalogueLaunchChoice = { reportId: string; world: string; sourceId: string; dataSource: number }
 export type CatalogueLaunchOption = { choice: CatalogueLaunchChoice; label: string; title: string; notice: string }
@@ -19,33 +24,64 @@ export type CatalogueLaunchResult = { ok: true; template: ReportTemplate; datase
 
 type Mode = 'native' | 'sales' | 'purchases' | 'daily' | 'monthly' | 'reserve' | 'new' | 'repeat' | 'incoming' | 'outgoing' | 'return-only'
 type Registration = { reportId: string; sourceId: string; worlds: readonly string[]; dataSources: readonly number[]; mode: Mode }
-// Exact metadata identities from Catalogue.json (2026-09-09, SHA256 37096c3c12a3ad2b02785ff24718a7a7185c41eeb01a38f3f16ce239d2b5cad8).
-// A registry entry permits only a native configuration, independently of source-parity status.
+// Exact metadata identities from the server catalogue. A registry entry permits
+// only a native configuration; findLaunch rechecks source coverage and capabilities.
 const builtin = (name: string, sourceId: string, dataSources: number[], mode: Mode = 'native'): Registration =>
   ({ reportId: `builtin:${name}`, sourceId, worlds: ['amg', 'fenix'], dataSources, mode })
 const indicator = (sourceId: string, dataSources: number[], mode: Mode = 'native'): Registration =>
   ({ reportId: `custom:fenix:${sourceId}`, sourceId, worlds: ['fenix'], dataSources, mode })
 const REGISTRY: readonly Registration[] = [
+  builtin('ABCАнализПродаж', '87d9f899-0eef-4879-ba0f-f76dcbf5ad93', [26]),
   builtin('XYZABCАнализПродаж', '970aa31b-9852-4036-99ed-53aa94566304', [15]),
   builtin('АнализДвиженияДенежныхСредств', '9e7d129c-bc85-457f-88f4-91db2c620577', [14]),
+  builtin('АнализДоступностиДенежныхСредств', '0742f621-fa58-46bb-9819-e4bc51a03f14', [11]),
   builtin('АнализДоступностиТоваровНаСкладах', '2008cac6-109b-4585-aa0f-6d5c422d9be3', [4]),
+  builtin('АнализОстатковДенежныхСредствПоДням', '2c5251d4-80f7-4c2d-bc6a-449ef0fcc6e9', [11]),
+  builtin('АнализОстатковПартийТоваровНаСкладах', 'a820d1c6-3eb2-4283-9aa2-de7e80ad0c42', [7]),
+  builtin('АнализОстатковТоваровНаСкладах', '5ec8b517-58d5-4309-9d31-381d89acdcad', [4]),
+  builtin('АнализСкидокНаценокНоменклатуры', '0ac4605f-8ff9-4d0e-b694-8bdc55dc485a', [23]),
+  builtin('АнализЦен', '991292be-2c3a-41cd-a32f-26467b589a1f', [28]),
+  builtin('ВедомостьВзаиморасчетыСКонтрагентами', '8fde42fc-6e49-4a8e-9096-74bbe14fe901', [10]),
   builtin('ВедомостьДенежныеСредства', '977cb58d-ff0b-46b7-90fd-124a560ec6ff', [11]),
+  builtin('ВаловаяПрибыльПоПоставщикам', 'f84e7b02-b6fe-40ca-bc7f-ea508d6ec41a', [38]),
+  builtin('ВаловаяПрибыль', '65fb1537-c992-4962-9f97-5d9f96b9a034', [35]),
+  builtin('ОтчетВпаривание', '069dfc76-74b6-491d-b039-f7fb54e0ea81', [39, 36]),
   builtin('ВедомостьПартииТоваровНаСкладах', 'fde97241-e736-4c21-9e61-2d6ecafa0b91', [7]),
+  builtin('ВедомостьПартииТоваровНаСкладахВесовойУчет', '614bb6c2-8932-48ba-a099-162aadead2e2', [7]),
   builtin('ВедомостьПартииТоваровНаСкладахКоличественныйУчет', 'dd98a3b9-e627-4a83-9f66-2dfe7686085c', [7]),
   builtin('ВедомостьПартииТоваровНаСкладахСКД', '9531c9a1-1ba3-41a5-966b-bc13257701dd', [7]),
   builtin('ВедомостьТоварыНаСкладах', 'a2f4cc04-d423-4537-b730-4179112bab40', [4]),
   builtin('ВедомостьТоварыОрганизаций', '8fe492c1-3bb1-4dfa-a5ef-ce689d3ff1ea', [7]),
   builtin('ГрафикЗакупокНоменклатуры', '817c9f2f-ebc7-4656-a543-515931fe1bb4', [3], 'daily'),
+  builtin('ГрафикЗакупокПродажНоменклатуры', 'aea10fb6-b60b-451d-94db-78870bef2a7f', [3], 'purchases'),
+  builtin('ГрафикЗакупокПродажНоменклатуры', 'aea10fb6-b60b-451d-94db-78870bef2a7f', [0], 'sales'),
   builtin('ГрафикПродажВозвратовНоменклатуры', '8fe9d4b6-5a10-4db6-bfd4-5d0b42dcc763', [0, 2], 'daily'),
   builtin('ГрафикПродажНоменклатуры', 'b63e6d14-b0a8-4c33-8e91-9fb397aee4f1', [0, 2], 'daily'),
   builtin('ГрафикПродажНоменклатурыПоПериодам', 'cb2964a3-59a3-431e-b3e2-fec3ab5e279f', [0, 2], 'monthly'),
   builtin('ЗадолженностьПоКонтрагентам', '0e9ed1d2-a9c6-4865-89bc-2f25c8b7ebd3', [10]),
+  builtin('ДвиженияДенежныхСредств', 'ecd83b31-5546-4832-bd65-daea9ef61431', [14]),
+  builtin('ДебиторскаяЗадолженностьПоИнтервалам', 'a9e8721c-8b9a-4145-8a78-2ee4495c1528', [10]),
+  builtin('ДебиторскаяЗадолженностьПоСрокамДолга', '25f1202e-f2e0-4135-a34f-fbbafb2dabfb', [10]),
+  builtin('ЗадолженностьДиаграмма', 'f0433565-4e50-4480-92b1-8955b8f4deb9', [10]),
   builtin('Закупки', 'ed77c5cc-6688-4316-a631-2ad0b237140d', [3], 'purchases'),
+  builtin('НаличиеПроданныхТоваровЗаПериод', '798e67f3-60cc-446a-9dee-c72c2a31fffc', [4]),
+  builtin('НаличиеПроданныхТоваровЗаПериодПоСкладах', '1d750774-6645-4cbc-a0e1-2f26f4654eca', [4]),
+  builtin('ОстаткиДенежныхСредствДиаграмма', 'dea7fe07-af34-40f1-b8cc-58ff90b29539', [11]),
   builtin('ОтчетЗаполненностиСклада', '7b5e0297-dc32-4dc4-8803-b7982a9618ce', [5]),
   builtin('ОтчетПоВозвратам', '0ec7344c-690f-4b13-af08-78b26a0f13f3', [2], 'return-only'),
   builtin('ОтчетПоМестамХраненияНоменклатуры', '9f693421-5a01-40b2-bf49-52d15132d3cb', [4, 5]),
+  builtin('ОтчетПоСкидкам', '56e2ad4b-9f75-4461-a742-eb54ae01823f', [25]),
+  builtin('ПланФактныйАнализЗакупок', '6e29b8f4-04ab-4bb5-afca-f94305bd6e32', [3], 'purchases'),
+  builtin('ПланФактныйАнализПродаж', '973ca751-f6ba-4853-982f-3df673cd57a8', [0], 'sales'),
+  builtin('ПредоставленныеСкидки', 'fa0ec96c-9345-4faf-8e35-747fc5f8e679', [24]),
   builtin('Продажи', '1d3b4053-a6fa-4c32-83be-269e93f7e853', [0, 2], 'sales'),
   builtin('ПродажиВозвраты', '8faf93b5-27ac-4e8a-bba2-107e6e64a998', [0, 2], 'sales'),
+  builtin('ПродажиСравнениеПоТипуЦен', '5543ce7d-61fa-45e2-8b85-5cd40abaccb6', [27]),
+  builtin('ПродажиДиаграмма', 'cdffe709-2fc4-41fa-b4d1-6b908277a701', [0, 2], 'sales'),
+  builtin('ПросроченнаяЗадолженностьПоСрокамДолга', '9dc84c04-db69-4684-8a0e-ee86dd77c454', [10]),
+  builtin('СравнениеРаботыКлиентов', '7551d592-9231-4c70-8ad0-1df5e13f3aa5', [0], 'sales'),
+  builtin('СравнительныйАнализДвиженияДенежныхСредств', '438b0286-b34b-419f-83ea-90b997bac6ee', [14]),
+  builtin('СтоимостнаяОценкаСкладаВЦенахНоменклатуры', '5356b590-bc98-49ab-b406-ca86b82ba7f5', [4]),
   builtin('ТоварыВРезервеНаСкладах', '91ef0806-a3fa-4bac-be65-5614d5ef270a', [4, 6], 'reserve'),
   indicator('0xb4b500055d78a52511ddfe9d4aaca7ff', [18]),
   indicator('0xb4b500055d78a52511ddfe606a8c1463', [21], 'outgoing'),
@@ -56,7 +92,21 @@ const REGISTRY: readonly Registration[] = [
   indicator('0xb4b500055d78a52511ddfe73b936bfac', [12, 13]),
   indicator('0xa6b50007e90a504c11de0962351b1edd', [20]),
   indicator('0xb4b500055d78a52511ddfe606a8c1461', [21], 'incoming'),
+  indicator('0xb4b500055d78a52511ddfc0eb172d884', [11]),
 ]
+const TURNOVER_REPORT = 'builtin:ВаловаяПрибыль'
+const TURNOVER_SOURCE = '65fb1537-c992-4962-9f97-5d9f96b9a034'
+export function isOneCTurnoverCatalogueChoice(value: unknown, choice: CatalogueLaunchChoice): boolean {
+  if (choice?.reportId !== TURNOVER_REPORT || choice.world !== 'fenix'
+    || choice.sourceId !== TURNOVER_SOURCE || choice.dataSource !== 1) return false
+  const validated = validatedCatalogue(value)
+  if (!validated) return false
+  const source = validated.catalogue.Reports.find(report => report.Id === TURNOVER_REPORT)?.Sources.find(item =>
+    item.World === 'fenix' && item.SourceId === TURNOVER_SOURCE)
+  const migration = source && validated.inspection.migrations.get(sourceIdentity(source))
+  return migration != null && ['native_partial', 'parity_verified'].includes(migration.Status)
+    && migration.NativeDataSources.includes(1)
+}
 
 const capabilities: Readonly<Record<number, (dataset: ReportDataset) => boolean>> = {
   13: dataset => isClientComparisonCapability(dataset.Comparison),
@@ -67,6 +117,14 @@ const capabilities: Readonly<Record<number, (dataset: ReportDataset) => boolean>
   19: dataset => isRateComparisonCapability(dataset.rateComparison),
   20: dataset => isMarginComparisonCapability(dataset.MarginComparison),
   21: dataset => isPaymentComparisonCapability(dataset.paymentComparison),
+  27: isPriceTypeSalesComparisonDataset,
+  23: isOneCSpecialDataset,
+  24: isOneCSpecialDataset,
+  25: isOneCSpecialDataset,
+  28: isOneCSpecialDataset,
+  26: dataset => readAbcCapabilities(dataset) !== null,
+  38: dataset => isSupplierSourceWorldCapability(dataset.supplierSourceWorld),
+  39: isCurrentVparivanieDataset,
 }
 function validFields(fields: ReportDatasetField[]): boolean {
   return Array.isArray(fields) && fields.every(field => field && Number.isSafeInteger(field.Type) && field.Type >= 0
@@ -76,17 +134,18 @@ function validFields(fields: ReportDatasetField[]): boolean {
 }
 function requirements(registration: Registration, dataSource: number) {
   const profile = getNativeReportProfile(dataSource)
-  const rows = registration.mode === 'daily' ? [3, 5, 28] : registration.mode === 'monthly' ? [2, 5, 28]
+  const rows = registration.mode === 'return-only' ? [12, 5, 3] : registration.mode === 'daily' ? [3, 5, 28] : registration.mode === 'monthly' ? [2, 5, 28]
     : registration.mode === 'sales' ? [12, 15, 5, 28] : registration.mode === 'purchases' ? [21, 25, 5, 28]
       : profile ? [...profile.rowGroupings] : []
-  const measures = registration.mode === 'new' ? [39, 40, 41, 42] : registration.mode === 'repeat' ? [43, 44, 45, 46]
+  const measures = registration.mode === 'return-only' ? [0] : registration.mode === 'new' ? [39, 40, 41, 42] : registration.mode === 'repeat' ? [43, 44, 45, 46]
     : registration.mode === 'reserve' ? [19] : profile ? [...profile.measurements] : [0, dataSource === 3 ? 2 : 4]
   return { rows, measures }
 }
 function supports(registration: Registration, dataset: ReportDataset): boolean {
   if (!dataset || typeof dataset.Name !== 'string' || !dataset.Name.trim() || !validFields(dataset.Groupings)
     || !validFields(dataset.Measurements) || !validFields(dataset.Filters)) return false
-  const current = [4, 5, 6, 7, 10, 11, 19].includes(dataset.DataSource)
+  if (registration.mode === 'return-only' && dataset.returnsOnly !== true) return false
+  const current = [4, 5, 6, 7, 10, 11, 19, 23, 25, 28].includes(dataset.DataSource)
   if (current ? dataset.PeriodSupported !== false || dataset.PeriodRequired === true : dataset.PeriodSupported === false) return false
   if (capabilities[dataset.DataSource] && !capabilities[dataset.DataSource](dataset)) return false
   const { rows, measures } = requirements(registration, dataset.DataSource)
@@ -103,7 +162,7 @@ function validatedCatalogue(value: unknown) {
 }
 function description(registration: Registration, report: ReportCatalogueEntry, dataset: ReportDataset): Omit<CatalogueLaunchOption, 'choice'> {
   const profile = getNativeReportProfile(dataset.DataSource)
-  const variant = registration.mode === 'incoming' ? 'Надходження' : registration.mode === 'outgoing' ? 'Виплати'
+  const variant = registration.mode === 'return-only' ? 'Лише повернення · кількість' : registration.mode === 'incoming' ? 'Надходження' : registration.mode === 'outgoing' ? 'Виплати'
     : registration.mode === 'new' ? 'Частка продажів новим покупцям' : registration.mode === 'repeat' ? 'Частка повторних продажів'
       : registration.mode === 'reserve' && dataset.DataSource === 4 ? 'Записаний резерв за складами'
         : registration.mode === 'daily' ? 'Таблиця за днями' : registration.mode === 'monthly' ? 'Таблиця за місяцями' : ''
@@ -111,9 +170,14 @@ function description(registration: Registration, report: ReportCatalogueEntry, d
   const label = variant ? `${variant} · ${nativeTitle}` : nativeTitle
   const required = dataset.DataSource === 19 ? ' Виберіть точну серію курсу та дві дати.'
     : [13, 16, 17, 18, 20, 21].includes(dataset.DataSource) ? ' Задайте окремий період порівняння.'
-      : dataset.DataSource === 15 ? ' Перевірте повні закриті місяці, кількість періодів і межі XYZ.' : ''
+      : dataset.DataSource === 15 ? ' Перевірте повні закриті місяці, кількість періодів і межі XYZ.'
+        : dataset.DataSource === 26 ? ' Перевірте частки A/B/C та показник класифікації.'
+          : [23, 25, 28].includes(dataset.DataSource) ? ' Вкажіть дату стану цього звіту.'
+            : dataset.DataSource === 27 ? ' Оберіть завантажене локальне покриття Fenix і один точний глобальний тип ціни.' : ''
   return { title: report.Title, label,
-    notice: `Готові налаштування «${report.Title}»: ${label}. ${profile?.preset.description ?? dataset.Description} Часткове покриття GBA; повна відповідність звіту 1С не підтверджена.${required}` }
+    notice: registration.mode === 'return-only'
+      ? `Готові налаштування «${report.Title}»: додатна кількість записаних повернень за клієнтом, товаром і днем. Причина, коментар, сума одиничних цін і відповідність проведенню 1С не підтверджені.`
+      : `Готові налаштування «${report.Title}»: ${label}. ${profile?.preset.description ?? dataset.Description} Часткове покриття GBA; повна відповідність первинному звіту не підтверджена.${required}` }
 }
 function findLaunch(catalogue: ReportCatalogue, inspection: ReturnType<typeof inspectCatalogueMigration>, choice: CatalogueLaunchChoice,
   datasets: readonly ReportDataset[]) {
@@ -127,7 +191,6 @@ function findLaunch(catalogue: ReportCatalogue, inspection: ReturnType<typeof in
   const registration = REGISTRY.find(item => item.reportId === choice.reportId && item.sourceId === choice.sourceId
     && item.worlds.includes(choice.world) && item.dataSources.includes(choice.dataSource))
   if (!registration) return { error: 'Для цього точного джерела ще немає готової конфігурації конструктора.' } as const
-  if (registration.mode === 'return-only') return { error: 'Звіт лише про повернення ще не має окремої готової конфігурації. Загальні чисті продажі не відтворюють цей звіт.' } as const
   const matches = datasets.filter(dataset => dataset?.DataSource === choice.dataSource)
   if (matches.length !== 1 || !supports(registration, matches[0])) return { error: 'Поточний набір даних не підтримує всі потрібні групування, показники або правила цього звіту.' } as const
   return { report, registration, dataset: matches[0] }
@@ -141,6 +204,8 @@ export function catalogueLaunchOptions(value: unknown, reportId: string, dataset
   const report = catalogue.Reports.find(item => item.Id === reportId)
   return report?.Sources.flatMap(source => (inspection.migrations.get(sourceIdentity(source))?.NativeDataSources ?? []).flatMap(dataSource => {
     const choice = { reportId, world: source.World, sourceId: source.SourceId, dataSource }
+    if (isOneCTurnoverCatalogueChoice(catalogue, choice)) return [{ choice, title: report.Title,
+      label: 'Консолідований оборот 1С', notice: `Звіт «${report.Title}» відкриється в окремій панелі. Доступний частковий Fenix-сценарій з перевіреними формулами; повна відповідність усім варіантам 1С не підтверджена.` }]
     const launch = findLaunch(catalogue, inspection, choice, datasets)
     return 'error' in launch ? [] : [{ choice, ...description(launch.registration, report, launch.dataset) }]
   })) ?? []
@@ -157,6 +222,9 @@ export function resolveCatalogueLaunch(value: unknown, choice: CatalogueLaunchCh
   if ('error' in launch) return { ok: false, message: launch.error ?? 'Не вдалося підготувати конфігурацію звіту.' }
   const { registration, dataset, report } = launch
   const data = defaultDatasetRequest(dataset, period.from, period.to)
+  if (registration.mode === 'return-only') data.returnsOnly = true
+  Object.assign(data, oneCSpecialSettingsForWorld(dataset.DataSource, choice.world))
+  if (dataset.DataSource === 38) data.supplierSourceWorld = choice.world === 'fenix' ? 0 : 1
   const { rows, measures } = requirements(registration, dataset.DataSource)
   const groupings = datasetGroupings(dataset)
   data.sorted.Row = rows.flatMap(type => groupings.filter(item => item.type === type))

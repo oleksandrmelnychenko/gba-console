@@ -1,4 +1,13 @@
+import { settlementPeriodConfigurationError, isSettlementPeriodDataset } from '../data/settlementPeriod'
 import { agreementPricesConfigurationError, isAgreementPricesDataset } from '../data/agreementPrices'
+import { agreementPriceComparisonConfigurationError, cloneAgreementPriceComparisonAliases, isAgreementPriceComparisonCapability, normalizeAgreementPriceComparisonDataset } from '../data/agreementPriceComparison'
+import { recordedSaleGrossProfitConfigurationError } from '../data/recordedSaleGrossProfit'
+import { dayOrganizationGrossProfitConfigurationError } from '../data/dayOrganizationGrossProfit'
+import { vparivanieConfigurationError } from '../data/vparivanie'
+import { currentVparivanieConfigurationError, isCurrentVparivanieDataset } from '../data/currentVparivanie'
+import { cashPeriodConfigurationError, isCashPeriodDataset } from '../data/cashPeriod'
+import { supplierBatchGrossProfitConfigurationError } from '../data/supplierBatchGrossProfit'
+import { importedSaleDiscountConfigurationError } from '../data/importedSaleDiscount'
 import { clonePaymentComparisonAliases, isPaymentComparisonCapability, paymentComparisonConfigurationError, PAYMENT_COMPARISON_CAPTIONS, PAYMENT_COMPARISON_GROUPINGS, PAYMENT_COMPARISON_FILTERS } from '../data/paymentComparison'
 import { cloneMarginComparisonAliases, isMarginComparisonCapability, marginComparisonConfigurationError, MARGIN_COMPARISON_CAPTIONS } from '../data/marginComparison'
 import { cloneRateComparisonAliases, isRateComparisonCapability, rateComparisonConfigurationError, RATE_COMPARISON_CAPTIONS, RATE_COMPARISON_GROUP } from '../data/rateComparison'
@@ -18,6 +27,8 @@ import {
   normalizePriceTypeSalesComparisonDataset,
   priceTypeSalesComparisonConfigurationError,
 } from '../data/priceTypeSalesComparison'
+import { cloneOneCSpecialAliases, isOneCSpecialDataset, oneCSpecialSettingsError } from '../data/oneCSpecialReports'
+import { readAbcCapabilities } from '../data/reportAbcClassification'
 
 const paymentUnsupportedCapabilities = ['Ordering', 'TopGroups', 'Threshold', 'HideZero', 'AbcClassification', 'FilterExpression'] as const
 const marginGroupings = [{ Type: 12, Name: 'Клієнт' }, { Type: 15, Name: 'Договір' }] as const
@@ -40,7 +51,21 @@ function isDataset(value: unknown): value is ReportDataset {
     && (item.PeriodSupported === undefined || typeof item.PeriodSupported === 'boolean')
     && !Object.hasOwn(item, 'AgreementPrices')
     && (item.DataSource === 22 ? isAgreementPricesDataset(item as ReportDataset) : item.agreementPrices == null)
+    && (item.DataSource === 31 ? item.PeriodSupported === false && item.PeriodRequired !== true
+      && isAgreementPriceComparisonCapability(item.agreementPriceComparison)
+      && item.Groupings?.map(field => field.Type).join(',') === '5,28'
+      && item.Measurements?.map(field => field.Type).join(',') === '75,76,77,78'
+      && item.Filters?.length === 0 : item.agreementPriceComparison == null)
     && (item.DataSource === 27 ? isPriceTypeSalesComparisonDataset(item as ReportDataset) : item.priceTypeSalesComparison == null)
+    && !Object.hasOwn(item, 'CurrentVparivanie')
+    && (item.DataSource === 39 ? isCurrentVparivanieDataset(item as ReportDataset) : item.currentVparivanie == null)
+    && !Object.hasOwn(item, 'SettlementPeriod')
+    && (item.DataSource === 41 ? isSettlementPeriodDataset(item as ReportDataset) : item.settlementPeriod == null)
+    && !Object.hasOwn(item, 'CashPeriod')
+    && (item.DataSource === 40 ? isCashPeriodDataset(item as ReportDataset) : item.cashPeriod == null)
+    && isOneCSpecialDataset(item as ReportDataset)
+    && (item.DataSource !== 26 || (item.PeriodRequired === true && item.PeriodSupported === true
+      && readAbcCapabilities(item as ReportDataset) !== null))
     && (item.DataSource !== 12 || (item.PeriodRequired === true && item.PeriodSupported === true))
     && (item.DataSource === 19 ? item.PeriodRequired === false && item.PeriodSupported === false && item.Filters?.length === 0 && item.Groupings?.length === 1 && item.Groupings[0].Type === 52 && item.Groupings[0].Name === RATE_COMPARISON_GROUP
       && item.Measurements?.length === RATE_COMPARISON_CAPTIONS.length && item.Measurements.every((field, index) => field.Type === 51 + index && field.Name === RATE_COMPARISON_CAPTIONS[index] && field.Selectable !== false) && isRateComparisonCapability(item.rateComparison) : item.rateComparison == null)
@@ -51,6 +76,14 @@ function isDataset(value: unknown): value is ReportDataset {
     && (item.DataSource === 20 ? item.PeriodRequired === true && item.PeriodSupported === true && item.Groupings?.length === marginGroupings.length && item.Groupings.every((field,index) => field.Type === marginGroupings[index].Type && field.Name === marginGroupings[index].Name && field.Selectable !== false)
       && item.Measurements?.length === MARGIN_COMPARISON_CAPTIONS.length && item.Measurements.every((field,index) => field.Type === 55 + index && field.Name === MARGIN_COMPARISON_CAPTIONS[index] && field.Selectable !== false)
       && item.Filters?.length === 4 && item.Filters.every(field => [1,2,6,9].includes(field.Type) && field.Selectable !== false) && isMarginComparisonCapability(item.MarginComparison) : item.MarginComparison == null)
+    && (item.DataSource !== 30 || (item.PeriodRequired === true && item.PeriodSupported === true
+      && item.Groupings?.map(field => field.Type).join(',') === '12,15'
+      && item.Measurements?.map(field => field.Type).join(',') === '2,6,10,14'
+      && item.Filters?.map(field => field.Type).join(',') === '1,2,6,9'))
+    && (item.DataSource !== 32 || (item.PeriodRequired === true && item.PeriodSupported === true
+      && item.Groupings?.map(field => field.Type).join(',') === '12,15,5'
+      && item.Measurements?.map(field => field.Type).join(',') === '79'
+      && item.Filters?.map(field => field.Type).join(',') === '1,2,6,9'))
     && (item.DataSource === 18 ? item.PeriodRequired === true && item.PeriodSupported === true && isReturnComparisonCapability(item.ReturnComparison) : item.ReturnComparison == null)
     && (item.DataSource === 17 ? item.PeriodRequired === true && item.PeriodSupported === true && isBuyerSalesShareCapability(item.BuyerSalesShare) : item.BuyerSalesShare == null)
     && (item.DataSource === 16 ? item.PeriodRequired === true && item.PeriodSupported === true && isRevenueComparisonCapability(item.RevenueComparison) : item.RevenueComparison == null)
@@ -67,7 +100,8 @@ export async function getReportDatasets(signal?: AbortSignal): Promise<ReportDat
   const normalized = Array.isArray(result) ? result.map(item => {
     if (!item || typeof item !== 'object' || Array.isArray(item)) return null
     const exactFilters = normalizeNativeExactFilterDataset(item as Record<string, unknown>)
-    return exactFilters ? normalizePriceTypeSalesComparisonDataset(exactFilters as unknown as Record<string, unknown>) : null
+    const comparison = exactFilters ? normalizeAgreementPriceComparisonDataset(exactFilters as unknown as Record<string, unknown>) : null
+    return comparison ? normalizePriceTypeSalesComparisonDataset(comparison as unknown as Record<string, unknown>) : null
   }) : []
   if (!normalized.length || !normalized.every((item): item is ReportDataset => item !== null && isDataset(item))
     || new Set(normalized.map(item => item.DataSource)).size !== normalized.length) {
@@ -89,6 +123,12 @@ type WireTemplate = Required<Omit<ReportTemplate, 'Data'>> & {
     Sorted: ReportRequestBody['sorted']
     Selections: ReportRequestBody['selections']
     DataSource: ReportRequestBody['dataSource']
+    ReturnsOnly?: boolean
+    returnsOnly?: boolean
+    SettlementPeriod?: unknown
+    settlementPeriod?: unknown
+    CashPeriod?: unknown
+    cashPeriod?: unknown
     ValuationClientAgreementId?: ReportRequestBody['valuationClientAgreementId']
     RateComparison?: unknown
     rateComparison?: unknown
@@ -120,8 +160,20 @@ type WireTemplate = Required<Omit<ReportTemplate, 'Data'>> & {
     productClassification?: unknown
     SourceOrganizations?: unknown
     sourceOrganizations?: unknown
+    SourceBuyerSubtree?: unknown
+    sourceBuyerSubtree?: unknown
+    SupplierSourceWorld?: unknown
+    supplierSourceWorld?: unknown
     PriceTypeSalesComparison?: unknown
     priceTypeSalesComparison?: unknown
+    DiscountMarkup?: unknown
+    discountMarkup?: unknown
+    ProvidedDiscounts?: unknown
+    providedDiscounts?: unknown
+    PriceAnalysis?: unknown
+    priceAnalysis?: unknown
+    AgreementPriceComparison?: unknown
+    agreementPriceComparison?: unknown
     OneC?: ReportRequestBody['oneC']
     oneC?: ReportRequestBody['oneC']
   }
@@ -137,6 +189,14 @@ export function normalizeSavedTemplate(value: WireTemplate): ReportTemplate {
     sorted: (value.Data.DataSource === 16 || value.Data.DataSource === 17 || value.Data.DataSource === 18 || value.Data.DataSource === 19 || value.Data.DataSource === 20 || value.Data.DataSource === 21 || value.Data.DataSource === 27) ? structuredClone(value.Data.Sorted) : value.Data.Sorted,
     selections: (value.Data.DataSource === 16 || value.Data.DataSource === 17 || value.Data.DataSource === 18 || value.Data.DataSource === 19 || value.Data.DataSource === 20 || value.Data.DataSource === 21 || value.Data.DataSource === 27) ? structuredClone(value.Data.Selections ?? []) : value.Data.Selections ?? [],
     dataSource: value.Data.DataSource,
+    ...(Object.hasOwn(value.Data, 'returnsOnly') ? { returnsOnly: value.Data.returnsOnly }
+      : Object.hasOwn(value.Data, 'ReturnsOnly') ? { returnsOnly: value.Data.ReturnsOnly } : {}),
+    ...(Object.hasOwn(value.Data, 'settlementPeriod') ? { settlementPeriod: structuredClone(value.Data.settlementPeriod),
+      ...(Object.hasOwn(value.Data, 'SettlementPeriod') ? { SettlementPeriod: structuredClone(value.Data.SettlementPeriod) } : {}),
+    } : Object.hasOwn(value.Data, 'SettlementPeriod') ? { settlementPeriod: structuredClone(value.Data.SettlementPeriod) } : {}),
+    ...(Object.hasOwn(value.Data, 'cashPeriod') ? { cashPeriod: value.Data.cashPeriod,
+      ...(Object.hasOwn(value.Data, 'CashPeriod') ? { CashPeriod: value.Data.CashPeriod } : {}),
+    } : Object.hasOwn(value.Data, 'CashPeriod') ? { cashPeriod: value.Data.CashPeriod } : {}),
     ...clonePaymentComparisonAliases(value.Data),
     ...cloneMarginComparisonAliases(value.Data),
     ...cloneRateComparisonAliases(value.Data),
@@ -145,7 +205,12 @@ export function normalizeSavedTemplate(value: WireTemplate): ReportTemplate {
     ...cloneRevenueComparisonAliases(value.Data),
     ...cloneXyzAliases(value.Data),
     ...cloneNativeExactFilterAliases(value.Data),
+    ...(Object.hasOwn(value.Data, 'supplierSourceWorld') ? { supplierSourceWorld: value.Data.supplierSourceWorld,
+      ...(Object.hasOwn(value.Data, 'SupplierSourceWorld') ? { SupplierSourceWorld: value.Data.SupplierSourceWorld } : {}),
+    } : Object.hasOwn(value.Data, 'SupplierSourceWorld') ? { supplierSourceWorld: value.Data.SupplierSourceWorld } : {}),
     ...clonePriceTypeSalesComparisonAliases(value.Data),
+    ...cloneAgreementPriceComparisonAliases(value.Data),
+    ...cloneOneCSpecialAliases(value.Data),
     ...(Object.hasOwn(value.Data, 'comparison') ? { comparison: value.Data.comparison,
       ...(Object.hasOwn(value.Data, 'Comparison') ? { Comparison: value.Data.Comparison } : {}),
     } : Object.hasOwn(value.Data, 'Comparison') ? { comparison: value.Data.Comparison } : {}),
@@ -175,11 +240,29 @@ export async function getServerReportTemplates(signal?: AbortSignal): Promise<Re
 }
 
 export async function saveServerReportTemplate(template: ReportTemplate): Promise<ReportTemplate> {
-  const request = (template.Data.dataSource === 2 || template.Data.dataSource === 17 || template.Data.dataSource === 18 || template.Data.dataSource === 19 || template.Data.dataSource === 20 || template.Data.dataSource === 21 || template.Data.dataSource === 22 || template.Data.dataSource === 27) ? structuredClone(template) : template
+  const request = (template.Data.dataSource === 2 || template.Data.dataSource === 17 || template.Data.dataSource === 18 || template.Data.dataSource === 19 || template.Data.dataSource === 20 || template.Data.dataSource === 21 || template.Data.dataSource === 22 || template.Data.dataSource === 23 || template.Data.dataSource === 24 || template.Data.dataSource === 25 || template.Data.dataSource === 27 || template.Data.dataSource === 28 || template.Data.dataSource === 35 || template.Data.dataSource === 39 || template.Data.dataSource === 40 || template.Data.dataSource === 41) ? structuredClone(template) : template
   const exactFilterError = nativeExactFiltersConfigurationError(request.Data)
   if (exactFilterError) throw new Error(exactFilterError)
   const pricesError = agreementPricesConfigurationError(request.Data)
   if (pricesError) throw new Error(pricesError)
+  const priceComparisonError = agreementPriceComparisonConfigurationError(request.Data)
+  if (priceComparisonError) throw new Error(priceComparisonError)
+  const grossProfitError = recordedSaleGrossProfitConfigurationError(request.Data)
+  if (grossProfitError) throw new Error(grossProfitError)
+  const dayOrganizationProfitError = dayOrganizationGrossProfitConfigurationError(request.Data)
+  if (dayOrganizationProfitError) throw new Error(dayOrganizationProfitError)
+  const currentVparivanieError = currentVparivanieConfigurationError(request.Data)
+  if (currentVparivanieError) throw new Error(currentVparivanieError)
+  const settlementPeriodError = settlementPeriodConfigurationError(request.Data)
+  if (settlementPeriodError) throw new Error(settlementPeriodError)
+  const cashPeriodError = cashPeriodConfigurationError(request.Data)
+  if (cashPeriodError) throw new Error(cashPeriodError)
+  const vparivanieError = vparivanieConfigurationError(request.Data)
+  if (vparivanieError) throw new Error(vparivanieError)
+  const supplierBatchProfitError = supplierBatchGrossProfitConfigurationError(request.Data)
+  if (supplierBatchProfitError) throw new Error(supplierBatchProfitError)
+  const importedDiscountError = importedSaleDiscountConfigurationError(request.Data)
+  if (importedDiscountError) throw new Error(importedDiscountError)
   const paymentError = paymentComparisonConfigurationError(request.Data)
   if (paymentError) throw new Error(paymentError)
   const marginError = marginComparisonConfigurationError(request.Data)
@@ -196,6 +279,8 @@ export async function saveServerReportTemplate(template: ReportTemplate): Promis
   if (xyzError) throw new Error(xyzError)
   const priceTypeComparisonError = priceTypeSalesComparisonConfigurationError(request.Data)
   if (priceTypeComparisonError) throw new Error(priceTypeComparisonError)
+  const specialOneCError = oneCSpecialSettingsError(request.Data, undefined)
+  if (specialOneCError) throw new Error(specialOneCError)
   const result = await apiRequest<WireTemplate>('/report/templates/save', {
     method: 'POST', body: { Id: request.Id, Revision: request.Revision ?? 0, Name: request.Name, Data: request.Data },
   })

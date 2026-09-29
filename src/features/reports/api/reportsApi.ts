@@ -1,4 +1,13 @@
+import { settlementPeriodConfigurationError } from '../data/settlementPeriod'
 import { agreementPricesConfigurationError } from '../data/agreementPrices'
+import { agreementPriceComparisonConfigurationError } from '../data/agreementPriceComparison'
+import { recordedSaleGrossProfitConfigurationError } from '../data/recordedSaleGrossProfit'
+import { dayOrganizationGrossProfitConfigurationError } from '../data/dayOrganizationGrossProfit'
+import { vparivanieConfigurationError } from '../data/vparivanie'
+import { currentVparivanieConfigurationError, currentVparivanieManagerReference } from '../data/currentVparivanie'
+import { cashPeriodConfigurationError } from '../data/cashPeriod'
+import { supplierBatchGrossProfitConfigurationError } from '../data/supplierBatchGrossProfit'
+import { importedSaleDiscountConfigurationError } from '../data/importedSaleDiscount'
 import { paymentComparisonConfigurationError } from '../data/paymentComparison'
 import { marginComparisonConfigurationError } from '../data/marginComparison'
 import { rateComparisonConfigurationError } from '../data/rateComparison'
@@ -22,16 +31,68 @@ import { normalizeReportResult } from '../utils'
 import { nativeExactFiltersConfigurationError } from '../data/nativeExactFilters'
 import { EXACT_ONE_C_BUYER_ROOT_ID } from '../data/oneCTurnoverReport'
 import { priceTypeSalesComparisonConfigurationError, priceTypeSalesSourceId } from '../data/priceTypeSalesComparison'
+import { oneCSpecialSettingsError } from '../data/oneCSpecialReports'
+import { normalizeNativeReportPreview, type NativeReportPreview } from '../data/nativeReportPreview'
 
 const EMPTY_GUID = '00000000-0000-0000-0000-000000000000'
 const CLIENT_FILTER_SQL = 'RegionCode.Value/Client.FullName/Client.USREOU'
 
 export async function createStockReport(body: ReportRequestBody): Promise<ReportResult> {
-  const request = (body.dataSource === 2 || body.dataSource === 17 || body.dataSource === 18 || body.dataSource === 19 || body.dataSource === 20 || body.dataSource === 21 || body.dataSource === 22 || body.dataSource === 27) ? structuredClone(body) : body
+  const request = prepareStockReportRequest(body)
+  const result = await apiRequest<unknown>('/report/stocks/generate', {
+    method: 'POST',
+    body: request,
+  })
+
+  return normalizeReportResult(result)
+}
+
+/** Calculates one bounded on-screen page and file links from the same report run. */
+export async function previewStockReport(body: ReportRequestBody): Promise<{ result: ReportResult; preview: NativeReportPreview }> {
+  const request = prepareStockReportRequest(body)
+  const response = await apiRequest<unknown>('/report/stocks/preview', {
+    method: 'POST',
+    query: { rowOffset: 0, rowLimit: 50 },
+    body: request,
+  })
+  const preview = normalizeNativeReportPreview(response)
+  if (request.dataSource === 39 && (preview.Request?.DataSource !== 'NativeCurrentVparivanie' || !preview.CurrentVparivanieProducts))
+    throw new Error('Сервер повернув результат іншого набору даних замість поточної матриці «Впарювання».')
+  if (request.dataSource === 41 && preview.Request?.DataSource !== 'NativeSettlementPeriod')
+    throw new Error('Сервер повернув інший набір даних замість взаєморозрахунків за період.')
+  if (request.dataSource === 40 && preview.Request?.DataSource !== 'NativeCashPeriod')
+    throw new Error('Сервер повернув результат іншого набору даних замість руху коштів.')
+  return { result: normalizeReportResult(response), preview }
+}
+
+function prepareStockReportRequest(body: ReportRequestBody): ReportRequestBody {
+  const request = (body.dataSource === 2 || body.dataSource === 17 || body.dataSource === 18 || body.dataSource === 19 || body.dataSource === 20 || body.dataSource === 21 || body.dataSource === 22 || body.dataSource === 23 || body.dataSource === 24 || body.dataSource === 25 || body.dataSource === 27 || body.dataSource === 28 || body.dataSource === 35 || body.dataSource === 39 || body.dataSource === 40 || body.dataSource === 41) ? structuredClone(body) : body
   const exactFilterError = nativeExactFiltersConfigurationError(request)
   if (exactFilterError) throw new Error(exactFilterError)
   const pricesError = agreementPricesConfigurationError(request)
   if (pricesError) throw new Error(pricesError)
+  const priceComparisonError = agreementPriceComparisonConfigurationError(request)
+  if (priceComparisonError) throw new Error(priceComparisonError)
+  const grossProfitError = recordedSaleGrossProfitConfigurationError(request)
+  if (grossProfitError) throw new Error(grossProfitError)
+  const dayOrganizationProfitError = dayOrganizationGrossProfitConfigurationError(request)
+  if (dayOrganizationProfitError) throw new Error(dayOrganizationProfitError)
+  const currentVparivanieError = currentVparivanieConfigurationError(request)
+  if (currentVparivanieError) throw new Error(currentVparivanieError)
+  const settlementPeriodError = settlementPeriodConfigurationError(request)
+  if (settlementPeriodError) throw new Error(settlementPeriodError)
+  const cashPeriodError = cashPeriodConfigurationError(request)
+  if (cashPeriodError) throw new Error(cashPeriodError)
+  if (request.dataSource === 39) for (const selection of request.selections) {
+    if (selection.SelectedField.Type === 60) for (const value of selection.Values)
+      value.Data.Id = currentVparivanieManagerReference(value.Data)!
+  }
+  const vparivanieError = vparivanieConfigurationError(request)
+  if (vparivanieError) throw new Error(vparivanieError)
+  const supplierBatchProfitError = supplierBatchGrossProfitConfigurationError(request)
+  if (supplierBatchProfitError) throw new Error(supplierBatchProfitError)
+  const importedDiscountError = importedSaleDiscountConfigurationError(request)
+  if (importedDiscountError) throw new Error(importedDiscountError)
   const paymentError = paymentComparisonConfigurationError(request)
   if (paymentError) throw new Error(paymentError)
   const marginError = marginComparisonConfigurationError(request)
@@ -52,26 +113,40 @@ export async function createStockReport(body: ReportRequestBody): Promise<Report
   if (comparisonError) throw new Error(comparisonError)
   const priceTypeComparisonError = priceTypeSalesComparisonConfigurationError(request)
   if (priceTypeComparisonError) throw new Error(priceTypeComparisonError)
-  const result = await apiRequest<unknown>('/report/stocks/generate', {
-    method: 'POST',
-    body: request,
-  })
-
-  return normalizeReportResult(result)
+  const specialOneCError = oneCSpecialSettingsError(request)
+  if (specialOneCError) throw new Error(specialOneCError)
+  return request
 }
 
-export async function searchDatasetReportValues(dataSource: number, field: number, params: ReportSearchParams, signal?: AbortSignal): Promise<ReportEntity[]> {
+export async function searchDatasetReportValues(dataSource: number, field: number, params: ReportSearchParams, signal?: AbortSignal, sourceWorld?: number): Promise<ReportEntity[]> {
+  if (dataSource === 41) throw new Error('Договори вибираються через точний довідник взаєморозрахунків за період.')
+  if (dataSource === 40) throw new Error('Валютні рахунки вибираються через точний довідник звіту руху коштів.')
+  if (dataSource === 39 && ![1, 4, 5, 21, 60].includes(field))
+    throw new Error('Цей відбір поточної матриці «Впарювання» недоступний.')
+  if ([23, 24, 25, 28].includes(dataSource) && !(sourceWorld === 1 || (dataSource !== 28 && sourceWorld === 2)))
+    throw new Error('Оберіть базу Fenix або AMG для довідника звіту 1С.')
   const result = await apiRequest<unknown>('/report/datasets/lookup', {
-    query: { dataSource, field, value: params.value.trim(), offset: params.offset, limit: params.limit }, signal,
+    query: { dataSource, field, value: params.value.trim(), offset: params.offset, limit: params.limit,
+      ...([23, 24, 25, 28].includes(dataSource) ? { sourceWorld } : {}) }, signal,
   })
-  if (!Array.isArray(result) || !result.every(item => item && typeof item === 'object' && (dataSource === 27
+  if (!Array.isArray(result) || !result.every(item => item && typeof item === 'object' && (dataSource === 39 && field === 60
+    ? typeof item.Id === 'string' && currentVparivanieManagerReference(item) === item.Id
+    : dataSource === 27
     ? priceTypeSalesSourceId(item.Id) !== null
-    : (dataSource === 18 || dataSource === 19 || dataSource === 20 || dataSource === 21 || dataSource === 22)
+    : [23, 24, 25, 28].includes(dataSource) ? typeof item.Id === 'string' && item.Id.length > 0 && item.Id.length <= 512 && !/\p{Cc}/u.test(item.Id)
+    : dataSource === 29 ? typeof item.Id === 'string' && /^[1-9]\d*$/.test(item.Id)
+      && Number.isSafeInteger(Number(item.Id))
+    : dataSource === 32 ? typeof item.Id === 'string' && revenueExactId(item) !== null
+    : dataSource === 31 ? (typeof item.Id === 'number' && Number.isSafeInteger(item.Id) && item.Id > 0)
+      || (typeof item.Id === 'string' && /^[1-9]\d*$/.test(item.Id) && Number.isSafeInteger(Number(item.Id)))
+    : (dataSource === 18 || dataSource === 19 || dataSource === 20 || dataSource === 21 || dataSource === 22 || dataSource === 30 || dataSource === 32 || dataSource === 35 || dataSource === 39)
       ? typeof item.Id === 'string' && revenueExactId(item) !== null
       : (dataSource === 16 || dataSource === 17) ? revenueExactId(item) !== null : Number.isSafeInteger(item.Id) && item.Id > 0)
     && typeof item.Name === 'string' && item.Name.trim().length > 0)) throw new Error('Сервер повернув некоректні значення відбору звіту.')
+  if (dataSource === 39 && field === 60 && new Set(result.map(item => item.Id)).size !== result.length)
+    throw new Error('Сервер повернув неоднозначні джерельні реквізити менеджерів покупців.')
   if (dataSource === 19 && (new Set(result.map(item => item.Id)).size !== result.length || result.some(item => !item.Name.trim()))) throw new Error('Сервер повернув неоднозначні серії курсів.')
-  return result
+  return dataSource === 29 || dataSource === 31 ? result.map(item => ({ ...item, Id: Number(item.Id) })) : result
 }
 
 export type ValuationAgreement = { Id: number; Name: string }

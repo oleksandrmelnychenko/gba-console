@@ -48,6 +48,9 @@ function PriceTypeSalesSettings({ disabled, scope, value, onChange, onScopeChang
         rightSection={scopes.loading ? <Loader size="xs" /> : undefined}
         nothingFoundMessage={scopes.loading ? 'Завантаження…' : 'Сумісного покриття не знайдено'} error={scopes.error}
         onChange={key => onScopeChange(key ? structuredClone(scopes.items.find(item => item.Key === key)?.Filters) : undefined)} />
+      {!scopes.loading && !scopes.error && scopes.items.length === 0
+        ? <Alert color="yellow">У локальній базі немає завантажених продажів Fenix для цього звіту. Після імпорту продажів за потрібний період виберіть доступне покриття.</Alert>
+        : null}
       <Select label="Глобальний тип ціни Fenix" placeholder="Шукайте назву або точний 32-hex ID" searchable clearable
         data={priceTypeOptions} value={priceTypeId || null} searchValue={query} disabled={disabled}
         filter={({ options }) => options} maxLength={120}
