@@ -37,6 +37,9 @@ export function isCurrentVparivanieCapability(value: unknown): boolean {
     && (value.ManagerUnassignedFilterSupported !== true || value.ManagerFilterSupported === true)
     && value.UnknownQuantity === 'null' && value.MixedUnits === 'null'
     && value.HistoricalStockSupported === false && value.HistoricalXlsParityVerified === false
+    && (value.RegionalV2Available === undefined || typeof value.RegionalV2Available === 'boolean')
+    && (value.RegionalV2Day === undefined || value.RegionalV2Day === '2026-09-03')
+    && (value.RegionalV2Available !== true || value.RegionalV2Day === '2026-09-03')
     && (value.CounterpartyIdentity === undefined || value.CounterpartyIdentity === CURRENT_VPARIVANIE_COUNTERPARTY_IDENTITY)
 }
 
