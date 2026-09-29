@@ -14,6 +14,7 @@ import type {
   ClientSourceCardSnapshot,
   ClientSourceContactSnapshot,
 } from '../../types'
+import { selectBuyerPriceTypeEvidence } from './buyerPriceTypeEvidence'
 import './client-commercial-structure-view.css'
 
 type ClientCommercialStructureViewProps = {
@@ -110,6 +111,8 @@ export function ClientCommercialStructureView({
         />
         <SummaryMetric label={t('Продажів')} value={structure.SaleCount} />
       </SimpleGrid>
+
+      <BuyerPriceTypeEvidenceSection structure={structure} t={t} />
 
       <Stack className="client-commercial-parties" gap={7}>
         <Text className="app-section-title">{t('Структура клієнта')}</Text>
@@ -224,6 +227,48 @@ export function ClientCommercialStructureView({
         </Stack>
       </AppModal>
     </Stack>
+  )
+}
+
+function BuyerPriceTypeEvidenceSection({ structure, t }: ClientCommercialStructureViewProps) {
+  const evidence = selectBuyerPriceTypeEvidence(structure)
+
+  return (
+    <section className="client-buyer-price-types" aria-label={t('Типи цін покупця з договорів Fenix')}>
+      <Text className="app-section-title">{t('Типи цін покупця з договорів Fenix')}</Text>
+      <Text c="dimmed" size="xs">
+        {t('Локальний зріз з нашої бази за відкритою карткою. Це не виконання конструктора звіту 1С.')}
+      </Text>
+      {evidence.state !== 'ready' ? (
+        <Alert color={evidence.state === 'incomplete' ? 'orange' : 'blue'} variant="light">
+          {t(evidence.reason)}
+        </Alert>
+      ) : evidence.rows.length === 0 ? (
+        <Text size="sm">{t('На дату синку чинних договорів покупця з типом ціни немає.')}</Text>
+      ) : (
+        <>
+          <Text size="xs" c="dimmed">{t('Зріз Fenix')}: {formatDateTime(evidence.capturedAt)}</Text>
+          <div className="client-buyer-price-types__scroll">
+            <table className="client-buyer-price-types__table">
+              <thead><tr>
+                <th>{t('Договір')}</th>
+                <th>{t('Стандартний тип ціни')}</th>
+                <th>{t('Акційний тип ціни')}</th>
+                <th>{t('Строк')}</th>
+              </tr></thead>
+              <tbody>{evidence.rows.map((row) => (
+                <tr key={row.reference}>
+                  <td>{row.agreement}</td>
+                  <td>{row.standard}</td>
+                  <td>{row.promotional ?? '—'}</td>
+                  <td>{t(row.validity)}</td>
+                </tr>
+              ))}</tbody>
+            </table>
+          </div>
+        </>
+      )}
+    </section>
   )
 }
 

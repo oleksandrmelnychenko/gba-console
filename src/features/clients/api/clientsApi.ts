@@ -587,6 +587,7 @@ function isClientSourceCardSnapshot(
   const snapshot = value as Partial<ClientSourceCardSnapshot>
   return typeof snapshot.SourceSystem === 'string'
     && typeof snapshot.SourceCode === 'number'
+    && isOptionalBoolean(snapshot.Buyer)
     && isOptionalNumber(snapshot.DirectClientGroupSourceCode)
     && isOptionalString(snapshot.DirectClientGroupRegionCode)
     && isOptionalBoolean(snapshot.DirectClientGroupSourceMarkedDeleted)
@@ -622,6 +623,7 @@ function isClientSourceAgreementSnapshot(value: unknown): boolean {
   if (!value || typeof value !== 'object') return false
   const agreement = value as Record<string, unknown>
   return typeof agreement.SourceCode === 'number'
+    && isOptionalString(agreement.SourceReference)
     && isOptionalString(agreement.Name)
     && isOptionalString(agreement.Number)
     && isOptionalString(agreement.CurrencyCode)

@@ -76,6 +76,40 @@
   margin-block: 1px 2px;
 }
 
+.client-buyer-price-types {
+  display: grid;
+  gap: 7px;
+}
+
+.client-buyer-price-types__scroll {
+  border: 1px solid var(--mantine-color-gray-2);
+  border-radius: 8px;
+  overflow-x: auto;
+}
+
+.client-buyer-price-types__table {
+  border-collapse: collapse;
+  min-width: 560px;
+  text-align: left;
+  width: 100%;
+}
+
+.client-buyer-price-types__table th,
+.client-buyer-price-types__table td {
+  border-bottom: 1px solid var(--mantine-color-gray-2);
+  padding: 8px 10px;
+  vertical-align: top;
+}
+
+.client-buyer-price-types__table th {
+  color: var(--mantine-color-gray-6);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.client-buyer-price-types__table td { font-size: 12px; }
+.client-buyer-price-types__table tbody tr:last-child td { border-bottom: 0; }
+
 .client-commercial-metric {
   min-width: 0;
   padding: 9px 12px 10px;
