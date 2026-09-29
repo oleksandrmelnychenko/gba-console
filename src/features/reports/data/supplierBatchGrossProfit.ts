@@ -33,12 +33,17 @@ function validDate(value: string): boolean {
   return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === value
 }
 
+export function isSupplierBatchGrossProfitDataset(dataset: ReportDataset): boolean {
+  return dataset.DataSource === SUPPLIER_BATCH_GROSS_PROFIT_SOURCE && dataset.PeriodRequired === true
+    && dataset.PeriodSupported === true && isSupplierSourceWorldCapability(dataset.supplierSourceWorld)
+    && dataset.Groupings.map(item => item.Type).join(',') === '73,4,21'
+    && dataset.Measurements.map(item => item.Type).join(',') === measures.join(',')
+    && dataset.Filters.map(item => item.Type).join(',') === '0,1,17'
+}
+
 export function supplierBatchGrossProfitConfigurationError(data: ReportRequestBody, dataset?: ReportDataset): string | null {
   if (data.dataSource !== SUPPLIER_BATCH_GROSS_PROFIT_SOURCE) return null
-  if (dataset && (dataset.DataSource !== SUPPLIER_BATCH_GROSS_PROFIT_SOURCE || dataset.PeriodRequired !== true
-    || dataset.PeriodSupported !== true || dataset.Groupings.map(item => item.Type).join(',') !== '73,4,21'
-    || dataset.Measurements.map(item => item.Type).join(',') !== measures.join(',')
-    || dataset.Filters.map(item => item.Type).join(',') !== '0,1,17'))
+  if (dataset && !isSupplierBatchGrossProfitDataset(dataset))
     return 'Сервер не підтвердив набір партійного прибутку за постачальниками.'
   const world = requestSupplierSourceWorld(data)
   if (data.supplierSourceWorld !== undefined && data.SupplierSourceWorld !== undefined
