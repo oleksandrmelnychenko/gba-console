@@ -1,0 +1,10 @@
+services:
+  gba-console:
+    image: gba-console:supplier38-product-b6c1ca6
+    build:
+      context: /root/projects/gba_console
+      labels:
+        gba.git.sha: b6c1ca6155f0aa42feacba0f02fe3415550714a9
+    labels:
+      gba.git.sha: b6c1ca6155f0aa42feacba0f02fe3415550714a9
+      gba.release: supplier38-product-console-20260928

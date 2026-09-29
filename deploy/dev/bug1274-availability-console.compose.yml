@@ -1,0 +1,10 @@
+services:
+  gba-console:
+    image: gba-console:bug1274-availability-6a24f837
+    build:
+      context: /root/projects/gba-release-worktrees/console-report-availability-20260929
+      labels:
+        gba.git.sha: 6a24f837480eb7abf474348d8674cdeecc027eea
+    labels:
+      gba.git.sha: 6a24f837480eb7abf474348d8674cdeecc027eea
+      gba.release: bug1274-availability-console-20260929
