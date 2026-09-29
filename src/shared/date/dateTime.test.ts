@@ -4,6 +4,7 @@ import {
   formatKyivBusinessDate,
   SYNC_DATA_RANGE_START,
   toDateTimeQuery,
+  toExclusiveDateTimeQuery,
   toQueryString,
 } from './dateTime'
 
@@ -49,6 +50,18 @@ describe('toDateTimeQuery', () => {
 
   it('passes invalid date-only inputs through for server-side validation', () => {
     expect(toDateTimeQuery('2026-02-31', 'end')).toBe('2026-02-31')
+  })
+})
+
+describe('toExclusiveDateTimeQuery', () => {
+  it('includes every instant on the selected day across month and leap-day boundaries', () => {
+    expect(toExclusiveDateTimeQuery('2026-09-29')).toBe('2026-09-30T00:00:00.000')
+    expect(toExclusiveDateTimeQuery('2028-02-29')).toBe('2028-03-01T00:00:00.000')
+  })
+
+  it('preserves explicit timestamps and invalid dates for server validation', () => {
+    expect(toExclusiveDateTimeQuery('2026-09-29T12:00:00')).toBe('2026-09-29T12:00:00')
+    expect(toExclusiveDateTimeQuery('2026-02-31')).toBe('2026-02-31')
   })
 })
 

@@ -119,7 +119,7 @@ describe('sales returns API', () => {
     ])
   })
 
-  it('bounds the detailed sales search used by the return drawer', async () => {
+  it('includes the selected final day in the bounded return sale search', async () => {
     const sales = [{ NetUid: 'sale-1' }]
 
     apiRequestMock.mockResolvedValueOnce({ Items: sales })
@@ -127,21 +127,21 @@ describe('sales returns API', () => {
     await expect(
       getSalesForReturn({
         clientNetId: 'client-1',
-        from: '2021-08-08',
+        from: '2021-09-30',
         organizationNetId: 'organization-1',
-        to: '2026-08-08',
-        value: ' 6015-01 ',
+        to: '2026-09-29',
+        value: ' 3021-C ',
       }),
     ).resolves.toEqual(sales)
 
     expect(apiRequestMock).toHaveBeenCalledWith('/sales/all/returns/search', {
       query: {
-        from: '2021-08-08',
+        from: '2021-09-30T00:00:00.000',
         limit: 50,
         netId: 'client-1',
         organizationNetId: 'organization-1',
-        to: '2026-08-08',
-        value: '6015-01',
+        to: '2026-09-30T00:00:00.000',
+        value: '3021-C',
       },
     })
   })
@@ -174,11 +174,11 @@ describe('sales returns API', () => {
 
     expect(apiRequestMock).toHaveBeenCalledWith('/sales/all/returns/search', {
       query: {
-        from: '2021-08-08',
+        from: '2021-08-08T00:00:00.000',
         limit: 50,
         netId: '',
         organizationNetId: '',
-        to: '2026-08-08',
+        to: '2026-08-09T00:00:00.000',
         value: 'ISS20081B',
       },
       signal: controller.signal,
@@ -197,11 +197,11 @@ describe('sales returns API', () => {
 
     expect(apiRequestMock).toHaveBeenCalledWith('/sales/all/returns/search', {
       query: {
-        from: '2021-08-08',
+        from: '2021-08-08T00:00:00.000',
         limit: 10,
         netId: '',
         organizationNetId: '',
-        to: '2026-08-08',
+        to: '2026-08-09T00:00:00.000',
         value: '',
       },
     })

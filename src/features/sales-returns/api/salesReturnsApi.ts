@@ -1,5 +1,5 @@
 import { apiRequest } from '../../../shared/api/apiClient'
-import { toDateTimeQuery } from '../../../shared/date/dateTime'
+import { toDateTimeQuery, toExclusiveDateTimeQuery } from '../../../shared/date/dateTime'
 import {
   getSalesMutationOperationHeaders,
   type SalesMutationOperationOptions,
@@ -132,11 +132,11 @@ export async function getSalesForReturn(
 
   const result = await apiRequest<unknown>('/sales/all/returns/search', {
     query: {
-      from: params.from,
+      from: toDateTimeQuery(params.from, 'start'),
       limit,
       netId: params.clientNetId || '',
       organizationNetId: params.organizationNetId || '',
-      to: params.to,
+      to: toExclusiveDateTimeQuery(params.to),
       value,
     },
     ...(signal ? { signal } : {}),

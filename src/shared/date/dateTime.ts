@@ -82,6 +82,19 @@ export function toDateTimeQuery(value: string, boundary: 'start' | 'end'): strin
   return `${trimmedValue}${time}`
 }
 
+export function toExclusiveDateTimeQuery(value: string): string {
+  const trimmedValue = value.trim()
+
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(trimmedValue) || !isValidDateInputValue(trimmedValue)) {
+    return formatDateInputForQuery(value)
+  }
+
+  const nextDate = new Date(`${trimmedValue}T00:00:00.000Z`)
+  nextDate.setUTCDate(nextDate.getUTCDate() + 1)
+
+  return `${nextDate.toISOString().slice(0, 10)}T00:00:00.000`
+}
+
 export function formatLocalDateTime(date: Date): string {
   const datePart = formatLocalDate(date)
   const hours = String(date.getHours()).padStart(2, '0')
