@@ -2354,6 +2354,16 @@ function describeReportError(error: unknown, t: TranslateFunction): string {
       return t('Сервер звітів недоступний. Спробуйте ще раз пізніше.')
     }
 
+    // Report generation uses 409 for missing accepted source coverage. The API
+    // client supplies a generic Cyrillic fallback when the response has no
+    // Message; do not mistake that fallback for an authored server explanation.
+    if (error.status === 409) {
+      const payload = error.payload
+      const authored = payload && typeof payload === 'object' && 'Message' in payload
+        && typeof payload.Message === 'string' && isAuthoredServerMessage(payload.Message)
+      return authored ? error.message : t('Сервер не підтвердив повноту даних для цього звіту. Звіт і файли не сформовано; після синхронізації потрібних даних повторіть запит.')
+    }
+
     if (isAuthoredServerMessage(error.message)) {
       return error.message
     }
