@@ -1,6 +1,7 @@
 import type { ReportDataset, ReportRequestBody } from '../types'
 import { revenueExactId } from './revenueComparison'
 import { requestSourceBuyerSubtree, sourceBuyerSubtree } from './nativeExactFilters'
+import { readFilterExpressionCapabilities, reportFilterExpressionError, requestFilterExpression } from './reportFilterExpression'
 
 export const SUPPLIER_BATCH_GROSS_PROFIT_SOURCE = 38
 export const SUPPLIER_BATCH_GROSS_PROFIT_TITLE = 'Валовий прибуток GBA за постачальниками (партії)'
@@ -20,7 +21,7 @@ const measures = [0, 2, 3, 4, 6, 7, 8, 10, 12, 14]
 const filters = new Set([0, 1, 17])
 const forbidden = new Set(['onec', 'comparison', 'xyz', 'revenuecomparison', 'buyersalesshare', 'returncomparison',
   'ratecomparison', 'margincomparison', 'paymentcomparison', 'pricetypesalescomparison', 'agreementpricecomparison',
-  'valuationclientagreementid', 'ordering', 'filterexpression', 'topgroups', 'threshold', 'hidezero',
+  'valuationclientagreementid', 'ordering', 'topgroups', 'threshold', 'hidezero',
   'abcclassification', 'productclassification', 'sourceorganizations', 'returnsonly', 'discountmarkup',
   'provideddiscounts', 'priceanalysis'])
 const invalid = 'Прибуток за партіями підтримує склад надходження або продажу 1С → організацію → постачальника, 1–10 показників і точні локальні відбори.'
@@ -73,16 +74,22 @@ export function supplierBatchGrossProfitConfigurationError(data: ReportRequestBo
     || new Set(sorted.Measurements.map(item => item.Type)).size !== sorted.Measurements.length
     || sorted.Measurements.every(item => item.IsChecked === false)) return invalid
   if (!Array.isArray(data.selections) || data.selections.length > 32) return invalid
+  const filterExpression = requestFilterExpression(data)
+  const logicError = reportFilterExpressionError(data, dataset)
+  if (logicError) return logicError
+  const advancedFilters = readFilterExpressionCapabilities(dataset) != null
   let values = 0
   const activeFields = new Set<number>()
   for (const selection of data.selections) {
     if (!selection || (selection.IsChecked != null && typeof selection.IsChecked !== 'boolean')
-      || !filters.has(selection.SelectedField?.Type) || ![0, 2].includes(selection.FilterCondition?.Type)
+      || !filters.has(selection.SelectedField?.Type) || ![0, 1, 2, 4].includes(selection.FilterCondition?.Type)
       || !Array.isArray(selection.Values) || !selection.Values.length
-      || (selection.FilterCondition.Type === 0 && selection.Values.length !== 1)) return invalid
+      || ([0, 1].includes(selection.FilterCondition.Type) && selection.Values.length !== 1)) return invalid
+    if ([1, 4].includes(selection.FilterCondition.Type) && !advancedFilters)
+      return 'Сервер не підтвердив виключення для партійного прибутку. Налаштування не змінено.'
     values += selection.Values.length
     if (selection.IsChecked !== false) {
-      if (activeFields.has(selection.SelectedField.Type)) return invalid
+      if (filterExpression == null && activeFields.has(selection.SelectedField.Type)) return invalid
       activeFields.add(selection.SelectedField.Type)
     }
     if (values > 100 || selection.Values.some(value => !value || !revenueExactId(value.Data)

@@ -85,6 +85,68 @@ it('restores the exact source world from a server saved template', () => {
   expect(datasetConfigurationError(template.Data, dataset)).toBeNull()
 })
 
+const groupedDataset: ReportDataset = {
+  ...dataset, FilterExpression: { Version: 1, MaximumDepth: 8, MaximumLeaves: 64,
+    MaximumNodes: 128, Operators: [1, 2] },
+}
+
+it('accepts supplier exclusion only when the server confirms the new filter contract', () => {
+  const request = defaultDatasetRequest(groupedDataset, '2026-09-05', '2026-09-05')
+  request.selections = [{ IsChecked: true, SelectedField: { Type: 17, Name: 'Постачальник' },
+    FilterCondition: { Type: 1, Name: 'Не дорівнює' },
+    Values: [{ Data: { Id: '9007199254740993' }, Name: 'Постачальник', Value: 0 }] }]
+  expect(datasetConfigurationError(request, groupedDataset)).toBeNull()
+  expect(datasetConfigurationError(request, dataset)).toContain('виключення')
+  request.selections[0].FilterCondition = { Type: 4, Name: 'Не у списку' }
+  request.selections[0].Values.push({ Data: { Id: '9007199254740992' }, Name: 'Інший постачальник', Value: 0 })
+  expect(datasetConfigurationError(request, groupedDataset)).toBeNull()
+  request.selections[0].FilterCondition = { Type: 1, Name: 'Не дорівнює' }
+  expect(datasetConfigurationError(request, groupedDataset)).not.toBeNull()
+})
+
+it('keeps nested AND/OR and repeated product leaves in an exact saved request', () => {
+  const request = defaultDatasetRequest(groupedDataset, '2026-09-05', '2026-09-05')
+  request.selections = [301, 302].map(id => ({ IsChecked: true,
+    SelectedField: { Type: 1, Name: 'Товар' }, FilterCondition: { Type: 0, Name: 'Дорівнює' },
+    Values: [{ Data: { Id: String(id) }, Name: `Товар ${id}`, Value: 0 }] }))
+  request.selections.push({ IsChecked: true, SelectedField: { Type: 17, Name: 'Постачальник' },
+    FilterCondition: { Type: 4, Name: 'Не у списку' },
+    Values: [{ Data: { Id: '501' }, Name: 'Постачальник', Value: 0 }] })
+  request.filterExpression = { Version: 1, Root: { Kind: 1, Children: [
+    { Kind: 2, Children: [{ Kind: 3, SelectionIndex: 0 }, { Kind: 3, SelectionIndex: 1 }] },
+    { Kind: 3, SelectionIndex: 2 },
+  ] } }
+  expect(datasetConfigurationError(request, groupedDataset)).toBeNull()
+  expect(datasetConfigurationError(request, dataset)).toContain('І/АБО')
+  const template = normalizeSavedTemplate({ Id: '10000000-0000-4000-8000-000000000038',
+    Revision: 1, Name: 'Варіант постачальників', Data: { DataSource: 38,
+      From: request.from, To: request.to, Sorted: request.sorted, Selections: request.selections,
+      SupplierSourceWorld: 0, FilterExpression: request.filterExpression } } as never)
+  expect(template.Data.filterExpression).toEqual(request.filterExpression)
+  expect(template.Data.selections).toEqual(request.selections)
+  expect(datasetConfigurationError(template.Data, groupedDataset)).toBeNull()
+  const unchanged = structuredClone(template)
+  template.Data.filterExpression = { Version: 1, Root: { Kind: 3, SelectionIndex: 0 } }
+  expect(datasetConfigurationError(template.Data, groupedDataset)).toContain('№2')
+  expect(unchanged.Data.filterExpression).toEqual(request.filterExpression)
+})
+
+it('validates original indices for disabled OR leaves and refuses malformed source logic', () => {
+  const request = defaultDatasetRequest(groupedDataset, '2026-09-05', '2026-09-05')
+  request.selections = [301, 302].map((id, index) => ({ IsChecked: index !== 0,
+    SelectedField: { Type: 1, Name: 'Товар' }, FilterCondition: { Type: 0, Name: 'Дорівнює' },
+    Values: [{ Data: { Id: String(id) }, Name: `Товар ${id}`, Value: 0 }] }))
+  request.filterExpression = { Version: 1, Root: { Kind: 2, Children: [
+    { Kind: 3, SelectionIndex: 0 }, { Kind: 3, SelectionIndex: 1 },
+  ] } }
+  expect(datasetConfigurationError(request, groupedDataset)).toBeNull()
+  expect(datasetConfigurationError({ ...request, FilterExpression: request.filterExpression }, groupedDataset)).toContain('двічі')
+  request.filterExpression = { Version: 1, Root: { Kind: 2, Children: [
+    { Kind: 3, SelectionIndex: 0 }, { Kind: 3, SelectionIndex: 0 },
+  ] } }
+  expect(datasetConfigurationError(request, groupedDataset)).not.toBeNull()
+})
+
 it('uses the exact Fenix Buyers subtree only with Fenix and a matching server capability', () => {
   const request = defaultDatasetRequest(dataset, '2026-07-01', '2026-07-31')
   request.sourceBuyerSubtree = { Version: 1, SourceWorld: 'fenix', BuyerRootId: FENIX_BUYERS_ROOT_ID }

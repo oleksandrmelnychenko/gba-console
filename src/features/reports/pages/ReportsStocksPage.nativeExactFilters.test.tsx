@@ -236,4 +236,40 @@ describe('exact Fenix filters in the report constructor', () => {
       sourceBuyerSubtree: { Version: 1, SourceWorld: 'fenix', BuyerRootId: FENIX_BUYERS_ROOT_ID },
     })
   })
+
+  it.each([73, 78])('keeps supplier exclusion and original AND/OR indices for warehouse axis %s', async axis => {
+    const dataset: ReportDataset = { ...supplierDataset,
+      Groupings: [73, 78, 4, 21].map(Type => ({ Type, Name: `Група ${Type}` })),
+      FilterExpression: { Version: 1, MaximumDepth: 8, MaximumLeaves: 64,
+        MaximumNodes: 128, Operators: [1, 2] },
+    }
+    const data = defaultDatasetRequest(dataset, '2026-09-05', '2026-09-05')
+    data.sorted.Row[0].type = axis
+    data.selections = [301, 302].map((id, index) => ({ IsChecked: index !== 0,
+      SelectedField: { Type: 1, Name: 'Товар' }, FilterCondition: { Type: 0, Name: 'Дорівнює' },
+      Values: [{ Data: { Id: String(id) }, Name: `Товар ${id}`, Value: 0 }] }))
+    data.selections.push({ IsChecked: true, SelectedField: { Type: 17, Name: 'Постачальник' },
+      FilterCondition: { Type: 1, Name: 'Не дорівнює' },
+      Values: [{ Data: { Id: '9007199254740993' }, Name: 'Постачальник', Value: 0 }] })
+    data.filterExpression = { Version: 1, Root: { Kind: 1, Children: [
+      { Kind: 2, Children: [{ Kind: 3, SelectionIndex: 0 }, { Kind: 3, SelectionIndex: 1 }] },
+      { Kind: 3, SelectionIndex: 2 },
+    ] } }
+    const template = { Id: crypto.randomUUID(), Revision: 4, Name: 'Daily exact supplier variant', Data: data }
+    vi.mocked(getReportDatasets).mockResolvedValue([...reportDatasets, dataset])
+    vi.mocked(getServerReportTemplates).mockResolvedValue([template])
+    const { container } = await ready()
+    await applySaved()
+    expect(screen.getByRole('button', { name: 'Очистити групи: усі умови через І' })).toBeTruthy()
+    fireEvent.submit(container.querySelector('form')!)
+    await waitFor(() => expect(createStockReport).toHaveBeenCalledOnce())
+    const submitted = vi.mocked(createStockReport).mock.calls[0][0]
+    expect(submitted.sorted.Row.map(group => group.type)).toEqual([axis, 4, 21])
+    expect(submitted.selections).toEqual(data.selections)
+    expect(submitted.filterExpression).toEqual(data.filterExpression)
+    fireEvent.click(screen.getByRole('button', { name: 'Шаблони' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Оновити шаблон' }))
+    await waitFor(() => expect(saveServerReportTemplate).toHaveBeenCalledOnce())
+    expect(vi.mocked(saveServerReportTemplate).mock.calls[0][0].Data).toEqual(submitted)
+  })
 })
