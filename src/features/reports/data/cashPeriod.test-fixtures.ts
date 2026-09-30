@@ -1,5 +1,5 @@
 import type { ReportDataset } from '../types'
-import { CASH_PERIOD_MEASURES, CASH_PERIOD_ROWS, CASH_PERIOD_TITLE } from './cashPeriod'
+import { CASH_PERIOD_ALL_MEASURES, CASH_PERIOD_MEASURES, CASH_PERIOD_ROWS, CASH_PERIOD_TITLE } from './cashPeriod'
 import { defaultDatasetRequest } from './reportDatasets'
 
 export const cashPeriodDataset: ReportDataset = {
@@ -29,7 +29,21 @@ export const cashPeriodScope = {
   CurrencyBasis: 'AccountCurrency' as const,
 }
 
+export const cashPeriodManagementScope = { ...cashPeriodScope, Version: 2 as const,
+  CurrencyBasis: 'AccountAndManagementCurrency' as const }
+
+export const cashPeriodManagementDataset: ReportDataset = { ...cashPeriodDataset,
+  Measurements: CASH_PERIOD_ALL_MEASURES.map(Type => ({ Type, Name: `Показник ${Type}` })),
+  cashPeriod: { ...(cashPeriodDataset.cashPeriod as Record<string, unknown>), Version: 2,
+    CurrencyBasis: 'AccountAndManagementCurrency', ManagementCurrencySupported: true,
+    FixedMeasurements: [...CASH_PERIOD_ALL_MEASURES] } }
+
 export function cashPeriodRequest() {
   return { ...defaultDatasetRequest(cashPeriodDataset, '2026-09-01', '2026-09-12'),
     cashPeriod: cashPeriodScope }
+}
+
+export function cashPeriodManagementRequest() {
+  return { ...defaultDatasetRequest(cashPeriodManagementDataset, '2026-09-01', '2026-09-12'),
+    cashPeriod: cashPeriodManagementScope }
 }

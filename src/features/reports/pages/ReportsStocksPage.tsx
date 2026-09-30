@@ -99,7 +99,7 @@ import { datasetConfigurationError, datasetFilters, datasetGroupings, datasetMea
 import { useReportDatasets } from '../hooks/useReportDatasets'
 import { usesNativeReportLookup, supportsFullReportDateRange, hasFixedReportAxes, nativeReportMeasurementUnit } from '../data/nativeReportProfiles'
 import { CURRENT_VPARIVANIE_NOTICE, currentVparivanieFilterConditions, currentVparivanieNotice } from '../data/currentVparivanie'
-import { previousKyivDay } from '../data/cashPeriod'
+import { CASH_PERIOD_ALL_MEASURES, CASH_PERIOD_MEASURES, cashPeriodMeasurements, cashPeriodSupportsManagement, previousKyivDay } from '../data/cashPeriod'
 import { availableBug1274WorkbookLaunches } from '../data/bug1274WorkbookLaunch'
 import { CashPeriodLegPicker } from './CashPeriodLegPicker'
 import { SettlementPeriodAgreementPicker } from './SettlementPeriodAgreementPicker'
@@ -745,7 +745,14 @@ function ReportsStocksWorkspace({ ownerId, constructorMode }: { ownerId: string 
             <GroupedDebtorWorkbookPanel from={from} to={to} disabled={comparisonSettingsDisabled}
               enabled={canGenerateReport} /></Stack> : null) : dataSource === 40 ? <CashPeriodLegPicker value={cashPeriod}
           disabled={comparisonSettingsDisabled} enabled={canGenerateReport}
-          onChange={setCashPeriod} /> : dataSource === 35 ? <Card className="app-section-card" withBorder radius="md" padding="md" style={{ minWidth: 0 }}>
+          managementSupported={cashPeriodSupportsManagement(dataset)}
+          onChange={next => {
+            setCashPeriod(next)
+            const required = new Set(next ? cashPeriodMeasurements(next) : cashPeriodSupportsManagement(dataset)
+              ? CASH_PERIOD_ALL_MEASURES : CASH_PERIOD_MEASURES)
+            setMeasurements(datasetMeasurements(dataset, (dataset?.Measurements ?? [])
+              .filter(field => required.has(field.Type)).map(field => ({ ...field, IsChecked: true, parentName: '' }))))
+          }} /> : dataSource === 35 ? <Card className="app-section-card" withBorder radius="md" padding="md" style={{ minWidth: 0 }}>
           <Checkbox label={t('Товар без послуг (Fenix)')}
             checked={parseProductClassification(productClassification)?.ProductKindId.toUpperCase() === DAY_ORGANIZATION_GOODS_KIND_ID
               && parseProductClassification(productClassification)?.IsService === false}

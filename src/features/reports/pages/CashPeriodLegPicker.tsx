@@ -5,10 +5,11 @@ import { readCashPeriodScope, type CashPeriodLeg, type CashPeriodScope } from '.
 
 const PAGE_SIZE = 30
 
-export function CashPeriodLegPicker({ value, disabled, enabled, onChange }: {
+export function CashPeriodLegPicker({ value, disabled, enabled, managementSupported = false, onChange }: {
   value: unknown
   disabled: boolean
   enabled: boolean
+  managementSupported?: boolean
   onChange: (next: CashPeriodScope | undefined) => void
 }) {
   const [legs, setLegs] = useState<CashPeriodLeg[]>([])
@@ -17,6 +18,7 @@ export function CashPeriodLegPicker({ value, disabled, enabled, onChange }: {
   const [error, setError] = useState<string | null>(null)
   const [retry, setRetry] = useState(0)
   const selected = readCashPeriodScope(value)
+  const managementSelected = selected ? selected.Version === 2 : managementSupported
 
   useEffect(() => {
     if (!enabled) return
@@ -64,9 +66,23 @@ export function CashPeriodLegPicker({ value, disabled, enabled, onChange }: {
         searchable data={options} value={selected?.CurrencyRegisterId ?? null}
         disabled={disabled || !enabled} onChange={id => {
           const leg = legs.find(item => item.CurrencyRegisterId === id)
-          onChange(leg ? { Version: 1, CurrencyRegisterId: leg.CurrencyRegisterId,
-            CurrencyRegisterNetUid: leg.CurrencyRegisterNetUid, CurrencyBasis: 'AccountCurrency' } : undefined)
+          if (!leg) { onChange(undefined); return }
+          const identity = { CurrencyRegisterId: leg.CurrencyRegisterId, CurrencyRegisterNetUid: leg.CurrencyRegisterNetUid }
+          onChange(managementSelected
+            ? { ...identity, Version: 2, CurrencyBasis: 'AccountAndManagementCurrency' }
+            : { ...identity, Version: 1, CurrencyBasis: 'AccountCurrency' })
         }} />
+      {managementSupported ? <Select label="Валюти показників" allowDeselect={false}
+        data={[{ value: 'both', label: 'Валюта рахунку та управлінська — 8 показників' },
+          { value: 'account', label: 'Валюта рахунку — 4 показники' }]}
+        value={managementSelected ? 'both' : 'account'} disabled={disabled || !enabled || !selected}
+        onChange={mode => {
+          if (!selected || (mode !== 'both' && mode !== 'account')) return
+          const identity = { CurrencyRegisterId: selected.CurrencyRegisterId, CurrencyRegisterNetUid: selected.CurrencyRegisterNetUid }
+          onChange(mode === 'both'
+            ? { ...identity, Version: 2, CurrencyBasis: 'AccountAndManagementCurrency' }
+            : { ...identity, Version: 1, CurrencyBasis: 'AccountCurrency' })
+        }} /> : null}
       <Group gap="xs">
         {hasMore ? <Button size="xs" variant="subtle" loading={loading} disabled={disabled} onClick={() => void loadMore()}>
           Завантажити ще рахунки
@@ -77,8 +93,9 @@ export function CashPeriodLegPicker({ value, disabled, enabled, onChange }: {
       {error ? <Alert color="orange">{error}</Alert> : null}
       {changed ? <Alert color="orange">Ідентичність цього рахунку змінилася. Оберіть його зі списку знову.</Alert> : null}
       <Text size="xs" c="dimmed">Початок, надходження, витрати та кінець показані у власній валюті рахунку.
+        {managementSupported ? ' У режимі восьми показників поруч показані окремі записані управлінські суми; їхню валюту вказано в результаті.' : ''}
         Період включає обидві дати й має складатися із завершених днів Києва (до 31 дня).
-        Конвертація FX та керівна валюта не застосовуються; сервер відхилить неповне покриття.</Text>
+        Сервер перевіряє повне покриття періоду та валюту обраних сум.</Text>
     </Stack>
   </Card>
 }

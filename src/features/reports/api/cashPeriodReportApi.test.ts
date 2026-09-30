@@ -2,7 +2,8 @@ import { beforeEach, expect, it, vi } from 'vitest'
 import { apiRequest } from '../../../shared/api/apiClient'
 import { createStockReport, previewStockReport } from './reportsApi'
 import { getReportDatasets, getServerReportTemplates, saveServerReportTemplate } from './reportWorkspaceApi'
-import { cashPeriodDataset, cashPeriodRequest, cashPeriodScope } from '../data/cashPeriod.test-fixtures'
+import { cashPeriodDataset, cashPeriodRequest, cashPeriodScope, cashPeriodManagementDataset,
+  cashPeriodManagementRequest, cashPeriodManagementScope } from '../data/cashPeriod.test-fixtures'
 import { currentVparivaniePreview } from '../data/currentVparivanie.test-fixtures'
 import { cashPeriodConfigurationError } from '../data/cashPeriod'
 import { retainStoredTemplateFields } from '../data/reportTemplateDraft'
@@ -20,6 +21,30 @@ it('requires the exact advertised capability and fixed four by four shape', asyn
   await expect(getReportDatasets()).rejects.toThrow('некоректний список')
   api.mockResolvedValue([{ ...cashPeriodDataset, DataSource: 39 }])
   await expect(getReportDatasets()).rejects.toThrow('некоректний список')
+})
+
+it('accepts v2 eight columns and preserves legacy four columns on a v2 server', async () => {
+  api.mockResolvedValue([cashPeriodManagementDataset])
+  await expect(getReportDatasets()).resolves.toEqual([cashPeriodManagementDataset])
+  const eight = cashPeriodManagementRequest()
+  expect(eight.sorted.Measurements.map(field => field.Type)).toEqual([84, 85, 86, 87, 92, 93, 94, 95])
+  expect(cashPeriodConfigurationError(eight, cashPeriodManagementDataset, '2026-09-27')).toBeNull()
+  expect(cashPeriodConfigurationError(cashPeriodRequest(), cashPeriodManagementDataset, '2026-09-27')).toBeNull()
+  expect(cashPeriodConfigurationError(eight, cashPeriodDataset, '2026-09-27')).toMatch(/ще не підтримує/)
+  expect(cashPeriodConfigurationError({ ...eight, sorted: cashPeriodRequest().sorted },
+    cashPeriodManagementDataset, '2026-09-27')).toMatch(/фіксована/)
+  expect(cashPeriodConfigurationError({ ...eight, cashPeriod: { ...cashPeriodManagementScope,
+    CurrencyBasis: 'AccountCurrency' } }, cashPeriodManagementDataset, '2026-09-27')).toMatch(/точний рахунок/)
+})
+
+it('submits eight columns and exact v2 currency basis without adding a client currency assumption', async () => {
+  const request = cashPeriodManagementRequest()
+  api.mockResolvedValue({ document: {} })
+  await createStockReport(request)
+  expect(api).toHaveBeenCalledWith('/report/stocks/generate', expect.objectContaining({
+    method: 'POST', body: request,
+  }))
+  expect(request.cashPeriod).toEqual(cashPeriodManagementScope)
 })
 
 it('accepts only completed Kyiv periods up to 31 inclusive days with an exact leg', () => {

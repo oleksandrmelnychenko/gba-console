@@ -6,7 +6,8 @@ import { formatKyivBusinessDate } from '../../../shared/date/dateTime'
 import { createStockReport } from '../api/reportsApi'
 import { getReportDatasets, getServerReportTemplates } from '../api/reportWorkspaceApi'
 import { getCashPeriodLegs } from '../api/cashPeriodApi'
-import { cashPeriodDataset, cashPeriodLeg, cashPeriodScope } from '../data/cashPeriod.test-fixtures'
+import { cashPeriodDataset, cashPeriodLeg, cashPeriodScope, cashPeriodManagementDataset,
+  cashPeriodManagementScope } from '../data/cashPeriod.test-fixtures'
 import { reportDatasets } from '../data/reportDatasets.test-fixtures'
 import { previousKyivDay } from '../data/cashPeriod'
 import { ReportsStocksPage } from './ReportsStocksPage'
@@ -50,5 +51,30 @@ it('selects the completed Kyiv day, one exact leg and submits only fixed account
   ])
   fireEvent.click(screen.getByRole('button', { name: 'Скинути' }))
   expect((screen.getByLabelText('До') as HTMLInputElement).value).toBe(previousKyivDay(formatKyivBusinessDate()))
+  expect(screen.queryByText(/Структура звіту руху коштів фіксована/)).toBeNull()
+})
+
+it('selects eight server-supported columns and switches to four while preserving exact account identity', async () => {
+  vi.mocked(getReportDatasets).mockResolvedValue([...reportDatasets, cashPeriodManagementDataset])
+  const { container } = render(<MantineProvider env="test"><I18nProvider><ReportsStocksPage /></I18nProvider></MantineProvider>)
+  await screen.findByRole('button', { name: 'Продажі за днями' })
+  fireEvent.click(screen.getByText('Часткові форми за зразками Excel'))
+  fireEvent.click(screen.getByRole('button', { name: 'Відкрити часткову форму: Рух коштів за період' }))
+  fireEvent.click(await screen.findByRole('combobox', { name: 'Рахунок і власна валюта' }))
+  fireEvent.click(await screen.findByRole('option', { name: /Synthetic organization/ }))
+  expect((screen.getByRole('combobox', { name: 'Валюти показників' }) as HTMLInputElement).value)
+    .toBe('Валюта рахунку та управлінська — 8 показників')
+  fireEvent.submit(container.querySelector('form')!)
+  await waitFor(() => expect(createStockReport).toHaveBeenCalledOnce())
+  const first = vi.mocked(createStockReport).mock.calls[0][0]
+  expect(first.cashPeriod).toEqual(cashPeriodManagementScope)
+  expect(first.sorted.Measurements.map(item => item.Type)).toEqual([84, 85, 86, 87, 92, 93, 94, 95])
+  fireEvent.click(screen.getByRole('combobox', { name: 'Валюти показників' }))
+  fireEvent.click(screen.getByRole('option', { name: 'Валюта рахунку — 4 показники' }))
+  fireEvent.submit(container.querySelector('form')!)
+  await waitFor(() => expect(createStockReport).toHaveBeenCalledTimes(2))
+  const second = vi.mocked(createStockReport).mock.calls[1][0]
+  expect(second.cashPeriod).toEqual(cashPeriodScope)
+  expect(second.sorted.Measurements.map(item => item.Type)).toEqual([84, 85, 86, 87])
   expect(screen.queryByText(/Структура звіту руху коштів фіксована/)).toBeNull()
 })

@@ -30,6 +30,6 @@ it('keeps a saved exact scope pending server lookup and warns on NetUID drift', 
   const view = show(cashPeriodScope)
   expect(await screen.findByText(/Ідентичність цього рахунку змінилася/)).toBeTruthy()
   expect(view.onChange).not.toHaveBeenCalled()
-  expect(screen.getByText(/сервер відхилить неповне покриття/)).toBeTruthy()
+  expect(screen.getByText(/Сервер перевіряє повне покриття періоду/)).toBeTruthy()
   await waitFor(() => expect(getLegs).toHaveBeenCalledOnce())
 })
