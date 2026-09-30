@@ -1,7 +1,7 @@
 import { expect, it } from 'vitest'
-import { datasetConfigurationError, defaultDatasetRequest } from './reportDatasets'
+import { datasetConfigurationError, datasetGroupings, datasetPresetRequest, datasetPresets, defaultDatasetRequest } from './reportDatasets'
 import { nativeReportMeasurementUnit, usesNativeReportLookup } from './nativeReportProfiles'
-import { supplierBatchGrossProfitConfigurationError } from './supplierBatchGrossProfit'
+import { isSupplierBatchGrossProfitDataset, supplierBatchGrossProfitConfigurationError } from './supplierBatchGrossProfit'
 import { FENIX_BUYERS_ROOT_ID, normalizeNativeExactFilterDataset, requestSourceBuyerSubtree } from './nativeExactFilters'
 import { normalizeSavedTemplate } from '../api/reportWorkspaceApi'
 import type { ReportDataset } from '../types'
@@ -27,6 +27,31 @@ it('starts with the six XLS measures and exact source warehouse grouping', () =>
   expect(nativeReportMeasurementUnit(38, 'Кількість')).toBe('Кількість товару')
   expect(nativeReportMeasurementUnit(38, 'Продана кількість GBA')).toBe('Кількість товару')
   expect(nativeReportMeasurementUnit(38, 'Рентабельність без ПДВ, %')).toBe('Відсотки')
+})
+
+it('offers the sale registrar axis only with the versioned server field', () => {
+  const withRegistrar = { ...dataset, Groupings: [73, 78, 4, 21].map(Type =>
+    ({ Type, Name: `Вимір ${Type}` })) }
+  expect(isSupplierBatchGrossProfitDataset(withRegistrar)).toBe(true)
+  expect(datasetGroupings(withRegistrar).find(field => field.type === 78)?.key).toBe('SourceRegistrarWarehouse')
+  const current = defaultDatasetRequest(withRegistrar, '2026-09-05', '2026-09-05')
+  expect(current.sorted.Row.map(field => field.type)).toEqual([73, 4, 21])
+  expect(datasetPresets(dataset).map(item => item.id)).not.toContain('supplier-registrar-warehouse')
+  expect(datasetPresets(withRegistrar).map(item => item.id)).toContain('supplier-registrar-warehouse')
+  current.supplierSourceWorld = 1
+  current.selections = [{ IsChecked: true, SelectedField: { Type: 17, Name: 'Supplier' },
+    FilterCondition: { Type: 0, Name: 'Equals' },
+    Values: [{ Data: { Id: '100' }, Name: 'Supplier 100', Value: 0 }] }]
+  const registrar = datasetPresetRequest(withRegistrar, 'supplier-registrar-warehouse', current)
+  expect(registrar).not.toBeNull()
+  if (!registrar) throw new Error('Missing registrar preset')
+  expect(registrar.Data.sorted.Row.map(field => field.type)).toEqual([78, 4, 21])
+  expect(registrar.Data.supplierSourceWorld).toBe(1)
+  expect(registrar.Data.selections).toEqual(current.selections)
+  expect(datasetConfigurationError(registrar.Data, withRegistrar)).toBeNull()
+  expect(supplierBatchGrossProfitConfigurationError(registrar.Data)).toBeNull()
+  expect(datasetConfigurationError(registrar.Data, dataset)).not.toBeNull()
+  expect(datasetPresetRequest(dataset, 'supplier-registrar-warehouse', current)).toBeNull()
 })
 
 it('rejects unrelated filters, rounded IDs and an overly long period', () => {

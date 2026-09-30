@@ -63,7 +63,11 @@ export function availableBug1274WorkbookLaunches(datasets: readonly ReportDatase
     const candidate = matches[0]
     return matches.length === 1 && Array.isArray(candidate.Groupings) && Array.isArray(candidate.Measurements)
       && Array.isArray(candidate.Filters) && spec.accepts(candidate)
-      ? [{ fileName: spec.fileName, label: spec.label, notice: spec.notice, dataset: matches[0] }]
+      ? [{ fileName: spec.fileName, label: spec.label,
+        notice: spec.dataSource === 38 && candidate.Groupings.some((field: { Type: number }) => field.Type === 78)
+          ? `${spec.notice} Для групування як в 1С оберіть шаблон «Валовий прибуток за складом продажу 1С»; він вимагає повних джерельних ID для всього періоду.`
+          : spec.notice,
+        dataset: matches[0] }]
       : []
   })
 }

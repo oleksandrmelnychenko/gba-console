@@ -54,3 +54,12 @@ it('withholds a workbook shortcut when its capability is missing, malformed or d
   expect(availableBug1274WorkbookLaunches([{ ...dayDataset, sourceBuyerSubtree: undefined }])).toEqual([])
   expect(availableBug1274WorkbookLaunches([dayDataset, dayDataset])).toEqual([])
 })
+
+it('mentions the registrar preset only when the server advertises that axis', () => {
+  const oldLaunch = availableBug1274WorkbookLaunches([supplierDataset])[0]
+  const versioned = { ...supplierDataset, Groupings: [73, 78, 4, 21].map(Type =>
+    ({ Type, Name: String(Type) })) }
+  const newLaunch = availableBug1274WorkbookLaunches([versioned])[0]
+  expect(oldLaunch.notice).not.toContain('складом продажу 1С')
+  expect(newLaunch.notice).toContain('Валовий прибуток за складом продажу 1С')
+})

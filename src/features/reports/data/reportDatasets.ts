@@ -36,7 +36,7 @@ import {
 } from './priceTypeSalesComparison'
 import { cloneOneCSpecialAliases, defaultOneCSpecialSettings, oneCSpecialSettingsError, oneCSpecialSpecification } from './oneCSpecialReports'
 
-export type DatasetReportPresetId = SalesReportPresetId | 'quantities-by-unit' | NativeReportPresetId
+export type DatasetReportPresetId = SalesReportPresetId | 'quantities-by-unit' | 'supplier-registrar-warehouse' | NativeReportPresetId
 type DatasetReportPreset = { id: DatasetReportPresetId; name: string; description: string }
 const QUANTITY_BY_UNIT_PRESET: DatasetReportPreset = {
   id: 'quantities-by-unit', name: 'Кількість за одиницями',
@@ -73,6 +73,7 @@ GROUPING_KEYS.set(49, 'ImportedPaymentArticle')
 GROUPING_KEYS.set(50, 'PaymentImportWorld')
 GROUPING_KEYS.set(51, 'XyzClass')
 GROUPING_KEYS.set(73, 'SourceReceiptStorage')
+GROUPING_KEYS.set(78, 'SourceRegistrarWarehouse')
 GROUPING_KEYS.set(74, 'CurrentVparivanieGroup')
 GROUPING_KEYS.set(75, 'CurrentVparivanieCounterparty')
 GROUPING_KEYS.set(76, 'SettlementCounterparty')
@@ -260,9 +261,15 @@ export function datasetPresets(dataset: ReportDataset | undefined): DatasetRepor
   if (!dataset) return []
   const profile = getNativeReportProfile(dataset.DataSource)
   if (profile) {
-    return profile.rowGroupings.every(type => dataset.Groupings.some(field => field.Type === type))
+    const native = profile.rowGroupings.every(type => dataset.Groupings.some(field => field.Type === type))
       && profile.measurements.every(type => dataset.Measurements.some(field => field.Type === type && field.Selectable !== false))
       ? [profile.preset] : []
+    return dataset.DataSource === 38 && native.length &&
+      dataset.Groupings.map(field => field.Type).join(',') === '73,78,4,21'
+      ? [...native, { id: 'supplier-registrar-warehouse',
+        name: 'Валовий прибуток за складом продажу 1С',
+        description: 'Склад документа продажу → організація → постачальник. Сервер перевіряє всі партії періоду; неповні дані зупиняють звіт.' }]
+      : native
   }
   if (![0, 2, 3].includes(dataset.DataSource)) return []
   const presets: DatasetReportPreset[] = []
@@ -301,6 +308,16 @@ export function datasetPresetRequest(dataset: ReportDataset, id: DatasetReportPr
     ...(Object.hasOwn(current, 'FilterExpression') ? { FilterExpression: structuredClone(current.FilterExpression) } : {}),
     ...cloneNativeExactFilterAliases(current), ...clonePriceTypeSalesComparisonAliases(current), ...cloneAgreementPriceComparisonAliases(current), ...cloneOneCSpecialAliases(current),
     ...(dataset.DataSource === 27 && current.oneC ? { oneC: structuredClone(current.oneC) } : {}) }
+  if (id === 'supplier-registrar-warehouse') {
+    const defaults = defaultDatasetRequest(dataset, current.from, current.to)
+    const registrar = datasetGroupings(dataset).find(field => field.type === 78)
+    if (!registrar || defaults.sorted.Row.map(field => field.type).join(',') !== '73,4,21') return null
+    defaults.sorted.Row[0] = registrar
+    return { Name: preset.name, Data: {
+      ...defaults, ...preservedOptions, selections: structuredClone(current.selections),
+      supplierSourceWorld: current.supplierSourceWorld ?? current.SupplierSourceWorld ?? 0,
+    } }
+  }
   if (isNativeReportPresetId(id)) {
     const defaults = defaultDatasetRequest(dataset, current.from, current.to)
     const special = oneCSpecialSpecification(dataset.DataSource)

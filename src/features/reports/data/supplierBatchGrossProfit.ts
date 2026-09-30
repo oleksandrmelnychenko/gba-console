@@ -23,7 +23,7 @@ const forbidden = new Set(['onec', 'comparison', 'xyz', 'revenuecomparison', 'bu
   'valuationclientagreementid', 'ordering', 'filterexpression', 'topgroups', 'threshold', 'hidezero',
   'abcclassification', 'productclassification', 'sourceorganizations', 'returnsonly', 'discountmarkup',
   'provideddiscounts', 'priceanalysis'])
-const invalid = 'Прибуток за партіями підтримує склад джерела → організацію → постачальника, 1–10 показників і точні локальні відбори.'
+const invalid = 'Прибуток за партіями підтримує склад надходження або продажу 1С → організацію → постачальника, 1–10 показників і точні локальні відбори.'
 
 function validDate(value: string): boolean {
   if (!/^\d{4}-\d\d-\d\d$/.test(value)) return false
@@ -36,7 +36,7 @@ function validDate(value: string): boolean {
 export function isSupplierBatchGrossProfitDataset(dataset: ReportDataset): boolean {
   return dataset.DataSource === SUPPLIER_BATCH_GROSS_PROFIT_SOURCE && dataset.PeriodRequired === true
     && dataset.PeriodSupported === true && isSupplierSourceWorldCapability(dataset.supplierSourceWorld)
-    && dataset.Groupings.map(item => item.Type).join(',') === '73,4,21'
+    && ['73,4,21', '73,78,4,21'].includes(dataset.Groupings.map(item => item.Type).join(','))
     && dataset.Measurements.map(item => item.Type).join(',') === measures.join(',')
     && dataset.Filters.map(item => item.Type).join(',') === '0,1,17'
 }
@@ -62,7 +62,10 @@ export function supplierBatchGrossProfitConfigurationError(data: ReportRequestBo
     return 'Період партійного прибутку може охоплювати щонайбільше 31 день.'
   if (Object.entries(data).some(([key, value]) => forbidden.has(key.toLowerCase()) && value != null)) return invalid
   const sorted = data.sorted
-  if (!sorted || !Array.isArray(sorted.Row) || sorted.Row.map(item => item.type).join(',') !== '73,4,21'
+  const axis = Array.isArray(sorted?.Row) ? sorted.Row.map(item => item.type).join(',') : ''
+  if (!sorted || !Array.isArray(sorted.Row) || !['73,4,21', '78,4,21'].includes(axis ?? '')
+    || axis === '78,4,21' && dataset != null &&
+      dataset.Groupings.map(item => item.Type).join(',') !== '73,78,4,21'
     || !Array.isArray(sorted.Col) || sorted.Col.length
     || !Array.isArray(sorted.Measurements) || sorted.Measurements.length < 1 || sorted.Measurements.length > 10
     || sorted.Measurements.some(item => !measures.includes(item.Type)
