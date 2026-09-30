@@ -24,8 +24,11 @@ function unavailable(reason: string, state: BuyerPriceTypeEvidence['state'] = 'i
 
 function utcDay(value: string | null | undefined): number | null {
   if (!value) return null
-  const match = /^(\d{4}-\d{2}-\d{2})(?:T|$)/.exec(value.trim())
+  // The server serializes UTC DateTime values, sometimes without a trailing Z.
+  // Validate the entire value before using its calendar day as a business date.
+  const match = /^(\d{4}-\d{2}-\d{2})(?:T(\d{2}):(\d{2}):(\d{2})(?:\.\d{1,7})?(?:Z|\+00:00)?)?$/.exec(value.trim())
   if (!match) return null
+  if (match[2] && (Number(match[2]) > 23 || Number(match[3]) > 59 || Number(match[4]) > 59)) return null
   const day = new Date(`${match[1]}T00:00:00Z`)
   return !Number.isNaN(day.getTime()) && day.toISOString().startsWith(match[1])
     ? day.getTime()

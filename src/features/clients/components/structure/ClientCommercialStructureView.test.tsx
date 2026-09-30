@@ -65,6 +65,23 @@ describe('ClientCommercialStructureView', () => {
     expect(screen.getByText('Зріз Fenix неповний, пошкоджений або позначений видаленим.')).toBeTruthy()
   })
 
+  it('suppresses buyer price types when a retained agreement date has a malformed time', () => {
+    const structure = createStructure()
+    const snapshot = structure.LegalParties[0].Cards[0].SourceSnapshots[0]
+    snapshot.Buyer = true
+    snapshot.Agreements[0].SourceReference = '11111111111111111111111111111111'
+    snapshot.Agreements[0].FromDate = '2026-01-01T99:00:00Z'
+
+    const { container } = render(
+      <MantineProvider env="test" theme={theme}>
+        <ClientCommercialStructureView structure={structure} t={t} />
+      </MantineProvider>,
+    )
+
+    expect(container.querySelector('.client-buyer-price-types__table')).toBeNull()
+    expect(screen.getByText('Дати одного з договорів Fenix некоректні.')).toBeTruthy()
+  })
+
   it('shows the business hierarchy first and keeps raw 1C evidence collapsed', () => {
     const { container } = render(
       <MantineProvider env="test" theme={theme}>
