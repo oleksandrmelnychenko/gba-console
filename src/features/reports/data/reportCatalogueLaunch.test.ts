@@ -16,6 +16,7 @@ import { cashPeriodDataset } from './cashPeriod.test-fixtures'
 import { settlementPeriodDataset } from './settlementPeriod.test-fixtures'
 import { importedPaymentsDataset } from './importedPayments.test-fixtures'
 import { datasetConfigurationError } from './reportDatasets'
+import { ownPriceAnalysisDataset } from './ownPriceAnalysis.test-fixtures'
 
 const period = { from: '2026-06-01', to: '2026-06-30' }
 const debt = ['builtin:ЗадолженностьПоКонтрагентам', '0e9ed1d2-a9c6-4865-89bc-2f25c8b7ebd3'] as const
@@ -44,6 +45,10 @@ function data(catalogue: ReportCatalogue, dataset: ReportDataset) {
 }
 
 describe('exact named catalogue launches', () => {
+  it('launches the supported OUR-rate analysis version from its exact catalogue identity', () => {
+    const catalogue = fixture(['builtin:АнализЦен', '991292be-2c3a-41cd-a32f-26467b589a1f'], [28], ['fenix'])
+    expect(data(catalogue, ownPriceAnalysisDataset).priceAnalysis).toEqual({ Version: 2, SourceWorld: 1, AsOf: '' })
+  })
   it.each([
     ['builtin:ВедомостьДенежныеСредства', '977cb58d-ff0b-46b7-90fd-124a560ec6ff', accountBalanceDataset, cashPeriodDataset],
     ['builtin:ВедомостьВзаиморасчетыСКонтрагентами', '8fde42fc-6e49-4a8e-9096-74bbe14fe901', currentDebtDataset, settlementPeriodDataset],

@@ -21,6 +21,20 @@ const date = (value: unknown, minimum: number) => typeof value === 'string' && /
 
 export function oneCSpecialSpecification(dataSource: number): Specification | undefined { return SPECS[dataSource] }
 
+export function ownPriceAnalysisRatesSupported(dataset?: ReportDataset): boolean {
+  if (dataset?.DataSource !== 28 || !record(dataset.priceAnalysis)) return false
+  const capability = dataset.priceAnalysis
+  return capability.OwnCommercialRatesSupported === true
+    && Array.isArray(capability.SupportedVersions)
+    && capability.SupportedVersions.length === 2
+    && capability.SupportedVersions[0] === 1 && capability.SupportedVersions[1] === 2
+}
+
+export function oneCSpecialVersionSupported(dataSource: number, version: unknown, dataset?: ReportDataset): boolean {
+  return version === 1 || (dataSource === 28 && version === 2
+    && (!dataset || ownPriceAnalysisRatesSupported(dataset)))
+}
+
 export function isOneCSpecialDataset(dataset: ReportDataset): boolean {
   const spec = SPECS[dataset.DataSource]
   if (!spec) return true
@@ -35,14 +49,15 @@ export function isOneCSpecialDataset(dataset: ReportDataset): boolean {
     : dataset.PeriodRequired === true && dataset.PeriodSupported === true
 }
 
-export function defaultOneCSpecialSettings(dataSource: number): Record<string, unknown> {
+export function defaultOneCSpecialSettings(dataSource: number, dataset?: ReportDataset): Record<string, unknown> {
   const spec = SPECS[dataSource]
-  return spec ? { [spec.key]: { Version: 1, SourceWorld: spec.worlds.length === 1 ? spec.worlds[0] : null,
+  return spec ? { [spec.key]: { Version: dataSource === 28 && ownPriceAnalysisRatesSupported(dataset) ? 2 : 1,
+    SourceWorld: spec.worlds.length === 1 ? spec.worlds[0] : null,
     ...(spec.date ? { [spec.date]: '' } : {}) } } : {}
 }
 
-export function oneCSpecialSettingsForWorld(dataSource: number, world: string): Record<string, unknown> {
-  const defaults = defaultOneCSpecialSettings(dataSource)
+export function oneCSpecialSettingsForWorld(dataSource: number, world: string, dataset?: ReportDataset): Record<string, unknown> {
+  const defaults = defaultOneCSpecialSettings(dataSource, dataset)
   const spec = SPECS[dataSource]
   if (!spec) return defaults
   const sourceWorld = world === 'fenix' ? 1 : world === 'amg' ? 2 : null
@@ -76,7 +91,7 @@ export function oneCSpecialSettingsError(data: ReportRequestBody, dataset?: Repo
   const value = requestOneCSpecialSettings(data, dataSource)
   const expected = spec.date ? ['Version', 'SourceWorld', spec.date] : ['Version', 'SourceWorld']
   if (!record(value) || Object.keys(value).length !== expected.length
-    || !expected.every(key => Object.hasOwn(value, key)) || value.Version !== 1
+    || !expected.every(key => Object.hasOwn(value, key)) || !oneCSpecialVersionSupported(dataSource, value.Version, dataset)
     || !spec.worlds.includes(value.SourceWorld as number)) return 'Оберіть підтверджену базу 1С для цього звіту.'
   if (spec.date && !date(value[spec.date], data.dataSource === 28 ? 1900 : 1753))
     return 'Оберіть коректну дату стану звіту 1С.'

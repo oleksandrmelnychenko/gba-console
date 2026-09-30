@@ -228,7 +228,7 @@ export function resolveCatalogueLaunch(value: unknown, choice: CatalogueLaunchCh
   const { registration, dataset, report } = launch
   const data = defaultDatasetRequest(dataset, period.from, period.to)
   if (registration.mode === 'return-only') data.returnsOnly = true
-  Object.assign(data, oneCSpecialSettingsForWorld(dataset.DataSource, choice.world))
+  Object.assign(data, oneCSpecialSettingsForWorld(dataset.DataSource, choice.world, dataset))
   if (dataset.DataSource === 38) data.supplierSourceWorld = choice.world === 'fenix' ? 0 : 1
   const { rows, measures } = requirements(registration, dataset.DataSource)
   const groupings = datasetGroupings(dataset)

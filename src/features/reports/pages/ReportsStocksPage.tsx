@@ -736,8 +736,8 @@ function ReportsStocksWorkspace({ ownerId, constructorMode }: { ownerId: string 
         </div> : null}
         priceTypeSalesComparisonPanel={<PriceTypeSalesComparisonPanel dataSource={dataSource} value={priceTypeSalesComparison}
           scope={oneCScope} disabled={comparisonSettingsDisabled} onChange={setPriceTypeSalesComparison} onScopeChange={setOneCScope} />}
-        oneCSpecialReportPanel={<OneCSpecialReportPanel dataSource={dataSource} value={oneCSpecialSettings ??
-          (oneCSpecialSpecification(dataSource) ? defaultOneCSpecialSettings(dataSource)[oneCSpecialSpecification(dataSource)!.key] : undefined)}
+        oneCSpecialReportPanel={<OneCSpecialReportPanel dataSource={dataSource} dataset={dataset} value={oneCSpecialSettings ??
+          (oneCSpecialSpecification(dataSource) ? defaultOneCSpecialSettings(dataSource, dataset)[oneCSpecialSpecification(dataSource)!.key] : undefined)}
           disabled={comparisonSettingsDisabled} onChange={setOneCSpecialSettings} />}
         classificationPanel={dataSource === 39 ? <CurrentVparivanieV2Panel dataset={dataset ?? null} /> : dataSource === 41 ? (dataset && isSettlementPeriodDataset(dataset)
           ? <Stack gap="sm"><SettlementPeriodAgreementPicker value={settlementPeriod} from={from} to={to} disabled={comparisonSettingsDisabled}

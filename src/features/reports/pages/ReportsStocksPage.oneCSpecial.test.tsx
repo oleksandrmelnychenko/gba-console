@@ -7,6 +7,7 @@ import { I18nProvider } from '../../../shared/i18n/I18nProvider'
 import { createStockReport, searchDatasetReportValues } from '../api/reportsApi'
 import { getReportDatasets, getServerReportTemplates } from '../api/reportWorkspaceApi'
 import { reportDatasets } from '../data/reportDatasets.test-fixtures'
+import { ownPriceAnalysisDataset } from '../data/ownPriceAnalysis.test-fixtures'
 import type { ReportDataset } from '../types'
 import { ReportsStocksPage } from './ReportsStocksPage'
 
@@ -34,6 +35,24 @@ beforeEach(() => {
   vi.mocked(getServerReportTemplates).mockResolvedValue([])
   vi.mocked(createStockReport).mockResolvedValue({ document: {}, raw: {} })
   vi.mocked(searchDatasetReportValues).mockResolvedValue([{ Id: '0xA0000000000000000000000000000001', Name: 'Договір 1С' }])
+})
+
+it('edits and submits the server-supported OUR-rate analysis without a period', async () => {
+  vi.mocked(getReportDatasets).mockResolvedValue([...reportDatasets, ownPriceAnalysisDataset])
+  const view = render(<Providers><ReportsStocksPage /></Providers>)
+  await screen.findByRole('button', { name: 'Продажі за днями' })
+  fireEvent.click(screen.getByRole('combobox', { name: 'Набір даних звіту' }))
+  fireEvent.click(await screen.findByRole('option', { name: ownPriceAnalysisDataset.Name }))
+  const input = screen.getByLabelText('Дата аналізу цін')
+  expect(input).not.toHaveProperty('disabled', true)
+  expect(screen.queryByText(/Налаштування мають невідому версію/)).toBeNull()
+  expect(screen.getByText(/курси нашої бази на дату звіту/)).toBeTruthy()
+  fireEvent.change(input, { target: { value: '2026-09-21' } })
+  fireEvent.submit(view.container.querySelector('form')!)
+  await waitFor(() => expect(createStockReport).toHaveBeenCalledOnce())
+  expect(vi.mocked(createStockReport).mock.calls[0][0]).toMatchObject({
+    dataSource: 28, from: '', to: '', priceAnalysis: { Version: 2, SourceWorld: 1, AsOf: '2026-09-21' },
+  })
 })
 
 it('passes the selected AMG world to the exact source lookup and report request', async () => {
