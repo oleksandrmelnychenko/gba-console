@@ -128,7 +128,8 @@ it('refuses duplicate null aliases, wrong datasets and unadvertised explicit mod
 
 it.each([null, 1])('preserves saved PascalCase basis %s through normalization, layout, builder and update', basis => {
   const request = { ...defaultDatasetRequest(dataset, '2026-07-01', '2026-07-01'), ...fullSourceFilters }
-  const wire = { Id: crypto.randomUUID(), Revision: 1, Name: 'Збережений прибуток', Data: {
+  const wire = { Id: crypto.randomUUID(), Revision: 1, Name: 'Збережений прибуток',
+    UpdatedAtUtc: '2026-07-01T00:00:00.000Z', Data: {
     DataSource: 35, From: request.from, To: request.to, Sorted: request.sorted, Selections: [],
     ...fullSourceFilters, DayOrganizationBasis: basis,
   } }
