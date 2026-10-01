@@ -146,6 +146,8 @@ export function nativeReportMeasurementUnit(dataSource: number, caption: string)
   if (dataSource === 29) return 'Відсотки'
   if (dataSource === 27) {
     if (caption.includes('%')) return 'Відсотки'
+    if (caption.endsWith(', EUR')) return 'Євро'
+    if (caption === 'Кількість продажів мінус повернення (GBA)') return 'Одиниці товару GBA'
     if (caption.includes('Кількість')) return 'Одиниці зберігання 1С'
     if (caption.includes('глобальним типом цін') || caption.includes('сумою за типом цін')) {
       return 'Значення за формулою 1С без валютного перерахунку'

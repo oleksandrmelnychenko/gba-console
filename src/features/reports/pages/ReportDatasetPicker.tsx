@@ -37,12 +37,8 @@ export function ReportDatasetPicker({ datasets, selected, disabled, loaded, erro
 
 export function ReportDatasetSummary({ dataset }: { dataset?: ReportDataset | null }) {
   if (!dataset) return null
-  const requiresImportedSnapshot = [23, 24, 25, 27, 28].includes(dataset.DataSource)
   return <Stack gap={6} className="report-dataset-summary">
     <Text size="sm">{dataset.Description}</Text>
-    {requiresImportedSnapshot ? <Alert color="yellow" title="Потрібен окремий знімок даних 1С">
-      Звичайна синхронізація GBA не наповнює цей набір. Після повного reset/sync він не сформує дані без окремого імпорту; використовуйте нативний набір із відповідним поточним змістом, якщо він доступний.
-    </Alert> : null}
     {dataset.Limitations.length ? <details className="report-dataset-limitations">
       <summary>Межі розрахунку</summary>
       <Stack gap={4}>{dataset.Limitations.map(text => <Text key={text} size="xs">{text}</Text>)}</Stack>
