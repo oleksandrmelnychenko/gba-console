@@ -126,8 +126,10 @@ describe('source27 report constructor wire', () => {
     expect(vi.mocked(createStockReport).mock.calls[0][0]).toEqual(vi.mocked(previewStockReport).mock.calls[0][0])
     expect(vi.mocked(createStockReport).mock.calls[0][0].priceTypeSalesComparison)
       .toMatchObject({ SalesBasis: 0 })
+    fireEvent.click(screen.getByRole('tab', { name: 'Структура звіту' }))
     fireEvent.click(screen.getByRole('combobox', { name: 'Основа продажів' }))
     fireEvent.click(screen.getByRole('option', { name: 'Збережені рухи 1С' }))
+    fireEvent.click(screen.getByRole('tab', { name: 'Результат' }))
     expect(screen.queryByRole('dialog')).toBeNull()
     expect(screen.queryByRole('region', { name: 'Таблиця попереднього перегляду' })).toBeNull()
     fireEvent.submit(container.querySelector('form')!)
@@ -141,6 +143,7 @@ describe('source27 report constructor wire', () => {
     const { container, rerender } = await currentForm()
     fireEvent.submit(container.querySelector('form')!)
     await waitFor(() => expect(createStockReport).toHaveBeenCalledOnce())
+    fireEvent.click(screen.getByRole('tab', { name: 'Структура звіту' }))
     expect((screen.getByRole('combobox', { name: 'Основа продажів' }) as HTMLInputElement).disabled).toBe(true)
     allowed = false
     rerender(<Providers><ReportsStocksPage constructorMode /></Providers>)
