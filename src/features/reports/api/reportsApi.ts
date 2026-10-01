@@ -118,7 +118,9 @@ function prepareStockReportRequest(body: ReportRequestBody): ReportRequestBody {
   return request
 }
 
-export async function searchDatasetReportValues(dataSource: number, field: number, params: ReportSearchParams, signal?: AbortSignal, sourceWorld?: number, salesBasis?: 0 | 1): Promise<ReportEntity[]> {
+export async function searchDatasetReportValues(dataSource: number, field: number, params: ReportSearchParams, signal?: AbortSignal, sourceWorld?: number, salesBasis?: 0 | 1, providedDiscountBasis?: 0 | 1): Promise<ReportEntity[]> {
+  if (providedDiscountBasis !== undefined && (dataSource !== 24 || ![0, 1].includes(providedDiscountBasis)
+    || (providedDiscountBasis === 0 && sourceWorld !== 1))) throw new Error('Некоректна основа довідника наданих знижок.')
   if (salesBasis !== undefined && (dataSource !== 27 || ![0, 1].includes(salesBasis)))
     throw new Error('Некоректна основа довідника продажів.')
   if (dataSource === 27 && salesBasis === 0 && ![46, 51, 52, 45].includes(field))
@@ -133,7 +135,8 @@ export async function searchDatasetReportValues(dataSource: number, field: numbe
   const result = await apiRequest<unknown>('/report/datasets/lookup', {
     query: { dataSource, field, value: params.value.trim(), offset: params.offset, limit: params.limit,
       ...([23, 24, 25, 28].includes(dataSource) ? { sourceWorld } : {}),
-      ...(dataSource === 27 && salesBasis !== undefined ? { salesBasis } : {}) }, signal,
+      ...(dataSource === 27 && salesBasis !== undefined ? { salesBasis } : {}),
+      ...(dataSource === 24 && providedDiscountBasis !== undefined ? { providedDiscountBasis } : {}) }, signal,
   })
   if (!Array.isArray(result) || !result.every(item => item && typeof item === 'object' && (dataSource === 39 && field === 60
     ? typeof item.Id === 'string' && currentVparivanieManagerReference(item) === item.Id

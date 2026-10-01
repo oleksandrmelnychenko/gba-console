@@ -159,7 +159,7 @@ import PriceTypeSalesComparisonPanel from './PriceTypeSalesComparisonPanel'
 import AgreementPriceComparisonPanel from './AgreementPriceComparisonPanel'
 import { defaultAgreementPriceComparison, requestAgreementPriceComparison } from '../data/agreementPriceComparison'
 import { OneCSpecialReportPanel } from './OneCSpecialReportPanel'
-import { defaultOneCSpecialSettings, oneCSpecialSpecification, requestOneCSpecialSettings } from '../data/oneCSpecialReports'
+import { currentProvidedDiscountLookupBasis, defaultOneCSpecialSettings, oneCSpecialSpecification, requestOneCSpecialSettings } from '../data/oneCSpecialReports'
 import {
   clonePriceTypeSalesComparisonValue,
   priceTypeSalesFormDataset,
@@ -884,6 +884,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode }: { ownerId: string 
         lastRun={lastRun}
         lookupFrom={hasLookupPeriod ? debouncedFrom : ''}
         lookupTo={hasLookupPeriod ? debouncedTo : ''}
+        lookupProvidedDiscountBasis={currentProvidedDiscountLookupBasis(dataSource, oneCSpecialSettings, dataset)}
         lookupSalesBasis={currentPriceTypeSalesLookupBasis(dataSource, priceTypeSalesComparison, dataset?.priceTypeSalesComparison)}
         lookupSourceWorld={typeof oneCSpecialSettings === 'object' && oneCSpecialSettings !== null && 'SourceWorld' in oneCSpecialSettings
           && (oneCSpecialSettings.SourceWorld === 1 || oneCSpecialSettings.SourceWorld === 2) ? oneCSpecialSettings.SourceWorld : undefined}
@@ -997,6 +998,7 @@ type ReportBuilderFormProps = {
   lookupFrom: string
   lookupTo: string
   lookupSourceWorld?: number
+  lookupProvidedDiscountBasis?: 0
   lookupSalesBasis?: 0
   maxDate: string
   measurements: ReportMeasurementGroup[]
@@ -1258,7 +1260,7 @@ function ReportBuilderContent(props: ReportBuilderFormProps) {
             groupingSelectData={groupingSelectData}
             lookupFrom={lookupFrom}
             lookupTo={lookupTo}
-            lookupSourceWorld={props.lookupSourceWorld} lookupSalesBasis={props.lookupSalesBasis}
+            lookupSourceWorld={props.lookupSourceWorld} lookupSalesBasis={props.lookupSalesBasis} lookupProvidedDiscountBasis={props.lookupProvidedDiscountBasis}
             measurements={measurements}
             rowGroups={rowGroups}
             selections={selections}
@@ -1369,6 +1371,7 @@ type LegacyReportBuilderProps = {
   lookupFrom: string
   lookupTo: string
   lookupSourceWorld?: number
+  lookupProvidedDiscountBasis?: 0
   lookupSalesBasis?: 0
   measurements: ReportMeasurementGroup[]
   rowGroups: ReportGroupingItem[]
@@ -1406,6 +1409,7 @@ function LegacyReportBuilder({
   lookupTo,
   lookupSourceWorld,
   lookupSalesBasis,
+  lookupProvidedDiscountBasis,
   measurements,
   rowGroups,
   selections,
@@ -1445,7 +1449,7 @@ function LegacyReportBuilder({
 
   const selectionPanel = dataSource === 19 ? null : <section className="reports-stocks-legacy__selections">
     <ReportSelectionsCard dataSource={dataSource} description={null} filterFieldOptions={filterFieldOptions}
-      from={lookupFrom} lookupSourceWorld={lookupSourceWorld} lookupSalesBasis={lookupSalesBasis} selections={selections} title={t('Умови відбору')} to={lookupTo} onChange={onSelectionsChange} />
+      from={lookupFrom} lookupSourceWorld={lookupSourceWorld} lookupSalesBasis={lookupSalesBasis} lookupProvidedDiscountBasis={lookupProvidedDiscountBasis} selections={selections} title={t('Умови відбору')} to={lookupTo} onChange={onSelectionsChange} />
   </section>
 
   return (
@@ -1667,6 +1671,7 @@ type FilterFieldOption = {
 type ReportSelectionsCardProps = {
   dataSource: number
   lookupSourceWorld?: number
+  lookupProvidedDiscountBasis?: 0
   lookupSalesBasis?: 0
   description?: string | null
   filterFieldOptions: FilterFieldOption[]
@@ -1681,6 +1686,7 @@ function ReportSelectionsCard({
   dataSource,
   lookupSourceWorld,
   lookupSalesBasis,
+  lookupProvidedDiscountBasis,
   description,
   filterFieldOptions,
   from,
@@ -1835,7 +1841,7 @@ function ReportSelectionsCard({
               />
               <SelectionValuePicker
                 dataSource={dataSource}
-                lookupSourceWorld={lookupSourceWorld} lookupSalesBasis={lookupSalesBasis}
+                lookupSourceWorld={lookupSourceWorld} lookupSalesBasis={lookupSalesBasis} lookupProvidedDiscountBasis={lookupProvidedDiscountBasis}
                 from={from}
                 label={t('Значення')}
                 selection={draftSelection}
@@ -2045,6 +2051,7 @@ function ReportResultSection({
 type SelectionValuePickerProps = {
   dataSource: number
   lookupSourceWorld?: number
+  lookupProvidedDiscountBasis?: 0
   lookupSalesBasis?: 0
   error?: string
   from: string
@@ -2056,7 +2063,7 @@ type SelectionValuePickerProps = {
   onChange: (values: ReportSelectedValue[]) => void
 }
 
-function SelectionValuePicker({ dataSource, lookupSourceWorld, lookupSalesBasis, error, from, label, selection, selections, to, width = 320, onChange }: SelectionValuePickerProps) {
+function SelectionValuePicker({ dataSource, lookupSourceWorld, lookupSalesBasis, lookupProvidedDiscountBasis, error, from, label, selection, selections, to, width = 320, onChange }: SelectionValuePickerProps) {
   const { t } = useI18n()
   const [search, setSearch] = useValueState('')
   const [manualValue, setManualValue] = useValueState('')
@@ -2171,7 +2178,7 @@ function SelectionValuePicker({ dataSource, lookupSourceWorld, lookupSalesBasis,
             ? await getReportClientAgreements(dependentClientNetId)
             : await loadSelectionLookupOptions(
                 dataSource, selection.SelectedField.Type, normalizedSearch, from, to,
-                controller.signal, saleDocumentFilters, lookupSourceWorld, lookupSalesBasis,
+                controller.signal, saleDocumentFilters, lookupSourceWorld, lookupSalesBasis, lookupProvidedDiscountBasis,
               )
 
         if (!cancelled) {
@@ -2198,6 +2205,7 @@ function SelectionValuePicker({ dataSource, lookupSourceWorld, lookupSalesBasis,
     dataSource,
     lookupSourceWorld,
     lookupSalesBasis,
+    lookupProvidedDiscountBasis,
     dependentClientNetId,
     from,
     lookupMode,
@@ -2648,11 +2656,14 @@ async function loadSelectionLookupOptions(
   saleDocumentFilters?: SaleDocumentLookupFilters,
   lookupSourceWorld?: number,
   lookupSalesBasis?: 0,
+  lookupProvidedDiscountBasis?: 0,
 ): Promise<ReportEntity[]> {
   if (usesNativeReportLookup(dataSource)) {
     const params = { limit: LOOKUP_SEARCH_LIMIT, offset: 0, value }
     if (dataSource === 27 && lookupSalesBasis === 0)
       return searchDatasetReportValues(dataSource, fieldType, params, signal, undefined, 0)
+    if (dataSource === 24 && lookupProvidedDiscountBasis === 0)
+      return searchDatasetReportValues(dataSource, fieldType, params, signal, lookupSourceWorld, undefined, 0)
     return [23, 24, 25, 28].includes(dataSource)
       ? searchDatasetReportValues(dataSource, fieldType, params, signal, lookupSourceWorld)
       : searchDatasetReportValues(dataSource, fieldType, params, signal)
