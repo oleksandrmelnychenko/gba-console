@@ -19,7 +19,7 @@ it.each([accountAbc, { ...accountAbc, Version: 7, Future: true }])('preserves ex
   vi.mocked(apiRequest).mockResolvedValue({ ...original, Revision: 4 }); await saveServerReportTemplate(template)
   expect(apiRequest).toHaveBeenLastCalledWith('/report/templates/save', { method: 'POST', body: template })
   vi.mocked(apiRequest).mockResolvedValue({}); await createStockReport(template.Data)
-  expect(apiRequest).toHaveBeenLastCalledWith('/report/stocks/generate', { method: 'POST', body: template.Data })
+  expect(apiRequest).toHaveBeenLastCalledWith('/report/stocks/generate', { method: 'POST', dedupe: false, body: template.Data })
 })
 it('keeps conflicting casing intact for explicit refusal', async () => {
   const original = wire(accountAbc); vi.mocked(apiRequest).mockResolvedValue([{ ...original, Data: { ...original.Data, abcClassification: { Version: 99 } } }])

@@ -18,7 +18,7 @@ it('requires the explicit original capability and submits only source identity/m
   expect(api).toHaveBeenNthCalledWith(1, '/report/constructors/debt-to-sales-ratio/capabilities', { signal: undefined })
   const request = createDebtToSalesRatioRequest(capability, '2026-09')
   expect(Object.keys(request)).toEqual(['Version', 'SourceIdentity', 'Month'])
-  expect(api).toHaveBeenNthCalledWith(2, '/report/constructors/debt-to-sales-ratio/preview', { method: 'POST', body: request })
+  expect(api).toHaveBeenNthCalledWith(2, '/report/constructors/debt-to-sales-ratio/preview', { method: 'POST', body: request, dedupe: false })
   expect(api).toHaveBeenCalledTimes(2)
 })
 

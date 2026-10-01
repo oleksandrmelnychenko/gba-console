@@ -21,6 +21,6 @@ export async function getCurrencyRateDynamicsDefinitions(query: string, offset =
 export async function previewCurrencyRateDynamics(capability: CurrencyRateDynamicsCapabilities, month: string,
   definition: CurrencyRateDynamicsDefinition): Promise<CurrencyRateDynamicsReport> {
   const request = createCurrencyRateDynamicsRequest(capability, month, definition)
-  const value = await apiRequest<unknown>(`${route}/preview`, { method: 'POST', body: request })
+  const value = await apiRequest<unknown>(`${route}/preview`, { method: 'POST', body: request, dedupe: false })
   return normalizeCurrencyRateDynamicsReport(value, request, definition)
 }

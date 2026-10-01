@@ -129,7 +129,7 @@ describe('reportsApi', () => {
       },
     })
     expect(apiRequestMock).toHaveBeenCalledWith('/report/stocks/generate', {
-      method: 'POST',
+      method: 'POST', dedupe: false,
       body,
     })
   })
@@ -145,7 +145,7 @@ describe('reportsApi', () => {
     expect(response.result.document.DocumentURL).toBe('/reports/result.xlsx')
     expect(response.preview.Page.ReturnedRows).toBe(0)
     expect(apiRequestMock).toHaveBeenCalledWith('/report/stocks/preview', {
-      method: 'POST', query: { rowOffset: 0, rowLimit: 50 }, body,
+      method: 'POST', dedupe: false, query: { rowOffset: 0, rowLimit: 50 }, body,
     })
   })
 

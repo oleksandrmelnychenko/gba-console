@@ -16,7 +16,7 @@ it('reads source14 capabilities and saved date/axis/measure identities without i
     DataSource: 14, From: data.from, To: data.to, Sorted: data.sorted, Selections: [] } }])
   const [template] = await getServerReportTemplates(); expect(template.Data).toEqual(data)
   vi.mocked(apiRequest).mockResolvedValue({}); await createStockReport(template.Data)
-  expect(apiRequest).toHaveBeenLastCalledWith('/report/stocks/generate', { method: 'POST', body: data })
+  expect(apiRequest).toHaveBeenLastCalledWith('/report/stocks/generate', { method: 'POST', dedupe: false, body: data })
 })
 it.each([{ PeriodRequired: false }, { PeriodSupported: false }])('rejects incompatible source14 period capability %#', async patch => {
   vi.mocked(apiRequest).mockResolvedValue([{ ...importedPaymentsDataset, ...patch }])

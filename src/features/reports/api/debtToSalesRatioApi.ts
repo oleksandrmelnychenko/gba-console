@@ -18,6 +18,6 @@ export async function getDebtToSalesRatioCapabilities(signal?: AbortSignal): Pro
 /** One server calculation supplies the on-screen cells and both export links. */
 export async function previewDebtToSalesRatio(capability: DebtToSalesRatioCapabilities, month: string): Promise<DebtToSalesRatioReport> {
   const request = createDebtToSalesRatioRequest(capability, month)
-  const result = await apiRequest<unknown>(`${route}/preview`, { method: 'POST', body: request })
+  const result = await apiRequest<unknown>(`${route}/preview`, { method: 'POST', body: request, dedupe: false })
   return normalizeDebtToSalesRatioReport(result, request)
 }

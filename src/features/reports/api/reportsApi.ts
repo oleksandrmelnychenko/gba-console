@@ -41,6 +41,7 @@ export async function createStockReport(body: ReportRequestBody): Promise<Report
   const request = prepareStockReportRequest(body)
   const result = await apiRequest<unknown>('/report/stocks/generate', {
     method: 'POST',
+    dedupe: false,
     body: request,
   })
 
@@ -52,6 +53,7 @@ export async function previewStockReport(body: ReportRequestBody): Promise<{ res
   const request = prepareStockReportRequest(body)
   const response = await apiRequest<unknown>('/report/stocks/preview', {
     method: 'POST',
+    dedupe: false,
     query: { rowOffset: 0, rowLimit: 50 },
     body: request,
   })

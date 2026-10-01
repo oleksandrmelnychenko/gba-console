@@ -13,7 +13,10 @@ export function CurrencyRateDynamicsRatePicker({ value, enabled, callerKey, onCh
 }) {
   const { t } = useI18n()
   const [search, setSearch] = useState('')
-  const [query] = useDebouncedValue(search, 300)
+  const selectedLabel = value ? currencyRateDynamicsDefinitionLabel(value) : ''
+  // Mantine writes the selected label into its search input without a user search.
+  const lookupSearch = search === selectedLabel ? '' : search
+  const [query] = useDebouncedValue(lookupSearch, 300)
   const [attempt, setAttempt] = useState(0)
   const scope = useMemo(() => ({ enabled, callerKey, query, attempt }), [enabled, callerKey, query, attempt])
   const [load, setLoad] = useState<{ scope: typeof scope; page: Page } | null>(null)
@@ -28,7 +31,7 @@ export function CurrencyRateDynamicsRatePicker({ value, enabled, callerKey, onCh
     })
     return () => controller.abort()
   }, [scope])
-  const page = load?.scope === scope && search === query ? load.page : null
+  const page = load?.scope === scope && lookupSearch === query ? load.page : null
   const options = new Map((page?.rows ?? []).map(row => [row.RateDefinitionId, row]))
   if (value) options.set(value.RateDefinitionId, value)
 
@@ -54,7 +57,7 @@ export function CurrencyRateDynamicsRatePicker({ value, enabled, callerKey, onCh
       placeholder={t('Шукайте валюту або точну серію')} searchable clearable disabled={!enabled}
       value={value?.RateDefinitionId ?? null} data={[...options.values()].map(row => ({ value: row.RateDefinitionId,
         label: currencyRateDynamicsDefinitionLabel(row) }))} searchValue={search}
-      onSearchChange={next => setSearch(next.slice(0, 120))} maxLength={120} filter={({ options: rows }) => rows}
+      onSearchChange={next => setSearch(next === selectedLabel ? next : next.slice(0, 120))} maxLength={120} filter={({ options: rows }) => rows}
       onChange={next => onChange(next ? options.get(next) ?? null : null)}
       nothingFoundMessage={t('Валютних пар за цими умовами немає')} />
     <Group gap="xs">

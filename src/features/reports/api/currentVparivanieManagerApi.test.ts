@@ -13,7 +13,7 @@ it('accepts advertised paired capability and canonical exact refs through reques
  const original = structuredClone(request);api.mockResolvedValue({})
  await createStockReport(request)
  expect(request).toEqual(original)
- expect(api).toHaveBeenLastCalledWith('/report/stocks/generate',{method:'POST',body:{...request,selections:[request.selections[0],{...request.selections[1],Values:[{...request.selections[1].Values[0],Data:{Id:reference}}]}]}})
+ expect(api).toHaveBeenLastCalledWith('/report/stocks/generate',{method:'POST', dedupe: false,body:{...request,selections:[request.selections[0],{...request.selections[1],Values:[{...request.selections[1].Values[0],Data:{Id:reference}}]}]}})
 })
 it('preserves distinct source refs with equal labels and sends only field60 dataset lookup', async () => {
  const rows = [{Id:reference,Name:'One caption'},{Id:'BBCDEF1234567890ABCDEF1234567890',Name:'One caption'}]
@@ -43,5 +43,5 @@ it('keeps the returned EmptyRef string through lookup and generation without num
  api.mockResolvedValue({})
  await createStockReport(request)
  expect(request).toEqual(original)
- expect(api).toHaveBeenLastCalledWith('/report/stocks/generate', { method: 'POST', body: original })
+ expect(api).toHaveBeenLastCalledWith('/report/stocks/generate', { method: 'POST', dedupe: false, body: original })
 })

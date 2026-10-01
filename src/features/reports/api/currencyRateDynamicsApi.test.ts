@@ -14,7 +14,7 @@ it('uses dedicated capability, bounded ordered-pair search and one exact authent
   expect(await previewCurrencyRateDynamics(capability, '2026-09', definition)).toBe(response)
   expect(api).toHaveBeenNthCalledWith(1, '/report/constructors/currency-rate-dynamics/capabilities', { signal: controller.signal })
   expect(api).toHaveBeenNthCalledWith(2, '/report/constructors/currency-rate-dynamics/rates?query=USD&offset=25&limit=25', { signal: controller.signal })
-  expect(api).toHaveBeenNthCalledWith(3, '/report/constructors/currency-rate-dynamics/preview', { method: 'POST',
+  expect(api).toHaveBeenNthCalledWith(3, '/report/constructors/currency-rate-dynamics/preview', { method: 'POST', dedupe: false,
     body: { Version: 1, SourceIdentity: capability.SourceIdentity, Month: '2026-09', RateDefinitionId: '9007199254740993' } })
   expect(api).toHaveBeenCalledTimes(3)
 })

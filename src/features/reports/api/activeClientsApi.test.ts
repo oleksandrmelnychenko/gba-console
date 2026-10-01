@@ -16,7 +16,7 @@ it('uses a dedicated capability and one authenticated month-only preview for cel
   expect(await previewActiveClients(capability, '2026-09')).toBe(response)
   expect(api).toHaveBeenNthCalledWith(1, '/report/constructors/active-clients/capabilities', { signal: controller.signal })
   expect(api).toHaveBeenNthCalledWith(2, '/report/constructors/active-clients/preview', {
-    method: 'POST', body: createActiveClientsRequest(capability, '2026-09'),
+    method: 'POST', body: createActiveClientsRequest(capability, '2026-09'), dedupe: false,
   })
   expect(api).toHaveBeenCalledTimes(2)
   expect(response.Cells[2].Value).toBe('33.333333333333333333333333333')

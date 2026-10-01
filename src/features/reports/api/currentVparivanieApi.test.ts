@@ -19,7 +19,7 @@ it('uses one preview calculation for raw cells, attrs and both export links', as
   api.mockResolvedValue({ DocumentURL: '/report/run.xlsx', PdfDocumentURL: '/report/run.pdf', Preview: currentVparivaniePreview() })
   const result = await previewStockReport(request)
   expect(api).toHaveBeenCalledOnce()
-  expect(api).toHaveBeenCalledWith('/report/stocks/preview', { method: 'POST', query: { rowOffset: 0, rowLimit: 50 }, body: request })
+  expect(api).toHaveBeenCalledWith('/report/stocks/preview', { method: 'POST', dedupe: false, query: { rowOffset: 0, rowLimit: 50 }, body: request })
   expect(result.result.document).toEqual({ DocumentURL: '/report/run.xlsx', PdfDocumentURL: '/report/run.pdf' })
   expect(result.preview.CurrentVparivanieProducts?.ResultSha256).toBe(result.preview.ResultSha256)
 })

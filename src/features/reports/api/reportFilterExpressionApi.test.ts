@@ -15,7 +15,7 @@ it.each([nestedExpression, { Version: 7, Root: { Future: true, OriginalIndices: 
   vi.mocked(apiRequest).mockResolvedValue({ ...wire, Revision: 4 }); await saveServerReportTemplate(template)
   expect(apiRequest).toHaveBeenLastCalledWith('/report/templates/save', { method: 'POST', body: template })
   vi.mocked(apiRequest).mockResolvedValue({}); await createStockReport(template.Data)
-  expect(apiRequest).toHaveBeenLastCalledWith('/report/stocks/generate', { method: 'POST', body: template.Data })
+  expect(apiRequest).toHaveBeenLastCalledWith('/report/stocks/generate', { method: 'POST', dedupe: false, body: template.Data })
 })
 
 it.each([{ Version: 99, Root: { Query: 'not executed' } }, { Version: 1, Root: { Kind: 3, SelectionIndex: 0 } }])('refuses malformed or active-omitting local imports without a POST or changing originals %#', async filterExpression => {

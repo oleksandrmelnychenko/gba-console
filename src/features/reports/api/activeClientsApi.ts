@@ -18,6 +18,6 @@ export async function getActiveClientsCapabilities(signal?: AbortSignal): Promis
 /** The authenticated preview supplies all cells and both caller-bound export links. */
 export async function previewActiveClients(capability: ActiveClientsCapabilities, month: string): Promise<ActiveClientsReport> {
   const request = createActiveClientsRequest(capability, month)
-  const result = await apiRequest<unknown>(`${route}/preview`, { method: 'POST', body: request })
+  const result = await apiRequest<unknown>(`${route}/preview`, { method: 'POST', body: request, dedupe: false })
   return normalizeActiveClientsReport(result, request)
 }
