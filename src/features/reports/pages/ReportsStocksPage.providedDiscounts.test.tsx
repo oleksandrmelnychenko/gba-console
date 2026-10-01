@@ -74,9 +74,11 @@ describe('current24 constructor', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Шаблони' }))
     fireEvent.click(await screen.findByRole('button', { name: /Старі знижки/ }))
     expect((screen.getByRole('combobox', { name: 'Основа наданих знижок' }) as HTMLInputElement).value).toBe('Збережений знімок 1С')
+    expect(screen.getByRole('button', { name: 'Сформувати' })).not.toBeDisabled()
     fireEvent.submit(container.querySelector('form')!)
     await waitFor(() => expect(createStockReport).toHaveBeenCalledOnce())
     expect(vi.mocked(createStockReport).mock.calls[0][0].providedDiscounts).toEqual(Data.providedDiscounts)
+    expect(vi.mocked(createStockReport).mock.calls[0][0].sorted.Measurements.map(item => item.Type)).toEqual([65, 66])
   })
 
   it('shares preview and files with basis0 and removes old results when basis changes', async () => {
