@@ -124,6 +124,8 @@ import { ActiveClientsReportPanel } from './ActiveClientsReportPanel'
 import { isActiveClientsCapabilities, type ActiveClientsCapabilities } from '../data/activeClients'
 import { CurrencyRateDynamicsReportPanel } from './CurrencyRateDynamicsReportPanel'
 import { CashAggregateBalanceReportPanel } from './CashAggregateBalanceReportPanel'
+import { OriginalRevenueReportPanel } from './OriginalRevenueReportPanel'
+import { isOriginalRevenueCapabilities, type OriginalRevenueCapabilities } from '../data/originalRevenue'
 import { isCashAggregateBalanceCapabilities, type CashAggregateBalanceCapabilities } from '../data/cashAggregateBalance'
 import { defaultCurrencyRateDynamicsMonth, isCurrencyRateDynamicsCapabilities, type CurrencyRateDynamicsCapabilities } from '../data/currencyRateDynamics'
 import { ReportGroupingPanel } from './ReportGroupingPanel'
@@ -309,6 +311,8 @@ function ReportsStocksWorkspace({ ownerId, constructorMode }: { ownerId: string 
   const [currencyDynamicsGenerating, setCurrencyDynamicsGenerating] = useState(false)
   const [cashAggregateCapability, setCashAggregateCapability] = useState<CashAggregateBalanceCapabilities | null>(null)
   const [cashAggregateGenerating, setCashAggregateGenerating] = useState(false)
+  const [originalRevenueCapability, setOriginalRevenueCapability] = useState<OriginalRevenueCapabilities | null>(null)
+  const [originalRevenueGenerating, setOriginalRevenueGenerating] = useState(false)
   const [valuationClientAgreementId, setValuationAgreementId] = useValueState<number | undefined>(undefined)
   const valuation = useValuationAgreement(valuationClientAgreementId, canGenerateReport && requiresValuationAgreement(dataSource))
   const dataset = datasetStorage.datasets.find(item => item.DataSource === dataSource)
@@ -711,6 +715,12 @@ function ReportsStocksWorkspace({ ownerId, constructorMode }: { ownerId: string 
     return true
   }
 
+  function openOriginalRevenue(capability: OriginalRevenueCapabilities): boolean {
+    if (!canGenerateReport || isLoading || !isOriginalRevenueCapabilities(capability) || !capability.Executable) return false
+    setOriginalRevenueCapability(structuredClone(capability))
+    setOriginalRevenueGenerating(false)
+    return true
+  }
   function openCashAggregateBalance(capability: CashAggregateBalanceCapabilities): boolean {
     if (!canGenerateReport || isLoading || !isCashAggregateBalanceCapabilities(capability) || !capability.Executable) return false
     setCashAggregateCapability(structuredClone(capability))
@@ -807,6 +817,14 @@ function ReportsStocksWorkspace({ ownerId, constructorMode }: { ownerId: string 
           initialMonth={defaultCurrencyRateDynamicsMonth(today)} canGenerate={canGenerateReport} callerKey={ownerId}
           onLoadingChange={setCurrencyDynamicsGenerating} /> : null}
       </AppModal>
+      <AppModal opened={canGenerateReport && originalRevenueCapability !== null} title={originalRevenueCapability?.Title ?? ''} size={1100}
+        onClose={() => { if (!originalRevenueGenerating) setOriginalRevenueCapability(null) }}
+        closeOnClickOutside={!originalRevenueGenerating} closeOnEscape={!originalRevenueGenerating}
+        closeButtonProps={{ disabled: originalRevenueGenerating, 'aria-label': t('Закрити конструктор виручки') }}>
+        {canGenerateReport && originalRevenueCapability ? <OriginalRevenueReportPanel capability={originalRevenueCapability}
+          initialMonth={defaultCurrencyRateDynamicsMonth(today)} canGenerate={canGenerateReport} callerKey={ownerId}
+          onLoadingChange={setOriginalRevenueGenerating} /> : null}
+      </AppModal>
       <AppModal opened={canGenerateReport && cashAggregateCapability !== null} title={cashAggregateCapability?.Title ?? ''} size={1100}
         onClose={() => { if (!cashAggregateGenerating) setCashAggregateCapability(null) }}
         closeOnClickOutside={!cashAggregateGenerating} closeOnEscape={!cashAggregateGenerating}
@@ -836,7 +854,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode }: { ownerId: string 
         catalogueControl={<ReportCatalogueControl presentation="dialog" enabled={canGenerateReport}
           disabled={isLoading} onOpen={openCatalogueReport}
           onOpenDebtToSalesRatio={openDebtToSalesRatio} onOpenActiveClients={openActiveClients}
-          onOpenCurrencyRateDynamics={openCurrencyRateDynamics} onOpenCashAggregateBalance={openCashAggregateBalance} />}
+          onOpenCurrencyRateDynamics={openCurrencyRateDynamics} onOpenCashAggregateBalance={openCashAggregateBalance} onOpenOriginalRevenue={openOriginalRevenue} />}
         datasetSummary={<><ReportDatasetSummary dataset={dataset} />
           {!constructorMode ? <details className="stocks-workspace-dataset-help"><summary>{t('Що змінює вибір набору даних')}</summary>
             <Text size="xs" c="dimmed">{t('Зміна набору застосує початкові групування й показники та очистить відбори, групи І/АБО, TOP, ABC-класифікацію і правила сортування. Набори поточного стану очищують період; після повернення до набору з періодом попередні дати відновляться.')}</Text>

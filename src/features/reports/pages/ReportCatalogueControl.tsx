@@ -7,11 +7,12 @@ import type { DebtToSalesRatioCapabilities } from '../data/debtToSalesRatio'
 import type { ActiveClientsCapabilities } from '../data/activeClients'
 import type { CurrencyRateDynamicsCapabilities } from '../data/currencyRateDynamics'
 import type { CashAggregateBalanceCapabilities } from '../data/cashAggregateBalance'
+import type { OriginalRevenueCapabilities } from '../data/originalRevenue'
 import type { ReportCatalogue } from '../types'
 
 const ReportCataloguePanel = lazy(() => import('./ReportCataloguePanel').then(module => ({ default: module.ReportCataloguePanel })))
 
-export function ReportCatalogueControl({ enabled, disabled = false, presentation = 'inline', onOpen, onOpenDebtToSalesRatio, onOpenActiveClients, onOpenCurrencyRateDynamics, onOpenCashAggregateBalance }: {
+export function ReportCatalogueControl({ enabled, disabled = false, presentation = 'inline', onOpen, onOpenDebtToSalesRatio, onOpenActiveClients, onOpenCurrencyRateDynamics, onOpenCashAggregateBalance, onOpenOriginalRevenue }: {
   enabled: boolean
   disabled?: boolean
   presentation?: 'inline' | 'dialog'
@@ -20,6 +21,7 @@ export function ReportCatalogueControl({ enabled, disabled = false, presentation
   onOpenActiveClients?: (capability: ActiveClientsCapabilities) => boolean
   onOpenCurrencyRateDynamics?: (capability: CurrencyRateDynamicsCapabilities) => boolean
   onOpenCashAggregateBalance?: (capability: CashAggregateBalanceCapabilities) => boolean
+  onOpenOriginalRevenue?: (capability: OriginalRevenueCapabilities) => boolean
 }) {
   const { t } = useI18n()
   const [opened, setOpened] = useState(false)
@@ -44,6 +46,10 @@ export function ReportCatalogueControl({ enabled, disabled = false, presentation
       return true
     } : undefined} onOpenCashAggregateBalance={onOpenCashAggregateBalance ? capability => {
       if (!enabled || disabled || !onOpenCashAggregateBalance(capability)) return false
+      setOpened(false)
+      return true
+    } : undefined} onOpenOriginalRevenue={onOpenOriginalRevenue ? capability => {
+      if (!enabled || disabled || !onOpenOriginalRevenue(capability)) return false
       setOpened(false)
       return true
     } : undefined} />
