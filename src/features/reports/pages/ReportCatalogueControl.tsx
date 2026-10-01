@@ -8,11 +8,12 @@ import type { ActiveClientsCapabilities } from '../data/activeClients'
 import type { CurrencyRateDynamicsCapabilities } from '../data/currencyRateDynamics'
 import type { CashAggregateBalanceCapabilities } from '../data/cashAggregateBalance'
 import type { OriginalRevenueCapabilities } from '../data/originalRevenue'
+import type { OriginalBuyerSalesShareCapabilities } from '../data/originalBuyerSalesShare'
 import type { ReportCatalogue } from '../types'
 
 const ReportCataloguePanel = lazy(() => import('./ReportCataloguePanel').then(module => ({ default: module.ReportCataloguePanel })))
 
-export function ReportCatalogueControl({ enabled, disabled = false, presentation = 'inline', onOpen, onOpenDebtToSalesRatio, onOpenActiveClients, onOpenCurrencyRateDynamics, onOpenCashAggregateBalance, onOpenOriginalRevenue }: {
+export function ReportCatalogueControl({ enabled, disabled = false, presentation = 'inline', onOpen, onOpenDebtToSalesRatio, onOpenActiveClients, onOpenCurrencyRateDynamics, onOpenCashAggregateBalance, onOpenOriginalRevenue, onOpenOriginalBuyerSalesShare }: {
   enabled: boolean
   disabled?: boolean
   presentation?: 'inline' | 'dialog'
@@ -22,6 +23,7 @@ export function ReportCatalogueControl({ enabled, disabled = false, presentation
   onOpenCurrencyRateDynamics?: (capability: CurrencyRateDynamicsCapabilities) => boolean
   onOpenCashAggregateBalance?: (capability: CashAggregateBalanceCapabilities) => boolean
   onOpenOriginalRevenue?: (capability: OriginalRevenueCapabilities) => boolean
+  onOpenOriginalBuyerSalesShare?: (capability: OriginalBuyerSalesShareCapabilities) => boolean
 }) {
   const { t } = useI18n()
   const [opened, setOpened] = useState(false)
@@ -50,6 +52,10 @@ export function ReportCatalogueControl({ enabled, disabled = false, presentation
       return true
     } : undefined} onOpenOriginalRevenue={onOpenOriginalRevenue ? capability => {
       if (!enabled || disabled || !onOpenOriginalRevenue(capability)) return false
+      setOpened(false)
+      return true
+    } : undefined} onOpenOriginalBuyerSalesShare={onOpenOriginalBuyerSalesShare ? capability => {
+      if (!enabled || disabled || !onOpenOriginalBuyerSalesShare(capability)) return false
       setOpened(false)
       return true
     } : undefined} />

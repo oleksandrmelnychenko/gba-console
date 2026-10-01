@@ -20,6 +20,8 @@ import { isCashAggregateBalanceCatalogueEntry, type CashAggregateBalanceCapabili
 import { CashAggregateBalanceCatalogueLaunch } from './CashAggregateBalanceCatalogueLaunch'
 import { isOriginalRevenueCatalogueEntry, type OriginalRevenueCapabilities } from '../data/originalRevenue'
 import { OriginalRevenueCatalogueLaunch } from './OriginalRevenueCatalogueLaunch'
+import { originalBuyerSalesShareCatalogueVariant, type OriginalBuyerSalesShareCapabilities } from '../data/originalBuyerSalesShare'
+import { OriginalBuyerSalesShareCatalogueLaunch } from './OriginalBuyerSalesShareCatalogueLaunch'
 
 const kindLabels: Record<string, string> = {
   builtin: 'Вбудовані', regulated: 'Регламентовані', external: 'Зовнішні',
@@ -35,6 +37,7 @@ type OpenActiveClients = (capability: ActiveClientsCapabilities) => boolean
 type OpenCurrencyRateDynamics = (capability: CurrencyRateDynamicsCapabilities) => boolean
 type OpenCashAggregateBalance = (capability: CashAggregateBalanceCapabilities) => boolean
 type OpenOriginalRevenue = (capability: OriginalRevenueCapabilities) => boolean
+type OpenOriginalBuyerSalesShare = (capability: OriginalBuyerSalesShareCapabilities) => boolean
 type LoadScope = { attempt: number; canGenerate: boolean }
 type CatalogueLoad = { scope: LoadScope; catalogue: ReportCatalogue | null; datasets: ReportDataset[] | null; error: boolean }
 
@@ -57,8 +60,8 @@ function useCatalogueLoad(canGenerate: boolean) {
     error: currentLoad?.error ?? false, retry: () => setAttempt(value => value + 1) }
 }
 
-export function ReportCataloguePanel({ onOpen, onOpenDebtToSalesRatio, onOpenActiveClients, onOpenCurrencyRateDynamics, onOpenCashAggregateBalance, onOpenOriginalRevenue, disabled = false }: {
-  onOpen?: OpenReport; onOpenDebtToSalesRatio?: OpenDebtToSalesRatio; onOpenActiveClients?: OpenActiveClients; onOpenCurrencyRateDynamics?: OpenCurrencyRateDynamics; onOpenCashAggregateBalance?: OpenCashAggregateBalance; onOpenOriginalRevenue?: OpenOriginalRevenue; disabled?: boolean
+export function ReportCataloguePanel({ onOpen, onOpenDebtToSalesRatio, onOpenActiveClients, onOpenCurrencyRateDynamics, onOpenCashAggregateBalance, onOpenOriginalRevenue, onOpenOriginalBuyerSalesShare, disabled = false }: {
+  onOpen?: OpenReport; onOpenDebtToSalesRatio?: OpenDebtToSalesRatio; onOpenActiveClients?: OpenActiveClients; onOpenCurrencyRateDynamics?: OpenCurrencyRateDynamics; onOpenCashAggregateBalance?: OpenCashAggregateBalance; onOpenOriginalRevenue?: OpenOriginalRevenue; onOpenOriginalBuyerSalesShare?: OpenOriginalBuyerSalesShare; disabled?: boolean
 }) {
   const { t } = useI18n()
   const { hasPermission } = useAuth()
@@ -138,7 +141,7 @@ export function ReportCataloguePanel({ onOpen, onOpenDebtToSalesRatio, onOpenAct
       </div>
       <CatalogueTable visibleRows={visibleRows} catalogue={catalogue} inspection={inspection} availableDatasets={availableDatasets}
         canGenerate={canGenerate} disabled={disabled} onOpen={onOpen} onOpenDebtToSalesRatio={onOpenDebtToSalesRatio}
-        onOpenActiveClients={onOpenActiveClients} onOpenCurrencyRateDynamics={onOpenCurrencyRateDynamics} onOpenCashAggregateBalance={onOpenCashAggregateBalance} onOpenOriginalRevenue={onOpenOriginalRevenue} expanded={expanded}
+        onOpenActiveClients={onOpenActiveClients} onOpenCurrencyRateDynamics={onOpenCurrencyRateDynamics} onOpenCashAggregateBalance={onOpenCashAggregateBalance} onOpenOriginalRevenue={onOpenOriginalRevenue} onOpenOriginalBuyerSalesShare={onOpenOriginalBuyerSalesShare} expanded={expanded}
         onToggle={id => setExpanded(current => toggleExpanded(current, id))} />
       {!filtered.length && <Text c="dimmed" ta="center" py="xl">{t('Звітів за цими умовами не знайдено')}</Text>}
       </div>
@@ -154,10 +157,10 @@ function toggleExpanded(current: ReadonlySet<string>, id: string) {
   return next
 }
 
-function CatalogueTable({ visibleRows, catalogue, inspection, availableDatasets, canGenerate, disabled, onOpen, onOpenDebtToSalesRatio, onOpenActiveClients, onOpenCurrencyRateDynamics, onOpenCashAggregateBalance, onOpenOriginalRevenue, expanded, onToggle }: {
+function CatalogueTable({ visibleRows, catalogue, inspection, availableDatasets, canGenerate, disabled, onOpen, onOpenDebtToSalesRatio, onOpenActiveClients, onOpenCurrencyRateDynamics, onOpenCashAggregateBalance, onOpenOriginalRevenue, onOpenOriginalBuyerSalesShare, expanded, onToggle }: {
   visibleRows: Array<{ report: ReportCatalogueEntry; options: LaunchOption[] }>; catalogue: ReportCatalogue
   inspection: ReturnType<typeof inspectCatalogueMigration>; availableDatasets: ReportDataset[] | null
-  canGenerate: boolean; disabled: boolean; onOpen?: OpenReport; onOpenDebtToSalesRatio?: OpenDebtToSalesRatio; onOpenActiveClients?: OpenActiveClients; onOpenCurrencyRateDynamics?: OpenCurrencyRateDynamics; onOpenCashAggregateBalance?: OpenCashAggregateBalance; onOpenOriginalRevenue?: OpenOriginalRevenue
+  canGenerate: boolean; disabled: boolean; onOpen?: OpenReport; onOpenDebtToSalesRatio?: OpenDebtToSalesRatio; onOpenActiveClients?: OpenActiveClients; onOpenCurrencyRateDynamics?: OpenCurrencyRateDynamics; onOpenCashAggregateBalance?: OpenCashAggregateBalance; onOpenOriginalRevenue?: OpenOriginalRevenue; onOpenOriginalBuyerSalesShare?: OpenOriginalBuyerSalesShare
   expanded: ReadonlySet<string>; onToggle: (id: string) => void
 }) {
   const { t } = useI18n()
@@ -171,7 +174,9 @@ function CatalogueTable({ visibleRows, catalogue, inspection, availableDatasets,
               <Table.Td><Stack gap={8} align="flex-start"><Button className="report-catalogue__report-title" leftSection={<ChevronRight size={14} aria-hidden="true" />} type="button" variant="subtle" size="compact-sm" aria-expanded={expanded.has(report.Id)} aria-label={t('Покриття звіту: {name}', { name: report.Title })}
                 styles={{ root: { height: 'auto', maxWidth: '100%' }, label: { whiteSpace: 'normal', textAlign: 'left' } }}
                 onClick={() => onToggle(report.Id)}>{report.Title}</Button>
-                {onOpenOriginalRevenue && isOriginalRevenueCatalogueEntry(report)
+                {onOpenOriginalBuyerSalesShare && originalBuyerSalesShareCatalogueVariant(report) !== null
+                  ? <OriginalBuyerSalesShareCatalogueLaunch report={report} enabled={canGenerate} disabled={disabled} onOpen={onOpenOriginalBuyerSalesShare} />
+                  : onOpenOriginalRevenue && isOriginalRevenueCatalogueEntry(report)
                   ? <OriginalRevenueCatalogueLaunch report={report} enabled={canGenerate} disabled={disabled} onOpen={onOpenOriginalRevenue} />
                   : onOpenCashAggregateBalance && isCashAggregateBalanceCatalogueEntry(report)
                   ? <CashAggregateBalanceCatalogueLaunch report={report} enabled={canGenerate} disabled={disabled} onOpen={onOpenCashAggregateBalance} />
