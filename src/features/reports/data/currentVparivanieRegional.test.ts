@@ -22,8 +22,8 @@ it('keeps an empty code distinct from its parent and permits a known parent with
   expect(result.Rows[0].Cells[2].Quantity).toBe('9.00000001'); expect(result.Rows[0].Cells[3].Quantity).toBeNull()
 })
 
-it.each(['period', 'parent-quantity', 'child-count', 'child-unit', 'missing-total', 'unknown-as-zero', 'duplicate', 'missing-core'])
-('rejects a result that cannot represent the requested current form: %s', fault => {
+it.each(['period', 'parent-quantity', 'child-count', 'child-unit', 'missing-total', 'unknown-as-zero', 'duplicate', 'missing-core'])(
+  'rejects a result that cannot represent the requested current form: %s', fault => {
   const result = regionalResult()
   if (fault === 'period') result.To = '2026-10-30'
   if (fault === 'parent-quantity') result.Rows[0].Cells[2].Quantity = '9.00000002'
