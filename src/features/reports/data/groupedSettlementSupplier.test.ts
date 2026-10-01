@@ -44,7 +44,7 @@ it('preserves exact supplier include/exclude IDs and Boolean leaves without assi
 })
 it('keeps existing grouped buyer and exact scalar saved drafts unchanged on a supplier-capable server', () => {
   for (const original of [groupedSettlementRequest(), settlementPeriodRequest()]) {
-    const saved = normalizeSavedTemplate({ Id: crypto.randomUUID(), Revision: 1, Name: 'Original saved scope', Data: {
+    const saved = normalizeSavedTemplate({ Id: crypto.randomUUID(), Revision: 1, Name: 'Original saved scope', UpdatedAtUtc: '2026-10-01T00:00:00Z', Data: {
       DataSource: original.dataSource, From: original.from, To: original.to, Sorted: structuredClone(original.sorted), Selections: [],
       ...(original.groupedSettlementPeriod === undefined ? {} : { GroupedSettlementPeriod: structuredClone(original.groupedSettlementPeriod) }),
       ...(original.settlementPeriod === undefined ? {} : { SettlementPeriod: structuredClone(original.settlementPeriod) }),

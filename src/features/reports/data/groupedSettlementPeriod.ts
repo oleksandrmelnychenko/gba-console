@@ -175,8 +175,9 @@ export function groupedSettlementConfigurationError(data: ReportRequestBody, dat
   const cap = groupedSettlementCapability(dataset?.groupedSettlementPeriod)
   // Without a catalogue argument, validate the native wire fields; the server remains final authority.
   const filters = cap?.Filters ?? GROUPED_SETTLEMENT_SUPPLIER_FILTERS
+  const allowedFilters = new Set<number>(filters)
   if (!Array.isArray(data.selections) || data.selections.some(selection => selection?.IsChecked !== false
-    && (!(filters as readonly number[]).includes(selection?.SelectedField?.Type)
+    && (!allowedFilters.has(selection?.SelectedField?.Type)
       || ![0, 1, 2, 4].includes(selection?.FilterCondition?.Type) || !Array.isArray(selection?.Values)
       || !selection.Values.length || selection.Values.some(value => revenueExactId(value?.Data) === null))))
     return 'Оберіть точні організації, покупців, постачальників, їхні договори або валюти з поточних списків.'
