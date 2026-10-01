@@ -11,7 +11,10 @@ vi.mock('../api/currencyRateDynamicsApi', () => ({ getCurrencyRateDynamicsDefini
 vi.mock('@mantine/hooks', async original => ({ ...await original<typeof import('@mantine/hooks')>(),
   useDebouncedValue: (value: string) => [value],
 }))
-beforeEach(() => vi.mocked(getCurrencyRateDynamicsDefinitions).mockReset())
+beforeEach(() => {
+  vi.mocked(getCurrencyRateDynamicsDefinitions).mockReset()
+  Object.defineProperty(HTMLElement.prototype, 'scrollIntoView', { configurable: true, value: vi.fn() })
+})
 function picker(onChange: (value: CurrencyRateDynamicsDefinition | null) => void, enabled = true, callerKey = 'caller-a', value: CurrencyRateDynamicsDefinition | null = null) {
   return <MantineProvider env="test"><I18nProvider><CurrencyRateDynamicsRatePicker value={value}
     enabled={enabled} callerKey={callerKey} onChange={onChange} /></I18nProvider></MantineProvider>
