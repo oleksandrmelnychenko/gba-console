@@ -87,7 +87,7 @@ it('opens the multi-account workbook only with its capability and submits eight 
   fireEvent.click(screen.getByText('Часткові форми за зразками Excel'))
   fireEvent.click(screen.getByRole('button', { name: 'Відкрити часткову форму: Рух коштів за період' }))
   expect(screen.queryByRole('combobox', { name: 'Рахунок і власна валюта' })).toBeNull()
-  expect(screen.getByLabelText('Усі / вибрані рахунки')).toBeChecked()
+  expect((screen.getByLabelText('Усі / вибрані рахунки') as HTMLInputElement).checked).toBe(true)
   fireEvent.submit(container.querySelector('form')!)
   await waitFor(() => expect(createStockReport).toHaveBeenCalledOnce())
   const data = vi.mocked(createStockReport).mock.calls[0][0]

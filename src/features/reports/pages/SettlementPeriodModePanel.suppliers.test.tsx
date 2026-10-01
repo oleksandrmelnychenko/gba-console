@@ -22,7 +22,7 @@ it('shows the additive counterparty scope while keeping Buyers checked until an 
   const view = show(groupedSettlementSupplierDataset)
   expect((screen.getByRole('combobox', { name: 'Обсяг взаєморозрахунків' }) as HTMLInputElement).value).toBe('Поточні договори контрагентів')
   const buyer = screen.getByRole('checkbox', { name: 'Контрагенти у групі «Покупці» (Fenix)' })
-  expect(buyer).toBeChecked(); expect(view.onBuyerChange).not.toHaveBeenCalled()
+  expect((buyer as HTMLInputElement).checked).toBe(true); expect(view.onBuyerChange).not.toHaveBeenCalled()
   fireEvent.click(buyer)
   expect(view.onBuyerChange).toHaveBeenCalledExactlyOnceWith(undefined)
   expect(view.onModeChange).not.toHaveBeenCalled()
@@ -30,6 +30,6 @@ it('shows the additive counterparty scope while keeping Buyers checked until an 
 it('preserves the accepted buyer-only label and default scope for the previous server capability', () => {
   const view = show(groupedSettlementDataset)
   expect((screen.getByRole('combobox', { name: 'Обсяг взаєморозрахунків' }) as HTMLInputElement).value).toBe('Поточні договори покупців')
-  expect(screen.getByRole('checkbox', { name: 'Контрагенти у групі «Покупці» (Fenix)' })).toBeChecked()
+  expect((screen.getByRole('checkbox', { name: 'Контрагенти у групі «Покупці» (Fenix)' }) as HTMLInputElement).checked).toBe(true)
   expect(view.onBuyerChange).not.toHaveBeenCalled(); expect(view.onModeChange).not.toHaveBeenCalled()
 })
