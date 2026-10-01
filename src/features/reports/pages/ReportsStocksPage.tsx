@@ -695,7 +695,8 @@ function ReportsStocksWorkspace({ ownerId, constructorMode }: { ownerId: string 
 
   const workbookLaunches = availableBug1274WorkbookLaunches(datasetStorage.datasets)
 
-  if (canGenerateReport && ownerId && workspaceDraft.recovery !== 'none') {
+  if (canGenerateReport && ownerId && workspaceDraft.recovery !== 'none'
+    && (workspaceDraft.recovery !== 'loading' || !datasetStorage.loaded)) {
     return <ReportDraftRecoveryPanel savedAt={workspaceDraft.savedAt}
       loading={!datasetStorage.loaded && !datasetStorage.error}
       error={draftRestoreError ?? datasetStorage.error ?? workspaceDraft.message}
