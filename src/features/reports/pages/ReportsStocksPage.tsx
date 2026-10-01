@@ -162,6 +162,8 @@ import { OneCSpecialReportPanel } from './OneCSpecialReportPanel'
 import { defaultOneCSpecialSettings, oneCSpecialSpecification, requestOneCSpecialSettings } from '../data/oneCSpecialReports'
 import {
   clonePriceTypeSalesComparisonValue,
+  priceTypeSalesFormDataset,
+  currentPriceTypeSalesLookupBasis,
   PRICE_TYPE_SALES_COMPARISON_SOURCE,
 } from '../data/priceTypeSalesComparison'
 const LOOKUP_SEARCH_DEBOUNCE_MS = 300
@@ -294,7 +296,8 @@ function ReportsStocksWorkspace({ ownerId, constructorMode }: { ownerId: string 
   const dataset = datasetStorage.datasets.find(item => item.DataSource === dataSource)
   const periodSupported = dataset?.PeriodSupported !== false
   const [selectedMeasurements, setMeasurements] = useValueState<ReportMeasurementGroup[]>(createDefaultMeasurementGroups)
-  const measurements = useMemo(() => datasetMeasurements(dataset, flattenCheckedMeasurements(selectedMeasurements)), [dataset, selectedMeasurements])
+  const priceTypeDataset = useMemo(() => priceTypeSalesFormDataset(dataset, priceTypeSalesComparison), [dataset, priceTypeSalesComparison])
+  const measurements = useMemo(() => datasetMeasurements(priceTypeDataset, flattenCheckedMeasurements(selectedMeasurements)), [priceTypeDataset, selectedMeasurements])
   const presets = useMemo(() => datasetPresets(dataset), [dataset])
   const groupingOrdering = useReportGroupingOrdering()
   const { rowGroups, setRowGroups, colGroups, setColGroups, ordering } = groupingOrdering
@@ -312,7 +315,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode }: { ownerId: string 
   const [draftRestoreError, setDraftRestoreError] = useState<string | null>(null)
   const [templateNotice, setTemplateNotice] = useValueState<string | null>(null)
   const [catalogueNotice, setCatalogueNotice] = useState<{ text: string; failed: boolean } | null>(null)
-  const groupingOptions = useMemo(() => datasetGroupings(dataset).filter(field => field.type !== ABC_CLASS_GROUPING || abcClassification != null), [abcClassification, dataset])
+  const groupingOptions = useMemo(() => datasetGroupings(priceTypeDataset).filter(field => field.type !== ABC_CLASS_GROUPING || abcClassification != null), [abcClassification, priceTypeDataset])
   const groupingSelectData = useMemo(
     () =>
       groupingOptions.map((item) => ({
@@ -325,7 +328,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode }: { ownerId: string 
       }) satisfies GroupingOption),
     [colGroups, groupingOptions, rowGroups],
   )
-  const settlementDataset = useMemo(() => settlementFormDataset(dataset, groupedSettlementPeriod), [dataset, groupedSettlementPeriod])
+  const settlementDataset = useMemo(() => settlementFormDataset(priceTypeDataset, groupedSettlementPeriod), [priceTypeDataset, groupedSettlementPeriod])
   const filterFieldOptions = useMemo(() => datasetFilters(settlementDataset), [settlementDataset])
   const maxDate = useMemo(() => settlementMaximumDate(dataSource, groupedSettlementPeriod, today)
     ?? (supportsFullReportDateRange(dataSource) ? CLIENT_COMPARISON_MAX_DATE : `${today.slice(0, 4)}-12-31`), [dataSource, groupedSettlementPeriod, today])
@@ -766,7 +769,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode }: { ownerId: string 
             validationError={valuation.error} onChange={setValuationAgreementId} onRetry={valuation.retry} />}
         </div> : null}
         priceTypeSalesComparisonPanel={<PriceTypeSalesComparisonPanel dataSource={dataSource} value={priceTypeSalesComparison}
-          scope={oneCScope} disabled={comparisonSettingsDisabled} onChange={setPriceTypeSalesComparison} onScopeChange={setOneCScope} />}
+          scope={oneCScope} capability={dataset?.priceTypeSalesComparison} disabled={comparisonSettingsDisabled} onChange={setPriceTypeSalesComparison} onScopeChange={setOneCScope} />}
         oneCSpecialReportPanel={<OneCSpecialReportPanel dataSource={dataSource} dataset={dataset} value={oneCSpecialSettings ??
           (oneCSpecialSpecification(dataSource) ? defaultOneCSpecialSettings(dataSource, dataset)[oneCSpecialSpecification(dataSource)!.key] : undefined)}
           disabled={comparisonSettingsDisabled} onChange={setOneCSpecialSettings} />}
@@ -881,6 +884,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode }: { ownerId: string 
         lastRun={lastRun}
         lookupFrom={hasLookupPeriod ? debouncedFrom : ''}
         lookupTo={hasLookupPeriod ? debouncedTo : ''}
+        lookupSalesBasis={currentPriceTypeSalesLookupBasis(dataSource, priceTypeSalesComparison, dataset?.priceTypeSalesComparison)}
         lookupSourceWorld={typeof oneCSpecialSettings === 'object' && oneCSpecialSettings !== null && 'SourceWorld' in oneCSpecialSettings
           && (oneCSpecialSettings.SourceWorld === 1 || oneCSpecialSettings.SourceWorld === 2) ? oneCSpecialSettings.SourceWorld : undefined}
         maxDate={maxDate}
@@ -993,6 +997,7 @@ type ReportBuilderFormProps = {
   lookupFrom: string
   lookupTo: string
   lookupSourceWorld?: number
+  lookupSalesBasis?: 0
   maxDate: string
   measurements: ReportMeasurementGroup[]
   notices: { emptyRun: string | null; error: string | null; period: string | null }
@@ -1253,7 +1258,7 @@ function ReportBuilderContent(props: ReportBuilderFormProps) {
             groupingSelectData={groupingSelectData}
             lookupFrom={lookupFrom}
             lookupTo={lookupTo}
-            lookupSourceWorld={props.lookupSourceWorld}
+            lookupSourceWorld={props.lookupSourceWorld} lookupSalesBasis={props.lookupSalesBasis}
             measurements={measurements}
             rowGroups={rowGroups}
             selections={selections}
@@ -1364,6 +1369,7 @@ type LegacyReportBuilderProps = {
   lookupFrom: string
   lookupTo: string
   lookupSourceWorld?: number
+  lookupSalesBasis?: 0
   measurements: ReportMeasurementGroup[]
   rowGroups: ReportGroupingItem[]
   selections: ReportSelection[]
@@ -1399,6 +1405,7 @@ function LegacyReportBuilder({
   lookupFrom,
   lookupTo,
   lookupSourceWorld,
+  lookupSalesBasis,
   measurements,
   rowGroups,
   selections,
@@ -1438,7 +1445,7 @@ function LegacyReportBuilder({
 
   const selectionPanel = dataSource === 19 ? null : <section className="reports-stocks-legacy__selections">
     <ReportSelectionsCard dataSource={dataSource} description={null} filterFieldOptions={filterFieldOptions}
-      from={lookupFrom} lookupSourceWorld={lookupSourceWorld} selections={selections} title={t('Умови відбору')} to={lookupTo} onChange={onSelectionsChange} />
+      from={lookupFrom} lookupSourceWorld={lookupSourceWorld} lookupSalesBasis={lookupSalesBasis} selections={selections} title={t('Умови відбору')} to={lookupTo} onChange={onSelectionsChange} />
   </section>
 
   return (
@@ -1660,6 +1667,7 @@ type FilterFieldOption = {
 type ReportSelectionsCardProps = {
   dataSource: number
   lookupSourceWorld?: number
+  lookupSalesBasis?: 0
   description?: string | null
   filterFieldOptions: FilterFieldOption[]
   from: string
@@ -1672,6 +1680,7 @@ type ReportSelectionsCardProps = {
 function ReportSelectionsCard({
   dataSource,
   lookupSourceWorld,
+  lookupSalesBasis,
   description,
   filterFieldOptions,
   from,
@@ -1826,7 +1835,7 @@ function ReportSelectionsCard({
               />
               <SelectionValuePicker
                 dataSource={dataSource}
-                lookupSourceWorld={lookupSourceWorld}
+                lookupSourceWorld={lookupSourceWorld} lookupSalesBasis={lookupSalesBasis}
                 from={from}
                 label={t('Значення')}
                 selection={draftSelection}
@@ -2036,6 +2045,7 @@ function ReportResultSection({
 type SelectionValuePickerProps = {
   dataSource: number
   lookupSourceWorld?: number
+  lookupSalesBasis?: 0
   error?: string
   from: string
   label?: string
@@ -2046,7 +2056,7 @@ type SelectionValuePickerProps = {
   onChange: (values: ReportSelectedValue[]) => void
 }
 
-function SelectionValuePicker({ dataSource, lookupSourceWorld, error, from, label, selection, selections, to, width = 320, onChange }: SelectionValuePickerProps) {
+function SelectionValuePicker({ dataSource, lookupSourceWorld, lookupSalesBasis, error, from, label, selection, selections, to, width = 320, onChange }: SelectionValuePickerProps) {
   const { t } = useI18n()
   const [search, setSearch] = useValueState('')
   const [manualValue, setManualValue] = useValueState('')
@@ -2161,7 +2171,7 @@ function SelectionValuePicker({ dataSource, lookupSourceWorld, error, from, labe
             ? await getReportClientAgreements(dependentClientNetId)
             : await loadSelectionLookupOptions(
                 dataSource, selection.SelectedField.Type, normalizedSearch, from, to,
-                controller.signal, saleDocumentFilters, lookupSourceWorld,
+                controller.signal, saleDocumentFilters, lookupSourceWorld, lookupSalesBasis,
               )
 
         if (!cancelled) {
@@ -2187,6 +2197,7 @@ function SelectionValuePicker({ dataSource, lookupSourceWorld, error, from, labe
   }, [
     dataSource,
     lookupSourceWorld,
+    lookupSalesBasis,
     dependentClientNetId,
     from,
     lookupMode,
@@ -2636,9 +2647,12 @@ async function loadSelectionLookupOptions(
   signal?: AbortSignal,
   saleDocumentFilters?: SaleDocumentLookupFilters,
   lookupSourceWorld?: number,
+  lookupSalesBasis?: 0,
 ): Promise<ReportEntity[]> {
   if (usesNativeReportLookup(dataSource)) {
     const params = { limit: LOOKUP_SEARCH_LIMIT, offset: 0, value }
+    if (dataSource === 27 && lookupSalesBasis === 0)
+      return searchDatasetReportValues(dataSource, fieldType, params, signal, undefined, 0)
     return [23, 24, 25, 28].includes(dataSource)
       ? searchDatasetReportValues(dataSource, fieldType, params, signal, lookupSourceWorld)
       : searchDatasetReportValues(dataSource, fieldType, params, signal)

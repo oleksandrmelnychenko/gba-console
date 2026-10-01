@@ -12,6 +12,7 @@ export type PriceTypeSalesComparisonOptions = {
   Version: 1
   SourceWorld: 1
   PriceTypeId: string
+  SalesBasis?: 0 | 1 | null
 }
 
 export type PriceTypeSalesComparisonCapabilities = {
@@ -30,6 +31,12 @@ export type PriceTypeSalesComparisonCapabilities = {
   CoverageStatus: 'native_partial'
   ParityVerified: false
   MaximumGroupedRows: 500000
+  SalesBases?: [0, 1]
+  NewDraftSalesBasis?: 0
+  OperationalRequiresDailyTurnoverPublication?: false
+  OperationalGroupings?: [0, 1, 2, 3, 4, 5, 6, 12, 15]
+  OperationalLookupFields?: [51, 52, 45]
+  OperationalScopePath?: '/report/datasets/27/current-scope'
 }
 
 type JsonRecord = Record<string, unknown>
@@ -50,8 +57,48 @@ export function priceTypeSalesSourceId(value: unknown): string | null {
     : null
 }
 
-export function defaultPriceTypeSalesComparison(): PriceTypeSalesComparisonOptions {
-  return { Version: 1, SourceWorld: 1, PriceTypeId: '' }
+export function defaultPriceTypeSalesComparison(capability?: unknown): PriceTypeSalesComparisonOptions {
+  return { Version: 1, SourceWorld: 1, PriceTypeId: '', ...(hasCurrentPriceTypeSalesChoices(capability) ? { SalesBasis: 0 as const } : {}) }
+}
+
+export function priceTypeSalesBasis(raw: unknown): 0 | 1 {
+  if (!record(raw)) return 1
+  const keys = aliases(raw, 'SalesBasis')
+  return keys.length === 1 && raw[keys[0]] === 0 ? 0 : 1
+}
+
+const OPERATIONAL = {
+  SalesBases: [0, 1], NewDraftSalesBasis: 0,
+  OperationalRequiresDailyTurnoverPublication: false,
+  OperationalGroupings: [0, 1, 2, 3, 4, 5, 6, 12, 15],
+}
+const CURRENT_CHOICES = { OperationalLookupFields: [51, 52, 45], OperationalScopePath: '/report/datasets/27/current-scope' }
+const matches = (raw: JsonRecord, expected: JsonRecord) => Object.entries(expected)
+  .every(([key, value]) => JSON.stringify(raw[key]) === JSON.stringify(value))
+
+export function hasOperationalPriceTypeSales(capability: unknown): boolean {
+  return record(capability) && matches(capability, OPERATIONAL)
+}
+
+export function hasCurrentPriceTypeSalesChoices(capability: unknown): boolean {
+  return hasOperationalPriceTypeSales(capability) && record(capability) && matches(capability, CURRENT_CHOICES)
+}
+
+export function currentPriceTypeSalesLookupBasis(dataSource: number, settings: unknown, capability: unknown): 0 | undefined {
+  return dataSource === 27 && priceTypeSalesBasis(settings) === 0 && hasCurrentPriceTypeSalesChoices(capability) ? 0 : undefined
+}
+
+const OPERATIONAL_CAPTIONS: Record<number, string> = {
+  0: 'Кількість продажів мінус повернення (GBA)', 2: 'Продажі без ПДВ, EUR', 3: 'ПДВ продажів, EUR',
+  4: 'Продажі з ПДВ, EUR', 67: 'Продажі до знижки без ПДВ, EUR', 68: 'Знижка без ПДВ, EUR',
+  69: 'Знижка без ПДВ, %', 70: 'Сума за глобальним типом цін, EUR', 71: 'Різниця із сумою за типом цін, EUR',
+}
+
+export function priceTypeSalesFormDataset(dataset: ReportDataset | undefined, settings: unknown): ReportDataset | undefined {
+  if (dataset?.DataSource !== 27 || priceTypeSalesBasis(settings) !== 0) return dataset
+  return { ...dataset, Groupings: dataset.Groupings.filter(field => OPERATIONAL.OperationalGroupings.includes(field.Type)),
+    Filters: dataset.Filters.filter(field => CURRENT_CHOICES.OperationalLookupFields.includes(field.Type)),
+    Measurements: dataset.Measurements.map(field => ({ ...field, Name: OPERATIONAL_CAPTIONS[field.Type] ?? field.Name })) }
 }
 
 export function requestPriceTypeSalesComparison(data: object): unknown {
@@ -70,16 +117,19 @@ export function clonePriceTypeSalesComparisonValue(data: ReportRequestBody): unk
 }
 
 export function priceTypeSalesComparisonOptions(raw: unknown): PriceTypeSalesComparisonOptions | null {
-  if (!record(raw) || Object.keys(raw).length !== SETTINGS_FIELDS.length) return null
+  if (!record(raw) || Object.keys(raw).some(key => ![...SETTINGS_FIELDS, 'SalesBasis'].some(field => field.toLowerCase() === key.toLowerCase()))) return null
   const normalized: JsonRecord = {}
   for (const field of SETTINGS_FIELDS) {
-    const matches = aliases(raw, field)
-    if (matches.length !== 1) return null
-    normalized[field] = raw[matches[0]]
+    const keys = aliases(raw, field)
+    if (keys.length !== 1) return null
+    normalized[field] = raw[keys[0]]
   }
+  const basisKeys = aliases(raw, 'SalesBasis')
+  if (basisKeys.length > 1 || basisKeys.length === 1 && ![null, 0, 1].includes(raw[basisKeys[0]] as null | number)) return null
   const priceTypeId = priceTypeSalesSourceId(normalized.PriceTypeId)
   return normalized.Version === 1 && normalized.SourceWorld === 1 && priceTypeId
-    ? { Version: 1, SourceWorld: 1, PriceTypeId: priceTypeId }
+    ? { Version: 1, SourceWorld: 1, PriceTypeId: priceTypeId,
+      ...(basisKeys.length ? { SalesBasis: raw[basisKeys[0]] as 0 | 1 | null } : {}) }
     : null
 }
 
@@ -102,8 +152,13 @@ export function isPriceTypeSalesComparisonCapability(raw: unknown): raw is Price
     ParityVerified: false,
     MaximumGroupedRows: 500000,
   }
-  return Object.keys(raw).length === Object.keys(expected).length
-    && Object.entries(expected).every(([key, value]) => JSON.stringify(raw[key]) === JSON.stringify(value))
+  const extras = Object.keys(raw).filter(key => !(key in expected))
+  return matches(raw, expected) && (extras.length === 0
+    || extras.length === Object.keys(OPERATIONAL).length && matches(raw, OPERATIONAL)
+      && extras.every(key => key in OPERATIONAL)
+    || extras.length === Object.keys(OPERATIONAL).length + Object.keys(CURRENT_CHOICES).length
+      && matches(raw, OPERATIONAL) && matches(raw, CURRENT_CHOICES)
+      && extras.every(key => key in OPERATIONAL || key in CURRENT_CHOICES))
 }
 
 export function normalizePriceTypeSalesComparisonDataset(value: JsonRecord): ReportDataset | null {
@@ -168,12 +223,17 @@ export function priceTypeSalesComparisonConfigurationError(data: ReportRequestBo
   if (data.dataSource !== PRICE_TYPE_SALES_COMPARISON_SOURCE) return settings != null
     ? 'Глобальний тип ціни підтримує лише звіт «1С: Продажі (порівняння за типом цін)».'
     : null
-  if (!priceTypeSalesComparisonOptions(settings)) return 'Оберіть точний глобальний тип ціни Fenix.'
-  if (!isPriceTypeScope(data.oneC)) return 'Оберіть доступне локальне покриття Fenix із точним коренем групи покупців.'
+  const options = priceTypeSalesComparisonOptions(settings)
+  if (!options) return 'Оберіть точний глобальний тип ціни Fenix.'
+  if (!isPriceTypeScope(data.oneC)) return options.SalesBasis === 0
+    ? 'Оберіть організації та вид товару поточних продажів із групою покупців.'
+    : 'Оберіть доступне локальне покриття Fenix із точним коренем групи покупців.'
   if (oneCReportPeriodError(data.from, data.to)) return 'Оберіть коректний період Fenix від 1 до 366 днів.'
   if (dataset && !isPriceTypeSalesComparisonCapability(dataset.priceTypeSalesComparison)) {
     return 'Сервер не підтвердив можливості порівняння продажів за глобальним типом цін.'
   }
+  if (options.SalesBasis === 0 && dataset && !hasOperationalPriceTypeSales(dataset.priceTypeSalesComparison))
+    return 'Сервер ще не підтримує основу поточних продажів.'
   const unsupported = new Set(['valuationclientagreementid', 'comparison', 'xyz', 'revenuecomparison', 'buyersalesshare',
     'returncomparison', 'ratecomparison', 'margincomparison', 'paymentcomparison', 'ordering', 'filterexpression',
     'topgroups', 'threshold', 'hidezero', 'abcclassification', 'productclassification', 'sourceorganizations'])
@@ -181,6 +241,12 @@ export function priceTypeSalesComparisonConfigurationError(data: ReportRequestBo
   if (!data.sorted || !Array.isArray(data.sorted.Row) || !Array.isArray(data.sorted.Col)
     || !Array.isArray(data.sorted.Measurements) || !data.sorted.Row.length) return INVALID
   const axes = [...data.sorted.Row, ...data.sorted.Col]
+  if (options.SalesBasis === 0) {
+    if (axes.some(field => !OPERATIONAL.OperationalGroupings.includes(field?.type)))
+      return 'Поточні продажі підтримують дату, організацію, покупця, договір, товар та артикул.'
+    if (Array.isArray(data.selections) && data.selections.some(selection => selection?.IsChecked !== false && [53, 54].includes(selection?.SelectedField?.Type)))
+      return 'Для поточних продажів відбір проєкту й підрозділу ще недоступний.'
+  }
   if (axes.some(item => !item || !GROUPINGS.has(item.type))
     || new Set(axes.map(item => item.type)).size !== axes.length) return INVALID
   const measures = data.sorted.Measurements

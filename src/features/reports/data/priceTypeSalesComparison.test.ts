@@ -1,15 +1,22 @@
 import { describe, expect, it } from 'vitest'
-import { datasetConfigurationError, datasetFilters, defaultDatasetRequest } from './reportDatasets'
+import { buildReportBuilderRequest } from './reportBuilderRequest'
+import { retainStoredTemplateFields } from './reportTemplateDraft'
+import { datasetConfigurationError, datasetFilters, datasetMeasurements, defaultDatasetRequest } from './reportDatasets'
 import {
   PRICE_TYPE_SALES_COMPARISON_FILTERS,
   PRICE_TYPE_SALES_COMPARISON_SOURCE,
   priceTypeSalesComparisonConfigurationError,
   priceTypeSalesComparisonOptions,
+  clonePriceTypeSalesComparisonValue,
+  defaultPriceTypeSalesComparison,
+  priceTypeSalesFormDataset,
+  isPriceTypeSalesComparisonCapability,
 } from './priceTypeSalesComparison'
 import {
   PRICE_TYPE_ID,
   PRICE_TYPE_SCOPE,
   priceTypeSalesComparisonDataset,
+  priceTypeSalesComparisonCapability,
   priceTypeSalesComparisonRequest,
 } from './priceTypeSalesComparison.test-fixtures'
 
@@ -20,7 +27,7 @@ describe('source27 price-type sales comparison contract', () => {
     expect(request.sorted.Row.map(item => item.type)).toEqual([12, 5])
     expect(request.sorted.Col).toEqual([])
     expect(request.sorted.Measurements.map(item => item.Type)).toEqual([4, 70, 71])
-    expect(request.priceTypeSalesComparison).toEqual({ Version: 1, SourceWorld: 1, PriceTypeId: '' })
+    expect(request.priceTypeSalesComparison).toEqual({ Version: 1, SourceWorld: 1, PriceTypeId: '', SalesBasis: 0 })
     expect(datasetFilters(priceTypeSalesComparisonDataset).map(item => item.field.Type)).toEqual(PRICE_TYPE_SALES_COMPARISON_FILTERS)
   })
 
@@ -68,4 +75,69 @@ describe('source27 price-type sales comparison contract', () => {
     request.oneC = { ...PRICE_TYPE_SCOPE, OrganizationIds: [PRICE_TYPE_SCOPE.OrganizationIds[0], PRICE_TYPE_SCOPE.OrganizationIds[0]] }
     expect(priceTypeSalesComparisonConfigurationError(request)).toMatch(/локальне покриття Fenix/)
   })
+
+  it('defaults fresh forms to ordinary only with advertised current choices, preserving legacy and intermediate servers', () => {
+    const capability = { ...priceTypeSalesComparisonCapability }
+    expect(defaultPriceTypeSalesComparison(capability).SalesBasis).toBe(0)
+    delete capability.OperationalLookupFields
+    delete capability.OperationalScopePath
+    expect(isPriceTypeSalesComparisonCapability(capability)).toBe(true)
+    expect(defaultPriceTypeSalesComparison(capability)).not.toHaveProperty('SalesBasis')
+    for (const key of ['SalesBases', 'NewDraftSalesBasis', 'OperationalRequiresDailyTurnoverPublication', 'OperationalGroupings'] as const) delete capability[key]
+    expect(isPriceTypeSalesComparisonCapability(capability)).toBe(true)
+    expect(defaultPriceTypeSalesComparison(capability)).not.toHaveProperty('SalesBasis')
+    expect(isPriceTypeSalesComparisonCapability({ ...capability, InventedNativeMode: true })).toBe(false)
+  })
+
+  it.each([undefined, null, 0, 1])('preserves saved basis %s through clone and aliases without upgrading omission', basis => {
+    const request = priceTypeSalesComparisonRequest()
+    const options = request.priceTypeSalesComparison as Record<string, unknown>
+    if (basis !== undefined) options.salesBasis = basis
+    const expected = { Version: 1, SourceWorld: 1, PriceTypeId: PRICE_TYPE_ID,
+      ...(basis === undefined ? {} : { SalesBasis: basis }) }
+    expect(priceTypeSalesComparisonOptions(options)).toEqual(expected)
+    const cloned = clonePriceTypeSalesComparisonValue(request)
+    expect(cloned).toEqual(expected)
+    expect(cloned).not.toBe(options)
+    if (basis === undefined) expect(cloned).not.toHaveProperty('SalesBasis')
+    options.SalesBasis = 9
+    expect(priceTypeSalesComparisonOptions(options)).toBeNull()
+  })
+
+  it('uses ordinary current scope without captured days, retains exact filter IDs and rejects unavailable axes only there', () => {
+    const request = priceTypeSalesComparisonRequest()
+    request.priceTypeSalesComparison = { Version: 1, SourceWorld: 1, PriceTypeId: PRICE_TYPE_ID, SalesBasis: 0 }
+    expect(datasetConfigurationError(request, priceTypeSalesComparisonDataset)).toBeNull()
+    const displayed = priceTypeSalesFormDataset(priceTypeSalesComparisonDataset, request.priceTypeSalesComparison)!
+    expect(displayed.Groupings.map(field => field.Type)).toEqual([0, 1, 2, 3, 4, 5, 6, 12, 15])
+    expect(displayed.Filters.map(field => field.Type)).toEqual([51, 52, 45])
+    expect(displayed.Measurements.find(field => field.Type === 4)?.Name).toContain('EUR')
+    request.selections = [{ IsChecked: true, SelectedField: { Type: 53, Name: 'Проєкт' },
+      FilterCondition: { Type: 0, Name: 'Дорівнює' }, Values: [{ Data: { Id: '4'.repeat(32) }, Name: 'Проєкт', Value: 0 }] }]
+    expect(priceTypeSalesComparisonConfigurationError(request, priceTypeSalesComparisonDataset)).toMatch(/проєкту/)
+    request.selections[0].IsChecked = false
+    expect(priceTypeSalesComparisonConfigurationError(request, priceTypeSalesComparisonDataset)).toBeNull()
+    request.sorted.Row.push({ type: 63, key: 'Project', label: 'Проєкт' })
+    expect(priceTypeSalesComparisonConfigurationError(request, priceTypeSalesComparisonDataset)).toMatch(/Поточні продажі/)
+    request.priceTypeSalesComparison = { Version: 1, SourceWorld: 1, PriceTypeId: PRICE_TYPE_ID }
+    expect(priceTypeSalesComparisonConfigurationError(request, priceTypeSalesComparisonDataset)).toBeNull()
+    expect(priceTypeSalesFormDataset(priceTypeSalesComparisonDataset, request.priceTypeSalesComparison)).toBe(priceTypeSalesComparisonDataset)
+  })
+
+
+  it('includes exact basis in builder/draft fingerprints and replaces stored case aliases once', () => {
+    const current = priceTypeSalesComparisonRequest()
+    const settings = { Version: 1, SourceWorld: 1, PriceTypeId: PRICE_TYPE_ID, SalesBasis: 0 }
+    const built = buildReportBuilderRequest({ dataSource: 27, from: current.from, to: current.to,
+      priceTypeSalesComparison: settings, oneC: current.oneC,
+      ordering: undefined, filterExpression: undefined, topGroups: undefined, valuationClientAgreementId: undefined,
+      rowGroups: current.sorted.Row, colGroups: [], measurements: datasetMeasurements(priceTypeSalesComparisonDataset, current.sorted.Measurements), selections: [] })
+    expect(built.priceTypeSalesComparison).toEqual(settings)
+    const restored = retainStoredTemplateFields({ ...current, PRICETYPESALESCOMPARISON: settings } as never, built)
+    expect(restored).not.toHaveProperty('PRICETYPESALESCOMPARISON')
+    expect(restored.priceTypeSalesComparison).toEqual(settings)
+    expect(JSON.stringify(built)).not.toBe(JSON.stringify({ ...built, priceTypeSalesComparison: { ...settings, SalesBasis: 1 } }))
+    expect(priceTypeSalesComparisonOptions({ ...settings, salesBasis: 0 })).toBeNull()
+  })
+
 })

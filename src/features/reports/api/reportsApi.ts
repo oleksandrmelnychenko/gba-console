@@ -118,7 +118,11 @@ function prepareStockReportRequest(body: ReportRequestBody): ReportRequestBody {
   return request
 }
 
-export async function searchDatasetReportValues(dataSource: number, field: number, params: ReportSearchParams, signal?: AbortSignal, sourceWorld?: number): Promise<ReportEntity[]> {
+export async function searchDatasetReportValues(dataSource: number, field: number, params: ReportSearchParams, signal?: AbortSignal, sourceWorld?: number, salesBasis?: 0 | 1): Promise<ReportEntity[]> {
+  if (salesBasis !== undefined && (dataSource !== 27 || ![0, 1].includes(salesBasis)))
+    throw new Error('Некоректна основа довідника продажів.')
+  if (dataSource === 27 && salesBasis === 0 && ![46, 51, 52, 45].includes(field))
+    throw new Error('Цей відбір поточних продажів недоступний.')
   if (dataSource === 41 && ![0, 6, 9, 30].includes(field))
     throw new Error('Цей відбір групових взаєморозрахунків недоступний.')
   if (dataSource === 40) throw new Error('Валютні рахунки вибираються через точний довідник звіту руху коштів.')
@@ -128,7 +132,8 @@ export async function searchDatasetReportValues(dataSource: number, field: numbe
     throw new Error('Оберіть базу Fenix або AMG для довідника звіту 1С.')
   const result = await apiRequest<unknown>('/report/datasets/lookup', {
     query: { dataSource, field, value: params.value.trim(), offset: params.offset, limit: params.limit,
-      ...([23, 24, 25, 28].includes(dataSource) ? { sourceWorld } : {}) }, signal,
+      ...([23, 24, 25, 28].includes(dataSource) ? { sourceWorld } : {}),
+      ...(dataSource === 27 && salesBasis !== undefined ? { salesBasis } : {}) }, signal,
   })
   if (!Array.isArray(result) || !result.every(item => item && typeof item === 'object' && (dataSource === 39 && field === 60
     ? typeof item.Id === 'string' && currentVparivanieManagerReference(item) === item.Id
@@ -148,6 +153,27 @@ export async function searchDatasetReportValues(dataSource: number, field: numbe
     throw new Error('Сервер повернув неоднозначні джерельні реквізити менеджерів покупців.')
   if (dataSource === 19 && (new Set(result.map(item => item.Id)).size !== result.length || result.some(item => !item.Name.trim()))) throw new Error('Сервер повернув неоднозначні серії курсів.')
   return dataSource === 29 || dataSource === 31 ? result.map(item => ({ ...item, Id: Number(item.Id) })) : result
+}
+
+export type CurrentPriceTypeSalesScopeChoices = {
+  Organizations: ReportEntity[]
+  ProductKinds: ReportEntity[]
+  BuyerRootId: string
+}
+
+/** Reads current native choices from OUR SQL; no sync or 1C calls. */
+export async function getCurrentPriceTypeSalesScopeChoices(signal?: AbortSignal): Promise<CurrentPriceTypeSalesScopeChoices> {
+  const result = await apiRequest<unknown>('/report/datasets/27/current-scope', { signal })
+  if (!result || typeof result !== 'object') throw new Error('Некоректні поточні відбори продажів.')
+  const scope = result as Record<string, unknown>
+  const choices = (items: unknown): items is ReportEntity[] => Array.isArray(items)
+    && items.every(item => item && typeof item === 'object' && priceTypeSalesSourceId(item.Id) !== null
+      && typeof item.Name === 'string' && item.Name.trim().length > 0)
+    && new Set(items.map(item => String(item.Id).toUpperCase())).size === items.length
+  if (!choices(scope.Organizations) || !choices(scope.ProductKinds)
+    || typeof scope.BuyerRootId !== 'string' || scope.BuyerRootId.toUpperCase() !== EXACT_ONE_C_BUYER_ROOT_ID)
+    throw new Error('Некоректні поточні відбори продажів.')
+  return { Organizations: scope.Organizations, ProductKinds: scope.ProductKinds, BuyerRootId: scope.BuyerRootId.toUpperCase() }
 }
 
 export type ValuationAgreement = { Id: number; Name: string }
