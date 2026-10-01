@@ -47,7 +47,7 @@ Backend order: `7b6e346` ordinary contract, `c6ceea4` current lookup/scope APIs,
 then `6218165` root-contract namespace import. Deploy those before this Console
 candidate; older base/intermediate capabilities retain their old fresh draft.
 
-Four focused files contain 27 cases (19 added): data contract 12, API 5, panel 5,
+Four focused files contain 27 cases (16 added): data contract 12, API 5, panel 5,
 page 5. Cases cover default versus saved omission, aliases and request
 fingerprints, unavailable ordinary axes, exact native choice/query identities,
 independent empty choices, no captured day request in ordinary mode, null
