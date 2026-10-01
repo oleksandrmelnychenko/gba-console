@@ -81,7 +81,8 @@ it('allows today with unavailable financial input and rejects future or overlong
   const today = { ...request(), from: '2026-10-01', to: '2026-10-01' }
   expect(groupedSettlementConfigurationError(today, dataset, '2026-10-01')).toBeNull()
   expect(groupedSettlementConfigurationError({ ...today, to: '2026-10-02' }, dataset, '2026-10-01')).toContain('сьогодні')
-  expect(groupedSettlementConfigurationError({ ...today, from: '2026-09-01' }, dataset, '2026-10-01')).toContain('31 день')
+  expect(groupedSettlementConfigurationError({ ...today, from: '2026-09-01' }, dataset, '2026-10-01')).toBeNull()
+  expect(groupedSettlementConfigurationError({ ...today, from: '2026-08-31' }, dataset, '2026-10-01')).toContain('31 день')
   expect(settlementMaximumDate(41, today.groupedSettlementPeriod, '2026-10-01')).toBe('2026-10-01')
   expect(settlementMaximumDate(41, undefined, '2026-10-01')).toBe('2026-09-30')
 })
