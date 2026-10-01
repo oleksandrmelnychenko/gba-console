@@ -180,9 +180,9 @@ describe('source27 report constructor wire', () => {
 
 
 async function chooseCurrentScope() {
-  fireEvent.click(screen.getByLabelText('Організації поточних продажів'))
+  fireEvent.click(screen.getByRole('combobox', { name: 'Організації поточних продажів' }))
   fireEvent.click(await screen.findByRole('option', { name: 'Організація Fenix' }))
-  fireEvent.keyDown(screen.getByLabelText('Організації поточних продажів'), { key: 'Escape' })
+  fireEvent.keyDown(screen.getByRole('combobox', { name: 'Організації поточних продажів' }), { key: 'Escape' })
   fireEvent.click(screen.getByRole('combobox', { name: 'Вид товару поточних продажів' }))
   fireEvent.click(await screen.findByRole('option', { name: 'Товар' }))
 }

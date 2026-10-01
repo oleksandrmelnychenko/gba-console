@@ -65,7 +65,7 @@ describe('PriceTypeSalesComparisonPanel', () => {
       scope={undefined} onChange={vi.fn()} onScopeChange={onScopeChange} /></MantineProvider>)
     expect(screen.queryByRole('combobox', { name: 'Локальне покриття Fenix' })).toBeNull()
     expect(screen.getByText(/відповідна клітинка та залежний підсумок/)).toBeTruthy()
-    fireEvent.click(screen.getByLabelText('Організації поточних продажів'))
+    fireEvent.click(screen.getByRole('combobox', { name: 'Організації поточних продажів' }))
     fireEvent.click(await screen.findByRole('option', { name: 'Наша організація' }))
     const partial = onScopeChange.mock.calls.at(-1)![0]
     expect(partial).toEqual({ ...PRICE_TYPE_SCOPE, ProductKindId: '' })
