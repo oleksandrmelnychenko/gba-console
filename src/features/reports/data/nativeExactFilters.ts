@@ -1,5 +1,5 @@
 import { isDayOrganizationBasisCapability } from './dayOrganizationBasis'
-import { isSupplierBasisCapability, supplierBasisConfigurationError } from './supplierBasis'
+import { isSupplierBasisCapability, requestSupplierBasis, supplierBasisConfigurationError } from './supplierBasis'
 import { groupedSettlementConfigurationError, requestGroupedSettlementPeriod } from './groupedSettlementPeriod'
 import type {
   ReportDataset,
@@ -204,8 +204,10 @@ export function nativeExactFiltersConfigurationError(data: ReportRequestBody, da
     .includes(data.dataSource) || !sourceBuyerSubtree(buyers))) {
     return 'Некоректний точний відбір піддерева «Покупці» Fenix. Налаштування не застосовано.'
   }
+  const supplierWorld = Object.prototype.hasOwnProperty.call(data, 'supplierSourceWorld')
+    ? data.supplierSourceWorld : data.SupplierSourceWorld
   if (buyers != null && data.dataSource === SUPPLIER_GROSS_PROFIT_EXACT_FILTER_SOURCE
-    && data.supplierSourceWorld !== 0 && data.SupplierSourceWorld !== 0) {
+    && supplierWorld !== 0 && !(requestSupplierBasis(data) === 0 && supplierWorld == null)) {
     return 'Для піддерева «Покупці» оберіть базу продажів Fenix.'
   }
   if (organizations != null && Array.isArray(data.selections) && data.selections.some(selection =>

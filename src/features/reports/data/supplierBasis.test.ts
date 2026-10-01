@@ -2,11 +2,12 @@ import { expect, it } from 'vitest'
 import { normalizeSavedTemplate } from '../api/reportWorkspaceApi'
 import type { ReportDataset } from '../types'
 import { availableBug1274WorkbookLaunches } from './bug1274WorkbookLaunch'
-import { normalizeNativeExactFilterDataset } from './nativeExactFilters'
+import { FENIX_BUYERS_ROOT_ID, nativeExactFiltersConfigurationError, normalizeNativeExactFilterDataset } from './nativeExactFilters'
 import { buildReportBuilderRequest } from './reportBuilderRequest'
 import { datasetConfigurationError, datasetGroupings, datasetPresetRequest, defaultDatasetRequest } from './reportDatasets'
 import { retainStoredTemplateFields } from './reportTemplateDraft'
 import { isSupplierBasisCapability, requestSupplierBasis, rowGroupsForSupplierBasis } from './supplierBasis'
+import { supplierBatchGrossProfitConfigurationError } from './supplierBatchGrossProfit'
 
 const capability = { Version: 1, DefaultBasis: 0, Bases: [0, 1], MaximumDays: 31,
   IncludesReturns: true, PreservesUnavailableValues: true, RegistrarWarehouseGrouping: 78 }
@@ -131,4 +132,56 @@ it('preserves the existing row layout for legacy calculation or an unavailable r
   const rows = defaultDatasetRequest({ ...dataset, supplierBasis: undefined }, '2026-07-01', '2026-07-31').sorted.Row
   expect(rowGroupsForSupplierBasis(1, rows, datasetGroupings(dataset))).toBe(rows)
   expect(rowGroupsForSupplierBasis(0, rows, datasetGroupings(dataset).filter(field => field.type !== 78))).toBe(rows)
+})
+
+const buyersDataset: ReportDataset = { ...dataset,
+  sourceBuyerSubtree: { Version: 1, SourceWorld: 'fenix', BuyerRootId: FENIX_BUYERS_ROOT_ID,
+    RequiresCompletePeriodLineage: true, UsesCurrentCapturedHierarchy: true },
+}
+
+it.each([undefined, null, 0])('accepts current Buyers in ordinary calculation with world %s and saved aliases', world => {
+  const request = defaultDatasetRequest(buyersDataset, '2026-09-01', '2026-09-30')
+  request.sourceBuyerSubtree = { Version: 1, SourceWorld: 'fenix', BuyerRootId: FENIX_BUYERS_ROOT_ID }
+  request.supplierSourceWorld = world
+  const savedAlias = { ...request, SupplierBasis: 0, SupplierSourceWorld: world }
+  delete savedAlias.supplierBasis
+  delete savedAlias.supplierSourceWorld
+  for (const candidate of [request, savedAlias]) {
+    expect(datasetConfigurationError(candidate, buyersDataset)).toBeNull()
+    expect(supplierBatchGrossProfitConfigurationError(candidate, buyersDataset)).toBeNull()
+    expect(nativeExactFiltersConfigurationError(candidate, buyersDataset)).toBeNull()
+  }
+})
+
+it.each([undefined, null, 1])('keeps the saved basis %s Buyers filter restricted to explicit Fenix', basis => {
+  const request = defaultDatasetRequest(buyersDataset, '2026-09-01', '2026-09-30')
+  request.supplierBasis = basis
+  request.sourceBuyerSubtree = { Version: 1, SourceWorld: 'fenix', BuyerRootId: FENIX_BUYERS_ROOT_ID }
+  expect(datasetConfigurationError(request, buyersDataset)).toBeNull()
+  for (const world of [undefined, null, 1]) {
+    const candidate = { ...request, supplierSourceWorld: world }
+    expect(datasetConfigurationError(candidate, buyersDataset)).toContain('Fenix')
+    expect(supplierBatchGrossProfitConfigurationError(candidate, buyersDataset)).toContain('Fenix')
+    expect(nativeExactFiltersConfigurationError(candidate, buyersDataset)).toContain('Fenix')
+  }
+})
+
+it('keeps AMG, unknown buyer roots, conflicting worlds and missing capabilities rejected for ordinary Buyers', () => {
+  const request = defaultDatasetRequest(buyersDataset, '2026-09-01', '2026-09-30')
+  request.sourceBuyerSubtree = { Version: 1, SourceWorld: 'fenix', BuyerRootId: FENIX_BUYERS_ROOT_ID }
+  const savedAmg = { ...request, SupplierSourceWorld: 1 }
+  delete savedAmg.supplierSourceWorld
+  for (const candidate of [{ ...request, supplierSourceWorld: 1 }, savedAmg]) {
+    expect(datasetConfigurationError(candidate, buyersDataset)).toContain('Fenix')
+    expect(nativeExactFiltersConfigurationError(candidate, buyersDataset)).toContain('Fenix')
+  }
+  expect(datasetConfigurationError({ ...request, supplierSourceWorld: null, SupplierSourceWorld: 0 },
+    buyersDataset)).not.toBeNull()
+  expect(datasetConfigurationError({ ...request, supplierSourceWorld: null, sourceBuyerSubtree: {
+    Version: 1, SourceWorld: 'fenix', BuyerRootId: '00000000000000000000000000000001',
+  } }, buyersDataset)).not.toBeNull()
+  expect(datasetConfigurationError({ ...request, supplierSourceWorld: null },
+    { ...buyersDataset, sourceBuyerSubtree: undefined })).not.toBeNull()
+  expect(datasetConfigurationError({ ...request, supplierSourceWorld: null },
+    { ...buyersDataset, supplierBasis: undefined })).toContain('Сервер')
 })

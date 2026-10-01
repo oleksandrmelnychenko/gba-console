@@ -2,7 +2,7 @@ import type { ReportDataset, ReportRequestBody } from '../types'
 import { revenueExactId } from './revenueComparison'
 import { requestSourceBuyerSubtree, sourceBuyerSubtree } from './nativeExactFilters'
 import { readFilterExpressionCapabilities, reportFilterExpressionError, requestFilterExpression } from './reportFilterExpression'
-import { supplierBasisConfigurationError } from './supplierBasis'
+import { requestSupplierBasis, supplierBasisConfigurationError } from './supplierBasis'
 
 export const SUPPLIER_BATCH_GROSS_PROFIT_SOURCE = 38
 export const SUPPLIER_BATCH_GROSS_PROFIT_TITLE = 'Валовий прибуток GBA за постачальниками (партії)'
@@ -53,11 +53,12 @@ export function supplierBatchGrossProfitConfigurationError(data: ReportRequestBo
   if (data.supplierSourceWorld !== undefined && data.SupplierSourceWorld !== undefined
     && data.supplierSourceWorld !== data.SupplierSourceWorld)
     return 'Шаблон суперечливо задає базу партійного прибутку.'
-  if (world !== undefined && (world !== 0 && world !== 1
+  if (world != null && (world !== 0 && world !== 1
     || dataset && !isSupplierSourceWorldCapability(dataset.supplierSourceWorld)))
     return 'Оберіть підтверджену базу Fenix або AMG для партійного прибутку.'
   const buyers = requestSourceBuyerSubtree(data)
-  if (buyers != null && (world !== 0 || !sourceBuyerSubtree(buyers)
+  if (buyers != null && (world !== 0 && !(requestSupplierBasis(data) === 0 && world == null)
+    || !sourceBuyerSubtree(buyers)
     || dataset && dataset.sourceBuyerSubtree == null))
     return 'Для піддерева «Покупці» потрібні база Fenix і підтверджений граф покупців.'
   if (!validDate(data.from) || !validDate(data.to) || data.from > data.to)
