@@ -117,6 +117,8 @@ import { ReportDatasetPicker, ReportDatasetSummary } from './ReportDatasetPicker
 import { ReportConstructorHeader, ReportConstructorNavigation, ReportConstructorResultEmpty, ReportSectionPanel, type ReportConstructorSection } from './ReportConstructorNavigation'
 import { ReportQuickPresets } from './ReportQuickPresets'
 import { OneCTurnoverReportPanel } from './OneCTurnoverReportPanel'
+import { DebtToSalesRatioReportPanel } from './DebtToSalesRatioReportPanel'
+import { isDebtToSalesRatioCapabilities, type DebtToSalesRatioCapabilities } from '../data/debtToSalesRatio'
 import { ReportGroupingPanel } from './ReportGroupingPanel'
 import { reorderReportGrouping, transferReportGrouping, type ReportGroupingAxis } from '../data/reportGroupingLayout'
 
@@ -291,6 +293,8 @@ function ReportsStocksWorkspace({ ownerId, constructorMode }: { ownerId: string 
   const [oneCScope, setOneCScope] = useValueState<OneCTurnoverFilters | undefined>(undefined)
   const [oneCReportOpen, setOneCReportOpen] = useState(false)
   const [oneCReportGenerating, setOneCReportGenerating] = useState(false)
+  const [debtRatioCapability, setDebtRatioCapability] = useState<DebtToSalesRatioCapabilities | null>(null)
+  const [debtRatioGenerating, setDebtRatioGenerating] = useState(false)
   const [valuationClientAgreementId, setValuationAgreementId] = useValueState<number | undefined>(undefined)
   const valuation = useValuationAgreement(valuationClientAgreementId, canGenerateReport && requiresValuationAgreement(dataSource))
   const dataset = datasetStorage.datasets.find(item => item.DataSource === dataSource)
@@ -671,6 +675,12 @@ function ReportsStocksWorkspace({ ownerId, constructorMode }: { ownerId: string 
     return true
   }
 
+  function openDebtToSalesRatio(capability: DebtToSalesRatioCapabilities): boolean {
+    if (!canGenerateReport || isLoading || !isDebtToSalesRatioCapabilities(capability) || !capability.Executable) return false
+    setDebtRatioCapability(structuredClone(capability))
+    return true
+  }
+
   function changeDataset(nextDataset: ReportDataset, currencyAxis?: boolean) {
     const period = periodSupported ? { from, to } : previousPeriod
     const day = (nextDataset.DataSource === 40 || nextDataset.DataSource === 41) ? previousKyivDay(today) : null
@@ -737,6 +747,13 @@ function ReportsStocksWorkspace({ ownerId, constructorMode }: { ownerId: string 
           onFromChange={setFrom} onToChange={setTo} onLoadingChange={setOneCReportGenerating}
           onClose={() => setOneCReportOpen(false)} /> : null}
       </AppModal>
+      <AppModal opened={canGenerateReport && debtRatioCapability !== null} title={debtRatioCapability?.Title ?? ''} size={960}
+        onClose={() => { if (!debtRatioGenerating) setDebtRatioCapability(null) }}
+        closeOnClickOutside={!debtRatioGenerating} closeOnEscape={!debtRatioGenerating}
+        closeButtonProps={{ disabled: debtRatioGenerating, 'aria-label': t('Закрити оригінальний конструктор') }}>
+        {canGenerateReport && debtRatioCapability ? <DebtToSalesRatioReportPanel capability={debtRatioCapability}
+          initialMonth={(from || today).slice(0, 7)} canGenerate={canGenerateReport} onLoadingChange={setDebtRatioGenerating} /> : null}
+      </AppModal>
       {!constructorMode && canGenerateReport && templateName.trim() ? <Text fw={600} aria-label={t('Назва поточного звіту')}>{templateName}</Text> : null}
       {canGenerateReport && catalogueNotice ? <Alert color={catalogueNotice.failed ? 'red' : 'blue'} style={{ flexShrink: 0 }}
         title={t(catalogueNotice.failed ? 'Не вдалося відкрити звіт' : 'Звіт відкрито в конструкторі')}
@@ -756,7 +773,8 @@ function ReportsStocksWorkspace({ ownerId, constructorMode }: { ownerId: string 
           disabled={!canGenerateReport || isLoading} loaded={datasetStorage.loaded} error={datasetStorage.error}
           onChange={changeDataset} onRetry={datasetStorage.retry} />}
         catalogueControl={<ReportCatalogueControl presentation="dialog" enabled={canGenerateReport}
-          disabled={isLoading || !datasetStorage.loaded || Boolean(datasetStorage.error)} onOpen={openCatalogueReport} />}
+          disabled={isLoading} onOpen={openCatalogueReport}
+          onOpenDebtToSalesRatio={openDebtToSalesRatio} />}
         datasetSummary={<><ReportDatasetSummary dataset={dataset} />
           {!constructorMode ? <details className="stocks-workspace-dataset-help"><summary>{t('Що змінює вибір набору даних')}</summary>
             <Text size="xs" c="dimmed">{t('Зміна набору застосує початкові групування й показники та очистить відбори, групи І/АБО, TOP, ABC-класифікацію і правила сортування. Набори поточного стану очищують період; після повернення до набору з періодом попередні дати відновляться.')}</Text>

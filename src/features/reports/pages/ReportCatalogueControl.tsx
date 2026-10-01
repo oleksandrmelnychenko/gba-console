@@ -3,15 +3,17 @@ import { lazy, Suspense, useRef, useState } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppModal } from '../../../shared/ui/AppModal'
 import type { CatalogueLaunchChoice } from '../data/reportCatalogueLaunch'
+import type { DebtToSalesRatioCapabilities } from '../data/debtToSalesRatio'
 import type { ReportCatalogue } from '../types'
 
 const ReportCataloguePanel = lazy(() => import('./ReportCataloguePanel').then(module => ({ default: module.ReportCataloguePanel })))
 
-export function ReportCatalogueControl({ enabled, disabled = false, presentation = 'inline', onOpen }: {
+export function ReportCatalogueControl({ enabled, disabled = false, presentation = 'inline', onOpen, onOpenDebtToSalesRatio }: {
   enabled: boolean
   disabled?: boolean
   presentation?: 'inline' | 'dialog'
   onOpen?: (choice: CatalogueLaunchChoice, catalogue: ReportCatalogue) => boolean
+  onOpenDebtToSalesRatio?: (capability: DebtToSalesRatioCapabilities) => boolean
 }) {
   const { t } = useI18n()
   const [opened, setOpened] = useState(false)
@@ -20,6 +22,10 @@ export function ReportCatalogueControl({ enabled, disabled = false, presentation
   const panel = enabled && opened ? <Suspense fallback={<Loader size="sm" aria-label={t('Завантаження каталогу звітів')} />}>
     <ReportCataloguePanel disabled={disabled} onOpen={onOpen ? (choice, catalogue) => {
       if (!enabled || disabled || !onOpen(choice, catalogue)) return false
+      setOpened(false)
+      return true
+    } : undefined} onOpenDebtToSalesRatio={onOpenDebtToSalesRatio ? capability => {
+      if (!enabled || disabled || !onOpenDebtToSalesRatio(capability)) return false
       setOpened(false)
       return true
     } : undefined} />
