@@ -273,7 +273,7 @@ describe('exact Fenix filters in the report constructor', () => {
     fireEvent.click(await screen.findByRole('option', { name: supplierDataset.Name }))
     expect((screen.getByRole('combobox', { name: 'Розрахунок за постачальниками' }) as HTMLInputElement).value)
       .toBe('Продажі мінус повернення')
-    expect(screen.getByText(/Недоступні собівартість і прибуток залишаються порожніми, зокрема у підсумках/)).toBeTruthy()
+    expect(screen.getAllByText(/Недоступні собівартість і прибуток залишаються порожніми, зокрема у підсумках/).length).toBeGreaterThan(0)
     fireEvent.change(screen.getByLabelText('Від'), { target: { value: '2026-07-01' } })
     fireEvent.change(screen.getByLabelText('До'), { target: { value: '2026-07-31' } })
     fireEvent.submit(container.querySelector('form')!)

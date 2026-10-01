@@ -65,7 +65,8 @@ it('refuses invalid basis, duplicate aliases, wrong datasets and receipt substit
 
 it.each([undefined, null, 1])('preserves saved basis %s through normalization, layout, request and update', basis => {
   const legacy = defaultDatasetRequest({ ...dataset, supplierBasis: undefined }, '2026-07-01', '2026-07-31')
-  const saved = normalizeSavedTemplate({ Id: crypto.randomUUID(), Revision: 1, Name: 'Збережений прибуток', Data: {
+  const saved = normalizeSavedTemplate({ Id: crypto.randomUUID(), Revision: 1, Name: 'Збережений прибуток',
+    UpdatedAtUtc: '2026-07-31T00:00:00.000Z', Data: {
     DataSource: 38, From: legacy.from, To: legacy.to, Sorted: legacy.sorted, Selections: [],
     ...(basis === undefined ? {} : { SupplierBasis: basis }),
   } })
