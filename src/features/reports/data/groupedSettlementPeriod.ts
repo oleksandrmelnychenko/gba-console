@@ -16,10 +16,12 @@ const capabilityFields = ['Version', 'MaximumDays', 'CurrencyBasis', 'UsesCurren
   'RowLayouts', 'Measurements', 'Filters', 'FilterExpression', 'BuyerSubtree'] as const
 export const GROUPED_SETTLEMENT_LAYOUTS = [[4, 41, 76], [4, 76]] as const
 export const GROUPED_SETTLEMENT_FILTERS = [0, 6, 9, 30] as const
+export const GROUPED_SETTLEMENT_SUPPLIER_FILTERS = [0, 6, 9, 17, 18, 30] as const
 export const GROUPED_SETTLEMENT_MEASURES = [88, 89, 90, 91] as const
 export type GroupedSettlementPeriod = { Version: 1; SourceWorld: 'Fenix' | 'Amg'; CurrencyBasis: 'SettlementCurrency' }
 export type GroupedSettlementCapability = {
   Version: 1; MaximumDays: 31; CurrencyBasis: 'SettlementCurrency'; UsesCurrentNativeBuyerAgreements: true
+  UsesCurrentNativeSupplierAgreements?: true
   PreservesUnavailableValues: true; RequiresCommonSourceObservation: false; CurrentDaySupported: true
   SourceWorlds: ['Fenix', 'Amg']; RowLayouts: number[][]; Measurements: number[]; Filters: number[]
   FilterExpression: ReportFilterExpressionCapabilities
@@ -62,7 +64,11 @@ export const defaultGroupedSettlementBuyer = (): ReportSourceBuyerSubtree => ({
 })
 
 export function groupedSettlementCapability(value: unknown): GroupedSettlementCapability | null {
-  const normalized = fields(value, capabilityFields)
+  const supplier = record(value) ? aliases(value, 'UsesCurrentNativeSupplierAgreements') : []
+  if (supplier.length > 1) return null
+  const normalized = fields(value, supplier.length ? [...capabilityFields, 'UsesCurrentNativeSupplierAgreements'] : capabilityFields)
+  if (supplier.length && normalized?.UsesCurrentNativeSupplierAgreements !== true) return null
+  const filters = supplier.length ? GROUPED_SETTLEMENT_SUPPLIER_FILTERS : GROUPED_SETTLEMENT_FILTERS
   if (!normalized || normalized.Version !== 1 || normalized.MaximumDays !== 31
     || normalized.CurrencyBasis !== 'SettlementCurrency' || normalized.UsesCurrentNativeBuyerAgreements !== true
     || normalized.PreservesUnavailableValues !== true || normalized.RequiresCommonSourceObservation !== false
@@ -70,7 +76,7 @@ export function groupedSettlementCapability(value: unknown): GroupedSettlementCa
     || normalized.SourceWorlds.length !== 2 || normalized.SourceWorlds[0] !== 'Fenix'
     || normalized.SourceWorlds[1] !== 'Amg' || !Array.isArray(normalized.RowLayouts)
     || normalized.RowLayouts.length !== 2 || !normalized.RowLayouts.every((row, index) => exact(row, GROUPED_SETTLEMENT_LAYOUTS[index]))
-    || !exact(normalized.Measurements, GROUPED_SETTLEMENT_MEASURES) || !exact(normalized.Filters, GROUPED_SETTLEMENT_FILTERS)) return null
+    || !exact(normalized.Measurements, GROUPED_SETTLEMENT_MEASURES) || !exact(normalized.Filters, filters)) return null
   const expression = fields(normalized.FilterExpression, ['Version', 'MaximumDepth', 'MaximumLeaves', 'MaximumNodes', 'Operators'])
   const filter = expression ? readFilterExpressionCapabilities({ FilterExpression: expression } as ReportDataset) : null
   if (!filter || filter.MaximumDepth !== 8 || filter.MaximumLeaves !== 64 || filter.MaximumNodes !== 128
@@ -93,13 +99,17 @@ export function normalizeGroupedSettlementDataset(value: JsonRecord): ReportData
   return normalized as ReportDataset
 }
 
+export const groupedSettlementSupportsSuppliers = (dataset?: ReportDataset): boolean =>
+  groupedSettlementCapability(dataset?.groupedSettlementPeriod)?.UsesCurrentNativeSupplierAgreements === true
+
 export function isGroupedSettlementDataset(dataset?: ReportDataset): boolean {
+  const cap = groupedSettlementCapability(dataset?.groupedSettlementPeriod)
   return dataset?.DataSource === 41 && dataset.PeriodRequired === true && dataset.PeriodSupported === true
-    && groupedSettlementCapability(dataset.groupedSettlementPeriod) !== null
+    && cap !== null
     && Array.isArray(dataset.Groupings) && Array.isArray(dataset.Measurements) && Array.isArray(dataset.Filters)
     && exact(dataset.Groupings.map(item => item.Type), [4, 41, 76, 77])
     && exact(dataset.Measurements.map(item => item.Type), GROUPED_SETTLEMENT_MEASURES)
-    && exact(dataset.Filters.map(item => item.Type), GROUPED_SETTLEMENT_FILTERS)
+    && exact(dataset.Filters.map(item => item.Type), cap.Filters)
     && [...dataset.Groupings, ...dataset.Measurements, ...dataset.Filters].every(item => item.Selectable !== false)
 }
 
@@ -162,11 +172,14 @@ export function groupedSettlementConfigurationError(data: ReportRequestBody, dat
     || !exact(data.sorted.Measurements.map(item => item?.Type), GROUPED_SETTLEMENT_MEASURES)
     || data.sorted.Measurements.some(item => item?.IsChecked === false))
     return 'Оберіть організацію → валюту → контрагента або організацію → контрагента та чотири показники залишків і руху.'
+  const cap = groupedSettlementCapability(dataset?.groupedSettlementPeriod)
+  // Without a catalogue argument, validate the native wire fields; the server remains final authority.
+  const filters = cap?.Filters ?? GROUPED_SETTLEMENT_SUPPLIER_FILTERS
   if (!Array.isArray(data.selections) || data.selections.some(selection => selection?.IsChecked !== false
-    && (!(GROUPED_SETTLEMENT_FILTERS as readonly number[]).includes(selection?.SelectedField?.Type)
+    && (!(filters as readonly number[]).includes(selection?.SelectedField?.Type)
       || ![0, 1, 2, 4].includes(selection?.FilterCondition?.Type) || !Array.isArray(selection?.Values)
       || !selection.Values.length || selection.Values.some(value => revenueExactId(value?.Data) === null))))
-    return 'Оберіть точні організації, покупців, договори або валюти з поточних списків.'
+    return 'Оберіть точні організації, покупців, постачальників, їхні договори або валюти з поточних списків.'
   const buyerKeys = aliases(data, 'SourceBuyerSubtree')
   if (buyerKeys.length > 1) return 'Відбір групи покупців задано двічі.'
   const buyer = buyerKeys.length ? (data as unknown as JsonRecord)[buyerKeys[0]] : undefined
@@ -175,7 +188,6 @@ export function groupedSettlementConfigurationError(data: ReportRequestBody, dat
     || selected.SourceWorld !== 'fenix' || typeof selected.BuyerRootId !== 'string'
     || selected.BuyerRootId.toUpperCase() !== EXACT_ONE_C_BUYER_ROOT_ID))
     return 'Група «Покупці» доступна для відповідного поточного довідника Fenix.'
-  const cap = groupedSettlementCapability(dataset?.groupedSettlementPeriod)
   const treeDataset = cap ? { ...dataset!, FilterExpression: cap.FilterExpression }
     : { FilterExpression: { Version: 1, MaximumDepth: 8, MaximumLeaves: 64, MaximumNodes: 128, Operators: [1, 2] } } as ReportDataset
   return reportFilterExpressionError(data, treeDataset)

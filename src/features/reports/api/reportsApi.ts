@@ -125,7 +125,7 @@ export async function searchDatasetReportValues(dataSource: number, field: numbe
     throw new Error('Некоректна основа довідника продажів.')
   if (dataSource === 27 && salesBasis === 0 && ![46, 51, 52, 45].includes(field))
     throw new Error('Цей відбір поточних продажів недоступний.')
-  if (dataSource === 41 && ![0, 6, 9, 30].includes(field))
+  if (dataSource === 41 && ![0, 6, 9, 17, 18, 30].includes(field))
     throw new Error('Цей відбір групових взаєморозрахунків недоступний.')
   if (dataSource === 40 && ![29, 30, 32, 33].includes(field)) throw new Error('Цей відбір рахунків недоступний.')
   if (dataSource === 39 && ![1, 4, 5, 21, 60].includes(field))

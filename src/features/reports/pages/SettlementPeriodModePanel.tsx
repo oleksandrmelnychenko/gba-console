@@ -2,7 +2,7 @@ import { Checkbox, Select, Stack, Text } from '@mantine/core'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import type { ReportDataset, ReportGroupingItem } from '../types'
 import { defaultGroupedSettlementBuyer, groupedSettlementPeriod, groupedSettlementRows,
-  isGroupedSettlementDataset } from '../data/groupedSettlementPeriod'
+  isGroupedSettlementDataset, groupedSettlementSupportsSuppliers } from '../data/groupedSettlementPeriod'
 import { isSettlementPeriodDataset } from '../data/settlementPeriod'
 import { sourceBuyerSubtree } from '../data/nativeExactFilters'
 import { SettlementPeriodAgreementPicker } from './SettlementPeriodAgreementPicker'
@@ -30,7 +30,7 @@ export function SettlementPeriodModePanel({ dataset, grouped, exact, buyer, grou
   return <Stack gap="sm">
     {supported && <Select label={t('Обсяг взаєморозрахунків')} disabled={disabled} allowDeselect={false}
       value={isGroup ? 'buyers' : 'agreement'} data={[
-        { value: 'buyers', label: t('Поточні договори покупців') },
+        { value: 'buyers', label: t(groupedSettlementSupportsSuppliers(dataset) ? 'Поточні договори контрагентів' : 'Поточні договори покупців') },
         { value: 'agreement', label: t('Один точний договір') },
       ]} onChange={next => { if (next === 'buyers' || next === 'agreement') onModeChange(next) }} />}
     {isGroup && supported ? <>
