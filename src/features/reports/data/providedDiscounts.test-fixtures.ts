@@ -12,5 +12,6 @@ export const currentProvidedDiscountsDataset: ReportDataset = {
 export const providedDiscountRequest = (Basis?: 0 | 1 | null): ReportRequestBody => ({
   dataSource: 24, from: '2026-09-01', to: '2026-09-30',
   providedDiscounts: { Version: 1, SourceWorld: 1, ...(Basis === undefined ? {} : { Basis }) },
-  sorted: { Row: [{ type: 57 }], Col: [], Measurements: [{ Type: 65, IsChecked: true }, { Type: 66, IsChecked: true }] }, selections: [],
+  sorted: { Row: [{ type: 57, key: '57', label: 'Договір 1С' }], Col: [],
+    Measurements: [{ Type: 65, Name: 'Сума знижки', IsChecked: true }, { Type: 66, Name: 'ПДВ знижки', IsChecked: true }] }, selections: [],
 })
