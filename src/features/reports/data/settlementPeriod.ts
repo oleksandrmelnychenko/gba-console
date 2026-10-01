@@ -1,6 +1,7 @@
 import type { ReportDataset, ReportRequestBody } from '../types'
 import { formatKyivBusinessDate } from '../../../shared/date/dateTime'
-import { groupedSettlementConfigurationError, isGroupedSettlementDataset, requestGroupedSettlementPeriod } from './groupedSettlementPeriod'
+import { groupedSettlementConfigurationError, groupedSettlementPeriod, isGroupedSettlementDataset, requestGroupedSettlementPeriod } from './groupedSettlementPeriod'
+import { sourceCounterpartyGroupsConfigurationError } from './sourceCounterpartyGroups'
 
 export const SETTLEMENT_PERIOD_SOURCE = 41
 export const SETTLEMENT_PERIOD_TITLE = 'Взаєморозрахунки за договором: залишки та рух'
@@ -114,6 +115,8 @@ export function validSettlementPeriodDays(from: string, to: string, todayKyiv = 
 /** Client guard; the server remains final authority on a complete closing-day generation. */
 export function settlementPeriodConfigurationError(data: ReportRequestBody, dataset?: ReportDataset,
   todayKyiv?: string): string | null {
+  const groupsError = sourceCounterpartyGroupsConfigurationError(data, groupedSettlementPeriod(requestGroupedSettlementPeriod(data))?.SourceWorld, dataset)
+  if (groupsError) return groupsError
   const groupedError = groupedSettlementConfigurationError(data, dataset, todayKyiv)
   if (groupedError || requestGroupedSettlementPeriod(data) != null) return groupedError
   if (data.dataSource !== SETTLEMENT_PERIOD_SOURCE) return data.settlementPeriod != null || data.SettlementPeriod != null

@@ -257,6 +257,8 @@ export type ReportRequestBody = {
   dataSource?: number
   groupedSettlementPeriod?: unknown
   GroupedSettlementPeriod?: unknown
+  sourceCounterpartyGroups?: unknown
+  SourceCounterpartyGroups?: unknown
   settlementPeriod?: unknown
   cashPeriod?: unknown
   SettlementPeriod?: unknown
@@ -331,6 +333,7 @@ export type ReportDatasetField = { Type: number; Name: string; Selectable?: bool
 export type ReportDataset = {
   returnsOnly?: boolean
   groupedSettlementPeriod?: unknown
+  sourceCounterpartyGroups?: unknown
   settlementPeriod?: unknown
   cashPeriod?: unknown
   currentVparivanie?: unknown

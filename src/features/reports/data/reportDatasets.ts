@@ -28,6 +28,7 @@ import { valuationConfigurationError, requiresValuationAgreement } from './repor
 import { getNativeReportProfile, isNativeReportPresetId, type NativeReportPresetId } from './nativeReportProfiles'
 import { cashPeriodConfigurationError } from './cashPeriod'
 import { settlementPeriodConfigurationError } from './settlementPeriod'
+import { cloneSourceCounterpartyGroupAliases } from './sourceCounterpartyGroups'
 import { isDayOrganizationBasisCapability } from './dayOrganizationBasis'
 import { isSupplierBasisCapability, requestSupplierBasis } from './supplierBasis'
 import { cloneNativeExactFilterAliases, nativeExactFiltersConfigurationError } from './nativeExactFilters'
@@ -310,6 +311,7 @@ export function datasetPresetRequest(dataset: ReportDataset, id: DatasetReportPr
   // Preserve both raw aliases, including invalid imported material, without reconstructing the tree.
   const preservedOptions = { ...(Object.hasOwn(current, 'settlementPeriod') ? { settlementPeriod: structuredClone(current.settlementPeriod) } : {}),
     ...(Object.hasOwn(current, 'SettlementPeriod') ? { SettlementPeriod: structuredClone(current.SettlementPeriod) } : {}), ...cloneGroupedSettlementAliases(current), ...clonePaymentComparisonAliases(current), ...cloneMarginComparisonAliases(current), ...cloneRateComparisonAliases(current), ...cloneReturnComparisonAliases(current), ...cloneBuyerSalesShareAliases(current), ...cloneRevenueComparisonAliases(current), ...cloneXyzAliases(current), ...(Object.hasOwn(current, 'comparison') ? { comparison: structuredClone(current.comparison) } : {}),
+    ...cloneSourceCounterpartyGroupAliases(current),
     ...(Object.hasOwn(current, 'Comparison') ? { Comparison: structuredClone(current.Comparison) } : {}),
     ...(Object.hasOwn(current, 'hideZero') ? { hideZero: structuredClone(current.hideZero) } : {}),
     ...(Object.hasOwn(current, 'HideZero') ? { HideZero: structuredClone(current.HideZero) } : {}),

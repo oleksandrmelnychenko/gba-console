@@ -19,6 +19,7 @@ const managedFields = new Set([
   'supplierSourceWorld', 'SupplierSourceWorld',
   'settlementPeriod', 'SettlementPeriod',
   'groupedSettlementPeriod', 'GroupedSettlementPeriod',
+  'sourceCounterpartyGroups', 'SourceCounterpartyGroups',
   'cashPeriod', 'CashPeriod',
   'priceTypeSalesComparison', 'PriceTypeSalesComparison', 'oneC', 'OneC',
   'discountMarkup', 'DiscountMarkup', 'providedDiscounts', 'ProvidedDiscounts',
@@ -28,7 +29,7 @@ const managedFields = new Set([
 export function retainStoredTemplateFields(stored: ReportRequestBody, draft: ReportRequestBody): ReportRequestBody {
   const retained = Object.fromEntries(Object.entries(stored).filter(([key]) => !managedFields.has(key)
     && key.toLowerCase() !== 'dayorganizationbasis' && key.toLowerCase() !== 'supplierbasis'
-    && key.toLowerCase() !== 'groupedsettlementperiod'))
+    && key.toLowerCase() !== 'groupedsettlementperiod' && key.toLowerCase() !== 'sourcecounterpartygroups'))
   const retainGroups = (axis: 'Row' | 'Col') => draft.sorted[axis].map(item => ({
     ...stored.sorted[axis].find(original => original.type === item.type), ...item,
   }))

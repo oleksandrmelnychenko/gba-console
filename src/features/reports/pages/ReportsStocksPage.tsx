@@ -104,6 +104,7 @@ import { availableBug1274WorkbookLaunches } from '../data/bug1274WorkbookLaunch'
 import { CashPeriodLegPicker } from './CashPeriodLegPicker'
 import { SettlementPeriodModePanel } from './SettlementPeriodModePanel'
 import { groupedWorkbookRequest, requestGroupedSettlementPeriod, settlementFormDataset, settlementMaximumDate, settlementModePatch } from '../data/groupedSettlementPeriod'
+import { requestSourceCounterpartyGroups } from '../data/sourceCounterpartyGroups'
 import { requiresValuationAgreement } from '../data/reportValuation'
 import { useValuationAgreement } from '../hooks/useValuationAgreement'
 import { useReportRunState } from '../hooks/useReportRunState'
@@ -282,6 +283,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode }: { ownerId: string 
   const [agreementPriceComparison, setAgreementPriceComparison] = useValueState<unknown>(undefined)
   const [settlementPeriod, setSettlementPeriod] = useValueState<unknown>(undefined)
   const [groupedSettlementPeriod, setGroupedSettlementPeriod] = useValueState<unknown>(undefined)
+  const [sourceCounterpartyGroups, setSourceCounterpartyGroups] = useValueState<unknown>(undefined)
   const [cashPeriod, setCashPeriod] = useValueState<unknown>(undefined)
   const [oneCSpecialSettings, setOneCSpecialSettings] = useValueState<unknown>(undefined)
   const [oneCScope, setOneCScope] = useValueState<OneCTurnoverFilters | undefined>(undefined)
@@ -335,8 +337,8 @@ function ReportsStocksWorkspace({ ownerId, constructorMode }: { ownerId: string 
   // period on a pause, and only once it is a period the server can answer for.
   const hasLookupPeriod = !getPeriodError(debouncedFrom, debouncedTo, maxDate, t)
   const reportBody = useMemo<ReportRequestBody>(
-    () => buildReportBuilderRequest({ dataSource, returnsOnly, comparison, xyz, revenueComparison, buyerSalesShare, returnComparison, paymentComparison, marginComparison, rateComparison, productClassification, sourceOrganizations, sourceBuyerSubtree, dayOrganizationBasis, supplierBasis, supplierSourceWorld, priceTypeSalesComparison, agreementPriceComparison, settlementPeriod, groupedSettlementPeriod, cashPeriod, oneCSpecialSettings, oneC: oneCScope, from, to, ordering, filterExpression, topGroups, threshold, hideZero, abcClassification, valuationClientAgreementId, rowGroups, colGroups, measurements, selections }),
-    [abcClassification, agreementPriceComparison, settlementPeriod, groupedSettlementPeriod, cashPeriod, colGroups, comparison, xyz, revenueComparison, buyerSalesShare, returnComparison, paymentComparison, marginComparison, rateComparison, productClassification, sourceOrganizations, sourceBuyerSubtree, dayOrganizationBasis, supplierBasis, supplierSourceWorld, returnsOnly, priceTypeSalesComparison, oneCSpecialSettings, oneCScope, dataSource, filterExpression, from, hideZero, measurements, ordering, rowGroups, selections, to, topGroups, threshold, valuationClientAgreementId],
+    () => buildReportBuilderRequest({ dataSource, returnsOnly, comparison, xyz, revenueComparison, buyerSalesShare, returnComparison, paymentComparison, marginComparison, rateComparison, productClassification, sourceOrganizations, sourceBuyerSubtree, dayOrganizationBasis, supplierBasis, supplierSourceWorld, priceTypeSalesComparison, agreementPriceComparison, settlementPeriod, groupedSettlementPeriod, sourceCounterpartyGroups, cashPeriod, oneCSpecialSettings, oneC: oneCScope, from, to, ordering, filterExpression, topGroups, threshold, hideZero, abcClassification, valuationClientAgreementId, rowGroups, colGroups, measurements, selections }),
+    [abcClassification, agreementPriceComparison, settlementPeriod, groupedSettlementPeriod, sourceCounterpartyGroups, cashPeriod, colGroups, comparison, xyz, revenueComparison, buyerSalesShare, returnComparison, paymentComparison, marginComparison, rateComparison, productClassification, sourceOrganizations, sourceBuyerSubtree, dayOrganizationBasis, supplierBasis, supplierSourceWorld, returnsOnly, priceTypeSalesComparison, oneCSpecialSettings, oneCScope, dataSource, filterExpression, from, hideZero, measurements, ordering, rowGroups, selections, to, topGroups, threshold, valuationClientAgreementId],
   )
   const { result, preview, lastRun, error, isLoading, downloadModalOpened, update: updateRun, begin: beginRun, clear: clearRun } = useReportRunState<ReportRunOutcome>(JSON.stringify({
     request: reportBody,
@@ -439,6 +441,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode }: { ownerId: string 
   function changeSettlementMode(mode: 'buyers' | 'agreement') {
     const patch = settlementModePatch(mode, groupingOptions)
     setGroupedSettlementPeriod(patch.grouped)
+    setSourceCounterpartyGroups(undefined)
     setSettlementPeriod(undefined)
     setSourceBuyerSubtree(patch.buyer)
     setRowGroups(patch.rows)
@@ -474,6 +477,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode }: { ownerId: string 
     setAgreementPriceComparison(snapshotDefaults?.agreementPriceComparison)
     setSettlementPeriod(undefined)
     setGroupedSettlementPeriod(snapshotDefaults?.groupedSettlementPeriod)
+    setSourceCounterpartyGroups(undefined)
     setCashPeriod(undefined)
     setOneCSpecialSettings(snapshotDefaults && oneCSpecialSpecification(dataSource)
       ? requestOneCSpecialSettings(snapshotDefaults, dataSource) : undefined)
@@ -564,6 +568,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode }: { ownerId: string 
     setAgreementPriceComparison(structuredClone(requestAgreementPriceComparison(data)))
     setSettlementPeriod(structuredClone(data.settlementPeriod))
     setGroupedSettlementPeriod(structuredClone(requestGroupedSettlementPeriod(data)))
+    setSourceCounterpartyGroups(structuredClone(requestSourceCounterpartyGroups(data)))
     setCashPeriod(structuredClone(data.cashPeriod))
     setOneCSpecialSettings(structuredClone(requestOneCSpecialSettings(data, nextDataset.DataSource)))
     setOneCScope(structuredClone(data.oneC))
@@ -629,6 +634,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode }: { ownerId: string 
     setAgreementPriceComparison(structuredClone(requestAgreementPriceComparison(data)))
     setSettlementPeriod(structuredClone(data.settlementPeriod))
     setGroupedSettlementPeriod(structuredClone(requestGroupedSettlementPeriod(data)))
+    setSourceCounterpartyGroups(structuredClone(requestSourceCounterpartyGroups(data)))
     setCashPeriod(structuredClone(data.cashPeriod))
     setOneCSpecialSettings(structuredClone(requestOneCSpecialSettings(data, nextDataset.DataSource)))
     setOneCScope(structuredClone(data.oneC))
@@ -766,10 +772,10 @@ function ReportsStocksWorkspace({ ownerId, constructorMode }: { ownerId: string 
           disabled={comparisonSettingsDisabled} onChange={setOneCSpecialSettings} />}
         classificationPanel={dataSource === 39 ? <CurrentVparivanieRegionalPanel dataset={dataset ?? null} request={reportBody}
           enabled={canGenerateReport} disabled={comparisonSettingsDisabled} /> : dataSource === 41 ? <SettlementPeriodModePanel dataset={dataset} grouped={groupedSettlementPeriod}
-          exact={settlementPeriod} buyer={sourceBuyerSubtree} rows={rowGroups} available={groupingOptions} from={from} to={to}
+          exact={settlementPeriod} buyer={sourceBuyerSubtree} groups={sourceCounterpartyGroups} rows={rowGroups} available={groupingOptions} from={from} to={to}
           disabled={comparisonSettingsDisabled} enabled={canGenerateReport} onModeChange={changeSettlementMode}
           onGroupedChange={setGroupedSettlementPeriod} onExactChange={setSettlementPeriod}
-          onBuyerChange={setSourceBuyerSubtree} onRowsChange={setRowGroups} /> : dataSource === 40 ? <CashPeriodLegPicker value={cashPeriod}
+          onBuyerChange={setSourceBuyerSubtree} onRowsChange={setRowGroups} onGroupsChange={setSourceCounterpartyGroups} /> : dataSource === 40 ? <CashPeriodLegPicker value={cashPeriod}
           disabled={comparisonSettingsDisabled} enabled={canGenerateReport}
           managementSupported={cashPeriodSupportsManagement(dataset)}
           onChange={next => {

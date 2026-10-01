@@ -4,6 +4,7 @@ import { EXACT_ONE_C_BUYER_ROOT_ID } from './oneCTurnoverReport'
 import { readFilterExpressionCapabilities, reportFilterExpressionError } from './reportFilterExpression'
 import { revenueExactId } from './revenueComparison'
 import { previousKyivDay } from './cashPeriod'
+import { sourceCounterpartyGroupsConfigurationError } from './sourceCounterpartyGroups'
 
 type JsonRecord = Record<string, unknown>
 const record = (value: unknown): value is JsonRecord => value !== null && typeof value === 'object' && !Array.isArray(value)
@@ -148,7 +149,9 @@ export function groupedSettlementConfigurationError(data: ReportRequestBody, dat
   const selector = groupedSettlementPeriod(raw)
   if (!selector) return 'Оберіть базу Fenix або AMG і валюту взаєморозрахунків поточних договорів.'
   if (dataset && !isGroupedSettlementDataset(dataset)) return 'Сервер не підтвердив груповий звіт взаєморозрахунків.'
-  const allowed = new Set(['datasource', 'from', 'to', 'sorted', 'selections', 'groupedsettlementperiod', 'filterexpression', 'sourcebuyersubtree'])
+  const groupsError = sourceCounterpartyGroupsConfigurationError(data, selector.SourceWorld, dataset)
+  if (groupsError) return groupsError
+  const allowed = new Set(['datasource', 'from', 'to', 'sorted', 'selections', 'groupedsettlementperiod', 'filterexpression', 'sourcebuyersubtree', 'sourcecounterpartygroups'])
   if (Object.entries(data).some(([key, value]) => !allowed.has(key.toLowerCase()) && value != null))
     return 'Групові взаєморозрахунки не поєднуються з точним договором, перерахунком валют або іншими перетвореннями.'
   const dayError = periodError(data.from, data.to, today)

@@ -30,6 +30,7 @@ type BuilderValues = {
   agreementPriceComparison?: unknown
   settlementPeriod?: unknown
   groupedSettlementPeriod?: unknown
+  sourceCounterpartyGroups?: unknown
   cashPeriod?: unknown
   rowGroups: ReportGroupingItem[]; colGroups: ReportGroupingItem[]
   measurements: ReportMeasurementGroup[]; selections: ReportSelection[]
@@ -67,6 +68,7 @@ export function buildReportBuilderRequest(values: BuilderValues): ReportRequestB
     ...(agreementPriceComparison !== undefined ? { agreementPriceComparison } : {}),
     ...(settlementPeriod !== undefined ? { settlementPeriod } : {}),
     ...(groupedSettlementPeriod !== undefined ? { groupedSettlementPeriod } : {}),
+    ...(values.sourceCounterpartyGroups !== undefined ? { sourceCounterpartyGroups: values.sourceCounterpartyGroups } : {}),
     ...(cashPeriod !== undefined ? { cashPeriod } : {}),
     sorted: { Col: colGroups, Row: rowGroups, Measurements: flattenCheckedMeasurements(measurements) },
     selections: (dataSource === 15 || dataSource === 16 || dataSource === 17 || dataSource === 18 || dataSource === 19 || dataSource === 20 || dataSource === 21 || dataSource === 22 || dataSource === 27) ? selections : reportSelectionsForRequest(selections, filterExpression),
