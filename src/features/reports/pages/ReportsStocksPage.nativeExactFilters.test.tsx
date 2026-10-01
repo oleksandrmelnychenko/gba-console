@@ -55,6 +55,11 @@ const supplierDataset: ReportDataset = {
   sourceBuyerSubtree: dayDataset.sourceBuyerSubtree,
   Limitations: [],
 }
+const ordinarySupplierDataset: ReportDataset = {
+  ...supplierDataset, Groupings: [73, 78, 4, 21].map(Type => ({ Type, Name: `Група ${Type}` })),
+  supplierBasis: { Version: 1, DefaultBasis: 0, Bases: [0, 1], MaximumDays: 31,
+    IncludesReturns: true, PreservesUnavailableValues: true, RegistrarWarehouseGrouping: 78 },
+}
 
 function savedTemplate() {
   const data = defaultDatasetRequest(netDataset, '2026-07-01', '2026-07-31')
@@ -259,6 +264,70 @@ describe('exact Fenix filters in the report constructor', () => {
 
     expect(await screen.findByText(refusal)).toBeTruthy()
     expect(screen.queryByRole('dialog')).toBeNull()
+  })
+
+  it('starts a new supplier form with returns, registrar warehouse and unavailable-value guidance', async () => {
+    vi.mocked(getReportDatasets).mockResolvedValue([...reportDatasets, ordinarySupplierDataset])
+    const { container } = await ready()
+    fireEvent.click(screen.getByRole('combobox', { name: 'Набір даних звіту' }))
+    fireEvent.click(await screen.findByRole('option', { name: supplierDataset.Name }))
+    expect((screen.getByRole('combobox', { name: 'Розрахунок за постачальниками' }) as HTMLInputElement).value)
+      .toBe('Продажі мінус повернення')
+    expect(screen.getByText(/Недоступні собівартість і прибуток залишаються порожніми, зокрема у підсумках/)).toBeTruthy()
+    fireEvent.change(screen.getByLabelText('Від'), { target: { value: '2026-07-01' } })
+    fireEvent.change(screen.getByLabelText('До'), { target: { value: '2026-07-31' } })
+    fireEvent.submit(container.querySelector('form')!)
+    await waitFor(() => expect(createStockReport).toHaveBeenCalledOnce())
+    const submitted = vi.mocked(createStockReport).mock.calls[0][0]
+    expect(submitted).toMatchObject({ dataSource: 38, supplierBasis: 0, from: '2026-07-01', to: '2026-07-31' })
+    expect(submitted.sorted.Row.map(field => field.type)).toEqual([78, 4, 21])
+  })
+
+  it.each([undefined, null, 1])('preserves saved supplier basis %s and receipt layout on submit and update', async basis => {
+    vi.mocked(getReportDatasets).mockResolvedValue([...reportDatasets, ordinarySupplierDataset])
+    const data = defaultDatasetRequest(supplierDataset, '2026-07-01', '2026-07-31')
+    if (basis !== undefined) data.SupplierBasis = basis
+    const template = { Id: crypto.randomUUID(), Revision: 2, Name: 'Daily exact supplier saved', Data: data }
+    vi.mocked(getServerReportTemplates).mockResolvedValue([template])
+    const { container } = await ready()
+    await applySaved()
+    expect((screen.getByRole('combobox', { name: 'Розрахунок за постачальниками' }) as HTMLInputElement).value)
+      .toBe(basis === 1 ? 'Продажі за партіями без повернень' : 'Збережений спосіб розрахунку')
+    fireEvent.submit(container.querySelector('form')!)
+    await waitFor(() => expect(createStockReport).toHaveBeenCalledOnce())
+    const submitted = vi.mocked(createStockReport).mock.calls[0][0]
+    expect(submitted.supplierBasis).toBe(basis)
+    expect(submitted.sorted.Row.map(field => field.type)).toEqual([73, 4, 21])
+    fireEvent.click(screen.getByRole('button', { name: 'Шаблони' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Оновити шаблон' }))
+    await waitFor(() => expect(saveServerReportTemplate).toHaveBeenCalledOnce())
+    const updated = vi.mocked(saveServerReportTemplate).mock.calls[0][0].Data
+    expect(updated.supplierBasis).toBe(basis)
+    expect(updated).not.toHaveProperty('SupplierBasis')
+    if (basis === undefined) expect(updated).not.toHaveProperty('supplierBasis')
+    expect(updated.sorted.Row.map(field => field.type)).toEqual([73, 4, 21])
+  })
+
+  it('switches a saved receipt calculation to registrar warehouse only after an explicit ordinary selection', async () => {
+    vi.mocked(getReportDatasets).mockResolvedValue([...reportDatasets, ordinarySupplierDataset])
+    const data = defaultDatasetRequest(supplierDataset, '2026-07-01', '2026-07-31')
+    data.selections = [{ IsChecked: true, SelectedField: { Type: 17, Name: 'Постачальник' },
+      FilterCondition: { Type: 0, Name: 'Дорівнює' }, Values: [{ Data: { Id: '9007199254740993' }, Name: 'Постачальник', Value: 0 }] }]
+    vi.mocked(getServerReportTemplates).mockResolvedValue([{ Id: crypto.randomUUID(), Revision: 1, Name: 'Daily exact supplier saved', Data: data }])
+    vi.mocked(createStockReport).mockResolvedValue({ document: { DocumentURL: '/files/legacy-supplier.xlsx' }, raw: {} })
+    const { container } = await ready()
+    await applySaved()
+    fireEvent.submit(container.querySelector('form')!)
+    await screen.findByRole('dialog')
+    fireEvent.click(screen.getByRole('combobox', { name: 'Розрахунок за постачальниками' }))
+    fireEvent.click(screen.getByRole('option', { name: 'Продажі мінус повернення' }))
+    expect(screen.queryByRole('dialog')).toBeNull()
+    fireEvent.submit(container.querySelector('form')!)
+    await waitFor(() => expect(createStockReport).toHaveBeenCalledTimes(2))
+    const submitted = vi.mocked(createStockReport).mock.calls[1][0]
+    expect(submitted.supplierBasis).toBe(0)
+    expect(submitted.sorted.Row.map(field => field.type)).toEqual([78, 4, 21])
+    expect(submitted.selections).toEqual(data.selections)
   })
 
   it('sends the exact Buyers subtree with Fenix for supplier gross profit', async () => {

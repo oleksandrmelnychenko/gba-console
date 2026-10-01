@@ -150,6 +150,8 @@ import { useReportGroupingOrdering } from '../hooks/useReportGroupingOrdering'
 import type { ReportGroupingLayout } from '../data/reportGroupingLayout'
 import { DayOrganizationBasisSelect } from './DayOrganizationBasisSelect'
 import { requestDayOrganizationBasis } from '../data/dayOrganizationBasis'
+import { requestSupplierBasis } from '../data/supplierBasis'
+import { SupplierBasisSelect } from './SupplierBasisSelect'
 import { productClassification as parseProductClassification, sourceOrganizations as parseSourceOrganizations, sourceBuyerSubtree as parseSourceBuyerSubtree, requestProductClassification, requestSourceOrganizations, requestSourceBuyerSubtree, FENIX_BUYERS_ROOT_ID } from '../data/nativeExactFilters'
 import { DAY_ORGANIZATION_GOODS_KIND_ID, DAY_ORGANIZATION_SAVED_ORGANIZATION_IDS } from '../data/dayOrganizationGrossProfit'
 import { isSupplierSourceWorldCapability, requestSupplierSourceWorld } from '../data/supplierBatchGrossProfit'
@@ -274,6 +276,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode }: { ownerId: string 
   const [sourceOrganizations, setSourceOrganizations] = useValueState<unknown>(undefined)
   const [sourceBuyerSubtree, setSourceBuyerSubtree] = useValueState<unknown>(undefined)
   const [dayOrganizationBasis, setDayOrganizationBasis] = useValueState<unknown>(undefined)
+  const [supplierBasis, setSupplierBasis] = useValueState<unknown>(undefined)
   const [supplierSourceWorld, setSupplierSourceWorld] = useValueState<unknown>(undefined)
   const [returnsOnly, setReturnsOnly] = useValueState<boolean | undefined>(undefined)
   const [priceTypeSalesComparison, setPriceTypeSalesComparison] = useValueState<unknown>(undefined)
@@ -331,8 +334,8 @@ function ReportsStocksWorkspace({ ownerId, constructorMode }: { ownerId: string 
   // period on a pause, and only once it is a period the server can answer for.
   const hasLookupPeriod = !getPeriodError(debouncedFrom, debouncedTo, maxDate, t)
   const reportBody = useMemo<ReportRequestBody>(
-    () => buildReportBuilderRequest({ dataSource, returnsOnly, comparison, xyz, revenueComparison, buyerSalesShare, returnComparison, paymentComparison, marginComparison, rateComparison, productClassification, sourceOrganizations, sourceBuyerSubtree, dayOrganizationBasis, supplierSourceWorld, priceTypeSalesComparison, agreementPriceComparison, settlementPeriod, cashPeriod, oneCSpecialSettings, oneC: oneCScope, from, to, ordering, filterExpression, topGroups, threshold, hideZero, abcClassification, valuationClientAgreementId, rowGroups, colGroups, measurements, selections }),
-    [abcClassification, agreementPriceComparison, settlementPeriod, cashPeriod, colGroups, comparison, xyz, revenueComparison, buyerSalesShare, returnComparison, paymentComparison, marginComparison, rateComparison, productClassification, sourceOrganizations, sourceBuyerSubtree, dayOrganizationBasis, supplierSourceWorld, returnsOnly, priceTypeSalesComparison, oneCSpecialSettings, oneCScope, dataSource, filterExpression, from, hideZero, measurements, ordering, rowGroups, selections, to, topGroups, threshold, valuationClientAgreementId],
+    () => buildReportBuilderRequest({ dataSource, returnsOnly, comparison, xyz, revenueComparison, buyerSalesShare, returnComparison, paymentComparison, marginComparison, rateComparison, productClassification, sourceOrganizations, sourceBuyerSubtree, dayOrganizationBasis, supplierBasis, supplierSourceWorld, priceTypeSalesComparison, agreementPriceComparison, settlementPeriod, cashPeriod, oneCSpecialSettings, oneC: oneCScope, from, to, ordering, filterExpression, topGroups, threshold, hideZero, abcClassification, valuationClientAgreementId, rowGroups, colGroups, measurements, selections }),
+    [abcClassification, agreementPriceComparison, settlementPeriod, cashPeriod, colGroups, comparison, xyz, revenueComparison, buyerSalesShare, returnComparison, paymentComparison, marginComparison, rateComparison, productClassification, sourceOrganizations, sourceBuyerSubtree, dayOrganizationBasis, supplierBasis, supplierSourceWorld, returnsOnly, priceTypeSalesComparison, oneCSpecialSettings, oneCScope, dataSource, filterExpression, from, hideZero, measurements, ordering, rowGroups, selections, to, topGroups, threshold, valuationClientAgreementId],
   )
   const { result, preview, lastRun, error, isLoading, downloadModalOpened, update: updateRun, begin: beginRun, clear: clearRun } = useReportRunState<ReportRunOutcome>(JSON.stringify({
     request: reportBody,
@@ -455,6 +458,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode }: { ownerId: string 
     setSourceOrganizations(undefined)
     setSourceBuyerSubtree(undefined)
     setDayOrganizationBasis(snapshotDefaults?.dayOrganizationBasis)
+    setSupplierBasis(snapshotDefaults?.supplierBasis)
     setSupplierSourceWorld(snapshotDefaults?.supplierSourceWorld)
     setPriceTypeSalesComparison(snapshotDefaults?.priceTypeSalesComparison)
     setAgreementPriceComparison(snapshotDefaults?.agreementPriceComparison)
@@ -542,6 +546,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode }: { ownerId: string 
     setSourceOrganizations(structuredClone(requestSourceOrganizations(data)))
     setSourceBuyerSubtree(structuredClone(requestSourceBuyerSubtree(data)))
     setDayOrganizationBasis(structuredClone(requestDayOrganizationBasis(data)))
+    setSupplierBasis(structuredClone(requestSupplierBasis(data)))
     setSupplierSourceWorld(structuredClone(requestSupplierSourceWorld(data)))
     setReturnsOnly(data.returnsOnly ?? data.ReturnsOnly)
     setPriceTypeSalesComparison(clonePriceTypeSalesComparisonValue(data))
@@ -605,6 +610,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode }: { ownerId: string 
     setSourceOrganizations(structuredClone(requestSourceOrganizations(data)))
     setSourceBuyerSubtree(structuredClone(requestSourceBuyerSubtree(data)))
     setDayOrganizationBasis(structuredClone(requestDayOrganizationBasis(data)))
+    setSupplierBasis(structuredClone(requestSupplierBasis(data)))
     setSupplierSourceWorld(structuredClone(requestSupplierSourceWorld(data)))
     setReturnsOnly(data.returnsOnly ?? data.ReturnsOnly)
     setPriceTypeSalesComparison(clonePriceTypeSalesComparisonValue(data))
@@ -795,6 +801,14 @@ function ReportsStocksWorkspace({ ownerId, constructorMode }: { ownerId: string 
             ? <Text size="xs" c="orange">{t('Шаблон містить інше піддерево Fenix; цей набір приймає тільки групу «Покупці».')}</Text> : null}
         </Card> : dataSource === 38 && isSupplierSourceWorldCapability(dataset?.supplierSourceWorld)
           ? <Card className="app-section-card" withBorder radius="md" padding="md" style={{ minWidth: 0 }}>
+            <SupplierBasisSelect capability={dataset?.supplierBasis} value={supplierBasis}
+              disabled={comparisonSettingsDisabled} onChange={basis => {
+                setSupplierBasis(basis)
+                if (basis === 0) {
+                  const registrar = datasetGroupings(dataset).find(field => field.type === 78)
+                  if (registrar) setRowGroups(rows => rows.map(field => field.type === 73 ? registrar : field))
+                }
+              }} />
             <Select label={t('База продажів для прибутку за постачальниками')}
               data={[{ value: '0', label: 'Fenix' }, { value: '1', label: 'AMG' },
                 { value: 'all', label: t('Обидві бази') }]}
@@ -805,7 +819,9 @@ function ReportsStocksWorkspace({ ownerId, constructorMode }: { ownerId: string 
                 setSupplierSourceWorld(world)
                 if (world !== 0) setSourceBuyerSubtree(undefined)
               }} />
-            <Text size="xs" c="dimmed">{t('Окремий зріз формується лише за однозначної лінії кожного продажу в періоді. Неповна партія вибраної бази зупинить звіт.')}</Text>
+            <Text size="xs" c="dimmed">{t(supplierBasis === 0
+              ? 'Для продажів потрібні повні дані партій вибраної бази.'
+              : 'Окремий зріз формується лише за однозначної лінії кожного продажу в періоді. Неповна партія вибраної бази зупинить звіт.')}</Text>
             {dataset?.sourceBuyerSubtree != null ? <>
               <Checkbox mt="sm" label={t('Група «Покупці» Fenix')}
                 checked={parseSourceBuyerSubtree(sourceBuyerSubtree) != null}
@@ -816,7 +832,9 @@ function ReportsStocksWorkspace({ ownerId, constructorMode }: { ownerId: string 
                     ? { Version: 1, SourceWorld: 'fenix', BuyerRootId: FENIX_BUYERS_ROOT_ID }
                     : undefined)
                 }} />
-              <Text size="xs" c="dimmed">{t('Вимагає базу Fenix, повну лінію покупців усіх продажів періоду і чинний захоплений граф. За неповних даних звіт покаже помилку покриття.')}</Text>
+              <Text size="xs" c="dimmed">{t(supplierBasis === 0
+                ? 'Покупці визначаються за поточним деревом. Повернення з невідомою належністю залишаються у звіті.'
+                : 'Вимагає базу Fenix, повну лінію покупців усіх продажів періоду і чинний захоплений граф. За неповних даних звіт покаже помилку покриття.')}</Text>
               {sourceBuyerSubtree != null && !parseSourceBuyerSubtree(sourceBuyerSubtree)
                 ? <Text size="xs" c="orange">{t('Шаблон містить інше піддерево Fenix; цей набір приймає тільки групу «Покупці».')}</Text> : null}
             </> : null}

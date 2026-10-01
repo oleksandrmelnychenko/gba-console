@@ -2,8 +2,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { apiRequest } from '../../../shared/api/apiClient'
 import { defaultDatasetRequest } from '../data/reportDatasets'
 import { netDataset } from '../data/reportDatasets.test-fixtures'
-import type { ReportRequestBody } from '../types'
-import { createStockReport } from './reportsApi'
+import type { ReportDataset, ReportRequestBody } from '../types'
+import { createStockReport, previewStockReport } from './reportsApi'
 import { getReportDatasets, getServerReportTemplates, saveServerReportTemplate } from './reportWorkspaceApi'
 
 vi.mock('../../../shared/api/apiClient', () => ({ apiRequest: vi.fn() }))
@@ -33,8 +33,50 @@ function exactRequest(): ReportRequestBody {
   }
 }
 
+const supplierDataset: ReportDataset = {
+  DataSource: 38, Name: 'Прибуток за постачальниками', Description: 'Продажі та повернення',
+  PeriodRequired: true, PeriodSupported: true,
+  supplierBasis: { Version: 1, DefaultBasis: 0, Bases: [0, 1], MaximumDays: 31,
+    IncludesReturns: true, PreservesUnavailableValues: true, RegistrarWarehouseGrouping: 78 },
+  supplierSourceWorld: { Version: 1, SourceWorlds: [0, 1], RequiresCompletePeriodLineage: true },
+  Groupings: [73, 78, 4, 21].map(Type => ({ Type, Name: `Група ${Type}` })),
+  Measurements: [0, 2, 3, 4, 6, 7, 8, 10, 12, 14].map(Type => ({ Type, Name: `Показник ${Type}` })),
+  Filters: [0, 1, 17].map(Type => ({ Type, Name: `Фільтр ${Type}` })), Limitations: [],
+}
+
 describe('exact Fenix report filter wire contract', () => {
   beforeEach(() => vi.clearAllMocks())
+
+  it('binds an ordinary supplier export to a snapshot of its exact basis and registrar layout', async () => {
+    const { supplierBasis: basis, ...wire } = supplierDataset
+    vi.mocked(apiRequest).mockResolvedValue([{ ...wire, SupplierBasis: basis }])
+    const [available] = await getReportDatasets()
+    expect(available.supplierBasis).toEqual(basis)
+    const data = defaultDatasetRequest(available, '2026-07-01', '2026-07-31')
+    const expected = structuredClone(data)
+    let finish!: (value: unknown) => void
+    vi.mocked(apiRequest).mockImplementation(() => new Promise(resolve => { finish = resolve }))
+    const pending = createStockReport(data)
+    data.supplierBasis = 1
+    data.sorted.Row[0].type = 73
+    expect(vi.mocked(apiRequest).mock.lastCall?.[1]?.body).toEqual(expected)
+    expect(expected.supplierBasis).toBe(0)
+    expect(expected.sorted.Row.map(field => field.type)).toEqual([78, 4, 21])
+    finish({})
+    await pending
+  })
+
+  it('refuses malformed supplier basis before preview, export or saved-template I/O', async () => {
+    const base = defaultDatasetRequest(supplierDataset, '2026-07-01', '2026-07-31')
+    for (const data of [{ ...base, supplierBasis: null, SupplierBasis: null },
+      { ...base, supplierBasis: '0' }, { ...base, dataSource: 35 },
+      { ...base, sorted: { ...base.sorted, Row: [{ ...base.sorted.Row[0], type: 73 }, ...base.sorted.Row.slice(1)] } }]) {
+      await expect(createStockReport(data)).rejects.toThrow()
+      await expect(previewStockReport(data)).rejects.toThrow()
+      await expect(saveServerReportTemplate({ Name: 'Невірний розрахунок', Data: data })).rejects.toThrow()
+    }
+    expect(apiRequest).not.toHaveBeenCalled()
+  })
 
   it('normalizes the server capability casing without changing exact capability values', async () => {
     const { sourceOrganizations: organizations, ...dataset } = netDataset

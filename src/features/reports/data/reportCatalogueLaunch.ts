@@ -15,6 +15,7 @@ import { isPriceTypeSalesComparisonDataset } from './priceTypeSalesComparison'
 import { isOneCSpecialDataset, oneCSpecialSettingsForWorld } from './oneCSpecialReports'
 import { readAbcCapabilities } from './reportAbcClassification'
 import { isSupplierSourceWorldCapability } from './supplierBatchGrossProfit'
+import { isSupplierBasisCapability, requestSupplierBasis } from './supplierBasis'
 import { isCurrentVparivanieDataset } from './currentVparivanie'
 
 export type CatalogueLaunchChoice = { reportId: string; world: string; sourceId: string; dataSource: number }
@@ -180,7 +181,9 @@ function description(registration: Registration, report: ReportCatalogueEntry, d
           : [23, 25, 28].includes(dataset.DataSource) ? ' Вкажіть дату стану цього звіту.'
             : dataset.DataSource === 27 ? ' Оберіть завантажене локальне покриття Fenix і один точний глобальний тип ціни.' : ''
   return { title: report.Title, label,
-    notice: registration.mode === 'return-only'
+    notice: dataset.DataSource === 38 && isSupplierBasisCapability(dataset.supplierBasis)
+      ? `Готові налаштування «${report.Title}»: склад документа → організація → постачальник, продажі мінус повернення до 31 дня. Невизначені постачальник і склад показуються окремо. Недоступні собівартість і прибуток залишаються порожніми, зокрема у підсумках.`
+      : registration.mode === 'return-only'
       ? `Готові налаштування «${report.Title}»: додатна кількість записаних повернень за клієнтом, товаром і днем. Причина, коментар, сума одиничних цін і відповідність проведенню 1С не підтверджені.`
       : `Готові налаштування «${report.Title}»: ${label}. ${profile?.preset.description ?? dataset.Description} ${currentOnly ? `${currentOnly} ` : ''}Часткове покриття GBA; повна відповідність первинному звіту не підтверджена.${required}` }
 }
@@ -231,6 +234,7 @@ export function resolveCatalogueLaunch(value: unknown, choice: CatalogueLaunchCh
   Object.assign(data, oneCSpecialSettingsForWorld(dataset.DataSource, choice.world, dataset))
   if (dataset.DataSource === 38) data.supplierSourceWorld = choice.world === 'fenix' ? 0 : 1
   const { rows, measures } = requirements(registration, dataset.DataSource)
+  if (dataset.DataSource === 38 && requestSupplierBasis(data) === 0) rows[0] = 78
   const groupings = datasetGroupings(dataset)
   data.sorted.Row = rows.flatMap(type => groupings.filter(item => item.type === type))
   const requiredMeasures = new Set(measures)

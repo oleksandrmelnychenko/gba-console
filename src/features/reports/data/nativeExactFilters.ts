@@ -1,4 +1,5 @@
 import { isDayOrganizationBasisCapability } from './dayOrganizationBasis'
+import { isSupplierBasisCapability, supplierBasisConfigurationError } from './supplierBasis'
 import type {
   ReportDataset,
   ReportProductClassification,
@@ -52,7 +53,8 @@ function sourceReference(value: unknown): value is string {
 export function cloneNativeExactFilterAliases(value: object): Record<string, unknown> {
   return Object.fromEntries(Object.entries(value).flatMap(([key, item]) => {
     const name = key.toLowerCase()
-    return name === 'productclassification' || name === 'sourceorganizations' || name === 'sourcebuyersubtree' || name === 'dayorganizationbasis'
+    return name === 'productclassification' || name === 'sourceorganizations' || name === 'sourcebuyersubtree'
+      || name === 'dayorganizationbasis' || name === 'supplierbasis'
       ? [[key, structuredClone(item)]]
       : []
   }))
@@ -126,10 +128,16 @@ export function normalizeNativeExactFilterDataset(value: JsonRecord): ReportData
   const organizationKeys = aliases(value, 'SourceOrganizations')
   const buyerKeys = aliases(value, 'SourceBuyerSubtree')
   const basisKeys = aliases(value, 'DayOrganizationBasis')
-  if (productKeys.length > 1 || organizationKeys.length > 1 || buyerKeys.length > 1 || basisKeys.length > 1) return null
+  const supplierBasisKeys = aliases(value, 'SupplierBasis')
+  if (productKeys.length > 1 || organizationKeys.length > 1 || buyerKeys.length > 1
+    || basisKeys.length > 1 || supplierBasisKeys.length > 1) return null
   const basis = basisKeys.length ? value[basisKeys[0]] : undefined
   if (basis !== undefined && (source !== DAY_ORGANIZATION_EXACT_FILTER_SOURCE
     || !isDayOrganizationBasisCapability(basis))) return null
+  const supplierBasis = supplierBasisKeys.length ? value[supplierBasisKeys[0]] : undefined
+  if (supplierBasis !== undefined && (source !== SUPPLIER_GROSS_PROFIT_EXACT_FILTER_SOURCE
+    || !isSupplierBasisCapability(supplierBasis) || !Array.isArray(value.Groupings)
+    || !value.Groupings.some(field => record(field) && field.Type === 78 && field.Selectable !== false))) return null
   const product = productKeys.length ? value[productKeys[0]] : undefined
   const organizations = organizationKeys.length ? value[organizationKeys[0]] : undefined
   const buyers = buyerKeys.length ? value[buyerKeys[0]] : undefined
@@ -149,14 +157,18 @@ export function normalizeNativeExactFilterDataset(value: JsonRecord): ReportData
   for (const key of organizationKeys) delete normalized[key]
   for (const key of buyerKeys) delete normalized[key]
   for (const key of basisKeys) delete normalized[key]
+  for (const key of supplierBasisKeys) delete normalized[key]
   if (product != null) normalized.productClassification = structuredClone(product)
   if (organizations != null) normalized.sourceOrganizations = structuredClone(organizations)
   if (buyers != null) normalized.sourceBuyerSubtree = structuredClone(buyers)
   if (basis !== undefined) normalized.dayOrganizationBasis = structuredClone(basis)
+  if (supplierBasis !== undefined) normalized.supplierBasis = structuredClone(supplierBasis)
   return normalized as ReportDataset
 }
 
 export function nativeExactFiltersConfigurationError(data: ReportRequestBody, dataset?: ReportDataset): string | null {
+  const supplierBasisError = supplierBasisConfigurationError(data, dataset)
+  if (supplierBasisError) return supplierBasisError
   const productKeys = aliases(data, 'ProductClassification')
   const organizationKeys = aliases(data, 'SourceOrganizations')
   const buyerKeys = aliases(data, 'SourceBuyerSubtree')

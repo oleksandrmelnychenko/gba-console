@@ -6,7 +6,7 @@ import { I18nProvider } from '../../../shared/i18n/I18nProvider'
 import { createStockReport, previewStockReport, searchValuationAgreements } from '../api/reportsApi'
 import { getReportDatasets, getServerReportTemplates } from '../api/reportWorkspaceApi'
 import { reportDatasets, valuationDataset } from '../data/reportDatasets.test-fixtures'
-import type { ReportResult } from '../types'
+import type { ReportDataset, ReportResult } from '../types'
 import { ReportsStocksPage } from './ReportsStocksPage'
 
 let allowed = true
@@ -37,6 +37,16 @@ async function agreement(id: number) {
   await waitFor(() => expect((screen.getByRole('button', { name: 'Сформувати' }) as HTMLButtonElement).disabled).toBe(false))
 }
 const file: ReportResult = { document: { DocumentURL: '/files/exact-contract.xlsx' }, raw: {} }
+const supplierDataset: ReportDataset = {
+  DataSource: 38, Name: 'Прибуток за постачальниками', Description: 'Продажі та повернення',
+  PeriodRequired: true, PeriodSupported: true,
+  supplierBasis: { Version: 1, DefaultBasis: 0, Bases: [0, 1], MaximumDays: 31,
+    IncludesReturns: true, PreservesUnavailableValues: true, RegistrarWarehouseGrouping: 78 },
+  supplierSourceWorld: { Version: 1, SourceWorlds: [0, 1], RequiresCompletePeriodLineage: true },
+  Groupings: [73, 78, 4, 21].map(Type => ({ Type, Name: `Група ${Type}` })),
+  Measurements: [0, 2, 3, 4, 6, 7, 8, 10, 12, 14].map(Type => ({ Type, Name: `Показник ${Type}` })),
+  Filters: [0, 1, 17].map(Type => ({ Type, Name: `Фільтр ${Type}` })), Limitations: [],
+}
 
 describe('constructor result and export request identity', () => {
   beforeEach(() => {
@@ -113,5 +123,60 @@ describe('constructor result and export request identity', () => {
     allowed = true
     rerender(<Providers><ReportsStocksPage /></Providers>)
     expect(screen.queryByRole('dialog', { name: 'Файли сформованого звіту' })).toBeNull()
+  })
+
+  it('binds supplier preview and export to the same ordinary request and preserves null financial values', async () => {
+    vi.mocked(getReportDatasets).mockResolvedValue([...reportDatasets, supplierDataset])
+    const response = await vi.mocked(previewStockReport).getMockImplementation()!({} as never)
+    response.preview.RowSchema = [{ Caption: 'Склад документа' }, { Caption: 'Постачальник' }]
+    response.preview.Rows[0].Values = [{ Caption: 'Склад не визначено' },
+      { Caption: 'Постачальника повернення не визначено' }]
+    response.preview.Cells[0].Value = { Kind: 'null', Value: null, Provenance: 'producerCell' }
+    vi.mocked(previewStockReport).mockResolvedValue(response)
+    const { container } = await ready()
+    fireEvent.click(screen.getByRole('combobox', { name: 'Набір даних звіту' }))
+    fireEvent.click(await screen.findByRole('option', { name: supplierDataset.Name }))
+    fireEvent.click(screen.getByRole('button', { name: 'Показати на екрані' }))
+    expect(await screen.findByRole('cell', { name: '∅' })).toBeTruthy()
+    expect(screen.getByRole('rowheader', { name: 'Склад не визначено' })).toBeTruthy()
+    expect(screen.getByRole('rowheader', { name: 'Постачальника повернення не визначено' })).toBeTruthy()
+    expect(screen.queryByRole('cell', { name: '0' })).toBeNull()
+    fireEvent.submit(container.querySelector('form')!)
+    await screen.findByRole('dialog', { name: 'Файли сформованого звіту' })
+    const exported = vi.mocked(createStockReport).mock.calls[0][0]
+    expect(exported).toEqual(vi.mocked(previewStockReport).mock.calls[0][0])
+    expect(exported.supplierBasis).toBe(0)
+    expect(exported.sorted.Row.map(field => field.type)).toEqual([78, 4, 21])
+    fireEvent.click(screen.getByRole('combobox', { name: 'Розрахунок за постачальниками' }))
+    fireEvent.click(screen.getByRole('option', { name: 'Продажі за партіями без повернень' }))
+    expect(screen.queryByRole('dialog')).toBeNull()
+    expect(screen.queryByRole('region', { name: 'Таблиця попереднього перегляду' })).toBeNull()
+    fireEvent.submit(container.querySelector('form')!)
+    await waitFor(() => expect(createStockReport).toHaveBeenCalledTimes(2))
+    expect(vi.mocked(createStockReport).mock.calls[1][0].supplierBasis).toBe(1)
+  })
+
+  it('rejects a supplier export after role loss and an explicit basis change even if permission returns first', async () => {
+    vi.mocked(getReportDatasets).mockResolvedValue([...reportDatasets, supplierDataset])
+    let complete!: (value: ReportResult) => void
+    vi.mocked(createStockReport).mockReturnValueOnce(new Promise(resolve => { complete = resolve }))
+    const { container, rerender } = await ready()
+    fireEvent.click(screen.getByRole('combobox', { name: 'Набір даних звіту' }))
+    fireEvent.click(await screen.findByRole('option', { name: supplierDataset.Name }))
+    fireEvent.submit(container.querySelector('form')!)
+    await waitFor(() => expect(createStockReport).toHaveBeenCalledOnce())
+    expect((screen.getByRole('combobox', { name: 'Розрахунок за постачальниками' }) as HTMLInputElement).disabled).toBe(true)
+    allowed = false
+    rerender(<Providers><ReportsStocksPage /></Providers>)
+    allowed = true
+    rerender(<Providers><ReportsStocksPage /></Providers>)
+    fireEvent.click(screen.getByRole('combobox', { name: 'Розрахунок за постачальниками' }))
+    fireEvent.click(screen.getByRole('option', { name: 'Продажі за партіями без повернень' }))
+    await act(async () => complete(file))
+    expect(screen.queryByRole('dialog')).toBeNull()
+    expect(screen.queryByRole('heading', { name: 'Результат' })).toBeNull()
+    fireEvent.submit(container.querySelector('form')!)
+    await screen.findByRole('dialog')
+    expect(vi.mocked(createStockReport).mock.calls[1][0].supplierBasis).toBe(1)
   })
 })

@@ -102,6 +102,27 @@ describe('exact named catalogue launches', () => {
     if (result.ok) expect(result.template.Data.supplierSourceWorld).toBe(1)
   })
 
+  it.each(['fenix', 'amg'])('launches the advertised current supplier form with registrar warehouse in %s', world => {
+    const identity = ['builtin:ВаловаяПрибыльПоПоставщикам', 'f84e7b02-b6fe-40ca-bc7f-ea508d6ec41a'] as const
+    const dataset: ReportDataset = { DataSource: 38, Name: 'Прибуток за постачальниками', Description: 'GBA',
+      PeriodRequired: true, PeriodSupported: true, Limitations: [],
+      supplierBasis: { Version: 1, DefaultBasis: 0, Bases: [0, 1], MaximumDays: 31,
+        IncludesReturns: true, PreservesUnavailableValues: true, RegistrarWarehouseGrouping: 78 },
+      supplierSourceWorld: { Version: 1, SourceWorlds: [0, 1], RequiresCompletePeriodLineage: true },
+      Groupings: [73, 78, 4, 21].map(Type => ({ Type, Name: String(Type) })),
+      Measurements: [0, 2, 3, 4, 6, 7, 8, 10, 12, 14].map(Type => ({ Type, Name: String(Type) })),
+      Filters: [0, 1, 17].map(Type => ({ Type, Name: String(Type) })),
+    }
+    const result = open(fixture(identity, [38], ['fenix', 'amg']), dataset, world)
+    expect(result.ok).toBe(true)
+    if (!result.ok) throw new Error(result.message)
+    expect(result.template.Data.supplierBasis).toBe(0)
+    expect(result.template.Data.supplierSourceWorld).toBe(world === 'fenix' ? 0 : 1)
+    expect(result.template.Data.sorted.Row.map(field => field.type)).toEqual([78, 4, 21])
+    expect(datasetConfigurationError(result.template.Data, dataset)).toBeNull()
+    expect(result.notice).toContain('Недоступні собівартість')
+  })
+
   it('opens only the exact Fenix gross-profit source in the dedicated panel', () => {
     const identity = ['builtin:ВаловаяПрибыль', '65fb1537-c992-4962-9f97-5d9f96b9a034'] as const
     const catalogue = fixture(identity, [1], ['fenix'])

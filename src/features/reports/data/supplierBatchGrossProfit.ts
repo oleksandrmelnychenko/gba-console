@@ -2,6 +2,7 @@ import type { ReportDataset, ReportRequestBody } from '../types'
 import { revenueExactId } from './revenueComparison'
 import { requestSourceBuyerSubtree, sourceBuyerSubtree } from './nativeExactFilters'
 import { readFilterExpressionCapabilities, reportFilterExpressionError, requestFilterExpression } from './reportFilterExpression'
+import { supplierBasisConfigurationError } from './supplierBasis'
 
 export const SUPPLIER_BATCH_GROSS_PROFIT_SOURCE = 38
 export const SUPPLIER_BATCH_GROSS_PROFIT_TITLE = 'Валовий прибуток GBA за постачальниками (партії)'
@@ -44,6 +45,8 @@ export function isSupplierBatchGrossProfitDataset(dataset: ReportDataset): boole
 
 export function supplierBatchGrossProfitConfigurationError(data: ReportRequestBody, dataset?: ReportDataset): string | null {
   if (data.dataSource !== SUPPLIER_BATCH_GROSS_PROFIT_SOURCE) return null
+  const basisError = supplierBasisConfigurationError(data, dataset)
+  if (basisError) return basisError
   if (dataset && !isSupplierBatchGrossProfitDataset(dataset))
     return 'Сервер не підтвердив набір партійного прибутку за постачальниками.'
   const world = requestSupplierSourceWorld(data)

@@ -4,6 +4,7 @@ import { isSettlementPeriodDataset } from './settlementPeriod'
 import { isDayOrganizationBasisCapability } from './dayOrganizationBasis'
 import { isDayOrganizationGrossProfitDataset } from './dayOrganizationGrossProfit'
 import { isSupplierBatchGrossProfitDataset } from './supplierBatchGrossProfit'
+import { isSupplierBasisCapability } from './supplierBasis'
 import { isCurrentVparivanieDataset } from './currentVparivanie'
 import { isProductClassificationCapability, isSourceBuyerSubtreeCapability,
   isSourceOrganizationsCapability } from './nativeExactFilters'
@@ -67,6 +68,8 @@ export function availableBug1274WorkbookLaunches(datasets: readonly ReportDatase
       ? [{ fileName: spec.fileName, label: spec.label,
         notice: spec.dataSource === 35 && isDayOrganizationBasisCapability(candidate.dayOrganizationBasis)
           ? 'Часткова форма Excel: день → організація, суми EUR та рентабельність %. «Продажі за період» підтримують до 31 дня та доступні відбори. Для «Продажі з поверненнями за день» оберіть один день, товар без послуг, організації та групу покупців.'
+          : spec.dataSource === 38 && isSupplierBasisCapability(candidate.supplierBasis)
+          ? 'Склад документа → організація → постачальник, продажі мінус повернення за період до 31 дня. Невизначені постачальник і склад показуються окремо. Недоступні собівартість і прибуток залишаються порожніми, зокрема у підсумках.'
           : spec.dataSource === 38 && candidate.Groupings.some((field: { Type: number }) => field.Type === 78)
           ? `${spec.notice} Для групування як в 1С оберіть шаблон «Валовий прибуток за складом продажу 1С»; він вимагає повних джерельних ID для всього періоду.`
           : spec.notice,
