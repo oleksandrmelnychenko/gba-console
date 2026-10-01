@@ -1,5 +1,8 @@
 import type { ReportDataset, ReportRequestBody } from '../types'
 import { revenueExactId } from './revenueComparison'
+import { dayOrganizationBasisConfigurationError, requestDayOrganizationBasis } from './dayOrganizationBasis'
+import { productClassification, requestProductClassification, requestSourceOrganizations,
+  requestSourceBuyerSubtree, sourceOrganizations, sourceBuyerSubtree } from './nativeExactFilters'
 
 export const DAY_ORGANIZATION_GROSS_PROFIT_SOURCE = 35
 export const DAY_ORGANIZATION_GROSS_PROFIT_TITLE = 'Валовий прибуток GBA за днем та організацією'
@@ -39,6 +42,8 @@ export function isDayOrganizationGrossProfitDataset(dataset: ReportDataset): boo
 }
 
 export function dayOrganizationGrossProfitConfigurationError(data: ReportRequestBody, dataset?: ReportDataset): string | null {
+  const basisError = dayOrganizationBasisConfigurationError(data, dataset)
+  if (basisError) return basisError
   if (data.dataSource !== DAY_ORGANIZATION_GROSS_PROFIT_SOURCE) return null
   if (dataset && !isDayOrganizationGrossProfitDataset(dataset))
     return 'Сервер не підтвердив набір валового прибутку GBA за днем.'
@@ -67,5 +72,15 @@ export function dayOrganizationGrossProfitConfigurationError(data: ReportRequest
         || (value.Value !== undefined && (!Number.isInteger(value.Value)
           || value.Value < -2147483648 || value.Value > 2147483647)))) return invalid
   }
+  const kind = requestProductClassification(data), organizations = requestSourceOrganizations(data), buyers = requestSourceBuyerSubtree(data)
+  const basis = requestDayOrganizationBasis(data)
+  const signed = basis === 1 || (basis == null && kind != null && organizations != null && buyers != null)
+  if (signed && (data.from !== data.to || data.selections.some(selection => selection.IsChecked !== false)))
+    return 'Продажі з поверненнями підтримують один день без додаткових локальних відборів.'
+  if (signed && (!productClassification(kind) || productClassification(kind)?.IsService !== false
+    || !sourceOrganizations(organizations) || !sourceBuyerSubtree(buyers)))
+    return 'Для продажів з поверненнями оберіть товар без послуг, організації та групу «Покупці» Fenix.'
+  if (signed && (Number(data.from.slice(0, 4)) < 2000 || Number(data.from.slice(0, 4)) > 7998))
+    return 'Оберіть підтримуваний день продажів з поверненнями: 2000–7998 роки.'
   return null
 }

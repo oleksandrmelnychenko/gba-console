@@ -1,3 +1,4 @@
+import { isDayOrganizationBasisCapability } from './dayOrganizationBasis'
 import type {
   ReportDataset,
   ReportProductClassification,
@@ -47,10 +48,11 @@ function sourceReference(value: unknown): value is string {
   return typeof value === 'string' && SOURCE_REFERENCE.test(value) && !ZERO_REFERENCE.test(value)
 }
 
+/** Source filters and their calculation basis round-trip together, including null and raw aliases. */
 export function cloneNativeExactFilterAliases(value: object): Record<string, unknown> {
   return Object.fromEntries(Object.entries(value).flatMap(([key, item]) => {
     const name = key.toLowerCase()
-    return name === 'productclassification' || name === 'sourceorganizations' || name === 'sourcebuyersubtree'
+    return name === 'productclassification' || name === 'sourceorganizations' || name === 'sourcebuyersubtree' || name === 'dayorganizationbasis'
       ? [[key, structuredClone(item)]]
       : []
   }))
@@ -123,7 +125,11 @@ export function normalizeNativeExactFilterDataset(value: JsonRecord): ReportData
   const productKeys = aliases(value, 'ProductClassification')
   const organizationKeys = aliases(value, 'SourceOrganizations')
   const buyerKeys = aliases(value, 'SourceBuyerSubtree')
-  if (productKeys.length > 1 || organizationKeys.length > 1 || buyerKeys.length > 1) return null
+  const basisKeys = aliases(value, 'DayOrganizationBasis')
+  if (productKeys.length > 1 || organizationKeys.length > 1 || buyerKeys.length > 1 || basisKeys.length > 1) return null
+  const basis = basisKeys.length ? value[basisKeys[0]] : undefined
+  if (basis !== undefined && (source !== DAY_ORGANIZATION_EXACT_FILTER_SOURCE
+    || !isDayOrganizationBasisCapability(basis))) return null
   const product = productKeys.length ? value[productKeys[0]] : undefined
   const organizations = organizationKeys.length ? value[organizationKeys[0]] : undefined
   const buyers = buyerKeys.length ? value[buyerKeys[0]] : undefined
@@ -142,9 +148,11 @@ export function normalizeNativeExactFilterDataset(value: JsonRecord): ReportData
   for (const key of productKeys) delete normalized[key]
   for (const key of organizationKeys) delete normalized[key]
   for (const key of buyerKeys) delete normalized[key]
+  for (const key of basisKeys) delete normalized[key]
   if (product != null) normalized.productClassification = structuredClone(product)
   if (organizations != null) normalized.sourceOrganizations = structuredClone(organizations)
   if (buyers != null) normalized.sourceBuyerSubtree = structuredClone(buyers)
+  if (basis !== undefined) normalized.dayOrganizationBasis = structuredClone(basis)
   return normalized as ReportDataset
 }
 

@@ -60,7 +60,9 @@ describe('exact Fenix report filter wire contract', () => {
       Filters: [0, 1, 2, 6, 9].map(Type => ({ Type, Name: `Фільтр ${Type}` })),
     }
     vi.mocked(apiRequest).mockResolvedValue([{ ...dayDataset, ProductClassification: netDataset.productClassification,
-      SourceOrganizations: netDataset.sourceOrganizations, SourceBuyerSubtree: buyerCapability }])
+      SourceOrganizations: netDataset.sourceOrganizations, SourceBuyerSubtree: buyerCapability,
+      DayOrganizationBasis: { Version: 1, DefaultBasis: 0, Bases: [0, 1], OperationalMaximumDays: 31,
+        SignedRegisterMaximumDays: 1, LegacyInferenceWhenAbsent: true } }])
     const [available] = await getReportDatasets()
     expect(available.productClassification).toEqual(netDataset.productClassification)
     expect(available.sourceOrganizations).toEqual(netDataset.sourceOrganizations)
@@ -72,12 +74,41 @@ describe('exact Fenix report filter wire contract', () => {
     vi.mocked(apiRequest).mockResolvedValue({})
     await createStockReport(request)
     expect(apiRequest).toHaveBeenLastCalledWith('/report/stocks/generate', expect.objectContaining({
-      body: expect.objectContaining({ dataSource: 35, productClassification, sourceOrganizations, sourceBuyerSubtree }),
+      body: expect.objectContaining({ dataSource: 35, dayOrganizationBasis: 0, productClassification, sourceOrganizations, sourceBuyerSubtree }),
     }))
     const invalid = { ...request, sourceOrganizations: { ...sourceOrganizations, SourceWorld: 'Fenix' } }
     await expect(createStockReport(invalid)).rejects.toThrow('Некоректний точний відбір')
     await expect(createStockReport({ ...request, sourceBuyerSubtree: {
       ...sourceBuyerSubtree, BuyerRootId: '00000000000000000000000000000001' } })).rejects.toThrow('Некоректний точний відбір')
+  })
+
+
+  it.each([null, 1])('round-trips saved basis %s without interpreting it as the default', async basis => {
+    const base = exactRequest()
+    const wire = { Id: crypto.randomUUID(), Revision: 2, Name: 'Прибуток за день', Data: {
+      DataSource: 35, From: '2026-07-31', To: '2026-07-31',
+      Sorted: { ...base.sorted, Row: [{ type: 3, key: 'Day', label: 'День' },
+        { type: 4, key: 'Organization', label: 'Організація' }],
+        Measurements: [{ Type: 4, Name: 'Дохід', IsChecked: true, parentName: '' }] },
+      Selections: [], ProductClassification: productClassification,
+      SourceOrganizations: sourceOrganizations, SourceBuyerSubtree: sourceBuyerSubtree, DayOrganizationBasis: basis,
+    } }
+    vi.mocked(apiRequest).mockResolvedValue([wire])
+    const [template] = await getServerReportTemplates()
+    expect(template.Data.DayOrganizationBasis).toBe(basis)
+    expect(template.Data).not.toHaveProperty('dayOrganizationBasis')
+    vi.mocked(apiRequest).mockResolvedValue({ ...wire, Revision: 3 })
+    await saveServerReportTemplate(template)
+    expect(apiRequest).toHaveBeenLastCalledWith('/report/templates/save', { method: 'POST', body: {
+      Id: wire.Id, Revision: 2, Name: wire.Name, Data: expect.objectContaining({ DayOrganizationBasis: basis }),
+    } })
+  })
+
+  it('refuses duplicate null basis aliases before generation and template writes', async () => {
+    const data = { ...exactRequest(), dayOrganizationBasis: null, DayOrganizationBasis: null }
+    await expect(createStockReport(data)).rejects.toThrow('двічі')
+    await expect(saveServerReportTemplate({ Name: 'Некоректний', Data: data })).rejects.toThrow('двічі')
+    expect(apiRequest).not.toHaveBeenCalled()
   })
 
   it.each([

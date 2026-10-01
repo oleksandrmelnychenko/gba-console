@@ -14,6 +14,10 @@ import type { ReportDataset } from '../types'
 import { ReportsStocksPage } from './ReportsStocksPage'
 
 vi.mock('../../auth/useAuth', () => ({ useAuth: () => ({ hasPermission: () => true }) }))
+vi.mock('../../../shared/ui/document-export-modal/DocumentExportModal', () => ({
+  DocumentExportModal: ({ opened, document }: { opened: boolean; document?: { DocumentURL?: string } }) =>
+    opened ? <div role="dialog" aria-label="Файли сформованого звіту">{document?.DocumentURL}</div> : null,
+}))
 vi.mock('../api/reportsApi', async original => ({ ...await original<typeof import('../api/reportsApi')>(), createStockReport: vi.fn() }))
 vi.mock('../api/reportWorkspaceApi', async original => ({ ...await original<typeof import('../api/reportWorkspaceApi')>(), getReportDatasets: vi.fn(), getServerReportTemplates: vi.fn(), saveServerReportTemplate: vi.fn() }))
 
@@ -35,6 +39,8 @@ const dayDataset: ReportDataset = {
   Filters: [0, 1, 2, 6, 9].map(Type => ({ Type, Name: `Фільтр ${Type}` })),
   productClassification: netDataset.productClassification,
   sourceOrganizations: netDataset.sourceOrganizations,
+  dayOrganizationBasis: { Version: 1, DefaultBasis: 0, Bases: [0, 1], OperationalMaximumDays: 31,
+    SignedRegisterMaximumDays: 1, LegacyInferenceWhenAbsent: true },
   sourceBuyerSubtree: { Version: 1, SourceWorld: 'fenix', BuyerRootId: FENIX_BUYERS_ROOT_ID,
     RequiresCompletePeriodLineage: true, UsesCurrentCapturedHierarchy: true },
   Limitations: [],
@@ -127,12 +133,78 @@ describe('exact Fenix filters in the report constructor', () => {
     fireEvent.submit(container.querySelector('form')!)
     await waitFor(() => expect(createStockReport).toHaveBeenCalledOnce())
     expect(vi.mocked(createStockReport).mock.calls[0][0]).toMatchObject({
-      dataSource: 35,
+      dataSource: 35, dayOrganizationBasis: 0,
       productClassification: { Version: 1, SourceWorld: 0,
         ProductKindId: DAY_ORGANIZATION_GOODS_KIND_ID, IsService: false },
       sourceOrganizations: { Version: 1, SourceWorld: 'fenix',
         OrganizationIds: [...DAY_ORGANIZATION_SAVED_ORGANIZATION_IDS] },
       sourceBuyerSubtree: { Version: 1, SourceWorld: 'fenix', BuyerRootId: FENIX_BUYERS_ROOT_ID },
+    })
+  })
+
+
+  it('keeps new requests compatible when the server has no basis capability', async () => {
+    vi.mocked(getReportDatasets).mockResolvedValue([...reportDatasets, { ...dayDataset, dayOrganizationBasis: undefined }])
+    const { container } = await ready()
+    fireEvent.click(screen.getByRole('combobox', { name: 'Набір даних звіту' }))
+    fireEvent.click(await screen.findByRole('option', { name: dayDataset.Name }))
+    expect(screen.queryByRole('combobox', { name: 'Розрахунок валового прибутку' })).toBeNull()
+    fireEvent.submit(container.querySelector('form')!)
+    await waitFor(() => expect(createStockReport).toHaveBeenCalledOnce())
+    expect(vi.mocked(createStockReport).mock.calls[0][0]).not.toHaveProperty('dayOrganizationBasis')
+  })
+
+  it.each([null, 1])('loads and updates saved basis %s without replacing it with the new default', async basis => {
+    vi.mocked(getReportDatasets).mockResolvedValue([...reportDatasets, dayDataset])
+    const data = defaultDatasetRequest(dayDataset, '2026-07-01', '2026-07-01')
+    delete data.dayOrganizationBasis
+    data.DayOrganizationBasis = basis
+    data.productClassification = structuredClone(productClassification)
+    data.sourceOrganizations = structuredClone(sourceOrganizations)
+    data.sourceBuyerSubtree = { Version: 1, SourceWorld: 'fenix', BuyerRootId: FENIX_BUYERS_ROOT_ID }
+    const template = { Id: crypto.randomUUID(), Revision: 2, Name: 'Daily exact', Data: data }
+    vi.mocked(getServerReportTemplates).mockResolvedValue([template])
+    const { container } = await ready()
+    await applySaved()
+    expect((screen.getByRole('combobox', { name: 'Розрахунок валового прибутку' }) as HTMLInputElement).value)
+      .toBe(basis === 1 ? 'Продажі з поверненнями за день' : 'Збережений спосіб розрахунку')
+    fireEvent.submit(container.querySelector('form')!)
+    await waitFor(() => expect(createStockReport).toHaveBeenCalledOnce())
+    expect(vi.mocked(createStockReport).mock.calls[0][0].dayOrganizationBasis).toBe(basis)
+    fireEvent.click(screen.getByRole('button', { name: 'Шаблони' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Оновити шаблон' }))
+    await waitFor(() => expect(saveServerReportTemplate).toHaveBeenCalledOnce())
+    const saved = vi.mocked(saveServerReportTemplate).mock.calls[0][0].Data
+    expect(saved.dayOrganizationBasis).toBe(basis)
+    expect(saved).not.toHaveProperty('DayOrganizationBasis')
+  })
+
+  it('removes the previous file when the calculation changes and refuses an unsupported signed period before HTTP', async () => {
+    vi.mocked(getReportDatasets).mockResolvedValue([...reportDatasets, dayDataset])
+    vi.mocked(createStockReport).mockResolvedValue({ document: { DocumentURL: '/files/period-sales.xlsx' }, raw: {} })
+    const { container } = await ready()
+    fireEvent.click(screen.getByRole('combobox', { name: 'Набір даних звіту' }))
+    fireEvent.click(await screen.findByRole('option', { name: dayDataset.Name }))
+    fireEvent.change(screen.getByLabelText('Від'), { target: { value: '2026-07-01' } })
+    fireEvent.change(screen.getByLabelText('До'), { target: { value: '2026-07-31' } })
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Товар без послуг (Fenix)' }))
+    fireEvent.click(screen.getByRole('checkbox', { name: 'П’ять організацій зі збереженого налаштування 1С' }))
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Група «Покупці» Fenix' }))
+    fireEvent.submit(container.querySelector('form')!)
+    await waitFor(() => expect(createStockReport).toHaveBeenCalledOnce())
+    expect(vi.mocked(createStockReport).mock.calls[0][0].dayOrganizationBasis).toBe(0)
+    await screen.findByRole('dialog')
+    fireEvent.click(screen.getByRole('combobox', { name: 'Розрахунок валового прибутку' }))
+    fireEvent.click(screen.getByRole('option', { name: 'Продажі з поверненнями за день' }))
+    expect(screen.queryByRole('dialog')).toBeNull()
+    expect((screen.getByRole('button', { name: 'Сформувати' }) as HTMLButtonElement).disabled).toBe(true)
+    fireEvent.submit(container.querySelector('form')!)
+    expect(createStockReport).toHaveBeenCalledOnce()
+    fireEvent.change(screen.getByLabelText('Від'), { target: { value: '2026-07-31' } })
+    fireEvent.submit(container.querySelector('form')!)
+    await waitFor(() => expect(createStockReport).toHaveBeenCalledTimes(2))
+    expect(vi.mocked(createStockReport).mock.calls[1][0]).toMatchObject({
+      dataSource: 35, dayOrganizationBasis: 1, from: '2026-07-31', to: '2026-07-31',
     })
   })
 

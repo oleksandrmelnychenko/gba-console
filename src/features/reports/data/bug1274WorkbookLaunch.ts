@@ -1,6 +1,7 @@
 import type { ReportDataset } from '../types'
 import { isCashPeriodDataset } from './cashPeriod'
 import { isSettlementPeriodDataset } from './settlementPeriod'
+import { isDayOrganizationBasisCapability } from './dayOrganizationBasis'
 import { isDayOrganizationGrossProfitDataset } from './dayOrganizationGrossProfit'
 import { isSupplierBatchGrossProfitDataset } from './supplierBatchGrossProfit'
 import { isCurrentVparivanieDataset } from './currentVparivanie'
@@ -64,7 +65,9 @@ export function availableBug1274WorkbookLaunches(datasets: readonly ReportDatase
     return matches.length === 1 && Array.isArray(candidate.Groupings) && Array.isArray(candidate.Measurements)
       && Array.isArray(candidate.Filters) && spec.accepts(candidate)
       ? [{ fileName: spec.fileName, label: spec.label,
-        notice: spec.dataSource === 38 && candidate.Groupings.some((field: { Type: number }) => field.Type === 78)
+        notice: spec.dataSource === 35 && isDayOrganizationBasisCapability(candidate.dayOrganizationBasis)
+          ? 'Часткова форма Excel: день → організація, суми EUR та рентабельність %. «Продажі за період» підтримують до 31 дня та доступні відбори. Для «Продажі з поверненнями за день» оберіть один день, товар без послуг, організації та групу покупців.'
+          : spec.dataSource === 38 && candidate.Groupings.some((field: { Type: number }) => field.Type === 78)
           ? `${spec.notice} Для групування як в 1С оберіть шаблон «Валовий прибуток за складом продажу 1С»; він вимагає повних джерельних ID для всього періоду.`
           : spec.notice,
         dataset: matches[0] }]
