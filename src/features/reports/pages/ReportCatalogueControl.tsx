@@ -4,16 +4,18 @@ import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppModal } from '../../../shared/ui/AppModal'
 import type { CatalogueLaunchChoice } from '../data/reportCatalogueLaunch'
 import type { DebtToSalesRatioCapabilities } from '../data/debtToSalesRatio'
+import type { ActiveClientsCapabilities } from '../data/activeClients'
 import type { ReportCatalogue } from '../types'
 
 const ReportCataloguePanel = lazy(() => import('./ReportCataloguePanel').then(module => ({ default: module.ReportCataloguePanel })))
 
-export function ReportCatalogueControl({ enabled, disabled = false, presentation = 'inline', onOpen, onOpenDebtToSalesRatio }: {
+export function ReportCatalogueControl({ enabled, disabled = false, presentation = 'inline', onOpen, onOpenDebtToSalesRatio, onOpenActiveClients }: {
   enabled: boolean
   disabled?: boolean
   presentation?: 'inline' | 'dialog'
   onOpen?: (choice: CatalogueLaunchChoice, catalogue: ReportCatalogue) => boolean
   onOpenDebtToSalesRatio?: (capability: DebtToSalesRatioCapabilities) => boolean
+  onOpenActiveClients?: (capability: ActiveClientsCapabilities) => boolean
 }) {
   const { t } = useI18n()
   const [opened, setOpened] = useState(false)
@@ -26,6 +28,10 @@ export function ReportCatalogueControl({ enabled, disabled = false, presentation
       return true
     } : undefined} onOpenDebtToSalesRatio={onOpenDebtToSalesRatio ? capability => {
       if (!enabled || disabled || !onOpenDebtToSalesRatio(capability)) return false
+      setOpened(false)
+      return true
+    } : undefined} onOpenActiveClients={onOpenActiveClients ? capability => {
+      if (!enabled || disabled || !onOpenActiveClients(capability)) return false
       setOpened(false)
       return true
     } : undefined} />

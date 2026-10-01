@@ -12,6 +12,8 @@ import { CAPTURE_STATUS_LABELS, DEPENDENCY_STATUS_LABELS, filterMigrationCatalog
 import type { ReportCatalogue, ReportCatalogueEntry, ReportDataset, ReportSourceMigration } from '../types'
 import { isDebtToSalesRatioCatalogueEntry, type DebtToSalesRatioCapabilities } from '../data/debtToSalesRatio'
 import { DebtToSalesRatioCatalogueLaunch } from './DebtToSalesRatioCatalogueLaunch'
+import { isActiveClientsCatalogueEntry, type ActiveClientsCapabilities } from '../data/activeClients'
+import { ActiveClientsCatalogueLaunch } from './ActiveClientsCatalogueLaunch'
 
 const kindLabels: Record<string, string> = {
   builtin: 'Вбудовані', regulated: 'Регламентовані', external: 'Зовнішні',
@@ -23,6 +25,7 @@ const worldLabel = (world: string) => world === 'fenix' ? 'Fenix' : world === 'a
 type LaunchOption = ReturnType<typeof catalogueLaunchOptions>[number]
 type OpenReport = (choice: CatalogueLaunchChoice, catalogue: ReportCatalogue) => boolean
 type OpenDebtToSalesRatio = (capability: DebtToSalesRatioCapabilities) => boolean
+type OpenActiveClients = (capability: ActiveClientsCapabilities) => boolean
 type LoadScope = { attempt: number; canGenerate: boolean }
 type CatalogueLoad = { scope: LoadScope; catalogue: ReportCatalogue | null; datasets: ReportDataset[] | null; error: boolean }
 
@@ -45,8 +48,8 @@ function useCatalogueLoad(canGenerate: boolean) {
     error: currentLoad?.error ?? false, retry: () => setAttempt(value => value + 1) }
 }
 
-export function ReportCataloguePanel({ onOpen, onOpenDebtToSalesRatio, disabled = false }: {
-  onOpen?: OpenReport; onOpenDebtToSalesRatio?: OpenDebtToSalesRatio; disabled?: boolean
+export function ReportCataloguePanel({ onOpen, onOpenDebtToSalesRatio, onOpenActiveClients, disabled = false }: {
+  onOpen?: OpenReport; onOpenDebtToSalesRatio?: OpenDebtToSalesRatio; onOpenActiveClients?: OpenActiveClients; disabled?: boolean
 }) {
   const { t } = useI18n()
   const { hasPermission } = useAuth()
@@ -125,7 +128,8 @@ export function ReportCataloguePanel({ onOpen, onOpenDebtToSalesRatio, disabled 
       <Pagination size="sm" total={Math.max(1, Math.ceil(filtered.length / pageSize))} value={page} onChange={setPage} />
       </div>
       <CatalogueTable visibleRows={visibleRows} catalogue={catalogue} inspection={inspection} availableDatasets={availableDatasets}
-        canGenerate={canGenerate} disabled={disabled} onOpen={onOpen} onOpenDebtToSalesRatio={onOpenDebtToSalesRatio} expanded={expanded}
+        canGenerate={canGenerate} disabled={disabled} onOpen={onOpen} onOpenDebtToSalesRatio={onOpenDebtToSalesRatio}
+        onOpenActiveClients={onOpenActiveClients} expanded={expanded}
         onToggle={id => setExpanded(current => toggleExpanded(current, id))} />
       {!filtered.length && <Text c="dimmed" ta="center" py="xl">{t('Звітів за цими умовами не знайдено')}</Text>}
       </div>
@@ -141,10 +145,10 @@ function toggleExpanded(current: ReadonlySet<string>, id: string) {
   return next
 }
 
-function CatalogueTable({ visibleRows, catalogue, inspection, availableDatasets, canGenerate, disabled, onOpen, onOpenDebtToSalesRatio, expanded, onToggle }: {
+function CatalogueTable({ visibleRows, catalogue, inspection, availableDatasets, canGenerate, disabled, onOpen, onOpenDebtToSalesRatio, onOpenActiveClients, expanded, onToggle }: {
   visibleRows: Array<{ report: ReportCatalogueEntry; options: LaunchOption[] }>; catalogue: ReportCatalogue
   inspection: ReturnType<typeof inspectCatalogueMigration>; availableDatasets: ReportDataset[] | null
-  canGenerate: boolean; disabled: boolean; onOpen?: OpenReport; onOpenDebtToSalesRatio?: OpenDebtToSalesRatio
+  canGenerate: boolean; disabled: boolean; onOpen?: OpenReport; onOpenDebtToSalesRatio?: OpenDebtToSalesRatio; onOpenActiveClients?: OpenActiveClients
   expanded: ReadonlySet<string>; onToggle: (id: string) => void
 }) {
   const { t } = useI18n()
@@ -158,7 +162,9 @@ function CatalogueTable({ visibleRows, catalogue, inspection, availableDatasets,
               <Table.Td><Stack gap={8} align="flex-start"><Button className="report-catalogue__report-title" leftSection={<ChevronRight size={14} aria-hidden="true" />} type="button" variant="subtle" size="compact-sm" aria-expanded={expanded.has(report.Id)} aria-label={t('Покриття звіту: {name}', { name: report.Title })}
                 styles={{ root: { height: 'auto', maxWidth: '100%' }, label: { whiteSpace: 'normal', textAlign: 'left' } }}
                 onClick={() => onToggle(report.Id)}>{report.Title}</Button>
-                {onOpenDebtToSalesRatio && isDebtToSalesRatioCatalogueEntry(report)
+                {onOpenActiveClients && isActiveClientsCatalogueEntry(report)
+                  ? <ActiveClientsCatalogueLaunch report={report} enabled={canGenerate} disabled={disabled} onOpen={onOpenActiveClients} />
+                  : onOpenDebtToSalesRatio && isDebtToSalesRatioCatalogueEntry(report)
                   ? <DebtToSalesRatioCatalogueLaunch report={report} enabled={canGenerate} disabled={disabled} onOpen={onOpenDebtToSalesRatio} />
                   : onOpen ? <ReportLaunchActions report={report} catalogue={catalogue} options={options}
                   disabled={disabled || !canGenerate} onOpen={onOpen}
