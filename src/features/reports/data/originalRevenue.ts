@@ -88,10 +88,10 @@ function totals(value: unknown): value is OriginalRevenueTotals {
     && bound[3].Available === (value.Current.GrossEur !== null && value.Previous.GrossEur !== null)
 }
 function row(value: unknown): value is OriginalRevenueRow {
-  return record(value) && totals(value) && typeof value.Caption === 'string' && value.Caption.trim().length > 0
-    && (value.ClientId === null ? value.Attributed === false && value.Caption === 'Контрагент не определён'
-      : id(value.ClientId) && value.Attributed === true)
-    && value.Current.SaleLines + value.Current.ReturnLines + value.Previous.SaleLines + value.Previous.ReturnLines > 0
+  if (!record(value) || typeof value.Caption !== 'string' || value.Caption.trim().length === 0
+    || !(value.ClientId === null ? value.Attributed === false && value.Caption === 'Контрагент не определён'
+      : id(value.ClientId) && value.Attributed === true)) return false
+  return totals(value) && value.Current.SaleLines + value.Current.ReturnLines + value.Previous.SaleLines + value.Previous.ReturnLines > 0
 }
 /** Preserve the server's exact EUR sums, unavailable cells and independent unattributed bucket; no client-side financial calculation. */
 export function normalizeOriginalRevenueReport(value: unknown, request: OriginalRevenueRequest): OriginalRevenueReport {

@@ -160,7 +160,7 @@ function leg(value: unknown, row: CashAggregateBalanceAccount, periods: ReturnTy
 function row(value: unknown, periods: ReturnType<typeof cashAggregateBalancePeriods>): value is CashAggregateBalanceRow {
   if (!record(value) || !account(value.Account)) return false
   const bound = value.Account
-  return totals(value) && Array.isArray(value.Legs) && value.Legs.every(item => leg(item, bound, periods))
+  return Array.isArray(value.Legs) && value.Legs.every(item => leg(item, bound, periods)) && totals(value)
 }
 /** Render server account groups and recomputed totals, preserving each independent point clock and every NULL. */
 export function normalizeCashAggregateBalanceReport(value: unknown, request: CashAggregateBalanceRequest): CashAggregateBalanceReport {
