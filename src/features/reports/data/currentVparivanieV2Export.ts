@@ -19,7 +19,7 @@ export type CurrentVparivanieV2PdfDefinition = {
     alignment: 'right'; margin: number[] }
 }
 
-export function currentVparivanieV2Columns(result: CurrentVparivanieV2Result): string[] {
+export function currentVparivanieV2Columns(result: Pick<CurrentVparivanieV2Result, 'Rows'>): string[] {
   return [...new Set(result.Rows.flatMap(row => row.Cells.map(currentVparivanieV2CellKey)))]
     .sort((left, right) => {
       const [leftKind, leftRegion] = JSON.parse(left) as [string, string | null]

@@ -40,6 +40,9 @@ export function isCurrentVparivanieCapability(value: unknown): boolean {
     && (value.RegionalV2Available === undefined || typeof value.RegionalV2Available === 'boolean')
     && (value.RegionalV2Day === undefined || value.RegionalV2Day === '2026-09-03')
     && (value.RegionalV2Available !== true || value.RegionalV2Day === '2026-09-03')
+    && (value.CurrentRegionalAvailable === undefined || typeof value.CurrentRegionalAvailable === 'boolean')
+    && (value.CurrentRegionalVersion === undefined || value.CurrentRegionalVersion === 3)
+    && (value.CurrentRegionalAvailable !== true || value.CurrentRegionalVersion === 3)
     && (value.CounterpartyIdentity === undefined || value.CounterpartyIdentity === CURRENT_VPARIVANIE_COUNTERPARTY_IDENTITY)
 }
 

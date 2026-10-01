@@ -133,7 +133,7 @@ import { CLIENT_COMPARISON_MAX_DATE, comparisonWindow, isComparisonDate, request
 import { ClientComparisonPeriodPanel } from './ClientComparisonPeriodPanel'
 import { buildReportBuilderRequest } from '../data/reportBuilderRequest'
 import { ReportInlinePreview } from './ReportInlinePreview'
-import { CurrentVparivanieV2Panel } from './CurrentVparivanieV2Panel'
+import { CurrentVparivanieRegionalPanel } from './CurrentVparivanieRegionalPanel'
 import type { NativeReportPreview } from '../data/nativeReportPreview'
 import { useReportFilterExpression, type ReportSelectionEdit } from '../hooks/useReportFilterExpression'
 import { ReportFilterExpressionPanel } from './ReportFilterExpressionPanel'
@@ -745,7 +745,8 @@ function ReportsStocksWorkspace({ ownerId, constructorMode }: { ownerId: string 
         oneCSpecialReportPanel={<OneCSpecialReportPanel dataSource={dataSource} dataset={dataset} value={oneCSpecialSettings ??
           (oneCSpecialSpecification(dataSource) ? defaultOneCSpecialSettings(dataSource, dataset)[oneCSpecialSpecification(dataSource)!.key] : undefined)}
           disabled={comparisonSettingsDisabled} onChange={setOneCSpecialSettings} />}
-        classificationPanel={dataSource === 39 ? <CurrentVparivanieV2Panel dataset={dataset ?? null} /> : dataSource === 41 ? (dataset && isSettlementPeriodDataset(dataset)
+        classificationPanel={dataSource === 39 ? <CurrentVparivanieRegionalPanel dataset={dataset ?? null} request={reportBody}
+          enabled={canGenerateReport} disabled={comparisonSettingsDisabled} /> : dataSource === 41 ? (dataset && isSettlementPeriodDataset(dataset)
           ? <Stack gap="sm"><SettlementPeriodAgreementPicker value={settlementPeriod} from={from} to={to} disabled={comparisonSettingsDisabled}
             enabled={canGenerateReport} onChange={setSettlementPeriod} />
             <GroupedDebtorWorkbookPanel from={from} to={to} disabled={comparisonSettingsDisabled}
