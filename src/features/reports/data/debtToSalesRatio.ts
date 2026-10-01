@@ -117,8 +117,7 @@ export function normalizeDebtToSalesRatioReport(value: unknown, request: DebtToS
     || value.PreviousPeriod.From !== periods.PreviousPeriod.From || value.PreviousPeriod.ThroughExclusive !== periods.PreviousPeriod.ThroughExclusive
     || !Array.isArray(value.Cells) || value.Cells.length !== 4
     || !value.Cells.every((cell, index) => record(cell) && cell.Key === DEBT_TO_SALES_RATIO_COLUMNS[index].Key
-      && typeof cell.Available === 'boolean' && (cell.Available ? decimal(cell.Value)
-        && (index !== 2 || /^-?\d+(?:\.\d{1,2})?$/.test(cell.Value)) : cell.Value === null))
+      && typeof cell.Available === 'boolean' && (cell.Available ? decimal(cell.Value) : cell.Value === null))
     || !record(value.Inputs) || !input(value.Inputs.CurrentDebt) || !input(value.Inputs.PreviousDebt) || !input(value.Inputs.CurrentSales)
     || typeof value.RequestSha256 !== 'string' || !/^[\da-f]{64}$/i.test(value.RequestSha256)
     || typeof value.ResultSha256 !== 'string' || !/^[\da-f]{64}$/i.test(value.ResultSha256)
@@ -129,8 +128,13 @@ export function normalizeDebtToSalesRatioReport(value: unknown, request: DebtToS
 
 export function debtToSalesRatioCellText(value: string | null, decimalPlaces: number | null): string {
   if (value === null) return '—'
-  const [integer, fraction = ''] = value.split('.')
-  // The server rounds percentages; preserve decimal strings rather than recomputing with binary floats.
-  const digits = decimalPlaces === null ? fraction : fraction.padEnd(decimalPlaces, '0')
-  return `${integer}${digits ? `,${digits}` : ''}`
+  if (decimalPlaces === null) return value.replace('.', ',')
+  const negative = value.startsWith('-')
+  const [integer, fraction = ''] = (negative ? value.slice(1) : value).split('.')
+  // Round presentation only, using the absolute decimal coefficient for halfway-away-from-zero.
+  let coefficient = BigInt(integer + fraction.slice(0, decimalPlaces).padEnd(decimalPlaces, '0'))
+  if (fraction.length > decimalPlaces && fraction[decimalPlaces] >= '5') coefficient += 1n
+  const digits = coefficient.toString().padStart(decimalPlaces + 1, '0')
+  const split = digits.length - decimalPlaces
+  return `${negative ? '-' : ''}${digits.slice(0, split)}${decimalPlaces ? `,${digits.slice(split)}` : ''}`
 }

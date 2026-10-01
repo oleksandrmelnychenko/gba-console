@@ -10,9 +10,11 @@ beforeEach(() => api.mockReset())
 
 it('requires the explicit original capability and submits only source identity/month to one preview and export run', async () => {
   const capability = debtRatioCapability(), response = debtRatioReport()
+  response.Cells[2].Value = '21.238938053097345132743362832'
   api.mockResolvedValueOnce(capability).mockResolvedValueOnce(response)
   expect(await getDebtToSalesRatioCapabilities()).toEqual(capability)
-  expect(await previewDebtToSalesRatio(capability, '2026-09')).toEqual(response)
+  expect(await previewDebtToSalesRatio(capability, '2026-09')).toBe(response)
+  expect(response.Cells[2].Value).toBe('21.238938053097345132743362832')
   expect(api).toHaveBeenNthCalledWith(1, '/report/constructors/debt-to-sales-ratio/capabilities', { signal: undefined })
   const request = createDebtToSalesRatioRequest(capability, '2026-09')
   expect(Object.keys(request)).toEqual(['Version', 'SourceIdentity', 'Month'])

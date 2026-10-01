@@ -22,6 +22,7 @@ function panel(canGenerate = true) {
 it('renders the month-only original four columns and exports both files from the same preview response', async () => {
   const response = debtRatioReport()
   response.Cells[1] = { ...response.Cells[1], Value: null, Available: false }
+  response.Cells[2].Value = '21.238938053097345132743362832'
   vi.mocked(previewDebtToSalesRatio).mockResolvedValue(response)
   const view = render(panel())
   expect(view.container.querySelector('input[type="month"]')).not.toBeNull()
@@ -31,7 +32,7 @@ it('renders the month-only original four columns and exports both files from the
   expect(within(result).getAllByRole('columnheader').map(cell => cell.textContent)).toEqual([
     'Текущее значение', 'Предыдущее значение', 'Изменение %', 'Изменение (абс)',
   ])
-  expect(within(result).getAllByRole('cell').map(cell => cell.textContent)).toEqual(['0,5', '—', '25,00', '0,1'])
+  expect(within(result).getAllByRole('cell').map(cell => cell.textContent)).toEqual(['0,5', '—', '21,24', '0,1'])
   expect(screen.queryByRole('dialog', { name: 'Файли оригінального звіту' })).toBeNull()
   fireEvent.click(screen.getByRole('button', { name: 'Файли звіту' }))
   const files = screen.getByRole('dialog', { name: 'Файли оригінального звіту' })
@@ -39,6 +40,7 @@ it('renders the month-only original four columns and exports both files from the
   expect(within(files).getByText(response.PdfDocumentURL)).toBeTruthy()
   expect(previewDebtToSalesRatio).toHaveBeenCalledOnce()
   expect(previewDebtToSalesRatio).toHaveBeenCalledWith(debtRatioCapability(), '2026-09')
+  expect(response.Cells[2].Value).toBe('21.238938053097345132743362832')
 })
 
 it('clears previous cells and export links on month change and permission revocation', async () => {

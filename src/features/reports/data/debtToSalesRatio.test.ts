@@ -55,8 +55,38 @@ it('refuses a reordered shape or files bound to another source/month', () => {
   expect(() => normalizeDebtToSalesRatioReport({ ...response, SourceIdentity: { ...response.SourceIdentity, SourceId: 'other' } }, request)).toThrow()
   expect(() => normalizeDebtToSalesRatioReport({ ...response, PreviousPeriod: response.CurrentPeriod }, request)).toThrow()
   expect(() => normalizeDebtToSalesRatioReport({ ...response, Columns: [...response.Columns].reverse() }, request)).toThrow()
-  response.Cells[2].Value = '25.001'
+  response.Cells[2].Value = '25e-3'
   expect(() => normalizeDebtToSalesRatioReport(response, request)).toThrow()
+})
+
+it('accepts raw fractional percentages and rounds only display while preserving result and export bindings', () => {
+  const request = createDebtToSalesRatioRequest(debtRatioCapability(), '2026-09')
+  const response = debtRatioReport()
+  const binding = [response.RequestSha256, response.ResultSha256, response.DocumentURL, response.PdfDocumentURL]
+  for (const [raw, display] of [
+    ['25.001', '25,00'],
+    ['21.238938053097345132743362832', '21,24'],
+  ]) {
+    response.Cells[2].Value = raw
+    expect(normalizeDebtToSalesRatioReport(response, request)).toBe(response)
+    expect(debtToSalesRatioCellText(response.Cells[2].Value, 2)).toBe(display)
+    expect(response.Cells[2].Value).toBe(raw)
+    expect([response.RequestSha256, response.ResultSha256, response.DocumentURL, response.PdfDocumentURL]).toEqual(binding)
+  }
+})
+
+it('rounds signed decimal display halfway away from zero with exact carry and no binary number conversion', () => {
+  for (const [raw, display] of [
+    ['0.005', '0,01'],
+    ['-0.005', '-0,01'],
+    ['1.005', '1,01'],
+    ['-1.005', '-1,01'],
+    ['-25.001', '-25,00'],
+    ['9.995', '10,00'],
+    ['-9.995', '-10,00'],
+    ['1.0049999999999999999999999999', '1,00'],
+    ['12345678901234567890.995', '12345678901234567891,00'],
+  ]) expect(debtToSalesRatioCellText(raw, 2)).toBe(display)
 })
 
 it('does not reject server-known zero cells because a separate debt input is unavailable', () => {
