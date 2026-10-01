@@ -1,4 +1,4 @@
-import type { ReportDataset, ReportRequestBody } from '../types'
+import type { ReportDataset, ReportGroupingItem, ReportRequestBody } from '../types'
 
 type JsonRecord = Record<string, unknown>
 const capabilityFields = ['Version', 'DefaultBasis', 'Bases', 'MaximumDays',
@@ -12,6 +12,15 @@ function aliases(value: object): string[] {
 export function requestSupplierBasis(value: object): unknown {
   const key = aliases(value)[0]
   return key === undefined ? undefined : (value as JsonRecord)[key]
+}
+
+/** An explicit ordinary choice replaces only the receipt warehouse dimension. */
+export function rowGroupsForSupplierBasis(basis: 0 | 1, rows: ReportGroupingItem[],
+  available: readonly ReportGroupingItem[]): ReportGroupingItem[] {
+  if (basis !== 0) return rows
+  const registrar = available.find(field => field.type === 78)
+  if (!registrar) return rows
+  return rows.map(field => field.type === 73 ? registrar : field)
 }
 
 export function isSupplierBasisCapability(value: unknown): boolean {

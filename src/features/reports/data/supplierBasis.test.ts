@@ -4,9 +4,9 @@ import type { ReportDataset } from '../types'
 import { availableBug1274WorkbookLaunches } from './bug1274WorkbookLaunch'
 import { normalizeNativeExactFilterDataset } from './nativeExactFilters'
 import { buildReportBuilderRequest } from './reportBuilderRequest'
-import { datasetConfigurationError, datasetPresetRequest, defaultDatasetRequest } from './reportDatasets'
+import { datasetConfigurationError, datasetGroupings, datasetPresetRequest, defaultDatasetRequest } from './reportDatasets'
 import { retainStoredTemplateFields } from './reportTemplateDraft'
-import { isSupplierBasisCapability, requestSupplierBasis } from './supplierBasis'
+import { isSupplierBasisCapability, requestSupplierBasis, rowGroupsForSupplierBasis } from './supplierBasis'
 
 const capability = { Version: 1, DefaultBasis: 0, Bases: [0, 1], MaximumDays: 31,
   IncludesReturns: true, PreservesUnavailableValues: true, RegistrarWarehouseGrouping: 78 }
@@ -114,4 +114,21 @@ it('changes supplier layout without resetting AMG, both-world omission or the sa
       expect(datasetConfigurationError(preset.Data, dataset)).toBeNull()
     }
   }
+})
+
+it('converts only the receipt warehouse when the user explicitly chooses ordinary calculation', () => {
+  const rows = defaultDatasetRequest({ ...dataset, supplierBasis: undefined }, '2026-07-01', '2026-07-31').sorted.Row
+  const available = datasetGroupings(dataset)
+  const converted = rowGroupsForSupplierBasis(0, rows, available)
+  expect(converted.map(field => field.type)).toEqual([78, 4, 21])
+  expect(converted[0]).toBe(available.find(field => field.type === 78))
+  expect(converted[1]).toBe(rows[1])
+  expect(converted[2]).toBe(rows[2])
+  expect(rows.map(field => field.type)).toEqual([73, 4, 21])
+})
+
+it('preserves the existing row layout for legacy calculation or an unavailable registrar dimension', () => {
+  const rows = defaultDatasetRequest({ ...dataset, supplierBasis: undefined }, '2026-07-01', '2026-07-31').sorted.Row
+  expect(rowGroupsForSupplierBasis(1, rows, datasetGroupings(dataset))).toBe(rows)
+  expect(rowGroupsForSupplierBasis(0, rows, datasetGroupings(dataset).filter(field => field.type !== 78))).toBe(rows)
 })

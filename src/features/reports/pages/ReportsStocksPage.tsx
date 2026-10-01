@@ -150,7 +150,7 @@ import { useReportGroupingOrdering } from '../hooks/useReportGroupingOrdering'
 import type { ReportGroupingLayout } from '../data/reportGroupingLayout'
 import { DayOrganizationBasisSelect } from './DayOrganizationBasisSelect'
 import { requestDayOrganizationBasis } from '../data/dayOrganizationBasis'
-import { requestSupplierBasis } from '../data/supplierBasis'
+import { requestSupplierBasis, rowGroupsForSupplierBasis } from '../data/supplierBasis'
 import { SupplierBasisSelect } from './SupplierBasisSelect'
 import { productClassification as parseProductClassification, sourceOrganizations as parseSourceOrganizations, sourceBuyerSubtree as parseSourceBuyerSubtree, requestProductClassification, requestSourceOrganizations, requestSourceBuyerSubtree, FENIX_BUYERS_ROOT_ID } from '../data/nativeExactFilters'
 import { DAY_ORGANIZATION_GOODS_KIND_ID, DAY_ORGANIZATION_SAVED_ORGANIZATION_IDS } from '../data/dayOrganizationGrossProfit'
@@ -804,10 +804,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode }: { ownerId: string 
             <SupplierBasisSelect capability={dataset?.supplierBasis} value={supplierBasis}
               disabled={comparisonSettingsDisabled} onChange={basis => {
                 setSupplierBasis(basis)
-                if (basis === 0) {
-                  const registrar = datasetGroupings(dataset).find(field => field.type === 78)
-                  if (registrar) setRowGroups(rows => rows.map(field => field.type === 73 ? registrar : field))
-                }
+                setRowGroups(rows => rowGroupsForSupplierBasis(basis, rows, groupingOptions))
               }} />
             <Select label={t('База продажів для прибутку за постачальниками')}
               data={[{ value: '0', label: 'Fenix' }, { value: '1', label: 'AMG' },
