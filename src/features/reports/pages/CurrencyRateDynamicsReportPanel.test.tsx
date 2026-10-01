@@ -14,6 +14,7 @@ vi.mock('../../../shared/ui/document-export-modal/DocumentExportModal', () => ({
     ? <div role="dialog" aria-label="Файли динаміки курсу"><span>{document?.DocumentURL}</span><span>{document?.PdfDocumentURL}</span></div> : null,
 }))
 beforeEach(() => {
+  Object.defineProperty(HTMLElement.prototype, 'scrollIntoView', { configurable: true, value: vi.fn() })
   vi.mocked(previewCurrencyRateDynamics).mockReset()
   vi.mocked(getCurrencyRateDynamicsDefinitions).mockReset().mockResolvedValue([currencyDynamicsDefinition(), currencyDynamicsDefinition(true)])
 })

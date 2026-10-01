@@ -23,6 +23,7 @@ function Providers({ children }: { children: ReactNode }) {
 }
 
 beforeEach(() => {
+  Object.defineProperty(HTMLElement.prototype, 'scrollIntoView', { configurable: true, value: vi.fn() })
   vi.clearAllMocks(); sessionStorage.clear(); localStorage.clear()
   const catalogue: ReportCatalogue = { CapturedOn: '2026-09-07', Presentations: [], Reports: [currencyDynamicsCatalogueEntry()] }
   vi.mocked(getReportCatalogue).mockResolvedValue(catalogue)
