@@ -34,7 +34,7 @@ const DOCUMENT_REPORT_PROFILES = [
       description: 'Один точний договір у валюті взаєморозрахунків. Початок, надходження, витрати й кінець за період до 31 завершеного дня Києва. Повне покриття перевіряє сервер.' } },
   { dataSource: 40, title: CASH_PERIOD_TITLE, rowGroupings: [43, 40, 42, 41], measurements: [...CASH_PERIOD_ALL_MEASURES],
     preset: { id: 'native-cash-period-account-currency', name: 'Кошти: рух за рахунком',
-      description: 'Один рахунок за включний період до 31 завершеного дня Києва. Початок, надходження, витрати й кінець у валюті рахунку; за підтримки сервера також окремі управлінські суми. Валюти вказано в результаті.' } },
+      description: 'Рахунки та каси за включний період до 31 завершеного дня Києва. Початок, надходження, витрати й кінець у валюті рахунку; за підтримки сервера також окремі управлінські суми. Валюти вказано в результаті.' } },
   { dataSource: 39, title: CURRENT_VPARIVANIE_TITLE, rowGroupings: [5], measurements: [83],
     preset: { id: 'vparivanie-current-native-matrix', name: 'Впарювання: поточна матриця',
       description: `Оберіть до 128 товарів або одну групу товарів і період продажів до 366 днів. ${CURRENT_VPARIVANIE_NOTICE}` } },
@@ -137,7 +137,7 @@ export const hasFixedReportAxes = (dataSource: number): boolean => FIXED_AXES_SO
 // Units belong to the selected report and caption, independently of VAT controls.
 export function nativeReportMeasurementUnit(dataSource: number, caption: string): string | undefined {
   if (dataSource === 41) return 'Валюта взаєморозрахунків договору'
-  if (dataSource === 40) return caption.includes('управлінська') ? 'Управлінська валюта з результату звіту' : 'Валюта вибраного рахунку'
+  if (dataSource === 40) return caption.includes('управлінська') ? 'Управлінська валюта з результату звіту' : 'Валюта кожного рахунку'
   if (dataSource === 36 || dataSource === 39) return 'Кількість товару'
   if (dataSource === 38) return caption.includes('%') ? 'Відсотки' : caption.toLowerCase().includes('кількість') ? 'Кількість товару' : 'Євро'
   if (dataSource === 32) return 'Євро'

@@ -5,6 +5,7 @@ import { recordedSaleGrossProfitConfigurationError } from '../data/recordedSaleG
 import { dayOrganizationGrossProfitConfigurationError } from '../data/dayOrganizationGrossProfit'
 import { vparivanieConfigurationError } from '../data/vparivanie'
 import { currentVparivanieConfigurationError, isCurrentVparivanieDataset } from '../data/currentVparivanie'
+import { cloneGroupedCashAliases, normalizeGroupedCashDataset } from '../data/groupedCashPeriod'
 import { cashPeriodConfigurationError, isCashPeriodDataset } from '../data/cashPeriod'
 import { supplierBatchGrossProfitConfigurationError } from '../data/supplierBatchGrossProfit'
 import { importedSaleDiscountConfigurationError } from '../data/importedSaleDiscount'
@@ -67,6 +68,8 @@ function isDataset(value: unknown): value is ReportDataset {
     && (item.DataSource === 41 || item.groupedSettlementPeriod == null)
     && !Object.hasOwn(item, 'SourceCounterpartyGroups')
     && (item.DataSource === 41 || item.sourceCounterpartyGroups == null)
+    && !Object.hasOwn(item, 'GroupedCashPeriod')
+    && (item.DataSource === 40 || item.groupedCashPeriod == null)
     && !Object.hasOwn(item, 'CashPeriod')
     && (item.DataSource === 40 ? isCashPeriodDataset(item as ReportDataset) : item.cashPeriod == null)
     && isOneCSpecialDataset(item as ReportDataset)
@@ -109,7 +112,8 @@ export async function getReportDatasets(signal?: AbortSignal): Promise<ReportDat
     const comparison = exactFilters ? normalizeAgreementPriceComparisonDataset(exactFilters as unknown as Record<string, unknown>) : null
     const prices = comparison ? normalizePriceTypeSalesComparisonDataset(comparison as unknown as Record<string, unknown>) : null
     const groups = prices ? normalizeGroupedSettlementDataset(prices as unknown as Record<string, unknown>) : null
-    return groups ? normalizeSourceCounterpartyGroupDataset(groups as unknown as Record<string, unknown>) : null
+    const sourceGroups = groups ? normalizeSourceCounterpartyGroupDataset(groups as unknown as Record<string, unknown>) : null
+    return sourceGroups ? normalizeGroupedCashDataset(sourceGroups as unknown as Record<string, unknown>) : null
   }) : []
   if (!normalized.length || !normalized.every((item): item is ReportDataset => item !== null && isDataset(item))
     || new Set(normalized.map(item => item.DataSource)).size !== normalized.length) {
@@ -140,6 +144,8 @@ type WireTemplate = Required<Omit<ReportTemplate, 'Data'>> & {
     SourceCounterpartyGroups?: unknown
     sourceCounterpartyGroups?: unknown
     CashPeriod?: unknown
+    groupedCashPeriod?: unknown
+    GroupedCashPeriod?: unknown
     cashPeriod?: unknown
     ValuationClientAgreementId?: ReportRequestBody['valuationClientAgreementId']
     RateComparison?: unknown
@@ -212,6 +218,7 @@ export function normalizeSavedTemplate(value: WireTemplate): ReportTemplate {
     } : Object.hasOwn(value.Data, 'SettlementPeriod') ? { settlementPeriod: structuredClone(value.Data.SettlementPeriod) } : {}),
     ...cloneGroupedSettlementAliases(value.Data),
     ...cloneSourceCounterpartyGroupAliases(value.Data),
+    ...cloneGroupedCashAliases(value.Data),
     ...(Object.hasOwn(value.Data, 'cashPeriod') ? { cashPeriod: value.Data.cashPeriod,
       ...(Object.hasOwn(value.Data, 'CashPeriod') ? { CashPeriod: value.Data.CashPeriod } : {}),
     } : Object.hasOwn(value.Data, 'CashPeriod') ? { cashPeriod: value.Data.CashPeriod } : {}),

@@ -1,4 +1,5 @@
 import type { ReportDataset } from '../types'
+import { groupedCashSupported } from './groupedCashPeriod'
 import { cashPeriodSupportsManagement, isCashPeriodDataset } from './cashPeriod'
 import { isSettlementPeriodDataset } from './settlementPeriod'
 import { isDayOrganizationBasisCapability } from './dayOrganizationBasis'
@@ -79,6 +80,8 @@ export function availableBug1274WorkbookLaunches(datasets: readonly ReportDatase
       ? [{ fileName: spec.fileName, label: spec.label, ...('currencyAxis' in spec ? { currencyAxis: spec.currencyAxis } : {}),
         notice: spec.dataSource === 35 && isDayOrganizationBasisCapability(candidate.dayOrganizationBasis)
           ? 'Часткова форма Excel: день → організація, суми EUR та рентабельність %. «Продажі мінус повернення за період» підтримують до 31 дня та доступні відбори. Недоступні собівартість, ПДВ і залежні показники залишаються порожніми. Для «Продажі з поверненнями за день» оберіть один день, товар без послуг, організації та групу покупців.'
+          : spec.dataSource === 40 && groupedCashSupported(candidate)
+            ? 'Показано банківські рахунки та каси: вісім показників у валюті рахунку й управлінській валюті. Відбори рахунку, організації, валюти та виду доступні у формі.'
           : spec.dataSource === 40 && cashPeriodSupportsManagement(candidate)
           ? 'Часткова форма Excel: один рахунок, вісім показників залишків і руху у валюті рахунку та управлінській валюті. Оберіть рахунок і завершений період до 31 дня. Недоступні суми залишаються порожніми.'
           : spec.dataSource === 41 && isGroupedSettlementDataset(candidate)

@@ -260,8 +260,10 @@ export type ReportRequestBody = {
   sourceCounterpartyGroups?: unknown
   SourceCounterpartyGroups?: unknown
   settlementPeriod?: unknown
+  groupedCashPeriod?: unknown
   cashPeriod?: unknown
   SettlementPeriod?: unknown
+  GroupedCashPeriod?: unknown
   CashPeriod?: unknown
   returnsOnly?: boolean
   ReturnsOnly?: boolean
@@ -335,6 +337,7 @@ export type ReportDataset = {
   groupedSettlementPeriod?: unknown
   sourceCounterpartyGroups?: unknown
   settlementPeriod?: unknown
+  groupedCashPeriod?: unknown
   cashPeriod?: unknown
   currentVparivanie?: unknown
   agreementPrices?: unknown

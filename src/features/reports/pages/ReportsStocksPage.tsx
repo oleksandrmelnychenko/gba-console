@@ -101,7 +101,8 @@ import { usesNativeReportLookup, supportsFullReportDateRange, hasFixedReportAxes
 import { CURRENT_VPARIVANIE_NOTICE, currentVparivanieFilterConditions, currentVparivanieNotice } from '../data/currentVparivanie'
 import { CASH_PERIOD_ALL_MEASURES, CASH_PERIOD_MEASURES, cashPeriodMeasurements, cashPeriodSupportsManagement, previousKyivDay } from '../data/cashPeriod'
 import { availableBug1274WorkbookLaunches } from '../data/bug1274WorkbookLaunch'
-import { CashPeriodLegPicker } from './CashPeriodLegPicker'
+import { CashPeriodModePanel } from './CashPeriodModePanel'
+import { cashFormDataset, defaultGroupedCashPeriod, requestGroupedCashPeriod } from '../data/groupedCashPeriod'
 import { SettlementPeriodModePanel } from './SettlementPeriodModePanel'
 import { groupedWorkbookRequest, requestGroupedSettlementPeriod, settlementFormDataset, settlementMaximumDate, settlementModePatch } from '../data/groupedSettlementPeriod'
 import { requestSourceCounterpartyGroups } from '../data/sourceCounterpartyGroups'
@@ -288,6 +289,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode }: { ownerId: string 
   const [settlementPeriod, setSettlementPeriod] = useValueState<unknown>(undefined)
   const [groupedSettlementPeriod, setGroupedSettlementPeriod] = useValueState<unknown>(undefined)
   const [sourceCounterpartyGroups, setSourceCounterpartyGroups] = useValueState<unknown>(undefined)
+  const [groupedCashPeriod, setGroupedCashPeriod] = useValueState<unknown>(undefined)
   const [cashPeriod, setCashPeriod] = useValueState<unknown>(undefined)
   const [oneCSpecialSettings, setOneCSpecialSettings] = useValueState<unknown>(undefined)
   const [oneCScope, setOneCScope] = useValueState<OneCTurnoverFilters | undefined>(undefined)
@@ -333,7 +335,8 @@ function ReportsStocksWorkspace({ ownerId, constructorMode }: { ownerId: string 
     [colGroups, groupingOptions, rowGroups],
   )
   const settlementDataset = useMemo(() => settlementFormDataset(priceTypeDataset, groupedSettlementPeriod), [priceTypeDataset, groupedSettlementPeriod])
-  const filterFieldOptions = useMemo(() => datasetFilters(settlementDataset), [settlementDataset])
+  const cashDataset = useMemo(() => cashFormDataset(settlementDataset, groupedCashPeriod), [settlementDataset, groupedCashPeriod])
+  const filterFieldOptions = useMemo(() => datasetFilters(cashDataset), [cashDataset])
   const maxDate = useMemo(() => settlementMaximumDate(dataSource, groupedSettlementPeriod, today)
     ?? (supportsFullReportDateRange(dataSource) ? CLIENT_COMPARISON_MAX_DATE : `${today.slice(0, 4)}-12-31`), [dataSource, groupedSettlementPeriod, today])
   const [debouncedFrom] = useDebouncedValue(from, DATE_INPUT_DEBOUNCE_MS)
@@ -344,8 +347,8 @@ function ReportsStocksWorkspace({ ownerId, constructorMode }: { ownerId: string 
   // period on a pause, and only once it is a period the server can answer for.
   const hasLookupPeriod = !getPeriodError(debouncedFrom, debouncedTo, maxDate, t)
   const reportBody = useMemo<ReportRequestBody>(
-    () => buildReportBuilderRequest({ dataSource, returnsOnly, comparison, xyz, revenueComparison, buyerSalesShare, returnComparison, paymentComparison, marginComparison, rateComparison, productClassification, sourceOrganizations, sourceBuyerSubtree, dayOrganizationBasis, supplierBasis, supplierSourceWorld, priceTypeSalesComparison, agreementPriceComparison, settlementPeriod, groupedSettlementPeriod, sourceCounterpartyGroups, cashPeriod, oneCSpecialSettings, oneC: oneCScope, from, to, ordering, filterExpression, topGroups, threshold, hideZero, abcClassification, valuationClientAgreementId, rowGroups, colGroups, measurements, selections }),
-    [abcClassification, agreementPriceComparison, settlementPeriod, groupedSettlementPeriod, sourceCounterpartyGroups, cashPeriod, colGroups, comparison, xyz, revenueComparison, buyerSalesShare, returnComparison, paymentComparison, marginComparison, rateComparison, productClassification, sourceOrganizations, sourceBuyerSubtree, dayOrganizationBasis, supplierBasis, supplierSourceWorld, returnsOnly, priceTypeSalesComparison, oneCSpecialSettings, oneCScope, dataSource, filterExpression, from, hideZero, measurements, ordering, rowGroups, selections, to, topGroups, threshold, valuationClientAgreementId],
+    () => buildReportBuilderRequest({ dataSource, returnsOnly, comparison, xyz, revenueComparison, buyerSalesShare, returnComparison, paymentComparison, marginComparison, rateComparison, productClassification, sourceOrganizations, sourceBuyerSubtree, dayOrganizationBasis, supplierBasis, supplierSourceWorld, priceTypeSalesComparison, agreementPriceComparison, settlementPeriod, groupedSettlementPeriod, sourceCounterpartyGroups, cashPeriod, groupedCashPeriod, oneCSpecialSettings, oneC: oneCScope, from, to, ordering, filterExpression, topGroups, threshold, hideZero, abcClassification, valuationClientAgreementId, rowGroups, colGroups, measurements, selections }),
+    [abcClassification, agreementPriceComparison, settlementPeriod, groupedSettlementPeriod, sourceCounterpartyGroups, cashPeriod, groupedCashPeriod, colGroups, comparison, xyz, revenueComparison, buyerSalesShare, returnComparison, paymentComparison, marginComparison, rateComparison, productClassification, sourceOrganizations, sourceBuyerSubtree, dayOrganizationBasis, supplierBasis, supplierSourceWorld, returnsOnly, priceTypeSalesComparison, oneCSpecialSettings, oneCScope, dataSource, filterExpression, from, hideZero, measurements, ordering, rowGroups, selections, to, topGroups, threshold, valuationClientAgreementId],
   )
   const { result, preview, lastRun, error, isLoading, downloadModalOpened, update: updateRun, begin: beginRun, clear: clearRun } = useReportRunState<ReportRunOutcome>(JSON.stringify({
     request: reportBody,
@@ -486,6 +489,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode }: { ownerId: string 
     setGroupedSettlementPeriod(snapshotDefaults?.groupedSettlementPeriod)
     setSourceCounterpartyGroups(undefined)
     setCashPeriod(undefined)
+    setGroupedCashPeriod(snapshotDefaults?.groupedCashPeriod)
     setOneCSpecialSettings(snapshotDefaults && oneCSpecialSpecification(dataSource)
       ? requestOneCSpecialSettings(snapshotDefaults, dataSource) : undefined)
     setOneCScope(snapshotDefaults?.oneC)
@@ -577,6 +581,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode }: { ownerId: string 
     setGroupedSettlementPeriod(structuredClone(requestGroupedSettlementPeriod(data)))
     setSourceCounterpartyGroups(structuredClone(requestSourceCounterpartyGroups(data)))
     setCashPeriod(structuredClone(data.cashPeriod))
+    setGroupedCashPeriod(structuredClone(requestGroupedCashPeriod(data)))
     setOneCSpecialSettings(structuredClone(requestOneCSpecialSettings(data, nextDataset.DataSource)))
     setOneCScope(structuredClone(data.oneC))
     groupingOrdering.loadOrdering(requestOrdering(data))
@@ -643,6 +648,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode }: { ownerId: string 
     setGroupedSettlementPeriod(structuredClone(requestGroupedSettlementPeriod(data)))
     setSourceCounterpartyGroups(structuredClone(requestSourceCounterpartyGroups(data)))
     setCashPeriod(structuredClone(data.cashPeriod))
+    setGroupedCashPeriod(structuredClone(requestGroupedCashPeriod(data)))
     setOneCSpecialSettings(structuredClone(requestOneCSpecialSettings(data, nextDataset.DataSource)))
     setOneCScope(structuredClone(data.oneC))
     setTopGroups(structuredClone(requestTopGroups(data)))
@@ -797,10 +803,17 @@ function ReportsStocksWorkspace({ ownerId, constructorMode }: { ownerId: string 
           exact={settlementPeriod} buyer={sourceBuyerSubtree} groups={sourceCounterpartyGroups} rows={rowGroups} available={groupingOptions} from={from} to={to}
           disabled={comparisonSettingsDisabled} enabled={canGenerateReport} onModeChange={changeSettlementMode}
           onGroupedChange={setGroupedSettlementPeriod} onExactChange={setSettlementPeriod}
-          onBuyerChange={setSourceBuyerSubtree} onRowsChange={setRowGroups} onGroupsChange={setSourceCounterpartyGroups} /> : dataSource === 40 ? <CashPeriodLegPicker value={cashPeriod}
+          onBuyerChange={setSourceBuyerSubtree} onRowsChange={setRowGroups} onGroupsChange={setSourceCounterpartyGroups} /> : dataSource === 40 ? <CashPeriodModePanel dataset={dataset} grouped={groupedCashPeriod} exact={cashPeriod}
+          onModeChange={multiple => {
+            setGroupedCashPeriod(multiple ? defaultGroupedCashPeriod() : undefined)
+            setCashPeriod(undefined)
+            filterLogic.load([])
+            const required = new Set<number>(multiple || cashPeriodSupportsManagement(dataset) ? CASH_PERIOD_ALL_MEASURES : CASH_PERIOD_MEASURES)
+            setMeasurements(datasetMeasurements(dataset, (dataset?.Measurements ?? [])
+              .filter(field => required.has(field.Type)).map(field => ({ ...field, IsChecked: true, parentName: '' }))))
+          }}
           disabled={comparisonSettingsDisabled} enabled={canGenerateReport}
-          managementSupported={cashPeriodSupportsManagement(dataset)}
-          onChange={next => {
+          onExactChange={next => {
             setCashPeriod(next)
             const required = new Set(next ? cashPeriodMeasurements(next) : cashPeriodSupportsManagement(dataset)
               ? CASH_PERIOD_ALL_MEASURES : CASH_PERIOD_MEASURES)

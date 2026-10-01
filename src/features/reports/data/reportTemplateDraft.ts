@@ -20,7 +20,7 @@ const managedFields = new Set([
   'settlementPeriod', 'SettlementPeriod',
   'groupedSettlementPeriod', 'GroupedSettlementPeriod',
   'sourceCounterpartyGroups', 'SourceCounterpartyGroups',
-  'cashPeriod', 'CashPeriod',
+  'cashPeriod', 'CashPeriod', 'groupedCashPeriod', 'GroupedCashPeriod',
   'priceTypeSalesComparison', 'PriceTypeSalesComparison', 'oneC', 'OneC',
   'discountMarkup', 'DiscountMarkup', 'providedDiscounts', 'ProvidedDiscounts',
   'priceAnalysis', 'PriceAnalysis',
@@ -30,7 +30,7 @@ export function retainStoredTemplateFields(stored: ReportRequestBody, draft: Rep
   const retained = Object.fromEntries(Object.entries(stored).filter(([key]) => !managedFields.has(key)
     && key.toLowerCase() !== 'dayorganizationbasis' && key.toLowerCase() !== 'supplierbasis'
     && key.toLowerCase() !== 'pricetypesalescomparison'
-    && key.toLowerCase() !== 'groupedsettlementperiod' && key.toLowerCase() !== 'sourcecounterpartygroups'))
+    && key.toLowerCase() !== 'groupedcashperiod' && key.toLowerCase() !== 'groupedsettlementperiod' && key.toLowerCase() !== 'sourcecounterpartygroups'))
   const retainGroups = (axis: 'Row' | 'Col') => draft.sorted[axis].map(item => ({
     ...stored.sorted[axis].find(original => original.type === item.type), ...item,
   }))

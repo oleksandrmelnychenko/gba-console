@@ -1,4 +1,5 @@
 import type { ReportDataset, ReportRequestBody } from '../types'
+import { groupedCashConfigurationError, groupedCashSupported, requestGroupedCashPeriod, GROUPED_CASH_FILTERS } from './groupedCashPeriod'
 import { formatKyivBusinessDate } from '../../../shared/date/dateTime'
 
 export const CASH_PERIOD_SOURCE = 40
@@ -91,7 +92,8 @@ export function isCashPeriodDataset(dataset: ReportDataset): boolean {
       ? CASH_PERIOD_ALL_MEASURES : CASH_PERIOD_MEASURES)
     && dataset.Groupings.every(item => item.Selectable !== false)
     && dataset.Measurements.every(item => item.Selectable !== false)
-    && dataset.Filters.length === 0
+    && (groupedCashSupported(dataset) ? exact(dataset.Filters.map(item => item.Type), GROUPED_CASH_FILTERS)
+      : dataset.Filters.length === 0)
 }
 
 function validDay(value: string): boolean {
@@ -110,7 +112,10 @@ export function previousKyivDay(todayKyiv: string): string {
 /** Client guard; the server remains final authority on a complete closing-day generation. */
 export function cashPeriodConfigurationError(data: ReportRequestBody, dataset?: ReportDataset,
   todayKyiv?: string): string | null {
-  if (data.dataSource !== CASH_PERIOD_SOURCE) return data.cashPeriod != null || data.CashPeriod != null
+  const groupedError = groupedCashConfigurationError(data, dataset)
+  if (groupedError) return groupedError
+  const grouped = requestGroupedCashPeriod(data) != null
+  if (data.dataSource !== CASH_PERIOD_SOURCE) return data.cashPeriod != null || data.CashPeriod != null || grouped
     ? 'Налаштування руху коштів застосовується лише до відповідного набору даних.' : null
   if (dataset && !isCashPeriodDataset(dataset)) return 'Сервер не підтвердив звіт руху коштів за рахунком.'
   if (!validDay(data.from) || !validDay(data.to) || data.from > data.to)
@@ -120,16 +125,16 @@ export function cashPeriodConfigurationError(data: ReportRequestBody, dataset?: 
   const days = (Date.parse(`${data.to}T00:00:00Z`) - Date.parse(`${data.from}T00:00:00Z`)) / 86_400_000 + 1
   if (days > 31) return 'Період руху коштів може охоплювати щонайбільше 31 день.'
   const scope = readCashPeriodScope(data.cashPeriod)
-  if (!scope) return 'Оберіть точний рахунок і його валюту зі списку GBA.'
-  if (scope.Version === 2 && dataset && !cashPeriodSupportsManagement(dataset))
+  if (!grouped && !scope) return 'Оберіть точний рахунок і його валюту зі списку GBA.'
+  if (scope?.Version === 2 && dataset && !cashPeriodSupportsManagement(dataset))
     return 'Сервер ще не підтримує управлінські колонки руху коштів.'
-  const allowed = new Set(['dataSource', 'from', 'to', 'sorted', 'selections', 'cashPeriod'])
-  if (Object.entries(data).some(([key, value]) => !allowed.has(key) && value != null))
+  const allowed = new Set(['dataSource', 'from', 'to', 'sorted', 'selections', grouped ? 'groupedCashPeriod' : 'cashPeriod'])
+  if (Object.entries(data).some(([key, value]) => !allowed.has(key) && !(grouped && key === 'GroupedCashPeriod') && value != null))
     return 'Для руху коштів недоступні додаткові відбори та перерахунок за поточним курсом.'
-  if (!Array.isArray(data.selections) || data.selections.length !== 0
+  if (!Array.isArray(data.selections) || !grouped && data.selections.length !== 0
     || !data.sorted || !exact(data.sorted.Row?.map(item => item.type), CASH_PERIOD_ROWS)
     || !Array.isArray(data.sorted.Col) || data.sorted.Col.length !== 0
-    || !exact(data.sorted.Measurements?.map(item => item.Type), cashPeriodMeasurements(scope))
+    || !exact(data.sorted.Measurements?.map(item => item.Type), grouped ? CASH_PERIOD_ALL_MEASURES : cashPeriodMeasurements(scope))
     || data.sorted.Measurements.some(item => item.IsChecked === false))
     return 'Структура звіту руху коштів фіксована: організація → рахунок → запис → валюта рахунку, чотири або вісім показників відповідно до вибраних валют.'
   return null
