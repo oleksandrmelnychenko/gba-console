@@ -98,3 +98,19 @@ it('preserves an ordinary calculation when applying either supplier layout', () 
     expect(datasetConfigurationError(preset.Data, dataset)).toBeNull()
   }
 })
+
+it('changes supplier layout without resetting AMG, both-world omission or the saved world alias', () => {
+  const base = defaultDatasetRequest(dataset, '2026-07-01', '2026-07-31')
+  delete base.supplierSourceWorld
+  for (const world of [undefined, 1]) {
+    const current = { ...base, ...(world === undefined ? {} : { SupplierSourceWorld: world }) }
+    for (const id of ['recorded-supplier-batch-gross-profit', 'supplier-registrar-warehouse'] as const) {
+      const preset = datasetPresetRequest(dataset, id, current)!
+      expect(preset.Data).not.toHaveProperty('supplierSourceWorld')
+      expect(preset.Data.SupplierSourceWorld).toBe(world)
+      if (world === undefined) expect(preset.Data).not.toHaveProperty('SupplierSourceWorld')
+      expect(preset.Data.supplierBasis).toBe(0)
+      expect(datasetConfigurationError(preset.Data, dataset)).toBeNull()
+    }
+  }
+})

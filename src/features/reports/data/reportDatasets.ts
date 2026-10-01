@@ -315,17 +315,20 @@ export function datasetPresetRequest(dataset: ReportDataset, id: DatasetReportPr
     ...(Object.hasOwn(current, 'TopGroups') ? { TopGroups: structuredClone(current.TopGroups) } : {}),
     ...(Object.hasOwn(current, 'filterExpression') ? { filterExpression: structuredClone(current.filterExpression) } : {}),
     ...(Object.hasOwn(current, 'FilterExpression') ? { FilterExpression: structuredClone(current.FilterExpression) } : {}),
-    ...cloneNativeExactFilterAliases(current), ...clonePriceTypeSalesComparisonAliases(current), ...cloneAgreementPriceComparisonAliases(current), ...cloneOneCSpecialAliases(current),
+    ...cloneNativeExactFilterAliases(current),
+    ...(Object.hasOwn(current, 'supplierSourceWorld') ? { supplierSourceWorld: structuredClone(current.supplierSourceWorld) } : {}),
+    ...(Object.hasOwn(current, 'SupplierSourceWorld') ? { SupplierSourceWorld: structuredClone(current.SupplierSourceWorld) } : {}),
+    ...clonePriceTypeSalesComparisonAliases(current), ...cloneAgreementPriceComparisonAliases(current), ...cloneOneCSpecialAliases(current),
     ...(dataset.DataSource === 27 && current.oneC ? { oneC: structuredClone(current.oneC) } : {}) }
   if (id === 'supplier-registrar-warehouse') {
     const defaults = defaultDatasetRequest(dataset, current.from, current.to)
     const registrar = datasetGroupings(dataset).find(field => field.type === 78)
     if (!registrar || !['73,4,21', '78,4,21'].includes(defaults.sorted.Row.map(field => field.type).join(','))) return null
     delete defaults.supplierBasis
+    delete defaults.supplierSourceWorld
     defaults.sorted.Row[0] = registrar
     return { Name: preset.name, Data: {
       ...defaults, ...preservedOptions, selections: structuredClone(current.selections),
-      supplierSourceWorld: current.supplierSourceWorld ?? current.SupplierSourceWorld ?? 0,
     } }
   }
   if (isNativeReportPresetId(id)) {
@@ -334,6 +337,7 @@ export function datasetPresetRequest(dataset: ReportDataset, id: DatasetReportPr
     if (dataset.DataSource === 35) delete defaults.dayOrganizationBasis
     if (dataset.DataSource === 38) {
       delete defaults.supplierBasis
+      delete defaults.supplierSourceWorld
       // Applying a layout to a saved request must not opt it into a new calculation.
       if (requestSupplierBasis(current) !== 0) {
         const receipt = datasetGroupings(dataset).find(field => field.type === 73)
