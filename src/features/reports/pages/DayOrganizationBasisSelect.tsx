@@ -9,7 +9,7 @@ export function DayOrganizationBasisSelect({ capability, value, disabled, onChan
   if (!isDayOrganizationBasisCapability(capability)) return null
   const options = [
     ...(value == null ? [{ value: 'saved', label: t('Збережений спосіб розрахунку') }] : []),
-    { value: '0', label: t('Продажі за період') },
+    { value: '0', label: t('Продажі мінус повернення за період') },
     { value: '1', label: t('Продажі з поверненнями за день') },
   ]
   return <Select label={t('Розрахунок валового прибутку')} data={options}

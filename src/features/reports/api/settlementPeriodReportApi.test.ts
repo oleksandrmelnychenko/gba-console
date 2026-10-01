@@ -63,7 +63,7 @@ it('rejects extra filters, FX, duplicate aliases and foreign dataset scope', asy
   }
   expect(error({ ...request(), sorted: { ...request().sorted, Col: [{ type: 4, key: 'Organization', label: 'Wrong' }] } }, dataset, '2026-09-27')).toMatch(/фіксована/)
   expect(error({ ...request(), dataSource: 36 }, undefined, '2026-09-27')).toMatch(/лише/)
-  await expect(searchDatasetReportValues(41, 77, { value: '', offset: 0, limit: 30 })).rejects.toThrow('точний довідник')
+  await expect(searchDatasetReportValues(41, 77, { value: '', offset: 0, limit: 30 })).rejects.toThrow('недоступний')
   expect(api).not.toHaveBeenCalled()
 })
 

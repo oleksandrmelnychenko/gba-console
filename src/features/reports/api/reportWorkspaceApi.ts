@@ -29,6 +29,7 @@ import {
 } from '../data/priceTypeSalesComparison'
 import { cloneOneCSpecialAliases, isOneCSpecialDataset, oneCSpecialSettingsError } from '../data/oneCSpecialReports'
 import { readAbcCapabilities } from '../data/reportAbcClassification'
+import { cloneGroupedSettlementAliases, normalizeGroupedSettlementDataset } from '../data/groupedSettlementPeriod'
 
 const paymentUnsupportedCapabilities = ['Ordering', 'TopGroups', 'Threshold', 'HideZero', 'AbcClassification', 'FilterExpression'] as const
 const marginGroupings = [{ Type: 12, Name: 'Клієнт' }, { Type: 15, Name: 'Договір' }] as const
@@ -61,6 +62,8 @@ function isDataset(value: unknown): value is ReportDataset {
     && (item.DataSource === 39 ? isCurrentVparivanieDataset(item as ReportDataset) : item.currentVparivanie == null)
     && !Object.hasOwn(item, 'SettlementPeriod')
     && (item.DataSource === 41 ? isSettlementPeriodDataset(item as ReportDataset) : item.settlementPeriod == null)
+    && !Object.hasOwn(item, 'GroupedSettlementPeriod')
+    && (item.DataSource === 41 || item.groupedSettlementPeriod == null)
     && !Object.hasOwn(item, 'CashPeriod')
     && (item.DataSource === 40 ? isCashPeriodDataset(item as ReportDataset) : item.cashPeriod == null)
     && isOneCSpecialDataset(item as ReportDataset)
@@ -101,7 +104,8 @@ export async function getReportDatasets(signal?: AbortSignal): Promise<ReportDat
     if (!item || typeof item !== 'object' || Array.isArray(item)) return null
     const exactFilters = normalizeNativeExactFilterDataset(item as Record<string, unknown>)
     const comparison = exactFilters ? normalizeAgreementPriceComparisonDataset(exactFilters as unknown as Record<string, unknown>) : null
-    return comparison ? normalizePriceTypeSalesComparisonDataset(comparison as unknown as Record<string, unknown>) : null
+    const prices = comparison ? normalizePriceTypeSalesComparisonDataset(comparison as unknown as Record<string, unknown>) : null
+    return prices ? normalizeGroupedSettlementDataset(prices as unknown as Record<string, unknown>) : null
   }) : []
   if (!normalized.length || !normalized.every((item): item is ReportDataset => item !== null && isDataset(item))
     || new Set(normalized.map(item => item.DataSource)).size !== normalized.length) {
@@ -127,6 +131,8 @@ type WireTemplate = Required<Omit<ReportTemplate, 'Data'>> & {
     returnsOnly?: boolean
     SettlementPeriod?: unknown
     settlementPeriod?: unknown
+    GroupedSettlementPeriod?: unknown
+    groupedSettlementPeriod?: unknown
     CashPeriod?: unknown
     cashPeriod?: unknown
     ValuationClientAgreementId?: ReportRequestBody['valuationClientAgreementId']
@@ -198,6 +204,7 @@ export function normalizeSavedTemplate(value: WireTemplate): ReportTemplate {
     ...(Object.hasOwn(value.Data, 'settlementPeriod') ? { settlementPeriod: structuredClone(value.Data.settlementPeriod),
       ...(Object.hasOwn(value.Data, 'SettlementPeriod') ? { SettlementPeriod: structuredClone(value.Data.SettlementPeriod) } : {}),
     } : Object.hasOwn(value.Data, 'SettlementPeriod') ? { settlementPeriod: structuredClone(value.Data.SettlementPeriod) } : {}),
+    ...cloneGroupedSettlementAliases(value.Data),
     ...(Object.hasOwn(value.Data, 'cashPeriod') ? { cashPeriod: value.Data.cashPeriod,
       ...(Object.hasOwn(value.Data, 'CashPeriod') ? { CashPeriod: value.Data.CashPeriod } : {}),
     } : Object.hasOwn(value.Data, 'CashPeriod') ? { cashPeriod: value.Data.CashPeriod } : {}),

@@ -5,6 +5,7 @@ import { isDayOrganizationBasisCapability } from './dayOrganizationBasis'
 import { isDayOrganizationGrossProfitDataset } from './dayOrganizationGrossProfit'
 import { isSupplierBatchGrossProfitDataset } from './supplierBatchGrossProfit'
 import { isSupplierBasisCapability } from './supplierBasis'
+import { isGroupedSettlementDataset } from './groupedSettlementPeriod'
 import { isCurrentVparivanieDataset } from './currentVparivanie'
 import { isProductClassificationCapability, isSourceBuyerSubtreeCapability,
   isSourceOrganizationsCapability } from './nativeExactFilters'
@@ -14,6 +15,7 @@ export type WorkbookLaunch = {
   label: string
   notice: string
   dataset: ReportDataset
+  currencyAxis?: boolean
 }
 
 const supported = [
@@ -50,10 +52,19 @@ const supported = [
   },
   {
     fileName: 'Взаємороз всі.xls',
+    currencyAxis: true,
     label: 'Взаєморозрахунки за період',
     notice: 'Часткова форма Excel: один точний договір, чотири показники у валюті взаєморозрахунків. Оберіть договір і завершений період до 31 дня. Сервер відхилить неповне покриття; згрупована відомість усіх контрагентів ще недоступна.',
     dataSource: 41,
     accepts: isSettlementPeriodDataset,
+  },
+  {
+    fileName: 'ДБіторка.xls',
+    currencyAxis: false,
+    label: 'Дебіторка за період',
+    notice: 'Організація → контрагент, поточні договори покупців і чотири показники залишків та руху. Недоступні суми й залежні підсумки залишаються порожніми; суми різних валют не додаються.',
+    dataSource: 41,
+    accepts: isGroupedSettlementDataset,
   },
 ] as const
 
@@ -65,9 +76,12 @@ export function availableBug1274WorkbookLaunches(datasets: readonly ReportDatase
     const candidate = matches[0]
     return matches.length === 1 && Array.isArray(candidate.Groupings) && Array.isArray(candidate.Measurements)
       && Array.isArray(candidate.Filters) && spec.accepts(candidate)
-      ? [{ fileName: spec.fileName, label: spec.label,
+      ? [{ fileName: spec.fileName, label: spec.label, ...('currencyAxis' in spec ? { currencyAxis: spec.currencyAxis } : {}),
         notice: spec.dataSource === 35 && isDayOrganizationBasisCapability(candidate.dayOrganizationBasis)
-          ? 'Часткова форма Excel: день → організація, суми EUR та рентабельність %. «Продажі за період» підтримують до 31 дня та доступні відбори. Для «Продажі з поверненнями за день» оберіть один день, товар без послуг, організації та групу покупців.'
+          ? 'Часткова форма Excel: день → організація, суми EUR та рентабельність %. «Продажі мінус повернення за період» підтримують до 31 дня та доступні відбори. Недоступні собівартість, ПДВ і залежні показники залишаються порожніми. Для «Продажі з поверненнями за день» оберіть один день, товар без послуг, організації та групу покупців.'
+          : spec.dataSource === 41 && isGroupedSettlementDataset(candidate)
+          ? spec.fileName === 'ДБіторка.xls' ? spec.notice
+            : 'Організація → валюта → контрагент, поточні договори покупців і чотири показники залишків та руху. Оберіть відбори й період до 31 дня; договори без повних даних залишаються з порожніми сумами та підсумками.'
           : spec.dataSource === 38 && isSupplierBasisCapability(candidate.supplierBasis)
           ? 'Склад документа → організація → постачальник, продажі мінус повернення за період до 31 дня. Невизначені постачальник і склад показуються окремо. Недоступні собівартість і прибуток залишаються порожніми, зокрема у підсумках.'
           : spec.dataSource === 38 && candidate.Groupings.some((field: { Type: number }) => field.Type === 78)

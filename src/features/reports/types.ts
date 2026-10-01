@@ -255,6 +255,8 @@ export type ReportSourceBuyerSubtreeCapabilities = {
 
 export type ReportRequestBody = {
   dataSource?: number
+  groupedSettlementPeriod?: unknown
+  GroupedSettlementPeriod?: unknown
   settlementPeriod?: unknown
   cashPeriod?: unknown
   SettlementPeriod?: unknown
@@ -328,6 +330,7 @@ export type ReportDatasetField = { Type: number; Name: string; Selectable?: bool
 
 export type ReportDataset = {
   returnsOnly?: boolean
+  groupedSettlementPeriod?: unknown
   settlementPeriod?: unknown
   cashPeriod?: unknown
   currentVparivanie?: unknown

@@ -1,5 +1,6 @@
 import { isDayOrganizationBasisCapability } from './dayOrganizationBasis'
 import { isSupplierBasisCapability, supplierBasisConfigurationError } from './supplierBasis'
+import { groupedSettlementConfigurationError, requestGroupedSettlementPeriod } from './groupedSettlementPeriod'
 import type {
   ReportDataset,
   ReportProductClassification,
@@ -178,6 +179,10 @@ export function nativeExactFiltersConfigurationError(data: ReportRequestBody, da
   const product = requestProductClassification(data)
   const organizations = requestSourceOrganizations(data)
   const buyers = requestSourceBuyerSubtree(data)
+  if (data.dataSource === 41 && requestGroupedSettlementPeriod(data) != null) {
+    if (product != null || organizations != null) return 'Групові взаєморозрахунки підтримують поточні локальні відбори та групу покупців.'
+    return groupedSettlementConfigurationError(data, dataset)
+  }
   if (data.dataSource !== NATIVE_EXACT_FILTER_SOURCE
     && data.dataSource !== DAY_ORGANIZATION_EXACT_FILTER_SOURCE
     && data.dataSource !== SUPPLIER_GROSS_PROFIT_EXACT_FILTER_SOURCE) {

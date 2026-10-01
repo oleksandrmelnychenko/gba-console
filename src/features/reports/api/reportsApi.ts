@@ -119,7 +119,8 @@ function prepareStockReportRequest(body: ReportRequestBody): ReportRequestBody {
 }
 
 export async function searchDatasetReportValues(dataSource: number, field: number, params: ReportSearchParams, signal?: AbortSignal, sourceWorld?: number): Promise<ReportEntity[]> {
-  if (dataSource === 41) throw new Error('Договори вибираються через точний довідник взаєморозрахунків за період.')
+  if (dataSource === 41 && ![0, 6, 9, 30].includes(field))
+    throw new Error('Цей відбір групових взаєморозрахунків недоступний.')
   if (dataSource === 40) throw new Error('Валютні рахунки вибираються через точний довідник звіту руху коштів.')
   if (dataSource === 39 && ![1, 4, 5, 21, 60].includes(field))
     throw new Error('Цей відбір поточної матриці «Впарювання» недоступний.')
@@ -139,7 +140,7 @@ export async function searchDatasetReportValues(dataSource: number, field: numbe
     : dataSource === 32 ? typeof item.Id === 'string' && revenueExactId(item) !== null
     : dataSource === 31 ? (typeof item.Id === 'number' && Number.isSafeInteger(item.Id) && item.Id > 0)
       || (typeof item.Id === 'string' && /^[1-9]\d*$/.test(item.Id) && Number.isSafeInteger(Number(item.Id)))
-    : (dataSource === 18 || dataSource === 19 || dataSource === 20 || dataSource === 21 || dataSource === 22 || dataSource === 30 || dataSource === 32 || dataSource === 35 || dataSource === 38 || dataSource === 39)
+    : (dataSource === 18 || dataSource === 19 || dataSource === 20 || dataSource === 21 || dataSource === 22 || dataSource === 30 || dataSource === 32 || dataSource === 35 || dataSource === 38 || dataSource === 39 || dataSource === 41)
       ? typeof item.Id === 'string' && revenueExactId(item) !== null
       : (dataSource === 16 || dataSource === 17) ? revenueExactId(item) !== null : Number.isSafeInteger(item.Id) && item.Id > 0)
     && typeof item.Name === 'string' && item.Name.trim().length > 0)) throw new Error('Сервер повернув некоректні значення відбору звіту.')
