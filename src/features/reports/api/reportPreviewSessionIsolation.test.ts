@@ -1,5 +1,7 @@
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 import { clearSession, saveSession } from '../../../shared/auth/session'
+import { cashAggregateCapability, cashAggregateReport } from '../data/cashAggregateBalance.test-fixtures'
+import { previewCashAggregateBalance } from './cashAggregateBalanceApi'
 import { activeClientsCapability, activeClientsReport } from '../data/activeClients.test-fixtures'
 import { currencyDynamicsCapability, currencyDynamicsDefinition, currencyDynamicsReport } from '../data/currencyRateDynamics.test-fixtures'
 import { debtRatioCapability, debtRatioReport } from '../data/debtToSalesRatio.test-fixtures'
@@ -17,6 +19,8 @@ const nativePayload = () => ({ Preview: { Version: 1, ResultSha256: 'b'.repeat(6
   Page: { Offset: 0, Limit: 50, TotalVisibleRows: 0, ReturnedRows: 0, HasMore: false },
   RowSchema: [], ColumnSchema: [], Rows: [], Columns: [], Cells: [] } })
 const cases = [
+  { name: 'cash aggregate', route: '/report/constructors/cash-aggregate-balance/preview',
+    run: () => previewCashAggregateBalance(cashAggregateCapability(), '2026-09-30'), payload: cashAggregateReport },
   { name: 'currency dynamics', route: '/report/constructors/currency-rate-dynamics/preview',
     run: () => previewCurrencyRateDynamics(currencyDynamicsCapability(), month, currencyDynamicsDefinition()), payload: currencyDynamicsReport },
   { name: 'active clients', route: '/report/constructors/active-clients/preview',

@@ -6,11 +6,12 @@ import type { CatalogueLaunchChoice } from '../data/reportCatalogueLaunch'
 import type { DebtToSalesRatioCapabilities } from '../data/debtToSalesRatio'
 import type { ActiveClientsCapabilities } from '../data/activeClients'
 import type { CurrencyRateDynamicsCapabilities } from '../data/currencyRateDynamics'
+import type { CashAggregateBalanceCapabilities } from '../data/cashAggregateBalance'
 import type { ReportCatalogue } from '../types'
 
 const ReportCataloguePanel = lazy(() => import('./ReportCataloguePanel').then(module => ({ default: module.ReportCataloguePanel })))
 
-export function ReportCatalogueControl({ enabled, disabled = false, presentation = 'inline', onOpen, onOpenDebtToSalesRatio, onOpenActiveClients, onOpenCurrencyRateDynamics }: {
+export function ReportCatalogueControl({ enabled, disabled = false, presentation = 'inline', onOpen, onOpenDebtToSalesRatio, onOpenActiveClients, onOpenCurrencyRateDynamics, onOpenCashAggregateBalance }: {
   enabled: boolean
   disabled?: boolean
   presentation?: 'inline' | 'dialog'
@@ -18,6 +19,7 @@ export function ReportCatalogueControl({ enabled, disabled = false, presentation
   onOpenDebtToSalesRatio?: (capability: DebtToSalesRatioCapabilities) => boolean
   onOpenActiveClients?: (capability: ActiveClientsCapabilities) => boolean
   onOpenCurrencyRateDynamics?: (capability: CurrencyRateDynamicsCapabilities) => boolean
+  onOpenCashAggregateBalance?: (capability: CashAggregateBalanceCapabilities) => boolean
 }) {
   const { t } = useI18n()
   const [opened, setOpened] = useState(false)
@@ -38,6 +40,10 @@ export function ReportCatalogueControl({ enabled, disabled = false, presentation
       return true
     } : undefined} onOpenCurrencyRateDynamics={onOpenCurrencyRateDynamics ? capability => {
       if (!enabled || disabled || !onOpenCurrencyRateDynamics(capability)) return false
+      setOpened(false)
+      return true
+    } : undefined} onOpenCashAggregateBalance={onOpenCashAggregateBalance ? capability => {
+      if (!enabled || disabled || !onOpenCashAggregateBalance(capability)) return false
       setOpened(false)
       return true
     } : undefined} />
