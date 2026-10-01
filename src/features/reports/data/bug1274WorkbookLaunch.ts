@@ -6,7 +6,7 @@ import { isDayOrganizationBasisCapability } from './dayOrganizationBasis'
 import { isDayOrganizationGrossProfitDataset } from './dayOrganizationGrossProfit'
 import { isSupplierBatchGrossProfitDataset } from './supplierBatchGrossProfit'
 import { isSupplierBasisCapability } from './supplierBasis'
-import { isGroupedSettlementDataset } from './groupedSettlementPeriod'
+import { groupedSettlementSupportsSuppliers, isGroupedSettlementDataset } from './groupedSettlementPeriod'
 import { isCurrentVparivanieDataset } from './currentVparivanie'
 import { isProductClassificationCapability, isSourceBuyerSubtreeCapability,
   isSourceOrganizationsCapability } from './nativeExactFilters'
@@ -85,8 +85,9 @@ export function availableBug1274WorkbookLaunches(datasets: readonly ReportDatase
           : spec.dataSource === 40 && cashPeriodSupportsManagement(candidate)
           ? 'Часткова форма Excel: один рахунок, вісім показників залишків і руху у валюті рахунку та управлінській валюті. Оберіть рахунок і завершений період до 31 дня. Недоступні суми залишаються порожніми.'
           : spec.dataSource === 41 && isGroupedSettlementDataset(candidate)
-          ? spec.fileName === 'ДБіторка.xls' ? spec.notice
-            : 'Організація → валюта → контрагент, поточні договори покупців і чотири показники залишків та руху. Оберіть відбори й період до 31 дня; договори без повних даних залишаються з порожніми сумами та підсумками.'
+          ? spec.fileName === 'ДБіторка.xls'
+            ? `Організація → контрагент, поточні договори ${groupedSettlementSupportsSuppliers(candidate) ? 'покупців і постачальників' : 'покупців'} за вибраними відборами й чотири показники залишків та руху. Період до 31 дня може включати поточний київський день. Недоступні суми й залежні підсумки залишаються порожніми; суми різних валют не додаються.`
+            : `Організація → валюта → контрагент, поточні договори ${groupedSettlementSupportsSuppliers(candidate) ? 'покупців і постачальників' : 'покупців'} за вибраними відборами й чотири показники залишків та руху. Період до 31 дня може включати поточний київський день; договори без повних даних залишаються з порожніми сумами та підсумками.`
           : spec.dataSource === 38 && isSupplierBasisCapability(candidate.supplierBasis)
           ? 'Склад документа → організація → постачальник, продажі мінус повернення за період до 31 дня. Невизначені постачальник і склад показуються окремо. Недоступні собівартість і прибуток залишаються порожніми, зокрема у підсумках.'
           : spec.dataSource === 38 && candidate.Groupings.some((field: { Type: number }) => field.Type === 78)

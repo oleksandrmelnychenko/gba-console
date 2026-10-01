@@ -34,7 +34,7 @@ import { isDayOrganizationBasisCapability } from './dayOrganizationBasis'
 import { isSupplierBasisCapability, requestSupplierBasis } from './supplierBasis'
 import { cloneNativeExactFilterAliases, nativeExactFiltersConfigurationError } from './nativeExactFilters'
 import { cloneGroupedSettlementAliases, defaultGroupedSettlementBuyer, defaultGroupedSettlementPeriod,
-  isGroupedSettlementDataset, requestGroupedSettlementPeriod } from './groupedSettlementPeriod'
+  groupedSettlementSupportsSuppliers, isGroupedSettlementDataset, requestGroupedSettlementPeriod } from './groupedSettlementPeriod'
 import {
   clonePriceTypeSalesComparisonAliases,
   defaultPriceTypeSalesComparison,
@@ -275,7 +275,7 @@ export function datasetPresets(dataset: ReportDataset | undefined): DatasetRepor
     const native = profile.rowGroupings.every(type => dataset.Groupings.some(field => field.Type === type))
       && profile.measurements.every(type => dataset.Measurements.some(field => field.Type === type && field.Selectable !== false))
       ? [isGroupedSettlementDataset(dataset)
-        ? { ...profile.preset, name: 'Взаєморозрахунки за період', description: 'Поточні договори покупців за період до 31 дня. Вибраний режим і відбори зберігаються; форму з валютою чи без неї оберіть у налаштуваннях.' }
+        ? { ...profile.preset, name: 'Взаєморозрахунки за період', description: `Поточні договори ${groupedSettlementSupportsSuppliers(dataset) ? 'покупців і постачальників' : 'покупців'} за вибраними відборами. Період до 31 дня може включати поточний київський день. Вибраний режим і відбори зберігаються; форму з валютою чи без неї оберіть у налаштуваннях.` }
         : dataset.DataSource === 38 && isSupplierBasisCapability(dataset.supplierBasis)
         ? { ...profile.preset, description: 'Склад документа або партії → організація → постачальник. Період до 31 дня; вибраний спосіб розрахунку й відбори зберігаються.' }
         : profile.preset] : []
