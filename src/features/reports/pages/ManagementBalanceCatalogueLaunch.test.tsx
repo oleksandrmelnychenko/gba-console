@@ -29,7 +29,7 @@ it('aborts old-owner capability and ignores its late executable response', async
   let resolve!: (value: ReturnType<typeof managementBalanceCapability>) => void
   vi.mocked(getManagementBalanceCapabilities).mockImplementationOnce(() => new Promise(done => { resolve = done }))
     .mockResolvedValueOnce({ ...managementBalanceCapability(), RuntimeImplemented: false })
-  const view = render(launcher()), signal = vi.mocked(getManagementBalanceCapabilities).mock.calls[0][1]
+  const view = render(launcher()), signal = vi.mocked(getManagementBalanceCapabilities).mock.calls[0][2]
   view.rerender(launcher(true, 'owner-b')); expect(signal.aborted).toBe(true)
   await screen.findByText('Сервер ще не підтримує формування цього конструктора.'); await act(async () => { resolve(managementBalanceCapability()) })
   expect((screen.getByRole('button', { name: 'Відкрити місячну дебіторку' }) as HTMLButtonElement).disabled).toBe(true); expect(open).not.toHaveBeenCalled()
