@@ -11,6 +11,8 @@ import type { ReportRequestBody } from '../types'
 import { previewActiveClients } from './activeClientsApi'
 import { previewCurrencyRateDynamics } from './currencyRateDynamicsApi'
 import { previewDebtToSalesRatio } from './debtToSalesRatioApi'
+import { collectionCoefficientCapability, collectionCoefficientReport } from '../data/collectionCoefficient.test-fixtures'
+import { previewCollectionCoefficient } from './collectionCoefficientApi'
 import { createStockReport, previewStockReport } from './reportsApi'
 
 import { originalBuyerSalesShareCapability, originalBuyerSalesShareReport } from '../data/originalBuyerSalesShare.test-fixtures'
@@ -38,6 +40,8 @@ const cases = [
     run: () => previewActiveClients(activeClientsCapability(), month), payload: activeClientsReport },
   { name: 'debt ratio', route: '/report/constructors/debt-to-sales-ratio/preview',
     run: () => previewDebtToSalesRatio(debtRatioCapability(), month), payload: debtRatioReport },
+  { name: 'collection coefficient', route: '/report/constructors/collection-coefficient/preview',
+    run: () => previewCollectionCoefficient(collectionCoefficientCapability(), month), payload: collectionCoefficientReport },
   { name: 'native generation', route: '/report/stocks/generate',
     run: async () => (await createStockReport(nativeRequest())).document, payload: nativePayload },
   { name: 'native preview', route: '/report/stocks/preview',
