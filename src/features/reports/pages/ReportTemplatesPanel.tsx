@@ -5,14 +5,18 @@ import { useI18n } from '../../../shared/i18n/useI18n'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { isCurrentReportSource } from '../data/nativeReportProfiles'
 import type { TemplateMutationResult, useServerReportTemplates } from '../hooks/useServerReportTemplates'
-import type { ReportTemplate } from '../types'
+import type { ReportDataset, ReportTemplate } from '../types'
 import { formatDate } from '../utils'
+import { SavedNativeReportPanel } from './SavedNativeReportPanel'
 
 type Action = { kind: 'rename' | 'copy' | 'delete'; template: ReportTemplate; name: string }
+const emptyDatasets: readonly ReportDataset[] = []
 type Props = {
   storage: ReturnType<typeof useServerReportTemplates>
   configurationReady: boolean
   disabled?: boolean
+  datasets?: readonly ReportDataset[]
+  callerKey?: string | null
   notice: string | null
   templateName: string
   activeTemplate: ReportTemplate | null
@@ -26,10 +30,11 @@ type Props = {
   onRefresh: () => void
 }
 
-export function ReportTemplatesPanel({ storage, configurationReady, disabled = false, notice, templateName,
+export function ReportTemplatesPanel({ storage, configurationReady, disabled = false, datasets = emptyDatasets, callerKey = null, notice, templateName,
   activeTemplate, onNameChange, onApply, onSave, onUpdate, onRenamed, onDeleted, onClearNotice, onRefresh }: Props) {
   const { t } = useI18n()
   const [action, setAction] = useState<Action | null>(null)
+  const [savedVariant, setSavedVariant] = useState<ReportTemplate | null>(null)
   const actionTitleId = useId()
   const blocked = disabled || storage.busy || !storage.ready
   const current = activeTemplate ? storage.templates.find(item => item.Id === activeTemplate.Id) : undefined
@@ -41,6 +46,10 @@ export function ReportTemplatesPanel({ storage, configurationReady, disabled = f
     <Text size="xs" c="dimmed">{t('Особисті шаблони зберігаються на сервері та доступні з інших браузерів.')}</Text>
     {activeTemplate ? <ActiveTemplateCard template={activeTemplate} stale={stale}
       blocked={blocked || !configurationReady} onUpdate={() => void onUpdate()} /> : null}
+    {savedVariant ? <SavedNativeReportPanel template={savedVariant} datasets={datasets} callerKey={callerKey}
+      enabled={!blocked} current={storage.templates.some(item => item.Id === savedVariant.Id
+        && item.Revision === savedVariant.Revision && JSON.stringify(item.Data) === JSON.stringify(savedVariant.Data))}
+      onClose={() => setSavedVariant(null)} /> : null}
     <section className="reports-stocks-template-create">
       <Text className="reports-stocks-template-section-title" fw={600} size="sm" mb="sm">{t('Новий шаблон із поточних налаштувань')}</Text>
       <Group className="reports-stocks-template-form" align="end" gap={10}>
@@ -55,6 +64,7 @@ export function ReportTemplatesPanel({ storage, configurationReady, disabled = f
       onNameChange={name => setAction({ ...action, name })} onRenamed={onRenamed} onDeleted={onDeleted}
       onComplete={() => setAction(null)} /> : null}
     <SavedTemplatesSection storage={storage} blocked={blocked} disabled={disabled} onRefresh={onRefresh} onApply={onApply}
+      onRunSaved={template => setSavedVariant(structuredClone(template))}
       onAction={(template, kind) => {
         onClearNotice()
         setAction({ kind, template, name: kind === 'copy' ? `${template.Name} — ${t('копія')}` : template.Name })
@@ -94,12 +104,13 @@ function TemplateActionConfirmation({ action, titleId, blocked, busy, onNameChan
     </Stack>
 }
 
-function SavedTemplateRow({ template, blocked, onApply, onAction }: {
-  template: ReportTemplate; blocked: boolean; onApply: () => void; onAction: (kind: Action['kind']) => void
+function SavedTemplateRow({ template, blocked, onApply, onRunSaved, onAction }: {
+  template: ReportTemplate; blocked: boolean; onApply: () => void; onRunSaved: () => void; onAction: (kind: Action['kind']) => void
 }) {
   const { t } = useI18n()
   return <div className="reports-stocks-template-item" role="group" aria-label={template.Name}>
           <Button className="reports-stocks-template-open" leftSection={<RotateCcw size={15} />} justify="flex-start"
+            aria-label={t('Відкрити для редагування: {name}', { name: template.Name })}
             type="button" variant="subtle" disabled={blocked} onClick={onApply}>
             <span className="reports-stocks-template-open__content">
               <span className="reports-stocks-template-open__name">{template.Name}</span>
@@ -108,6 +119,8 @@ function SavedTemplateRow({ template, blocked, onApply, onAction }: {
             </span>
           </Button>
           <Group className="reports-stocks-template-item__actions" gap={2} wrap="nowrap">
+            <Button type="button" size="xs" variant="light" disabled={blocked || !template.Id || !template.Revision}
+              onClick={onRunSaved}>{t('Збережений варіант')}</Button>
             <Tooltip label={t('Перейменувати')}><ActionIcon aria-label={t('Перейменувати')}
               type="button" variant="subtle" disabled={blocked || !template.Id} onClick={() => onAction('rename')}><Pencil size={16} /></ActionIcon></Tooltip>
             <Tooltip label={t('Створити копію')}><ActionIcon aria-label={t('Створити копію')}
@@ -124,6 +137,7 @@ function ActiveTemplateCard({ template, stale, blocked, onUpdate }: {
   const { t } = useI18n()
   return <Stack gap="xs" p="sm" style={{ border: '1px solid var(--mantine-color-default-border)', borderRadius: 8 }}>
       <Text fw={600}>{t('Відкритий шаблон')}: {template.Name}</Text>
+      <Text size="xs" c="dimmed">{t('У формі редагується чернетка. Для збережених налаштувань оберіть «Збережений варіант» у списку.')}</Text>
       <Text size="sm">{t('Поточні налаштування буде збережено в шаблоні «{name}».', { name: template.Name })}</Text>
       {stale ? <Text c="orange" size="sm">{t('Шаблон змінився або видалений. Відкрийте його знову перед збереженням змін.')}</Text> : null}
       <Button type="button" variant="light" leftSection={<Save size={16} />} disabled={blocked || stale}
@@ -150,9 +164,10 @@ function TemplateActionController({ action, titleId, blocked, storage, onNameCha
     onNameChange={onNameChange} onConfirm={() => void confirmAction()} onCancel={onComplete} />
 }
 
-function SavedTemplatesSection({ storage, blocked, disabled, onRefresh, onApply, onAction }: {
+function SavedTemplatesSection({ storage, blocked, disabled, onRefresh, onApply, onRunSaved, onAction }: {
   storage: Props['storage']; blocked: boolean; disabled: boolean; onRefresh: Props['onRefresh']; onApply: Props['onApply']
   onAction: (template: ReportTemplate, kind: Action['kind']) => void
+  onRunSaved: (template: ReportTemplate) => void
 }) {
   const { t } = useI18n()
   const [search, setSearch] = useState('')
@@ -167,6 +182,7 @@ function SavedTemplatesSection({ storage, blocked, disabled, onRefresh, onApply,
         onChange={event => setSearch(event.currentTarget.value)} /> : null}
       {visible.length ? <div className="reports-stocks-template-list">
         {visible.map(template => <SavedTemplateRow key={template.Id ?? template.Name} template={template} blocked={blocked}
+          onRunSaved={() => onRunSaved(template)}
           onApply={() => onApply(template)} onAction={kind => onAction(template, kind)} />)}
       </div> : <div className="reports-stocks-template-empty">
         <span className="reports-stocks-template-empty__icon"><LayoutTemplate size={22} aria-hidden="true" /></span>

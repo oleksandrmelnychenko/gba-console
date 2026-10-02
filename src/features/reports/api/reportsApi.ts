@@ -67,6 +67,11 @@ export async function previewStockReport(body: ReportRequestBody): Promise<{ res
   return { result: normalizeReportResult(response), preview }
 }
 
+/** Reuses native refusal rules without submitting or replacing a saved definition. */
+export function validateStockReportRequest(body: ReportRequestBody): void {
+  prepareStockReportRequest(body)
+}
+
 function prepareStockReportRequest(body: ReportRequestBody): ReportRequestBody {
   const request = (body.dataSource === 2 || body.dataSource === 17 || body.dataSource === 18 || body.dataSource === 19 || body.dataSource === 20 || body.dataSource === 21 || body.dataSource === 22 || body.dataSource === 23 || body.dataSource === 24 || body.dataSource === 25 || body.dataSource === 27 || body.dataSource === 28 || body.dataSource === 35 || body.dataSource === 38 || body.dataSource === 39 || body.dataSource === 40 || body.dataSource === 41) ? structuredClone(body) : body
   const exactFilterError = nativeExactFiltersConfigurationError(request)

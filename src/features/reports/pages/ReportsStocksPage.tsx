@@ -1024,6 +1024,8 @@ function ReportsStocksWorkspace({ ownerId, constructorMode }: { ownerId: string 
         templateName={templateName}
         templateNotice={templateNotice ?? templateStorage.notice}
         templateStorage={templateStorage}
+        templateDatasets={datasetStorage.datasets}
+        templateCallerKey={ownerId}
         activeTemplate={activeTemplate}
         templatesDisabled={!canGenerateReport || isLoading}
         onRenamedTemplate={renamedTemplate}
@@ -1109,6 +1111,8 @@ type ReportBuilderFormProps = {
   presets: ReturnType<typeof datasetPresets>
   configurationReady: boolean
   templateStorage: ReturnType<typeof useServerReportTemplates>
+  templateDatasets: readonly ReportDataset[]
+  templateCallerKey: string | null
   onApplyPreset: (id: DatasetReportPresetId) => void
   canSubmit: boolean
   colGroups: ReportGroupingItem[]
@@ -1302,6 +1306,8 @@ function ReportBuilderForm(props: ReportBuilderFormProps) {
         >
           <ReportTemplatesPanel
             storage={templateStorage}
+            datasets={props.templateDatasets}
+            callerKey={props.templateCallerKey}
             configurationReady={configurationReady}
             notice={templateNotice}
             templateName={templateName}
