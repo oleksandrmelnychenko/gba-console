@@ -55,7 +55,11 @@ const decimal = (value: unknown): value is string => typeof value === 'string' &
 export function isOverdueReceivablesDocumentUrl(value: unknown): value is string {
   if (typeof value !== 'string') return false
   if (value === '') return true
-  if (value !== value.trim() || /[\u0000-\u001f\u007f\\]/.test(value)
+  for (const character of value) {
+    const code = character.charCodeAt(0)
+    if (code <= 31 || code === 127 || character === '\\') return false
+  }
+  if (value !== value.trim()
     || !/^https?:\/\//i.test(value) && (!value.startsWith('/') || value.startsWith('//'))) return false
   try {
     const url = new URL(value, 'https://gba.invalid')
