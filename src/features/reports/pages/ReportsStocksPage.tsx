@@ -128,6 +128,8 @@ import { CashMovementConstructorModal } from './CashMovementConstructorModal'
 import { useCashMovementConstructor } from '../hooks/useCashMovementConstructor'
 import { SupplierDebtConstructorModal } from './SupplierDebtConstructorModal'
 import { useSupplierDebtConstructor } from '../hooks/useSupplierDebtConstructor'
+import { EmployeeGrossProfitConstructorModal } from './EmployeeGrossProfitConstructorModal'
+import { useEmployeeGrossProfitConstructor } from '../hooks/useEmployeeGrossProfitConstructor'
 import { OverdueReceivablesConstructorModal } from './OverdueReceivablesConstructorModal'
 import { useOverdueReceivablesConstructor } from '../hooks/useOverdueReceivablesConstructor'
 import { ManagementReturnsConstructorModal } from './ManagementReturnsConstructorModal'
@@ -394,6 +396,8 @@ function ReportsStocksWorkspace({ ownerId, constructorMode }: { ownerId: string 
   const cashMovementConstructor = useCashMovementConstructor({ enabled: canGenerateReport, disabled: isLoading,
     callerKey: ownerId, from, today })
   const supplierDebtConstructor = useSupplierDebtConstructor({ enabled: canGenerateReport, disabled: isLoading,
+    callerKey: ownerId, from, today })
+  const employeeGrossProfitConstructor = useEmployeeGrossProfitConstructor({ enabled: canGenerateReport, disabled: isLoading,
     callerKey: ownerId, from, today })
   const overdueReceivablesConstructor = useOverdueReceivablesConstructor({ enabled: canGenerateReport, disabled: isLoading,
     callerKey: ownerId, from, today })
@@ -848,6 +852,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode }: { ownerId: string 
       <SalesMarginConstructorModal {...salesMarginConstructor.modalProps} />
       <CashMovementConstructorModal {...cashMovementConstructor.modalProps} />
       <SupplierDebtConstructorModal {...supplierDebtConstructor.modalProps} />
+      <EmployeeGrossProfitConstructorModal {...employeeGrossProfitConstructor.modalProps} />
       <OverdueReceivablesConstructorModal {...overdueReceivablesConstructor.modalProps} />
       <ManagementReturnsConstructorModal {...managementReturnsConstructor.modalProps} />
       <AppModal opened={canGenerateReport && currencyDynamicsCapability !== null} title={currencyDynamicsCapability?.Title ?? ''} size={960}
@@ -902,7 +907,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode }: { ownerId: string 
           onChange={changeDataset} onRetry={datasetStorage.retry} />}
         catalogueControl={<ReportCatalogueControl presentation="dialog" enabled={canGenerateReport}
           disabled={isLoading} onOpen={openCatalogueReport}
-          onOpenDebtToSalesRatio={openDebtToSalesRatio} onOpenCollectionCoefficient={collectionConstructor.open} onOpenSalesMargin={salesMarginConstructor.open} onOpenCashMovement={cashMovementConstructor.open} onOpenSupplierDebt={supplierDebtConstructor.open} onOpenOverdueReceivables={overdueReceivablesConstructor.open} onOpenManagementReturns={managementReturnsConstructor.open} callerKey={ownerId} onOpenActiveClients={openActiveClients}
+          onOpenDebtToSalesRatio={openDebtToSalesRatio} onOpenCollectionCoefficient={collectionConstructor.open} onOpenSalesMargin={salesMarginConstructor.open} onOpenCashMovement={cashMovementConstructor.open} onOpenSupplierDebt={supplierDebtConstructor.open} onOpenEmployeeGrossProfit={employeeGrossProfitConstructor.open} onOpenOverdueReceivables={overdueReceivablesConstructor.open} onOpenManagementReturns={managementReturnsConstructor.open} callerKey={ownerId} onOpenActiveClients={openActiveClients}
           onOpenCurrencyRateDynamics={openCurrencyRateDynamics} onOpenCashAggregateBalance={openCashAggregateBalance} onOpenOriginalRevenue={openOriginalRevenue} onOpenOriginalBuyerSalesShare={openOriginalBuyerSalesShare} />}
         datasetSummary={<><ReportDatasetSummary dataset={dataset} />
           {!constructorMode ? <details className="stocks-workspace-dataset-help"><summary>{t('Що змінює вибір набору даних')}</summary>
