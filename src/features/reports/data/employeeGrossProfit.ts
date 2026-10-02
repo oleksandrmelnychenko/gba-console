@@ -139,15 +139,15 @@ export function normalizeEmployeeGrossProfitReport(value: unknown, request: Empl
     || !Object.entries(periods.PreviousPeriod).every(([key, expected]) => (value.PreviousPeriod as Record<string, unknown>)[key] === expected)
     || !record(value.Inputs) || !input(value.Inputs.Current) || !input(value.Inputs.Previous)
     || !cells(value.Cells) || typeof value.InputsComplete !== 'boolean' || typeof value.Complete !== 'boolean' || typeof value.HasRows !== 'boolean'
-    || !hash(value.RequestSha256) || !hash(value.ResultSha256) || typeof value.DocumentURL !== 'string' || typeof value.PdfDocumentURL !== 'string') throw invalid()
+    || !hash(value.RequestSha256) || !hash(value.ResultSha256) || typeof value.DocumentURL !== 'string' || typeof value.PdfDocumentURL !== 'string') throw invalidEmployeeGrossProfitReport()
   const report = value as unknown as EmployeeGrossProfitReport, proof = value.Proof
   if (!record(proof) || proof.OurSnapshotVerified !== true || !hash(proof.InputProofSha256)
     || !periodProof(proof.Current, report.Inputs.Current, periods.CurrentPeriod) || !periodProof(proof.Previous, report.Inputs.Previous, periods.PreviousPeriod)
     || report.InputsComplete !== (complete(report.Inputs.Current) && complete(report.Inputs.Previous))
     || report.Complete !== (report.InputsComplete && report.Cells.every(cell => cell.Available))
-    || report.HasRows !== (hasRows(report.Inputs.Current) || hasRows(report.Inputs.Previous))) throw invalid()
+    || report.HasRows !== (hasRows(report.Inputs.Current) || hasRows(report.Inputs.Previous))) throw invalidEmployeeGrossProfitReport()
   const expected = !report.InputsComplete ? 'input_not_available' : !report.Complete ? 'arithmetic_not_representable' : report.HasRows ? 'available' : 'confirmed_empty'
-  if (report.Code !== expected) throw invalid()
+  if (report.Code !== expected) throw invalidEmployeeGrossProfitReport()
   return report
 }
-function invalid() { return new Error('Сервер повернув некоректний результат прибутку на співробітника або інший місячний період.') }
+export function invalidEmployeeGrossProfitReport() { return new Error('Сервер повернув некоректний результат прибутку на співробітника або інший місячний період.') }

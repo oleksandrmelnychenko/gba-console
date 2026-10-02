@@ -28,7 +28,7 @@ it('renders four server formatted values verbatim and exports both files from th
   fireEvent.click(screen.getByRole('button', { name: 'Файли звіту' }))
   const files = screen.getByRole('dialog', { name: 'Файли прибутку на співробітника' })
   expect(within(files).getByText(report.DocumentURL)).toBeTruthy(); expect(within(files).getByText(report.PdfDocumentURL)).toBeTruthy()
-  expect(previewEmployeeGrossProfit).toHaveBeenCalledWith(employeeGrossProfitCapability(), report.Month, expect.any(AbortSignal)); expect(previewEmployeeGrossProfit).toHaveBeenCalledOnce()
+  expect(previewEmployeeGrossProfit).toHaveBeenCalledWith(employeeGrossProfitCapability(), report.Month, 'owner-a', expect.any(AbortSignal)); expect(previewEmployeeGrossProfit).toHaveBeenCalledOnce()
 })
 it('shows confirmed empty with original zero and hundred cells without declaring missing data', async () => {
   vi.mocked(previewEmployeeGrossProfit).mockResolvedValue(employeeGrossProfitEmptyReport()); render(panel())
@@ -68,7 +68,7 @@ it('aborts deferred old caller output without clearing a newer loading state or 
     .mockImplementationOnce(() => new Promise(done => { newDone = done }))
   const loading = vi.fn(), view = render(panel('owner-a', true, loading))
   fireEvent.click(screen.getByRole('button', { name: 'Сформувати' }))
-  const oldSignal = vi.mocked(previewEmployeeGrossProfit).mock.calls[0][2]!
+  const oldSignal = vi.mocked(previewEmployeeGrossProfit).mock.calls[0][3]!
   view.rerender(panel('owner-b', true, loading)); expect(oldSignal.aborted).toBe(true)
   fireEvent.click(screen.getByRole('button', { name: 'Переглянути' }))
   await act(async () => { oldDone(employeeGrossProfitReport()) })

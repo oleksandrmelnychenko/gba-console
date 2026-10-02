@@ -36,13 +36,13 @@ export function EmployeeGrossProfitReportPanel({ capability, initialMonth, canGe
   const hasFiles = Boolean(run.result?.document.DocumentURL || run.result?.document.PdfDocumentURL)
 
   async function generate(openFiles: boolean) {
-    if (!canSubmit || active.current) return
+    if (!canSubmit || !callerKey || active.current) return
     const attempt = { requestKey, controller: new AbortController(), loading: onLoadingChange }
     active.current = attempt
     const updateAttempt = run.begin()
     onLoadingChange?.(true)
     try {
-      const response = await previewEmployeeGrossProfit(capability, month, attempt.controller.signal)
+      const response = await previewEmployeeGrossProfit(capability, month, callerKey, attempt.controller.signal)
       if (attempt.controller.signal.aborted) return
       const result = normalizeReportResult(response)
       updateAttempt({ result, lastRun: response, downloadModalOpened: openFiles && Boolean(result.document.DocumentURL || result.document.PdfDocumentURL) })
@@ -59,7 +59,7 @@ export function EmployeeGrossProfitReportPanel({ capability, initialMonth, canGe
 
   return <Stack gap="md">
     <Text size="sm">{t('Валовий прибуток на співробітника з поточних даних GBA за вибраний та попередній місяці. Управлінський ресурс (Упр), без валютної конвертації.')}</Text>
-    <Text size="xs" c="dimmed">{t('Враховуються активні записи історії співробітників за погодженим правилом OUR. Поточна чисельність штату та нативна семантика 1С не підтверджені.')}</Text>
+    <Text size="xs" c="dimmed">{t('Кількість співробітників визначається з активних записів історії на кінцеву межу кожного періоду.')}</Text>
     <TextInput type="month" label={t('Період')} value={month} disabled={!canGenerate || run.isLoading}
       onChange={event => setMonth(event.currentTarget.value)} />
     {!canGenerate ? <Alert color="yellow">{t('Недостатньо прав для формування звітів.')}</Alert> : null}

@@ -54,7 +54,7 @@ it('defers the capability until catalogue opening and keeps the monthly request 
   fireEvent.change(month, { target: { value: '2026-09' } })
   fireEvent.click(within(modal).getByRole('button', { name: 'Переглянути' }))
   await within(modal).findByRole('region', { name: 'Результат прибутку на співробітника' })
-  expect(previewEmployeeGrossProfit).toHaveBeenCalledWith(employeeGrossProfitCapability(), '2026-09', expect.any(AbortSignal))
+  expect(previewEmployeeGrossProfit).toHaveBeenCalledWith(employeeGrossProfitCapability(), '2026-09', 'employee-gross-profit-test-owner', expect.any(AbortSignal))
   expect(createStockReport).not.toHaveBeenCalled()
   expect(sessionStorage.getItem(draftKey)).toBe(draft)
   fireEvent.click(within(modal).getByRole('button', { name: 'Закрити прибуток на співробітника' }))

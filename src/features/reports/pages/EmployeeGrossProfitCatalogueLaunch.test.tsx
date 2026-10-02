@@ -29,6 +29,7 @@ it('opens only after the exact executable server capability is available', async
   await waitFor(() => expect((button as HTMLButtonElement).disabled).toBe(false))
   fireEvent.click(button)
   expect(open).toHaveBeenCalledWith(capability)
+  expect(getEmployeeGrossProfitCapabilities).toHaveBeenCalledWith('owner-a', expect.any(AbortSignal))
 })
 
 it('does not read a capability without permission and keeps an unavailable capability disabled', async () => {
@@ -46,7 +47,7 @@ it('aborts an old caller capability and ignores its deferred completion', async 
   vi.mocked(getEmployeeGrossProfitCapabilities).mockImplementationOnce(() => new Promise(done => { resolve = done }))
     .mockResolvedValueOnce({ ...employeeGrossProfitCapability(), RuntimeImplemented: false })
   const view = render(launcher())
-  const signal = vi.mocked(getEmployeeGrossProfitCapabilities).mock.calls[0][0]!
+  const signal = vi.mocked(getEmployeeGrossProfitCapabilities).mock.calls[0][1]!
   view.rerender(launcher(true, 'owner-b'))
   expect(signal.aborted).toBe(true)
   await screen.findByText('Сервер ще не підтримує формування цього конструктора.')

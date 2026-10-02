@@ -21,7 +21,7 @@ export function EmployeeGrossProfitCatalogueLaunch({ report, enabled, disabled, 
   useEffect(() => {
     if (!scope.enabled || !scope.availableSource || !scope.callerKey) return
     const controller = new AbortController()
-    getEmployeeGrossProfitCapabilities(controller.signal).then(capability => {
+    getEmployeeGrossProfitCapabilities(scope.callerKey, controller.signal).then(capability => {
       if (!controller.signal.aborted) setLoad({ scope, capability, failed: false })
     }).catch(() => {
       if (!controller.signal.aborted) setLoad({ scope, capability: null, failed: true })
