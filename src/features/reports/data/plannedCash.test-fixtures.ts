@@ -23,7 +23,7 @@ export function plannedCashTestRequest(kind: PlannedCashKind = 'CalendarPayouts'
     PreviousPeriod: dds ? { From: '2026-08-01T00:00:00.000', ThroughExclusive: '2026-09-01T00:00:00.000' } : null,
     PlanEndpoint: dds ? null : '2026-10-01T00:00:00.000', Scenario: dds ? { Type: '08', Table: '0000008A', Value: '1'.repeat(32) } : null }
 }
-const relation = (): PlannedCashRelationProof => ({ Available: true, CompletePublication: true, DatedOpeningVerified: true, CompletedMovementMonths: 1 })
+const relation = (datedOpeningVerified = false): PlannedCashRelationProof => ({ Available: true, CompletePublication: true, DatedOpeningVerified: datedOpeningVerified, CompletedMovementMonths: 1 })
 export function plannedCashReport(kind: PlannedCashKind = 'CalendarPayouts'): PlannedCashReport {
   const cap = plannedCashCapability(kind), req = plannedCashTestRequest(kind), dds = cap.RequiresObservedScenario
   const values = dds ? ['-2', '0', '100', '-2', '10', '-20', '-120', '-12'] : ['-2', '10']
@@ -36,8 +36,8 @@ export function plannedCashReport(kind: PlannedCashKind = 'CalendarPayouts'): Pl
     GroupLabelsAvailabilityMessage: kind === 'DdsReceipts' ? 'Назви частини груп ще не синхронізовані.' : null, InputBasis: cap.InputBasis, PresentationBasis: 'CurrentGbaClrDecimal', ResourceUnits: cap.ResourceUnits,
     EffectiveSourcePeriodsVerified: false, SourceParityVerified: false, NativeVirtualTableZeroSuppressionVerified: false, AppliesFxConversion: false, NativeSavedVariantsSupported: false,
     Proof: { InputWitnessSha256: 'b'.repeat(64), SnapshotVerified: true, Current: relation(), Previous: dds ? relation() : null,
-      Scenario: dds ? relation() : null, Receipts: kind === 'NetFlow' || kind === 'CalendarReceipts' ? relation() : null,
-      Requests: kind === 'NetFlow' || kind === 'CalendarPayouts' ? relation() : null, LabelWitnessSha256: 'd'.repeat(64), ComparisonCurrencyStatus: dds ? 'Compatible' : 'NotApplicable' },
+      Scenario: dds ? relation() : null, Receipts: kind === 'NetFlow' || kind === 'CalendarReceipts' ? relation(true) : null,
+      Requests: kind === 'NetFlow' || kind === 'CalendarPayouts' ? relation(true) : null, LabelWitnessSha256: 'd'.repeat(64), ComparisonCurrencyStatus: dds ? 'Compatible' : 'NotApplicable' },
     ObservationStartedAtUtc: '2026-10-02T01:02:03.0000000Z', ObservationCompletedAtUtc: '2026-10-02T01:02:04.0000000Z',
     RequestSha256: 'e'.repeat(64), ResultSha256: 'f'.repeat(64), DocumentURL: '/reports/planned-cash.xlsx', PdfDocumentURL: '/reports/planned-cash.pdf' }
 }

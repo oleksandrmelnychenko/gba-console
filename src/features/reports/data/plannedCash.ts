@@ -136,14 +136,16 @@ function cells(v: unknown, expected: PlannedCashColumn[]): v is PlannedCashCell[
 }
 function relation(v: unknown): v is PlannedCashRelationProof { return record(v) && typeof v.Available === 'boolean' && typeof v.CompletePublication === 'boolean'
   && typeof v.DatedOpeningVerified === 'boolean' && typeof v.CompletedMovementMonths === 'number' && Number.isSafeInteger(v.CompletedMovementMonths)
-  && v.CompletedMovementMonths >= 0 && v.CompletedMovementMonths <= 120 && (!v.Available || v.CompletePublication) }
+  && v.CompletedMovementMonths >= 0 && (!v.Available || v.CompletePublication) }
+function turnoverRelation(v: unknown): v is PlannedCashRelationProof { return relation(v) && !v.DatedOpeningVerified }
+function plannedBalanceRelation(v: unknown): v is PlannedCashRelationProof { return relation(v) && (!v.Available || v.DatedOpeningVerified) }
 function utc(v: unknown): v is string { return typeof v === 'string' && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{7}Z$/.test(v)
   && Number.isFinite(Date.parse(v)) && new Date(v).toISOString().slice(0, 23) === v.slice(0, 23) }
 function proof(v: unknown, r: PlannedCashReport): v is PlannedCashProof {
-  if (!record(v) || !hash(v.InputWitnessSha256) || !hash(v.LabelWitnessSha256) || v.SnapshotVerified !== true || !relation(v.Current)) return false
+  if (!record(v) || !hash(v.InputWitnessSha256) || !hash(v.LabelWitnessSha256) || v.SnapshotVerified !== true || !turnoverRelation(v.Current)) return false
   const dds = Boolean(PLANNED_CASH_FORMS[r.Kind].Scenario), receipts = r.Kind === 'NetFlow' || r.Kind === 'CalendarReceipts', requests = r.Kind === 'NetFlow' || r.Kind === 'CalendarPayouts'
-  if (!(dds ? relation(v.Previous) && relation(v.Scenario) && v.Receipts === null && v.Requests === null
-    : v.Previous === null && v.Scenario === null && (receipts ? relation(v.Receipts) : v.Receipts === null) && (requests ? relation(v.Requests) : v.Requests === null))) return false
+  if (!(dds ? turnoverRelation(v.Previous) && turnoverRelation(v.Scenario) && v.Receipts === null && v.Requests === null
+    : v.Previous === null && v.Scenario === null && (receipts ? plannedBalanceRelation(v.Receipts) : v.Receipts === null) && (requests ? plannedBalanceRelation(v.Requests) : v.Requests === null))) return false
   if (r.CurrentAvailable && !v.Current.Available || r.PreviousAvailable === true && !(record(v.Previous) && v.Previous.Available)
     || r.PlanAvailable && !(dds ? record(v.Scenario) && v.Scenario.Available : (!receipts || record(v.Receipts) && v.Receipts.Available) && (!requests || record(v.Requests) && v.Requests.Available))) return false
   return dds ? ['Compatible', 'Conflict', 'Unverified'].includes(String(v.ComparisonCurrencyStatus))

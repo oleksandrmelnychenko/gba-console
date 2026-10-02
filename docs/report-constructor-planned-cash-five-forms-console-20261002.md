@@ -17,3 +17,19 @@ Cash-flow article labels remain explicitly pending where the server has no canon
 ## Verification scope
 
 Meaningful tests are authored for original identities/routes, strict dates, pending DDS selection, partial/empty/undefined values, signed server presentation, known currency-conflict transport, cookie/CSRF and response headers, old-owner streams, cancellation, same-run exports and native-workspace isolation. Author performed FILE/Git checks only. No build, tests, browser authorization, PDF conversion, normal publication, deployment or Source parity has been executed or accepted by this patch. Root owns all runtime checks.
+
+## Proof-contract correction successor
+
+This isolated successor starts at frozen `cdb6c3b8537b275c81da0616909735a20bf39cea`.
+Completed movement-month counts retain the server's nonnegative safe-integer contract;
+there is no invented 120-month limit. Current/prior/scenario turnover proofs must have
+`DatedOpeningVerified=false`. Available planned receipt/request balances require a
+verified dated opening; unavailable planned balances may retain a genuine opening and
+partial month prefix while their values remain unavailable. Fixtures now use those
+actual role-specific flags.
+
+Fourteen additional cases are authored for a valid 121-month scope, each available
+planned role without an opening, invented turnover openings, a preserved incomplete
+planned prefix, and malformed counters. Total declarations are 125: data63, API25,
+launcher13, panel19 and workspace5. None were executed by the author. Five forms,
+routes, caller/CSRF/file bindings and pending scenario/label/settings scope are unchanged.
