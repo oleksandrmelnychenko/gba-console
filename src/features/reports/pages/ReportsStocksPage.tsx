@@ -142,6 +142,8 @@ import { DefectProductionConstructorModal } from './DefectProductionConstructorM
 import { useDefectProductionConstructor } from '../hooks/useDefectProductionConstructor'
 import { InventoryTurnoverConstructorModal } from './InventoryTurnoverConstructorModal'
 import { useInventoryTurnoverConstructor } from '../hooks/useInventoryTurnoverConstructor'
+import { PlannedCashConstructorModal } from './PlannedCashConstructorModal'
+import { usePlannedCashConstructor } from '../hooks/usePlannedCashConstructor'
 import { CurrentLiquidityConstructorModal } from './CurrentLiquidityConstructorModal'
 import { useCurrentLiquidityConstructor } from '../hooks/useCurrentLiquidityConstructor'
 import { ActiveClientsReportPanel } from './ActiveClientsReportPanel'
@@ -423,6 +425,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode }: { ownerId: string 
     callerKey: ownerId, from, today })
   const currentLiquidityConstructor = useCurrentLiquidityConstructor({ enabled: canGenerateReport, disabled: isLoading,
     callerKey: ownerId, today })
+  const plannedCashConstructor = usePlannedCashConstructor({ enabled: canGenerateReport, disabled: isLoading, callerKey: ownerId, today })
   const comparisonSettingsDisabled = isLoading || !canGenerateReport
   const retainedData = restoredData ?? activeTemplate?.Data
   const templateBody = useMemo(() => retainedData
@@ -880,6 +883,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode }: { ownerId: string 
       <DefectProductionConstructorModal {...defectProductionConstructor.modalProps} />
       <InventoryTurnoverConstructorModal {...inventoryTurnoverConstructor.modalProps} />
       <CurrentLiquidityConstructorModal {...currentLiquidityConstructor.modalProps} />
+      <PlannedCashConstructorModal {...plannedCashConstructor.modalProps} />
       <AppModal opened={canGenerateReport && currencyDynamicsCapability !== null} title={currencyDynamicsCapability?.Title ?? ''} size={960}
         onClose={() => { if (!currencyDynamicsGenerating) setCurrencyDynamicsCapability(null) }}
         closeOnClickOutside={!currencyDynamicsGenerating} closeOnEscape={!currencyDynamicsGenerating}
@@ -932,7 +936,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode }: { ownerId: string 
           onChange={changeDataset} onRetry={datasetStorage.retry} />}
         catalogueControl={<ReportCatalogueControl presentation="dialog" enabled={canGenerateReport}
           disabled={isLoading} onOpen={openCatalogueReport}
-          onOpenDebtToSalesRatio={openDebtToSalesRatio} onOpenCollectionCoefficient={collectionConstructor.open} onOpenSalesMargin={salesMarginConstructor.open} onOpenCashMovement={cashMovementConstructor.open} onOpenSupplierDebt={supplierDebtConstructor.open} onOpenEmployeeGrossProfit={employeeGrossProfitConstructor.open} onOpenOverdueReceivables={overdueReceivablesConstructor.open} onOpenManagementReturns={managementReturnsConstructor.open} onOpenManagementBalance={managementBalanceConstructor.open} onOpenManagementOrders={managementOrdersConstructor.open} onOpenDefectProduction={defectProductionConstructor.open} onOpenInventoryTurnover={inventoryTurnoverConstructor.open} onOpenCurrentLiquidity={currentLiquidityConstructor.open} callerKey={ownerId} onOpenActiveClients={openActiveClients}
+          onOpenDebtToSalesRatio={openDebtToSalesRatio} onOpenCollectionCoefficient={collectionConstructor.open} onOpenSalesMargin={salesMarginConstructor.open} onOpenCashMovement={cashMovementConstructor.open} onOpenSupplierDebt={supplierDebtConstructor.open} onOpenEmployeeGrossProfit={employeeGrossProfitConstructor.open} onOpenOverdueReceivables={overdueReceivablesConstructor.open} onOpenManagementReturns={managementReturnsConstructor.open} onOpenManagementBalance={managementBalanceConstructor.open} onOpenManagementOrders={managementOrdersConstructor.open} onOpenDefectProduction={defectProductionConstructor.open} onOpenInventoryTurnover={inventoryTurnoverConstructor.open} onOpenCurrentLiquidity={currentLiquidityConstructor.open} onOpenPlannedCash={plannedCashConstructor.open} callerKey={ownerId} onOpenActiveClients={openActiveClients}
           onOpenCurrencyRateDynamics={openCurrencyRateDynamics} onOpenCashAggregateBalance={openCashAggregateBalance} onOpenOriginalRevenue={openOriginalRevenue} onOpenOriginalBuyerSalesShare={openOriginalBuyerSalesShare} />}
         datasetSummary={<><ReportDatasetSummary dataset={dataset} />
           {!constructorMode ? <details className="stocks-workspace-dataset-help"><summary>{t('Що змінює вибір набору даних')}</summary>

@@ -16,6 +16,7 @@ import type { ManagementOrdersCapabilities } from '../data/managementOrders'
 import type { DefectProductionCapabilities } from '../data/defectProduction'
 import type { InventoryTurnoverCapabilities } from '../data/inventoryTurnover'
 import type { CurrentLiquidityCapabilities } from '../data/currentLiquidity'
+import type { PlannedCashCapabilities } from '../data/plannedCash'
 import type { ActiveClientsCapabilities } from '../data/activeClients'
 import type { CurrencyRateDynamicsCapabilities } from '../data/currencyRateDynamics'
 import type { CashAggregateBalanceCapabilities } from '../data/cashAggregateBalance'
@@ -25,7 +26,7 @@ import type { ReportCatalogue } from '../types'
 
 const ReportCataloguePanel = lazy(() => import('./ReportCataloguePanel').then(module => ({ default: module.ReportCataloguePanel })))
 
-export function ReportCatalogueControl({ enabled, disabled = false, presentation = 'inline', onOpen, onOpenDebtToSalesRatio, onOpenCollectionCoefficient, onOpenSalesMargin, onOpenCashMovement, onOpenSupplierDebt, onOpenEmployeeGrossProfit, onOpenOverdueReceivables, onOpenManagementReturns, onOpenManagementBalance, onOpenManagementOrders, onOpenDefectProduction, onOpenInventoryTurnover, onOpenCurrentLiquidity, callerKey = null, onOpenActiveClients, onOpenCurrencyRateDynamics, onOpenCashAggregateBalance, onOpenOriginalRevenue, onOpenOriginalBuyerSalesShare }: {
+export function ReportCatalogueControl({ enabled, disabled = false, presentation = 'inline', onOpen, onOpenDebtToSalesRatio, onOpenCollectionCoefficient, onOpenSalesMargin, onOpenCashMovement, onOpenSupplierDebt, onOpenEmployeeGrossProfit, onOpenOverdueReceivables, onOpenManagementReturns, onOpenManagementBalance, onOpenManagementOrders, onOpenDefectProduction, onOpenInventoryTurnover, onOpenCurrentLiquidity, onOpenPlannedCash, callerKey = null, onOpenActiveClients, onOpenCurrencyRateDynamics, onOpenCashAggregateBalance, onOpenOriginalRevenue, onOpenOriginalBuyerSalesShare }: {
   enabled: boolean
   disabled?: boolean
   presentation?: 'inline' | 'dialog'
@@ -43,6 +44,7 @@ export function ReportCatalogueControl({ enabled, disabled = false, presentation
   onOpenDefectProduction?: (capability: DefectProductionCapabilities) => boolean
   onOpenInventoryTurnover?: (capability: InventoryTurnoverCapabilities) => boolean
   onOpenCurrentLiquidity?: (capability: CurrentLiquidityCapabilities) => boolean
+  onOpenPlannedCash?: (capability: PlannedCashCapabilities) => boolean
   callerKey?: string | null
   onOpenActiveClients?: (capability: ActiveClientsCapabilities) => boolean
   onOpenCurrencyRateDynamics?: (capability: CurrencyRateDynamicsCapabilities) => boolean
@@ -71,6 +73,7 @@ export function ReportCatalogueControl({ enabled, disabled = false, presentation
       onOpenDefectProduction={closeAfterAccepted(onOpenDefectProduction, canOpen, () => setOpened(false))}
       onOpenInventoryTurnover={closeAfterAccepted(onOpenInventoryTurnover, canOpen, () => setOpened(false))}
       onOpenCurrentLiquidity={closeAfterAccepted(onOpenCurrentLiquidity, canOpen, () => setOpened(false))}
+      onOpenPlannedCash={closeAfterAccepted(onOpenPlannedCash, canOpen, () => setOpened(false))}
       onOpenActiveClients={closeAfterAccepted(onOpenActiveClients, canOpen, () => setOpened(false))}
       onOpenCurrencyRateDynamics={closeAfterAccepted(onOpenCurrencyRateDynamics, canOpen, () => setOpened(false))}
       onOpenCashAggregateBalance={closeAfterAccepted(onOpenCashAggregateBalance, canOpen, () => setOpened(false))}
