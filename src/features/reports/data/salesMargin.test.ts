@@ -5,6 +5,10 @@ import { salesMarginCapability, salesMarginCatalogueEntry, salesMarginEmptyInput
 
 it('binds the dedicated identity, four columns and explicit current monthly basis', () => {
   expect(isSalesMarginCapabilities(salesMarginCapability())).toBe(true)
+  expect(salesMarginCapability().Columns[1].Caption).toBe('Предыдущее значение')
+  const obsoleteCaption = salesMarginCapability()
+  const columns: unknown[] = obsoleteCaption.Columns.map((column, index) => index === 1 ? { ...column, Caption: 'Значение предыдущего периода' } : column)
+  expect(isSalesMarginCapabilities({ ...obsoleteCaption, Columns: columns })).toBe(false)
   expect(isSalesMarginCapabilities({ ...salesMarginCapability(), SourceParityVerified: true })).toBe(false)
   expect(isSalesMarginCapabilities({ ...salesMarginCapability(), Currency: 'USD' })).toBe(false)
   expect(isSalesMarginCapabilities({ ...salesMarginCapability(), Columns: [...salesMarginCapability().Columns].reverse() })).toBe(false)

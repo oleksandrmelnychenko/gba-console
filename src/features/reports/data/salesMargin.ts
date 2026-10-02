@@ -10,7 +10,7 @@ export const SALES_MARGIN_INPUT_BASIS = 'CurrentOurMonthlyNetSalesAndRetainedNet
 export const SALES_MARGIN_PRESENTATION_BASIS = 'CurrentGbaClrDecimal'
 export const SALES_MARGIN_COLUMNS = [
   { Key: 'ТекущееЗначение', Caption: 'Текущее значение', DecimalPlaces: null },
-  { Key: 'ПредыдущееЗначение', Caption: 'Значение предыдущего периода', DecimalPlaces: null },
+  { Key: 'ПредыдущееЗначение', Caption: 'Предыдущее значение', DecimalPlaces: null },
   { Key: 'UserFields.field1', Caption: 'Изменение %', DecimalPlaces: 2 },
   { Key: 'UserFields.field2', Caption: 'Изменение (абс)', DecimalPlaces: 2 },
 ] as const
