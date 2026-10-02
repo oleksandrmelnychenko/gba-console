@@ -4,7 +4,7 @@ import { ApiError } from '../../../shared/api/apiClient'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { DocumentExportModal } from '../../../shared/ui/document-export-modal/DocumentExportModal'
 import { previewOverdueReceivables } from '../api/overdueReceivablesApi'
-import { isOverdueReceivablesCapabilities, overdueReceivablesMonthError, type OverdueReceivablesCapabilities, type OverdueReceivablesReport } from '../data/overdueReceivables'
+import { isOverdueReceivablesCapabilities, isOverdueReceivablesDocumentUrl, overdueReceivablesMonthError, type OverdueReceivablesCapabilities, type OverdueReceivablesReport } from '../data/overdueReceivables'
 import { useReportRunState } from '../hooks/useReportRunState'
 import { normalizeReportResult } from '../utils'
 import { ServerReportCellsTable } from './ServerReportCellsTable'
@@ -44,6 +44,8 @@ export function OverdueReceivablesReportPanel({ capability, initialMonth, canGen
     try {
       const response = await previewOverdueReceivables(capability, month, attempt.controller.signal)
       if (attempt.controller.signal.aborted) return
+      if (!isOverdueReceivablesDocumentUrl(response.DocumentURL) || !isOverdueReceivablesDocumentUrl(response.PdfDocumentURL))
+        throw new Error('Сервер повернув некоректне посилання на файл звіту.')
       const result = normalizeReportResult(response)
       updateAttempt({ result, lastRun: response, downloadModalOpened: openFiles && Boolean(result.document.DocumentURL || result.document.PdfDocumentURL) })
     } catch (error) {

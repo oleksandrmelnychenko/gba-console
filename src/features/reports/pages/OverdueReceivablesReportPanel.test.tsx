@@ -28,7 +28,7 @@ it('renders four server formatted values verbatim and exports both files from th
   const groups = within(result).getByRole('table', { name: 'Контрагенти' })
   expect(within(groups).getAllByRole('columnheader').map(cell => cell.textContent)).toEqual(['Контрагент', ...report.Columns.map(column => column.Caption)])
   expect(within(groups).getAllByRole('cell').map(cell => cell.textContent)).toEqual(['Контрагент із OUR', '1', '3', '-66.67', '-2'])
-  expect(screen.queryByText('-200/3')).toBeNull(); expect(screen.queryByText(report.Proof.OpeningRunId!)).toBeNull(); expect(screen.getByText(/EUR — валюта відображення GBA/)).toBeTruthy()
+  expect(screen.queryByText('-200/3')).toBeNull(); expect(screen.queryByText(report.Proof.OpeningRunId!)).toBeNull(); expect(screen.getByText(/Суми в EUR за комерційними курсами системи/)).toBeTruthy()
   fireEvent.click(screen.getByRole('button', { name: 'Файли звіту' }))
   const files = screen.getByRole('dialog', { name: 'Файли простроченої дебіторки' })
   expect(within(files).getByText(report.DocumentURL)).toBeTruthy(); expect(within(files).getByText(report.PdfDocumentURL)).toBeTruthy()

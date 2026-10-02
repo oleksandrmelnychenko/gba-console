@@ -52,6 +52,16 @@ const count = (value: unknown): value is number => typeof value === 'number' && 
 const hash = (value: unknown): value is string => typeof value === 'string' && /^[0-9a-f]{64}$/.test(value)
 const guid = (value: unknown): value is string => typeof value === 'string' && /^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i.test(value) && value !== '00000000-0000-0000-0000-000000000000'
 const decimal = (value: unknown): value is string => typeof value === 'string' && value.length <= 64 && /^-?\d+(?:\.\d+)?$/.test(value)
+export function isOverdueReceivablesDocumentUrl(value: unknown): value is string {
+  if (typeof value !== 'string') return false
+  if (value === '') return true
+  if (value !== value.trim() || /[\u0000-\u001f\u007f\\]/.test(value)
+    || !/^https?:\/\//i.test(value) && (!value.startsWith('/') || value.startsWith('//'))) return false
+  try {
+    const url = new URL(value, 'https://gba.invalid')
+    return (url.protocol === 'http:' || url.protocol === 'https:') && !url.username && !url.password
+  } catch { return false }
+}
 function date(value: unknown): value is string {
   if (typeof value !== 'string' || value < '0001-01-01' || !/^\d{4}-(?:0[1-9]|1[0-2])-(?:0[1-9]|[12]\d|3[01])$/.test(value)) return false
   const parsed = Date.parse(`${value}T00:00:00Z`)
@@ -151,7 +161,7 @@ function envelope(value: unknown, request: OverdueReceivablesRequest): value is 
   return record(value) && value.Version === 1 && identity(value.SourceIdentity) && scopeMatches(value, request.Month) && columns(value.Columns) && basis(value)
     && record(value.Inputs) && input(value.Inputs.Current) && input(value.Inputs.Previous) && cells(value.Cells) && groups(value.Rows)
     && typeof value.Complete === 'boolean' && typeof value.HasRows === 'boolean' && hash(value.RequestSha256) && hash(value.ResultSha256)
-    && typeof value.DocumentURL === 'string' && typeof value.PdfDocumentURL === 'string'
+    && isOverdueReceivablesDocumentUrl(value.DocumentURL) && isOverdueReceivablesDocumentUrl(value.PdfDocumentURL)
 }
 /** Request scope and coverage only: no balances, ratios or currency conversions are calculated in the browser. */
 export function normalizeOverdueReceivablesReport(value: unknown, request: OverdueReceivablesRequest): OverdueReceivablesReport {
