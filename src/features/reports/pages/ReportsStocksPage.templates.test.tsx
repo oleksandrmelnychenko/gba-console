@@ -18,7 +18,11 @@ describe('constructor opened-template identity', () => {
     Object.defineProperty(HTMLElement.prototype, 'scrollIntoView', { configurable: true, value: vi.fn() })
     vi.mocked(getReportDatasets).mockResolvedValue([...reportDatasets, stockDataset])
     vi.mocked(getServerReportTemplates).mockResolvedValue([template])
-    vi.mocked(saveServerReportTemplate).mockImplementation(async request => ({ ...request, Revision: 5 }))
+    vi.mocked(saveServerReportTemplate).mockImplementation(async request => {
+      const saved = { ...request, Revision: 5 }
+      vi.mocked(getServerReportTemplates).mockResolvedValue([saved])
+      return saved
+    })
   })
   it.each(['reset', 'preset', 'dataset'])('clears the opened target after %s without overwriting its stored settings', async action => {
     render(<MantineProvider env="test"><I18nProvider><ReportsStocksPage /></I18nProvider></MantineProvider>)
@@ -46,7 +50,11 @@ describe('constructor opened-template identity', () => {
     fireEvent.change(screen.getByLabelText('Від'), { target: { value: '2026-09-02' } })
     const newer = { ...template, Revision: 5, Data: { ...template.Data, from: '2026-09-03' } }
     vi.mocked(getServerReportTemplates).mockResolvedValue([newer])
-    vi.mocked(saveServerReportTemplate).mockImplementation(async request => ({ ...request, Revision: 6 }))
+    vi.mocked(saveServerReportTemplate).mockImplementation(async request => {
+      const saved = { ...request, Revision: 6 }
+      vi.mocked(getServerReportTemplates).mockResolvedValue([saved])
+      return saved
+    })
     fireEvent.click(screen.getByRole('button', { name: 'Шаблони' }))
     fireEvent.click(screen.getByRole('button', { name: 'Оновити список' }))
     await waitFor(() => expect((screen.getByRole('button', { name: 'Оновити шаблон' }) as HTMLButtonElement).disabled).toBe(true))

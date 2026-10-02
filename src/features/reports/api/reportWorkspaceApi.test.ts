@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 import { apiRequest } from '../../../shared/api/apiClient'
-import { getReportCatalogue, getReportDatasets, getServerReportTemplates, saveServerReportTemplate } from './reportWorkspaceApi'
+import { deleteServerReportTemplate, getReportCatalogue, getReportDatasets, getServerReportTemplates, saveServerReportTemplate } from './reportWorkspaceApi'
 import { createSalesReportPreset } from '../data/reportPresets'
 import { reportDatasets, stockDataset, currentStockDatasets, valuationDataset, nativeDocumentDatasets, currentDebtDataset } from '../data/reportDatasets.test-fixtures'
 import { defaultDatasetRequest } from '../data/reportDatasets'
@@ -10,6 +10,28 @@ import { catalogueFixture } from '../data/reportMigration.test-fixtures'
 vi.mock('../../../shared/api/apiClient', () => ({ apiRequest: vi.fn() }))
 
 describe('report workspace wire contract', () => {
+  it('reloads authoritative template definitions without the browser HTTP cache', async () => {
+    const controller = new AbortController()
+    vi.mocked(apiRequest).mockResolvedValue([])
+    await expect(getServerReportTemplates(controller.signal)).resolves.toEqual([])
+    expect(apiRequest).toHaveBeenLastCalledWith('/report/templates', { signal: controller.signal, cache: 'no-store', dedupe: false })
+  })
+
+  it('passes optional per-operation cancellation for template writes while preserving the one-argument contract', async () => {
+    const signal = new AbortController().signal
+    const preset = createSalesReportPreset('daily', '2026-09-01', '2026-09-07', [])
+    const template = { ...preset, Id: crypto.randomUUID(), Revision: 2 }
+    const wire = { ...template, Data: { DataSource: 0, From: preset.Data.from, To: preset.Data.to,
+      Sorted: preset.Data.sorted, Selections: preset.Data.selections } }
+    vi.mocked(apiRequest).mockResolvedValue(wire)
+    await saveServerReportTemplate(template, signal)
+    expect(apiRequest).toHaveBeenLastCalledWith('/report/templates/save', { method: 'POST', body: template, signal })
+    await deleteServerReportTemplate(template, signal)
+    expect(apiRequest).toHaveBeenLastCalledWith('/report/templates/delete', { method: 'POST', body: { Id: template.Id, Revision: 2 }, signal })
+    await deleteServerReportTemplate(template)
+    expect(apiRequest).toHaveBeenLastCalledWith('/report/templates/delete', { method: 'POST', body: { Id: template.Id, Revision: 2 } })
+  })
+
   it('loads exact per-world migration metadata without changing the source inventory or cancellation', async () => {
     const controller = new AbortController(), catalogue = catalogueFixture()
     vi.mocked(apiRequest).mockResolvedValue(catalogue)

@@ -290,7 +290,7 @@ function shouldDeduplicateGetRequest(options: ApiRequestOptions): boolean {
   const method = (options.method || 'GET').toUpperCase()
   const hasIdempotencyKey = new Headers(options.headers).has('Idempotency-Key')
 
-  return method === 'GET' && typeof options.body === 'undefined' && !hasIdempotencyKey
+  return options.dedupe !== false && method === 'GET' && typeof options.body === 'undefined' && !hasIdempotencyKey
 }
 
 function getGetRequestKey(path: string, options: ApiRequestOptions): string {

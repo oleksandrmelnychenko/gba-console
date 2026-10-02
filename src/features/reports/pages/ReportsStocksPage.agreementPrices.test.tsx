@@ -1,7 +1,8 @@
 import { MantineProvider } from '@mantine/core'
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import type { ReactNode } from 'react'
-import { beforeEach, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, expect, it, vi } from 'vitest'
+import { clearSession, saveSession } from '../../../shared/auth/session'
 import { I18nProvider } from '../../../shared/i18n/I18nProvider'
 import { createStockReport, searchValuationAgreements } from '../api/reportsApi'
 import { getReportDatasets, getServerReportTemplates, saveServerReportTemplate } from '../api/reportWorkspaceApi'
@@ -39,6 +40,7 @@ async function agreement() {
 }
 beforeEach(() => {
   allowed = true; vi.clearAllMocks(); localStorage.clear(); sessionStorage.clear()
+  saveSession({ userNetUid: 'prices-owner', csrfToken: 'prices-fixture-csrf' })
   Object.defineProperty(HTMLElement.prototype, 'scrollIntoView', { configurable: true, value: vi.fn() })
   vi.mocked(getReportDatasets).mockResolvedValue([...reportDatasets, agreementPricesDataset])
   vi.mocked(getServerReportTemplates).mockResolvedValue([])
@@ -46,6 +48,7 @@ beforeEach(() => {
   vi.mocked(createStockReport).mockResolvedValue({ document: { DocumentURL: '/files/prices.xlsx' }, raw: {} })
   vi.mocked(saveServerReportTemplate).mockImplementation(async value => ({ ...value, Revision: 2 }))
 })
+afterEach(clearSession)
 it('requires a verified exact contract, keeps it in the preset and submits current prices without dates', async () => {
   const view = await ready(); await prices()
   expect(screen.queryByLabelText('Від')).toBeNull()
@@ -62,6 +65,11 @@ it('requires a verified exact contract, keeps it in the preset and submits curre
 it('retains contract and price layout in a saved template and rejects unavailable contract at generation', async () => {
   const template = { Id: '10000000-0000-4000-8000-000000000022', Revision: 1, Name: 'Мої ціни', Data: agreementPricesRequest() }
   vi.mocked(getServerReportTemplates).mockResolvedValue([template])
+  vi.mocked(saveServerReportTemplate).mockImplementation(async value => {
+    const saved = { ...value, Revision: 2 }
+    vi.mocked(getServerReportTemplates).mockResolvedValue(value.Id === template.Id ? [saved] : [template, saved])
+    return saved
+  })
   const view = await ready()
   fireEvent.click(screen.getByRole('button', { name: 'Шаблони' }))
   fireEvent.click(await screen.findByRole('button', { name: /Мої ціни/ }))

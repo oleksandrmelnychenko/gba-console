@@ -335,7 +335,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode }: { ownerId: string 
   const filterLogic = useReportFilterExpression()
   const { selections, expression: filterExpression } = filterLogic
   const [templateName, setTemplateName] = useValueState('')
-  const templateStorage = useServerReportTemplates(canGenerateReport, datasetStorage.datasets)
+  const templateStorage = useServerReportTemplates(canGenerateReport, datasetStorage.datasets, ownerId)
   const [activeTemplate, setActiveTemplate] = useState<ReportTemplate | null>(null)
   const [restoredData, setRestoredData] = useState<ReportRequestBody | null>(null)
   const [draftRestoreError, setDraftRestoreError] = useState<string | null>(null)
@@ -1305,6 +1305,7 @@ function ReportBuilderForm(props: ReportBuilderFormProps) {
           onClose={() => setTemplatesOpened(false)}
         >
           <ReportTemplatesPanel
+            ordering={props.templateStorage.ordering}
             storage={templateStorage}
             datasets={props.templateDatasets}
             callerKey={props.templateCallerKey}

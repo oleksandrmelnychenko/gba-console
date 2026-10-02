@@ -1,7 +1,8 @@
 import { MantineProvider } from '@mantine/core'
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import type { ReactNode } from 'react'
-import { beforeEach, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, expect, it, vi } from 'vitest'
+import { clearSession, saveSession } from '../../../shared/auth/session'
 import { I18nProvider } from '../../../shared/i18n/I18nProvider'
 import { getActiveClientsCapabilities, previewActiveClients } from '../api/activeClientsApi'
 import { createStockReport } from '../api/reportsApi'
@@ -24,6 +25,7 @@ function Providers({ children }: { children: ReactNode }) {
 
 beforeEach(() => {
   vi.clearAllMocks(); sessionStorage.clear(); localStorage.clear()
+  saveSession({ userNetUid: 'active-clients-test-owner', csrfToken: 'active-clients-fixture-csrf' })
   const catalogue: ReportCatalogue = { CapturedOn: '2026-09-07', Presentations: [], Reports: [activeClientsCatalogueEntry()] }
   vi.mocked(getReportCatalogue).mockResolvedValue(catalogue)
   vi.mocked(getReportDatasets).mockResolvedValue(reportDatasets)
@@ -31,6 +33,7 @@ beforeEach(() => {
   vi.mocked(getActiveClientsCapabilities).mockResolvedValue(activeClientsCapability())
   vi.mocked(previewActiveClients).mockResolvedValue(activeClientsReport())
 })
+afterEach(clearSession)
 
 it('launches the original count form without borrowing native filters, request or draft state', async () => {
   render(<Providers><ReportsStocksPage constructorMode /></Providers>)

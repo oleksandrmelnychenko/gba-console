@@ -8,11 +8,14 @@ import type { TemplateMutationResult, useServerReportTemplates } from '../hooks/
 import type { ReportDataset, ReportTemplate } from '../types'
 import { formatDate } from '../utils'
 import { SavedNativeReportPanel } from './SavedNativeReportPanel'
+import { ReportTemplateOrderingControls } from './ReportTemplateOrderingControls'
 
 type Action = { kind: 'rename' | 'copy' | 'delete'; template: ReportTemplate; name: string }
 const emptyDatasets: readonly ReportDataset[] = []
 type Props = {
-  storage: ReturnType<typeof useServerReportTemplates>
+  storage: Pick<ReturnType<typeof useServerReportTemplates>, 'templates' | 'busy' | 'ready' | 'notice' | 'browserTemplates'
+    | 'reload' | 'save' | 'update' | 'rename' | 'copy' | 'remove' | 'importBrowserTemplate'>
+  ordering?: ReturnType<typeof useServerReportTemplates>['ordering']
   configurationReady: boolean
   disabled?: boolean
   datasets?: readonly ReportDataset[]
@@ -30,7 +33,7 @@ type Props = {
   onRefresh: () => void
 }
 
-export function ReportTemplatesPanel({ storage, configurationReady, disabled = false, datasets = emptyDatasets, callerKey = null, notice, templateName,
+export function ReportTemplatesPanel({ storage, ordering, configurationReady, disabled = false, datasets = emptyDatasets, callerKey = null, notice, templateName,
   activeTemplate, onNameChange, onApply, onSave, onUpdate, onRenamed, onDeleted, onClearNotice, onRefresh }: Props) {
   const { t } = useI18n()
   const [action, setAction] = useState<Action | null>(null)
@@ -63,6 +66,7 @@ export function ReportTemplatesPanel({ storage, configurationReady, disabled = f
     {action ? <TemplateActionController action={action} titleId={actionTitleId} blocked={blocked} storage={storage}
       onNameChange={name => setAction({ ...action, name })} onRenamed={onRenamed} onDeleted={onDeleted}
       onComplete={() => setAction(null)} /> : null}
+    {ordering ? <ReportTemplateOrderingControls key={callerKey} ordering={ordering} blocked={blocked} busy={storage.busy} /> : null}
     <SavedTemplatesSection storage={storage} blocked={blocked} disabled={disabled} onRefresh={onRefresh} onApply={onApply}
       onRunSaved={template => setSavedVariant(structuredClone(template))}
       onAction={(template, kind) => {

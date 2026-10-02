@@ -34,8 +34,9 @@ describe('server report templates', () => {
     vi.mocked(saveServerReportTemplate).mockResolvedValue({ ...template, Revision: 5 })
     const { result } = renderHook(() => useServerReportTemplates(true))
     await waitFor(() => expect(result.current.ready).toBe(true))
+    vi.mocked(getServerReportTemplates).mockResolvedValue([{ ...template, Revision: 5 }])
     await act(() => result.current.save(template.Name, template.Data, template.Id))
-    expect(saveServerReportTemplate).toHaveBeenCalledWith(template)
+    expect(saveServerReportTemplate).toHaveBeenCalledWith(template, expect.any(AbortSignal))
     expect(result.current.templates[0].Revision).toBe(5)
     expect(result.current.templates[0].Data.selections[0].Values[0].Data.Id).toBe(42)
   })
@@ -64,7 +65,7 @@ describe('server report templates', () => {
     await waitFor(() => expect(result.current.ready).toBe(true))
     expect(saveServerReportTemplate).not.toHaveBeenCalled()
     await act(() => result.current.importBrowserTemplate(template))
-    expect(saveServerReportTemplate).toHaveBeenCalledWith({ ...template, Id: await browserTemplateImportId(template), Revision: 0 })
+    expect(saveServerReportTemplate).toHaveBeenCalledWith({ ...template, Id: await browserTemplateImportId(template), Revision: 0 }, expect.any(AbortSignal))
     expect(result.current.notice).toBe('Умову не підтримано')
     expect(localStorage.getItem('app_configs_reports_template:v1')).toBe(raw)
   })
@@ -83,11 +84,15 @@ describe('server report templates', () => {
 
   it('imports the exact valuation scenario parameter with a distinct stable identity', async () => {
     const template = { Name: 'Оцінка', Data: { ...defaultDatasetRequest(valuationDataset, '', ''), valuationClientAgreementId: 456246 } }
-    vi.mocked(saveServerReportTemplate).mockImplementation(async request => ({ ...request, Revision: 1 }))
+    vi.mocked(saveServerReportTemplate).mockImplementation(async request => {
+      const saved = { ...request, Revision: 1 }
+      vi.mocked(getServerReportTemplates).mockResolvedValue([saved])
+      return saved
+    })
     const { result } = renderHook(() => useServerReportTemplates(true))
     await waitFor(() => expect(result.current.ready).toBe(true))
     await act(() => result.current.importBrowserTemplate(template))
-    expect(saveServerReportTemplate).toHaveBeenCalledWith({ ...template, Id: await browserTemplateImportId(template), Revision: 0 })
+    expect(saveServerReportTemplate).toHaveBeenCalledWith({ ...template, Id: await browserTemplateImportId(template), Revision: 0 }, expect.any(AbortSignal))
     expect(await browserTemplateImportId(template)).not.toBe(await browserTemplateImportId({ ...template, Data: { ...template.Data, valuationClientAgreementId: 459018 } }))
   })
 
@@ -111,11 +116,15 @@ describe('server report templates', () => {
 
   it('imports exact ordering and refuses a later save with its measure disabled', async () => {
     const template = { Name: 'Залишки за сумою', Data: orderedAccountRequest() }
-    vi.mocked(saveServerReportTemplate).mockImplementation(async request => ({ ...request, Revision: 1 }))
+    vi.mocked(saveServerReportTemplate).mockImplementation(async request => {
+      const saved = { ...request, Revision: 1 }
+      vi.mocked(getServerReportTemplates).mockResolvedValue([saved])
+      return saved
+    })
     const { result } = renderHook(() => useServerReportTemplates(true, [orderedAccountDataset]))
     await waitFor(() => expect(result.current.ready).toBe(true))
     await act(() => result.current.importBrowserTemplate(template))
-    expect(saveServerReportTemplate).toHaveBeenCalledWith({ ...template, Id: await browserTemplateImportId(template), Revision: 0 })
+    expect(saveServerReportTemplate).toHaveBeenCalledWith({ ...template, Id: await browserTemplateImportId(template), Revision: 0 }, expect.any(AbortSignal))
     const disabled = { ...template.Data, sorted: { ...template.Data.sorted, Measurements: template.Data.sorted.Measurements.map(measure => ({ ...measure, IsChecked: false })) } }
     await act(() => result.current.save(template.Name, disabled))
     expect(saveServerReportTemplate).toHaveBeenCalledTimes(1)
@@ -127,11 +136,15 @@ describe('server report templates', () => {
         selections: [{ SelectedField: { Name: 'Future', Type: 999 }, FilterCondition: { Name: 'InGroup', Type: 6 },
           IsChecked: false, Values: [{ Name: 'exact', Value: 42, Data: { Id: 42, Future: ['retain'] } }] }] } }
     vi.mocked(getServerReportTemplates).mockResolvedValue([template])
-    vi.mocked(saveServerReportTemplate).mockImplementation(async request => ({ ...request, Revision: 8 }))
+    vi.mocked(saveServerReportTemplate).mockImplementation(async request => {
+      const saved = { ...request, Revision: 8 }
+      vi.mocked(getServerReportTemplates).mockResolvedValue([saved])
+      return saved
+    })
     const { result } = renderHook(() => useServerReportTemplates(true, [valuationDataset]))
     await waitFor(() => expect(result.current.ready).toBe(true))
     await act(async () => { expect(await result.current.rename(template, '  Новий заголовок  ')).toMatchObject({ ok: true }) })
-    expect(saveServerReportTemplate).toHaveBeenCalledWith({ ...template, Name: 'Новий заголовок' })
+    expect(saveServerReportTemplate).toHaveBeenCalledWith({ ...template, Name: 'Новий заголовок' }, expect.any(AbortSignal))
     expect(template.Name).toBe('Договір 42')
     expect(result.current.templates[0].Data).toEqual(template.Data)
   })
@@ -141,7 +154,11 @@ describe('server report templates', () => {
     const data = { ...template.Data, futureOptions: { value: false, full: [0, null, '42'] } }
     template.Data = data
     vi.mocked(getServerReportTemplates).mockResolvedValue([template])
-    vi.mocked(saveServerReportTemplate).mockImplementation(async request => ({ ...request, Revision: 1 }))
+    vi.mocked(saveServerReportTemplate).mockImplementation(async request => {
+      const saved = { ...request, Revision: 1 }
+      vi.mocked(getServerReportTemplates).mockResolvedValue([template, saved])
+      return saved
+    })
     const { result } = renderHook(() => useServerReportTemplates(true))
     await waitFor(() => expect(result.current.ready).toBe(true))
     await act(async () => { expect(await result.current.copy(template, 'Копія')).toMatchObject({ ok: true }) })
@@ -173,7 +190,7 @@ describe('server report templates', () => {
     const { result } = renderHook(() => useServerReportTemplates(true))
     await waitFor(() => expect(result.current.ready).toBe(true))
     await act(async () => { expect(await result.current.update(template, { ...template.Data, from: '2026-09-01' })).toEqual({ ok: false }) })
-    expect(saveServerReportTemplate).toHaveBeenCalledWith({ ...template, Data: { ...template.Data, from: '2026-09-01' } })
+    expect(saveServerReportTemplate).toHaveBeenCalledWith({ ...template, Data: { ...template.Data, from: '2026-09-01' } }, expect.any(AbortSignal))
     expect(result.current.templates).toEqual([template])
   })
 

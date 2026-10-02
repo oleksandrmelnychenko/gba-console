@@ -1,7 +1,8 @@
 import { MantineProvider } from '@mantine/core'
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import type { ReactNode } from 'react'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { clearSession, saveSession } from '../../../shared/auth/session'
 import { I18nProvider } from '../../../shared/i18n/I18nProvider'
 import { createStockReport, searchValuationAgreements } from '../api/reportsApi'
 import { getReportCatalogue, getReportDatasets, getServerReportTemplates, saveServerReportTemplate } from '../api/reportWorkspaceApi'
@@ -56,6 +57,7 @@ function stored() { return JSON.parse(sessionStorage.getItem(draftKey)!) }
 describe('named catalogue report to constructor', () => {
   beforeEach(() => {
     allowed = true; vi.clearAllMocks(); sessionStorage.clear(); localStorage.clear()
+    saveSession({ userNetUid: 'catalogue-owner', csrfToken: 'catalogue-fixture-csrf' })
     Object.defineProperty(HTMLElement.prototype, 'scrollIntoView', { configurable: true, value: vi.fn() })
     vi.mocked(getReportCatalogue).mockResolvedValue(catalogue())
     vi.mocked(getReportDatasets).mockResolvedValue([...reportDatasets, currentDebtDataset, valuationDataset])
@@ -63,6 +65,7 @@ describe('named catalogue report to constructor', () => {
     vi.mocked(searchValuationAgreements).mockResolvedValue([{ Id: 42, Name: 'Договір 42' }, { Id: 43, Name: 'Договір 43' }])
     vi.mocked(createStockReport).mockResolvedValue({ document: { DocumentURL: '/files/old-valuation.xlsx' }, raw: {} })
   })
+  afterEach(clearSession)
 
   it('opens only the exact Fenix gross-profit source in its separate report panel', async () => {
     const source = catalogue()

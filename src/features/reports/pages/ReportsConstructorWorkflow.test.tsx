@@ -3,6 +3,7 @@ import { act, fireEvent, render, screen, waitFor, within } from '@testing-librar
 import { MemoryRouter } from 'react-router-dom'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 import { PermissionKeys } from '../../../shared/auth/permissionKeys'
+import { clearSession, saveSession } from '../../../shared/auth/session'
 import { I18nProvider } from '../../../shared/i18n/I18nProvider'
 import { createStockReport, searchValuationAgreements } from '../api/reportsApi'
 import { getReportDatasets, getServerReportTemplates } from '../api/reportWorkspaceApi'
@@ -71,6 +72,7 @@ beforeEach(() => {
   permissions.add(PermissionKeys.ReportsStocks.Page.View)
   permissions.add(PermissionKeys.ReportsStocks.Report.Generate)
   vi.clearAllMocks(); localStorage.clear(); sessionStorage.clear()
+  saveSession({ userNetUid: 'constructor-workflow-user', csrfToken: 'workflow-fixture-csrf' })
   Object.defineProperty(HTMLElement.prototype, 'scrollIntoView', { configurable: true, value: vi.fn() })
   vi.mocked(getReportDatasets).mockResolvedValue([...reportDatasets, abcDataset, agreementPricesDataset])
   vi.mocked(getServerReportTemplates).mockResolvedValue([])
@@ -80,7 +82,7 @@ beforeEach(() => {
 })
 afterEach(() => {
   try { expect(fetch).not.toHaveBeenCalled() }
-  finally { vi.unstubAllGlobals() }
+  finally { clearSession(); vi.unstubAllGlobals() }
 })
 
 it('navigates all four real tab panels by keyboard without generating or changing the selected preset', async () => {

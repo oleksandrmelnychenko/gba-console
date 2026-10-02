@@ -259,12 +259,12 @@ export function normalizeSavedTemplate(value: WireTemplate): ReportTemplate {
 }
 
 export async function getServerReportTemplates(signal?: AbortSignal): Promise<ReportTemplate[]> {
-  const result = await apiRequest<WireTemplate[]>('/report/templates', { signal })
+  const result = await apiRequest<WireTemplate[]>('/report/templates', { signal, cache: 'no-store', dedupe: false })
   if (!Array.isArray(result)) throw new Error('Сервер повернув некоректний список шаблонів.')
   return result.map(normalizeSavedTemplate)
 }
 
-export async function saveServerReportTemplate(template: ReportTemplate): Promise<ReportTemplate> {
+export async function saveServerReportTemplate(template: ReportTemplate, signal?: AbortSignal): Promise<ReportTemplate> {
   const request = (template.Data.dataSource === 2 || template.Data.dataSource === 17 || template.Data.dataSource === 18 || template.Data.dataSource === 19 || template.Data.dataSource === 20 || template.Data.dataSource === 21 || template.Data.dataSource === 22 || template.Data.dataSource === 23 || template.Data.dataSource === 24 || template.Data.dataSource === 25 || template.Data.dataSource === 27 || template.Data.dataSource === 28 || template.Data.dataSource === 35 || template.Data.dataSource === 39 || template.Data.dataSource === 40 || template.Data.dataSource === 41) ? structuredClone(template) : template
   const exactFilterError = nativeExactFiltersConfigurationError(request.Data)
   if (exactFilterError) throw new Error(exactFilterError)
@@ -308,12 +308,14 @@ export async function saveServerReportTemplate(template: ReportTemplate): Promis
   if (specialOneCError) throw new Error(specialOneCError)
   const result = await apiRequest<WireTemplate>('/report/templates/save', {
     method: 'POST', body: { Id: request.Id, Revision: request.Revision ?? 0, Name: request.Name, Data: request.Data },
+    ...(signal ? { signal } : {}),
   })
   return normalizeSavedTemplate(result)
 }
 
-export function deleteServerReportTemplate(template: ReportTemplate): Promise<unknown> {
+export function deleteServerReportTemplate(template: ReportTemplate, signal?: AbortSignal): Promise<unknown> {
   return apiRequest('/report/templates/delete', {
     method: 'POST', body: { Id: template.Id, Revision: template.Revision },
+    ...(signal ? { signal } : {}),
   })
 }
