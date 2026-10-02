@@ -136,6 +136,8 @@ import { ManagementReturnsConstructorModal } from './ManagementReturnsConstructo
 import { useManagementReturnsConstructor } from '../hooks/useManagementReturnsConstructor'
 import { ManagementBalanceConstructorModal } from './ManagementBalanceConstructorModal'
 import { useManagementBalanceConstructor } from '../hooks/useManagementBalanceConstructor'
+import { ManagementOrdersConstructorModal } from './ManagementOrdersConstructorModal'
+import { useManagementOrdersConstructor } from '../hooks/useManagementOrdersConstructor'
 import { ActiveClientsReportPanel } from './ActiveClientsReportPanel'
 import { isActiveClientsCapabilities, type ActiveClientsCapabilities } from '../data/activeClients'
 import { CurrencyRateDynamicsReportPanel } from './CurrencyRateDynamicsReportPanel'
@@ -406,6 +408,8 @@ function ReportsStocksWorkspace({ ownerId, constructorMode }: { ownerId: string 
   const managementReturnsConstructor = useManagementReturnsConstructor({ enabled: canGenerateReport, disabled: isLoading,
     callerKey: ownerId, from, today })
   const managementBalanceConstructor = useManagementBalanceConstructor({ enabled: canGenerateReport, disabled: isLoading,
+    callerKey: ownerId, from, today })
+  const managementOrdersConstructor = useManagementOrdersConstructor({ enabled: canGenerateReport, disabled: isLoading,
     callerKey: ownerId, from, today })
   const comparisonSettingsDisabled = isLoading || !canGenerateReport
   const retainedData = restoredData ?? activeTemplate?.Data
@@ -860,6 +864,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode }: { ownerId: string 
       <OverdueReceivablesConstructorModal {...overdueReceivablesConstructor.modalProps} />
       <ManagementReturnsConstructorModal {...managementReturnsConstructor.modalProps} />
       <ManagementBalanceConstructorModal {...managementBalanceConstructor.modalProps} />
+      <ManagementOrdersConstructorModal {...managementOrdersConstructor.modalProps} />
       <AppModal opened={canGenerateReport && currencyDynamicsCapability !== null} title={currencyDynamicsCapability?.Title ?? ''} size={960}
         onClose={() => { if (!currencyDynamicsGenerating) setCurrencyDynamicsCapability(null) }}
         closeOnClickOutside={!currencyDynamicsGenerating} closeOnEscape={!currencyDynamicsGenerating}
@@ -912,7 +917,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode }: { ownerId: string 
           onChange={changeDataset} onRetry={datasetStorage.retry} />}
         catalogueControl={<ReportCatalogueControl presentation="dialog" enabled={canGenerateReport}
           disabled={isLoading} onOpen={openCatalogueReport}
-          onOpenDebtToSalesRatio={openDebtToSalesRatio} onOpenCollectionCoefficient={collectionConstructor.open} onOpenSalesMargin={salesMarginConstructor.open} onOpenCashMovement={cashMovementConstructor.open} onOpenSupplierDebt={supplierDebtConstructor.open} onOpenEmployeeGrossProfit={employeeGrossProfitConstructor.open} onOpenOverdueReceivables={overdueReceivablesConstructor.open} onOpenManagementReturns={managementReturnsConstructor.open} onOpenManagementBalance={managementBalanceConstructor.open} callerKey={ownerId} onOpenActiveClients={openActiveClients}
+          onOpenDebtToSalesRatio={openDebtToSalesRatio} onOpenCollectionCoefficient={collectionConstructor.open} onOpenSalesMargin={salesMarginConstructor.open} onOpenCashMovement={cashMovementConstructor.open} onOpenSupplierDebt={supplierDebtConstructor.open} onOpenEmployeeGrossProfit={employeeGrossProfitConstructor.open} onOpenOverdueReceivables={overdueReceivablesConstructor.open} onOpenManagementReturns={managementReturnsConstructor.open} onOpenManagementBalance={managementBalanceConstructor.open} onOpenManagementOrders={managementOrdersConstructor.open} callerKey={ownerId} onOpenActiveClients={openActiveClients}
           onOpenCurrencyRateDynamics={openCurrencyRateDynamics} onOpenCashAggregateBalance={openCashAggregateBalance} onOpenOriginalRevenue={openOriginalRevenue} onOpenOriginalBuyerSalesShare={openOriginalBuyerSalesShare} />}
         datasetSummary={<><ReportDatasetSummary dataset={dataset} />
           {!constructorMode ? <details className="stocks-workspace-dataset-help"><summary>{t('Що змінює вибір набору даних')}</summary>
