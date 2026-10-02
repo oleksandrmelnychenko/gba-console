@@ -36,12 +36,13 @@ export type PlannedCashCapabilities = typeof basis & {
   ScopeKind: 'ExplicitCurrentOurIntervalsAndPlan'; Filters: string[]; Columns: PlannedCashColumn[]; ResourceUnits: Array<typeof PLANNED_CASH_UNITS[number]>
   NativeScenarioParameterName: string | null; NativePlanEndpointParameterName: string | null; SourceEmbeddedPeriodicity: string
   RuntimeImplemented: boolean; RequiresCompleteNormalPublications: true; InputAvailability: 'CheckedByPreview'
-  RequiresObservedScenario: boolean; ScenarioSelectionLabelsAvailable: false; GroupLabelAvailability: 'CheckedByPreview'; UnsupportedFilters: string[]
+  RequiresObservedScenario: boolean; ScenarioSelectionLabelsAvailable: false
+  ScenarioChoiceAvailability: 'CheckedByChoices' | 'NotApplicable'; ScenarioChoiceApiImplemented: boolean; NativeChoiceVisibilityVerified: false; GroupLabelAvailability: 'CheckedByPreview'; UnsupportedFilters: string[]
 }
 export type PlannedCashPeriod = { From: string; ThroughExclusive: string }
 export type PlannedCashFilters = { From: string; ThroughExclusive: string; PreviousFrom: string; PreviousThroughExclusive: string; PlanEndpoint: string }
 export type PlannedCashRequest = { Version: 1; SourceIdentity: PlannedCashIdentity; CurrentPeriod: PlannedCashPeriod; PreviousPeriod: PlannedCashPeriod | null
-  PlanEndpoint: string | null; Scenario: { Type: '08'; Table: '0000008A'; Value: string } | null }
+  PlanEndpoint: string | null; Scenario: null; ScenarioChoiceKey?: string | null }
 export type PlannedCashCell = { Key: string; Value: string | null; Available: boolean; ExactValue: { Numerator: string; Denominator: string } | null; FormattedValue: string | null }
 export type PlannedCashGroup = { Key: string; GroupIsNull: boolean; Name: string | null; NameAvailable: boolean; Cells: PlannedCashCell[] }
 export type PlannedCashRelationProof = { Available: boolean; CompletePublication: boolean; DatedOpeningVerified: boolean; CompletedMovementMonths: number }
@@ -50,7 +51,7 @@ export type PlannedCashProof = { InputWitnessSha256: string; SnapshotVerified: t
   ComparisonCurrencyStatus: 'Compatible' | 'Conflict' | 'Unverified' | 'NotApplicable' }
 export type PlannedCashReport = typeof basis & {
   Version: 1; SourceIdentity: PlannedCashIdentity; Kind: PlannedCashKind; ReportName: string; Grouping: string; CurrentPeriod: PlannedCashPeriod
-  PreviousPeriod: PlannedCashPeriod | null; PlanEndpoint: string | null; ScenarioBindingSha256: string | null; Columns: PlannedCashColumn[]
+  PreviousPeriod: PlannedCashPeriod | null; PlanEndpoint: string | null; ScenarioBindingSha256: string | null; ScenarioChoiceBindingSha256: string | null; Columns: PlannedCashColumn[]
   Rows: PlannedCashGroup[]; Totals: PlannedCashCell[]; CurrentAvailable: boolean; PreviousAvailable: boolean | null; PlanAvailable: boolean
   Complete: boolean; HasRows: boolean; Code: string; AvailabilityMessage: string | null; GroupLabelsAvailabilityMessage: string | null
   PresentationBasis: 'CurrentGbaClrDecimal'; ResourceUnits: Array<typeof PLANNED_CASH_UNITS[number]>; Proof: PlannedCashProof
@@ -89,7 +90,8 @@ export function isPlannedCashCapabilities(v: unknown): v is PlannedCashCapabilit
     && v.NativeScenarioParameterName === form.Scenario && v.NativePlanEndpointParameterName === form.Endpoint && v.SourceEmbeddedPeriodicity === form.Periodicity
     && hasBasis(v) && columns(v.Columns, v.Kind) && units(v.ResourceUnits) && typeof v.RuntimeImplemented === 'boolean'
     && v.RequiresCompleteNormalPublications === true && v.InputAvailability === 'CheckedByPreview' && v.RequiresObservedScenario === Boolean(form.Scenario)
-    && v.ScenarioSelectionLabelsAvailable === false && v.GroupLabelAvailability === 'CheckedByPreview'
+    && v.ScenarioSelectionLabelsAvailable === false && v.ScenarioChoiceAvailability === (form.Scenario ? 'CheckedByChoices' : 'NotApplicable')
+    && v.ScenarioChoiceApiImplemented === Boolean(form.Scenario) && v.NativeChoiceVisibilityVerified === false && v.GroupLabelAvailability === 'CheckedByPreview'
     && same(v.UnsupportedFilters, ['AdditionalSavedFilters', 'AdditionalSavedGrouping', 'AccountCurrencyMeasures', 'DocumentAttributeProjections', 'NativeEffectivePeriodAndHorizon'])
 }
 function localDate(v: string, upper: number): boolean {
@@ -99,13 +101,21 @@ function localDate(v: string, upper: number): boolean {
 }
 function wireDate(v: unknown, upper: number): v is string { return typeof v === 'string' && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}$/.test(v)
   && localDate(v.slice(0, 10), upper) && v.slice(11, 13) <= '23' && v.slice(14, 16) <= '59' && v.slice(17, 19) <= '59' }
-export function plannedCashFilterError(cap: PlannedCashCapabilities, filters: PlannedCashFilters): string | null {
+export function plannedCashPeriodFilterError(cap: PlannedCashCapabilities, filters: PlannedCashFilters): string | null {
   if (!localDate(filters.From, 8000) || !localDate(filters.ThroughExclusive, 8000) || filters.From >= filters.ThroughExclusive) return 'Оберіть допустимі межі періоду; кінцева дата не входить до нього.'
   if (cap.RequiresObservedScenario) {
     if (!localDate(filters.PreviousFrom, 8000) || !localDate(filters.PreviousThroughExclusive, 8000) || filters.PreviousFrom >= filters.PreviousThroughExclusive) return 'Оберіть допустимі межі попереднього періоду.'
-    return PLANNED_CASH_SCENARIO_PENDING
+    return null
   }
   return !localDate(filters.PlanEndpoint, 3999) ? 'Оберіть дату планового залишку.' : null
+}
+/** Selection comes only from the scoped server list; its encrypted contents are never interpreted here. */
+export function isPlannedCashOpaqueKey(value: unknown): value is string {
+  return typeof value === 'string' && value.length > 0 && value.length <= 4096 && !/\s|[\u0000-\u001f\u007f]/.test(value)
+}
+export function plannedCashFilterError(cap: PlannedCashCapabilities, filters: PlannedCashFilters, scenarioChoiceKey?: string | null): string | null {
+  const error = plannedCashPeriodFilterError(cap, filters)
+  return error ?? (cap.RequiresObservedScenario && !isPlannedCashOpaqueKey(scenarioChoiceKey) ? 'Оберіть сценарій плану зі списку.' : null)
 }
 /** Explicit current GBA date choices, not inferred native effective periods or plan horizon. */
 export function plannedCashDefaultFilters(cap: PlannedCashCapabilities, today: string): PlannedCashFilters {
@@ -116,11 +126,14 @@ export function plannedCashDefaultFilters(cap: PlannedCashCapabilities, today: s
   const day = (index: number) => `${String(Math.floor(index / 12)).padStart(4, '0')}-${String(index % 12 + 1).padStart(2, '0')}-01`
   return { From: day(first), ThroughExclusive: day(first + size), PreviousFrom: day(first - size), PreviousThroughExclusive: day(first), PlanEndpoint: '' }
 }
-export function createPlannedCashRequest(cap: PlannedCashCapabilities, filters: PlannedCashFilters): PlannedCashRequest {
+export function createPlannedCashRequest(cap: PlannedCashCapabilities, filters: PlannedCashFilters, scenarioChoiceKey?: string | null): PlannedCashRequest {
   if (!isPlannedCashCapabilities(cap) || !cap.RuntimeImplemented) throw new Error('Сервер не підтвердив доступність цього конструктора.')
-  const error = plannedCashFilterError(cap, filters); if (error) throw new Error(error)
+  const error = plannedCashFilterError(cap, filters, scenarioChoiceKey); if (error) throw new Error(error)
+  if (!cap.RequiresObservedScenario && scenarioChoiceKey != null) throw new Error('Ця форма не має вибору сценарію.')
   return { Version: cap.Version, SourceIdentity: { ...cap.SourceIdentity }, CurrentPeriod: { From: `${filters.From}T00:00:00.000`, ThroughExclusive: `${filters.ThroughExclusive}T00:00:00.000` },
-    PreviousPeriod: null, PlanEndpoint: `${filters.PlanEndpoint}T00:00:00.000`, Scenario: null }
+    PreviousPeriod: cap.RequiresObservedScenario ? { From: `${filters.PreviousFrom}T00:00:00.000`, ThroughExclusive: `${filters.PreviousThroughExclusive}T00:00:00.000` } : null,
+    PlanEndpoint: cap.RequiresObservedScenario ? null : `${filters.PlanEndpoint}T00:00:00.000`, Scenario: null,
+    ...(cap.RequiresObservedScenario ? { ScenarioChoiceKey: scenarioChoiceKey } : {}) }
 }
 function period(v: unknown, expected: PlannedCashPeriod): boolean { return record(v) && Object.keys(v).length === 2
   && v.From === expected.From && v.ThroughExclusive === expected.ThroughExclusive && wireDate(v.From, 8000) && wireDate(v.ThroughExclusive, 8000) && v.From < v.ThroughExclusive }
@@ -154,12 +167,16 @@ function proof(v: unknown, r: PlannedCashReport): v is PlannedCashProof {
 /** Checks only transport/scope/availability invariants. All financial presentation is server-authored. */
 export function normalizePlannedCashReport(v: unknown, request: PlannedCashRequest): PlannedCashReport {
   const k = (Object.keys(PLANNED_CASH_FORMS) as PlannedCashKind[]).find(key => PLANNED_CASH_FORMS[key].SourceId === request.SourceIdentity.SourceId)
-  if (!k || request.Version !== 1 || !identity(request.SourceIdentity) || !record(v) || v.Version !== request.Version || !identity(v.SourceIdentity)
+  if (!k || (PLANNED_CASH_FORMS[k].Scenario
+    ? !isPlannedCashOpaqueKey(request.ScenarioChoiceKey) || request.PreviousPeriod === null || request.PlanEndpoint !== null
+    : request.ScenarioChoiceKey != null || request.PreviousPeriod !== null) || request.Version !== 1 || !identity(request.SourceIdentity) || !record(v) || v.Version !== request.Version || !identity(v.SourceIdentity)
     || !Object.entries(request.SourceIdentity).every(([key, value]) => v.SourceIdentity && (v.SourceIdentity as PlannedCashIdentity)[key as keyof PlannedCashIdentity] === value)
     || v.Kind !== k || v.ReportName !== PLANNED_CASH_FORMS[k].ReportName || v.Grouping !== PLANNED_CASH_FORMS[k].Grouping
     || !period(v.CurrentPeriod, request.CurrentPeriod) || !(request.PreviousPeriod === null ? v.PreviousPeriod === null : period(v.PreviousPeriod, request.PreviousPeriod))
     || v.PlanEndpoint !== request.PlanEndpoint || !(request.PlanEndpoint === null || wireDate(v.PlanEndpoint, 3999))
-    || !(request.Scenario === null ? v.ScenarioBindingSha256 === null : hash(v.ScenarioBindingSha256))
+    || request.Scenario !== null || !(request.ScenarioChoiceKey == null
+      ? v.ScenarioBindingSha256 === null && v.ScenarioChoiceBindingSha256 === null
+      : isPlannedCashOpaqueKey(request.ScenarioChoiceKey) && hash(v.ScenarioBindingSha256) && hash(v.ScenarioChoiceBindingSha256))
     || !columns(v.Columns, k) || !units(v.ResourceUnits) || !hasBasis(v) || v.PresentationBasis !== 'CurrentGbaClrDecimal'
     || !Array.isArray(v.Rows) || v.Rows.length > 200000 || !cells(v.Totals, plannedCashColumns(k))
     || typeof v.CurrentAvailable !== 'boolean' || !(v.PreviousAvailable === null || typeof v.PreviousAvailable === 'boolean') || typeof v.PlanAvailable !== 'boolean'

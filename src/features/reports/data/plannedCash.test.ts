@@ -1,6 +1,6 @@
 import { expect, it } from 'vitest'
 import { createPlannedCashRequest, isPlannedCashCapabilities, normalizePlannedCashReport, plannedCashCatalogueKind,
-  plannedCashCatalogueMatches, plannedCashDefaultFilters, plannedCashFilterError, PLANNED_CASH_SCENARIO_PENDING } from './plannedCash'
+  plannedCashCatalogueMatches, plannedCashDefaultFilters, plannedCashFilterError } from './plannedCash'
 import { plannedCashCapability, plannedCashCatalogueEntry, plannedCashCalendarKinds, plannedCashDdsKinds, plannedCashKinds,
   plannedCashFilters, plannedCashReport, plannedCashTestRequest, plannedCashEmptyReport, plannedCashPartialReport, plannedCashConflictReport } from './plannedCash.test-fixtures'
 
@@ -17,10 +17,10 @@ it.each(plannedCashCalendarKinds)('copies the actual opaque %s server identity a
   expect(req).toEqual({ ...plannedCashTestRequest(kind), SourceIdentity: cap.SourceIdentity })
   expect(plannedCashDefaultFilters(cap, '2026-10-02').PlanEndpoint).toBe('')
 })
-it.each(plannedCashDdsKinds)('keeps %s scenario selection pending and refuses manual or invented selections before HTTP', kind => {
+it.each(plannedCashDdsKinds)('requires an explicit genuine %s selection without choosing a default', kind => {
   const cap = plannedCashCapability(kind)
-  expect(plannedCashFilterError(cap, plannedCashFilters())).toBe(PLANNED_CASH_SCENARIO_PENDING)
-  expect(() => createPlannedCashRequest(cap, plannedCashFilters())).toThrow(PLANNED_CASH_SCENARIO_PENDING)
+  expect(plannedCashFilterError(cap, plannedCashFilters())).toBe('Оберіть сценарій плану зі списку.')
+  expect(() => createPlannedCashRequest(cap, plannedCashFilters())).toThrow('Оберіть сценарій плану зі списку.')
 })
 it.each(['2026-02-30','0000-01-01','8000-01-01','2026-9-01','2026-09-01T00:00:00Z',' 2026-09-01',''])('rejects dirty current date %s', From => {
   expect(() => createPlannedCashRequest(plannedCashCapability(), { ...plannedCashFilters(), From })).toThrow('межі періоду')

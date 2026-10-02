@@ -29,7 +29,7 @@ it.each(plannedCashCalendarKinds)('posts exact %s scope and opaque identity with
   expect(new Headers(options.headers).get('X-CSRF-Token')).toBe(session.csrfToken); expect(fetchMock).toHaveBeenCalledOnce()
 })
 it.each(plannedCashDdsKinds)('does not POST %s when genuine scenario choices are unavailable', async kind => {
-  await expect(previewPlannedCash(plannedCashCapability(kind), plannedCashFilters(), session.userNetUid, signal())).rejects.toThrow('Вибір сценарію')
+  await expect(previewPlannedCash(plannedCashCapability(kind), plannedCashFilters(), session.userNetUid, signal())).rejects.toThrow('Оберіть сценарій')
   expect(fetchMock).not.toHaveBeenCalled()
 })
 it('refuses a dirty date, unsupported runtime and different caller before HTTP', async () => {

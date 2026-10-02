@@ -2,15 +2,16 @@ import { MantineProvider } from '@mantine/core'
 import { act, fireEvent, render, screen, within } from '@testing-library/react'
 import { beforeEach, expect, it, vi } from 'vitest'
 import { I18nProvider } from '../../../shared/i18n/I18nProvider'
-import { previewPlannedCash } from '../api/plannedCashApi'
-import { plannedCashCapability, plannedCashCalendarKinds, plannedCashDdsKinds, plannedCashFilters, plannedCashReport, plannedCashPartialReport, plannedCashEmptyReport } from '../data/plannedCash.test-fixtures'
+import { getPlannedCashScenarioChoices, previewPlannedCash } from '../api/plannedCashApi'
+import { plannedCashCapability, plannedCashCalendarKinds, plannedCashDdsKinds, plannedCashFilters, plannedCashReport, plannedCashPartialReport, plannedCashEmptyReport, plannedCashChoices } from '../data/plannedCash.test-fixtures'
 import type { PlannedCashKind } from '../data/plannedCash'
 import type { ReportDocument } from '../types'
 import { PlannedCashReportPanel } from './PlannedCashReportPanel'
-vi.mock('../api/plannedCashApi', () => ({ previewPlannedCash: vi.fn() }))
+vi.mock('../api/plannedCashApi', () => ({ previewPlannedCash: vi.fn(), getPlannedCashScenarioChoices: vi.fn() }))
 vi.mock('../../../shared/ui/document-export-modal/DocumentExportModal', () => ({ DocumentExportModal: ({ opened, document }: { opened: boolean; document: ReportDocument | null }) =>
   opened ? <div role="dialog" aria-label="Файли планування коштів"><span>{document?.DocumentURL}</span><span>{document?.PdfDocumentURL}</span></div> : null }))
-beforeEach(() => vi.mocked(previewPlannedCash).mockReset())
+beforeEach(() => { vi.mocked(previewPlannedCash).mockReset(); vi.mocked(getPlannedCashScenarioChoices).mockReset()
+  vi.mocked(getPlannedCashScenarioChoices).mockResolvedValue({ ...plannedCashChoices(), Available: false, Code: 'catalogue_not_ready', Choices: [] }) })
 function panel(kind: PlannedCashKind = 'CalendarPayouts', caller = 'owner-a', canGenerate = true, loading?: (value: boolean) => void) {
   return <MantineProvider env="test"><I18nProvider><PlannedCashReportPanel capability={plannedCashCapability(kind)} initialFilters={plannedCashFilters()}
     canGenerate={canGenerate} callerKey={caller} onLoadingChange={loading} /></I18nProvider></MantineProvider>
@@ -25,8 +26,9 @@ it.each(plannedCashCalendarKinds)('shows %s original server columns/groups/signe
   expect(previewPlannedCash).toHaveBeenCalledWith(plannedCashCapability(kind), plannedCashFilters(), 'owner-a', expect.any(AbortSignal)); expect(previewPlannedCash).toHaveBeenCalledOnce()
   expect(within(result).queryByText(report.SourceIdentity.SourceId)).toBeNull(); expect(within(result).queryByText(report.Proof.InputWitnessSha256)).toBeNull()
 })
-it.each(plannedCashDdsKinds)('shows honest %s selection pending, no manual reference field and no invented choices', kind => {
-  render(panel(kind)); expect(screen.getByText(/Вибір сценарію плану ще не доступний/)).toBeTruthy()
+it.each(plannedCashDdsKinds)('shows honest %s selection pending, no manual reference field and no invented choices', async kind => {
+  vi.mocked(getPlannedCashScenarioChoices).mockResolvedValue({ ...plannedCashChoices(kind), Available: false, Code: 'catalogue_not_ready', Choices: [] })
+  render(panel(kind)); expect(await screen.findByText(/Вибір сценарію плану ще не доступний/)).toBeTruthy()
   expect(screen.queryByRole('combobox')).toBeNull(); expect(screen.queryByLabelText(/RRef|Table|Source|Id/)).toBeNull()
   expect(screen.getByLabelText('Попередній період від')).toBeTruthy(); expect(screen.queryByLabelText('Дата планового залишку')).toBeNull()
   fireEvent.click(screen.getByRole('button', { name: 'Сформувати' })); expect(previewPlannedCash).not.toHaveBeenCalled()

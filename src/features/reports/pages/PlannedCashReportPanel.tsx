@@ -2,12 +2,13 @@ import { Alert, Button, Group, Stack, Table, Text, TextInput } from '@mantine/co
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { DocumentExportModal } from '../../../shared/ui/document-export-modal/DocumentExportModal'
 import type { PlannedCashCapabilities, PlannedCashCell, PlannedCashFilters, PlannedCashReport } from '../data/plannedCash'
+import { PlannedCashScenarioPicker } from './PlannedCashScenarioPicker'
 import { usePlannedCashReport } from '../hooks/usePlannedCashReport'
 
 export function PlannedCashReportPanel(props: { capability: PlannedCashCapabilities; initialFilters: PlannedCashFilters; canGenerate: boolean; callerKey: string | null
   onLoadingChange?: (value: boolean) => void }) {
   const { t } = useI18n()
-  const { filters, change, filterError, executable, canSubmit, run, hasFiles, generate } = usePlannedCashReport(props)
+  const { choices, filters, change, filterError, executable, canSubmit, run, hasFiles, generate } = usePlannedCashReport(props)
   const disabled = !props.canGenerate || run.isLoading, scenario = props.capability.RequiresObservedScenario
   return <Stack gap="md">
     <Text size="sm">{t('Звіт із поточних даних GBA. Кінцева дата періоду не входить до нього.')}</Text>
@@ -20,6 +21,7 @@ export function PlannedCashReportPanel(props: { capability: PlannedCashCapabilit
       <TextInput type="date" label={t('Попередній період до (не включно)')} value={filters.PreviousThroughExclusive} disabled={disabled} onChange={event => change('PreviousThroughExclusive', event.currentTarget.value)} />
     </Group> : <TextInput type="date" label={t('Дата планового залишку')} value={filters.PlanEndpoint} disabled={disabled}
       description={t('Оберіть дату, на яку потрібно взяти плановий залишок.')} onChange={event => change('PlanEndpoint', event.currentTarget.value)} />}
+    {scenario ? <PlannedCashScenarioPicker choices={choices} disabled={disabled} /> : null}
     {!props.canGenerate ? <Alert color="yellow">{t('Недостатньо прав для формування звітів.')}</Alert> : null}
     {!executable ? <Alert color="yellow">{t('Сервер ще не підтримує формування цього конструктора.')}</Alert> : null}
     {filterError ? <Alert color="yellow">{t(filterError)}</Alert> : null}

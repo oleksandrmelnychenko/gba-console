@@ -4,8 +4,10 @@ import { readSession } from '../../../shared/auth/session'
 import { createPlannedCashRequest, invalidPlannedCash, isPlannedCashCapabilities, normalizePlannedCashReport,
   PLANNED_CASH_ROUTE, PLANNED_CASH_FORMS, type PlannedCashKind, type PlannedCashFilters, type PlannedCashCapabilities, type PlannedCashReport } from '../data/plannedCash'
 
+import { createPlannedCashScenarioChoicesRequest, normalizePlannedCashScenarioChoices, type PlannedCashScenarioChoices } from '../data/plannedCashScenarioChoices'
+
 const maximumBytes = 32 * 1024 * 1024 // Bounded grouped deliveries; no partial body or unbound files.
-async function readPayload(response: Response, signal: AbortSignal): Promise<unknown> {
+async function readPayload(response: Response, signal: AbortSignal, limit = maximumBytes): Promise<unknown> {
   if (!response.body || response.headers.get('Content-Type')?.split(';')[0].trim().toLowerCase() !== 'application/json') throw invalidPlannedCash()
   const reader = response.body.getReader(), decoder = new TextDecoder('utf-8', { fatal: true })
   const abort = () => { void reader.cancel().catch(() => undefined) }
@@ -15,7 +17,7 @@ async function readPayload(response: Response, signal: AbortSignal): Promise<unk
     while (true) {
       assertApiStreamCurrent(response, signal); const next = await reader.read(); assertApiStreamCurrent(response, signal)
       if (next.done) break
-      bytes += next.value.byteLength; if (bytes > maximumBytes) throw invalidPlannedCash()
+      bytes += next.value.byteLength; if (bytes > limit) throw invalidPlannedCash()
       text += decoder.decode(next.value, { stream: true })
     }
     text += decoder.decode(); const value = unwrapApiResponse<unknown>(JSON.parse(text)); assertApiStreamCurrent(response, signal); return value
@@ -38,13 +40,24 @@ export async function getPlannedCashCapabilities(kind: PlannedCashKind, callerKe
 }
 /** One preview produces inline values and caller-bound files; ambiguous outcomes are never retried here. */
 export async function previewPlannedCash(capability: PlannedCashCapabilities, filters: PlannedCashFilters,
-  callerKey: string, signal: AbortSignal): Promise<PlannedCashReport> {
-  const command = createPlannedCashRequest(capability, filters)
+  callerKey: string, signal: AbortSignal, scenarioChoiceKey?: string | null): Promise<PlannedCashReport> {
+  const command = createPlannedCashRequest(capability, filters, scenarioChoiceKey)
   const response = await request(`${PLANNED_CASH_ROUTE}/${PLANNED_CASH_FORMS[capability.Kind].Route}/preview`, callerKey, signal, JSON.stringify(command))
   try {
     const report = normalizePlannedCashReport(await readPayload(response, signal), command)
     if (response.headers.get('Gba-Report-Request-Sha256') !== report.RequestSha256
       || response.headers.get('Gba-Report-Result-Sha256') !== report.ResultSha256) throw invalidPlannedCash()
     assertApiStreamCurrent(response, signal); return report
+  } finally { void response.body?.cancel().catch(() => undefined) }
+}
+
+/** Only genuine caller/period-bound catalogue choices; this response is not a generated report. */
+export async function getPlannedCashScenarioChoices(capability: PlannedCashCapabilities, filters: PlannedCashFilters,
+  callerKey: string, signal: AbortSignal, continuationKey: string | null = null): Promise<PlannedCashScenarioChoices> {
+  const command = createPlannedCashScenarioChoicesRequest(capability, filters, continuationKey)
+  const response = await request(`${PLANNED_CASH_ROUTE}/${PLANNED_CASH_FORMS[capability.Kind].Route}/scenario-choices`, callerKey, signal, JSON.stringify(command))
+  try {
+    const choices = normalizePlannedCashScenarioChoices(await readPayload(response, signal, 2 * 1024 * 1024), command)
+    assertApiStreamCurrent(response, signal); return choices
   } finally { void response.body?.cancel().catch(() => undefined) }
 }
