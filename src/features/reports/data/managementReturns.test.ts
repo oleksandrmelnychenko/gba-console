@@ -57,7 +57,7 @@ it('accepts complete decimal overflow with exact evidence and preserves server f
 })
 it.each(['identity', 'period', 'column', 'currency', 'parity', 'row_key', 'caption', 'complete', 'unknown_count', 'empty_change', 'parent_vector', 'parent_hash', 'duplicate_run', 'clock', 'unsafe_file'])('refuses an inconsistent %s response without exposing files', kind => {
   const report = managementReturnsReport(), request = createManagementReturnsRequest(managementReturnsCapability(), report)
-  if (kind === 'identity') report.SourceIdentity = { ...report.SourceIdentity, World: 'amg' } as typeof report.SourceIdentity
+  if (kind === 'identity') report.SourceIdentity = { ...report.SourceIdentity, World: 'amg' } as unknown as typeof report.SourceIdentity
   else if (kind === 'period') report.PreviousPeriod.From = '2026-07-01T00:00:00.000'
   else if (kind === 'column') report.Columns.reverse()
   else if (kind === 'currency') report.ManagementCurrency = 'EUR' as typeof report.ManagementCurrency

@@ -36,7 +36,7 @@ it('aborts old-owner capability and ignores its late executable response', async
 })
 it('offers an explicit capability retry after failure and rejects the wrong Source definition', async () => {
   vi.mocked(getManagementReturnsCapabilities).mockRejectedValueOnce(new Error('unavailable')).mockResolvedValueOnce({ ...managementReturnsCapability(),
-    SourceIdentity: { ...managementReturnsCapability().SourceIdentity, DefinitionSha256: 'wrong' } } as ReturnType<typeof managementReturnsCapability>)
+    SourceIdentity: { ...managementReturnsCapability().SourceIdentity, DefinitionSha256: 'wrong' } } as unknown as ReturnType<typeof managementReturnsCapability>)
   render(launcher()); fireEvent.click(await screen.findByRole('button', { name: 'Повторити' }))
   await waitFor(() => expect(getManagementReturnsCapabilities).toHaveBeenCalledTimes(2))
   expect((screen.getByRole('button', { name: 'Відкрити управлінські повернення' }) as HTMLButtonElement).disabled).toBe(true)
