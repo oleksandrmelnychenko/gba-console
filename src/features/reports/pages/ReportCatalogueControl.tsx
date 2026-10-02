@@ -11,6 +11,7 @@ import type { SupplierDebtCapabilities } from '../data/supplierDebt'
 import type { EmployeeGrossProfitCapabilities } from '../data/employeeGrossProfit'
 import type { OverdueReceivablesCapabilities } from '../data/overdueReceivables'
 import type { ManagementReturnsCapabilities } from '../data/managementReturns'
+import type { ManagementBalanceCapabilities } from '../data/managementBalance'
 import type { ActiveClientsCapabilities } from '../data/activeClients'
 import type { CurrencyRateDynamicsCapabilities } from '../data/currencyRateDynamics'
 import type { CashAggregateBalanceCapabilities } from '../data/cashAggregateBalance'
@@ -20,7 +21,7 @@ import type { ReportCatalogue } from '../types'
 
 const ReportCataloguePanel = lazy(() => import('./ReportCataloguePanel').then(module => ({ default: module.ReportCataloguePanel })))
 
-export function ReportCatalogueControl({ enabled, disabled = false, presentation = 'inline', onOpen, onOpenDebtToSalesRatio, onOpenCollectionCoefficient, onOpenSalesMargin, onOpenCashMovement, onOpenSupplierDebt, onOpenEmployeeGrossProfit, onOpenOverdueReceivables, onOpenManagementReturns, callerKey = null, onOpenActiveClients, onOpenCurrencyRateDynamics, onOpenCashAggregateBalance, onOpenOriginalRevenue, onOpenOriginalBuyerSalesShare }: {
+export function ReportCatalogueControl({ enabled, disabled = false, presentation = 'inline', onOpen, onOpenDebtToSalesRatio, onOpenCollectionCoefficient, onOpenSalesMargin, onOpenCashMovement, onOpenSupplierDebt, onOpenEmployeeGrossProfit, onOpenOverdueReceivables, onOpenManagementReturns, onOpenManagementBalance, callerKey = null, onOpenActiveClients, onOpenCurrencyRateDynamics, onOpenCashAggregateBalance, onOpenOriginalRevenue, onOpenOriginalBuyerSalesShare }: {
   enabled: boolean
   disabled?: boolean
   presentation?: 'inline' | 'dialog'
@@ -33,6 +34,7 @@ export function ReportCatalogueControl({ enabled, disabled = false, presentation
   onOpenEmployeeGrossProfit?: (capability: EmployeeGrossProfitCapabilities) => boolean
   onOpenOverdueReceivables?: (capability: OverdueReceivablesCapabilities) => boolean
   onOpenManagementReturns?: (capability: ManagementReturnsCapabilities) => boolean
+  onOpenManagementBalance?: (capability: ManagementBalanceCapabilities) => boolean
   callerKey?: string | null
   onOpenActiveClients?: (capability: ActiveClientsCapabilities) => boolean
   onOpenCurrencyRateDynamics?: (capability: CurrencyRateDynamicsCapabilities) => boolean
@@ -56,6 +58,7 @@ export function ReportCatalogueControl({ enabled, disabled = false, presentation
       onOpenEmployeeGrossProfit={closeAfterAccepted(onOpenEmployeeGrossProfit, canOpen, () => setOpened(false))}
       onOpenOverdueReceivables={closeAfterAccepted(onOpenOverdueReceivables, canOpen, () => setOpened(false))}
       onOpenManagementReturns={closeAfterAccepted(onOpenManagementReturns, canOpen, () => setOpened(false))}
+      onOpenManagementBalance={closeAfterAccepted(onOpenManagementBalance, canOpen, () => setOpened(false))}
       onOpenActiveClients={closeAfterAccepted(onOpenActiveClients, canOpen, () => setOpened(false))}
       onOpenCurrencyRateDynamics={closeAfterAccepted(onOpenCurrencyRateDynamics, canOpen, () => setOpened(false))}
       onOpenCashAggregateBalance={closeAfterAccepted(onOpenCashAggregateBalance, canOpen, () => setOpened(false))}
