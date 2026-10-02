@@ -13,7 +13,7 @@ function matchingObject(value: unknown, expected: object) { return record(value)
   && Object.entries(expected).every(([key, item]) => value[key] === item) }
 /** Native labels remain lossless; malformed UTF16 and nameless entries cannot become selectable choices. */
 function caption(value: unknown): value is string {
-  if (typeof value !== 'string' || value.length === 0 || value.length > 100 || /^[\u0009-\u000d\u0020\u0085\u00a0\u1680\u2000-\u200a\u2028\u2029\u202f\u205f\u3000]*$/.test(value)) return false
+  if (typeof value !== 'string' || value.length === 0 || value.length > 100 || /^\p{White_Space}*$/u.test(value)) return false
   for (let i = 0; i < value.length; i++) {
     const unit = value.charCodeAt(i)
     if (unit >= 0xd800 && unit <= 0xdbff) { const low = value.charCodeAt(++i); if (!(low >= 0xdc00 && low <= 0xdfff)) return false }

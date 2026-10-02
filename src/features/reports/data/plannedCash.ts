@@ -111,7 +111,12 @@ export function plannedCashPeriodFilterError(cap: PlannedCashCapabilities, filte
 }
 /** Selection comes only from the scoped server list; its encrypted contents are never interpreted here. */
 export function isPlannedCashOpaqueKey(value: unknown): value is string {
-  return typeof value === 'string' && value.length > 0 && value.length <= 4096 && !/\s|[\u0000-\u001f\u007f]/.test(value)
+  if (typeof value !== 'string' || value.length === 0 || value.length > 4096 || /\s/.test(value)) return false
+  for (let i = 0; i < value.length; i++) {
+    const unit = value.charCodeAt(i)
+    if (unit <= 0x1f || unit === 0x7f) return false
+  }
+  return true
 }
 export function plannedCashFilterError(cap: PlannedCashCapabilities, filters: PlannedCashFilters, scenarioChoiceKey?: string | null): string | null {
   const error = plannedCashPeriodFilterError(cap, filters)
