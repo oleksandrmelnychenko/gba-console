@@ -18,6 +18,9 @@ import { createStockReport, previewStockReport } from './reportsApi'
 import { originalBuyerSalesShareCapability, originalBuyerSalesShareReport } from '../data/originalBuyerSalesShare.test-fixtures'
 import { previewOriginalBuyerSalesShare } from './originalBuyerSalesShareApi'
 
+import { overdueReceivablesCapability, overdueReceivablesReport } from '../data/overdueReceivables.test-fixtures'
+import { previewOverdueReceivables } from './overdueReceivablesApi'
+
 const fetchMock = vi.fn()
 const month = '2026-09'
 const nativeRequest = (): ReportRequestBody => ({ from: `${month}-01`, to: `${month}-30`, selections: [],
@@ -26,6 +29,8 @@ const nativePayload = () => ({ Preview: { Version: 1, ResultSha256: 'b'.repeat(6
   Page: { Offset: 0, Limit: 50, TotalVisibleRows: 0, ReturnedRows: 0, HasMore: false },
   RowSchema: [], ColumnSchema: [], Rows: [], Columns: [], Cells: [] } })
 const cases = [
+  { name: 'overdue receivables', route: '/report/constructors/overdue-receivables/preview',
+    run: () => previewOverdueReceivables(overdueReceivablesCapability(), month), payload: overdueReceivablesReport },
   { name: 'new buyer share', route: '/report/constructors/sales-new-buyer-share/preview',
     run: () => previewOriginalBuyerSalesShare(originalBuyerSalesShareCapability('new'), month), payload: () => originalBuyerSalesShareReport(month, 'new') },
   { name: 'repeat buyer share', route: '/report/constructors/sales-repeat-buyer-share/preview',
