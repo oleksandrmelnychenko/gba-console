@@ -42,7 +42,8 @@ it('defers the capability until catalogue opening and keeps the monthly request 
   const draftKey = 'report-workspace-draft:v1:employee-gross-profit-test-owner'
   const draft = sessionStorage.getItem(draftKey)
   fireEvent.click(screen.getByRole('button', { name: 'Каталог усіх звітів 1С' }))
-  const open = await screen.findByRole('button', { name: 'Відкрити прибуток на співробітника' })
+  // The first catalogue opening also loads its lazy module before the capability action exists.
+  const open = await screen.findByRole('button', { name: 'Відкрити прибуток на співробітника' }, { timeout: 5000 })
   await waitFor(() => expect((open as HTMLButtonElement).disabled).toBe(false))
   fireEvent.click(open)
   const modal = await screen.findByRole('dialog', { name: employeeGrossProfitCapability().ReportName })
