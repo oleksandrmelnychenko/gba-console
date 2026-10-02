@@ -58,7 +58,7 @@ export function OverdueReceivablesReportPanel({ capability, initialMonth, canGen
   }
 
   return <Stack gap="md">
-    <Text size="sm">{t('Прострочена дебіторська заборгованість на кінець місяця з поточних даних GBA. Порівняння із залишками на кінець попереднього місяця. EUR — валюта відображення GBA за комерційними курсами OUR.')}</Text>
+    <Text size="sm">{t('Прострочена дебіторська заборгованість на кінець місяця. Порівняння із залишками на кінець попереднього місяця. Суми в EUR за комерційними курсами системи.')}</Text>
     <TextInput type="month" label={t('Період')} value={month} disabled={!canGenerate || run.isLoading}
       onChange={event => setMonth(event.currentTarget.value)} />
     {!canGenerate ? <Alert color="yellow">{t('Недостатньо прав для формування звітів.')}</Alert> : null}
