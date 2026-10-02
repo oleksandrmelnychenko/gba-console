@@ -6,7 +6,8 @@ import type { ReportCatalogueEntry } from '../types'
 export function cashMovementCapability(kind: CashMovementKind = 'receipts'): CashMovementCapabilities {
   const definition = CASH_MOVEMENT_DEFINITIONS[kind]
   return { Version: 1, SourceIdentity: { ...definition.SourceIdentity }, Title: definition.Title, Executable: true,
-    Periodicity: definition.Periodicity, Columns: CASH_MOVEMENT_COLUMNS.map(column => ({ ...column })), Filters: [definition.Periodicity],
+    Periodicity: definition.Periodicity, Columns: CASH_MOVEMENT_COLUMNS.map(column => ({ ...column })), Filters: [definition.Periodicity, 'CashFlowArticle'],
+    ArticleChoiceApiImplemented: true, ArticleChoiceAvailability: 'CheckedByChoices',
     UnsupportedFilters: [...CASH_MOVEMENT_UNSUPPORTED_FILTERS], CfoAvailable: false, AccountCurrencyAvailable: false,
     InputBasis: CASH_MOVEMENT_INPUT_BASIS, PresentationBasis: CASH_MOVEMENT_PRESENTATION_BASIS,
     EffectiveSourcePeriodsVerified: false, SourceParityVerified: false }
@@ -58,4 +59,15 @@ export function cashMovementCatalogueEntry(kind: CashMovementKind = 'receipts'):
   const definition = CASH_MOVEMENT_DEFINITIONS[kind]
   return { Id: `custom:fenix:${definition.SourceIdentity.SourceId}`, Name: definition.Title, Title: definition.Title, Kind: 'indicator',
     Sources: [{ World: 'fenix', SourceId: definition.SourceIdentity.SourceId, DefinitionSha256: null, Attributes: [] }] }
+}
+
+export const CASH_MOVEMENT_TEST_ARTICLE = 'genuine-protected-article-choice'
+export const CASH_MOVEMENT_TEST_CALLER = '11111111-2222-3333-4444-555555555555'
+export function cashMovementArticleChoices(kind: CashMovementKind = 'receipts', period = kind === 'receipts' ? '2026-Q3' : '2026-09') {
+  return { Version: 1 as const, SourceIdentity: { ...CASH_MOVEMENT_DEFINITIONS[kind].SourceIdentity }, Period: period,
+    Available: true, Code: 'available', Choices: [{ Key: CASH_MOVEMENT_TEST_ARTICLE, Caption: ' Надходження від покупців ' }], ContinuationKey: null as string | null,
+    SelectionPolicy: 'AllPublishedCatalogueEntriesWithoutNativeVisibilityFiltering' as const, SourceParityVerified: false as const, NativeChoiceVisibilityVerified: false as const }
+}
+export function cashMovementFilteredReport(kind: CashMovementKind = 'receipts', period = kind === 'receipts' ? '2026-Q3' : '2026-09'): CashMovementReport {
+  return { ...cashMovementReport(kind, period), ArticleFilter: { Caption: cashMovementArticleChoices(kind, period).Choices[0].Caption, BindingSha256: 'f'.repeat(64) } }
 }

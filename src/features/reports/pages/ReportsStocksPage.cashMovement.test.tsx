@@ -3,16 +3,16 @@ import { fireEvent, render, screen, waitFor, within } from '@testing-library/rea
 import type { ReactNode } from 'react'
 import { beforeAll, beforeEach, expect, it, vi } from 'vitest'
 import { I18nProvider } from '../../../shared/i18n/I18nProvider'
-import { getCashMovementCapabilities, previewCashMovement } from '../api/cashMovementApi'
+import { getCashMovementArticleChoices, getCashMovementCapabilities, previewCashMovement } from '../api/cashMovementApi'
 import { createStockReport } from '../api/reportsApi'
 import { getReportCatalogue, getReportDatasets, getServerReportTemplates } from '../api/reportWorkspaceApi'
-import { cashMovementCapability, cashMovementCatalogueEntry, cashMovementReport } from '../data/cashMovement.test-fixtures'
+import { CASH_MOVEMENT_TEST_ARTICLE, cashMovementArticleChoices, cashMovementCapability, cashMovementCatalogueEntry, cashMovementFilteredReport, cashMovementReport } from '../data/cashMovement.test-fixtures'
 import { reportDatasets } from '../data/reportDatasets.test-fixtures'
 import type { CashMovementKind } from '../data/cashMovement'
 import type { ReportCatalogue } from '../types'
 import { ReportsStocksPage } from './ReportsStocksPage'
 vi.mock('../../auth/useAuth', () => ({ useAuth: () => ({ user: { NetUid: 'cash-movement-test-owner' }, hasPermission: () => true }) }))
-vi.mock('../api/cashMovementApi', () => ({ getCashMovementCapabilities: vi.fn(), previewCashMovement: vi.fn() }))
+vi.mock('../api/cashMovementApi', () => ({ getCashMovementCapabilities: vi.fn(), previewCashMovement: vi.fn(), getCashMovementArticleChoices: vi.fn(() => new Promise(() => undefined)) }))
 vi.mock('../api/reportWorkspaceApi', async original => ({ ...await original<typeof import('../api/reportWorkspaceApi')>(),
   getReportCatalogue: vi.fn(), getReportDatasets: vi.fn(), getServerReportTemplates: vi.fn(),
 }))
@@ -28,7 +28,7 @@ function configure(kind: CashMovementKind) {
 // API loading remains deferred and is asserted before the catalogue is opened.
 beforeAll(async () => { await import('./ReportCataloguePanel') })
 beforeEach(() => {
-  vi.clearAllMocks(); sessionStorage.clear(); localStorage.clear()
+  vi.clearAllMocks(); vi.mocked(getCashMovementArticleChoices).mockImplementation(() => new Promise(() => undefined)); sessionStorage.clear(); localStorage.clear()
   configure('receipts'); vi.mocked(getReportDatasets).mockResolvedValue(reportDatasets)
   vi.mocked(getServerReportTemplates).mockResolvedValue([])
 })
@@ -49,7 +49,7 @@ it.each(['receipts', 'payouts'] as const)('defers %s capability and uses its own
   fireEvent.change(period, { target: { value: kind === 'receipts' ? '2026-Q3' : '2026-09' } })
   fireEvent.click(within(modal).getByRole('button', { name: 'Переглянути' }))
   await within(modal).findByRole('region', { name: 'Результат руху коштів' })
-  expect(previewCashMovement).toHaveBeenCalledWith(cashMovementCapability(kind), kind === 'receipts' ? '2026-Q3' : '2026-09', expect.any(AbortSignal))
+  expect(previewCashMovement).toHaveBeenCalledWith(cashMovementCapability(kind), kind === 'receipts' ? '2026-Q3' : '2026-09', 'cash-movement-test-owner', expect.any(AbortSignal), null)
   expect(createStockReport).not.toHaveBeenCalled(); expect(sessionStorage.getItem(draftKey)).toBe(draft)
   fireEvent.click(within(modal).getByRole('button', { name: 'Закрити рух коштів' }))
   await waitFor(() => expect(screen.queryByRole('dialog', { name: cashMovementCapability(kind).Title })).toBeNull())
@@ -70,4 +70,24 @@ it('opens the original payout form when native numeric datasets are unavailable'
   fireEvent.click(within(modal).getByRole('button', { name: 'Переглянути' }))
   await within(modal).findByRole('region', { name: 'Результат руху коштів' })
   expect(createStockReport).not.toHaveBeenCalled(); expect(sessionStorage.getItem('report-workspace-draft:v1:cash-movement-test-owner')).toBeNull()
+})
+
+it.each(['receipts', 'payouts'] as const)('binds the catalogue %s article filter to its own modal without changing the native workspace draft', async kind => {
+  configure(kind)
+  vi.mocked(getCashMovementArticleChoices).mockImplementation(async (_capability, period) => cashMovementArticleChoices(kind, period))
+  vi.mocked(previewCashMovement).mockResolvedValue(cashMovementFilteredReport(kind))
+  render(<Providers><ReportsStocksPage constructorMode /></Providers>)
+  await screen.findByRole('button', { name: 'Продажі за днями' })
+  expect(getCashMovementArticleChoices).not.toHaveBeenCalled()
+  const draftKey = 'report-workspace-draft:v1:cash-movement-test-owner', draft = sessionStorage.getItem(draftKey)
+  fireEvent.click(screen.getByRole('button', { name: 'Каталог усіх звітів 1С' }))
+  const open = await screen.findByRole('button', { name: kind === 'receipts' ? 'Відкрити надходження за квартал' : 'Відкрити виплати за місяць' })
+  await waitFor(() => expect((open as HTMLButtonElement).disabled).toBe(false)); fireEvent.click(open)
+  const modal = await screen.findByRole('dialog', { name: cashMovementCapability(kind).Title })
+  fireEvent.change(within(modal).getByLabelText(kind === 'receipts' ? 'Квартал' : 'Місяць'), { target: { value: kind === 'receipts' ? '2026-Q3' : '2026-09' } })
+  const select = await within(modal).findByRole('combobox', { name: 'Стаття руху коштів' })
+  fireEvent.change(select, { target: { value: CASH_MOVEMENT_TEST_ARTICLE } }); fireEvent.click(within(modal).getByRole('button', { name: 'Переглянути' }))
+  await within(modal).findByRole('region', { name: 'Результат руху коштів' })
+  expect(previewCashMovement).toHaveBeenCalledWith(cashMovementCapability(kind), kind === 'receipts' ? '2026-Q3' : '2026-09', 'cash-movement-test-owner', expect.any(AbortSignal), CASH_MOVEMENT_TEST_ARTICLE)
+  expect(createStockReport).not.toHaveBeenCalled(); expect(sessionStorage.getItem(draftKey)).toBe(draft)
 })

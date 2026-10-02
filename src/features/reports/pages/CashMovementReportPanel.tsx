@@ -3,13 +3,14 @@ import { useI18n } from '../../../shared/i18n/useI18n'
 import { DocumentExportModal } from '../../../shared/ui/document-export-modal/DocumentExportModal'
 import type { CashMovementCapabilities, CashMovementCell, CashMovementReport } from '../data/cashMovement'
 import { useCashMovementReport } from '../hooks/useCashMovementReport'
+import { CashMovementArticlePicker } from './CashMovementArticlePicker'
 
 export function CashMovementReportPanel({ capability, initialMonth, canGenerate, callerKey, onLoadingChange }: {
   capability: CashMovementCapabilities; initialMonth: string; canGenerate: boolean; callerKey: string | null
   onLoadingChange?: (loading: boolean) => void
 }) {
   const { t } = useI18n()
-  const { kind, period, setPeriod, periodError, executable, canSubmit, run, hasFiles, generate } = useCashMovementReport({
+  const { choices, kind, period, setPeriod, periodError, executable, canSubmit, run, hasFiles, generate } = useCashMovementReport({
     capability, initialMonth, canGenerate, callerKey, onLoadingChange,
   })
   const report = run.lastRun
@@ -20,7 +21,8 @@ export function CashMovementReportPanel({ capability, initialMonth, canGenerate,
     <TextInput type={kind === 'receipts' ? 'text' : 'month'} label={t(kind === 'receipts' ? 'Квартал' : 'Місяць')}
       placeholder={kind === 'receipts' ? '2026-Q3' : undefined} description={kind === 'receipts' ? t('Формат: РРРР-Q1, Q2, Q3 або Q4') : undefined}
       value={period} disabled={!canGenerate || run.isLoading} onChange={event => setPeriod(event.currentTarget.value)} />
-    <Text size="sm" c="dimmed">{t('Доступний відбір за періодом. Інші відбори цієї форми ще недоступні.')}</Text>
+    <CashMovementArticlePicker choices={choices} disabled={!canGenerate || run.isLoading} />
+    <Text size="sm" c="dimmed">{t('Доступні відбори за періодом і статтею руху коштів. Інші відбори цієї форми ще недоступні.')}</Text>
     {!canGenerate ? <Alert color="yellow">{t('Недостатньо прав для формування звітів.')}</Alert> : null}
     {!executable ? <Alert color="yellow">{t('Сервер ще не підтримує формування цього конструктора.')}</Alert> : null}
     {periodError ? <Alert color="yellow">{t(periodError)}</Alert> : null}
@@ -47,6 +49,7 @@ function CashMovementResult({ report }: { report: CashMovementReport }) {
   }
   return <section aria-label={t('Результат руху коштів')}>
     <Text size="sm">{t('Період')}: {report.Period}</Text>
+    {report.ArticleFilter ? <Text size="sm">{t('Стаття руху коштів')}: {report.ArticleFilter.Caption}</Text> : null}
     <Text size="sm">{t('Валюта поточного періоду')}: {currencyName(report.Inputs.Current)}; {t('Валюта попереднього періоду')}: {currencyName(report.Inputs.Previous)}</Text>
     {report.Complete && !report.HasRows ? <Alert color="blue">{t('У вибраних періодах немає руху коштів.')}</Alert> : null}
     <Table.ScrollContainer minWidth={800}>

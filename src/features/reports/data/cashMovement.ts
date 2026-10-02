@@ -17,16 +17,17 @@ export const CASH_MOVEMENT_COLUMNS = [
   { Key: 'UserFields.field1', Caption: 'Изменение %', DecimalPlaces: 2 },
   { Key: 'UserFields.field2', Caption: 'Изменение (абс)', DecimalPlaces: null },
 ] as const
-export const CASH_MOVEMENT_UNSUPPORTED_FILTERS = ['Cfo', 'AccountCurrency', 'CashKind', 'CashFlowArticle', 'Project',
+export const CASH_MOVEMENT_UNSUPPORTED_FILTERS = ['Cfo', 'AccountCurrency', 'CashKind', 'Project',
   'Counterparty', 'Agreement', 'Deal', 'BankAccount'] as const
 export type CashMovementIdentity = typeof CASH_MOVEMENT_DEFINITIONS[CashMovementKind]['SourceIdentity']
 export type CashMovementCapabilities = {
   Version: 1; SourceIdentity: CashMovementIdentity; Title: string; Executable: boolean; Periodicity: 'Quarter' | 'Month'
-  Columns: Array<typeof CASH_MOVEMENT_COLUMNS[number]>; Filters: Array<'Quarter' | 'Month'>; UnsupportedFilters: string[]
+  Columns: Array<typeof CASH_MOVEMENT_COLUMNS[number]>; Filters: Array<'Quarter' | 'Month' | 'CashFlowArticle'>; UnsupportedFilters: string[]
+  ArticleChoiceApiImplemented: true; ArticleChoiceAvailability: 'CheckedByChoices'
   CfoAvailable: false; AccountCurrencyAvailable: false; InputBasis: typeof CASH_MOVEMENT_INPUT_BASIS
   PresentationBasis: typeof CASH_MOVEMENT_PRESENTATION_BASIS; EffectiveSourcePeriodsVerified: false; SourceParityVerified: false
 }
-export type CashMovementRequest = { Version: 1; SourceIdentity: CashMovementIdentity; Period: string }
+export type CashMovementRequest = { Version: 1; SourceIdentity: CashMovementIdentity; Period: string; ArticleChoiceKey?: string }
 export type CashMovementCell = { Key: typeof CASH_MOVEMENT_COLUMNS[number]['Key']; Available: boolean; Value: string | null; FormattedValue: string | null }
 export type CashMovementMonth = { Month: string; RunId: string | null; Available: boolean; PhysicalRows: number; ActiveRows: number; IncludedRows: number; Code: string }
 export type CashMovementCurrency = {
@@ -47,6 +48,7 @@ export type CashMovementReport = {
   CfoAvailable: false; AccountCurrencyAvailable: false; EffectiveSourcePeriodsVerified: false; SourceParityVerified: false
   ObservationStartedAtUtc: string; ObservationCompletedAtUtc: string; RequestSha256: string; ResultSha256: string
   DocumentURL: string; PdfDocumentURL: string
+  ArticleFilter?: { Caption: string; BindingSha256: string }
 }
 const record = (value: unknown): value is Record<string, unknown> => value !== null && typeof value === 'object' && !Array.isArray(value)
 const hash = (value: unknown): value is string => typeof value === 'string' && /^[0-9a-f]{64}$/.test(value)
@@ -85,7 +87,8 @@ export function isCashMovementCapabilities(value: unknown, expectedKind?: CashMo
   if (!kind || expectedKind && kind !== expectedKind) return false
   const definition = CASH_MOVEMENT_DEFINITIONS[kind]
   return value.Title === definition.Title && value.Periodicity === definition.Periodicity
-    && Array.isArray(value.Filters) && value.Filters.length === 1 && value.Filters[0] === definition.Periodicity
+    && value.ArticleChoiceApiImplemented === true && value.ArticleChoiceAvailability === 'CheckedByChoices'
+    && Array.isArray(value.Filters) && value.Filters.length === 2 && value.Filters[0] === definition.Periodicity && value.Filters[1] === 'CashFlowArticle'
     && Array.isArray(value.UnsupportedFilters) && value.UnsupportedFilters.length === CASH_MOVEMENT_UNSUPPORTED_FILTERS.length
     && value.UnsupportedFilters.every((item, index) => item === CASH_MOVEMENT_UNSUPPORTED_FILTERS[index])
 }
@@ -109,12 +112,29 @@ export function cashMovementPeriods(kind: CashMovementKind, period: string): Pic
   }
   return { CurrentPeriod: { From: shifted(0), ThroughExclusive: shifted(months) }, PreviousPeriod: { From: shifted(-months), ThroughExclusive: shifted(0) } }
 }
-export function createCashMovementRequest(capability: CashMovementCapabilities, period: string): CashMovementRequest {
+export function createCashMovementRequest(capability: CashMovementCapabilities, period: string, articleChoiceKey?: string | null): CashMovementRequest {
   if (!isCashMovementCapabilities(capability) || !capability.Executable) throw new Error('Сервер не підтвердив доступність цього конструктора.')
   const kind = cashMovementKind(capability)!
   const error = cashMovementPeriodError(kind, period)
   if (error) throw new Error(error)
-  return { Version: 1, SourceIdentity: { ...CASH_MOVEMENT_DEFINITIONS[kind].SourceIdentity }, Period: period }
+  if (articleChoiceKey !== undefined && articleChoiceKey !== null && !isCashMovementOpaqueKey(articleChoiceKey)) throw invalidResult()
+  return { Version: capability.Version, SourceIdentity: { ...capability.SourceIdentity }, Period: period,
+    ...(articleChoiceKey == null ? {} : { ArticleChoiceKey: articleChoiceKey }) }
+}
+export function isCashMovementOpaqueKey(value: unknown): value is string {
+  if (typeof value !== 'string' || value.length === 0 || value.length > 4096 || value.trim() !== value) return false
+  for (let index = 0; index < value.length; index++) { const unit = value.charCodeAt(index); if (unit < 32 || unit === 127) return false }
+  return true
+}
+/** Preserve native label whitespace and reject only nameless or malformed UTF16 captions. */
+export function isCashMovementArticleCaption(value: unknown): value is string {
+  if (typeof value !== 'string' || value.length === 0 || value.length > 100 || /^\p{White_Space}*$/u.test(value)) return false
+  for (let index = 0; index < value.length; index++) {
+    const unit = value.charCodeAt(index)
+    if (unit >= 0xd800 && unit <= 0xdbff) { const low = value.charCodeAt(++index); if (!(low >= 0xdc00 && low <= 0xdfff)) return false }
+    else if (unit >= 0xdc00 && unit <= 0xdfff) return false
+  }
+  return true
 }
 function currency(value: unknown): value is CashMovementCurrency {
   if (!record(value) || typeof value.Available !== 'boolean' || !code(value.Code)
@@ -179,6 +199,10 @@ export function normalizeCashMovementReport(value: unknown, request: CashMovemen
     || Date.parse(value.ObservationCompletedAtUtc) < Date.parse(value.ObservationStartedAtUtc)
     || !hash(value.RequestSha256) || !hash(value.ResultSha256) || typeof value.DocumentURL !== 'string' || typeof value.PdfDocumentURL !== 'string') throw invalidResult()
   const result = value as unknown as CashMovementReport
+  if (request.ArticleChoiceKey === undefined ? Object.hasOwn(value, 'ArticleFilter')
+    : !isCashMovementOpaqueKey(request.ArticleChoiceKey) || !record(value.ArticleFilter)
+      || Object.keys(value.ArticleFilter).length !== 2 || !isCashMovementArticleCaption(value.ArticleFilter.Caption)
+      || !hash(value.ArticleFilter.BindingSha256)) throw invalidResult()
   const current = result.Inputs.Current, previous = result.Inputs.Previous
   const included = (period: CashMovementInput) => period.Publication.Months.reduce((sum, month) => sum + month.IncludedRows, 0)
   const currentRows = current.Available ? included(current) : 0, previousRows = previous.Available ? included(previous) : 0

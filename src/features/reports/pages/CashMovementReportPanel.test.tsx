@@ -8,7 +8,7 @@ import { cashMovementCapability, cashMovementEmptyReport, cashMovementIncomplete
 import type { CashMovementKind } from '../data/cashMovement'
 import type { ReportDocument } from '../types'
 import { CashMovementReportPanel } from './CashMovementReportPanel'
-vi.mock('../api/cashMovementApi', () => ({ previewCashMovement: vi.fn() }))
+vi.mock('../api/cashMovementApi', () => ({ previewCashMovement: vi.fn(), getCashMovementArticleChoices: vi.fn(() => new Promise(() => undefined)) }))
 vi.mock('../../../shared/ui/document-export-modal/DocumentExportModal', () => ({
   DocumentExportModal: ({ opened, document }: { opened: boolean; document: ReportDocument | null }) => opened
     ? <div role="dialog" aria-label="Файли руху коштів"><span>{document?.DocumentURL}</span><span>{document?.PdfDocumentURL}</span></div> : null,
@@ -32,7 +32,7 @@ it.each(['receipts', 'payouts'] as const)('shows grouped %s four server formatte
   fireEvent.click(screen.getByRole('button', { name: 'Файли звіту' }))
   const files = screen.getByRole('dialog', { name: 'Файли руху коштів' })
   expect(within(files).getByText(report.DocumentURL)).toBeTruthy(); expect(within(files).getByText(report.PdfDocumentURL)).toBeTruthy()
-  expect(previewCashMovement).toHaveBeenCalledWith(cashMovementCapability(kind), report.Period, expect.any(AbortSignal))
+  expect(previewCashMovement).toHaveBeenCalledWith(cashMovementCapability(kind), report.Period, 'owner-a', expect.any(AbortSignal), null)
   expect(previewCashMovement).toHaveBeenCalledOnce()
 })
 it('shows complete empty periods separately from missing publication and does not invent empty totals', async () => {
@@ -81,7 +81,7 @@ it('aborts a deferred old caller and protects a newer loading state and export s
     .mockImplementationOnce(() => new Promise(done => { newDone = done }))
   const loading = vi.fn(), view = render(panel('receipts', 'owner-a', true, loading))
   fireEvent.click(screen.getByRole('button', { name: 'Сформувати' }))
-  const oldSignal = vi.mocked(previewCashMovement).mock.calls[0][2]!
+  const oldSignal = vi.mocked(previewCashMovement).mock.calls[0][3]!
   view.rerender(panel('receipts', 'owner-b', true, loading)); expect(oldSignal.aborted).toBe(true)
   fireEvent.click(screen.getByRole('button', { name: 'Переглянути' }))
   await act(async () => { oldDone(cashMovementReport()) })
