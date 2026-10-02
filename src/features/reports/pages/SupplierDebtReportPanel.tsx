@@ -1,4 +1,4 @@
-import { Alert, Button, Group, Stack, Table, Text, TextInput } from '@mantine/core'
+import { Alert, Button, Group, Stack, Text, TextInput } from '@mantine/core'
 import { useEffect, useRef, useState } from 'react'
 import { ApiError } from '../../../shared/api/apiClient'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -7,6 +7,7 @@ import { previewSupplierDebt } from '../api/supplierDebtApi'
 import { isSupplierDebtCapabilities, supplierDebtMonthError, type SupplierDebtCapabilities, type SupplierDebtReport } from '../data/supplierDebt'
 import { useReportRunState } from '../hooks/useReportRunState'
 import { normalizeReportResult } from '../utils'
+import { ServerReportCellsTable } from './ServerReportCellsTable'
 
 export function SupplierDebtReportPanel({ capability, initialMonth, canGenerate, callerKey, onLoadingChange }: {
   capability: SupplierDebtCapabilities
@@ -81,15 +82,7 @@ function SupplierDebtResult({ report }: { report: SupplierDebtReport }) {
   return <section aria-label={t('Результат заборгованості постачальникам')}>
     <Text size="sm">{t('Період')}: {report.Month}</Text>
     {report.Complete && !report.HasRows ? <Alert color="blue">{t('У вибраних періодах немає заборгованості перед постачальниками.')}</Alert> : null}
-    <Table.ScrollContainer minWidth={640}>
-      <Table>
-        <Table.Thead><Table.Tr>{report.Columns.map(column => <Table.Th key={column.Key}>{column.Caption}</Table.Th>)}</Table.Tr></Table.Thead>
-        <Table.Tbody><Table.Tr>{report.Cells.map(cell => <Table.Td key={cell.Key}
-          title={!cell.Available ? t('Недоступні дані') : cell.Value === null ? t('У періоді немає даних') : undefined}>
-          {cell.FormattedValue ?? '—'}
-        </Table.Td>)}</Table.Tr></Table.Tbody>
-      </Table>
-    </Table.ScrollContainer>
+    <ServerReportCellsTable columns={report.Columns} cells={report.Cells} />
     {!report.Complete ? <Alert color="yellow">{t('Звіт неповний: початкові залишки або рухи за вибрані періоди ще не підтверджені.')}</Alert> : null}
     {report.HasRows && unavailable ? <Alert color="yellow">{t('Не всі показники вдалося розрахувати.')}</Alert> : null}
   </section>

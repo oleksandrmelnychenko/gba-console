@@ -1,7 +1,7 @@
 import { MantineProvider } from '@mantine/core'
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import type { ReactNode } from 'react'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { clearSession, saveSession } from '../../../shared/auth/session'
 import { I18nProvider } from '../../../shared/i18n/I18nProvider'
 import { createStockReport, searchValuationAgreements } from '../api/reportsApi'
@@ -54,6 +54,9 @@ async function launchDebt() {
 }
 function stored() { return JSON.parse(sessionStorage.getItem(draftKey)!) }
 
+// Keep the UI wait focused on opening/rendering, after Vite has loaded the real lazy module.
+// API loading remains deferred and is asserted before the catalogue is opened.
+beforeAll(async () => { await import('./ReportCataloguePanel') })
 describe('named catalogue report to constructor', () => {
   beforeEach(() => {
     allowed = true; vi.clearAllMocks(); sessionStorage.clear(); localStorage.clear()

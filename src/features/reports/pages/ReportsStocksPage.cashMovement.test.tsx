@@ -1,7 +1,7 @@
 import { MantineProvider } from '@mantine/core'
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import type { ReactNode } from 'react'
-import { beforeEach, expect, it, vi } from 'vitest'
+import { beforeAll, beforeEach, expect, it, vi } from 'vitest'
 import { I18nProvider } from '../../../shared/i18n/I18nProvider'
 import { getCashMovementCapabilities, previewCashMovement } from '../api/cashMovementApi'
 import { createStockReport } from '../api/reportsApi'
@@ -24,6 +24,9 @@ function configure(kind: CashMovementKind) {
   vi.mocked(getCashMovementCapabilities).mockResolvedValue(cashMovementCapability(kind))
   vi.mocked(previewCashMovement).mockResolvedValue(cashMovementReport(kind))
 }
+// Keep the UI wait focused on opening/rendering, after Vite has loaded the real lazy module.
+// API loading remains deferred and is asserted before the catalogue is opened.
+beforeAll(async () => { await import('./ReportCataloguePanel') })
 beforeEach(() => {
   vi.clearAllMocks(); sessionStorage.clear(); localStorage.clear()
   configure('receipts'); vi.mocked(getReportDatasets).mockResolvedValue(reportDatasets)
