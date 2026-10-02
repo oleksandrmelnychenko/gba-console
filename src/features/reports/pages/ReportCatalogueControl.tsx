@@ -6,6 +6,7 @@ import type { CatalogueLaunchChoice } from '../data/reportCatalogueLaunch'
 import type { DebtToSalesRatioCapabilities } from '../data/debtToSalesRatio'
 import type { CollectionCoefficientCapabilities } from '../data/collectionCoefficient'
 import type { SalesMarginCapabilities } from '../data/salesMargin'
+import type { CashMovementCapabilities } from '../data/cashMovement'
 import type { ActiveClientsCapabilities } from '../data/activeClients'
 import type { CurrencyRateDynamicsCapabilities } from '../data/currencyRateDynamics'
 import type { CashAggregateBalanceCapabilities } from '../data/cashAggregateBalance'
@@ -15,7 +16,7 @@ import type { ReportCatalogue } from '../types'
 
 const ReportCataloguePanel = lazy(() => import('./ReportCataloguePanel').then(module => ({ default: module.ReportCataloguePanel })))
 
-export function ReportCatalogueControl({ enabled, disabled = false, presentation = 'inline', onOpen, onOpenDebtToSalesRatio, onOpenCollectionCoefficient, onOpenSalesMargin, callerKey = null, onOpenActiveClients, onOpenCurrencyRateDynamics, onOpenCashAggregateBalance, onOpenOriginalRevenue, onOpenOriginalBuyerSalesShare }: {
+export function ReportCatalogueControl({ enabled, disabled = false, presentation = 'inline', onOpen, onOpenDebtToSalesRatio, onOpenCollectionCoefficient, onOpenSalesMargin, onOpenCashMovement, callerKey = null, onOpenActiveClients, onOpenCurrencyRateDynamics, onOpenCashAggregateBalance, onOpenOriginalRevenue, onOpenOriginalBuyerSalesShare }: {
   enabled: boolean
   disabled?: boolean
   presentation?: 'inline' | 'dialog'
@@ -23,6 +24,7 @@ export function ReportCatalogueControl({ enabled, disabled = false, presentation
   onOpenDebtToSalesRatio?: (capability: DebtToSalesRatioCapabilities) => boolean
   onOpenCollectionCoefficient?: (capability: CollectionCoefficientCapabilities) => boolean
   onOpenSalesMargin?: (capability: SalesMarginCapabilities) => boolean
+  onOpenCashMovement?: (capability: CashMovementCapabilities) => boolean
   callerKey?: string | null
   onOpenActiveClients?: (capability: ActiveClientsCapabilities) => boolean
   onOpenCurrencyRateDynamics?: (capability: CurrencyRateDynamicsCapabilities) => boolean
@@ -41,6 +43,7 @@ export function ReportCatalogueControl({ enabled, disabled = false, presentation
       onOpenDebtToSalesRatio={closeAfterAccepted(onOpenDebtToSalesRatio, canOpen, () => setOpened(false))}
       onOpenCollectionCoefficient={closeAfterAccepted(onOpenCollectionCoefficient, canOpen, () => setOpened(false))}
       onOpenSalesMargin={closeAfterAccepted(onOpenSalesMargin, canOpen, () => setOpened(false))}
+      onOpenCashMovement={closeAfterAccepted(onOpenCashMovement, canOpen, () => setOpened(false))}
       onOpenActiveClients={closeAfterAccepted(onOpenActiveClients, canOpen, () => setOpened(false))}
       onOpenCurrencyRateDynamics={closeAfterAccepted(onOpenCurrencyRateDynamics, canOpen, () => setOpened(false))}
       onOpenCashAggregateBalance={closeAfterAccepted(onOpenCashAggregateBalance, canOpen, () => setOpened(false))}

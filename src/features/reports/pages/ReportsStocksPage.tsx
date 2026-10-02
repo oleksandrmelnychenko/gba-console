@@ -124,6 +124,8 @@ import { CollectionCoefficientConstructorModal } from './CollectionCoefficientCo
 import { useCollectionCoefficientConstructor } from '../hooks/useCollectionCoefficientConstructor'
 import { SalesMarginConstructorModal } from './SalesMarginConstructorModal'
 import { useSalesMarginConstructor } from '../hooks/useSalesMarginConstructor'
+import { CashMovementConstructorModal } from './CashMovementConstructorModal'
+import { useCashMovementConstructor } from '../hooks/useCashMovementConstructor'
 import { ActiveClientsReportPanel } from './ActiveClientsReportPanel'
 import { isActiveClientsCapabilities, type ActiveClientsCapabilities } from '../data/activeClients'
 import { CurrencyRateDynamicsReportPanel } from './CurrencyRateDynamicsReportPanel'
@@ -382,6 +384,8 @@ function ReportsStocksWorkspace({ ownerId, constructorMode }: { ownerId: string 
   const collectionConstructor = useCollectionCoefficientConstructor({ enabled: canGenerateReport, disabled: isLoading,
     callerKey: ownerId, from, today })
   const salesMarginConstructor = useSalesMarginConstructor({ enabled: canGenerateReport, disabled: isLoading,
+    callerKey: ownerId, from, today })
+  const cashMovementConstructor = useCashMovementConstructor({ enabled: canGenerateReport, disabled: isLoading,
     callerKey: ownerId, from, today })
   const comparisonSettingsDisabled = isLoading || !canGenerateReport
   const retainedData = restoredData ?? activeTemplate?.Data
@@ -830,6 +834,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode }: { ownerId: string 
       </AppModal>
       <CollectionCoefficientConstructorModal {...collectionConstructor.modalProps} />
       <SalesMarginConstructorModal {...salesMarginConstructor.modalProps} />
+      <CashMovementConstructorModal {...cashMovementConstructor.modalProps} />
       <AppModal opened={canGenerateReport && currencyDynamicsCapability !== null} title={currencyDynamicsCapability?.Title ?? ''} size={960}
         onClose={() => { if (!currencyDynamicsGenerating) setCurrencyDynamicsCapability(null) }}
         closeOnClickOutside={!currencyDynamicsGenerating} closeOnEscape={!currencyDynamicsGenerating}
@@ -882,7 +887,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode }: { ownerId: string 
           onChange={changeDataset} onRetry={datasetStorage.retry} />}
         catalogueControl={<ReportCatalogueControl presentation="dialog" enabled={canGenerateReport}
           disabled={isLoading} onOpen={openCatalogueReport}
-          onOpenDebtToSalesRatio={openDebtToSalesRatio} onOpenCollectionCoefficient={collectionConstructor.open} onOpenSalesMargin={salesMarginConstructor.open} callerKey={ownerId} onOpenActiveClients={openActiveClients}
+          onOpenDebtToSalesRatio={openDebtToSalesRatio} onOpenCollectionCoefficient={collectionConstructor.open} onOpenSalesMargin={salesMarginConstructor.open} onOpenCashMovement={cashMovementConstructor.open} callerKey={ownerId} onOpenActiveClients={openActiveClients}
           onOpenCurrencyRateDynamics={openCurrencyRateDynamics} onOpenCashAggregateBalance={openCashAggregateBalance} onOpenOriginalRevenue={openOriginalRevenue} onOpenOriginalBuyerSalesShare={openOriginalBuyerSalesShare} />}
         datasetSummary={<><ReportDatasetSummary dataset={dataset} />
           {!constructorMode ? <details className="stocks-workspace-dataset-help"><summary>{t('Що змінює вибір набору даних')}</summary>
