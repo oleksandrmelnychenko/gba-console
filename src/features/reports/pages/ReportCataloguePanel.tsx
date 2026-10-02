@@ -18,6 +18,8 @@ import { isSalesMarginCatalogueEntry, type SalesMarginCapabilities } from '../da
 import { SalesMarginCatalogueLaunch } from './SalesMarginCatalogueLaunch'
 import { cashMovementCatalogueKind, type CashMovementCapabilities } from '../data/cashMovement'
 import { CashMovementCatalogueLaunch } from './CashMovementCatalogueLaunch'
+import { isSupplierDebtCatalogueEntry, type SupplierDebtCapabilities } from '../data/supplierDebt'
+import { SupplierDebtCatalogueLaunch } from './SupplierDebtCatalogueLaunch'
 import { isActiveClientsCatalogueEntry, type ActiveClientsCapabilities } from '../data/activeClients'
 import { ActiveClientsCatalogueLaunch } from './ActiveClientsCatalogueLaunch'
 import { isCurrencyRateDynamicsCatalogueEntry, type CurrencyRateDynamicsCapabilities } from '../data/currencyRateDynamics'
@@ -42,6 +44,7 @@ type OpenDebtToSalesRatio = (capability: DebtToSalesRatioCapabilities) => boolea
 type OpenCollectionCoefficient = (capability: CollectionCoefficientCapabilities) => boolean
 type OpenSalesMargin = (capability: SalesMarginCapabilities) => boolean
 type OpenCashMovement = (capability: CashMovementCapabilities) => boolean
+type OpenSupplierDebt = (capability: SupplierDebtCapabilities) => boolean
 type OpenActiveClients = (capability: ActiveClientsCapabilities) => boolean
 type OpenCurrencyRateDynamics = (capability: CurrencyRateDynamicsCapabilities) => boolean
 type OpenCashAggregateBalance = (capability: CashAggregateBalanceCapabilities) => boolean
@@ -69,8 +72,8 @@ function useCatalogueLoad(canGenerate: boolean) {
     error: currentLoad?.error ?? false, retry: () => setAttempt(value => value + 1) }
 }
 
-export function ReportCataloguePanel({ onOpen, onOpenDebtToSalesRatio, onOpenCollectionCoefficient, onOpenSalesMargin, onOpenCashMovement, callerKey = null, onOpenActiveClients, onOpenCurrencyRateDynamics, onOpenCashAggregateBalance, onOpenOriginalRevenue, onOpenOriginalBuyerSalesShare, disabled = false }: {
-  onOpen?: OpenReport; onOpenDebtToSalesRatio?: OpenDebtToSalesRatio; onOpenCollectionCoefficient?: OpenCollectionCoefficient; onOpenSalesMargin?: OpenSalesMargin; onOpenCashMovement?: OpenCashMovement; callerKey?: string | null; onOpenActiveClients?: OpenActiveClients; onOpenCurrencyRateDynamics?: OpenCurrencyRateDynamics; onOpenCashAggregateBalance?: OpenCashAggregateBalance; onOpenOriginalRevenue?: OpenOriginalRevenue; onOpenOriginalBuyerSalesShare?: OpenOriginalBuyerSalesShare; disabled?: boolean
+export function ReportCataloguePanel({ onOpen, onOpenDebtToSalesRatio, onOpenCollectionCoefficient, onOpenSalesMargin, onOpenCashMovement, onOpenSupplierDebt, callerKey = null, onOpenActiveClients, onOpenCurrencyRateDynamics, onOpenCashAggregateBalance, onOpenOriginalRevenue, onOpenOriginalBuyerSalesShare, disabled = false }: {
+  onOpen?: OpenReport; onOpenDebtToSalesRatio?: OpenDebtToSalesRatio; onOpenCollectionCoefficient?: OpenCollectionCoefficient; onOpenSalesMargin?: OpenSalesMargin; onOpenCashMovement?: OpenCashMovement; onOpenSupplierDebt?: OpenSupplierDebt; callerKey?: string | null; onOpenActiveClients?: OpenActiveClients; onOpenCurrencyRateDynamics?: OpenCurrencyRateDynamics; onOpenCashAggregateBalance?: OpenCashAggregateBalance; onOpenOriginalRevenue?: OpenOriginalRevenue; onOpenOriginalBuyerSalesShare?: OpenOriginalBuyerSalesShare; disabled?: boolean
 }) {
   const { t } = useI18n()
   const { hasPermission } = useAuth()
@@ -149,7 +152,7 @@ export function ReportCataloguePanel({ onOpen, onOpenDebtToSalesRatio, onOpenCol
       <Pagination size="sm" total={Math.max(1, Math.ceil(filtered.length / pageSize))} value={page} onChange={setPage} />
       </div>
       <CatalogueTable visibleRows={visibleRows} catalogue={catalogue} inspection={inspection} availableDatasets={availableDatasets}
-        canGenerate={canGenerate} disabled={disabled} onOpen={onOpen} onOpenDebtToSalesRatio={onOpenDebtToSalesRatio} onOpenCollectionCoefficient={onOpenCollectionCoefficient} onOpenSalesMargin={onOpenSalesMargin} onOpenCashMovement={onOpenCashMovement} callerKey={callerKey}
+        canGenerate={canGenerate} disabled={disabled} onOpen={onOpen} onOpenDebtToSalesRatio={onOpenDebtToSalesRatio} onOpenCollectionCoefficient={onOpenCollectionCoefficient} onOpenSalesMargin={onOpenSalesMargin} onOpenCashMovement={onOpenCashMovement} onOpenSupplierDebt={onOpenSupplierDebt} callerKey={callerKey}
         onOpenActiveClients={onOpenActiveClients} onOpenCurrencyRateDynamics={onOpenCurrencyRateDynamics} onOpenCashAggregateBalance={onOpenCashAggregateBalance} onOpenOriginalRevenue={onOpenOriginalRevenue} onOpenOriginalBuyerSalesShare={onOpenOriginalBuyerSalesShare} expanded={expanded}
         onToggle={id => setExpanded(current => toggleExpanded(current, id))} />
       {!filtered.length && <Text c="dimmed" ta="center" py="xl">{t('Звітів за цими умовами не знайдено')}</Text>}
@@ -166,10 +169,10 @@ function toggleExpanded(current: ReadonlySet<string>, id: string) {
   return next
 }
 
-function CatalogueTable({ visibleRows, catalogue, inspection, availableDatasets, canGenerate, disabled, onOpen, onOpenDebtToSalesRatio, onOpenCollectionCoefficient, onOpenSalesMargin, onOpenCashMovement, callerKey = null, onOpenActiveClients, onOpenCurrencyRateDynamics, onOpenCashAggregateBalance, onOpenOriginalRevenue, onOpenOriginalBuyerSalesShare, expanded, onToggle }: {
+function CatalogueTable({ visibleRows, catalogue, inspection, availableDatasets, canGenerate, disabled, onOpen, onOpenDebtToSalesRatio, onOpenCollectionCoefficient, onOpenSalesMargin, onOpenCashMovement, onOpenSupplierDebt, callerKey = null, onOpenActiveClients, onOpenCurrencyRateDynamics, onOpenCashAggregateBalance, onOpenOriginalRevenue, onOpenOriginalBuyerSalesShare, expanded, onToggle }: {
   visibleRows: Array<{ report: ReportCatalogueEntry; options: LaunchOption[] }>; catalogue: ReportCatalogue
   inspection: ReturnType<typeof inspectCatalogueMigration>; availableDatasets: ReportDataset[] | null
-  canGenerate: boolean; disabled: boolean; onOpen?: OpenReport; onOpenDebtToSalesRatio?: OpenDebtToSalesRatio; onOpenCollectionCoefficient?: OpenCollectionCoefficient; onOpenSalesMargin?: OpenSalesMargin; onOpenCashMovement?: OpenCashMovement; callerKey?: string | null; onOpenActiveClients?: OpenActiveClients; onOpenCurrencyRateDynamics?: OpenCurrencyRateDynamics; onOpenCashAggregateBalance?: OpenCashAggregateBalance; onOpenOriginalRevenue?: OpenOriginalRevenue; onOpenOriginalBuyerSalesShare?: OpenOriginalBuyerSalesShare
+  canGenerate: boolean; disabled: boolean; onOpen?: OpenReport; onOpenDebtToSalesRatio?: OpenDebtToSalesRatio; onOpenCollectionCoefficient?: OpenCollectionCoefficient; onOpenSalesMargin?: OpenSalesMargin; onOpenCashMovement?: OpenCashMovement; onOpenSupplierDebt?: OpenSupplierDebt; callerKey?: string | null; onOpenActiveClients?: OpenActiveClients; onOpenCurrencyRateDynamics?: OpenCurrencyRateDynamics; onOpenCashAggregateBalance?: OpenCashAggregateBalance; onOpenOriginalRevenue?: OpenOriginalRevenue; onOpenOriginalBuyerSalesShare?: OpenOriginalBuyerSalesShare
   expanded: ReadonlySet<string>; onToggle: (id: string) => void
 }) {
   const { t } = useI18n()
@@ -187,6 +190,8 @@ function CatalogueTable({ visibleRows, catalogue, inspection, availableDatasets,
                   ? <SalesMarginCatalogueLaunch report={report} enabled={canGenerate} disabled={disabled} callerKey={callerKey} onOpen={onOpenSalesMargin} /> : null}
                 {onOpenCashMovement && cashMovementCatalogueKind(report) !== null
                   ? <CashMovementCatalogueLaunch report={report} enabled={canGenerate} disabled={disabled} callerKey={callerKey} onOpen={onOpenCashMovement} /> : null}
+                {onOpenSupplierDebt && isSupplierDebtCatalogueEntry(report)
+                  ? <SupplierDebtCatalogueLaunch report={report} enabled={canGenerate} disabled={disabled} callerKey={callerKey} onOpen={onOpenSupplierDebt} /> : null}
                 {onOpenOriginalBuyerSalesShare && originalBuyerSalesShareCatalogueVariant(report) !== null
                   ? <OriginalBuyerSalesShareCatalogueLaunch report={report} enabled={canGenerate} disabled={disabled} onOpen={onOpenOriginalBuyerSalesShare} />
                   : onOpenOriginalRevenue && isOriginalRevenueCatalogueEntry(report)
