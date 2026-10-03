@@ -1,6 +1,7 @@
 import { MantineProvider } from '@mantine/core'
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { expect, it, vi } from 'vitest'
+import { I18nProvider } from '../../../shared/i18n/I18nProvider'
 import { readWarehouseQuantity } from '../api/originalWarehouseQuantityApi'
 import { WAREHOUSE_QUANTITY_SOURCE, WAREHOUSE_QUANTITY_DEFINITION, type WarehouseQuantityCapability, type WarehouseQuantityResult } from '../data/originalWarehouseQuantity'
 import { OriginalWarehouseQuantityPanel } from './OriginalWarehouseQuantityPanel'
@@ -22,8 +23,8 @@ const response = (): WarehouseQuantityResult => ({ Version: 1, World: 'fenix', S
   WarehouseCaptionPolicy: 'CurrentOURStorageNameViaAuthenticatedRoutingAssociation', WarehouseCaptionWitnessSha256: 'c'.repeat(64),
   WarehouseFilterAvailable: true, ReceiptFilterAvailable: false, UnitPolicy: 'NativeStoredQuantityNoCoefficientConversion',
   NativeVirtualTableVerified: false, SourceParityVerified: false, OriginalFullTaskAccepted: false })
-const panel = (caller = 'caller1', cap = capability) => <MantineProvider env="test"><OriginalWarehouseQuantityPanel capability={cap}
-  callerKey={caller} canGenerate initialFrom="2026-09-01" initialThrough="2026-09-30" /></MantineProvider>
+const panel = (caller = 'caller1', cap = capability) => <MantineProvider env="test"><I18nProvider><OriginalWarehouseQuantityPanel capability={cap}
+  callerKey={caller} canGenerate initialFrom="2026-09-01" initialThrough="2026-09-30" /></I18nProvider></MantineProvider>
 
 it('offers only admitted human warehouse choices and sends their exact original equality key', async () => {
   vi.clearAllMocks(); vi.mocked(readWarehouseQuantity).mockResolvedValue(response())
