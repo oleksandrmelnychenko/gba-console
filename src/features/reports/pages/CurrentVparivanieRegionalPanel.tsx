@@ -39,6 +39,17 @@ function RegionalTable({ result }: { result: CurrentVparivanieRegionalResult }) 
   </div></Stack>
 }
 
+function RegionalFullScopeCheckbox({ dataset, checked, disabled, onChange }: {
+  dataset: ReportDataset | null; checked?: boolean; disabled: boolean
+  onChange?: (value: boolean) => void
+}) {
+  if (!onChange || !currentVparivanieFullScopeAvailable(dataset)) return null
+  return <Checkbox label="Повний вибраний набір товарів"
+    description="Читаються всі рядки вибраної групи або товарів. Якщо форма завелика, звузьте відбір."
+    checked={checked ?? false} disabled={disabled}
+    onChange={event => onChange(event.currentTarget.checked)} />
+}
+
 export function CurrentVparivanieRegionalPanel({ dataset, request, enabled, disabled, fullScope, onFullScopeChange }: {
   dataset: ReportDataset | null; request: ReportRequestBody; enabled: boolean; disabled: boolean
   fullScope?: boolean; onFullScopeChange?: (value: boolean) => void
@@ -89,10 +100,8 @@ export function CurrentVparivanieRegionalPanel({ dataset, request, enabled, disa
   if (!available) return null
   return <section className="app-section-card" aria-label="Регіональна форма Впарювання">
     <Stack gap="sm"><Text component="h2" fw={600} size="sm">{CURRENT_REGIONAL_TITLE}</Text>
-      {onFullScopeChange && currentVparivanieFullScopeAvailable(dataset) ? <Checkbox label="Повний вибраний набір товарів"
-        description="Читаються всі рядки вибраної групи або товарів. Якщо форма завелика, звузьте відбір."
-        checked={fullScope ?? false} disabled={!enabled || disabled || busy || exporting}
-        onChange={event => onFullScopeChange(event.currentTarget.checked)} /> : null}
+      <RegionalFullScopeCheckbox dataset={dataset} checked={fullScope}
+        disabled={!enabled || disabled || busy || exporting} onChange={onFullScopeChange} />
       <Text size="sm">Період і відбори — з конструктора. Окремий підсумок контрагентів та колонки регіональних кодів.</Text>
       <Group><Button loading={busy} disabled={!enabled || disabled || !!rejected || exporting} onClick={() => void read()}>
         Показати регіональну форму</Button>
