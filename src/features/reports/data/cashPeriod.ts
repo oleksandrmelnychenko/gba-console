@@ -1,5 +1,5 @@
 import type { ReportDataset, ReportRequestBody } from '../types'
-import { groupedCashConfigurationError, groupedCashSupported, requestGroupedCashPeriod, GROUPED_CASH_FILTERS } from './groupedCashPeriod'
+import { groupedCashConfigurationError, groupedCashSupported, requestGroupedCashPeriod, GROUPED_CASH_FILTERS, groupedCashWorkbookSupported, CASH_WORKBOOK_ROWS } from './groupedCashPeriod'
 import { formatKyivBusinessDate } from '../../../shared/date/dateTime'
 
 export const CASH_PERIOD_SOURCE = 40
@@ -87,7 +87,8 @@ export function cashPeriodSupportsManagement(dataset: ReportDataset | undefined)
 export function isCashPeriodDataset(dataset: ReportDataset): boolean {
   return dataset.DataSource === CASH_PERIOD_SOURCE && dataset.PeriodRequired === true
     && dataset.PeriodSupported === true && isCashPeriodCapability(dataset.cashPeriod)
-    && exact(dataset.Groupings.map(item => item.Type), CASH_PERIOD_ROWS)
+    && (exact(dataset.Groupings.map(item => item.Type), CASH_PERIOD_ROWS)
+      || groupedCashWorkbookSupported(dataset) && exact(dataset.Groupings.map(item => item.Type), [...CASH_PERIOD_ROWS, 44]))
     && exact(dataset.Measurements.map(item => item.Type), cashPeriodSupportsManagement(dataset)
       ? CASH_PERIOD_ALL_MEASURES : CASH_PERIOD_MEASURES)
     && dataset.Groupings.every(item => item.Selectable !== false)
@@ -132,10 +133,11 @@ export function cashPeriodConfigurationError(data: ReportRequestBody, dataset?: 
   if (Object.entries(data).some(([key, value]) => !allowed.has(key) && !(grouped && key === 'GroupedCashPeriod') && value != null))
     return 'Для руху коштів недоступні додаткові відбори та перерахунок за поточним курсом.'
   if (!Array.isArray(data.selections) || !grouped && data.selections.length !== 0
-    || !data.sorted || !exact(data.sorted.Row?.map(item => item.type), CASH_PERIOD_ROWS)
+    || !data.sorted || !(exact(data.sorted.Row?.map(item => item.type), CASH_PERIOD_ROWS)
+      || grouped && groupedCashWorkbookSupported(dataset) && exact(data.sorted.Row?.map(item => item.type), CASH_WORKBOOK_ROWS))
     || !Array.isArray(data.sorted.Col) || data.sorted.Col.length !== 0
     || !exact(data.sorted.Measurements?.map(item => item.Type), grouped ? CASH_PERIOD_ALL_MEASURES : cashPeriodMeasurements(scope))
     || data.sorted.Measurements.some(item => item.IsChecked === false))
-    return 'Структура звіту руху коштів фіксована: організація → рахунок → запис → валюта рахунку, чотири або вісім показників відповідно до вибраних валют.'
+    return 'Структура звіту руху коштів фіксована: деталізація валютних записів або форма рахунок → тип → організація; чотири або вісім показників відповідно до вибраних валют.'
   return null
 }

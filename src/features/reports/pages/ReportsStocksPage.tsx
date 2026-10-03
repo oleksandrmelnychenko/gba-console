@@ -960,9 +960,11 @@ function ReportsStocksWorkspace({ ownerId, constructorMode }: { ownerId: string 
           disabled={comparisonSettingsDisabled} enabled={canGenerateReport} onModeChange={changeSettlementMode}
           onGroupedChange={setGroupedSettlementPeriod} onExactChange={setSettlementPeriod}
           onBuyerChange={setSourceBuyerSubtree} onRowsChange={setRowGroups} onGroupsChange={setSourceCounterpartyGroups} /> : dataSource === 40 ? <CashPeriodModePanel dataset={dataset} grouped={groupedCashPeriod} exact={cashPeriod}
+          rows={rowGroups} available={groupingOptions} onRowsChange={setRowGroups}
           onModeChange={multiple => {
             setGroupedCashPeriod(multiple ? defaultGroupedCashPeriod() : undefined)
             setCashPeriod(undefined)
+            setRowGroups([43, 40, 42, 41].flatMap(type => groupingOptions.filter(group => group.type === type)))
             filterLogic.load([])
             const required = new Set<number>(multiple || cashPeriodSupportsManagement(dataset) ? CASH_PERIOD_ALL_MEASURES : CASH_PERIOD_MEASURES)
             setMeasurements(datasetMeasurements(dataset, (dataset?.Measurements ?? [])

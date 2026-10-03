@@ -1,6 +1,6 @@
 import { expect, it } from 'vitest'
 import type { ReportSelection } from '../types'
-import { groupedCashDataset, groupedCashRequest } from './groupedCashPeriod.test-fixtures'
+import { groupedCashDataset, groupedCashRequest, groupedCashWorkbookDataset } from './groupedCashPeriod.test-fixtures'
 import { cashPeriodDataset, cashPeriodRequest } from './cashPeriod.test-fixtures'
 import { cashPeriodConfigurationError, isCashPeriodDataset } from './cashPeriod'
 import { cashFormDataset, defaultGroupedCashPeriod, groupedCashSupported, normalizeGroupedCashDataset } from './groupedCashPeriod'
@@ -61,4 +61,24 @@ it('clears the old grouped selector when changing to exact mode and does not ove
 it('the workbook shortcut describes and defaults to the full current bank/cash form', () => {
   const choice = availableBug1274WorkbookLaunches([groupedCashDataset]).find(x => x.dataset.DataSource === 40)!
   expect(choice.dataset.DataSource).toBe(40); expect(choice.notice).toMatch(/банківські рахунки та каси/i)
+})
+
+it('accepts the workbook axes only when the server declares the exact additional layout', () => {
+  const data = groupedCashRequest()
+  data.sorted.Row = [40, 44, 43].map(type => ({ type, key: String(type), label: 'Axis' }))
+  expect(cashPeriodConfigurationError(data, groupedCashWorkbookDataset, '2026-10-01')).toBeNull()
+  expect(cashPeriodConfigurationError(data, groupedCashDataset, '2026-10-01')).not.toBeNull()
+})
+it('keeps a saved scalar account request valid on the expanded dataset but refuses scalar kind grouping', () => {
+  const scalar = cashPeriodRequest()
+  expect(cashPeriodConfigurationError(scalar, groupedCashWorkbookDataset, '2026-10-01')).toBeNull()
+  scalar.sorted.Row = [40, 44, 43].map(type => ({ type, key: String(type), label: 'Axis' }))
+  expect(cashPeriodConfigurationError(scalar, groupedCashWorkbookDataset, '2026-10-01')).not.toBeNull()
+})
+it('refuses a malformed layout capability and any arbitrary combination of the now advertised kind axis', () => {
+  expect(normalizeGroupedCashDataset({ ...groupedCashWorkbookDataset,
+    groupedCashPeriod: { ...(groupedCashWorkbookDataset.groupedCashPeriod as Record<string, unknown>), RowLayouts: [[43, 40, 42, 41], [44, 40, 43]] } })).toBeNull()
+  const data = groupedCashRequest()
+  data.sorted.Row = [43, 44].map(type => ({ type, key: String(type), label: 'Axis' }))
+  expect(cashPeriodConfigurationError(data, groupedCashWorkbookDataset, '2026-10-01')).not.toBeNull()
 })

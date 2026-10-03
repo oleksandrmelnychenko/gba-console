@@ -1,6 +1,7 @@
 import type { ReportDataset, ReportRequestBody } from '../types'
 import { revenueExactId } from './revenueComparison'
 
+export const CASH_WORKBOOK_ROWS = [40, 44, 43] as const
 export const GROUPED_CASH_FILTERS = [29, 30, 32, 33] as const
 export type GroupedCashPeriod = { Version: 1; CurrencyBasis: 'AccountAndManagementCurrency' }
 const record = (value: unknown): value is Record<string, unknown> => value !== null && typeof value === 'object' && !Array.isArray(value)
@@ -25,9 +26,16 @@ export function isGroupedCashCapability(value: unknown): boolean {
     && value.PreservesUnavailableValues === true && value.RequiresCommonSourceObservation === false
     && exact(value.FixedRowGroupings, [43, 40, 42, 41]) && exact(value.FixedMeasurements, [84, 85, 86, 87, 92, 93, 94, 95])
     && exact(value.Filters, GROUPED_CASH_FILTERS) && exact(value.RegisterKinds, [1, 2])
+    && (value.RowLayouts === undefined || Array.isArray(value.RowLayouts) && value.RowLayouts.length === 2
+      && exact(value.RowLayouts[0], [43, 40, 42, 41]) && exact(value.RowLayouts[1], CASH_WORKBOOK_ROWS))
 }
 export const groupedCashSupported = (dataset?: ReportDataset) => dataset?.DataSource === 40
   && isGroupedCashCapability(dataset.groupedCashPeriod)
+export function groupedCashWorkbookSupported(dataset?: ReportDataset): boolean {
+  const capability = dataset?.groupedCashPeriod
+  return groupedCashSupported(dataset) && record(capability) && Array.isArray(capability.RowLayouts)
+    && exact(capability.RowLayouts[1], CASH_WORKBOOK_ROWS)
+}
 export function normalizeGroupedCashDataset(value: Record<string, unknown>): ReportDataset | null {
   const keys = aliases(value)
   if (keys.length > 1) return null

@@ -12,3 +12,9 @@ export const groupedCashDataset: ReportDataset = { ...cashPeriodManagementDatase
 }
 export const groupedCashRequest = (): ReportRequestBody => ({ ...defaultDatasetRequest(groupedCashDataset, '2026-09-01', '2026-09-30'),
   groupedCashPeriod: defaultGroupedCashPeriod() })
+
+export const groupedCashWorkbookDataset: ReportDataset = { ...groupedCashDataset,
+  Groupings: [...groupedCashDataset.Groupings, { Type: 44, Name: 'Тип рахунку', Selectable: true }],
+  groupedCashPeriod: { ...(groupedCashDataset.groupedCashPeriod as Record<string, unknown>),
+    RowLayouts: [[43, 40, 42, 41], [40, 44, 43]] },
+}
