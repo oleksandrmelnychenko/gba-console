@@ -35,7 +35,7 @@ export type CurrentLiquidityCell = { Key: typeof CURRENT_LIQUIDITY_COLUMNS[numbe
 export type CurrentLiquidityInput = { Available: boolean; CoverageComplete: boolean; IncludedUnionRows: number | null; Code: string }
 export const CURRENT_LIQUIDITY_RELATIONS = ['CashBalances', 'WarehouseBalances', 'NttBalances', 'WorkInProgress', 'TransferredGoods', 'CounterpartyManagement'] as const
 export type CurrentLiquidityRelationProof = { Relation: typeof CURRENT_LIQUIDITY_RELATIONS[number]; Available: boolean; CompletePublication: boolean
-  Code: string; DatedOpeningVerified: boolean; CompletedMovementMonths: number }
+  Code: string; DatedOpeningVerified: boolean; CompletedMovementMonths: number; WholePhysicalPairEmptyVerified?: boolean }
 export type CurrentLiquidityEndpointProof = { CompletePublication: boolean; WarehouseStatusMappingAvailable: boolean
   SettlementMovementSourceIdentityVerified: boolean; Relations: CurrentLiquidityRelationProof[] }
 export type CurrentLiquidityProof = { InputWitnessSha256: string; SnapshotVerified: true; Current: CurrentLiquidityEndpointProof
@@ -119,11 +119,16 @@ function input(value: unknown): value is CurrentLiquidityInput {
     ? ['warehouse_status_conflict', 'warehouse_status_unavailable', 'balance_resource_unavailable'].includes(value.Code) : value.Code === 'balance_relation_incomplete')
 }
 function relation(value: unknown, index: number): value is CurrentLiquidityRelationProof {
-  return record(value) && value.Relation === CURRENT_LIQUIDITY_RELATIONS[index] && typeof value.Available === 'boolean'
+  if (!record(value) || 'WholePhysicalPairEmptyVerified' in value && (!Object.hasOwn(value, 'WholePhysicalPairEmptyVerified')
+    || typeof value.WholePhysicalPairEmptyVerified !== 'boolean')) return false
+  const wholePairEmpty = value.WholePhysicalPairEmptyVerified === true
+  const openingVerified = value.DatedOpeningVerified === true || wholePairEmpty
+  return value.Relation === CURRENT_LIQUIDITY_RELATIONS[index] && typeof value.Available === 'boolean'
     && typeof value.CompletePublication === 'boolean' && text(value.Code) && typeof value.DatedOpeningVerified === 'boolean'
     && count(value.CompletedMovementMonths) && value.CompletedMovementMonths <= 120
-    && (!value.Available || value.CompletePublication) && (!value.CompletePublication || value.DatedOpeningVerified)
-    && (value.DatedOpeningVerified || value.CompletedMovementMonths === 0)
+    && (!wholePairEmpty || value.Relation === 'NttBalances' && !value.DatedOpeningVerified)
+    && (!value.Available || value.CompletePublication) && (!value.CompletePublication || openingVerified)
+    && (openingVerified || value.CompletedMovementMonths === 0)
 }
 function endpointProof(value: unknown, supplied: CurrentLiquidityInput): value is CurrentLiquidityEndpointProof {
   if (!record(value) || typeof value.CompletePublication !== 'boolean' || typeof value.WarehouseStatusMappingAvailable !== 'boolean'
