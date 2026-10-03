@@ -1,5 +1,5 @@
 import { MantineProvider } from '@mantine/core'
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { expect, it, vi } from 'vitest'
 import { readWarehouseQuantity } from '../api/originalWarehouseQuantityApi'
 import { WAREHOUSE_QUANTITY_SOURCE, WAREHOUSE_QUANTITY_DEFINITION, type WarehouseQuantityCapability, type WarehouseQuantityResult } from '../data/originalWarehouseQuantity'
@@ -53,4 +53,28 @@ it('caller change drops warehouse choices and selections without showing a raw r
   fireEvent.click(screen.getByRole('button', { name: 'Сформувати' }))
   await waitFor(() => expect(readWarehouseQuantity).toHaveBeenCalledTimes(2))
   expect(vi.mocked(readWarehouseQuantity).mock.calls[1][0].Warehouses).toEqual([])
+})
+
+it('a late quantity response from the previous caller cannot restore rows warehouse choices or export availability', async () => {
+  vi.clearAllMocks()
+  let finish!: (value: WarehouseQuantityResult) => void
+  vi.mocked(readWarehouseQuantity).mockImplementationOnce(() => new Promise(resolve => { finish = resolve }))
+  const view = render(panel()); fireEvent.click(screen.getByRole('button', { name: 'Сформувати' }))
+  await waitFor(() => expect(readWarehouseQuantity).toHaveBeenCalledTimes(1))
+  const signal = vi.mocked(readWarehouseQuantity).mock.calls[0][1]
+  view.rerender(panel('caller2')); expect(signal?.aborted).toBe(true)
+  await act(async () => { finish(response()) })
+  expect(screen.queryByText('Наш склад')).toBeNull(); expect(screen.queryByText('Товар')).toBeNull()
+  for (const name of ['CSV', 'XLSX', 'PDF']) expect((screen.getByRole('button', { name }) as HTMLButtonElement).disabled).toBe(true)
+  expect((screen.getByLabelText('Склади') as HTMLInputElement).disabled).toBe(true)
+})
+it('missing complete monthly publication shows its dependency and keeps every export unavailable', async () => {
+  vi.clearAllMocks(); vi.mocked(readWarehouseQuantity).mockResolvedValue({ ...response(), Available: false,
+    Code: 'original_warehouse_month_publication_unavailable', NormalInputsComplete: false, OurSnapshotVerified: false,
+    InputWitnessSha256: null, ResultSha256: null, Rows: [], Totals: null, ProductChoices: [], WarehouseChoices: [],
+    WarehouseFilterAvailable: false, WarehouseCaptionPolicy: undefined, WarehouseCaptionWitnessSha256: undefined })
+  render(panel()); fireEvent.click(screen.getByRole('button', { name: 'Сформувати' }))
+  await screen.findByText('Не всі місячні рухи цього періоду синхронізовані повністю.')
+  for (const name of ['CSV', 'XLSX', 'PDF']) expect((screen.getByRole('button', { name }) as HTMLButtonElement).disabled).toBe(true)
+  expect(screen.queryByText('2.000')).toBeNull(); expect(screen.queryByText('Наш склад')).toBeNull()
 })

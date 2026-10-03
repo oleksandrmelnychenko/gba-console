@@ -1,5 +1,5 @@
 import { MantineProvider } from '@mantine/core'
-import { act, render, screen, waitFor } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { beforeEach, expect, it, vi } from 'vitest'
 import { I18nProvider } from '../../../shared/i18n/I18nProvider'
 import { getWarehouseQuantityCapability } from '../api/originalWarehouseQuantityApi'
@@ -33,5 +33,19 @@ it('ignores a late capability from the previous caller until the new caller requ
   await act(async () => { first(capability) })
   expect((screen.getByRole('button', { name: 'Fenix · Кількість за період' }) as HTMLButtonElement).disabled).toBe(true)
   await act(async () => { second(capability) })
+  expect((screen.getByRole('button', { name: 'Fenix · Кількість за період' }) as HTMLButtonElement).disabled).toBe(false)
+})
+
+it('retries a failed capability check with a fresh attempt and keeps the launch disabled until it settles', async () => {
+  let retry!: (value: WarehouseQuantityCapability) => void
+  vi.mocked(getWarehouseQuantityCapability).mockRejectedValueOnce(new Error('unavailable'))
+    .mockImplementationOnce(() => new Promise(resolve => { retry = resolve }))
+  render(component())
+  await screen.findByText('Не вдалося перевірити періодну відомість.')
+  expect((screen.getByRole('button', { name: 'Fenix · Кількість за період' }) as HTMLButtonElement).disabled).toBe(true)
+  fireEvent.click(screen.getByRole('button', { name: 'Повторити' }))
+  await waitFor(() => expect(getWarehouseQuantityCapability).toHaveBeenCalledTimes(2))
+  expect((screen.getByRole('button', { name: 'Fenix · Кількість за період' }) as HTMLButtonElement).disabled).toBe(true)
+  await act(async () => { retry(capability) })
   expect((screen.getByRole('button', { name: 'Fenix · Кількість за період' }) as HTMLButtonElement).disabled).toBe(false)
 })

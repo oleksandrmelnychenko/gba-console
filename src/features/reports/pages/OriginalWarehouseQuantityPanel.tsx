@@ -17,35 +17,37 @@ function download(blob: Blob, name: string) {
   link.href = url; link.download = name; document.body.append(link); link.click(); link.remove()
   window.setTimeout(() => URL.revokeObjectURL(url), 30_000)
 }
+type QuantityChoice = { value: string; label: string }
+type QuantityChoices = { scope: string; products: QuantityChoice[]; warehouses: QuantityChoice[] }
+const quantityKeys = ['Opening', 'Incoming', 'Outgoing', 'Closing'] as const
+const exportFormats = ['csv', 'xlsx', 'pdf'] as const
+
 function QuantityTable({ result }: { result: WarehouseQuantityResult }) {
   const { t } = useI18n(); const [page, setPage] = useState(0)
   // Screen paging does not change the accepted result or the full export matrix.
-  const rows = useMemo(() => result.Rows.flatMap(row => [[row.Caption, 'Підсумок товару', row.Quantity.Opening, row.Quantity.Incoming, row.Quantity.Outgoing, row.Quantity.Closing],
-    ...row.Receipts.map(child => [row.Caption, child.Caption, child.Quantity.Opening, child.Quantity.Incoming, child.Quantity.Outgoing, child.Quantity.Closing])]), [result])
+  const rows = useMemo(() => result.Rows.flatMap(row => [
+    { key: JSON.stringify([row.Product]), cells: [row.Caption, 'Підсумок товару', ...quantityKeys.map(key => row.Quantity[key])] },
+    ...row.Receipts.map(child => ({ key: JSON.stringify([row.Product, child.Receipt.Type, child.Receipt.Table, child.Receipt.Reference]),
+      cells: [row.Caption, child.Caption, ...quantityKeys.map(key => child.Quantity[key])] })),
+  ]), [result])
   const current = Math.min(page, Math.max(0, Math.ceil(rows.length / 50) - 1)), first = current * 50
   return <Stack gap="xs"><Group><Button variant="light" size="xs" disabled={current === 0} onClick={() => setPage(current - 1)}>{t('Попередні рядки')}</Button>
     <Text size="xs">{rows.length ? first + 1 : 0}–{Math.min(first + 50, rows.length)} / {rows.length}</Text>
     <Button variant="light" size="xs" disabled={first + 50 >= rows.length} onClick={() => setPage(current + 1)}>{t('Наступні рядки')}</Button></Group>
     <Table.ScrollContainer minWidth={900}><Table><Table.Thead><Table.Tr>{warehouseQuantityHeaders.map(label => <Table.Th key={label}>{t(label)}</Table.Th>)}</Table.Tr></Table.Thead>
-      <Table.Tbody>{rows.slice(first, first + 50).map((row, index) => <Table.Tr key={first + index}>{row.map((cell, column) => <Table.Td key={column}>{cell}</Table.Td>)}</Table.Tr>)}</Table.Tbody>
-      {result.Totals ? <Table.Tfoot><Table.Tr><Table.Th colSpan={2}>{t('Разом')}</Table.Th>{[result.Totals.Opening, result.Totals.Incoming, result.Totals.Outgoing, result.Totals.Closing].map((v, i) => <Table.Td key={i}>{v}</Table.Td>)}</Table.Tr></Table.Tfoot> : null}
+      <Table.Tbody>{rows.slice(first, first + 50).map(row => <Table.Tr key={row.key}>{row.cells.map((cell, column) => <Table.Td key={warehouseQuantityHeaders[column]}>{cell}</Table.Td>)}</Table.Tr>)}</Table.Tbody>
+      {result.Totals ? <Table.Tfoot><Table.Tr><Table.Th colSpan={2}>{t('Разом')}</Table.Th>{quantityKeys.map(key => <Table.Td key={key}>{result.Totals?.[key]}</Table.Td>)}</Table.Tr></Table.Tfoot> : null}
     </Table></Table.ScrollContainer>{!rows.length ? <Text>{t('У повністю перевіреному періоді рядків немає.')}</Text> : null}</Stack>
 }
-export function OriginalWarehouseQuantityPanel({ capability, callerKey, canGenerate, initialFrom, initialThrough }: {
-  capability: WarehouseQuantityCapability; callerKey: string | null; canGenerate: boolean; initialFrom: string; initialThrough: string
+
+function useQuantityRun({ capability, callerKey, canGenerate, from, through, products, warehouses, key, onAvailable }: {
+  capability: WarehouseQuantityCapability; callerKey: string | null; canGenerate: boolean; from: string; through: string;
+  products: string[]; warehouses: string[]; key: string; onAvailable: (result: WarehouseQuantityResult) => void
 }) {
-  const { t } = useI18n(); const [from, setFrom] = useState(initialFrom); const [through, setThrough] = useState(initialThrough)
-  const [selection, setSelection] = useState<{ scope: string; products: string[]; warehouses: string[] }>({ scope: '', products: [], warehouses: [] })
   const [exporting, setExporting] = useState(false)
-  const [choices, setChoices] = useState<{ scope: string; products: Array<{ value: string; label: string }>; warehouses: Array<{ value: string; label: string }> } | null>(null)
-  const periodScope = JSON.stringify([callerKey, canGenerate, capability, from, through])
-  const products = selection.scope === periodScope ? selection.products : [], warehouses = selection.scope === periodScope ? selection.warehouses : []
-  const key = JSON.stringify([periodScope, products, warehouses])
   const run = useReportRunState<WarehouseQuantityResult>(key), active = useRef<AbortController | null>(null), latest = useRef(key)
   useEffect(() => { latest.current = key; return () => { latest.current = ''; active.current?.abort() } }, [key])
   const error = warehouseQuantityPeriodError(from, through), report = run.lastRun
-  const selectChoices = choices?.scope === periodScope ? choices.products : []
-  const warehouseChoices = choices?.scope === periodScope ? choices.warehouses : []
   const permitted = canGenerate && !!callerKey && capability.Executable && capability.World === 'fenix'
   function invalidate() { active.current?.abort(); latest.current = ''; run.clear() }
   async function generate() {
@@ -55,12 +57,11 @@ export function OriginalWarehouseQuantityPanel({ capability, callerKey, canGener
     try {
       const result = await readWarehouseQuantity(warehouseQuantityRequest(capability, from, through, products, warehouses), controller.signal)
       if (controller.signal.aborted) return
-      update({ lastRun: result }); if (result.Available) setChoices({ scope: periodScope, products: result.ProductChoices.map(v => ({ value: v.Key, label: v.Caption })),
-        warehouses: (result.WarehouseChoices ?? []).map(v => ({ value: v.Key, label: v.Caption })) })
+      update({ lastRun: result }); if (result.Available) onAvailable(result)
     } catch (failure) { if (!controller.signal.aborted) update({ error: failure instanceof Error ? failure.message : 'Не вдалося сформувати відомість.' }) }
     finally { update({ isLoading: false }) }
   }
-  async function exportFile(format: 'csv' | 'xlsx' | 'pdf') {
+  async function exportFile(format: typeof exportFormats[number]) {
     if (!permitted || !report?.Available || exporting) return
     setExporting(true)
     try {
@@ -70,25 +71,85 @@ export function OriginalWarehouseQuantityPanel({ capability, callerKey, canGener
     } catch (failure) { if (latest.current === key) run.update({ error: failure instanceof Error ? failure.message : 'Не вдалося сформувати файл.' }) }
     finally { setExporting(false) }
   }
-  const exportError = report?.Available ? warehouseQuantityExportError(report) : null
-  return <Stack gap="md"><Text size="sm">{t('Записана кількість у наших таблицях за період: товар → документ надходження. Перерахунок одиниць не застосовується.')}</Text>
-    <Group grow><TextInput type="date" label={t('Початок періоду')} value={from} disabled={run.isLoading || exporting} onChange={e => { invalidate(); setFrom(e.currentTarget.value) }} />
-      <TextInput type="date" label={t('Кінець періоду')} value={through} disabled={run.isLoading || exporting} onChange={e => { invalidate(); setThrough(e.currentTarget.value) }} /></Group>
-    <MultiSelect label={t('Товари')} placeholder={t('Усі товари; назви для відбору з’являться після формування')} data={selectChoices} value={products} searchable clearable
-      disabled={run.isLoading || exporting || !selectChoices.length} onChange={v => { invalidate(); setSelection({ scope: periodScope, products: v, warehouses }) }} maxValues={256} />
-    {capability.CurrentWarehouseCaptionChoicesSupported ? <MultiSelect label={t('Склади')} placeholder={t('Усі склади; підтверджені назви з’являться після формування')}
-      data={warehouseChoices} value={warehouses} searchable clearable maxValues={256} disabled={run.isLoading || exporting || !warehouseChoices.length}
-      onChange={v => { invalidate(); setSelection({ scope: periodScope, products, warehouses: v }) }} /> : <Text size="sm" c="dimmed">{t('Відбір за складом недоступний на цій версії сервера.')}</Text>}
+  return { run, report, error, permitted, exporting, invalidate, generate, exportFile,
+    exportError: report?.Available ? warehouseQuantityExportError(report) : null }
+}
+
+function QuantityFilters({ from, through, products, warehouses, productChoices, warehouseChoices, warehouseSupported, busy,
+  changeFrom, changeThrough, selectProducts, selectWarehouses }: {
+  from: string; through: string; products: string[]; warehouses: string[]; productChoices: QuantityChoice[]; warehouseChoices: QuantityChoice[];
+  warehouseSupported: boolean; busy: boolean; changeFrom: (value: string) => void; changeThrough: (value: string) => void;
+  selectProducts: (value: string[]) => void; selectWarehouses: (value: string[]) => void
+}) {
+  const { t } = useI18n()
+  return <>
+    <Group grow><TextInput type="date" label={t('Початок періоду')} value={from} disabled={busy} onChange={e => changeFrom(e.currentTarget.value)} />
+      <TextInput type="date" label={t('Кінець періоду')} value={through} disabled={busy} onChange={e => changeThrough(e.currentTarget.value)} /></Group>
+    <MultiSelect label={t('Товари')} placeholder={t('Усі товари; назви для відбору з’являться після формування')} data={productChoices} value={products} searchable clearable
+      disabled={busy || !productChoices.length} onChange={selectProducts} maxValues={256} />
+    {warehouseSupported ? <MultiSelect label={t('Склади')} placeholder={t('Усі склади; підтверджені назви з’являться після формування')}
+      data={warehouseChoices} value={warehouses} searchable clearable maxValues={256} disabled={busy || !warehouseChoices.length}
+      onChange={selectWarehouses} /> : <Text size="sm" c="dimmed">{t('Відбір за складом недоступний на цій версії сервера.')}</Text>}
+  </>
+}
+
+function QuantityNotes() {
+  const { t } = useI18n()
+  return <>
     <Text size="sm" c="dimmed">{t('Назви складів — поточні назви довідника GBA. Непідтверджені назви не пропонуються для відбору; усі кількості збережено. Назви й відбір документів надходження ще недоступні.')}</Text>
     <Text size="sm" c="dimmed">{t('Період охоплює календарні дні від 00:00:00 до 23:59:59; дробова частина секунди після цієї межі не включається.')}</Text>
     <Text size="sm" c="dimmed">{t('Нульові спостережені рядки збережено. Повна відповідність усім налаштуванням 1С не підтверджена.')}</Text>
-    {error ? <Alert color="yellow">{t(error)}</Alert> : null}{run.error ? <Alert color="red">{t(run.error)}</Alert> : null}
-    <Group><Button disabled={!permitted || !!error || run.isLoading || exporting} loading={run.isLoading} onClick={() => { void generate() }}>{t('Сформувати')}</Button>
-      {(['csv', 'xlsx', 'pdf'] as const).map(format => <Button key={format} variant="light" disabled={!permitted || !report?.Available || exporting || !!exportError}
-        onClick={() => { void exportFile(format) }}>{format.toUpperCase()}</Button>)}</Group>
+  </>
+}
+
+function QuantityMessages({ error, runError }: { error: string | null; runError: string | null }) {
+  const { t } = useI18n()
+  return <>{error ? <Alert color="yellow">{t(error)}</Alert> : null}{runError ? <Alert color="red">{t(runError)}</Alert> : null}</>
+}
+
+function QuantityActions({ permitted, invalidPeriod, loading, exporting, available, exportError, generate, exportFile }: {
+  permitted: boolean; invalidPeriod: boolean; loading: boolean; exporting: boolean; available: boolean; exportError: boolean;
+  generate: () => Promise<void>; exportFile: (format: typeof exportFormats[number]) => Promise<void>
+}) {
+  const { t } = useI18n()
+  return <Group><Button disabled={!permitted || invalidPeriod || loading || exporting} loading={loading} onClick={() => { void generate() }}>{t('Сформувати')}</Button>
+    {exportFormats.map(format => <Button key={format} variant="light" disabled={!permitted || !available || exporting || exportError}
+      onClick={() => { void exportFile(format) }}>{format.toUpperCase()}</Button>)}</Group>
+}
+
+function QuantityResult({ report, exportError }: { report: WarehouseQuantityResult | null; exportError: string | null }) {
+  const { t } = useI18n()
+  return <>
     {exportError ? <Alert color="yellow">{t(exportError)}</Alert> : null}
     {report && !report.Available ? <Alert color="yellow">{t(dependencies[report.Code] ?? 'Повні узгоджені початкові залишки й місячні рухи цього періоду недоступні; частковий звіт не формується.')}</Alert> : null}
     {report?.Available ? <><Alert color="yellow">{t('Назви документів надходження недоступні. Усі кількості включено; документи не об’єднано за схожими назвами.')}</Alert>
       <QuantityTable key={report.ResultSha256} result={report} /></> : null}
+  </>
+}
+
+export function OriginalWarehouseQuantityPanel({ capability, callerKey, canGenerate, initialFrom, initialThrough }: {
+  capability: WarehouseQuantityCapability; callerKey: string | null; canGenerate: boolean; initialFrom: string; initialThrough: string
+}) {
+  const { t } = useI18n(); const [from, setFrom] = useState(initialFrom); const [through, setThrough] = useState(initialThrough)
+  const [selection, setSelection] = useState<{ scope: string; products: string[]; warehouses: string[] }>({ scope: '', products: [], warehouses: [] })
+  const [choices, setChoices] = useState<QuantityChoices | null>(null)
+  const periodScope = JSON.stringify([callerKey, canGenerate, capability, from, through])
+  const products = selection.scope === periodScope ? selection.products : [], warehouses = selection.scope === periodScope ? selection.warehouses : []
+  const key = JSON.stringify([periodScope, products, warehouses])
+  const delivery = useQuantityRun({ capability, callerKey, canGenerate, from, through, products, warehouses, key,
+    onAvailable: result => setChoices({ scope: periodScope, products: result.ProductChoices.map(v => ({ value: v.Key, label: v.Caption })),
+      warehouses: (result.WarehouseChoices ?? []).map(v => ({ value: v.Key, label: v.Caption })) }) })
+  const currentChoices = choices?.scope === periodScope ? choices : null
+  return <Stack gap="md"><Text size="sm">{t('Записана кількість у наших таблицях за період: товар → документ надходження. Перерахунок одиниць не застосовується.')}</Text>
+    <QuantityFilters from={from} through={through} products={products} warehouses={warehouses} productChoices={currentChoices?.products ?? []}
+      warehouseChoices={currentChoices?.warehouses ?? []} warehouseSupported={!!capability.CurrentWarehouseCaptionChoicesSupported}
+      busy={delivery.run.isLoading || delivery.exporting} changeFrom={value => { delivery.invalidate(); setFrom(value) }}
+      changeThrough={value => { delivery.invalidate(); setThrough(value) }} selectProducts={value => { delivery.invalidate(); setSelection({ scope: periodScope, products: value, warehouses }) }}
+      selectWarehouses={value => { delivery.invalidate(); setSelection({ scope: periodScope, products, warehouses: value }) }} />
+    <QuantityNotes />
+    <QuantityMessages error={delivery.error} runError={delivery.run.error} />
+    <QuantityActions permitted={delivery.permitted} invalidPeriod={!!delivery.error} loading={delivery.run.isLoading} exporting={delivery.exporting}
+      available={!!delivery.report?.Available} exportError={!!delivery.exportError} generate={delivery.generate} exportFile={delivery.exportFile} />
+    <QuantityResult report={delivery.report} exportError={delivery.exportError} />
   </Stack>
 }

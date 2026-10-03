@@ -46,6 +46,13 @@ describe('exact warehouse quantity period delivery', () => {
     expect(() => warehouseQuantityRequest(capability, request.From, request.Through, [ref, ref])).toThrow()
     expect(() => warehouseQuantityRequest(capability, request.From, request.Through, Array(257).fill(ref))).toThrow()
   })
+  it('accepts the selected product set and refuses an out-of-selection grain without changing exact quantities', () => {
+    const selected = warehouseQuantityRequest(capability, request.From, request.Through, ['B'.repeat(32), ref])
+    expect(normalizeWarehouseQuantity(result(), selected).Totals).toEqual(quantity)
+    const value = result(); value.Rows[0].Product = 'C'.repeat(32)
+    expect(() => normalizeWarehouseQuantity(value, selected)).toThrow()
+    expect(normalizeWarehouseQuantity(value, request).Totals).toEqual(quantity)
+  })
   it('retains amounts beyond Number integer precision with signed closing arithmetic', () => {
     expect(quantityScaled(quantity.Closing)).toBe(9007199254740993006n)
     expect(normalizeWarehouseQuantity(result(), request).Totals).toEqual(quantity)

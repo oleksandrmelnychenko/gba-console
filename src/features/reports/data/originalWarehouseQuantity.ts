@@ -98,11 +98,12 @@ export function normalizeWarehouseQuantity(v: unknown, request: WarehouseQuantit
     if (request.Warehouses.some(w => !warehouses.has(w))) return invalid()
   } else if (v.WarehouseFilterAvailable || v.WarehouseChoices !== undefined && (!Array.isArray(v.WarehouseChoices) || v.WarehouseChoices.length)
     || v.WarehouseCaptionPolicy !== undefined || v.WarehouseCaptionWitnessSha256 !== undefined) return invalid()
+  const selectedProducts = new Set(request.Products)
   const products = new Set<string>(); let grains = 0
   for (const row of v.Rows) {
     if (!object(row) || !ref(row.Product) || products.has(row.Product as string) || typeof row.Caption !== 'string' || !row.Caption.trim()
       || typeof row.CaptionAvailable !== 'boolean' || !quantity(row.Quantity) || !Array.isArray(row.Receipts) || !row.Receipts.length
-      || request.Products.length && !request.Products.includes(row.Product as string)) return invalid()
+      || selectedProducts.size > 0 && !selectedProducts.has(row.Product as string)) return invalid()
     products.add(row.Product as string); const receipts = new Set<string>(); const parts: WarehouseQuantity[] = []
     for (const child of row.Receipts) {
       if (!object(child) || !receipt(child.Receipt)) return invalid()
