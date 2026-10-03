@@ -9,6 +9,7 @@ import { buildSpreadsheetSheet, buildSheetExportRows, parseDelimitedText } from 
 import { CURRENT_VPARIVANIE_DISPLAY_LINE } from './currentVparivanieSpreadsheet'
 import { CURRENT_VPARIVANIE_PRODUCT_CAPTIONS } from './currentVparivanie'
 import { retainStoredTemplateFields } from './reportTemplateDraft'
+import { currentRegionalSheets } from './currentVparivanieRegionalExport'
 
 const dataset = { ...currentVparivanieDataset, currentVparivanie: { ...(currentVparivanieDataset.currentVparivanie as object),
   FullScopeVersion: 1, FullScopeContract: 'OneOurSnapshotCompleteSelectedScope', FullScopeMaximumRows: 500000,
@@ -86,4 +87,26 @@ it('reads and reexports every full workbook row with text identity and null quan
 it('refuses a full workbook without its EOF attribution', () => {
   expect(() => buildSpreadsheetSheet('Incomplete', [[CURRENT_VPARIVANIE_FULL_TITLE], ['Рядки: Товар'],
     ['Колонки: Группа, Контрагент'], [], ['Артикул','Результат'], ['A',1]])).toThrow('Некоректний файл')
+})
+
+it('counts exported ProductId in the complete regional Matrix footprint', () => {
+  const request = { ...regionalRequest(), currentVparivanieFullScope: true }
+  const result = { ...regionalResult(), FullScopeVersion: 1 as const,
+    ProductCount: 3787, StockFacts: 0, SaleFacts: 253, ReturnFacts: 0, CounterpartyFacts: 253 }
+  result.Request.Notes.push(CURRENT_VPARIVANIE_FULL_NOTE)
+  const empty = [
+    { Column: 'Stock' as const, RegionCode: null, Quantity: '0', UnitId: '12', FactCount: 0 },
+    { Column: 'Sales' as const, RegionCode: null, Quantity: '0', UnitId: '12', FactCount: 0 },
+  ]
+  result.Rows = Array.from({ length: 3787 }, (_, i) => ({ ...regionalResult().Rows[0], ProductId: String(i + 1), Cells: empty }))
+  result.Rows[0].Cells = [empty[0], { ...empty[1], Quantity: '1012', FactCount: 253 },
+    { Column: 'CounterpartyTotal', RegionCode: null, Quantity: '1012', UnitId: '12', FactCount: 253 },
+    ...Array.from({ length: 252 }, (_, i) => ({ Column: 'CounterpartyRegionCode' as const,
+      RegionCode: `R${i + 1}`, Quantity: '4', UnitId: '12', FactCount: 1 })),
+    { Column: 'CounterpartyUnknown', RegionCode: null, Quantity: null, UnitId: null, FactCount: 1 }]
+  const accepted = normalizeCurrentVparivanieRegional(result, request)
+  expect(currentRegionalSheets(accepted).matrix[3]).toHaveLength(264)
+  result.Rows.push(...Array.from({ length: 13 }, (_, i) => ({ ...regionalResult().Rows[0], ProductId: String(3788 + i), Cells: empty })))
+  result.ProductCount = 3800
+  expect(() => normalizeCurrentVparivanieRegional(result, request)).toThrow('неповну')
 })

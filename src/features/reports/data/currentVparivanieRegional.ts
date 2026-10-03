@@ -101,8 +101,9 @@ export function normalizeCurrentVparivanieRegional(value: unknown,
     || counterpartyFacts !== value.CounterpartyFacts || counterpartyFacts > salesFacts) fail()
   if (full) {
     const codes = new Set(rows.flatMap(row => row.Cells.filter(item => item.Column === 'CounterpartyRegionCode').map(item => item.RegionCode)))
-    const columns = 10 + codes.size + (rows.some(row => row.Cells.some(item => item.Column === 'CounterpartyUnknown')) ? 1 : 0)
-    if (columns > 263 || rows.length * columns > 1000000) fail()
+    // Matrix export carries ProductId as well as seven attributes and financial columns.
+    const columns = 11 + codes.size + (rows.some(row => row.Cells.some(item => item.Column === 'CounterpartyUnknown')) ? 1 : 0)
+    if (columns > 264 || rows.length * columns > 1000000) fail()
   }
   return { ...value, Rows: rows } as CurrentVparivanieRegionalResult
 }
