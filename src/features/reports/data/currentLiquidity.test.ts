@@ -129,8 +129,7 @@ it.each([0, 1, 3, 4, 5])('refuses the NTT-only whole-pair marker on relation ind
   relation.DatedOpeningVerified = false; relation.WholePhysicalPairEmptyVerified = true
   expect(() => normalizeCurrentLiquidityReport(report, command())).toThrow('непідтверджений результат')
 })
-it.each(['missing', 'false', 'both', 'null', 'string', 'number', 'undefined', 'inherited', 'incomplete', 'negative_months', 'fractional_months', 'too_many_months'])
-('refuses invalid NTT whole-pair mode or coverage %s before exposing values or signed files', fault => {
+it.each(['missing', 'false', 'both', 'null', 'string', 'number', 'undefined', 'inherited', 'incomplete', 'negative_months', 'fractional_months', 'too_many_months'])('refuses invalid NTT whole-pair mode or coverage %s before exposing values or signed files', fault => {
   const report = wholePairEmptyReport(), ntt = report.Proof.Current.Relations[2]
   if (fault === 'missing') delete ntt.WholePhysicalPairEmptyVerified
   else if (fault === 'false') ntt.WholePhysicalPairEmptyVerified = false
