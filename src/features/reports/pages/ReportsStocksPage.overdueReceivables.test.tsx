@@ -42,7 +42,8 @@ it('defers the capability until catalogue opening and keeps the monthly request 
   const draftKey = 'report-workspace-draft:v1:overdue-receivables-test-owner'
   const draft = sessionStorage.getItem(draftKey)
   fireEvent.click(screen.getByRole('button', { name: 'Каталог усіх звітів 1С' }))
-  const open = await screen.findByRole('button', { name: 'Відкрити прострочену дебіторку' })
+  // The first catalogue opening loads its lazy module before the capability action exists.
+  const open = await screen.findByRole('button', { name: 'Відкрити прострочену дебіторку' }, { timeout: 5000 })
   await waitFor(() => expect((open as HTMLButtonElement).disabled).toBe(false))
   fireEvent.click(open)
   const modal = await screen.findByRole('dialog', { name: overdueReceivablesCapability().ReportName })

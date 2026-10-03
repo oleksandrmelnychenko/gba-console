@@ -31,6 +31,6 @@ it('does not present a workbook selector on the earlier capability', () => {
 })
 it('disables the workbook form selector during generation', () => {
   const view = show(groupedCashWorkbookDataset, true)
-  expect(screen.getByRole('combobox', { name: 'Форма руху коштів' })).toBeDisabled()
+  expect((screen.getByRole('combobox', { name: 'Форма руху коштів' }) as HTMLSelectElement).disabled).toBe(true)
   expect(view.onRowsChange).not.toHaveBeenCalled()
 })
