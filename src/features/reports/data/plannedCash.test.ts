@@ -139,3 +139,77 @@ it.each([-1, 0.5, Number.NaN, Number.MAX_SAFE_INTEGER + 1])('refuses an invalid 
   const report = plannedCashReport(); report.Proof.Current.CompletedMovementMonths = count
   expect(() => normalizePlannedCashReport(report, plannedCashTestRequest())).toThrow('непідтверджений результат')
 })
+
+const plannedBalanceRoles = [
+  ['CalendarPayouts', 'Requests'], ['CalendarReceipts', 'Receipts'], ['NetFlow', 'Receipts'], ['NetFlow', 'Requests'],
+] as const
+
+it.each(plannedBalanceRoles)('preserves verified whole-pair empty %s %s NULLs without creating a group or zero', (kind, role) => {
+  const report = plannedCashEmptyReport(kind), balance = report.Proof[role]
+  if (balance === null) throw new Error('The selected form requires this planned-balance proof')
+  balance.DatedOpeningVerified = false; balance.WholePhysicalPairEmptyVerified = true; balance.CompletedMovementMonths = 0
+  const result = normalizePlannedCashReport(report, plannedCashTestRequest(kind))
+  expect(result).toEqual(report); expect(result.Rows).toEqual([])
+  expect(result.Totals[1]).toMatchObject({ Available: true, Value: null, ExactValue: null, FormattedValue: null })
+})
+
+it.each(plannedBalanceRoles)('preserves later genuine movement values after a verified empty %s %s opening', (kind, role) => {
+  const report = plannedCashReport(kind), balance = report.Proof[role]
+  if (balance === null) throw new Error('The selected form requires this planned-balance proof')
+  balance.DatedOpeningVerified = false; balance.WholePhysicalPairEmptyVerified = true; balance.CompletedMovementMonths = 3
+  const result = normalizePlannedCashReport(report, plannedCashTestRequest(kind))
+  expect(result).toEqual(report); expect(result.Totals[1].Value).toBe('10')
+  expect(result.Proof[role]?.CompletedMovementMonths).toBe(3)
+})
+
+it('keeps a verified empty opening independent of unavailable later movement months', () => {
+  const report = plannedCashReport()
+  report.Proof.Requests = { Available: false, CompletePublication: false, DatedOpeningVerified: false,
+    WholePhysicalPairEmptyVerified: true, CompletedMovementMonths: 3 }
+  report.PlanAvailable = false; report.Complete = false; report.Code = 'planned_cash_input_unavailable'
+  report.AvailabilityMessage = 'Дані синку ще не готові для формування повного звіту.'
+  report.Totals[1] = { ...report.Totals[1], Available: false, Value: null, ExactValue: null, FormattedValue: null }
+  report.Rows = report.Rows.map(row => ({ ...row, Cells: row.Cells.map((cell, i) => i === 1
+    ? { ...cell, Available: false, Value: null, ExactValue: null, FormattedValue: null } : cell) }))
+  const result = normalizePlannedCashReport(report, plannedCashTestRequest())
+  expect(result.Proof.Requests).toEqual(report.Proof.Requests)
+  expect(result.Totals[1]).toMatchObject({ Available: false, Value: null, ExactValue: null, FormattedValue: null })
+})
+
+it.each(plannedBalanceRoles)('rejects simultaneous dated and whole-pair empty %s %s openings', (kind, role) => {
+  const report = plannedCashReport(kind), balance = report.Proof[role]
+  if (balance === null) throw new Error('The selected form requires this planned-balance proof')
+  balance.WholePhysicalPairEmptyVerified = true
+  expect(() => normalizePlannedCashReport(report, plannedCashTestRequest(kind))).toThrow('непідтверджений результат')
+})
+
+it.each([false, null, 'true', 1, undefined])('rejects a malformed whole-pair empty marker %s', marker => {
+  const report = plannedCashReport()
+  if (report.Proof.Requests === null) throw new Error('The payout fixture requires its planned-balance proof')
+  report.Proof.Requests.DatedOpeningVerified = false
+  Reflect.set(report.Proof.Requests, 'WholePhysicalPairEmptyVerified', marker)
+  expect(() => normalizePlannedCashReport(report, plannedCashTestRequest())).toThrow('непідтверджений результат')
+})
+
+it.each(['Current', 'Previous', 'Scenario'] as const)('rejects a whole-pair empty marker on %s turnover', role => {
+  const report = plannedCashReport('DdsPayouts'), turnover = report.Proof[role]
+  if (turnover === null) throw new Error('The DDS fixture requires this turnover proof')
+  turnover.WholePhysicalPairEmptyVerified = true
+  expect(() => normalizePlannedCashReport(report, plannedCashTestRequest('DdsPayouts'))).toThrow('непідтверджений результат')
+})
+
+it('does not borrow an empty receipts proof for an unverified requests opening', () => {
+  const report = plannedCashReport('NetFlow')
+  if (report.Proof.Receipts === null || report.Proof.Requests === null) throw new Error('Net flow requires both planned-balance proofs')
+  report.Proof.Receipts.DatedOpeningVerified = false; report.Proof.Receipts.WholePhysicalPairEmptyVerified = true
+  report.Proof.Requests.DatedOpeningVerified = false
+  expect(() => normalizePlannedCashReport(report, plannedCashTestRequest('NetFlow'))).toThrow('непідтверджений результат')
+})
+
+it('rejects available whole-pair empty proof without complete publication', () => {
+  const report = plannedCashEmptyReport()
+  if (report.Proof.Requests === null) throw new Error('The payout fixture requires its planned-balance proof')
+  report.Proof.Requests.DatedOpeningVerified = false; report.Proof.Requests.WholePhysicalPairEmptyVerified = true
+  report.Proof.Requests.CompletePublication = false
+  expect(() => normalizePlannedCashReport(report, plannedCashTestRequest())).toThrow('непідтверджений результат')
+})

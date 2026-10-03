@@ -45,7 +45,8 @@ export type PlannedCashRequest = { Version: 1; SourceIdentity: PlannedCashIdenti
   PlanEndpoint: string | null; Scenario: null; ScenarioChoiceKey?: string | null }
 export type PlannedCashCell = { Key: string; Value: string | null; Available: boolean; ExactValue: { Numerator: string; Denominator: string } | null; FormattedValue: string | null }
 export type PlannedCashGroup = { Key: string; GroupIsNull: boolean; Name: string | null; NameAvailable: boolean; Cells: PlannedCashCell[] }
-export type PlannedCashRelationProof = { Available: boolean; CompletePublication: boolean; DatedOpeningVerified: boolean; CompletedMovementMonths: number }
+export type PlannedCashRelationProof = { Available: boolean; CompletePublication: boolean; DatedOpeningVerified: boolean; CompletedMovementMonths: number
+  WholePhysicalPairEmptyVerified?: true }
 export type PlannedCashProof = { InputWitnessSha256: string; SnapshotVerified: true; Current: PlannedCashRelationProof; Previous: PlannedCashRelationProof | null
   Scenario: PlannedCashRelationProof | null; Receipts: PlannedCashRelationProof | null; Requests: PlannedCashRelationProof | null; LabelWitnessSha256: string
   ComparisonCurrencyStatus: 'Compatible' | 'Conflict' | 'Unverified' | 'NotApplicable' }
@@ -154,9 +155,12 @@ function cells(v: unknown, expected: PlannedCashColumn[]): v is PlannedCashCell[
 }
 function relation(v: unknown): v is PlannedCashRelationProof { return record(v) && typeof v.Available === 'boolean' && typeof v.CompletePublication === 'boolean'
   && typeof v.DatedOpeningVerified === 'boolean' && typeof v.CompletedMovementMonths === 'number' && Number.isSafeInteger(v.CompletedMovementMonths)
-  && v.CompletedMovementMonths >= 0 && (!v.Available || v.CompletePublication) }
-function turnoverRelation(v: unknown): v is PlannedCashRelationProof { return relation(v) && !v.DatedOpeningVerified }
-function plannedBalanceRelation(v: unknown): v is PlannedCashRelationProof { return relation(v) && (!v.Available || v.DatedOpeningVerified) }
+  && v.CompletedMovementMonths >= 0 && (!v.Available || v.CompletePublication)
+  && (!('WholePhysicalPairEmptyVerified' in v) || v.WholePhysicalPairEmptyVerified === true) }
+function turnoverRelation(v: unknown): v is PlannedCashRelationProof { return relation(v) && !v.DatedOpeningVerified && !('WholePhysicalPairEmptyVerified' in v) }
+function plannedBalanceRelation(v: unknown): v is PlannedCashRelationProof { return relation(v)
+  && !(v.DatedOpeningVerified && v.WholePhysicalPairEmptyVerified)
+  && (!v.Available || v.DatedOpeningVerified || v.WholePhysicalPairEmptyVerified === true) }
 function utc(v: unknown): v is string { return typeof v === 'string' && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{7}Z$/.test(v)
   && Number.isFinite(Date.parse(v)) && new Date(v).toISOString().slice(0, 23) === v.slice(0, 23) }
 function proof(v: unknown, r: PlannedCashReport): v is PlannedCashProof {
