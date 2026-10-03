@@ -29,8 +29,8 @@ const panel = (caller = 'caller1', cap = capability) => <MantineProvider env="te
 it('offers only admitted human warehouse choices and sends their exact original equality key', async () => {
   vi.clearAllMocks(); vi.mocked(readWarehouseQuantity).mockResolvedValue(response())
   render(panel()); fireEvent.click(screen.getByRole('button', { name: 'Сформувати' }))
-  await waitFor(() => expect((screen.getByLabelText('Склади') as HTMLInputElement).disabled).toBe(false))
-  fireEvent.click(screen.getByLabelText('Склади')); fireEvent.click(await screen.findByRole('option', { name: 'Наш склад' }))
+  await waitFor(() => expect((screen.getByRole('combobox', { name: 'Склади' }) as HTMLInputElement).disabled).toBe(false))
+  fireEvent.click(screen.getByRole('combobox', { name: 'Склади' })); fireEvent.click(await screen.findByRole('option', { name: 'Наш склад' }))
   fireEvent.click(screen.getByRole('button', { name: 'Сформувати' }))
   await waitFor(() => expect(readWarehouseQuantity).toHaveBeenCalledTimes(2))
   expect(vi.mocked(readWarehouseQuantity).mock.calls[1][0]).toMatchObject({ CurrentWarehouseCaptionChoices: true, Warehouses: [key], Receipts: [] })
@@ -40,14 +40,14 @@ it('current mapping absence leaves complete quantities and exports available wit
   vi.clearAllMocks(); vi.mocked(readWarehouseQuantity).mockResolvedValue({ ...response(), WarehouseChoices: [], WarehouseFilterAvailable: false, WarehouseCaptionWitnessSha256: undefined })
   render(panel()); fireEvent.click(screen.getByRole('button', { name: 'Сформувати' }))
   await waitFor(() => expect((screen.getByRole('button', { name: 'XLSX' }) as HTMLButtonElement).disabled).toBe(false))
-  expect((screen.getByLabelText('Склади') as HTMLInputElement).disabled).toBe(true)
+  expect((screen.getByRole('combobox', { name: 'Склади' }) as HTMLInputElement).disabled).toBe(true)
   expect(screen.getAllByText('2.000').length).toBeGreaterThan(0)
 })
 it('caller change drops warehouse choices and selections without showing a raw reference or stale result', async () => {
   vi.clearAllMocks(); vi.mocked(readWarehouseQuantity).mockResolvedValue(response())
   const view = render(panel()); fireEvent.click(screen.getByRole('button', { name: 'Сформувати' }))
-  await waitFor(() => expect((screen.getByLabelText('Склади') as HTMLInputElement).disabled).toBe(false))
-  fireEvent.click(screen.getByLabelText('Склади')); fireEvent.click(await screen.findByRole('option', { name: 'Наш склад' }))
+  await waitFor(() => expect((screen.getByRole('combobox', { name: 'Склади' }) as HTMLInputElement).disabled).toBe(false))
+  fireEvent.click(screen.getByRole('combobox', { name: 'Склади' })); fireEvent.click(await screen.findByRole('option', { name: 'Наш склад' }))
   view.rerender(panel('caller2'))
   expect(screen.queryByText('Наш склад')).toBeNull(); expect(screen.queryByText(key)).toBeNull()
   expect((screen.getByRole('button', { name: 'XLSX' }) as HTMLButtonElement).disabled).toBe(true)
@@ -67,7 +67,7 @@ it('a late quantity response from the previous caller cannot restore rows wareho
   await act(async () => { finish(response()) })
   expect(screen.queryByText('Наш склад')).toBeNull(); expect(screen.queryByText('Товар')).toBeNull()
   for (const name of ['CSV', 'XLSX', 'PDF']) expect((screen.getByRole('button', { name }) as HTMLButtonElement).disabled).toBe(true)
-  expect((screen.getByLabelText('Склади') as HTMLInputElement).disabled).toBe(true)
+  expect((screen.getByRole('combobox', { name: 'Склади' }) as HTMLInputElement).disabled).toBe(true)
 })
 it('missing complete monthly publication shows its dependency and keeps every export unavailable', async () => {
   vi.clearAllMocks(); vi.mocked(readWarehouseQuantity).mockResolvedValue({ ...response(), Available: false,
