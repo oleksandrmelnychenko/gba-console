@@ -100,10 +100,10 @@ import { useReportDatasets } from '../hooks/useReportDatasets'
 import { usesNativeReportLookup, supportsFullReportDateRange, hasFixedReportAxes, nativeReportMeasurementUnit } from '../data/nativeReportProfiles'
 import { CURRENT_VPARIVANIE_NOTICE, currentVparivanieFilterConditions, currentVparivanieNotice } from '../data/currentVparivanie'
 import { previousKyivDay } from '../data/cashPeriod'
-import { availableBug1274WorkbookLaunches } from '../data/bug1274WorkbookLaunch'
+import { availableBug1274WorkbookLaunches, bug1274WorkbookRequest, type WorkbookLaunch } from '../data/bug1274WorkbookLaunch'
 import { CashSettlementSettingsPanels } from './CashSettlementSettingsPanels'
 import { cashFormDataset, requestGroupedCashPeriod } from '../data/groupedCashPeriod'
-import { groupedSettlementPeriod as parseGroupedSettlementPeriod, groupedWorkbookRequest, requestGroupedSettlementPeriod, settlementFormDataset, settlementMaximumDate, settlementModePatch } from '../data/groupedSettlementPeriod'
+import { groupedSettlementPeriod as parseGroupedSettlementPeriod, requestGroupedSettlementPeriod, settlementFormDataset, settlementMaximumDate, settlementModePatch } from '../data/groupedSettlementPeriod'
 import { requestSourceCounterpartyGroups } from '../data/sourceCounterpartyGroups'
 import { requiresValuationAgreement } from '../data/reportValuation'
 import { useValuationAgreement } from '../hooks/useValuationAgreement'
@@ -797,10 +797,10 @@ function ReportsStocksWorkspace({ ownerId, constructorMode }: { ownerId: string 
     return true
   }
 
-  function changeDataset(nextDataset: ReportDataset, currencyAxis?: boolean) {
+  function changeDataset(nextDataset: ReportDataset, workbook?: WorkbookLaunch) {
     const period = periodSupported ? { from, to } : previousPeriod
     const day = (nextDataset.DataSource === 40 || nextDataset.DataSource === 41) ? previousKyivDay(today) : null
-    applyConfiguration({ Name: '', Data: groupedWorkbookRequest(defaultDatasetRequest(nextDataset, day ?? period.from, day ?? period.to), currencyAxis) }, nextDataset)
+    applyConfiguration({ Name: '', Data: bug1274WorkbookRequest(defaultDatasetRequest(nextDataset, day ?? period.from, day ?? period.to), workbook) }, nextDataset)
   }
 
   function applyPreset(id: DatasetReportPresetId) {
@@ -851,7 +851,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode }: { ownerId: string 
               <Text size="sm">{item.fileName} · {t(item.notice)}</Text>
               <Button type="button" size="xs" variant="light" disabled={isLoading}
                 onClick={() => {
-                  changeDataset(item.dataset, item.currencyAxis)
+                  changeDataset(item.dataset, item)
                   setCatalogueNotice({ text: `${item.fileName}: ${item.notice}`, failed: false })
                 }}>{t('Відкрити часткову форму: {name}', { name: item.label })}</Button>
             </Group>)}</Stack>

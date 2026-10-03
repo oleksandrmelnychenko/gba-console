@@ -1,12 +1,13 @@
-import type { ReportDataset } from '../types'
-import { groupedCashSupported } from './groupedCashPeriod'
+import type { ReportDataset, ReportRequestBody } from '../types'
+import { CASH_WORKBOOK_ROWS, groupedCashPeriod, groupedCashSupported, groupedCashWorkbookSupported, requestGroupedCashPeriod } from './groupedCashPeriod'
 import { cashPeriodSupportsManagement, isCashPeriodDataset } from './cashPeriod'
 import { isSettlementPeriodDataset } from './settlementPeriod'
 import { isDayOrganizationBasisCapability } from './dayOrganizationBasis'
 import { isDayOrganizationGrossProfitDataset } from './dayOrganizationGrossProfit'
 import { isSupplierBatchGrossProfitDataset } from './supplierBatchGrossProfit'
 import { isSupplierBasisCapability } from './supplierBasis'
-import { groupedSettlementSupportsSuppliers, isGroupedSettlementDataset } from './groupedSettlementPeriod'
+import { groupedSettlementSupportsSuppliers, groupedWorkbookRequest, isGroupedSettlementDataset } from './groupedSettlementPeriod'
+import { datasetGroupings } from './reportDatasets'
 import { isCurrentVparivanieDataset } from './currentVparivanie'
 import { isProductClassificationCapability, isSourceBuyerSubtreeCapability,
   isSourceOrganizationsCapability } from './nativeExactFilters'
@@ -96,4 +97,21 @@ export function availableBug1274WorkbookLaunches(datasets: readonly ReportDatase
         dataset: matches[0] }]
       : []
   })
+}
+
+/** Only the Excel shortcut opts into its supported form; ordinary and saved dataset requests keep their own meaning. */
+export function bug1274WorkbookRequest(request: ReportRequestBody, launch?: WorkbookLaunch): ReportRequestBody {
+  if (!launch || launch.dataset.DataSource !== request.dataSource) return request
+  const selected = groupedWorkbookRequest(request, launch.currencyAxis)
+  if (launch.fileName !== 'Ведомость по денежным средствам.xls' || request.dataSource !== 40
+    || !groupedCashWorkbookSupported(launch.dataset) || !groupedCashPeriod(requestGroupedCashPeriod(selected))
+    || !Array.isArray(launch.dataset.Groupings)) return selected
+  if (CASH_WORKBOOK_ROWS.some(type => {
+    const matches = launch.dataset.Groupings.filter(field => field.Type === type)
+    return matches.length !== 1 || matches[0].Selectable === false
+  })) return selected
+  const groupings = datasetGroupings(launch.dataset)
+  const result = structuredClone(selected)
+  result.sorted.Row = CASH_WORKBOOK_ROWS.flatMap(type => groupings.filter(row => row.type === type))
+  return result
 }
