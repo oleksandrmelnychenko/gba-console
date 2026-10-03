@@ -46,6 +46,7 @@ import { isCashAggregateBalanceCatalogueEntry, type CashAggregateBalanceCapabili
 import { CashAggregateBalanceCatalogueLaunch } from './CashAggregateBalanceCatalogueLaunch'
 import { isOriginalRevenueCatalogueEntry, type OriginalRevenueCapabilities } from '../data/originalRevenue'
 import { OriginalRevenueCatalogueLaunch } from './OriginalRevenueCatalogueLaunch'
+import { OriginalWarehouseQuantityCatalogueLaunch } from './OriginalWarehouseQuantityCatalogueLaunch'
 import { originalBuyerSalesShareCatalogueVariant, type OriginalBuyerSalesShareCapabilities } from '../data/originalBuyerSalesShare'
 import { OriginalBuyerSalesShareCatalogueLaunch } from './OriginalBuyerSalesShareCatalogueLaunch'
 
@@ -197,7 +198,7 @@ function toggleExpanded(current: ReadonlySet<string>, id: string) {
 }
 
 function CatalogueTable({ visibleRows, catalogue, inspection, availableDatasets, canGenerate, disabled, onOpen, onOpenDebtToSalesRatio, onOpenCollectionCoefficient, onOpenSalesMargin, onOpenCashMovement, onOpenSupplierDebt, onOpenEmployeeGrossProfit, onOpenOverdueReceivables, onOpenManagementReturns, onOpenManagementBalance, onOpenManagementOrders, onOpenDefectProduction, onOpenInventoryTurnover, onOpenCurrentLiquidity, onOpenPlannedCash, callerKey = null, onOpenActiveClients, onOpenCurrencyRateDynamics, onOpenCashAggregateBalance, onOpenOriginalRevenue, onOpenOriginalBuyerSalesShare, expanded, onToggle }: {
-  visibleRows: Array<{ report: ReportCatalogueEntry; options: LaunchOption[] }>; catalogue: ReportCatalogue
+  visibleRows: Array<{ report: ReportCatalogueEntry; options: LaunchOption[]; matchingSources: ReportCatalogueEntry['Sources'] }>; catalogue: ReportCatalogue
   inspection: ReturnType<typeof inspectCatalogueMigration>; availableDatasets: ReportDataset[] | null
   canGenerate: boolean; disabled: boolean; onOpen?: OpenReport; onOpenDebtToSalesRatio?: OpenDebtToSalesRatio; onOpenCollectionCoefficient?: OpenCollectionCoefficient; onOpenSalesMargin?: OpenSalesMargin; onOpenCashMovement?: OpenCashMovement; onOpenSupplierDebt?: OpenSupplierDebt; onOpenEmployeeGrossProfit?: OpenEmployeeGrossProfit; onOpenOverdueReceivables?: OpenOverdueReceivables; onOpenManagementReturns?: OpenManagementReturns; onOpenManagementBalance?: OpenManagementBalance; onOpenManagementOrders?: OpenManagementOrders; onOpenDefectProduction?: OpenDefectProduction; onOpenInventoryTurnover?: OpenInventoryTurnover; onOpenCurrentLiquidity?: OpenCurrentLiquidity; onOpenPlannedCash?: OpenPlannedCash; callerKey?: string | null; onOpenActiveClients?: OpenActiveClients; onOpenCurrencyRateDynamics?: OpenCurrencyRateDynamics; onOpenCashAggregateBalance?: OpenCashAggregateBalance; onOpenOriginalRevenue?: OpenOriginalRevenue; onOpenOriginalBuyerSalesShare?: OpenOriginalBuyerSalesShare
   expanded: ReadonlySet<string>; onToggle: (id: string) => void
@@ -208,7 +209,7 @@ function CatalogueTable({ visibleRows, catalogue, inspection, availableDatasets,
         <Table className="report-catalogue__table" highlightOnHover>
           <colgroup><col style={{ width: '46%' }} /><col style={{ width: '15%' }} /><col style={{ width: '39%' }} /></colgroup>
           <Table.Thead><Table.Tr><Table.Th>{t('Звіт')}</Table.Th><Table.Th>{t('Тип')}</Table.Th><Table.Th>{t('Стан за базами')}</Table.Th></Table.Tr></Table.Thead>
-          <Table.Tbody>{visibleRows.map(({ report, options }) => <Fragment key={report.Id}>
+          <Table.Tbody>{visibleRows.map(({ report, options, matchingSources }) => <Fragment key={report.Id}>
             <Table.Tr>
               <Table.Td><Stack gap={8} align="flex-start"><Button className="report-catalogue__report-title" leftSection={<ChevronRight size={14} aria-hidden="true" />} type="button" variant="subtle" size="compact-sm" aria-expanded={expanded.has(report.Id)} aria-label={t('Покриття звіту: {name}', { name: report.Title })}
                 styles={{ root: { height: 'auto', maxWidth: '100%' }, label: { whiteSpace: 'normal', textAlign: 'left' } }}
@@ -227,6 +228,7 @@ function CatalogueTable({ visibleRows, catalogue, inspection, availableDatasets,
                   ? <ManagementReturnsCatalogueLaunch report={report} enabled={canGenerate} disabled={disabled} callerKey={callerKey} onOpen={onOpenManagementReturns} /> : null}
                 {onOpenManagementBalance && managementBalanceCatalogueKind(report)
                   ? <ManagementBalanceCatalogueLaunch report={report} enabled={canGenerate} disabled={disabled} callerKey={callerKey} onOpen={onOpenManagementBalance} /> : null}
+                <OriginalWarehouseQuantityCatalogueLaunch report={report} worlds={matchingSources.map(s => s.World)} enabled={canGenerate} disabled={disabled} callerKey={callerKey} />
                 <ManagementOrdersCatalogueLaunch report={report} enabled={canGenerate} disabled={disabled} callerKey={callerKey} onOpen={onOpenManagementOrders} />
                 <DefectProductionCatalogueLaunch report={report} enabled={canGenerate} disabled={disabled} callerKey={callerKey} onOpen={onOpenDefectProduction} />
                 <InventoryTurnoverCatalogueLaunch report={report} enabled={canGenerate} disabled={disabled} callerKey={callerKey} onOpen={onOpenInventoryTurnover} />
