@@ -99,11 +99,10 @@ import { datasetConfigurationError, datasetFilters, datasetGroupings, datasetMea
 import { useReportDatasets } from '../hooks/useReportDatasets'
 import { usesNativeReportLookup, supportsFullReportDateRange, hasFixedReportAxes, nativeReportMeasurementUnit } from '../data/nativeReportProfiles'
 import { CURRENT_VPARIVANIE_NOTICE, currentVparivanieFilterConditions, currentVparivanieNotice } from '../data/currentVparivanie'
-import { CASH_PERIOD_ALL_MEASURES, CASH_PERIOD_MEASURES, cashPeriodMeasurements, cashPeriodSupportsManagement, previousKyivDay } from '../data/cashPeriod'
+import { previousKyivDay } from '../data/cashPeriod'
 import { availableBug1274WorkbookLaunches } from '../data/bug1274WorkbookLaunch'
-import { CashPeriodModePanel } from './CashPeriodModePanel'
-import { cashFormDataset, defaultGroupedCashPeriod, requestGroupedCashPeriod } from '../data/groupedCashPeriod'
-import { SettlementPeriodModePanel } from './SettlementPeriodModePanel'
+import { CashSettlementSettingsPanels } from './CashSettlementSettingsPanels'
+import { cashFormDataset, requestGroupedCashPeriod } from '../data/groupedCashPeriod'
 import { groupedSettlementPeriod as parseGroupedSettlementPeriod, groupedWorkbookRequest, requestGroupedSettlementPeriod, settlementFormDataset, settlementMaximumDate, settlementModePatch } from '../data/groupedSettlementPeriod'
 import { requestSourceCounterpartyGroups } from '../data/sourceCounterpartyGroups'
 import { requiresValuationAgreement } from '../data/reportValuation'
@@ -280,6 +279,15 @@ function usesSavedFenixOrganizations(value: unknown): boolean {
   const ids = parseSourceOrganizations(value)?.OrganizationIds
   if (ids?.length !== DAY_ORGANIZATION_SAVED_ORGANIZATION_IDS.length) return false
   return DAY_ORGANIZATION_SAVED_ORGANIZATION_IDS.every(id => ids.some(value => value.toUpperCase() === id))
+}
+
+function reportLookupSourceWorld(dataSource: number, groupedSettlement: unknown, specialSettings: unknown): 1 | 2 | undefined {
+  if (dataSource === 41) {
+    const world = parseGroupedSettlementPeriod(groupedSettlement)?.SourceWorld
+    return world === 'Fenix' ? 1 : world === 'Amg' ? 2 : undefined
+  }
+  return typeof specialSettings === 'object' && specialSettings !== null && 'SourceWorld' in specialSettings
+    && (specialSettings.SourceWorld === 1 || specialSettings.SourceWorld === 2) ? specialSettings.SourceWorld : undefined
 }
 
 export function ReportsStocksPage({ constructorMode = false }: { constructorMode?: boolean }) {
@@ -955,29 +963,17 @@ function ReportsStocksWorkspace({ ownerId, constructorMode }: { ownerId: string 
           (oneCSpecialSpecification(dataSource) ? defaultOneCSpecialSettings(dataSource, dataset)[oneCSpecialSpecification(dataSource)!.key] : undefined)}
           disabled={comparisonSettingsDisabled} onChange={setOneCSpecialSettings} />}
         classificationPanel={dataSource === 39 ? <CurrentVparivanieRegionalPanel dataset={dataset ?? null} request={reportBody}
-          enabled={canGenerateReport} disabled={comparisonSettingsDisabled} /> : dataSource === 41 ? <SettlementPeriodModePanel dataset={dataset} grouped={groupedSettlementPeriod}
-          exact={settlementPeriod} buyer={sourceBuyerSubtree} groups={sourceCounterpartyGroups} rows={rowGroups} available={groupingOptions} from={from} to={to}
-          disabled={comparisonSettingsDisabled} enabled={canGenerateReport} onModeChange={changeSettlementMode}
-          onGroupedChange={setGroupedSettlementPeriod} onExactChange={setSettlementPeriod}
-          onBuyerChange={setSourceBuyerSubtree} onRowsChange={setRowGroups} onGroupsChange={setSourceCounterpartyGroups} /> : dataSource === 40 ? <CashPeriodModePanel dataset={dataset} grouped={groupedCashPeriod} exact={cashPeriod}
-          rows={rowGroups} available={groupingOptions} onRowsChange={setRowGroups}
-          onModeChange={multiple => {
-            setGroupedCashPeriod(multiple ? defaultGroupedCashPeriod() : undefined)
-            setCashPeriod(undefined)
-            setRowGroups([43, 40, 42, 41].flatMap(type => groupingOptions.filter(group => group.type === type)))
-            filterLogic.load([])
-            const required = new Set<number>(multiple || cashPeriodSupportsManagement(dataset) ? CASH_PERIOD_ALL_MEASURES : CASH_PERIOD_MEASURES)
-            setMeasurements(datasetMeasurements(dataset, (dataset?.Measurements ?? [])
-              .filter(field => required.has(field.Type)).map(field => ({ ...field, IsChecked: true, parentName: '' }))))
-          }}
-          disabled={comparisonSettingsDisabled} enabled={canGenerateReport}
-          onExactChange={next => {
-            setCashPeriod(next)
-            const required = new Set(next ? cashPeriodMeasurements(next) : cashPeriodSupportsManagement(dataset)
-              ? CASH_PERIOD_ALL_MEASURES : CASH_PERIOD_MEASURES)
-            setMeasurements(datasetMeasurements(dataset, (dataset?.Measurements ?? [])
-              .filter(field => required.has(field.Type)).map(field => ({ ...field, IsChecked: true, parentName: '' }))))
-          }} /> : dataSource === 35 ? <Card className="app-section-card" withBorder radius="md" padding="md" style={{ minWidth: 0 }}>
+          enabled={canGenerateReport} disabled={comparisonSettingsDisabled} /> : dataSource === 41 || dataSource === 40 ? <CashSettlementSettingsPanels dataSource={dataSource}
+          cash={{ dataset, grouped: groupedCashPeriod, exact: cashPeriod, rows: rowGroups,
+            available: groupingOptions, onRowsChange: setRowGroups, disabled: comparisonSettingsDisabled, enabled: canGenerateReport }}
+          settlement={{ dataset, grouped: groupedSettlementPeriod, exact: settlementPeriod,
+            buyer: sourceBuyerSubtree, groups: sourceCounterpartyGroups, rows: rowGroups,
+            available: groupingOptions, from, to, disabled: comparisonSettingsDisabled, enabled: canGenerateReport,
+            onModeChange: changeSettlementMode, onGroupedChange: setGroupedSettlementPeriod,
+            onExactChange: setSettlementPeriod, onBuyerChange: setSourceBuyerSubtree,
+            onRowsChange: setRowGroups, onGroupsChange: setSourceCounterpartyGroups }}
+          onGroupedCashChange={setGroupedCashPeriod} onExactCashChange={setCashPeriod}
+          onCashMeasurementsChange={setMeasurements} onClearCashFilters={() => filterLogic.load([])} /> : dataSource === 35 ? <Card className="app-section-card" withBorder radius="md" padding="md" style={{ minWidth: 0 }}>
           <DayOrganizationBasisSelect capability={dataset?.dayOrganizationBasis} value={dayOrganizationBasis}
             disabled={comparisonSettingsDisabled} onChange={setDayOrganizationBasis} />
           <Checkbox mt="sm" label={t('Товар без послуг (Fenix)')}
@@ -1076,10 +1072,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode }: { ownerId: string 
         lookupTo={hasLookupPeriod ? debouncedTo : ''}
         lookupProvidedDiscountBasis={currentProvidedDiscountLookupBasis(dataSource, oneCSpecialSettings, dataset)}
         lookupSalesBasis={currentPriceTypeSalesLookupBasis(dataSource, priceTypeSalesComparison, dataset?.priceTypeSalesComparison)}
-        lookupSourceWorld={dataSource === 41 ? parseGroupedSettlementPeriod(groupedSettlementPeriod)?.SourceWorld === 'Fenix' ? 1
-          : parseGroupedSettlementPeriod(groupedSettlementPeriod)?.SourceWorld === 'Amg' ? 2 : undefined
-          : typeof oneCSpecialSettings === 'object' && oneCSpecialSettings !== null && 'SourceWorld' in oneCSpecialSettings
-          && (oneCSpecialSettings.SourceWorld === 1 || oneCSpecialSettings.SourceWorld === 2) ? oneCSpecialSettings.SourceWorld : undefined}
+        lookupSourceWorld={reportLookupSourceWorld(dataSource, groupedSettlementPeriod, oneCSpecialSettings)}
         maxDate={maxDate}
         measurements={measurements}
         notices={{ emptyRun: emptyRunNotice, error, period: periodError }}
