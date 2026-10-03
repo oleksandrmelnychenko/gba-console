@@ -100,10 +100,10 @@ export function normalizeCurrentVparivanieRegional(value: unknown,
   if (stockFacts !== value.StockFacts || salesFacts !== Number(value.SaleFacts) + Number(value.ReturnFacts)
     || counterpartyFacts !== value.CounterpartyFacts || counterpartyFacts > salesFacts) fail()
   if (full) {
-    const codes = new Set(rows.flatMap(row => row.Cells.filter(item => item.Column === 'CounterpartyRegionCode').map(item => item.RegionCode)))
-    // Matrix export carries ProductId as well as seven attributes and financial columns.
-    const columns = 11 + codes.size + (rows.some(row => row.Cells.some(item => item.Column === 'CounterpartyUnknown')) ? 1 : 0)
-    if (columns > 264 || rows.length * columns > 1000000) fail()
+    const financial = new Set(rows.flatMap(row => row.Cells.map(item => JSON.stringify([item.Column, item.RegionCode]))))
+    // Matrix export carries ProductId, seven attributes and only actual financial keys.
+    const columns = 8 + financial.size
+    if (financial.size > 256 || rows.length * columns > 1000000) fail()
   }
   return { ...value, Rows: rows } as CurrentVparivanieRegionalResult
 }

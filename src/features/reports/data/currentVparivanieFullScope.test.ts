@@ -110,3 +110,19 @@ it('counts exported ProductId in the complete regional Matrix footprint', () => 
   result.ProductCount = 3800
   expect(() => normalizeCurrentVparivanieRegional(result, request)).toThrow('неповну')
 })
+
+it('admits the complete sparse Matrix without inventing an absent counterparty column', () => {
+  const request = { ...regionalRequest(), currentVparivanieFullScope: true }
+  const result = { ...regionalResult(), FullScopeVersion: 1 as const,
+    ProductCount: 100000, StockFacts: 100000, SaleFacts: 0, ReturnFacts: 0, CounterpartyFacts: 0 }
+  result.Request.Notes.push(CURRENT_VPARIVANIE_FULL_NOTE)
+  const cells = [
+    { Column: 'Stock' as const, RegionCode: null, Quantity: '1', UnitId: '12', FactCount: 1 },
+    { Column: 'Sales' as const, RegionCode: null, Quantity: '0', UnitId: '12', FactCount: 0 },
+  ]
+  const product = regionalResult().Rows[0]
+  result.Rows = Array.from({ length: 100000 }, (_, i) => ({ ...product, ProductId: String(i + 1), Cells: cells }))
+  const accepted = normalizeCurrentVparivanieRegional(result, request)
+  expect(accepted.ProductCount).toBe(100000)
+  expect(accepted.Rows[99999].Cells.map(value => value.Column)).toEqual(['Stock', 'Sales'])
+})

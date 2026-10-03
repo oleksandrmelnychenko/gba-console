@@ -11,3 +11,5 @@ All authored tests and quality gates remain unexecuted by the author. Root must 
 ## Regional Matrix physical width
 
 The complete regional Matrix exporter includes `ProductId` plus seven attributes and up to 256 financial columns. Its 1,000,000 data-cell guard counts all 264 physical columns when present. This budget is the main Matrix footprint, not a sum of every serialized About/Cells-sheet field. A sparse 3,787/3,800-product boundary test checks both admission and refusal without fabricating a million facts. Ordinary bounded form rules remain unchanged.
+
+The guard counts distinct actual financial cell keys, so a missing counterparty arm adds no total column. A complete stock-only result with 100,000 products has ten physical columns and fits; a focused case checks this without exporting a million fixture cells.
