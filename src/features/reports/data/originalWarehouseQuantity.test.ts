@@ -91,6 +91,43 @@ describe('exact warehouse quantity period delivery', () => {
     expect(warehouseQuantityCsv(value)).toContain("'" + '=2+2')
     expect(warehouseQuantityCsv(value)).toContain('"-0.003"')
   })
+  it('advertises current warehouse captions independently and copies exact source warehouse filters', () => {
+    const current: WarehouseQuantityCapability = { ...capability, CurrentWarehouseCaptionChoicesSupported: true }
+    const warehouses = [ref], query = warehouseQuantityRequest(current, request.From, request.Through, [], warehouses)
+    warehouses[0] = 'B'.repeat(32)
+    expect(query.CurrentWarehouseCaptionChoices).toBe(true); expect(query.Warehouses).toEqual([ref])
+    expect(() => warehouseQuantityRequest(capability, request.From, request.Through, [], [ref])).toThrow()
+    expect(() => warehouseQuantityRequest(current, request.From, request.Through, [], [ref, ref])).toThrow()
+    expect(isWarehouseQuantityCapability({ ...capability, CurrentWarehouseCaptionChoicesSupported: false })).toBe(false)
+  })
+  it('requires the current caption witness and exports human warehouse names without technical identities', () => {
+    const current: WarehouseQuantityCapability = { ...capability, CurrentWarehouseCaptionChoicesSupported: true }
+    const query = warehouseQuantityRequest(current, request.From, request.Through, [], [ref]), value = result()
+    Object.assign(value, { WarehouseChoices: [{ Key: ref, Caption: 'Наш склад' }], WarehouseFilterAvailable: true,
+      WarehouseCaptionPolicy: 'CurrentOURStorageNameViaAuthenticatedRoutingAssociation', WarehouseCaptionWitnessSha256: 'c'.repeat(64), FilterSummary: ['Склад: Наш склад'] })
+    const accepted = normalizeWarehouseQuantity(value, query)
+    expect(accepted.Totals).toEqual(quantity); expect(warehouseQuantityCsv(accepted)).toContain('Склад: Наш склад')
+    expect(warehouseQuantityCsv(accepted)).not.toContain(ref)
+    expect(() => normalizeWarehouseQuantity({ ...value, WarehouseCaptionWitnessSha256: undefined }, query)).toThrow()
+    expect(() => normalizeWarehouseQuantity({ ...value, WarehouseChoices: [] }, query)).toThrow()
+    expect(() => normalizeWarehouseQuantity(value, request)).toThrow()
+  })
+  it('missing current mapping keeps complete quantities and no warehouse choice or synthetic name', () => {
+    const current: WarehouseQuantityCapability = { ...capability, CurrentWarehouseCaptionChoicesSupported: true }
+    const query = warehouseQuantityRequest(current, request.From, request.Through), value = result()
+    Object.assign(value, { WarehouseChoices: [], WarehouseCaptionPolicy: 'CurrentOURStorageNameViaAuthenticatedRoutingAssociation' })
+    const accepted = normalizeWarehouseQuantity(value, query)
+    expect(accepted.Available).toBe(true); expect(accepted.Totals).toEqual(quantity); expect(accepted.WarehouseFilterAvailable).toBe(false)
+    expect(accepted.WarehouseChoices).toEqual([])
+  })
+  it('refuses duplicate or mismatched warehouse caption choices before screen or export', () => {
+    const current: WarehouseQuantityCapability = { ...capability, CurrentWarehouseCaptionChoicesSupported: true }
+    const query = warehouseQuantityRequest(current, request.From, request.Through), value = result()
+    Object.assign(value, { WarehouseChoices: [{ Key: ref, Caption: 'Наш склад' }, { Key: ref, Caption: 'Інша назва' }], WarehouseFilterAvailable: true,
+      WarehouseCaptionPolicy: 'CurrentOURStorageNameViaAuthenticatedRoutingAssociation', WarehouseCaptionWitnessSha256: 'c'.repeat(64) })
+    expect(() => normalizeWarehouseQuantity(value, query)).toThrow()
+    expect(() => normalizeWarehouseQuantity({ ...value, WarehouseChoices: [{ Key: '0'.repeat(32), Caption: 'Невідомий' }] }, query)).toThrow()
+  })
   it('resource boundary counts complete product and receipt rows before allocation', () => {
     const value = result()
     value.Rows[0].Receipts = new Array(166_665).fill(value.Rows[0].Receipts[0])

@@ -35,13 +35,17 @@ export function OriginalWarehouseQuantityPanel({ capability, callerKey, canGener
   capability: WarehouseQuantityCapability; callerKey: string | null; canGenerate: boolean; initialFrom: string; initialThrough: string
 }) {
   const { t } = useI18n(); const [from, setFrom] = useState(initialFrom); const [through, setThrough] = useState(initialThrough)
-  const [products, setProducts] = useState<string[]>([]); const [exporting, setExporting] = useState(false)
-  const [choices, setChoices] = useState<{ scope: string; values: Array<{ value: string; label: string }> } | null>(null)
-  const periodScope = JSON.stringify([callerKey, canGenerate, capability, from, through]), key = JSON.stringify([periodScope, products])
+  const [selection, setSelection] = useState<{ scope: string; products: string[]; warehouses: string[] }>({ scope: '', products: [], warehouses: [] })
+  const [exporting, setExporting] = useState(false)
+  const [choices, setChoices] = useState<{ scope: string; products: Array<{ value: string; label: string }>; warehouses: Array<{ value: string; label: string }> } | null>(null)
+  const periodScope = JSON.stringify([callerKey, canGenerate, capability, from, through])
+  const products = selection.scope === periodScope ? selection.products : [], warehouses = selection.scope === periodScope ? selection.warehouses : []
+  const key = JSON.stringify([periodScope, products, warehouses])
   const run = useReportRunState<WarehouseQuantityResult>(key), active = useRef<AbortController | null>(null), latest = useRef(key)
   useEffect(() => { latest.current = key; return () => { latest.current = ''; active.current?.abort() } }, [key])
   const error = warehouseQuantityPeriodError(from, through), report = run.lastRun
-  const selectChoices = choices?.scope === periodScope ? choices.values : []
+  const selectChoices = choices?.scope === periodScope ? choices.products : []
+  const warehouseChoices = choices?.scope === periodScope ? choices.warehouses : []
   const permitted = canGenerate && !!callerKey && capability.Executable && capability.World === 'fenix'
   function invalidate() { active.current?.abort(); latest.current = ''; run.clear() }
   async function generate() {
@@ -49,9 +53,10 @@ export function OriginalWarehouseQuantityPanel({ capability, callerKey, canGener
     const controller = new AbortController(); active.current?.abort(); active.current = controller
     latest.current = key; const update = run.begin()
     try {
-      const result = await readWarehouseQuantity(warehouseQuantityRequest(capability, from, through, products), controller.signal)
+      const result = await readWarehouseQuantity(warehouseQuantityRequest(capability, from, through, products, warehouses), controller.signal)
       if (controller.signal.aborted) return
-      update({ lastRun: result }); if (result.Available) setChoices({ scope: periodScope, values: result.ProductChoices.map(v => ({ value: v.Key, label: v.Caption })) })
+      update({ lastRun: result }); if (result.Available) setChoices({ scope: periodScope, products: result.ProductChoices.map(v => ({ value: v.Key, label: v.Caption })),
+        warehouses: (result.WarehouseChoices ?? []).map(v => ({ value: v.Key, label: v.Caption })) })
     } catch (failure) { if (!controller.signal.aborted) update({ error: failure instanceof Error ? failure.message : 'Не вдалося сформувати відомість.' }) }
     finally { update({ isLoading: false }) }
   }
@@ -67,11 +72,14 @@ export function OriginalWarehouseQuantityPanel({ capability, callerKey, canGener
   }
   const exportError = report?.Available ? warehouseQuantityExportError(report) : null
   return <Stack gap="md"><Text size="sm">{t('Записана кількість у наших таблицях за період: товар → документ надходження. Перерахунок одиниць не застосовується.')}</Text>
-    <Group grow><TextInput type="date" label={t('Початок періоду')} value={from} disabled={run.isLoading || exporting} onChange={e => { invalidate(); setProducts([]); setFrom(e.currentTarget.value) }} />
-      <TextInput type="date" label={t('Кінець періоду')} value={through} disabled={run.isLoading || exporting} onChange={e => { invalidate(); setProducts([]); setThrough(e.currentTarget.value) }} /></Group>
+    <Group grow><TextInput type="date" label={t('Початок періоду')} value={from} disabled={run.isLoading || exporting} onChange={e => { invalidate(); setFrom(e.currentTarget.value) }} />
+      <TextInput type="date" label={t('Кінець періоду')} value={through} disabled={run.isLoading || exporting} onChange={e => { invalidate(); setThrough(e.currentTarget.value) }} /></Group>
     <MultiSelect label={t('Товари')} placeholder={t('Усі товари; назви для відбору з’являться після формування')} data={selectChoices} value={products} searchable clearable
-      disabled={run.isLoading || exporting || !selectChoices.length} onChange={v => { invalidate(); setProducts(v) }} maxValues={256} />
-    <Text size="sm" c="dimmed">{t('Відбір за складом і документом надходження недоступний: ще немає підтвердженого зіставлення їхніх назв з довідниками GBA.')}</Text>
+      disabled={run.isLoading || exporting || !selectChoices.length} onChange={v => { invalidate(); setSelection({ scope: periodScope, products: v, warehouses }) }} maxValues={256} />
+    {capability.CurrentWarehouseCaptionChoicesSupported ? <MultiSelect label={t('Склади')} placeholder={t('Усі склади; підтверджені назви з’являться після формування')}
+      data={warehouseChoices} value={warehouses} searchable clearable maxValues={256} disabled={run.isLoading || exporting || !warehouseChoices.length}
+      onChange={v => { invalidate(); setSelection({ scope: periodScope, products, warehouses: v }) }} /> : <Text size="sm" c="dimmed">{t('Відбір за складом недоступний на цій версії сервера.')}</Text>}
+    <Text size="sm" c="dimmed">{t('Назви складів — поточні назви довідника GBA. Непідтверджені назви не пропонуються для відбору; усі кількості збережено. Назви й відбір документів надходження ще недоступні.')}</Text>
     <Text size="sm" c="dimmed">{t('Період охоплює календарні дні від 00:00:00 до 23:59:59; дробова частина секунди після цієї межі не включається.')}</Text>
     <Text size="sm" c="dimmed">{t('Нульові спостережені рядки збережено. Повна відповідність усім налаштуванням 1С не підтверджена.')}</Text>
     {error ? <Alert color="yellow">{t(error)}</Alert> : null}{run.error ? <Alert color="red">{t(run.error)}</Alert> : null}
