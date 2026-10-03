@@ -1,10 +1,10 @@
 import { readSettlementCounterpartyAttributes, type SettlementCounterpartyAttributes } from './settlementSourceAttributes'
-import { CURRENT_VPARIVANIE_PRODUCT_FIELDS } from './currentVparivanie'
+import { CURRENT_VPARIVANIE_PRODUCT_FIELDS, CURRENT_VPARIVANIE_FULL_NOTE } from './currentVparivanie'
 import { validateCurrentVparivanieColumns } from './currentVparivanieColumns'
 
 export type NativeReportPreviewScalar = { Kind: string; Value: string | null; Provenance: string }
 export type CurrentVparivanieProduct = { RowSourceIndex: number } & Record<typeof CURRENT_VPARIVANIE_PRODUCT_FIELDS[number], string | null>
-export type CurrentVparivanieProducts = { Version: 1; ResultSha256: string; Rows: CurrentVparivanieProduct[] }
+export type CurrentVparivanieProducts = { Version: 1 | 2; ResultSha256: string; Rows: CurrentVparivanieProduct[] }
 export type NativeReportPreviewAxis = { Ordinal: number; SourceIndex: number; Values: { Caption: string; Identity?: NativeReportPreviewScalar }[] }
 export type NativeReportPreviewCell = { RowSourceIndex: number; ColumnSourceIndex: number; Value: NativeReportPreviewScalar }
 export type NativeReportPreviewFilter = { Field: string; Condition: string; Values: string[]; IgnoredReason: string | null }
@@ -110,7 +110,7 @@ function normalizeRequest(value: unknown): NativeReportPreviewRequest | null {
   }
 }
 
-export function normalizeNativeReportPreview(response: unknown): NativeReportPreview {
+export function normalizeNativeReportPreview(response: unknown, fullCurrentVparivanie = false): NativeReportPreview {
   const preview = record(response) ? response.Preview : undefined
   if (!record(preview) || preview.Version !== 1 || preview.PresentationOnly !== true
     || typeof preview.ResultSha256 !== 'string' || !/^[a-f\d]{64}$/i.test(preview.ResultSha256)
@@ -156,24 +156,26 @@ export function normalizeNativeReportPreview(response: unknown): NativeReportPre
   if (attributes && (request?.DataSource !== 'NativeSettlementPeriod'
     || (preview.RowSchema as { Identity?: string }[]).at(-1)?.Identity !== 'SettlementCounterparty'))
     throw new Error('Реквізити покупця не відповідають набору взаєморозрахунків.')
-  const productDisplay = normalizeCurrentVparivanieProducts(preview, request)
+  const productDisplay = normalizeCurrentVparivanieProducts(preview, request, fullCurrentVparivanie)
   return { ...preview, Request: request, ...(productDisplay ? { CurrentVparivanieProducts: productDisplay } : {}), ...(attributes ? { SettlementCounterpartyAttributes: attributes } : {}) } as NativeReportPreview
 }
 
-function normalizeCurrentVparivanieProducts(preview: Record<string, unknown>, request: NativeReportPreviewRequest | null): CurrentVparivanieProducts | undefined {
+function normalizeCurrentVparivanieProducts(preview: Record<string, unknown>, request: NativeReportPreviewRequest | null, full: boolean): CurrentVparivanieProducts | undefined {
   const value = preview.CurrentVparivanieProducts
   const current = request?.DataSource === 'NativeCurrentVparivanie'
-  if (!current && value === undefined) return undefined
+  if (!current && value === undefined && !full) return undefined
   const fail = () => { throw new Error('Сервер повернув непідтверджені атрибути товарів матриці «Впарювання».') }
   if (!current || !request.HasPeriod || request.IsCurrentSnapshot || !request.PeriodFrom || !request.PeriodTo
     || request.RowGroupings?.length !== 1 || request.ColumnGroupings?.length !== 2
     || request.Measures?.join(',') !== 'Результат'
-    || !record(preview.Page) || !boundedInteger(preview.Page.TotalVisibleRows, 128)
+    || !record(preview.Page) || !boundedInteger(preview.Page.TotalVisibleRows, full ? 500000 : 128)
     || !Array.isArray(preview.RowSchema) || preview.RowSchema.length !== 1 || preview.RowSchema[0]?.Identity !== 'Product'
     || !Array.isArray(preview.ColumnSchema) || preview.ColumnSchema.slice(0, 2).map(item => item.Identity).join(',') !== 'CurrentVparivanieGroup,CurrentVparivanieCounterparty'
     || !Array.isArray(preview.Columns) || new Set(preview.Columns.map(column => column.SourceIndex)).size !== preview.Columns.length
-    || !record(value) || value.Version !== 1 || value.ResultSha256 !== preview.ResultSha256
+    || !record(value) || value.Version !== (full ? 2 : 1) || value.ResultSha256 !== preview.ResultSha256
     || !Array.isArray(value.Rows) || !Array.isArray(preview.Rows) || value.Rows.length !== preview.Rows.length) return fail()
+  if (full && !request.Notes?.includes(CURRENT_VPARIVANIE_FULL_NOTE)) return fail()
+  if (full && Number(preview.Page.TotalVisibleRows) * (7 + preview.Columns.length) > 1000000) return fail()
   validateCurrentVparivanieColumns(preview.ColumnSchema as NativeReportPreview['ColumnSchema'], preview.Columns as NativeReportPreviewAxis[])
   const rowIds = new Set((preview.Rows as NativeReportPreviewAxis[]).map(row => row.SourceIndex))
   const seen = new Set<number>()
@@ -185,7 +187,7 @@ function normalizeCurrentVparivanieProducts(preview: Record<string, unknown>, re
     const display = Object.fromEntries(CURRENT_VPARIVANIE_PRODUCT_FIELDS.map(key => [key, row[key] === null ? null : attributionText(row[key])]))
     return { RowSourceIndex: row.RowSourceIndex, ...display } as CurrentVparivanieProduct
   })
-  return { Version: 1, ResultSha256: value.ResultSha256 as string, Rows: rows }
+  return { Version: full ? 2 : 1, ResultSha256: value.ResultSha256 as string, Rows: rows }
 }
 
 export function previewScalarText(value: NativeReportPreviewScalar | undefined): string {

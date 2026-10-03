@@ -5,7 +5,7 @@ import { agreementPriceComparisonConfigurationError } from '../data/agreementPri
 import { recordedSaleGrossProfitConfigurationError } from '../data/recordedSaleGrossProfit'
 import { dayOrganizationGrossProfitConfigurationError } from '../data/dayOrganizationGrossProfit'
 import { vparivanieConfigurationError } from '../data/vparivanie'
-import { currentVparivanieConfigurationError, currentVparivanieManagerReference } from '../data/currentVparivanie'
+import { currentVparivanieConfigurationError, currentVparivanieManagerReference, currentVparivanieFullScope } from '../data/currentVparivanie'
 import { cashPeriodConfigurationError } from '../data/cashPeriod'
 import { supplierBatchGrossProfitConfigurationError } from '../data/supplierBatchGrossProfit'
 import { importedSaleDiscountConfigurationError } from '../data/importedSaleDiscount'
@@ -58,7 +58,7 @@ export async function previewStockReport(body: ReportRequestBody): Promise<{ res
     query: { rowOffset: 0, rowLimit: 50 },
     body: request,
   })
-  const preview = normalizeNativeReportPreview(response)
+  const preview = normalizeNativeReportPreview(response, currentVparivanieFullScope(request))
   if (request.dataSource === 39 && (preview.Request?.DataSource !== 'NativeCurrentVparivanie' || !preview.CurrentVparivanieProducts))
     throw new Error('Сервер повернув результат іншого набору даних замість поточної матриці «Впарювання».')
   if (request.dataSource === 41 && preview.Request?.DataSource !== 'NativeSettlementPeriod')

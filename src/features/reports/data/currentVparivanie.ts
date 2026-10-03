@@ -3,7 +3,10 @@ import { revenueExactId } from './revenueComparison'
 
 export const CURRENT_VPARIVANIE_SOURCE = 39
 export const CURRENT_VPARIVANIE_UNASSIGNED_MANAGER = '00000000000000000000000000000000'
+export const CURRENT_VPARIVANIE_FULL_TITLE = 'Впарювання: повний вибір, поточні залишки та продажі GBA'
+export const CURRENT_VPARIVANIE_FULL_NOTE = 'Повний вибраний набір: усі сторінки прочитано до кінця в одному SQL Snapshot GBA.'
 export const CURRENT_VPARIVANIE_TITLE = 'Впарювання: поточні залишки та продажі GBA'
+export const isCurrentVparivanieTitle = (title: string): boolean => [CURRENT_VPARIVANIE_TITLE, CURRENT_VPARIVANIE_FULL_TITLE].includes(title)
 export const CURRENT_VPARIVANIE_PRODUCT_FIELDS = ['Article', 'Name', 'Description', 'Group', 'OE', 'Size', 'Top'] as const
 export const CURRENT_VPARIVANIE_PRODUCT_CAPTIONS = ['Артикул', 'Наименование', 'Описание', 'Группа', 'OE', 'Размер', 'Топ'] as const
 export const CURRENT_VPARIVANIE_COUNTERPARTY_IDENTITY = 'NativeClientOrFenixSourceGroupV1'
@@ -46,6 +49,25 @@ export function isCurrentVparivanieCapability(value: unknown): boolean {
     && (value.CounterpartyIdentity === undefined || value.CounterpartyIdentity === CURRENT_VPARIVANIE_COUNTERPARTY_IDENTITY)
 }
 
+/** Additive capability: the bounded version 1 declaration remains unchanged. */
+export function currentVparivanieFullScopeAvailable(dataset: ReportDataset | null | undefined): boolean {
+  const value = dataset?.currentVparivanie
+  return !!dataset && isCurrentVparivanieDataset(dataset) && record(value)
+    && value.FullScopeVersion === 1 && value.FullScopeContract === 'OneOurSnapshotCompleteSelectedScope'
+    && value.FullScopeMaximumRows === 500000 && value.FullScopeMaximumSelectedProducts === 4096
+    && value.FullScopeMaximumColumns === 256 && value.FullScopeMaximumAddressedCells === 1000000
+}
+
+export function currentVparivanieFullScope(data: ReportRequestBody): boolean {
+  const entries = Object.entries(data).filter(([key]) => key.toLowerCase() === 'currentvparivaniefullscope')
+  return entries.length === 1 && entries[0][1] === true
+}
+
+/** Keep stored aliases, including conflicting/invalid input, for explicit refusal. */
+export function cloneCurrentVparivanieFullScope(data: Record<string, unknown>): Partial<ReportRequestBody> {
+  return structuredClone(Object.fromEntries(Object.entries(data).filter(([key]) => key.toLowerCase() === 'currentvparivaniefullscope')))
+}
+
 /** Exact reference syntax, including Users.EmptyRef; server capability separately gates empty-manager use. */
 export function currentVparivanieManagerReference(raw: unknown): string | null {
   return record(raw) && typeof raw.Id === 'string' && /^[a-f\d]{32}$/i.test(raw.Id)
@@ -83,7 +105,13 @@ function validDate(value: string): boolean {
 
 /** Keeps bounded native identities exact; no catalogue or Source request is made here. */
 export function currentVparivanieConfigurationError(data: ReportRequestBody, dataset?: ReportDataset): string | null {
+  const modes = Object.entries(data).filter(([key]) => key.toLowerCase() === 'currentvparivaniefullscope')
+  if (modes.length && (modes.length !== 1 || modes[0][1] !== true || data.dataSource !== CURRENT_VPARIVANIE_SOURCE))
+    return 'Повний вибір доступний лише для поточної матриці «Впарювання»; перемикач має бути явно увімкнений.'
   if (data.dataSource !== CURRENT_VPARIVANIE_SOURCE) return null
+  const full = currentVparivanieFullScope(data)
+  if (full && dataset && !currentVparivanieFullScopeAvailable(dataset))
+    return 'Сервер поки не підтримує повний вибраний набір матриці «Впарювання».'
   if (dataset && !isCurrentVparivanieDataset(dataset)) return 'Сервер не підтвердив поточну матрицю «Впарювання».'
   if (!validDate(data.from) || !validDate(data.to) || data.from > data.to)
     return 'Оберіть коректний включний період продажів «Впарювання».'
@@ -105,7 +133,7 @@ export function currentVparivanieConfigurationError(data: ReportRequestBody, dat
     if (![1, 4, 5, 21, 60].includes(field) || fields.has(field) || selection.IsChecked === false
       || (selection.IsChecked != null && typeof selection.IsChecked !== 'boolean') || !Array.isArray(selection.Values)) return invalid
     const condition = selection.FilterCondition?.Type
-    const max = field === 1 ? 128 : field === 21 ? 32 : 1
+    const max = field === 1 ? (full ? 4096 : 128) : field === 21 ? 32 : 1
     if ((field === 4 ? condition !== 6 : field === 5 || field === 60 ? condition !== 0 : condition !== 0 && condition !== 2)
       || selection.Values.length < 1 || selection.Values.length > max
       || (condition === 0 && selection.Values.length !== 1)) return invalid

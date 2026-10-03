@@ -52,3 +52,34 @@ it('cancels a pending old-period read and never exposes it under a new period', 
   await waitFor(() => expect(screen.queryByText('9007199254740993.00000001')).toBeNull())
   expect((screen.getByRole('button', { name: 'Завантажити PDF' }) as HTMLButtonElement).disabled).toBe(true)
 })
+
+it('offers full scope only on the negotiated server and keeps it an explicit constructor choice', () => {
+  const onChange = vi.fn()
+  const fullDataset = { ...regionalDataset, currentVparivanie: { ...(regionalDataset.currentVparivanie as object),
+    FullScopeVersion: 1, FullScopeContract: 'OneOurSnapshotCompleteSelectedScope', FullScopeMaximumRows: 500000,
+    FullScopeMaximumSelectedProducts: 4096, FullScopeMaximumColumns: 256, FullScopeMaximumAddressedCells: 1000000 } }
+  const view = render(<MantineProvider env="test"><CurrentVparivanieRegionalPanel dataset={regionalDataset}
+    request={regionalRequest()} enabled disabled={false} fullScope={false} onFullScopeChange={onChange} /></MantineProvider>)
+  expect(screen.queryByRole('checkbox', { name: 'Повний вибраний набір товарів' })).toBeNull()
+  view.rerender(<MantineProvider env="test"><CurrentVparivanieRegionalPanel dataset={fullDataset}
+    request={regionalRequest()} enabled disabled={false} fullScope={false} onFullScopeChange={onChange} /></MantineProvider>)
+  fireEvent.click(screen.getByRole('checkbox', { name: 'Повний вибраний набір товарів' }))
+  expect(onChange).toHaveBeenCalledWith(true)
+})
+
+it('pages the same complete regional result locally and keeps later rows reachable', async () => {
+  vi.clearAllMocks()
+  const result = regionalResult(), row = result.Rows[0]
+  result.Rows = Array.from({ length: 55 }, (_, i) => ({ ...row, ProductId: String(i + 1), Article: `SKU${i}` }))
+  result.ProductCount = 55
+  vi.mocked(readCurrentVparivanieRegional).mockResolvedValue(result)
+  render(panel())
+  fireEvent.click(screen.getByRole('button', { name: 'Показати регіональну форму' }))
+  await screen.findByText('SKU0')
+  expect(screen.queryByText('SKU54')).toBeNull()
+  fireEvent.click(screen.getByRole('button', { name: 'Наступні рядки' }))
+  expect(screen.getByText('SKU54')).toBeTruthy()
+  expect(screen.queryByText('SKU0')).toBeNull()
+  expect(readCurrentVparivanieRegional).toHaveBeenCalledOnce()
+  expect((screen.getByRole('button', { name: 'Завантажити XLSX' }) as HTMLButtonElement).disabled).toBe(false)
+})

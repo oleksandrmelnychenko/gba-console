@@ -1,7 +1,7 @@
-import { Alert, Button, Group, Stack, Text } from '@mantine/core'
+import { Alert, Button, Checkbox, Group, Stack, Text } from '@mantine/core'
 import { useEffect, useRef, useState } from 'react'
 import { readCurrentVparivanieRegional } from '../api/currentVparivanieRegionalApi'
-import { CURRENT_VPARIVANIE_PRODUCT_CAPTIONS, currentVparivanieConfigurationError } from '../data/currentVparivanie'
+import { CURRENT_VPARIVANIE_PRODUCT_CAPTIONS, currentVparivanieConfigurationError, currentVparivanieFullScopeAvailable } from '../data/currentVparivanie'
 import { currentVparivanieV2CellKey, currentVparivanieV2Columns } from '../data/currentVparivanieV2Export'
 import { currentVparivanieRegionalAvailable, type CurrentVparivanieRegionalResult } from '../data/currentVparivanieRegional'
 import { currentRegionalCellText, currentRegionalColumnCaption, currentRegionalCsv,
@@ -16,11 +16,19 @@ function download(blob: Blob, filename: string) {
 }
 
 function RegionalTable({ result }: { result: CurrentVparivanieRegionalResult }) {
+  const [page, setPage] = useState(0)
   const columns = currentVparivanieV2Columns(result)
-  return <div className="report-inline-preview__scroll" tabIndex={0} role="region" aria-label="Регіональна форма Впарювання">
+  const currentPage = Math.min(page, Math.max(0, Math.ceil(result.Rows.length / 50) - 1))
+  const first = currentPage * 50
+  const visible = result.Rows.slice(first, first + 50)
+  return <Stack gap="xs"><Group>
+    <Button size="xs" variant="light" disabled={currentPage === 0} onClick={() => setPage(currentPage - 1)}>Попередні рядки</Button>
+    <Text size="xs">{result.Rows.length ? first + 1 : 0}–{first + visible.length} / {result.Rows.length}</Text>
+    <Button size="xs" variant="light" disabled={first + visible.length >= result.Rows.length} onClick={() => setPage(currentPage + 1)}>Наступні рядки</Button>
+  </Group><div className="report-inline-preview__scroll" tabIndex={0} role="region" aria-label="Регіональна форма Впарювання">
     <table><thead><tr>{CURRENT_VPARIVANIE_PRODUCT_CAPTIONS.map(caption => <th scope="col" key={caption}>{caption}</th>)}
       {columns.map(key => <th scope="col" key={key}>{currentRegionalColumnCaption(key)}</th>)}</tr></thead>
-      <tbody>{result.Rows.map(row => {
+      <tbody>{visible.map(row => {
         const cells = new Map(row.Cells.map(cell => [currentVparivanieV2CellKey(cell), cell]))
         return <tr key={row.ProductId}>
           {[row.Article, row.Name, row.Description, row.Group, row.OE, row.Size, row.Top].map((value, index) =>
@@ -28,11 +36,12 @@ function RegionalTable({ result }: { result: CurrentVparivanieRegionalResult }) 
           {columns.map(key => <td key={key}>{currentRegionalCellText(cells.get(key)) || '—'}</td>)}
         </tr>
       })}</tbody></table>
-  </div>
+  </div></Stack>
 }
 
-export function CurrentVparivanieRegionalPanel({ dataset, request, enabled, disabled }: {
+export function CurrentVparivanieRegionalPanel({ dataset, request, enabled, disabled, fullScope, onFullScopeChange }: {
   dataset: ReportDataset | null; request: ReportRequestBody; enabled: boolean; disabled: boolean
+  fullScope?: boolean; onFullScopeChange?: (value: boolean) => void
 }) {
   const requestKey = JSON.stringify(request)
   const currentKey = useRef(requestKey)
@@ -80,6 +89,10 @@ export function CurrentVparivanieRegionalPanel({ dataset, request, enabled, disa
   if (!available) return null
   return <section className="app-section-card" aria-label="Регіональна форма Впарювання">
     <Stack gap="sm"><Text component="h2" fw={600} size="sm">{CURRENT_REGIONAL_TITLE}</Text>
+      {onFullScopeChange && currentVparivanieFullScopeAvailable(dataset) ? <Checkbox label="Повний вибраний набір товарів"
+        description="Читаються всі рядки вибраної групи або товарів. Якщо форма завелика, звузьте відбір."
+        checked={fullScope ?? false} disabled={!enabled || disabled || busy || exporting}
+        onChange={event => onFullScopeChange(event.currentTarget.checked)} /> : null}
       <Text size="sm">Період і відбори — з конструктора. Окремий підсумок контрагентів та колонки регіональних кодів.</Text>
       <Group><Button loading={busy} disabled={!enabled || disabled || !!rejected || exporting} onClick={() => void read()}>
         Показати регіональну форму</Button>
@@ -88,7 +101,7 @@ export function CurrentVparivanieRegionalPanel({ dataset, request, enabled, disa
           {`Завантажити ${format.toUpperCase()}`}</Button>)}</Group>
       {error ? <Alert color="red">{error}</Alert> : null}
       {result ? <><Text size="xs" c="dimmed">Продажі: {result.From} — {result.To}. Залишки поточні.
-        Порожня клітинка — факт відсутній; ∅ — кількість невідома.</Text><RegionalTable result={result} /></> : null}
+        Порожня клітинка — факт відсутній; ∅ — кількість невідома.</Text><RegionalTable key={requestKey} result={result} /></> : null}
     </Stack>
   </section>
 }

@@ -1,5 +1,5 @@
 import type { ReportDataset, ReportRequestBody } from '../types'
-import { isCurrentVparivanieDataset } from './currentVparivanie'
+import { isCurrentVparivanieDataset, currentVparivanieFullScope, CURRENT_VPARIVANIE_FULL_NOTE } from './currentVparivanie'
 import { CURRENT_VPARIVANIE_V2_COLUMNS, type CurrentVparivanieV2Cell,
   type CurrentVparivanieV2Row } from './currentVparivanieV2'
 
@@ -8,6 +8,7 @@ export type CurrentRegionalSummary = {
   Filters: Array<{ Field: string; Condition: string; Values: string[] }>; Notes: string[]
 }
 export type CurrentVparivanieRegionalResult = {
+  FullScopeVersion?: 1
   Version: 3; From: string; To: string; StockAnchor: 'CurrentRecordedFree'
   ProductCount: number; StockFacts: number; SaleFacts: number; ReturnFacts: number; CounterpartyFacts: number
   Rows: CurrentVparivanieV2Row[]; Request: CurrentRegionalSummary
@@ -73,6 +74,10 @@ export function normalizeCurrentVparivanieRegional(value: unknown,
     || !Array.isArray(value.Request.Filters) || value.Request.Filters.some(filter => !object(filter)
       || typeof filter.Field !== 'string' || typeof filter.Condition !== 'string'
       || !Array.isArray(filter.Values) || filter.Values.some(item => typeof item !== 'string'))) fail()
+  const full = currentVparivanieFullScope(request)
+  if (full ? value.FullScopeVersion !== 1 || !value.Request.Notes.includes(CURRENT_VPARIVANIE_FULL_NOTE)
+    : Object.hasOwn(value, 'FullScopeVersion')) fail()
+  if (full && value.Rows.length > 500000) fail()
   const products = new Set<string>()
   let stockFacts = 0, salesFacts = 0, counterpartyFacts = 0
   const rows = value.Rows.map(raw => {
@@ -94,5 +99,10 @@ export function normalizeCurrentVparivanieRegional(value: unknown,
   })
   if (stockFacts !== value.StockFacts || salesFacts !== Number(value.SaleFacts) + Number(value.ReturnFacts)
     || counterpartyFacts !== value.CounterpartyFacts || counterpartyFacts > salesFacts) fail()
+  if (full) {
+    const codes = new Set(rows.flatMap(row => row.Cells.filter(item => item.Column === 'CounterpartyRegionCode').map(item => item.RegionCode)))
+    const columns = 10 + codes.size + (rows.some(row => row.Cells.some(item => item.Column === 'CounterpartyUnknown')) ? 1 : 0)
+    if (columns > 263 || rows.length * columns > 1000000) fail()
+  }
   return { ...value, Rows: rows } as CurrentVparivanieRegionalResult
 }

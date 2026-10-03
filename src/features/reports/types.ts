@@ -254,6 +254,8 @@ export type ReportSourceBuyerSubtreeCapabilities = {
 }
 
 export type ReportRequestBody = {
+  currentVparivanieFullScope?: unknown
+  CurrentVparivanieFullScope?: unknown
   dataSource?: number
   groupedSettlementPeriod?: unknown
   GroupedSettlementPeriod?: unknown

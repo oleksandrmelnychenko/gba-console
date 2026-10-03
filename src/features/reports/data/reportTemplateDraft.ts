@@ -5,7 +5,7 @@ import type { ReportRequestBody } from '../types'
 const managedFields = new Set([
   'dataSource', 'from', 'to', 'sorted', 'selections', 'valuationClientAgreementId',
   'agreementPriceComparison', 'AgreementPriceComparison',
-  'returnsOnly', 'ReturnsOnly',
+  'returnsOnly', 'ReturnsOnly', 'currentVparivanieFullScope', 'CurrentVparivanieFullScope',
   'paymentComparison', 'PaymentComparison', 'marginComparison', 'MarginComparison',
   'rateComparison', 'RateComparison', 'returnComparison', 'ReturnComparison',
   'buyerSalesShare', 'BuyerSalesShare', 'revenueComparison', 'RevenueComparison',
@@ -28,7 +28,7 @@ const managedFields = new Set([
 
 export function retainStoredTemplateFields(stored: ReportRequestBody, draft: ReportRequestBody): ReportRequestBody {
   const retained = Object.fromEntries(Object.entries(stored).filter(([key]) => !managedFields.has(key)
-    && key.toLowerCase() !== 'dayorganizationbasis' && key.toLowerCase() !== 'supplierbasis'
+    && key.toLowerCase() !== 'currentvparivaniefullscope' && key.toLowerCase() !== 'dayorganizationbasis' && key.toLowerCase() !== 'supplierbasis'
     && key.toLowerCase() !== 'pricetypesalescomparison'
     && key.toLowerCase() !== 'groupedcashperiod' && key.toLowerCase() !== 'groupedsettlementperiod' && key.toLowerCase() !== 'sourcecounterpartygroups'))
   const retainGroups = (axis: 'Row' | 'Col') => draft.sorted[axis].map(item => ({

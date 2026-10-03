@@ -1,4 +1,4 @@
-import { CURRENT_VPARIVANIE_TITLE } from './data/currentVparivanie'
+import { CURRENT_VPARIVANIE_TITLE, CURRENT_VPARIVANIE_FULL_TITLE, isCurrentVparivanieTitle } from './data/currentVparivanie'
 import { currentVparivanieDisplayHeader, isCurrentVparivanieSheet, validateCurrentVparivanieSheet } from './data/currentVparivanieSpreadsheet'
 import { AGREEMENT_PRICES_TITLE, AGREEMENT_PRICES_CAPTION, AGREEMENT_PRICES_NOTE_PREFIXES } from './data/agreementPrices'
 import { isAgreementPricesSheet, prepareAgreementPricesRows, validateAgreementPricesAttribution, validateAgreementPricesHeader, validateAgreementPricesSheet } from './data/agreementPricesSpreadsheet'
@@ -47,7 +47,7 @@ const HEADER_LEVEL_SEPARATOR = ' · '
 const STOCK_STATE_LINE = 'Поточний стан: знімок операційних записів GBA'
 const STOCK_READ_TIME_LINE = /^Час читання \(UTC\): \d{2}\.\d{2}\.\d{4} \d{2}:\d{2}:\d{2}\.\d{3} – \d{2}\.\d{2}\.\d{4} \d{2}:\d{2}:\d{2}\.\d{3}$/
 const SUPPLIER_RETURN_PERIOD_LINE = /^Період: \d{2}\.\d{2}\.\d{4} – \d{2}\.\d{2}\.\d{4}$/
-const REPORT_TITLES = new Set([CURRENT_VPARIVANIE_TITLE,PAYMENT_COMPARISON_TITLE, MARGIN_COMPARISON_TITLE, RATE_COMPARISON_TITLE, RETURN_COMPARISON_TITLE, BUYER_SALES_SHARE_TITLE, REVENUE_COMPARISON_TITLE, XYZ_TITLE, 'Звіт продажів', 'Звіт продажів і повернень', 'Звіт надходжень', SUPPLIER_RETURN_REPORT_TITLE, CLIENT_ACTIVITY_REPORT_TITLE, CLIENT_COMPARISON_TITLE, IMPORTED_PAYMENTS_TITLE, ...CURRENT_REPORT_TITLES])
+const REPORT_TITLES = new Set([CURRENT_VPARIVANIE_TITLE,CURRENT_VPARIVANIE_FULL_TITLE,PAYMENT_COMPARISON_TITLE, MARGIN_COMPARISON_TITLE, RATE_COMPARISON_TITLE, RETURN_COMPARISON_TITLE, BUYER_SALES_SHARE_TITLE, REVENUE_COMPARISON_TITLE, XYZ_TITLE, 'Звіт продажів', 'Звіт продажів і повернень', 'Звіт надходжень', SUPPLIER_RETURN_REPORT_TITLE, CLIENT_ACTIVITY_REPORT_TITLE, CLIENT_COMPARISON_TITLE, IMPORTED_PAYMENTS_TITLE, ...CURRENT_REPORT_TITLES])
 const clientCountFormatter = new Intl.NumberFormat('uk-UA', { maximumFractionDigits: 0 })
 const clientCountCsvFormatter = new Intl.NumberFormat('en-US', { useGrouping: false, maximumFractionDigits: 0 })
 export const stockQuantityFormatter = new Intl.NumberFormat('uk-UA', { maximumFractionDigits: 8 })
@@ -78,7 +78,7 @@ export function supportsSpreadsheetDateFilters(sheet: SpreadsheetSheet | null): 
 export function getSpreadsheetNumberFormatter(sheet: SpreadsheetSheet | null, columnIndex: number, csv = false): Intl.NumberFormat | undefined {
   if (!sheet?.header || columnIndex < sheet.header.rowGroupings.length) return undefined
   const title = sheet.header.lines[0], caption = sheet.columns[columnIndex]?.split(HEADER_LEVEL_SEPARATOR).at(-1)
-  if (title === CURRENT_VPARIVANIE_TITLE) return caption === 'Результат' ? (csv ? stockCsvQuantityFormatter : stockQuantityFormatter) : undefined
+  if (isCurrentVparivanieTitle(title)) return caption === 'Результат' ? (csv ? stockCsvQuantityFormatter : stockQuantityFormatter) : undefined
   if (title === AGREEMENT_PRICES_TITLE) return caption === AGREEMENT_PRICES_CAPTION ? (csv ? debtCsvAmountFormatter : debtAmountFormatter) : undefined
   if (title === PAYMENT_COMPARISON_TITLE) return paymentComparisonColumn(caption) < 0 ? undefined : paymentComparisonColumn(caption) === 3 ? (csv ? valuationCsvMoneyFormatter : valuationMoneyFormatter) : (csv ? paymentCsvMoneyFormatter : paymentMoneyFormatter)
   if (title === MARGIN_COMPARISON_TITLE) return marginComparisonColumn(caption) >= 0 ? (csv ? valuationCsvMoneyFormatter : valuationMoneyFormatter) : undefined
@@ -180,7 +180,7 @@ export function buildSpreadsheetSheet(name: string, rows: SpreadsheetCellValue[]
     // measure with no answer and must stay empty. Only the row-field columns may be carried, and there are
     // exactly as many of them as the block names in «Рядки».
     rows: reportHeader?.header.lines[0] === PAYMENT_COMPARISON_TITLE ? buildPaymentComparisonBodyRows(tableRows.slice(headerRowCount))
-      : buildBodyRows(tableRows.slice(headerRowCount), isReport && reportHeader?.header.lines[0] !== CURRENT_VPARIVANIE_TITLE, format === 'flat' ? 0 : reportHeader?.header.rowGroupings.length),
+      : buildBodyRows(tableRows.slice(headerRowCount), isReport && !isCurrentVparivanieTitle(reportHeader?.header.lines[0] ?? ''), format === 'flat' ? 0 : reportHeader?.header.rowGroupings.length),
   })))))))), format)
   return validateCurrentVparivanieSheet(validateAgreementPricesSheet(validatePaymentComparisonSheet(sheet)))
 }
@@ -331,7 +331,7 @@ export function detectDelimiter(text: string): ',' | '\t' | ';' {
 
 export function parseDelimitedText(text: string, delimiter: string): SpreadsheetCellValue[][] {
   const clean = text.replace(/^\uFEFF/, '')
-  const currentMatrix = parseDelimitedLine(clean.split(/\r?\n/, 1)[0] ?? '', delimiter)[0]?.trim() === CURRENT_VPARIVANIE_TITLE
+  const currentMatrix = isCurrentVparivanieTitle(parseDelimitedLine(clean.split(/\r?\n/, 1)[0] ?? '', delimiter)[0]?.trim() ?? '')
   // The seven display attributes remain text, including digit-only articles and sizes.
   // This route also retains quoted multiline descriptions in our own exported CSV.
   const records = currentMatrix ? currentVparivanieCsvRecords(clean) : clean.split(/\r?\n/)

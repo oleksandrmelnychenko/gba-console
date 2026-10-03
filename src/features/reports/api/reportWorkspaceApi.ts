@@ -4,7 +4,7 @@ import { agreementPriceComparisonConfigurationError, cloneAgreementPriceComparis
 import { recordedSaleGrossProfitConfigurationError } from '../data/recordedSaleGrossProfit'
 import { dayOrganizationGrossProfitConfigurationError } from '../data/dayOrganizationGrossProfit'
 import { vparivanieConfigurationError } from '../data/vparivanie'
-import { currentVparivanieConfigurationError, isCurrentVparivanieDataset } from '../data/currentVparivanie'
+import { currentVparivanieConfigurationError, isCurrentVparivanieDataset, cloneCurrentVparivanieFullScope } from '../data/currentVparivanie'
 import { cloneGroupedCashAliases, normalizeGroupedCashDataset } from '../data/groupedCashPeriod'
 import { cashPeriodConfigurationError, isCashPeriodDataset } from '../data/cashPeriod'
 import { supplierBatchGrossProfitConfigurationError } from '../data/supplierBatchGrossProfit'
@@ -135,6 +135,8 @@ type WireTemplate = Required<Omit<ReportTemplate, 'Data'>> & {
     Sorted: ReportRequestBody['sorted']
     Selections: ReportRequestBody['selections']
     DataSource: ReportRequestBody['dataSource']
+    CurrentVparivanieFullScope?: unknown
+    currentVparivanieFullScope?: unknown
     ReturnsOnly?: boolean
     returnsOnly?: boolean
     SettlementPeriod?: unknown
@@ -211,6 +213,7 @@ export function normalizeSavedTemplate(value: WireTemplate): ReportTemplate {
     sorted: (value.Data.DataSource === 16 || value.Data.DataSource === 17 || value.Data.DataSource === 18 || value.Data.DataSource === 19 || value.Data.DataSource === 20 || value.Data.DataSource === 21 || value.Data.DataSource === 27) ? structuredClone(value.Data.Sorted) : value.Data.Sorted,
     selections: (value.Data.DataSource === 16 || value.Data.DataSource === 17 || value.Data.DataSource === 18 || value.Data.DataSource === 19 || value.Data.DataSource === 20 || value.Data.DataSource === 21 || value.Data.DataSource === 27) ? structuredClone(value.Data.Selections ?? []) : value.Data.Selections ?? [],
     dataSource: value.Data.DataSource,
+    ...cloneCurrentVparivanieFullScope(value.Data),
     ...(Object.hasOwn(value.Data, 'returnsOnly') ? { returnsOnly: value.Data.returnsOnly }
       : Object.hasOwn(value.Data, 'ReturnsOnly') ? { returnsOnly: value.Data.ReturnsOnly } : {}),
     ...(Object.hasOwn(value.Data, 'settlementPeriod') ? { settlementPeriod: structuredClone(value.Data.settlementPeriod),
