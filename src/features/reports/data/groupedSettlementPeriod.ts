@@ -3,6 +3,7 @@ import { formatKyivBusinessDate } from '../../../shared/date/dateTime'
 import { EXACT_ONE_C_BUYER_ROOT_ID } from './oneCTurnoverReport'
 import { readFilterExpressionCapabilities, reportFilterExpressionError } from './reportFilterExpression'
 import { revenueExactId } from './revenueComparison'
+import { settlementAttributeKey } from './settlementSourceAttributes'
 import { previousKyivDay } from './cashPeriod'
 import { sourceCounterpartyGroupsConfigurationError } from './sourceCounterpartyGroups'
 
@@ -22,6 +23,7 @@ export type GroupedSettlementPeriod = { Version: 1; SourceWorld: 'Fenix' | 'Amg'
 export type GroupedSettlementCapability = {
   Version: 1; MaximumDays: 31; CurrencyBasis: 'SettlementCurrency'; UsesCurrentNativeBuyerAgreements: true
   UsesCurrentNativeSupplierAgreements?: true
+  SourceAttributeWorlds?: ['Fenix']; AdditionalFields?: ['Основний менеджер покупця', 'Код по региону']
   PreservesUnavailableValues: true; RequiresCommonSourceObservation: false; CurrentDaySupported: true
   SourceWorlds: ['Fenix', 'Amg']; RowLayouts: number[][]; Measurements: number[]; Filters: number[]
   FilterExpression: ReportFilterExpressionCapabilities
@@ -66,9 +68,17 @@ export const defaultGroupedSettlementBuyer = (): ReportSourceBuyerSubtree => ({
 export function groupedSettlementCapability(value: unknown): GroupedSettlementCapability | null {
   const supplier = record(value) ? aliases(value, 'UsesCurrentNativeSupplierAgreements') : []
   if (supplier.length > 1) return null
-  const normalized = fields(value, supplier.length ? [...capabilityFields, 'UsesCurrentNativeSupplierAgreements'] : capabilityFields)
+  const attributes = record(value) ? aliases(value, 'SourceAttributeWorlds') : []
+  if (attributes.length > 1) return null
+  const names: readonly string[] = [...capabilityFields, ...(supplier.length ? ['UsesCurrentNativeSupplierAgreements'] : []),
+    ...(attributes.length ? ['SourceAttributeWorlds', 'AdditionalFields'] : [])]
+  const normalized = fields(value, names)
+  if (attributes.length && (!supplier.length || !normalized || !Array.isArray(normalized.SourceAttributeWorlds)
+    || normalized.SourceAttributeWorlds.join(',') !== 'Fenix' || !Array.isArray(normalized.AdditionalFields)
+    || normalized.AdditionalFields.join('|') !== 'Основний менеджер покупця|Код по региону')) return null
   if (supplier.length && normalized?.UsesCurrentNativeSupplierAgreements !== true) return null
-  const filters = supplier.length ? GROUPED_SETTLEMENT_SUPPLIER_FILTERS : GROUPED_SETTLEMENT_FILTERS
+  const filters = attributes.length ? [...GROUPED_SETTLEMENT_SUPPLIER_FILTERS, 60, 61]
+    : supplier.length ? GROUPED_SETTLEMENT_SUPPLIER_FILTERS : GROUPED_SETTLEMENT_FILTERS
   if (!normalized || normalized.Version !== 1 || normalized.MaximumDays !== 31
     || normalized.CurrencyBasis !== 'SettlementCurrency' || normalized.UsesCurrentNativeBuyerAgreements !== true
     || normalized.PreservesUnavailableValues !== true || normalized.RequiresCommonSourceObservation !== false
@@ -117,7 +127,9 @@ export function isGroupedSettlementDataset(dataset?: ReportDataset): boolean {
 export function settlementFormDataset(dataset: ReportDataset | undefined, selector: unknown): ReportDataset | undefined {
   if (dataset?.DataSource !== 41) return dataset
   const cap = groupedSettlementCapability(dataset.groupedSettlementPeriod)
-  return selector != null && cap ? { ...dataset, FilterExpression: cap.FilterExpression }
+  return selector != null && cap ? { ...dataset, FilterExpression: cap.FilterExpression,
+    Filters: groupedSettlementPeriod(selector)?.SourceWorld === 'Fenix' ? dataset.Filters
+      : dataset.Filters.filter(field => ![60, 61].includes(field.Type)) }
     : { ...dataset, Filters: [], FilterExpression: undefined }
 }
 
@@ -174,12 +186,14 @@ export function groupedSettlementConfigurationError(data: ReportRequestBody, dat
     return 'Оберіть організацію → валюту → контрагента або організацію → контрагента та чотири показники залишків і руху.'
   const cap = groupedSettlementCapability(dataset?.groupedSettlementPeriod)
   // Without a catalogue argument, validate the native wire fields; the server remains final authority.
-  const filters = cap?.Filters ?? GROUPED_SETTLEMENT_SUPPLIER_FILTERS
+  const filters = cap?.Filters ?? [...GROUPED_SETTLEMENT_SUPPLIER_FILTERS, 60, 61]
   const allowedFilters = new Set<number>(filters)
   if (!Array.isArray(data.selections) || data.selections.some(selection => selection?.IsChecked !== false
     && (!allowedFilters.has(selection?.SelectedField?.Type)
       || ![0, 1, 2, 4].includes(selection?.FilterCondition?.Type) || !Array.isArray(selection?.Values)
-      || !selection.Values.length || selection.Values.some(value => revenueExactId(value?.Data) === null))))
+      || !selection.Values.length || selection.Values.some(value => [60, 61].includes(selection.SelectedField.Type)
+        ? selector.SourceWorld !== 'Fenix' || settlementAttributeKey(selection.SelectedField.Type, value?.Data) === null
+        : revenueExactId(value?.Data) === null))))
     return 'Оберіть точні організації, покупців, постачальників, їхні договори або валюти з поточних списків.'
   const buyerKeys = aliases(data, 'SourceBuyerSubtree')
   if (buyerKeys.length > 1) return 'Відбір групи покупців задано двічі.'

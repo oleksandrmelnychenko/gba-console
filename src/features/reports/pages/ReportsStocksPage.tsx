@@ -104,7 +104,7 @@ import { availableBug1274WorkbookLaunches } from '../data/bug1274WorkbookLaunch'
 import { CashPeriodModePanel } from './CashPeriodModePanel'
 import { cashFormDataset, defaultGroupedCashPeriod, requestGroupedCashPeriod } from '../data/groupedCashPeriod'
 import { SettlementPeriodModePanel } from './SettlementPeriodModePanel'
-import { groupedWorkbookRequest, requestGroupedSettlementPeriod, settlementFormDataset, settlementMaximumDate, settlementModePatch } from '../data/groupedSettlementPeriod'
+import { groupedSettlementPeriod as parseGroupedSettlementPeriod, groupedWorkbookRequest, requestGroupedSettlementPeriod, settlementFormDataset, settlementMaximumDate, settlementModePatch } from '../data/groupedSettlementPeriod'
 import { requestSourceCounterpartyGroups } from '../data/sourceCounterpartyGroups'
 import { requiresValuationAgreement } from '../data/reportValuation'
 import { useValuationAgreement } from '../hooks/useValuationAgreement'
@@ -1076,7 +1076,9 @@ function ReportsStocksWorkspace({ ownerId, constructorMode }: { ownerId: string 
         lookupTo={hasLookupPeriod ? debouncedTo : ''}
         lookupProvidedDiscountBasis={currentProvidedDiscountLookupBasis(dataSource, oneCSpecialSettings, dataset)}
         lookupSalesBasis={currentPriceTypeSalesLookupBasis(dataSource, priceTypeSalesComparison, dataset?.priceTypeSalesComparison)}
-        lookupSourceWorld={typeof oneCSpecialSettings === 'object' && oneCSpecialSettings !== null && 'SourceWorld' in oneCSpecialSettings
+        lookupSourceWorld={dataSource === 41 ? parseGroupedSettlementPeriod(groupedSettlementPeriod)?.SourceWorld === 'Fenix' ? 1
+          : parseGroupedSettlementPeriod(groupedSettlementPeriod)?.SourceWorld === 'Amg' ? 2 : undefined
+          : typeof oneCSpecialSettings === 'object' && oneCSpecialSettings !== null && 'SourceWorld' in oneCSpecialSettings
           && (oneCSpecialSettings.SourceWorld === 1 || oneCSpecialSettings.SourceWorld === 2) ? oneCSpecialSettings.SourceWorld : undefined}
         maxDate={maxDate}
         measurements={measurements}
@@ -1581,7 +1583,7 @@ type LegacyReportBuilderProps = {
 
 const fixedAxesDescription: Partial<Record<number, string>> = {
   41: 'Організація → Валюта → Контрагент → Договір. Один точний договір і чотири показники у валюті взаєморозрахунків; структура фіксована.',
-  40: 'Організація → Рахунок → Валютний запис → Валюта. Початок, надходження, витрати й кінець у валюті рахунку; структура фіксована.',
+  40: 'Організація → Рахунок → Валютний запис → Валюта або Рахунок → Тип → Організація. Початок, надходження, витрати й кінець у валюті рахунку.',
   39: `Товар → сім атрибутів. Колонки: Остатки, Продажи та Контрагенты; один показник «Результат». ${CURRENT_VPARIVANIE_NOTICE}`,
   15: 'Клас XYZ → Товар. Показники у стовпцях; структура цього звіту фіксована.',
   16: 'Клієнт → Договір. Показники у стовпцях; структура цього звіту фіксована.',
@@ -2857,6 +2859,8 @@ async function loadSelectionLookupOptions(
 ): Promise<ReportEntity[]> {
   if (usesNativeReportLookup(dataSource)) {
     const params = { limit: LOOKUP_SEARCH_LIMIT, offset: 0, value }
+    if (dataSource === 41 && [60, 61].includes(fieldType))
+      return searchDatasetReportValues(dataSource, fieldType, params, signal, lookupSourceWorld)
     if (dataSource === 27 && lookupSalesBasis === 0)
       return searchDatasetReportValues(dataSource, fieldType, params, signal, undefined, 0)
     if (dataSource === 24 && lookupProvidedDiscountBasis === 0)
@@ -2967,7 +2971,7 @@ function createSelectedValue(entity: ReportEntity, dataSource?: number): ReportS
   return {
     Data: entity,
     Name: getEntityDisplayName(entity),
-    Value: (dataSource === 16 || dataSource === 17 || dataSource === 18 || dataSource === 20 || dataSource === 21 || dataSource === 23 || dataSource === 24 || dataSource === 25 || dataSource === 28 || dataSource === 39) ? 0 : getReportEntityNumericValue(entity),
+    Value: (dataSource === 16 || dataSource === 17 || dataSource === 18 || dataSource === 20 || dataSource === 21 || dataSource === 23 || dataSource === 24 || dataSource === 25 || dataSource === 28 || dataSource === 39 || dataSource === 41) ? 0 : getReportEntityNumericValue(entity),
   }
 }
 

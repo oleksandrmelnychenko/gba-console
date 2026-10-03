@@ -1,3 +1,4 @@
+import { readSettlementCounterpartyAttributes, type SettlementCounterpartyAttributes } from './settlementSourceAttributes'
 import { CURRENT_VPARIVANIE_PRODUCT_FIELDS } from './currentVparivanie'
 import { validateCurrentVparivanieColumns } from './currentVparivanieColumns'
 
@@ -36,6 +37,7 @@ export type NativeReportPreview = {
   Columns: NativeReportPreviewAxis[]
   Cells: NativeReportPreviewCell[]
   CurrentVparivanieProducts?: CurrentVparivanieProducts
+  SettlementCounterpartyAttributes?: SettlementCounterpartyAttributes
 }
 
 const record = (value: unknown): value is Record<string, unknown> => !!value && typeof value === 'object' && !Array.isArray(value)
@@ -149,8 +151,13 @@ export function normalizeNativeReportPreview(response: unknown): NativeReportPre
     coordinates.add(coordinate)
   }
   const request = normalizeRequest(preview.Request)
+  const attributes = readSettlementCounterpartyAttributes(preview.SettlementCounterpartyAttributes,
+    preview.ResultSha256 as string, (preview.Rows as NativeReportPreviewAxis[]).map(row => row.SourceIndex))
+  if (attributes && (request?.DataSource !== 'NativeSettlementPeriod'
+    || (preview.RowSchema as { Identity?: string }[]).at(-1)?.Identity !== 'SettlementCounterparty'))
+    throw new Error('Реквізити покупця не відповідають набору взаєморозрахунків.')
   const productDisplay = normalizeCurrentVparivanieProducts(preview, request)
-  return { ...preview, Request: request, ...(productDisplay ? { CurrentVparivanieProducts: productDisplay } : {}) } as NativeReportPreview
+  return { ...preview, Request: request, ...(productDisplay ? { CurrentVparivanieProducts: productDisplay } : {}), ...(attributes ? { SettlementCounterpartyAttributes: attributes } : {}) } as NativeReportPreview
 }
 
 function normalizeCurrentVparivanieProducts(preview: Record<string, unknown>, request: NativeReportPreviewRequest | null): CurrentVparivanieProducts | undefined {

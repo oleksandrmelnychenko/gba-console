@@ -1,3 +1,4 @@
+import { settlementAttributeKey } from '../data/settlementSourceAttributes'
 import { settlementPeriodConfigurationError } from '../data/settlementPeriod'
 import { agreementPricesConfigurationError } from '../data/agreementPrices'
 import { agreementPriceComparisonConfigurationError } from '../data/agreementPriceComparison'
@@ -132,20 +133,23 @@ export async function searchDatasetReportValues(dataSource: number, field: numbe
     throw new Error('Некоректна основа довідника продажів.')
   if (dataSource === 27 && salesBasis === 0 && ![46, 51, 52, 45].includes(field))
     throw new Error('Цей відбір поточних продажів недоступний.')
-  if (dataSource === 41 && ![0, 6, 9, 17, 18, 30].includes(field))
+  if (dataSource === 41 && ![0, 6, 9, 17, 18, 30, 60, 61].includes(field))
     throw new Error('Цей відбір групових взаєморозрахунків недоступний.')
   if (dataSource === 40 && ![29, 30, 32, 33].includes(field)) throw new Error('Цей відбір рахунків недоступний.')
   if (dataSource === 39 && ![1, 4, 5, 21, 60].includes(field))
     throw new Error('Цей відбір поточної матриці «Впарювання» недоступний.')
   if ([23, 24, 25, 28].includes(dataSource) && !(sourceWorld === 1 || (dataSource !== 28 && sourceWorld === 2)))
     throw new Error('Оберіть базу Fenix або AMG для довідника звіту 1С.')
+  if (dataSource === 41 && [60, 61].includes(field) && sourceWorld !== 1)
+    throw new Error('Джерельні реквізити покупців доступні лише для Fenix.')
   const result = await apiRequest<unknown>('/report/datasets/lookup', {
     query: { dataSource, field, value: params.value.trim(), offset: params.offset, limit: params.limit,
-      ...([23, 24, 25, 28].includes(dataSource) ? { sourceWorld } : {}),
+      ...([23, 24, 25, 28].includes(dataSource) || dataSource === 41 && [60, 61].includes(field) ? { sourceWorld } : {}),
       ...(dataSource === 27 && salesBasis !== undefined ? { salesBasis } : {}),
       ...(dataSource === 24 && providedDiscountBasis !== undefined ? { providedDiscountBasis } : {}) }, signal,
   })
-  if (!Array.isArray(result) || !result.every(item => item && typeof item === 'object' && (dataSource === 39 && field === 60
+  if (!Array.isArray(result) || !result.every(item => item && typeof item === 'object' && (dataSource === 41 && [60, 61].includes(field) ? settlementAttributeKey(field, item) === item.Id
+    : dataSource === 39 && field === 60
     ? typeof item.Id === 'string' && currentVparivanieManagerReference(item) === item.Id
     : dataSource === 27
     ? priceTypeSalesSourceId(item.Id) !== null
@@ -159,6 +163,8 @@ export async function searchDatasetReportValues(dataSource: number, field: numbe
       ? typeof item.Id === 'string' && revenueExactId(item) !== null
       : (dataSource === 16 || dataSource === 17) ? revenueExactId(item) !== null : Number.isSafeInteger(item.Id) && item.Id > 0)
     && typeof item.Name === 'string' && item.Name.trim().length > 0)) throw new Error('Сервер повернув некоректні значення відбору звіту.')
+  if (dataSource === 41 && [60, 61].includes(field) && new Set(result.map(item => item.Id)).size !== result.length)
+    throw new Error('Сервер повернув неоднозначні реквізити покупця.')
   if (dataSource === 39 && field === 60 && new Set(result.map(item => item.Id)).size !== result.length)
     throw new Error('Сервер повернув неоднозначні джерельні реквізити менеджерів покупців.')
   if (dataSource === 19 && (new Set(result.map(item => item.Id)).size !== result.length || result.some(item => !item.Name.trim()))) throw new Error('Сервер повернув неоднозначні серії курсів.')

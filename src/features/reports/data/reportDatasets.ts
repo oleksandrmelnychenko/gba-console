@@ -116,6 +116,7 @@ FILTER_KEYS.set(52, 'OneCPriceComparisonClient')
 FILTER_KEYS.set(53, 'OneCPriceComparisonProject')
 FILTER_KEYS.set(54, 'OneCPriceComparisonDivision')
 FILTER_KEYS.set(60, 'SourceBuyerManager')
+FILTER_KEYS.set(61, 'SourceBuyerRegionCode')
 
 export function datasetGroupings(dataset: ReportDataset | undefined): ReportGroupingItem[] {
   return dataset?.Groupings.map(field => ({ key: GROUPING_KEYS.get(field.Type) ?? field.Name, label: field.Name, type: field.Type })) ?? []

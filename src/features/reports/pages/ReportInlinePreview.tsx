@@ -1,3 +1,4 @@
+import { settlementAttributeText } from '../data/settlementSourceAttributes'
 import { Alert, Badge, Stack, Text } from '@mantine/core'
 import { previewScalarText, type NativeReportPreview, type NativeReportPreviewFilter, type NativeReportPreviewRequest } from '../data/nativeReportPreview'
 import { CURRENT_VPARIVANIE_PRODUCT_CAPTIONS, CURRENT_VPARIVANIE_PRODUCT_FIELDS } from '../data/currentVparivanie'
@@ -7,8 +8,11 @@ import './report-inline-preview.css'
 export function ReportInlinePreview({ preview }: { preview: NativeReportPreview }) {
   const cells = new Map(preview.Cells.map(cell => [`${cell.RowSourceIndex}:${cell.ColumnSourceIndex}`, cell.Value]))
   const products = preview.CurrentVparivanieProducts
+  const attributes = preview.SettlementCounterpartyAttributes
+  const attributeRows = new Map(attributes?.Rows.map(row => [row.RowSourceIndex, row]))
   const productRows = new Map(products?.Rows.map(row => [row.RowSourceIndex, row]))
-  const rowHeaders = products ? CURRENT_VPARIVANIE_PRODUCT_CAPTIONS : preview.RowSchema.map((level, index) => level.Caption || `Рівень ${index + 1}`)
+  const rowHeaders = products ? CURRENT_VPARIVANIE_PRODUCT_CAPTIONS : [...preview.RowSchema.map((level, index) => level.Caption || `Рівень ${index + 1}`),
+    ...(attributes ? ['Основний менеджер покупця', 'Код по региону'] : [])]
   return <section className="app-section-card report-inline-preview" aria-label="Попередній перегляд звіту">
     <div className="report-inline-preview__heading">
       <Text component="h2" fw={600} size="sm">Дані звіту</Text>
@@ -29,7 +33,8 @@ export function ReportInlinePreview({ preview }: { preview: NativeReportPreview 
         <tbody>{preview.Rows.map(row => <tr key={row.SourceIndex}>
           {rowHeaders.map((header, index) => <th scope="row" key={header}>{products
             ? productRows.get(row.SourceIndex)?.[CURRENT_VPARIVANIE_PRODUCT_FIELDS[index]] ?? '—'
-            : row.Values[index]?.Caption ?? '—'}</th>)}
+            : index < preview.RowSchema.length ? row.Values[index]?.Caption ?? '—'
+              : settlementAttributeText(attributeRows.get(row.SourceIndex), index === preview.RowSchema.length ? 'manager' : 'region')}</th>)}
           {preview.Columns.map(column => {
             const value = cells.get(`${row.SourceIndex}:${column.SourceIndex}`)
             return <td key={column.SourceIndex} title={value === undefined ? 'Клітинка відсутня' : value.Kind === 'null' ? 'Явне значення NULL' : undefined}>
