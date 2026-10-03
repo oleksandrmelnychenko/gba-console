@@ -84,9 +84,11 @@ export function normalizeWarehouseQuantity(v: unknown, request: WarehouseQuantit
       || request.Products.length && !request.Products.includes(row.Product as string)) return invalid()
     products.add(row.Product as string); const receipts = new Set<string>(); const parts: WarehouseQuantity[] = []
     for (const child of row.Receipts) {
-      if (!object(child) || !receipt(child.Receipt) || receipts.has(JSON.stringify(child.Receipt)) || typeof child.Caption !== 'string'
+      if (!object(child) || !receipt(child.Receipt)) return invalid()
+      const receiptKey = JSON.stringify([child.Receipt.Type, child.Receipt.Table, child.Receipt.Reference])
+      if (receipts.has(receiptKey) || typeof child.Caption !== 'string'
         || !child.Caption.trim() || child.CaptionAvailable !== false || !quantity(child.Quantity)) return invalid()
-      receipts.add(JSON.stringify(child.Receipt)); parts.push(child.Quantity); if (++grains > 200_000) return invalid()
+      receipts.add(receiptKey); parts.push(child.Quantity); if (++grains > 200_000) return invalid()
     }
     if (!sameTotal(row.Quantity, parts)) return invalid()
   }

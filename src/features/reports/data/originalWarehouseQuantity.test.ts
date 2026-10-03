@@ -72,6 +72,13 @@ describe('exact warehouse quantity period delivery', () => {
     value.Rows[0].Receipts.push(child)
     expect(() => normalizeWarehouseQuantity(value, request)).toThrow()
   })
+  it('rejects a duplicate receipt tuple with reordered properties even when all totals match', () => {
+    const value = result(), child = structuredClone(value.Rows[0].Receipts[0])
+    child.Receipt = { Reference: child.Receipt.Reference, Table: child.Receipt.Table, Type: child.Receipt.Type }
+    child.Quantity = { Opening: '0.000', Incoming: '0.000', Outgoing: '0.000', Closing: '0.000' }
+    value.Rows[0].Receipts.push(child)
+    expect(() => normalizeWarehouseQuantity(value, request)).toThrow()
+  })
   it('every export uses the same complete matrix including exact totals and caption gaps', () => {
     const accepted = normalizeWarehouseQuantity(result(), request), matrix = warehouseQuantityMatrix(accepted), pdf = warehouseQuantityPdfDefinition(accepted)
     expect(matrix).toHaveLength(4); expect(matrix.at(-1)?.slice(2)).toEqual(Object.values(quantity))
