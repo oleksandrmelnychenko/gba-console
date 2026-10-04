@@ -29,7 +29,7 @@ it('transferred complete empty result keeps an active receipt removable with its
   fireEvent.click(await screen.findByRole('option', { name: pointCaption })); fireEvent.click(screen.getByRole('button', { name: 'Сформувати' }))
   await screen.findByText('У повністю перевіреному періоді рядків немає.')
   expect((screen.getByRole('combobox', { name: 'Документи надходження' }) as HTMLInputElement).disabled).toBe(false)
-  expect(screen.getByText(pointCaption)).toBeTruthy(); expect(screen.queryByText(pointReceipt.Reference)).toBeNull()
+  expect(screen.getByText(pointCaption, { selector: '.mantine-MultiSelect-pill .mantine-Pill-label' })).toBeTruthy(); expect(screen.queryByText(pointReceipt.Reference)).toBeNull()
   fireEvent.click(screen.getByRole('button', { name: 'Очистити відбір документів' })); fireEvent.click(screen.getByRole('button', { name: 'Сформувати' }))
   await waitFor(() => expect(readTransferred).toHaveBeenCalledTimes(3)); expect(vi.mocked(readTransferred).mock.calls[2][0].Receipts).toEqual([])
 })

@@ -19,12 +19,12 @@ it('shared receipt controls retain genuine selected labels after incomplete and 
   await waitFor(() => expect(screen.getByLabelText('Кількість вибраних документів').textContent).toBe('1'))
   view.rerender(<Harness context={incompletePointContext()} />)
   expect((screen.getByRole('combobox', { name: 'Документи надходження' }) as HTMLInputElement).disabled).toBe(false)
-  expect(screen.getByText(pointCaption)).toBeTruthy(); expect(screen.queryByText(pointReceipt.Reference)).toBeNull()
+  expect(screen.getByText(pointCaption, { selector: '.mantine-MultiSelect-pill .mantine-Pill-label' })).toBeTruthy(); expect(screen.queryByText(pointReceipt.Reference)).toBeNull()
   view.rerender(<Harness context={{ ...pointContext(), Choices: [], RequiredChoiceTupleCount: 0, SelectedReceiptScopeComplete: false }} />)
-  expect(screen.getByText(pointCaption)).toBeTruthy()
+  expect(screen.getByText(pointCaption, { selector: '.mantine-MultiSelect-pill .mantine-Pill-label' })).toBeTruthy()
   fireEvent.click(screen.getByRole('button', { name: 'Очистити відбір документів' }))
   await waitFor(() => expect(screen.getByLabelText('Кількість вибраних документів').textContent).toBe('0'))
-  expect(screen.queryByText(pointCaption)).toBeNull(); expect((screen.getByRole('combobox', { name: 'Документи надходження' }) as HTMLInputElement).disabled).toBe(true)
+  expect(screen.queryByText(pointCaption, { selector: '.mantine-MultiSelect-pill .mantine-Pill-label' })).toBeNull(); expect((screen.getByRole('combobox', { name: 'Документи надходження' }) as HTMLInputElement).disabled).toBe(true)
 })
 it('shared receipt controls remove one full tuple without losing another selected kind with the same reference', async () => {
   const context = pointContext(), other = { ...pointReceipt, Table: '000000AF' }
@@ -37,7 +37,7 @@ it('shared receipt controls remove one full tuple without losing another selecte
   view.rerender(<Harness context={incompletePointContext()} />)
   fireEvent.keyDown(screen.getByRole('combobox', { name: 'Документи надходження' }), { key: 'Backspace' })
   await waitFor(() => expect(screen.getByLabelText('Кількість вибраних документів').textContent).toBe('1'))
-  expect(screen.getByText(pointCaption)).toBeTruthy(); expect(screen.queryByText('Інший документ')).toBeNull()
+  expect(screen.getByText(pointCaption, { selector: '.mantine-MultiSelect-pill .mantine-Pill-label' })).toBeTruthy(); expect(screen.queryByText('Інший документ', { selector: '.mantine-MultiSelect-pill .mantine-Pill-label' })).toBeNull()
 })
 it('shared receipt controls discard names and selections when their caller or report scope changes', async () => {
   const view = render(<Harness context={pointContext()} />)
