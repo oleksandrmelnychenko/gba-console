@@ -1,10 +1,11 @@
-import { Alert, Button, Checkbox, Group, MultiSelect, Select, Stack, Table, Text, TextInput } from '@mantine/core'
+import { Alert, Button, Checkbox, Group, MultiSelect, Select, Stack, Text, TextInput } from '@mantine/core'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { getPriceSalesTypes, readPriceSales } from '../api/originalPriceTypeSalesApi'
 import { priceSalesDefaults, priceSalesField, priceSalesFilters, priceSalesMeasures, priceSalesPeriodError, priceSalesRequest, type PriceSalesCapability,
   type PriceSalesChoice, type PriceSalesFilter, type PriceSalesMeasure, type PriceSalesResult, type PriceSalesSelection } from '../data/originalPriceTypeSales'
 import { priceSalesCsv, priceSalesExportError, priceSalesHeaders, priceSalesLines, priceSalesPdf, priceSalesUnitNote, priceSalesValues, priceSalesXlsx } from '../data/originalPriceTypeSalesExport'
+import { OriginalSalesGrid } from './OriginalSalesGrid'
 import { useReportRunState } from '../hooks/useReportRunState'
 const formats = ['csv', 'xlsx', 'pdf'] as const
 const labels = { 'Контрагент': 'Контрагенти', 'Номенклатура': 'Товари', 'Проект': 'Проєкти', 'Подразделение': 'Підрозділи' }
@@ -16,17 +17,8 @@ function retain(current: PriceSalesChoice[], previous: PriceSalesChoice[], selec
   return [...current, ...previous.filter(c => kept.has(c.Key) && !ids.has(c.Key))]
 }
 function PriceSalesTable({ result }: { result: PriceSalesResult }) {
-  const { t } = useI18n(), [page, setPage] = useState(0), lines = useMemo(() => priceSalesLines(result), [result]), headers = priceSalesHeaders(result)
-  const current = Math.min(page, Math.max(0, Math.ceil(lines.length / 50) - 1)), start = current * 50
-  return <Stack gap="xs"><Group><Button variant="light" disabled={!current} onClick={() => setPage(current - 1)}>{t('Попередні рядки')}</Button>
-    <Text>{lines.length ? start + 1 : 0}–{Math.min(lines.length, start + 50)} / {lines.length}</Text>
-    <Button variant="light" disabled={start + 50 >= lines.length} onClick={() => setPage(current + 1)}>{t('Наступні рядки')}</Button></Group>
-    <Table.ScrollContainer minWidth={1000}><Table striped><Table.Thead><Table.Tr>{headers.map(h => <Table.Th key={h}>{t(h)}</Table.Th>)}</Table.Tr></Table.Thead>
-      <Table.Tbody>{lines.slice(start, start + 50).map(line => <Table.Tr key={line.key} fw={line.subtotal ? 600 : undefined}>
-        {line.cells.map((cell, i) => <Table.Td key={headers[i]} className={i >= 2 ? 'app-money' : undefined}>{cell}</Table.Td>)}
-      </Table.Tr>)}</Table.Tbody>{result.Totals ? <Table.Tfoot><Table.Tr><Table.Th colSpan={2}>{t('Разом')}</Table.Th>
-        {priceSalesValues(result, result.Totals).map((cell, i) => <Table.Td key={headers[i + 2]} className="app-money">{cell}</Table.Td>)}
-      </Table.Tr></Table.Tfoot> : null}</Table></Table.ScrollContainer>{!lines.length ? <Text>{t('У повністю перевіреному зрізі рядків немає.')}</Text> : null}</Stack>
+  const lines = useMemo(() => priceSalesLines(result), [result])
+  return <OriginalSalesGrid lines={lines} headers={priceSalesHeaders(result)} totals={result.Totals ? priceSalesValues(result, result.Totals) : null} />
 }
 function usePriceSalesRun(capability: PriceSalesCapability, caller: string | null, allowed: boolean, from: string, through: string, priceType: string,
   selection: PriceSalesSelection, measures: PriceSalesMeasure[], key: string, accept: (r: PriceSalesResult) => void) {
@@ -53,21 +45,34 @@ function usePriceSalesRun(capability: PriceSalesCapability, caller: string | nul
   }
   return { run, permitted, error, report, exporting, invalidate, generate, exportFile }
 }
+function useNamedPriceSalesTypes(callerScope: string, callerKey: string | null, canGenerate: boolean, executable: boolean) {
+  const [types, setTypes] = useState<{ scope: string; values: PriceSalesChoice[]; failed: boolean } | null>(null)
+  useEffect(() => {
+    if (!callerKey || !canGenerate || !executable) return
+    const controller = new AbortController()
+    getPriceSalesTypes(controller.signal).then(values => { if (!controller.signal.aborted) setTypes({ scope: callerScope, values, failed: false }) })
+      .catch(() => { if (!controller.signal.aborted) setTypes({ scope: callerScope, values: [], failed: true }) })
+    return () => controller.abort()
+  }, [callerScope, callerKey, canGenerate, executable])
+  return types?.scope === callerScope ? types : null
+}
+function NamedPriceSalesType({ current, priceType, busy, canGenerate, callerKey, onChange }: {
+  current: { values: PriceSalesChoice[]; failed: boolean } | null; priceType: string; busy: boolean;
+  canGenerate: boolean; callerKey: string | null; onChange: (value: string | null) => void
+}) {
+  const { t } = useI18n()
+  return <><Select label={t('Тип ціни Fenix')} data={(current?.values ?? []).map(c => ({ value: c.Key, label: c.Caption }))} value={priceType || null} searchable clearable
+    disabled={busy || !canGenerate || !callerKey || (!current?.values.length && !priceType)} onChange={onChange} />
+    {current?.failed || current && !current.values.length ? <Text>{t('Немає підтверджених назв типів цін у звичайних даних Fenix.')}</Text> : null}</>
+}
 export function OriginalPriceTypeSalesPanel({ capability, callerKey, canGenerate, initialFrom, initialThrough }: {
   capability: PriceSalesCapability; callerKey: string | null; canGenerate: boolean; initialFrom: string; initialThrough: string
 }) {
   const { t } = useI18n(), [from, setFrom] = useState(initialFrom), [through, setThrough] = useState(initialThrough)
   const [measures, setMeasures] = useState<PriceSalesMeasure[]>(priceSalesDefaults as PriceSalesMeasure[])
-  const callerScope = JSON.stringify([callerKey, canGenerate, capability]), [types, setTypes] = useState<{ scope: string; values: PriceSalesChoice[]; failed: boolean } | null>(null)
+  const callerScope = JSON.stringify([callerKey, canGenerate, capability])
   const [price, setPrice] = useState({ scope: '', value: '' }), priceType = price.scope === callerScope ? price.value : ''
-  useEffect(() => {
-    if (!callerKey || !canGenerate || !capability.Executable) return
-    const controller = new AbortController()
-    getPriceSalesTypes(controller.signal).then(values => { if (!controller.signal.aborted) setTypes({ scope: callerScope, values, failed: false }) })
-      .catch(() => { if (!controller.signal.aborted) setTypes({ scope: callerScope, values: [], failed: true }) })
-    return () => controller.abort()
-  }, [callerScope, callerKey, canGenerate, capability.Executable])
-  const currentTypes = types?.scope === callerScope ? types : null
+  const currentTypes = useNamedPriceSalesTypes(callerScope, callerKey, canGenerate, capability.Executable)
   const [selection, setSelection] = useState<{ scope: string; values: PriceSalesSelection }>({ scope: '', values: empty() })
   const [choices, setChoices] = useState<{ scope: string; values: Choices; fresh: Choices } | null>(null)
   const scope = JSON.stringify([callerScope, from, through, priceType]), current = choices?.scope === scope ? choices : null
@@ -77,6 +82,7 @@ export function OriginalPriceTypeSalesPanel({ capability, callerKey, canGenerate
     setChoices(previous => ({ scope, fresh, values: Object.fromEntries(priceSalesFilters.map(f => [f, retain(fresh[f], previous?.scope === scope ? previous.values[f] : [], selected[priceSalesField[f]])])) as Choices }))
   })
   const busy = delivery.run.isLoading || delivery.exporting, result = delivery.report
+  const selectedMeasures = new Set(measures)
   function choose(field: PriceSalesFilter, values: string[]) {
     delivery.invalidate(); setSelection({ scope, values: { ...selected, [priceSalesField[field]]: values } })
     const kept = new Set(values), fresh = new Set(current?.fresh[field].map(c => c.Key) ?? [])
@@ -85,15 +91,14 @@ export function OriginalPriceTypeSalesPanel({ capability, callerKey, canGenerate
   return <Stack gap="md"><Text>{t('Контрагент → товар. Чотири ресурси оригіналу за замовчуванням; сім додаткових ресурсів доступні окремо.')}</Text>
     <Group grow><TextInput type="date" label={t('Початок періоду')} value={from} disabled={busy} onChange={e => { delivery.invalidate(); setFrom(e.currentTarget.value) }} />
       <TextInput type="date" label={t('Кінець періоду (включно)')} value={through} disabled={busy} onChange={e => { delivery.invalidate(); setThrough(e.currentTarget.value) }} /></Group>
-    <Select label={t('Тип ціни Fenix')} data={(currentTypes?.values ?? []).map(c => ({ value: c.Key, label: c.Caption }))} value={priceType || null} searchable clearable
-      disabled={busy || !canGenerate || !callerKey || (!currentTypes?.values.length && !priceType)} onChange={v => { delivery.invalidate(); setPrice({ scope: callerScope, value: v ?? '' }) }} />
-    {currentTypes?.failed || currentTypes && !currentTypes.values.length ? <Text>{t('Немає підтверджених назв типів цін у звичайних даних Fenix.')}</Text> : null}
+    <NamedPriceSalesType current={currentTypes} priceType={priceType} busy={busy} canGenerate={canGenerate} callerKey={callerKey}
+      onChange={v => { delivery.invalidate(); setPrice({ scope: callerScope, value: v ?? '' }) }} />
     <Group grow>{priceSalesFilters.map(f => { const values = selected[priceSalesField[f]], options = current?.values[f] ?? []
       return <MultiSelect key={f} label={t(labels[f])} data={options.map(c => ({ value: c.Key, label: c.Caption }))} value={values} searchable clearable maxValues={256}
         disabled={busy || (!options.length && !values.length)} onChange={v => choose(f, v)} />
     })}</Group>
-    <Group>{priceSalesMeasures.map(m => <Checkbox key={m} label={t(m)} checked={measures.includes(m)} disabled={busy} onChange={e => {
-      delivery.invalidate(); const checked = e.currentTarget.checked; setMeasures(previous => priceSalesMeasures.filter(x => x === m ? checked : previous.includes(x)))
+    <Group>{priceSalesMeasures.map(m => <Checkbox key={m} label={t(m)} checked={selectedMeasures.has(m)} disabled={busy} onChange={e => {
+      delivery.invalidate(); const checked = e.currentTarget.checked; setMeasures(previous => { const selected = new Set(previous); return priceSalesMeasures.filter(x => x === m ? checked : selected.has(x)) })
     }} />)}</Group>
     <Text size="sm" c="dimmed">{t(priceSalesUnitNote)}</Text>{delivery.error ? <Alert color="yellow">{t(delivery.error)}</Alert> : null}
     {delivery.run.error ? <Alert color="red">{t(delivery.run.error)}</Alert> : null}

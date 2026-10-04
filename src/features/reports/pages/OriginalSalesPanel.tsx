@@ -1,10 +1,11 @@
-import { Alert, Button, Checkbox, Group, MultiSelect, Stack, Table, Text, TextInput } from '@mantine/core'
+import { Alert, Button, Checkbox, Group, MultiSelect, Stack, Text, TextInput } from '@mantine/core'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { readSales } from '../api/originalSalesApi'
 import { salesDefaults, salesField, salesFilters, salesMeasures, salesPeriodError, salesRequest, type SalesCapability,
   type SalesChoice, type SalesFilter, type SalesMeasure, type SalesResult, type SalesSelection } from '../data/originalSales'
 import { salesCsv, salesExportError, salesHeaders, salesLines, salesPdf, salesUnitNote, salesValues, salesXlsx } from '../data/originalSalesExport'
+import { OriginalSalesGrid } from './OriginalSalesGrid'
 import { useReportRunState } from '../hooks/useReportRunState'
 const formats = ['csv', 'xlsx', 'pdf'] as const
 const labels = { 'Контрагент': 'Контрагенти', 'Номенклатура': 'Товари', 'Проект': 'Проєкти', 'Подразделение': 'Підрозділи' }
@@ -16,17 +17,8 @@ function retain(current: SalesChoice[], previous: SalesChoice[], selected: strin
   return [...current, ...previous.filter(c => kept.has(c.Key) && !ids.has(c.Key))]
 }
 function SalesTable({ result }: { result: SalesResult }) {
-  const { t } = useI18n(), [page, setPage] = useState(0), lines = useMemo(() => salesLines(result), [result]), headers = salesHeaders(result)
-  const current = Math.min(page, Math.max(0, Math.ceil(lines.length / 50) - 1)), start = current * 50
-  return <Stack gap="xs"><Group><Button variant="light" disabled={!current} onClick={() => setPage(current - 1)}>{t('Попередні рядки')}</Button>
-    <Text>{lines.length ? start + 1 : 0}–{Math.min(lines.length, start + 50)} / {lines.length}</Text>
-    <Button variant="light" disabled={start + 50 >= lines.length} onClick={() => setPage(current + 1)}>{t('Наступні рядки')}</Button></Group>
-    <Table.ScrollContainer minWidth={1000}><Table striped><Table.Thead><Table.Tr>{headers.map(h => <Table.Th key={h}>{t(h)}</Table.Th>)}</Table.Tr></Table.Thead>
-      <Table.Tbody>{lines.slice(start, start + 50).map(line => <Table.Tr key={line.key} fw={line.subtotal ? 600 : undefined}>
-        {line.cells.map((cell, i) => <Table.Td key={headers[i]} className={i >= 2 ? 'app-money' : undefined}>{cell}</Table.Td>)}
-      </Table.Tr>)}</Table.Tbody>{result.Totals ? <Table.Tfoot><Table.Tr><Table.Th colSpan={2}>{t('Разом')}</Table.Th>
-        {salesValues(result, result.Totals).map((cell, i) => <Table.Td key={headers[i + 2]} className="app-money">{cell}</Table.Td>)}
-      </Table.Tr></Table.Tfoot> : null}</Table></Table.ScrollContainer>{!lines.length ? <Text>{t('У повністю перевіреному зрізі рядків немає.')}</Text> : null}</Stack>
+  const lines = useMemo(() => salesLines(result), [result])
+  return <OriginalSalesGrid lines={lines} headers={salesHeaders(result)} totals={result.Totals ? salesValues(result, result.Totals) : null} />
 }
 function useSalesRun(capability: SalesCapability, caller: string | null, allowed: boolean, from: string, through: string,
   selection: SalesSelection, measures: SalesMeasure[], key: string, accept: (r: SalesResult) => void) {
@@ -68,6 +60,7 @@ export function OriginalSalesPanel({ capability, callerKey, canGenerate, initial
     setChoices(previous => ({ scope, fresh, values: Object.fromEntries(salesFilters.map(f => [f, retain(fresh[f], previous?.scope === scope ? previous.values[f] : [], selected[salesField[f]])])) as Choices }))
   })
   const busy = delivery.run.isLoading || delivery.exporting, result = delivery.report
+  const selectedMeasures = new Set(measures)
   function choose(field: SalesFilter, values: string[]) {
     delivery.invalidate(); setSelection({ scope, values: { ...selected, [salesField[field]]: values } })
     const kept = new Set(values), fresh = new Set(current?.fresh[field].map(c => c.Key) ?? [])
@@ -80,8 +73,8 @@ export function OriginalSalesPanel({ capability, callerKey, canGenerate, initial
       return <MultiSelect key={f} label={t(labels[f])} data={options.map(c => ({ value: c.Key, label: c.Caption }))} value={values} searchable clearable maxValues={256}
         disabled={busy || (!options.length && !values.length)} onChange={v => choose(f, v)} />
     })}</Group>
-    <Group>{salesMeasures.map(m => <Checkbox key={m} label={t(m)} checked={measures.includes(m)} disabled={busy} onChange={e => {
-      delivery.invalidate(); const checked = e.currentTarget.checked; setMeasures(previous => salesMeasures.filter(x => x === m ? checked : previous.includes(x)))
+    <Group>{salesMeasures.map(m => <Checkbox key={m} label={t(m)} checked={selectedMeasures.has(m)} disabled={busy} onChange={e => {
+      delivery.invalidate(); const checked = e.currentTarget.checked; setMeasures(previous => { const selected = new Set(previous); return salesMeasures.filter(x => x === m ? checked : selected.has(x)) })
     }} />)}</Group>
     <Text size="sm" c="dimmed">{t(salesUnitNote)}</Text>{delivery.error ? <Alert color="yellow">{t(delivery.error)}</Alert> : null}
     {delivery.run.error ? <Alert color="red">{t(delivery.run.error)}</Alert> : null}

@@ -4,6 +4,7 @@ export const PRICE_SALES_DEFINITION = '255142468c4718edab44f93f32c39b39b4262e536
 export const priceSalesFilters = ['Контрагент', 'Номенклатура', 'Проект', 'Подразделение'] as const
 export const priceSalesMeasures = ['СтоимостьОборот', 'НДСОборот', 'СтоимостьСНДСОборот', 'СтоимостьПоТипуЦен', 'РазницаМеждуСтоимостями', 'КоличествоОборот', 'КоличествоЕдиницОтчетов', 'КоличествоБазовыхЕд', 'СуммаСкидки', 'ПроцентСкидки', 'СтоимостьБезСкидокОборот'] as const
 export const priceSalesDefaults = ['СтоимостьСНДСОборот', 'СтоимостьПоТипуЦен', 'РазницаМеждуСтоимостями', 'КоличествоБазовыхЕд']
+const priceSalesMeasureSet: ReadonlySet<string> = new Set(priceSalesMeasures)
 export type PriceSalesFilter = typeof priceSalesFilters[number]
 export type PriceSalesMeasure = typeof priceSalesMeasures[number]
 export type PriceSalesCapability = { Version: 1; World: 'fenix'; SourceId: string; DefinitionSha256: string; ModuleSha256: string; QuerySha256: string;
@@ -40,11 +41,12 @@ import { statementPeriodError } from './originalCounterpartyStatement'
 export function priceSalesRequest(cap: PriceSalesCapability, from: string, through: string, priceType: string, selection: PriceSalesSelection,
   measures: readonly PriceSalesMeasure[] = priceSalesDefaults as PriceSalesMeasure[]): PriceSalesRequest {
   if (!isPriceSalesCapability(cap) || statementPeriodError(from, through) || !ref(priceType) || /^0+$/.test(priceType) || !measures.length
-    || new Set(measures).size !== measures.length || measures.some(m => !priceSalesMeasures.includes(m))
+    || new Set(measures).size !== measures.length || measures.some(m => !priceSalesMeasureSet.has(m))
     || Object.values(selection).some(a => a.length > 256 || !a.every(ref) || new Set(a).size !== a.length)) throw new Error('Некоректний запит порівняння продажів за типом цін.')
+  const selectedMeasures = new Set(measures)
   return { Version: 1, World: 'fenix', SourceId: PRICE_SALES_SOURCE, DefinitionSha256: PRICE_SALES_DEFINITION, From: from, Through: through, PriceType: priceType,
     Counterparties: [...selection.Counterparties].sort(), Products: [...selection.Products].sort(), Projects: [...selection.Projects].sort(), Divisions: [...selection.Divisions].sort(),
-    Measures: priceSalesMeasures.filter(m => measures.includes(m)) }
+    Measures: priceSalesMeasures.filter(m => selectedMeasures.has(m)) }
 }
 export function isPriceSalesChoices(v: unknown): v is PriceSalesChoice[] { return Array.isArray(v) && v.every(c => obj(c) && ref(c.Key) && !/^0+$/.test(c.Key) && label(c.Caption)) && new Set(v.map(c => c.Key)).size === v.length }
 function values(v: unknown, measures: readonly PriceSalesMeasure[]): v is PriceSalesValues {
@@ -70,13 +72,14 @@ export function normalizePriceSales(v: unknown, request: PriceSalesRequest): Pri
     return v as unknown as PriceSalesResult
   }
   if (v.Code !== 'original_price_type_sales_complete' || v.Dependency !== null || !digest(v.InputWitnessSha256) || !digest(v.ResultSha256) || !values(v.Totals, request.Measures)) return fail()
+  const selectedParties = new Set(request.Counterparties), selectedProducts = new Set(request.Products)
   const parties = new Set<string>()
   for (const p of v.Rows) {
-    if (!obj(p) || !ref(p.Counterparty) || parties.has(p.Counterparty) || request.Counterparties.length && !request.Counterparties.includes(p.Counterparty)
+    if (!obj(p) || !ref(p.Counterparty) || parties.has(p.Counterparty) || request.Counterparties.length && !selectedParties.has(p.Counterparty)
       || !label(p.Caption) || typeof p.CaptionAvailable !== 'boolean' || !values(p.Values, request.Measures) || !Array.isArray(p.Products) || !p.Products.length) return fail()
     parties.add(p.Counterparty); const products = new Set<string>()
     for (const r of p.Products) {
-      if (!obj(r) || !ref(r.Product) || products.has(r.Product) || request.Products.length && !request.Products.includes(r.Product)
+      if (!obj(r) || !ref(r.Product) || products.has(r.Product) || request.Products.length && !selectedProducts.has(r.Product)
         || !label(r.Caption) || typeof r.CaptionAvailable !== 'boolean' || !values(r.Values, request.Measures)) return fail()
       products.add(r.Product)
     }

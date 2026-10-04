@@ -4,6 +4,7 @@ export const SALES_DEFINITION = '981f54bc951d7c07426f6313c8a563a7d0a7f181f36ab80
 export const salesFilters = ['Контрагент', 'Номенклатура', 'Проект', 'Подразделение'] as const
 export const salesMeasures = ['СтоимостьОборот', 'НДСОборот', 'СтоимостьСНДСОборот', 'КоличествоОборот', 'КоличествоЕдиницОтчетов', 'КоличествоБазовыхЕд', 'СуммаСкидки', 'ПроцентСкидки', 'СтоимостьБезСкидокОборот'] as const
 export const salesDefaults = ['СтоимостьСНДСОборот', 'КоличествоБазовыхЕд']
+const salesMeasureSet: ReadonlySet<string> = new Set(salesMeasures)
 export type SalesFilter = typeof salesFilters[number]
 export type SalesMeasure = typeof salesMeasures[number]
 export type SalesCapability = { Version: 1; World: 'fenix'; SourceId: string; DefinitionSha256: string; ModuleSha256: string; QuerySha256: string;
@@ -40,11 +41,12 @@ import { statementPeriodError } from './originalCounterpartyStatement'
 export function salesRequest(cap: SalesCapability, from: string, through: string, selection: SalesSelection,
   measures: readonly SalesMeasure[] = salesDefaults as SalesMeasure[]): SalesRequest {
   if (!isSalesCapability(cap) || statementPeriodError(from, through) || !measures.length
-    || new Set(measures).size !== measures.length || measures.some(m => !salesMeasures.includes(m))
+    || new Set(measures).size !== measures.length || measures.some(m => !salesMeasureSet.has(m))
     || Object.values(selection).some(a => a.length > 256 || !a.every(ref) || new Set(a).size !== a.length)) throw new Error('Некоректний запит продажів.')
+  const selectedMeasures = new Set(measures)
   return { Version: 1, World: 'fenix', SourceId: SALES_SOURCE, DefinitionSha256: SALES_DEFINITION, From: from, Through: through,
     Counterparties: [...selection.Counterparties].sort(), Products: [...selection.Products].sort(), Projects: [...selection.Projects].sort(), Divisions: [...selection.Divisions].sort(),
-    Measures: salesMeasures.filter(m => measures.includes(m)) }
+    Measures: salesMeasures.filter(m => selectedMeasures.has(m)) }
 }
 export function isSalesChoices(v: unknown): v is SalesChoice[] { return Array.isArray(v) && v.every(c => obj(c) && ref(c.Key) && !/^0+$/.test(c.Key) && label(c.Caption)) && new Set(v.map(c => c.Key)).size === v.length }
 function values(v: unknown, measures: readonly SalesMeasure[]): v is SalesValues {
@@ -70,13 +72,14 @@ export function normalizeSales(v: unknown, request: SalesRequest): SalesResult {
     return v as unknown as SalesResult
   }
   if (v.Code !== 'original_sales_complete' || v.Dependency !== null || !digest(v.InputWitnessSha256) || !digest(v.ResultSha256) || !values(v.Totals, request.Measures)) return fail()
+  const selectedParties = new Set(request.Counterparties), selectedProducts = new Set(request.Products)
   const parties = new Set<string>()
   for (const p of v.Rows) {
-    if (!obj(p) || !ref(p.Counterparty) || parties.has(p.Counterparty) || request.Counterparties.length && !request.Counterparties.includes(p.Counterparty)
+    if (!obj(p) || !ref(p.Counterparty) || parties.has(p.Counterparty) || request.Counterparties.length && !selectedParties.has(p.Counterparty)
       || !label(p.Caption) || typeof p.CaptionAvailable !== 'boolean' || !values(p.Values, request.Measures) || !Array.isArray(p.Products) || !p.Products.length) return fail()
     parties.add(p.Counterparty); const products = new Set<string>()
     for (const r of p.Products) {
-      if (!obj(r) || !ref(r.Product) || products.has(r.Product) || request.Products.length && !request.Products.includes(r.Product)
+      if (!obj(r) || !ref(r.Product) || products.has(r.Product) || request.Products.length && !selectedProducts.has(r.Product)
         || !label(r.Caption) || typeof r.CaptionAvailable !== 'boolean' || !values(r.Values, request.Measures)) return fail()
       products.add(r.Product)
     }
