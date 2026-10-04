@@ -9,9 +9,9 @@ const captions: Record<string, string> = {
 }
 
 type PdfText = { text: string; style?: string; color?: string; margin?: number[] }
-type PdfTable = { table: { headerRows: number; widths: number[]; body: string[][] }; layout: string }
+type PdfTable = { table: { headerRows: number; widths: Array<number | '*' | 'auto'>; body: string[][] }; layout: string }
 export type CurrentVparivanieV2PdfDefinition = {
-  pageSize: 'A3'; pageOrientation: 'landscape'; pageMargins: number[]
+  pageSize: 'A3' | 'A4'; pageOrientation: 'landscape'; pageMargins: number[]
   defaultStyle: { font: 'Roboto'; fontSize: number }
   content: Array<PdfText | PdfTable>
   styles: { title: { bold: boolean; fontSize: number } }

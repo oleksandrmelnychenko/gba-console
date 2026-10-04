@@ -32,7 +32,7 @@ export async function debtXlsx(result: DebtResult): Promise<Blob> {
 export function debtPdfDefinition(result: DebtResult): CurrentVparivanieV2PdfDefinition {
   return { pageSize: 'A4', pageOrientation: 'landscape', pageMargins: [24, 32, 24, 28], defaultStyle: { font: 'Roboto', fontSize: 8 },
     content: [{ text: 'Заборгованість за контрагентами', style: 'title' }, ...metadata(result).map(r => ({ text: r.join(' · ') })),
-      { table: { headerRows: 1, widths: debtHeaders(result).map(() => '*'), body: debtMatrix(result) }, layout: 'lightHorizontalLines' }],
+      { table: { headerRows: 1, widths: debtHeaders(result).map(() => '*' as const), body: debtMatrix(result) }, layout: 'lightHorizontalLines' }],
     styles: { title: { bold: true, fontSize: 13 } }, footer: (page, pages) => ({ text: `${page}/${pages}`, fontSize: 7, alignment: 'right', margin: [24, 0, 24, 0] }) }
 }
 export async function debtPdf(result: DebtResult): Promise<Blob> {

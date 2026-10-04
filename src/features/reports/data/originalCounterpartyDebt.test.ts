@@ -43,7 +43,13 @@ it('same full matrix feeds screen and exports with optional resource only when s
   const ordinary = debtResponse(), optional = debtResponse(true)
   expect(debtMatrix(ordinary)[0]).toHaveLength(3); expect(debtMatrix(optional)[0]).toHaveLength(4)
   expect(debtMatrix(optional).at(-1)).toEqual(['Разом', '', '60.00', '4.00'])
-  expect(debtPdfDefinition(optional).content).toContainEqual(expect.objectContaining({ table: expect.objectContaining({ body: debtMatrix(optional) }) }))
+  for (const result of [ordinary, optional]) {
+    const pdf = debtPdfDefinition(result)
+    expect(pdf.pageSize).toBe('A4'); expect(pdf.pageOrientation).toBe('landscape')
+    expect(pdf.content).toContainEqual(expect.objectContaining({ table: expect.objectContaining({
+      widths: Array(debtMatrix(result)[0].length).fill('*'), body: debtMatrix(result),
+    }) }))
+  }
   expect(debtCsv(optional)).toContain(optional.ResultSha256)
 })
 it('export escapes label formulas while preserving exact signed monetary text', () => {
