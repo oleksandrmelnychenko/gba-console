@@ -24,16 +24,21 @@ export function originalClientDiscountsSupported(dataset: ReportDataset): boolea
 export function applyOriginalClientDiscounts(data: ReportRequestBody, dataset: ReportDataset): void {
   if (!originalClientDiscountsSupported(dataset)) throw new Error('Сервер не підтвердив початковий макет звіту знижок.')
   const grouping = (type: number) => {
-    const field = dataset.Groupings.find(item => item.Type === type)!
+    const field = dataset.Groupings.find(item => item.Type === type)
+    if (!field) throw new Error('Сервер не підтвердив початковий макет звіту знижок.')
     return { type, key: field.Name, label: field.Name }
   }
+  const measurement = dataset.Measurements.find(field => field.Type === 64)
+  if (!measurement) throw new Error('Сервер не підтвердив початковий макет звіту знижок.')
   data.sorted.Row = [grouping(55)]
   data.sorted.Col = [grouping(53)]
-  data.sorted.Measurements = [{ Type: 64, Name: dataset.Measurements.find(field => field.Type === 64)!.Name,
-    IsChecked: true, parentName: '' }]
-  data.selections = [41, 43, 50].map(type => ({ IsChecked: false,
-    SelectedField: { Type: type, Name: dataset.Filters.find(field => field.Type === type)!.Name },
-    FilterCondition: { Type: 0, Name: 'Дорівнює' }, Values: [] }))
+  data.sorted.Measurements = [{ Type: 64, Name: measurement.Name, IsChecked: true, parentName: '' }]
+  data.selections = [41, 43, 50].map(type => {
+    const field = dataset.Filters.find(item => item.Type === type)
+    if (!field) throw new Error('Сервер не підтвердив початковий макет звіту знижок.')
+    return { IsChecked: false, SelectedField: { Type: type, Name: field.Name },
+      FilterCondition: { Type: 0, Name: 'Дорівнює' }, Values: [] }
+  })
   data.discountMarkup = { Version: 1, SourceWorld: 1, DateEnd: '' }
 }
 
