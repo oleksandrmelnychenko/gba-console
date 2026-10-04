@@ -2,7 +2,7 @@ import { Alert, Button, Group, MultiSelect, Stack, Text } from '@mantine/core'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { readDefectCost } from '../api/originalDefectCostApi'
-import { defectCostDefaultMeasures, defectCostLabels, defectCostMeasures, defectCostPeriodError, defectCostRequest, type DefectCostCapability, type DefectCostMeasure, type DefectCostResult } from '../data/originalDefectCost'
+import { defectCostDefaultMeasures, defectCostLabels, defectCostMeasures, defectCostPeriodError, defectCostRequest, type DefectCostCapability, type DefectCostChoicesResult, type DefectCostMeasure, type DefectCostResult } from '../data/originalDefectCost'
 import { defectCostCsv, defectCostExportError, defectCostHeaders, defectCostLines, defectCostPdf, defectCostValues, defectCostXlsx } from '../data/originalDefectCostExport'
 import { useReportRunState } from '../hooks/useReportRunState'
 import { useDefectCostNamedChoices } from '../hooks/useDefectCostNamedChoices'
@@ -64,6 +64,15 @@ function DefectCostResultView({ result }: { result: DefectCostResult | null }) {
     {result.Dependency?.MissingMonth ? ` ${t('Місяць')}: ${result.Dependency.MissingMonth.slice(0, 7)}.` : ''}</Alert>
   return <OriginalSalesGrid key={result.ResultSha256} lines={lines} headers={defectCostHeaders(result)} totals={result.Totals ? defectCostValues(result.Totals, result) : null} />
 }
+function DefectCostNamedChoicesStatus({ named, error }: { named: DefectCostChoicesResult | null; error: string | null }) {
+  const { t } = useI18n(), available = named?.Available === true
+  return <>
+    {error ? <Alert color="yellow">{t(error)}</Alert> : null}
+    {named && !available ? <Alert color="yellow">{t(dependencies[named.Dependency?.Kind ?? ''] ?? 'Назви для цього періоду ще недоступні. Формування без відборів доступне, якщо повні суми синхронізовані.')}</Alert> : null}
+    {available && !named.Choices.Подразделение.length && !named.Choices.СтатьяЗатрат.length ? <Text size="sm" c="dimmed">{t('Назви перевірено. Для цього періоду немає доступних варіантів відбору.')}</Text> : null}
+    {!available ? <Text size="sm" c="dimmed">{t('Відбір за підрозділом і статтею витрат стане доступним після завантаження їхніх назв. Зараз формування виконується без цих відборів.')}</Text> : null}
+  </>
+}
 function DefectCostNamedChoiceControls({ names, busy, permitted, divisions, articles, periodError, onSelect, onLoad }: {
   names: ReturnType<typeof useDefectCostNamedChoices>; busy: boolean; permitted: boolean; divisions: string[]; articles: string[]
   periodError: string | null; onSelect: (field: 'divisions' | 'articles', value: string[]) => void; onLoad: () => void
@@ -78,10 +87,7 @@ function DefectCostNamedChoiceControls({ names, busy, permitted, divisions, arti
         disabled={!available || busy || !permitted} maxValues={256} onChange={value => onSelect('articles', value)} /></Group>
     <Button variant="light" disabled={!names.permitted || !!periodError || busy} loading={names.run.isLoading}
       onClick={onLoad}>{t('Завантажити назви')}</Button>
-    {names.run.error ? <Alert color="yellow">{t(names.run.error)}</Alert> : null}
-    {named && !available ? <Alert color="yellow">{t(dependencies[named.Dependency?.Kind ?? ''] ?? 'Назви для цього періоду ще недоступні. Формування без відборів доступне, якщо повні суми синхронізовані.')}</Alert> : null}
-    {available && !named.Choices.Подразделение.length && !named.Choices.СтатьяЗатрат.length ? <Text size="sm" c="dimmed">{t('Назви перевірено. Для цього періоду немає доступних варіантів відбору.')}</Text> : null}
-    {!available ? <Text size="sm" c="dimmed">{t('Відбір за підрозділом і статтею витрат стане доступним після завантаження їхніх назв. Зараз формування виконується без цих відборів.')}</Text> : null}
+    <DefectCostNamedChoicesStatus named={named} error={names.run.error} />
   </>
 }
 export function OriginalDefectCostPanel({ capability, callerKey, canGenerate, initialFrom, initialThrough }: {
