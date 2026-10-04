@@ -138,11 +138,13 @@ function hierarchy(v: unknown[], columns: string[], request: CashMovementsReques
   function level(rows: unknown[], depth: number): boolean {
     const field = cashMovementsRows[depth], siblings = new Set<string>(), selected = new Set(request[cashMovementsRequestFields[field]])
     for (const row of rows) {
-      if (!object(row) || row.Field !== field || !choice(row, field) || siblings.has(row.Key) || selected.size && !selected.has(row.Key)) return false
-      if (!totals(row, columns) || !Array.isArray(row.Children) || ++count > 2_000_000) return false
+      if (!object(row)) return false
+      const children = row.Children
+      if (row.Field !== field || !choice(row, field) || siblings.has(row.Key) || selected.size && !selected.has(row.Key)) return false
+      if (!totals(row, columns) || !Array.isArray(children) || ++count > 2_000_000) return false
       if ((row.Values as CashMovementsValues).СуммаОборот === null) return false
       siblings.add(row.Key)
-      if (depth === 3 ? row.Children.length !== 0 : !row.Children.length || !level(row.Children, depth + 1)) return false
+      if (depth === 3 ? children.length !== 0 : !children.length || !level(children, depth + 1)) return false
     }
     return true
   }

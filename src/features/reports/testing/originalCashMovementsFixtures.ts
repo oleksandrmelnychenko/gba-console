@@ -39,6 +39,8 @@ export function emptyCashMovements(): CashMovementsResult {
 }
 export function unavailableCashMovements(): CashMovementsResult {
   return { ...emptyCashMovements(), Available: false, NormalInputsComplete: false, Code: 'original_cash_movements_month_unavailable', Totals: null,
-    InputWitnessSha256: null, ResultSha256: null, ManagementCurrency: null, Choices: Object.fromEntries(cashMovementsFilters.map(field => [field, []])) as CashMovementsResult['Choices'],
+    InputWitnessSha256: null, ResultSha256: null, ManagementCurrency: null,
+    Choices: { ВалютаДенежныхСредств: [], ВидДенежныхСредств: [], ПриходРасход: [], Организация: [], БанковскийСчетКасса: [],
+      СтатьяДвиженияДенежныхСредств: [], Проект: [], Контрагент: [] },
     Dependency: { Kind: 'month_unavailable', MissingMonth: '2026-09' } }
 }
