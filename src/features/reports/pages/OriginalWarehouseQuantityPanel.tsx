@@ -1,3 +1,5 @@
+import { receiptChoiceScope, receiptChoiceValues, type ReceiptCaptionContext, type WarehouseReceiptKey } from '../data/warehouseReceiptCaptions'
+import { WarehouseReceiptCaptionControls, WarehouseReceiptCaptionStatus } from './WarehouseReceiptCaptionControls'
 import { Alert, Button, Group, Stack, Table, Text } from '@mantine/core'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -19,7 +21,7 @@ function download(blob: Blob, name: string) {
   window.setTimeout(() => URL.revokeObjectURL(url), 30_000)
 }
 type QuantityChoice = { value: string; label: string }
-type QuantityChoices = { scope: string; products: QuantityChoice[]; warehouses: QuantityChoice[] }
+type QuantityChoices = { scope: string; products: QuantityChoice[]; warehouses: QuantityChoice[]; receiptScope: string; receiptContext?: ReceiptCaptionContext }
 const quantityKeys = ['Opening', 'Incoming', 'Outgoing', 'Closing'] as const
 const exportFormats = ['csv', 'xlsx', 'pdf'] as const
 
@@ -41,9 +43,9 @@ function QuantityTable({ result }: { result: WarehouseQuantityResult }) {
     </Table></Table.ScrollContainer>{!rows.length ? <Text>{t('У повністю перевіреному періоді рядків немає.')}</Text> : null}</Stack>
 }
 
-function useQuantityRun({ capability, callerKey, canGenerate, from, through, products, warehouses, key, onAvailable }: {
+function useQuantityRun({ capability, callerKey, canGenerate, from, through, products, warehouses, receiptMode, receipts, key, onAvailable }: {
   capability: WarehouseQuantityCapability; callerKey: string | null; canGenerate: boolean; from: string; through: string;
-  products: string[]; warehouses: string[]; key: string; onAvailable: (result: WarehouseQuantityResult) => void
+  products: string[]; warehouses: string[]; receiptMode: boolean; receipts: WarehouseReceiptKey[]; key: string; onAvailable: (result: WarehouseQuantityResult) => void
 }) {
   const [exporting, setExporting] = useState(false)
   const run = useReportRunState<WarehouseQuantityResult>(key), active = useRef<AbortController | null>(null), latest = useRef(key)
@@ -56,7 +58,7 @@ function useQuantityRun({ capability, callerKey, canGenerate, from, through, pro
     const controller = new AbortController(); active.current?.abort(); active.current = controller
     latest.current = key; const update = run.begin()
     try {
-      const result = await readWarehouseQuantity(warehouseQuantityRequest(capability, from, through, products, warehouses), controller.signal)
+      const result = await readWarehouseQuantity(warehouseQuantityRequest(capability, from, through, products, warehouses, receiptMode, receipts), controller.signal)
       if (controller.signal.aborted) return
       update({ lastRun: result }); if (result.Available) onAvailable(result)
     } catch (failure) { if (!controller.signal.aborted) update({ error: failure instanceof Error ? failure.message : 'Не вдалося сформувати відомість.' }) }
@@ -79,7 +81,7 @@ function useQuantityRun({ capability, callerKey, canGenerate, from, through, pro
 function QuantityNotes() {
   const { t } = useI18n()
   return <>
-    <Text size="sm" c="dimmed">{t('Назви складів — поточні назви довідника GBA. Непідтверджені назви не пропонуються для відбору; усі кількості збережено. Назви й відбір документів надходження ще недоступні.')}</Text>
+    <Text size="sm" c="dimmed">{t('Назви складів — поточні назви довідника GBA. Непідтверджені назви не пропонуються для відбору; усі кількості збережено.')}</Text>
     <Text size="sm" c="dimmed">{t('Період охоплює календарні дні від 00:00:00 до 23:59:59; дробова частина секунди після цієї межі не включається.')}</Text>
     <Text size="sm" c="dimmed">{t('Нульові спостережені рядки збережено. Повна відповідність усім налаштуванням 1С не підтверджена.')}</Text>
   </>
@@ -105,7 +107,7 @@ function QuantityResult({ report, exportError }: { report: WarehouseQuantityResu
   return <>
     {exportError ? <Alert color="yellow">{t(exportError)}</Alert> : null}
     {report && !report.Available ? <Alert color="yellow">{t(dependencies[report.Code] ?? 'Повні узгоджені початкові залишки й місячні рухи цього періоду недоступні; частковий звіт не формується.')}</Alert> : null}
-    {report?.Available ? <><Alert color="yellow">{t('Назви документів надходження недоступні. Усі кількості включено; документи не об’єднано за схожими назвами.')}</Alert>
+    {report?.Available ? <><WarehouseReceiptCaptionStatus context={report.ReceiptCaptions} fallback="Назви документів надходження недоступні. Усі кількості включено; документи не об’єднано за схожими назвами." />
       <QuantityTable key={report.ResultSha256} result={report} /></> : null}
   </>
 }
@@ -114,21 +116,29 @@ export function OriginalWarehouseQuantityPanel({ capability, callerKey, canGener
   capability: WarehouseQuantityCapability; callerKey: string | null; canGenerate: boolean; initialFrom: string; initialThrough: string
 }) {
   const { t } = useI18n(); const [from, setFrom] = useState(initialFrom); const [through, setThrough] = useState(initialThrough)
-  const [selection, setSelection] = useState<{ scope: string; products: string[]; warehouses: string[] }>({ scope: '', products: [], warehouses: [] })
+  const [receiptMode, setReceiptMode] = useState(false)
+  const [selection, setSelection] = useState<{ scope: string; products: string[]; warehouses: string[]; receipts: WarehouseReceiptKey[] }>({ scope: '', products: [], warehouses: [], receipts: [] })
   const [choices, setChoices] = useState<QuantityChoices | null>(null)
-  const periodScope = JSON.stringify([callerKey, canGenerate, capability, from, through])
+  const receiptEnabled = receiptMode && capability.CurrentReceiptCaptionChoicesSupported === true
+  const periodScope = JSON.stringify([callerKey, canGenerate, capability, from, through, receiptEnabled])
   const products = selection.scope === periodScope ? selection.products : [], warehouses = selection.scope === periodScope ? selection.warehouses : []
-  const key = JSON.stringify([periodScope, products, warehouses])
-  const delivery = useQuantityRun({ capability, callerKey, canGenerate, from, through, products, warehouses, key,
+  const receipts = selection.scope === periodScope ? selection.receipts : []
+  const proofScope = receiptChoiceScope(periodScope, products, warehouses)
+  const key = JSON.stringify([periodScope, products, warehouses, receipts])
+  const delivery = useQuantityRun({ capability, callerKey, canGenerate, from, through, products, warehouses, receiptMode: receiptEnabled, receipts, key,
     onAvailable: result => setChoices({ scope: periodScope, products: result.ProductChoices.map(v => ({ value: v.Key, label: v.Caption })),
-      warehouses: (result.WarehouseChoices ?? []).map(v => ({ value: v.Key, label: v.Caption })) }) })
+      warehouses: (result.WarehouseChoices ?? []).map(v => ({ value: v.Key, label: v.Caption })), receiptScope: proofScope, receiptContext: result.ReceiptCaptions }) })
   const currentChoices = choices?.scope === periodScope ? choices : null
   return <Stack gap="md"><Text size="sm">{t('Записана кількість у наших таблицях за період: товар → документ надходження. Перерахунок одиниць не застосовується.')}</Text>
     <WarehousePeriodFilters from={from} through={through} products={products} warehouses={warehouses} productChoices={currentChoices?.products ?? []}
       warehouseChoices={currentChoices?.warehouses ?? []} warehouseSupported={!!capability.CurrentWarehouseCaptionChoicesSupported}
       busy={delivery.run.isLoading || delivery.exporting} changeFrom={value => { delivery.invalidate(); setFrom(value) }}
-      changeThrough={value => { delivery.invalidate(); setThrough(value) }} selectProducts={value => { delivery.invalidate(); setSelection({ scope: periodScope, products: value, warehouses }) }}
-      selectWarehouses={value => { delivery.invalidate(); setSelection({ scope: periodScope, products, warehouses: value }) }} />
+      changeThrough={value => { delivery.invalidate(); setThrough(value) }} selectProducts={value => { delivery.invalidate(); setSelection({ scope: periodScope, products: value, warehouses, receipts: [] }) }}
+      selectWarehouses={value => { delivery.invalidate(); setSelection({ scope: periodScope, products, warehouses: value, receipts: [] }) }} />
+    <WarehouseReceiptCaptionControls supported={!!capability.CurrentReceiptCaptionChoicesSupported} enabled={receiptEnabled}
+      context={currentChoices?.receiptScope === proofScope ? currentChoices.receiptContext : undefined} selected={receipts} busy={delivery.run.isLoading || delivery.exporting}
+      toggle={value => { delivery.invalidate(); setReceiptMode(value) }} select={values => { delivery.invalidate(); setSelection({ scope: periodScope, products, warehouses,
+        receipts: receiptChoiceValues(values, currentChoices?.receiptScope === proofScope ? currentChoices.receiptContext : undefined) }) }} />
     <QuantityNotes />
     <QuantityMessages error={delivery.error} runError={delivery.run.error} />
     <QuantityActions permitted={delivery.permitted} invalidPeriod={!!delivery.error} loading={delivery.run.isLoading} exporting={delivery.exporting}

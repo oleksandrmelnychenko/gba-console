@@ -1,3 +1,4 @@
+import { receiptCaptionRequest, validReceiptCaptions, type ReceiptCaptionContext } from './warehouseReceiptCaptions'
 import type { ReportCatalogueEntry } from '../types'
 
 export const WAREHOUSE_MONETARY_SOURCE = 'fde97241-e736-4c21-9e61-2d6ecafa0b91'
@@ -6,22 +7,22 @@ const moduleHash = 'e5b629dd087052bf882091c962cf994a8fea720146e501d5b3aa3640fabc
 const queryHash = 'e64d3dee516b4eae8c2065f1a89779a6bb35193e48e02661c955c6398355065c'
 export type WarehouseMonetaryCapability = { Version: 1; World: 'fenix' | 'amg'; SourceId: string; DefinitionSha256: string;
   ModuleSha256: string; QuerySha256: string; Executable: boolean; Title: string; PeriodRequired: true;
-  MaximumInclusiveDays: 366; RequiresCompleteNormalInputs: true; CurrentWarehouseCaptionChoicesSupported?: true; NativeVirtualTableVerified: false;
+  MaximumInclusiveDays: 366; RequiresCompleteNormalInputs: true; CurrentWarehouseCaptionChoicesSupported?: true; CurrentReceiptCaptionChoicesSupported?: true; NativeVirtualTableVerified: false;
   SourceParityVerified: false; OriginalFullTaskAccepted: false; MoneyUnitPolicy: 'NativeManagementResourceNoCurrencyIdentityAssumption';
   ManagementCurrencyPresentationVerified: false; AppliesFxConversion: false; DefaultMeasures: string[] }
 export type WarehouseReceipt = { Type: string; Table: string; Reference: string }
 export type WarehouseMonetaryMeasure = { Opening: string; Incoming: string; Outgoing: string; Closing: string }
 export type WarehouseMonetaryResources = { Quantity: WarehouseMonetaryMeasure; Cost: WarehouseMonetaryMeasure; Vat: WarehouseMonetaryMeasure }
 export type WarehouseMonetaryRequest = { Version: 1; World: 'fenix' | 'amg'; SourceId: string; DefinitionSha256: string;
-  From: string; Through: string; Warehouses: string[]; Products: string[]; Receipts: WarehouseReceipt[]; CurrentWarehouseCaptionChoices?: true }
+  From: string; Through: string; Warehouses: string[]; Products: string[]; Receipts: WarehouseReceipt[]; CurrentWarehouseCaptionChoices?: true; CurrentReceiptCaptionChoices?: true }
 export type WarehouseMonetaryResult = { Version: 1; World: 'fenix' | 'amg'; SourceId: string; DefinitionSha256: string;
   From: string; Through: string; Available: boolean; Code: string; NormalInputsComplete: boolean; OurSnapshotVerified: boolean;
   InputWitnessSha256: string | null; ResultSha256: string | null;
   Rows: Array<{ Product: string; Caption: string; CaptionAvailable: boolean; Resources: WarehouseMonetaryResources;
-    Receipts: Array<{ Receipt: WarehouseReceipt; Caption: string; CaptionAvailable: false; Resources: WarehouseMonetaryResources }> }>;
+    Receipts: Array<{ Receipt: WarehouseReceipt; Caption: string; CaptionAvailable: boolean; Resources: WarehouseMonetaryResources }> }>;
   Totals: WarehouseMonetaryResources | null; ProductChoices: Array<{ Key: string; Caption: string }>; MissingCaptionMappings: string[]; FilterSummary: string[];
   WarehouseChoices?: Array<{ Key: string; Caption: string }>; WarehouseCaptionPolicy?: 'CurrentOURStorageNameViaAuthenticatedRoutingAssociation';
-  WarehouseCaptionWitnessSha256?: string; WarehouseFilterAvailable: boolean; ReceiptFilterAvailable: false; UnitPolicy: 'NativeStoredQuantityNoCoefficientConversion';
+  WarehouseCaptionWitnessSha256?: string; WarehouseFilterAvailable: boolean; ReceiptFilterAvailable: boolean; ReceiptCaptions?: ReceiptCaptionContext; UnitPolicy: 'NativeStoredQuantityNoCoefficientConversion';
   NativeVirtualTableVerified: false; SourceParityVerified: false; OriginalFullTaskAccepted: false;
   MoneyUnitPolicy: 'NativeManagementResourceNoCurrencyIdentityAssumption'; ManagementCurrencyPresentationVerified: false; AppliesFxConversion: false }
 const object = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null && !Array.isArray(v)
@@ -40,6 +41,7 @@ export function isWarehouseMonetaryCapability(v: unknown): v is WarehouseMonetar
     && v.Executable === (v.World === 'fenix') && typeof v.Title === 'string' && v.Title.trim().length > 0
     && v.PeriodRequired === true && v.MaximumInclusiveDays === 366 && v.RequiresCompleteNormalInputs === true
     && (v.CurrentWarehouseCaptionChoicesSupported === undefined || v.CurrentWarehouseCaptionChoicesSupported === true && v.World === 'fenix')
+    && (v.CurrentReceiptCaptionChoicesSupported === undefined || v.CurrentReceiptCaptionChoicesSupported === true && v.World === 'fenix')
 }
 export function isWarehouseMonetaryCatalogueEntry(report: ReportCatalogueEntry, worlds: readonly string[] = ['fenix']) {
   return report.Id === 'builtin:ВедомостьПартииТоваровНаСкладах'
@@ -56,13 +58,14 @@ export function warehouseMonetaryPeriodError(from: string, through: string): str
     ? 'Оберіть явний період до 366 календарних днів.' : null
 }
 export function warehouseMonetaryRequest(capability: WarehouseMonetaryCapability, from: string, through: string,
-  products: readonly string[] = [], warehouses: readonly string[] = []): WarehouseMonetaryRequest {
+  products: readonly string[] = [], warehouses: readonly string[] = [], currentReceiptCaptions = false, receipts: readonly WarehouseReceipt[] = []): WarehouseMonetaryRequest {
   if (!isWarehouseMonetaryCapability(capability) || !capability.Executable || warehouseMonetaryPeriodError(from, through)
     || products.length > 256 || products.some(p => !ref(p)) || new Set(products).size !== products.length
     || warehouses.length > 256 || warehouses.some(w => !ref(w) || w === '0'.repeat(32)) || new Set(warehouses).size !== warehouses.length
     || warehouses.length > 0 && !capability.CurrentWarehouseCaptionChoicesSupported) throw new Error('Некоректний запит відомості партій.')
   return { Version: 1, World: capability.World, SourceId: capability.SourceId, DefinitionSha256: capability.DefinitionSha256,
-    From: from, Through: through, Products: [...products], Warehouses: [...warehouses], Receipts: [],
+    From: from, Through: through, Products: [...products], Warehouses: [...warehouses],
+    ...receiptCaptionRequest(capability.CurrentReceiptCaptionChoicesSupported === true && capability.World === 'fenix', currentReceiptCaptions, receipts),
     ...(capability.CurrentWarehouseCaptionChoicesSupported ? { CurrentWarehouseCaptionChoices: true as const } : {}) }
 }
 export function warehouseMonetaryScaled(v: unknown, scale: 2 | 3): bigint {
@@ -92,11 +95,12 @@ export function normalizeWarehouseMonetary(v: unknown, request: WarehouseMonetar
     || typeof v.Code !== 'string' || !v.Code.startsWith('original_warehouse_') || !Array.isArray(v.Rows) || !Array.isArray(v.ProductChoices)
     || !Array.isArray(v.FilterSummary) || v.FilterSummary.some(s => typeof s !== 'string')
     || !Array.isArray(v.MissingCaptionMappings) || v.MissingCaptionMappings.some(s => typeof s !== 'string')
-    || typeof v.WarehouseFilterAvailable !== 'boolean' || v.ReceiptFilterAvailable !== false || v.UnitPolicy !== 'NativeStoredQuantityNoCoefficientConversion') return invalid()
+    || typeof v.WarehouseFilterAvailable !== 'boolean' || typeof v.ReceiptFilterAvailable !== 'boolean' || v.UnitPolicy !== 'NativeStoredQuantityNoCoefficientConversion') return invalid()
   if (!v.Available) {
     if (v.Rows.length || v.Totals !== null || v.ProductChoices.length || v.InputWitnessSha256 !== null || v.ResultSha256 !== null
       || v.WarehouseFilterAvailable || v.WarehouseChoices !== undefined && (!Array.isArray(v.WarehouseChoices) || v.WarehouseChoices.length)
       || v.WarehouseCaptionPolicy !== undefined || v.WarehouseCaptionWitnessSha256 !== undefined) return invalid()
+    if (!validReceiptCaptions(v.ReceiptCaptions, v.ReceiptFilterAvailable, !!request.CurrentReceiptCaptionChoices, false, [], request.Receipts)) return invalid()
     return structuredClone(v) as WarehouseMonetaryResult
   }
   if (request.World !== 'fenix' || !v.NormalInputsComplete || !v.OurSnapshotVerified || !hash(v.InputWitnessSha256) || !hash(v.ResultSha256)
@@ -126,7 +130,7 @@ export function normalizeWarehouseMonetary(v: unknown, request: WarehouseMonetar
       if (!object(child) || !receipt(child.Receipt)) return invalid()
       const receiptKey = JSON.stringify([child.Receipt.Type, child.Receipt.Table, child.Receipt.Reference])
       if (receipts.has(receiptKey) || typeof child.Caption !== 'string'
-        || !child.Caption.trim() || child.CaptionAvailable !== false || !resources(child.Resources)) return invalid()
+        || !child.Caption.trim() || (request.CurrentReceiptCaptionChoices ? typeof child.CaptionAvailable !== 'boolean' : child.CaptionAvailable !== false) || !resources(child.Resources)) return invalid()
       receipts.add(receiptKey); parts.push(child.Resources); if (++grains > 200_000) return invalid()
     }
     if (!sameTotal(row.Resources, parts)) return invalid()
@@ -137,5 +141,7 @@ export function normalizeWarehouseMonetary(v: unknown, request: WarehouseMonetar
     if (!object(option) || !ref(option.Key) || choices.has(option.Key as string) || typeof option.Caption !== 'string' || !option.Caption.trim()) return invalid()
     choices.add(option.Key as string)
   }
+  if (!validReceiptCaptions(v.ReceiptCaptions, v.ReceiptFilterAvailable, !!request.CurrentReceiptCaptionChoices, true,
+    (v as unknown as WarehouseMonetaryResult).Rows, request.Receipts)) return invalid()
   return structuredClone(v) as WarehouseMonetaryResult
 }

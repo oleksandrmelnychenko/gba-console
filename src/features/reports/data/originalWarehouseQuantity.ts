@@ -1,3 +1,4 @@
+import { receiptCaptionRequest, validReceiptCaptions, type ReceiptCaptionContext } from './warehouseReceiptCaptions'
 import type { ReportCatalogueEntry } from '../types'
 
 export const WAREHOUSE_QUANTITY_SOURCE = 'dd98a3b9-e627-4a83-9f66-2dfe7686085c'
@@ -6,20 +7,20 @@ const moduleHash = '29bcf58a1951a39cbb6cda7195c7a2da100edb98a2b1b44e2406af5ed587
 const queryHash = 'ea18073fc8b3fe0f39652a077391038003f6f0617357d749ec9b4f89da479785'
 export type WarehouseQuantityCapability = { Version: 1; World: 'fenix' | 'amg'; SourceId: string; DefinitionSha256: string;
   ModuleSha256: string; QuerySha256: string; Executable: boolean; Title: string; PeriodRequired: true;
-  MaximumInclusiveDays: 366; RequiresCompleteNormalInputs: true; CurrentWarehouseCaptionChoicesSupported?: true; NativeVirtualTableVerified: false;
+  MaximumInclusiveDays: 366; RequiresCompleteNormalInputs: true; CurrentWarehouseCaptionChoicesSupported?: true; CurrentReceiptCaptionChoicesSupported?: true; NativeVirtualTableVerified: false;
   SourceParityVerified: false; OriginalFullTaskAccepted: false }
 export type WarehouseReceipt = { Type: string; Table: string; Reference: string }
 export type WarehouseQuantity = { Opening: string; Incoming: string; Outgoing: string; Closing: string }
 export type WarehouseQuantityRequest = { Version: 1; World: 'fenix' | 'amg'; SourceId: string; DefinitionSha256: string;
-  From: string; Through: string; Warehouses: string[]; Products: string[]; Receipts: WarehouseReceipt[]; CurrentWarehouseCaptionChoices?: true }
+  From: string; Through: string; Warehouses: string[]; Products: string[]; Receipts: WarehouseReceipt[]; CurrentWarehouseCaptionChoices?: true; CurrentReceiptCaptionChoices?: true }
 export type WarehouseQuantityResult = { Version: 1; World: 'fenix' | 'amg'; SourceId: string; DefinitionSha256: string;
   From: string; Through: string; Available: boolean; Code: string; NormalInputsComplete: boolean; OurSnapshotVerified: boolean;
   InputWitnessSha256: string | null; ResultSha256: string | null;
   Rows: Array<{ Product: string; Caption: string; CaptionAvailable: boolean; Quantity: WarehouseQuantity;
-    Receipts: Array<{ Receipt: WarehouseReceipt; Caption: string; CaptionAvailable: false; Quantity: WarehouseQuantity }> }>;
+    Receipts: Array<{ Receipt: WarehouseReceipt; Caption: string; CaptionAvailable: boolean; Quantity: WarehouseQuantity }> }>;
   Totals: WarehouseQuantity | null; ProductChoices: Array<{ Key: string; Caption: string }>; MissingCaptionMappings: string[]; FilterSummary: string[];
   WarehouseChoices?: Array<{ Key: string; Caption: string }>; WarehouseCaptionPolicy?: 'CurrentOURStorageNameViaAuthenticatedRoutingAssociation';
-  WarehouseCaptionWitnessSha256?: string; WarehouseFilterAvailable: boolean; ReceiptFilterAvailable: false; UnitPolicy: 'NativeStoredQuantityNoCoefficientConversion';
+  WarehouseCaptionWitnessSha256?: string; WarehouseFilterAvailable: boolean; ReceiptFilterAvailable: boolean; ReceiptCaptions?: ReceiptCaptionContext; UnitPolicy: 'NativeStoredQuantityNoCoefficientConversion';
   NativeVirtualTableVerified: false; SourceParityVerified: false; OriginalFullTaskAccepted: false }
 const object = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null && !Array.isArray(v)
 const ref = (v: unknown) => typeof v === 'string' && /^[0-9A-F]{32}$/.test(v)
@@ -32,6 +33,7 @@ export function isWarehouseQuantityCapability(v: unknown): v is WarehouseQuantit
     && v.Executable === (v.World === 'fenix') && typeof v.Title === 'string' && v.Title.trim().length > 0
     && v.PeriodRequired === true && v.MaximumInclusiveDays === 366 && v.RequiresCompleteNormalInputs === true
     && (v.CurrentWarehouseCaptionChoicesSupported === undefined || v.CurrentWarehouseCaptionChoicesSupported === true && v.World === 'fenix')
+    && (v.CurrentReceiptCaptionChoicesSupported === undefined || v.CurrentReceiptCaptionChoicesSupported === true && v.World === 'fenix')
 }
 export function isWarehouseQuantityCatalogueEntry(report: ReportCatalogueEntry, worlds: readonly string[] = ['fenix']) {
   return report.Id === 'builtin:ВедомостьПартииТоваровНаСкладахКоличественныйУчет'
@@ -48,13 +50,14 @@ export function warehouseQuantityPeriodError(from: string, through: string): str
     ? 'Оберіть явний період до 366 календарних днів.' : null
 }
 export function warehouseQuantityRequest(capability: WarehouseQuantityCapability, from: string, through: string,
-  products: readonly string[] = [], warehouses: readonly string[] = []): WarehouseQuantityRequest {
+  products: readonly string[] = [], warehouses: readonly string[] = [], currentReceiptCaptions = false, receipts: readonly WarehouseReceipt[] = []): WarehouseQuantityRequest {
   if (!isWarehouseQuantityCapability(capability) || !capability.Executable || warehouseQuantityPeriodError(from, through)
     || products.length > 256 || products.some(p => !ref(p)) || new Set(products).size !== products.length
     || warehouses.length > 256 || warehouses.some(w => !ref(w) || w === '0'.repeat(32)) || new Set(warehouses).size !== warehouses.length
     || warehouses.length > 0 && !capability.CurrentWarehouseCaptionChoicesSupported) throw new Error('Некоректний запит відомості партій.')
   return { Version: 1, World: capability.World, SourceId: capability.SourceId, DefinitionSha256: capability.DefinitionSha256,
-    From: from, Through: through, Products: [...products], Warehouses: [...warehouses], Receipts: [],
+    From: from, Through: through, Products: [...products], Warehouses: [...warehouses],
+    ...receiptCaptionRequest(capability.CurrentReceiptCaptionChoicesSupported === true && capability.World === 'fenix', currentReceiptCaptions, receipts),
     ...(capability.CurrentWarehouseCaptionChoicesSupported ? { CurrentWarehouseCaptionChoices: true as const } : {}) }
 }
 export function quantityScaled(v: unknown): bigint {
@@ -75,11 +78,12 @@ export function normalizeWarehouseQuantity(v: unknown, request: WarehouseQuantit
     || typeof v.Code !== 'string' || !v.Code.startsWith('original_warehouse_') || !Array.isArray(v.Rows) || !Array.isArray(v.ProductChoices)
     || !Array.isArray(v.FilterSummary) || v.FilterSummary.some(s => typeof s !== 'string')
     || !Array.isArray(v.MissingCaptionMappings) || v.MissingCaptionMappings.some(s => typeof s !== 'string')
-    || typeof v.WarehouseFilterAvailable !== 'boolean' || v.ReceiptFilterAvailable !== false || v.UnitPolicy !== 'NativeStoredQuantityNoCoefficientConversion') return invalid()
+    || typeof v.WarehouseFilterAvailable !== 'boolean' || typeof v.ReceiptFilterAvailable !== 'boolean' || v.UnitPolicy !== 'NativeStoredQuantityNoCoefficientConversion') return invalid()
   if (!v.Available) {
     if (v.Rows.length || v.Totals !== null || v.ProductChoices.length || v.InputWitnessSha256 !== null || v.ResultSha256 !== null
       || v.WarehouseFilterAvailable || v.WarehouseChoices !== undefined && (!Array.isArray(v.WarehouseChoices) || v.WarehouseChoices.length)
       || v.WarehouseCaptionPolicy !== undefined || v.WarehouseCaptionWitnessSha256 !== undefined) return invalid()
+    if (!validReceiptCaptions(v.ReceiptCaptions, v.ReceiptFilterAvailable, !!request.CurrentReceiptCaptionChoices, false, [], request.Receipts)) return invalid()
     return structuredClone(v) as WarehouseQuantityResult
   }
   if (request.World !== 'fenix' || !v.NormalInputsComplete || !v.OurSnapshotVerified || !hash(v.InputWitnessSha256) || !hash(v.ResultSha256)
@@ -109,7 +113,7 @@ export function normalizeWarehouseQuantity(v: unknown, request: WarehouseQuantit
       if (!object(child) || !receipt(child.Receipt)) return invalid()
       const receiptKey = JSON.stringify([child.Receipt.Type, child.Receipt.Table, child.Receipt.Reference])
       if (receipts.has(receiptKey) || typeof child.Caption !== 'string'
-        || !child.Caption.trim() || child.CaptionAvailable !== false || !quantity(child.Quantity)) return invalid()
+        || !child.Caption.trim() || (request.CurrentReceiptCaptionChoices ? typeof child.CaptionAvailable !== 'boolean' : child.CaptionAvailable !== false) || !quantity(child.Quantity)) return invalid()
       receipts.add(receiptKey); parts.push(child.Quantity); if (++grains > 200_000) return invalid()
     }
     if (!sameTotal(row.Quantity, parts)) return invalid()
@@ -120,5 +124,7 @@ export function normalizeWarehouseQuantity(v: unknown, request: WarehouseQuantit
     if (!object(option) || !ref(option.Key) || choices.has(option.Key as string) || typeof option.Caption !== 'string' || !option.Caption.trim()) return invalid()
     choices.add(option.Key as string)
   }
+  if (!validReceiptCaptions(v.ReceiptCaptions, v.ReceiptFilterAvailable, !!request.CurrentReceiptCaptionChoices, true,
+    (v as unknown as WarehouseQuantityResult).Rows, request.Receipts)) return invalid()
   return structuredClone(v) as WarehouseQuantityResult
 }
