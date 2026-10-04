@@ -1,3 +1,4 @@
+import { validReceiptCaptions, warehouseReceiptKey, type ReceiptCaptionContext } from './warehouseReceiptCaptions'
 import type { ReportCatalogueEntry } from '../types'
 import { warehouseMonetaryScaled } from './originalWarehouseMonetary'
 export const TRANSFERRED_GOODS_SOURCE = '7e2c1a1d-c205-4ade-a42b-9a1a5fce2c17'
@@ -14,23 +15,23 @@ export type TransferredCapability = { Version: 1; World: 'fenix' | 'amg'; Source
   QuerySha256: string; Executable: boolean; Title: string; PeriodRequired: true; MaximumInclusiveDays: 366; RequiresCompleteNormalInputs: true;
   DefaultRows: string[]; DefaultFilterFields: string[]; DefaultMeasures: string[]; UnitPolicy: 'NativeStoredQuantityNoCoefficientConversion';
   MoneyUnitPolicy: 'NativeManagementResourceNoCurrencyIdentityAssumption'; ManagementCurrencyPresentationVerified: false; AppliesFxConversion: false;
-  ReceiptFilterChoicesSupported: false; NativeVirtualTableVerified: false; SourceParityVerified: false; OriginalFullTaskAccepted: false }
+  ReceiptFilterChoicesSupported: false; CurrentReceiptCaptionChoicesSupported?: boolean; NativeVirtualTableVerified: false; SourceParityVerified: false; OriginalFullTaskAccepted: false }
 export type TransferredRequest = { Version: 1; World: 'fenix' | 'amg'; SourceId: string; DefinitionSha256: string; From: string; Through: string;
-  Products: string[]; Receipts: TransferredReceipt[] }
+  Products: string[]; Receipts: TransferredReceipt[]; CurrentReceiptCaptionChoices?: true }
 export type TransferredResult = { Version: 1; World: 'fenix' | 'amg'; SourceId: string; DefinitionSha256: string; From: string; Through: string;
   Available: boolean; Code: string; NormalInputsComplete: boolean; OurSnapshotVerified: boolean; InputWitnessSha256: string | null; ResultSha256: string | null;
-  Rows: Array<{ Receipt: TransferredReceipt; Caption: string; CaptionAvailable: false; Resources: TransferredResources;
+  Rows: Array<{ Receipt: TransferredReceipt; Caption: string; CaptionAvailable: boolean; Resources: TransferredResources;
     Products: Array<{ Product: string; Caption: string; CaptionAvailable: boolean; Resources: TransferredResources }> }>;
   Totals: TransferredResources | null; ProductChoices: Array<{ Key: string; Caption: string }>; MissingCaptionMappings: string[]; FilterSummary: string[];
   UnitPolicy: 'NativeStoredQuantityNoCoefficientConversion'; MoneyUnitPolicy: 'NativeManagementResourceNoCurrencyIdentityAssumption';
-  ManagementCurrencyPresentationVerified: false; AppliesFxConversion: false; ReceiptFilterAvailable: false;
+  ManagementCurrencyPresentationVerified: false; AppliesFxConversion: false; ReceiptFilterAvailable: boolean; ReceiptCaptions?: ReceiptCaptionContext;
   NativeVirtualTableVerified: false; SourceParityVerified: false; OriginalFullTaskAccepted: false }
 const object = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null && !Array.isArray(v)
 const ref = (v: unknown) => typeof v === 'string' && /^[0-9A-F]{32}$/.test(v)
 const hash = (v: unknown) => typeof v === 'string' && /^[0-9a-f]{64}$/.test(v)
 const receipt = (v: unknown): v is TransferredReceipt => object(v) && typeof v.Type === 'string' && /^[0-9A-F]{2}$/.test(v.Type)
   && typeof v.Table === 'string' && /^[0-9A-F]{8}$/.test(v.Table) && ref(v.Reference)
-const tuple = (v: TransferredReceipt) => JSON.stringify([v.Type, v.Table, v.Reference])
+const tuple = warehouseReceiptKey
 const identity = (v: Record<string, unknown>) => v.Version === 1 && (v.World === 'fenix' || v.World === 'amg')
   && v.SourceId === TRANSFERRED_GOODS_SOURCE && v.DefinitionSha256 === TRANSFERRED_GOODS_DEFINITION
   && v.UnitPolicy === 'NativeStoredQuantityNoCoefficientConversion' && v.MoneyUnitPolicy === 'NativeManagementResourceNoCurrencyIdentityAssumption'
@@ -41,6 +42,7 @@ export function isTransferredCapability(v: unknown): v is TransferredCapability 
   return object(v) && identity(v) && v.ModuleSha256 === moduleHash && v.QuerySha256 === queryHash && v.Executable === (v.World === 'fenix')
     && typeof v.Title === 'string' && v.Title.trim().length > 0 && v.PeriodRequired === true && v.MaximumInclusiveDays === 366
     && v.RequiresCompleteNormalInputs === true && v.ReceiptFilterChoicesSupported === false
+    && (v.CurrentReceiptCaptionChoicesSupported === undefined || v.CurrentReceiptCaptionChoicesSupported === (v.World === 'fenix'))
     && listEquals(v.DefaultRows, ['ДокументОприходования', 'Номенклатура'])
     && listEquals(v.DefaultFilterFields, ['Номенклатура', 'ДокументОприходования']) && listEquals(v.DefaultMeasures, transferredGoodsMeasures)
 }
@@ -58,13 +60,15 @@ export function transferredPeriodError(from: string, through: string): string | 
   return a === null || b === null || a > b || (b - a) / 86_400_000 >= 366 ? 'Оберіть явний період до 366 календарних днів.' : null
 }
 export function transferredRequest(capability: TransferredCapability, from: string, through: string,
-  products: readonly string[] = [], receipts: readonly TransferredReceipt[] = []): TransferredRequest {
+  products: readonly string[] = [], receipts: readonly TransferredReceipt[] = [], currentReceiptCaptions = false): TransferredRequest {
   if (!isTransferredCapability(capability) || !capability.Executable || transferredPeriodError(from, through)
+    || typeof currentReceiptCaptions !== 'boolean' || currentReceiptCaptions && (capability.World !== 'fenix' || capability.CurrentReceiptCaptionChoicesSupported !== true)
     || products.length > 256 || products.some(p => !ref(p)) || new Set(products).size !== products.length
     || receipts.length > 256 || receipts.some(r => !receipt(r)) || new Set(receipts.map(tuple)).size !== receipts.length)
     throw new Error('Некоректний запит відомості переданих товарів.')
   return { Version: 1, World: capability.World, SourceId: capability.SourceId, DefinitionSha256: capability.DefinitionSha256,
-    From: from, Through: through, Products: [...products], Receipts: receipts.map(r => ({ ...r })) }
+    From: from, Through: through, Products: [...products], Receipts: receipts.map(r => ({ ...r })),
+    ...(currentReceiptCaptions ? { CurrentReceiptCaptionChoices: true as const } : {}) }
 }
 const measure = (v: unknown, scale: 2 | 3): v is TransferredMeasure => object(v)
   && warehouseMonetaryScaled(v.Closing, scale) === warehouseMonetaryScaled(v.Opening, scale)
@@ -77,14 +81,16 @@ const totalEquals = (total: TransferredResources, parts: TransferredResources[])
 /** The exact Receipt -> Product hierarchy is verified before screen or export receives it. */
 export function normalizeTransferred(v: unknown, request: TransferredRequest): TransferredResult {
   const invalid = () => { throw new Error('Сервер не підтвердив повний результат переданих товарів.') }
-  if (request.Version !== 1 || request.SourceId !== TRANSFERRED_GOODS_SOURCE || request.DefinitionSha256 !== TRANSFERRED_GOODS_DEFINITION
+  if (request.CurrentReceiptCaptionChoices !== undefined && request.CurrentReceiptCaptionChoices !== true
+    || request.CurrentReceiptCaptionChoices === true && request.World !== 'fenix' || request.Version !== 1 || request.SourceId !== TRANSFERRED_GOODS_SOURCE || request.DefinitionSha256 !== TRANSFERRED_GOODS_DEFINITION
     || !object(v) || !identity(v) || v.World !== request.World || v.From !== request.From || v.Through !== request.Through
     || typeof v.Available !== 'boolean' || typeof v.NormalInputsComplete !== 'boolean' || typeof v.OurSnapshotVerified !== 'boolean'
     || typeof v.Code !== 'string' || !v.Code.startsWith('original_transferred_') || !Array.isArray(v.Rows) || !Array.isArray(v.ProductChoices)
     || !Array.isArray(v.MissingCaptionMappings) || v.MissingCaptionMappings.some(s => typeof s !== 'string')
-    || !Array.isArray(v.FilterSummary) || v.FilterSummary.some(s => typeof s !== 'string') || v.ReceiptFilterAvailable !== false) return invalid()
+    || !Array.isArray(v.FilterSummary) || v.FilterSummary.some(s => typeof s !== 'string')) return invalid()
   if (!v.Available) {
     if (v.Rows.length || v.Totals !== null || v.ProductChoices.length || v.InputWitnessSha256 !== null || v.ResultSha256 !== null) return invalid()
+    if (!validReceiptCaptions(v.ReceiptCaptions, v.ReceiptFilterAvailable, !!request.CurrentReceiptCaptionChoices, false, [], request.Receipts)) return invalid()
     return structuredClone(v) as TransferredResult
   }
   if (v.World !== 'fenix' || !v.NormalInputsComplete || !v.OurSnapshotVerified || !hash(v.InputWitnessSha256) || !hash(v.ResultSha256)
@@ -92,7 +98,7 @@ export function normalizeTransferred(v: unknown, request: TransferredRequest): T
   const receipts = new Set<string>(), productsFilter = new Set(request.Products), receiptFilter = new Set(request.Receipts.map(tuple))
   let groups = 0
   for (const row of v.Rows) {
-    if (!object(row) || !receipt(row.Receipt) || typeof row.Caption !== 'string' || !row.Caption.trim() || row.CaptionAvailable !== false
+    if (!object(row) || !receipt(row.Receipt) || typeof row.Caption !== 'string' || !row.Caption.trim() || (request.CurrentReceiptCaptionChoices ? typeof row.CaptionAvailable !== 'boolean' : row.CaptionAvailable !== false)
       || !resources(row.Resources) || !Array.isArray(row.Products) || !row.Products.length) return invalid()
     const key = tuple(row.Receipt)
     if (receipts.has(key) || receiptFilter.size > 0 && !receiptFilter.has(key)) return invalid()
@@ -111,5 +117,7 @@ export function normalizeTransferred(v: unknown, request: TransferredRequest): T
     if (!object(choice) || !ref(choice.Key) || choices.has(choice.Key as string) || typeof choice.Caption !== 'string' || !choice.Caption.trim()) return invalid()
     choices.add(choice.Key as string)
   }
+  if (!validReceiptCaptions(v.ReceiptCaptions, v.ReceiptFilterAvailable, !!request.CurrentReceiptCaptionChoices, true,
+    v.Rows.map(row => ({ Receipts: [row] })), request.Receipts)) return invalid()
   return structuredClone(v) as TransferredResult
 }

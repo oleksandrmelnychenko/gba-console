@@ -1,8 +1,12 @@
 export type WarehouseReceiptKey = { Type: string; Table: string; Reference: string }
 export const receiptCaptionPolicy = 'CurrentOURAuthenticatedInboundHeaderSameNormalSourceGeneration'
-export type ReceiptCaptionContext = { Policy: typeof receiptCaptionPolicy; NormalSourceGenerationBound: boolean;
+export const pointReceiptCaptionPolicy = 'CurrentOURAuthenticatedInboundAndPointHeaderSameNormalSourceGeneration'
+const receiptTables = new Set(['000000A2', '000000AF', '000000DB', '000000F2', '000000F9', '000000FA', '00000104', '00000113', '00000115', '00000116', '0000011C'])
+const pointReadCodes = new Set(['PointCurrentComplete', 'PointNormalGenerationUnavailable', 'PointNormalInputsUnavailable', 'PointJournalStorageUnavailable',
+  'PointOriginalSnapshotBudgetExhausted', 'PointQueryTimeout', 'PointCurrentAuthenticationFailed', 'PointParentQueryTimeout', 'PointParentAuthenticationFailed'])
+export type ReceiptCaptionContext = { Policy: typeof receiptCaptionPolicy | typeof pointReceiptCaptionPolicy; NormalSourceGenerationBound: boolean;
   CompleteReceiptChoices: boolean; SelectedReceiptScopeComplete: boolean; RequiredChoiceTupleCount: number; Code: string; Choices: Array<{ Receipt: WarehouseReceiptKey; Caption: string }>;
-  WitnessSha256: string | null; AllElevenReceiptKindsAvailable: false; HistoricalCaptionVerified: false; SourceParityVerified: false }
+  WitnessSha256: string | null; PointReadCode?: string; PointHeaderWitnessSha256?: string; AllElevenReceiptKindsAvailable: false; HistoricalCaptionVerified: false; SourceParityVerified: false }
 const object = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null && !Array.isArray(v)
 const hash = (v: unknown) => typeof v === 'string' && /^[0-9a-f]{64}$/.test(v)
 export const isWarehouseReceiptKey = (v: unknown): v is WarehouseReceiptKey => object(v)
@@ -14,12 +18,18 @@ export function receiptCaptionRequest(supported: boolean, enabled: boolean, rece
     || new Set(receipts.map(warehouseReceiptKey)).size !== receipts.length) throw new Error('Некоректний відбір документів надходження.')
   return enabled ? { CurrentReceiptCaptionChoices: true as const, Receipts: receipts.map(v => ({ ...v })) } : { Receipts: [] }
 }
+function validCaptionPolicy(value: Record<string, unknown>): boolean {
+  if (value.PointReadCode !== undefined && (typeof value.PointReadCode !== 'string' || !pointReadCodes.has(value.PointReadCode))) return false
+  if (value.Policy === pointReceiptCaptionPolicy) return value.NormalSourceGenerationBound === true
+    && value.PointReadCode === 'PointCurrentComplete' && hash(value.PointHeaderWitnessSha256)
+  return value.Policy === receiptCaptionPolicy && value.PointHeaderWitnessSha256 === undefined
+}
 type CaptionChild = { Receipt: WarehouseReceiptKey; Caption: string; CaptionAvailable: boolean }
 /** Validate current-OUR display evidence separately from quantities/money; equality always uses all three key components. */
 export function validReceiptCaptions(value: unknown, filterAvailable: unknown, enabled: boolean,
   available: boolean, rows: Array<{ Receipts: CaptionChild[] }>, selected: readonly WarehouseReceiptKey[]): boolean {
   if (!enabled) return value === undefined && filterAvailable === false
-  if (!object(value) || value.Policy !== receiptCaptionPolicy || typeof value.NormalSourceGenerationBound !== 'boolean'
+  if (!object(value) || !validCaptionPolicy(value) || typeof value.NormalSourceGenerationBound !== 'boolean'
     || typeof value.CompleteReceiptChoices !== 'boolean' || typeof value.SelectedReceiptScopeComplete !== 'boolean'
     || !Number.isSafeInteger(value.RequiredChoiceTupleCount) || (value.RequiredChoiceTupleCount as number) < 0
     || (value.RequiredChoiceTupleCount as number) > 200_000 || !Array.isArray(value.Choices) || value.Choices.length > 200_256
@@ -32,7 +42,7 @@ export function validReceiptCaptions(value: unknown, filterAvailable: unknown, e
   const names = new Map<string, string>()
   for (const choice of value.Choices) {
     if (!object(choice) || !isWarehouseReceiptKey(choice.Receipt) || choice.Receipt.Type !== '08'
-      || !['000000AF', '000000F2', '00000115'].includes(choice.Receipt.Table) || choice.Receipt.Reference === '0'.repeat(32)
+      || !receiptTables.has(choice.Receipt.Table) || choice.Receipt.Reference === '0'.repeat(32)
       || typeof choice.Caption !== 'string' || !choice.Caption.trim() || names.has(warehouseReceiptKey(choice.Receipt))) return false
     names.set(warehouseReceiptKey(choice.Receipt), choice.Caption)
   }
@@ -49,12 +59,14 @@ export function validReceiptCaptions(value: unknown, filterAvailable: unknown, e
 }
 /** A scope change invalidates document choices, independently of the receipt selection itself. */
 export const receiptChoiceScope = (period: string, products: readonly string[], warehouses: readonly string[]) => JSON.stringify([period, products, warehouses])
-export function receiptChoiceValues(values: readonly string[], context: ReceiptCaptionContext | undefined): WarehouseReceiptKey[] {
-  if (!context?.NormalSourceGenerationBound || !context.CompleteReceiptChoices) {
-    if (values.length) throw new Error('Повний відбір документів надходження не підтверджено.')
-    return []
+/** Removing prior selected values needs no new complete chooser; adding values always does. */
+export function receiptChoiceValues(values: readonly string[], context: ReceiptCaptionContext | undefined,
+  selected: readonly WarehouseReceiptKey[] = []): WarehouseReceiptKey[] {
+  if (values.length > 256 || new Set(values).size !== values.length) throw new Error('Некоректний відбір документів надходження.')
+  const choices = new Map(selected.map(v => [warehouseReceiptKey(v), v]))
+  if (context?.NormalSourceGenerationBound && context.CompleteReceiptChoices) {
+    for (const choice of context.Choices) choices.set(warehouseReceiptKey(choice.Receipt), choice.Receipt)
   }
-  const choices = new Map(context.Choices.map(v => [warehouseReceiptKey(v.Receipt), v.Receipt]))
   return values.map(value => { const key = choices.get(value); if (!key) throw new Error('Документ не належить підтвердженому відбору.'); return { ...key } })
 }
 export function receiptCaptionNote(context: ReceiptCaptionContext | undefined): string {

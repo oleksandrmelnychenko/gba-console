@@ -1,3 +1,5 @@
+import { receiptChoiceScope, receiptChoiceValues, warehouseReceiptKey, type ReceiptCaptionContext, type WarehouseReceiptKey } from '../data/warehouseReceiptCaptions'
+import { WarehouseReceiptCaptionControls, WarehouseReceiptCaptionStatus } from './WarehouseReceiptCaptionControls'
 import { Alert, Button, Group, Stack, Table, Text } from '@mantine/core'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -23,8 +25,8 @@ function download(blob: Blob, name: string) {
 function TransferredTable({ result }: { result: TransferredResult }) {
   const { t } = useI18n(); const [page, setPage] = useState(0)
   const lines = useMemo(() => result.Rows.flatMap(receipt => [
-    { key: JSON.stringify([receipt.Receipt]), cells: [receipt.Caption, 'Підсумок документа', ...transferredValues(receipt.Resources)], subtotal: true },
-    ...receipt.Products.map(product => ({ key: JSON.stringify([receipt.Receipt, product.Product]),
+    { key: warehouseReceiptKey(receipt.Receipt), cells: [receipt.Caption, 'Підсумок документа', ...transferredValues(receipt.Resources)], subtotal: true },
+    ...receipt.Products.map(product => ({ key: JSON.stringify([warehouseReceiptKey(receipt.Receipt), product.Product]),
       cells: [receipt.Caption, product.Caption, ...transferredValues(product.Resources)], subtotal: false })),
   ]), [result])
   const current = Math.min(page, Math.max(0, Math.ceil(lines.length / 50) - 1)), offset = current * 50
@@ -46,7 +48,7 @@ function TransferredTable({ result }: { result: TransferredResult }) {
 }
 
 function useTransferredRun(capability: TransferredCapability, callerKey: string | null, canGenerate: boolean,
-  from: string, through: string, products: string[], key: string, onAvailable: (result: TransferredResult) => void) {
+  from: string, through: string, products: string[], receiptMode: boolean, receipts: WarehouseReceiptKey[], key: string, onAvailable: (result: TransferredResult) => void) {
   const run = useReportRunState<TransferredResult>(key), active = useRef<AbortController | null>(null), latest = useRef(key)
   const [exporting, setExporting] = useState(false)
   useEffect(() => { latest.current = key; return () => { latest.current = ''; active.current?.abort() } }, [key])
@@ -58,9 +60,9 @@ function useTransferredRun(capability: TransferredCapability, callerKey: string 
     const controller = new AbortController(); active.current?.abort(); active.current = controller
     latest.current = key; const update = run.begin()
     try {
-      const response = await readTransferred(transferredRequest(capability, from, through, products), controller.signal)
+      const response = await readTransferred(transferredRequest(capability, from, through, products, receipts, receiptMode), controller.signal)
       if (controller.signal.aborted) return
-      update({ lastRun: response }); if (response.Available) onAvailable(response)
+      update({ lastRun: response }); onAvailable(response)
     } catch (failure) { if (!controller.signal.aborted) update({ error: failure instanceof Error ? failure.message : 'Не вдалося сформувати відомість переданих товарів.' }) }
     finally { update({ isLoading: false }) }
   }
@@ -93,7 +95,7 @@ function TransferredOutput({ report, exportError }: { report: TransferredResult 
   return <>
     {exportError ? <Alert color="yellow">{t(exportError)}</Alert> : null}
     {report && !report.Available ? <Alert color="yellow">{t(dependencies[report.Code] ?? 'Повні узгоджені початкові залишки й місячні рухи переданих товарів недоступні; частковий звіт не формується.')}</Alert> : null}
-    {report?.Available ? <><Alert color="yellow">{t('Назви документів надходження недоступні. Усі їхні рядки та суми включено окремо; товари згруповано всередині кожного документа.')}</Alert>
+    {report?.Available ? <><WarehouseReceiptCaptionStatus context={report.ReceiptCaptions} fallback="Назви документів надходження недоступні. Усі їхні рядки та суми включено окремо; товари згруповано всередині кожного документа." />
       <TransferredTable key={report.ResultSha256} result={report} /></> : null}
   </>
 }
@@ -102,16 +104,24 @@ export function OriginalTransferredGoodsPanel({ capability, callerKey, canGenera
   capability: TransferredCapability; callerKey: string | null; canGenerate: boolean; initialFrom: string; initialThrough: string
 }) {
   const { t } = useI18n(); const [from, setFrom] = useState(initialFrom), [through, setThrough] = useState(initialThrough)
-  const [selection, setSelection] = useState<{ scope: string; products: string[] }>({ scope: '', products: [] })
-  const [choices, setChoices] = useState<{ scope: string; products: { value: string; label: string }[] } | null>(null)
-  const scope = JSON.stringify([callerKey, canGenerate, capability, from, through]), products = selection.scope === scope ? selection.products : []
-  const key = JSON.stringify([scope, products])
-  const delivery = useTransferredRun(capability, callerKey, canGenerate, from, through, products, key,
-    result => setChoices({ scope, products: result.ProductChoices.map(p => ({ value: p.Key, label: p.Caption })) }))
+  const [receiptMode, setReceiptMode] = useState(false)
+  const [selection, setSelection] = useState<{ scope: string; products: string[]; receipts: WarehouseReceiptKey[] }>({ scope: '', products: [], receipts: [] })
+  const [choices, setChoices] = useState<{ scope: string; products: { value: string; label: string }[]; receiptScope: string; receiptContext?: ReceiptCaptionContext } | null>(null)
+  const receiptEnabled = receiptMode && capability.CurrentReceiptCaptionChoicesSupported === true
+  const scope = JSON.stringify([callerKey, canGenerate, capability, from, through, receiptEnabled]), products = selection.scope === scope ? selection.products : []
+  const receipts = selection.scope === scope ? selection.receipts : [], proofScope = receiptChoiceScope(scope, products, [])
+  const key = JSON.stringify([scope, products, receipts]), currentChoices = choices?.scope === scope ? choices : null
+  const receiptContext = currentChoices?.receiptScope === proofScope ? currentChoices.receiptContext : undefined
+  const delivery = useTransferredRun(capability, callerKey, canGenerate, from, through, products, receiptEnabled, receipts, key,
+    result => setChoices({ scope, products: result.ProductChoices.map(p => ({ value: p.Key, label: p.Caption })), receiptScope: proofScope, receiptContext: result.ReceiptCaptions }))
   return <Stack gap="md"><Text size="sm">{t('Документ надходження → товар; кількість, вартість і ПДВ для початкового залишку, надходжень, витрат і кінцевого залишку.')}</Text>
     <OriginalPeriodDateProductFilters from={from} through={through} products={products} productChoices={choices?.scope === scope ? choices.products : []}
       busy={delivery.run.isLoading || delivery.exporting} changeFrom={value => { delivery.invalidate(); setFrom(value) }}
-      changeThrough={value => { delivery.invalidate(); setThrough(value) }} selectProducts={value => { delivery.invalidate(); setSelection({ scope, products: value }) }} />
+      changeThrough={value => { delivery.invalidate(); setThrough(value) }} selectProducts={value => { delivery.invalidate(); setSelection({ scope, products: value, receipts: [] }) }} />
+    <WarehouseReceiptCaptionControls supported={capability.CurrentReceiptCaptionChoicesSupported === true} enabled={receiptEnabled} scope={proofScope}
+      context={receiptContext} selected={receipts} busy={delivery.run.isLoading || delivery.exporting}
+      toggle={value => { delivery.invalidate(); setReceiptMode(value) }} select={values => { delivery.invalidate(); setSelection({ scope, products,
+        receipts: receiptChoiceValues(values, receiptContext, receipts) }) }} />
     <Text size="sm" c="dimmed">{t('Відбір за документом надходження стане доступним після підтвердженого зіставлення його назви. Рядки документів без назв не вилучаються.')}</Text>
     <Text size="sm" c="dimmed">{t('Період охоплює календарні дні від 00:00:00 до 23:59:59; дробова частина секунди після цієї межі не включається.')}</Text>
     <Text size="sm" c="dimmed">{t('Кількість — записані одиниці; суми управлінського обліку показано без валютного перерахунку. Повна відповідність усім налаштуванням 1С не підтверджена.')}</Text>

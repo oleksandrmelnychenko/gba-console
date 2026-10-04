@@ -60,7 +60,7 @@ function useQuantityRun({ capability, callerKey, canGenerate, from, through, pro
     try {
       const result = await readWarehouseQuantity(warehouseQuantityRequest(capability, from, through, products, warehouses, receiptMode, receipts), controller.signal)
       if (controller.signal.aborted) return
-      update({ lastRun: result }); if (result.Available) onAvailable(result)
+      update({ lastRun: result }); onAvailable(result)
     } catch (failure) { if (!controller.signal.aborted) update({ error: failure instanceof Error ? failure.message : 'Не вдалося сформувати відомість.' }) }
     finally { update({ isLoading: false }) }
   }
@@ -135,10 +135,10 @@ export function OriginalWarehouseQuantityPanel({ capability, callerKey, canGener
       busy={delivery.run.isLoading || delivery.exporting} changeFrom={value => { delivery.invalidate(); setFrom(value) }}
       changeThrough={value => { delivery.invalidate(); setThrough(value) }} selectProducts={value => { delivery.invalidate(); setSelection({ scope: periodScope, products: value, warehouses, receipts: [] }) }}
       selectWarehouses={value => { delivery.invalidate(); setSelection({ scope: periodScope, products, warehouses: value, receipts: [] }) }} />
-    <WarehouseReceiptCaptionControls supported={!!capability.CurrentReceiptCaptionChoicesSupported} enabled={receiptEnabled}
+    <WarehouseReceiptCaptionControls supported={!!capability.CurrentReceiptCaptionChoicesSupported} enabled={receiptEnabled} scope={proofScope}
       context={currentChoices?.receiptScope === proofScope ? currentChoices.receiptContext : undefined} selected={receipts} busy={delivery.run.isLoading || delivery.exporting}
       toggle={value => { delivery.invalidate(); setReceiptMode(value) }} select={values => { delivery.invalidate(); setSelection({ scope: periodScope, products, warehouses,
-        receipts: receiptChoiceValues(values, currentChoices?.receiptScope === proofScope ? currentChoices.receiptContext : undefined) }) }} />
+        receipts: receiptChoiceValues(values, currentChoices?.receiptScope === proofScope ? currentChoices.receiptContext : undefined, receipts) }) }} />
     <QuantityNotes />
     <QuantityMessages error={delivery.error} runError={delivery.run.error} />
     <QuantityActions permitted={delivery.permitted} invalidPeriod={!!delivery.error} loading={delivery.run.isLoading} exporting={delivery.exporting}

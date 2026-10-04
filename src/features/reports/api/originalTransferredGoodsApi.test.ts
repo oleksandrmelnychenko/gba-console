@@ -14,3 +14,14 @@ it('transferred capability refuses a foreign server original before exposing gen
   vi.clearAllMocks(); vi.mocked(apiRequest).mockResolvedValue({ ...capability, SourceId: 'other' }); await expect(getTransferredCapability()).rejects.toThrow()
   expect(apiRequest).toHaveBeenCalledWith('/report/originals/transferred-goods/capabilities?world=fenix', { signal: undefined })
 })
+
+it('transferred optional receipt API preserves the same full compound keys and validates returned point evidence', async () => {
+  vi.clearAllMocks()
+  const { pointCapability, pointResponse, pointReceipt } = await import('../testing/receiptPointFixtures')
+  const query = transferredRequest(pointCapability, '2026-09-01', '2026-09-30', [], [pointReceipt], true)
+  vi.mocked(apiRequest).mockResolvedValue(pointResponse())
+  expect((await readTransferred(query)).ReceiptCaptions?.PointReadCode).toBe('PointCurrentComplete')
+  expect(apiRequest).toHaveBeenCalledWith('/report/originals/transferred-goods/preview', { method: 'POST', body: query, dedupe: false, signal: undefined })
+  const forged = pointResponse(); delete forged.ReceiptCaptions!.PointHeaderWitnessSha256
+  vi.mocked(apiRequest).mockResolvedValue(forged); await expect(readTransferred(query)).rejects.toThrow()
+})
