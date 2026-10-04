@@ -18,7 +18,7 @@ const quantityCap: WarehouseQuantityCapability = { ...base, SourceId: WAREHOUSE_
 const moneyCap: WarehouseMonetaryCapability = { ...base, SourceId: WAREHOUSE_MONETARY_SOURCE, DefinitionSha256: WAREHOUSE_MONETARY_DEFINITION,
   ModuleSha256: 'e5b629dd087052bf882091c962cf994a8fea720146e501d5b3aa3640fabcdc4b', QuerySha256: 'e64d3dee516b4eae8c2065f1a89779a6bb35193e48e02661c955c6398355065c',
   MoneyUnitPolicy: 'NativeManagementResourceNoCurrencyIdentityAssumption', ManagementCurrencyPresentationVerified: false, AppliesFxConversion: false, DefaultMeasures: warehouseMonetaryDefaultMeasures }
-const context = (): ReceiptCaptionContext => ({ Policy: receiptCaptionPolicy, NormalSourceGenerationBound: true, CompleteReceiptChoices: true,
+const context = (): ReceiptCaptionContext => ({ Policy: receiptCaptionPolicy, NormalSourceGenerationBound: true, CompleteReceiptChoices: true, SelectedReceiptScopeComplete: true, RequiredChoiceTupleCount: 1,
   Code: 'original_warehouse_receipt_selected_scope_complete', Choices: [{ Receipt: { ...tuple }, Caption: 'Н-15 від 10.09.2026' }], WitnessSha256: 'c'.repeat(64),
   AllElevenReceiptKindsAvailable: false, HistoricalCaptionVerified: false, SourceParityVerified: false })
 function scenario(money: boolean, enabled = true) {
@@ -62,6 +62,7 @@ describe('same-generation current OUR captions on both original period deliverie
     // Both result variants retain the same full tuple hierarchy.
     ;(value.Rows[0].Receipts as typeof unknown[]).push(unknown)
     value.ReceiptFilterAvailable = false; value.ReceiptCaptions!.CompleteReceiptChoices = false
+    value.ReceiptCaptions!.SelectedReceiptScopeComplete = false; value.ReceiptCaptions!.RequiredChoiceTupleCount = 2
     value.ReceiptCaptions!.Code = 'original_warehouse_receipt_selected_scope_incomplete'
     expect(normalize(value).Rows[0].Receipts).toHaveLength(2); expect(normalize(value).Totals).toEqual(value.Totals)
     expect(() => normalize({ ...value, ReceiptFilterAvailable: true })).toThrow()
@@ -79,7 +80,7 @@ describe('same-generation current OUR captions on both original period deliverie
   })
   it('never gives old normal parents a caption or loses their resource rows', () => {
     const { value, normalize } = scenario(true); value.ReceiptFilterAvailable = false
-    value.ReceiptCaptions = { ...context(), NormalSourceGenerationBound: false, CompleteReceiptChoices: false, WitnessSha256: null, Choices: [], Code: 'original_warehouse_receipt_normal_generation_crossbinding_unavailable' }
+    value.ReceiptCaptions = { ...context(), NormalSourceGenerationBound: false, CompleteReceiptChoices: false, SelectedReceiptScopeComplete: false, WitnessSha256: null, Choices: [], Code: 'original_warehouse_receipt_normal_generation_crossbinding_unavailable' }
     value.Rows[0].Receipts[0].Caption = 'Назва документа недоступна'; value.Rows[0].Receipts[0].CaptionAvailable = false
     expect(normalize(value).Totals).toEqual(resources)
     expect(() => normalize({ ...value, ReceiptCaptions: context() })).toThrow()
@@ -90,6 +91,14 @@ describe('same-generation current OUR captions on both original period deliverie
     expect(() => warehouseQuantityRequest({ ...quantityCap, CurrentReceiptCaptionChoicesSupported: undefined }, query.From, query.Through, [], [], true)).toThrow()
     expect(() => warehouseQuantityRequest(quantityCap, query.From, query.Through, [], [], false, [tuple])).toThrow()
     expect(() => warehouseQuantityRequest(quantityCap, query.From, query.Through, [], [], true, [tuple, { Reference: tuple.Reference, Type: tuple.Type, Table: tuple.Table }])).toThrow()
+  })
+  it('keeps the complete chooser after selecting one receipt and reports selected coverage separately', () => {
+    const { value } = scenario(false), c = value.ReceiptCaptions!
+    const other = { ...tuple, Table: '000000AF' }; c.Choices.push({ Receipt: other, Caption: 'П-2 від 11.09.2026' }); c.RequiredChoiceTupleCount = 2
+    const query = warehouseQuantityRequest(quantityCap, '2026-09-01', '2026-09-30', [], [], true, [tuple])
+    expect(normalizeWarehouseQuantity(value, query).ReceiptCaptions?.Choices).toHaveLength(2)
+    expect(receiptChoiceValues([warehouseReceiptKey(other)], c)).toEqual([other])
+    expect(() => normalizeWarehouseQuantity({ ...value, ReceiptCaptions: { ...c, SelectedReceiptScopeComplete: false } }, query)).toThrow()
   })
   it('scopes choices to period/product/warehouse and matches selections by all three components', () => {
     expect(receiptChoiceScope('period', ['A'], ['B'])).not.toBe(receiptChoiceScope('period', ['C'], ['B']))

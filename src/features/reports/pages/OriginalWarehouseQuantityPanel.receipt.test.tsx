@@ -30,7 +30,7 @@ const captionResponse = (): WarehouseQuantityResult => {
   const value = response(), receipt = value.Rows[0].Receipts[0].Receipt
   value.Rows[0].Receipts[0].Caption = 'Н-15 від 10.09.2026'; value.Rows[0].Receipts[0].CaptionAvailable = true
   value.ReceiptFilterAvailable = true
-  value.ReceiptCaptions = { Policy: 'CurrentOURAuthenticatedInboundHeaderSameNormalSourceGeneration', NormalSourceGenerationBound: true, CompleteReceiptChoices: true,
+  value.ReceiptCaptions = { Policy: 'CurrentOURAuthenticatedInboundHeaderSameNormalSourceGeneration', NormalSourceGenerationBound: true, CompleteReceiptChoices: true, SelectedReceiptScopeComplete: true, RequiredChoiceTupleCount: 1,
     Code: 'original_warehouse_receipt_selected_scope_complete', Choices: [{ Receipt: { ...receipt }, Caption: 'Н-15 від 10.09.2026' }], WitnessSha256: 'd'.repeat(64),
     AllElevenReceiptKindsAvailable: false, HistoricalCaptionVerified: false, SourceParityVerified: false }
   return value
@@ -64,7 +64,7 @@ it('selects the human caption with its full tuple and drops receipt proof when p
 })
 it('partial three-kind captions leave all rows and exports usable but never enable an incomplete document chooser', async () => {
   vi.clearAllMocks(); const value = captionResponse(); value.ReceiptFilterAvailable = false
-  value.ReceiptCaptions!.CompleteReceiptChoices = false; value.ReceiptCaptions!.Code = 'original_warehouse_receipt_selected_scope_incomplete'
+  value.ReceiptCaptions!.CompleteReceiptChoices = false; value.ReceiptCaptions!.SelectedReceiptScopeComplete = false; value.ReceiptCaptions!.RequiredChoiceTupleCount = 2; value.ReceiptCaptions!.Code = 'original_warehouse_receipt_selected_scope_incomplete'
   value.Rows[0].Receipts.push({ Receipt: { Type: '08', Table: '0000011C', Reference: 'D'.repeat(32) }, Caption: 'Назва документа недоступна', CaptionAvailable: false,
     Quantity: { Opening: '0.000', Incoming: '0.000', Outgoing: '0.000', Closing: '0.000' } })
   vi.mocked(readWarehouseQuantity).mockResolvedValue(value)
