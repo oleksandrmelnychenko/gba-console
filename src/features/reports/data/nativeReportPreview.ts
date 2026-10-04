@@ -1,4 +1,5 @@
 import { readSettlementCounterpartyAttributes, type SettlementCounterpartyAttributes } from './settlementSourceAttributes'
+import { readClientDiscountRegions, type ClientDiscountRegions } from './originalClientDiscounts'
 import { CURRENT_VPARIVANIE_PRODUCT_FIELDS, CURRENT_VPARIVANIE_FULL_NOTE } from './currentVparivanie'
 import { validateCurrentVparivanieColumns } from './currentVparivanieColumns'
 
@@ -38,6 +39,7 @@ export type NativeReportPreview = {
   Cells: NativeReportPreviewCell[]
   CurrentVparivanieProducts?: CurrentVparivanieProducts
   SettlementCounterpartyAttributes?: SettlementCounterpartyAttributes
+  ClientDiscountRecipientRegions?: ClientDiscountRegions
 }
 
 const record = (value: unknown): value is Record<string, unknown> => !!value && typeof value === 'object' && !Array.isArray(value)
@@ -156,8 +158,13 @@ export function normalizeNativeReportPreview(response: unknown, fullCurrentVpari
   if (attributes && (request?.DataSource !== 'NativeSettlementPeriod'
     || (preview.RowSchema as { Identity?: string }[]).at(-1)?.Identity !== 'SettlementCounterparty'))
     throw new Error('Реквізити покупця не відповідають набору взаєморозрахунків.')
+  const regions = readClientDiscountRegions(preview.ClientDiscountRecipientRegions,
+    preview.ResultSha256 as string, (preview.Rows as NativeReportPreviewAxis[]).map(row => row.SourceIndex))
+  if (regions && (request?.DataSource !== 'NativeOneCClientDiscounts' || preview.RowSchema.length !== 1
+    || (preview.RowSchema as { Identity?: string }[])[0]?.Identity !== 'OneCDiscountClient'))
+    throw new Error('Код регіону не відповідає рядку одержувача знижки.')
   const productDisplay = normalizeCurrentVparivanieProducts(preview, request, fullCurrentVparivanie)
-  return { ...preview, Request: request, ...(productDisplay ? { CurrentVparivanieProducts: productDisplay } : {}), ...(attributes ? { SettlementCounterpartyAttributes: attributes } : {}) } as NativeReportPreview
+  return { ...preview, Request: request, ...(productDisplay ? { CurrentVparivanieProducts: productDisplay } : {}), ...(attributes ? { SettlementCounterpartyAttributes: attributes } : {}), ...(regions ? { ClientDiscountRecipientRegions: regions } : {}) } as NativeReportPreview
 }
 
 function normalizeCurrentVparivanieProducts(preview: Record<string, unknown>, request: NativeReportPreviewRequest | null, full: boolean): CurrentVparivanieProducts | undefined {

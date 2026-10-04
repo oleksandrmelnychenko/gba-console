@@ -346,6 +346,7 @@ export type ReportDataset = {
   agreementPriceComparison?: unknown
   priceTypeSalesComparison?: unknown
   discountMarkup?: unknown
+  originalClientDiscounts?: unknown
   providedDiscounts?: unknown
   priceAnalysis?: unknown
   DataSource: number
