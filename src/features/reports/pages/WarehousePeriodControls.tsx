@@ -36,9 +36,17 @@ export function OriginalPeriodDateProductFilters({ from, through, products, prod
 }) {
   const { t } = useI18n()
   return <>
-    <Group grow><TextInput type="date" label={t('Початок періоду')} value={from} disabled={busy} onChange={e => changeFrom(e.currentTarget.value)} />
-      <TextInput type="date" label={t('Кінець періоду')} value={through} disabled={busy} onChange={e => changeThrough(e.currentTarget.value)} /></Group>
+    <OriginalPeriodDateInputs from={from} through={through} busy={busy} changeFrom={changeFrom} changeThrough={changeThrough} />
     <MultiSelect label={t('Товари')} placeholder={t('Усі товари; назви для відбору з’являться після формування')} data={productChoices} value={products} searchable clearable
       disabled={busy || (!productChoices.length && !products.length)} onChange={selectProducts} maxValues={256} />
   </>
+}
+
+// Calendar presentation shared by originals; no product choice or report-specific semantics are added.
+export function OriginalPeriodDateInputs({ from, through, busy, changeFrom, changeThrough }: {
+  from: string; through: string; busy: boolean; changeFrom: (value: string) => void; changeThrough: (value: string) => void
+}) {
+  const { t } = useI18n()
+  return <Group grow><TextInput type="date" label={t('Початок періоду')} value={from} disabled={busy} onChange={e => changeFrom(e.currentTarget.value)} />
+    <TextInput type="date" label={t('Кінець періоду')} value={through} disabled={busy} onChange={e => changeThrough(e.currentTarget.value)} /></Group>
 }
