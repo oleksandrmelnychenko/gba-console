@@ -64,7 +64,7 @@ export function plannedPeriodError(from: string, through: string): string | null
   return first === null || last === null || first > last || (last - first) / 86_400_000 >= 366 ? 'Оберіть явний період до 366 календарних днів.' : null
 }
 export const plannedFilterKey = (v: PlannedFilter) => JSON.stringify([v.Field, v.Type, v.Table, v.Reference])
-function validFilter(v: unknown): v is PlannedFilter {
+function validFilter(v: unknown): v is PlannedFilter & Record<string, unknown> {
   if (!object(v) || !field(v.Field) || !ref(v.Reference, 32)) return false
   return v.Field === 'Project' || v.Field === 'BankAccountCash' ? ref(v.Type, 2) && ref(v.Table, 8) : v.Type === null && v.Table === null
 }
@@ -116,10 +116,12 @@ export function normalizePlannedResult(v: unknown, request: PlannedRequest): Ori
   const captionNames = new Map((v.Choices as PlannedChoice[]).map(choice => [plannedFilterKey(choice), choice.Caption]))
   const keys = new Set<string>(), parts: PlannedAmounts[] = []
   for (const row of v.Rows) {
-    if (!object(row) || !Array.isArray(row.Key) || row.Key.length !== request.Rows.length || !amounts(row)) return invalid()
+    if (!object(row) || !Array.isArray(row.Key) || row.Key.length !== request.Rows.length) return invalid()
+    const rowKey = row.Key
+    if (!amounts(row)) return invalid()
     const tuple: string[] = []
-    for (let i = 0; i < row.Key.length; i++) {
-      const value = row.Key[i]
+    for (let i = 0; i < rowKey.length; i++) {
+      const value = rowKey[i]
       if (!validFilter(value) || !object(value) || value.Field !== request.Rows[i] || value.Caption !== null && (typeof value.Caption !== 'string' || !value.Caption.trim())) return invalid()
       if (value.Caption !== null && captionNames.get(plannedFilterKey(value)) !== value.Caption) return invalid()
       tuple.push(plannedFilterKey(value))
