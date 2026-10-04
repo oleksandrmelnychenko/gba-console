@@ -55,7 +55,7 @@ it('complete empty period retains applied human caption until the typed filter i
   await screen.findByText('У повністю перевіреному періоді рядків немає.')
   expect((screen.getByRole('combobox', { name: 'Контрагент' }) as HTMLInputElement).disabled).toBe(false)
   expect(screen.getByText('Наш контрагент', { selector: '.mantine-MultiSelect-pill .mantine-Pill-label' })).toBeTruthy(); expect(screen.queryByText('A'.repeat(32))).toBeNull()
-  fireEvent.click(screen.getByRole('button', { name: 'Очистити Контрагент' }))
+  fireEvent.click(screen.getByLabelText('Очистити Контрагент', { selector: 'button' }))
   expect(screen.queryByText('Наш контрагент', { selector: '.mantine-MultiSelect-pill .mantine-Pill-label' })).toBeNull()
   fireEvent.click(screen.getByRole('button', { name: 'Сформувати' }))
   await waitFor(() => expect(readOriginalPlannedCash).toHaveBeenCalledTimes(3))
