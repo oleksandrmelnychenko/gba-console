@@ -34,7 +34,7 @@ function PlannedSelections({ rows, filters, choices, busy, group, select }: { ro
     {plannedFilterFields.map(field => {
       const options = choices.filter(choice => choice.Field === field).map(choice => ({ value: plannedFilterKey(choice), label: choice.Caption }))
       return <MultiSelect key={field} label={t(plannedFieldLabels[field])} data={options} value={filters.filter(filter => filter.Field === field).map(plannedFilterKey)}
-        disabled={busy || !options.length} placeholder={t(options.length ? 'Усі; оберіть потрібні значення' : 'Назви для відбору ще недоступні')}
+        disabled={busy || (!options.length && !filters.some(filter => filter.Field === field))} clearButtonProps={{ 'aria-label': `${t('Очистити')} ${t(plannedFieldLabels[field])}` }} placeholder={t(options.length ? 'Усі; оберіть потрібні значення' : 'Назви для відбору ще недоступні')}
         searchable clearable limit={50} maxValues={256} onChange={keys => select(field, keys)} />
     })}
   </>
@@ -101,11 +101,17 @@ export function OriginalPlannedCashPanel({ capability, callerKey, canGenerate, i
 }) {
   const { t } = useI18n(), [from, setFrom] = useState(initialFrom), [through, setThrough] = useState(initialThrough), [rows, setRows] = useState<PlannedField[]>([...plannedDefaultRows])
   const [selection, setSelection] = useState<{ scope: string; filters: PlannedFilter[] }>({ scope: '', filters: [] })
-  const [choiceState, setChoiceState] = useState<{ scope: string; choices: PlannedChoice[] } | null>(null)
+  const [choiceState, setChoiceState] = useState<{ scope: string; choices: PlannedChoice[]; selectedCaptions: PlannedChoice[] } | null>(null)
   const scope = JSON.stringify([callerKey, canGenerate, capability, from, through]), filters = selection.scope === scope ? selection.filters : []
-  const choices = choiceState?.scope === scope ? choiceState.choices : [], key = JSON.stringify([scope, rows, filters])
+  const currentChoices = choiceState?.scope === scope ? choiceState.choices : [], selectedKeys = new Set(filters.map(plannedFilterKey))
+  const choices = [...currentChoices, ...(choiceState?.scope === scope ? choiceState.selectedCaptions.filter(choice => selectedKeys.has(plannedFilterKey(choice))) : [])]
+  const key = JSON.stringify([scope, rows, filters])
   const delivery = usePlannedRun({ capability, callerKey, permitted: canGenerate, from, through, rows, filters, key,
-    receiveChoices: value => setChoiceState({ scope, choices: value }) })
+    receiveChoices: value => setChoiceState(previous => {
+      const freshKeys = new Set(value.map(plannedFilterKey)), appliedKeys = new Set(filters.map(plannedFilterKey))
+      const prior = previous?.scope === scope ? [...previous.choices, ...previous.selectedCaptions] : []
+      return { scope, choices: value, selectedCaptions: prior.filter(choice => appliedKeys.has(plannedFilterKey(choice)) && !freshKeys.has(plannedFilterKey(choice))) }
+    }) })
   const busy = delivery.run.isLoading || delivery.exporting
   function select(field: PlannedField, keys: string[]) {
     const selected = new Set(keys), current = choices.filter(choice => choice.Field === field && selected.has(plannedFilterKey(choice)))

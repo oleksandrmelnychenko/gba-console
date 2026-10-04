@@ -44,3 +44,21 @@ it('missing own monthly publication keeps rows and every export unavailable', as
   for (const name of ['CSV', 'XLSX', 'PDF']) expect((screen.getByRole('button', { name }) as HTMLButtonElement).disabled).toBe(true)
   expect(screen.queryByText('Наш контрагент')).toBeNull()
 })
+
+it('complete empty period retains applied human caption until the typed filter is cleared', async () => {
+  vi.clearAllMocks(); const empty = { ...response(), Rows: [], Totals: null, Choices: [], ResultSha256: 'e'.repeat(64) }
+  vi.mocked(readOriginalPlannedCash).mockResolvedValueOnce(response()).mockResolvedValue(empty)
+  render(panel()); fireEvent.click(screen.getByRole('button', { name: 'Сформувати' }))
+  await waitFor(() => expect((screen.getByRole('combobox', { name: 'Контрагент' }) as HTMLInputElement).disabled).toBe(false))
+  fireEvent.click(screen.getByRole('combobox', { name: 'Контрагент' })); fireEvent.click(await screen.findByRole('option', { name: 'Наш контрагент' }))
+  fireEvent.click(screen.getByRole('button', { name: 'Сформувати' }))
+  await screen.findByText('У повністю перевіреному періоді рядків немає.')
+  expect((screen.getByRole('combobox', { name: 'Контрагент' }) as HTMLInputElement).disabled).toBe(false)
+  expect(screen.getByText('Наш контрагент')).toBeTruthy(); expect(screen.queryByText('A'.repeat(32))).toBeNull()
+  fireEvent.click(screen.getByRole('button', { name: 'Очистити Контрагент' }))
+  expect(screen.queryByText('Наш контрагент')).toBeNull()
+  fireEvent.click(screen.getByRole('button', { name: 'Сформувати' }))
+  await waitFor(() => expect(readOriginalPlannedCash).toHaveBeenCalledTimes(3))
+  expect(vi.mocked(readOriginalPlannedCash).mock.calls[1][0].Filters).toEqual([{ Field: 'Counterparty', Type: null, Table: null, Reference: 'A'.repeat(32) }])
+  expect(vi.mocked(readOriginalPlannedCash).mock.calls[2][0].Filters).toEqual([])
+})

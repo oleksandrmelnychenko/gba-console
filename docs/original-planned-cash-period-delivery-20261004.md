@@ -22,3 +22,5 @@ intermediate subtotals and six remaining choice mappings are pending.
 
 Node tests/lint/build/Doctor/authenticated-browser checks are Root-owned future
 gates. No runtime or deployment credit is claimed by authoring this change.
+
+Applied choices retain their previous genuine human caption only while selected when a complete new response has no such choice. The active filter remains clearable; after clearing, its stale option disappears. Caption history is discarded by the existing caller/permission/definition/period scope. One authored empty-result regression was added:16 new delivery cases,34 with18 retained catalogue cases, actual0.
