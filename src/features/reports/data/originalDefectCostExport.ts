@@ -2,13 +2,13 @@ import { defectCostLabels, normalizeDefectCost, type DefectCostResult, type Defe
 import type { CurrentVparivanieV2PdfDefinition } from './currentVparivanieV2Export'
 export const defectCostValues = (value: DefectCostValues, result: DefectCostResult) => result.Measures.map(m => value[m])
 export const defectCostHeaders = (result: DefectCostResult) => ['Підрозділ', 'Стаття витрат', ...result.Measures.map(m => defectCostLabels[m])]
-/** Names are unavailable in the current wire contract. Ordinals identify visible rows without exposing technical references. */
+/** Completed server-bound names are retained in every export; missing names use human ordinals without technical references. */
 export function defectCostLines(result: DefectCostResult) {
   return result.Rows.flatMap((row, division) => {
-    const caption = `Підрозділ ${division + 1} · назва недоступна`
+    const caption = row.CaptionAvailable && row.Caption !== null ? row.Caption : `Підрозділ ${division + 1} · назва недоступна`
     return [{ key: JSON.stringify([row.Division]), cells: [caption, 'Підсумок підрозділу', ...defectCostValues(row.Values, result)], subtotal: true },
       ...row.Articles.map((article, index) => ({ key: JSON.stringify([row.Division, article.CostArticle]),
-        cells: [caption, `Стаття витрат ${index + 1} · назва недоступна`, ...defectCostValues(article.Values, result)], subtotal: false }))]
+        cells: [caption, article.CaptionAvailable && article.Caption !== null ? article.Caption : `Стаття витрат ${index + 1} · назва недоступна`, ...defectCostValues(article.Values, result)], subtotal: false }))]
   })
 }
 export function defectCostExportError(result: DefectCostResult): string | null {
@@ -24,8 +24,12 @@ export function defectCostMatrix(result: DefectCostResult): string[][] {
 }
 const unitNote = 'Вартість і ПДВ — суми управлінського обліку з двома десятковими знаками, без валютного перерахунку.'
 export function defectCostFilterSummary(result: DefectCostResult) {
-  return [`Підрозділи: ${result.Divisions.length ? 'вибрані; назви недоступні' : 'усі'}`,
-    `Статті витрат: ${result.CostArticles.length ? 'вибрані; назви недоступні' : 'усі'}`]
+  const summary = (field: 'Подразделение' | 'СтатьяЗатрат', keys: string[]) => {
+    if (!keys.length) return 'усі'
+    const captions = new Map(result.Choices[field].map(choice => [choice.Key, choice.Caption]))
+    return keys.every(key => captions.has(key)) ? keys.map(key => captions.get(key)).join('; ') : 'вибрані; назви недоступні'
+  }
+  return [`Підрозділи: ${summary('Подразделение', result.Divisions)}`, `Статті витрат: ${summary('СтатьяЗатрат', result.CostArticles)}`]
 }
 export function defectCostCsv(result: DefectCostResult): string {
   const quote = (value: string) => `"${value.replaceAll('"', '""')}"`

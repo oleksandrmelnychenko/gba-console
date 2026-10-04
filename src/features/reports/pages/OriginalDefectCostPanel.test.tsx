@@ -7,7 +7,7 @@ import { defectCostXlsx } from '../data/originalDefectCostExport'
 import type { DefectCostResult } from '../data/originalDefectCost'
 import { defectCostCapability, defectCostResponse, defectDivision, defectArticle, emptyDefectCost, missingDefectCost } from '../testing/originalDefectCostFixtures'
 import { OriginalDefectCostPanel } from './OriginalDefectCostPanel'
-vi.mock('../api/originalDefectCostApi', () => ({ readDefectCost: vi.fn() }))
+vi.mock('../api/originalDefectCostApi', () => ({ readDefectCost: vi.fn(), readDefectCostChoices: vi.fn() }))
 vi.mock('../data/originalDefectCostExport', async importOriginal => {
   const actual = await importOriginal<typeof import('../data/originalDefectCostExport')>()
   return { ...actual, defectCostXlsx: vi.fn() }
