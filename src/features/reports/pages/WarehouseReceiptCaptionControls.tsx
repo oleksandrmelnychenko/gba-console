@@ -1,23 +1,23 @@
 import { Button, Checkbox, MultiSelect, Stack, Text } from '@mantine/core'
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { receiptCaptionNote, warehouseReceiptKey, type ReceiptCaptionContext, type WarehouseReceiptKey } from '../data/warehouseReceiptCaptions'
 
 type ReceiptOption = { value: string; label: string }
 function useSelectedReceiptOptions(scope: string, context: ReceiptCaptionContext | undefined, selectedKeys: string[]) {
-  const [remembered, remember] = useState<{ scope: string; choices: ReceiptOption[] }>({ scope: '', choices: [] })
   const selectionKey = JSON.stringify(selectedKeys), selectedSet = new Set(selectedKeys)
+  const [remembered, remember] = useState<{ scope: string; context: ReceiptCaptionContext | undefined; selectionKey: string; choices: ReceiptOption[] }>({
+    scope: '', context: undefined, selectionKey: '', choices: [],
+  })
   const prior = remembered.scope === scope ? remembered.choices.filter(choice => selectedSet.has(choice.value)) : []
-  useEffect(() => {
-    const keys = new Set<string>(JSON.parse(selectionKey))
-    remember(previous => {
-      const old = previous.scope === scope ? previous.choices.filter(choice => keys.has(choice.value)) : []
-      const known = context?.NormalSourceGenerationBound ? context.Choices.filter(choice => keys.has(warehouseReceiptKey(choice.Receipt)))
-        .map(choice => ({ value: warehouseReceiptKey(choice.Receipt), label: choice.Caption })) : []
-      return { scope, choices: [...new Map([...old, ...known].map(choice => [choice.value, choice])).values()] }
-    })
-  }, [scope, context, selectionKey])
-  return prior
+  const known = context?.NormalSourceGenerationBound ? context.Choices.filter(choice => selectedSet.has(warehouseReceiptKey(choice.Receipt)))
+    .map(choice => ({ value: warehouseReceiptKey(choice.Receipt), label: choice.Caption })) : []
+  const choices = [...new Map([...prior, ...known].map(choice => [choice.value, choice])).values()]
+  // Cache genuine selected captions with the same render's inputs; never carry names across scopes.
+  if (remembered.scope !== scope || remembered.context !== context || remembered.selectionKey !== selectionKey) {
+    remember({ scope, context, selectionKey, choices })
+  }
+  return choices
 }
 export function WarehouseReceiptCaptionControls({ supported, enabled, scope, context, selected, busy, toggle, select }: {
   supported: boolean; enabled: boolean; scope: string; context: ReceiptCaptionContext | undefined; selected: WarehouseReceiptKey[];
