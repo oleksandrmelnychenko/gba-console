@@ -5,6 +5,8 @@ export const WIP_DEFINITION = '972aaec8037746fed0bfa5df7be7cf88d56666aa2e963a88c
 export const wipFilters = ['Подразделение', 'НоменклатурнаяГруппа', 'СтатьяЗатрат'] as const
 export const wipMeasures = ['НачОст', 'НачОстНДС', 'Приход', 'ПриходНДС', 'НоменклатураЗатратКоличество', 'Расход', 'РасходНДС', 'КонОст', 'КонОстНДС'] as const
 export const wipDefaults = ['НачОст', 'Приход', 'Расход', 'КонОст'] as const
+const wipMeasureSet: ReadonlySet<string> = new Set(wipMeasures)
+const wipFilterSet: ReadonlySet<string> = new Set(wipFilters)
 export type WipFilter = typeof wipFilters[number]
 export type WipMeasure = typeof wipMeasures[number]
 export type WipSelection = { Divisions: string[]; ProductGroups: string[]; CostArticles: string[] }
@@ -29,8 +31,9 @@ export function isWipCapability(v: unknown): v is WipCapability {
 }
 export const wipPeriodError = statementPeriodError
 export function wipRequest(cap: WipCapability, from: string, through: string, selection: WipSelection, measures: readonly WipMeasure[] = wipDefaults): WipRequest {
-  if (!isWipCapability(cap) || statementPeriodError(from, through) || !measures.length || new Set(measures).size !== measures.length || measures.some(m => !wipMeasures.includes(m)) || Object.values(selection).some(a => a.length > 256 || !a.every(ref) || new Set(a).size !== a.length)) throw new Error('Некоректний період або відбір незавершеного виробництва.')
-  return { Version: 1, World: 'fenix', SourceId: WIP_SOURCE, DefinitionSha256: WIP_DEFINITION, From: from, Through: through, Divisions: [...selection.Divisions].sort(), ProductGroups: [...selection.ProductGroups].sort(), CostArticles: [...selection.CostArticles].sort(), Measures: wipMeasures.filter(m => measures.includes(m)) }
+  if (!isWipCapability(cap) || statementPeriodError(from, through) || !measures.length || new Set(measures).size !== measures.length || measures.some(m => !wipMeasureSet.has(m)) || Object.values(selection).some(a => a.length > 256 || !a.every(ref) || new Set(a).size !== a.length)) throw new Error('Некоректний період або відбір незавершеного виробництва.')
+  const selectedMeasures = new Set(measures)
+  return { Version: 1, World: 'fenix', SourceId: WIP_SOURCE, DefinitionSha256: WIP_DEFINITION, From: from, Through: through, Divisions: [...selection.Divisions].sort(), ProductGroups: [...selection.ProductGroups].sort(), CostArticles: [...selection.CostArticles].sort(), Measures: wipMeasures.filter(m => selectedMeasures.has(m)) }
 }
 function values(v: unknown, measures: readonly WipMeasure[]): v is WipValues {
   return obj(v) && exact(Object.keys(v), measures) && measures.every(m => { const s = v[m], scale = m === 'НоменклатураЗатратКоличество' ? 3 : 2
@@ -40,22 +43,23 @@ const choices = (v: unknown): v is WipChoice[] => Array.isArray(v) && v.every(c 
 function adds(parent: WipValues, children: WipValues[], measures: readonly WipMeasure[]) { return measures.every(m => BigInt(parent[m]!.replace('.', '')) === children.reduce((sum, c) => sum + BigInt(c[m]!.replace('.', '')), 0n)) }
 export function normalizeWip(v: unknown, request: WipRequest): WipResult {
   const fail = () => { throw new Error('Сервер не підтвердив повне незавершене виробництво для поточних відборів.') }
-  if (!obj(v) || !identity(v) || v.From !== request.From || v.Through !== request.Through || !exact(v.Measures, request.Measures) || (['Divisions', 'ProductGroups', 'CostArticles'] as const).some(k => !exact(v[k], request[k])) || typeof v.Available !== 'boolean' || v.NormalInputsComplete !== v.Available || v.OurSnapshotVerified !== true || typeof v.Code !== 'string' || !v.Code.startsWith('original_work_in_progress_') || !Array.isArray(v.Rows) || !obj(v.Choices) || !wipFilters.every(f => choices((v.Choices as Record<string, unknown>)[f])) || !Array.isArray(v.MissingCaptionMappings) || !v.MissingCaptionMappings.every(f => wipFilters.includes(f)) || new Set(v.MissingCaptionMappings).size !== v.MissingCaptionMappings.length) return fail()
+  if (!obj(v) || !identity(v) || v.From !== request.From || v.Through !== request.Through || !exact(v.Measures, request.Measures) || (['Divisions', 'ProductGroups', 'CostArticles'] as const).some(k => !exact(v[k], request[k])) || typeof v.Available !== 'boolean' || v.NormalInputsComplete !== v.Available || v.OurSnapshotVerified !== true || typeof v.Code !== 'string' || !v.Code.startsWith('original_work_in_progress_') || !Array.isArray(v.Rows) || !obj(v.Choices) || !wipFilters.every(f => choices((v.Choices as Record<string, unknown>)[f])) || !Array.isArray(v.MissingCaptionMappings) || !v.MissingCaptionMappings.every(f => wipFilterSet.has(f)) || new Set(v.MissingCaptionMappings).size !== v.MissingCaptionMappings.length) return fail()
   if (!v.Available) {
     const d = v.Dependency
     if (v.Rows.length || v.Totals !== null || v.InputWitnessSha256 !== null || v.ResultSha256 !== null || !wipFilters.every(f => !(v.Choices as Record<string, WipChoice[]>)[f].length) || !obj(d) || !label(d.Kind) || d.MissingMonth !== null && (typeof d.MissingMonth !== 'string' || !/^20\d{2}-(0[1-9]|1[0-2])-01$/.test(d.MissingMonth))) return fail()
     return v as unknown as WipResult
   }
   if (v.Code !== 'original_work_in_progress_complete' || v.Dependency !== null || !digest(v.InputWitnessSha256) || !digest(v.ResultSha256) || !values(v.Totals, request.Measures)) return fail()
+  const selectedDivisions = new Set(request.Divisions), selectedGroups = new Set(request.ProductGroups), selectedArticles = new Set(request.CostArticles)
   const divisions = new Set<string>(), rows: WipDivision[] = []
   for (const d of v.Rows) {
-    if (!obj(d) || !ref(d.Division) || divisions.has(d.Division) || request.Divisions.length && !request.Divisions.includes(d.Division) || !label(d.Caption) || typeof d.CaptionAvailable !== 'boolean' || !values(d.Values, request.Measures) || !Array.isArray(d.ProductGroups) || !d.ProductGroups.length) return fail()
+    if (!obj(d) || !ref(d.Division) || divisions.has(d.Division) || request.Divisions.length && !selectedDivisions.has(d.Division) || !label(d.Caption) || typeof d.CaptionAvailable !== 'boolean' || !values(d.Values, request.Measures) || !Array.isArray(d.ProductGroups) || !d.ProductGroups.length) return fail()
     divisions.add(d.Division); const groups = new Set<string>(), childGroups: WipGroup[] = []
     for (const g of d.ProductGroups) {
-      if (!obj(g) || !ref(g.ProductGroup) || groups.has(g.ProductGroup) || request.ProductGroups.length && !request.ProductGroups.includes(g.ProductGroup) || !label(g.Caption) || typeof g.CaptionAvailable !== 'boolean' || !values(g.Values, request.Measures) || !Array.isArray(g.Articles) || !g.Articles.length) return fail()
+      if (!obj(g) || !ref(g.ProductGroup) || groups.has(g.ProductGroup) || request.ProductGroups.length && !selectedGroups.has(g.ProductGroup) || !label(g.Caption) || typeof g.CaptionAvailable !== 'boolean' || !values(g.Values, request.Measures) || !Array.isArray(g.Articles) || !g.Articles.length) return fail()
       groups.add(g.ProductGroup); const articles = new Set<string | null>(), childArticles: WipArticle[] = []
       for (const a of g.Articles) {
-        if (!obj(a) || a.CostArticle !== null && !ref(a.CostArticle) || articles.has(a.CostArticle as string | null) || request.CostArticles.length && !request.CostArticles.includes(a.CostArticle as string) || !label(a.Caption) || typeof a.CaptionAvailable !== 'boolean' || !values(a.Values, request.Measures)) return fail()
+        if (!obj(a) || a.CostArticle !== null && !ref(a.CostArticle) || articles.has(a.CostArticle as string | null) || request.CostArticles.length && !selectedArticles.has(a.CostArticle as string) || !label(a.Caption) || typeof a.CaptionAvailable !== 'boolean' || !values(a.Values, request.Measures)) return fail()
         articles.add(a.CostArticle as string | null); childArticles.push(a as WipArticle)
       }
       if (!adds(g.Values, childArticles.map(a => a.Values), request.Measures)) return fail()

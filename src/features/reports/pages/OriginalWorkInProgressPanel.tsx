@@ -1,4 +1,4 @@
-import { Alert, Button, Checkbox, Group, MultiSelect, Stack, Table, Text, TextInput } from '@mantine/core'
+import { Alert, Button, Checkbox, Group, MultiSelect, Stack, Text, TextInput } from '@mantine/core'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { readWip } from '../api/originalWorkInProgressApi'
@@ -6,6 +6,7 @@ import { wipDefaults, wipField, wipFilters, wipMeasures, wipPeriodError, wipRequ
   type WipChoice, type WipFilter, type WipMeasure, type WipResult, type WipSelection } from '../data/originalWorkInProgress'
 import { wipCsv, wipExportError, wipHeaders, wipLines, wipPdf, wipUnitNote, wipValues, wipXlsx } from '../data/originalWorkInProgressExport'
 import { useReportRunState } from '../hooks/useReportRunState'
+import { OriginalSalesGrid } from './OriginalSalesGrid'
 const formats = ['csv', 'xlsx', 'pdf'] as const
 const labels = { Подразделение: 'Підрозділи', НоменклатурнаяГруппа: 'Номенклатурні групи', СтатьяЗатрат: 'Статті витрат' }
 const empty = (): WipSelection => ({ Divisions: [], ProductGroups: [], CostArticles: [] })
@@ -16,17 +17,8 @@ function retain(current: WipChoice[], previous: WipChoice[], selected: string[])
   return [...current, ...previous.filter(c => kept.has(c.Key) && !ids.has(c.Key))]
 }
 function WipTable({ result }: { result: WipResult }) {
-  const { t } = useI18n(), [page, setPage] = useState(0), lines = useMemo(() => wipLines(result), [result]), headers = wipHeaders(result)
-  const current = Math.min(page, Math.max(0, Math.ceil(lines.length / 50) - 1)), start = current * 50
-  return <Stack gap="xs"><Group><Button variant="light" disabled={!current} onClick={() => setPage(current - 1)}>{t('Попередні рядки')}</Button>
-    <Text>{lines.length ? start + 1 : 0}–{Math.min(lines.length, start + 50)} / {lines.length}</Text>
-    <Button variant="light" disabled={start + 50 >= lines.length} onClick={() => setPage(current + 1)}>{t('Наступні рядки')}</Button></Group>
-    <Table.ScrollContainer minWidth={1000}><Table striped><Table.Thead><Table.Tr>{headers.map(h => <Table.Th key={h}>{t(h)}</Table.Th>)}</Table.Tr></Table.Thead>
-      <Table.Tbody>{lines.slice(start, start + 50).map(line => <Table.Tr key={line.key} fw={line.subtotal ? 600 : undefined}>
-        {line.cells.map((cell, i) => <Table.Td key={headers[i]} className={i >= 3 ? 'app-money' : undefined}>{cell}</Table.Td>)}
-      </Table.Tr>)}</Table.Tbody>{result.Totals ? <Table.Tfoot><Table.Tr><Table.Th colSpan={3}>{t('Разом')}</Table.Th>
-        {wipValues(result, result.Totals).map((cell, i) => <Table.Td key={headers[i + 3]} className="app-money">{cell}</Table.Td>)}
-      </Table.Tr></Table.Tfoot> : null}</Table></Table.ScrollContainer>{!lines.length ? <Text>{t('У повністю перевіреному зрізі рядків немає.')}</Text> : null}</Stack>
+  const lines = useMemo(() => wipLines(result), [result])
+  return <OriginalSalesGrid lines={lines} headers={wipHeaders(result)} totals={result.Totals ? wipValues(result, result.Totals) : null} hierarchyColumns={3} />
 }
 function useWipRun(capability: WipCapability, caller: string | null, allowed: boolean, from: string, through: string,
   selection: WipSelection, measures: WipMeasure[], key: string, accept: (r: WipResult) => void) {
@@ -68,6 +60,7 @@ export function OriginalWorkInProgressPanel({ capability, callerKey, canGenerate
     setChoices(previous => ({ scope, fresh, values: Object.fromEntries(wipFilters.map(f => [f, retain(fresh[f], previous?.scope === scope ? previous.values[f] : [], selected[wipField[f]])])) as Choices }))
   })
   const busy = delivery.run.isLoading || delivery.exporting, result = delivery.report
+  const selectedMeasures = new Set(measures)
   function choose(field: WipFilter, values: string[]) {
     delivery.invalidate(); setSelection({ scope, values: { ...selected, [wipField[field]]: values } })
     const kept = new Set(values), fresh = new Set(current?.fresh[field].map(c => c.Key) ?? [])
@@ -80,8 +73,8 @@ export function OriginalWorkInProgressPanel({ capability, callerKey, canGenerate
       return <MultiSelect key={f} label={t(labels[f])} data={options.map(c => ({ value: c.Key, label: c.Caption }))} value={values} searchable clearable maxValues={256}
         disabled={busy || (!options.length && !values.length)} onChange={v => choose(f, v)} />
     })}</Group>
-    <Group>{wipMeasures.map(m => <Checkbox key={m} label={t(m)} checked={measures.includes(m)} disabled={busy} onChange={e => {
-      delivery.invalidate(); const checked = e.currentTarget.checked; setMeasures(previous => wipMeasures.filter(x => x === m ? checked : previous.includes(x)))
+    <Group>{wipMeasures.map(m => <Checkbox key={m} label={t(m)} checked={selectedMeasures.has(m)} disabled={busy} onChange={e => {
+      delivery.invalidate(); const checked = e.currentTarget.checked; setMeasures(previous => { const selected = new Set(previous); return wipMeasures.filter(x => x === m ? checked : selected.has(x)) })
     }} />)}</Group>
     <Text size="sm" c="dimmed">{t(wipUnitNote)}</Text>{delivery.error ? <Alert color="yellow">{t(delivery.error)}</Alert> : null}
     {delivery.run.error ? <Alert color="red">{t(delivery.run.error)}</Alert> : null}
