@@ -1,3 +1,4 @@
+import { warehouseQuantityXlsx } from '../data/originalWarehouseQuantityExport'
 import { MantineProvider } from '@mantine/core'
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { expect, it, vi } from 'vitest'
@@ -23,8 +24,8 @@ const response = (): WarehouseQuantityResult => ({ Version: 1, World: 'fenix', S
   WarehouseCaptionPolicy: 'CurrentOURStorageNameViaAuthenticatedRoutingAssociation', WarehouseCaptionWitnessSha256: 'c'.repeat(64),
   WarehouseFilterAvailable: true, ReceiptFilterAvailable: false, UnitPolicy: 'NativeStoredQuantityNoCoefficientConversion',
   NativeVirtualTableVerified: false, SourceParityVerified: false, OriginalFullTaskAccepted: false })
-const panel = (caller = 'caller1', cap = capability) => <MantineProvider env="test"><I18nProvider><OriginalWarehouseQuantityPanel capability={cap}
-  callerKey={caller} canGenerate initialFrom="2026-09-01" initialThrough="2026-09-30" /></I18nProvider></MantineProvider>
+const panel = (caller = 'caller1', cap = capability, canGenerate = true) => <MantineProvider env="test"><I18nProvider><OriginalWarehouseQuantityPanel capability={cap}
+  callerKey={caller} canGenerate={canGenerate} initialFrom="2026-09-01" initialThrough="2026-09-30" /></I18nProvider></MantineProvider>
 
 it('offers only admitted human warehouse choices and sends their exact original equality key', async () => {
   vi.clearAllMocks(); vi.mocked(readWarehouseQuantity).mockResolvedValue(response())
@@ -78,4 +79,27 @@ it('missing complete monthly publication shows its dependency and keeps every ex
   await screen.findByText('Не всі місячні рухи цього періоду синхронізовані повністю.')
   for (const name of ['CSV', 'XLSX', 'PDF']) expect((screen.getByRole('button', { name }) as HTMLButtonElement).disabled).toBe(true)
   expect(screen.queryByText('2.000')).toBeNull(); expect(screen.queryByText('Наш склад')).toBeNull()
+})
+
+vi.mock('../data/originalWarehouseQuantityExport', async importOriginal => {
+  const actual = await importOriginal<typeof import('../data/originalWarehouseQuantityExport')>()
+  return { ...actual, warehouseQuantityXlsx: vi.fn() }
+})
+it('a deferred XLSX cannot revive after permission loss and return to the same caller scope', async () => {
+  vi.clearAllMocks(); let finish!: (blob: Blob) => void
+  vi.mocked(warehouseQuantityXlsx).mockImplementationOnce(() => new Promise(resolve => { finish = resolve }))
+  vi.mocked(readWarehouseQuantity).mockResolvedValue(response())
+  const prior = Object.getOwnPropertyDescriptor(URL, 'createObjectURL'), create = vi.fn(() => 'blob:late-export')
+  Object.defineProperty(URL, 'createObjectURL', { configurable: true, value: create })
+  try {
+    const view = render(panel()); fireEvent.click(screen.getByRole('button', { name: 'Сформувати' }))
+    await waitFor(() => expect((screen.getByRole('button', { name: 'XLSX' }) as HTMLButtonElement).disabled).toBe(false))
+    fireEvent.click(screen.getByRole('button', { name: 'XLSX' })); await waitFor(() => expect(warehouseQuantityXlsx).toHaveBeenCalledTimes(1))
+    view.rerender(panel('caller1', capability, false)); view.rerender(panel('caller1', capability, true))
+    await act(async () => { finish(new Blob(['stale file'])) })
+    expect(create).not.toHaveBeenCalled()
+  } finally {
+    if (prior) Object.defineProperty(URL, 'createObjectURL', prior)
+    else Reflect.deleteProperty(URL, 'createObjectURL')
+  }
 })

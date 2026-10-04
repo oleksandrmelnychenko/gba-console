@@ -49,10 +49,11 @@ function useQuantityRun({ capability, callerKey, canGenerate, from, through, pro
 }) {
   const [exporting, setExporting] = useState(false)
   const run = useReportRunState<WarehouseQuantityResult>(key), active = useRef<AbortController | null>(null), latest = useRef(key)
-  useEffect(() => { latest.current = key; return () => { latest.current = ''; active.current?.abort() } }, [key])
+  const activeExport = useRef<AbortController | null>(null)
+  useEffect(() => { latest.current = key; return () => { latest.current = ''; active.current?.abort(); activeExport.current?.abort() } }, [key])
   const error = warehouseQuantityPeriodError(from, through), report = run.lastRun
   const permitted = canGenerate && !!callerKey && capability.Executable && capability.World === 'fenix'
-  function invalidate() { active.current?.abort(); latest.current = ''; run.clear() }
+  function invalidate() { active.current?.abort(); latest.current = ''; activeExport.current?.abort(); run.clear() }
   async function generate() {
     if (!permitted || error || run.isLoading || exporting) return
     const controller = new AbortController(); active.current?.abort(); active.current = controller
@@ -66,12 +67,13 @@ function useQuantityRun({ capability, callerKey, canGenerate, from, through, pro
   }
   async function exportFile(format: typeof exportFormats[number]) {
     if (!permitted || !report?.Available || exporting) return
+    const controller = new AbortController(); activeExport.current?.abort(); activeExport.current = controller
     setExporting(true)
     try {
       const blob = format === 'csv' ? new Blob([warehouseQuantityCsv(report)], { type: 'text/csv;charset=utf-8' })
         : format === 'xlsx' ? await warehouseQuantityXlsx(report) : await warehouseQuantityPdf(report)
-      if (latest.current === key) download(blob, `warehouse-quantity-${report.From}-${report.Through}.${format}`)
-    } catch (failure) { if (latest.current === key) run.update({ error: failure instanceof Error ? failure.message : 'Не вдалося сформувати файл.' }) }
+      if (!controller.signal.aborted && latest.current === key) download(blob, `warehouse-quantity-${report.From}-${report.Through}.${format}`)
+    } catch (failure) { if (!controller.signal.aborted && latest.current === key) run.update({ error: failure instanceof Error ? failure.message : 'Не вдалося сформувати файл.' }) }
     finally { setExporting(false) }
   }
   return { run, report, error, permitted, exporting, invalidate, generate, exportFile,
