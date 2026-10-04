@@ -19,7 +19,8 @@ function download(blob: Blob, name: string) {
   window.setTimeout(() => URL.revokeObjectURL(url), 30_000)
 }
 function retainChoices(current: DebtChoice[], previous: DebtChoice[], selected: string[]) {
-  return [...current, ...previous.filter(p => selected.includes(p.Key) && !current.some(c => c.Key === p.Key))]
+  const selectedKeys = new Set(selected), currentKeys = new Set(current.map(c => c.Key))
+  return [...current, ...previous.filter(p => selectedKeys.has(p.Key) && !currentKeys.has(p.Key))]
 }
 
 function DebtTable({ result }: { result: DebtResult }) {
@@ -84,9 +85,14 @@ export function OriginalCounterpartyDebtPanel({ capability, callerKey, canGenera
   const busy = delivery.run.isLoading || delivery.exporting, result = delivery.report
   function choose(field: 'orgs' | 'parties', values: string[]) {
     delivery.invalidate(); setSelection({ scope, orgs: field === 'orgs' ? values : orgs, parties: field === 'parties' ? values : parties })
-    setChoices(previous => previous?.scope === scope ? { ...previous,
-      orgs: previous.orgs.filter(c => field !== 'orgs' || values.includes(c.Key) || previous.freshOrgs.includes(c.Key)),
-      parties: previous.parties.filter(c => field !== 'parties' || values.includes(c.Key) || previous.freshParties.includes(c.Key)) } : previous)
+    const selectedKeys = new Set(values)
+    setChoices(previous => {
+      if (previous?.scope !== scope) return previous
+      const freshOrgs = new Set(previous.freshOrgs), freshParties = new Set(previous.freshParties)
+      return { ...previous,
+        orgs: previous.orgs.filter(c => field !== 'orgs' || selectedKeys.has(c.Key) || freshOrgs.has(c.Key)),
+        parties: previous.parties.filter(c => field !== 'parties' || selectedKeys.has(c.Key) || freshParties.has(c.Key)) }
+    })
   }
   return <Stack gap="md"><Text>{t('Організація → контрагент. Типово показано управлінську суму; сума взаєморозрахунків є окремою необов’язковою колонкою.')}</Text>
     <TextInput type="datetime-local" step={1} label={t('Момент залишку (до)')} value={asOf} disabled={busy} onChange={e => { delivery.invalidate(); setAsOf(e.currentTarget.value.length === 16 ? e.currentTarget.value + ':00' : e.currentTarget.value) }} />
