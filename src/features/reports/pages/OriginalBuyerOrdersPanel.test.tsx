@@ -69,7 +69,8 @@ it('complete empty buyer result keeps all four active filters removable and pres
   vi.clearAllMocks()
   const initial = response(), secondStatus = { Value: { Field: 2 as const, Type: null, Table: null, Reference: '7'.repeat(32) }, Caption: 'Інший статус' }
   initial.FieldChoices.push(secondStatus)
-  const empty = { ...response(), Rows: [], BaseTotals: null, StoredTotals: null, ProductChoices: [], FieldChoices: [] }
+  const empty = { ...response(), Rows: [], BaseTotals: { Opening: '0.000', Incoming: '0.000', Outgoing: '0.000', Closing: '0.000' },
+    StoredTotals: { Opening: '0.000', Incoming: '0.000', Outgoing: '0.000', Closing: '0.000' }, ProductChoices: [], FieldChoices: [] }
   vi.mocked(readBuyerOrders).mockResolvedValueOnce(initial).mockResolvedValue(empty)
   render(panel()); fireEvent.click(screen.getByRole('button', { name: 'Сформувати' }))
   await screen.findByText('Підсумок замовлення')
