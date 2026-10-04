@@ -102,10 +102,11 @@ function BuyerOrdersIntrinsicFilters({ filters, choices, busy, change }: {
   const { t } = useI18n()
   const fields = [{ field: 0, label: 'Замовлення' }, { field: 2, label: 'Статуси партій' }, { field: 3, label: 'Угоди' }] as const
   return <Group align="flex-start">{fields.map(({ field, label }) => {
-    const options = choices.filter(c => c.Value.Field === field), available = new Map(options.map(c => [buyerOrdersValueKey(c.Value), c.Value]))
-    return <MultiSelect key={field} label={t(label)} searchable clearable disabled={busy || !options.length} style={{ flex: 1, minWidth: 200 }}
+    const selected = filters.filter(f => f.Field === field), options = choices.filter(c => c.Value.Field === field)
+    const available = new Map([...selected.map(value => [buyerOrdersValueKey(value), value] as const), ...options.map(c => [buyerOrdersValueKey(c.Value), c.Value] as const)])
+    return <MultiSelect key={field} label={t(label)} searchable clearable disabled={busy || (!options.length && !selected.length)} style={{ flex: 1, minWidth: 200 }}
       placeholder={t('Усі')} data={options.map(c => ({ value: buyerOrdersValueKey(c.Value), label: c.Caption }))}
-      value={filters.filter(f => f.Field === field).map(buyerOrdersValueKey)} onChange={keys => change([...filters.filter(f => f.Field !== field), ...keys.map(k => available.get(k)!).filter(Boolean)])} />
+      value={selected.map(buyerOrdersValueKey)} onChange={keys => change([...filters.filter(f => f.Field !== field), ...keys.map(k => available.get(k)!).filter(Boolean)])} />
   })}</Group>
 }
 

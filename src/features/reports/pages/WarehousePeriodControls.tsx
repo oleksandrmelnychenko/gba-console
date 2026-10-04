@@ -39,6 +39,6 @@ export function OriginalPeriodDateProductFilters({ from, through, products, prod
     <Group grow><TextInput type="date" label={t('Початок періоду')} value={from} disabled={busy} onChange={e => changeFrom(e.currentTarget.value)} />
       <TextInput type="date" label={t('Кінець періоду')} value={through} disabled={busy} onChange={e => changeThrough(e.currentTarget.value)} /></Group>
     <MultiSelect label={t('Товари')} placeholder={t('Усі товари; назви для відбору з’являться після формування')} data={productChoices} value={products} searchable clearable
-      disabled={busy || !productChoices.length} onChange={selectProducts} maxValues={256} />
+      disabled={busy || (!productChoices.length && !products.length)} onChange={selectProducts} maxValues={256} />
   </>
 }

@@ -7,6 +7,7 @@ import { capability, product, response } from '../testing/buyerOrdersFixtures'
 import type { BuyerOrdersResult } from '../data/originalBuyerOrders'
 import { OriginalBuyerOrdersPanel } from './OriginalBuyerOrdersPanel'
 import { buyerOrdersHeaders, buyerOrdersValues } from '../data/originalBuyerOrdersExport'
+import { buyerOrdersValueKey } from '../data/originalBuyerOrders'
 vi.mock('../api/originalBuyerOrdersApi', () => ({ readBuyerOrders: vi.fn() }))
 const panel = (caller = 'caller1', canGenerate = true) => <MantineProvider env="test"><I18nProvider>
   <OriginalBuyerOrdersPanel capability={capability} callerKey={caller} canGenerate={canGenerate} initialFrom="2026-09-01" initialThrough="2026-09-30" />
@@ -62,4 +63,39 @@ it('buyer default form selects full order status and agreement identities from i
     await screen.findByText('Підсумок замовлення')
   }
   expect(vi.mocked(readBuyerOrders).mock.lastCall?.[0].Filters.find(f => f.Field === 0)).toMatchObject({ Type: '08', Table: '00000100', Reference: '4'.repeat(32) })
+})
+
+it('complete empty buyer result keeps all four active filters removable and preserves remaining typed selections', async () => {
+  vi.clearAllMocks()
+  const initial = response(), secondStatus = { Value: { Field: 2 as const, Type: null, Table: null, Reference: '7'.repeat(32) }, Caption: 'Інший статус' }
+  initial.FieldChoices.push(secondStatus)
+  const empty = { ...response(), Rows: [], BaseTotals: null, StoredTotals: null, ProductChoices: [], FieldChoices: [] }
+  vi.mocked(readBuyerOrders).mockResolvedValueOnce(initial).mockResolvedValue(empty)
+  render(panel()); fireEvent.click(screen.getByRole('button', { name: 'Сформувати' }))
+  await screen.findByText('Підсумок замовлення')
+  for (const [label, option] of [['Замовлення', 'Замовлення без назви · 1'], ['Товари', 'Наш товар'], ['Статуси партій', 'Статус без назви · 1'],
+    ['Статуси партій', 'Інший статус'], ['Угоди', 'Угода без назви · 1']] as const) {
+    fireEvent.click(screen.getByRole('combobox', { name: label })); fireEvent.click(await screen.findByRole('option', { name: option }))
+  }
+  fireEvent.click(screen.getByRole('button', { name: 'Сформувати' }))
+  await screen.findByText('У повністю перевіреному періоді рядків немає.')
+  const selected = vi.mocked(readBuyerOrders).mock.calls[1][0].Filters
+  expect(selected).toHaveLength(5)
+  for (const label of ['Замовлення', 'Товари', 'Статуси партій', 'Угоди']) {
+    expect((screen.getByRole('combobox', { name: label }) as HTMLInputElement).disabled).toBe(false)
+  }
+  expect(screen.getByText('Наш товар')).toBeTruthy(); expect(screen.getByText('Інший статус')).toBeTruthy()
+  expect(screen.queryByText(product)).toBeNull(); expect(screen.queryByText(buyerOrdersValueKey(secondStatus.Value))).toBeNull()
+  fireEvent.keyDown(screen.getByRole('combobox', { name: 'Статуси партій' }), { key: 'Backspace' })
+  fireEvent.click(screen.getByRole('button', { name: 'Сформувати' }))
+  await waitFor(() => expect(readBuyerOrders).toHaveBeenCalledTimes(3))
+  expect(vi.mocked(readBuyerOrders).mock.calls[2][0].Filters.map(buyerOrdersValueKey).sort())
+    .toEqual(selected.filter(value => value.Reference !== secondStatus.Value.Reference).map(buyerOrdersValueKey).sort())
+  await waitFor(() => expect((screen.getByRole('combobox', { name: 'Угоди' }) as HTMLInputElement).disabled).toBe(false))
+  for (const label of ['Замовлення', 'Товари', 'Статуси партій', 'Угоди']) {
+    fireEvent.keyDown(screen.getByRole('combobox', { name: label }), { key: 'Backspace' })
+  }
+  fireEvent.click(screen.getByRole('button', { name: 'Сформувати' }))
+  await waitFor(() => expect(readBuyerOrders).toHaveBeenCalledTimes(4))
+  expect(vi.mocked(readBuyerOrders).mock.calls[3][0].Filters).toEqual([])
 })
