@@ -49,3 +49,23 @@ it('missing named price types and permission loss cannot fabricate a raw choice 
   vi.clearAllMocks(); vi.mocked(getPriceSalesTypes).mockResolvedValue([]); render(panel()); await screen.findByText('Немає підтверджених назв типів цін у звичайних даних Fenix.')
   fireEvent.click(screen.getByRole('button', { name: 'Сформувати' })); expect(readPriceSales).not.toHaveBeenCalled(); expect(screen.queryByText(salesType)).toBeNull()
 })
+
+it('new ordinary project and division names become exact selectable filters while unavailable names never replace signed resource cells', async () => {
+  vi.clearAllMocks(); mockTypes()
+  vi.mocked(readPriceSales).mockImplementationOnce(async request => normalizePriceSales({ ...salesResponse(), ...request,
+    Choices: { ...salesResponse().Choices, 'Проект': [], 'Подразделение': [] }, MissingCaptionMappings: ['Проект', 'Подразделение'] }, request))
+  render(panel()); await chooseType(); fireEvent.click(screen.getByRole('button', { name: 'Сформувати' })); await screen.findAllByText('Підсумок контрагента')
+  for (const field of ['Проєкти', 'Підрозділи']) expect((screen.getByRole('combobox', { name: field }) as HTMLInputElement).disabled).toBe(true)
+  const first = within(screen.getByRole('table')).getByRole('cell', { name: 'Наш товар' }).closest('tr')!
+  expect(within(first).getAllByRole('cell').slice(2).map(c => c.textContent)).toEqual(['-12.00', '-8.00', '-4.00', '-5.000'])
+  vi.mocked(readPriceSales).mockImplementation(async request => normalizePriceSales({ ...salesResponse(), ...request }, request))
+  fireEvent.click(screen.getByRole('button', { name: 'Сформувати' }))
+  await waitFor(() => expect((screen.getByRole('combobox', { name: 'Проєкти' }) as HTMLInputElement).disabled).toBe(false))
+  for (const [field, name] of [['Проєкти', 'Наш проєкт'], ['Підрозділи', 'Наш підрозділ']]) {
+    fireEvent.click(screen.getByRole('combobox', { name: field })); fireEvent.click(await screen.findByRole('option', { name }))
+  }
+  fireEvent.click(screen.getByRole('button', { name: 'Сформувати' })); await waitFor(() => expect(readPriceSales).toHaveBeenCalledTimes(3))
+  expect(vi.mocked(readPriceSales).mock.calls[2][0]).toMatchObject({ Projects: [salesProject], Divisions: [salesDivision] })
+  const row = within(await screen.findByRole('table')).getByRole('cell', { name: 'Наш товар' }).closest('tr')!
+  expect(within(row).getAllByRole('cell').slice(2).map(c => c.textContent)).toEqual(['-12.00', '-8.00', '-4.00', '-5.000'])
+})
