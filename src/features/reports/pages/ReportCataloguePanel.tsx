@@ -49,6 +49,7 @@ import { OriginalRevenueCatalogueLaunch } from './OriginalRevenueCatalogueLaunch
 import { OriginalWarehouseQuantityCatalogueLaunch } from './OriginalWarehouseQuantityCatalogueLaunch'
 import { OriginalWarehouseMonetaryCatalogueLaunch } from './OriginalWarehouseMonetaryCatalogueLaunch'
 import { OriginalTransferredGoodsCatalogueLaunch } from './OriginalTransferredGoodsCatalogueLaunch'
+import { OriginalCounterpartyDebtCatalogueLaunch } from './OriginalCounterpartyDebtCatalogueLaunch'
 import { OriginalBuyerOrdersCatalogueLaunch } from './OriginalBuyerOrdersCatalogueLaunch'
 import { OriginalPlannedCashCatalogueLaunch } from './OriginalPlannedCashCatalogueLaunch'
 import { OriginalCashStatementCatalogueLaunch } from './OriginalCashStatementCatalogueLaunch'
@@ -236,6 +237,7 @@ function CatalogueTable({ visibleRows, catalogue, inspection, availableDatasets,
                 <OriginalWarehouseQuantityCatalogueLaunch report={report} worlds={matchingSources.map(s => s.World)} enabled={canGenerate} disabled={disabled} callerKey={callerKey} />
                 <OriginalWarehouseMonetaryCatalogueLaunch report={report} worlds={matchingSources.map(s => s.World)} enabled={canGenerate} disabled={disabled} callerKey={callerKey} />
                 <OriginalTransferredGoodsCatalogueLaunch report={report} worlds={matchingSources.map(s => s.World)} enabled={canGenerate} disabled={disabled} callerKey={callerKey} />
+                <OriginalCounterpartyDebtCatalogueLaunch report={report} worlds={matchingSources.map(s => s.World)} enabled={canGenerate} disabled={disabled} callerKey={callerKey} />
                 <OriginalBuyerOrdersCatalogueLaunch report={report} worlds={matchingSources.map(s => s.World)} enabled={canGenerate} disabled={disabled} callerKey={callerKey} />
                 <OriginalPlannedCashCatalogueLaunch report={report} worlds={matchingSources.map(s => s.World)} enabled={canGenerate} disabled={disabled} callerKey={callerKey} />
                 <OriginalCashStatementCatalogueLaunch report={report} worlds={matchingSources.map(s => s.World)} enabled={canGenerate} disabled={disabled} callerKey={callerKey} />
