@@ -2,14 +2,15 @@ import type { ReportDataset, ReportRequestBody } from '../types'
 import { CASH_WORKBOOK_ROWS, groupedCashPeriod, groupedCashSupported, groupedCashWorkbookSupported, requestGroupedCashPeriod } from './groupedCashPeriod'
 import { cashPeriodSupportsManagement, isCashPeriodDataset } from './cashPeriod'
 import { isSettlementPeriodDataset } from './settlementPeriod'
-import { isDayOrganizationBasisCapability } from './dayOrganizationBasis'
-import { isDayOrganizationGrossProfitDataset } from './dayOrganizationGrossProfit'
+import { isDayOrganizationBasisCapability, requestDayOrganizationBasis } from './dayOrganizationBasis'
+import { DAY_ORGANIZATION_GOODS_KIND_ID, DAY_ORGANIZATION_SAVED_ORGANIZATION_IDS,
+  isDayOrganizationGrossProfitDataset } from './dayOrganizationGrossProfit'
 import { isSupplierBatchGrossProfitDataset } from './supplierBatchGrossProfit'
 import { isSupplierBasisCapability } from './supplierBasis'
 import { groupedSettlementSupportsSuppliers, groupedWorkbookRequest, isGroupedSettlementDataset } from './groupedSettlementPeriod'
 import { datasetGroupings } from './reportDatasets'
 import { isCurrentVparivanieDataset } from './currentVparivanie'
-import { isProductClassificationCapability, isSourceBuyerSubtreeCapability,
+import { FENIX_BUYERS_ROOT_ID, isProductClassificationCapability, isSourceBuyerSubtreeCapability,
   isSourceOrganizationsCapability } from './nativeExactFilters'
 
 export type WorkbookLaunch = {
@@ -80,7 +81,7 @@ export function availableBug1274WorkbookLaunches(datasets: readonly ReportDatase
       && Array.isArray(candidate.Filters) && spec.accepts(candidate)
       ? [{ fileName: spec.fileName, label: spec.label, ...('currencyAxis' in spec ? { currencyAxis: spec.currencyAxis } : {}),
         notice: spec.dataSource === 35 && isDayOrganizationBasisCapability(candidate.dayOrganizationBasis)
-          ? 'Часткова форма Excel: день → організація, суми EUR та рентабельність %. «Продажі мінус повернення за період» підтримують до 31 дня та доступні відбори. Недоступні собівартість, ПДВ і залежні показники залишаються порожніми. Для «Продажі з поверненнями за день» оберіть один день, товар без послуг, організації та групу покупців.'
+          ? 'Часткова форма Excel: день → організація, суми EUR та рентабельність %. Для нового запиту застосовано відбори книги: товар без послуг, п’ять організацій і група «Покупці» Fenix. Їх можна змінити у формі. «Продажі мінус повернення за період» підтримують до 31 дня. Недоступні собівартість, ПДВ і залежні показники залишаються порожніми.'
           : spec.dataSource === 40 && groupedCashSupported(candidate)
             ? 'Показано банківські рахунки та каси: вісім показників у валюті рахунку й управлінській валюті. Відбори рахунку, організації, валюти та виду доступні у формі.'
           : spec.dataSource === 40 && cashPeriodSupportsManagement(candidate)
@@ -99,10 +100,30 @@ export function availableBug1274WorkbookLaunches(datasets: readonly ReportDatase
   })
 }
 
+/** The retained day workbook has these three exact filters; explicit scopes keep their own meaning. */
+function dayWorkbookRequest(request: ReportRequestBody, launch: WorkbookLaunch): ReportRequestBody {
+  const dataset = launch.dataset
+  if (launch.fileName !== 'ВП.xls' || request.dataSource !== 35 || !isDayOrganizationGrossProfitDataset(dataset)
+    || !isDayOrganizationBasisCapability(dataset.dayOrganizationBasis) || requestDayOrganizationBasis(request) !== 0
+    || Object.keys(request).filter(key => key.toLowerCase() === 'dayorganizationbasis').length !== 1
+    || !isProductClassificationCapability(dataset.productClassification)
+    || !isSourceOrganizationsCapability(dataset.sourceOrganizations)
+    || !isSourceBuyerSubtreeCapability(dataset.sourceBuyerSubtree)) return request
+  const explicit = new Set(Object.keys(request).map(key => key.toLowerCase()))
+  if (explicit.has('productclassification') || explicit.has('sourceorganizations') || explicit.has('sourcebuyersubtree')
+    || !Array.isArray(request.selections)
+    || request.selections.some(selection => selection?.IsChecked !== false && selection?.SelectedField?.Type === 0)) return request
+  return { ...structuredClone(request),
+    productClassification: { Version: 1, SourceWorld: 0, ProductKindId: DAY_ORGANIZATION_GOODS_KIND_ID, IsService: false },
+    sourceOrganizations: { Version: 1, SourceWorld: 'fenix', OrganizationIds: [...DAY_ORGANIZATION_SAVED_ORGANIZATION_IDS] },
+    sourceBuyerSubtree: { Version: 1, SourceWorld: 'fenix', BuyerRootId: FENIX_BUYERS_ROOT_ID },
+  }
+}
+
 /** Only the Excel shortcut opts into its supported form; ordinary and saved dataset requests keep their own meaning. */
 export function bug1274WorkbookRequest(request: ReportRequestBody, launch?: WorkbookLaunch): ReportRequestBody {
   if (!launch || launch.dataset.DataSource !== request.dataSource) return request
-  const selected = groupedWorkbookRequest(request, launch.currencyAxis)
+  const selected = groupedWorkbookRequest(dayWorkbookRequest(request, launch), launch.currencyAxis)
   if (launch.fileName !== 'Ведомость по денежным средствам.xls' || request.dataSource !== 40
     || !groupedCashWorkbookSupported(launch.dataset) || !groupedCashPeriod(requestGroupedCashPeriod(selected))
     || !Array.isArray(launch.dataset.Groupings)) return selected

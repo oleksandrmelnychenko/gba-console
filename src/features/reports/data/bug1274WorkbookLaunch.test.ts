@@ -8,6 +8,8 @@ import { groupedCashDataset, groupedCashWorkbookDataset } from './groupedCashPer
 import { groupedSettlementDataset } from './groupedSettlementPeriod.test-fixtures'
 import { cashPeriodConfigurationError } from './cashPeriod'
 import { defaultDatasetRequest } from './reportDatasets'
+import { DAY_ORGANIZATION_GOODS_KIND_ID, DAY_ORGANIZATION_SAVED_ORGANIZATION_IDS } from './dayOrganizationGrossProfit'
+import { FENIX_BUYERS_ROOT_ID, nativeExactFiltersConfigurationError } from './nativeExactFilters'
 
 const dayDataset: ReportDataset = {
   DataSource: 35, Name: 'Валовий прибуток за днем', Description: '', PeriodRequired: true, PeriodSupported: true,
@@ -129,4 +131,69 @@ it('preserves the two settlement workbook layouts and independent currency witne
   expect(debt.groupedSettlementPeriod).toEqual(request.groupedSettlementPeriod)
   expect(debt.sorted.Measurements).toEqual(request.sorted.Measurements)
   expect(request.sorted.Row.map(row => row.type)).toEqual([4, 41, 76])
+})
+
+const currentDayDataset: ReportDataset = { ...dayDataset,
+  dayOrganizationBasis: { Version: 1, DefaultBasis: 0, Bases: [0, 1], OperationalMaximumDays: 31,
+    SignedRegisterMaximumDays: 1, LegacyInferenceWhenAbsent: true } }
+const dayDefaults = () => defaultDatasetRequest(currentDayDataset, '2026-09-01', '2026-09-30')
+const dayLaunch = (dataset = currentDayDataset): WorkbookLaunch => ({ fileName: 'ВП.xls', label: '', notice: '', dataset })
+
+it('opens the day workbook with its three exact retained filters and keeps the ordinary request detached', () => {
+  const request = dayDefaults(), before = structuredClone(request)
+  const result = bug1274WorkbookRequest(request, dayLaunch())
+  expect(result).toMatchObject({ dataSource: 35, from: '2026-09-01', to: '2026-09-30', dayOrganizationBasis: 0,
+    productClassification: { Version: 1, SourceWorld: 0, ProductKindId: DAY_ORGANIZATION_GOODS_KIND_ID, IsService: false },
+    sourceOrganizations: { Version: 1, SourceWorld: 'fenix', OrganizationIds: [...DAY_ORGANIZATION_SAVED_ORGANIZATION_IDS] },
+    sourceBuyerSubtree: { Version: 1, SourceWorld: 'fenix', BuyerRootId: FENIX_BUYERS_ROOT_ID } })
+  expect(result.sorted).toEqual(request.sorted)
+  expect(result.selections).toEqual(request.selections)
+  expect(nativeExactFiltersConfigurationError(result, currentDayDataset)).toBeNull()
+  const organizations = result.sourceOrganizations as { OrganizationIds: string[] }
+  organizations.OrganizationIds.pop(); result.sorted.Row[0].label = 'Changed'
+  expect(request).toEqual(before)
+  expect(defaultDatasetRequest(currentDayDataset, request.from, request.to)).toEqual(before)
+  expect(DAY_ORGANIZATION_SAVED_ORGANIZATION_IDS).toHaveLength(5)
+})
+
+it.each(['productClassification', 'sourceOrganizations', 'sourceBuyerSubtree'] as const)(
+  'preserves an explicit %s scope including saved aliases, null and undefined', field => {
+    for (const key of [field, field[0].toUpperCase() + field.slice(1)]) {
+      for (const value of [null, undefined, { Version: 9, UserChoice: 'Keep this exact saved scope' }]) {
+        const request = { ...dayDefaults(), [key]: value }, before = structuredClone(request)
+        expect(bug1274WorkbookRequest(request, dayLaunch())).toBe(request)
+        expect(request).toEqual(before)
+        expect(Object.keys(request).filter(k => k.toLowerCase() === field.toLowerCase())).toEqual([key])
+      }
+    }
+  })
+
+it('keeps an active native organization selection and admits only inactive selections beside the workbook defaults', () => {
+  const request = dayDefaults()
+  request.selections = [{ IsChecked: true, SelectedField: { Type: 0, Name: 'Організація' },
+    FilterCondition: { Type: 2, Name: 'У списку' }, Values: [{ Data: { Id: '1' }, Value: 0, Name: 'Обрана організація' }] }]
+  expect(bug1274WorkbookRequest(request, dayLaunch())).toBe(request)
+  request.selections[0].IsChecked = false
+  const result = bug1274WorkbookRequest(request, dayLaunch())
+  expect(result.sourceOrganizations).toMatchObject({ OrganizationIds: [...DAY_ORGANIZATION_SAVED_ORGANIZATION_IDS] })
+  expect(result.selections).toEqual(request.selections)
+  expect(nativeExactFiltersConfigurationError(result, currentDayDataset)).toBeNull()
+})
+
+it('does not infer workbook filters for an old or malformed server, an explicit legacy basis or another launch', () => {
+  const request = dayDefaults()
+  for (const dataset of [{ ...currentDayDataset, dayOrganizationBasis: undefined },
+    { ...currentDayDataset, productClassification: undefined }, { ...currentDayDataset, sourceOrganizations: undefined },
+    { ...currentDayDataset, sourceBuyerSubtree: undefined },
+    { ...currentDayDataset, sourceBuyerSubtree: { ...(currentDayDataset.sourceBuyerSubtree as object), BuyerRootId: '1'.repeat(32) } }]) {
+    expect(bug1274WorkbookRequest(request, dayLaunch(dataset))).toBe(request)
+  }
+  for (const basis of [null, undefined, 1]) {
+    const saved = { ...request, dayOrganizationBasis: basis }
+    expect(bug1274WorkbookRequest(saved, dayLaunch())).toBe(saved)
+  }
+  const duplicate = { ...request, DayOrganizationBasis: 1 }
+  expect(bug1274WorkbookRequest(duplicate, dayLaunch())).toBe(duplicate)
+  expect(bug1274WorkbookRequest(request)).toBe(request)
+  expect(bug1274WorkbookRequest(request, { ...dayLaunch(), fileName: 'ВП по постачальниках.xls' })).toBe(request)
 })

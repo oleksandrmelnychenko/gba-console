@@ -147,6 +147,33 @@ describe('exact Fenix filters in the report constructor', () => {
     })
   })
 
+  it('opens the VP workbook with all three retained filters and lets the user change that scope before submission', async () => {
+    vi.mocked(getReportDatasets).mockResolvedValue([...reportDatasets, dayDataset])
+    const { container } = await ready()
+    fireEvent.click(screen.getByRole('button', { name: 'Відкрити часткову форму: Валовий прибуток за днем' }))
+    expect((screen.getByRole('checkbox', { name: 'Товар без послуг (Fenix)' }) as HTMLInputElement).checked).toBe(true)
+    expect((screen.getByRole('checkbox', { name: 'П’ять організацій зі збереженого налаштування 1С' }) as HTMLInputElement).checked).toBe(true)
+    expect((screen.getByRole('checkbox', { name: 'Група «Покупці» Fenix' }) as HTMLInputElement).checked).toBe(true)
+    fireEvent.change(screen.getByLabelText('Від'), { target: { value: '2026-09-01' } })
+    fireEvent.change(screen.getByLabelText('До'), { target: { value: '2026-09-30' } })
+    fireEvent.submit(container.querySelector('form')!)
+    await waitFor(() => expect(createStockReport).toHaveBeenCalledOnce())
+    expect(vi.mocked(createStockReport).mock.calls[0][0]).toMatchObject({
+      dataSource: 35, dayOrganizationBasis: 0, from: '2026-09-01', to: '2026-09-30',
+      productClassification: { Version: 1, SourceWorld: 0, ProductKindId: DAY_ORGANIZATION_GOODS_KIND_ID, IsService: false },
+      sourceOrganizations: { Version: 1, SourceWorld: 'fenix', OrganizationIds: [...DAY_ORGANIZATION_SAVED_ORGANIZATION_IDS] },
+      sourceBuyerSubtree: { Version: 1, SourceWorld: 'fenix', BuyerRootId: FENIX_BUYERS_ROOT_ID },
+    })
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Група «Покупці» Fenix' }))
+    fireEvent.submit(container.querySelector('form')!)
+    await waitFor(() => expect(createStockReport).toHaveBeenCalledTimes(2))
+    expect(vi.mocked(createStockReport).mock.calls[1][0]).not.toHaveProperty('sourceBuyerSubtree')
+    expect(vi.mocked(createStockReport).mock.calls[1][0]).toMatchObject({
+      productClassification: { Version: 1, SourceWorld: 0, ProductKindId: DAY_ORGANIZATION_GOODS_KIND_ID, IsService: false },
+      sourceOrganizations: { Version: 1, SourceWorld: 'fenix', OrganizationIds: [...DAY_ORGANIZATION_SAVED_ORGANIZATION_IDS] },
+    })
+  })
+
 
   it('keeps new requests compatible when the server has no basis capability', async () => {
     vi.mocked(getReportDatasets).mockResolvedValue([...reportDatasets, { ...dayDataset, dayOrganizationBasis: undefined }])
