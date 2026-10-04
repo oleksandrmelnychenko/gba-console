@@ -1,3 +1,4 @@
+import { lotAnalysisXlsx } from '../data/originalLotBalanceAnalysisExport'
 import { MantineProvider } from '@mantine/core'
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { expect, it, vi } from 'vitest'
@@ -47,4 +48,27 @@ it('both selected human filters stay clearable after complete empty choice popul
 })
 it('permission denial prevents generation', () => {
   vi.clearAllMocks(); render(panel('caller1', false)); fireEvent.click(screen.getByRole('button', { name: 'Сформувати' })); expect(readLotAnalysis).not.toHaveBeenCalled()
+})
+
+vi.mock('../data/originalLotBalanceAnalysisExport', async importOriginal => {
+  const actual = await importOriginal<typeof import('../data/originalLotBalanceAnalysisExport')>()
+  return { ...actual, lotAnalysisXlsx: vi.fn() }
+})
+it('a deferred XLSX cannot revive after permission loss and return to the same caller scope', async () => {
+  vi.clearAllMocks(); let finish!: (blob: Blob) => void
+  vi.mocked(lotAnalysisXlsx).mockImplementationOnce(() => new Promise(resolve => { finish = resolve }))
+  vi.mocked(readLotAnalysis).mockResolvedValue(lotAnalysisResponse())
+  const prior = Object.getOwnPropertyDescriptor(URL, 'createObjectURL'), create = vi.fn(() => 'blob:late-export')
+  Object.defineProperty(URL, 'createObjectURL', { configurable: true, value: create })
+  try {
+    const view = render(panel()); fireEvent.click(screen.getByRole('button', { name: 'Сформувати' }))
+    await waitFor(() => expect((screen.getByRole('button', { name: 'XLSX' }) as HTMLButtonElement).disabled).toBe(false))
+    fireEvent.click(screen.getByRole('button', { name: 'XLSX' })); await waitFor(() => expect(lotAnalysisXlsx).toHaveBeenCalledTimes(1))
+    view.rerender(panel('caller1', false)); view.rerender(panel('caller1', true))
+    await act(async () => { finish(new Blob(['stale file'])) })
+    expect(create).not.toHaveBeenCalled()
+  } finally {
+    if (prior) Object.defineProperty(URL, 'createObjectURL', prior)
+    else Reflect.deleteProperty(URL, 'createObjectURL')
+  }
 })

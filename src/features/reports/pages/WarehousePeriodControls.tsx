@@ -24,7 +24,7 @@ export function WarehousePeriodFilters({ from, through, products, warehouses, pr
     <OriginalPeriodDateProductFilters from={from} through={through} products={products} productChoices={productChoices} busy={busy}
       changeFrom={changeFrom} changeThrough={changeThrough} selectProducts={selectProducts} />
     {warehouseSupported ? <MultiSelect label={t('Склади')} placeholder={t('Усі склади; підтверджені назви з’являться після формування')}
-      data={warehouseChoices} value={warehouses} searchable clearable maxValues={256} disabled={busy || !warehouseChoices.length}
+      data={warehouseChoices} value={warehouses} searchable clearable maxValues={256} disabled={busy || (!warehouseChoices.length && !warehouses.length)}
       onChange={selectWarehouses} /> : <Text size="sm" c="dimmed">{t('Відбір за складом недоступний на цій версії сервера.')}</Text>}
   </>
 }

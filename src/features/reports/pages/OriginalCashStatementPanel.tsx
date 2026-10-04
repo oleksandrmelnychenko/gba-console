@@ -39,9 +39,10 @@ function useCashRun({ capability, callerKey, canGenerate, from, through, filters
   capability: CashCapability; callerKey: string | null; canGenerate: boolean; from: string; through: string; filters: CashFilter[]; turnover: boolean; key: string; receive: (result: CashResult) => void
 }) {
   const run = useReportRunState<CashResult>(key), active = useRef<AbortController | null>(null), latest = useRef(key), [exporting, setExporting] = useState(false)
-  useEffect(() => { latest.current = key; return () => { latest.current = ''; active.current?.abort() } }, [key])
+  const activeExport = useRef<AbortController | null>(null)
+  useEffect(() => { latest.current = key; return () => { latest.current = ''; active.current?.abort(); activeExport.current?.abort() } }, [key])
   const allowed = canGenerate && !!callerKey && capability.Executable && capability.World === 'fenix', error = plannedPeriodError(from, through), result = run.lastRun
-  function invalidate() { latest.current = ''; active.current?.abort(); run.clear() }
+  function invalidate() { latest.current = ''; active.current?.abort(); activeExport.current?.abort(); run.clear() }
   async function generate() {
     if (!allowed || error || run.isLoading || exporting) return
     const controller = new AbortController(); active.current?.abort(); active.current = controller; latest.current = key; const update = run.begin()
@@ -54,11 +55,12 @@ function useCashRun({ capability, callerKey, canGenerate, from, through, filters
   }
   async function exportFile(format: typeof formats[number]) {
     if (!allowed || !result?.Available || exporting || cashExportError(result)) return
+    const controller = new AbortController(); activeExport.current?.abort(); activeExport.current = controller
     setExporting(true)
     try {
       const file = format === 'csv' ? new Blob([cashCsv(result)], { type: 'text/csv;charset=utf-8' }) : format === 'xlsx' ? await cashXlsx(result) : await cashPdf(result)
-      if (latest.current === key) download(file, `cash-statement-${result.From}-${result.Through}.${format}`)
-    } catch (failure) { if (latest.current === key) run.update({ error: failure instanceof Error ? failure.message : 'Не вдалося сформувати файл.' }) }
+      if (!controller.signal.aborted && latest.current === key) download(file, `cash-statement-${result.From}-${result.Through}.${format}`)
+    } catch (failure) { if (!controller.signal.aborted && latest.current === key) run.update({ error: failure instanceof Error ? failure.message : 'Не вдалося сформувати файл.' }) }
     finally { setExporting(false) }
   }
   return { run, result, allowed, error, exporting, invalidate, generate, exportFile, exportError: result?.Available ? cashExportError(result) : null }

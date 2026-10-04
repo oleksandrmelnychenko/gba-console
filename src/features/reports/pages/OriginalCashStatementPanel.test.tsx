@@ -1,3 +1,4 @@
+import { cashXlsx } from '../data/originalCashStatementExport'
 import { MantineProvider } from '@mantine/core'
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { expect, it, vi } from 'vitest'
@@ -62,4 +63,27 @@ it('optional turnover changes only requested presentation mode and invalidates p
 it('permission loss prevents request and removes current financial screen and export access', async () => {
   vi.clearAllMocks(); const view = render(panel('caller1', false)); fireEvent.click(screen.getByRole('button', { name: 'Сформувати' })); expect(readOriginalCashStatement).not.toHaveBeenCalled()
   view.rerender(panel('caller1', true)); expect((screen.getByRole('button', { name: 'Сформувати' }) as HTMLButtonElement).disabled).toBe(false)
+})
+
+vi.mock('../data/originalCashStatementExport', async importOriginal => {
+  const actual = await importOriginal<typeof import('../data/originalCashStatementExport')>()
+  return { ...actual, cashXlsx: vi.fn() }
+})
+it('a deferred XLSX cannot revive after permission loss and return to the same caller scope', async () => {
+  vi.clearAllMocks(); let finish!: (blob: Blob) => void
+  vi.mocked(cashXlsx).mockImplementationOnce(() => new Promise(resolve => { finish = resolve }))
+  vi.mocked(readOriginalCashStatement).mockResolvedValue(cashResultFixture())
+  const prior = Object.getOwnPropertyDescriptor(URL, 'createObjectURL'), create = vi.fn(() => 'blob:late-export')
+  Object.defineProperty(URL, 'createObjectURL', { configurable: true, value: create })
+  try {
+    const view = render(panel()); fireEvent.click(screen.getByRole('button', { name: 'Сформувати' }))
+    await waitFor(() => expect((screen.getByRole('button', { name: 'XLSX' }) as HTMLButtonElement).disabled).toBe(false))
+    fireEvent.click(screen.getByRole('button', { name: 'XLSX' })); await waitFor(() => expect(cashXlsx).toHaveBeenCalledTimes(1))
+    view.rerender(panel('caller1', false)); view.rerender(panel('caller1', true))
+    await act(async () => { finish(new Blob(['stale file'])) })
+    expect(create).not.toHaveBeenCalled()
+  } finally {
+    if (prior) Object.defineProperty(URL, 'createObjectURL', prior)
+    else Reflect.deleteProperty(URL, 'createObjectURL')
+  }
 })
