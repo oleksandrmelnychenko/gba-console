@@ -1,6 +1,7 @@
-import { Alert, Button, Group, MultiSelect, Stack, Table, Text, TextInput } from '@mantine/core'
+import { Alert, Button, Group, Stack, Table, Text } from '@mantine/core'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
+import { WarehousePeriodFilters } from './WarehousePeriodControls'
 import { readWarehouseMonetary } from '../api/originalWarehouseMonetaryApi'
 import { warehouseMonetaryPeriodError, warehouseMonetaryRequest, type WarehouseMonetaryCapability, type WarehouseMonetaryResult } from '../data/originalWarehouseMonetary'
 import { warehouseMonetaryCsv, warehouseMonetaryHeaders, warehouseMonetaryExportError, warehouseMonetaryPdf, warehouseMonetaryXlsx, warehouseMonetaryValues } from '../data/originalWarehouseMonetaryExport'
@@ -74,24 +75,6 @@ function useMonetaryRun({ capability, callerKey, canGenerate, from, through, pro
     exportError: report?.Available ? warehouseMonetaryExportError(report) : null }
 }
 
-function MonetaryFilters({ from, through, products, warehouses, productChoices, warehouseChoices, warehouseSupported, busy,
-  changeFrom, changeThrough, selectProducts, selectWarehouses }: {
-  from: string; through: string; products: string[]; warehouses: string[]; productChoices: MonetaryChoice[]; warehouseChoices: MonetaryChoice[];
-  warehouseSupported: boolean; busy: boolean; changeFrom: (value: string) => void; changeThrough: (value: string) => void;
-  selectProducts: (value: string[]) => void; selectWarehouses: (value: string[]) => void
-}) {
-  const { t } = useI18n()
-  return <>
-    <Group grow><TextInput type="date" label={t('Початок періоду')} value={from} disabled={busy} onChange={e => changeFrom(e.currentTarget.value)} />
-      <TextInput type="date" label={t('Кінець періоду')} value={through} disabled={busy} onChange={e => changeThrough(e.currentTarget.value)} /></Group>
-    <MultiSelect label={t('Товари')} placeholder={t('Усі товари; назви для відбору з’являться після формування')} data={productChoices} value={products} searchable clearable
-      disabled={busy || !productChoices.length} onChange={selectProducts} maxValues={256} />
-    {warehouseSupported ? <MultiSelect label={t('Склади')} placeholder={t('Усі склади; підтверджені назви з’являться після формування')}
-      data={warehouseChoices} value={warehouses} searchable clearable maxValues={256} disabled={busy || !warehouseChoices.length}
-      onChange={selectWarehouses} /> : <Text size="sm" c="dimmed">{t('Відбір за складом недоступний на цій версії сервера.')}</Text>}
-  </>
-}
-
 function MonetaryNotes() {
   const { t } = useI18n()
   return <>
@@ -140,7 +123,7 @@ export function OriginalWarehouseMonetaryPanel({ capability, callerKey, canGener
       warehouses: (result.WarehouseChoices ?? []).map(v => ({ value: v.Key, label: v.Caption })) }) })
   const currentChoices = choices?.scope === periodScope ? choices : null
   return <Stack gap="md"><Text size="sm">{t('Кількість, вартість і ПДВ у наших таблицях за період: товар → документ надходження. Вартість і ПДВ — суми управлінського обліку без валютного перерахунку.')}</Text>
-    <MonetaryFilters from={from} through={through} products={products} warehouses={warehouses} productChoices={currentChoices?.products ?? []}
+    <WarehousePeriodFilters from={from} through={through} products={products} warehouses={warehouses} productChoices={currentChoices?.products ?? []}
       warehouseChoices={currentChoices?.warehouses ?? []} warehouseSupported={!!capability.CurrentWarehouseCaptionChoicesSupported}
       busy={delivery.run.isLoading || delivery.exporting} changeFrom={value => { delivery.invalidate(); setFrom(value) }}
       changeThrough={value => { delivery.invalidate(); setThrough(value) }} selectProducts={value => { delivery.invalidate(); setSelection({ scope: periodScope, products: value, warehouses }) }}

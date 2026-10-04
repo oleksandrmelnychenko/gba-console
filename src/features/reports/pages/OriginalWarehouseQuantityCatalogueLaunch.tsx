@@ -1,6 +1,7 @@
 import { Button, Loader, Stack, Text } from '@mantine/core'
 import { lazy, Suspense, useEffect, useMemo, useState } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
+import { WarehousePeriodCapabilityStatus } from './WarehousePeriodControls'
 import { AppModal } from '../../../shared/ui/AppModal'
 import { getWarehouseQuantityCapability } from '../api/originalWarehouseQuantityApi'
 import { isWarehouseQuantityCatalogueEntry, type WarehouseQuantityCapability } from '../data/originalWarehouseQuantity'
@@ -20,17 +21,6 @@ function useQuantityCapability(scope: CapabilityScope) {
     return () => controller.abort()
   }, [scope])
   return load?.scope === scope ? load : null
-}
-
-function QuantityCapabilityStatus({ current, enabled, callerKey, disabled, retry }: {
-  current: CapabilityLoad | null; enabled: boolean; callerKey: string | null; disabled: boolean; retry: () => void
-}) {
-  const { t } = useI18n()
-  return <>
-    {!current && enabled && callerKey ? <Loader size="xs" aria-label={t('Перевірка періодної відомості')} /> : null}
-    {enabled && !callerKey ? <Text size="xs">{t('Для формування потрібен чинний сеанс користувача.')}</Text> : null}
-    {current?.failed ? <><Text size="xs">{t('Не вдалося перевірити періодну відомість.')}</Text><Button variant="subtle" disabled={disabled} onClick={retry}>{t('Повторити')}</Button></> : null}
-  </>
 }
 
 function QuantityPeriodModal({ opened, enabled, disabled, capability, callerKey, scope, close }: {
@@ -56,7 +46,7 @@ export function OriginalWarehouseQuantityCatalogueLaunch({ report, worlds, enabl
   const current = useQuantityCapability(scope), capability = current?.capability ?? null
   if (!present) return null
   return <Stack gap={6}>
-    <QuantityCapabilityStatus current={current} enabled={enabled} callerKey={callerKey} disabled={disabled} retry={() => setAttempt(n => n + 1)} />
+    <WarehousePeriodCapabilityStatus current={current} enabled={enabled} callerKey={callerKey} disabled={disabled} retry={() => setAttempt(n => n + 1)} />
     <Button variant="filled" disabled={!enabled || disabled || !capability?.Executable || !callerKey} onClick={() => setOpened(true)}>{t('Fenix · Кількість за період')}</Button>
     <Text size="xs" c="dimmed">{t('Початковий залишок, надходження, витрати та кінцевий залишок. Доступність усіх місячних даних перевіряється під час формування.')}</Text>
     <QuantityPeriodModal opened={opened} enabled={enabled} disabled={disabled} capability={capability} callerKey={callerKey} scope={scope} close={() => setOpened(false)} />
