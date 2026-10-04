@@ -39,4 +39,27 @@ describe('connected own inbound and point receipt caption evidence', () => {
     expect(() => receiptChoiceValues([warehouseReceiptKey(other), warehouseReceiptKey(other)], context, selected)).toThrow()
     expect(receiptChoiceValues([warehouseReceiptKey(pointReceipt)], undefined, selected)).toEqual([pointReceipt])
   })
+  it('admits the genuine warehouse failure suffix for bound and unbound incomplete scopes', () => {
+    const missingRows = [{ Receipts: [{ Receipt: pointReceipt, Caption: 'Назва документа недоступна', CaptionAvailable: false }] }]
+    for (const bound of [true, false]) {
+      const context = { ...incompletePointContext(), NormalSourceGenerationBound: bound, WitnessSha256: bound ? 'c'.repeat(64) : null,
+        Code: `${bound ? 'original_warehouse_receipt_selected_scope_incomplete' : 'original_warehouse_receipt_normal_generation_crossbinding_unavailable'}:PointParentAuthenticationFailed` }
+      expect(validReceiptCaptions(context, false, true, true, missingRows, [])).toBe(true)
+    }
+  })
+  it('keeps missing warehouse labels unsuffixed after a successful point read', () => {
+    const context = { ...incompletePointContext(), PointReadCode: 'PointCurrentComplete', Code: 'original_warehouse_receipt_selected_scope_incomplete' }
+    const missingRows = [{ Receipts: [{ Receipt: pointReceipt, Caption: 'Назва документа недоступна', CaptionAvailable: false }] }]
+    expect(validReceiptCaptions(context, false, true, true, missingRows, [])).toBe(true)
+    expect(validReceiptCaptions({ ...context, Code: `${context.Code}:PointCurrentComplete` }, false, true, true, missingRows, [])).toBe(false)
+  })
+  it('rejects foreign receipt code families and missing mismatched or extra warehouse suffixes', () => {
+    expect(validReceiptCaptions(pointContext(pointReceipt, 'transferred'), true, true, true, rows(), [])).toBe(false)
+    const context = incompletePointContext(), missingRows = [{ Receipts: [{ Receipt: pointReceipt, Caption: 'Назва документа недоступна', CaptionAvailable: false }] }]
+    for (const Code of ['original_warehouse_receipt_selected_scope_incomplete',
+      'original_warehouse_receipt_selected_scope_incomplete:PointParentQueryTimeout',
+      'original_warehouse_receipt_selected_scope_incomplete:InventedPointComplete', `${context.Code}:PointParentAuthenticationFailed`]) {
+      expect(validReceiptCaptions({ ...context, Code }, false, true, true, missingRows, [])).toBe(false)
+    }
+  })
 })

@@ -31,12 +31,12 @@ describe('transferred goods optional own receipt captions', () => {
     expect(() => normalizeTransferred(value, query())).toThrow()
   })
   it('refuses a forged caption and complete-choice flag while preserving incomplete numeric results', () => {
-    const value = pointResponse(); value.ReceiptCaptions = incompletePointContext(); value.ReceiptFilterAvailable = false
+    const value = pointResponse(); value.ReceiptCaptions = incompletePointContext('transferred'); value.ReceiptFilterAvailable = false
     value.Rows[0].Caption = 'Назва документа недоступна'; value.Rows[0].CaptionAvailable = false
     expect(normalizeTransferred(value, query()).Totals).toEqual(resources)
     expect(() => normalizeTransferred({ ...value, ReceiptFilterAvailable: true }, query())).toThrow()
     const forged = pointResponse(); forged.Rows[0].Caption = 'Чужий номер'; expect(() => normalizeTransferred(forged, query())).toThrow()
-    expect(() => normalizeTransferred({ ...pointResponse(), ReceiptCaptions: { ...pointContext(), PointHeaderWitnessSha256: undefined } }, query())).toThrow()
+    expect(() => normalizeTransferred({ ...pointResponse(), ReceiptCaptions: { ...pointContext(pointReceipt, 'transferred'), PointHeaderWitnessSha256: undefined } }, query())).toThrow()
   })
   it('validates receipt selection by full tuple and keeps the whole chooser independent of selected receipts', () => {
     const value = pointResponse(); value.ReceiptCaptions!.Choices.push({ Receipt: { ...pointReceipt, Table: '000000AF' }, Caption: 'Інший документ' })
@@ -53,5 +53,34 @@ describe('transferred goods optional own receipt captions', () => {
     const blob = await transferredXlsx(accepted), XLSX = await import('xlsx')
     const buffer = await new Promise<ArrayBuffer>((resolve, reject) => { const reader = new FileReader(); reader.onload = () => resolve(reader.result as ArrayBuffer); reader.onerror = () => reject(reader.error); reader.readAsArrayBuffer(blob) })
     const book = XLSX.read(buffer, { type: 'array' }); expect(XLSX.utils.sheet_to_json(book.Sheets['Передані товари'], { header: 1, defval: '' })).toEqual(matrix)
+  })
+  it.each(['PointCurrentComplete', 'PointParentAuthenticationFailed'])('admits the genuine transferred incomplete wire code=%s without losing resources', PointReadCode => {
+    const value = pointResponse(); value.ReceiptFilterAvailable = false
+    value.ReceiptCaptions = { ...incompletePointContext('transferred'), PointReadCode,
+      Code: `original_transferred_receipt_scope_incomplete:${PointReadCode}` }
+    value.Rows[0].Caption = 'Назва документа недоступна'; value.Rows[0].CaptionAvailable = false
+    expect(normalizeTransferred(value, query()).Totals).toEqual(resources)
+    const Code = value.ReceiptCaptions.Code
+    for (const wrong of ['original_transferred_receipt_scope_incomplete',
+      'original_transferred_receipt_scope_incomplete:PointParentQueryTimeout',
+      'original_transferred_receipt_scope_incomplete:InventedPointComplete', `${Code}:${PointReadCode}`]) {
+      expect(() => normalizeTransferred({ ...value, ReceiptCaptions: { ...value.ReceiptCaptions, Code: wrong } }, query())).toThrow()
+    }
+  })
+  it('admits only the unsuffixed transferred unbound code and rejects the warehouse family', () => {
+    const value = pointResponse(); value.ReceiptFilterAvailable = false
+    value.ReceiptCaptions = { ...incompletePointContext('transferred'), NormalSourceGenerationBound: false,
+      WitnessSha256: null, Code: 'original_transferred_receipt_normal_generation_unavailable' }
+    value.Rows[0].Caption = 'Назва документа недоступна'; value.Rows[0].CaptionAvailable = false
+    expect(normalizeTransferred(value, query()).Totals).toEqual(resources)
+    expect(() => normalizeTransferred({ ...value, ReceiptCaptions: { ...value.ReceiptCaptions,
+      Code: `${value.ReceiptCaptions!.Code}:PointParentAuthenticationFailed` } }, query())).toThrow()
+    expect(() => normalizeTransferred({ ...pointResponse(), ReceiptCaptions: pointContext() }, query())).toThrow()
+    const unavailable = { ...value, Available: false, Code: 'original_transferred_normal_inputs_unavailable',
+      NormalInputsComplete: false, OurSnapshotVerified: false, Rows: [], Totals: null, ProductChoices: [], InputWitnessSha256: null, ResultSha256: null,
+      ReceiptCaptions: { ...value.ReceiptCaptions, RequiredChoiceTupleCount: 0 } }
+    expect(normalizeTransferred(unavailable, query()).Available).toBe(false)
+    expect(() => normalizeTransferred({ ...unavailable, ReceiptCaptions: { ...unavailable.ReceiptCaptions,
+      Code: 'original_warehouse_receipt_normal_generation_crossbinding_unavailable:PointParentAuthenticationFailed' } }, query())).toThrow()
   })
 })

@@ -90,7 +90,7 @@ export function normalizeTransferred(v: unknown, request: TransferredRequest): T
     || !Array.isArray(v.FilterSummary) || v.FilterSummary.some(s => typeof s !== 'string')) return invalid()
   if (!v.Available) {
     if (v.Rows.length || v.Totals !== null || v.ProductChoices.length || v.InputWitnessSha256 !== null || v.ResultSha256 !== null) return invalid()
-    if (!validReceiptCaptions(v.ReceiptCaptions, v.ReceiptFilterAvailable, !!request.CurrentReceiptCaptionChoices, false, [], request.Receipts)) return invalid()
+    if (!validReceiptCaptions(v.ReceiptCaptions, v.ReceiptFilterAvailable, !!request.CurrentReceiptCaptionChoices, false, [], request.Receipts, 'transferred')) return invalid()
     return structuredClone(v) as TransferredResult
   }
   if (v.World !== 'fenix' || !v.NormalInputsComplete || !v.OurSnapshotVerified || !hash(v.InputWitnessSha256) || !hash(v.ResultSha256)
@@ -118,6 +118,6 @@ export function normalizeTransferred(v: unknown, request: TransferredRequest): T
     choices.add(choice.Key as string)
   }
   if (!validReceiptCaptions(v.ReceiptCaptions, v.ReceiptFilterAvailable, !!request.CurrentReceiptCaptionChoices, true,
-    v.Rows.map(row => ({ Receipts: [row] })), request.Receipts)) return invalid()
+    v.Rows.map(row => ({ Receipts: [row] })), request.Receipts, 'transferred')) return invalid()
   return structuredClone(v) as TransferredResult
 }

@@ -1,4 +1,5 @@
 export type WarehouseReceiptKey = { Type: string; Table: string; Reference: string }
+export type ReceiptCaptionFamily = 'warehouse' | 'transferred'
 export const receiptCaptionPolicy = 'CurrentOURAuthenticatedInboundHeaderSameNormalSourceGeneration'
 export const pointReceiptCaptionPolicy = 'CurrentOURAuthenticatedInboundAndPointHeaderSameNormalSourceGeneration'
 const receiptTables = new Set(['000000A2', '000000AF', '000000DB', '000000F2', '000000F9', '000000FA', '00000104', '00000113', '00000115', '00000116', '0000011C'])
@@ -24,10 +25,23 @@ function validCaptionPolicy(value: Record<string, unknown>): boolean {
     && value.PointReadCode === 'PointCurrentComplete' && hash(value.PointHeaderWitnessSha256)
   return value.Policy === receiptCaptionPolicy && value.PointHeaderWitnessSha256 === undefined
 }
+/** Match the exact producer family and its diagnostic suffix; a failed point read can still leave inbound captions usable. */
+function captionCode(value: Record<string, unknown>, family: ReceiptCaptionFamily): string | undefined {
+  const bound = value.NormalSourceGenerationBound, complete = value.CompleteReceiptChoices, pointCode = value.PointReadCode
+  if (family === 'transferred') {
+    if (typeof pointCode !== 'string' || !pointReadCodes.has(pointCode)) return undefined
+    return !bound ? 'original_transferred_receipt_normal_generation_unavailable'
+      : complete ? 'original_transferred_receipt_scope_complete' : `original_transferred_receipt_scope_incomplete:${pointCode}`
+  }
+  if (family !== 'warehouse') return undefined
+  const code = !bound ? 'original_warehouse_receipt_normal_generation_crossbinding_unavailable'
+    : complete ? 'original_warehouse_receipt_selected_scope_complete' : 'original_warehouse_receipt_selected_scope_incomplete'
+  return !complete && typeof pointCode === 'string' && pointCode !== 'PointCurrentComplete' ? `${code}:${pointCode}` : code
+}
 type CaptionChild = { Receipt: WarehouseReceiptKey; Caption: string; CaptionAvailable: boolean }
 /** Validate current-OUR display evidence separately from quantities/money; equality always uses all three key components. */
 export function validReceiptCaptions(value: unknown, filterAvailable: unknown, enabled: boolean,
-  available: boolean, rows: Array<{ Receipts: CaptionChild[] }>, selected: readonly WarehouseReceiptKey[]): boolean {
+  available: boolean, rows: Array<{ Receipts: CaptionChild[] }>, selected: readonly WarehouseReceiptKey[], family: ReceiptCaptionFamily = 'warehouse'): boolean {
   if (!enabled) return value === undefined && filterAvailable === false
   if (!object(value) || !validCaptionPolicy(value) || typeof value.NormalSourceGenerationBound !== 'boolean'
     || typeof value.CompleteReceiptChoices !== 'boolean' || typeof value.SelectedReceiptScopeComplete !== 'boolean'
@@ -35,8 +49,8 @@ export function validReceiptCaptions(value: unknown, filterAvailable: unknown, e
     || (value.RequiredChoiceTupleCount as number) > 200_000 || !Array.isArray(value.Choices) || value.Choices.length > 200_256
     || value.AllElevenReceiptKindsAvailable !== false || value.HistoricalCaptionVerified !== false || value.SourceParityVerified !== false) return false
   const bound = value.NormalSourceGenerationBound, complete = value.CompleteReceiptChoices
-  if (value.Code !== (!bound ? 'original_warehouse_receipt_normal_generation_crossbinding_unavailable'
-    : complete ? 'original_warehouse_receipt_selected_scope_complete' : 'original_warehouse_receipt_selected_scope_incomplete')
+  const expectedCode = captionCode(value, family)
+  if (expectedCode === undefined || value.Code !== expectedCode
     || bound && (!available || !hash(value.WitnessSha256)) || !bound && (complete || value.WitnessSha256 !== null || value.Choices.length)
     || filterAvailable !== (bound && complete && value.Choices.length > 0)) return false
   const names = new Map<string, string>()
