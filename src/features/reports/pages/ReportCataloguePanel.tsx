@@ -50,6 +50,7 @@ import { OriginalWarehouseQuantityCatalogueLaunch } from './OriginalWarehouseQua
 import { OriginalWarehouseMonetaryCatalogueLaunch } from './OriginalWarehouseMonetaryCatalogueLaunch'
 import { OriginalTransferredGoodsCatalogueLaunch } from './OriginalTransferredGoodsCatalogueLaunch'
 import { OriginalBuyerOrdersCatalogueLaunch } from './OriginalBuyerOrdersCatalogueLaunch'
+import { OriginalPlannedCashCatalogueLaunch } from './OriginalPlannedCashCatalogueLaunch'
 import { originalBuyerSalesShareCatalogueVariant, type OriginalBuyerSalesShareCapabilities } from '../data/originalBuyerSalesShare'
 import { OriginalBuyerSalesShareCatalogueLaunch } from './OriginalBuyerSalesShareCatalogueLaunch'
 
@@ -235,6 +236,7 @@ function CatalogueTable({ visibleRows, catalogue, inspection, availableDatasets,
                 <OriginalWarehouseMonetaryCatalogueLaunch report={report} worlds={matchingSources.map(s => s.World)} enabled={canGenerate} disabled={disabled} callerKey={callerKey} />
                 <OriginalTransferredGoodsCatalogueLaunch report={report} worlds={matchingSources.map(s => s.World)} enabled={canGenerate} disabled={disabled} callerKey={callerKey} />
                 <OriginalBuyerOrdersCatalogueLaunch report={report} worlds={matchingSources.map(s => s.World)} enabled={canGenerate} disabled={disabled} callerKey={callerKey} />
+                <OriginalPlannedCashCatalogueLaunch report={report} worlds={matchingSources.map(s => s.World)} enabled={canGenerate} disabled={disabled} callerKey={callerKey} />
                 <ManagementOrdersCatalogueLaunch report={report} enabled={canGenerate} disabled={disabled} callerKey={callerKey} onOpen={onOpenManagementOrders} />
                 <DefectProductionCatalogueLaunch report={report} enabled={canGenerate} disabled={disabled} callerKey={callerKey} onOpen={onOpenDefectProduction} />
                 <InventoryTurnoverCatalogueLaunch report={report} enabled={canGenerate} disabled={disabled} callerKey={callerKey} onOpen={onOpenInventoryTurnover} />
