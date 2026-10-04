@@ -150,6 +150,7 @@ describe('exact Fenix filters in the report constructor', () => {
   it('opens the VP workbook with all three retained filters and lets the user change that scope before submission', async () => {
     vi.mocked(getReportDatasets).mockResolvedValue([...reportDatasets, dayDataset])
     const { container } = await ready()
+    fireEvent.click(screen.getByText('Часткові форми за зразками Excel'))
     fireEvent.click(screen.getByRole('button', { name: 'Відкрити часткову форму: Валовий прибуток за днем' }))
     expect((screen.getByRole('checkbox', { name: 'Товар без послуг (Fenix)' }) as HTMLInputElement).checked).toBe(true)
     expect((screen.getByRole('checkbox', { name: 'П’ять організацій зі збереженого налаштування 1С' }) as HTMLInputElement).checked).toBe(true)
