@@ -1,5 +1,5 @@
 import { expect, it } from 'vitest'
-import { debtCapability, debtResponse, emptyDebt, org1, party1 } from '../testing/counterpartyDebtFixtures'
+import { debtCapability, debtResponse, emptyDebt, org1, org2, party1, party2 } from '../testing/counterpartyDebtFixtures'
 import { debtInstantError, debtRequest, isDebtCapability, normalizeDebt } from './originalCounterpartyDebt'
 import { debtCsv, debtMatrix, debtPdfDefinition } from './originalCounterpartyDebtExport'
 it('own original keeps management alone enabled and settlement explicitly optional', () => {
@@ -54,4 +54,19 @@ it('large exact sums never pass through floating point arithmetic', () => {
   const r = emptyDebt(), amount = { Management: '999999999999999999999.00', Settlement: '-1.00' }
   r.Rows = [{ Organization: org1, Caption: 'Наша організація', CaptionAvailable: true, Amounts: amount, Counterparties: [{ Counterparty: party1, Caption: 'Наш контрагент', CaptionAvailable: true, Amounts: amount }] }]; r.Totals = amount
   expect(normalizeDebt(r, debtRequest(debtCapability, r.AsOf)).Totals).toEqual(amount)
+})
+
+it('same-time complete empty and missing payloads cannot substitute either selected equality filter', () => {
+  const base = debtResponse(), request = debtRequest(debtCapability, base.AsOf, base.DebtSwitch, base.IncludeSettlement, [org1], [party1])
+  base.Rows = [base.Rows[0]]; base.Totals = base.Rows[0].Amounts
+  base.FilterSummary = ['Організації: Наша організація', 'Контрагенти: Наш контрагент', 'Вид заборгованості: усі', 'Типова управлінська сума']
+  const missing = { ...emptyDebt(), Available: false, NormalInputsComplete: false, Code: 'original_counterparty_debt_month_publication_unavailable',
+    Totals: null, InputWitnessSha256: null, ResultSha256: null,
+    Dependency: { OpeningRegister: 0 as const, MovementBranch: 0 as const, RequestedEndpoint: request.AsOf, MissingMonth: '2026-09' } }
+  for (const original of [base, emptyDebt(), missing]) {
+    const bound = { ...original, Organizations: [...request.Organizations], Counterparties: [...request.Counterparties] }
+    expect(normalizeDebt(bound, request)).toEqual(bound)
+    for (const patch of [{ Organizations: [org2] }, { Counterparties: [party2] }, { Organizations: [] }, { Counterparties: undefined }])
+      expect(() => normalizeDebt({ ...bound, ...patch }, request)).toThrow()
+  }
 })

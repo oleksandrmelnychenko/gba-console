@@ -15,6 +15,7 @@ export type DebtRequest = { Version: 1; World: 'fenix'; SourceId: string; Defini
 export type DebtPartyRow = { Counterparty: string; Caption: string; CaptionAvailable: boolean; Amounts: DebtAmounts }
 export type DebtOrgRow = { Organization: string; Caption: string; CaptionAvailable: boolean; Amounts: DebtAmounts; Counterparties: DebtPartyRow[] }
 export type DebtResult = { Version: 1; World: 'fenix'; SourceId: string; DefinitionSha256: string; AsOf: string; DebtSwitch: number; IncludeSettlement: boolean;
+  Organizations: string[]; Counterparties: string[];
   Available: boolean; Code: string; NormalInputsComplete: boolean; OurSnapshotVerified: true; InputWitnessSha256: string | null; ResultSha256: string | null;
   Rows: DebtOrgRow[]; Totals: DebtAmounts | null; OrganizationChoices: DebtChoice[]; CounterpartyChoices: DebtChoice[]; MissingCaptionMappings: string[];
   FilterSummary: string[]; Dependency: { OpeningRegister: 0; MovementBranch: 0; RequestedEndpoint: string; MissingMonth: string | null } | null;
@@ -63,6 +64,7 @@ const choices = (v: unknown): v is DebtChoice[] => Array.isArray(v) && v.every(c
 export function normalizeDebt(v: unknown, request: DebtRequest): DebtResult {
   const fail = () => { throw new Error('Сервер не підтвердив повний результат заборгованості за контрагентами.') }
   if (!object(v) || !identity(v) || v.AsOf !== request.AsOf || v.DebtSwitch !== request.DebtSwitch || v.IncludeSettlement !== request.IncludeSettlement
+    || !exact(v.Organizations, request.Organizations) || !exact(v.Counterparties, request.Counterparties)
     || typeof v.Available !== 'boolean' || v.NormalInputsComplete !== v.Available || v.OurSnapshotVerified !== true
     || typeof v.Code !== 'string' || !v.Code.startsWith('original_counterparty_debt_') || !Array.isArray(v.Rows)
     || !choices(v.OrganizationChoices) || !choices(v.CounterpartyChoices) || !Array.isArray(v.FilterSummary) || !v.FilterSummary.every(label)

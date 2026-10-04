@@ -9,7 +9,7 @@ export const debtCapability: DebtCapability = { Version: 1, World: 'fenix', Sour
 export function debtResponse(settlement = false): DebtResult {
   const amount1 = { Management: '20.00', Settlement: '10.00' }, amount2 = { Management: '40.00', Settlement: '-6.00' }
   return { Version: 1, World: 'fenix', SourceId: DEBT_SOURCE, DefinitionSha256: DEBT_DEFINITION, AsOf: '2026-09-15T10:20:30', DebtSwitch: 0, IncludeSettlement: settlement,
-    Available: true, Code: 'original_counterparty_debt_complete', NormalInputsComplete: true, OurSnapshotVerified: true,
+    Organizations: [], Counterparties: [], Available: true, Code: 'original_counterparty_debt_complete', NormalInputsComplete: true, OurSnapshotVerified: true,
     InputWitnessSha256: 'a'.repeat(64), ResultSha256: 'b'.repeat(64), Rows: [
       { Organization: org1, Caption: 'Наша організація', CaptionAvailable: true, Amounts: amount1, Counterparties: [{ Counterparty: party1, Caption: 'Наш контрагент', CaptionAvailable: true, Amounts: amount1 }] },
       { Organization: org2, Caption: 'Назва організації недоступна', CaptionAvailable: false, Amounts: amount2, Counterparties: [{ Counterparty: party2, Caption: 'Назва контрагента недоступна', CaptionAvailable: false, Amounts: amount2 }] }],
