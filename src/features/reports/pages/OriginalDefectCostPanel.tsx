@@ -64,6 +64,26 @@ function DefectCostResultView({ result }: { result: DefectCostResult | null }) {
     {result.Dependency?.MissingMonth ? ` ${t('Місяць')}: ${result.Dependency.MissingMonth.slice(0, 7)}.` : ''}</Alert>
   return <OriginalSalesGrid key={result.ResultSha256} lines={lines} headers={defectCostHeaders(result)} totals={result.Totals ? defectCostValues(result.Totals, result) : null} />
 }
+function DefectCostNamedChoiceControls({ names, busy, permitted, divisions, articles, periodError, onSelect, onLoad }: {
+  names: ReturnType<typeof useDefectCostNamedChoices>; busy: boolean; permitted: boolean; divisions: string[]; articles: string[]
+  periodError: string | null; onSelect: (field: 'divisions' | 'articles', value: string[]) => void; onLoad: () => void
+}) {
+  const { t } = useI18n(), named = names.run.lastRun, available = named?.Available === true
+  return <>
+    <Group grow><MultiSelect label={t('Підрозділи')} placeholder={t('Назви підрозділів ще недоступні')}
+      data={available ? named.Choices.Подразделение.map(choice => ({ value: choice.Key, label: choice.Caption })) : []} value={divisions}
+      disabled={!available || busy || !permitted} maxValues={256} onChange={value => onSelect('divisions', value)} />
+      <MultiSelect label={t('Статті витрат')} placeholder={t('Назви статей витрат ще недоступні')}
+        data={available ? named.Choices.СтатьяЗатрат.map(choice => ({ value: choice.Key, label: choice.Caption })) : []} value={articles}
+        disabled={!available || busy || !permitted} maxValues={256} onChange={value => onSelect('articles', value)} /></Group>
+    <Button variant="light" disabled={!names.permitted || !!periodError || busy} loading={names.run.isLoading}
+      onClick={onLoad}>{t('Завантажити назви')}</Button>
+    {names.run.error ? <Alert color="yellow">{t(names.run.error)}</Alert> : null}
+    {named && !available ? <Alert color="yellow">{t(dependencies[named.Dependency?.Kind ?? ''] ?? 'Назви для цього періоду ще недоступні. Формування без відборів доступне, якщо повні суми синхронізовані.')}</Alert> : null}
+    {available && !named.Choices.Подразделение.length && !named.Choices.СтатьяЗатрат.length ? <Text size="sm" c="dimmed">{t('Назви перевірено. Для цього періоду немає доступних варіантів відбору.')}</Text> : null}
+    {!available ? <Text size="sm" c="dimmed">{t('Відбір за підрозділом і статтею витрат стане доступним після завантаження їхніх назв. Зараз формування виконується без цих відборів.')}</Text> : null}
+  </>
+}
 export function OriginalDefectCostPanel({ capability, callerKey, canGenerate, initialFrom, initialThrough }: {
   capability: DefectCostCapability; callerKey: string | null; canGenerate: boolean; initialFrom: string; initialThrough: string
 }) {
@@ -88,18 +108,9 @@ export function OriginalDefectCostPanel({ capability, callerKey, canGenerate, in
       changeFrom={value => { delivery.invalidate(); setFrom(value) }} changeThrough={value => { delivery.invalidate(); setThrough(value) }} />
     <MultiSelect label={t('Показники')} value={measures} data={defectCostMeasures.map(value => ({ value, label: t(defectCostLabels[value]) }))} maxValues={8} disabled={busy}
       onChange={value => { const selected = new Set(value); delivery.invalidate(); setMeasures(defectCostMeasures.filter(m => selected.has(m))) }} />
-    <Group grow><MultiSelect label={t('Підрозділи')} placeholder={t('Назви підрозділів ще недоступні')}
-      data={available ? named.Choices.Подразделение.map(choice => ({ value: choice.Key, label: choice.Caption })) : []} value={divisions}
-      disabled={!available || busy || !delivery.permitted} maxValues={256} onChange={value => select('divisions', value)} />
-      <MultiSelect label={t('Статті витрат')} placeholder={t('Назви статей витрат ще недоступні')}
-        data={available ? named.Choices.СтатьяЗатрат.map(choice => ({ value: choice.Key, label: choice.Caption })) : []} value={articles}
-        disabled={!available || busy || !delivery.permitted} maxValues={256} onChange={value => select('articles', value)} /></Group>
-    <Button variant="light" disabled={!names.permitted || !!defectCostPeriodError(from, through) || busy} loading={names.run.isLoading}
-      onClick={() => { delivery.invalidate(); setSelection({ key: '', witness: null, divisions: [], articles: [] }); void names.load() }}>{t('Завантажити назви')}</Button>
-    {names.run.error ? <Alert color="yellow">{t(names.run.error)}</Alert> : null}
-    {named && !available ? <Alert color="yellow">{t(dependencies[named.Dependency?.Kind ?? ''] ?? 'Назви для цього періоду ще недоступні. Формування без відборів доступне, якщо повні суми синхронізовані.')}</Alert> : null}
-    {available && !named.Choices.Подразделение.length && !named.Choices.СтатьяЗатрат.length ? <Text size="sm" c="dimmed">{t('Назви перевірено. Для цього періоду немає доступних варіантів відбору.')}</Text> : null}
-    {!available ? <Text size="sm" c="dimmed">{t('Відбір за підрозділом і статтею витрат стане доступним після завантаження їхніх назв. Зараз формування виконується без цих відборів.')}</Text> : null}
+    <DefectCostNamedChoiceControls names={names} busy={busy} permitted={delivery.permitted} divisions={divisions} articles={articles}
+      periodError={defectCostPeriodError(from, through)} onSelect={select}
+      onLoad={() => { delivery.invalidate(); setSelection({ key: '', witness: null, divisions: [], articles: [] }); void names.load() }} />
     <Text size="sm" c="dimmed">{t('Період охоплює календарні дні до 23:59:59. Повна відповідність датам і підсумкам оригіналу 1С ще не підтверджена.')}</Text>
     {delivery.error ? <Alert color="yellow">{t(delivery.error)}</Alert> : null}
     {delivery.run.error ? <Alert color="red">{t(delivery.run.error)}</Alert> : null}
