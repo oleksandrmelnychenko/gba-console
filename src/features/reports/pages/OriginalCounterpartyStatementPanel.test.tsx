@@ -1,5 +1,5 @@
 import { MantineProvider } from '@mantine/core'
-import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { expect, it, vi } from 'vitest'
 import { I18nProvider } from '../../../shared/i18n/I18nProvider'
 import { readStatement } from '../api/originalCounterpartyStatementApi'
@@ -11,7 +11,11 @@ const panel = (caller = 'caller1', allowed = true) => <MantineProvider env="test
   capability={statementCapability} callerKey={caller} canGenerate={allowed} initialFrom="2026-09-10" initialThrough="2026-09-12" /></I18nProvider></MantineProvider>
 it('screen keeps organization party agreement hierarchy and every signed default8 resource cell', async () => {
   vi.clearAllMocks(); vi.mocked(readStatement).mockResolvedValue(statementResponse()); render(panel()); fireEvent.click(screen.getByRole('button', { name: 'Сформувати' }))
-  await screen.findAllByText('Підсумок контрагента'); expect(screen.getByText('Наш договір')).not.toBeNull()
+  await screen.findAllByText('Підсумок контрагента')
+  const table = screen.getByRole('table'), agreementRow = within(table).getByRole('cell', { name: 'Наш договір' }).closest('tr')!
+  expect(within(agreementRow).getAllByRole('cell').map(cell => cell.textContent)).toEqual([
+    'Наша організація', 'Наш контрагент', 'Наш договір', '10.00', '-2.00', '3.00', '5.00', '20.00', '4.00', '-1.00', '25.00',
+  ])
   expect(screen.getAllByRole('columnheader').filter(e => e.closest('thead'))).toHaveLength(11)
   for (const format of ['CSV', 'XLSX', 'PDF']) expect((screen.getByRole('button', { name: format }) as HTMLButtonElement).disabled).toBe(false)
 })
