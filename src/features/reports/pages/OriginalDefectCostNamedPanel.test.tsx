@@ -10,7 +10,7 @@ vi.mock('../api/originalDefectCostApi', () => ({ readDefectCost: vi.fn(), readDe
 const panel = (caller: string | null = 'caller1', allowed = true) => <MantineProvider env="test"><I18nProvider><OriginalDefectCostPanel capability={defectCostCapability}
   callerKey={caller} canGenerate={allowed} initialFrom="2026-09-10" initialThrough="2026-09-12" /></I18nProvider></MantineProvider>
 async function load() { fireEvent.click(screen.getByRole('button', { name: 'Завантажити назви' })); await waitFor(() => expect((screen.getByRole('combobox', { name: 'Підрозділи' }) as HTMLInputElement).disabled).toBe(false)) }
-async function select(label: string, option: string) { fireEvent.click(screen.getByRole('combobox', { name: label })); fireEvent.click(await screen.findByRole('option', { name: option })) }
+async function select(label: string, option: string) { const input = screen.getByRole('combobox', { name: label }); fireEvent.click(input); fireEvent.click(await screen.findByRole('option', { name: option })); fireEvent.blur(input) }
 it('enables typed selectors only after both current named families and submits their exact witness', async () => {
   vi.clearAllMocks(); vi.mocked(readDefectCostChoices).mockImplementation(async request => defectCostChoices(request)); vi.mocked(readDefectCost).mockImplementation(async request => namedDefectCost(request))
   render(panel()); await load(); await select('Підрозділи', 'Цех'); await select('Статті витрат', 'Потери')
