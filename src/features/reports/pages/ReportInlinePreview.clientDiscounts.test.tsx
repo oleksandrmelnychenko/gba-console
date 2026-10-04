@@ -10,8 +10,8 @@ it('renders direct recipient region beside its row and keeps product percentage 
   render(<MantineProvider><ReportInlinePreview preview={normalizeNativeReportPreview({ Preview: clientDiscountsPreview() })} /></MantineProvider>)
   const table = screen.getByRole('table')
   expect(within(table).getAllByRole('columnheader').map(header => header.textContent)).toEqual(['Одержувач', 'Код по региону', 'Product / Відсоток'])
-  expect(within(table).getByRole('rowheader', { name: '01' })).toBeInTheDocument()
-  expect(within(table).getByRole('cell', { name: '20' })).toBeInTheDocument()
+  expect(table.contains(within(table).getByRole('rowheader', { name: '01' }))).toBe(true)
+  expect(table.contains(within(table).getByRole('cell', { name: '20' }))).toBe(true)
 })
 it('does not replace a known empty region with NULL or unavailable text', () => {
   const value = clientDiscountsPreview(); value.ClientDiscountRecipientRegions.Rows[0].RegionCode = ''
