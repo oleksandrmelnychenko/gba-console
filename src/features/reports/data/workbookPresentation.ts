@@ -54,7 +54,9 @@ export function readWorkbookCapability(value: unknown, source: number): Workbook
   const expected = workbookSources.get(source)
   if (!expected || !record(value) || !exactKeys(value, ['version', 'additionalFields', 'orderings'])
     || value.version !== 1 || !Array.isArray(value.additionalFields) || value.additionalFields.length !== expected.length
-    || !Array.isArray(value.orderings) || value.orderings.join(',') !== (source === 35 ? 'MonthAscending' : '')) return null
+    || !Array.isArray(value.orderings) || (source === 35
+      ? value.orderings.length !== 1 || value.orderings[0] !== 'MonthAscending'
+      : value.orderings.length !== 0)) return null
   const fields: WorkbookField[] = []
   for (let index = 0; index < expected.length; index++) {
     const field = value.additionalFields[index]

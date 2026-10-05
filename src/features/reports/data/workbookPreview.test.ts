@@ -65,6 +65,14 @@ it('distinguishes known explicit unassigned manager from missing evidence and ne
   expect(workbookAttributeText(normalize(raw).WorkbookPresentation?.rows[0].values[0])).toBe('∅')
   raw.workbookPresentation.rows[0].values[0].state = 'unavailable'
   expect(workbookAttributeText(normalize(raw).WorkbookPresentation?.rows[0].values[0])).toBe('—')
+  for (const type of [60, 61]) {
+    const mixed = structuredClone(raw)
+    mixed.workbookPresentation.selection.additionalFields = [type]
+    mixed.workbookPresentation.fields[0].type = type
+    mixed.workbookPresentation.fields[0].caption = type === 60 ? 'Менеджер' : 'Регіон'
+    mixed.workbookPresentation.rows[0].values[0] = { type, state: 'mixed', values: ['Перший', 'Другий'], inputSha256: 'c'.repeat(64) }
+    expect(() => normalize(mixed)).toThrow()
+  }
   raw.workbookPresentation.rows[0].values[0].inputSha256 = null
   expect(() => normalize(raw)).toThrow()
 })
@@ -91,4 +99,7 @@ it('rejects unknown output fields, bad UTF16, wrong field placement and finance-
   const placement = workbookPreview(); placement.workbookPresentation.fields[0].placement = 'column'; expect(() => normalize(placement)).toThrow()
   const text = workbookPreview(); text.workbookPresentation.rows[0].values[0].values = ['\ud800']; expect(() => normalize(text)).toThrow()
   const hash = workbookPreview(); hash.workbookPresentation.rows[0].values[0].inputSha256 = 'c'.repeat(64); expect(() => normalize(hash)).toThrow()
+  const kind = workbookPreview(); kind.workbookPresentation.rows[0].values[1].values = ['Вигаданий тип']; expect(() => normalize(kind)).toThrow()
+  kind.workbookPresentation.rows[0].values[1] = { type: 33, state: 'mixed', values: ['Банківський рахунок', 'Каса'], inputSha256: null }
+  expect(normalize(kind).WorkbookPresentation?.rows[0].values[1].state).toBe('mixed')
 })

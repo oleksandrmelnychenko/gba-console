@@ -28,6 +28,8 @@ function attribute(value: unknown): WorkbookAttribute {
   if (!record(value) || !keys(value, ['type', 'state', 'values', 'inputSha256']) || !Number.isSafeInteger(value.type)
     || !['known', 'mixed', 'unavailable', 'null'].includes(String(value.state)) || !Array.isArray(value.values)
     || !value.values.every(workbookText)
+    || value.state === 'mixed' && ![30, 33].includes(value.type as number)
+    || value.type === 33 && !value.values.every(caption => ['Банківський рахунок', 'Каса'].includes(caption))
     || value.state === 'known' && value.values.length !== 1 || value.state === 'mixed' && value.values.length === 0
     || (value.state === 'unavailable' || value.state === 'null') && value.values.length !== 0
     || !(value.inputSha256 === null || hash(value.inputSha256))) return fail()
