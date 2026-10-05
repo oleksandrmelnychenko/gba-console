@@ -35,7 +35,8 @@ it('rejects duplicate cells, conflicting captions, malformed numeric values and 
 it('validates dates and exact detached uppercase reference scopes without inventing named choice authority', () => {
   expect(fenixDiscountDateError('2024-02-29')).toBeNull(); expect(fenixDiscountDateError('2025-02-29')).not.toBeNull()
   expect(() => validateFenixDiscountRequest({ ...fenixScope(), Products: ['a'.repeat(32)] })).toThrow()
-  expect(() => validateFenixDiscountRequest({ ...fenixScope(), ChoicesWitnessSha256: 'a'.repeat(64) })).toThrow()
+  expect(() => validateFenixDiscountRequest({ ...fenixScope(), ChoicesWitnessSha256: 'bad' })).toThrow()
+  expect(validateFenixDiscountRequest({ ...fenixScope(), ChoicesWitnessSha256: 'a'.repeat(64) }).ChoicesWitnessSha256).toBe('a'.repeat(64))
   const raw = { ...fenixScope(), Products: ['F'.repeat(32), 'A'.repeat(32)] }, detached = validateFenixDiscountRequest(raw); raw.Products.length = 0
   expect(detached.Products).toEqual(['A'.repeat(32), 'F'.repeat(32)])
 })
