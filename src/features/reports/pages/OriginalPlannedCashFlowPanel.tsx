@@ -53,6 +53,21 @@ function PlanningFilters({ current, selection, captions, busy, select }: { curre
       onChange={keys => select(field, keys)} />
   })}</>
 }
+function PlanningAvailability({ current, named }: { current: PlannedFlowChoices | null; named: boolean }) {
+  const { t } = useI18n()
+  return <>
+    {current && !current.FullParentScopeVerified ? <Alert color="yellow">{t(dependencies[current.Code] ?? 'Повних даних планування й реквізитів документів ще немає.')}</Alert> : null}
+    {!named ? <Alert color="yellow">{t('Назви або склад значень змінилися. Очистьте відбори й оновіть перелік назв.')}</Alert> : null}
+  </>
+}
+function PlanningErrors({ periodError, previewError, namesError }: { periodError: string | null; previewError: string | null; namesError: string | null }) {
+  const { t } = useI18n()
+  return <>
+    {periodError ? <Alert color="yellow">{t(periodError)}</Alert> : null}
+    {previewError ? <Alert color="red">{t(previewError)}</Alert> : null}
+    {namesError ? <Alert color="red">{t(namesError)}</Alert> : null}
+  </>
+}
 export function OriginalPlannedCashFlowPanel({ capability, callerKey, canGenerate, initialFrom, initialThrough }: {
   capability: PlannedFlowCapability; callerKey: string | null; canGenerate: boolean; initialFrom: string; initialThrough: string
 }) {
@@ -84,12 +99,11 @@ export function OriginalPlannedCashFlowPanel({ capability, callerKey, canGenerat
       value={measures} maxValues={6} disabled={busy} onChange={value => { invalidate(); setMeasures(value as PlannedFlowMeasure[]) }} />
     <PlanningFilters current={current} selection={selection} captions={choices?.scope === scope ? choices.captions : {}} busy={busy} select={select} />
     <Text size="sm" c="dimmed">{t('Поля з неповними назвами залишаються недоступними. Без відборів звіт охоплює всі сценарії, проєкти й підрозділи.')}</Text>
-    {current && !current.FullParentScopeVerified ? <Alert color="yellow">{t(dependencies[current.Code] ?? 'Повних даних планування й реквізитів документів ще немає.')}</Alert> : null}
-    {!named ? <Alert color="yellow">{t('Назви або склад значень змінилися. Очистьте відбори й оновіть перелік назв.')}</Alert> : null}
+    <PlanningAvailability current={current} named={named} />
     <Button variant="light" loading={load.isLoading} disabled={!allowed || busy || !!error || capability.ScopedChoicesImplemented !== true} onClick={() => { run.invalidate(); void load.generate() }}>{t('Оновити назви відборів')}</Button>
     <Button variant="subtle" disabled={busy} onClick={reset}>{t('Очистити відбори й назви')}</Button>
     <Text size="sm" c="dimmed">{t(note)}</Text>
-    {error ? <Alert color="yellow">{t(error)}</Alert> : null}{run.error ? <Alert color="red">{t(run.error)}</Alert> : null}{load.error ? <Alert color="red">{t(load.error)}</Alert> : null}
+    <PlanningErrors periodError={error} previewError={run.error} namesError={load.error} />
     <Button loading={run.isLoading} disabled={!allowed || !named || busy || !!error} onClick={() => { void run.generate() }}>{t('Сформувати')}</Button>
     <PlannedFlowResultView result={run.lastRun} />
   </Stack>
