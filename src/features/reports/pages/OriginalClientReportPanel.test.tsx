@@ -55,10 +55,12 @@ it('fresh full-universe membership changes refuse further selected generation un
   fireEvent.click(screen.getByRole('button', { name: 'Очистити відбори й назви' })); expect(screen.queryByRole('table')).toBeNull()
   expect((screen.getByRole('button', { name: 'Сформувати' }) as HTMLButtonElement).disabled).toBe(false)
 })
-it('date scope resets rows selections and choices without reusing old caption evidence', async () => {
+it('date scope resets rows selections and choices including ABA without reusing old caption evidence', async () => {
   vi.clearAllMocks(); vi.mocked(readClientReport).mockResolvedValue(clientResult()); render(panel())
   fireEvent.click(screen.getByRole('button', { name: 'Сформувати' })); await screen.findByRole('table')
   fireEvent.change(screen.getByLabelText('Кінець періоду'), { target: { value: '2026-10-03' } })
+  expect(screen.queryByRole('table')).toBeNull(); expect((screen.getByRole('combobox', { name: 'Організації' }) as HTMLInputElement).disabled).toBe(true)
+  fireEvent.change(screen.getByLabelText('Кінець періоду'), { target: { value: '2026-10-04' } })
   expect(screen.queryByRole('table')).toBeNull(); expect((screen.getByRole('combobox', { name: 'Організації' }) as HTMLInputElement).disabled).toBe(true)
 })
 it('caller and permission changes abort original requests and discard late rows and names', async () => {
@@ -67,4 +69,6 @@ it('caller and permission changes abort original requests and discard late rows 
   const signal = vi.mocked(readClientReport).mock.calls[0][1]; view.rerender(panel('caller2', false)); expect(signal?.aborted).toBe(true)
   await act(async () => { finish(clientResult()) }); expect(screen.queryByRole('table')).toBeNull()
   expect((screen.getByRole('button', { name: 'Сформувати' }) as HTMLButtonElement).disabled).toBe(true)
+  view.rerender(panel('caller1', true)); expect(screen.queryByRole('table')).toBeNull()
+  expect((screen.getByRole('combobox', { name: 'Контрагенти' }) as HTMLInputElement).disabled).toBe(true)
 })

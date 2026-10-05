@@ -37,9 +37,10 @@ function selectedStillNamed(result: ClientResult | null, selected: ClientSelecti
     && selected[field].every(key => result?.Choices[field]?.some(choice => choice.Key === key)))
 }
 type CaptionCache = Partial<Record<ClientField, ClientChoice[]>>
-function selectedCaptions(previous: { scope: string; result: ClientResult; captions: CaptionCache } | null, scope: string, selection: ClientSelection): CaptionCache {
+type ClientScope = { capability: ClientCapability; callerKey: string | null; canGenerate: boolean; from: string; through: string }
+function selectedCaptions(previous: { scope: ClientScope; result: ClientResult; captions: CaptionCache } | null, scope: ClientScope, selection: ClientSelection): CaptionCache {
   return Object.fromEntries(clientFields.map(field => {
-    if (previous?.scope !== scope) return [field, []]
+    if (!previous || previous.scope !== scope) return [field, []]
     const prior = new Map([...(previous.captions[field] ?? []), ...(previous.result.Choices[field] ?? [])].map(choice => [choice.Key, choice]))
     return [field, [...prior.values()].filter(choice => choice.CaptionAvailable && selection[field].includes(choice.Key))]
   }))
@@ -61,9 +62,9 @@ export function OriginalClientReportPanel({ capability, callerKey, canGenerate, 
   capability: ClientCapability; callerKey: string | null; canGenerate: boolean; initialFrom: string; initialThrough: string
 }) {
   const { t } = useI18n(), [from, setFrom] = useState(initialFrom), [through, setThrough] = useState(initialThrough)
-  const [selected, setSelected] = useState<{ scope: string; values: ClientSelection }>({ scope: '', values: emptyClientSelection() })
-  const [choices, setChoices] = useState<{ scope: string; result: ClientResult; captions: CaptionCache } | null>(null)
-  const scope = JSON.stringify([capability, callerKey, canGenerate, from, through])
+  const scope = useMemo(() => ({ capability, callerKey, canGenerate, from, through }), [capability, callerKey, canGenerate, from, through])
+  const [selected, setSelected] = useState<{ scope: ClientScope | null; values: ClientSelection }>({ scope: null, values: emptyClientSelection() })
+  const [choices, setChoices] = useState<{ scope: ClientScope; result: ClientResult; captions: CaptionCache } | null>(null)
   const selection = selected.scope === scope ? selected.values : emptyClientSelection(), current = choices?.scope === scope ? choices.result : null
   const error = clientPeriodError(from, through), named = selectedStillNamed(current, selection), allowed = canGenerate && !!callerKey && capability.Executable
   const key = JSON.stringify([scope, selection])
