@@ -64,6 +64,7 @@ import { OriginalGoodsStockAnalysisCatalogueLaunch } from './OriginalGoodsStockA
 import { OriginalDefectCostCatalogueLaunch } from './OriginalDefectCostCatalogueLaunch'
 import { OriginalPurchasesCatalogueLaunch } from './OriginalPurchasesCatalogueLaunch'
 import { OriginalAmgClientDiscountsCatalogueLaunch } from './OriginalAmgClientDiscountsCatalogueLaunch'
+import { OriginalFenixDiscountAnalysisCatalogueLaunch } from './OriginalFenixDiscountAnalysisCatalogueLaunch'
 import { originalBuyerSalesShareCatalogueVariant, type OriginalBuyerSalesShareCapabilities } from '../data/originalBuyerSalesShare'
 import { OriginalBuyerSalesShareCatalogueLaunch } from './OriginalBuyerSalesShareCatalogueLaunch'
 
@@ -263,6 +264,7 @@ function CatalogueTable({ visibleRows, catalogue, inspection, availableDatasets,
                 <OriginalDefectCostCatalogueLaunch report={report} worlds={matchingSources.map(s => s.World)} enabled={canGenerate} disabled={disabled} callerKey={callerKey} />
                 <OriginalPurchasesCatalogueLaunch report={report} worlds={matchingSources.map(s => s.World)} enabled={canGenerate} disabled={disabled} callerKey={callerKey} />
                 <OriginalAmgClientDiscountsCatalogueLaunch report={report} worlds={matchingSources.map(s => s.World)} enabled={canGenerate} disabled={disabled} callerKey={callerKey} />
+                <OriginalFenixDiscountAnalysisCatalogueLaunch report={report} worlds={matchingSources.map(s => s.World)} enabled={canGenerate} disabled={disabled} callerKey={callerKey} />
                 <ManagementOrdersCatalogueLaunch report={report} enabled={canGenerate} disabled={disabled} callerKey={callerKey} onOpen={onOpenManagementOrders} />
                 <DefectProductionCatalogueLaunch report={report} enabled={canGenerate} disabled={disabled} callerKey={callerKey} onOpen={onOpenDefectProduction} />
                 <InventoryTurnoverCatalogueLaunch report={report} enabled={canGenerate} disabled={disabled} callerKey={callerKey} onOpen={onOpenInventoryTurnover} />
