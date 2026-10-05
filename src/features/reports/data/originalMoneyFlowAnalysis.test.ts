@@ -9,8 +9,7 @@ it('binds the own Fenix source, two-level hierarchy, no columns and exactly four
     From: '2026-09-10', Through: '2026-09-12', Organizations: [], Divisions: [], Projects: [], Measures: [...moneyFlowDefaults] })
   expect(moneyFlowCapability.DefaultColumns).toEqual([]); expect(request().Measures).not.toContain('СуммаРасходВал'); expect(request().Measures).not.toContain('СуммаРасходУпр')
 })
-it.each(['World', 'SourceId', 'DefinitionSha256', 'ModuleSha256', 'QuerySha256', 'DefaultScopeCode', 'MoneyPolicy', 'DatePolicy', 'DivisionPolicy', 'MissingPropertyPolicy'])
-  ('refuses a foreign original or altered capability policy %s', field => { expect(isMoneyFlowCapability({ ...moneyFlowCapability, [field]: 'foreign' })).toBe(false) })
+it.each(['World', 'SourceId', 'DefinitionSha256', 'ModuleSha256', 'QuerySha256', 'DefaultScopeCode', 'MoneyPolicy', 'DatePolicy', 'DivisionPolicy', 'MissingPropertyPolicy'])('refuses a foreign original or altered capability policy %s', field => { expect(isMoneyFlowCapability({ ...moneyFlowCapability, [field]: 'foreign' })).toBe(false) })
 it('refuses a pivot, altered default expenses, reordered hierarchy and fabricated Source readiness', () => {
   for (const patch of [{ DefaultColumns: ['ВидДенежныхСредств'] }, { DefaultMeasures: moneyFlowMeasures }, { DefaultRows: [...moneyFlowCapability.DefaultRows].reverse() },
     { HumanChoicesAvailable: true }, { SourceSyncEnabled: true }, { SourceParityVerified: true }, { MeasureDefinitions: [] }])
@@ -34,8 +33,7 @@ it('rejects no measures, duplicate resources, unknown resource and undeclared se
     expect(() => moneyFlowRequest(moneyFlowCapability, '2026-09-10', '2026-09-12', emptyMoneyFlowSelection(), measures as never)).toThrow()
   expect(() => moneyFlowRequest(moneyFlowCapability, '2026-09-10', '2026-09-12', Object.assign(emptyMoneyFlowSelection(), { Articles: [] }))).toThrow()
 })
-it.each([['2026-02-30', '2026-03-01'], ['2026-09-12', '2026-09-10'], ['2026-09-10', '2027-09-10'], ['1999-12-31', '2000-01-01']])
-  ('refuses invalid or oversized calendar interval %s to %s', (from, through) => { expect(() => moneyFlowRequest(moneyFlowCapability, from, through)).toThrow() })
+it.each([['2026-02-30', '2026-03-01'], ['2026-09-12', '2026-09-10'], ['2026-09-10', '2027-09-10'], ['1999-12-31', '2000-01-01']])('refuses invalid or oversized calendar interval %s to %s', (from, through) => { expect(() => moneyFlowRequest(moneyFlowCapability, from, through)).toThrow() })
 it.each([...moneyFlowFilters])('binds the response to the exact current %s filter echo', field => {
   const value = moneyFlowResponse(); value.Selectors[field] = [moneyFlowRef(1)]; expect(() => normalizeMoneyFlow(value, request())).toThrow()
 })
