@@ -22,9 +22,9 @@ function FenixCapabilityStatus({ current, enabled, callerKey, disabled, retry }:
   current: { failed: boolean } | null; enabled: boolean; callerKey: string | null; disabled: boolean; retry: () => void
 }) {
   const { t } = useI18n()
-  return <>{!current && enabled && callerKey ? <Loader size="xs" aria-label={t('Перевірка API аналізу знижок Fenix')} /> : null}
+  return <>{!current && enabled && callerKey ? <Loader size="xs" aria-label={t('Перевірка доступності звіту')} /> : null}
     {enabled && !callerKey ? <Text size="xs">{t('Для формування потрібен чинний сеанс користувача.')}</Text> : null}
-    {current?.failed ? <><Text size="xs">{t('Не вдалося перевірити API аналізу знижок Fenix.')}</Text><Button variant="subtle" disabled={disabled} onClick={retry}>{t('Повторити')}</Button></> : null}</>
+    {current?.failed ? <><Text size="xs">{t('Не вдалося перевірити доступність звіту.')}</Text><Button variant="subtle" disabled={disabled} onClick={retry}>{t('Повторити')}</Button></> : null}</>
 }
 export function OriginalFenixDiscountAnalysisCatalogueLaunch({ report, worlds, enabled, disabled, callerKey }: {
   report: ReportCatalogueEntry; worlds: readonly string[]; enabled: boolean; disabled: boolean; callerKey: string | null
@@ -36,7 +36,7 @@ export function OriginalFenixDiscountAnalysisCatalogueLaunch({ report, worlds, e
   const allowed = enabled && !disabled && !!callerKey && !!capability?.Executable
   return <Stack gap={6}><FenixCapabilityStatus current={current} enabled={enabled} callerKey={callerKey} disabled={disabled} retry={() => setAttempt(n => n + 1)} />
     <Button disabled={!allowed} onClick={() => setOpened(true)}>{t('Fenix · Аналіз знижок і націнок')}</Button>
-    <Text size="sm" c="dimmed">{t('Форма власного оригіналу без відборів. Поточні дані перевіряються під час формування; відбори назв ще недоступні.')}</Text>
+    <Text size="sm" c="dimmed">{t('Поточні дані перевіряються під час формування. Оберіть дату та, за потреби, контрагентів і номенклатуру.')}</Text>
     <AppModal opened={opened && allowed} title={t('Fenix · Аналіз знижок і націнок')} size={1250} onClose={() => setOpened(false)} closeButtonProps={{ 'aria-label': t('Закрити аналіз знижок Fenix') }}>
       {opened && allowed && capability ? <Suspense fallback={<Loader size="sm" />}><Panel key={JSON.stringify(scope)} capability={capability} callerKey={callerKey} canGenerate={allowed}
         initialThrough={new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Kyiv' })} /></Suspense> : null}

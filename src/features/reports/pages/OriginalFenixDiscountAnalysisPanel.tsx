@@ -1,17 +1,20 @@
-import { Alert, Button, Group, MultiSelect, Stack, Text, TextInput } from '@mantine/core'
+import { Alert, Button, Group, Stack, Text, TextInput } from '@mantine/core'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { readFenixDiscountAnalysis } from '../api/originalFenixDiscountAnalysisApi'
-import { fenixDiscountDateError, fenixDiscountRequest, type FenixDiscountCapability, type FenixDiscountResult } from '../data/originalFenixDiscountAnalysis'
+import { fenixDiscountDateError, type FenixDiscountCapability, type FenixDiscountResult } from '../data/originalFenixDiscountAnalysis'
+import { emptyFenixDiscountSelection, selectedFenixDiscountRequest, type FenixDiscountChoices, type FenixDiscountField, type FenixDiscountSelection } from '../data/originalFenixDiscountAnalysisChoices'
 import { fenixDiscountCsv, fenixDiscountExportError, fenixDiscountPdf, fenixDiscountXlsx } from '../data/originalFenixDiscountAnalysisExport'
 import { useReportRunState } from '../hooks/useReportRunState'
+import { useFenixDiscountChoices } from '../hooks/useFenixDiscountChoices'
+import { OriginalFenixDiscountChoiceControls } from './OriginalFenixDiscountChoiceControls'
 import { OriginalFenixDiscountAnalysisGrid } from './OriginalFenixDiscountAnalysisGrid'
 const formats = ['csv', 'xlsx', 'pdf'] as const
 function download(blob: Blob, name: string) {
   const url = URL.createObjectURL(blob), link = document.createElement('a')
   link.href = url; link.download = name; document.body.append(link); link.click(); link.remove(); window.setTimeout(() => URL.revokeObjectURL(url), 30_000)
 }
-function useFenixDiscountRun(key: string, permitted: boolean, through: string) {
+function useFenixDiscountRun(key: string, permitted: boolean, through: string, selection: FenixDiscountSelection, names: FenixDiscountChoices | null) {
   const run = useReportRunState<FenixDiscountResult>(key), [exporting, setExporting] = useState(false)
   const active = useRef<AbortController | null>(null), activeExport = useRef<AbortController | null>(null), latest = useRef(key)
   useEffect(() => { latest.current = key; return () => { latest.current = ''; active.current?.abort(); activeExport.current?.abort() } }, [key])
@@ -19,7 +22,7 @@ function useFenixDiscountRun(key: string, permitted: boolean, through: string) {
   async function generate() {
     if (!permitted || fenixDiscountDateError(through) || run.isLoading || exporting) return
     const controller = new AbortController(); active.current?.abort(); active.current = controller; latest.current = key; const update = run.begin()
-    try { const result = await readFenixDiscountAnalysis(fenixDiscountRequest(through), controller.signal); if (!controller.signal.aborted) update({ lastRun: result }) }
+    try { const result = await readFenixDiscountAnalysis(selectedFenixDiscountRequest(through, selection, names), controller.signal); if (!controller.signal.aborted) update({ lastRun: result }) }
     catch (failure) { if (!controller.signal.aborted) update({ error: failure instanceof Error ? failure.message : 'Не вдалося сформувати звіт.' }) }
     finally { if (!controller.signal.aborted) update({ isLoading: false }) }
   }
@@ -45,21 +48,32 @@ function FenixDiscountActions({ delivery, permitted, dateError }: { delivery: Re
 function FenixDiscountOutcome({ result }: { result: FenixDiscountResult | null }) {
   const { t } = useI18n()
   if (!result) return null
-  if (!result.NormalInputsComplete) return <Alert color="yellow">{t('Повні узгоджені звичайні дані Fenix ще недоступні. Порожній або частковий результат не підставляється.')}</Alert>
-  return <>{!result.Available ? <Alert color="yellow">{t('Частина назв або ресурсів недоступна: порядок кількох посилань не підтверджений. Значення не замінюються нулем; експорт повного звіту недоступний.')}</Alert> : null}
+  if (!result.NormalInputsComplete) return <Alert color="yellow">{t('Повні узгоджені звичайні дані для цієї дати ще недоступні. Оновіть дані й повторіть формування.')}</Alert>
+  return <>{!result.Available ? <Alert color="yellow">{t('Частина назв або ресурсів недоступна. Їх позначено в таблиці; експорт буде доступний після оновлення даних.')}</Alert> : null}
     <OriginalFenixDiscountAnalysisGrid key={result.ResultSha256} result={result} /></>
+}
+function FenixDiscountMessages({ dateError, runError, ready }: { dateError: string | null; runError: string | null; ready: boolean | undefined }) {
+  const { t } = useI18n()
+  return <>{ready === false ? <Text size="sm" c="dimmed">{t('Дані звіту ще не повні. Доступні назви можна переглянути; для формування потрібне оновлення даних.')}</Text> : null}
+    {dateError ? <Alert color="yellow">{t(dateError)}</Alert> : null}{runError ? <Alert color="red">{t(runError)}</Alert> : null}</>
 }
 export function OriginalFenixDiscountAnalysisPanel({ capability, callerKey, canGenerate, initialThrough }: {
   capability: FenixDiscountCapability; callerKey: string | null; canGenerate: boolean; initialThrough: string
 }) {
   const { t } = useI18n(), [through, setThrough] = useState(initialThrough)
   const permitted = canGenerate && !!callerKey && capability.Executable && capability.World === 'fenix'
-  const key = JSON.stringify([callerKey, canGenerate, capability, through]), delivery = useFenixDiscountRun(key, permitted, through), dateError = fenixDiscountDateError(through)
+  const names = useFenixDiscountChoices(through, permitted, callerKey), named = names.run.lastRun?.names ?? null
+  const [selection, setSelection] = useState<{ key: string; witness: string | null; values: FenixDiscountSelection }>({ key: '', witness: null, values: emptyFenixDiscountSelection() })
+  const selected = named && selection.key === names.key && selection.witness === named.ResultSha256 ? selection.values : emptyFenixDiscountSelection()
+  const key = JSON.stringify([callerKey, canGenerate, capability, through, selected, named?.ChoicesWitnessSha256 ?? null, named?.ResultSha256 ?? null])
+  const delivery = useFenixDiscountRun(key, permitted, through, selected, named), dateError = fenixDiscountDateError(through)
+  const busy = delivery.run.isLoading || delivery.exporting || names.run.isLoading
+  function select(field: FenixDiscountField, values: string[]) { delivery.invalidate(); setSelection({ key: names.key, witness: named?.ResultSha256 ?? null, values: { ...selected, [field]: [...values] } }) }
   return <Stack gap="md"><Text>{t('Fenix · Аналіз знижок і націнок: контрагенти в рядках, номенклатура у стовпцях; тип ціни й відсоток. Загальних підсумків немає.')}</Text>
-    <TextInput type="date" label={t('Дата зрізу')} value={through} disabled={delivery.run.isLoading || delivery.exporting} onChange={event => { delivery.invalidate(); setThrough(event.currentTarget.value) }} />
-    <Group grow><MultiSelect label={t('Контрагенти')} data={[]} value={[]} disabled description={t('Підтверджені назви для відбору ще недоступні.')} />
-      <MultiSelect label={t('Номенклатура')} data={[]} value={[]} disabled description={t('Підтверджені назви для відбору ще недоступні.')} /></Group>
-    <Text size="sm" c="dimmed">{t('Запит без відборів використовує звичайні дані GBA й останню цілу секунду дня, 23:59:59. Виконуваний API не підтверджує наявність поточних даних. Відповідність оригіналу 1С, його порядку посилань та дат ще не перевірена. Відсотки не додаються; валютна конвертація не застосовується.')}</Text>
-    {dateError ? <Alert color="yellow">{t(dateError)}</Alert> : null}{delivery.run.error ? <Alert color="red">{t(delivery.run.error)}</Alert> : null}
-    <FenixDiscountActions delivery={delivery} permitted={permitted} dateError={dateError} /><FenixDiscountOutcome result={delivery.run.lastRun} /></Stack>
+    <TextInput type="date" label={t('Дата зрізу')} value={through} disabled={busy} onChange={event => { delivery.invalidate(); setThrough(event.currentTarget.value) }} />
+    <OriginalFenixDiscountChoiceControls names={named} selection={selected} busy={busy} permitted={permitted} dateError={dateError} error={names.run.error} loading={names.run.isLoading}
+      onSelect={select} onLoad={() => { delivery.invalidate(); setSelection({ key: '', witness: null, values: emptyFenixDiscountSelection() }); void names.load() }} />
+    <Text size="sm" c="dimmed">{t('Звіт показує стан на кінець обраного дня. Залиште відбори порожніми, щоб охопити всіх контрагентів і всю номенклатуру.')}</Text>
+    <FenixDiscountMessages ready={names.run.lastRun?.readiness.Executable} dateError={dateError} runError={delivery.run.error} />
+    <FenixDiscountActions delivery={delivery} permitted={permitted && !names.run.isLoading} dateError={dateError} /><FenixDiscountOutcome result={delivery.run.lastRun} /></Stack>
 }

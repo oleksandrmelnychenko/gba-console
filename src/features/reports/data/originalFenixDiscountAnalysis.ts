@@ -25,7 +25,7 @@ export type FenixDiscountCapability = typeof fenixDiscountIdentity & typeof poli
   ModuleSha256: string; QuerySha256: string; Executable: boolean; HumanChoicesAvailable: false;
   NormalInputsReadinessVerified: false; SourceSyncEnabled: false
 }
-export type FenixDiscountRequest = typeof fenixDiscountIdentity & { Through: string; Counterparties: string[]; Products: string[] }
+export type FenixDiscountRequest = typeof fenixDiscountIdentity & { Through: string; Counterparties: string[]; Products: string[]; ChoicesWitnessSha256?: string | null }
 export type FenixDiscountCell = {
   CounterpartyRef: string; CounterpartyCaption: string | null; CounterpartyCaptionAvailable: boolean;
   ProductRef: string; ProductCaption: string | null; ProductCaptionAvailable: boolean;
@@ -67,10 +67,12 @@ function references(value: unknown): value is string[] {
   return Array.isArray(value) && value.every(reference) && new Set(value).size === value.length
 }
 export function validateFenixDiscountRequest(value: unknown): FenixDiscountRequest {
-  if (!record(value) || Object.keys(value).sort().join(',') !== 'Counterparties,DefinitionSha256,Products,SourceId,Through,Version,World'
+  if (!record(value) || Object.keys(value).filter(k => k !== 'ChoicesWitnessSha256').sort().join(',') !== 'Counterparties,DefinitionSha256,Products,SourceId,Through,Version,World'
     || !identity(value) || typeof value.Through !== 'string' || fenixDiscountDateError(value.Through)
-    || !references(value.Counterparties) || !references(value.Products) || value.Counterparties.length > 256 || value.Products.length > 256) throw refusal()
-  return { ...fenixDiscountIdentity, Through: value.Through, Counterparties: [...value.Counterparties].sort(), Products: [...value.Products].sort() }
+    || !references(value.Counterparties) || !references(value.Products) || value.Counterparties.length > 256 || value.Products.length > 256
+    || value.ChoicesWitnessSha256 !== undefined && value.ChoicesWitnessSha256 !== null && !digest(value.ChoicesWitnessSha256)) throw refusal()
+  const witness = value.ChoicesWitnessSha256 === undefined ? {} : { ChoicesWitnessSha256: value.ChoicesWitnessSha256 as string | null }
+  return { ...fenixDiscountIdentity, Through: value.Through, Counterparties: [...value.Counterparties].sort(), Products: [...value.Products].sort(), ...witness }
 }
 function named(ref: unknown, text: unknown, available: unknown) {
   return reference(ref) && (available === true ? caption(text) && (ref === emptyRef ? text === '' : !!text.trim()) : available === false && text === null)
@@ -120,6 +122,7 @@ export function normalizeFenixDiscountResult(value: unknown, request: FenixDisco
   const scope = validateFenixDiscountRequest(request)
   if (!record(value) || !identity(value) || !policies(value) || !equal(value.Rows, ['Контрагент']) || !equal(value.Columns, ['Номенклатура'])
     || value.Through !== scope.Through || !equal(value.Counterparties, scope.Counterparties) || !equal(value.Products, scope.Products)
+    || (value.ChoicesWitnessSha256 ?? null) !== (scope.ChoicesWitnessSha256 ?? null)
     || !cells(value.Cells, scope) || typeof value.Available !== 'boolean') throw refusal()
   if (value.NormalInputsComplete === false) {
     if (value.OurSnapshotVerified !== false || value.Available || value.Cells.length || value.InputWitnessSha256 !== null || value.ResultSha256 !== null
@@ -132,7 +135,8 @@ export function normalizeFenixDiscountResult(value: unknown, request: FenixDisco
   return structuredClone(value) as FenixDiscountResult
 }
 export function fenixDiscountResultRequest(result: FenixDiscountResult): FenixDiscountRequest {
-  return { ...fenixDiscountIdentity, Through: result.Through, Counterparties: [...result.Counterparties], Products: [...result.Products] }
+  return validateFenixDiscountRequest({ ...fenixDiscountIdentity, Through: result.Through, Counterparties: [...result.Counterparties], Products: [...result.Products],
+    ...(result.ChoicesWitnessSha256 === undefined ? {} : { ChoicesWitnessSha256: result.ChoicesWitnessSha256 }) })
 }
 export type FenixDiscountIndex = {
   parties: { key: string; caption: string }[]; products: { key: string; caption: string }[]; cells: Map<string, FenixDiscountCell>

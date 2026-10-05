@@ -21,12 +21,12 @@ function typedMatrix(result: FenixDiscountResult) {
 export function fenixDiscountMatrix(result: FenixDiscountResult): string[][] {
   return typedMatrix(result).map(row => row.map(c => c.text))
 }
-const metadata = (result: FenixDiscountResult) => [[`Fenix · АнализСкидокНаценокНоменклатуры · зріз ${result.Through} до 23:59:59`],
+const metadata = (result: FenixDiscountResult) => [[`Fenix · Аналіз знижок і націнок · на кінець дня ${result.Through}`],
   ['Контрагент у рядках, номенклатура у стовпцях; тип ціни й відсоток знижки/націнки. Загальних підсумків немає.'],
-  ['Відсотки не додаються. Відповідність поточному оригіналу 1С та його порядку посилань ще не підтверджена.'],
+  ['Для кожної пари контрагента й товару показано тип ціни та відсоток.'],
   [result.Counterparties.length || result.Products.length
-    ? `Відбори запиту: контрагенти ${result.Counterparties.length}, номенклатура ${result.Products.length}. Валютна конвертація не застосовується.`
-    : 'Фільтри назв недоступні; запит без відборів. Валютна конвертація не застосовується.']]
+    ? `Відбори: контрагенти ${result.Counterparties.length}, номенклатура ${result.Products.length}.`
+    : 'Без відборів: усі контрагенти й номенклатура.']]
 export function fenixDiscountCsv(result: FenixDiscountResult): string {
   const safe = (value: string) => /^[\s\p{Cc}]*[=+\-@]/u.test(value) ? `'${value}` : value
   const quote = (value: string) => `"${value.replaceAll('"', '""')}"`
