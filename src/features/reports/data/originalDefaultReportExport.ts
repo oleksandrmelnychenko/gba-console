@@ -26,7 +26,7 @@ async function xlsx(sheet: OriginalDefaultSheet): Promise<Blob> {
 async function pdf(sheet: OriginalDefaultSheet): Promise<Blob> {
   const definition: CurrentVparivanieV2PdfDefinition = { pageSize: 'A3', pageOrientation: 'landscape', pageMargins: [24, 32, 24, 28], defaultStyle: { font: 'Roboto', fontSize: 8 },
     content: [...metadata(sheet).map(row => ({ text: row.join(' · ') })), { table: { headerRows: 1, widths: sheet.headers.map(() => '*' as const), body: matrix(sheet) }, layout: 'lightHorizontalLines' }],
-    styles: {}, footer: (page, pages) => ({ text: `${page}/${pages}`, fontSize: 7, alignment: 'right', margin: [24, 0, 24, 0] }) }
+    styles: { title: { bold: true, fontSize: 14 } }, footer: (page, pages) => ({ text: `${page}/${pages}`, fontSize: 7, alignment: 'right', margin: [24, 0, 24, 0] }) }
   const [pdfMake, fonts] = await Promise.all([import('pdfmake/build/pdfmake'), import('pdfmake/build/vfs_fonts')])
   return new Promise((resolve, reject) => { try { pdfMake.default.createPdf(definition, undefined, undefined, fonts.default).getBlob(resolve) } catch (error) { reject(error) } })
 }

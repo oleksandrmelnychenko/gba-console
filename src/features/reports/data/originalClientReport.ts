@@ -51,7 +51,7 @@ export function clientRequest(capability: ClientCapability, from: string, throug
     Organizations: referenceSelection(selection.Организация), Counterparties: referenceSelection(selection.Контрагент, true), Agreements: referenceSelection(selection.ДоговорКонтрагента) }
 }
 const keyFor = (value: unknown, field: ClientField): value is string => wireReference(value) || field === 'Контрагент' && value === 'NULL'
-function choice(value: unknown, field: ClientField): value is ClientChoice {
+function choice(value: unknown, field: ClientField): value is ClientChoice & Record<string, unknown> {
   return wireObject(value) && keyFor(value.Key, field) && typeof value.CaptionAvailable === 'boolean'
     && (value.Key !== 'NULL' || value.CaptionAvailable === true && value.Caption === 'Не задано')
     && (value.CaptionAvailable ? humanReportCaption(value.Caption) : value.Caption === 'Назва недоступна')
