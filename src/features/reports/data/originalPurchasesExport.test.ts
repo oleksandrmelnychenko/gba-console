@@ -1,7 +1,8 @@
 import { expect, it } from 'vitest'
-import { purchasesMeasures } from './originalPurchases'
+import { normalizePurchases, purchasesMeasures } from './originalPurchases'
 import { purchasesCsv, purchasesExportError, purchasesLines, purchasesMatrix, purchasesPdfDefinition, purchasesXlsx } from './originalPurchasesExport'
 import { emptyPurchases, missingPurchases, purchasesParty, purchasesProduct, purchasesResponse, purchasesStatus } from '../testing/originalPurchasesFixtures'
+import { namedPurchasesResponse, purchasesNamedScope } from '../testing/originalPurchasesNamedFixtures'
 it('screen CSV and PDF preserve the same base-only hierarchy with human ordinals and no technical captions', () => {
   const result = purchasesResponse(), matrix = purchasesMatrix(result), csv = purchasesCsv(result), pdf = purchasesPdfDefinition(result)
   expect(matrix[0]).toEqual(['Статус партії', 'Контрагент', 'Номенклатура', 'Кількість у базових одиницях'])
@@ -32,4 +33,21 @@ it('XLSX uses the same completed matrix and retains wide signed quantities as st
   const book = XLSX.read(await blob.arrayBuffer(), { type: 'array' })
   expect(XLSX.utils.sheet_to_json(book.Sheets['Закупки'], { header: 1 })).toEqual(matrix)
   expect(book.Sheets['Закупки'].D4.v).toBe(value); expect(book.Sheets['Закупки'].D4.t).toBe('s')
+})
+it('completed captions survive later wire edits identically on screen CSV XLSX and PDF', async () => {
+  const request = purchasesNamedScope(), wire = namedPurchasesResponse(), wide = '-9007199254740993.001'
+  wire.Rows[0].Children[0].Children[0].Values.КоличествоБазовыхЕд = wide
+  const result = normalizePurchases(wire, request); wire.Rows[0].Children[0].Caption = 'Later caption'; wire.Rows[0].Children[0].Children[0].Caption = 'Later product'
+  const matrix = purchasesMatrix(result), csv = purchasesCsv(result), pdf = purchasesPdfDefinition(result)
+  expect(matrix[2][1]).toBe('Постачальник'); expect(matrix[3][2]).toBe('Перший товар'); expect(matrix[3][3]).toBe(wide)
+  expect(purchasesLines(result).map(row => row.cells)).toEqual(matrix.slice(1, -1))
+  expect(csv).toContain('Постачальник'); expect(csv).toContain(wide); expect(JSON.stringify(pdf)).toContain('Перший товар')
+  for (const value of ['Later caption', 'Later product', purchasesParty, purchasesProduct]) { expect(csv).not.toContain(value); expect(JSON.stringify(pdf)).not.toContain(value) }
+  const blob = await purchasesXlsx(result), XLSX = await import('xlsx'), book = XLSX.read(await blob.arrayBuffer(), { type: 'array' })
+  expect(XLSX.utils.sheet_to_json(book.Sheets['Закупки'], { header: 1 })).toEqual(matrix)
+})
+it('formula-like human captions are escaped only as CSV text and never change signed quantities', () => {
+  const result = namedPurchasesResponse(); result.Rows[0].Children[0].Caption = '=SUM(A1)'; result.Rows[0].Values.КоличествоБазовыхЕд = '-2.000'
+  expect(purchasesCsv(result)).toContain('"\'=SUM(A1)"'); expect(purchasesCsv(result)).toContain('"-2.000"')
+  expect(purchasesMatrix(result)[2][1]).toBe('=SUM(A1)')
 })

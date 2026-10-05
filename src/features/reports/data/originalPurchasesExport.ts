@@ -4,13 +4,13 @@ export const purchasesValues = (values: PurchasesValues, result: PurchasesResult
 export const purchasesHeaders = (result: PurchasesResult) => ['Статус партії', 'Контрагент', 'Номенклатура', ...result.Measures.map(m => purchasesLabels[m])]
 export function purchasesLines(result: PurchasesResult) {
   return result.Rows.flatMap((status, statusIndex) => {
-    const statusName = `Статус партії ${statusIndex + 1} · назва недоступна`
+    const statusName = status.CaptionAvailable ? status.Caption : `Статус партії ${statusIndex + 1} · назва недоступна`
     return [{ key: JSON.stringify([status.Key]), cells: [statusName, 'Підсумок статусу', '', ...purchasesValues(status.Values, result)], subtotal: true },
       ...status.Children.flatMap((party, partyIndex) => {
-        const partyName = `Контрагент ${partyIndex + 1} · назва недоступна`
+        const partyName = party.CaptionAvailable ? party.Caption : `Контрагент ${partyIndex + 1} · назва недоступна`
         return [{ key: JSON.stringify([status.Key, party.Key]), cells: [statusName, partyName, 'Підсумок контрагента', ...purchasesValues(party.Values, result)], subtotal: true },
           ...party.Children.map((product, productIndex) => ({ key: JSON.stringify([status.Key, party.Key, product.Key]),
-            cells: [statusName, partyName, `Номенклатура ${productIndex + 1} · назва недоступна`, ...purchasesValues(product.Values, result)], subtotal: false }))]
+            cells: [statusName, partyName, product.CaptionAvailable ? product.Caption : `Номенклатура ${productIndex + 1} · назва недоступна`, ...purchasesValues(product.Values, result)], subtotal: false }))]
       })]
   })
 }
@@ -27,7 +27,7 @@ export function purchasesMatrix(result: PurchasesResult): string[][] {
 }
 const unitNote = 'Кількості мають три десяткові знаки. Базові та звітні одиниці використовують спостережені коефіцієнти товару; підсумки сервера не перераховуються з округлених рядків.'
 const metadata = (result: PurchasesResult) => [[`Період: ${result.From} — ${result.Through}, включно до 23:59:59`], [unitNote],
-  ...purchasesFilters.map(field => [`${purchasesFilterLabels[field]}: ${result.Selectors[field].length ? 'вибрані; назви недоступні' : 'усі'}`])]
+  ...purchasesFilters.map(field => [`${purchasesFilterLabels[field]}: ${result.Selectors[field].length ? 'вибрані' : 'усі'}`])]
 export function purchasesCsv(result: PurchasesResult): string {
   const quote = (value: string) => `"${value.replaceAll('"', '""')}"`
   const safe = (value: string) => /^[\s\p{Cc}]*[=+\-@]/u.test(value) ? `'${value}` : value

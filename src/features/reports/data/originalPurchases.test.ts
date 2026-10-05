@@ -1,5 +1,6 @@
 import { expect, it } from 'vitest'
 import { emptyPurchases, missingPurchases, purchasesCapability, purchasesProduct, purchasesResponse } from '../testing/originalPurchasesFixtures'
+import { namedPurchasesResponse } from '../testing/originalPurchasesNamedFixtures'
 import { isPurchasesCapability, normalizePurchases, purchasesMeasures, purchasesMilli, purchasesRequest, purchasesResultRequest, validatePurchasesRequest } from './originalPurchases'
 
 it('requires the exact own module dynamic-query policy and base-only default without native claims', () => {
@@ -82,8 +83,8 @@ it('retains contributing zero rows rather than imposing native virtual zero supp
   expect(normalized.Rows[0].Children[0].Children).toHaveLength(2)
 })
 it('a matching scope echo cannot admit a product row outside its exact selected reference', () => {
-  const request = purchasesRequest(purchasesCapability, '2026-09-10', '2026-09-12'), result = purchasesResponse()
-  request.Products = [purchasesProduct]; result.Selectors.Номенклатура = [purchasesProduct]
+  const request = purchasesRequest(purchasesCapability, '2026-09-10', '2026-09-12'), result = namedPurchasesResponse()
+  request.Products = [purchasesProduct]; request.NamedChoiceWitnesses = { Номенклатура: 'd'.repeat(64) }; result.Selectors.Номенклатура = [purchasesProduct]
   expect(() => normalizePurchases(result, request)).toThrow()
   result.Rows[0].Children[0].Children.pop()
   expect(normalizePurchases(result, request).Available).toBe(true)

@@ -7,7 +7,7 @@ import { purchasesXlsx } from '../data/originalPurchasesExport'
 import { purchasesFilterLabels, purchasesFilters, type PurchasesResult } from '../data/originalPurchases'
 import { emptyPurchases, missingPurchases, purchasesCapability, purchasesParty, purchasesProduct, purchasesResponse, purchasesStatus } from '../testing/originalPurchasesFixtures'
 import { OriginalPurchasesPanel } from './OriginalPurchasesPanel'
-vi.mock('../api/originalPurchasesApi', () => ({ readPurchases: vi.fn() }))
+vi.mock('../api/originalPurchasesApi', () => ({ readPurchases: vi.fn(), readPurchasesChoices: vi.fn() }))
 vi.mock('../data/originalPurchasesExport', async importOriginal => {
   const actual = await importOriginal<typeof import('../data/originalPurchasesExport')>()
   return { ...actual, purchasesXlsx: vi.fn() }

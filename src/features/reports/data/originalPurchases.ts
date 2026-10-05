@@ -31,15 +31,18 @@ export type PurchasesCapability = PurchasesIdentity & PurchasesPolicies & {
   DefaultRows: string[]; DefaultColumns: string[]; Filters: string[]; Measures: string[]; DefaultMeasures: string[]
 }
 export type PurchasesRequest = PurchasesIdentity & {
-  From: string; Through: string; Statuses: string[]; Counterparties: string[]; Products: string[]; Divisions: string[]; Projects: string[]; Measures: PurchasesMeasure[]
+  From: string; Through: string; Statuses: string[]; Counterparties: string[]; Products: string[]; Divisions: string[]; Projects: string[]; Measures: PurchasesMeasure[];
+  NamedChoiceWitnesses?: Partial<Record<PurchasesField, string>> | null
 }
 export type PurchasesValues = Record<string, string>
-export type PurchasesRow = { Field: typeof purchasesRows[number]; Key: string; Caption: 'Назва недоступна'; CaptionAvailable: false; Values: PurchasesValues; Children: PurchasesRow[] }
+export type PurchasesRow = { Field: typeof purchasesRows[number]; Key: string; Caption: string; CaptionAvailable: boolean; Values: PurchasesValues; Children: PurchasesRow[] }
 export type PurchasesResult = PurchasesIdentity & PurchasesPolicies & {
   From: string; Through: string; Selectors: Record<PurchasesField, string[]>; Measures: PurchasesMeasure[];
   Available: boolean; Code: string; NormalInputsComplete: boolean; OurSnapshotVerified: true;
   InputWitnessSha256: string | null; ResultSha256: string | null; Rows: PurchasesRow[]; Totals: PurchasesValues | null;
-  Dependency: null | { Kind: string; MissingMonth: string | null; Product: string | null }
+  Dependency: null | { Kind: string; MissingMonth: string | null; Product: string | null };
+  NamedChoiceWitnesses?: Partial<Record<PurchasesField, string>> | null;
+  NamedFieldAvailability?: Record<PurchasesField, boolean> | null
 }
 const object = (value: unknown): value is Record<string, unknown> => value !== null && typeof value === 'object' && !Array.isArray(value)
 const ref = (value: unknown): value is string => typeof value === 'string' && /^[0-9A-F]{32}$/.test(value)
@@ -64,16 +67,22 @@ export function isPurchasesCapability(value: unknown): value is PurchasesCapabil
     && exact(value.Measures, purchasesMeasures) && exact(value.DefaultMeasures, purchasesDefaultMeasures)
 }
 export { statementPeriodError as purchasesPeriodError }
+const witnesses = (value: unknown): value is Partial<Record<PurchasesField, string>> => object(value) && Object.keys(value).length <= 5
+  && Object.entries(value).every(([field, hash]) => purchasesFilters.includes(field as PurchasesField) && digest(hash))
+export const isPurchasesHumanCaption = (value: unknown): value is string => typeof value === 'string' && value.trim().length > 0
+  && value.length <= 100 && !/[\p{Cc}]/u.test(value) && !ref(value) && !project(value)
 export function validatePurchasesRequest(value: PurchasesRequest): PurchasesRequest {
   const arrays = [value?.Statuses, value?.Counterparties, value?.Products, value?.Divisions, value?.Projects]
   if (!object(value) || !identity(value) || typeof value.From !== 'string' || typeof value.Through !== 'string' || statementPeriodError(value.From, value.Through)
     || arrays.some((keys, index) => !Array.isArray(keys) || keys.length > 256 || !keys.every(index === 4 ? project : ref) || new Set(keys).size !== keys.length)
     || !Array.isArray(value.Measures) || !value.Measures.length || value.Measures.length > 3
-    || !value.Measures.every(m => purchasesMeasures.includes(m)) || new Set(value.Measures).size !== value.Measures.length) throw new Error('Некоректний запит оригінального звіту «Закупки».')
+    || !value.Measures.every(m => purchasesMeasures.includes(m)) || new Set(value.Measures).size !== value.Measures.length
+    || value.NamedChoiceWitnesses != null && !witnesses(value.NamedChoiceWitnesses)) throw new Error('Некоректний запит оригінального звіту «Закупки».')
   return { Version: 1, World: 'fenix', SourceId: PURCHASES_SOURCE, DefinitionSha256: PURCHASES_DEFINITION,
     From: value.From, Through: value.Through, Statuses: [...value.Statuses].sort(), Counterparties: [...value.Counterparties].sort(),
     Products: [...value.Products].sort(), Divisions: [...value.Divisions].sort(), Projects: [...value.Projects].sort(),
-    Measures: purchasesMeasures.filter(m => value.Measures.includes(m)) }
+    Measures: purchasesMeasures.filter(m => value.Measures.includes(m)),
+    ...(value.NamedChoiceWitnesses != null ? { NamedChoiceWitnesses: { ...value.NamedChoiceWitnesses } } : {}) }
 }
 export function purchasesRequest(capability: PurchasesCapability, from: string, through: string, measures: readonly PurchasesMeasure[] = purchasesDefaultMeasures): PurchasesRequest {
   if (!isPurchasesCapability(capability) || !capability.Executable) throw new Error('Формування оригінального звіту «Закупки» недоступне.')
@@ -95,6 +104,13 @@ function dependency(value: unknown): value is NonNullable<PurchasesResult['Depen
     && (value.MissingMonth === null || typeof value.MissingMonth === 'string' && /^20\d{2}-(0[1-9]|1[0-2])$/.test(value.MissingMonth))
     && (value.Product === null || ref(value.Product))
 }
+function namedEvidence(value: Record<string, unknown>): boolean {
+  if (value.NamedChoiceWitnesses == null && value.NamedFieldAvailability == null) return true
+  const availability = value.NamedFieldAvailability, current = value.NamedChoiceWitnesses
+  return object(availability) && exact(Object.keys(availability).sort(), [...purchasesFilters].sort())
+    && purchasesFilters.every(field => typeof availability[field] === 'boolean') && availability.СтатусПартии === false && witnesses(current)
+    && exact(Object.keys(current).sort(), purchasesFilters.filter(field => availability[field]).sort())
+}
 /** Validates the exact echoed scope, hierarchy and policies before rendering or exporting a detached completed result. */
 export function normalizePurchases(value: unknown, request: PurchasesRequest): PurchasesResult {
   const scope = validatePurchasesRequest(request), selectors = purchasesSelectors(scope)
@@ -110,13 +126,18 @@ export function normalizePurchases(value: unknown, request: PurchasesRequest): P
     return structuredClone(value) as PurchasesResult
   }
   if (value.Code !== (value.Rows.length ? 'original_purchases_declared_calendar_complete' : 'original_purchases_declared_calendar_empty')
-    || value.Dependency !== null || !digest(value.InputWitnessSha256) || !digest(value.ResultSha256) || !values(value.Totals, scope.Measures)) return fail()
+    || value.Dependency !== null || !digest(value.InputWitnessSha256) || !digest(value.ResultSha256) || !values(value.Totals, scope.Measures) || !namedEvidence(value)) return fail()
+  const availability = value.NamedFieldAvailability as Record<PurchasesField, boolean> | null | undefined
+  const current = value.NamedChoiceWitnesses as Partial<Record<PurchasesField, string>> | null | undefined
+  if (!purchasesFilters.every(field => !selectors[field].length || availability?.[field] === true
+    && current?.[field] === scope.NamedChoiceWitnesses?.[field] && digest(current?.[field]))) return fail()
   let leaves = 0, count = 0
   function rows(input: unknown[], depth: number): boolean {
     const keys = new Set<string>(), field = purchasesRows[depth]
     return input.every(row => {
       if (!object(row) || row.Field !== field || !ref(row.Key) || keys.has(row.Key) || selectors[field].length && !selectors[field].includes(row.Key)
-        || row.Caption !== 'Назва недоступна' || row.CaptionAvailable !== false || !values(row.Values, scope.Measures)
+        || typeof row.CaptionAvailable !== 'boolean' || selectors[field].length > 0 && !row.CaptionAvailable || (row.CaptionAvailable
+          ? availability?.[field] !== true || !isPurchasesHumanCaption(row.Caption) : row.Caption !== 'Назва недоступна') || !values(row.Values, scope.Measures)
         || !Array.isArray(row.Children) || ++count > 1_500_000) return false
       const children = row.Children
       keys.add(row.Key)
@@ -131,7 +152,8 @@ export function normalizePurchases(value: unknown, request: PurchasesRequest): P
 export function purchasesResultRequest(result: PurchasesResult): PurchasesRequest {
   return validatePurchasesRequest({ Version: result.Version, World: result.World, SourceId: result.SourceId, DefinitionSha256: result.DefinitionSha256,
     From: result.From, Through: result.Through, Statuses: result.Selectors.СтатусПартии, Counterparties: result.Selectors.Контрагент,
-    Products: result.Selectors.Номенклатура, Divisions: result.Selectors.Подразделение, Projects: result.Selectors.Проект, Measures: result.Measures })
+    Products: result.Selectors.Номенклатура, Divisions: result.Selectors.Подразделение, Projects: result.Selectors.Проект, Measures: result.Measures,
+    ...(result.NamedChoiceWitnesses != null ? { NamedChoiceWitnesses: result.NamedChoiceWitnesses } : {}) })
 }
 export function isPurchasesCatalogueEntry(report: ReportCatalogueEntry, worlds: readonly string[]) {
   return report.Id === 'builtin:Закупки' && worlds.includes('fenix')
