@@ -65,6 +65,7 @@ import { OriginalDefectCostCatalogueLaunch } from './OriginalDefectCostCatalogue
 import { OriginalPurchasesCatalogueLaunch } from './OriginalPurchasesCatalogueLaunch'
 import { OriginalAmgClientDiscountsCatalogueLaunch } from './OriginalAmgClientDiscountsCatalogueLaunch'
 import { OriginalFenixDiscountAnalysisCatalogueLaunch } from './OriginalFenixDiscountAnalysisCatalogueLaunch'
+import { OriginalAmgDiscountAnalysisCatalogueLaunch } from './OriginalAmgDiscountAnalysisCatalogueLaunch'
 import { originalBuyerSalesShareCatalogueVariant, type OriginalBuyerSalesShareCapabilities } from '../data/originalBuyerSalesShare'
 import { OriginalBuyerSalesShareCatalogueLaunch } from './OriginalBuyerSalesShareCatalogueLaunch'
 
@@ -265,6 +266,7 @@ function CatalogueTable({ visibleRows, catalogue, inspection, availableDatasets,
                 <OriginalPurchasesCatalogueLaunch report={report} worlds={matchingSources.map(s => s.World)} enabled={canGenerate} disabled={disabled} callerKey={callerKey} />
                 <OriginalAmgClientDiscountsCatalogueLaunch report={report} worlds={matchingSources.map(s => s.World)} enabled={canGenerate} disabled={disabled} callerKey={callerKey} />
                 <OriginalFenixDiscountAnalysisCatalogueLaunch report={report} worlds={matchingSources.map(s => s.World)} enabled={canGenerate} disabled={disabled} callerKey={callerKey} />
+                <OriginalAmgDiscountAnalysisCatalogueLaunch report={report} worlds={matchingSources.map(s => s.World)} enabled={canGenerate} disabled={disabled} callerKey={callerKey} />
                 <ManagementOrdersCatalogueLaunch report={report} enabled={canGenerate} disabled={disabled} callerKey={callerKey} onOpen={onOpenManagementOrders} />
                 <DefectProductionCatalogueLaunch report={report} enabled={canGenerate} disabled={disabled} callerKey={callerKey} onOpen={onOpenDefectProduction} />
                 <InventoryTurnoverCatalogueLaunch report={report} enabled={canGenerate} disabled={disabled} callerKey={callerKey} onOpen={onOpenInventoryTurnover} />
