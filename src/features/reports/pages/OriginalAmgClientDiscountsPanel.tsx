@@ -44,6 +44,20 @@ function AmgDiscountResultView({ result }: { result: AmgDiscountResult | null })
   return <Stack gap="xs">{result.MaximumPercentage !== null ? <Text>{t('Максимальний відсоток')}: {result.MaximumPercentage}</Text> : null}
     <OriginalSalesGrid key={result.ResultSha256} hierarchyColumns={3} lines={lines} headers={amgDiscountHeaders} totals={null} /></Stack>
 }
+function AmgDiscountMessages({ dateError, runError, exportError }: {
+  dateError: string | null; runError: string | null; exportError: string | null
+}) {
+  const { t } = useI18n()
+  return <>{dateError ? <Alert color="yellow">{t(dateError)}</Alert> : null}{runError ? <Alert color="red">{t(runError)}</Alert> : null}
+    {exportError ? <Alert color="yellow">{t(exportError)}</Alert> : null}</>
+}
+function AmgDiscountActions({ delivery, permitted, dateError, busy, exportError }: {
+  delivery: ReturnType<typeof useAmgDiscountRun>; permitted: boolean; dateError: string | null; busy: boolean; exportError: string | null
+}) {
+  const { t } = useI18n(), result = delivery.run.lastRun
+  return <Group><Button disabled={!permitted || !!dateError || busy} loading={delivery.run.isLoading} onClick={() => { void delivery.generate() }}>{t('Сформувати')}</Button>
+    {formats.map(format => <Button key={format} variant="light" disabled={!permitted || !result?.InputAvailable || busy || !!exportError} onClick={() => { void delivery.exportFile(format) }}>{format.toUpperCase()}</Button>)}</Group>
+}
 export function OriginalAmgClientDiscountsPanel({ readiness, callerKey, canGenerate, initialThrough }: {
   readiness: AmgDiscountReadiness; callerKey: string | null; canGenerate: boolean; initialThrough: string
 }) {
@@ -61,9 +75,7 @@ export function OriginalAmgClientDiscountsPanel({ readiness, callerKey, canGener
     <OriginalAmgDiscountChoiceControls names={named} selection={selected} busy={busy} permitted={permitted} dateError={dateError} error={names.run.error} loading={names.run.isLoading}
       onSelect={select} onLoad={() => { delivery.invalidate(); setSelection({ key: '', witness: null, values: emptyAmgSelection() }); void names.load() }} />
     <Text size="sm" c="dimmed">{t('Зріз охоплює останню цілу секунду дня, 23:59:59. Відсотки не додаються. Відповідність поточному оригіналу 1С ще не підтверджена; валютна конвертація не застосовується.')}</Text>
-    {dateError ? <Alert color="yellow">{t(dateError)}</Alert> : null}{delivery.run.error ? <Alert color="red">{t(delivery.run.error)}</Alert> : null}
-    {exportError ? <Alert color="yellow">{t(exportError)}</Alert> : null}
-    <Group><Button disabled={!permitted || !!dateError || busy} loading={delivery.run.isLoading} onClick={() => { void delivery.generate() }}>{t('Сформувати')}</Button>
-      {formats.map(format => <Button key={format} variant="light" disabled={!permitted || !result?.InputAvailable || busy || !!exportError} onClick={() => { void delivery.exportFile(format) }}>{format.toUpperCase()}</Button>)}</Group>
+    <AmgDiscountMessages dateError={dateError} runError={delivery.run.error} exportError={exportError} />
+    <AmgDiscountActions delivery={delivery} permitted={permitted} dateError={dateError} busy={busy} exportError={exportError} />
     <AmgDiscountResultView result={result} /></Stack>
 }
