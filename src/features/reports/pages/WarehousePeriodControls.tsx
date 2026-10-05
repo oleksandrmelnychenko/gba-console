@@ -1,16 +1,10 @@
-import { Button, Group, Loader, MultiSelect, Text, TextInput } from '@mantine/core'
+import { Group, MultiSelect, Text, TextInput } from '@mantine/core'
 import { useI18n } from '../../../shared/i18n/useI18n'
+import { ReportCapabilityStatus, type ReportCapabilityStatusProps } from './ReportCapabilityStatus'
 
 // Presentation shared by both period statements; data loading and access remain with each caller.
-export function WarehousePeriodCapabilityStatus({ current, enabled, callerKey, disabled, retry }: {
-  current: { failed: boolean } | null; enabled: boolean; callerKey: string | null; disabled: boolean; retry: () => void
-}) {
-  const { t } = useI18n()
-  return <>
-    {!current && enabled && callerKey ? <Loader size="xs" aria-label={t('Перевірка періодної відомості')} /> : null}
-    {enabled && !callerKey ? <Text size="xs">{t('Для формування потрібен чинний сеанс користувача.')}</Text> : null}
-    {current?.failed ? <><Text size="xs">{t('Не вдалося перевірити періодну відомість.')}</Text><Button variant="subtle" disabled={disabled} onClick={retry}>{t('Повторити')}</Button></> : null}
-  </>
+export function WarehousePeriodCapabilityStatus(props: ReportCapabilityStatusProps) {
+  return <ReportCapabilityStatus {...props} loadingLabel="Перевірка періодної відомості" failureMessage="Не вдалося перевірити періодну відомість." />
 }
 
 export function WarehousePeriodFilters({ from, through, products, warehouses, productChoices, warehouseChoices, warehouseSupported, busy,
