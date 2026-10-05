@@ -57,6 +57,7 @@ import { OriginalLotBalanceAnalysisCatalogueLaunch } from './OriginalLotBalanceA
 import { OriginalWorkInProgressCatalogueLaunch } from './OriginalWorkInProgressCatalogueLaunch'
 import { OriginalBuyerOrdersCatalogueLaunch } from './OriginalBuyerOrdersCatalogueLaunch'
 import { OriginalPlannedCashCatalogueLaunch } from './OriginalPlannedCashCatalogueLaunch'
+import { OriginalClientReportCatalogueLaunch, OriginalPlannedCashFlowCatalogueLaunch } from './OriginalPlannedCashClientCatalogueLaunch'
 import { OriginalCashStatementCatalogueLaunch } from './OriginalCashStatementCatalogueLaunch'
 import { OriginalCashMovementsCatalogueLaunch } from './OriginalCashMovementsCatalogueLaunch'
 import { OriginalMoneyFlowAnalysisCatalogueLaunch } from './OriginalMoneyFlowAnalysisCatalogueLaunch'
@@ -258,6 +259,8 @@ function CatalogueTable({ visibleRows, catalogue, inspection, availableDatasets,
                 <OriginalWorkInProgressCatalogueLaunch report={report} worlds={matchingSources.map(s => s.World)} enabled={canGenerate} disabled={disabled} callerKey={callerKey} />
                 <OriginalBuyerOrdersCatalogueLaunch report={report} worlds={matchingSources.map(s => s.World)} enabled={canGenerate} disabled={disabled} callerKey={callerKey} />
                 <OriginalPlannedCashCatalogueLaunch report={report} worlds={matchingSources.map(s => s.World)} enabled={canGenerate} disabled={disabled} callerKey={callerKey} />
+                <OriginalPlannedCashFlowCatalogueLaunch report={report} worlds={matchingSources.map(s => s.World)} enabled={canGenerate} disabled={disabled} callerKey={callerKey} />
+                <OriginalClientReportCatalogueLaunch report={report} worlds={matchingSources.map(s => s.World)} enabled={canGenerate} disabled={disabled} callerKey={callerKey} />
                 <OriginalCashStatementCatalogueLaunch report={report} worlds={matchingSources.map(s => s.World)} enabled={canGenerate} disabled={disabled} callerKey={callerKey} />
                 <OriginalCashMovementsCatalogueLaunch report={report} worlds={matchingSources.map(s => s.World)} enabled={canGenerate} disabled={disabled} callerKey={callerKey} />
                 <OriginalMoneyFlowAnalysisCatalogueLaunch report={report} worlds={matchingSources.map(s => s.World)} enabled={canGenerate} disabled={disabled} callerKey={callerKey} />
