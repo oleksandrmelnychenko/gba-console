@@ -95,7 +95,7 @@ function requestValid(request: MoneyFlowRequest) {
   return exact(request.Measures, moneyFlowMeasures.filter(measure => selected.has(measure)))
     && moneyFlowFilters.every(field => exact(selection[field], [...selection[field]].sort()))
 }
-function choice(v: unknown): v is MoneyFlowChoice {
+function choice(v: unknown): v is MoneyFlowChoice & Record<string, unknown> {
   return object(v) && ref(v.Key) && caption(v.Caption) && typeof v.CaptionAvailable === 'boolean'
     && (v.CaptionAvailable ? humanCaption(v.Caption) : v.Caption === 'Назва недоступна')
 }
