@@ -51,7 +51,7 @@ it('fresh full-universe membership changes refuse further selected generation un
   vi.mocked(readClientReport).mockResolvedValueOnce(empty); fireEvent.click(screen.getByRole('button', { name: 'Сформувати' }))
   await screen.findByText('Назви або склад значень змінилися. Очистьте відбори й сформуйте звіт повторно.')
   expect(screen.queryByText(clientParty)).toBeNull()
-  expect(within(screen.getByRole('listbox')).getByRole('option', { name: 'Наш клієнт' }).getAttribute('aria-disabled')).toBe('true')
+  expect(within(screen.getByRole('listbox')).getByRole('option', { name: 'Наш клієнт' }).hasAttribute('data-combobox-disabled')).toBe(true)
   expect((screen.getByRole('button', { name: 'Сформувати' }) as HTMLButtonElement).disabled).toBe(true)
   fireEvent.click(screen.getByRole('button', { name: 'Очистити відбори й назви' })); expect(screen.queryByRole('table')).toBeNull()
   expect((screen.getByRole('button', { name: 'Сформувати' }) as HTMLButtonElement).disabled).toBe(false)
