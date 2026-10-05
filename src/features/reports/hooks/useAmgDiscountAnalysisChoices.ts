@@ -19,5 +19,6 @@ export function useAmgDiscountAnalysisChoices(through: string, permitted: boolea
     } catch (failure) { if (!controller.signal.aborted) update({ error: failure instanceof Error ? failure.message : 'Не вдалося завантажити назви.' }) }
     finally { if (!controller.signal.aborted) update({ isLoading: false }); if (active.current === controller) active.current = null }
   }, [through, permitted, callerKey, run.begin])
-  return { key, run, load }
+  const clear = useCallback(() => { active.current?.abort(); active.current = null; run.clear() }, [run.clear])
+  return { key, run, load, clear }
 }

@@ -82,3 +82,21 @@ it('loading even the same saved date requires a new names observation instead of
   await act(async () => { finish({ ...amgNames(), RequestedCounterparties: [amgParty], RequestedProducts: [amgProduct] }) })
   await waitFor(() => expect(button('Сформувати').disabled).toBe(false))
 })
+it('cancels an overlapping names refresh before observing the same saved date and ignores its late names', async () => {
+  setup(); let finishVariant!: (value: ReturnType<typeof amgVariant>) => void, finishOldNames!: (value: ReturnType<typeof amgNames>) => void, finishSavedNames!: (value: ReturnType<typeof amgNames>) => void
+  vi.mocked(loadAmgDiscountVariant).mockImplementationOnce(() => new Promise(resolve => { finishVariant = resolve }))
+  vi.mocked(readAmgDiscountAnalysisChoices).mockImplementationOnce(() => new Promise(resolve => { finishOldNames = resolve })).mockImplementationOnce(() => new Promise(resolve => { finishSavedNames = resolve }))
+  render(panel()); await choose(); fireEvent.click(button('Відкрити варіант AMG')); await waitFor(() => expect(loadAmgDiscountVariant).toHaveBeenCalledTimes(1))
+  fireEvent.click(button('Оновити назви')); await waitFor(() => expect(readAmgDiscountAnalysisChoices).toHaveBeenCalledTimes(1))
+  const oldSignal = vi.mocked(readAmgDiscountAnalysisChoices).mock.calls[0][1]
+  await act(async () => { finishVariant(amgVariant()) }); await waitFor(() => expect(readAmgDiscountAnalysisChoices).toHaveBeenCalledTimes(2))
+  expect(oldSignal?.aborted).toBe(true); expect(button('Сформувати').disabled).toBe(true)
+  const savedRequest = vi.mocked(readAmgDiscountAnalysisChoices).mock.calls[1][0]
+  expect(savedRequest.Through).toBe('2026-09-30'); expect(savedRequest.Counterparties).toEqual([amgParty]); expect(savedRequest.Products).toEqual([amgProduct]); expect(savedRequest.ChoicesWitnessSha256).toBeUndefined()
+  const savedNames = { ...amgNames(), RequestedCounterparties: [amgParty], RequestedProducts: [amgProduct], ChoicesWitnessSha256: 'D'.repeat(64), ResultSha256: 'E'.repeat(64) }
+  await act(async () => { finishSavedNames(savedNames) }); await waitFor(() => expect(button('Сформувати').disabled).toBe(false))
+  await act(async () => { finishOldNames(amgNames()) }); expect(button('Сформувати').disabled).toBe(false)
+  fireEvent.click(button('Сформувати')); await screen.findByRole('table')
+  const preview = vi.mocked(readAmgDiscountAnalysis).mock.calls[0][0]
+  expect(preview.Counterparties).toEqual([amgParty]); expect(preview.Products).toEqual([amgProduct]); expect(preview.ChoicesWitnessSha256).toBe(savedNames.ChoicesWitnessSha256)
+})

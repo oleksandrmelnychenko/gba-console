@@ -77,7 +77,7 @@ export function OriginalAmgDiscountAnalysisPanel({ capability, callerKey, canGen
   const busy = delivery.run.isLoading || delivery.exporting || names.run.isLoading
   function select(field: AmgDiscountAnalysisField, values: string[]) { delivery.invalidate(); scope.select(field, values) }
   function loadVariant(saved: AmgDiscountVariant) {
-    delivery.invalidate(); names.run.clear(); setThrough(saved.Scope.Request.Through); scope.load(saved)
+    delivery.invalidate(); names.clear(); setThrough(saved.Scope.Request.Through); scope.load(saved)
   }
   const savedScope = dateError ? null : amgDiscountVariantScope({ ...amgDiscountAnalysisRequest(through), Counterparties: selected.Контрагент, Products: selected.Номенклатура })
   return <Stack gap="md"><Text>{t('AMG · Аналіз знижок і націнок: контрагенти в рядках, номенклатура у стовпцях; тип ціни й відсоток. Загальних підсумків немає.')}</Text>
