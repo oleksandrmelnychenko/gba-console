@@ -1,5 +1,5 @@
 import { apiRequest } from '../../../shared/api/apiClient'
-import { isPlannedFlowCapability, normalizePlannedFlow, type PlannedFlowCapability, type PlannedFlowRequest } from '../data/originalPlannedCashFlow'
+import { isPlannedFlowCapability, normalizePlannedFlow, normalizePlannedFlowChoices, type PlannedFlowCapability, type PlannedFlowRequest } from '../data/originalPlannedCashFlow'
 const route = '/report/originals/planned-cash-flow'
 export async function getPlannedFlowCapability(signal?: AbortSignal): Promise<PlannedFlowCapability> {
   const value = await apiRequest<unknown>(`${route}/capabilities?world=fenix`, { signal })
@@ -8,4 +8,8 @@ export async function getPlannedFlowCapability(signal?: AbortSignal): Promise<Pl
 }
 export async function readPlannedFlow(request: PlannedFlowRequest, signal?: AbortSignal) {
   return normalizePlannedFlow(await apiRequest<unknown>(`${route}/preview`, { method: 'POST', body: request, dedupe: false, signal }), request)
+}
+
+export async function readPlannedFlowChoices(request: PlannedFlowRequest, signal?: AbortSignal) {
+  return normalizePlannedFlowChoices(await apiRequest<unknown>(`${route}/choices`, { method: 'POST', body: request, dedupe: false, signal }), request)
 }

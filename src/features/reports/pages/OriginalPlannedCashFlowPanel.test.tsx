@@ -6,7 +6,7 @@ import { readPlannedFlow } from '../api/originalPlannedCashFlowApi'
 import { flowCapability, flowResult, missingFlow } from '../testing/originalPlannedCashClientFixtures'
 import type { PlannedFlowResult } from '../data/originalPlannedCashFlow'
 import { OriginalPlannedCashFlowPanel } from './OriginalPlannedCashFlowPanel'
-vi.mock('../api/originalPlannedCashFlowApi', () => ({ readPlannedFlow: vi.fn() }))
+vi.mock('../api/originalPlannedCashFlowApi', () => ({ readPlannedFlow: vi.fn(), readPlannedFlowChoices: vi.fn() }))
 const panel = (caller = 'caller1', permission = true) => <MantineProvider env="test"><I18nProvider><OriginalPlannedCashFlowPanel
   capability={flowCapability} callerKey={caller} canGenerate={permission} initialFrom="2026-10-01" initialThrough="2026-10-04" /></I18nProvider></MantineProvider>
 it('own four default resources render signed server cells and every unsupported named filter stays disabled', async () => {

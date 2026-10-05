@@ -1,9 +1,9 @@
 import { Alert, Button, MultiSelect, Stack, Text } from '@mantine/core'
 import { useMemo, useState } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
-import { readPlannedFlow } from '../api/originalPlannedCashFlowApi'
-import { plannedFlowDefaults, plannedFlowLabels, plannedFlowMeasures, plannedFlowPeriodError, plannedFlowRequest,
-  type PlannedFlowCapability, type PlannedFlowMeasure, type PlannedFlowResult } from '../data/originalPlannedCashFlow'
+import { readPlannedFlow, readPlannedFlowChoices } from '../api/originalPlannedCashFlowApi'
+import { emptyPlannedFlowSelection, plannedFlowDefaults, plannedFlowFieldLabels, plannedFlowFields, plannedFlowLabels, plannedFlowMeasures, plannedFlowPeriodError, plannedFlowRequest, plannedFlowSelectedStillNamed,
+  type PlannedFlowCapability, type PlannedFlowChoices, type PlannedFlowField, type PlannedFlowMeasure, type PlannedFlowNamedChoice, type PlannedFlowResult, type PlannedFlowSelection } from '../data/originalPlannedCashFlow'
 import type { OriginalDefaultSheet } from '../data/originalDefaultReportExport'
 import { useOriginalDefaultPreview } from '../hooks/useOriginalDefaultPreview'
 import { OriginalPeriodDateInputs } from './WarehousePeriodControls'
@@ -30,24 +30,67 @@ function PlannedFlowResultView({ result }: { result: PlannedFlowResult | null })
   return <>{result.Rows.some(row => row.Caption === null) ? <Text size="sm">{t('Частина назв статей недоступна. Їхні суми збережено окремими рядками.')}</Text> : null}
     <OriginalDefaultReportOutput key={result.ResultSha256} sheet={output} filename="planned-cash-flow" /></>
 }
+type PlanningScope = { capability: PlannedFlowCapability; callerKey: string | null; canGenerate: boolean; from: string; through: string; measures: PlannedFlowMeasure[] }
+type PlanningCaptionCache = Partial<Record<PlannedFlowField, PlannedFlowNamedChoice[]>>
+function retainedCaptions(previous: { scope: PlanningScope; result: PlannedFlowChoices; captions: PlanningCaptionCache } | null, scope: PlanningScope, selection: PlannedFlowSelection): PlanningCaptionCache {
+  return Object.fromEntries(plannedFlowFields.map(field => {
+    if (!previous || previous.scope !== scope) return [field, []]
+    const prior = new Map([...(previous.captions[field] ?? []), ...(previous.result.Fields.find(item => item.Field === field)?.Choices ?? [])].map(choice => [choice.Value, choice]))
+    const selected = new Set(selection[field])
+    return [field, [...prior.values()].filter(choice => selected.has(choice.Value))]
+  }))
+}
+function PlanningFilters({ current, selection, captions, busy, select }: { current: PlannedFlowChoices | null; selection: PlannedFlowSelection;
+  captions: PlanningCaptionCache; busy: boolean; select: (field: PlannedFlowField, keys: string[]) => void }) {
+  const { t } = useI18n()
+  return <>{plannedFlowFields.map(field => {
+    const offered = current?.Fields.find(item => item.Field === field), fresh = offered?.Choices ?? []
+    const keys = new Set(fresh.map(choice => choice.Value)), selected = new Set(selection[field])
+    const retained = (captions[field] ?? []).filter(choice => selected.has(choice.Value) && !keys.has(choice.Value))
+    return <MultiSelect key={field} label={t(plannedFlowFieldLabels[field])} value={selection[field]} searchable clearable limit={100} maxValues={256}
+      data={[...fresh.map(choice => ({ value: choice.Value, label: choice.Caption, disabled: !offered?.Available })), ...retained.map(choice => ({ value: choice.Value, label: choice.Caption, disabled: true }))]}
+      disabled={busy || !offered?.Available && !selection[field].length} placeholder={t('Усі; потрібні повні синхронізовані назви')}
+      onChange={keys => select(field, keys)} />
+  })}</>
+}
 export function OriginalPlannedCashFlowPanel({ capability, callerKey, canGenerate, initialFrom, initialThrough }: {
   capability: PlannedFlowCapability; callerKey: string | null; canGenerate: boolean; initialFrom: string; initialThrough: string
 }) {
   const { t } = useI18n(), [from, setFrom] = useState(initialFrom), [through, setThrough] = useState(initialThrough)
   const [measures, setMeasures] = useState<PlannedFlowMeasure[]>([...plannedFlowDefaults])
+  const scope = useMemo(() => ({ capability, callerKey, canGenerate, from, through, measures }), [capability, callerKey, canGenerate, from, through, measures])
+  const [selected, setSelected] = useState<{ scope: PlanningScope | null; values: PlannedFlowSelection }>({ scope: null, values: emptyPlannedFlowSelection() })
+  const [choices, setChoices] = useState<{ scope: PlanningScope; result: PlannedFlowChoices; captions: PlanningCaptionCache } | null>(null)
+  const selection = selected.scope === scope ? selected.values : emptyPlannedFlowSelection(), current = choices?.scope === scope ? choices.result : null
   const error = plannedFlowPeriodError(from, through) ?? (!measures.length ? 'Оберіть хоча б один показник.' : null)
-  const allowed = canGenerate && !!callerKey && capability.Implemented
-  const key = JSON.stringify([capability, callerKey, canGenerate, from, through, measures])
-  const run = useOriginalDefaultPreview(key, allowed, error, signal => readPlannedFlow(plannedFlowRequest(capability, from, through, measures), signal))
+  const allowed = canGenerate && !!callerKey && capability.Implemented, named = plannedFlowSelectedStillNamed(current, selection)
+  const run = useOriginalDefaultPreview(JSON.stringify([scope, selection, current?.ChoicesWitnessSha256]), allowed && named, error,
+    signal => readPlannedFlow(plannedFlowRequest(capability, from, through, measures, selection, current), signal))
+  const load = useOriginalDefaultPreview(JSON.stringify(scope), allowed && capability.ScopedChoicesImplemented === true, error,
+    signal => readPlannedFlowChoices(plannedFlowRequest(capability, from, through, measures), signal),
+    result => { run.invalidate(); setChoices(previous => ({ scope, result, captions: retainedCaptions(previous, scope, selection) })) })
+  const busy = run.isLoading || load.isLoading
+  function invalidate() { run.invalidate(); load.invalidate() }
+  function select(field: PlannedFlowField, keys: string[]) {
+    const selectedKeys = new Set(selection[field]), offered = current?.Fields.find(item => item.Field === field)
+    const offeredKeys = new Set(offered?.Choices.map(choice => choice.Value) ?? [])
+    if (!keys.every(key => selectedKeys.has(key)) && (!offered?.Available || keys.some(key => !offeredKeys.has(key)))) return
+    invalidate(); setSelected({ scope, values: { ...selection, [field]: keys } })
+  }
+  function reset() { invalidate(); setSelected({ scope, values: emptyPlannedFlowSelection() }); setChoices(null) }
   return <Stack gap="md"><Text>{t('Плани руху коштів: надходження, витрати й потік за статтями.')}</Text>
-    <OriginalPeriodDateInputs from={from} through={through} busy={run.isLoading} changeFrom={value => { run.invalidate(); setFrom(value) }} changeThrough={value => { run.invalidate(); setThrough(value) }} />
+    <OriginalPeriodDateInputs from={from} through={through} busy={busy} changeFrom={value => { invalidate(); setFrom(value) }} changeThrough={value => { invalidate(); setThrough(value) }} />
     <MultiSelect label={t('Показники')} data={plannedFlowMeasures.map(measure => ({ value: measure, label: t(plannedFlowLabels[measure]) }))}
-      value={measures} maxValues={6} disabled={run.isLoading} onChange={value => { run.invalidate(); setMeasures(value as PlannedFlowMeasure[]) }} />
-    {['Сценарій', 'Проєкт', 'Підрозділ'].map(label => <MultiSelect key={label} label={t(label)} data={[]} value={[]} disabled placeholder={t('Назви для відбору ще недоступні')} />)}
-    <Text size="sm" c="dimmed">{t('Звіт охоплює всі сценарії, проєкти й підрозділи. Відбір за ними стане доступним після підтвердження повних назв.')}</Text>
+      value={measures} maxValues={6} disabled={busy} onChange={value => { invalidate(); setMeasures(value as PlannedFlowMeasure[]) }} />
+    <PlanningFilters current={current} selection={selection} captions={choices?.scope === scope ? choices.captions : {}} busy={busy} select={select} />
+    <Text size="sm" c="dimmed">{t('Поля з неповними назвами залишаються недоступними. Без відборів звіт охоплює всі сценарії, проєкти й підрозділи.')}</Text>
+    {current && !current.FullParentScopeVerified ? <Alert color="yellow">{t(dependencies[current.Code] ?? 'Повних даних планування й реквізитів документів ще немає.')}</Alert> : null}
+    {!named ? <Alert color="yellow">{t('Назви або склад значень змінилися. Очистьте відбори й оновіть перелік назв.')}</Alert> : null}
+    <Button variant="light" loading={load.isLoading} disabled={!allowed || busy || !!error || capability.ScopedChoicesImplemented !== true} onClick={() => { run.invalidate(); void load.generate() }}>{t('Оновити назви відборів')}</Button>
+    <Button variant="subtle" disabled={busy} onClick={reset}>{t('Очистити відбори й назви')}</Button>
     <Text size="sm" c="dimmed">{t(note)}</Text>
-    {error ? <Alert color="yellow">{t(error)}</Alert> : null}{run.error ? <Alert color="red">{t(run.error)}</Alert> : null}
-    <Button loading={run.isLoading} disabled={!allowed || run.isLoading || !!error} onClick={() => { void run.generate() }}>{t('Сформувати')}</Button>
+    {error ? <Alert color="yellow">{t(error)}</Alert> : null}{run.error ? <Alert color="red">{t(run.error)}</Alert> : null}{load.error ? <Alert color="red">{t(load.error)}</Alert> : null}
+    <Button loading={run.isLoading} disabled={!allowed || !named || busy || !!error} onClick={() => { void run.generate() }}>{t('Сформувати')}</Button>
     <PlannedFlowResultView result={run.lastRun} />
   </Stack>
 }
