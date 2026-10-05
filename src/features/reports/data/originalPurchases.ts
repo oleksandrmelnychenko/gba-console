@@ -9,6 +9,7 @@ export const purchasesMeasures = ['КоличествоОборот', 'Коли�
 export const purchasesDefaultMeasures = ['КоличествоБазовыхЕд'] as const
 export type PurchasesMeasure = typeof purchasesMeasures[number]
 export type PurchasesField = typeof purchasesFilters[number]
+const purchaseFilterSet = new Set<PurchasesField>(purchasesFilters)
 export const purchasesLabels: Record<PurchasesMeasure, string> = {
   КоличествоОборот: 'Кількість за регістром', КоличествоЕдиницОтчетов: 'Кількість у звітних одиницях', КоличествоБазовыхЕд: 'Кількість у базових одиницях',
 }
@@ -68,7 +69,7 @@ export function isPurchasesCapability(value: unknown): value is PurchasesCapabil
 }
 export { statementPeriodError as purchasesPeriodError }
 const witnesses = (value: unknown): value is Partial<Record<PurchasesField, string>> => object(value) && Object.keys(value).length <= 5
-  && Object.entries(value).every(([field, hash]) => purchasesFilters.includes(field as PurchasesField) && digest(hash))
+  && Object.entries(value).every(([field, hash]) => purchaseFilterSet.has(field as PurchasesField) && digest(hash))
 export const isPurchasesHumanCaption = (value: unknown): value is string => typeof value === 'string' && value.trim().length > 0
   && value.length <= 100 && !/[\p{Cc}]/u.test(value) && !ref(value) && !project(value)
 export function validatePurchasesRequest(value: PurchasesRequest): PurchasesRequest {
@@ -131,11 +132,12 @@ export function normalizePurchases(value: unknown, request: PurchasesRequest): P
   const current = value.NamedChoiceWitnesses as Partial<Record<PurchasesField, string>> | null | undefined
   if (!purchasesFilters.every(field => !selectors[field].length || availability?.[field] === true
     && current?.[field] === scope.NamedChoiceWitnesses?.[field] && digest(current?.[field]))) return fail()
+  const selectedKeys = purchasesRows.map(field => new Set(selectors[field]))
   let leaves = 0, count = 0
   function rows(input: unknown[], depth: number): boolean {
     const keys = new Set<string>(), field = purchasesRows[depth]
     return input.every(row => {
-      if (!object(row) || row.Field !== field || !ref(row.Key) || keys.has(row.Key) || selectors[field].length && !selectors[field].includes(row.Key)
+      if (!object(row) || row.Field !== field || !ref(row.Key) || keys.has(row.Key) || selectors[field].length && !selectedKeys[depth].has(row.Key)
         || typeof row.CaptionAvailable !== 'boolean' || selectors[field].length > 0 && !row.CaptionAvailable || (row.CaptionAvailable
           ? availability?.[field] !== true || !isPurchasesHumanCaption(row.Caption) : row.Caption !== 'Назва недоступна') || !values(row.Values, scope.Measures)
         || !Array.isArray(row.Children) || ++count > 1_500_000) return false

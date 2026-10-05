@@ -19,9 +19,9 @@ const fields = (value: unknown): value is Record<PurchasesField, unknown> => obj
 export const emptyPurchasesSelections = (): PurchasesSelections => ({ СтатусПартии: [], Контрагент: [], Номенклатура: [], Подразделение: [], Проект: [] })
 function choices(input: unknown, field: PurchasesField): input is PurchasesChoice[] {
   if (!Array.isArray(input)) return false
-  const keys = new Set<string>()
+  const keys = new Set<string>(), allowedTables = new Set(tables[field])
   return input.every(row => {
-    if (!object(row) || row.Field !== field || row.Type !== '08' || typeof row.TableReference !== 'string' || !tables[field].includes(row.TableReference)
+    if (!object(row) || row.Field !== field || row.Type !== '08' || typeof row.TableReference !== 'string' || !allowedTables.has(row.TableReference)
       || typeof row.Key !== 'string' || !isPurchasesHumanCaption(row.Caption) || typeof row.Deleted !== 'boolean'
       || !/^[0-9A-F]{32}$/.test(field === 'Проект' ? row.Key.slice(12) : row.Key)
       || field === 'Проект' && !row.Key.startsWith(`08:${row.TableReference}:`) || keys.has(row.Key)) return false
