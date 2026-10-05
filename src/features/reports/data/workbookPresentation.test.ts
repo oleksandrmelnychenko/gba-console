@@ -37,7 +37,7 @@ it('requires the complete current capability and account-only grouped declaratio
   for (const dataset of [presentedCashDataset, presentedSettlementDataset]) {
     expect(normalizeWorkbookDataset({ ...dataset, workbookPresentation: { ...(dataset.workbookPresentation as Record<string, unknown>), orderings: [''] } })).toBeNull()
   }
-  expect(normalizeWorkbookDataset({ ...presentedDayDataset, workbookPresentation: { ...presentedDayDataset.workbookPresentation,
+  expect(normalizeWorkbookDataset({ ...presentedDayDataset, workbookPresentation: { ...(presentedDayDataset.workbookPresentation as Record<string, unknown>),
     orderings: ['MonthAscending', ''] } })).toBeNull()
 })
 it('allows the account-only request without modifying financial measures and refuses scalar/old row shapes', () => {
