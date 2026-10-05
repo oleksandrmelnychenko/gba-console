@@ -24,7 +24,7 @@ export function OriginalPurchasesChoiceControls({ names, selection, busy, permit
       const available = named?.OurSnapshotVerified === true && named.FieldAvailability[field]
       return <MultiSelect key={field} label={t(purchasesFilterLabels[field])}
         data={available ? named.Choices[field].map(choice => ({ value: choice.Key, label: choice.Deleted ? `${choice.Caption} (${t('позначено на видалення')})` : choice.Caption })) : []}
-        value={available ? selection[field] : []} disabled={!available || busy || !permitted} maxValues={256}
+        value={available ? selection[field] : []} disabled={!available || busy || !permitted} maxValues={256} searchable limit={100}
         placeholder={t(available ? named.Choices[field].length ? 'Усі' : 'Немає варіантів відбору' : 'Назви ще недоступні')}
         onChange={keys => onSelect(field, keys)} />
     })}</Group>
