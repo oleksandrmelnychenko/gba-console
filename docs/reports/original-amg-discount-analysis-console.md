@@ -34,3 +34,11 @@
 ## Перевірка цього increment
 
 Авторовано 35 Vitest cases у 30 деклараціях і 5 нових spec-файлах. Старі test/spec файли з parent `759ef47` збережено байт у байт. Нейтральна таблиця матриці зберігає старі Fenix DOM, сторінкування і підписи; власний AMG API, нормалізація, ресурси та scope залишаються окремими. Автор не запускав Node, браузер, SDK, SQL, Docker або Source. Фактичні focused/lint/build/Doctor gates виконує Root після незалежного FILE review.
+
+## Own named selectors (named successor)
+
+The dedicated AMG API now supplies GET `readiness` and POST `choices` under `/report/originals/amg/discount-analysis`. The Console validates the exact own identity, full requested date and scope, Reference90/5A counterparties and Reference108/6C products, independent field availability, agreement/characteristic coverage and closed OUR Snapshot before using a current choices witness. Names remain searchable beyond the first 100 rendered entries; each selection accepts at most 256 distinct uppercase references.
+
+Preview requires actual readiness. Available names can still be inspected when a whole publication or owner coverage is incomplete; a selected preview remains disabled until that coverage is complete. Date, caller, permission, names reload and navigation invalidate prior selections/results/exports. CSV/XLSX/PDF consume the exact completed own result including its witness, never a newly recomputed client result. Static capabilities retain false current Source/native parity flags.
+
+The earlier unfiltered-only and missing-choices paragraphs describe the frozen f0d5 baseline. This successor implements the two own named selectors. Persistent own variants are a separate authorized storage/API successor: the generic template payload is a dataset ReportsModel, so no own AMG request is saved into its owner list or deserializer. No Source/current-data/parity/runtime acceptance is claimed here.

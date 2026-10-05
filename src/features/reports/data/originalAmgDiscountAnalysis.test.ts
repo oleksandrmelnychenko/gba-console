@@ -36,7 +36,7 @@ it('validates dates and exact detached uppercase reference scopes without invent
   expect(amgDiscountAnalysisDateError('2024-02-29')).toBeNull(); expect(amgDiscountAnalysisDateError('2025-02-29')).not.toBeNull()
   expect(() => validateAmgDiscountAnalysisRequest({ ...amgScope(), Products: ['a'.repeat(32)] })).toThrow()
   expect(() => validateAmgDiscountAnalysisRequest({ ...amgScope(), ChoicesWitnessSha256: 'bad' })).toThrow()
-  expect(() => validateAmgDiscountAnalysisRequest({ ...amgScope(), ChoicesWitnessSha256: 'a'.repeat(64) })).toThrow()
+  expect(validateAmgDiscountAnalysisRequest({ ...amgScope(), ChoicesWitnessSha256: 'a'.repeat(64) }).ChoicesWitnessSha256).toBe('a'.repeat(64))
   const raw = { ...amgScope(), Products: ['F'.repeat(32), 'A'.repeat(32)] }, detached = validateAmgDiscountAnalysisRequest(raw); raw.Products.length = 0
   expect(detached.Products).toEqual(['A'.repeat(32), 'F'.repeat(32)])
 })

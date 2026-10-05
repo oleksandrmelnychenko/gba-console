@@ -25,7 +25,7 @@ export type AmgDiscountAnalysisCapability = typeof amgDiscountAnalysisIdentity &
   ModuleSha256: string; QuerySha256: string; Executable: boolean; HumanChoicesAvailable: false;
   NormalInputsReadinessVerified: false; SourceSyncEnabled: false
 }
-export type AmgDiscountAnalysisRequest = typeof amgDiscountAnalysisIdentity & { Through: string; Counterparties: string[]; Products: string[] }
+export type AmgDiscountAnalysisRequest = typeof amgDiscountAnalysisIdentity & { Through: string; Counterparties: string[]; Products: string[]; ChoicesWitnessSha256?: string | null }
 export type AmgDiscountAnalysisCell = {
   CounterpartyRef: string; CounterpartyCaption: string | null; CounterpartyCaptionAvailable: boolean;
   ProductRef: string; ProductCaption: string | null; ProductCaptionAvailable: boolean;
@@ -67,10 +67,10 @@ function references(value: unknown): value is string[] {
   return Array.isArray(value) && value.every(reference) && new Set(value).size === value.length
 }
 export function validateAmgDiscountAnalysisRequest(value: unknown): AmgDiscountAnalysisRequest {
-  if (!record(value) || Object.keys(value).sort().join(',') !== 'Counterparties,DefinitionSha256,Products,SourceId,Through,Version,World'
+  if (!record(value) || Object.keys(value).filter(k => k !== 'ChoicesWitnessSha256').sort().join(',') !== 'Counterparties,DefinitionSha256,Products,SourceId,Through,Version,World'
     || !identity(value) || typeof value.Through !== 'string' || amgDiscountAnalysisDateError(value.Through)
-    || !references(value.Counterparties) || !references(value.Products) || value.Counterparties.length > 256 || value.Products.length > 256) throw refusal()
-  return { ...amgDiscountAnalysisIdentity, Through: value.Through, Counterparties: [...value.Counterparties].sort(), Products: [...value.Products].sort() }
+    || !references(value.Counterparties) || !references(value.Products) || value.Counterparties.length > 256 || value.Products.length > 256 || !(value.ChoicesWitnessSha256 == null || digest(value.ChoicesWitnessSha256))) throw refusal()
+  return { ...amgDiscountAnalysisIdentity, Through: value.Through, Counterparties: [...value.Counterparties].sort(), Products: [...value.Products].sort(), ...(value.ChoicesWitnessSha256 == null ? {} : { ChoicesWitnessSha256: value.ChoicesWitnessSha256 }) }
 }
 function named(ref: unknown, text: unknown, available: unknown) {
   return reference(ref) && (available === true ? caption(text) && (ref === emptyRef ? text === '' : !!text.trim()) : available === false && text === null)
@@ -120,7 +120,7 @@ export function normalizeAmgDiscountAnalysisResult(value: unknown, request: AmgD
   const scope = validateAmgDiscountAnalysisRequest(request)
   if (!record(value) || !identity(value) || !policies(value) || !equal(value.Rows, ['Контрагент']) || !equal(value.Columns, ['Номенклатура'])
     || value.Through !== scope.Through || !equal(value.Counterparties, scope.Counterparties) || !equal(value.Products, scope.Products)
-    || !cells(value.Cells, scope) || typeof value.Available !== 'boolean') throw refusal()
+    || (value.ChoicesWitnessSha256 ?? null) !== (scope.ChoicesWitnessSha256 ?? null) || !cells(value.Cells, scope) || typeof value.Available !== 'boolean') throw refusal()
   if (value.NormalInputsComplete === false) {
     if (value.OurSnapshotVerified !== false || value.Available || value.Cells.length || value.InputWitnessSha256 !== null || !digest(value.ResultSha256)
       || value.Code !== 'original_amg_discount_analysis_input_unavailable' || typeof value.Dependency !== 'string') throw refusal()
@@ -132,7 +132,7 @@ export function normalizeAmgDiscountAnalysisResult(value: unknown, request: AmgD
   return structuredClone(value) as AmgDiscountAnalysisResult
 }
 export function amgDiscountAnalysisResultRequest(result: AmgDiscountAnalysisResult): AmgDiscountAnalysisRequest {
-  return validateAmgDiscountAnalysisRequest({ ...amgDiscountAnalysisIdentity, Through: result.Through, Counterparties: [...result.Counterparties], Products: [...result.Products] })
+  return validateAmgDiscountAnalysisRequest({ ...amgDiscountAnalysisIdentity, Through: result.Through, Counterparties: [...result.Counterparties], Products: [...result.Products], ...(result.ChoicesWitnessSha256 == null ? {} : { ChoicesWitnessSha256: result.ChoicesWitnessSha256 }) })
 }
 export type AmgDiscountAnalysisIndex = {
   parties: { key: string; caption: string }[]; products: { key: string; caption: string }[]; cells: Map<string, AmgDiscountAnalysisCell>
