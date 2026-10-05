@@ -1,6 +1,6 @@
 # AMG · Аналіз знижок і націнок: власна форма за замовчуванням
 
-## Реалізована частина
+## Історична форма без named choices (f0d5)
 
 Форма запускається тільки для власного AMG original `0ac4605f-8ff9-4d0e-b694-8bdc55dc485a`, definition `168e4ef5787e1ec5e6d4a6a3ebfe5f9a002a6e28996661e550a5bc2778e7696a`. Власні маршрути: `GET /report/originals/amg/discount-analysis/capabilities` та `POST /report/originals/amg/discount-analysis/preview`. Наявний сервер не має для цієї форми маршруту choices або readiness.
 
@@ -41,4 +41,12 @@ The dedicated AMG API now supplies GET `readiness` and POST `choices` under `/re
 
 Preview requires actual readiness. Available names can still be inspected when a whole publication or owner coverage is incomplete; a selected preview remains disabled until that coverage is complete. Date, caller, permission, names reload and navigation invalidate prior selections/results/exports. CSV/XLSX/PDF consume the exact completed own result including its witness, never a newly recomputed client result. Static capabilities retain false current Source/native parity flags.
 
-The earlier unfiltered-only and missing-choices paragraphs describe the frozen f0d5 baseline. This successor implements the two own named selectors. Persistent own variants are a separate authorized storage/API successor: the generic template payload is a dataset ReportsModel, so no own AMG request is saved into its owner list or deserializer. No Source/current-data/parity/runtime acceptance is claimed here.
+The earlier unfiltered-only and missing-choices paragraphs describe the frozen f0d5 baseline. This successor implements the two own named selectors. The owner saved-variant successor is described below: the generic template payload is a dataset ReportsModel, so no own AMG request is saved into its owner list or deserializer. No Source/current-data/parity/runtime acceptance is claimed here.
+
+## Owner saved variants
+
+The own `/report/originals/amg/discount-analysis/variants` API stores only the captured date, distinct counterparty90/product108 references and fixed row/column/default-two measure shape. Console lists authenticated owner variants manually and opens an exact revision. Create, update and delete use revision CAS; an unavailable table stays visible. Scope normalizers reject a foreign identity, unsupported shape or retained publication witness. Name and revision never replace server owner authorization.
+
+Opening a variant invalidates the completed result and obtains new own choices/readiness, even when the date is unchanged. Every saved reference remains intact until the current offered universe confirms it. A missing reference blocks execution and saving; clearing saved filters is an explicit user action. Current choices supply the preview witness, while saved JSON never supplies execution authority. Caller, permission, date and unmount cancellation reject late variant responses. Existing CSV/XLSX/PDF still use the same completed result.
+
+This FILE feature is unexecuted. The additive own variant table migration1292, server publication readiness, all quality gates and deployment require Root runtime evidence. No Source connection, current-data or native-parity credit is implied.

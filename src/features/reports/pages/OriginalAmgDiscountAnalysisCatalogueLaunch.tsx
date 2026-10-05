@@ -30,7 +30,7 @@ export function OriginalAmgDiscountAnalysisCatalogueLaunch({ report, worlds, ena
   return <Stack gap={6}><ReportCapabilityStatus current={current} enabled={enabled} callerKey={callerKey} disabled={disabled} retry={() => setAttempt(n => n + 1)}
     loadingLabel="Перевірка доступності звіту" failureMessage="Не вдалося перевірити доступність звіту." />
     <Button disabled={!allowed} onClick={() => setOpened(true)}>{t('AMG · Аналіз знижок і націнок')}</Button>
-    <Text size="sm" c="dimmed">{t('Поточні дані перевіряються під час формування. Оберіть дату; відбори за назвами для цієї форми AMG ще недоступні.')}</Text>
+    <Text size="sm" c="dimmed">{t('Поточні дані перевіряються під час формування. Оберіть дату та оновіть назви для відбору у власній формі AMG.')}</Text>
     <AppModal opened={opened && allowed} title={t('AMG · Аналіз знижок і націнок')} size={1250} onClose={() => setOpened(false)} closeButtonProps={{ 'aria-label': t('Закрити аналіз знижок AMG') }}>
       {opened && allowed && capability ? <Suspense fallback={<Loader size="sm" />}><Panel key={JSON.stringify(scope)} capability={capability} callerKey={callerKey} canGenerate={allowed}
         initialThrough={new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Kyiv' })} /></Suspense> : null}

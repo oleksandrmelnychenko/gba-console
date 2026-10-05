@@ -2,12 +2,15 @@ import { Alert, Button, Group, Stack, Text, TextInput } from '@mantine/core'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { readAmgDiscountAnalysis } from '../api/originalAmgDiscountAnalysisApi'
-import { amgDiscountAnalysisDateError, type AmgDiscountAnalysisCapability, type AmgDiscountAnalysisResult } from '../data/originalAmgDiscountAnalysis'
+import { amgDiscountAnalysisDateError, amgDiscountAnalysisRequest, type AmgDiscountAnalysisCapability, type AmgDiscountAnalysisResult } from '../data/originalAmgDiscountAnalysis'
 import { amgDiscountAnalysisCsv, amgDiscountAnalysisExportError, amgDiscountAnalysisPdf, amgDiscountAnalysisXlsx } from '../data/originalAmgDiscountAnalysisExport'
-import { emptyAmgDiscountAnalysisSelection, selectedAmgDiscountAnalysisRequest, type AmgDiscountAnalysisChoices, type AmgDiscountAnalysisField, type AmgDiscountAnalysisSelection } from '../data/originalAmgDiscountAnalysisChoices'
+import { selectedAmgDiscountAnalysisRequest, type AmgDiscountAnalysisChoices, type AmgDiscountAnalysisField, type AmgDiscountAnalysisSelection } from '../data/originalAmgDiscountAnalysisChoices'
 import { useAmgDiscountAnalysisChoices } from '../hooks/useAmgDiscountAnalysisChoices'
 import { OriginalAmgDiscountAnalysisChoiceControls } from './OriginalAmgDiscountAnalysisChoiceControls'
 import { useReportRunState } from '../hooks/useReportRunState'
+import { amgDiscountVariantScope, type AmgDiscountVariant } from '../data/originalAmgDiscountAnalysisVariants'
+import { useAmgDiscountAnalysisSelection } from '../hooks/useAmgDiscountAnalysisSelection'
+import { OriginalAmgDiscountVariantControls } from './OriginalAmgDiscountVariantControls'
 import { OriginalAmgDiscountAnalysisGrid } from './OriginalAmgDiscountAnalysisGrid'
 const formats = ['csv', 'xlsx', 'pdf'] as const
 function download(blob: Blob, name: string) {
@@ -66,20 +69,26 @@ export function OriginalAmgDiscountAnalysisPanel({ capability, callerKey, canGen
   const { t } = useI18n(), [through, setThrough] = useState(initialThrough)
   const permitted = canGenerate && !!callerKey && capability.Executable && capability.World === 'amg'
   const names = useAmgDiscountAnalysisChoices(through, permitted, callerKey), named = names.run.lastRun?.names ?? null
-  const [selection, setSelection] = useState<{ key: string; witness: string | null; values: AmgDiscountAnalysisSelection }>({ key: '', witness: null, values: emptyAmgDiscountAnalysisSelection() })
-  const selected = named && selection.key === names.key && selection.witness === named.ResultSha256 ? selection.values : emptyAmgDiscountAnalysisSelection()
+  const scope = useAmgDiscountAnalysisSelection(names, callerKey, canGenerate, permitted), { selected, pending, blockedVariant } = scope
   const ready = names.run.lastRun?.readiness.Executable
-  const executable = permitted && ready === true && !names.run.isLoading && selectionAvailable(selected, named)
+  const executable = permitted && !blockedVariant && ready === true && !names.run.isLoading && selectionAvailable(selected, named)
   const key = JSON.stringify([callerKey, canGenerate, capability, through, selected, named?.ChoicesWitnessSha256 ?? null, named?.ResultSha256 ?? null, ready])
   const delivery = useAmgDiscountAnalysisRun(key, executable, through, selected, named), dateError = amgDiscountAnalysisDateError(through)
   const busy = delivery.run.isLoading || delivery.exporting || names.run.isLoading
-  function select(field: AmgDiscountAnalysisField, values: string[]) { delivery.invalidate(); setSelection({ key: names.key, witness: named?.ResultSha256 ?? null, values: { ...selected, [field]: [...values] } }) }
+  function select(field: AmgDiscountAnalysisField, values: string[]) { delivery.invalidate(); scope.select(field, values) }
+  function loadVariant(saved: AmgDiscountVariant) {
+    delivery.invalidate(); names.run.clear(); setThrough(saved.Scope.Request.Through); scope.load(saved)
+  }
+  const savedScope = dateError ? null : amgDiscountVariantScope({ ...amgDiscountAnalysisRequest(through), Counterparties: selected.Контрагент, Products: selected.Номенклатура })
   return <Stack gap="md"><Text>{t('AMG · Аналіз знижок і націнок: контрагенти в рядках, номенклатура у стовпцях; тип ціни й відсоток. Загальних підсумків немає.')}</Text>
-    <TextInput type="date" label={t('Дата зрізу')} value={through} disabled={busy} onChange={event => { delivery.invalidate(); setThrough(event.currentTarget.value) }} />
-    <OriginalAmgDiscountAnalysisChoiceControls names={named} selection={selected} busy={busy} permitted={permitted} dateError={dateError} error={names.run.error} loading={names.run.isLoading}
-      onSelect={select} onLoad={() => { delivery.invalidate(); setSelection({ key: '', witness: null, values: emptyAmgDiscountAnalysisSelection() }); void names.load() }} />
+    <TextInput type="date" label={t('Дата зрізу')} value={through} disabled={busy} onChange={event => { delivery.invalidate(); scope.clear(); setThrough(event.currentTarget.value) }} />
+    <OriginalAmgDiscountAnalysisChoiceControls names={named} selection={selected} busy={busy} selectionBlocked={blockedVariant} permitted={permitted} dateError={dateError} error={names.run.error} loading={names.run.isLoading}
+      onSelect={select} onLoad={() => { delivery.invalidate(); scope.clearSelection(); void names.load(pending?.Request) }} />
     <Text size="sm" c="dimmed">{t('Залиште відбори порожніми, щоб охопити всіх контрагентів і всю номенклатуру.')}</Text>
     <Text size="sm" c="dimmed">{t('Звіт показує стан на кінець обраного дня. Поточні дані перевіряються під час формування.')}</Text>
+    {blockedVariant ? <Stack gap="xs"><Alert color="yellow">{t('Збережені відбори AMG ще не підтверджені поточними назвами. Вони не були замінені або вилучені.')}</Alert>
+      <Button variant="light" disabled={busy} onClick={() => { delivery.invalidate(); scope.clear() }}>{t('Очистити збережені відбори AMG')}</Button></Stack> : null}
+    <OriginalAmgDiscountVariantControls key={JSON.stringify([callerKey, canGenerate])} callerKey={callerKey} permitted={permitted} busy={busy} scope={savedScope} blocked={blockedVariant} onLoad={loadVariant} />
     <AmgDiscountAnalysisMessages ready={ready} dateError={dateError} runError={delivery.run.error} />
     <AmgDiscountAnalysisActions delivery={delivery} permitted={executable} dateError={dateError} /><AmgDiscountAnalysisOutcome result={delivery.run.lastRun} /></Stack>
 }
