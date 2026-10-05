@@ -9,7 +9,7 @@ function PurchasesNamesStatus({ named, error }: { named: PurchasesChoices | null
   return <>
     {error ? <Alert color="yellow">{t(error)}</Alert> : null}
     <Text size="sm" c="dimmed">{t('Відбори доступні окремо для кожного поля після завантаження його назв. Формування без відборів не потребує назв.')}</Text>
-    {named ? <Text size="sm" c="dimmed">{t('Назви ще недоступні')}: {named.MissingFamilies.map(field => t(purchasesFilterLabels[field])).join(', ')}.</Text> : null}
+    {named?.MissingFamilies.length ? <Text size="sm" c="dimmed">{t('Назви ще недоступні')}: {named.MissingFamilies.map(field => t(purchasesFilterLabels[field])).join(', ')}.</Text> : null}
     {named && purchasesFilters.some(field => named.FieldAvailability[field] && !named.Choices[field].length)
       ? <Text size="sm" c="dimmed">{t('Для перевірених порожніх полів немає варіантів відбору.')}</Text> : null}
   </>

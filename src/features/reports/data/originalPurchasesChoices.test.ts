@@ -2,7 +2,34 @@ import { expect, it } from 'vitest'
 import { normalizePurchases, purchasesRequest, purchasesResultRequest, validatePurchasesRequest } from './originalPurchases'
 import { emptyPurchasesSelections, normalizePurchasesChoices, purchasesNamedRequest } from './originalPurchasesChoices'
 import { purchasesCapability, purchasesParty, purchasesProduct, purchasesResponse, purchasesStatus } from '../testing/originalPurchasesFixtures'
-import { namedPurchasesResponse, purchasesAllSelected, purchasesDistributionProject, purchasesMainProject, purchasesMissingNames, purchasesNamedChoices, purchasesNamedScope } from '../testing/originalPurchasesNamedFixtures'
+import { namedPurchasesResponse, purchasesAllSelected, purchasesDistributionProject, purchasesMainProject, purchasesMissingNames, purchasesNamedChoices, purchasesNamedScope, purchasesStatusChoices, statusNamedPurchasesResponse } from '../testing/originalPurchasesNamedFixtures'
+
+it('uses the complete server enum mapping and current witness for a named Status filter', () => {
+  const wire = purchasesStatusChoices(), names = normalizePurchasesChoices(wire, purchasesNamedScope())
+  const request = purchasesNamedRequest(purchasesNamedScope(), { ...emptyPurchasesSelections(), СтатусПартии: [purchasesStatus] }, names)
+  expect(names.HumanChoicesAvailable).toBe(true); expect(names.MissingFamilies).toEqual([])
+  expect(request.Statuses).toEqual([purchasesStatus]); expect(request.NamedChoiceWitnesses).toEqual({ СтатусПартии: '2'.repeat(64) })
+  const result = normalizePurchases(statusNamedPurchasesResponse(request), request)
+  wire.Choices.СтатусПартии[0].Caption = 'Later status'
+  expect(names.Choices.СтатусПартии[0].Caption).toBe('Власна партія'); expect(result.Rows[0].Caption).toBe('Власна партія')
+  expect(purchasesResultRequest(result).Statuses).toEqual(request.Statuses)
+  expect(() => normalizePurchases(result, { ...request, NamedChoiceWitnesses: { СтатусПартии: '3'.repeat(64) } })).toThrow()
+  expect(() => purchasesNamedRequest(purchasesNamedScope(), { ...emptyPurchasesSelections(), СтатусПартии: ['F'.repeat(32)] }, names)).toThrow()
+})
+it.each(['partial', 'catalogue-type', 'foreign-enum', 'deleted', 'zero', 'duplicate'])('refuses an unconfirmed Status mapping: %s', fault => {
+  const names = purchasesStatusChoices(), row = names.Choices.СтатусПартии[0]
+  if (fault === 'partial') names.Choices.СтатусПартии.pop()
+  if (fault === 'catalogue-type') row.Type = '08'
+  if (fault === 'foreign-enum') row.TableReference = '_Enum563'
+  if (fault === 'deleted') row.Deleted = true
+  if (fault === 'zero') row.Key = '0'.repeat(32)
+  if (fault === 'duplicate') names.Choices.СтатусПартии[1].Key = row.Key
+  expect(() => normalizePurchasesChoices(names, purchasesNamedScope())).toThrow()
+})
+it('requires global name availability to agree with all individual field publications', () => {
+  expect(() => normalizePurchasesChoices({ ...purchasesStatusChoices(), HumanChoicesAvailable: false }, purchasesNamedScope())).toThrow()
+  expect(() => normalizePurchasesChoices({ ...purchasesNamedChoices(), HumanChoicesAvailable: true }, purchasesNamedScope())).toThrow()
+})
 
 it('enables four genuine typed fields independently while global names and Status remain unavailable', () => {
   const names = normalizePurchasesChoices(purchasesNamedChoices(), purchasesNamedScope())

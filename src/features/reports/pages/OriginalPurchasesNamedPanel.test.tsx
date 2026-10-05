@@ -5,8 +5,8 @@ import { I18nProvider } from '../../../shared/i18n/I18nProvider'
 import { readPurchases, readPurchasesChoices } from '../api/originalPurchasesApi'
 import { purchasesXlsx } from '../data/originalPurchasesExport'
 import type { PurchasesChoices } from '../data/originalPurchasesChoices'
-import { purchasesCapability, purchasesParty, purchasesProduct, purchasesResponse } from '../testing/originalPurchasesFixtures'
-import { namedPurchasesResponse, purchasesDistributionProject, purchasesMainProject, purchasesMissingNames, purchasesNamedChoices } from '../testing/originalPurchasesNamedFixtures'
+import { purchasesCapability, purchasesParty, purchasesProduct, purchasesResponse, purchasesStatus } from '../testing/originalPurchasesFixtures'
+import { namedPurchasesResponse, purchasesDistributionProject, purchasesMainProject, purchasesMissingNames, purchasesNamedChoices, purchasesStatusChoices, statusNamedPurchasesResponse } from '../testing/originalPurchasesNamedFixtures'
 import { OriginalPurchasesPanel } from './OriginalPurchasesPanel'
 
 vi.mock('../api/originalPurchasesApi', () => ({ readPurchases: vi.fn(), readPurchasesChoices: vi.fn() }))
@@ -28,6 +28,18 @@ async function select(label: string, option: string) {
   const input = screen.getByRole('combobox', { name: label }); fireEvent.click(input)
   fireEvent.click(await screen.findByRole('option', { name: option })); fireEvent.blur(input)
 }
+it('enables the admitted Status field, sends its current witness and displays the returned caption', async () => {
+  setup(); vi.mocked(readPurchasesChoices).mockImplementation(async request => purchasesStatusChoices(request))
+  vi.mocked(readPurchases).mockImplementation(async request => statusNamedPurchasesResponse(request))
+  render(panel()); await load()
+  expect((screen.getByRole('combobox', { name: 'Статуси партій' }) as HTMLInputElement).disabled).toBe(false)
+  expect(screen.queryByText('Назви ще недоступні: .')).toBeNull()
+  await select('Статуси партій', 'Власна партія'); fireEvent.click(screen.getByRole('button', { name: 'Сформувати' }))
+  const table = await screen.findByRole('table'); expect(within(table).getAllByText('Власна партія')).toHaveLength(4)
+  expect(vi.mocked(readPurchases).mock.calls[0][0]).toMatchObject({ Statuses: [purchasesStatus], NamedChoiceWitnesses: { СтатусПартии: '2'.repeat(64) } })
+  expect(screen.queryByText(purchasesStatus)).toBeNull()
+  expect((screen.getByRole('button', { name: 'XLSX' }) as HTMLButtonElement).disabled).toBe(false)
+})
 it('enables four named fields independently and preserves both full Project keys with exact witnesses', async () => {
   setup(); render(panel()); await load()
   expect((screen.getByRole('combobox', { name: 'Статуси партій' }) as HTMLInputElement).disabled).toBe(true)

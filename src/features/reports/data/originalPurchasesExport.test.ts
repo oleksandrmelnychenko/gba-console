@@ -2,7 +2,15 @@ import { expect, it } from 'vitest'
 import { normalizePurchases, purchasesMeasures } from './originalPurchases'
 import { purchasesCsv, purchasesExportError, purchasesLines, purchasesMatrix, purchasesPdfDefinition, purchasesXlsx } from './originalPurchasesExport'
 import { emptyPurchases, missingPurchases, purchasesParty, purchasesProduct, purchasesResponse, purchasesStatus } from '../testing/originalPurchasesFixtures'
-import { namedPurchasesResponse, purchasesNamedScope } from '../testing/originalPurchasesNamedFixtures'
+import { namedPurchasesResponse, purchasesNamedScope, statusNamedPurchasesResponse } from '../testing/originalPurchasesNamedFixtures'
+it('preserves admitted Status captions and exact server amounts in every export format', async () => {
+  const result = normalizePurchases(statusNamedPurchasesResponse(), purchasesNamedScope()), matrix = purchasesMatrix(result)
+  expect(matrix[1][0]).toBe('Власна партія'); expect(matrix[1].slice(3)).toEqual(['2.000', '123.46', '24.70', '3.126'])
+  expect(purchasesCsv(result)).toContain('Власна партія'); expect(JSON.stringify(purchasesPdfDefinition(result))).toContain('Власна партія')
+  const blob = await purchasesXlsx(result), XLSX = await import('xlsx'), book = XLSX.read(await blob.arrayBuffer(), { type: 'array' })
+  expect(XLSX.utils.sheet_to_json(book.Sheets['Закупки'], { header: 1 })).toEqual(matrix)
+  expect(purchasesCsv(result)).not.toContain(purchasesStatus)
+})
 it('screen CSV and PDF preserve all four default resources with human ordinals and no technical captions', () => {
   const result = purchasesResponse(), matrix = purchasesMatrix(result), csv = purchasesCsv(result), pdf = purchasesPdfDefinition(result)
   expect(matrix[0]).toEqual(['Статус партії', 'Контрагент', 'Номенклатура', 'Кількість у базових одиницях', 'Вартість', 'ПДВ', 'Вага'])

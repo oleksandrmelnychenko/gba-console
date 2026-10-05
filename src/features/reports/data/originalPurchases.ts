@@ -147,7 +147,7 @@ function namedEvidence(value: Record<string, unknown>): boolean {
   if (value.NamedChoiceWitnesses == null && value.NamedFieldAvailability == null) return true
   const availability = value.NamedFieldAvailability, current = value.NamedChoiceWitnesses
   return object(availability) && exact(Object.keys(availability).sort(), [...purchasesFilters].sort())
-    && purchasesFilters.every(field => typeof availability[field] === 'boolean') && availability.СтатусПартии === false && witnesses(current)
+    && purchasesFilters.every(field => typeof availability[field] === 'boolean') && witnesses(current)
     && exact(Object.keys(current).sort(), purchasesFilters.filter(field => availability[field]).sort())
 }
 /** Validates the exact echoed scope, hierarchy and policies before rendering or exporting a detached completed result. */

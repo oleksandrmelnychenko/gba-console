@@ -1,6 +1,6 @@
 import { purchasesFilters, purchasesRequest, purchasesSelectors, type PurchasesRequest, type PurchasesResult } from '../data/originalPurchases'
 import { emptyPurchasesSelections, type PurchasesChoice, type PurchasesChoices } from '../data/originalPurchasesChoices'
-import { purchasesCapability, purchasesParty, purchasesProduct, purchasesResponse, purchasesSecondProduct } from './originalPurchasesFixtures'
+import { purchasesCapability, purchasesParty, purchasesProduct, purchasesResponse, purchasesSecondProduct, purchasesStatus } from './originalPurchasesFixtures'
 
 export const purchasesDivision = 'E'.repeat(32), purchasesProjectRef = 'F'.repeat(32)
 export const purchasesDistributionProject = `08:0000001F:${purchasesProjectRef}`, purchasesMainProject = `08:00000069:${purchasesProjectRef}`
@@ -21,6 +21,22 @@ export function purchasesNamedChoices(request: PurchasesRequest = purchasesNamed
 export function purchasesMissingNames(): PurchasesChoices {
   return { ...purchasesNamedChoices(), FieldAvailability: { СтатусПартии: false, Контрагент: false, Номенклатура: false, Подразделение: false, Проект: false },
     Choices: { СтатусПартии: [], Контрагент: [], Номенклатура: [], Подразделение: [], Проект: [] }, FieldWitnessSha256: {}, MissingFamilies: [...purchasesFilters] }
+}
+export function purchasesStatusChoices(request: PurchasesRequest = purchasesNamedScope()): PurchasesChoices {
+  const names = purchasesNamedChoices(request)
+  names.FieldAvailability.СтатусПартии = true
+  names.Choices.СтатусПартии = [purchasesStatus, ...Array.from({ length: 8 }, (_, index) => (index + 1).toString(16).padStart(32, '0').toUpperCase())]
+    .map((Key, index) => ({ Field: 'СтатусПартии', Type: 'Enum', TableReference: '_Enum566', Key,
+      Caption: index ? `Статус ${index + 1}` : 'Власна партія', Deleted: false }))
+  names.FieldWitnessSha256.СтатусПартии = '2'.repeat(64)
+  names.MissingFamilies = []; names.HumanChoicesAvailable = true
+  return names
+}
+export function statusNamedPurchasesResponse(request: PurchasesRequest = purchasesNamedScope()): PurchasesResult {
+  const result = namedPurchasesResponse(request), names = purchasesStatusChoices(request)
+  result.NamedFieldAvailability = { ...names.FieldAvailability }; result.NamedChoiceWitnesses = { ...names.FieldWitnessSha256 }
+  result.Rows[0].Caption = 'Власна партія'; result.Rows[0].CaptionAvailable = true
+  return result
 }
 export function namedPurchasesResponse(request: PurchasesRequest = purchasesNamedScope()): PurchasesResult {
   const result = purchasesResponse(request.Measures), names = purchasesNamedChoices(request)
