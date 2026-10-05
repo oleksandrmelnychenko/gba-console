@@ -1,6 +1,6 @@
 import { MantineProvider } from '@mantine/core'
-import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
-import { beforeEach, expect, it, vi } from 'vitest'
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 import { I18nProvider } from '../../../shared/i18n/I18nProvider'
 import { createStockReport, searchDatasetReportValues } from '../api/reportsApi'
 import { getReportDatasets, getServerReportTemplates, saveServerReportTemplate } from '../api/reportWorkspaceApi'
@@ -13,13 +13,14 @@ vi.mock('../api/reportsApi', async original => ({ ...await original<typeof impor
 vi.mock('../api/reportWorkspaceApi', async original => ({ ...await original<typeof import('../api/reportWorkspaceApi')>(),
   getReportDatasets: vi.fn(), getServerReportTemplates: vi.fn(), saveServerReportTemplate: vi.fn() }))
 beforeEach(() => {
-  auth.enabled = true; auth.owner = 'owner-A'; vi.clearAllMocks(); localStorage.clear()
+  auth.enabled = true; auth.owner = 'owner-A'; vi.clearAllMocks(); localStorage.clear(); sessionStorage.clear()
   Object.defineProperty(HTMLElement.prototype, 'scrollIntoView', { configurable: true, value: vi.fn() })
   vi.mocked(getReportDatasets).mockResolvedValue([...reportDatasets, presentedSettlementDataset])
   vi.mocked(getServerReportTemplates).mockResolvedValue([])
   vi.mocked(searchDatasetReportValues).mockResolvedValue([])
   vi.mocked(createStockReport).mockResolvedValue({ document: { DocumentURL: '/files/current.xlsx' }, raw: {} })
 })
+afterEach(() => { cleanup(); localStorage.clear(); sessionStorage.clear() })
 const page = () => <MantineProvider env="test"><I18nProvider><ReportsStocksPage /></I18nProvider></MantineProvider>
 async function debtor() {
   const view = render(page()); await screen.findByRole('button', { name: 'Продажі за днями' })
