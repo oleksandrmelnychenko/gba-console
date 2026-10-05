@@ -82,15 +82,15 @@ export function OriginalPurchasesPanel({ capability, callerKey, canGenerate, ini
     delivery.invalidate(); setSelection({ key: names.key, witness: named?.ResultSha256 ?? null, values: { ...selected, [field]: [...keys] } })
   }
   return <Stack gap="md">
-    <Text size="sm">{t('Закупки за період: статус партії → контрагент → номенклатура. За замовчуванням — кількість у базових одиницях.')}</Text>
+    <Text size="sm">{t('Закупки за період: статус партії → контрагент → номенклатура. За замовчуванням — кількість у базових одиницях, вартість, ПДВ і вага.')}</Text>
     <OriginalPeriodDateInputs from={from} through={through} busy={busy}
       changeFrom={value => { delivery.invalidate(); setFrom(value) }} changeThrough={value => { delivery.invalidate(); setThrough(value) }} />
-    <MultiSelect label={t('Показники')} value={measures} data={purchasesMeasures.map(value => ({ value, label: t(purchasesLabels[value]) }))} maxValues={3} disabled={busy}
+    <MultiSelect label={t('Показники')} value={measures} data={purchasesMeasures.map(value => ({ value, label: t(purchasesLabels[value]) }))} maxValues={purchasesMeasures.length} disabled={busy}
       onChange={value => { const selected = new Set(value); delivery.invalidate(); setMeasures(purchasesMeasures.filter(m => selected.has(m))) }} />
     <OriginalPurchasesChoiceControls names={names} selection={selected} busy={busy} permitted={delivery.permitted}
       periodError={purchasesPeriodError(from, through)} onSelect={select}
       onLoad={() => { delivery.invalidate(); setSelection({ key: '', witness: null, values: emptyPurchasesSelections() }); void names.load() }} />
-    <Text size="sm" c="dimmed">{t('Кількості мають три десяткові знаки. Період охоплює календарні дні до 23:59:59. Повна відповідність підсумкам оригіналу 1С ще не підтверджена.')}</Text>
+    <Text size="sm" c="dimmed">{t('Кількості й вага мають три десяткові знаки; вартість і ПДВ — два. Період охоплює календарні дні до 23:59:59. Повна відповідність підсумкам оригіналу 1С ще не підтверджена.')}</Text>
     {delivery.error ? <Alert color="yellow">{t(delivery.error)}</Alert> : null}
     {delivery.run.error ? <Alert color="red">{t(delivery.run.error)}</Alert> : null}
     {exportError ? <Alert color="yellow">{t(exportError)}</Alert> : null}

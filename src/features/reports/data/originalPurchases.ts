@@ -5,13 +5,14 @@ export const PURCHASES_SOURCE = 'ed77c5cc-6688-4316-a631-2ad0b237140d'
 export const PURCHASES_DEFINITION = '582aeeaf58b04b2234f9b73c3036045882b47d94165b3e47d70529b44520b241'
 export const purchasesRows = ['СтатусПартии', 'Контрагент', 'Номенклатура'] as const
 export const purchasesFilters = [...purchasesRows, 'Подразделение', 'Проект'] as const
-export const purchasesMeasures = ['КоличествоОборот', 'КоличествоЕдиницОтчетов', 'КоличествоБазовыхЕд'] as const
-export const purchasesDefaultMeasures = ['КоличествоБазовыхЕд'] as const
+export const purchasesMeasures = ['КоличествоОборот', 'КоличествоЕдиницОтчетов', 'КоличествоБазовыхЕд', 'СтоимостьОборот', 'НДСОборот', 'ВесОборот'] as const
+export const purchasesDefaultMeasures = ['КоличествоБазовыхЕд', 'СтоимостьОборот', 'НДСОборот', 'ВесОборот'] as const
 export type PurchasesMeasure = typeof purchasesMeasures[number]
 export type PurchasesField = typeof purchasesFilters[number]
 const purchaseFilterSet = new Set<PurchasesField>(purchasesFilters)
 export const purchasesLabels: Record<PurchasesMeasure, string> = {
   КоличествоОборот: 'Кількість за регістром', КоличествоЕдиницОтчетов: 'Кількість у звітних одиницях', КоличествоБазовыхЕд: 'Кількість у базових одиницях',
+  СтоимостьОборот: 'Вартість', НДСОборот: 'ПДВ', ВесОборот: 'Вага',
 }
 export const purchasesFilterLabels: Record<PurchasesField, string> = {
   СтатусПартии: 'Статуси партій', Контрагент: 'Контрагенти', Номенклатура: 'Номенклатура', Подразделение: 'Підрозділи', Проект: 'Проєкти',
@@ -76,7 +77,7 @@ export function validatePurchasesRequest(value: PurchasesRequest): PurchasesRequ
   const arrays = [value?.Statuses, value?.Counterparties, value?.Products, value?.Divisions, value?.Projects]
   if (!object(value) || !identity(value) || typeof value.From !== 'string' || typeof value.Through !== 'string' || statementPeriodError(value.From, value.Through)
     || arrays.some((keys, index) => !Array.isArray(keys) || keys.length > 256 || !keys.every(index === 4 ? project : ref) || new Set(keys).size !== keys.length)
-    || !Array.isArray(value.Measures) || !value.Measures.length || value.Measures.length > 3
+    || !Array.isArray(value.Measures) || !value.Measures.length || value.Measures.length > purchasesMeasures.length
     || !value.Measures.every(m => purchasesMeasures.includes(m)) || new Set(value.Measures).size !== value.Measures.length
     || value.NamedChoiceWitnesses != null && !witnesses(value.NamedChoiceWitnesses)) throw new Error('Некоректний запит оригінального звіту «Закупки».')
   return { Version: 1, World: 'fenix', SourceId: PURCHASES_SOURCE, DefinitionSha256: PURCHASES_DEFINITION,
@@ -98,8 +99,14 @@ export function purchasesMilli(value: unknown): bigint {
   if (typeof value !== 'string' || value.length > 400 || !/^-?(0|[1-9]\d*)\.\d{3}$/.test(value) || value === '-0.000') throw new Error('Некоректна точна кількість закупівель.')
   return BigInt(value.replace('.', ''))
 }
+/** Stored cost and VAT have two decimal places; quantities and weight have three. */
+export function purchasesScaled(value: unknown, measure: PurchasesMeasure): bigint {
+  if (measure !== 'СтоимостьОборот' && measure !== 'НДСОборот') return purchasesMilli(value)
+  if (typeof value !== 'string' || value.length > 400 || !/^-?(0|[1-9]\d*)\.\d{2}$/.test(value) || value === '-0.00') throw new Error('Некоректна точна сума закупівель.')
+  return BigInt(value.replace('.', ''))
+}
 const values = (value: unknown, measures: readonly PurchasesMeasure[]): value is PurchasesValues => object(value)
-  && exact(Object.keys(value).sort(), [...measures].sort()) && measures.every(m => { purchasesMilli(value[m]); return true })
+  && exact(Object.keys(value).sort(), [...measures].sort()) && measures.every(m => { purchasesScaled(value[m], m); return true })
 function dependency(value: unknown): value is NonNullable<PurchasesResult['Dependency']> {
   return object(value) && typeof value.Kind === 'string' && /^[a-z_]+$/.test(value.Kind)
     && (value.MissingMonth === null || typeof value.MissingMonth === 'string' && /^20\d{2}-(0[1-9]|1[0-2])$/.test(value.MissingMonth))
@@ -148,7 +155,7 @@ export function normalizePurchases(value: unknown, request: PurchasesRequest): P
     })
   }
   if (!rows(value.Rows, 0)) return fail()
-  if (!value.Rows.length && scope.Measures.some(m => purchasesMilli((value.Totals as PurchasesValues)[m]) !== 0n)) return fail()
+  if (!value.Rows.length && scope.Measures.some(m => purchasesScaled((value.Totals as PurchasesValues)[m], m) !== 0n)) return fail()
   return structuredClone(value) as PurchasesResult
 }
 export function purchasesResultRequest(result: PurchasesResult): PurchasesRequest {

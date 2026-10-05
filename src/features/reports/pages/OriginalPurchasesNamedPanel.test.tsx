@@ -37,7 +37,7 @@ it('enables four named fields independently and preserves both full Project keys
   expect(within(table).getAllByText('Постачальник').length).toBeGreaterThan(0); expect(within(table).getByText('Перший товар')).toBeTruthy()
   expect(vi.mocked(readPurchases).mock.calls[0][0]).toMatchObject({ Statuses: [], Counterparties: [purchasesParty], Products: [purchasesProduct],
     Projects: [purchasesDistributionProject, purchasesMainProject], NamedChoiceWitnesses: { Контрагент: 'c'.repeat(64), Номенклатура: 'd'.repeat(64), Подразделение: 'e'.repeat(64), Проект: 'f'.repeat(64) } })
-  expect(vi.mocked(readPurchasesChoices).mock.calls[0][0]).toMatchObject({ Statuses: [], Counterparties: [], Products: [], Divisions: [], Projects: [], Measures: ['КоличествоБазовыхЕд'] })
+  expect(vi.mocked(readPurchasesChoices).mock.calls[0][0]).toMatchObject({ Statuses: [], Counterparties: [], Products: [], Divisions: [], Projects: [], Measures: ['КоличествоБазовыхЕд', 'СтоимостьОборот', 'НДСОборот', 'ВесОборот'] })
   for (const key of [purchasesParty, purchasesProduct, purchasesDistributionProject, purchasesMainProject]) expect(screen.queryByText(key)).toBeNull()
 })
 it('one missing named family keeps only that field unavailable and does not block another field', async () => {

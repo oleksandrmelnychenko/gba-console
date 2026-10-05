@@ -1,16 +1,17 @@
 import { expect, it } from 'vitest'
 import { emptyPurchases, missingPurchases, purchasesCapability, purchasesProduct, purchasesResponse } from '../testing/originalPurchasesFixtures'
 import { namedPurchasesResponse } from '../testing/originalPurchasesNamedFixtures'
-import { isPurchasesCapability, normalizePurchases, purchasesMeasures, purchasesMilli, purchasesRequest, purchasesResultRequest, validatePurchasesRequest } from './originalPurchases'
+import { isPurchasesCapability, normalizePurchases, purchasesDefaultMeasures, purchasesMeasures, purchasesMilli, purchasesRequest, purchasesResultRequest, purchasesScaled, validatePurchasesRequest } from './originalPurchases'
 
-it('requires the exact own module dynamic-query policy and base-only default without native claims', () => {
+it('requires the exact own module dynamic-query policy and all four original default resources without native claims', () => {
   expect(isPurchasesCapability(purchasesCapability)).toBe(true)
   for (const field of ['World', 'SourceId', 'DefinitionSha256', 'ModuleSha256', 'UniversalReportModuleSha256', 'RegisterUuid', 'QueryPolicy', 'DatePolicy', 'QuantityPolicy', 'ZeroRowPolicy'])
     expect(isPurchasesCapability({ ...purchasesCapability, [field]: 'foreign' })).toBe(false)
   for (const field of ['HumanChoicesAvailable', 'SourceSyncEnabled', 'NormalInputsReadinessVerified', 'NativeDateParametersVerified', 'NativeVirtualRegistrarTotalsVerified', 'NativeZeroGroupSuppressionVerified', 'NativeNullNumericSemanticsVerified', 'SourceParityVerified', 'OriginalFullTaskAccepted', 'AppliesFxConversion'])
     expect(isPurchasesCapability({ ...purchasesCapability, [field]: true })).toBe(false)
   expect(isPurchasesCapability({ ...purchasesCapability, DefaultMeasures: [...purchasesMeasures] })).toBe(false)
-  expect(purchasesRequest(purchasesCapability, '2026-09-10', '2026-09-12').Measures).toEqual(['КоличествоБазовыхЕд'])
+  expect(purchasesRequest(purchasesCapability, '2026-09-10', '2026-09-12').Measures).toEqual(['КоличествоБазовыхЕд', 'СтоимостьОборот', 'НДСОборот', 'ВесОборот'])
+  expect(isPurchasesCapability({ ...purchasesCapability, DefaultMeasures: ['КоличествоБазовыхЕд'] })).toBe(false)
 })
 it.each(purchasesMeasures)('selects canonical resource %s without substituting another quantity or receipt dataset', measure => {
   const request = purchasesRequest(purchasesCapability, '2026-09-10', '2026-09-12', [measure])
@@ -61,19 +62,20 @@ it.each(['1', '01.000', '-0.000', '1.00', '1e3', '+1.000'])('rejects noncanonica
 })
 it('retains wide signed quantity strings and returns a detached result', () => {
   const request = purchasesRequest(purchasesCapability, '2026-09-10', '2026-09-12'), response = purchasesResponse()
-  response.Totals = { КоличествоБазовыхЕд: '-9007199254740993.001' }
+  response.Totals = { ...response.Totals, КоличествоБазовыхЕд: '-9007199254740993.001' }
   const detached = normalizePurchases(response, request); response.Totals.КоличествоБазовыхЕд = '0.000'; response.Rows.length = 0
   expect(detached.Totals?.КоличествоБазовыхЕд).toBe('-9007199254740993.001'); expect(detached.Rows).toHaveLength(1)
 })
 it('distinguishes authenticated complete empty from absent input without accepting partial amounts', () => {
   const request = purchasesRequest(purchasesCapability, '2026-09-10', '2026-09-12')
-  expect(normalizePurchases(emptyPurchases(), request).Totals).toEqual({ КоличествоБазовыхЕд: '0.000' })
+  expect(normalizePurchases(emptyPurchases(), request).Totals).toEqual({ КоличествоБазовыхЕд: '0.000', СтоимостьОборот: '0.00', НДСОборот: '0.00', ВесОборот: '0.000' })
   expect(normalizePurchases(missingPurchases(), request).Totals).toBeNull()
   expect(() => normalizePurchases({ ...missingPurchases(), Totals: { КоличествоБазовыхЕд: '0.000' } }, request)).toThrow()
-  expect(() => normalizePurchases({ ...emptyPurchases(), Totals: { КоличествоБазовыхЕд: '1.000' } }, request)).toThrow()
+  expect(() => normalizePurchases({ ...emptyPurchases(), Totals: { ...emptyPurchases().Totals, КоличествоБазовыхЕд: '1.000' } }, request)).toThrow()
+  expect(() => normalizePurchases({ ...emptyPurchases(), Totals: { ...emptyPurchases().Totals, СтоимостьОборот: '0.01' } }, request)).toThrow()
 })
 it('retains contributing zero rows rather than imposing native virtual zero suppression', () => {
-  const request = purchasesRequest(purchasesCapability, '2026-09-10', '2026-09-12'), result = purchasesResponse()
+  const request = purchasesRequest(purchasesCapability, '2026-09-10', '2026-09-12', ['КоличествоБазовыхЕд']), result = purchasesResponse(['КоличествоБазовыхЕд'])
   result.Totals = { КоличествоБазовыхЕд: '0.000' }
   result.Rows[0].Values = { КоличествоБазовыхЕд: '0.000' }
   result.Rows[0].Children[0].Values = { КоличествоБазовыхЕд: '0.000' }
@@ -81,6 +83,34 @@ it('retains contributing zero rows rather than imposing native virtual zero supp
   const normalized = normalizePurchases(result, request)
   expect(normalized.Code).toBe('original_purchases_declared_calendar_complete')
   expect(normalized.Rows[0].Children[0].Children).toHaveLength(2)
+})
+it.each(['СтоимостьОборот', 'НДСОборот'] as const)('keeps signed wide %s at source two-place precision and refuses quantity formatting', measure => {
+  const request = purchasesRequest(purchasesCapability, '2026-09-10', '2026-09-12', [measure]), wire = purchasesResponse([measure])
+  const wide = '-9007199254740993.01'
+  wire.Totals = { [measure]: wide }
+  expect(normalizePurchases(wire, request).Totals?.[measure]).toBe(wide)
+  expect(purchasesScaled(wide, measure)).toBe(-900719925474099301n)
+  for (const value of ['1.000', '1.0', '-0.00', '01.00', '+1.00', '1e2']) {
+    expect(() => normalizePurchases({ ...wire, Totals: { [measure]: value } }, request)).toThrow()
+  }
+})
+it('selects all six resources canonically and retains exact stored weight totals', () => {
+  const request = purchasesRequest(purchasesCapability, '2026-09-10', '2026-09-12', [...purchasesMeasures].reverse())
+  expect(request.Measures).toEqual(purchasesMeasures)
+  const result = normalizePurchases(purchasesResponse(purchasesMeasures), request)
+  expect(result.Totals?.ВесОборот).toBe('3.126')
+  expect(result.Rows[0].Children[0].Children.map(row => row.Values.ВесОборот)).toEqual(['1.563', '1.563'])
+  expect(purchasesDefaultMeasures).toHaveLength(4)
+})
+it('rejects wrong resource precision in hierarchy cells and weight totals before rendering', () => {
+  const request = purchasesRequest(purchasesCapability, '2026-09-10', '2026-09-12')
+  for (const [measure, value] of [['СтоимостьОборот', '61.730'], ['НДСОборот', '12.350'], ['ВесОборот', '1.56']] as const) {
+    const result = purchasesResponse()
+    result.Rows[0].Children[0].Children[0].Values[measure] = value
+    expect(() => normalizePurchases(result, request)).toThrow()
+  }
+  const result = purchasesResponse()
+  expect(() => normalizePurchases({ ...result, Totals: { ...result.Totals, ВесОборот: '-0.000' } }, request)).toThrow()
 })
 it('a matching scope echo cannot admit a product row outside its exact selected reference', () => {
   const request = purchasesRequest(purchasesCapability, '2026-09-10', '2026-09-12'), result = namedPurchasesResponse()

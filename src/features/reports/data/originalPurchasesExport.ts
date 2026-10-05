@@ -25,7 +25,7 @@ export function purchasesMatrix(result: PurchasesResult): string[][] {
   normalizePurchases(result, purchasesResultRequest(result))
   return [purchasesHeaders(result), ...purchasesLines(result).map(row => row.cells), ['Разом', '', '', ...purchasesValues(result.Totals, result)]]
 }
-const unitNote = 'Кількості мають три десяткові знаки. Базові та звітні одиниці використовують спостережені коефіцієнти товару; підсумки сервера не перераховуються з округлених рядків.'
+const unitNote = 'Кількості й вага мають три десяткові знаки; вартість і ПДВ — два. Базові та звітні одиниці використовують спостережені коефіцієнти товару; підсумки сервера не перераховуються з округлених рядків.'
 const metadata = (result: PurchasesResult) => [[`Період: ${result.From} — ${result.Through}, включно до 23:59:59`], [unitNote],
   ...purchasesFilters.map(field => [`${purchasesFilterLabels[field]}: ${result.Selectors[field].length ? 'вибрані' : 'усі'}`])]
 export function purchasesCsv(result: PurchasesResult): string {

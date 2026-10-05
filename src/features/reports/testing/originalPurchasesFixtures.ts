@@ -16,8 +16,8 @@ export const purchasesCapability: PurchasesCapability = {
 export const purchasesStatus = 'A'.repeat(32), purchasesParty = 'B'.repeat(32), purchasesProduct = 'C'.repeat(32), purchasesSecondProduct = 'D'.repeat(32)
 export function purchasesResponse(measures: readonly PurchasesMeasure[] = purchasesDefaultMeasures): PurchasesResult {
   const selected = purchasesMeasures.filter(m => measures.includes(m))
-  const total = { КоличествоОборот: '2.000', КоличествоЕдиницОтчетов: '0.667', КоличествоБазовыхЕд: '2.000' }
-  const leaf = { КоличествоОборот: '1.000', КоличествоЕдиницОтчетов: '0.333', КоличествоБазовыхЕд: '1.000' }
+  const total = { КоличествоОборот: '2.000', КоличествоЕдиницОтчетов: '0.667', КоличествоБазовыхЕд: '2.000', СтоимостьОборот: '123.46', НДСОборот: '24.70', ВесОборот: '3.126' }
+  const leaf = { КоличествоОборот: '1.000', КоличествоЕдиницОтчетов: '0.333', КоличествоБазовыхЕд: '1.000', СтоимостьОборот: '61.73', НДСОборот: '12.35', ВесОборот: '1.563' }
   const values = Object.fromEntries(selected.map(m => [m, total[m]])), children = Object.fromEntries(selected.map(m => [m, leaf[m]]))
   return { Version: 1, World: 'fenix', SourceId: PURCHASES_SOURCE, DefinitionSha256: PURCHASES_DEFINITION, ...policies,
     From: '2026-09-10', Through: '2026-09-12', Selectors: { СтатусПартии: [], Контрагент: [], Номенклатура: [], Подразделение: [], Проект: [] }, Measures: selected,
@@ -30,7 +30,7 @@ export function purchasesResponse(measures: readonly PurchasesMeasure[] = purcha
 }
 export function emptyPurchases(): PurchasesResult {
   const result = purchasesResponse()
-  return { ...result, Code: 'original_purchases_declared_calendar_empty', Rows: [], Totals: Object.fromEntries(result.Measures.map(m => [m, '0.000'])) }
+  return { ...result, Code: 'original_purchases_declared_calendar_empty', Rows: [], Totals: Object.fromEntries(result.Measures.map(m => [m, m === 'СтоимостьОборот' || m === 'НДСОборот' ? '0.00' : '0.000'])) }
 }
 export function missingPurchases(): PurchasesResult {
   return { ...purchasesResponse(), Available: false, Code: 'original_purchases_normal_month_incomplete', NormalInputsComplete: false,

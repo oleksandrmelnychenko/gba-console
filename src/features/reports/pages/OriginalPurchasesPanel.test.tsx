@@ -14,15 +14,15 @@ vi.mock('../data/originalPurchasesExport', async importOriginal => {
 })
 const panel = (caller: string | null = 'caller1', allowed = true) => <MantineProvider env="test"><I18nProvider><OriginalPurchasesPanel capability={purchasesCapability}
   callerKey={caller} canGenerate={allowed} initialFrom="2026-09-10" initialThrough="2026-09-12" /></I18nProvider></MantineProvider>
-it('shows all five unavailable filters and generates the exact unfiltered base-only default hierarchy', async () => {
+it('shows all five unavailable filters and generates the exact unfiltered four-resource default hierarchy', async () => {
   vi.clearAllMocks(); vi.mocked(readPurchases).mockResolvedValue(purchasesResponse()); render(panel())
   for (const field of purchasesFilters) expect((screen.getByRole('combobox', { name: purchasesFilterLabels[field] }) as HTMLInputElement).disabled).toBe(true)
   fireEvent.click(screen.getByRole('button', { name: 'Сформувати' })); const table = await screen.findByRole('table')
   const row = within(table).getByRole('cell', { name: 'Номенклатура 1 · назва недоступна' }).closest('tr')
   if (!row) throw new Error('Product row is required')
-  expect(within(row).getAllByRole('cell').map(cell => cell.textContent)).toEqual(['Статус партії 1 · назва недоступна', 'Контрагент 1 · назва недоступна', 'Номенклатура 1 · назва недоступна', '1.000'])
+  expect(within(row).getAllByRole('cell').map(cell => cell.textContent)).toEqual(['Статус партії 1 · назва недоступна', 'Контрагент 1 · назва недоступна', 'Номенклатура 1 · назва недоступна', '1.000', '61.73', '12.35', '1.563'])
   for (const key of [purchasesStatus, purchasesParty, purchasesProduct]) expect(screen.queryByText(key)).toBeNull()
-  expect(vi.mocked(readPurchases).mock.calls[0][0]).toMatchObject({ Statuses: [], Counterparties: [], Products: [], Divisions: [], Projects: [], Measures: ['КоличествоБазовыхЕд'] })
+  expect(vi.mocked(readPurchases).mock.calls[0][0]).toMatchObject({ Statuses: [], Counterparties: [], Products: [], Divisions: [], Projects: [], Measures: ['КоличествоБазовыхЕд', 'СтоимостьОборот', 'НДСОборот', 'ВесОборот'] })
   for (const format of ['CSV', 'XLSX', 'PDF']) expect((screen.getByRole('button', { name: format }) as HTMLButtonElement).disabled).toBe(false)
 })
 it('missing full monthly input never becomes zero rows totals or completed files', async () => {
@@ -32,7 +32,7 @@ it('missing full monthly input never becomes zero rows totals or completed files
 })
 it('complete empty retains authenticated zero totals and completed exports', async () => {
   vi.clearAllMocks(); vi.mocked(readPurchases).mockResolvedValue(emptyPurchases()); render(panel()); fireEvent.click(screen.getByRole('button', { name: 'Сформувати' }))
-  await screen.findByText('У повністю перевіреному зрізі рядків немає.'); expect(screen.getByText('0.000')).toBeTruthy()
+  await screen.findByText('У повністю перевіреному зрізі рядків немає.'); expect(screen.getAllByText('0.000')).toHaveLength(2); expect(screen.getAllByText('0.00')).toHaveLength(2)
   expect((screen.getByRole('button', { name: 'CSV' }) as HTMLButtonElement).disabled).toBe(false)
 })
 it('selecting report-unit quantity invalidates prior rows and retains server-rounded report subtotals', async () => {
@@ -42,7 +42,7 @@ it('selecting report-unit quantity invalidates prior rows and retains server-rou
   fireEvent.click(await screen.findByRole('option', { name: 'Кількість у звітних одиницях' })); fireEvent.blur(measures)
   expect(screen.queryByRole('table')).toBeNull(); fireEvent.click(screen.getByRole('button', { name: 'Сформувати' }))
   await waitFor(() => expect(readPurchases).toHaveBeenCalledTimes(2))
-  expect(vi.mocked(readPurchases).mock.calls[1][0].Measures).toEqual(['КоличествоЕдиницОтчетов', 'КоличествоБазовыхЕд'])
+  expect(vi.mocked(readPurchases).mock.calls[1][0].Measures).toEqual(['КоличествоЕдиницОтчетов', 'КоличествоБазовыхЕд', 'СтоимостьОборот', 'НДСОборот', 'ВесОборот'])
   expect(await screen.findByRole('columnheader', { name: 'Кількість у звітних одиницях' })).toBeTruthy()
   expect(screen.getAllByText('0.667').length).toBeGreaterThan(0)
 })
