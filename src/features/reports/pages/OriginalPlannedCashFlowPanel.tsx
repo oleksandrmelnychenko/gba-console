@@ -53,6 +53,10 @@ function PlanningFilters({ current, selection, captions, busy, select }: { curre
       onChange={keys => select(field, keys)} />
   })}</>
 }
+function canSelectPlanningValues(selected: string[], offered: PlannedFlowChoices['Fields'][number] | undefined, keys: string[]) {
+  const selectedKeys = new Set(selected), offeredKeys = new Set(offered?.Choices.map(choice => choice.Value) ?? [])
+  return !(!keys.every(key => selectedKeys.has(key)) && (!offered?.Available || keys.some(key => !offeredKeys.has(key))))
+}
 function PlanningAvailability({ current, named }: { current: PlannedFlowChoices | null; named: boolean }) {
   const { t } = useI18n()
   return <>
@@ -87,9 +91,8 @@ export function OriginalPlannedCashFlowPanel({ capability, callerKey, canGenerat
   const busy = run.isLoading || load.isLoading
   function invalidate() { run.invalidate(); load.invalidate() }
   function select(field: PlannedFlowField, keys: string[]) {
-    const selectedKeys = new Set(selection[field]), offered = current?.Fields.find(item => item.Field === field)
-    const offeredKeys = new Set(offered?.Choices.map(choice => choice.Value) ?? [])
-    if (!keys.every(key => selectedKeys.has(key)) && (!offered?.Available || keys.some(key => !offeredKeys.has(key)))) return
+    const offered = current?.Fields.find(item => item.Field === field)
+    if (!canSelectPlanningValues(selection[field], offered, keys)) return
     invalidate(); setSelected({ scope, values: { ...selection, [field]: keys } })
   }
   function reset() { invalidate(); setSelected({ scope, values: emptyPlannedFlowSelection() }); setChoices(null) }
