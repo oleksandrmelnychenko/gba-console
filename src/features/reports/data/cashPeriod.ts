@@ -1,3 +1,4 @@
+import { requestWorkbookPresentation, workbookConfigurationError } from './workbookPresentation'
 import type { ReportDataset, ReportRequestBody } from '../types'
 import { groupedCashConfigurationError, groupedCashSupported, requestGroupedCashPeriod, GROUPED_CASH_FILTERS, groupedCashWorkbookSupported, CASH_WORKBOOK_ROWS } from './groupedCashPeriod'
 import { formatKyivBusinessDate } from '../../../shared/date/dateTime'
@@ -113,6 +114,8 @@ export function previousKyivDay(todayKyiv: string): string {
 /** Client guard; the server remains final authority on a complete closing-day generation. */
 export function cashPeriodConfigurationError(data: ReportRequestBody, dataset?: ReportDataset,
   todayKyiv?: string): string | null {
+  const workbookError = workbookConfigurationError(data, dataset)
+  if (workbookError) return workbookError
   const groupedError = groupedCashConfigurationError(data, dataset)
   if (groupedError) return groupedError
   const grouped = requestGroupedCashPeriod(data) != null
@@ -130,11 +133,12 @@ export function cashPeriodConfigurationError(data: ReportRequestBody, dataset?: 
   if (scope?.Version === 2 && dataset && !cashPeriodSupportsManagement(dataset))
     return 'Сервер ще не підтримує управлінські колонки руху коштів.'
   const allowed = new Set(['dataSource', 'from', 'to', 'sorted', 'selections', grouped ? 'groupedCashPeriod' : 'cashPeriod'])
-  if (Object.entries(data).some(([key, value]) => !allowed.has(key) && !(grouped && key === 'GroupedCashPeriod') && value != null))
+  if (Object.entries(data).some(([key, value]) => !allowed.has(key) && !(grouped && ['GroupedCashPeriod', 'workbookPresentation', 'WorkbookPresentation'].includes(key)) && value != null))
     return 'Для руху коштів недоступні додаткові відбори та перерахунок за поточним курсом.'
   if (!Array.isArray(data.selections) || !grouped && data.selections.length !== 0
     || !data.sorted || !(exact(data.sorted.Row?.map(item => item.type), CASH_PERIOD_ROWS)
-      || grouped && groupedCashWorkbookSupported(dataset) && exact(data.sorted.Row?.map(item => item.type), CASH_WORKBOOK_ROWS))
+      || grouped && groupedCashWorkbookSupported(dataset) && exact(data.sorted.Row?.map(item => item.type), CASH_WORKBOOK_ROWS)
+      || grouped && requestWorkbookPresentation(data) != null && exact(data.sorted.Row?.map(item => item.type), [40]))
     || !Array.isArray(data.sorted.Col) || data.sorted.Col.length !== 0
     || !exact(data.sorted.Measurements?.map(item => item.Type), grouped ? CASH_PERIOD_ALL_MEASURES : cashPeriodMeasurements(scope))
     || data.sorted.Measurements.some(item => item.IsChecked === false))

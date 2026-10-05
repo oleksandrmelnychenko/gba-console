@@ -254,6 +254,8 @@ export type ReportSourceBuyerSubtreeCapabilities = {
 }
 
 export type ReportRequestBody = {
+  workbookPresentation?: unknown
+  WorkbookPresentation?: unknown
   currentVparivanieFullScope?: unknown
   CurrentVparivanieFullScope?: unknown
   dataSource?: number
@@ -335,6 +337,7 @@ export type ReportRequestBody = {
 export type ReportDatasetField = { Type: number; Name: string; Selectable?: boolean }
 
 export type ReportDataset = {
+  workbookPresentation?: unknown
   returnsOnly?: boolean
   groupedSettlementPeriod?: unknown
   sourceCounterpartyGroups?: unknown

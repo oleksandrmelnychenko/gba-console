@@ -1,3 +1,4 @@
+import { cloneWorkbookAliases, workbookConfigurationError } from './workbookPresentation'
 import { agreementPricesConfigurationError } from './agreementPrices'
 import { agreementPriceComparisonConfigurationError, cloneAgreementPriceComparisonAliases, defaultAgreementPriceComparison } from './agreementPriceComparison'
 import { recordedSaleGrossProfitConfigurationError } from './recordedSaleGrossProfit'
@@ -209,6 +210,8 @@ export function datasetConfigurationError(data: ReportRequestBody, dataset: Repo
     return 'Поточні залишки не підтримують період або історичну дату. Шаблон із датами не застосовано; виберіть набір поточного стану заново.'
   }
   if (dataset.PeriodRequired && (!data.from || !data.to)) return 'Для цього набору даних потрібні обидві дати періоду. Налаштування не застосовано.'
+  const workbookError = workbookConfigurationError(data, dataset)
+  if (workbookError) return workbookError
   const paymentError = paymentComparisonConfigurationError(data, dataset)
   if (paymentError) return paymentError
   const settlementPeriodError = settlementPeriodConfigurationError(data, dataset)
@@ -316,7 +319,7 @@ export function datasetPresetRequest(dataset: ReportDataset, id: DatasetReportPr
   // Preserve both raw aliases, including invalid imported material, without reconstructing the tree.
   const preservedOptions = { ...(Object.hasOwn(current, 'settlementPeriod') ? { settlementPeriod: structuredClone(current.settlementPeriod) } : {}),
     ...(Object.hasOwn(current, 'SettlementPeriod') ? { SettlementPeriod: structuredClone(current.SettlementPeriod) } : {}), ...cloneGroupedSettlementAliases(current), ...clonePaymentComparisonAliases(current), ...cloneMarginComparisonAliases(current), ...cloneRateComparisonAliases(current), ...cloneReturnComparisonAliases(current), ...cloneBuyerSalesShareAliases(current), ...cloneRevenueComparisonAliases(current), ...cloneXyzAliases(current), ...(Object.hasOwn(current, 'comparison') ? { comparison: structuredClone(current.comparison) } : {}),
-    ...cloneSourceCounterpartyGroupAliases(current), ...cloneGroupedCashAliases(current),
+    ...cloneSourceCounterpartyGroupAliases(current), ...cloneGroupedCashAliases(current), ...cloneWorkbookAliases(current),
     ...(Object.hasOwn(current, 'cashPeriod') ? { cashPeriod: structuredClone(current.cashPeriod) } : {}),
     ...(Object.hasOwn(current, 'CashPeriod') ? { CashPeriod: structuredClone(current.CashPeriod) } : {}),
     ...(Object.hasOwn(current, 'Comparison') ? { Comparison: structuredClone(current.Comparison) } : {}),

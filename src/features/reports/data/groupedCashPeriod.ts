@@ -1,3 +1,4 @@
+import { workbookConfigurationError } from './workbookPresentation'
 import type { ReportDataset, ReportRequestBody } from '../types'
 import { revenueExactId } from './revenueComparison'
 
@@ -57,7 +58,9 @@ export function groupedCashConfigurationError(data: ReportRequestBody, dataset?:
   if (data.dataSource !== 40) return 'Багаторахунковий режим належить лише звіту коштів.'
   if (!groupedCashPeriod(raw)) return 'Оберіть рахунки у власній та управлінській валюті.'
   if (dataset && !groupedCashSupported(dataset)) return 'Сервер ще не підтримує звіт за кількома рахунками.'
-  const allowed = new Set(['datasource', 'from', 'to', 'sorted', 'selections', 'groupedcashperiod'])
+  const workbookError = workbookConfigurationError(data, dataset)
+  if (workbookError) return workbookError
+  const allowed = new Set(['datasource', 'from', 'to', 'sorted', 'selections', 'groupedcashperiod', 'workbookpresentation'])
   if (Object.entries(data).some(([key, value]) => !allowed.has(key.toLowerCase()) && value != null))
     return 'Рахунки не поєднуються з точним записом або іншими перетвореннями.'
   if (!Array.isArray(data.selections) || data.selections.some(selection => selection?.IsChecked !== false

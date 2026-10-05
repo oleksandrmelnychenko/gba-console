@@ -1,3 +1,4 @@
+import { readWorkbookPreview, type WorkbookPreview } from './workbookPreview'
 import { readSettlementCounterpartyAttributes, type SettlementCounterpartyAttributes } from './settlementSourceAttributes'
 import { readClientDiscountRegions, type ClientDiscountRegions } from './originalClientDiscounts'
 import { CURRENT_VPARIVANIE_PRODUCT_FIELDS, CURRENT_VPARIVANIE_FULL_NOTE } from './currentVparivanie'
@@ -40,6 +41,7 @@ export type NativeReportPreview = {
   CurrentVparivanieProducts?: CurrentVparivanieProducts
   SettlementCounterpartyAttributes?: SettlementCounterpartyAttributes
   ClientDiscountRecipientRegions?: ClientDiscountRegions
+  WorkbookPresentation?: WorkbookPreview
 }
 
 const record = (value: unknown): value is Record<string, unknown> => !!value && typeof value === 'object' && !Array.isArray(value)
@@ -163,8 +165,12 @@ export function normalizeNativeReportPreview(response: unknown, fullCurrentVpari
   if (regions && (request?.DataSource !== 'NativeOneCClientDiscounts' || preview.RowSchema.length !== 1
     || (preview.RowSchema as { Identity?: string }[])[0]?.Identity !== 'OneCDiscountClient'))
     throw new Error('Код регіону не відповідає рядку одержувача знижки.')
+  const workbookAliases = Object.keys(preview).filter(key => key.toLowerCase() === 'workbookpresentation')
+  if (workbookAliases.length > 1 || workbookAliases.some(key => key !== 'workbookPresentation'))
+    throw new Error('Сервер повернув неоднозначні додаткові поля форми.')
+  const workbook = readWorkbookPreview(preview.workbookPresentation, { ...preview, Request: request, SettlementCounterpartyAttributes: attributes } as NativeReportPreview)
   const productDisplay = normalizeCurrentVparivanieProducts(preview, request, fullCurrentVparivanie)
-  return { ...preview, Request: request, ...(productDisplay ? { CurrentVparivanieProducts: productDisplay } : {}), ...(attributes ? { SettlementCounterpartyAttributes: attributes } : {}), ...(regions ? { ClientDiscountRecipientRegions: regions } : {}) } as NativeReportPreview
+  return { ...preview, Request: request, ...(workbook ? { WorkbookPresentation: workbook } : {}), ...(productDisplay ? { CurrentVparivanieProducts: productDisplay } : {}), ...(attributes ? { SettlementCounterpartyAttributes: attributes } : {}), ...(regions ? { ClientDiscountRecipientRegions: regions } : {}) } as NativeReportPreview
 }
 
 function normalizeCurrentVparivanieProducts(preview: Record<string, unknown>, request: NativeReportPreviewRequest | null, full: boolean): CurrentVparivanieProducts | undefined {

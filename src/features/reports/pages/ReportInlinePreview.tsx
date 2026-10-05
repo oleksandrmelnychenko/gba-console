@@ -1,9 +1,10 @@
-import { settlementAttributeText } from '../data/settlementSourceAttributes'
+import { settlementAttributeText, type SettlementCounterpartyAttribute } from '../data/settlementSourceAttributes'
 import { Alert, Badge, Stack, Text } from '@mantine/core'
-import { previewScalarText, type NativeReportPreview, type NativeReportPreviewFilter, type NativeReportPreviewRequest } from '../data/nativeReportPreview'
+import { previewScalarText, type CurrentVparivanieProduct, type NativeReportPreview, type NativeReportPreviewAxis, type NativeReportPreviewFilter, type NativeReportPreviewRequest } from '../data/nativeReportPreview'
 import { CURRENT_VPARIVANIE_PRODUCT_CAPTIONS, CURRENT_VPARIVANIE_PRODUCT_FIELDS } from '../data/currentVparivanie'
 import { currentVparivanieSecondTier } from '../data/currentVparivanieColumns'
 import './report-inline-preview.css'
+import { workbookAttributeText, type WorkbookRow } from '../data/workbookPreview'
 
 export function ReportInlinePreview({ preview }: { preview: NativeReportPreview }) {
   const cells = new Map(preview.Cells.map(cell => [`${cell.RowSourceIndex}:${cell.ColumnSourceIndex}`, cell.Value]))
@@ -13,14 +14,19 @@ export function ReportInlinePreview({ preview }: { preview: NativeReportPreview 
   const attributes = preview.SettlementCounterpartyAttributes
   const attributeRows = new Map(attributes?.Rows.map(row => [row.RowSourceIndex, row]))
   const productRows = new Map(products?.Rows.map(row => [row.RowSourceIndex, row]))
+  const workbook = preview.WorkbookPresentation
+  const workbookRows = new Map(workbook?.rows.map(row => [row.rowSourceIndex, row]))
+  const workbookColumns = workbook?.fields.filter(field => field.placement === 'column') ?? []
   const rowHeaders = products ? CURRENT_VPARIVANIE_PRODUCT_CAPTIONS : [...preview.RowSchema.map((level, index) => level.Caption || `Рівень ${index + 1}`),
-    ...(attributes ? ['Основний менеджер покупця', 'Код по региону'] : []), ...(regions ? ['Код по региону'] : [])]
+    ...(attributes ? ['Основний менеджер покупця', 'Код по региону'] : []), ...(regions ? ['Код по региону'] : []),
+    ...workbookColumns.map(field => field.caption)]
   return <section className="app-section-card report-inline-preview" aria-label="Попередній перегляд звіту">
     <div className="report-inline-preview__heading">
       <Text component="h2" fw={600} size="sm">Дані звіту</Text>
       <Badge variant="light">{preview.Page.ReturnedRows} із {preview.Page.TotalVisibleRows} рядків</Badge>
     </div>
     <ReportAttribution request={preview.Request} />
+    <WorkbookMetadata workbook={workbook} />
     <Text size="xs" c="dimmed">Порожня клітинка: — · явне значення NULL: ∅. Підсумки показано лише якщо вони є в даних сервера.</Text>
     <div className="report-inline-preview__scroll" tabIndex={0} role="region" aria-label="Таблиця попереднього перегляду">
       <table>
@@ -33,11 +39,9 @@ export function ReportInlinePreview({ preview }: { preview: NativeReportPreview 
           {currentVparivanieSecondTier(column)}
         </th>)}</tr> : null}</thead>
         <tbody>{preview.Rows.map(row => <tr key={row.SourceIndex}>
-          {rowHeaders.map((header, index) => <th scope="row" key={header}>{products
-            ? productRows.get(row.SourceIndex)?.[CURRENT_VPARIVANIE_PRODUCT_FIELDS[index]] ?? '—'
-            : index < preview.RowSchema.length ? row.Values[index]?.Caption ?? '—'
-              : regions ? regionRows.get(row.SourceIndex) ?? '∅'
-                : settlementAttributeText(attributeRows.get(row.SourceIndex), index === preview.RowSchema.length ? 'manager' : 'region')}</th>)}
+          {rowHeaders.map((header, index) => <th scope="row" key={header}>{rowHeaderText({ index, row, preview,
+            products: !!products, product: productRows.get(row.SourceIndex), regions: !!regions, region: regionRows.get(row.SourceIndex),
+            attributes: attributeRows.get(row.SourceIndex), workbookRow: workbookRows.get(row.SourceIndex), workbookColumns })}</th>)}
           {preview.Columns.map(column => {
             const value = cells.get(`${row.SourceIndex}:${column.SourceIndex}`)
             return <td key={column.SourceIndex} title={value === undefined ? 'Клітинка відсутня' : value.Kind === 'null' ? 'Явне значення NULL' : undefined}>
@@ -49,6 +53,36 @@ export function ReportInlinePreview({ preview }: { preview: NativeReportPreview 
     </div>
     {preview.Page.HasMore ? <Text size="xs" c="dimmed">Показано перші {preview.Page.ReturnedRows} рядків. Повний результат доступний у Excel або PDF.</Text> : null}
   </section>
+}
+
+function WorkbookMetadata({ workbook }: { workbook: NativeReportPreview['WorkbookPresentation'] }) {
+  if (!workbook) return null
+  return <>
+    {workbook.fields.some(field => field.placement === 'retainedSetting') ? <Text size="xs" c="dimmed">
+      Збережені налаштування книги: {workbook.fields.map(field => field.caption).join('; ')}. Значення товарів на рівні день / організація не створюються.
+    </Text> : null}
+    {workbook.selection.ordering === 'MonthAscending' ? <Text size="xs">Порядок форми: місяць за зростанням.</Text> : null}
+  </>
+}
+function rowHeaderText({ index, row, preview, products, product, regions, region, attributes, workbookRow, workbookColumns }: {
+  index: number; row: NativeReportPreviewAxis; preview: NativeReportPreview; products: boolean
+  product?: CurrentVparivanieProduct; regions: boolean; region?: string | null; attributes?: SettlementCounterpartyAttribute
+  workbookRow?: WorkbookRow; workbookColumns: NonNullable<NativeReportPreview['WorkbookPresentation']>['fields']
+}): string {
+  if (products) return product?.[CURRENT_VPARIVANIE_PRODUCT_FIELDS[index]] ?? '—'
+  if (index < preview.RowSchema.length) return workbookRowCaption(row.Values[index]?.Caption ?? '—',
+    index === preview.RowSchema.length - 1, workbookRow, preview.WorkbookPresentation?.fields ?? [])
+  if (workbookColumns.length) return workbookAttributeText(workbookRow?.values
+    .find(value => value.type === workbookColumns[index - preview.RowSchema.length]?.type))
+  if (regions) return region ?? '∅'
+  return settlementAttributeText(attributes, index === preview.RowSchema.length ? 'manager' : 'region')
+}
+
+function workbookRowCaption(caption: string, last: boolean, row: WorkbookRow | undefined,
+  fields: NonNullable<NativeReportPreview['WorkbookPresentation']>['fields']): string {
+  if (!last || !row) return caption
+  return [caption, ...fields.filter(field => field.placement === 'inline')
+    .map(field => `${field.caption}: ${workbookAttributeText(row.values.find(value => value.type === field.type))}`)].join(', ')
 }
 
 // Repeated server notes/filters remain separate and ordered. Their stable text

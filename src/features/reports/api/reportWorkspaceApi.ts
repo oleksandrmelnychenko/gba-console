@@ -1,3 +1,4 @@
+import { cloneWorkbookAliases, normalizeWorkbookDataset, workbookConfigurationError } from '../data/workbookPresentation'
 import { settlementPeriodConfigurationError, isSettlementPeriodDataset } from '../data/settlementPeriod'
 import { agreementPricesConfigurationError, isAgreementPricesDataset } from '../data/agreementPrices'
 import { agreementPriceComparisonConfigurationError, cloneAgreementPriceComparisonAliases, isAgreementPriceComparisonCapability, normalizeAgreementPriceComparisonDataset } from '../data/agreementPriceComparison'
@@ -113,7 +114,8 @@ export async function getReportDatasets(signal?: AbortSignal): Promise<ReportDat
     const prices = comparison ? normalizePriceTypeSalesComparisonDataset(comparison as unknown as Record<string, unknown>) : null
     const groups = prices ? normalizeGroupedSettlementDataset(prices as unknown as Record<string, unknown>) : null
     const sourceGroups = groups ? normalizeSourceCounterpartyGroupDataset(groups as unknown as Record<string, unknown>) : null
-    return sourceGroups ? normalizeGroupedCashDataset(sourceGroups as unknown as Record<string, unknown>) : null
+    const cash = sourceGroups ? normalizeGroupedCashDataset(sourceGroups as unknown as Record<string, unknown>) : null
+    return cash ? normalizeWorkbookDataset(cash as unknown as Record<string, unknown>) : null
   }) : []
   if (!normalized.length || !normalized.every((item): item is ReportDataset => item !== null && isDataset(item))
     || new Set(normalized.map(item => item.DataSource)).size !== normalized.length) {
@@ -222,6 +224,7 @@ export function normalizeSavedTemplate(value: WireTemplate): ReportTemplate {
     ...cloneGroupedSettlementAliases(value.Data),
     ...cloneSourceCounterpartyGroupAliases(value.Data),
     ...cloneGroupedCashAliases(value.Data),
+    ...cloneWorkbookAliases(value.Data),
     ...(Object.hasOwn(value.Data, 'cashPeriod') ? { cashPeriod: value.Data.cashPeriod,
       ...(Object.hasOwn(value.Data, 'CashPeriod') ? { CashPeriod: value.Data.CashPeriod } : {}),
     } : Object.hasOwn(value.Data, 'CashPeriod') ? { cashPeriod: value.Data.CashPeriod } : {}),
@@ -269,6 +272,8 @@ export async function getServerReportTemplates(signal?: AbortSignal): Promise<Re
 
 export async function saveServerReportTemplate(template: ReportTemplate, signal?: AbortSignal): Promise<ReportTemplate> {
   const request = (template.Data.dataSource === 2 || template.Data.dataSource === 17 || template.Data.dataSource === 18 || template.Data.dataSource === 19 || template.Data.dataSource === 20 || template.Data.dataSource === 21 || template.Data.dataSource === 22 || template.Data.dataSource === 23 || template.Data.dataSource === 24 || template.Data.dataSource === 25 || template.Data.dataSource === 27 || template.Data.dataSource === 28 || template.Data.dataSource === 35 || template.Data.dataSource === 39 || template.Data.dataSource === 40 || template.Data.dataSource === 41) ? structuredClone(template) : template
+  const workbookError = workbookConfigurationError(request.Data)
+  if (workbookError) throw new Error(workbookError)
   const exactFilterError = nativeExactFiltersConfigurationError(request.Data)
   if (exactFilterError) throw new Error(exactFilterError)
   const pricesError = agreementPricesConfigurationError(request.Data)

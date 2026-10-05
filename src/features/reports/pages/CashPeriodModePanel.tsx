@@ -3,6 +3,7 @@ import type { ReportDataset, ReportGroupingItem } from '../types'
 import { cashPeriodSupportsManagement, type CashPeriodScope } from '../data/cashPeriod'
 import { groupedCashSupported, groupedCashWorkbookSupported, CASH_WORKBOOK_ROWS } from '../data/groupedCashPeriod'
 import { CashPeriodLegPicker } from './CashPeriodLegPicker'
+import { cashWorkbookPresentationSupported } from '../data/workbookPresentation'
 
 export function CashPeriodModePanel({ dataset, grouped, exact, disabled, enabled, onModeChange, onExactChange, rows, available, onRowsChange }: {
   dataset?: ReportDataset; grouped: unknown; exact: unknown; disabled: boolean; enabled: boolean
@@ -17,12 +18,14 @@ export function CashPeriodModePanel({ dataset, grouped, exact, disabled, enabled
         value={multiple ? 'accounts' : 'account'} data={[
           { value: 'accounts', label: 'Усі / вибрані рахунки' }, { value: 'account', label: 'Один валютний запис' },
         ]} onChange={value => onModeChange(value === 'accounts')} />
-      {multiple && groupedCashWorkbookSupported(dataset) ? <Select mt="sm" label="Форма руху коштів" disabled={disabled}
+      {multiple && (groupedCashWorkbookSupported(dataset) || cashWorkbookPresentationSupported(dataset)) ? <Select mt="sm" label="Форма руху коштів" disabled={disabled}
         allowDeselect={false} value={rows.map(row => row.type).join(',')} data={[
           { value: '43,40,42,41', label: 'Організація / Рахунок / Запис / Валюта' },
           { value: '40,44,43', label: 'Рахунок / Тип / Організація' },
+          ...(cashWorkbookPresentationSupported(dataset) ? [{ value: '40', label: 'Рахунок / каса з додатковими полями' }] : []),
         ]} onChange={value => {
-          const types = value === '40,44,43' ? CASH_WORKBOOK_ROWS : value === '43,40,42,41' ? [43, 40, 42, 41] : null
+          const types = value === '40' && cashWorkbookPresentationSupported(dataset) ? [40]
+            : value === '40,44,43' ? CASH_WORKBOOK_ROWS : value === '43,40,42,41' ? [43, 40, 42, 41] : null
           if (!types) return
           const next = types.flatMap(type => available.filter(row => row.type === type))
           if (next.length === types.length) onRowsChange(next)

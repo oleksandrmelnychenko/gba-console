@@ -1,3 +1,5 @@
+import { workbookConfigurationError } from '../data/workbookPresentation'
+import { bindWorkbookPreview } from '../data/workbookPreview'
 import { settlementAttributeKey } from '../data/settlementSourceAttributes'
 import { settlementPeriodConfigurationError } from '../data/settlementPeriod'
 import { agreementPricesConfigurationError } from '../data/agreementPrices'
@@ -59,6 +61,7 @@ export async function previewStockReport(body: ReportRequestBody): Promise<{ res
     body: request,
   })
   const preview = normalizeNativeReportPreview(response, currentVparivanieFullScope(request))
+  bindWorkbookPreview(request, preview)
   if (request.dataSource === 39 && (preview.Request?.DataSource !== 'NativeCurrentVparivanie' || !preview.CurrentVparivanieProducts))
     throw new Error('Сервер повернув результат іншого набору даних замість поточної матриці «Впарювання».')
   if (request.dataSource === 41 && preview.Request?.DataSource !== 'NativeSettlementPeriod')
@@ -75,6 +78,8 @@ export function validateStockReportRequest(body: ReportRequestBody): void {
 
 function prepareStockReportRequest(body: ReportRequestBody): ReportRequestBody {
   const request = (body.dataSource === 2 || body.dataSource === 17 || body.dataSource === 18 || body.dataSource === 19 || body.dataSource === 20 || body.dataSource === 21 || body.dataSource === 22 || body.dataSource === 23 || body.dataSource === 24 || body.dataSource === 25 || body.dataSource === 27 || body.dataSource === 28 || body.dataSource === 35 || body.dataSource === 38 || body.dataSource === 39 || body.dataSource === 40 || body.dataSource === 41) ? structuredClone(body) : body
+  const workbookError = workbookConfigurationError(request)
+  if (workbookError) throw new Error(workbookError)
   const exactFilterError = nativeExactFiltersConfigurationError(request)
   if (exactFilterError) throw new Error(exactFilterError)
   const pricesError = agreementPricesConfigurationError(request)

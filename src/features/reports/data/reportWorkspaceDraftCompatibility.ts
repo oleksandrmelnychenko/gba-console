@@ -1,10 +1,11 @@
+import { workbookConfigurationError } from './workbookPresentation'
 import type { ReportDataset } from '../types'
 import { getNativeReportProfile, hasFixedReportAxes } from './nativeReportProfiles'
 import type { ReportWorkspaceSnapshot } from './reportWorkspaceDraft'
 
 const options = ['comparison', 'xyz', 'paymentComparison', 'marginComparison', 'rateComparison',
   'returnComparison', 'buyerSalesShare', 'revenueComparison', 'ordering', 'filterExpression',
-  'abcClassification', 'hideZero', 'threshold', 'topGroups', 'priceTypeSalesComparison']
+  'abcClassification', 'hideZero', 'threshold', 'topGroups', 'priceTypeSalesComparison', 'workbookPresentation']
 
 /** Recovery checks what the current editor can represent, not whether an unfinished report can run. */
 export function reportWorkspaceDraftCompatibility(snapshot: ReportWorkspaceSnapshot, dataset?: ReportDataset): string | null {
@@ -16,6 +17,9 @@ export function reportWorkspaceDraftCompatibility(snapshot: ReportWorkspaceSnaps
   if (dataset.PeriodSupported === false && (data.from || data.to)) {
     return 'Чернетка містить період, який цей набір даних не підтримує. Чернетка збережена без змін.'
   }
+  const workbookError = workbookConfigurationError(data, dataset)
+  if (workbookError) return `${workbookError} Чернетка збережена без змін.`
+  const presented = data.workbookPresentation != null || data.WorkbookPresentation != null
   const groupings = new Set(dataset.Groupings.map(field => field.Type))
   const measures = new Set(dataset.Measurements.map(field => field.Type))
   if ([...data.sorted.Row, ...data.sorted.Col].some(field => !groupings.has(field.type))
@@ -25,7 +29,7 @@ export function reportWorkspaceDraftCompatibility(snapshot: ReportWorkspaceSnaps
   }
   if ((data.dataSource === 13 && data.sorted.Col.length > 0)
     || (hasFixedReportAxes(dataset.DataSource) && ((dataset.DataSource === 39 ? data.sorted.Col.map(field => field.type).join(',') !== '74,75' : data.sorted.Col.length > 0)
-      || JSON.stringify(data.sorted.Row.map(field => field.type)) !== JSON.stringify(getNativeReportProfile(dataset.DataSource)?.rowGroupings)))
+      || !presented && JSON.stringify(data.sorted.Row.map(field => field.type)) !== JSON.stringify(getNativeReportProfile(dataset.DataSource)?.rowGroupings)))
     || (data.dataSource === 19 && data.selections.length > 0)) {
     return 'Структура чернетки несумісна з цим набором даних. Чернетка збережена без змін.'
   }

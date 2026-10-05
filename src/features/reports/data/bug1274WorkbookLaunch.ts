@@ -1,4 +1,5 @@
 import type { ReportDataset, ReportRequestBody } from '../types'
+import { cashWorkbookPresentationSupported, readWorkbookCapability, requestWorkbookPresentation } from './workbookPresentation'
 import { CASH_WORKBOOK_ROWS, groupedCashPeriod, groupedCashSupported, groupedCashWorkbookSupported, requestGroupedCashPeriod } from './groupedCashPeriod'
 import { cashPeriodSupportsManagement, isCashPeriodDataset } from './cashPeriod'
 import { isSettlementPeriodDataset } from './settlementPeriod'
@@ -7,7 +8,7 @@ import { DAY_ORGANIZATION_GOODS_KIND_ID, DAY_ORGANIZATION_SAVED_ORGANIZATION_IDS
   isDayOrganizationGrossProfitDataset } from './dayOrganizationGrossProfit'
 import { isSupplierBatchGrossProfitDataset } from './supplierBatchGrossProfit'
 import { isSupplierBasisCapability } from './supplierBasis'
-import { groupedSettlementSupportsSuppliers, groupedWorkbookRequest, isGroupedSettlementDataset } from './groupedSettlementPeriod'
+import { groupedSettlementPeriod, requestGroupedSettlementPeriod, groupedSettlementSupportsSuppliers, groupedWorkbookRequest, isGroupedSettlementDataset } from './groupedSettlementPeriod'
 import { datasetGroupings } from './reportDatasets'
 import { isCurrentVparivanieDataset } from './currentVparivanie'
 import { FENIX_BUYERS_ROOT_ID, isProductClassificationCapability, isSourceBuyerSubtreeCapability,
@@ -124,6 +125,8 @@ function dayWorkbookRequest(request: ReportRequestBody, launch: WorkbookLaunch):
 export function bug1274WorkbookRequest(request: ReportRequestBody, launch?: WorkbookLaunch): ReportRequestBody {
   if (!launch || launch.dataset.DataSource !== request.dataSource) return request
   const selected = groupedWorkbookRequest(dayWorkbookRequest(request, launch), launch.currencyAxis)
+  const presented = presentationWorkbookRequest(selected, launch)
+  if (presented !== selected) return presented
   if (launch.fileName !== 'Ведомость по денежным средствам.xls' || request.dataSource !== 40
     || !groupedCashWorkbookSupported(launch.dataset) || !groupedCashPeriod(requestGroupedCashPeriod(selected))
     || !Array.isArray(launch.dataset.Groupings)) return selected
@@ -135,4 +138,21 @@ export function bug1274WorkbookRequest(request: ReportRequestBody, launch?: Work
   const result = structuredClone(selected)
   result.sorted.Row = CASH_WORKBOOK_ROWS.flatMap(type => groupings.filter(row => row.type === type))
   return result
+}
+
+function presentationWorkbookRequest(request: ReportRequestBody, launch: WorkbookLaunch): ReportRequestBody {
+  if (requestWorkbookPresentation(request) !== undefined || !readWorkbookCapability(launch.dataset.workbookPresentation, request.dataSource ?? -1)) return request
+  if (launch.fileName === 'ВП.xls' && request.dataSource === 35 && requestDayOrganizationBasis(request) === 0)
+    return { ...structuredClone(request), workbookPresentation: { version: 1, additionalFields: [2, 3], ordering: 'MonthAscending' } }
+  if (request.dataSource === 41 && isGroupedSettlementDataset(launch.dataset)
+    && groupedSettlementPeriod(requestGroupedSettlementPeriod(request))
+    && (launch.fileName === 'Взаємороз всі.xls' || launch.fileName === 'ДБіторка.xls'))
+    return { ...structuredClone(request), workbookPresentation: { version: 1,
+      additionalFields: launch.fileName === 'ДБіторка.xls' || groupedSettlementPeriod(requestGroupedSettlementPeriod(request))?.SourceWorld !== 'Fenix'
+        ? [30] : [30, 60, 61], ordering: null } }
+  if (launch.fileName !== 'Ведомость по денежным средствам.xls' || !cashWorkbookPresentationSupported(launch.dataset)
+    || !groupedCashPeriod(requestGroupedCashPeriod(request))) return request
+  const rows = datasetGroupings(launch.dataset).filter(row => row.type === 40)
+  return rows.length === 1 ? { ...structuredClone(request), sorted: { ...structuredClone(request.sorted), Row: rows },
+    workbookPresentation: { version: 1, additionalFields: [30, 33], ordering: null } } : request
 }

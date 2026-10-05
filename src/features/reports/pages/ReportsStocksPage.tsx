@@ -1,3 +1,5 @@
+import { requestWorkbookPresentation, type WorkbookSelection } from '../data/workbookPresentation'
+import { WorkbookPresentationPanel } from './WorkbookPresentationPanel'
 import './stocks-workspace.css'
 import PaymentComparisonPanel from './PaymentComparisonPanel'
 import { clonePaymentComparisonValue, paymentComparisonSummary } from '../data/paymentComparison'
@@ -336,6 +338,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode }: { ownerId: string 
   const [sourceCounterpartyGroups, setSourceCounterpartyGroups] = useValueState<unknown>(undefined)
   const [groupedCashPeriod, setGroupedCashPeriod] = useValueState<unknown>(undefined)
   const [cashPeriod, setCashPeriod] = useValueState<unknown>(undefined)
+  const [workbookPresentation, setWorkbookPresentation] = useValueState<unknown>(undefined)
   const [oneCSpecialSettings, setOneCSpecialSettings] = useValueState<unknown>(undefined)
   const [oneCScope, setOneCScope] = useValueState<OneCTurnoverFilters | undefined>(undefined)
   const [oneCReportOpen, setOneCReportOpen] = useState(false)
@@ -402,8 +405,8 @@ function ReportsStocksWorkspace({ ownerId, constructorMode }: { ownerId: string 
   // period on a pause, and only once it is a period the server can answer for.
   const hasLookupPeriod = !getPeriodError(debouncedFrom, debouncedTo, maxDate, t)
   const reportBody = useMemo<ReportRequestBody>(
-    () => ({ ...buildReportBuilderRequest({ dataSource, returnsOnly, comparison, xyz, revenueComparison, buyerSalesShare, returnComparison, paymentComparison, marginComparison, rateComparison, productClassification, sourceOrganizations, sourceBuyerSubtree, dayOrganizationBasis, supplierBasis, supplierSourceWorld, priceTypeSalesComparison, agreementPriceComparison, settlementPeriod, groupedSettlementPeriod, sourceCounterpartyGroups, cashPeriod, groupedCashPeriod, oneCSpecialSettings, oneC: oneCScope, from, to, ordering, filterExpression, topGroups, threshold, hideZero, abcClassification, valuationClientAgreementId, rowGroups, colGroups, measurements, selections }), ...(dataSource === 39 && fullCurrentVparivanie ? { currentVparivanieFullScope: true } : {}) }),
-    [fullCurrentVparivanie, abcClassification, agreementPriceComparison, settlementPeriod, groupedSettlementPeriod, sourceCounterpartyGroups, cashPeriod, groupedCashPeriod, colGroups, comparison, xyz, revenueComparison, buyerSalesShare, returnComparison, paymentComparison, marginComparison, rateComparison, productClassification, sourceOrganizations, sourceBuyerSubtree, dayOrganizationBasis, supplierBasis, supplierSourceWorld, returnsOnly, priceTypeSalesComparison, oneCSpecialSettings, oneCScope, dataSource, filterExpression, from, hideZero, measurements, ordering, rowGroups, selections, to, topGroups, threshold, valuationClientAgreementId],
+    () => ({ ...buildReportBuilderRequest({ dataSource, returnsOnly, comparison, xyz, revenueComparison, buyerSalesShare, returnComparison, paymentComparison, marginComparison, rateComparison, productClassification, sourceOrganizations, sourceBuyerSubtree, dayOrganizationBasis, supplierBasis, supplierSourceWorld, priceTypeSalesComparison, agreementPriceComparison, settlementPeriod, groupedSettlementPeriod, sourceCounterpartyGroups, cashPeriod, groupedCashPeriod, workbookPresentation, oneCSpecialSettings, oneC: oneCScope, from, to, ordering, filterExpression, topGroups, threshold, hideZero, abcClassification, valuationClientAgreementId, rowGroups, colGroups, measurements, selections }), ...(dataSource === 39 && fullCurrentVparivanie ? { currentVparivanieFullScope: true } : {}) }),
+    [fullCurrentVparivanie, abcClassification, agreementPriceComparison, settlementPeriod, groupedSettlementPeriod, sourceCounterpartyGroups, cashPeriod, groupedCashPeriod, workbookPresentation, colGroups, comparison, xyz, revenueComparison, buyerSalesShare, returnComparison, paymentComparison, marginComparison, rateComparison, productClassification, sourceOrganizations, sourceBuyerSubtree, dayOrganizationBasis, supplierBasis, supplierSourceWorld, returnsOnly, priceTypeSalesComparison, oneCSpecialSettings, oneCScope, dataSource, filterExpression, from, hideZero, measurements, ordering, rowGroups, selections, to, topGroups, threshold, valuationClientAgreementId],
   )
   const { result, preview, lastRun, error, isLoading, downloadModalOpened, update: updateRun, begin: beginRun, clear: clearRun } = useReportRunState<ReportRunOutcome>(JSON.stringify({
     request: reportBody,
@@ -445,6 +448,16 @@ function ReportsStocksWorkspace({ ownerId, constructorMode }: { ownerId: string 
   }), [activeTemplate, previousPeriod, selectedMeasurements, templateBody, templateName])
   const workspaceDraft = useReportWorkspaceDraft({ ownerId, enabled: canGenerateReport,
     ready: datasetStorage.loaded && !datasetStorage.error, snapshot: draftSnapshot })
+  function changeWorkbookPresentation(value: WorkbookSelection | undefined) {
+    setWorkbookPresentation(value)
+    if (dataSource === 40) setRowGroups((value ? [40] : [43, 40, 42, 41])
+      .flatMap(type => groupingOptions.filter(row => row.type === type)))
+  }
+  function changeCashWorkbookRows(rows: ReportGroupingItem[]) {
+    setRowGroups(rows)
+    setWorkbookPresentation(rows.map(row => row.type).join(',') === '40'
+      ? workbookPresentation ?? { version: 1, additionalFields: [], ordering: null } : undefined)
+  }
   const configurationError = datasetStorage.error ?? (!datasetStorage.loaded ? t('Завантаження наборів даних…') : datasetConfigurationError(templateBody, dataset))
     ?? (requiresValuationAgreement(dataSource) && valuation.agreement?.Id !== valuationClientAgreementId ? 'Підтвердіть доступний договір оцінки.' : null)
   const checkedMeasurements = reportBody.sorted.Measurements.length
@@ -571,6 +584,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode }: { ownerId: string 
     setSourceCounterpartyGroups(undefined)
     setCashPeriod(undefined)
     setGroupedCashPeriod(snapshotDefaults?.groupedCashPeriod)
+    setWorkbookPresentation(requestWorkbookPresentation(snapshotDefaults ?? {}))
     setOneCSpecialSettings(snapshotDefaults && oneCSpecialSpecification(dataSource)
       ? requestOneCSpecialSettings(snapshotDefaults, dataSource) : undefined)
     setOneCScope(snapshotDefaults?.oneC)
@@ -664,6 +678,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode }: { ownerId: string 
     setSourceCounterpartyGroups(structuredClone(requestSourceCounterpartyGroups(data)))
     setCashPeriod(structuredClone(data.cashPeriod))
     setGroupedCashPeriod(structuredClone(requestGroupedCashPeriod(data)))
+    setWorkbookPresentation(structuredClone(requestWorkbookPresentation(data)))
     setOneCSpecialSettings(structuredClone(requestOneCSpecialSettings(data, nextDataset.DataSource)))
     setOneCScope(structuredClone(data.oneC))
     groupingOrdering.loadOrdering(requestOrdering(data))
@@ -732,6 +747,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode }: { ownerId: string 
     setSourceCounterpartyGroups(structuredClone(requestSourceCounterpartyGroups(data)))
     setCashPeriod(structuredClone(data.cashPeriod))
     setGroupedCashPeriod(structuredClone(requestGroupedCashPeriod(data)))
+    setWorkbookPresentation(structuredClone(requestWorkbookPresentation(data)))
     setOneCSpecialSettings(structuredClone(requestOneCSpecialSettings(data, nextDataset.DataSource)))
     setOneCScope(structuredClone(data.oneC))
     setTopGroups(structuredClone(requestTopGroups(data)))
@@ -966,18 +982,20 @@ function ReportsStocksWorkspace({ ownerId, constructorMode }: { ownerId: string 
         oneCSpecialReportPanel={<OneCSpecialReportPanel dataSource={dataSource} dataset={dataset} value={oneCSpecialSettings ??
           (oneCSpecialSpecification(dataSource) ? defaultOneCSpecialSettings(dataSource, dataset)[oneCSpecialSpecification(dataSource)!.key] : undefined)}
           disabled={comparisonSettingsDisabled} onChange={setOneCSpecialSettings} />}
-        classificationPanel={dataSource === 39 ? <CurrentVparivanieRegionalPanel dataset={dataset ?? null} request={reportBody}
+        classificationPanel={<><WorkbookPresentationPanel dataset={dataset} request={reportBody} value={workbookPresentation}
+          disabled={comparisonSettingsDisabled} onChange={changeWorkbookPresentation} />
+          {dataSource === 39 ? <CurrentVparivanieRegionalPanel dataset={dataset ?? null} request={reportBody}
           enabled={canGenerateReport} disabled={comparisonSettingsDisabled}
           fullScope={fullCurrentVparivanie} onFullScopeChange={setFullCurrentVparivanie} /> : dataSource === 41 || dataSource === 40 ? <CashSettlementSettingsPanels dataSource={dataSource}
           cash={{ dataset, grouped: groupedCashPeriod, exact: cashPeriod, rows: rowGroups,
-            available: groupingOptions, onRowsChange: setRowGroups, disabled: comparisonSettingsDisabled, enabled: canGenerateReport }}
+            available: groupingOptions, onRowsChange: changeCashWorkbookRows, disabled: comparisonSettingsDisabled, enabled: canGenerateReport }}
           settlement={{ dataset, grouped: groupedSettlementPeriod, exact: settlementPeriod,
             buyer: sourceBuyerSubtree, groups: sourceCounterpartyGroups, rows: rowGroups,
             available: groupingOptions, from, to, disabled: comparisonSettingsDisabled, enabled: canGenerateReport,
             onModeChange: changeSettlementMode, onGroupedChange: setGroupedSettlementPeriod,
             onExactChange: setSettlementPeriod, onBuyerChange: setSourceBuyerSubtree,
             onRowsChange: setRowGroups, onGroupsChange: setSourceCounterpartyGroups }}
-          onGroupedCashChange={setGroupedCashPeriod} onExactCashChange={setCashPeriod}
+          onGroupedCashChange={value => { setWorkbookPresentation(undefined); setGroupedCashPeriod(value) }} onExactCashChange={setCashPeriod}
           onCashMeasurementsChange={setMeasurements} onClearCashFilters={() => filterLogic.load([])} /> : dataSource === 35 ? <Card className="app-section-card" withBorder radius="md" padding="md" style={{ minWidth: 0 }}>
           <DayOrganizationBasisSelect capability={dataset?.dayOrganizationBasis} value={dayOrganizationBasis}
             disabled={comparisonSettingsDisabled} onChange={setDayOrganizationBasis} />
@@ -1050,7 +1068,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode }: { ownerId: string 
             </> : null}
             {supplierSourceWorld !== undefined && supplierSourceWorld !== 0 && supplierSourceWorld !== 1
               ? <Text size="xs" c="orange">{t('Шаблон містить невідому базу джерела; виберіть Fenix або AMG.')}</Text> : null}
-          </Card> : null}
+          </Card> : null}</>}
         dataSource={dataSource}
         rateComparisonPanel={<RateComparisonPanel dataSource={dataSource} value={rateComparison} disabled={comparisonSettingsDisabled} onChange={setRateComparison} />}
         paymentComparisonPanel={<PaymentComparisonPanel dataSource={dataSource} value={paymentComparison} disabled={comparisonSettingsDisabled} onChange={setPaymentComparison} />}

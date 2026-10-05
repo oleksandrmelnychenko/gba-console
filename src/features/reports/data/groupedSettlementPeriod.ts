@@ -1,3 +1,4 @@
+import { workbookConfigurationError } from './workbookPresentation'
 import type { ReportDataset, ReportFilterExpressionCapabilities, ReportGroupingItem, ReportRequestBody, ReportSourceBuyerSubtree } from '../types'
 import { formatKyivBusinessDate } from '../../../shared/date/dateTime'
 import { EXACT_ONE_C_BUYER_ROOT_ID } from './oneCTurnoverReport'
@@ -173,7 +174,9 @@ export function groupedSettlementConfigurationError(data: ReportRequestBody, dat
   if (dataset && !isGroupedSettlementDataset(dataset)) return 'Сервер не підтвердив груповий звіт взаєморозрахунків.'
   const groupsError = sourceCounterpartyGroupsConfigurationError(data, selector.SourceWorld, dataset)
   if (groupsError) return groupsError
-  const allowed = new Set(['datasource', 'from', 'to', 'sorted', 'selections', 'groupedsettlementperiod', 'filterexpression', 'sourcebuyersubtree', 'sourcecounterpartygroups'])
+  const workbookError = workbookConfigurationError(data, dataset)
+  if (workbookError) return workbookError
+  const allowed = new Set(['datasource', 'from', 'to', 'sorted', 'selections', 'groupedsettlementperiod', 'filterexpression', 'sourcebuyersubtree', 'sourcecounterpartygroups', 'workbookpresentation'])
   if (Object.entries(data).some(([key, value]) => !allowed.has(key.toLowerCase()) && value != null))
     return 'Групові взаєморозрахунки не поєднуються з точним договором, перерахунком валют або іншими перетвореннями.'
   const dayError = periodError(data.from, data.to, today)
