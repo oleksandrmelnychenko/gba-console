@@ -8,7 +8,7 @@ export function useWorkbookPresentation({ dataSource, groupingOptions, setRowGro
   setRowGroups: (rows: ReportGroupingItem[]) => void; setGroupedCashPeriod: (value: unknown) => void
 }) {
   const [value, setValue] = useValueState<unknown>(undefined)
-  function reset(defaults: ReportRequestBody | undefined) {
+  function reset(defaults: ReportRequestBody | undefined | null) {
     setValue(requestWorkbookPresentation(defaults ?? {}))
   }
   function restore(request: ReportRequestBody) {
