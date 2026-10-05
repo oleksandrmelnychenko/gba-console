@@ -93,7 +93,7 @@ it('cancels an overlapping names refresh before observing the same saved date an
   expect(oldSignal?.aborted).toBe(true); expect(button('Сформувати').disabled).toBe(true)
   const savedRequest = vi.mocked(readAmgDiscountAnalysisChoices).mock.calls[1][0]
   expect(savedRequest.Through).toBe('2026-09-30'); expect(savedRequest.Counterparties).toEqual([amgParty]); expect(savedRequest.Products).toEqual([amgProduct]); expect(savedRequest.ChoicesWitnessSha256).toBeUndefined()
-  const savedNames = { ...amgNames(), RequestedCounterparties: [amgParty], RequestedProducts: [amgProduct], ChoicesWitnessSha256: 'D'.repeat(64), ResultSha256: 'E'.repeat(64) }
+  const savedNames = { ...amgNames(), RequestedCounterparties: [amgParty], RequestedProducts: [amgProduct], ChoicesWitnessSha256: 'd'.repeat(64), ResultSha256: 'e'.repeat(64) }
   await act(async () => { finishSavedNames(savedNames) }); await waitFor(() => expect(button('Сформувати').disabled).toBe(false))
   await act(async () => { finishOldNames(amgNames()) }); expect(button('Сформувати').disabled).toBe(false)
   fireEvent.click(button('Сформувати')); await screen.findByRole('table')
