@@ -73,12 +73,13 @@ function zeroTotals(value: ClientValues): boolean {
 }
 function validRows(rows: unknown[], selection: ClientSelection, choices: Record<ClientField, ClientChoice[]>): boolean {
   const maps = Object.fromEntries(clientFields.map(field => [field, new Map(choices[field].map(item => [item.Key, item]))])) as Record<ClientField, Map<string, ClientChoice>>
+  const selected = Object.fromEntries(clientFields.map(field => [field, new Set(selection[field])])) as Record<ClientField, Set<string>>
   let count = 0
   function level(items: unknown[], depth: number): boolean {
     const field = clientFields[depth], keys = new Set<string>()
     for (const item of items) {
       if (++count > 1_500_000 || !wireObject(item) || item.Field !== field || !choice(item, field) || keys.has(item.Key) || !values(item.Values)
-        || !Array.isArray(item.Children) || selection[field].length && !selection[field].includes(item.Key)) return false
+        || !Array.isArray(item.Children) || selected[field].size && !selected[field].has(item.Key)) return false
       keys.add(item.Key)
       const named = maps[field].get(item.Key)
       if (!named || named.Caption !== item.Caption || named.CaptionAvailable !== item.CaptionAvailable) return false

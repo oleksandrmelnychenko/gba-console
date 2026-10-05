@@ -46,8 +46,8 @@ function selectedCaptions(previous: { scope: ClientScope; result: ClientResult; 
   }))
 }
 function options(current: ClientResult | null, field: ClientField, selection: ClientSelection, captions: CaptionCache) {
-  const fresh = (current?.Choices[field] ?? []).filter(choice => choice.CaptionAvailable), keys = new Set(fresh.map(choice => choice.Key))
-  const retained = (captions[field] ?? []).filter(choice => selection[field].includes(choice.Key) && !keys.has(choice.Key))
+  const fresh = (current?.Choices[field] ?? []).filter(choice => choice.CaptionAvailable), keys = new Set(fresh.map(choice => choice.Key)), selected = new Set(selection[field])
+  const retained = (captions[field] ?? []).filter(choice => selected.has(choice.Key) && !keys.has(choice.Key))
   return [...fresh.map(choice => ({ value: choice.Key, label: choice.Caption, disabled: !clientFieldSelectable(current, field) })), ...retained.map(choice => ({ value: choice.Key, label: choice.Caption, disabled: true }))]
 }
 function ClientFilters({ current, selection, captions, busy, select }: { current: ClientResult | null; selection: ClientSelection; captions: CaptionCache; busy: boolean;
@@ -71,8 +71,9 @@ export function OriginalClientReportPanel({ capability, callerKey, canGenerate, 
   const run = useOriginalDefaultPreview(key, allowed && named, error, signal => readClientReport(clientRequest(capability, from, through, selection), signal),
     result => setChoices(previous => ({ scope, result, captions: selectedCaptions(previous, scope, selection) })))
   function select(field: ClientField, keys: string[]) {
-    const removing = keys.every(key => selection[field].includes(key))
-    if (!removing && (!clientFieldSelectable(current, field) || keys.some(key => !current?.Choices[field]?.some(choice => choice.Key === key)))) return
+    const selectedKeys = new Set(selection[field]), offeredKeys = new Set((current?.Choices[field] ?? []).map(choice => choice.Key))
+    const removing = keys.every(key => selectedKeys.has(key))
+    if (!removing && (!clientFieldSelectable(current, field) || keys.some(key => !offeredKeys.has(key)))) return
     run.invalidate(); setSelected({ scope, values: { ...selection, [field]: keys } })
   }
   function reset() { run.invalidate(); setSelected({ scope, values: emptyClientSelection() }); setChoices(null) }

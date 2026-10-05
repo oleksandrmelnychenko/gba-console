@@ -7,6 +7,9 @@ export function OriginalDefaultReportOutput({ sheet, filename }: { sheet: Origin
   const { t } = useI18n(), [page, setPage] = useState(0), [busy, setBusy] = useState(false), [error, setError] = useState<string | null>(null)
   const alive = useRef(false)
   useEffect(() => { alive.current = true; return () => { alive.current = false } }, [])
+  function releaseExport() {
+    if (alive.current) { setBusy(false) }
+  }
   const current = Math.min(page, Math.max(0, Math.ceil(sheet.lines.length / 50) - 1)), offset = current * 50, exportError = defaultSheetExportError(sheet)
   async function exportFile(format: 'csv' | 'xlsx' | 'pdf') {
     if (busy || exportError) return
@@ -18,7 +21,7 @@ export function OriginalDefaultReportOutput({ sheet, filename }: { sheet: Origin
       link.href = url; link.download = `${filename}-${sheet.from}-${sheet.through}.${format}`
       document.body.append(link); link.click(); link.remove(); window.setTimeout(() => URL.revokeObjectURL(url), 30_000)
     } catch (failure) { if (alive.current) setError(failure instanceof Error ? failure.message : 'Не вдалося сформувати файл.') }
-    finally { if (alive.current) setBusy(false) }
+    finally { releaseExport() }
   }
   return <Stack gap="sm"><Group>{(['csv', 'xlsx', 'pdf'] as const).map(format => <Button key={format} variant="light" disabled={busy || !!exportError}
     onClick={() => { void exportFile(format) }}>{format.toUpperCase()}</Button>)}</Group>
