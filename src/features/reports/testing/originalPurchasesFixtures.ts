@@ -1,4 +1,4 @@
-import { PURCHASES_DEFINITION, PURCHASES_SOURCE, purchasesDefaultMeasures, purchasesFilters, purchasesMeasures, purchasesRows, type PurchasesCapability, type PurchasesMeasure, type PurchasesPolicies, type PurchasesResult, type PurchasesRow } from '../data/originalPurchases'
+import { PURCHASES_BASE_UNIT_FIELD, PURCHASES_DEFINITION, PURCHASES_SOURCE, purchasesDefaultAdditionalFieldSettings, purchasesDefaultMeasures, purchasesFilters, purchasesMeasures, purchasesRows, type PurchasesCapability, type PurchasesMeasure, type PurchasesPolicies, type PurchasesResult, type PurchasesRow } from '../data/originalPurchases'
 const policies: PurchasesPolicies = {
   DatePolicy: 'DeclaredInclusiveBusinessDaysThroughLastWholeSecond', QuantityPolicy: 'SignedStoredPurchasesQuantityWithObservedProductOwnedUnitCoefficients',
   ZeroRowPolicy: 'RetainContributingNormalRowsIncludingCancellationNativeVirtualSuppressionUnverified', HumanChoicesAvailable: false,
@@ -12,6 +12,7 @@ export const purchasesCapability: PurchasesCapability = {
   QueryPolicy: 'OwnRegisterUniversalReportDynamicTurnoversRegistrarPeriodicity', DefaultScopeCode: 'original_purchases_declared_calendar_v1',
   Executable: true, SourceSyncEnabled: false, NormalInputsReadinessVerified: false, DefaultRows: [...purchasesRows], DefaultColumns: [],
   Filters: [...purchasesFilters], Measures: [...purchasesMeasures], DefaultMeasures: [...purchasesDefaultMeasures],
+  DefaultAdditionalFields: [PURCHASES_BASE_UNIT_FIELD], DefaultAdditionalFieldSettings: structuredClone([...purchasesDefaultAdditionalFieldSettings]),
 }
 export const purchasesStatus = 'A'.repeat(32), purchasesParty = 'B'.repeat(32), purchasesProduct = 'C'.repeat(32), purchasesSecondProduct = 'D'.repeat(32)
 export function purchasesResponse(measures: readonly PurchasesMeasure[] = purchasesDefaultMeasures): PurchasesResult {
@@ -23,9 +24,12 @@ export function purchasesResponse(measures: readonly PurchasesMeasure[] = purcha
     From: '2026-09-10', Through: '2026-09-12', Selectors: { СтатусПартии: [], Контрагент: [], Номенклатура: [], Подразделение: [], Проект: [] }, Measures: selected,
     Available: true, Code: 'original_purchases_declared_calendar_complete', NormalInputsComplete: true, OurSnapshotVerified: true,
     InputWitnessSha256: 'a'.repeat(64), ResultSha256: 'b'.repeat(64), Totals: { ...values }, Dependency: null,
+    AdditionalFieldSettings: structuredClone([...purchasesDefaultAdditionalFieldSettings]), BaseMeasurementUnitWitnessSha256: null,
     Rows: [{ Field: 'СтатусПартии', Key: purchasesStatus, Caption: 'Назва недоступна', CaptionAvailable: false, Values: { ...values },
       Children: [{ Field: 'Контрагент', Key: purchasesParty, Caption: 'Назва недоступна', CaptionAvailable: false, Values: { ...values },
-        Children: [purchasesProduct, purchasesSecondProduct].map<PurchasesRow>(Key => ({ Field: 'Номенклатура', Key, Caption: 'Назва недоступна', CaptionAvailable: false, Values: { ...children }, Children: [] })) }] }],
+        Children: [purchasesProduct, purchasesSecondProduct].map<PurchasesRow>(Key => ({ Field: 'Номенклатура', Key, Caption: 'Назва недоступна', CaptionAvailable: false, Values: { ...children }, Children: [],
+          AdditionalFields: { [PURCHASES_BASE_UNIT_FIELD]: { Field: PURCHASES_BASE_UNIT_FIELD, Type: '08', TableReference: '0000003D', Key: null, Caption: null, CaptionAvailable: false,
+            Code: 'base_product_publication_unavailable', Deleted: null, NativePresentationVerified: false, SourceParityVerified: false } } })) }] }],
   }
 }
 export function emptyPurchases(): PurchasesResult {
@@ -34,5 +38,6 @@ export function emptyPurchases(): PurchasesResult {
 }
 export function missingPurchases(): PurchasesResult {
   return { ...purchasesResponse(), Available: false, Code: 'original_purchases_normal_month_incomplete', NormalInputsComplete: false,
-    InputWitnessSha256: null, ResultSha256: null, Rows: [], Totals: null, Dependency: { Kind: 'normal_month_incomplete', MissingMonth: '2026-09', Product: null } }
+    InputWitnessSha256: null, ResultSha256: null, Rows: [], Totals: null, Dependency: { Kind: 'normal_month_incomplete', MissingMonth: '2026-09', Product: null },
+    AdditionalFieldSettings: [], BaseMeasurementUnitWitnessSha256: null }
 }

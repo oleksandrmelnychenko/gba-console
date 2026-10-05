@@ -50,7 +50,7 @@ it('completed captions survive later wire edits identically on screen CSV XLSX a
   wire.Rows[0].Children[0].Children[0].Values.КоличествоБазовыхЕд = wide
   const result = normalizePurchases(wire, request); wire.Rows[0].Children[0].Caption = 'Later caption'; wire.Rows[0].Children[0].Children[0].Caption = 'Later product'
   const matrix = purchasesMatrix(result), csv = purchasesCsv(result), pdf = purchasesPdfDefinition(result)
-  expect(matrix[2][1]).toBe('Постачальник'); expect(matrix[3][2]).toBe('Перший товар'); expect(matrix[3][3]).toBe(wide)
+  expect(matrix[2][1]).toBe('Постачальник'); expect(matrix[3][2]).toBe('Перший товар, базова одиниця недоступна'); expect(matrix[3][3]).toBe(wide)
   expect(purchasesLines(result).map(row => row.cells)).toEqual(matrix.slice(1, -1))
   expect(csv).toContain('Постачальник'); expect(csv).toContain(wide); expect(JSON.stringify(pdf)).toContain('Перший товар')
   for (const value of ['Later caption', 'Later product', purchasesParty, purchasesProduct]) { expect(csv).not.toContain(value); expect(JSON.stringify(pdf)).not.toContain(value) }

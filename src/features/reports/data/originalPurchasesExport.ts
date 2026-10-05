@@ -1,7 +1,12 @@
-import { normalizePurchases, purchasesFilterLabels, purchasesFilters, purchasesLabels, purchasesResultRequest, type PurchasesResult, type PurchasesValues } from './originalPurchases'
+import { normalizePurchases, PURCHASES_BASE_UNIT_FIELD, purchasesFilterLabels, purchasesFilters, purchasesLabels, purchasesResultRequest, type PurchasesResult, type PurchasesRow, type PurchasesValues } from './originalPurchases'
 import type { CurrentVparivanieV2PdfDefinition } from './currentVparivanieV2Export'
 export const purchasesValues = (values: PurchasesValues, result: PurchasesResult) => result.Measures.map(m => values[m])
 export const purchasesHeaders = (result: PurchasesResult) => ['Статус партії', 'Контрагент', 'Номенклатура', ...result.Measures.map(m => purchasesLabels[m])]
+export function purchasesProductCell(product: PurchasesRow, index: number): string {
+  const name = product.CaptionAvailable ? product.Caption : `Номенклатура ${index + 1} · назва недоступна`
+  const unit = product.AdditionalFields?.[PURCHASES_BASE_UNIT_FIELD]
+  return `${name}, ${unit?.CaptionAvailable ? unit.Caption : 'базова одиниця недоступна'}`
+}
 export function purchasesLines(result: PurchasesResult) {
   return result.Rows.flatMap((status, statusIndex) => {
     const statusName = status.CaptionAvailable ? status.Caption : `Статус партії ${statusIndex + 1} · назва недоступна`
@@ -10,7 +15,7 @@ export function purchasesLines(result: PurchasesResult) {
         const partyName = party.CaptionAvailable ? party.Caption : `Контрагент ${partyIndex + 1} · назва недоступна`
         return [{ key: JSON.stringify([status.Key, party.Key]), cells: [statusName, partyName, 'Підсумок контрагента', ...purchasesValues(party.Values, result)], subtotal: true },
           ...party.Children.map((product, productIndex) => ({ key: JSON.stringify([status.Key, party.Key, product.Key]),
-            cells: [statusName, partyName, product.CaptionAvailable ? product.Caption : `Номенклатура ${productIndex + 1} · назва недоступна`, ...purchasesValues(product.Values, result)], subtotal: false }))]
+            cells: [statusName, partyName, purchasesProductCell(product, productIndex), ...purchasesValues(product.Values, result)], subtotal: false }))]
       })]
   })
 }

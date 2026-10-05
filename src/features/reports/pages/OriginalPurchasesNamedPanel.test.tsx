@@ -34,7 +34,7 @@ it('enables four named fields independently and preserves both full Project keys
   await select('Контрагенти', 'Постачальник'); await select('Номенклатура', 'Перший товар'); await select('Підрозділи', 'Відділ закупівель')
   await select('Проєкти', 'Розподіл закупівель'); await select('Проєкти', 'Основний проєкт (позначено на видалення)')
   fireEvent.click(screen.getByRole('button', { name: 'Сформувати' })); const table = await screen.findByRole('table')
-  expect(within(table).getAllByText('Постачальник').length).toBeGreaterThan(0); expect(within(table).getByText('Перший товар')).toBeTruthy()
+  expect(within(table).getAllByText('Постачальник').length).toBeGreaterThan(0); expect(within(table).getByText('Перший товар, базова одиниця недоступна')).toBeTruthy()
   expect(vi.mocked(readPurchases).mock.calls[0][0]).toMatchObject({ Statuses: [], Counterparties: [purchasesParty], Products: [purchasesProduct],
     Projects: [purchasesDistributionProject, purchasesMainProject], NamedChoiceWitnesses: { Контрагент: 'c'.repeat(64), Номенклатура: 'd'.repeat(64), Подразделение: 'e'.repeat(64), Проект: 'f'.repeat(64) } })
   expect(vi.mocked(readPurchasesChoices).mock.calls[0][0]).toMatchObject({ Statuses: [], Counterparties: [], Products: [], Divisions: [], Projects: [], Measures: ['КоличествоБазовыхЕд', 'СтоимостьОборот', 'НДСОборот', 'ВесОборот'] })
