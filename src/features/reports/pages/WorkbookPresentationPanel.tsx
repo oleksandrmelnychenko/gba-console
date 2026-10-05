@@ -82,7 +82,7 @@ function WorkbookOrderingControl({ selection, disabled, onChange }: {
       { value: 'MonthAscending', label: 'Місяць за зростанням' }]} onChange={changeOrdering} />
 }
 
-function WorkbookFieldsNote({ dataSource }: { dataSource: number }) {
+function WorkbookFieldsNote({ dataSource }: { dataSource: number | undefined }) {
   if (dataSource === 35) return <Text size="xs" c="dimmed">
     Артикул і Топ зберігають налаштування книги. Значення товарів на рівні день / організація не створюються.
   </Text>

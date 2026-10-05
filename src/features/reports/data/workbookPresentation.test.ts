@@ -35,7 +35,7 @@ it('requires the complete current capability and account-only grouped declaratio
   expect(normalizeWorkbookDataset({ ...presentedCashDataset, WorkbookPresentation: presentedCashDataset.workbookPresentation })).toBeNull()
   expect(normalizeWorkbookDataset({ ...presentedCashDataset, workbookPresentation: { version: 2 } })).toBeNull()
   for (const dataset of [presentedCashDataset, presentedSettlementDataset]) {
-    expect(normalizeWorkbookDataset({ ...dataset, workbookPresentation: { ...dataset.workbookPresentation, orderings: [''] } })).toBeNull()
+    expect(normalizeWorkbookDataset({ ...dataset, workbookPresentation: { ...(dataset.workbookPresentation as Record<string, unknown>), orderings: [''] } })).toBeNull()
   }
   expect(normalizeWorkbookDataset({ ...presentedDayDataset, workbookPresentation: { ...presentedDayDataset.workbookPresentation,
     orderings: ['MonthAscending', ''] } })).toBeNull()
