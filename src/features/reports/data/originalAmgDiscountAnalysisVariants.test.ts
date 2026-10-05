@@ -10,7 +10,7 @@ it('persists only detached own date filters and captured default grouping, never
 })
 it.each(['world', 'source', 'shape', 'authority', 'revision'])('refuses an unsupported own saved variant %s', field => {
   const value = amgVariant()
-  if (field === 'world') value.Scope.Request.World = 'fenix' as 'amg'
+  if (field === 'world') Object.assign(value.Scope.Request, { World: 'fenix' })
   if (field === 'source') Object.assign(value.Scope.Request, { SourceId: '56e2ad4b-9f75-4461-a742-eb54ae01823f' })
   if (field === 'shape') value.Scope.Measures[0] = 'other' as 'ТипЦен'
   if (field === 'authority') value.Scope.Request.ChoicesWitnessSha256 = amgChoiceWitness
