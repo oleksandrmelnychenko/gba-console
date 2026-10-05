@@ -1,6 +1,6 @@
 # Required OUR-only names and readiness contract
 
-This is a proposed server change, not an existing endpoint. The current Console calls capabilities and preview only and sends no active filters.
+This records the original server requirements from the disabled-selector Console. The accepted server8446 now implements dedicated readiness/choices and optional preview witness validation. The named Console implements both selectors and requires a current witness for its selected requests. The approved server retains no-witness legacy previews. See original-fenix-discount-analysis-console.md and the frozen server wire contract for the implemented behavior.
 
 ## Current dependencies to reuse
 
@@ -20,4 +20,4 @@ The names result needs exact Through/world/source/definition echoes; independent
 
 Public ordinary publication followed by real Snapshot readiness/choices/preview; both exact families, full universe before selection, agreement owner mapping, duplicate/foreign/deleted/empty refs, split publication and changed mapping refusal, selected-empty data, stale witness after republish, date/identity echoes, permission and cancellation. The existing unfiltered preview must remain valid and retain all current MAX/typed-empty/default resource guards.
 
-Only after this server contract is implemented and independently validated should the Console enable either named selector. Current disabled controls and false human-choice/readiness claims remain accurate.
+The server feature has independent FILE acceptance; the named Console feature awaits its own independent review and actual quality validation. Each field is enabled only from its genuine current choices result. Static human-choice/readiness flags retain their original meaning.
