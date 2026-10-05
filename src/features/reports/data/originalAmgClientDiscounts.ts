@@ -86,13 +86,14 @@ export function normalizeAmgDiscounts(v: unknown, request: AmgDiscountRequest): 
     return structuredClone(v) as AmgDiscountResult
   }
   if (!v.OrdinaryPublicationAvailable || !v.OurSnapshotVerified || v.Dependency !== null || !digest(v.InputWitnessSha256)) return fail()
+  const products = new Set(scope.Products), recipients = new Set(scope.Recipients.map(amgRecipientKey)), regions = new Set(scope.RegionCodes)
   const keys = new Set<string>(); let maximum: bigint | null = null
   for (const cell of v.Cells) {
     if (!object(cell) || !recipient(cell.Recipient) || cell.Recipient.Type !== '08' || cell.Recipient.Table !== '0000005A'
       || !human(cell.RecipientName) || !ref(cell.Product) || !human(cell.ProductName) || !(cell.RegionCode === null || typeof cell.RegionCode === 'string' && cell.RegionCode.length <= 25)
-      || typeof cell.FactRows !== 'number' || !Number.isSafeInteger(cell.FactRows) || cell.FactRows < 1 || scope.Products.length && !scope.Products.includes(cell.Product)
-      || scope.Recipients.length && !scope.Recipients.some(r => amgRecipientKey(r) === amgRecipientKey(cell.Recipient as AmgRecipient))
-      || scope.RegionCodes.length && !scope.RegionCodes.includes(cell.RegionCode as string)) return fail()
+      || typeof cell.FactRows !== 'number' || !Number.isSafeInteger(cell.FactRows) || cell.FactRows < 1 || products.size && !products.has(cell.Product)
+      || recipients.size && !recipients.has(amgRecipientKey(cell.Recipient))
+      || regions.size && !regions.has(cell.RegionCode as string)) return fail()
     const key = `${amgRecipientKey(cell.Recipient)}:${cell.Product}`
     if (keys.has(key)) return fail(); keys.add(key)
     const percentage = amgPercentage(cell.Percentage); maximum = maximum === null || percentage > maximum ? percentage : maximum
@@ -128,8 +129,9 @@ export function selectedAmgRequest(through: string, selected: AmgDiscountSelecti
   const request = amgDiscountRequest(through)
   for (const field of amgDiscountFields) {
     if (!selected[field].length) continue
-    if (!names || names.Through !== through || !names.OurSnapshotVerified || !names.FieldAvailability[field] || !digest(names.ChoicesWitnessSha256)
-      || selected[field].some(key => !names.Choices[field].some(c => c.Key === key))) throw new Error('Завантажте актуальні назви та повторіть відбір.')
+    if (!names || names.Through !== through || !names.OurSnapshotVerified || !names.FieldAvailability[field] || !digest(names.ChoicesWitnessSha256)) throw new Error('Завантажте актуальні назви та повторіть відбір.')
+    const offered = new Set(names.Choices[field].map(c => c.Key))
+    if (selected[field].some(key => !offered.has(key))) throw new Error('Завантажте актуальні назви та повторіть відбір.')
   }
   request.Products = [...selected.Номенклатура]
   request.Recipients = selected.ПолучательСкидки.map(key => { const [Type, Table, Reference] = key.split(':'); return { Type, Table, Reference } })
