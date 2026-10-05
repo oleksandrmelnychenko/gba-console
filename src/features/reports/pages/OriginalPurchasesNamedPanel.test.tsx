@@ -58,6 +58,7 @@ it('complete empty choices remain measured empty while absent names preserve unf
   await screen.findByText('Для перевірених порожніх полів немає варіантів відбору.')
   fireEvent.click(screen.getByRole('button', { name: 'Завантажити назви' }))
   await waitFor(() => expect((screen.getByRole('combobox', { name: 'Контрагенти' }) as HTMLInputElement).disabled).toBe(true))
+  await waitFor(() => expect((screen.getByRole('button', { name: 'Завантажити назви' }) as HTMLButtonElement).disabled).toBe(false))
   fireEvent.click(screen.getByRole('button', { name: 'Сформувати' })); await screen.findByRole('table')
   expect(vi.mocked(readPurchases).mock.calls[0][0]).toMatchObject({ Counterparties: [], Products: [], Divisions: [], Projects: [] })
   expect(screen.queryByRole('option', { name: 'Перший товар' })).toBeNull()
