@@ -72,6 +72,15 @@ function PlanningErrors({ periodError, previewError, namesError }: { periodError
     {namesError ? <Alert color="red">{t(namesError)}</Alert> : null}
   </>
 }
+function PlanningNameActions({ allowed, busy, invalidPeriod, namesImplemented, loading, refresh, reset }: {
+  allowed: boolean; busy: boolean; invalidPeriod: boolean; namesImplemented: boolean; loading: boolean; refresh: () => void; reset: () => void
+}) {
+  const { t } = useI18n()
+  return <>
+    <Button variant="light" loading={loading} disabled={!allowed || busy || invalidPeriod || !namesImplemented} onClick={refresh}>{t('Оновити назви відборів')}</Button>
+    <Button variant="subtle" disabled={busy} onClick={reset}>{t('Очистити відбори й назви')}</Button>
+  </>
+}
 export function OriginalPlannedCashFlowPanel({ capability, callerKey, canGenerate, initialFrom, initialThrough }: {
   capability: PlannedFlowCapability; callerKey: string | null; canGenerate: boolean; initialFrom: string; initialThrough: string
 }) {
@@ -103,8 +112,8 @@ export function OriginalPlannedCashFlowPanel({ capability, callerKey, canGenerat
     <PlanningFilters current={current} selection={selection} captions={choices?.scope === scope ? choices.captions : {}} busy={busy} select={select} />
     <Text size="sm" c="dimmed">{t('Поля з неповними назвами залишаються недоступними. Без відборів звіт охоплює всі сценарії, проєкти й підрозділи.')}</Text>
     <PlanningAvailability current={current} named={named} />
-    <Button variant="light" loading={load.isLoading} disabled={!allowed || busy || !!error || capability.ScopedChoicesImplemented !== true} onClick={() => { run.invalidate(); void load.generate() }}>{t('Оновити назви відборів')}</Button>
-    <Button variant="subtle" disabled={busy} onClick={reset}>{t('Очистити відбори й назви')}</Button>
+    <PlanningNameActions allowed={allowed} busy={busy} invalidPeriod={!!error} namesImplemented={capability.ScopedChoicesImplemented === true}
+      loading={load.isLoading} refresh={() => { run.invalidate(); void load.generate() }} reset={reset} />
     <Text size="sm" c="dimmed">{t(note)}</Text>
     <PlanningErrors periodError={error} previewError={run.error} namesError={load.error} />
     <Button loading={run.isLoading} disabled={!allowed || !named || busy || !!error} onClick={() => { void run.generate() }}>{t('Сформувати')}</Button>
