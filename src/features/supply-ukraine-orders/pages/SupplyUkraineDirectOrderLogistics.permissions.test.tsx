@@ -79,6 +79,7 @@ describe('Supply Ukraine direct-order logistics permissions', () => {
   beforeEach(() => {
     allowedPermissions.clear()
     vi.clearAllMocks()
+    HTMLElement.prototype.scrollIntoView = vi.fn()
     vi.mocked(getDirectSupplyOrderForLogisticWay).mockResolvedValue(null)
     vi.mocked(getSupplyOrderCreateSuppliers).mockResolvedValue([])
     vi.mocked(getSupplyOrderOrganizations).mockResolvedValue([])
@@ -163,6 +164,14 @@ describe('Supply Ukraine direct-order logistics permissions', () => {
     )
 
     await waitFor(() => expect(getSupplyOrderCreateSuppliers).toHaveBeenCalledWith('direct'))
+    await waitFor(() => expect(screen.getByRole('combobox', { name: 'Постачальник' }).hasAttribute('disabled')).toBe(false))
+
+    fireEvent.click(screen.getByRole('combobox', { name: 'Постачальник' }))
+    fireEvent.click(await screen.findByRole('option', { name: 'Test supplier' }))
+    fireEvent.click(screen.getByRole('combobox', { name: 'Організація' }))
+    fireEvent.click(await screen.findByRole('option', { name: 'GBA Україна' }))
+    fireEvent.click(screen.getByRole('combobox', { name: 'Договір' }))
+    fireEvent.click(await screen.findByRole('option', { name: 'USD' }))
 
     const fileInput = container.querySelector('input[type="file"]')
     expect(fileInput).not.toBeNull()

@@ -269,17 +269,19 @@ function SupplyUkraineOrderFileCreatePage({ mode }: { mode: CreateMode }) {
           suppliers: nextSuppliers,
         })
 
-        const defaultSupplier = nextSuppliers.find((supplier) => (supplier.ClientAgreements || []).length > 0) || nextSuppliers[0]
-        const defaults = getDefaultsForSupplier(defaultSupplier || null, nextOrganizations)
+        if (isToUkraineMode) {
+          const defaultSupplier = nextSuppliers.find((supplier) => (supplier.ClientAgreements || []).length > 0) || nextSuppliers[0]
+          const defaults = getDefaultsForSupplier(defaultSupplier || null, nextOrganizations)
 
-        dispatchForm({
-          type: 'patch',
-          patch: {
-            clientAgreementKey: getClientAgreementKey(defaults.clientAgreement),
-            organizationKey: getEntityKey(defaults.organization),
-            supplierKey: getEntityKey(defaultSupplier),
-          },
-        })
+          dispatchForm({
+            type: 'patch',
+            patch: {
+              clientAgreementKey: getClientAgreementKey(defaults.clientAgreement),
+              organizationKey: getEntityKey(defaults.organization),
+              supplierKey: getEntityKey(defaultSupplier),
+            },
+          })
+        }
       } catch (loadError) {
         if (!cancelled) {
           dispatchPage({
@@ -295,7 +297,7 @@ function SupplyUkraineOrderFileCreatePage({ mode }: { mode: CreateMode }) {
     return () => {
       cancelled = true
     }
-  }, [mode, t])
+  }, [mode, isToUkraineMode, t])
 
   const filteredSuppliers = useMemo(() => {
     const normalizedSearch = supplierSearch.trim().toLowerCase()
@@ -357,11 +359,11 @@ function SupplyUkraineOrderFileCreatePage({ mode }: { mode: CreateMode }) {
 
   function changeSupplier(value: string | null) {
     const supplier = suppliers.find((item) => getEntityKey(item) === value) || null
-    const defaults = getDefaultsForSupplier(supplier, organizations)
+    const defaults = isToUkraineMode ? getDefaultsForSupplier(supplier, organizations) : null
 
     updateForm({
-      clientAgreementKey: getClientAgreementKey(defaults.clientAgreement),
-      organizationKey: getEntityKey(defaults.organization),
+      clientAgreementKey: getClientAgreementKey(defaults?.clientAgreement),
+      organizationKey: getEntityKey(defaults?.organization),
       supplierKey: value || '',
     })
     dispatchPage({ type: 'setUploadResponse', uploadResponse: null })
@@ -369,7 +371,9 @@ function SupplyUkraineOrderFileCreatePage({ mode }: { mode: CreateMode }) {
 
   function changeOrganization(value: string | null) {
     const organization = availableOrganizations.find((item) => getEntityKey(item) === value) || null
-    const nextAgreement = filterAgreementsByOrganization(supplierAgreements, organization)[0] || null
+    const nextAgreement = isToUkraineMode
+      ? filterAgreementsByOrganization(supplierAgreements, organization)[0] || null
+      : null
 
     updateForm({
       clientAgreementKey: getClientAgreementKey(nextAgreement),
