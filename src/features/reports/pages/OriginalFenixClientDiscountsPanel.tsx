@@ -71,6 +71,7 @@ export function OriginalFenixClientDiscountsPanel({ readiness, callerKey, canGen
   const busy = delivery.run.isLoading || delivery.exporting || names.run.isLoading, exportError = result?.InputAvailable ? fenixDiscountExportError(result) : null
   function select(field: FenixDiscountField, values: string[]) { delivery.invalidate(); setSelection({ scope: names.scope, witness: named?.ResultSha256 ?? null, values: { ...selected, [field]: [...values] } }) }
   return <Stack gap="md"><Text size="sm">{t('FENIX · ОтчетПоСкидкам: отримувач → номенклатура, максимальний відсоток знижки/націнки. Прямий код регіону належить отримувачу.')}</Text>
+    <Text size="sm" c="dimmed">{t('Форма підтримує прямі знижки клієнтів з числовим відсотком. Інші типи отримувачів або відсотка залишають повний результат недоступним.')}</Text>
     <TextInput type="date" label={t('Дата зрізу')} value={through} disabled={busy} onChange={event => { delivery.invalidate(); setThrough(event.currentTarget.value) }} />
     <OriginalFenixClientDiscountChoiceControls names={named} selection={selected} busy={busy} permitted={permitted} dateError={dateError} error={names.run.error} loading={names.run.isLoading}
       onSelect={select} onLoad={() => { delivery.invalidate(); setSelection({ scope: null, witness: null, values: emptyFenixSelection() }); void names.load() }} />
