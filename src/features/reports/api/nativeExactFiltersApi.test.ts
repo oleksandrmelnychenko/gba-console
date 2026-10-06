@@ -19,6 +19,11 @@ const sourceOrganizations = {
   SourceWorld: 'fenix' as const,
   OrganizationIds: ['00000000000000000000000000000001', '00000000000000000000000000000002'],
 }
+const sourceBuyerSubtree = { Version: 1 as const, SourceWorld: 'fenix' as const,
+  BuyerRootId: '8AB2005056C0000811DEFC4535BB4D40' }
+const buyerCapability = { Version: 1 as const, SourceWorld: 'fenix' as const,
+  BuyerRootId: sourceBuyerSubtree.BuyerRootId, RequiresCompletePeriodLineage: true as const,
+  UsesCurrentCapturedHierarchy: true as const }
 
 function exactRequest(): ReportRequestBody {
   return {
@@ -42,6 +47,36 @@ describe('exact Fenix report filter wire contract', () => {
     expect(result.sourceOrganizations).not.toBe(organizations)
     expect(result.productClassification).not.toBe(netDataset.productClassification)
     expect(result).not.toHaveProperty('SourceOrganizations')
+  })
+
+  it('loads the day and organization capability and sends its exact kind and service filter', async () => {
+    const { sourceOrganizations: _unused, productClassification: _product, ...base } = netDataset
+    const dayDataset = {
+      ...base, DataSource: 35, Name: 'Валовий прибуток GBA за днем та організацією',
+      PeriodRequired: true, PeriodSupported: true,
+      Groupings: [3, 4].map(Type => ({ Type, Name: `Група ${Type}` })),
+      Measurements: [2, 3, 4, 6, 7, 8, 10, 12, 14, 15].map(Type => ({ Type, Name: `Показник ${Type}` })),
+      Filters: [0, 1, 2, 6, 9].map(Type => ({ Type, Name: `Фільтр ${Type}` })),
+    }
+    vi.mocked(apiRequest).mockResolvedValue([{ ...dayDataset, ProductClassification: netDataset.productClassification,
+      SourceOrganizations: netDataset.sourceOrganizations, SourceBuyerSubtree: buyerCapability }])
+    const [available] = await getReportDatasets()
+    expect(available.productClassification).toEqual(netDataset.productClassification)
+    expect(available.sourceOrganizations).toEqual(netDataset.sourceOrganizations)
+    expect(available.sourceBuyerSubtree).toEqual(buyerCapability)
+    const request = defaultDatasetRequest(available, '2026-09-01', '2026-09-23')
+    request.productClassification = structuredClone(productClassification)
+    request.sourceOrganizations = structuredClone(sourceOrganizations)
+    request.sourceBuyerSubtree = structuredClone(sourceBuyerSubtree)
+    vi.mocked(apiRequest).mockResolvedValue({})
+    await createStockReport(request)
+    expect(apiRequest).toHaveBeenLastCalledWith('/report/stocks/generate', expect.objectContaining({
+      body: expect.objectContaining({ dataSource: 35, productClassification, sourceOrganizations, sourceBuyerSubtree }),
+    }))
+    const invalid = { ...request, sourceOrganizations: { ...sourceOrganizations, SourceWorld: 'Fenix' } }
+    await expect(createStockReport(invalid)).rejects.toThrow('Некоректний точний відбір')
+    await expect(createStockReport({ ...request, sourceBuyerSubtree: {
+      ...sourceBuyerSubtree, BuyerRootId: '00000000000000000000000000000001' } })).rejects.toThrow('Некоректний точний відбір')
   })
 
   it.each([

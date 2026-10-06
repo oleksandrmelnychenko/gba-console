@@ -1,0 +1,7 @@
+.report-inline-preview { display: grid; gap: 0.75rem; }
+.report-inline-preview__heading { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+.report-inline-preview__scroll { max-height: 38rem; overflow: auto; }
+.report-inline-preview table { border-collapse: collapse; width: max-content; min-width: 100%; font-size: 0.8125rem; }
+.report-inline-preview th, .report-inline-preview td { border: 1px solid var(--mantine-color-gray-3); padding: 0.5rem; text-align: left; min-width: 7rem; max-width: 20rem; overflow-wrap: anywhere; }
+.report-inline-preview thead th { position: sticky; top: 0; z-index: 1; background: var(--mantine-color-body); }
+.report-inline-preview tbody th { font-weight: 500; }

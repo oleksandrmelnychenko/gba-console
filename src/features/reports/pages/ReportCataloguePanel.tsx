@@ -8,7 +8,7 @@ import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { useAuth } from '../../auth/useAuth'
 import { getReportCatalogue, getReportDatasets } from '../api/reportWorkspaceApi'
 import { catalogueLaunchOptions, type CatalogueLaunchChoice } from '../data/reportCatalogueLaunch'
-import { CAPTURE_STATUS_LABELS, DEPENDENCY_STATUS_LABELS, filterMigrationCatalogue, inspectCatalogueMigration, MIGRATION_STATUS_LABELS, sourceIdentity, type MigrationDisplayStatus } from '../data/reportMigration'
+import { CAPTURE_STATUS_LABELS, consoleReportAvailability, DEPENDENCY_STATUS_LABELS, filterConsoleMigrationCatalogue, filterMigrationCatalogue, inspectCatalogueMigration, MIGRATION_STATUS_LABELS, sourceIdentity, type ConsoleReportAvailability, type MigrationDisplayStatus } from '../data/reportMigration'
 import type { ReportCatalogue, ReportCatalogueEntry, ReportDataset, ReportSourceMigration } from '../types'
 
 const kindLabels: Record<string, string> = {
@@ -42,7 +42,7 @@ function useCatalogueLoad(canGenerate: boolean) {
     error: currentLoad?.error ?? false, retry: () => setAttempt(value => value + 1) }
 }
 
-export function ReportCataloguePanel({ onOpen, disabled = false }: { onOpen?: OpenReport; disabled?: boolean }) {
+export function ReportCataloguePanel({ onOpen, disabled = false, consoleScope = false }: { onOpen?: OpenReport; disabled?: boolean; consoleScope?: boolean }) {
   const { t } = useI18n()
   const { hasPermission } = useAuth()
   const canGenerate = hasPermission(PermissionKeys.ReportsStocks.Report.Generate)
@@ -55,16 +55,21 @@ export function ReportCataloguePanel({ onOpen, disabled = false }: { onOpen?: Op
   const [page, setPage] = useState(1)
   const [expanded, setExpanded] = useState<ReadonlySet<string>>(new Set())
   const inspection = useMemo(() => catalogue ? inspectCatalogueMigration(catalogue) : null, [catalogue])
-  const filtered = useMemo(() => catalogue && inspection ? filterMigrationCatalogue(catalogue, inspection, { kind, world, status, dependency, search }) : [],
-    [catalogue, inspection, kind, world, status, dependency, search])
+  const filtered = useMemo(() => {
+    if (!catalogue || !inspection) return []
+    const filters = { kind, world, status, dependency, search }
+    return consoleScope ? filterConsoleMigrationCatalogue(catalogue, inspection, filters)
+      : filterMigrationCatalogue(catalogue, inspection, filters)
+  }, [catalogue, inspection, consoleScope, kind, world, status, dependency, search])
   const availableDatasets = canGenerate ? datasets : null
   const supportsLaunch = Boolean(onOpen)
   const visibleSourceCount = filtered.reduce((sum, item) => sum + item.matchingSources.length, 0)
   const visibleRows = useMemo(() => filtered.slice((page - 1) * pageSize, page * pageSize).map(item => ({ ...item,
+    availability: consoleScope ? consoleReportAvailability(item.report, inspection!) : 'active' as const,
     options: supportsLaunch && catalogue && inspection?.valid && availableDatasets
       ? catalogueLaunchOptions(catalogue, item.report.Id, availableDatasets).filter(option => item.matchingSources.some(source =>
         source.World === option.choice.world && source.SourceId === option.choice.sourceId)) : [],
-  })), [filtered, page, supportsLaunch, catalogue, inspection, availableDatasets])
+  })), [filtered, page, supportsLaunch, consoleScope, catalogue, inspection, availableDatasets])
 
   if (error) return <Alert color="red" title={t('Не вдалося завантажити каталог')}>
     <Button type="button" onClick={retry}>{t('Повторити')}</Button>
@@ -73,19 +78,21 @@ export function ReportCataloguePanel({ onOpen, disabled = false }: { onOpen?: Op
   const { summary } = inspection
   return <div className="report-catalogue">
     <Stack gap="md">
-      <DocumentDetailSummary eyebrow={t('Звіти · Fenix / AMG')} title={t('Каталог звітів 1С')}
+      <DocumentDetailSummary eyebrow={t('Звіти · Fenix / AMG')} title={t('Каталог звітів')}
         meta={t('Оберіть звіт, щоб переглянути покриття та доступні налаштування.')}
         metrics={<>
           <DocumentDetailMetric label={t('Звітів у каталозі')} value={String(summary.CatalogueEntries)} />
+          {consoleScope && <DocumentDetailMetric label={t('Показано в Консолі')} value={String(filtered.length)} />}
           <DocumentDetailMetric label={t('Джерельних реалізацій')} value={String(summary.SourceImplementations)} />
           <DocumentDetailMetric label={t('Перевірених позицій')} value={String(summary.FullyVerifiedEntries)} />
         </>} />
-      {onOpen && <Text size="sm" c="dimmed" className="report-catalogue__intro">{t('Оберіть доступний варіант і відкрийте його в конструкторі. Для отримання звіту натисніть «Сформувати».')}</Text>}
+      {onOpen && <Text size="sm" c="dimmed" className="report-catalogue__intro">{t('Оберіть доступний варіант. Звіти конструктора формуються кнопкою «Сформувати»; Fenix «Валовая прибыль» відкривається в окремій панелі.')}</Text>}
+      {consoleScope && <Text size="sm" c="dimmed" className="report-catalogue__intro">{t('У Консолі активні лише звіти з BUG-1274. Інші готові звіти показані вимкненими з чіпсою «Готово», незавершені звіти приховані.')}</Text>}
       <details className="report-catalogue__overview">
         <summary><ChevronRight size={15} aria-hidden="true" />{t('Стан перенесення та джерела')}</summary>
         <Stack gap="sm" className="report-catalogue__overview-body">
       <Text size="sm" c="dimmed">{t(onOpen
-        ? 'Оберіть звіт і доступний варіант розрахунку GBA. Відкриття перенесе готові налаштування в конструктор; звіт сформується лише після натискання «Сформувати». Повну відповідність звіту 1С перевіряйте в покритті.'
+        ? 'Оберіть звіт і доступний варіант розрахунку GBA. Відкриття перенесе готові налаштування в конструктор; звіт сформується лише після натискання «Сформувати». Межі покриття наведено у картці звіту.'
         : 'Перелік для перенесення з Fenix та AMG. Наявність у каталозі ще не означає, що розрахунок доступний у GBA. Готові налаштування доступних звітів розташовані в конструкторі.')}</Text>
       {onOpen ? <Text size="sm" c="dimmed">{t('Варіанти Fenix/AMG позначають походження звіту; розрахунок використовує доступні дані GBA.')}</Text> : null}
       <Stack gap={2} aria-label={t('Загальний стан каталогу')}>
@@ -99,7 +106,7 @@ export function ReportCataloguePanel({ onOpen, disabled = false }: { onOpen?: Op
         <Text size="xs" c="dimmed">{t('Джерела зафіксовано: {date}', { date: catalogue.CapturedOn })}</Text>
         {inspection.valid && catalogue.Migration && <Text size="xs" c="dimmed">{t('Версія стану перенесення: {version} · {date}', { version: catalogue.Migration.Version, date: catalogue.Migration.GeneratedAtUtc })}</Text>}
       </Stack>
-      <Text size="xs" c="dimmed">{t('Типи подання у вихідних конфігураціях 1С; це не перелік готових подань GBA.')}</Text>
+      <Text size="xs" c="dimmed">{t('Типи подання у вихідних конфігураціях; це не перелік готових подань GBA.')}</Text>
       <Group aria-label={t('Типи подання 1С')}>{catalogue.Presentations.map(item => <Badge key={item.Id} color="gray" variant="light">{t(item.Title)}</Badge>)}</Group>
         </Stack>
       </details>
@@ -137,7 +144,7 @@ function toggleExpanded(current: ReadonlySet<string>, id: string) {
 }
 
 function CatalogueTable({ visibleRows, catalogue, inspection, availableDatasets, canGenerate, disabled, onOpen, expanded, onToggle }: {
-  visibleRows: Array<{ report: ReportCatalogueEntry; options: LaunchOption[] }>; catalogue: ReportCatalogue
+  visibleRows: Array<{ report: ReportCatalogueEntry; options: LaunchOption[]; availability: ConsoleReportAvailability }>; catalogue: ReportCatalogue
   inspection: ReturnType<typeof inspectCatalogueMigration>; availableDatasets: ReportDataset[] | null
   canGenerate: boolean; disabled: boolean; onOpen?: OpenReport; expanded: ReadonlySet<string>; onToggle: (id: string) => void
 }) {
@@ -147,12 +154,13 @@ function CatalogueTable({ visibleRows, catalogue, inspection, availableDatasets,
         <Table className="report-catalogue__table" highlightOnHover>
           <colgroup><col style={{ width: '46%' }} /><col style={{ width: '15%' }} /><col style={{ width: '39%' }} /></colgroup>
           <Table.Thead><Table.Tr><Table.Th>{t('Звіт')}</Table.Th><Table.Th>{t('Тип')}</Table.Th><Table.Th>{t('Стан за базами')}</Table.Th></Table.Tr></Table.Thead>
-          <Table.Tbody>{visibleRows.map(({ report, options }) => <Fragment key={report.Id}>
+          <Table.Tbody>{visibleRows.map(({ report, options, availability }) => <Fragment key={report.Id}>
             <Table.Tr>
-              <Table.Td><Stack gap={8} align="flex-start"><Button className="report-catalogue__report-title" leftSection={<ChevronRight size={14} aria-hidden="true" />} type="button" variant="subtle" size="compact-sm" aria-expanded={expanded.has(report.Id)} aria-label={t('Покриття звіту: {name}', { name: report.Title })}
+              <Table.Td><Stack gap={8} align="flex-start"><Group gap={6} align="center"><Button className="report-catalogue__report-title" leftSection={<ChevronRight size={14} aria-hidden="true" />} type="button" variant="subtle" size="compact-sm" aria-expanded={expanded.has(report.Id)} aria-label={t('Покриття звіту: {name}', { name: report.Title })}
                 styles={{ root: { height: 'auto', maxWidth: '100%' }, label: { whiteSpace: 'normal', textAlign: 'left' } }}
-                onClick={() => onToggle(report.Id)}>{report.Title}</Button>
+                onClick={() => onToggle(report.Id)}>{report.Title}</Button>{availability === 'ready_disabled' && <Badge color="gray" variant="light">{t('Готово')}</Badge>}</Group>
                 {onOpen ? <ReportLaunchActions report={report} catalogue={catalogue} options={options}
+                  availability={availability}
                   disabled={disabled || !canGenerate} onOpen={onOpen}
                   unavailable={!canGenerate ? 'Для роботи з наборами GBA потрібне право формування звітів.'
                     : !availableDatasets ? 'Доступність конструктора не підтверджена. Спробуйте відкрити каталог ще раз.'
@@ -174,14 +182,15 @@ function CatalogueTable({ visibleRows, catalogue, inspection, availableDatasets,
 
 const launchIdentity = (choice: CatalogueLaunchChoice) => JSON.stringify([choice.reportId, choice.world, choice.sourceId, choice.dataSource])
 
-function ReportLaunchActions({ report, catalogue, options, disabled, unavailable, onOpen }: {
-  report: ReportCatalogueEntry; catalogue: ReportCatalogue; options: LaunchOption[]; disabled: boolean; unavailable: string; onOpen: OpenReport
+function ReportLaunchActions({ report, catalogue, options, availability, disabled, unavailable, onOpen }: {
+  report: ReportCatalogueEntry; catalogue: ReportCatalogue; options: LaunchOption[]; availability: ConsoleReportAvailability; disabled: boolean; unavailable: string; onOpen: OpenReport
 }) {
   const { t } = useI18n()
   const [selectedKey, setSelectedKey] = useState<string | null>(null)
   const [rejectedKey, setRejectedKey] = useState<string | null>(null)
   const selected = options.length === 1 ? options[0] : options.find(option => launchIdentity(option.choice) === selectedKey)
   const label = (option: LaunchOption) => `${worldLabel(option.choice.world)} · ${t(option.label)}`
+  if (availability === 'ready_disabled') return <Text size="xs" c="dimmed">{t('Готово, але поки вимкнено для запуску в Консолі.')}</Text>
   if (!options.length) return <Text size="xs" c="dimmed">{t(unavailable)}</Text>
   return <Stack className="report-catalogue__launch" gap={6} role="group" aria-label={t('Відкрити звіт: {name}', { name: report.Title })} style={{ width: '100%', maxWidth: 440 }}>
     {options.length > 1 ? <Select label={t('Варіант для конструктора')} aria-label={t('Варіант звіту: {name}', { name: report.Title })}
@@ -190,7 +199,7 @@ function ReportLaunchActions({ report, catalogue, options, disabled, unavailable
       onChange={value => { setSelectedKey(value); setRejectedKey(null) }} /> : <Text size="sm">{label(options[0])}</Text>}
     {selected ? <Text size="xs" c="dimmed">{t(selected.notice)}</Text> : <Text size="xs" c="dimmed">{t('Виберіть один із доступних варіантів розрахунку GBA.')}</Text>}
     <Button type="button" variant="filled" rightSection={<ArrowRight size={15} />} disabled={disabled || !selected} styles={{ root: { height: 'auto', minHeight: 36, paddingBlock: 8 }, label: { whiteSpace: 'normal' } }}
-      onClick={() => { if (!disabled && selected) setRejectedKey(onOpen(selected.choice, catalogue) ? null : launchIdentity(selected.choice)) }}>{t('Відкрити в конструкторі')}</Button>
+      onClick={() => { if (!disabled && selected) setRejectedKey(onOpen(selected.choice, catalogue) ? null : launchIdentity(selected.choice)) }}>{t(selected?.choice.dataSource === 1 ? 'Відкрити звіт 1С' : 'Відкрити в конструкторі')}</Button>
     {selected && rejectedKey === launchIdentity(selected.choice) ? <Text size="sm" c="orange" role="alert">{t('Не вдалося відкрити цей варіант. Поточні налаштування збережено; перевірте доступність звіту й повторіть вибір.')}</Text> : null}
   </Stack>
 }
@@ -211,7 +220,7 @@ function ReportMigrationDetails({ report, migrations, datasets, canGenerate, lau
         {migration.Dependencies.length ? migration.Dependencies.map(item => <Text size="sm" key={item.Key}>{item.Title}: {t(DEPENDENCY_STATUS_LABELS[item.Status])}{item.Note ? ` · ${item.Note}` : ''}</Text>)
           : <Text size="sm" c="dimmed">{t('У маніфесті не зазначені окремі залежності.')}</Text>}
         {migration.Validation && <Stack gap={2}>
-          <Text size="sm">{t(migration.Validation.Kind === 'source_parity' ? 'Доказ відповідності джерельній реалізації' : 'Перевірка нативного обсягу; повну відповідність 1С не підтверджено')}</Text>
+          <Text size="sm">{t(migration.Validation.Kind === 'source_parity' ? 'Доказ відповідності джерельній реалізації' : 'Перевірка локального обсягу; повну відповідність первинному звіту не підтверджено')}</Text>
           <Text size="xs">{migration.Validation.EvidenceId} · {migration.Validation.VerifiedAtUtc}</Text>
           <Text size="xs">{t('Версія розрахунку: {revision}', { revision: migration.Validation.NativeRevision })}</Text>
         </Stack>}

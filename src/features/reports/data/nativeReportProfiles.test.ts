@@ -34,3 +34,26 @@ describe('native return documents and current debt profiles', () => {
     for(const dataset of [currentDebtDataset,supplierReturnDataset]) expect(datasetConfigurationError({...defaultDatasetRequest(dataset,'2026-06-01','2026-06-30'),valuationClientAgreementId:42},dataset)).toContain('Договір оцінки дозволено лише')
   })
 })
+
+describe('current agreement group discount profile', () => {
+  const dataset = {
+    ...currentDebtDataset,
+    DataSource: 29,
+    Name: 'Поточні знижки за договорами та групами товарів',
+    Groupings: [{ Type: 15, Name: 'Договір клієнта' }, { Type: 10, Name: 'Група товарів' }],
+    Measurements: [{ Type: 74, Name: 'Чинна ставка знижки, %' }],
+    Filters: [{ Type: 9, Name: 'Договір клієнта' }, { Type: 4, Name: 'Група товарів' }],
+  }
+
+  it('uses a current-state report with exact agreement and group axes', () => {
+    const data = defaultDatasetRequest(dataset, '2026-06-01', '2026-06-30')
+    expect(data).toMatchObject({ dataSource: 29, from: '', to: '', sorted: {
+      Row: [{ type: 15 }, { type: 10 }], Col: [], Measurements: [{ Type: 74 }],
+    } })
+    expect(isCurrentReportSource(29)).toBe(true)
+    expect(usesNativeReportLookup(29)).toBe(true)
+    expect(datasetConfigurationError(data, dataset)).toContain('точний ID договору')
+    expect(datasetConfigurationError({ ...data, valuationClientAgreementId: 459018 }, dataset)).toBeNull()
+    expect(datasetConfigurationError({ ...data, valuationClientAgreementId: 459018, from: '2026-06-01' }, dataset)).toContain('не підтримують період')
+  })
+})

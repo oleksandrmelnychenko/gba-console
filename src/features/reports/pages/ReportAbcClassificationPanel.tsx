@@ -20,25 +20,30 @@ export function ReportAbcClassificationPanel({ data, dataset, disabled, notice, 
   const raw = requestAbcClassification(data), draft = readAbcDraft(raw), cap = readAbcCapabilities(dataset)
   const error = reportAbcClassificationError(data, dataset), initial = defaultAbcClassification(data, dataset)
   const prerequisites = getRankingPrerequisites('ABC', data, cap, disabled)
+  const capturedSales = dataset?.DataSource === 26
   return <Stack component="section" aria-label="ABC-класифікація" className="reports-constructor-rule-panel" gap="xs" p="sm">
     <Group className="reports-constructor-rule-header" justify="space-between" align="start" gap="xs">
       <Text component="h3" className="app-section-title" fw={600}>ABC-класифікація</Text>
-      <AbcToggleButton active={raw != null} supported={!!cap} initial={initial} disabled={disabled}
+      {!capturedSales ? <AbcToggleButton active={raw != null} supported={!!cap} initial={initial} disabled={disabled}
         descriptionId={prerequisites.reasons ? reasonId : undefined} onChange={onChange} />
+        : null}
     </Group>
-    <Text size="xs" c="dimmed">Ділить групи на A, B і C після TOP. Усі залишені факти й загальний підсумок зберігаються.</Text>
+    <Text size="xs" c="dimmed">{capturedSales ? 'Класифікація збережених продажів 1С: клас A/B/C обчислюється за товаром і заданими частками.'
+      : 'Ділить групи на A, B і C після TOP. Усі залишені факти й загальний підсумок зберігаються.'}</Text>
     {error ? <Alert color="red">{error}</Alert> : null}
     {notice ? <Text role="status" size="sm">{notice}</Text> : null}
     <ReportRankingPrerequisites kind="ABC" reasonId={reasonId} {...prerequisites} disabled={disabled}
       onConfigureGrouping={onConfigureGrouping} onConfigureMeasures={onConfigureMeasures} />
-    {raw != null ? <Text size="xs" c="dimmed">Вимкнення ABC прибере його правило, поле «ABC-клас» і сортування лише цього поля. Інші налаштування залишаться.</Text>
+    {capturedSales ? null : raw != null ? <Text size="xs" c="dimmed">Вимкнення ABC прибере його правило, поле «ABC-клас» і сортування лише цього поля. Інші налаштування залишаться.</Text>
       : cap ? <Text size="xs" c="dimmed">Увімкнення додасть поле «ABC-клас» першим у рядках; його порядок можна змінити кнопками групування.</Text> : null}
     {draft && cap && dataset ? <AbcFields data={data} dataset={dataset} disabled={disabled} value={draft} onChange={onChange} /> : null}
-    <ReportRuleHelp title="Як працює ABC">
+    {capturedSales ? <ReportRuleHelp title="Як працює ABC у збережених продажах 1С">
+      <Text size="xs" c="dimmed">Клас обчислюється за накопиченою сумою з включенням поточного товару; межі часток округлюються до копійок. Від'ємні суми зберігаються. Доступні тільки зафіксовані поля й показники цього набору.</Text>
+    </ReportRuleHelp> : <ReportRuleHelp title="Як працює ABC">
         <Text size="xs" c="dimmed">Сервер класифікує один початковий ключ рядків глобально, разом за всіма батьківськими групами й стовпцями, після TOP. Поле «ABC-клас» утворює групи A, B і C; усі залишені факти та загальний підсумок зберігаються. Окремі рядки підсумків A/B/C у файлі з’являються, лише коли «ABC-клас» стоїть першим у групуванні рядків.</Text>
         <Text size="xs" c="dimmed">Групи ранжуються від найбільшого показника, за рівності — за меншим ключем. Клас визначається накопиченою сумою до поточної групи: нижче межі A — клас A, нижче A+B — клас B, решта — C. Група може перетнути межу цілком; нульовий хвіст належить C.</Text>
         <Text size="xs" c="dimmed">Потрібні відомі невід’ємні суми груп і додатний загальний показник в одній підтвердженій валюті чи одиниці. За потреби звузьте відбір. ABC підтримує лише рядки; відбору за класом немає. Відсотки вводяться окремо, їхня сума має дорівнювати 100.</Text>
-    </ReportRuleHelp>
+    </ReportRuleHelp>}
   </Stack>
 }
 

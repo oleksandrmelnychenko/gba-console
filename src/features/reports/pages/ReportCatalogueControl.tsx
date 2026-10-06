@@ -18,7 +18,7 @@ export function ReportCatalogueControl({ enabled, disabled = false, presentation
   const trigger = useRef<HTMLButtonElement>(null)
   const dialog = presentation === 'dialog'
   const panel = enabled && opened ? <Suspense fallback={<Loader size="sm" aria-label={t('Завантаження каталогу звітів')} />}>
-    <ReportCataloguePanel disabled={disabled} onOpen={onOpen ? (choice, catalogue) => {
+    <ReportCataloguePanel consoleScope disabled={disabled} onOpen={onOpen ? (choice, catalogue) => {
       if (!enabled || disabled || !onOpen(choice, catalogue)) return false
       setOpened(false)
       return true

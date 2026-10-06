@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { apiRequest } from '../../../shared/api/apiClient'
-import { createStockReport, getOneCTurnoverScopes, searchDatasetReportValues, searchReportUsers, searchValuationAgreements } from './reportsApi'
+import { createStockReport, previewStockReport, getOneCTurnoverScopes, searchDatasetReportValues, searchReportUsers, searchValuationAgreements } from './reportsApi'
 import type { ReportRequestBody } from '../types'
 
 vi.mock('../../../shared/api/apiClient', () => ({
@@ -34,6 +34,15 @@ describe('reportsApi', () => {
     expect(apiRequestMock).toHaveBeenLastCalledWith('/report/datasets/lookup', {
       query: { dataSource, field: 20, limit: 30, offset: 0, value: 'м' }, signal,
     })
+  })
+
+  it('normalizes exact current-discount lookup IDs from SQL strings without losing precision', async () => {
+    apiRequestMock.mockResolvedValueOnce([{ Id: '459018', Name: 'Договір [459018]' }])
+    await expect(searchDatasetReportValues(29, 9, { limit: 25, offset: 0, value: '459018' }))
+      .resolves.toEqual([{ Id: 459018, Name: 'Договір [459018]' }])
+    apiRequestMock.mockResolvedValueOnce([{ Id: '9007199254740992', Name: 'Небезпечний ID' }])
+    await expect(searchDatasetReportValues(29, 9, { limit: 25, offset: 0, value: '' }))
+      .rejects.toThrow('некоректні значення')
   })
 
   it('uses the dedicated valuation agreement catalogue with exact Id, independent of stock ownership', async () => {
@@ -104,6 +113,21 @@ describe('reportsApi', () => {
     expect(apiRequestMock).toHaveBeenCalledWith('/report/stocks/generate', {
       method: 'POST',
       body,
+    })
+  })
+
+  it('gets bounded inline data and file links from one preview request', async () => {
+    const body: ReportRequestBody = { from: '2026-08-01', to: '2026-08-18', selections: [], sorted: { Col: [], Measurements: [], Row: [] } }
+    apiRequestMock.mockResolvedValueOnce({ DocumentURL: '/reports/result.xlsx', PdfDocumentURL: '/reports/result.pdf', Preview: {
+      Version: 1, ResultSha256: 'a'.repeat(64), PresentationOnly: true,
+      Page: { Offset: 0, Limit: 50, TotalVisibleRows: 0, ReturnedRows: 0, HasMore: false },
+      RowSchema: [], ColumnSchema: [], Rows: [], Columns: [], Cells: [],
+    } })
+    const response = await previewStockReport(body)
+    expect(response.result.document.DocumentURL).toBe('/reports/result.xlsx')
+    expect(response.preview.Page.ReturnedRows).toBe(0)
+    expect(apiRequestMock).toHaveBeenCalledWith('/report/stocks/preview', {
+      method: 'POST', query: { rowOffset: 0, rowLimit: 50 }, body,
     })
   })
 

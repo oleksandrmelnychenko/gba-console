@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { ReportCatalogue, ReportSourceMigration } from '../types'
-import { filterMigrationCatalogue, inspectCatalogueMigration, isReportCatalogue, readSourceMigration, sourceIdentity } from './reportMigration'
+import { consoleReportAvailability, filterConsoleMigrationCatalogue, filterMigrationCatalogue, inspectCatalogueMigration, isReportCatalogue, readSourceMigration, sourceIdentity } from './reportMigration'
 import { catalogueFixture, migrationFixture, sourceHash } from './reportMigration.test-fixtures'
 
 describe('per-implementation migration evidence', () => {
@@ -62,6 +62,24 @@ describe('per-implementation migration evidence', () => {
     expect(filtered[0].matchingSources.map(source => source.World)).toEqual(['amg'])
     expect(view.summary.SourceImplementations).toBe(4)
     expect(view.summary.FullyVerifiedEntries).toBe(0)
+  })
+
+  it('keeps only BUG-1274 active rows and marks other executable rows ready-disabled', () => {
+    const catalogue = catalogueFixture(), view = inspectCatalogueMigration(catalogue)
+    catalogue.Reports[0].Id = 'builtin:ЗадолженностьПоКонтрагентам'
+    catalogue.Reports[0].Name = 'ЗадолженностьПоКонтрагентам'
+    expect(consoleReportAvailability(catalogue.Reports[0], view)).toBe('active')
+    expect(consoleReportAvailability(catalogue.Reports[1], view)).toBe('hidden')
+    catalogue.Reports.push({ Id: 'builtin:OtherReady', Name: 'OtherReady', Title: 'Інший готовий', Kind: 'builtin', Sources: [
+      { World: 'fenix', SourceId: 'other', DefinitionSha256: sourceHash, Attributes: [], Migration: migrationFixture('native_partial') },
+    ] })
+    const refreshed = inspectCatalogueMigration({ ...catalogue, Migration: { ...catalogue.Migration!, Summary: {
+      ...catalogue.Migration!.Summary, CatalogueEntries: 4, SourceImplementations: 5, BuiltinImplementations: 3,
+      ByStatus: { ...catalogue.Migration!.Summary.ByStatus, NativePartial: 2 },
+    } } })
+    expect(consoleReportAvailability(catalogue.Reports[3], refreshed)).toBe('ready_disabled')
+    expect(filterConsoleMigrationCatalogue(catalogue, refreshed, { kind: null, world: null, status: null, dependency: null, search: '' })
+      .map(item => item.report.Id)).toEqual(['builtin:ЗадолженностьПоКонтрагентам', 'builtin:OtherReady'])
   })
 
   it('rejects duplicate exact source identity while preserving valid UUID and storage string identifiers', () => {
