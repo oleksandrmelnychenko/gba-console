@@ -59,27 +59,42 @@ function FenixDiscountActions({ delivery, permitted, dateError, busy, exportErro
   return <Group><Button disabled={!permitted || !!dateError || busy} loading={delivery.run.isLoading} onClick={() => { void delivery.generate() }}>{t('Сформувати')}</Button>
     {formats.map(format => <Button key={format} variant="light" disabled={!permitted || !result?.InputAvailable || busy || !!exportError || !!fenixDiscountExportError(result!, format)} onClick={() => { void delivery.exportFile(format) }}>{format.toUpperCase()}</Button>)}</Group>
 }
+function useFenixPagedSelection(names: ReturnType<typeof useFenixClientDiscountCatalogue>) {
+  const named = names.run.lastRun
+  const [selection, setSelection] = useState<{ scope: typeof names.scope | null; witness: string | null; values: FenixDiscountSelection; captions: FenixSelectedCaptions }>({ scope: null, witness: null, values: emptyFenixSelection(), captions: emptyFenixCaptions() })
+  const current = named && selection.scope === names.scope && selection.witness === named.ResultSha256
+  const selected = current ? selection.values : emptyFenixSelection(), captions = current ? selection.captions : emptyFenixCaptions()
+  function select(field: FenixDiscountField, values: string[], observed: FenixDiscountChoice[]) {
+    setSelection({ scope: names.scope, witness: named?.ResultSha256 ?? null, values: { ...selected, [field]: [...values] }, captions: { ...captions, [field]: [...observed] } })
+  }
+  function clear() { setSelection({ scope: null, witness: null, values: emptyFenixSelection(), captions: emptyFenixCaptions() }) }
+  return { selected, captions, select, clear }
+}
+function FenixDiscountPdfStatus({ result }: { result: FenixDiscountResult | null }) {
+  const { t } = useI18n()
+  if (!result?.InputAvailable) return null
+  const message = fenixDiscountExportError(result, 'pdf')
+  return message ? <Text size="sm" c="dimmed">{t(message)}</Text> : null
+}
 export function OriginalFenixClientDiscountsPanel({ readiness, callerKey, canGenerate, initialThrough }: {
   readiness: FenixDiscountReadiness; callerKey: string | null; canGenerate: boolean; initialThrough: string
 }) {
   const { t } = useI18n(), [through, setThrough] = useState(initialThrough)
   const permitted = canGenerate && !!callerKey && readiness.Executable && readiness.World === 'fenix', dateError = fenixDateError(through)
   const names = useFenixClientDiscountCatalogue(through, permitted, callerKey), named = names.run.lastRun
-  const [selection, setSelection] = useState<{ scope: ReturnType<typeof useFenixClientDiscountCatalogue>['scope'] | null; witness: string | null; values: FenixDiscountSelection; captions: FenixSelectedCaptions }>({ scope: null, witness: null, values: emptyFenixSelection(), captions: emptyFenixCaptions() })
-  const selected = named && selection.scope === names.scope && selection.witness === named.ResultSha256 ? selection.values : emptyFenixSelection()
-  const captions = named && selection.scope === names.scope && selection.witness === named.ResultSha256 ? selection.captions : emptyFenixCaptions()
+  const selection = useFenixPagedSelection(names), { selected, captions } = selection
   const key = JSON.stringify([callerKey, canGenerate, readiness, through, selected, named?.ChoicesWitnessSha256 ?? null])
   const delivery = useFenixDiscountRun(key, permitted, through, selected, named, captions), result = delivery.run.lastRun
   const busy = delivery.run.isLoading || delivery.exporting || names.run.isLoading, exportError = result?.InputAvailable ? fenixDiscountExportError(result) : null
-  function select(field: FenixDiscountField, values: string[], observed: FenixDiscountChoice[]) { delivery.invalidate(); setSelection({ scope: names.scope, witness: named?.ResultSha256 ?? null, values: { ...selected, [field]: [...values] }, captions: { ...captions, [field]: [...observed] } }) }
+  function select(field: FenixDiscountField, values: string[], observed: FenixDiscountChoice[]) { delivery.invalidate(); selection.select(field, values, observed) }
   return <Stack gap="md"><Text size="sm">{t('FENIX · ОтчетПоСкидкам: отримувач → номенклатура, максимальний відсоток знижки/націнки. Прямий код регіону належить отримувачу.')}</Text>
     <Text size="sm" c="dimmed">{t('Форма підтримує прямі знижки клієнтів з числовим відсотком. Інші типи отримувачів або відсотка залишають повний результат недоступним.')}</Text>
     <TextInput type="date" label={t('Дата зрізу')} value={through} disabled={busy} onChange={event => { delivery.invalidate(); setThrough(event.currentTarget.value) }} />
     <OriginalFenixClientDiscountPagedControls through={through} names={named} scope={names.scope} captions={captions} selection={selected} busy={busy} permitted={permitted} dateError={dateError} error={names.run.error} loading={names.run.isLoading}
-      onSelect={select} onLoad={() => { delivery.invalidate(); setSelection({ scope: null, witness: null, values: emptyFenixSelection(), captions: emptyFenixCaptions() }); void names.load() }} />
+      onSelect={select} onLoad={() => { delivery.invalidate(); selection.clear(); void names.load() }} />
     <Text size="sm" c="dimmed">{t('Зріз охоплює останню цілу секунду дня, 23:59:59. Відсотки не додаються. Відповідність поточному оригіналу 1С ще не підтверджена; валютна конвертація не застосовується.')}</Text>
     <FenixDiscountMessages dateError={dateError} runError={delivery.run.error} exportError={exportError} />
-    {result?.InputAvailable && fenixDiscountExportError(result, 'pdf') ? <Text size="sm" c="dimmed">{t(fenixDiscountExportError(result, 'pdf')!)}</Text> : null}
+    <FenixDiscountPdfStatus result={result} />
     <FenixDiscountActions delivery={delivery} permitted={permitted} dateError={dateError} busy={busy} exportError={exportError} />
     <FenixDiscountResultView result={result} /></Stack>
 }
