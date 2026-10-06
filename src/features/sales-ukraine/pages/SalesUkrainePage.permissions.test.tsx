@@ -139,6 +139,30 @@ describe('SalesUkrainePage event permissions', () => {
     expect(mocks.getSalesUkraine).not.toHaveBeenCalled()
   })
 
+  it('shows the actual carrier logo in the sales registry and opens its delivery details', async () => {
+    grant(PermissionKeys.SalesUkraine.Sale.View, PermissionKeys.SalesUkraine.Sale.OpenDeliveryDetails)
+    mocks.getSalesUkraine.mockResolvedValue([actionableSale({
+      Transporter: { Name: 'Нова пошта', CssClass: 'nova_posta_item_class', ImageUrl: 'https://old.example/logo.png' },
+    })])
+    renderPage()
+
+    const carrierButton = await screen.findByRole('button', { name: 'Нова пошта' })
+    const logo = carrierButton.querySelector<HTMLImageElement>('img[alt="Нова пошта"]')
+    expect(logo?.getAttribute('src')).toContain('nova_posta')
+
+    fireEvent.click(carrierButton)
+    await waitFor(() => expect(mocks.getSalesUkraineDeliveryDetails).toHaveBeenCalledWith('sale-1'))
+  })
+
+  it('keeps a usable delivery action when a sale has no carrier logo', async () => {
+    grant(PermissionKeys.SalesUkraine.Sale.View, PermissionKeys.SalesUkraine.Sale.OpenDeliveryDetails)
+    mocks.getSalesUkraine.mockResolvedValue([actionableSale({ Transporter: { Name: 'Інший перевізник' } })])
+    renderPage()
+
+    const carrierButton = await screen.findByRole('button', { name: 'Інший перевізник' })
+    expect(carrierButton.querySelector('svg')).toBeTruthy()
+  })
+
   it('keeps independent actions unavailable when only page view is granted', async () => {
     mocks.granted.add(PermissionKeys.SalesUkraine.Sale.View)
     const { container } = renderPage()

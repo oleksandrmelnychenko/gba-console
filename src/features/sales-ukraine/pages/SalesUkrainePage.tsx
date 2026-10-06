@@ -1645,6 +1645,7 @@ const SaleGridRow = memo(function SaleGridRow({
   const manager = getSaleUserName(sale)
   const contract = sale.ClientAgreement?.Agreement?.Name
   const transporter = getSaleTransporterName(sale)
+  const transporterData = sale.Transporter ?? sale.UpdateDataCarrier?.[0]?.Transporter
   const localAmount = getNumber(sale.TotalAmountLocal) ?? getNumber(sale.TotalAmount)
   const vat = sale.IsVatSale ? getNumber(sale.Order?.TotalVat) : null
   const paymentColor = getPaymentStatusColor(sale)
@@ -1926,11 +1927,22 @@ const SaleGridRow = memo(function SaleGridRow({
 
       <div className="sg-transporter-cell" data-row-stop="true">
         {!hideEditActActions && canOpenDeliveryDetails && (
-          <TableRowAction
-            action="delivery"
-            label={transporter || t('Перевізник')}
+          <ActionIcon
+            aria-label={transporter || t('Перевізник')}
+            className="app-table-row-action is-neutral"
+            color="gray"
+            title={transporter || t('Перевізник')}
+            variant="subtle"
             onClick={() => onOpenDetails(sale)}
-          />
+          >
+            <TransporterIcon
+              cssClass={transporterData?.CssClass}
+              fallback={<Truck aria-hidden="true" size={16} />}
+              imageUrl={getTransporterImageUrl(sale)}
+              name={transporter}
+              size={20}
+            />
+          </ActionIcon>
         )}
       </div>
 
