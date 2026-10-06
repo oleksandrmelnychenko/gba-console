@@ -1,7 +1,7 @@
 import { Box, Stack, Text } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import { UserSearch } from 'lucide-react'
-import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react'
 import { formatLocalDate } from '../../../../shared/date/dateTime'
 import { useI18n } from '../../../../shared/i18n/useI18n'
 import { realtimeEvents, useRealtimeEvent } from '../../../../shared/realtime/events'
@@ -648,7 +648,7 @@ export function NewSaleClientStep({
   // was outside the wizard (e.g. right after returning from another step).
   const arrowNavRef = useRef<(event: KeyboardEvent) => void>(() => {})
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     arrowNavRef.current = (event: KeyboardEvent) => {
       const isArrow = event.key === 'ArrowUp' || event.key === 'ArrowDown'
       const isAgreementArrow = event.key === 'ArrowLeft' || event.key === 'ArrowRight'

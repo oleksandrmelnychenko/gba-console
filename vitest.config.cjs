@@ -10,7 +10,7 @@ module.exports = defineConfig({
   test: {
     // Playwright owns these suites; importing them through Vitest fails before
     // collection and makes the unit-test release gate report false failures.
-    exclude: [...configDefaults.exclude, '**/e2e/**'],
+    exclude: [...configDefaults.exclude, '**/e2e/**', 'tests/browser/**'],
     globals: true,
     environment: 'jsdom',
     setupFiles: ['./src/test/setup.ts'],

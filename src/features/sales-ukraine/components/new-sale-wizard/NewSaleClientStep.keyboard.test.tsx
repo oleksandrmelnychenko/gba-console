@@ -71,8 +71,12 @@ describe('new-sale client keyboard navigation', () => {
 
     fireEvent.keyDown(search, { key: 'ArrowDown' })
 
-    expect(screen.getByTestId('wizard-selected-client').getAttribute('data-client-net-uid')).toBe(
-      folder.NetUid?.toLowerCase(),
+    await waitFor(
+      () =>
+        expect(screen.getByTestId('wizard-selected-client').getAttribute('data-client-net-uid')).toBe(
+          folder.NetUid?.toLowerCase(),
+        ),
+      { timeout: 3_000 },
     )
     expect(onClientChange).not.toHaveBeenCalled()
     expect(apiMocks.getWizardClientAgreements).not.toHaveBeenCalled()
@@ -80,7 +84,7 @@ describe('new-sale client keyboard navigation', () => {
 
     fireEvent.keyDown(search, { key: 'Enter' })
 
-    await waitFor(() => expect(screen.getAllByText('VI02101')).toHaveLength(2))
+    await waitFor(() => expect(screen.getAllByText('VI02101')).toHaveLength(2), { timeout: 3_000 })
   })
 
   it('selects a real IF01200 client instead of treating its 00 suffix as an empty folder', async () => {

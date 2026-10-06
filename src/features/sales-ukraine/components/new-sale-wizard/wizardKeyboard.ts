@@ -1,4 +1,4 @@
-import { useEffect, useRef, useSyncExternalStore } from 'react'
+import { useEffect, useLayoutEffect, useRef, useSyncExternalStore } from 'react'
 import type { KeyboardEvent as ReactKeyboardEvent } from 'react'
 
 export type WizardStepIndex = 0 | 1 | 2
@@ -265,7 +265,7 @@ export function registerWizardKeyHandler(handler: WizardKeyHandler): () => void 
 export function useWizardKeyHandler(handler: WizardKeyHandler): void {
   const handlerRef = useRef<WizardKeyHandler>(handler)
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     handlerRef.current = handler
   })
 
