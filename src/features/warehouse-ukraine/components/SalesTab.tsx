@@ -641,6 +641,7 @@ function useSalesColumns({
       {
         id: 'client',
         header: t("Повне ім'я"),
+        className: 'sales-tab-client-name',
         width: 300,
         minWidth: 240,
         accessor: (sale) => buildClientName(sale),

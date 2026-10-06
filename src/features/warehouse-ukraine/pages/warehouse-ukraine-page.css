@@ -231,6 +231,14 @@
   white-space: nowrap;
 }
 
+.warehouse-ukraine-table .data-table-cell.sales-tab-client-name,
+.warehouse-ukraine-table .data-table-cell.sales-tab-client-name > * {
+  overflow: visible;
+  overflow-wrap: anywhere;
+  text-overflow: clip;
+  white-space: normal;
+}
+
 .warehouse-ukraine-table-footer-summary {
   font-family: var(--font-mono);
   font-weight: 600;
