@@ -1,18 +1,18 @@
 import { Alert, Button, Group, Stack, Table, Text } from '@mantine/core'
-import { useEffect, useRef, useState } from 'react'
+import { useLayoutEffect, useRef, useState } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { defaultSheetBlob, defaultSheetExportError, type OriginalDefaultSheet } from '../data/originalDefaultReportExport'
 
-export function OriginalDefaultReportOutput({ sheet, filename }: { sheet: OriginalDefaultSheet; filename: string }) {
+export function OriginalDefaultReportOutput({ sheet, filename, allowExport = true }: { sheet: OriginalDefaultSheet; filename: string; allowExport?: boolean }) {
   const { t } = useI18n(), [page, setPage] = useState(0), [busy, setBusy] = useState(false), [error, setError] = useState<string | null>(null)
   const alive = useRef(false)
-  useEffect(() => { alive.current = true; return () => { alive.current = false } }, [])
+  useLayoutEffect(() => { alive.current = true; return () => { alive.current = false } }, [])
   function releaseExport() {
     if (alive.current) { setBusy(false) }
   }
   const current = Math.min(page, Math.max(0, Math.ceil(sheet.lines.length / 50) - 1)), offset = current * 50, exportError = defaultSheetExportError(sheet)
   async function exportFile(format: 'csv' | 'xlsx' | 'pdf') {
-    if (busy || exportError) return
+    if (!allowExport || busy || exportError) return
     setBusy(true); setError(null)
     try {
       const blob = await defaultSheetBlob(sheet, format)
@@ -23,7 +23,7 @@ export function OriginalDefaultReportOutput({ sheet, filename }: { sheet: Origin
     } catch (failure) { if (alive.current) setError(failure instanceof Error ? failure.message : 'Не вдалося сформувати файл.') }
     finally { releaseExport() }
   }
-  return <Stack gap="sm"><Group>{(['csv', 'xlsx', 'pdf'] as const).map(format => <Button key={format} variant="light" disabled={busy || !!exportError}
+  return <Stack gap="sm"><Group>{(['csv', 'xlsx', 'pdf'] as const).map(format => <Button key={format} variant="light" disabled={!allowExport || busy || !!exportError}
     onClick={() => { void exportFile(format) }}>{format.toUpperCase()}</Button>)}</Group>
     {exportError || error ? <Alert color="yellow">{t(exportError ?? error ?? '')}</Alert> : null}
     <Group><Button size="xs" variant="light" disabled={current === 0} onClick={() => setPage(current - 1)}>{t('Попередні рядки')}</Button>

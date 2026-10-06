@@ -1,7 +1,7 @@
 import type { CurrentVparivanieV2PdfDefinition } from './currentVparivanieV2Export'
 export type OriginalDefaultLine = { key: string; cells: string[]; subtotal?: boolean }
 export type OriginalDefaultSheet = { title: string; from: string; through: string; headers: string[]; labelColumns: number;
-  lines: OriginalDefaultLine[]; total: string[] | null; note: string }
+  lines: OriginalDefaultLine[]; total: string[] | null; note: string; scopeLabel?: string }
 export function defaultSheetExportError(sheet: OriginalDefaultSheet): string | null {
   return (sheet.lines.length + 1 + (sheet.total ? 1 : 0)) * sheet.headers.length > 1_000_000
     ? 'Файл перевищує 1 000 000 клітинок; звузьте період. Частковий файл не формується.' : null
@@ -11,7 +11,7 @@ function matrix(sheet: OriginalDefaultSheet): string[][] {
   if (error) throw new Error(error)
   return [sheet.headers, ...sheet.lines.map(line => line.cells), ...(sheet.total ? [sheet.total] : [])]
 }
-const metadata = (sheet: OriginalDefaultSheet) => [[sheet.title], [`Період: ${sheet.from} – ${sheet.through}, включно`], [sheet.note]]
+const metadata = (sheet: OriginalDefaultSheet) => [[sheet.title], [sheet.scopeLabel ?? `Період: ${sheet.from} – ${sheet.through}, включно`], [sheet.note]]
 export function defaultSheetCsv(sheet: OriginalDefaultSheet): string {
   const safe = (value: string) => /^[\s\p{Cc}]*[=+\-@]/u.test(value) ? `'${value}` : value
   const rows = [...metadata(sheet).map(row => row.map(safe)), ...matrix(sheet).map((row, index) => row.map((value, column) => index === 0 || column < sheet.labelColumns ? safe(value) : value))]
