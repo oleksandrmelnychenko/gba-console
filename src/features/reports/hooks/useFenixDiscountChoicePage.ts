@@ -1,11 +1,15 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { readFenixDiscountChoicePage } from '../api/originalFenixClientDiscountPagesApi'
 import { fenixChoicePageRequest, type FenixDiscountCatalogue, type FenixDiscountChoicePage } from '../data/originalFenixClientDiscountPages'
 import type { FenixDiscountField } from '../data/originalFenixClientDiscounts'
 export function useFenixDiscountChoicePage(through: string, catalogue: FenixDiscountCatalogue | null, field: FenixDiscountField, callerScope: object, selected: readonly string[]) {
   const scope = useMemo(() => ({ catalogue, field, callerScope, through }), [catalogue, field, callerScope, through])
   const current = useRef(scope), selectedNow = useRef(selected), active = useRef<AbortController | null>(null)
-  current.current = scope; selectedNow.current = selected
+  useLayoutEffect(() => {
+    current.current = scope
+    return () => active.current?.abort()
+  }, [scope])
+  useLayoutEffect(() => { selectedNow.current = selected }, [selected])
   const [state, setState] = useState<{ scope: typeof scope; page: FenixDiscountChoicePage | null; busy: boolean; error: string | null }>({ scope, page: null, busy: false, error: null })
   const load = useCallback(async (search: string, offset: number) => {
     if (current.current !== scope || !catalogue?.OurSnapshotVerified || !catalogue.FieldAvailability[field]) return
