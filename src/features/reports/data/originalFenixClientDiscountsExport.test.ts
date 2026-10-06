@@ -1,7 +1,7 @@
 import { expect, it, vi } from 'vitest'
 import { fenixEmpty, fenixMissing, fenixResult } from '../testing/originalFenixClientDiscountsFixtures'
 import { fenixDiscountCsv, fenixDiscountMatrix, fenixDiscountPdfDefinition, fenixDiscountXlsx } from './originalFenixClientDiscountsExport'
-const xlsx = vi.hoisted(() => ({ book_new: vi.fn(() => ({})), aoa_to_sheet: vi.fn((v: unknown) => v), book_append_sheet: vi.fn(), write: vi.fn(() => new ArrayBuffer(0)) }))
+const xlsx = vi.hoisted(() => ({ book_new: vi.fn(() => ({})), aoa_to_sheet: vi.fn((v: unknown) => v), book_append_sheet: vi.fn(), sheet_add_aoa: vi.fn(), write: vi.fn(() => new ArrayBuffer(0)) }))
 vi.mock('xlsx', () => ({ utils: xlsx, write: xlsx.write }))
 it('uses completed authentic names and exact signed percentage without sums or raw keys', () => {
   const matrix = fenixDiscountMatrix(fenixResult()); expect(matrix[1]).toEqual(['Клієнт FENIX', 'Товар FENIX', 'Київ', '-12.34'])
@@ -16,6 +16,7 @@ it('escapes human CSV formula prefixes while preserving signed numeric cells', (
 })
 it('shares the same exact completed matrix in XLSX and PDF', async () => {
   vi.clearAllMocks(); const result = fenixResult(), matrix = fenixDiscountMatrix(result); await fenixDiscountXlsx(result)
-  expect(xlsx.aoa_to_sheet).toHaveBeenCalledWith(matrix)
+  expect(xlsx.aoa_to_sheet).toHaveBeenCalledWith([matrix[0]])
+  expect(xlsx.sheet_add_aoa).toHaveBeenCalledWith(expect.anything(), matrix.slice(1), { origin: -1 })
   expect(JSON.stringify(fenixDiscountPdfDefinition(result))).toContain(JSON.stringify(matrix))
 })

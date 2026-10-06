@@ -83,7 +83,7 @@ function echo(v: Record<string, unknown>, scope: FenixDiscountRequest, choices =
   return identity(v) && v.Through === scope.Through && same(v[choices ? 'RequestedProducts' : 'Products'], scope.Products)
     && same(v[choices ? 'RequestedRecipients' : 'Recipients'], scope.Recipients) && same(v[choices ? 'RequestedRegionCodes' : 'RegionCodes'], scope.RegionCodes)
 }
-export function normalizeFenixDiscounts(v: unknown, request: FenixDiscountRequest): FenixDiscountResult {
+function checkedFenixDiscounts(v: unknown, request: FenixDiscountRequest): FenixDiscountResult {
   const scope = validateFenixDiscountRequest(request), fail = () => { throw new Error('Сервер не підтвердив результат для поточних параметрів FENIX.') }
   if (!object(v) || !echo(v, scope) || v.ChoicesWitnessSha256 !== scope.ChoicesWitnessSha256 || !digest(v.ResultSha256)
     || typeof v.InputAvailable !== 'boolean' || typeof v.OrdinaryPublicationAvailable !== 'boolean' || typeof v.OurSnapshotVerified !== 'boolean'
@@ -91,7 +91,7 @@ export function normalizeFenixDiscounts(v: unknown, request: FenixDiscountReques
     || ['SourceParityVerified', 'NativeDateParametersVerified', 'NativeStringComparisonVerified', 'AppliesFxConversion'].some(k => v[k] !== false)) return fail()
   if (!v.InputAvailable) {
     if (v.Cells.length || v.MaximumPercentage !== null || v.InputWitnessSha256 !== null || v.Dependency === null) return fail()
-    return structuredClone(v) as FenixDiscountResult
+    return v as FenixDiscountResult
   }
   if (!v.OrdinaryPublicationAvailable || !v.OurSnapshotVerified || v.Dependency !== null || !digest(v.InputWitnessSha256)) return fail()
   const products = new Set(scope.Products), recipients = new Set(scope.Recipients.map(fenixRecipientKey)), regions = new Set(scope.RegionCodes)
@@ -107,8 +107,12 @@ export function normalizeFenixDiscounts(v: unknown, request: FenixDiscountReques
     const percentage = fenixPercentage(cell.Percentage); maximum = maximum === null || percentage > maximum ? percentage : maximum
   }
   if (maximum === null ? v.MaximumPercentage !== null : fenixPercentage(v.MaximumPercentage) !== maximum) return fail()
-  return structuredClone(v) as FenixDiscountResult
+  return v as FenixDiscountResult
 }
+/** API responses are detached after complete validation. Export validation does not duplicate the full result. */
+export function normalizeFenixDiscounts(v: unknown, request: FenixDiscountRequest): FenixDiscountResult { return structuredClone(checkedFenixDiscounts(v, request)) }
+export function validateFenixDiscountResult(v: unknown, request: FenixDiscountRequest): void { checkedFenixDiscounts(v, request) }
+
 function choice(v: unknown, field: FenixDiscountField): v is FenixDiscountChoice {
   if (!object(v) || v.Field !== field || !human(v.Caption) || typeof v.Deleted !== 'boolean' || typeof v.Key !== 'string') return false
   if (field === 'КодПоРегиону') return v.Type === 'string' && v.TableReference === null && v.Key.length > 0 && v.Key.length <= 25 && v.Caption === v.Key && !v.Deleted
@@ -151,3 +155,6 @@ export function fenixResultRequest(v: FenixDiscountResult): FenixDiscountRequest
 export function isFenixDiscountCatalogueEntry(report: ReportCatalogueEntry, worlds: readonly string[]) {
   return report.Id === 'builtin:ОтчетПоСкидкам' && worlds.includes('fenix') && report.Sources.some(s => s.World === 'fenix' && s.SourceId === FENIX_DISCOUNTS_SOURCE && s.DefinitionSha256 === FENIX_DISCOUNTS_DEFINITION)
 }
+
+/** Shared strict typed caption/key validation for bounded public pages. */
+export { choice as isFenixDiscountChoice }
