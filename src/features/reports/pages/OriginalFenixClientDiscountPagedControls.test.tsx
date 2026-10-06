@@ -26,7 +26,8 @@ it('reaches options beyond100 and keeps authentic selected captions from earlier
   render(<Harness />); await ready(); fireEvent.click(product()); fireEvent.click(await screen.findByRole('option', { name: 'Product 0001' })); fireEvent.blur(product())
   fireEvent.click(screen.getByRole('button', { name: 'Наступні назви: Номенклатура' })); await ready()
   fireEvent.click(product()); fireEvent.click(await screen.findByRole('option', { name: 'Product 0101' })); fireEvent.blur(product())
-  expect(screen.getByText('Product 0001')).toBeTruthy(); expect(screen.getByText('Product 0101')).toBeTruthy()
+  const selectedCaptions = [...product().closest('.mantine-MultiSelect-root')!.querySelectorAll('.mantine-Pill-label')].map(pill => pill.textContent)
+  expect(selectedCaptions).toEqual(['Product 0001', 'Product 0101'])
   fireEvent.change(screen.getByLabelText('Пошук: Номенклатура'), { target: { value: 'Product 0201' } }); fireEvent.click(screen.getByRole('button', { name: 'Шукати: Номенклатура' })); await ready()
   fireEvent.click(product()); expect(await screen.findByRole('option', { name: 'Product 0201' })).toBeTruthy()
   const calls = vi.mocked(readFenixDiscountChoicePage).mock.calls.filter(([q]) => q.Field === 'Номенклатура'), last = calls[calls.length - 1][0]

@@ -11,7 +11,8 @@ it('large complete292266-row default no longer hits the former1M-cell CSV/XLSX g
 })
 it('batched CSV bytes equal the existing complete lossless export including formula protection and exact signed text', async () => {
   const result = resultWithRows(1201); result.Cells[1].ProductName = '=SUM(A1)'; result.Cells[1200].ProductName = 'final retained row'
-  expect(await (await fenixDiscountCsvBlob(result)).text()).toBe(fenixDiscountCsv(result)); expect(result.Cells).toHaveLength(1201)
+  const bytes = new Uint8Array(await (await fenixDiscountCsvBlob(result)).arrayBuffer())
+  expect([...bytes.slice(0, 3)]).toEqual([0xef, 0xbb, 0xbf]); expect(bytes).toEqual(new TextEncoder().encode(fenixDiscountCsv(result))); expect(result.Cells).toHaveLength(1201)
 })
 it('XLSX batches include every292266 row with at most1000 formatted rows per writer call and the final row intact', async () => {
   vi.clearAllMocks(); const result = resultWithRows(292266); await fenixDiscountXlsx(result)
