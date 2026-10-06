@@ -67,9 +67,9 @@ export function orderAnalysisPeriodError(from: string, through: string) {
 }
 const states = (v: OrderAnalysisState[] | null) => v === null || v.length <= 3 && new Set(v).size === v.length && v.every(s => s === 0 || s === 1 || s === 2)
 export function orderAnalysisRequest(capability: OrderAnalysisCapability, from: string, through: string, rows: OrderAnalysisField[], measures: string[], filters: OrderAnalysisFilter[], shipment: OrderAnalysisState[] | null, payment: OrderAnalysisState[] | null): OrderAnalysisRequest {
-  const kind = capability.Definition.Kind
-  if (!isOrderAnalysisCapability(capability, kind) || orderAnalysisPeriodError(from, through) || rows.length > 11 || new Set(rows).size !== rows.length || rows.some(v => !orderAnalysisRowOptions(kind).includes(v))
-    || !measures.length || new Set(measures).size !== measures.length || measures.some(v => !capability.Measures.includes(v)) || filters.length > 256 || new Set(filters.map(orderAnalysisFilterKey)).size !== filters.length
+  const kind = capability.Definition.Kind, allowedRows = new Set(orderAnalysisRowOptions(capability.Definition.Kind)), allowedMeasures = new Set(capability.Measures)
+  if (!isOrderAnalysisCapability(capability, kind) || orderAnalysisPeriodError(from, through) || rows.length > 11 || new Set(rows).size !== rows.length || rows.some(v => !allowedRows.has(v))
+    || !measures.length || new Set(measures).size !== measures.length || measures.some(v => !allowedMeasures.has(v)) || filters.length > 256 || new Set(filters.map(orderAnalysisFilterKey)).size !== filters.length
     || !states(shipment) || !states(payment) || kind === 0 && payment !== null) throw orderAnalysisInvalid()
   return { Version: 1, World: 'fenix', Kind: kind, SourceId: capability.Definition.SourceId, DefinitionSha256: capability.Definition.DefinitionSha256, ModuleSha256: capability.Definition.ModuleSha256,
     From: from, Through: through, Rows: [...rows], Measures: [...measures], Filters: filters.map(v => readOrderAnalysisFilter(v, kind)), ShipmentStates: shipment?.slice() ?? null, PaymentStates: payment?.slice() ?? null }

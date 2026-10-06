@@ -5,6 +5,7 @@ import { availabilityCatalogueMatches, type AvailabilityCapability } from '../da
 import type { ReportCatalogueEntry } from '../types'
 import { ClientDiscountsCatalogueFrame } from './ClientDiscountsCatalogueFrame'
 const Panel = lazy(() => import('./OriginalCashAvailabilityPanel').then(v => ({ default: v.OriginalCashAvailabilityPanel })))
+const kyivPointFormatter = new Intl.DateTimeFormat('sv-SE', { timeZone: 'Europe/Kyiv', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', hourCycle: 'h23' })
 type Scope = { matches: boolean; enabled: boolean; callerKey: string | null; attempt: number }
 function useAvailabilityCapability(scope: Scope) {
   const [loaded, setLoaded] = useState<{ scope: Scope; capability: AvailabilityCapability | null; failed: boolean } | null>(null)
@@ -18,7 +19,7 @@ function useAvailabilityCapability(scope: Scope) {
   return loaded?.scope === scope ? loaded : null
 }
 function currentKyivPoint() {
-  return new Intl.DateTimeFormat('sv-SE', { timeZone: 'Europe/Kyiv', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', hourCycle: 'h23' }).format(new Date()).replace(' ', 'T')
+  return kyivPointFormatter.format(new Date()).replace(' ', 'T')
 }
 export function OriginalCashAvailabilityCatalogueLaunch({ report, worlds, enabled, disabled, callerKey }: { report: ReportCatalogueEntry; worlds: readonly string[]; enabled: boolean; disabled: boolean; callerKey: string | null }) {
   const [opened, setOpened] = useState(false), [attempt, setAttempt] = useState(0), matches = availabilityCatalogueMatches(report, worlds)

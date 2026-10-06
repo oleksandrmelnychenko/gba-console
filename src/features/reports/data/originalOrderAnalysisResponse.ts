@@ -69,9 +69,9 @@ function groupValue(field: OrderAnalysisField, value: string | null): boolean {
   return /^[0-9A-F]{32}$/.test(value)
 }
 function group(v: unknown, request: OrderAnalysisRequest): OrderAnalysisGroup {
-  const row = object(v), key = list(row.Key).map(v => {
+  const row = object(v), allowedRows = new Set(request.Rows), key = list(row.Key).map(v => {
     const item = object(v)
-    if (!(item.Value === null || typeof item.Value === 'string') || !request.Rows.includes(item.Field as OrderAnalysisField)) throw orderAnalysisInvalid()
+    if (!(item.Value === null || typeof item.Value === 'string') || !allowedRows.has(item.Field as OrderAnalysisField)) throw orderAnalysisInvalid()
     return { Field: item.Field as OrderAnalysisField, Value: item.Value as string | null }
   })
   if (key.some(v => !groupValue(v.Field, v.Value)) || !orderAnalysisSame(key.map(v => v.Field), request.Rows.slice(0, key.length))) throw orderAnalysisInvalid()
