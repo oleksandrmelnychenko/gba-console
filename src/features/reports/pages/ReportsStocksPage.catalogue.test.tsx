@@ -1,12 +1,13 @@
 import { MantineProvider } from '@mantine/core'
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import type { ReactNode } from 'react'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, onTestFinished, vi } from 'vitest'
 import { I18nProvider } from '../../../shared/i18n/I18nProvider'
 import { createStockReport, searchValuationAgreements } from '../api/reportsApi'
 import { getReportCatalogue, getReportDatasets, getServerReportTemplates, saveServerReportTemplate } from '../api/reportWorkspaceApi'
 import { reportDatasets, currentDebtDataset, valuationDataset, netDataset } from '../data/reportDatasets.test-fixtures'
 import { defaultDatasetRequest } from '../data/reportDatasets'
+import { BUG_1274_ACTIVE_REPORT_IDS } from '../data/reportMigration'
 import { migrationFixture, sourceHash } from '../data/reportMigration.test-fixtures'
 import type { ReportCatalogue } from '../types'
 import { ReportsStocksPage } from './ReportsStocksPage'
@@ -84,6 +85,8 @@ describe('named catalogue report to constructor', () => {
   })
 
   it('launches the return-only catalogue variant and sends its bounded server request', async () => {
+    BUG_1274_ACTIVE_REPORT_IDS.add('builtin:ОтчетПоВозвратам')
+    onTestFinished(() => { BUG_1274_ACTIVE_REPORT_IDS.delete('builtin:ОтчетПоВозвратам') })
     const source = catalogue()
     source.Reports[0].Id = 'builtin:ОтчетПоВозвратам'
     source.Reports[0].Name = 'ОтчетПоВозвратам'
