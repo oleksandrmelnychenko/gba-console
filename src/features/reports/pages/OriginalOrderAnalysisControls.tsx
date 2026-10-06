@@ -1,4 +1,4 @@
-import { Checkbox, Group, MultiSelect, Select, Stack, Text, TextInput } from '@mantine/core'
+import { Button, Checkbox, Group, MultiSelect, Select, Stack, Text, TextInput } from '@mantine/core'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { orderAnalysisFieldLabels, orderAnalysisFilterFields, orderAnalysisFilterKey, orderAnalysisRowOptions, type OrderAnalysisCapability, type OrderAnalysisField, type OrderAnalysisFilter, type OrderAnalysisState } from '../data/originalOrderAnalyses'
 import { orderAnalysisMeasureLabel, orderAnalysisPaymentLabels, orderAnalysisShipmentLabels } from '../data/originalOrderAnalysisLabels'
@@ -11,8 +11,9 @@ function NamedOrderFilter({ field, choices, filters, busy, select }: { field: Or
 function StateSubset({ title, labels, values, busy, change }: { title: string; labels: readonly string[]; values: OrderAnalysisState[] | null; busy: boolean; change: (values: OrderAnalysisState[] | null) => void }) {
   const { t } = useI18n()
   return <Stack gap="xs"><Checkbox label={t(title)} disabled={busy} checked={values !== null} onChange={event => change(event.currentTarget.checked ? [0, 1, 2] : null)} />
-    {values !== null ? <MultiSelect label={t('Вибрані стани') + ' · ' + t(title)} disabled={busy} data={labels.map((label, i) => ({ value: String(i), label: t(label) }))} value={values.map(String)} clearable clearButtonProps={{ 'aria-label': t('Очистити вибрані стани') + ' · ' + t(title) }}
-      onChange={items => change(items.map(v => Number(v) as OrderAnalysisState))} /> : null}</Stack>
+    {values !== null ? <><MultiSelect label={t('Вибрані стани') + ' · ' + t(title)} disabled={busy} data={labels.map((label, i) => ({ value: String(i), label: t(label) }))} value={values.map(String)}
+      onChange={items => change(items.map(v => Number(v) as OrderAnalysisState))} />
+      <Button variant="subtle" size="compact-sm" disabled={busy || values.length === 0} onClick={() => change([])}>{t('Очистити вибрані стани') + ' · ' + t(title)}</Button></> : null}</Stack>
 }
 export function OriginalOrderAnalysisControls({ capability, from, through, rows, measures, filters, choices, shipment, payment, busy, choicesBusy, changePeriod, changeRows, changeMeasures, select, changeShipment, changePayment }: {
   capability: OrderAnalysisCapability; from: string; through: string; rows: OrderAnalysisField[]; measures: string[]; filters: OrderAnalysisFilter[]; choices: OrderAnalysisChoice[];

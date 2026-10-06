@@ -67,8 +67,17 @@ it('permission loss aborts pending preview and prevents late rows or exports aft
   view.rerender(panel()); expect(screen.queryByRole('table')).toBeNull()
 })
 it('enabled empty shipment filter is sent as empty without inventing a state and invalid period refuses', async () => {
-  render(panel()); fireEvent.click(screen.getByRole('checkbox', { name: 'Відбір за відвантаженням' }))
-  fireEvent.click(screen.getByRole('button', { name: 'Очистити вибрані стани · Відбір за відвантаженням' })); fireEvent.click(screen.getByRole('button', { name: 'Сформувати' })); await screen.findByRole('table')
+  let finishChoices!: (result: OrderAnalysisChoices) => void
+  vi.mocked(readOriginalOrderAnalysisChoices).mockImplementationOnce(() => new Promise(resolve => { finishChoices = resolve }))
+  render(panel()); await waitFor(() => expect(readOriginalOrderAnalysisChoices).toHaveBeenCalledTimes(1))
+  const shipment = screen.getByRole('checkbox', { name: 'Відбір за відвантаженням' }) as HTMLInputElement
+  expect(shipment.disabled).toBe(false); fireEvent.click(shipment); expect(shipment.checked).toBe(true)
+  const clear = screen.getByRole('button', { name: 'Очистити вибрані стани · Відбір за відвантаженням' }) as HTMLButtonElement
+  expect(clear.disabled).toBe(false)
+  await act(async () => finishChoices(orderChoicesFixture()))
+  expect(shipment.checked).toBe(true); expect(clear.disabled).toBe(false)
+  fireEvent.click(clear); expect(shipment.checked).toBe(true); expect(clear.disabled).toBe(true)
+  fireEvent.click(screen.getByRole('button', { name: 'Сформувати' })); await screen.findByRole('table')
   expect(vi.mocked(readOriginalOrderAnalyses).mock.calls[0][0].ShipmentStates).toEqual([])
   fireEvent.change(screen.getByLabelText('Кінець періоду'), { target: { value: '' } }); expect((screen.getByRole('button', { name: 'Сформувати' }) as HTMLButtonElement).disabled).toBe(true)
 })
