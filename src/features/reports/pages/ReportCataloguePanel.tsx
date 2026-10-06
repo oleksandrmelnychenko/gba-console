@@ -65,6 +65,7 @@ import { OriginalGoodsStockAnalysisCatalogueLaunch } from './OriginalGoodsStockA
 import { OriginalDefectCostCatalogueLaunch } from './OriginalDefectCostCatalogueLaunch'
 import { OriginalPurchasesCatalogueLaunch } from './OriginalPurchasesCatalogueLaunch'
 import { OriginalAmgClientDiscountsCatalogueLaunch } from './OriginalAmgClientDiscountsCatalogueLaunch'
+import { OriginalFenixClientDiscountsCatalogueLaunch } from './OriginalFenixClientDiscountsCatalogueLaunch'
 import { OriginalFenixDiscountAnalysisCatalogueLaunch } from './OriginalFenixDiscountAnalysisCatalogueLaunch'
 import { OriginalAmgDiscountAnalysisCatalogueLaunch } from './OriginalAmgDiscountAnalysisCatalogueLaunch'
 import { originalBuyerSalesShareCatalogueVariant, type OriginalBuyerSalesShareCapabilities } from '../data/originalBuyerSalesShare'
@@ -268,6 +269,7 @@ function CatalogueTable({ visibleRows, catalogue, inspection, availableDatasets,
                 <OriginalDefectCostCatalogueLaunch report={report} worlds={matchingSources.map(s => s.World)} enabled={canGenerate} disabled={disabled} callerKey={callerKey} />
                 <OriginalPurchasesCatalogueLaunch report={report} worlds={matchingSources.map(s => s.World)} enabled={canGenerate} disabled={disabled} callerKey={callerKey} />
                 <OriginalAmgClientDiscountsCatalogueLaunch report={report} worlds={matchingSources.map(s => s.World)} enabled={canGenerate} disabled={disabled} callerKey={callerKey} />
+                <OriginalFenixClientDiscountsCatalogueLaunch report={report} worlds={matchingSources.map(s => s.World)} enabled={canGenerate} disabled={disabled} callerKey={callerKey} />
                 <OriginalFenixDiscountAnalysisCatalogueLaunch report={report} worlds={matchingSources.map(s => s.World)} enabled={canGenerate} disabled={disabled} callerKey={callerKey} />
                 <OriginalAmgDiscountAnalysisCatalogueLaunch report={report} worlds={matchingSources.map(s => s.World)} enabled={canGenerate} disabled={disabled} callerKey={callerKey} />
                 <ManagementOrdersCatalogueLaunch report={report} enabled={canGenerate} disabled={disabled} callerKey={callerKey} onOpen={onOpenManagementOrders} />
