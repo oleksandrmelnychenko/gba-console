@@ -3,7 +3,7 @@ import { readOriginalStockAvailability } from '../api/originalStockAvailabilityA
 import { stockAxes, type StockAxis, type StockFilter, type StockRequest } from '../data/originalStockAvailability'
 import type { StockChoices, StockResult } from '../data/originalStockAvailabilityResponse'
 import { useReportRunState } from './useReportRunState'
-const emptyChoices = (): StockChoices => Object.fromEntries(stockAxes.map(a => [a, []])) as StockChoices
+const emptyChoices = (): StockChoices => ({ warehouse: [], product: [], characteristic: [], series: [], quality: [], basisDocument: [] })
 export function useStockAvailabilitySelection(scope: string) {
   const [stored, setStored] = useState(() => ({ scope, choices: emptyChoices(), filters: [] as StockFilter[] }))
   let current = stored
