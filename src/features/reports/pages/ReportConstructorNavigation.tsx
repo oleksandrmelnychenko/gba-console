@@ -19,7 +19,7 @@ const sections = [
   { id: 'result', label: 'Результат', icon: BarChart3 },
 ] as const
 
-export function ReportConstructorHeader({ name }: { name: string }) {
+export function ReportConstructorHeader({ name, registerReportsEnabled = true }: { name: string; registerReportsEnabled?: boolean }) {
   return <header className="report-constructor-header">
     <div className="report-constructor-heading">
       <span className="report-constructor-heading__icon"><FileSpreadsheet size={23} aria-hidden="true" /></span>
@@ -28,7 +28,7 @@ export function ReportConstructorHeader({ name }: { name: string }) {
       <Text size="xs" c="gray.7">{name.trim() || 'Оберіть готові налаштування або налаштуйте власний звіт.'}</Text>
       </div>
     </div>
-    <Button component="a" href="/reports/registers" variant="default" size="xs">Звіти регістрів</Button>
+    {registerReportsEnabled ? <Button component="a" href="/reports/registers" variant="default" size="xs">Звіти регістрів</Button> : null}
   </header>
 }
 

@@ -16,7 +16,7 @@ it.each([accountOrdering, { Version: 7, Rows: 'future', Expression: 'source-path
 })
 it('passes exact request ordering to the server and retains unknown local template source material', async () => {
   const data = orderedAccountRequest(); vi.mocked(apiRequest).mockResolvedValue({}); await createStockReport(data)
-  expect(apiRequest).toHaveBeenLastCalledWith('/report/stocks/generate', { method: 'POST', body: data })
+  expect(apiRequest).toHaveBeenLastCalledWith('/report/stocks/generate', { method: 'POST', dedupe: false, body: data })
   const local = { Name: 'Невідомий порядок', Data: { ...data, ordering: { Version: 99, Rows: 'future', SecretExpression: 'not-executed' } } }
   localStorage.setItem('app_configs_reports_template:v1', JSON.stringify([local]))
   expect(readBrowserReportTemplates()).toEqual([local])

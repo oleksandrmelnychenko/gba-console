@@ -1,5 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { ApiError } from '../../../shared/api/apiClient'
+import { readSession } from '../../../shared/auth/session'
 import { deleteServerReportTemplate, getServerReportTemplates, saveServerReportTemplate } from '../api/reportWorkspaceApi'
+import { getReportTemplateOrderState, orderReportTemplates } from '../api/reportTemplateOrderApi'
+import { invalidTemplateOrder, templatesInAuthoritativeOrder, type ReportTemplateOrderCommand,
+  type ReportTemplateOrderState } from '../data/reportTemplateOrder'
 import { clientComparisonConfigurationError } from '../data/clientPeriodComparison'
 import { datasetConfigurationError } from '../data/reportDatasets'
 import { valuationConfigurationError } from '../data/reportValuation'
@@ -34,39 +39,79 @@ export async function browserTemplateImportId(template: ReportTemplate): Promise
   return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`
 }
 
-export function useServerReportTemplates(enabled: boolean, datasets: ReportDataset[] = []) {
+export function useServerReportTemplates(enabled: boolean, datasets: ReportDataset[] = [], callerKey: string | null = null) {
   const [templates, setTemplates] = useState<ReportTemplate[]>([])
   const [notice, setNotice] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const [ready, setReady] = useState(false)
+  const [orderingOpened, setOrderingOpened] = useState(false)
+  const [orderState, setOrderState] = useState<ReportTemplateOrderState | null>(null)
+  const scope = JSON.stringify([enabled, callerKey])
+  const [storedScope, setStoredScope] = useState(scope)
+  const [loadedScope, setLoadedScope] = useState<string | null>(null)
   const locked = useRef(false)
   const generation = useRef(0)
   const alive = useRef(false)
+  const operationController = useRef<AbortController | null>(null)
+  const readController = useRef<AbortController | null>(null)
+  const orderingRequested = useRef(false)
   const [browserTemplates] = useState(readBrowserReportTemplates)
+  if (storedScope !== scope) {
+    setStoredScope(scope)
+    setReady(false)
+    setOrderingOpened(false)
+    setOrderState(null)
+    setLoadedScope(null)
+    setNotice(null)
+  }
 
-  const reload = useCallback((signal?: AbortSignal) => {
+  const loadList = useCallback(async (signal: AbortSignal) => {
+    for (let attempt = 0; attempt < 2; attempt++) {
+      if (callerKey && readSession()?.userNetUid !== callerKey) throw new DOMException('Authentication changed', 'AbortError')
+      const definitions = await getServerReportTemplates(signal)
+      signal.throwIfAborted()
+      const session = readSession() // An ordinary GET may legitimately refresh this owner's CSRF token.
+      if (callerKey && session?.userNetUid !== callerKey)
+        throw new DOMException('Authentication changed', 'AbortError')
+      if (!orderingRequested.current) return { definitions, order: null }
+      if (!session?.userNetUid || session.userNetUid !== callerKey) throw invalidTemplateOrder()
+      const order = await getReportTemplateOrderState({ session: { userNetUid: session.userNetUid, csrfToken: session.csrfToken }, signal })
+      try { return { definitions: templatesInAuthoritativeOrder(definitions, order), order } }
+      catch (cause) { if (attempt === 1) throw cause }
+    }
+    throw invalidTemplateOrder()
+  }, [callerKey])
+
+  const reload = useCallback((controller: AbortController) => {
+    readController.current?.abort()
+    readController.current = controller
+    const signal = controller.signal
     const current = ++generation.current
-    return getServerReportTemplates(signal).then(result => {
+    return loadList(signal).then(result => {
       if (alive.current && current === generation.current && !signal?.aborted) {
-        setTemplates(result)
+        setTemplates(result.definitions)
+        setOrderState(result.order)
         setReady(true)
+        setLoadedScope(scope)
         setNotice(null)
       }
     }).catch((error: unknown) => {
       if (alive.current && current === generation.current && !signal?.aborted) {
         setReady(false)
+        setOrderState(null)
         setNotice(error instanceof Error ? error.message : 'Не вдалося завантажити шаблони.')
       }
     })
-  }, [])
+  }, [loadList, scope])
 
   const invalidatePending = useCallback(() => { ++generation.current }, [])
 
   useEffect(() => {
     alive.current = true
+    orderingRequested.current = false
     const controller = new AbortController()
-    if (enabled) void reload(controller.signal)
-    return () => { alive.current = false; invalidatePending(); controller.abort() }
+    if (enabled) void reload(controller)
+    return () => { alive.current = false; invalidatePending(); controller.abort(); readController.current?.abort(); operationController.current?.abort() }
   }, [enabled, reload, invalidatePending])
 
   type Operation =
@@ -76,28 +121,65 @@ export function useServerReportTemplates(enabled: boolean, datasets: ReportDatas
     | { kind: 'rename'; template: ReportTemplate; name: string }
     | { kind: 'copy'; template: ReportTemplate; name: string }
     | { kind: 'import'; template: ReportTemplate }
+    | { kind: 'open-order' }
+    | { kind: 'order'; command: ReportTemplateOrderCommand }
 
   async function runTemplateOperation(operation: Operation): Promise<TemplateMutationResult> {
-    if (!enabled || locked.current || !ready) return { ok: false }
+    if (!enabled || loadedScope !== scope || locked.current || !ready) return { ok: false }
     locked.current = true
     const currentGeneration = ++generation.current // Ignore an earlier list response or a later permission change.
     const isCurrent = () => alive.current && generation.current === currentGeneration
+      && (!callerKey || readSession()?.userNetUid === callerKey)
+    const controller = new AbortController()
+    operationController.current = controller
     setBusy(true)
+    async function refreshCommitted(message: string, template?: ReportTemplate): Promise<TemplateMutationResult> {
+      try {
+        const list = await loadList(controller.signal)
+        if (!isCurrent()) return { ok: false }
+        setTemplates(list.definitions); setOrderState(list.order); setReady(true); setLoadedScope(scope); setNotice(message)
+      } catch {
+        if (!isCurrent()) return { ok: false }
+        setReady(false); setOrderState(null)
+        setNotice(`${message} Не вдалося оновити список. Оновіть його перед наступною дією.`)
+      }
+      // The mutation is committed even if the following read failed. Never retry the write.
+      return template ? { ok: true, template } : { ok: true }
+    }
     try {
-      if (operation.kind === 'remove') {
+      if (callerKey && readSession()?.userNetUid !== callerKey) throw invalidTemplateOrder()
+      if (operation.kind === 'open-order') {
+        orderingRequested.current = true; setOrderingOpened(true); setOrderState(null)
+        const list = await loadList(controller.signal)
+        if (!isCurrent()) return { ok: false }
+        setTemplates(list.definitions); setOrderState(list.order); setReady(true); setNotice(null)
+        return { ok: true }
+      } else if (operation.kind === 'order') {
+        const session = readSession()
+        if (!orderingRequested.current || !orderState || !session?.userNetUid || session.userNetUid !== callerKey) throw invalidTemplateOrder()
+        templatesInAuthoritativeOrder(templates, orderState)
+        if (operation.command.Id && !orderState.Items.some(item => item.Id.toLowerCase() === operation.command.Id?.toLowerCase())) throw invalidTemplateOrder()
+        const response = await orderReportTemplates(operation.command, orderState.ListRevision,
+          { session: { userNetUid: session.userNetUid, csrfToken: session.csrfToken }, signal: controller.signal })
+        if (!isCurrent()) return { ok: false }
+        // The accepted order response confirms the write, but cannot replace definitions.
+        // Always reload both snapshots; a racing definition update must not turn this into a retryable write failure.
+        try { templatesInAuthoritativeOrder(templates, response) } catch { setOrderState(null) }
+        return await refreshCommitted('Порядок шаблонів збережено.')
+      } else if (operation.kind === 'remove') {
         const existing = templates.find(item => item.Id === operation.id)
         if (!existing) throw new Error('Шаблон недоступний. Оновіть список.')
         if (operation.revision !== undefined && existing.Revision !== operation.revision) throw new Error('Шаблон змінився. Відкрийте його знову перед збереженням змін.')
-        await deleteServerReportTemplate(existing)
-        if (isCurrent()) {
-          setTemplates(current => current.filter(item => item.Id !== operation.id))
-          setNotice('Шаблон видалено.')
-          return { ok: true }
-        }
+        controller.signal.throwIfAborted()
+        if (!isCurrent()) return { ok: false }
+        await deleteServerReportTemplate(existing, controller.signal)
+        if (isCurrent()) return await refreshCommitted('Шаблон видалено.')
       } else {
         let request: ReportTemplate
         if (operation.kind === 'import') {
           const id = await browserTemplateImportId(operation.template)
+          controller.signal.throwIfAborted()
+          if (!isCurrent()) return { ok: false }
           if (templates.some(item => item.Id === id)) throw new Error('Цей шаблон уже імпортовано.')
           request = { ...operation.template, Id: id, Revision: 0 }
         } else if (operation.kind === 'update' || operation.kind === 'rename' || operation.kind === 'copy') {
@@ -135,21 +217,34 @@ export function useServerReportTemplates(enabled: boolean, datasets: ReportDatas
         if (thresholdError) throw new Error(thresholdError)
         const hideZeroError = reportHideZeroError(request.Data, datasets.find(item => item.DataSource === (request.Data.dataSource ?? 0)))
         if (hideZeroError) throw new Error(hideZeroError)
-        const saved = await saveServerReportTemplate(request)
+        controller.signal.throwIfAborted()
+        if (!isCurrent()) return { ok: false }
+        const saved = await saveServerReportTemplate(request, controller.signal)
         if (isCurrent()) {
-          setTemplates(current => [...current.filter(item => item.Id !== saved.Id), saved])
-          setNotice(operation.kind === 'import' ? 'Шаблон імпортовано. Копія в браузері збережена.'
+          const message = operation.kind === 'import' ? 'Шаблон імпортовано. Копія в браузері збережена.'
             : operation.kind === 'rename' ? 'Назву шаблону змінено.'
               : operation.kind === 'copy' ? 'Створено незалежну копію збереженого шаблону.'
-                : 'Шаблон збережено на сервері у вашому обліковому записі.')
-          return { ok: true, template: saved }
+                : 'Шаблон збережено на сервері у вашому обліковому записі.'
+          return await refreshCommitted(message, saved)
         }
       }
     } catch (error) {
-      if (isCurrent()) setNotice(error instanceof Error ? error.message : 'Не вдалося зберегти зміни шаблону.')
+      if (isCurrent() && operation.kind === 'order' && error instanceof ApiError && error.status === 409) {
+        try {
+          const list = await loadList(controller.signal)
+          if (isCurrent()) { setTemplates(list.definitions); setOrderState(list.order); setReady(true) }
+        } catch { if (isCurrent()) { setReady(false); setOrderState(null) } }
+        if (isCurrent()) setNotice('Список шаблонів змінився. Спробуйте потрібну дію ще раз після оновлення списку.')
+      } else if (isCurrent()) {
+        if (operation.kind === 'open-order' || operation.kind === 'order') { setOrderState(null); setReady(false) }
+        setNotice(operation.kind === 'order'
+          ? 'Не вдалося підтвердити зміну порядку. Оновіть список перед наступною дією.'
+          : error instanceof Error ? error.message : 'Не вдалося зберегти зміни шаблону.')
+      }
     } finally {
       locked.current = false
       setBusy(false)
+      if (operationController.current === controller) operationController.current = null
     }
     return { ok: false }
   }
@@ -160,6 +255,13 @@ export function useServerReportTemplates(enabled: boolean, datasets: ReportDatas
   const rename = (template: ReportTemplate, name: string) => runTemplateOperation({ kind: 'rename', template, name })
   const copy = (template: ReportTemplate, name: string) => runTemplateOperation({ kind: 'copy', template, name })
   const importBrowserTemplate = (template: ReportTemplate) => runTemplateOperation({ kind: 'import', template })
+  const ordering = {
+    opened: enabled && loadedScope === scope && orderingOpened, state: enabled && loadedScope === scope ? orderState : null,
+    open: () => runTemplateOperation({ kind: 'open-order' }),
+    close: () => { if (!locked.current) { orderingRequested.current = false; setOrderingOpened(false); setOrderState(null) } },
+    change: (command: ReportTemplateOrderCommand) => runTemplateOperation({ kind: 'order', command }),
+  }
 
-  return { templates: enabled ? templates : [], notice: enabled ? notice : null, busy, ready: enabled && ready, browserTemplates: enabled ? browserTemplates : [], update, rename, copy, reload: () => { if (!locked.current && enabled) void reload() }, save, remove, importBrowserTemplate }
+  return { templates: enabled && loadedScope === scope ? templates : [], notice: enabled ? notice : null, busy, ready: enabled && loadedScope === scope && ready, browserTemplates: enabled ? browserTemplates : [], update, rename, copy,
+    reload: () => { if (!locked.current && enabled) { setReady(false); void reload(new AbortController()) } }, save, remove, importBrowserTemplate, ordering }
 }

@@ -26,7 +26,7 @@ it('accepts frozen source21 capabilities and serializes only explicit independen
   vi.mocked(apiRequest).mockResolvedValueOnce([paymentDataset]); expect(await getReportDatasets()).toEqual([paymentDataset])
   const body = paymentRequest(), before = structuredClone(body)
   vi.mocked(apiRequest).mockResolvedValueOnce({ DocumentURL: '/reports/revenue.xlsx' }); await createStockReport(body)
-  expect(apiRequest).toHaveBeenLastCalledWith('/report/stocks/generate', { method: 'POST', body }); expect(body).toEqual(before)
+  expect(apiRequest).toHaveBeenLastCalledWith('/report/stocks/generate', { method: 'POST', dedupe: false, body }); expect(body).toEqual(before)
 })
 it.each(['PaymentComparison', 'Direction', 'Extra', 'Comparison', 'RevenueComparison', 'BuyerSalesShare', 'Ordering', 'Row', 'Measurements'])('rejects malformed %s before generation AND direct template I/O', async field => {
   const body = paymentRequest()

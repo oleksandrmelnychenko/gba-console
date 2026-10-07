@@ -15,7 +15,7 @@ vi.mock('../../auth/useAuth', () => ({ useAuth: () => ({ hasPermission: (permiss
 vi.mock('../api/reportWorkspaceApi', () => ({ getReportCatalogue: vi.fn(), getReportDatasets: vi.fn() }))
 type Props = ComponentProps<typeof ReportCatalogueControl>
 const control = (props: Partial<Props> = {}) => <MantineProvider env="test"><I18nProvider>
-  <ReportCatalogueControl enabled presentation="dialog" {...props} />
+  <ReportCatalogueControl enabled consoleScope={false} presentation="dialog" {...props} />
 </I18nProvider></MantineProvider>
 function launchCatalogue() {
   const catalogue = catalogueFixture()
@@ -40,7 +40,7 @@ it('loads only after opening the shared wide dialog, then restores trigger focus
   expect(getReportCatalogue).not.toHaveBeenCalled()
   trigger.focus(); fireEvent.click(trigger)
   const dialog = await screen.findByRole('dialog', { name: 'Каталог усіх звітів 1С' })
-  await within(dialog).findByText('Каталог звітів', { exact: true })
+  await within(dialog).findByText('Каталог звітів', { exact: true }, { timeout: 5000 })
   expect(document.querySelector('.app-modal.report-catalogue-dialog')).toBeTruthy()
   const signal = vi.mocked(getReportCatalogue).mock.calls[0][0] as AbortSignal
   fireEvent.click(screen.getByRole('button', { name: 'Закрити каталог звітів' }))

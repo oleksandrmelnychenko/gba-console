@@ -1,6 +1,7 @@
 import { MantineProvider } from '@mantine/core'
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { clearSession, saveSession } from '../../../shared/auth/session'
 import { I18nProvider } from '../../../shared/i18n/I18nProvider'
 import { createStockReport, searchValuationAgreements } from '../api/reportsApi'
 import { getReportDatasets, getServerReportTemplates, saveServerReportTemplate } from '../api/reportWorkspaceApi'
@@ -21,7 +22,7 @@ vi.mock('../api/reportsApi', async original => ({ ...await original<typeof impor
 }))
 
 function workspace() {
-  return render(<MantineProvider env="test"><I18nProvider><ReportsStocksPage /></I18nProvider></MantineProvider>)
+  return render(<MantineProvider env="test"><I18nProvider><ReportsStocksPage consoleScope={false} /></I18nProvider></MantineProvider>)
 }
 async function ready() {
   const view = workspace()
@@ -46,11 +47,13 @@ describe('constructor draft recovery', () => {
   beforeEach(() => {
     owner = 'draft-owner-a'; allowed = true
     vi.clearAllMocks(); sessionStorage.clear(); localStorage.clear()
+    saveSession({ userNetUid: owner, csrfToken: 'draft-fixture-csrf-a' })
     Object.defineProperty(HTMLElement.prototype, 'scrollIntoView', { configurable: true, value: vi.fn() })
     vi.mocked(getReportDatasets).mockResolvedValue([...reportDatasets, stockDataset, valuationDataset])
     vi.mocked(getServerReportTemplates).mockResolvedValue([structuredClone(template)])
     vi.mocked(searchValuationAgreements).mockResolvedValue([{ Id: 42, Name: 'Договір 42' }, { Id: 43, Name: 'Договір 43' }])
   })
+  afterEach(clearSession)
 
   it('recovers an unfinished period after remount only on request, without generating or updating a template', async () => {
     const view = await ready()
@@ -142,10 +145,12 @@ describe('constructor draft recovery', () => {
     fireEvent.change(screen.getByLabelText('Від'), { target: { value: '2026-09-02' } })
     first.unmount()
     owner = 'draft-owner-b'
+    saveSession({ userNetUid: owner, csrfToken: 'draft-fixture-csrf-b' })
     const second = await ready()
     expect(screen.queryByRole('button', { name: 'Відновити чернетку' })).toBeNull()
     second.unmount()
     owner = 'draft-owner-a'
+    saveSession({ userNetUid: owner, csrfToken: 'draft-fixture-csrf-a-returned' })
     await restored()
     expect((screen.getByLabelText('Від') as HTMLInputElement).value).toBe('2026-09-02')
   })

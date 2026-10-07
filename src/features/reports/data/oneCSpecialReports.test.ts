@@ -2,7 +2,8 @@ import { describe, expect, it } from 'vitest'
 import type { ReportDataset } from '../types'
 import { datasetPresetRequest, defaultDatasetRequest } from './reportDatasets'
 import { defaultOneCSpecialSettings, isOneCSpecialDataset, oneCSpecialSettingsError,
-  oneCSpecialSettingsForWorld } from './oneCSpecialReports'
+  oneCSpecialSettingsForWorld, cloneOneCSpecialAliases } from './oneCSpecialReports'
+import { ownPriceAnalysisDataset } from './ownPriceAnalysis.test-fixtures'
 
 function dataset(dataSource: number): ReportDataset {
   const fields = dataSource === 28 ? { rows: [68, 69], measures: [72, 73] }
@@ -42,6 +43,41 @@ describe('bounded 1C server reports', () => {
     expect(isOneCSpecialDataset({ ...native, priceAnalysis: undefined })).toBe(false)
     expect(isOneCSpecialDataset({ ...native, priceAnalysis: { ...native.priceAnalysis as object,
       RecommendationEligible: true } })).toBe(false)
+  })
+
+  it('uses OUR rates for new analysis requests only when the server supports them', () => {
+    const own = defaultDatasetRequest(ownPriceAnalysisDataset, '2026-01-01', '2026-01-31')
+    expect(own.priceAnalysis).toEqual({ Version: 2, SourceWorld: 1, AsOf: '' })
+    const request = { ...own, priceAnalysis: { Version: 2, SourceWorld: 1, AsOf: '2026-01-31' } }
+    expect(oneCSpecialSettingsError(request, ownPriceAnalysisDataset)).toBeNull()
+    expect(oneCSpecialSettingsError(request)).toBeNull()
+    expect(oneCSpecialSettingsError(request, dataset(28))).toBeTruthy()
+    expect(defaultDatasetRequest(dataset(28), '', '').priceAnalysis).toEqual({ Version: 1, SourceWorld: 1, AsOf: '' })
+    expect(oneCSpecialSettingsForWorld(28, 'fenix', ownPriceAnalysisDataset)).toEqual({
+      priceAnalysis: { Version: 2, SourceWorld: 1, AsOf: '' },
+    })
+  })
+
+  it.each([false, undefined])('does not infer OUR rate support from versions without the capability %s', flag => {
+    const legacy = { ...ownPriceAnalysisDataset, priceAnalysis: {
+      ...ownPriceAnalysisDataset.priceAnalysis as object, OwnCommercialRatesSupported: flag,
+    } }
+    expect(defaultDatasetRequest(legacy, '', '').priceAnalysis).toMatchObject({ Version: 1 })
+  })
+
+  it('preserves explicit saved versions and rejects an unsupported version', () => {
+    const base = defaultDatasetRequest(ownPriceAnalysisDataset, '', '')
+    for (const Version of [1, 2]) {
+      const saved = { ...base, PriceAnalysis: { Version, SourceWorld: 1, AsOf: '2026-01-31' }, priceAnalysis: undefined }
+      delete saved.priceAnalysis
+      expect(oneCSpecialSettingsError(saved, ownPriceAnalysisDataset)).toBeNull()
+      const copy = cloneOneCSpecialAliases(saved)
+      expect(copy.PriceAnalysis).toEqual(saved.PriceAnalysis)
+      expect(copy.PriceAnalysis).not.toBe(saved.PriceAnalysis)
+    }
+    expect(oneCSpecialSettingsError({ ...base, priceAnalysis: { Version: 3, SourceWorld: 1, AsOf: '2026-01-31' } }, ownPriceAnalysisDataset)).toBeTruthy()
+    expect(oneCSpecialSettingsError({ ...defaultDatasetRequest(dataset(23), '', ''),
+      discountMarkup: { Version: 2, SourceWorld: 1, DateEnd: '2026-01-31' } }, dataset(23))).toBeTruthy()
   })
 
   it('keeps the fixed ABC class once when its preset is reapplied', () => {

@@ -9,23 +9,24 @@ type Props = { value: unknown; disabled: boolean; onChange: (value: AgreementPri
 type Option = { value: string; label: string }
 const SOURCE = 31
 const LIMIT = 25
+const EMPTY_ITEMS: ReportEntity[] = []
 
 function useLookup(field: number, enabled: boolean, search: string) {
   const [query] = useDebouncedValue(search.trim(), 300)
-  const [items, setItems] = useState<ReportEntity[]>([])
-  const [error, setError] = useState<string | null>(null)
+  const [result, setResult] = useState<{ key: string; items: ReportEntity[]; error: string | null } | null>(null)
+  const key = `${field}:${query}`
+  const active = enabled && (field !== 1 || query.length >= 2 || /^\d+$/.test(query))
   useEffect(() => {
-    if (!enabled || (field === 1 && query.length < 2 && !/^\d+$/.test(query))) {
-      setItems([])
-      return
-    }
+    if (!active) return
     const controller = new AbortController()
     searchDatasetReportValues(SOURCE, field, { value: query, offset: 0, limit: LIMIT }, controller.signal)
-      .then(result => { setItems(result); setError(null) })
-      .catch(cause => { if (!controller.signal.aborted) setError(cause instanceof Error ? cause.message : 'Не вдалося завантажити довідник.') })
+      .then(items => { if (!controller.signal.aborted) setResult({ key, items, error: null }) })
+      .catch(cause => { if (!controller.signal.aborted) setResult({ key, items: EMPTY_ITEMS,
+        error: cause instanceof Error ? cause.message : 'Не вдалося завантажити довідник.' }) })
     return () => controller.abort()
-  }, [enabled, field, query])
-  return { items, error }
+  }, [active, field, key, query])
+  return { items: active && result?.key === key ? result.items : EMPTY_ITEMS,
+    error: active && result?.key === key ? result.error : null }
 }
 
 function mergeOptions(found: ReportEntity[], saved: Option[], selected: number[]): Option[] {

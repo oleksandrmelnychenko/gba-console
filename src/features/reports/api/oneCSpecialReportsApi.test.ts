@@ -34,7 +34,7 @@ it('validates specialized generation and retains settings when a saved template 
   const original = structuredClone(data)
   vi.mocked(apiRequest).mockResolvedValueOnce({ DocumentURL: '/report/discount.xlsx' })
   await createStockReport(data)
-  expect(apiRequest).toHaveBeenLastCalledWith('/report/stocks/generate', { method: 'POST', body: original })
+  expect(apiRequest).toHaveBeenLastCalledWith('/report/stocks/generate', { method: 'POST', dedupe: false, body: original })
   expect(data).toEqual(original)
   const wire = { Id: crypto.randomUUID(), Revision: 1, Name: 'Знижки', Data: {
     DataSource: 23, From: null, To: null, Sorted: data.sorted, Selections: [], DiscountMarkup: data.discountMarkup,

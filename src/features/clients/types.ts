@@ -382,6 +382,7 @@ export type ClientSourceContactSnapshot = {
 
 export type ClientSourceAgreementSnapshot = {
   SourceCode: number
+  SourceReference?: string | null
   Name?: string | null
   Number?: string | null
   CurrencyCode?: string | null
@@ -401,6 +402,7 @@ export type ClientSourceAgreementSnapshot = {
 export type ClientSourceCardSnapshot = {
   SourceSystem: 'fenix' | 'amg' | string
   SourceCode: number
+  Buyer?: boolean
   ClientName?: string | null
   FullName?: string | null
   Tin?: string | null

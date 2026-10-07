@@ -26,6 +26,9 @@ export const priceTypeSalesComparisonCapability: PriceTypeSalesComparisonCapabil
   CoverageStatus: 'native_partial',
   ParityVerified: false,
   MaximumGroupedRows: 500000,
+  SalesBases: [0, 1], NewDraftSalesBasis: 0, OperationalRequiresDailyTurnoverPublication: false,
+  OperationalGroupings: [0, 1, 2, 3, 4, 5, 6, 12, 15],
+  OperationalLookupFields: [51, 52, 45], OperationalScopePath: '/report/datasets/27/current-scope',
 }
 
 export const priceTypeSalesComparisonDataset: ReportDataset = {

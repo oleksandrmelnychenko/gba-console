@@ -11,7 +11,7 @@ it('accepts actual capability and passes XYZ request bytes without synthesizing 
   const body = salesXyzRequest(), before = structuredClone(body)
   vi.mocked(apiRequest).mockResolvedValueOnce({ DocumentURL: '/reports/xyz.xlsx' })
   await createStockReport(body)
-  expect(apiRequest).toHaveBeenLastCalledWith('/report/stocks/generate', { method: 'POST', body })
+  expect(apiRequest).toHaveBeenLastCalledWith('/report/stocks/generate', { method: 'POST', dedupe: false, body })
   expect(body).toEqual(before)
 })
 it.each(['Xyz', 'Bounds', 'Comparison', 'Ordering', 'Row', 'Measurements'])('rejects malformed %s before generation I/O', field => {

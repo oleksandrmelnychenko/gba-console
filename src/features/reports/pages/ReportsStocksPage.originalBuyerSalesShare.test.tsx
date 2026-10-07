@@ -1,0 +1,76 @@
+import { MantineProvider } from '@mantine/core'
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import type { ReactNode } from 'react'
+import { beforeEach, expect, it, vi } from 'vitest'
+import { I18nProvider } from '../../../shared/i18n/I18nProvider'
+import { getOriginalBuyerSalesShareCapabilities, previewOriginalBuyerSalesShare } from '../api/originalBuyerSalesShareApi'
+import { createStockReport } from '../api/reportsApi'
+import { getReportCatalogue, getReportDatasets, getServerReportTemplates } from '../api/reportWorkspaceApi'
+import { originalBuyerSalesShareCapability, originalBuyerSalesShareCatalogueEntry, originalBuyerSalesShareReport } from '../data/originalBuyerSalesShare.test-fixtures'
+import { reportDatasets } from '../data/reportDatasets.test-fixtures'
+import type { ReportCatalogue } from '../types'
+import { ReportsStocksPage } from './ReportsStocksPage'
+
+vi.mock('../../auth/useAuth', () => ({ useAuth: () => ({ user: { NetUid: 'buyer-share-test-owner' }, hasPermission: () => true }) }))
+vi.mock('../api/originalBuyerSalesShareApi', () => ({ getOriginalBuyerSalesShareCapabilities: vi.fn(), previewOriginalBuyerSalesShare: vi.fn() }))
+vi.mock('../api/reportWorkspaceApi', async original => ({ ...await original<typeof import('../api/reportWorkspaceApi')>(),
+  getReportCatalogue: vi.fn(), getReportDatasets: vi.fn(), getServerReportTemplates: vi.fn(),
+}))
+vi.mock('../api/reportsApi', async original => ({ ...await original<typeof import('../api/reportsApi')>(), createStockReport: vi.fn() }))
+
+function Providers({ children }: { children: ReactNode }) {
+  return <MantineProvider env="test"><I18nProvider>{children}</I18nProvider></MantineProvider>
+}
+
+beforeEach(() => {
+  vi.clearAllMocks(); sessionStorage.clear(); localStorage.clear()
+  const catalogue: ReportCatalogue = { CapturedOn: '2026-09-07', Presentations: [], Reports: [originalBuyerSalesShareCatalogueEntry()] }
+  vi.mocked(getReportCatalogue).mockResolvedValue(catalogue)
+  vi.mocked(getReportDatasets).mockResolvedValue(reportDatasets)
+  vi.mocked(getServerReportTemplates).mockResolvedValue([])
+  vi.mocked(getOriginalBuyerSalesShareCapabilities).mockResolvedValue(originalBuyerSalesShareCapability())
+  vi.mocked(previewOriginalBuyerSalesShare).mockResolvedValue(originalBuyerSalesShareReport())
+})
+
+it.each(['new', 'repeat'] as const)('%s launches its original share form without native filters or draft state', async variant => {
+  vi.mocked(getReportCatalogue).mockResolvedValue({ CapturedOn: '2026-09-07', Presentations: [], Reports: [originalBuyerSalesShareCatalogueEntry(variant)] })
+  vi.mocked(getOriginalBuyerSalesShareCapabilities).mockResolvedValue(originalBuyerSalesShareCapability(variant))
+  vi.mocked(previewOriginalBuyerSalesShare).mockResolvedValue(originalBuyerSalesShareReport('2026-09', variant))
+  render(<Providers><ReportsStocksPage consoleScope={false} constructorMode /></Providers>)
+  await screen.findByRole('button', { name: 'Продажі за днями' })
+  const draftKey = 'report-workspace-draft:v1:buyer-share-test-owner'
+  const draft = sessionStorage.getItem(draftKey)
+  fireEvent.click(screen.getByRole('button', { name: 'Каталог усіх звітів 1С' }))
+  const open = await screen.findByRole('button', { name: 'Відкрити оригінальний конструктор' })
+  await waitFor(() => expect((open as HTMLButtonElement).disabled).toBe(false))
+  fireEvent.click(open)
+  const original = await screen.findByRole('dialog', { name: originalBuyerSalesShareCapability(variant).Title })
+  const month = within(original).getByLabelText('Період')
+  expect((month as HTMLInputElement).type).toBe('month')
+  expect(within(original).queryByRole('combobox')).toBeNull()
+  expect(within(original).queryByLabelText('Від')).toBeNull()
+  expect(within(original).queryByLabelText('До')).toBeNull()
+  fireEvent.change(month, { target: { value: '2026-09' } })
+  fireEvent.click(within(original).getByRole('button', { name: 'Переглянути' }))
+  await screen.findByRole('region', { name: 'Результат частки продажів' })
+  expect(previewOriginalBuyerSalesShare).toHaveBeenCalledWith(originalBuyerSalesShareCapability(variant), '2026-09')
+  expect(createStockReport).not.toHaveBeenCalled()
+  expect(sessionStorage.getItem(draftKey)).toBe(draft)
+})
+
+it.each(['new', 'repeat'] as const)('%s launches independently when the numeric dataset catalogue fails', async variant => {
+  vi.mocked(getReportCatalogue).mockResolvedValue({ CapturedOn: '2026-09-07', Presentations: [], Reports: [originalBuyerSalesShareCatalogueEntry(variant)] })
+  vi.mocked(getOriginalBuyerSalesShareCapabilities).mockResolvedValue(originalBuyerSalesShareCapability(variant))
+  vi.mocked(getReportDatasets).mockRejectedValue(new Error('Native datasets unavailable'))
+  render(<Providers><ReportsStocksPage consoleScope={false} constructorMode /></Providers>)
+  const catalogue = await screen.findByRole('button', { name: 'Каталог усіх звітів 1С' })
+  expect(screen.getAllByText('Native datasets unavailable').length).toBeGreaterThan(0)
+  expect((screen.getByRole('button', { name: 'Сформувати' }) as HTMLButtonElement).disabled).toBe(true)
+  fireEvent.click(catalogue)
+  const open = await screen.findByRole('button', { name: 'Відкрити оригінальний конструктор' })
+  await waitFor(() => expect((open as HTMLButtonElement).disabled).toBe(false))
+  fireEvent.click(open)
+  await screen.findByRole('dialog', { name: originalBuyerSalesShareCapability(variant).Title })
+  expect(getOriginalBuyerSalesShareCapabilities).toHaveBeenCalled()
+  expect(createStockReport).not.toHaveBeenCalled()
+})

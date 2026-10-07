@@ -18,10 +18,14 @@ describe('constructor opened-template identity', () => {
     Object.defineProperty(HTMLElement.prototype, 'scrollIntoView', { configurable: true, value: vi.fn() })
     vi.mocked(getReportDatasets).mockResolvedValue([...reportDatasets, stockDataset])
     vi.mocked(getServerReportTemplates).mockResolvedValue([template])
-    vi.mocked(saveServerReportTemplate).mockImplementation(async request => ({ ...request, Revision: 5 }))
+    vi.mocked(saveServerReportTemplate).mockImplementation(async request => {
+      const saved = { ...request, Revision: 5 }
+      vi.mocked(getServerReportTemplates).mockResolvedValue([saved])
+      return saved
+    })
   })
   it.each(['reset', 'preset', 'dataset'])('clears the opened target after %s without overwriting its stored settings', async action => {
-    render(<MantineProvider env="test"><I18nProvider><ReportsStocksPage /></I18nProvider></MantineProvider>)
+    render(<MantineProvider env="test"><I18nProvider><ReportsStocksPage consoleScope={false} /></I18nProvider></MantineProvider>)
     await screen.findByRole('button', { name: 'Продажі за днями' }); await openTemplate()
     if (action === 'reset') fireEvent.click(screen.getByRole('button', { name: 'Скинути' }))
     else if (action === 'preset') fireEvent.click(screen.getByRole('button', { name: 'Продажі за днями' }))
@@ -31,7 +35,7 @@ describe('constructor opened-template identity', () => {
     expect(saveServerReportTemplate).not.toHaveBeenCalled()
   })
   it('sends an edited period only to the opened id while preserving its stored name', async () => {
-    render(<MantineProvider env="test"><I18nProvider><ReportsStocksPage /></I18nProvider></MantineProvider>)
+    render(<MantineProvider env="test"><I18nProvider><ReportsStocksPage consoleScope={false} /></I18nProvider></MantineProvider>)
     await screen.findByRole('button', { name: 'Продажі за днями' }); await openTemplate()
     fireEvent.change(screen.getByLabelText('Від'), { target: { value: '2026-09-02' } })
     fireEvent.click(screen.getByRole('button', { name: 'Шаблони' }))
@@ -41,12 +45,16 @@ describe('constructor opened-template identity', () => {
     expect(vi.mocked(saveServerReportTemplate).mock.calls[0][0]).toMatchObject({ Id: template.Id, Revision: 4, Name: template.Name, Data: { from: '2026-09-02', to: template.Data.to } })
   })
   it('does not upgrade an old opened draft when renaming a newer reloaded template', async () => {
-    render(<MantineProvider env="test"><I18nProvider><ReportsStocksPage /></I18nProvider></MantineProvider>)
+    render(<MantineProvider env="test"><I18nProvider><ReportsStocksPage consoleScope={false} /></I18nProvider></MantineProvider>)
     await screen.findByRole('button', { name: 'Продажі за днями' }); await openTemplate()
     fireEvent.change(screen.getByLabelText('Від'), { target: { value: '2026-09-02' } })
     const newer = { ...template, Revision: 5, Data: { ...template.Data, from: '2026-09-03' } }
     vi.mocked(getServerReportTemplates).mockResolvedValue([newer])
-    vi.mocked(saveServerReportTemplate).mockImplementation(async request => ({ ...request, Revision: 6 }))
+    vi.mocked(saveServerReportTemplate).mockImplementation(async request => {
+      const saved = { ...request, Revision: 6 }
+      vi.mocked(getServerReportTemplates).mockResolvedValue([saved])
+      return saved
+    })
     fireEvent.click(screen.getByRole('button', { name: 'Шаблони' }))
     fireEvent.click(screen.getByRole('button', { name: 'Оновити список' }))
     await waitFor(() => expect((screen.getByRole('button', { name: 'Оновити шаблон' }) as HTMLButtonElement).disabled).toBe(true))

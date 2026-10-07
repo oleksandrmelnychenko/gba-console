@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { apiRequest } from './apiClient'
+import { clearSession, saveSession } from '../auth/session'
 
 function okResponse() {
   return new Response(JSON.stringify({ Body: { ok: true } }), {
@@ -17,6 +18,7 @@ describe('apiRequest mutation dedupe (rapid-click guard)', () => {
   })
 
   afterEach(() => {
+    clearSession()
     vi.unstubAllGlobals()
   })
 
@@ -82,5 +84,52 @@ describe('apiRequest mutation dedupe (rapid-click guard)', () => {
     ])
 
     expect(fetchMock).toHaveBeenCalledTimes(2)
+  })
+
+  it('honors GET dedupe:false across a cancelled old caller and a new caller at the same URL', async () => {
+    const releases: ((response: Response) => void)[] = []
+    fetchMock.mockImplementation((_url: string, options: RequestInit) => new Promise<Response>((resolve, reject) => {
+      releases.push(resolve)
+      options.signal?.addEventListener('abort', () => reject(new DOMException('Cancelled', 'AbortError')), { once: true })
+    }))
+    const oldController = new AbortController(), newController = new AbortController()
+    saveSession({ userNetUid: 'caller-a', csrfToken: 'csrf-a' })
+    const previous = apiRequest('/report/templates', { cache: 'no-store', dedupe: false, signal: oldController.signal }).catch(error => error)
+    oldController.abort(); saveSession({ userNetUid: 'caller-b', csrfToken: 'csrf-b' })
+    const current = apiRequest('/report/templates', { cache: 'no-store', dedupe: false, signal: newController.signal })
+    expect(fetchMock).toHaveBeenCalledTimes(2)
+    releases[1](new Response(JSON.stringify({ Body: { caller: 'caller-b' } }), { headers: { 'Content-Type': 'application/json' } }))
+    await expect(current).resolves.toEqual({ caller: 'caller-b' })
+    expect(await previous).toMatchObject({ name: 'AbortError' })
+    expect(fetchMock.mock.calls[0][1].signal).toBe(oldController.signal)
+    expect(fetchMock.mock.calls[1][1].signal).toBe(newController.signal)
+  })
+
+  it('keeps normal concurrent GET deduplication when no opt-out is requested', async () => {
+    let release!: (response: Response) => void
+    fetchMock.mockImplementation(() => new Promise<Response>(resolve => { release = resolve }))
+    const first = apiRequest('/ordinary-reference'), second = apiRequest('/ordinary-reference')
+    release(okResponse())
+    await expect(first).resolves.toEqual({ ok: true }); await expect(second).resolves.toEqual({ ok: true })
+    expect(fetchMock).toHaveBeenCalledOnce()
+  })
+
+  it('does not join identical caller-scoped writes carrying separate cancellation signals after an account switch', async () => {
+    const releases: ((response: Response) => void)[] = []
+    fetchMock.mockImplementation((_url: string, options: RequestInit) => new Promise<Response>((resolve, reject) => {
+      releases.push(resolve)
+      options.signal?.addEventListener('abort', () => reject(new DOMException('Cancelled', 'AbortError')), { once: true })
+    }))
+    const oldController = new AbortController(), currentController = new AbortController(), body = { Name: 'Імпорт', Id: 'same-import-id', Revision: 0 }
+    saveSession({ userNetUid: 'caller-a', csrfToken: 'csrf-a' })
+    const previous = apiRequest('/report/templates/save', { method: 'POST', body, signal: oldController.signal }).catch(error => error)
+    oldController.abort(); saveSession({ userNetUid: 'caller-b', csrfToken: 'csrf-b' })
+    const current = apiRequest('/report/templates/save', { method: 'POST', body, signal: currentController.signal })
+    expect(fetchMock).toHaveBeenCalledTimes(2)
+    expect(fetchMock.mock.calls[0][1].body).toBe(fetchMock.mock.calls[1][1].body)
+    expect(new Headers(fetchMock.mock.calls[0][1].headers).get('X-CSRF-Token')).toBe('csrf-a')
+    expect(new Headers(fetchMock.mock.calls[1][1].headers).get('X-CSRF-Token')).toBe('csrf-b')
+    releases[1](okResponse()); await expect(current).resolves.toEqual({ ok: true })
+    expect(await previous).toMatchObject({ name: 'AbortError' })
   })
 })

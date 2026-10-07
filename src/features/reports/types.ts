@@ -254,7 +254,21 @@ export type ReportSourceBuyerSubtreeCapabilities = {
 }
 
 export type ReportRequestBody = {
+  workbookPresentation?: unknown
+  WorkbookPresentation?: unknown
+  currentVparivanieFullScope?: unknown
+  CurrentVparivanieFullScope?: unknown
   dataSource?: number
+  groupedSettlementPeriod?: unknown
+  GroupedSettlementPeriod?: unknown
+  sourceCounterpartyGroups?: unknown
+  SourceCounterpartyGroups?: unknown
+  settlementPeriod?: unknown
+  groupedCashPeriod?: unknown
+  cashPeriod?: unknown
+  SettlementPeriod?: unknown
+  GroupedCashPeriod?: unknown
+  CashPeriod?: unknown
   returnsOnly?: boolean
   ReturnsOnly?: boolean
   priceTypeSalesComparison?: unknown
@@ -303,6 +317,12 @@ export type ReportRequestBody = {
   SourceOrganizations?: unknown
   sourceBuyerSubtree?: unknown
   SourceBuyerSubtree?: unknown
+  dayOrganizationBasis?: unknown
+  DayOrganizationBasis?: unknown
+  supplierBasis?: unknown
+  SupplierBasis?: unknown
+  supplierSourceWorld?: unknown
+  SupplierSourceWorld?: unknown
   oneC?: OneCTurnoverFilters
   from: string
   selections: ReportSelection[]
@@ -317,11 +337,19 @@ export type ReportRequestBody = {
 export type ReportDatasetField = { Type: number; Name: string; Selectable?: boolean }
 
 export type ReportDataset = {
+  workbookPresentation?: unknown
   returnsOnly?: boolean
+  groupedSettlementPeriod?: unknown
+  sourceCounterpartyGroups?: unknown
+  settlementPeriod?: unknown
+  groupedCashPeriod?: unknown
+  cashPeriod?: unknown
+  currentVparivanie?: unknown
   agreementPrices?: unknown
   agreementPriceComparison?: unknown
   priceTypeSalesComparison?: unknown
   discountMarkup?: unknown
+  originalClientDiscounts?: unknown
   providedDiscounts?: unknown
   priceAnalysis?: unknown
   DataSource: number
@@ -346,6 +374,9 @@ export type ReportDataset = {
   productClassification?: unknown
   sourceOrganizations?: unknown
   sourceBuyerSubtree?: unknown
+  dayOrganizationBasis?: unknown
+  supplierBasis?: unknown
+  supplierSourceWorld?: unknown
   Groupings: ReportDatasetField[]
   Measurements: ReportDatasetField[]
   Filters: ReportDatasetField[]

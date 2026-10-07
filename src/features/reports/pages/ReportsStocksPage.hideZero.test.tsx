@@ -15,7 +15,7 @@ vi.mock('../api/reportWorkspaceApi', async original => ({ ...await original<type
 function Providers({ children }: { children: ReactNode }) { return <MantineProvider env="test"><I18nProvider>{children}</I18nProvider></MantineProvider> }
 async function select(name: string, option: string) { fireEvent.click(screen.getByRole('combobox', { name })); fireEvent.click(await screen.findByRole('option', { name: option })) }
 const saved = () => ({ Id: crypto.randomUUID(), Revision: 3, Name: 'Приховані нулі рахунків', Data: hideZeroRequest() })
-async function ready() { const view = render(<Providers><ReportsStocksPage /></Providers>); await screen.findByRole('button', { name: 'Продажі за днями' }); return view }
+async function ready() { const view = render(<Providers><ReportsStocksPage consoleScope={false} /></Providers>); await screen.findByRole('button', { name: 'Продажі за днями' }); return view }
 async function applySaved() { fireEvent.click(screen.getByRole('button', { name: 'Шаблони' })); fireEvent.click(await screen.findByRole('button', { name: /Приховані нулі рахунків/ })) }
 const disable = () => fireEvent.click(screen.getByRole('button', { name: 'Показувати підтверджені нулі' }))
 

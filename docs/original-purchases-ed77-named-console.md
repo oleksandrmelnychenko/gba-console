@@ -1,0 +1,13 @@
+# Purchases named filters
+
+This additive form uses the accepted Fenix original `ed77c5cc-6688-4316-a631-2ad0b237140d` and definition `582aeeaf58b04b2234f9b73c3036045882b47d94165b3e47d70529b44520b241`. The server contract is commit `95cf8725e92c6b7ba88372821c9168c739ae8542`; its independent FILE review is `b53378dabd72546ea1a482eaf96c18b549fafcc5a57fcebdbd5de55f73fcfcb2`.
+
+`Завантажити назви` sends an unfiltered, base-quantity `POST /report/originals/purchases/choices` for the selected period. The client validates the exact original identity, dates, selectors and resource echo; all five field dictionaries; actual source-field `MissingFamilies`; current field hashes; and typed choices. A field is enabled only when that field has a closed ordinary Snapshot and a current witness. `HumanChoicesAvailable` remains false. The unmapped Status field stays disabled. Genuine complete-empty publications remain distinct from absent names and add no options.
+
+Counterparty, Product and Division keep their own native Ref68/84/97 families and uppercase references. Project keys retain both full `08:0000001F:RRef` and `08:00000069:RRef` identities, including equal RRefs in the two types. Only genuine captions appear as choices; deleted entries retain their caption with a visible deletion note. No technical reference becomes a label.
+
+Each selected field sends its own current `NamedChoiceWitnesses` value to preview. Changes to dates, caller, permission or catalogue coverage invalidate selections and completed files. Resource changes keep the same canonical period-wide name coverage. A catalogue reload explicitly clears the selections before obtaining fresh witnesses. The server can refuse a stale current witness without returning partial amounts or synthetic zero totals. Names remain optional for an unfiltered request.
+
+Preview validation preserves the original policies, exact three-decimal quantity strings, hierarchy and server totals. Named rows require current field evidence; selected rows require confirmed captions. Missing row names use human ordinal fallbacks. Completed results are detached, and screen, CSV, XLSX and PDF all use their completed captions and exact quantities; later choices do not relabel a completed export. CSV protects formula-like caption text without modifying signed quantity strings.
+
+The existing report permission, caller identity, original abort ownership, stale response protection, export size limit and dynamic workbook/PDF imports remain. There is no Source provider registration, queue activation, schema change, native virtual/date/zero/NULL parity or current-data acceptance. All authored tests are FILE-only; Root owns quality execution. The current frozen Console1670 deployment is unchanged.

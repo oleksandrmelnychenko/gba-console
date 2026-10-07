@@ -17,7 +17,7 @@ vi.mock('../api/reportWorkspaceApi', () => ({ getReportCatalogue: vi.fn(), getRe
 const panel = (props: ComponentProps<typeof ReportCataloguePanel> = {}) => <MantineProvider env="test"><I18nProvider><ReportCataloguePanel {...props} /></I18nProvider></MantineProvider>
 const renderPanel = (props: ComponentProps<typeof ReportCataloguePanel> = {}) => render(panel(props))
 const openSpy = () => vi.fn<NonNullable<ComponentProps<typeof ReportCataloguePanel>['onOpen']>>(() => true)
-const control = (props: ComponentProps<typeof ReportCatalogueControl>) => <MantineProvider env="test"><I18nProvider><ReportCatalogueControl {...props} /></I18nProvider></MantineProvider>
+const control = (props: ComponentProps<typeof ReportCatalogueControl>) => <MantineProvider env="test"><I18nProvider><ReportCatalogueControl consoleScope={false} {...props} /></I18nProvider></MantineProvider>
 function launchCatalogue(): ReportCatalogue {
   const catalogue = catalogueFixture()
   catalogue.Reports[0].Id = 'builtin:ЗадолженностьПоКонтрагентам'
@@ -162,7 +162,7 @@ it('requires a specific native variant when the same source supports multiple da
 it('hides source-only reports from the Console rollout', async () => {
   vi.mocked(getReportCatalogue).mockResolvedValue(launchCatalogue())
   const onOpen = openSpy()
-  renderPanel({ onOpen, consoleScope: true }); await launchReady()
+  renderPanel({ onOpen, consoleScope: true }); await screen.findByText('Готово')
   fireEvent.change(screen.getByLabelText('Пошук звіту'), { target: { value: 'Повернення' } })
   expect(screen.queryByRole('button', { name: 'Покриття звіту: Повернення постачальникам' })).toBeNull()
   expect(onOpen).not.toHaveBeenCalled()

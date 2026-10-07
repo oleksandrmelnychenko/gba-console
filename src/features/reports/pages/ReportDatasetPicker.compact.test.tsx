@@ -87,3 +87,16 @@ it('shows no fabricated limitations or summary without an available dataset', ()
   expect(screen.getByText(grossDataset.Description)).toBeTruthy()
   expect(screen.queryByText('Межі розрахунку')).toBeNull()
 })
+
+
+it('disables datasets outside the active rollout while retaining their ready label', async () => {
+  const options = props()
+  render(picker({ ...options, compact: true, activeDataSources: new Set([valuationDataset.DataSource]) }))
+  fireEvent.click(screen.getByRole('combobox'))
+  const blocked = await screen.findByRole('option', { name: `${stockDataset.Name} · Готово (запуск вимкнено)` })
+  expect(blocked.getAttribute('data-combobox-disabled')).toBe('true')
+  fireEvent.click(blocked)
+  expect(options.onChange).not.toHaveBeenCalled()
+  fireEvent.click(screen.getByRole('option', { name: valuationDataset.Name }))
+  expect(options.onChange).toHaveBeenCalledExactlyOnceWith(valuationDataset)
+})

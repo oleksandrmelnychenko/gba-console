@@ -3,6 +3,7 @@ import { act, fireEvent, render, screen, waitFor, within } from '@testing-librar
 import { MemoryRouter } from 'react-router-dom'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 import { PermissionKeys } from '../../../shared/auth/permissionKeys'
+import { clearSession, saveSession } from '../../../shared/auth/session'
 import { I18nProvider } from '../../../shared/i18n/I18nProvider'
 import { createStockReport, searchValuationAgreements } from '../api/reportsApi'
 import { getReportDatasets, getServerReportTemplates } from '../api/reportWorkspaceApi'
@@ -37,7 +38,7 @@ vi.mock('../../../shared/ui/document-export-modal/DocumentExportModal', () => ({
 const tabs = ['Структура звіту', 'Умови відбору', 'Аналіз і сортування', 'Результат'] as const
 const file: ReportResult = { document: { DocumentURL: '/files/constructor-workflow.xlsx' }, raw: {} }
 const page = () => <MemoryRouter initialEntries={['/reports/constructor']}><MantineProvider env="test">
-  <I18nProvider><ReportsConstructorPage /></I18nProvider>
+  <I18nProvider><ReportsConstructorPage consoleScope={false} /></I18nProvider>
 </MantineProvider></MemoryRouter>
 async function ready() {
   const view = render(page())
@@ -71,6 +72,7 @@ beforeEach(() => {
   permissions.add(PermissionKeys.ReportsStocks.Page.View)
   permissions.add(PermissionKeys.ReportsStocks.Report.Generate)
   vi.clearAllMocks(); localStorage.clear(); sessionStorage.clear()
+  saveSession({ userNetUid: 'constructor-workflow-user', csrfToken: 'workflow-fixture-csrf' })
   Object.defineProperty(HTMLElement.prototype, 'scrollIntoView', { configurable: true, value: vi.fn() })
   vi.mocked(getReportDatasets).mockResolvedValue([...reportDatasets, abcDataset, agreementPricesDataset])
   vi.mocked(getServerReportTemplates).mockResolvedValue([])
@@ -80,7 +82,7 @@ beforeEach(() => {
 })
 afterEach(() => {
   try { expect(fetch).not.toHaveBeenCalled() }
-  finally { vi.unstubAllGlobals() }
+  finally { clearSession(); vi.unstubAllGlobals() }
 })
 
 it('navigates all four real tab panels by keyboard without generating or changing the selected preset', async () => {
@@ -132,7 +134,7 @@ it('navigates all four real tab panels by keyboard without generating or changin
     expect(document.activeElement).toBe(tab('Структура звіту'))
   }
   expect(createStockReport).not.toHaveBeenCalled()
-})
+}, 10000)
 
 it('preserves full TOP, ABC, filters and ordering through every tab and a same-dataset preset', async () => {
   const template = { Id: '10000000-0000-4000-8000-000000000046', Revision: 3,

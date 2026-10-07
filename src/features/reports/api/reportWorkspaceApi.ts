@@ -1,8 +1,13 @@
+import { cloneWorkbookAliases, normalizeWorkbookDataset, workbookConfigurationError } from '../data/workbookPresentation'
+import { settlementPeriodConfigurationError, isSettlementPeriodDataset } from '../data/settlementPeriod'
 import { agreementPricesConfigurationError, isAgreementPricesDataset } from '../data/agreementPrices'
 import { agreementPriceComparisonConfigurationError, cloneAgreementPriceComparisonAliases, isAgreementPriceComparisonCapability, normalizeAgreementPriceComparisonDataset } from '../data/agreementPriceComparison'
 import { recordedSaleGrossProfitConfigurationError } from '../data/recordedSaleGrossProfit'
 import { dayOrganizationGrossProfitConfigurationError } from '../data/dayOrganizationGrossProfit'
 import { vparivanieConfigurationError } from '../data/vparivanie'
+import { currentVparivanieConfigurationError, isCurrentVparivanieDataset, cloneCurrentVparivanieFullScope } from '../data/currentVparivanie'
+import { cloneGroupedCashAliases, normalizeGroupedCashDataset } from '../data/groupedCashPeriod'
+import { cashPeriodConfigurationError, isCashPeriodDataset } from '../data/cashPeriod'
 import { supplierBatchGrossProfitConfigurationError } from '../data/supplierBatchGrossProfit'
 import { importedSaleDiscountConfigurationError } from '../data/importedSaleDiscount'
 import { clonePaymentComparisonAliases, isPaymentComparisonCapability, paymentComparisonConfigurationError, PAYMENT_COMPARISON_CAPTIONS, PAYMENT_COMPARISON_GROUPINGS, PAYMENT_COMPARISON_FILTERS } from '../data/paymentComparison'
@@ -26,6 +31,8 @@ import {
 } from '../data/priceTypeSalesComparison'
 import { cloneOneCSpecialAliases, isOneCSpecialDataset, oneCSpecialSettingsError } from '../data/oneCSpecialReports'
 import { readAbcCapabilities } from '../data/reportAbcClassification'
+import { cloneGroupedSettlementAliases, normalizeGroupedSettlementDataset } from '../data/groupedSettlementPeriod'
+import { cloneSourceCounterpartyGroupAliases, normalizeSourceCounterpartyGroupDataset } from '../data/sourceCounterpartyGroups'
 
 const paymentUnsupportedCapabilities = ['Ordering', 'TopGroups', 'Threshold', 'HideZero', 'AbcClassification', 'FilterExpression'] as const
 const marginGroupings = [{ Type: 12, Name: 'Клієнт' }, { Type: 15, Name: 'Договір' }] as const
@@ -54,6 +61,18 @@ function isDataset(value: unknown): value is ReportDataset {
       && item.Measurements?.map(field => field.Type).join(',') === '75,76,77,78'
       && item.Filters?.length === 0 : item.agreementPriceComparison == null)
     && (item.DataSource === 27 ? isPriceTypeSalesComparisonDataset(item as ReportDataset) : item.priceTypeSalesComparison == null)
+    && !Object.hasOwn(item, 'CurrentVparivanie')
+    && (item.DataSource === 39 ? isCurrentVparivanieDataset(item as ReportDataset) : item.currentVparivanie == null)
+    && !Object.hasOwn(item, 'SettlementPeriod')
+    && (item.DataSource === 41 ? isSettlementPeriodDataset(item as ReportDataset) : item.settlementPeriod == null)
+    && !Object.hasOwn(item, 'GroupedSettlementPeriod')
+    && (item.DataSource === 41 || item.groupedSettlementPeriod == null)
+    && !Object.hasOwn(item, 'SourceCounterpartyGroups')
+    && (item.DataSource === 41 || item.sourceCounterpartyGroups == null)
+    && !Object.hasOwn(item, 'GroupedCashPeriod')
+    && (item.DataSource === 40 || item.groupedCashPeriod == null)
+    && !Object.hasOwn(item, 'CashPeriod')
+    && (item.DataSource === 40 ? isCashPeriodDataset(item as ReportDataset) : item.cashPeriod == null)
     && isOneCSpecialDataset(item as ReportDataset)
     && (item.DataSource !== 26 || (item.PeriodRequired === true && item.PeriodSupported === true
       && readAbcCapabilities(item as ReportDataset) !== null))
@@ -87,12 +106,20 @@ function isDataset(value: unknown): value is ReportDataset {
 }
 
 export async function getReportDatasets(signal?: AbortSignal): Promise<ReportDataset[]> {
-  const result = await apiRequest<unknown>('/report/datasets', { signal })
+  return parseReportDatasets(await apiRequest<unknown>('/report/datasets', { signal }))
+}
+
+/** Validate and normalize the same capability bytes used by the live Console. */
+export function parseReportDatasets(result: unknown): ReportDataset[] {
   const normalized = Array.isArray(result) ? result.map(item => {
     if (!item || typeof item !== 'object' || Array.isArray(item)) return null
     const exactFilters = normalizeNativeExactFilterDataset(item as Record<string, unknown>)
     const comparison = exactFilters ? normalizeAgreementPriceComparisonDataset(exactFilters as unknown as Record<string, unknown>) : null
-    return comparison ? normalizePriceTypeSalesComparisonDataset(comparison as unknown as Record<string, unknown>) : null
+    const prices = comparison ? normalizePriceTypeSalesComparisonDataset(comparison as unknown as Record<string, unknown>) : null
+    const groups = prices ? normalizeGroupedSettlementDataset(prices as unknown as Record<string, unknown>) : null
+    const sourceGroups = groups ? normalizeSourceCounterpartyGroupDataset(groups as unknown as Record<string, unknown>) : null
+    const cash = sourceGroups ? normalizeGroupedCashDataset(sourceGroups as unknown as Record<string, unknown>) : null
+    return cash ? normalizeWorkbookDataset(cash as unknown as Record<string, unknown>) : null
   }) : []
   if (!normalized.length || !normalized.every((item): item is ReportDataset => item !== null && isDataset(item))
     || new Set(normalized.map(item => item.DataSource)).size !== normalized.length) {
@@ -114,8 +141,20 @@ type WireTemplate = Required<Omit<ReportTemplate, 'Data'>> & {
     Sorted: ReportRequestBody['sorted']
     Selections: ReportRequestBody['selections']
     DataSource: ReportRequestBody['dataSource']
+    CurrentVparivanieFullScope?: unknown
+    currentVparivanieFullScope?: unknown
     ReturnsOnly?: boolean
     returnsOnly?: boolean
+    SettlementPeriod?: unknown
+    settlementPeriod?: unknown
+    GroupedSettlementPeriod?: unknown
+    groupedSettlementPeriod?: unknown
+    SourceCounterpartyGroups?: unknown
+    sourceCounterpartyGroups?: unknown
+    CashPeriod?: unknown
+    groupedCashPeriod?: unknown
+    GroupedCashPeriod?: unknown
+    cashPeriod?: unknown
     ValuationClientAgreementId?: ReportRequestBody['valuationClientAgreementId']
     RateComparison?: unknown
     rateComparison?: unknown
@@ -148,7 +187,13 @@ type WireTemplate = Required<Omit<ReportTemplate, 'Data'>> & {
     SourceOrganizations?: unknown
     sourceOrganizations?: unknown
     SourceBuyerSubtree?: unknown
+    DayOrganizationBasis?: unknown
+    dayOrganizationBasis?: unknown
     sourceBuyerSubtree?: unknown
+    SupplierSourceWorld?: unknown
+    SupplierBasis?: unknown
+    supplierBasis?: unknown
+    supplierSourceWorld?: unknown
     PriceTypeSalesComparison?: unknown
     priceTypeSalesComparison?: unknown
     DiscountMarkup?: unknown
@@ -174,8 +219,19 @@ export function normalizeSavedTemplate(value: WireTemplate): ReportTemplate {
     sorted: (value.Data.DataSource === 16 || value.Data.DataSource === 17 || value.Data.DataSource === 18 || value.Data.DataSource === 19 || value.Data.DataSource === 20 || value.Data.DataSource === 21 || value.Data.DataSource === 27) ? structuredClone(value.Data.Sorted) : value.Data.Sorted,
     selections: (value.Data.DataSource === 16 || value.Data.DataSource === 17 || value.Data.DataSource === 18 || value.Data.DataSource === 19 || value.Data.DataSource === 20 || value.Data.DataSource === 21 || value.Data.DataSource === 27) ? structuredClone(value.Data.Selections ?? []) : value.Data.Selections ?? [],
     dataSource: value.Data.DataSource,
+    ...cloneCurrentVparivanieFullScope(value.Data),
     ...(Object.hasOwn(value.Data, 'returnsOnly') ? { returnsOnly: value.Data.returnsOnly }
       : Object.hasOwn(value.Data, 'ReturnsOnly') ? { returnsOnly: value.Data.ReturnsOnly } : {}),
+    ...(Object.hasOwn(value.Data, 'settlementPeriod') ? { settlementPeriod: structuredClone(value.Data.settlementPeriod),
+      ...(Object.hasOwn(value.Data, 'SettlementPeriod') ? { SettlementPeriod: structuredClone(value.Data.SettlementPeriod) } : {}),
+    } : Object.hasOwn(value.Data, 'SettlementPeriod') ? { settlementPeriod: structuredClone(value.Data.SettlementPeriod) } : {}),
+    ...cloneGroupedSettlementAliases(value.Data),
+    ...cloneSourceCounterpartyGroupAliases(value.Data),
+    ...cloneGroupedCashAliases(value.Data),
+    ...cloneWorkbookAliases(value.Data),
+    ...(Object.hasOwn(value.Data, 'cashPeriod') ? { cashPeriod: value.Data.cashPeriod,
+      ...(Object.hasOwn(value.Data, 'CashPeriod') ? { CashPeriod: value.Data.CashPeriod } : {}),
+    } : Object.hasOwn(value.Data, 'CashPeriod') ? { cashPeriod: value.Data.CashPeriod } : {}),
     ...clonePaymentComparisonAliases(value.Data),
     ...cloneMarginComparisonAliases(value.Data),
     ...cloneRateComparisonAliases(value.Data),
@@ -184,6 +240,9 @@ export function normalizeSavedTemplate(value: WireTemplate): ReportTemplate {
     ...cloneRevenueComparisonAliases(value.Data),
     ...cloneXyzAliases(value.Data),
     ...cloneNativeExactFilterAliases(value.Data),
+    ...(Object.hasOwn(value.Data, 'supplierSourceWorld') ? { supplierSourceWorld: value.Data.supplierSourceWorld,
+      ...(Object.hasOwn(value.Data, 'SupplierSourceWorld') ? { SupplierSourceWorld: value.Data.SupplierSourceWorld } : {}),
+    } : Object.hasOwn(value.Data, 'SupplierSourceWorld') ? { supplierSourceWorld: value.Data.SupplierSourceWorld } : {}),
     ...clonePriceTypeSalesComparisonAliases(value.Data),
     ...cloneAgreementPriceComparisonAliases(value.Data),
     ...cloneOneCSpecialAliases(value.Data),
@@ -210,13 +269,15 @@ export function normalizeSavedTemplate(value: WireTemplate): ReportTemplate {
 }
 
 export async function getServerReportTemplates(signal?: AbortSignal): Promise<ReportTemplate[]> {
-  const result = await apiRequest<WireTemplate[]>('/report/templates', { signal })
+  const result = await apiRequest<WireTemplate[]>('/report/templates', { signal, cache: 'no-store', dedupe: false })
   if (!Array.isArray(result)) throw new Error('Сервер повернув некоректний список шаблонів.')
   return result.map(normalizeSavedTemplate)
 }
 
-export async function saveServerReportTemplate(template: ReportTemplate): Promise<ReportTemplate> {
-  const request = (template.Data.dataSource === 2 || template.Data.dataSource === 17 || template.Data.dataSource === 18 || template.Data.dataSource === 19 || template.Data.dataSource === 20 || template.Data.dataSource === 21 || template.Data.dataSource === 22 || template.Data.dataSource === 23 || template.Data.dataSource === 24 || template.Data.dataSource === 25 || template.Data.dataSource === 27 || template.Data.dataSource === 28 || template.Data.dataSource === 35) ? structuredClone(template) : template
+export async function saveServerReportTemplate(template: ReportTemplate, signal?: AbortSignal): Promise<ReportTemplate> {
+  const request = (template.Data.dataSource === 2 || template.Data.dataSource === 17 || template.Data.dataSource === 18 || template.Data.dataSource === 19 || template.Data.dataSource === 20 || template.Data.dataSource === 21 || template.Data.dataSource === 22 || template.Data.dataSource === 23 || template.Data.dataSource === 24 || template.Data.dataSource === 25 || template.Data.dataSource === 27 || template.Data.dataSource === 28 || template.Data.dataSource === 35 || template.Data.dataSource === 39 || template.Data.dataSource === 40 || template.Data.dataSource === 41) ? structuredClone(template) : template
+  const workbookError = workbookConfigurationError(request.Data)
+  if (workbookError) throw new Error(workbookError)
   const exactFilterError = nativeExactFiltersConfigurationError(request.Data)
   if (exactFilterError) throw new Error(exactFilterError)
   const pricesError = agreementPricesConfigurationError(request.Data)
@@ -227,6 +288,12 @@ export async function saveServerReportTemplate(template: ReportTemplate): Promis
   if (grossProfitError) throw new Error(grossProfitError)
   const dayOrganizationProfitError = dayOrganizationGrossProfitConfigurationError(request.Data)
   if (dayOrganizationProfitError) throw new Error(dayOrganizationProfitError)
+  const currentVparivanieError = currentVparivanieConfigurationError(request.Data)
+  if (currentVparivanieError) throw new Error(currentVparivanieError)
+  const settlementPeriodError = settlementPeriodConfigurationError(request.Data)
+  if (settlementPeriodError) throw new Error(settlementPeriodError)
+  const cashPeriodError = cashPeriodConfigurationError(request.Data)
+  if (cashPeriodError) throw new Error(cashPeriodError)
   const vparivanieError = vparivanieConfigurationError(request.Data)
   if (vparivanieError) throw new Error(vparivanieError)
   const supplierBatchProfitError = supplierBatchGrossProfitConfigurationError(request.Data)
@@ -253,12 +320,14 @@ export async function saveServerReportTemplate(template: ReportTemplate): Promis
   if (specialOneCError) throw new Error(specialOneCError)
   const result = await apiRequest<WireTemplate>('/report/templates/save', {
     method: 'POST', body: { Id: request.Id, Revision: request.Revision ?? 0, Name: request.Name, Data: request.Data },
+    ...(signal ? { signal } : {}),
   })
   return normalizeSavedTemplate(result)
 }
 
-export function deleteServerReportTemplate(template: ReportTemplate): Promise<unknown> {
+export function deleteServerReportTemplate(template: ReportTemplate, signal?: AbortSignal): Promise<unknown> {
   return apiRequest('/report/templates/delete', {
     method: 'POST', body: { Id: template.Id, Revision: template.Revision },
+    ...(signal ? { signal } : {}),
   })
 }

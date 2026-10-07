@@ -1,3 +1,4 @@
+import userEvent from '@testing-library/user-event'
 import { MantineProvider } from '@mantine/core'
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { MemoryRouter, useLocation } from 'react-router-dom'
@@ -13,6 +14,7 @@ import { getNavigationNodePath, normalizeNavigation } from '../../navigation/nav
 import { createStockReport } from '../api/reportsApi'
 import { getReportDatasets, getServerReportTemplates } from '../api/reportWorkspaceApi'
 import { reportDatasets } from '../data/reportDatasets.test-fixtures'
+import { groupedCashWorkbookDataset } from '../data/groupedCashPeriod.test-fixtures'
 
 const allowedPermissions = new Set<string>()
 
@@ -53,7 +55,7 @@ function renderConstructor(menuRoute: string | null = '/reports/stocks', showNav
 
   return render(
     <MemoryRouter initialEntries={['/reports/constructor']}>
-      <MantineProvider>
+      <MantineProvider env="test">
         <I18nProvider>
           <NavigationContext.Provider value={{
             error: null,
@@ -84,6 +86,7 @@ describe('report constructor entry', () => {
     vi.clearAllMocks()
     localStorage.clear()
     sessionStorage.clear()
+    Object.defineProperty(HTMLElement.prototype, 'scrollIntoView', { configurable: true, value: vi.fn() })
     vi.mocked(getReportDatasets).mockResolvedValue(reportDatasets)
     vi.mocked(getServerReportTemplates).mockResolvedValue([])
   })
@@ -132,13 +135,21 @@ describe('report constructor entry', () => {
     allowedPermissions.add(PermissionKeys.ReportsStocks.Page.View)
     allowedPermissions.add(PermissionKeys.ReportsStocks.Report.Generate)
     vi.mocked(createStockReport).mockRejectedValue(new Error('test request'))
+    vi.mocked(getReportDatasets).mockResolvedValue([...reportDatasets, groupedCashWorkbookDataset])
     const { container } = renderConstructor()
     await screen.findByRole('heading', { name: 'Конструктор звітів' })
-    fireEvent.click(await screen.findByRole('button', { name: 'Продажі за днями' }))
+    await screen.findByRole('combobox', { name: 'Набір даних звіту' })
+    await waitFor(() => expect((screen.getByRole('combobox', { name: 'Набір даних звіту' }) as HTMLInputElement).disabled).toBe(false))
+    const user = userEvent.setup()
+    const datasetPicker = screen.getByRole('combobox', { name: 'Набір даних звіту' })
+    await user.click(datasetPicker)
+    await user.clear(datasetPicker)
+    await user.type(datasetPicker, 'Кошти')
+    fireEvent.click(await screen.findByRole('option', { name: groupedCashWorkbookDataset.Name }))
     expect(createStockReport).not.toHaveBeenCalled()
     expect((screen.getByRole('button', { name: 'Сформувати' }) as HTMLButtonElement).disabled).toBe(false)
     fireEvent.submit(container.querySelector('form')!)
     await waitFor(() => expect(createStockReport).toHaveBeenCalledOnce())
     await screen.findByText('Не вдалося сформувати звіт')
-  })
+  }, 10000)
 })

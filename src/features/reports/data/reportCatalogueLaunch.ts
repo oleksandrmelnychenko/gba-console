@@ -3,6 +3,7 @@ import { isReportCatalogue, inspectCatalogueMigration, sourceIdentity } from './
 import { datasetGroupings, datasetMeasurements, defaultDatasetRequest } from './reportDatasets'
 import { flattenCheckedMeasurements } from './reportOptions'
 import { getNativeReportProfile } from './nativeReportProfiles'
+import { applyOriginalClientDiscounts, CLIENT_DISCOUNTS_ORIGINAL_ID, originalClientDiscountsSupported } from './originalClientDiscounts'
 import { isClientComparisonCapability } from './clientPeriodComparison'
 import { isXyzCapability } from './salesXyz'
 import { isRevenueComparisonCapability } from './revenueComparison'
@@ -14,6 +15,9 @@ import { defaultPaymentComparison, isPaymentComparisonCapability } from './payme
 import { isPriceTypeSalesComparisonDataset } from './priceTypeSalesComparison'
 import { isOneCSpecialDataset, oneCSpecialSettingsForWorld } from './oneCSpecialReports'
 import { readAbcCapabilities } from './reportAbcClassification'
+import { isSupplierSourceWorldCapability } from './supplierBatchGrossProfit'
+import { isSupplierBasisCapability, requestSupplierBasis } from './supplierBasis'
+import { isCurrentVparivanieDataset } from './currentVparivanie'
 
 export type CatalogueLaunchChoice = { reportId: string; world: string; sourceId: string; dataSource: number }
 export type CatalogueLaunchOption = { choice: CatalogueLaunchChoice; label: string; title: string; notice: string }
@@ -43,7 +47,7 @@ const REGISTRY: readonly Registration[] = [
   builtin('ВедомостьДенежныеСредства', '977cb58d-ff0b-46b7-90fd-124a560ec6ff', [11]),
   builtin('ВаловаяПрибыльПоПоставщикам', 'f84e7b02-b6fe-40ca-bc7f-ea508d6ec41a', [38]),
   builtin('ВаловаяПрибыль', '65fb1537-c992-4962-9f97-5d9f96b9a034', [35]),
-  builtin('ОтчетВпаривание', '069dfc76-74b6-491d-b039-f7fb54e0ea81', [36]),
+  builtin('ОтчетВпаривание', '069dfc76-74b6-491d-b039-f7fb54e0ea81', [39, 36]),
   builtin('ВедомостьПартииТоваровНаСкладах', 'fde97241-e736-4c21-9e61-2d6ecafa0b91', [7]),
   builtin('ВедомостьПартииТоваровНаСкладахВесовойУчет', '614bb6c2-8932-48ba-a099-162aadead2e2', [7]),
   builtin('ВедомостьПартииТоваровНаСкладахКоличественныйУчет', 'dd98a3b9-e627-4a83-9f66-2dfe7686085c', [7]),
@@ -121,6 +125,8 @@ const capabilities: Readonly<Record<number, (dataset: ReportDataset) => boolean>
   25: isOneCSpecialDataset,
   28: isOneCSpecialDataset,
   26: dataset => readAbcCapabilities(dataset) !== null,
+  38: dataset => isSupplierSourceWorldCapability(dataset.supplierSourceWorld),
+  39: isCurrentVparivanieDataset,
 }
 function validFields(fields: ReportDatasetField[]): boolean {
   return Array.isArray(fields) && fields.every(field => field && Number.isSafeInteger(field.Type) && field.Type >= 0
@@ -156,14 +162,19 @@ function validatedCatalogue(value: unknown) {
     source.Migration !== undefined && !inspection.migrations.has(sourceIdentity(source))))) return null
   return { catalogue: value, inspection }
 }
-function description(registration: Registration, report: ReportCatalogueEntry, dataset: ReportDataset): Omit<CatalogueLaunchOption, 'choice'> {
+function description(registration: Registration, report: ReportCatalogueEntry, dataset: ReportDataset, world: string): Omit<CatalogueLaunchOption, 'choice'> {
   const profile = getNativeReportProfile(dataset.DataSource)
+  const currentOnly = report.Id === 'builtin:ВедомостьДенежныеСредства' && dataset.DataSource === 11
+    ? 'Це лише поточний залишок рахунків, без початку, рухів і кінця за період. Часткова періодна форма Excel доступна окремо в GBA.'
+    : report.Id === 'builtin:ВедомостьВзаиморасчетыСКонтрагентами' && dataset.DataSource === 10
+      ? 'Це лише поточний борг, без початку, рухів і кінця за період. Часткова форма за одним договором доступна окремо в GBA.'
+      : ''
   const variant = registration.mode === 'return-only' ? 'Лише повернення · кількість' : registration.mode === 'incoming' ? 'Надходження' : registration.mode === 'outgoing' ? 'Виплати'
     : registration.mode === 'new' ? 'Частка продажів новим покупцям' : registration.mode === 'repeat' ? 'Частка повторних продажів'
       : registration.mode === 'reserve' && dataset.DataSource === 4 ? 'Записаний резерв за складами'
         : registration.mode === 'daily' ? 'Таблиця за днями' : registration.mode === 'monthly' ? 'Таблиця за місяцями' : ''
   const nativeTitle = profile?.title ?? dataset.Name
-  const label = variant ? `${variant} · ${nativeTitle}` : nativeTitle
+  const label = currentOnly ? `Поточний стан · ${nativeTitle}` : variant ? `${variant} · ${nativeTitle}` : nativeTitle
   const required = dataset.DataSource === 19 ? ' Виберіть точну серію курсу та дві дати.'
     : [13, 16, 17, 18, 20, 21].includes(dataset.DataSource) ? ' Задайте окремий період порівняння.'
       : dataset.DataSource === 15 ? ' Перевірте повні закриті місяці, кількість періодів і межі XYZ.'
@@ -171,9 +182,13 @@ function description(registration: Registration, report: ReportCatalogueEntry, d
           : [23, 25, 28].includes(dataset.DataSource) ? ' Вкажіть дату стану цього звіту.'
             : dataset.DataSource === 27 ? ' Оберіть завантажене локальне покриття Fenix і один точний глобальний тип ціни.' : ''
   return { title: report.Title, label,
-    notice: registration.mode === 'return-only'
+    notice: world === 'fenix' && registration.sourceId === CLIENT_DISCOUNTS_ORIGINAL_ID && originalClientDiscountsSupported(dataset)
+      ? `Готові налаштування «${report.Title}»: одержувачі в рядках, товари в колонках, максимальний відсоток знижки та прямий код регіону одержувача. Фільтри товару, одержувача й регіону вимкнені до вибору значень. Вкажіть дату стану; відповідність поточним даним 1С не підтверджена.`
+      : dataset.DataSource === 38 && isSupplierBasisCapability(dataset.supplierBasis)
+      ? `Готові налаштування «${report.Title}»: склад документа → організація → постачальник, продажі мінус повернення до 31 дня. Невизначені постачальник і склад показуються окремо. Недоступні собівартість і прибуток залишаються порожніми, зокрема у підсумках.`
+      : registration.mode === 'return-only'
       ? `Готові налаштування «${report.Title}»: додатна кількість записаних повернень за клієнтом, товаром і днем. Причина, коментар, сума одиничних цін і відповідність проведенню 1С не підтверджені.`
-      : `Готові налаштування «${report.Title}»: ${label}. ${profile?.preset.description ?? dataset.Description} Часткове покриття GBA; повна відповідність первинному звіту не підтверджена.${required}` }
+      : `Готові налаштування «${report.Title}»: ${label}. ${profile?.preset.description ?? dataset.Description} ${currentOnly ? `${currentOnly} ` : ''}Часткове покриття GBA; повна відповідність первинному звіту не підтверджена.${required}` }
 }
 function findLaunch(catalogue: ReportCatalogue, inspection: ReturnType<typeof inspectCatalogueMigration>, choice: CatalogueLaunchChoice,
   datasets: readonly ReportDataset[]) {
@@ -189,6 +204,10 @@ function findLaunch(catalogue: ReportCatalogue, inspection: ReturnType<typeof in
   if (!registration) return { error: 'Для цього точного джерела ще немає готової конфігурації конструктора.' } as const
   const matches = datasets.filter(dataset => dataset?.DataSource === choice.dataSource)
   if (matches.length !== 1 || !supports(registration, matches[0])) return { error: 'Поточний набір даних не підтримує всі потрібні групування, показники або правила цього звіту.' } as const
+  if (choice.world === 'fenix' && choice.sourceId === CLIENT_DISCOUNTS_ORIGINAL_ID
+    && matches[0].originalClientDiscounts !== undefined && (!originalClientDiscountsSupported(matches[0])
+      || source.DefinitionSha256 !== 'e355fd45fed1b64f52704baa92f09755b91bea96be74953c182f65b1c8fcc637'))
+    return { error: 'Початковий макет не відповідає точному джерелу звіту знижок.' } as const
   return { report, registration, dataset: matches[0] }
 }
 
@@ -203,7 +222,7 @@ export function catalogueLaunchOptions(value: unknown, reportId: string, dataset
     if (isOneCTurnoverCatalogueChoice(catalogue, choice)) return [{ choice, title: report.Title,
       label: 'Консолідований оборот 1С', notice: `Звіт «${report.Title}» відкриється в окремій панелі. Доступний частковий Fenix-сценарій з перевіреними формулами; повна відповідність усім варіантам 1С не підтверджена.` }]
     const launch = findLaunch(catalogue, inspection, choice, datasets)
-    return 'error' in launch ? [] : [{ choice, ...description(launch.registration, report, launch.dataset) }]
+    return 'error' in launch ? [] : [{ choice, ...description(launch.registration, report, launch.dataset, source.World) }]
   })) ?? []
 }
 
@@ -219,8 +238,14 @@ export function resolveCatalogueLaunch(value: unknown, choice: CatalogueLaunchCh
   const { registration, dataset, report } = launch
   const data = defaultDatasetRequest(dataset, period.from, period.to)
   if (registration.mode === 'return-only') data.returnsOnly = true
-  Object.assign(data, oneCSpecialSettingsForWorld(dataset.DataSource, choice.world))
+  Object.assign(data, oneCSpecialSettingsForWorld(dataset.DataSource, choice.world, dataset))
+  if (dataset.DataSource === 25 && choice.world !== 'fenix' && originalClientDiscountsSupported(dataset)) {
+    data.sorted.Col = []
+    data.selections = []
+  }
+  if (dataset.DataSource === 38) data.supplierSourceWorld = choice.world === 'fenix' ? 0 : 1
   const { rows, measures } = requirements(registration, dataset.DataSource)
+  if (dataset.DataSource === 38 && requestSupplierBasis(data) === 0) rows[0] = 78
   const groupings = datasetGroupings(dataset)
   data.sorted.Row = rows.flatMap(type => groupings.filter(item => item.type === type))
   const requiredMeasures = new Set(measures)
@@ -231,9 +256,11 @@ export function resolveCatalogueLaunch(value: unknown, choice: CatalogueLaunchCh
   if (data.sorted.Row.length !== rows.length || data.sorted.Measurements.length !== measures.length) {
     return { ok: false, message: 'Не вдалося зберегти всі потрібні групування та показники. Налаштування не застосовано.' }
   }
+  if (choice.world === 'fenix' && choice.sourceId === CLIENT_DISCOUNTS_ORIGINAL_ID
+    && dataset.DataSource === 25 && originalClientDiscountsSupported(dataset)) applyOriginalClientDiscounts(data, dataset)
   if (registration.mode === 'incoming' || registration.mode === 'outgoing') {
     data.paymentComparison = { ...defaultPaymentComparison(), Direction: registration.mode === 'incoming' ? 1 : 2 }
   }
-  const { title, notice } = description(registration, report, dataset)
+  const { title, notice } = description(registration, report, dataset, choice.world)
   return { ok: true, title, notice, dataset: structuredClone(dataset), template: { Name: title, Data: data } }
 }

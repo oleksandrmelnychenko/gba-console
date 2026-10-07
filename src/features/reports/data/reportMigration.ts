@@ -3,17 +3,19 @@ import type { ReportCatalogue, ReportCatalogueEntry, ReportCatalogueSource, Repo
 export type MigrationDisplayStatus = ReportMigrationStatus | 'unassessed'
 export type ConsoleReportAvailability = 'active' | 'ready_disabled' | 'hidden'
 
-// BUG-1274 is the controlled Console wave. The debtor workbook is a saved
-// settlement variant, so it gets its own catalogue entry while sharing the
-// same current-debt dataset.
+// The six BUG-1274 workbooks belong to five source reports. Both settlement
+// workbooks use the same report; the separate current-debt report is outside this wave.
 export const BUG_1274_ACTIVE_REPORT_IDS = new Set([
   'builtin:ВедомостьДенежныеСредства',
   'builtin:ВедомостьВзаиморасчетыСКонтрагентами',
-  'builtin:ЗадолженностьПоКонтрагентам',
   'builtin:ВаловаяПрибыльПоПоставщикам',
   'builtin:ВаловаяПрибыль',
   'builtin:ОтчетВпаривание',
 ])
+export const BUG_1274_ACTIVE_DATA_SOURCES: ReadonlySet<number> = new Set([35, 38, 39, 40, 41])
+
+export const BUG_1274_DISABLED_MESSAGE = 'Запуск цього звіту поки вимкнено. Оберіть форму із задачі 1274.'
+
 export const MIGRATION_STATUS_LABELS: Record<MigrationDisplayStatus, string> = {
   unassessed: 'Стан перенесення не оцінено', captured: 'Джерело зафіксовано',
   native_partial: 'Частково доступно в GBA', parity_verified: 'Відповідність підтверджено',

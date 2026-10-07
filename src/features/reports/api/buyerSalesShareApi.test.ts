@@ -9,7 +9,7 @@ it('accepts actual source17 capabilities and serializes only explicit independen
   vi.mocked(apiRequest).mockResolvedValueOnce([buyerShareDataset]); expect(await getReportDatasets()).toEqual([buyerShareDataset])
   const body = buyerShareRequest(), before = structuredClone(body)
   vi.mocked(apiRequest).mockResolvedValueOnce({ DocumentURL: '/reports/revenue.xlsx' }); await createStockReport(body)
-  expect(apiRequest).toHaveBeenLastCalledWith('/report/stocks/generate', { method: 'POST', body }); expect(body).toEqual(before)
+  expect(apiRequest).toHaveBeenLastCalledWith('/report/stocks/generate', { method: 'POST', dedupe: false, body }); expect(body).toEqual(before)
 })
 it.each(['BuyerSalesShare', 'BaseResource', 'Extra', 'Comparison', 'RevenueComparison', 'Ordering', 'Row', 'Measurements'])('rejects malformed %s before generation AND direct template I/O', async field => {
   const body = buyerShareRequest()

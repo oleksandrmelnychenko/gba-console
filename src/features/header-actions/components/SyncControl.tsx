@@ -10,7 +10,7 @@ import {
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import { ArrowRightLeft, Play } from 'lucide-react'
-import { useCallback, useEffect, useReducer, useRef } from 'react'
+import { useCallback, useEffect, useReducer, useRef, useState } from 'react'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import {
@@ -46,6 +46,7 @@ import { DataSyncSessionMode, DailyDataSyncStockMode, type OneCTurnoverSyncFilte
 import { SyncSessionPanel } from './SyncSessionPanel'
 import { SyncSessionConfigurator } from './SyncSessionConfigurator'
 import { OneCTurnoverSyncPanel } from './OneCTurnoverSyncPanel'
+import { FenixGoodsDayRefreshPanel } from './FenixGoodsDayRefreshPanel'
 
 const STATUS_POLL_INTERVAL_MS = 3_000
 
@@ -53,6 +54,8 @@ export function SyncControl() {
   const { t } = useI18n()
   const dataSyncProgress = useDataSyncProgress()
   const [state, dispatch] = useReducer(syncReducer, undefined, createInitialSyncState)
+  const [isGoodsRefreshing, setGoodsRefreshing] = useState(false)
+  const handleGoodsPending = useCallback((pending: boolean) => setGoodsRefreshing(pending), [])
   const syncStartOperationRef = useRef<ReturnType<typeof createSyncStartOperation> | null>(null)
   syncStartOperationRef.current ??= createSyncStartOperation(createSyncOperationId)
   const syncStartOperation = syncStartOperationRef.current
@@ -109,7 +112,7 @@ export function SyncControl() {
     !state.status ||
     state.status.IsGlobalLockStatusAvailable !== true ||
     Boolean(state.statusError)
-  const isStartBlocked = isSyncInProgress || state.isStatusRefreshing || isStatusUnknown
+  const isStartBlocked = [isSyncInProgress, state.isStatusRefreshing, isStatusUnknown, isGoodsRefreshing].includes(true)
   const sourceForAmg = state.source === 'amg'
   const today = getTodaySyncDate()
   const activeRange = state.dateRanges[state.mode]
@@ -279,6 +282,10 @@ export function SyncControl() {
           <OneCTurnoverSyncPanel visible={state.opened} mode={state.mode} source={state.source}
             range={activeRange} types={state.selectedDailyDocumentTypes} today={today}
             blocked={isStartBlocked || Boolean(state.pendingRun)} loading={state.isStarting} onRun={runReportSync} />
+
+          <FenixGoodsDayRefreshPanel visible={state.opened} mode={state.mode} source={state.source}
+            range={activeRange} blocked={isStartBlocked || Boolean(state.pendingRun)}
+            onPendingChange={handleGoodsPending} />
 
           {state.pendingRun ? (
             <SyncConfirmation

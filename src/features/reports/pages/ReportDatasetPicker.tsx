@@ -8,21 +8,22 @@ type Props = {
   loaded: boolean
   error: string | null
   compact?: boolean
+  activeDataSources?: ReadonlySet<number>
   onChange: (dataset: ReportDataset) => void
   onRetry: () => void
 }
 
-export function ReportDatasetPicker({ datasets, selected, disabled, loaded, error, compact = false, onChange, onRetry }: Props) {
+export function ReportDatasetPicker({ datasets, selected, disabled, loaded, error, compact = false, activeDataSources, onChange, onRetry }: Props) {
   const dataset = datasets.find(item => item.DataSource === selected)
   return <Stack gap={6} p={compact ? 0 : 'sm'} className={compact ? 'report-dataset-picker report-dataset-picker--compact' : 'report-dataset-picker'}>
-    <Select label="Набір даних звіту" data={datasets.map(item => ({ value: String(item.DataSource), label: item.Name }))}
-      value={dataset ? String(selected) : null} disabled={disabled || !loaded || !!error}
+    <Select label="Набір даних звіту" data={datasets.map(item => ({ value: String(item.DataSource), label: activeDataSources && !activeDataSources.has(item.DataSource) ? `${item.Name} · Готово (запуск вимкнено)` : item.Name, disabled: activeDataSources ? !activeDataSources.has(item.DataSource) : false }))}
+      value={dataset && (!activeDataSources || activeDataSources.has(selected)) ? String(selected) : null} disabled={disabled || !loaded || !!error}
       placeholder={!loaded ? 'Завантаження наборів даних…' : 'Виберіть набір даних'} allowDeselect={false}
       searchable={compact} aria-label="Набір даних звіту" aria-busy={!loaded}
       nothingFoundMessage="Наборів даних не знайдено"
       rightSection={!loaded ? <Loader size="xs" aria-label="Завантаження наборів даних" /> : undefined}
       description={compact ? undefined : 'Зміна набору застосує початкові групування й показники та очистить відбори, групи І/АБО, TOP, ABC-класифікацію і правила сортування. Набори поточного стану очищують період; після повернення до набору з періодом попередні дати відновляться.'}
-      onChange={value => { const next = datasets.find(item => String(item.DataSource) === value); if (next && next.DataSource !== selected) onChange(next) }} />
+      onChange={value => { const next = datasets.find(item => String(item.DataSource) === value); if (next && (!activeDataSources || activeDataSources.has(next.DataSource)) && next.DataSource !== selected) onChange(next) }} />
     {error ? <Alert color="red" title="Набори даних недоступні">
       <Text size="sm">{error}</Text><Button size="xs" variant="light" mt="xs" onClick={onRetry}>Спробувати ще раз</Button>
     </Alert> : null}

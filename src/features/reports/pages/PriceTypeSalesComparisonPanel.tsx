@@ -7,12 +7,17 @@ import {
   PRICE_TYPE_SALES_COMPARISON_LOOKUP_FIELD,
   PRICE_TYPE_SALES_COMPARISON_SOURCE,
   priceTypeSalesSourceId,
+  priceTypeSalesBasis,
+  hasOperationalPriceTypeSales,
+  hasCurrentPriceTypeSalesChoices,
 } from '../data/priceTypeSalesComparison'
 import { EXACT_ONE_C_BUYER_ROOT_ID } from '../data/oneCTurnoverReport'
+import CurrentPriceTypeSalesScopePanel from './CurrentPriceTypeSalesScopePanel'
 import type { OneCTurnoverFilters, OneCTurnoverScopeSummary } from '../types'
 
 type Props = {
   dataSource: number
+  capability?: unknown
   disabled: boolean
   scope: unknown
   value: unknown
@@ -29,28 +34,25 @@ export default function PriceTypeSalesComparisonPanel(props: Props) {
   return props.dataSource === PRICE_TYPE_SALES_COMPARISON_SOURCE ? <PriceTypeSalesSettings {...props} /> : null
 }
 
-function PriceTypeSalesSettings({ disabled, scope, value, onChange, onScopeChange }: Props) {
+function PriceTypeSalesSettings({ disabled, scope, value, capability, onChange, onScopeChange }: Props) {
   const draft = settingsDraft(value)
+  const basis = priceTypeSalesBasis(value)
   const priceTypeId = priceTypeSalesSourceId(draft.PriceTypeId) ?? ''
   const [query, setQuery] = useState('')
   const [selectedPriceType, setSelectedPriceType] = useState<SelectOption | null>(null)
   const priceTypes = usePriceTypeLookup(disabled, query, priceTypeId, setSelectedPriceType)
-  const scopes = useFenixScopeLookup(disabled)
-  const scopeValue = selectedScopeKey(scopes.items, scope)
-  const scopeOptions = scopes.items.map(item => ({ value: item.Key, label: scopeLabel(item) }))
   const priceTypeOptions = mergeSelectedPriceType(priceTypes.items, selectedPriceType, priceTypeId)
 
   return <Card className="app-section-card reports-price-type-sales-settings" withBorder radius="md" padding="md" style={{ minWidth: 0 }}>
     <Stack gap="sm" aria-label="Параметри порівняння продажів за типом цін">
       <Text fw={600}>Продажі Fenix за глобальним типом ціни</Text>
-      <Select label="Локальне покриття Fenix" placeholder="Оберіть завантажений exact scope" searchable clearable
-        data={scopeOptions} value={scopeValue} disabled={disabled} filter={({ options }) => options}
-        rightSection={scopes.loading ? <Loader size="xs" /> : undefined}
-        nothingFoundMessage={scopes.loading ? 'Завантаження…' : 'Сумісного покриття не знайдено'} error={scopes.error}
-        onChange={key => onScopeChange(key ? structuredClone(scopes.items.find(item => item.Key === key)?.Filters) : undefined)} />
-      {!scopes.loading && !scopes.error && scopes.items.length === 0
-        ? <Alert color="yellow">У локальній базі немає завантажених продажів Fenix для цього звіту. Після імпорту продажів за потрібний період виберіть доступне покриття.</Alert>
-        : null}
+      {hasOperationalPriceTypeSales(capability) ? <Select label="Основа продажів" allowDeselect={false}
+        data={[{ value: '0', label: 'Наші продажі й повернення' }, { value: '1', label: 'Збережені рухи 1С' }]}
+        value={String(basis)} disabled={disabled}
+        onChange={next => { if (next === '0' || next === '1') onChange({ ...draft, SalesBasis: Number(next) }) }} /> : null}
+      {basis === 0 ? <CurrentPriceTypeSalesScopePanel disabled={disabled} value={scope}
+        available={hasCurrentPriceTypeSalesChoices(capability)} onChange={onScopeChange} />
+        : <CapturedPriceTypeSalesScope disabled={disabled} value={scope} onChange={onScopeChange} />}
       <Select label="Глобальний тип ціни Fenix" placeholder="Шукайте назву або точний 32-hex ID" searchable clearable
         data={priceTypeOptions} value={priceTypeId || null} searchValue={query} disabled={disabled}
         filter={({ options }) => options} maxLength={120}
@@ -63,13 +65,32 @@ function PriceTypeSalesSettings({ disabled, scope, value, onChange, onScopeChang
           setQuery('')
           onChange({ ...draft, Version: 1, SourceWorld: 1, PriceTypeId: exact ?? '' })
         }} />
-      <Text size="sm">Джерело налаштувань — Fenix (Version 1). Внутрішній добір для кожного дня бере останню точну ціну типу на товар і характеристику; зовнішнє приєднання до джерельних продажів свідомо не включає день, як у захопленому запиті 1С.</Text>
+      {basis === 0 ? <Text size="sm">Продажі мінус повернення за обраний період із нашої бази. Грошові суми — в EUR за нашими курсами валют.</Text>
+        : <Text size="sm">Джерело налаштувань — Fenix (Version 1). Внутрішній добір для кожного дня бере останню точну ціну типу на товар і характеристику; зовнішнє приєднання до джерельних продажів свідомо не включає день, як у захопленому запиті 1С.</Text>}
       <Alert color="yellow" title="Лише порівняльний звіт">
         Глобальний тип ціни не є ціною договору клієнта. Цей звіт не формує договірних рекомендацій і ніколи не підставляє ціну договору, якщо глобальної ціни немає.
       </Alert>
-      <Text size="xs" c="dimmed">Покриття native_partial залежить від свіжості локальної синхронізації. Збіги ціни за різні дні можуть повторити джерельний продаж; рядки без підтвердженої ціни не додаються до суми за типом ціни та різниці, а якщо ціни немає в усій групі, ці підсумки залишаються порожніми.</Text>
+      {basis === 0 ? <Alert color="blue" title="Доступність даних">Кількість і суми продажів показуються незалежно від наявності порівняльної ціни. Якщо бракує ціни, суми до знижки, одиниці або курсу, відповідна клітинка та залежний підсумок залишаються порожніми.</Alert>
+        : <Text size="xs" c="dimmed">Збіги ціни за різні дні можуть повторити продаж; рядки без підтвердженої ціни не додаються до суми за типом ціни та різниці, а якщо ціни немає в усій групі, ці підсумки залишаються порожніми.</Text>}
     </Stack>
   </Card>
+}
+
+function CapturedPriceTypeSalesScope({ disabled, value, onChange }: {
+  disabled: boolean; value: unknown; onChange: Props['onScopeChange']
+}) {
+  const scopes = useFenixScopeLookup(disabled)
+  const options = scopes.items.map(item => ({ value: item.Key, label: scopeLabel(item) }))
+  return <>
+    <Select label="Локальне покриття Fenix" placeholder="Оберіть завантажені рухи" searchable clearable
+      data={options} value={selectedScopeKey(scopes.items, value)} disabled={disabled} filter={({ options }) => options}
+      rightSection={scopes.loading ? <Loader size="xs" /> : undefined}
+      nothingFoundMessage={scopes.loading ? 'Завантаження…' : 'Сумісного покриття не знайдено'} error={scopes.error}
+      onChange={key => onChange(key ? structuredClone(scopes.items.find(item => item.Key === key)?.Filters) : undefined)} />
+    {!scopes.loading && !scopes.error && scopes.items.length === 0
+      ? <Alert color="yellow">У локальній базі немає завантажених продажів Fenix для цього звіту. Після імпорту продажів за потрібний період виберіть доступне покриття.</Alert>
+      : null}
+  </>
 }
 
 function usePriceTypeLookup(disabled: boolean, query: string, priceTypeId: string,

@@ -1,0 +1,31 @@
+import { useMemo, useState } from 'react'
+import { isSalesMarginCapabilities, type SalesMarginCapabilities } from '../data/salesMargin'
+
+export type SalesMarginModalProps = {
+  capability: SalesMarginCapabilities | null
+  enabled: boolean
+  generating: boolean
+  callerKey: string | null
+  initialMonth: string
+  onClose: () => void
+  onLoadingChange: (loading: boolean) => void
+}
+
+/** Keeps this monthly variant outside the native report builder's filters and cache. */
+export function useSalesMarginConstructor({ enabled, disabled, callerKey, from, today }: {
+  enabled: boolean; disabled: boolean; callerKey: string | null; from: string; today: string
+}) {
+  const [capability, setCapability] = useState<SalesMarginCapabilities | null>(null)
+  const scope = useMemo(() => ({ callerKey, enabled, capability }), [callerKey, enabled, capability])
+  const [loading, setLoading] = useState<{ scope: typeof scope; value: boolean } | null>(null)
+  const generating = loading?.scope === scope && loading.value
+  function open(next: SalesMarginCapabilities): boolean {
+    if (!enabled || disabled || !isSalesMarginCapabilities(next) || !next.Executable) return false
+    setCapability(structuredClone(next))
+    return true
+  }
+  return { open, modalProps: { capability, enabled, generating, callerKey, initialMonth: (from || today).slice(0, 7),
+    onClose: () => { if (!generating) setCapability(null) },
+    onLoadingChange: (value: boolean) => setLoading(previous => value || previous?.scope === scope ? { scope, value } : previous),
+  } satisfies SalesMarginModalProps }
+}

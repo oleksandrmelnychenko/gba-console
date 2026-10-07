@@ -5,3 +5,7 @@
 .report-inline-preview th, .report-inline-preview td { border: 1px solid var(--mantine-color-gray-3); padding: 0.5rem; text-align: left; min-width: 7rem; max-width: 20rem; overflow-wrap: anywhere; }
 .report-inline-preview thead th { position: sticky; top: 0; z-index: 1; background: var(--mantine-color-body); }
 .report-inline-preview tbody th { font-weight: 500; }
+/* The matrix has two header tiers. Keeping both in normal flow prevents
+   overlapping sticky tiers while scrolling its dynamic customer columns. */
+.report-inline-preview table:has(th[rowspan="2"]) thead th { position: static; }
+.report-inline-preview table:has(th[rowspan="2"]) tbody th:nth-child(3) { white-space: pre-wrap; }

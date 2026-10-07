@@ -45,3 +45,13 @@ it('accepts one case alias, rejects duplicate aliases and wrong server capabilit
     agreementPriceComparison: undefined })).toBeNull()
   expect(agreementPriceComparisonConfigurationError(valid(), { ...comparisonDataset, agreementPriceComparison: { version: 2 } })).not.toBeNull()
 })
+
+it('normalizes the Pascal-cased capability emitted by the live Analytics API', () => {
+  const capability = comparisonDataset.agreementPriceComparison as Record<string, unknown>
+  const pascal = Object.fromEntries(Object.entries(capability).map(([key, value]) =>
+    [key[0].toUpperCase() + key.slice(1), value]))
+  expect(normalizeAgreementPriceComparisonDataset({ ...comparisonDataset, agreementPriceComparison: pascal })?.agreementPriceComparison)
+    .toEqual(capability)
+  expect(normalizeAgreementPriceComparisonDataset({ ...comparisonDataset,
+    agreementPriceComparison: { ...pascal, version: 1 } })).toBeNull()
+})

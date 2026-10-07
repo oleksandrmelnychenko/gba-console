@@ -14,6 +14,9 @@ import { CURRENT_STOCK_REPORT_TITLES, getCurrentStockReport, isCurrentStockPrese
 import { IMPORTED_SALE_DISCOUNT_TITLE } from './importedSaleDiscount'
 import { DAY_ORGANIZATION_GROSS_PROFIT_TITLE } from './dayOrganizationGrossProfit'
 import { VPARIVANIE_TITLE } from './vparivanie'
+import { CURRENT_VPARIVANIE_TITLE, CURRENT_VPARIVANIE_NOTICE } from './currentVparivanie'
+import { CASH_PERIOD_ALL_MEASURES, CASH_PERIOD_TITLE } from './cashPeriod'
+import { SETTLEMENT_PERIOD_TITLE } from './settlementPeriod'
 import { SUPPLIER_BATCH_GROSS_PROFIT_TITLE } from './supplierBatchGrossProfit'
 
 export const SUPPLIER_RETURN_REPORT_TITLE = 'Звіт документів повернень постачальникам'
@@ -26,6 +29,15 @@ export const CURRENT_AGREEMENT_GROUP_DISCOUNT_TITLE = 'Поточні знижк
 export const AGREEMENT_PRICE_COMPARISON_TITLE = 'Порівняння цін двох договорів'
 export const RECORDED_SALE_GROSS_PROFIT_TITLE = 'Валовий прибуток проведених продажів GBA'
 const DOCUMENT_REPORT_PROFILES = [
+  { dataSource: 41, title: SETTLEMENT_PERIOD_TITLE, rowGroupings: [4, 41, 76, 77], measurements: [88, 89, 90, 91],
+    preset: { id: 'native-settlement-period-agreement-currency', name: 'Взаєморозрахунки: рух за договором',
+      description: 'Один точний договір у валюті взаєморозрахунків. Початок, надходження, витрати й кінець за період до 31 завершеного дня Києва. Повне покриття перевіряє сервер.' } },
+  { dataSource: 40, title: CASH_PERIOD_TITLE, rowGroupings: [43, 40, 42, 41], measurements: [...CASH_PERIOD_ALL_MEASURES],
+    preset: { id: 'native-cash-period-account-currency', name: 'Кошти: рух за рахунком',
+      description: 'Рахунки та каси за включний період до 31 завершеного дня Києва. Початок, надходження, витрати й кінець у валюті рахунку; за підтримки сервера також окремі управлінські суми. Валюти вказано в результаті.' } },
+  { dataSource: 39, title: CURRENT_VPARIVANIE_TITLE, rowGroupings: [5], measurements: [83],
+    preset: { id: 'vparivanie-current-native-matrix', name: 'Впарювання: поточна матриця',
+      description: `Оберіть до 128 товарів або одну групу товарів і період продажів до 366 днів. ${CURRENT_VPARIVANIE_NOTICE}` } },
   { dataSource: 38, title: SUPPLIER_BATCH_GROSS_PROFIT_TITLE, rowGroupings: [73, 4, 21], measurements: [0, 2, 6, 10, 12, 14],
     preset: { id: 'recorded-supplier-batch-gross-profit', name: 'Валовий прибуток за постачальниками',
       description: 'Склад партії джерела → організація → постачальник. До 31 дня імпортованих повністю розподілених продажів GBA. Часткові та непідтверджені партії не формують звіт; відповідність XLS 1С не підтверджена.' } },
@@ -113,18 +125,20 @@ export function isCurrentReportSource(dataSource: number | undefined): boolean {
   return isCurrentStockSource(dataSource) || dataSource === 10 || dataSource === 11 || dataSource === 22 || dataSource === 29 || dataSource === 31
 }
 export function usesNativeReportLookup(dataSource: number | undefined): boolean {
-  return isCurrentReportSource(dataSource) || dataSource === 9 || dataSource === 12 || dataSource === 13 || dataSource === 14 || dataSource === 15 || dataSource === 16 || dataSource === 17 || dataSource === 18 || dataSource === 20 || dataSource === 21 || dataSource === 23 || dataSource === 24 || dataSource === 25 || dataSource === 26 || dataSource === 27 || dataSource === 28 || dataSource === 30 || dataSource === 32 || dataSource === 35 || dataSource === 36 || dataSource === 38
+  return isCurrentReportSource(dataSource) || dataSource === 9 || dataSource === 12 || dataSource === 13 || dataSource === 14 || dataSource === 15 || dataSource === 16 || dataSource === 17 || dataSource === 18 || dataSource === 20 || dataSource === 21 || dataSource === 23 || dataSource === 24 || dataSource === 25 || dataSource === 26 || dataSource === 27 || dataSource === 28 || dataSource === 30 || dataSource === 32 || dataSource === 35 || dataSource === 36 || dataSource === 38 || dataSource === 39 || dataSource === 40 || dataSource === 41
 }
 
-const FULL_DATE_RANGE_SOURCES = new Set([13, 14, 15, 16, 17, 18, 20, 21, 24, 30, 32, 36, 38])
-const FIXED_AXES_SOURCES = new Set([15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 28, 29, 30, 31, 32, 36, 38])
+const FULL_DATE_RANGE_SOURCES = new Set([13, 14, 15, 16, 17, 18, 20, 21, 24, 30, 32, 36, 38, 39, 40, 41])
+const FIXED_AXES_SOURCES = new Set([15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 28, 29, 30, 31, 32, 36, 38, 39, 40, 41])
 export const supportsFullReportDateRange = (dataSource: number): boolean => FULL_DATE_RANGE_SOURCES.has(dataSource)
 export const hasFixedReportAxes = (dataSource: number): boolean => FIXED_AXES_SOURCES.has(dataSource)
 
 
 // Units belong to the selected report and caption, independently of VAT controls.
 export function nativeReportMeasurementUnit(dataSource: number, caption: string): string | undefined {
-  if (dataSource === 36) return 'Кількість товару'
+  if (dataSource === 41) return 'Валюта взаєморозрахунків договору'
+  if (dataSource === 40) return caption.includes('управлінська') ? 'Управлінська валюта з результату звіту' : 'Валюта кожного рахунку'
+  if (dataSource === 36 || dataSource === 39) return 'Кількість товару'
   if (dataSource === 38) return caption.includes('%') ? 'Відсотки' : caption.toLowerCase().includes('кількість') ? 'Кількість товару' : 'Євро'
   if (dataSource === 32) return 'Євро'
   if (dataSource === 30 || dataSource === 35) return caption.includes('%') ? 'Відсотки' : 'Євро'
@@ -132,6 +146,8 @@ export function nativeReportMeasurementUnit(dataSource: number, caption: string)
   if (dataSource === 29) return 'Відсотки'
   if (dataSource === 27) {
     if (caption.includes('%')) return 'Відсотки'
+    if (caption.endsWith(', EUR')) return 'Євро'
+    if (caption === 'Кількість продажів мінус повернення (GBA)') return 'Одиниці товару GBA'
     if (caption.includes('Кількість')) return 'Одиниці зберігання 1С'
     if (caption.includes('глобальним типом цін') || caption.includes('сумою за типом цін')) {
       return 'Значення за формулою 1С без валютного перерахунку'

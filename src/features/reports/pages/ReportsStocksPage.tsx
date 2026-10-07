@@ -1,3 +1,5 @@
+import { BUG_1274_ACTIVE_DATA_SOURCES, BUG_1274_DISABLED_MESSAGE } from '../data/reportMigration'
+import { useWorkbookPresentation } from '../hooks/useWorkbookPresentation'
 import './stocks-workspace.css'
 import PaymentComparisonPanel from './PaymentComparisonPanel'
 import { clonePaymentComparisonValue, paymentComparisonSummary } from '../data/paymentComparison'
@@ -98,6 +100,13 @@ import './report-constructor.css'
 import { datasetConfigurationError, datasetFilters, datasetGroupings, datasetMeasurements, datasetPresetRequest, datasetPresets, defaultDatasetRequest, type DatasetReportPresetId } from '../data/reportDatasets'
 import { useReportDatasets } from '../hooks/useReportDatasets'
 import { usesNativeReportLookup, supportsFullReportDateRange, hasFixedReportAxes, nativeReportMeasurementUnit } from '../data/nativeReportProfiles'
+import { CURRENT_VPARIVANIE_NOTICE, currentVparivanieFilterConditions, currentVparivanieNotice, currentVparivanieFullScope } from '../data/currentVparivanie'
+import { previousKyivDay } from '../data/cashPeriod'
+import { availableBug1274WorkbookLaunches, bug1274WorkbookRequest, type WorkbookLaunch } from '../data/bug1274WorkbookLaunch'
+import { CashSettlementSettingsPanels } from './CashSettlementSettingsPanels'
+import { cashFormDataset, requestGroupedCashPeriod } from '../data/groupedCashPeriod'
+import { groupedSettlementPeriod as parseGroupedSettlementPeriod, requestGroupedSettlementPeriod, settlementFormDataset, settlementMaximumDate, settlementModePatch } from '../data/groupedSettlementPeriod'
+import { requestSourceCounterpartyGroups } from '../data/sourceCounterpartyGroups'
 import { requiresValuationAgreement } from '../data/reportValuation'
 import { useValuationAgreement } from '../hooks/useValuationAgreement'
 import { useReportRunState } from '../hooks/useReportRunState'
@@ -110,6 +119,44 @@ import { ReportDatasetPicker, ReportDatasetSummary } from './ReportDatasetPicker
 import { ReportConstructorHeader, ReportConstructorNavigation, ReportConstructorResultEmpty, ReportSectionPanel, type ReportConstructorSection } from './ReportConstructorNavigation'
 import { ReportQuickPresets } from './ReportQuickPresets'
 import { OneCTurnoverReportPanel } from './OneCTurnoverReportPanel'
+import { DebtToSalesRatioReportPanel } from './DebtToSalesRatioReportPanel'
+import { isDebtToSalesRatioCapabilities, type DebtToSalesRatioCapabilities } from '../data/debtToSalesRatio'
+import { CollectionCoefficientConstructorModal } from './CollectionCoefficientConstructorModal'
+import { useCollectionCoefficientConstructor } from '../hooks/useCollectionCoefficientConstructor'
+import { SalesMarginConstructorModal } from './SalesMarginConstructorModal'
+import { useSalesMarginConstructor } from '../hooks/useSalesMarginConstructor'
+import { CashMovementConstructorModal } from './CashMovementConstructorModal'
+import { useCashMovementConstructor } from '../hooks/useCashMovementConstructor'
+import { SupplierDebtConstructorModal } from './SupplierDebtConstructorModal'
+import { useSupplierDebtConstructor } from '../hooks/useSupplierDebtConstructor'
+import { EmployeeGrossProfitConstructorModal } from './EmployeeGrossProfitConstructorModal'
+import { useEmployeeGrossProfitConstructor } from '../hooks/useEmployeeGrossProfitConstructor'
+import { OverdueReceivablesConstructorModal } from './OverdueReceivablesConstructorModal'
+import { useOverdueReceivablesConstructor } from '../hooks/useOverdueReceivablesConstructor'
+import { ManagementReturnsConstructorModal } from './ManagementReturnsConstructorModal'
+import { useManagementReturnsConstructor } from '../hooks/useManagementReturnsConstructor'
+import { ManagementBalanceConstructorModal } from './ManagementBalanceConstructorModal'
+import { useManagementBalanceConstructor } from '../hooks/useManagementBalanceConstructor'
+import { ManagementOrdersConstructorModal } from './ManagementOrdersConstructorModal'
+import { useManagementOrdersConstructor } from '../hooks/useManagementOrdersConstructor'
+import { DefectProductionConstructorModal } from './DefectProductionConstructorModal'
+import { useDefectProductionConstructor } from '../hooks/useDefectProductionConstructor'
+import { InventoryTurnoverConstructorModal } from './InventoryTurnoverConstructorModal'
+import { useInventoryTurnoverConstructor } from '../hooks/useInventoryTurnoverConstructor'
+import { PlannedCashConstructorModal } from './PlannedCashConstructorModal'
+import { usePlannedCashConstructor } from '../hooks/usePlannedCashConstructor'
+import { CurrentLiquidityConstructorModal } from './CurrentLiquidityConstructorModal'
+import { useCurrentLiquidityConstructor } from '../hooks/useCurrentLiquidityConstructor'
+import { ActiveClientsReportPanel } from './ActiveClientsReportPanel'
+import { isActiveClientsCapabilities, type ActiveClientsCapabilities } from '../data/activeClients'
+import { CurrencyRateDynamicsReportPanel } from './CurrencyRateDynamicsReportPanel'
+import { CashAggregateBalanceReportPanel } from './CashAggregateBalanceReportPanel'
+import { OriginalRevenueReportPanel } from './OriginalRevenueReportPanel'
+import { OriginalBuyerSalesShareReportPanel } from './OriginalBuyerSalesShareReportPanel'
+import { isOriginalBuyerSalesShareCapabilities, type OriginalBuyerSalesShareCapabilities } from '../data/originalBuyerSalesShare'
+import { isOriginalRevenueCapabilities, type OriginalRevenueCapabilities } from '../data/originalRevenue'
+import { isCashAggregateBalanceCapabilities, type CashAggregateBalanceCapabilities } from '../data/cashAggregateBalance'
+import { defaultCurrencyRateDynamicsMonth, isCurrencyRateDynamicsCapabilities, type CurrencyRateDynamicsCapabilities } from '../data/currencyRateDynamics'
 import { ReportGroupingPanel } from './ReportGroupingPanel'
 import { reorderReportGrouping, transferReportGrouping, type ReportGroupingAxis } from '../data/reportGroupingLayout'
 
@@ -126,6 +173,7 @@ import { CLIENT_COMPARISON_MAX_DATE, comparisonWindow, isComparisonDate, request
 import { ClientComparisonPeriodPanel } from './ClientComparisonPeriodPanel'
 import { buildReportBuilderRequest } from '../data/reportBuilderRequest'
 import { ReportInlinePreview } from './ReportInlinePreview'
+import { CurrentVparivanieRegionalPanel } from './CurrentVparivanieRegionalPanel'
 import type { NativeReportPreview } from '../data/nativeReportPreview'
 import { useReportFilterExpression, type ReportSelectionEdit } from '../hooks/useReportFilterExpression'
 import { ReportFilterExpressionPanel } from './ReportFilterExpressionPanel'
@@ -140,15 +188,22 @@ import { useReportAbcClassification } from '../hooks/useReportAbcClassification'
 import { requestTopGroups } from '../data/reportTopGroups'
 import { useReportGroupingOrdering } from '../hooks/useReportGroupingOrdering'
 import type { ReportGroupingLayout } from '../data/reportGroupingLayout'
+import { DayOrganizationBasisSelect } from './DayOrganizationBasisSelect'
+import { requestDayOrganizationBasis } from '../data/dayOrganizationBasis'
+import { requestSupplierBasis, rowGroupsForSupplierBasis } from '../data/supplierBasis'
+import { SupplierBasisSelect } from './SupplierBasisSelect'
 import { productClassification as parseProductClassification, sourceOrganizations as parseSourceOrganizations, sourceBuyerSubtree as parseSourceBuyerSubtree, requestProductClassification, requestSourceOrganizations, requestSourceBuyerSubtree, FENIX_BUYERS_ROOT_ID } from '../data/nativeExactFilters'
 import { DAY_ORGANIZATION_GOODS_KIND_ID, DAY_ORGANIZATION_SAVED_ORGANIZATION_IDS } from '../data/dayOrganizationGrossProfit'
+import { isSupplierSourceWorldCapability, requestSupplierSourceWorld } from '../data/supplierBatchGrossProfit'
 import PriceTypeSalesComparisonPanel from './PriceTypeSalesComparisonPanel'
 import AgreementPriceComparisonPanel from './AgreementPriceComparisonPanel'
 import { defaultAgreementPriceComparison, requestAgreementPriceComparison } from '../data/agreementPriceComparison'
 import { OneCSpecialReportPanel } from './OneCSpecialReportPanel'
-import { defaultOneCSpecialSettings, oneCSpecialSpecification, requestOneCSpecialSettings } from '../data/oneCSpecialReports'
+import { currentProvidedDiscountLookupBasis, defaultOneCSpecialSettings, oneCSpecialSpecification, requestOneCSpecialSettings } from '../data/oneCSpecialReports'
 import {
   clonePriceTypeSalesComparisonValue,
+  priceTypeSalesFormDataset,
+  currentPriceTypeSalesLookupBasis,
   PRICE_TYPE_SALES_COMPARISON_SOURCE,
 } from '../data/priceTypeSalesComparison'
 const LOOKUP_SEARCH_DEBOUNCE_MS = 300
@@ -228,13 +283,22 @@ function usesSavedFenixOrganizations(value: unknown): boolean {
   return DAY_ORGANIZATION_SAVED_ORGANIZATION_IDS.every(id => ids.some(value => value.toUpperCase() === id))
 }
 
-export function ReportsStocksPage({ constructorMode = false }: { constructorMode?: boolean }) {
-  const { user, session } = useAuth()
-  const ownerId = user?.NetUid ?? session?.userNetUid ?? null
-  return <ReportsStocksWorkspace key={ownerId ?? 'anonymous'} ownerId={ownerId} constructorMode={constructorMode} />
+function reportLookupSourceWorld(dataSource: number, groupedSettlement: unknown, specialSettings: unknown): 1 | 2 | undefined {
+  if (dataSource === 41) {
+    const world = parseGroupedSettlementPeriod(groupedSettlement)?.SourceWorld
+    return world === 'Fenix' ? 1 : world === 'Amg' ? 2 : undefined
+  }
+  return typeof specialSettings === 'object' && specialSettings !== null && 'SourceWorld' in specialSettings
+    && (specialSettings.SourceWorld === 1 || specialSettings.SourceWorld === 2) ? specialSettings.SourceWorld : undefined
 }
 
-function ReportsStocksWorkspace({ ownerId, constructorMode }: { ownerId: string | null; constructorMode: boolean }) {
+export function ReportsStocksPage({ constructorMode = false, consoleScope = true }: { constructorMode?: boolean; consoleScope?: boolean }) {
+  const { user, session } = useAuth()
+  const ownerId = user?.NetUid ?? session?.userNetUid ?? null
+  return <ReportsStocksWorkspace key={ownerId ?? 'anonymous'} ownerId={ownerId} constructorMode={constructorMode} consoleScope={consoleScope} />
+}
+
+function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ownerId: string | null; constructorMode: boolean; consoleScope: boolean }) {
   const { t } = useI18n()
   const { hasPermission } = useAuth()
   const canGenerateReport = hasPermission(
@@ -246,6 +310,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode }: { ownerId: string 
   const [previousPeriod, setPreviousPeriod] = useValueState({ from: today, to: today })
   const datasetStorage = useReportDatasets(canGenerateReport)
   const [dataSource, setDataSource] = useValueState(0)
+  const [fullCurrentVparivanie, setFullCurrentVparivanie] = useValueState(false)
   const [constructorSection, setConstructorSection] = useState<ReportConstructorSection>('structure')
   const navigateConstructorSection = (section: ReportConstructorSection) => {
     setConstructorSection(section)
@@ -262,19 +327,40 @@ function ReportsStocksWorkspace({ ownerId, constructorMode }: { ownerId: string 
   const [productClassification, setProductClassification] = useValueState<unknown>(undefined)
   const [sourceOrganizations, setSourceOrganizations] = useValueState<unknown>(undefined)
   const [sourceBuyerSubtree, setSourceBuyerSubtree] = useValueState<unknown>(undefined)
+  const [dayOrganizationBasis, setDayOrganizationBasis] = useValueState<unknown>(undefined)
+  const [supplierBasis, setSupplierBasis] = useValueState<unknown>(undefined)
+  const [supplierSourceWorld, setSupplierSourceWorld] = useValueState<unknown>(undefined)
   const [returnsOnly, setReturnsOnly] = useValueState<boolean | undefined>(undefined)
   const [priceTypeSalesComparison, setPriceTypeSalesComparison] = useValueState<unknown>(undefined)
   const [agreementPriceComparison, setAgreementPriceComparison] = useValueState<unknown>(undefined)
+  const [settlementPeriod, setSettlementPeriod] = useValueState<unknown>(undefined)
+  const [groupedSettlementPeriod, setGroupedSettlementPeriod] = useValueState<unknown>(undefined)
+  const [sourceCounterpartyGroups, setSourceCounterpartyGroups] = useValueState<unknown>(undefined)
+  const [groupedCashPeriod, setGroupedCashPeriod] = useValueState<unknown>(undefined)
+  const [cashPeriod, setCashPeriod] = useValueState<unknown>(undefined)
   const [oneCSpecialSettings, setOneCSpecialSettings] = useValueState<unknown>(undefined)
   const [oneCScope, setOneCScope] = useValueState<OneCTurnoverFilters | undefined>(undefined)
   const [oneCReportOpen, setOneCReportOpen] = useState(false)
   const [oneCReportGenerating, setOneCReportGenerating] = useState(false)
+  const [debtRatioCapability, setDebtRatioCapability] = useState<DebtToSalesRatioCapabilities | null>(null)
+  const [debtRatioGenerating, setDebtRatioGenerating] = useState(false)
+  const [activeClientsCapability, setActiveClientsCapability] = useState<ActiveClientsCapabilities | null>(null)
+  const [activeClientsGenerating, setActiveClientsGenerating] = useState(false)
+  const [currencyDynamicsCapability, setCurrencyDynamicsCapability] = useState<CurrencyRateDynamicsCapabilities | null>(null)
+  const [currencyDynamicsGenerating, setCurrencyDynamicsGenerating] = useState(false)
+  const [cashAggregateCapability, setCashAggregateCapability] = useState<CashAggregateBalanceCapabilities | null>(null)
+  const [cashAggregateGenerating, setCashAggregateGenerating] = useState(false)
+  const [originalRevenueCapability, setOriginalRevenueCapability] = useState<OriginalRevenueCapabilities | null>(null)
+  const [originalRevenueGenerating, setOriginalRevenueGenerating] = useState(false)
+  const [originalBuyerSalesShareCapability, setOriginalBuyerSalesShareCapability] = useState<OriginalBuyerSalesShareCapabilities | null>(null)
+  const [originalBuyerSalesShareGenerating, setOriginalBuyerSalesShareGenerating] = useState(false)
   const [valuationClientAgreementId, setValuationAgreementId] = useValueState<number | undefined>(undefined)
   const valuation = useValuationAgreement(valuationClientAgreementId, canGenerateReport && requiresValuationAgreement(dataSource))
   const dataset = datasetStorage.datasets.find(item => item.DataSource === dataSource)
   const periodSupported = dataset?.PeriodSupported !== false
   const [selectedMeasurements, setMeasurements] = useValueState<ReportMeasurementGroup[]>(createDefaultMeasurementGroups)
-  const measurements = useMemo(() => datasetMeasurements(dataset, flattenCheckedMeasurements(selectedMeasurements)), [dataset, selectedMeasurements])
+  const priceTypeDataset = useMemo(() => priceTypeSalesFormDataset(dataset, priceTypeSalesComparison), [dataset, priceTypeSalesComparison])
+  const measurements = useMemo(() => datasetMeasurements(priceTypeDataset, flattenCheckedMeasurements(selectedMeasurements)), [priceTypeDataset, selectedMeasurements])
   const presets = useMemo(() => datasetPresets(dataset), [dataset])
   const groupingOrdering = useReportGroupingOrdering()
   const { rowGroups, setRowGroups, colGroups, setColGroups, ordering } = groupingOrdering
@@ -286,13 +372,14 @@ function ReportsStocksWorkspace({ ownerId, constructorMode }: { ownerId: string 
   const filterLogic = useReportFilterExpression()
   const { selections, expression: filterExpression } = filterLogic
   const [templateName, setTemplateName] = useValueState('')
-  const templateStorage = useServerReportTemplates(canGenerateReport, datasetStorage.datasets)
+  const templateStorage = useServerReportTemplates(canGenerateReport, datasetStorage.datasets, ownerId)
   const [activeTemplate, setActiveTemplate] = useState<ReportTemplate | null>(null)
   const [restoredData, setRestoredData] = useState<ReportRequestBody | null>(null)
   const [draftRestoreError, setDraftRestoreError] = useState<string | null>(null)
   const [templateNotice, setTemplateNotice] = useValueState<string | null>(null)
   const [catalogueNotice, setCatalogueNotice] = useState<{ text: string; failed: boolean } | null>(null)
-  const groupingOptions = useMemo(() => datasetGroupings(dataset).filter(field => field.type !== ABC_CLASS_GROUPING || abcClassification != null), [abcClassification, dataset])
+  const groupingOptions = useMemo(() => datasetGroupings(priceTypeDataset).filter(field => field.type !== ABC_CLASS_GROUPING || abcClassification != null), [abcClassification, priceTypeDataset])
+  const workbook = useWorkbookPresentation({ dataSource, groupingOptions, setRowGroups, setGroupedCashPeriod })
   const groupingSelectData = useMemo(
     () =>
       groupingOptions.map((item) => ({
@@ -305,8 +392,11 @@ function ReportsStocksWorkspace({ ownerId, constructorMode }: { ownerId: string 
       }) satisfies GroupingOption),
     [colGroups, groupingOptions, rowGroups],
   )
-  const filterFieldOptions = useMemo(() => datasetFilters(dataset), [dataset])
-  const maxDate = useMemo(() => supportsFullReportDateRange(dataSource) ? CLIENT_COMPARISON_MAX_DATE : `${today.slice(0, 4)}-12-31`, [dataSource, today])
+  const settlementDataset = useMemo(() => settlementFormDataset(priceTypeDataset, groupedSettlementPeriod), [priceTypeDataset, groupedSettlementPeriod])
+  const cashDataset = useMemo(() => cashFormDataset(settlementDataset, groupedCashPeriod), [settlementDataset, groupedCashPeriod])
+  const filterFieldOptions = useMemo(() => datasetFilters(cashDataset), [cashDataset])
+  const maxDate = useMemo(() => settlementMaximumDate(dataSource, groupedSettlementPeriod, today)
+    ?? (supportsFullReportDateRange(dataSource) ? CLIENT_COMPARISON_MAX_DATE : `${today.slice(0, 4)}-12-31`), [dataSource, groupedSettlementPeriod, today])
   const [debouncedFrom] = useDebouncedValue(from, DATE_INPUT_DEBOUNCE_MS)
   const [debouncedTo] = useDebouncedValue(to, DATE_INPUT_DEBOUNCE_MS)
   const periodError = supportsFullReportDateRange(dataSource) ? (!isComparisonDate(from) || !isComparisonDate(to) || from > to ? 'Оберіть коректний період у межах 1900–9998 років.' : null)
@@ -315,14 +405,39 @@ function ReportsStocksWorkspace({ ownerId, constructorMode }: { ownerId: string 
   // period on a pause, and only once it is a period the server can answer for.
   const hasLookupPeriod = !getPeriodError(debouncedFrom, debouncedTo, maxDate, t)
   const reportBody = useMemo<ReportRequestBody>(
-    () => buildReportBuilderRequest({ dataSource, returnsOnly, comparison, xyz, revenueComparison, buyerSalesShare, returnComparison, paymentComparison, marginComparison, rateComparison, productClassification, sourceOrganizations, sourceBuyerSubtree, priceTypeSalesComparison, agreementPriceComparison, oneCSpecialSettings, oneC: oneCScope, from, to, ordering, filterExpression, topGroups, threshold, hideZero, abcClassification, valuationClientAgreementId, rowGroups, colGroups, measurements, selections }),
-    [abcClassification, agreementPriceComparison, colGroups, comparison, xyz, revenueComparison, buyerSalesShare, returnComparison, paymentComparison, marginComparison, rateComparison, productClassification, sourceOrganizations, sourceBuyerSubtree, returnsOnly, priceTypeSalesComparison, oneCSpecialSettings, oneCScope, dataSource, filterExpression, from, hideZero, measurements, ordering, rowGroups, selections, to, topGroups, threshold, valuationClientAgreementId],
+    () => ({ ...buildReportBuilderRequest({ dataSource, returnsOnly, comparison, xyz, revenueComparison, buyerSalesShare, returnComparison, paymentComparison, marginComparison, rateComparison, productClassification, sourceOrganizations, sourceBuyerSubtree, dayOrganizationBasis, supplierBasis, supplierSourceWorld, priceTypeSalesComparison, agreementPriceComparison, settlementPeriod, groupedSettlementPeriod, sourceCounterpartyGroups, cashPeriod, groupedCashPeriod, workbookPresentation: workbook.value, oneCSpecialSettings, oneC: oneCScope, from, to, ordering, filterExpression, topGroups, threshold, hideZero, abcClassification, valuationClientAgreementId, rowGroups, colGroups, measurements, selections }), ...(dataSource === 39 && fullCurrentVparivanie ? { currentVparivanieFullScope: true } : {}) }),
+    [fullCurrentVparivanie, abcClassification, agreementPriceComparison, settlementPeriod, groupedSettlementPeriod, sourceCounterpartyGroups, cashPeriod, groupedCashPeriod, workbook.value, colGroups, comparison, xyz, revenueComparison, buyerSalesShare, returnComparison, paymentComparison, marginComparison, rateComparison, productClassification, sourceOrganizations, sourceBuyerSubtree, dayOrganizationBasis, supplierBasis, supplierSourceWorld, returnsOnly, priceTypeSalesComparison, oneCSpecialSettings, oneCScope, dataSource, filterExpression, from, hideZero, measurements, ordering, rowGroups, selections, to, topGroups, threshold, valuationClientAgreementId],
   )
   const { result, preview, lastRun, error, isLoading, downloadModalOpened, update: updateRun, begin: beginRun, clear: clearRun } = useReportRunState<ReportRunOutcome>(JSON.stringify({
     request: reportBody,
     allowed: canGenerateReport,
     agreementVerified: !requiresValuationAgreement(dataSource) || valuation.agreement?.Id === valuationClientAgreementId,
   }))
+  const collectionConstructor = useCollectionCoefficientConstructor({ enabled: canGenerateReport, disabled: isLoading,
+    callerKey: ownerId, from, today })
+  const salesMarginConstructor = useSalesMarginConstructor({ enabled: canGenerateReport, disabled: isLoading,
+    callerKey: ownerId, from, today })
+  const cashMovementConstructor = useCashMovementConstructor({ enabled: canGenerateReport, disabled: isLoading,
+    callerKey: ownerId, from, today })
+  const supplierDebtConstructor = useSupplierDebtConstructor({ enabled: canGenerateReport, disabled: isLoading,
+    callerKey: ownerId, from, today })
+  const employeeGrossProfitConstructor = useEmployeeGrossProfitConstructor({ enabled: canGenerateReport, disabled: isLoading,
+    callerKey: ownerId, from, today })
+  const overdueReceivablesConstructor = useOverdueReceivablesConstructor({ enabled: canGenerateReport, disabled: isLoading,
+    callerKey: ownerId, from, today })
+  const managementReturnsConstructor = useManagementReturnsConstructor({ enabled: canGenerateReport, disabled: isLoading,
+    callerKey: ownerId, from, today })
+  const managementBalanceConstructor = useManagementBalanceConstructor({ enabled: canGenerateReport, disabled: isLoading,
+    callerKey: ownerId, from, today })
+  const managementOrdersConstructor = useManagementOrdersConstructor({ enabled: canGenerateReport, disabled: isLoading,
+    callerKey: ownerId, from, today })
+  const defectProductionConstructor = useDefectProductionConstructor({ enabled: canGenerateReport, disabled: isLoading,
+    callerKey: ownerId, from, today })
+  const inventoryTurnoverConstructor = useInventoryTurnoverConstructor({ enabled: canGenerateReport, disabled: isLoading,
+    callerKey: ownerId, from, today })
+  const currentLiquidityConstructor = useCurrentLiquidityConstructor({ enabled: canGenerateReport, disabled: isLoading,
+    callerKey: ownerId, today })
+  const plannedCashConstructor = usePlannedCashConstructor({ enabled: canGenerateReport, disabled: isLoading, callerKey: ownerId, today })
   const comparisonSettingsDisabled = isLoading || !canGenerateReport
   const retainedData = restoredData ?? activeTemplate?.Data
   const templateBody = useMemo(() => retainedData
@@ -333,7 +448,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode }: { ownerId: string 
   }), [activeTemplate, previousPeriod, selectedMeasurements, templateBody, templateName])
   const workspaceDraft = useReportWorkspaceDraft({ ownerId, enabled: canGenerateReport,
     ready: datasetStorage.loaded && !datasetStorage.error, snapshot: draftSnapshot })
-  const configurationError = datasetStorage.error ?? (!datasetStorage.loaded ? t('Завантаження наборів даних…') : datasetConfigurationError(templateBody, dataset))
+  const configurationError = (consoleScope && !BUG_1274_ACTIVE_DATA_SOURCES.has(dataSource) ? BUG_1274_DISABLED_MESSAGE : null) ?? datasetStorage.error ?? (!datasetStorage.loaded ? t('Завантаження наборів даних…') : datasetConfigurationError(templateBody, dataset))
     ?? (requiresValuationAgreement(dataSource) && valuation.agreement?.Id !== valuationClientAgreementId ? 'Підтвердіть доступний договір оцінки.' : null)
   const checkedMeasurements = reportBody.sorted.Measurements.length
   // The report engine lays the sheet out from the row groupings; without one it fails deep
@@ -416,15 +531,27 @@ function ReportsStocksWorkspace({ ownerId, constructorMode }: { ownerId: string 
     }
   }
 
+  function changeSettlementMode(mode: 'buyers' | 'agreement') {
+    const patch = settlementModePatch(mode, groupingOptions)
+    setGroupedSettlementPeriod(patch.grouped)
+    setSourceCounterpartyGroups(undefined)
+    setSettlementPeriod(undefined)
+    setSourceBuyerSubtree(patch.buyer)
+    setRowGroups(patch.rows)
+    filterLogic.load([])
+  }
+
   function resetReport() {
+    setFullCurrentVparivanie(false)
     setConstructorSection('structure')
     setCatalogueNotice(null)
     workspaceDraft.rememberBeforeReplace()
     setRestoredData(null)
     setDraftRestoreError(null)
     setActiveTemplate(null)
+    const resetDay = (dataSource === 40 || dataSource === 41) ? previousKyivDay(today) : today
     const snapshotDefaults = dataset && shouldLoadDatasetDefaults(dataSource, periodSupported)
-      ? defaultDatasetRequest(dataset, today, today)
+      ? defaultDatasetRequest(dataset, resetDay, resetDay)
       : null
     setComparison(snapshotDefaults?.comparison)
     setXyz(snapshotDefaults?.xyz)
@@ -436,17 +563,26 @@ function ReportsStocksWorkspace({ ownerId, constructorMode }: { ownerId: string 
     setRevenueComparison(snapshotDefaults?.revenueComparison)
     setProductClassification(undefined)
     setSourceOrganizations(undefined)
-    setSourceBuyerSubtree(undefined)
+    setSourceBuyerSubtree(snapshotDefaults?.sourceBuyerSubtree)
+    setDayOrganizationBasis(snapshotDefaults?.dayOrganizationBasis)
+    setSupplierBasis(snapshotDefaults?.supplierBasis)
+    setSupplierSourceWorld(snapshotDefaults?.supplierSourceWorld)
     setPriceTypeSalesComparison(snapshotDefaults?.priceTypeSalesComparison)
     setAgreementPriceComparison(snapshotDefaults?.agreementPriceComparison)
+    setSettlementPeriod(undefined)
+    setGroupedSettlementPeriod(snapshotDefaults?.groupedSettlementPeriod)
+    setSourceCounterpartyGroups(undefined)
+    setCashPeriod(undefined)
+    setGroupedCashPeriod(snapshotDefaults?.groupedCashPeriod)
+    workbook.reset(snapshotDefaults)
     setOneCSpecialSettings(snapshotDefaults && oneCSpecialSpecification(dataSource)
       ? requestOneCSpecialSettings(snapshotDefaults, dataSource) : undefined)
     setOneCScope(snapshotDefaults?.oneC)
-    setFrom(periodSupported ? today : '')
-    setTo(periodSupported ? today : '')
+    setFrom(periodSupported ? resetDay : '')
+    setTo(periodSupported ? resetDay : '')
     setMeasurements(snapshotDefaults ? datasetMeasurements(dataset, snapshotDefaults.sorted.Measurements) : createDefaultMeasurementGroups())
     setRowGroups(snapshotDefaults?.sorted.Row ?? [])
-    setColGroups([])
+    setColGroups((dataSource === 40 || dataSource === 41) ? snapshotDefaults?.sorted.Col ?? [] : [])
     filterLogic.load([])
     setTopGroups(undefined)
     setThreshold(undefined)
@@ -491,7 +627,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode }: { ownerId: string 
 
   function applyTemplate(template: ReportTemplate): boolean {
     const nextDataset = datasetStorage.datasets.find(item => item.DataSource === (template.Data.dataSource ?? 0))
-    const incompatible = datasetConfigurationError(template.Data, nextDataset)
+    const incompatible = (consoleScope && !BUG_1274_ACTIVE_DATA_SOURCES.has(template.Data.dataSource ?? 0) ? BUG_1274_DISABLED_MESSAGE : null) ?? datasetConfigurationError(template.Data, nextDataset)
     if (incompatible || !nextDataset) {
       setTemplateNotice(incompatible)
       return false
@@ -509,6 +645,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode }: { ownerId: string 
     setDraftRestoreError(null)
     setActiveTemplate(null)
     const data = template.Data
+    setFullCurrentVparivanie(currentVparivanieFullScope(data))
     setComparison(structuredClone(requestComparison(data)))
     setXyz(structuredClone(xyzOptions(requestXyz(data)) ?? requestXyz(data)))
     setRateComparison(structuredClone(rateComparisonOptions(requestRateComparison(data)) ?? requestRateComparison(data)))
@@ -520,9 +657,18 @@ function ReportsStocksWorkspace({ ownerId, constructorMode }: { ownerId: string 
     setProductClassification(structuredClone(requestProductClassification(data)))
     setSourceOrganizations(structuredClone(requestSourceOrganizations(data)))
     setSourceBuyerSubtree(structuredClone(requestSourceBuyerSubtree(data)))
+    setDayOrganizationBasis(structuredClone(requestDayOrganizationBasis(data)))
+    setSupplierBasis(structuredClone(requestSupplierBasis(data)))
+    setSupplierSourceWorld(structuredClone(requestSupplierSourceWorld(data)))
     setReturnsOnly(data.returnsOnly ?? data.ReturnsOnly)
     setPriceTypeSalesComparison(clonePriceTypeSalesComparisonValue(data))
     setAgreementPriceComparison(structuredClone(requestAgreementPriceComparison(data)))
+    setSettlementPeriod(structuredClone(data.settlementPeriod))
+    setGroupedSettlementPeriod(structuredClone(requestGroupedSettlementPeriod(data)))
+    setSourceCounterpartyGroups(structuredClone(requestSourceCounterpartyGroups(data)))
+    setCashPeriod(structuredClone(data.cashPeriod))
+    setGroupedCashPeriod(structuredClone(requestGroupedCashPeriod(data)))
+    workbook.restore(data)
     setOneCSpecialSettings(structuredClone(requestOneCSpecialSettings(data, nextDataset.DataSource)))
     setOneCScope(structuredClone(data.oneC))
     groupingOrdering.loadOrdering(requestOrdering(data))
@@ -555,6 +701,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode }: { ownerId: string 
       return false
     }
     const data = structuredClone(snapshot.data)
+    setFullCurrentVparivanie(currentVparivanieFullScope(data))
     setCatalogueNotice(null)
     setRestoredData(data)
     setActiveTemplate(structuredClone(snapshot.activeTemplate))
@@ -579,9 +726,18 @@ function ReportsStocksWorkspace({ ownerId, constructorMode }: { ownerId: string 
     setProductClassification(structuredClone(requestProductClassification(data)))
     setSourceOrganizations(structuredClone(requestSourceOrganizations(data)))
     setSourceBuyerSubtree(structuredClone(requestSourceBuyerSubtree(data)))
+    setDayOrganizationBasis(structuredClone(requestDayOrganizationBasis(data)))
+    setSupplierBasis(structuredClone(requestSupplierBasis(data)))
+    setSupplierSourceWorld(structuredClone(requestSupplierSourceWorld(data)))
     setReturnsOnly(data.returnsOnly ?? data.ReturnsOnly)
     setPriceTypeSalesComparison(clonePriceTypeSalesComparisonValue(data))
     setAgreementPriceComparison(structuredClone(requestAgreementPriceComparison(data)))
+    setSettlementPeriod(structuredClone(data.settlementPeriod))
+    setGroupedSettlementPeriod(structuredClone(requestGroupedSettlementPeriod(data)))
+    setSourceCounterpartyGroups(structuredClone(requestSourceCounterpartyGroups(data)))
+    setCashPeriod(structuredClone(data.cashPeriod))
+    setGroupedCashPeriod(structuredClone(requestGroupedCashPeriod(data)))
+    workbook.restore(data)
     setOneCSpecialSettings(structuredClone(requestOneCSpecialSettings(data, nextDataset.DataSource)))
     setOneCScope(structuredClone(data.oneC))
     setTopGroups(structuredClone(requestTopGroups(data)))
@@ -614,9 +770,48 @@ function ReportsStocksWorkspace({ ownerId, constructorMode }: { ownerId: string 
     return true
   }
 
-  function changeDataset(nextDataset: ReportDataset) {
+  function openDebtToSalesRatio(capability: DebtToSalesRatioCapabilities): boolean {
+    if (!canGenerateReport || isLoading || !isDebtToSalesRatioCapabilities(capability) || !capability.Executable) return false
+    setDebtRatioCapability(structuredClone(capability))
+    return true
+  }
+
+  function openActiveClients(capability: ActiveClientsCapabilities): boolean {
+    if (!canGenerateReport || isLoading || !isActiveClientsCapabilities(capability) || !capability.Executable) return false
+    setActiveClientsCapability(structuredClone(capability))
+    return true
+  }
+
+  function openCurrencyRateDynamics(capability: CurrencyRateDynamicsCapabilities): boolean {
+    if (!canGenerateReport || isLoading || !isCurrencyRateDynamicsCapabilities(capability) || !capability.Executable) return false
+    setCurrencyDynamicsCapability(structuredClone(capability))
+    return true
+  }
+
+  function openOriginalBuyerSalesShare(capability: OriginalBuyerSalesShareCapabilities): boolean {
+    if (!canGenerateReport || isLoading || !isOriginalBuyerSalesShareCapabilities(capability) || !capability.Executable) return false
+    setOriginalBuyerSalesShareCapability(structuredClone(capability))
+    setOriginalBuyerSalesShareGenerating(false)
+    return true
+  }
+
+  function openOriginalRevenue(capability: OriginalRevenueCapabilities): boolean {
+    if (!canGenerateReport || isLoading || !isOriginalRevenueCapabilities(capability) || !capability.Executable) return false
+    setOriginalRevenueCapability(structuredClone(capability))
+    setOriginalRevenueGenerating(false)
+    return true
+  }
+  function openCashAggregateBalance(capability: CashAggregateBalanceCapabilities): boolean {
+    if (!canGenerateReport || isLoading || !isCashAggregateBalanceCapabilities(capability) || !capability.Executable) return false
+    setCashAggregateCapability(structuredClone(capability))
+    return true
+  }
+
+  function changeDataset(nextDataset: ReportDataset, workbook?: WorkbookLaunch) {
+    if (consoleScope && !BUG_1274_ACTIVE_DATA_SOURCES.has(nextDataset.DataSource)) return
     const period = periodSupported ? { from, to } : previousPeriod
-    applyConfiguration({ Name: '', Data: defaultDatasetRequest(nextDataset, period.from, period.to) }, nextDataset)
+    const day = (nextDataset.DataSource === 40 || nextDataset.DataSource === 41) ? previousKyivDay(today) : null
+    applyConfiguration({ Name: '', Data: bug1274WorkbookRequest(defaultDatasetRequest(nextDataset, day ?? period.from, day ?? period.to), workbook) }, nextDataset)
   }
 
   function applyPreset(id: DatasetReportPresetId) {
@@ -625,7 +820,10 @@ function ReportsStocksWorkspace({ ownerId, constructorMode }: { ownerId: string 
     if (preset) groupingOrdering.applyPreset(preset, next => applyConfiguration(next, dataset))
   }
 
-  if (canGenerateReport && ownerId && workspaceDraft.recovery !== 'none') {
+  const workbookLaunches = availableBug1274WorkbookLaunches(datasetStorage.datasets)
+
+  if (canGenerateReport && ownerId && workspaceDraft.recovery !== 'none'
+    && (workspaceDraft.recovery !== 'loading' || !datasetStorage.loaded)) {
     return <ReportDraftRecoveryPanel savedAt={workspaceDraft.savedAt}
       loading={!datasetStorage.loaded && !datasetStorage.error}
       error={draftRestoreError ?? datasetStorage.error ?? workspaceDraft.message}
@@ -637,7 +835,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode }: { ownerId: string 
 
   return (
     <Stack className={`reports-stocks-page${constructorMode ? ' report-constructor-page' : ' reports-stocks-workspace'}`} gap={6}>
-      {constructorMode ? <ReportConstructorHeader name={templateName} /> : null}
+      {constructorMode ? <ReportConstructorHeader registerReportsEnabled={!consoleScope} name={templateName} /> : null}
       {canGenerateReport && ownerId ? <ReportDraftStatus savedAt={workspaceDraft.status === 'saved' ? workspaceDraft.savedAt : null}
         notice={draftRestoreError ?? workspaceDraft.message} canUndo={Boolean(workspaceDraft.previousSnapshot)}
         disabled={isLoading || !datasetStorage.loaded || Boolean(datasetStorage.error)}
@@ -649,13 +847,27 @@ function ReportsStocksWorkspace({ ownerId, constructorMode }: { ownerId: string 
             <Text size="xs" c="dimmed">{t('Оберіть набір даних, налаштуйте структуру та сформуйте звіт.')}</Text></div>
         </div> : null}
       <Group justify="flex-end" gap={8}>
-        {!constructorMode && canGenerateReport ? <Button component="a" href="/reports/registers" variant="default">{t('Звіти регістрів')}</Button> : null}
-        <Button type="button" variant="filled" disabled={!canGenerateReport}
+        {!consoleScope && !constructorMode && canGenerateReport ? <Button component="a" href="/reports/registers" variant="default">{t('Звіти регістрів')}</Button> : null}
+        <Button type="button" variant="filled" disabled={consoleScope || !canGenerateReport}
           aria-haspopup="dialog" aria-expanded={oneCReportOpen} onClick={() => setOneCReportOpen(true)}>
           {t('Валовий прибуток — як у 1С')}
         </Button>
+        {consoleScope ? <Badge color="green">Готово</Badge> : null}
       </Group>
       </div>
+      {!constructorMode && canGenerateReport && datasetStorage.loaded && !datasetStorage.error && workbookLaunches.length > 0
+        ? <details className="app-section-card">
+          <summary>{t('Часткові форми за зразками Excel')}</summary>
+          <Stack gap="xs" p="sm">{workbookLaunches.map(item =>
+            <Group key={item.fileName} justify="space-between" align="start" wrap="wrap">
+              <Text size="sm">{item.fileName} · {t(item.notice)}</Text>
+              <Button type="button" size="xs" variant="light" disabled={isLoading}
+                onClick={() => {
+                  changeDataset(item.dataset, item)
+                  setCatalogueNotice({ text: `${item.fileName}: ${item.notice}`, failed: false })
+                }}>{t('Відкрити часткову форму: {name}', { name: item.label })}</Button>
+            </Group>)}</Stack>
+        </details> : null}
       <AppModal opened={oneCReportOpen} title={t('Валовий прибуток — як у 1С')} size={960}
         onClose={() => { if (!oneCReportGenerating) setOneCReportOpen(false) }}
         closeOnClickOutside={!oneCReportGenerating} closeOnEscape={!oneCReportGenerating}
@@ -663,6 +875,66 @@ function ReportsStocksWorkspace({ ownerId, constructorMode }: { ownerId: string 
         {oneCReportOpen ? <OneCTurnoverReportPanel canGenerate={canGenerateReport} from={from} to={to}
           onFromChange={setFrom} onToChange={setTo} onLoadingChange={setOneCReportGenerating}
           onClose={() => setOneCReportOpen(false)} /> : null}
+      </AppModal>
+      <AppModal opened={canGenerateReport && debtRatioCapability !== null} title={debtRatioCapability?.Title ?? ''} size={960}
+        onClose={() => { if (!debtRatioGenerating) setDebtRatioCapability(null) }}
+        closeOnClickOutside={!debtRatioGenerating} closeOnEscape={!debtRatioGenerating}
+        closeButtonProps={{ disabled: debtRatioGenerating, 'aria-label': t('Закрити оригінальний конструктор') }}>
+        {canGenerateReport && debtRatioCapability ? <DebtToSalesRatioReportPanel capability={debtRatioCapability}
+          initialMonth={(from || today).slice(0, 7)} canGenerate={canGenerateReport} onLoadingChange={setDebtRatioGenerating} /> : null}
+      </AppModal>
+      <AppModal opened={canGenerateReport && activeClientsCapability !== null} title={activeClientsCapability?.Title ?? ''} size={960}
+        onClose={() => { if (!activeClientsGenerating) setActiveClientsCapability(null) }}
+        closeOnClickOutside={!activeClientsGenerating} closeOnEscape={!activeClientsGenerating}
+        closeButtonProps={{ disabled: activeClientsGenerating, 'aria-label': t('Закрити конструктор активних клієнтів') }}>
+        {canGenerateReport && activeClientsCapability ? <ActiveClientsReportPanel capability={activeClientsCapability}
+          initialMonth={(from || today).slice(0, 7)} canGenerate={canGenerateReport} callerKey={ownerId}
+          onLoadingChange={setActiveClientsGenerating} /> : null}
+      </AppModal>
+      <CollectionCoefficientConstructorModal {...collectionConstructor.modalProps} />
+      <SalesMarginConstructorModal {...salesMarginConstructor.modalProps} />
+      <CashMovementConstructorModal {...cashMovementConstructor.modalProps} />
+      <SupplierDebtConstructorModal {...supplierDebtConstructor.modalProps} />
+      <EmployeeGrossProfitConstructorModal {...employeeGrossProfitConstructor.modalProps} />
+      <OverdueReceivablesConstructorModal {...overdueReceivablesConstructor.modalProps} />
+      <ManagementReturnsConstructorModal {...managementReturnsConstructor.modalProps} />
+      <ManagementBalanceConstructorModal {...managementBalanceConstructor.modalProps} />
+      <ManagementOrdersConstructorModal {...managementOrdersConstructor.modalProps} />
+      <DefectProductionConstructorModal {...defectProductionConstructor.modalProps} />
+      <InventoryTurnoverConstructorModal {...inventoryTurnoverConstructor.modalProps} />
+      <CurrentLiquidityConstructorModal {...currentLiquidityConstructor.modalProps} />
+      <PlannedCashConstructorModal {...plannedCashConstructor.modalProps} />
+      <AppModal opened={canGenerateReport && currencyDynamicsCapability !== null} title={currencyDynamicsCapability?.Title ?? ''} size={960}
+        onClose={() => { if (!currencyDynamicsGenerating) setCurrencyDynamicsCapability(null) }}
+        closeOnClickOutside={!currencyDynamicsGenerating} closeOnEscape={!currencyDynamicsGenerating}
+        closeButtonProps={{ disabled: currencyDynamicsGenerating, 'aria-label': t('Закрити конструктор динаміки курсу') }}>
+        {canGenerateReport && currencyDynamicsCapability ? <CurrencyRateDynamicsReportPanel capability={currencyDynamicsCapability}
+          initialMonth={defaultCurrencyRateDynamicsMonth(today)} canGenerate={canGenerateReport} callerKey={ownerId}
+          onLoadingChange={setCurrencyDynamicsGenerating} /> : null}
+      </AppModal>
+      <AppModal opened={canGenerateReport && originalBuyerSalesShareCapability !== null} title={originalBuyerSalesShareCapability?.Title ?? ''} size={960}
+        onClose={() => { if (!originalBuyerSalesShareGenerating) setOriginalBuyerSalesShareCapability(null) }}
+        closeOnClickOutside={!originalBuyerSalesShareGenerating} closeOnEscape={!originalBuyerSalesShareGenerating}
+        closeButtonProps={{ disabled: originalBuyerSalesShareGenerating, 'aria-label': t('Закрити конструктор частки продажів') }}>
+        {canGenerateReport && originalBuyerSalesShareCapability ? <OriginalBuyerSalesShareReportPanel capability={originalBuyerSalesShareCapability}
+          initialMonth={defaultCurrencyRateDynamicsMonth(today)} canGenerate={canGenerateReport} callerKey={ownerId}
+          onLoadingChange={setOriginalBuyerSalesShareGenerating} /> : null}
+      </AppModal>
+      <AppModal opened={canGenerateReport && originalRevenueCapability !== null} title={originalRevenueCapability?.Title ?? ''} size={1100}
+        onClose={() => { if (!originalRevenueGenerating) setOriginalRevenueCapability(null) }}
+        closeOnClickOutside={!originalRevenueGenerating} closeOnEscape={!originalRevenueGenerating}
+        closeButtonProps={{ disabled: originalRevenueGenerating, 'aria-label': t('Закрити конструктор виручки') }}>
+        {canGenerateReport && originalRevenueCapability ? <OriginalRevenueReportPanel capability={originalRevenueCapability}
+          initialMonth={defaultCurrencyRateDynamicsMonth(today)} canGenerate={canGenerateReport} callerKey={ownerId}
+          onLoadingChange={setOriginalRevenueGenerating} /> : null}
+      </AppModal>
+      <AppModal opened={canGenerateReport && cashAggregateCapability !== null} title={cashAggregateCapability?.Title ?? ''} size={1100}
+        onClose={() => { if (!cashAggregateGenerating) setCashAggregateCapability(null) }}
+        closeOnClickOutside={!cashAggregateGenerating} closeOnEscape={!cashAggregateGenerating}
+        closeButtonProps={{ disabled: cashAggregateGenerating, 'aria-label': t('Закрити конструктор залишків коштів') }}>
+        {canGenerateReport && cashAggregateCapability ? <CashAggregateBalanceReportPanel capability={cashAggregateCapability}
+          initialPeriod={previousKyivDay(today)} canGenerate={canGenerateReport} callerKey={ownerId}
+          onLoadingChange={setCashAggregateGenerating} /> : null}
       </AppModal>
       {!constructorMode && canGenerateReport && templateName.trim() ? <Text fw={600} aria-label={t('Назва поточного звіту')}>{templateName}</Text> : null}
       {canGenerateReport && catalogueNotice ? <Alert color={catalogueNotice.failed ? 'red' : 'blue'} style={{ flexShrink: 0 }}
@@ -679,11 +951,19 @@ function ReportsStocksWorkspace({ ownerId, constructorMode }: { ownerId: string 
         constructorSection={constructorSection}
         onConstructorSectionChange={navigateConstructorSection}
         analysisCount={[topGroups, threshold, hideZero, abcClassification, ordering].filter(value => value != null).length}
-        datasetPanel={<ReportDatasetPicker compact datasets={datasetStorage.datasets} selected={dataSource}
+        datasetPanel={<ReportDatasetPicker compact activeDataSources={consoleScope ? BUG_1274_ACTIVE_DATA_SOURCES : undefined} datasets={datasetStorage.datasets} selected={dataSource}
           disabled={!canGenerateReport || isLoading} loaded={datasetStorage.loaded} error={datasetStorage.error}
           onChange={changeDataset} onRetry={datasetStorage.retry} />}
-        catalogueControl={<ReportCatalogueControl presentation="dialog" enabled={canGenerateReport}
-          disabled={isLoading || !datasetStorage.loaded || Boolean(datasetStorage.error)} onOpen={openCatalogueReport} />}
+        catalogueControl={<ReportCatalogueControl consoleScope={consoleScope} presentation="dialog" enabled={canGenerateReport}
+          onOpenWorkbook={item => {
+            if (!canGenerateReport || isLoading) return false
+            changeDataset(item.dataset, item)
+            setCatalogueNotice({ text: `${item.fileName}: ${item.notice}`, failed: false })
+            return true
+          }}
+          disabled={isLoading} onOpen={openCatalogueReport}
+          onOpenDebtToSalesRatio={openDebtToSalesRatio} onOpenCollectionCoefficient={collectionConstructor.open} onOpenSalesMargin={salesMarginConstructor.open} onOpenCashMovement={cashMovementConstructor.open} onOpenSupplierDebt={supplierDebtConstructor.open} onOpenEmployeeGrossProfit={employeeGrossProfitConstructor.open} onOpenOverdueReceivables={overdueReceivablesConstructor.open} onOpenManagementReturns={managementReturnsConstructor.open} onOpenManagementBalance={managementBalanceConstructor.open} onOpenManagementOrders={managementOrdersConstructor.open} onOpenDefectProduction={defectProductionConstructor.open} onOpenInventoryTurnover={inventoryTurnoverConstructor.open} onOpenCurrentLiquidity={currentLiquidityConstructor.open} onOpenPlannedCash={plannedCashConstructor.open} callerKey={ownerId} onOpenActiveClients={openActiveClients}
+          onOpenCurrencyRateDynamics={openCurrencyRateDynamics} onOpenCashAggregateBalance={openCashAggregateBalance} onOpenOriginalRevenue={openOriginalRevenue} onOpenOriginalBuyerSalesShare={openOriginalBuyerSalesShare} />}
         datasetSummary={<><ReportDatasetSummary dataset={dataset} />
           {!constructorMode ? <details className="stocks-workspace-dataset-help"><summary>{t('Що змінює вибір набору даних')}</summary>
             <Text size="xs" c="dimmed">{t('Зміна набору застосує початкові групування й показники та очистить відбори, групи І/АБО, TOP, ABC-класифікацію і правила сортування. Набори поточного стану очищують період; після повернення до набору з періодом попередні дати відновляться.')}</Text>
@@ -696,12 +976,27 @@ function ReportsStocksWorkspace({ ownerId, constructorMode }: { ownerId: string 
             validationError={valuation.error} onChange={setValuationAgreementId} onRetry={valuation.retry} />}
         </div> : null}
         priceTypeSalesComparisonPanel={<PriceTypeSalesComparisonPanel dataSource={dataSource} value={priceTypeSalesComparison}
-          scope={oneCScope} disabled={comparisonSettingsDisabled} onChange={setPriceTypeSalesComparison} onScopeChange={setOneCScope} />}
-        oneCSpecialReportPanel={<OneCSpecialReportPanel dataSource={dataSource} value={oneCSpecialSettings ??
-          (oneCSpecialSpecification(dataSource) ? defaultOneCSpecialSettings(dataSource)[oneCSpecialSpecification(dataSource)!.key] : undefined)}
+          scope={oneCScope} capability={dataset?.priceTypeSalesComparison} disabled={comparisonSettingsDisabled} onChange={setPriceTypeSalesComparison} onScopeChange={setOneCScope} />}
+        oneCSpecialReportPanel={<OneCSpecialReportPanel dataSource={dataSource} dataset={dataset} value={oneCSpecialSettings ??
+          (oneCSpecialSpecification(dataSource) ? defaultOneCSpecialSettings(dataSource, dataset)[oneCSpecialSpecification(dataSource)!.key] : undefined)}
           disabled={comparisonSettingsDisabled} onChange={setOneCSpecialSettings} />}
-        classificationPanel={dataSource === 35 ? <Card className="app-section-card" withBorder radius="md" padding="md" style={{ minWidth: 0 }}>
-          <Checkbox label={t('Товар без послуг (Fenix)')}
+        classificationPanel={<>{workbook.panel(dataset, reportBody, comparisonSettingsDisabled)}
+          {dataSource === 39 ? <CurrentVparivanieRegionalPanel dataset={dataset ?? null} request={reportBody}
+          enabled={canGenerateReport} disabled={comparisonSettingsDisabled}
+          fullScope={fullCurrentVparivanie} onFullScopeChange={setFullCurrentVparivanie} /> : dataSource === 41 || dataSource === 40 ? <CashSettlementSettingsPanels dataSource={dataSource}
+          cash={{ dataset, grouped: groupedCashPeriod, exact: cashPeriod, rows: rowGroups,
+            available: groupingOptions, onRowsChange: workbook.changeCashRows, disabled: comparisonSettingsDisabled, enabled: canGenerateReport }}
+          settlement={{ dataset, grouped: groupedSettlementPeriod, exact: settlementPeriod,
+            buyer: sourceBuyerSubtree, groups: sourceCounterpartyGroups, rows: rowGroups,
+            available: groupingOptions, from, to, disabled: comparisonSettingsDisabled, enabled: canGenerateReport,
+            onModeChange: changeSettlementMode, onGroupedChange: setGroupedSettlementPeriod,
+            onExactChange: setSettlementPeriod, onBuyerChange: setSourceBuyerSubtree,
+            onRowsChange: setRowGroups, onGroupsChange: setSourceCounterpartyGroups }}
+          onGroupedCashChange={workbook.changeGroupedCash} onExactCashChange={setCashPeriod}
+          onCashMeasurementsChange={setMeasurements} onClearCashFilters={() => filterLogic.load([])} /> : dataSource === 35 ? <Card className="app-section-card" withBorder radius="md" padding="md" style={{ minWidth: 0 }}>
+          <DayOrganizationBasisSelect capability={dataset?.dayOrganizationBasis} value={dayOrganizationBasis}
+            disabled={comparisonSettingsDisabled} onChange={setDayOrganizationBasis} />
+          <Checkbox mt="sm" label={t('Товар без послуг (Fenix)')}
             checked={parseProductClassification(productClassification)?.ProductKindId.toUpperCase() === DAY_ORGANIZATION_GOODS_KIND_ID
               && parseProductClassification(productClassification)?.IsService === false}
             disabled={comparisonSettingsDisabled}
@@ -732,7 +1027,45 @@ function ReportsStocksWorkspace({ ownerId, constructorMode }: { ownerId: string 
           <Text size="xs" c="dimmed">{t('Поточний збережений знімок ієрархії покупців. Якщо лінія покупця або ієрархія неповні, звіт покаже помилку покриття.')}</Text>
           {sourceBuyerSubtree != null && !parseSourceBuyerSubtree(sourceBuyerSubtree)
             ? <Text size="xs" c="orange">{t('Шаблон містить інше піддерево Fenix; цей набір приймає тільки групу «Покупці».')}</Text> : null}
-        </Card> : null}
+        </Card> : dataSource === 38 && isSupplierSourceWorldCapability(dataset?.supplierSourceWorld)
+          ? <Card className="app-section-card" withBorder radius="md" padding="md" style={{ minWidth: 0 }}>
+            <SupplierBasisSelect capability={dataset?.supplierBasis} value={supplierBasis}
+              disabled={comparisonSettingsDisabled} onChange={basis => {
+                setSupplierBasis(basis)
+                setRowGroups(rows => rowGroupsForSupplierBasis(basis, rows, groupingOptions))
+              }} />
+            <Select label={t('База продажів для прибутку за постачальниками')}
+              data={[{ value: '0', label: 'Fenix' }, { value: '1', label: 'AMG' },
+                { value: 'all', label: t('Обидві бази') }]}
+              value={supplierSourceWorld === 0 ? '0' : supplierSourceWorld === 1 ? '1' : 'all'}
+              disabled={comparisonSettingsDisabled}
+              onChange={value => {
+                const world = value === '0' ? 0 : value === '1' ? 1 : undefined
+                setSupplierSourceWorld(world)
+                if (world !== 0) setSourceBuyerSubtree(undefined)
+              }} />
+            <Text size="xs" c="dimmed">{t(supplierBasis === 0
+              ? 'Для продажів потрібні повні дані партій вибраної бази.'
+              : 'Окремий зріз формується лише за однозначної лінії кожного продажу в періоді. Неповна партія вибраної бази зупинить звіт.')}</Text>
+            {dataset?.sourceBuyerSubtree != null ? <>
+              <Checkbox mt="sm" label={t('Група «Покупці» Fenix')}
+                checked={parseSourceBuyerSubtree(sourceBuyerSubtree) != null}
+                disabled={comparisonSettingsDisabled}
+                onChange={event => {
+                  if (event.currentTarget.checked) setSupplierSourceWorld(0)
+                  setSourceBuyerSubtree(event.currentTarget.checked
+                    ? { Version: 1, SourceWorld: 'fenix', BuyerRootId: FENIX_BUYERS_ROOT_ID }
+                    : undefined)
+                }} />
+              <Text size="xs" c="dimmed">{t(supplierBasis === 0
+                ? 'Покупці визначаються за поточним деревом. Повернення з невідомою належністю залишаються у звіті.'
+                : 'Вимагає базу Fenix, повну лінію покупців усіх продажів періоду і чинний захоплений граф. За неповних даних звіт покаже помилку покриття.')}</Text>
+              {sourceBuyerSubtree != null && !parseSourceBuyerSubtree(sourceBuyerSubtree)
+                ? <Text size="xs" c="orange">{t('Шаблон містить інше піддерево Fenix; цей набір приймає тільки групу «Покупці».')}</Text> : null}
+            </> : null}
+            {supplierSourceWorld !== undefined && supplierSourceWorld !== 0 && supplierSourceWorld !== 1
+              ? <Text size="xs" c="orange">{t('Шаблон містить невідому базу джерела; виберіть Fenix або AMG.')}</Text> : null}
+          </Card> : null}</>}
         dataSource={dataSource}
         rateComparisonPanel={<RateComparisonPanel dataSource={dataSource} value={rateComparison} disabled={comparisonSettingsDisabled} onChange={setRateComparison} />}
         paymentComparisonPanel={<PaymentComparisonPanel dataSource={dataSource} value={paymentComparison} disabled={comparisonSettingsDisabled} onChange={setPaymentComparison} />}
@@ -757,8 +1090,9 @@ function ReportsStocksWorkspace({ ownerId, constructorMode }: { ownerId: string 
         lastRun={lastRun}
         lookupFrom={hasLookupPeriod ? debouncedFrom : ''}
         lookupTo={hasLookupPeriod ? debouncedTo : ''}
-        lookupSourceWorld={typeof oneCSpecialSettings === 'object' && oneCSpecialSettings !== null && 'SourceWorld' in oneCSpecialSettings
-          && (oneCSpecialSettings.SourceWorld === 1 || oneCSpecialSettings.SourceWorld === 2) ? oneCSpecialSettings.SourceWorld : undefined}
+        lookupProvidedDiscountBasis={currentProvidedDiscountLookupBasis(dataSource, oneCSpecialSettings, dataset)}
+        lookupSalesBasis={currentPriceTypeSalesLookupBasis(dataSource, priceTypeSalesComparison, dataset?.priceTypeSalesComparison)}
+        lookupSourceWorld={reportLookupSourceWorld(dataSource, groupedSettlementPeriod, oneCSpecialSettings)}
         maxDate={maxDate}
         measurements={measurements}
         notices={{ emptyRun: emptyRunNotice, error, period: periodError }}
@@ -771,6 +1105,8 @@ function ReportsStocksWorkspace({ ownerId, constructorMode }: { ownerId: string 
         templateName={templateName}
         templateNotice={templateNotice ?? templateStorage.notice}
         templateStorage={templateStorage}
+        templateDatasets={datasetStorage.datasets}
+        templateCallerKey={ownerId}
         activeTemplate={activeTemplate}
         templatesDisabled={!canGenerateReport || isLoading}
         onRenamedTemplate={renamedTemplate}
@@ -795,7 +1131,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode }: { ownerId: string 
         topGroupsPanel={<ReportTopGroupsPanel data={templateBody} dataset={dataset} disabled={comparisonSettingsDisabled} onChange={setTopGroups}
           onConfigureGrouping={constructorMode ? () => navigateConstructorSection('structure') : undefined}
           onConfigureMeasures={constructorMode ? () => navigateConstructorSection('structure') : undefined} />}
-        filterExpressionPanel={<ReportFilterExpressionPanel data={templateBody} dataset={dataset} disabled={comparisonSettingsDisabled}
+        filterExpressionPanel={<ReportFilterExpressionPanel data={templateBody} dataset={settlementDataset} disabled={comparisonSettingsDisabled}
           notice={filterLogic.notice} onChange={filterLogic.change} />}
         orderingPanel={<ReportOrderingPanel data={templateBody} dataset={dataset} disabled={comparisonSettingsDisabled}
           notice={groupingOrdering.notice} onChange={groupingOrdering.changeOrdering} />}
@@ -856,6 +1192,8 @@ type ReportBuilderFormProps = {
   presets: ReturnType<typeof datasetPresets>
   configurationReady: boolean
   templateStorage: ReturnType<typeof useServerReportTemplates>
+  templateDatasets: readonly ReportDataset[]
+  templateCallerKey: string | null
   onApplyPreset: (id: DatasetReportPresetId) => void
   canSubmit: boolean
   colGroups: ReportGroupingItem[]
@@ -869,6 +1207,8 @@ type ReportBuilderFormProps = {
   lookupFrom: string
   lookupTo: string
   lookupSourceWorld?: number
+  lookupProvidedDiscountBasis?: 0
+  lookupSalesBasis?: 0
   maxDate: string
   measurements: ReportMeasurementGroup[]
   notices: { emptyRun: string | null; error: string | null; period: string | null }
@@ -1046,7 +1386,10 @@ function ReportBuilderForm(props: ReportBuilderFormProps) {
           onClose={() => setTemplatesOpened(false)}
         >
           <ReportTemplatesPanel
+            ordering={props.templateStorage.ordering}
             storage={templateStorage}
+            datasets={props.templateDatasets}
+            callerKey={props.templateCallerKey}
             configurationReady={configurationReady}
             notice={templateNotice}
             templateName={templateName}
@@ -1129,7 +1472,7 @@ function ReportBuilderContent(props: ReportBuilderFormProps) {
             groupingSelectData={groupingSelectData}
             lookupFrom={lookupFrom}
             lookupTo={lookupTo}
-            lookupSourceWorld={props.lookupSourceWorld}
+            lookupSourceWorld={props.lookupSourceWorld} lookupSalesBasis={props.lookupSalesBasis} lookupProvidedDiscountBasis={props.lookupProvidedDiscountBasis}
             measurements={measurements}
             rowGroups={rowGroups}
             selections={selections}
@@ -1240,6 +1583,8 @@ type LegacyReportBuilderProps = {
   lookupFrom: string
   lookupTo: string
   lookupSourceWorld?: number
+  lookupProvidedDiscountBasis?: 0
+  lookupSalesBasis?: 0
   measurements: ReportMeasurementGroup[]
   rowGroups: ReportGroupingItem[]
   selections: ReportSelection[]
@@ -1250,6 +1595,9 @@ type LegacyReportBuilderProps = {
 }
 
 const fixedAxesDescription: Partial<Record<number, string>> = {
+  41: 'Організація → Валюта → Контрагент → Договір. Один точний договір і чотири показники у валюті взаєморозрахунків; структура фіксована.',
+  40: 'Організація → Рахунок → Валютний запис → Валюта або Рахунок → Тип → Організація. Початок, надходження, витрати й кінець у валюті рахунку.',
+  39: `Товар → сім атрибутів. Колонки: Остатки, Продажи та Контрагенты; один показник «Результат». ${CURRENT_VPARIVANIE_NOTICE}`,
   15: 'Клас XYZ → Товар. Показники у стовпцях; структура цього звіту фіксована.',
   16: 'Клієнт → Договір. Показники у стовпцях; структура цього звіту фіксована.',
   17: 'Клієнт → Договір. Показники у стовпцях; структура цього звіту фіксована.',
@@ -1272,6 +1620,8 @@ function LegacyReportBuilder({
   lookupFrom,
   lookupTo,
   lookupSourceWorld,
+  lookupSalesBasis,
+  lookupProvidedDiscountBasis,
   measurements,
   rowGroups,
   selections,
@@ -1311,7 +1661,7 @@ function LegacyReportBuilder({
 
   const selectionPanel = dataSource === 19 ? null : <section className="reports-stocks-legacy__selections">
     <ReportSelectionsCard dataSource={dataSource} description={null} filterFieldOptions={filterFieldOptions}
-      from={lookupFrom} lookupSourceWorld={lookupSourceWorld} selections={selections} title={t('Умови відбору')} to={lookupTo} onChange={onSelectionsChange} />
+      from={lookupFrom} lookupSourceWorld={lookupSourceWorld} lookupSalesBasis={lookupSalesBasis} lookupProvidedDiscountBasis={lookupProvidedDiscountBasis} selections={selections} title={t('Умови відбору')} to={lookupTo} onChange={onSelectionsChange} />
   </section>
 
   return (
@@ -1387,7 +1737,9 @@ function LegacyReportBuilder({
 
         <section className="app-section-card reports-stocks-structure">
           <Text className="app-section-title" component="h2" fw={600} size="sm">{t('Групування')}</Text>
-          {fixedAxesDescription[dataSource] ? <Text size="sm">{fixedAxesDescription[dataSource]}</Text> : <ReportGroupingPanel layout={groupingLayout} axis="Row" allowed={allowedGroupingTypes} transferSupported={dataSource !== 13}
+          {fixedAxesDescription[dataSource] ? <Text size="sm">{dataSource === 39
+            ? `Товар → сім атрибутів. Колонки: Остатки, Продажи та Контрагенты; один показник «Результат». ${currentVparivanieNotice(filterFieldOptions.some(option => option.field.Type === 60))}`
+            : fixedAxesDescription[dataSource]}</Text> : <ReportGroupingPanel layout={groupingLayout} axis="Row" allowed={allowedGroupingTypes} transferSupported={dataSource !== 13}
             onOpenPicker={() => setGroupingPickerTarget('rows')}
             onRemove={(index) => onRowGroupsChange((current) => current.filter((_, itemIndex) => itemIndex !== index))}
             onReorder={(type, direction) => onRowGroupsChange(current => reorderReportGrouping(current, type, direction, allowedGroupingTypes))}
@@ -1531,6 +1883,8 @@ type FilterFieldOption = {
 type ReportSelectionsCardProps = {
   dataSource: number
   lookupSourceWorld?: number
+  lookupProvidedDiscountBasis?: 0
+  lookupSalesBasis?: 0
   description?: string | null
   filterFieldOptions: FilterFieldOption[]
   from: string
@@ -1543,6 +1897,8 @@ type ReportSelectionsCardProps = {
 function ReportSelectionsCard({
   dataSource,
   lookupSourceWorld,
+  lookupSalesBasis,
+  lookupProvidedDiscountBasis,
   description,
   filterFieldOptions,
   from,
@@ -1554,6 +1910,7 @@ function ReportSelectionsCard({
   const { t } = useI18n()
   const [editorIndex, setEditorIndex] = useState<number | null>(null)
   const [draftSelection, setDraftSelection] = useState<ReportSelection | null>(null)
+  const filterConditions = dataSource === 39 ? currentVparivanieFilterConditions(draftSelection?.SelectedField.Type ?? 0) : REPORT_FILTER_CONDITIONS
   const resolvedDescription = description === undefined
     ? t('Необов’язково: звузьте звіт до клієнта, товару, документа або іншої ознаки.')
     : description
@@ -1669,6 +2026,7 @@ function ReportSelectionsCard({
                 setDraftSelection((current) => current ? {
                   ...current,
                   SelectedField: option?.field || { Name: '', Type: 0 },
+                  ...(dataSource === 39 ? { FilterCondition: currentVparivanieFilterConditions(option?.field.Type ?? 0)[0] } : {}),
                   Values: [],
                 } : current)
               }}
@@ -1676,14 +2034,14 @@ function ReportSelectionsCard({
             <div className="reports-stocks-selection-modal__controls">
               <Select
                 allowDeselect={false}
-                data={REPORT_FILTER_CONDITIONS.map((condition) => ({
+                data={filterConditions.map((condition) => ({
                   label: condition.Name,
                   value: String(condition.Type),
                 }))}
                 label={t('Умова')}
                 value={String(draftSelection.FilterCondition.Type)}
                 onChange={(value) => {
-                  const condition = REPORT_FILTER_CONDITIONS.find((item) => String(item.Type) === value) || defaultCondition
+                  const condition = filterConditions.find((item) => String(item.Type) === value) || filterConditions[0]
                   setDraftSelection((current) => current ? {
                     ...current,
                     FilterCondition: condition,
@@ -1695,7 +2053,7 @@ function ReportSelectionsCard({
               />
               <SelectionValuePicker
                 dataSource={dataSource}
-                lookupSourceWorld={lookupSourceWorld}
+                lookupSourceWorld={lookupSourceWorld} lookupSalesBasis={lookupSalesBasis} lookupProvidedDiscountBasis={lookupProvidedDiscountBasis}
                 from={from}
                 label={t('Значення')}
                 selection={draftSelection}
@@ -1905,6 +2263,8 @@ function ReportResultSection({
 type SelectionValuePickerProps = {
   dataSource: number
   lookupSourceWorld?: number
+  lookupProvidedDiscountBasis?: 0
+  lookupSalesBasis?: 0
   error?: string
   from: string
   label?: string
@@ -1915,7 +2275,7 @@ type SelectionValuePickerProps = {
   onChange: (values: ReportSelectedValue[]) => void
 }
 
-function SelectionValuePicker({ dataSource, lookupSourceWorld, error, from, label, selection, selections, to, width = 320, onChange }: SelectionValuePickerProps) {
+function SelectionValuePicker({ dataSource, lookupSourceWorld, lookupSalesBasis, lookupProvidedDiscountBasis, error, from, label, selection, selections, to, width = 320, onChange }: SelectionValuePickerProps) {
   const { t } = useI18n()
   const [search, setSearch] = useValueState('')
   const [manualValue, setManualValue] = useValueState('')
@@ -2030,7 +2390,7 @@ function SelectionValuePicker({ dataSource, lookupSourceWorld, error, from, labe
             ? await getReportClientAgreements(dependentClientNetId)
             : await loadSelectionLookupOptions(
                 dataSource, selection.SelectedField.Type, normalizedSearch, from, to,
-                controller.signal, saleDocumentFilters, lookupSourceWorld,
+                controller.signal, saleDocumentFilters, lookupSourceWorld, lookupSalesBasis, lookupProvidedDiscountBasis,
               )
 
         if (!cancelled) {
@@ -2056,6 +2416,8 @@ function SelectionValuePicker({ dataSource, lookupSourceWorld, error, from, labe
   }, [
     dataSource,
     lookupSourceWorld,
+    lookupSalesBasis,
+    lookupProvidedDiscountBasis,
     dependentClientNetId,
     from,
     lookupMode,
@@ -2277,6 +2639,16 @@ function describeReportError(error: unknown, t: TranslateFunction): string {
       return t('Сервер звітів недоступний. Спробуйте ще раз пізніше.')
     }
 
+    // Report generation uses 409 for missing accepted source coverage. The API
+    // client supplies a generic Cyrillic fallback when the response has no
+    // Message; do not mistake that fallback for an authored server explanation.
+    if (error.status === 409) {
+      const payload = error.payload
+      const authored = payload && typeof payload === 'object' && 'Message' in payload
+        && typeof payload.Message === 'string' && isAuthoredServerMessage(payload.Message)
+      return authored ? error.message : t('Сервер не підтвердив повноту даних для цього звіту. Звіт і файли не сформовано; після синхронізації потрібних даних повторіть запит.')
+    }
+
     if (isAuthoredServerMessage(error.message)) {
       return error.message
     }
@@ -2495,9 +2867,17 @@ async function loadSelectionLookupOptions(
   signal?: AbortSignal,
   saleDocumentFilters?: SaleDocumentLookupFilters,
   lookupSourceWorld?: number,
+  lookupSalesBasis?: 0,
+  lookupProvidedDiscountBasis?: 0,
 ): Promise<ReportEntity[]> {
   if (usesNativeReportLookup(dataSource)) {
     const params = { limit: LOOKUP_SEARCH_LIMIT, offset: 0, value }
+    if (dataSource === 41 && [60, 61].includes(fieldType))
+      return searchDatasetReportValues(dataSource, fieldType, params, signal, lookupSourceWorld)
+    if (dataSource === 27 && lookupSalesBasis === 0)
+      return searchDatasetReportValues(dataSource, fieldType, params, signal, undefined, 0)
+    if (dataSource === 24 && lookupProvidedDiscountBasis === 0)
+      return searchDatasetReportValues(dataSource, fieldType, params, signal, lookupSourceWorld, undefined, 0)
     return [23, 24, 25, 28].includes(dataSource)
       ? searchDatasetReportValues(dataSource, fieldType, params, signal, lookupSourceWorld)
       : searchDatasetReportValues(dataSource, fieldType, params, signal)
@@ -2604,7 +2984,7 @@ function createSelectedValue(entity: ReportEntity, dataSource?: number): ReportS
   return {
     Data: entity,
     Name: getEntityDisplayName(entity),
-    Value: (dataSource === 16 || dataSource === 17 || dataSource === 18 || dataSource === 20 || dataSource === 21 || dataSource === 23 || dataSource === 24 || dataSource === 25 || dataSource === 28) ? 0 : getReportEntityNumericValue(entity),
+    Value: (dataSource === 16 || dataSource === 17 || dataSource === 18 || dataSource === 20 || dataSource === 21 || dataSource === 23 || dataSource === 24 || dataSource === 25 || dataSource === 28 || dataSource === 39 || dataSource === 41) ? 0 : getReportEntityNumericValue(entity),
   }
 }
 

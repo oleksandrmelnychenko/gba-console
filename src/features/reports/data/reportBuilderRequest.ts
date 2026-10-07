@@ -20,18 +20,27 @@ type BuilderValues = {
   productClassification?: unknown
   sourceOrganizations?: unknown
   sourceBuyerSubtree?: unknown
+  dayOrganizationBasis?: unknown
+  supplierBasis?: unknown
+  supplierSourceWorld?: unknown
   priceTypeSalesComparison?: unknown
   oneCSpecialSettings?: unknown
   oneC?: ReportRequestBody['oneC']
   valuationClientAgreementId: number | undefined
   agreementPriceComparison?: unknown
+  settlementPeriod?: unknown
+  groupedSettlementPeriod?: unknown
+  sourceCounterpartyGroups?: unknown
+  groupedCashPeriod?: unknown
+  cashPeriod?: unknown
+  workbookPresentation?: unknown
   rowGroups: ReportGroupingItem[]; colGroups: ReportGroupingItem[]
   measurements: ReportMeasurementGroup[]; selections: ReportSelection[]
 }
 
 /** Tree indices address this exact selection array; only the legacy request omits unchecked rows. */
 export function buildReportBuilderRequest(values: BuilderValues): ReportRequestBody {
-  const { dataSource, returnsOnly, from, to, ordering, filterExpression, topGroups, abcClassification, threshold, hideZero, comparison, xyz, revenueComparison, buyerSalesShare, returnComparison, paymentComparison, marginComparison, rateComparison, productClassification, sourceOrganizations, sourceBuyerSubtree, priceTypeSalesComparison, oneCSpecialSettings, oneC, valuationClientAgreementId, agreementPriceComparison, rowGroups, colGroups, measurements, selections } = values
+  const { dataSource, returnsOnly, from, to, ordering, filterExpression, topGroups, abcClassification, threshold, hideZero, comparison, xyz, revenueComparison, buyerSalesShare, returnComparison, paymentComparison, marginComparison, rateComparison, productClassification, sourceOrganizations, sourceBuyerSubtree, dayOrganizationBasis, supplierBasis, supplierSourceWorld, priceTypeSalesComparison, oneCSpecialSettings, oneC, valuationClientAgreementId, agreementPriceComparison, settlementPeriod, groupedSettlementPeriod, cashPeriod, rowGroups, colGroups, measurements, selections } = values
   const special = oneCSpecialSpecification(dataSource)
   return { dataSource, from, to, ...(returnsOnly === true ? { returnsOnly: true } : {}),
     ...(special && oneCSpecialSettings !== undefined ? { [special.key]: oneCSpecialSettings } : {}),
@@ -52,10 +61,19 @@ export function buildReportBuilderRequest(values: BuilderValues): ReportRequestB
     ...(productClassification !== undefined ? { productClassification } : {}),
     ...(sourceOrganizations !== undefined ? { sourceOrganizations } : {}),
     ...(sourceBuyerSubtree !== undefined ? { sourceBuyerSubtree } : {}),
+    ...(dayOrganizationBasis !== undefined ? { dayOrganizationBasis } : {}),
+    ...(supplierBasis !== undefined ? { supplierBasis } : {}),
+    ...(supplierSourceWorld !== undefined ? { supplierSourceWorld } : {}),
     ...(priceTypeSalesComparison !== undefined ? { priceTypeSalesComparison } : {}),
     ...(oneC !== undefined ? { oneC } : {}),
     ...(valuationClientAgreementId !== undefined ? { valuationClientAgreementId } : {}),
     ...(agreementPriceComparison !== undefined ? { agreementPriceComparison } : {}),
+    ...(settlementPeriod !== undefined ? { settlementPeriod } : {}),
+    ...(groupedSettlementPeriod !== undefined ? { groupedSettlementPeriod } : {}),
+    ...(values.sourceCounterpartyGroups !== undefined ? { sourceCounterpartyGroups: values.sourceCounterpartyGroups } : {}),
+    ...(cashPeriod !== undefined ? { cashPeriod } : {}),
+    ...(values.groupedCashPeriod !== undefined ? { groupedCashPeriod: values.groupedCashPeriod } : {}),
+    ...(values.workbookPresentation !== undefined ? { workbookPresentation: values.workbookPresentation } : {}),
     sorted: { Col: colGroups, Row: rowGroups, Measurements: flattenCheckedMeasurements(measurements) },
     selections: (dataSource === 15 || dataSource === 16 || dataSource === 17 || dataSource === 18 || dataSource === 19 || dataSource === 20 || dataSource === 21 || dataSource === 22 || dataSource === 27) ? selections : reportSelectionsForRequest(selections, filterExpression),
   }

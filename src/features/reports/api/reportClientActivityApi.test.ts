@@ -17,7 +17,7 @@ it('reads source12 caps and preserves exact period, contracts, disabled filter, 
   vi.mocked(apiRequest).mockResolvedValue({ ...original, Revision: 4 }); await saveServerReportTemplate(template)
   expect(apiRequest).toHaveBeenLastCalledWith('/report/templates/save', { method: 'POST', body: template })
   vi.mocked(apiRequest).mockResolvedValue({}); await createStockReport(template.Data)
-  expect(apiRequest).toHaveBeenLastCalledWith('/report/stocks/generate', { method: 'POST', body: data })
+  expect(apiRequest).toHaveBeenLastCalledWith('/report/stocks/generate', { method: 'POST', dedupe: false, body: data })
 })
 it.each([{ PeriodRequired: false }, { PeriodRequired: undefined }, { PeriodSupported: false }, { PeriodSupported: undefined }])('refuses source12 without declared explicit period capabilities %#', async patch => {
   vi.mocked(apiRequest).mockResolvedValue([{ ...clientActivityDataset, ...patch }])

@@ -8,8 +8,72 @@ import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { useAuth } from '../../auth/useAuth'
 import { getReportCatalogue, getReportDatasets } from '../api/reportWorkspaceApi'
 import { catalogueLaunchOptions, type CatalogueLaunchChoice } from '../data/reportCatalogueLaunch'
-import { CAPTURE_STATUS_LABELS, consoleReportAvailability, DEPENDENCY_STATUS_LABELS, filterConsoleMigrationCatalogue, filterMigrationCatalogue, inspectCatalogueMigration, MIGRATION_STATUS_LABELS, sourceIdentity, type ConsoleReportAvailability, type MigrationDisplayStatus } from '../data/reportMigration'
+import { CAPTURE_STATUS_LABELS, DEPENDENCY_STATUS_LABELS, consoleReportAvailability, filterConsoleMigrationCatalogue, filterMigrationCatalogue, inspectCatalogueMigration, MIGRATION_STATUS_LABELS, sourceIdentity, type MigrationDisplayStatus } from '../data/reportMigration'
 import type { ReportCatalogue, ReportCatalogueEntry, ReportDataset, ReportSourceMigration } from '../types'
+import { isDebtToSalesRatioCatalogueEntry, type DebtToSalesRatioCapabilities } from '../data/debtToSalesRatio'
+import { DebtToSalesRatioCatalogueLaunch } from './DebtToSalesRatioCatalogueLaunch'
+import { isCollectionCoefficientCatalogueEntry, type CollectionCoefficientCapabilities } from '../data/collectionCoefficient'
+import { CollectionCoefficientCatalogueLaunch } from './CollectionCoefficientCatalogueLaunch'
+import { isSalesMarginCatalogueEntry, type SalesMarginCapabilities } from '../data/salesMargin'
+import { SalesMarginCatalogueLaunch } from './SalesMarginCatalogueLaunch'
+import { cashMovementCatalogueKind, type CashMovementCapabilities } from '../data/cashMovement'
+import { CashMovementCatalogueLaunch } from './CashMovementCatalogueLaunch'
+import { isSupplierDebtCatalogueEntry, type SupplierDebtCapabilities } from '../data/supplierDebt'
+import { SupplierDebtCatalogueLaunch } from './SupplierDebtCatalogueLaunch'
+import { isEmployeeGrossProfitCatalogueEntry, type EmployeeGrossProfitCapabilities } from '../data/employeeGrossProfit'
+import { EmployeeGrossProfitCatalogueLaunch } from './EmployeeGrossProfitCatalogueLaunch'
+import { isOverdueReceivablesCatalogueEntry, type OverdueReceivablesCapabilities } from '../data/overdueReceivables'
+import { OverdueReceivablesCatalogueLaunch } from './OverdueReceivablesCatalogueLaunch'
+import { isManagementReturnsCatalogueEntry, type ManagementReturnsCapabilities } from '../data/managementReturns'
+import { ManagementReturnsCatalogueLaunch } from './ManagementReturnsCatalogueLaunch'
+import { managementBalanceCatalogueKind, type ManagementBalanceCapabilities } from '../data/managementBalance'
+import { ManagementBalanceCatalogueLaunch } from './ManagementBalanceCatalogueLaunch'
+import type { ManagementOrdersCapabilities } from '../data/managementOrders'
+import { ManagementOrdersCatalogueLaunch } from './ManagementOrdersCatalogueLaunch'
+import type { DefectProductionCapabilities } from '../data/defectProduction'
+import { DefectProductionCatalogueLaunch } from './DefectProductionCatalogueLaunch'
+import type { InventoryTurnoverCapabilities } from '../data/inventoryTurnover'
+import { InventoryTurnoverCatalogueLaunch } from './InventoryTurnoverCatalogueLaunch'
+import type { CurrentLiquidityCapabilities } from '../data/currentLiquidity'
+import { CurrentLiquidityCatalogueLaunch } from './CurrentLiquidityCatalogueLaunch'
+import type { PlannedCashCapabilities } from '../data/plannedCash'
+import { PlannedCashCatalogueLaunch } from './PlannedCashCatalogueLaunch'
+import { isActiveClientsCatalogueEntry, type ActiveClientsCapabilities } from '../data/activeClients'
+import { ActiveClientsCatalogueLaunch } from './ActiveClientsCatalogueLaunch'
+import { isCurrencyRateDynamicsCatalogueEntry, type CurrencyRateDynamicsCapabilities } from '../data/currencyRateDynamics'
+import { CurrencyRateDynamicsCatalogueLaunch } from './CurrencyRateDynamicsCatalogueLaunch'
+import { isCashAggregateBalanceCatalogueEntry, type CashAggregateBalanceCapabilities } from '../data/cashAggregateBalance'
+import { CashAggregateBalanceCatalogueLaunch } from './CashAggregateBalanceCatalogueLaunch'
+import { isOriginalRevenueCatalogueEntry, type OriginalRevenueCapabilities } from '../data/originalRevenue'
+import { OriginalRevenueCatalogueLaunch } from './OriginalRevenueCatalogueLaunch'
+import { OriginalWarehouseQuantityCatalogueLaunch } from './OriginalWarehouseQuantityCatalogueLaunch'
+import { OriginalWarehouseMonetaryCatalogueLaunch } from './OriginalWarehouseMonetaryCatalogueLaunch'
+import { OriginalTransferredGoodsCatalogueLaunch } from './OriginalTransferredGoodsCatalogueLaunch'
+import { OriginalCounterpartyDebtCatalogueLaunch } from './OriginalCounterpartyDebtCatalogueLaunch'
+import { OriginalCounterpartyStatementCatalogueLaunch } from './OriginalCounterpartyStatementCatalogueLaunch'
+import { OriginalPriceTypeSalesCatalogueLaunch } from './OriginalPriceTypeSalesCatalogueLaunch'
+import { OriginalSalesCatalogueLaunch } from './OriginalSalesCatalogueLaunch'
+import { OriginalLotBalanceAnalysisCatalogueLaunch } from './OriginalLotBalanceAnalysisCatalogueLaunch'
+import { OriginalWorkInProgressCatalogueLaunch } from './OriginalWorkInProgressCatalogueLaunch'
+import { OriginalBuyerOrdersCatalogueLaunch } from './OriginalBuyerOrdersCatalogueLaunch'
+import { OriginalPlannedCashCatalogueLaunch } from './OriginalPlannedCashCatalogueLaunch'
+import { OriginalClientReportCatalogueLaunch, OriginalPlannedCashFlowCatalogueLaunch } from './OriginalPlannedCashClientCatalogueLaunch'
+import { OriginalCashStatementCatalogueLaunch } from './OriginalCashStatementCatalogueLaunch'
+import { OriginalOrderAnalysesCatalogueLaunch } from './OriginalOrderAnalysesCatalogueLaunch'
+import { OriginalStockAvailabilityCatalogueLaunch } from './OriginalStockAvailabilityCatalogueLaunch'
+import { OriginalCashAvailabilityCatalogueLaunch } from './OriginalCashAvailabilityCatalogueLaunch'
+import { OriginalCashMovementsCatalogueLaunch } from './OriginalCashMovementsCatalogueLaunch'
+import { OriginalMoneyFlowAnalysisCatalogueLaunch } from './OriginalMoneyFlowAnalysisCatalogueLaunch'
+import { OriginalGoodsStockAnalysisCatalogueLaunch } from './OriginalGoodsStockAnalysisCatalogueLaunch'
+import { OriginalDefectCostCatalogueLaunch } from './OriginalDefectCostCatalogueLaunch'
+import { OriginalPurchasesCatalogueLaunch } from './OriginalPurchasesCatalogueLaunch'
+import { OriginalAmgClientDiscountsCatalogueLaunch } from './OriginalAmgClientDiscountsCatalogueLaunch'
+import { OriginalFenixClientDiscountsCatalogueLaunch } from './OriginalFenixClientDiscountsCatalogueLaunch'
+import { OriginalFenixDiscountAnalysisCatalogueLaunch } from './OriginalFenixDiscountAnalysisCatalogueLaunch'
+import { OriginalAmgDiscountAnalysisCatalogueLaunch } from './OriginalAmgDiscountAnalysisCatalogueLaunch'
+import { availableBug1274WorkbookLaunches, BUG_1274_WORKBOOK_REPORT_IDS, type WorkbookLaunch } from '../data/bug1274WorkbookLaunch'
+import { originalBuyerSalesShareCatalogueVariant, type OriginalBuyerSalesShareCapabilities } from '../data/originalBuyerSalesShare'
+import { OriginalBuyerSalesShareCatalogueLaunch } from './OriginalBuyerSalesShareCatalogueLaunch'
 
 const kindLabels: Record<string, string> = {
   builtin: 'Вбудовані', regulated: 'Регламентовані', external: 'Зовнішні',
@@ -20,6 +84,25 @@ const pageSize = 20
 const worldLabel = (world: string) => world === 'fenix' ? 'Fenix' : world === 'amg' ? 'AMG' : world
 type LaunchOption = ReturnType<typeof catalogueLaunchOptions>[number]
 type OpenReport = (choice: CatalogueLaunchChoice, catalogue: ReportCatalogue) => boolean
+type OpenDebtToSalesRatio = (capability: DebtToSalesRatioCapabilities) => boolean
+type OpenCollectionCoefficient = (capability: CollectionCoefficientCapabilities) => boolean
+type OpenSalesMargin = (capability: SalesMarginCapabilities) => boolean
+type OpenCashMovement = (capability: CashMovementCapabilities) => boolean
+type OpenSupplierDebt = (capability: SupplierDebtCapabilities) => boolean
+type OpenEmployeeGrossProfit = (capability: EmployeeGrossProfitCapabilities) => boolean
+type OpenOverdueReceivables = (capability: OverdueReceivablesCapabilities) => boolean
+type OpenManagementReturns = (capability: ManagementReturnsCapabilities) => boolean
+type OpenManagementBalance = (capability: ManagementBalanceCapabilities) => boolean
+type OpenManagementOrders = (capability: ManagementOrdersCapabilities) => boolean
+type OpenDefectProduction = (capability: DefectProductionCapabilities) => boolean
+type OpenInventoryTurnover = (capability: InventoryTurnoverCapabilities) => boolean
+type OpenPlannedCash = (capability: PlannedCashCapabilities) => boolean
+type OpenCurrentLiquidity = (capability: CurrentLiquidityCapabilities) => boolean
+type OpenActiveClients = (capability: ActiveClientsCapabilities) => boolean
+type OpenCurrencyRateDynamics = (capability: CurrencyRateDynamicsCapabilities) => boolean
+type OpenCashAggregateBalance = (capability: CashAggregateBalanceCapabilities) => boolean
+type OpenOriginalRevenue = (capability: OriginalRevenueCapabilities) => boolean
+type OpenOriginalBuyerSalesShare = (capability: OriginalBuyerSalesShareCapabilities) => boolean
 type LoadScope = { attempt: number; canGenerate: boolean }
 type CatalogueLoad = { scope: LoadScope; catalogue: ReportCatalogue | null; datasets: ReportDataset[] | null; error: boolean }
 
@@ -42,7 +125,9 @@ function useCatalogueLoad(canGenerate: boolean) {
     error: currentLoad?.error ?? false, retry: () => setAttempt(value => value + 1) }
 }
 
-export function ReportCataloguePanel({ onOpen, disabled = false, consoleScope = false }: { onOpen?: OpenReport; disabled?: boolean; consoleScope?: boolean }) {
+export function ReportCataloguePanel({ onOpen, onOpenDebtToSalesRatio, onOpenCollectionCoefficient, onOpenSalesMargin, onOpenCashMovement, onOpenSupplierDebt, onOpenEmployeeGrossProfit, onOpenOverdueReceivables, onOpenManagementReturns, onOpenManagementBalance, onOpenManagementOrders, onOpenDefectProduction, onOpenInventoryTurnover, onOpenCurrentLiquidity, onOpenPlannedCash, callerKey = null, onOpenActiveClients, onOpenCurrencyRateDynamics, onOpenCashAggregateBalance, onOpenOriginalRevenue, onOpenOriginalBuyerSalesShare, disabled = false, consoleScope = false, onOpenWorkbook }: {
+  consoleScope?: boolean; onOpenWorkbook?: (launch: WorkbookLaunch) => boolean; onOpen?: OpenReport; onOpenDebtToSalesRatio?: OpenDebtToSalesRatio; onOpenCollectionCoefficient?: OpenCollectionCoefficient; onOpenSalesMargin?: OpenSalesMargin; onOpenCashMovement?: OpenCashMovement; onOpenSupplierDebt?: OpenSupplierDebt; onOpenEmployeeGrossProfit?: OpenEmployeeGrossProfit; onOpenOverdueReceivables?: OpenOverdueReceivables; onOpenManagementReturns?: OpenManagementReturns; onOpenManagementBalance?: OpenManagementBalance; onOpenManagementOrders?: OpenManagementOrders; onOpenDefectProduction?: OpenDefectProduction; onOpenInventoryTurnover?: OpenInventoryTurnover; onOpenCurrentLiquidity?: OpenCurrentLiquidity; onOpenPlannedCash?: OpenPlannedCash; callerKey?: string | null; onOpenActiveClients?: OpenActiveClients; onOpenCurrencyRateDynamics?: OpenCurrencyRateDynamics; onOpenCashAggregateBalance?: OpenCashAggregateBalance; onOpenOriginalRevenue?: OpenOriginalRevenue; onOpenOriginalBuyerSalesShare?: OpenOriginalBuyerSalesShare; disabled?: boolean
+}) {
   const { t } = useI18n()
   const { hasPermission } = useAuth()
   const canGenerate = hasPermission(PermissionKeys.ReportsStocks.Report.Generate)
@@ -55,21 +140,16 @@ export function ReportCataloguePanel({ onOpen, disabled = false, consoleScope = 
   const [page, setPage] = useState(1)
   const [expanded, setExpanded] = useState<ReadonlySet<string>>(new Set())
   const inspection = useMemo(() => catalogue ? inspectCatalogueMigration(catalogue) : null, [catalogue])
-  const filtered = useMemo(() => {
-    if (!catalogue || !inspection) return []
-    const filters = { kind, world, status, dependency, search }
-    return consoleScope ? filterConsoleMigrationCatalogue(catalogue, inspection, filters)
-      : filterMigrationCatalogue(catalogue, inspection, filters)
-  }, [catalogue, inspection, consoleScope, kind, world, status, dependency, search])
+  const filtered = useMemo(() => catalogue && inspection ? (consoleScope ? filterConsoleMigrationCatalogue : filterMigrationCatalogue)(catalogue, inspection, { kind, world, status, dependency, search }) : [],
+    [catalogue, inspection, consoleScope, kind, world, status, dependency, search])
   const availableDatasets = canGenerate ? datasets : null
   const supportsLaunch = Boolean(onOpen)
   const visibleSourceCount = filtered.reduce((sum, item) => sum + item.matchingSources.length, 0)
   const visibleRows = useMemo(() => filtered.slice((page - 1) * pageSize, page * pageSize).map(item => ({ ...item,
-    availability: consoleScope ? consoleReportAvailability(item.report, inspection!) : 'active' as const,
     options: supportsLaunch && catalogue && inspection?.valid && availableDatasets
       ? catalogueLaunchOptions(catalogue, item.report.Id, availableDatasets).filter(option => item.matchingSources.some(source =>
         source.World === option.choice.world && source.SourceId === option.choice.sourceId)) : [],
-  })), [filtered, page, supportsLaunch, consoleScope, catalogue, inspection, availableDatasets])
+  })), [filtered, page, supportsLaunch, catalogue, inspection, availableDatasets])
 
   if (error) return <Alert color="red" title={t('Не вдалося завантажити каталог')}>
     <Button type="button" onClick={retry}>{t('Повторити')}</Button>
@@ -82,12 +162,10 @@ export function ReportCataloguePanel({ onOpen, disabled = false, consoleScope = 
         meta={t('Оберіть звіт, щоб переглянути покриття та доступні налаштування.')}
         metrics={<>
           <DocumentDetailMetric label={t('Звітів у каталозі')} value={String(summary.CatalogueEntries)} />
-          {consoleScope && <DocumentDetailMetric label={t('Показано в Консолі')} value={String(filtered.length)} />}
           <DocumentDetailMetric label={t('Джерельних реалізацій')} value={String(summary.SourceImplementations)} />
           <DocumentDetailMetric label={t('Перевірених позицій')} value={String(summary.FullyVerifiedEntries)} />
         </>} />
       {onOpen && <Text size="sm" c="dimmed" className="report-catalogue__intro">{t('Оберіть доступний варіант. Звіти конструктора формуються кнопкою «Сформувати»; Fenix «Валовая прибыль» відкривається в окремій панелі.')}</Text>}
-      {consoleScope && <Text size="sm" c="dimmed" className="report-catalogue__intro">{t('У Консолі активні лише звіти з BUG-1274. Інші готові звіти показані вимкненими з чіпсою «Готово», незавершені звіти приховані.')}</Text>}
       <details className="report-catalogue__overview">
         <summary><ChevronRight size={15} aria-hidden="true" />{t('Стан перенесення та джерела')}</summary>
         <Stack gap="sm" className="report-catalogue__overview-body">
@@ -126,8 +204,9 @@ export function ReportCataloguePanel({ onOpen, disabled = false, consoleScope = 
       <Text size="xs" c="dimmed">{t('У вибірці: {entries} позицій · {implementations} реалізацій. Загальні показники вище охоплюють усі бази.', { entries: filtered.length, implementations: visibleSourceCount })}</Text>
       <Pagination size="sm" total={Math.max(1, Math.ceil(filtered.length / pageSize))} value={page} onChange={setPage} />
       </div>
-      <CatalogueTable visibleRows={visibleRows} catalogue={catalogue} inspection={inspection} availableDatasets={availableDatasets}
-        canGenerate={canGenerate} disabled={disabled} onOpen={onOpen} expanded={expanded}
+      <CatalogueTable consoleScope={consoleScope} onOpenWorkbook={onOpenWorkbook} visibleRows={visibleRows} catalogue={catalogue} inspection={inspection} availableDatasets={availableDatasets}
+        canGenerate={canGenerate} disabled={disabled} onOpen={onOpen} onOpenDebtToSalesRatio={onOpenDebtToSalesRatio} onOpenCollectionCoefficient={onOpenCollectionCoefficient} onOpenSalesMargin={onOpenSalesMargin} onOpenCashMovement={onOpenCashMovement} onOpenSupplierDebt={onOpenSupplierDebt} onOpenEmployeeGrossProfit={onOpenEmployeeGrossProfit} onOpenOverdueReceivables={onOpenOverdueReceivables} onOpenManagementReturns={onOpenManagementReturns} onOpenManagementBalance={onOpenManagementBalance} onOpenManagementOrders={onOpenManagementOrders} onOpenDefectProduction={onOpenDefectProduction} onOpenInventoryTurnover={onOpenInventoryTurnover} onOpenCurrentLiquidity={onOpenCurrentLiquidity} onOpenPlannedCash={onOpenPlannedCash} callerKey={callerKey}
+        onOpenActiveClients={onOpenActiveClients} onOpenCurrencyRateDynamics={onOpenCurrencyRateDynamics} onOpenCashAggregateBalance={onOpenCashAggregateBalance} onOpenOriginalRevenue={onOpenOriginalRevenue} onOpenOriginalBuyerSalesShare={onOpenOriginalBuyerSalesShare} expanded={expanded}
         onToggle={id => setExpanded(current => toggleExpanded(current, id))} />
       {!filtered.length && <Text c="dimmed" ta="center" py="xl">{t('Звітів за цими умовами не знайдено')}</Text>}
       </div>
@@ -143,10 +222,12 @@ function toggleExpanded(current: ReadonlySet<string>, id: string) {
   return next
 }
 
-function CatalogueTable({ visibleRows, catalogue, inspection, availableDatasets, canGenerate, disabled, onOpen, expanded, onToggle }: {
-  visibleRows: Array<{ report: ReportCatalogueEntry; options: LaunchOption[]; availability: ConsoleReportAvailability }>; catalogue: ReportCatalogue
+function CatalogueTable({ consoleScope = false, onOpenWorkbook, visibleRows, catalogue, inspection, availableDatasets, canGenerate, disabled, onOpen, onOpenDebtToSalesRatio, onOpenCollectionCoefficient, onOpenSalesMargin, onOpenCashMovement, onOpenSupplierDebt, onOpenEmployeeGrossProfit, onOpenOverdueReceivables, onOpenManagementReturns, onOpenManagementBalance, onOpenManagementOrders, onOpenDefectProduction, onOpenInventoryTurnover, onOpenCurrentLiquidity, onOpenPlannedCash, callerKey = null, onOpenActiveClients, onOpenCurrencyRateDynamics, onOpenCashAggregateBalance, onOpenOriginalRevenue, onOpenOriginalBuyerSalesShare, expanded, onToggle }: {
+  consoleScope?: boolean; onOpenWorkbook?: (launch: WorkbookLaunch) => boolean
+  visibleRows: Array<{ report: ReportCatalogueEntry; options: LaunchOption[]; matchingSources: ReportCatalogueEntry['Sources'] }>; catalogue: ReportCatalogue
   inspection: ReturnType<typeof inspectCatalogueMigration>; availableDatasets: ReportDataset[] | null
-  canGenerate: boolean; disabled: boolean; onOpen?: OpenReport; expanded: ReadonlySet<string>; onToggle: (id: string) => void
+  canGenerate: boolean; disabled: boolean; onOpen?: OpenReport; onOpenDebtToSalesRatio?: OpenDebtToSalesRatio; onOpenCollectionCoefficient?: OpenCollectionCoefficient; onOpenSalesMargin?: OpenSalesMargin; onOpenCashMovement?: OpenCashMovement; onOpenSupplierDebt?: OpenSupplierDebt; onOpenEmployeeGrossProfit?: OpenEmployeeGrossProfit; onOpenOverdueReceivables?: OpenOverdueReceivables; onOpenManagementReturns?: OpenManagementReturns; onOpenManagementBalance?: OpenManagementBalance; onOpenManagementOrders?: OpenManagementOrders; onOpenDefectProduction?: OpenDefectProduction; onOpenInventoryTurnover?: OpenInventoryTurnover; onOpenCurrentLiquidity?: OpenCurrentLiquidity; onOpenPlannedCash?: OpenPlannedCash; callerKey?: string | null; onOpenActiveClients?: OpenActiveClients; onOpenCurrencyRateDynamics?: OpenCurrencyRateDynamics; onOpenCashAggregateBalance?: OpenCashAggregateBalance; onOpenOriginalRevenue?: OpenOriginalRevenue; onOpenOriginalBuyerSalesShare?: OpenOriginalBuyerSalesShare
+  expanded: ReadonlySet<string>; onToggle: (id: string) => void
 }) {
   const { t } = useI18n()
   return (
@@ -154,18 +235,88 @@ function CatalogueTable({ visibleRows, catalogue, inspection, availableDatasets,
         <Table className="report-catalogue__table" highlightOnHover>
           <colgroup><col style={{ width: '46%' }} /><col style={{ width: '15%' }} /><col style={{ width: '39%' }} /></colgroup>
           <Table.Thead><Table.Tr><Table.Th>{t('Звіт')}</Table.Th><Table.Th>{t('Тип')}</Table.Th><Table.Th>{t('Стан за базами')}</Table.Th></Table.Tr></Table.Thead>
-          <Table.Tbody>{visibleRows.map(({ report, options, availability }) => <Fragment key={report.Id}>
+          <Table.Tbody>{visibleRows.map(({ report, options, matchingSources }) => <Fragment key={report.Id}>
             <Table.Tr>
-              <Table.Td><Stack gap={8} align="flex-start"><Group gap={6} align="center"><Button className="report-catalogue__report-title" leftSection={<ChevronRight size={14} aria-hidden="true" />} type="button" variant="subtle" size="compact-sm" aria-expanded={expanded.has(report.Id)} aria-label={t('Покриття звіту: {name}', { name: report.Title })}
+              <Table.Td><Stack gap={8} align="flex-start"><Button className="report-catalogue__report-title" leftSection={<ChevronRight size={14} aria-hidden="true" />} type="button" variant="subtle" size="compact-sm" aria-expanded={expanded.has(report.Id)} aria-label={t('Покриття звіту: {name}', { name: report.Title })}
                 styles={{ root: { height: 'auto', maxWidth: '100%' }, label: { whiteSpace: 'normal', textAlign: 'left' } }}
-                onClick={() => onToggle(report.Id)}>{report.Title}</Button>{availability === 'ready_disabled' && <Badge color="gray" variant="light">{t('Готово')}</Badge>}</Group>
-                {onOpen ? <ReportLaunchActions report={report} catalogue={catalogue} options={options}
-                  availability={availability}
+                onClick={() => onToggle(report.Id)}>{report.Title}</Button>
+                {consoleScope ? consoleReportAvailability(report, inspection) === 'ready_disabled'
+                  ? <Group gap="xs"><Badge color="green" variant="light">{t('Готово')}</Badge>
+                    <Button type="button" disabled size="xs">{t('Запуск поки вимкнено')}</Button></Group>
+                  : availableBug1274WorkbookLaunches(availableDatasets ?? [])
+                    .filter(launch => BUG_1274_WORKBOOK_REPORT_IDS[launch.fileName] === report.Id)
+                    .map(launch => <Button key={launch.fileName} type="button" size="xs"
+                      disabled={disabled || !canGenerate || !onOpenWorkbook}
+                      onClick={() => { if (!disabled && canGenerate) onOpenWorkbook?.(launch) }}>
+                      {launch.fileName}
+                    </Button>)
+                  : <>
+                {onOpenSalesMargin && isSalesMarginCatalogueEntry(report)
+                  ? <SalesMarginCatalogueLaunch report={report} enabled={canGenerate} disabled={disabled} callerKey={callerKey} onOpen={onOpenSalesMargin} /> : null}
+                {onOpenCashMovement && cashMovementCatalogueKind(report) !== null
+                  ? <CashMovementCatalogueLaunch report={report} enabled={canGenerate} disabled={disabled} callerKey={callerKey} onOpen={onOpenCashMovement} /> : null}
+                {onOpenSupplierDebt && isSupplierDebtCatalogueEntry(report)
+                  ? <SupplierDebtCatalogueLaunch report={report} enabled={canGenerate} disabled={disabled} callerKey={callerKey} onOpen={onOpenSupplierDebt} /> : null}
+                {onOpenEmployeeGrossProfit && isEmployeeGrossProfitCatalogueEntry(report)
+                  ? <EmployeeGrossProfitCatalogueLaunch report={report} enabled={canGenerate} disabled={disabled} callerKey={callerKey} onOpen={onOpenEmployeeGrossProfit} /> : null}
+                {onOpenOverdueReceivables && isOverdueReceivablesCatalogueEntry(report)
+                  ? <OverdueReceivablesCatalogueLaunch report={report} enabled={canGenerate} disabled={disabled} callerKey={callerKey} onOpen={onOpenOverdueReceivables} /> : null}
+                {onOpenManagementReturns && isManagementReturnsCatalogueEntry(report)
+                  ? <ManagementReturnsCatalogueLaunch report={report} enabled={canGenerate} disabled={disabled} callerKey={callerKey} onOpen={onOpenManagementReturns} /> : null}
+                {onOpenManagementBalance && managementBalanceCatalogueKind(report)
+                  ? <ManagementBalanceCatalogueLaunch report={report} enabled={canGenerate} disabled={disabled} callerKey={callerKey} onOpen={onOpenManagementBalance} /> : null}
+                <OriginalWarehouseQuantityCatalogueLaunch report={report} worlds={matchingSources.map(s => s.World)} enabled={canGenerate} disabled={disabled} callerKey={callerKey} />
+                <OriginalWarehouseMonetaryCatalogueLaunch report={report} worlds={matchingSources.map(s => s.World)} enabled={canGenerate} disabled={disabled} callerKey={callerKey} />
+                <OriginalTransferredGoodsCatalogueLaunch report={report} worlds={matchingSources.map(s => s.World)} enabled={canGenerate} disabled={disabled} callerKey={callerKey} />
+                <OriginalCounterpartyDebtCatalogueLaunch report={report} worlds={matchingSources.map(s => s.World)} enabled={canGenerate} disabled={disabled} callerKey={callerKey} />
+                <OriginalCounterpartyStatementCatalogueLaunch report={report} worlds={matchingSources.map(s => s.World)} enabled={canGenerate} disabled={disabled} callerKey={callerKey} />
+                <OriginalPriceTypeSalesCatalogueLaunch report={report} worlds={matchingSources.map(s => s.World)} enabled={canGenerate} disabled={disabled} callerKey={callerKey} />
+                <OriginalSalesCatalogueLaunch report={report} worlds={matchingSources.map(s => s.World)} enabled={canGenerate} disabled={disabled} callerKey={callerKey} />
+                <OriginalLotBalanceAnalysisCatalogueLaunch report={report} worlds={matchingSources.map(s => s.World)} enabled={canGenerate} disabled={disabled} callerKey={callerKey} />
+                <OriginalWorkInProgressCatalogueLaunch report={report} worlds={matchingSources.map(s => s.World)} enabled={canGenerate} disabled={disabled} callerKey={callerKey} />
+                <OriginalBuyerOrdersCatalogueLaunch report={report} worlds={matchingSources.map(s => s.World)} enabled={canGenerate} disabled={disabled} callerKey={callerKey} />
+                <OriginalPlannedCashCatalogueLaunch report={report} worlds={matchingSources.map(s => s.World)} enabled={canGenerate} disabled={disabled} callerKey={callerKey} />
+                <OriginalPlannedCashFlowCatalogueLaunch report={report} worlds={matchingSources.map(s => s.World)} enabled={canGenerate} disabled={disabled} callerKey={callerKey} />
+                <OriginalClientReportCatalogueLaunch report={report} worlds={matchingSources.map(s => s.World)} enabled={canGenerate} disabled={disabled} callerKey={callerKey} />
+                <OriginalCashStatementCatalogueLaunch report={report} worlds={matchingSources.map(s => s.World)} enabled={canGenerate} disabled={disabled} callerKey={callerKey} />
+                <OriginalCashAvailabilityCatalogueLaunch report={report} worlds={matchingSources.map(s => s.World)} enabled={canGenerate} disabled={disabled} callerKey={callerKey} />
+                <OriginalOrderAnalysesCatalogueLaunch report={report} worlds={matchingSources.map(s => s.World)} enabled={canGenerate} disabled={disabled} callerKey={callerKey} />
+                <OriginalStockAvailabilityCatalogueLaunch report={report} worlds={matchingSources.map(s => s.World)} enabled={canGenerate} disabled={disabled} callerKey={callerKey} />
+                <OriginalCashMovementsCatalogueLaunch report={report} worlds={matchingSources.map(s => s.World)} enabled={canGenerate} disabled={disabled} callerKey={callerKey} />
+                <OriginalMoneyFlowAnalysisCatalogueLaunch report={report} worlds={matchingSources.map(s => s.World)} enabled={canGenerate} disabled={disabled} callerKey={callerKey} />
+                <OriginalGoodsStockAnalysisCatalogueLaunch report={report} worlds={matchingSources.map(s => s.World)} enabled={canGenerate} disabled={disabled} callerKey={callerKey} />
+                <OriginalDefectCostCatalogueLaunch report={report} worlds={matchingSources.map(s => s.World)} enabled={canGenerate} disabled={disabled} callerKey={callerKey} />
+                <OriginalPurchasesCatalogueLaunch report={report} worlds={matchingSources.map(s => s.World)} enabled={canGenerate} disabled={disabled} callerKey={callerKey} />
+                <OriginalAmgClientDiscountsCatalogueLaunch report={report} worlds={matchingSources.map(s => s.World)} enabled={canGenerate} disabled={disabled} callerKey={callerKey} />
+                <OriginalFenixClientDiscountsCatalogueLaunch report={report} worlds={matchingSources.map(s => s.World)} enabled={canGenerate} disabled={disabled} callerKey={callerKey} />
+                <OriginalFenixDiscountAnalysisCatalogueLaunch report={report} worlds={matchingSources.map(s => s.World)} enabled={canGenerate} disabled={disabled} callerKey={callerKey} />
+                <OriginalAmgDiscountAnalysisCatalogueLaunch report={report} worlds={matchingSources.map(s => s.World)} enabled={canGenerate} disabled={disabled} callerKey={callerKey} />
+                <ManagementOrdersCatalogueLaunch report={report} enabled={canGenerate} disabled={disabled} callerKey={callerKey} onOpen={onOpenManagementOrders} />
+                <DefectProductionCatalogueLaunch report={report} enabled={canGenerate} disabled={disabled} callerKey={callerKey} onOpen={onOpenDefectProduction} />
+                <InventoryTurnoverCatalogueLaunch report={report} enabled={canGenerate} disabled={disabled} callerKey={callerKey} onOpen={onOpenInventoryTurnover} />
+                <CurrentLiquidityCatalogueLaunch report={report} enabled={canGenerate} disabled={disabled} callerKey={callerKey} onOpen={onOpenCurrentLiquidity} />
+                <PlannedCashCatalogueLaunch report={report} enabled={canGenerate} disabled={disabled} callerKey={callerKey} onOpen={onOpenPlannedCash} />
+                {onOpenOriginalBuyerSalesShare && originalBuyerSalesShareCatalogueVariant(report) !== null
+                  ? <OriginalBuyerSalesShareCatalogueLaunch report={report} enabled={canGenerate} disabled={disabled} onOpen={onOpenOriginalBuyerSalesShare} />
+                  : onOpenOriginalRevenue && isOriginalRevenueCatalogueEntry(report)
+                  ? <OriginalRevenueCatalogueLaunch report={report} enabled={canGenerate} disabled={disabled} onOpen={onOpenOriginalRevenue} />
+                  : onOpenCashAggregateBalance && isCashAggregateBalanceCatalogueEntry(report)
+                  ? <CashAggregateBalanceCatalogueLaunch report={report} enabled={canGenerate} disabled={disabled} onOpen={onOpenCashAggregateBalance} />
+                  : onOpenCurrencyRateDynamics && isCurrencyRateDynamicsCatalogueEntry(report)
+                  ? <CurrencyRateDynamicsCatalogueLaunch report={report} enabled={canGenerate} disabled={disabled} onOpen={onOpenCurrencyRateDynamics} />
+                  : onOpenActiveClients && isActiveClientsCatalogueEntry(report)
+                  ? <ActiveClientsCatalogueLaunch report={report} enabled={canGenerate} disabled={disabled} onOpen={onOpenActiveClients} />
+                  : onOpenCollectionCoefficient && isCollectionCoefficientCatalogueEntry(report)
+                  ? <CollectionCoefficientCatalogueLaunch report={report} enabled={canGenerate} disabled={disabled} onOpen={onOpenCollectionCoefficient} />
+                  : onOpenDebtToSalesRatio && isDebtToSalesRatioCatalogueEntry(report)
+                  ? <DebtToSalesRatioCatalogueLaunch report={report} enabled={canGenerate} disabled={disabled} onOpen={onOpenDebtToSalesRatio} />
+                  : onOpen ? <ReportLaunchActions report={report} catalogue={catalogue} options={options}
                   disabled={disabled || !canGenerate} onOpen={onOpen}
                   unavailable={!canGenerate ? 'Для роботи з наборами GBA потрібне право формування звітів.'
                     : !availableDatasets ? 'Доступність конструктора не підтверджена. Спробуйте відкрити каталог ще раз.'
                       : !inspection.valid ? 'Готові налаштування не підтверджені: стан перенесення не узгоджений з каталогом.'
                         : 'Для цього звіту ще немає готових налаштувань конструктора.'} /> : null}
+                </>}
               </Stack></Table.Td>
               <Table.Td>{t(kindLabels[report.Kind] ?? report.Kind)}</Table.Td>
               <Table.Td><Group gap={6} className="report-catalogue__statuses">{report.Sources.map(source => {
@@ -182,15 +333,14 @@ function CatalogueTable({ visibleRows, catalogue, inspection, availableDatasets,
 
 const launchIdentity = (choice: CatalogueLaunchChoice) => JSON.stringify([choice.reportId, choice.world, choice.sourceId, choice.dataSource])
 
-function ReportLaunchActions({ report, catalogue, options, availability, disabled, unavailable, onOpen }: {
-  report: ReportCatalogueEntry; catalogue: ReportCatalogue; options: LaunchOption[]; availability: ConsoleReportAvailability; disabled: boolean; unavailable: string; onOpen: OpenReport
+function ReportLaunchActions({ report, catalogue, options, disabled, unavailable, onOpen }: {
+  report: ReportCatalogueEntry; catalogue: ReportCatalogue; options: LaunchOption[]; disabled: boolean; unavailable: string; onOpen: OpenReport
 }) {
   const { t } = useI18n()
   const [selectedKey, setSelectedKey] = useState<string | null>(null)
   const [rejectedKey, setRejectedKey] = useState<string | null>(null)
   const selected = options.length === 1 ? options[0] : options.find(option => launchIdentity(option.choice) === selectedKey)
   const label = (option: LaunchOption) => `${worldLabel(option.choice.world)} · ${t(option.label)}`
-  if (availability === 'ready_disabled') return <Text size="xs" c="dimmed">{t('Готово, але поки вимкнено для запуску в Консолі.')}</Text>
   if (!options.length) return <Text size="xs" c="dimmed">{t(unavailable)}</Text>
   return <Stack className="report-catalogue__launch" gap={6} role="group" aria-label={t('Відкрити звіт: {name}', { name: report.Title })} style={{ width: '100%', maxWidth: 440 }}>
     {options.length > 1 ? <Select label={t('Варіант для конструктора')} aria-label={t('Варіант звіту: {name}', { name: report.Title })}

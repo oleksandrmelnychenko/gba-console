@@ -12,8 +12,11 @@ import { revenueDataset } from './revenueComparison.test-fixtures'
 import { salesXyzDataset } from './salesXyz.test-fixtures'
 import { priceTypeSalesComparisonDataset } from './priceTypeSalesComparison.test-fixtures'
 import { accountBalanceDataset } from './accountBalances.test-fixtures'
+import { cashPeriodDataset } from './cashPeriod.test-fixtures'
+import { settlementPeriodDataset } from './settlementPeriod.test-fixtures'
 import { importedPaymentsDataset } from './importedPayments.test-fixtures'
 import { datasetConfigurationError } from './reportDatasets'
+import { ownPriceAnalysisDataset } from './ownPriceAnalysis.test-fixtures'
 
 const period = { from: '2026-06-01', to: '2026-06-30' }
 const debt = ['builtin:ЗадолженностьПоКонтрагентам', '0e9ed1d2-a9c6-4865-89bc-2f25c8b7ebd3'] as const
@@ -42,13 +45,30 @@ function data(catalogue: ReportCatalogue, dataset: ReportDataset) {
 }
 
 describe('exact named catalogue launches', () => {
+  it('launches the supported OUR-rate analysis version from its exact catalogue identity', () => {
+    const catalogue = fixture(['builtin:АнализЦен', '991292be-2c3a-41cd-a32f-26467b589a1f'], [28], ['fenix'])
+    expect(data(catalogue, ownPriceAnalysisDataset).priceAnalysis).toEqual({ Version: 2, SourceWorld: 1, AsOf: '' })
+  })
+  it.each([
+    ['builtin:ВедомостьДенежныеСредства', '977cb58d-ff0b-46b7-90fd-124a560ec6ff', accountBalanceDataset, cashPeriodDataset],
+    ['builtin:ВедомостьВзаиморасчетыСКонтрагентами', '8fde42fc-6e49-4a8e-9096-74bbe14fe901', currentDebtDataset, settlementPeriodDataset],
+  ])('keeps the old %s source proof on the current-state slice, distinct from the XLS period form', (reportId, sourceId, current, periodDataset) => {
+    const catalogue = fixture([reportId, sourceId], [current.DataSource], ['fenix'])
+    const options = catalogueLaunchOptions(catalogue, reportId, [current, periodDataset])
+    expect(options.map(option => option.choice.dataSource)).toEqual([current.DataSource])
+    expect(options[0].label).toContain('Поточний стан')
+    expect(options[0].notice).toContain('без початку, рухів і кінця за період')
+    expect(options[0].notice).toContain('Часткове покриття GBA')
+  })
+
   it.each([
     ['builtin:ВаловаяПрибыль', '65fb1537-c992-4962-9f97-5d9f96b9a034', 35, [3, 4], [2, 3, 4, 6, 7, 8, 10, 12, 14, 15], [0, 1, 2, 6, 9]],
     ['builtin:ОтчетВпаривание', '069dfc76-74b6-491d-b039-f7fb54e0ea81', 36, [5], [80, 81, 82], [1, 5]],
-    ['builtin:ВаловаяПрибыльПоПоставщикам', 'f84e7b02-b6fe-40ca-bc7f-ea508d6ec41a', 38, [73, 4, 21], [0, 2, 3, 4, 6, 7, 8, 10, 12, 14], [0, 17]],
+    ['builtin:ВаловаяПрибыльПоПоставщикам', 'f84e7b02-b6fe-40ca-bc7f-ea508d6ec41a', 38, [73, 4, 21], [0, 2, 3, 4, 6, 7, 8, 10, 12, 14], [0, 1, 17]],
   ] as const)('opens bounded BUG-1274 Fenix native slice %s with its exact groups', (reportId, sourceId, source, rows, measures, filters) => {
     const dataset: ReportDataset = { DataSource: source, Name: reportId, Description: 'Зріз GBA',
       PeriodRequired: true, PeriodSupported: true, Limitations: [],
+      ...(source === 38 ? { supplierSourceWorld: { Version: 1, SourceWorlds: [0, 1], RequiresCompletePeriodLineage: true } } : {}),
       Groupings: rows.map(Type => ({ Type, Name: String(Type) })),
       Measurements: measures.map(Type => ({ Type, Name: String(Type) })),
       Filters: filters.map(Type => ({ Type, Name: String(Type) })),
@@ -60,8 +80,47 @@ describe('exact named catalogue launches', () => {
     expect(result.ok).toBe(true)
     if (!result.ok) throw new Error(result.message)
     expect(result.template.Data.sorted.Row.map(item => item.type)).toEqual(rows)
+    if (source === 38) expect(result.template.Data.supplierSourceWorld).toBe(0)
     expect(result.notice).toContain('Часткове покриття GBA')
     expect(catalogueLaunchOptions(catalogue, reportId, [{ ...dataset, Groupings: [] }])).toEqual([])
+  })
+
+  it('maps the AMG supplier-profit catalogue source to the AMG batch world', () => {
+    const identity = ['builtin:ВаловаяПрибыльПоПоставщикам', 'f84e7b02-b6fe-40ca-bc7f-ea508d6ec41a'] as const
+    const source = 38
+    const dataset: ReportDataset = { DataSource: source, Name: 'Партійний прибуток', Description: 'GBA',
+      PeriodRequired: true, PeriodSupported: true, Limitations: [],
+      supplierSourceWorld: { Version: 1, SourceWorlds: [0, 1], RequiresCompletePeriodLineage: true },
+      Groupings: [73, 4, 21].map(Type => ({ Type, Name: String(Type) })),
+      Measurements: [0, 2, 3, 4, 6, 7, 8, 10, 12, 14].map(Type => ({ Type, Name: String(Type) })),
+      Filters: [0, 17].map(Type => ({ Type, Name: String(Type) })),
+    }
+    const catalogue = fixture(identity, [source], ['fenix', 'amg'])
+    expect(catalogueLaunchOptions(catalogue, identity[0], [dataset])).toHaveLength(2)
+    const result = open(catalogue, dataset, 'amg')
+    expect(result.ok).toBe(true)
+    if (result.ok) expect(result.template.Data.supplierSourceWorld).toBe(1)
+  })
+
+  it.each(['fenix', 'amg'])('launches the advertised current supplier form with registrar warehouse in %s', world => {
+    const identity = ['builtin:ВаловаяПрибыльПоПоставщикам', 'f84e7b02-b6fe-40ca-bc7f-ea508d6ec41a'] as const
+    const dataset: ReportDataset = { DataSource: 38, Name: 'Прибуток за постачальниками', Description: 'GBA',
+      PeriodRequired: true, PeriodSupported: true, Limitations: [],
+      supplierBasis: { Version: 1, DefaultBasis: 0, Bases: [0, 1], MaximumDays: 31,
+        IncludesReturns: true, PreservesUnavailableValues: true, RegistrarWarehouseGrouping: 78 },
+      supplierSourceWorld: { Version: 1, SourceWorlds: [0, 1], RequiresCompletePeriodLineage: true },
+      Groupings: [73, 78, 4, 21].map(Type => ({ Type, Name: String(Type) })),
+      Measurements: [0, 2, 3, 4, 6, 7, 8, 10, 12, 14].map(Type => ({ Type, Name: String(Type) })),
+      Filters: [0, 1, 17].map(Type => ({ Type, Name: String(Type) })),
+    }
+    const result = open(fixture(identity, [38], ['fenix', 'amg']), dataset, world)
+    expect(result.ok).toBe(true)
+    if (!result.ok) throw new Error(result.message)
+    expect(result.template.Data.supplierBasis).toBe(0)
+    expect(result.template.Data.supplierSourceWorld).toBe(world === 'fenix' ? 0 : 1)
+    expect(result.template.Data.sorted.Row.map(field => field.type)).toEqual([78, 4, 21])
+    expect(datasetConfigurationError(result.template.Data, dataset)).toBeNull()
+    expect(result.notice).toContain('Недоступні собівартість')
   })
 
   it('opens only the exact Fenix gross-profit source in the dedicated panel', () => {

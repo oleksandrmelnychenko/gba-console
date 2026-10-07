@@ -25,7 +25,7 @@ function Providers({ children }: { children: ReactNode }) {
 }
 
 async function renderReady() {
-  const view = render(<Providers><ReportsStocksPage /></Providers>)
+  const view = render(<Providers><ReportsStocksPage consoleScope={false} /></Providers>)
   await screen.findByRole('button', { name: 'Продажі за днями' })
   return view
 }
@@ -305,7 +305,7 @@ describe('native report datasets in the constructor', () => {
 
   it('blocks generation when capabilities fail to load and allows a retry', async () => {
     vi.mocked(getReportDatasets).mockRejectedValueOnce(new Error('Немає зв’язку із сервером'))
-    const { container } = render(<Providers><ReportsStocksPage /></Providers>)
+    const { container } = render(<Providers><ReportsStocksPage consoleScope={false} /></Providers>)
     await screen.findByText('Немає зв’язку із сервером')
     expect((screen.getByRole('button', { name: 'Сформувати' }) as HTMLButtonElement).disabled).toBe(true)
     fireEvent.submit(container.querySelector('form')!)

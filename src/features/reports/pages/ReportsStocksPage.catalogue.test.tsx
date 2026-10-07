@@ -1,13 +1,13 @@
 import { MantineProvider } from '@mantine/core'
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import type { ReactNode } from 'react'
-import { beforeEach, describe, expect, it, onTestFinished, vi } from 'vitest'
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
+import { clearSession, saveSession } from '../../../shared/auth/session'
 import { I18nProvider } from '../../../shared/i18n/I18nProvider'
 import { createStockReport, searchValuationAgreements } from '../api/reportsApi'
 import { getReportCatalogue, getReportDatasets, getServerReportTemplates, saveServerReportTemplate } from '../api/reportWorkspaceApi'
 import { reportDatasets, currentDebtDataset, valuationDataset, netDataset } from '../data/reportDatasets.test-fixtures'
 import { defaultDatasetRequest } from '../data/reportDatasets'
-import { BUG_1274_ACTIVE_REPORT_IDS } from '../data/reportMigration'
 import { migrationFixture, sourceHash } from '../data/reportMigration.test-fixtures'
 import type { ReportCatalogue } from '../types'
 import { ReportsStocksPage } from './ReportsStocksPage'
@@ -25,6 +25,13 @@ vi.mock('../api/reportsApi', async original => ({ ...await original<typeof impor
 vi.mock('../../../shared/ui/document-export-modal/DocumentExportModal', () => ({
   DocumentExportModal: ({ opened }: { opened: boolean }) => opened ? <div role="dialog" aria-label="Файли звіту" /> : null,
 }))
+// This file verifies the generic catalogue adapters. Production rollout policy is
+// exercised separately by ReportCataloguePanel.rollout tests.
+vi.mock('./ReportCatalogueControl', async original => {
+  const actual = await original<typeof import('./ReportCatalogueControl')>()
+  return { ReportCatalogueControl: (props: import('react').ComponentProps<typeof actual.ReportCatalogueControl>) =>
+    <actual.ReportCatalogueControl {...props} consoleScope={false} /> }
+})
 vi.mock('./OneCTurnoverReportPanel', () => ({ OneCTurnoverReportPanel: () => <div>Панель консолідованого обороту 1С</div> }))
 function Providers({ children }: { children: ReactNode }) {
   return <MantineProvider env="test"><I18nProvider>{children}</I18nProvider></MantineProvider>
@@ -40,7 +47,7 @@ function catalogue(): ReportCatalogue {
   } } }
 }
 async function ready() {
-  const view = render(<Providers><ReportsStocksPage /></Providers>)
+  const view = render(<Providers><ReportsStocksPage consoleScope={false} /></Providers>)
   await screen.findByRole('button', { name: 'Продажі за днями' })
   return view
 }
@@ -54,9 +61,13 @@ async function launchDebt() {
 }
 function stored() { return JSON.parse(sessionStorage.getItem(draftKey)!) }
 
+// Keep the UI wait focused on opening/rendering, after Vite has loaded the real lazy module.
+// API loading remains deferred and is asserted before the catalogue is opened.
+beforeAll(async () => { await import('./ReportCataloguePanel') })
 describe('named catalogue report to constructor', () => {
   beforeEach(() => {
     allowed = true; vi.clearAllMocks(); sessionStorage.clear(); localStorage.clear()
+    saveSession({ userNetUid: 'catalogue-owner', csrfToken: 'catalogue-fixture-csrf' })
     Object.defineProperty(HTMLElement.prototype, 'scrollIntoView', { configurable: true, value: vi.fn() })
     vi.mocked(getReportCatalogue).mockResolvedValue(catalogue())
     vi.mocked(getReportDatasets).mockResolvedValue([...reportDatasets, currentDebtDataset, valuationDataset])
@@ -64,6 +75,7 @@ describe('named catalogue report to constructor', () => {
     vi.mocked(searchValuationAgreements).mockResolvedValue([{ Id: 42, Name: 'Договір 42' }, { Id: 43, Name: 'Договір 43' }])
     vi.mocked(createStockReport).mockResolvedValue({ document: { DocumentURL: '/files/old-valuation.xlsx' }, raw: {} })
   })
+  afterEach(clearSession)
 
   it('opens only the exact Fenix gross-profit source in its separate report panel', async () => {
     const source = catalogue()
@@ -85,8 +97,6 @@ describe('named catalogue report to constructor', () => {
   })
 
   it('launches the return-only catalogue variant and sends its bounded server request', async () => {
-    BUG_1274_ACTIVE_REPORT_IDS.add('builtin:ОтчетПоВозвратам')
-    onTestFinished(() => { BUG_1274_ACTIVE_REPORT_IDS.delete('builtin:ОтчетПоВозвратам') })
     const source = catalogue()
     source.Reports[0].Id = 'builtin:ОтчетПоВозвратам'
     source.Reports[0].Name = 'ОтчетПоВозвратам'
@@ -121,7 +131,7 @@ describe('named catalogue report to constructor', () => {
     expect(stored().snapshot).toMatchObject({ name: debtTitle, activeTemplate: null, data: { dataSource: 10, from: '', to: '', selections: [] } })
     expect(createStockReport).not.toHaveBeenCalled(); expect(saveServerReportTemplate).not.toHaveBeenCalled()
     view.unmount()
-    render(<Providers><ReportsStocksPage /></Providers>)
+    render(<Providers><ReportsStocksPage consoleScope={false} /></Providers>)
     const restore = await screen.findByRole('button', { name: 'Відновити чернетку' })
     await waitFor(() => expect((restore as HTMLButtonElement).disabled).toBe(false));fireEvent.click(restore)
     expect(screen.getByLabelText('Назва поточного звіту').textContent).toBe(debtTitle)
@@ -167,7 +177,7 @@ describe('named catalogue report to constructor', () => {
 
   it('does not expose catalogue launch after permission is revoked', async () => {
     const view = await ready()
-    allowed = false;view.rerender(<Providers><ReportsStocksPage /></Providers>)
+    allowed = false;view.rerender(<Providers><ReportsStocksPage consoleScope={false} /></Providers>)
     expect((screen.getByRole('button', { name: 'Каталог усіх звітів 1С' }) as HTMLButtonElement).disabled).toBe(true)
     expect(getReportCatalogue).not.toHaveBeenCalled()
     expect(createStockReport).not.toHaveBeenCalled()

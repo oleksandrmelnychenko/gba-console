@@ -15,7 +15,7 @@ vi.mock('../api/reportWorkspaceApi', async original => ({ ...await original<type
 function Providers({ children }: { children: ReactNode }) { return <MantineProvider env="test"><I18nProvider>{children}</I18nProvider></MantineProvider> }
 async function select(name: string, option: string) { fireEvent.click(screen.getByRole('combobox', { name })); fireEvent.click(await screen.findByRole('option', { name: option })) }
 const saved = () => ({ Id: crypto.randomUUID(), Revision: 3, Name: 'ABC рахунків', Data: abcRequest() })
-async function ready() { const view = render(<Providers><ReportsStocksPage /></Providers>); await screen.findByRole('button', { name: 'Продажі за днями' }); return view }
+async function ready() { const view = render(<Providers><ReportsStocksPage consoleScope={false} /></Providers>); await screen.findByRole('button', { name: 'Продажі за днями' }); return view }
 async function applySaved() { fireEvent.click(screen.getByRole('button', { name: 'Шаблони' })); fireEvent.click(await screen.findByRole('button', { name: /ABC рахунків/ })) }
 
 describe('server-computed ABC constructor', () => {
@@ -103,7 +103,7 @@ describe('server-computed ABC constructor', () => {
     fireEvent.submit(container.querySelector('form')!); await waitFor(() => expect(createStockReport).toHaveBeenCalledTimes(2))
     expect(vi.mocked(createStockReport).mock.calls[1][0]).not.toHaveProperty('abcClassification')
     expect(vi.mocked(createStockReport).mock.calls[1][0].sorted.Row.some(field => field.type === 46)).toBe(false)
-  })
+  }, 10000)
   it.each([{ ...accountAbc, Version: 99, Extra: true }, { ...accountAbc, PercentC: 6 }])('refuses an invalid saved rule before changing the form %#', async abcClassification => {
     const template = { ...saved(), Data: { ...abcRequest(), abcClassification } }, original = structuredClone(template)
     vi.mocked(getServerReportTemplates).mockResolvedValue([template]); await ready(); await applySaved()

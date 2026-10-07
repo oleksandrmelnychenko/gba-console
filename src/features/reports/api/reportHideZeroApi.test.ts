@@ -22,7 +22,7 @@ it.each([{ Version: 1 }, { Version: 7, Future: true }])('preserves exact hideZer
   vi.mocked(apiRequest).mockResolvedValue({ ...original, Revision: 4 }); await saveServerReportTemplate(template)
   expect(apiRequest).toHaveBeenLastCalledWith('/report/templates/save', { method: 'POST', body: template })
   vi.mocked(apiRequest).mockResolvedValue({}); await createStockReport(template.Data)
-  expect(apiRequest).toHaveBeenLastCalledWith('/report/stocks/generate', { method: 'POST', body: template.Data })
+  expect(apiRequest).toHaveBeenLastCalledWith('/report/stocks/generate', { method: 'POST', dedupe: false, body: template.Data })
 })
 it('retains both aliases from a conflicting template so validation can refuse it explicitly', async () => {
   const original = wire({ Version: 1 })

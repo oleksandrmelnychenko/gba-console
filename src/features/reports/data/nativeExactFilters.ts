@@ -1,3 +1,6 @@
+import { isDayOrganizationBasisCapability } from './dayOrganizationBasis'
+import { isSupplierBasisCapability, requestSupplierBasis, supplierBasisConfigurationError } from './supplierBasis'
+import { groupedSettlementConfigurationError, requestGroupedSettlementPeriod } from './groupedSettlementPeriod'
 import type {
   ReportDataset,
   ReportProductClassification,
@@ -11,6 +14,7 @@ import type {
 
 export const NATIVE_EXACT_FILTER_SOURCE = 2
 export const DAY_ORGANIZATION_EXACT_FILTER_SOURCE = 35
+export const SUPPLIER_GROSS_PROFIT_EXACT_FILTER_SOURCE = 38
 export const FENIX_BUYERS_ROOT_ID = '8AB2005056C0000811DEFC4535BB4D40'
 const SOURCE_REFERENCE = /^[0-9a-f]{32}$/i
 const ZERO_REFERENCE = /^0{32}$/
@@ -46,10 +50,12 @@ function sourceReference(value: unknown): value is string {
   return typeof value === 'string' && SOURCE_REFERENCE.test(value) && !ZERO_REFERENCE.test(value)
 }
 
+/** Source filters and their calculation basis round-trip together, including null and raw aliases. */
 export function cloneNativeExactFilterAliases(value: object): Record<string, unknown> {
   return Object.fromEntries(Object.entries(value).flatMap(([key, item]) => {
     const name = key.toLowerCase()
     return name === 'productclassification' || name === 'sourceorganizations' || name === 'sourcebuyersubtree'
+      || name === 'dayorganizationbasis' || name === 'supplierbasis'
       ? [[key, structuredClone(item)]]
       : []
   }))
@@ -122,7 +128,17 @@ export function normalizeNativeExactFilterDataset(value: JsonRecord): ReportData
   const productKeys = aliases(value, 'ProductClassification')
   const organizationKeys = aliases(value, 'SourceOrganizations')
   const buyerKeys = aliases(value, 'SourceBuyerSubtree')
-  if (productKeys.length > 1 || organizationKeys.length > 1 || buyerKeys.length > 1) return null
+  const basisKeys = aliases(value, 'DayOrganizationBasis')
+  const supplierBasisKeys = aliases(value, 'SupplierBasis')
+  if (productKeys.length > 1 || organizationKeys.length > 1 || buyerKeys.length > 1
+    || basisKeys.length > 1 || supplierBasisKeys.length > 1) return null
+  const basis = basisKeys.length ? value[basisKeys[0]] : undefined
+  if (basis !== undefined && (source !== DAY_ORGANIZATION_EXACT_FILTER_SOURCE
+    || !isDayOrganizationBasisCapability(basis))) return null
+  const supplierBasis = supplierBasisKeys.length ? value[supplierBasisKeys[0]] : undefined
+  if (supplierBasis !== undefined && (source !== SUPPLIER_GROSS_PROFIT_EXACT_FILTER_SOURCE
+    || !isSupplierBasisCapability(supplierBasis) || !Array.isArray(value.Groupings)
+    || !value.Groupings.some(field => record(field) && field.Type === 78 && field.Selectable !== false))) return null
   const product = productKeys.length ? value[productKeys[0]] : undefined
   const organizations = organizationKeys.length ? value[organizationKeys[0]] : undefined
   const buyers = buyerKeys.length ? value[buyerKeys[0]] : undefined
@@ -131,6 +147,9 @@ export function normalizeNativeExactFilterDataset(value: JsonRecord): ReportData
   } else if (source === DAY_ORGANIZATION_EXACT_FILTER_SOURCE) {
     if (!isProductClassificationCapability(product) || !isSourceOrganizationsCapability(organizations)
       || !isSourceBuyerSubtreeCapability(buyers)) return null
+  } else if (source === SUPPLIER_GROSS_PROFIT_EXACT_FILTER_SOURCE) {
+    if (product != null || organizations != null
+      || buyers != null && !isSourceBuyerSubtreeCapability(buyers)) return null
   } else if (product != null || organizations != null || buyers != null) {
     return null
   }
@@ -138,13 +157,19 @@ export function normalizeNativeExactFilterDataset(value: JsonRecord): ReportData
   for (const key of productKeys) delete normalized[key]
   for (const key of organizationKeys) delete normalized[key]
   for (const key of buyerKeys) delete normalized[key]
+  for (const key of basisKeys) delete normalized[key]
+  for (const key of supplierBasisKeys) delete normalized[key]
   if (product != null) normalized.productClassification = structuredClone(product)
   if (organizations != null) normalized.sourceOrganizations = structuredClone(organizations)
   if (buyers != null) normalized.sourceBuyerSubtree = structuredClone(buyers)
+  if (basis !== undefined) normalized.dayOrganizationBasis = structuredClone(basis)
+  if (supplierBasis !== undefined) normalized.supplierBasis = structuredClone(supplierBasis)
   return normalized as ReportDataset
 }
 
 export function nativeExactFiltersConfigurationError(data: ReportRequestBody, dataset?: ReportDataset): string | null {
+  const supplierBasisError = supplierBasisConfigurationError(data, dataset)
+  if (supplierBasisError) return supplierBasisError
   const productKeys = aliases(data, 'ProductClassification')
   const organizationKeys = aliases(data, 'SourceOrganizations')
   const buyerKeys = aliases(data, 'SourceBuyerSubtree')
@@ -154,8 +179,13 @@ export function nativeExactFiltersConfigurationError(data: ReportRequestBody, da
   const product = requestProductClassification(data)
   const organizations = requestSourceOrganizations(data)
   const buyers = requestSourceBuyerSubtree(data)
+  if (data.dataSource === 41 && requestGroupedSettlementPeriod(data) != null) {
+    if (product != null || organizations != null) return 'Групові взаєморозрахунки підтримують поточні локальні відбори та групу покупців.'
+    return groupedSettlementConfigurationError(data, dataset)
+  }
   if (data.dataSource !== NATIVE_EXACT_FILTER_SOURCE
-    && data.dataSource !== DAY_ORGANIZATION_EXACT_FILTER_SOURCE) {
+    && data.dataSource !== DAY_ORGANIZATION_EXACT_FILTER_SOURCE
+    && data.dataSource !== SUPPLIER_GROSS_PROFIT_EXACT_FILTER_SOURCE) {
     return product != null || organizations != null || buyers != null
       ? 'Цей набір не підтримує точні відбори Fenix. Налаштування не застосовано.'
       : null
@@ -166,8 +196,19 @@ export function nativeExactFiltersConfigurationError(data: ReportRequestBody, da
   if (organizations != null && !sourceOrganizations(organizations)) {
     return 'Некоректний точний відбір організацій Fenix. Налаштування не застосовано.'
   }
-  if (buyers != null && (data.dataSource !== DAY_ORGANIZATION_EXACT_FILTER_SOURCE || !sourceBuyerSubtree(buyers))) {
+  if (data.dataSource === SUPPLIER_GROSS_PROFIT_EXACT_FILTER_SOURCE
+    && (product != null || organizations != null)) {
+    return 'Партійний прибуток підтримує лише точне піддерево покупців Fenix.'
+  }
+  if (buyers != null && (![DAY_ORGANIZATION_EXACT_FILTER_SOURCE, SUPPLIER_GROSS_PROFIT_EXACT_FILTER_SOURCE]
+    .includes(data.dataSource) || !sourceBuyerSubtree(buyers))) {
     return 'Некоректний точний відбір піддерева «Покупці» Fenix. Налаштування не застосовано.'
+  }
+  const supplierWorld = Object.prototype.hasOwnProperty.call(data, 'supplierSourceWorld')
+    ? data.supplierSourceWorld : data.SupplierSourceWorld
+  if (buyers != null && data.dataSource === SUPPLIER_GROSS_PROFIT_EXACT_FILTER_SOURCE
+    && supplierWorld !== 0 && !(requestSupplierBasis(data) === 0 && supplierWorld == null)) {
+    return 'Для піддерева «Покупці» оберіть базу продажів Fenix.'
   }
   if (organizations != null && Array.isArray(data.selections) && data.selections.some(selection =>
     selection?.IsChecked !== false && selection?.SelectedField?.Type === 0)) {
@@ -183,7 +224,8 @@ export function nativeExactFiltersConfigurationError(data: ReportRequestBody, da
     && !isSourceOrganizationsCapability(dataset.sourceOrganizations)) {
     return 'Сервер не підтвердив точний відбір організацій Fenix.'
   }
-  if (dataset && data.dataSource === DAY_ORGANIZATION_EXACT_FILTER_SOURCE
+  if (dataset && (data.dataSource === DAY_ORGANIZATION_EXACT_FILTER_SOURCE
+    || data.dataSource === SUPPLIER_GROSS_PROFIT_EXACT_FILTER_SOURCE && buyers != null)
     && !isSourceBuyerSubtreeCapability(dataset.sourceBuyerSubtree)) {
     return 'Сервер не підтвердив точний відбір піддерева «Покупці» Fenix.'
   }

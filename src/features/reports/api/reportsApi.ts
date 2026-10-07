@@ -1,8 +1,14 @@
+import { workbookConfigurationError } from '../data/workbookPresentation'
+import { bindWorkbookPreview } from '../data/workbookPreview'
+import { settlementAttributeKey } from '../data/settlementSourceAttributes'
+import { settlementPeriodConfigurationError } from '../data/settlementPeriod'
 import { agreementPricesConfigurationError } from '../data/agreementPrices'
 import { agreementPriceComparisonConfigurationError } from '../data/agreementPriceComparison'
 import { recordedSaleGrossProfitConfigurationError } from '../data/recordedSaleGrossProfit'
 import { dayOrganizationGrossProfitConfigurationError } from '../data/dayOrganizationGrossProfit'
 import { vparivanieConfigurationError } from '../data/vparivanie'
+import { currentVparivanieConfigurationError, currentVparivanieManagerReference, currentVparivanieFullScope } from '../data/currentVparivanie'
+import { cashPeriodConfigurationError } from '../data/cashPeriod'
 import { supplierBatchGrossProfitConfigurationError } from '../data/supplierBatchGrossProfit'
 import { importedSaleDiscountConfigurationError } from '../data/importedSaleDiscount'
 import { paymentComparisonConfigurationError } from '../data/paymentComparison'
@@ -38,6 +44,7 @@ export async function createStockReport(body: ReportRequestBody): Promise<Report
   const request = prepareStockReportRequest(body)
   const result = await apiRequest<unknown>('/report/stocks/generate', {
     method: 'POST',
+    dedupe: false,
     body: request,
   })
 
@@ -49,14 +56,30 @@ export async function previewStockReport(body: ReportRequestBody): Promise<{ res
   const request = prepareStockReportRequest(body)
   const response = await apiRequest<unknown>('/report/stocks/preview', {
     method: 'POST',
+    dedupe: false,
     query: { rowOffset: 0, rowLimit: 50 },
     body: request,
   })
-  return { result: normalizeReportResult(response), preview: normalizeNativeReportPreview(response) }
+  const preview = normalizeNativeReportPreview(response, currentVparivanieFullScope(request))
+  bindWorkbookPreview(request, preview)
+  if (request.dataSource === 39 && (preview.Request?.DataSource !== 'NativeCurrentVparivanie' || !preview.CurrentVparivanieProducts))
+    throw new Error('Сервер повернув результат іншого набору даних замість поточної матриці «Впарювання».')
+  if (request.dataSource === 41 && preview.Request?.DataSource !== 'NativeSettlementPeriod')
+    throw new Error('Сервер повернув інший набір даних замість взаєморозрахунків за період.')
+  if (request.dataSource === 40 && preview.Request?.DataSource !== 'NativeCashPeriod')
+    throw new Error('Сервер повернув результат іншого набору даних замість руху коштів.')
+  return { result: normalizeReportResult(response), preview }
+}
+
+/** Reuses native refusal rules without submitting or replacing a saved definition. */
+export function validateStockReportRequest(body: ReportRequestBody): void {
+  prepareStockReportRequest(body)
 }
 
 function prepareStockReportRequest(body: ReportRequestBody): ReportRequestBody {
-  const request = (body.dataSource === 2 || body.dataSource === 17 || body.dataSource === 18 || body.dataSource === 19 || body.dataSource === 20 || body.dataSource === 21 || body.dataSource === 22 || body.dataSource === 23 || body.dataSource === 24 || body.dataSource === 25 || body.dataSource === 27 || body.dataSource === 28 || body.dataSource === 35) ? structuredClone(body) : body
+  const request = (body.dataSource === 2 || body.dataSource === 17 || body.dataSource === 18 || body.dataSource === 19 || body.dataSource === 20 || body.dataSource === 21 || body.dataSource === 22 || body.dataSource === 23 || body.dataSource === 24 || body.dataSource === 25 || body.dataSource === 27 || body.dataSource === 28 || body.dataSource === 35 || body.dataSource === 38 || body.dataSource === 39 || body.dataSource === 40 || body.dataSource === 41) ? structuredClone(body) : body
+  const workbookError = workbookConfigurationError(request)
+  if (workbookError) throw new Error(workbookError)
   const exactFilterError = nativeExactFiltersConfigurationError(request)
   if (exactFilterError) throw new Error(exactFilterError)
   const pricesError = agreementPricesConfigurationError(request)
@@ -67,6 +90,16 @@ function prepareStockReportRequest(body: ReportRequestBody): ReportRequestBody {
   if (grossProfitError) throw new Error(grossProfitError)
   const dayOrganizationProfitError = dayOrganizationGrossProfitConfigurationError(request)
   if (dayOrganizationProfitError) throw new Error(dayOrganizationProfitError)
+  const currentVparivanieError = currentVparivanieConfigurationError(request)
+  if (currentVparivanieError) throw new Error(currentVparivanieError)
+  const settlementPeriodError = settlementPeriodConfigurationError(request)
+  if (settlementPeriodError) throw new Error(settlementPeriodError)
+  const cashPeriodError = cashPeriodConfigurationError(request)
+  if (cashPeriodError) throw new Error(cashPeriodError)
+  if (request.dataSource === 39) for (const selection of request.selections) {
+    if (selection.SelectedField.Type === 60) for (const value of selection.Values)
+      value.Data.Id = currentVparivanieManagerReference(value.Data)!
+  }
   const vparivanieError = vparivanieConfigurationError(request)
   if (vparivanieError) throw new Error(vparivanieError)
   const supplierBatchProfitError = supplierBatchGrossProfitConfigurationError(request)
@@ -98,14 +131,32 @@ function prepareStockReportRequest(body: ReportRequestBody): ReportRequestBody {
   return request
 }
 
-export async function searchDatasetReportValues(dataSource: number, field: number, params: ReportSearchParams, signal?: AbortSignal, sourceWorld?: number): Promise<ReportEntity[]> {
+export async function searchDatasetReportValues(dataSource: number, field: number, params: ReportSearchParams, signal?: AbortSignal, sourceWorld?: number, salesBasis?: 0 | 1, providedDiscountBasis?: 0 | 1): Promise<ReportEntity[]> {
+  if (providedDiscountBasis !== undefined && (dataSource !== 24 || ![0, 1].includes(providedDiscountBasis)
+    || (providedDiscountBasis === 0 && sourceWorld !== 1))) throw new Error('Некоректна основа довідника наданих знижок.')
+  if (salesBasis !== undefined && (dataSource !== 27 || ![0, 1].includes(salesBasis)))
+    throw new Error('Некоректна основа довідника продажів.')
+  if (dataSource === 27 && salesBasis === 0 && ![46, 51, 52, 45].includes(field))
+    throw new Error('Цей відбір поточних продажів недоступний.')
+  if (dataSource === 41 && ![0, 6, 9, 17, 18, 30, 60, 61].includes(field))
+    throw new Error('Цей відбір групових взаєморозрахунків недоступний.')
+  if (dataSource === 40 && ![29, 30, 32, 33].includes(field)) throw new Error('Цей відбір рахунків недоступний.')
+  if (dataSource === 39 && ![1, 4, 5, 21, 60].includes(field))
+    throw new Error('Цей відбір поточної матриці «Впарювання» недоступний.')
   if ([23, 24, 25, 28].includes(dataSource) && !(sourceWorld === 1 || (dataSource !== 28 && sourceWorld === 2)))
     throw new Error('Оберіть базу Fenix або AMG для довідника звіту 1С.')
+  if (dataSource === 41 && [60, 61].includes(field) && sourceWorld !== 1)
+    throw new Error('Джерельні реквізити покупців доступні лише для Fenix.')
   const result = await apiRequest<unknown>('/report/datasets/lookup', {
     query: { dataSource, field, value: params.value.trim(), offset: params.offset, limit: params.limit,
-      ...([23, 24, 25, 28].includes(dataSource) ? { sourceWorld } : {}) }, signal,
+      ...([23, 24, 25, 28].includes(dataSource) || dataSource === 41 && [60, 61].includes(field) ? { sourceWorld } : {}),
+      ...(dataSource === 27 && salesBasis !== undefined ? { salesBasis } : {}),
+      ...(dataSource === 24 && providedDiscountBasis !== undefined ? { providedDiscountBasis } : {}) }, signal,
   })
-  if (!Array.isArray(result) || !result.every(item => item && typeof item === 'object' && (dataSource === 27
+  if (!Array.isArray(result) || !result.every(item => item && typeof item === 'object' && (dataSource === 41 && [60, 61].includes(field) ? settlementAttributeKey(field, item) === item.Id
+    : dataSource === 39 && field === 60
+    ? typeof item.Id === 'string' && currentVparivanieManagerReference(item) === item.Id
+    : dataSource === 27
     ? priceTypeSalesSourceId(item.Id) !== null
     : [23, 24, 25, 28].includes(dataSource) ? typeof item.Id === 'string' && item.Id.length > 0 && item.Id.length <= 512 && !/\p{Cc}/u.test(item.Id)
     : dataSource === 29 ? typeof item.Id === 'string' && /^[1-9]\d*$/.test(item.Id)
@@ -113,12 +164,37 @@ export async function searchDatasetReportValues(dataSource: number, field: numbe
     : dataSource === 32 ? typeof item.Id === 'string' && revenueExactId(item) !== null
     : dataSource === 31 ? (typeof item.Id === 'number' && Number.isSafeInteger(item.Id) && item.Id > 0)
       || (typeof item.Id === 'string' && /^[1-9]\d*$/.test(item.Id) && Number.isSafeInteger(Number(item.Id)))
-    : (dataSource === 18 || dataSource === 19 || dataSource === 20 || dataSource === 21 || dataSource === 22 || dataSource === 30 || dataSource === 32 || dataSource === 35)
+    : (dataSource === 18 || dataSource === 19 || dataSource === 20 || dataSource === 21 || dataSource === 22 || dataSource === 30 || dataSource === 32 || dataSource === 35 || dataSource === 38 || dataSource === 39 || dataSource === 40 || dataSource === 41)
       ? typeof item.Id === 'string' && revenueExactId(item) !== null
       : (dataSource === 16 || dataSource === 17) ? revenueExactId(item) !== null : Number.isSafeInteger(item.Id) && item.Id > 0)
     && typeof item.Name === 'string' && item.Name.trim().length > 0)) throw new Error('Сервер повернув некоректні значення відбору звіту.')
+  if (dataSource === 41 && [60, 61].includes(field) && new Set(result.map(item => item.Id)).size !== result.length)
+    throw new Error('Сервер повернув неоднозначні реквізити покупця.')
+  if (dataSource === 39 && field === 60 && new Set(result.map(item => item.Id)).size !== result.length)
+    throw new Error('Сервер повернув неоднозначні джерельні реквізити менеджерів покупців.')
   if (dataSource === 19 && (new Set(result.map(item => item.Id)).size !== result.length || result.some(item => !item.Name.trim()))) throw new Error('Сервер повернув неоднозначні серії курсів.')
   return dataSource === 29 || dataSource === 31 ? result.map(item => ({ ...item, Id: Number(item.Id) })) : result
+}
+
+export type CurrentPriceTypeSalesScopeChoices = {
+  Organizations: ReportEntity[]
+  ProductKinds: ReportEntity[]
+  BuyerRootId: string
+}
+
+/** Reads current native choices from OUR SQL; no sync or 1C calls. */
+export async function getCurrentPriceTypeSalesScopeChoices(signal?: AbortSignal): Promise<CurrentPriceTypeSalesScopeChoices> {
+  const result = await apiRequest<unknown>('/report/datasets/27/current-scope', { signal })
+  if (!result || typeof result !== 'object') throw new Error('Некоректні поточні відбори продажів.')
+  const scope = result as Record<string, unknown>
+  const choices = (items: unknown): items is ReportEntity[] => Array.isArray(items)
+    && items.every(item => item && typeof item === 'object' && priceTypeSalesSourceId(item.Id) !== null
+      && typeof item.Name === 'string' && item.Name.trim().length > 0)
+    && new Set(items.map(item => String(item.Id).toUpperCase())).size === items.length
+  if (!choices(scope.Organizations) || !choices(scope.ProductKinds)
+    || typeof scope.BuyerRootId !== 'string' || scope.BuyerRootId.toUpperCase() !== EXACT_ONE_C_BUYER_ROOT_ID)
+    throw new Error('Некоректні поточні відбори продажів.')
+  return { Organizations: scope.Organizations, ProductKinds: scope.ProductKinds, BuyerRootId: scope.BuyerRootId.toUpperCase() }
 }
 
 export type ValuationAgreement = { Id: number; Name: string }

@@ -1,5 +1,8 @@
 import type { ReportDataset, ReportRequestBody } from '../types'
 import { revenueExactId } from './revenueComparison'
+import { dayOrganizationBasisConfigurationError, requestDayOrganizationBasis } from './dayOrganizationBasis'
+import { productClassification, requestProductClassification, requestSourceOrganizations,
+  requestSourceBuyerSubtree, sourceOrganizations, sourceBuyerSubtree } from './nativeExactFilters'
 
 export const DAY_ORGANIZATION_GROSS_PROFIT_SOURCE = 35
 export const DAY_ORGANIZATION_GROSS_PROFIT_TITLE = 'Валовий прибуток GBA за днем та організацією'
@@ -31,12 +34,18 @@ function validDate(value: string): boolean {
   return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === value
 }
 
+export function isDayOrganizationGrossProfitDataset(dataset: ReportDataset): boolean {
+  return dataset.DataSource === DAY_ORGANIZATION_GROSS_PROFIT_SOURCE && dataset.PeriodRequired === true
+    && dataset.PeriodSupported === true && dataset.Groupings.map(field => field.Type).join(',') === '3,4'
+    && dataset.Measurements.map(field => field.Type).join(',') === measures.join(',')
+    && dataset.Filters.map(field => field.Type).join(',') === '0,1,2,6,9'
+}
+
 export function dayOrganizationGrossProfitConfigurationError(data: ReportRequestBody, dataset?: ReportDataset): string | null {
+  const basisError = dayOrganizationBasisConfigurationError(data, dataset)
+  if (basisError) return basisError
   if (data.dataSource !== DAY_ORGANIZATION_GROSS_PROFIT_SOURCE) return null
-  if (dataset && (dataset.DataSource !== DAY_ORGANIZATION_GROSS_PROFIT_SOURCE || dataset.PeriodRequired !== true
-    || dataset.PeriodSupported !== true || dataset.Groupings.map(field => field.Type).join(',') !== '3,4'
-    || dataset.Measurements.map(field => field.Type).join(',') !== measures.join(',')
-    || dataset.Filters.map(field => field.Type).join(',') !== '0,1,2,6,9'))
+  if (dataset && !isDayOrganizationGrossProfitDataset(dataset))
     return 'Сервер не підтвердив набір валового прибутку GBA за днем.'
   if (!validDate(data.from) || !validDate(data.to) || data.from > data.to) return 'Оберіть один коректний період валового прибутку GBA.'
   if ((Date.parse(`${data.to}T00:00:00Z`) - Date.parse(`${data.from}T00:00:00Z`)) / 86400000 >= 31)
@@ -63,5 +72,15 @@ export function dayOrganizationGrossProfitConfigurationError(data: ReportRequest
         || (value.Value !== undefined && (!Number.isInteger(value.Value)
           || value.Value < -2147483648 || value.Value > 2147483647)))) return invalid
   }
+  const kind = requestProductClassification(data), organizations = requestSourceOrganizations(data), buyers = requestSourceBuyerSubtree(data)
+  const basis = requestDayOrganizationBasis(data)
+  const signed = basis === 1 || (basis == null && kind != null && organizations != null && buyers != null)
+  if (signed && (data.from !== data.to || data.selections.some(selection => selection.IsChecked !== false)))
+    return 'Продажі з поверненнями підтримують один день без додаткових локальних відборів.'
+  if (signed && (!productClassification(kind) || productClassification(kind)?.IsService !== false
+    || !sourceOrganizations(organizations) || !sourceBuyerSubtree(buyers)))
+    return 'Для продажів з поверненнями оберіть товар без послуг, організації та групу «Покупці» Fenix.'
+  if (signed && (Number(data.from.slice(0, 4)) < 2000 || Number(data.from.slice(0, 4)) > 7998))
+    return 'Оберіть підтримуваний день продажів з поверненнями: 2000–7998 роки.'
   return null
 }

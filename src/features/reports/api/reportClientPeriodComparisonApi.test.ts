@@ -18,7 +18,7 @@ it('reads PascalCase capabilities and preserves the exact saved two-window reque
   expect(template.Data).toEqual(data)
   vi.mocked(apiRequest).mockResolvedValue({})
   await createStockReport(template.Data)
-  expect(apiRequest).toHaveBeenLastCalledWith('/report/stocks/generate', { method: 'POST', body: data })
+  expect(apiRequest).toHaveBeenLastCalledWith('/report/stocks/generate', { method: 'POST', dedupe: false, body: data })
 })
 it.each([undefined, { Version: 2 }, { ...(clientComparisonDataset.Comparison as object), ColumnsSupported: true }])('refuses unavailable or incompatible comparison capabilities %#', async Comparison => {
   vi.mocked(apiRequest).mockResolvedValue([{ ...clientComparisonDataset, Comparison }])

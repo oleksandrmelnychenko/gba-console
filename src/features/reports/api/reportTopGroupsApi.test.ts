@@ -19,7 +19,7 @@ it.each([accountTop, { ...accountTop, Version: 7, Future: true }])('preserves na
   vi.mocked(apiRequest).mockResolvedValue({ ...original, Revision: 4 }); await saveServerReportTemplate(template)
   expect(apiRequest).toHaveBeenLastCalledWith('/report/templates/save', { method: 'POST', body: template })
   vi.mocked(apiRequest).mockResolvedValue({}); await createStockReport(template.Data)
-  expect(apiRequest).toHaveBeenLastCalledWith('/report/stocks/generate', { method: 'POST', body: template.Data })
+  expect(apiRequest).toHaveBeenLastCalledWith('/report/stocks/generate', { method: 'POST', dedupe: false, body: template.Data })
 })
 it('retains conflicting Pascal/camel fields received from a malformed template, allowing explicit refusal instead of collapsing them', async () => {
   const original = wire(accountTop); const duplicate = { ...original, Data: { ...original.Data, topGroups: { Version: 99 } } }

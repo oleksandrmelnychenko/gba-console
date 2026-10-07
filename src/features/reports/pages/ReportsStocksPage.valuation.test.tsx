@@ -22,7 +22,7 @@ function Providers({ children }: { children: ReactNode }) {
   return <MantineProvider env="test"><I18nProvider>{children}</I18nProvider></MantineProvider>
 }
 async function ready() {
-  const view = render(<Providers><ReportsStocksPage /></Providers>)
+  const view = render(<Providers><ReportsStocksPage consoleScope={false} /></Providers>)
   await screen.findByRole('button', { name: 'Продажі за днями' })
   return view
 }
@@ -136,7 +136,7 @@ describe('current stock valuation by exact client agreement', () => {
     await chooseDataset(valuationDataset.Name)
     await chooseAgreement()
     allowed = false
-    rerender(<Providers><ReportsStocksPage /></Providers>)
+    rerender(<Providers><ReportsStocksPage consoleScope={false} /></Providers>)
     fireEvent.submit(container.querySelector('form')!)
     expect(createStockReport).not.toHaveBeenCalled()
     expect((screen.getByRole('combobox', { name: 'Договір для оцінки' }) as HTMLInputElement).disabled).toBe(true)

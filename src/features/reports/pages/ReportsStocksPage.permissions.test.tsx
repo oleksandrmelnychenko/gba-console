@@ -48,7 +48,7 @@ describe('stock report permissions', () => {
   })
 
   it('offers native reports only, without mounting the archived source-register panel', () => {
-    render(<Providers><ReportsStocksPage /></Providers>)
+    render(<Providers><ReportsStocksPage consoleScope={false} /></Providers>)
     expect(screen.queryByRole('combobox', { name: 'Джерело звіту' })).toBeNull()
     expect(screen.queryByText('Консолідовані дані 1С')).toBeNull()
     expect((screen.getByRole('combobox', { name: 'Набір даних звіту' }) as HTMLInputElement).disabled).toBe(true)
@@ -59,7 +59,7 @@ describe('stock report permissions', () => {
   it('fails closed at submit when generate permission is absent', () => {
     const { container } = render(
       <Providers>
-        <ReportsStocksPage />
+        <ReportsStocksPage consoleScope={false} />
       </Providers>,
     )
 
@@ -78,7 +78,7 @@ describe('stock report permissions', () => {
 
     render(
       <Providers>
-        <ReportsStocksPage />
+        <ReportsStocksPage consoleScope={false} />
       </Providers>,
     )
 
@@ -95,7 +95,7 @@ describe('stock report permissions', () => {
     vi.useFakeTimers({ toFake: ['Date'] })
     vi.setSystemTime(new Date('2026-09-05T21:30:00Z'))
     try {
-      render(<Providers><ReportsStocksPage /></Providers>)
+      render(<Providers><ReportsStocksPage consoleScope={false} /></Providers>)
       expect((screen.getByLabelText('Від') as HTMLInputElement).value).toBe('2026-09-06')
       expect((screen.getByLabelText('До') as HTMLInputElement).value).toBe('2026-09-06')
     } finally {
@@ -105,7 +105,7 @@ describe('stock report permissions', () => {
   })
 
   it('does not grant generation rights when a ready preset is applied', () => {
-    const { container } = render(<Providers><ReportsStocksPage /></Providers>)
+    const { container } = render(<Providers><ReportsStocksPage consoleScope={false} /></Providers>)
     expect(screen.queryByRole('button', { name: 'Продажі за днями' })).toBeNull()
     expect((screen.getByRole('button', { name: 'Сформувати' }) as HTMLButtonElement).disabled).toBe(true)
     fireEvent.submit(container.querySelector('form')!)
@@ -117,7 +117,7 @@ describe('stock report permissions', () => {
     const saved = JSON.stringify([{ Name: 'Мій звіт', Data: { from: '2026-01-01' } }])
     localStorage.setItem('app_configs_reports_template:v1', saved)
     vi.mocked(createStockReport).mockRejectedValue(new Error('test request'))
-    const { container } = render(<Providers><ReportsStocksPage /></Providers>)
+    const { container } = render(<Providers><ReportsStocksPage consoleScope={false} /></Providers>)
     fireEvent.change(screen.getByLabelText('Від'), { target: { value: '2026-09-01' } })
     fireEvent.change(screen.getByLabelText('До'), { target: { value: '2026-09-03' } })
 
@@ -138,7 +138,7 @@ describe('stock report permissions', () => {
   it('explains denied report access without claiming the session expired', async () => {
     allowedPermissions.add(PermissionKeys.ReportsStocks.Report.Generate)
     vi.mocked(createStockReport).mockRejectedValue(new ApiError('Forbidden', 403, null))
-    const { container } = render(<Providers><ReportsStocksPage /></Providers>)
+    const { container } = render(<Providers><ReportsStocksPage consoleScope={false} /></Providers>)
     fireEvent.click(await screen.findByRole('button', { name: 'Продажі за товарами' }))
     fireEvent.submit(container.querySelector('form')!)
     await screen.findByText('Недостатньо прав для формування звіту. Зверніться до адміністратора щодо доступу до конструктора звітів.')

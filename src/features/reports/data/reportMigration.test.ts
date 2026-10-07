@@ -66,8 +66,8 @@ describe('per-implementation migration evidence', () => {
 
   it('keeps only BUG-1274 active rows and marks other executable rows ready-disabled', () => {
     const catalogue = catalogueFixture(), view = inspectCatalogueMigration(catalogue)
-    catalogue.Reports[0].Id = 'builtin:ЗадолженностьПоКонтрагентам'
-    catalogue.Reports[0].Name = 'ЗадолженностьПоКонтрагентам'
+    catalogue.Reports[0].Id = 'builtin:ВедомостьВзаиморасчетыСКонтрагентами'
+    catalogue.Reports[0].Name = 'ВедомостьВзаиморасчетыСКонтрагентами'
     expect(consoleReportAvailability(catalogue.Reports[0], view)).toBe('active')
     expect(consoleReportAvailability(catalogue.Reports[1], view)).toBe('hidden')
     catalogue.Reports.push({ Id: 'builtin:OtherReady', Name: 'OtherReady', Title: 'Інший готовий', Kind: 'builtin', Sources: [
@@ -79,7 +79,7 @@ describe('per-implementation migration evidence', () => {
     } } })
     expect(consoleReportAvailability(catalogue.Reports[3], refreshed)).toBe('ready_disabled')
     expect(filterConsoleMigrationCatalogue(catalogue, refreshed, { kind: null, world: null, status: null, dependency: null, search: '' })
-      .map(item => item.report.Id)).toEqual(['builtin:ЗадолженностьПоКонтрагентам', 'builtin:OtherReady'])
+      .map(item => item.report.Id)).toEqual(['builtin:ВедомостьВзаиморасчетыСКонтрагентами', 'builtin:OtherReady'])
   })
 
   it('rejects duplicate exact source identity while preserving valid UUID and storage string identifiers', () => {

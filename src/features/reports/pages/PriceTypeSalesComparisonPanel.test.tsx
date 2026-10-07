@@ -1,12 +1,13 @@
 import { MantineProvider } from '@mantine/core'
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { getOneCTurnoverScopes, searchDatasetReportValues } from '../api/reportsApi'
-import { PRICE_TYPE_ID, PRICE_TYPE_SCOPE } from '../data/priceTypeSalesComparison.test-fixtures'
+import { getCurrentPriceTypeSalesScopeChoices, getOneCTurnoverScopes, searchDatasetReportValues } from '../api/reportsApi'
+import { PRICE_TYPE_ID, PRICE_TYPE_SCOPE, priceTypeSalesComparisonCapability } from '../data/priceTypeSalesComparison.test-fixtures'
 import PriceTypeSalesComparisonPanel from './PriceTypeSalesComparisonPanel'
 
 vi.mock('../api/reportsApi', async original => ({
   ...await original<typeof import('../api/reportsApi')>(),
+  getCurrentPriceTypeSalesScopeChoices: vi.fn(),
   getOneCTurnoverScopes: vi.fn(),
   searchDatasetReportValues: vi.fn(),
 }))
@@ -14,6 +15,10 @@ vi.mock('../api/reportsApi', async original => ({
 describe('PriceTypeSalesComparisonPanel', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    vi.mocked(getCurrentPriceTypeSalesScopeChoices).mockResolvedValue({
+      Organizations: [{ Id: PRICE_TYPE_SCOPE.OrganizationIds[0], Name: 'Наша організація' }],
+      ProductKinds: [{ Id: PRICE_TYPE_SCOPE.ProductKindId, Name: 'Товар' }], BuyerRootId: PRICE_TYPE_SCOPE.BuyerRootId,
+    })
     vi.mocked(getOneCTurnoverScopes).mockResolvedValue([{
       Key: 'A'.repeat(64), Filters: structuredClone(PRICE_TYPE_SCOPE), OrganizationNames: ['Організація Fenix'],
       FirstDay: '2026-09-01', LastDay: '2026-09-30', LoadedDayCount: 30,
@@ -52,4 +57,53 @@ describe('PriceTypeSalesComparisonPanel', () => {
 
     expect(await screen.findByText(/немає завантажених продажів Fenix/)).toBeTruthy()
   })
+
+  it('selects current native organization and kind without captured turnover days or guessed IDs', async () => {
+    const onScopeChange = vi.fn()
+    const { rerender } = render(<MantineProvider env="test"><PriceTypeSalesComparisonPanel dataSource={27} disabled={false}
+      capability={priceTypeSalesComparisonCapability} value={{ Version: 1, SourceWorld: 1, PriceTypeId: PRICE_TYPE_ID, SalesBasis: 0 }}
+      scope={undefined} onChange={vi.fn()} onScopeChange={onScopeChange} /></MantineProvider>)
+    expect(screen.queryByRole('combobox', { name: 'Локальне покриття Fenix' })).toBeNull()
+    expect(screen.getByText(/відповідна клітинка та залежний підсумок/)).toBeTruthy()
+    fireEvent.click(screen.getByRole('combobox', { name: 'Організації поточних продажів' }))
+    fireEvent.click(await screen.findByRole('option', { name: 'Наша організація' }))
+    const partial = onScopeChange.mock.calls.at(-1)![0]
+    expect(partial).toEqual({ ...PRICE_TYPE_SCOPE, ProductKindId: '' })
+    rerender(<MantineProvider env="test"><PriceTypeSalesComparisonPanel dataSource={27} disabled={false}
+      capability={priceTypeSalesComparisonCapability} value={{ Version: 1, SourceWorld: 1, PriceTypeId: PRICE_TYPE_ID, SalesBasis: 0 }}
+      scope={partial} onChange={vi.fn()} onScopeChange={onScopeChange} /></MantineProvider>)
+    fireEvent.click(screen.getByRole('combobox', { name: 'Вид товару поточних продажів' }))
+    fireEvent.click(await screen.findByRole('option', { name: 'Товар' }))
+    expect(onScopeChange).toHaveBeenLastCalledWith(PRICE_TYPE_SCOPE)
+    expect(getOneCTurnoverScopes).not.toHaveBeenCalled()
+  })
+
+  it('displays omitted saved basis as signed and changes it only on explicit choice', async () => {
+    const onChange = vi.fn()
+    render(<MantineProvider env="test"><PriceTypeSalesComparisonPanel dataSource={27} disabled={false}
+      capability={priceTypeSalesComparisonCapability} value={{ Version: 1, SourceWorld: 1, PriceTypeId: PRICE_TYPE_ID }}
+      scope={PRICE_TYPE_SCOPE} onChange={onChange} onScopeChange={vi.fn()} /></MantineProvider>)
+    expect((screen.getByRole('combobox', { name: 'Основа продажів' }) as HTMLInputElement).value).toBe('Збережені рухи 1С')
+    await waitFor(() => expect(getOneCTurnoverScopes).toHaveBeenCalled())
+    expect(getCurrentPriceTypeSalesScopeChoices).not.toHaveBeenCalled()
+    expect(onChange).not.toHaveBeenCalled()
+    fireEvent.click(screen.getByRole('combobox', { name: 'Основа продажів' }))
+    fireEvent.click(screen.getByRole('option', { name: 'Наші продажі й повернення' }))
+    expect(onChange).toHaveBeenCalledWith({ Version: 1, SourceWorld: 1, PriceTypeId: PRICE_TYPE_ID, SalesBasis: 0 })
+  })
+
+  it('retains saved scope despite missing current choices and does not call an unadvertised API', async () => {
+    const capability = { ...priceTypeSalesComparisonCapability }
+    delete capability.OperationalScopePath
+    delete capability.OperationalLookupFields
+    const onScopeChange = vi.fn()
+    render(<MantineProvider env="test"><PriceTypeSalesComparisonPanel dataSource={27} disabled={false}
+      capability={capability} value={{ Version: 1, SourceWorld: 1, PriceTypeId: PRICE_TYPE_ID, SalesBasis: 0 }}
+      scope={PRICE_TYPE_SCOPE} onChange={vi.fn()} onScopeChange={onScopeChange} /></MantineProvider>)
+    expect(screen.getByText(/Збережені точні відбори можна використовувати/)).toBeTruthy()
+    expect(getCurrentPriceTypeSalesScopeChoices).not.toHaveBeenCalled()
+    expect(getOneCTurnoverScopes).not.toHaveBeenCalled()
+    expect(onScopeChange).not.toHaveBeenCalled()
+  })
+
 })
