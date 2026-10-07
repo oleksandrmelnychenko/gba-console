@@ -52,7 +52,7 @@ Its typed request identifiers and saved calculation mode are preserved.
 Six PDFs also passed the production converter in an isolated image without
 network access. This does not prove Console download, visual layout or complete
 numeric acceptance. The integrated code is pushed to main and built as Console
-revision `753e7f19`, version `2026.10.07.0758`. The fresh API, Analytics and
+revision `7abb025e`, version `2026.10.07.0920`. The fresh API, Analytics and
 Console image pins are prepared in the separate integrated release overlay.
 
 DEV entered an independently configured `dev-full-reset-20261007-no-backups`
@@ -69,7 +69,7 @@ succeeded. React Doctor scanned the same four changed files at the pre-fix
 revision and current code: 93/100 in both runs, with the same five existing
 issues. This comparison is separate from the earlier broader 88/100 scan.
 
-The final prepared API/Analytics code revision is `4a0ee2424`, including the
+The final prepared API/Analytics code revision is `d4dd998a2`, including the
 native organization/currency captions, supplier title, short-table PDF
 pagination and the concurrent main sales write-off fix. Server verification
 passed 96/96 final layout/caption cases, the required owned SQL case 1/1 and
@@ -87,3 +87,23 @@ maintenance overlay still temporarily disables writers during cutover; this
 report correction did not redeploy DEV or override maintenance. The user
 confirmed an upcoming full data reset. Recheck current data, live writers,
 image binding and authenticated Excel/PDF downloads after reset and sync.
+
+The regional matrix follow-up exercised the actual SQL reader on a disposable
+synthetic database, then the actual Console normalizer and XLSX/pdfMake
+exporters for known and unknown quantities. All four files were generated;
+both Excel files preserve exact DTO quantities, and both final PDF pages were
+rendered and visually checked. The PDF font's missing empty-set glyph was
+corrected to «н/д» only in PDF output (16/16 focused Console tests); exact buyer
+filters now say «Покупець» in dataset-39 metadata and both summaries (78/78
+focused server tests). Final matrix browser acceptance must use the existing
+regional panel and its exports, not only the generic pivot. These synthetic
+checks do not certify current data or the original stock formula.
+Matched full React Doctor scans remained 70/100 across 2,636 files with unchanged
+issue counts; the two-file diff scored 93/100. The new Console image's revision,
+build metadata and changed export asset hash match the production build.
+Receipts: `/private/gba-1274-regional-console-export-20261007`.
+
+The independent reset was observed actively deleting from our DEV database
+at 06:08:14 UTC. The earlier preflight status file was stale. Preserve its
+maintenance configuration; report runtime and post-reset/authenticated
+acceptance remain pending.
