@@ -28,8 +28,10 @@ A fresh authenticated six-form browser run, current backend/image binding,
 and same-generation Excel/PDF downloads remain acceptance requirements. Old
 sessions fail normal refresh with «Refresh token invalid». The current SQL
 verification is a production-repository and workbook-writer check, not a claim
-of authenticated UI acceptance or complete source parity. 1C workers and
-connections remain disabled.
+of authenticated UI acceptance or complete source parity. The prepared report
+release disables source workers and scheduling. The separate DEV maintenance
+operation may use its own source connection; zero live source sessions must be
+checked again after it finishes. Report verification opened no source connection.
 
 The six production requests now generate previews and Excel workbooks on our
 SQL. The checked supplier and selected-group matrix requests have defined
@@ -67,14 +69,17 @@ succeeded. React Doctor scanned the same four changed files at the pre-fix
 revision and current code: 93/100 in both runs, with the same five existing
 issues. This comparison is separate from the earlier broader 88/100 scan.
 
-The final prepared API/Analytics code revision is `c738e861f`, including the
+The final prepared API/Analytics code revision is `4a0ee2424`, including the
 native organization/currency captions, supplier title, short-table PDF
 pagination and the concurrent main sales write-off fix. Server verification
 passed 96/96 final layout/caption cases, the required owned SQL case 1/1 and
 the sales source-policy gate 9/9. Eight regression PDFs converted without
 networking (14 pages), with text origins inside page bounds; six corrected
 sampled pages were visually inspected. These fixtures do not replace a real
-six-form Console run on post-reset data.
+six-form Console run on post-reset data. The legacy settlement default's
+manager/region header wrapping follow-up passed 60/60 focused server tests.
+Its synthetic PDF was visually checked with readable headers and unchanged
+amounts/totals; this is separate from current-data and browser acceptance.
 
 Both normal report release overlays now enable local business background
 writers and disable the 31 scheduler/source-sync flags. The independent
