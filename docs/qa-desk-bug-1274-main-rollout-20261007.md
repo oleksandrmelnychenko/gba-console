@@ -66,3 +66,19 @@ ordinary mode, saved legacy modes and explicit mode changes. Production build
 succeeded. React Doctor scanned the same four changed files at the pre-fix
 revision and current code: 93/100 in both runs, with the same five existing
 issues. This comparison is separate from the earlier broader 88/100 scan.
+
+The final prepared API/Analytics code revision is `c738e861f`, including the
+native organization/currency captions, supplier title, short-table PDF
+pagination and the concurrent main sales write-off fix. Server verification
+passed 96/96 final layout/caption cases, the required owned SQL case 1/1 and
+the sales source-policy gate 9/9. Eight regression PDFs converted without
+networking (14 pages), with text origins inside page bounds; six corrected
+sampled pages were visually inspected. These fixtures do not replace a real
+six-form Console run on post-reset data.
+
+Both normal report release overlays now enable local business background
+writers and disable the 31 scheduler/source-sync flags. The independent
+maintenance overlay still temporarily disables writers during cutover; this
+report correction did not redeploy DEV or override maintenance. The user
+confirmed an upcoming full data reset. Recheck current data, live writers,
+image binding and authenticated Excel/PDF downloads after reset and sync.
