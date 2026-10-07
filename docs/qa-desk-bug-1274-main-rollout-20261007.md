@@ -39,10 +39,18 @@ their required classification or complete period publications. Generation
 alone does not close BUG-1274; current data coverage and authenticated browser
 downloads remain open.
 
+Defined supplier and matrix values are not full calculation acceptance. The
+checked supplier cost/profit unit is unverified, original storage-unit quantity
+equivalence is open, and complete return profit needs exact return cost and
+supplier attribution. The matrix's source stock formula and retained selector
+mapping also remain open. The supplier measurement picker now follows the
+selected calculation: ordinary signed quantity or saved register quantity.
+Its typed request identifiers and saved calculation mode are preserved.
+
 Six PDFs also passed the production converter in an isolated image without
 network access. This does not prove Console download, visual layout or complete
 numeric acceptance. The integrated code is pushed to main and built as Console
-revision `e085e556`, version `2026.10.07.0731`. The fresh API, Analytics and
+revision `753e7f19`, version `2026.10.07.0758`. The fresh API, Analytics and
 Console image pins are prepared in the separate integrated release overlay.
 
 DEV entered an independently configured `dev-full-reset-20261007-no-backups`
@@ -52,3 +60,9 @@ stopped. The new integrated release awaits maintenance clearance. It is not
 claimed to be the active DEV Console. Current SQL and browser acceptance must
 be repeated on the resulting synchronized database; previous receipts retain
 their original observation scope.
+
+The quantity-caption follow-up passed 50/50 focused Console tests, including
+ordinary mode, saved legacy modes and explicit mode changes. Production build
+succeeded. React Doctor scanned the same four changed files at the pre-fix
+revision and current code: 93/100 in both runs, with the same five existing
+issues. This comparison is separate from the earlier broader 88/100 scan.
