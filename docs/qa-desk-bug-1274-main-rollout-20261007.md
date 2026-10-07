@@ -38,3 +38,17 @@ contain unknown values because the current synchronized data does not cover
 their required classification or complete period publications. Generation
 alone does not close BUG-1274; current data coverage and authenticated browser
 downloads remain open.
+
+Six PDFs also passed the production converter in an isolated image without
+network access. This does not prove Console download, visual layout or complete
+numeric acceptance. The integrated code is pushed to main and built as Console
+revision `e085e556`, version `2026.10.07.0731`. The fresh API, Analytics and
+Console image pins are prepared in the separate integrated release overlay.
+
+DEV entered an independently configured `dev-full-reset-20261007-no-backups`
+maintenance mode during release preparation. Its existing API runtime and
+disabled background writers were restored; Analytics and Console remain
+stopped. The new integrated release awaits maintenance clearance. It is not
+claimed to be the active DEV Console. Current SQL and browser acceptance must
+be repeated on the resulting synchronized database; previous receipts retain
+their original observation scope.
