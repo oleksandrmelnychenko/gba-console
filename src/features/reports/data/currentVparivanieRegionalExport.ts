@@ -47,7 +47,7 @@ export function currentRegionalPdfDefinition(result: CurrentVparivanieRegionalRe
     { text: CURRENT_REGIONAL_TITLE, style: 'title' },
     { text: `Період продажів: ${result.From} — ${result.To}. Залишки поточні.`, margin: [0, 3, 0, 6] },
     ...result.Request.Filters.map(filter => ({ text: `${filter.Field} · ${filter.Condition}: ${filter.Values.join(', ')}` })),
-    { text: 'Порожня клітинка: факт відсутній. ∅: кількість невідома.', margin: [0, 4, 0, 8] },
+    { text: 'Порожня клітинка: факт відсутній. н/д: кількість невідома.', margin: [0, 4, 0, 8] },
   ]
   const bands = columns.length ? Array.from({ length: Math.ceil(columns.length / 8) }, (_, index) =>
     columns.slice(index * 8, index * 8 + 8)) : [[]]
@@ -56,7 +56,11 @@ export function currentRegionalPdfDefinition(result: CurrentVparivanieRegionalRe
       ...result.Rows.map(row => {
         const cells = new Map(row.Cells.map(cell => [currentVparivanieV2CellKey(cell), cell]))
         return [row.Article ?? '', row.Name ?? '', row.Description ?? '', row.Group ?? '', row.OE ?? '',
-          row.Size ?? '', row.Top ?? '', ...band.map(key => currentRegionalCellText(cells.get(key)))]
+          row.Size ?? '', row.Top ?? '', ...band.map(key => {
+            const cell = cells.get(key)
+            // The bundled Roboto PDF font has no empty-set glyph.
+            return cell?.Quantity === null ? 'н/д' : currentRegionalCellText(cell)
+          })]
       })]
     content.push({ table: { headerRows: 1, widths: [70, 100, 120, 70, 60, 45, 35, ...band.map(() => 55)], body },
       layout: 'lightHorizontalLines' })

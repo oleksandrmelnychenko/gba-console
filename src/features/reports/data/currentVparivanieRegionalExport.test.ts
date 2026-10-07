@@ -25,4 +25,9 @@ it('preserves an explicit unknown quantity independently of an absent regional c
   value.Rows.push({ ...value.Rows[0], ProductId: '2', Cells: value.Rows[0].Cells.slice(0, 2) }); value.ProductCount = 2
   const rows = currentRegionalSheets(value).matrix
   expect(rows[4].at(-4)).toBe('∅'); expect(rows[5].slice(-2)).toEqual(['', ''])
+  const tables = currentRegionalPdfDefinition(value).content.filter(part => 'table' in part)
+  expect(tables[0]).toHaveProperty('table.body.1.7', 'н/д')
+  expect(tables[0]).toHaveProperty('table.body.2.7', 'н/д')
+  expect(tables[0]).toHaveProperty('table.body.2.9', '')
+  expect(tables[0]).toHaveProperty('table.body.2.10', '')
 })
