@@ -6,7 +6,7 @@ import { FENIX_BUYERS_ROOT_ID, nativeExactFiltersConfigurationError, normalizeNa
 import { buildReportBuilderRequest } from './reportBuilderRequest'
 import { datasetConfigurationError, datasetGroupings, datasetPresetRequest, defaultDatasetRequest } from './reportDatasets'
 import { retainStoredTemplateFields } from './reportTemplateDraft'
-import { isSupplierBasisCapability, requestSupplierBasis, rowGroupsForSupplierBasis } from './supplierBasis'
+import { isSupplierBasisCapability, requestSupplierBasis, rowGroupsForSupplierBasis, supplierBasisFormDataset } from './supplierBasis'
 import { supplierBatchGrossProfitConfigurationError } from './supplierBatchGrossProfit'
 
 const capability = { Version: 1, DefaultBasis: 0, Bases: [0, 1], MaximumDays: 31,
@@ -19,6 +19,26 @@ const dataset: ReportDataset = {
   Measurements: [0, 2, 3, 4, 6, 7, 8, 10, 12, 14].map(Type => ({ Type, Name: `Показник ${Type}` })),
   Filters: [0, 1, 17].map(Type => ({ Type, Name: `Фільтр ${Type}` })), Limitations: [],
 }
+
+it.each([0, 1, null, undefined])('uses the executed quantity caption for basis %s without changing server metadata', basis => {
+  const original = structuredClone(dataset)
+  const form = supplierBasisFormDataset(dataset, basis)!
+  expect(form.Measurements[0].Name).toBe(basis === 0
+    ? 'Кількість продажів мінус повернення' : 'Кількість за регістром собівартості 1С')
+  expect(form.Measurements.slice(1)).toEqual(dataset.Measurements.slice(1))
+  expect(form.Measurements[1]).toBe(dataset.Measurements[1])
+  expect(form.Groupings).toBe(dataset.Groupings)
+  expect(dataset).toEqual(original)
+})
+
+it('does not relabel unsupported datasets or invalid supplier calculations', () => {
+  expect(supplierBasisFormDataset(undefined, 0)).toBeUndefined()
+  for (const basis of ['0', true, 2]) expect(supplierBasisFormDataset(dataset, basis)).toBe(dataset)
+  const unsupported = { ...dataset, supplierBasis: undefined }
+  const other = { ...dataset, DataSource: 35 }
+  expect(supplierBasisFormDataset(unsupported, 0)).toBe(unsupported)
+  expect(supplierBasisFormDataset(other, 0)).toBe(other)
+})
 
 it('admits the precise ordinary contract with either casing and rejects inconsistent server declarations', () => {
   const camel = Object.fromEntries(Object.entries(capability).map(([key, value]) =>

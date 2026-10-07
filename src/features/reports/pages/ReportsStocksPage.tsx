@@ -190,7 +190,7 @@ import { useReportGroupingOrdering } from '../hooks/useReportGroupingOrdering'
 import type { ReportGroupingLayout } from '../data/reportGroupingLayout'
 import { DayOrganizationBasisSelect } from './DayOrganizationBasisSelect'
 import { requestDayOrganizationBasis } from '../data/dayOrganizationBasis'
-import { requestSupplierBasis, rowGroupsForSupplierBasis } from '../data/supplierBasis'
+import { requestSupplierBasis, rowGroupsForSupplierBasis, supplierBasisFormDataset } from '../data/supplierBasis'
 import { SupplierBasisSelect } from './SupplierBasisSelect'
 import { productClassification as parseProductClassification, sourceOrganizations as parseSourceOrganizations, sourceBuyerSubtree as parseSourceBuyerSubtree, requestProductClassification, requestSourceOrganizations, requestSourceBuyerSubtree, FENIX_BUYERS_ROOT_ID } from '../data/nativeExactFilters'
 import { DAY_ORGANIZATION_GOODS_KIND_ID, DAY_ORGANIZATION_SAVED_ORGANIZATION_IDS } from '../data/dayOrganizationGrossProfit'
@@ -360,7 +360,8 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
   const periodSupported = dataset?.PeriodSupported !== false
   const [selectedMeasurements, setMeasurements] = useValueState<ReportMeasurementGroup[]>(createDefaultMeasurementGroups)
   const priceTypeDataset = useMemo(() => priceTypeSalesFormDataset(dataset, priceTypeSalesComparison), [dataset, priceTypeSalesComparison])
-  const measurements = useMemo(() => datasetMeasurements(priceTypeDataset, flattenCheckedMeasurements(selectedMeasurements)), [priceTypeDataset, selectedMeasurements])
+  const supplierDataset = useMemo(() => supplierBasisFormDataset(priceTypeDataset, supplierBasis), [priceTypeDataset, supplierBasis])
+  const measurements = useMemo(() => datasetMeasurements(supplierDataset, flattenCheckedMeasurements(selectedMeasurements)), [supplierDataset, selectedMeasurements])
   const presets = useMemo(() => datasetPresets(dataset), [dataset])
   const groupingOrdering = useReportGroupingOrdering()
   const { rowGroups, setRowGroups, colGroups, setColGroups, ordering } = groupingOrdering

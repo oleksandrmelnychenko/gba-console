@@ -14,6 +14,15 @@ export function requestSupplierBasis(value: object): unknown {
   return key === undefined ? undefined : (value as JsonRecord)[key]
 }
 
+/** The quantity label follows the executed calculation, including saved legacy requests. */
+export function supplierBasisFormDataset(dataset: ReportDataset | undefined, basis: unknown): ReportDataset | undefined {
+  if (dataset?.DataSource !== 38 || !isSupplierBasisCapability(dataset.supplierBasis)
+    || (basis != null && basis !== 0 && basis !== 1)) return dataset
+  const caption = basis === 0 ? 'Кількість продажів мінус повернення' : 'Кількість за регістром собівартості 1С'
+  if (!dataset.Measurements.some(field => field.Type === 0 && field.Name !== caption)) return dataset
+  return { ...dataset, Measurements: dataset.Measurements.map(field => field.Type === 0 ? { ...field, Name: caption } : field) }
+}
+
 /** An explicit ordinary choice replaces only the receipt warehouse dimension. */
 export function rowGroupsForSupplierBasis(basis: 0 | 1, rows: ReportGroupingItem[],
   available: readonly ReportGroupingItem[]): ReportGroupingItem[] {

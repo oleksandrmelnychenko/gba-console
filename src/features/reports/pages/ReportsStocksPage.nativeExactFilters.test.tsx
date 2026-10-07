@@ -308,6 +308,7 @@ describe('exact Fenix filters in the report constructor', () => {
     await waitFor(() => expect(createStockReport).toHaveBeenCalledOnce())
     const submitted = vi.mocked(createStockReport).mock.calls[0][0]
     expect(submitted).toMatchObject({ dataSource: 38, supplierBasis: 0, from: '2026-07-01', to: '2026-07-31' })
+    expect((screen.getByRole('checkbox', { name: 'Кількість продажів мінус повернення' }) as HTMLInputElement).checked).toBe(true)
     expect(submitted.sorted.Row.map(field => field.type)).toEqual([78, 4, 21])
   })
 
@@ -325,6 +326,7 @@ describe('exact Fenix filters in the report constructor', () => {
     await waitFor(() => expect(createStockReport).toHaveBeenCalledOnce())
     const submitted = vi.mocked(createStockReport).mock.calls[0][0]
     expect(submitted.supplierBasis).toBe(basis)
+    expect((screen.getByRole('checkbox', { name: 'Кількість за регістром собівартості 1С' }) as HTMLInputElement).checked).toBe(true)
     expect(submitted.sorted.Row.map(field => field.type)).toEqual([73, 4, 21])
     fireEvent.click(screen.getByRole('button', { name: 'Шаблони' }))
     fireEvent.click(screen.getByRole('button', { name: 'Оновити шаблон' }))
@@ -354,6 +356,7 @@ describe('exact Fenix filters in the report constructor', () => {
     await waitFor(() => expect(createStockReport).toHaveBeenCalledTimes(2))
     const submitted = vi.mocked(createStockReport).mock.calls[1][0]
     expect(submitted.supplierBasis).toBe(0)
+    expect((screen.getByRole('checkbox', { name: 'Кількість продажів мінус повернення' }) as HTMLInputElement).checked).toBe(true)
     expect(submitted.sorted.Row.map(field => field.type)).toEqual([78, 4, 21])
     expect(submitted.selections).toEqual(data.selections)
   })
