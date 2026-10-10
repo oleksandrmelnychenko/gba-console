@@ -1,3 +1,4 @@
+import { originalNormalPeriodError } from './originalNormalPeriod'
 import type { ReportDataset, ReportRequestBody } from '../types'
 import { revenueExactId } from './revenueComparison'
 import { dayOrganizationBasisConfigurationError, requestDayOrganizationBasis } from './dayOrganizationBasis'
@@ -48,7 +49,12 @@ export function dayOrganizationGrossProfitConfigurationError(data: ReportRequest
   if (dataset && !isDayOrganizationGrossProfitDataset(dataset))
     return 'Сервер не підтвердив набір валового прибутку GBA за днем.'
   if (!validDate(data.from) || !validDate(data.to) || data.from > data.to) return 'Оберіть один коректний період валового прибутку GBA.'
-  if ((Date.parse(`${data.to}T00:00:00Z`) - Date.parse(`${data.from}T00:00:00Z`)) / 86400000 >= 31)
+  const normal = requestDayOrganizationBasis(data) === 0 && requestSourceOrganizations(data) != null
+    && requestSourceBuyerSubtree(data) != null && productClassification(requestProductClassification(data))?.SourceWorld === 0
+  if (normal && data.from >= '2025-01-01') {
+    const error = originalNormalPeriodError(data.from, data.to)
+    if (error) return error
+  } else if ((Date.parse(`${data.to}T00:00:00Z`) - Date.parse(`${data.from}T00:00:00Z`)) / 86400000 >= 31)
     return 'Період валового прибутку GBA може охоплювати щонайбільше 31 календарний день.'
   if (Object.entries(data).some(([key, value]) => unsupported.has(key.toLowerCase()) && value != null)) return invalid
   const sorted = data.sorted

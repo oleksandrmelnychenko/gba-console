@@ -1,3 +1,4 @@
+import { originalNormalPeriodError } from './originalNormalPeriod'
 import type { ReportCatalogueEntry } from '../types'
 import { plannedPeriodError } from './originalPlannedCash'
 export const cashDefinition = { source: '977cb58d-ff0b-46b7-90fd-124a560ec6ff', name: 'ВедомостьДенежныеСредства', definition: '51785ecc8fb8b57fb53b4728bc3a2552c3352d5f8d5c2549237f351a7bedbdcd',
@@ -46,8 +47,10 @@ function readFilter(v: unknown): CashFilter {
   if (!object(v) || !field(v.Field) || !hex(v.Reference, 32) || (v.Field === 'BankAccountCash' ? !hex(v.Type, 2) || !hex(v.Table, 8) : v.Type !== null || v.Table !== null)) throw invalid()
   return { Field: v.Field, Reference: v.Reference, Type: v.Type === null ? null : String(v.Type), Table: v.Table === null ? null : String(v.Table) }
 }
+export const cashPeriodError = (from: string, through: string): string | null => from >= '2025-01-01'
+  ? originalNormalPeriodError(from, through) : plannedPeriodError(from, through)
 export function cashRequest(capability: CashCapability, from: string, through: string, filters: readonly CashFilter[], turnover: boolean): CashRequest {
-  if (!isCashCapability(capability) || !capability.Executable || plannedPeriodError(from, through) || filters.length > 256
+  if (!isCashCapability(capability) || !capability.Executable || cashPeriodError(from, through) || filters.length > 256
     || new Set(filters.map(cashFilterKey)).size !== filters.length) throw invalid()
   return { Version: 1, World: capability.World, SourceId: capability.SourceId, DefinitionSha256: capability.DefinitionSha256, From: from, Through: through,
     Filters: filters.map(readFilter), IncludeTurnover: turnover }

@@ -1,3 +1,4 @@
+import { originalNormalPeriodError } from './originalNormalPeriod'
 import { workbookConfigurationError } from './workbookPresentation'
 import type { ReportDataset, ReportFilterExpressionCapabilities, ReportGroupingItem, ReportRequestBody, ReportSourceBuyerSubtree } from '../types'
 import { formatKyivBusinessDate } from '../../../shared/date/dateTime'
@@ -23,6 +24,7 @@ export const GROUPED_SETTLEMENT_MEASURES = [88, 89, 90, 91] as const
 export type GroupedSettlementPeriod = { Version: 1; SourceWorld: 'Fenix' | 'Amg'; CurrencyBasis: 'SettlementCurrency' }
 export type GroupedSettlementCapability = {
   Version: 1; MaximumDays: 31; CurrencyBasis: 'SettlementCurrency'; UsesCurrentNativeBuyerAgreements: true
+  OriginalNormalMaximumMonths?: 120; OriginalNormalMinimumDate?: '2025-01-01'
   UsesCurrentNativeSupplierAgreements?: true
   SourceAttributeWorlds?: ['Fenix']; AdditionalFields?: ['Основний менеджер покупця', 'Код по региону']
   PreservesUnavailableValues: true; RequiresCommonSourceObservation: false; CurrentDaySupported: true
@@ -71,9 +73,13 @@ export function groupedSettlementCapability(value: unknown): GroupedSettlementCa
   if (supplier.length > 1) return null
   const attributes = record(value) ? aliases(value, 'SourceAttributeWorlds') : []
   if (attributes.length > 1) return null
+  const normal = record(value) ? aliases(value, 'OriginalNormalMaximumMonths') : []
+  if (normal.length > 1) return null
   const names: readonly string[] = [...capabilityFields, ...(supplier.length ? ['UsesCurrentNativeSupplierAgreements'] : []),
-    ...(attributes.length ? ['SourceAttributeWorlds', 'AdditionalFields'] : [])]
+    ...(attributes.length ? ['SourceAttributeWorlds', 'AdditionalFields'] : []),
+    ...(normal.length ? ['OriginalNormalMaximumMonths', 'OriginalNormalMinimumDate'] : [])]
   const normalized = fields(value, names)
+  if (normal.length && (normalized?.OriginalNormalMaximumMonths !== 120 || normalized?.OriginalNormalMinimumDate !== '2025-01-01')) return null
   if (attributes.length && (!supplier.length || !normalized || !Array.isArray(normalized.SourceAttributeWorlds)
     || normalized.SourceAttributeWorlds.join(',') !== 'Fenix' || !Array.isArray(normalized.AdditionalFields)
     || normalized.AdditionalFields.join('|') !== 'Основний менеджер покупця|Код по региону')) return null
@@ -155,10 +161,11 @@ export function groupedWorkbookRequest(request: ReportRequestBody, currencyAxis?
   return { ...request, sorted: { ...request.sorted, Row: request.sorted.Row.filter(row => row.type !== 41) } }
 }
 
-function periodError(from: string, to: string, today: string): string | null {
+function periodError(from: string, to: string, today: string, normal: boolean): string | null {
   const valid = (day: string) => /^\d{4}-\d\d-\d\d$/.test(day) && day >= '1900-01-01' && day <= '7998-12-31'
     && Number.isFinite(Date.parse(`${day}T00:00:00Z`)) && new Date(`${day}T00:00:00Z`).toISOString().slice(0, 10) === day
   if (!valid(from) || !valid(to) || !valid(today) || from > to || to > today) return 'Оберіть коректний київський період до сьогодні включно.'
+  if (normal) return originalNormalPeriodError(from, to)
   return (Date.parse(`${to}T00:00:00Z`) - Date.parse(`${from}T00:00:00Z`)) / 86_400_000 >= 31
     ? 'Період взаєморозрахунків може охоплювати щонайбільше 31 день.' : null
 }
@@ -179,7 +186,11 @@ export function groupedSettlementConfigurationError(data: ReportRequestBody, dat
   const allowed = new Set(['datasource', 'from', 'to', 'sorted', 'selections', 'groupedsettlementperiod', 'filterexpression', 'sourcebuyersubtree', 'sourcecounterpartygroups', 'workbookpresentation'])
   if (Object.entries(data).some(([key, value]) => !allowed.has(key.toLowerCase()) && value != null))
     return 'Групові взаєморозрахунки не поєднуються з точним договором, перерахунком валют або іншими перетвореннями.'
-  const dayError = periodError(data.from, data.to, today)
+  const sourceBuyer = aliases(data, 'SourceBuyerSubtree')
+  const normal = selector.SourceWorld === 'Fenix' && sourceBuyer.length === 1
+    && (data as unknown as JsonRecord)[sourceBuyer[0]] != null
+    && (!dataset || groupedSettlementCapability(dataset.groupedSettlementPeriod)?.OriginalNormalMaximumMonths === 120)
+  const dayError = periodError(data.from, data.to, today, normal)
   if (dayError) return dayError
   const rows = Array.isArray(data.sorted?.Row) ? data.sorted.Row.map(item => item?.type) : null
   if (!GROUPED_SETTLEMENT_LAYOUTS.some(layout => exact(rows, layout)) || data.sorted?.Col?.length !== 0

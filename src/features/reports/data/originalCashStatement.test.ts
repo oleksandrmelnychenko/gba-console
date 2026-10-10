@@ -69,3 +69,11 @@ describe('exact original977 cash period', () => {
     expect(cashExportError(value)).not.toBeNull(); expect(() => cashMatrix(value)).toThrow()
   })
 })
+
+it('builds a complete normal cash period without widening the planned cash form', () => {
+  const query = cashRequest(cashCapabilityFixture(), '2025-01-01', '2026-10-09', [], false)
+  expect(query.From).toBe('2025-01-01')
+  expect(query.Through).toBe('2026-10-09')
+  expect(() => cashRequest(cashCapabilityFixture(), '2025-01-01', '2035-01-01', [], false)).toThrow()
+  expect(() => cashRequest(cashCapabilityFixture(), '2024-01-01', '2025-10-09', [], false)).toThrow()
+})

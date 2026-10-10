@@ -4,7 +4,7 @@ import { useI18n } from '../../../shared/i18n/useI18n'
 import { readOriginalCashStatement } from '../api/originalCashStatementApi'
 import { cashAccountKey, cashFields, cashFilterKey, cashLabels, cashRequest, type CashCapability, type CashChoice, type CashField, type CashFilter, type CashResult } from '../data/originalCashStatement'
 import { cashCsv, cashExportError, cashHeaders, cashPdf, cashValues, cashXlsx } from '../data/originalCashStatementExport'
-import { plannedPeriodError } from '../data/originalPlannedCash'
+import { cashPeriodError } from '../data/originalCashStatement'
 import { useReportRunState } from '../hooks/useReportRunState'
 import { OriginalPeriodDateInputs } from './WarehousePeriodControls'
 const formats = ['csv', 'xlsx', 'pdf'] as const
@@ -41,7 +41,7 @@ function useCashRun({ capability, callerKey, canGenerate, from, through, filters
   const run = useReportRunState<CashResult>(key), active = useRef<AbortController | null>(null), latest = useRef(key), [exporting, setExporting] = useState(false)
   const activeExport = useRef<AbortController | null>(null)
   useEffect(() => { latest.current = key; return () => { latest.current = ''; active.current?.abort(); activeExport.current?.abort() } }, [key])
-  const allowed = canGenerate && !!callerKey && capability.Executable && capability.World === 'fenix', error = plannedPeriodError(from, through), result = run.lastRun
+  const allowed = canGenerate && !!callerKey && capability.Executable && capability.World === 'fenix', error = cashPeriodError(from, through), result = run.lastRun
   function invalidate() { latest.current = ''; active.current?.abort(); activeExport.current?.abort(); run.clear() }
   async function generate() {
     if (!allowed || error || run.isLoading || exporting) return

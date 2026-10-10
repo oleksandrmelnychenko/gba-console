@@ -1,3 +1,4 @@
+import { originalNormalPeriodError } from './originalNormalPeriod'
 import type { ReportDataset, ReportRequestBody } from '../types'
 import { revenueExactId } from './revenueComparison'
 import { requestSourceBuyerSubtree, sourceBuyerSubtree } from './nativeExactFilters'
@@ -63,7 +64,11 @@ export function supplierBatchGrossProfitConfigurationError(data: ReportRequestBo
     return 'Для піддерева «Покупці» потрібні база Fenix і підтверджений граф покупців.'
   if (!validDate(data.from) || !validDate(data.to) || data.from > data.to)
     return 'Оберіть один коректний період партійного прибутку.'
-  if ((Date.parse(`${data.to}T00:00:00Z`) - Date.parse(`${data.from}T00:00:00Z`)) / 86400000 >= 31)
+  const normal = world === 0 && requestSupplierBasis(data) === 0 && data.sorted?.Row?.[0]?.type === 78
+  if (normal && data.from >= '2025-01-01') {
+    const error = originalNormalPeriodError(data.from, data.to)
+    if (error) return error
+  } else if ((Date.parse(`${data.to}T00:00:00Z`) - Date.parse(`${data.from}T00:00:00Z`)) / 86400000 >= 31)
     return 'Період партійного прибутку може охоплювати щонайбільше 31 день.'
   if (Object.entries(data).some(([key, value]) => forbidden.has(key.toLowerCase()) && value != null)) return invalid
   const sorted = data.sorted

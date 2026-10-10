@@ -106,3 +106,16 @@ it('clones stored aliases and includes grouped scope in builder, draft and file 
   expect(noCapability).not.toHaveProperty('groupedSettlementPeriod')
   expect(groupedSettlementRows(datasetGroupings(dataset), false).map(field => field.type)).toEqual([4, 76])
 })
+
+it('negotiates complete periods for both original Fenix layouts while preserving old capability limits', () => {
+  const cap = { ...dataset.groupedSettlementPeriod as object, OriginalNormalMaximumMonths: 120, OriginalNormalMinimumDate: '2025-01-01' }
+  expect(groupedSettlementCapability(cap)).not.toBeNull()
+  expect(groupedSettlementCapability({ ...cap, OriginalNormalMaximumMonths: 121 })).toBeNull()
+  expect(groupedSettlementCapability({ ...cap, originalNormalMaximumMonths: 120 })).toBeNull()
+  const current = { ...request(), from: '2025-01-01', to: '2026-10-09' }
+  const expanded = { ...dataset, groupedSettlementPeriod: cap }
+  expect(groupedSettlementConfigurationError(current, expanded, '2026-10-10')).toBeNull()
+  expect(groupedSettlementConfigurationError(groupedWorkbookRequest(current, false), expanded, '2026-10-10')).toBeNull()
+  expect(groupedSettlementConfigurationError(current, dataset, '2026-10-10')).toContain('31')
+  expect(groupedSettlementConfigurationError({ ...current, sourceBuyerSubtree: undefined }, expanded, '2026-10-10')).toContain('31')
+})

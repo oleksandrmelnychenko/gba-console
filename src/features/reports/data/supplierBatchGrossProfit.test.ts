@@ -167,3 +167,12 @@ it('uses the exact Fenix Buyers subtree only with Fenix and a matching server ca
   expect(requestSourceBuyerSubtree(template.Data)).toEqual(request.sourceBuyerSubtree)
   expect(datasetConfigurationError(template.Data, dataset)).toBeNull()
 })
+
+it('accepts the complete journal period for the Fenix operational registrar warehouse form', () => {
+  const request = defaultDatasetRequest(dataset, '2025-01-01', '2026-10-09')
+  request.supplierBasis = 0
+  request.sorted.Row[0] = { ...request.sorted.Row[0], type: 78 }
+  expect(supplierBatchGrossProfitConfigurationError(request)).toBeNull()
+  expect(supplierBatchGrossProfitConfigurationError({ ...request, supplierSourceWorld: 1 })).toContain('31')
+  expect(supplierBatchGrossProfitConfigurationError({ ...request, supplierBasis: 1 })).not.toBeNull()
+})

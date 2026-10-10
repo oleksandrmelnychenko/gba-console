@@ -155,3 +155,10 @@ it.each([null, 1])('preserves saved PascalCase basis %s through normalization, l
   expect(absentPreset.Data).not.toHaveProperty('dayOrganizationBasis')
   expect(absentPreset.Data).not.toHaveProperty('DayOrganizationBasis')
 })
+
+it('accepts a complete journal period only for the explicit original normal form', () => {
+  const request = { ...defaultDatasetRequest(dataset, '2025-01-01', '2026-10-09'), ...fullSourceFilters, dayOrganizationBasis: 0 }
+  expect(datasetConfigurationError(request, dataset)).toBeNull()
+  expect(dayOrganizationGrossProfitConfigurationError({ ...request, sourceBuyerSubtree: undefined })).toContain('31')
+  expect(dayOrganizationGrossProfitConfigurationError({ ...request, dayOrganizationBasis: 1 })).not.toBeNull()
+})
