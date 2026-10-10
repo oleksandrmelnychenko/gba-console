@@ -10,8 +10,20 @@ describe('original matrix transport', () => {
     expect(result.Columns.map(column => column.RegionCode)).toEqual([null, '', null, ''])
     expect(result.SourceParityVerified).toBe(false)
   })
-  it.each([['2025-02-30','2025-02-30'],['2025-01-31','2025-02-01'],['2024-12-31','2024-12-31'],['2025-04-23','2025-04-22']])('rejects unsupported period %s…%s', (from, through) => {
+  it.each([['2025-02-30','2025-02-30'],['2025-01-01','2035-01-01'],['2024-12-31','2024-12-31'],['2025-04-23','2025-04-22'],['2099-12-01','2100-01-01']])('rejects unsupported period %s…%s', (from, through) => {
     expect(() => matrixRequest(matrixCapability(), from, through, 3569, 'A'.repeat(32))).toThrow()
+  })
+  it.each([['2025-01-01','2026-10-09'],['2025-12-31','2026-01-01'],['2028-02-29','2028-03-01'],['2025-01-01','2034-12-31']])('preserves the full period %s…%s through request and response', (from, through) => {
+    const request = matrixRequest(matrixCapability(), from, through, 3569, 'A'.repeat(32))
+    const result = normalizeMatrixResult({ ...matrixFixture(), From: from, Through: through }, request)
+    expect([result.From, result.Through]).toEqual([from, through])
+    expect(result.Rows[1].Values[2]).toBe('-9007199254740993.125')
+    expect(result.SourceParityVerified).toBe(false)
+  })
+  it('rejects an invalid period echoed by a response even if its request was not constructed by the helper', () => {
+    const request = { ...matrixWire(), From: '2025-01-01', Through: '2035-01-01' }
+    expect(() => normalizeMatrixResult({ ...matrixFixture(), ...request }, request)).toThrow()
+    expect(isMatrixCapability({ ...matrixCapability(), PeriodPolicy: 'InclusiveCalendarWholeSecondsSingleMonth' })).toBe(false)
   })
   it('cannot confuse local group aliases, another Source schema, period, world or definition', () => {
     for (const patch of [{ GroupId: 3568 },{ GroupReference: 'D'.repeat(32) },{ SchemaId: matrixWire().SourceId },{ World: 'amg' },{ Through: '2025-04-22' },{ DefinitionSha256: 'b'.repeat(64) }])

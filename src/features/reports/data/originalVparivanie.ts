@@ -8,7 +8,7 @@ export type MatrixRequest = {
 }
 export type MatrixCapability = {
   Version: 1; World: 'fenix' | 'amg'; SourceId: string; SchemaId: string; DefinitionSha256: string;
-  Executable: boolean; PeriodPolicy: 'InclusiveCalendarWholeSecondsSingleMonth'; GroupPolicy: 'ExactSourceLeafProductGroup';
+  Executable: boolean; PeriodPolicy: 'InclusiveCalendarWholeSecondsUpTo120Months'; GroupPolicy: 'ExactSourceLeafProductGroup';
   MaximumProductRows: 128; MaximumColumns: 262; QuantityEncoding: 'InvariantDecimalString'; RequiresCompleteNormalInputs: true;
   SourceParityVerified: boolean; OriginalFullTaskAccepted: boolean;
 }
@@ -18,7 +18,7 @@ export type MatrixRow = { ProductReference: string; Caption: string; Values: (st
 export type MatrixResult = MatrixRequest & {
   GroupCaption: string | null; Available: boolean; Code: string; NormalInputsComplete: boolean; OurSnapshotVerified: boolean;
   InputWitnessSha256: string | null; Columns: MatrixColumn[]; Rows: MatrixRow[];
-  PeriodPolicy: 'InclusiveCalendarWholeSecondsSingleMonth'; QuantityEncoding: 'InvariantDecimalString';
+  PeriodPolicy: 'InclusiveCalendarWholeSecondsUpTo120Months'; QuantityEncoding: 'InvariantDecimalString';
   SourceParityVerified: boolean; OriginalFullTaskAccepted: boolean;
 }
 const captions: Record<MatrixGroup, string> = { Counterparties: 'Контрагенты', Stock: 'Остатки', Sales: 'Продажи' }
@@ -30,7 +30,7 @@ const group = (v: unknown): v is MatrixGroup => v === 'Counterparties' || v === 
 function invalid() { return new Error('Сервер не підтвердив повну матрицю для обраної групи та періоду.') }
 const identity = (v: Record<string, unknown>) => v.Version === 1 && (v.World === 'fenix' || v.World === 'amg')
   && v.SourceId === originalMatrixDefinition.source && v.SchemaId === originalMatrixDefinition.schema && v.DefinitionSha256 === originalMatrixDefinition.hash
-const policy = (v: Record<string, unknown>) => v.PeriodPolicy === 'InclusiveCalendarWholeSecondsSingleMonth' && v.QuantityEncoding === 'InvariantDecimalString'
+const policy = (v: Record<string, unknown>) => v.PeriodPolicy === 'InclusiveCalendarWholeSecondsUpTo120Months' && v.QuantityEncoding === 'InvariantDecimalString'
   && typeof v.SourceParityVerified === 'boolean' && typeof v.OriginalFullTaskAccepted === 'boolean' && (!v.OriginalFullTaskAccepted || v.SourceParityVerified)
 export function isMatrixCapability(v: unknown): v is MatrixCapability {
   return object(v) && identity(v) && policy(v) && v.Executable === (v.World === 'fenix')
@@ -42,8 +42,10 @@ function calendar(v: string): boolean {
   return !Number.isNaN(parsed.valueOf()) && parsed.toISOString().slice(0, 10) === v
 }
 export function matrixPeriodError(from: string, through: string): string | null {
-  return !calendar(from) || !calendar(through) || through < from || from.slice(0, 7) !== through.slice(0, 7)
-    ? 'Оберіть період у межах одного місяця, починаючи з 01.01.2025.' : null
+  const months = (Number(through.slice(0, 4)) - Number(from.slice(0, 4))) * 12
+    + Number(through.slice(5, 7)) - Number(from.slice(5, 7)) + 1
+  return !calendar(from) || !calendar(through) || through < from || months > 120
+    ? 'Оберіть коректний період від 01.01.2025, що охоплює не більше 120 місяців.' : null
 }
 export function matrixRequest(capability: MatrixCapability, from: string, through: string, id: number, sourceReference: string): MatrixRequest {
   if (!isMatrixCapability(capability) || !capability.Executable || matrixPeriodError(from, through)
@@ -75,7 +77,8 @@ function columns(values: unknown[]): MatrixColumn[] {
 }
 /** Scope identity and sparse physical order are retained for both screen and future exports. */
 export function normalizeMatrixResult(value: unknown, request: MatrixRequest): MatrixResult {
-  if (!object(value) || !identity(value) || !policy(value) || Object.entries(request).some(([key, item]) => value[key] !== item)
+  if (!object(value) || !identity(value) || !policy(value) || matrixPeriodError(request.From, request.Through)
+    || Object.entries(request).some(([key, item]) => value[key] !== item)
     || typeof value.Available !== 'boolean' || typeof value.Code !== 'string' || !value.Code.startsWith('original_vparivanie_')
     || typeof value.NormalInputsComplete !== 'boolean' || typeof value.OurSnapshotVerified !== 'boolean'
     || !Array.isArray(value.Columns) || value.Columns.length > 262 || !Array.isArray(value.Rows) || value.Rows.length > 128
