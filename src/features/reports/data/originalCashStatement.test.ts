@@ -1,9 +1,35 @@
 import { describe, expect, it } from 'vitest'
-import { cashCatalogueMatches, cashDefinition, cashFilterKey, cashRequest, isCashCapability, normalizeCashResult } from './originalCashStatement'
+import { cashCatalogueMatches, cashDefinition, cashFilterKey, cashRequest, cashRowCaption, isCashCapability, normalizeCashResult } from './originalCashStatement'
 import { cashCapabilityFixture, cashResultFixture } from './originalCashStatement.fixtures'
 import { cashCsv, cashExportError, cashMatrix, cashPdfDefinition, cashValues, cashXlsx } from './originalCashStatementExport'
 import * as XLSX from 'xlsx'
 describe('exact original977 cash period', () => {
+  it('uses the original currency caption on screen and exports without changing account identity or cents', async () => {
+    const value = cashResultFixture(), query = cashRequest(cashCapabilityFixture(), value.From, value.Through, [], false)
+    value.Rows[0].CurrencyCaption = 'PLN'
+    value.Choices = value.Choices.map(choice => choice.Value.Field === 'CashCurrency' ? { ...choice, Caption: 'PLN' } : choice)
+    const result = normalizeCashResult(value, query), label = `${value.Rows[0].Caption}, PLN`
+    expect(cashRowCaption(result.Rows[0])).toBe(label)
+    expect(result.Rows[0].Account).toEqual(value.Rows[0].Account)
+    expect(result.Rows[0].Amounts).toEqual(value.Rows[0].Amounts)
+    expect(cashMatrix(result)[1][0]).toBe(label)
+    expect(cashCsv(result)).toContain(label)
+    expect(cashPdfDefinition(result).content.find(part => 'table' in part)?.table?.body).toEqual(cashMatrix(result))
+    const blob = await cashXlsx(result), buffer = await new Promise<ArrayBuffer>((resolve, reject) => { const reader = new FileReader(); reader.onload = () => { if (reader.result !== null && typeof reader.result !== 'string') resolve(reader.result); else reject(new Error('Expected workbook bytes')) }; reader.onerror = () => reject(reader.error); reader.readAsArrayBuffer(blob) })
+    const workbook = XLSX.read(buffer, { type: 'array' })
+    expect(XLSX.utils.sheet_to_json(workbook.Sheets['Відомість коштів'], { header: 1 })).toEqual(cashMatrix(result))
+  })
+  it('retains source whitespace and leaves absent currency captions absent', () => {
+    const row = cashResultFixture().Rows[0]
+    expect(cashRowCaption({ ...row, Caption: 'Каса (PLN) ', CurrencyCaption: ' PLN ' })).toBe('Каса (PLN) ,  PLN ')
+    expect(cashRowCaption(row)).toBe(row.Caption)
+    expect(cashRowCaption({ ...row, CurrencyCaption: null })).toBe(row.Caption)
+    expect(cashRowCaption({ ...row, Caption: null, CurrencyCaption: 'PLN' })).toBeNull()
+  })
+  it.each(['Forged', '', ' ', 42])('rejects an unverified or malformed currency caption %s', caption => {
+    const value = cashResultFixture(), query = cashRequest(cashCapabilityFixture(), value.From, value.Through, [], false)
+    expect(() => normalizeCashResult({ ...value, Rows: [{ ...value.Rows[0], CurrencyCaption: caption }] }, query)).toThrow()
+  })
   it('negotiates its own default8 optional2 and four filters without borrowing dataset40 or FX', () => {
     const capability = cashCapabilityFixture()
     expect(isCashCapability(capability)).toBe(true); expect(capability.DefaultMeasures).toHaveLength(8); expect(capability.TurnoverMeasures).toHaveLength(2)

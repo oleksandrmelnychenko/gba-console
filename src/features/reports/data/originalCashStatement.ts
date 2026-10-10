@@ -17,7 +17,7 @@ export type CashRequest = { Version: 1; World: 'fenix' | 'amg'; SourceId: string
 export type CashMeasure = { Opening: string; Incoming: string; Outgoing: string; Closing: string; Turnover: string }
 export type CashAmounts = { Own: CashMeasure; Management: CashMeasure }
 export type CashChoice = { Value: CashFilter; Caption: string; WitnessSha256: string }
-export type CashRow = { Account: CashAccount; Caption: string | null; Amounts: CashAmounts }
+export type CashRow = { Account: CashAccount; Caption: string | null; CurrencyCaption?: string | null; Amounts: CashAmounts }
 export type CashResult = { Version: 1; World: 'fenix' | 'amg'; SourceId: string; DefinitionSha256: string; From: string; Through: string; Filters: CashFilter[]; IncludeTurnover: boolean;
   Available: boolean; Code: string; NormalInputsComplete: boolean; OurSnapshotVerified: boolean; InputWitnessSha256: string | null; ResultSha256: string | null;
   Rows: CashRow[]; Totals: CashAmounts | null; Choices: CashChoice[]; MissingCaptionMappings: CashField[]; CurrencyAttributeScopeComplete: boolean;
@@ -43,6 +43,8 @@ export function cashCatalogueMatches(report: ReportCatalogueEntry, worlds: reado
 }
 export const cashFilterKey = (v: CashFilter) => JSON.stringify([v.Field, v.Type, v.Table, v.Reference])
 export const cashAccountKey = (v: CashAccount) => JSON.stringify([v.Type, v.Table, v.Reference])
+export const cashRowCaption = (row: CashRow): string | null => row.Caption === null ? null
+  : row.CurrencyCaption ? `${row.Caption}, ${row.CurrencyCaption}` : row.Caption
 function readFilter(v: unknown): CashFilter {
   if (!object(v) || !field(v.Field) || !hex(v.Reference, 32) || (v.Field === 'BankAccountCash' ? !hex(v.Type, 2) || !hex(v.Table, 8) : v.Type !== null || v.Table !== null)) throw invalid()
   return { Field: v.Field, Reference: v.Reference, Type: v.Type === null ? null : String(v.Type), Table: v.Table === null ? null : String(v.Table) }
@@ -75,17 +77,20 @@ function readChoices(values: unknown[]): CashChoice[] {
     return { Value: filter, Caption: v.Caption, WitnessSha256: v.WitnessSha256 }
   })
 }
-const resultCodes = new Set(['OUR_complete', 'amg_normal_publication_unavailable', 'normal_storage_unavailable', 'opening_publication_unavailable', 'month_publication_unavailable', 'currency_attribute_unavailable', 'normal_journal_invalid', 'prefix_scope_exceeded', 'raw_visibility_unavailable', 'account_attribute_ambiguous', 'caption_ambiguous'].map(code => `original_cash_statement_${code}`))
+const resultCodes = new Set(['OUR_complete', 'amg_normal_publication_unavailable', 'normal_storage_unavailable', 'opening_publication_unavailable', 'month_publication_unavailable', 'currency_attribute_unavailable', 'currency_catalogue_invalid', 'normal_journal_invalid', 'prefix_scope_exceeded', 'raw_visibility_unavailable', 'account_attribute_ambiguous', 'caption_ambiguous'].map(code => `original_cash_statement_${code}`))
 const stages = ['Opening', 'Incoming', 'Outgoing', 'Closing', 'Turnover'] as const
 const resources = ['Own', 'Management'] as const
 function readRows(values: unknown[], choices: CashChoice[]): CashRow[] {
   const keys = new Set<string>(), captions = new Map(choices.filter(choice => choice.Value.Field === 'BankAccountCash').map(choice => [cashFilterKey(choice.Value), choice.Caption]))
+  const currencyCaptions = new Set(choices.filter(choice => choice.Value.Field === 'CashCurrency').map(choice => choice.Caption))
   return values.map(v => {
     if (!object(v) || !object(v.Account) || !hex(v.Account.Type, 2) || !hex(v.Account.Table, 8) || !hex(v.Account.Reference, 32)
       || v.Caption !== null && (typeof v.Caption !== 'string' || !v.Caption.trim())) throw invalid()
+    if (v.CurrencyCaption !== undefined && v.CurrencyCaption !== null
+      && (typeof v.CurrencyCaption !== 'string' || !v.CurrencyCaption.trim() || !currencyCaptions.has(v.CurrencyCaption))) throw invalid()
     const account = { Type: v.Account.Type, Table: v.Account.Table, Reference: v.Account.Reference }, key = cashAccountKey(account)
     if (keys.has(key) || v.Caption !== null && captions.get(cashFilterKey({ Field: 'BankAccountCash', ...account })) !== v.Caption) throw invalid(); keys.add(key)
-    return { Account: account, Caption: v.Caption, Amounts: readAmounts(v.Amounts) }
+    return { Account: account, Caption: v.Caption, ...(v.CurrencyCaption === undefined ? {} : { CurrencyCaption: v.CurrencyCaption as string | null }), Amounts: readAmounts(v.Amounts) }
   })
 }
 /** One authenticated complete identity-bound calculation for screen and every export. No JS monetary Number conversion. */

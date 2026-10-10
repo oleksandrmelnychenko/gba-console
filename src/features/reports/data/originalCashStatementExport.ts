@@ -1,4 +1,4 @@
-import { cashFields, cashLabels, cashFilterKey, type CashAmounts, type CashResult } from './originalCashStatement'
+import { cashFields, cashLabels, cashFilterKey, cashRowCaption, type CashAmounts, type CashResult } from './originalCashStatement'
 import type { CurrentVparivanieV2PdfDefinition } from './currentVparivanieV2Export'
 const stages = [['Opening', 'Початковий залишок'], ['Incoming', 'Надходження'], ['Outgoing', 'Витрати'], ['Closing', 'Кінцевий залишок'], ['Turnover', 'Оборот']] as const
 const resources = [['Own', 'У валюті рахунку / каси'], ['Management', 'Управлінська сума']] as const
@@ -12,7 +12,7 @@ export function cashExportError(result: CashResult): string | null {
 }
 export function cashMatrix(result: CashResult): string[][] {
   const error = cashExportError(result); if (error) throw new Error(error)
-  return [cashHeaders(result.IncludeTurnover), ...result.Rows.map(row => [row.Caption ?? 'Назва недоступна', ...cashValues(row.Amounts, result.IncludeTurnover)]),
+  return [cashHeaders(result.IncludeTurnover), ...result.Rows.map(row => [cashRowCaption(row) ?? 'Назва недоступна', ...cashValues(row.Amounts, result.IncludeTurnover)]),
     ...(result.Totals ? [['Разом', ...cashValues(result.Totals, result.IncludeTurnover)]] : [])]
 }
 function metadata(result: CashResult): string[][] {

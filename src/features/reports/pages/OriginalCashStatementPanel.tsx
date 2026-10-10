@@ -2,7 +2,7 @@ import { Alert, Button, Checkbox, Group, MultiSelect, Stack, Table, Text } from 
 import { useEffect, useRef, useState } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { readOriginalCashStatement } from '../api/originalCashStatementApi'
-import { cashAccountKey, cashFields, cashFilterKey, cashLabels, cashRequest, type CashCapability, type CashChoice, type CashField, type CashFilter, type CashResult } from '../data/originalCashStatement'
+import { cashAccountKey, cashFields, cashFilterKey, cashLabels, cashRequest, cashRowCaption, type CashCapability, type CashChoice, type CashField, type CashFilter, type CashResult } from '../data/originalCashStatement'
 import { cashCsv, cashExportError, cashHeaders, cashPdf, cashValues, cashXlsx } from '../data/originalCashStatementExport'
 import { cashPeriodError } from '../data/originalCashStatement'
 import { useReportRunState } from '../hooks/useReportRunState'
@@ -30,7 +30,7 @@ function CashTable({ result }: { result: CashResult }) {
     <Text size="xs">{result.Rows.length ? first + 1 : 0}–{Math.min(first + 50, result.Rows.length)} / {result.Rows.length}</Text>
     <Button size="xs" variant="light" disabled={first + 50 >= result.Rows.length} onClick={() => setPage(current + 1)}>{t('Наступні рядки')}</Button></Group>
     <Table.ScrollContainer minWidth={1400}><Table><Table.Thead><Table.Tr>{headers.map(header => <Table.Th key={header}>{t(header)}</Table.Th>)}</Table.Tr></Table.Thead>
-      <Table.Tbody>{result.Rows.slice(first, first + 50).map(row => <Table.Tr key={cashAccountKey(row.Account)}><Table.Td>{row.Caption ?? t('Назва недоступна')}</Table.Td>
+      <Table.Tbody>{result.Rows.slice(first, first + 50).map(row => <Table.Tr key={cashAccountKey(row.Account)}><Table.Td>{cashRowCaption(row) ?? t('Назва недоступна')}</Table.Td>
         {cashValues(row.Amounts, result.IncludeTurnover).map((value, column) => <Table.Td key={headers[column + 1]} className="app-money">{value}</Table.Td>)}</Table.Tr>)}</Table.Tbody>
       {result.Totals ? <Table.Tfoot><Table.Tr><Table.Th>{t('Разом')}</Table.Th>{cashValues(result.Totals, result.IncludeTurnover).map((value, column) => <Table.Td key={headers[column + 1]} className="app-money">{value}</Table.Td>)}</Table.Tr></Table.Tfoot> : null}
     </Table></Table.ScrollContainer>{!result.Rows.length ? <Text>{t('У повністю перевіреному періоді рядків немає.')}</Text> : null}</Stack>

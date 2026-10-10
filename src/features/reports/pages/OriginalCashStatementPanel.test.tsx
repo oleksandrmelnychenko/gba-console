@@ -10,6 +10,16 @@ import { OriginalCashStatementPanel } from './OriginalCashStatementPanel'
 vi.mock('../api/originalCashStatementApi', () => ({ readOriginalCashStatement: vi.fn() }))
 const panel = (caller = 'caller1', allowed = true) => <MantineProvider env="test"><I18nProvider><OriginalCashStatementPanel capability={cashCapabilityFixture()} callerKey={caller}
   canGenerate={allowed} initialFrom="2026-09-01" initialThrough="2026-09-30" /></I18nProvider></MantineProvider>
+it('renders the original account and currency caption together while preserving signed financial cells', async () => {
+  vi.clearAllMocks(); const result = cashResultFixture()
+  result.Rows[0].CurrencyCaption = 'PLN'
+  result.Choices = result.Choices.map(choice => choice.Value.Field === 'CashCurrency' ? { ...choice, Caption: 'PLN' } : choice)
+  vi.mocked(readOriginalCashStatement).mockResolvedValue(result)
+  render(panel()); fireEvent.click(screen.getByRole('button', { name: 'Сформувати' }))
+  await screen.findByText('Наш рахунок, PLN', { selector: 'tbody td' })
+  expect(screen.getByText('9007199254740990.97', { selector: 'tbody td' })).toBeTruthy()
+  expect(screen.queryByText('Злотий')).toBeNull()
+})
 it('offers all four genuine typed filters and sends account currency selection without changing resource units', async () => {
   vi.clearAllMocks(); vi.mocked(readOriginalCashStatement).mockImplementation(async request => ({ ...cashResultFixture(), Filters: request.Filters, IncludeTurnover: request.IncludeTurnover }))
   render(panel()); fireEvent.click(screen.getByRole('button', { name: 'Сформувати' }))
