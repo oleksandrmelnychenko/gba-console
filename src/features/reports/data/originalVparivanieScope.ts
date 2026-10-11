@@ -64,9 +64,12 @@ export function matrixBindingRequest(binding: MatrixScopeBinding): MatrixRequest
 
 export function normalizeScopedMatrixResult(value: unknown, binding: MatrixScopeBinding): MatrixResult {
   const result = normalizeMatrixResult(value, matrixBindingRequest(binding))
+  const sameAdmission = result.AcceptedInputWitnessSha256 === binding.AcceptedInputWitnessSha256
+    && result.AcceptanceProofSha256 === binding.AcceptanceProofSha256
+  const unavailable = !result.Available && result.ExactScopeAccepted === false
+    && result.AcceptedInputWitnessSha256 === null && result.AcceptanceProofSha256 === null
   if (result.AdmissionPolicy !== binding.AdmissionPolicy || typeof result.ExactScopeAccepted !== 'boolean'
-    || result.AcceptedInputWitnessSha256 !== binding.AcceptedInputWitnessSha256
-    || result.AcceptanceProofSha256 !== binding.AcceptanceProofSha256
+    || !sameAdmission && !unavailable
     || result.ExactScopeAccepted && (!binding.AcceptanceProofSha256 || !binding.AcceptedInputWitnessSha256
       || !result.Available || result.InputWitnessSha256 !== binding.AcceptedInputWitnessSha256)
     || result.Available && result.GroupCaption !== binding.GroupCaption) throw invalid()

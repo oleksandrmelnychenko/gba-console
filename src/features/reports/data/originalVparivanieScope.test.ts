@@ -55,4 +55,14 @@ describe('original matrix exact scope admission', () => {
     expect(matrixScopeAccepted(normalizeScopedMatrixResult(changed, binding))).toBe(false)
     expect(matrixScopeAccepted({ ...matrixFixture(), ExactScopeAccepted: true })).toBe(false)
   })
+  it('preserves an explicit unavailable normal read without carrying admission hashes or fabricated rows', () => {
+    const missing = { ...scopedMatrixFixture(), Available: false, ExactScopeAccepted: false,
+      Code: 'original_vparivanie_normal_party_metadata_unavailable', NormalInputsComplete: false, OurSnapshotVerified: false,
+      GroupCaption: null, InputWitnessSha256: null, Rows: [], Columns: [], AcceptedInputWitnessSha256: null, AcceptanceProofSha256: null }
+    const result = normalizeScopedMatrixResult(missing, originalScopeBinding())
+    expect(result.Code).toBe(missing.Code); expect(matrixScopeAccepted(result)).toBe(false)
+    expect(() => normalizeScopedMatrixResult({ ...missing, ExactScopeAccepted: true }, originalScopeBinding())).toThrow()
+    expect(() => normalizeScopedMatrixResult({ ...missing, AcceptanceProofSha256: 'c'.repeat(64) }, originalScopeBinding())).toThrow()
+    expect(() => normalizeScopedMatrixResult({ ...missing, Rows: scopedMatrixFixture().Rows }, originalScopeBinding())).toThrow()
+  })
 })
