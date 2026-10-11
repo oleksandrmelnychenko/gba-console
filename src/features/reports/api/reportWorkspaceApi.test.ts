@@ -6,10 +6,21 @@ import { reportDatasets, stockDataset, currentStockDatasets, valuationDataset, n
 import { defaultDatasetRequest } from '../data/reportDatasets'
 import { accountBalanceDataset, accountBalanceSelections } from '../data/accountBalances.test-fixtures'
 import { catalogueFixture } from '../data/reportMigration.test-fixtures'
+import { originalScopeRequest } from '../testing/originalVparivanieScopeFixtures'
 
 vi.mock('../../../shared/api/apiClient', () => ({ apiRequest: vi.fn() }))
 
 describe('report workspace wire contract', () => {
+  it('saves and reloads the original matrix full period without changing its group or enabling current-report execution', async () => {
+    const template = { Id: crypto.randomUUID(), Revision: 1, Name: 'Оригінальна матриця', Data: originalScopeRequest() }
+    const wire = { ...template, Data: { DataSource: 39, From: template.Data.from, To: template.Data.to,
+      Sorted: template.Data.sorted, Selections: template.Data.selections, currentVparivanieFullScope: true } }
+    vi.mocked(apiRequest).mockResolvedValue(wire)
+    expect(await saveServerReportTemplate(template)).toEqual(template)
+    expect(apiRequest).toHaveBeenLastCalledWith('/report/templates/save', { method: 'POST', body: template })
+    vi.mocked(apiRequest).mockResolvedValue([wire])
+    expect(await getServerReportTemplates()).toEqual([template])
+  })
   it('reloads authoritative template definitions without the browser HTTP cache', async () => {
     const controller = new AbortController()
     vi.mocked(apiRequest).mockResolvedValue([])

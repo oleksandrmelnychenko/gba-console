@@ -187,7 +187,7 @@ export function defaultDatasetRequest(dataset: ReportDataset, from: string, to: 
 }
 
 /** Refuse incompatible saved settings before mutating the form. Never remove or remap a filter. */
-export function datasetConfigurationError(data: ReportRequestBody, dataset: ReportDataset | undefined): string | null {
+export function datasetConfigurationError(data: ReportRequestBody, dataset: ReportDataset | undefined, purpose: 'current' | 'workspace' = 'current'): string | null {
   if (data.dataSource !== 38 && (data.supplierSourceWorld !== undefined || data.SupplierSourceWorld !== undefined))
     return 'Вибір бази Fenix або AMG доступний лише для партійного прибутку за постачальниками.'
   if (data.returnsOnly !== undefined || data.ReturnsOnly !== undefined) {
@@ -249,7 +249,7 @@ export function datasetConfigurationError(data: ReportRequestBody, dataset: Repo
   if (grossProfitError) return grossProfitError
   const dayOrganizationProfitError = dayOrganizationGrossProfitConfigurationError(data, dataset)
   if (dayOrganizationProfitError) return dayOrganizationProfitError
-  const currentVparivanieError = currentVparivanieConfigurationError(data, dataset)
+  const currentVparivanieError = currentVparivanieConfigurationError(data, dataset, purpose)
   if (currentVparivanieError) return currentVparivanieError
   const vparivanieError = vparivanieConfigurationError(data, dataset)
   if (vparivanieError) return vparivanieError

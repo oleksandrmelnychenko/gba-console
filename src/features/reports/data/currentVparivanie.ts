@@ -1,5 +1,6 @@
 import type { ReportDataset, ReportFilterCondition, ReportRequestBody } from '../types'
 import { revenueExactId } from './revenueComparison'
+import { originalMatrixScope } from './originalVparivanieScope'
 
 export const CURRENT_VPARIVANIE_SOURCE = 39
 export const CURRENT_VPARIVANIE_UNASSIGNED_MANAGER = '00000000000000000000000000000000'
@@ -104,7 +105,7 @@ function validDate(value: string): boolean {
 }
 
 /** Keeps bounded native identities exact; no catalogue or Source request is made here. */
-export function currentVparivanieConfigurationError(data: ReportRequestBody, dataset?: ReportDataset): string | null {
+export function currentVparivanieConfigurationError(data: ReportRequestBody, dataset?: ReportDataset, purpose: 'current' | 'workspace' = 'current'): string | null {
   const modes = Object.entries(data).filter(([key]) => key.toLowerCase() === 'currentvparivaniefullscope')
   if (modes.length && (modes.length !== 1 || modes[0][1] !== true || data.dataSource !== CURRENT_VPARIVANIE_SOURCE))
     return 'Повний вибір доступний лише для поточної матриці «Впарювання»; перемикач має бути явно увімкнений.'
@@ -115,8 +116,13 @@ export function currentVparivanieConfigurationError(data: ReportRequestBody, dat
   if (dataset && !isCurrentVparivanieDataset(dataset)) return 'Сервер не підтвердив поточну матрицю «Впарювання».'
   if (!validDate(data.from) || !validDate(data.to) || data.from > data.to)
     return 'Оберіть коректний включний період продажів «Впарювання».'
-  if ((Date.parse(`${data.to}T00:00:00Z`) - Date.parse(`${data.from}T00:00:00Z`)) / 86400000 >= 366)
-    return 'Період продажів може охоплювати щонайбільше 366 днів.'
+  if ((Date.parse(`${data.to}T00:00:00Z`) - Date.parse(`${data.from}T00:00:00Z`)) / 86400000 >= 366) {
+    let originalScope = false
+    if (purpose === 'workspace') {
+      try { originalMatrixScope(data); originalScope = true } catch { /* Other saved current variants retain their ordinary bound. */ }
+    }
+    if (!originalScope) return 'Період продажів може охоплювати щонайбільше 366 днів.'
+  }
   if (Object.entries(data).some(([key, value]) => forbidden.has(key.toLowerCase()) && value != null)) return invalid
   const sorted = data.sorted
   if (!sorted || !Array.isArray(sorted.Row) || sorted.Row.map(item => item.type).join(',') !== '5'

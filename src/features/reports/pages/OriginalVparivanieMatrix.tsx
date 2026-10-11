@@ -2,12 +2,13 @@ import { Alert, Button, Group, Stack, Table, Text } from '@mantine/core'
 import { useState } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { matrixColumnKey, type MatrixResult } from '../data/originalVparivanie'
+import { matrixScopeAccepted } from '../data/originalVparivanieScope'
 
-/** Presentation candidate; catalogue integration follows accepted native comparisons. */
+/** The screen retains the admitted normal snapshot's physical rows and columns. */
 export function OriginalVparivanieMatrix({ result }: { result: MatrixResult }) {
   const { t } = useI18n()
   if (!result.Available) return <Alert color="yellow">{t('Дані за обраний період ще синхронізуються. Спробуйте сформувати звіт пізніше.')}</Alert>
-  if (!result.SourceParityVerified || !result.OriginalFullTaskAccepted)
+  if (!matrixScopeAccepted(result))
     return <Alert color="yellow">{t('Матриця проходить звірку з 1С. Звіт буде доступний після завершення перевірки.')}</Alert>
   return <AcceptedMatrix key={JSON.stringify([result.InputWitnessSha256, result.From, result.Through, result.GroupReference])} result={result} />
 }

@@ -16,6 +16,8 @@ export type MatrixGroup = 'Counterparties' | 'Stock' | 'Sales'
 export type MatrixColumn = { Group: MatrixGroup; Caption: string; RegionCode: string | null; MeasureCaption: string | null }
 export type MatrixRow = { ProductReference: string; Caption: string; Values: (string | null)[] }
 export type MatrixResult = MatrixRequest & {
+  AdmissionPolicy?: 'ExactCurrentInputWitnessV1'; ExactScopeAccepted?: boolean;
+  AcceptedInputWitnessSha256?: string | null; AcceptanceProofSha256?: string | null;
   GroupCaption: string | null; Available: boolean; Code: string; NormalInputsComplete: boolean; OurSnapshotVerified: boolean;
   InputWitnessSha256: string | null; Columns: MatrixColumn[]; Rows: MatrixRow[];
   PeriodPolicy: 'InclusiveCalendarWholeSecondsUpTo120Months'; QuantityEncoding: 'InvariantDecimalString';

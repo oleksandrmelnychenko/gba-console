@@ -100,7 +100,7 @@ import './report-constructor.css'
 import { datasetConfigurationError, datasetFilters, datasetGroupings, datasetMeasurements, datasetPresetRequest, datasetPresets, defaultDatasetRequest, type DatasetReportPresetId } from '../data/reportDatasets'
 import { useReportDatasets } from '../hooks/useReportDatasets'
 import { usesNativeReportLookup, supportsFullReportDateRange, hasFixedReportAxes, nativeReportMeasurementUnit } from '../data/nativeReportProfiles'
-import { CURRENT_VPARIVANIE_NOTICE, currentVparivanieFilterConditions, currentVparivanieNotice, currentVparivanieFullScope } from '../data/currentVparivanie'
+import { CURRENT_VPARIVANIE_NOTICE, currentVparivanieConfigurationError, currentVparivanieFilterConditions, currentVparivanieNotice, currentVparivanieFullScope } from '../data/currentVparivanie'
 import { previousKyivDay } from '../data/cashPeriod'
 import { availableBug1274WorkbookLaunches, bug1274WorkbookRequest, type WorkbookLaunch } from '../data/bug1274WorkbookLaunch'
 import { CashSettlementSettingsPanels } from './CashSettlementSettingsPanels'
@@ -174,6 +174,7 @@ import { ClientComparisonPeriodPanel } from './ClientComparisonPeriodPanel'
 import { buildReportBuilderRequest } from '../data/reportBuilderRequest'
 import { ReportInlinePreview } from './ReportInlinePreview'
 import { CurrentVparivanieRegionalPanel } from './CurrentVparivanieRegionalPanel'
+import { OriginalVparivanieReportPanel } from './OriginalVparivanieReportPanel'
 import type { NativeReportPreview } from '../data/nativeReportPreview'
 import { useReportFilterExpression, type ReportSelectionEdit } from '../hooks/useReportFilterExpression'
 import { ReportFilterExpressionPanel } from './ReportFilterExpressionPanel'
@@ -449,7 +450,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
   }), [activeTemplate, previousPeriod, selectedMeasurements, templateBody, templateName])
   const workspaceDraft = useReportWorkspaceDraft({ ownerId, enabled: canGenerateReport,
     ready: datasetStorage.loaded && !datasetStorage.error, snapshot: draftSnapshot })
-  const configurationError = (consoleScope && !BUG_1274_ACTIVE_DATA_SOURCES.has(dataSource) ? BUG_1274_DISABLED_MESSAGE : null) ?? datasetStorage.error ?? (!datasetStorage.loaded ? t('Завантаження наборів даних…') : datasetConfigurationError(templateBody, dataset))
+  const configurationError = (consoleScope && !BUG_1274_ACTIVE_DATA_SOURCES.has(dataSource) ? BUG_1274_DISABLED_MESSAGE : null) ?? datasetStorage.error ?? (!datasetStorage.loaded ? t('Завантаження наборів даних…') : datasetConfigurationError(templateBody, dataset, 'workspace'))
     ?? (requiresValuationAgreement(dataSource) && valuation.agreement?.Id !== valuationClientAgreementId ? 'Підтвердіть доступний договір оцінки.' : null)
   const checkedMeasurements = reportBody.sorted.Measurements.length
   // The report engine lays the sheet out from the row groupings; without one it fails deep
@@ -466,12 +467,14 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
           field: getReportFieldLabel(selections[incompleteSelectionIndex].SelectedField.Name),
           position: incompleteSelectionIndex + 1,
         })
-  const reportIsReady = !configurationError && !periodError && !incompleteSelectionMessage && checkedMeasurements > 0 && !missingRowGrouping
+  const currentMatrixError = currentVparivanieConfigurationError(reportBody, dataset)
+  const generationConfigurationError = configurationError ?? currentMatrixError
+  const reportIsReady = !configurationError && !currentMatrixError && !periodError && !incompleteSelectionMessage && checkedMeasurements > 0 && !missingRowGrouping
   const canSubmit = canGenerateReport && reportIsReady
   const submitBlockedReason = !canGenerateReport
     ? t('Немає права формувати звіт залишків')
-    : configurationError
-      ? configurationError
+    : generationConfigurationError
+      ? generationConfigurationError
       : periodError
       ? periodError
       : checkedMeasurements === 0
@@ -628,7 +631,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
 
   function applyTemplate(template: ReportTemplate): boolean {
     const nextDataset = datasetStorage.datasets.find(item => item.DataSource === (template.Data.dataSource ?? 0))
-    const incompatible = (consoleScope && !BUG_1274_ACTIVE_DATA_SOURCES.has(template.Data.dataSource ?? 0) ? BUG_1274_DISABLED_MESSAGE : null) ?? datasetConfigurationError(template.Data, nextDataset)
+    const incompatible = (consoleScope && !BUG_1274_ACTIVE_DATA_SOURCES.has(template.Data.dataSource ?? 0) ? BUG_1274_DISABLED_MESSAGE : null) ?? datasetConfigurationError(template.Data, nextDataset, 'workspace')
     if (incompatible || !nextDataset) {
       setTemplateNotice(incompatible)
       return false
@@ -982,9 +985,11 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
           (oneCSpecialSpecification(dataSource) ? defaultOneCSpecialSettings(dataSource, dataset)[oneCSpecialSpecification(dataSource)!.key] : undefined)}
           disabled={comparisonSettingsDisabled} onChange={setOneCSpecialSettings} />}
         classificationPanel={<>{workbook.panel(dataset, reportBody, comparisonSettingsDisabled)}
-          {dataSource === 39 ? <CurrentVparivanieRegionalPanel dataset={dataset ?? null} request={reportBody}
+          {dataSource === 39 ? <><OriginalVparivanieReportPanel request={reportBody} enabled={canGenerateReport}
+            disabled={comparisonSettingsDisabled} callerKey={ownerId} />
+          <CurrentVparivanieRegionalPanel dataset={dataset ?? null} request={reportBody}
           enabled={canGenerateReport} disabled={comparisonSettingsDisabled}
-          fullScope={fullCurrentVparivanie} onFullScopeChange={setFullCurrentVparivanie} /> : dataSource === 41 || dataSource === 40 ? <CashSettlementSettingsPanels dataSource={dataSource}
+          fullScope={fullCurrentVparivanie} onFullScopeChange={setFullCurrentVparivanie} /></> : dataSource === 41 || dataSource === 40 ? <CashSettlementSettingsPanels dataSource={dataSource}
           cash={{ dataset, grouped: groupedCashPeriod, exact: cashPeriod, rows: rowGroups,
             available: groupingOptions, onRowsChange: workbook.changeCashRows, disabled: comparisonSettingsDisabled, enabled: canGenerateReport }}
           settlement={{ dataset, grouped: groupedSettlementPeriod, exact: settlementPeriod,

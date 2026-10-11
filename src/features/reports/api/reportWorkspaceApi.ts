@@ -288,7 +288,7 @@ export async function saveServerReportTemplate(template: ReportTemplate, signal?
   if (grossProfitError) throw new Error(grossProfitError)
   const dayOrganizationProfitError = dayOrganizationGrossProfitConfigurationError(request.Data)
   if (dayOrganizationProfitError) throw new Error(dayOrganizationProfitError)
-  const currentVparivanieError = currentVparivanieConfigurationError(request.Data)
+  const currentVparivanieError = currentVparivanieConfigurationError(request.Data, undefined, 'workspace')
   if (currentVparivanieError) throw new Error(currentVparivanieError)
   const settlementPeriodError = settlementPeriodConfigurationError(request.Data)
   if (settlementPeriodError) throw new Error(settlementPeriodError)

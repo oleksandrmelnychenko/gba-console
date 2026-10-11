@@ -1,7 +1,8 @@
 import { matrixQuantity, type MatrixResult } from './originalVparivanie'
+import { matrixScopeAccepted } from './originalVparivanieScope'
 
 export function matrixExportError(result: MatrixResult): string | null {
-  return !result.Available || !result.SourceParityVerified || !result.OriginalFullTaskAccepted
+  return !matrixScopeAccepted(result)
     ? 'Матриця ще не пройшла повну звірку з 1С.' : null
 }
 export function originalMatrixCells(result: MatrixResult): (string | null)[][] {
