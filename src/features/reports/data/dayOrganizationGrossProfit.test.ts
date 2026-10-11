@@ -1,9 +1,10 @@
 import { expect, it } from 'vitest'
-import { datasetConfigurationError, datasetPresetRequest, defaultDatasetRequest } from './reportDatasets'
+import { datasetConfigurationError, datasetGroupings, datasetMeasurements, datasetPresetRequest, defaultDatasetRequest } from './reportDatasets'
 import { dayOrganizationGrossProfitConfigurationError } from './dayOrganizationGrossProfit'
 import { nativeReportMeasurementUnit, usesNativeReportLookup } from './nativeReportProfiles'
 import { isDayOrganizationBasisCapability, requestDayOrganizationBasis } from './dayOrganizationBasis'
 import { normalizeNativeExactFilterDataset } from './nativeExactFilters'
+import { requestProductClassification, requestSourceOrganizations, requestSourceBuyerSubtree } from './nativeExactFilters'
 import { normalizeSavedTemplate } from '../api/reportWorkspaceApi'
 import { retainStoredTemplateFields } from './reportTemplateDraft'
 import { buildReportBuilderRequest } from './reportBuilderRequest'
@@ -161,4 +162,31 @@ it('accepts a complete journal period only for the explicit original normal form
   expect(datasetConfigurationError(request, dataset)).toBeNull()
   expect(dayOrganizationGrossProfitConfigurationError({ ...request, sourceBuyerSubtree: undefined })).toContain('31')
   expect(dayOrganizationGrossProfitConfigurationError({ ...request, dayOrganizationBasis: 1 })).not.toBeNull()
+})
+
+it('applies and rebuilds a saved two-month normal request with the server nullable foreign setting', () => {
+  const request = { ...defaultDatasetRequest(dataset, '2026-08-01', '2026-09-30'), ...fullSourceFilters, dayOrganizationBasis: 0 }
+  const saved = normalizeSavedTemplate({ Id: crypto.randomUUID(), Revision: 1, Name: 'Збережений прибуток',
+    UpdatedAtUtc: '2026-10-11T22:07:00.000Z', Data: {
+      DataSource: 35, From: request.from, To: request.to, Sorted: request.sorted, Selections: [],
+      ProductClassification: request.productClassification, SourceOrganizations: request.sourceOrganizations,
+      SourceBuyerSubtree: request.sourceBuyerSubtree, DayOrganizationBasis: 0, ProvidedDiscounts: null,
+    } })
+  expect(saved.Data.ProvidedDiscounts).toBeNull()
+  expect(datasetConfigurationError(saved.Data, dataset, 'workspace')).toBeNull()
+  const built = buildReportBuilderRequest({ dataSource: 35, from: saved.Data.from, to: saved.Data.to,
+    ordering: undefined, filterExpression: undefined, topGroups: undefined, valuationClientAgreementId: undefined,
+    rowGroups: datasetGroupings(dataset), colGroups: [], measurements: datasetMeasurements(dataset, saved.Data.sorted.Measurements), selections: [],
+    productClassification: requestProductClassification(saved.Data), sourceOrganizations: requestSourceOrganizations(saved.Data),
+    sourceBuyerSubtree: requestSourceBuyerSubtree(saved.Data), dayOrganizationBasis: requestDayOrganizationBasis(saved.Data) })
+  expect(built.from).toBe('2026-08-01')
+  expect(built.to).toBe('2026-09-30')
+  expect(built.sorted.Row.map(item => item.type)).toEqual([3, 4])
+  expect(built.sorted.Measurements).toHaveLength(10)
+  expect(built.productClassification).toEqual(request.productClassification)
+  expect(built.sourceOrganizations).toEqual(request.sourceOrganizations)
+  expect(built.sourceBuyerSubtree).toEqual(request.sourceBuyerSubtree)
+  expect(built.dayOrganizationBasis).toBe(0)
+  expect(datasetConfigurationError(built, dataset, 'workspace')).toBeNull()
+  expect(datasetConfigurationError(retainStoredTemplateFields(saved.Data, built), dataset, 'workspace')).toBeNull()
 })

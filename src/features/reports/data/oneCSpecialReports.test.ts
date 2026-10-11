@@ -20,6 +20,28 @@ function dataset(dataSource: number): ReportDataset {
 }
 
 describe('bounded 1C server reports', () => {
+  it('treats unrelated wire nulls as absent without accepting foreign settings', () => {
+    const request = defaultDatasetRequest({ ...dataset(24), DataSource: 35 }, '2026-08-01', '2026-09-30')
+    delete request.providedDiscounts
+    for (const value of [null, undefined]) {
+      expect(oneCSpecialSettingsError({ ...request, ProvidedDiscounts: value })).toBeNull()
+    }
+    for (const value of [{ Version: 1, SourceWorld: 1 }, {}, false, 0, '']) {
+      expect(oneCSpecialSettingsError({ ...request, ProvidedDiscounts: value })).toContain('іншому набору')
+    }
+  })
+
+  it('keeps matching special nulls and conflicting aliases invalid', () => {
+    const capability = dataset(24)
+    const request = defaultDatasetRequest(capability, '2026-08-01', '2026-08-31')
+    expect(oneCSpecialSettingsError({ ...request, providedDiscounts: null }, capability)).toBeTruthy()
+    expect(oneCSpecialSettingsError({ ...request, providedDiscounts: undefined }, capability)).toBeTruthy()
+    const valid = { Version: 1, SourceWorld: 1 }
+    expect(oneCSpecialSettingsError({ ...request, providedDiscounts: valid }, capability)).toBeNull()
+    expect(oneCSpecialSettingsError({ ...request, providedDiscounts: valid, ProvidedDiscounts: null }, capability)).toBeTruthy()
+    expect(oneCSpecialSettingsError({ ...request, providedDiscounts: null, ProvidedDiscounts: valid }, capability)).toBeTruthy()
+  })
+
   it.each([23, 24, 25, 28])('binds source world and validates required settings for dataset %i', dataSource => {
     const capability = dataset(dataSource)
     expect(isOneCSpecialDataset(capability)).toBe(true)

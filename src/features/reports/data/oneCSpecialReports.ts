@@ -117,7 +117,8 @@ export function oneCSpecialSettingsError(data: ReportRequestBody, dataset?: Repo
   const spec = SPECS[dataSource]
   const allKeys = [...new Set(Object.values(SPECS).map(value => value.key))]
   const present = allKeys.flatMap(key => field(data, key))
-  if (!spec) return present.length ? 'Параметри звіту 1С належать іншому набору даних.' : null
+  if (!spec) return present.some(key => (data as unknown as JsonRecord)[key] != null)
+    ? 'Параметри звіту 1С належать іншому набору даних.' : null
   if (dataset && (!isOneCSpecialDataset(dataset) || dataset.DataSource !== data.dataSource))
     return 'Сервер не підтвердив параметри цього набору 1С.'
   if (present.length !== 1 || present[0].toLowerCase() !== spec.key.toLowerCase())
