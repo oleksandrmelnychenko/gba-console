@@ -1,4 +1,6 @@
 import { workbookConfigurationError } from './workbookPresentation'
+import { requestSupplierBasis } from './supplierBasis'
+import { requestSupplierSourceWorld, supplierBatchGrossProfitConfigurationError } from './supplierBatchGrossProfit'
 import type { ReportDataset } from '../types'
 import { getNativeReportProfile, hasFixedReportAxes } from './nativeReportProfiles'
 import type { ReportWorkspaceSnapshot } from './reportWorkspaceDraft'
@@ -20,6 +22,8 @@ export function reportWorkspaceDraftCompatibility(snapshot: ReportWorkspaceSnaps
   const workbookError = workbookConfigurationError(data, dataset)
   if (workbookError) return `${workbookError} Чернетка збережена без змін.`
   const presented = data.workbookPresentation != null || data.WorkbookPresentation != null
+  const originalSupplier = dataset.DataSource === 38 && requestSupplierBasis(data) === 0
+    && requestSupplierSourceWorld(data) === 0 && supplierBatchGrossProfitConfigurationError(data, dataset) === null
   const groupings = new Set(dataset.Groupings.map(field => field.Type))
   const measures = new Set(dataset.Measurements.map(field => field.Type))
   if ([...data.sorted.Row, ...data.sorted.Col].some(field => !groupings.has(field.type))
@@ -29,7 +33,7 @@ export function reportWorkspaceDraftCompatibility(snapshot: ReportWorkspaceSnaps
   }
   if ((data.dataSource === 13 && data.sorted.Col.length > 0)
     || (hasFixedReportAxes(dataset.DataSource) && ((dataset.DataSource === 39 ? data.sorted.Col.map(field => field.type).join(',') !== '74,75' : data.sorted.Col.length > 0)
-      || !presented && JSON.stringify(data.sorted.Row.map(field => field.type)) !== JSON.stringify(getNativeReportProfile(dataset.DataSource)?.rowGroupings)))
+      || !presented && !originalSupplier && JSON.stringify(data.sorted.Row.map(field => field.type)) !== JSON.stringify(getNativeReportProfile(dataset.DataSource)?.rowGroupings)))
     || (data.dataSource === 19 && data.selections.length > 0)) {
     return 'Структура чернетки несумісна з цим набором даних. Чернетка збережена без змін.'
   }

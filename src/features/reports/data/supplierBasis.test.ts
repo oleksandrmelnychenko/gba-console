@@ -4,10 +4,12 @@ import type { ReportDataset } from '../types'
 import { availableBug1274WorkbookLaunches } from './bug1274WorkbookLaunch'
 import { FENIX_BUYERS_ROOT_ID, nativeExactFiltersConfigurationError, normalizeNativeExactFilterDataset } from './nativeExactFilters'
 import { buildReportBuilderRequest } from './reportBuilderRequest'
-import { datasetConfigurationError, datasetGroupings, datasetPresetRequest, defaultDatasetRequest } from './reportDatasets'
+import { datasetConfigurationError, datasetGroupings, datasetMeasurements, datasetPresetRequest, defaultDatasetRequest } from './reportDatasets'
 import { retainStoredTemplateFields } from './reportTemplateDraft'
 import { isSupplierBasisCapability, requestSupplierBasis, rowGroupsForSupplierBasis, supplierBasisFormDataset } from './supplierBasis'
 import { supplierBatchGrossProfitConfigurationError } from './supplierBatchGrossProfit'
+import { decodeReportWorkspaceDraft, encodeReportWorkspaceDraft, type ReportWorkspaceSnapshot } from './reportWorkspaceDraft'
+import { reportWorkspaceDraftCompatibility } from './reportWorkspaceDraftCompatibility'
 
 const capability = { Version: 1, DefaultBasis: 0, Bases: [0, 1], MaximumDays: 31,
   IncludesReturns: true, PreservesUnavailableValues: true, RegistrarWarehouseGrouping: 78 }
@@ -205,3 +207,54 @@ it('keeps AMG, unknown buyer roots, conflicting worlds and missing capabilities 
   expect(datasetConfigurationError({ ...request, supplierSourceWorld: null },
     { ...buyersDataset, supplierBasis: undefined })).toContain('Сервер')
 })
+
+function originalSupplierSnapshot(): ReportWorkspaceSnapshot {
+  const data = defaultDatasetRequest(dataset, '2026-08-01', '2026-09-30')
+  return { name: 'Збережений прибуток', data, measurements: datasetMeasurements(dataset, data.sorted.Measurements),
+    activeTemplate: null, previousPeriod: { from: '', to: '' } }
+}
+
+it('restores the complete ordinary supplier draft without substituting receipt warehouses or changing its settings', () => {
+  const value = originalSupplierSnapshot(), before = structuredClone(value)
+  const ownerId = 'a0000000-0000-4000-8000-000000000001'
+  const encoded = encodeReportWorkspaceDraft({ version: 1, ownerId, savedAt: '2026-09-30T23:00:00.000Z', snapshot: value })
+  expect(encoded.ok).toBe(true)
+  if (!encoded.ok) throw new Error('draft encoding failed')
+  const decoded = decodeReportWorkspaceDraft(encoded.value, ownerId)
+  expect(decoded.ok).toBe(true)
+  if (!decoded.ok) throw new Error('draft decoding failed')
+  const restored = decoded.data.snapshot
+  expect(supplierBatchGrossProfitConfigurationError(restored.data, dataset)).toBeNull()
+  expect(reportWorkspaceDraftCompatibility(restored, dataset)).toBeNull()
+  expect(restored).toEqual(before)
+  expect(restored.data.sorted.Row.map(field => field.type)).toEqual([78, 4, 21])
+  expect(restored.data.sorted.Measurements.map(field => field.Type)).toEqual([0, 2, 6, 10, 12, 14])
+  expect(restored.data.supplierBasis).toBe(0)
+  expect(restored.data.supplierSourceWorld).toBe(0)
+  expect(value).toEqual(before)
+})
+
+it('retains the existing receipt-warehouse draft layout for saved sale-allocation calculation', () => {
+  const data = defaultDatasetRequest({ ...dataset, supplierBasis: undefined }, '2026-09-01', '2026-09-30')
+  const value = { ...originalSupplierSnapshot(), data, measurements: datasetMeasurements(dataset, data.sorted.Measurements) }
+  const before = structuredClone(value)
+  expect(data.sorted.Row.map(field => field.type)).toEqual([73, 4, 21])
+  expect(reportWorkspaceDraftCompatibility(value, dataset)).toBeNull()
+  expect(value).toEqual(before)
+})
+
+it.each(['world', 'basis', 'basisAlias', 'order', 'column', 'measure', 'foreignSetting', 'capability'])(
+  'refuses an ordinary supplier draft with changed %s before applying it', defect => {
+    const value = originalSupplierSnapshot(), available = structuredClone(dataset)
+    if (defect === 'world') value.data.supplierSourceWorld = 1
+    if (defect === 'basis') value.data.supplierBasis = 1
+    if (defect === 'basisAlias') value.data.SupplierBasis = 0
+    if (defect === 'order') value.data.sorted.Row.reverse()
+    if (defect === 'column') value.data.sorted.Col = [value.data.sorted.Row[1]]
+    if (defect === 'measure') value.data.sorted.Measurements[0].Type = 9999
+    if (defect === 'foreignSetting') value.data.ordering = { Version: 1 }
+    if (defect === 'capability') available.supplierBasis = undefined
+    const before = structuredClone(value)
+    expect(reportWorkspaceDraftCompatibility(value, available)).not.toBeNull()
+    expect(value).toEqual(before)
+  })
