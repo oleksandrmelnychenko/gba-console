@@ -240,6 +240,8 @@ function CatalogueTable({ consoleScope = false, onOpenWorkbook, visibleRows, cat
               <Table.Td><Stack gap={8} align="flex-start"><Button className="report-catalogue__report-title" leftSection={<ChevronRight size={14} aria-hidden="true" />} type="button" variant="subtle" size="compact-sm" aria-expanded={expanded.has(report.Id)} aria-label={t('Покриття звіту: {name}', { name: report.Title })}
                 styles={{ root: { height: 'auto', maxWidth: '100%' }, label: { whiteSpace: 'normal', textAlign: 'left' } }}
                 onClick={() => onToggle(report.Id)}>{report.Title}</Button>
+                {consoleScope ? <OriginalCashStatementCatalogueLaunch report={report} worlds={matchingSources.map(s => s.World)}
+                  enabled={canGenerate} disabled={disabled} callerKey={callerKey} /> : null}
                 {consoleScope ? consoleReportAvailability(report, inspection) === 'ready_disabled'
                   ? <Group gap="xs"><Badge color="green" variant="light">{t('Готово')}</Badge>
                     <Button type="button" disabled size="xs">{t('Запуск поки вимкнено')}</Button></Group>
