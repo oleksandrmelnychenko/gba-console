@@ -865,8 +865,11 @@ export function NewSaleReviewStep({
     return true
   }
 
-  function validateFinalPayload(payload: SalesUkraineSale): boolean {
-    if ((!payload.ChangedToInvoice || splitItems.length > 0 || isMergedMode) && (!Number.isSafeInteger(payload.RegistrarStorageId) || Number(payload.RegistrarStorageId) <= 0)) {
+  function validateFinalPayload(payload: SalesUkraineSale, intent: 'submit' | 'save' = 'submit'): boolean {
+    const savesPendingDraft = intent === 'save'
+      && [0, 5].includes(Number(payload.BaseLifeCycleStatus?.SaleLifeCycleType))
+      && !('SaleInvoiceDocument' in payload && payload.SaleInvoiceDocument != null)
+    if (!savesPendingDraft && (!payload.ChangedToInvoice || splitItems.length > 0 || isMergedMode) && (!Number.isSafeInteger(payload.RegistrarStorageId) || Number(payload.RegistrarStorageId) <= 0)) {
       notifications.show({ color: 'red', message: t('Оберіть склад документа') })
       return false
     }
@@ -1569,7 +1572,7 @@ export function NewSaleReviewStep({
 
     const payload = buildPayload('save', sale)
 
-    if (!validateFinalPayload(payload)) {
+    if (!validateFinalPayload(payload, 'save')) {
       return false
     }
 

@@ -294,6 +294,55 @@ describe('NewSaleReviewStep persistent file reconciliation', () => {
     expect(mocks.createSalesUkraineSaleFromData).not.toHaveBeenCalled()
   })
 
+  it.each([0, 5])('saves draft metadata without choosing a warehouse at lifecycle %s', async (lifecycle) => {
+    const draft = { ...sale, RegistrarStorageId: null, BaseLifeCycleStatus: { SaleLifeCycleType: lifecycle } }
+    mocks.updateSaleFromData.mockResolvedValue({ message: 'saved', sale: draft })
+    const { onSaved, onCreated, onClose } = renderStep({
+      saleValue: draft,
+      value: { ...reviewValue(), registrarStorageId: null },
+    })
+
+    fireEvent.click(screen.getByRole('button', { name: 'Зберегти' }))
+
+    await waitFor(() => expect(mocks.updateSaleFromData).toHaveBeenCalledTimes(1))
+    expect(mocks.updateSaleFromData.mock.calls[0]?.[0]).toMatchObject({
+      BaseLifeCycleStatus: { SaleLifeCycleType: lifecycle },
+      Comment: 'current form value',
+      DeliveryRecipientAddress: { City: 'Kyiv', Department: '1' },
+      IsEdited: true,
+      RegistrarStorageId: null,
+    })
+    await waitFor(() => expect(onSaved).toHaveBeenCalledWith(draft))
+    expect(onCreated).not.toHaveBeenCalled()
+    expect(onClose).not.toHaveBeenCalled()
+  })
+
+  it.each([1, 2, 3, 4])('still requires a warehouse when saving an unposted processing stage %s', async (lifecycle) => {
+    renderStep({
+      saleValue: { ...sale, BaseLifeCycleStatus: { SaleLifeCycleType: lifecycle } },
+      value: { ...reviewValue(), registrarStorageId: null },
+    })
+
+    fireEvent.click(screen.getByRole('button', { name: 'Зберегти' }))
+
+    await waitFor(() => expect(mocks.notificationsShow).toHaveBeenCalledWith(expect.objectContaining({
+      message: 'Оберіть склад документа',
+    })))
+    expect(mocks.updateSaleFromData).not.toHaveBeenCalled()
+  })
+
+  it('requires a warehouse when a draft save carries an invoice document that starts posting', async () => {
+    const invoiceDraft = { ...sale, SaleInvoiceDocument: { Id: 21 } }
+    renderStep({ saleValue: invoiceDraft, value: { ...reviewValue(), registrarStorageId: null } })
+
+    fireEvent.click(screen.getByRole('button', { name: 'Зберегти' }))
+
+    await waitFor(() => expect(mocks.notificationsShow).toHaveBeenCalledWith(expect.objectContaining({
+      message: 'Оберіть склад документа',
+    })))
+    expect(mocks.updateSaleFromData).not.toHaveBeenCalled()
+  })
+
   it('uses the permission-scoped multipart facade for an ordinary create submit', async () => {
     mocks.createSalesUkraineSaleFromData.mockResolvedValue({ message: 'created', sale: null })
     renderStep({ submitFlow: 'create' })
