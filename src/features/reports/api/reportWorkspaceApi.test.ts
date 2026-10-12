@@ -16,11 +16,12 @@ vi.mock('../../../shared/api/apiClient', () => ({ apiRequest: vi.fn() }))
 
 describe('report workspace wire contract', () => {
   it('saves and reloads the original matrix full period without changing its group or enabling current-report execution', async () => {
-    const template = { Id: crypto.randomUUID(), Revision: 1, Name: 'Оригінальна матриця', Data: originalScopeRequest() }
+    const template = { ...originalScopeWireTemplate(), Id: crypto.randomUUID(), Name: 'Оригінальна матриця', Data: originalScopeRequest() }
     const wire = { ...originalScopeWireTemplate(), Id: template.Id, Name: template.Name }
     vi.mocked(apiRequest).mockResolvedValue(wire)
     expect(await saveServerReportTemplate(template)).toEqual(template)
-    expect(apiRequest).toHaveBeenLastCalledWith('/report/templates/save', { method: 'POST', body: template })
+    expect(apiRequest).toHaveBeenLastCalledWith('/report/templates/save', { method: 'POST',
+      body: { Id: template.Id, Revision: template.Revision, Name: template.Name, Data: template.Data } })
     vi.mocked(apiRequest).mockResolvedValue([wire])
     expect(await getServerReportTemplates()).toEqual([template])
   })

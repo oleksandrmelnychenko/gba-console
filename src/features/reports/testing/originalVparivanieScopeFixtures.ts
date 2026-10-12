@@ -13,7 +13,7 @@ export const scopedMatrixFixture = () => ({ ...matrixFixture(), ...originalScope
 /** The saved .NET DTO uses these two PascalCase aliases, unlike the builder request. */
 export function originalScopeWireTemplate() {
   const data = originalScopeRequest()
-  return { Id: 'scope', Revision: 1, Name: 'Оригінальна повна матриця', Data: {
+  return { Id: 'scope', Revision: 1, Name: 'Оригінальна повна матриця', UpdatedAtUtc: '2026-10-12T00:00:00Z', Data: {
     DataSource: data.dataSource, From: data.from, To: data.to, CurrentVparivanieFullScope: true,
     Selections: structuredClone(data.selections), Sorted: { ...structuredClone(data.sorted),
       Measurements: data.sorted.Measurements.map(item => Object.fromEntries(Object.entries(item)
