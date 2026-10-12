@@ -64,9 +64,11 @@ export function currentVparivanieFullScope(data: ReportRequestBody): boolean {
   return entries.length === 1 && entries[0][1] === true
 }
 
-/** Keep stored aliases, including conflicting/invalid input, for explicit refusal. */
+/** Canonicalize the DTO alias; retain ambiguous or unknown aliases for explicit refusal. */
 export function cloneCurrentVparivanieFullScope(data: Record<string, unknown>): Partial<ReportRequestBody> {
-  return structuredClone(Object.fromEntries(Object.entries(data).filter(([key]) => key.toLowerCase() === 'currentvparivaniefullscope')))
+  const entries = Object.entries(data).filter(([key]) => key.toLowerCase() === 'currentvparivaniefullscope')
+  return structuredClone(Object.fromEntries(data.DataSource === CURRENT_VPARIVANIE_SOURCE && entries.length === 1 && entries[0][0] === 'CurrentVparivanieFullScope'
+    ? [['currentVparivanieFullScope', entries[0][1]]] : entries))
 }
 
 /** Exact reference syntax, including Users.EmptyRef; server capability separately gates empty-manager use. */

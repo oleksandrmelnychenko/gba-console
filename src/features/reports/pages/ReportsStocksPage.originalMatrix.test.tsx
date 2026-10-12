@@ -4,11 +4,11 @@ import { beforeEach, expect, it, vi } from 'vitest'
 import { I18nProvider } from '../../../shared/i18n/I18nProvider'
 import { getOriginalMatrixCapability, getOriginalMatrixScopeBinding, readScopedOriginalMatrix } from '../api/originalVparivanieApi'
 import { createStockReport, previewStockReport } from '../api/reportsApi'
-import { getReportDatasets, getServerReportTemplates } from '../api/reportWorkspaceApi'
+import { getReportDatasets, getServerReportTemplates, normalizeSavedTemplate } from '../api/reportWorkspaceApi'
 import { currentVparivanieDataset } from '../data/currentVparivanie.test-fixtures'
 import { reportDatasets } from '../data/reportDatasets.test-fixtures'
 import { matrixCapability } from '../testing/originalVparivanieFixtures'
-import { originalScopeBinding, originalScopeRequest, scopedMatrixFixture } from '../testing/originalVparivanieScopeFixtures'
+import { originalScopeBinding, originalScopeWireTemplate, scopedMatrixFixture } from '../testing/originalVparivanieScopeFixtures'
 import { ReportsStocksPage } from './ReportsStocksPage'
 
 vi.mock('../../auth/useAuth', () => ({ useAuth: () => ({ hasPermission: () => true }) }))
@@ -23,7 +23,7 @@ beforeEach(() => {
   vi.clearAllMocks(); localStorage.clear()
   Object.defineProperty(HTMLElement.prototype, 'scrollIntoView', { configurable: true, value: vi.fn() })
   vi.mocked(getReportDatasets).mockResolvedValue([...reportDatasets, dataset])
-  vi.mocked(getServerReportTemplates).mockResolvedValue([{ Id: 'scope', Revision: 1, Name: 'Оригінальна повна матриця', Data: originalScopeRequest() }])
+  vi.mocked(getServerReportTemplates).mockResolvedValue([normalizeSavedTemplate(originalScopeWireTemplate())])
   vi.mocked(getOriginalMatrixCapability).mockResolvedValue(matrixCapability())
   vi.mocked(getOriginalMatrixScopeBinding).mockResolvedValue(originalScopeBinding())
   vi.mocked(readScopedOriginalMatrix).mockResolvedValue(scopedMatrixFixture())
@@ -33,6 +33,7 @@ it('opens the exact full-period saved form and runs its mounted original matrix 
   await screen.findByRole('button', { name: 'Продажі за днями' })
   fireEvent.click(screen.getByRole('button', { name: 'Шаблони' }))
   fireEvent.click(await screen.findByRole('button', { name: /Відкрити для редагування: Оригінальна повна матриця/ }))
+  await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
   expect((screen.getByLabelText('Від') as HTMLInputElement).value).toBe('2025-01-01')
   expect((screen.getByLabelText('До') as HTMLInputElement).value).toBe('2026-10-09')
   fireEvent.click(screen.getByRole('button', { name: 'Переглянути оригінальну матрицю' }))

@@ -1,26 +1,78 @@
 import { describe, expect, it, vi } from 'vitest'
 import { apiRequest } from '../../../shared/api/apiClient'
-import { deleteServerReportTemplate, getReportCatalogue, getReportDatasets, getServerReportTemplates, saveServerReportTemplate } from './reportWorkspaceApi'
+import { deleteServerReportTemplate, getReportCatalogue, getReportDatasets, getServerReportTemplates, saveServerReportTemplate, normalizeSavedTemplate } from './reportWorkspaceApi'
 import { createSalesReportPreset } from '../data/reportPresets'
 import { reportDatasets, stockDataset, currentStockDatasets, valuationDataset, nativeDocumentDatasets, currentDebtDataset } from '../data/reportDatasets.test-fixtures'
 import { defaultDatasetRequest } from '../data/reportDatasets'
 import { accountBalanceDataset, accountBalanceSelections } from '../data/accountBalances.test-fixtures'
 import { catalogueFixture } from '../data/reportMigration.test-fixtures'
-import { originalScopeRequest } from '../testing/originalVparivanieScopeFixtures'
+import { originalScopeRequest, originalScopeWireTemplate } from '../testing/originalVparivanieScopeFixtures'
+import { originalMatrixScope } from '../data/originalVparivanieScope'
+import { currentVparivanieConfigurationError } from '../data/currentVparivanie'
+import { currentVparivanieDataset } from '../data/currentVparivanie.test-fixtures'
+import { retainStoredTemplateFields } from '../data/reportTemplateDraft'
 
 vi.mock('../../../shared/api/apiClient', () => ({ apiRequest: vi.fn() }))
 
 describe('report workspace wire contract', () => {
   it('saves and reloads the original matrix full period without changing its group or enabling current-report execution', async () => {
     const template = { Id: crypto.randomUUID(), Revision: 1, Name: 'Оригінальна матриця', Data: originalScopeRequest() }
-    const wire = { ...template, Data: { DataSource: 39, From: template.Data.from, To: template.Data.to,
-      Sorted: template.Data.sorted, Selections: template.Data.selections, currentVparivanieFullScope: true } }
+    const wire = { ...originalScopeWireTemplate(), Id: template.Id, Name: template.Name }
     vi.mocked(apiRequest).mockResolvedValue(wire)
     expect(await saveServerReportTemplate(template)).toEqual(template)
     expect(apiRequest).toHaveBeenLastCalledWith('/report/templates/save', { method: 'POST', body: template })
     vi.mocked(apiRequest).mockResolvedValue([wire])
     expect(await getServerReportTemplates()).toEqual([template])
   })
+  it('normalizes both matrix DTO aliases without mutating the wire input or duplicating aliases on save', () => {
+    const wire = originalScopeWireTemplate(), before = structuredClone(wire)
+    const normalized = normalizeSavedTemplate(wire).Data
+    expect(normalized).toEqual(originalScopeRequest())
+    expect(wire).toEqual(before)
+    expect(originalMatrixScope(normalized)).toEqual({ World: 'fenix', From: '2025-01-01', Through: '2026-10-09', GroupId: 3569 })
+    expect(retainStoredTemplateFields(normalized, originalScopeRequest())).toEqual(originalScopeRequest())
+    const dataset = { ...currentVparivanieDataset, currentVparivanie: { ...currentVparivanieDataset.currentVparivanie as object,
+      FullScopeVersion: 1, FullScopeContract: 'OneOurSnapshotCompleteSelectedScope', FullScopeMaximumRows: 500000,
+      FullScopeMaximumSelectedProducts: 4096, FullScopeMaximumColumns: 256, FullScopeMaximumAddressedCells: 1000000 } }
+    expect(currentVparivanieConfigurationError(normalized, dataset, 'workspace')).toBeNull()
+    expect(currentVparivanieConfigurationError(normalized, dataset, 'current')).toContain('366')
+  })
+
+  it.each([
+    ['conflicting mode', (wire: ReturnType<typeof originalScopeWireTemplate>) => Object.assign(wire.Data, { currentVparivanieFullScope: false })],
+    ['duplicate mode', (wire: ReturnType<typeof originalScopeWireTemplate>) => Object.assign(wire.Data, { currentVparivanieFullScope: true })],
+    ['unknown mode casing', (wire: ReturnType<typeof originalScopeWireTemplate>) => {
+      const data = wire.Data as unknown as Record<string, unknown>
+      delete data.CurrentVparivanieFullScope; data.CURRENTVPARIVANIEFULLSCOPE = true
+    }],
+    ['false mode', (wire: ReturnType<typeof originalScopeWireTemplate>) => { wire.Data.CurrentVparivanieFullScope = false }],
+    ['string mode', (wire: ReturnType<typeof originalScopeWireTemplate>) => Object.assign(wire.Data, { CurrentVparivanieFullScope: 'true' })],
+    ['conflicting parent', (wire: ReturnType<typeof originalScopeWireTemplate>) => Object.assign(wire.Data.Sorted.Measurements[0], { parentName: 'Інший результат' })],
+    ['duplicate parent', (wire: ReturnType<typeof originalScopeWireTemplate>) => Object.assign(wire.Data.Sorted.Measurements[0], { parentName: 'Результат' })],
+    ['unknown parent casing', (wire: ReturnType<typeof originalScopeWireTemplate>) => {
+      const item = wire.Data.Sorted.Measurements[0] as unknown as Record<string, unknown>
+      item.PARENTNAME = item.ParentName; delete item.ParentName
+    }],
+    ['unknown measurement option', (wire: ReturnType<typeof originalScopeWireTemplate>) => Object.assign(wire.Data.Sorted.Measurements[0], { unsupportedOption: true })],
+    ['other report option', (wire: ReturnType<typeof originalScopeWireTemplate>) => Object.assign(wire.Data, { Ordering: 1 })],
+  ])('retains %s for strict original-scope refusal', (_name, mutate) => {
+    const wire = originalScopeWireTemplate()
+    mutate(wire)
+    const before = structuredClone(wire), normalized = normalizeSavedTemplate(wire).Data
+    expect(() => originalMatrixScope(normalized)).toThrow()
+    expect(wire).toEqual(before)
+  })
+
+  it('leaves non-matrix measurement aliases unchanged', () => {
+    const wire = originalScopeWireTemplate()
+    wire.Data.DataSource = 0
+    const normalized = normalizeSavedTemplate(wire).Data
+    expect(normalized.sorted).toEqual(wire.Data.Sorted)
+    expect(normalized).toHaveProperty('CurrentVparivanieFullScope', true)
+    expect(normalized).not.toHaveProperty('currentVparivanieFullScope')
+    expect(() => originalMatrixScope(normalized)).toThrow()
+  })
+
   it('reloads authoritative template definitions without the browser HTTP cache', async () => {
     const controller = new AbortController()
     vi.mocked(apiRequest).mockResolvedValue([])
