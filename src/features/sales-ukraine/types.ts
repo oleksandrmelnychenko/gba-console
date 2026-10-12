@@ -274,6 +274,7 @@ export type SalesUkraineTransporter = SalesUkraineEntity & {
 }
 
 export type SalesUkraineSale = SalesUkraineEntity & {
+  RegistrarStorageId?: number | null
   BaseLifeCycleStatus?: SalesUkraineStatus
   BaseSalePaymentStatus?: SalesUkraineStatus
   CashOnDeliveryAmount?: number

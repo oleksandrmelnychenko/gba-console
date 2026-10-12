@@ -93,6 +93,7 @@ import {
 import { buildWizardSplitSale } from './wizardSplitSale'
 import { createWizardAsyncGenerationGuard } from './wizardAsyncGeneration'
 import { createWizardEnterLatch } from './wizardEnterLatch'
+import { SaleDocumentWarehouseSelect } from './SaleDocumentWarehouseSelect'
 
 const EMPTY_GUID = '00000000-0000-0000-0000-000000000000'
 const SALE_LIFE_CYCLE_STATUS_NAMES: Record<number, string> = {
@@ -814,6 +815,7 @@ export function NewSaleReviewStep({
     const addressId = selfCheckoutPayload ? null : getPositiveId(value.address?.Id)
     const payload: SalesUkraineSale & { IsEdited?: boolean } = {
       ...current,
+      RegistrarStorageId: value.registrarStorageId ?? current.RegistrarStorageId,
       CashOnDeliveryAmount: selfCheckoutPayload ? 0 : Number(value.codAmount),
       Comment: value.comment,
       DeliveryRecipient: selfCheckoutPayload
@@ -864,6 +866,10 @@ export function NewSaleReviewStep({
   }
 
   function validateFinalPayload(payload: SalesUkraineSale): boolean {
+    if ((!payload.ChangedToInvoice || splitItems.length > 0 || isMergedMode) && (!Number.isSafeInteger(payload.RegistrarStorageId) || Number(payload.RegistrarStorageId) <= 0)) {
+      notifications.show({ color: 'red', message: t('Оберіть склад документа') })
+      return false
+    }
     if (!validateSelectedTtnFile()) {
       return false
     }
@@ -1668,6 +1674,15 @@ export function NewSaleReviewStep({
                   </Text>
                 </Box>
               )}
+
+              <Box className="new-sale-review-section">
+                <SaleDocumentWarehouseSelect
+                  value={value.registrarStorageId ?? sale?.RegistrarStorageId ?? null}
+                  flow={submitFlow}
+                  disabled={(Boolean(sale?.ChangedToInvoice) && splitItems.length === 0 && !isMergedMode) || submitting || saving || !canSubmit}
+                  onChange={(registrarStorageId) => onChange({ registrarStorageId })}
+                />
+              </Box>
 
               <Box className="new-sale-review-section">
                 <Box className="new-sale-review-section__head">

@@ -11,6 +11,7 @@ import type {
 export const SELF_CHECKOUT_CLASS = 'self_checkout_item_class'
 
 export type NewSaleReviewValue = {
+  registrarStorageId?: number | null
   address: WizardDeliveryRecipientAddress | null
   addressValue: string
   city: string

@@ -23,6 +23,7 @@ import { NewSaleReviewStep } from './NewSaleReviewStep'
 import { createWizardSplitOrderItem } from './wizardSplitSale'
 
 const mocks = vi.hoisted(() => ({
+  apiRequest: vi.fn(),
   clearWizardMergedSale: vi.fn(),
   clearWizardSplitFinalMutation: vi.fn(),
   clearWizardSplitOrderItems: vi.fn(),
@@ -59,6 +60,11 @@ const mocks = vi.hoisted(() => ({
   translate: (key: string) => key,
   updateMergedSale: vi.fn(),
   updateSaleFromData: vi.fn(),
+}))
+
+vi.mock('../../../../shared/api/apiClient', async (importOriginal) => ({
+  ...await importOriginal<typeof import('../../../../shared/api/apiClient')>(),
+  apiRequest: mocks.apiRequest,
 }))
 
 vi.mock('../../../auth/useAuth', () => ({
@@ -194,6 +200,7 @@ function reviewValue(ttnFile: File | null = null): NewSaleReviewValue {
     mobilePhone: '0500000000',
     recipient: { Id: 1 },
     recipientName: 'Recipient',
+    registrarStorageId: 7,
     transporter: { Id: 1 },
     ttnFile,
     ttnNumber: '',
@@ -277,6 +284,16 @@ describe('NewSaleReviewStep persistent file reconciliation', () => {
     expect(mocks.createSale).not.toHaveBeenCalled()
   })
 
+  it('requires an explicit warehouse before posting a draft', async () => {
+    renderStep({ value: { ...reviewValue(), registrarStorageId: null } })
+    fireEvent.click(document.querySelector<HTMLButtonElement>('.new-sale-review-actions__primary') as HTMLButtonElement)
+    await waitFor(() => expect(mocks.notificationsShow).toHaveBeenCalledWith(expect.objectContaining({
+      message: 'Оберіть склад документа',
+    })))
+    expect(mocks.updateSaleFromData).not.toHaveBeenCalled()
+    expect(mocks.createSalesUkraineSaleFromData).not.toHaveBeenCalled()
+  })
+
   it('uses the permission-scoped multipart facade for an ordinary create submit', async () => {
     mocks.createSalesUkraineSaleFromData.mockResolvedValue({ message: 'created', sale: null })
     renderStep({ submitFlow: 'create' })
@@ -285,6 +302,7 @@ describe('NewSaleReviewStep persistent file reconciliation', () => {
 
     await waitFor(() => expect(mocks.createSalesUkraineSaleFromData).toHaveBeenCalledTimes(1))
     expect(mocks.updateSaleFromData).not.toHaveBeenCalled()
+    expect(mocks.createSalesUkraineSaleFromData.mock.calls[0]?.[0]).toMatchObject({ RegistrarStorageId: 7 })
   })
 
   it('uses the permission-scoped VAT POST/GET facade for a create submit', async () => {
@@ -346,6 +364,7 @@ describe('NewSaleReviewStep persistent file reconciliation', () => {
   beforeEach(() => {
     clearAllSalesPendingMutations()
     vi.clearAllMocks()
+    mocks.apiRequest.mockResolvedValue([{ Id: 7, Name: 'Склад документа' }])
     mocks.keyHandler = null
     mocks.mergedSale = null
     mocks.reviewComboboxProps = {}

@@ -853,6 +853,7 @@ export function mapWizardSplitOrderItem(item: WizardSplitOrderItem): SalesUkrain
 
 export function buildWizardSplitSale(current: SalesUkraineSale, items: WizardSplitOrderItem[]): SalesUkraineSale {
   return {
+    RegistrarStorageId: current.RegistrarStorageId,
     ClientAgreement: current.ClientAgreement,
     CustomersOwnTtn: current.CustomersOwnTtn ?? null,
     Deleted: false,
