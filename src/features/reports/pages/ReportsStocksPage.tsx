@@ -162,7 +162,7 @@ import { reorderReportGrouping, transferReportGrouping, type ReportGroupingAxis 
 
 import { useServerReportTemplates, type TemplateMutationResult } from '../hooks/useServerReportTemplates'
 import { ReportTemplatesPanel } from './ReportTemplatesPanel'
-import { retainStoredTemplateFields } from '../data/reportTemplateDraft'
+import { retainStoredMeasurementLabels, retainStoredTemplateFields } from '../data/reportTemplateDraft'
 
 import { ReportCatalogueControl } from './ReportCatalogueControl'
 import { isOneCTurnoverCatalogueChoice, resolveCatalogueLaunch, type CatalogueLaunchChoice } from '../data/reportCatalogueLaunch'
@@ -357,12 +357,17 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
   const [originalBuyerSalesShareGenerating, setOriginalBuyerSalesShareGenerating] = useState(false)
   const [valuationClientAgreementId, setValuationAgreementId] = useValueState<number | undefined>(undefined)
   const valuation = useValuationAgreement(valuationClientAgreementId, canGenerateReport && requiresValuationAgreement(dataSource))
+  const [activeTemplate, setActiveTemplate] = useState<ReportTemplate | null>(null)
+  const [restoredData, setRestoredData] = useState<ReportRequestBody | null>(null)
+  const retainedData = restoredData ?? activeTemplate?.Data
   const dataset = datasetStorage.datasets.find(item => item.DataSource === dataSource)
   const periodSupported = dataset?.PeriodSupported !== false
   const [selectedMeasurements, setMeasurements] = useValueState<ReportMeasurementGroup[]>(createDefaultMeasurementGroups)
   const priceTypeDataset = useMemo(() => priceTypeSalesFormDataset(dataset, priceTypeSalesComparison), [dataset, priceTypeSalesComparison])
   const supplierDataset = useMemo(() => supplierBasisFormDataset(priceTypeDataset, supplierBasis), [priceTypeDataset, supplierBasis])
-  const measurements = useMemo(() => datasetMeasurements(supplierDataset, flattenCheckedMeasurements(selectedMeasurements)), [supplierDataset, selectedMeasurements])
+  const measurements = useMemo(() => retainStoredMeasurementLabels(retainedData, { dataSource, supplierBasis },
+    datasetMeasurements(supplierDataset, flattenCheckedMeasurements(selectedMeasurements))),
+  [dataSource, retainedData, selectedMeasurements, supplierBasis, supplierDataset])
   const presets = useMemo(() => datasetPresets(dataset), [dataset])
   const groupingOrdering = useReportGroupingOrdering()
   const { rowGroups, setRowGroups, colGroups, setColGroups, ordering } = groupingOrdering
@@ -375,8 +380,6 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
   const { selections, expression: filterExpression } = filterLogic
   const [templateName, setTemplateName] = useValueState('')
   const templateStorage = useServerReportTemplates(canGenerateReport, datasetStorage.datasets, ownerId)
-  const [activeTemplate, setActiveTemplate] = useState<ReportTemplate | null>(null)
-  const [restoredData, setRestoredData] = useState<ReportRequestBody | null>(null)
   const [draftRestoreError, setDraftRestoreError] = useState<string | null>(null)
   const [templateNotice, setTemplateNotice] = useValueState<string | null>(null)
   const [catalogueNotice, setCatalogueNotice] = useState<{ text: string; failed: boolean } | null>(null)
@@ -441,7 +444,6 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
     callerKey: ownerId, today })
   const plannedCashConstructor = usePlannedCashConstructor({ enabled: canGenerateReport, disabled: isLoading, callerKey: ownerId, today })
   const comparisonSettingsDisabled = isLoading || !canGenerateReport
-  const retainedData = restoredData ?? activeTemplate?.Data
   const templateBody = useMemo(() => retainedData
     ? retainStoredTemplateFields(retainedData, { ...reportBody, selections })
     : { ...reportBody, selections }, [retainedData, reportBody, selections])

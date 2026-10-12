@@ -1,4 +1,5 @@
-import type { ReportRequestBody } from '../types'
+import type { ReportMeasurementGroup, ReportRequestBody } from '../types'
+import { requestSupplierBasis } from './supplierBasis'
 
 // Form-managed options can be deliberately cleared. Unrecognized stored fields
 // remain attached to the saved draft instead of disappearing during round-trip.
@@ -27,19 +28,45 @@ const managedFields = new Set([
   'priceAnalysis', 'PriceAnalysis',
 ])
 
+type MeasurementContext = Pick<ReportRequestBody, 'dataSource' | 'supplierBasis' | 'SupplierBasis'>
+
+function retainStoredMeasurementLabel<T extends { Type: number; Label?: string }>(
+  stored: ReportRequestBody | null | undefined, current: MeasurementContext, item: T,
+): T {
+  if (!stored || stored.dataSource !== current.dataSource) return item
+  // Null/absence and explicit 1 execute the same saved supplier calculation.
+  const quantityChanged = current.dataSource === 38 && item.Type === 0
+    && (requestSupplierBasis(stored) === 0) !== (requestSupplierBasis(current) === 0)
+  const original = stored.sorted.Measurements.find(value => value.Type === item.Type)
+  return !quantityChanged && typeof original?.Label === 'string' && original.Label.trim().length > 0
+    ? { ...item, Label: original.Label } : item
+}
+
+/** Stored captions survive reconstruction; newly selected measures keep dataset defaults. */
+export function retainStoredMeasurementLabels(stored: ReportRequestBody | null | undefined,
+  current: MeasurementContext, groups: ReportMeasurementGroup[]): ReportMeasurementGroup[] {
+  if (!stored) return groups
+  return groups.map(group => {
+    const SubList = group.SubList.map(item => retainStoredMeasurementLabel(stored, current, item))
+    return { ...group, SubList, ...(SubList.length === 1 ? { Label: SubList[0].Label } : {}) }
+  })
+}
+
 export function retainStoredTemplateFields(stored: ReportRequestBody, draft: ReportRequestBody): ReportRequestBody {
   const retained = Object.fromEntries(Object.entries(stored).filter(([key]) => !managedFields.has(key)
     && key.toLowerCase() !== 'currentvparivaniefullscope' && key.toLowerCase() !== 'dayorganizationbasis' && key.toLowerCase() !== 'supplierbasis'
     && key.toLowerCase() !== 'pricetypesalescomparison'
     && key.toLowerCase() !== 'groupedcashperiod' && key.toLowerCase() !== 'groupedsettlementperiod' && key.toLowerCase() !== 'sourcecounterpartygroups'))
+  const retainMeasurement = (item: ReportRequestBody['sorted']['Measurements'][number]) =>
+    retainStoredMeasurementLabel(stored, draft, {
+      ...stored.sorted.Measurements.find(original => original.Type === item.Type), ...item,
+    })
   const retainGroups = (axis: 'Row' | 'Col') => draft.sorted[axis].map(item => ({
     ...stored.sorted[axis].find(original => original.type === item.type), ...item,
   }))
   return structuredClone({ ...retained, ...draft, sorted: {
     ...stored.sorted, ...draft.sorted, Row: retainGroups('Row'), Col: retainGroups('Col'),
-    Measurements: [...draft.sorted.Measurements.map(item => ({
-      ...stored.sorted.Measurements.find(original => original.Type === item.Type), ...item,
-    })), ...stored.sorted.Measurements.filter(item => item.IsChecked === false
+    Measurements: [...draft.sorted.Measurements.map(retainMeasurement), ...stored.sorted.Measurements.filter(item => item.IsChecked === false
       && !draft.sorted.Measurements.some(current => current.Type === item.Type))],
   } })
 }
