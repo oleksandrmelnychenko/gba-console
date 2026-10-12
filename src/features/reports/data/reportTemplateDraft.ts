@@ -1,4 +1,4 @@
-import type { ReportMeasurementGroup, ReportRequestBody } from '../types'
+import type { ReportGroupingItem, ReportMeasurementGroup, ReportRequestBody } from '../types'
 import { requestSupplierBasis } from './supplierBasis'
 
 // Form-managed options can be deliberately cleared. Unrecognized stored fields
@@ -27,6 +27,17 @@ const managedFields = new Set([
   'discountMarkup', 'DiscountMarkup', 'providedDiscounts', 'ProvidedDiscounts',
   'priceAnalysis', 'PriceAnalysis',
 ])
+
+/** Applying a validated saved layout keeps its captions and current grouping metadata. */
+export function retainStoredGroupingLabels(stored: ReportRequestBody, dataSource: number,
+  axis: 'Row' | 'Col', groups: ReportGroupingItem[]): ReportGroupingItem[] {
+  if (stored.dataSource !== dataSource) return groups
+  return groups.map(group => {
+    const originals = stored.sorted[axis].filter(item => item.type === group.type)
+    const label = originals.length === 1 ? originals[0].label : undefined
+    return typeof label === 'string' && label.trim().length > 0 ? { ...group, label } : group
+  })
+}
 
 type MeasurementContext = Pick<ReportRequestBody, 'dataSource' | 'supplierBasis' | 'SupplierBasis'>
 

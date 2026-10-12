@@ -162,7 +162,7 @@ import { reorderReportGrouping, transferReportGrouping, type ReportGroupingAxis 
 
 import { useServerReportTemplates, type TemplateMutationResult } from '../hooks/useServerReportTemplates'
 import { ReportTemplatesPanel } from './ReportTemplatesPanel'
-import { retainStoredMeasurementLabels, retainStoredTemplateFields } from '../data/reportTemplateDraft'
+import { retainStoredGroupingLabels, retainStoredMeasurementLabels, retainStoredTemplateFields } from '../data/reportTemplateDraft'
 
 import { ReportCatalogueControl } from './ReportCatalogueControl'
 import { isOneCTurnoverCatalogueChoice, resolveCatalogueLaunch, type CatalogueLaunchChoice } from '../data/reportCatalogueLaunch'
@@ -686,8 +686,10 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
     setTemplateName(template.Name)
     setFrom(nextDataset.PeriodSupported === false ? '' : data.from || today)
     setTo(nextDataset.PeriodSupported === false ? '' : data.to || today)
-    setRowGroups(data.sorted.Row.map(item => groupingByType.get(item.type)!))
-    setColGroups(data.sorted.Col.map(item => groupingByType.get(item.type)!))
+    setRowGroups(retainStoredGroupingLabels(data, nextDataset.DataSource, 'Row',
+      data.sorted.Row.map(item => groupingByType.get(item.type)!)))
+    setColGroups(retainStoredGroupingLabels(data, nextDataset.DataSource, 'Col',
+      data.sorted.Col.map(item => groupingByType.get(item.type)!)))
     filterLogic.load(data.selections, requestFilterExpression(data))
     setTopGroups(structuredClone(requestTopGroups(data)))
     setThreshold(structuredClone(requestThreshold(data)))

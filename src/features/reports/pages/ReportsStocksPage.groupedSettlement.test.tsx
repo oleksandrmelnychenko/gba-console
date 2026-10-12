@@ -3,10 +3,11 @@ import { fireEvent, render, screen, waitFor, within } from '@testing-library/rea
 import { beforeEach, expect, it, vi } from 'vitest'
 import { I18nProvider } from '../../../shared/i18n/I18nProvider'
 import { createStockReport, searchDatasetReportValues } from '../api/reportsApi'
-import { getReportDatasets, getServerReportTemplates, saveServerReportTemplate } from '../api/reportWorkspaceApi'
+import { getReportDatasets, getServerReportTemplates, saveServerReportTemplate, normalizeSavedTemplate } from '../api/reportWorkspaceApi'
 import { getSettlementPeriodAgreements } from '../api/settlementPeriodApi'
 import { groupedSettlementDataset as dataset } from '../data/groupedSettlementPeriod.test-fixtures'
 import { settlementPeriodAgreement, settlementPeriodRequest } from '../data/settlementPeriod.test-fixtures'
+import { defaultDatasetRequest } from '../data/reportDatasets'
 import { reportDatasets } from '../data/reportDatasets.test-fixtures'
 import { settlementAttributesDataset, settlementAttributesRequest } from '../data/settlementSourceAttributes.test-fixtures'
 import { ReportsStocksPage } from './ReportsStocksPage'
@@ -146,4 +147,41 @@ it('invalidates stale XLSX/PDF links when the grouped workbook layout or source 
   const amg = vi.mocked(createStockReport).mock.calls[2][0]
   expect(amg.groupedSettlementPeriod).toMatchObject({ SourceWorld: 'Amg' })
   expect(amg).not.toHaveProperty('sourceBuyerSubtree')
+})
+
+
+it.each([[[4, 41, 76]], [[4, 76]]])('applies and resaves wire settlement layout %j without replacing its saved captions', async rows => {
+  const technical = { ...dataset, Groupings: dataset.Groupings.map(group => ({ ...group,
+    Name: group.Type === 41 ? 'Валюта взаєморозрахунків' : group.Name })) }
+  vi.mocked(getReportDatasets).mockResolvedValue([...reportDatasets, technical])
+  const data = defaultDatasetRequest(technical, '2026-09-01', '2026-09-12')
+  data.sorted.Row = data.sorted.Row.filter(row => rows.includes(row.type)).map(row => ({ ...row,
+    label: row.type === 41 ? 'Валюта рахунку' : row.label }))
+  const wire = { Id: crypto.randomUUID(), Revision: 1, Name: 'Збережені взаєморозрахунки',
+    UpdatedAtUtc: '2026-10-12T00:00:00Z', Data: { DataSource: 41, From: data.from, To: data.to,
+      Sorted: { ...data.sorted, Measurements: data.sorted.Measurements.map(item => {
+        const { parentName, ...rest } = item
+        return { ...rest, ParentName: parentName }
+      }) }, Selections: data.selections, GroupedSettlementPeriod: data.groupedSettlementPeriod } }
+  // The actual saved DTO has PascalCase measurement fields at the wire boundary.
+  const saved = normalizeSavedTemplate(wire as unknown as Parameters<typeof normalizeSavedTemplate>[0])
+  vi.mocked(getServerReportTemplates).mockResolvedValue([saved])
+  const { container } = await ready()
+  fireEvent.click(screen.getByRole('button', { name: 'Шаблони' }))
+  fireEvent.click(await screen.findByRole('button', { name: /Збережені взаєморозрахунки/ }))
+  await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
+  fireEvent.submit(container.querySelector('form')!)
+  await waitFor(() => expect(createStockReport).toHaveBeenCalledOnce())
+  const request = vi.mocked(createStockReport).mock.calls[0][0]
+  expect(request.sorted.Row).toEqual(data.sorted.Row)
+  expect(request.sorted.Measurements).toEqual(data.sorted.Measurements)
+  expect(request.groupedSettlementPeriod).toEqual(data.groupedSettlementPeriod)
+  fireEvent.click(screen.getByRole('button', { name: 'Шаблони' }))
+  fireEvent.click(screen.getByRole('button', { name: 'Оновити шаблон' }))
+  await waitFor(() => expect(saveServerReportTemplate).toHaveBeenCalledOnce())
+  const resaved = vi.mocked(saveServerReportTemplate).mock.calls[0][0].Data
+  expect(resaved.sorted.Row).toEqual(data.sorted.Row)
+  expect(resaved.sorted.Measurements).toEqual(data.sorted.Measurements)
+  expect(resaved.groupedSettlementPeriod).toEqual(data.groupedSettlementPeriod)
+  expect(resaved.sorted.Measurements.every(item => !Object.hasOwn(item, 'ParentName'))).toBe(true)
 })

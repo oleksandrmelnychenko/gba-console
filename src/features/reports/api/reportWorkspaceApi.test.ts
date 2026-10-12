@@ -64,7 +64,21 @@ describe('report workspace wire contract', () => {
     expect(wire).toEqual(before)
   })
 
-  it('leaves non-matrix measurement aliases unchanged', () => {
+  it('normalizes the same known saved measurement alias for settlements and preserves ambiguous or unknown aliases', () => {
+    const wire = originalScopeWireTemplate()
+    wire.Data.DataSource = 41
+    const before = structuredClone(wire), normalized = normalizeSavedTemplate(wire).Data
+    expect(normalized.sorted.Measurements[0]).toHaveProperty('parentName', 'Результат')
+    expect(normalized.sorted.Measurements[0]).not.toHaveProperty('ParentName')
+    expect(wire).toEqual(before)
+    for (const extra of [{ parentName: 'Інший підпис' }, { PARENTNAME: 'Результат' }]) {
+      const ambiguous = structuredClone(wire)
+      Object.assign(ambiguous.Data.Sorted.Measurements[0], extra)
+      expect(normalizeSavedTemplate(ambiguous).Data.sorted.Measurements[0]).toEqual(ambiguous.Data.Sorted.Measurements[0])
+    }
+  })
+
+  it('leaves unrelated dataset measurement aliases unchanged', () => {
     const wire = originalScopeWireTemplate()
     wire.Data.DataSource = 0
     const normalized = normalizeSavedTemplate(wire).Data

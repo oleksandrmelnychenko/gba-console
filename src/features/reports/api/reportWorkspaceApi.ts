@@ -209,8 +209,8 @@ type WireTemplate = Required<Omit<ReportTemplate, 'Data'>> & {
   }
 }
 
-// Only the matrix DTO's known measurement alias is canonicalized; ambiguous fields stay rejectable.
-function normalizeMatrixMeasurements(sorted: ReportRequestBody['sorted']): ReportRequestBody['sorted'] {
+// Known native saved-DTO measurement aliases are canonicalized; ambiguous fields stay rejectable.
+function normalizeNativeMeasurements(sorted: ReportRequestBody['sorted']): ReportRequestBody['sorted'] {
   const result = structuredClone(sorted)
   if (!Array.isArray(result.Measurements)) return result
   result.Measurements = result.Measurements.map(item => {
@@ -231,7 +231,7 @@ export function normalizeSavedTemplate(value: WireTemplate): ReportTemplate {
   }
   return { ...value, Data: {
     from: value.Data.From ?? '', to: value.Data.To ?? '',
-    sorted: value.Data.DataSource === 39 ? normalizeMatrixMeasurements(value.Data.Sorted) : (value.Data.DataSource === 16 || value.Data.DataSource === 17 || value.Data.DataSource === 18 || value.Data.DataSource === 19 || value.Data.DataSource === 20 || value.Data.DataSource === 21 || value.Data.DataSource === 27) ? structuredClone(value.Data.Sorted) : value.Data.Sorted,
+    sorted: (value.Data.DataSource === 39 || value.Data.DataSource === 41) ? normalizeNativeMeasurements(value.Data.Sorted) : (value.Data.DataSource === 16 || value.Data.DataSource === 17 || value.Data.DataSource === 18 || value.Data.DataSource === 19 || value.Data.DataSource === 20 || value.Data.DataSource === 21 || value.Data.DataSource === 27) ? structuredClone(value.Data.Sorted) : value.Data.Sorted,
     selections: (value.Data.DataSource === 16 || value.Data.DataSource === 17 || value.Data.DataSource === 18 || value.Data.DataSource === 19 || value.Data.DataSource === 20 || value.Data.DataSource === 21 || value.Data.DataSource === 27) ? structuredClone(value.Data.Selections ?? []) : value.Data.Selections ?? [],
     dataSource: value.Data.DataSource,
     ...cloneCurrentVparivanieFullScope(value.Data),

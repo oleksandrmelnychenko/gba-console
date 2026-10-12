@@ -5,7 +5,7 @@ import { datasetMeasurements, defaultDatasetRequest } from './reportDatasets'
 import { supplierBasisFormDataset } from './supplierBasis'
 import { flattenCheckedMeasurements } from './reportOptions'
 import type { ReportDataset } from '../types'
-import { retainStoredMeasurementLabels, retainStoredTemplateFields } from './reportTemplateDraft'
+import { retainStoredGroupingLabels, retainStoredMeasurementLabels, retainStoredTemplateFields } from './reportTemplateDraft'
 
 describe('saved-template draft preservation', () => {
   it('preserves unrecognized settings and grouping metadata while allowing explicit option removal and full filter edits', () => {
@@ -57,6 +57,28 @@ describe('saved-template draft preservation', () => {
       expect(retainStoredTemplateFields(malformed as never, draft).sorted.Measurements[0].Label)
         .toBe('Поточний стандартний підпис')
     }
+  })
+
+  it('applies saved row and column captions using current metadata without changing new or foreign-source defaults', () => {
+    const data = createSalesReportPreset('agreements', '', '', []).Data
+    const row = { type: 41, key: 'SettlementCurrency', label: 'Валюта взаєморозрахунків' }
+    const column = { type: 76, key: 'Counterparty', label: 'Контрагент' }
+    const stored = { ...data, dataSource: 41, sorted: { ...data.sorted,
+      Row: [{ ...row, key: 'OldCurrencyKey', label: 'Валюта рахунку' }],
+      Col: [{ ...column, label: 'Власний підпис колонки' }],
+    } }
+    const before = structuredClone(stored)
+    expect(retainStoredGroupingLabels(stored, 41, 'Row', [row])).toEqual([{ ...row, label: 'Валюта рахунку' }])
+    expect(retainStoredGroupingLabels(stored, 41, 'Col', [column])).toEqual([{ ...column, label: 'Власний підпис колонки' }])
+    expect(retainStoredGroupingLabels(stored, 39, 'Row', [row])).toEqual([row])
+    expect(retainStoredGroupingLabels(stored, 41, 'Row', [column])).toEqual([column])
+    for (const label of ['', '   ', null]) {
+      const invalid = { ...stored, sorted: { ...stored.sorted, Row: [{ ...row, label }] } }
+      expect(retainStoredGroupingLabels(invalid as never, 41, 'Row', [row])).toEqual([row])
+    }
+    const duplicate = { ...stored, sorted: { ...stored.sorted, Row: [stored.sorted.Row[0], row] } }
+    expect(retainStoredGroupingLabels(duplicate, 41, 'Row', [row])).toEqual([row])
+    expect(stored).toEqual(before)
   })
 
   const supplier: ReportDataset = {
