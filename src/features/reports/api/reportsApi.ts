@@ -20,6 +20,7 @@ import { revenueComparisonConfigurationError, revenueExactId } from '../data/rev
 import { salesXyzConfigurationError } from '../data/salesXyz'
 import { apiRequest } from '../../../shared/api/apiClient'
 import type {
+  ReportDataset,
   ReportEntity,
   OneCTurnoverScopeSummary,
   ReportRequestBody,
@@ -41,8 +42,8 @@ import { normalizeNativeReportPreview, type NativeReportPreview } from '../data/
 const EMPTY_GUID = '00000000-0000-0000-0000-000000000000'
 const CLIENT_FILTER_SQL = 'RegionCode.Value/Client.FullName/Client.USREOU'
 
-export async function createStockReport(body: ReportRequestBody): Promise<ReportResult> {
-  const request = prepareStockReportRequest(body)
+export async function createStockReport(body: ReportRequestBody, dataset?: ReportDataset): Promise<ReportResult> {
+  const request = prepareStockReportRequest(body, dataset)
   const result = await apiRequest<unknown>('/report/stocks/generate', {
     method: 'POST',
     dedupe: false,
@@ -53,8 +54,8 @@ export async function createStockReport(body: ReportRequestBody): Promise<Report
 }
 
 /** Calculates one bounded on-screen page and file links from the same report run. */
-export async function previewStockReport(body: ReportRequestBody): Promise<{ result: ReportResult; preview: NativeReportPreview }> {
-  const request = prepareStockReportRequest(body)
+export async function previewStockReport(body: ReportRequestBody, dataset?: ReportDataset): Promise<{ result: ReportResult; preview: NativeReportPreview }> {
+  const request = prepareStockReportRequest(body, dataset)
   const response = await apiRequest<unknown>('/report/stocks/preview', {
     method: 'POST',
     dedupe: false,
@@ -78,11 +79,11 @@ export async function previewStockReport(body: ReportRequestBody): Promise<{ res
 }
 
 /** Reuses native refusal rules without submitting or replacing a saved definition. */
-export function validateStockReportRequest(body: ReportRequestBody): void {
-  prepareStockReportRequest(body)
+export function validateStockReportRequest(body: ReportRequestBody, dataset?: ReportDataset): void {
+  prepareStockReportRequest(body, dataset)
 }
 
-function prepareStockReportRequest(body: ReportRequestBody): ReportRequestBody {
+function prepareStockReportRequest(body: ReportRequestBody, dataset?: ReportDataset): ReportRequestBody {
   const request = (body.dataSource === 2 || body.dataSource === 17 || body.dataSource === 18 || body.dataSource === 19 || body.dataSource === 20 || body.dataSource === 21 || body.dataSource === 22 || body.dataSource === 23 || body.dataSource === 24 || body.dataSource === 25 || body.dataSource === 27 || body.dataSource === 28 || body.dataSource === 35 || body.dataSource === 38 || body.dataSource === 39 || body.dataSource === 40 || body.dataSource === 41) ? structuredClone(body) : body
   const workbookError = workbookConfigurationError(request)
   if (workbookError) throw new Error(workbookError)
@@ -94,7 +95,7 @@ function prepareStockReportRequest(body: ReportRequestBody): ReportRequestBody {
   if (priceComparisonError) throw new Error(priceComparisonError)
   const grossProfitError = recordedSaleGrossProfitConfigurationError(request)
   if (grossProfitError) throw new Error(grossProfitError)
-  const dayOrganizationProfitError = dayOrganizationGrossProfitConfigurationError(request)
+  const dayOrganizationProfitError = dayOrganizationGrossProfitConfigurationError(request, dataset)
   if (dayOrganizationProfitError) throw new Error(dayOrganizationProfitError)
   const currentVparivanieError = currentVparivanieConfigurationError(request)
   if (currentVparivanieError) throw new Error(currentVparivanieError)
@@ -108,7 +109,7 @@ function prepareStockReportRequest(body: ReportRequestBody): ReportRequestBody {
   }
   const vparivanieError = vparivanieConfigurationError(request)
   if (vparivanieError) throw new Error(vparivanieError)
-  const supplierBatchProfitError = supplierBatchGrossProfitConfigurationError(request)
+  const supplierBatchProfitError = supplierBatchGrossProfitConfigurationError(request, dataset)
   if (supplierBatchProfitError) throw new Error(supplierBatchProfitError)
   const importedDiscountError = importedSaleDiscountConfigurationError(request)
   if (importedDiscountError) throw new Error(importedDiscountError)

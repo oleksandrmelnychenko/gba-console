@@ -511,8 +511,8 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
     if (constructorMode) setConstructorSection('result')
 
     try {
-      const previewResult = showPreview ? await previewStockReport(reportBody) : null
-      const nextResult = previewResult?.result ?? await createStockReport(reportBody)
+      const previewResult = showPreview ? await previewStockReport(reportBody, dataset) : null
+      const nextResult = previewResult?.result ?? await createStockReport(reportBody, dataset)
       const outcome: ReportRunOutcome = {
         ...(rateComparisonOptions(rateComparison) ? { rateComparison: structuredClone(rateComparisonOptions(rateComparison)!) } : {}),
         ...returnComparisonSummary(returnComparison),

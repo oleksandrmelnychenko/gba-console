@@ -24,7 +24,7 @@ export function savedNativeReportConfigurationError(template: ReportTemplate, da
   if (matches.length !== 1) return 'Набір даних збереженого варіанта зараз недоступний.'
   const error = datasetConfigurationError(template.Data, matches[0])
   if (error) return error
-  try { validateStockReportRequest(template.Data) }
+  try { validateStockReportRequest(template.Data, matches[0]) }
   catch (cause) { return cause instanceof Error ? cause.message : 'Налаштування збереженого варіанта не підтримуються.' }
   return null
 }

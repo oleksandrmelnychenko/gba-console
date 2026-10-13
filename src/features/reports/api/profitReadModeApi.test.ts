@@ -3,7 +3,8 @@ import { apiRequest } from '../../../shared/api/apiClient'
 import { defaultDatasetRequest } from '../data/reportDatasets'
 import { profitDayDataset, profitSupplierDataset } from '../data/profitReadMode.test-fixtures'
 import { normalizeNativeReportPreview } from '../data/nativeReportPreview'
-import { createStockReport, previewStockReport } from './reportsApi'
+import { savedNativeReportConfigurationError } from '../data/savedNativeReport'
+import { createStockReport, previewStockReport, validateStockReportRequest } from './reportsApi'
 vi.mock('../../../shared/api/apiClient', () => ({ apiRequest: vi.fn() }))
 beforeEach(() => vi.clearAllMocks())
 function response(mode: unknown = 0, source = 'NativeDayOrganizationGrossProfit') {
@@ -45,4 +46,21 @@ it('preserves strict numeric response aliases and refuses duplicate evidence', (
   const camel = { ...payload, Preview: { ...payload.Preview, Request: { ...rest, profitReadMode: 0 } } }
   expect(normalizeNativeReportPreview(camel).Request?.ProfitReadMode).toBe(0)
   expect(() => normalizeNativeReportPreview({ ...payload, Preview: { ...payload.Preview, Request: { ...payload.Preview.Request, profitReadMode: 0 } } })).toThrow('джерело')
+})
+
+it.each([profitDayDataset, profitSupplierDataset])('passes the server two-month capability through preview, generation and saved validation for $DataSource', async dataset => {
+  const current = { ...dataset, profitReadMode: { ...dataset.profitReadMode as object, CurrentDocumentsMaximumDays: 62 } }
+  const request = { ...defaultDatasetRequest(dataset, '2026-08-01', '2026-09-30'), profitReadMode: 0 }
+  vi.mocked(apiRequest).mockResolvedValue(response(0, dataset.DataSource === 35 ? 'NativeDayOrganizationGrossProfit' : 'NativeSupplierGrossProfit'))
+  await previewStockReport(request, current)
+  await createStockReport(request, current)
+  expect(apiRequest).toHaveBeenCalledTimes(2)
+  expect(vi.mocked(apiRequest).mock.calls.every(call => JSON.stringify(call[1]?.body) === JSON.stringify(request))).toBe(true)
+  expect(() => validateStockReportRequest(request, current)).not.toThrow()
+  const template = { Id: '11111111-1111-1111-1111-111111111111', Name: 'Current two months', Revision: 0, Data: request }
+  expect(savedNativeReportConfigurationError(template, [current])).toBeNull()
+  expect(savedNativeReportConfigurationError(template, [dataset])).toContain('31')
+  expect(() => validateStockReportRequest(request, dataset)).toThrow('31')
+  expect(() => validateStockReportRequest(request)).toThrow('31')
+  expect(() => validateStockReportRequest({ ...request, to: '2026-10-03' }, current)).toThrow('62')
 })
