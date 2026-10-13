@@ -97,6 +97,7 @@ import {
   isProductRealtimePayloadForProduct,
 } from '../utils'
 import { getProductPriceBreakdown } from '../productPricing'
+import { canEditNativeProductClassification } from '../productNativeClassification'
 import {
   PRODUCT_ANALYTICS_PERMISSION,
   PRODUCT_AUDIT_PERMISSION,
@@ -140,6 +141,7 @@ type ProductSpecificationDraft = {
 }
 
 type ProductEditForm = {
+  NativeIsService: boolean | null
   Description: string
   DescriptionUA: string
   IsForSale: boolean
@@ -1111,6 +1113,7 @@ function ProductPermissionDeniedAlert() {
 function ProductEditPanel({ onProductSaved, product }: { onProductSaved: (product: Product | null) => void; product: Product }) {
   const { t } = useI18n()
   const [form, setForm] = useState<ProductEditForm>(() => createProductEditForm(product))
+  const canEditClassification = canEditNativeProductClassification(product)
   const [error, setError] = useState<string | null>(null)
   const [isSaving, setSaving] = useState(false)
 
@@ -1129,6 +1132,7 @@ function ProductEditPanel({ onProductSaved, product }: { onProductSaved: (produc
     try {
         const nextProduct = await updateProduct({
           ...product,
+          ...(canEditClassification ? { NativeIsService: form.NativeIsService } : {}),
           Description: form.Description,
           DescriptionUA: form.DescriptionUA,
           IsForSale: form.IsForSale,
@@ -1176,6 +1180,22 @@ function ProductEditPanel({ onProductSaved, product }: { onProductSaved: (produc
           </Alert>
         )}
         <SimpleGrid cols={{ base: 1, md: 2 }} spacing="md">
+          {canEditClassification && (
+            <Select
+              label={t('Тип позиції')}
+              data={[
+                ...(form.NativeIsService === null ? [{ value: 'unknown', label: t('Не визначено') }] : []),
+                { value: 'goods', label: t('Товар') },
+                { value: 'service', label: t('Послуга') },
+              ]}
+              value={form.NativeIsService === null ? 'unknown' : form.NativeIsService ? 'service' : 'goods'}
+              allowDeselect={false}
+              disabled={isSaving}
+              onChange={(value) => {
+                if (value === 'goods' || value === 'service') setField('NativeIsService', value === 'service')
+              }}
+            />
+          )}
           <TextInput label={t('Top')} value={form.Top} maxLength={3} onChange={(event) => setField('Top', event.currentTarget.value)} />
           <TextInput label={t('Розмір')} value={form.Size} onChange={(event) => setField('Size', event.currentTarget.value)} />
           <TextInput label={t("Об'єм")} value={form.Volume} onChange={(event) => setField('Volume', event.currentTarget.value)} />
@@ -2596,6 +2616,7 @@ function PriceRow({ price }: { price: CalculatedProductPrice }) {
 
 function createProductEditForm(product: Product): ProductEditForm {
   return {
+    NativeIsService: typeof product.NativeIsService === 'boolean' ? product.NativeIsService : null,
     Description: product.Description || '',
     DescriptionUA: product.DescriptionUA || '',
     IsForSale: Boolean(product.IsForSale),

@@ -1,3 +1,4 @@
+import { canEditNativeProductClassification } from '../productNativeClassification'
 import { apiRequest } from '../../../shared/api/apiClient'
 import { readSession } from '../../../shared/auth/session'
 import { normalizeExportDocument } from '../../../shared/documents/exportDocument'
@@ -1101,6 +1102,8 @@ function ensureProduct(product: Product): Product {
 
 function buildProductUpdatePayload(product: Product): Product {
   const payload = { ...product }
+
+  if (!canEditNativeProductClassification(product)) delete payload.NativeIsService
 
   delete payload.AnalogueProducts
   delete payload.BaseAnalogueProducts

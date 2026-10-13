@@ -199,6 +199,11 @@ export type Product = EntityFields & {
   IsForSale?: boolean
   IsForWeb?: boolean
   IsForZeroSale?: boolean
+  NativeIsService?: boolean | null
+  SourceAmgId?: string | number[] | null
+  SourceFenixId?: string | number[] | null
+  SourceAmgCode?: number | null
+  SourceFenixCode?: number | null
   MainOriginalNumber?: string
   MeasureUnit?: MeasureUnit | null
   MeasureUnitId?: number

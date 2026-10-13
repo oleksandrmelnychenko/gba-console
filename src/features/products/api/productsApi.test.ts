@@ -1,6 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { apiRequest } from '../../../shared/api/apiClient'
 import {
+  createProductWithImages,
+  getProductByNetId,
   exportProductIncomeMovementsDocument,
   exportProductMovementsDocument,
   exportProductOutcomeMovementsDocument,
@@ -540,3 +542,49 @@ function createProductWithRelations(): Product {
     VendorCode: 'ABC-1',
   }
 }
+
+
+describe('native product classification wire contract', () => {
+  beforeEach(() => apiRequestMock.mockReset())
+
+  it.each([null, false, true])('preserves explicit %s in detail, update and creation payloads', async (NativeIsService) => {
+    apiRequestMock.mockResolvedValue({ Id: 42, NativeIsService })
+    const product = await getProductByNetId('native-product')
+    expect(product).toHaveProperty('NativeIsService', NativeIsService)
+    await updateProduct(product!)
+    expect(apiRequestMock.mock.calls.at(-1)?.[1]?.body).toHaveProperty('NativeIsService', NativeIsService)
+    await createProductWithImages(product!, [])
+    const body = apiRequestMock.mock.calls.at(-1)?.[1]?.body as FormData
+    expect(JSON.parse(String(body.get('entity')))).toHaveProperty('NativeIsService', NativeIsService)
+  })
+
+  it('keeps omitted capability omitted across old detail, update and creation', async () => {
+    apiRequestMock.mockResolvedValue({ Id: 42 })
+    const product = await getProductByNetId('old-product')
+    expect(product).not.toHaveProperty('NativeIsService')
+    await updateProduct(product!)
+    expect(apiRequestMock.mock.calls.at(-1)?.[1]?.body).not.toHaveProperty('NativeIsService')
+    await createProductWithImages(product!, [])
+    const body = apiRequestMock.mock.calls.at(-1)?.[1]?.body as FormData
+    expect(JSON.parse(String(body.get('entity')))).not.toHaveProperty('NativeIsService')
+  })
+
+  it.each([
+    { SourceFenixId: 'source' }, { SourceAmgId: [] }, { SourceFenixCode: 0 },
+    { SourceAmgCode: -1 }, { SourceFenixID: 'unexpected casing' },
+  ])('omits native classification from source-owned mutations %j', async (source) => {
+    for (const NativeIsService of [false, true]) {
+      const product: Product = { Id: 42, NativeIsService, ...source }
+      await updateProduct(product)
+      expect(apiRequestMock.mock.calls.at(-1)?.[1]?.body).not.toHaveProperty('NativeIsService')
+      await createProductWithImages(product, [])
+      const body = apiRequestMock.mock.calls.at(-1)?.[1]?.body as FormData
+      expect(JSON.parse(String(body.get('entity')))).not.toHaveProperty('NativeIsService')
+    }
+  })
+
+  it('does not forward malformed capability as a native choice', async () => {
+    await updateProduct({ NativeIsService: 'false' } as unknown as Product)
+    expect(apiRequestMock.mock.calls.at(-1)?.[1]?.body).not.toHaveProperty('NativeIsService')
+  })
+})
