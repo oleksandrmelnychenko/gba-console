@@ -33,6 +33,7 @@ import { cloneOneCSpecialAliases, isOneCSpecialDataset, oneCSpecialSettingsError
 import { readAbcCapabilities } from '../data/reportAbcClassification'
 import { cloneGroupedSettlementAliases, normalizeGroupedSettlementDataset } from '../data/groupedSettlementPeriod'
 import { cloneSourceCounterpartyGroupAliases, normalizeSourceCounterpartyGroupDataset } from '../data/sourceCounterpartyGroups'
+import { cloneSettlementReadModeAliases, normalizeSettlementReadModeDataset } from '../data/settlementReadMode'
 
 const paymentUnsupportedCapabilities = ['Ordering', 'TopGroups', 'Threshold', 'HideZero', 'AbcClassification', 'FilterExpression'] as const
 const marginGroupings = [{ Type: 12, Name: 'Клієнт' }, { Type: 15, Name: 'Договір' }] as const
@@ -113,7 +114,7 @@ export async function getReportDatasets(signal?: AbortSignal): Promise<ReportDat
 export function parseReportDatasets(result: unknown): ReportDataset[] {
   const normalized = Array.isArray(result) ? result.map(item => {
     if (!item || typeof item !== 'object' || Array.isArray(item)) return null
-    const exactFilters = normalizeNativeExactFilterDataset(item as Record<string, unknown>)
+    const exactFilters = normalizeNativeExactFilterDataset(normalizeSettlementReadModeDataset(item as Record<string, unknown>))
     const comparison = exactFilters ? normalizeAgreementPriceComparisonDataset(exactFilters as unknown as Record<string, unknown>) : null
     const prices = comparison ? normalizePriceTypeSalesComparisonDataset(comparison as unknown as Record<string, unknown>) : null
     const groups = prices ? normalizeGroupedSettlementDataset(prices as unknown as Record<string, unknown>) : null
@@ -149,6 +150,8 @@ type WireTemplate = Required<Omit<ReportTemplate, 'Data'>> & {
     settlementPeriod?: unknown
     GroupedSettlementPeriod?: unknown
     groupedSettlementPeriod?: unknown
+    SettlementReadMode?: unknown
+    settlementReadMode?: unknown
     SourceCounterpartyGroups?: unknown
     sourceCounterpartyGroups?: unknown
     CashPeriod?: unknown
@@ -243,6 +246,7 @@ export function normalizeSavedTemplate(value: WireTemplate): ReportTemplate {
       ...(Object.hasOwn(value.Data, 'SettlementPeriod') ? { SettlementPeriod: structuredClone(value.Data.SettlementPeriod) } : {}),
     } : Object.hasOwn(value.Data, 'SettlementPeriod') ? { settlementPeriod: structuredClone(value.Data.SettlementPeriod) } : {}),
     ...cloneGroupedSettlementAliases(value.Data),
+    ...cloneSettlementReadModeAliases(value.Data),
     ...cloneSourceCounterpartyGroupAliases(value.Data),
     ...cloneGroupedCashAliases(value.Data),
     ...cloneWorkbookAliases(value.Data),

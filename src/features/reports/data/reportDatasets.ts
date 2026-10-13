@@ -37,6 +37,7 @@ import { isSupplierBasisCapability, requestSupplierBasis } from './supplierBasis
 import { cloneNativeExactFilterAliases, nativeExactFiltersConfigurationError } from './nativeExactFilters'
 import { cloneGroupedSettlementAliases, defaultGroupedSettlementBuyer, defaultGroupedSettlementPeriod,
   groupedSettlementSupportsSuppliers, isGroupedSettlementDataset, requestGroupedSettlementPeriod } from './groupedSettlementPeriod'
+import { cloneSettlementReadModeAliases } from './settlementReadMode'
 import {
   clonePriceTypeSalesComparisonAliases,
   defaultPriceTypeSalesComparison,
@@ -318,7 +319,7 @@ export function datasetPresetRequest(dataset: ReportDataset, id: DatasetReportPr
   if (!preset) return null
   // Preserve both raw aliases, including invalid imported material, without reconstructing the tree.
   const preservedOptions = { ...(Object.hasOwn(current, 'settlementPeriod') ? { settlementPeriod: structuredClone(current.settlementPeriod) } : {}),
-    ...(Object.hasOwn(current, 'SettlementPeriod') ? { SettlementPeriod: structuredClone(current.SettlementPeriod) } : {}), ...cloneGroupedSettlementAliases(current), ...clonePaymentComparisonAliases(current), ...cloneMarginComparisonAliases(current), ...cloneRateComparisonAliases(current), ...cloneReturnComparisonAliases(current), ...cloneBuyerSalesShareAliases(current), ...cloneRevenueComparisonAliases(current), ...cloneXyzAliases(current), ...(Object.hasOwn(current, 'comparison') ? { comparison: structuredClone(current.comparison) } : {}),
+    ...(Object.hasOwn(current, 'SettlementPeriod') ? { SettlementPeriod: structuredClone(current.SettlementPeriod) } : {}), ...cloneGroupedSettlementAliases(current), ...cloneSettlementReadModeAliases(current), ...clonePaymentComparisonAliases(current), ...cloneMarginComparisonAliases(current), ...cloneRateComparisonAliases(current), ...cloneReturnComparisonAliases(current), ...cloneBuyerSalesShareAliases(current), ...cloneRevenueComparisonAliases(current), ...cloneXyzAliases(current), ...(Object.hasOwn(current, 'comparison') ? { comparison: structuredClone(current.comparison) } : {}),
     ...cloneSourceCounterpartyGroupAliases(current), ...cloneGroupedCashAliases(current), ...cloneWorkbookAliases(current),
     ...(Object.hasOwn(current, 'cashPeriod') ? { cashPeriod: structuredClone(current.cashPeriod) } : {}),
     ...(Object.hasOwn(current, 'CashPeriod') ? { CashPeriod: structuredClone(current.CashPeriod) } : {}),

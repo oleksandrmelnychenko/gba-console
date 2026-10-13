@@ -21,6 +21,7 @@ type BuilderValues = {
   sourceOrganizations?: unknown
   sourceBuyerSubtree?: unknown
   profitReadMode?: unknown
+  settlementReadMode?: unknown
   dayOrganizationBasis?: unknown
   supplierBasis?: unknown
   supplierSourceWorld?: unknown
@@ -63,6 +64,7 @@ export function buildReportBuilderRequest(values: BuilderValues): ReportRequestB
     ...(sourceOrganizations !== undefined ? { sourceOrganizations } : {}),
     ...(sourceBuyerSubtree !== undefined ? { sourceBuyerSubtree } : {}),
     ...(values.profitReadMode !== undefined ? { profitReadMode: values.profitReadMode } : {}),
+    ...(values.settlementReadMode !== undefined ? { settlementReadMode: values.settlementReadMode } : {}),
     ...(dayOrganizationBasis !== undefined ? { dayOrganizationBasis } : {}),
     ...(supplierBasis !== undefined ? { supplierBasis } : {}),
     ...(supplierSourceWorld !== undefined ? { supplierSourceWorld } : {}),

@@ -9,6 +9,7 @@ import { SettlementPeriodAgreementPicker } from './SettlementPeriodAgreementPick
 import { GroupedDebtorWorkbookPanel } from './GroupedDebtorWorkbookPanel'
 import { sourceCounterpartyGroupCapability } from '../data/sourceCounterpartyGroups'
 import { CounterpartyGroupFilters } from './CounterpartyGroupFilters'
+import { SettlementReadModeSelect } from './SettlementReadModeSelect'
 
 type Props = {
   dataset: ReportDataset | undefined; grouped: unknown; exact: unknown; buyer: unknown; groups: unknown
@@ -18,15 +19,18 @@ type Props = {
   onGroupedChange: (value: unknown) => void; onExactChange: (value: unknown) => void
   onBuyerChange: (value: unknown) => void; onRowsChange: (value: ReportGroupingItem[]) => void
   onGroupsChange: (value: unknown) => void
+  readMode?: unknown; onReadModeChange?: (value: 0 | 1 | undefined) => void
 }
 
 export function SettlementPeriodModePanel({ dataset, grouped, exact, buyer, groups, available, rows, from, to,
-  disabled, enabled, onModeChange, onGroupedChange, onExactChange, onBuyerChange, onRowsChange, onGroupsChange }: Props) {
+  disabled, enabled, onModeChange, onGroupedChange, onExactChange, onBuyerChange, onRowsChange, onGroupsChange,
+  readMode, onReadModeChange }: Props) {
   const { t } = useI18n()
   if (!dataset || !isSettlementPeriodDataset(dataset)) return null
   const supported = isGroupedSettlementDataset(dataset)
   const selector = groupedSettlementPeriod(grouped)
   const isGroup = grouped != null
+  const explicitSource = readMode != null
   return <Stack gap="sm">
     {supported && <Select label={t('Обсяг взаєморозрахунків')} disabled={disabled} allowDeselect={false}
       value={isGroup ? 'buyers' : 'agreement'} data={[
@@ -34,7 +38,9 @@ export function SettlementPeriodModePanel({ dataset, grouped, exact, buyer, grou
         { value: 'agreement', label: t('Один точний договір') },
       ]} onChange={next => { if (next === 'buyers' || next === 'agreement') onModeChange(next) }} />}
     {isGroup && supported ? <>
-      <Select label={t('База взаєморозрахунків')} disabled={disabled} allowDeselect={false}
+      {onReadModeChange && <SettlementReadModeSelect capability={dataset.settlementReadMode} value={readMode}
+        disabled={disabled} onChange={onReadModeChange} />}
+      <Select label={t('База взаєморозрахунків')} disabled={disabled || explicitSource} allowDeselect={false}
         value={selector?.SourceWorld ?? null} data={[{ value: 'Fenix', label: 'Fenix' }, { value: 'Amg', label: 'AMG' }]}
         onChange={world => {
           if (world !== 'Fenix' && world !== 'Amg') return
@@ -50,7 +56,7 @@ export function SettlementPeriodModePanel({ dataset, grouped, exact, buyer, grou
           if (layout === '4,41,76' || layout === '4,76') onRowsChange(groupedSettlementRows(available, layout === '4,41,76'))
         }} />
       {selector?.SourceWorld === 'Fenix' && <Checkbox label={t('Контрагенти у групі «Покупці» (Fenix)')}
-        disabled={disabled} checked={sourceBuyerSubtree(buyer) !== null}
+        disabled={disabled || explicitSource} checked={sourceBuyerSubtree(buyer) !== null}
         onChange={event => onBuyerChange(event.currentTarget.checked ? defaultGroupedSettlementBuyer() : undefined)} />}
       {selector?.SourceWorld === 'Fenix' && sourceCounterpartyGroupCapability(dataset.sourceCounterpartyGroups)
         && <CounterpartyGroupFilters value={groups} disabled={disabled || !enabled} onChange={onGroupsChange} />}

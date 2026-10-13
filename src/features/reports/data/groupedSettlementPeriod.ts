@@ -8,6 +8,7 @@ import { revenueExactId } from './revenueComparison'
 import { settlementAttributeKey } from './settlementSourceAttributes'
 import { previousKyivDay } from './cashPeriod'
 import { sourceCounterpartyGroupsConfigurationError } from './sourceCounterpartyGroups'
+import { requestSettlementReadMode, settlementReadModeConfigurationError } from './settlementReadMode'
 
 type JsonRecord = Record<string, unknown>
 const record = (value: unknown): value is JsonRecord => value !== null && typeof value === 'object' && !Array.isArray(value)
@@ -173,8 +174,11 @@ function periodError(from: string, to: string, today: string, normal: boolean): 
 export function groupedSettlementConfigurationError(data: ReportRequestBody, dataset?: ReportDataset,
   today = formatKyivBusinessDate()): string | null {
   if (aliases(data, 'GroupedSettlementPeriod').length > 1) return 'Груповий режим взаєморозрахунків задано двічі.'
+  const modeError = settlementReadModeConfigurationError(data, dataset)
+  if (modeError) return modeError
+  const mode = requestSettlementReadMode(data)
   const raw = requestGroupedSettlementPeriod(data)
-  if (raw == null) return null
+  if (raw == null) return mode != null ? 'Джерело розрахунку доступне лише для поточних договорів контрагентів.' : null
   if (data.dataSource !== 41) return 'Груповий режим взаєморозрахунків належить лише відповідному набору даних.'
   const selector = groupedSettlementPeriod(raw)
   if (!selector) return 'Оберіть базу Fenix або AMG і валюту взаєморозрахунків поточних договорів.'
@@ -183,13 +187,15 @@ export function groupedSettlementConfigurationError(data: ReportRequestBody, dat
   if (groupsError) return groupsError
   const workbookError = workbookConfigurationError(data, dataset)
   if (workbookError) return workbookError
-  const allowed = new Set(['datasource', 'from', 'to', 'sorted', 'selections', 'groupedsettlementperiod', 'filterexpression', 'sourcebuyersubtree', 'sourcecounterpartygroups', 'workbookpresentation'])
+  const allowed = new Set(['datasource', 'from', 'to', 'sorted', 'selections', 'groupedsettlementperiod', 'settlementreadmode', 'filterexpression', 'sourcebuyersubtree', 'sourcecounterpartygroups', 'workbookpresentation'])
   if (Object.entries(data).some(([key, value]) => !allowed.has(key.toLowerCase()) && value != null))
     return 'Групові взаєморозрахунки не поєднуються з точним договором, перерахунком валют або іншими перетвореннями.'
   const sourceBuyer = aliases(data, 'SourceBuyerSubtree')
-  const normal = selector.SourceWorld === 'Fenix' && sourceBuyer.length === 1
+  const fenixBuyers = selector.SourceWorld === 'Fenix' && sourceBuyer.length === 1
     && (data as unknown as JsonRecord)[sourceBuyer[0]] != null
-    && (!dataset || groupedSettlementCapability(dataset.groupedSettlementPeriod)?.OriginalNormalMaximumMonths === 120)
+  if (mode != null && !fenixBuyers) return 'Для вибраного джерела розрахунку потрібні база Fenix і група «Покупці».'
+  const normal = fenixBuyers && (mode != null || !dataset
+    || groupedSettlementCapability(dataset.groupedSettlementPeriod)?.OriginalNormalMaximumMonths === 120)
   const dayError = periodError(data.from, data.to, today, normal)
   if (dayError) return dayError
   const rows = Array.isArray(data.sorted?.Row) ? data.sorted.Row.map(item => item?.type) : null

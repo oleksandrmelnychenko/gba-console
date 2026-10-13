@@ -1,4 +1,5 @@
 import { isProfitReadModeCapability, requestProfitReadMode } from './profitReadMode'
+import { isSettlementReadModeCapability } from './settlementReadMode'
 import type { ReportDataset, ReportRequestBody } from '../types'
 import { cashWorkbookPresentationSupported, readWorkbookCapability, requestWorkbookPresentation } from './workbookPresentation'
 import { CASH_WORKBOOK_ROWS, groupedCashPeriod, groupedCashSupported, groupedCashWorkbookSupported, requestGroupedCashPeriod } from './groupedCashPeriod'
@@ -22,6 +23,8 @@ export type WorkbookLaunch = {
   dataset: ReportDataset
   currencyAxis?: boolean
 }
+
+export const SETTLEMENT_READ_MODE_NOTICE = 'Можна обрати джерело розрахунку: «Поточні документи GBA» (документи GBA та початкові залишки на 01.01.2025) або «Збережені регістри 1С».'
 
 const supported = [
   {
@@ -91,9 +94,7 @@ export function availableBug1274WorkbookLaunches(datasets: readonly ReportDatase
           : spec.dataSource === 40 && cashPeriodSupportsManagement(candidate)
           ? 'Часткова форма Excel: один рахунок, вісім показників залишків і руху у валюті рахунку та управлінській валюті. Оберіть рахунок і завершений період до 31 дня. Недоступні суми залишаються порожніми.'
           : spec.dataSource === 41 && isGroupedSettlementDataset(candidate)
-          ? spec.fileName === 'ДБіторка.xls'
-            ? `Організація → контрагент, поточні договори ${groupedSettlementSupportsSuppliers(candidate) ? 'покупців і постачальників' : 'покупців'} за вибраними відборами й чотири показники залишків та руху. Період до 31 дня може включати поточний київський день. Недоступні суми й залежні підсумки залишаються порожніми; суми різних валют не додаються.`
-            : `Організація → валюта → контрагент, поточні договори ${groupedSettlementSupportsSuppliers(candidate) ? 'покупців і постачальників' : 'покупців'} за вибраними відборами й чотири показники залишків та руху. Період до 31 дня може включати поточний київський день; договори без повних даних залишаються з порожніми сумами та підсумками.`
+          ? groupedSettlementNotice(spec.fileName, candidate)
           : spec.dataSource === 38 && isSupplierBasisCapability(candidate.supplierBasis)
           ? 'Склад документа → організація → постачальник, продажі мінус повернення за період до 31 дня. Невизначені постачальник і склад показуються окремо. Недоступні собівартість і прибуток залишаються порожніми, зокрема у підсумках.'
           : spec.dataSource === 38 && candidate.Groupings.some((field: { Type: number }) => field.Type === 78)
@@ -102,6 +103,14 @@ export function availableBug1274WorkbookLaunches(datasets: readonly ReportDatase
         dataset: matches[0] }]
       : []
   })
+}
+
+function groupedSettlementNotice(fileName: string, dataset: ReportDataset): string {
+  const parties = groupedSettlementSupportsSuppliers(dataset) ? 'покупців і постачальників' : 'покупців'
+  const notice = fileName === 'ДБіторка.xls'
+    ? `Організація → контрагент, поточні договори ${parties} за вибраними відборами й чотири показники залишків та руху. Період до 31 дня може включати поточний київський день. Недоступні суми й залежні підсумки залишаються порожніми; суми різних валют не додаються.`
+    : `Організація → валюта → контрагент, поточні договори ${parties} за вибраними відборами й чотири показники залишків та руху. Період до 31 дня може включати поточний київський день; договори без повних даних залишаються з порожніми сумами та підсумками.`
+  return isSettlementReadModeCapability(dataset.settlementReadMode) ? `${notice} ${SETTLEMENT_READ_MODE_NOTICE}` : notice
 }
 
 /** The retained day workbook has these three exact filters; explicit scopes keep their own meaning. */

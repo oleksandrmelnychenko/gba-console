@@ -1,4 +1,5 @@
 import { profitReadModeConfigurationError, requestProfitReadMode } from './profitReadMode'
+import { settlementReadModeConfigurationError } from './settlementReadMode'
 import { workbookConfigurationError } from './workbookPresentation'
 import { requestSupplierBasis } from './supplierBasis'
 import { requestSupplierSourceWorld, supplierBatchGrossProfitConfigurationError } from './supplierBatchGrossProfit'
@@ -22,6 +23,8 @@ export function reportWorkspaceDraftCompatibility(snapshot: ReportWorkspaceSnaps
   }
   const modeError = profitReadModeConfigurationError(data, dataset)
   if (modeError) return `${modeError} Чернетка збережена без змін.`
+  const settlementModeError = settlementReadModeConfigurationError(data, dataset)
+  if (settlementModeError) return `${settlementModeError} Чернетка збережена без змін.`
   const workbookError = workbookConfigurationError(data, dataset)
   if (workbookError) return `${workbookError} Чернетка збережена без змін.`
   const presented = data.workbookPresentation != null || data.WorkbookPresentation != null

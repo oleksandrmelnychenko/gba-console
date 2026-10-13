@@ -37,6 +37,7 @@ import { EXACT_ONE_C_BUYER_ROOT_ID } from '../data/oneCTurnoverReport'
 import { priceTypeSalesComparisonConfigurationError, priceTypeSalesSourceId } from '../data/priceTypeSalesComparison'
 import { oneCSpecialSettingsError } from '../data/oneCSpecialReports'
 import { requestProfitReadMode } from '../data/profitReadMode'
+import { requestSettlementReadMode } from '../data/settlementReadMode'
 import { normalizeNativeReportPreview, type NativeReportPreview } from '../data/nativeReportPreview'
 
 const EMPTY_GUID = '00000000-0000-0000-0000-000000000000'
@@ -73,6 +74,8 @@ export async function previewStockReport(body: ReportRequestBody, dataset?: Repo
     throw new Error('Сервер повернув результат іншого набору даних замість поточної матриці «Впарювання».')
   if (request.dataSource === 41 && preview.Request?.DataSource !== 'NativeSettlementPeriod')
     throw new Error('Сервер повернув інший набір даних замість взаєморозрахунків за період.')
+  if (request.dataSource === 41 && (requestSettlementReadMode(request) ?? null) !== (preview.Request?.SettlementReadMode ?? null))
+    throw new Error('Сервер повернув інше джерело розрахунку взаєморозрахунків.')
   if (request.dataSource === 40 && preview.Request?.DataSource !== 'NativeCashPeriod')
     throw new Error('Сервер повернув результат іншого набору даних замість руху коштів.')
   return { result: normalizeReportResult(response), preview }

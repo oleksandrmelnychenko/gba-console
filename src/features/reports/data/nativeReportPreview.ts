@@ -13,6 +13,7 @@ export type NativeReportPreviewFilter = { Field: string; Condition: string; Valu
 export type NativeReportPreviewRequest = {
   DataSource: string
   ProfitReadMode?: 0 | 1
+  SettlementReadMode?: 0 | 1
   IsCurrentSnapshot: boolean
   ObservationStartedAtUtc: string | null
   ObservationCompletedAtUtc: string | null
@@ -74,15 +75,21 @@ function attributionText(value: unknown): string {
   return value
 }
 
+function readMode(value: Record<string, unknown>, name: string, error: string): 0 | 1 | undefined {
+  const keys = Object.keys(value).filter(key => key.toLowerCase() === name.toLowerCase())
+  const mode = keys.length ? value[keys[0]] : undefined
+  if (keys.length > 1 || keys.some(key => key !== name && key !== name[0].toLowerCase() + name.slice(1))
+    || mode != null && mode !== 0 && mode !== 1)
+    throw new Error(error)
+  return mode == null ? undefined : mode
+}
+
 function normalizeRequest(value: unknown): NativeReportPreviewRequest | null {
   if (value === undefined || value === null) return null
   if (!record(value) || typeof value.IsCurrentSnapshot !== 'boolean' || typeof value.HasPeriod !== 'boolean')
     throw new Error('Сервер повернув некоректний опис розрахунку звіту.')
-  const modeKeys = Object.keys(value).filter(key => key.toLowerCase() === 'profitreadmode')
-  const mode = modeKeys.length ? value[modeKeys[0]] : undefined
-  if (modeKeys.length > 1 || modeKeys.some(key => key !== 'ProfitReadMode' && key !== 'profitReadMode')
-    || mode != null && mode !== 0 && mode !== 1)
-    throw new Error('Сервер повернув некоректне джерело розрахунку прибутку.')
+  const mode = readMode(value, 'ProfitReadMode', 'Сервер повернув некоректне джерело розрахунку прибутку.')
+  const settlementMode = readMode(value, 'SettlementReadMode', 'Сервер повернув некоректне джерело розрахунку взаєморозрахунків.')
   let items = 0
   const consume = (count: number) => {
     if (count > maximumRequestItems - items)
@@ -108,7 +115,8 @@ function normalizeRequest(value: unknown): NativeReportPreviewRequest | null {
     })
   }
   return {
-    ...(mode != null ? { ProfitReadMode: mode as 0 | 1 } : {}),
+    ...(mode != null ? { ProfitReadMode: mode } : {}),
+    ...(settlementMode != null ? { SettlementReadMode: settlementMode } : {}),
     DataSource: attributionText(value.DataSource), IsCurrentSnapshot: value.IsCurrentSnapshot,
     ObservationStartedAtUtc: nullableText(value.ObservationStartedAtUtc),
     ObservationCompletedAtUtc: nullableText(value.ObservationCompletedAtUtc), HasPeriod: value.HasPeriod,
