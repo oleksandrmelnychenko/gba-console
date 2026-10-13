@@ -137,7 +137,9 @@ function prepareStockReportRequest(body: ReportRequestBody): ReportRequestBody {
   return request
 }
 
-export async function searchDatasetReportValues(dataSource: number, field: number, params: ReportSearchParams, signal?: AbortSignal, sourceWorld?: number, salesBasis?: 0 | 1, providedDiscountBasis?: 0 | 1): Promise<ReportEntity[]> {
+export async function searchDatasetReportValues(dataSource: number, field: number, params: ReportSearchParams, signal?: AbortSignal, sourceWorld?: number, salesBasis?: 0 | 1, providedDiscountBasis?: 0 | 1, profitReadMode?: 0 | 1): Promise<ReportEntity[]> {
+  if (profitReadMode !== undefined && (![35, 38].includes(dataSource) || (profitReadMode !== 0 && profitReadMode !== 1)))
+    throw new Error('Некоректне джерело довідника прибутку.')
   if (providedDiscountBasis !== undefined && (dataSource !== 24 || ![0, 1].includes(providedDiscountBasis)
     || (providedDiscountBasis === 0 && sourceWorld !== 1))) throw new Error('Некоректна основа довідника наданих знижок.')
   if (salesBasis !== undefined && (dataSource !== 27 || ![0, 1].includes(salesBasis)))
@@ -156,6 +158,7 @@ export async function searchDatasetReportValues(dataSource: number, field: numbe
   const result = await apiRequest<unknown>('/report/datasets/lookup', {
     query: { dataSource, field, value: params.value.trim(), offset: params.offset, limit: params.limit,
       ...([23, 24, 25, 28].includes(dataSource) || dataSource === 41 && [60, 61].includes(field) ? { sourceWorld } : {}),
+      ...(profitReadMode !== undefined ? { profitReadMode } : {}),
       ...(dataSource === 27 && salesBasis !== undefined ? { salesBasis } : {}),
       ...(dataSource === 24 && providedDiscountBasis !== undefined ? { providedDiscountBasis } : {}) }, signal,
   })

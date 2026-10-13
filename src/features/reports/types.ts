@@ -376,6 +376,7 @@ export type ReportDataset = {
   productClassification?: unknown
   sourceOrganizations?: unknown
   sourceBuyerSubtree?: unknown
+  profitReadModeLookup?: unknown
   profitReadMode?: unknown
   dayOrganizationBasis?: unknown
   supplierBasis?: unknown
