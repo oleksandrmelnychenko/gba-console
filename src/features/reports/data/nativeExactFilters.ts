@@ -1,3 +1,4 @@
+import { isProfitReadModeCapability, profitReadModeConfigurationError } from './profitReadMode'
 import { isDayOrganizationBasisCapability } from './dayOrganizationBasis'
 import { isSupplierBasisCapability, requestSupplierBasis, supplierBasisConfigurationError } from './supplierBasis'
 import { groupedSettlementConfigurationError, requestGroupedSettlementPeriod } from './groupedSettlementPeriod'
@@ -55,7 +56,7 @@ export function cloneNativeExactFilterAliases(value: object): Record<string, unk
   return Object.fromEntries(Object.entries(value).flatMap(([key, item]) => {
     const name = key.toLowerCase()
     return name === 'productclassification' || name === 'sourceorganizations' || name === 'sourcebuyersubtree'
-      || name === 'dayorganizationbasis' || name === 'supplierbasis'
+      || name === 'dayorganizationbasis' || name === 'supplierbasis' || name === 'profitreadmode'
       ? [[key, structuredClone(item)]]
       : []
   }))
@@ -128,6 +129,10 @@ export function normalizeNativeExactFilterDataset(value: JsonRecord): ReportData
   const productKeys = aliases(value, 'ProductClassification')
   const organizationKeys = aliases(value, 'SourceOrganizations')
   const buyerKeys = aliases(value, 'SourceBuyerSubtree')
+  const modeKeys = aliases(value, 'ProfitReadMode')
+  if (modeKeys.length > 1) return null
+  const mode = modeKeys.length ? value[modeKeys[0]] : undefined
+  if (modeKeys.length && (![35, 38].includes(Number(source)) || !isProfitReadModeCapability(mode))) return null
   const basisKeys = aliases(value, 'DayOrganizationBasis')
   const supplierBasisKeys = aliases(value, 'SupplierBasis')
   if (productKeys.length > 1 || organizationKeys.length > 1 || buyerKeys.length > 1
@@ -157,6 +162,8 @@ export function normalizeNativeExactFilterDataset(value: JsonRecord): ReportData
   for (const key of productKeys) delete normalized[key]
   for (const key of organizationKeys) delete normalized[key]
   for (const key of buyerKeys) delete normalized[key]
+  for (const key of modeKeys) delete normalized[key]
+  if (modeKeys.length) normalized.profitReadMode = structuredClone(mode)
   for (const key of basisKeys) delete normalized[key]
   for (const key of supplierBasisKeys) delete normalized[key]
   if (product != null) normalized.productClassification = structuredClone(product)
@@ -168,6 +175,8 @@ export function normalizeNativeExactFilterDataset(value: JsonRecord): ReportData
 }
 
 export function nativeExactFiltersConfigurationError(data: ReportRequestBody, dataset?: ReportDataset): string | null {
+  const modeError = profitReadModeConfigurationError(data, dataset)
+  if (modeError) return modeError
   const supplierBasisError = supplierBasisConfigurationError(data, dataset)
   if (supplierBasisError) return supplierBasisError
   const productKeys = aliases(data, 'ProductClassification')

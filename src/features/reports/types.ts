@@ -317,6 +317,8 @@ export type ReportRequestBody = {
   SourceOrganizations?: unknown
   sourceBuyerSubtree?: unknown
   SourceBuyerSubtree?: unknown
+  profitReadMode?: unknown
+  ProfitReadMode?: unknown
   dayOrganizationBasis?: unknown
   DayOrganizationBasis?: unknown
   supplierBasis?: unknown
@@ -374,6 +376,7 @@ export type ReportDataset = {
   productClassification?: unknown
   sourceOrganizations?: unknown
   sourceBuyerSubtree?: unknown
+  profitReadMode?: unknown
   dayOrganizationBasis?: unknown
   supplierBasis?: unknown
   supplierSourceWorld?: unknown

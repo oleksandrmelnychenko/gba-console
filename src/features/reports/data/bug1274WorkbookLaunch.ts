@@ -1,3 +1,4 @@
+import { isProfitReadModeCapability, requestProfitReadMode } from './profitReadMode'
 import type { ReportDataset, ReportRequestBody } from '../types'
 import { cashWorkbookPresentationSupported, readWorkbookCapability, requestWorkbookPresentation } from './workbookPresentation'
 import { CASH_WORKBOOK_ROWS, groupedCashPeriod, groupedCashSupported, groupedCashWorkbookSupported, requestGroupedCashPeriod } from './groupedCashPeriod'
@@ -81,7 +82,9 @@ export function availableBug1274WorkbookLaunches(datasets: readonly ReportDatase
     return matches.length === 1 && Array.isArray(candidate.Groupings) && Array.isArray(candidate.Measurements)
       && Array.isArray(candidate.Filters) && spec.accepts(candidate)
       ? [{ fileName: spec.fileName, label: spec.label, ...('currencyAxis' in spec ? { currencyAxis: spec.currencyAxis } : {}),
-        notice: spec.dataSource === 35 && isDayOrganizationBasisCapability(candidate.dayOrganizationBasis)
+        notice: (spec.dataSource === 35 || spec.dataSource === 38) && isProfitReadModeCapability(candidate.profitReadMode)
+          ? 'Форма відкривається з чинними налаштуваннями розрахунку за регістрами 1С. Для продажів і повернень із поточних документів оберіть «Поточні документи GBA» у джерелі розрахунку; цей режим підтримує до 31 дня і ще не має повної відповідності 1С.'
+          : spec.dataSource === 35 && isDayOrganizationBasisCapability(candidate.dayOrganizationBasis)
           ? 'Часткова форма Excel: день → організація, суми EUR та рентабельність %. Для нового запиту застосовано відбори книги: товар без послуг, п’ять організацій і група «Покупці» Fenix. Їх можна змінити у формі. «Продажі мінус повернення за період» підтримують до 31 дня. Недоступні собівартість, ПДВ і залежні показники залишаються порожніми.'
           : spec.dataSource === 40 && groupedCashSupported(candidate)
             ? 'Показано банківські рахунки та каси: вісім показників у валюті рахунку й управлінській валюті. Відбори рахунку, організації, валюти та виду доступні у формі.'
@@ -104,7 +107,7 @@ export function availableBug1274WorkbookLaunches(datasets: readonly ReportDatase
 /** The retained day workbook has these three exact filters; explicit scopes keep their own meaning. */
 function dayWorkbookRequest(request: ReportRequestBody, launch: WorkbookLaunch): ReportRequestBody {
   const dataset = launch.dataset
-  if (launch.fileName !== 'ВП.xls' || request.dataSource !== 35 || !isDayOrganizationGrossProfitDataset(dataset)
+  if (requestProfitReadMode(request) === 0 || launch.fileName !== 'ВП.xls' || request.dataSource !== 35 || !isDayOrganizationGrossProfitDataset(dataset)
     || !isDayOrganizationBasisCapability(dataset.dayOrganizationBasis) || requestDayOrganizationBasis(request) !== 0
     || Object.keys(request).filter(key => key.toLowerCase() === 'dayorganizationbasis').length !== 1
     || !isProductClassificationCapability(dataset.productClassification)
@@ -142,7 +145,8 @@ export function bug1274WorkbookRequest(request: ReportRequestBody, launch?: Work
 
 function presentationWorkbookRequest(request: ReportRequestBody, launch: WorkbookLaunch): ReportRequestBody {
   if (requestWorkbookPresentation(request) !== undefined || !readWorkbookCapability(launch.dataset.workbookPresentation, request.dataSource ?? -1)) return request
-  if (launch.fileName === 'ВП.xls' && request.dataSource === 35 && requestDayOrganizationBasis(request) === 0)
+  if (launch.fileName === 'ВП.xls' && request.dataSource === 35 && requestDayOrganizationBasis(request) === 0
+    && requestProfitReadMode(request) !== 0)
     return { ...structuredClone(request), workbookPresentation: { version: 1, additionalFields: [2, 3], ordering: 'MonthAscending' } }
   if (request.dataSource === 41 && isGroupedSettlementDataset(launch.dataset)
     && groupedSettlementPeriod(requestGroupedSettlementPeriod(request))

@@ -12,6 +12,7 @@ export type NativeReportPreviewCell = { RowSourceIndex: number; ColumnSourceInde
 export type NativeReportPreviewFilter = { Field: string; Condition: string; Values: string[]; IgnoredReason: string | null }
 export type NativeReportPreviewRequest = {
   DataSource: string
+  ProfitReadMode?: 0 | 1
   IsCurrentSnapshot: boolean
   ObservationStartedAtUtc: string | null
   ObservationCompletedAtUtc: string | null
@@ -77,6 +78,11 @@ function normalizeRequest(value: unknown): NativeReportPreviewRequest | null {
   if (value === undefined || value === null) return null
   if (!record(value) || typeof value.IsCurrentSnapshot !== 'boolean' || typeof value.HasPeriod !== 'boolean')
     throw new Error('Сервер повернув некоректний опис розрахунку звіту.')
+  const modeKeys = Object.keys(value).filter(key => key.toLowerCase() === 'profitreadmode')
+  const mode = modeKeys.length ? value[modeKeys[0]] : undefined
+  if (modeKeys.length > 1 || modeKeys.some(key => key !== 'ProfitReadMode' && key !== 'profitReadMode')
+    || mode != null && mode !== 0 && mode !== 1)
+    throw new Error('Сервер повернув некоректне джерело розрахунку прибутку.')
   let items = 0
   const consume = (count: number) => {
     if (count > maximumRequestItems - items)
@@ -102,6 +108,7 @@ function normalizeRequest(value: unknown): NativeReportPreviewRequest | null {
     })
   }
   return {
+    ...(mode != null ? { ProfitReadMode: mode as 0 | 1 } : {}),
     DataSource: attributionText(value.DataSource), IsCurrentSnapshot: value.IsCurrentSnapshot,
     ObservationStartedAtUtc: nullableText(value.ObservationStartedAtUtc),
     ObservationCompletedAtUtc: nullableText(value.ObservationCompletedAtUtc), HasPeriod: value.HasPeriod,

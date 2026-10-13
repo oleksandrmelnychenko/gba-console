@@ -15,7 +15,7 @@ const managedFields = new Set([
   'hideZero', 'HideZero', 'threshold', 'Threshold', 'topGroups', 'TopGroups',
   'productClassification', 'ProductClassification', 'sourceOrganizations', 'SourceOrganizations',
   'sourceBuyerSubtree', 'SourceBuyerSubtree',
-  'dayOrganizationBasis', 'DayOrganizationBasis',
+  'dayOrganizationBasis', 'DayOrganizationBasis', 'profitReadMode', 'ProfitReadMode',
   'supplierBasis', 'SupplierBasis',
   'supplierSourceWorld', 'SupplierSourceWorld',
   'settlementPeriod', 'SettlementPeriod',
@@ -66,7 +66,7 @@ export function retainStoredMeasurementLabels(stored: ReportRequestBody | null |
 export function retainStoredTemplateFields(stored: ReportRequestBody, draft: ReportRequestBody): ReportRequestBody {
   const retained = Object.fromEntries(Object.entries(stored).filter(([key]) => !managedFields.has(key)
     && key.toLowerCase() !== 'currentvparivaniefullscope' && key.toLowerCase() !== 'dayorganizationbasis' && key.toLowerCase() !== 'supplierbasis'
-    && key.toLowerCase() !== 'pricetypesalescomparison'
+    && key.toLowerCase() !== 'profitreadmode' && key.toLowerCase() !== 'pricetypesalescomparison'
     && key.toLowerCase() !== 'groupedcashperiod' && key.toLowerCase() !== 'groupedsettlementperiod' && key.toLowerCase() !== 'sourcecounterpartygroups'))
   const retainMeasurement = (item: ReportRequestBody['sorted']['Measurements'][number]) =>
     retainStoredMeasurementLabel(stored, draft, {

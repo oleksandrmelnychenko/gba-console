@@ -35,6 +35,7 @@ import { nativeExactFiltersConfigurationError } from '../data/nativeExactFilters
 import { EXACT_ONE_C_BUYER_ROOT_ID } from '../data/oneCTurnoverReport'
 import { priceTypeSalesComparisonConfigurationError, priceTypeSalesSourceId } from '../data/priceTypeSalesComparison'
 import { oneCSpecialSettingsError } from '../data/oneCSpecialReports'
+import { requestProfitReadMode } from '../data/profitReadMode'
 import { normalizeNativeReportPreview, type NativeReportPreview } from '../data/nativeReportPreview'
 
 const EMPTY_GUID = '00000000-0000-0000-0000-000000000000'
@@ -62,6 +63,11 @@ export async function previewStockReport(body: ReportRequestBody): Promise<{ res
   })
   const preview = normalizeNativeReportPreview(response, currentVparivanieFullScope(request))
   bindWorkbookPreview(request, preview)
+  if ((request.dataSource === 35 || request.dataSource === 38)
+    && ((requestProfitReadMode(request) ?? null) !== (preview.Request?.ProfitReadMode ?? null)
+      || requestProfitReadMode(request) != null && preview.Request?.DataSource !== (request.dataSource === 35
+        ? 'NativeDayOrganizationGrossProfit' : 'NativeSupplierGrossProfit')))
+    throw new Error('Сервер повернув інше джерело розрахунку прибутку.')
   if (request.dataSource === 39 && (preview.Request?.DataSource !== 'NativeCurrentVparivanie' || !preview.CurrentVparivanieProducts))
     throw new Error('Сервер повернув результат іншого набору даних замість поточної матриці «Впарювання».')
   if (request.dataSource === 41 && preview.Request?.DataSource !== 'NativeSettlementPeriod')

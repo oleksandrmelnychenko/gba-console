@@ -39,6 +39,8 @@ import { CheckboxMultiSelect } from '../../../shared/ui/CheckboxMultiSelect'
 import { CircleAlert, LayoutTemplate, Plus, RotateCcw, Save, Trash2 } from 'lucide-react'
 import { IconFileSpreadsheet } from '@tabler/icons-react'
 import { TableRowAction } from '../../../shared/ui/table-row-action/TableRowAction'
+import { requestProfitReadMode } from '../data/profitReadMode'
+import { ProfitReadModeSelect } from './ProfitReadModeSelect'
 import { type FormEvent, type ReactNode, useEffect, useMemo, useState } from 'react'
 import { ApiError } from '../../../shared/api/apiClient'
 import { formatKyivBusinessDate } from '../../../shared/date/dateTime'
@@ -328,6 +330,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
   const [productClassification, setProductClassification] = useValueState<unknown>(undefined)
   const [sourceOrganizations, setSourceOrganizations] = useValueState<unknown>(undefined)
   const [sourceBuyerSubtree, setSourceBuyerSubtree] = useValueState<unknown>(undefined)
+  const [profitReadMode, setProfitReadMode] = useValueState<unknown>(undefined)
   const [dayOrganizationBasis, setDayOrganizationBasis] = useValueState<unknown>(undefined)
   const [supplierBasis, setSupplierBasis] = useValueState<unknown>(undefined)
   const [supplierSourceWorld, setSupplierSourceWorld] = useValueState<unknown>(undefined)
@@ -410,8 +413,8 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
   // period on a pause, and only once it is a period the server can answer for.
   const hasLookupPeriod = !getPeriodError(debouncedFrom, debouncedTo, maxDate, t)
   const reportBody = useMemo<ReportRequestBody>(
-    () => ({ ...buildReportBuilderRequest({ dataSource, returnsOnly, comparison, xyz, revenueComparison, buyerSalesShare, returnComparison, paymentComparison, marginComparison, rateComparison, productClassification, sourceOrganizations, sourceBuyerSubtree, dayOrganizationBasis, supplierBasis, supplierSourceWorld, priceTypeSalesComparison, agreementPriceComparison, settlementPeriod, groupedSettlementPeriod, sourceCounterpartyGroups, cashPeriod, groupedCashPeriod, workbookPresentation: workbook.value, oneCSpecialSettings, oneC: oneCScope, from, to, ordering, filterExpression, topGroups, threshold, hideZero, abcClassification, valuationClientAgreementId, rowGroups, colGroups, measurements, selections }), ...(dataSource === 39 && fullCurrentVparivanie ? { currentVparivanieFullScope: true } : {}) }),
-    [fullCurrentVparivanie, abcClassification, agreementPriceComparison, settlementPeriod, groupedSettlementPeriod, sourceCounterpartyGroups, cashPeriod, groupedCashPeriod, workbook.value, colGroups, comparison, xyz, revenueComparison, buyerSalesShare, returnComparison, paymentComparison, marginComparison, rateComparison, productClassification, sourceOrganizations, sourceBuyerSubtree, dayOrganizationBasis, supplierBasis, supplierSourceWorld, returnsOnly, priceTypeSalesComparison, oneCSpecialSettings, oneCScope, dataSource, filterExpression, from, hideZero, measurements, ordering, rowGroups, selections, to, topGroups, threshold, valuationClientAgreementId],
+    () => ({ ...buildReportBuilderRequest({ dataSource, returnsOnly, comparison, xyz, revenueComparison, buyerSalesShare, returnComparison, paymentComparison, marginComparison, rateComparison, productClassification, sourceOrganizations, sourceBuyerSubtree, profitReadMode, dayOrganizationBasis, supplierBasis, supplierSourceWorld, priceTypeSalesComparison, agreementPriceComparison, settlementPeriod, groupedSettlementPeriod, sourceCounterpartyGroups, cashPeriod, groupedCashPeriod, workbookPresentation: workbook.value, oneCSpecialSettings, oneC: oneCScope, from, to, ordering, filterExpression, topGroups, threshold, hideZero, abcClassification, valuationClientAgreementId, rowGroups, colGroups, measurements, selections }), ...(dataSource === 39 && fullCurrentVparivanie ? { currentVparivanieFullScope: true } : {}) }),
+    [fullCurrentVparivanie, abcClassification, agreementPriceComparison, settlementPeriod, groupedSettlementPeriod, sourceCounterpartyGroups, cashPeriod, groupedCashPeriod, workbook.value, colGroups, comparison, xyz, revenueComparison, buyerSalesShare, returnComparison, paymentComparison, marginComparison, rateComparison, productClassification, sourceOrganizations, sourceBuyerSubtree, profitReadMode, dayOrganizationBasis, supplierBasis, supplierSourceWorld, returnsOnly, priceTypeSalesComparison, oneCSpecialSettings, oneCScope, dataSource, filterExpression, from, hideZero, measurements, ordering, rowGroups, selections, to, topGroups, threshold, valuationClientAgreementId],
   )
   const { result, preview, lastRun, error, isLoading, downloadModalOpened, update: updateRun, begin: beginRun, clear: clearRun } = useReportRunState<ReportRunOutcome>(JSON.stringify({
     request: reportBody,
@@ -570,6 +573,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
     setProductClassification(undefined)
     setSourceOrganizations(undefined)
     setSourceBuyerSubtree(snapshotDefaults?.sourceBuyerSubtree)
+    setProfitReadMode(snapshotDefaults?.profitReadMode)
     setDayOrganizationBasis(snapshotDefaults?.dayOrganizationBasis)
     setSupplierBasis(snapshotDefaults?.supplierBasis)
     setSupplierSourceWorld(snapshotDefaults?.supplierSourceWorld)
@@ -663,6 +667,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
     setProductClassification(structuredClone(requestProductClassification(data)))
     setSourceOrganizations(structuredClone(requestSourceOrganizations(data)))
     setSourceBuyerSubtree(structuredClone(requestSourceBuyerSubtree(data)))
+    setProfitReadMode(structuredClone(requestProfitReadMode(data)))
     setDayOrganizationBasis(structuredClone(requestDayOrganizationBasis(data)))
     setSupplierBasis(structuredClone(requestSupplierBasis(data)))
     setSupplierSourceWorld(structuredClone(requestSupplierSourceWorld(data)))
@@ -734,6 +739,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
     setProductClassification(structuredClone(requestProductClassification(data)))
     setSourceOrganizations(structuredClone(requestSourceOrganizations(data)))
     setSourceBuyerSubtree(structuredClone(requestSourceBuyerSubtree(data)))
+    setProfitReadMode(structuredClone(requestProfitReadMode(data)))
     setDayOrganizationBasis(structuredClone(requestDayOrganizationBasis(data)))
     setSupplierBasis(structuredClone(requestSupplierBasis(data)))
     setSupplierSourceWorld(structuredClone(requestSupplierSourceWorld(data)))
@@ -1004,8 +1010,14 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
             onRowsChange: setRowGroups, onGroupsChange: setSourceCounterpartyGroups }}
           onGroupedCashChange={workbook.changeGroupedCash} onExactCashChange={setCashPeriod}
           onCashMeasurementsChange={setMeasurements} onClearCashFilters={() => filterLogic.load([])} /> : dataSource === 35 ? <Card className="app-section-card" withBorder radius="md" padding="md" style={{ minWidth: 0 }}>
+          <ProfitReadModeSelect capability={dataset?.profitReadMode} value={profitReadMode}
+            disabled={comparisonSettingsDisabled} onChange={mode => {
+              setProfitReadMode(mode)
+              if (mode != null) setDayOrganizationBasis(0)
+              if (mode === 0) workbook.reset(undefined)
+            }} />
           <DayOrganizationBasisSelect capability={dataset?.dayOrganizationBasis} value={dayOrganizationBasis}
-            disabled={comparisonSettingsDisabled} onChange={setDayOrganizationBasis} />
+            disabled={comparisonSettingsDisabled || profitReadMode != null} onChange={setDayOrganizationBasis} />
           <Checkbox mt="sm" label={t('Товар без послуг (Fenix)')}
             checked={parseProductClassification(productClassification)?.ProductKindId.toUpperCase() === DAY_ORGANIZATION_GOODS_KIND_ID
               && parseProductClassification(productClassification)?.IsService === false}
@@ -1039,14 +1051,24 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
             ? <Text size="xs" c="orange">{t('Шаблон містить інше піддерево Fenix; цей набір приймає тільки групу «Покупці».')}</Text> : null}
         </Card> : dataSource === 38 && isSupplierSourceWorldCapability(dataset?.supplierSourceWorld)
           ? <Card className="app-section-card" withBorder radius="md" padding="md" style={{ minWidth: 0 }}>
+            <ProfitReadModeSelect capability={dataset?.profitReadMode} value={profitReadMode}
+              disabled={comparisonSettingsDisabled} onChange={mode => {
+                setProfitReadMode(mode)
+                if (mode === 0) setSupplierSourceWorld(undefined)
+                if (mode === 1) setSupplierSourceWorld(0)
+                if (mode != null) {
+                  setSupplierBasis(0)
+                  setRowGroups(rows => rowGroupsForSupplierBasis(0, rows, groupingOptions))
+                }
+              }} />
             <SupplierBasisSelect capability={dataset?.supplierBasis} value={supplierBasis}
-              disabled={comparisonSettingsDisabled} onChange={basis => {
+              disabled={comparisonSettingsDisabled || profitReadMode != null} onChange={basis => {
                 setSupplierBasis(basis)
                 setRowGroups(rows => rowGroupsForSupplierBasis(basis, rows, groupingOptions))
               }} />
             <Select label={t('База продажів для прибутку за постачальниками')}
               data={[{ value: '0', label: 'Fenix' }, { value: '1', label: 'AMG' },
-                { value: 'all', label: t('Обидві бази') }]}
+                { value: 'all', label: t(profitReadMode === 0 ? 'Усі документи, включно з GBA' : 'Обидві бази') }]}
               value={supplierSourceWorld === 0 ? '0' : supplierSourceWorld === 1 ? '1' : 'all'}
               disabled={comparisonSettingsDisabled}
               onChange={value => {

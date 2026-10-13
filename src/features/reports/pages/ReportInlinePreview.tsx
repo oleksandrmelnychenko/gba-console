@@ -1,5 +1,6 @@
 import { settlementAttributeText, type SettlementCounterpartyAttribute } from '../data/settlementSourceAttributes'
 import { Alert, Badge, Stack, Text } from '@mantine/core'
+import { profitReadModeLabel } from '../data/profitReadMode'
 import { previewScalarText, type CurrentVparivanieProduct, type NativeReportPreview, type NativeReportPreviewAxis, type NativeReportPreviewFilter, type NativeReportPreviewRequest } from '../data/nativeReportPreview'
 import { CURRENT_VPARIVANIE_PRODUCT_CAPTIONS, CURRENT_VPARIVANIE_PRODUCT_FIELDS } from '../data/currentVparivanie'
 import { currentVparivanieSecondTier } from '../data/currentVparivanieColumns'
@@ -111,6 +112,7 @@ function ReportAttribution({ request }: { request: NativeReportPreviewRequest | 
     {!request ? <Alert color="yellow" title="Опис розрахунку відсутній">
       Сервер не передав опис розрахунку. Період, застосовані фільтри й обмеження цього результату не зазначені.
     </Alert> : <>
+      {request.ProfitReadMode != null ? <Text size="sm">Джерело розрахунку: {profitReadModeLabel(request.ProfitReadMode)}</Text> : null}
       <SnapshotAttribution request={request} />
       <PeriodAttribution request={request} />
       <IgnoredFilterAttribution filters={request.IgnoredFilters} />

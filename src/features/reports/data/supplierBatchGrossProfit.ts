@@ -1,3 +1,4 @@
+import { requestProfitReadMode, profitReadModeConfigurationError } from './profitReadMode'
 import { originalNormalPeriodError } from './originalNormalPeriod'
 import type { ReportDataset, ReportRequestBody } from '../types'
 import { revenueExactId } from './revenueComparison'
@@ -46,6 +47,8 @@ export function isSupplierBatchGrossProfitDataset(dataset: ReportDataset): boole
 
 export function supplierBatchGrossProfitConfigurationError(data: ReportRequestBody, dataset?: ReportDataset): string | null {
   if (data.dataSource !== SUPPLIER_BATCH_GROSS_PROFIT_SOURCE) return null
+  const modeError = profitReadModeConfigurationError(data, dataset)
+  if (modeError) return modeError
   const basisError = supplierBasisConfigurationError(data, dataset)
   if (basisError) return basisError
   if (dataset && !isSupplierBatchGrossProfitDataset(dataset))
@@ -64,7 +67,8 @@ export function supplierBatchGrossProfitConfigurationError(data: ReportRequestBo
     return 'Для піддерева «Покупці» потрібні база Fenix і підтверджений граф покупців.'
   if (!validDate(data.from) || !validDate(data.to) || data.from > data.to)
     return 'Оберіть один коректний період партійного прибутку.'
-  const normal = world === 0 && requestSupplierBasis(data) === 0 && data.sorted?.Row?.[0]?.type === 78
+  const normal = requestProfitReadMode(data) !== 0 && world === 0 && requestSupplierBasis(data) === 0 && data.sorted?.Row?.[0]?.type === 78
+  if (requestProfitReadMode(data) === 1 && !normal) return 'Для збережених регістрів 1С потрібні підтверджені відбори Fenix.'
   if (normal && data.from >= '2025-01-01') {
     const error = originalNormalPeriodError(data.from, data.to)
     if (error) return error

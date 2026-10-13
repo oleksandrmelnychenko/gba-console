@@ -1,4 +1,5 @@
 import { Alert, Button, Card, Checkbox, Select, Stack, Text } from '@mantine/core'
+import { requestProfitReadMode } from '../data/profitReadMode'
 import type { ReportDataset, ReportRequestBody } from '../types'
 import { readWorkbookCapability, readWorkbookSelection, workbookConfigurationError, type WorkbookSelection } from '../data/workbookPresentation'
 
@@ -34,7 +35,7 @@ function workbookFieldAvailability(request: ReportRequestBody) {
   const fenix = readSettlementWorld(grouped) === 'Fenix'
   const periodBasis = request.dayOrganizationBasis ?? request.DayOrganizationBasis
   let unavailable = false
-  if (request.dataSource === 35) unavailable = periodBasis !== 0
+  if (request.dataSource === 35) unavailable = periodBasis !== 0 || requestProfitReadMode(request) === 0
   if (request.dataSource === 40) unavailable = request.groupedCashPeriod == null && request.GroupedCashPeriod == null
   if (request.dataSource === 41) unavailable = grouped == null
   return { fenix, unavailable }

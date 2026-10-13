@@ -187,6 +187,8 @@ type WireTemplate = Required<Omit<ReportTemplate, 'Data'>> & {
     SourceOrganizations?: unknown
     sourceOrganizations?: unknown
     SourceBuyerSubtree?: unknown
+    ProfitReadMode?: unknown
+    profitReadMode?: unknown
     DayOrganizationBasis?: unknown
     dayOrganizationBasis?: unknown
     sourceBuyerSubtree?: unknown

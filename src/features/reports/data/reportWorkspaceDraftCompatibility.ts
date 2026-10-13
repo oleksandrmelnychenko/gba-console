@@ -1,3 +1,4 @@
+import { profitReadModeConfigurationError, requestProfitReadMode } from './profitReadMode'
 import { workbookConfigurationError } from './workbookPresentation'
 import { requestSupplierBasis } from './supplierBasis'
 import { requestSupplierSourceWorld, supplierBatchGrossProfitConfigurationError } from './supplierBatchGrossProfit'
@@ -19,11 +20,14 @@ export function reportWorkspaceDraftCompatibility(snapshot: ReportWorkspaceSnaps
   if (dataset.PeriodSupported === false && (data.from || data.to)) {
     return 'Чернетка містить період, який цей набір даних не підтримує. Чернетка збережена без змін.'
   }
+  const modeError = profitReadModeConfigurationError(data, dataset)
+  if (modeError) return `${modeError} Чернетка збережена без змін.`
   const workbookError = workbookConfigurationError(data, dataset)
   if (workbookError) return `${workbookError} Чернетка збережена без змін.`
   const presented = data.workbookPresentation != null || data.WorkbookPresentation != null
   const originalSupplier = dataset.DataSource === 38 && requestSupplierBasis(data) === 0
-    && requestSupplierSourceWorld(data) === 0 && supplierBatchGrossProfitConfigurationError(data, dataset) === null
+    && (requestSupplierSourceWorld(data) === 0 || requestProfitReadMode(data) === 0)
+    && supplierBatchGrossProfitConfigurationError(data, dataset) === null
   const groupings = new Set(dataset.Groupings.map(field => field.Type))
   const measures = new Set(dataset.Measurements.map(field => field.Type))
   if ([...data.sorted.Row, ...data.sorted.Col].some(field => !groupings.has(field.type))

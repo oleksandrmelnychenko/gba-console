@@ -1,3 +1,4 @@
+import { requestProfitReadMode, profitReadModeConfigurationError } from './profitReadMode'
 import { originalNormalPeriodError } from './originalNormalPeriod'
 import type { ReportDataset, ReportRequestBody } from '../types'
 import { revenueExactId } from './revenueComparison'
@@ -43,14 +44,17 @@ export function isDayOrganizationGrossProfitDataset(dataset: ReportDataset): boo
 }
 
 export function dayOrganizationGrossProfitConfigurationError(data: ReportRequestBody, dataset?: ReportDataset): string | null {
+  const modeError = profitReadModeConfigurationError(data, dataset)
+  if (modeError) return modeError
   const basisError = dayOrganizationBasisConfigurationError(data, dataset)
   if (basisError) return basisError
   if (data.dataSource !== DAY_ORGANIZATION_GROSS_PROFIT_SOURCE) return null
   if (dataset && !isDayOrganizationGrossProfitDataset(dataset))
     return 'Сервер не підтвердив набір валового прибутку GBA за днем.'
   if (!validDate(data.from) || !validDate(data.to) || data.from > data.to) return 'Оберіть один коректний період валового прибутку GBA.'
-  const normal = requestDayOrganizationBasis(data) === 0 && requestSourceOrganizations(data) != null
+  const normal = requestProfitReadMode(data) !== 0 && requestDayOrganizationBasis(data) === 0 && requestSourceOrganizations(data) != null
     && requestSourceBuyerSubtree(data) != null && productClassification(requestProductClassification(data))?.SourceWorld === 0
+  if (requestProfitReadMode(data) === 1 && !normal) return 'Для збережених регістрів 1С потрібні підтверджені відбори Fenix.'
   if (normal && data.from >= '2025-01-01') {
     const error = originalNormalPeriodError(data.from, data.to)
     if (error) return error

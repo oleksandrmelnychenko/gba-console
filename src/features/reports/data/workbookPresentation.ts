@@ -1,3 +1,4 @@
+import { requestProfitReadMode } from './profitReadMode'
 import type { ReportDataset, ReportRequestBody } from '../types'
 
 export type WorkbookSelection = { version: 1; additionalFields: number[]; ordering: null | 'MonthAscending' }
@@ -87,6 +88,8 @@ function option(data: object, name: string): unknown {
 }
 /** API callers validate semantics; the form additionally requires current server capabilities. */
 export function workbookConfigurationError(data: ReportRequestBody, dataset?: ReportDataset): string | null {
+  if (data.dataSource === 35 && requestProfitReadMode(data) === 0 && requestWorkbookPresentation(data) != null)
+    return 'Додаткові поля книги недоступні для поточних документів GBA. Очистіть налаштування форми.'
   const keys = aliases(data)
   if (keys.length > 1 || keys.some(key => key !== 'workbookPresentation' && key !== 'WorkbookPresentation'))
     return 'Налаштування форми задано повторно або невідомим полем.'
