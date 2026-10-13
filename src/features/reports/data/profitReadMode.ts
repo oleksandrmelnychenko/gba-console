@@ -20,7 +20,15 @@ export function isProfitReadModeCapability(value: unknown): boolean {
   }
   return fields.Version === 1 && Array.isArray(fields.SupportedModes)
     && fields.SupportedModes.join(',') === '0,1' && fields.SupportedModes.every(mode => typeof mode === 'number')
-    && fields.CurrentDocumentsMaximumDays === 31 && fields.LegacyInferencePreserved === true
+    && (fields.CurrentDocumentsMaximumDays === 31 || fields.CurrentDocumentsMaximumDays === 62)
+    && fields.LegacyInferencePreserved === true
+}
+
+/** Uses only an understood server limit; older or absent capabilities retain 31 days. */
+export function currentProfitMaximumDays(capability: unknown): number {
+  if (!isProfitReadModeCapability(capability) || !record(capability)) return 31
+  const key = Object.keys(capability).find(name => name.toLowerCase() === 'currentdocumentsmaximumdays')!
+  return capability[key] as number
 }
 
 export function profitReadModeConfigurationError(data: ReportRequestBody, dataset?: ReportDataset): string | null {

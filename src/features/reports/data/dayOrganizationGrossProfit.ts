@@ -1,4 +1,4 @@
-import { requestProfitReadMode, profitReadModeConfigurationError } from './profitReadMode'
+import { requestProfitReadMode, profitReadModeConfigurationError, currentProfitMaximumDays } from './profitReadMode'
 import { originalNormalPeriodError } from './originalNormalPeriod'
 import type { ReportDataset, ReportRequestBody } from '../types'
 import { revenueExactId } from './revenueComparison'
@@ -54,12 +54,13 @@ export function dayOrganizationGrossProfitConfigurationError(data: ReportRequest
   if (!validDate(data.from) || !validDate(data.to) || data.from > data.to) return 'Оберіть один коректний період валового прибутку GBA.'
   const normal = requestProfitReadMode(data) !== 0 && requestDayOrganizationBasis(data) === 0 && requestSourceOrganizations(data) != null
     && requestSourceBuyerSubtree(data) != null && productClassification(requestProductClassification(data))?.SourceWorld === 0
+  const maximumDays = requestProfitReadMode(data) === 0 ? currentProfitMaximumDays(dataset?.profitReadMode) : 31
   if (requestProfitReadMode(data) === 1 && !normal) return 'Для збережених регістрів 1С потрібні підтверджені відбори Fenix.'
   if (normal && data.from >= '2025-01-01') {
     const error = originalNormalPeriodError(data.from, data.to)
     if (error) return error
-  } else if ((Date.parse(`${data.to}T00:00:00Z`) - Date.parse(`${data.from}T00:00:00Z`)) / 86400000 >= 31)
-    return 'Період валового прибутку GBA може охоплювати щонайбільше 31 календарний день.'
+  } else if ((Date.parse(`${data.to}T00:00:00Z`) - Date.parse(`${data.from}T00:00:00Z`)) / 86400000 >= maximumDays)
+    return `Період валового прибутку GBA може охоплювати щонайбільше ${maximumDays} календарних днів.`
   if (Object.entries(data).some(([key, value]) => unsupported.has(key.toLowerCase()) && value != null)) return invalid
   const sorted = data.sorted
   if (!sorted || !Array.isArray(sorted.Row) || !Array.isArray(sorted.Col) || !Array.isArray(sorted.Measurements)

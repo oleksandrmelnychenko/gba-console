@@ -1,4 +1,4 @@
-import { requestProfitReadMode, profitReadModeConfigurationError } from './profitReadMode'
+import { requestProfitReadMode, profitReadModeConfigurationError, currentProfitMaximumDays } from './profitReadMode'
 import { originalNormalPeriodError } from './originalNormalPeriod'
 import type { ReportDataset, ReportRequestBody } from '../types'
 import { revenueExactId } from './revenueComparison'
@@ -68,12 +68,13 @@ export function supplierBatchGrossProfitConfigurationError(data: ReportRequestBo
   if (!validDate(data.from) || !validDate(data.to) || data.from > data.to)
     return 'Оберіть один коректний період партійного прибутку.'
   const normal = requestProfitReadMode(data) !== 0 && world === 0 && requestSupplierBasis(data) === 0 && data.sorted?.Row?.[0]?.type === 78
+  const maximumDays = requestProfitReadMode(data) === 0 ? currentProfitMaximumDays(dataset?.profitReadMode) : 31
   if (requestProfitReadMode(data) === 1 && !normal) return 'Для збережених регістрів 1С потрібні підтверджені відбори Fenix.'
   if (normal && data.from >= '2025-01-01') {
     const error = originalNormalPeriodError(data.from, data.to)
     if (error) return error
-  } else if ((Date.parse(`${data.to}T00:00:00Z`) - Date.parse(`${data.from}T00:00:00Z`)) / 86400000 >= 31)
-    return 'Період партійного прибутку може охоплювати щонайбільше 31 день.'
+  } else if ((Date.parse(`${data.to}T00:00:00Z`) - Date.parse(`${data.from}T00:00:00Z`)) / 86400000 >= maximumDays)
+    return `Період партійного прибутку може охоплювати щонайбільше ${maximumDays} днів.`
   if (Object.entries(data).some(([key, value]) => forbidden.has(key.toLowerCase()) && value != null)) return invalid
   const sorted = data.sorted
   const axis = Array.isArray(sorted?.Row) ? sorted.Row.map(item => item.type).join(',') : ''
