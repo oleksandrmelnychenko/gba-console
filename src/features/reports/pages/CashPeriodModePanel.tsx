@@ -4,12 +4,15 @@ import { cashPeriodSupportsManagement, type CashPeriodScope } from '../data/cash
 import { groupedCashSupported, groupedCashWorkbookSupported, CASH_WORKBOOK_ROWS } from '../data/groupedCashPeriod'
 import { CashPeriodLegPicker } from './CashPeriodLegPicker'
 import { cashWorkbookPresentationSupported } from '../data/workbookPresentation'
+import { CashReadModeSelect } from './CashReadModeSelect'
 
-export function CashPeriodModePanel({ dataset, grouped, exact, disabled, enabled, onModeChange, onExactChange, rows, available, onRowsChange }: {
+export function CashPeriodModePanel({ dataset, grouped, exact, disabled, enabled, onModeChange, onExactChange, rows, available, onRowsChange,
+  readMode, onReadModeChange }: {
   dataset?: ReportDataset; grouped: unknown; exact: unknown; disabled: boolean; enabled: boolean
   rows: ReportGroupingItem[]; available: readonly ReportGroupingItem[]
   onRowsChange: (rows: ReportGroupingItem[]) => void
   onModeChange: (grouped: boolean) => void; onExactChange: (scope: CashPeriodScope | undefined) => void
+  readMode?: unknown; onReadModeChange?: (value: 0 | 1 | undefined) => void
 }) {
   const multiple = grouped != null
   return <>
@@ -18,6 +21,8 @@ export function CashPeriodModePanel({ dataset, grouped, exact, disabled, enabled
         value={multiple ? 'accounts' : 'account'} data={[
           { value: 'accounts', label: 'Усі / вибрані рахунки' }, { value: 'account', label: 'Один валютний запис' },
         ]} onChange={value => onModeChange(value === 'accounts')} />
+      {multiple && onReadModeChange ? <CashReadModeSelect capability={dataset?.cashReadMode} value={readMode}
+        disabled={disabled} onChange={onReadModeChange} /> : null}
       {multiple && (groupedCashWorkbookSupported(dataset) || cashWorkbookPresentationSupported(dataset)) ? <Select mt="sm" label="Форма руху коштів" disabled={disabled}
         allowDeselect={false} value={rows.map(row => row.type).join(',')} data={[
           { value: '43,40,42,41', label: 'Організація / Рахунок / Запис / Валюта' },

@@ -1,5 +1,6 @@
 import { isProfitReadModeCapability, requestProfitReadMode } from './profitReadMode'
 import { isSettlementReadModeCapability } from './settlementReadMode'
+import { isCashReadModeCapability } from './cashReadMode'
 import type { ReportDataset, ReportRequestBody } from '../types'
 import { cashWorkbookPresentationSupported, readWorkbookCapability, requestWorkbookPresentation } from './workbookPresentation'
 import { CASH_WORKBOOK_ROWS, groupedCashPeriod, groupedCashSupported, groupedCashWorkbookSupported, requestGroupedCashPeriod } from './groupedCashPeriod'
@@ -25,6 +26,7 @@ export type WorkbookLaunch = {
 }
 
 export const SETTLEMENT_READ_MODE_NOTICE = 'Можна обрати джерело розрахунку: «Поточні документи GBA» (документи GBA та початкові залишки на 01.01.2025) або «Збережені регістри 1С».'
+export const CASH_READ_MODE_NOTICE = SETTLEMENT_READ_MODE_NOTICE
 
 const supported = [
   {
@@ -90,7 +92,7 @@ export function availableBug1274WorkbookLaunches(datasets: readonly ReportDatase
           : spec.dataSource === 35 && isDayOrganizationBasisCapability(candidate.dayOrganizationBasis)
           ? 'Часткова форма Excel: день → організація, суми EUR та рентабельність %. Для нового запиту застосовано відбори книги: товар без послуг, п’ять організацій і група «Покупці» Fenix. Їх можна змінити у формі. «Продажі мінус повернення за період» підтримують до 31 дня. Недоступні собівартість, ПДВ і залежні показники залишаються порожніми.'
           : spec.dataSource === 40 && groupedCashSupported(candidate)
-            ? 'Показано банківські рахунки та каси: вісім показників у валюті рахунку й управлінській валюті. Відбори рахунку, організації, валюти та виду доступні у формі.'
+            ? groupedCashNotice(candidate)
           : spec.dataSource === 40 && cashPeriodSupportsManagement(candidate)
           ? 'Часткова форма Excel: один рахунок, вісім показників залишків і руху у валюті рахунку та управлінській валюті. Оберіть рахунок і завершений період до 31 дня. Недоступні суми залишаються порожніми.'
           : spec.dataSource === 41 && isGroupedSettlementDataset(candidate)
@@ -103,6 +105,11 @@ export function availableBug1274WorkbookLaunches(datasets: readonly ReportDatase
         dataset: matches[0] }]
       : []
   })
+}
+
+function groupedCashNotice(dataset: ReportDataset): string {
+  const notice = 'Показано банківські рахунки та каси: вісім показників у валюті рахунку й управлінській валюті. Відбори рахунку, організації, валюти та виду доступні у формі.'
+  return isCashReadModeCapability(dataset.cashReadMode) ? `${notice} ${CASH_READ_MODE_NOTICE}` : notice
 }
 
 function groupedSettlementNotice(fileName: string, dataset: ReportDataset): string {

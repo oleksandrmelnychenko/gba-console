@@ -38,6 +38,7 @@ import { priceTypeSalesComparisonConfigurationError, priceTypeSalesSourceId } fr
 import { oneCSpecialSettingsError } from '../data/oneCSpecialReports'
 import { requestProfitReadMode } from '../data/profitReadMode'
 import { requestSettlementReadMode } from '../data/settlementReadMode'
+import { requestCashReadMode } from '../data/cashReadMode'
 import { normalizeNativeReportPreview, type NativeReportPreview } from '../data/nativeReportPreview'
 
 const EMPTY_GUID = '00000000-0000-0000-0000-000000000000'
@@ -78,6 +79,8 @@ export async function previewStockReport(body: ReportRequestBody, dataset?: Repo
     throw new Error('Сервер повернув інше джерело розрахунку взаєморозрахунків.')
   if (request.dataSource === 40 && preview.Request?.DataSource !== 'NativeCashPeriod')
     throw new Error('Сервер повернув результат іншого набору даних замість руху коштів.')
+  if (request.dataSource === 40 && (requestCashReadMode(request) ?? null) !== (preview.Request?.CashReadMode ?? null))
+    throw new Error('Сервер повернув інше джерело розрахунку коштів.')
   return { result: normalizeReportResult(response), preview }
 }
 

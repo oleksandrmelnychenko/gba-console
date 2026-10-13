@@ -21,7 +21,7 @@ const managedFields = new Set([
   'settlementPeriod', 'SettlementPeriod',
   'groupedSettlementPeriod', 'GroupedSettlementPeriod', 'settlementReadMode', 'SettlementReadMode',
   'sourceCounterpartyGroups', 'SourceCounterpartyGroups',
-  'cashPeriod', 'CashPeriod', 'groupedCashPeriod', 'GroupedCashPeriod',
+  'cashPeriod', 'CashPeriod', 'groupedCashPeriod', 'GroupedCashPeriod', 'cashReadMode', 'CashReadMode',
   'workbookPresentation', 'WorkbookPresentation',
   'priceTypeSalesComparison', 'PriceTypeSalesComparison', 'oneC', 'OneC',
   'discountMarkup', 'DiscountMarkup', 'providedDiscounts', 'ProvidedDiscounts',
@@ -67,7 +67,8 @@ export function retainStoredTemplateFields(stored: ReportRequestBody, draft: Rep
   const retained = Object.fromEntries(Object.entries(stored).filter(([key]) => !managedFields.has(key)
     && key.toLowerCase() !== 'currentvparivaniefullscope' && key.toLowerCase() !== 'dayorganizationbasis' && key.toLowerCase() !== 'supplierbasis'
     && key.toLowerCase() !== 'profitreadmode' && key.toLowerCase() !== 'pricetypesalescomparison'
-    && key.toLowerCase() !== 'groupedcashperiod' && key.toLowerCase() !== 'groupedsettlementperiod' && key.toLowerCase() !== 'settlementreadmode'
+    && key.toLowerCase() !== 'groupedcashperiod' && key.toLowerCase() !== 'cashreadmode'
+    && key.toLowerCase() !== 'groupedsettlementperiod' && key.toLowerCase() !== 'settlementreadmode'
     && key.toLowerCase() !== 'sourcecounterpartygroups'))
   const retainMeasurement = (item: ReportRequestBody['sorted']['Measurements'][number]) =>
     retainStoredMeasurementLabel(stored, draft, {

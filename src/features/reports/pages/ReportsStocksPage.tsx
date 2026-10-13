@@ -41,6 +41,7 @@ import { IconFileSpreadsheet } from '@tabler/icons-react'
 import { TableRowAction } from '../../../shared/ui/table-row-action/TableRowAction'
 import { requestProfitReadMode } from '../data/profitReadMode'
 import { requestSettlementReadMode } from '../data/settlementReadMode'
+import { requestCashReadMode } from '../data/cashReadMode'
 import { ProfitReadModeSelect } from './ProfitReadModeSelect'
 import { type FormEvent, type ReactNode, useEffect, useMemo, useState } from 'react'
 import { ApiError } from '../../../shared/api/apiClient'
@@ -343,6 +344,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
   const [settlementReadMode, setSettlementReadMode] = useValueState<unknown>(undefined)
   const [sourceCounterpartyGroups, setSourceCounterpartyGroups] = useValueState<unknown>(undefined)
   const [groupedCashPeriod, setGroupedCashPeriod] = useValueState<unknown>(undefined)
+  const [cashReadMode, setCashReadMode] = useValueState<unknown>(undefined)
   const [cashPeriod, setCashPeriod] = useValueState<unknown>(undefined)
   const [oneCSpecialSettings, setOneCSpecialSettings] = useValueState<unknown>(undefined)
   const [oneCScope, setOneCScope] = useValueState<OneCTurnoverFilters | undefined>(undefined)
@@ -405,8 +407,8 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
   const settlementDataset = useMemo(() => settlementFormDataset(priceTypeDataset, groupedSettlementPeriod), [priceTypeDataset, groupedSettlementPeriod])
   const cashDataset = useMemo(() => cashFormDataset(settlementDataset, groupedCashPeriod), [settlementDataset, groupedCashPeriod])
   const filterFieldOptions = useMemo(() => datasetFilters(cashDataset), [cashDataset])
-  const maxDate = useMemo(() => settlementMaximumDate(dataSource, groupedSettlementPeriod, today)
-    ?? (supportsFullReportDateRange(dataSource) ? CLIENT_COMPARISON_MAX_DATE : `${today.slice(0, 4)}-12-31`), [dataSource, groupedSettlementPeriod, today])
+  const maxDate = useMemo(() => settlementMaximumDate(dataSource, groupedSettlementPeriod, today, cashReadMode)
+    ?? (supportsFullReportDateRange(dataSource) ? CLIENT_COMPARISON_MAX_DATE : `${today.slice(0, 4)}-12-31`), [cashReadMode, dataSource, groupedSettlementPeriod, today])
   const [debouncedFrom] = useDebouncedValue(from, DATE_INPUT_DEBOUNCE_MS)
   const [debouncedTo] = useDebouncedValue(to, DATE_INPUT_DEBOUNCE_MS)
   const periodError = supportsFullReportDateRange(dataSource) ? (!isComparisonDate(from) || !isComparisonDate(to) || from > to ? 'Оберіть коректний період у межах 1900–9998 років.' : null)
@@ -415,8 +417,8 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
   // period on a pause, and only once it is a period the server can answer for.
   const hasLookupPeriod = !getPeriodError(debouncedFrom, debouncedTo, maxDate, t)
   const reportBody = useMemo<ReportRequestBody>(
-    () => ({ ...buildReportBuilderRequest({ dataSource, returnsOnly, comparison, xyz, revenueComparison, buyerSalesShare, returnComparison, paymentComparison, marginComparison, rateComparison, productClassification, sourceOrganizations, sourceBuyerSubtree, profitReadMode, dayOrganizationBasis, supplierBasis, supplierSourceWorld, priceTypeSalesComparison, agreementPriceComparison, settlementPeriod, groupedSettlementPeriod, settlementReadMode, sourceCounterpartyGroups, cashPeriod, groupedCashPeriod, workbookPresentation: workbook.value, oneCSpecialSettings, oneC: oneCScope, from, to, ordering, filterExpression, topGroups, threshold, hideZero, abcClassification, valuationClientAgreementId, rowGroups, colGroups, measurements, selections }), ...(dataSource === 39 && fullCurrentVparivanie ? { currentVparivanieFullScope: true } : {}) }),
-    [fullCurrentVparivanie, abcClassification, agreementPriceComparison, settlementPeriod, groupedSettlementPeriod, settlementReadMode, sourceCounterpartyGroups, cashPeriod, groupedCashPeriod, workbook.value, colGroups, comparison, xyz, revenueComparison, buyerSalesShare, returnComparison, paymentComparison, marginComparison, rateComparison, productClassification, sourceOrganizations, sourceBuyerSubtree, profitReadMode, dayOrganizationBasis, supplierBasis, supplierSourceWorld, returnsOnly, priceTypeSalesComparison, oneCSpecialSettings, oneCScope, dataSource, filterExpression, from, hideZero, measurements, ordering, rowGroups, selections, to, topGroups, threshold, valuationClientAgreementId],
+    () => ({ ...buildReportBuilderRequest({ dataSource, returnsOnly, comparison, xyz, revenueComparison, buyerSalesShare, returnComparison, paymentComparison, marginComparison, rateComparison, productClassification, sourceOrganizations, sourceBuyerSubtree, profitReadMode, dayOrganizationBasis, supplierBasis, supplierSourceWorld, priceTypeSalesComparison, agreementPriceComparison, settlementPeriod, groupedSettlementPeriod, settlementReadMode, sourceCounterpartyGroups, cashPeriod, groupedCashPeriod, cashReadMode, workbookPresentation: workbook.value, oneCSpecialSettings, oneC: oneCScope, from, to, ordering, filterExpression, topGroups, threshold, hideZero, abcClassification, valuationClientAgreementId, rowGroups, colGroups, measurements, selections }), ...(dataSource === 39 && fullCurrentVparivanie ? { currentVparivanieFullScope: true } : {}) }),
+    [fullCurrentVparivanie, abcClassification, agreementPriceComparison, settlementPeriod, groupedSettlementPeriod, settlementReadMode, sourceCounterpartyGroups, cashPeriod, groupedCashPeriod, cashReadMode, workbook.value, colGroups, comparison, xyz, revenueComparison, buyerSalesShare, returnComparison, paymentComparison, marginComparison, rateComparison, productClassification, sourceOrganizations, sourceBuyerSubtree, profitReadMode, dayOrganizationBasis, supplierBasis, supplierSourceWorld, returnsOnly, priceTypeSalesComparison, oneCSpecialSettings, oneCScope, dataSource, filterExpression, from, hideZero, measurements, ordering, rowGroups, selections, to, topGroups, threshold, valuationClientAgreementId],
   )
   const { result, preview, lastRun, error, isLoading, downloadModalOpened, update: updateRun, begin: beginRun, clear: clearRun } = useReportRunState<ReportRunOutcome>(JSON.stringify({
     request: reportBody,
@@ -588,6 +590,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
     setSourceCounterpartyGroups(undefined)
     setCashPeriod(undefined)
     setGroupedCashPeriod(snapshotDefaults?.groupedCashPeriod)
+    setCashReadMode(snapshotDefaults?.cashReadMode)
     workbook.reset(snapshotDefaults)
     setOneCSpecialSettings(snapshotDefaults && oneCSpecialSpecification(dataSource)
       ? requestOneCSpecialSettings(snapshotDefaults, dataSource) : undefined)
@@ -684,6 +687,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
     setSourceCounterpartyGroups(structuredClone(requestSourceCounterpartyGroups(data)))
     setCashPeriod(structuredClone(data.cashPeriod))
     setGroupedCashPeriod(structuredClone(requestGroupedCashPeriod(data)))
+    setCashReadMode(structuredClone(requestCashReadMode(data)))
     workbook.restore(data)
     setOneCSpecialSettings(structuredClone(requestOneCSpecialSettings(data, nextDataset.DataSource)))
     setOneCScope(structuredClone(data.oneC))
@@ -757,6 +761,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
     setSourceCounterpartyGroups(structuredClone(requestSourceCounterpartyGroups(data)))
     setCashPeriod(structuredClone(data.cashPeriod))
     setGroupedCashPeriod(structuredClone(requestGroupedCashPeriod(data)))
+    setCashReadMode(structuredClone(requestCashReadMode(data)))
     workbook.restore(data)
     setOneCSpecialSettings(structuredClone(requestOneCSpecialSettings(data, nextDataset.DataSource)))
     setOneCScope(structuredClone(data.oneC))
@@ -1007,7 +1012,8 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
           enabled={canGenerateReport} disabled={comparisonSettingsDisabled}
           fullScope={fullCurrentVparivanie} onFullScopeChange={setFullCurrentVparivanie} /></> : dataSource === 41 || dataSource === 40 ? <CashSettlementSettingsPanels dataSource={dataSource}
           cash={{ dataset, grouped: groupedCashPeriod, exact: cashPeriod, rows: rowGroups,
-            available: groupingOptions, onRowsChange: workbook.changeCashRows, disabled: comparisonSettingsDisabled, enabled: canGenerateReport }}
+            available: groupingOptions, onRowsChange: workbook.changeCashRows, disabled: comparisonSettingsDisabled, enabled: canGenerateReport,
+            readMode: cashReadMode, onReadModeChange: setCashReadMode }}
           settlement={{ dataset, grouped: groupedSettlementPeriod, exact: settlementPeriod,
             buyer: sourceBuyerSubtree, groups: sourceCounterpartyGroups, rows: rowGroups,
             available: groupingOptions, from, to, disabled: comparisonSettingsDisabled, enabled: canGenerateReport,

@@ -152,9 +152,10 @@ export function settlementModePatch(mode: 'buyers' | 'agreement', available: rea
     : { grouped: undefined, buyer: undefined, rows: [4, 41, 76, 77].map(type => available.find(item => item.type === type)!).filter(Boolean) }
 }
 
-export function settlementMaximumDate(source: number, selector: unknown, today: string): string | null {
+export function settlementMaximumDate(source: number, selector: unknown, today: string, cashReadMode?: unknown): string | null {
   if (source === 41) return selector != null ? today : previousKyivDay(today)
-  return source === 40 ? previousKyivDay(today) : null
+  if (source === 40) return cashReadMode != null ? today : previousKyivDay(today)
+  return null
 }
 
 export function groupedWorkbookRequest(request: ReportRequestBody, currencyAxis?: boolean): ReportRequestBody {

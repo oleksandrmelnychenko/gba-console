@@ -2,6 +2,8 @@ import { requestWorkbookPresentation, workbookConfigurationError } from './workb
 import type { ReportDataset, ReportRequestBody } from '../types'
 import { groupedCashConfigurationError, groupedCashSupported, requestGroupedCashPeriod, GROUPED_CASH_FILTERS, groupedCashWorkbookSupported, CASH_WORKBOOK_ROWS } from './groupedCashPeriod'
 import { formatKyivBusinessDate } from '../../../shared/date/dateTime'
+import { requestCashReadMode } from './cashReadMode'
+import { originalNormalPeriodError } from './originalNormalPeriod'
 
 export const CASH_PERIOD_SOURCE = 40
 export const CASH_PERIOD_TITLE = 'Кошти: залишки та рух за період'
@@ -125,15 +127,22 @@ export function cashPeriodConfigurationError(data: ReportRequestBody, dataset?: 
   if (!validDay(data.from) || !validDay(data.to) || data.from > data.to)
     return 'Оберіть коректний включний період руху коштів.'
   const today = todayKyiv ?? formatKyivBusinessDate()
-  if (!validDay(today) || data.to >= today) return 'Звіт доступний лише за завершені дні Києва.'
-  const days = (Date.parse(`${data.to}T00:00:00Z`) - Date.parse(`${data.from}T00:00:00Z`)) / 86_400_000 + 1
-  if (days > 31) return 'Період руху коштів може охоплювати щонайбільше 31 день.'
+  const explicitSource = grouped && requestCashReadMode(data) != null
+  if (explicitSource) {
+    if (!validDay(today) || data.to > today) return 'Оберіть коректний київський період до сьогодні включно.'
+    const normalError = originalNormalPeriodError(data.from, data.to)
+    if (normalError) return normalError
+  } else {
+    if (!validDay(today) || data.to >= today) return 'Звіт доступний лише за завершені дні Києва.'
+    const days = (Date.parse(`${data.to}T00:00:00Z`) - Date.parse(`${data.from}T00:00:00Z`)) / 86_400_000 + 1
+    if (days > 31) return 'Період руху коштів може охоплювати щонайбільше 31 день.'
+  }
   const scope = readCashPeriodScope(data.cashPeriod)
   if (!grouped && !scope) return 'Оберіть точний рахунок і його валюту зі списку GBA.'
   if (scope?.Version === 2 && dataset && !cashPeriodSupportsManagement(dataset))
     return 'Сервер ще не підтримує управлінські колонки руху коштів.'
   const allowed = new Set(['dataSource', 'from', 'to', 'sorted', 'selections', grouped ? 'groupedCashPeriod' : 'cashPeriod'])
-  if (Object.entries(data).some(([key, value]) => !allowed.has(key) && !(grouped && ['GroupedCashPeriod', 'workbookPresentation', 'WorkbookPresentation'].includes(key)) && value != null))
+  if (Object.entries(data).some(([key, value]) => !allowed.has(key) && !(grouped && ['GroupedCashPeriod', 'cashReadMode', 'CashReadMode', 'workbookPresentation', 'WorkbookPresentation'].includes(key)) && value != null))
     return 'Для руху коштів недоступні додаткові відбори та перерахунок за поточним курсом.'
   if (!Array.isArray(data.selections) || !grouped && data.selections.length !== 0
     || !data.sorted || !(exact(data.sorted.Row?.map(item => item.type), CASH_PERIOD_ROWS)

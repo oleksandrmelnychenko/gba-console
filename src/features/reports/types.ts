@@ -321,6 +321,8 @@ export type ReportRequestBody = {
   ProfitReadMode?: unknown
   settlementReadMode?: unknown
   SettlementReadMode?: unknown
+  cashReadMode?: unknown
+  CashReadMode?: unknown
   dayOrganizationBasis?: unknown
   DayOrganizationBasis?: unknown
   supplierBasis?: unknown
@@ -381,6 +383,7 @@ export type ReportDataset = {
   profitReadModeLookup?: unknown
   profitReadMode?: unknown
   settlementReadMode?: unknown
+  cashReadMode?: unknown
   dayOrganizationBasis?: unknown
   supplierBasis?: unknown
   supplierSourceWorld?: unknown

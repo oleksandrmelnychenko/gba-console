@@ -24,6 +24,7 @@ export function CashSettlementSettingsPanels({ dataSource, cash, settlement, onG
   return <CashPeriodModePanel {...cash}
     onModeChange={multiple => {
       onGroupedCashChange(multiple ? defaultGroupedCashPeriod() : undefined)
+      cash.onReadModeChange?.(undefined)
       onExactCashChange(undefined)
       onRowsChange([43, 40, 42, 41].flatMap(type => available.filter(group => group.type === type)))
       onClearCashFilters()

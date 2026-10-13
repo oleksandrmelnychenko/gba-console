@@ -14,6 +14,7 @@ export type NativeReportPreviewRequest = {
   DataSource: string
   ProfitReadMode?: 0 | 1
   SettlementReadMode?: 0 | 1
+  CashReadMode?: 0 | 1
   IsCurrentSnapshot: boolean
   ObservationStartedAtUtc: string | null
   ObservationCompletedAtUtc: string | null
@@ -90,6 +91,7 @@ function normalizeRequest(value: unknown): NativeReportPreviewRequest | null {
     throw new Error('Сервер повернув некоректний опис розрахунку звіту.')
   const mode = readMode(value, 'ProfitReadMode', 'Сервер повернув некоректне джерело розрахунку прибутку.')
   const settlementMode = readMode(value, 'SettlementReadMode', 'Сервер повернув некоректне джерело розрахунку взаєморозрахунків.')
+  const cashMode = readMode(value, 'CashReadMode', 'Сервер повернув некоректне джерело розрахунку коштів.')
   let items = 0
   const consume = (count: number) => {
     if (count > maximumRequestItems - items)
@@ -117,6 +119,7 @@ function normalizeRequest(value: unknown): NativeReportPreviewRequest | null {
   return {
     ...(mode != null ? { ProfitReadMode: mode } : {}),
     ...(settlementMode != null ? { SettlementReadMode: settlementMode } : {}),
+    ...(cashMode != null ? { CashReadMode: cashMode } : {}),
     DataSource: attributionText(value.DataSource), IsCurrentSnapshot: value.IsCurrentSnapshot,
     ObservationStartedAtUtc: nullableText(value.ObservationStartedAtUtc),
     ObservationCompletedAtUtc: nullableText(value.ObservationCompletedAtUtc), HasPeriod: value.HasPeriod,

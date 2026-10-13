@@ -1,6 +1,7 @@
 import { workbookConfigurationError } from './workbookPresentation'
 import type { ReportDataset, ReportRequestBody } from '../types'
 import { revenueExactId } from './revenueComparison'
+import { cashReadModeConfigurationError, requestCashReadMode } from './cashReadMode'
 
 export const CASH_WORKBOOK_ROWS = [40, 44, 43] as const
 export const GROUPED_CASH_FILTERS = [29, 30, 32, 33] as const
@@ -53,14 +54,16 @@ export function cashFormDataset(dataset: ReportDataset | undefined, grouped: unk
 }
 export function groupedCashConfigurationError(data: ReportRequestBody, dataset?: ReportDataset): string | null {
   if (aliases(data).length > 1) return 'Багаторахунковий режим задано двічі.'
+  const modeError = cashReadModeConfigurationError(data, dataset)
+  if (modeError) return modeError
   const raw = requestGroupedCashPeriod(data)
-  if (raw == null) return null
+  if (raw == null) return requestCashReadMode(data) != null ? 'Джерело розрахунку коштів доступне лише для звіту за кількома рахунками.' : null
   if (data.dataSource !== 40) return 'Багаторахунковий режим належить лише звіту коштів.'
   if (!groupedCashPeriod(raw)) return 'Оберіть рахунки у власній та управлінській валюті.'
   if (dataset && !groupedCashSupported(dataset)) return 'Сервер ще не підтримує звіт за кількома рахунками.'
   const workbookError = workbookConfigurationError(data, dataset)
   if (workbookError) return workbookError
-  const allowed = new Set(['datasource', 'from', 'to', 'sorted', 'selections', 'groupedcashperiod', 'workbookpresentation'])
+  const allowed = new Set(['datasource', 'from', 'to', 'sorted', 'selections', 'groupedcashperiod', 'cashreadmode', 'workbookpresentation'])
   if (Object.entries(data).some(([key, value]) => !allowed.has(key.toLowerCase()) && value != null))
     return 'Рахунки не поєднуються з точним записом або іншими перетвореннями.'
   if (!Array.isArray(data.selections) || data.selections.some(selection => selection?.IsChecked !== false
