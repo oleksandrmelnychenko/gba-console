@@ -1,14 +1,14 @@
 import type { SpreadsheetReportHeader, SpreadsheetSheet } from '../types'
-import { CURRENT_VPARIVANIE_PRODUCT_CAPTIONS, CURRENT_VPARIVANIE_TITLE, CURRENT_VPARIVANIE_FULL_TITLE, CURRENT_VPARIVANIE_FULL_NOTE } from './currentVparivanie'
+import { CURRENT_VPARIVANIE_PRODUCT_CAPTIONS, CURRENT_VPARIVANIE_FULL_NOTE, isCurrentVparivanieFullTitle, isCurrentVparivanieTitle } from './currentVparivanie'
 
 export const CURRENT_VPARIVANIE_DISPLAY_LINE = `Колонки товару: ${CURRENT_VPARIVANIE_PRODUCT_CAPTIONS.join(', ')}`
-const invalid = () => new Error('Некоректний файл поточної матриці «Впарювання»: потрібні сім атрибутів товару, один «Результат», поточний залишок і явний період продажів.')
-export const isCurrentVparivanieSheet = (sheet: SpreadsheetSheet | null): boolean => !!sheet?.header && [CURRENT_VPARIVANIE_TITLE, CURRENT_VPARIVANIE_FULL_TITLE].includes(sheet.header.lines[0])
+const invalid = () => new Error('Некоректний файл матриці «Впарювання»: потрібні сім атрибутів товару, один «Результат», залишок і явний період продажів.')
+export const isCurrentVparivanieSheet = (sheet: SpreadsheetSheet | null): boolean => !!sheet?.header && isCurrentVparivanieTitle(sheet.header.lines[0])
 
 /** The workbook declares display width independently of the one Product identity. */
 export function currentVparivanieDisplayHeader(title: string, header: SpreadsheetReportHeader | null): SpreadsheetReportHeader | null {
-  if (![CURRENT_VPARIVANIE_TITLE, CURRENT_VPARIVANIE_FULL_TITLE].includes(title)) return header
-  if (title === CURRENT_VPARIVANIE_FULL_TITLE && !header?.lines.includes(`! ${CURRENT_VPARIVANIE_FULL_NOTE}`)) throw invalid()
+  if (!isCurrentVparivanieTitle(title)) return header
+  if (isCurrentVparivanieFullTitle(title) && !header?.lines.includes(`! ${CURRENT_VPARIVANIE_FULL_NOTE}`)) throw invalid()
   if (!header || header.rowGroupings.join(',') !== 'Товар' || header.columnGroupings.length !== 2
     || header.lines.filter(line => line.startsWith('Колонки товару:')).length !== 1
     || !header.lines.includes(CURRENT_VPARIVANIE_DISPLAY_LINE)
@@ -20,7 +20,7 @@ export function currentVparivanieDisplayHeader(title: string, header: Spreadshee
 
 export function validateCurrentVparivanieSheet(sheet: SpreadsheetSheet): SpreadsheetSheet {
   if (!isCurrentVparivanieSheet(sheet)) return sheet
-  if (sheet.columns.length < 8 || sheet.columns.length > 263 || sheet.rows.length > (sheet.header?.lines[0] === CURRENT_VPARIVANIE_FULL_TITLE ? 500000 : 128)
+  if (sheet.columns.length < 8 || sheet.columns.length > 263 || sheet.rows.length > (isCurrentVparivanieFullTitle(sheet.header?.lines[0] ?? '') ? 500000 : 128)
     || sheet.rows.length * sheet.columns.length > 1000000
     || sheet.columns.slice(0, 7).join(',') !== CURRENT_VPARIVANIE_PRODUCT_CAPTIONS.join(',')
     || sheet.columns.slice(7).some(column => column.split(' · ').at(-1) !== 'Результат')) throw invalid()

@@ -127,8 +127,8 @@ function ReportAttribution({ request }: { request: NativeReportPreviewRequest | 
 }
 
 function SnapshotAttribution({ request }: { request: NativeReportPreviewRequest }) {
-  if (request.DataSource === 'NativeCurrentVparivanie') return <Alert color="blue" title="Поточні залишки та період продажів">
-    Залишки показують поточну записану вільну кількість GBA. Вибраний період стосується продажів; історичний залишок на кінець періоду не розраховується.
+  if (request.DataSource === 'NativeCurrentVparivanie') return <Alert color="blue" title="Залишки на кінець періоду та період продажів">
+    Залишки показують вільний залишок GBA на кінець вибраного періоду; до останньої синхронізації залишків з 1С вони порожні. Вибраний період стосується продажів.
     {request.ObservationStartedAtUtc && request.ObservationCompletedAtUtc
       ? <Text size="sm">Спостереження сервера: {request.ObservationStartedAtUtc} — {request.ObservationCompletedAtUtc}</Text>
       : <Text size="sm">Час спостереження сервер не передав повністю.</Text>}

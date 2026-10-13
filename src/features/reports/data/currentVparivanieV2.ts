@@ -22,7 +22,7 @@ const count = (value: unknown): value is number => Number.isSafeInteger(value) &
 
 export function currentVparivanieV2Available(dataset: ReportDataset | null | undefined): boolean {
   if (dataset?.DataSource !== 39 || !object(dataset.currentVparivanie)) return false
-  return dataset.currentVparivanie.Version === 1
+  return (dataset.currentVparivanie.Version === 1 || dataset.currentVparivanie.Version === 2)
     && dataset.currentVparivanie.RegionalV2Available === true
     && dataset.currentVparivanie.RegionalV2Day === CURRENT_VPARIVANIE_V2_DAY
 }

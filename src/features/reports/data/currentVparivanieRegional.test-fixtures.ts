@@ -9,7 +9,7 @@ export function regionalRequest(): ReportRequestBody {
   return { ...currentVparivanieRequest(), from: '2026-10-01', to: '2026-10-31' }
 }
 export function regionalResult(): CurrentVparivanieRegionalResult {
-  return { Version: 3, From: '2026-10-01', To: '2026-10-31', StockAnchor: 'CurrentRecordedFree',
+  return { Version: 3, From: '2026-10-01', To: '2026-10-31', StockAnchor: 'PeriodEndFree',
     ProductCount: 1, StockFacts: 1, SaleFacts: 2, ReturnFacts: 1, CounterpartyFacts: 3,
     Request: { HasPeriod: true, IsCurrentSnapshot: false, PeriodFrom: '01.10.2026', PeriodTo: '31.10.2026',
       Filters: [{ Field: 'Товар', Condition: 'Дорівнює', Values: ['Товар А'] }], Notes: ['Залишки поточні.'] },

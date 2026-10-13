@@ -8,10 +8,10 @@ export const currentVparivanieDataset: ReportDataset = {
   Groupings: [{ Type: 5, Name: 'Товар' }, { Type: 74, Name: 'Группа' }, { Type: 75, Name: 'Контрагент' }],
   Measurements: [{ Type: 83, Name: 'Результат' }],
   Filters: [1, 4, 5, 21, 60].map(Type => ({ Type, Name: `Фільтр ${Type}`, Selectable: Type !== 60 })),
-  currentVparivanie: { Version: 1, StockAnchor: 'CurrentRecordedFree', PeriodCalendar: 'Europe/Kyiv', MaximumProducts: 128,
+  currentVparivanie: { Version: 2, StockAnchor: 'PeriodEndFree', PeriodCalendar: 'Europe/Kyiv', MaximumProducts: 128,
     MaximumFacts: 20000, MaximumWarehouses: 32, ProductDisplayColumns: [...CURRENT_VPARIVANIE_PRODUCT_FIELDS],
     FixedRowGroupings: [5], FixedColumnGroupings: [74, 75], FixedMeasurements: [83], ManagerFilterSupported: false,
-    UnknownQuantity: 'null', MixedUnits: 'null', HistoricalStockSupported: false, HistoricalXlsParityVerified: false },
+    UnknownQuantity: 'null', MixedUnits: 'null', HistoricalStockSupported: true, HistoricalXlsParityVerified: false },
   Limitations: ['Менеджер покупця недоступний'],
 }
 export const exactSelection = (field: number, condition = 0, ids = ['9223372036854775807']) => ({ IsChecked: true,

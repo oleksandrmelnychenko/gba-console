@@ -1,4 +1,4 @@
-import { CURRENT_VPARIVANIE_TITLE, CURRENT_VPARIVANIE_FULL_TITLE, isCurrentVparivanieTitle } from './data/currentVparivanie'
+import { CURRENT_VPARIVANIE_TITLE, CURRENT_VPARIVANIE_FULL_TITLE, CURRENT_VPARIVANIE_LEGACY_TITLES, CURRENT_VPARIVANIE_LEGACY_FULL_TITLES, isCurrentVparivanieTitle } from './data/currentVparivanie'
 import { currentVparivanieDisplayHeader, isCurrentVparivanieSheet, validateCurrentVparivanieSheet } from './data/currentVparivanieSpreadsheet'
 import { AGREEMENT_PRICES_TITLE, AGREEMENT_PRICES_CAPTION, AGREEMENT_PRICES_NOTE_PREFIXES } from './data/agreementPrices'
 import { isAgreementPricesSheet, prepareAgreementPricesRows, validateAgreementPricesAttribution, validateAgreementPricesHeader, validateAgreementPricesSheet } from './data/agreementPricesSpreadsheet'
@@ -47,7 +47,7 @@ const HEADER_LEVEL_SEPARATOR = ' · '
 const STOCK_STATE_LINE = 'Поточний стан: знімок операційних записів GBA'
 const STOCK_READ_TIME_LINE = /^Час читання \(UTC\): \d{2}\.\d{2}\.\d{4} \d{2}:\d{2}:\d{2}\.\d{3} – \d{2}\.\d{2}\.\d{4} \d{2}:\d{2}:\d{2}\.\d{3}$/
 const SUPPLIER_RETURN_PERIOD_LINE = /^Період: \d{2}\.\d{2}\.\d{4} – \d{2}\.\d{2}\.\d{4}$/
-const REPORT_TITLES = new Set([CURRENT_VPARIVANIE_TITLE,CURRENT_VPARIVANIE_FULL_TITLE,PAYMENT_COMPARISON_TITLE, MARGIN_COMPARISON_TITLE, RATE_COMPARISON_TITLE, RETURN_COMPARISON_TITLE, BUYER_SALES_SHARE_TITLE, REVENUE_COMPARISON_TITLE, XYZ_TITLE, 'Звіт продажів', 'Звіт продажів і повернень', 'Звіт надходжень', SUPPLIER_RETURN_REPORT_TITLE, CLIENT_ACTIVITY_REPORT_TITLE, CLIENT_COMPARISON_TITLE, IMPORTED_PAYMENTS_TITLE, ...CURRENT_REPORT_TITLES])
+const REPORT_TITLES = new Set([CURRENT_VPARIVANIE_TITLE,CURRENT_VPARIVANIE_FULL_TITLE,...CURRENT_VPARIVANIE_LEGACY_TITLES,...CURRENT_VPARIVANIE_LEGACY_FULL_TITLES,PAYMENT_COMPARISON_TITLE, MARGIN_COMPARISON_TITLE, RATE_COMPARISON_TITLE, RETURN_COMPARISON_TITLE, BUYER_SALES_SHARE_TITLE, REVENUE_COMPARISON_TITLE, XYZ_TITLE, 'Звіт продажів', 'Звіт продажів і повернень', 'Звіт надходжень', SUPPLIER_RETURN_REPORT_TITLE, CLIENT_ACTIVITY_REPORT_TITLE, CLIENT_COMPARISON_TITLE, IMPORTED_PAYMENTS_TITLE, ...CURRENT_REPORT_TITLES])
 const clientCountFormatter = new Intl.NumberFormat('uk-UA', { maximumFractionDigits: 0 })
 const clientCountCsvFormatter = new Intl.NumberFormat('en-US', { useGrouping: false, maximumFractionDigits: 0 })
 export const stockQuantityFormatter = new Intl.NumberFormat('uk-UA', { maximumFractionDigits: 8 })

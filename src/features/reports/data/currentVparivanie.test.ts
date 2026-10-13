@@ -68,12 +68,19 @@ describe('current native Vparivanie form contract', () => {
   })
   it('requires the exact advertised capability, not a generic source number', () => {
     expect(isCurrentVparivanieDataset(dataset)).toBe(true)
-    for (const change of [{ StockAnchor: 'Historical' }, { HistoricalStockSupported: true }, { ManagerFilterSupported: 'true' },
+    for (const change of [{ StockAnchor: 'Historical' }, { HistoricalStockSupported: false }, { StockAnchor: 'CurrentRecordedFree' },
+      { Version: 1 }, { Version: 3 }, { HistoricalXlsParityVerified: true }, { ManagerFilterSupported: 'true' },
       { MaximumProducts: 5000 }, { ProductDisplayColumns: ['Name'] }, { FixedMeasurements: [80, 81, 82] }]) {
       const changed = { ...dataset, currentVparivanie: { ...dataset.currentVparivanie as object, ...change } }
       expect(isCurrentVparivanieCapability(changed.currentVparivanie)).toBe(false)
       expect(datasetConfigurationError(request(), changed)).not.toBeNull()
     }
+  })
+  it('accepts the previous current-stock capability only as one complete pair', () => {
+    const legacy = { ...dataset.currentVparivanie as object, Version: 1, StockAnchor: 'CurrentRecordedFree', HistoricalStockSupported: false }
+    expect(isCurrentVparivanieCapability(legacy)).toBe(true)
+    expect(isCurrentVparivanieCapability({ ...legacy, HistoricalStockSupported: true })).toBe(false)
+    expect(isCurrentVparivanieCapability({ ...legacy, StockAnchor: 'PeriodEndFree' })).toBe(false)
   })
   it('refuses legacy three-measure axes and reordered counterparty/group columns', () => {
     const data = request()

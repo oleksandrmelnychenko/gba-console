@@ -1,7 +1,8 @@
 import { Alert, Button, Checkbox, Group, Stack, Text } from '@mantine/core'
 import { useEffect, useRef, useState } from 'react'
 import { readCurrentVparivanieRegional } from '../api/currentVparivanieRegionalApi'
-import { CURRENT_VPARIVANIE_PRODUCT_CAPTIONS, currentVparivanieConfigurationError, currentVparivanieFullScopeAvailable } from '../data/currentVparivanie'
+import { CURRENT_VPARIVANIE_PRODUCT_CAPTIONS, currentVparivanieConfigurationError, currentVparivanieFullScopeAvailable,
+  currentVparivanieStockSentence } from '../data/currentVparivanie'
 import { currentVparivanieV2CellKey, currentVparivanieV2Columns } from '../data/currentVparivanieV2Export'
 import { currentVparivanieRegionalAvailable, type CurrentVparivanieRegionalResult } from '../data/currentVparivanieRegional'
 import { currentRegionalCellText, currentRegionalColumnCaption, currentRegionalCsv,
@@ -109,7 +110,7 @@ export function CurrentVparivanieRegionalPanel({ dataset, request, enabled, disa
           disabled={!result || !enabled || disabled || exporting || busy} onClick={() => void exportDocument(format)}>
           {`Завантажити ${format.toUpperCase()}`}</Button>)}</Group>
       {error ? <Alert color="red">{error}</Alert> : null}
-      {result ? <><Text size="xs" c="dimmed">Продажі: {result.From} — {result.To}. Залишки поточні.
+      {result ? <><Text size="xs" c="dimmed">Продажі: {result.From} — {result.To}. {currentVparivanieStockSentence(result.StockAnchor)}
         Порожня клітинка — факт відсутній; ∅ — кількість невідома.</Text><RegionalTable key={requestKey} result={result} /></> : null}
     </Stack>
   </section>

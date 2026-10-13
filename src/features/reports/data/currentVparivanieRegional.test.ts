@@ -46,3 +46,8 @@ it('retains complete-empty core zeros without invented facts and allows a comple
   result.Rows = []; result.ProductCount = 0
   expect(normalizeCurrentVparivanieRegional(result, regionalRequest()).Rows).toEqual([])
 })
+
+it('accepts the previous current-stock anchor and refuses an unknown one', () => {
+  expect(normalizeCurrentVparivanieRegional({ ...regionalResult(), StockAnchor: 'CurrentRecordedFree' }, regionalRequest()).StockAnchor).toBe('CurrentRecordedFree')
+  expect(() => normalizeCurrentVparivanieRegional({ ...regionalResult(), StockAnchor: 'Historical' } as never, regionalRequest())).toThrow()
+})

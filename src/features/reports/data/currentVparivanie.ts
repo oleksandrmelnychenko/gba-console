@@ -4,15 +4,27 @@ import { originalMatrixScope } from './originalVparivanieScope'
 
 export const CURRENT_VPARIVANIE_SOURCE = 39
 export const CURRENT_VPARIVANIE_UNASSIGNED_MANAGER = '00000000000000000000000000000000'
-export const CURRENT_VPARIVANIE_FULL_TITLE = 'Впарювання: повний вибір, поточні залишки та продажі GBA'
+export const CURRENT_VPARIVANIE_FULL_TITLE = 'Впарювання: повний вибір, залишки на кінець періоду та продажі GBA'
 export const CURRENT_VPARIVANIE_FULL_NOTE = 'Повний вибраний набір: усі сторінки прочитано до кінця в одному SQL Snapshot GBA.'
-export const CURRENT_VPARIVANIE_TITLE = 'Впарювання: поточні залишки та продажі GBA'
-export const isCurrentVparivanieTitle = (title: string): boolean => [CURRENT_VPARIVANIE_TITLE, CURRENT_VPARIVANIE_FULL_TITLE].includes(title)
+export const CURRENT_VPARIVANIE_TITLE = 'Впарювання: залишки на кінець періоду та продажі GBA'
+export const CURRENT_VPARIVANIE_LEGACY_TITLES = ['Впарювання: поточні залишки та продажі GBA'] as const
+export const CURRENT_VPARIVANIE_LEGACY_FULL_TITLES = ['Впарювання: повний вибір, поточні залишки та продажі GBA'] as const
+export const isCurrentVparivanieFullTitle = (title: string): boolean =>
+  title === CURRENT_VPARIVANIE_FULL_TITLE || (CURRENT_VPARIVANIE_LEGACY_FULL_TITLES as readonly string[]).includes(title)
+export const isCurrentVparivanieTitle = (title: string): boolean => isCurrentVparivanieFullTitle(title)
+  || title === CURRENT_VPARIVANIE_TITLE || (CURRENT_VPARIVANIE_LEGACY_TITLES as readonly string[]).includes(title)
+export type CurrentVparivanieStockAnchor = 'CurrentRecordedFree' | 'PeriodEndFree'
+export const isCurrentVparivanieStockAnchor = (value: unknown): value is CurrentVparivanieStockAnchor =>
+  value === 'CurrentRecordedFree' || value === 'PeriodEndFree'
+export const currentVparivanieStockLabel = (anchor: CurrentVparivanieStockAnchor): string =>
+  anchor === 'PeriodEndFree' ? 'Вільний залишок на кінець періоду' : 'Поточна записана вільна кількість'
+export const currentVparivanieStockSentence = (anchor: CurrentVparivanieStockAnchor): string =>
+  anchor === 'PeriodEndFree' ? 'Залишки на кінець періоду.' : 'Залишки поточні.'
 export const CURRENT_VPARIVANIE_PRODUCT_FIELDS = ['Article', 'Name', 'Description', 'Group', 'OE', 'Size', 'Top'] as const
 export const CURRENT_VPARIVANIE_PRODUCT_CAPTIONS = ['Артикул', 'Наименование', 'Описание', 'Группа', 'OE', 'Размер', 'Топ'] as const
 export const CURRENT_VPARIVANIE_COUNTERPARTY_IDENTITY = 'NativeClientOrFenixSourceGroupV1'
 export function currentVparivanieNotice(managerSupported = false): string {
-  return `Залишки — поточна записана вільна кількість GBA. Продажі — за вибраний включний період Europe/Kyiv. Клієнт впливає лише на колонки контрагентів, склад — лише на залишки. ${managerSupported ? 'Менеджер покупця з 1С (Fenix) впливає лише на колонки контрагентів.' : 'Менеджер покупця поки недоступний.'} Невідомі кількості та підсумки різних одиниць залишаються NULL.`
+  return `Залишки — вільний залишок GBA на кінець періоду: поточна доступність, резерви на цю мить і документи GBA після неї. До останньої синхронізації залишків з 1С залишок порожній. Продажі — за вибраний включний період Europe/Kyiv. Клієнт впливає лише на колонки контрагентів, склад — лише на залишки. ${managerSupported ? 'Основний менеджер покупця з картки клієнта GBA впливає лише на колонки контрагентів.' : 'Менеджер покупця поки недоступний.'} Невідомі кількості та підсумки різних одиниць залишаються NULL.`
 }
 export const CURRENT_VPARIVANIE_NOTICE = currentVparivanieNotice()
 const invalid = 'Оберіть товари або одну групу товарів, період і показник «Результат». Доступні точні відбори клієнта та складів.'
@@ -32,7 +44,9 @@ export function currentVparivanieFilterConditions(field: number): ReportFilterCo
 }
 
 export function isCurrentVparivanieCapability(value: unknown): boolean {
-  return record(value) && value.Version === 1 && value.StockAnchor === 'CurrentRecordedFree'
+  return record(value)
+    && (value.Version === 1 && value.StockAnchor === 'CurrentRecordedFree' && value.HistoricalStockSupported === false
+      || value.Version === 2 && value.StockAnchor === 'PeriodEndFree' && value.HistoricalStockSupported === true)
     && value.PeriodCalendar === 'Europe/Kyiv' && value.MaximumProducts === 128 && value.MaximumFacts === 20000
     && value.MaximumWarehouses === 32 && same(value.ProductDisplayColumns, CURRENT_VPARIVANIE_PRODUCT_FIELDS)
     && same(value.FixedRowGroupings, [5]) && same(value.FixedColumnGroupings, [74, 75])
@@ -40,7 +54,7 @@ export function isCurrentVparivanieCapability(value: unknown): boolean {
     && (value.ManagerUnassignedFilterSupported === undefined || typeof value.ManagerUnassignedFilterSupported === 'boolean')
     && (value.ManagerUnassignedFilterSupported !== true || value.ManagerFilterSupported === true)
     && value.UnknownQuantity === 'null' && value.MixedUnits === 'null'
-    && value.HistoricalStockSupported === false && value.HistoricalXlsParityVerified === false
+    && value.HistoricalXlsParityVerified === false
     && (value.RegionalV2Available === undefined || typeof value.RegionalV2Available === 'boolean')
     && (value.RegionalV2Day === undefined || value.RegionalV2Day === '2026-09-03')
     && (value.RegionalV2Available !== true || value.RegionalV2Day === '2026-09-03')

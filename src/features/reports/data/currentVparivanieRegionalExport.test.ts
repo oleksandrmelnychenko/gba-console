@@ -31,3 +31,12 @@ it('preserves an explicit unknown quantity independently of an absent regional c
   expect(tables[0]).toHaveProperty('table.body.2.9', '')
   expect(tables[0]).toHaveProperty('table.body.2.10', '')
 })
+
+it('labels stock by the anchor the server actually used', () => {
+  const value = regionalResult()
+  expect(currentRegionalSheets(value).about).toContainEqual(['Залишки', 'Вільний залишок на кінець періоду'])
+  expect(currentRegionalPdfDefinition(value).content[1]).toHaveProperty('text', 'Період продажів: 2026-10-01 — 2026-10-31. Залишки на кінець періоду.')
+  const legacy = { ...value, StockAnchor: 'CurrentRecordedFree' as const }
+  expect(currentRegionalSheets(legacy).about).toContainEqual(['Залишки', 'Поточна записана вільна кількість'])
+  expect(currentRegionalPdfDefinition(legacy).content[1]).toHaveProperty('text', 'Період продажів: 2026-10-01 — 2026-10-31. Залишки поточні.')
+})

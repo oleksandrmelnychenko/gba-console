@@ -1,4 +1,4 @@
-import { CURRENT_VPARIVANIE_PRODUCT_CAPTIONS } from './currentVparivanie'
+import { CURRENT_VPARIVANIE_PRODUCT_CAPTIONS, currentVparivanieStockLabel, currentVparivanieStockSentence } from './currentVparivanie'
 import type { CurrentVparivanieV2Cell } from './currentVparivanieV2'
 import { currentVparivanieV2CellKey, currentVparivanieV2ColumnCaption,
   currentVparivanieV2Columns, type CurrentVparivanieV2PdfDefinition } from './currentVparivanieV2Export'
@@ -17,7 +17,7 @@ export function currentRegionalColumnCaption(key: string): string {
 export function currentRegionalSheets(result: CurrentVparivanieRegionalResult) {
   const columns = currentVparivanieV2Columns(result)
   const about: string[][] = [[CURRENT_REGIONAL_TITLE], ['Період продажів', `${result.From} — ${result.To}`],
-    ['Залишки', 'Поточна записана вільна кількість'], ['Товарів', String(result.ProductCount)],
+    ['Залишки', currentVparivanieStockLabel(result.StockAnchor)], ['Товарів', String(result.ProductCount)],
     ['Порожня клітинка', 'Факт відсутній'], ['∅', 'Кількість невідома'],
     ...result.Request.Filters.map(filter => [filter.Field, filter.Condition, ...filter.Values]),
     ...result.Request.Notes.map(note => [note])]
@@ -45,7 +45,7 @@ export function currentRegionalPdfDefinition(result: CurrentVparivanieRegionalRe
   const columns = currentVparivanieV2Columns(result)
   const content: CurrentVparivanieV2PdfDefinition['content'] = [
     { text: CURRENT_REGIONAL_TITLE, style: 'title' },
-    { text: `Період продажів: ${result.From} — ${result.To}. Залишки поточні.`, margin: [0, 3, 0, 6] },
+    { text: `Період продажів: ${result.From} — ${result.To}. ${currentVparivanieStockSentence(result.StockAnchor)}`, margin: [0, 3, 0, 6] },
     ...result.Request.Filters.map(filter => ({ text: `${filter.Field} · ${filter.Condition}: ${filter.Values.join(', ')}` })),
     { text: 'Порожня клітинка: факт відсутній. н/д: кількість невідома.', margin: [0, 4, 0, 8] },
   ]

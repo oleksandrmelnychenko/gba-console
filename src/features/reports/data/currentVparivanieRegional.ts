@@ -1,5 +1,6 @@
 import type { ReportDataset, ReportRequestBody } from '../types'
-import { isCurrentVparivanieDataset, currentVparivanieFullScope, CURRENT_VPARIVANIE_FULL_NOTE } from './currentVparivanie'
+import { isCurrentVparivanieDataset, currentVparivanieFullScope, CURRENT_VPARIVANIE_FULL_NOTE,
+  isCurrentVparivanieStockAnchor, type CurrentVparivanieStockAnchor } from './currentVparivanie'
 import { CURRENT_VPARIVANIE_V2_COLUMNS, type CurrentVparivanieV2Cell,
   type CurrentVparivanieV2Row } from './currentVparivanieV2'
 
@@ -9,7 +10,7 @@ export type CurrentRegionalSummary = {
 }
 export type CurrentVparivanieRegionalResult = {
   FullScopeVersion?: 1
-  Version: 3; From: string; To: string; StockAnchor: 'CurrentRecordedFree'
+  Version: 3; From: string; To: string; StockAnchor: CurrentVparivanieStockAnchor
   ProductCount: number; StockFacts: number; SaleFacts: number; ReturnFacts: number; CounterpartyFacts: number
   Rows: CurrentVparivanieV2Row[]; Request: CurrentRegionalSummary
 }
@@ -65,7 +66,7 @@ function validateCounterpartyPartition(cells: CurrentVparivanieV2Cell[]): void {
 export function normalizeCurrentVparivanieRegional(value: unknown,
   request: ReportRequestBody): CurrentVparivanieRegionalResult {
   if (!object(value) || value.Version !== 3 || value.From !== request.from || value.To !== request.to
-    || value.StockAnchor !== 'CurrentRecordedFree' || !count(value.ProductCount)
+    || !isCurrentVparivanieStockAnchor(value.StockAnchor) || !count(value.ProductCount)
     || !['StockFacts', 'SaleFacts', 'ReturnFacts', 'CounterpartyFacts'].every(key => count(value[key]))
     || !Array.isArray(value.Rows) || value.Rows.length !== value.ProductCount
     || !object(value.Request) || value.Request.HasPeriod !== true || value.Request.IsCurrentSnapshot !== false

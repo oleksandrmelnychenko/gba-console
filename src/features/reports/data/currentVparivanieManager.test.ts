@@ -42,7 +42,8 @@ it('permits all five bounded filters without losing the product/group intersecti
 })
 it('describes only actual enabled source-manager customer-arm semantics', () => {
  expect(currentVparivanieNotice()).toContain('поки недоступний')
- expect(currentVparivanieNotice(true)).toContain('Менеджер покупця з 1С (Fenix) впливає лише на колонки контрагентів')
+ expect(currentVparivanieNotice(true)).toContain('Основний менеджер покупця з картки клієнта GBA впливає лише на колонки контрагентів')
+ expect(currentVparivanieNotice()).toContain('на кінець періоду')
  expect(currentVparivanieNotice(true)).not.toContain('поки недоступний')
 })
 
