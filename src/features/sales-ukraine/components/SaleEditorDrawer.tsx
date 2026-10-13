@@ -65,6 +65,7 @@ import { usePersistentSaleFileMutation } from '../usePersistentSaleFileMutation'
 import { usePersistentSaleJsonMutationRunner } from '../usePersistentSaleJsonMutation'
 import type { WizardCartMutationRequest } from './new-sale-wizard/wizardCartMutation'
 import type { WizardCartMutationExpectation } from './new-sale-wizard/wizardMutationOperation'
+import { SaleDocumentWarehouseSelect } from './new-sale-wizard/SaleDocumentWarehouseSelect'
 import { MergedSalesDrawer } from './MergedSalesDrawer'
 import { SaleDetailsDrawer } from './SaleDetailsDrawer'
 import { usePermissions } from '../../auth/usePermissions'
@@ -143,6 +144,7 @@ function SaleEditorContent({ initialSale, loadSale }: { initialSale: SalesUkrain
   const [isConvertOpen, setConvertOpen] = useValueState(false)
   const [isConverting, setConverting] = useValueState(false)
   const [invoiceTtnFile, setInvoiceTtnFile] = useValueState<File | null>(null)
+  const [selectedWarehouseId, setSelectedWarehouseId] = useState<number | null>(null)
   const [isMergedOpen, setMergedOpen] = useValueState(false)
   const [isReassignOpen, setReassignOpen] = useValueState(false)
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
@@ -326,6 +328,11 @@ function SaleEditorContent({ initialSale, loadSale }: { initialSale: SalesUkrain
       const mutationSale = fileMutation.reconciliationRequired
         ? sale
         : await loadSaleForMutation()
+      const invoicePayload = createInvoicePayload(mutationSale, selectedWarehouseId)
+      if (!fileMutation.reconciliationRequired && !mutationSale.ChangedToInvoice
+        && (!Number.isSafeInteger(invoicePayload.RegistrarStorageId) || Number(invoicePayload.RegistrarStorageId) <= 0)) {
+        throw new Error(t('Оберіть склад документа'))
+      }
       const issues = getSaleReviewIssues(mutationSale, {
         isRetailPaymentLoading,
         retailPaymentStatus,
@@ -357,7 +364,7 @@ function SaleEditorContent({ initialSale, loadSale }: { initialSale: SalesUkrain
           ? await fileMutation.reconcile(kind, invoiceTtnFile, convertVatSaleAndGetPaymentDocument)
           : await fileMutation.run(
               kind,
-              createInvoicePayload(mutationSale),
+              invoicePayload,
               invoiceTtnFile,
               convertVatSaleAndGetPaymentDocument,
             )
@@ -376,7 +383,7 @@ function SaleEditorContent({ initialSale, loadSale }: { initialSale: SalesUkrain
           ? await fileMutation.reconcile(kind, invoiceTtnFile, updateSaleFromData)
           : await fileMutation.run(
               kind,
-              createInvoicePayload(mutationSale),
+              invoicePayload,
               invoiceTtnFile,
               updateSaleFromData,
             )
@@ -653,6 +660,12 @@ function SaleEditorContent({ initialSale, loadSale }: { initialSale: SalesUkrain
       >
         <Stack gap="md">
           <Text>{t('Перетворити рахунок на накладну?')}</Text>
+          <SaleDocumentWarehouseSelect
+            value={sale.ChangedToInvoice ? sale.RegistrarStorageId ?? null : selectedWarehouseId ?? sale.RegistrarStorageId ?? null}
+            flow="edit"
+            disabled={isLoading || isConverting || Boolean(sale.ChangedToInvoice) || fileMutation.reconciliationRequired}
+            onChange={setSelectedWarehouseId}
+          />
           {reviewIssues.length > 0 && (
             <Alert color="orange" icon={<TriangleAlert size={18} />} variant="light">
               <Stack gap={4}>
@@ -746,9 +759,10 @@ function SaleEditorContent({ initialSale, loadSale }: { initialSale: SalesUkrain
   )
 }
 
-function createInvoicePayload(sale: SalesUkraineSale): SalesUkraineSale {
+function createInvoicePayload(sale: SalesUkraineSale, selectedWarehouseId: number | null): SalesUkraineSale {
   return {
     ...sale,
+    RegistrarStorageId: sale.ChangedToInvoice ? sale.RegistrarStorageId : selectedWarehouseId ?? sale.RegistrarStorageId,
     BaseLifeCycleStatus: { Deleted: false, Id: 0, NetUid: EMPTY_GUID, SaleLifeCycleType: 1 },
     BaseSalePaymentStatus: { Deleted: false, Id: 0, NetUid: EMPTY_GUID, SalePaymentStatusType: 0 },
     IsPrintedPaymentInvoice: true,
