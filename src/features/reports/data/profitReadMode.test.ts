@@ -3,43 +3,84 @@ import { normalizeSavedTemplate } from '../api/reportWorkspaceApi'
 import { availableBug1274WorkbookLaunches, bug1274WorkbookRequest } from './bug1274WorkbookLaunch'
 import { normalizeNativeExactFilterDataset } from './nativeExactFilters'
 import { buildReportBuilderRequest } from './reportBuilderRequest'
-import { datasetConfigurationError, datasetGroupings, datasetMeasurements, datasetPresetRequest, defaultDatasetRequest } from './reportDatasets'
+import { datasetConfigurationError, datasetGroupings, datasetMeasurements, datasetPresetRequest, defaultDatasetRequest,
+  withDefaultReadModes } from './reportDatasets'
 import { retainStoredTemplateFields } from './reportTemplateDraft'
 import { encodeReportWorkspaceSnapshot } from './reportWorkspaceDraft'
 import { reportWorkspaceDraftCompatibility } from './reportWorkspaceDraftCompatibility'
 import { isProfitReadModeCapability, profitReadModeConfigurationError, requestProfitReadMode } from './profitReadMode'
 import { profitDayDataset, profitSupplierDataset, profitReadModeCapability } from './profitReadMode.test-fixtures'
 
-it.each([profitDayDataset, profitSupplierDataset])('keeps legacy defaults and presets unopted for source $DataSource', dataset => {
-  const original = defaultDatasetRequest(dataset, '2026-09-01', '2026-09-30')
-  expect(Object.hasOwn(original, 'profitReadMode')).toBe(false)
-  const launch = availableBug1274WorkbookLaunches([dataset])[0]
-  const workbook = bug1274WorkbookRequest(original, launch)
-  expect(requestProfitReadMode(workbook)).toBeUndefined()
-  expect(datasetConfigurationError(workbook, dataset)).toBeNull()
-  const current = { ...workbook, profitReadMode: 0, workbookPresentation: undefined }
+const presetId = (dataset: typeof profitDayDataset) => dataset.DataSource === 35
+  ? 'recorded-sale-gross-profit-by-day-organization' : 'recorded-supplier-batch-gross-profit'
+const unmarked = (dataset: typeof profitDayDataset, from: string, to: string) => {
+  const request = defaultDatasetRequest(dataset, from, to)
+  delete request.profitReadMode
+  return dataset.DataSource === 38 ? { ...request, supplierSourceWorld: 0 } : request
+}
+
+it.each([profitDayDataset, profitSupplierDataset])('opens new requests and the workbook launch on current documents for source $DataSource', dataset => {
+  const current = defaultDatasetRequest(dataset, '2026-09-01', '2026-09-30')
+  expect(current.profitReadMode).toBe(0)
+  expect(Object.hasOwn(current, 'supplierSourceWorld')).toBe(false)
   expect(datasetConfigurationError(current, dataset)).toBeNull()
-  const preset = datasetPresetRequest(dataset, dataset.DataSource === 35
-    ? 'recorded-sale-gross-profit-by-day-organization' : 'recorded-supplier-batch-gross-profit', current)
-  expect(preset).not.toBeNull()
-  expect(requestProfitReadMode(preset!.Data)).toBe(0)
-  expect(bug1274WorkbookRequest(current, launch).workbookPresentation).toBeUndefined()
+  const launch = availableBug1274WorkbookLaunches([dataset])[0]
+  expect(launch.notice).toContain('«Поточні документи GBA»')
+  expect(launch.notice).toContain('до 31 календарних днів')
+  const workbook = bug1274WorkbookRequest(current, launch)
+  expect(workbook).toBe(current)
+  expect(workbook.workbookPresentation).toBeUndefined()
+  expect(workbook.sourceOrganizations).toBeUndefined()
+  const { profitReadMode: _capability, ...previous } = dataset
+  void _capability
+  const legacy = defaultDatasetRequest(previous, '2026-09-01', '2026-09-30')
+  expect(Object.hasOwn(legacy, 'profitReadMode')).toBe(false)
+  if (dataset.DataSource === 38) expect(legacy.supplierSourceWorld).toBe(0)
+  expect(availableBug1274WorkbookLaunches([previous])[0].notice).not.toContain('Поточні документи GBA')
+  const wide = { ...dataset, profitReadMode: { ...profitReadModeCapability, CurrentDocumentsMaximumDays: 62 } }
+  expect(availableBug1274WorkbookLaunches([wide])[0].notice).toContain('до 62 календарних днів')
 })
 
-it.each([profitDayDataset, profitSupplierDataset])('limits current mode to31days even when original shape accepts months for source $DataSource', dataset => {
+it.each([profitDayDataset, profitSupplierDataset])('keeps the request mode or its absence through presets for source $DataSource', dataset => {
+  for (const mode of [0, 1, undefined]) {
+    const request = mode === undefined ? unmarked(dataset, '2026-09-01', '2026-09-30')
+      : { ...defaultDatasetRequest(dataset, '2026-09-01', '2026-09-30'), profitReadMode: mode }
+    const preset = datasetPresetRequest(dataset, presetId(dataset), request)
+    expect(preset).not.toBeNull()
+    expect(requestProfitReadMode(preset!.Data)).toBe(mode)
+  }
+})
+
+it.each([profitDayDataset, profitSupplierDataset])('applies current documents to a saved request without a mode and reports its limits for source $DataSource', dataset => {
   const launch = availableBug1274WorkbookLaunches([dataset])[0]
-  const original = bug1274WorkbookRequest(defaultDatasetRequest(dataset, '2026-08-01', '2026-09-30'), launch)
-  expect(datasetConfigurationError(original, dataset)).toBeNull()
-  expect(datasetConfigurationError({ ...original, profitReadMode: 1 }, dataset)).toBeNull()
-  expect(datasetConfigurationError({ ...original, profitReadMode: 0, workbookPresentation: undefined }, dataset)).toContain('31')
+  const saved = bug1274WorkbookRequest(unmarked(dataset, '2026-08-01', '2026-09-30'), launch)
+  expect(datasetConfigurationError(saved, dataset)).toBeNull()
+  expect(datasetConfigurationError({ ...saved, profitReadMode: 1 }, dataset)).toBeNull()
+  const current = withDefaultReadModes(saved, dataset)
+  expect(current.profitReadMode).toBe(0)
+  expect(saved).not.toHaveProperty('profitReadMode')
+  expect(datasetConfigurationError(current, dataset)).toContain(dataset.DataSource === 35 ? 'Додаткові поля' : '31')
+  expect(datasetConfigurationError({ ...current, workbookPresentation: undefined }, dataset)).toContain('31')
+  for (const mode of [0, 1, null]) {
+    const explicit = { ...saved, ProfitReadMode: mode }
+    expect(withDefaultReadModes(explicit, dataset)).toBe(explicit)
+  }
+  const { profitReadMode: _capability, ...previous } = dataset
+  void _capability
+  expect(withDefaultReadModes(saved, previous)).toBe(saved)
+  const otherBasis = dataset.DataSource === 35 ? { ...saved, dayOrganizationBasis: 1 } : { ...saved, supplierBasis: 1 }
+  expect(withDefaultReadModes(otherBasis, dataset)).toBe(otherBasis)
+  const withoutBasis = dataset.DataSource === 35 ? { ...saved, dayOrganizationBasis: undefined } : { ...saved, supplierBasis: null }
+  expect(withDefaultReadModes(withoutBasis, dataset)).toBe(withoutBasis)
 })
 
 it.each([0, 1, null, undefined])('round trips explicit mode %s through builder, saved template and draft', mode => {
   const dataset = profitSupplierDataset
-  const original = { ...defaultDatasetRequest(dataset, '2026-09-01', '2026-09-30'), ProfitReadMode: mode }
+  const original = { ...unmarked(dataset, '2026-09-01', '2026-09-30'), ProfitReadMode: mode }
   const normalized = normalizeSavedTemplate({ Id: 'stored', Revision: 1, UpdatedAtUtc: '2026-10-13T00:00:00Z', Name: 'saved', Data: { From: original.from, To: original.to, DataSource: original.dataSource,
-    Sorted: original.sorted, Selections: [], ProfitReadMode: mode, SupplierBasis: 0, SupplierSourceWorld: 0 } })!
+    Sorted: original.sorted, Selections: [], ...(mode !== undefined ? { ProfitReadMode: mode } : {}), SupplierBasis: 0, SupplierSourceWorld: 0 } })!
   expect(requestProfitReadMode(normalized.Data)).toBe(mode)
+  expect(requestProfitReadMode(withDefaultReadModes(normalized.Data, dataset))).toBe(mode === undefined ? 0 : mode)
   const data = buildReportBuilderRequest({ ...original, dataSource: dataset.DataSource, profitReadMode: requestProfitReadMode(normalized.Data),
     ordering: undefined, filterExpression: undefined, topGroups: undefined, valuationClientAgreementId: undefined,
     rowGroups: original.sorted.Row, colGroups: [], measurements: datasetMeasurements(dataset, original.sorted.Measurements), selections: [] })
@@ -75,7 +116,7 @@ it('normalizes only the precise server capability and rejects duplicate aliases'
 })
 
 it('refuses current workbook presentation and restores supplier current drafts without a source-world filter', () => {
-  const day = bug1274WorkbookRequest(defaultDatasetRequest(profitDayDataset, '2026-09-01', '2026-09-30'), availableBug1274WorkbookLaunches([profitDayDataset])[0])
+  const day = bug1274WorkbookRequest(unmarked(profitDayDataset, '2026-09-01', '2026-09-30'), availableBug1274WorkbookLaunches([profitDayDataset])[0])
   expect(datasetConfigurationError({ ...day, profitReadMode: 0 }, profitDayDataset)).toContain('Додаткові поля')
   const data = { ...defaultDatasetRequest(profitSupplierDataset, day.from, day.to), profitReadMode: 0, supplierSourceWorld: undefined }
   const snapshot = { name: '', data, measurements: datasetMeasurements(profitSupplierDataset), activeTemplate: null, previousPeriod: { from: data.from, to: data.to } }

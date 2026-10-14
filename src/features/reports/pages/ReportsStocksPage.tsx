@@ -40,7 +40,7 @@ import { CircleAlert, LayoutTemplate, Plus, RotateCcw, Save, Trash2 } from 'luci
 import { IconFileSpreadsheet } from '@tabler/icons-react'
 import { TableRowAction } from '../../../shared/ui/table-row-action/TableRowAction'
 import { requestProfitReadMode } from '../data/profitReadMode'
-import { requestSettlementReadMode } from '../data/settlementReadMode'
+import { isSettlementReadModeCapability, requestSettlementReadMode } from '../data/settlementReadMode'
 import { requestCashReadMode } from '../data/cashReadMode'
 import { ProfitReadModeSelect } from './ProfitReadModeSelect'
 import { type FormEvent, type ReactNode, useEffect, useMemo, useState } from 'react'
@@ -101,7 +101,7 @@ import {
 } from '../utils'
 import './reports-pages.css'
 import './report-constructor.css'
-import { datasetConfigurationError, datasetFilters, datasetGroupings, datasetMeasurements, datasetPresetRequest, datasetPresets, defaultDatasetRequest, type DatasetReportPresetId } from '../data/reportDatasets'
+import { datasetConfigurationError, datasetFilters, datasetGroupings, datasetMeasurements, datasetPresetRequest, datasetPresets, defaultDatasetRequest, withDefaultReadModes, type DatasetReportPresetId } from '../data/reportDatasets'
 import { useReportDatasets } from '../hooks/useReportDatasets'
 import { usesNativeReportLookup, supportsFullReportDateRange, hasFixedReportAxes, nativeReportMeasurementUnit } from '../data/nativeReportProfiles'
 import { CURRENT_VPARIVANIE_NOTICE, currentVparivanieConfigurationError, currentVparivanieFilterConditions, currentVparivanieNotice, currentVparivanieFullScope } from '../data/currentVparivanie'
@@ -547,7 +547,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
   function changeSettlementMode(mode: 'buyers' | 'agreement') {
     const patch = settlementModePatch(mode, groupingOptions)
     setGroupedSettlementPeriod(patch.grouped)
-    setSettlementReadMode(undefined)
+    setSettlementReadMode(mode === 'buyers' && isSettlementReadModeCapability(dataset?.settlementReadMode) ? 0 : undefined)
     setSourceCounterpartyGroups(undefined)
     setSettlementPeriod(undefined)
     setSourceBuyerSubtree(patch.buyer)
@@ -649,7 +649,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
       setTemplateNotice(incompatible)
       return false
     }
-    applyConfiguration(template, nextDataset)
+    applyConfiguration({ ...template, Data: withDefaultReadModes(template.Data, nextDataset) }, nextDataset)
     setActiveTemplate(structuredClone(template))
     return true
   }

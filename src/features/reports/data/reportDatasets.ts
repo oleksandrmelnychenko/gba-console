@@ -28,7 +28,7 @@ import { reportTopGroupsError } from './reportTopGroups'
 import { valuationConfigurationError, requiresValuationAgreement } from './reportValuation'
 import { getNativeReportProfile, isNativeReportPresetId, type NativeReportPresetId } from './nativeReportProfiles'
 import { applyOriginalClientDiscounts, originalClientDiscountsSupported } from './originalClientDiscounts'
-import { cloneGroupedCashAliases, defaultGroupedCashPeriod, groupedCashSupported } from './groupedCashPeriod'
+import { cloneGroupedCashAliases, defaultGroupedCashPeriod, groupedCashSupported, withDefaultCashReadMode } from './groupedCashPeriod'
 import { cashPeriodConfigurationError } from './cashPeriod'
 import { settlementPeriodConfigurationError } from './settlementPeriod'
 import { cloneSourceCounterpartyGroupAliases } from './sourceCounterpartyGroups'
@@ -36,9 +36,11 @@ import { isDayOrganizationBasisCapability } from './dayOrganizationBasis'
 import { isSupplierBasisCapability, requestSupplierBasis } from './supplierBasis'
 import { cloneNativeExactFilterAliases, nativeExactFiltersConfigurationError } from './nativeExactFilters'
 import { cloneGroupedSettlementAliases, defaultGroupedSettlementBuyer, defaultGroupedSettlementPeriod,
-  groupedSettlementSupportsSuppliers, isGroupedSettlementDataset, requestGroupedSettlementPeriod } from './groupedSettlementPeriod'
+  groupedSettlementSupportsSuppliers, isGroupedSettlementDataset, requestGroupedSettlementPeriod,
+  withDefaultSettlementReadMode } from './groupedSettlementPeriod'
 import { cloneSettlementReadModeAliases } from './settlementReadMode'
 import { cloneCashReadModeAliases } from './cashReadMode'
+import { isProfitReadModeCapability, withDefaultProfitReadMode } from './profitReadMode'
 import {
   clonePriceTypeSalesComparisonAliases,
   defaultPriceTypeSalesComparison,
@@ -176,16 +178,21 @@ export function defaultDatasetRequest(dataset: ReportDataset, from: string, to: 
   const selected = fields.map(field => ({ ...field, IsChecked: true, parentName: '' }))
   const supplierOperational = dataset.DataSource === 38 && isSupplierBasisCapability(dataset.supplierBasis)
     && groupings.some(field => field.type === 78)
+  const supplierCurrent = supplierOperational && isProfitReadModeCapability(dataset.profitReadMode)
   const groupedSettlement = isGroupedSettlementDataset(dataset)
   const profileRows = groupedSettlement ? [4, 41, 76] : supplierOperational ? [78, 4, 21] : profile?.rowGroupings
-  const request: ReportRequestBody = { dataSource: dataset.DataSource, ...(groupedCashSupported(dataset) ? { groupedCashPeriod: defaultGroupedCashPeriod() } : {}), ...(groupedSettlement ? { groupedSettlementPeriod: defaultGroupedSettlementPeriod(), sourceBuyerSubtree: defaultGroupedSettlementBuyer() } : {}), ...(supplierOperational ? { supplierBasis: 0 } : {}), ...(dataset.DataSource === 35 && isDayOrganizationBasisCapability(dataset.dayOrganizationBasis) ? { dayOrganizationBasis: 0 } : {}), ...(dataset.DataSource === 38 && isSupplierSourceWorldCapability(dataset.supplierSourceWorld) ? { supplierSourceWorld: 0 } : {}), ...defaultOneCSpecialSettings(dataset.DataSource, dataset), ...(dataset.DataSource === 31 ? { agreementPriceComparison: defaultAgreementPriceComparison() } : {}), ...(dataset.DataSource === 26 ? { abcClassification: { Version: 1, Axis: 1, Grouping: 5, Measure: 4, PercentA: 80, PercentB: 15, PercentC: 5 } } : {}), ...(dataset.DataSource === 27 ? { priceTypeSalesComparison: defaultPriceTypeSalesComparison(dataset.priceTypeSalesComparison) } : {}), ...(dataset.DataSource === 21 ? { paymentComparison: defaultPaymentComparison() } : {}), ...(dataset.DataSource === 20 ? { marginComparison: defaultMarginComparison() } : {}), ...(dataset.DataSource === 19 ? { rateComparison: defaultRateComparison() } : {}), ...(dataset.DataSource === 18 ? { returnComparison: defaultReturnComparison() } : {}), ...(dataset.DataSource === 17 ? { buyerSalesShare: defaultBuyerSalesShare() } : {}), ...(dataset.DataSource === 16 ? { revenueComparison: defaultRevenueComparison() } : {}), ...(dataset.DataSource === 15 ? { xyz: defaultXyzOptions() } : {}), ...(dataset.DataSource === 13 ? { comparison: { Version: 1, From: '', To: '' } } : {}), from: dataset.PeriodSupported === false ? '' : from,
+  const request: ReportRequestBody = { dataSource: dataset.DataSource, ...(groupedCashSupported(dataset) ? { groupedCashPeriod: defaultGroupedCashPeriod() } : {}), ...(groupedSettlement ? { groupedSettlementPeriod: defaultGroupedSettlementPeriod(), sourceBuyerSubtree: defaultGroupedSettlementBuyer() } : {}), ...(supplierOperational ? { supplierBasis: 0 } : {}), ...(dataset.DataSource === 35 && isDayOrganizationBasisCapability(dataset.dayOrganizationBasis) ? { dayOrganizationBasis: 0 } : {}), ...(dataset.DataSource === 38 && isSupplierSourceWorldCapability(dataset.supplierSourceWorld) && !supplierCurrent ? { supplierSourceWorld: 0 } : {}), ...defaultOneCSpecialSettings(dataset.DataSource, dataset), ...(dataset.DataSource === 31 ? { agreementPriceComparison: defaultAgreementPriceComparison() } : {}), ...(dataset.DataSource === 26 ? { abcClassification: { Version: 1, Axis: 1, Grouping: 5, Measure: 4, PercentA: 80, PercentB: 15, PercentC: 5 } } : {}), ...(dataset.DataSource === 27 ? { priceTypeSalesComparison: defaultPriceTypeSalesComparison(dataset.priceTypeSalesComparison) } : {}), ...(dataset.DataSource === 21 ? { paymentComparison: defaultPaymentComparison() } : {}), ...(dataset.DataSource === 20 ? { marginComparison: defaultMarginComparison() } : {}), ...(dataset.DataSource === 19 ? { rateComparison: defaultRateComparison() } : {}), ...(dataset.DataSource === 18 ? { returnComparison: defaultReturnComparison() } : {}), ...(dataset.DataSource === 17 ? { buyerSalesShare: defaultBuyerSalesShare() } : {}), ...(dataset.DataSource === 16 ? { revenueComparison: defaultRevenueComparison() } : {}), ...(dataset.DataSource === 15 ? { xyz: defaultXyzOptions() } : {}), ...(dataset.DataSource === 13 ? { comparison: { Version: 1, From: '', To: '' } } : {}), from: dataset.PeriodSupported === false ? '' : from,
     to: dataset.PeriodSupported === false ? '' : to, selections: [], sorted: {
     Row: (profileRows ? profileRows.map(type => groupings.find(item => item.type === type)) : [unit, row])
       .filter((item, index, items): item is ReportGroupingItem => Boolean(item) && items.indexOf(item) === index),
     Col: dataset.DataSource === 39 ? groupings.filter(item => item.type === 74 || item.type === 75) : [], Measurements: flattenCheckedMeasurements(datasetMeasurements(dataset, selected)),
   } }
   if (originalClientDiscountsSupported(dataset)) applyOriginalClientDiscounts(request, dataset)
-  return request
+  return withDefaultReadModes(request, dataset)
+}
+
+export function withDefaultReadModes(data: ReportRequestBody, dataset?: ReportDataset): ReportRequestBody {
+  return withDefaultCashReadMode(withDefaultSettlementReadMode(withDefaultProfitReadMode(data, dataset), dataset), dataset)
 }
 
 /** Refuse incompatible saved settings before mutating the form. Never remove or remap a filter. */
@@ -341,7 +348,7 @@ export function datasetPresetRequest(dataset: ReportDataset, id: DatasetReportPr
     ...clonePriceTypeSalesComparisonAliases(current), ...cloneAgreementPriceComparisonAliases(current), ...cloneOneCSpecialAliases(current),
     ...(dataset.DataSource === 27 && current.oneC ? { oneC: structuredClone(current.oneC) } : {}) }
   if (id === 'supplier-registrar-warehouse') {
-    const defaults = defaultDatasetRequest(dataset, current.from, current.to)
+    const defaults = layoutDefaults(dataset, current)
     const registrar = datasetGroupings(dataset).find(field => field.type === 78)
     if (!registrar || !['73,4,21', '78,4,21'].includes(defaults.sorted.Row.map(field => field.type).join(','))) return null
     delete defaults.supplierBasis
@@ -352,7 +359,7 @@ export function datasetPresetRequest(dataset: ReportDataset, id: DatasetReportPr
     } }
   }
   if (isNativeReportPresetId(id)) {
-    const defaults = defaultDatasetRequest(dataset, current.from, current.to)
+    const defaults = layoutDefaults(dataset, current)
     // A preset changes layout; saved calculation inference remains unchanged.
     if (dataset.DataSource === 35) delete defaults.dayOrganizationBasis
     if (dataset.DataSource === 40) {
@@ -400,6 +407,14 @@ export function datasetPresetRequest(dataset: ReportDataset, id: DatasetReportPr
   }
   const template = createSalesReportPreset(id, current.from, current.to, current.selections)
   return { ...template, Name: preset.name, Data: preserveAbcGrouping(current, { ...template.Data, ...preservedOptions, dataSource: dataset.DataSource }) }
+}
+
+function layoutDefaults(dataset: ReportDataset, current: ReportRequestBody): ReportRequestBody {
+  const defaults = defaultDatasetRequest(dataset, current.from, current.to)
+  delete defaults.profitReadMode
+  delete defaults.settlementReadMode
+  delete defaults.cashReadMode
+  return defaults
 }
 
 function profileRowsForLegacySettlement(dataset: ReportDataset): ReportGroupingItem[] {

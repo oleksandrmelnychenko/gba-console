@@ -8,7 +8,7 @@ import { revenueExactId } from './revenueComparison'
 import { settlementAttributeKey } from './settlementSourceAttributes'
 import { previousKyivDay } from './cashPeriod'
 import { sourceCounterpartyGroupsConfigurationError } from './sourceCounterpartyGroups'
-import { requestSettlementReadMode, settlementReadModeConfigurationError } from './settlementReadMode'
+import { isSettlementReadModeCapability, requestSettlementReadMode, settlementReadModeConfigurationError } from './settlementReadMode'
 
 type JsonRecord = Record<string, unknown>
 const record = (value: unknown): value is JsonRecord => value !== null && typeof value === 'object' && !Array.isArray(value)
@@ -158,6 +158,15 @@ export function settlementMaximumDate(source: number, selector: unknown, today: 
   return null
 }
 
+export function withDefaultSettlementReadMode(data: ReportRequestBody, dataset?: ReportDataset): ReportRequestBody {
+  const buyers = aliases(data, 'SourceBuyerSubtree')
+  return !aliases(data, 'SettlementReadMode').length && data.dataSource === 41 && dataset?.DataSource === 41
+    && isSettlementReadModeCapability(dataset.settlementReadMode)
+    && groupedSettlementPeriod(requestGroupedSettlementPeriod(data))?.SourceWorld === 'Fenix'
+    && buyers.length === 1 && (data as unknown as JsonRecord)[buyers[0]] != null
+    ? { ...data, settlementReadMode: 0 } : data
+}
+
 export function groupedWorkbookRequest(request: ReportRequestBody, currencyAxis?: boolean): ReportRequestBody {
   if (request.dataSource !== 41 || requestGroupedSettlementPeriod(request) == null || currencyAxis !== false) return request
   return { ...request, sorted: { ...request.sorted, Row: request.sorted.Row.filter(row => row.type !== 41) } }
@@ -195,6 +204,9 @@ export function groupedSettlementConfigurationError(data: ReportRequestBody, dat
   const fenixBuyers = selector.SourceWorld === 'Fenix' && sourceBuyer.length === 1
     && (data as unknown as JsonRecord)[sourceBuyer[0]] != null
   if (mode != null && !fenixBuyers) return 'Для вибраного джерела розрахунку потрібні база Fenix і група «Покупці».'
+  if (mode === 0 && ((Array.isArray(data.selections) && data.selections.some(selection => selection?.IsChecked !== false))
+    || aliases(data, 'SourceCounterpartyGroups').some(key => (data as unknown as JsonRecord)[key] != null)))
+    return 'Взаєморозрахунки з документів GBA формуються для всієї групи «Покупці» без додаткових відборів.'
   const normal = fenixBuyers && (mode != null || !dataset
     || groupedSettlementCapability(dataset.groupedSettlementPeriod)?.OriginalNormalMaximumMonths === 120)
   const dayError = periodError(data.from, data.to, today, normal)

@@ -3,7 +3,7 @@ import { normalizeSavedTemplate, parseReportDatasets } from '../api/reportWorksp
 import { availableBug1274WorkbookLaunches, bug1274WorkbookRequest, SETTLEMENT_READ_MODE_NOTICE } from './bug1274WorkbookLaunch'
 import { groupedSettlementConfigurationError } from './groupedSettlementPeriod'
 import { buildReportBuilderRequest } from './reportBuilderRequest'
-import { datasetConfigurationError, datasetMeasurements, datasetPresetRequest, defaultDatasetRequest } from './reportDatasets'
+import { datasetConfigurationError, datasetMeasurements, datasetPresetRequest, defaultDatasetRequest, withDefaultReadModes } from './reportDatasets'
 import { reportDatasets } from './reportDatasets.test-fixtures'
 import { retainStoredTemplateFields } from './reportTemplateDraft'
 import { reportWorkspaceDraftCompatibility } from './reportWorkspaceDraftCompatibility'
@@ -17,6 +17,13 @@ const hasMode = (value: object) => Object.keys(value).some(key => key.toLowerCas
 const request = (mode: unknown) => ({ ...defaultDatasetRequest(dataset, '2025-01-01', today), settlementReadMode: mode })
 const { settlementReadMode: _capability, ...plain } = dataset
 void _capability
+const unmarked = (from: string, to: string) => {
+  const result = defaultDatasetRequest(dataset, from, to)
+  delete result.settlementReadMode
+  return result
+}
+const organization = { IsChecked: true, SelectedField: { Type: 0, Name: 'Організація' },
+  FilterCondition: { Type: 2, Name: 'У списку' }, Values: [{ Data: { Id: '1' }, Value: 0, Name: 'Організація' }] }
 
 it('accepts only the exact four-field capability with case-insensitive names', () => {
   expect(isSettlementReadModeCapability(capability)).toBe(true)
@@ -69,14 +76,51 @@ it('rejects malformed, duplicated, misplaced or unconfirmed modes and non-Fenix 
   expect(groupedSettlementConfigurationError({ ...request(undefined), from: '2026-10-01' }, plain, today)).toBeNull()
 })
 
+it('opens new grouped Fenix buyer requests on current documents and leaves other scopes unmarked', () => {
+  const current = defaultDatasetRequest(dataset, '2025-01-01', today)
+  expect(current.settlementReadMode).toBe(0)
+  expect(groupedSettlementConfigurationError(current, dataset, today)).toBeNull()
+  expect(hasMode(defaultDatasetRequest(plain, '2025-01-01', today))).toBe(false)
+  const { settlementReadMode: _mode, ...scope } = current
+  void _mode
+  const amg = { ...scope, sourceBuyerSubtree: undefined,
+    groupedSettlementPeriod: { Version: 1, SourceWorld: 'Amg', CurrencyBasis: 'SettlementCurrency' } }
+  for (const other of [amg, { ...scope, sourceBuyerSubtree: undefined }, settlementPeriodRequest()])
+    expect(withDefaultReadModes(other, dataset)).toBe(other)
+})
+
+it('applies current documents to a saved request without a mode and reports the current-document limits', () => {
+  const saved = unmarked('2024-12-01', '2024-12-31')
+  expect(groupedSettlementConfigurationError(saved, dataset, today)).toContain('120')
+  const current = withDefaultReadModes(saved, dataset)
+  expect(current.settlementReadMode).toBe(0)
+  expect(saved).not.toHaveProperty('settlementReadMode')
+  expect(groupedSettlementConfigurationError(current, dataset, today)).toContain('120')
+  for (const mode of [0, 1, null]) {
+    const explicit = { ...saved, SettlementReadMode: mode }
+    expect(withDefaultReadModes(explicit, dataset)).toBe(explicit)
+  }
+  expect(withDefaultReadModes(saved, plain)).toBe(saved)
+  const filtered = withDefaultReadModes({ ...unmarked('2025-01-01', today), selections: [organization] }, dataset)
+  expect(groupedSettlementConfigurationError(filtered, dataset, today)).toBe('Взаєморозрахунки з документів GBA формуються для всієї групи «Покупці» без додаткових відборів.')
+  expect(groupedSettlementConfigurationError({ ...filtered, selections: [{ ...organization, IsChecked: false }] }, dataset, today)).toBeNull()
+  expect(groupedSettlementConfigurationError({ ...filtered, settlementReadMode: 1 }, dataset, today)).toBeNull()
+  const grouped = { ...dataset, sourceCounterpartyGroups: { Version: 1, SourceWorld: 'fenix', MaximumGroupIds: 64,
+    UsesCurrentCapturedHierarchy: true, ExclusionsTakePrecedence: true, GroupIdFormat: '32 hexadecimal characters (16 bytes)' } }
+  const groups = { ...filtered, selections: [], sourceCounterpartyGroups: { Version: 1, SourceWorld: 'fenix', IncludeGroupIds: ['A'.repeat(32)], ExcludeGroupIds: [] } }
+  expect(groupedSettlementConfigurationError(groups, grouped, today)).toContain('без додаткових відборів')
+  expect(groupedSettlementConfigurationError({ ...groups, settlementReadMode: 1 }, grouped, today)).toBeNull()
+})
+
 it.each([0, 1, null, undefined])('round trips mode %s through saved template, builder, retained fields, preset and draft', mode => {
-  const original = defaultDatasetRequest(dataset, '2025-01-01', '2026-09-30')
+  const original = unmarked('2025-01-01', '2026-09-30')
   const normalized = normalizeSavedTemplate({ Id: 'stored', Revision: 1, UpdatedAtUtc: '2026-10-13T00:00:00Z', Name: 'saved', Data: {
     DataSource: 41, From: original.from, To: original.to, Sorted: original.sorted, Selections: [],
     GroupedSettlementPeriod: original.groupedSettlementPeriod, SourceBuyerSubtree: original.sourceBuyerSubtree,
     ...(mode !== undefined ? { SettlementReadMode: mode } : {}) } })
   expect(hasMode(normalized.Data)).toBe(mode !== undefined)
   expect(requestSettlementReadMode(normalized.Data)).toBe(mode)
+  expect(requestSettlementReadMode(withDefaultReadModes(normalized.Data, dataset))).toBe(mode === undefined ? 0 : mode)
   expect(datasetConfigurationError(normalized.Data, dataset)).toBeNull()
   const data = buildReportBuilderRequest({ dataSource: 41, from: original.from, to: original.to,
     groupedSettlementPeriod: original.groupedSettlementPeriod, sourceBuyerSubtree: original.sourceBuyerSubtree,
@@ -99,21 +143,24 @@ it.each([0, 1, null, undefined])('round trips mode %s through saved template, bu
     : 'Сервер не підтвердив вибір джерела розрахунку взаєморозрахунків. Чернетка збережена без змін.')
 })
 
-it('keeps both workbook launch requests unopted and mentions the selector only with the capability', () => {
+it('opens both workbook launch requests on current documents and mentions the source only with the capability', () => {
   const launches = availableBug1274WorkbookLaunches([dataset])
   const previous = availableBug1274WorkbookLaunches([plain])
   expect(launches.map(launch => launch.fileName)).toEqual(['Взаємороз всі.xls', 'ДБіторка.xls'])
   launches.forEach((launch, index) => {
-    expect(launch.notice).toBe(`${previous[index].notice} ${SETTLEMENT_READ_MODE_NOTICE}`)
-    expect(previous[index].notice).not.toContain('джерело розрахунку')
+    expect(launch.notice).toBe(`${previous[index].notice.replace('Період до 31 дня може', 'Період може')} ${SETTLEMENT_READ_MODE_NOTICE}`)
+    expect(previous[index].notice).not.toContain('джерел')
     const opened = bug1274WorkbookRequest(defaultDatasetRequest(dataset, '2026-09-30', '2026-09-30'), launch)
-    expect(hasMode(opened)).toBe(false)
-    expect(opened).toEqual(bug1274WorkbookRequest(defaultDatasetRequest(plain, '2026-09-30', '2026-09-30'), previous[index]))
+    expect(opened.settlementReadMode).toBe(0)
+    const legacy = bug1274WorkbookRequest(defaultDatasetRequest(plain, '2026-09-30', '2026-09-30'), previous[index])
+    expect(hasMode(legacy)).toBe(false)
+    expect(opened).toEqual({ ...legacy, settlementReadMode: 0 })
     expect(datasetConfigurationError(opened, dataset)).toBeNull()
-    const current = { ...opened, settlementReadMode: 0 }
-    expect(bug1274WorkbookRequest(current, launch)).toEqual(current)
-    expect(datasetConfigurationError(current, dataset)).toBeNull()
-    expect(datasetConfigurationError({ ...current, from: '2025-01-01' }, dataset)).toBeNull()
+    expect(datasetConfigurationError({ ...opened, from: '2025-01-01' }, dataset)).toBeNull()
+    expect(datasetConfigurationError({ ...opened, from: '2024-12-31' }, dataset)).toContain('120')
+    const unopted = bug1274WorkbookRequest(unmarked('2026-09-30', '2026-09-30'), launch)
+    expect(hasMode(unopted)).toBe(false)
+    expect(bug1274WorkbookRequest({ ...unopted, settlementReadMode: 1 }, launch)).toEqual({ ...unopted, settlementReadMode: 1 })
   })
 })
 

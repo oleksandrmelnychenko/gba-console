@@ -56,7 +56,18 @@ it.each([undefined, false, 'true'])('does not fall back to legacy current38 choi
   expect((within(view.dialog).getByRole('combobox', { name: 'Значення' }) as HTMLInputElement).disabled).toBe(true)
   expect(searchDatasetReportValues).not.toHaveBeenCalled()
 })
-it.each([undefined, 'Збережені регістри 1С'])('keeps legacy query semantics for %s without lookup capability', async mode => {
+it('scopes the default current source like an explicit one', async () => {
+  const view = await editor()
+  await waitFor(() => expect(searchDatasetReportValues).toHaveBeenCalledWith(38, 1, { limit: 30, offset: 0, value: '' }, expect.any(AbortSignal), undefined, undefined, undefined, 0))
+  expect(within(view.dialog).queryByRole('status')).toBeNull()
+})
+it('does not fall back to legacy current38 choices for the default source without capability', async () => {
+  vi.mocked(getReportDatasets).mockResolvedValue([...reportDatasets, { ...dataset, profitReadModeLookup: undefined }])
+  const view = await editor()
+  expect(await within(view.dialog).findByRole('status')).toHaveProperty('textContent', expect.stringContaining('Сервер ще не підтримує довідник'))
+  expect(searchDatasetReportValues).not.toHaveBeenCalled()
+})
+it.each(['За налаштуваннями звіту', 'Збережені регістри 1С'])('keeps legacy query semantics for %s without lookup capability', async mode => {
   vi.mocked(getReportDatasets).mockResolvedValue([...reportDatasets, { ...dataset, profitReadModeLookup: undefined }])
   await editor(mode)
   await waitFor(() => expect(searchDatasetReportValues).toHaveBeenCalledWith(38, 1, { limit: 30, offset: 0, value: '' }, expect.any(AbortSignal)))

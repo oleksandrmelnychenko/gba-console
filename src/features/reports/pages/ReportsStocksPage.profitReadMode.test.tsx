@@ -31,35 +31,38 @@ function mode(name: string) {
   fireEvent.click(screen.getByRole('combobox', { name: 'Джерело розрахунку' }))
   fireEvent.click(screen.getByRole('option', { name }))
 }
-it.each(['Валовий прибуток за днем', 'Валовий прибуток за постачальниками'])('keeps original default, then sends deliberate current choice in %s', async name => {
+const source = () => (screen.getByRole('combobox', { name: 'Джерело розрахунку' }) as HTMLInputElement).value
+async function submitted(view: ReturnType<typeof render>, count: number) {
+  fireEvent.submit(view.container.querySelector('form')!)
+  await waitFor(() => expect(createStockReport).toHaveBeenCalledTimes(count))
+  return vi.mocked(createStockReport).mock.calls[count - 1][0]
+}
+it.each(['Валовий прибуток за днем', 'Валовий прибуток за постачальниками'])('opens %s on current documents, then keeps deliberate registers and opt-out choices', async name => {
   const view = await openWorkbook(name)
-  fireEvent.submit(view.container.querySelector('form')!)
-  await waitFor(() => expect(createStockReport).toHaveBeenCalledOnce())
-  expect(vi.mocked(createStockReport).mock.calls[0][0].profitReadMode).toBeUndefined()
-  mode('Поточні документи GBA')
-  expect(screen.queryByRole('dialog')).toBeNull()
-  fireEvent.submit(view.container.querySelector('form')!)
-  await waitFor(() => expect(createStockReport).toHaveBeenCalledTimes(2))
-  const current = vi.mocked(createStockReport).mock.calls[1][0]
+  expect(source()).toBe('Поточні документи GBA')
+  expect(screen.getByText(/Типове джерело: продажі та повернення з поточних документів GBA за період до 31 календарних днів/)).toBeTruthy()
+  const current = await submitted(view, 1)
   expect(current.profitReadMode).toBe(0)
   expect(current.workbookPresentation).toBeUndefined()
   expect(current.dataSource === 35 ? current.dayOrganizationBasis : current.supplierBasis).toBe(0)
-  if (current.dataSource === 38) {
+  if (current.dataSource === 35) expect(current.sourceOrganizations).toBeUndefined()
+  else {
     expect(current.supplierSourceWorld).toBeUndefined()
     expect((screen.getByRole('combobox', { name: 'База продажів для прибутку за постачальниками' }) as HTMLInputElement).value).toBe('Усі документи, включно з GBA')
     expect(current.sorted.Row.map(row => row.type)).toEqual([78, 4, 21])
   }
   mode('Збережені регістри 1С')
-  fireEvent.submit(view.container.querySelector('form')!)
-  await waitFor(() => expect(createStockReport).toHaveBeenCalledTimes(3))
-  const original = vi.mocked(createStockReport).mock.calls[2][0]
+  expect(screen.queryByRole('dialog')).toBeNull()
+  if (current.dataSource === 35) for (const label of ['Товар без послуг (Fenix)', 'П’ять організацій зі збереженого налаштування 1С', 'Група «Покупці» Fenix'])
+    fireEvent.click(screen.getByRole('checkbox', { name: label }))
+  const original = await submitted(view, 2)
   expect(original.profitReadMode).toBe(1)
   if (original.dataSource === 38) expect(original.supplierSourceWorld).toBe(0)
-  mode('Збережений / автоматичний режим')
-  fireEvent.submit(view.container.querySelector('form')!)
-  await waitFor(() => expect(createStockReport).toHaveBeenCalledTimes(4))
-  expect(Object.hasOwn(vi.mocked(createStockReport).mock.calls[3][0], 'profitReadMode')).toBe(false)
-})
+  mode('За налаштуваннями звіту')
+  expect(source()).toBe('За налаштуваннями звіту')
+  const unmarked = await submitted(view, 3)
+  expect(Object.hasOwn(unmarked, 'profitReadMode')).toBe(false)
+}, 15_000)
 it('hides current opt-in without a confirmed capability', async () => {
   vi.mocked(getReportDatasets).mockResolvedValue([...reportDatasets, { ...profitDayDataset, profitReadMode: undefined }])
   await openWorkbook('Валовий прибуток за днем')

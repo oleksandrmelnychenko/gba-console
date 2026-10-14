@@ -3,6 +3,7 @@ import type { ReportMeasurementGroup } from '../types'
 import { datasetMeasurements } from '../data/reportDatasets'
 import { CASH_PERIOD_ALL_MEASURES, CASH_PERIOD_MEASURES, cashPeriodMeasurements, cashPeriodSupportsManagement } from '../data/cashPeriod'
 import { defaultGroupedCashPeriod } from '../data/groupedCashPeriod'
+import { isCashReadModeCapability } from '../data/cashReadMode'
 import { CashPeriodModePanel } from './CashPeriodModePanel'
 import { SettlementPeriodModePanel } from './SettlementPeriodModePanel'
 
@@ -24,7 +25,7 @@ export function CashSettlementSettingsPanels({ dataSource, cash, settlement, onG
   return <CashPeriodModePanel {...cash}
     onModeChange={multiple => {
       onGroupedCashChange(multiple ? defaultGroupedCashPeriod() : undefined)
-      cash.onReadModeChange?.(undefined)
+      cash.onReadModeChange?.(multiple && isCashReadModeCapability(dataset?.cashReadMode) ? 0 : undefined)
       onExactCashChange(undefined)
       onRowsChange([43, 40, 42, 41].flatMap(type => available.filter(group => group.type === type)))
       onClearCashFilters()

@@ -12,8 +12,11 @@ function response(mode?: unknown, source = 'NativeSettlementPeriod') {
     Page: { Offset: 0, Limit: 50, TotalVisibleRows: 0, ReturnedRows: 0, HasMore: false },
     RowSchema: [], ColumnSchema: [], Rows: [], Columns: [], Cells: [] } }
 }
-const request = (mode?: unknown) => ({ ...defaultDatasetRequest(dataset, '2025-01-01', '2026-09-30'),
-  ...(mode !== undefined ? { settlementReadMode: mode } : {}) })
+const request = (mode?: unknown) => {
+  const body = { ...defaultDatasetRequest(dataset, '2025-01-01', '2026-09-30'), settlementReadMode: mode }
+  if (mode === undefined) delete body.settlementReadMode
+  return body
+}
 
 it.each([0, 1])('submits explicit mode %s unchanged and accepts the matching server echo', async mode => {
   const body = request(mode)
@@ -27,6 +30,13 @@ it.each([0, 1])('submits explicit mode %s unchanged and accepts the matching ser
 it.each([undefined, null, 1])('refuses an older or different server echo %s for an explicit current-documents request', async echo => {
   vi.mocked(apiRequest).mockResolvedValue(response(echo))
   await expect(previewStockReport(request(0), dataset)).rejects.toThrow('інше джерело розрахунку взаєморозрахунків')
+})
+
+it('submits the new default grouped Fenix buyer request with current documents', async () => {
+  vi.mocked(apiRequest).mockResolvedValue(response(0))
+  await expect(previewStockReport(defaultDatasetRequest(dataset, '2025-01-01', '2026-09-30'), dataset))
+    .resolves.toMatchObject({ preview: { Request: { SettlementReadMode: 0 } } })
+  expect(vi.mocked(apiRequest).mock.calls[0][1]?.body).toMatchObject({ settlementReadMode: 0 })
 })
 
 it('keeps legacy requests legacy and refuses a server that claims an explicit mode for them', async () => {

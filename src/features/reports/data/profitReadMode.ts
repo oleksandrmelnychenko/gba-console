@@ -45,6 +45,14 @@ export function profitReadModeConfigurationError(data: ReportRequestBody, datase
   return null
 }
 
+export function withDefaultProfitReadMode(data: ReportRequestBody, dataset?: ReportDataset): ReportRequestBody {
+  if (aliases(data).length || !dataset || dataset.DataSource !== data.dataSource
+    || !isProfitReadModeCapability(dataset.profitReadMode)) return data
+  const basisName = data.dataSource === 35 ? 'dayorganizationbasis' : data.dataSource === 38 ? 'supplierbasis' : null
+  const keys = basisName ? Object.keys(data).filter(key => key.toLowerCase() === basisName) : []
+  return keys.length === 1 && (data as unknown as Record<string, unknown>)[keys[0]] === 0 ? { ...data, profitReadMode: 0 } : data
+}
+
 export function profitReadModeLabel(mode: 0 | 1): string {
   return mode === 0 ? 'Поточні документи GBA' : 'Збережені регістри 1С'
 }

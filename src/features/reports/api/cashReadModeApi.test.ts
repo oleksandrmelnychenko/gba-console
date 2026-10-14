@@ -14,9 +14,12 @@ function response(mode?: unknown, source = 'NativeCashPeriod') {
     Page: { Offset: 0, Limit: 50, TotalVisibleRows: 0, ReturnedRows: 0, HasMore: false },
     RowSchema: [], ColumnSchema: [], Rows: [], Columns: [], Cells: [] } }
 }
-const request = (mode?: unknown) => mode !== undefined
-  ? { ...defaultDatasetRequest(dataset, '2025-01-01', formatKyivBusinessDate()), cashReadMode: mode }
-  : defaultDatasetRequest(dataset, '2026-09-01', '2026-09-30')
+const request = (mode?: unknown) => {
+  if (mode !== undefined) return { ...defaultDatasetRequest(dataset, '2025-01-01', formatKyivBusinessDate()), cashReadMode: mode }
+  const legacy = defaultDatasetRequest(dataset, '2026-09-01', '2026-09-30')
+  delete legacy.cashReadMode
+  return legacy
+}
 
 it.each([0, 1])('submits explicit mode %s unchanged and accepts the matching server echo', async mode => {
   const body = request(mode)
@@ -30,6 +33,13 @@ it.each([0, 1])('submits explicit mode %s unchanged and accepts the matching ser
 it.each([undefined, null, 1])('refuses an older or different server echo %s for an explicit current-documents request', async echo => {
   vi.mocked(apiRequest).mockResolvedValue(response(echo))
   await expect(previewStockReport(request(0), dataset)).rejects.toThrow('Сервер повернув інше джерело розрахунку коштів.')
+})
+
+it('submits the new default grouped request with current documents', async () => {
+  const body = defaultDatasetRequest(dataset, '2025-01-01', formatKyivBusinessDate())
+  vi.mocked(apiRequest).mockResolvedValue(response(0))
+  await expect(previewStockReport(body, dataset)).resolves.toMatchObject({ preview: { Request: { CashReadMode: 0 } } })
+  expect(vi.mocked(apiRequest).mock.calls[0][1]?.body).toMatchObject({ cashReadMode: 0 })
 })
 
 it('keeps legacy requests legacy and refuses a server that claims an explicit mode for them', async () => {

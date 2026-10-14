@@ -61,7 +61,8 @@ export function SettlementPeriodModePanel({ dataset, grouped, exact, buyer, grou
       {selector?.SourceWorld === 'Fenix' && sourceCounterpartyGroupCapability(dataset.sourceCounterpartyGroups)
         && <CounterpartyGroupFilters value={groups} disabled={disabled || !enabled} onChange={onGroupsChange} />}
       <Text size="sm" c="dimmed">{t('Відбори використовують поточні договори нашої бази. Договори без повних даних за період залишаються з порожніми сумами; залежні підсумки також порожні. Непідтверджена належність до групи позначається окремо.')}</Text>
-      <Text size="sm" c="dimmed">{t('Період — до 31 дня включно зі сьогодні. Суми різних валют не додаються; за потреби оберіть форму з валютою.')}</Text>
+      <Text size="sm" c="dimmed">{t(explicitSource ? 'Суми різних валют не додаються; за потреби оберіть форму з валютою.'
+        : 'Період — до 31 дня включно зі сьогодні. Суми різних валют не додаються; за потреби оберіть форму з валютою.')}</Text>
     </> : <>
       <SettlementPeriodAgreementPicker value={exact} from={from} to={to} disabled={disabled}
         enabled={enabled} onChange={onExactChange} />

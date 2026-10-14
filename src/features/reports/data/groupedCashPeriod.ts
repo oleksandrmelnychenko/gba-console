@@ -1,7 +1,7 @@
 import { workbookConfigurationError } from './workbookPresentation'
 import type { ReportDataset, ReportRequestBody } from '../types'
 import { revenueExactId } from './revenueComparison'
-import { cashReadModeConfigurationError, requestCashReadMode } from './cashReadMode'
+import { cashReadModeConfigurationError, isCashReadModeCapability, requestCashReadMode } from './cashReadMode'
 
 export const CASH_WORKBOOK_ROWS = [40, 44, 43] as const
 export const GROUPED_CASH_FILTERS = [29, 30, 32, 33] as const
@@ -17,6 +17,11 @@ export function requestGroupedCashPeriod(value: object): unknown {
 }
 export function cloneGroupedCashAliases(value: object): Record<string, unknown> {
   return Object.fromEntries(aliases(value).map(key => [key, structuredClone((value as Record<string, unknown>)[key])]))
+}
+export function withDefaultCashReadMode(data: ReportRequestBody, dataset?: ReportDataset): ReportRequestBody {
+  return !Object.keys(data).some(key => key.toLowerCase() === 'cashreadmode') && data.dataSource === 40
+    && dataset?.DataSource === 40 && isCashReadModeCapability(dataset.cashReadMode) && requestGroupedCashPeriod(data) != null
+    ? { ...data, cashReadMode: 0 } : data
 }
 export function groupedCashPeriod(value: unknown): GroupedCashPeriod | null {
   return record(value) && Object.keys(value).sort().join(',') === 'CurrencyBasis,Version'

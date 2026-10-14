@@ -6,8 +6,12 @@ import { availableBug1274WorkbookLaunches, bug1274WorkbookRequest, type Workbook
 import type { ReportDataset } from '../types'
 import { groupedCashDataset, groupedCashWorkbookDataset } from './groupedCashPeriod.test-fixtures'
 import { groupedSettlementDataset } from './groupedSettlementPeriod.test-fixtures'
-import { cashPeriodConfigurationError } from './cashPeriod'
-import { defaultDatasetRequest } from './reportDatasets'
+import { cashPeriodConfigurationError, previousKyivDay } from './cashPeriod'
+import { datasetConfigurationError, defaultDatasetRequest } from './reportDatasets'
+import { formatKyivBusinessDate } from '../../../shared/date/dateTime'
+import { profitDayDataset, profitSupplierDataset } from './profitReadMode.test-fixtures'
+import { cashModeDataset } from './cashReadMode.test-fixtures'
+import { settlementModeDataset } from './settlementReadMode.test-fixtures'
 import { DAY_ORGANIZATION_GOODS_KIND_ID, DAY_ORGANIZATION_SAVED_ORGANIZATION_IDS } from './dayOrganizationGrossProfit'
 import { FENIX_BUYERS_ROOT_ID, nativeExactFiltersConfigurationError } from './nativeExactFilters'
 
@@ -196,4 +200,33 @@ it('does not infer workbook filters for an old or malformed server, an explicit 
   expect(bug1274WorkbookRequest(duplicate, dayLaunch())).toBe(duplicate)
   expect(bug1274WorkbookRequest(request)).toBe(request)
   expect(bug1274WorkbookRequest(request, { ...dayLaunch(), fileName: 'ВП по постачальниках.xls' })).toBe(request)
+})
+
+it('opens every workbook with an advertised source on current GBA documents and keeps an explicit registers choice', () => {
+  const launches = availableBug1274WorkbookLaunches([profitDayDataset, profitSupplierDataset, cashModeDataset, settlementModeDataset])
+  expect(launches.map(item => item.fileName)).toEqual(['ВП.xls', 'ВП по постачальниках.xls',
+    'Ведомость по денежным средствам.xls', 'Взаємороз всі.xls', 'ДБіторка.xls'])
+  const day = previousKyivDay(formatKyivBusinessDate())
+  const mode = (request: ReturnType<typeof defaultDatasetRequest>) => request.dataSource === 40 ? request.cashReadMode
+    : request.dataSource === 41 ? request.settlementReadMode : request.profitReadMode
+  for (const launch of launches) {
+    const opened = bug1274WorkbookRequest(defaultDatasetRequest(launch.dataset, day, day), launch)
+    expect(mode(opened)).toBe(0)
+    expect(datasetConfigurationError(opened, launch.dataset)).toBeNull()
+    expect(launch.notice).toContain('Форма відкривається з джерелом «Поточні документи GBA»')
+    expect(launch.notice).toContain('«Збережені регістри 1С»')
+  }
+  const current = bug1274WorkbookRequest(defaultDatasetRequest(profitDayDataset, day, day), launches[0])
+  expect(current.workbookPresentation).toBeUndefined()
+  expect(current.sourceOrganizations).toBeUndefined()
+  expect(launches[0].notice).toContain('«Збережені регістри 1С» і відбори Fenix')
+  const original = bug1274WorkbookRequest({ ...defaultDatasetRequest(profitDayDataset, day, day), profitReadMode: 1 }, launches[0])
+  expect(original).toMatchObject({ profitReadMode: 1, dayOrganizationBasis: 0,
+    sourceOrganizations: { OrganizationIds: [...DAY_ORGANIZATION_SAVED_ORGANIZATION_IDS] },
+    workbookPresentation: { version: 1, additionalFields: [2, 3], ordering: 'MonthAscending' } })
+  expect(datasetConfigurationError(original, profitDayDataset)).toBeNull()
+  for (const launch of launches.slice(2)) {
+    const explicit = { ...defaultDatasetRequest(launch.dataset, day, day), ...(launch.dataset.DataSource === 40 ? { cashReadMode: 1 } : { settlementReadMode: 1 }) }
+    expect(mode(bug1274WorkbookRequest(explicit, launch))).toBe(1)
+  }
 })

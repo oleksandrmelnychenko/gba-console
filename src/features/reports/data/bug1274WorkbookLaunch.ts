@@ -1,4 +1,4 @@
-import { isProfitReadModeCapability, requestProfitReadMode } from './profitReadMode'
+import { currentProfitMaximumDays, isProfitReadModeCapability, requestProfitReadMode } from './profitReadMode'
 import { isSettlementReadModeCapability } from './settlementReadMode'
 import { isCashReadModeCapability } from './cashReadMode'
 import type { ReportDataset, ReportRequestBody } from '../types'
@@ -25,7 +25,7 @@ export type WorkbookLaunch = {
   currencyAxis?: boolean
 }
 
-export const SETTLEMENT_READ_MODE_NOTICE = 'Можна обрати джерело розрахунку: «Поточні документи GBA» (документи GBA та початкові залишки на 01.01.2025) або «Збережені регістри 1С».'
+export const SETTLEMENT_READ_MODE_NOTICE = 'Форма відкривається з джерелом «Поточні документи GBA»: документи GBA та початкові залишки на 01.01.2025, період від 01.01.2025 до 120 календарних місяців. Для розрахунку за регістрами 1С оберіть «Збережені регістри 1С» у джерелі розрахунку.'
 export const CASH_READ_MODE_NOTICE = SETTLEMENT_READ_MODE_NOTICE
 
 const supported = [
@@ -88,7 +88,7 @@ export function availableBug1274WorkbookLaunches(datasets: readonly ReportDatase
       && Array.isArray(candidate.Filters) && spec.accepts(candidate)
       ? [{ fileName: spec.fileName, label: spec.label, ...('currencyAxis' in spec ? { currencyAxis: spec.currencyAxis } : {}),
         notice: (spec.dataSource === 35 || spec.dataSource === 38) && isProfitReadModeCapability(candidate.profitReadMode)
-          ? 'Форма відкривається з чинними налаштуваннями розрахунку за регістрами 1С. Для продажів і повернень із поточних документів оберіть «Поточні документи GBA» у джерелі розрахунку; цей режим підтримує до 31 дня і ще не має повної відповідності 1С.'
+          ? profitReadModeNotice(spec.dataSource, candidate)
           : spec.dataSource === 35 && isDayOrganizationBasisCapability(candidate.dayOrganizationBasis)
           ? 'Часткова форма Excel: день → організація, суми EUR та рентабельність %. Для нового запиту застосовано відбори книги: товар без послуг, п’ять організацій і група «Покупці» Fenix. Їх можна змінити у формі. «Продажі мінус повернення за період» підтримують до 31 дня. Недоступні собівартість, ПДВ і залежні показники залишаються порожніми.'
           : spec.dataSource === 40 && groupedCashSupported(candidate)
@@ -107,6 +107,11 @@ export function availableBug1274WorkbookLaunches(datasets: readonly ReportDatase
   })
 }
 
+function profitReadModeNotice(dataSource: number, dataset: ReportDataset): string {
+  const original = dataSource === 35 ? '«Збережені регістри 1С» і відбори Fenix' : '«Збережені регістри 1С»'
+  return `Форма відкривається з джерелом «Поточні документи GBA»: продажі та повернення з поточних документів за період до ${currentProfitMaximumDays(dataset.profitReadMode)} календарних днів. Повна відповідність 1С ще не підтверджена. Для розрахунку за регістрами 1С оберіть ${original}.`
+}
+
 function groupedCashNotice(dataset: ReportDataset): string {
   const notice = 'Показано банківські рахунки та каси: вісім показників у валюті рахунку й управлінській валюті. Відбори рахунку, організації, валюти та виду доступні у формі.'
   return isCashReadModeCapability(dataset.cashReadMode) ? `${notice} ${CASH_READ_MODE_NOTICE}` : notice
@@ -114,10 +119,12 @@ function groupedCashNotice(dataset: ReportDataset): string {
 
 function groupedSettlementNotice(fileName: string, dataset: ReportDataset): string {
   const parties = groupedSettlementSupportsSuppliers(dataset) ? 'покупців і постачальників' : 'покупців'
+  const current = isSettlementReadModeCapability(dataset.settlementReadMode)
+  const period = current ? 'Період може включати поточний київський день' : 'Період до 31 дня може включати поточний київський день'
   const notice = fileName === 'ДБіторка.xls'
-    ? `Організація → контрагент, поточні договори ${parties} за вибраними відборами й чотири показники залишків та руху. Період до 31 дня може включати поточний київський день. Недоступні суми й залежні підсумки залишаються порожніми; суми різних валют не додаються.`
-    : `Організація → валюта → контрагент, поточні договори ${parties} за вибраними відборами й чотири показники залишків та руху. Період до 31 дня може включати поточний київський день; договори без повних даних залишаються з порожніми сумами та підсумками.`
-  return isSettlementReadModeCapability(dataset.settlementReadMode) ? `${notice} ${SETTLEMENT_READ_MODE_NOTICE}` : notice
+    ? `Організація → контрагент, поточні договори ${parties} за вибраними відборами й чотири показники залишків та руху. ${period}. Недоступні суми й залежні підсумки залишаються порожніми; суми різних валют не додаються.`
+    : `Організація → валюта → контрагент, поточні договори ${parties} за вибраними відборами й чотири показники залишків та руху. ${period}; договори без повних даних залишаються з порожніми сумами та підсумками.`
+  return current ? `${notice} ${SETTLEMENT_READ_MODE_NOTICE}` : notice
 }
 
 /** The retained day workbook has these three exact filters; explicit scopes keep their own meaning. */

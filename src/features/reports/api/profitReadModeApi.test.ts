@@ -27,8 +27,15 @@ it.each([undefined, null, 1, '0', true])('refuses missing, mismatched or malform
   const request = { ...defaultDatasetRequest(profitDayDataset, '2026-09-01', '2026-09-30'), profitReadMode: 0 }
   await expect(previewStockReport(request)).rejects.toThrow('джерело розрахунку')
 })
+it('submits the new default request with current documents', async () => {
+  const request = defaultDatasetRequest(profitDayDataset, '2026-09-01', '2026-09-30')
+  vi.mocked(apiRequest).mockResolvedValue(response(0))
+  await expect(previewStockReport(request, profitDayDataset)).resolves.toMatchObject({ preview: { Request: { ProfitReadMode: 0 } } })
+  expect(vi.mocked(apiRequest).mock.calls[0][1]?.body).toMatchObject({ profitReadMode: 0 })
+})
 it('rejects wrong dataset proof and a response claiming explicit mode for an old request', async () => {
   const request = defaultDatasetRequest(profitDayDataset, '2026-09-01', '2026-09-30')
+  delete request.profitReadMode
   vi.mocked(apiRequest).mockResolvedValue(response(0, 'NativeCashPeriod'))
   await expect(previewStockReport({ ...request, profitReadMode: 0 })).rejects.toThrow('інше джерело')
   vi.mocked(apiRequest).mockResolvedValue(response())

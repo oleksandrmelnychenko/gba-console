@@ -44,38 +44,37 @@ async function submitted(view: ReturnType<typeof render>, count: number) {
   await waitFor(() => expect(createStockReport).toHaveBeenCalledTimes(count))
   return vi.mocked(createStockReport).mock.calls[count - 1][0]
 }
-it('keeps the cash workbook launch unopted, then sends a deliberate source choice', async () => {
+const source = () => (screen.getByRole('combobox', { name: 'Джерело розрахунку' }) as HTMLInputElement).value
+it('opens the cash workbook on current documents, then keeps deliberate registers and opt-out choices', async () => {
   const view = await openWorkbook()
   expect(screen.getAllByText(new RegExp(CASH_READ_MODE_NOTICE.slice(0, 40))).length).toBeGreaterThan(0)
-  const original = await submitted(view, 1)
-  expect(Object.keys(original).some(key => key.toLowerCase() === 'cashreadmode')).toBe(false)
-  mode('Поточні документи GBA')
-  const current = await submitted(view, 2)
+  expect(source()).toBe('Поточні документи GBA')
+  const current = await submitted(view, 1)
   expect(current.cashReadMode).toBe(0)
-  expect(current.groupedCashPeriod).toEqual(original.groupedCashPeriod)
-  expect(current.workbookPresentation).toEqual(original.workbookPresentation)
-  expect(current.sorted).toEqual(original.sorted)
   expect(current.sorted.Row.map(row => row.type)).toEqual([40])
   mode('Збережені регістри 1С')
-  expect((await submitted(view, 3)).cashReadMode).toBe(1)
-  mode('Збережене налаштування')
-  const restored = await submitted(view, 4)
-  expect(Object.hasOwn(restored, 'cashReadMode')).toBe(false)
-  expect(restored).toEqual(original)
+  const original = await submitted(view, 2)
+  expect(original).toEqual({ ...current, cashReadMode: 1 })
+  mode('За налаштуваннями звіту')
+  const unmarked = await submitted(view, 3)
+  expect(Object.keys(unmarked).some(key => key.toLowerCase() === 'cashreadmode')).toBe(false)
+  const { cashReadMode: _mode, ...rest } = current
+  void _mode
+  expect(unmarked).toEqual(rest)
 }, 15_000)
-it('accepts a period from 01.01.2025 through today only with an explicit source', async () => {
+it('accepts a period from 01.01.2025 through today by default and keeps the opt-out on completed days', async () => {
   const view = await openWorkbook()
   const today = formatKyivBusinessDate()
   fireEvent.change(screen.getByLabelText('Від'), { target: { value: '2025-01-01' } })
   fireEvent.change(screen.getByLabelText('До'), { target: { value: today } })
-  fireEvent.submit(view.container.querySelector('form')!)
-  expect(createStockReport).not.toHaveBeenCalled()
-  mode('Поточні документи GBA')
   expect(await submitted(view, 1)).toMatchObject({ cashReadMode: 0, from: '2025-01-01', to: today })
+  mode('За налаштуваннями звіту')
+  fireEvent.submit(view.container.querySelector('form')!)
+  expect(createStockReport).toHaveBeenCalledOnce()
 }, 15_000)
-it('clears the source when switching to one exact account', async () => {
+it('clears the source for one exact account and restores current documents for all accounts', async () => {
   const view = await openWorkbook()
-  mode('Поточні документи GBA')
+  mode('Збережені регістри 1С')
   fireEvent.click(screen.getByLabelText('Один валютний запис'))
   expect(screen.queryByRole('combobox', { name: 'Джерело розрахунку' })).toBeNull()
   fireEvent.click(await screen.findByRole('combobox', { name: 'Рахунок і власна валюта' }))
@@ -84,8 +83,9 @@ it('clears the source when switching to one exact account', async () => {
   expect(exact.groupedCashPeriod).toBeUndefined()
   expect(Object.keys(exact).some(key => key.toLowerCase() === 'cashreadmode')).toBe(false)
   fireEvent.click(screen.getByLabelText('Усі / вибрані рахунки'))
-  expect((screen.getByRole('combobox', { name: 'Джерело розрахунку' }) as HTMLInputElement).value).toBe('Збережене налаштування')
-})
+  expect(source()).toBe('Поточні документи GBA')
+  expect((await submitted(view, 2)).cashReadMode).toBe(0)
+}, 15_000)
 it('hides the selector and the notice without a confirmed capability', async () => {
   vi.mocked(getReportDatasets).mockResolvedValue([...reportDatasets, { ...cashModeDataset, cashReadMode: undefined }])
   await openWorkbook()
