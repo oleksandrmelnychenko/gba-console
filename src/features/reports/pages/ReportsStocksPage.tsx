@@ -107,7 +107,7 @@ import { useReportDatasets } from '../hooks/useReportDatasets'
 import { usesNativeReportLookup, supportsFullReportDateRange, hasFixedReportAxes, nativeReportMeasurementUnit } from '../data/nativeReportProfiles'
 import { CURRENT_VPARIVANIE_NOTICE, currentVparivanieConfigurationError, currentVparivanieFilterConditions, currentVparivanieNotice, currentVparivanieFullScope } from '../data/currentVparivanie'
 import { previousKyivDay } from '../data/cashPeriod'
-import { availableBug1274WorkbookLaunches, bug1274WorkbookRequest, type WorkbookLaunch } from '../data/bug1274WorkbookLaunch'
+import { availableBug1274WorkbookLaunches, bug1274WorkbookRequest, opensOnPreviousDay, type WorkbookLaunch } from '../data/bug1274WorkbookLaunch'
 import { CashSettlementSettingsPanels } from './CashSettlementSettingsPanels'
 import { cashFormDataset, requestGroupedCashPeriod } from '../data/groupedCashPeriod'
 import { defaultGroupedSettlementBuyer, defaultGroupedSettlementPeriod, groupedSettlementPeriod as parseGroupedSettlementPeriod, requestGroupedSettlementPeriod, settlementFormDataset, settlementMaximumDate, settlementModePatch } from '../data/groupedSettlementPeriod'
@@ -566,7 +566,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
     setRestoredData(null)
     setDraftRestoreError(null)
     setActiveTemplate(null)
-    const resetDay = (dataSource === 40 || dataSource === 41) ? previousKyivDay(today) : today
+    const resetDay = opensOnPreviousDay(dataSource) ? previousKyivDay(today) : today
     const snapshotDefaults = dataset && shouldLoadDatasetDefaults(dataSource, periodSupported)
       ? defaultDatasetRequest(dataset, resetDay, resetDay)
       : null
@@ -838,7 +838,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
   function changeDataset(nextDataset: ReportDataset, workbook?: WorkbookLaunch) {
     if (consoleScope && !BUG_1274_ACTIVE_DATA_SOURCES.has(nextDataset.DataSource)) return
     const period = periodSupported ? { from, to } : previousPeriod
-    const day = (nextDataset.DataSource === 40 || nextDataset.DataSource === 41) ? previousKyivDay(today) : null
+    const day = opensOnPreviousDay(nextDataset.DataSource) ? previousKyivDay(today) : null
     applyConfiguration({ Name: '', Data: bug1274WorkbookRequest(defaultDatasetRequest(nextDataset, day ?? period.from, day ?? period.to), workbook) }, nextDataset)
   }
 

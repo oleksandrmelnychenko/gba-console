@@ -26,6 +26,13 @@ export type WorkbookLaunch = {
   currencyAxis?: boolean
 }
 
+/** Completed-day reports open on the previous Kyiv day: today's documents are still incomplete. */
+const PREVIOUS_DAY_DEFAULT_SOURCES: ReadonlySet<number> = new Set([35, 38, 40, 41])
+
+export function opensOnPreviousDay(dataSource: number): boolean {
+  return PREVIOUS_DAY_DEFAULT_SOURCES.has(dataSource)
+}
+
 export const SETTLEMENT_READ_MODE_NOTICE = BUG_1274_ONLY_REPORT_SURFACE
   ? 'Форма відкривається з джерелом «Поточні документи GBA»: документи GBA та початкові залишки на 01.01.2025, період від 01.01.2025 до 120 календарних місяців.'
   : 'Форма відкривається з джерелом «Поточні документи GBA»: документи GBA та початкові залишки на 01.01.2025, період від 01.01.2025 до 120 календарних місяців. Для розрахунку за регістрами 1С оберіть «Збережені регістри 1С» у джерелі розрахунку.'

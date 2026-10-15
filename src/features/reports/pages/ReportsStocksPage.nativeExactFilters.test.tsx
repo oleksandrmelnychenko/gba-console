@@ -10,6 +10,8 @@ import { defaultDatasetRequest } from '../data/reportDatasets'
 import { netDataset, reportDatasets } from '../data/reportDatasets.test-fixtures'
 import { DAY_ORGANIZATION_GOODS_KIND_ID, DAY_ORGANIZATION_SAVED_ORGANIZATION_IDS } from '../data/dayOrganizationGrossProfit'
 import { FENIX_BUYERS_ROOT_ID } from '../data/nativeExactFilters'
+import { previousKyivDay } from '../data/cashPeriod'
+import { formatKyivBusinessDate } from '../../../shared/date/dateTime'
 import type { ReportDataset } from '../types'
 import { ReportsStocksPage } from './ReportsStocksPage'
 
@@ -152,6 +154,8 @@ describe('exact Fenix filters in the report constructor', () => {
     const { container } = await ready()
     fireEvent.click(screen.getByText('Часткові форми за зразками Excel'))
     fireEvent.click(screen.getByRole('button', { name: 'Відкрити часткову форму: Валовий прибуток за днем' }))
+    expect((screen.getByLabelText('Від') as HTMLInputElement).value).toBe(previousKyivDay(formatKyivBusinessDate()))
+    expect((screen.getByLabelText('До') as HTMLInputElement).value).toBe(previousKyivDay(formatKyivBusinessDate()))
     expect((screen.getByRole('checkbox', { name: 'Товар без послуг (Fenix)' }) as HTMLInputElement).checked).toBe(true)
     expect((screen.getByRole('checkbox', { name: 'П’ять організацій зі збереженого налаштування 1С' }) as HTMLInputElement).checked).toBe(true)
     expect((screen.getByRole('checkbox', { name: 'Група «Покупці» Fenix' }) as HTMLInputElement).checked).toBe(true)

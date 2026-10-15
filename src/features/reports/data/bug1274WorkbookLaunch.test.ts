@@ -2,7 +2,7 @@ import { beforeEach, expect, it, vi } from 'vitest'
 import { cashPeriodDataset } from './cashPeriod.test-fixtures'
 import { settlementPeriodDataset } from './settlementPeriod.test-fixtures'
 import { currentVparivanieDataset } from './currentVparivanie.test-fixtures'
-import { availableBug1274WorkbookLaunches, bug1274WorkbookRequest, type WorkbookLaunch } from './bug1274WorkbookLaunch'
+import { availableBug1274WorkbookLaunches, bug1274WorkbookRequest, opensOnPreviousDay, type WorkbookLaunch } from './bug1274WorkbookLaunch'
 import type { ReportDataset } from '../types'
 import { groupedCashDataset, groupedCashWorkbookDataset } from './groupedCashPeriod.test-fixtures'
 import { groupedSettlementDataset } from './groupedSettlementPeriod.test-fixtures'
@@ -237,4 +237,9 @@ it('opens every workbook with an advertised source on current GBA documents and 
     const explicit = { ...defaultDatasetRequest(launch.dataset, day, day), ...(launch.dataset.DataSource === 40 ? { cashReadMode: 1 } : { settlementReadMode: 1 }) }
     expect(mode(bug1274WorkbookRequest(explicit, launch))).toBe(1)
   }
+})
+
+it('opens both gross-profit workbooks on the previous completed Kyiv day like the settlement and cash forms', () => {
+  expect([35, 38, 40, 41].map(opensOnPreviousDay)).toEqual([true, true, true, true])
+  expect([39, 1, 27, 30].map(opensOnPreviousDay)).toEqual([false, false, false, false])
 })
