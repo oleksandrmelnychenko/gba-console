@@ -1,5 +1,6 @@
 import { BUG_1274_ACTIVE_DATA_SOURCES, BUG_1274_DISABLED_MESSAGE } from '../data/reportMigration'
 import { BUG_1274_ONLY_REPORT_SURFACE } from '../reportSurfacePolicy'
+import { lacksCurrentReadMode, TEMPLATE_WITHOUT_READ_MODE_ERROR } from '../data/currentReadModePolicy'
 import { useWorkbookPresentation } from '../hooks/useWorkbookPresentation'
 import './stocks-workspace.css'
 import PaymentComparisonPanel from './PaymentComparisonPanel'
@@ -281,6 +282,7 @@ function shouldLoadDatasetDefaults(dataSource: number, periodSupported: boolean)
   return !periodSupported
     || supportsFullReportDateRange(dataSource)
     || dataSource === PRICE_TYPE_SALES_COMPARISON_SOURCE
+    || BUG_1274_ONLY_REPORT_SURFACE && dataSource === 35
 }
 
 function usesSavedFenixOrganizations(value: unknown): boolean {
@@ -653,7 +655,12 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
       setTemplateNotice(incompatible)
       return false
     }
-    applyConfiguration({ ...template, Data: withDefaultReadModes(template.Data, nextDataset) }, nextDataset)
+    const data = withDefaultReadModes(template.Data, nextDataset)
+    if (bug1274Only && lacksCurrentReadMode(data, nextDataset)) {
+      setTemplateNotice(TEMPLATE_WITHOUT_READ_MODE_ERROR)
+      return false
+    }
+    applyConfiguration({ ...template, Data: data }, nextDataset)
     setActiveTemplate(structuredClone(template))
     return true
   }
@@ -1456,6 +1463,7 @@ function ReportBuilderForm(props: ReportBuilderFormProps) {
             datasets={props.templateDatasets}
             dataSources={props.templateDataSources}
             callerKey={props.templateCallerKey}
+            requireReadMode={props.templateDataSources != null}
             configurationReady={configurationReady}
             notice={templateNotice}
             templateName={templateName}

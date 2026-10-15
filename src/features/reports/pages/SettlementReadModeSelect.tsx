@@ -11,12 +11,12 @@ export function SettlementReadModeSelect({ capability, value, disabled, hideRegi
     <Select label={t('Джерело розрахунку')} allowDeselect={false} disabled={disabled}
       value={value === 0 ? '0' : value === 1 ? '1' : 'saved'}
       data={[{ value: '0', label: t(settlementReadModeLabel(0)) }, ...(hideRegister && value !== 1 ? [] : [{ value: '1', label: t(settlementReadModeLabel(1)), disabled: hideRegister }]),
-        { value: 'saved', label: t('За налаштуваннями звіту') }]}
+        ...(hideRegister && (value === 0 || value === 1) ? [] : [{ value: 'saved', label: t('За налаштуваннями звіту'), disabled: hideRegister }])]}
       onChange={next => {
         if (next === '0' || next === '1' || next === 'saved') onChange(next === 'saved' ? undefined : next === '0' ? 0 : 1)
       }} />
     <Text size="xs" c="dimmed">{t(value === 0
-      ? 'Типове джерело: документи GBA та початкові залишки на 01.01.2025 для всієї групи «Покупці» бази Fenix, без додаткових відборів. Період від 01.01.2025 до 120 календарних місяців, включно з сьогодні.'
+      ? 'Типове джерело: документи GBA та початкові залишки на 01.01.2025 для групи «Покупці» бази Fenix. Доступні відбори організації, контрагента, договору, валюти та груп контрагентів. Період від 01.01.2025 до 120 календарних місяців, включно з сьогодні.'
       : value === 1 ? 'Розрахунок за збереженими регістрами 1С для бази Fenix і групи «Покупці». Нові документи GBA не включаються.'
       : 'Джерело не передається: звіт визначає його за налаштуваннями, як до появи цього вибору. Цей варіант потрібен для бази AMG або форми без групи «Покупці».')}</Text>
   </>

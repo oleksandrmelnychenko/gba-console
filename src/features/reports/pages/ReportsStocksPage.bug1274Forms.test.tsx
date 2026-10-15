@@ -59,7 +59,7 @@ it.each([
   ['Дебіторка за період', 41, 'settlementReadMode'],
 ] as const)('opens «%s» on current GBA documents without the 1C register source', async (label, dataSource, modeKey) => {
   const view = await openWorkbook(label)
-  expect(sourceOptions()).toEqual({ value: 'Поточні документи GBA', options: ['Поточні документи GBA', 'За налаштуваннями звіту'] })
+  expect(sourceOptions()).toEqual({ value: 'Поточні документи GBA', options: ['Поточні документи GBA'] })
   fireEvent.submit(view.container.querySelector('form')!)
   await waitFor(() => expect(createStockReport).toHaveBeenCalledOnce())
   expect(vi.mocked(createStockReport).mock.calls[0][0]).toMatchObject({ dataSource, [modeKey]: 0 })

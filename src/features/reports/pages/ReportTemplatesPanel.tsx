@@ -21,6 +21,7 @@ type Props = {
   datasets?: readonly ReportDataset[]
   dataSources?: ReadonlySet<number>
   callerKey?: string | null
+  requireReadMode?: boolean
   notice: string | null
   templateName: string
   activeTemplate: ReportTemplate | null
@@ -34,7 +35,7 @@ type Props = {
   onRefresh: () => void
 }
 
-export function ReportTemplatesPanel({ storage, ordering, configurationReady, disabled = false, datasets = emptyDatasets, dataSources, callerKey = null, notice, templateName,
+export function ReportTemplatesPanel({ storage, ordering, configurationReady, disabled = false, datasets = emptyDatasets, dataSources, callerKey = null, requireReadMode = false, notice, templateName,
   activeTemplate, onNameChange, onApply, onSave, onUpdate, onRenamed, onDeleted, onClearNotice, onRefresh }: Props) {
   const { t } = useI18n()
   const [action, setAction] = useState<Action | null>(null)
@@ -54,7 +55,7 @@ export function ReportTemplatesPanel({ storage, ordering, configurationReady, di
     {activeTemplate ? <ActiveTemplateCard template={activeTemplate} stale={stale}
       blocked={blocked || !configurationReady} onUpdate={() => void onUpdate()} /> : null}
     {savedVariant ? <SavedNativeReportPanel template={savedVariant} datasets={datasets} callerKey={callerKey}
-      enabled={!blocked} current={storage.templates.some(item => item.Id === savedVariant.Id
+      requireReadMode={requireReadMode} enabled={!blocked} current={storage.templates.some(item => item.Id === savedVariant.Id
         && item.Revision === savedVariant.Revision && JSON.stringify(item.Data) === JSON.stringify(savedVariant.Data))}
       onClose={() => setSavedVariant(null)} /> : null}
     <section className="reports-stocks-template-create">

@@ -35,15 +35,24 @@ describe.each([
     expect(onChange).toHaveBeenCalledWith(1)
   })
 
-  it.each([0, undefined])('hides the 1C register source for value %s', value => {
-    mount(value, true)
-    expect(screen.getAllByRole('option').map(option => option.textContent))
-      .toEqual(['Поточні документи GBA', 'За налаштуваннями звіту'])
+  it('offers only current GBA documents under the BUG-1274 surface', () => {
+    mount(0, true)
+    expect(screen.getAllByRole('option').map(option => option.textContent)).toEqual(['Поточні документи GBA'])
+  })
+
+  it('keeps a request without a source visible but not selectable again', () => {
+    const { onChange, select } = mount(undefined, true)
+    expect(select.value).toBe('За налаштуваннями звіту')
+    expect(screen.getAllByRole('option').map(option => option.textContent)).toEqual(['Поточні документи GBA', 'За налаштуваннями звіту'])
+    expect(screen.getByRole('option', { name: 'За налаштуваннями звіту' }).hasAttribute('data-combobox-disabled')).toBe(true)
+    fireEvent.click(screen.getByRole('option', { name: 'Поточні документи GBA' }))
+    expect(onChange).toHaveBeenCalledWith(0)
   })
 
   it('keeps an already selected 1C register source visible but not selectable again', () => {
     const { onChange, select } = mount(1, true)
     expect(select.value).toBe('Збережені регістри 1С')
+    expect(screen.getAllByRole('option').map(option => option.textContent)).toEqual(['Поточні документи GBA', 'Збережені регістри 1С'])
     const register = screen.getByRole('option', { name: 'Збережені регістри 1С' })
     expect(register.hasAttribute('data-combobox-disabled')).toBe(true)
     fireEvent.click(screen.getByRole('option', { name: 'Поточні документи GBA' }))

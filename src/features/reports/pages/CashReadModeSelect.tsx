@@ -11,7 +11,7 @@ export function CashReadModeSelect({ capability, value, disabled, hideRegister =
     <Select mt="sm" label={t('Джерело розрахунку')} allowDeselect={false} disabled={disabled}
       value={value === 0 ? '0' : value === 1 ? '1' : 'saved'}
       data={[{ value: '0', label: t(cashReadModeLabel(0)) }, ...(hideRegister && value !== 1 ? [] : [{ value: '1', label: t(cashReadModeLabel(1)), disabled: hideRegister }]),
-        { value: 'saved', label: t('За налаштуваннями звіту') }]}
+        ...(hideRegister && (value === 0 || value === 1) ? [] : [{ value: 'saved', label: t('За налаштуваннями звіту'), disabled: hideRegister }])]}
       onChange={next => {
         if (next === '0' || next === '1' || next === 'saved') onChange(next === 'saved' ? undefined : next === '0' ? 0 : 1)
       }} />

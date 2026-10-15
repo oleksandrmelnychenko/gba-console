@@ -17,10 +17,10 @@ export function CashPeriodModePanel({ dataset, grouped, exact, disabled, enabled
   const multiple = grouped != null
   return <>
     {groupedCashSupported(dataset) ? <Card withBorder radius="md" padding="md">
-      <SegmentedControl fullWidth aria-label="Рахунки звіту коштів" disabled={disabled}
+      {hideRegisterReadMode && multiple ? null : <SegmentedControl fullWidth aria-label="Рахунки звіту коштів" disabled={disabled}
         value={multiple ? 'accounts' : 'account'} data={[
           { value: 'accounts', label: 'Усі / вибрані рахунки' }, { value: 'account', label: 'Один валютний запис' },
-        ]} onChange={value => onModeChange(value === 'accounts')} />
+        ]} onChange={value => onModeChange(value === 'accounts')} />}
       {multiple && onReadModeChange ? <CashReadModeSelect capability={dataset?.cashReadMode} value={readMode}
         disabled={disabled} hideRegister={hideRegisterReadMode} onChange={onReadModeChange} /> : null}
       {multiple && (groupedCashWorkbookSupported(dataset) || cashWorkbookPresentationSupported(dataset)) ? <Select mt="sm" label="Форма руху коштів" disabled={disabled}

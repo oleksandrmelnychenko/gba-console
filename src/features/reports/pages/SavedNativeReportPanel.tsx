@@ -10,16 +10,18 @@ import { useReportRunState } from '../hooks/useReportRunState'
 import type { ReportDataset, ReportTemplate } from '../types'
 import { ReportInlinePreview } from './ReportInlinePreview'
 
-export function SavedNativeReportPanel({ template, datasets, callerKey, enabled, current, onClose }: {
+export function SavedNativeReportPanel({ template, datasets, callerKey, enabled, current, requireReadMode = false, onClose }: {
   template: ReportTemplate
   datasets: readonly ReportDataset[]
   callerKey: string | null
   enabled: boolean
   current: boolean
+  requireReadMode?: boolean
   onClose: () => void
 }) {
   const { t } = useI18n()
-  const configurationError = useMemo(() => savedNativeReportConfigurationError(template, datasets), [template, datasets])
+  const configurationError = useMemo(() => savedNativeReportConfigurationError(template, datasets, requireReadMode),
+    [template, datasets, requireReadMode])
   const scope = JSON.stringify([callerKey, enabled, current, template, datasets])
   const run = useReportRunState<SavedNativeReportBinding>(scope)
   const controller = useRef<AbortController | null>(null)

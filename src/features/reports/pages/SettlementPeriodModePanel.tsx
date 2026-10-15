@@ -32,7 +32,7 @@ export function SettlementPeriodModePanel({ dataset, grouped, exact, buyer, grou
   const isGroup = grouped != null
   const explicitSource = readMode != null
   return <Stack gap="sm">
-    {supported && <Select label={t('Обсяг взаєморозрахунків')} disabled={disabled} allowDeselect={false}
+    {supported && !(hideRegisterReadMode && isGroup) && <Select label={t('Обсяг взаєморозрахунків')} disabled={disabled} allowDeselect={false}
       value={isGroup ? 'buyers' : 'agreement'} data={[
         { value: 'buyers', label: t(groupedSettlementSupportsSuppliers(dataset) ? 'Поточні договори контрагентів' : 'Поточні договори покупців') },
         { value: 'agreement', label: t('Один точний договір') },
@@ -41,7 +41,8 @@ export function SettlementPeriodModePanel({ dataset, grouped, exact, buyer, grou
       {onReadModeChange && <SettlementReadModeSelect capability={dataset.settlementReadMode} value={readMode}
         disabled={disabled} hideRegister={hideRegisterReadMode} onChange={onReadModeChange} />}
       <Select label={t('База взаєморозрахунків')} disabled={disabled || explicitSource} allowDeselect={false}
-        value={selector?.SourceWorld ?? null} data={[{ value: 'Fenix', label: 'Fenix' }, { value: 'Amg', label: 'AMG' }]}
+        value={selector?.SourceWorld ?? null} data={[{ value: 'Fenix', label: 'Fenix' },
+          ...(hideRegisterReadMode && selector?.SourceWorld !== 'Amg' ? [] : [{ value: 'Amg', label: 'AMG' }])]}
         onChange={world => {
           if (world !== 'Fenix' && world !== 'Amg') return
           onGroupedChange({ Version: 1, SourceWorld: world, CurrencyBasis: 'SettlementCurrency' })
