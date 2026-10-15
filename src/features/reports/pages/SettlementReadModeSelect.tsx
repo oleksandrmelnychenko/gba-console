@@ -2,15 +2,15 @@ import { Select, Text } from '@mantine/core'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { isSettlementReadModeCapability, settlementReadModeLabel } from '../data/settlementReadMode'
 
-type Props = { capability: unknown; value: unknown; disabled: boolean; onChange: (value: 0 | 1 | undefined) => void }
+type Props = { capability: unknown; value: unknown; disabled: boolean; hideRegister?: boolean; onChange: (value: 0 | 1 | undefined) => void }
 
-export function SettlementReadModeSelect({ capability, value, disabled, onChange }: Props) {
+export function SettlementReadModeSelect({ capability, value, disabled, hideRegister = false, onChange }: Props) {
   const { t } = useI18n()
   if (!isSettlementReadModeCapability(capability)) return null
   return <>
     <Select label={t('Джерело розрахунку')} allowDeselect={false} disabled={disabled}
       value={value === 0 ? '0' : value === 1 ? '1' : 'saved'}
-      data={[{ value: '0', label: t(settlementReadModeLabel(0)) }, { value: '1', label: t(settlementReadModeLabel(1)) },
+      data={[{ value: '0', label: t(settlementReadModeLabel(0)) }, ...(hideRegister && value !== 1 ? [] : [{ value: '1', label: t(settlementReadModeLabel(1)), disabled: hideRegister }]),
         { value: 'saved', label: t('За налаштуваннями звіту') }]}
       onChange={next => {
         if (next === '0' || next === '1' || next === 'saved') onChange(next === 'saved' ? undefined : next === '0' ? 0 : 1)

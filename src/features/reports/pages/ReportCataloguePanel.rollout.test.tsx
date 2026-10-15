@@ -12,6 +12,8 @@ import { ReportCataloguePanel } from './ReportCataloguePanel'
 import type { ReportCatalogue } from '../types'
 
 const auth = vi.hoisted(() => ({ allowed: true }))
+const surface = vi.hoisted(() => ({ only: true }))
+vi.mock('../reportSurfacePolicy', () => ({ get BUG_1274_ONLY_REPORT_SURFACE() { return surface.only } }))
 vi.mock('../../auth/useAuth', () => ({ useAuth: () => ({ hasPermission: () => auth.allowed }) }))
 vi.mock('../api/reportWorkspaceApi', () => ({ getReportCatalogue: vi.fn(), getReportDatasets: vi.fn() }))
 function fixture(): ReportCatalogue {
@@ -30,7 +32,7 @@ function mount(onOpenWorkbook = vi.fn<(launch: WorkbookLaunch) => boolean>(() =>
   return onOpenWorkbook
 }
 beforeEach(() => {
-  vi.clearAllMocks(); auth.allowed = true
+  vi.clearAllMocks(); auth.allowed = true; surface.only = true
   vi.mocked(getReportCatalogue).mockResolvedValue(fixture())
   vi.mocked(getReportDatasets).mockResolvedValue([groupedCashWorkbookDataset, groupedSettlementDataset, currentVparivanieDataset])
 })
@@ -48,7 +50,21 @@ it('launches the period cash, both settlement variants and the current product m
   }
   expect(open).toHaveBeenCalledTimes(4)
 })
-it('shows ready reports disabled with a chip and hides captured and unassessed reports', async () => {
+it('lists only the five BUG-1274 reports and hides ready, captured and unassessed reports', async () => {
+  const open = mount()
+  await screen.findByRole('button', { name: 'ДБіторка.xls' })
+  expect(screen.getAllByRole('button', { name: /^Покриття звіту:/ }).map(button => button.textContent))
+    .toEqual([...new Set(Object.values(BUG_1274_WORKBOOK_REPORT_IDS))])
+  expect(screen.getByRole('button', { name: 'Взаємороз всі.xls' })).toBeTruthy()
+  expect(screen.queryByText('Готово')).toBeNull()
+  expect(screen.queryByRole('button', { name: 'Запуск поки вимкнено' })).toBeNull()
+  expect(screen.queryByRole('button', { name: 'Покриття звіту: Борг за договорами' })).toBeNull()
+  expect(screen.queryByRole('button', { name: 'Покриття звіту: Повернення постачальникам' })).toBeNull()
+  expect(screen.queryByRole('button', { name: 'Покриття звіту: Конструктор запиту' })).toBeNull()
+  expect(open).not.toHaveBeenCalled()
+})
+it('shows ready reports disabled with a chip and hides captured and unassessed reports when the BUG-1274-only surface is off', async () => {
+  surface.only = false
   const open = mount()
   const chip = await screen.findByText('Готово')
   const row = chip.closest('tr')!
@@ -61,7 +77,7 @@ it('shows ready reports disabled with a chip and hides captured and unassessed r
 it('does not launch workbook forms without generation permission or with unavailable capabilities', async () => {
   auth.allowed = false
   mount()
-  await screen.findByText('Готово')
+  await screen.findByRole('button', { name: 'Покриття звіту: builtin:ВаловаяПрибыль' })
   expect(getReportDatasets).not.toHaveBeenCalled()
   expect(screen.queryByRole('button', { name: 'ДБіторка.xls' })).toBeNull()
 })

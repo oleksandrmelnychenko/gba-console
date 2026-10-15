@@ -1,4 +1,5 @@
 import type { ReportCatalogue, ReportCatalogueEntry, ReportCatalogueSource, ReportDependencyStatus, ReportMigrationStatus, ReportMigrationSummary, ReportSourceMigration } from '../types'
+import { BUG_1274_ONLY_REPORT_SURFACE } from '../reportSurfacePolicy'
 
 export type MigrationDisplayStatus = ReportMigrationStatus | 'unassessed'
 export type ConsoleReportAvailability = 'active' | 'ready_disabled' | 'hidden'
@@ -167,12 +168,13 @@ export function filterMigrationCatalogue(catalogue: ReportCatalogue, inspection:
 
 /**
  * The Console rollout is deliberately narrower than the source inventory.
- * BUG-1274 entries are launchable; every other executable native mapping is
- * visible as a disabled "Готово" row; source-only and unassessed entries are
- * omitted from the Console list.
+ * BUG-1274 entries are launchable; while the BUG-1274-only surface is off,
+ * every other executable native mapping is visible as a disabled "Готово" row;
+ * all other entries are omitted from the Console list.
  */
 export function consoleReportAvailability(report: ReportCatalogueEntry, inspection: ReturnType<typeof inspectCatalogueMigration>): ConsoleReportAvailability {
   if (BUG_1274_ACTIVE_REPORT_IDS.has(report.Id)) return 'active'
+  if (BUG_1274_ONLY_REPORT_SURFACE) return 'hidden'
   const ready = report.Sources.some(source => {
     const status = inspection.statuses.get(sourceIdentity(source))
     return status === 'native_partial' || status === 'parity_verified'

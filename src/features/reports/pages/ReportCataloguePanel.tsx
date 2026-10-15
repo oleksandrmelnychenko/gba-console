@@ -74,6 +74,7 @@ import { OriginalAmgDiscountAnalysisCatalogueLaunch } from './OriginalAmgDiscoun
 import { availableBug1274WorkbookLaunches, BUG_1274_WORKBOOK_REPORT_IDS, type WorkbookLaunch } from '../data/bug1274WorkbookLaunch'
 import { originalBuyerSalesShareCatalogueVariant, type OriginalBuyerSalesShareCapabilities } from '../data/originalBuyerSalesShare'
 import { OriginalBuyerSalesShareCatalogueLaunch } from './OriginalBuyerSalesShareCatalogueLaunch'
+import { BUG_1274_ONLY_REPORT_SURFACE } from '../reportSurfacePolicy'
 
 const kindLabels: Record<string, string> = {
   builtin: 'Вбудовані', regulated: 'Регламентовані', external: 'Зовнішні',
@@ -165,7 +166,9 @@ export function ReportCataloguePanel({ onOpen, onOpenDebtToSalesRatio, onOpenCol
           <DocumentDetailMetric label={t('Джерельних реалізацій')} value={String(summary.SourceImplementations)} />
           <DocumentDetailMetric label={t('Перевірених позицій')} value={String(summary.FullyVerifiedEntries)} />
         </>} />
-      {onOpen && <Text size="sm" c="dimmed" className="report-catalogue__intro">{t('Оберіть доступний варіант. Звіти конструктора формуються кнопкою «Сформувати»; Fenix «Валовая прибыль» відкривається в окремій панелі.')}</Text>}
+      {onOpen && <Text size="sm" c="dimmed" className="report-catalogue__intro">{t(consoleScope && BUG_1274_ONLY_REPORT_SURFACE
+        ? 'Оберіть форму за зразком Excel у рядку звіту. Звіт формується кнопкою «Сформувати».'
+        : 'Оберіть доступний варіант. Звіти конструктора формуються кнопкою «Сформувати»; Fenix «Валовая прибыль» відкривається в окремій панелі.')}</Text>}
       <details className="report-catalogue__overview">
         <summary><ChevronRight size={15} aria-hidden="true" />{t('Стан перенесення та джерела')}</summary>
         <Stack gap="sm" className="report-catalogue__overview-body">
@@ -240,7 +243,7 @@ function CatalogueTable({ consoleScope = false, onOpenWorkbook, visibleRows, cat
               <Table.Td><Stack gap={8} align="flex-start"><Button className="report-catalogue__report-title" leftSection={<ChevronRight size={14} aria-hidden="true" />} type="button" variant="subtle" size="compact-sm" aria-expanded={expanded.has(report.Id)} aria-label={t('Покриття звіту: {name}', { name: report.Title })}
                 styles={{ root: { height: 'auto', maxWidth: '100%' }, label: { whiteSpace: 'normal', textAlign: 'left' } }}
                 onClick={() => onToggle(report.Id)}>{report.Title}</Button>
-                {consoleScope ? <OriginalCashStatementCatalogueLaunch report={report} worlds={matchingSources.map(s => s.World)}
+                {consoleScope && !BUG_1274_ONLY_REPORT_SURFACE ? <OriginalCashStatementCatalogueLaunch report={report} worlds={matchingSources.map(s => s.World)}
                   enabled={canGenerate} disabled={disabled} callerKey={callerKey} /> : null}
                 {consoleScope ? consoleReportAvailability(report, inspection) === 'ready_disabled'
                   ? <Group gap="xs"><Badge color="green" variant="light">{t('Готово')}</Badge>

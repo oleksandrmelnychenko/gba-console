@@ -12,6 +12,7 @@ import { ReportCatalogueControl } from './ReportCatalogueControl'
 import type { ReportCatalogue, ReportDataset } from '../types'
 
 const auth = vi.hoisted(() => ({ allowed: true }))
+vi.mock('../reportSurfacePolicy', () => ({ BUG_1274_ONLY_REPORT_SURFACE: true }))
 vi.mock('../../auth/useAuth', () => ({ useAuth: () => ({ hasPermission: (permission: string) => permission === PermissionKeys.ReportsStocks.Report.Generate && auth.allowed }) }))
 vi.mock('../api/reportWorkspaceApi', () => ({ getReportCatalogue: vi.fn(), getReportDatasets: vi.fn() }))
 const panel = (props: ComponentProps<typeof ReportCataloguePanel> = {}) => <MantineProvider env="test"><I18nProvider><ReportCataloguePanel {...props} /></I18nProvider></MantineProvider>
@@ -159,10 +160,12 @@ it('requires a specific native variant when the same source supports multiple da
     sourceId: report.Sources[1].SourceId, dataSource: 5 }, catalogue)
 })
 
-it('hides source-only reports from the Console rollout', async () => {
+it('hides source-only and ready non-BUG-1274 reports from the Console rollout', async () => {
   vi.mocked(getReportCatalogue).mockResolvedValue(launchCatalogue())
   const onOpen = openSpy()
-  renderPanel({ onOpen, consoleScope: true }); await screen.findByText('Готово')
+  renderPanel({ onOpen, consoleScope: true }); await screen.findByText('Звітів за цими умовами не знайдено')
+  expect(screen.queryByText('Готово')).toBeNull()
+  expect(screen.queryAllByRole('button', { name: /^Покриття звіту:/ })).toHaveLength(0)
   fireEvent.change(screen.getByLabelText('Пошук звіту'), { target: { value: 'Повернення' } })
   expect(screen.queryByRole('button', { name: 'Покриття звіту: Повернення постачальникам' })).toBeNull()
   expect(onOpen).not.toHaveBeenCalled()

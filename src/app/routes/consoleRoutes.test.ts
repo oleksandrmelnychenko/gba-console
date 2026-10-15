@@ -1,9 +1,11 @@
 import { isValidElement } from 'react'
 import { Navigate } from 'react-router-dom'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { PaymentArticlesPage } from '../../features/payment-articles/PaymentArticlesPage'
 import { PermissionKeys } from '../../shared/auth/permissionKeys'
 import { consoleRoutes } from './consoleRoutes'
+
+vi.mock('../../features/reports/reportSurfacePolicy', () => ({ BUG_1274_ONLY_REPORT_SURFACE: true }))
 
 const EXPECTED_NEW_PAGE_PERMISSIONS = {
   '/dashboard': PermissionKeys.SystemPages.Dashboard.View,
@@ -127,7 +129,17 @@ describe('console report routes', () => {
     for (const path of ['/reports/constructor', '/reports/stocks']) {
       const route = consoleRoutes.find(candidate => candidate.path === path)
       expect(route?.permissionKey).toBe(PermissionKeys.ReportsStocks.Page.View)
-      expect(isValidElement(route?.element) && route.element.type !== Navigate).toBe(true)
+    }
+    const stocks = consoleRoutes.find(candidate => candidate.path === '/reports/stocks')
+    expect(isValidElement(stocks?.element) && stocks.element.type !== Navigate).toBe(true)
+  })
+
+  it('redirects the constructor and sale-file report screens to the BUG-1274 reports page', () => {
+    for (const path of ['/reports/constructor', '/reports/sale', '/reports/sales']) {
+      const route = consoleRoutes.find(candidate => candidate.path === path)
+      if (!isValidElement<{ to: string; replace?: boolean }>(route?.element)) throw new Error(`Expected ${path} to render a redirect`)
+      expect(route.element.type).toBe(Navigate)
+      expect(route.element.props).toMatchObject({ to: '/reports/stocks', replace: true })
     }
   })
 

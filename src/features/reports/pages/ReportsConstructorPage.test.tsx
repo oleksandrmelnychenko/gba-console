@@ -18,6 +18,8 @@ import { groupedCashWorkbookDataset } from '../data/groupedCashPeriod.test-fixtu
 
 const allowedPermissions = new Set<string>()
 
+vi.mock('../reportSurfacePolicy', () => ({ BUG_1274_ONLY_REPORT_SURFACE: false }))
+
 vi.mock('../../auth/useAuth', () => ({
   useAuth: () => ({
     user: { NetUid: 'constructor-user' },
@@ -80,7 +82,7 @@ function renderConstructor(menuRoute: string | null = '/reports/stocks', showNav
   )
 }
 
-describe('report constructor entry', () => {
+describe('report constructor entry with the BUG-1274-only surface off', () => {
   beforeEach(() => {
     allowedPermissions.clear()
     vi.clearAllMocks()

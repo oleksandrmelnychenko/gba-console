@@ -11,6 +11,8 @@ import type { ReportCatalogueEntry } from '../types'
 import { ReportCataloguePanel } from './ReportCataloguePanel'
 
 const auth = vi.hoisted(() => ({ allowed: true }))
+const surface = vi.hoisted(() => ({ only: false }))
+vi.mock('../reportSurfacePolicy', () => ({ get BUG_1274_ONLY_REPORT_SURFACE() { return surface.only } }))
 vi.mock('../../auth/useAuth', () => ({ useAuth: () => ({ hasPermission: () => auth.allowed }) }))
 vi.mock('../api/reportWorkspaceApi', () => ({ getReportCatalogue: vi.fn(), getReportDatasets: vi.fn() }))
 vi.mock('../api/originalCashStatementApi', () => ({ getOriginalCashCapability: vi.fn() }))
@@ -30,9 +32,16 @@ function mount(disabled = false, callerKey: string | null = 'approved-caller') {
   </I18nProvider></MantineProvider>)
 }
 beforeEach(() => {
-  vi.clearAllMocks(); auth.allowed = true; configure()
+  vi.clearAllMocks(); auth.allowed = true; surface.only = false; configure()
   vi.mocked(getReportDatasets).mockResolvedValue([])
   vi.mocked(getOriginalCashCapability).mockResolvedValue(cashCapabilityFixture())
+})
+it('the BUG-1274-only console catalogue keeps the cash report row without the original cash form', async () => {
+  surface.only = true
+  mount()
+  await screen.findByRole('button', { name: 'Покриття звіту: Відомість коштів' })
+  expect(screen.queryByRole('button', { name: 'Fenix · відомість коштів за період' })).toBeNull()
+  expect(getOriginalCashCapability).not.toHaveBeenCalled()
 })
 it('the console catalogue exposes only the identity-bound original cash form and opens its real panel', async () => {
   mount()

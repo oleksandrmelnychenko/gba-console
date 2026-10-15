@@ -1,4 +1,5 @@
 import { BUG_1274_ACTIVE_DATA_SOURCES, BUG_1274_DISABLED_MESSAGE } from '../data/reportMigration'
+import { BUG_1274_ONLY_REPORT_SURFACE } from '../reportSurfacePolicy'
 import { useWorkbookPresentation } from '../hooks/useWorkbookPresentation'
 import './stocks-workspace.css'
 import PaymentComparisonPanel from './PaymentComparisonPanel'
@@ -369,13 +370,15 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
   const retainedData = restoredData ?? activeTemplate?.Data
   const dataset = datasetStorage.datasets.find(item => item.DataSource === dataSource)
   const periodSupported = dataset?.PeriodSupported !== false
+  const bug1274Only = consoleScope && BUG_1274_ONLY_REPORT_SURFACE
+  const datasetHidden = bug1274Only && !BUG_1274_ACTIVE_DATA_SOURCES.has(dataSource)
   const [selectedMeasurements, setMeasurements] = useValueState<ReportMeasurementGroup[]>(createDefaultMeasurementGroups)
   const priceTypeDataset = useMemo(() => priceTypeSalesFormDataset(dataset, priceTypeSalesComparison), [dataset, priceTypeSalesComparison])
   const supplierDataset = useMemo(() => supplierBasisFormDataset(priceTypeDataset, supplierBasis), [priceTypeDataset, supplierBasis])
   const measurements = useMemo(() => retainStoredMeasurementLabels(retainedData, { dataSource, supplierBasis },
     datasetMeasurements(supplierDataset, flattenCheckedMeasurements(selectedMeasurements))),
   [dataSource, retainedData, selectedMeasurements, supplierBasis, supplierDataset])
-  const presets = useMemo(() => datasetPresets(dataset), [dataset])
+  const presets = useMemo(() => datasetHidden ? [] : datasetPresets(dataset), [dataset, datasetHidden])
   const groupingOrdering = useReportGroupingOrdering()
   const { rowGroups, setRowGroups, colGroups, setColGroups, ordering } = groupingOrdering
   const abc = useReportAbcClassification({ Row: rowGroups, Col: colGroups }, groupingOrdering.changeLayout, dataset)
@@ -873,11 +876,11 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
         </div> : null}
       <Group justify="flex-end" gap={8}>
         {!consoleScope && !constructorMode && canGenerateReport ? <Button component="a" href="/reports/registers" variant="default">{t('Звіти регістрів')}</Button> : null}
-        <Button type="button" variant="filled" disabled={consoleScope || !canGenerateReport}
+        {!bug1274Only ? <Button type="button" variant="filled" disabled={consoleScope || !canGenerateReport}
           aria-haspopup="dialog" aria-expanded={oneCReportOpen} onClick={() => setOneCReportOpen(true)}>
           {t('Валовий прибуток — як у 1С')}
-        </Button>
-        {consoleScope ? <Badge color="green">Готово</Badge> : null}
+        </Button> : null}
+        {consoleScope && !bug1274Only ? <Badge color="green">Готово</Badge> : null}
       </Group>
       </div>
       {!constructorMode && canGenerateReport && datasetStorage.loaded && !datasetStorage.error && workbookLaunches.length > 0
@@ -965,7 +968,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
       {canGenerateReport && catalogueNotice ? <Alert color={catalogueNotice.failed ? 'red' : 'blue'} style={{ flexShrink: 0 }}
         title={t(catalogueNotice.failed ? 'Не вдалося відкрити звіт' : 'Звіт відкрито в конструкторі')}
         withCloseButton onClose={() => setCatalogueNotice(null)}>{catalogueNotice.text}</Alert> : null}
-      {!constructorMode ? <>{dataSource === 31 ? <AgreementPriceComparisonPanel value={agreementPriceComparison ?? defaultAgreementPriceComparison()} disabled={comparisonSettingsDisabled} onChange={setAgreementPriceComparison} />
+      {!constructorMode && !datasetHidden ? <>{dataSource === 31 ? <AgreementPriceComparisonPanel value={agreementPriceComparison ?? defaultAgreementPriceComparison()} disabled={comparisonSettingsDisabled} onChange={setAgreementPriceComparison} />
         : requiresValuationAgreement(dataSource) ? <ValuationAgreementPicker purpose={dataSource === 22 ? 'prices' : 'stock'} value={valuationClientAgreementId} enabled={canGenerateReport} disabled={isLoading}
         agreement={valuation.agreement} validating={valuation.loading} validationError={valuation.error}
         onChange={setValuationAgreementId} onRetry={valuation.retry} /> : dataSource === 29
@@ -976,7 +979,8 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
         constructorSection={constructorSection}
         onConstructorSectionChange={navigateConstructorSection}
         analysisCount={[topGroups, threshold, hideZero, abcClassification, ordering].filter(value => value != null).length}
-        datasetPanel={<ReportDatasetPicker compact activeDataSources={consoleScope ? BUG_1274_ACTIVE_DATA_SOURCES : undefined} datasets={datasetStorage.datasets} selected={dataSource}
+        datasetPanel={<ReportDatasetPicker compact activeDataSources={consoleScope ? BUG_1274_ACTIVE_DATA_SOURCES : undefined}
+          datasets={bug1274Only ? datasetStorage.datasets.filter(item => BUG_1274_ACTIVE_DATA_SOURCES.has(item.DataSource)) : datasetStorage.datasets} selected={dataSource}
           disabled={!canGenerateReport || isLoading} loaded={datasetStorage.loaded} error={datasetStorage.error}
           onChange={changeDataset} onRetry={datasetStorage.retry} />}
         catalogueControl={<ReportCatalogueControl consoleScope={consoleScope} presentation="dialog" enabled={canGenerateReport}
@@ -1006,21 +1010,21 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
           (oneCSpecialSpecification(dataSource) ? defaultOneCSpecialSettings(dataSource, dataset)[oneCSpecialSpecification(dataSource)!.key] : undefined)}
           disabled={comparisonSettingsDisabled} onChange={setOneCSpecialSettings} />}
         classificationPanel={<>{workbook.panel(dataset, reportBody, comparisonSettingsDisabled)}
-          {dataSource === 39 ? <><OriginalVparivanieReportPanel request={reportBody} enabled={canGenerateReport}
-            disabled={comparisonSettingsDisabled} callerKey={ownerId} />
+          {dataSource === 39 ? <>{!bug1274Only ? <OriginalVparivanieReportPanel request={reportBody} enabled={canGenerateReport}
+            disabled={comparisonSettingsDisabled} callerKey={ownerId} /> : null}
           <CurrentVparivanieRegionalPanel dataset={dataset ?? null} request={reportBody}
           enabled={canGenerateReport} disabled={comparisonSettingsDisabled}
           fullScope={fullCurrentVparivanie} onFullScopeChange={setFullCurrentVparivanie} /></> : dataSource === 41 || dataSource === 40 ? <CashSettlementSettingsPanels dataSource={dataSource}
           cash={{ dataset, grouped: groupedCashPeriod, exact: cashPeriod, rows: rowGroups,
             available: groupingOptions, onRowsChange: workbook.changeCashRows, disabled: comparisonSettingsDisabled, enabled: canGenerateReport,
-            readMode: cashReadMode, onReadModeChange: setCashReadMode }}
+            readMode: cashReadMode, onReadModeChange: setCashReadMode, hideRegisterReadMode: bug1274Only }}
           settlement={{ dataset, grouped: groupedSettlementPeriod, exact: settlementPeriod,
             buyer: sourceBuyerSubtree, groups: sourceCounterpartyGroups, rows: rowGroups,
             available: groupingOptions, from, to, disabled: comparisonSettingsDisabled, enabled: canGenerateReport,
             onModeChange: changeSettlementMode, onGroupedChange: setGroupedSettlementPeriod,
             onExactChange: setSettlementPeriod, onBuyerChange: setSourceBuyerSubtree,
             onRowsChange: setRowGroups, onGroupsChange: setSourceCounterpartyGroups,
-            readMode: settlementReadMode, onReadModeChange: mode => {
+            readMode: settlementReadMode, hideRegisterReadMode: bug1274Only, onReadModeChange: mode => {
               setSettlementReadMode(mode)
               if (mode == null) return
               setGroupedSettlementPeriod(defaultGroupedSettlementPeriod())
@@ -1029,7 +1033,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
           onGroupedCashChange={workbook.changeGroupedCash} onExactCashChange={setCashPeriod}
           onCashMeasurementsChange={setMeasurements} onClearCashFilters={() => filterLogic.load([])} /> : dataSource === 35 ? <Card className="app-section-card" withBorder radius="md" padding="md" style={{ minWidth: 0 }}>
           <ProfitReadModeSelect capability={dataset?.profitReadMode} value={profitReadMode}
-            disabled={comparisonSettingsDisabled} onChange={mode => {
+            disabled={comparisonSettingsDisabled} hideRegister={bug1274Only} onChange={mode => {
               setProfitReadMode(mode)
               if (mode != null) setDayOrganizationBasis(0)
               if (mode === 0) workbook.reset(undefined)
@@ -1070,7 +1074,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
         </Card> : dataSource === 38 && isSupplierSourceWorldCapability(dataset?.supplierSourceWorld)
           ? <Card className="app-section-card" withBorder radius="md" padding="md" style={{ minWidth: 0 }}>
             <ProfitReadModeSelect capability={dataset?.profitReadMode} value={profitReadMode}
-              disabled={comparisonSettingsDisabled} onChange={mode => {
+              disabled={comparisonSettingsDisabled} hideRegister={bug1274Only} onChange={mode => {
                 setProfitReadMode(mode)
                 if (mode === 0) setSupplierSourceWorld(undefined)
                 if (mode === 1) setSupplierSourceWorld(0)
@@ -1126,6 +1130,8 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
         xyzPanel={dataSource === 15 ? <SalesXyzPanel value={xyz} disabled={comparisonSettingsDisabled} onChange={setXyz} /> : null}
         comparisonPanel={dataSource === 13 ? <ClientComparisonPeriodPanel value={comparison} disabled={comparisonSettingsDisabled} onChange={setComparison} /> : null}
         periodSupported={periodSupported}
+        datasetHidden={datasetHidden}
+        templateDataSources={bug1274Only ? BUG_1274_ACTIVE_DATA_SOURCES : undefined}
         presets={presets}
         configurationReady={!configurationError}
         onApplyPreset={applyPreset}
@@ -1242,6 +1248,8 @@ type ReportBuilderFormProps = {
   onGroupingLayoutChange: (layout: ReportGroupingLayout) => void
   dataSource: number
   periodSupported: boolean
+  datasetHidden: boolean
+  templateDataSources?: ReadonlySet<number>
   presets: ReturnType<typeof datasetPresets>
   configurationReady: boolean
   templateStorage: ReturnType<typeof useServerReportTemplates>
@@ -1388,7 +1396,7 @@ function ReportBuilderForm(props: ReportBuilderFormProps) {
           <div className="reports-stocks-toolbar-fields">
           {datasetPanel}
           <ReportPeriodInputs dataSource={dataSource} supported={periodSupported} from={from} to={to} maxDate={maxDate} disabled={constructorMode && isLoading} onFromChange={onFromChange} onToChange={onToChange} />
-          {!constructorMode ? comparisonPanel : null}
+          {!constructorMode && !props.datasetHidden ? comparisonPanel : null}
           <div className="app-filter-actions reports-stocks-actions">
             {catalogueControl}
             <Button color="brand" variant="filled" size="sm" className="app-filter-primary-action"
@@ -1427,7 +1435,9 @@ function ReportBuilderForm(props: ReportBuilderFormProps) {
         {constructorMode && !canSubmit ? <Text id="report-constructor-blocked-reason" className="report-constructor-blocked-reason" size="xs" c="gray.7">{submitBlockedReason}</Text> : null}
         {!constructorMode && presets.length ? <ReportQuickPresets disabled={isLoading || !configurationReady} presets={presets} onApply={onApplyPreset} /> : null}
 
-        <ReportBuilderContent {...props} />
+        {props.datasetHidden ? <Alert className="reports-page-alert" color="blue" icon={<CircleAlert size={18} />}>
+          {t('Оберіть звіт у полі «Набір даних звіту» або відкрийте часткову форму за зразком Excel.')}
+        </Alert> : <ReportBuilderContent {...props} />}
 
         <AppModal
           centered
@@ -1444,6 +1454,7 @@ function ReportBuilderForm(props: ReportBuilderFormProps) {
             ordering={props.templateStorage.ordering}
             storage={templateStorage}
             datasets={props.templateDatasets}
+            dataSources={props.templateDataSources}
             callerKey={props.templateCallerKey}
             configurationReady={configurationReady}
             notice={templateNotice}

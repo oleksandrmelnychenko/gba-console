@@ -16,6 +16,7 @@ import { datasetGroupings } from './reportDatasets'
 import { isCurrentVparivanieDataset } from './currentVparivanie'
 import { FENIX_BUYERS_ROOT_ID, isProductClassificationCapability, isSourceBuyerSubtreeCapability,
   isSourceOrganizationsCapability } from './nativeExactFilters'
+import { BUG_1274_ONLY_REPORT_SURFACE } from '../reportSurfacePolicy'
 
 export type WorkbookLaunch = {
   fileName: string
@@ -25,7 +26,9 @@ export type WorkbookLaunch = {
   currencyAxis?: boolean
 }
 
-export const SETTLEMENT_READ_MODE_NOTICE = 'Форма відкривається з джерелом «Поточні документи GBA»: документи GBA та початкові залишки на 01.01.2025, період від 01.01.2025 до 120 календарних місяців. Для розрахунку за регістрами 1С оберіть «Збережені регістри 1С» у джерелі розрахунку.'
+export const SETTLEMENT_READ_MODE_NOTICE = BUG_1274_ONLY_REPORT_SURFACE
+  ? 'Форма відкривається з джерелом «Поточні документи GBA»: документи GBA та початкові залишки на 01.01.2025, період від 01.01.2025 до 120 календарних місяців.'
+  : 'Форма відкривається з джерелом «Поточні документи GBA»: документи GBA та початкові залишки на 01.01.2025, період від 01.01.2025 до 120 календарних місяців. Для розрахунку за регістрами 1С оберіть «Збережені регістри 1С» у джерелі розрахунку.'
 export const CASH_READ_MODE_NOTICE = SETTLEMENT_READ_MODE_NOTICE
 
 const supported = [
@@ -109,7 +112,8 @@ export function availableBug1274WorkbookLaunches(datasets: readonly ReportDatase
 
 function profitReadModeNotice(dataSource: number, dataset: ReportDataset): string {
   const original = dataSource === 35 ? '«Збережені регістри 1С» і відбори Fenix' : '«Збережені регістри 1С»'
-  return `Форма відкривається з джерелом «Поточні документи GBA»: продажі та повернення з поточних документів за період до ${currentProfitMaximumDays(dataset.profitReadMode)} календарних днів. Повна відповідність 1С ще не підтверджена. Для розрахунку за регістрами 1С оберіть ${original}.`
+  const notice = `Форма відкривається з джерелом «Поточні документи GBA»: продажі та повернення з поточних документів за період до ${currentProfitMaximumDays(dataset.profitReadMode)} календарних днів. Повна відповідність 1С ще не підтверджена.`
+  return BUG_1274_ONLY_REPORT_SURFACE ? notice : `${notice} Для розрахунку за регістрами 1С оберіть ${original}.`
 }
 
 function groupedCashNotice(dataset: ReportDataset): string {

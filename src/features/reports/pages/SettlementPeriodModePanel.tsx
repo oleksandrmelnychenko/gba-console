@@ -19,12 +19,12 @@ type Props = {
   onGroupedChange: (value: unknown) => void; onExactChange: (value: unknown) => void
   onBuyerChange: (value: unknown) => void; onRowsChange: (value: ReportGroupingItem[]) => void
   onGroupsChange: (value: unknown) => void
-  readMode?: unknown; onReadModeChange?: (value: 0 | 1 | undefined) => void
+  readMode?: unknown; onReadModeChange?: (value: 0 | 1 | undefined) => void; hideRegisterReadMode?: boolean
 }
 
 export function SettlementPeriodModePanel({ dataset, grouped, exact, buyer, groups, available, rows, from, to,
   disabled, enabled, onModeChange, onGroupedChange, onExactChange, onBuyerChange, onRowsChange, onGroupsChange,
-  readMode, onReadModeChange }: Props) {
+  readMode, onReadModeChange, hideRegisterReadMode = false }: Props) {
   const { t } = useI18n()
   if (!dataset || !isSettlementPeriodDataset(dataset)) return null
   const supported = isGroupedSettlementDataset(dataset)
@@ -39,7 +39,7 @@ export function SettlementPeriodModePanel({ dataset, grouped, exact, buyer, grou
       ]} onChange={next => { if (next === 'buyers' || next === 'agreement') onModeChange(next) }} />}
     {isGroup && supported ? <>
       {onReadModeChange && <SettlementReadModeSelect capability={dataset.settlementReadMode} value={readMode}
-        disabled={disabled} onChange={onReadModeChange} />}
+        disabled={disabled} hideRegister={hideRegisterReadMode} onChange={onReadModeChange} />}
       <Select label={t('База взаєморозрахунків')} disabled={disabled || explicitSource} allowDeselect={false}
         value={selector?.SourceWorld ?? null} data={[{ value: 'Fenix', label: 'Fenix' }, { value: 'Amg', label: 'AMG' }]}
         onChange={world => {

@@ -19,6 +19,7 @@ type Props = {
   configurationReady: boolean
   disabled?: boolean
   datasets?: readonly ReportDataset[]
+  dataSources?: ReadonlySet<number>
   callerKey?: string | null
   notice: string | null
   templateName: string
@@ -33,7 +34,7 @@ type Props = {
   onRefresh: () => void
 }
 
-export function ReportTemplatesPanel({ storage, ordering, configurationReady, disabled = false, datasets = emptyDatasets, callerKey = null, notice, templateName,
+export function ReportTemplatesPanel({ storage, ordering, configurationReady, disabled = false, datasets = emptyDatasets, dataSources, callerKey = null, notice, templateName,
   activeTemplate, onNameChange, onApply, onSave, onUpdate, onRenamed, onDeleted, onClearNotice, onRefresh }: Props) {
   const { t } = useI18n()
   const [action, setAction] = useState<Action | null>(null)
@@ -42,6 +43,9 @@ export function ReportTemplatesPanel({ storage, ordering, configurationReady, di
   const blocked = disabled || storage.busy || !storage.ready
   const current = activeTemplate ? storage.templates.find(item => item.Id === activeTemplate.Id) : undefined
   const stale = Boolean(activeTemplate && (!current || current.Revision !== activeTemplate.Revision))
+  const listed = (template: ReportTemplate) => !dataSources || dataSources.has(template.Data.dataSource ?? 0)
+  const listedStorage = dataSources ? { ...storage, templates: storage.templates.filter(listed) } : storage
+  const browserTemplates = storage.browserTemplates.filter(listed)
 
 
   return <div className="reports-stocks-template-card">
@@ -66,17 +70,17 @@ export function ReportTemplatesPanel({ storage, ordering, configurationReady, di
     {action ? <TemplateActionController action={action} titleId={actionTitleId} blocked={blocked} storage={storage}
       onNameChange={name => setAction({ ...action, name })} onRenamed={onRenamed} onDeleted={onDeleted}
       onComplete={() => setAction(null)} /> : null}
-    {ordering ? <ReportTemplateOrderingControls key={callerKey} ordering={ordering} blocked={blocked} busy={storage.busy} /> : null}
-    <SavedTemplatesSection storage={storage} blocked={blocked} disabled={disabled} onRefresh={onRefresh} onApply={onApply}
+    {ordering && !dataSources ? <ReportTemplateOrderingControls key={callerKey} ordering={ordering} blocked={blocked} busy={storage.busy} /> : null}
+    <SavedTemplatesSection storage={listedStorage} blocked={blocked} disabled={disabled} onRefresh={onRefresh} onApply={onApply}
       onRunSaved={template => setSavedVariant(structuredClone(template))}
       onAction={(template, kind) => {
         onClearNotice()
         setAction({ kind, template, name: kind === 'copy' ? `${template.Name} — ${t('копія')}` : template.Name })
       }} />
-    {storage.browserTemplates.length ? <Stack gap="xs">
+    {browserTemplates.length ? <Stack gap="xs">
       <Text fw={600} size="sm">{t('Шаблони цього браузера')}</Text>
       <Text size="xs" c="dimmed">{t('Імпортуйте потрібні шаблони у свій обліковий запис. Оригінали залишаться в браузері.')}</Text>
-      {storage.browserTemplates.map(template => <Group key={JSON.stringify({ Name: template.Name, Data: template.Data })} justify="space-between">
+      {browserTemplates.map(template => <Group key={JSON.stringify({ Name: template.Name, Data: template.Data })} justify="space-between">
         <Text size="sm">{template.Name}</Text><Button type="button" size="xs" variant="light" disabled={blocked}
           onClick={() => { onClearNotice(); void storage.importBrowserTemplate(template) }}>{t('Імпортувати на сервер')}</Button>
       </Group>)}

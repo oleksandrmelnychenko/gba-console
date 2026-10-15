@@ -1,4 +1,4 @@
-import { expect, it } from 'vitest'
+import { beforeEach, expect, it, vi } from 'vitest'
 import { cashPeriodDataset } from './cashPeriod.test-fixtures'
 import { settlementPeriodDataset } from './settlementPeriod.test-fixtures'
 import { currentVparivanieDataset } from './currentVparivanie.test-fixtures'
@@ -14,6 +14,10 @@ import { cashModeDataset } from './cashReadMode.test-fixtures'
 import { settlementModeDataset } from './settlementReadMode.test-fixtures'
 import { DAY_ORGANIZATION_GOODS_KIND_ID, DAY_ORGANIZATION_SAVED_ORGANIZATION_IDS } from './dayOrganizationGrossProfit'
 import { FENIX_BUYERS_ROOT_ID, nativeExactFiltersConfigurationError } from './nativeExactFilters'
+
+const surface = vi.hoisted(() => ({ only: true }))
+vi.mock('../reportSurfacePolicy', () => ({ get BUG_1274_ONLY_REPORT_SURFACE() { return surface.only } }))
+beforeEach(() => { surface.only = true })
 
 const dayDataset: ReportDataset = {
   DataSource: 35, Name: 'Валовий прибуток за днем', Description: '', PeriodRequired: true, PeriodSupported: true,
@@ -214,12 +218,16 @@ it('opens every workbook with an advertised source on current GBA documents and 
     expect(mode(opened)).toBe(0)
     expect(datasetConfigurationError(opened, launch.dataset)).toBeNull()
     expect(launch.notice).toContain('Форма відкривається з джерелом «Поточні документи GBA»')
-    expect(launch.notice).toContain('«Збережені регістри 1С»')
+    expect(launch.notice).not.toContain('«Збережені регістри 1С»')
   }
   const current = bug1274WorkbookRequest(defaultDatasetRequest(profitDayDataset, day, day), launches[0])
   expect(current.workbookPresentation).toBeUndefined()
   expect(current.sourceOrganizations).toBeUndefined()
-  expect(launches[0].notice).toContain('«Збережені регістри 1С» і відбори Fenix')
+  surface.only = false
+  const [dayLaunchWithRegisters, supplierLaunchWithRegisters] = availableBug1274WorkbookLaunches([profitDayDataset, profitSupplierDataset])
+  expect(dayLaunchWithRegisters.notice).toContain('«Збережені регістри 1С» і відбори Fenix')
+  expect(supplierLaunchWithRegisters.notice).toContain('«Збережені регістри 1С»')
+  surface.only = true
   const original = bug1274WorkbookRequest({ ...defaultDatasetRequest(profitDayDataset, day, day), profitReadMode: 1 }, launches[0])
   expect(original).toMatchObject({ profitReadMode: 1, dayOrganizationBasis: 0,
     sourceOrganizations: { OrganizationIds: [...DAY_ORGANIZATION_SAVED_ORGANIZATION_IDS] },

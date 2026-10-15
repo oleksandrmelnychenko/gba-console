@@ -1,7 +1,11 @@
-import { describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { ReportCatalogue, ReportSourceMigration } from '../types'
 import { consoleReportAvailability, filterConsoleMigrationCatalogue, filterMigrationCatalogue, inspectCatalogueMigration, isReportCatalogue, readSourceMigration, sourceIdentity } from './reportMigration'
 import { catalogueFixture, migrationFixture, sourceHash } from './reportMigration.test-fixtures'
+
+const surface = vi.hoisted(() => ({ only: true }))
+vi.mock('../reportSurfacePolicy', () => ({ get BUG_1274_ONLY_REPORT_SURFACE() { return surface.only } }))
+beforeEach(() => { surface.only = true })
 
 describe('per-implementation migration evidence', () => {
   it('keeps worlds distinct and requires all implementations before counting a completed entry', () => {
@@ -64,7 +68,31 @@ describe('per-implementation migration evidence', () => {
     expect(view.summary.FullyVerifiedEntries).toBe(0)
   })
 
-  it('keeps only BUG-1274 active rows and marks other executable rows ready-disabled', () => {
+  function catalogueWithOtherReadyReport() {
+    const catalogue = catalogueFixture()
+    catalogue.Reports[0].Id = 'builtin:ВедомостьВзаиморасчетыСКонтрагентами'
+    catalogue.Reports[0].Name = 'ВедомостьВзаиморасчетыСКонтрагентами'
+    catalogue.Reports.push({ Id: 'builtin:OtherReady', Name: 'OtherReady', Title: 'Інший готовий', Kind: 'builtin', Sources: [
+      { World: 'fenix', SourceId: 'other', DefinitionSha256: sourceHash, Attributes: [], Migration: migrationFixture('native_partial') },
+    ] })
+    const view = inspectCatalogueMigration({ ...catalogue, Migration: { ...catalogue.Migration!, Summary: {
+      ...catalogue.Migration!.Summary, CatalogueEntries: 4, SourceImplementations: 5, BuiltinImplementations: 3,
+      ByStatus: { ...catalogue.Migration!.Summary.ByStatus, NativePartial: 2 },
+    } } })
+    return { catalogue, view }
+  }
+
+  it('keeps only BUG-1274 rows in the BUG-1274-only surface and hides other executable rows', () => {
+    const { catalogue, view } = catalogueWithOtherReadyReport()
+    expect(view.valid).toBe(true)
+    expect(consoleReportAvailability(catalogue.Reports[0], view)).toBe('active')
+    expect(consoleReportAvailability(catalogue.Reports[3], view)).toBe('hidden')
+    expect(filterConsoleMigrationCatalogue(catalogue, view, { kind: null, world: null, status: null, dependency: null, search: '' })
+      .map(item => item.report.Id)).toEqual(['builtin:ВедомостьВзаиморасчетыСКонтрагентами'])
+  })
+
+  it('keeps only BUG-1274 active rows and marks other executable rows ready-disabled when the BUG-1274-only surface is off', () => {
+    surface.only = false
     const catalogue = catalogueFixture(), view = inspectCatalogueMigration(catalogue)
     catalogue.Reports[0].Id = 'builtin:ВедомостьВзаиморасчетыСКонтрагентами'
     catalogue.Reports[0].Name = 'ВедомостьВзаиморасчетыСКонтрагентами'

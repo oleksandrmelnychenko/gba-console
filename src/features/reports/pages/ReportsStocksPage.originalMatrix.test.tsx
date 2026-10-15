@@ -11,6 +11,8 @@ import { matrixCapability } from '../testing/originalVparivanieFixtures'
 import { originalScopeBinding, originalScopeWireTemplate, scopedMatrixFixture } from '../testing/originalVparivanieScopeFixtures'
 import { ReportsStocksPage } from './ReportsStocksPage'
 
+const surface = vi.hoisted(() => ({ only: false }))
+vi.mock('../reportSurfacePolicy', () => ({ get BUG_1274_ONLY_REPORT_SURFACE() { return surface.only } }))
 vi.mock('../../auth/useAuth', () => ({ useAuth: () => ({ hasPermission: () => true }) }))
 vi.mock('./ReportCatalogueControl', () => ({ ReportCatalogueControl: () => null }))
 vi.mock('../api/reportWorkspaceApi', async original => ({ ...await original<typeof import('../api/reportWorkspaceApi')>(), getReportDatasets: vi.fn(), getServerReportTemplates: vi.fn() }))
@@ -20,7 +22,7 @@ const dataset = { ...currentVparivanieDataset, currentVparivanie: { ...currentVp
   FullScopeVersion: 1, FullScopeContract: 'OneOurSnapshotCompleteSelectedScope', FullScopeMaximumRows: 500000,
   FullScopeMaximumSelectedProducts: 4096, FullScopeMaximumColumns: 256, FullScopeMaximumAddressedCells: 1000000 } }
 beforeEach(() => {
-  vi.clearAllMocks(); localStorage.clear()
+  vi.clearAllMocks(); localStorage.clear(); surface.only = false
   Object.defineProperty(HTMLElement.prototype, 'scrollIntoView', { configurable: true, value: vi.fn() })
   vi.mocked(getReportDatasets).mockResolvedValue([...reportDatasets, dataset])
   vi.mocked(getServerReportTemplates).mockResolvedValue([normalizeSavedTemplate(originalScopeWireTemplate())])
@@ -43,4 +45,17 @@ it('opens the exact full-period saved form and runs its mounted original matrix 
   expect(screen.getByRole('table')).toBeTruthy()
   fireEvent.submit(container.querySelector('form')!)
   expect(createStockReport).not.toHaveBeenCalled(); expect(previewStockReport).not.toHaveBeenCalled()
+})
+it('opens the saved form 39 without the original matrix in the BUG-1274-only surface', async () => {
+  surface.only = true
+  const { container } = render(<MantineProvider env="test"><I18nProvider><ReportsStocksPage /></I18nProvider></MantineProvider>)
+  await screen.findByText('Часткові форми за зразками Excel')
+  fireEvent.click(screen.getByRole('button', { name: 'Шаблони' }))
+  fireEvent.click(await screen.findByRole('button', { name: /Відкрити для редагування: Оригінальна повна матриця/ }))
+  await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
+  expect((screen.getByLabelText('Від') as HTMLInputElement).value).toBe('2025-01-01')
+  expect(screen.queryByRole('button', { name: 'Переглянути оригінальну матрицю' })).toBeNull()
+  expect(container.querySelector('form')).toBeTruthy()
+  expect(getOriginalMatrixCapability).not.toHaveBeenCalled()
+  expect(readScopedOriginalMatrix).not.toHaveBeenCalled()
 })
