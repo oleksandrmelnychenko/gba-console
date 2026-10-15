@@ -12,7 +12,10 @@ import { formatKyivBusinessDate } from '../../../shared/date/dateTime'
 import { profitDayDataset, profitSupplierDataset } from './profitReadMode.test-fixtures'
 import { cashModeDataset } from './cashReadMode.test-fixtures'
 import { settlementModeDataset } from './settlementReadMode.test-fixtures'
-import { DAY_ORGANIZATION_GOODS_KIND_ID, DAY_ORGANIZATION_SAVED_ORGANIZATION_IDS } from './dayOrganizationGrossProfit'
+import { DAY_ORGANIZATION_GOODS_KIND_ID, DAY_ORGANIZATION_OUT_OF_SCOPE_ORGANIZATION_IDS, DAY_ORGANIZATION_SAVED_ORGANIZATION_IDS } from './dayOrganizationGrossProfit'
+import { groupCapability } from './sourceCounterpartyGroups.test-fixtures'
+import { SETTLEMENT_WORKBOOK_EXCLUDED_GROUPS } from './sourceCounterpartyGroups'
+import { DAY_WORKBOOK_FILTERS_NOTICE, SETTLEMENT_WORKBOOK_EXCLUSIONS_NOTICE } from './bug1274WorkbookLaunch'
 import { FENIX_BUYERS_ROOT_ID, nativeExactFiltersConfigurationError } from './nativeExactFilters'
 
 const surface = vi.hoisted(() => ({ only: true }))
@@ -141,6 +144,36 @@ it('preserves the two settlement workbook layouts and independent currency witne
   expect(request.sorted.Row.map(row => row.type)).toEqual([4, 41, 76])
 })
 
+it('opens «Взаємороз всі.xls» on current documents without the three excluded counterparty groups of the workbook', () => {
+  const dataset = { ...settlementModeDataset, sourceCounterpartyGroups: groupCapability }
+  const launches = availableBug1274WorkbookLaunches([dataset])
+  const all = launches.find(item => item.fileName === 'Взаємороз всі.xls')!
+  const debt = launches.find(item => item.fileName === 'ДБіторка.xls')!
+  const day = previousKyivDay(formatKyivBusinessDate())
+  const request = defaultDatasetRequest(dataset, day, day), before = structuredClone(request)
+  const opened = bug1274WorkbookRequest(request, all)
+  expect(opened).toMatchObject({ settlementReadMode: 0, sourceBuyerSubtree: { BuyerRootId: FENIX_BUYERS_ROOT_ID },
+    sourceCounterpartyGroups: { Version: 1, SourceWorld: 'fenix', IncludeGroupIds: [],
+      ExcludeGroupIds: ['A156005056C0000811E182DA08AE7D43', 'B1A7005056C0000811E18EBBAA67CF52', '8AB2005056C0000811DEFEBB3581EBEC'] },
+    workbookPresentation: { version: 1, additionalFields: [30, 60, 61], ordering: null } })
+  expect(opened.selections).toEqual([])
+  expect(opened.sorted.Row.map(row => row.type)).toEqual([4, 41, 76])
+  expect(datasetConfigurationError(opened, dataset)).toBeNull()
+  expect(request).toEqual(before)
+  expect(all.notice).toContain(SETTLEMENT_WORKBOOK_EXCLUSIONS_NOTICE)
+  expect(SETTLEMENT_WORKBOOK_EXCLUDED_GROUPS.map(group => group.Name)).toEqual(['Харків Скляр', 'Ніжин - ФОП Гречківська О.І.', 'НЕВІДОМІ'])
+  const debtor = bug1274WorkbookRequest(request, debt)
+  expect(debtor).not.toHaveProperty('sourceCounterpartyGroups')
+  expect(debt.notice).not.toContain(SETTLEMENT_WORKBOOK_EXCLUSIONS_NOTICE)
+  const explicit = { ...request, sourceCounterpartyGroups: undefined }
+  expect(bug1274WorkbookRequest(explicit, all).sourceCounterpartyGroups).toBeUndefined()
+  const legacy = { ...request, settlementReadMode: 1 }
+  expect(bug1274WorkbookRequest(legacy, all)).not.toHaveProperty('sourceCounterpartyGroups')
+  const withoutCapability = availableBug1274WorkbookLaunches([settlementModeDataset]).find(item => item.fileName === 'Взаємороз всі.xls')!
+  expect(bug1274WorkbookRequest(defaultDatasetRequest(settlementModeDataset, day, day), withoutCapability)).not.toHaveProperty('sourceCounterpartyGroups')
+  expect(withoutCapability.notice).not.toContain(SETTLEMENT_WORKBOOK_EXCLUSIONS_NOTICE)
+})
+
 const currentDayDataset: ReportDataset = { ...dayDataset,
   dayOrganizationBasis: { Version: 1, DefaultBasis: 0, Bases: [0, 1], OperationalMaximumDays: 31,
     SignedRegisterMaximumDays: 1, LegacyInferenceWhenAbsent: true } }
@@ -161,7 +194,8 @@ it('opens the day workbook with its three exact retained filters and keeps the o
   organizations.OrganizationIds.pop(); result.sorted.Row[0].label = 'Changed'
   expect(request).toEqual(before)
   expect(defaultDatasetRequest(currentDayDataset, request.from, request.to)).toEqual(before)
-  expect(DAY_ORGANIZATION_SAVED_ORGANIZATION_IDS).toHaveLength(5)
+  expect(DAY_ORGANIZATION_SAVED_ORGANIZATION_IDS).toHaveLength(4)
+  expect(DAY_ORGANIZATION_SAVED_ORGANIZATION_IDS).not.toContain(DAY_ORGANIZATION_OUT_OF_SCOPE_ORGANIZATION_IDS[0])
 })
 
 it.each(['productClassification', 'sourceOrganizations', 'sourceBuyerSubtree'] as const)(
@@ -221,8 +255,12 @@ it('opens every workbook with an advertised source on current GBA documents and 
     expect(launch.notice).not.toContain('«Збережені регістри 1С»')
   }
   const current = bug1274WorkbookRequest(defaultDatasetRequest(profitDayDataset, day, day), launches[0])
-  expect(current.workbookPresentation).toBeUndefined()
-  expect(current.sourceOrganizations).toBeUndefined()
+  expect(current).toMatchObject({ profitReadMode: 0, dayOrganizationBasis: 0,
+    productClassification: { Version: 1, SourceWorld: 0, ProductKindId: DAY_ORGANIZATION_GOODS_KIND_ID, IsService: false },
+    sourceOrganizations: { Version: 1, SourceWorld: 'fenix', OrganizationIds: [...DAY_ORGANIZATION_SAVED_ORGANIZATION_IDS] },
+    sourceBuyerSubtree: { Version: 1, SourceWorld: 'fenix', BuyerRootId: FENIX_BUYERS_ROOT_ID },
+    workbookPresentation: { version: 1, additionalFields: [2, 3], ordering: 'MonthAscending' } })
+  expect(launches[0].notice).toContain(DAY_WORKBOOK_FILTERS_NOTICE)
   surface.only = false
   const [dayLaunchWithRegisters, supplierLaunchWithRegisters] = availableBug1274WorkbookLaunches([profitDayDataset, profitSupplierDataset])
   expect(dayLaunchWithRegisters.notice).toContain('«Збережені регістри 1С» і відбори Fenix')

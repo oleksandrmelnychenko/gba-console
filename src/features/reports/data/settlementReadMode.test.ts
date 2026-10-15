@@ -1,7 +1,7 @@
 import { expect, it } from 'vitest'
 import { normalizeSavedTemplate, parseReportDatasets } from '../api/reportWorkspaceApi'
 import { availableBug1274WorkbookLaunches, bug1274WorkbookRequest, SETTLEMENT_READ_MODE_NOTICE } from './bug1274WorkbookLaunch'
-import { groupedSettlementConfigurationError } from './groupedSettlementPeriod'
+import { groupedSettlementConfigurationError, settlementFormDataset } from './groupedSettlementPeriod'
 import { buildReportBuilderRequest } from './reportBuilderRequest'
 import { datasetConfigurationError, datasetMeasurements, datasetPresetRequest, defaultDatasetRequest, withDefaultReadModes } from './reportDatasets'
 import { reportDatasets } from './reportDatasets.test-fixtures'
@@ -102,14 +102,25 @@ it('applies current documents to a saved request without a mode and reports the 
   }
   expect(withDefaultReadModes(saved, plain)).toBe(saved)
   const filtered = withDefaultReadModes({ ...unmarked('2025-01-01', today), selections: [organization] }, dataset)
-  expect(groupedSettlementConfigurationError(filtered, dataset, today)).toBe('Взаєморозрахунки з документів GBA формуються для всієї групи «Покупці» без додаткових відборів.')
-  expect(groupedSettlementConfigurationError({ ...filtered, selections: [{ ...organization, IsChecked: false }] }, dataset, today)).toBeNull()
+  expect(groupedSettlementConfigurationError(filtered, dataset, today)).toBeNull()
+  for (const type of [6, 9, 30]) {
+    const selection = { ...organization, SelectedField: { Type: type, Name: String(type) }, FilterCondition: { Type: 4, Name: 'Не в списку' } }
+    expect(groupedSettlementConfigurationError({ ...filtered, selections: [selection] }, dataset, today)).toBeNull()
+  }
+  for (const type of [17, 18, 60, 61]) {
+    const selection = { ...organization, SelectedField: { Type: type, Name: String(type) } }
+    expect(groupedSettlementConfigurationError({ ...filtered, selections: [selection] }, dataset, today))
+      .toBe('Для документів GBA доступні відбори організації, контрагента, договору та валюти; відбори постачальника, менеджера й коду регіону недоступні.')
+    expect(groupedSettlementConfigurationError({ ...filtered, selections: [{ ...selection, IsChecked: false }] }, dataset, today)).toBeNull()
+  }
   expect(groupedSettlementConfigurationError({ ...filtered, settlementReadMode: 1 }, dataset, today)).toBeNull()
   const grouped = { ...dataset, sourceCounterpartyGroups: { Version: 1, SourceWorld: 'fenix', MaximumGroupIds: 64,
     UsesCurrentCapturedHierarchy: true, ExclusionsTakePrecedence: true, GroupIdFormat: '32 hexadecimal characters (16 bytes)' } }
-  const groups = { ...filtered, selections: [], sourceCounterpartyGroups: { Version: 1, SourceWorld: 'fenix', IncludeGroupIds: ['A'.repeat(32)], ExcludeGroupIds: [] } }
-  expect(groupedSettlementConfigurationError(groups, grouped, today)).toContain('без додаткових відборів')
+  const groups = { ...filtered, selections: [], sourceCounterpartyGroups: { Version: 1, SourceWorld: 'fenix', IncludeGroupIds: ['A'.repeat(32)], ExcludeGroupIds: ['B'.repeat(32)] } }
+  expect(groupedSettlementConfigurationError(groups, grouped, today)).toBeNull()
   expect(groupedSettlementConfigurationError({ ...groups, settlementReadMode: 1 }, grouped, today)).toBeNull()
+  expect(settlementFormDataset(dataset, filtered.groupedSettlementPeriod, 0)?.Filters.map(field => field.Type)).toEqual([0, 6, 9, 30])
+  expect(settlementFormDataset(dataset, filtered.groupedSettlementPeriod, 1)?.Filters.map(field => field.Type)).toEqual([0, 6, 9, 17, 18, 30, 60, 61])
 })
 
 it.each([0, 1, null, undefined])('round trips mode %s through saved template, builder, retained fields, preset and draft', mode => {

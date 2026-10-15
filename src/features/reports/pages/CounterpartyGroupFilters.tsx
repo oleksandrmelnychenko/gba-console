@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Alert, Button, Group, MultiSelect, Stack, Text } from '@mantine/core'
 import { useDebouncedValue } from '@mantine/hooks'
 import { getSettlementCounterpartyGroups } from '../api/counterpartyGroupsApi'
-import { changeCounterpartyGroupList, sourceCounterpartyGroups, type CounterpartyGroupChoice } from '../data/sourceCounterpartyGroups'
+import { changeCounterpartyGroupList, SETTLEMENT_WORKBOOK_EXCLUDED_GROUPS, sourceCounterpartyGroups, type CounterpartyGroupChoice } from '../data/sourceCounterpartyGroups'
 
 const PAGE_SIZE = 30
 
@@ -45,12 +45,15 @@ export function CounterpartyGroupFilters({ value, disabled, onChange }: {
   }
   const selectedIds = [...(selected?.IncludeGroupIds ?? []), ...(selected?.ExcludeGroupIds ?? [])]
   const options = new Map(rows.map(row => [row.Id.toUpperCase(), { value: row.Id.toUpperCase(), label: row.Name }]))
-  for (const id of selectedIds) if (!options.has(id.toUpperCase()))
-    options.set(id.toUpperCase(), { value: id.toUpperCase(), label: `Збережена група [${id.toUpperCase()}]` })
+  for (const id of selectedIds) if (!options.has(id.toUpperCase())) {
+    const known = SETTLEMENT_WORKBOOK_EXCLUDED_GROUPS.find(group => group.Id === id.toUpperCase())
+    options.set(id.toUpperCase(), { value: id.toUpperCase(), label: known?.Name ?? `Збережена група [${id.toUpperCase()}]` })
+  }
   const count = selectedIds.length
   return <Stack gap="xs">
     {(['IncludeGroupIds', 'ExcludeGroupIds'] as const).map(list => <MultiSelect key={list}
       label={list === 'IncludeGroupIds' ? 'Включити групи контрагентів (Fenix)' : 'Виключити групи контрагентів (Fenix)'}
+      description="Групи або окремі контрагенти довідника Fenix; пошук за назвою показує й контрагентів"
       data={[...options.values()]} value={selected?.[list].map(id => id.toUpperCase()) ?? []}
       disabled={disabled} searchable clearable searchValue={search}
       maxValues={64 - count + (selected?.[list].length ?? 0)}
@@ -64,7 +67,7 @@ export function CounterpartyGroupFilters({ value, disabled, onChange }: {
     </Group>
     {error && <Alert color="orange">{error}</Alert>}
     {value != null && !selected && <Alert color="orange">Збережений відбір груп некоректний. Оберіть групи з поточного списку.</Alert>}
-    <Text size="xs" c="dimmed">Включення охоплює будь-яку вибрану групу та її підгрупи; виключення має пріоритет.
-      Порожній список включення не звужує вибір. Невідома належність до групи залишає рядок і залежні підсумки з порожніми сумами.</Text>
+    <Text size="xs" c="dimmed">Включення охоплює будь-яку вибрану групу та її підгрупи або вибраного контрагента; виключення має пріоритет.
+      Порожній список включення не звужує вибір. Контрагенти без вузла в довіднику Fenix не належать до вибраних груп.</Text>
   </Stack>
 }

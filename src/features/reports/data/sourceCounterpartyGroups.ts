@@ -15,6 +15,11 @@ const exactFields = (value: unknown, expected: readonly string[]): RecordValue |
   }
   return result
 }
+export const SETTLEMENT_WORKBOOK_EXCLUDED_GROUPS: readonly CounterpartyGroupChoice[] = [
+  { Id: 'A156005056C0000811E182DA08AE7D43', Name: 'Харків Скляр' },
+  { Id: 'B1A7005056C0000811E18EBBAA67CF52', Name: 'Ніжин - ФОП Гречківська О.І.' },
+  { Id: '8AB2005056C0000811DEFEBB3581EBEC', Name: 'НЕВІДОМІ' },
+]
 export const counterpartyGroupId = (value: unknown): value is string => typeof value === 'string'
   && /^[0-9a-f]{32}$/i.test(value) && !/^0{32}$/.test(value)
 export function requestSourceCounterpartyGroups(data: object): unknown {

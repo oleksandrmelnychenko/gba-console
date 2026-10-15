@@ -1,5 +1,5 @@
-import { currentProfitMaximumDays, isProfitReadModeCapability, requestProfitReadMode } from './profitReadMode'
-import { isSettlementReadModeCapability } from './settlementReadMode'
+import { currentProfitMaximumDays, isProfitReadModeCapability } from './profitReadMode'
+import { isSettlementReadModeCapability, requestSettlementReadMode } from './settlementReadMode'
 import { isCashReadModeCapability } from './cashReadMode'
 import type { ReportDataset, ReportRequestBody } from '../types'
 import { cashWorkbookPresentationSupported, readWorkbookCapability, requestWorkbookPresentation } from './workbookPresentation'
@@ -17,6 +17,7 @@ import { isCurrentVparivanieDataset } from './currentVparivanie'
 import { FENIX_BUYERS_ROOT_ID, isProductClassificationCapability, isSourceBuyerSubtreeCapability,
   isSourceOrganizationsCapability } from './nativeExactFilters'
 import { BUG_1274_ONLY_REPORT_SURFACE } from '../reportSurfacePolicy'
+import { SETTLEMENT_WORKBOOK_EXCLUDED_GROUPS, sourceCounterpartyGroupCapability } from './sourceCounterpartyGroups'
 
 export type WorkbookLaunch = {
   fileName: string
@@ -100,7 +101,7 @@ export function availableBug1274WorkbookLaunches(datasets: readonly ReportDatase
         notice: (spec.dataSource === 35 || spec.dataSource === 38) && isProfitReadModeCapability(candidate.profitReadMode)
           ? profitReadModeNotice(spec.dataSource, candidate)
           : spec.dataSource === 35 && isDayOrganizationBasisCapability(candidate.dayOrganizationBasis)
-          ? 'Часткова форма Excel: день → організація, суми EUR та рентабельність %. Для нового запиту застосовано відбори книги: товар без послуг, п’ять організацій і група «Покупці» Fenix. Їх можна змінити у формі. «Продажі мінус повернення за період» підтримують до 31 дня. Недоступні собівартість, ПДВ і залежні показники залишаються порожніми.'
+          ? 'Часткова форма Excel: день → організація, суми EUR та рентабельність %. Для нового запиту застосовано відбори книги: товар без послуг, чотири організації GBA (ФОП Пархоменко не синхронізується) і група «Покупці» Fenix. Їх можна змінити у формі. «Продажі мінус повернення за період» підтримують до 31 дня. Недоступні собівартість, ПДВ і залежні показники залишаються порожніми.'
           : spec.dataSource === 40 && groupedCashSupported(candidate)
             ? groupedCashNotice(candidate)
           : spec.dataSource === 40 && cashPeriodSupportsManagement(candidate)
@@ -119,9 +120,13 @@ export function availableBug1274WorkbookLaunches(datasets: readonly ReportDatase
 
 function profitReadModeNotice(dataSource: number, dataset: ReportDataset): string {
   const original = dataSource === 35 ? '«Збережені регістри 1С» і відбори Fenix' : '«Збережені регістри 1С»'
-  const notice = `Форма відкривається з джерелом «Поточні документи GBA»: продажі та повернення з поточних документів за період до ${currentProfitMaximumDays(dataset.profitReadMode)} календарних днів. Повна відповідність 1С ще не підтверджена.`
+  const filters = dataSource === 35 ? ` ${DAY_WORKBOOK_FILTERS_NOTICE}` : ''
+  const notice = `Форма відкривається з джерелом «Поточні документи GBA»: продажі та повернення з поточних документів за період до ${currentProfitMaximumDays(dataset.profitReadMode)} календарних днів.${filters} Повна відповідність 1С ще не підтверджена.`
   return BUG_1274_ONLY_REPORT_SURFACE ? notice : `${notice} Для розрахунку за регістрами 1С оберіть ${original}.`
 }
+
+export const DAY_WORKBOOK_FILTERS_NOTICE = 'Застосовано відбори книги: товар без послуг, організації ТОВ «АМГ «КОНКОРД», Фенікс, ФОП Самолюк А.Д. і ФОП Самолюк Ю.М. (ФОП Пархоменко не синхронізується в GBA), група «Покупці» Fenix і додаткові поля Артикул/Топ із порядком за місяцями.'
+export const SETTLEMENT_WORKBOOK_EXCLUSIONS_NOTICE = `Застосовано виключення книги: ${SETTLEMENT_WORKBOOK_EXCLUDED_GROUPS.map(group => group.Name).join('; ')}.`
 
 function groupedCashNotice(dataset: ReportDataset): string {
   const notice = 'Показано банківські рахунки та каси: вісім показників у валюті рахунку й управлінській валюті. Відбори рахунку, організації, валюти та виду доступні у формі.'
@@ -135,13 +140,15 @@ function groupedSettlementNotice(fileName: string, dataset: ReportDataset): stri
   const notice = fileName === 'ДБіторка.xls'
     ? `Організація → контрагент, поточні договори ${parties} за вибраними відборами й чотири показники залишків та руху. ${period}. Недоступні суми й залежні підсумки залишаються порожніми; суми різних валют не додаються.`
     : `Організація → валюта → контрагент, поточні договори ${parties} за вибраними відборами й чотири показники залишків та руху. ${period}; договори без повних даних залишаються з порожніми сумами та підсумками.`
-  return current ? `${notice} ${SETTLEMENT_READ_MODE_NOTICE}` : notice
+  const exclusions = current && fileName === 'Взаємороз всі.xls' && sourceCounterpartyGroupCapability(dataset.sourceCounterpartyGroups)
+    ? ` ${SETTLEMENT_WORKBOOK_EXCLUSIONS_NOTICE}` : ''
+  return current ? `${notice}${exclusions} ${SETTLEMENT_READ_MODE_NOTICE}` : notice
 }
 
 /** The retained day workbook has these three exact filters; explicit scopes keep their own meaning. */
 function dayWorkbookRequest(request: ReportRequestBody, launch: WorkbookLaunch): ReportRequestBody {
   const dataset = launch.dataset
-  if (requestProfitReadMode(request) === 0 || launch.fileName !== 'ВП.xls' || request.dataSource !== 35 || !isDayOrganizationGrossProfitDataset(dataset)
+  if (launch.fileName !== 'ВП.xls' || request.dataSource !== 35 || !isDayOrganizationGrossProfitDataset(dataset)
     || !isDayOrganizationBasisCapability(dataset.dayOrganizationBasis) || requestDayOrganizationBasis(request) !== 0
     || Object.keys(request).filter(key => key.toLowerCase() === 'dayorganizationbasis').length !== 1
     || !isProductClassificationCapability(dataset.productClassification)
@@ -161,7 +168,7 @@ function dayWorkbookRequest(request: ReportRequestBody, launch: WorkbookLaunch):
 /** Only the Excel shortcut opts into its supported form; ordinary and saved dataset requests keep their own meaning. */
 export function bug1274WorkbookRequest(request: ReportRequestBody, launch?: WorkbookLaunch): ReportRequestBody {
   if (!launch || launch.dataset.DataSource !== request.dataSource) return request
-  const selected = groupedWorkbookRequest(dayWorkbookRequest(request, launch), launch.currencyAxis)
+  const selected = settlementWorkbookRequest(groupedWorkbookRequest(dayWorkbookRequest(request, launch), launch.currencyAxis), launch)
   const presented = presentationWorkbookRequest(selected, launch)
   if (presented !== selected) return presented
   if (launch.fileName !== 'Ведомость по денежным средствам.xls' || request.dataSource !== 40
@@ -177,10 +184,18 @@ export function bug1274WorkbookRequest(request: ReportRequestBody, launch?: Work
   return result
 }
 
+function settlementWorkbookRequest(request: ReportRequestBody, launch: WorkbookLaunch): ReportRequestBody {
+  if (launch.fileName !== 'Взаємороз всі.xls' || request.dataSource !== 41 || requestSettlementReadMode(request) !== 0
+    || groupedSettlementPeriod(requestGroupedSettlementPeriod(request))?.SourceWorld !== 'Fenix'
+    || !sourceCounterpartyGroupCapability(launch.dataset.sourceCounterpartyGroups)
+    || Object.keys(request).some(key => key.toLowerCase() === 'sourcecounterpartygroups')) return request
+  return { ...structuredClone(request), sourceCounterpartyGroups: { Version: 1, SourceWorld: 'fenix', IncludeGroupIds: [],
+    ExcludeGroupIds: SETTLEMENT_WORKBOOK_EXCLUDED_GROUPS.map(group => group.Id) } }
+}
+
 function presentationWorkbookRequest(request: ReportRequestBody, launch: WorkbookLaunch): ReportRequestBody {
   if (requestWorkbookPresentation(request) !== undefined || !readWorkbookCapability(launch.dataset.workbookPresentation, request.dataSource ?? -1)) return request
-  if (launch.fileName === 'ВП.xls' && request.dataSource === 35 && requestDayOrganizationBasis(request) === 0
-    && requestProfitReadMode(request) !== 0)
+  if (launch.fileName === 'ВП.xls' && request.dataSource === 35 && requestDayOrganizationBasis(request) === 0)
     return { ...structuredClone(request), workbookPresentation: { version: 1, additionalFields: [2, 3], ordering: 'MonthAscending' } }
   if (request.dataSource === 41 && isGroupedSettlementDataset(launch.dataset)
     && groupedSettlementPeriod(requestGroupedSettlementPeriod(request))

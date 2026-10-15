@@ -6,6 +6,8 @@ import { createStockReport, searchDatasetReportValues } from '../api/reportsApi'
 import { getReportDatasets, getServerReportTemplates } from '../api/reportWorkspaceApi'
 import { reportDatasets } from '../data/reportDatasets.test-fixtures'
 import { profitDayDataset, profitSupplierDataset } from '../data/profitReadMode.test-fixtures'
+import { DAY_ORGANIZATION_GOODS_KIND_ID, DAY_ORGANIZATION_SAVED_ORGANIZATION_IDS } from '../data/dayOrganizationGrossProfit'
+import { FENIX_BUYERS_ROOT_ID } from '../data/nativeExactFilters'
 import { ReportsStocksPage } from './ReportsStocksPage'
 vi.mock('../../auth/useAuth', () => ({ useAuth: () => ({ hasPermission: () => true, user: { NetUid: 'profit-mode-owner' } }) }))
 vi.mock('../api/reportsApi', async original => ({ ...await original<typeof import('../api/reportsApi')>(), createStockReport: vi.fn(), searchDatasetReportValues: vi.fn() }))
@@ -43,18 +45,21 @@ it.each(['Валовий прибуток за днем', 'Валовий при
   expect(screen.getByText(/Типове джерело: продажі та повернення з поточних документів GBA за період до 31 календарних днів/)).toBeTruthy()
   const current = await submitted(view, 1)
   expect(current.profitReadMode).toBe(0)
-  expect(current.workbookPresentation).toBeUndefined()
   expect(current.dataSource === 35 ? current.dayOrganizationBasis : current.supplierBasis).toBe(0)
-  if (current.dataSource === 35) expect(current.sourceOrganizations).toBeUndefined()
-  else {
+  if (current.dataSource === 35) {
+    expect(current).toMatchObject({ productClassification: { ProductKindId: DAY_ORGANIZATION_GOODS_KIND_ID, IsService: false },
+      sourceOrganizations: { OrganizationIds: [...DAY_ORGANIZATION_SAVED_ORGANIZATION_IDS] }, sourceBuyerSubtree: { BuyerRootId: FENIX_BUYERS_ROOT_ID },
+      workbookPresentation: { version: 1, additionalFields: [2, 3], ordering: 'MonthAscending' } })
+    for (const label of ['Товар без послуг (Fenix)', 'Організації зі збереженого налаштування 1С', 'Група «Покупці» Fenix'])
+      expect((screen.getByRole('checkbox', { name: label }) as HTMLInputElement).checked).toBe(true)
+  } else {
+    expect(current.workbookPresentation).toBeUndefined()
     expect(current.supplierSourceWorld).toBeUndefined()
     expect((screen.getByRole('combobox', { name: 'База продажів для прибутку за постачальниками' }) as HTMLInputElement).value).toBe('Усі документи, включно з GBA')
     expect(current.sorted.Row.map(row => row.type)).toEqual([78, 4, 21])
   }
   mode('Збережені регістри 1С')
   expect(screen.queryByRole('dialog')).toBeNull()
-  if (current.dataSource === 35) for (const label of ['Товар без послуг (Fenix)', 'П’ять організацій зі збереженого налаштування 1С', 'Група «Покупці» Fenix'])
-    fireEvent.click(screen.getByRole('checkbox', { name: label }))
   const original = await submitted(view, 2)
   expect(original.profitReadMode).toBe(1)
   if (original.dataSource === 38) expect(original.supplierSourceWorld).toBe(0)

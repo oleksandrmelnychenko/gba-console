@@ -10,6 +10,8 @@ import { encodeReportWorkspaceSnapshot } from './reportWorkspaceDraft'
 import { reportWorkspaceDraftCompatibility } from './reportWorkspaceDraftCompatibility'
 import { isProfitReadModeCapability, profitReadModeConfigurationError, requestProfitReadMode } from './profitReadMode'
 import { profitDayDataset, profitSupplierDataset, profitReadModeCapability } from './profitReadMode.test-fixtures'
+import { DAY_ORGANIZATION_GOODS_KIND_ID, DAY_ORGANIZATION_SAVED_ORGANIZATION_IDS } from './dayOrganizationGrossProfit'
+import { FENIX_BUYERS_ROOT_ID } from './nativeExactFilters'
 
 const presetId = (dataset: typeof profitDayDataset) => dataset.DataSource === 35
   ? 'recorded-sale-gross-profit-by-day-organization' : 'recorded-supplier-batch-gross-profit'
@@ -28,9 +30,20 @@ it.each([profitDayDataset, profitSupplierDataset])('opens new requests and the w
   expect(launch.notice).toContain('«Поточні документи GBA»')
   expect(launch.notice).toContain('до 31 календарних днів')
   const workbook = bug1274WorkbookRequest(current, launch)
-  expect(workbook).toBe(current)
-  expect(workbook.workbookPresentation).toBeUndefined()
-  expect(workbook.sourceOrganizations).toBeUndefined()
+  if (dataset.DataSource === 35) {
+    expect(workbook).toMatchObject({ profitReadMode: 0, dayOrganizationBasis: 0,
+      productClassification: { ProductKindId: DAY_ORGANIZATION_GOODS_KIND_ID, IsService: false },
+      sourceOrganizations: { OrganizationIds: [...DAY_ORGANIZATION_SAVED_ORGANIZATION_IDS] },
+      sourceBuyerSubtree: { BuyerRootId: FENIX_BUYERS_ROOT_ID },
+      workbookPresentation: { version: 1, additionalFields: [2, 3], ordering: 'MonthAscending' } })
+    expect(datasetConfigurationError(workbook, dataset)).toBeNull()
+    expect(launch.notice).toContain('ФОП Пархоменко не синхронізується в GBA')
+    expect(current).not.toHaveProperty('sourceOrganizations')
+  } else {
+    expect(workbook).toBe(current)
+    expect(workbook.workbookPresentation).toBeUndefined()
+    expect(workbook.sourceOrganizations).toBeUndefined()
+  }
   const { profitReadMode: _capability, ...previous } = dataset
   void _capability
   const legacy = defaultDatasetRequest(previous, '2026-09-01', '2026-09-30')
@@ -59,7 +72,7 @@ it.each([profitDayDataset, profitSupplierDataset])('applies current documents to
   const current = withDefaultReadModes(saved, dataset)
   expect(current.profitReadMode).toBe(0)
   expect(saved).not.toHaveProperty('profitReadMode')
-  expect(datasetConfigurationError(current, dataset)).toContain(dataset.DataSource === 35 ? 'Додаткові поля' : '31')
+  expect(datasetConfigurationError(current, dataset)).toContain('31')
   expect(datasetConfigurationError({ ...current, workbookPresentation: undefined }, dataset)).toContain('31')
   for (const mode of [0, 1, null]) {
     const explicit = { ...saved, ProfitReadMode: mode }
@@ -115,9 +128,10 @@ it('normalizes only the precise server capability and rejects duplicate aliases'
   expect(normalizeNativeExactFilterDataset({ ...profitDayDataset, ProfitReadMode: profitReadModeCapability })).toBeNull()
 })
 
-it('refuses current workbook presentation and restores supplier current drafts without a source-world filter', () => {
+it('accepts current workbook presentation and restores supplier current drafts without a source-world filter', () => {
   const day = bug1274WorkbookRequest(unmarked(profitDayDataset, '2026-09-01', '2026-09-30'), availableBug1274WorkbookLaunches([profitDayDataset])[0])
-  expect(datasetConfigurationError({ ...day, profitReadMode: 0 }, profitDayDataset)).toContain('Додаткові поля')
+  expect(day.workbookPresentation).toEqual({ version: 1, additionalFields: [2, 3], ordering: 'MonthAscending' })
+  expect(datasetConfigurationError({ ...day, profitReadMode: 0 }, profitDayDataset)).toBeNull()
   const data = { ...defaultDatasetRequest(profitSupplierDataset, day.from, day.to), profitReadMode: 0, supplierSourceWorld: undefined }
   const snapshot = { name: '', data, measurements: datasetMeasurements(profitSupplierDataset), activeTemplate: null, previousPeriod: { from: data.from, to: data.to } }
   expect(reportWorkspaceDraftCompatibility(snapshot, profitSupplierDataset)).toBeNull()

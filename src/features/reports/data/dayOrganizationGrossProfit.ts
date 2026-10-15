@@ -10,14 +10,13 @@ export const DAY_ORGANIZATION_GROSS_PROFIT_SOURCE = 35
 export const DAY_ORGANIZATION_GROSS_PROFIT_TITLE = 'Валовий прибуток GBA за днем та організацією'
 // Exact saved Fenix setting 0x1893a68ef4db1647a85309ae4c2ff7ce: "Товар", excluding services.
 export const DAY_ORGANIZATION_GOODS_KIND_ID = '8AB2005056C0000811DEF956DA4CFDA0'
-// Exact five IDs in the structurally matching saved Fenix setting.
 export const DAY_ORGANIZATION_SAVED_ORGANIZATION_IDS = [
   'A98BC3FAAC5CA23811E99CCA70CA60B9',
   '8AB2005056C0000811DEF92AB3F4DFF1',
   '8AB2005056C0000811DF04FAB939A4DE',
   '94B4005056C0000811DF1A0C73BC9A12',
-  '88D1B8CB29DC7A6911ECFC60797DF65F',
 ] as const
+export const DAY_ORGANIZATION_OUT_OF_SCOPE_ORGANIZATION_IDS = ['88D1B8CB29DC7A6911ECFC60797DF65F'] as const
 const measures = [2, 3, 4, 6, 7, 8, 10, 12, 14, 15]
 const filters = new Set([0, 1, 2, 6, 9])
 const conditions = new Set([0, 2])

@@ -132,11 +132,13 @@ export function isGroupedSettlementDataset(dataset?: ReportDataset): boolean {
 }
 
 /** The exact saved route keeps its original no-filter form; grouped capabilities are explicit. */
-export function settlementFormDataset(dataset: ReportDataset | undefined, selector: unknown): ReportDataset | undefined {
+export function settlementFormDataset(dataset: ReportDataset | undefined, selector: unknown, readMode?: unknown): ReportDataset | undefined {
   if (dataset?.DataSource !== 41) return dataset
   const cap = groupedSettlementCapability(dataset.groupedSettlementPeriod)
+  const current = new Set<number>(GROUPED_SETTLEMENT_FILTERS)
   return selector != null && cap ? { ...dataset, FilterExpression: cap.FilterExpression,
-    Filters: groupedSettlementPeriod(selector)?.SourceWorld === 'Fenix' ? dataset.Filters
+    Filters: readMode === 0 ? dataset.Filters.filter(field => current.has(field.Type))
+      : groupedSettlementPeriod(selector)?.SourceWorld === 'Fenix' ? dataset.Filters
       : dataset.Filters.filter(field => ![60, 61].includes(field.Type)) }
     : { ...dataset, Filters: [], FilterExpression: undefined }
 }
@@ -204,9 +206,9 @@ export function groupedSettlementConfigurationError(data: ReportRequestBody, dat
   const fenixBuyers = selector.SourceWorld === 'Fenix' && sourceBuyer.length === 1
     && (data as unknown as JsonRecord)[sourceBuyer[0]] != null
   if (mode != null && !fenixBuyers) return 'Для вибраного джерела розрахунку потрібні база Fenix і група «Покупці».'
-  if (mode === 0 && ((Array.isArray(data.selections) && data.selections.some(selection => selection?.IsChecked !== false))
-    || aliases(data, 'SourceCounterpartyGroups').some(key => (data as unknown as JsonRecord)[key] != null)))
-    return 'Взаєморозрахунки з документів GBA формуються для всієї групи «Покупці» без додаткових відборів.'
+  if (mode === 0 && Array.isArray(data.selections) && data.selections.some(selection => selection?.IsChecked !== false
+    && !(GROUPED_SETTLEMENT_FILTERS as readonly number[]).includes(selection?.SelectedField?.Type)))
+    return 'Для документів GBA доступні відбори організації, контрагента, договору та валюти; відбори постачальника, менеджера й коду регіону недоступні.'
   const normal = fenixBuyers && (mode != null || !dataset
     || groupedSettlementCapability(dataset.groupedSettlementPeriod)?.OriginalNormalMaximumMonths === 120)
   const dayError = periodError(data.from, data.to, today, normal)

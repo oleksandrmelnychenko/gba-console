@@ -199,7 +199,7 @@ import { requestDayOrganizationBasis } from '../data/dayOrganizationBasis'
 import { requestSupplierBasis, rowGroupsForSupplierBasis, supplierBasisFormDataset } from '../data/supplierBasis'
 import { SupplierBasisSelect } from './SupplierBasisSelect'
 import { productClassification as parseProductClassification, sourceOrganizations as parseSourceOrganizations, sourceBuyerSubtree as parseSourceBuyerSubtree, requestProductClassification, requestSourceOrganizations, requestSourceBuyerSubtree, FENIX_BUYERS_ROOT_ID } from '../data/nativeExactFilters'
-import { DAY_ORGANIZATION_GOODS_KIND_ID, DAY_ORGANIZATION_SAVED_ORGANIZATION_IDS } from '../data/dayOrganizationGrossProfit'
+import { DAY_ORGANIZATION_GOODS_KIND_ID, DAY_ORGANIZATION_OUT_OF_SCOPE_ORGANIZATION_IDS, DAY_ORGANIZATION_SAVED_ORGANIZATION_IDS } from '../data/dayOrganizationGrossProfit'
 import { isSupplierSourceWorldCapability, requestSupplierSourceWorld } from '../data/supplierBatchGrossProfit'
 import PriceTypeSalesComparisonPanel from './PriceTypeSalesComparisonPanel'
 import AgreementPriceComparisonPanel from './AgreementPriceComparisonPanel'
@@ -284,9 +284,10 @@ function shouldLoadDatasetDefaults(dataSource: number, periodSupported: boolean)
 }
 
 function usesSavedFenixOrganizations(value: unknown): boolean {
-  const ids = parseSourceOrganizations(value)?.OrganizationIds
+  const ids = parseSourceOrganizations(value)?.OrganizationIds.map(id => id.toUpperCase())
+    .filter(id => !(DAY_ORGANIZATION_OUT_OF_SCOPE_ORGANIZATION_IDS as readonly string[]).includes(id))
   if (ids?.length !== DAY_ORGANIZATION_SAVED_ORGANIZATION_IDS.length) return false
-  return DAY_ORGANIZATION_SAVED_ORGANIZATION_IDS.every(id => ids.some(value => value.toUpperCase() === id))
+  return DAY_ORGANIZATION_SAVED_ORGANIZATION_IDS.every(id => ids.includes(id))
 }
 
 function reportLookupSourceWorld(dataSource: number, groupedSettlement: unknown, specialSettings: unknown): 1 | 2 | undefined {
@@ -407,7 +408,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
       }) satisfies GroupingOption),
     [colGroups, groupingOptions, rowGroups],
   )
-  const settlementDataset = useMemo(() => settlementFormDataset(priceTypeDataset, groupedSettlementPeriod), [priceTypeDataset, groupedSettlementPeriod])
+  const settlementDataset = useMemo(() => settlementFormDataset(priceTypeDataset, groupedSettlementPeriod, settlementReadMode), [priceTypeDataset, groupedSettlementPeriod, settlementReadMode])
   const cashDataset = useMemo(() => cashFormDataset(settlementDataset, groupedCashPeriod), [settlementDataset, groupedCashPeriod])
   const filterFieldOptions = useMemo(() => datasetFilters(cashDataset), [cashDataset])
   const maxDate = useMemo(() => settlementMaximumDate(dataSource, groupedSettlementPeriod, today, cashReadMode)
@@ -1036,7 +1037,6 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
             disabled={comparisonSettingsDisabled} hideRegister={bug1274Only} onChange={mode => {
               setProfitReadMode(mode)
               if (mode != null) setDayOrganizationBasis(0)
-              if (mode === 0) workbook.reset(undefined)
             }} />
           <DayOrganizationBasisSelect capability={dataset?.dayOrganizationBasis} value={dayOrganizationBasis}
             disabled={comparisonSettingsDisabled || profitReadMode != null} onChange={setDayOrganizationBasis} />
@@ -1052,16 +1052,16 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
             && !(parseProductClassification(productClassification)?.ProductKindId.toUpperCase() === DAY_ORGANIZATION_GOODS_KIND_ID
               && parseProductClassification(productClassification)?.IsService === false)
             ? <Text size="xs" c="orange">{t('Шаблон містить інший вид товару Fenix. Увімкнення перемикача замінить цей відбір на «Товар».')}</Text> : null}
-          <Checkbox mt="sm" label={t('П’ять організацій зі збереженого налаштування 1С')}
+          <Checkbox mt="sm" label={t('Організації зі збереженого налаштування 1С')}
             checked={usesSavedFenixOrganizations(sourceOrganizations)}
             disabled={comparisonSettingsDisabled}
             onChange={event => setSourceOrganizations(event.currentTarget.checked
               ? { Version: 1, SourceWorld: 'fenix', OrganizationIds: [...DAY_ORGANIZATION_SAVED_ORGANIZATION_IDS] }
               : undefined)} />
-          <Text size="xs" c="dimmed">{t('Точні ID зі збереженого налаштування 1С. Якщо організації ще не прив’язані до локальних даних, звіт покаже помилку покриття.')}</Text>
+          <Text size="xs" c="dimmed">{t('ТОВ «АМГ «КОНКОРД», Фенікс, ФОП Самолюк А.Д. і ФОП Самолюк Ю.М. ФОП Пархоменко з налаштування 1С не синхронізується в GBA і не додає продажів.')}</Text>
           {sourceOrganizations != null
             && !usesSavedFenixOrganizations(sourceOrganizations)
-            ? <Text size="xs" c="orange">{t('Шаблон містить інші організації Fenix. Увімкнення перемикача замінить цей відбір на п’ять організацій.')}</Text> : null}
+            ? <Text size="xs" c="orange">{t('Шаблон містить інші організації Fenix. Увімкнення перемикача замінить цей відбір на організації налаштування 1С.')}</Text> : null}
           <Checkbox mt="sm" label={t('Група «Покупці» Fenix')}
             checked={parseSourceBuyerSubtree(sourceBuyerSubtree) != null}
             disabled={comparisonSettingsDisabled}
