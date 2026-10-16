@@ -1,4 +1,5 @@
-import { CURRENT_VPARIVANIE_PRODUCT_CAPTIONS, currentVparivanieStockLabel, currentVparivanieStockSentence } from './currentVparivanie'
+import { CURRENT_VPARIVANIE_PRODUCT_CAPTIONS, currentVparivanieQuantityCell, currentVparivanieQuantityText, currentVparivanieStockLabel,
+  currentVparivanieStockSentence } from './currentVparivanie'
 import type { CurrentVparivanieV2Cell } from './currentVparivanieV2'
 import { currentVparivanieV2CellKey, currentVparivanieV2ColumnCaption,
   currentVparivanieV2Columns, type CurrentVparivanieV2PdfDefinition } from './currentVparivanieV2Export'
@@ -6,14 +7,16 @@ import type { CurrentVparivanieRegionalResult } from './currentVparivanieRegiona
 
 export const CURRENT_REGIONAL_TITLE = 'Впарювання: регіональна форма'
 export const currentRegionalCellText = (cell?: CurrentVparivanieV2Cell) =>
-  cell === undefined ? '' : cell.Quantity === null ? '∅' : cell.Quantity
+  cell === undefined ? '' : cell.Quantity === null ? '∅' : currentVparivanieQuantityText(cell.Quantity)
+const currentRegionalCellValue = (cell?: CurrentVparivanieV2Cell): string | number =>
+  cell === undefined ? '' : cell.Quantity === null ? '∅' : currentVparivanieQuantityCell(cell.Quantity)
 export function currentRegionalColumnCaption(key: string): string {
   const [kind, region] = JSON.parse(key) as [string, string | null]
   return kind === 'CounterpartyRegionCode' && region === ''
     ? 'Регіон / Без коду' : currentVparivanieV2ColumnCaption(key)
 }
 
-/** Numeric strings remain exact in the matrix and in the separate quantity/unit sheet. */
+/** Quantities are numbers like the 1C workbook; a value a double cannot hold exactly stays exact text. */
 export function currentRegionalSheets(result: CurrentVparivanieRegionalResult) {
   const columns = currentVparivanieV2Columns(result)
   const about: string[][] = [[CURRENT_REGIONAL_TITLE], ['Період продажів', `${result.From} — ${result.To}`],
@@ -21,16 +24,16 @@ export function currentRegionalSheets(result: CurrentVparivanieRegionalResult) {
     ['Порожня клітинка', 'Факт відсутній'], ['∅', 'Кількість невідома'],
     ...result.Request.Filters.map(filter => [filter.Field, filter.Condition, ...filter.Values]),
     ...result.Request.Notes.map(note => [note])]
-  const matrix: string[][] = [[CURRENT_REGIONAL_TITLE], ['Період продажів', `${result.From} — ${result.To}`], [],
+  const matrix: Array<Array<string | number>> = [[CURRENT_REGIONAL_TITLE], ['Період продажів', `${result.From} — ${result.To}`], [],
     ['ProductId', ...CURRENT_VPARIVANIE_PRODUCT_CAPTIONS, ...columns.map(currentRegionalColumnCaption)],
     ...result.Rows.map(row => {
       const cells = new Map(row.Cells.map(cell => [currentVparivanieV2CellKey(cell), cell]))
       return [row.ProductId, row.Article ?? '', row.Name ?? '', row.Description ?? '', row.Group ?? '',
-        row.OE ?? '', row.Size ?? '', row.Top ?? '', ...columns.map(key => currentRegionalCellText(cells.get(key)))]
+        row.OE ?? '', row.Size ?? '', row.Top ?? '', ...columns.map(key => currentRegionalCellValue(cells.get(key)))]
     })]
-  const facts: string[][] = [['ProductId', 'Column', 'RegionCode', 'Quantity', 'UnitId', 'FactCount'],
+  const facts: Array<Array<string | number>> = [['ProductId', 'Column', 'RegionCode', 'Quantity', 'UnitId', 'FactCount'],
     ...result.Rows.flatMap(row => row.Cells.map(cell => [row.ProductId, cell.Column, cell.RegionCode ?? '',
-      currentRegionalCellText(cell), cell.UnitId ?? '', String(cell.FactCount)]))]
+      currentRegionalCellValue(cell), cell.UnitId ?? '', String(cell.FactCount)]))]
   return { about, matrix, facts }
 }
 
@@ -38,7 +41,7 @@ export function currentRegionalCsv(result: CurrentVparivanieRegionalResult): str
   const quote = (value: string) => `"${value.replaceAll('"', '""')}"`
   const safeLabel = (value: string) => /^[\s\p{Cc}]*[=+\-@]/u.test(value) ? `'${value}` : value
   return '\ufeff' + currentRegionalSheets(result).matrix.map(row => row.map((value, index) =>
-    quote(index >= 1 && index <= 7 ? safeLabel(value) : value)).join(',')).join('\r\n') + '\r\n'
+    quote(index >= 1 && index <= 7 ? safeLabel(String(value)) : String(value))).join(',')).join('\r\n') + '\r\n'
 }
 
 export function currentRegionalPdfDefinition(result: CurrentVparivanieRegionalResult): CurrentVparivanieV2PdfDefinition {

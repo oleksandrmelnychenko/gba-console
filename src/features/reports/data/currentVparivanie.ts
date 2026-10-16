@@ -22,6 +22,20 @@ export const currentVparivanieStockSentence = (anchor: CurrentVparivanieStockAnc
   anchor === 'PeriodEndFree' ? 'Залишки на кінець періоду.' : 'Залишки поточні.'
 export const CURRENT_VPARIVANIE_PRODUCT_FIELDS = ['Article', 'Name', 'Description', 'Group', 'OE', 'Size', 'Top'] as const
 export const CURRENT_VPARIVANIE_PRODUCT_CAPTIONS = ['Артикул', 'Наименование', 'Описание', 'Группа', 'OE', 'Размер', 'Топ'] as const
+
+/** 1C prints matrix quantities with the «0» format: no padded decimals, significant fractional digits only. */
+export function currentVparivanieQuantityText(value: string): string {
+  const match = /^(-?)(\d+)(?:\.(\d*?)0*)?$/.exec(value.trim())
+  if (!match) return value
+  const whole = match[2].replace(/^0+(?=\d)/, ''), fraction = match[3] ?? ''
+  const text = fraction ? `${whole}.${fraction}` : whole
+  return match[1] && text !== '0' ? `-${text}` : text
+}
+
+export function currentVparivanieQuantityCell(value: string): number | string {
+  const text = currentVparivanieQuantityText(value), number = Number(text)
+  return Number.isFinite(number) && String(number) === text ? number : text
+}
 export const CURRENT_VPARIVANIE_COUNTERPARTY_IDENTITY = 'NativeClientOrFenixSourceGroupV1'
 export function currentVparivanieNotice(managerSupported = false): string {
   return `Залишки — вільний залишок GBA на кінець періоду: поточна доступність, резерви на цю мить і документи GBA після неї. До останньої синхронізації залишків з 1С залишок порожній. Продажі — за вибраний включний період Europe/Kyiv. Клієнт впливає лише на колонки контрагентів, склад — лише на залишки. ${managerSupported ? 'Основний менеджер покупця з картки клієнта GBA впливає лише на колонки контрагентів.' : 'Менеджер покупця поки недоступний.'} Невідомі кількості та підсумки різних одиниць залишаються NULL.`

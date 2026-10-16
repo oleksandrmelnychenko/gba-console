@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { currentVparivanieConfigurationError, currentVparivanieFilterConditions, isCurrentVparivanieCapability, isCurrentVparivanieDataset } from './currentVparivanie'
+import { currentVparivanieConfigurationError, currentVparivanieFilterConditions, currentVparivanieQuantityCell, currentVparivanieQuantityText,
+  isCurrentVparivanieCapability, isCurrentVparivanieDataset } from './currentVparivanie'
 import { currentVparivanieDataset as dataset, currentVparivanieRequest as request, exactSelection } from './currentVparivanie.test-fixtures'
 import { datasetConfigurationError, datasetFilters, datasetMeasurements, datasetPresetRequest } from './reportDatasets'
 import { reportWorkspaceDraftCompatibility } from './reportWorkspaceDraftCompatibility'
@@ -113,4 +114,12 @@ it('offers the new matrix only when exact catalogue source and advertised capabi
   expect(catalogueLaunchOptions(catalogue, reportId, [{ ...dataset, currentVparivanie: undefined }])).toEqual([])
   catalogue.Reports[0].Sources[0].SourceId = 'other-source'
   expect(catalogueLaunchOptions(catalogue, reportId, [dataset])).toEqual([])
+})
+
+it('prints matrix quantities without padded decimals like the 1C «0» format', () => {
+  expect(['2.00000000', '0.00000000', '-2.00000000', '-0.00000000', '2.50000000', '161', '0', '9.00000001', '007.10', 'abc']
+    .map(currentVparivanieQuantityText)).toEqual(['2', '0', '-2', '0', '2.5', '161', '0', '9.00000001', '7.1', 'abc'])
+  expect(currentVparivanieQuantityCell('2.00000000')).toBe(2)
+  expect(currentVparivanieQuantityCell('9007199254740993.00000001')).toBe('9007199254740993.00000001')
+  expect(currentVparivanieQuantityCell('9007199254740993')).toBe('9007199254740993')
 })

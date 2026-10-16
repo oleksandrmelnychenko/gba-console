@@ -4,7 +4,7 @@ import { profitReadModeLabel } from '../data/profitReadMode'
 import { settlementReadModeLabel } from '../data/settlementReadMode'
 import { cashReadModeLabel } from '../data/cashReadMode'
 import { previewScalarText, type CurrentVparivanieProduct, type NativeReportPreview, type NativeReportPreviewAxis, type NativeReportPreviewFilter, type NativeReportPreviewRequest } from '../data/nativeReportPreview'
-import { CURRENT_VPARIVANIE_PRODUCT_CAPTIONS, CURRENT_VPARIVANIE_PRODUCT_FIELDS } from '../data/currentVparivanie'
+import { CURRENT_VPARIVANIE_PRODUCT_CAPTIONS, CURRENT_VPARIVANIE_PRODUCT_FIELDS, currentVparivanieQuantityText } from '../data/currentVparivanie'
 import { currentVparivanieSecondTier } from '../data/currentVparivanieColumns'
 import './report-inline-preview.css'
 import { workbookAttributeText, type WorkbookRow } from '../data/workbookPreview'
@@ -48,7 +48,8 @@ export function ReportInlinePreview({ preview }: { preview: NativeReportPreview 
           {preview.Columns.map(column => {
             const value = cells.get(`${row.SourceIndex}:${column.SourceIndex}`)
             return <td key={column.SourceIndex} title={value === undefined ? 'Клітинка відсутня' : value.Kind === 'null' ? 'Явне значення NULL' : undefined}>
-              {previewScalarText(value)}
+              {products && value?.Kind === 'decimal' && typeof value.Value === 'string'
+                ? currentVparivanieQuantityText(value.Value) : previewScalarText(value)}
             </td>
           })}
         </tr>)}</tbody>

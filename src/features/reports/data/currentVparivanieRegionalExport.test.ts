@@ -7,7 +7,7 @@ it('writes the same regional matrix with exact text, separate total and empty-co
   const value = regionalResult(); value.Rows[0].Name = '=Товар'; value.Rows[0].Cells[3].RegionCode = ''
   const sheets = currentRegionalSheets(value)
   expect(sheets.matrix[3].slice(-2)).toEqual(['Контрагенты', 'Регіон / Без коду'])
-  expect(sheets.matrix[4].slice(-4)).toEqual(['9007199254740993.00000001', '9.00000001', '9.00000001', '9.00000001'])
+  expect(sheets.matrix[4].slice(-4)).toEqual(['9007199254740993.00000001', 9.00000001, 9.00000001, 9.00000001])
   expect(sheets.about).toContainEqual(['Період продажів', '2026-10-01 — 2026-10-31'])
   expect(currentRegionalCsv(value)).toContain('"\'=Товар"')
   const XLSX = await import('xlsx'), workbook = XLSX.read(await (await currentRegionalXlsx(value)).arrayBuffer(), { type: 'array' })
@@ -40,3 +40,18 @@ it('labels stock by the anchor the server actually used', () => {
   expect(currentRegionalSheets(legacy).about).toContainEqual(['Залишки', 'Поточна записана вільна кількість'])
   expect(currentRegionalPdfDefinition(legacy).content[1]).toHaveProperty('text', 'Період продажів: 2026-10-01 — 2026-10-31. Залишки поточні.')
 })
+
+it('writes whole quantities like the 1C workbook: numbers without padded decimals', async () => {
+  const value = regionalResult()
+  value.Rows[0].Cells[0].Quantity = '2.00000000'; value.Rows[0].Cells[1].Quantity = '-2.50000000'
+  value.Rows[0].Cells[2].Quantity = '0.00000000'
+  const sheets = currentRegionalSheets(value)
+  expect(sheets.matrix[4].slice(-4)).toEqual([2, -2.5, 0, 9.00000001])
+  expect(sheets.facts[1][3]).toBe(2)
+  expect(currentRegionalCsv(value)).toContain('"2","-2.5","0","9.00000001"')
+  const tables = currentRegionalPdfDefinition(value).content.filter(part => 'table' in part)
+  expect(tables[0]).toHaveProperty('table.body.1.7', '2')
+  const XLSX = await import('xlsx'), workbook = XLSX.read(await (await currentRegionalXlsx(value)).arrayBuffer(), { type: 'array' })
+  expect(workbook.Sheets.Matrix.I5).toMatchObject({ t: 'n', v: 2 })
+  expect(workbook.Sheets.Matrix.J5).toMatchObject({ t: 'n', v: -2.5 })
+}, 30_000)
