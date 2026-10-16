@@ -2,6 +2,7 @@ import { Button, Loader, Popover, ScrollArea, Stack, Text, UnstyledButton } from
 import { notifications } from '@mantine/notifications'
 import { Bug, ChevronUp, RefreshCw } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { isNewerBuild } from './qaBuild'
 
 const deskUrl = (import.meta.env.VITE_QA_DESK_URL ?? 'https://gba-qa-desk.85.17.167.167.nip.io').replace(/\/$/, '')
 
@@ -79,7 +80,7 @@ export function QaBuildTicker() {
       setBuild(next)
       setFailed(false)
 
-      if (next.number !== __BUILD_NUMBER__ && announcedRef.current !== next.number) {
+      if (isNewerBuild(next.number, __BUILD_NUMBER__) && announcedRef.current !== next.number) {
         announcedRef.current = next.number
         notifications.show({
           id: 'qa-build-changed',
@@ -107,8 +108,9 @@ export function QaBuildTicker() {
     }
   }, [loadBuild])
 
-  const number = build?.number ?? __BUILD_NUMBER__
-  const stale = Boolean(build && build.number !== __BUILD_NUMBER__)
+  const number = __BUILD_NUMBER__
+  const stale = Boolean(build && isNewerBuild(build.number, __BUILD_NUMBER__))
+  const deskNumber = build && build.number !== number ? build.number : null
 
   return (
     <Popover opened={opened} onChange={setOpened} position="top-end" width={380} shadow="md" withArrow>
@@ -135,6 +137,9 @@ export function QaBuildTicker() {
             Поточний build <Text span fw={700}>{number}</Text>
             {' · '}{build?.bugs.length ?? 0} опрацьовано
           </Text>
+          {deskNumber && !stale ? (
+            <Text size="xs" c="dimmed">Останній випуск QA Desk: {deskNumber}</Text>
+          ) : null}
 
           {stale && (
             <Button
