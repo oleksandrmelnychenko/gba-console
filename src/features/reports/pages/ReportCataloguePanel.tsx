@@ -8,7 +8,7 @@ import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { useAuth } from '../../auth/useAuth'
 import { getReportCatalogue, getReportDatasets } from '../api/reportWorkspaceApi'
 import { catalogueLaunchOptions, type CatalogueLaunchChoice } from '../data/reportCatalogueLaunch'
-import { CAPTURE_STATUS_LABELS, DEPENDENCY_STATUS_LABELS, consoleReportAvailability, filterConsoleMigrationCatalogue, filterMigrationCatalogue, inspectCatalogueMigration, MIGRATION_STATUS_LABELS, sourceIdentity, summarizeConsoleCatalogue, type MigrationDisplayStatus } from '../data/reportMigration'
+import { BUG_1274_ACTIVE_REPORT_IDS, BUG_1274_PARITY_LABEL, BUG_1274_PARITY_NOTICE, CAPTURE_STATUS_LABELS, DEPENDENCY_STATUS_LABELS, consoleReportAvailability, filterConsoleMigrationCatalogue, filterMigrationCatalogue, inspectCatalogueMigration, MIGRATION_STATUS_LABELS, sourceIdentity, summarizeConsoleCatalogue, type MigrationDisplayStatus } from '../data/reportMigration'
 import type { ReportCatalogue, ReportCatalogueEntry, ReportDataset, ReportSourceMigration } from '../types'
 import { isDebtToSalesRatioCatalogueEntry, type DebtToSalesRatioCapabilities } from '../data/debtToSalesRatio'
 import { DebtToSalesRatioCatalogueLaunch } from './DebtToSalesRatioCatalogueLaunch'
@@ -169,8 +169,9 @@ export function ReportCataloguePanel({ onOpen, onOpenDebtToSalesRatio, onOpenCol
           <DocumentDetailMetric label={t(bug1274Scope ? 'Звітів задачі 1274' : 'Звітів у каталозі')} value={String(headline.CatalogueEntries)} />
           <DocumentDetailMetric label={t('Джерельних реалізацій')} value={String(headline.SourceImplementations)} />
           {bug1274Scope ? <DocumentDetailMetric label={t('Форм за зразками Excel')} value={String(workbookCount)} /> : null}
-          <DocumentDetailMetric label={t('Перевірених позицій')} value={String(headline.FullyVerifiedEntries)} />
+          {bug1274Scope ? null : <DocumentDetailMetric label={t('Перевірених позицій')} value={String(headline.FullyVerifiedEntries)} />}
         </>} />
+      {bug1274Scope ? <Text size="sm" c="dimmed">{t(BUG_1274_PARITY_NOTICE)}</Text> : null}
       {onOpen && <Text size="sm" c="dimmed" className="report-catalogue__intro">{t(consoleScope && BUG_1274_ONLY_REPORT_SURFACE
         ? 'Оберіть форму за зразком Excel у рядку звіту. Звіт формується кнопкою «Сформувати».'
         : 'Оберіть доступний варіант. Звіти конструктора формуються кнопкою «Сформувати»; Fenix «Валовая прибыль» відкривається в окремій панелі.')}</Text>}
@@ -329,7 +330,8 @@ function CatalogueTable({ consoleScope = false, onOpenWorkbook, visibleRows, cat
                 </>}
               </Stack></Table.Td>
               <Table.Td>{t(kindLabels[report.Kind] ?? report.Kind)}</Table.Td>
-              <Table.Td><Group gap={6} className="report-catalogue__statuses">{report.Sources.map(source => {
+              <Table.Td><Group gap={6} className="report-catalogue__statuses">{consoleScope && BUG_1274_ONLY_REPORT_SURFACE && BUG_1274_ACTIVE_REPORT_IDS.has(report.Id)
+                ? <Badge color="green" variant="light">{t(BUG_1274_PARITY_LABEL)}</Badge> : report.Sources.map(source => {
                 const state = inspection.statuses.get(sourceIdentity(source)) ?? 'unassessed'
                 return <Badge key={sourceIdentity(source)} color={statusColors[state]} variant="light">{worldLabel(source.World)}: {t(MIGRATION_STATUS_LABELS[state])}</Badge>
               })}</Group></Table.Td>

@@ -1,5 +1,5 @@
 import type { ReportCatalogue, ReportCatalogueEntry, ReportDataset, ReportDatasetField, ReportTemplate } from '../types'
-import { isReportCatalogue, inspectCatalogueMigration, sourceIdentity } from './reportMigration'
+import { BUG_1274_ACTIVE_DATA_SOURCES, BUG_1274_PARITY_NOTICE, isReportCatalogue, inspectCatalogueMigration, sourceIdentity } from './reportMigration'
 import { datasetGroupings, datasetMeasurements, defaultDatasetRequest } from './reportDatasets'
 import { flattenCheckedMeasurements } from './reportOptions'
 import { getNativeReportProfile } from './nativeReportProfiles'
@@ -181,6 +181,9 @@ function description(registration: Registration, report: ReportCatalogueEntry, d
         : dataset.DataSource === 26 ? ' Перевірте частки A/B/C та показник класифікації.'
           : [23, 25, 28].includes(dataset.DataSource) ? ' Вкажіть дату стану цього звіту.'
             : dataset.DataSource === 27 ? ' Оберіть завантажене локальне покриття Fenix і один точний глобальний тип ціни.' : ''
+  const presetDescription = profile?.preset.description ?? dataset.Description
+  const scope = !BUG_1274_ACTIVE_DATA_SOURCES.has(dataset.DataSource) ? 'Часткове покриття GBA; повна відповідність первинному звіту не підтверджена.'
+    : presetDescription.includes(BUG_1274_PARITY_NOTICE) ? '' : BUG_1274_PARITY_NOTICE
   return { title: report.Title, label,
     notice: world === 'fenix' && registration.sourceId === CLIENT_DISCOUNTS_ORIGINAL_ID && originalClientDiscountsSupported(dataset)
       ? `Готові налаштування «${report.Title}»: одержувачі в рядках, товари в колонках, максимальний відсоток знижки та прямий код регіону одержувача. Фільтри товару, одержувача й регіону вимкнені до вибору значень. Вкажіть дату стану; відповідність поточним даним 1С не підтверджена.`
@@ -188,7 +191,7 @@ function description(registration: Registration, report: ReportCatalogueEntry, d
       ? `Готові налаштування «${report.Title}»: склад документа → організація → постачальник, продажі мінус повернення до 31 дня. Невизначені постачальник і склад показуються окремо. Недоступні собівартість і прибуток залишаються порожніми, зокрема у підсумках.`
       : registration.mode === 'return-only'
       ? `Готові налаштування «${report.Title}»: додатна кількість записаних повернень за клієнтом, товаром і днем. Причина, коментар, сума одиничних цін і відповідність проведенню 1С не підтверджені.`
-      : `Готові налаштування «${report.Title}»: ${label}. ${profile?.preset.description ?? dataset.Description} ${currentOnly ? `${currentOnly} ` : ''}Часткове покриття GBA; повна відповідність первинному звіту не підтверджена.${required}` }
+      : `${[`Готові налаштування «${report.Title}»: ${label}.`, presetDescription, currentOnly, scope].filter(Boolean).join(' ')}${required}` }
 }
 function findLaunch(catalogue: ReportCatalogue, inspection: ReturnType<typeof inspectCatalogueMigration>, choice: CatalogueLaunchChoice,
   datasets: readonly ReportDataset[]) {

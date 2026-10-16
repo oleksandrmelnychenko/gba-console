@@ -18,6 +18,7 @@ import { CURRENT_VPARIVANIE_TITLE, CURRENT_VPARIVANIE_NOTICE } from './currentVp
 import { CASH_PERIOD_ALL_MEASURES, CASH_PERIOD_TITLE } from './cashPeriod'
 import { SETTLEMENT_PERIOD_TITLE } from './settlementPeriod'
 import { SUPPLIER_BATCH_GROSS_PROFIT_TITLE } from './supplierBatchGrossProfit'
+import { BUG_1274_PARITY_NOTICE } from './reportMigration'
 
 export const SUPPLIER_RETURN_REPORT_TITLE = 'Звіт документів повернень постачальникам'
 export const DEBT_REPORT_TITLE = 'Звіт поточної заборгованості'
@@ -40,13 +41,13 @@ const DOCUMENT_REPORT_PROFILES = [
       description: `Оберіть до 128 товарів або одну групу товарів і період продажів до 366 днів. ${CURRENT_VPARIVANIE_NOTICE}` } },
   { dataSource: 38, title: SUPPLIER_BATCH_GROSS_PROFIT_TITLE, rowGroupings: [73, 4, 21], measurements: [0, 2, 6, 10, 12, 14],
     preset: { id: 'recorded-supplier-batch-gross-profit', name: 'Валовий прибуток за постачальниками',
-      description: 'Склад партії джерела → організація → постачальник. До 31 дня імпортованих повністю розподілених продажів GBA. Часткові та непідтверджені партії не формують звіт; відповідність XLS 1С не підтверджена.' } },
+      description: `Склад партії джерела → організація → постачальник. До 31 дня імпортованих повністю розподілених продажів GBA. Часткові та непідтверджені партії не формують звіт. ${BUG_1274_PARITY_NOTICE}` } },
   { dataSource: 36, title: VPARIVANIE_TITLE, rowGroupings: [5], measurements: [80, 81, 82],
     preset: { id: 'vparivanie-certified-product-stock-sales', name: 'Впарювання: товар і клієнт',
       description: 'Один точний товар і період до 366 днів. Підтверджений залишок на кінець періоду, продажі та кількість за вибраним клієнтом. Оберіть товар; клієнт впливає лише на третій показник. Менеджер і повна відповідність XLS 1С ще не підтверджені.' } },
   { dataSource: 35, title: DAY_ORGANIZATION_GROSS_PROFIT_TITLE, rowGroupings: [3, 4], measurements: [2, 3, 4, 6, 7, 8, 10, 12, 14, 15],
     preset: { id: 'recorded-sale-gross-profit-by-day-organization', name: 'Валовий прибуток GBA за днем і організацією',
-      description: 'До 31 дня проведених продажів GBA: день → поточна записана організація. Десять EUR-показників з окремим ПДВ. Точні відбори «Товар без послуг», організації налаштування 1С і «Покупці» Fenix перевіряють локальне покриття за обраний період. Невідома собівартість порожня; відповідність XLS 1С не підтверджена.' } },
+      description: `До 31 дня проведених продажів GBA: день → поточна записана організація. Десять EUR-показників з окремим ПДВ. Точні відбори «Товар без послуг», організації налаштування 1С і «Покупці» Fenix перевіряють локальне покриття за обраний період. Невідома собівартість порожня. ${BUG_1274_PARITY_NOTICE}` } },
   { dataSource: 32, title: IMPORTED_SALE_DISCOUNT_TITLE, rowGroupings: [12, 15, 5], measurements: [79],
     preset: { id: 'imported-sale-recorded-discount-by-agreement-product', name: 'Записана знижка/націнка GBA',
       description: 'До 31 дня імпортованих продажів GBA: клієнт → точний договір → товар. Обов’язково виберіть один договір. Показник зі знаком у EUR без ПДВ; повернення не віднімаються, відповідність звіту 1С не підтверджена.' } },

@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import type { ReportCatalogue, ReportDataset } from '../types'
 import { catalogueLaunchOptions, isOneCTurnoverCatalogueChoice, resolveCatalogueLaunch } from './reportCatalogueLaunch'
 import { migrationFixture } from './reportMigration.test-fixtures'
+import { BUG_1274_PARITY_NOTICE } from './reportMigration'
 import { currentDebtDataset, grossDataset, lotDataset, netDataset, placementDataset, purchaseDataset, stockDataset } from './reportDatasets.test-fixtures'
 import { paymentDataset } from './paymentComparison.test-fixtures'
 import { buyerShareDataset } from './buyerSalesShare.test-fixtures'
@@ -81,7 +82,12 @@ describe('exact named catalogue launches', () => {
     if (!result.ok) throw new Error(result.message)
     expect(result.template.Data.sorted.Row.map(item => item.type)).toEqual(rows)
     if (source === 38) expect(result.template.Data.supplierSourceWorld).toBe(0)
-    expect(result.notice).toContain('Часткове покриття GBA')
+    if (source === 36) expect(result.notice).toContain('Часткове покриття GBA')
+    else {
+      expect(result.notice).toContain(BUG_1274_PARITY_NOTICE)
+      expect(result.notice.split(BUG_1274_PARITY_NOTICE)).toHaveLength(2)
+      expect(result.notice).not.toMatch(/не підтверджен/)
+    }
     expect(catalogueLaunchOptions(catalogue, reportId, [{ ...dataset, Groupings: [] }])).toEqual([])
   })
 

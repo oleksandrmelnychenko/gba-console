@@ -18,6 +18,7 @@ import { isCurrentVparivanieDataset } from './currentVparivanie'
 import { FENIX_BUYERS_ROOT_ID, isProductClassificationCapability, isSourceBuyerSubtreeCapability,
   isSourceOrganizationsCapability } from './nativeExactFilters'
 import { BUG_1274_ONLY_REPORT_SURFACE } from '../reportSurfacePolicy'
+import { BUG_1274_PARITY_NOTICE } from './reportMigration'
 import { SETTLEMENT_WORKBOOK_EXCLUDED_GROUPS, sourceCounterpartyGroupCapability } from './sourceCounterpartyGroups'
 import { requestSupplierBasis } from './supplierBasis'
 import { requestSupplierSourceWorld } from './supplierBatchGrossProfit'
@@ -67,7 +68,7 @@ const supported = [
   {
     fileName: 'Впарювання.xls',
     label: 'Матриця товарів',
-    notice: `Часткова форма Excel: залишки GBA на кінець періоду і продажі за вибраний період. ${VPARIVANIE_WORKBOOK_FILTERS_NOTICE} До останньої синхронізації залишків з 1С залишок порожній.`,
+    notice: `Часткова форма Excel: залишки GBA на кінець періоду і продажі за вибраний період. ${VPARIVANIE_WORKBOOK_FILTERS_NOTICE} До останньої синхронізації залишків з 1С залишок порожній. Продажі: ${BUG_1274_PARITY_NOTICE}`,
     dataSource: 39,
     accepts: isCurrentVparivanieDataset,
   },
@@ -129,10 +130,11 @@ function profitReadModeNotice(dataSource: number, dataset: ReportDataset): strin
   const original = dataSource === 35 ? '«Збережені регістри 1С» і відбори Fenix' : '«Збережені регістри 1С»'
   const filters = dataSource === 35 ? ` ${DAY_WORKBOOK_FILTERS_NOTICE}`
     : isSourceBuyerSubtreeCapability(dataset.sourceBuyerSubtree) ? ` ${SUPPLIER_WORKBOOK_FILTERS_NOTICE}` : ''
-  const notice = `Форма відкривається з джерелом «Поточні документи GBA»: продажі та повернення з поточних документів за період до ${currentProfitMaximumDays(dataset.profitReadMode)} календарних днів.${filters} Повна відповідність 1С ще не підтверджена.`
+  const notice = `Форма відкривається з джерелом «Поточні документи GBA»: продажі та повернення з поточних документів за період до ${currentProfitMaximumDays(dataset.profitReadMode)} календарних днів.${filters} ${BUG_1274_AMG_PARITY_NOTICE}`
   return BUG_1274_ONLY_REPORT_SURFACE ? notice : `${notice} Для розрахунку за регістрами 1С оберіть ${original}.`
 }
 
+export const BUG_1274_AMG_PARITY_NOTICE = `${BUG_1274_PARITY_NOTICE} ТОВ «АМГ «КОНКОРД» розраховано й звірено за базою 1С AMG.`
 export const DAY_WORKBOOK_FILTERS_NOTICE = 'Застосовано відбори книги: товар без послуг, організації ТОВ «АМГ «КОНКОРД», Фенікс, ФОП Самолюк А.Д. і ФОП Самолюк Ю.М. (ФОП Пархоменко не синхронізується в GBA), група «Покупці» Fenix і додаткові поля Артикул/Топ із порядком за місяцями.'
 export const SETTLEMENT_WORKBOOK_EXCLUSIONS_NOTICE = `Застосовано виключення книги: ${SETTLEMENT_WORKBOOK_EXCLUDED_GROUPS.map(group => group.Name).join('; ')}.`
 

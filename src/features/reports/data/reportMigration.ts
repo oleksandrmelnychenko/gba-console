@@ -15,6 +15,9 @@ export const BUG_1274_ACTIVE_REPORT_IDS = new Set([
 ])
 export const BUG_1274_ACTIVE_DATA_SOURCES: ReadonlySet<number> = new Set([35, 38, 39, 40, 41])
 
+export const BUG_1274_PARITY_LABEL = 'Розраховано з документів GBA; звірено з 1С'
+export const BUG_1274_PARITY_NOTICE = `${BUG_1274_PARITY_LABEL}.`
+
 export const BUG_1274_DISABLED_MESSAGE = 'Запуск цього звіту поки вимкнено. Оберіть форму із задачі 1274.'
 
 export const MIGRATION_STATUS_LABELS: Record<MigrationDisplayStatus, string> = {

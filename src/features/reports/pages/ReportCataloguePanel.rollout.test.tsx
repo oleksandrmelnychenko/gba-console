@@ -63,6 +63,21 @@ it('lists only the five BUG-1274 reports and hides ready, captured and unassesse
   expect(screen.queryByRole('button', { name: 'Покриття звіту: Конструктор запиту' })).toBeNull()
   expect(open).not.toHaveBeenCalled()
 })
+it('states the 1C reconciliation of the five BUG-1274 reports instead of migration states and a zero verified count', async () => {
+  mount()
+  await screen.findByRole('button', { name: 'ДБіторка.xls' })
+  expect(screen.getAllByText('Розраховано з документів GBA; звірено з 1С')).toHaveLength(5)
+  expect(screen.getByText('Розраховано з документів GBA; звірено з 1С.')).toBeTruthy()
+  expect(screen.queryByText('Перевірених позицій')).toBeNull()
+  expect(within(screen.getByRole('table')).queryByText(/Частково доступно в GBA|Джерело зафіксовано|Відповідність підтверджено/)).toBeNull()
+})
+it('keeps migration states and the verified count outside the BUG-1274-only surface', async () => {
+  surface.only = false
+  mount()
+  await screen.findByText('Готово')
+  expect(screen.getByText('Перевірених позицій')).toBeTruthy()
+  expect(screen.queryByText('Розраховано з документів GBA; звірено з 1С')).toBeNull()
+})
 it('shows ready reports disabled with a chip and hides captured and unassessed reports when the BUG-1274-only surface is off', async () => {
   surface.only = false
   const open = mount()

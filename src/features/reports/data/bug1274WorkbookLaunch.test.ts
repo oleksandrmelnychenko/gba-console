@@ -15,8 +15,10 @@ import { settlementModeDataset } from './settlementReadMode.test-fixtures'
 import { DAY_ORGANIZATION_GOODS_KIND_ID, DAY_ORGANIZATION_OUT_OF_SCOPE_ORGANIZATION_IDS, DAY_ORGANIZATION_SAVED_ORGANIZATION_IDS } from './dayOrganizationGrossProfit'
 import { groupCapability } from './sourceCounterpartyGroups.test-fixtures'
 import { SETTLEMENT_WORKBOOK_EXCLUDED_GROUPS } from './sourceCounterpartyGroups'
-import { DAY_WORKBOOK_FILTERS_NOTICE, DEBTOR_WORKBOOK_CURRENCY_NOTICE, SETTLEMENT_WORKBOOK_CURRENCY_NOTICE,
+import { BUG_1274_AMG_PARITY_NOTICE, DAY_WORKBOOK_FILTERS_NOTICE, DEBTOR_WORKBOOK_CURRENCY_NOTICE, SETTLEMENT_WORKBOOK_CURRENCY_NOTICE,
   SETTLEMENT_WORKBOOK_EXCLUSIONS_NOTICE } from './bug1274WorkbookLaunch'
+import { BUG_1274_PARITY_NOTICE } from './reportMigration'
+import { getNativeReportProfile } from './nativeReportProfiles'
 import { resolveBug1274WorkbookFilters, SUPPLIER_WORKBOOK_FILTERS_NOTICE, VPARIVANIE_WORKBOOK_FILTERS_NOTICE,
   type ResolvedWorkbookFilters } from './bug1274WorkbookFilters'
 import { currentVparivanieConfigurationError } from './currentVparivanie'
@@ -279,6 +281,18 @@ it('opens every workbook with an advertised source on current GBA documents and 
     const explicit = { ...defaultDatasetRequest(launch.dataset, day, day), ...(launch.dataset.DataSource === 40 ? { cashReadMode: 1 } : { settlementReadMode: 1 }) }
     expect(mode(bug1274WorkbookRequest(explicit, launch))).toBe(1)
   }
+})
+
+it('states the 1C reconciliation of the gross-profit and matrix workbooks neutrally, with АМГ from the AMG base', () => {
+  const launches = availableBug1274WorkbookLaunches([profitDayDataset, profitSupplierDataset, currentVparivanieDataset])
+  expect(launches.map(item => item.fileName)).toEqual(['ВП.xls', 'ВП по постачальниках.xls', 'Впарювання.xls'])
+  for (const launch of launches) {
+    expect(launch.notice).toContain(BUG_1274_PARITY_NOTICE)
+    expect(launch.notice).not.toMatch(/не підтвердж|не стверджен|не завершено/)
+  }
+  expect(launches[0].notice).toContain(BUG_1274_AMG_PARITY_NOTICE)
+  expect(launches[1].notice).toContain(BUG_1274_AMG_PARITY_NOTICE)
+  for (const source of [35, 38]) expect(getNativeReportProfile(source)?.preset.description).not.toMatch(/не підтвердж/)
 })
 
 it('opens both gross-profit workbooks on the previous completed Kyiv day like the settlement and cash forms', () => {
