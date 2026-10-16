@@ -416,6 +416,10 @@ export function flattenGroupingOptions(groups = REPORT_GROUPING_GROUPS): Array<R
   return groups.flatMap((group) => group.items.map((item) => ({ ...item, group: group.categoryLabel })))
 }
 
+export function measurementGroupCaption(name: string, label: string): string {
+  return name === 'Profitability' && !label.includes('%') ? `${label}, %` : label
+}
+
 export function getReportFieldLabel(key?: string): string {
   if (!key) {
     return ''

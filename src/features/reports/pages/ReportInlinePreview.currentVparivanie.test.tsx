@@ -14,7 +14,7 @@ it('shows the actual seven flat attributes and separate customer identities with
   expect(screen.getAllByRole('columnheader', { name: 'Одна назва / Результат' })).toHaveLength(2)
   expect(screen.getAllByRole('columnheader', { name: 'Результат' })).toHaveLength(2)
   const row = screen.getByRole('rowheader', { name: '0000123' }).closest('tr')!
-  expect(within(row).getAllByRole('cell').map(cell => cell.textContent)).toEqual(['0', '-2', '∅', '3.00000001'])
+  expect(within(row).getAllByRole('cell').map(cell => cell.textContent)).toEqual(['0', '-2', '∅', '3,00000001'])
   expect(within(row).getAllByRole('rowheader')).toHaveLength(7)
   expect(view.container.querySelectorAll('script')).toHaveLength(0)
   expect(screen.getByText('<script>name</script>')).toBeTruthy()

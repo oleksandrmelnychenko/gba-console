@@ -3,7 +3,7 @@ import { Alert, Badge, Stack, Text } from '@mantine/core'
 import { profitReadModeLabel } from '../data/profitReadMode'
 import { settlementReadModeLabel } from '../data/settlementReadMode'
 import { cashReadModeLabel } from '../data/cashReadMode'
-import { previewScalarText, type CurrentVparivanieProduct, type NativeReportPreview, type NativeReportPreviewAxis, type NativeReportPreviewFilter, type NativeReportPreviewRequest } from '../data/nativeReportPreview'
+import { previewCellText, previewNumberText, type CurrentVparivanieProduct, type NativeReportPreview, type NativeReportPreviewAxis, type NativeReportPreviewFilter, type NativeReportPreviewRequest } from '../data/nativeReportPreview'
 import { CURRENT_VPARIVANIE_PRODUCT_CAPTIONS, CURRENT_VPARIVANIE_PRODUCT_FIELDS, currentVparivanieQuantityText } from '../data/currentVparivanie'
 import { currentVparivanieSecondTier } from '../data/currentVparivanieColumns'
 import './report-inline-preview.css'
@@ -49,7 +49,7 @@ export function ReportInlinePreview({ preview }: { preview: NativeReportPreview 
             const value = cells.get(`${row.SourceIndex}:${column.SourceIndex}`)
             return <td key={column.SourceIndex} title={value === undefined ? 'Клітинка відсутня' : value.Kind === 'null' ? 'Явне значення NULL' : undefined}>
               {products && value?.Kind === 'decimal' && typeof value.Value === 'string'
-                ? currentVparivanieQuantityText(value.Value) : previewScalarText(value)}
+                ? previewNumberText(currentVparivanieQuantityText(value.Value)) : previewCellText(value)}
             </td>
           })}
         </tr>)}</tbody>

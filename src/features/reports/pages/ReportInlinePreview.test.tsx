@@ -16,14 +16,14 @@ const request: NativeReportPreviewRequest = {
     'Класифікацію Goods підтверджено тільки для повної множини чинних товарів продажу вибраного дня; повноту каталогу Fenix не стверджено.',
   ],
 }
-function show(Request: unknown = request) {
+function show(Request: unknown = request, Value: unknown = { Kind: 'null', Value: null, Provenance: 'producerCell' }) {
   const preview = normalizeNativeReportPreview({ Preview: {
     Version: 1, ResultSha256: 'a'.repeat(64), PresentationOnly: true, Request,
     Page: { Offset: 0, Limit: 50, TotalVisibleRows: 1, ReturnedRows: 1, HasMore: false },
     RowSchema: [{ Caption: 'День' }], ColumnSchema: [{ Caption: 'Сума' }],
     Rows: [{ Ordinal: 0, SourceIndex: 12, Values: [{ Caption: '12.09.2026' }] }],
     Columns: [{ Ordinal: 0, SourceIndex: 3, Values: [{ Caption: 'Сума' }] }],
-    Cells: [{ RowSourceIndex: 12, ColumnSourceIndex: 3, Value: { Kind: 'null', Value: null, Provenance: 'producerCell' } }],
+    Cells: [{ RowSourceIndex: 12, ColumnSourceIndex: 3, Value }],
   } })
   return render(<MantineProvider env="test"><ReportInlinePreview preview={preview} /></MantineProvider>)
 }
@@ -91,4 +91,10 @@ it('retains repeated notes and hides exact technical filter identities by defaul
   expect(view.container.textContent).not.toContain('[Id=42]')
   expect(view.container.textContent).not.toContain('[Id=64]')
   expect(screen.getByText('Вид товару Fenix У списку: Обране точне значення, Обране точне значення, Назва товару')).toBeTruthy()
+})
+
+it('prints decimal cells with 1C thousands separators and a decimal comma', () => {
+  show(request, { Kind: 'decimal', Value: '104090.44', Provenance: 'producerCell' })
+  const table = screen.getByRole('region', { name: 'Таблиця попереднього перегляду' })
+  expect(table.querySelector('td')?.textContent).toBe('104\u00a0090,44')
 })

@@ -83,6 +83,7 @@ import {
   createDefaultMeasurementGroups,
   flattenCheckedMeasurements,
   getReportFieldLabel,
+  measurementGroupCaption,
 } from '../data/reportOptions'
 import type {
   OneCTurnoverFilters,
@@ -1816,7 +1817,7 @@ function LegacyReportBuilder({
                     checked={group.IsChecked}
                     indeterminate={!group.IsChecked && group.SubList.some((item) => item.IsChecked)}
                     aria-label={groupLabel}
-                    label={group.Name === 'Profitability' ? `${groupLabel}, %` : groupLabel}
+                    label={measurementGroupCaption(group.Name, groupLabel)}
                     onChange={() => toggleMeasurementGroup(measurements, groupIndex, onMeasurementsChange)}
                   />
                   {hasDistinctChildren ? group.SubList.map((item, itemIndex) => (

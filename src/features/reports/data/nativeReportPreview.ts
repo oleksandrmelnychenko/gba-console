@@ -226,3 +226,14 @@ export function previewScalarText(value: NativeReportPreviewScalar | undefined):
   if (value.Kind === 'null') return '∅'
   return value.Value ?? '∅'
 }
+
+export function previewNumberText(value: string): string {
+  const match = /^(-?)(\d+)(?:\.(\d+))?$/.exec(value)
+  if (!match) return value
+  return `${match[1]}${match[2].replace(/\B(?=(\d{3})+(?!\d))/g, '\u00a0')}${match[3] ? `,${match[3]}` : ''}`
+}
+
+export function previewCellText(value: NativeReportPreviewScalar | undefined): string {
+  const text = previewScalarText(value)
+  return value?.Value != null && (value.Kind === 'decimal' || value.Kind === 'signedInteger') ? previewNumberText(text) : text
+}

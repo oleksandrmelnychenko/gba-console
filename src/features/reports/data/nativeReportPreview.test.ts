@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { normalizeNativeReportPreview, previewScalarText } from './nativeReportPreview'
+import { normalizeNativeReportPreview, previewCellText, previewNumberText, previewScalarText } from './nativeReportPreview'
 
 const preview = {
   Version: 1, ResultSha256: 'a'.repeat(64), PresentationOnly: true,
@@ -22,6 +22,21 @@ describe('native report preview transport', () => {
     const result = normalizeNativeReportPreview({ Preview: preview })
     expect(previewScalarText(result.Cells[0].Value)).toBe('∅')
     expect(previewScalarText(undefined)).toBe('—')
+  })
+
+  it('shows numbers like 1C: no-break space thousands and a decimal comma, keeping the server digits', () => {
+    expect(previewNumberText('104090.44')).toBe('104\u00a0090,44')
+    expect(previewNumberText('-6477443.56')).toBe('-6\u00a0477\u00a0443,56')
+    expect(previewNumberText('2260.3')).toBe('2\u00a0260,3')
+    expect(previewNumberText('999')).toBe('999')
+    expect(previewNumberText('1000')).toBe('1\u00a0000')
+    expect(previewNumberText('0.00')).toBe('0,00')
+    expect(previewNumberText('n/a')).toBe('n/a')
+    expect(previewCellText({ Kind: 'decimal', Value: '17222', Provenance: 'producerCell' })).toBe('17\u00a0222')
+    expect(previewCellText({ Kind: 'signedInteger', Value: '-12345', Provenance: 'producerCell' })).toBe('-12\u00a0345')
+    expect(previewCellText({ Kind: 'text', Value: '12345.5', Provenance: 'producerCell' })).toBe('12345.5')
+    expect(previewCellText({ Kind: 'null', Value: null, Provenance: 'producerCell' })).toBe('∅')
+    expect(previewCellText(undefined)).toBe('—')
   })
 
   it('rejects unexpected coordinates and oversized result pages', () => {

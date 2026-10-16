@@ -99,7 +99,7 @@ describe('constructor result and export request identity', () => {
     await ready()
     fireEvent.click(screen.getByRole('button', { name: 'Продажі за днями' }))
     fireEvent.click(screen.getByRole('button', { name: 'Показати на екрані' }))
-    expect(await screen.findByRole('cell', { name: '12.50' })).toBeTruthy()
+    expect(await screen.findByRole('cell', { name: '12,50' })).toBeTruthy()
     expect(screen.getByRole('region', { name: 'Таблиця попереднього перегляду' })).toBeTruthy()
     expect(vi.mocked(previewStockReport)).toHaveBeenCalledOnce()
     expect(vi.mocked(createStockReport)).not.toHaveBeenCalled()

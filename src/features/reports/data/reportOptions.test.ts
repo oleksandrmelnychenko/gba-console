@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
+  measurementGroupCaption,
   REPORT_FILTER_FIELD_GROUPS,
   REPORT_FILTER_FIELD_TYPES,
   flattenGroupingOptions,
@@ -133,4 +134,10 @@ describe('sanitizeReportTemplate', () => {
     expect(removedCount).toBe(0)
     expect(data.sorted.Row).toEqual([{ key: 'SomethingNewer', label: 'Щось нове', type: 99 }])
   })
+})
+
+it('appends the percent sign to a profitability group label only once', () => {
+  expect(measurementGroupCaption('Profitability', 'Рентабельність')).toBe('Рентабельність, %')
+  expect(measurementGroupCaption('Profitability', 'Рентабельність без ПДВ, %')).toBe('Рентабельність без ПДВ, %')
+  expect(measurementGroupCaption('Sales', 'Продажі')).toBe('Продажі')
 })
