@@ -47,11 +47,17 @@ export const SUPPLIER_WORKBOOK_SUPPLIERS = [
   'TORK FREN YEDEK PARCA SANAYI VE TICARET LIMITED SIRKETI',
 ] as const
 
+export const SUPPLIER_WORKBOOK_AMG_NAMES: Readonly<Partial<Record<(typeof SUPPLIER_WORKBOOK_SUPPLIERS)[number], string>>> = {
+  'Kurtsan Otomotiv San. ve Tic. A.Ş': 'KURTSAN OTOMOTIV SAN. VE TIC. A.S., TURKEY',
+  'KALE OTO RADYATÖR SANAYİ VE TİC': 'KALE OTO RADYATOR SANAYI VE TIC  Туречина',
+  'Aymeks Ic ve Dis Tic. Ltd. Sti.': 'AYMEKS IC VE DIS TICARET LTD. STI.,Туреччина',
+}
+
 export const VPARIVANIE_WORKBOOK_GROUP = 'AL-KO'
 export const VPARIVANIE_WORKBOOK_CUSTOMER = 'АФРАКО ТЗОВ'
 export const VPARIVANIE_WORKBOOK_MANAGER = 'Крицький Олег Русланович'
 
-export const SUPPLIER_WORKBOOK_FILTERS_NOTICE = `Застосовано відбори книги: організації ${SUPPLIER_WORKBOOK_ORGANIZATIONS.join(', ')} (ФОП Пархоменко не синхронізується в GBA), ${SUPPLIER_WORKBOOK_SUPPLIERS.length} постачальників зі збереженого налаштування 1С «OV» та група «Покупці» Fenix. Їх можна змінити у формі.`
+export const SUPPLIER_WORKBOOK_FILTERS_NOTICE = `Застосовано відбори книги: організації ${SUPPLIER_WORKBOOK_ORGANIZATIONS.join(', ')} (ФОП Пархоменко не синхронізується в GBA), ${SUPPLIER_WORKBOOK_SUPPLIERS.length} постачальників зі збереженого налаштування 1С «OV» з усіма їхніми картками Fenix і AMG та група «Покупці» Fenix. Їх можна змінити у формі.`
 export const VPARIVANIE_WORKBOOK_FILTERS_NOTICE = `Застосовано відбори книги: група товару ${VPARIVANIE_WORKBOOK_GROUP}, покупець ${VPARIVANIE_WORKBOOK_CUSTOMER}, основний менеджер покупця ${VPARIVANIE_WORKBOOK_MANAGER}. Їх можна змінити у формі.`
 
 export type WorkbookLookup = (dataSource: number, field: number, value: string) => Promise<ReportEntity[]>
@@ -62,7 +68,8 @@ export type ResolvedWorkbookFilters = {
   unresolved: string[]
 }
 
-type Target = { field: number; condition: ReportFilterCondition; names: readonly string[]; listQuery?: string }
+type Target = { field: number; condition: ReportFilterCondition; names: readonly string[]; listQuery?: string
+  aliases?: Readonly<Partial<Record<string, string>>> }
 
 const EQUALS = REPORT_FILTER_CONDITIONS.find(condition => condition.Type === 0)!
 const IN_LIST = REPORT_FILTER_CONDITIONS.find(condition => condition.Type === 2)!
@@ -72,7 +79,7 @@ const LOOKUP_CONCURRENCY = 6
 function targets(fileName: string): Target[] {
   if (fileName === SUPPLIER_WORKBOOK_FILE) return [
     { field: 0, condition: IN_LIST, names: SUPPLIER_WORKBOOK_ORGANIZATIONS, listQuery: '' },
-    { field: 17, condition: IN_LIST, names: SUPPLIER_WORKBOOK_SUPPLIERS },
+    { field: 17, condition: IN_LIST, names: SUPPLIER_WORKBOOK_SUPPLIERS, aliases: SUPPLIER_WORKBOOK_AMG_NAMES },
   ]
   if (fileName === VPARIVANIE_WORKBOOK_FILE) return [
     { field: 4, condition: IN_GROUP, names: [VPARIVANIE_WORKBOOK_GROUP] },
@@ -100,6 +107,20 @@ function exactMatch(entities: readonly ReportEntity[], name: string): ReportEnti
   return matches.length === 1 && matches[0].Id !== undefined && matches[0].Id !== null ? matches[0] : null
 }
 
+function sourceNames(target: Target, name: string): string[] {
+  const alias = target.aliases?.[name]
+  return alias ? [name, alias] : [name]
+}
+
+function distinct(entities: readonly (ReportEntity | null)[]): ReportEntity[] {
+  const seen = new Set<string>()
+  return entities.flatMap(entity => {
+    if (!entity || seen.has(String(entity.Id))) return []
+    seen.add(String(entity.Id))
+    return [entity]
+  })
+}
+
 async function mapLimited<T, R>(items: readonly T[], limit: number, map: (item: T) => Promise<R>): Promise<R[]> {
   const results = new Array<R>(items.length)
   let next = 0
@@ -124,13 +145,15 @@ export async function resolveBug1274WorkbookFilters(fileName: string, dataset: R
       unresolved.push(...target.names.map(workbookCaption))
       continue
     }
-    const found = target.listQuery !== undefined
+    const found: ReportEntity[][] = target.listQuery !== undefined
       ? await lookup(dataset.DataSource, target.field, target.listQuery)
-        .then(entities => target.names.map(name => exactMatch(entities, name)), () => target.names.map(() => null))
-      : await mapLimited(target.names, LOOKUP_CONCURRENCY, name => lookup(dataset.DataSource, target.field, searchText(name))
-        .then(entities => exactMatch(entities, name), () => null))
-    const values = found.flatMap(entity => entity ? [{ Data: entity, Name: String(entity.Name), Value: 0 }] : [])
-    unresolved.push(...target.names.filter((_, index) => !found[index]).map(workbookCaption))
+        .then(entities => target.names.map(name => distinct(sourceNames(target, name).map(source => exactMatch(entities, source)))),
+          () => target.names.map(() => []))
+      : await mapLimited(target.names, LOOKUP_CONCURRENCY, async name => distinct(await Promise.all(sourceNames(target, name)
+        .map(source => lookup(dataset.DataSource, target.field, searchText(source))
+          .then(entities => exactMatch(entities, source), () => null)))))
+    const values = distinct(found.flat()).map(entity => ({ Data: entity, Name: String(entity.Name), Value: 0 }))
+    unresolved.push(...target.names.filter((_, index) => !found[index].length).map(workbookCaption))
     if (values.length && (target.condition.Type === 2 || values.length === 1))
       selections.push({ IsChecked: true, SelectedField: { ...field }, FilterCondition: { ...target.condition }, Values: values })
   }

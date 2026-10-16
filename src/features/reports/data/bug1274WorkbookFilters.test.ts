@@ -2,8 +2,8 @@ import { expect, it, vi } from 'vitest'
 import type { ReportEntity } from '../types'
 import { profitSupplierDataset } from './profitReadMode.test-fixtures'
 import { currentVparivanieDataset } from './currentVparivanie.test-fixtures'
-import { resolveBug1274WorkbookFilters, resolvesWorkbookFilters, SUPPLIER_WORKBOOK_FILE, SUPPLIER_WORKBOOK_ORGANIZATIONS,
-  SUPPLIER_WORKBOOK_SUPPLIERS, VPARIVANIE_WORKBOOK_FILE, workbookCaption, workbookFiltersNotice, type WorkbookLookup } from './bug1274WorkbookFilters'
+import { resolveBug1274WorkbookFilters, resolvesWorkbookFilters, SUPPLIER_WORKBOOK_AMG_NAMES, SUPPLIER_WORKBOOK_FILE,
+  SUPPLIER_WORKBOOK_FILTERS_NOTICE, SUPPLIER_WORKBOOK_ORGANIZATIONS, SUPPLIER_WORKBOOK_SUPPLIERS, VPARIVANIE_WORKBOOK_FILE, workbookCaption, workbookFiltersNotice, type WorkbookLookup } from './bug1274WorkbookFilters'
 
 const managerDataset = { ...currentVparivanieDataset,
   currentVparivanie: { ...currentVparivanieDataset.currentVparivanie as object, ManagerFilterSupported: true },
@@ -39,6 +39,37 @@ it('resolves the supplier workbook organizations and the saved 1C supplier list 
   expect(vi.mocked(lookup).mock.calls.some(call => call[2] === 'КРАФТ СП')).toBe(true)
   expect(vi.mocked(lookup).mock.calls.every(call => !call[2].includes('\t') && call[2].length <= 120)).toBe(true)
   expect(SUPPLIER_WORKBOOK_ORGANIZATIONS).not.toContain('ФОП Пархоменко Ганна Юріївна')
+})
+
+it('selects every GBA card of a workbook supplier, including the separate AMG card under its AMG 1C name', async () => {
+  const cards: Record<string, ReportEntity[]> = {
+    'Aymeks Ic ve Dis Tic. Ltd. Sti.': [{ Id: '626338', Name: 'Aymeks Ic ve Dis Tic. Ltd. Sti. [626338]' }],
+    'AYMEKS IC VE DIS TICARET LTD. STI.,Туреччина': [{ Id: '622925', Name: 'AYMEKS IC VE DIS TICARET LTD. STI.,Туреччина [622925]' }],
+    'KALE OTO RADYATÖR SANAYİ VE TİC': [{ Id: '626729', Name: 'KALE OTO RADYATÖR SANAYİ VE TİC [626729]' }],
+    'KALE OTO RADYATOR SANAYI VE TIC  Туречина': [{ Id: '624181', Name: 'KALE OTO RADYATOR SANAYI VE TIC  Туречина [624181]' }],
+    'Kurtsan Otomotiv San. ve Tic. A.Ş': [{ Id: '626719', Name: 'Kurtsan Otomotiv San. ve Tic. A.Ş [626719]' }],
+    'KURTSAN OTOMOTIV SAN. VE TIC. A.S., TURKEY': [{ Id: '624052', Name: 'KURTSAN OTOMOTIV SAN. VE TIC. A.S., TURKEY [624052]' },
+      { Id: '624053', Name: 'KURTSAN OTOMOTIV SAN. VE TIC. A.S., TURKEY (стара) [624053]' }],
+    'BENEFIT OTOMOTIV IC DIS TIC. LTD. STI,Туреччина': [{ Id: '623048', Name: 'BENEFIT OTOMOTIV IC DIS TIC. LTD. STI,Туреччина [623048]' }],
+  }
+  const lookup: WorkbookLookup = vi.fn(async (_source: number, field: number, value: string) => field === 17 ? cards[value] ?? [] : [])
+  const resolved = await resolveBug1274WorkbookFilters(SUPPLIER_WORKBOOK_FILE, profitSupplierDataset, lookup)
+  const suppliers = resolved.selections.find(selection => selection.SelectedField.Type === 17)!
+  expect(suppliers.FilterCondition.Type).toBe(2)
+  expect(suppliers.Values.map(value => value.Data.Id)).toEqual(['623048', '626719', '624052', '626729', '624181', '626338', '622925'])
+  expect(resolved.unresolved).not.toContain('Aymeks Ic ve Dis Tic. Ltd. Sti.')
+  expect(resolved.unresolved).toHaveLength(SUPPLIER_WORKBOOK_ORGANIZATIONS.length + SUPPLIER_WORKBOOK_SUPPLIERS.length - 4)
+  expect(Object.keys(SUPPLIER_WORKBOOK_AMG_NAMES).every(name => (SUPPLIER_WORKBOOK_SUPPLIERS as readonly string[]).includes(name))).toBe(true)
+  expect(SUPPLIER_WORKBOOK_FILTERS_NOTICE).toContain('35 постачальників')
+})
+
+it('treats an ambiguous AMG name like any ambiguous name and keeps the resolved Fenix card', async () => {
+  const lookup: WorkbookLookup = async (_source, field, value) => field !== 17 ? []
+    : value === 'Aymeks Ic ve Dis Tic. Ltd. Sti.' ? [{ Id: '626338', Name: 'Aymeks Ic ve Dis Tic. Ltd. Sti. [626338]' }]
+    : value === 'AYMEKS IC VE DIS TICARET LTD. STI.,Туреччина' ? [{ Id: '1', Name: 'AYMEKS IC VE DIS TICARET LTD. STI.,Туреччина [1]' },
+      { Id: '2', Name: 'AYMEKS IC VE DIS TICARET LTD. STI.,Туреччина [2]' }] : []
+  const resolved = await resolveBug1274WorkbookFilters(SUPPLIER_WORKBOOK_FILE, profitSupplierDataset, lookup)
+  expect(resolved.selections.find(selection => selection.SelectedField.Type === 17)!.Values.map(value => value.Data.Id)).toEqual(['626338'])
 })
 
 it('refuses ambiguous or failed lookups instead of guessing an identity', async () => {
