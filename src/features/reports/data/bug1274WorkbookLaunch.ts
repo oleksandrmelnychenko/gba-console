@@ -2,7 +2,8 @@ import { currentProfitMaximumDays, isProfitReadModeCapability, requestProfitRead
 import { isSettlementReadModeCapability, requestSettlementReadMode } from './settlementReadMode'
 import { isCashReadModeCapability } from './cashReadMode'
 import type { ReportDataset, ReportRequestBody } from '../types'
-import { cashWorkbookPresentationSupported, readWorkbookCapability, requestWorkbookPresentation } from './workbookPresentation'
+import { cashCurrencyRecordWorkbookSupported, cashWorkbookPresentationSupported, readWorkbookCapability,
+  requestWorkbookPresentation } from './workbookPresentation'
 import { CASH_WORKBOOK_ROWS, groupedCashPeriod, groupedCashSupported, groupedCashWorkbookSupported, requestGroupedCashPeriod } from './groupedCashPeriod'
 import { cashPeriodSupportsManagement, isCashPeriodDataset } from './cashPeriod'
 import { isSettlementPeriodDataset } from './settlementPeriod'
@@ -135,8 +136,11 @@ function profitReadModeNotice(dataSource: number, dataset: ReportDataset): strin
 export const DAY_WORKBOOK_FILTERS_NOTICE = 'Застосовано відбори книги: товар без послуг, організації ТОВ «АМГ «КОНКОРД», Фенікс, ФОП Самолюк А.Д. і ФОП Самолюк Ю.М. (ФОП Пархоменко не синхронізується в GBA), група «Покупці» Fenix і додаткові поля Артикул/Топ із порядком за місяцями.'
 export const SETTLEMENT_WORKBOOK_EXCLUSIONS_NOTICE = `Застосовано виключення книги: ${SETTLEMENT_WORKBOOK_EXCLUDED_GROUPS.map(group => group.Name).join('; ')}.`
 
+export const CASH_CURRENCY_RECORD_NOTICE = 'Як в 1С, кожна валюта рахунку чи каси — окремий рядок із сумами у своїй валюті.'
+
 function groupedCashNotice(dataset: ReportDataset): string {
-  const notice = 'Показано банківські рахунки та каси: вісім показників у валюті рахунку й управлінській валюті. Відбори рахунку, організації, валюти та виду доступні у формі.'
+  const base = 'Показано банківські рахунки та каси: вісім показників у валюті рахунку й управлінській валюті. Відбори рахунку, організації, валюти та виду доступні у формі.'
+  const notice = cashCurrencyRecordWorkbookSupported(dataset) ? `${base} ${CASH_CURRENCY_RECORD_NOTICE}` : base
   return isCashReadModeCapability(dataset.cashReadMode) ? `${notice} ${CASH_READ_MODE_NOTICE}` : notice
 }
 
@@ -231,7 +235,8 @@ function presentationWorkbookRequest(request: ReportRequestBody, launch: Workboo
         ? [30] : [30, 60, 61], ordering: null } }
   if (launch.fileName !== 'Ведомость по денежным средствам.xls' || !cashWorkbookPresentationSupported(launch.dataset)
     || !groupedCashPeriod(requestGroupedCashPeriod(request))) return request
-  const rows = datasetGroupings(launch.dataset).filter(row => row.type === 40)
+  const rowType = cashCurrencyRecordWorkbookSupported(launch.dataset) ? 41 : 40
+  const rows = datasetGroupings(launch.dataset).filter(row => row.type === rowType)
   return rows.length === 1 ? { ...structuredClone(request), sorted: { ...structuredClone(request.sorted), Row: rows },
     workbookPresentation: { version: 1, additionalFields: [30, 33], ordering: null } } : request
 }

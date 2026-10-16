@@ -11,6 +11,8 @@ export const cashWorkbookCapability = { version: 1, additionalFields: [
 export const presentedCashDataset: ReportDataset = { ...groupedCashWorkbookDataset,
   workbookPresentation: cashWorkbookCapability,
   groupedCashPeriod: { ...(groupedCashWorkbookDataset.groupedCashPeriod as object), PresentedWorkbookRows: [40] } }
+export const presentedCurrencyRecordCashDataset: ReportDataset = { ...presentedCashDataset,
+  groupedCashPeriod: { ...(presentedCashDataset.groupedCashPeriod as object), PresentedCurrencyRecordRows: [41] } }
 export const presentedSettlementDataset: ReportDataset = { ...settlementAttributesDataset,
   workbookPresentation: { version: 1, additionalFields: [
     { type: 30, caption: 'Валюта взаєморозрахунків', placement: 'inline' },

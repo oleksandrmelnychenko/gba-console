@@ -1,10 +1,11 @@
 import { expect, it } from 'vitest'
-import { bug1274WorkbookRequest, type WorkbookLaunch } from './bug1274WorkbookLaunch'
+import { availableBug1274WorkbookLaunches, bug1274WorkbookRequest, CASH_CURRENCY_RECORD_NOTICE, type WorkbookLaunch } from './bug1274WorkbookLaunch'
 import { cashPeriodConfigurationError } from './cashPeriod'
 import { defaultDatasetRequest } from './reportDatasets'
-import { cashWorkbookPresentationSupported, cloneWorkbookAliases, normalizeWorkbookDataset, readWorkbookSelection,
+import { cashCurrencyRecordWorkbookSupported, cashWorkbookPresentationSupported, cloneWorkbookAliases, normalizeWorkbookDataset, readWorkbookSelection,
   workbookConfigurationError } from './workbookPresentation'
-import { presentedCashDataset, presentedCashRequest, presentedDayDataset, presentedSettlementDataset } from './workbookPresentation.test-fixtures'
+import { presentedCashDataset, presentedCashRequest, presentedCurrencyRecordCashDataset, presentedDayDataset,
+  presentedSettlementDataset } from './workbookPresentation.test-fixtures'
 import { retainStoredTemplateFields } from './reportTemplateDraft'
 import { reportWorkspaceDraftCompatibility } from './reportWorkspaceDraftCompatibility'
 import { encodeReportWorkspaceSnapshot } from './reportWorkspaceDraft'
@@ -80,6 +81,21 @@ it('uses only account rows with Currency/Kind for the new cash shortcut while re
   expect(selected.sorted.Measurements).toEqual(request.sorted.Measurements)
   const legacy = { ...presentedCashDataset, workbookPresentation: undefined }
   expect(bug1274WorkbookRequest(request, launch('Ведомость по денежным средствам.xls', legacy)).sorted.Row.map(row => row.type)).toEqual([40, 44, 43])
+})
+it('opens the cash shortcut on currency-record rows when the server advertises them, like the single-currency 1C desks', () => {
+  const request = defaultDatasetRequest(presentedCurrencyRecordCashDataset, '2026-10-01', '2026-10-04')
+  const selected = bug1274WorkbookRequest(request, launch('Ведомость по денежным средствам.xls', presentedCurrencyRecordCashDataset))
+  expect(selected.sorted.Row.map(row => row.type)).toEqual([41])
+  expect(selected.workbookPresentation).toEqual({ version: 1, additionalFields: [30, 33], ordering: null })
+  expect(workbookConfigurationError(selected, presentedCurrencyRecordCashDataset)).toBeNull()
+  expect(workbookConfigurationError(selected, presentedCashDataset)).toBeTruthy()
+  expect(workbookConfigurationError(selected)).toBeNull()
+  expect(cashPeriodConfigurationError(selected, presentedCurrencyRecordCashDataset, '2026-10-05')).toBeNull()
+  expect(cashPeriodConfigurationError(selected, presentedCashDataset, '2026-10-05')).toBeTruthy()
+  expect(cashCurrencyRecordWorkbookSupported(presentedCashDataset)).toBe(false)
+  const plain = bug1274WorkbookRequest(request, launch('Ведомость по денежным средствам.xls', presentedCashDataset))
+  expect(plain.sorted.Row.map(row => row.type)).toEqual([40])
+  expect(availableBug1274WorkbookLaunches([presentedCurrencyRecordCashDataset])[0].notice).toContain(CASH_CURRENCY_RECORD_NOTICE)
 })
 it('defaults full settlements to manager/region but excludes both from the debtor form', () => {
   const request = defaultDatasetRequest(presentedSettlementDataset, '2026-10-01', '2026-10-04')
