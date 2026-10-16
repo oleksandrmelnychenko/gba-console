@@ -85,7 +85,7 @@ export function cashWorkbookPresentationSupported(dataset?: ReportDataset): bool
 export function cashCurrencyRecordWorkbookSupported(dataset?: ReportDataset): boolean {
   if (!cashWorkbookPresentationSupported(dataset) || !record(dataset?.groupedCashPeriod)) return false
   const rows = dataset.groupedCashPeriod.PresentedCurrencyRecordRows
-  return Array.isArray(rows) && rows.length === 1 && rows[0] === 41
+  return Array.isArray(rows) && rows.length === 1 && rows[0] === 42
 }
 
 function option(data: object, name: string): unknown {
@@ -111,7 +111,7 @@ export function workbookConfigurationError(data: ReportRequestBody, dataset?: Re
     return 'Налаштування книги за днем доступні для продажів і повернень за період.'
   const cashRows = data.sorted?.Row?.map(field => field.type).join(',')
   if (data.dataSource === 40 && (!record(option(data, 'groupedCashPeriod'))
-    || cashRows !== '40' && !(cashRows === '41' && (!dataset || cashCurrencyRecordWorkbookSupported(dataset)))))
+    || cashRows !== '40' && !(cashRows === '42' && (!dataset || cashCurrencyRecordWorkbookSupported(dataset)))))
     return 'Форма коштів із додатковими полями групується лише за рахунком / касою або за рахунком / касою у валюті.'
   const settlements = option(data, 'groupedSettlementPeriod')
   if (data.dataSource === 41 && (!record(settlements)

@@ -28,10 +28,10 @@ export function CashPeriodModePanel({ dataset, grouped, exact, disabled, enabled
           { value: '43,40,42,41', label: 'Організація / Рахунок / Запис / Валюта' },
           { value: '40,44,43', label: 'Рахунок / Тип / Організація' },
           ...(cashWorkbookPresentationSupported(dataset) ? [{ value: '40', label: 'Рахунок / каса з додатковими полями' }] : []),
-          ...(cashCurrencyRecordWorkbookSupported(dataset) ? [{ value: '41', label: 'Рахунок / каса у валюті з додатковими полями' }] : []),
+          ...(cashCurrencyRecordWorkbookSupported(dataset) ? [{ value: '42', label: 'Рахунок / каса у валюті з додатковими полями' }] : []),
         ]} onChange={value => {
           const types = value === '40' && cashWorkbookPresentationSupported(dataset) ? [40]
-            : value === '41' && cashCurrencyRecordWorkbookSupported(dataset) ? [41]
+            : value === '42' && cashCurrencyRecordWorkbookSupported(dataset) ? [42]
             : value === '40,44,43' ? CASH_WORKBOOK_ROWS : value === '43,40,42,41' ? [43, 40, 42, 41] : null
           if (!types) return
           const next = types.flatMap(type => available.filter(row => row.type === type))

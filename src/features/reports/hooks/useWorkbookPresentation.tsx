@@ -21,7 +21,7 @@ export function useWorkbookPresentation({ dataSource, groupingOptions, setRowGro
   }
   function changeCashRows(rows: ReportGroupingItem[]) {
     setRowGroups(rows)
-    setValue(['40', '41'].includes(rows.map(row => row.type).join(','))
+    setValue(['40', '42'].includes(rows.map(row => row.type).join(','))
       ? value ?? { version: 1, additionalFields: [], ordering: null } : undefined)
   }
   function changeGroupedCash(next: unknown) {

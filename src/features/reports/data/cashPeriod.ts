@@ -148,7 +148,7 @@ export function cashPeriodConfigurationError(data: ReportRequestBody, dataset?: 
     || !data.sorted || !(exact(data.sorted.Row?.map(item => item.type), CASH_PERIOD_ROWS)
       || grouped && groupedCashWorkbookSupported(dataset) && exact(data.sorted.Row?.map(item => item.type), CASH_WORKBOOK_ROWS)
       || grouped && requestWorkbookPresentation(data) != null && (exact(data.sorted.Row?.map(item => item.type), [40])
-        || exact(data.sorted.Row?.map(item => item.type), [41]) && (!dataset || cashCurrencyRecordWorkbookSupported(dataset))))
+        || exact(data.sorted.Row?.map(item => item.type), [42]) && (!dataset || cashCurrencyRecordWorkbookSupported(dataset))))
     || !Array.isArray(data.sorted.Col) || data.sorted.Col.length !== 0
     || !exact(data.sorted.Measurements?.map(item => item.Type), grouped ? CASH_PERIOD_ALL_MEASURES : cashPeriodMeasurements(scope))
     || data.sorted.Measurements.some(item => item.IsChecked === false))

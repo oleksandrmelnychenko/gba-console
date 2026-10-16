@@ -2,6 +2,7 @@ import { expect, it } from 'vitest'
 import { availableBug1274WorkbookLaunches, bug1274WorkbookRequest, CASH_CURRENCY_RECORD_NOTICE, type WorkbookLaunch } from './bug1274WorkbookLaunch'
 import { cashPeriodConfigurationError } from './cashPeriod'
 import { defaultDatasetRequest } from './reportDatasets'
+import type { ReportDataset } from '../types'
 import { cashCurrencyRecordWorkbookSupported, cashWorkbookPresentationSupported, cloneWorkbookAliases, normalizeWorkbookDataset, readWorkbookSelection,
   workbookConfigurationError } from './workbookPresentation'
 import { presentedCashDataset, presentedCashRequest, presentedCurrencyRecordCashDataset, presentedDayDataset,
@@ -85,7 +86,7 @@ it('uses only account rows with Currency/Kind for the new cash shortcut while re
 it('opens the cash shortcut on currency-record rows when the server advertises them, like the single-currency 1C desks', () => {
   const request = defaultDatasetRequest(presentedCurrencyRecordCashDataset, '2026-10-01', '2026-10-04')
   const selected = bug1274WorkbookRequest(request, launch('Ведомость по денежным средствам.xls', presentedCurrencyRecordCashDataset))
-  expect(selected.sorted.Row.map(row => row.type)).toEqual([41])
+  expect(selected.sorted.Row.map(row => row.type)).toEqual([42])
   expect(selected.workbookPresentation).toEqual({ version: 1, additionalFields: [30, 33], ordering: null })
   expect(workbookConfigurationError(selected, presentedCurrencyRecordCashDataset)).toBeNull()
   expect(workbookConfigurationError(selected, presentedCashDataset)).toBeTruthy()
@@ -96,6 +97,19 @@ it('opens the cash shortcut on currency-record rows when the server advertises t
   const plain = bug1274WorkbookRequest(request, launch('Ведомость по денежным средствам.xls', presentedCashDataset))
   expect(plain.sorted.Row.map(row => row.type)).toEqual([40])
   expect(availableBug1274WorkbookLaunches([presentedCurrencyRecordCashDataset])[0].notice).toContain(CASH_CURRENCY_RECORD_NOTICE)
+})
+it('keeps account rows when an older server advertises the currency row 41 instead of the currency record 42', () => {
+  const older: ReportDataset = { ...presentedCashDataset,
+    groupedCashPeriod: { ...(presentedCashDataset.groupedCashPeriod as object), PresentedCurrencyRecordRows: [41] } }
+  const request = defaultDatasetRequest(older, '2026-10-01', '2026-10-04')
+  const selected = bug1274WorkbookRequest(request, launch('Ведомость по денежным средствам.xls', older))
+  expect(cashCurrencyRecordWorkbookSupported(older)).toBe(false)
+  expect(selected.sorted.Row.map(row => row.type)).toEqual([40])
+  expect(workbookConfigurationError(selected, older)).toBeNull()
+  expect(cashPeriodConfigurationError(selected, older, '2026-10-05')).toBeNull()
+  const currency = { ...selected, sorted: { ...selected.sorted, Row: [{ ...selected.sorted.Row[0], type: 41 }] } }
+  expect(workbookConfigurationError(currency, presentedCurrencyRecordCashDataset)).toBeTruthy()
+  expect(availableBug1274WorkbookLaunches([older])[0].notice).not.toContain(CASH_CURRENCY_RECORD_NOTICE)
 })
 it('defaults full settlements to manager/region but excludes both from the debtor form', () => {
   const request = defaultDatasetRequest(presentedSettlementDataset, '2026-10-01', '2026-10-04')

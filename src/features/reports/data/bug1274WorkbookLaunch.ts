@@ -235,7 +235,7 @@ function presentationWorkbookRequest(request: ReportRequestBody, launch: Workboo
         ? [30] : [30, 60, 61], ordering: null } }
   if (launch.fileName !== 'Ведомость по денежным средствам.xls' || !cashWorkbookPresentationSupported(launch.dataset)
     || !groupedCashPeriod(requestGroupedCashPeriod(request))) return request
-  const rowType = cashCurrencyRecordWorkbookSupported(launch.dataset) ? 41 : 40
+  const rowType = cashCurrencyRecordWorkbookSupported(launch.dataset) ? 42 : 40
   const rows = datasetGroupings(launch.dataset).filter(row => row.type === rowType)
   return rows.length === 1 ? { ...structuredClone(request), sorted: { ...structuredClone(request.sorted), Row: rows },
     workbookPresentation: { version: 1, additionalFields: [30, 33], ordering: null } } : request

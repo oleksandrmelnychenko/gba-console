@@ -4,6 +4,7 @@ import { expect, it, vi } from 'vitest'
 import { groupedCashDataset, groupedCashWorkbookDataset } from '../data/groupedCashPeriod.test-fixtures'
 import { defaultGroupedCashPeriod } from '../data/groupedCashPeriod'
 import { datasetGroupings } from '../data/reportDatasets'
+import { presentedCurrencyRecordCashDataset } from '../data/workbookPresentation.test-fixtures'
 import type { ReportDataset } from '../types'
 import { CashPeriodModePanel } from './CashPeriodModePanel'
 
@@ -33,4 +34,10 @@ it('disables the workbook form selector during generation', () => {
   const view = show(groupedCashWorkbookDataset, true)
   expect((screen.getByRole('combobox', { name: 'Форма руху коштів' }) as HTMLSelectElement).disabled).toBe(true)
   expect(view.onRowsChange).not.toHaveBeenCalled()
+})
+it('offers the per-currency-record form and sends only the currency-record row 42', () => {
+  const view = show(presentedCurrencyRecordCashDataset)
+  fireEvent.click(screen.getByRole('combobox', { name: 'Форма руху коштів' }))
+  fireEvent.click(screen.getByRole('option', { name: 'Рахунок / каса у валюті з додатковими полями' }))
+  expect(view.onRowsChange.mock.calls[0][0].map((row: { type: number }) => row.type)).toEqual([42])
 })
