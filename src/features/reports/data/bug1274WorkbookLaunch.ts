@@ -38,6 +38,8 @@ export const SETTLEMENT_READ_MODE_NOTICE = BUG_1274_ONLY_REPORT_SURFACE
   ? 'Форма відкривається з джерелом «Поточні документи GBA»: документи GBA та початкові залишки на 01.01.2025, період від 01.01.2025 до 120 календарних місяців.'
   : 'Форма відкривається з джерелом «Поточні документи GBA»: документи GBA та початкові залишки на 01.01.2025, період від 01.01.2025 до 120 календарних місяців. Для розрахунку за регістрами 1С оберіть «Збережені регістри 1С» у джерелі розрахунку.'
 export const CASH_READ_MODE_NOTICE = SETTLEMENT_READ_MODE_NOTICE
+export const DEBTOR_WORKBOOK_CURRENCY_NOTICE = 'Як в 1С: суми договорів контрагента в різних валютах додаються в один рядок без перерахунку; підсумки організацій і загальний підсумок також додають валюти без перерахунку.'
+export const SETTLEMENT_WORKBOOK_CURRENCY_NOTICE = 'Як в 1С: рядки розділено за валютою взаєморозрахунків; підсумки організацій і загальний підсумок додають суми різних валют без перерахунку.'
 
 const supported = [
   {
@@ -83,7 +85,7 @@ const supported = [
     fileName: 'ДБіторка.xls',
     currencyAxis: false,
     label: 'Дебіторка за період',
-    notice: 'Організація → контрагент, поточні договори покупців і чотири показники залишків та руху. Недоступні суми й залежні підсумки залишаються порожніми; суми різних валют не додаються.',
+    notice: `Організація → контрагент, поточні договори покупців і чотири показники залишків та руху. Недоступні суми й залежні підсумки залишаються порожніми. ${DEBTOR_WORKBOOK_CURRENCY_NOTICE}`,
     dataSource: 41,
     accepts: isGroupedSettlementDataset,
   },
@@ -138,8 +140,8 @@ function groupedSettlementNotice(fileName: string, dataset: ReportDataset): stri
   const current = isSettlementReadModeCapability(dataset.settlementReadMode)
   const period = current ? 'Період може включати поточний київський день' : 'Період до 31 дня може включати поточний київський день'
   const notice = fileName === 'ДБіторка.xls'
-    ? `Організація → контрагент, поточні договори ${parties} за вибраними відборами й чотири показники залишків та руху. ${period}. Недоступні суми й залежні підсумки залишаються порожніми; суми різних валют не додаються.`
-    : `Організація → валюта → контрагент, поточні договори ${parties} за вибраними відборами й чотири показники залишків та руху. ${period}; договори без повних даних залишаються з порожніми сумами та підсумками.`
+    ? `Організація → контрагент, поточні договори ${parties} за вибраними відборами й чотири показники залишків та руху. ${period}. Недоступні суми й залежні підсумки залишаються порожніми. ${DEBTOR_WORKBOOK_CURRENCY_NOTICE}`
+    : `Організація → валюта → контрагент, поточні договори ${parties} за вибраними відборами й чотири показники залишків та руху. ${period}; договори без повних даних залишаються з порожніми сумами та підсумками. ${SETTLEMENT_WORKBOOK_CURRENCY_NOTICE}`
   const exclusions = current && fileName === 'Взаємороз всі.xls' && sourceCounterpartyGroupCapability(dataset.sourceCounterpartyGroups)
     ? ` ${SETTLEMENT_WORKBOOK_EXCLUSIONS_NOTICE}` : ''
   return current ? `${notice}${exclusions} ${SETTLEMENT_READ_MODE_NOTICE}` : notice

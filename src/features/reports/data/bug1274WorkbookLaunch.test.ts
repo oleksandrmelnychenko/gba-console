@@ -15,7 +15,8 @@ import { settlementModeDataset } from './settlementReadMode.test-fixtures'
 import { DAY_ORGANIZATION_GOODS_KIND_ID, DAY_ORGANIZATION_OUT_OF_SCOPE_ORGANIZATION_IDS, DAY_ORGANIZATION_SAVED_ORGANIZATION_IDS } from './dayOrganizationGrossProfit'
 import { groupCapability } from './sourceCounterpartyGroups.test-fixtures'
 import { SETTLEMENT_WORKBOOK_EXCLUDED_GROUPS } from './sourceCounterpartyGroups'
-import { DAY_WORKBOOK_FILTERS_NOTICE, SETTLEMENT_WORKBOOK_EXCLUSIONS_NOTICE } from './bug1274WorkbookLaunch'
+import { DAY_WORKBOOK_FILTERS_NOTICE, DEBTOR_WORKBOOK_CURRENCY_NOTICE, SETTLEMENT_WORKBOOK_CURRENCY_NOTICE,
+  SETTLEMENT_WORKBOOK_EXCLUSIONS_NOTICE } from './bug1274WorkbookLaunch'
 import { FENIX_BUYERS_ROOT_ID, nativeExactFiltersConfigurationError } from './nativeExactFilters'
 
 const surface = vi.hoisted(() => ({ only: true }))
@@ -280,4 +281,15 @@ it('opens every workbook with an advertised source on current GBA documents and 
 it('opens both gross-profit workbooks on the previous completed Kyiv day like the settlement and cash forms', () => {
   expect([35, 38, 40, 41].map(opensOnPreviousDay)).toEqual([true, true, true, true])
   expect([39, 1, 27, 30].map(opensOnPreviousDay)).toEqual([false, false, false, false])
+})
+
+it('states the 1C currency rule of both settlement workbooks instead of claiming currencies are never added', () => {
+  const launches = availableBug1274WorkbookLaunches([settlementModeDataset])
+  const all = launches.find(item => item.fileName === 'Взаємороз всі.xls')!
+  const debt = launches.find(item => item.fileName === 'ДБіторка.xls')!
+  expect(all.notice).toContain(SETTLEMENT_WORKBOOK_CURRENCY_NOTICE)
+  expect(debt.notice).toContain(DEBTOR_WORKBOOK_CURRENCY_NOTICE)
+  for (const launch of [all, debt]) expect(launch.notice).not.toContain('не додаються')
+  expect(DEBTOR_WORKBOOK_CURRENCY_NOTICE).toContain('в один рядок без перерахунку')
+  expect(SETTLEMENT_WORKBOOK_CURRENCY_NOTICE).toContain('розділено за валютою')
 })

@@ -10,6 +10,8 @@ import { previousKyivDay } from './cashPeriod'
 import { sourceCounterpartyGroupsConfigurationError } from './sourceCounterpartyGroups'
 import { isSettlementReadModeCapability, requestSettlementReadMode, settlementReadModeConfigurationError } from './settlementReadMode'
 
+export const SETTLEMENT_CURRENCY_TOTALS_RULE = 'Як в 1С: у формі «Організація → контрагент» суми договорів контрагента в різних валютах додаються в один рядок без перерахунку, форма з валютою розділяє рядки за валютою; підсумки організацій і загальний підсумок додають суми різних валют без перерахунку.'
+
 type JsonRecord = Record<string, unknown>
 const record = (value: unknown): value is JsonRecord => value !== null && typeof value === 'object' && !Array.isArray(value)
 const aliases = (value: object, key: string) => Object.keys(value).filter(name => name.toLowerCase() === key.toLowerCase())

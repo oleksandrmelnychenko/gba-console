@@ -2,7 +2,7 @@ import { Checkbox, Select, Stack, Text } from '@mantine/core'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import type { ReportDataset, ReportGroupingItem } from '../types'
 import { defaultGroupedSettlementBuyer, groupedSettlementPeriod, groupedSettlementRows,
-  isGroupedSettlementDataset, groupedSettlementSupportsSuppliers } from '../data/groupedSettlementPeriod'
+  isGroupedSettlementDataset, groupedSettlementSupportsSuppliers, SETTLEMENT_CURRENCY_TOTALS_RULE } from '../data/groupedSettlementPeriod'
 import { isSettlementPeriodDataset } from '../data/settlementPeriod'
 import { sourceBuyerSubtree } from '../data/nativeExactFilters'
 import { SettlementPeriodAgreementPicker } from './SettlementPeriodAgreementPicker'
@@ -62,8 +62,8 @@ export function SettlementPeriodModePanel({ dataset, grouped, exact, buyer, grou
       {selector?.SourceWorld === 'Fenix' && sourceCounterpartyGroupCapability(dataset.sourceCounterpartyGroups)
         && <CounterpartyGroupFilters value={groups} disabled={disabled || !enabled} onChange={onGroupsChange} />}
       <Text size="sm" c="dimmed">{t('Відбори використовують поточні договори нашої бази. Договори без повних даних за період залишаються з порожніми сумами; залежні підсумки також порожні. Непідтверджена належність до групи позначається окремо.')}</Text>
-      <Text size="sm" c="dimmed">{t(explicitSource ? 'Суми різних валют не додаються; за потреби оберіть форму з валютою.'
-        : 'Період — до 31 дня включно зі сьогодні. Суми різних валют не додаються; за потреби оберіть форму з валютою.')}</Text>
+      <Text size="sm" c="dimmed">{t(explicitSource ? SETTLEMENT_CURRENCY_TOTALS_RULE
+        : `Період — до 31 дня включно зі сьогодні. ${SETTLEMENT_CURRENCY_TOTALS_RULE}`)}</Text>
     </> : <>
       <SettlementPeriodAgreementPicker value={exact} from={from} to={to} disabled={disabled}
         enabled={enabled} onChange={onExactChange} />
