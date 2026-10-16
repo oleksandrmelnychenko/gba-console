@@ -17,6 +17,9 @@ import { groupCapability } from './sourceCounterpartyGroups.test-fixtures'
 import { SETTLEMENT_WORKBOOK_EXCLUDED_GROUPS } from './sourceCounterpartyGroups'
 import { DAY_WORKBOOK_FILTERS_NOTICE, DEBTOR_WORKBOOK_CURRENCY_NOTICE, SETTLEMENT_WORKBOOK_CURRENCY_NOTICE,
   SETTLEMENT_WORKBOOK_EXCLUSIONS_NOTICE } from './bug1274WorkbookLaunch'
+import { resolveBug1274WorkbookFilters, SUPPLIER_WORKBOOK_FILTERS_NOTICE, VPARIVANIE_WORKBOOK_FILTERS_NOTICE,
+  type ResolvedWorkbookFilters } from './bug1274WorkbookFilters'
+import { currentVparivanieConfigurationError } from './currentVparivanie'
 import { FENIX_BUYERS_ROOT_ID, nativeExactFiltersConfigurationError } from './nativeExactFilters'
 
 const surface = vi.hoisted(() => ({ only: true }))
@@ -281,6 +284,58 @@ it('opens every workbook with an advertised source on current GBA documents and 
 it('opens both gross-profit workbooks on the previous completed Kyiv day like the settlement and cash forms', () => {
   expect([35, 38, 40, 41].map(opensOnPreviousDay)).toEqual([true, true, true, true])
   expect([39, 1, 27, 30].map(opensOnPreviousDay)).toEqual([false, false, false, false])
+})
+
+const supplierResolved = (): Promise<ResolvedWorkbookFilters> => resolveBug1274WorkbookFilters('ВП по постачальниках.xls',
+  profitSupplierDataset, async (_source, field, value) => field === 0
+    ? [{ Id: '10549', Name: 'ТОВ «АМГ «КОНКОРД» [10549]' }, { Id: '10550', Name: 'Фенікс [10550]' },
+      { Id: '10551', Name: 'ФОП Самолюк Алла Дмитрівна [10551]' }, { Id: '10552', Name: 'ФОП Самолюк Юрій Миколайович [10552]' }]
+    : [{ Id: String(value.length + 610000), Name: `${value} [${value.length + 610000}]` }])
+
+it('opens «ВП по постачальниках.xls» on current documents with «Покупці» and the resolved workbook selections', async () => {
+  const [launch] = availableBug1274WorkbookLaunches([profitSupplierDataset])
+  expect(launch.fileName).toBe('ВП по постачальниках.xls')
+  expect(launch.notice).toContain(SUPPLIER_WORKBOOK_FILTERS_NOTICE)
+  expect(launch.notice).toContain('ФОП Пархоменко не синхронізується')
+  const day = previousKyivDay(formatKyivBusinessDate())
+  const request = defaultDatasetRequest(profitSupplierDataset, day, day), before = structuredClone(request)
+  const resolved = await supplierResolved()
+  const opened = bug1274WorkbookRequest(request, launch, resolved)
+  expect(opened).toMatchObject({ profitReadMode: 0, supplierBasis: 0,
+    sourceBuyerSubtree: { Version: 1, SourceWorld: 'fenix', BuyerRootId: FENIX_BUYERS_ROOT_ID } })
+  expect(opened).not.toHaveProperty('supplierSourceWorld')
+  expect(opened.selections).toEqual(resolved.selections)
+  expect(opened.selections.map(selection => [selection.SelectedField.Type, selection.FilterCondition.Type])).toEqual([[0, 2], [17, 2]])
+  expect(datasetConfigurationError(opened, profitSupplierDataset)).toBeNull()
+  opened.selections[0].Values.pop()
+  expect(resolved.selections[0].Values).toHaveLength(4)
+  expect(request).toEqual(before)
+  const unresolved = bug1274WorkbookRequest(request, launch)
+  expect(unresolved.selections).toEqual([])
+  expect(unresolved.sourceBuyerSubtree).toEqual({ Version: 1, SourceWorld: 'fenix', BuyerRootId: FENIX_BUYERS_ROOT_ID })
+  const chosen = { ...request, selections: [{ IsChecked: true, SelectedField: { Type: 1, Name: 'Товар' },
+    FilterCondition: { Type: 0, Name: 'Дорівнює' }, Values: [{ Data: { Id: '7' }, Name: 'Товар 7', Value: 0 }] }] }
+  expect(bug1274WorkbookRequest(chosen, launch, resolved).selections).toEqual(chosen.selections)
+  expect(bug1274WorkbookRequest(request, launch, { ...resolved, fileName: 'Впарювання.xls' }).selections).toEqual([])
+  const registers = bug1274WorkbookRequest({ ...request, profitReadMode: 1 }, launch, resolved)
+  expect(registers).not.toHaveProperty('sourceBuyerSubtree')
+  const explicit = { ...request, sourceBuyerSubtree: undefined }
+  expect(bug1274WorkbookRequest(explicit, launch).sourceBuyerSubtree).toBeUndefined()
+  const fenixWorld = bug1274WorkbookRequest({ ...request, supplierSourceWorld: 1 }, launch)
+  expect(fenixWorld).not.toHaveProperty('sourceBuyerSubtree')
+})
+
+it('opens «Впарювання.xls» with the resolved group, buyer and manager selections', async () => {
+  const [launch] = availableBug1274WorkbookLaunches([currentVparivanieDataset])
+  expect(launch.notice).toContain(VPARIVANIE_WORKBOOK_FILTERS_NOTICE)
+  const request = defaultDatasetRequest(currentVparivanieDataset, '2026-01-01', '2026-10-15')
+  const resolved = await resolveBug1274WorkbookFilters('Впарювання.xls', currentVparivanieDataset,
+    async (_source, field) => field === 4 ? [{ Id: '3996', Name: 'AL-KO [3996]' }]
+      : field === 5 ? [{ Id: '613989', Name: 'АФРАКО ТЗОВ [613989]' }] : [])
+  const opened = bug1274WorkbookRequest(request, launch, resolved)
+  expect(opened.selections.map(selection => [selection.SelectedField.Type, selection.FilterCondition.Type])).toEqual([[4, 6], [5, 0]])
+  expect(currentVparivanieConfigurationError(opened, currentVparivanieDataset)).toBeNull()
+  expect(request.selections).toEqual([])
 })
 
 it('states the 1C currency rule of both settlement workbooks instead of claiming currencies are never added', () => {

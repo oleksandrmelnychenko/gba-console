@@ -27,6 +27,7 @@ async function openWorkbook(name: string) {
   await screen.findByRole('button', { name: 'Продажі за днями' })
   fireEvent.click(screen.getByText('Часткові форми за зразками Excel'))
   fireEvent.click(screen.getByRole('button', { name: `Відкрити часткову форму: ${name}` }))
+  await waitFor(() => expect(screen.queryByText(/застосовуються відбори книги/)).toBeNull())
   return view
 }
 function mode(name: string) {

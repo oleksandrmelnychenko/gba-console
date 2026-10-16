@@ -40,9 +40,12 @@ it.each([profitDayDataset, profitSupplierDataset])('opens new requests and the w
     expect(launch.notice).toContain('ФОП Пархоменко не синхронізується в GBA')
     expect(current).not.toHaveProperty('sourceOrganizations')
   } else {
-    expect(workbook).toBe(current)
+    expect(workbook).toEqual({ ...current, sourceBuyerSubtree: { Version: 1, SourceWorld: 'fenix', BuyerRootId: FENIX_BUYERS_ROOT_ID } })
     expect(workbook.workbookPresentation).toBeUndefined()
     expect(workbook.sourceOrganizations).toBeUndefined()
+    expect(datasetConfigurationError(workbook, dataset)).toBeNull()
+    expect(launch.notice).toContain('ФОП Пархоменко не синхронізується в GBA')
+    expect(current).not.toHaveProperty('sourceBuyerSubtree')
   }
   const { profitReadMode: _capability, ...previous } = dataset
   void _capability

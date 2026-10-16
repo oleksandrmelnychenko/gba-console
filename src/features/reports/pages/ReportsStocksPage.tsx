@@ -45,7 +45,7 @@ import { requestProfitReadMode } from '../data/profitReadMode'
 import { isSettlementReadModeCapability, requestSettlementReadMode } from '../data/settlementReadMode'
 import { requestCashReadMode } from '../data/cashReadMode'
 import { ProfitReadModeSelect } from './ProfitReadModeSelect'
-import { type FormEvent, type ReactNode, useEffect, useMemo, useState } from 'react'
+import { type FormEvent, type ReactNode, useEffect, useMemo, useRef, useState } from 'react'
 import { ApiError } from '../../../shared/api/apiClient'
 import { formatKyivBusinessDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
@@ -109,6 +109,7 @@ import { usesNativeReportLookup, supportsFullReportDateRange, hasFixedReportAxes
 import { CURRENT_VPARIVANIE_NOTICE, currentVparivanieConfigurationError, currentVparivanieFilterConditions, currentVparivanieNotice, currentVparivanieFullScope } from '../data/currentVparivanie'
 import { previousKyivDay } from '../data/cashPeriod'
 import { availableBug1274WorkbookLaunches, bug1274WorkbookRequest, opensOnPreviousDay, type WorkbookLaunch } from '../data/bug1274WorkbookLaunch'
+import { resolveBug1274WorkbookFilters, resolvesWorkbookFilters, workbookFiltersNotice, type ResolvedWorkbookFilters } from '../data/bug1274WorkbookFilters'
 import { CashSettlementSettingsPanels } from './CashSettlementSettingsPanels'
 import { cashFormDataset, requestGroupedCashPeriod } from '../data/groupedCashPeriod'
 import { defaultGroupedSettlementBuyer, defaultGroupedSettlementPeriod, groupedSettlementPeriod as parseGroupedSettlementPeriod, requestGroupedSettlementPeriod, settlementFormDataset, settlementMaximumDate, settlementModePatch } from '../data/groupedSettlementPeriod'
@@ -396,6 +397,8 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
   const [draftRestoreError, setDraftRestoreError] = useState<string | null>(null)
   const [templateNotice, setTemplateNotice] = useValueState<string | null>(null)
   const [catalogueNotice, setCatalogueNotice] = useState<{ text: string; failed: boolean } | null>(null)
+  const [workbookResolving, setWorkbookResolving] = useState(false)
+  const workbookLaunchToken = useRef(0)
   const groupingOptions = useMemo(() => datasetGroupings(priceTypeDataset).filter(field => field.type !== ABC_CLASS_GROUPING || abcClassification != null), [abcClassification, priceTypeDataset])
   const workbook = useWorkbookPresentation({ dataSource, groupingOptions, setRowGroups, setGroupedCashPeriod })
   const groupingSelectData = useMemo(
@@ -843,11 +846,39 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
     return true
   }
 
-  function changeDataset(nextDataset: ReportDataset, workbook?: WorkbookLaunch) {
+  function changeDataset(nextDataset: ReportDataset, workbook?: WorkbookLaunch, resolved?: ResolvedWorkbookFilters) {
     if (consoleScope && !BUG_1274_ACTIVE_DATA_SOURCES.has(nextDataset.DataSource)) return
     const period = periodSupported ? { from, to } : previousPeriod
     const day = opensOnPreviousDay(nextDataset.DataSource) ? previousKyivDay(today) : null
-    applyConfiguration({ Name: '', Data: bug1274WorkbookRequest(defaultDatasetRequest(nextDataset, day ?? period.from, day ?? period.to), workbook) }, nextDataset)
+    applyConfiguration({ Name: '', Data: bug1274WorkbookRequest(defaultDatasetRequest(nextDataset, day ?? period.from, day ?? period.to), workbook, resolved) }, nextDataset)
+  }
+
+  function pickDataset(nextDataset: ReportDataset) {
+    workbookLaunchToken.current += 1
+    setWorkbookResolving(false)
+    changeDataset(nextDataset)
+  }
+
+  function openWorkbook(item: WorkbookLaunch): boolean {
+    if (!canGenerateReport || isLoading || workbookResolving) return false
+    const token = ++workbookLaunchToken.current
+    if (!resolvesWorkbookFilters(item.fileName)) {
+      changeDataset(item.dataset, item)
+      setCatalogueNotice({ text: `${item.fileName}: ${item.notice}`, failed: false })
+      return true
+    }
+    setWorkbookResolving(true)
+    setCatalogueNotice({ text: `${item.fileName}: ${t('застосовуються відбори книги…')}`, failed: false })
+    const profitLookup = item.dataset.DataSource === 38 && item.dataset.profitReadModeLookup === true ? 0 : undefined
+    void resolveBug1274WorkbookFilters(item.fileName, item.dataset, (source, field, value) => searchDatasetReportValues(source, field,
+      { value, offset: 0, limit: LOOKUP_SEARCH_LIMIT }, undefined, undefined, undefined, undefined, profitLookup))
+      .then(resolved => {
+        if (token !== workbookLaunchToken.current) return
+        changeDataset(item.dataset, item, resolved)
+        setCatalogueNotice({ text: `${item.fileName}: ${item.notice}${workbookFiltersNotice(resolved)}`, failed: false })
+      })
+      .finally(() => { if (token === workbookLaunchToken.current) setWorkbookResolving(false) })
+    return true
   }
 
   function applyPreset(id: DatasetReportPresetId) {
@@ -897,11 +928,8 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
           <Stack gap="xs" p="sm">{workbookLaunches.map(item =>
             <Group key={item.fileName} justify="space-between" align="start" wrap="wrap">
               <Text size="sm">{item.fileName} · {t(item.notice)}</Text>
-              <Button type="button" size="xs" variant="light" disabled={isLoading}
-                onClick={() => {
-                  changeDataset(item.dataset, item)
-                  setCatalogueNotice({ text: `${item.fileName}: ${item.notice}`, failed: false })
-                }}>{t('Відкрити часткову форму: {name}', { name: item.label })}</Button>
+              <Button type="button" size="xs" variant="light" disabled={isLoading || workbookResolving}
+                onClick={() => { openWorkbook(item) }}>{t('Відкрити часткову форму: {name}', { name: item.label })}</Button>
             </Group>)}</Stack>
         </details> : null}
       <AppModal opened={oneCReportOpen} title={t('Валовий прибуток — як у 1С')} size={960}
@@ -990,15 +1018,10 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
         datasetPanel={<ReportDatasetPicker compact activeDataSources={consoleScope ? BUG_1274_ACTIVE_DATA_SOURCES : undefined}
           datasets={bug1274Only ? datasetStorage.datasets.filter(item => BUG_1274_ACTIVE_DATA_SOURCES.has(item.DataSource)) : datasetStorage.datasets} selected={dataSource}
           disabled={!canGenerateReport || isLoading} loaded={datasetStorage.loaded} error={datasetStorage.error}
-          onChange={changeDataset} onRetry={datasetStorage.retry} />}
+          onChange={pickDataset} onRetry={datasetStorage.retry} />}
         catalogueControl={<ReportCatalogueControl consoleScope={consoleScope} presentation="dialog" enabled={canGenerateReport}
-          onOpenWorkbook={item => {
-            if (!canGenerateReport || isLoading) return false
-            changeDataset(item.dataset, item)
-            setCatalogueNotice({ text: `${item.fileName}: ${item.notice}`, failed: false })
-            return true
-          }}
-          disabled={isLoading} onOpen={openCatalogueReport}
+          onOpenWorkbook={openWorkbook}
+          disabled={isLoading || workbookResolving} onOpen={openCatalogueReport}
           onOpenDebtToSalesRatio={openDebtToSalesRatio} onOpenCollectionCoefficient={collectionConstructor.open} onOpenSalesMargin={salesMarginConstructor.open} onOpenCashMovement={cashMovementConstructor.open} onOpenSupplierDebt={supplierDebtConstructor.open} onOpenEmployeeGrossProfit={employeeGrossProfitConstructor.open} onOpenOverdueReceivables={overdueReceivablesConstructor.open} onOpenManagementReturns={managementReturnsConstructor.open} onOpenManagementBalance={managementBalanceConstructor.open} onOpenManagementOrders={managementOrdersConstructor.open} onOpenDefectProduction={defectProductionConstructor.open} onOpenInventoryTurnover={inventoryTurnoverConstructor.open} onOpenCurrentLiquidity={currentLiquidityConstructor.open} onOpenPlannedCash={plannedCashConstructor.open} callerKey={ownerId} onOpenActiveClients={openActiveClients}
           onOpenCurrencyRateDynamics={openCurrencyRateDynamics} onOpenCashAggregateBalance={openCashAggregateBalance} onOpenOriginalRevenue={openOriginalRevenue} onOpenOriginalBuyerSalesShare={openOriginalBuyerSalesShare} />}
         datasetSummary={<><ReportDatasetSummary dataset={dataset} />

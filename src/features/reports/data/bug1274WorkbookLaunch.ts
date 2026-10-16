@@ -1,4 +1,4 @@
-import { currentProfitMaximumDays, isProfitReadModeCapability } from './profitReadMode'
+import { currentProfitMaximumDays, isProfitReadModeCapability, requestProfitReadMode } from './profitReadMode'
 import { isSettlementReadModeCapability, requestSettlementReadMode } from './settlementReadMode'
 import { isCashReadModeCapability } from './cashReadMode'
 import type { ReportDataset, ReportRequestBody } from '../types'
@@ -18,6 +18,10 @@ import { FENIX_BUYERS_ROOT_ID, isProductClassificationCapability, isSourceBuyerS
   isSourceOrganizationsCapability } from './nativeExactFilters'
 import { BUG_1274_ONLY_REPORT_SURFACE } from '../reportSurfacePolicy'
 import { SETTLEMENT_WORKBOOK_EXCLUDED_GROUPS, sourceCounterpartyGroupCapability } from './sourceCounterpartyGroups'
+import { requestSupplierBasis } from './supplierBasis'
+import { requestSupplierSourceWorld } from './supplierBatchGrossProfit'
+import { SUPPLIER_WORKBOOK_FILE, SUPPLIER_WORKBOOK_FILTERS_NOTICE, VPARIVANIE_WORKBOOK_FILE, VPARIVANIE_WORKBOOK_FILTERS_NOTICE,
+  type ResolvedWorkbookFilters } from './bug1274WorkbookFilters'
 
 export type WorkbookLaunch = {
   fileName: string
@@ -62,7 +66,7 @@ const supported = [
   {
     fileName: 'Впарювання.xls',
     label: 'Матриця товарів',
-    notice: 'Часткова форма Excel: залишки GBA на кінець періоду і продажі за вибраний період. Оберіть товари або групу; до останньої синхронізації залишків з 1С залишок порожній.',
+    notice: `Часткова форма Excel: залишки GBA на кінець періоду і продажі за вибраний період. ${VPARIVANIE_WORKBOOK_FILTERS_NOTICE} До останньої синхронізації залишків з 1С залишок порожній.`,
     dataSource: 39,
     accepts: isCurrentVparivanieDataset,
   },
@@ -122,7 +126,8 @@ export function availableBug1274WorkbookLaunches(datasets: readonly ReportDatase
 
 function profitReadModeNotice(dataSource: number, dataset: ReportDataset): string {
   const original = dataSource === 35 ? '«Збережені регістри 1С» і відбори Fenix' : '«Збережені регістри 1С»'
-  const filters = dataSource === 35 ? ` ${DAY_WORKBOOK_FILTERS_NOTICE}` : ''
+  const filters = dataSource === 35 ? ` ${DAY_WORKBOOK_FILTERS_NOTICE}`
+    : isSourceBuyerSubtreeCapability(dataset.sourceBuyerSubtree) ? ` ${SUPPLIER_WORKBOOK_FILTERS_NOTICE}` : ''
   const notice = `Форма відкривається з джерелом «Поточні документи GBA»: продажі та повернення з поточних документів за період до ${currentProfitMaximumDays(dataset.profitReadMode)} календарних днів.${filters} Повна відповідність 1С ще не підтверджена.`
   return BUG_1274_ONLY_REPORT_SURFACE ? notice : `${notice} Для розрахунку за регістрами 1С оберіть ${original}.`
 }
@@ -168,9 +173,11 @@ function dayWorkbookRequest(request: ReportRequestBody, launch: WorkbookLaunch):
 }
 
 /** Only the Excel shortcut opts into its supported form; ordinary and saved dataset requests keep their own meaning. */
-export function bug1274WorkbookRequest(request: ReportRequestBody, launch?: WorkbookLaunch): ReportRequestBody {
+export function bug1274WorkbookRequest(request: ReportRequestBody, launch?: WorkbookLaunch,
+  resolved?: ResolvedWorkbookFilters): ReportRequestBody {
   if (!launch || launch.dataset.DataSource !== request.dataSource) return request
-  const selected = settlementWorkbookRequest(groupedWorkbookRequest(dayWorkbookRequest(request, launch), launch.currencyAxis), launch)
+  const selected = filtersWorkbookRequest(supplierWorkbookRequest(settlementWorkbookRequest(
+    groupedWorkbookRequest(dayWorkbookRequest(request, launch), launch.currencyAxis), launch), launch), launch, resolved)
   const presented = presentationWorkbookRequest(selected, launch)
   if (presented !== selected) return presented
   if (launch.fileName !== 'Ведомость по денежным средствам.xls' || request.dataSource !== 40
@@ -184,6 +191,23 @@ export function bug1274WorkbookRequest(request: ReportRequestBody, launch?: Work
   const result = structuredClone(selected)
   result.sorted.Row = CASH_WORKBOOK_ROWS.flatMap(type => groupings.filter(row => row.type === type))
   return result
+}
+
+function supplierWorkbookRequest(request: ReportRequestBody, launch: WorkbookLaunch): ReportRequestBody {
+  if (launch.fileName !== SUPPLIER_WORKBOOK_FILE || request.dataSource !== 38 || requestProfitReadMode(request) !== 0
+    || requestSupplierBasis(request) !== 0 || requestSupplierSourceWorld(request) != null
+    || !isSourceBuyerSubtreeCapability(launch.dataset.sourceBuyerSubtree)
+    || Object.keys(request).some(key => key.toLowerCase() === 'sourcebuyersubtree')) return request
+  return { ...structuredClone(request), sourceBuyerSubtree: { Version: 1, SourceWorld: 'fenix', BuyerRootId: FENIX_BUYERS_ROOT_ID } }
+}
+
+function filtersWorkbookRequest(request: ReportRequestBody, launch: WorkbookLaunch,
+  resolved?: ResolvedWorkbookFilters): ReportRequestBody {
+  if (!resolved || resolved.fileName !== launch.fileName || !resolved.selections.length
+    || ![SUPPLIER_WORKBOOK_FILE, VPARIVANIE_WORKBOOK_FILE].includes(launch.fileName)
+    || request.dataSource !== (launch.fileName === SUPPLIER_WORKBOOK_FILE ? 38 : 39)
+    || !Array.isArray(request.selections) || request.selections.length) return request
+  return { ...structuredClone(request), selections: structuredClone(resolved.selections) }
 }
 
 function settlementWorkbookRequest(request: ReportRequestBody, launch: WorkbookLaunch): ReportRequestBody {

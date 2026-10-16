@@ -29,6 +29,8 @@ async function editor(mode?: string) {
   await screen.findByRole('button', { name: 'Продажі за днями' })
   fireEvent.click(screen.getByText('Часткові форми за зразками Excel'))
   fireEvent.click(screen.getByRole('button', { name: 'Відкрити часткову форму: Валовий прибуток за постачальниками' }))
+  await waitFor(() => expect(screen.queryByText(/застосовуються відбори книги/)).toBeNull())
+  vi.mocked(searchDatasetReportValues).mockClear()
   if (mode) {
     fireEvent.click(screen.getByRole('combobox', { name: 'Джерело розрахунку' }))
     fireEvent.click(screen.getByRole('option', { name: mode }))

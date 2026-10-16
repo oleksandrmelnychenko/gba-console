@@ -31,6 +31,7 @@ async function openWorkbook(label: string) {
   const view = render(page())
   fireEvent.click(await screen.findByText('Часткові форми за зразками Excel'))
   fireEvent.click(screen.getByRole('button', { name: `Відкрити часткову форму: ${label}` }))
+  await waitFor(() => expect(screen.queryByText(/застосовуються відбори книги/)).toBeNull())
   return view
 }
 function sourceOptions() {
@@ -71,3 +72,29 @@ it('opens the product matrix form without the original matrix', async () => {
   expect(screen.queryByRole('button', { name: 'Переглянути оригінальну матрицю' })).toBeNull()
   expect(screen.queryByText('Оберіть звіт у полі «Набір даних звіту» або відкрийте часткову форму за зразком Excel.')).toBeNull()
 })
+
+it('opens the supplier workbook with its organizations, saved supplier list and «Покупці» resolved by name', async () => {
+  vi.mocked(searchDatasetReportValues).mockImplementation(async (dataSource, field, params) => dataSource !== 38 ? []
+    : field === 0 ? [{ Id: '10549', Name: 'ТОВ «АМГ «КОНКОРД» [10549]' }, { Id: '10550', Name: 'Фенікс [10550]' },
+      { Id: '10551', Name: 'ФОП Самолюк Алла Дмитрівна [10551]' }, { Id: '10552', Name: 'ФОП Самолюк Юрій Миколайович [10552]' }]
+    : params.value.startsWith('BENEFIT') ? [{ Id: '614427', Name: 'BENEFIT OTOMOTIV IC DIS TIC. LTD. STI,Туреччина [614427]' }] : [])
+  const view = await openWorkbook('Валовий прибуток за постачальниками')
+  expect(screen.getByText(/Не знайдено однозначно в GBA, тому не застосовано: YPS GLOBAL/)).toBeTruthy()
+  fireEvent.submit(view.container.querySelector('form')!)
+  await waitFor(() => expect(createStockReport).toHaveBeenCalledOnce())
+  const request = vi.mocked(createStockReport).mock.calls[0][0]
+  expect(request).toMatchObject({ dataSource: 38, profitReadMode: 0,
+    sourceBuyerSubtree: { Version: 1, SourceWorld: 'fenix', BuyerRootId: '8AB2005056C0000811DEFC4535BB4D40' } })
+  expect(request.selections.map(selection => [selection.SelectedField.Type, selection.FilterCondition.Type,
+    selection.Values.map(value => value.Data.Id)])).toEqual([[0, 2, ['10549', '10550', '10551', '10552']], [17, 2, ['614427']]])
+}, 15_000)
+
+it('opens the product matrix workbook with the AL-KO group and АФРАКО resolved by name', async () => {
+  vi.mocked(searchDatasetReportValues).mockImplementation(async (dataSource, field) => dataSource !== 39 ? []
+    : field === 4 ? [{ Id: '3996', Name: 'AL-KO [3996]' }] : field === 5 ? [{ Id: '613989', Name: 'АФРАКО ТЗОВ [613989]' }] : [])
+  const view = await openWorkbook('Матриця товарів')
+  fireEvent.submit(view.container.querySelector('form')!)
+  await waitFor(() => expect(createStockReport).toHaveBeenCalledOnce())
+  expect(vi.mocked(createStockReport).mock.calls[0][0].selections.map(selection => [selection.SelectedField.Type,
+    selection.FilterCondition.Type, selection.Values.map(value => value.Data.Id)])).toEqual([[4, 6, ['3996']], [5, 0, ['613989']]])
+}, 15_000)
