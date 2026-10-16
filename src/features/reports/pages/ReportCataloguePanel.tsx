@@ -8,7 +8,7 @@ import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { useAuth } from '../../auth/useAuth'
 import { getReportCatalogue, getReportDatasets } from '../api/reportWorkspaceApi'
 import { catalogueLaunchOptions, type CatalogueLaunchChoice } from '../data/reportCatalogueLaunch'
-import { CAPTURE_STATUS_LABELS, DEPENDENCY_STATUS_LABELS, consoleReportAvailability, filterConsoleMigrationCatalogue, filterMigrationCatalogue, inspectCatalogueMigration, MIGRATION_STATUS_LABELS, sourceIdentity, type MigrationDisplayStatus } from '../data/reportMigration'
+import { CAPTURE_STATUS_LABELS, DEPENDENCY_STATUS_LABELS, consoleReportAvailability, filterConsoleMigrationCatalogue, filterMigrationCatalogue, inspectCatalogueMigration, MIGRATION_STATUS_LABELS, sourceIdentity, summarizeConsoleCatalogue, type MigrationDisplayStatus } from '../data/reportMigration'
 import type { ReportCatalogue, ReportCatalogueEntry, ReportDataset, ReportSourceMigration } from '../types'
 import { isDebtToSalesRatioCatalogueEntry, type DebtToSalesRatioCapabilities } from '../data/debtToSalesRatio'
 import { DebtToSalesRatioCatalogueLaunch } from './DebtToSalesRatioCatalogueLaunch'
@@ -157,14 +157,19 @@ export function ReportCataloguePanel({ onOpen, onOpenDebtToSalesRatio, onOpenCol
   </Alert>
   if (!catalogue || !inspection) return <Group><Loader size="sm" /><Text>{t('Завантаження каталогу звітів')}</Text></Group>
   const { summary } = inspection
+  const bug1274Scope = consoleScope && BUG_1274_ONLY_REPORT_SURFACE
+  const headline = bug1274Scope ? summarizeConsoleCatalogue(catalogue, inspection) : summary
+  const workbookCount = Object.values(BUG_1274_WORKBOOK_REPORT_IDS)
+    .filter(id => catalogue.Reports.some(report => report.Id === id)).length
   return <div className="report-catalogue">
     <Stack gap="md">
       <DocumentDetailSummary eyebrow={t('Звіти · Fenix / AMG')} title={t('Каталог звітів')}
         meta={t('Оберіть звіт, щоб переглянути покриття та доступні налаштування.')}
         metrics={<>
-          <DocumentDetailMetric label={t('Звітів у каталозі')} value={String(summary.CatalogueEntries)} />
-          <DocumentDetailMetric label={t('Джерельних реалізацій')} value={String(summary.SourceImplementations)} />
-          <DocumentDetailMetric label={t('Перевірених позицій')} value={String(summary.FullyVerifiedEntries)} />
+          <DocumentDetailMetric label={t(bug1274Scope ? 'Звітів задачі 1274' : 'Звітів у каталозі')} value={String(headline.CatalogueEntries)} />
+          <DocumentDetailMetric label={t('Джерельних реалізацій')} value={String(headline.SourceImplementations)} />
+          {bug1274Scope ? <DocumentDetailMetric label={t('Форм за зразками Excel')} value={String(workbookCount)} /> : null}
+          <DocumentDetailMetric label={t('Перевірених позицій')} value={String(headline.FullyVerifiedEntries)} />
         </>} />
       {onOpen && <Text size="sm" c="dimmed" className="report-catalogue__intro">{t(consoleScope && BUG_1274_ONLY_REPORT_SURFACE
         ? 'Оберіть форму за зразком Excel у рядку звіту. Звіт формується кнопкою «Сформувати».'

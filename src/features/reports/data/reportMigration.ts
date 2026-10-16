@@ -182,6 +182,11 @@ export function consoleReportAvailability(report: ReportCatalogueEntry, inspecti
   return ready ? 'ready_disabled' : 'hidden'
 }
 
+/** Header counts of the console list itself; the full inventory stays in the migration overview. */
+export function summarizeConsoleCatalogue(catalogue: ReportCatalogue, inspection: ReturnType<typeof inspectCatalogueMigration>): ReportMigrationSummary {
+  return summarize(catalogue.Reports.filter(report => consoleReportAvailability(report, inspection) !== 'hidden'), inspection.statuses)
+}
+
 export function filterConsoleMigrationCatalogue(catalogue: ReportCatalogue, inspection: ReturnType<typeof inspectCatalogueMigration>, filters: MigrationFilters) {
   return filterMigrationCatalogue(catalogue, inspection, filters)
     .filter(item => consoleReportAvailability(item.report, inspection) !== 'hidden')

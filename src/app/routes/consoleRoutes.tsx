@@ -805,6 +805,11 @@ const plannedConsoleRoutes: ConsoleRoute[] = [
     permissionKey: PermissionKeys.Resales.Page.View,
   },
   {
+    path: '/reports',
+    element: <Navigate to="/reports/stocks" replace />,
+    permissionKey: PermissionKeys.ReportsStocks.Page.View,
+  },
+  {
     path: '/reports/registers',
     element: <Navigate to="/reports/stocks" replace />,
     permissionKey: PermissionKeys.ReportsStocks.Report.Generate,

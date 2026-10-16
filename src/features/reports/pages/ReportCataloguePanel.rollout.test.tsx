@@ -81,3 +81,19 @@ it('does not launch workbook forms without generation permission or with unavail
   expect(getReportDatasets).not.toHaveBeenCalled()
   expect(screen.queryByRole('button', { name: 'ДБіторка.xls' })).toBeNull()
 })
+it('counts only the BUG-1274 reports and workbook forms in the catalogue header of the 1274-only surface', async () => {
+  const metric = (label: string) => screen.getByText(label).closest('.document-detail-metric')?.querySelector('strong')?.textContent
+  mount()
+  await screen.findByRole('button', { name: 'ДБіторка.xls' })
+  expect(metric('Звітів задачі 1274')).toBe('5')
+  expect(metric('Джерельних реалізацій')).toBe('5')
+  expect(metric('Форм за зразками Excel')).toBe('6')
+  expect(screen.queryByText('Звітів у каталозі')).toBeNull()
+})
+it('keeps the whole-inventory header outside the 1274-only surface', async () => {
+  surface.only = false
+  mount()
+  await screen.findByText('Готово')
+  expect(screen.getByText('Звітів у каталозі').closest('.document-detail-metric')?.querySelector('strong')?.textContent).toBe('8')
+  expect(screen.queryByText('Форм за зразками Excel')).toBeNull()
+})

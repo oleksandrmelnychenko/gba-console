@@ -134,8 +134,9 @@ describe('console report routes', () => {
     expect(isValidElement(stocks?.element) && stocks.element.type !== Navigate).toBe(true)
   })
 
-  it('redirects the constructor and sale-file report screens to the BUG-1274 reports page', () => {
-    for (const path of ['/reports/constructor', '/reports/sale', '/reports/sales']) {
+  it('redirects the bare reports URL, the constructor and sale-file report screens to the BUG-1274 reports page', () => {
+    expect(consoleRoutes.find(route => route.path === '/reports')?.permissionKey).toBe(PermissionKeys.ReportsStocks.Page.View)
+    for (const path of ['/reports', '/reports/constructor', '/reports/sale', '/reports/sales']) {
       const route = consoleRoutes.find(candidate => candidate.path === path)
       if (!isValidElement<{ to: string; replace?: boolean }>(route?.element)) throw new Error(`Expected ${path} to render a redirect`)
       expect(route.element.type).toBe(Navigate)
