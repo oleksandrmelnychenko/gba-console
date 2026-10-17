@@ -233,7 +233,6 @@ export function previewNumberText(value: string): string {
   return `${match[1]}${match[2].replace(/\B(?=(\d{3})+(?!\d))/g, '\u00a0')}${match[3] ? `,${match[3]}` : ''}`
 }
 
-/** Money and percentages print with two decimals like the 1C form and the exported #,##0.00 cells. */
 export function previewAmountText(value: string): string {
   const match = /^(-?\d+)(?:\.(\d*))?$/.exec(value)
   if (!match) return previewNumberText(value)
@@ -241,13 +240,11 @@ export function previewAmountText(value: string): string {
   return previewNumberText(`${match[1]}.${fraction}`)
 }
 
-/** Ids appended to names for uniqueness are not business labels; 1C shows the name alone. */
 export function previewCaptionText(caption: string, sharedNames?: ReadonlySet<string>): string {
   const name = caption.replace(/\s+\[(?:id=)?-?\d+\]$/i, '')
   return sharedNames?.has(name) ? caption : name
 }
 
-/** Names that two different captions reduce to keep their id so the rows stay distinguishable. */
 export function previewSharedNames(captions: readonly string[]): ReadonlySet<string> {
   const byName = new Map<string, Set<string>>()
   for (const caption of captions) {

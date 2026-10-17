@@ -7,7 +7,6 @@ import { readTopGroupsCapabilities, requestTopGroups } from './reportTopGroups'
 
 export type SupportedAnalysisRules = { topGroups: boolean; threshold: boolean; abc: boolean; ordering: boolean; filterExpression: boolean }
 
-/** A rule panel is worth showing only when the server offers the rule or the request already carries one. */
 export function supportedAnalysisRules(data: ReportRequestBody, dataset?: ReportDataset, filterDataset?: ReportDataset): SupportedAnalysisRules {
   return {
     topGroups: requestTopGroups(data) != null || readTopGroupsCapabilities(dataset) != null,

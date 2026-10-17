@@ -350,7 +350,6 @@ const REPORT_FIELD_LABELS: Record<string, string> = {
 
 const GROSS_PROFIT_MEASURE_GROUPS: Readonly<Record<string, string>> = { SalesValue: 'Продажі', Markup: 'Валовий прибуток' }
 
-/** The gross-profit forms name their columns «Продажі …» and «Валовий прибуток …»; the picker uses the same words. */
 export function grossProfitMeasureGroupLabel(dataSource: number, name: string): string | undefined {
   return dataSource === 35 || dataSource === 38 ? GROSS_PROFIT_MEASURE_GROUPS[name] : undefined
 }

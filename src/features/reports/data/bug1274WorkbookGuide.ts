@@ -58,7 +58,6 @@ function previousMonth(day: string): { from: string; to: string } {
   return { from: monthStart(to), to }
 }
 
-/** The 1C workbooks print a month, a year or a day; the shortcut opens the same kind of period ending on the last completed day. */
 export function bug1274WorkbookPeriod(fileName: string, today: string): { from: string; to: string } | null {
   const yesterday = previousKyivDay(today)
   if (!yesterday) return null
@@ -67,7 +66,6 @@ export function bug1274WorkbookPeriod(fileName: string, today: string): { from: 
   return null
 }
 
-/** Quick periods ending on the same day the form opens on: today for the matrix, the last completed day otherwise. */
 export function reportPeriodPresets(dataSource: number, today: string): ReportPeriodPreset[] {
   if (![35, 38, 39, 40, 41].includes(dataSource)) return []
   const yesterday = previousKyivDay(today)
@@ -91,7 +89,6 @@ const REPORT_TITLES: Readonly<Record<string, string>> = {
   'builtin:ВедомостьВзаиморасчетыСКонтрагентами': 'Відомість по взаєморозрахунках з контрагентами',
 }
 
-/** The Ukrainian 1C interface names these reports as the workbooks print them; the catalogue keeps the configuration name aside. */
 export function bug1274ReportTitle(reportId: string): string | undefined {
   return REPORT_TITLES[reportId]
 }
