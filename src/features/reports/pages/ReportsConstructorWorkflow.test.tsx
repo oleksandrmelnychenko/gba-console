@@ -226,6 +226,15 @@ it('moves an explicit generation to loading then its result without allowing a d
   expect(createStockReport).toHaveBeenCalledOnce()
 })
 
+it('names the reason when the console refuses the returned report instead of a generic failure', async () => {
+  vi.mocked(createStockReport).mockRejectedValueOnce(new Error('Сервер повернув некоректний опис розрахунку звіту.'))
+  await ready()
+  fireEvent.click(screen.getByRole('button', { name: 'Продажі за днями' }))
+  fireEvent.click(screen.getByRole('button', { name: 'Сформувати' }))
+  await screen.findByText('Сервер повернув некоректний опис розрахунку звіту.')
+  expect(screen.queryByText('Не вдалося сформувати звіт')).toBeNull()
+})
+
 it('keeps a failed explicit generation retryable without switching dataset or generating on tab changes', async () => {
   vi.mocked(createStockReport).mockRejectedValueOnce(new Error('Fixture report failure')).mockResolvedValue(file)
   await ready()

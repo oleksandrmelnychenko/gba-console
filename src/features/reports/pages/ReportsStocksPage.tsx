@@ -1457,7 +1457,7 @@ function ReportBuilderForm(props: ReportBuilderFormProps) {
               loading={isLoading}
               disabled={!canSubmit}
               title={submitBlockedReason}
-              aria-describedby={constructorMode && !canSubmit ? 'report-constructor-blocked-reason' : undefined}
+              aria-describedby={!canSubmit && submitBlockedReason ? 'report-constructor-blocked-reason' : undefined}
               type="submit"
             >
               {t('Сформувати')}
@@ -1465,7 +1465,10 @@ function ReportBuilderForm(props: ReportBuilderFormProps) {
           </Tooltip>
         </div>
         </div>
-        {constructorMode && !canSubmit ? <Text id="report-constructor-blocked-reason" className="report-constructor-blocked-reason" size="xs" c="gray.7">{submitBlockedReason}</Text> : null}
+        {constructorMode && !canSubmit ? <Text id="report-constructor-blocked-reason" className="report-constructor-blocked-reason" size="xs" c="gray.7">{submitBlockedReason}</Text>
+          : !canSubmit && !isLoading && submitBlockedReason && !props.datasetHidden && submitBlockedReason !== props.notices.period
+            && submitBlockedReason !== props.incompleteSelectionMessage ? <Alert id="report-constructor-blocked-reason"
+            className="reports-page-alert" color="yellow" icon={<CircleAlert size={18} />}>{submitBlockedReason}</Alert> : null}
         {!constructorMode && presets.length ? <ReportQuickPresets disabled={isLoading || !configurationReady} presets={presets} onApply={onApplyPreset} /> : null}
 
         {props.datasetHidden ? <Alert className="reports-page-alert" color="blue" icon={<CircleAlert size={18} />}>
@@ -2782,6 +2785,7 @@ function describeReportError(error: unknown, t: TranslateFunction): string {
     return t('Сервер не зміг сформувати звіт із такими параметрами. Спробуйте вужчий період або менше групувань.')
   }
 
+  if (error instanceof Error && isAuthoredServerMessage(error.message)) return error.message
   return t('Не вдалося сформувати звіт')
 }
 
