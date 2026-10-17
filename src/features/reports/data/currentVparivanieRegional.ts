@@ -102,8 +102,8 @@ export function normalizeCurrentVparivanieRegional(value: unknown,
     || counterpartyFacts !== value.CounterpartyFacts || counterpartyFacts > salesFacts) fail()
   if (full) {
     const financial = new Set(rows.flatMap(row => row.Cells.map(item => JSON.stringify([item.Column, item.RegionCode]))))
-    // Matrix export carries ProductId, seven attributes and only actual financial keys.
-    const columns = 8 + financial.size
+    // Matrix export carries seven attributes and only actual financial keys.
+    const columns = 7 + financial.size
     if (financial.size > 256 || rows.length * columns > 1000000) fail()
   }
   return { ...value, Rows: rows } as CurrentVparivanieRegionalResult

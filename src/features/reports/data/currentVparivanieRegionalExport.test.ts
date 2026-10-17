@@ -2,18 +2,22 @@ import { expect, it } from 'vitest'
 import { currentRegionalCsv, currentRegionalPdf, currentRegionalPdfDefinition,
   currentRegionalSheets, currentRegionalXlsx } from './currentVparivanieRegionalExport'
 import { regionalResult } from './currentVparivanieRegional.test-fixtures'
+import { CURRENT_VPARIVANIE_PRODUCT_CAPTIONS } from './currentVparivanie'
 
 it('writes the same regional matrix with exact text, separate total and empty-code child to real XLSX/PDF', async () => {
   const value = regionalResult(); value.Rows[0].Name = '=Товар'; value.Rows[0].Cells[3].RegionCode = ''
   const sheets = currentRegionalSheets(value)
   expect(sheets.matrix[3].slice(-2)).toEqual(['Контрагенты', 'Регіон / Без коду'])
+  expect(sheets.matrix[3].slice(0, 7)).toEqual([...CURRENT_VPARIVANIE_PRODUCT_CAPTIONS])
+  expect(sheets.matrix.flat()).not.toContain('ProductId')
+  expect(sheets.matrix[4][0]).toBe(value.Rows[0].Article ?? '')
   expect(sheets.matrix[4].slice(-4)).toEqual(['9007199254740993.00000001', 9.00000001, 9.00000001, 9.00000001])
   expect(sheets.about).toContainEqual(['Період продажів', '2026-10-01 — 2026-10-31'])
   expect(currentRegionalCsv(value)).toContain('"\'=Товар"')
   const XLSX = await import('xlsx'), workbook = XLSX.read(await (await currentRegionalXlsx(value)).arrayBuffer(), { type: 'array' })
   expect(workbook.SheetNames).toEqual(['Matrix', 'About', 'Cells'])
-  expect(workbook.Sheets.Matrix.C5).toMatchObject({ t: 's', v: '=Товар' })
-  expect(workbook.Sheets.Matrix.I5).toMatchObject({ t: 's', v: '9007199254740993.00000001' })
+  expect(workbook.Sheets.Matrix.B5).toMatchObject({ t: 's', v: '=Товар' })
+  expect(workbook.Sheets.Matrix.H5).toMatchObject({ t: 's', v: '9007199254740993.00000001' })
   const tables = currentRegionalPdfDefinition(value).content.filter(part => 'table' in part)
   expect(tables[0]).toHaveProperty('table.body.1.7', '9007199254740993.00000001')
   const pdf = await currentRegionalPdf(value)
@@ -52,6 +56,6 @@ it('writes whole quantities like the 1C workbook: numbers without padded decimal
   const tables = currentRegionalPdfDefinition(value).content.filter(part => 'table' in part)
   expect(tables[0]).toHaveProperty('table.body.1.7', '2')
   const XLSX = await import('xlsx'), workbook = XLSX.read(await (await currentRegionalXlsx(value)).arrayBuffer(), { type: 'array' })
-  expect(workbook.Sheets.Matrix.I5).toMatchObject({ t: 'n', v: 2 })
-  expect(workbook.Sheets.Matrix.J5).toMatchObject({ t: 'n', v: -2.5 })
+  expect(workbook.Sheets.Matrix.H5).toMatchObject({ t: 'n', v: 2 })
+  expect(workbook.Sheets.Matrix.I5).toMatchObject({ t: 'n', v: -2.5 })
 }, 30_000)

@@ -25,10 +25,10 @@ export function currentRegionalSheets(result: CurrentVparivanieRegionalResult) {
     ...result.Request.Filters.map(filter => [filter.Field, filter.Condition, ...filter.Values]),
     ...result.Request.Notes.map(note => [note])]
   const matrix: Array<Array<string | number>> = [[CURRENT_REGIONAL_TITLE], ['Період продажів', `${result.From} — ${result.To}`], [],
-    ['ProductId', ...CURRENT_VPARIVANIE_PRODUCT_CAPTIONS, ...columns.map(currentRegionalColumnCaption)],
+    [...CURRENT_VPARIVANIE_PRODUCT_CAPTIONS, ...columns.map(currentRegionalColumnCaption)],
     ...result.Rows.map(row => {
       const cells = new Map(row.Cells.map(cell => [currentVparivanieV2CellKey(cell), cell]))
-      return [row.ProductId, row.Article ?? '', row.Name ?? '', row.Description ?? '', row.Group ?? '',
+      return [row.Article ?? '', row.Name ?? '', row.Description ?? '', row.Group ?? '',
         row.OE ?? '', row.Size ?? '', row.Top ?? '', ...columns.map(key => currentRegionalCellValue(cells.get(key)))]
     })]
   const facts: Array<Array<string | number>> = [['ProductId', 'Column', 'RegionCode', 'Quantity', 'UnitId', 'FactCount'],
@@ -41,7 +41,7 @@ export function currentRegionalCsv(result: CurrentVparivanieRegionalResult): str
   const quote = (value: string) => `"${value.replaceAll('"', '""')}"`
   const safeLabel = (value: string) => /^[\s\p{Cc}]*[=+\-@]/u.test(value) ? `'${value}` : value
   return '\ufeff' + currentRegionalSheets(result).matrix.map(row => row.map((value, index) =>
-    quote(index >= 1 && index <= 7 ? safeLabel(String(value)) : String(value))).join(',')).join('\r\n') + '\r\n'
+    quote(index <= 6 ? safeLabel(String(value)) : String(value))).join(',')).join('\r\n') + '\r\n'
 }
 
 export function currentRegionalPdfDefinition(result: CurrentVparivanieRegionalResult): CurrentVparivanieV2PdfDefinition {
