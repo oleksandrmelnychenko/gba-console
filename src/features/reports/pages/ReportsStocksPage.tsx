@@ -45,7 +45,7 @@ import { requestProfitReadMode } from '../data/profitReadMode'
 import { isSettlementReadModeCapability, requestSettlementReadMode } from '../data/settlementReadMode'
 import { requestCashReadMode } from '../data/cashReadMode'
 import { ProfitReadModeSelect } from './ProfitReadModeSelect'
-import { type FormEvent, type ReactNode, useEffect, useMemo, useRef, useState } from 'react'
+import { type FormEvent, memo, type ReactNode, useEffect, useMemo, useRef, useState } from 'react'
 import { ApiError } from '../../../shared/api/apiClient'
 import { formatKyivBusinessDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
@@ -249,6 +249,8 @@ const SALE_DOCUMENT_STATUS_OPTIONS: Array<{ label: string; value: string }> = [
 
 const defaultCondition = REPORT_FILTER_CONDITIONS[0]
 
+const MemoizedReportInlinePreview = memo(ReportInlinePreview)
+
 // What the finished run was asked for, kept because the response carries none of it back.
 type ReportRunOutcome = {
   rateComparison?: RateComparisonOptions
@@ -430,11 +432,10 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
     () => ({ ...buildReportBuilderRequest({ dataSource, returnsOnly, comparison, xyz, revenueComparison, buyerSalesShare, returnComparison, paymentComparison, marginComparison, rateComparison, productClassification, sourceOrganizations, sourceBuyerSubtree, profitReadMode, dayOrganizationBasis, supplierBasis, supplierSourceWorld, priceTypeSalesComparison, agreementPriceComparison, settlementPeriod, groupedSettlementPeriod, settlementReadMode, sourceCounterpartyGroups, cashPeriod, groupedCashPeriod, cashReadMode, workbookPresentation: workbook.value, oneCSpecialSettings, oneC: oneCScope, from, to, ordering, filterExpression, topGroups, threshold, hideZero, abcClassification, valuationClientAgreementId, rowGroups, colGroups, measurements, selections }), ...(dataSource === 39 && fullCurrentVparivanie ? { currentVparivanieFullScope: true } : {}) }),
     [fullCurrentVparivanie, abcClassification, agreementPriceComparison, settlementPeriod, groupedSettlementPeriod, settlementReadMode, sourceCounterpartyGroups, cashPeriod, groupedCashPeriod, cashReadMode, workbook.value, colGroups, comparison, xyz, revenueComparison, buyerSalesShare, returnComparison, paymentComparison, marginComparison, rateComparison, productClassification, sourceOrganizations, sourceBuyerSubtree, profitReadMode, dayOrganizationBasis, supplierBasis, supplierSourceWorld, returnsOnly, priceTypeSalesComparison, oneCSpecialSettings, oneCScope, dataSource, filterExpression, from, hideZero, measurements, ordering, rowGroups, selections, to, topGroups, threshold, valuationClientAgreementId],
   )
-  const { result, preview, lastRun, error, isLoading, downloadModalOpened, update: updateRun, begin: beginRun, clear: clearRun } = useReportRunState<ReportRunOutcome>(JSON.stringify({
-    request: reportBody,
-    allowed: canGenerateReport,
-    agreementVerified: !requiresValuationAgreement(dataSource) || valuation.agreement?.Id === valuationClientAgreementId,
-  }))
+  const agreementVerified = !requiresValuationAgreement(dataSource) || valuation.agreement?.Id === valuationClientAgreementId
+  const runRequestKey = useMemo(() => JSON.stringify({ request: reportBody, allowed: canGenerateReport, agreementVerified }),
+    [agreementVerified, canGenerateReport, reportBody])
+  const { result, preview, lastRun, error, isLoading, downloadModalOpened, update: updateRun, begin: beginRun, clear: clearRun } = useReportRunState<ReportRunOutcome>(runRequestKey)
   const collectionConstructor = useCollectionCoefficientConstructor({ enabled: canGenerateReport, disabled: isLoading,
     callerKey: ownerId, from, today })
   const salesMarginConstructor = useSalesMarginConstructor({ enabled: canGenerateReport, disabled: isLoading,
@@ -888,7 +889,8 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
     if (preset) groupingOrdering.applyPreset(preset, next => applyConfiguration(next, dataset))
   }
 
-  const workbookLaunches = availableBug1274WorkbookLaunches(datasetStorage.datasets)
+  const workbookLaunches = useMemo(() => availableBug1274WorkbookLaunches(datasetStorage.datasets), [datasetStorage.datasets])
+  const mountsDialog = (open: boolean) => !consoleScope || open
 
   if (canGenerateReport && ownerId && workspaceDraft.recovery !== 'none'
     && (workspaceDraft.recovery !== 'loading' || !datasetStorage.loaded)) {
@@ -933,74 +935,74 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
                 onClick={() => { openWorkbook(item) }}>{t('Відкрити часткову форму: {name}', { name: item.label })}</Button>
             </Group>)}</Stack>
         </details> : null}
-      <AppModal opened={oneCReportOpen} title={t('Валовий прибуток — як у 1С')} size={960}
+      {mountsDialog(oneCReportOpen) ? <AppModal opened={oneCReportOpen} title={t('Валовий прибуток — як у 1С')} size={960}
         onClose={() => { if (!oneCReportGenerating) setOneCReportOpen(false) }}
         closeOnClickOutside={!oneCReportGenerating} closeOnEscape={!oneCReportGenerating}
         closeButtonProps={{ disabled: oneCReportGenerating, 'aria-label': t('Закрити звіт 1С') }}>
         {oneCReportOpen ? <OneCTurnoverReportPanel canGenerate={canGenerateReport} from={from} to={to}
           onFromChange={setFrom} onToChange={setTo} onLoadingChange={setOneCReportGenerating}
           onClose={() => setOneCReportOpen(false)} /> : null}
-      </AppModal>
-      <AppModal opened={canGenerateReport && debtRatioCapability !== null} title={debtRatioCapability?.Title ?? ''} size={960}
+      </AppModal> : null}
+      {mountsDialog(debtRatioCapability !== null) ? <AppModal opened={canGenerateReport && debtRatioCapability !== null} title={debtRatioCapability?.Title ?? ''} size={960}
         onClose={() => { if (!debtRatioGenerating) setDebtRatioCapability(null) }}
         closeOnClickOutside={!debtRatioGenerating} closeOnEscape={!debtRatioGenerating}
         closeButtonProps={{ disabled: debtRatioGenerating, 'aria-label': t('Закрити оригінальний конструктор') }}>
         {canGenerateReport && debtRatioCapability ? <DebtToSalesRatioReportPanel capability={debtRatioCapability}
           initialMonth={(from || today).slice(0, 7)} canGenerate={canGenerateReport} onLoadingChange={setDebtRatioGenerating} /> : null}
-      </AppModal>
-      <AppModal opened={canGenerateReport && activeClientsCapability !== null} title={activeClientsCapability?.Title ?? ''} size={960}
+      </AppModal> : null}
+      {mountsDialog(activeClientsCapability !== null) ? <AppModal opened={canGenerateReport && activeClientsCapability !== null} title={activeClientsCapability?.Title ?? ''} size={960}
         onClose={() => { if (!activeClientsGenerating) setActiveClientsCapability(null) }}
         closeOnClickOutside={!activeClientsGenerating} closeOnEscape={!activeClientsGenerating}
         closeButtonProps={{ disabled: activeClientsGenerating, 'aria-label': t('Закрити конструктор активних клієнтів') }}>
         {canGenerateReport && activeClientsCapability ? <ActiveClientsReportPanel capability={activeClientsCapability}
           initialMonth={(from || today).slice(0, 7)} canGenerate={canGenerateReport} callerKey={ownerId}
           onLoadingChange={setActiveClientsGenerating} /> : null}
-      </AppModal>
-      <CollectionCoefficientConstructorModal {...collectionConstructor.modalProps} />
-      <SalesMarginConstructorModal {...salesMarginConstructor.modalProps} />
-      <CashMovementConstructorModal {...cashMovementConstructor.modalProps} />
-      <SupplierDebtConstructorModal {...supplierDebtConstructor.modalProps} />
-      <EmployeeGrossProfitConstructorModal {...employeeGrossProfitConstructor.modalProps} />
-      <OverdueReceivablesConstructorModal {...overdueReceivablesConstructor.modalProps} />
-      <ManagementReturnsConstructorModal {...managementReturnsConstructor.modalProps} />
-      <ManagementBalanceConstructorModal {...managementBalanceConstructor.modalProps} />
-      <ManagementOrdersConstructorModal {...managementOrdersConstructor.modalProps} />
-      <DefectProductionConstructorModal {...defectProductionConstructor.modalProps} />
-      <InventoryTurnoverConstructorModal {...inventoryTurnoverConstructor.modalProps} />
-      <CurrentLiquidityConstructorModal {...currentLiquidityConstructor.modalProps} />
-      <PlannedCashConstructorModal {...plannedCashConstructor.modalProps} />
-      <AppModal opened={canGenerateReport && currencyDynamicsCapability !== null} title={currencyDynamicsCapability?.Title ?? ''} size={960}
+      </AppModal> : null}
+      {mountsDialog(collectionConstructor.modalProps.capability !== null) ? <CollectionCoefficientConstructorModal {...collectionConstructor.modalProps} /> : null}
+      {mountsDialog(salesMarginConstructor.modalProps.capability !== null) ? <SalesMarginConstructorModal {...salesMarginConstructor.modalProps} /> : null}
+      {mountsDialog(cashMovementConstructor.modalProps.capability !== null) ? <CashMovementConstructorModal {...cashMovementConstructor.modalProps} /> : null}
+      {mountsDialog(supplierDebtConstructor.modalProps.capability !== null) ? <SupplierDebtConstructorModal {...supplierDebtConstructor.modalProps} /> : null}
+      {mountsDialog(employeeGrossProfitConstructor.modalProps.capability !== null) ? <EmployeeGrossProfitConstructorModal {...employeeGrossProfitConstructor.modalProps} /> : null}
+      {mountsDialog(overdueReceivablesConstructor.modalProps.capability !== null) ? <OverdueReceivablesConstructorModal {...overdueReceivablesConstructor.modalProps} /> : null}
+      {mountsDialog(managementReturnsConstructor.modalProps.capability !== null) ? <ManagementReturnsConstructorModal {...managementReturnsConstructor.modalProps} /> : null}
+      {mountsDialog(managementBalanceConstructor.modalProps.capability !== null) ? <ManagementBalanceConstructorModal {...managementBalanceConstructor.modalProps} /> : null}
+      {mountsDialog(managementOrdersConstructor.modalProps.capability !== null) ? <ManagementOrdersConstructorModal {...managementOrdersConstructor.modalProps} /> : null}
+      {mountsDialog(defectProductionConstructor.modalProps.capability !== null) ? <DefectProductionConstructorModal {...defectProductionConstructor.modalProps} /> : null}
+      {mountsDialog(inventoryTurnoverConstructor.modalProps.capability !== null) ? <InventoryTurnoverConstructorModal {...inventoryTurnoverConstructor.modalProps} /> : null}
+      {mountsDialog(currentLiquidityConstructor.modalProps.capability !== null) ? <CurrentLiquidityConstructorModal {...currentLiquidityConstructor.modalProps} /> : null}
+      {mountsDialog(plannedCashConstructor.modalProps.capability !== null) ? <PlannedCashConstructorModal {...plannedCashConstructor.modalProps} /> : null}
+      {mountsDialog(currencyDynamicsCapability !== null) ? <AppModal opened={canGenerateReport && currencyDynamicsCapability !== null} title={currencyDynamicsCapability?.Title ?? ''} size={960}
         onClose={() => { if (!currencyDynamicsGenerating) setCurrencyDynamicsCapability(null) }}
         closeOnClickOutside={!currencyDynamicsGenerating} closeOnEscape={!currencyDynamicsGenerating}
         closeButtonProps={{ disabled: currencyDynamicsGenerating, 'aria-label': t('Закрити конструктор динаміки курсу') }}>
         {canGenerateReport && currencyDynamicsCapability ? <CurrencyRateDynamicsReportPanel capability={currencyDynamicsCapability}
           initialMonth={defaultCurrencyRateDynamicsMonth(today)} canGenerate={canGenerateReport} callerKey={ownerId}
           onLoadingChange={setCurrencyDynamicsGenerating} /> : null}
-      </AppModal>
-      <AppModal opened={canGenerateReport && originalBuyerSalesShareCapability !== null} title={originalBuyerSalesShareCapability?.Title ?? ''} size={960}
+      </AppModal> : null}
+      {mountsDialog(originalBuyerSalesShareCapability !== null) ? <AppModal opened={canGenerateReport && originalBuyerSalesShareCapability !== null} title={originalBuyerSalesShareCapability?.Title ?? ''} size={960}
         onClose={() => { if (!originalBuyerSalesShareGenerating) setOriginalBuyerSalesShareCapability(null) }}
         closeOnClickOutside={!originalBuyerSalesShareGenerating} closeOnEscape={!originalBuyerSalesShareGenerating}
         closeButtonProps={{ disabled: originalBuyerSalesShareGenerating, 'aria-label': t('Закрити конструктор частки продажів') }}>
         {canGenerateReport && originalBuyerSalesShareCapability ? <OriginalBuyerSalesShareReportPanel capability={originalBuyerSalesShareCapability}
           initialMonth={defaultCurrencyRateDynamicsMonth(today)} canGenerate={canGenerateReport} callerKey={ownerId}
           onLoadingChange={setOriginalBuyerSalesShareGenerating} /> : null}
-      </AppModal>
-      <AppModal opened={canGenerateReport && originalRevenueCapability !== null} title={originalRevenueCapability?.Title ?? ''} size={1100}
+      </AppModal> : null}
+      {mountsDialog(originalRevenueCapability !== null) ? <AppModal opened={canGenerateReport && originalRevenueCapability !== null} title={originalRevenueCapability?.Title ?? ''} size={1100}
         onClose={() => { if (!originalRevenueGenerating) setOriginalRevenueCapability(null) }}
         closeOnClickOutside={!originalRevenueGenerating} closeOnEscape={!originalRevenueGenerating}
         closeButtonProps={{ disabled: originalRevenueGenerating, 'aria-label': t('Закрити конструктор виручки') }}>
         {canGenerateReport && originalRevenueCapability ? <OriginalRevenueReportPanel capability={originalRevenueCapability}
           initialMonth={defaultCurrencyRateDynamicsMonth(today)} canGenerate={canGenerateReport} callerKey={ownerId}
           onLoadingChange={setOriginalRevenueGenerating} /> : null}
-      </AppModal>
-      <AppModal opened={canGenerateReport && cashAggregateCapability !== null} title={cashAggregateCapability?.Title ?? ''} size={1100}
+      </AppModal> : null}
+      {mountsDialog(cashAggregateCapability !== null) ? <AppModal opened={canGenerateReport && cashAggregateCapability !== null} title={cashAggregateCapability?.Title ?? ''} size={1100}
         onClose={() => { if (!cashAggregateGenerating) setCashAggregateCapability(null) }}
         closeOnClickOutside={!cashAggregateGenerating} closeOnEscape={!cashAggregateGenerating}
         closeButtonProps={{ disabled: cashAggregateGenerating, 'aria-label': t('Закрити конструктор залишків коштів') }}>
         {canGenerateReport && cashAggregateCapability ? <CashAggregateBalanceReportPanel capability={cashAggregateCapability}
           initialPeriod={previousKyivDay(today)} canGenerate={canGenerateReport} callerKey={ownerId}
           onLoadingChange={setCashAggregateGenerating} /> : null}
-      </AppModal>
+      </AppModal> : null}
       {!constructorMode && canGenerateReport && templateName.trim() ? <Text fw={600} aria-label={t('Назва поточного звіту')}>{templateName}</Text> : null}
       {canGenerateReport && catalogueNotice ? <Alert color={catalogueNotice.failed ? 'red' : 'blue'} style={{ flexShrink: 0 }}
         title={t(catalogueNotice.failed ? 'Не вдалося відкрити звіт' : 'Звіт відкрито в конструкторі')}
@@ -1601,7 +1603,7 @@ function ReportBuilderContent(props: ReportBuilderFormProps) {
             placeholder={resultPlaceholder}
             onOpenFiles={onOpenFiles}
           />
-          {preview ? <ReportInlinePreview preview={preview} /> : null}
+          {preview ? <MemoizedReportInlinePreview preview={preview} /> : null}
           </ReportSectionPanel>
         </div>
         </div>
