@@ -331,7 +331,7 @@ describe('exact Fenix filters in the report constructor', () => {
     await waitFor(() => expect(createStockReport).toHaveBeenCalledOnce())
     const submitted = vi.mocked(createStockReport).mock.calls[0][0]
     expect(submitted.supplierBasis).toBe(basis)
-    expect((screen.getByRole('checkbox', { name: 'Показник 0' }) as HTMLInputElement).checked).toBe(true)
+    expect((screen.getByRole('checkbox', { name: 'Кількість за регістром собівартості 1С' }) as HTMLInputElement).checked).toBe(true)
     expect(submitted.sorted.Row.map(field => field.type)).toEqual([73, 4, 21])
     fireEvent.click(screen.getByRole('button', { name: 'Шаблони' }))
     fireEvent.click(screen.getByRole('button', { name: 'Оновити шаблон' }))
