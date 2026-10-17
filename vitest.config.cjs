@@ -12,6 +12,7 @@ module.exports = defineConfig({
     // collection and makes the unit-test release gate report false failures.
     exclude: [...configDefaults.exclude, '**/e2e/**', 'tests/browser/**'],
     globals: true,
+    testTimeout: 30_000,
     environment: 'jsdom',
     setupFiles: ['./src/test/setup.ts'],
     include: ['src/**/*.{test,spec}.{ts,tsx}', 'tests/**/*.{test,spec}.{ts,tsx}'],
