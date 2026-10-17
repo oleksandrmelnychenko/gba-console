@@ -73,3 +73,11 @@ it('does not re-render the finished preview while the template name is typed', a
   expect(screen.getByRole('region', { name: 'Попередній перегляд звіту' })).toBeTruthy()
   expect(vi.mocked(ReportInlinePreview).mock.calls.length).toBe(renders)
 })
+
+it('names the close button of the workbook notice', async () => {
+  render(page())
+  fireEvent.click(await screen.findByText('Часткові форми за зразками Excel'))
+  fireEvent.click(screen.getByRole('button', { name: 'Відкрити часткову форму: Валовий прибуток за днем' }))
+  fireEvent.click(await screen.findByRole('button', { name: 'Закрити повідомлення' }))
+  await waitFor(() => expect(screen.queryByText('Звіт відкрито в конструкторі')).toBeNull())
+})
