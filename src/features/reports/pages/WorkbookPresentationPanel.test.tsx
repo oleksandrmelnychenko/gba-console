@@ -17,9 +17,9 @@ it('keeps retained Article/Top labels as settings and explicitly selects MonthAs
   const request = defaultDatasetRequest(presentedDayDataset, '2026-10-01', '2026-10-04'), onChange = vi.fn()
   render(<MantineProvider env="test"><WorkbookPresentationPanel dataset={presentedDayDataset} request={request}
     value={undefined} disabled={false} onChange={onChange} /></MantineProvider>)
-  expect(screen.getByText(/Значення товарів на рівні день/)).toBeTruthy()
-  fireEvent.click(screen.getByRole('combobox', { name: 'Порядок форми' }))
-  fireEvent.click(screen.getByRole('option', { name: 'Місяць за зростанням' }))
+  expect(screen.getByText(/Як і в 1С, Артикул і Топ у рядках «день \/ організація» не заповнюються/)).toBeTruthy()
+  fireEvent.click(screen.getByRole('combobox', { name: 'Сортування' }))
+  fireEvent.click(screen.getByRole('option', { name: 'По місяцях (за зростанням), як у книзі 1С' }))
   expect(onChange).toHaveBeenCalledExactlyOnceWith({ version: 1, additionalFields: [], ordering: 'MonthAscending' })
 })
 it('keeps manager and region visibly disabled for AMG while allowing its currency field', () => {
@@ -37,7 +37,7 @@ it('does not silently convert an unknown saved selector and offers an explicit c
     value={{ version: 9, additionalFields: [999], ordering: null }} disabled={false} onChange={onChange} /></MantineProvider>)
   expect(screen.getByText(/Збережені налаштування не змінено/)).toBeTruthy()
   expect(onChange).not.toHaveBeenCalled()
-  fireEvent.click(screen.getByRole('button', { name: 'Очистити налаштування форми' }))
+  fireEvent.click(screen.getByRole('button', { name: 'Прибрати додаткові поля книги' }))
   expect(onChange).toHaveBeenCalledExactlyOnceWith(undefined)
 })
 it('disables setting changes and clearing while permission is missing or a run is active', () => {
@@ -45,6 +45,6 @@ it('disables setting changes and clearing while permission is missing or a run i
   render(<MantineProvider env="test"><WorkbookPresentationPanel dataset={presentedCashDataset} request={presentedCashRequest()}
     value={{ version: 1, additionalFields: [30], ordering: null }} disabled onChange={onChange} /></MantineProvider>)
   expect((screen.getByRole('checkbox', { name: 'Валюта рахунку (каси)' }) as HTMLInputElement).disabled).toBe(true)
-  expect((screen.getByRole('button', { name: 'Очистити налаштування форми' }) as HTMLButtonElement).disabled).toBe(true)
+  expect((screen.getByRole('button', { name: 'Прибрати додаткові поля книги' }) as HTMLButtonElement).disabled).toBe(true)
   expect(onChange).not.toHaveBeenCalled()
 })

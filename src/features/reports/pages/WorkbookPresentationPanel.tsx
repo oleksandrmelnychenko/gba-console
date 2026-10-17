@@ -17,7 +17,7 @@ export function WorkbookPresentationPanel({ dataset, request, value, disabled, o
       {capability ? <WorkbookFieldControls capability={capability} selection={selection} request={request}
         disabled={disabled || !!invalid} onChange={onChange} /> : null}
       {value != null ? <Button variant="subtle" size="xs" disabled={disabled} onClick={() => onChange(undefined)}>
-        Очистити налаштування форми
+        Прибрати додаткові поля книги
       </Button> : null}
     </Stack>
   </Card>
@@ -64,7 +64,7 @@ function WorkbookFieldItem({ field, selection, disabled, fenix, onChange }: {
 }) {
   const fields = selection?.additionalFields ?? []
   const locked = disabled || [60, 61].includes(field.type) && !fenix
-  return <Checkbox label={field.caption} checked={fields.includes(field.type)} disabled={locked}
+  return <Checkbox label={field.caption.replace('(Вместе,', '(Разом,')} checked={fields.includes(field.type)} disabled={locked}
     onChange={event => onChange({ version: 1, ordering: selection?.ordering ?? null,
       additionalFields: event.currentTarget.checked ? [...fields, field.type] : fields.filter(type => type !== field.type) })} />
 }
@@ -77,14 +77,14 @@ function WorkbookOrderingControl({ selection, disabled, onChange }: {
     onChange({ version: 1, additionalFields: [...(selection?.additionalFields ?? [])],
       ordering: value === 'default' ? null : value })
   }
-  return <Select label="Порядок форми" disabled={disabled} allowDeselect={false}
-    value={selection?.ordering ?? 'default'} data={[{ value: 'default', label: 'Порядок набору даних' },
-      { value: 'MonthAscending', label: 'Місяць за зростанням' }]} onChange={changeOrdering} />
+  return <Select label="Сортування" disabled={disabled} allowDeselect={false}
+    value={selection?.ordering ?? 'default'} data={[{ value: 'default', label: 'За днями' },
+      { value: 'MonthAscending', label: 'По місяцях (за зростанням), як у книзі 1С' }]} onChange={changeOrdering} />
 }
 
 function WorkbookFieldsNote({ dataSource }: { dataSource: number | undefined }) {
   if (dataSource === 35) return <Text size="xs" c="dimmed">
-    Артикул і Топ зберігають налаштування книги. Значення товарів на рівні день / організація не створюються.
+    Як і в 1С, Артикул і Топ у рядках «день / організація» не заповнюються.
   </Text>
-  return <Text size="xs" c="dimmed">Додаткові поля не змінюють фінансові групування. Невідомі значення залишаються недоступними.</Text>
+  return <Text size="xs" c="dimmed">Додаткові поля лише підписують рядки, як у 1С; суми від них не змінюються. Невідоме значення показано як «—».</Text>
 }

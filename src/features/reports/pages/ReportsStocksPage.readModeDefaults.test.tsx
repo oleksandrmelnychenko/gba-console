@@ -58,7 +58,7 @@ function blocked(view: ReturnType<typeof render>) {
 it('reads a saved profit variant without a mode from current documents and reports the current-document period limit', async () => {
   const view = await apply(saved(profitSupplierDataset, '2026-07-01', '2026-08-31', { supplierSourceWorld: 0 }))
   expect(source()).toBe('Поточні документи GBA')
-  expect(blocked(view)).toBe('Період партійного прибутку може охоплювати щонайбільше 31 днів.')
+  expect(blocked(view)).toBe('Період «Валового прибутку по постачальниках» — не більше 31 календарних днів. Зменште період.')
   mode('Збережені регістри 1С')
   expect(await submitted(view, 1)).toMatchObject({ profitReadMode: 1, supplierSourceWorld: 0, from: '2026-07-01', to: '2026-08-31' })
 })

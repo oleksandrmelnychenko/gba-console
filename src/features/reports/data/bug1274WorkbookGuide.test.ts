@@ -1,5 +1,5 @@
 import { expect, it } from 'vitest'
-import { bug1274ReportTitle, bug1274WorkbookGuide, bug1274WorkbookPeriod, reportPeriodPresets } from './bug1274WorkbookGuide'
+import { bug1274DatasetTitle, bug1274ReportTitle, bug1274WorkbookGuide, bug1274WorkbookPeriod, reportPeriodPresets } from './bug1274WorkbookGuide'
 import { BUG_1274_WORKBOOK_REPORT_IDS } from './bug1274WorkbookLaunch'
 
 it('names every workbook and its 1C report in Ukrainian without internal terms', () => {
@@ -32,4 +32,10 @@ it('offers quick periods that end on the day each form opens on and respects the
     ['Минулий місяць', '2026-02-01', '2026-02-28'], ['Поточний рік', '2026-01-01', '2026-03-01']])
   expect(reportPeriodPresets(41, '2026-01-01').at(-1)).toEqual({ label: 'Поточний рік', from: '2025-01-01', to: '2025-12-31' })
   expect(reportPeriodPresets(12, '2026-10-17')).toEqual([])
+})
+
+it('names the five report datasets as the 1C reports', () => {
+  expect([35, 38, 39, 40, 41].map(bug1274DatasetTitle)).toEqual(['Валовий прибуток', 'Валовий прибуток по постачальниках',
+    'Впарювання', 'Відомість по коштах', 'Взаєморозрахунки з контрагентами'])
+  expect(bug1274DatasetTitle(12)).toBeUndefined()
 })

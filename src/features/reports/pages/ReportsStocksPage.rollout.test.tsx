@@ -34,7 +34,7 @@ it('shows only BUG-1274 entry points, then accepts the actual cash workbook', as
   expect(screen.queryByRole('button', { name: 'Продажі за днями' })).toBeNull()
   expect(screen.getByText('Відкрийте звіт 1С за зразком Excel вище або оберіть звіт у полі «Звіт».')).toBeTruthy()
   fireEvent.click(screen.getByRole('combobox', { name: 'Звіт' }))
-  expect(screen.getAllByRole('option').map(option => option.textContent)).toEqual([groupedCashWorkbookDataset.Name])
+  expect(screen.getAllByRole('option').map(option => option.textContent)).toEqual(['Відомість по коштах'])
   fireEvent.submit(view.container.querySelector('form')!)
   expect(createStockReport).not.toHaveBeenCalled()
   fireEvent.click(screen.getByRole('button', { name: 'Відкрити Ведомость по денежным средствам.xls' }))

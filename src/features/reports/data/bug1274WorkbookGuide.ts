@@ -95,3 +95,15 @@ const REPORT_TITLES: Readonly<Record<string, string>> = {
 export function bug1274ReportTitle(reportId: string): string | undefined {
   return REPORT_TITLES[reportId]
 }
+
+const DATASET_TITLES: Readonly<Record<number, string>> = {
+  35: 'Валовий прибуток',
+  38: 'Валовий прибуток по постачальниках',
+  39: 'Впарювання',
+  40: 'Відомість по коштах',
+  41: 'Взаєморозрахунки з контрагентами',
+}
+
+export function bug1274DatasetTitle(dataSource: number): string | undefined {
+  return DATASET_TITLES[dataSource]
+}

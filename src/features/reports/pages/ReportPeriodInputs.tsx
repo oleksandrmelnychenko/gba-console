@@ -8,7 +8,7 @@ type Props = { dataSource: number; supported: boolean; from: string; to: string;
   onFromChange: (value: string) => void; onToChange: (value: string) => void }
 export default function ReportPeriodInputs({ dataSource, supported, from, to, maxDate, disabled = false, presets = [], onFromChange, onToChange }: Props) {
   const { t } = useI18n()
-  return supported ? <div className="app-filter-date-range">
+  return supported ? <><div className="app-filter-date-range">
             <TextInput
               label={dataSource === 13 ? 'Поточний період: від' : t('Від')}
               max={to || maxDate}
@@ -27,6 +27,7 @@ export default function ReportPeriodInputs({ dataSource, supported, from, to, ma
               value={to}
               onChange={(event) => onToChange(event.currentTarget.value)}
             />
+          </div>
             {presets.length ? <Select label={t('Швидкий період')} placeholder={t('Оберіть…')} value={null} disabled={disabled}
               allowDeselect={false} w={170} data={presets.map(preset => ({ value: preset.label, label: t(preset.label) }))}
               onChange={label => {
@@ -35,5 +36,5 @@ export default function ReportPeriodInputs({ dataSource, supported, from, to, ma
                 onFromChange(preset.from)
                 onToChange(preset.to)
               }} /> : null}
-          </div> : <Text size="sm">{dataSource === 19 ? 'Історичні курси на дві дати, задані нижче.' : t('Поточний стан на час читання даних. Історичний період не застосовується.')}</Text>
+          </> : <Text size="sm">{dataSource === 19 ? 'Історичні курси на дві дати, задані нижче.' : t('Поточний стан на час читання даних. Історичний період не застосовується.')}</Text>
 }

@@ -59,7 +59,7 @@ export function dayOrganizationGrossProfitConfigurationError(data: ReportRequest
     const error = originalNormalPeriodError(data.from, data.to)
     if (error) return error
   } else if ((Date.parse(`${data.to}T00:00:00Z`) - Date.parse(`${data.from}T00:00:00Z`)) / 86400000 >= maximumDays)
-    return `Період валового прибутку GBA може охоплювати щонайбільше ${maximumDays} календарних днів.`
+    return `Період «Валового прибутку» — не більше ${maximumDays} календарних днів. Зменште період.`
   if (Object.entries(data).some(([key, value]) => unsupported.has(key.toLowerCase()) && value != null)) return invalid
   const sorted = data.sorted
   if (!sorted || !Array.isArray(sorted.Row) || !Array.isArray(sorted.Col) || !Array.isArray(sorted.Measurements)

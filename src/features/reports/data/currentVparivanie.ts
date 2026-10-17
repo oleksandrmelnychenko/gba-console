@@ -151,7 +151,7 @@ export function currentVparivanieConfigurationError(data: ReportRequestBody, dat
     if (purpose === 'workspace') {
       try { originalMatrixScope(data); originalScope = true } catch { /* Other saved current variants retain their ordinary bound. */ }
     }
-    if (!originalScope) return 'Період продажів може охоплювати щонайбільше 366 днів.'
+    if (!originalScope) return 'Період продажів «Впарювання» — не більше 366 днів. Зменште період.'
   }
   if (Object.entries(data).some(([key, value]) => forbidden.has(key.toLowerCase()) && value != null)) return invalid
   const sorted = data.sorted

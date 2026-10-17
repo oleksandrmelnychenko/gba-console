@@ -940,7 +940,8 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
         {!constructorMode ? <div className="stocks-workspace-heading">
           <span className="stocks-workspace-heading__icon"><IconFileSpreadsheet size={24} aria-hidden="true" /></span>
           <div><Text component="h2">{t('Налаштування звіту')}</Text>
-            <Text size="xs" c="dimmed">{t('Оберіть набір даних, налаштуйте структуру та сформуйте звіт.')}</Text></div>
+            <Text size="xs" c="dimmed">{t(bug1274Only ? 'Відкрийте звіт 1С, за потреби змініть період і відбори, потім «Показати на екрані» або «Сформувати» файл Excel / PDF.'
+              : 'Оберіть набір даних, налаштуйте структуру та сформуйте звіт.')}</Text></div>
         </div> : null}
       <Group justify="flex-end" gap={8}>
         {!consoleScope && !constructorMode && canGenerateReport ? <Button component="a" href="/reports/registers" variant="default">{t('Звіти регістрів')}</Button> : null}
@@ -1099,7 +1100,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
             onChange={event => setProductClassification(event.currentTarget.checked
               ? { Version: 1, SourceWorld: 0, ProductKindId: DAY_ORGANIZATION_GOODS_KIND_ID, IsService: false }
               : undefined)} />
-          <Text size="xs" c="dimmed">{t('Точний відбір зі збереженого налаштування 1С, що структурно збігається з XLS. Якщо для товару немає повної локальної класифікації, звіт покаже помилку покриття.')}</Text>
+          <Text size="xs" c="dimmed">{t('Як у книзі: Номенклатура.Послуга = Ні, Вид номенклатури = Товар. Продажі товару з невідомим видом залишають залежні суми порожніми.')}</Text>
           {productClassification != null
             && !(parseProductClassification(productClassification)?.ProductKindId.toUpperCase() === DAY_ORGANIZATION_GOODS_KIND_ID
               && parseProductClassification(productClassification)?.IsService === false)
@@ -1120,7 +1121,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
             onChange={event => setSourceBuyerSubtree(event.currentTarget.checked
               ? { Version: 1, SourceWorld: 'fenix', BuyerRootId: FENIX_BUYERS_ROOT_ID }
               : undefined)} />
-          <Text size="xs" c="dimmed">{t('Поточний збережений знімок ієрархії покупців. Якщо лінія покупця або ієрархія неповні, звіт покаже помилку покриття.')}</Text>
+          <Text size="xs" c="dimmed">{t('Як у книзі: Покупець у групі «Покупці» довідника контрагентів 1С (поточний склад групи).')}</Text>
           {sourceBuyerSubtree != null && !parseSourceBuyerSubtree(sourceBuyerSubtree)
             ? <Text size="xs" c="orange">{t('Шаблон містить інше піддерево Fenix; цей набір приймає тільки групу «Покупці».')}</Text> : null}
         </Card> : dataSource === 38 && isSupplierSourceWorldCapability(dataset?.supplierSourceWorld)
@@ -1151,7 +1152,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
                 if (world !== 0) setSourceBuyerSubtree(undefined)
               }} />
             <Text size="xs" c="dimmed">{t(supplierBasis === 0
-              ? 'Для продажів потрібні повні дані партій вибраної бази.'
+              ? '«Усі документи» — продажі обох баз 1С і нові документи GBA, як у книзі; Fenix або AMG — лише продажі цієї бази.'
               : 'Окремий зріз формується лише за однозначної лінії кожного продажу в періоді. Неповна партія вибраної бази зупинить звіт.')}</Text>
             {dataset?.sourceBuyerSubtree != null ? <>
               <Checkbox mt="sm" label={t('Група «Покупці» Fenix')}
@@ -1164,7 +1165,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
                     : undefined)
                 }} />
               <Text size="xs" c="dimmed">{t(supplierBasis === 0
-                ? 'Покупці визначаються за поточним деревом. Повернення з невідомою належністю залишаються у звіті.'
+                ? 'Як у книзі: Покупець у групі «Покупці» довідника контрагентів 1С (поточний склад групи). Повернення, покупця яких не визначено, залишаються у звіті.'
                 : 'Вимагає базу Fenix, повну лінію покупців усіх продажів періоду і чинний захоплений граф. За неповних даних звіт покаже помилку покриття.')}</Text>
               {sourceBuyerSubtree != null && !parseSourceBuyerSubtree(sourceBuyerSubtree)
                 ? <Text size="xs" c="orange">{t('Шаблон містить інше піддерево Fenix; цей набір приймає тільки групу «Покупці».')}</Text> : null}

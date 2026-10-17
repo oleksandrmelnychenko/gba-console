@@ -74,7 +74,7 @@ export function supplierBatchGrossProfitConfigurationError(data: ReportRequestBo
     const error = originalNormalPeriodError(data.from, data.to)
     if (error) return error
   } else if ((Date.parse(`${data.to}T00:00:00Z`) - Date.parse(`${data.from}T00:00:00Z`)) / 86400000 >= maximumDays)
-    return `Період партійного прибутку може охоплювати щонайбільше ${maximumDays} днів.`
+    return `Період «Валового прибутку по постачальниках» — не більше ${maximumDays} календарних днів. Зменште період.`
   if (Object.entries(data).some(([key, value]) => forbidden.has(key.toLowerCase()) && value != null)) return invalid
   const sorted = data.sorted
   const axis = Array.isArray(sorted?.Row) ? sorted.Row.map(item => item.type).join(',') : ''

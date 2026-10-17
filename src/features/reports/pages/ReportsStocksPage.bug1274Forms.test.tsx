@@ -52,7 +52,7 @@ it('offers the six workbook forms of the five BUG-1274 reports and only their da
     'Рух коштів за період', 'Взаєморозрахунки за період', 'Дебіторка за період'])
     expect(screen.getByRole('button', { name: `Відкрити ${WORKBOOK_FILES[label] ?? label}` })).toBeTruthy()
   fireEvent.click(screen.getByRole('combobox', { name: 'Звіт' }))
-  expect(screen.getAllByRole('option').map(option => option.textContent)).toEqual(bug1274Datasets.map(dataset => dataset.Name))
+  expect(screen.getAllByRole('option').map(option => option.textContent)).toEqual(['Валовий прибуток', 'Валовий прибуток по постачальниках', 'Впарювання', 'Відомість по коштах', 'Взаєморозрахунки з контрагентами'])
 })
 
 it.each([
