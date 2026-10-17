@@ -21,6 +21,9 @@ const capabilityFields = ['Version', 'MaximumDays', 'CurrencyBasis', 'UsesCurren
   'PreservesUnavailableValues', 'RequiresCommonSourceObservation', 'CurrentDaySupported', 'SourceWorlds',
   'RowLayouts', 'Measurements', 'Filters', 'FilterExpression', 'BuyerSubtree'] as const
 export const GROUPED_SETTLEMENT_LAYOUTS = [[4, 41, 76], [4, 76]] as const
+export const SINGLE_SETTLEMENT_AXES = 'Організація → Валюта → Контрагент → Договір. Один точний договір і чотири показники у валюті взаєморозрахунків; структура фіксована.'
+export const CURRENCY_SETTLEMENT_AXES = 'Організація → Валюта → Контрагент, як у «Взаємороз всі.xls». Договори контрагента за вибраними відборами; чотири показники у валюті взаєморозрахунків: залишок на початок, надходження, витрати, залишок на кінець.'
+export const DEBTOR_SETTLEMENT_AXES = 'Організація → Контрагент, як у «ДБіторка.xls». Договори контрагента за вибраними відборами; чотири показники: залишок на початок, надходження, витрати, залишок на кінець. Суми договорів у різних валютах додаються в один рядок без перерахунку, як у 1С.'
 export const GROUPED_SETTLEMENT_FILTERS = [0, 6, 9, 30] as const
 export const GROUPED_SETTLEMENT_SUPPLIER_FILTERS = [0, 6, 9, 17, 18, 30] as const
 export const GROUPED_SETTLEMENT_MEASURES = [88, 89, 90, 91] as const
@@ -143,6 +146,11 @@ export function settlementFormDataset(dataset: ReportDataset | undefined, select
       : groupedSettlementPeriod(selector)?.SourceWorld === 'Fenix' ? dataset.Filters
       : dataset.Filters.filter(field => ![60, 61].includes(field.Type)) }
     : { ...dataset, Filters: [], FilterExpression: undefined }
+}
+
+export function settlementAxesDescription(rows: readonly { type: number }[]): string {
+  const layout = rows.map(row => row.type).join(',')
+  return layout === '4,41,76' ? CURRENCY_SETTLEMENT_AXES : layout === '4,76' ? DEBTOR_SETTLEMENT_AXES : SINGLE_SETTLEMENT_AXES
 }
 
 export function groupedSettlementRows(available: readonly ReportGroupingItem[], currency: boolean): ReportGroupingItem[] {

@@ -6,7 +6,8 @@ import { datasetConfigurationError, datasetGroupings, datasetPresetRequest, data
 import { buildReportBuilderRequest } from './reportBuilderRequest'
 import { retainStoredTemplateFields } from './reportTemplateDraft'
 import { availableBug1274WorkbookLaunches } from './bug1274WorkbookLaunch'
-import { cloneGroupedSettlementAliases, groupedSettlementCapability, groupedSettlementConfigurationError,
+import { CURRENCY_SETTLEMENT_AXES, DEBTOR_SETTLEMENT_AXES, SINGLE_SETTLEMENT_AXES, settlementAxesDescription,
+  cloneGroupedSettlementAliases, groupedSettlementCapability, groupedSettlementConfigurationError,
   groupedSettlementRows, groupedWorkbookRequest, normalizeGroupedSettlementDataset,
   requestGroupedSettlementPeriod, settlementFormDataset, settlementMaximumDate } from './groupedSettlementPeriod'
 import { settlementPeriodConfigurationError } from './settlementPeriod'
@@ -118,4 +119,15 @@ it('negotiates complete periods for both original Fenix layouts while preserving
   expect(groupedSettlementConfigurationError(groupedWorkbookRequest(current, false), expanded, '2026-10-10')).toBeNull()
   expect(groupedSettlementConfigurationError(current, dataset, '2026-10-10')).toContain('31')
   expect(groupedSettlementConfigurationError({ ...current, sourceBuyerSubtree: undefined }, expanded, '2026-10-10')).toContain('31')
+})
+
+it('describes the grouping that each settlement workbook actually uses', () => {
+  const rows = (...types: number[]) => types.map(type => ({ type }))
+  expect(settlementAxesDescription(rows(4, 41, 76))).toBe(CURRENCY_SETTLEMENT_AXES)
+  expect(settlementAxesDescription(rows(4, 76))).toBe(DEBTOR_SETTLEMENT_AXES)
+  expect(settlementAxesDescription(rows(4, 41, 76, 77))).toBe(SINGLE_SETTLEMENT_AXES)
+  expect(DEBTOR_SETTLEMENT_AXES).toMatch(/^Організація → Контрагент, як у «ДБіторка\.xls»/)
+  expect(DEBTOR_SETTLEMENT_AXES).not.toContain('Валюта →')
+  expect(CURRENCY_SETTLEMENT_AXES).toMatch(/^Організація → Валюта → Контрагент, як у «Взаємороз всі\.xls»/)
+  expect([CURRENCY_SETTLEMENT_AXES, DEBTOR_SETTLEMENT_AXES].join(' ')).not.toMatch(/Один точний договір|структура фіксована/)
 })

@@ -113,7 +113,7 @@ import { availableBug1274WorkbookLaunches, bug1274WorkbookRequest, opensOnPrevio
 import { resolveBug1274WorkbookFilters, resolvesWorkbookFilters, workbookFiltersNotice, type ResolvedWorkbookFilters } from '../data/bug1274WorkbookFilters'
 import { CashSettlementSettingsPanels } from './CashSettlementSettingsPanels'
 import { cashFormDataset, requestGroupedCashPeriod } from '../data/groupedCashPeriod'
-import { defaultGroupedSettlementBuyer, defaultGroupedSettlementPeriod, groupedSettlementPeriod as parseGroupedSettlementPeriod, requestGroupedSettlementPeriod, settlementFormDataset, settlementMaximumDate, settlementModePatch } from '../data/groupedSettlementPeriod'
+import { defaultGroupedSettlementBuyer, defaultGroupedSettlementPeriod, groupedSettlementPeriod as parseGroupedSettlementPeriod, requestGroupedSettlementPeriod, settlementFormDataset, settlementAxesDescription, settlementMaximumDate, settlementModePatch, SINGLE_SETTLEMENT_AXES } from '../data/groupedSettlementPeriod'
 import { requestSourceCounterpartyGroups } from '../data/sourceCounterpartyGroups'
 import { requiresValuationAgreement } from '../data/reportValuation'
 import { useValuationAgreement } from '../hooks/useValuationAgreement'
@@ -1696,7 +1696,7 @@ type LegacyReportBuilderProps = {
 }
 
 const fixedAxesDescription: Partial<Record<number, string>> = {
-  41: 'Організація → Валюта → Контрагент → Договір. Один точний договір і чотири показники у валюті взаєморозрахунків; структура фіксована.',
+  41: SINGLE_SETTLEMENT_AXES,
   40: 'Організація → Рахунок → Валютний запис → Валюта або Рахунок → Тип → Організація. Початок, надходження, витрати й кінець у валюті рахунку.',
   39: `Товар → сім атрибутів. Колонки: Остатки, Продажи та Контрагенты; один показник «Результат». ${CURRENT_VPARIVANIE_NOTICE}`,
   15: 'Клас XYZ → Товар. Показники у стовпцях; структура цього звіту фіксована.',
@@ -1842,7 +1842,7 @@ function LegacyReportBuilder({
           <Text className="app-section-title" component="h2" fw={600} size="sm">{t('Групування')}</Text>
           {fixedAxesDescription[dataSource] ? <Text size="sm">{dataSource === 39
             ? `Товар → сім атрибутів. Колонки: Остатки, Продажи та Контрагенты; один показник «Результат». ${currentVparivanieNotice(filterFieldOptions.some(option => option.field.Type === 60))}`
-            : fixedAxesDescription[dataSource]}</Text> : <ReportGroupingPanel layout={groupingLayout} axis="Row" allowed={allowedGroupingTypes} transferSupported={dataSource !== 13}
+            : dataSource === 41 ? settlementAxesDescription(rowGroups) : fixedAxesDescription[dataSource]}</Text> : <ReportGroupingPanel layout={groupingLayout} axis="Row" allowed={allowedGroupingTypes} transferSupported={dataSource !== 13}
             onOpenPicker={() => setGroupingPickerTarget('rows')}
             onRemove={(index) => onRowGroupsChange((current) => current.filter((_, itemIndex) => itemIndex !== index))}
             onReorder={(type, direction) => onRowGroupsChange(current => reorderReportGrouping(current, type, direction, allowedGroupingTypes))}
