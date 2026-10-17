@@ -97,7 +97,6 @@ describe('BUG-1274-only report surface routes', () => {
       expect(await screen.findByRole('heading', { name: 'Налаштування звіту' })).toBeTruthy()
       expect(screen.queryByRole('heading', { name: 'Конструктор звітів' })).toBeNull()
     },
-    10_000,
   )
 
   it('shows one reports menu entry without the sale-file screen', async () => {
