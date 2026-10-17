@@ -320,6 +320,7 @@ describe('exact Fenix filters in the report constructor', () => {
     vi.mocked(getReportDatasets).mockResolvedValue([...reportDatasets, ordinarySupplierDataset])
     const data = defaultDatasetRequest(supplierDataset, '2026-07-01', '2026-07-31')
     if (basis !== undefined) data.SupplierBasis = basis
+    data.sorted.Measurements.find(measurement => measurement.Type === 0)!.Label = 'Кількість за регістром собівартості 1С'
     const template = { Id: crypto.randomUUID(), Revision: 2, Name: 'Daily exact supplier saved', Data: data }
     vi.mocked(getServerReportTemplates).mockResolvedValue([template])
     const { container } = await ready()
