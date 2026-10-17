@@ -57,7 +57,8 @@ export function readWorkbookPreview(raw: unknown, preview: NativeReportPreview):
   if (source === 35) {
     if (raw.rows.length !== 0 || preview.RowSchema.map(field => (field as { Identity?: string }).Identity).join(',') !== 'Day,Organization') return fail()
   } else if (raw.rows.length !== preview.Rows.length || preview.SettlementCounterpartyAttributes
-    || source === 40 && preview.RowSchema.map(field => (field as { Identity?: string }).Identity).join(',') !== 'PaymentRegister'
+    || source === 40 && !['PaymentRegister', 'PaymentBalanceRecord']
+      .includes(preview.RowSchema.map(field => (field as { Identity?: string }).Identity).join(','))
     || source === 41 && !['Organization,PaymentCurrency,SettlementCounterparty', 'Organization,SettlementCounterparty']
       .includes(preview.RowSchema.map(field => (field as { Identity?: string }).Identity).join(','))) return fail()
   const visible = new Set(preview.Rows.map(row => row.SourceIndex))

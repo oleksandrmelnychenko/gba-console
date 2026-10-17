@@ -19,6 +19,10 @@ it('refuses different result hashes, unknown preview sources and wrong native ro
     const raw = workbookPreview(); mutate(raw); expect(() => normalize(raw)).toThrow('додаткові поля')
   }
 })
+it('accepts the per-currency cash record row grain the server presents for 40', () => {
+  const raw = workbookPreview(); raw.RowSchema[0].Identity = 'PaymentBalanceRecord'
+  expect(normalize(raw).WorkbookPresentation?.rows).toHaveLength(1)
+})
 it('rejects foreign or duplicated page rows and never attaches attribute evidence by a display caption', () => {
   const foreign = workbookPreview(); foreign.workbookPresentation.rows[0].rowSourceIndex = 13
   expect(() => normalize(foreign)).toThrow('додаткові поля')
