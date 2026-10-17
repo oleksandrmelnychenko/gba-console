@@ -1,7 +1,7 @@
 import { MantineProvider } from '@mantine/core'
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import type { ReactNode } from 'react'
-import { beforeEach, expect, it, vi } from 'vitest'
+import { beforeAll, beforeEach, expect, it, vi } from 'vitest'
 import { saveSession } from '../../../shared/auth/session'
 import { I18nProvider } from '../../../shared/i18n/I18nProvider'
 import { getInventoryTurnoverCapabilities, previewInventoryTurnover } from '../api/inventoryTurnoverApi'
@@ -18,6 +18,7 @@ vi.mock('../api/reportWorkspaceApi', async original => ({ ...await original<type
   getReportCatalogue: vi.fn(), getReportDatasets: vi.fn(), getServerReportTemplates: vi.fn() }))
 vi.mock('../api/reportsApi', async original => ({ ...await original<typeof import('../api/reportsApi')>(), createStockReport: vi.fn() }))
 function Providers({ children }: { children: ReactNode }) { return <MantineProvider env="test"><I18nProvider>{children}</I18nProvider></MantineProvider> }
+beforeAll(async () => { await import('./ReportCataloguePanel') })
 beforeEach(() => {
   vi.clearAllMocks(); sessionStorage.clear(); localStorage.clear(); saveSession({ userNetUid: INVENTORY_TURNOVER_TEST_CALLER, csrfToken: 'inventory-workspace' })
   const catalogue: ReportCatalogue = { CapturedOn: '2026-09-07', Presentations: [], Reports: [inventoryTurnoverCatalogueEntry()] }

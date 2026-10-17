@@ -1,7 +1,7 @@
 import { MantineProvider } from '@mantine/core'
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import type { ComponentProps } from 'react'
-import { beforeEach, expect, it, vi } from 'vitest'
+import { beforeAll, beforeEach, expect, it, vi } from 'vitest'
 import { I18nProvider } from '../../../shared/i18n/I18nProvider'
 import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { getReportCatalogue, getReportDatasets } from '../api/reportWorkspaceApi'
@@ -24,6 +24,7 @@ function launchCatalogue() {
   catalogue.Reports[0].Sources.forEach(source => { source.SourceId = '0e9ed1d2-a9c6-4865-89bc-2f25c8b7ebd3' })
   return catalogue
 }
+beforeAll(async () => { await import('./ReportCataloguePanel') })
 beforeEach(() => {
   vi.clearAllMocks(); auth.allowed = true
   vi.mocked(getReportCatalogue).mockResolvedValue(launchCatalogue())

@@ -1,7 +1,7 @@
 import { MantineProvider } from '@mantine/core'
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import type { ReactNode } from 'react'
-import { beforeEach, expect, it, vi } from 'vitest'
+import { beforeAll, beforeEach, expect, it, vi } from 'vitest'
 import { I18nProvider } from '../../../shared/i18n/I18nProvider'
 import { getCollectionCoefficientCapabilities, previewCollectionCoefficient } from '../api/collectionCoefficientApi'
 import { createStockReport } from '../api/reportsApi'
@@ -22,6 +22,7 @@ function Providers({ children }: { children: ReactNode }) {
   return <MantineProvider env="test"><I18nProvider>{children}</I18nProvider></MantineProvider>
 }
 
+beforeAll(async () => { await import('./ReportCataloguePanel') })
 beforeEach(() => {
   vi.clearAllMocks(); sessionStorage.clear(); localStorage.clear()
   const catalogue: ReportCatalogue = { CapturedOn: '2026-09-07', Presentations: [], Reports: [collectionCoefficientCatalogueEntry()] }

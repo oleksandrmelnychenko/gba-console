@@ -63,7 +63,7 @@ it('handles stale409 by reloading choices and requiring an explicit new preview 
   vi.mocked(previewPlannedCash).mockRejectedValueOnce(new ApiError('Застарілий сценарій', 409, null)).mockResolvedValueOnce(plannedCashReport('DdsPayouts'))
   render(panel()); await selectScenario(); fireEvent.click(screen.getByRole('button', { name: 'Сформувати' }))
   await waitFor(() => expect(getPlannedCashScenarioChoices).toHaveBeenCalledTimes(2))
-  expect(previewPlannedCash).toHaveBeenCalledOnce(); expect((screen.getByRole('combobox') as HTMLSelectElement).value).toBe('')
+  expect(previewPlannedCash).toHaveBeenCalledOnce(); expect((await screen.findByRole('combobox') as HTMLSelectElement).value).toBe('')
   expect(screen.queryByRole('dialog', { name: 'Файли планування коштів' })).toBeNull(); expect(screen.queryByRole('region', { name: 'Результат планування коштів' })).toBeNull()
   await selectScenario(); fireEvent.click(screen.getByRole('button', { name: 'Переглянути' })); await screen.findByRole('region', { name: 'Результат планування коштів' })
   expect(previewPlannedCash).toHaveBeenCalledTimes(2)
