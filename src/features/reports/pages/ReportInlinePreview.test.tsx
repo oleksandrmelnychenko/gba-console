@@ -60,7 +60,7 @@ it('keeps missing legacy attribution explicit rather than inventing dates or com
   show(null)
   expect(screen.getByText('Опис розрахунку відсутній')).toBeTruthy()
   expect(screen.queryByText(/Період розрахунку:/)).toBeNull()
-  expect(screen.queryByText('Сервер не зазначив застосованих фільтрів.')).toBeNull()
+  expect(screen.queryByText('Відборів немає.')).toBeNull()
 })
 
 it('distinguishes unknown lists from explicit empty lists', () => {

@@ -189,7 +189,7 @@ function IgnoredFilterAttribution({ filters }: { filters: NativeReportPreviewFil
 
 function AppliedFilterAttribution({ filters }: { filters: NativeReportPreviewFilter[] | null }) {
   if (filters === null) return <Text size="sm">Сервер не передав відомості про застосовані фільтри.</Text>
-  if (filters.length === 0) return <Text size="sm">Сервер не зазначив застосованих фільтрів.</Text>
+  if (filters.length === 0) return <Text size="sm">Відборів немає.</Text>
   return <div>
     <Text size="sm" fw={600}>Застосовані фільтри</Text>
     <ul>{entries(filters.map(filterText)).map(item => <li key={item.key}>{item.text}</li>)}</ul>
