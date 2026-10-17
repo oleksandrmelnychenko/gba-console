@@ -2393,8 +2393,9 @@ export function SelectionValuePicker({ dataSource, lookupProfitReadMode, lookupP
   const [search, setSearch] = useValueState('')
   const [manualValue, setManualValue] = useValueState('')
   const lookupScope = JSON.stringify([dataSource, selection.SelectedField.Type, lookupProfitReadMode ?? null, lookupProfitUnavailable === true])
-  const [optionResult, setOptionResult] = useValueState<{ scope: string; items: ReportEntity[] }>({ scope: '', items: [] })
+  const [optionResult, setOptionResult] = useValueState<{ scope: string; items: ReportEntity[]; failed?: boolean }>({ scope: '', items: [] })
   const options = optionResult.scope === lookupScope ? optionResult.items : EMPTY_LOOKUP_OPTIONS
+  const lookupFailed = optionResult.scope === lookupScope && optionResult.failed === true
   const [isLoading, setLoading] = useValueState(false)
   const [docStatus, setDocStatus] = useValueState('All')
   const [docOrganisationIds, setDocOrganisationIds] = useValueState<string[]>([])
@@ -2514,7 +2515,7 @@ export function SelectionValuePicker({ dataSource, lookupProfitReadMode, lookupP
         }
       } catch {
         if (!cancelled) {
-          setOptionResult({ scope: lookupScope, items: [] })
+          setOptionResult({ scope: lookupScope, items: [], failed: true })
         }
       } finally {
         if (!cancelled) {
@@ -2646,7 +2647,9 @@ export function SelectionValuePicker({ dataSource, lookupProfitReadMode, lookupP
           filter={lookupMode === 'search' ? keepServerLookupResults : undefined}
           label={label}
           nothingFoundMessage={
-            needsPeriod && (!from || !to)
+            lookupFailed
+              ? t('Не вдалося завантажити значення. Змініть пошук, щоб спробувати ще раз.')
+              : needsPeriod && (!from || !to)
               ? t('Спочатку вкажіть коректний період')
               : lookupMode === 'search' && normalizedSearch.length < minSearchLength
                 ? t('Введіть мінімум 2 символи')
