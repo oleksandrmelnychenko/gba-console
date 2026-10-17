@@ -3,7 +3,7 @@ import { Alert, Badge, Stack, Text } from '@mantine/core'
 import { profitReadModeLabel } from '../data/profitReadMode'
 import { settlementReadModeLabel } from '../data/settlementReadMode'
 import { cashReadModeLabel } from '../data/cashReadMode'
-import { previewAmountText, previewCaptionText, previewCellText, previewNumberText, type CurrentVparivanieProduct, type NativeReportPreview, type NativeReportPreviewAxis, type NativeReportPreviewFilter, type NativeReportPreviewRequest } from '../data/nativeReportPreview'
+import { previewAmountText, previewCaptionText, previewCellText, previewNumberText, previewSharedNames, type CurrentVparivanieProduct, type NativeReportPreview, type NativeReportPreviewAxis, type NativeReportPreviewFilter, type NativeReportPreviewRequest } from '../data/nativeReportPreview'
 import { CURRENT_VPARIVANIE_PRODUCT_CAPTIONS, CURRENT_VPARIVANIE_PRODUCT_FIELDS, currentVparivanieQuantityText } from '../data/currentVparivanie'
 import { currentVparivanieSecondTier } from '../data/currentVparivanieColumns'
 import './report-inline-preview.css'
@@ -23,6 +23,7 @@ export function ReportInlinePreview({ preview }: { preview: NativeReportPreview 
   const inlineFields = workbook?.fields.filter(field => field.placement === 'inline') ?? []
   const sharedGroup = !products && preview.Columns.length > 1 && preview.Columns.every(column => column.Values.length > 1
     && column.Values[0].Caption === preview.Columns[0].Values[0].Caption)
+  const sharedNames = preview.RowSchema.map((_, index) => previewSharedNames(preview.Rows.map(row => row.Values[index]?.Caption ?? '')))
   const amountColumns = new Set(preview.Columns.filter(column => isAmountColumn(column)).map(column => column.SourceIndex))
   const rowHeaders = products ? CURRENT_VPARIVANIE_PRODUCT_CAPTIONS : [...preview.RowSchema.map((level, index) => [level.Caption || `Рівень ${index + 1}`,
     ...(index === preview.RowSchema.length - 1 ? inlineFields.map(field => field.caption) : [])].join(', ')),
@@ -49,7 +50,7 @@ export function ReportInlinePreview({ preview }: { preview: NativeReportPreview 
         <tbody>{preview.Rows.map(row => <tr key={row.SourceIndex}>
           {rowHeaders.map((header, index) => <th scope="row" key={header}>{rowHeaderText({ index, row, preview,
             products: !!products, product: productRows.get(row.SourceIndex), regions: !!regions, region: regionRows.get(row.SourceIndex),
-            attributes: attributeRows.get(row.SourceIndex), workbookRow: workbookRows.get(row.SourceIndex), workbookColumns })}</th>)}
+            attributes: attributeRows.get(row.SourceIndex), workbookRow: workbookRows.get(row.SourceIndex), workbookColumns, sharedNames })}</th>)}
           {preview.Columns.map(column => {
             const value = cells.get(`${row.SourceIndex}:${column.SourceIndex}`)
             return <td key={column.SourceIndex} title={value === undefined ? 'Клітинка відсутня' : value.Kind === 'null' ? 'Явне значення NULL' : undefined}>
@@ -75,13 +76,14 @@ function WorkbookMetadata({ workbook }: { workbook: NativeReportPreview['Workboo
     {workbook.selection.ordering === 'MonthAscending' ? <Text size="xs">Сортування: по місяцях (за зростанням), як у книзі 1С.</Text> : null}
   </>
 }
-function rowHeaderText({ index, row, preview, products, product, regions, region, attributes, workbookRow, workbookColumns }: {
+function rowHeaderText({ index, row, preview, products, product, regions, region, attributes, workbookRow, workbookColumns, sharedNames }: {
   index: number; row: NativeReportPreviewAxis; preview: NativeReportPreview; products: boolean
   product?: CurrentVparivanieProduct; regions: boolean; region?: string | null; attributes?: SettlementCounterpartyAttribute
   workbookRow?: WorkbookRow; workbookColumns: NonNullable<NativeReportPreview['WorkbookPresentation']>['fields']
+  sharedNames: readonly ReadonlySet<string>[]
 }): string {
   if (products) return product?.[CURRENT_VPARIVANIE_PRODUCT_FIELDS[index]] ?? '—'
-  if (index < preview.RowSchema.length) return workbookRowCaption(previewCaptionText(row.Values[index]?.Caption ?? '—'),
+  if (index < preview.RowSchema.length) return workbookRowCaption(previewCaptionText(row.Values[index]?.Caption ?? '—', sharedNames[index]),
     index === preview.RowSchema.length - 1, workbookRow, preview.WorkbookPresentation?.fields ?? [])
   if (workbookColumns.length) return workbookAttributeText(workbookRow?.values
     .find(value => value.type === workbookColumns[index - preview.RowSchema.length]?.type))
@@ -116,11 +118,12 @@ function entries(values: readonly string[]) {
   })
 }
 function filterText(filter: NativeReportPreviewFilter): string {
+  const shared = previewSharedNames(filter.Values.map(value => value.trim()))
   const values = filter.Values.map(value => {
     if (/^(?:\[id=\d+\]|[\da-f]{8}-[\da-f]{4}-[\da-f]{4}-[\da-f]{4}-[\da-f]{12}|(?:0x)?[\da-f]{32}(?:[\da-f]{32})?)$/i.test(value.trim()))
       return 'Обране точне значення'
     // Captioned values retain the caption; a numeric machine suffix is not a business label.
-    return previewCaptionText(value.trim())
+    return previewCaptionText(value.trim(), shared)
   })
   const description = `${filter.Field} ${filter.Condition}: ${values.length ? values.join(', ') : '—'}`
   return filter.IgnoredReason ? `${description} (${filter.IgnoredReason})` : description

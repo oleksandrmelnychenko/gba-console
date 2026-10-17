@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { normalizeNativeReportPreview, previewAmountText, previewCaptionText, previewCellText, previewNumberText, previewScalarText } from './nativeReportPreview'
+import { normalizeNativeReportPreview, previewAmountText, previewCaptionText, previewCellText, previewSharedNames, previewNumberText, previewScalarText } from './nativeReportPreview'
 
 const preview = {
   Version: 1, ResultSha256: 'a'.repeat(64), PresentationOnly: true,
@@ -53,6 +53,13 @@ describe('native report preview transport', () => {
     expect(previewCaptionText('Клієнт [id=12]')).toBe('Клієнт')
     expect(previewCaptionText('Каса [грн]')).toBe('Каса [грн]')
     expect(previewCaptionText('СКЛАД -1')).toBe('СКЛАД -1')
+  })
+
+  it('keeps the id of two different rows that share a name', () => {
+    const shared = previewSharedNames(['Однакова [701]', 'Однакова [702]', 'Фенікс [10558]', 'Однакова [701]'])
+    expect([...shared]).toEqual(['Однакова'])
+    expect(previewCaptionText('Однакова [702]', shared)).toBe('Однакова [702]')
+    expect(previewCaptionText('Фенікс [10558]', shared)).toBe('Фенікс')
   })
 
   it('rejects unexpected coordinates and oversized result pages', () => {

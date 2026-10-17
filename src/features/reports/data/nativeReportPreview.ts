@@ -242,8 +242,19 @@ export function previewAmountText(value: string): string {
 }
 
 /** Ids appended to names for uniqueness are not business labels; 1C shows the name alone. */
-export function previewCaptionText(caption: string): string {
-  return caption.replace(/\s+\[(?:id=)?-?\d+\]$/i, '')
+export function previewCaptionText(caption: string, sharedNames?: ReadonlySet<string>): string {
+  const name = caption.replace(/\s+\[(?:id=)?-?\d+\]$/i, '')
+  return sharedNames?.has(name) ? caption : name
+}
+
+/** Names that two different captions reduce to keep their id so the rows stay distinguishable. */
+export function previewSharedNames(captions: readonly string[]): ReadonlySet<string> {
+  const byName = new Map<string, Set<string>>()
+  for (const caption of captions) {
+    const name = previewCaptionText(caption)
+    byName.set(name, (byName.get(name) ?? new Set()).add(caption))
+  }
+  return new Set([...byName].filter(([, all]) => all.size > 1).map(([name]) => name))
 }
 
 export function previewCellText(value: NativeReportPreviewScalar | undefined): string {
