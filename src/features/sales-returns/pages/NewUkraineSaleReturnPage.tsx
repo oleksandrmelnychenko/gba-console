@@ -41,6 +41,7 @@ import {
   getSaleReturns,
   getSalesForReturn,
   getSalesReturnOrganizations,
+  isSalesForReturnResultTruncated,
   MIN_SALES_FOR_RETURN_PRODUCT_SEARCH_LENGTH,
   searchSalesReturnClients,
 } from '../api/salesReturnsApi'
@@ -380,14 +381,16 @@ export function NewUkraineSaleReturnPage() {
     setCreateError(null)
     setCreateWarning(null)
 
+    const searchParams = {
+      clientNetId: selectedClientNetUid,
+      from: saleFromDate,
+      organizationNetId: selectedOrganizationNetUid,
+      to: saleToDate,
+      value: saleSearch,
+    }
+
     try {
-      const sales = await getSalesForReturn({
-        clientNetId: selectedClientNetUid,
-        from: saleFromDate,
-        organizationNetId: selectedOrganizationNetUid,
-        to: saleToDate,
-        value: saleSearch,
-      }, signal)
+      const sales = await getSalesForReturn(searchParams, signal)
 
       if (requestId !== salesRequestIdRef.current) {
         return
@@ -400,6 +403,12 @@ export function NewUkraineSaleReturnPage() {
 
       if (!sales.length) {
         setCreateWarning(t('Продажі для повернення не знайдено'))
+      } else if (isSalesForReturnResultTruncated(searchParams, sales.length)) {
+        setCreateWarning(
+          t('Показано лише останні {count} продажів. Звузьте період або виберіть клієнта, щоб знайти старіший продаж.', {
+            count: sales.length,
+          }),
+        )
       }
     } catch (loadError) {
       if (signal?.aborted || requestId !== salesRequestIdRef.current) {

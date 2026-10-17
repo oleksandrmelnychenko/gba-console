@@ -5,9 +5,11 @@ import {
   createDirectSaleReturn,
   createSaleReturn,
   getSalesForReturn,
+  getSalesForReturnLimit,
   getStoragesByOrganization,
   getReturnStorages,
   getReturnProductByNetId,
+  isSalesForReturnResultTruncated,
   searchReturnProducts,
   searchSalesReturnClients,
 } from './salesReturnsApi'
@@ -119,7 +121,7 @@ describe('sales returns API', () => {
     ])
   })
 
-  it('includes the selected final day in the bounded return sale search', async () => {
+  it('sends the selected final day as the inclusive end of the return sale search', async () => {
     const sales = [{ NetUid: 'sale-1' }]
 
     apiRequestMock.mockResolvedValueOnce({ Items: sales })
@@ -140,10 +142,22 @@ describe('sales returns API', () => {
         limit: 50,
         netId: 'client-1',
         organizationNetId: 'organization-1',
-        to: '2026-09-30T00:00:00.000',
+        to: '2026-09-29T23:59:59.999',
         value: '3021-C',
       },
     })
+  })
+
+  it('flags a return sale search that reached its server limit so older sales are not silently hidden', () => {
+    expect(getSalesForReturnLimit({ value: ' 3021-C ' })).toBe(50)
+    expect(getSalesForReturnLimit({ clientNetId: 'client-1' })).toBe(20)
+    expect(getSalesForReturnLimit({ organizationNetId: 'organization-1', value: '  ' })).toBe(20)
+    expect(getSalesForReturnLimit({})).toBe(10)
+
+    expect(isSalesForReturnResultTruncated({ value: '3021-C' }, 50)).toBe(true)
+    expect(isSalesForReturnResultTruncated({ value: '3021-C' }, 49)).toBe(false)
+    expect(isSalesForReturnResultTruncated({ clientNetId: 'client-1' }, 20)).toBe(true)
+    expect(isSalesForReturnResultTruncated({}, 0)).toBe(false)
   })
 
   it('does not enqueue a broad sale search for an incomplete product code', async () => {
@@ -178,7 +192,7 @@ describe('sales returns API', () => {
         limit: 50,
         netId: '',
         organizationNetId: '',
-        to: '2026-08-09T00:00:00.000',
+        to: '2026-08-08T23:59:59.999',
         value: 'ISS20081B',
       },
       signal: controller.signal,
@@ -201,7 +215,7 @@ describe('sales returns API', () => {
         limit: 10,
         netId: '',
         organizationNetId: '',
-        to: '2026-08-09T00:00:00.000',
+        to: '2026-08-08T23:59:59.999',
         value: '',
       },
     })

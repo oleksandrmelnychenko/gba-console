@@ -1,5 +1,5 @@
 import { apiRequest } from '../../../shared/api/apiClient'
-import { toDateTimeQuery, toExclusiveDateTimeQuery } from '../../../shared/date/dateTime'
+import { toDateTimeQuery } from '../../../shared/date/dateTime'
 import {
   getSalesMutationOperationHeaders,
   type SalesMutationOperationOptions,
@@ -114,6 +114,25 @@ export async function createDirectSaleReturn(
   )
 }
 
+export function getSalesForReturnLimit(
+  params: Pick<SalesForReturnSearchParams, 'clientNetId' | 'organizationNetId' | 'value'>,
+): number {
+  if (params.value?.trim()) {
+    return FILTERED_SALES_FOR_RETURN_LIMIT
+  }
+
+  return params.clientNetId || params.organizationNetId
+    ? SCOPED_SALES_FOR_RETURN_LIMIT
+    : UNFILTERED_SALES_FOR_RETURN_LIMIT
+}
+
+export function isSalesForReturnResultTruncated(
+  params: Pick<SalesForReturnSearchParams, 'clientNetId' | 'organizationNetId' | 'value'>,
+  salesCount: number,
+): boolean {
+  return salesCount > 0 && salesCount >= getSalesForReturnLimit(params)
+}
+
 export async function getSalesForReturn(
   params: SalesForReturnSearchParams,
   signal?: AbortSignal,
@@ -124,11 +143,7 @@ export async function getSalesForReturn(
     return []
   }
 
-  const limit = value
-    ? FILTERED_SALES_FOR_RETURN_LIMIT
-    : params.clientNetId || params.organizationNetId
-      ? SCOPED_SALES_FOR_RETURN_LIMIT
-      : UNFILTERED_SALES_FOR_RETURN_LIMIT
+  const limit = getSalesForReturnLimit(params)
 
   const result = await apiRequest<unknown>('/sales/all/returns/search', {
     query: {
@@ -136,7 +151,7 @@ export async function getSalesForReturn(
       limit,
       netId: params.clientNetId || '',
       organizationNetId: params.organizationNetId || '',
-      to: toExclusiveDateTimeQuery(params.to),
+      to: toDateTimeQuery(params.to, 'end'),
       value,
     },
     ...(signal ? { signal } : {}),
