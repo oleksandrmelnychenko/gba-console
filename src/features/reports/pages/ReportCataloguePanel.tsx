@@ -1,6 +1,7 @@
 import { ActionIcon, Alert, Badge, Button, Group, Loader, Pagination, Select, Stack, Table, Text, TextInput } from '@mantine/core'
 import { ArrowRight, ChevronRight, RotateCcw, Search } from 'lucide-react'
 import { DocumentDetailMetric, DocumentDetailSummary } from '../../../shared/ui/document-detail/DocumentDetail'
+import { bug1274ReportTitle } from '../data/bug1274WorkbookGuide'
 import './report-catalogue.css'
 import { Fragment, useEffect, useMemo, useState } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -166,8 +167,8 @@ export function ReportCataloguePanel({ onOpen, onOpenDebtToSalesRatio, onOpenCol
       <DocumentDetailSummary eyebrow={t('Звіти · Fenix / AMG')} title={t('Каталог звітів')}
         meta={t('Оберіть звіт, щоб переглянути покриття та доступні налаштування.')}
         metrics={<>
-          <DocumentDetailMetric label={t(bug1274Scope ? 'Звітів задачі 1274' : 'Звітів у каталозі')} value={String(headline.CatalogueEntries)} />
-          <DocumentDetailMetric label={t('Джерельних реалізацій')} value={String(headline.SourceImplementations)} />
+          <DocumentDetailMetric label={t(bug1274Scope ? 'Звітів 1С' : 'Звітів у каталозі')} value={String(headline.CatalogueEntries)} />
+          {bug1274Scope ? null : <DocumentDetailMetric label={t('Джерельних реалізацій')} value={String(headline.SourceImplementations)} />}
           {bug1274Scope ? <DocumentDetailMetric label={t('Форм за зразками Excel')} value={String(workbookCount)} /> : null}
           {bug1274Scope ? null : <DocumentDetailMetric label={t('Перевірених позицій')} value={String(headline.FullyVerifiedEntries)} />}
         </>} />
@@ -175,7 +176,7 @@ export function ReportCataloguePanel({ onOpen, onOpenDebtToSalesRatio, onOpenCol
       {onOpen && <Text size="sm" c="dimmed" className="report-catalogue__intro">{t(consoleScope && BUG_1274_ONLY_REPORT_SURFACE
         ? 'Оберіть форму за зразком Excel у рядку звіту. Звіт формується кнопкою «Сформувати».'
         : 'Оберіть доступний варіант. Звіти конструктора формуються кнопкою «Сформувати»; Fenix «Валовая прибыль» відкривається в окремій панелі.')}</Text>}
-      <details className="report-catalogue__overview">
+      {bug1274Scope ? null : <details className="report-catalogue__overview">
         <summary><ChevronRight size={15} aria-hidden="true" />{t('Стан перенесення та джерела')}</summary>
         <Stack gap="sm" className="report-catalogue__overview-body">
       <Text size="sm" c="dimmed">{t(onOpen
@@ -196,7 +197,7 @@ export function ReportCataloguePanel({ onOpen, onOpenDebtToSalesRatio, onOpenCol
       <Text size="xs" c="dimmed">{t('Типи подання у вихідних конфігураціях; це не перелік готових подань GBA.')}</Text>
       <Group aria-label={t('Типи подання 1С')}>{catalogue.Presentations.map(item => <Badge key={item.Id} color="gray" variant="light">{t(item.Title)}</Badge>)}</Group>
         </Stack>
-      </details>
+      </details>}
       {!inspection.valid && <Alert color="yellow">{t(inspection.supplied ? 'Дані стану перенесення не узгоджені з каталогом. Завершеність не підтверджена; усі позиції каталогу збережені.'
         : 'Стан перенесення ще не надано сервером. Наявність джерела не підтверджує готовність розрахунку.')}</Alert>}
       <div className="report-catalogue__list">
@@ -248,7 +249,9 @@ function CatalogueTable({ consoleScope = false, onOpenWorkbook, visibleRows, cat
             <Table.Tr>
               <Table.Td><Stack gap={8} align="flex-start"><Button className="report-catalogue__report-title" leftSection={<ChevronRight size={14} aria-hidden="true" />} type="button" variant="subtle" size="compact-sm" aria-expanded={expanded.has(report.Id)} aria-label={t('Покриття звіту: {name}', { name: report.Title })}
                 styles={{ root: { height: 'auto', maxWidth: '100%' }, label: { whiteSpace: 'normal', textAlign: 'left' } }}
-                onClick={() => onToggle(report.Id)}>{report.Title}</Button>
+                onClick={() => onToggle(report.Id)}>{consoleScope && BUG_1274_ONLY_REPORT_SURFACE ? bug1274ReportTitle(report.Id) ?? report.Title : report.Title}</Button>
+                {consoleScope && BUG_1274_ONLY_REPORT_SURFACE && bug1274ReportTitle(report.Id)
+                  ? <Text size="xs" c="dimmed">{t('Назва в конфігурації 1С: {name}', { name: report.Title })}</Text> : null}
                 {consoleScope && !BUG_1274_ONLY_REPORT_SURFACE ? <OriginalCashStatementCatalogueLaunch report={report} worlds={matchingSources.map(s => s.World)}
                   enabled={canGenerate} disabled={disabled} callerKey={callerKey} /> : null}
                 {consoleScope ? consoleReportAvailability(report, inspection) === 'ready_disabled'

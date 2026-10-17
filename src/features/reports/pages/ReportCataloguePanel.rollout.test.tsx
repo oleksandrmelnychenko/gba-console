@@ -54,7 +54,9 @@ it('lists only the five BUG-1274 reports and hides ready, captured and unassesse
   const open = mount()
   await screen.findByRole('button', { name: 'ДБіторка.xls' })
   expect(screen.getAllByRole('button', { name: /^Покриття звіту:/ }).map(button => button.textContent))
-    .toEqual([...new Set(Object.values(BUG_1274_WORKBOOK_REPORT_IDS))])
+    .toEqual(['Валовий прибуток', 'Валовий прибуток по постачальниках', 'Впарювання', 'Відомість по коштах',
+      'Відомість по взаєморозрахунках з контрагентами'])
+  expect(screen.getByText('Назва в конфігурації 1С: builtin:ВаловаяПрибыль')).toBeTruthy()
   expect(screen.getByRole('button', { name: 'Взаємороз всі.xls' })).toBeTruthy()
   expect(screen.queryByText('Готово')).toBeNull()
   expect(screen.queryByRole('button', { name: 'Запуск поки вимкнено' })).toBeNull()
@@ -100,8 +102,9 @@ it('counts only the BUG-1274 reports and workbook forms in the catalogue header 
   const metric = (label: string) => screen.getByText(label).closest('.document-detail-metric')?.querySelector('strong')?.textContent
   mount()
   await screen.findByRole('button', { name: 'ДБіторка.xls' })
-  expect(metric('Звітів задачі 1274')).toBe('5')
-  expect(metric('Джерельних реалізацій')).toBe('5')
+  expect(metric('Звітів 1С')).toBe('5')
+  expect(screen.queryByText('Джерельних реалізацій')).toBeNull()
+  expect(screen.queryByText('Стан перенесення та джерела')).toBeNull()
   expect(metric('Форм за зразками Excel')).toBe('6')
   expect(screen.queryByText('Звітів у каталозі')).toBeNull()
 })

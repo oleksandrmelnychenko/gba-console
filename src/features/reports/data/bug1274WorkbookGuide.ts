@@ -1,0 +1,97 @@
+import { previousKyivDay } from './cashPeriod'
+
+export type WorkbookGuide = { title: string; summary: string }
+export type ReportPeriodPreset = { label: string; from: string; to: string }
+
+export const BUG_1274_WORKBOOKS_TITLE = 'Звіти 1С за зразками Excel'
+export const BUG_1274_WORKBOOKS_INTRO = 'Кожна форма відкривається з відборами й групуваннями книги 1С. Період і відбори можна змінити; '
+  + 'кнопка «Скинути» повертає налаштування книги. Суми розраховано з документів GBA і звірено з 1С; ТОВ «АМГ «КОНКОРД» — за базою 1С AMG. '
+  + 'Організації ХАЗ, ФОП Пархоменко, ФОП Берешвілі, ПАК, Злагода та CONCORD.PL у GBA не переносяться, тому їхніх сум у звітах немає.'
+
+const DEBT_ADJUSTMENT_NOTE = 'Документи 1С «Корректировка долга» в GBA не переносяться: у 1С надходження й видаток більші на їхню суму, залишки однакові.'
+
+const GUIDES: Readonly<Record<string, WorkbookGuide>> = {
+  'ВП.xls': {
+    title: 'Валовий прибуток',
+    summary: 'По днях і організаціях, період до 62 днів. Відбори книги: товари без послуг, чотири організації, покупці з групи «Покупці»; '
+      + 'додаткові поля Артикул і Топ, сортування по місяцях.',
+  },
+  'ВП по постачальниках.xls': {
+    title: 'Валовий прибуток по постачальниках',
+    summary: 'Склад → організація → постачальник, період до 62 днів. Відбори книги: чотири організації, 35 постачальників зі збереженого '
+      + 'налаштування 1С «OV», покупці з групи «Покупці».',
+  },
+  'Впарювання.xls': {
+    title: 'Впарювання',
+    summary: 'Товари із залишком на кінець періоду, продажами й контрагентами. Відбори книги: група AL-KO, покупець АФРАКО ТЗОВ, '
+      + 'основний менеджер Крицький О. Р. Залишок відомий від останнього перенесення залишків з 1С; за раніший період він порожній.',
+  },
+  'Ведомость по денежным средствам.xls': {
+    title: 'Відомість по коштах',
+    summary: 'Кожна каса й банківський рахунок окремим рядком у своїй валюті та в EUR: початковий залишок, надходження, видаток, '
+      + 'кінцевий залишок. Період від 01.01.2025.',
+  },
+  'Взаємороз всі.xls': {
+    title: 'Взаєморозрахунки з контрагентами',
+    summary: 'Організація → валюта → контрагент з основним менеджером і кодом по регіону. Покупці з групи «Покупці», крім груп '
+      + `Харків Скляр, Ніжин - ФОП Гречківська О.І. і НЕВІДОМІ. Період від 01.01.2025. ${DEBT_ADJUSTMENT_NOTE}`,
+  },
+  'ДБіторка.xls': {
+    title: 'Відомість по взаєморозрахунках з контрагентами',
+    summary: 'Організація → контрагент, договори контрагента в різних валютах — в одному рядку, як у 1С. Покупці з групи «Покупці». '
+      + `Період від 01.01.2025. ${DEBT_ADJUSTMENT_NOTE}`,
+  },
+}
+
+export function bug1274WorkbookGuide(fileName: string): WorkbookGuide | undefined {
+  return GUIDES[fileName]
+}
+
+const MONTH_PERIOD_WORKBOOKS: ReadonlySet<string> = new Set(['ВП.xls', 'ВП по постачальниках.xls', 'ДБіторка.xls'])
+
+function monthStart(day: string): string {
+  return `${day.slice(0, 7)}-01`
+}
+
+function previousMonth(day: string): { from: string; to: string } {
+  const to = previousKyivDay(monthStart(day))
+  return { from: monthStart(to), to }
+}
+
+/** The 1C workbooks print a month, a year or a day; the shortcut opens the same kind of period ending on the last completed day. */
+export function bug1274WorkbookPeriod(fileName: string, today: string): { from: string; to: string } | null {
+  const yesterday = previousKyivDay(today)
+  if (!yesterday) return null
+  if (fileName === 'Впарювання.xls') return { from: `${today.slice(0, 4)}-01-01`, to: today }
+  if (MONTH_PERIOD_WORKBOOKS.has(fileName)) return { from: monthStart(yesterday), to: yesterday }
+  return null
+}
+
+/** Quick periods ending on the same day the form opens on: today for the matrix, the last completed day otherwise. */
+export function reportPeriodPresets(dataSource: number, today: string): ReportPeriodPreset[] {
+  if (![35, 38, 39, 40, 41].includes(dataSource)) return []
+  const yesterday = previousKyivDay(today)
+  if (!yesterday) return []
+  const end = dataSource === 39 ? today : yesterday
+  const last = previousMonth(end)
+  const presets: ReportPeriodPreset[] = [
+    dataSource === 39 ? { label: 'Сьогодні', from: today, to: today } : { label: 'Вчора', from: yesterday, to: yesterday },
+    { label: 'Поточний місяць', from: monthStart(end), to: end },
+    { label: 'Минулий місяць', ...last },
+  ]
+  if (dataSource !== 35 && dataSource !== 38) presets.push({ label: 'Поточний рік', from: `${end.slice(0, 4)}-01-01`, to: end })
+  return presets
+}
+
+const REPORT_TITLES: Readonly<Record<string, string>> = {
+  'builtin:ВаловаяПрибыль': 'Валовий прибуток',
+  'builtin:ВаловаяПрибыльПоПоставщикам': 'Валовий прибуток по постачальниках',
+  'builtin:ОтчетВпаривание': 'Впарювання',
+  'builtin:ВедомостьДенежныеСредства': 'Відомість по коштах',
+  'builtin:ВедомостьВзаиморасчетыСКонтрагентами': 'Відомість по взаєморозрахунках з контрагентами',
+}
+
+/** The Ukrainian 1C interface names these reports as the workbooks print them; the catalogue keeps the configuration name aside. */
+export function bug1274ReportTitle(reportId: string): string | undefined {
+  return REPORT_TITLES[reportId]
+}

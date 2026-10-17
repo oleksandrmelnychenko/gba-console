@@ -2,6 +2,7 @@ import { Button, Group, Loader } from '@mantine/core'
 import { lazy, Suspense, useRef, useState } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppModal } from '../../../shared/ui/AppModal'
+import { BUG_1274_ONLY_REPORT_SURFACE } from '../reportSurfacePolicy'
 import type { WorkbookLaunch } from '../data/bug1274WorkbookLaunch'
 import type { CatalogueLaunchChoice } from '../data/reportCatalogueLaunch'
 import type { DebtToSalesRatioCapabilities } from '../data/debtToSalesRatio'
@@ -88,11 +89,11 @@ export function ReportCatalogueControl({ enabled, disabled = false, presentation
       <Button ref={trigger} type="button" variant={dialog ? 'filled' : 'subtle'} disabled={!enabled || disabled}
         aria-haspopup={dialog ? 'dialog' : undefined} aria-expanded={enabled && opened}
         onClick={() => setOpened(value => !value)}>
-        {!dialog && opened ? t('Сховати каталог звітів 1С') : t('Каталог усіх звітів 1С')}
+        {!dialog && opened ? t('Сховати каталог звітів 1С') : t(consoleScope && BUG_1274_ONLY_REPORT_SURFACE ? 'Каталог звітів 1С' : 'Каталог усіх звітів 1С')}
       </Button>
     </Group>
     {dialog ? <AppModal opened={enabled && opened} onClose={() => setOpened(false)}
-      title={t('Каталог усіх звітів 1С')} size={1280} className="report-catalogue-dialog"
+      title={t(consoleScope && BUG_1274_ONLY_REPORT_SURFACE ? 'Каталог звітів 1С' : 'Каталог усіх звітів 1С')} size={1280} className="report-catalogue-dialog"
       closeButtonProps={{ 'aria-label': t('Закрити каталог звітів') }} returnFocus={false}
       onExitTransitionEnd={() => trigger.current?.focus()}>
       {panel}
