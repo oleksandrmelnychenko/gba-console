@@ -32,7 +32,7 @@ async function openForm(kind: PlannedCashKind) {
   const from = (screen.getByLabelText('Від') as HTMLInputElement).value
   fireEvent.click(await screen.findByRole('button', { name: 'Каталог усіх звітів 1С' }))
   // A cold catalogue opening loads its lazy module before the capability action exists.
-  const button = await screen.findByRole('button', { name: 'Відкрити звіт планування коштів' }, { timeout: 5000 }); await waitFor(() => expect((button as HTMLButtonElement).disabled).toBe(false)); fireEvent.click(button)
+  const button = await screen.findByRole('button', { name: 'Відкрити звіт планування коштів' }); await waitFor(() => expect((button as HTMLButtonElement).disabled).toBe(false)); fireEvent.click(button)
   return { modal: await screen.findByRole('dialog', { name: plannedCashCapability(kind).ReportName }), draftKey, draft, from }
 }
 it.each(plannedCashCalendarKinds)('opens %s only on demand and keeps explicit periods outside the native draft', async kind => {

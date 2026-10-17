@@ -64,7 +64,7 @@ it.each([
   fireEvent.submit(view.container.querySelector('form')!)
   await waitFor(() => expect(createStockReport).toHaveBeenCalledOnce())
   expect(vi.mocked(createStockReport).mock.calls[0][0]).toMatchObject({ dataSource, [modeKey]: 0 })
-}, 15_000)
+})
 
 it('opens the product matrix form without the original matrix', async () => {
   await openWorkbook('Матриця товарів')
@@ -87,7 +87,7 @@ it('opens the supplier workbook with its organizations, saved supplier list and 
     sourceBuyerSubtree: { Version: 1, SourceWorld: 'fenix', BuyerRootId: '8AB2005056C0000811DEFC4535BB4D40' } })
   expect(request.selections.map(selection => [selection.SelectedField.Type, selection.FilterCondition.Type,
     selection.Values.map(value => value.Data.Id)])).toEqual([[0, 2, ['10549', '10550', '10551', '10552']], [17, 2, ['614427']]])
-}, 15_000)
+})
 
 it('opens the product matrix workbook with the AL-KO group and АФРАКО resolved by name', async () => {
   vi.mocked(searchDatasetReportValues).mockImplementation(async (dataSource, field) => dataSource !== 39 ? []
@@ -97,4 +97,4 @@ it('opens the product matrix workbook with the AL-KO group and АФРАКО reso
   await waitFor(() => expect(createStockReport).toHaveBeenCalledOnce())
   expect(vi.mocked(createStockReport).mock.calls[0][0].selections.map(selection => [selection.SelectedField.Type,
     selection.FilterCondition.Type, selection.Values.map(value => value.Data.Id)])).toEqual([[4, 6, ['3996']], [5, 0, ['613989']]])
-}, 15_000)
+})

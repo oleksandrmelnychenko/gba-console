@@ -51,7 +51,7 @@ describe('server-proven HideZero constructor', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Приховувати підтверджені нулі' }))
     fireEvent.submit(container.querySelector('form')!); await waitFor(() => expect(createStockReport).toHaveBeenCalledTimes(3))
     expect(vi.mocked(createStockReport).mock.calls[2][0]).toEqual(template.Data)
-  }, 10000)
+  })
   it('retains HideZero when its native group moves or its measure is disabled and restores validity explicitly', async () => {
     vi.mocked(getServerReportTemplates).mockResolvedValue([saved()]); const { container } = await ready(); await applySaved()
     fireEvent.click(screen.getByRole('button', { name: 'Перенести Запис залишку рахунку до стовпців' }))
@@ -65,7 +65,7 @@ describe('server-proven HideZero constructor', () => {
     fireEvent.click(screen.getByRole('checkbox', { name: 'Записаний залишок рахунку' }))
     fireEvent.submit(container.querySelector('form')!); await waitFor(() => expect(createStockReport).toHaveBeenCalledOnce())
     expect(vi.mocked(createStockReport).mock.calls[0][0].hideZero).toEqual({ Version: 1 })
-  }, 10000)
+  })
   it('preserves the rule on a same-source preset and clears it on an explicit dataset switch', async () => {
     vi.mocked(getServerReportTemplates).mockResolvedValue([saved()]); const { container } = await ready(); await applySaved()
     fireEvent.click(screen.getByRole('button', { name: 'Рахунки за призначенням і валютою' }))

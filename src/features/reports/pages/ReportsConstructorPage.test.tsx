@@ -116,7 +116,7 @@ describe('report constructor entry with the BUG-1274-only surface off', () => {
     async menuRoute => {
       allowedPermissions.add(PermissionKeys.ReportsStocks.Page.View)
       const { container } = renderConstructor(menuRoute)
-      expect(await screen.findByRole('heading', { name: 'Конструктор звітів', level: 2 }, { timeout: 5000 })).not.toBeNull()
+      expect(await screen.findByRole('heading', { name: 'Конструктор звітів', level: 2 })).not.toBeNull()
       expect(container.querySelectorAll('form')).toHaveLength(1)
       expect((screen.getByRole('button', { name: 'Сформувати' }) as HTMLButtonElement).disabled).toBe(true)
       fireEvent.submit(container.querySelector('form')!)
@@ -153,5 +153,5 @@ describe('report constructor entry with the BUG-1274-only surface off', () => {
     fireEvent.submit(container.querySelector('form')!)
     await waitFor(() => expect(createStockReport).toHaveBeenCalledOnce())
     await screen.findByText('Не вдалося сформувати звіт')
-  }, 10000)
+  })
 })

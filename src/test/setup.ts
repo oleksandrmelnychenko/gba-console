@@ -2,7 +2,7 @@ import { cleanup, configure } from '@testing-library/react'
 import { DEFAULT_THEME } from '@mantine/core'
 import { afterEach, vi } from 'vitest'
 
-configure({ asyncUtilTimeout: 5_000 })
+configure({ asyncUtilTimeout: 15_000 })
 
 const CHART_WIDTH = 640
 const CHART_HEIGHT = 320

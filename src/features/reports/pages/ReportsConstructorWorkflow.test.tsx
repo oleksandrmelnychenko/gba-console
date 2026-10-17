@@ -134,7 +134,7 @@ it('navigates all four real tab panels by keyboard without generating or changin
     expect(document.activeElement).toBe(tab('Структура звіту'))
   }
   expect(createStockReport).not.toHaveBeenCalled()
-}, 10000)
+})
 
 it('preserves full TOP, ABC, filters and ordering through every tab and a same-dataset preset', async () => {
   const template = { Id: '10000000-0000-4000-8000-000000000046', Revision: 3,
@@ -162,7 +162,7 @@ it('preserves full TOP, ABC, filters and ordering through every tab and a same-d
   expect(vi.mocked(createStockReport).mock.calls[0][0]).toEqual(template.Data)
   expect(tab('Результат').getAttribute('aria-selected')).toBe('true')
   await screen.findByRole('dialog', { name: 'Файли сформованого звіту' })
-}, 15000)
+})
 
 it('shows a blocking reason outside hidden panels and rejects direct submission until rows are configured', async () => {
   const view = await ready()

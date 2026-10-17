@@ -61,13 +61,13 @@ it('reads a saved profit variant without a mode from current documents and repor
   expect(blocked(view)).toBe('Період партійного прибутку може охоплювати щонайбільше 31 днів.')
   mode('Збережені регістри 1С')
   expect(await submitted(view, 1)).toMatchObject({ profitReadMode: 1, supplierSourceWorld: 0, from: '2026-07-01', to: '2026-08-31' })
-}, 15_000)
+})
 
 it('keeps the saved registers choice of a profit variant', async () => {
   const view = await apply(saved(profitSupplierDataset, '2026-07-01', '2026-08-31', { supplierSourceWorld: 0, ProfitReadMode: 1 }))
   expect(source()).toBe('Збережені регістри 1С')
   expect((await submitted(view, 1)).profitReadMode).toBe(1)
-}, 15_000)
+})
 
 it('reads a saved cash variant without a mode from current documents and leaves the earlier period to the opt-out', async () => {
   const view = await apply(saved(cashModeDataset, '2024-12-01', '2024-12-31'))
@@ -77,7 +77,7 @@ it('reads a saved cash variant without a mode from current documents and leaves 
   const unmarked = await submitted(view, 1)
   expect(Object.keys(unmarked).some(key => key.toLowerCase() === 'cashreadmode')).toBe(false)
   expect(unmarked).toMatchObject({ from: '2024-12-01', to: '2024-12-31' })
-}, 15_000)
+})
 
 it.each([[undefined, 0, 'Поточні документи GBA'], [1, 1, 'Збережені регістри 1С']] as const)(
   'opens a saved settlement variant with mode %s as %s', async (stored, sent, label) => {
@@ -86,4 +86,4 @@ it.each([[undefined, 0, 'Поточні документи GBA'], [1, 1, 'Збе
     const request = await submitted(view, 1)
     expect(Object.keys(request).filter(key => key.toLowerCase() === 'settlementreadmode')
       .map(key => (request as unknown as Record<string, unknown>)[key])).toEqual([sent])
-  }, 15_000)
+  })

@@ -68,7 +68,7 @@ it.each(['Валовий прибуток за днем', 'Валовий при
   expect(source()).toBe('За налаштуваннями звіту')
   const unmarked = await submitted(view, 3)
   expect(Object.hasOwn(unmarked, 'profitReadMode')).toBe(false)
-}, 15_000)
+})
 it('hides current opt-in without a confirmed capability', async () => {
   vi.mocked(getReportDatasets).mockResolvedValue([...reportDatasets, { ...profitDayDataset, profitReadMode: undefined }])
   await openWorkbook('Валовий прибуток за днем')

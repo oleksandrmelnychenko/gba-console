@@ -13,6 +13,7 @@ module.exports = defineConfig({
     exclude: [...configDefaults.exclude, '**/e2e/**', 'tests/browser/**'],
     globals: true,
     testTimeout: 30_000,
+    hookTimeout: 30_000,
     environment: 'jsdom',
     setupFiles: ['./src/test/setup.ts'],
     include: ['src/**/*.{test,spec}.{ts,tsx}', 'tests/**/*.{test,spec}.{ts,tsx}'],

@@ -75,7 +75,7 @@ describe('server-computed ABC constructor', () => {
     expect(vi.mocked(createStockReport).mock.calls[1][0]).toEqual({ ...expected,
       sorted: { ...expected.sorted, Row: expected.sorted.Row.filter(field => field.type !== 46) },
       ordering: { ...expected.ordering, Rows: expected.ordering.Rows.filter(rule => rule.Grouping !== 46) } })
-  }, 10000)
+  })
   it('blocks a moved native target, disabled ranking measure or deleted class without dropping ABC', async () => {
     vi.mocked(getServerReportTemplates).mockResolvedValue([saved()]); const { container } = await ready(); await applySaved()
     fireEvent.click(screen.getByRole('button', { name: 'Перенести Рахунок до стовпців' }))
@@ -93,7 +93,7 @@ describe('server-computed ABC constructor', () => {
     fireEvent.click(within(await screen.findByRole('dialog')).getByRole('button', { name: 'ABC-класABC-клас' }))
     fireEvent.submit(container.querySelector('form')!); await waitFor(() => expect(createStockReport).toHaveBeenCalledOnce())
     expect(vi.mocked(createStockReport).mock.calls[0][0].abcClassification).toEqual(accountAbc)
-  }, 10000)
+  })
   it('preserves ABC on a same-source preset and clears it only on explicit dataset reset', async () => {
     vi.mocked(getServerReportTemplates).mockResolvedValue([saved()]); const { container } = await ready(); await applySaved()
     fireEvent.click(screen.getByRole('button', { name: 'Рахунки за призначенням і валютою' }))
@@ -103,7 +103,7 @@ describe('server-computed ABC constructor', () => {
     fireEvent.submit(container.querySelector('form')!); await waitFor(() => expect(createStockReport).toHaveBeenCalledTimes(2))
     expect(vi.mocked(createStockReport).mock.calls[1][0]).not.toHaveProperty('abcClassification')
     expect(vi.mocked(createStockReport).mock.calls[1][0].sorted.Row.some(field => field.type === 46)).toBe(false)
-  }, 10000)
+  })
   it.each([{ ...accountAbc, Version: 99, Extra: true }, { ...accountAbc, PercentC: 6 }])('refuses an invalid saved rule before changing the form %#', async abcClassification => {
     const template = { ...saved(), Data: { ...abcRequest(), abcClassification } }, original = structuredClone(template)
     vi.mocked(getServerReportTemplates).mockResolvedValue([template]); await ready(); await applySaved()

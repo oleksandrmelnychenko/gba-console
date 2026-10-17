@@ -62,7 +62,7 @@ it.each([['Взаєморозрахунки за період', [4, 41, 76]], ['
     const { settlementReadMode: _mode, ...rest } = current
     void _mode
     expect(unmarked).toEqual(rest)
-  }, 15_000)
+  })
 it('reaches AMG only through the opt-out and returns to Fenix buyers when a source is chosen', async () => {
   const view = await openWorkbook('Дебіторка за період')
   mode('За налаштуваннями звіту')
@@ -76,7 +76,7 @@ it('reaches AMG only through the opt-out and returns to Fenix buyers when a sour
   expect(current.settlementReadMode).toBe(0)
   expect(current.groupedSettlementPeriod).toEqual({ Version: 1, SourceWorld: 'Fenix', CurrencyBasis: 'SettlementCurrency' })
   expect(current.sourceBuyerSubtree).toMatchObject({ Version: 1, SourceWorld: 'fenix' })
-}, 15_000)
+})
 it('restores current documents when the form returns from one agreement to all buyers', async () => {
   await openWorkbook('Взаєморозрахунки за період')
   mode('Збережені регістри 1С')
@@ -87,7 +87,7 @@ it('restores current documents when the form returns from one agreement to all b
   fireEvent.click(scope())
   fireEvent.click(screen.getByRole('option', { name: /^Поточні договори/ }))
   expect(source()).toBe('Поточні документи GBA')
-}, 15_000)
+})
 it('hides the selector and the notice without a confirmed capability', async () => {
   vi.mocked(getReportDatasets).mockResolvedValue([...reportDatasets, { ...settlementModeDataset, settlementReadMode: undefined }])
   await openWorkbook('Дебіторка за період')

@@ -94,7 +94,7 @@ describe('BUG-1274-only report surface routes', () => {
     async path => {
       renderReports(path)
       await waitFor(() => expect(screen.getByLabelText('Поточний маршрут').textContent).toBe('/reports/stocks'))
-      expect(await screen.findByRole('heading', { name: 'Налаштування звіту' }, { timeout: 5000 })).toBeTruthy()
+      expect(await screen.findByRole('heading', { name: 'Налаштування звіту' })).toBeTruthy()
       expect(screen.queryByRole('heading', { name: 'Конструктор звітів' })).toBeNull()
     },
     10_000,
@@ -106,6 +106,6 @@ describe('BUG-1274-only report surface routes', () => {
     expect(screen.queryByRole('button', { name: 'Конструктор звітів' })).toBeNull()
     fireEvent.click(screen.getByRole('button', { name: 'Звіти' }))
     expect(screen.getByLabelText('Поточний маршрут').textContent).toBe('/reports/stocks')
-    expect(await screen.findByRole('heading', { name: 'Налаштування звіту' }, { timeout: 5000 })).toBeTruthy()
-  }, 10_000)
+    expect(await screen.findByRole('heading', { name: 'Налаштування звіту' })).toBeTruthy()
+  })
 })

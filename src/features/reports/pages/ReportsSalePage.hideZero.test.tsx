@@ -55,7 +55,7 @@ it('imports a real binary metadata-only XLSX, shows the explicit presentation in
   expect(screen.getByText('Рядків: 4')).toBeTruthy()
   expect(container.querySelectorAll('.reports-sale-table tr.data-table-row')).toHaveLength(6)
   expect(container.querySelectorAll('.reports-sale-table tr.data-table-row td.data-table-cell')[4].textContent).toBe('0,00')
-}, 10000)
+})
 
 it.each(['data', 'marker'])('refuses malformed native state (%s) after a prior successful import instead of keeping a stale empty success', async kind => {
   viewer(); upload(await workbookFile(hideZeroAllHiddenRows)); await screen.findByText('Усі підтверджені нульові записи приховано')

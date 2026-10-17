@@ -70,20 +70,20 @@ it('opens «Взаємороз всі.xls» on current documents with the workbo
   expect(request).toMatchObject({ dataSource: 41, settlementReadMode: 0,
     sourceCounterpartyGroups: { Version: 1, SourceWorld: 'fenix', IncludeGroupIds: [],
       ExcludeGroupIds: ['A156005056C0000811E182DA08AE7D43', 'B1A7005056C0000811E18EBBAA67CF52', '8AB2005056C0000811DEFEBB3581EBEC'] } })
-}, 15_000)
+})
 
 it('hides the single currency record of the cash form', async () => {
   const view = await openWorkbook('Рух коштів за період')
   expect(screen.queryByText('Один валютний запис')).toBeNull()
   expect((await submitted(view)).cashReadMode).toBe(0)
-}, 15_000)
+})
 
 it('keeps the day form on current documents after a reset', async () => {
   const view = await openWorkbook('Валовий прибуток за днем')
   fireEvent.click(screen.getByRole('button', { name: 'Скинути' }))
   expect((screen.getByRole('combobox', { name: 'Джерело розрахунку' }) as HTMLInputElement).value).toBe('Поточні документи GBA')
   expect(await submitted(view)).toMatchObject({ dataSource: 35, profitReadMode: 0, dayOrganizationBasis: 0 })
-}, 15_000)
+})
 
 it('applies a compatible template without a mode on current documents and refuses an incompatible one', async () => {
   const compatible = template('Сумісний шаблон', modeless(settlementGroupsDataset))
@@ -96,7 +96,7 @@ it('applies a compatible template without a mode on current documents and refuse
   fireEvent.click(screen.getByRole('button', { name: `Відкрити для редагування: ${compatible.Name}` }))
   await waitFor(() => expect((screen.getByRole('combobox', { name: 'Джерело розрахунку' }) as HTMLInputElement).value).toBe('Поточні документи GBA'))
   expect((await submitted(view)).settlementReadMode).toBe(0)
-}, 15_000)
+})
 
 it('refuses a saved variant without a mode instead of posting its legacy body', async () => {
   const stored = template('Старий варіант', modeless(cashModeDataset))
@@ -106,4 +106,4 @@ it('refuses a saved variant without a mode instead of posting its legacy body', 
   fireEvent.click(within(await screen.findByRole('group', { name: stored.Name })).getByRole('button', { name: 'Збережений варіант' }))
   expect(await screen.findByText(SAVED_VARIANT_WITHOUT_READ_MODE_ERROR)).toBeTruthy()
   expect((screen.getByRole('button', { name: 'Показати збережений варіант' }) as HTMLButtonElement).disabled).toBe(true)
-}, 15_000)
+})

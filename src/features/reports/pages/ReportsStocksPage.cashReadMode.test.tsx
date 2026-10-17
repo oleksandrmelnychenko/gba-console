@@ -61,7 +61,7 @@ it('opens the cash workbook on current documents, then keeps deliberate register
   const { cashReadMode: _mode, ...rest } = current
   void _mode
   expect(unmarked).toEqual(rest)
-}, 15_000)
+})
 it('accepts a period from 01.01.2025 through today by default and keeps the opt-out on completed days', async () => {
   const view = await openWorkbook()
   const today = formatKyivBusinessDate()
@@ -71,7 +71,7 @@ it('accepts a period from 01.01.2025 through today by default and keeps the opt-
   mode('За налаштуваннями звіту')
   fireEvent.submit(view.container.querySelector('form')!)
   expect(createStockReport).toHaveBeenCalledOnce()
-}, 15_000)
+})
 it('clears the source for one exact account and restores current documents for all accounts', async () => {
   const view = await openWorkbook()
   mode('Збережені регістри 1С')
@@ -85,7 +85,7 @@ it('clears the source for one exact account and restores current documents for a
   fireEvent.click(screen.getByLabelText('Усі / вибрані рахунки'))
   expect(source()).toBe('Поточні документи GBA')
   expect((await submitted(view, 2)).cashReadMode).toBe(0)
-}, 15_000)
+})
 it('hides the selector and the notice without a confirmed capability', async () => {
   vi.mocked(getReportDatasets).mockResolvedValue([...reportDatasets, { ...cashModeDataset, cashReadMode: undefined }])
   await openWorkbook()
