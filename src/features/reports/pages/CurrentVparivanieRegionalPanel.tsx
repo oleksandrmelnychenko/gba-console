@@ -103,7 +103,7 @@ export function CurrentVparivanieRegionalPanel({ dataset, request, enabled, disa
     <Stack gap="sm"><Text component="h2" fw={600} size="sm">{CURRENT_REGIONAL_TITLE}</Text>
       <RegionalFullScopeCheckbox dataset={dataset} checked={fullScope}
         disabled={!enabled || disabled || busy || exporting} onChange={onFullScopeChange} />
-      <Text size="sm">Період і відбори — з конструктора. Окремий підсумок контрагентів та колонки регіональних кодів.</Text>
+      <Text size="sm">Період і відбори — ті самі, що у формі вище. Окремо показано підсумок контрагентів і колонки кодів регіонів, як на аркуші книги.</Text>
       <Group><Button loading={busy} disabled={!enabled || disabled || !!rejected || exporting} onClick={() => void read()}>
         Показати регіональну форму</Button>
         {(['csv', 'xlsx', 'pdf'] as const).map(format => <Button key={format} variant="light"
