@@ -25,6 +25,7 @@ type DocumentExportModalProps = {
   emptyText?: string
   error?: string | null
   excelUrl?: string | null
+  fileBaseName?: string
   isLoading?: boolean
   items?: ReadonlyArray<DocumentExportItem>
   loadingFormat?: DocumentExportFormat | null
@@ -42,6 +43,7 @@ export function DocumentExportModal({
   emptyText,
   error = null,
   excelUrl,
+  fileBaseName,
   isLoading = false,
   items,
   loadingFormat = null,
@@ -175,6 +177,7 @@ export function DocumentExportModal({
                 key={`${item.label || item.format}-${index}`}
                 className={`document-export-card is-${item.format}`}
                 href={getDocumentHref(item.url)}
+                download={fileBaseName ? `${fileBaseName}.${documentExtension(item)}` : undefined}
                 rel="noreferrer"
                 target="_blank"
               >
@@ -238,4 +241,10 @@ function DocumentCardContent({
       <span className="document-export-card-action">{action}</span>
     </>
   )
+}
+
+function documentExtension(item: DocumentExportItem): string {
+  const path = item.url.split(/[?#]/)[0]
+  const extension = /\.([a-z\d]{2,5})$/i.exec(path)?.[1]
+  return extension ? extension.toLowerCase() : item.format === 'excel' ? 'xlsx' : item.format === 'word' ? 'docx' : 'pdf'
 }
