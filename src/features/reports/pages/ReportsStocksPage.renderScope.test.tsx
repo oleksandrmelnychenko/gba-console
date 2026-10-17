@@ -45,7 +45,7 @@ const page = (consoleScope?: boolean) => <MantineProvider env="test"><I18nProvid
 
 it('does not mount the constructor dialogs the console catalogue cannot open', async () => {
   render(page())
-  await screen.findByText('Часткові форми за зразками Excel')
+  await screen.findByText('Звіти 1С за зразками Excel')
   expect(CollectionCoefficientConstructorModal).not.toHaveBeenCalled()
   expect(PlannedCashConstructorModal).not.toHaveBeenCalled()
 })
@@ -59,8 +59,8 @@ it('keeps the constructor dialogs mounted where the full catalogue can open them
 
 it('does not re-render the finished preview while the template name is typed', async () => {
   render(page())
-  fireEvent.click(await screen.findByText('Часткові форми за зразками Excel'))
-  fireEvent.click(screen.getByRole('button', { name: 'Відкрити часткову форму: Валовий прибуток за днем' }))
+  await screen.findByText('Звіти 1С за зразками Excel')
+  fireEvent.click(screen.getByRole('button', { name: 'Відкрити ВП.xls' }))
   await waitFor(() => expect((screen.getByRole('button', { name: 'Показати на екрані' }) as HTMLButtonElement).disabled).toBe(false))
   fireEvent.click(screen.getByRole('button', { name: 'Показати на екрані' }))
   await screen.findByRole('region', { name: 'Попередній перегляд звіту' })
@@ -76,8 +76,8 @@ it('does not re-render the finished preview while the template name is typed', a
 
 it('names the close button of the workbook notice', async () => {
   render(page())
-  fireEvent.click(await screen.findByText('Часткові форми за зразками Excel'))
-  fireEvent.click(screen.getByRole('button', { name: 'Відкрити часткову форму: Валовий прибуток за днем' }))
+  await screen.findByText('Звіти 1С за зразками Excel')
+  fireEvent.click(screen.getByRole('button', { name: 'Відкрити ВП.xls' }))
   fireEvent.click(await screen.findByRole('button', { name: 'Закрити повідомлення' }))
-  await waitFor(() => expect(screen.queryByText('Звіт відкрито в конструкторі')).toBeNull())
+  await waitFor(() => expect(screen.queryByText('ВП.xls — Валовий прибуток')).toBeNull())
 })
