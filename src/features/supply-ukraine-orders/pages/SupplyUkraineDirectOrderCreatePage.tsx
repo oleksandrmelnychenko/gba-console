@@ -269,19 +269,6 @@ function SupplyUkraineOrderFileCreatePage({ mode }: { mode: CreateMode }) {
           suppliers: nextSuppliers,
         })
 
-        if (isToUkraineMode) {
-          const defaultSupplier = nextSuppliers.find((supplier) => (supplier.ClientAgreements || []).length > 0) || nextSuppliers[0]
-          const defaults = getDefaultsForSupplier(defaultSupplier || null, nextOrganizations)
-
-          dispatchForm({
-            type: 'patch',
-            patch: {
-              clientAgreementKey: getClientAgreementKey(defaults.clientAgreement),
-              organizationKey: getEntityKey(defaults.organization),
-              supplierKey: getEntityKey(defaultSupplier),
-            },
-          })
-        }
       } catch (loadError) {
         if (!cancelled) {
           dispatchPage({
@@ -297,7 +284,7 @@ function SupplyUkraineOrderFileCreatePage({ mode }: { mode: CreateMode }) {
     return () => {
       cancelled = true
     }
-  }, [mode, isToUkraineMode, t])
+  }, [mode, t])
 
   const filteredSuppliers = useMemo(() => {
     const normalizedSearch = supplierSearch.trim().toLowerCase()
@@ -358,25 +345,17 @@ function SupplyUkraineOrderFileCreatePage({ mode }: { mode: CreateMode }) {
   }
 
   function changeSupplier(value: string | null) {
-    const supplier = suppliers.find((item) => getEntityKey(item) === value) || null
-    const defaults = isToUkraineMode ? getDefaultsForSupplier(supplier, organizations) : null
-
     updateForm({
-      clientAgreementKey: getClientAgreementKey(defaults?.clientAgreement),
-      organizationKey: getEntityKey(defaults?.organization),
+      clientAgreementKey: '',
+      organizationKey: '',
       supplierKey: value || '',
     })
     dispatchPage({ type: 'setUploadResponse', uploadResponse: null })
   }
 
   function changeOrganization(value: string | null) {
-    const organization = availableOrganizations.find((item) => getEntityKey(item) === value) || null
-    const nextAgreement = isToUkraineMode
-      ? filterAgreementsByOrganization(supplierAgreements, organization)[0] || null
-      : null
-
     updateForm({
-      clientAgreementKey: getClientAgreementKey(nextAgreement),
+      clientAgreementKey: '',
       organizationKey: value || '',
     })
     dispatchPage({ type: 'setUploadResponse', uploadResponse: null })
@@ -933,14 +912,6 @@ function UploadErrorsAlert({ response }: { response: UploadResponse }) {
       </Stack>
     </Alert>
   )
-}
-
-function getDefaultsForSupplier(supplier: Client | null, fallbackOrganizations: Organization[]) {
-  const agreements = getAvailableClientAgreements(supplier)
-  const organization = getAvailableOrganizations(agreements, fallbackOrganizations)[0] || null
-  const clientAgreement = filterAgreementsByOrganization(agreements, organization)[0] || agreements[0] || null
-
-  return { clientAgreement, organization }
 }
 
 function getAvailableClientAgreements(supplier: Client | null): ClientAgreement[] {
