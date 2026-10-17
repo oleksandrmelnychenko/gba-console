@@ -1,5 +1,5 @@
 import { Bus, PackageCheck } from 'lucide-react'
-import type { ReactNode } from 'react'
+import { useState, type ReactNode } from 'react'
 import { toProxiedAssetUrl } from '../url/proxiedAssetUrl'
 import { resolveTransporterLogo } from './transporterLogos'
 import { getSemanticTransporterIcon } from './transporterSemantics'
@@ -18,6 +18,7 @@ type TransporterIconProps = {
 // driver row with no logo), so callers can render it inline before the name without reserving space.
 export function TransporterIcon({ cssClass, fallback = null, imageUrl, name = '', size = 22 }: TransporterIconProps) {
   const semanticIcon = getSemanticTransporterIcon(cssClass, name)
+  const [failedSrc, setFailedSrc] = useState<string | null>(null)
 
   if (semanticIcon === 'bus') {
     return <Bus size={size} strokeWidth={1.5} style={{ flexShrink: 0 }} />
@@ -43,7 +44,7 @@ export function TransporterIcon({ cssClass, fallback = null, imageUrl, name = ''
 
   const imageSrc = toProxiedAssetUrl(imageUrl?.trim())
 
-  if (imageSrc) {
+  if (imageSrc && failedSrc !== imageSrc) {
     return (
       <img
         alt={name}
@@ -51,6 +52,7 @@ export function TransporterIcon({ cssClass, fallback = null, imageUrl, name = ''
         width={size}
         height={size}
         style={{ objectFit: 'contain', verticalAlign: 'middle', flexShrink: 0 }}
+        onError={() => setFailedSrc(imageSrc)}
       />
     )
   }
