@@ -24,8 +24,7 @@ afterEach(() => { cleanup(); localStorage.clear(); sessionStorage.clear() })
 const page = () => <MantineProvider env="test"><I18nProvider><ReportsStocksPage consoleScope={false} /></I18nProvider></MantineProvider>
 async function debtor() {
   const view = render(page()); await screen.findByRole('button', { name: 'Продажі за днями' })
-  fireEvent.click(screen.getByText('Часткові форми за зразками Excel'))
-  fireEvent.click(screen.getByRole('button', { name: 'Відкрити часткову форму: Дебіторка за період' }))
+  fireEvent.click(screen.getByRole('button', { name: 'Відкрити ДБіторка.xls' }))
   return view
 }
 it('submits debtor Currency only, then invalidates prior file links when a display field changes', async () => {

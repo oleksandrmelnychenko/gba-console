@@ -51,7 +51,7 @@ describe('stock report permissions', () => {
     render(<Providers><ReportsStocksPage consoleScope={false} /></Providers>)
     expect(screen.queryByRole('combobox', { name: 'Джерело звіту' })).toBeNull()
     expect(screen.queryByText('Консолідовані дані 1С')).toBeNull()
-    expect((screen.getByRole('combobox', { name: 'Набір даних звіту' }) as HTMLInputElement).disabled).toBe(true)
+    expect((screen.getByRole('combobox', { name: 'Звіт' }) as HTMLInputElement).disabled).toBe(true)
     expect(getReportDatasets).not.toHaveBeenCalled()
     expect(createStockReport).not.toHaveBeenCalled()
   })

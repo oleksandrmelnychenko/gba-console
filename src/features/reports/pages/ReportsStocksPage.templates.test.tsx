@@ -29,7 +29,7 @@ describe('constructor opened-template identity', () => {
     await screen.findByRole('button', { name: 'Продажі за днями' }); await openTemplate()
     if (action === 'reset') fireEvent.click(screen.getByRole('button', { name: 'Скинути' }))
     else if (action === 'preset') fireEvent.click(screen.getByRole('button', { name: 'Продажі за днями' }))
-    else { fireEvent.click(screen.getByRole('combobox', { name: 'Набір даних звіту' })); fireEvent.click(await screen.findByRole('option', { name: stockDataset.Name })) }
+    else { fireEvent.click(screen.getByRole('combobox', { name: 'Звіт' })); fireEvent.click(await screen.findByRole('option', { name: stockDataset.Name })) }
     fireEvent.click(screen.getByRole('button', { name: 'Шаблони' }))
     expect(screen.queryByRole('button', { name: 'Оновити шаблон' })).toBeNull()
     expect(saveServerReportTemplate).not.toHaveBeenCalled()

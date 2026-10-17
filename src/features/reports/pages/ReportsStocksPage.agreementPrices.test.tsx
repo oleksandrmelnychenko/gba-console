@@ -30,7 +30,7 @@ async function ready() {
   return view
 }
 async function prices() {
-  fireEvent.click(screen.getByRole('combobox', { name: 'Набір даних звіту' }))
+  fireEvent.click(screen.getByRole('combobox', { name: 'Звіт' }))
   fireEvent.click(await screen.findByRole('option', { name: agreementPricesDataset.Name }))
 }
 async function agreement() {

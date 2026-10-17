@@ -130,7 +130,7 @@ describe('constructor draft recovery', () => {
     else if (action === 'preset') fireEvent.click(screen.getByRole('button', { name: 'Продажі за днями' }))
     else if (action === 'template') await openTemplate(template.Name)
     else {
-      fireEvent.click(screen.getByRole('combobox', { name: 'Набір даних звіту' }))
+      fireEvent.click(screen.getByRole('combobox', { name: 'Звіт' }))
       fireEvent.click(await screen.findByRole('option', { name: stockDataset.Name }))
     }
     fireEvent.click(await screen.findByRole('button', { name: 'Повернути попередні налаштування' }))

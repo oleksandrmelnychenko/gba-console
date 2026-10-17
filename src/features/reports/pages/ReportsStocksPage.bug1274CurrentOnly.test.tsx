@@ -15,6 +15,7 @@ import { SAVED_VARIANT_WITHOUT_READ_MODE_ERROR, TEMPLATE_WITHOUT_READ_MODE_ERROR
 import { settlementPeriodRequest } from '../data/settlementPeriod.test-fixtures'
 import type { ReportDataset, ReportRequestBody } from '../types'
 import { ReportsStocksPage } from './ReportsStocksPage'
+import { WORKBOOK_FILES } from '../testing/workbookFiles'
 
 vi.mock('../reportSurfacePolicy', () => ({ BUG_1274_ONLY_REPORT_SURFACE: true }))
 vi.mock('../../auth/useAuth', () => ({ useAuth: () => ({ hasPermission: () => true }) }))
@@ -39,8 +40,8 @@ afterEach(() => { cleanup(); localStorage.clear(); sessionStorage.clear() })
 const page = () => <MantineProvider env="test"><I18nProvider><ReportsStocksPage /></I18nProvider></MantineProvider>
 async function openWorkbook(label: string) {
   const view = render(page())
-  fireEvent.click(await screen.findByText('Часткові форми за зразками Excel'))
-  fireEvent.click(screen.getByRole('button', { name: `Відкрити часткову форму: ${label}` }))
+  await screen.findByText('Звіти 1С за зразками Excel')
+  fireEvent.click(screen.getByRole('button', { name: `Відкрити ${WORKBOOK_FILES[label] ?? label}` }))
   return view
 }
 async function submitted(view: ReturnType<typeof render>, count = 1) {

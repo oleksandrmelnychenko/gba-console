@@ -38,7 +38,7 @@ beforeEach(() => {
 it('forms a report only after selecting two distinct local agreements and a product', async () => {
   const view = render(<Providers><ReportsStocksPage consoleScope={false} /></Providers>)
   await screen.findByRole('button', { name: 'Продажі за днями' })
-  fireEvent.click(screen.getByRole('combobox', { name: 'Набір даних звіту' }))
+  fireEvent.click(screen.getByRole('combobox', { name: 'Звіт' }))
   fireEvent.click(await screen.findByRole('option', { name: comparisonDataset.Name }))
   expect((screen.getByRole('button', { name: 'Сформувати' }) as HTMLButtonElement).disabled).toBe(true)
 

@@ -95,7 +95,7 @@ it('navigates all four real tab panels by keyboard without generating or changin
   expect(tab('Структура звіту').getAttribute('aria-selected')).toBe('true')
   expect(document.activeElement).toBe(tab('Структура звіту'))
   fireEvent.click(screen.getByRole('button', { name: 'Продажі за днями' }))
-  const beforeDataset = (screen.getByRole('combobox', { name: 'Набір даних звіту' }) as HTMLInputElement).value
+  const beforeDataset = (screen.getByRole('combobox', { name: 'Звіт' }) as HTMLInputElement).value
   expect(screen.getAllByRole('tab')).toHaveLength(4)
   for (const name of tabs) expect(tab(name)).toBeTruthy()
   const first = tab('Структура звіту'); first.focus()
@@ -115,9 +115,9 @@ it('navigates all four real tab panels by keyboard without generating or changin
   fireEvent.keyDown(tab('Результат'), { key: 'Home' })
   fireEvent.keyDown(first, { key: 'End' })
   expect(document.activeElement).toBe(tab('Результат'))
-  expect((screen.getByRole('combobox', { name: 'Набір даних звіту' }) as HTMLInputElement).value).toBe(beforeDataset)
+  expect((screen.getByRole('combobox', { name: 'Звіт' }) as HTMLInputElement).value).toBe(beforeDataset)
 
-  await select('Набір даних звіту', abcDataset.Name)
+  await select('Звіт', abcDataset.Name)
   const structure = moveTo('Структура звіту')
   for (const remove of within(screen.getByRole('region', { name: 'Групування рядків' })).queryAllByRole('button', { name: /^Видалити / })) {
     fireEvent.click(remove)
@@ -143,7 +143,7 @@ it('preserves full TOP, ABC, filters and ordering through every tab and a same-d
   await ready()
   fireEvent.click(screen.getByRole('button', { name: 'Шаблони' }))
   fireEvent.click(await screen.findByRole('button', { name: /Повний TOP і ABC/ }))
-  expect((screen.getByRole('combobox', { name: 'Набір даних звіту' }) as HTMLInputElement).value).toBe(abcDataset.Name)
+  expect((screen.getByRole('combobox', { name: 'Звіт' }) as HTMLInputElement).value).toBe(abcDataset.Name)
   moveTo('Умови відбору')
   const analysis = moveTo('Аналіз і сортування')
   expect((within(analysis).getByRole('textbox', { name: 'Кількість груп TOP' }) as HTMLInputElement).value).toBe('10')
@@ -181,7 +181,7 @@ it('shows a blocking reason outside hidden panels and rejects direct submission 
 
 it('requires the exact available agreement for dataset 22 and preserves it when changing tabs or applying its preset', async () => {
   const view = await ready()
-  await select('Набір даних звіту', agreementPricesDataset.Name)
+  await select('Звіт', agreementPricesDataset.Name)
   expect(blockingReason().textContent).toMatch(/договір/i)
   expect(screen.queryByLabelText('Від')).toBeNull()
   moveTo('Аналіз і сортування'); moveTo('Умови відбору'); moveTo('Результат')

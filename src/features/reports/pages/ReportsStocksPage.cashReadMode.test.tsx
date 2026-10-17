@@ -31,8 +31,7 @@ afterEach(() => { cleanup(); localStorage.clear(); sessionStorage.clear() })
 async function openWorkbook() {
   const view = render(<MantineProvider env="test"><I18nProvider><ReportsStocksPage consoleScope={false} /></I18nProvider></MantineProvider>)
   await screen.findByRole('button', { name: 'Продажі за днями' })
-  fireEvent.click(screen.getByText('Часткові форми за зразками Excel'))
-  fireEvent.click(screen.getByRole('button', { name: 'Відкрити часткову форму: Рух коштів за період' }))
+  fireEvent.click(screen.getByRole('button', { name: 'Відкрити Ведомость по денежным средствам.xls' }))
   return view
 }
 function mode(name: string) {
@@ -47,7 +46,7 @@ async function submitted(view: ReturnType<typeof render>, count: number) {
 const source = () => (screen.getByRole('combobox', { name: 'Джерело розрахунку' }) as HTMLInputElement).value
 it('opens the cash workbook on current documents, then keeps deliberate registers and opt-out choices', async () => {
   const view = await openWorkbook()
-  expect(screen.getAllByText(new RegExp(CASH_READ_MODE_NOTICE.slice(0, 40))).length).toBeGreaterThan(0)
+  expect(screen.getAllByText('Ведомость по денежным средствам.xls — Відомість по коштах').length).toBeGreaterThan(0)
   expect(source()).toBe('Поточні документи GBA')
   const current = await submitted(view, 1)
   expect(current.cashReadMode).toBe(0)

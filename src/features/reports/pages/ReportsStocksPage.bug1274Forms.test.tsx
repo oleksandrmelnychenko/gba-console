@@ -1,5 +1,5 @@
 import { MantineProvider } from '@mantine/core'
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { beforeEach, expect, it, vi } from 'vitest'
 import { I18nProvider } from '../../../shared/i18n/I18nProvider'
 import { createStockReport, searchDatasetReportValues } from '../api/reportsApi'
@@ -10,6 +10,9 @@ import { cashModeDataset } from '../data/cashReadMode.test-fixtures'
 import { settlementModeDataset } from '../data/settlementReadMode.test-fixtures'
 import { currentVparivanieDataset } from '../data/currentVparivanie.test-fixtures'
 import { ReportsStocksPage } from './ReportsStocksPage'
+import { previousKyivDay } from '../data/cashPeriod'
+import { formatKyivBusinessDate } from '../../../shared/date/dateTime'
+import { WORKBOOK_FILES } from '../testing/workbookFiles'
 
 vi.mock('../reportSurfacePolicy', () => ({ BUG_1274_ONLY_REPORT_SURFACE: true }))
 vi.mock('../../auth/useAuth', () => ({ useAuth: () => ({ hasPermission: () => true }) }))
@@ -29,9 +32,9 @@ beforeEach(() => {
 const page = () => <MantineProvider env="test"><I18nProvider><ReportsStocksPage /></I18nProvider></MantineProvider>
 async function openWorkbook(label: string) {
   const view = render(page())
-  fireEvent.click(await screen.findByText('Часткові форми за зразками Excel'))
-  fireEvent.click(screen.getByRole('button', { name: `Відкрити часткову форму: ${label}` }))
-  await waitFor(() => expect(screen.queryByText(/застосовуються відбори книги/)).toBeNull())
+  await screen.findByText('Звіти 1С за зразками Excel')
+  fireEvent.click(screen.getByRole('button', { name: `Відкрити ${WORKBOOK_FILES[label] ?? label}` }))
+  await waitFor(() => expect(screen.queryByText(/застосовуються відбори книги/i)).toBeNull())
   return view
 }
 function sourceOptions() {
@@ -44,11 +47,11 @@ function sourceOptions() {
 
 it('offers the six workbook forms of the five BUG-1274 reports and only their datasets', async () => {
   render(page())
-  await screen.findByText('Часткові форми за зразками Excel')
+  await screen.findByText('Звіти 1С за зразками Excel')
   for (const label of ['Валовий прибуток за днем', 'Валовий прибуток за постачальниками', 'Матриця товарів',
     'Рух коштів за період', 'Взаєморозрахунки за період', 'Дебіторка за період'])
-    expect(screen.getByRole('button', { name: `Відкрити часткову форму: ${label}` })).toBeTruthy()
-  fireEvent.click(screen.getByRole('combobox', { name: 'Набір даних звіту' }))
+    expect(screen.getByRole('button', { name: `Відкрити ${WORKBOOK_FILES[label] ?? label}` })).toBeTruthy()
+  fireEvent.click(screen.getByRole('combobox', { name: 'Звіт' }))
   expect(screen.getAllByRole('option').map(option => option.textContent)).toEqual(bug1274Datasets.map(dataset => dataset.Name))
 })
 
@@ -70,7 +73,7 @@ it('opens the product matrix form without the original matrix', async () => {
   await openWorkbook('Матриця товарів')
   expect(screen.getByText(/Товар → сім атрибутів/)).toBeTruthy()
   expect(screen.queryByRole('button', { name: 'Переглянути оригінальну матрицю' })).toBeNull()
-  expect(screen.queryByText('Оберіть звіт у полі «Набір даних звіту» або відкрийте часткову форму за зразком Excel.')).toBeNull()
+  expect(screen.queryByText('Відкрийте звіт 1С за зразком Excel вище або оберіть звіт у полі «Звіт».')).toBeNull()
 })
 
 it('opens the supplier workbook with its organizations, saved supplier list and «Покупці» resolved by name', async () => {
@@ -97,4 +100,35 @@ it('opens the product matrix workbook with the AL-KO group and АФРАКО reso
   await waitFor(() => expect(createStockReport).toHaveBeenCalledOnce())
   expect(vi.mocked(createStockReport).mock.calls[0][0].selections.map(selection => [selection.SelectedField.Type,
     selection.FilterCondition.Type, selection.Values.map(value => value.Data.Id)])).toEqual([[4, 6, ['3996']], [5, 0, ['613989']]])
+})
+
+it('lists the six workbooks under their 1C report names and keeps one compact row after opening one', async () => {
+  render(page())
+  const list = await screen.findByRole('region', { name: 'Звіти 1С за зразками Excel' })
+  for (const title of ['Валовий прибуток', 'Валовий прибуток по постачальниках', 'Впарювання', 'Відомість по коштах',
+    'Взаєморозрахунки з контрагентами', 'Відомість по взаєморозрахунках з контрагентами'])
+    expect(within(list).getByText(title)).toBeTruthy()
+  expect(within(list).queryByText(/Часткова|набір даних|режим/)).toBeNull()
+  fireEvent.click(within(list).getByRole('button', { name: 'Відкрити ВП.xls' }))
+  expect(await screen.findByText('ВП.xls — Валовий прибуток')).toBeTruthy()
+  const compact = screen.getByRole('region', { name: 'Звіти 1С за зразками Excel' })
+  expect(within(compact).getByRole('button', { name: 'Відкрити ВП.xls' }).getAttribute('aria-current')).toBe('true')
+  expect(within(compact).getAllByRole('button')).toHaveLength(6)
+  expect(within(compact).queryByText('Валовий прибуток по постачальниках')).toBeNull()
+})
+
+it('opens ВП.xls on the current month, says why a too long period is refused and «Скинути» restores the workbook', async () => {
+  await openWorkbook('Валовий прибуток за днем')
+  const yesterday = previousKyivDay(formatKyivBusinessDate())
+  const from = () => (screen.getByLabelText('Від') as HTMLInputElement).value
+  expect(from()).toBe(`${yesterday.slice(0, 7)}-01`)
+  expect((screen.getByLabelText('До') as HTMLInputElement).value).toBe(yesterday)
+  fireEvent.change(screen.getByLabelText('Від'), { target: { value: '2026-01-01' } })
+  fireEvent.change(screen.getByLabelText('До'), { target: { value: '2026-09-30' } })
+  await waitFor(() => expect(document.getElementById('report-constructor-blocked-reason')?.textContent).toMatch(/\d+/))
+  fireEvent.click(screen.getByRole('checkbox', { name: 'Група «Покупці» Fenix' }))
+  fireEvent.click(screen.getByRole('button', { name: 'Скинути' }))
+  await waitFor(() => expect(from()).toBe(`${yesterday.slice(0, 7)}-01`))
+  expect((screen.getByRole('checkbox', { name: 'Група «Покупці» Fenix' }) as HTMLInputElement).checked).toBe(true)
+  expect(document.getElementById('report-constructor-blocked-reason')).toBeNull()
 })

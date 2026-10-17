@@ -9,6 +9,7 @@ import { profitDayDataset, profitSupplierDataset } from '../data/profitReadMode.
 import { DAY_ORGANIZATION_GOODS_KIND_ID, DAY_ORGANIZATION_SAVED_ORGANIZATION_IDS } from '../data/dayOrganizationGrossProfit'
 import { FENIX_BUYERS_ROOT_ID } from '../data/nativeExactFilters'
 import { ReportsStocksPage } from './ReportsStocksPage'
+import { WORKBOOK_FILES } from '../testing/workbookFiles'
 vi.mock('../../auth/useAuth', () => ({ useAuth: () => ({ hasPermission: () => true, user: { NetUid: 'profit-mode-owner' } }) }))
 vi.mock('../api/reportsApi', async original => ({ ...await original<typeof import('../api/reportsApi')>(), createStockReport: vi.fn(), searchDatasetReportValues: vi.fn() }))
 vi.mock('../api/reportWorkspaceApi', async original => ({ ...await original<typeof import('../api/reportWorkspaceApi')>(),
@@ -25,9 +26,8 @@ afterEach(() => { cleanup(); localStorage.clear(); sessionStorage.clear() })
 async function openWorkbook(name: string) {
   const view = render(<MantineProvider env="test"><I18nProvider><ReportsStocksPage consoleScope={false} /></I18nProvider></MantineProvider>)
   await screen.findByRole('button', { name: 'Продажі за днями' })
-  fireEvent.click(screen.getByText('Часткові форми за зразками Excel'))
-  fireEvent.click(screen.getByRole('button', { name: `Відкрити часткову форму: ${name}` }))
-  await waitFor(() => expect(screen.queryByText(/застосовуються відбори книги/)).toBeNull())
+  fireEvent.click(screen.getByRole('button', { name: `Відкрити ${WORKBOOK_FILES[name] ?? name}` }))
+  await waitFor(() => expect(screen.queryByText(/застосовуються відбори книги/i)).toBeNull())
   return view
 }
 function mode(name: string) {
@@ -43,7 +43,7 @@ async function submitted(view: ReturnType<typeof render>, count: number) {
 it.each(['Валовий прибуток за днем', 'Валовий прибуток за постачальниками'])('opens %s on current documents, then keeps deliberate registers and opt-out choices', async name => {
   const view = await openWorkbook(name)
   expect(source()).toBe('Поточні документи GBA')
-  expect(screen.getByText(/Типове джерело: продажі та повернення з поточних документів GBA за період до 31 календарних днів/)).toBeTruthy()
+  expect(screen.getByText(/Продажі та повернення з документів GBA за період до 31 календарних днів, звірені з 1С/)).toBeTruthy()
   const current = await submitted(view, 1)
   expect(current.profitReadMode).toBe(0)
   expect(current.dataSource === 35 ? current.dayOrganizationBasis : current.supplierBasis).toBe(0)

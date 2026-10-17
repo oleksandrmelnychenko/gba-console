@@ -31,7 +31,7 @@ async function renderReady() {
 }
 
 async function chooseDataset(name: string) {
-  fireEvent.click(screen.getByRole('combobox', { name: 'Набір даних звіту' }))
+  fireEvent.click(screen.getByRole('combobox', { name: 'Звіт' }))
   fireEvent.click(await screen.findByRole('option', { name }))
 }
 
@@ -150,7 +150,7 @@ describe('native report datasets in the constructor', () => {
     fireEvent.click(await screen.findByRole('button', { name: /Історична дата у залишках/ }))
     expect(screen.getByText(/Поточні залишки не підтримують період або історичну дату/)).toBeTruthy()
     expect((screen.getByLabelText('Від') as HTMLInputElement).value).toBe('2026-08-01')
-    expect((screen.getByRole('combobox', { name: 'Набір даних звіту' }) as HTMLInputElement).value).toBe('Продажі')
+    expect((screen.getByRole('combobox', { name: 'Звіт' }) as HTMLInputElement).value).toBe('Продажі')
     expect(createStockReport).not.toHaveBeenCalled()
     expect(saveServerReportTemplate).not.toHaveBeenCalled()
   })
@@ -248,7 +248,7 @@ describe('native report datasets in the constructor', () => {
     await renderReady()
     fireEvent.click(screen.getByRole('button', { name: 'Шаблони' }))
     fireEvent.click(await screen.findByRole('button', { name: /Мій шаблон надходжень/ }))
-    expect((screen.getByRole('combobox', { name: 'Набір даних звіту' }) as HTMLInputElement).value).toBe('Надходження товарів')
+    expect((screen.getByRole('combobox', { name: 'Звіт' }) as HTMLInputElement).value).toBe('Надходження товарів')
     expect((screen.getByLabelText('Від') as HTMLInputElement).value).toBe('2026-09-01')
     fireEvent.click(screen.getByRole('button', { name: 'Шаблони' }))
     fireEvent.click(screen.getByRole('button', { name: 'Зберегти' }))
@@ -286,7 +286,7 @@ describe('native report datasets in the constructor', () => {
     fireEvent.click(await screen.findByRole('button', { name: /Мій шаблон надходжень/ }))
     expect(screen.getByText(/Налаштування не застосовано/)).toBeTruthy()
     expect((screen.getByLabelText('Від') as HTMLInputElement).value).toBe('2026-08-01')
-    expect((screen.getByRole('combobox', { name: 'Набір даних звіту' }) as HTMLInputElement).value).toBe('Продажі')
+    expect((screen.getByRole('combobox', { name: 'Звіт' }) as HTMLInputElement).value).toBe('Продажі')
   })
 
   it('refuses unsupported saved filters instead of sanitizing them', async () => {

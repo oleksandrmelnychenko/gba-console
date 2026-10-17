@@ -8,6 +8,7 @@ import { SETTLEMENT_READ_MODE_NOTICE } from '../data/bug1274WorkbookLaunch'
 import { reportDatasets } from '../data/reportDatasets.test-fixtures'
 import { settlementModeDataset } from '../data/settlementReadMode.test-fixtures'
 import { ReportsStocksPage } from './ReportsStocksPage'
+import { WORKBOOK_FILES } from '../testing/workbookFiles'
 vi.mock('../../auth/useAuth', () => ({ useAuth: () => ({ hasPermission: () => true, user: { NetUid: 'settlement-mode-owner' } }) }))
 vi.mock('../api/reportsApi', async original => ({ ...await original<typeof import('../api/reportsApi')>(), createStockReport: vi.fn(), searchDatasetReportValues: vi.fn() }))
 vi.mock('../api/reportWorkspaceApi', async original => ({ ...await original<typeof import('../api/reportWorkspaceApi')>(),
@@ -24,8 +25,7 @@ afterEach(() => { cleanup(); localStorage.clear(); sessionStorage.clear() })
 async function openWorkbook(name: string) {
   const view = render(<MantineProvider env="test"><I18nProvider><ReportsStocksPage consoleScope={false} /></I18nProvider></MantineProvider>)
   await screen.findByRole('button', { name: 'Продажі за днями' })
-  fireEvent.click(screen.getByText('Часткові форми за зразками Excel'))
-  fireEvent.click(screen.getByRole('button', { name: `Відкрити часткову форму: ${name}` }))
+  fireEvent.click(screen.getByRole('button', { name: `Відкрити ${WORKBOOK_FILES[name] ?? name}` }))
   return view
 }
 function mode(name: string) {
@@ -42,7 +42,7 @@ const world = () => screen.getByRole('combobox', { name: 'База взаємо�
 it.each([['Взаєморозрахунки за період', [4, 41, 76]], ['Дебіторка за період', [4, 76]]] as const)(
   'opens %s on current documents, then keeps deliberate registers and opt-out choices', async (name, rows) => {
     const view = await openWorkbook(name)
-    expect(screen.getAllByText(new RegExp(SETTLEMENT_READ_MODE_NOTICE.slice(0, 40))).length).toBeGreaterThan(0)
+    expect(screen.getAllByText(/^(Взаємороз всі|ДБіторка)\.xls — /).length).toBeGreaterThan(0)
     expect(source()).toBe('Поточні документи GBA')
     expect(world().disabled).toBe(true)
     expect((screen.getByRole('checkbox', { name: 'Контрагенти у групі «Покупці» (Fenix)' }) as HTMLInputElement).disabled).toBe(true)

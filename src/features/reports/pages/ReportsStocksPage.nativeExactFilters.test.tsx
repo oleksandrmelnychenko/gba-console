@@ -124,7 +124,7 @@ describe('exact Fenix filters in the report constructor', () => {
     await applySaved()
 
     expect(screen.getByText(/Некоректний точний відбір організацій Fenix/)).toBeTruthy()
-    expect((screen.getByRole('combobox', { name: 'Набір даних звіту' }) as HTMLInputElement).value).toBe(reportDatasets[0].Name)
+    expect((screen.getByRole('combobox', { name: 'Звіт' }) as HTMLInputElement).value).toBe(reportDatasets[0].Name)
     expect(createStockReport).not.toHaveBeenCalled()
     expect(saveServerReportTemplate).not.toHaveBeenCalled()
   })
@@ -132,7 +132,7 @@ describe('exact Fenix filters in the report constructor', () => {
   it('selects the saved XLS Goods and non-service scope without typing a source ID', async () => {
     vi.mocked(getReportDatasets).mockResolvedValue([...reportDatasets, dayDataset])
     const { container } = await ready()
-    fireEvent.click(screen.getByRole('combobox', { name: 'Набір даних звіту' }))
+    fireEvent.click(screen.getByRole('combobox', { name: 'Звіт' }))
     fireEvent.click(await screen.findByRole('option', { name: dayDataset.Name }))
     fireEvent.click(screen.getByRole('checkbox', { name: 'Товар без послуг (Fenix)' }))
     fireEvent.click(screen.getByRole('checkbox', { name: 'Організації зі збереженого налаштування 1С' }))
@@ -152,9 +152,8 @@ describe('exact Fenix filters in the report constructor', () => {
   it('opens the VP workbook with all three retained filters and lets the user change that scope before submission', async () => {
     vi.mocked(getReportDatasets).mockResolvedValue([...reportDatasets, dayDataset])
     const { container } = await ready()
-    fireEvent.click(screen.getByText('Часткові форми за зразками Excel'))
-    fireEvent.click(screen.getByRole('button', { name: 'Відкрити часткову форму: Валовий прибуток за днем' }))
-    expect((screen.getByLabelText('Від') as HTMLInputElement).value).toBe(previousKyivDay(formatKyivBusinessDate()))
+    fireEvent.click(screen.getByRole('button', { name: 'Відкрити ВП.xls' }))
+    expect((screen.getByLabelText('Від') as HTMLInputElement).value).toBe(`${previousKyivDay(formatKyivBusinessDate()).slice(0, 7)}-01`)
     expect((screen.getByLabelText('До') as HTMLInputElement).value).toBe(previousKyivDay(formatKyivBusinessDate()))
     expect((screen.getByRole('checkbox', { name: 'Товар без послуг (Fenix)' }) as HTMLInputElement).checked).toBe(true)
     expect((screen.getByRole('checkbox', { name: 'Організації зі збереженого налаштування 1С' }) as HTMLInputElement).checked).toBe(true)
@@ -183,7 +182,7 @@ describe('exact Fenix filters in the report constructor', () => {
   it('keeps new requests compatible when the server has no basis capability', async () => {
     vi.mocked(getReportDatasets).mockResolvedValue([...reportDatasets, { ...dayDataset, dayOrganizationBasis: undefined }])
     const { container } = await ready()
-    fireEvent.click(screen.getByRole('combobox', { name: 'Набір даних звіту' }))
+    fireEvent.click(screen.getByRole('combobox', { name: 'Звіт' }))
     fireEvent.click(await screen.findByRole('option', { name: dayDataset.Name }))
     expect(screen.queryByRole('combobox', { name: 'Розрахунок валового прибутку' })).toBeNull()
     fireEvent.submit(container.querySelector('form')!)
@@ -220,7 +219,7 @@ describe('exact Fenix filters in the report constructor', () => {
     vi.mocked(getReportDatasets).mockResolvedValue([...reportDatasets, dayDataset])
     vi.mocked(createStockReport).mockResolvedValue({ document: { DocumentURL: '/files/period-sales.xlsx' }, raw: {} })
     const { container } = await ready()
-    fireEvent.click(screen.getByRole('combobox', { name: 'Набір даних звіту' }))
+    fireEvent.click(screen.getByRole('combobox', { name: 'Звіт' }))
     fireEvent.click(await screen.findByRole('option', { name: dayDataset.Name }))
     fireEvent.change(screen.getByLabelText('Від'), { target: { value: '2026-07-01' } })
     fireEvent.change(screen.getByLabelText('До'), { target: { value: '2026-07-31' } })
@@ -250,7 +249,7 @@ describe('exact Fenix filters in the report constructor', () => {
     vi.mocked(createStockReport).mockResolvedValueOnce({ document: { DocumentURL: '/files/previous.xlsx' }, raw: {} })
       .mockRejectedValueOnce(new ApiError('Не вдалося виконати запит', 409, null))
     const { container } = await ready()
-    fireEvent.click(screen.getByRole('combobox', { name: 'Набір даних звіту' }))
+    fireEvent.click(screen.getByRole('combobox', { name: 'Звіт' }))
     fireEvent.click(await screen.findByRole('option', { name: dayDataset.Name }))
     fireEvent.click(screen.getByRole('checkbox', { name: 'Товар без послуг (Fenix)' }))
     fireEvent.click(screen.getByRole('checkbox', { name: 'Організації зі збереженого налаштування 1С' }))
@@ -272,7 +271,7 @@ describe('exact Fenix filters in the report constructor', () => {
     const reason = 'Період звіту 1С ще не завантажено повністю для цих відборів.'
     vi.mocked(createStockReport).mockRejectedValue(new ApiError(reason, 409, { Message: reason }))
     const { container } = await ready()
-    fireEvent.click(screen.getByRole('combobox', { name: 'Набір даних звіту' }))
+    fireEvent.click(screen.getByRole('combobox', { name: 'Звіт' }))
     fireEvent.click(await screen.findByRole('option', { name: dayDataset.Name }))
     fireEvent.click(screen.getByRole('checkbox', { name: 'Товар без послуг (Fenix)' }))
     fireEvent.click(screen.getByRole('checkbox', { name: 'Організації зі збереженого налаштування 1С' }))
@@ -290,7 +289,7 @@ describe('exact Fenix filters in the report constructor', () => {
     const refusal = 'За період є повернення продажів; прибуток за постачальниками без підтвердженої обробки повернень не сформовано.'
     vi.mocked(createStockReport).mockRejectedValue(new ApiError(refusal, 400, { Message: refusal }))
     const { container } = await ready()
-    fireEvent.click(screen.getByRole('combobox', { name: 'Набір даних звіту' }))
+    fireEvent.click(screen.getByRole('combobox', { name: 'Звіт' }))
     fireEvent.click(await screen.findByRole('option', { name: supplierDataset.Name }))
     fireEvent.submit(container.querySelector('form')!)
 
@@ -301,7 +300,7 @@ describe('exact Fenix filters in the report constructor', () => {
   it('starts a new supplier form with returns, registrar warehouse and unavailable-value guidance', async () => {
     vi.mocked(getReportDatasets).mockResolvedValue([...reportDatasets, ordinarySupplierDataset])
     const { container } = await ready()
-    fireEvent.click(screen.getByRole('combobox', { name: 'Набір даних звіту' }))
+    fireEvent.click(screen.getByRole('combobox', { name: 'Звіт' }))
     fireEvent.click(await screen.findByRole('option', { name: supplierDataset.Name }))
     expect((screen.getByRole('combobox', { name: 'Розрахунок за постачальниками' }) as HTMLInputElement).value)
       .toBe('Продажі мінус повернення')
@@ -369,7 +368,7 @@ describe('exact Fenix filters in the report constructor', () => {
   it('sends the exact Buyers subtree with Fenix for supplier gross profit', async () => {
     vi.mocked(getReportDatasets).mockResolvedValue([...reportDatasets, supplierDataset])
     const { container } = await ready()
-    fireEvent.click(screen.getByRole('combobox', { name: 'Набір даних звіту' }))
+    fireEvent.click(screen.getByRole('combobox', { name: 'Звіт' }))
     fireEvent.click(await screen.findByRole('option', { name: supplierDataset.Name }))
     fireEvent.click(screen.getByRole('checkbox', { name: 'Група «Покупці» Fenix' }))
     fireEvent.submit(container.querySelector('form')!)
@@ -383,7 +382,7 @@ describe('exact Fenix filters in the report constructor', () => {
   it.each(['AMG', 'Обидві бази'])('clears the Fenix Buyers filter when supplier world changes to %s', async world => {
     vi.mocked(getReportDatasets).mockResolvedValue([...reportDatasets, supplierDataset])
     const { container } = await ready()
-    fireEvent.click(screen.getByRole('combobox', { name: 'Набір даних звіту' }))
+    fireEvent.click(screen.getByRole('combobox', { name: 'Звіт' }))
     fireEvent.click(await screen.findByRole('option', { name: supplierDataset.Name }))
     const buyers = screen.getByRole('checkbox', { name: 'Група «Покупці» Fenix' }) as HTMLInputElement
     fireEvent.click(buyers)
@@ -401,7 +400,7 @@ describe('exact Fenix filters in the report constructor', () => {
   it('selecting Buyers after AMG selects Fenix before submitting the supplier report', async () => {
     vi.mocked(getReportDatasets).mockResolvedValue([...reportDatasets, supplierDataset])
     const { container } = await ready()
-    fireEvent.click(screen.getByRole('combobox', { name: 'Набір даних звіту' }))
+    fireEvent.click(screen.getByRole('combobox', { name: 'Звіт' }))
     fireEvent.click(await screen.findByRole('option', { name: supplierDataset.Name }))
     fireEvent.click(screen.getByRole('combobox', { name: 'База продажів для прибутку за постачальниками' }))
     fireEvent.click(screen.getByRole('option', { name: 'AMG' }))

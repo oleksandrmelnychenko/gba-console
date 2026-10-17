@@ -34,7 +34,7 @@ it('selects genuine Fenix manager and region keys and submits them without numer
   vi.mocked(searchDatasetReportValues).mockImplementation(async (_source, field) => field === 60
     ? [{ Id: 'A'.repeat(32), Name: 'Source manager' }] : field === 61 ? [{ Id: 'region:00420020', Name: 'B ' }] : [])
   const { container } = await ready()
-  fireEvent.click(screen.getByRole('combobox', { name: 'Набір даних звіту' }))
+  fireEvent.click(screen.getByRole('combobox', { name: 'Звіт' }))
   fireEvent.click(await screen.findByRole('option', { name: settlementAttributesDataset.Name }))
   for (const [field, name, caption] of [[60, 'Основний менеджер покупця (ID джерела)', 'Source manager'],
     [61, 'Код по региону (джерело покупця)', 'B ']] as const) {
@@ -86,8 +86,7 @@ async function ready() {
 
 it('opens the debtor workbook directly with grouped current Buyers and no exact-agreement lookup', async () => {
   const { container } = await ready()
-  fireEvent.click(screen.getByText('Часткові форми за зразками Excel'))
-  fireEvent.click(screen.getByRole('button', { name: 'Відкрити часткову форму: Дебіторка за період' }))
+  fireEvent.click(screen.getByRole('button', { name: 'Відкрити ДБіторка.xls' }))
   expect((screen.getByRole('combobox', { name: 'Обсяг взаєморозрахунків' }) as HTMLInputElement).value).toBe('Поточні договори покупців')
   expect((screen.getByRole('combobox', { name: 'Форма взаєморозрахунків' }) as HTMLInputElement).value).toBe('Організація → контрагент')
   expect((screen.getByRole('checkbox', { name: 'Контрагенти у групі «Покупці» (Fenix)' }) as HTMLInputElement).checked).toBe(true)
@@ -128,7 +127,7 @@ it.each([undefined, null])('keeps saved exact-agreement templates with grouped o
 it('invalidates stale XLSX/PDF links when the grouped workbook layout or source world changes', async () => {
   vi.mocked(createStockReport).mockResolvedValue({ document: { DocumentURL: '/files/grouped.xlsx', PdfDocumentURL: '/files/grouped.pdf' }, raw: {} })
   const { container } = await ready()
-  fireEvent.click(screen.getByRole('combobox', { name: 'Набір даних звіту' }))
+  fireEvent.click(screen.getByRole('combobox', { name: 'Звіт' }))
   fireEvent.click(await screen.findByRole('option', { name: dataset.Name }))
   fireEvent.submit(container.querySelector('form')!)
   await screen.findByRole('dialog')

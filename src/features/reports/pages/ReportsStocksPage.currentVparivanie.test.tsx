@@ -24,7 +24,7 @@ beforeEach(()=>{
 it('offers exact group lookup and InGroup only for this dataset, then sends fixed matrix axes',async()=>{
   const user=userEvent.setup();const {container}=render(<Providers><ReportsStocksPage consoleScope={false} /></Providers>)
   await screen.findByRole('button',{name:'Продажі за днями'})
-  fireEvent.click(screen.getByRole('combobox',{name:'Набір даних звіту'}));fireEvent.click(await screen.findByRole('option',{name:dataset.Name}))
+  fireEvent.click(screen.getByRole('combobox',{name:'Звіт'}));fireEvent.click(await screen.findByRole('option',{name:dataset.Name}))
   fireEvent.change(screen.getByLabelText('Від'),{target:{value:'2026-09-01'}});fireEvent.change(screen.getByLabelText('До'),{target:{value:'2026-09-27'}})
   expect((screen.getByRole('button',{name:'Сформувати'}) as HTMLButtonElement).disabled).toBe(true)
   expect(screen.getByText(/Менеджер покупця поки недоступний/)).toBeTruthy()
@@ -48,7 +48,7 @@ it('refuses a saved selected-manager variant before replacing an existing ordina
   render(<Providers><ReportsStocksPage consoleScope={false} /></Providers>);await screen.findByRole('button',{name:'Продажі за днями'})
   fireEvent.click(screen.getByRole('button',{name:'Шаблони'}));fireEvent.click(await screen.findByRole('button',{name:/Unsupported manager/}))
   expect(screen.getByText(/Відбір за менеджером покупця поки недоступний/)).toBeTruthy()
-  expect((screen.getByRole('combobox',{name:'Набір даних звіту'}) as HTMLInputElement).value).not.toBe(dataset.Name)
+  expect((screen.getByRole('combobox',{name:'Звіт'}) as HTMLInputElement).value).not.toBe(dataset.Name)
   expect(createStockReport).not.toHaveBeenCalled()
 })
 
@@ -60,7 +60,7 @@ it.each([{reference:'ABCDEF1234567890ABCDEF1234567890',empty:false},{reference:'
   vi.mocked(searchDatasetReportValues).mockImplementation(async(_source,field)=>field===60?[{Id:reference,Name:caption}]:[{Id:'9223372036854775807',Name:'Synthetic group'}])
   const {container}=render(<Providers><ReportsStocksPage consoleScope={false} /></Providers>)
   await screen.findByRole('button',{name:'Продажі за днями'})
-  fireEvent.click(screen.getByRole('combobox',{name:'Набір даних звіту'}));fireEvent.click(await screen.findByRole('option',{name:dataset.Name}))
+  fireEvent.click(screen.getByRole('combobox',{name:'Звіт'}));fireEvent.click(await screen.findByRole('option',{name:dataset.Name}))
   fireEvent.change(screen.getByLabelText('Від'),{target:{value:'2026-09-12'}});fireEvent.change(screen.getByLabelText('До'),{target:{value:'2026-09-12'}})
   expect(screen.queryByText(/Менеджер покупця поки недоступний/)).toBeNull()
   expect(screen.getByText(/Основний менеджер покупця з картки клієнта GBA/)).toBeTruthy()

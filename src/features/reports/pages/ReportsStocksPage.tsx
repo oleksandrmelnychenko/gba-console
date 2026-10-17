@@ -83,6 +83,7 @@ import {
   createDefaultMeasurementGroups,
   flattenCheckedMeasurements,
   getReportFieldLabel,
+  grossProfitMeasureGroupLabel,
   measurementGroupCaption,
 } from '../data/reportOptions'
 import type {
@@ -110,6 +111,10 @@ import { usesNativeReportLookup, supportsFullReportDateRange, hasFixedReportAxes
 import { CURRENT_VPARIVANIE_NOTICE, currentVparivanieConfigurationError, currentVparivanieFilterConditions, currentVparivanieNotice, currentVparivanieFullScope } from '../data/currentVparivanie'
 import { previousKyivDay } from '../data/cashPeriod'
 import { availableBug1274WorkbookLaunches, bug1274WorkbookRequest, opensOnPreviousDay, type WorkbookLaunch } from '../data/bug1274WorkbookLaunch'
+import { bug1274WorkbookGuide, bug1274WorkbookPeriod, reportPeriodPresets, type ReportPeriodPreset } from '../data/bug1274WorkbookGuide'
+import { supportedAnalysisRules } from '../data/supportedAnalysisRules'
+import { reportFileBaseName } from '../data/reportFileName'
+import { Bug1274WorkbookShortcuts } from './Bug1274WorkbookShortcuts'
 import { resolveBug1274WorkbookFilters, resolvesWorkbookFilters, workbookFiltersNotice, type ResolvedWorkbookFilters } from '../data/bug1274WorkbookFilters'
 import { CashSettlementSettingsPanels } from './CashSettlementSettingsPanels'
 import { cashFormDataset, requestGroupedCashPeriod } from '../data/groupedCashPeriod'
@@ -257,10 +262,12 @@ type ReportRunOutcome = {
   comparison?: { From: string; To: string }
   periodSupported: boolean
   colGroupings: string[]
+  fileName: string
   from: string
   hasDocument: boolean
   measures: string[]
   name: string
+  title: string
   rowGroupings: string[]
   to: string
 }
@@ -385,7 +392,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
   const measurements = useMemo(() => retainStoredMeasurementLabels(retainedData, { dataSource, supplierBasis },
     datasetMeasurements(supplierDataset, flattenCheckedMeasurements(selectedMeasurements))),
   [dataSource, retainedData, selectedMeasurements, supplierBasis, supplierDataset])
-  const presets = useMemo(() => datasetHidden ? [] : datasetPresets(dataset), [dataset, datasetHidden])
+  const presets = useMemo(() => datasetHidden || bug1274Only ? [] : datasetPresets(dataset), [bug1274Only, dataset, datasetHidden])
   const groupingOrdering = useReportGroupingOrdering()
   const { rowGroups, setRowGroups, colGroups, setColGroups, ordering } = groupingOrdering
   const abc = useReportAbcClassification({ Row: rowGroups, Col: colGroups }, groupingOrdering.changeLayout, dataset)
@@ -399,7 +406,8 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
   const templateStorage = useServerReportTemplates(canGenerateReport, datasetStorage.datasets, ownerId)
   const [draftRestoreError, setDraftRestoreError] = useState<string | null>(null)
   const [templateNotice, setTemplateNotice] = useValueState<string | null>(null)
-  const [catalogueNotice, setCatalogueNotice] = useState<{ text: string; failed: boolean } | null>(null)
+  const [catalogueNotice, setCatalogueNotice] = useState<{ text: string; failed: boolean; title?: string } | null>(null)
+  const [activeWorkbook, setActiveWorkbook] = useState<string | null>(null)
   const [workbookResolving, setWorkbookResolving] = useState(false)
   const workbookLaunchToken = useRef(0)
   const groupingOptions = useMemo(() => datasetGroupings(priceTypeDataset).filter(field => field.type !== ABC_CLASS_GROUPING || abcClassification != null), [abcClassification, priceTypeDataset])
@@ -542,6 +550,9 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
         hasDocument: Boolean(nextResult.document.DocumentURL || nextResult.document.PdfDocumentURL),
         measures: reportBody.sorted.Measurements.map((measurement) => measurement.Label || getReportFieldLabel(measurement.Name)),
         name: templateName.trim(),
+        fileName: reportFileBaseName(activeWorkbook ?? dataset?.Name ?? '', from, to, periodSupported),
+        title: activeWorkbook && bug1274WorkbookGuide(activeWorkbook)
+          ? `${activeWorkbook} — ${t(bug1274WorkbookGuide(activeWorkbook)!.title)}` : dataset?.Name ?? '',
         rowGroupings: rowGroups.map((group) => group.label || getReportFieldLabel(group.key)),
         to,
       }
@@ -567,6 +578,9 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
   }
 
   function resetReport() {
+    const workbookLaunch = activeWorkbook ? workbookLaunches.find(item => item.fileName === activeWorkbook) : undefined
+    if (workbookLaunch && openWorkbook(workbookLaunch)) return
+    setActiveWorkbook(null)
     setFullCurrentVparivanie(false)
     setConstructorSection('structure')
     setCatalogueNotice(null)
@@ -666,6 +680,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
       return false
     }
     applyConfiguration({ ...template, Data: data }, nextDataset)
+    setActiveWorkbook(null)
     setActiveTemplate(structuredClone(template))
     return true
   }
@@ -741,6 +756,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
     const data = structuredClone(snapshot.data)
     setFullCurrentVparivanie(currentVparivanieFullScope(data))
     setCatalogueNotice(null)
+    setActiveWorkbook(null)
     setRestoredData(data)
     setActiveTemplate(structuredClone(snapshot.activeTemplate))
     setTemplateName(snapshot.name)
@@ -852,32 +868,40 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
     if (consoleScope && !BUG_1274_ACTIVE_DATA_SOURCES.has(nextDataset.DataSource)) return
     const period = periodSupported ? { from, to } : previousPeriod
     const day = opensOnPreviousDay(nextDataset.DataSource) ? previousKyivDay(today) : null
-    applyConfiguration({ Name: '', Data: bug1274WorkbookRequest(defaultDatasetRequest(nextDataset, day ?? period.from, day ?? period.to), workbook, resolved) }, nextDataset)
+    const opened = (workbook ? bug1274WorkbookPeriod(workbook.fileName, today) : null) ?? { from: day ?? period.from, to: day ?? period.to }
+    applyConfiguration({ Name: '', Data: bug1274WorkbookRequest(defaultDatasetRequest(nextDataset, opened.from, opened.to), workbook, resolved) }, nextDataset)
   }
 
   function pickDataset(nextDataset: ReportDataset) {
     workbookLaunchToken.current += 1
     setWorkbookResolving(false)
+    setActiveWorkbook(null)
     changeDataset(nextDataset)
   }
 
   function openWorkbook(item: WorkbookLaunch): boolean {
     if (!canGenerateReport || isLoading || workbookResolving) return false
     const token = ++workbookLaunchToken.current
+    const guide = bug1274WorkbookGuide(item.fileName)
+    const title = guide ? `${item.fileName} — ${t(guide.title)}` : undefined
+    const notice = guide ? t(guide.summary) : `${item.fileName}: ${item.notice}`
     if (!resolvesWorkbookFilters(item.fileName)) {
       changeDataset(item.dataset, item)
-      setCatalogueNotice({ text: `${item.fileName}: ${item.notice}`, failed: false })
+      setActiveWorkbook(item.fileName)
+      setCatalogueNotice({ text: notice, title, failed: false })
       return true
     }
     setWorkbookResolving(true)
-    setCatalogueNotice({ text: `${item.fileName}: ${t('застосовуються відбори книги…')}`, failed: false })
+    setActiveWorkbook(item.fileName)
+    setCatalogueNotice({ text: guide ? t('Застосовуються відбори книги…') : `${item.fileName}: ${t('застосовуються відбори книги…')}`, title, failed: false })
     const profitLookup = item.dataset.DataSource === 38 && item.dataset.profitReadModeLookup === true ? 0 : undefined
     void resolveBug1274WorkbookFilters(item.fileName, item.dataset, (source, field, value) => searchDatasetReportValues(source, field,
       { value, offset: 0, limit: LOOKUP_SEARCH_LIMIT }, undefined, undefined, undefined, undefined, profitLookup))
       .then(resolved => {
         if (token !== workbookLaunchToken.current) return
         changeDataset(item.dataset, item, resolved)
-        setCatalogueNotice({ text: `${item.fileName}: ${item.notice}${workbookFiltersNotice(resolved)}`, failed: false })
+        setActiveWorkbook(item.fileName)
+        setCatalogueNotice({ text: `${notice}${workbookFiltersNotice(resolved)}`, title, failed: false })
       })
       .finally(() => { if (token === workbookLaunchToken.current) setWorkbookResolving(false) })
     return true
@@ -891,6 +915,8 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
 
   const workbookLaunches = useMemo(() => availableBug1274WorkbookLaunches(datasetStorage.datasets), [datasetStorage.datasets])
   const mountsDialog = (open: boolean) => !consoleScope || open
+  const analysisRules = bug1274Only ? supportedAnalysisRules(templateBody, dataset, settlementDataset)
+    : { topGroups: true, threshold: true, abc: true, ordering: true, filterExpression: true }
 
   if (canGenerateReport && ownerId && workspaceDraft.recovery !== 'none'
     && (workspaceDraft.recovery !== 'loading' || !datasetStorage.loaded)) {
@@ -926,15 +952,8 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
       </Group>
       </div>
       {!constructorMode && canGenerateReport && datasetStorage.loaded && !datasetStorage.error && workbookLaunches.length > 0
-        ? <details className="app-section-card">
-          <summary>{t('Часткові форми за зразками Excel')}</summary>
-          <Stack gap="xs" p="sm">{workbookLaunches.map(item =>
-            <Group key={item.fileName} justify="space-between" align="start" wrap="wrap">
-              <Text size="sm">{item.fileName} · {t(item.notice)}</Text>
-              <Button type="button" size="xs" variant="light" disabled={isLoading || workbookResolving}
-                onClick={() => { openWorkbook(item) }}>{t('Відкрити часткову форму: {name}', { name: item.label })}</Button>
-            </Group>)}</Stack>
-        </details> : null}
+        ? <Bug1274WorkbookShortcuts launches={workbookLaunches} active={activeWorkbook && !datasetHidden ? activeWorkbook : null}
+          disabled={isLoading || workbookResolving} onOpen={item => { openWorkbook(item) }} /> : null}
       {mountsDialog(oneCReportOpen) ? <AppModal opened={oneCReportOpen} title={t('Валовий прибуток — як у 1С')} size={960}
         onClose={() => { if (!oneCReportGenerating) setOneCReportOpen(false) }}
         closeOnClickOutside={!oneCReportGenerating} closeOnEscape={!oneCReportGenerating}
@@ -1005,7 +1024,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
       </AppModal> : null}
       {!constructorMode && canGenerateReport && templateName.trim() ? <Text fw={600} aria-label={t('Назва поточного звіту')}>{templateName}</Text> : null}
       {canGenerateReport && catalogueNotice ? <Alert color={catalogueNotice.failed ? 'red' : 'blue'} style={{ flexShrink: 0 }}
-        title={t(catalogueNotice.failed ? 'Не вдалося відкрити звіт' : 'Звіт відкрито в конструкторі')}
+        title={catalogueNotice.title ?? t(catalogueNotice.failed ? 'Не вдалося відкрити звіт' : 'Звіт відкрито')}
         withCloseButton closeButtonLabel={t('Закрити повідомлення')} onClose={() => setCatalogueNotice(null)}>{catalogueNotice.text}</Alert> : null}
       {!constructorMode && !datasetHidden ? <>{dataSource === 31 ? <AgreementPriceComparisonPanel value={agreementPriceComparison ?? defaultAgreementPriceComparison()} disabled={comparisonSettingsDisabled} onChange={setAgreementPriceComparison} />
         : requiresValuationAgreement(dataSource) ? <ValuationAgreementPicker purpose={dataSource === 22 ? 'prices' : 'stock'} value={valuationClientAgreementId} enabled={canGenerateReport} disabled={isLoading}
@@ -1027,7 +1046,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
           disabled={isLoading || workbookResolving} onOpen={openCatalogueReport}
           onOpenDebtToSalesRatio={openDebtToSalesRatio} onOpenCollectionCoefficient={collectionConstructor.open} onOpenSalesMargin={salesMarginConstructor.open} onOpenCashMovement={cashMovementConstructor.open} onOpenSupplierDebt={supplierDebtConstructor.open} onOpenEmployeeGrossProfit={employeeGrossProfitConstructor.open} onOpenOverdueReceivables={overdueReceivablesConstructor.open} onOpenManagementReturns={managementReturnsConstructor.open} onOpenManagementBalance={managementBalanceConstructor.open} onOpenManagementOrders={managementOrdersConstructor.open} onOpenDefectProduction={defectProductionConstructor.open} onOpenInventoryTurnover={inventoryTurnoverConstructor.open} onOpenCurrentLiquidity={currentLiquidityConstructor.open} onOpenPlannedCash={plannedCashConstructor.open} callerKey={ownerId} onOpenActiveClients={openActiveClients}
           onOpenCurrencyRateDynamics={openCurrencyRateDynamics} onOpenCashAggregateBalance={openCashAggregateBalance} onOpenOriginalRevenue={openOriginalRevenue} onOpenOriginalBuyerSalesShare={openOriginalBuyerSalesShare} />}
-        datasetSummary={<><ReportDatasetSummary dataset={dataset} />
+        datasetSummary={bug1274Only ? null : <><ReportDatasetSummary dataset={dataset} />
           {!constructorMode ? <details className="stocks-workspace-dataset-help"><summary>{t('Що змінює вибір набору даних')}</summary>
             <Text size="xs" c="dimmed">{t('Зміна набору застосує початкові групування й показники та очистить відбори, групи І/АБО, TOP, ABC-класифікацію і правила сортування. Набори поточного стану очищують період; після повернення до набору з періодом попередні дати відновляться.')}</Text>
           </details> : null}</>}
@@ -1164,6 +1183,8 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
         comparisonPanel={dataSource === 13 ? <ClientComparisonPeriodPanel value={comparison} disabled={comparisonSettingsDisabled} onChange={setComparison} /> : null}
         periodSupported={periodSupported}
         datasetHidden={datasetHidden}
+        showBlockedReason={bug1274Only}
+        periodPresets={bug1274Only ? reportPeriodPresets(dataSource, today) : undefined}
         templateDataSources={bug1274Only ? BUG_1274_ACTIVE_DATA_SOURCES : undefined}
         presets={presets}
         configurationReady={!configurationError}
@@ -1215,17 +1236,17 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
         onRowGroupsChange={value => groupingOrdering.changeAxis('Row', value)}
         onColGroupsChange={value => groupingOrdering.changeAxis('Col', value)}
         onGroupingLayoutChange={groupingOrdering.changeLayout}
-        abcPanel={<ReportAbcClassificationPanel data={templateBody} dataset={dataset} disabled={comparisonSettingsDisabled} notice={abc.notice} onChange={abc.change}
+        abcPanel={!analysisRules.abc ? null : <ReportAbcClassificationPanel data={templateBody} dataset={dataset} disabled={comparisonSettingsDisabled} notice={abc.notice} onChange={abc.change}
           onConfigureGrouping={constructorMode ? () => navigateConstructorSection('structure') : undefined}
           onConfigureMeasures={constructorMode ? () => navigateConstructorSection('structure') : undefined} />}
         hideZeroPanel={<ReportHideZeroPanel data={templateBody} dataset={dataset} disabled={comparisonSettingsDisabled} onChange={setHideZero} />}
-        thresholdPanel={<ReportThresholdPanel data={templateBody} dataset={dataset} disabled={comparisonSettingsDisabled} onChange={setThreshold} />}
-        topGroupsPanel={<ReportTopGroupsPanel data={templateBody} dataset={dataset} disabled={comparisonSettingsDisabled} onChange={setTopGroups}
+        thresholdPanel={!analysisRules.threshold ? null : <ReportThresholdPanel data={templateBody} dataset={dataset} disabled={comparisonSettingsDisabled} onChange={setThreshold} />}
+        topGroupsPanel={!analysisRules.topGroups ? null : <ReportTopGroupsPanel data={templateBody} dataset={dataset} disabled={comparisonSettingsDisabled} onChange={setTopGroups}
           onConfigureGrouping={constructorMode ? () => navigateConstructorSection('structure') : undefined}
           onConfigureMeasures={constructorMode ? () => navigateConstructorSection('structure') : undefined} />}
-        filterExpressionPanel={<ReportFilterExpressionPanel data={templateBody} dataset={settlementDataset} disabled={comparisonSettingsDisabled}
+        filterExpressionPanel={!analysisRules.filterExpression ? null : <ReportFilterExpressionPanel data={templateBody} dataset={settlementDataset} disabled={comparisonSettingsDisabled}
           notice={filterLogic.notice} onChange={filterLogic.change} />}
-        orderingPanel={<ReportOrderingPanel data={templateBody} dataset={dataset} disabled={comparisonSettingsDisabled}
+        orderingPanel={!analysisRules.ordering ? null : <ReportOrderingPanel data={templateBody} dataset={dataset} disabled={comparisonSettingsDisabled}
           notice={groupingOrdering.notice} onChange={groupingOrdering.changeOrdering} />}
         onSaveTemplate={saveTemplate}
         onSelectionsChange={filterLogic.editSelection}
@@ -1245,7 +1266,8 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
           ) : null
         }
         opened={downloadModalOpened}
-        title={lastRun?.name || dataset?.Name || t('Звіт')}
+        fileBaseName={lastRun?.fileName}
+        title={lastRun?.name || lastRun?.title || dataset?.Name || t('Звіт')}
         onClose={() => updateRun({ downloadModalOpened: false })}
       />
     </Stack>
@@ -1282,6 +1304,8 @@ type ReportBuilderFormProps = {
   dataSource: number
   periodSupported: boolean
   datasetHidden: boolean
+  showBlockedReason?: boolean
+  periodPresets?: readonly ReportPeriodPreset[]
   templateDataSources?: ReadonlySet<number>
   presets: ReturnType<typeof datasetPresets>
   configurationReady: boolean
@@ -1428,7 +1452,8 @@ function ReportBuilderForm(props: ReportBuilderFormProps) {
         <div className="app-filter-bar reports-stocks-filter-bar">
           <div className="reports-stocks-toolbar-fields">
           {datasetPanel}
-          <ReportPeriodInputs dataSource={dataSource} supported={periodSupported} from={from} to={to} maxDate={maxDate} disabled={constructorMode && isLoading} onFromChange={onFromChange} onToChange={onToChange} />
+          <ReportPeriodInputs dataSource={dataSource} supported={periodSupported} from={from} to={to} maxDate={maxDate} disabled={constructorMode && isLoading}
+            presets={props.periodPresets} onFromChange={onFromChange} onToChange={onToChange} />
           {!constructorMode && !props.datasetHidden ? comparisonPanel : null}
           <div className="app-filter-actions reports-stocks-actions">
             {catalogueControl}
@@ -1466,13 +1491,13 @@ function ReportBuilderForm(props: ReportBuilderFormProps) {
         </div>
         </div>
         {constructorMode && !canSubmit ? <Text id="report-constructor-blocked-reason" className="report-constructor-blocked-reason" size="xs" c="gray.7">{submitBlockedReason}</Text>
-          : !canSubmit && !isLoading && submitBlockedReason && !props.datasetHidden && submitBlockedReason !== props.notices.period
+          : props.showBlockedReason && !canSubmit && !isLoading && submitBlockedReason && !props.datasetHidden && submitBlockedReason !== props.notices.period
             && submitBlockedReason !== props.incompleteSelectionMessage ? <Alert id="report-constructor-blocked-reason"
             className="reports-page-alert" color="yellow" icon={<CircleAlert size={18} />}>{submitBlockedReason}</Alert> : null}
         {!constructorMode && presets.length ? <ReportQuickPresets disabled={isLoading || !configurationReady} presets={presets} onApply={onApplyPreset} /> : null}
 
         {props.datasetHidden ? <Alert className="reports-page-alert" color="blue" icon={<CircleAlert size={18} />}>
-          {t('Оберіть звіт у полі «Набір даних звіту» або відкрийте часткову форму за зразком Excel.')}
+          {t('Відкрийте звіт 1С за зразком Excel вище або оберіть звіт у полі «Звіт».')}
         </Alert> : <ReportBuilderContent {...props} />}
 
         <AppModal
@@ -1804,14 +1829,14 @@ function LegacyReportBuilder({
           </div>
 
           <div className="reports-stocks-legacy-measurements__list">
-            {!hasFixedReportAxes(dataSource) ? <div className="reports-stocks-measurement-columns" aria-hidden="true">
+            {!hasFixedReportAxes(dataSource) || measurements.some(group => group.SubList.length > 1) ? <div className="reports-stocks-measurement-columns" aria-hidden="true">
               <span>{t('Показник')}</span>
               <span>{t('Без ПДВ')}</span>
               <span>{t('ПДВ')}</span>
               <span>{t('З ПДВ')}</span>
             </div> : null}
             {measurements.map((group, groupIndex) => {
-              const groupLabel = group.Label || getReportFieldLabel(group.Name)
+              const groupLabel = group.Label || grossProfitMeasureGroupLabel(dataSource, group.Name) || getReportFieldLabel(group.Name)
               const hasDistinctChildren =
                 group.SubList.length > 1
                 || (group.SubList[0]?.Label || getReportFieldLabel(group.SubList[0]?.Name ?? '')) !== groupLabel

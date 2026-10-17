@@ -27,7 +27,7 @@ beforeEach(() => {
 it('selects independent current inclusion/exclusion groups, invalidates old files and clears Fenix groups when AMG is selected', async () => {
   const { container } = render(<MantineProvider env="test"><I18nProvider><ReportsStocksPage consoleScope={false} /></I18nProvider></MantineProvider>)
   await screen.findByRole('button', { name: 'Продажі за днями' })
-  fireEvent.click(screen.getByRole('combobox', { name: 'Набір даних звіту' }))
+  fireEvent.click(screen.getByRole('combobox', { name: 'Звіт' }))
   fireEvent.click(await screen.findByRole('option', { name: groupDataset.Name }))
   await waitFor(() => expect(getSettlementCounterpartyGroups).toHaveBeenCalledOnce())
   fireEvent.click(screen.getByRole('combobox', { name: 'Включити групи контрагентів (Fenix)' }))

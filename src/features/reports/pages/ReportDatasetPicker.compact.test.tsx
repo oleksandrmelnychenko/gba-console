@@ -27,7 +27,7 @@ it('searches compact options without applying a selection until explicitly chose
   const user = userEvent.setup()
   const options = props()
   render(picker({ ...options, compact: true }))
-  const input = screen.getByRole('combobox', { name: 'Набір даних звіту' })
+  const input = screen.getByRole('combobox', { name: 'Звіт' })
   expect(screen.queryByText(/Зміна набору застосує/)).toBeNull()
   expect(screen.queryByText(grossDataset.Description)).toBeNull()
   await user.click(input)

@@ -77,7 +77,7 @@ describe('source27 report constructor wire', () => {
   it('submits Fenix Version1 settings, explicit scope and Client → Product defaults', async () => {
     const { container } = render(<Providers><ReportsStocksPage consoleScope={false} constructorMode /></Providers>)
     await screen.findByRole('button', { name: 'Продажі за днями' })
-    fireEvent.click(screen.getByRole('combobox', { name: 'Набір даних звіту' }))
+    fireEvent.click(screen.getByRole('combobox', { name: 'Звіт' }))
     fireEvent.click(await screen.findByRole('option', { name: priceTypeSalesComparisonDataset.Name }))
 
     expect(screen.getByText(/не формує договірних рекомендацій/)).toBeTruthy()
@@ -193,7 +193,7 @@ async function chooseCurrentScope() {
 async function currentForm() {
   const view = render(<Providers><ReportsStocksPage consoleScope={false} constructorMode /></Providers>)
   await screen.findByRole('button', { name: 'Продажі за днями' })
-  fireEvent.click(screen.getByRole('combobox', { name: 'Набір даних звіту' }))
+  fireEvent.click(screen.getByRole('combobox', { name: 'Звіт' }))
   fireEvent.click(await screen.findByRole('option', { name: priceTypeSalesComparisonDataset.Name }))
   await chooseCurrentScope()
   fireEvent.click(screen.getByRole('combobox', { name: 'Глобальний тип ціни Fenix' }))

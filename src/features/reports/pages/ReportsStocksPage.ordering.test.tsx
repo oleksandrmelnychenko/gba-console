@@ -17,7 +17,7 @@ function Providers({ children }: { children: ReactNode }) { return <MantineProvi
 async function select(name: string, option: string) { fireEvent.click(screen.getByRole('combobox', { name })); fireEvent.click(await screen.findByRole('option', { name: option })) }
 async function ready() { const view = render(<Providers><ReportsStocksPage consoleScope={false} /></Providers>); await screen.findByRole('button', { name: 'Продажі за днями' }); return view }
 async function accountRule() {
-  await select('Набір даних звіту', orderedAccountDataset.Name)
+  await select('Звіт', orderedAccountDataset.Name)
   await select('Сортування — Рядки: Рахунок', 'За підсумком показника')
   await select('Напрямок — Рядки: Рахунок', 'За спаданням')
 }
@@ -76,7 +76,7 @@ describe('constructor typed group ordering', () => {
     vi.mocked(getServerReportTemplates).mockResolvedValue([template]); await ready()
     fireEvent.click(screen.getByRole('button', { name: 'Шаблони' })); fireEvent.click(await screen.findByRole('button', { name: /Невідоме сортування/ }))
     expect(screen.getByText(/Невідома версія або некоректні правила сортування/)).toBeTruthy()
-    expect((screen.getByRole('combobox', { name: 'Набір даних звіту' }) as HTMLInputElement).value).toBe(reportDatasets[0].Name)
+    expect((screen.getByRole('combobox', { name: 'Звіт' }) as HTMLInputElement).value).toBe(reportDatasets[0].Name)
     expect(template).toEqual(original); expect(createStockReport).not.toHaveBeenCalled(); expect(saveServerReportTemplate).not.toHaveBeenCalled()
   })
   it('clears ordering only through an explicit action and does not leak it to another dataset', async () => {
@@ -86,7 +86,7 @@ describe('constructor typed group ordering', () => {
     fireEvent.submit(container.querySelector('form')!); await waitFor(() => expect(createStockReport).toHaveBeenCalledOnce())
     expect(vi.mocked(createStockReport).mock.calls[0][0]).not.toHaveProperty('ordering')
     await select('Сортування — Рядки: Рахунок', 'За значенням поля')
-    await select('Набір даних звіту', reportDatasets[0].Name)
+    await select('Звіт', reportDatasets[0].Name)
     fireEvent.click(screen.getByRole('button', { name: 'Продажі за днями' }))
     fireEvent.submit(container.querySelector('form')!); await waitFor(() => expect(createStockReport).toHaveBeenCalledTimes(2))
     expect(vi.mocked(createStockReport).mock.calls[1][0]).not.toHaveProperty('ordering')

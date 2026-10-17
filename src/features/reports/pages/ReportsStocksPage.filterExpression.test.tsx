@@ -73,7 +73,7 @@ describe('constructor groups of conditions', () => {
     expect(vi.mocked(createStockReport).mock.calls[1][0].selections).toHaveLength(2)
     expect(vi.mocked(createStockReport).mock.calls[1][0]).not.toHaveProperty('filterExpression')
     fireEvent.click(screen.getByRole('button', { name: 'Налаштувати групи І/АБО' }))
-    await select('Набір даних звіту', reportDatasets[0].Name)
+    await select('Звіт', reportDatasets[0].Name)
     fireEvent.click(screen.getByRole('button', { name: 'Продажі за днями' }))
     fireEvent.submit(container.querySelector('form')!); await waitFor(() => expect(createStockReport).toHaveBeenCalledTimes(3))
     expect(vi.mocked(createStockReport).mock.calls[2][0]).not.toHaveProperty('filterExpression')
@@ -83,7 +83,7 @@ describe('constructor groups of conditions', () => {
     const template = { ...saved(), Data: { ...expressionRequest(), filterExpression } }, original = structuredClone(template)
     vi.mocked(getServerReportTemplates).mockResolvedValue([template]); await ready(); await applySaved()
     expect(screen.getByText(/Невідома версія|не включено до логіки/)).toBeTruthy()
-    expect((screen.getByRole('combobox', { name: 'Набір даних звіту' }) as HTMLInputElement).value).toBe(reportDatasets[0].Name)
+    expect((screen.getByRole('combobox', { name: 'Звіт' }) as HTMLInputElement).value).toBe(reportDatasets[0].Name)
     expect(template).toEqual(original); expect(createStockReport).not.toHaveBeenCalled(); expect(saveServerReportTemplate).not.toHaveBeenCalled()
   })
   it('blocks an enabled unassigned condition until explicitly added to a group, keeping empty group semantics visible', async () => {

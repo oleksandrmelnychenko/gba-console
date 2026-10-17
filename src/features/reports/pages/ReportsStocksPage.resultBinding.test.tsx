@@ -71,7 +71,7 @@ describe('constructor result and export request identity', () => {
 
   it('removes the previous valuation file when the selected contract changes', async () => {
     const { container } = await ready()
-    fireEvent.click(screen.getByRole('combobox', { name: 'Набір даних звіту' }))
+    fireEvent.click(screen.getByRole('combobox', { name: 'Звіт' }))
     fireEvent.click(await screen.findByRole('option', { name: valuationDataset.Name }))
     await agreement(42)
     fireEvent.submit(container.querySelector('form')!)
@@ -134,7 +134,7 @@ describe('constructor result and export request identity', () => {
     response.preview.Cells[0].Value = { Kind: 'null', Value: null, Provenance: 'producerCell' }
     vi.mocked(previewStockReport).mockResolvedValue(response)
     const { container } = await ready()
-    fireEvent.click(screen.getByRole('combobox', { name: 'Набір даних звіту' }))
+    fireEvent.click(screen.getByRole('combobox', { name: 'Звіт' }))
     fireEvent.click(await screen.findByRole('option', { name: supplierDataset.Name }))
     fireEvent.click(screen.getByRole('button', { name: 'Показати на екрані' }))
     expect(await screen.findByRole('cell', { name: '∅' })).toBeTruthy()
@@ -161,7 +161,7 @@ describe('constructor result and export request identity', () => {
     let complete!: (value: ReportResult) => void
     vi.mocked(createStockReport).mockReturnValueOnce(new Promise(resolve => { complete = resolve }))
     const { container, rerender } = await ready()
-    fireEvent.click(screen.getByRole('combobox', { name: 'Набір даних звіту' }))
+    fireEvent.click(screen.getByRole('combobox', { name: 'Звіт' }))
     fireEvent.click(await screen.findByRole('option', { name: supplierDataset.Name }))
     fireEvent.submit(container.querySelector('form')!)
     await waitFor(() => expect(createStockReport).toHaveBeenCalledOnce())

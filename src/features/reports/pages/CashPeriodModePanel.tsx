@@ -37,7 +37,7 @@ export function CashPeriodModePanel({ dataset, grouped, exact, disabled, enabled
           const next = types.flatMap(type => available.filter(row => row.type === type))
           if (next.length === types.length) onRowsChange(next)
         }} /> : null}
-      {multiple ? <Text size="sm" mt="sm">Банківські рахунки та каси можна відібрати за рахунком, організацією, валютою й видом. Різні валюти рахунків не додаються; недоступні внески залишаються порожніми.</Text> : null}
+      {multiple ? <Text size="sm" mt="sm">Банківські рахунки та каси можна відібрати за рахунком, організацією, валютою й видом. Як в 1С, підсумки у валюті рахунку додають суми різних валют без перерахунку; підсумки в EUR — в одній валюті. Недоступні суми залишаються порожніми.</Text> : null}
     </Card> : null}
     {!multiple ? <CashPeriodLegPicker value={exact} disabled={disabled} enabled={enabled}
       managementSupported={cashPeriodSupportsManagement(dataset)} onChange={onExactChange} /> : null}

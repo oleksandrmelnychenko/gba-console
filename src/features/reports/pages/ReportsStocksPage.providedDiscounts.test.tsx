@@ -39,7 +39,7 @@ beforeEach(() => {
 async function currentForm() {
   const view = render(<Providers><ReportsStocksPage consoleScope={false} constructorMode /></Providers>)
   await screen.findByRole('button', { name: 'Продажі за днями' })
-  fireEvent.click(screen.getByRole('combobox', { name: 'Набір даних звіту' }))
+  fireEvent.click(screen.getByRole('combobox', { name: 'Звіт' }))
   fireEvent.click(await screen.findByRole('option', { name: dataset.Name }))
   await waitFor(() => expect((screen.getByRole('combobox', { name: 'Основа наданих знижок' }) as HTMLInputElement).value)
     .toBe('Поточні продажі та повернення'))

@@ -18,7 +18,7 @@ vi.mock('../api/reportsApi', async original => ({ ...await original<typeof impor
 vi.mock('../api/reportWorkspaceApi', async original => ({ ...await original<typeof import('../api/reportWorkspaceApi')>(), getReportDatasets: vi.fn(), getServerReportTemplates: vi.fn(), saveServerReportTemplate: vi.fn() }))
 function Providers({ children }: { children: ReactNode }) { return <MantineProvider env="test"><I18nProvider>{children}</I18nProvider></MantineProvider> }
 async function ready() { const view = render(<Providers><ReportsStocksPage consoleScope={false} /></Providers>); await screen.findByRole('button', { name: 'Продажі за днями' }); return view }
-async function choose(name: string) { fireEvent.click(screen.getByRole('combobox', { name: 'Набір даних звіту' })); fireEvent.click(await screen.findByRole('option', { name })) }
+async function choose(name: string) { fireEvent.click(screen.getByRole('combobox', { name: 'Звіт' })); fireEvent.click(await screen.findByRole('option', { name })) }
 
 describe('native distinct sale-client constructor', () => {
   beforeEach(() => {
@@ -73,7 +73,7 @@ describe('native distinct sale-client constructor', () => {
     vi.mocked(getServerReportTemplates).mockResolvedValue([{ Id: crypto.randomUUID(), Revision: 3, Name: 'Клієнти без періоду', Data: data }]); await ready()
     fireEvent.click(screen.getByRole('button', { name: 'Шаблони' })); fireEvent.click(await screen.findByRole('button', { name: /Клієнти без періоду/ }))
     expect(screen.getByText(/потрібні обидві дати періоду/)).toBeTruthy()
-    expect((screen.getByRole('combobox', { name: 'Набір даних звіту' }) as HTMLInputElement).value).toBe(reportDatasets[0].Name)
+    expect((screen.getByRole('combobox', { name: 'Звіт' }) as HTMLInputElement).value).toBe(reportDatasets[0].Name)
     expect(createStockReport).not.toHaveBeenCalled()
   })
 })

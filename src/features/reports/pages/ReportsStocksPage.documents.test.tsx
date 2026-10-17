@@ -17,7 +17,7 @@ vi.mock('../api/reportsApi',async original=>({...await original<typeof import('.
 vi.mock('../api/reportWorkspaceApi',async original=>({...await original<typeof import('../api/reportWorkspaceApi')>(),getReportDatasets:vi.fn(),getServerReportTemplates:vi.fn(),saveServerReportTemplate:vi.fn()}))
 function Providers({children}:{children:ReactNode}) {return <MantineProvider env="test"><I18nProvider>{children}</I18nProvider></MantineProvider>}
 async function ready() {const view=render(<Providers><ReportsStocksPage consoleScope={false} /></Providers>);await screen.findByRole('button',{name:'Продажі за днями'});return view}
-async function choose(name:string) {fireEvent.click(screen.getByRole('combobox',{name:'Набір даних звіту'}));fireEvent.click(await screen.findByRole('option',{name}))}
+async function choose(name:string) {fireEvent.click(screen.getByRole('combobox',{name:'Звіт'}));fireEvent.click(await screen.findByRole('option',{name}))}
 
 describe('native supplier-return documents and current debt',()=>{
   beforeEach(()=>{

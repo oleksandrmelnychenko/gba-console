@@ -16,7 +16,7 @@ vi.mock('../api/reportWorkspaceApi', async original => ({ ...await original<type
 function Providers({ children }: { children: ReactNode }) { return <MantineProvider env="test"><I18nProvider>{children}</I18nProvider></MantineProvider> }
 async function ready() { const view = render(<Providers><ReportsStocksPage consoleScope={false} /></Providers>); await screen.findByRole('button', { name: 'Продажі за днями' }); return view }
 async function choose() {
-  fireEvent.click(screen.getByRole('combobox', { name: 'Набір даних звіту' }))
+  fireEvent.click(screen.getByRole('combobox', { name: 'Звіт' }))
   fireEvent.click(await screen.findByRole('option', { name: buyerShareDataset.Name }))
 }
 function dates(from = '2026-07-01', to = '2026-07-31') {
@@ -92,7 +92,7 @@ describe('source17 builder and precise contract templates', () => {
     expect((screen.getByLabelText('Частки продажів: порівняння до') as HTMLInputElement).value).toBe('')
     expect((screen.getByRole('button', { name: 'Сформувати' }) as HTMLButtonElement).disabled).toBe(true)
     dates(); previous()
-    fireEvent.click(screen.getByRole('combobox', { name: 'Набір даних звіту' }))
+    fireEvent.click(screen.getByRole('combobox', { name: 'Звіт' }))
     fireEvent.click(await screen.findByRole('option', { name: grossDataset.Name }))
     expect(screen.queryByLabelText('Параметри часток продажів покупцям')).toBeNull()
     fireEvent.submit(container.querySelector('form')!)

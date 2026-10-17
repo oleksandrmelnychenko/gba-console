@@ -16,7 +16,7 @@ vi.mock('../api/reportWorkspaceApi', async original => ({ ...await original<type
 function Providers({ children }: { children: ReactNode }) { return <MantineProvider env="test"><I18nProvider>{children}</I18nProvider></MantineProvider> }
 async function ready() { const view = render(<Providers><ReportsStocksPage consoleScope={false} /></Providers>); await screen.findByRole('button', { name: 'Продажі за днями' }); return view }
 async function choose() {
-  fireEvent.click(screen.getByRole('combobox', { name: 'Набір даних звіту' }))
+  fireEvent.click(screen.getByRole('combobox', { name: 'Звіт' }))
   fireEvent.click(await screen.findByRole('option', { name: revenueDataset.Name }))
 }
 function dates(from = '2026-07-01', to = '2026-07-31') {
