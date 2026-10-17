@@ -23,7 +23,9 @@ export function ReportInlinePreview({ preview }: { preview: NativeReportPreview 
   const inlineFields = workbook?.fields.filter(field => field.placement === 'inline') ?? []
   const sharedGroup = !products && preview.Columns.length > 1 && preview.Columns.every(column => column.Values.length > 1
     && column.Values[0].Caption === preview.Columns[0].Values[0].Caption)
-  const sharedNames = preview.RowSchema.map((_, index) => previewSharedNames(preview.Rows.map(row => row.Values[index]?.Caption ?? '')))
+  const rowCaption = (row: NativeReportPreviewAxis, index: number) => workbookRowCaption(row.Values[index]?.Caption ?? '—',
+    index === preview.RowSchema.length - 1, workbookRows.get(row.SourceIndex), workbook?.fields ?? [])
+  const sharedNames = preview.RowSchema.map((_, index) => previewSharedNames(preview.Rows.map(row => rowCaption(row, index))))
   const amountColumns = new Set(preview.Columns.filter(column => isAmountColumn(column)).map(column => column.SourceIndex))
   const rowHeaders = products ? CURRENT_VPARIVANIE_PRODUCT_CAPTIONS : [...preview.RowSchema.map((level, index) => [level.Caption || `Рівень ${index + 1}`,
     ...(index === preview.RowSchema.length - 1 ? inlineFields.map(field => field.caption) : [])].join(', ')),
@@ -50,7 +52,8 @@ export function ReportInlinePreview({ preview }: { preview: NativeReportPreview 
         <tbody>{preview.Rows.map(row => <tr key={row.SourceIndex}>
           {rowHeaders.map((header, index) => <th scope="row" key={header}>{rowHeaderText({ index, row, preview,
             products: !!products, product: productRows.get(row.SourceIndex), regions: !!regions, region: regionRows.get(row.SourceIndex),
-            attributes: attributeRows.get(row.SourceIndex), workbookRow: workbookRows.get(row.SourceIndex), workbookColumns, sharedNames })}</th>)}
+            attributes: attributeRows.get(row.SourceIndex), workbookRow: workbookRows.get(row.SourceIndex), workbookColumns, sharedNames,
+            caption: rowCaption })}</th>)}
           {preview.Columns.map(column => {
             const value = cells.get(`${row.SourceIndex}:${column.SourceIndex}`)
             return <td key={column.SourceIndex} title={value === undefined ? 'Клітинка відсутня' : value.Kind === 'null' ? 'Явне значення NULL' : undefined}>
@@ -76,15 +79,14 @@ function WorkbookMetadata({ workbook }: { workbook: NativeReportPreview['Workboo
     {workbook.selection.ordering === 'MonthAscending' ? <Text size="xs">Сортування: по місяцях (за зростанням), як у книзі 1С.</Text> : null}
   </>
 }
-function rowHeaderText({ index, row, preview, products, product, regions, region, attributes, workbookRow, workbookColumns, sharedNames }: {
+function rowHeaderText({ index, row, preview, products, product, regions, region, attributes, workbookRow, workbookColumns, sharedNames, caption }: {
   index: number; row: NativeReportPreviewAxis; preview: NativeReportPreview; products: boolean
   product?: CurrentVparivanieProduct; regions: boolean; region?: string | null; attributes?: SettlementCounterpartyAttribute
   workbookRow?: WorkbookRow; workbookColumns: NonNullable<NativeReportPreview['WorkbookPresentation']>['fields']
-  sharedNames: readonly ReadonlySet<string>[]
+  sharedNames: readonly ReadonlySet<string>[]; caption: (row: NativeReportPreviewAxis, index: number) => string
 }): string {
   if (products) return product?.[CURRENT_VPARIVANIE_PRODUCT_FIELDS[index]] ?? '—'
-  if (index < preview.RowSchema.length) return workbookRowCaption(previewCaptionText(row.Values[index]?.Caption ?? '—', sharedNames[index]),
-    index === preview.RowSchema.length - 1, workbookRow, preview.WorkbookPresentation?.fields ?? [])
+  if (index < preview.RowSchema.length) return previewCaptionText(caption(row, index), sharedNames[index])
   if (workbookColumns.length) return workbookAttributeText(workbookRow?.values
     .find(value => value.type === workbookColumns[index - preview.RowSchema.length]?.type))
   if (regions) return region ?? '∅'

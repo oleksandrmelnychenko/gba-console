@@ -78,7 +78,7 @@ export function currentRegionalPdfDefinition(result: CurrentVparivanieRegionalRe
 export async function currentRegionalXlsx(result: CurrentVparivanieRegionalResult): Promise<Blob> {
   const XLSX = await import('xlsx')
   const sheets = currentRegionalSheets(result), book = XLSX.utils.book_new()
-  for (const [name, rows] of Object.entries({ Matrix: sheets.matrix, About: sheets.about, Cells: sheets.facts }))
+  for (const [name, rows] of Object.entries({ 'Звіт': sheets.matrix, 'Про звіт': sheets.about, 'Клітинки': sheets.facts }))
     XLSX.utils.book_append_sheet(book, XLSX.utils.aoa_to_sheet(rows), name)
   return new Blob([XLSX.write(book, { bookType: 'xlsx', type: 'array' }) as ArrayBuffer],
     { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })

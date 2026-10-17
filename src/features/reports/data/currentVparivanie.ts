@@ -4,11 +4,12 @@ import { originalMatrixScope } from './originalVparivanieScope'
 
 export const CURRENT_VPARIVANIE_SOURCE = 39
 export const CURRENT_VPARIVANIE_UNASSIGNED_MANAGER = '00000000000000000000000000000000'
-export const CURRENT_VPARIVANIE_FULL_TITLE = 'Впарювання: повний вибір, залишки на кінець періоду та продажі GBA'
+export const CURRENT_VPARIVANIE_FULL_TITLE = 'Впарювання: повний вибір'
 export const CURRENT_VPARIVANIE_FULL_NOTE = 'Повний вибраний набір: усі сторінки прочитано до кінця в одному SQL Snapshot GBA.'
-export const CURRENT_VPARIVANIE_TITLE = 'Впарювання: залишки на кінець періоду та продажі GBA'
-export const CURRENT_VPARIVANIE_LEGACY_TITLES = ['Впарювання: поточні залишки та продажі GBA'] as const
-export const CURRENT_VPARIVANIE_LEGACY_FULL_TITLES = ['Впарювання: повний вибір, поточні залишки та продажі GBA'] as const
+export const CURRENT_VPARIVANIE_TITLE = 'Впарювання'
+export const CURRENT_VPARIVANIE_LEGACY_TITLES = ['Впарювання: поточні залишки та продажі GBA', 'Впарювання: залишки на кінець періоду та продажі GBA'] as const
+export const CURRENT_VPARIVANIE_LEGACY_FULL_TITLES = ['Впарювання: повний вибір, поточні залишки та продажі GBA',
+  'Впарювання: повний вибір, залишки на кінець періоду та продажі GBA'] as const
 export const isCurrentVparivanieFullTitle = (title: string): boolean =>
   title === CURRENT_VPARIVANIE_FULL_TITLE || (CURRENT_VPARIVANIE_LEGACY_FULL_TITLES as readonly string[]).includes(title)
 export const isCurrentVparivanieTitle = (title: string): boolean => isCurrentVparivanieFullTitle(title)

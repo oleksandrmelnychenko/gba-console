@@ -62,6 +62,14 @@ describe('native report preview transport', () => {
     expect(previewCaptionText('Фенікс [10558]', shared)).toBe('Фенікс')
   })
 
+  it('strips the id in front of the currency and kind of a cash record unless two records print the same caption', () => {
+    const shared = previewSharedNames(['Каса А [41754], USD, Каса', 'Каса А [41755], EUR, Каса', 'Каса П [41761], USD, Каса', 'Каса П [41762], USD, Каса'])
+    expect([...shared]).toEqual(['Каса П, USD, Каса'])
+    expect(previewCaptionText('Каса А [41754], USD, Каса', shared)).toBe('Каса А, USD, Каса')
+    expect(previewCaptionText('Каса П [41762], USD, Каса', shared)).toBe('Каса П [41762], USD, Каса')
+    expect(previewCaptionText('Каса [грн], USD')).toBe('Каса [грн], USD')
+  })
+
   it('rejects unexpected coordinates and oversized result pages', () => {
     expect(() => normalizeNativeReportPreview({ Preview: { ...preview, Cells: [{ ...preview.Cells[0], RowSourceIndex: 11 }] } })).toThrow('клітинки')
     expect(() => normalizeNativeReportPreview({ Preview: { ...preview, Page: { ...preview.Page, Limit: 200 } } })).toThrow('некоректний')

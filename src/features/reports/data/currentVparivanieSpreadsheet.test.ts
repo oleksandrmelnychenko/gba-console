@@ -26,12 +26,12 @@ it('keeps seven flat display columns separate from one semantic Product axis and
   expect(getSpreadsheetNumberFormatter(sheet,0)).toBeUndefined()
   expect(getSpreadsheetNumberFormatter(sheet,7,true)?.format(0.00000001)).toBe('0.00000001')
 })
-it('reads workbooks titled before and after the period-end stock change', () => {
-  for (const title of ['Впарювання: поточні залишки та продажі GBA', 'Впарювання: залишки на кінець періоду та продажі GBA']) {
+it('reads workbooks titled before and after the 1C name change', () => {
+  for (const title of ['Впарювання: поточні залишки та продажі GBA', 'Впарювання: залишки на кінець періоду та продажі GBA', 'Впарювання']) {
     const input = rows(); input[0] = [title]
     expect(buildSpreadsheetSheet('Матриця', input).columns.slice(0,7)).toEqual(CURRENT_VPARIVANIE_PRODUCT_CAPTIONS)
   }
-  expect(CURRENT_VPARIVANIE_TITLE).toBe('Впарювання: залишки на кінець періоду та продажі GBA')
+  expect(CURRENT_VPARIVANIE_TITLE).toBe('Впарювання')
 })
 it('round trips exact digit-only text and quoted multiline attrs without browser totals', () => {
   const input = rows(); input[11][2] = 'line1\nline2'

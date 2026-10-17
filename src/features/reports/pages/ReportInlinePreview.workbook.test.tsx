@@ -35,3 +35,22 @@ it('keeps retained day settings outside row product columns and displays the exp
   expect(screen.getByText('Сортування: по місяцях (за зростанням), як у книзі 1С.')).toBeTruthy()
   expect(screen.queryByRole('columnheader', { name: 'Артикул' })).toBeNull()
 })
+it('prints each cash desk in its own currency without the id unless two records would print the same caption', () => {
+  const raw = workbookPreview()
+  const records = [['Каса А [41754]', 'USD'], ['Каса А [41755]', 'EUR'], ['Каса П [41761]', 'USD'], ['Каса П [41762]', 'USD']] as const
+  raw.RowSchema = [{ Identity: 'PaymentBalanceRecord', Caption: 'Каса / рахунок' }]
+  raw.Rows = records.map(([caption], index) => ({ Ordinal: index, SourceIndex: 12 + index, Values: [{ Caption: caption }] }))
+  raw.Cells = records.map((_, index) => ({ RowSourceIndex: 12 + index, ColumnSourceIndex: 0,
+    Value: { Kind: 'null' as const, Value: null, Provenance: 'producerCell' } }))
+  raw.Page = { ...raw.Page, TotalVisibleRows: records.length, ReturnedRows: records.length }
+  raw.workbookPresentation.rows = records.map(([, currency], index) => ({ rowSourceIndex: 12 + index,
+    rowKeySha256: String(index + 1).repeat(64), values: [{ type: 30, state: 'known' as const, values: [currency], inputSha256: null },
+      { type: 33, state: 'known' as const, values: ['Каса'], inputSha256: null }],
+    currencyWitnesses: [{ id: String(index + 1), netUid: `0000000${index + 1}-2222-3333-4444-555555555555`, name: currency, code: null, available: true }] }))
+  render(<MantineProvider env="test"><ReportInlinePreview preview={normalizeNativeReportPreview({ Preview: raw })} /></MantineProvider>)
+  expect(screen.getByRole('rowheader', { name: 'Каса А, USD, Каса' })).toBeTruthy()
+  expect(screen.getByRole('rowheader', { name: 'Каса А, EUR, Каса' })).toBeTruthy()
+  expect(screen.getByRole('rowheader', { name: 'Каса П [41761], USD, Каса' })).toBeTruthy()
+  expect(screen.getByRole('rowheader', { name: 'Каса П [41762], USD, Каса' })).toBeTruthy()
+  expect(screen.getByRole('columnheader', { name: 'Каса / рахунок, Валюта рахунку (каси), Вид коштів' })).toBeTruthy()
+})

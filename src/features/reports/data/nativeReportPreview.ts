@@ -241,7 +241,7 @@ export function previewAmountText(value: string): string {
 }
 
 export function previewCaptionText(caption: string, sharedNames?: ReadonlySet<string>): string {
-  const name = caption.replace(/\s+\[(?:id=)?-?\d+\]$/i, '')
+  const name = caption.replace(/\s+\[(?:id=)?-?\d+\](?=,\s|$)/gi, '')
   return sharedNames?.has(name) ? caption : name
 }
 
