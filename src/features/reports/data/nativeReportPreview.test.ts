@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { normalizeNativeReportPreview, previewCellText, previewNumberText, previewScalarText } from './nativeReportPreview'
+import { normalizeNativeReportPreview, previewAmountText, previewCaptionText, previewCellText, previewNumberText, previewScalarText } from './nativeReportPreview'
 
 const preview = {
   Version: 1, ResultSha256: 'a'.repeat(64), PresentationOnly: true,
@@ -37,6 +37,22 @@ describe('native report preview transport', () => {
     expect(previewCellText({ Kind: 'text', Value: '12345.5', Provenance: 'producerCell' })).toBe('12345.5')
     expect(previewCellText({ Kind: 'null', Value: null, Provenance: 'producerCell' })).toBe('∅')
     expect(previewCellText(undefined)).toBe('—')
+  })
+
+  it('prints money and percentages with two decimals like the exported #,##0.00 cells', () => {
+    expect(previewAmountText('2260.3')).toBe('2\u00a0260,30')
+    expect(previewAmountText('-6.6')).toBe('-6,60')
+    expect(previewAmountText('14463.81')).toBe('14\u00a0463,81')
+    expect(previewAmountText('0')).toBe('0,00')
+    expect(previewAmountText('0.123456')).toBe('0,123456')
+    expect(previewAmountText('n/a')).toBe('n/a')
+  })
+
+  it('drops the uniqueness id from a name but keeps names that merely end in brackets', () => {
+    expect(previewCaptionText('ТОВ «АМГ «КОНКОРД» [10557]')).toBe('ТОВ «АМГ «КОНКОРД»')
+    expect(previewCaptionText('Клієнт [id=12]')).toBe('Клієнт')
+    expect(previewCaptionText('Каса [грн]')).toBe('Каса [грн]')
+    expect(previewCaptionText('СКЛАД -1')).toBe('СКЛАД -1')
   })
 
   it('rejects unexpected coordinates and oversized result pages', () => {

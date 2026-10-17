@@ -161,7 +161,7 @@ it('opens «Взаємороз всі.xls» on current documents without the thr
   expect(opened).toMatchObject({ settlementReadMode: 0, sourceBuyerSubtree: { BuyerRootId: FENIX_BUYERS_ROOT_ID },
     sourceCounterpartyGroups: { Version: 1, SourceWorld: 'fenix', IncludeGroupIds: [],
       ExcludeGroupIds: ['A156005056C0000811E182DA08AE7D43', 'B1A7005056C0000811E18EBBAA67CF52', '8AB2005056C0000811DEFEBB3581EBEC'] },
-    workbookPresentation: { version: 1, additionalFields: [30, 60, 61], ordering: null } })
+    workbookPresentation: { version: 1, additionalFields: [60, 61], ordering: null } })
   expect(opened.selections).toEqual([])
   expect(opened.sorted.Row.map(row => row.type)).toEqual([4, 41, 76])
   expect(datasetConfigurationError(opened, dataset)).toBeNull()

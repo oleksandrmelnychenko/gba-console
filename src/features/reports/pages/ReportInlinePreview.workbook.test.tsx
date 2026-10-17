@@ -5,9 +5,10 @@ import { normalizeNativeReportPreview } from '../data/nativeReportPreview'
 import { workbookPreview } from '../data/workbookPresentation.test-fixtures'
 import { ReportInlinePreview } from './ReportInlinePreview'
 
-it('appends selected currency/kind to the account caption while leaving explicit financialNULL unchanged', () => {
+it('appends selected currency/kind values to the account caption like 1C «Разом з вимірами» while leaving explicit financialNULL unchanged', () => {
   render(<MantineProvider env="test"><ReportInlinePreview preview={normalizeNativeReportPreview({ Preview: workbookPreview() })} /></MantineProvider>)
-  expect(screen.getByRole('rowheader', { name: 'Каса №1, Валюта рахунку (каси): Гривня (UAH), Вид коштів: Каса' })).toBeTruthy()
+  expect(screen.getByRole('rowheader', { name: 'Каса №1, Гривня (UAH), Каса' })).toBeTruthy()
+  expect(screen.getByRole('columnheader', { name: /, Валюта рахунку \(каси\), Вид коштів$/ })).toBeTruthy()
   expect(screen.getByRole('cell', { name: '∅' })).toBeTruthy()
   expect(screen.queryByRole('columnheader', { name: 'Основний менеджер покупця' })).toBeNull()
 })
@@ -30,7 +31,7 @@ it('keeps retained day settings outside row product columns and displays the exp
   raw.workbookPresentation.selection = { version: 1, additionalFields: [2], ordering: 'MonthAscending' }
   raw.workbookPresentation.fields = [{ type: 2, caption: 'Артикул', placement: 'retainedSetting' }]; raw.workbookPresentation.rows = []
   render(<MantineProvider env="test"><ReportInlinePreview preview={normalizeNativeReportPreview({ Preview: raw })} /></MantineProvider>)
-  expect(screen.getByText(/Значення товарів на рівні день/)).toBeTruthy()
-  expect(screen.getByText('Порядок форми: місяць за зростанням.')).toBeTruthy()
+  expect(screen.getByText(/Додаткові поля книги: Артикул\. Як і в 1С, у рядках «день \/ організація» вони не заповнюються/)).toBeTruthy()
+  expect(screen.getByText('Сортування: по місяцях (за зростанням), як у книзі 1С.')).toBeTruthy()
   expect(screen.queryByRole('columnheader', { name: 'Артикул' })).toBeNull()
 })

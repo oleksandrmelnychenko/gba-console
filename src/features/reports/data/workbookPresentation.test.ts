@@ -111,11 +111,11 @@ it('keeps account rows when an older server advertises the currency row 41 inste
   expect(workbookConfigurationError(currency, presentedCurrencyRecordCashDataset)).toBeTruthy()
   expect(availableBug1274WorkbookLaunches([older])[0].notice).not.toContain(CASH_CURRENCY_RECORD_NOTICE)
 })
-it('defaults full settlements to manager/region but excludes both from the debtor form', () => {
+it('defaults full settlements to the 1C manager and region columns without repeating the currency level, and the debtor form to currency', () => {
   const request = defaultDatasetRequest(presentedSettlementDataset, '2026-10-01', '2026-10-04')
   const full = bug1274WorkbookRequest(request, launch('Взаємороз всі.xls', presentedSettlementDataset))
   const debtor = bug1274WorkbookRequest(request, { ...launch('ДБіторка.xls', presentedSettlementDataset), currencyAxis: false })
-  expect(full.workbookPresentation).toEqual({ version: 1, additionalFields: [30, 60, 61], ordering: null })
+  expect(full.workbookPresentation).toEqual({ version: 1, additionalFields: [60, 61], ordering: null })
   expect(debtor.workbookPresentation).toEqual({ version: 1, additionalFields: [30], ordering: null })
   expect(debtor.sorted.Row.map(row => row.type)).toEqual([4, 76])
   expect(bug1274WorkbookRequest({ ...request, groupedSettlementPeriod: { Version: 1, SourceWorld: 'Amg', CurrencyBasis: 'SettlementCurrency' } },

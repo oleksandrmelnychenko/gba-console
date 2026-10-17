@@ -79,7 +79,7 @@ it('describes current stock only when the server marks it current', () => {
   view.unmount()
   show({ ...request, ...times, IsCurrentSnapshot: true, HasPeriod: false })
   expect(screen.getByText('Поточний стан')).toBeTruthy()
-  expect(screen.getByText(`Спостереження сервера: ${times.ObservationStartedAtUtc} — ${times.ObservationCompletedAtUtc}`)).toBeTruthy()
+  expect(screen.getByText('Дані прочитано: 27.09.2026 13:00')).toBeTruthy()
 })
 
 it('retains repeated notes and hides exact technical filter identities by default', () => {
@@ -97,4 +97,27 @@ it('prints decimal cells with 1C thousands separators and a decimal comma', () =
   show(request, { Kind: 'decimal', Value: '104090.44', Provenance: 'producerCell' })
   const table = screen.getByRole('region', { name: 'Таблиця попереднього перегляду' })
   expect(table.querySelector('td')?.textContent).toBe('104\u00a0090,44')
+})
+
+it('shows the workbook names without technical ids, money with two decimals and one shared column group once', () => {
+  const preview = normalizeNativeReportPreview({ Preview: {
+    Version: 1, ResultSha256: 'a'.repeat(64), PresentationOnly: true, Request: request,
+    Page: { Offset: 0, Limit: 50, TotalVisibleRows: 1, ReturnedRows: 1, HasMore: false },
+    RowSchema: [{ Caption: 'Дата' }, { Caption: 'Організація' }], ColumnSchema: [{ Caption: 'Група' }, { Caption: 'Показник' }],
+    Rows: [{ Ordinal: 0, SourceIndex: 1, Values: [{ Caption: '01.09.2026' }, { Caption: 'ТОВ «АМГ «КОНКОРД» [10557]' }] }],
+    Columns: [
+      { Ordinal: 0, SourceIndex: 0, Values: [{ Caption: 'Валовий прибуток' }, { Caption: 'Продажі без ПДВ, EUR',
+        Identity: { Kind: 'reportField', Value: 'SalesValueWithoutVAT', Provenance: 'columnAxisKey' } }] },
+      { Ordinal: 1, SourceIndex: 1, Values: [{ Caption: 'Валовий прибуток' }, { Caption: 'Кількість',
+        Identity: { Kind: 'reportField', Value: 'SalesQuantity', Provenance: 'columnAxisKey' } }] },
+    ],
+    Cells: [{ RowSourceIndex: 1, ColumnSourceIndex: 0, Value: { Kind: 'decimal', Value: '2260.3', Provenance: 'producerCell' } },
+      { RowSourceIndex: 1, ColumnSourceIndex: 1, Value: { Kind: 'decimal', Value: '3527', Provenance: 'producerCell' } }],
+  } })
+  render(<MantineProvider env="test"><ReportInlinePreview preview={preview} /></MantineProvider>)
+  const table = within(screen.getByRole('region', { name: 'Таблиця попереднього перегляду' }))
+  expect(table.getByRole('rowheader', { name: 'ТОВ «АМГ «КОНКОРД»' })).toBeTruthy()
+  expect(table.getByRole('columnheader', { name: 'Продажі без ПДВ, EUR' })).toBeTruthy()
+  expect(table.getByRole('cell', { name: '2\u00a0260,30' })).toBeTruthy()
+  expect(table.getByRole('cell', { name: '3\u00a0527' })).toBeTruthy()
 })

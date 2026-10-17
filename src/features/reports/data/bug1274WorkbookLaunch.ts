@@ -234,7 +234,7 @@ function presentationWorkbookRequest(request: ReportRequestBody, launch: Workboo
     && (launch.fileName === 'Взаємороз всі.xls' || launch.fileName === 'ДБіторка.xls'))
     return { ...structuredClone(request), workbookPresentation: { version: 1,
       additionalFields: launch.fileName === 'ДБіторка.xls' || groupedSettlementPeriod(requestGroupedSettlementPeriod(request))?.SourceWorld !== 'Fenix'
-        ? [30] : [30, 60, 61], ordering: null } }
+        ? [30] : [60, 61], ordering: null } }
   if (launch.fileName !== 'Ведомость по денежным средствам.xls' || !cashWorkbookPresentationSupported(launch.dataset)
     || !groupedCashPeriod(requestGroupedCashPeriod(request))) return request
   const rowType = cashCurrencyRecordWorkbookSupported(launch.dataset) ? 42 : 40

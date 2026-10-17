@@ -3,7 +3,7 @@ import { Alert, Badge, Stack, Text } from '@mantine/core'
 import { profitReadModeLabel } from '../data/profitReadMode'
 import { settlementReadModeLabel } from '../data/settlementReadMode'
 import { cashReadModeLabel } from '../data/cashReadMode'
-import { previewCellText, previewNumberText, type CurrentVparivanieProduct, type NativeReportPreview, type NativeReportPreviewAxis, type NativeReportPreviewFilter, type NativeReportPreviewRequest } from '../data/nativeReportPreview'
+import { previewAmountText, previewCaptionText, previewCellText, previewNumberText, type CurrentVparivanieProduct, type NativeReportPreview, type NativeReportPreviewAxis, type NativeReportPreviewFilter, type NativeReportPreviewRequest } from '../data/nativeReportPreview'
 import { CURRENT_VPARIVANIE_PRODUCT_CAPTIONS, CURRENT_VPARIVANIE_PRODUCT_FIELDS, currentVparivanieQuantityText } from '../data/currentVparivanie'
 import { currentVparivanieSecondTier } from '../data/currentVparivanieColumns'
 import './report-inline-preview.css'
@@ -20,7 +20,12 @@ export function ReportInlinePreview({ preview }: { preview: NativeReportPreview 
   const workbook = preview.WorkbookPresentation
   const workbookRows = new Map(workbook?.rows.map(row => [row.rowSourceIndex, row]))
   const workbookColumns = workbook?.fields.filter(field => field.placement === 'column') ?? []
-  const rowHeaders = products ? CURRENT_VPARIVANIE_PRODUCT_CAPTIONS : [...preview.RowSchema.map((level, index) => level.Caption || `Рівень ${index + 1}`),
+  const inlineFields = workbook?.fields.filter(field => field.placement === 'inline') ?? []
+  const sharedGroup = !products && preview.Columns.length > 1 && preview.Columns.every(column => column.Values.length > 1
+    && column.Values[0].Caption === preview.Columns[0].Values[0].Caption)
+  const amountColumns = new Set(preview.Columns.filter(column => isAmountColumn(column)).map(column => column.SourceIndex))
+  const rowHeaders = products ? CURRENT_VPARIVANIE_PRODUCT_CAPTIONS : [...preview.RowSchema.map((level, index) => [level.Caption || `Рівень ${index + 1}`,
+    ...(index === preview.RowSchema.length - 1 ? inlineFields.map(field => field.caption) : [])].join(', ')),
     ...(attributes ? ['Основний менеджер покупця', 'Код по региону'] : []), ...(regions ? ['Код по региону'] : []),
     ...workbookColumns.map(field => field.caption)]
   return <section className="app-section-card report-inline-preview" aria-label="Попередній перегляд звіту">
@@ -30,13 +35,13 @@ export function ReportInlinePreview({ preview }: { preview: NativeReportPreview 
     </div>
     <ReportAttribution request={preview.Request} />
     <WorkbookMetadata workbook={workbook} />
-    <Text size="xs" c="dimmed">Порожня клітинка: — · явне значення NULL: ∅. Підсумки показано лише якщо вони є в даних сервера.</Text>
+    <Text size="xs" c="dimmed">«—» — значення немає; «∅» — суму не визначено, бо в документах бракує даних. На екрані показано рядки без підсумків; підсумки є у файлах Excel і PDF.</Text>
     <div className="report-inline-preview__scroll" tabIndex={0} role="region" aria-label="Таблиця попереднього перегляду">
       <table>
         <thead><tr>
           {rowHeaders.map((header, index) => <th scope="col" rowSpan={products ? 2 : undefined} key={`row-${index}`}>{header}</th>)}
           {preview.Columns.map(column => <th scope="col" key={column.SourceIndex}>
-            {(products ? column.Values.slice(0, 1) : column.Values).map(value => value.Caption).filter(Boolean).join(' / ') || `Стовпець ${column.Ordinal + 1}`}
+            {(products ? column.Values.slice(0, 1) : sharedGroup ? column.Values.slice(1) : column.Values).map(value => value.Caption).filter(Boolean).join(' / ') || `Стовпець ${column.Ordinal + 1}`}
           </th>)}
         </tr>{products ? <tr>{preview.Columns.map(column => <th scope="col" key={column.SourceIndex}>
           {currentVparivanieSecondTier(column)}
@@ -49,7 +54,9 @@ export function ReportInlinePreview({ preview }: { preview: NativeReportPreview 
             const value = cells.get(`${row.SourceIndex}:${column.SourceIndex}`)
             return <td key={column.SourceIndex} title={value === undefined ? 'Клітинка відсутня' : value.Kind === 'null' ? 'Явне значення NULL' : undefined}>
               {products && value?.Kind === 'decimal' && typeof value.Value === 'string'
-                ? previewNumberText(currentVparivanieQuantityText(value.Value)) : previewCellText(value)}
+                ? previewNumberText(currentVparivanieQuantityText(value.Value))
+                : amountColumns.has(column.SourceIndex) && value?.Kind === 'decimal' && typeof value.Value === 'string'
+                  ? previewAmountText(value.Value) : previewCellText(value)}
             </td>
           })}
         </tr>)}</tbody>
@@ -63,9 +70,9 @@ function WorkbookMetadata({ workbook }: { workbook: NativeReportPreview['Workboo
   if (!workbook) return null
   return <>
     {workbook.fields.some(field => field.placement === 'retainedSetting') ? <Text size="xs" c="dimmed">
-      Збережені налаштування книги: {workbook.fields.map(field => field.caption).join('; ')}. Значення товарів на рівні день / організація не створюються.
+      Додаткові поля книги: {workbook.fields.map(field => workbookFieldCaption(field.caption)).join('; ')}. Як і в 1С, у рядках «день / організація» вони не заповнюються.
     </Text> : null}
-    {workbook.selection.ordering === 'MonthAscending' ? <Text size="xs">Порядок форми: місяць за зростанням.</Text> : null}
+    {workbook.selection.ordering === 'MonthAscending' ? <Text size="xs">Сортування: по місяцях (за зростанням), як у книзі 1С.</Text> : null}
   </>
 }
 function rowHeaderText({ index, row, preview, products, product, regions, region, attributes, workbookRow, workbookColumns }: {
@@ -74,7 +81,7 @@ function rowHeaderText({ index, row, preview, products, product, regions, region
   workbookRow?: WorkbookRow; workbookColumns: NonNullable<NativeReportPreview['WorkbookPresentation']>['fields']
 }): string {
   if (products) return product?.[CURRENT_VPARIVANIE_PRODUCT_FIELDS[index]] ?? '—'
-  if (index < preview.RowSchema.length) return workbookRowCaption(row.Values[index]?.Caption ?? '—',
+  if (index < preview.RowSchema.length) return workbookRowCaption(previewCaptionText(row.Values[index]?.Caption ?? '—'),
     index === preview.RowSchema.length - 1, workbookRow, preview.WorkbookPresentation?.fields ?? [])
   if (workbookColumns.length) return workbookAttributeText(workbookRow?.values
     .find(value => value.type === workbookColumns[index - preview.RowSchema.length]?.type))
@@ -86,7 +93,16 @@ function workbookRowCaption(caption: string, last: boolean, row: WorkbookRow | u
   fields: NonNullable<NativeReportPreview['WorkbookPresentation']>['fields']): string {
   if (!last || !row) return caption
   return [caption, ...fields.filter(field => field.placement === 'inline')
-    .map(field => `${field.caption}: ${workbookAttributeText(row.values.find(value => value.type === field.type))}`)].join(', ')
+    .map(field => workbookAttributeText(row.values.find(value => value.type === field.type)))].join(', ')
+}
+
+function workbookFieldCaption(caption: string): string {
+  return caption.replace(/\(Вместе,/g, '(Разом,')
+}
+
+function isAmountColumn(column: NativeReportPreviewAxis): boolean {
+  const field = column.Values.at(-1)?.Identity
+  return field?.Kind === 'reportField' && typeof field.Value === 'string' && !/Quantity|Count/i.test(field.Value)
 }
 
 // Repeated server notes/filters remain separate and ordered. Their stable text
@@ -104,7 +120,7 @@ function filterText(filter: NativeReportPreviewFilter): string {
     if (/^(?:\[id=\d+\]|[\da-f]{8}-[\da-f]{4}-[\da-f]{4}-[\da-f]{4}-[\da-f]{12}|(?:0x)?[\da-f]{32}(?:[\da-f]{32})?)$/i.test(value.trim()))
       return 'Обране точне значення'
     // Captioned values retain the caption; a numeric machine suffix is not a business label.
-    return value.replace(/\s*\[id=\d+\]\s*$/i, '')
+    return previewCaptionText(value.trim())
   })
   const description = `${filter.Field} ${filter.Condition}: ${values.length ? values.join(', ') : '—'}`
   return filter.IgnoredReason ? `${description} (${filter.IgnoredReason})` : description
@@ -131,15 +147,15 @@ function SnapshotAttribution({ request }: { request: NativeReportPreviewRequest 
   if (request.DataSource === 'NativeCurrentVparivanie') return <Alert color="blue" title="Залишки на кінець періоду та період продажів">
     Залишки показують вільний залишок GBA на кінець вибраного періоду; до останньої синхронізації залишків з 1С вони порожні. Вибраний період стосується продажів.
     {request.ObservationStartedAtUtc && request.ObservationCompletedAtUtc
-      ? <Text size="sm">Спостереження сервера: {request.ObservationStartedAtUtc} — {request.ObservationCompletedAtUtc}</Text>
-      : <Text size="sm">Час спостереження сервер не передав повністю.</Text>}
+      ? <Text size="sm">Дані прочитано: {kyivTimestamp(request.ObservationCompletedAtUtc)}</Text>
+      : null}
   </Alert>
   if (!request.IsCurrentSnapshot) return null
   return <Alert color="blue" title="Поточний стан">
     Поточний знімок даних, а не історичний стан на вибрану дату.
     {request.ObservationStartedAtUtc && request.ObservationCompletedAtUtc
-      ? <Text size="sm">Спостереження сервера: {request.ObservationStartedAtUtc} — {request.ObservationCompletedAtUtc}</Text>
-      : <Text size="sm">Час спостереження сервер не передав повністю.</Text>}
+      ? <Text size="sm">Дані прочитано: {kyivTimestamp(request.ObservationCompletedAtUtc)}</Text>
+      : <Text size="sm">Час читання даних сервер не передав.</Text>}
   </Alert>
 }
 
@@ -181,7 +197,15 @@ function NoteAttribution({ notes }: { notes: string[] | null }) {
   if (notes === null) return <Text size="sm">Сервер не передав примітки до розрахунку.</Text>
   if (notes.length === 0) return <Text size="sm">Додаткових приміток сервера немає.</Text>
   return <div>
-    <Text size="sm" fw={600}>Примітки сервера</Text>
+    <Text size="sm" fw={600}>Як розраховано</Text>
     <ul>{entries(notes).map(item => <li key={item.key}>{item.text}</li>)}</ul>
   </div>
+}
+
+function kyivTimestamp(value: string): string {
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return value
+  const parts = Object.fromEntries(new Intl.DateTimeFormat('uk-UA', { timeZone: 'Europe/Kyiv', year: 'numeric', month: '2-digit',
+    day: '2-digit', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).formatToParts(date).map(part => [part.type, part.value]))
+  return `${parts.day}.${parts.month}.${parts.year} ${parts.hour}:${parts.minute}`
 }
