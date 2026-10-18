@@ -1,9 +1,10 @@
 import { settlementAttributeText, type SettlementCounterpartyAttribute } from '../data/settlementSourceAttributes'
+import { Fragment } from 'react'
 import { Alert, Badge, Stack, Text } from '@mantine/core'
 import { profitReadModeLabel } from '../data/profitReadMode'
 import { settlementReadModeLabel } from '../data/settlementReadMode'
 import { cashReadModeLabel } from '../data/cashReadMode'
-import { previewAmountText, previewCaptionText, previewCellText, previewNumberText, previewSharedNames, type CurrentVparivanieProduct, type NativeReportPreview, type NativeReportPreviewAxis, type NativeReportPreviewFilter, type NativeReportPreviewRequest } from '../data/nativeReportPreview'
+import { isZeroPreviewScalar, previewAmountText, previewBlanksZero, previewCaptionText, previewCellText, previewNumberText, previewSharedNames, type CurrentVparivanieProduct, type NativeReportPreview, type NativeReportPreviewAxis, type NativeReportPreviewCell, type NativeReportPreviewFilter, type NativeReportPreviewRequest, type NativeReportPreviewScalar } from '../data/nativeReportPreview'
 import { CURRENT_VPARIVANIE_PRODUCT_CAPTIONS, CURRENT_VPARIVANIE_PRODUCT_FIELDS, currentVparivanieQuantityText } from '../data/currentVparivanie'
 import { currentVparivanieSecondTier } from '../data/currentVparivanieColumns'
 import './report-inline-preview.css'
@@ -27,6 +28,24 @@ export function ReportInlinePreview({ preview }: { preview: NativeReportPreview 
     index === preview.RowSchema.length - 1, workbookRows.get(row.SourceIndex), workbook?.fields ?? [])
   const sharedNames = preview.RowSchema.map((_, index) => previewSharedNames(preview.Rows.map(row => rowCaption(row, index))))
   const amountColumns = new Set(preview.Columns.filter(column => isAmountColumn(column)).map(column => column.SourceIndex))
+  const blanksZero = previewBlanksZero(preview.Request?.DataSource)
+  const totals = preview.Totals
+  const groupTotals = new Map<number, NonNullable<NativeReportPreview['Totals']>['Groups']>()
+  for (const group of totals?.Groups ?? []) groupTotals.set(group.RowSourceIndex, [...(groupTotals.get(group.RowSourceIndex) ?? []), group]
+    .sort((left, right) => left.Level - right.Level))
+  const valueText = (value: NativeReportPreviewScalar | undefined, columnSourceIndex: number) =>
+    blanksZero && isZeroPreviewScalar(value) ? ''
+      : products && value?.Kind === 'decimal' && typeof value.Value === 'string'
+        ? previewNumberText(currentVparivanieQuantityText(value.Value))
+        : amountColumns.has(columnSourceIndex) && value?.Kind === 'decimal' && typeof value.Value === 'string'
+          ? previewAmountText(value.Value) : previewCellText(value)
+  const totalCells = (values: NativeReportPreviewCell[]) => {
+    const byColumn = new Map(values.map(cell => [cell.ColumnSourceIndex, cell.Value]))
+    return preview.Columns.map(column => {
+      const value = byColumn.get(column.SourceIndex)
+      return <td key={column.SourceIndex}>{value === undefined ? '' : valueText(value, column.SourceIndex)}</td>
+    })
+  }
   const rowHeaders = products ? CURRENT_VPARIVANIE_PRODUCT_CAPTIONS : [...preview.RowSchema.map((level, index) => [level.Caption || `Рівень ${index + 1}`,
     ...(index === preview.RowSchema.length - 1 ? inlineFields.map(field => field.caption) : [])].join(', ')),
     ...(attributes ? ['Основний менеджер покупця', 'Код по региону'] : []), ...(regions ? ['Код по региону'] : []),
@@ -38,7 +57,10 @@ export function ReportInlinePreview({ preview }: { preview: NativeReportPreview 
     </div>
     <ReportAttribution request={preview.Request} />
     <WorkbookMetadata workbook={workbook} />
-    <Text size="xs" c="dimmed">«—» — значення немає; «∅» — суму не визначено, бо в документах бракує даних. На екрані показано рядки без підсумків; підсумки є у файлах Excel і PDF.</Text>
+    <Text size="xs" c="dimmed">{['«—» — значення немає; «∅» — суму не визначено, бо в документах бракує даних.',
+      ...(blanksZero ? ['Порожня клітинка — нуль, як у 1С.'] : []),
+      totals ? 'Підсумки груп показано над їхніми рядками, як у 1С; загальний підсумок — унизу таблиці.'
+        : 'На екрані показано рядки без підсумків; підсумки є у файлах Excel і PDF.'].join(' ')}</Text>
     <div className="report-inline-preview__scroll" tabIndex={0} role="region" aria-label="Таблиця попереднього перегляду">
       <table>
         <thead><tr>
@@ -49,7 +71,15 @@ export function ReportInlinePreview({ preview }: { preview: NativeReportPreview 
         </tr>{products ? <tr>{preview.Columns.map(column => <th scope="col" key={column.SourceIndex}>
           {currentVparivanieSecondTier(column)}
         </th>)}</tr> : null}</thead>
-        <tbody>{preview.Rows.map(row => <tr key={row.SourceIndex}>
+        <tbody>{preview.Rows.map(row => <Fragment key={row.SourceIndex}>
+          {(groupTotals.get(row.SourceIndex) ?? []).map(group => <tr key={`group-${group.Level}`}
+            className="report-inline-preview__group-total" data-level={group.Level}>
+            <th scope="row" colSpan={rowHeaders.length}>
+              {`Підсумок: ${previewCaptionText(rowCaption(row, group.Level), sharedNames[group.Level])}`}
+            </th>
+            {totalCells(group.Values)}
+          </tr>)}
+          <tr>
           {rowHeaders.map((header, index) => <th scope="row" key={header}>{rowHeaderText({ index, row, preview,
             products: !!products, product: productRows.get(row.SourceIndex), regions: !!regions, region: regionRows.get(row.SourceIndex),
             attributes: attributeRows.get(row.SourceIndex), workbookRow: workbookRows.get(row.SourceIndex), workbookColumns, sharedNames,
@@ -57,16 +87,19 @@ export function ReportInlinePreview({ preview }: { preview: NativeReportPreview 
           {preview.Columns.map(column => {
             const value = cells.get(`${row.SourceIndex}:${column.SourceIndex}`)
             return <td key={column.SourceIndex} title={value === undefined ? 'Клітинка відсутня' : value.Kind === 'null' ? 'Явне значення NULL' : undefined}>
-              {products && value?.Kind === 'decimal' && typeof value.Value === 'string'
-                ? previewNumberText(currentVparivanieQuantityText(value.Value))
-                : amountColumns.has(column.SourceIndex) && value?.Kind === 'decimal' && typeof value.Value === 'string'
-                  ? previewAmountText(value.Value) : previewCellText(value)}
+              {valueText(value, column.SourceIndex)}
             </td>
           })}
-        </tr>)}</tbody>
+          </tr>
+        </Fragment>)}</tbody>
+        {totals ? <tfoot><tr className="report-inline-preview__grand-total">
+          <th scope="row" colSpan={rowHeaders.length}>Загальний підсумок</th>
+          {totalCells(totals.Values)}
+        </tr></tfoot> : null}
       </table>
     </div>
-    {preview.Page.HasMore ? <Text size="xs" c="dimmed">Показано перші {preview.Page.ReturnedRows} рядків. Повний результат доступний у Excel або PDF.</Text> : null}
+    {preview.Page.HasMore ? <Text size="xs" c="dimmed">Показано перші {preview.Page.ReturnedRows} рядків. Повний результат доступний у Excel або PDF.{totals
+      ? ` Загальний підсумок — за всіма ${preview.Page.TotalVisibleRows} рядками звіту.` : ''}</Text> : null}
   </section>
 }
 

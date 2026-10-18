@@ -4,13 +4,14 @@ import { expect, it } from 'vitest'
 import { normalizeNativeReportPreview } from '../data/nativeReportPreview'
 import { knownSettlementAttribute, settlementAttributePreview } from '../data/settlementSourceAttributes.test-fixtures'
 import { ReportInlinePreview } from './ReportInlinePreview'
-it('shows the original additional headers and server strings without changing the three financial axes or zero cell', () => {
+it('shows the original additional headers and server strings without changing the three financial axes, zero blank like 1C', () => {
   const view = render(<MantineProvider env="test"><ReportInlinePreview preview={normalizeNativeReportPreview({ Preview: settlementAttributePreview() })} /></MantineProvider>)
   const table = screen.getByRole('table')
   expect(within(table).getByRole('columnheader', { name: 'Основний менеджер покупця' })).toBeTruthy()
   expect(within(table).getByRole('columnheader', { name: 'Код по региону' })).toBeTruthy()
   expect(view.container.textContent).toContain(' Manager🙂 '); expect(view.container.textContent).toContain(' B🙂 ')
-  expect(within(table).getByRole('cell', { name: '0' })).toBeTruthy()
+  expect(within(table).queryByRole('cell', { name: '0' })).toBeNull()
+  expect(within(table).getAllByRole('cell').some(cell => cell.textContent === '' && cell.title === '')).toBe(true)
   expect(view.container.textContent).not.toContain('b'.repeat(64))
 })
 it('renders observed unassigned fields and treats source markup as text', () => {
@@ -19,11 +20,12 @@ it('renders observed unassigned fields and treats source markup as text', () => 
   const table = screen.getByRole('table'); expect(within(table).getByRole('rowheader', { name: '∅' })).toBeTruthy()
   expect(view.container.textContent).toContain('<img src=x>'); expect(view.container.querySelector('img')).toBeNull()
 })
-it('shows unavailable source attributes without fabricating text or hiding the known zero amount', () => {
+it('shows unavailable source attributes without fabricating text and leaves the known zero amount blank like 1C', () => {
   const row = { ...knownSettlementAttribute(), ManagerAvailable: false, ManagerName: null, ManagerAssigned: null,
     RegionAvailable: false, RegionCode: null }
   render(<MantineProvider env="test"><ReportInlinePreview preview={normalizeNativeReportPreview({ Preview: settlementAttributePreview(row) })} /></MantineProvider>)
   const table = screen.getByRole('table')
   expect(within(table).getAllByRole('rowheader', { name: '—' })).toHaveLength(2)
-  expect(within(table).getByRole('cell', { name: '0' })).toBeTruthy()
+  expect(within(table).queryByRole('cell', { name: '0' })).toBeNull()
+  expect(within(table).getAllByRole('cell').some(cell => cell.textContent === '' && cell.title === '')).toBe(true)
 })

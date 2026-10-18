@@ -9,6 +9,8 @@ export type CurrentVparivanieProduct = { RowSourceIndex: number } & Record<typeo
 export type CurrentVparivanieProducts = { Version: 1 | 2; ResultSha256: string; Rows: CurrentVparivanieProduct[] }
 export type NativeReportPreviewAxis = { Ordinal: number; SourceIndex: number; Values: { Caption: string; Identity?: NativeReportPreviewScalar }[] }
 export type NativeReportPreviewCell = { RowSourceIndex: number; ColumnSourceIndex: number; Value: NativeReportPreviewScalar }
+export type NativeReportPreviewGroupTotal = { Level: number; RowSourceIndex: number; RowCount: number; Values: NativeReportPreviewCell[] }
+export type NativeReportPreviewTotals = { State: 'materialized'; Values: NativeReportPreviewCell[]; Groups: NativeReportPreviewGroupTotal[] }
 export type NativeReportPreviewFilter = { Field: string; Condition: string; Values: string[]; IgnoredReason: string | null }
 export type NativeReportPreviewRequest = {
   DataSource: string
@@ -42,6 +44,7 @@ export type NativeReportPreview = {
   Columns: NativeReportPreviewAxis[]
   Cells: NativeReportPreviewCell[]
   CurrentVparivanieProducts?: CurrentVparivanieProducts
+  Totals?: NativeReportPreviewTotals
   SettlementCounterpartyAttributes?: SettlementCounterpartyAttributes
   ClientDiscountRecipientRegions?: ClientDiscountRegions
   WorkbookPresentation?: WorkbookPreview
@@ -188,7 +191,44 @@ export function normalizeNativeReportPreview(response: unknown, fullCurrentVpari
     throw new Error('Сервер повернув неоднозначні додаткові поля форми.')
   const workbook = readWorkbookPreview(preview.workbookPresentation, { ...preview, Request: request, SettlementCounterpartyAttributes: attributes } as NativeReportPreview)
   const productDisplay = normalizeCurrentVparivanieProducts(preview, request, fullCurrentVparivanie)
-  return { ...preview, Request: request, ...(workbook ? { WorkbookPresentation: workbook } : {}), ...(productDisplay ? { CurrentVparivanieProducts: productDisplay } : {}), ...(attributes ? { SettlementCounterpartyAttributes: attributes } : {}), ...(regions ? { ClientDiscountRecipientRegions: regions } : {}) } as NativeReportPreview
+  const totals = normalizeTotals(preview.Totals, preview.Rows as NativeReportPreviewAxis[], columnIds, preview.RowSchema.length)
+  return { ...preview, Request: request, Totals: totals, ...(workbook ? { WorkbookPresentation: workbook } : {}), ...(productDisplay ? { CurrentVparivanieProducts: productDisplay } : {}), ...(attributes ? { SettlementCounterpartyAttributes: attributes } : {}), ...(regions ? { ClientDiscountRecipientRegions: regions } : {}) } as NativeReportPreview
+}
+
+function normalizeTotals(value: unknown, rows: NativeReportPreviewAxis[], columnIds: ReadonlySet<number>,
+  levels: number): NativeReportPreviewTotals | undefined {
+  if (!record(value) || value.State !== 'materialized') return undefined
+  const fail = () => { throw new Error('Сервер повернув некоректні підсумки попереднього перегляду.') }
+  const rowIds = new Set(rows.map(row => row.SourceIndex))
+  const cells = (list: unknown, row: number): NativeReportPreviewCell[] => {
+    if (!Array.isArray(list) || list.length > 256) return fail()
+    const seen = new Set<number>()
+    return list.map(cell => {
+      if (!record(cell) || cell.RowSourceIndex !== row || !boundedInteger(cell.ColumnSourceIndex, 256)
+        || !columnIds.has(cell.ColumnSourceIndex) || seen.has(cell.ColumnSourceIndex) || !scalar(cell.Value)) return fail()
+      seen.add(cell.ColumnSourceIndex)
+      return { RowSourceIndex: row, ColumnSourceIndex: cell.ColumnSourceIndex, Value: cell.Value }
+    })
+  }
+  const groups = value.Groups ?? []
+  if (!Array.isArray(groups) || groups.length > 50 * Math.max(levels, 1)) return fail()
+  const seenGroups = new Set<string>()
+  return { State: 'materialized', Values: cells(value.Values, -1), Groups: groups.map(group => {
+    if (!record(group) || !boundedInteger(group.Level, Math.max(levels - 2, 0)) || !boundedInteger(group.RowSourceIndex, 500000)
+      || !rowIds.has(group.RowSourceIndex) || !boundedInteger(group.RowCount, 500000) || group.RowCount === 0
+      || seenGroups.has(`${group.Level}:${group.RowSourceIndex}`)) return fail()
+    seenGroups.add(`${group.Level}:${group.RowSourceIndex}`)
+    return { Level: group.Level, RowSourceIndex: group.RowSourceIndex, RowCount: group.RowCount, Values: cells(group.Values, group.RowSourceIndex) }
+  }) }
+}
+
+const ONE_C_BLANK_ZERO_SOURCES = new Set(['NativeDayOrganizationGrossProfit', 'NativeSupplierGrossProfit', 'NativeCurrentVparivanie',
+  'NativeCashPeriod', 'NativeSettlementPeriod'])
+export const previewBlanksZero = (dataSource: string | undefined): boolean => !!dataSource && ONE_C_BLANK_ZERO_SOURCES.has(dataSource)
+
+export function isZeroPreviewScalar(value: NativeReportPreviewScalar | undefined): boolean {
+  if (!value || value.Value == null || !['decimal', 'signedInteger', 'unsignedInteger', 'float32', 'float64'].includes(value.Kind)) return false
+  return Number(value.Value) === 0 && value.Value.trim() !== ''
 }
 
 function normalizeCurrentVparivanieProducts(preview: Record<string, unknown>, request: NativeReportPreviewRequest | null, full: boolean): CurrentVparivanieProducts | undefined {

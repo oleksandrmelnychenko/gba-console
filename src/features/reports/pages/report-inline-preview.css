@@ -9,3 +9,5 @@
    overlapping sticky tiers while scrolling its dynamic customer columns. */
 .report-inline-preview table:has(th[rowspan="2"]) thead th { position: static; }
 .report-inline-preview table:has(th[rowspan="2"]) tbody th:nth-child(3) { white-space: pre-wrap; }
+.report-inline-preview__group-total th, .report-inline-preview__group-total td,
+.report-inline-preview__grand-total th, .report-inline-preview__grand-total td { font-weight: 700; }
