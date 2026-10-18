@@ -22,8 +22,8 @@ const capabilityFields = ['Version', 'MaximumDays', 'CurrencyBasis', 'UsesCurren
   'RowLayouts', 'Measurements', 'Filters', 'FilterExpression', 'BuyerSubtree'] as const
 export const GROUPED_SETTLEMENT_LAYOUTS = [[4, 41, 76], [4, 76]] as const
 export const SINGLE_SETTLEMENT_AXES = 'Організація → Валюта → Контрагент → Договір. Один точний договір і чотири показники у валюті взаєморозрахунків; структура фіксована.'
-export const CURRENCY_SETTLEMENT_AXES = 'Організація → Валюта → Контрагент, як у «Взаємороз всі.xls». Договори контрагента за вибраними відборами; чотири показники у валюті взаєморозрахунків: залишок на початок, надходження, витрати, залишок на кінець.'
-export const DEBTOR_SETTLEMENT_AXES = 'Організація → Контрагент, як у «ДБіторка.xls». Договори контрагента за вибраними відборами; чотири показники: залишок на початок, надходження, витрати, залишок на кінець. Суми договорів у різних валютах додаються в один рядок без перерахунку, як у 1С.'
+export const CURRENCY_SETTLEMENT_AXES = 'Організація → Валюта → Контрагент, як у «Взаємороз всі.xls». Договори контрагента за вибраними відборами; чотири показники у валюті взаєморозрахунків: поч. залишок, надходження, видаток, кін. залишок.'
+export const DEBTOR_SETTLEMENT_AXES = 'Організація → Контрагент, як у «ДБіторка.xls». Договори контрагента за вибраними відборами; чотири показники: поч. залишок, надходження, видаток, кін. залишок. Суми договорів у різних валютах додаються в один рядок без перерахунку, як у 1С.'
 export const GROUPED_SETTLEMENT_FILTERS = [0, 6, 9, 30] as const
 export const GROUPED_SETTLEMENT_SUPPLIER_FILTERS = [0, 6, 9, 17, 18, 30] as const
 export const GROUPED_SETTLEMENT_MEASURES = [88, 89, 90, 91] as const
