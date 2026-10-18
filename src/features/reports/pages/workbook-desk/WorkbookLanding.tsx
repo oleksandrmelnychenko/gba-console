@@ -2,6 +2,7 @@ import { Alert, Button, Loader, Text } from '@mantine/core'
 import { ArrowLeftRight, ArrowRight, CalendarDays, ChartNoAxesCombined, CircleAlert, PackageSearch, ReceiptText, Truck, WalletCards, type LucideIcon } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { useI18n } from '../../../../shared/i18n/useI18n'
+import { CREATE_ACTION_COLOR } from '../../../../shared/ui/page-header-actions/PageHeaderActions'
 import type { WorkbookLaunch } from '../../data/bug1274WorkbookLaunch'
 import { deskPeriodText, workbookDefaultPeriod, workbookDeskEntry } from '../../data/workbookDesk'
 
@@ -76,7 +77,7 @@ function WorkbookCard({ launch, today, disabled, onOpen }: {
         <CalendarDays size={15} aria-hidden="true" />
         <span className="workbook-card__dates">{deskPeriodText(period.from, period.to)}</span>
       </div> : null}
-      <Button type="button" variant="default" className="workbook-card__open" disabled={disabled}
+      <Button type="button" color={CREATE_ACTION_COLOR} variant="filled" className="workbook-card__open" disabled={disabled}
         rightSection={<ArrowRight size={15} aria-hidden="true" />}
         aria-label={t('Відкрити {file}', { file: launch.fileName })} onClick={() => onOpen(launch)}>{t('Відкрити')}</Button>
     </div>

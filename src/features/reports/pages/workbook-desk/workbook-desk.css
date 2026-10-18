@@ -173,12 +173,16 @@
 
 .workbook-card__period {
   align-items: center;
-  color: var(--mantine-color-gray-7);
+  background: var(--mantine-color-blue-0);
+  border: 1px solid var(--mantine-color-blue-2);
+  border-radius: 999px;
+  color: var(--mantine-color-blue-9);
   display: flex;
-  font-size: 11px;
+  font-size: 12px;
   gap: 6px;
   line-height: 1.4;
   min-width: 0;
+  padding: 5px 9px;
 }
 
 .workbook-card__period svg {
@@ -187,23 +191,18 @@
 }
 
 .workbook-card__dates {
-  color: var(--desk-text);
+  color: inherit;
   font-family: var(--font-mono);
   font-weight: 600;
 }
 
 .workbook-card__open.mantine-Button-root {
-  background: var(--mantine-color-gray-2);
-  border-color: transparent;
-  color: var(--desk-strong);
   flex-shrink: 0;
   height: 34px;
   font-size: 12px;
   margin-left: auto;
   padding-inline: 12px;
 }
-
-.workbook-card__open.mantine-Button-root:not(:disabled):hover { background: var(--mantine-color-gray-3); }
 
 .workbook-landing__more {
   background: var(--mantine-color-white);
