@@ -39,7 +39,8 @@ export function WorkbookSettings({ period, sections, advanced }: Props) {
     </div>
     {!expanded ? <ul className="workbook-settings__summary" aria-label={t('Коротко про налаштування')}>
       {sections.map(section => <li key={section.id}>
-        <button type="button" className="workbook-settings__summary-item" onClick={() => reveal(section.id)}>
+        <button type="button" className="workbook-settings__summary-item" onClick={() => reveal(section.id)}
+          aria-label={`${t(section.title)}: ${section.summary}`}>
           <span className="workbook-settings__summary-title">{t(section.title)}</span>
           <span className="workbook-settings__summary-text">{section.summary}</span>
         </button>
