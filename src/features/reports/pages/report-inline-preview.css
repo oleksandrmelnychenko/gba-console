@@ -1,13 +1,39 @@
-.report-inline-preview { display: grid; gap: 0.75rem; }
-.report-inline-preview__heading { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
-.report-inline-preview__scroll { max-height: 38rem; overflow: auto; }
-.report-inline-preview table { border-collapse: collapse; width: max-content; min-width: 100%; font-size: 0.8125rem; }
-.report-inline-preview th, .report-inline-preview td { border: 1px solid var(--mantine-color-gray-3); padding: 0.5rem; text-align: left; min-width: 7rem; max-width: 20rem; overflow-wrap: anywhere; }
-.report-inline-preview thead th { position: sticky; top: 0; z-index: 1; background: var(--mantine-color-body); }
-.report-inline-preview tbody th { font-weight: 500; }
+.report-inline-preview { display: grid; gap: 0.75rem; min-width: 0; }
+.report-inline-preview__heading { display: flex; align-items: baseline; justify-content: space-between; flex-wrap: wrap; gap: 0.25rem 1rem; }
+.report-inline-preview__title { font-family: var(--font-mono); color: var(--mantine-color-gray-9); margin: 0; }
+.report-inline-preview__count { color: var(--mantine-color-gray-7); font-weight: 600; }
+.report-inline-preview__about { background: var(--mantine-color-gray-0); border: 1px solid var(--mantine-color-gray-2); border-radius: 8px; padding: 0.625rem 0.875rem; gap: 0.375rem !important; }
+.report-inline-preview__about h3 { font-family: var(--font-mono); font-size: 12.5px; color: var(--mantine-color-gray-7); margin: 0; }
+.report-inline-preview__about .mantine-Text-root { font-size: 13px; color: var(--mantine-color-gray-8); }
+.report-inline-preview__about ul { margin: 0.125rem 0 0; padding-left: 1.125rem; display: grid; gap: 0.125rem; }
+.report-inline-preview__about li { font-size: 12.5px; line-height: 1.45; color: var(--mantine-color-gray-8); }
+.report-inline-preview__legend { color: var(--mantine-color-gray-7) !important; }
+.report-inline-preview__more { color: var(--mantine-color-gray-7) !important; }
+.report-inline-preview__scroll { max-height: min(38rem, 72vh); overflow: auto; border: 1px solid var(--mantine-color-gray-2); border-radius: 8px; }
+.report-inline-preview__scroll:focus-visible { outline: 2px solid rgba(var(--brand-orange-rgb), 0.7); outline-offset: 2px; }
+.report-inline-preview table { border-collapse: separate; border-spacing: 0; width: max-content; min-width: 100%; font-size: 0.8125rem; }
+.report-inline-preview th, .report-inline-preview td { background: var(--mantine-color-white); border-bottom: 1px solid var(--mantine-color-gray-2); border-right: 1px solid var(--mantine-color-gray-2); padding: 0.4375rem 0.625rem; text-align: left; min-width: 6.5rem; max-width: 20rem; overflow-wrap: anywhere; vertical-align: top; }
+.report-inline-preview tr > :last-child { border-right: 0; }
+.report-inline-preview tbody tr:last-child > * { border-bottom: 0; }
+.report-inline-preview thead th { position: sticky; top: 0; z-index: 2; background: #f8f9fa; color: var(--mantine-color-gray-8); font-weight: 600; vertical-align: bottom; line-height: 1.3; }
+.report-inline-preview td { color: var(--mantine-color-gray-9); font-family: var(--font-mono); font-size: 12.5px; font-variant-numeric: tabular-nums; text-align: right; white-space: nowrap; }
+.report-inline-preview tbody th { color: var(--mantine-color-gray-9); font-weight: 500; }
+.report-inline-preview tbody th[data-level="0"] { font-weight: 600; }
+.report-inline-preview tbody th.is-repeat { color: var(--mantine-color-gray-6); font-weight: 400; }
+.report-inline-preview thead tr > :first-child, .report-inline-preview tbody tr:not(.report-inline-preview__group-total) > th:first-child { position: sticky; left: 0; box-shadow: inset -1px 0 0 var(--mantine-color-gray-3); }
+.report-inline-preview tbody tr:not(.report-inline-preview__group-total) > th:first-child { z-index: 1; }
+.report-inline-preview thead tr > :first-child { z-index: 3; }
+.report-inline-preview tbody tr:not(.report-inline-preview__group-total):hover > * { background: #fff8f1; }
+.report-inline-preview .report-inline-preview__group-total > * { background: var(--mantine-color-gray-0); color: var(--mantine-color-gray-9); }
+.report-inline-preview .report-inline-preview__group-total[data-level="0"] > * { background: #f1f3f5; }
+.report-inline-preview .report-inline-preview__group-total[data-level="1"] > th { padding-left: 1.5rem; }
+.report-inline-preview .report-inline-preview__group-total[data-level="2"] > th { padding-left: 2.375rem; }
+.report-inline-preview .report-inline-preview__group-total[data-level="3"] > th { padding-left: 3.25rem; }
+.report-inline-preview tfoot th, .report-inline-preview tfoot td { position: sticky; bottom: 0; z-index: 2; background: #fff4eb; border-top: 2px solid var(--mantine-color-orange-3); border-bottom: 0; color: var(--mantine-color-gray-9); }
 /* The matrix has two header tiers. Keeping both in normal flow prevents
    overlapping sticky tiers while scrolling its dynamic customer columns. */
 .report-inline-preview table:has(th[rowspan="2"]) thead th { position: static; }
+.report-inline-preview table:has(th[rowspan="2"]) thead tr > :first-child { position: sticky; left: 0; }
 .report-inline-preview table:has(th[rowspan="2"]) tbody th:nth-child(3) { white-space: pre-wrap; }
 .report-inline-preview__group-total th, .report-inline-preview__group-total td,
 .report-inline-preview__grand-total th, .report-inline-preview__grand-total td { font-weight: 700; }

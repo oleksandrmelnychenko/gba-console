@@ -1,6 +1,6 @@
 import { settlementAttributeText, type SettlementCounterpartyAttribute } from '../data/settlementSourceAttributes'
 import { Fragment } from 'react'
-import { Alert, Badge, Stack, Text } from '@mantine/core'
+import { Alert, Stack, Text } from '@mantine/core'
 import { profitReadModeLabel } from '../data/profitReadMode'
 import { settlementReadModeLabel } from '../data/settlementReadMode'
 import { cashReadModeLabel } from '../data/cashReadMode'
@@ -9,6 +9,7 @@ import { CURRENT_VPARIVANIE_PRODUCT_CAPTIONS, CURRENT_VPARIVANIE_PRODUCT_FIELDS,
 import { currentVparivanieSecondTier } from '../data/currentVparivanieColumns'
 import './report-inline-preview.css'
 import { workbookAttributeText, type WorkbookRow } from '../data/workbookPreview'
+import { deskRowsText } from '../data/workbookDesk'
 
 export function ReportInlinePreview({ preview }: { preview: NativeReportPreview }) {
   const cells = new Map(preview.Cells.map(cell => [`${cell.RowSourceIndex}:${cell.ColumnSourceIndex}`, cell.Value]))
@@ -50,14 +51,17 @@ export function ReportInlinePreview({ preview }: { preview: NativeReportPreview 
     ...(index === preview.RowSchema.length - 1 ? inlineFields.map(field => field.caption) : [])].join(', ')),
     ...(attributes ? ['Основний менеджер покупця', 'Код по региону'] : []), ...(regions ? ['Код по региону'] : []),
     ...workbookColumns.map(field => field.caption)]
+  const levelCount = products ? 0 : preview.RowSchema.length
+  const repeated = preview.Rows.map((row, rowIndex) => preview.RowSchema.map((_, level) => level < levelCount - 1 && rowIndex > 0
+    && preview.RowSchema.slice(0, level + 1).every((__, upper) => rowCaption(row, upper) === rowCaption(preview.Rows[rowIndex - 1], upper))))
   return <section className="app-section-card report-inline-preview" aria-label="Попередній перегляд звіту">
     <div className="report-inline-preview__heading">
-      <Text component="h2" fw={600} size="sm">Дані звіту</Text>
-      <Badge variant="light">{preview.Page.ReturnedRows} із {preview.Page.TotalVisibleRows} рядків</Badge>
+      <Text component="h2" fw={600} size="sm" className="report-inline-preview__title">Таблиця на екрані</Text>
+      <Text size="sm" className="report-inline-preview__count">{deskRowsText(preview.Page.ReturnedRows, preview.Page.TotalVisibleRows, preview.Page.HasMore)}</Text>
     </div>
-    <ReportAttribution request={preview.Request} />
+    <ReportAttributionWarnings request={preview.Request} />
     <WorkbookMetadata workbook={workbook} />
-    <Text size="xs" c="dimmed">{['«—» — значення немає; «∅» — суму не визначено, бо в документах бракує даних.',
+    <Text size="xs" c="dimmed" className="report-inline-preview__legend">{['«—» — значення немає; «∅» — суму не визначено, бо в документах бракує даних.',
       ...(blanksZero ? ['Порожня клітинка — нуль, як у 1С.'] : []),
       totals ? 'Підсумки груп показано над їхніми рядками, як у 1С; загальний підсумок — унизу таблиці.'
         : 'На екрані показано рядки без підсумків; підсумки є у файлах Excel і PDF.'].join(' ')}</Text>
@@ -71,7 +75,7 @@ export function ReportInlinePreview({ preview }: { preview: NativeReportPreview 
         </tr>{products ? <tr>{preview.Columns.map(column => <th scope="col" key={column.SourceIndex}>
           {currentVparivanieSecondTier(column)}
         </th>)}</tr> : null}</thead>
-        <tbody>{preview.Rows.map(row => <Fragment key={row.SourceIndex}>
+        <tbody>{preview.Rows.map((row, rowIndex) => <Fragment key={row.SourceIndex}>
           {(groupTotals.get(row.SourceIndex) ?? []).map(group => <tr key={`group-${group.Level}`}
             className="report-inline-preview__group-total" data-level={group.Level}>
             <th scope="row" colSpan={rowHeaders.length}>
@@ -80,7 +84,8 @@ export function ReportInlinePreview({ preview }: { preview: NativeReportPreview 
             {totalCells(group.Values)}
           </tr>)}
           <tr>
-          {rowHeaders.map((header, index) => <th scope="row" key={header}>{rowHeaderText({ index, row, preview,
+          {rowHeaders.map((header, index) => <th scope="row" key={header} data-level={index < levelCount ? index : undefined}
+            className={repeated[rowIndex]?.[index] ? 'is-repeat' : undefined}>{rowHeaderText({ index, row, preview,
             products: !!products, product: productRows.get(row.SourceIndex), regions: !!regions, region: regionRows.get(row.SourceIndex),
             attributes: attributeRows.get(row.SourceIndex), workbookRow: workbookRows.get(row.SourceIndex), workbookColumns, sharedNames,
             caption: rowCaption })}</th>)}
@@ -98,8 +103,9 @@ export function ReportInlinePreview({ preview }: { preview: NativeReportPreview 
         </tr></tfoot> : null}
       </table>
     </div>
-    {preview.Page.HasMore ? <Text size="xs" c="dimmed">Показано перші {preview.Page.ReturnedRows} рядків. Повний результат доступний у Excel або PDF.{totals
+    {preview.Page.HasMore ? <Text size="xs" c="dimmed" className="report-inline-preview__more">Показано перші {preview.Page.ReturnedRows} рядків. Повний результат доступний у Excel або PDF.{totals
       ? ` Загальний підсумок — за всіма ${preview.Page.TotalVisibleRows} рядками звіту.` : ''}</Text> : null}
+    <ReportAttribution request={preview.Request} />
   </section>
 }
 
@@ -163,21 +169,26 @@ function filterText(filter: NativeReportPreviewFilter): string {
   const description = `${filter.Field} ${filter.Condition}: ${values.length ? values.join(', ') : '—'}`
   return filter.IgnoredReason ? `${description} (${filter.IgnoredReason})` : description
 }
+function ReportAttributionWarnings({ request }: { request: NativeReportPreviewRequest | null | undefined }) {
+  if (!request) return <Alert color="yellow" title="Опис розрахунку відсутній">
+    Сервер не передав опис розрахунку. Період, застосовані фільтри й обмеження цього результату не зазначені.
+  </Alert>
+  return <>
+    <SnapshotAttribution request={request} />
+    <IgnoredFilterAttribution filters={request.IgnoredFilters} />
+  </>
+}
+
 function ReportAttribution({ request }: { request: NativeReportPreviewRequest | null | undefined }) {
-  return <Stack gap="xs" component="section" aria-label="Про дані звіту">
+  if (!request) return null
+  return <Stack gap="xs" component="section" aria-label="Про дані звіту" className="report-inline-preview__about">
     <Text component="h3" fw={600} size="sm">Про дані звіту</Text>
-    {!request ? <Alert color="yellow" title="Опис розрахунку відсутній">
-      Сервер не передав опис розрахунку. Період, застосовані фільтри й обмеження цього результату не зазначені.
-    </Alert> : <>
-      {request.ProfitReadMode != null ? <Text size="sm">Джерело розрахунку: {profitReadModeLabel(request.ProfitReadMode)}</Text> : null}
-      {request.SettlementReadMode != null ? <Text size="sm">Джерело розрахунку: {settlementReadModeLabel(request.SettlementReadMode)}</Text> : null}
-      {request.CashReadMode != null ? <Text size="sm">Джерело розрахунку: {cashReadModeLabel(request.CashReadMode)}</Text> : null}
-      <SnapshotAttribution request={request} />
-      <PeriodAttribution request={request} />
-      <IgnoredFilterAttribution filters={request.IgnoredFilters} />
-      <AppliedFilterAttribution filters={request.Filters} />
-      <NoteAttribution notes={request.Notes} />
-    </>}
+    {request.ProfitReadMode != null ? <Text size="sm">Джерело розрахунку: {profitReadModeLabel(request.ProfitReadMode)}</Text> : null}
+    {request.SettlementReadMode != null ? <Text size="sm">Джерело розрахунку: {settlementReadModeLabel(request.SettlementReadMode)}</Text> : null}
+    {request.CashReadMode != null ? <Text size="sm">Джерело розрахунку: {cashReadModeLabel(request.CashReadMode)}</Text> : null}
+    <PeriodAttribution request={request} />
+    <AppliedFilterAttribution filters={request.Filters} />
+    <NoteAttribution notes={request.Notes} />
   </Stack>
 }
 
